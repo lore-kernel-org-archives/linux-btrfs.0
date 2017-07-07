@@ -1,246 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:41360 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750726AbdGGEA3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 Jul 2017 00:00:29 -0400
-Date: Fri, 7 Jul 2017 12:00:26 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Cc: fstests@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH v2] btrfs/146: Test various btrfs operations rounding
- behavior
-Message-ID: <20170707040026.GC29475@eguan.usersys.redhat.com>
-References: <1498031435-28344-1-git-send-email-nborisov@suse.com>
- <20170623082543.GN23360@eguan.usersys.redhat.com>
+Received: from magic.merlins.org ([209.81.13.136]:49933 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750983AbdGGFhV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jul 2017 01:37:21 -0400
+Date: Thu, 6 Jul 2017 22:37:18 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
+Subject: ctree.c:197: update_ref_for_cow: BUG_ON `ret` triggered, value -5
+Message-ID: <20170707053718.GA9735@merlins.org>
+References: <0d93c1c4-1feb-b589-0c8f-1fced7b77686@cn.fujitsu.com> <20170627231146.GA16192@merlins.org> <20170628071026.GA21006@lufq.5F> <20170628144348.abvqowzmeveyzssn@merlins.org> <20170501170641.GG3516@merlins.org> <20170501180856.GH3516@merlins.org> <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com> <20170502032346.ayhh3n3uh5d5ekbb@merlins.org> <CAJCQCtRaeejj4b+J6M7VTsDAe7Sn4PUtBwcvHXgfLNAFe=8Jqg@mail.gmail.com> <20170502051155.igmbqcqgzi4ukefg@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170623082543.GN23360@eguan.usersys.redhat.com>
+In-Reply-To: <20170628144348.abvqowzmeveyzssn@merlins.org> <20170502051155.igmbqcqgzi4ukefg@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 23, 2017 at 04:25:43PM +0800, Eryu Guan wrote:
-> On Wed, Jun 21, 2017 at 10:50:35AM +0300, Nikolay Borisov wrote:
-> > When changing the size of disks/filesystem we should always be
-> > rounding down to a multiple of sectorsize
-> > 
-> > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> Thanks for the update! But I still need some reviews from btrfs list to
-> see if this is a valid test.
+I'm still trying to fix my filesystem.
+It seems to work well enough since the damage is apparently localized, but
+I'd really want check --repair to actually bring it back to a working
+state, but now it's crashing
 
-Still looking for reviews on this test. Thanks a lot!
+This is btrfs tools from git from a few days ago
 
-Eryu
+Failed to find [4068943577088, 168, 16384]
+btrfs unable to find ref byte nr 4068943577088 parent 0 root 4  owner 1 offset 0
+Failed to find [5905106075648, 168, 16384]
+btrfs unable to find ref byte nr 5906282119168 parent 0 root 4  owner 0 offset 1
+Failed to find [21037056, 168, 16384]
+btrfs unable to find ref byte nr 21037056 parent 0 root 3  owner 1 offset 0
+Failed to find [21053440, 168, 16384]
+btrfs unable to find ref byte nr 21053440 parent 0 root 3  owner 0 offset 1
+Failed to find [21299200, 168, 16384]
+btrfs unable to find ref byte nr 21299200 parent 0 root 3  owner 0 offset 1
+Failed to find [5523931971584, 168, 16384]
+btrfs unable to find ref byte nr 5524037566464 parent 0 root 3861  owner 3 offset 0
+ctree.c:197: update_ref_for_cow: BUG_ON `ret` triggered, value -5
+btrfs(+0x113cf)[0x5651e60443cf]
+btrfs(__btrfs_cow_block+0x576)[0x5651e6045848]
+btrfs(btrfs_cow_block+0xea)[0x5651e6045dc6]
+btrfs(btrfs_search_slot+0x11df)[0x5651e604969d]
+btrfs(+0x59184)[0x5651e608c184]
+btrfs(cmd_check+0x2bd4)[0x5651e60987b3]
+btrfs(main+0x85)[0x5651e60442c3]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f34f523d2b1]
+btrfs(_start+0x2a)[0x5651e6043e3a]
 
-> 
-> (There're still two places in _cleanup() that have trailing whitespace
-> issue, but I can fix them at commit time if test passes review of other
-> btrfs developers.)
-> 
-> Thanks,
-> Eryu
-> 
-> > ---
-> > 
-> > Changes since v1: 
-> >  - Worked on incorporated feedback by Eryu 
-> >  - Changed test number to 146 to avoid clashes
-> > 
-> >  tests/btrfs/146     | 147 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  tests/btrfs/146.out |  20 +++++++
-> >  tests/btrfs/group   |   1 +
-> >  3 files changed, 168 insertions(+)
-> >  create mode 100755 tests/btrfs/146
-> >  create mode 100644 tests/btrfs/146.out
-> > 
-> > diff --git a/tests/btrfs/146 b/tests/btrfs/146
-> > new file mode 100755
-> > index 0000000..7e6d40f
-> > --- /dev/null
-> > +++ b/tests/btrfs/146
-> > @@ -0,0 +1,147 @@
-> > +#! /bin/bash
-> > +# FS QA Test No. btrfs/146
-> > +#
-> > +# Test that various code paths which deal with modifying the total size
-> > +# of devices/superblock correctly round the value to a multiple of
-> > +# sector size
-> > +#
-> > +#-----------------------------------------------------------------------
-> > +#
-> > +# Copyright (C) 2017 SUSE Linux Products GmbH. All Rights Reserved.
-> > +# Author: Nikolay Borisov <nborisov@suse.com>
-> > +#
-> > +# This program is free software; you can redistribute it and/or
-> > +# modify it under the terms of the GNU General Public License as
-> > +# published by the Free Software Foundation.
-> > +#
-> > +# This program is distributed in the hope that it would be useful,
-> > +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> > +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> > +# GNU General Public License for more details.
-> > +#
-> > +# You should have received a copy of the GNU General Public License
-> > +# along with this program; if not, write the Free Software Foundation,
-> > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> > +#-----------------------------------------------------------------------
-> > +#
-> > +
-> > +seq=`basename $0`
-> > +seqres=$RESULT_DIR/$seq
-> > +echo "QA output created by $seq"
-> > +
-> > +tmp=/tmp/$$
-> > +status=1	# failure is the default!
-> > +trap "_cleanup; exit \$status" 0 1 2 3 15
-> > +
-> > +_cleanup()
-> > +{
-> > +	$UMOUNT_PROG $loop_mnt 
-> > +	_destroy_loop_device $loop_dev1
-> > +	_destroy_loop_device $loop_dev2
-> > +	cd /
-> > +	rm -f $tmp.*
-> > +	
-> > +}
-> > +
-> > +# get standard environment, filters and checks
-> > +. ./common/rc
-> > +. ./common/filter
-> > +
-> > +# real QA test starts here
-> > +_supported_fs btrfs
-> > +_supported_os Linux
-> > +_require_scratch
-> > +_require_loop
-> > +_require_block_device $SCRATCH_DEV
-> > +_require_btrfs_command inspect-internal dump-super
-> > +# ~2.1 gigabytes just to be on the safe side
-> > +_require_fs_space $SCRATCH_MNT $(( 2202009 ))
-> > +
-> > +rm -f $seqres.full
-> > +
-> > +_scratch_mkfs >>$seqres.full 2>&1
-> > +_scratch_mount
-> > +
-> > +
-> > +# Size of devices which are going to be half a page larger than
-> > +# default sectorsize (4kb)
-> > +expectedsize=$(( 1 * 1024 * 1024 * 1024 ))
-> > +filesize=$(( $expectedsize + 2048 ))
-> > +loop_mnt=$SCRATCH_MNT/mount
-> > +fs_img1=$SCRATCH_MNT/disk1.img
-> > +fs_img2=$SCRATCH_MNT/disk2.img
-> > +
-> > +mkdir $loop_mnt
-> > +
-> > +#create files to hold dummy devices
-> > +$XFS_IO_PROG -f -c "falloc 0 $filesize" $fs_img1 &> /dev/null
-> > +$XFS_IO_PROG -f -c "falloc 0 $filesize" $fs_img2 &> /dev/null
-> > +
-> > +loop_dev1=$(_create_loop_device $fs_img1)
-> > +loop_dev2=$(_create_loop_device $fs_img2)
-> > +
-> > +#create fs only on the first device
-> > +_mkfs_dev $loop_dev1
-> > +_mount $loop_dev1 $loop_mnt
-> > +
-> > +echo "Size from mkfs"
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super /dev/loop0 | grep total
-> > +
-> > +#resize down to 768mb + 2k
-> > +$BTRFS_UTIL_PROG filesystem resize 824182784 $loop_mnt >>$seqres.full 2>&1
-> > +sync
-> > +
-> > +echo ""
-> > +
-> > +echo "Size after resizing down"
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super $loop_dev1 | grep total
-> > +
-> > +echo ""
-> > +
-> > +#now resize back up to 1 gb
-> > +$BTRFS_UTIL_PROG filesystem resize max $loop_mnt >>$seqres.full 2>&1
-> > +sync
-> > +
-> > +echo "Size after resizing up"
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super /dev/loop0 | grep total
-> > +
-> > +# Add fs load for later balance operations, we need to do this
-> > +# before adding a second device
-> > +$FSSTRESS_PROG -w -n 15000 -p 2 -d $loop_mnt >> $seqres.full 2>&1
-> > +
-> > +# add second unaligned device, this checks the btrfs_init_new_device codepath
-> > +# device should be aligned
-> > +$BTRFS_UTIL_PROG device add $loop_dev2 $loop_mnt >>$seqres.full 2>&1
-> > +sync
-> > +
-> > +echo ""
-> > +
-> > +# Ensure that adding a device doesn't cause the superbock to be
-> > +# unaligned
-> > +echo "Size of superblock after device addition"
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super $loop_dev1 | grep total
-> > +
-> > +echo ""
-> > +
-> > +# The newly added device must also be aligned
-> > +echo "Size of superblock/device for second device"
-> > +$BTRFS_UTIL_PROG inspect-internal dump-super $loop_dev2 | grep total
-> > +
-> > +# now start a balance, this might produce warnings while
-> > +# it's relocating chunks and updating the size of devices
-> > +$BTRFS_UTIL_PROG balance start $loop_mnt >> $seqres.full 2>&1
-> > +sync
-> > +
-> > +# delete everything and then run balance
-> > +rm -rf $loop_mnt/*
-> > +
-> > +# do a bit more stress testing until we fill the fs
-> > +$FSSTRESS_PROG -w -n 15000 -p 4 -d $loop_mnt >> $seqres.full 2>&1
-> > +rm -rf $loop_mnt/p0 $loop_mnt/p2
-> > +
-> > +# run balance again, this time we will be freeing chunks
-> > +$BTRFS_UTIL_PROG balance start $loop_mnt >> $seqres.full 2>&1
-> > +sync
-> > +
-> > +status=$?
-> > +exit
-> > diff --git a/tests/btrfs/146.out b/tests/btrfs/146.out
-> > new file mode 100644
-> > index 0000000..8fb671b
-> > --- /dev/null
-> > +++ b/tests/btrfs/146.out
-> > @@ -0,0 +1,20 @@
-> > +QA output created by 146
-> > +Size from mkfs
-> > +total_bytes		1073741824
-> > +dev_item.total_bytes	1073741824
-> > +
-> > +Size after resizing down
-> > +total_bytes		824180736
-> > +dev_item.total_bytes	824180736
-> > +
-> > +Size after resizing up
-> > +total_bytes		1073741824
-> > +dev_item.total_bytes	1073741824
-> > +
-> > +Size of superblock after device addition
-> > +total_bytes		2147483648
-> > +dev_item.total_bytes	1073741824
-> > +
-> > +Size of superblock/device for second device
-> > +total_bytes		2147483648
-> > +dev_item.total_bytes	1073741824
-> > diff --git a/tests/btrfs/group b/tests/btrfs/group
-> > index 629919b..f74f50c 100644
-> > --- a/tests/btrfs/group
-> > +++ b/tests/btrfs/group
-> > @@ -148,3 +148,4 @@
-> >  143 auto quick
-> >  144 auto quick send
-> >  145 auto quick send
-> > +146 auto quick
-> > -- 
-> > 2.7.4
-> > 
+
+Full log:
+enabling repair mode
+Checking filesystem on /dev/mapper/dshelf2
+UUID: 85441c59-ad11-4b25-b1fe-974f9e4acede
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checksum verify failed on 3037243965440 found 179689AF wanted 82B97043
+checksum verify failed on 3037243965440 found 179689AF wanted 82B97043
+checksum verify failed on 3037243998208 found 60EA5C5B wanted 0CF5948F
+checksum verify failed on 3037243998208 found 60EA5C5B wanted 0CF5948F
+checksum verify failed on 3037244293120 found 38382803 wanted 39E4F85E
+checksum verify failed on 3037244293120 found 38382803 wanted 39E4F85E
+checksum verify failed on 3037244342272 found E84F1D8F wanted 472DA98C
+checksum verify failed on 3037244342272 found E84F1D8F wanted 472DA98C
+checksum verify failed on 3037244669952 found 2F6E4C0E wanted E00BBF09
+checksum verify failed on 3037244669952 found 2F6E4C0E wanted E00BBF09
+checksum verify failed on 3037248913408 found CE2E4AEE wanted EF22F9CA
+checksum verify failed on 3037248913408 found CE2E4AEE wanted EF22F9CA
+checksum verify failed on 3037248929792 found C989CB0E wanted E27527BC
+checksum verify failed on 3037248929792 found C989CB0E wanted E27527BC
+checksum verify failed on 3037247569920 found 05848C79 wanted EF3D5598
+checksum verify failed on 3037247569920 found 05848C79 wanted EF3D5598
+checksum verify failed on 3037247586304 found 9D1E4E39 wanted F1EC8135
+checksum verify failed on 3037247586304 found 9D1E4E39 wanted F1EC8135
+checksum verify failed on 3037247619072 found BFE40520 wanted 627DB20D
+checksum verify failed on 3037247619072 found BFE40520 wanted 627DB20D
+checksum verify failed on 3037249208320 found A6B5775F wanted B1E6C0FC
+checksum verify failed on 3037249208320 found A6B5775F wanted B1E6C0FC
+checksum verify failed on 3037252534272 found 207AD7DF wanted DE72BDF7
+checksum verify failed on 3037252534272 found 207AD7DF wanted DE72BDF7
+checksum verify failed on 3111569391616 found 3C623707 wanted D955D668
+checksum verify failed on 3111569391616 found 3C623707 wanted D955D668
+checksum verify failed on 3111569768448 found 0C129F3C wanted C509003A
+checksum verify failed on 3111569768448 found 0C129F3C wanted C509003A
+checksum verify failed on 3111569735680 found E94C9D41 wanted 55836DD2
+checksum verify failed on 3111569735680 found E94C9D41 wanted 55836DD2
+checksum verify failed on 3037253435392 found 8E124EB5 wanted A3291C35
+checksum verify failed on 3037253435392 found 8E124EB5 wanted A3291C35
+checksum verify failed on 3037253746688 found 2B6A4DCD wanted 4323B339
+checksum verify failed on 3037253746688 found 2B6A4DCD wanted 4323B339
+checksum verify failed on 3111569702912 found 1048610C wanted 9856BB43
+checksum verify failed on 3111569702912 found 1048610C wanted 9856BB43
+checksum verify failed on 3111569801216 found CD7AAF82 wanted C1DA44DF
+checksum verify failed on 3111569801216 found CD7AAF82 wanted C1DA44DF
+checksum verify failed on 3037251878912 found 86FB02F3 wanted 728772CE
+checksum verify failed on 3037251878912 found 86FB02F3 wanted 728772CE
+checksum verify failed on 3037252861952 found CFD54426 wanted E91774C0
+checksum verify failed on 3037252861952 found CFD54426 wanted E91774C0
+checksum verify failed on 3037255974912 found E3655B7C wanted 8163FDDE
+checksum verify failed on 3037255974912 found E3655B7C wanted 8163FDDE
+checksum verify failed on 3037252927488 found E7AD88A3 wanted F6BA5B10
+checksum verify failed on 3037252927488 found E7AD88A3 wanted F6BA5B10
+checksum verify failed on 3037253500928 found 514A55B2 wanted 3611CD81
+checksum verify failed on 3037253500928 found 514A55B2 wanted 3611CD81
+checksum verify failed on 3037256105984 found 41ADA274 wanted 8F7F0A0B
+checksum verify failed on 3037256105984 found 41ADA274 wanted 8F7F0A0B
+Csum didn't match
+The following tree block(s) is corrupted in tree 3861:
+	tree block bytenr: 1710573748224, level: 1, node key: (1073956, 12, 959325)
+Try to repair the btree for root 3861
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Csum didn't match
+Failed to find [4068943577088, 168, 16384]
+btrfs unable to find ref byte nr 4068943577088 parent 0 root 4  owner 1 offset 0
+Failed to find [5905106075648, 168, 16384]
+btrfs unable to find ref byte nr 5906282119168 parent 0 root 4  owner 0 offset 1
+Failed to find [21037056, 168, 16384]
+btrfs unable to find ref byte nr 21037056 parent 0 root 3  owner 1 offset 0
+Failed to find [21053440, 168, 16384]
+btrfs unable to find ref byte nr 21053440 parent 0 root 3  owner 0 offset 1
+Failed to find [21299200, 168, 16384]
+btrfs unable to find ref byte nr 21299200 parent 0 root 3  owner 0 offset 1
+Failed to find [5523931971584, 168, 16384]
+btrfs unable to find ref byte nr 5524037566464 parent 0 root 3861  owner 3 offset 0
+ctree.c:197: update_ref_for_cow: BUG_ON `ret` triggered, value -5
+btrfs(+0x113cf)[0x5651e60443cf]
+btrfs(__btrfs_cow_block+0x576)[0x5651e6045848]
+btrfs(btrfs_cow_block+0xea)[0x5651e6045dc6]
+btrfs(btrfs_search_slot+0x11df)[0x5651e604969d]
+btrfs(+0x59184)[0x5651e608c184]
+btrfs(cmd_check+0x2bd4)[0x5651e60987b3]
+btrfs(main+0x85)[0x5651e60442c3]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f34f523d2b1]
+btrfs(_start+0x2a)[0x5651e6043e3a]
+Aborted
+gargamel:~# 
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

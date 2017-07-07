@@ -1,77 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46467 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751013AbdGGJd3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jul 2017 05:33:29 -0400
-Date: Fri, 7 Jul 2017 17:33:20 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
-Subject: Re: ctree.c:197: update_ref_for_cow: BUG_ON `ret` triggered, value -5
-Message-ID: <20170707093318.GD3224@fnst>
-References: <20170628071026.GA21006@lufq.5F>
- <20170628144348.abvqowzmeveyzssn@merlins.org>
- <20170501170641.GG3516@merlins.org>
- <20170501180856.GH3516@merlins.org>
- <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com>
- <20170502032346.ayhh3n3uh5d5ekbb@merlins.org>
- <CAJCQCtRaeejj4b+J6M7VTsDAe7Sn4PUtBwcvHXgfLNAFe=8Jqg@mail.gmail.com>
- <20170502051155.igmbqcqgzi4ukefg@merlins.org>
- <20170707053718.GA9735@merlins.org>
- <20170707053953.GB9735@merlins.org>
+Received: from mail-qk0-f173.google.com ([209.85.220.173]:34448 "EHLO
+        mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751155AbdGGPFl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jul 2017 11:05:41 -0400
+Received: by mail-qk0-f173.google.com with SMTP id d78so29548201qkb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 07 Jul 2017 08:05:40 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20170707053953.GB9735@merlins.org>
+In-Reply-To: <20170707054608.GA28035@vader>
+References: <20170706150046.GB12959@merlins.org> <20170706211320.GA12206@vader.DHCP.thefacebook.com>
+ <20170706212422.GH30689@merlins.org> <20170706230141.GA22242@vader.DHCP.thefacebook.com>
+ <20170706233152.GI30689@merlins.org> <20170706234451.GB22242@vader.DHCP.thefacebook.com>
+ <20170706235939.GJ30689@merlins.org> <20170707054608.GA28035@vader>
+From: Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Date: Fri, 7 Jul 2017 18:05:39 +0300
+Message-ID: <CAN4oSBe8x3jpMGzdo2F2unqvNT7V+P4VxkaWG3df4DDY+q=TRA@mail.gmail.com>
+Subject: Re: Leveldb in google-chrome incompatible with btrfs?
+To: Omar Sandoval <osandov@osandov.com>
+Cc: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org,
+        pwnall@chromium.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 06, 2017 at 10:39:53PM -0700, Marc MERLIN wrote:
->On Thu, Jul 06, 2017 at 10:37:18PM -0700, Marc MERLIN wrote:
->> I'm still trying to fix my filesystem.
->> It seems to work well enough since the damage is apparently localized, but
->> I'd really want check --repair to actually bring it back to a working
->> state, but now it's crashing
+I was also struggling with this issue for quite some time. Today my 2
+months old disk is crashed (which really surprises me). It doesn't
+even being shown by `fdisk -l`.
 
-I apologise for my late reply. As a colleague left, I have to take over his
-work recently.
+After buying this this disk, I installed a Debian on a BTRFS partition
+on an LVM partition on a LUKS partition. From that day till today,
+while doing my work, there was always a video running on Youtube in
+the background. Sometimes my editor (atom, it also shares a lot with
+chromium) was slowing down which was making me end up restarting the
+Chromium (and it was restarting barely with `killall -9 chromium`.
+Another mentionable event is, 3 days ago my laptop suddenly restarted.
 
->> 
->> This is btrfs tools from git from a few days ago
->> 
->> Failed to find [4068943577088, 168, 16384]
->> btrfs unable to find ref byte nr 4068943577088 parent 0 root 4  owner 1 offset 0
->> Failed to find [5905106075648, 168, 16384]
->> btrfs unable to find ref byte nr 5906282119168 parent 0 root 4  owner 0 offset 1
->> Failed to find [21037056, 168, 16384]
->> btrfs unable to find ref byte nr 21037056 parent 0 root 3  owner 1 offset 0
->> Failed to find [21053440, 168, 16384]
->> btrfs unable to find ref byte nr 21053440 parent 0 root 3  owner 0 offset 1
->> Failed to find [21299200, 168, 16384]
->> btrfs unable to find ref byte nr 21299200 parent 0 root 3  owner 0 offset 1
->> Failed to find [5523931971584, 168, 16384]
->> btrfs unable to find ref byte nr 5524037566464 parent 0 root 3861  owner 3 offset 0
->> ctree.c:197: update_ref_for_cow: BUG_ON `ret` triggered, value -5
->> btrfs(+0x113cf)[0x5651e60443cf]
->> btrfs(__btrfs_cow_block+0x576)[0x5651e6045848]
->> btrfs(btrfs_cow_block+0xea)[0x5651e6045dc6]
->> btrfs(btrfs_search_slot+0x11df)[0x5651e604969d]
->> btrfs(+0x59184)[0x5651e608c184]
->> btrfs(cmd_check+0x2bd4)[0x5651e60987b3]
->> btrfs(main+0x85)[0x5651e60442c3]
->> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f34f523d2b1]
->> btrfs(_start+0x2a)[0x5651e6043e3a]
+I suspect Chromium usage on BTRFS and disk the crash are somehow related.
+
+2017-07-07 8:46 GMT+03:00 Omar Sandoval <osandov@osandov.com>:
+> On Thu, Jul 06, 2017 at 04:59:39PM -0700, Marc MERLIN wrote:
+>> On Thu, Jul 06, 2017 at 04:44:51PM -0700, Omar Sandoval wrote:
+>> > In the bug report, you commented that CURRENT contained MANIFEST-010814,
+>> > is that indeed the case or was it actually something newer? If it was
+>> > the newer one, then it's still tricky how we'd end up that way but not
+>> > as outlandish.
+>>
+>> You are correct, my bad.
+>> At this point, I'm going to have to assume that something bad happened with
+>> rsync when I rsync'ed an old profile over the one that caused chrome to fail
+>> to restart.
+>> Especially because CURRENT was dated Oct 4th, which does not make sense.
 >
->Mmmh, never mind, it seems that the software raid suffered yet another
->double disk failure due to some undermined flakiness in the underlying block
->device cabling :-/
->That would likely explain the failures here.
-
-I'm sorry for hear this. Which raid level are you using? So could you recover
-from this double disk failure?
-
--- 
-Thanks,
-Lu
-
-
+> Okay, this makes sense.
+>
+>> Now that I know what to look for, I'll have a much closer look next time
+>> this happens, with the understanding that it would be a while if I've
+>> successfully fixed the reason why my laptop was crashing too often.
+>
+> Sounds good.
+>
+>> But you said you've also seen issues with google-chrome profile and btrfs.
+>> What did you experience?
+>
+> I never debugged it, but I had to blow away the profile a couple of times. Then
+> there's this weird one which looks like a Btrfs bug:
+>
+> ┌[osandov@vader ~/.config]
+> └$ ls -al google-chrome-busted/**
+> ls: cannot access 'google-chrome-busted/Local State': No such file or directory
+> google-chrome-busted/Default:
+> ls: cannot access 'google-chrome-busted/Default/Preferences': No such file or directory
+> ls: cannot access 'google-chrome-busted/Default/.com.google.Chrome.VfAUNx': No such file or directory
+> total 0
+> drwx------ 1 osandov users 12 Feb  7 16:50 .
+> drwx------ 1 osandov users 14 Feb  7 16:50 ..
+> -????????? ? ?       ?      ?            ? .com.google.Chrome.VfAUNx
+> -????????? ? ?       ?      ?            ? Preferences
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

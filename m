@@ -1,39 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:33178 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:33409 "EHLO
         mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750882AbdGGQif (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jul 2017 12:38:35 -0400
-Date: Fri, 7 Jul 2017 09:38:34 -0700
+        with ESMTP id S1750882AbdGGQuI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jul 2017 12:50:08 -0400
+Date: Fri, 7 Jul 2017 09:50:06 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Josef Bacik <jbacik@fb.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
-Subject: Re: ctree.c:197: update_ref_for_cow: BUG_ON `ret` triggered, value -5
-Message-ID: <20170707163834.GA6083@merlins.org>
-References: <20170628144348.abvqowzmeveyzssn@merlins.org> <20170501170641.GG3516@merlins.org> <20170501180856.GH3516@merlins.org> <CAJCQCtR4Hr5ekASiqWn2RNju5pHz8itS91N=M29Cz8Nqx8=kqA@mail.gmail.com> <20170502032346.ayhh3n3uh5d5ekbb@merlins.org> <CAJCQCtRaeejj4b+J6M7VTsDAe7Sn4PUtBwcvHXgfLNAFe=8Jqg@mail.gmail.com> <20170502051155.igmbqcqgzi4ukefg@merlins.org> <20170707053718.GA9735@merlins.org> <20170707053953.GB9735@merlins.org> <20170707093318.GD3224@fnst>
+To: Omar Sandoval <osandov@osandov.com>,
+        Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Cc: linux-btrfs@vger.kernel.org, pwnall@chromium.org
+Subject: Re: Leveldb in google-chrome incompatible with btrfs?
+Message-ID: <20170707165006.GC6083@merlins.org>
+References: <20170707054608.GA28035@vader> <CAN4oSBe8x3jpMGzdo2F2unqvNT7V+P4VxkaWG3df4DDY+q=TRA@mail.gmail.com> <20170706150046.GB12959@merlins.org> <20170706211320.GA12206@vader.DHCP.thefacebook.com> <20170706212422.GH30689@merlins.org> <20170706230141.GA22242@vader.DHCP.thefacebook.com> <20170706233152.GI30689@merlins.org> <20170706234451.GB22242@vader.DHCP.thefacebook.com> <20170706235939.GJ30689@merlins.org> <20170707054608.GA28035@vader>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170707093318.GD3224@fnst>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAN4oSBe8x3jpMGzdo2F2unqvNT7V+P4VxkaWG3df4DDY+q=TRA@mail.gmail.com> <20170707054608.GA28035@vader>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 07, 2017 at 05:33:20PM +0800, Lu Fengqi wrote:
-> I apologise for my late reply. As a colleague left, I have to take over his
-> work recently.
- 
-no worries.
+(removing pwnall at chromium.org to cut spam)
 
-> >Mmmh, never mind, it seems that the software raid suffered yet another
-> >double disk failure due to some undermined flakiness in the underlying block
-> >device cabling :-/
-> >That would likely explain the failures here.
+On Thu, Jul 06, 2017 at 10:46:08PM -0700, Omar Sandoval wrote:
+> ┌[osandov@vader ~/.config]
+> └$ ls -al google-chrome-busted/**
+> ls: cannot access 'google-chrome-busted/Local State': No such file or directory
+> google-chrome-busted/Default:
+> ls: cannot access 'google-chrome-busted/Default/Preferences': No such file or directory
+> ls: cannot access 'google-chrome-busted/Default/.com.google.Chrome.VfAUNx': No such file or directory
+> total 0
+> drwx------ 1 osandov users 12 Feb  7 16:50 .
+> drwx------ 1 osandov users 14 Feb  7 16:50 ..
+> -????????? ? ?       ?      ?            ? .com.google.Chrome.VfAUNx
+> -????????? ? ?       ?      ?            ? Preferences
+
+Yeah, that's definitely not chrome's fault :)
+
+On Fri, Jul 07, 2017 at 06:05:39PM +0300, Cerem Cem ASLAN wrote:
+> I was also struggling with this issue for quite some time. Today my 2
+> months old disk is crashed (which really surprises me). It doesn't
+> even being shown by `fdisk -l`.
 > 
-> I'm sorry for hear this. Which raid level are you using? So could you recover
-> from this double disk failure?
+> After buying this this disk, I installed a Debian on a BTRFS partition
+> on an LVM partition on a LUKS partition. From that day till today,
+> while doing my work, there was always a video running on Youtube in
+> the background. Sometimes my editor (atom, it also shares a lot with
+> chromium) was slowing down which was making me end up restarting the
+> Chromium (and it was restarting barely with `killall -9 chromium`.
+> Another mentionable event is, 3 days ago my laptop suddenly restarted.
 
-The disks aren't failed, and the array wasn't being written to.
-It's just a matter of putting the disks back in the md raid5 array in the
-right order.
+Sorry, I'm not quite making sense out of this.
 
 Marc
 -- 

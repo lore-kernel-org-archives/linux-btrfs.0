@@ -1,90 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50339 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39638 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752286AbdGEDd1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 Jul 2017 23:33:27 -0400
-From: Goldwyn Rodrigues <rgoldwyn@suse.de>
-To: linux-btrfs@vger.kernel.org
-Cc: linux-block@vger.kernel.org, markus@trippelsdorf.de,
-        linux-kernel@vger.kernel.org, axboe@kernel.dk, dsterba@suse.com,
-        marc.c.dionne@gmail.com, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH v2] btrfs: Correct assignment of pos
-Date: Tue,  4 Jul 2017 22:33:07 -0500
-Message-Id: <20170705033307.8213-1-rgoldwyn@suse.de>
+        id S1752314AbdGGQQ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 7 Jul 2017 12:16:29 -0400
+Date: Fri, 7 Jul 2017 18:15:10 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        markus@trippelsdorf.de, linux-kernel@vger.kernel.org, axboe@kernel.dk,
+        dsterba@suse.com, marc.c.dionne@gmail.com,
+        Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: Re: [PATCH v2] btrfs: Correct assignment of pos
+Message-ID: <20170707161510.GJ2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170705033307.8213-1-rgoldwyn@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170705033307.8213-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+On Tue, Jul 04, 2017 at 10:33:07PM -0500, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> Assigning pos for usage early messes up in append mode, where
+> the pos is re-assigned in generic_write_checks(). Assign
+> pos later to get the correct position to write from iocb->ki_pos.
+> 
+> Since check_can_nocow also uses the value of pos, we shift
+> generic_write_checks() before check_can_nocow(). Checks with
+> IOCB_DIRECT are present in generic_write_checks(), so checking
+> for IOCB_NOWAIT is enough.
+> 
+> Also, put locking sequence in the fast path.
+> 
+> Changes since v1:
+>  - Moved pos higher up to encompass check_can_nocow() call.
+> 
+> Fixes: edf064e7c6fe ("btrfs: nowait aio support")
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Assigning pos for usage early messes up in append mode, where
-the pos is re-assigned in generic_write_checks(). Assign
-pos later to get the correct position to write from iocb->ki_pos.
-
-Since check_can_nocow also uses the value of pos, we shift
-generic_write_checks() before check_can_nocow(). Checks with
-IOCB_DIRECT are present in generic_write_checks(), so checking
-for IOCB_NOWAIT is enough.
-
-Also, put locking sequence in the fast path.
-
-Changes since v1:
- - Moved pos higher up to encompass check_can_nocow() call.
-
-Fixes: edf064e7c6fe ("btrfs: nowait aio support")
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/file.c | 26 ++++++++++++++------------
- 1 file changed, 14 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 59e2dccdf75b..ad53832838b5 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1875,16 +1875,25 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 	ssize_t num_written = 0;
- 	bool sync = (file->f_flags & O_DSYNC) || IS_SYNC(file->f_mapping->host);
- 	ssize_t err;
--	loff_t pos = iocb->ki_pos;
-+	loff_t pos;
- 	size_t count = iov_iter_count(from);
- 	loff_t oldsize;
- 	int clean_page = 0;
- 
--	if ((iocb->ki_flags & IOCB_NOWAIT) &&
--			(iocb->ki_flags & IOCB_DIRECT)) {
--		/* Don't sleep on inode rwsem */
--		if (!inode_trylock(inode))
-+	if (!inode_trylock(inode)) {
-+		if (iocb->ki_flags & IOCB_NOWAIT)
- 			return -EAGAIN;
-+		inode_lock(inode);
-+	}
-+
-+	err = generic_write_checks(iocb, from);
-+	if (err <= 0) {
-+		inode_unlock(inode);
-+		return err;
-+	}
-+
-+	pos = iocb->ki_pos;
-+	if (iocb->ki_flags & IOCB_NOWAIT) {
- 		/*
- 		 * We will allocate space in case nodatacow is not set,
- 		 * so bail
-@@ -1895,13 +1904,6 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
- 			inode_unlock(inode);
- 			return -EAGAIN;
- 		}
--	} else
--		inode_lock(inode);
--
--	err = generic_write_checks(iocb, from);
--	if (err <= 0) {
--		inode_unlock(inode);
--		return err;
- 	}
- 
- 	current->backing_dev_info = inode_to_bdi(inode);
--- 
-2.12.0
-
+Acked-by: David Sterba <dsterba@suse.com>

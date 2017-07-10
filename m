@@ -1,78 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f51.google.com ([209.85.214.51]:37276 "EHLO
+Received: from mail-it0-f51.google.com ([209.85.214.51]:38352 "EHLO
         mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753224AbdGJMt3 (ORCPT
+        with ESMTP id S1753701AbdGJNAB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Jul 2017 08:49:29 -0400
-Received: by mail-it0-f51.google.com with SMTP id m84so37236362ita.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jul 2017 05:49:29 -0700 (PDT)
-Subject: Re: raid10 array lost with single disk failure?
-To: Adam Bahe <adambahe@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CACzgC9j026GHxX9m8=1iaYyV9ejFrzaC3nqwgn+j_awXA7D_Lw@mail.gmail.com>
- <pan$b8d9f$672ac146$c6d8fd45$3b1ed204@cox.net>
- <ojudab$mcr$1@blaine.gmane.org>
- <CACzgC9hn_9Pk=M02b4UX14WPpsvUke=ZVs3p_WsT1LJ0rPWaNg@mail.gmail.com>
+        Mon, 10 Jul 2017 09:00:01 -0400
+Received: by mail-it0-f51.google.com with SMTP id k192so37511149ith.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jul 2017 06:00:01 -0700 (PDT)
+Subject: Re: Chunk root problem
+To: Daniel Brady <drbrady@gmail.com>, Roman Mamedov <rm@romanrm.net>
+Cc: linux-btrfs@vger.kernel.org
+References: <CABRvOkNWpaKB=mAEF9UvUUveFLBQroTWLpC5H=Fqc+okQ_BU3Q@mail.gmail.com>
+ <20170707104817.3e2b6273@natsu>
+ <350bd522-7169-3510-6c70-87434eef62d6@gmail.com>
+ <00581e84-6c8f-be60-94f9-2e88ca25e3fe@gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <12f5de03-68e9-57fb-e228-bd12194886a3@gmail.com>
-Date: Mon, 10 Jul 2017 08:49:23 -0400
+Message-ID: <3f7bfe3e-899e-a03e-0c85-c9c19ab40921@gmail.com>
+Date: Mon, 10 Jul 2017 08:59:54 -0400
 MIME-Version: 1.0
-In-Reply-To: <CACzgC9hn_9Pk=M02b4UX14WPpsvUke=ZVs3p_WsT1LJ0rPWaNg@mail.gmail.com>
+In-Reply-To: <00581e84-6c8f-be60-94f9-2e88ca25e3fe@gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-07-09 22:13, Adam Bahe wrote:
-> I have finished all of the above suggestions, ran a scrub, remounted,
-> rebooted, made sure the system didn't hang, and then kicked off
-> another balance on the entire pool. It completed rather quickly but
-> something still does not seem right.
+On 2017-07-10 00:21, Daniel Brady wrote:
+> On 7/7/2017 1:06 AM, Daniel Brady wrote:
+>> On 7/6/2017 11:48 PM, Roman Mamedov wrote:
+>>> On Wed, 5 Jul 2017 22:10:35 -0600
+>>> Daniel Brady <drbrady@gmail.com> wrote:
+>>>
+>>>> parent transid verify failed
+>>>
+>>> Typically in Btrfs terms this means "you're screwed", fsck will not fix it, and
+>>> nobody will know how to fix or what is the cause either. Time to restore from
+>>> backups! Or look into "btrfs restore" if you don't have any.
+>>>
+>>> In your case it's especially puzzling as the difference in transid numbers is
+>>> really significant (about 100K), almost like the FS was operating for months
+>>> without updating some parts of itself -- and no checksum errors either, so
+>>> all looks correct, except that everything is horribly wrong.
+>>>
+>>> This kind of error seems to occur more often in RAID setups, either Btrfs
+>>> native RAID, or with Btrfs on top of other RAID setups -- i.e. where it
+>>> becomes a complex issue that all writes to multi devices DO complete IN order,
+>>> in case of an unclean shutdown. (which is much simpler on a single device FS).
+>>>
+>>> Also one of your disks or cables is failing (was /dev/sde on that boot, but may
+>>> get a different index next boot), check SMART data for it and replace.
+>>>
+>>>> [   21.230919] BTRFS info (device sdf): bdev /dev/sde errs: wr 402545, rd
+>>>> 234683174, flush 194501, corrupt 0, gen 0
+>>>
+>>
+>> Well that's not good news. Unfortunately I made a fatal error in not
+>> having a backup. Restore looks like I could recover a good chunk of it
+>> from the dry runs, however it has a lot of trouble reading many files.
+>> I'm sure that is related to the one disk (sde). Drives were setup as raid56.
+>>
+>> After updating the kernel as suggested in the email from Duncan it
+>> reduced the "parent transid verify" errors down to just one and the errs
+>> on sde still exist.
+>>
+>> [   21.400190] BTRFS info (device sdb): use no compression
+>> [   21.400191] BTRFS info (device sdb): disk space caching is enabled
+>> [   21.400192] BTRFS info (device sdb): has skinny extents
+>> [   21.584923] BTRFS info (device sdb): bdev /dev/sde errs: wr 402545,
+>> rd 234683174, flush 194501, corrupt 0, gen 0
+>> [   23.394788] BTRFS error (device sdb): parent transid verify failed on
+>> 5257838690304 wanted 591492 found 489231
+>> [   23.416489] BTRFS error (device sdb): parent transid verify failed on
+>> 5257838690304 wanted 591492 found 489231
+>> [   23.416524] BTRFS error (device sdb): failed to read block groups: -5
+>> [   23.448478] BTRFS error (device sdb): open_ctree failed
+>>
+>> I ran a SMART test as you suggested with a passing result. I also
+>> swapped SATA cables & power with another drive and the error followed
+>> the drive confirmed by the serial via SMART. It seems like it just can't
+>> read from that one drive for whatever reason. I also tried disconnecting
+>> the drive and trying to mount it degraded with no luck. Still had the
+>> transid error just with null as the bdev.
+>>
+>> smartctl -a /dev/sde
+>> smartctl 6.2 2013-07-26 r3841 [x86_64-linux-4.12.0-1.el7.elrepo.x86_64]
+>> (local build)
+>> Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+>>
+>> === START OF INFORMATION SECTION ===
+>> Model Family:     Western Digital Red (AF)
+>> Device Model:     WDC WD30EFRX-68EUZN0
+>> Serial Number:    WD-WCC4N0PEYTEV
+>> LU WWN Device Id: 5 0014ee 2b7dbfe54
+>> Firmware Version: 82.00A82
+>> User Capacity:    3,000,592,982,016 bytes [3.00 TB]
+>> Sector Sizes:     512 bytes logical, 4096 bytes physical
+>> Rotation Rate:    5400 rpm
+>> Device is:        In smartctl database [for details use: -P show]
+>> ATA Version is:   ACS-2 (minor revision not indicated)
+>> SATA Version is:  SATA 3.0, 6.0 Gb/s (current: 3.0 Gb/s)
+>> Local Time is:    Fri Jul  7 00:30:10 2017 MDT
+>> SMART support is: Available - device has SMART capability.
+>> SMART support is: Enabled
+>>
+>> === START OF READ SMART DATA SECTION ===
+>> SMART overall-health self-assessment test result: PASSED
+>>
+>> General SMART Values:
+>> Offline data collection status:  (0x00) Offline data collection activity
+>>                                          was never started.
+>>                                          Auto Offline Data Collection:
+>> Disabled.
+>> Self-test execution status:      (   0) The previous self-test routine
+>> completed
+>>                                          without error or no self-test
+>> has ever
+>>                                          been run.
+>> Total time to complete Offline
+>> data collection:                (40500) seconds.
+>> Offline data collection
+>> capabilities:                    (0x7b) SMART execute Offline immediate.
+>>                                          Auto Offline data collection
+>> on/off support.
+>>                                          Suspend Offline collection upon new
+>>                                          command.
+>>                                          Offline surface scan supported.
+>>                                          Self-test supported.
+>>                                          Conveyance Self-test supported.
+>>                                          Selective Self-test supported.
+>> SMART capabilities:            (0x0003) Saves SMART data before entering
+>>                                          power-saving mode.
+>>                                          Supports SMART auto save timer.
+>> Error logging capability:        (0x01) Error logging supported.
+>>                                          General Purpose Logging supported.
+>> Short self-test routine
+>> recommended polling time:        (   2) minutes.
+>> Extended self-test routine
+>> recommended polling time:        ( 406) minutes.
+>> Conveyance self-test routine
+>> recommended polling time:        (   5) minutes.
+>> SCT capabilities:              (0x703d) SCT Status supported.
+>>                                          SCT Error Recovery Control
+>> supported.
+>>                                          SCT Feature Control supported.
+>>                                          SCT Data Table supported.
+>>
+>> SMART Attributes Data Structure revision number: 16
+>> Vendor Specific SMART Attributes with Thresholds:
+>> ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
+>> UPDATED  WHEN_FAILED RAW_VALUE
+>>    1 Raw_Read_Error_Rate     0x002f   200   200   051    Pre-fail  Always
+>>        -       0
+>>    3 Spin_Up_Time            0x0027   179   179   021    Pre-fail  Always
+>>        -       6050
+>>    4 Start_Stop_Count        0x0032   100   100   000    Old_age   Always
+>>        -       15
+>>    5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always
+>>        -       0
+>>    7 Seek_Error_Rate         0x002e   200   200   000    Old_age   Always
+>>        -       0
+>>    9 Power_On_Hours          0x0032   092   091   000    Old_age   Always
+>>        -       6337
+>>   10 Spin_Retry_Count        0x0032   100   253   000    Old_age   Always
+>>        -       0
+>>   11 Calibration_Retry_Count 0x0032   100   253   000    Old_age   Always
+>>        -       0
+>>   12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always
+>>        -       15
+>> 192 Power-Off_Retract_Count 0x0032   200   200   000    Old_age   Always
+>>        -       5
+>> 193 Load_Cycle_Count        0x0032   197   197   000    Old_age   Always
+>>        -       9084
+>> 194 Temperature_Celsius     0x0022   122   114   000    Old_age   Always
+>>        -       28
+>> 196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always
+>>        -       0
+>> 197 Current_Pending_Sector  0x0032   200   200   000    Old_age   Always
+>>        -       0
+>> 198 Offline_Uncorrectable   0x0030   100   253   000    Old_age
+>> Offline      -       0
+>> 199 UDMA_CRC_Error_Count    0x0032   200   200   000    Old_age   Always
+>>        -       0
+>> 200 Multi_Zone_Error_Rate   0x0008   100   253   000    Old_age
+>> Offline      -       0
+>>
+>> SMART Error Log Version: 1
+>> No Errors Logged
+>>
+>> SMART Self-test log structure revision number 1
+>> Num  Test_Description    Status                  Remaining
+>> LifeTime(hours)  LBA_of_first_error
+>> # 1  Short offline       Completed without error       00%      6337
+>>      -
+>> # 2  Extended offline    Aborted by host               90%      6337
+>>      -
+>>
+>> SMART Selective self-test log data structure revision number 1
+>>   SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
+>>      1        0        0  Not_testing
+>>      2        0        0  Not_testing
+>>      3        0        0  Not_testing
+>>      4        0        0  Not_testing
+>>      5        0        0  Not_testing
+>> Selective self-test flags (0x0):
+>>    After scanning selected spans, do NOT read-scan remainder of disk.
+>> If Selective self-test is pending on power-up, resume after 0 minute delay.
+>>
+>> -Dan
+>>
 > 
-> Label: 'btrfs_pool1'  uuid: 04a7fa70-1572-47a2-a55c-7c99aef12603
->          Total devices 18 FS bytes used 23.64TiB
->          devid    1 size 1.82TiB used 1.82TiB path /dev/sdd
->          devid    2 size 1.82TiB used 1.82TiB path /dev/sdf
->          devid    3 size 3.64TiB used 3.07TiB path /dev/sdg
->          devid    4 size 3.64TiB used 3.06TiB path /dev/sdk
->          devid    5 size 1.82TiB used 1.82TiB path /dev/sdn
->          devid    6 size 3.64TiB used 3.06TiB path /dev/sdo
->          devid    7 size 1.82TiB used 1.82TiB path /dev/sds
->          devid    8 size 1.82TiB used 1.82TiB path /dev/sdj
->          devid    9 size 1.82TiB used 1.82TiB path /dev/sdi
->          devid   10 size 1.82TiB used 1.82TiB path /dev/sdq
->          devid   11 size 1.82TiB used 1.82TiB path /dev/sdr
->          devid   12 size 1.82TiB used 1.82TiB path /dev/sde
->          devid   13 size 1.82TiB used 1.82TiB path /dev/sdm
->          devid   14 size 7.28TiB used 4.78TiB path /dev/sdh
->          devid   15 size 7.28TiB used 4.99TiB path /dev/sdl
->          devid   16 size 7.28TiB used 4.97TiB path /dev/sdp
->          devid   17 size 7.28TiB used 4.99TiB path /dev/sdc
->          devid   18 size 5.46TiB used 210.12GiB path /dev/sdb
-> 
-> /dev/sdb is the new disk, but btrfs only moved 210.12GB over to it.
-> Most disks in the array are >50% utilized or more. Is this normal?
-> 
-Was this from a full balance, or just running a scrub to repair chunks?
+> Does anyone have any other guidance on what I can do to try and recover?
+> I would like to try anything I can do before moving on. I did a btrfs
+> restore and got what little I had left. btrfsck just gives me a "ERROR:
+> failed to repair root items: Input/output error" and btrfs rescue
+> zero-log does not seem to do anything.
+Unfortunately, it sounds like the firmware or the controller on the disk 
+itself is bad.  If the device is as young as the Power_On_Hours implies 
+(that lists less than a year of run-time), then it may still be under 
+warranty, and you might be able to get the manufacturer to fix the disk 
+for you, but other than that there's unfortunately not much you can do 
+if it is the firmware or controller.
 
-You have three ways you can repair a BTRFS volume that's lost a device:
-
-* The first, quickest, and most reliable is to use `btrfs device 
-replace` to replace the failing/missing device.  This will result in 
-only reading data that needs to be read to go on the new device, so it 
-completes quicker, but you will also need to resize the new device if 
-you are going to a larger device, and can't replace the missing device 
-with a smaller one.
-
-* The second is to add the device to the array, then run a scrub on the 
-whole array.  This will spit out a bunch of errors from the chunks that 
-need to be rebuilt, but will make sure everything is consistent.  This 
-isn't as fast as using `device replace`, but is still quicker than a 
-full balance most of the time.  In this particular case, I would expect 
-behavior like what you're seeing above at least some of the time.
-
-* The third, and slowest method, is to add the new device, then run a 
-full balance.  This will make sure data is evenly distributed 
-proportionate to device size and will rebuild all the partial chunks. 
-It will also take the longest, and put significantly more stress on the 
-array than the other two options (it rewrites the entire array).  If 
-this is what you used, then you probably found a bug, because it should 
-never result in what you're seeing.
+Also, just as a side note, the reported flush errors for that device are 
+probably the reason that the transid verification is so far off.

@@ -1,165 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f181.google.com ([209.85.213.181]:36589 "EHLO
-        mail-yb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753234AbdGJCOS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Jul 2017 22:14:18 -0400
-Received: by mail-yb0-f181.google.com with SMTP id f194so23806419yba.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 09 Jul 2017 19:14:18 -0700 (PDT)
+Received: from mail-it0-f42.google.com ([209.85.214.42]:37000 "EHLO
+        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750924AbdGJEVk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 Jul 2017 00:21:40 -0400
+Received: by mail-it0-f42.google.com with SMTP id m84so26536713ita.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Jul 2017 21:21:40 -0700 (PDT)
+Subject: Re: Chunk root problem
+From: Daniel Brady <drbrady@gmail.com>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: linux-btrfs@vger.kernel.org
+References: <CABRvOkNWpaKB=mAEF9UvUUveFLBQroTWLpC5H=Fqc+okQ_BU3Q@mail.gmail.com>
+ <20170707104817.3e2b6273@natsu>
+ <350bd522-7169-3510-6c70-87434eef62d6@gmail.com>
+Message-ID: <00581e84-6c8f-be60-94f9-2e88ca25e3fe@gmail.com>
+Date: Sun, 9 Jul 2017 22:21:14 -0600
 MIME-Version: 1.0
-In-Reply-To: <ojudab$mcr$1@blaine.gmane.org>
-References: <CACzgC9j026GHxX9m8=1iaYyV9ejFrzaC3nqwgn+j_awXA7D_Lw@mail.gmail.com>
- <pan$b8d9f$672ac146$c6d8fd45$3b1ed204@cox.net> <ojudab$mcr$1@blaine.gmane.org>
-From: Adam Bahe <adambahe@gmail.com>
-Date: Sun, 9 Jul 2017 21:13:36 -0500
-Message-ID: <CACzgC9hn_9Pk=M02b4UX14WPpsvUke=ZVs3p_WsT1LJ0rPWaNg@mail.gmail.com>
-Subject: Re: raid10 array lost with single disk failure?
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <350bd522-7169-3510-6c70-87434eef62d6@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have finished all of the above suggestions, ran a scrub, remounted,
-rebooted, made sure the system didn't hang, and then kicked off
-another balance on the entire pool. It completed rather quickly but
-something still does not seem right.
+On 7/7/2017 1:06 AM, Daniel Brady wrote:
+> On 7/6/2017 11:48 PM, Roman Mamedov wrote:
+>> On Wed, 5 Jul 2017 22:10:35 -0600
+>> Daniel Brady <drbrady@gmail.com> wrote:
+>>
+>>> parent transid verify failed
+>>
+>> Typically in Btrfs terms this means "you're screwed", fsck will not fix it, and
+>> nobody will know how to fix or what is the cause either. Time to restore from
+>> backups! Or look into "btrfs restore" if you don't have any.
+>>
+>> In your case it's especially puzzling as the difference in transid numbers is
+>> really significant (about 100K), almost like the FS was operating for months
+>> without updating some parts of itself -- and no checksum errors either, so
+>> all looks correct, except that everything is horribly wrong.
+>>
+>> This kind of error seems to occur more often in RAID setups, either Btrfs
+>> native RAID, or with Btrfs on top of other RAID setups -- i.e. where it
+>> becomes a complex issue that all writes to multi devices DO complete IN order,
+>> in case of an unclean shutdown. (which is much simpler on a single device FS).
+>>
+>> Also one of your disks or cables is failing (was /dev/sde on that boot, but may
+>> get a different index next boot), check SMART data for it and replace.
+>>
+>>> [   21.230919] BTRFS info (device sdf): bdev /dev/sde errs: wr 402545, rd
+>>> 234683174, flush 194501, corrupt 0, gen 0
+>>
+> 
+> Well that's not good news. Unfortunately I made a fatal error in not
+> having a backup. Restore looks like I could recover a good chunk of it
+> from the dry runs, however it has a lot of trouble reading many files.
+> I'm sure that is related to the one disk (sde). Drives were setup as raid56.
+> 
+> After updating the kernel as suggested in the email from Duncan it
+> reduced the "parent transid verify" errors down to just one and the errs
+> on sde still exist.
+> 
+> [   21.400190] BTRFS info (device sdb): use no compression
+> [   21.400191] BTRFS info (device sdb): disk space caching is enabled
+> [   21.400192] BTRFS info (device sdb): has skinny extents
+> [   21.584923] BTRFS info (device sdb): bdev /dev/sde errs: wr 402545,
+> rd 234683174, flush 194501, corrupt 0, gen 0
+> [   23.394788] BTRFS error (device sdb): parent transid verify failed on
+> 5257838690304 wanted 591492 found 489231
+> [   23.416489] BTRFS error (device sdb): parent transid verify failed on
+> 5257838690304 wanted 591492 found 489231
+> [   23.416524] BTRFS error (device sdb): failed to read block groups: -5
+> [   23.448478] BTRFS error (device sdb): open_ctree failed
+> 
+> I ran a SMART test as you suggested with a passing result. I also
+> swapped SATA cables & power with another drive and the error followed
+> the drive confirmed by the serial via SMART. It seems like it just can't
+> read from that one drive for whatever reason. I also tried disconnecting
+> the drive and trying to mount it degraded with no luck. Still had the
+> transid error just with null as the bdev.
+> 
+> smartctl -a /dev/sde
+> smartctl 6.2 2013-07-26 r3841 [x86_64-linux-4.12.0-1.el7.elrepo.x86_64]
+> (local build)
+> Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+> 
+> === START OF INFORMATION SECTION ===
+> Model Family:     Western Digital Red (AF)
+> Device Model:     WDC WD30EFRX-68EUZN0
+> Serial Number:    WD-WCC4N0PEYTEV
+> LU WWN Device Id: 5 0014ee 2b7dbfe54
+> Firmware Version: 82.00A82
+> User Capacity:    3,000,592,982,016 bytes [3.00 TB]
+> Sector Sizes:     512 bytes logical, 4096 bytes physical
+> Rotation Rate:    5400 rpm
+> Device is:        In smartctl database [for details use: -P show]
+> ATA Version is:   ACS-2 (minor revision not indicated)
+> SATA Version is:  SATA 3.0, 6.0 Gb/s (current: 3.0 Gb/s)
+> Local Time is:    Fri Jul  7 00:30:10 2017 MDT
+> SMART support is: Available - device has SMART capability.
+> SMART support is: Enabled
+> 
+> === START OF READ SMART DATA SECTION ===
+> SMART overall-health self-assessment test result: PASSED
+> 
+> General SMART Values:
+> Offline data collection status:  (0x00) Offline data collection activity
+>                                         was never started.
+>                                         Auto Offline Data Collection:
+> Disabled.
+> Self-test execution status:      (   0) The previous self-test routine
+> completed
+>                                         without error or no self-test
+> has ever
+>                                         been run.
+> Total time to complete Offline
+> data collection:                (40500) seconds.
+> Offline data collection
+> capabilities:                    (0x7b) SMART execute Offline immediate.
+>                                         Auto Offline data collection
+> on/off support.
+>                                         Suspend Offline collection upon new
+>                                         command.
+>                                         Offline surface scan supported.
+>                                         Self-test supported.
+>                                         Conveyance Self-test supported.
+>                                         Selective Self-test supported.
+> SMART capabilities:            (0x0003) Saves SMART data before entering
+>                                         power-saving mode.
+>                                         Supports SMART auto save timer.
+> Error logging capability:        (0x01) Error logging supported.
+>                                         General Purpose Logging supported.
+> Short self-test routine
+> recommended polling time:        (   2) minutes.
+> Extended self-test routine
+> recommended polling time:        ( 406) minutes.
+> Conveyance self-test routine
+> recommended polling time:        (   5) minutes.
+> SCT capabilities:              (0x703d) SCT Status supported.
+>                                         SCT Error Recovery Control
+> supported.
+>                                         SCT Feature Control supported.
+>                                         SCT Data Table supported.
+> 
+> SMART Attributes Data Structure revision number: 16
+> Vendor Specific SMART Attributes with Thresholds:
+> ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
+> UPDATED  WHEN_FAILED RAW_VALUE
+>   1 Raw_Read_Error_Rate     0x002f   200   200   051    Pre-fail  Always
+>       -       0
+>   3 Spin_Up_Time            0x0027   179   179   021    Pre-fail  Always
+>       -       6050
+>   4 Start_Stop_Count        0x0032   100   100   000    Old_age   Always
+>       -       15
+>   5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always
+>       -       0
+>   7 Seek_Error_Rate         0x002e   200   200   000    Old_age   Always
+>       -       0
+>   9 Power_On_Hours          0x0032   092   091   000    Old_age   Always
+>       -       6337
+>  10 Spin_Retry_Count        0x0032   100   253   000    Old_age   Always
+>       -       0
+>  11 Calibration_Retry_Count 0x0032   100   253   000    Old_age   Always
+>       -       0
+>  12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always
+>       -       15
+> 192 Power-Off_Retract_Count 0x0032   200   200   000    Old_age   Always
+>       -       5
+> 193 Load_Cycle_Count        0x0032   197   197   000    Old_age   Always
+>       -       9084
+> 194 Temperature_Celsius     0x0022   122   114   000    Old_age   Always
+>       -       28
+> 196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always
+>       -       0
+> 197 Current_Pending_Sector  0x0032   200   200   000    Old_age   Always
+>       -       0
+> 198 Offline_Uncorrectable   0x0030   100   253   000    Old_age
+> Offline      -       0
+> 199 UDMA_CRC_Error_Count    0x0032   200   200   000    Old_age   Always
+>       -       0
+> 200 Multi_Zone_Error_Rate   0x0008   100   253   000    Old_age
+> Offline      -       0
+> 
+> SMART Error Log Version: 1
+> No Errors Logged
+> 
+> SMART Self-test log structure revision number 1
+> Num  Test_Description    Status                  Remaining
+> LifeTime(hours)  LBA_of_first_error
+> # 1  Short offline       Completed without error       00%      6337
+>     -
+> # 2  Extended offline    Aborted by host               90%      6337
+>     -
+> 
+> SMART Selective self-test log data structure revision number 1
+>  SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
+>     1        0        0  Not_testing
+>     2        0        0  Not_testing
+>     3        0        0  Not_testing
+>     4        0        0  Not_testing
+>     5        0        0  Not_testing
+> Selective self-test flags (0x0):
+>   After scanning selected spans, do NOT read-scan remainder of disk.
+> If Selective self-test is pending on power-up, resume after 0 minute delay.
+> 
+> -Dan
+> 
 
-Label: 'btrfs_pool1'  uuid: 04a7fa70-1572-47a2-a55c-7c99aef12603
-        Total devices 18 FS bytes used 23.64TiB
-        devid    1 size 1.82TiB used 1.82TiB path /dev/sdd
-        devid    2 size 1.82TiB used 1.82TiB path /dev/sdf
-        devid    3 size 3.64TiB used 3.07TiB path /dev/sdg
-        devid    4 size 3.64TiB used 3.06TiB path /dev/sdk
-        devid    5 size 1.82TiB used 1.82TiB path /dev/sdn
-        devid    6 size 3.64TiB used 3.06TiB path /dev/sdo
-        devid    7 size 1.82TiB used 1.82TiB path /dev/sds
-        devid    8 size 1.82TiB used 1.82TiB path /dev/sdj
-        devid    9 size 1.82TiB used 1.82TiB path /dev/sdi
-        devid   10 size 1.82TiB used 1.82TiB path /dev/sdq
-        devid   11 size 1.82TiB used 1.82TiB path /dev/sdr
-        devid   12 size 1.82TiB used 1.82TiB path /dev/sde
-        devid   13 size 1.82TiB used 1.82TiB path /dev/sdm
-        devid   14 size 7.28TiB used 4.78TiB path /dev/sdh
-        devid   15 size 7.28TiB used 4.99TiB path /dev/sdl
-        devid   16 size 7.28TiB used 4.97TiB path /dev/sdp
-        devid   17 size 7.28TiB used 4.99TiB path /dev/sdc
-        devid   18 size 5.46TiB used 210.12GiB path /dev/sdb
+Does anyone have any other guidance on what I can do to try and recover?
+I would like to try anything I can do before moving on. I did a btrfs
+restore and got what little I had left. btrfsck just gives me a "ERROR:
+failed to repair root items: Input/output error" and btrfs rescue
+zero-log does not seem to do anything.
 
-/dev/sdb is the new disk, but btrfs only moved 210.12GB over to it.
-Most disks in the array are >50% utilized or more. Is this normal?
-
-On Sun, Jul 9, 2017 at 6:13 PM, Ferry Toth <ftoth@exalondelft.nl> wrote:
-> Op Sat, 08 Jul 2017 20:51:41 +0000, schreef Duncan:
->
->> Adam Bahe posted on Fri, 07 Jul 2017 23:26:31 -0500 as excerpted:
->>
->>> I did recently upgrade the kernel a few days ago from
->>> 4.8.7-1.el7.elrepo.x86_64 to 4.10.6-1.el7.elrepo.x86_64. I had also
->>> added a new 6TB disk a few days ago but I'm not sure if the balance
->>> finished as it locked up sometime today when I was at work. Any ideas
->>> how I can recover? Even if I have 1 bad disk, raid10 should have kept
->>> my data safe no? Is there anything I can do to recover?
->>
->> Yes, btrfs raid10 should be fine with a single bad device.  That's
->> unlikely to be the issue.
->
-> I'm wondering about that.
->
-> The btrfs wiki says 'mostly ok' for raid10 and mentions btrfs needs to be
-> able to create 2 copies of a file to prevent going into an unreversable
-> read only.
->
-> To me that sounds like you are save against a single failing drive if you
-> had 5 to start with. Is that correct?
->
-> 'mostly ok' is a bit useless message. We need to know what to do to be
-> safe, and to have defined procedures to prevent screwing up
-> 'unrecoverably' when something bad happens.
->
-> Any advice?
->
->> But you did well to bring up the balance.  Have you tried mounting with
->> the "skip_balance" mount option?
->>
->> Sometimes a balance will run into a previously undetected problem with
->> the filesystem and crash.  While mounting would otherwise still work, as
->> soon as the filesystem goes active at the kernel level and before the
->> mount call returns to userspace, the kernel will see the in-progress
->> balance and attempt to continue it.  But if it crashed while processing
->> a particular block group (aka chunk), of course that's the first one in
->> line to continue the balance with, which will naturally crash again as
->> it comes to the same inconsistency that triggered the crash the first
->> time.
->>
->> So the skip_balance mount option was invented to create a work-around
->> and allow you to mount the filesystem again. =:^)
->>
->> The fact that it sits there for awhile trying to do IO on all devices
->> before it crashes is another clue it's probably the resumed balance
->> crashing things as it comes to the same inconsistency that triggered the
->> original crash during balance, so it's very likely that skip_balance
->> will help. =:^)
->>
->> Assuming that lets you mount, the next thing I'd try is a btrfs scrub.
->> Chances are it'll find some checksum problems, but given that you're
->> running raid10, there's a second copy it can try to use to correct the
->> bad one and there's a reasonably good chance scrub will find and fix
->> your problems.  Even if it can't fix them all, it should get you closer,
->> with less chance at making things worse instead of better than more
->> risky options such as btrfs check with --repair.
->>
->> If a scrub completes with no uncorrected errors, I'd do an umount/mount
->> cycle or reboot just to be sure -- don't forget the skip_balance option
->> again tho -- and then, ensuring you're not doing anything that a crash
->> would interrupt and have taken the opportunity presented to update your
->> backups if you need to and assuming you consider the data worth more
->> than the time/trouble/resources required for a backup, try a balance
->> resume.
->>
->> Once the balance resume gets reasonably past the time it otherwise took
->> to crash, you can reasonably assume you've safely corrected at least
->> /that/ inconsistency, and hope the scrub took care of any others before
->> you got to them.
->>
->> But of course all scrub does is verify checksums and where there's a
->> second copy (as there is with dup, raid1 and raid10 modes) attempt a
->> repair of the bad copy with the second one, of course verifying it as
->> well in the process.  If the second copy of that block is bad too or in
->> cases where there isn't such a second copy, it'll detect but not be able
->> to fix the block with a bad checksum, and if the block has a valid
->> checksum but is logically invalid for other reasons, scrub won't detect
->> it, because /all/ it does is verify checksums, not actual filesystem
->> consistency.  That's what the somewhat more risky (if --repair or other
->> fix option is used, not in read-only mode, which detects but doesn't
->> attempt to fix) btrfs check is for.
->>
->> So if skip_balance doesn't work, or it does but scrub can't fix all the
->> errors it finds, or scrub fixes everything it detects but a balance
->> resume still crashes, then it's time to try riskier fixes.  I'll let
->> others guide you there if needed, but will leave you with one
->> reminder...
->>
->> Sysadmin's first rule of backups:
->>
->> Don't test fate and challenge reality!  Have your backups or regardless
->> of claims to the contrary you're defining your data as throw-away value,
->> and eventually, fate and reality are going to call you on it!
->>
->> So don't worry too much even if you lose the filesystem.  Either you
->> have backups and can restore from them should it be necessary, or you
->> defined the data as not worth the trouble of those backups, and losing
->> it isn't a big deal, because in either case you saved what was truly
->> important to you, either the data because it was important enough to you
->> to have backups, or the time/resources/trouble you would have spent
->> doing those backups, which you still saved regardless of whether you can
->> save the data or not. =:^)
->>
->> --
->> Duncan - List replies preferred.   No HTML msgs.
->> "Every nonfree program has a lord, a master --
->> and if you use the program, he is your master."  Richard Stallman
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+Dan

@@ -1,132 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:51542 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752688AbdGIXNb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Jul 2017 19:13:31 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dULOE-0008WV-Hv
-        for linux-btrfs@vger.kernel.org; Mon, 10 Jul 2017 01:13:22 +0200
-To: linux-btrfs@vger.kernel.org
-From: Ferry Toth <ftoth@exalondelft.nl>
-Subject: Re: raid10 array lost with single disk failure?
-Date: Sun, 9 Jul 2017 23:13:16 +0000 (UTC)
-Message-ID: <ojudab$mcr$1@blaine.gmane.org>
+Received: from mail-yb0-f181.google.com ([209.85.213.181]:36589 "EHLO
+        mail-yb0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753234AbdGJCOS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Jul 2017 22:14:18 -0400
+Received: by mail-yb0-f181.google.com with SMTP id f194so23806419yba.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Jul 2017 19:14:18 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <ojudab$mcr$1@blaine.gmane.org>
 References: <CACzgC9j026GHxX9m8=1iaYyV9ejFrzaC3nqwgn+j_awXA7D_Lw@mail.gmail.com>
-        <pan$b8d9f$672ac146$c6d8fd45$3b1ed204@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <pan$b8d9f$672ac146$c6d8fd45$3b1ed204@cox.net> <ojudab$mcr$1@blaine.gmane.org>
+From: Adam Bahe <adambahe@gmail.com>
+Date: Sun, 9 Jul 2017 21:13:36 -0500
+Message-ID: <CACzgC9hn_9Pk=M02b4UX14WPpsvUke=ZVs3p_WsT1LJ0rPWaNg@mail.gmail.com>
+Subject: Re: raid10 array lost with single disk failure?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Op Sat, 08 Jul 2017 20:51:41 +0000, schreef Duncan:
+I have finished all of the above suggestions, ran a scrub, remounted,
+rebooted, made sure the system didn't hang, and then kicked off
+another balance on the entire pool. It completed rather quickly but
+something still does not seem right.
 
-> Adam Bahe posted on Fri, 07 Jul 2017 23:26:31 -0500 as excerpted:
-> 
->> I did recently upgrade the kernel a few days ago from
->> 4.8.7-1.el7.elrepo.x86_64 to 4.10.6-1.el7.elrepo.x86_64. I had also
->> added a new 6TB disk a few days ago but I'm not sure if the balance
->> finished as it locked up sometime today when I was at work. Any ideas
->> how I can recover? Even if I have 1 bad disk, raid10 should have kept
->> my data safe no? Is there anything I can do to recover?
-> 
-> Yes, btrfs raid10 should be fine with a single bad device.  That's
-> unlikely to be the issue.
+Label: 'btrfs_pool1'  uuid: 04a7fa70-1572-47a2-a55c-7c99aef12603
+        Total devices 18 FS bytes used 23.64TiB
+        devid    1 size 1.82TiB used 1.82TiB path /dev/sdd
+        devid    2 size 1.82TiB used 1.82TiB path /dev/sdf
+        devid    3 size 3.64TiB used 3.07TiB path /dev/sdg
+        devid    4 size 3.64TiB used 3.06TiB path /dev/sdk
+        devid    5 size 1.82TiB used 1.82TiB path /dev/sdn
+        devid    6 size 3.64TiB used 3.06TiB path /dev/sdo
+        devid    7 size 1.82TiB used 1.82TiB path /dev/sds
+        devid    8 size 1.82TiB used 1.82TiB path /dev/sdj
+        devid    9 size 1.82TiB used 1.82TiB path /dev/sdi
+        devid   10 size 1.82TiB used 1.82TiB path /dev/sdq
+        devid   11 size 1.82TiB used 1.82TiB path /dev/sdr
+        devid   12 size 1.82TiB used 1.82TiB path /dev/sde
+        devid   13 size 1.82TiB used 1.82TiB path /dev/sdm
+        devid   14 size 7.28TiB used 4.78TiB path /dev/sdh
+        devid   15 size 7.28TiB used 4.99TiB path /dev/sdl
+        devid   16 size 7.28TiB used 4.97TiB path /dev/sdp
+        devid   17 size 7.28TiB used 4.99TiB path /dev/sdc
+        devid   18 size 5.46TiB used 210.12GiB path /dev/sdb
 
-I'm wondering about that.
+/dev/sdb is the new disk, but btrfs only moved 210.12GB over to it.
+Most disks in the array are >50% utilized or more. Is this normal?
 
-The btrfs wiki says 'mostly ok' for raid10 and mentions btrfs needs to be 
-able to create 2 copies of a file to prevent going into an unreversable 
-read only.
-
-To me that sounds like you are save against a single failing drive if you 
-had 5 to start with. Is that correct?
-
-'mostly ok' is a bit useless message. We need to know what to do to be 
-safe, and to have defined procedures to prevent screwing up 
-'unrecoverably' when something bad happens.
-
-Any advice?
-
-> But you did well to bring up the balance.  Have you tried mounting with
-> the "skip_balance" mount option?
-> 
-> Sometimes a balance will run into a previously undetected problem with
-> the filesystem and crash.  While mounting would otherwise still work, as
-> soon as the filesystem goes active at the kernel level and before the
-> mount call returns to userspace, the kernel will see the in-progress
-> balance and attempt to continue it.  But if it crashed while processing
-> a particular block group (aka chunk), of course that's the first one in
-> line to continue the balance with, which will naturally crash again as
-> it comes to the same inconsistency that triggered the crash the first
-> time.
-> 
-> So the skip_balance mount option was invented to create a work-around
-> and allow you to mount the filesystem again. =:^)
-> 
-> The fact that it sits there for awhile trying to do IO on all devices
-> before it crashes is another clue it's probably the resumed balance
-> crashing things as it comes to the same inconsistency that triggered the
-> original crash during balance, so it's very likely that skip_balance
-> will help. =:^)
-> 
-> Assuming that lets you mount, the next thing I'd try is a btrfs scrub.
-> Chances are it'll find some checksum problems, but given that you're
-> running raid10, there's a second copy it can try to use to correct the
-> bad one and there's a reasonably good chance scrub will find and fix
-> your problems.  Even if it can't fix them all, it should get you closer,
-> with less chance at making things worse instead of better than more
-> risky options such as btrfs check with --repair.
-> 
-> If a scrub completes with no uncorrected errors, I'd do an umount/mount
-> cycle or reboot just to be sure -- don't forget the skip_balance option
-> again tho -- and then, ensuring you're not doing anything that a crash
-> would interrupt and have taken the opportunity presented to update your
-> backups if you need to and assuming you consider the data worth more
-> than the time/trouble/resources required for a backup, try a balance
-> resume.
-> 
-> Once the balance resume gets reasonably past the time it otherwise took
-> to crash, you can reasonably assume you've safely corrected at least
-> /that/ inconsistency, and hope the scrub took care of any others before
-> you got to them.
-> 
-> But of course all scrub does is verify checksums and where there's a
-> second copy (as there is with dup, raid1 and raid10 modes) attempt a
-> repair of the bad copy with the second one, of course verifying it as
-> well in the process.  If the second copy of that block is bad too or in
-> cases where there isn't such a second copy, it'll detect but not be able
-> to fix the block with a bad checksum, and if the block has a valid
-> checksum but is logically invalid for other reasons, scrub won't detect
-> it, because /all/ it does is verify checksums, not actual filesystem
-> consistency.  That's what the somewhat more risky (if --repair or other
-> fix option is used, not in read-only mode, which detects but doesn't
-> attempt to fix) btrfs check is for.
-> 
-> So if skip_balance doesn't work, or it does but scrub can't fix all the
-> errors it finds, or scrub fixes everything it detects but a balance
-> resume still crashes, then it's time to try riskier fixes.  I'll let
-> others guide you there if needed, but will leave you with one
-> reminder...
-> 
-> Sysadmin's first rule of backups:
-> 
-> Don't test fate and challenge reality!  Have your backups or regardless
-> of claims to the contrary you're defining your data as throw-away value,
-> and eventually, fate and reality are going to call you on it!
-> 
-> So don't worry too much even if you lose the filesystem.  Either you
-> have backups and can restore from them should it be necessary, or you
-> defined the data as not worth the trouble of those backups, and losing
-> it isn't a big deal, because in either case you saved what was truly
-> important to you, either the data because it was important enough to you
-> to have backups, or the time/resources/trouble you would have spent
-> doing those backups, which you still saved regardless of whether you can
-> save the data or not. =:^)
-> 
+On Sun, Jul 9, 2017 at 6:13 PM, Ferry Toth <ftoth@exalondelft.nl> wrote:
+> Op Sat, 08 Jul 2017 20:51:41 +0000, schreef Duncan:
+>
+>> Adam Bahe posted on Fri, 07 Jul 2017 23:26:31 -0500 as excerpted:
+>>
+>>> I did recently upgrade the kernel a few days ago from
+>>> 4.8.7-1.el7.elrepo.x86_64 to 4.10.6-1.el7.elrepo.x86_64. I had also
+>>> added a new 6TB disk a few days ago but I'm not sure if the balance
+>>> finished as it locked up sometime today when I was at work. Any ideas
+>>> how I can recover? Even if I have 1 bad disk, raid10 should have kept
+>>> my data safe no? Is there anything I can do to recover?
+>>
+>> Yes, btrfs raid10 should be fine with a single bad device.  That's
+>> unlikely to be the issue.
+>
+> I'm wondering about that.
+>
+> The btrfs wiki says 'mostly ok' for raid10 and mentions btrfs needs to be
+> able to create 2 copies of a file to prevent going into an unreversable
+> read only.
+>
+> To me that sounds like you are save against a single failing drive if you
+> had 5 to start with. Is that correct?
+>
+> 'mostly ok' is a bit useless message. We need to know what to do to be
+> safe, and to have defined procedures to prevent screwing up
+> 'unrecoverably' when something bad happens.
+>
+> Any advice?
+>
+>> But you did well to bring up the balance.  Have you tried mounting with
+>> the "skip_balance" mount option?
+>>
+>> Sometimes a balance will run into a previously undetected problem with
+>> the filesystem and crash.  While mounting would otherwise still work, as
+>> soon as the filesystem goes active at the kernel level and before the
+>> mount call returns to userspace, the kernel will see the in-progress
+>> balance and attempt to continue it.  But if it crashed while processing
+>> a particular block group (aka chunk), of course that's the first one in
+>> line to continue the balance with, which will naturally crash again as
+>> it comes to the same inconsistency that triggered the crash the first
+>> time.
+>>
+>> So the skip_balance mount option was invented to create a work-around
+>> and allow you to mount the filesystem again. =:^)
+>>
+>> The fact that it sits there for awhile trying to do IO on all devices
+>> before it crashes is another clue it's probably the resumed balance
+>> crashing things as it comes to the same inconsistency that triggered the
+>> original crash during balance, so it's very likely that skip_balance
+>> will help. =:^)
+>>
+>> Assuming that lets you mount, the next thing I'd try is a btrfs scrub.
+>> Chances are it'll find some checksum problems, but given that you're
+>> running raid10, there's a second copy it can try to use to correct the
+>> bad one and there's a reasonably good chance scrub will find and fix
+>> your problems.  Even if it can't fix them all, it should get you closer,
+>> with less chance at making things worse instead of better than more
+>> risky options such as btrfs check with --repair.
+>>
+>> If a scrub completes with no uncorrected errors, I'd do an umount/mount
+>> cycle or reboot just to be sure -- don't forget the skip_balance option
+>> again tho -- and then, ensuring you're not doing anything that a crash
+>> would interrupt and have taken the opportunity presented to update your
+>> backups if you need to and assuming you consider the data worth more
+>> than the time/trouble/resources required for a backup, try a balance
+>> resume.
+>>
+>> Once the balance resume gets reasonably past the time it otherwise took
+>> to crash, you can reasonably assume you've safely corrected at least
+>> /that/ inconsistency, and hope the scrub took care of any others before
+>> you got to them.
+>>
+>> But of course all scrub does is verify checksums and where there's a
+>> second copy (as there is with dup, raid1 and raid10 modes) attempt a
+>> repair of the bad copy with the second one, of course verifying it as
+>> well in the process.  If the second copy of that block is bad too or in
+>> cases where there isn't such a second copy, it'll detect but not be able
+>> to fix the block with a bad checksum, and if the block has a valid
+>> checksum but is logically invalid for other reasons, scrub won't detect
+>> it, because /all/ it does is verify checksums, not actual filesystem
+>> consistency.  That's what the somewhat more risky (if --repair or other
+>> fix option is used, not in read-only mode, which detects but doesn't
+>> attempt to fix) btrfs check is for.
+>>
+>> So if skip_balance doesn't work, or it does but scrub can't fix all the
+>> errors it finds, or scrub fixes everything it detects but a balance
+>> resume still crashes, then it's time to try riskier fixes.  I'll let
+>> others guide you there if needed, but will leave you with one
+>> reminder...
+>>
+>> Sysadmin's first rule of backups:
+>>
+>> Don't test fate and challenge reality!  Have your backups or regardless
+>> of claims to the contrary you're defining your data as throw-away value,
+>> and eventually, fate and reality are going to call you on it!
+>>
+>> So don't worry too much even if you lose the filesystem.  Either you
+>> have backups and can restore from them should it be necessary, or you
+>> defined the data as not worth the trouble of those backups, and losing
+>> it isn't a big deal, because in either case you saved what was truly
+>> important to you, either the data because it was important enough to you
+>> to have backups, or the time/resources/trouble you would have spent
+>> doing those backups, which you still saved regardless of whether you can
+>> save the data or not. =:^)
+>>
+>> --
+>> Duncan - List replies preferred.   No HTML msgs.
+>> "Every nonfree program has a lord, a master --
+>> and if you use the program, he is your master."  Richard Stallman
+>
+>
 > --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
-
-
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

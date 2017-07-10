@@ -1,62 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39338 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751124AbdGJG7p (ORCPT
+Received: from mail-it0-f51.google.com ([209.85.214.51]:37276 "EHLO
+        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753224AbdGJMt3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Jul 2017 02:59:45 -0400
-Date: Sun, 9 Jul 2017 23:59:40 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20170710065940.x7ouz5dxsynrbhbx@merlins.org>
-References: <20170709053228.donh2nh75idlzfck@merlins.org>
- <pan$de201$b4e6d9dd$ac883479$6ac66e5b@cox.net>
+        Mon, 10 Jul 2017 08:49:29 -0400
+Received: by mail-it0-f51.google.com with SMTP id m84so37236362ita.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jul 2017 05:49:29 -0700 (PDT)
+Subject: Re: raid10 array lost with single disk failure?
+To: Adam Bahe <adambahe@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CACzgC9j026GHxX9m8=1iaYyV9ejFrzaC3nqwgn+j_awXA7D_Lw@mail.gmail.com>
+ <pan$b8d9f$672ac146$c6d8fd45$3b1ed204@cox.net>
+ <ojudab$mcr$1@blaine.gmane.org>
+ <CACzgC9hn_9Pk=M02b4UX14WPpsvUke=ZVs3p_WsT1LJ0rPWaNg@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <12f5de03-68e9-57fb-e228-bd12194886a3@gmail.com>
+Date: Mon, 10 Jul 2017 08:49:23 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$de201$b4e6d9dd$ac883479$6ac66e5b@cox.net>
-Subject: Re: Can I drop/reset files with corrupted data if they are in a read
- only snapshot?
+In-Reply-To: <CACzgC9hn_9Pk=M02b4UX14WPpsvUke=ZVs3p_WsT1LJ0rPWaNg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the Cc/ping, I appreciate it
-
-On Sun, Jul 09, 2017 at 11:38:51AM +0000, Duncan wrote:
-> At your own risk you can try using btrfs property to set the ro snapshot 
-> to rw.  Then you can delete the corrupted files and reset the snapshot 
-> back to ro.
+On 2017-07-09 22:13, Adam Bahe wrote:
+> I have finished all of the above suggestions, ran a scrub, remounted,
+> rebooted, made sure the system didn't hang, and then kicked off
+> another balance on the entire pool. It completed rather quickly but
+> something still does not seem right.
 > 
-> Of course you'll need to do the same thing on both the send and receive 
-> side in ordered to keep the two reference snapshots in sync.
+> Label: 'btrfs_pool1'  uuid: 04a7fa70-1572-47a2-a55c-7c99aef12603
+>          Total devices 18 FS bytes used 23.64TiB
+>          devid    1 size 1.82TiB used 1.82TiB path /dev/sdd
+>          devid    2 size 1.82TiB used 1.82TiB path /dev/sdf
+>          devid    3 size 3.64TiB used 3.07TiB path /dev/sdg
+>          devid    4 size 3.64TiB used 3.06TiB path /dev/sdk
+>          devid    5 size 1.82TiB used 1.82TiB path /dev/sdn
+>          devid    6 size 3.64TiB used 3.06TiB path /dev/sdo
+>          devid    7 size 1.82TiB used 1.82TiB path /dev/sds
+>          devid    8 size 1.82TiB used 1.82TiB path /dev/sdj
+>          devid    9 size 1.82TiB used 1.82TiB path /dev/sdi
+>          devid   10 size 1.82TiB used 1.82TiB path /dev/sdq
+>          devid   11 size 1.82TiB used 1.82TiB path /dev/sdr
+>          devid   12 size 1.82TiB used 1.82TiB path /dev/sde
+>          devid   13 size 1.82TiB used 1.82TiB path /dev/sdm
+>          devid   14 size 7.28TiB used 4.78TiB path /dev/sdh
+>          devid   15 size 7.28TiB used 4.99TiB path /dev/sdl
+>          devid   16 size 7.28TiB used 4.97TiB path /dev/sdp
+>          devid   17 size 7.28TiB used 4.99TiB path /dev/sdc
+>          devid   18 size 5.46TiB used 210.12GiB path /dev/sdb
 > 
-> However, because my use-case doesn't involve send/receive, I've not been 
-> able to personally verify that the above procedure doesn't screw up an 
-> incremental send/receive job using that modified snapshot as a 
-> reference.  There has been one report on the list of someone who did the 
+> /dev/sdb is the new disk, but btrfs only moved 210.12GB over to it.
+> Most disks in the array are >50% utilized or more. Is this normal?
+> 
+Was this from a full balance, or just running a scrub to repair chunks?
 
-On the plus side, on FS #1, I was able to do this, clear all the
-corrupted blocks and both scrub and btrfs check come back clean.
+You have three ways you can repair a BTRFS volume that's lost a device:
 
-On the 2nd one with more corruption, I'm very saddened to say that I did
-clear all the blocks, and on my next scrub I got new files that had
-corruption and didn't show up on the previous scrub (!).
-So, I rebooted from 4.11 to 4.8 and I'm doing a new scrub will clear all
-those blocks too, and see if it stays that way, or not.
+* The first, quickest, and most reliable is to use `btrfs device 
+replace` to replace the failing/missing device.  This will result in 
+only reading data that needs to be read to go on the new device, so it 
+completes quicker, but you will also need to resize the new device if 
+you are going to a larger device, and can't replace the missing device 
+with a smaller one.
 
-For reference the steps look like this:
-gargamel:/mnt/btrfs_pool1# btrfs property set Video_ro.20170625_01:23:05 ro false
-truncate damaged files
-gargamel:/mnt/btrfs_pool1# btrfs property set Video_ro.20170625_01:23:05 ro true
-gargamel:/mnt/btrfs_pool1# btrfs scrub start -Bd /mnt/btrfs_pool1
-scrub device /dev/mapper/dshelf1 (id 1) done
-        scrub started at Sun Jul  9 08:05:44 2017 and finished after 11:31:58
-        total bytes scrubbed: 10.43TiB with 0 errors
-gargamel:/mnt/btrfs_pool1#
+* The second is to add the device to the array, then run a scrub on the 
+whole array.  This will spit out a bunch of errors from the chunks that 
+need to be rebuilt, but will make sure everything is consistent.  This 
+isn't as fast as using `device replace`, but is still quicker than a 
+full balance most of the time.  In this particular case, I would expect 
+behavior like what you're seeing above at least some of the time.
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+* The third, and slowest method, is to add the new device, then run a 
+full balance.  This will make sure data is evenly distributed 
+proportionate to device size and will rebuild all the partial chunks. 
+It will also take the longest, and put significantly more stress on the 
+array than the other two options (it rewrites the entire array).  If 
+this is what you used, then you probably found a bug, because it should 
+never result in what you're seeing.

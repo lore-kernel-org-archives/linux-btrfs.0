@@ -1,65 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f174.google.com ([209.85.128.174]:33716 "EHLO
-        mail-wr0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753932AbdGKWnJ (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:60248 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753701AbdGKXEU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jul 2017 18:43:09 -0400
-Received: by mail-wr0-f174.google.com with SMTP id r103so8933673wrb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2017 15:43:08 -0700 (PDT)
+        Tue, 11 Jul 2017 19:04:20 -0400
+Date: Tue, 11 Jul 2017 16:04:19 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17 Object already exists
+Message-ID: <20170711230419.GR30689@merlins.org>
+References: <20170711062155.hvlx5ud4zphpzjnp@merlins.org> <CAJCQCtREGq4i5mn+PPB__dFLBvo8YrDeU_=GPHdzD1CuVYAfwg@mail.gmail.com> <20170711164812.sj64s3nc2oe3ai3n@merlins.org> <CAJCQCtSYJqa=nJA0w+yiHvwzdiWF51PmrfUPGVUjm1MwbiNZaQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20170711164812.sj64s3nc2oe3ai3n@merlins.org>
-References: <20170711062155.hvlx5ud4zphpzjnp@merlins.org> <CAJCQCtREGq4i5mn+PPB__dFLBvo8YrDeU_=GPHdzD1CuVYAfwg@mail.gmail.com>
- <20170711164812.sj64s3nc2oe3ai3n@merlins.org>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 11 Jul 2017 16:43:06 -0600
-Message-ID: <CAJCQCtSYJqa=nJA0w+yiHvwzdiWF51PmrfUPGVUjm1MwbiNZaQ@mail.gmail.com>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists
-To: Marc MERLIN <marc@merlins.org>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtSYJqa=nJA0w+yiHvwzdiWF51PmrfUPGVUjm1MwbiNZaQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 11, 2017 at 10:48 AM, Marc MERLIN <marc@merlins.org> wrote:
-> On Tue, Jul 11, 2017 at 10:00:40AM -0600, Chris Murphy wrote:
->> > ---[ end trace feb4b95c83ac065f ]---
->> > BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17 Object already exists
->> > BTRFS info (device dm-2): forced readonly
->>
->> You've already had this same traceback, not sure whether it's the same
->> file system or not, but it was 4.7.2 kernel.
->
-> You have better memory than me. I'll admit that I'm kind of overwhelmed
-> by all the time I'm currently spending/wasting on btrfs recovery and
-> that came almost out of nowwhere and hit me in 3 different places :-/
->
->> Probably fixed in 4.9, no idea when. I would just use the most recent
->> 4.9 kernel you can get or build. Less chance of regressions in
->> longterm, greater chance of bug fixes. Same for 4.4.
->
-> Fair suggestion. I jumped from 4.8 to 4.11. I'll build a 4.9 then.
+On Tue, Jul 11, 2017 at 04:43:06PM -0600, Chris Murphy wrote:
+> Assuming it works, settle on 4.9 until 4.14 shakes out a bit. Given
+> your setup and the penalty for even small problems, it's probably
+> better to go low risk and that means longterm kernels. Maybe one of
+> the three systems can use a newer kernel just to make sure you're
+> regressions, if any, are contained, but otherwise avoid all eggs in
+> one basket approach.
+ 
+That's indeed what I was considering doing.
+I guess I got complacent/too trusting after btrfs had worked for me without
+real problems for over a year (maybe close to 2?)
 
-Assuming it works, settle on 4.9 until 4.14 shakes out a bit. Given
-your setup and the penalty for even small problems, it's probably
-better to go low risk and that means longterm kernels. Maybe one of
-the three systems can use a newer kernel just to make sure you're
-regressions, if any, are contained, but otherwise avoid all eggs in
-one basket approach.
+My laptop had to be upgraded to 4.11 due to a kernel issue with nvme drives
+that made any kernel before that hang on S3 sleep.
+But my server can be on anything, and it seems that I'm going to leave it in
+4.9 for a while indeed, even if it had been happily on 4.8 for a long time
+(but given this snapshot rotation bug that caused it to remount a perfectly
+good filesystem, as read only, I indeed just moved it to 4.9.36)
 
-Another option is cutting down the size of the array and going with a
-gluster or ceph approach so the rebuilds aren't so hideously invasive.
-You could also optionally use a different storage layout and file
-system for a small subset of the bricks, either XFS on LVM RAID or
-ZoL. Again, fewer eggs in one basket. But even if they're all Btrfs,
-merely breaking things down makes for faster rebuilds, less downtime,
-less stress. Because whether it's an unexplained regression, the never
-finished fsck, a hardware bug, or a legit drive failure, you will
-inevitably have brick problems. Something's always going to go wrong
-eventually. Haha. Just throw more drives at the problem and have
-gluster do some distributed replication so you can more easily lose
-entire bricks like this.
+> Another option is cutting down the size of the array and going with a
+> gluster or ceph approach so the rebuilds aren't so hideously invasive.
 
+Right, it's just personal stuff, I don't want the management to be
+ridiculously high for something that ought to be simple.
+I only have 2 raid5 arrays of 5 drives each (when back in the day, I
+remember building a 26 drive array with SCSI SCA drives in 3 disk shelves
+for a total of 2TB, woot!)
+I don't really want to artificially cut that raid5 in smaller filesystem by
+adding yet another layer like LVM and then concatenate several smaller btrfs
+filesystems.
+I know I might be a bit stubborn here, but only 4 data drives, it should be
+considered small enough, even if the drives are not super small.
+
+> You could also optionally use a different storage layout and file
+> system for a small subset of the bricks, either XFS on LVM RAID or
+
+Yes, basically instead of having one media array and one backup array, I can
+make multiple ones, and then take the penalty of moving data across them.
+Been there in the past, don't really want to go back :-/
+But as you said, there is no magic answer outside not having filesystems
+that get corrupted so easily. I did have one flaky SAS card that did
+probably slightly damage one of my arrays, but the other 2 (and the
+filesystem on my laptop) don't have that hardware excuse.
+
+Anyway, while it's not very helpful to the btrfs project, 4.9.36 seems like
+indeed what's best for me for now.
+
+Thanks for the replies.
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

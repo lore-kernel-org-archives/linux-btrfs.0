@@ -1,43 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58782 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750899AbdGLOlu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2017 10:41:50 -0400
-Date: Wed, 12 Jul 2017 16:40:36 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: report errors when checksum is not found
-Message-ID: <20170712144036.GC2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170711204316.11283-1-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170711204316.11283-1-bo.li.liu@oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:50955 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934105AbdGKVoS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Jul 2017 17:44:18 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v6BLiH20003020
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2017 21:44:18 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v6BLiGRT024195
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2017 21:44:17 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v6BLiGEj009434
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Jul 2017 21:44:16 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: report errors when checksum is not found
+Date: Tue, 11 Jul 2017 14:43:16 -0600
+Message-Id: <20170711204316.11283-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 11, 2017 at 02:43:16PM -0600, Liu Bo wrote:
-> When btrfs fails the checksum check, it'll fill the whole page with
-> "1".
+When btrfs fails the checksum check, it'll fill the whole page with
+"1".
 
-One could ask, why is the page filled with 1s. Brought by commit
-07157aacb1ecd394a54949 from 2007, without mentioning any justification.
-I'm more inclined to revisit this behaviour and drop it eventually.
+However, if %csum_expected is 0 (which means there is no checksum), then
+for some unknown reason, we just pretend that the read is correct, so
+userspace would be confused about the dilemma that read is successful but
+getting a page with all content being "1".
 
-> However, if %csum_expected is 0 (which means there is no checksum), then
-> for some unknown reason, we just pretend that the read is correct, so
-> userspace would be confused about the dilemma that read is successful but
-> getting a page with all content being "1".
+This can happen due to a bug in btrfs-convert.
 
-Here 'no checksum' means that no checksum was found but was expected,
-right? An EIO would fail the read, I don't see a reason why the page
-needs to be "zeroed". The contents would be inaccessible anyway.
+This fixes it by always returning errors if checksum doesn't match.
 
-> This can happen due to a bug in btrfs-convert.
-> 
-> This fixes it by always returning errors if checksum doesn't match.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-Independent of the above, this fix makes sense.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ef3c98c..8a4d8ee 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3151,8 +3151,6 @@ static int __readpage_endio_check(struct inode *inode,
+ 	memset(kaddr + pgoff, 1, len);
+ 	flush_dcache_page(page);
+ 	kunmap_atomic(kaddr);
+-	if (csum_expected == 0)
+-		return 0;
+ 	return -EIO;
+ }
+ 
+-- 
+2.9.4
 
-Reviewed-by: David Sterba <dsterba@suse.com>

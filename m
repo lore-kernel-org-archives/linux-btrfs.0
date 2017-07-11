@@ -1,68 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44616 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53647 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1755296AbdGKPRI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jul 2017 11:17:08 -0400
-Date: Tue, 11 Jul 2017 17:15:54 +0200
+        id S932475AbdGKRam (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Jul 2017 13:30:42 -0400
+Date: Tue, 11 Jul 2017 19:29:28 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Edmund Nadolski <enadolski@suse.com>
 Cc: jeffm@suse.com, linux-btrfs@vger.kernel.org, lufq.fnst@cn.fujitsu.com
-Subject: Re: [PATCH v2 08/13] btrfs: convert prelimary reference tracking to
- use rbtrees
-Message-ID: <20170711151554.GU2866@twin.jikos.cz>
+Subject: Re: [PATCH v2 10/13] btrfs: backref, add tracepoints for prelim_ref
+ insertion and merging
+Message-ID: <20170711172928.GZ2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170629035705.1589-1-enadolski@suse.com>
- <20170629035705.1589-9-enadolski@suse.com>
+ <20170629035705.1589-11-enadolski@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170629035705.1589-9-enadolski@suse.com>
+In-Reply-To: <20170629035705.1589-11-enadolski@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 28, 2017 at 09:57:00PM -0600, Edmund Nadolski wrote:
-> It's been known for a while that the use of multiple lists
-> that are periodically merged was an algorithmic problem within
-> btrfs.  There are several workloads that don't complete in any
-> reasonable amount of time (e.g. btrfs/130) and others that cause
-> soft lockups.
-> 
-> The solution is to use a pair of rbtrees that do insertion merging
-> for both indirect and direct refs, with the former converting
-> refs into the latter.  The result is a btrfs/130 workload that
-> used to take several hours now takes about half of that. This
-> runtime still isn't acceptable and a future patch will address that
-> by moving the rbtrees higher in the stack so the lookups can be
-> shared across multiple calls to find_parent_nodes.
-> 
-> Signed-off-by: Edmund Nadolski <enadolski@suse.com>
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+On Wed, Jun 28, 2017 at 09:57:02PM -0600, Edmund Nadolski wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> +DECLARE_EVENT_CLASS(btrfs__prelim_ref,
+> +	TP_PROTO(const struct btrfs_fs_info *fs_info,
+> +		 const struct prelim_ref *oldref,
+> +		 const struct prelim_ref *newref, u64 tree_size),
+> +	TP_ARGS(fs_info, newref, oldref, tree_size),
+> +
+> +	TP_STRUCT__entry_btrfs(
+> +		__field(	u64,  root_id		)
+> +		__field(	u64,  objectid		)
+> +		__field(	 u8,  type		)
+> +		__field(	u64,  offset		)
+> +		__field(	int,  level		)
+> +		__field(	int,  old_count		)
+> +		__field(	u64,  parent		)
+> +		__field(	u64,  bytenr		)
+> +		__field(	int,  mod_count		)
+> +		__field(	u64, tree_size		)
+> +	),
+> +
+> +	TP_fast_assign_btrfs(fs_info,
+> +		__entry->root_id	= oldref->root_id;
+> +		__entry->objectid	= oldref->key_for_search.objectid;
+> +		__entry->type		= oldref->key_for_search.type;
+> +		__entry->offset		= oldref->key_for_search.offset;
+> +		__entry->level		= oldref->level;
+> +		__entry->old_count	= oldref->count;
+> +		__entry->parent		= oldref->parent;
+> +		__entry->bytenr		= oldref->wanted_disk_byte;
+> +		__entry->mod_count	= newref ? newref->count : 0;
+> +		__entry->tree_size	= tree_size;
+> +	),
+> +
+> +	TP_printk_btrfs("root=%llu, key=[%llu, %u, %llu], level=%d, count=[%d+%d=%d], parent=%llu, wanted_disk_byte=%llu, nodes=%llu",
 
-I've bisected to this patch, the self-tests run at module load time
-fail:
+Please update the format according to the recommendations
 
-tests/qgroup-tests.c:272
-
-270         if (btrfs_verify_qgroup_counts(fs_info, BTRFS_FS_TREE_OBJECTID,
-271                                 nodesize, nodesize)) {
-272                 test_msg("Qgroup counts didn't match expected values\n");
-273                 return -EINVAL;
-274         }
-
- 245 int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- 246                                u64 rfer, u64 excl)
- 247 {
- 248         struct btrfs_qgroup *qgroup;
- 249
- 250         qgroup = find_qgroup_rb(fs_info, qgroupid);
- 251         if (!qgroup)
- 252                 return -EINVAL;
- 253         if (qgroup->rfer != rfer || qgroup->excl != excl)
- 254                 return -EINVAL;
- 255         return 0;
- 256 }
-
-the second if fails, with 0 != 4096 || 0 != 4096
-
-Tested branch was current for-next-test (top commit
-8d73f8348287a3d3be10795f45d313f63cdcd72c), with
-CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
+https://btrfs.wiki.kernel.org/index.php/Development_notes#Tracepoints

@@ -1,222 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f51.google.com ([209.85.214.51]:38352 "EHLO
-        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753701AbdGJNAB (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:39255 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751241AbdGKGWA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Jul 2017 09:00:01 -0400
-Received: by mail-it0-f51.google.com with SMTP id k192so37511149ith.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jul 2017 06:00:01 -0700 (PDT)
-Subject: Re: Chunk root problem
-To: Daniel Brady <drbrady@gmail.com>, Roman Mamedov <rm@romanrm.net>
-Cc: linux-btrfs@vger.kernel.org
-References: <CABRvOkNWpaKB=mAEF9UvUUveFLBQroTWLpC5H=Fqc+okQ_BU3Q@mail.gmail.com>
- <20170707104817.3e2b6273@natsu>
- <350bd522-7169-3510-6c70-87434eef62d6@gmail.com>
- <00581e84-6c8f-be60-94f9-2e88ca25e3fe@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <3f7bfe3e-899e-a03e-0c85-c9c19ab40921@gmail.com>
-Date: Mon, 10 Jul 2017 08:59:54 -0400
+        Tue, 11 Jul 2017 02:22:00 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:55430 helo=legolas.merlins.org)
+        by mail1.merlins.org with esmtps
+        (Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.87 #1)
+        id 1dUoYW-0001Cd-NE
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Jul 2017 23:22:00 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+        (envelope-from <marc@merlins.org>)
+        id 1dUoYV-0000Ng-TM
+        for linux-btrfs@vger.kernel.org; Mon, 10 Jul 2017 23:21:55 -0700
+Date: Mon, 10 Jul 2017 23:21:55 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20170711062155.hvlx5ud4zphpzjnp@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <00581e84-6c8f-be60-94f9-2e88ca25e3fe@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Subject: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17
+ Object already exists
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-07-10 00:21, Daniel Brady wrote:
-> On 7/7/2017 1:06 AM, Daniel Brady wrote:
->> On 7/6/2017 11:48 PM, Roman Mamedov wrote:
->>> On Wed, 5 Jul 2017 22:10:35 -0600
->>> Daniel Brady <drbrady@gmail.com> wrote:
->>>
->>>> parent transid verify failed
->>>
->>> Typically in Btrfs terms this means "you're screwed", fsck will not fix it, and
->>> nobody will know how to fix or what is the cause either. Time to restore from
->>> backups! Or look into "btrfs restore" if you don't have any.
->>>
->>> In your case it's especially puzzling as the difference in transid numbers is
->>> really significant (about 100K), almost like the FS was operating for months
->>> without updating some parts of itself -- and no checksum errors either, so
->>> all looks correct, except that everything is horribly wrong.
->>>
->>> This kind of error seems to occur more often in RAID setups, either Btrfs
->>> native RAID, or with Btrfs on top of other RAID setups -- i.e. where it
->>> becomes a complex issue that all writes to multi devices DO complete IN order,
->>> in case of an unclean shutdown. (which is much simpler on a single device FS).
->>>
->>> Also one of your disks or cables is failing (was /dev/sde on that boot, but may
->>> get a different index next boot), check SMART data for it and replace.
->>>
->>>> [   21.230919] BTRFS info (device sdf): bdev /dev/sde errs: wr 402545, rd
->>>> 234683174, flush 194501, corrupt 0, gen 0
->>>
->>
->> Well that's not good news. Unfortunately I made a fatal error in not
->> having a backup. Restore looks like I could recover a good chunk of it
->> from the dry runs, however it has a lot of trouble reading many files.
->> I'm sure that is related to the one disk (sde). Drives were setup as raid56.
->>
->> After updating the kernel as suggested in the email from Duncan it
->> reduced the "parent transid verify" errors down to just one and the errs
->> on sde still exist.
->>
->> [   21.400190] BTRFS info (device sdb): use no compression
->> [   21.400191] BTRFS info (device sdb): disk space caching is enabled
->> [   21.400192] BTRFS info (device sdb): has skinny extents
->> [   21.584923] BTRFS info (device sdb): bdev /dev/sde errs: wr 402545,
->> rd 234683174, flush 194501, corrupt 0, gen 0
->> [   23.394788] BTRFS error (device sdb): parent transid verify failed on
->> 5257838690304 wanted 591492 found 489231
->> [   23.416489] BTRFS error (device sdb): parent transid verify failed on
->> 5257838690304 wanted 591492 found 489231
->> [   23.416524] BTRFS error (device sdb): failed to read block groups: -5
->> [   23.448478] BTRFS error (device sdb): open_ctree failed
->>
->> I ran a SMART test as you suggested with a passing result. I also
->> swapped SATA cables & power with another drive and the error followed
->> the drive confirmed by the serial via SMART. It seems like it just can't
->> read from that one drive for whatever reason. I also tried disconnecting
->> the drive and trying to mount it degraded with no luck. Still had the
->> transid error just with null as the bdev.
->>
->> smartctl -a /dev/sde
->> smartctl 6.2 2013-07-26 r3841 [x86_64-linux-4.12.0-1.el7.elrepo.x86_64]
->> (local build)
->> Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
->>
->> === START OF INFORMATION SECTION ===
->> Model Family:     Western Digital Red (AF)
->> Device Model:     WDC WD30EFRX-68EUZN0
->> Serial Number:    WD-WCC4N0PEYTEV
->> LU WWN Device Id: 5 0014ee 2b7dbfe54
->> Firmware Version: 82.00A82
->> User Capacity:    3,000,592,982,016 bytes [3.00 TB]
->> Sector Sizes:     512 bytes logical, 4096 bytes physical
->> Rotation Rate:    5400 rpm
->> Device is:        In smartctl database [for details use: -P show]
->> ATA Version is:   ACS-2 (minor revision not indicated)
->> SATA Version is:  SATA 3.0, 6.0 Gb/s (current: 3.0 Gb/s)
->> Local Time is:    Fri Jul  7 00:30:10 2017 MDT
->> SMART support is: Available - device has SMART capability.
->> SMART support is: Enabled
->>
->> === START OF READ SMART DATA SECTION ===
->> SMART overall-health self-assessment test result: PASSED
->>
->> General SMART Values:
->> Offline data collection status:  (0x00) Offline data collection activity
->>                                          was never started.
->>                                          Auto Offline Data Collection:
->> Disabled.
->> Self-test execution status:      (   0) The previous self-test routine
->> completed
->>                                          without error or no self-test
->> has ever
->>                                          been run.
->> Total time to complete Offline
->> data collection:                (40500) seconds.
->> Offline data collection
->> capabilities:                    (0x7b) SMART execute Offline immediate.
->>                                          Auto Offline data collection
->> on/off support.
->>                                          Suspend Offline collection upon new
->>                                          command.
->>                                          Offline surface scan supported.
->>                                          Self-test supported.
->>                                          Conveyance Self-test supported.
->>                                          Selective Self-test supported.
->> SMART capabilities:            (0x0003) Saves SMART data before entering
->>                                          power-saving mode.
->>                                          Supports SMART auto save timer.
->> Error logging capability:        (0x01) Error logging supported.
->>                                          General Purpose Logging supported.
->> Short self-test routine
->> recommended polling time:        (   2) minutes.
->> Extended self-test routine
->> recommended polling time:        ( 406) minutes.
->> Conveyance self-test routine
->> recommended polling time:        (   5) minutes.
->> SCT capabilities:              (0x703d) SCT Status supported.
->>                                          SCT Error Recovery Control
->> supported.
->>                                          SCT Feature Control supported.
->>                                          SCT Data Table supported.
->>
->> SMART Attributes Data Structure revision number: 16
->> Vendor Specific SMART Attributes with Thresholds:
->> ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE
->> UPDATED  WHEN_FAILED RAW_VALUE
->>    1 Raw_Read_Error_Rate     0x002f   200   200   051    Pre-fail  Always
->>        -       0
->>    3 Spin_Up_Time            0x0027   179   179   021    Pre-fail  Always
->>        -       6050
->>    4 Start_Stop_Count        0x0032   100   100   000    Old_age   Always
->>        -       15
->>    5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always
->>        -       0
->>    7 Seek_Error_Rate         0x002e   200   200   000    Old_age   Always
->>        -       0
->>    9 Power_On_Hours          0x0032   092   091   000    Old_age   Always
->>        -       6337
->>   10 Spin_Retry_Count        0x0032   100   253   000    Old_age   Always
->>        -       0
->>   11 Calibration_Retry_Count 0x0032   100   253   000    Old_age   Always
->>        -       0
->>   12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always
->>        -       15
->> 192 Power-Off_Retract_Count 0x0032   200   200   000    Old_age   Always
->>        -       5
->> 193 Load_Cycle_Count        0x0032   197   197   000    Old_age   Always
->>        -       9084
->> 194 Temperature_Celsius     0x0022   122   114   000    Old_age   Always
->>        -       28
->> 196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always
->>        -       0
->> 197 Current_Pending_Sector  0x0032   200   200   000    Old_age   Always
->>        -       0
->> 198 Offline_Uncorrectable   0x0030   100   253   000    Old_age
->> Offline      -       0
->> 199 UDMA_CRC_Error_Count    0x0032   200   200   000    Old_age   Always
->>        -       0
->> 200 Multi_Zone_Error_Rate   0x0008   100   253   000    Old_age
->> Offline      -       0
->>
->> SMART Error Log Version: 1
->> No Errors Logged
->>
->> SMART Self-test log structure revision number 1
->> Num  Test_Description    Status                  Remaining
->> LifeTime(hours)  LBA_of_first_error
->> # 1  Short offline       Completed without error       00%      6337
->>      -
->> # 2  Extended offline    Aborted by host               90%      6337
->>      -
->>
->> SMART Selective self-test log data structure revision number 1
->>   SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
->>      1        0        0  Not_testing
->>      2        0        0  Not_testing
->>      3        0        0  Not_testing
->>      4        0        0  Not_testing
->>      5        0        0  Not_testing
->> Selective self-test flags (0x0):
->>    After scanning selected spans, do NOT read-scan remainder of disk.
->> If Selective self-test is pending on power-up, resume after 0 minute delay.
->>
->> -Dan
->>
-> 
-> Does anyone have any other guidance on what I can do to try and recover?
-> I would like to try anything I can do before moving on. I did a btrfs
-> restore and got what little I had left. btrfsck just gives me a "ERROR:
-> failed to repair root items: Input/output error" and btrfs rescue
-> zero-log does not seem to do anything.
-Unfortunately, it sounds like the firmware or the controller on the disk 
-itself is bad.  If the device is as young as the Power_On_Hours implies 
-(that lists less than a year of run-time), then it may still be under 
-warranty, and you might be able to get the manufacturer to fix the disk 
-for you, but other than that there's unfortunately not much you can do 
-if it is the firmware or controller.
+Looks like btrfs has decided to give me hell.
+I'm still recovering my system.
+The biggest filesystem seems to work, but I just had it go read only:
 
-Also, just as a side note, the reported flush errors for that device are 
-probably the reason that the transid verification is so far off.
+------------[ cut here ]------------
+WARNING: CPU: 5 PID: 3734 at fs/btrfs/extent-tree.c:2960 btrfs_run_delayed_refs+0xb6/0x1dc
+BTRFS: Transaction aborted (error -17)
+Modules linked in: udp_diag tcp_diag inet_diag veth ip6table_filter ip6_tables ebtable_nat ebtables ppdev lp xt_addrtype br_
+fmt_misc ftdi_sio nfsd auth_rpcgss nfs_acl nfs lockd grace fscache sunrpc ipt_REJECT nf_reject_ipv4 xt_conntrack xt_mark xt_
+ptable_mangle iptable_filter pl2303 dm_snapshot dm_bufio iptable_nat ip_tables nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 
+e_ipv4 nf_nat nf_conntrack x_tables sg st snd_pcm_oss snd_mixer_oss bcache kvm_intel kvm irqbypass snd_hda_codec_realtek snd
+da_codec snd_cmipci rc_ati_x10 asus_wmi snd_hda_core snd_mpu401_uart snd_opl3_lib snd_hwdep snd_rawmidi snd_seq_device spars
+l tpm_infineon snd tpm_tis hwmon tpm_tis_core usbnet rc_core i2c_i801 usbserial libphy soundcore wmi i915 lpc_ich mfd_cor
+s evdev pcspkr parport_pc battery mei_me parport i2c_smbus e1000e ptp pps_core fuse raid456 multipath mmc_block mmc_core dm_
+r async_memcpy async_tx crc32c_intel blowfish_x86_64 blowfish_common aesni_intel aes_x86_64 lrw glue_helper ablk_helper cryp
+4 thermal usbcore mvsas libsas fjes scsi_transport_sas fan r8169 mii usb_common [last unloaded: ftdi_sio]
+CPU: 1 PID: 3734 Comm: btrfs-transacti Tainted: G     U  W       4.8.10-amd64-preempt-sysrq-20161121vb3tj1 #12
+Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 3904 04/27/2013
+ 0000000000200286 000000003f87d529 ffff9dcc9838fd00 ffffffffbb39e738
+ ffff9dcc9838fd50 0000000000000000 ffff9dcc9838fd40 ffffffffbb066e08
+ 00000b909838fdc0 ffff9dc94fdc9be0 0000000000000000 ffff9dcca0d93000
+Call Trace:
+ [<ffffffffbb39e738>] dump_stack+0x63/0x7f
+ [<ffffffffbb066e08>] __warn+0xc2/0xdd
+ [<ffffffffbb066e7d>] warn_slowpath_fmt+0x5a/0x76
+ [<ffffffffbb291dc2>] btrfs_run_delayed_refs+0xb6/0x1dc
+ [<ffffffffbb2a4d1d>] btrfs_commit_transaction+0x5b/0x965
+ [<ffffffffbb2a030e>] transaction_kthread+0xf5/0x19f
+ [<ffffffffbb2a0219>] ? btrfs_cleanup_transaction+0x47b/0x47b
+ [<ffffffffbb081df3>] kthread+0xb4/0xbc
+ [<ffffffffbb6d23df>] ret_from_fork+0x1f/0x40
+ [<ffffffffbb081d3f>] ? init_completion+0x24/0x24
+---[ end trace feb4b95c83ac065f ]---
+BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17 Object already exists
+BTRFS info (device dm-2): forced readonly
+
+Yes, I'm back with 4.8 since I need to get back to a working state,
+however this may be a totally unrelated bug that has been fixed since
+4.8?
+
+The filesystem seems fine though:
+enabling repair mode
+Checking filesystem on /dev/mapper/dshelf1
+UUID: 36f5079e-ca6c-4855-8639-ccb82695c18d
+checking extents
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+checking csums
+checking root refs
+found 11452211699712 bytes used, no error found
+total csum bytes: 11167908392
+total tree bytes: 13463715840
+total fs tree bytes: 712867840
+total extent tree bytes: 478281728
+btree space waste bytes: 1159679826
+file data blocks allocated: 11888008564736
+ referenced 11908268208128
+
+So I'm going to remount it read-write, but can someone explain the failure above?
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

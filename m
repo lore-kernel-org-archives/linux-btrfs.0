@@ -1,54 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35912 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753208AbdGLPjk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2017 11:39:40 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B91B7AD59
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2017 15:39:38 +0000 (UTC)
-Date: Wed, 12 Jul 2017 17:38:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Prevent possible ERR_PTR() dereference
-Message-ID: <20170712153825.GI2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1499781351-3156-1-git-send-email-nborisov@suse.com>
- <20170711172442.GY2866@twin.jikos.cz>
- <21f0034c-fd24-863f-a760-8f8732558468@suse.com>
+Received: from mout.gmx.net ([212.227.15.18]:57878 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751052AbdGKJLc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 11 Jul 2017 05:11:32 -0400
+Subject: Re: [PATCH 00/19] fs_info refactor part 2 (disk-io.h and volumes.h
+ based)
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <41aa56a9-075b-7107-25cf-4673ecabc3e0@gmx.com>
+Date: Tue, 11 Jul 2017 17:11:16 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <21f0034c-fd24-863f-a760-8f8732558468@suse.com>
+In-Reply-To: <20170613091935.23277-1-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=gbk; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 11, 2017 at 10:29:49PM +0300, Nikolay Borisov wrote:
-> 
-> 
-> On 11.07.2017 20:24, David Sterba wrote:
-> > On Tue, Jul 11, 2017 at 04:55:51PM +0300, Nikolay Borisov wrote:
-> >> In btrfs_full_stripe_len/btrfs_is_parity_mirror we have similar code which
-> >> gets the chunk map for a particular range via get_chunk_map. However,
-> >> get_chunk_map can return an ERR_PTR value and while the 2 callers do catch
-> >> this with a WARN_ON they then proceed to indiscriminately dereference the
-> >> extent map. This of course leads to a crash. Fix the offenders by making the
-> >> dereference conditional on IS_ERR.
-> > 
-> > While the code makes it better, the whole callchain should be fixed. The
-> > WARN_ON used to be a BUG_ON and the error handling was absent, and still
-> > is. Although it's unlikely to see the warnings from that, I'd rather see
-> > it fixed properly. The direct caller of btrfs_full_stripe_len will be
-> > able to handle it.
-> 
-> What should be returned in case we can't find the chunk_map -EINVAL ?
+Any comment?
 
-Returning what get_chunk_map seems ok in btrfs_full_stripe_len (compared
-to other callers of get_chunk_map that may interpret a failure in a
-different way).
 
-But EINVAL is IMO wrong as it's more like the ENOENT when the mapping is
-missing or EUCLEAN when the mapping looks incorrect.
+Thanks,
 
-The failure of btrfs_full_stripe_len in btrfs_create_block_group_cache
-could be best handled if we return ERR_PTR instead of assuming ENOMEM in
-all of its callers (btrfs_read_block_groups and btrfs_make_block_group).
+Qu
+
+
+在 2017年06月13日 17:19, Qu Wenruo 写道:
+> This is the part 2 patchset to refactor btrfs_root usage to
+> btrfs_fs_info.
+>
+> The most obvious advantage is to make function calls a little shorter,
+> and less confused.
+> Function calls like btrfs_alloc_data_chunk() needs caller to pass a
+> btrfs_root parameter, while the parameter should always be
+> fs_info->extent_root, grab it inside that function is much more safer
+> than allowing user to pass in a random root.
+>
+> Another advantage is to make it easier to sync some headers with kernel.
+> In fact, when I'm not sure if I should convert one function, I normally
+> check kernel code to find the parameter of kernel equivalent.
+> So when we are going to sync (part of) the headers with kernel, it will
+> reduce the work.
+>
+> Part 2 focus on the exported functions mainly in disk-io.h and
+> volumes.h.
+> Now most tree blocks/extents read/write, device scan/read, chunk
+> allocation/initialization functions are all using fs_info.
+>
+> I'm quite sure there is a lot of remaining functions to be refactored,
+> but I prefer to do it step by step.
+>
+> Qu Wenruo (19):
+>    btrfs-progs: Refactor btrfs_map_block and its variants to use
+>      btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_num_copies to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_next_bg and its callers to use
+>      btrfs_fs_info
+>    btrfs-progs: Refactor csum_tree_block to use btrfs_fs_info
+>    btrfs-progs: Refactor write_and_map_eb to use btrfs_fs_info
+>    btrfs-progs: Refactor write_tree_block to use btrfs_fs_info
+>    btrfs-progs: btrfstune: Refactor change_devices_uuid to use
+>      btrfs_fs_info
+>    btrfs-progs: Refactor read_extent_data to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_find_tree_block to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_readahead_tree_block to use btrfs_fs_info
+>    btrfs-progs: Refactor write_all_supers and its callers to use
+>      btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_check_chunk_valid to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_find_device to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_read_sys_array/chunk_tree to use
+>      btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_add_system_chunk to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_chunk_readonly to use btrfs_fs_info
+>    btrfs-progs: Refactor btrfs_add_device() to use btrfs_fs_info
+>    btrfs-progs: Remove btrfs_read_super_device as there is no
+>      implementation
+>    btrfs-progs: Refactor chunk creation functions to use btrfs_fs_info
+>
+>   btrfs-corrupt-block.c |   9 ++--
+>   btrfs-map-logical.c   |   9 ++--
+>   btrfs-select-super.c  |   2 +-
+>   btrfstune.c           |  17 ++++---
+>   chunk-recover.c       |  10 +++--
+>   cmds-check.c          |  53 ++++++++++++----------
+>   cmds-restore.c        |  10 ++---
+>   convert/main.c        |   6 +--
+>   ctree.c               |   7 +--
+>   ctree.h               |   4 +-
+>   disk-io.c             | 120 +++++++++++++++++++++++---------------------------
+>   disk-io.h             |  16 +++----
+>   extent-tree.c         |  59 ++++++++++++-------------
+>   extent_io.c           |   8 ++--
+>   file.c                |  15 ++++---
+>   find-root.c           |   4 +-
+>   image/main.c          |   8 ++--
+>   mkfs/main.c           |  34 +++++++-------
+>   super-recover.c       |   2 +-
+>   utils.c               |  11 ++---
+>   utils.h               |   4 +-
+>   volumes.c             | 109 ++++++++++++++++++++++-----------------------
+>   volumes.h             |  44 +++++++++---------
+>   23 files changed, 278 insertions(+), 283 deletions(-)
+>
+

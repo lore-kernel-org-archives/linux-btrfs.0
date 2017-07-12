@@ -1,57 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f182.google.com ([209.85.192.182]:34733 "EHLO
-        mail-pf0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750855AbdGGF7f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Jul 2017 01:59:35 -0400
-Received: by mail-pf0-f182.google.com with SMTP id q85so12019757pfq.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Jul 2017 22:59:35 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH] Btrfs: fix early ENOSPC due to delalloc
-Date: Thu,  6 Jul 2017 22:59:27 -0700
-Message-Id: <0cf8577381f6ebe99b584ca60f920c630000c343.1499407060.git.osandov@fb.com>
+Received: from mout.gmx.net ([212.227.17.21]:59840 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751378AbdGLHKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Jul 2017 03:10:01 -0400
+Subject: Re: [PATCH] btrfs: qgroups: Fix BUG_ON condition
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, rgoldwyn@suse.de
+References: <1499841739-18549-1-git-send-email-nborisov@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <9f2efc65-1972-e200-72ff-2ccf29da06d1@gmx.com>
+Date: Wed, 12 Jul 2017 15:09:42 +0800
+MIME-Version: 1.0
+In-Reply-To: <1499841739-18549-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=gbk; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
 
-If a lot of metadata is reserved for outstanding delayed allocations, we
-rely on shrink_delalloc() to reclaim metadata space in order to fulfill
-reservation tickets. However, shrink_delalloc() has a shortcut where if
-it determines that space can be overcommitted, it will stop early. This
-made sense before the ticketed enospc system, but now it means that
-shrink_delalloc() will often not reclaim enough space to fulfill any
-tickets, leading to an early ENOSPC. (Reservation tickets don't care
-about being able to overcommit, they need every byte accounted for.)
 
-Fix it by getting rid of the shortcut so that shrink_delalloc() reclaims
-all of the metadata it is supposed to. This fixes early ENOSPCs we were
-seeing when doing a btrfs receive to populate a new filesystem.
+在 2017年07月12日 14:42, Nikolay Borisov 写道:
+> The current code was erroneously checking for root_level > BTRFS_MAX_LEVEL. If
+> we had a root_level of 8 then the check won't trigger and we could
+> potentially hit a buffer overflow. The correct check should be
+> root_level >= BTRFS_MAX_LEVEL
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
-I don't have a good reproducer for this except for the btrfs send stream
-I was given by someone internally, unfortunately.
+Thanks for catching this.
 
- fs/btrfs/extent-tree.c | 4 ----
- 1 file changed, 4 deletions(-)
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 33d979e9ea2a..83eecd33ad96 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4776,10 +4776,6 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 		else
- 			flush = BTRFS_RESERVE_NO_FLUSH;
- 		spin_lock(&space_info->lock);
--		if (can_overcommit(root, space_info, orig, flush)) {
--			spin_unlock(&space_info->lock);
--			break;
--		}
- 		if (list_empty(&space_info->tickets) &&
- 		    list_empty(&space_info->priority_tickets)) {
- 			spin_unlock(&space_info->lock);
--- 
-2.13.2
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>   fs/btrfs/qgroup.c | 4 ++--
+>   1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 4ce351efe281..3b787915ef31 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1603,7 +1603,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
+>   	struct extent_buffer *eb = root_eb;
+>   	struct btrfs_path *path = NULL;
+>   
+> -	BUG_ON(root_level < 0 || root_level > BTRFS_MAX_LEVEL);
+> +	BUG_ON(root_level < 0 || root_level >= BTRFS_MAX_LEVEL);
+>   	BUG_ON(root_eb == NULL);
+>   
+>   	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+> @@ -2959,7 +2959,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
+>   	if (free && reserved)
+>   		return qgroup_free_reserved_data(inode, reserved, start, len);
+>   	extent_changeset_init(&changeset);
+> -	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
+> +	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
+>   			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
 
+I didn't recongize it's a tailing white space at first.
+Nice catch.
+
+Thanks,
+Qu
+
+>   	if (ret < 0)
+>   		goto out;
+> 

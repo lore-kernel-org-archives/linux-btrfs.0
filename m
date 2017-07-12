@@ -1,26 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42859 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751738AbdGDBXZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2017 21:23:25 -0400
-To: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Anand Jain <anand.jain@oracle.com>
-Subject: ping on patches..
-Message-ID: <1e65809a-19fd-1814-fc58-b034c4922530@oracle.com>
-Date: Tue, 4 Jul 2017 09:29:52 +0800
+Received: from mx1.redhat.com ([209.132.183.28]:36614 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932080AbdGLRS2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Jul 2017 13:18:28 -0400
+Date: Wed, 12 Jul 2017 18:10:54 +0100
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: Jan Tulak <jtulak@redhat.com>
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs <linux-xfs@vger.kernel.org>
+Subject: Re: [proposal] making filesystem tools more machine friendly
+Message-ID: <20170712171054.GB19996@redhat.com>
+References: <CACj3i70p=ybXZWRncseqwnbs7HAYu-SL02+cj--7T5YnqcwVKQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CACj3i70p=ybXZWRncseqwnbs7HAYu-SL02+cj--7T5YnqcwVKQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Hi David,
+libguestfs could really use structured output from more of the command
+line tools.  Particularly:
 
-  Couple of patches waiting for your response ..
+ - all the ext4 tools
+ - all the xfs tools
+ - all the btrfs tools
+ - parted
 
-[PATCH] btrfs: check options during subsequent mount
-[PATCH] btrfs: add mount umount logs
+and more.  See also:
 
+  https://github.com/libguestfs/libguestfs/tree/master/daemon
 
-cheers, Anand
+A dbus service would not be useful.
 
+Rich.
+
+-- 
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+Read my programming and virtualization blog: http://rwmj.wordpress.com
+virt-builder quickly builds VMs from scratch
+http://libguestfs.org/virt-builder.1.html

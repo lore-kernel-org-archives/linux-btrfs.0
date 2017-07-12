@@ -1,137 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f175.google.com ([209.85.192.175]:35140 "EHLO
-        mail-pf0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751161AbdGLUFt (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:34632 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751871AbdGLSrb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2017 16:05:49 -0400
-Received: by mail-pf0-f175.google.com with SMTP id c73so17986945pfk.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2017 13:05:49 -0700 (PDT)
-From: Adam Buchbinder <abuchbinder@google.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Adam Buchbinder <abuchbinder@google.com>
-Subject: [PATCH] btrfs-progs: Fix data race in btrfs-convert.
-Date: Wed, 12 Jul 2017 13:05:38 -0700
-Message-Id: <20170712200538.18881-1-abuchbinder@google.com>
+        Wed, 12 Jul 2017 14:47:31 -0400
+Date: Wed, 12 Jul 2017 11:46:29 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: report errors when checksum is not found
+Message-ID: <20170712174628.GB4268@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20170711204316.11283-1-bo.li.liu@oracle.com>
+ <20170712144036.GC2866@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170712144036.GC2866@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The status display was reading the state while the task was updating
-it. Use a mutex to prevent the race.
+On Wed, Jul 12, 2017 at 04:40:36PM +0200, David Sterba wrote:
+> On Tue, Jul 11, 2017 at 02:43:16PM -0600, Liu Bo wrote:
+> > When btrfs fails the checksum check, it'll fill the whole page with
+> > "1".
+> 
+> One could ask, why is the page filled with 1s. Brought by commit
+> 07157aacb1ecd394a54949 from 2007, without mentioning any justification.
+> I'm more inclined to revisit this behaviour and drop it eventually.
+> 
+> > However, if %csum_expected is 0 (which means there is no checksum), then
+> > for some unknown reason, we just pretend that the read is correct, so
+> > userspace would be confused about the dilemma that read is successful but
+> > getting a page with all content being "1".
+> 
+> Here 'no checksum' means that no checksum was found but was expected,
+> right?
 
-This race was detected using ThreadSanitizer and
-misc-tests/005-convert-progress-thread-crash.
+Yes, no checksum was found.
 
-==================
-WARNING: ThreadSanitizer: data race
-  Write of size 8 by main thread:
-    #0 ext2_copy_inodes btrfs-progs/convert/source-ext2.c:853
-    #1 copy_inodes btrfs-progs/convert/main.c:145
-    #2 do_convert btrfs-progs/convert/main.c:1297
-    #3 main btrfs-progs/convert/main.c:1924
+> An EIO would fail the read, I don't see a reason why the page
+> needs to be "zeroed". The contents would be inaccessible anyway.
+>
 
-  Previous read of size 8 by thread T1:
-    #0 print_copied_inodes btrfs-progs/convert/main.c:124
+Right, resetting page's content is needed when we return 0 instead of
+-EIO.  I guess it was introduced for testing.  So yes, I'm glad to
+remove that part, will do in a v2.
 
-  Location is stack of main thread.
+> > This can happen due to a bug in btrfs-convert.
+> > 
+> > This fixes it by always returning errors if checksum doesn't match.
+> 
+> Independent of the above, this fix makes sense.
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
 
-  Thread T1 (running) created by main thread at:
-    #0 pthread_create <null>
-    #1 task_start btrfs-progs/task-utils.c:50
-    #2 do_convert btrfs-progs/convert/main.c:1295
-    #3 main btrfs-progs/convert/main.c:1924
+Thank you for the comments.
 
-SUMMARY: ThreadSanitizer: data race
-btrfs-progs/convert/source-ext2.c:853 in ext2_copy_inodes
+Thanks,
 
-Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
----
- convert/main.c        | 12 ++++++++++--
- convert/source-ext2.c |  3 +++
- convert/source-fs.h   |  3 +++
- 3 files changed, 16 insertions(+), 2 deletions(-)
-
-diff --git a/convert/main.c b/convert/main.c
-index c56382e..c9c1fd4 100644
---- a/convert/main.c
-+++ b/convert/main.c
-@@ -88,6 +88,7 @@
- #include <fcntl.h>
- #include <unistd.h>
- #include <getopt.h>
-+#include <pthread.h>
- #include <stdbool.h>
- 
- #include "ctree.h"
-@@ -119,10 +120,12 @@ static void *print_copied_inodes(void *p)
- 	task_period_start(priv->info, 1000 /* 1s */);
- 	while (1) {
- 		count++;
-+		pthread_mutex_lock(&priv->mutex);
- 		printf("copy inodes [%c] [%10llu/%10llu]\r",
- 		       work_indicator[count % 4],
--		       (unsigned long long)priv->cur_copy_inodes,
--		       (unsigned long long)priv->max_copy_inodes);
-+		       (u64)priv->cur_copy_inodes,
-+		       (u64)priv->max_copy_inodes);
-+		pthread_mutex_unlock(&priv->mutex);
- 		fflush(stdout);
- 		task_period_wait(priv->info);
- 	}
-@@ -1286,6 +1289,11 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
- 	}
- 
- 	printf("creating btrfs metadata");
-+	ret = pthread_mutex_init(&ctx.mutex, NULL);
-+	if (ret) {
-+		error("failed to init mutex: %d", ret);
-+		goto fail;
-+	}
- 	ctx.max_copy_inodes = (cctx.inodes_count - cctx.free_inodes_count);
- 	ctx.cur_copy_inodes = 0;
- 
-diff --git a/convert/source-ext2.c b/convert/source-ext2.c
-index 38c3cd3..4bce4b3 100644
---- a/convert/source-ext2.c
-+++ b/convert/source-ext2.c
-@@ -18,6 +18,7 @@
- 
- #include "kerncompat.h"
- #include <linux/limits.h>
-+#include <pthread.h>
- #include "disk-io.h"
- #include "transaction.h"
- #include "utils.h"
-@@ -850,7 +851,9 @@ static int ext2_copy_inodes(struct btrfs_convert_context *cctx,
- 		ret = ext2_copy_single_inode(trans, root,
- 					objectid, ext2_fs, ext2_ino,
- 					&ext2_inode, convert_flags);
-+		pthread_mutex_lock(&p->mutex);
- 		p->cur_copy_inodes++;
-+		pthread_mutex_unlock(&p->mutex);
- 		if (ret)
- 			return ret;
- 		if (trans->blocks_used >= 4096) {
-diff --git a/convert/source-fs.h b/convert/source-fs.h
-index ca32d15..7ae6edd 100644
---- a/convert/source-fs.h
-+++ b/convert/source-fs.h
-@@ -17,6 +17,8 @@
- #ifndef __BTRFS_CONVERT_SOURCE_FS_H__
- #define __BTRFS_CONVERT_SOURCE_FS_H__
- 
-+#include <pthread.h>
-+
- #include "kerncompat.h"
- 
- #define CONV_IMAGE_SUBVOL_OBJECTID BTRFS_FIRST_FREE_OBJECTID
-@@ -37,6 +39,7 @@ extern const struct simple_range btrfs_reserved_ranges[3];
- struct task_info;
- 
- struct task_ctx {
-+	pthread_mutex_t mutex;
- 	u64 max_copy_inodes;
- 	u64 cur_copy_inodes;
- 	struct task_info *info;
--- 
-2.13.2.932.g7449e964c-goog
-
+-liubo

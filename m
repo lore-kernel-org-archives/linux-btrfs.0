@@ -1,62 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52167 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932598AbdGKREu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jul 2017 13:04:50 -0400
-Date: Tue, 11 Jul 2017 19:03:35 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Aleksa Sarai <asarai@suse.de>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        stable@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [PATCH] btrfs: resume qgroup rescan on rw remount
-Message-ID: <20170711170335.GV2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170704114906.8419-1-asarai@suse.de>
- <725eb058-4fb4-a167-9ba4-a062de718555@suse.com>
- <532a6e98-1745-4181-260a-38f4d5015857@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:49989 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754997AbdGLIuU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Jul 2017 04:50:20 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id B883946B524E
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Jul 2017 16:50:12 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v14.4 00/15] Btrfs In-band De-duplication
+Date: Wed, 12 Jul 2017 16:49:47 +0800
+Message-ID: <20170712085002.23241-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <532a6e98-1745-4181-260a-38f4d5015857@suse.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 10, 2017 at 04:56:36PM +0300, Nikolay Borisov wrote:
-> On 10.07.2017 16:12, Nikolay Borisov wrote:
-> > On  4.07.2017 14:49, Aleksa Sarai wrote:
-> >> Several distributions mount the "proper root" as ro during initrd and
-> >> then remount it as rw before pivot_root(2). Thus, if a rescan had been
-> >> aborted by a previous shutdown, the rescan would never be resumed.
-> >>
-> >> This issue would manifest itself as several btrfs ioctl(2)s causing the
-> >> entire machine to hang when btrfs_qgroup_wait_for_completion was hit
-> >> (due to the fs_info->qgroup_rescan_running flag being set but the rescan
-> >> itself not being resumed). Notably, Docker's btrfs storage driver makes
-> >> regular use of BTRFS_QUOTA_CTL_DISABLE and BTRFS_IOC_QUOTA_RESCAN_WAIT
-> >> (causing this problem to be manifested on boot for some machines).
-> >>
-> >> Cc: <stable@vger.kernel.org> # v3.11+
-> >> Cc: Jeff Mahoney <jeffm@suse.com>
-> >> Fixes: b382a324b60f ("Btrfs: fix qgroup rescan resume on mount")
-> >> Signed-off-by: Aleksa Sarai <asarai@suse.de>
-> > 
-> > Indeed, looking at the code it seems that b382a324b60f ("Btrfs: fix
-> > qgroup rescan resume on mount") missed adding the qgroup_rescan_resume
-> > in the remount path. One thing which I couldn't verify though is whether
-> > reading fs_info->qgroup_flags without any locking is safe from remount
-> > context.
-> > 
-> > During remount I don't see any locks taken that prevent operations which
-> > can modify qgroup_flags.
-> 
-> Further inspection reveals that the access rules to qgroup_flags are
-> somewhat broken so this patch doesn't really make things any worse than
-> they are.
+This patchset can be fetched from github:
+https://github.com/littleroad/linux.git dedupe_20170712
 
-The usage follows a pattern for a bitfield, updated by set_bit/clear_bit
-etc. The updates to the state or inconsistency is not safe, so some
-updates could get lost under some circumstances.
+This is just a normal rebase update.
+Now the new base is kdave/for-4.13-part1
 
-Patch added to devel queue, possibly will be submitted to 4.13 so stable
-can pick it.
+Normal test cases from auto group exposes no regression, and ib-dedupe
+group can pass without problem.
+
+Changelog:
+v2:
+  Totally reworked to handle multiple backends
+v3:
+  Fix a stupid but deadly on-disk backend bug
+  Add handle for multiple hash on same bytenr corner case to fix abort
+  trans error
+  Increase dedup rate by enhancing delayed ref handler for both backend.
+  Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+  Increase dedup block size up limit to 8M.
+v4:
+  Add dedup prop for disabling dedup for given files/dirs.
+  Merge inmem_search() and ondisk_search() into generic_search() to save
+  some code
+  Fix another delayed_ref related bug.
+  Use the same mutex for both inmem and ondisk backend.
+  Move dedup_add() back to btrfs_finish_ordered_io() to increase dedup
+  rate.
+v5:
+  Reuse compress routine for much simpler dedup function.
+  Slightly improved performance due to above modification.
+  Fix race between dedup enable/disable
+  Fix for false ENOSPC report
+v6:
+  Further enable/disable race window fix.
+  Minor format change according to checkpatch.
+v7:
+  Fix one concurrency bug with balance.
+  Slightly modify return value from -EINVAL to -EOPNOTSUPP for
+  btrfs_dedup_ioctl() to allow progs to distinguish unsupported commands
+  and wrong parameter.
+  Rebased to integration-4.6.
+v8:
+  Rename 'dedup' to 'dedupe'.
+  Add support to allow dedupe and compression work at the same time.
+  Fix several balance related bugs. Special thanks to Satoru Takeuchi,
+  who exposed most of them.
+  Small dedupe hit case performance improvement.
+v9:
+  Re-order the patchset to completely separate pure in-memory and any
+  on-disk format change.
+  Fold bug fixes into its original patch.
+v10:
+  Adding back missing bug fix patch.
+  Reduce on-disk item size.
+  Hide dedupe ioctl under CONFIG_BTRFS_DEBUG.
+v11:
+  Remove other backend and props support to focus on the framework and
+  in-memory backend. Suggested by David.
+  Better disable and buffered write race protection.
+  Comprehensive fix to dedupe metadata ENOSPC problem.
+v12:
+  Stateful 'enable' ioctl and new 'reconf' ioctl
+  New FORCE flag for enable ioctl to allow stateless ioctl
+  Precise error report and extendable ioctl structure.
+v12.1
+  Rebase to David's for-next-20160704 branch
+  Add co-ordinate patch for subpage and dedupe patchset. 
+v12.2
+  Rebase to David's for-next-20160715 branch
+  Add co-ordinate patch for other patchset.
+v13
+  Rebase to David's for-next-20160906 branch
+  Fix a reserved space leak bug, which only frees quota reserved space
+  but not space_info->byte_may_use.
+v13.1
+  Rebase to Chris' for-linux-4.9 branch
+v14
+  Use generic ENOSPC fix for both compression and dedupe.
+v14.1
+  Further split ENOSPC fix.
+v14.2
+  Rebase to v4.11-rc2.
+  Co-operate with count_max_extent() to calculate num_extents.
+  No longer rely on qgroup fixes.
+v14.3
+  Rbease to v4.12-rc1
+v14.4
+  Rbease to kdave/for-4.13-part1
+
+Qu Wenruo (4):
+  btrfs: delayed-ref: Add support for increasing data ref under spinlock
+  btrfs: dedupe: Inband in-memory only de-duplication implement
+  btrfs: relocation: Enhance error handling to avoid BUG_ON
+  btrfs: dedupe: Introduce new reconfigure ioctl
+
+Wang Xiaoguang (11):
+  btrfs: improve inode's outstanding_extents computation
+  btrfs: introduce type based delalloc metadata reserve
+  btrfs: Introduce COMPRESS reserve type to fix false enospc for
+    compression
+  btrfs: dedupe: Introduce dedupe framework and its header
+  btrfs: dedupe: Introduce function to initialize dedupe info
+  btrfs: dedupe: Introduce function to add hash into in-memory tree
+  btrfs: dedupe: Introduce function to remove hash from in-memory tree
+  btrfs: dedupe: Introduce function to search for an existing hash
+  btrfs: dedupe: Implement btrfs_dedupe_calc_hash interface
+  btrfs: ordered-extent: Add support for dedupe
+  btrfs: dedupe: Add ioctl for inband dedupelication
+
+ fs/btrfs/Makefile            |   2 +-
+ fs/btrfs/ctree.h             |  51 ++-
+ fs/btrfs/dedupe.c            | 821 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedupe.h            | 184 +++++++++-
+ fs/btrfs/delayed-ref.c       |  35 +-
+ fs/btrfs/delayed-ref.h       |  10 +
+ fs/btrfs/disk-io.c           |   4 +
+ fs/btrfs/extent-tree.c       |  67 +++-
+ fs/btrfs/extent_io.c         |  63 +++-
+ fs/btrfs/extent_io.h         |   6 +
+ fs/btrfs/file.c              |  26 +-
+ fs/btrfs/free-space-cache.c  |   5 +-
+ fs/btrfs/inode-map.c         |   6 +-
+ fs/btrfs/inode.c             | 532 +++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c             |  99 +++++-
+ fs/btrfs/ordered-data.c      |  46 ++-
+ fs/btrfs/ordered-data.h      |  13 +
+ fs/btrfs/relocation.c        |  52 ++-
+ fs/btrfs/sysfs.c             |   2 +
+ fs/btrfs/tests/inode-tests.c |  15 +-
+ include/uapi/linux/btrfs.h   |  55 +++
+ 21 files changed, 1940 insertions(+), 154 deletions(-)
+ create mode 100644 fs/btrfs/dedupe.c
+
+-- 
+2.13.2
+
+
+

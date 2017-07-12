@@ -1,60 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34632 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751871AbdGLSrb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2017 14:47:31 -0400
-Date: Wed, 12 Jul 2017 11:46:29 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: report errors when checksum is not found
-Message-ID: <20170712174628.GB4268@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170711204316.11283-1-bo.li.liu@oracle.com>
- <20170712144036.GC2866@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:40782 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751004AbdGLWRy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Jul 2017 18:17:54 -0400
+Date: Thu, 13 Jul 2017 00:16:40 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: fix the path use full_path as provided by
+ the root info
+Message-ID: <20170712221640.GO2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170712072027.2459-1-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170712144036.GC2866@twin.jikos.cz>
+In-Reply-To: <20170712072027.2459-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 12, 2017 at 04:40:36PM +0200, David Sterba wrote:
-> On Tue, Jul 11, 2017 at 02:43:16PM -0600, Liu Bo wrote:
-> > When btrfs fails the checksum check, it'll fill the whole page with
-> > "1".
+On Wed, Jul 12, 2017 at 03:20:27PM +0800, Anand Jain wrote:
+> This is a kind of preparatory patch for the patch which will add
+> --rootid and --uuid options for the btrfs subvol show command.
 > 
-> One could ask, why is the page filled with 1s. Brought by commit
-> 07157aacb1ecd394a54949 from 2007, without mentioning any justification.
-> I'm more inclined to revisit this behaviour and drop it eventually.
+> As of now btrfs subvol show is using the external user provided subvol
+> path to show in the output. Which is kind of confusing.
 > 
-> > However, if %csum_expected is 0 (which means there is no checksum), then
-> > for some unknown reason, we just pretend that the read is correct, so
-> > userspace would be confused about the dilemma that read is successful but
-> > getting a page with all content being "1".
+> btrfs su show /btrfs
+> /btrfs <--
+> 	Name: 			<FS_TREE>
 > 
-> Here 'no checksum' means that no checksum was found but was expected,
-> right?
-
-Yes, no checksum was found.
-
-> An EIO would fail the read, I don't see a reason why the page
-> needs to be "zeroed". The contents would be inaccessible anyway.
->
-
-Right, resetting page's content is needed when we return 0 instead of
--EIO.  I guess it was introduced for testing.  So yes, I'm glad to
-remove that part, will do in a v2.
-
-> > This can happen due to a bug in btrfs-convert.
-> > 
-> > This fixes it by always returning errors if checksum doesn't match.
+> It will be even more confusing when proposed --uuid or --rootid
+> options are used.
 > 
-> Independent of the above, this fix makes sense.
+> btrfs su show --rootid 258 /btrfs
+> /btrfs <--
+> 	Name: 			snap <--
+> 	UUID: 			9630a45f-e647-4242-bd19-97590b4e20b2
+> 	Parent UUID: 		30129358-c69d-3e4a-a662-29509cc69c95
+> 	Received UUID: 		-
+> 	Creation time: 		2017-07-12 12:43:28 +0800
+> 	Subvolume ID: 		258
+> 	Generation: 		9
+> 	Gen at creation: 	9
+> 	Parent ID: 		257
+> 	Top level ID: 		257
+> 	Flags: 			-
+> 	Snapshot(s):
 > 
-> Reviewed-by: David Sterba <dsterba@suse.com>
+> Now with this patch, it will only show what is provided by the root_info.
+> 
+> btrfs su show --rootid 258 /btrfs
+> sv1/snap <--
+> 	Name: 			snap
+> 	UUID: 			9630a45f-e647-4242-bd19-97590b4e20b2
+> 	Parent UUID: 		30129358-c69d-3e4a-a662-29509cc69c95
+> 	Received UUID: 		-
+> 	Creation time: 		2017-07-12 12:43:28 +0800
+> 	Subvolume ID: 		258
+> 	Generation: 		9
+> 	Gen at creation: 	9
+> 	Parent ID: 		257
+> 	Top level ID: 		257
+> 	Flags: 			-
+> 	Snapshot(s):
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Thank you for the comments.
-
-Thanks,
-
--liubo
+Applied, thanks.

@@ -1,25 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from demfloro.ru ([188.166.0.225]:60326 "EHLO demfloro.ru"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754225AbdGJSpK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Jul 2017 14:45:10 -0400
-Date: Mon, 10 Jul 2017 21:11:50 +0300
-From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+Received: from mx2.suse.de ([195.135.220.15]:34800 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752617AbdGLPZd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 12 Jul 2017 11:25:33 -0400
+Date: Wed, 12 Jul 2017 17:24:19 +0200
+From: David Sterba <dsterba@suse.cz>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>, <ahferroin7@gmail.com>,
-        <kilobyte@angband.pl>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, ahferroin7@gmail.com,
+        kilobyte@angband.pl, demfloro@demfloro.ru
 Subject: Re: [PATCH v4 0/6] Chunk level degradable check
-Message-ID: <20170710211150.7210ac36@fire>
-In-Reply-To: <20170628054335.18806-1-quwenruo@cn.fujitsu.com>
+Message-ID: <20170712152419.GH2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170628054335.18806-1-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170628054335.18806-1-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 28 Jun 2017 13:43:29 +0800
-Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-
+On Wed, Jun 28, 2017 at 01:43:29PM +0800, Qu Wenruo wrote:
 > The patchset can be fetched from my github repo:
 > https://github.com/adam900710/linux/tree/degradable
 > 
@@ -42,57 +41,9 @@ Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >  # mkfs.btrfs -f -m raid1 -d sing /dev/sdb /dev/sdc
 >  # wipefs -f /dev/sdc
 >  # mount /dev/sdb -o degraded,rw
-> 
-> If using btrfs-debug-tree to check /dev/sdb, one should find that the
-> data chunk is only in sdb, so in fact it should allow degraded mount.
-> 
-> This patchset will introduce a new per-chunk degradable check for
-> btrfs, allow above case to succeed, and it's quite small anyway.
-> 
-> And enhance kernel error message for missing device, at least user
-> can know what's making mount failed, other than meaningless
-> "failed to read system chunk/chunk tree -5".
-> 
-> v2:
->   Update after almost 2 years.
->   Add the last patch to enhance the kernel output, so user can know
->   it's missing devices that prevents btrfs to be mounted.
-> v3:
->   Remove one duplicated missing device output
->   Use the advice from Anand Jain, not to add new members in
-> btrfs_device, but use a new structure extra_rw_degrade_errors, to
-> record error when sending down/waiting device.
-> v3.1:
->   Reduce the critical section in btrfs_check_rw_degradable(), follow
-> other caller to only acquire the lock when searching, as extent_map
-> has refcount to avoid concurrency already.
->   The modification itself won't affect the behavior, so tested-by
-> tags are added to each patch.
-> v4:
->   Thanks Anand for this dev flush work, which makes us more easier to
->   detect flush error in previous transaction.
->   Now this patchset won't need to alloc memory, and can just use
->   btrfs_device->last_flush_error to check if last flush finished
->   correctly.
->   New rebase, so old tested by tags are all removed, sorry guys.
-> 
-> Qu Wenruo (6):
->   btrfs: Introduce a function to check if all chunks a OK for degraded
->     rw mount
->   btrfs: Do chunk level rw degrade check at mount time
->   btrfs: Do chunk level degradation check for remount
->   btrfs: Allow barrier_all_devices to do chunk level device check
->   btrfs: Cleanup num_tolerated_disk_barrier_failures
->   btrfs: Enhance missing device kernel message
-> 
->  fs/btrfs/ctree.h   |  2 --
->  fs/btrfs/disk-io.c | 81 ++++----------------------------------------
->  fs/btrfs/disk-io.h |  2 --
->  fs/btrfs/super.c   |  3 +-
->  fs/btrfs/volumes.c | 99
-> +++++++++++++++++++++++++++++++++++++++++-------------
-> fs/btrfs/volumes.h |  3 ++ 6 files changed, 85 insertions(+), 105
-> deletions(-)
-> 
 
-Tested on top of current mainline master (commit af3c8d98508d37541d4bf57f13a984a7f73a328c). Didn't find any regressions.
+I've seen wider testing coverage in replies to the previous patchset
+iterations. Can we have that added to fstests?
+
+I'm going to add this patchset to the devel queue (ie. not a separate
+for-next branch anymore).

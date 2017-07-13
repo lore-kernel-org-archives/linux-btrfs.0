@@ -1,106 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40783 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59597 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751166AbdGNGzq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 02:55:46 -0400
+        id S1750966AbdGMIht (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Jul 2017 04:37:49 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 7EB15AC2F
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2017 08:37:47 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
-To: quwenruo.btrfs@gmx.com
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Remove find_raid56_stripe_len
-Date: Fri, 14 Jul 2017 09:55:41 +0300
-Message-Id: <1500015341-3154-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <adde7cae-a365-ae97-8193-92564f17d960@gmx.com>
-References: <adde7cae-a365-ae97-8193-92564f17d960@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 2/3] btrfs: Remove unused parameters from volume.c functions
+Date: Thu, 13 Jul 2017 11:37:42 +0300
+Message-Id: <1499935063-24401-3-git-send-email-nborisov@suse.com>
+In-Reply-To: <1499935063-24401-1-git-send-email-nborisov@suse.com>
+References: <1499935063-24401-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-find_raid56_stripe_len statically returns SZ_64K which equals BTRFS_STRIPE_LEN.
-It's sole caller is __btrfs_alloc_chunk and it assigns the return value to ai
-variable which is already set to BTRFS_STRIPE_LEN. So remove the function
-invocation altogether and remove the function itself. Also remove the variable
-since it's only aliasing BTRFS_STRIPE_LEN and use the define directly. Use
-the occassion to simplify the rounding down of stripe_size now that the value 
-we want it to align is a power of 2. 
+This also adjusts the respective callers in other files. Those were found with
+-Wunused-parameter.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
+ fs/btrfs/extent-tree.c | 6 ++----
+ fs/btrfs/extent_io.c   | 2 +-
+ fs/btrfs/volumes.c     | 7 ++-----
+ fs/btrfs/volumes.h     | 3 +--
+ 4 files changed, 6 insertions(+), 12 deletions(-)
 
-V2:
- * Incorporate Qu's suggestion to use round_down macro. Updated commit 
- message accordingly. 
-
- fs/btrfs/volumes.c | 27 +++++++--------------------
- 1 file changed, 7 insertions(+), 20 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f8aa512e9de5..d57f1f161fa2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5819,7 +5819,7 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
+ 	 */
+ 	u64 num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
+ 
+-	trace_btrfs_space_reservation(fs_info, "orphan", btrfs_ino(inode), 
++	trace_btrfs_space_reservation(fs_info, "orphan", btrfs_ino(inode),
+ 			num_bytes, 1);
+ 	return btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
+ }
+@@ -9948,9 +9948,7 @@ btrfs_create_block_group_cache(struct btrfs_fs_info *fs_info,
+ 
+ 	cache->sectorsize = fs_info->sectorsize;
+ 	cache->fs_info = fs_info;
+-	cache->full_stripe_len = btrfs_full_stripe_len(fs_info,
+-						       &fs_info->mapping_tree,
+-						       start);
++	cache->full_stripe_len = btrfs_full_stripe_len(fs_info, start);
+ 	set_free_space_tree_thresholds(cache);
+ 
+ 	atomic_set(&cache->count, 1);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2e6f69908303..a6a71629190e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1997,7 +1997,7 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+ 	 * read repair operation.
+ 	 */
+ 	btrfs_bio_counter_inc_blocked(fs_info);
+-	if (btrfs_is_parity_mirror(fs_info, logical, length, mirror_num)) {
++	if (btrfs_is_parity_mirror(fs_info, logical, length)) {
+ 		/*
+ 		 * Note that we don't use BTRFS_MAP_WRITE because it's supposed
+ 		 * to update all raid stripes, but here we just want to correct
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 171a8e79332f..fa779875bcfb 100644
+index 9a38cbf233a1..171a8e79332f 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4594,12 +4594,6 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
- 	return 0;
+@@ -3311,7 +3311,6 @@ static int chunk_devid_filter(struct extent_buffer *leaf,
+ /* [pstart, pend) */
+ static int chunk_drange_filter(struct extent_buffer *leaf,
+ 			       struct btrfs_chunk *chunk,
+-			       u64 chunk_offset,
+ 			       struct btrfs_balance_args *bargs)
+ {
+ 	struct btrfs_stripe *stripe;
+@@ -3438,7 +3437,7 @@ static int should_balance_chunk(struct btrfs_fs_info *fs_info,
+ 
+ 	/* drange filter, makes sense only with devid filter */
+ 	if ((bargs->flags & BTRFS_BALANCE_ARGS_DRANGE) &&
+-	    chunk_drange_filter(leaf, chunk, chunk_offset, bargs)) {
++	    chunk_drange_filter(leaf, chunk, bargs)) {
+ 		return 0;
+ 	}
+ 
+@@ -5166,7 +5165,6 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
  }
  
--static u32 find_raid56_stripe_len(u32 data_devices, u32 dev_stripe_target)
--{
--	/* TODO allow them to set a preferred stripe size */
--	return SZ_64K;
--}
--
- static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
+ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+-				    struct btrfs_mapping_tree *map_tree,
+ 				    u64 logical)
  {
- 	if (!(type & BTRFS_BLOCK_GROUP_RAID56_MASK))
-@@ -4642,7 +4636,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	u64 max_chunk_size;
- 	u64 stripe_size;
- 	u64 num_bytes;
--	u64 raid_stripe_len = BTRFS_STRIPE_LEN;
- 	int ndevs;
- 	int i;
- 	int j;
-@@ -4784,16 +4777,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	 */
- 	data_stripes = num_stripes / ncopies;
+ 	struct extent_map *em;
+@@ -5184,8 +5182,7 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+ 	return len;
+ }
  
--	if (type & BTRFS_BLOCK_GROUP_RAID5) {
--		raid_stripe_len = find_raid56_stripe_len(ndevs - 1,
--							 info->stripesize);
-+	if (type & BTRFS_BLOCK_GROUP_RAID5)
- 		data_stripes = num_stripes - 1;
--	}
--	if (type & BTRFS_BLOCK_GROUP_RAID6) {
--		raid_stripe_len = find_raid56_stripe_len(ndevs - 2,
--							 info->stripesize);
-+
-+	if (type & BTRFS_BLOCK_GROUP_RAID6)
- 		data_stripes = num_stripes - 2;
--	}
- 
- 	/*
- 	 * Use the number of data stripes to figure out how big this chunk
-@@ -4818,8 +4806,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	stripe_size = div_u64(stripe_size, dev_stripes);
- 
- 	/* align to BTRFS_STRIPE_LEN */
--	stripe_size = div64_u64(stripe_size, raid_stripe_len);
--	stripe_size *= raid_stripe_len;
-+	stripe_size = round_down(stripe_size, BTRFS_STRIPE_LEN);
- 
- 	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
- 	if (!map) {
-@@ -4837,9 +4824,9 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		}
- 	}
- 	map->sector_size = info->sectorsize;
--	map->stripe_len = raid_stripe_len;
--	map->io_align = raid_stripe_len;
--	map->io_width = raid_stripe_len;
-+	map->stripe_len = BTRFS_STRIPE_LEN;
-+	map->io_align = BTRFS_STRIPE_LEN;
-+	map->io_width = BTRFS_STRIPE_LEN;
- 	map->type = type;
- 	map->sub_stripes = sub_stripes;
- 
+-int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
+-			   u64 logical, u64 len, int mirror_num)
++int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ {
+ 	struct extent_map *em;
+ 	struct map_lookup *map;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6f45fd60d15a..706ca5c2e974 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -481,9 +481,8 @@ void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
+ 					      struct btrfs_device *tgtdev);
+ void btrfs_scratch_superblocks(struct block_device *bdev, const char *device_path);
+ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
+-			   u64 logical, u64 len, int mirror_num);
++			   u64 logical, u64 len);
+ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
+-				    struct btrfs_mapping_tree *map_tree,
+ 				    u64 logical);
+ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 				struct btrfs_fs_info *fs_info,
 -- 
 2.7.4
 

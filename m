@@ -1,107 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49479 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750846AbdGMHPh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2017 03:15:37 -0400
-Subject: Fwd: [PATCH v2] btrfs: add mount umount logs
-References: <1497518442-1078-1-git-send-email-anand.jain@oracle.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <3352043d-dbb1-0055-f50a-c91ca43aff1d@oracle.com>
-Date: Thu, 13 Jul 2017 15:22:18 +0800
+Received: from mx2.suse.de ([195.135.220.15]:35971 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751176AbdGMNZ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 13 Jul 2017 09:25:57 -0400
+Subject: Re: [PATCH] btrfs-progs: add support to sort by topid
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <20170713041642.27125-1-anand.jain@oracle.com>
+From: Jeffrey Mahoney <jeffm@suse.com>
+Message-ID: <d329b0b6-b8ab-1173-8084-0d5c31ce1981@suse.com>
+Date: Thu, 13 Jul 2017 09:25:49 -0400
 MIME-Version: 1.0
-In-Reply-To: <1497518442-1078-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20170713041642.27125-1-anand.jain@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="xlxxqI1I6qww3iV2X8jUeq6xKted8Uc2J"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--xlxxqI1I6qww3iV2X8jUeq6xKted8Uc2J
+Content-Type: multipart/mixed; boundary="3eClxgWWuXcJIGI3V1H3NUn3PiGlw3Vjr";
+ protected-headers="v1"
+From: Jeffrey Mahoney <jeffm@suse.com>
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Message-ID: <d329b0b6-b8ab-1173-8084-0d5c31ce1981@suse.com>
+Subject: Re: [PATCH] btrfs-progs: add support to sort by topid
+References: <20170713041642.27125-1-anand.jain@oracle.com>
+In-Reply-To: <20170713041642.27125-1-anand.jain@oracle.com>
 
-Hi David, Any response on this ?
+--3eClxgWWuXcJIGI3V1H3NUn3PiGlw3Vjr
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Thanks, Anand
+On 7/13/17 12:16 AM, Anand Jain wrote:
+> As users generally organize the subvols and snapshots based on the subv=
+ol
+> directory hierarchy. So providing an ability to sort them by topid woul=
+d
+> help. Thanks.
 
--------- Forwarded Message --------
-Subject: [PATCH v2] btrfs: add mount umount logs
-Date: Thu, 15 Jun 2017 17:20:42 +0800
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-CC: dsterba@suse.cz
+What is a topid?  I needed to look at the code to discover this and it's
+not even documented as part of the root_info structure.  Users are going
+to have no idea what this means.
 
-From: Anand Jain <Anand.Jain@oracle.com>
+-Jeff
 
-By looking at the logs we should be able to know when FS was
-mounted and unmounted and the options used, so to help forensic
-investigations.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-Hi David,
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  btrfs-list.c     | 18 ++++++++++++++++++
+>  btrfs-list.h     |  1 +
+>  cmds-subvolume.c |  8 ++++----
+>  3 files changed, 23 insertions(+), 4 deletions(-)
+>=20
+> diff --git a/btrfs-list.c b/btrfs-list.c
+> index 92a537f425f3..733e22bc2524 100644
+> --- a/btrfs-list.c
+> +++ b/btrfs-list.c
+> @@ -188,11 +188,28 @@ static int comp_entry_with_path(struct root_info =
+*entry1,
+>  	return is_descending ? -ret : ret;
+>  }
+> =20
+> +static int comp_entry_with_topid(struct root_info *entry1,
+> +				struct root_info *entry2,
+> +				int is_descending)
+> +{
+> +	int ret;
+> +
+> +	if (entry1->top_id > entry2->top_id)
+> +		ret =3D 1;
+> +	else if (entry1->top_id < entry2->top_id)
+> +		ret =3D -1;
+> +	else
+> +		ret =3D 0;
+> +
+> +	return is_descending ? -ret : ret;
+> +}
+> +
+>  static btrfs_list_comp_func all_comp_funcs[] =3D {
+>  	[BTRFS_LIST_COMP_ROOTID]	=3D comp_entry_with_rootid,
+>  	[BTRFS_LIST_COMP_OGEN]		=3D comp_entry_with_ogen,
+>  	[BTRFS_LIST_COMP_GEN]		=3D comp_entry_with_gen,
+>  	[BTRFS_LIST_COMP_PATH]		=3D comp_entry_with_path,
+> +	[BTRFS_LIST_COMP_TOPID]		=3D comp_entry_with_topid,
+>  };
+> =20
+>  static char *all_sort_items[] =3D {
+> @@ -200,6 +217,7 @@ static char *all_sort_items[] =3D {
+>  	[BTRFS_LIST_COMP_OGEN]		=3D "ogen",
+>  	[BTRFS_LIST_COMP_GEN]		=3D "gen",
+>  	[BTRFS_LIST_COMP_PATH]		=3D "path",
+> +	[BTRFS_LIST_COMP_TOPID]		=3D "topid",
+>  	[BTRFS_LIST_COMP_MAX]		=3D NULL,
+>  };
+> =20
+> diff --git a/btrfs-list.h b/btrfs-list.h
+> index 6e5fc7784fb1..9a3869a452a8 100644
+> --- a/btrfs-list.h
+> +++ b/btrfs-list.h
+> @@ -152,6 +152,7 @@ enum btrfs_list_comp_enum {
+>  	BTRFS_LIST_COMP_OGEN,
+>  	BTRFS_LIST_COMP_GEN,
+>  	BTRFS_LIST_COMP_PATH,
+> +	BTRFS_LIST_COMP_TOPID,
+>  	BTRFS_LIST_COMP_MAX,
+>  };
+> =20
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index de5e0da0ff48..17b680d26e86 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -416,10 +416,10 @@ static const char * const cmd_subvol_list_usage[]=
+ =3D {
+>  	"-C [+|-]value",
+>  	"             filter the subvolumes by ogeneration",
+>  	"             (+value: >=3D value; -value: <=3D value; value: =3D val=
+ue)",
+> -	"--sort=3Dgen,ogen,rootid,path",
+> -	"             list the subvolume in order of gen, ogen, rootid or pat=
+h",
+> -	"             you also can add '+' or '-' in front of each items.",
+> -	"             (+:ascending, -:descending, ascending default)",
+> +	"--sort=3Dgen,ogen,rootid,path,topid",
+> +	"             list the subvolumes in order of gen, ogen, rootid, path=
+",
+> +	"             or topid. You also can add '+' or '-' in front of each"=
+,
+> +	"             items. (+:ascending, -:descending, ascending default)",=
 
-  As you suggested VFS is definitely a better place to have this
-  and its patch is in the ML. But I am not too sure what's their
-  plan is.  So can we integrate this into BTRFS ? as we can always
-  remove it once VFS provides that feature.
+>  	NULL,
+>  };
+> =20
+>=20
 
-Thanks, Anand
 
-v2: Use ro,rw instead of rdonly and directly print it.
+--=20
+Jeff Mahoney
+SUSE Labs
 
-  fs/btrfs/super.c | 13 +++++++++++++
-  1 file changed, 13 insertions(+)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3371213924bd..2cb367a106e3 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1373,6 +1373,13 @@ static char *setup_root_args(char *args)
-  	return buf;
-  }
-  +static void print_mount_info(struct btrfs_fs_info *info, int flag, 
-char *opt,
-+		char *prefix)
-+{
-+	btrfs_notice(info, "%s: flags=%s opt=%s\n",
-+			prefix, flag & MS_RDONLY ? "ro":"rw", opt);
-+}
-+
-  static struct dentry *mount_subvol(const char *subvol_name, u64 
-subvol_objectid,
-  				   int flags, const char *device_name,
-  				   char *data)
-@@ -1467,6 +1474,8 @@ static struct dentry *mount_subvol(const char 
-*subvol_name, u64 subvol_objectid,
-  			dput(root);
-  			root = ERR_PTR(ret);
-  			deactivate_locked_super(s);
-+		} else {
-+			print_mount_info(fs_info, flags, data, "mount");
-  		}
-  	}
-  @@ -1845,6 +1854,9 @@ static int btrfs_remount(struct super_block *sb, 
-int *flags, char *data)
-  out:
-  	wake_up_process(fs_info->transaction_kthread);
-  	btrfs_remount_cleanup(fs_info, old_opts);
-+
-+	print_mount_info(fs_info, *flags, data, "remount");
-+
-  	return 0;
-   restore:
-@@ -2174,6 +2186,7 @@ static int btrfs_statfs(struct dentry *dentry, 
-struct kstatfs *buf)
-  static void btrfs_kill_super(struct super_block *sb)
-  {
-  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-+	btrfs_notice(fs_info, "%s\n", "unmount");
-  	kill_anon_super(sb);
-  	free_fs_info(fs_info);
-  }
--- 
-2.7.0
+--3eClxgWWuXcJIGI3V1H3NUn3PiGlw3Vjr--
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--xlxxqI1I6qww3iV2X8jUeq6xKted8Uc2J
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2
+
+iQIVAwUBWWd04R57S2MheeWyAQi5CA//ZXxzyz+JDJvo7yI3vuB6XPlZvtoz3bc8
+YD9DAq7IvdKFc7jXLyYGVWIGF0ExMXN4cGkMjASCKo0VTe/x62ZMxE2uHE3Xjt60
+epWooS/vvcozX51Wrg/56GP9UIV8hjeAGBFx/XfVB7Ystj9IkH9UXdBw3HMiWMOL
+sruBfFpIrRwf7vEA2uXMVOnunpvlzKTiDsio4aQB0n/vnXUvX4tqNAAMpbPT8UbX
+YqxDKT2KCV1YVwdxBmB5Eboj/XVFwbKrVPVe/MUmhsuTs8yOcdbmkZLLBuKrhxsj
+RGhUPTrFbqi81yarJDCaz8sq69wjn2mXTUcEKWk0hk150ApgT7CmqNTrkNMH+ja5
+ArOBgwxNCVAMf4XzoPQZRwduGGXBVQ61r1R8p8NAV7pBbn7ifjSmwPic3wpdJT7q
+NGubTHGRXuzEabASA0eTEw0N+RPqomD0NjOK8KFfdd4yWJslabdl8jvZO/RzOtVh
+ys7inSTNm2rX7+qtSWAXDc+APRy5VGVFf9cfvkVsVKAmZhkMJTBPLHi94VMCeZkV
+rJzVcAXsKelN/pxjE9HIW+Bg7uqLhk1bsQSqE5GfIQxSgS6LsZgyojqwp25yHQ6L
+VCgdIoLZnbseOPAaFb4mxoE6nuX1VV8HWY2KmtLiy4Cn5XlEjfFRJnDoqTHlVmtT
+42M3PFn8U30=
+=Ft3n
+-----END PGP SIGNATURE-----
+
+--xlxxqI1I6qww3iV2X8jUeq6xKted8Uc2J--

@@ -1,200 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:56129 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750748AbdGMGkQ (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:49479 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750846AbdGMHPh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2017 02:40:16 -0400
-Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1dVXnI-0002Qd-7P
-        for linux-btrfs@vger.kernel.org; Thu, 13 Jul 2017 08:40:12 +0200
-Date: Thu, 13 Jul 2017 08:40:12 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: degraded raid scribbling upon wrong device
-Message-ID: <20170713064011.gweixjxdrq3gjc23@angband.pl>
+        Thu, 13 Jul 2017 03:15:37 -0400
+Subject: Fwd: [PATCH v2] btrfs: add mount umount logs
+References: <1497518442-1078-1-git-send-email-anand.jain@oracle.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <3352043d-dbb1-0055-f50a-c91ca43aff1d@oracle.com>
+Date: Thu, 13 Jul 2017 15:22:18 +0800
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="qgpg6w7rpaeebbus"
+In-Reply-To: <1497518442-1078-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---qgpg6w7rpaeebbus
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
+Hi David, Any response on this ?
 
-Hi!
-Here's a set of test cases, two of them in some cases seem to scribble upon
-the wrong device:
+Thanks, Anand
 
-* deg-mid-missing
-* deg-last-replaced (not on the innocent "re")
-* but never deg-last-missing
+-------- Forwarded Message --------
+Subject: [PATCH v2] btrfs: add mount umount logs
+Date: Thu, 15 Jun 2017 17:20:42 +0800
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+CC: dsterba@suse.cz
 
-When all goes ok, there are no errors other than wrong generation on the
-re-added disk (expected).   When it goes bad, there's a lot of corruption.
-In all cases, though, the "Device missing:" field is wrong.
+From: Anand Jain <Anand.Jain@oracle.com>
 
-I'm not yet sure how to trigger this, perhaps someone would have a clue?
+By looking at the logs we should be able to know when FS was
+mounted and unmounted and the options used, so to help forensic
+investigations.
 
-8:30am, hitting the sack, will try again todorrow.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+Hi David,
 
+  As you suggested VFS is definitely a better place to have this
+  and its patch is in the ML. But I am not too sure what's their
+  plan is.  So can we integrate this into BTRFS ? as we can always
+  remove it once VFS provides that feature.
 
-Meow!
+Thanks, Anand
+
+v2: Use ro,rw instead of rdonly and directly print it.
+
+  fs/btrfs/super.c | 13 +++++++++++++
+  1 file changed, 13 insertions(+)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 3371213924bd..2cb367a106e3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1373,6 +1373,13 @@ static char *setup_root_args(char *args)
+  	return buf;
+  }
+  +static void print_mount_info(struct btrfs_fs_info *info, int flag, 
+char *opt,
++		char *prefix)
++{
++	btrfs_notice(info, "%s: flags=%s opt=%s\n",
++			prefix, flag & MS_RDONLY ? "ro":"rw", opt);
++}
++
+  static struct dentry *mount_subvol(const char *subvol_name, u64 
+subvol_objectid,
+  				   int flags, const char *device_name,
+  				   char *data)
+@@ -1467,6 +1474,8 @@ static struct dentry *mount_subvol(const char 
+*subvol_name, u64 subvol_objectid,
+  			dput(root);
+  			root = ERR_PTR(ret);
+  			deactivate_locked_super(s);
++		} else {
++			print_mount_info(fs_info, flags, data, "mount");
+  		}
+  	}
+  @@ -1845,6 +1854,9 @@ static int btrfs_remount(struct super_block *sb, 
+int *flags, char *data)
+  out:
+  	wake_up_process(fs_info->transaction_kthread);
+  	btrfs_remount_cleanup(fs_info, old_opts);
++
++	print_mount_info(fs_info, *flags, data, "remount");
++
+  	return 0;
+   restore:
+@@ -2174,6 +2186,7 @@ static int btrfs_statfs(struct dentry *dentry, 
+struct kstatfs *buf)
+  static void btrfs_kill_super(struct super_block *sb)
+  {
+  	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
++	btrfs_notice(fs_info, "%s\n", "unmount");
+  	kill_anon_super(sb);
+  	free_fs_info(fs_info);
+  }
 -- 
-⢀⣴⠾⠻⢶⣦⠀ 
-⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
-⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
-⠈⠳⣄⠀⠀⠀⠀ A master species delegates.
+2.7.0
 
---qgpg6w7rpaeebbus
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename=deg-mid-missing
-
-#!/bin/sh
-set -e
-set -x
-
-umount /mnt/vol1 ||:
-losetup -D
-
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=ra
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rb
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rc
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rd
-
-mkfs.btrfs -draid1 -mraid1 ra rb rc rd
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f rd
-sleep 1
-mount /dev/loop0 /mnt/vol1
-cp -pr /bin /mnt/vol1
-btrfs fi sync /mnt/vol1
-btrfs fi us /mnt/vol1
-umount /mnt/vol1
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rd
-sleep 1
-mount -odegraded /dev/loop0 /mnt/vol1
-btrfs fi us /mnt/vol1
-dd if=/dev/zero of=/mnt/vol1/foo bs=1048576 count=2222
-umount /mnt/vol1
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f rd
-sleep 1
-mount /dev/loop0 /mnt/vol1
-btrfs scrub start -B /mnt/vol1
-
---qgpg6w7rpaeebbus
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename=deg-last-missing
-
-#!/bin/sh
-set -e
-set -x
-
-umount /mnt/vol1 ||:
-losetup -D
-
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=ra
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rb
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rc
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rd
-
-mkfs.btrfs -draid1 -mraid1 ra rb rc rd
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f rd
-sleep 1
-mount /dev/loop0 /mnt/vol1
-cp -pr /bin /mnt/vol1
-btrfs fi sync /mnt/vol1
-btrfs fi us /mnt/vol1
-umount /mnt/vol1
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-sleep 1
-mount -odegraded /dev/loop0 /mnt/vol1
-btrfs fi us /mnt/vol1
-dd if=/dev/zero of=/mnt/vol1/foo bs=1048576 count=2222
-umount /mnt/vol1
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f rd
-sleep 1
-mount /dev/loop0 /mnt/vol1
-btrfs scrub start -B /mnt/vol1
-
---qgpg6w7rpaeebbus
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename=deg-last-replaced
-
-#!/bin/sh
-set -e
-set -x
-
-umount /mnt/vol1 ||:
-losetup -D
-
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=ra
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rb
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rc
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=rd
-dd if=/dev/zero bs=1048576 count=1 seek=4095 of=re
-
-mkfs.btrfs -draid1 -mraid1 ra rb rc rd
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f rd
-sleep 1
-mount /dev/loop0 /mnt/vol1
-cp -pr /bin /mnt/vol1
-btrfs fi sync /mnt/vol1
-btrfs fi us /mnt/vol1
-umount /mnt/vol1
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f re
-sleep 1
-mount -odegraded /dev/loop0 /mnt/vol1
-btrfs fi us /mnt/vol1
-dd if=/dev/zero of=/mnt/vol1/foo bs=1048576 count=2222
-umount /mnt/vol1
-
-losetup -D
-losetup -f ra
-losetup -f rb
-losetup -f rc
-losetup -f rd
-sleep 1
-mount /dev/loop0 /mnt/vol1
-btrfs scrub start -B /mnt/vol1
-
---qgpg6w7rpaeebbus--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

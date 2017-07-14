@@ -1,41 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57721 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753762AbdGSR54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jul 2017 13:57:56 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B9BA2AC6B
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jul 2017 17:57:55 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: account that we're waiting for IO in scrub_submit_raid56_bio_wait
-Date: Wed, 19 Jul 2017 19:56:40 +0200
-Message-Id: <20170719175640.1820-1-dsterba@suse.com>
+Received: from mail-pg0-f45.google.com ([74.125.83.45]:35141 "EHLO
+        mail-pg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751012AbdGNVgr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Jul 2017 17:36:47 -0400
+Received: by mail-pg0-f45.google.com with SMTP id j186so51099777pge.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 14:36:47 -0700 (PDT)
+Date: Fri, 14 Jul 2017 14:36:45 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org, Jeff Mahoney <jeffm@suse.com>,
+        Nikolay Borisov <nborisov@suse.com>
+Cc: kernel-team@fb.com
+Subject: Re: [PATCH] Btrfs: fix early ENOSPC due to delalloc
+Message-ID: <20170714213645.GC13690@vader.DHCP.thefacebook.com>
+References: <0cf8577381f6ebe99b584ca60f920c630000c343.1499407060.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <0cf8577381f6ebe99b584ca60f920c630000c343.1499407060.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Correctly account for IO when waiting for a submitted bio in scrub. This
-only for the accounting purposes and should not change other behaviour.
+On Thu, Jul 06, 2017 at 10:59:27PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> If a lot of metadata is reserved for outstanding delayed allocations, we
+> rely on shrink_delalloc() to reclaim metadata space in order to fulfill
+> reservation tickets. However, shrink_delalloc() has a shortcut where if
+> it determines that space can be overcommitted, it will stop early. This
+> made sense before the ticketed enospc system, but now it means that
+> shrink_delalloc() will often not reclaim enough space to fulfill any
+> tickets, leading to an early ENOSPC. (Reservation tickets don't care
+> about being able to overcommit, they need every byte accounted for.)
+> 
+> Fix it by getting rid of the shortcut so that shrink_delalloc() reclaims
+> all of the metadata it is supposed to. This fixes early ENOSPCs we were
+> seeing when doing a btrfs receive to populate a new filesystem.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Jeff, Nikolay, did either of you get a chance to test this yet?
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 0cebeb5eb5d0..0e6daf0582a1 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1704,7 +1704,7 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
- 	if (ret)
- 		return ret;
- 
--	wait_for_completion(&done.event);
-+	wait_for_completion_io(&done.event);
- 	if (done.error)
- 		return -EIO;
- 
--- 
-2.13.0
-
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+> I don't have a good reproducer for this except for the btrfs send stream
+> I was given by someone internally, unfortunately.
+> 
+>  fs/btrfs/extent-tree.c | 4 ----
+>  1 file changed, 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 33d979e9ea2a..83eecd33ad96 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4776,10 +4776,6 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+>  		else
+>  			flush = BTRFS_RESERVE_NO_FLUSH;
+>  		spin_lock(&space_info->lock);
+> -		if (can_overcommit(root, space_info, orig, flush)) {
+> -			spin_unlock(&space_info->lock);
+> -			break;
+> -		}
+>  		if (list_empty(&space_info->tickets) &&
+>  		    list_empty(&space_info->priority_tickets)) {
+>  			spin_unlock(&space_info->lock);
+> -- 
+> 2.13.2
+> 

@@ -1,41 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51085 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753495AbdGNQcs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 12:32:48 -0400
-Date: Fri, 14 Jul 2017 09:30:07 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix unexpected return value of bio_readpage_error
-Message-ID: <20170714163007.GA10708@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170713220050.22720-1-bo.li.liu@oracle.com>
- <20170714123209.GG2866@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170714123209.GG2866@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:33604 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751112AbdGNURo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Jul 2017 16:17:44 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs for 4.13, part 2
+Date: Fri, 14 Jul 2017 22:16:12 +0200
+Message-Id: <cover.1500058584.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 14, 2017 at 02:32:09PM +0200, David Sterba wrote:
-> On Thu, Jul 13, 2017 at 03:00:50PM -0700, Liu Bo wrote:
-> > With blk_status_t, in bio_readpage_error() may return 1 as now
-> > ->submit_bio_hook() may not set %ret if it runs without problem.
-> 
-> Huh, that is pretty subtle, good catch. Also it's good the patch can be
-> applied independent of the blk_status_t changes, so I don't need to do 2
-> branches and pull requests.
->
+Hi,
 
-Thanks to the ASSERT(ret == -EIO) in end_bio_extent_readpage() ;)
+we've identified and fixed a silent corruption (introduced by code in the
+first pull), a fixup after the blk_status_t merge and two fixes to incremental
+send that Filipe has been hunting for some time. Please pull, thanks.
 
-thanks,
--liubo
+----------------------------------------------------------------
+The following changes since commit 848c23b78fafdcd3270b06a30737f8dbd70c347f:
 
-> > This fixes that unexpected return value by changing
-> > btrfs_check_repairable() to return a bool instead of updating %ret.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Reviewed-by: David Sterba <dsterba@suse.com>
+  btrfs: Remove false alert when fiemap range is smaller than on-disk extent (2017-06-29 20:25:20 +0200)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-part2
+
+for you to fetch changes up to c3cfb656307583ddfea45375c10183737593c195:
+
+  Btrfs: fix unexpected return value of bio_readpage_error (2017-07-14 20:42:37 +0200)
+
+----------------------------------------------------------------
+David Sterba (3):
+      Merge branch 'next/filipe' into for-4.13-part2
+      btrfs: cloned bios must not be iterated by bio_for_each_segment_all
+      btrfs: btrfs_create_repair_bio never fails, skip error handling
+
+Filipe Manana (3):
+      Btrfs: incremental send, fix invalid path for link commands
+      Btrfs: incremental send, fix invalid memory access
+      Btrfs: fix write corruption due to bio cloning on raid5/6
+
+Liu Bo (1):
+      Btrfs: fix unexpected return value of bio_readpage_error
+
+ fs/btrfs/compression.c |  1 +
+ fs/btrfs/disk-io.c     |  1 +
+ fs/btrfs/extent_io.c   | 19 ++++++-----
+ fs/btrfs/extent_io.h   |  4 +--
+ fs/btrfs/inode.c       |  6 ++--
+ fs/btrfs/raid56.c      | 26 ++++++++++-----
+ fs/btrfs/send.c        | 88 +++++++++++++++++++++++++++++++-------------------
+ 7 files changed, 88 insertions(+), 57 deletions(-)

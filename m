@@ -1,258 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47909 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753522AbdGNQ7E (ORCPT
+Received: from mail-it0-f49.google.com ([209.85.214.49]:34913 "EHLO
+        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751038AbdGNGxL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 12:59:04 -0400
-Date: Fri, 14 Jul 2017 09:56:18 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix write corruption due to bio cloning on raid5/6
-Message-ID: <20170714165618.GB10708@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170713140954.2243-1-fdmanana@kernel.org>
- <20170713163619.GB12913@lim.localdomain>
- <20170713223859.GC6181@lim.localdomain>
- <CAL3q7H5YegTE=EmP4N431pe5YsNGoHjCPbKW92KJ13E4XxTHNg@mail.gmail.com>
+        Fri, 14 Jul 2017 02:53:11 -0400
+Received: by mail-it0-f49.google.com with SMTP id v202so13520674itb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2017 23:53:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H5YegTE=EmP4N431pe5YsNGoHjCPbKW92KJ13E4XxTHNg@mail.gmail.com>
+In-Reply-To: <20170713164359.GE12913@lim.localdomain>
+References: <CAK78SMnGpVx5dEOGnq75fSgfKnKbVr3FPEfAKecfVbHZ0F8+Uw@mail.gmail.com>
+ <20170713164359.GE12913@lim.localdomain>
+From: =?UTF-8?B?QWxla3NhbmRhciDEjGVrcmxpxIc=?= <pathlidge.ann@gmail.com>
+Date: Fri, 14 Jul 2017 08:53:09 +0200
+Message-ID: <CAK78SM=fmRexVaZtf3WArDirMc+joc8b=VCer=qLAFfmQ2Wp+A@mail.gmail.com>
+Subject: Re: BTRFS file I/O with O_DIRECT
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 14, 2017 at 10:04:34AM +0100, Filipe Manana wrote:
-> On Thu, Jul 13, 2017 at 11:38 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > On Thu, Jul 13, 2017 at 09:36:19AM -0700, Liu Bo wrote:
-> >> On Thu, Jul 13, 2017 at 03:09:54PM +0100, fdmanana@kernel.org wrote:
-> >> > From: Filipe Manana <fdmanana@suse.com>
-> >> >
-> >> > The recent changes to make bio cloning faster (added in the 4.13 merge
-> >> > window) by using the bio_clone_fast() API introduced a regression on
-> >> > raid5/6 modes, because cloned bios have an invalid bi_vcnt field
-> >> > (therefore it can not be used) and the raid5/6 code uses the
-> >> > bio_for_each_segment_all() API to iterate the segments of a bio, and this
-> >> > API uses a bio's bi_vcnt field.
-> >> >
-> >> > The issue is very simple to trigger by doing for example a direct IO write
-> >> > against a raid5 or raid6 filesystem and then attempting to read what we
-> >> > wrote before:
-> >> >
-> >> >   $ mkfs.btrfs -m raid5 -d raid5 -f /dev/sdc /dev/sdd /dev/sde /dev/sdf
-> >> >   $ mount /dev/sdc /mnt
-> >> >   $ xfs_io -f -d -c "pwrite -S 0xab 0 1M" /mnt/foobar
-> >> >   $ od -t x1 /mnt/foobar
-> >> >   od: /mnt/foobar: read error: Input/output error
-> >> >
-> >> > For that example, the following is also reported in dmesg/syslog:
-> >> >
-> >> >   [18274.985557] btrfs_print_data_csum_error: 18 callbacks suppressed
-> >> >   [18274.995277] BTRFS warning (device sdf): csum failed root 5 ino 257 off 0 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18274.997205] BTRFS warning (device sdf): csum failed root 5 ino 257 off 4096 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18275.025221] BTRFS warning (device sdf): csum failed root 5 ino 257 off 8192 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18275.047422] BTRFS warning (device sdf): csum failed root 5 ino 257 off 12288 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18275.054818] BTRFS warning (device sdf): csum failed root 5 ino 257 off 4096 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18275.054834] BTRFS warning (device sdf): csum failed root 5 ino 257 off 8192 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18275.054943] BTRFS warning (device sdf): csum failed root 5 ino 257 off 8192 csum 0x98f94189 expected csum 0x94374193 mirror 2
-> >> >   [18275.055207] BTRFS warning (device sdf): csum failed root 5 ino 257 off 8192 csum 0x98f94189 expected csum 0x94374193 mirror 3
-> >> >   [18275.055571] BTRFS warning (device sdf): csum failed root 5 ino 257 off 0 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >   [18275.062171] BTRFS warning (device sdf): csum failed root 5 ino 257 off 12288 csum 0x98f94189 expected csum 0x94374193 mirror 1
-> >> >
-> >> > A scrub will also fail correcting bad copies, mentioning the following in
-> >> > dmesg/syslog:
-> >> >
-> >> >   [18276.128696] scrub_handle_errored_block: 498 callbacks suppressed
-> >> >   [18276.129617] BTRFS warning (device sdf): checksum error at logical 2186346496 on dev /dev/sde, sector 2116608, root 5, inode 257, offset 65536, length 4096, links $
-> >> >   [18276.149235] btrfs_dev_stat_print_on_error: 498 callbacks suppressed
-> >> >   [18276.157897] BTRFS error (device sdf): bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-> >> >   [18276.206059] BTRFS warning (device sdf): checksum error at logical 2186477568 on dev /dev/sdd, sector 2116736, root 5, inode 257, offset 196608, length 4096, links$
-> >> >   [18276.206059] BTRFS error (device sdf): bdev /dev/sdd errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-> >> >   [18276.306552] BTRFS warning (device sdf): checksum error at logical 2186543104 on dev /dev/sdd, sector 2116864, root 5, inode 257, offset 262144, length 4096, links$
-> >> >   [18276.319152] BTRFS error (device sdf): bdev /dev/sdd errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-> >> >   [18276.394316] BTRFS warning (device sdf): checksum error at logical 2186739712 on dev /dev/sdf, sector 2116992, root 5, inode 257, offset 458752, length 4096, links$
-> >> >   [18276.396348] BTRFS error (device sdf): bdev /dev/sdf errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-> >> >   [18276.434127] BTRFS warning (device sdf): checksum error at logical 2186870784 on dev /dev/sde, sector 2117120, root 5, inode 257, offset 589824, length 4096, links$
-> >> >   [18276.434127] BTRFS error (device sdf): bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-> >> >   [18276.500504] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186477568 on dev /dev/sdd
-> >> >   [18276.538400] BTRFS warning (device sdf): checksum error at logical 2186481664 on dev /dev/sdd, sector 2116744, root 5, inode 257, offset 200704, length 4096, links$
-> >> >   [18276.540452] BTRFS error (device sdf): bdev /dev/sdd errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
-> >> >   [18276.542012] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186481664 on dev /dev/sdd
-> >> >   [18276.585030] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186346496 on dev /dev/sde
-> >> >   [18276.598306] BTRFS warning (device sdf): checksum error at logical 2186412032 on dev /dev/sde, sector 2116736, root 5, inode 257, offset 131072, length 4096, links$
-> >> >   [18276.598310] BTRFS error (device sdf): bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
-> >> >   [18276.598582] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186350592 on dev /dev/sde
-> >> >   [18276.603455] BTRFS error (device sdf): bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 4, gen 0
-> >> >   [18276.638362] BTRFS warning (device sdf): checksum error at logical 2186354688 on dev /dev/sde, sector 2116624, root 5, inode 257, offset 73728, length 4096, links $
-> >> >   [18276.640445] BTRFS error (device sdf): bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 5, gen 0
-> >> >   [18276.645942] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186354688 on dev /dev/sde
-> >> >   [18276.657204] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186412032 on dev /dev/sde
-> >> >   [18276.660563] BTRFS warning (device sdf): checksum error at logical 2186416128 on dev /dev/sde, sector 2116744, root 5, inode 257, offset 135168, length 4096, links$
-> >> >   [18276.664609] BTRFS error (device sdf): bdev /dev/sde errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
-> >> >   [18276.664609] BTRFS error (device sdf): unable to fixup (regular) error at logical 2186358784 on dev /dev/sde
-> >> >
-> >> > So fix this by using the bio_for_each_segment() API and setting before
-> >> > the bio's bi_iter field to the value of the corresponding btrfs bio
-> >> > container's saved iterator if we are processing a cloned bio in the
-> >> > raid5/6 code (the same code processes both cloned and non-cloned bios).
-> >> >
-> >> > This incorrect iteration of cloned bios was also causing some occasional
-> >> > BUG_ONs when running fstest btrfs/064, which have a trace like the
-> >> > following:
-> >> >
-> >> >   [ 6674.416156] ------------[ cut here ]------------
-> >> >   [ 6674.416157] kernel BUG at fs/btrfs/raid56.c:1897!
-> >> >   [ 6674.416159] invalid opcode: 0000 [#1] PREEMPT SMP
-> >> >   [ 6674.416160] Modules linked in: dm_flakey dm_mod dax ppdev tpm_tis parport_pc tpm_tis_core evdev tpm psmouse sg i2c_piix4 pcspkr parport i2c_core serio_raw button s
-> >> >   [ 6674.416184] CPU: 3 PID: 19236 Comm: kworker/u32:10 Not tainted 4.12.0-rc6-btrfs-next-44+ #1
-> >> >   [ 6674.416185] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.9.1-0-gb3ef39f-prebuilt.qemu-project.org 04/01/2014
-> >> >   [ 6674.416210] Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
-> >> >   [ 6674.416211] task: ffff880147f6c740 task.stack: ffffc90001fb8000
-> >> >   [ 6674.416229] RIP: 0010:__raid_recover_end_io+0x1ac/0x370 [btrfs]
-> >> >   [ 6674.416230] RSP: 0018:ffffc90001fbbb90 EFLAGS: 00010217
-> >> >   [ 6674.416231] RAX: ffff8801ff4b4f00 RBX: 0000000000000002 RCX: 0000000000000001
-> >> >   [ 6674.416232] RDX: ffff880099b045d8 RSI: ffffffff81a5f6e0 RDI: 0000000000000004
-> >> >   [ 6674.416232] RBP: ffffc90001fbbbc8 R08: 0000000000000001 R09: 0000000000000001
-> >> >   [ 6674.416233] R10: ffffc90001fbbac8 R11: 0000000000001000 R12: 0000000000000002
-> >> >   [ 6674.416234] R13: ffff880099b045c0 R14: 0000000000000004 R15: ffff88012bff2000
-> >> >   [ 6674.416235] FS:  0000000000000000(0000) GS:ffff88023f2c0000(0000) knlGS:0000000000000000
-> >> >   [ 6674.416235] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> >> >   [ 6674.416236] CR2: 00007f28cf282000 CR3: 00000001000c6000 CR4: 00000000000006e0
-> >> >   [ 6674.416239] Call Trace:
-> >> >   [ 6674.416259]  __raid56_parity_recover+0xfc/0x16e [btrfs]
-> >> >   [ 6674.416276]  raid56_parity_recover+0x157/0x16b [btrfs]
-> >> >   [ 6674.416293]  btrfs_map_bio+0xe0/0x259 [btrfs]
-> >> >   [ 6674.416310]  btrfs_submit_bio_hook+0xbf/0x147 [btrfs]
-> >> >   [ 6674.416327]  end_bio_extent_readpage+0x27b/0x4a0 [btrfs]
-> >> >   [ 6674.416331]  bio_endio+0x17d/0x1b3
-> >> >   [ 6674.416346]  end_workqueue_fn+0x3c/0x3f [btrfs]
-> >> >   [ 6674.416362]  btrfs_scrubparity_helper+0x1aa/0x3b8 [btrfs]
-> >> >   [ 6674.416379]  btrfs_endio_helper+0xe/0x10 [btrfs]
-> >> >   [ 6674.416381]  process_one_work+0x276/0x4b6
-> >> >   [ 6674.416384]  worker_thread+0x1ac/0x266
-> >> >   [ 6674.416386]  ? rescuer_thread+0x278/0x278
-> >> >   [ 6674.416387]  kthread+0x106/0x10e
-> >> >   [ 6674.416389]  ? __list_del_entry+0x22/0x22
-> >> >   [ 6674.416391]  ret_from_fork+0x27/0x40
-> >> >   [ 6674.416395] Code: 44 89 e2 be 00 10 00 00 ff 15 b0 ab ef ff eb 72 4d 89 e8 89 d9 44 89 e2 be 00 10 00 00 ff 15 a3 ab ef ff eb 5d 41 83 fc ff 74 02 <0f> 0b 49 63 97
-> >> >   [ 6674.416432] RIP: __raid_recover_end_io+0x1ac/0x370 [btrfs] RSP: ffffc90001fbbb90
-> >> >   [ 6674.416434] ---[ end trace 74d56ebe7489dd6a ]---
-> >> >
-> >>
-> >> Thank you so much for the fix!
-> >>
-> >>
-> >> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> >> > ---
-> >> >  fs/btrfs/raid56.c | 26 ++++++++++++++++++--------
-> >> >  1 file changed, 18 insertions(+), 8 deletions(-)
-> >> >
-> >> > diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> >> > index b9abb0b01021..b89d07003697 100644
-> >> > --- a/fs/btrfs/raid56.c
-> >> > +++ b/fs/btrfs/raid56.c
-> >> > @@ -1136,20 +1136,27 @@ static void validate_rbio_for_rmw(struct btrfs_raid_bio *rbio)
-> >> >  static void index_rbio_pages(struct btrfs_raid_bio *rbio)
-> >> >  {
-> >> >     struct bio *bio;
-> >> > -   struct bio_vec *bvec;
-> >> >     u64 start;
-> >> >     unsigned long stripe_offset;
-> >> >     unsigned long page_index;
-> >> > -   int i;
-> >> >
-> >> >     spin_lock_irq(&rbio->bio_list_lock);
-> >> >     bio_list_for_each(bio, &rbio->bio_list) {
-> >> > +           struct bio_vec bvec;
-> >> > +           struct bvec_iter iter;
-> >> > +           int i = 0;
-> >> > +
-> >> >             start = (u64)bio->bi_iter.bi_sector << 9;
-> >> >             stripe_offset = start - rbio->bbio->raid_map[0];
-> >> >             page_index = stripe_offset >> PAGE_SHIFT;
-> >> >
-> >> > -           bio_for_each_segment_all(bvec, bio, i)
-> >> > -                   rbio->bio_pages[page_index + i] = bvec->bv_page;
-> >> > +           if (bio_flagged(bio, BIO_CLONED))
-> >> > +                   bio->bi_iter = btrfs_io_bio(bio)->iter;
-> >> > +
-> >>
-> >> I think we can use use bio->bi_iter directly as the bio is not
-> >> submitted yet, i.e. bi_iter is not advanced yet.
-> >>
-> >> > +           bio_for_each_segment(bvec, bio, iter) {
-> >> > +                   rbio->bio_pages[page_index + i] = bvec.bv_page;
-> >> > +                   i++;
-> >> > +           }
-> >> >     }
-> >> >     spin_unlock_irq(&rbio->bio_list_lock);
-> >> >  }
-> >> > @@ -1423,11 +1430,14 @@ static int fail_bio_stripe(struct btrfs_raid_bio *rbio,
-> >> >   */
-> >> >  static void set_bio_pages_uptodate(struct bio *bio)
-> >> >  {
-> >> > -   struct bio_vec *bvec;
-> >> > -   int i;
-> >> > +   struct bio_vec bvec;
-> >> > +   struct bvec_iter iter;
-> >> > +
-> >> > +   if (bio_flagged(bio, BIO_CLONED))
-> >> > +           bio->bi_iter = btrfs_io_bio(bio)->iter;
-> >> >
-> >
-> > It is not necessary to update set_bio_pages_uptodate() because the bio
-> > here is for reading pages in RMW and no way it could be a cloned one.
-> 
-> From my testing I've never seen this function getting cloned bios as
-> well. But I'm afraid we don't have full test coverage and it scares me
-> to have code around that can cause silent corruptions or crashes due
-> to such subtle details (bi_vcnt can't be used for cloned bios and it's
-> not obvious which APIs from the block layer make use of it without
-> reading their code). Plus a quick look I had at btrfs_map_bio()
-> suggested it can clone bios used for read operations through
-> btrfs_submit_bio_hook() for example. So that's why I changed that
-> function too to be able to deal both with cloned and non-cloned bios.
+Hi Liu,
+
+indeed setting the address alignment and read chunk to 4k did the
+trick, everything worked as expected. I expected in the case of the
+wrong alignment read() would fail with errno == EINVAL like for some
+other file systems, not to fallback to buffered read.
+
+Thanks a lot for the help!
+
+BR,
+Aleksandar
+
+On Thu, Jul 13, 2017 at 6:43 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On Thu, Jul 13, 2017 at 04:16:44PM +0200, Aleksandar Čekrlić wrote:
+>> Hi all,
+>>
+>> I am currently working on a file system related code where user can
+>> opt to use direct I/O for file reads / writes. Code seems to be
+>> working and operational, and on majority of the file systems I/O is
+>> not using the page cache, but on BTRFS even though file is opened with
+>> O_DIRECT file is cached, and subsequent reads are quite faster,
+>> indicating that file read is not actually read from disk. I have
+>> checked both with a separate binary (basically just open() with
+>> O_DIRECT and read()) and with dd, and I get the same results.
+>>
+>> dd reading a 200 MB file:
+>> =================================
+>> [root@lepton btrfs_mail]# linux-fincore /btrfs/smallfiles/dfile
+>> filename
+>>                         size        total_pages    min_cached page
+>>   cached_pages        cached_size        cached_perc
+>> --------
+>>                         ----        -----------    ---------------
+>>   ------------        -----------        -----------
+>> /btrfs/smallfiles/dfile
+>>                  209,715,200             51,200                 -1
+>>              0                  0               0.00
+>> ---
+>> total cached size: 0
+>> [root@lepton btrfs_mail]# dd if=/btrfs/smallfiles/dfile iflag=direct
+>> of=/dev/null
+>> 409600+0 records in
+>> 409600+0 records out
+>> 209715200 bytes (210 MB) copied, 2.32787 s, 90.1 MB/s
+>> [root@lepton btrfs_mail]# linux-fincore /btrfs/smallfiles/dfile
+>> filename
+>>                         size        total_pages    min_cached page
+>>   cached_pages        cached_size        cached_perc
+>> --------
+>>                         ----        -----------    ---------------
+>>   ------------        -----------        -----------
+>> /btrfs/smallfiles/dfile
+>>                  209,715,200             51,200                  0
+>>         51,200        209,715,200             100.00
+>> ---
+>> total cached size: 209,715,200
+>> [root@lepton btrfs_mail]# dd if=/btrfs/smallfiles/dfile iflag=direct
+>> of=/dev/null
+>> 409600+0 records in
+>> 409600+0 records out
+>> 209715200 bytes (210 MB) copied, 0.460326 s, 456 MB/s
+>> =================================
+>>
+>> I know in case the file system does not support O_DIRECT it will
+>> ignore it, but I thought BTRFS does support it, so I'm kinda confused
+>> by the behaviour.
+>>
 >
-
-Thanks for putting the explanation.  I'm OK with setting an extra
-fence.
-
-(Just to clarify it, unlike writes, reads on raid56 will read data
-directly from disk, so it doesn't make difference whether it's cloned
-or not.  For read retry, it adds the page to a newly created bio, so
-it's not a cloned, either.)
-
-thanks,
--liubo
-
-> >
-> > thanks,
-> >
-> > -liubo
-> >
-> >>
-> >> Ditto.
-> >>
-> >> Others look good.
-> >>
-> >> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-> >>
-> >> -liubo
-> >>
-> >> > -   bio_for_each_segment_all(bvec, bio, i)
-> >> > -           SetPageUptodate(bvec->bv_page);
-> >> > +   bio_for_each_segment(bvec, bio, iter)
-> >> > +           SetPageUptodate(bvec.bv_page);
-> >> >  }
-> >> >
-> >> >  /*
-> >> > --
-> >> > 2.11.0
-> >> >
-> >> > --
-> >> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> > the body of a message to majordomo@vger.kernel.org
-> >> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >> --
-> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> >> the body of a message to majordomo@vger.kernel.org
-> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Btrfs does support O_DIRECT, it is using 4K as its direct IO alignment
+> (at least on x86_64), so the above dd may just use 512 and btrfs dio
+> read falls back to buffered read then.
+>
+> thank,
+> -liubo
+>
+>> System information (dmesg.log is attached) :
+>> =================================
+>> uname -a:
+>> Linux lepton 2.6.32-642.el6.x86_64 #1 SMP Wed Apr 13 00:51:26 EDT 2016
+>> x86_64 x86_64 x86_64 GNU/Linux
+>> =================================
+>> btrfs --version
+>> Btrfs Btrfs v0.20-rc1
+>> =================================
+>> btrfs fi show
+>> failed to stat /dev/VxDMP2
+>> failed to stat /dev/VxDMP2p1
+>> failed to stat /dev/VxDMP2p2
+>> failed to stat /dev/VxDMP3
+>> failed to stat /dev/VxDMP3p3
+>> failed to stat /dev/VxDMP3p8
+>> failed to stat /dev/VxDMP4
+>> failed to stat /dev/VxDMP4p1
+>> failed to stat /dev/VxDMP4p2
+>> failed to stat /dev/VxDMP4p3
+>> failed to stat /dev/VxDMP5
+>> failed to stat /dev/VxDMP5p1
+>> failed to stat /dev/VxDMP5p2
+>> failed to stat /dev/VxDMP5p3
+>> failed to stat /dev/VxVM21000
+>> Label: none  uuid: 903217cd-80e3-497e-8724-6e697d6c5d3e
+>>         Total devices 1 FS bytes used 620.84MB
+>>         devid    1 size 50.00GB used 6.04GB path /dev/cciss/c0d1p1
+>>
+>> Btrfs Btrfs v0.20-rc1
+>> =================================
+>> btrfs fi df /btrfs
+>> Data: total=2.01GB, used=619.95MB
+>> System, DUP: total=8.00MB, used=4.00KB
+>> System: total=4.00MB, used=0.00
+>> Metadata, DUP: total=2.00GB, used=900.00KB
+>> Metadata: total=8.00MB, used=0.00
+>> =================================
+>>
+>> Thanks and best regards,
+>> Aleksandar
+>
+>

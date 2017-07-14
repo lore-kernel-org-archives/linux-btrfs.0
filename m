@@ -1,21 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:35656 "EHLO
-        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754517AbdGNPJd (ORCPT
+Received: from mail-it0-f48.google.com ([209.85.214.48]:37765 "EHLO
+        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754178AbdGNPMU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 11:09:33 -0400
-Received: by mail-io0-f175.google.com with SMTP id h134so15941695iof.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 08:09:33 -0700 (PDT)
-Received: from ircssh-2.c.rugged-nimbus-611.internal (80.60.198.104.bc.googleusercontent.com. [104.198.60.80])
-        by smtp.gmail.com with ESMTPSA id t18sm1410004ita.25.2017.07.14.08.09.31
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 14 Jul 2017 08:09:32 -0700 (PDT)
-Date: Fri, 14 Jul 2017 15:09:31 +0000
+        Fri, 14 Jul 2017 11:12:20 -0400
+Received: by mail-it0-f48.google.com with SMTP id m84so26713717ita.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 08:12:20 -0700 (PDT)
+Date: Fri, 14 Jul 2017 15:12:06 +0000
 From: Sargun Dhillon <sargun@sargun.me>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/2] New qgroup creation / removal ioctl
-Message-ID: <20170714150929.GA17966@ircssh-2.c.rugged-nimbus-611.internal>
+Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
+Subject: [PATCH v3 0/2] New qgroup creation / removal ioctls
+Message-ID: <cover.1499941625.git.sargun@sargun.me>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -43,7 +39,6 @@ Changes since v2:
   * Remove deprecation message for old API
 Changes since v1:
   * Remove creation of level-0 qgroups without subvol
-
 
 Sargun Dhillon (2):
   btrfs: Fail on removing qgroup if del_qgroup_item fails

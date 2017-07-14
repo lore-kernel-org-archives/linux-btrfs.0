@@ -1,22 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f66.google.com ([209.85.215.66]:34254 "EHLO
-        mail-lf0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753471AbdGNKaU (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:35063 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753472AbdGNMA4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 06:30:20 -0400
-Received: by mail-lf0-f66.google.com with SMTP id g21so7817913lfk.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 03:30:19 -0700 (PDT)
+        Fri, 14 Jul 2017 08:00:56 -0400
+Received: by mail-wm0-f68.google.com with SMTP id u23so10465671wma.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 05:00:56 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH] Btrfs: add skeleton code for compression heuristic
-Date: Fri, 14 Jul 2017 13:30:00 +0300
-Message-Id: <20170714103000.9052-1-nefelim4ag@gmail.com>
+Subject: [PATCH v2] Btrfs: add skeleton code for compression heuristic
+Date: Fri, 14 Jul 2017 15:00:46 +0300
+Message-Id: <20170714120046.3451-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 For now that code just return true
 Later more complex heuristic code will be added
+
+Changes v1 -> v2:
+ - Heuristic call moved into inode_need_compress() function
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---

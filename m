@@ -1,125 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19102 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750881AbdGMQqh (ORCPT
+Received: from mail-lf0-f66.google.com ([209.85.215.66]:34254 "EHLO
+        mail-lf0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753471AbdGNKaU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2017 12:46:37 -0400
-Date: Thu, 13 Jul 2017 09:43:59 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Aleksandar =?utf-8?B?xIxla3JsacSH?= <pathlidge.ann@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS file I/O with O_DIRECT
-Message-ID: <20170713164359.GE12913@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAK78SMnGpVx5dEOGnq75fSgfKnKbVr3FPEfAKecfVbHZ0F8+Uw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAK78SMnGpVx5dEOGnq75fSgfKnKbVr3FPEfAKecfVbHZ0F8+Uw@mail.gmail.com>
+        Fri, 14 Jul 2017 06:30:20 -0400
+Received: by mail-lf0-f66.google.com with SMTP id g21so7817913lfk.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 03:30:19 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH] Btrfs: add skeleton code for compression heuristic
+Date: Fri, 14 Jul 2017 13:30:00 +0300
+Message-Id: <20170714103000.9052-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 13, 2017 at 04:16:44PM +0200, Aleksandar Čekrlić wrote:
-> Hi all,
-> 
-> I am currently working on a file system related code where user can
-> opt to use direct I/O for file reads / writes. Code seems to be
-> working and operational, and on majority of the file systems I/O is
-> not using the page cache, but on BTRFS even though file is opened with
-> O_DIRECT file is cached, and subsequent reads are quite faster,
-> indicating that file read is not actually read from disk. I have
-> checked both with a separate binary (basically just open() with
-> O_DIRECT and read()) and with dd, and I get the same results.
-> 
-> dd reading a 200 MB file:
-> =================================
-> [root@lepton btrfs_mail]# linux-fincore /btrfs/smallfiles/dfile
-> filename
->                         size        total_pages    min_cached page
->   cached_pages        cached_size        cached_perc
-> --------
->                         ----        -----------    ---------------
->   ------------        -----------        -----------
-> /btrfs/smallfiles/dfile
->                  209,715,200             51,200                 -1
->              0                  0               0.00
-> ---
-> total cached size: 0
-> [root@lepton btrfs_mail]# dd if=/btrfs/smallfiles/dfile iflag=direct
-> of=/dev/null
-> 409600+0 records in
-> 409600+0 records out
-> 209715200 bytes (210 MB) copied, 2.32787 s, 90.1 MB/s
-> [root@lepton btrfs_mail]# linux-fincore /btrfs/smallfiles/dfile
-> filename
->                         size        total_pages    min_cached page
->   cached_pages        cached_size        cached_perc
-> --------
->                         ----        -----------    ---------------
->   ------------        -----------        -----------
-> /btrfs/smallfiles/dfile
->                  209,715,200             51,200                  0
->         51,200        209,715,200             100.00
-> ---
-> total cached size: 209,715,200
-> [root@lepton btrfs_mail]# dd if=/btrfs/smallfiles/dfile iflag=direct
-> of=/dev/null
-> 409600+0 records in
-> 409600+0 records out
-> 209715200 bytes (210 MB) copied, 0.460326 s, 456 MB/s
-> =================================
-> 
-> I know in case the file system does not support O_DIRECT it will
-> ignore it, but I thought BTRFS does support it, so I'm kinda confused
-> by the behaviour.
->
+For now that code just return true
+Later more complex heuristic code will be added
 
-Btrfs does support O_DIRECT, it is using 4K as its direct IO alignment
-(at least on x86_64), so the above dd may just use 512 and btrfs dio
-read falls back to buffered read then.
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+---
+ fs/btrfs/compression.c | 22 ++++++++++++++++++++++
+ fs/btrfs/compression.h |  2 ++
+ fs/btrfs/inode.c       | 18 ++++++++++++------
+ 3 files changed, 36 insertions(+), 6 deletions(-)
 
-thank,
--liubo
-
-> System information (dmesg.log is attached) :
-> =================================
-> uname -a:
-> Linux lepton 2.6.32-642.el6.x86_64 #1 SMP Wed Apr 13 00:51:26 EDT 2016
-> x86_64 x86_64 x86_64 GNU/Linux
-> =================================
-> btrfs --version
-> Btrfs Btrfs v0.20-rc1
-> =================================
-> btrfs fi show
-> failed to stat /dev/VxDMP2
-> failed to stat /dev/VxDMP2p1
-> failed to stat /dev/VxDMP2p2
-> failed to stat /dev/VxDMP3
-> failed to stat /dev/VxDMP3p3
-> failed to stat /dev/VxDMP3p8
-> failed to stat /dev/VxDMP4
-> failed to stat /dev/VxDMP4p1
-> failed to stat /dev/VxDMP4p2
-> failed to stat /dev/VxDMP4p3
-> failed to stat /dev/VxDMP5
-> failed to stat /dev/VxDMP5p1
-> failed to stat /dev/VxDMP5p2
-> failed to stat /dev/VxDMP5p3
-> failed to stat /dev/VxVM21000
-> Label: none  uuid: 903217cd-80e3-497e-8724-6e697d6c5d3e
->         Total devices 1 FS bytes used 620.84MB
->         devid    1 size 50.00GB used 6.04GB path /dev/cciss/c0d1p1
-> 
-> Btrfs Btrfs v0.20-rc1
-> =================================
-> btrfs fi df /btrfs
-> Data: total=2.01GB, used=619.95MB
-> System, DUP: total=8.00MB, used=4.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, DUP: total=2.00GB, used=900.00KB
-> Metadata: total=8.00MB, used=0.00
-> =================================
-> 
-> Thanks and best regards,
-> Aleksandar
-
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 2c0b7b57fcd5..d0cf2024def7 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -1046,3 +1046,25 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+ 
+ 	return 1;
+ }
++
++/*
++ * Heuristic skeleton
++ * For now just would be a naive and very optimistic 'return true'.
++ */
++int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
++{
++	u64 index = start >> PAGE_SHIFT;
++	u64 end_index = end >> PAGE_SHIFT;
++	struct page *page;
++	int ret = 1;
++
++	while (index <= end_index) {
++		page = find_get_page(inode->i_mapping, index);
++		kmap(page);
++		kunmap(page);
++		put_page(page);
++		index++;
++	}
++
++	return ret;
++}
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 87f6d3332163..8508ba6b9aef 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -129,4 +129,6 @@ struct btrfs_compress_op {
+ extern const struct btrfs_compress_op btrfs_zlib_compress;
+ extern const struct btrfs_compress_op btrfs_lzo_compress;
+ 
++int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
++
+ #endif
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 06dea7c89bbd..27922b29fa4e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -392,20 +392,26 @@ static noinline int add_async_extent(struct async_cow *cow,
+ 	return 0;
+ }
+ 
+-static inline int inode_need_compress(struct inode *inode)
++static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
+ {
++	int ret = 0;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 
+ 	/* force compress */
+ 	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
+-		return 1;
++		goto try_compress;
+ 	/* bad compression ratios */
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
+-		return 0;
++		goto skip_compress;
+ 	if (btrfs_test_opt(fs_info, COMPRESS) ||
+ 	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
+ 	    BTRFS_I(inode)->force_compress)
+-		return 1;
++		goto try_compress;
++	goto skip_compress;
++try_compress:
++	ret = btrfs_compress_heuristic(inode, start, end);
++	return ret;
++skip_compress:
+ 	return 0;
+ }
+ 
+@@ -503,7 +509,7 @@ static noinline void compress_file_range(struct inode *inode,
+ 	 * inode has not been flagged as nocompress.  This flag can
+ 	 * change at any time if we discover bad compression ratios.
+ 	 */
+-	if (inode_need_compress(inode)) {
++	if (inode_need_compress(inode, start, end)) {
+ 		WARN_ON(pages);
+ 		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+ 		if (!pages) {
+@@ -1576,7 +1582,7 @@ static int run_delalloc_range(void *private_data, struct page *locked_page,
+ 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	} else if (!inode_need_compress(inode)) {
++	} else if (!inode_need_compress(inode, start, end)) {
+ 		ret = cow_file_range(inode, locked_page, start, end, end,
+ 				      page_started, nr_written, 1, NULL);
+ 	} else {
+-- 
+2.13.2
 

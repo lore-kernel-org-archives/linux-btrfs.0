@@ -1,141 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48298 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41425 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753124AbdGNMZe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 08:25:34 -0400
-Date: Fri, 14 Jul 2017 14:24:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Timofey Titovets <nefelim4ag@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: add skeleton code for compression heuristic
-Message-ID: <20170714122414.GF2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170714120046.3451-1-nefelim4ag@gmail.com>
+        id S1750917AbdGNHFB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 14 Jul 2017 03:05:01 -0400
+Subject: Re: [PATCH] Btrfs: fix unexpected return value of bio_readpage_error
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20170713220050.22720-1-bo.li.liu@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <ea29b0c9-d5b1-7dbb-8e51-6659940b42b3@suse.com>
+Date: Fri, 14 Jul 2017 10:04:58 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170714120046.3451-1-nefelim4ag@gmail.com>
+In-Reply-To: <20170713220050.22720-1-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 14, 2017 at 03:00:46PM +0300, Timofey Titovets wrote:
-> For now that code just return true
-> Later more complex heuristic code will be added
+
+
+On 14.07.2017 01:00, Liu Bo wrote:
+> With blk_status_t, in bio_readpage_error() may return 1 as now
+> ->submit_bio_hook() may not set %ret if it runs without problem.
 > 
-> Changes v1 -> v2:
->  - Heuristic call moved into inode_need_compress() function
+> This fixes that unexpected return value by changing
+> btrfs_check_repairable() to return a bool instead of updating %ret.
 > 
-> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
 > ---
->  fs/btrfs/compression.c | 22 ++++++++++++++++++++++
->  fs/btrfs/compression.h |  2 ++
->  fs/btrfs/inode.c       | 18 ++++++++++++------
->  3 files changed, 36 insertions(+), 6 deletions(-)
+>  fs/btrfs/extent_io.c | 12 ++++++------
+>  fs/btrfs/extent_io.h |  4 ++--
+>  2 files changed, 8 insertions(+), 8 deletions(-)
 > 
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index 2c0b7b57fcd5..d0cf2024def7 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -1046,3 +1046,25 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
->  
->  	return 1;
->  }
-> +
-> +/*
-> + * Heuristic skeleton
-> + * For now just would be a naive and very optimistic 'return true'.
-> + */
-> +int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
-> +{
-> +	u64 index = start >> PAGE_SHIFT;
-> +	u64 end_index = end >> PAGE_SHIFT;
-> +	struct page *page;
-> +	int ret = 1;
-> +
-> +	while (index <= end_index) {
-> +		page = find_get_page(inode->i_mapping, index);
-> +		kmap(page);
-> +		kunmap(page);
-> +		put_page(page);
-> +		index++;
-> +	}
-> +
-> +	return ret;
-> +}
-> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-> index 87f6d3332163..8508ba6b9aef 100644
-> --- a/fs/btrfs/compression.h
-> +++ b/fs/btrfs/compression.h
-> @@ -129,4 +129,6 @@ struct btrfs_compress_op {
->  extern const struct btrfs_compress_op btrfs_zlib_compress;
->  extern const struct btrfs_compress_op btrfs_lzo_compress;
->  
-> +int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
-> +
->  #endif
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 06dea7c89bbd..27922b29fa4e 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -392,20 +392,26 @@ static noinline int add_async_extent(struct async_cow *cow,
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 556484c..098c319 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2258,7 +2258,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
 >  	return 0;
 >  }
 >  
-> -static inline int inode_need_compress(struct inode *inode)
-> +static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
+> -int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+> +bool btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+>  			   struct io_failure_record *failrec, int failed_mirror)
 >  {
-> +	int ret = 0;
 >  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  
->  	/* force compress */
->  	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
-> -		return 1;
-> +		goto try_compress;
->  	/* bad compression ratios */
->  	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
+> @@ -2274,7 +2274,7 @@ int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+>  		btrfs_debug(fs_info,
+>  			"Check Repairable: cannot repair, num_copies=%d, next_mirror %d, failed_mirror %d",
+>  			num_copies, failrec->this_mirror, failed_mirror);
 > -		return 0;
-> +		goto skip_compress;
->  	if (btrfs_test_opt(fs_info, COMPRESS) ||
->  	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
->  	    BTRFS_I(inode)->force_compress)
-> -		return 1;
-> +		goto try_compress;
-> +	goto skip_compress;
-> +try_compress:
-> +	ret = btrfs_compress_heuristic(inode, start, end);
-> +	return ret;
-> +skip_compress:
->  	return 0;
-
-That's a bit wilde goto skip_compress can be simple return 0. Also you
-can drop ret and return btrfs_compress_heuristic(...);
-
-Otherwise it looks ok, just the documentation side could be improved,
-like describe the purpose and expected furure enhancements.
-
+> +		return false;
+>  	}
+>  
+>  	/*
+> @@ -2315,10 +2315,10 @@ int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+>  		btrfs_debug(fs_info,
+>  			"Check Repairable: (fail) num_copies=%d, next_mirror %d, failed_mirror %d",
+>  			num_copies, failrec->this_mirror, failed_mirror);
+> -		return 0;
+> +		return false;
+>  	}
+>  
+> -	return 1;
+> +	return true;
 >  }
 >  
-> @@ -503,7 +509,7 @@ static noinline void compress_file_range(struct inode *inode,
->  	 * inode has not been flagged as nocompress.  This flag can
->  	 * change at any time if we discover bad compression ratios.
->  	 */
-> -	if (inode_need_compress(inode)) {
-> +	if (inode_need_compress(inode, start, end)) {
->  		WARN_ON(pages);
->  		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
->  		if (!pages) {
-> @@ -1576,7 +1582,7 @@ static int run_delalloc_range(void *private_data, struct page *locked_page,
->  	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
->  		ret = run_delalloc_nocow(inode, locked_page, start, end,
->  					 page_started, 0, nr_written);
-> -	} else if (!inode_need_compress(inode)) {
-> +	} else if (!inode_need_compress(inode, start, end)) {
->  		ret = cow_file_range(inode, locked_page, start, end, end,
->  				      page_started, nr_written, 1, NULL);
->  	} else {
-> -- 
-> 2.13.2
+>  
+> @@ -2382,8 +2382,8 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+>  	if (ret)
+>  		return ret;
+>  
+> -	ret = btrfs_check_repairable(inode, failed_bio, failrec, failed_mirror);
+> -	if (!ret) {
+> +	if (!btrfs_check_repairable(inode, failed_bio, failrec,
+> +				    failed_mirror)) {
+>  		free_io_failure(failure_tree, tree, failrec);
+>  		return -EIO;
+>  	}
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 3fb8513..4f03091 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -539,8 +539,8 @@ void btrfs_free_io_failure_record(struct btrfs_inode *inode, u64 start,
+>  		u64 end);
+>  int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+>  				struct io_failure_record **failrec_ret);
+> -int btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+> -			   struct io_failure_record *failrec, int fail_mirror);
+> +bool btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+> +			    struct io_failure_record *failrec, int fail_mirror);
+>  struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+>  				    struct io_failure_record *failrec,
+>  				    struct page *page, int pg_offset, int icsum,
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

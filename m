@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52940 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29344 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751242AbdGOJLh (ORCPT
+        with ESMTP id S1751247AbdGOJLi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 15 Jul 2017 05:11:37 -0400
+        Sat, 15 Jul 2017 05:11:38 -0400
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [PATCH v5 11/15] btrfs-progs: scrub: Introduce function to recover data parity
-Date: Sat, 15 Jul 2017 17:10:49 +0800
-Message-ID: <20170715091053.19725-11-gujx@cn.fujitsu.com>
+Subject: [PATCH v5 12/15] btrfs-progs: scrub: Introduce helper to write a full stripe
+Date: Sat, 15 Jul 2017 17:10:50 +0800
+Message-ID: <20170715091053.19725-12-gujx@cn.fujitsu.com>
 In-Reply-To: <20170715091053.19725-1-gujx@cn.fujitsu.com>
 References: <20170715091053.19725-1-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,75 +19,68 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Introduce function, recover_from_parities(), to recover data stripes.
+Introduce a internal helper, write_full_stripe() to calculate P/Q and
+write the whole full stripe.
 
-It just wraps raid56_recov() with extra check functions to
-scrub_full_stripe structure.
+This is useful to recover RAID56 stripes.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- scrub.c | 51 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
+ scrub.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
 diff --git a/scrub.c b/scrub.c
-index 33d5ce2..4d7709f 100644
+index 4d7709f..a4695f4 100644
 --- a/scrub.c
 +++ b/scrub.c
-@@ -823,3 +823,54 @@ out:
+@@ -874,3 +874,47 @@ static int recover_from_parities(struct btrfs_fs_info *fs_info,
  	free(ptrs);
  	return ret;
  }
 +
 +/*
-+ * Try to recover data stripe from P or Q stripe
-+ *
-+ * Return >0 if it can't be require any more.
-+ * Return 0 for successful repair or no need to repair at all
-+ * Return <0 for fatal error
++ * Helper to write a full stripe to disk
++ * P/Q will be re-calculated.
 + */
-+static int recover_from_parities(struct btrfs_fs_info *fs_info,
-+				  struct btrfs_scrub_progress *scrub_ctx,
-+				  struct scrub_full_stripe *fstripe)
++static int write_full_stripe(struct scrub_full_stripe *fstripe)
 +{
 +	void **ptrs;
 +	int nr_stripes = fstripe->nr_stripes;
 +	int stripe_len = BTRFS_STRIPE_LEN;
-+	int max_tolerance;
 +	int i;
-+	int ret;
-+
-+	/* No need to recover */
-+	if (!fstripe->nr_corrupted_stripes)
-+		return 0;
-+
-+	/* Already recovered once, no more chance */
-+	if (fstripe->recovered)
-+		return 1;
-+
-+	if (fstripe->bg_type & BTRFS_BLOCK_GROUP_RAID5)
-+		max_tolerance = 1;
-+	else
-+		max_tolerance = 2;
-+
-+	/* Out of repair */
-+	if (fstripe->nr_corrupted_stripes > max_tolerance)
-+		return 1;
++	int ret = 0;
 +
 +	ptrs = malloc(sizeof(void *) * fstripe->nr_stripes);
 +	if (!ptrs)
 +		return -ENOMEM;
 +
-+	/* Construct ptrs */
-+	for (i = 0; i < nr_stripes; i++)
++	for (i = 0; i < fstripe->nr_stripes; i++)
 +		ptrs[i] = fstripe->stripes[i].data;
 +
-+	ret = raid56_recov(nr_stripes, stripe_len, fstripe->bg_type,
-+			fstripe->corrupted_index[0],
-+			fstripe->corrupted_index[1], ptrs);
-+	fstripe->recovered = 1;
++	if (fstripe->bg_type & BTRFS_BLOCK_GROUP_RAID6) {
++		raid6_gen_syndrome(nr_stripes, stripe_len, ptrs);
++	} else {
++		ret = raid5_gen_result(nr_stripes, stripe_len, nr_stripes - 1,
++					ptrs);
++		if (ret < 0)
++			goto out;
++	}
++
++	for (i = 0; i < fstripe->nr_stripes; i++) {
++		struct scrub_stripe *stripe = &fstripe->stripes[i];
++
++		ret = pwrite(stripe->fd, stripe->data, fstripe->stripe_len,
++			     stripe->physical);
++		if (ret != fstripe->stripe_len) {
++			ret = -EIO;
++			goto out;
++		}
++	}
++out:
 +	free(ptrs);
 +	return ret;
++
 +}
 -- 
 2.9.4

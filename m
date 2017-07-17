@@ -1,103 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10747 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751802AbdGYB6X (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2017 21:58:23 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 2D21046B5DF4
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jul 2017 09:58:16 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Move check of mixed block early.
-Date: Tue, 25 Jul 2017 09:57:44 +0800
-Message-ID: <20170725015744.12907-1-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:36767 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751311AbdGQSrS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jul 2017 14:47:18 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 8CBEEAAB6
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2017 18:47:17 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/4] btrfs: rename variable holding per-inode compression type
+Date: Mon, 17 Jul 2017 20:46:03 +0200
+Message-Id: <37833daff8f290a95d2feb08bbc8225d7d3ba36b.1500317040.git.dsterba@suse.com>
+In-Reply-To: <cover.1500317040.git.dsterba@suse.com>
+References: <cover.1500317040.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Make the check of mixed block groups early.
-Reason:
-We do not support re-initing extent tree for mixed block groups.
-So it will return -EINVAL in function reinit_extent_tree.
-In this situation, we do not need to start transaction.
-We do not have a btrfs_abort_transaction like kernel now,
-so we should prevent starting transaction not necessary.
+This is preparatory for separating inode compression requested by defrag
+and set via properties. This will fix a usability bug when defrag will
+reset compression type to NONE. If the file has compression set via
+property, it will not apply anymore (until next mount or reset through
+command line).
 
-Output message when run test 003 in fuzz-test:
-/home/gujx/btrfs/btrfs-progs/btrfs check --init-extent-tree /home/gujx/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-154961-heap-overflow-chunk-items.raw.restored
-We don't support re-initing the extent tree for mixed block groups yet, please notify a btrfs developer you want to do this so they can add this functionality.
-transaction.h:42: btrfs_start_transaction: BUG_ON fs_info->running_transaction triggered, value 11477904
-/home/gujx/btrfs/btrfs-progs/btrfs[0x411adf]
-/home/gujx/btrfs/btrfs-progs/btrfs(close_ctree_fs_info+0x312)[0x413c93]
-/home/gujx/btrfs/btrfs-progs/btrfs(cmd_check+0x5b1)[0x45d46a]
-/home/gujx/btrfs/btrfs-progs/btrfs(main+0x85)[0x40acd9]
-/lib64/libc.so.6(__libc_start_main+0xf1)[0x7f0d957d3401]
-/home/gujx/btrfs/btrfs-progs/btrfs(_start+0x2a)[0x40a88a]
-Checking filesystem on /home/gujx/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-154961-heap-overflow-chunk-items.raw.restored
-UUID: e0d334b9-d48f-49f3-9c6b-45fc8e0ec0c7
-Creating a new extent tree
-failed (ignored, ret=134): /home/gujx/btrfs/btrfs-progs/btrfs check --init-extent-tree /home/gujx/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-154961-heap-overflow-chunk-items.raw.restored
-mayfail: returned code 134 (SIGABRT), not ignored
+We're going to fix that by adding another variable just for the defrag
+call and won't touch the property. The defrag will have higher priority
+when deciding whether to compress the data.
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- cmds-check.c | 32 +++++++++++++++++---------------
- 1 file changed, 17 insertions(+), 15 deletions(-)
+ fs/btrfs/btrfs_inode.h |  4 ++--
+ fs/btrfs/inode.c       | 10 +++++-----
+ fs/btrfs/ioctl.c       |  4 ++--
+ fs/btrfs/props.c       |  6 +++---
+ 4 files changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index c5faa2b..357623e 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -11914,21 +11914,6 @@ static int reinit_extent_tree(struct btrfs_trans_handle *trans,
- 	int ret;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index b8622e4d1744..0c9ba8b96782 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -179,9 +179,9 @@ struct btrfs_inode {
+ 	unsigned reserved_extents;
  
  	/*
--	 * The only reason we don't do this is because right now we're just
--	 * walking the trees we find and pinning down their bytes, we don't look
--	 * at any of the leaves.  In order to do mixed groups we'd have to check
--	 * the leaves of any fs roots and pin down the bytes for any file
--	 * extents we find.  Not hard but why do it if we don't have to?
--	 */
--	if (btrfs_fs_incompat(fs_info, MIXED_GROUPS)) {
--		fprintf(stderr, "We don't support re-initing the extent tree "
--			"for mixed block groups yet, please notify a btrfs "
--			"developer you want to do this so they can add this "
--			"functionality.\n");
--		return -EINVAL;
--	}
--
--	/*
- 	 * first we need to walk all of the trees except the extent tree and pin
- 	 * down the bytes that are in use so we don't overwrite any existing
- 	 * metadata.
-@@ -12963,6 +12948,23 @@ int cmd_check(int argc, char **argv)
- 	if (init_extent_tree || init_csum_tree) {
- 		struct btrfs_trans_handle *trans;
+-	 * always compress this one file
++	 * Cached values if inode properties
+ 	 */
+-	unsigned force_compress;
++	unsigned prop_compress;		/* per-file compression algorithm */
  
-+		/*
-+		 * The only reason we don't do this is because right now we're
-+		 * just walking the trees we find and pinning down their bytes,
-+		 * we don't look at any of the leaves. In order to do mixed
-+		 * groups we'd have to check the leaves of any fs roots and
-+		 * pin down the bytes for any file extents we find.
-+		 * Not hard but why do it if we don't have to?
-+		 */
-+		if (init_extent_tree && btrfs_fs_incompat(info, MIXED_GROUPS)) {
-+			fprintf(stderr, "We don't support re-initing the extent tree "
-+					"for mixed block groups yet, please notify a btrfs "
-+					"developer you want to do this so they can add this "
-+					"functionality.\n");
-+			goto close_out;
-+
-+		}
-+
- 		trans = btrfs_start_transaction(info->extent_root, 0);
- 		if (IS_ERR(trans)) {
- 			error("error starting transaction");
+ 	struct btrfs_delayed_node *delayed_node;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index eb495e956d53..ece5362e7aff 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -404,7 +404,7 @@ static inline int inode_need_compress(struct inode *inode)
+ 		return 0;
+ 	if (btrfs_test_opt(fs_info, COMPRESS) ||
+ 	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
+-	    BTRFS_I(inode)->force_compress)
++	    BTRFS_I(inode)->prop_compress)
+ 		return 1;
+ 	return 0;
+ }
+@@ -511,8 +511,8 @@ static noinline void compress_file_range(struct inode *inode,
+ 			goto cont;
+ 		}
+ 
+-		if (BTRFS_I(inode)->force_compress)
+-			compress_type = BTRFS_I(inode)->force_compress;
++		if (BTRFS_I(inode)->prop_compress)
++			compress_type = BTRFS_I(inode)->prop_compress;
+ 
+ 		/*
+ 		 * we need to call clear_page_dirty_for_io on each
+@@ -645,7 +645,7 @@ static noinline void compress_file_range(struct inode *inode,
+ 
+ 		/* flag the file so we don't compress in the future */
+ 		if (!btrfs_test_opt(fs_info, FORCE_COMPRESS) &&
+-		    !(BTRFS_I(inode)->force_compress)) {
++		    !(BTRFS_I(inode)->prop_compress)) {
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+ 		}
+ 	}
+@@ -9402,7 +9402,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->reserved_extents = 0;
+ 
+ 	ei->runtime_flags = 0;
+-	ei->force_compress = BTRFS_COMPRESS_NONE;
++	ei->prop_compress = BTRFS_COMPRESS_NONE;
+ 
+ 	ei->delayed_node = NULL;
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fa1b78cf25f6..571392cbd64c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1402,7 +1402,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 
+ 		inode_lock(inode);
+ 		if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
+-			BTRFS_I(inode)->force_compress = compress_type;
++			BTRFS_I(inode)->prop_compress = compress_type;
+ 		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
+ 		if (ret < 0) {
+ 			inode_unlock(inode);
+@@ -1473,7 +1473,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ out_ra:
+ 	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
+ 		inode_lock(inode);
+-		BTRFS_I(inode)->force_compress = BTRFS_COMPRESS_NONE;
++		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
+ 		inode_unlock(inode);
+ 	}
+ 	if (!file)
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index 4b23ae5d0e5c..916f5cf9b292 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -403,7 +403,7 @@ static int prop_compression_apply(struct inode *inode,
+ 	if (len == 0) {
+ 		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+ 		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
+-		BTRFS_I(inode)->force_compress = BTRFS_COMPRESS_NONE;
++		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
+ 
+ 		return 0;
+ 	}
+@@ -417,14 +417,14 @@ static int prop_compression_apply(struct inode *inode,
+ 
+ 	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
+ 	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
+-	BTRFS_I(inode)->force_compress = type;
++	BTRFS_I(inode)->prop_compress = type;
+ 
+ 	return 0;
+ }
+ 
+ static const char *prop_compression_extract(struct inode *inode)
+ {
+-	switch (BTRFS_I(inode)->force_compress) {
++	switch (BTRFS_I(inode)->prop_compress) {
+ 	case BTRFS_COMPRESS_ZLIB:
+ 		return "zlib";
+ 	case BTRFS_COMPRESS_LZO:
 -- 
-2.9.4
-
-
+2.13.0
 

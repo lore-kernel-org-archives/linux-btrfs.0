@@ -1,82 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51921 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36778 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751996AbdGURg5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2017 13:36:57 -0400
-Date: Fri, 21 Jul 2017 19:35:40 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] btrfs: separate defrag and property compression
-Message-ID: <20170721173540.GN2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1751401AbdGQSrX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jul 2017 14:47:23 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 25040AAB6
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2017 18:47:22 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 3/4] btrfs: defrag: cleanup checking for compression status
+Date: Mon, 17 Jul 2017 20:46:08 +0200
+Message-Id: <478c34f701ea6ed1f028d96390586cffaa38f438.1500317040.git.dsterba@suse.com>
+In-Reply-To: <cover.1500317040.git.dsterba@suse.com>
 References: <cover.1500317040.git.dsterba@suse.com>
- <9dc75da8c4a2cfc0cddec3c9ccf95f5d28a89084.1500317040.git.dsterba@suse.com>
- <c5ce5317-a1d2-f4b3-1615-76812c8874f8@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <c5ce5317-a1d2-f4b3-1615-76812c8874f8@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 20, 2017 at 06:49:19PM +0800, Anand Jain wrote:
-> 
-> 
-> On 07/18/2017 02:46 AM, David Sterba wrote:
-> > Add new value for compression to distinguish between defrag and
-> > property. Previously, a single variable was used and this caused clashes
-> > when the per-file 'compression' was set and a defrag -c was called.
-> 
->   How about..
->     deprecate property compression
->     introduce property compress (inline with -o compress) [1]
->     introduce property compress-force (inline with -o compress-force) [2]
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/ioctl.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-IIRC compress-force has been added as a bandaid when 'compress' bails
-out of compression too soon (due to the trivial check and that just one
-incompressible chunk can set tne NOCOMPRESS bit). So compress-force now
-compresses everthing even if it's not worth.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 5d28d53e1b81..37226b13e289 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1286,6 +1286,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	unsigned long cluster = max_cluster;
+ 	u64 new_align = ~((u64)SZ_128K - 1);
+ 	struct page **pages = NULL;
++	bool do_compress = range->flags & BTRFS_DEFRAG_RANGE_COMPRESS;
+ 
+ 	if (isize == 0)
+ 		return 0;
+@@ -1293,7 +1294,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	if (range->start >= isize)
+ 		return -EINVAL;
+ 
+-	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
++	if (do_compress) {
+ 		if (range->compress_type > BTRFS_COMPRESS_TYPES)
+ 			return -EINVAL;
+ 		if (range->compress_type)
+@@ -1373,8 +1374,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 
+ 		if (!should_defrag_range(inode, (u64)i << PAGE_SHIFT,
+ 					 extent_thresh, &last_len, &skip,
+-					 &defrag_end, range->flags &
+-					 BTRFS_DEFRAG_RANGE_COMPRESS)) {
++					 &defrag_end, do_compress)){
+ 			unsigned long next;
+ 			/*
+ 			 * the should_defrag function tells us how much to skip
+@@ -1401,7 +1401,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		}
+ 
+ 		inode_lock(inode);
+-		if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
++		if (do_compress)
+ 			BTRFS_I(inode)->defrag_compress = compress_type;
+ 		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
+ 		if (ret < 0) {
+@@ -1449,7 +1449,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			filemap_flush(inode->i_mapping);
+ 	}
+ 
+-	if ((range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)) {
++	if (do_compress) {
+ 		/* the filemap_flush will queue IO into the worker threads, but
+ 		 * we have to make sure the IO is actually started and that
+ 		 * ordered extents get created before we return
+@@ -1471,7 +1471,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	ret = defrag_count;
+ 
+ out_ra:
+-	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
++	if (do_compress) {
+ 		inode_lock(inode);
+ 		BTRFS_I(inode)->defrag_compress = BTRFS_COMPRESS_NONE;
+ 		inode_unlock(inode);
+-- 
+2.13.0
 
-What we need is better behaviour of 'compress', and that's where the
-heuristics should help. It will try to guess if the data are
-compressible in advance, so we hopefully don't reach the point where the
-incompressible chunk will flip the NOCOMPRESS bit.
-
-I don't want to spread the compress-force logic further, rather improve
-the heuristic and possibly track a long-term stats about the file and
-the data compressibility. So everybody can use 'compress' and expect
-sane behaviour, and this would apply to the per-file property and
-defrag.
-
-> inode_need_compress will look something like this..
-> -----
-> static inline int inode_need_compress(struct inode *inode)
-> {
->          struct btrfs_root *root = BTRFS_I(inode)->root;
-> 
->          /* force compress */
->          if (btrfs_test_opt(root->fs_info, FORCE_COMPRESS) ||
-> 		            BTRFS_I(inode)->force_compress) [2]
->                  return 1;
-> 
->          /* bad compression ratios */
->          if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
->                  return 0;
-> 
->          if (btrfs_test_opt(root->fs_info, COMPRESS) ||
->              BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
->              BTRFS_I(inode)->compress) [1]
->                  return 1;
-> 
->          return 0;
-> }
-> -----
-> 
->   defrag -c will in turn set the compress property.
-> 
->   introduce defrag --compress-force|-C to in turn set the compress-force
->   property.
-
-This would be a good enhancement to the defrag interface to
-check/manipulate the properties, but this does not affect the kernel
-behaviour.

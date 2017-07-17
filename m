@@ -1,62 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpgw02.sap-ag.de ([155.56.66.97]:44633 "EHLO smtpgw.sap-ag.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751280AbdGQISh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Jul 2017 04:18:37 -0400
-From: "Brennecke, Simon" <simon.brennecke@sap.com>
-To: "'linux-btrfs@vger.kernel.org'" <linux-btrfs@vger.kernel.org>
-Subject: btrfs-cleaner causing heavy load
-Date: Mon, 17 Jul 2017 08:03:33 +0000
-Message-ID: <64e68f94963a441db087e660e167a2f4@sap.com>
-Content-Type: text/plain; charset="us-ascii"
+Received: from mail-io0-f194.google.com ([209.85.223.194]:35407 "EHLO
+        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751279AbdGQLFN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jul 2017 07:05:13 -0400
+Received: by mail-io0-f194.google.com with SMTP id 84so7202503iop.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2017 04:05:13 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <20170716160658.r4uxuqlfe24hgi5n@merlins.org>
+References: <20170715004828.f4bom5wq34abe4lz@merlins.org> <20170715012216.njq6az3y34qyomtb@merlins.org>
+ <20170715231245.GA28281@merlins.org> <3161165.SzVyadSXaH@exnet.gdb.it> <20170716160658.r4uxuqlfe24hgi5n@merlins.org>
+From: gius db <giusdbg@gmail.com>
+Date: Mon, 17 Jul 2017 13:05:12 +0200
+Message-ID: <CAO6aweN16fR9xE955UwCy_nsWUOtYEy_nt=ujHEqwz-i+zrCXQ@mail.gmail.com>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
+ errno=-17 Object already exists (since 3.4 / 2012)
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi guys,
+2017-07-16 18:06 GMT+02:00 Marc MERLIN <marc@merlins.org>:
+> On Sun, Jul 16, 2017 at 04:01:53PM +0200, Giuseppe Della Bianca wrote:
+>> > On Fri, Jul 14, 2017 at 06:22:16PM -0700, Marc MERLIN wrote:
+>> > > Dear Chris and other developers,
+>> ]zac[
+>> > Others on this thread with the same error: did anyone recover from this
+>> > without wiping the filesystem?
+>> >
+>> > Is there a chance a balance might work around the bug so that whatever
+>> > layout I have, changes, and stops the bug from occuring?
+>> ]zac[
+>>
+>> Any attempt, even just delete files, has worsened the situation.
+>> I advise not to waste time in repairs, and directly recreate the filesystem.
+>
+> I see. So, this is a condition where the filesystem is clear as far as:
+> - check
+> - check lowmem
+> - scrub
+> are all concerned (at least in my case), but it's in a state where
+> touching something around a sensitive area causes the bug.
+> If so, this blows, and I'm not really wanting to recreate a clean 12TB
+> filesystem "just because", especially since this could just happen
+> again after I've rebuilt it.
+>
 
-We are facing some issues with a btrfs filesystem on one of our department filers.
-The problem started pretty much one week ago, when I decided to purge old snapshots.
-Until then we were doing daily btrfs snapshots to have a quick backup.
-What then happened was that btrfs-cleaner kicked in, and is now slowing things down very badly.
-It is consuming 100% CPU and also a lot of IOP/s.
-I tried reducing its CPU priority, but that was pretty much without effect.
-Beside that we tried restarting the machine, but that also did not mitigate the problem.
+IMHO, rebuild from scratch, 1-2 times a year, the snapshot receive
+filesystem is inevitable.
 
-I understand that purging snapshots is a complex operation, but we somehow need to reduce the load this causes during working hours.
-Are there any ways to tell btrfs-cleaner to suspend or reduce its operations?
-
-Background:
-	The file-server runs inside a XEN domU
-	The backing disk is a Ceph RDB with 50TiB capacity
-	We employ a bcache with a local SSD to improve latency
-	Files are served via NFS and Samba to a couple of hundred clients.
-
-Thanks & regards
-Simon
-
-uname -a
-	Linux v2-fs 4.1.42-xen #2 SMP Wed Jul 12 14:06:37 CEST 2017 x86_64 GNU/Linux
-
-btrfs --version
-	Btrfs v3.17
-
-btrfs fi show
-	Label: 'v2-fs-data'  uuid: f2bad13d-8b02-4325-8c4a-31b0cafb1549
-	        Total devices 1 FS bytes used 6.98TiB
-	        devid    1 size 50.00TiB used 7.48TiB path /dev/bcache0
-
-	Btrfs v3.17
-
-btrfs fi df /mnt/ceph/
-	Data, single: total=7.10TiB, used=6.93TiB
-	System, DUP: total=8.00MiB, used=864.00KiB
-	System, single: total=4.00MiB, used=0.00B
-	Metadata, DUP: total=194.00GiB, used=54.93GiB
-	Metadata, single: total=8.00MiB, used=0.00B
-	GlobalReserve, single: total=512.00MiB, used=0.00B
-
-dmesg did not contain any recent (2 days) events.
-The older ones were about NFSd being stuck for more than 30 seconds while reading from disk.
+For this reason, my snapshot receive filesystems have only this
+purpose and are not bigger than 1-2 TB.
 
 
+>>  while read proc; do
+>>        if [ $progResult == 0 ]; then
+>>                echo -e \nbtrfs tools already running
+>>
+>>                progResult=222
+>>        fi
+>>
+>>        echo $proc"
+>>  done < <(ps -ef | grep -e "btrfs \{1,\}\(subvolume\|send\|receive\|delete\)")
+>
+> Yeah, I probably hit that. I think you can also add scrub to that list.
+>
+
+Yes.
+
+I did not add scrubs because my scrub are always read-only.
+And I think that race condition is between snapshot receive and
+subvolume delete.
+
+I also suggest:
+- Use btrfs subvolume delete with -c
+- Try to add a sleep after subvolume delete and receive.
+
+> Marc
+
+
+Gdb

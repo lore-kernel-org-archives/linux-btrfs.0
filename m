@@ -1,108 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36767 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36772 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751311AbdGQSrS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Jul 2017 14:47:18 -0400
+        id S1751401AbdGQSrV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jul 2017 14:47:21 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 8CBEEAAB6
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2017 18:47:17 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id CEB04AAB6
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2017 18:47:19 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/4] btrfs: rename variable holding per-inode compression type
-Date: Mon, 17 Jul 2017 20:46:03 +0200
-Message-Id: <37833daff8f290a95d2feb08bbc8225d7d3ba36b.1500317040.git.dsterba@suse.com>
+Subject: [PATCH 2/4] btrfs: separate defrag and property compression
+Date: Mon, 17 Jul 2017 20:46:05 +0200
+Message-Id: <9dc75da8c4a2cfc0cddec3c9ccf95f5d28a89084.1500317040.git.dsterba@suse.com>
 In-Reply-To: <cover.1500317040.git.dsterba@suse.com>
 References: <cover.1500317040.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is preparatory for separating inode compression requested by defrag
-and set via properties. This will fix a usability bug when defrag will
-reset compression type to NONE. If the file has compression set via
-property, it will not apply anymore (until next mount or reset through
-command line).
+Add new value for compression to distinguish between defrag and
+property. Previously, a single variable was used and this caused clashes
+when the per-file 'compression' was set and a defrag -c was called.
 
-We're going to fix that by adding another variable just for the defrag
-call and won't touch the property. The defrag will have higher priority
-when deciding whether to compress the data.
+The property-compression is loaded when the file is open, defrag will
+overwrite the same variable and reset to 0 (ie. NONE) at when the file
+defragmentaion is finished. That's considered a usability bug.
+
+Now we won't touch the property value, use the defrag-compression. The
+precedence of defrag is higher than for property (and whole-filesystem).
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/btrfs_inode.h |  4 ++--
- fs/btrfs/inode.c       | 10 +++++-----
- fs/btrfs/ioctl.c       |  4 ++--
- fs/btrfs/props.c       |  6 +++---
- 4 files changed, 12 insertions(+), 12 deletions(-)
+ fs/btrfs/btrfs_inode.h | 5 +++++
+ fs/btrfs/inode.c       | 8 +++++++-
+ fs/btrfs/ioctl.c       | 4 ++--
+ 3 files changed, 14 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index b8622e4d1744..0c9ba8b96782 100644
+index 0c9ba8b96782..d71ad059ca7c 100644
 --- a/fs/btrfs/btrfs_inode.h
 +++ b/fs/btrfs/btrfs_inode.h
-@@ -179,9 +179,9 @@ struct btrfs_inode {
- 	unsigned reserved_extents;
- 
- 	/*
--	 * always compress this one file
-+	 * Cached values if inode properties
+@@ -182,6 +182,11 @@ struct btrfs_inode {
+ 	 * Cached values if inode properties
  	 */
--	unsigned force_compress;
-+	unsigned prop_compress;		/* per-file compression algorithm */
+ 	unsigned prop_compress;		/* per-file compression algorithm */
++	/*
++	 * Force compression on the file using the defrag ioctl, could be
++	 * different from prop_compress and takes precedence if set
++	 */
++	unsigned defrag_compress;
  
  	struct btrfs_delayed_node *delayed_node;
  
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index eb495e956d53..ece5362e7aff 100644
+index ece5362e7aff..14677535610b 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -404,7 +404,7 @@ static inline int inode_need_compress(struct inode *inode)
+@@ -402,6 +402,9 @@ static inline int inode_need_compress(struct inode *inode)
+ 	/* bad compression ratios */
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
  		return 0;
++	/* defrag ioctl */
++	if (BTRFS_I(inode)->defrag_compress)
++		return 1;
  	if (btrfs_test_opt(fs_info, COMPRESS) ||
  	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
--	    BTRFS_I(inode)->force_compress)
-+	    BTRFS_I(inode)->prop_compress)
- 		return 1;
- 	return 0;
- }
-@@ -511,8 +511,8 @@ static noinline void compress_file_range(struct inode *inode,
+ 	    BTRFS_I(inode)->prop_compress)
+@@ -511,7 +514,9 @@ static noinline void compress_file_range(struct inode *inode,
  			goto cont;
  		}
  
--		if (BTRFS_I(inode)->force_compress)
--			compress_type = BTRFS_I(inode)->force_compress;
-+		if (BTRFS_I(inode)->prop_compress)
-+			compress_type = BTRFS_I(inode)->prop_compress;
+-		if (BTRFS_I(inode)->prop_compress)
++		if (BTRFS_I(inode)->defrag_compress)
++			compress_type = BTRFS_I(inode)->defrag_compress;
++		else if (BTRFS_I(inode)->prop_compress)
+ 			compress_type = BTRFS_I(inode)->prop_compress;
  
  		/*
- 		 * we need to call clear_page_dirty_for_io on each
-@@ -645,7 +645,7 @@ static noinline void compress_file_range(struct inode *inode,
- 
- 		/* flag the file so we don't compress in the future */
- 		if (!btrfs_test_opt(fs_info, FORCE_COMPRESS) &&
--		    !(BTRFS_I(inode)->force_compress)) {
-+		    !(BTRFS_I(inode)->prop_compress)) {
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
- 		}
- 	}
-@@ -9402,7 +9402,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->reserved_extents = 0;
+@@ -9403,6 +9408,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
  
  	ei->runtime_flags = 0;
--	ei->force_compress = BTRFS_COMPRESS_NONE;
-+	ei->prop_compress = BTRFS_COMPRESS_NONE;
+ 	ei->prop_compress = BTRFS_COMPRESS_NONE;
++	ei->defrag_compress = BTRFS_COMPRESS_NONE;
  
  	ei->delayed_node = NULL;
  
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fa1b78cf25f6..571392cbd64c 100644
+index 571392cbd64c..5d28d53e1b81 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -1402,7 +1402,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
  
  		inode_lock(inode);
  		if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
--			BTRFS_I(inode)->force_compress = compress_type;
-+			BTRFS_I(inode)->prop_compress = compress_type;
+-			BTRFS_I(inode)->prop_compress = compress_type;
++			BTRFS_I(inode)->defrag_compress = compress_type;
  		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
  		if (ret < 0) {
  			inode_unlock(inode);
@@ -110,41 +101,11 @@ index fa1b78cf25f6..571392cbd64c 100644
  out_ra:
  	if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS) {
  		inode_lock(inode);
--		BTRFS_I(inode)->force_compress = BTRFS_COMPRESS_NONE;
-+		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
+-		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
++		BTRFS_I(inode)->defrag_compress = BTRFS_COMPRESS_NONE;
  		inode_unlock(inode);
  	}
  	if (!file)
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 4b23ae5d0e5c..916f5cf9b292 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -403,7 +403,7 @@ static int prop_compression_apply(struct inode *inode,
- 	if (len == 0) {
- 		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
- 		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
--		BTRFS_I(inode)->force_compress = BTRFS_COMPRESS_NONE;
-+		BTRFS_I(inode)->prop_compress = BTRFS_COMPRESS_NONE;
- 
- 		return 0;
- 	}
-@@ -417,14 +417,14 @@ static int prop_compression_apply(struct inode *inode,
- 
- 	BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
- 	BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
--	BTRFS_I(inode)->force_compress = type;
-+	BTRFS_I(inode)->prop_compress = type;
- 
- 	return 0;
- }
- 
- static const char *prop_compression_extract(struct inode *inode)
- {
--	switch (BTRFS_I(inode)->force_compress) {
-+	switch (BTRFS_I(inode)->prop_compress) {
- 	case BTRFS_COMPRESS_ZLIB:
- 		return "zlib";
- 	case BTRFS_COMPRESS_LZO:
 -- 
 2.13.0
 

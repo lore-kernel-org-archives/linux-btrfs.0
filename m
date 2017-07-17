@@ -1,65 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:37318 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751216AbdGPQHE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 16 Jul 2017 12:07:04 -0400
-Date: Sun, 16 Jul 2017 09:06:58 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Giuseppe Della Bianca <giusdbg@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20170716160658.r4uxuqlfe24hgi5n@merlins.org>
-References: <20170715004828.f4bom5wq34abe4lz@merlins.org>
- <20170715012216.njq6az3y34qyomtb@merlins.org>
- <20170715231245.GA28281@merlins.org>
- <3161165.SzVyadSXaH@exnet.gdb.it>
+Received: from parrot.pmhahn.de ([88.198.50.102]:47716 "EHLO parrot.pmhahn.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751253AbdGQGhB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jul 2017 02:37:01 -0400
+Subject: Re: segfault on btrfs --repair
+To: Tassos Mavroudeas <amavroudeas@yahoo.co.uk>, linux-btrfs@vger.kernel.org
+References: <4effea44-4fd2-c562-f7fb-17bc4623ced5@yahoo.co.uk>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>
+From: Philipp Hahn <pmhahn@pmhahn.de>
+Message-ID: <4be5b27a-25ad-4c24-719b-4477ed5822dc@pmhahn.de>
+Date: Mon, 17 Jul 2017 08:30:41 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3161165.SzVyadSXaH@exnet.gdb.it>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists (since 3.4 / 2012)
+In-Reply-To: <4effea44-4fd2-c562-f7fb-17bc4623ced5@yahoo.co.uk>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 16, 2017 at 04:01:53PM +0200, Giuseppe Della Bianca wrote:
-> > On Fri, Jul 14, 2017 at 06:22:16PM -0700, Marc MERLIN wrote:
-> > > Dear Chris and other developers,
-> ]zac[
-> > Others on this thread with the same error: did anyone recover from this
-> > without wiping the filesystem?
-> > 
-> > Is there a chance a balance might work around the bug so that whatever
-> > layout I have, changes, and stops the bug from occuring?
-> ]zac[
-> 
-> Any attempt, even just delete files, has worsened the situation.
-> I advise not to waste time in repairs, and directly recreate the filesystem.
- 
-I see. So, this is a condition where the filesystem is clear as far as:
-- check 
-- check lowmem
-- scrub
-are all concerned (at least in my case), but it's in a state where
-touching something around a sensitive area causes the bug.
-If so, this blows, and I'm not really wanting to recreate a clean 12TB
-filesystem "just because", especially since this could just happen
-again after I've rebuilt it.
+Hello,
 
->  while read proc; do
-> 	 if [ $progResult == 0 ]; then
-> 		 echo -e \nbtrfs tools already running
+Am 16.07.2017 um 13:19 schrieb Tassos Mavroudeas:
+> let me share with you a segfault on btrfs --repair
 > 
-> 		 progResult=222
-> 	 fi
+> I have backups etc. latest kernel and progs.
 > 
-> 	 echo $proc"
->  done < <(ps -ef | grep -e "btrfs \{1,\}\(subvolume\|send\|receive\|delete\)")
+> [root@node ~]# uname -a
+> Linux node 4.12.2 #1 SMP Sun Jul 16 08:15:48 EEST 2017 x86_64 x86_64
+> x86_64 GNU/Linux
+> [root@node ~]# btrfs version
+> btrfs-progs v4.11.1
+> 
+> GNU gdb (GDB) Red Hat Enterprise Linux 7.6.1-94.el7
+...
+> Program received signal SIGSEGV, Segmentation fault.
+> 0x00007f2f2a8e3f12 in __memmove_ssse3 () from /lib64/libc.so.6
+...
+> (gdb) backtrace
+> #0  0x00007f2f2a8e3f12 in __memmove_ssse3 () from /lib64/libc.so.6
+> #1  0x0000000000424705 in memmove (__len=141733920735, __src=0x91e58a1,
+> __dest=0x91e5880) at /usr/include/bits/string3.h:57
+> #2  memmove_extent_buffer (dst=dst@entry=0x91e4be0,
+> dst_offset=dst_offset@entry=3104, src_offset=src_offset@entry=3137,
+> len=len@entry=141733920735) at extent_io.c:882
+> #3  0x000000000040edb1 in btrfs_del_ptr (root=root@entry=0x8a3470,
+> path=path@entry=0x7fffffffde00, level=level@entry=0, slot=91) at
+> ctree.c:2607
+> #4  0x0000000000452809 in repair_btree (corrupt_blocks=0x7fffffffdfa0,
+> root=0x8a3470) at cmds-check.c:3847
+> #5  check_fs_root (root=root@entry=0x8a3470,
+> root_cache=root_cache@entry=0x7fffffffe4b0, wc=wc@entry=0x7fffffffe200)
+> at cmds-check.c:4009
+> #6  0x000000000045eda5 in check_fs_roots (root_cache=0x7fffffffe4b0,
+> root=0x8a3470) at cmds-check.c:4115
+> #7  cmd_check (argc=<optimized out>, argv=<optimized out>) at
+> cmds-check.c:13076
+> #8  0x000000000040abd4 in main (argc=3, argv=0x7fffffffe600) at btrfs.c:302
 
-Yeah, I probably hit that. I think you can also add scrub to that list.
+"Welcome to the club" - I have a similar broken btrfs.
+I posted some patches 2017-06-02 following "[PATCH 0/2] More nritems
+range checking"
+<http://www.spinics.net/lists/linux-btrfs/msg66143.html>, which at leas
+replace the SIGSEGV with a BUG_ON, but the have not been picked up yet.
+The do NOT fix the --repair, but only terminate fsck with a better error
+message.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Philipp

@@ -1,101 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:24893 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751161AbdGMEKH (ORCPT
+Received: from mail-wr0-f176.google.com ([209.85.128.176]:35213 "EHLO
+        mail-wr0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751433AbdGQVrW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2017 00:10:07 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: add support to sort by topid
-Date: Thu, 13 Jul 2017 12:16:42 +0800
-Message-Id: <20170713041642.27125-1-anand.jain@oracle.com>
+        Mon, 17 Jul 2017 17:47:22 -0400
+Received: by mail-wr0-f176.google.com with SMTP id w4so2164488wrb.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Jul 2017 14:47:22 -0700 (PDT)
+MIME-Version: 1.0
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 17 Jul 2017 15:47:20 -0600
+Message-ID: <CAJCQCtT=-YoFJgEo=BFqfiPdtMoJCYR3dJPSekf+HQ22GYGztw@mail.gmail.com>
+Subject: bind mounts on btrfs cause mountinfo confusion
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As users generally organize the subvols and snapshots based on the subvol
-directory hierarchy. So providing an ability to sort them by topid would
-help. Thanks.
+libOSTree makes use of bind mounts during startup to support multiple
+fs trees on any file system for the purpose of atomic updates and
+rollback.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- btrfs-list.c     | 18 ++++++++++++++++++
- btrfs-list.h     |  1 +
- cmds-subvolume.c |  8 ++++----
- 3 files changed, 23 insertions(+), 4 deletions(-)
+Example during boot:
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 92a537f425f3..733e22bc2524 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -188,11 +188,28 @@ static int comp_entry_with_path(struct root_info *entry1,
- 	return is_descending ? -ret : ret;
- }
- 
-+static int comp_entry_with_topid(struct root_info *entry1,
-+				struct root_info *entry2,
-+				int is_descending)
-+{
-+	int ret;
-+
-+	if (entry1->top_id > entry2->top_id)
-+		ret = 1;
-+	else if (entry1->top_id < entry2->top_id)
-+		ret = -1;
-+	else
-+		ret = 0;
-+
-+	return is_descending ? -ret : ret;
-+}
-+
- static btrfs_list_comp_func all_comp_funcs[] = {
- 	[BTRFS_LIST_COMP_ROOTID]	= comp_entry_with_rootid,
- 	[BTRFS_LIST_COMP_OGEN]		= comp_entry_with_ogen,
- 	[BTRFS_LIST_COMP_GEN]		= comp_entry_with_gen,
- 	[BTRFS_LIST_COMP_PATH]		= comp_entry_with_path,
-+	[BTRFS_LIST_COMP_TOPID]		= comp_entry_with_topid,
- };
- 
- static char *all_sort_items[] = {
-@@ -200,6 +217,7 @@ static char *all_sort_items[] = {
- 	[BTRFS_LIST_COMP_OGEN]		= "ogen",
- 	[BTRFS_LIST_COMP_GEN]		= "gen",
- 	[BTRFS_LIST_COMP_PATH]		= "path",
-+	[BTRFS_LIST_COMP_TOPID]		= "topid",
- 	[BTRFS_LIST_COMP_MAX]		= NULL,
- };
- 
-diff --git a/btrfs-list.h b/btrfs-list.h
-index 6e5fc7784fb1..9a3869a452a8 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -152,6 +152,7 @@ enum btrfs_list_comp_enum {
- 	BTRFS_LIST_COMP_OGEN,
- 	BTRFS_LIST_COMP_GEN,
- 	BTRFS_LIST_COMP_PATH,
-+	BTRFS_LIST_COMP_TOPID,
- 	BTRFS_LIST_COMP_MAX,
- };
- 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index de5e0da0ff48..17b680d26e86 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -416,10 +416,10 @@ static const char * const cmd_subvol_list_usage[] = {
- 	"-C [+|-]value",
- 	"             filter the subvolumes by ogeneration",
- 	"             (+value: >= value; -value: <= value; value: = value)",
--	"--sort=gen,ogen,rootid,path",
--	"             list the subvolume in order of gen, ogen, rootid or path",
--	"             you also can add '+' or '-' in front of each items.",
--	"             (+:ascending, -:descending, ascending default)",
-+	"--sort=gen,ogen,rootid,path,topid",
-+	"             list the subvolumes in order of gen, ogen, rootid, path",
-+	"             or topid. You also can add '+' or '-' in front of each",
-+	"             items. (+:ascending, -:descending, ascending default)",
- 	NULL,
- };
- 
+Jul 17 15:18:42 frawhide.localdomain systemd[779]: var.mount:
+Executing: /usr/bin/mount
+/sysroot/ostree/deploy/fedora-workstation/var /var -o bind
+
+cat /proc/self/mounts
+
+/dev/sda6 /var btrfs
+rw,relatime,ssd,space_cache,subvolid=5,subvol=/ostree/deploy/fedora-workstation/var
+0 0
+
+findmnt shows basically the same
+
+─/var
+/dev/sda6[/ostree/deploy/fedora-workstation/var]
+│                                                btrfs
+rw,relatime,ssd,space_cache,subvolid=5,subvol=/ostree/deploy/fedora-workstation
+
+
+There is no such subvolume /ostree/deploy/fedora-workstation/var,
+basically it seems like whatever is producing this mount information
+(kernel code?) is just assuming a bind mount on Btrfs is a subvolume
+without checking if that subvolume really exists, and if it's just an
+ordinary directory being bind mounted, which is what's going on here.
+
+I'd say it's confusing. But I don't know if it's a problem otherwise.
+
+
+
+
 -- 
-2.13.1
-
+Chris Murphy

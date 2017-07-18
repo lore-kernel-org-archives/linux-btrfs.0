@@ -1,66 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:44433 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756342AbdGLDiO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Jul 2017 23:38:14 -0400
-Date: Wed, 12 Jul 2017 05:38:06 +0200
-From: Adam Borowski <kilobyte@angband.pl>
+Received: from mx2.suse.de ([195.135.220.15]:39554 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751612AbdGRSW1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Jul 2017 14:22:27 -0400
+Date: Tue, 18 Jul 2017 20:21:11 +0200
+From: David Sterba <dsterba@suse.cz>
 To: Nick Terrell <terrelln@fb.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Kernel Team <Kernel-team@fb.com>, Chris Mason <clm@fb.com>,
-        Yann Collet <cyan@fb.com>, David Sterba <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
+        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
+        squashfs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Subject: Re: [PATCH v2 3/4] btrfs: Add zstd support
-Message-ID: <20170712033806.xlkzyo56gmtrr6f5@angband.pl>
+Message-ID: <20170718182111.GA2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170629194108.1674498-1-terrelln@fb.com>
  <20170629194108.1674498-4-terrelln@fb.com>
- <20170706163225.xbluc2gi2nlaafzo@angband.pl>
- <A077809C-5D3A-4F3C-B859-E6C371A6EA4F@fb.com>
- <20170707234018.syyfaktjxyxvwglc@angband.pl>
- <20170708030706.tle2mpfe376jneft@angband.pl>
- <046c7611-be6d-ec4d-6489-e8f49a4453f6@gmail.com>
- <15FC42E2-5823-4AF4-A945-0F7C60E7751C@fb.com>
- <816FA2EC-C072-41D3-A14D-9891BBFEB7DB@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <816FA2EC-C072-41D3-A14D-9891BBFEB7DB@fb.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170629194108.1674498-4-terrelln@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 11, 2017 at 06:01:38AM +0000, Nick Terrell wrote:
-> On 7/10/17, 9:57 PM, "Nick Terrell" <terrelln@fb.com> wrote:
-> > The problem is caused by a gcc-7 bug [1]. It miscompiles
-> > ZSTD_wildcopy(void *dst, void const *src, ptrdiff_t len) when len is 0.
->
-> Sorry, my patch still triggered the gcc bug, I used the wrong compiler.
-> This patch works, and runs about the same speed as before the patch for
-> small inputs, and slightly faster for larger inputs (100+ bytes). I'll
-> look for a faster workaround if benchmarks show it matters.
+On Thu, Jun 29, 2017 at 12:41:07PM -0700, Nick Terrell wrote:
+> +static void zstd_free_workspace(struct list_head *ws)
+> +{
+> +	struct workspace *workspace = list_entry(ws, struct workspace, list);
+> +
+> +	vfree(workspace->mem);
+> +	kfree(workspace->buf);
+> +	kfree(workspace);
+> +}
+> +
+> +static struct list_head *zstd_alloc_workspace(void)
+> +{
+> +	ZSTD_parameters params =
+> +			zstd_get_btrfs_parameters(ZSTD_BTRFS_MAX_INPUT);
+> +	struct workspace *workspace;
+> +
+> +	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
+> +	if (!workspace)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	workspace->size = max_t(size_t,
+> +			ZSTD_CStreamWorkspaceBound(params.cParams),
+> +			ZSTD_DStreamWorkspaceBound(ZSTD_BTRFS_MAX_INPUT));
+> +	workspace->mem = vmalloc(workspace->size);
+> +	workspace->buf = kmalloc(PAGE_SIZE, GFP_NOFS);
+> +	if (!workspace->mem || !workspace->buf)
+> +		goto fail;
+> +
+> +	INIT_LIST_HEAD(&workspace->list);
+> +
+> +	return &workspace->list;
+> +fail:
+> +	zstd_free_workspace(&workspace->list);
+> +	return ERR_PTR(-ENOMEM);
+> +}
 
-Confirmed, the fix stops the crash for me.  Yay!
-
-> --- a/lib/zstd/zstd_internal.h
-> +++ b/lib/zstd/zstd_internal.h
-> @@ -139,12 +139,8 @@ static void ZSTD_copy8(void *dst, const void *src) { memcpy(dst, src, 8); }
->  #define WILDCOPY_OVERLENGTH 8
->  ZSTD_STATIC void ZSTD_wildcopy(void *dst, const void *src, ptrdiff_t length)
->  {
-> -	const BYTE *ip = (const BYTE *)src;
-> -	BYTE *op = (BYTE *)dst;
-> -	BYTE *const oend = op + length;
-> -	do
-> -		COPY8(op, ip)
-> -	while (op < oend);
-> +	if (length > 0)
-> +		memcpy(dst, src, length);
->  }
->  
->  ZSTD_STATIC void ZSTD_wildcopy_e(void *dst, const void *src, void *dstEnd) /* should be faster for decoding, but strangely, not verified on all platform */
-
--- 
-⢀⣴⠾⠻⢶⣦⠀ 
-⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
-⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
-⠈⠳⣄⠀⠀⠀⠀ A master species delegates.
+In the next iteration, please update the workspace allocations so that
+they use kvmalloc/kvfree and GFP_KERNEL (eg. 6acafd1eff426).

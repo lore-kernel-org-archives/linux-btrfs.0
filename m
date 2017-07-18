@@ -1,55 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52049 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751462AbdGRPCm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Jul 2017 11:02:42 -0400
-Date: Tue, 18 Jul 2017 17:01:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs: make use of inode_need_compress()
-Message-ID: <20170718150125.GT2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170718093747.19046-1-anand.jain@oracle.com>
+Received: from len.romanrm.net ([91.121.75.85]:52106 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751613AbdGRSly (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Jul 2017 14:41:54 -0400
+Received: from natsu (unknown [IPv6:fd39::e9:9eff:fe8f:1bcf])
+        by len.romanrm.net (Postfix) with SMTP id 783D220318
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jul 2017 18:41:53 +0000 (UTC)
+Date: Tue, 18 Jul 2017 23:41:52 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: "detect-zeroes=unmap" support in Btrfs?
+Message-ID: <20170718234152.2ff2f438@natsu>
+In-Reply-To: <20170718165710.111ac97e@natsu>
+References: <20170718165710.111ac97e@natsu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170718093747.19046-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 18, 2017 at 05:37:47PM +0800, Anand Jain wrote:
-> Its better to have the policy enforcement going through a function,
-> so that we have better control and visibility of the decision logic.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/inode.c | 7 +++----
->  1 file changed, 3 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 06dea7c89bbd..d0cc3de120b7 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1189,11 +1189,10 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
->  		async_cow->locked_page = locked_page;
->  		async_cow->start = start;
->  
-> -		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
-> -		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
-> -			cur_end = end;
-> -		else
-> +		if (inode_need_compress(inode))
->  			cur_end = min(end, start + SZ_512K - 1);
-> +		else
-> +			cur_end = end;
+On Tue, 18 Jul 2017 16:57:10 +0500
+Roman Mamedov <rm@romanrm.net> wrote:
 
-The opencoded test should be cleaned up, however cow_file_range_async is
-called from run_delalloc_range if the inode_need_compress passes the
-'inode_need_compress' condition. So at minimum, checking again here is
-redundant, but we still might need to know if the compression is
-desired.
+> if a block written consists of zeroes entirely, instead of writing zeroes to
+> the backing storage, converts that into an "unmap" operation
+> (FALLOC_FL_PUNCH_HOLE[1]).
 
-The check does no depend on anything inside the loop, so it should be
-moved out of it.  If I understand the logic correctly, we get to
-cow_file_range_async and always want to compress, so the test should be
-dropped entirely.
+BTW I found that it is very easy to "offline" process preexisting files for
+this, using "fallocate -d".
+
+       -d, --dig-holes
+              Detect  and  dig  holes. Makes the file sparse in-place, without
+              using extra disk space. The minimal size of the hole depends  on
+              filesystem I/O block size (usually 4096 bytes). Also, when using
+              this option, --keep-size is implied. If no range is specified by
+              --offset and --length, then all file is analyzed for holes.
+
+              You  can think of this as doing a "cp --sparse" and renaming the
+              dest file as the original,  without  the  need  for  extra  disk
+              space.
+
+So my suggestion is to implement an "online" counterpart to such
+forced-sparsifying, i.e. the same thing done on FS I/O in-band.
+(the analogy is with offline vs in-band dedup).
+
+-- 
+With respect,
+Roman

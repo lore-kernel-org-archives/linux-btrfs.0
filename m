@@ -1,116 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:60512 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:44454 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750931AbdGRGvp (ORCPT
+        with ESMTP id S1751203AbdGRHYx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Jul 2017 02:51:45 -0400
+        Tue, 18 Jul 2017 03:24:53 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dXMLz-0008HA-Tk
-        for linux-btrfs@vger.kernel.org; Tue, 18 Jul 2017 08:51:31 +0200
+        id 1dXMs1-00078V-MK
+        for linux-btrfs@vger.kernel.org; Tue, 18 Jul 2017 09:24:37 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-cleaner causing heavy load
-Date: Tue, 18 Jul 2017 06:51:23 +0000 (UTC)
-Message-ID: <pan$353c4$27c16fdf$380479ed$1d3824d4@cox.net>
-References: <64e68f94963a441db087e660e167a2f4@sap.com>
+Subject: Re: bind mounts on btrfs cause mountinfo confusion
+Date: Tue, 18 Jul 2017 07:24:29 +0000 (UTC)
+Message-ID: <pan$78a03$5a3730b6$f093b5e5$da803183@cox.net>
+References: <CAJCQCtT=-YoFJgEo=BFqfiPdtMoJCYR3dJPSekf+HQ22GYGztw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Brennecke, Simon posted on Mon, 17 Jul 2017 08:03:33 +0000 as excerpted:
+Chris Murphy posted on Mon, 17 Jul 2017 15:47:20 -0600 as excerpted:
 
-
-> I understand that purging snapshots is a complex operation, but we
-> somehow need to reduce the load this causes during working hours.
-> Are there any ways to tell btrfs-cleaner to suspend or reduce its
-> operations?
+> Example during boot:
 > 
-> Background:
-> 	The file-server runs inside a XEN domU The backing disk is a Ceph 
-RDB
-> 	with 50TiB capacity We employ a bcache with a local SSD to improve
-> 	latency Files are served via NFS and Samba to a couple of hundred
-> 	clients.
+> Executing: /usr/bin/mount
+> /sysroot/ostree/deploy/fedora-workstation/var /var -o bind
 > 
-> Thanks & regards Simon
+> cat /proc/self/mounts
 > 
-> uname -a
-> 	Linux v2-fs 4.1.42-xen #2 SMP Wed Jul 12 14:06:37 CEST 2017 x86_64
-> 	GNU/Linux
+> /dev/sda6 /var btrfs
+> rw,relatime,ssd,space_cache,subvolid=5,subvol=/ostree/deploy/fedora-
+> workstation/var 0 0
 > 
-> btrfs --version
-> 	Btrfs v3.17
+> findmnt shows basically the same [options only listed]
+> 
+> rw,relatime,ssd,space_cache,subvolid=5,subvol=/ostree/deploy/fedora-
+> workstation
+> 
+> 
+> There is no such subvolume /ostree/deploy/fedora-workstation/var,
+> basically it seems like whatever is producing this mount information
+> (kernel code?) is just assuming a bind mount on Btrfs is a subvolume
+> without checking if that subvolume really exists, and if it's just an
+> ordinary directory being bind mounted, which is what's going on here.
+> 
+> I'd say it's confusing. But I don't know if it's a problem otherwise.
 
-Just another user and list regular here, and one that doesn't use either 
-ceph or btrfs snapshots so my ability to help will be limited, but some 
-things to try based on what I've seen go by on the list, the low hanging 
-fruit, if you will...
+Yes, it's kernel code.  The reason is that btrfs internally handles 
+subvolume mounts as bind-mounts, so it thinks all bind-mounts are 
+subvolume mounts, even when they're not.
 
-* If at all possible and you have it on, try turning off the btrfs quota 
-machinery when deleting snapshots.  Attempting to keep quotas in sync 
-while deleting snapshots increases the load *tremendously* and it simply 
-doesn't scale well.  Based on list reports, turning them off during 
-snapshot deletion can be like night and day, result-wise.
+It can be slightly confusing, true, but I actually appreciate having the 
+path information available here for my bind-mounts (which aren't 
+subvolumes as I don't use subvolumes here).  It makes it easier to figure 
+out which are the bind-mounts vs the original mount.  From my mount 
+output:
 
-If you need quotas you can of course turn them back on when you're done 
-with the deletes, and it's quite possible that it's the big deletion 
-backlog that's the problem and deleting just one snapshot at a time with 
-quotas on may work at least tolerably well once you've caught up with the 
-backlog.
+/dev/sda5 on / type btrfs (..,subvolid=5,subvol=/)
+/dev/sda5 on /m/cbind/etc/bind type btrfs (..,subvolid=5,subvol=/etc/bind)
 
-OTOH, quotas do dramatically increase scaling issues for a number of 
-btrfs maintenance tasks, and until recently, they were too buggy to be 
-reliable anyway, so if you don't really need them, keeping them off will 
-likely improve btrfs responsiveness for you, particularly when doing 
-snapshot deletion, balances or checks.  And as buggy as quotas were in 
-4.1, I'd suggest either upgrading, or just leaving them off, as they're 
-just not worth the bother, in 4.1.
+/dev/sda6 on /h type btrfs (..,subvolid=5,subvol=/)
+/dev/sda6 on /m/cbind/var/bind type btrfs (..,subvolid=5,subvol=/var/bind)
 
-* Talking about "recently", on the LTS side this list does try to support 
-the last two LTS kernel series, but not really beyond that... as is 
-understandable for a forward focused development list covering a still 
-stabilizing filesystem such as btrfs.  The two currently supported LTS 
-series are thus now 4.9 and 4.4, with the 4.1 you're running now off in 
-long ago btrfs development history.
+Note the subvolid=5.  For real subvolume mounts that should be something 
+else, so it makes it clear it's the root subvolume and thus a regular 
+bind-mount not a subvolume mount, regardless of what subvol= says.
 
-Basically, while there are valid reasons to run kernels that old, in 
-general they tend to be incompatible with the reasons one may choose to 
-run a still stabilizing, not fully stable and mature filesystem like 
-btrfs.  So the list recommendation tends to be to choose one or the 
-other, a more current kernel in keeping with a not yet fully stabilized 
-btrfs, or a different, fully  stable filesystem, in keeping with the 
-reasons people usually give for choosing to run such old kernels.
+Meanwhile, the subvol= gives me the information that the duplicate 
+/dev/sdx is missing, the path on the device that's actually being 
+mounted.  For the original mount it's /.  For bind-mounts, it's the path 
+that's being bind-mounted elsewhere, /etc/bind being bind-mounted to 
+/m/cbind/etc/bind, for the first (sda5) listing above.
 
-Alternatively, some distros support btrfs on older kernels, but in that 
-case you're better off getting support from them, because theyknow what 
-changes they've backported and which ones they haven't, and are thus 
-better positioned to provide support for those kernels and what's running 
-in them.
+Before the kernel started printing that subvol= stuff, this information 
+was missing, as it still is for non-btrfs.
 
-Or you can stay with what you have and try to do the best with the 
-support you can get from this list, and we'll try to do our best too, but 
-realize there's a serious limit to how much work people are going to be 
-putting into stuff that old, is all.
+So while slightly confusing, I definitely /like/ having that new 
+information available. =:^)
 
-Meanwhile, as hinted, quotas are one area that has had dramatic fixes 
-since 4.1, where they were definitely known to still be buggy.  Tho 
-they'll still kill snapshot deletion performance in current kernels, but 
-at least you should be getting more reliable numbers with them in current 
-kernels.  So if you use quotas, you _definitely_ want to upgrade... 
-unless of course your distro has backported those fixes, but then we're 
-back to them being in a better position to provide support as they know 
-what they've backported.
-
-As for btrfs-tools, while in normal operation they're not as critical as 
-the kernel (since in normal operation most of the work is done by the 
-kernel, with userspace only calling the appropriate kernel 
-functionality), if there's problems, you want a newer userspace as well, 
-because then it's the userspace code doing the work.  Regardless, 3.17 is 
-a /very/ long time ago in btrfs terms, and an upgrade to something even 
-/half/ modern, perhaps a 4.4 userspace to match a 4.4 LTS kernel upgrade, 
-should be considered.
+Arguably it could be printed as something other than "subvol=", however, 
+but what?  If I had a reasonable suggestion for something that retains 
+the additional information but looks less confusing regardless of whether 
+it's an actual subvolume mount or just a bind-mount, I'd have made it 
+already. =:^(
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

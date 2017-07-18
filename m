@@ -1,42 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.121.75.85]:51650 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751371AbdGRMEy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Jul 2017 08:04:54 -0400
-Received: from natsu (unknown [IPv6:fd39::e9:9eff:fe8f:1bcf])
-        by len.romanrm.net (Postfix) with SMTP id D468020318
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jul 2017 11:57:11 +0000 (UTC)
-Date: Tue, 18 Jul 2017 16:57:10 +0500
-From: Roman Mamedov <rm@romanrm.net>
+Received: from userp1040.oracle.com ([156.151.31.81]:20990 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751334AbdGRJbO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Jul 2017 05:31:14 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: "detect-zeroes=unmap" support in Btrfs?
-Message-ID: <20170718165710.111ac97e@natsu>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: make use of inode_need_compress()
+Date: Tue, 18 Jul 2017 17:37:47 +0800
+Message-Id: <20170718093747.19046-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Its better to have the policy enforcement going through a function,
+so that we have better control and visibility of the decision logic.
 
-Qemu/KVM has this nice feature in its storage layer, "detect-zeroes=unmap".
-Basically the VM host detects if a block written by the guest consists of
-zeroes entirely, and instead of writing zeroes to the backing storage,
-converts that into an "unmap" operation (FALLOC_FL_PUNCH_HOLE[1]).
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/inode.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-I wonder if the same could be added into Btrfs directly? With a CoW filesystem
-there is really no reason to store long runs of zeroes, or even spend
-compression cycles on them (even if they compress really well), it would be
-more efficient to turn all zero-filled blocks into file holes. (In effect
-forcing all files with zero blocks into always being "sparse" files.)
-
-You could say this increases fragmentation, but given the CoW nature of Btrfs,
-any write to a file increases fragmentation already (except with "nocow"), and
-converting zeroes into holes would be beneficial due to not requiring any
-actual IO when those need to be read (reading back zeroes which are not stored
-anywhere, as opposed to reading actual zeroes from disk).
-
-[1] http://man7.org/linux/man-pages/man2/fallocate.2.html
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 06dea7c89bbd..d0cc3de120b7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1189,11 +1189,10 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 		async_cow->locked_page = locked_page;
+ 		async_cow->start = start;
+ 
+-		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+-		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
+-			cur_end = end;
+-		else
++		if (inode_need_compress(inode))
+ 			cur_end = min(end, start + SZ_512K - 1);
++		else
++			cur_end = end;
+ 
+ 		async_cow->end = cur_end;
+ 		INIT_LIST_HEAD(&async_cow->extents);
 -- 
-With respect,
-Roman
+2.13.1
+

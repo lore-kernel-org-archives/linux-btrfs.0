@@ -1,26 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52380 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751560AbdGRPGt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Jul 2017 11:06:49 -0400
-Date: Tue, 18 Jul 2017 17:05:33 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs: btrfs_inherit_iflags() can be static
-Message-ID: <20170718150533.GU2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170718093705.18901-1-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170718093705.18901-1-anand.jain@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:43079 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751524AbdGRJa0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 18 Jul 2017 05:30:26 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: btrfs_inherit_iflags() can be static
+Date: Tue, 18 Jul 2017 17:37:05 +0800
+Message-Id: <20170718093705.18901-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 18, 2017 at 05:37:05PM +0800, Anand Jain wrote:
-> btrfs_new_inode() is the only consumer move it to inode.c,
-> from ioctl.c.
+btrfs_new_inode() is the only consumer move it to inode.c,
+from ioctl.c.
 
-Yes, moving the functions out of ioctl.c is ok.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/ctree.h |  1 -
+ fs/btrfs/inode.c | 31 +++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.c | 31 -------------------------------
+ 3 files changed, 31 insertions(+), 32 deletions(-)
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3f3eb7b17cac..10bf3e40a846 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3229,7 +3229,6 @@ long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+ long btrfs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+ int btrfs_ioctl_get_supported_features(void __user *arg);
+ void btrfs_update_iflags(struct inode *inode);
+-void btrfs_inherit_iflags(struct inode *inode, struct inode *dir);
+ int btrfs_is_empty_uuid(u8 *uuid);
+ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		      struct btrfs_ioctl_defrag_range_args *range,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d0cc3de120b7..3309e6eb1814 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6184,6 +6184,37 @@ static int btrfs_insert_inode_locked(struct inode *inode)
+ 		   btrfs_find_actor, &args);
+ }
+ 
++/*
++ * Inherit flags from the parent inode.
++ *
++ * Currently only the compression flags and the cow flags are inherited.
++ */
++static void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
++{
++	unsigned int flags;
++
++	if (!dir)
++		return;
++
++	flags = BTRFS_I(dir)->flags;
++
++	if (flags & BTRFS_INODE_NOCOMPRESS) {
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
++	} else if (flags & BTRFS_INODE_COMPRESS) {
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
++		BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
++	}
++
++	if (flags & BTRFS_INODE_NODATACOW) {
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
++		if (S_ISREG(inode->i_mode))
++			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
++	}
++
++	btrfs_update_iflags(inode);
++}
++
+ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *root,
+ 				     struct inode *dir,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fa1b78cf25f6..335e252a99f5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -156,37 +156,6 @@ void btrfs_update_iflags(struct inode *inode)
+ 		      new_fl);
+ }
+ 
+-/*
+- * Inherit flags from the parent inode.
+- *
+- * Currently only the compression flags and the cow flags are inherited.
+- */
+-void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+-{
+-	unsigned int flags;
+-
+-	if (!dir)
+-		return;
+-
+-	flags = BTRFS_I(dir)->flags;
+-
+-	if (flags & BTRFS_INODE_NOCOMPRESS) {
+-		BTRFS_I(inode)->flags &= ~BTRFS_INODE_COMPRESS;
+-		BTRFS_I(inode)->flags |= BTRFS_INODE_NOCOMPRESS;
+-	} else if (flags & BTRFS_INODE_COMPRESS) {
+-		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NOCOMPRESS;
+-		BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
+-	}
+-
+-	if (flags & BTRFS_INODE_NODATACOW) {
+-		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
+-		if (S_ISREG(inode->i_mode))
+-			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+-	}
+-
+-	btrfs_update_iflags(inode);
+-}
+-
+ static int btrfs_ioctl_getflags(struct file *file, void __user *arg)
+ {
+ 	struct btrfs_inode *ip = BTRFS_I(file_inode(file));
+-- 
+2.13.1
+

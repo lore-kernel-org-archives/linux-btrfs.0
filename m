@@ -1,115 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45840 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57712 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932172AbdGTDZz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jul 2017 23:25:55 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B0329AB43
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 03:25:53 +0000 (UTC)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: fix lockup in find_free_extent with read-only block
- groups
-Message-ID: <90eaab22-1431-715a-17bb-06ffe686e5cf@suse.com>
-Date: Wed, 19 Jul 2017 23:25:51 -0400
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+        id S1753762AbdGSR5t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Jul 2017 13:57:49 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 53634AC6B
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jul 2017 17:57:48 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: account that we're waiting for DIO read
+Date: Wed, 19 Jul 2017 19:56:32 +0200
+Message-Id: <20170719175632.1757-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we have a block group that is all of the following:
-1) uncached in memory
-2) is read-only
-3) has a disk cache state that indicates we need to recreate the cache
+Correctly account for IO when waiting for a submitted DIO read, the case
+when we're retrying.  This only for the accounting purposes and should
+not change other behaviour.
 
-AND the file system has enough free space fragmentation such that the
-request for an extent of a given size can't be honored;
-
-AND have a single CPU core;
-
-AND it's the block group with the highest starting offset such that
-there are no opportunities (like reading from disk) for the loop to
-yield the CPU;
-
-We can end up with a lockup.
-
-The root cause is simple.  Once we're in the position that we've read in
-all of the other block groups directly and none of those block groups
-can honor the request, there are no more opportunities to sleep.  We end
-up trying to start a caching thread which never gets run if we only have
-one core.  This *should* present as a hung task waiting on the caching
-thread to make some progress, but it doesn't.  Instead, it degrades into
-a busy loop because of the placement of the read-only check.
-
-During the first pass through the loop, block_group->cached will be set
-to BTRFS_CACHE_STARTED and have_caching_bg will be set.  Then we hit the
-read-only check and short circuit the loop.  We're not yet in
-LOOP_CACHING_WAIT, so we skip that loop back before going through the
-loop again for other raid groups.
-
-Then we move to LOOP_CACHING_WAIT state.
-
-During the this pass through the loop, ->cached will still be
-BTRFS_CACHE_STARTED, which means it's not cached, so we'll enter
-cache_block_group, do a lot of nothing, and return, and also set
-have_caching_bg again.  Then we hit the read-only check and short circuit
-the loop.  The same thing happens as before except now we DO trigger
-the LOOP_CACHING_WAIT && have_caching_bg check and loop back up to the
-top.  We do this forever.
-
-There are two fixes in this patch since they address the same underlying
-bug.
-
-The first is to add a cond_resched to the end of the loop to ensure
-that the caching thread always has an opportunity to run.  This will
-fix the soft lockup issue, but find_free_extent will still loop doing
-nothing until the thread has completed.
-
-The second is to move the read-only check to the top of the loop.  We're
-never going to return an allocation within a read-only block group so
-we may as well skip it early.  The check for ->cached == BTRFS_CACHE_ERROR
-would cause the same problem except that BTRFS_CACHE_ERROR is considered
-a "done" state and we won't re-set have_caching_bg again.
-
-Many thanks to Stephan Kulow <coolo@suse.de> for his excellent help in
-the testing process.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent-tree.c |    7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7571,6 +7571,10 @@ search:
- 		u64 offset;
- 		int cached;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index eb495e956d53..2fde93548298 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8105,7 +8105,7 @@ static int __btrfs_correct_data_nocsum(struct inode *inode,
+ 			goto next;
+ 		}
  
-+		/* If the block group is read-only, we can skip it entirely. */
-+		if (unlikely(block_group->ro))
-+			continue;
-+
- 		btrfs_grab_block_group(block_group, delalloc);
- 		search_start = block_group->key.objectid;
+-		wait_for_completion(&done.done);
++		wait_for_completion_io(&done.done);
  
-@@ -7606,8 +7610,6 @@ have_block_group:
+ 		if (!done.uptodate) {
+ 			/* We might have another mirror, so try again */
+@@ -8219,7 +8219,7 @@ static int __btrfs_subio_endio_read(struct inode *inode,
+ 			goto next;
+ 		}
  
- 		if (unlikely(block_group->cached == BTRFS_CACHE_ERROR))
- 			goto loop;
--		if (unlikely(block_group->ro))
--			goto loop;
+-		wait_for_completion(&done.done);
++		wait_for_completion_io(&done.done);
  
- 		/*
- 		 * Ok we want to try and use the cluster allocator, so
-@@ -7819,6 +7821,7 @@ loop:
- 		failed_alloc = false;
- 		BUG_ON(index != get_block_group_index(block_group));
- 		btrfs_release_block_group(block_group, delalloc);
-+		cond_resched();
- 	}
- 	up_read(&space_info->groups_sem);
- 
-
+ 		if (!done.uptodate) {
+ 			/* We might have another mirror, so try again */
 -- 
-Jeff Mahoney
-SUSE Labs
+2.13.0
+

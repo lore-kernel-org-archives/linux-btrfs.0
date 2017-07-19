@@ -1,62 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35482 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751193AbdGMNUA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2017 09:20:00 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 15923AC7F
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2017 13:19:59 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: allow defrag compress to override NOCOMPRESS attribute
-Date: Thu, 13 Jul 2017 15:18:44 +0200
-Message-Id: <20170713131844.706-1-dsterba@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:19674 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751991AbdGSNNT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Jul 2017 09:13:19 -0400
+Date: Wed, 19 Jul 2017 16:13:07 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [bug report] btrfs: get fs_info from eb in btrfs_print_leaf, remove
+ argument
+Message-ID: <20170719131307.v7houpsugk5te247@mwanda>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, the BTRFS_INODE_NOCOMPRESS will prevent any compression on a
-given file, except when the mount is force-compress. As users have
-reported on IRC, this will also prevent compression when requested by
-defrag (btrfs fi defrag -c file).
+Hello David Sterba,
 
-The nocompress flag is set automatically by filesystem when the ratios
-are bad and the user would have to manually drop the bit in order to
-make defrag -c work. This is not good from the usability perspective.
+This is a semi-automatic email about new static checker warnings.
 
-This patch will raise priority for the defrag -c over nocompress, ie.
-any file with NOCOMPRESS bit set will get defragmented. The bit will
-remain untouched.
+The patch c042dd070450: "btrfs: get fs_info from eb in
+btrfs_print_leaf, remove argument" from Jun 29, 2017, leads to the
+following Smatch complaint:
 
-Alternate option was to also drop the nocompress bit and keep the
-decision logic as is, but I think this is not the right solution.
+    fs/btrfs/print-tree.c:181 btrfs_print_leaf()
+    warn: variable dereferenced before check 'l' (see line 166)
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/inode.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+fs/btrfs/print-tree.c
+   165	{
+   166		struct btrfs_fs_info *fs_info = l->fs_info;
+                                                ^^^^^^^^^^
+New dereference.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5d3c6ac960fd..ea2f02ec0394 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -399,12 +399,14 @@ static inline int inode_need_compress(struct inode *inode)
- 	/* force compress */
- 	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
- 		return 1;
-+	/* force compress when called from defrag */
-+	if (BTRFS_I(inode)->force_compress)
-+		return 1;
- 	/* bad compression ratios */
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
- 		return 0;
- 	if (btrfs_test_opt(fs_info, COMPRESS) ||
--	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
--	    BTRFS_I(inode)->force_compress)
-+	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS)
- 		return 1;
- 	return 0;
- }
--- 
-2.13.0
+   167		int i;
+   168		u32 type, nr;
+   169		struct btrfs_item *item;
+   170		struct btrfs_root_item *ri;
+   171		struct btrfs_dir_item *di;
+   172		struct btrfs_inode_item *ii;
+   173		struct btrfs_block_group_item *bi;
+   174		struct btrfs_file_extent_item *fi;
+   175		struct btrfs_extent_data_ref *dref;
+   176		struct btrfs_shared_data_ref *sref;
+   177		struct btrfs_dev_extent *dev_extent;
+   178		struct btrfs_key key;
+   179		struct btrfs_key found_key;
+   180	
+   181		if (!l)
+                    ^^
+Checked too late.
 
+   182			return;
+   183	
+
+regards,
+dan carpenter

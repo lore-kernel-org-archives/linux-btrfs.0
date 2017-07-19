@@ -1,40 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40160 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46533 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752091AbdGUQCO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2017 12:02:14 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3C3D4AD82
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2017 16:02:13 +0000 (UTC)
-Date: Fri, 21 Jul 2017 18:00:58 +0200
+        id S1751991AbdGSQsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 19 Jul 2017 12:48:12 -0400
+Date: Wed, 19 Jul 2017 18:46:55 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Remove unused parameters from volume.c
- functions
-Message-ID: <20170721160058.GK2866@twin.jikos.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix dir item validation when replaying xattr
+ deletes
+Message-ID: <20170719164655.GB2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170718160917.GX2866@twin.jikos.cz>
- <1500450522-22086-1-git-send-email-nborisov@suse.com>
+References: <20170718193402.11810-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1500450522-22086-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20170718193402.11810-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 19, 2017 at 10:48:42AM +0300, Nikolay Borisov wrote:
-> This also adjusts the respective callers in other files. Those were found with
-> -Wunused-parameter.
+On Tue, Jul 18, 2017 at 08:34:02PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> btrfs_full_stripe_len's mapping_tree - introduced by
-> 53b381b3abeb ("Btrfs: RAID5 and RAID6") but it was never really used even in
-> that commit
-> 
-> btrfs_is_parity_mirror's mirror_num - same as above
-> 
-> chunk_drange_filter's chunk_offset - introduced by 94e60d5a5c4b ("Btrfs: devid
-> subset filter") and never used.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> We were passing an incorrect slot number to the function that validates
+> directory items when we are replaying xattr deletes from a log tree. The
+> correct slot is stored at variable 'i' and not at 'path->slots[0]', so
+> the call to the validation function was only correct for the first
+> iteration of the loop, when 'i == path->slots[0]'.
+> After this fix, the fstest generic/066 passes again.
+
+Thanks. Fixing this was last on my list of known issue caused by some of
+the new 4.13 patches.
 
 Reviewed-by: David Sterba <dsterba@suse.com>

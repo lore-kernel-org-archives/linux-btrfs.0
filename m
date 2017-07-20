@@ -1,119 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:37283 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752698AbdG3CSp (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41063 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S935214AbdGTV1y (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Jul 2017 22:18:45 -0400
-Received: by mail-qt0-f195.google.com with SMTP id d10so14483683qtb.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jul 2017 19:18:45 -0700 (PDT)
-Date: Sat, 29 Jul 2017 23:18:39 -0300
-From: Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
-        <ernesto.mnd.fernandez@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>,
-        Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
-        <ernesto.mnd.fernandez@gmail.com>
-Subject: [PATCH v2] btrfs: preserve i_mode if __btrfs_set_acl() fails
-Message-ID: <20170730021838.GA4565@debian.home>
-References: <20170729002626.GA6759@debian.home>
+        Thu, 20 Jul 2017 17:27:54 -0400
+Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.21/8.16.0.21) with SMTP id v6KLP4dk028673
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 14:27:54 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+        by mx0a-00082601.pphosted.com with ESMTP id 2bu185gy6b-1
+        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 14:27:53 -0700
+Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
+ mx-out.facebook.com (10.103.99.99) with ESMTP  id
+ 493059126d9211e78c370002c9dfb610-3a507150 for <linux-btrfs@vger.kernel.org>;
+        Thu, 20 Jul 2017 14:27:51 -0700
+From: Nick Terrell <terrelln@fb.com>
+To: Nick Terrell <terrelln@fb.com>
+CC: "Austin S . Hemmelgarn" <ahferroin7@gmail.com>,
+        Herbert Xu <herbert@gondor.apana.org.au>, <kernel-team@fb.com>,
+        Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
+        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
+        <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCH v3 0/4] Add xxhash and zstd modules
+Date: Thu, 20 Jul 2017 14:27:39 -0700
+Message-ID: <20170720212743.3351201-1-terrelln@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170729002626.GA6759@debian.home>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When changing a file's acl mask, btrfs_set_acl() will first set the
-group bits of i_mode to the value of the mask, and only then set the
-actual extended attribute representing the new acl.
+Hi all,
 
-If the second part fails (due to lack of space, for example) and the
-file had no acl attribute to begin with, the system will from now on
-assume that the mask permission bits are actual group permission bits,
-potentially granting access to the wrong users.
+This patch set adds xxhash, zstd compression, and zstd decompression
+modules. It also adds zstd support to BtrFS and SquashFS.
 
-Prevent this by starting the journal transaction before calling
-__btrfs_set_acl and only changing the inode mode after the acl is set
-successfully.
+Each patch has relevant summaries, benchmarks, and tests.
 
-Signed-off-by: Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
----
-Changes in v2:
-  - Take the code that checks if we are setting a default acl on something
-    that is not a dir, remove it from the __btrfs_set_acl function, and
-    place it in btrfs_set_acl instead. This should fix the issue pointed out
-    by Josef Bacik, that I was sometimes updating the inode even when there
-    was no change.
-  - Don't call BUG_ON when the inode failed to update. Also requested by
-    Josef Bacik. It should be noted that __btrfs_setxattr was already
-    calling BUG_ON before my patch; that has not been changed.
+Best,
+Nick Terrell
 
- fs/btrfs/acl.c | 31 +++++++++++++++++++++++++++----
- 1 file changed, 27 insertions(+), 4 deletions(-)
+Changelog:
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 8d8370d..f62e8ac 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -27,6 +27,7 @@
- #include "ctree.h"
- #include "btrfs_inode.h"
- #include "xattr.h"
-+#include "transaction.h"
- 
- struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- {
-@@ -80,8 +81,6 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
- 		name = XATTR_NAME_POSIX_ACL_ACCESS;
- 		break;
- 	case ACL_TYPE_DEFAULT:
--		if (!S_ISDIR(inode->i_mode))
--			return acl ? -EINVAL : 0;
- 		name = XATTR_NAME_POSIX_ACL_DEFAULT;
- 		break;
- 	default:
-@@ -113,14 +112,38 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
- 
- int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
- 	int ret;
-+	umode_t mode = inode->i_mode;
- 
-+	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
-+		return acl ? -EINVAL : 0;
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-+		ret = posix_acl_update_mode(inode, &mode, &acl);
- 		if (ret)
- 			return ret;
- 	}
--	return __btrfs_set_acl(NULL, inode, acl, type);
-+
-+	if (btrfs_root_readonly(root))
-+		return -EROFS;
-+
-+	trans = btrfs_start_transaction(root, 2);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	ret = __btrfs_set_acl(trans, inode, acl, type);
-+	if (ret)
-+		goto out;
-+
-+	inode->i_mode = mode;
-+	inode_inc_iversion(inode);
-+	inode->i_ctime = current_time(inode);
-+	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
-+	ret = btrfs_update_inode(trans, root, inode);
-+out:
-+	btrfs_end_transaction(trans);
-+	return ret;
- }
- 
- /*
--- 
-2.1.4
+v1 -> v2:
+- Make pointer in lib/xxhash.c:394 non-const (1/4)
+- Use div_u64() for division of u64s (2/4)
+- Reduce stack usage of ZSTD_compressSequences(), ZSTD_buildSeqTable(),
+  ZSTD_decompressSequencesLong(), FSE_buildDTable(), FSE_decompress_wksp(),
+  HUF_writeCTable(), HUF_readStats(), HUF_readCTable(),
+  HUF_compressWeights(), HUF_readDTableX2(), and HUF_readDTableX4() (2/4)
+- No zstd function uses more than 400 B of stack space (2/4)
 
+v2 -> v3:
+- Work around gcc-7 bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81388
+  (2/4)
+- Fix bug in dictionary compression from upstream commit cc1522351f (2/4)
+- Port upstream BtrFS commits e1ddce71d6, 389a6cfc2a, and 6acafd1eff (3/4)
+- Change default compression level for BtrFS to 3 (3/4)
 
+Nick Terrell (4):
+  lib: Add xxhash module
+  lib: Add zstd modules
+  btrfs: Add zstd support
+  squashfs: Add zstd support
+
+ fs/btrfs/Kconfig           |    2 +
+ fs/btrfs/Makefile          |    2 +-
+ fs/btrfs/compression.c     |    1 +
+ fs/btrfs/compression.h     |    6 +-
+ fs/btrfs/ctree.h           |    1 +
+ fs/btrfs/disk-io.c         |    2 +
+ fs/btrfs/ioctl.c           |    6 +-
+ fs/btrfs/props.c           |    6 +
+ fs/btrfs/super.c           |   12 +-
+ fs/btrfs/sysfs.c           |    2 +
+ fs/btrfs/zstd.c            |  435 ++++++
+ fs/squashfs/Kconfig        |   14 +
+ fs/squashfs/Makefile       |    1 +
+ fs/squashfs/decompressor.c |    7 +
+ fs/squashfs/decompressor.h |    4 +
+ fs/squashfs/squashfs_fs.h  |    1 +
+ fs/squashfs/zstd_wrapper.c |  150 ++
+ include/linux/xxhash.h     |  236 +++
+ include/linux/zstd.h       | 1157 +++++++++++++++
+ include/uapi/linux/btrfs.h |    8 +-
+ lib/Kconfig                |   11 +
+ lib/Makefile               |    3 +
+ lib/xxhash.c               |  500 +++++++
+ lib/zstd/Makefile          |   18 +
+ lib/zstd/bitstream.h       |  374 +++++
+ lib/zstd/compress.c        | 3479 ++++++++++++++++++++++++++++++++++++++++++++
+ lib/zstd/decompress.c      | 2526 ++++++++++++++++++++++++++++++++
+ lib/zstd/entropy_common.c  |  243 ++++
+ lib/zstd/error_private.h   |   53 +
+ lib/zstd/fse.h             |  575 ++++++++
+ lib/zstd/fse_compress.c    |  795 ++++++++++
+ lib/zstd/fse_decompress.c  |  332 +++++
+ lib/zstd/huf.h             |  212 +++
+ lib/zstd/huf_compress.c    |  770 ++++++++++
+ lib/zstd/huf_decompress.c  |  960 ++++++++++++
+ lib/zstd/mem.h             |  151 ++
+ lib/zstd/zstd_common.c     |   75 +
+ lib/zstd/zstd_internal.h   |  250 ++++
+ lib/zstd/zstd_opt.h        | 1014 +++++++++++++
+ 39 files changed, 14382 insertions(+), 12 deletions(-)
+ create mode 100644 fs/btrfs/zstd.c
+ create mode 100644 fs/squashfs/zstd_wrapper.c
+ create mode 100644 include/linux/xxhash.h
+ create mode 100644 include/linux/zstd.h
+ create mode 100644 lib/xxhash.c
+ create mode 100644 lib/zstd/Makefile
+ create mode 100644 lib/zstd/bitstream.h
+ create mode 100644 lib/zstd/compress.c
+ create mode 100644 lib/zstd/decompress.c
+ create mode 100644 lib/zstd/entropy_common.c
+ create mode 100644 lib/zstd/error_private.h
+ create mode 100644 lib/zstd/fse.h
+ create mode 100644 lib/zstd/fse_compress.c
+ create mode 100644 lib/zstd/fse_decompress.c
+ create mode 100644 lib/zstd/huf.h
+ create mode 100644 lib/zstd/huf_compress.c
+ create mode 100644 lib/zstd/huf_decompress.c
+ create mode 100644 lib/zstd/mem.h
+ create mode 100644 lib/zstd/zstd_common.c
+ create mode 100644 lib/zstd/zstd_internal.h
+ create mode 100644 lib/zstd/zstd_opt.h
+
+--
+2.9.3

@@ -1,95 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:40769 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752822AbdGTOjN (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:52300 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S935012AbdGTOoF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2017 10:39:13 -0400
+        Thu, 20 Jul 2017 10:44:05 -0400
 Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id 145685FEDE
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 14:39:12 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id 2IQgfvB9nVk2 for <linux-btrfs@vger.kernel.org>;
-        Thu, 20 Jul 2017 14:39:09 +0000 (UTC)
+        by mailgw-02.dd24.net (Postfix) with ESMTP id 7EF455FD11
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 14:44:04 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id 4mTkVYPgAUo7 for <linux-btrfs@vger.kernel.org>;
+        Thu, 20 Jul 2017 14:44:02 +0000 (UTC)
 Received: from heisenberg.fritz.box (ppp-82-135-93-9.dynamic.mnet-online.de [82.135.93.9])
         (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 14:39:09 +0000 (UTC)
-Message-ID: <1500561549.7266.1.camel@scientia.net>
-Subject: strange No space left on device issues
+        by mailgw-02.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 14:44:02 +0000 (UTC)
+Message-ID: <1500561842.7266.3.camel@scientia.net>
+Subject: Re: strange No space left on device issues
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Thu, 20 Jul 2017 16:39:09 +0200
+Date: Thu, 20 Jul 2017 16:44:02 +0200
+In-Reply-To: <1500561549.7266.1.camel@scientia.net>
+References: <1500561549.7266.1.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-TdBzDwV+1OikxKY88klJ"
+        boundary="=-a9fERunOrWle/PxmS6K/"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-TdBzDwV+1OikxKY88klJ
+--=-a9fERunOrWle/PxmS6K/
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hey.
+Oh and I should add:
+After such error, cp goes on copying (with other files)...
 
-The following happens on Debian stretch systems:
-# uname -a
-Linux lcg-lrz-admin 4.9.0-3-amd64 #1 SMP Debian 4.9.30-2+deb9u2 (2017-06-26=
-) x86_64 GNU/Linux
+Same issue occurs when I do something like tar -cf - /media | tar -xf
 
-What I have are VMs, which run with root fs as ext4 and which I want to
-migrate to btrfs.
-So I've added further disk images and then something like this:
-- mkfs.btrfs --nodiscard --label system /dev/sdc2 (i.e. the new image)
-- mounted that at /mnt
-- created a subvol "root" in it
-- stopped all services on the node
-- remount,ro /
-- mount --bind / /media
-- cp -a /media/ /mnt/subvol/
-- and then I'd go on move everything in place, install bootloader etc.
-
-That used to always work, and does when I try the same with ext4
-instead of btrfs on the new images.
-
-But with btrfs I get spurious No space error like:
-cp: cannot create regular file
-'/mnt/root/X/media/usr/share/doc/openjdk-8-jre-
-headless/api/java/security/PrivilegedExceptionAction.html': No space
-left on device
-cp: cannot create regular file
-'/mnt/root/X/media/usr/share/doc/openjdk-8-jre-
-headless/api/java/security/Provider.Service.html': No space left on
-device
-cp: cannot create regular file
-'/mnt/root/X/media/usr/share/doc/openjdk-8-jre-
-headless/api/javax/script/AbstractScriptEngine.html': No space left on
-device
-
-or:
-cp: preserving permissions for
-=E2=80=98/mnt/root/X/usr/include/c++/6/gnu/javax/crypto/keyring/BaseKeyring=
-.h=E2=80=99:
-No space left on device
-cp: preserving permissions for =E2=80=98/mnt/root/X/usr/share/doc/cmake-
-data/html/variable/CMAKE_CXX_STANDARD_REQUIRED.html=E2=80=99: No space left=
- on
-device
-
-
-All these happen always (when I create a fresh btrfs on the volume and
-start over) with different files... and btrfs filesystem df shows
-plenty of space left like in terms of >15GB left.
-
-
-Any ideas?
 
 Cheers,
 Chris.
---=-TdBzDwV+1OikxKY88klJ
+--=-a9fERunOrWle/PxmS6K/
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -181,25 +135,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMTQzOTA5WjBPBgkqhkiG9w0BCQQxQgRApwpA
-yJVrTZsKwxeuesJr/Iz8J82oC6T0samqHwRC1FVgDTSRj1pwHY+NY4fMwwipgF3illa/PSsXicH3
-UGZd3zCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMTQ0NDAyWjBPBgkqhkiG9w0BCQQxQgRAild7
+NK2adOOWnq5KbEkijhvGQxH7ztfbYdCOkZf3hUhnTv78oHT/h5HLpdEhbzoyFtLfCSbeFDC5v+gO
+WAuhZjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIACzZl
-gxy3ywZY8dBXJ+mgWesO0m8U6+t2YwCJ+EbAwoyoJkNuc8u7eltiDIZJa75VHFCgHeFNxvSAuinj
-3S4uwr5hroNQs5kTQeoqh8gzyM+qa5icT01lOv5ygqEckovJB6UnWUL82OIb0o8zHdl80Hgh8TbL
-kfGD2nnhcNwSm3NJyNxoszmh9+HXA6hH0NfkmiKcz+jw1UHQoOsPAd6wGhILTC6jmm2hp4ACQIRD
-YU/28DIc347u2VVsl2426C94/Qouh/YHWgv6YIGVTukglObrCc7TxIWU+JkpWK6avTOAPDv2W6fs
-r7zHu+ZAd7LbOeR5bB8jGRZQcIYd8PHDjBYMFHck3BHXii2Z+BDOT5YZVueQ3oJcFj4YMFbpV+A8
-YuFWKjH+P8sNjUSeLbC65bIb7Tb5fql+YgoSU2y+9VNSSozb8+ZUcHbV0QsfuydezZG2QyrtC4ZC
-OphSy16FgMNUsLVX5jJVPykvWY8J0NIi/wv4xnx4Jrola2C0a3XCfObmWkI4XBmbsS1QUe3LLWK7
-feuMkjv8sl+6S/kloNSL7fdwnj3KNiDFZfNAKfZIbpehBS/L9VahqyndykPd/XI03859HPETEsCM
-nVKVHkNmYuSsrz8PCLY76mXxji8LzGX+QfqsC22w1qKRtjEvx46bWH4dEP+tPgc3/kL7qgkAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAaKqB
+yRkvR9iwqOzZ88uYNURJLBMEd2qqox9tFjk42+ACOT8VBGw/kYujJzPWz2l76FK12Zfyh1xFNx+0
+epASBPgEx0Hrc9HH1B8/VD6U8i8f0+mt/lPTeFuDRg1nW7tPGaVky8asVprnUI3WFJ0dB/CupFAE
+knVOlAUwthI19sY8yfSleIBFzrXluoRn6ANSnqdc/0Qcw54g3CwLFA9CXM5dLZMFEkO+CLwkW3yW
+lOxCEM5j0OSnA7vo9NHhBU7zfuIHLB40zEMIs6qRIdlogW4/Hc9o/GAnZlm4EtS9tjiIyN+hXKEZ
+OBsnJQu0LTRu0c0J8GU8ldcEvV+7tTmeGP1npvFcMiRBy14tWIU2bJ+jFQGdz5nA487riDb8onA9
+9vnIV9aLiM0xaV3E910Jub9uopt8i7Hn9wULfM8vjak6ZmDdH4urjJGKILml1HyxnijtqOqUKR5M
+/X/nL1mJt3GDP9s3FQKKn4yIae3UJCqAoFS+QMmKmA5Kfj/7/3nt4Tne3nT9g+XCM3v/P0EaPGHw
+EmPRXXvovLWIKZil0CbOz187DARF4z2LXGpRQKKdbpviU7Cx1wCzR+s1T+cAUMrKS/7Da+Ql5XcE
+f1LeGErK/e47jboMKbqUBE5x88PSHX9CllydGmPCqThpzMhWpqDXZIHEOKfrrxA1WEO03P8AAAAA
 AAA=
 
 
---=-TdBzDwV+1OikxKY88klJ--
+--=-a9fERunOrWle/PxmS6K/--
 

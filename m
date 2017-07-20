@@ -1,340 +1,356 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:34917 "EHLO
-        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754373AbdGNPNG (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:25018 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+        with ESMTP id S933183AbdGTG4u (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Jul 2017 11:13:06 -0400
-Received: by mail-io0-f178.google.com with SMTP id h134so15998242iof.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Jul 2017 08:13:06 -0700 (PDT)
-Date: Fri, 14 Jul 2017 15:13:03 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
-Subject: [PATCH v3 2/2] btrfs: Add new ioctl uapis for qgroup creation /
- removal
-Message-ID: <7d071875077a30dd1694bf6fab43bbc9c12c2487.1499941625.git.sargun@sargun.me>
-References: <cover.1499941625.git.sargun@sargun.me>
+        Thu, 20 Jul 2017 02:56:50 -0400
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v6 01/15] btrfs-progs: Introduce new btrfs_map_block function which returns more unified result.
+Date: Thu, 20 Jul 2017 14:55:54 +0800
+Message-ID: <20170720065608.27563-2-gujx@cn.fujitsu.com>
+In-Reply-To: <20170720065608.27563-1-gujx@cn.fujitsu.com>
+References: <20170720065608.27563-1-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1499941625.git.sargun@sargun.me>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduces two new ioctls to create, and remove qgroups. These
-offer a somewhat more intuitive set of operations with the opportunity
-to add flags that gate to unintentional manipulation of qgroups.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-The create qgroup ioctl has a a new semantic which level-0 qgroups cannot
-be created unless a matching subvolume ID is created.
+Introduce a new function, __btrfs_map_block_v2().
 
-The delete qgroup ioctl has the new semantic that it will not let you
-delete a currently utilized (referenced by a subvolume) level-0
-qgroup unless you pass the BTRFS_QGROUP_NO_SUBVOL_CHECK flag.
+Unlike old btrfs_map_block(), which needs different parameter to handle
+different RAID profile, this new function uses unified btrfs_map_block
+structure to handle all RAID profile in a more meaningful method:
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+Return physical address along with logical address for each stripe.
+
+For RAID1/Single/DUP (none-stripped):
+result would be like:
+Map block: Logical 128M, Len 10M, Type RAID1, Stripe len 0, Nr_stripes 2
+Stripe 0: Logical 128M, Physical X, Len: 10M Dev dev1
+Stripe 1: Logical 128M, Physical Y, Len: 10M Dev dev2
+
+Result will be as long as possible, since it's not stripped at all.
+
+For RAID0/10 (stripped without parity):
+Result will be aligned to full stripe size:
+Map block: Logical 64K, Len 128K, Type RAID10, Stripe len 64K, Nr_stripes 4
+Stripe 0: Logical 64K, Physical X, Len 64K Dev dev1
+Stripe 1: Logical 64K, Physical Y, Len 64K Dev dev2
+Stripe 2: Logical 128K, Physical Z, Len 64K Dev dev3
+Stripe 3: Logical 128K, Physical W, Len 64K Dev dev4
+
+For RAID5/6 (stripped with parity and dev-rotation):
+Result will be aligned to full stripe size:
+Map block: Logical 64K, Len 128K, Type RAID6, Stripe len 64K, Nr_stripes 4
+Stripe 0: Logical 64K, Physical X, Len 64K Dev dev1
+Stripe 1: Logical 128K, Physical Y, Len 64K Dev dev2
+Stripe 2: Logical RAID5_P, Physical Z, Len 64K Dev dev3
+Stripe 3: Logical RAID6_Q, Physical W, Len 64K Dev dev4
+
+The new unified layout should be very flex and can even handle things
+like N-way RAID1 (which old mirror_num basic one can't handle well).
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c           | 100 ++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/qgroup.c          |  76 +++++++++++++++++++++++++++++++---
- fs/btrfs/qgroup.h          |   6 ++-
- include/uapi/linux/btrfs.h |  16 ++++++++
- 4 files changed, 189 insertions(+), 9 deletions(-)
+ volumes.c | 181 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ volumes.h |  78 +++++++++++++++++++++++++++
+ 2 files changed, 259 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fa1b78c..2eca8e5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4924,6 +4924,98 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
- 	return ret;
+diff --git a/volumes.c b/volumes.c
+index 2f3943d..3116f8c 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1601,6 +1601,187 @@ out:
+ 	return 0;
  }
  
-+static long btrfs_ioctl_qgroup_create_v2(struct file *file, void __user *uargs)
++static inline struct btrfs_map_block *alloc_map_block(int num_stripes)
 +{
-+	struct btrfs_ioctl_qgroup_args_v2 args;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_root *root;
-+	struct inode *inode;
-+	int ret;
-+	int err;
++	struct btrfs_map_block *ret;
++	int size;
 +
-+	inode = file_inode(file);
-+	fs_info = btrfs_sb(inode->i_sb);
-+	root = BTRFS_I(inode)->root;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	ret = copy_from_user(&args, uargs, sizeof(args));
-+	if (ret)
-+		return ret;
-+
-+	if (!args.qgroupid)
-+		return -EINVAL;
-+
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		return ret;
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
-+
-+	ret = btrfs_create_qgroup(trans, fs_info, args.qgroupid, 1);
-+	err = btrfs_end_transaction(trans);
-+
-+	if (err && !ret)
-+		ret = err;
-+
-+out:
-+	mnt_drop_write_file(file);
++	size = sizeof(struct btrfs_map_stripe) * num_stripes +
++		sizeof(struct btrfs_map_block);
++	ret = malloc(size);
++	if (!ret)
++		return NULL;
++	memset(ret, 0, size);
 +	return ret;
 +}
 +
-+static long btrfs_ioctl_qgroup_remove_v2(struct file *file, void __user *uargs)
++static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
++			       struct btrfs_map_block *map_block)
 +{
-+	struct btrfs_ioctl_qgroup_args_v2 args;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_root *root;
-+	struct inode *inode;
-+	int check;
-+	int ret;
-+	int err;
++	u64 profile = map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
++	u64 bg_start = map->ce.start;
++	u64 bg_end = bg_start + map->ce.size;
++	u64 bg_offset = start - bg_start; /* offset inside the block group */
++	u64 fstripe_logical = 0;	/* Full stripe start logical bytenr */
++	u64 fstripe_size = 0;		/* Full stripe logical size */
++	u64 fstripe_phy_off = 0;	/* Full stripe offset in each dev */
++	u32 stripe_len = map->stripe_len;
++	int sub_stripes = map->sub_stripes;
++	int data_stripes = nr_data_stripes(map);
++	int dev_rotation;
++	int i;
 +
-+	inode = file_inode(file);
-+	fs_info = btrfs_sb(inode->i_sb);
-+	root = BTRFS_I(inode)->root;
++	map_block->num_stripes = map->num_stripes;
++	map_block->type = profile;
 +
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	ret = copy_from_user(&args, uargs, sizeof(args));
-+	if (ret)
-+		return ret;
-+
-+	if (!args.qgroupid)
-+		return -EINVAL;
-+	check = !(args.flags & BTRFS_QGROUP_NO_SUBVOL_CHECK);
-+
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		return ret;
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
++	/*
++	 * Common full stripe data for stripe based profiles
++	 */
++	if (profile & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10 |
++		       BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
++		fstripe_size = stripe_len * data_stripes;
++		if (sub_stripes)
++			fstripe_size /= sub_stripes;
++		fstripe_logical = bg_offset / fstripe_size * fstripe_size +
++				    bg_start;
++		fstripe_phy_off = bg_offset / fstripe_size * stripe_len;
 +	}
 +
-+	ret = btrfs_remove_qgroup(trans, fs_info, args.qgroupid, check);
-+	err = btrfs_end_transaction(trans);
++	switch (profile) {
++	case BTRFS_BLOCK_GROUP_DUP:
++	case BTRFS_BLOCK_GROUP_RAID1:
++	case 0: /* SINGLE */
++		/*
++		 * None-stripe mode, (Single, DUP and RAID1)
++		 * Just use offset to fill map_block
++		 */
++		map_block->stripe_len = 0;
++		map_block->start = start;
++		map_block->length = min(bg_end, start + length) - start;
++		for (i = 0; i < map->num_stripes; i++) {
++			struct btrfs_map_stripe *stripe;
 +
-+	if (err && !ret)
-+		ret = err;
++			stripe = &map_block->stripes[i];
 +
-+out:
-+	mnt_drop_write_file(file);
-+	return ret;
-+}
-+
- static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- {
- 	struct inode *inode = file_inode(file);
-@@ -4959,9 +5051,9 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
- 	}
- 
- 	if (sa->create) {
--		ret = btrfs_create_qgroup(trans, fs_info, sa->qgroupid);
-+		ret = btrfs_create_qgroup(trans, fs_info, sa->qgroupid, 0);
- 	} else {
--		ret = btrfs_remove_qgroup(trans, fs_info, sa->qgroupid);
-+		ret = btrfs_remove_qgroup(trans, fs_info, sa->qgroupid, 0);
- 	}
- 
- 	err = btrfs_end_transaction(trans);
-@@ -5632,6 +5724,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_get_features(file, argp);
- 	case BTRFS_IOC_SET_FEATURES:
- 		return btrfs_ioctl_set_features(file, argp);
-+	case BTRFS_IOC_QGROUP_CREATE_V2:
-+		return btrfs_ioctl_qgroup_create_v2(file, argp);
-+	case BTRFS_IOC_QGROUP_REMOVE_V2:
-+		return btrfs_ioctl_qgroup_remove_v2(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 3abc517..05bce7b 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1247,8 +1247,51 @@ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
-+/*
-+ * Meant to only operate on level-0 qroupid.
-+ *
-+ * It returns 1 if a matching subvolume is found; 0 if none is found.
-+ * < 0 if there is an error.
-+ */
-+static int btrfs_subvolume_exists(struct btrfs_fs_info *fs_info, u64 qgroupid)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	int err, ret = 0;
-+
-+	if (qgroupid == BTRFS_FS_TREE_OBJECTID)
-+		return 1;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = qgroupid;
-+	key.type = BTRFS_ROOT_BACKREF_KEY;
-+	key.offset = 0;
-+
-+	err = btrfs_search_slot_for_read(fs_info->tree_root, &key, path, 1, 0);
-+	if (err == 1)
-+		goto out;
-+
-+	if (err) {
-+		ret = err;
-+		goto out;
-+	}
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	if (key.objectid != qgroupid || key.type != BTRFS_ROOT_BACKREF_KEY)
-+		goto out;
-+
-+	ret = 1;
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
--			struct btrfs_fs_info *fs_info, u64 qgroupid)
-+			struct btrfs_fs_info *fs_info, u64 qgroupid,
-+			int check_subvol_exists)
- {
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
-@@ -1260,12 +1303,23 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
- 		ret = -EINVAL;
- 		goto out;
- 	}
-+
- 	qgroup = find_qgroup_rb(fs_info, qgroupid);
- 	if (qgroup) {
- 		ret = -EEXIST;
- 		goto out;
- 	}
- 
-+	if (check_subvol_exists && btrfs_qgroup_level(qgroupid) == 0) {
-+		ret = btrfs_subvolume_exists(fs_info, qgroupid);
-+		if (ret < 0)
-+			goto out;
-+		if (!ret) {
-+			ret = -ENOENT;
-+			goto out;
++			stripe->dev = map->stripes[i].dev;
++			stripe->logical = start;
++			stripe->physical = map->stripes[i].physical + bg_offset;
++			stripe->length = map_block->length;
 +		}
++		break;
++	case BTRFS_BLOCK_GROUP_RAID10:
++	case BTRFS_BLOCK_GROUP_RAID0:
++		/*
++		 * Stripe modes without parity (0 and 10)
++		 * Return the whole full stripe
++		 */
++
++		map_block->start = fstripe_logical;
++		map_block->length = fstripe_size;
++		map_block->stripe_len = map->stripe_len;
++		for (i = 0; i < map->num_stripes; i++) {
++			struct btrfs_map_stripe *stripe;
++			u64 cur_offset;
++
++			/* Handle RAID10 sub stripes */
++			if (sub_stripes)
++				cur_offset = i / sub_stripes * stripe_len;
++			else
++				cur_offset = stripe_len * i;
++			stripe = &map_block->stripes[i];
++
++			stripe->dev = map->stripes[i].dev;
++			stripe->logical = fstripe_logical + cur_offset;
++			stripe->length = stripe_len;
++			stripe->physical = map->stripes[i].physical +
++					   fstripe_phy_off;
++		}
++		break;
++	case BTRFS_BLOCK_GROUP_RAID5:
++	case BTRFS_BLOCK_GROUP_RAID6:
++		/*
++		 * Stripe modes with parity and device rotation (5 and 6)
++		 *
++		 * Return the whole full stripe
++		 */
++
++		dev_rotation = (bg_offset / fstripe_size) % map->num_stripes;
++
++		map_block->start = fstripe_logical;
++		map_block->length = fstripe_size;
++		map_block->stripe_len = map->stripe_len;
++		for (i = 0; i < map->num_stripes; i++) {
++			struct btrfs_map_stripe *stripe;
++			int dest_index;
++			u64 cur_offset = stripe_len * i;
++
++			stripe = &map_block->stripes[i];
++
++			dest_index = (i + dev_rotation) % map->num_stripes;
++			stripe->dev = map->stripes[dest_index].dev;
++			stripe->length = stripe_len;
++			stripe->physical = map->stripes[dest_index].physical +
++					   fstripe_phy_off;
++			if (i < data_stripes) {
++				/* data stripe */
++				stripe->logical = fstripe_logical +
++						  cur_offset;
++			} else if (i == data_stripes) {
++				/* P */
++				stripe->logical = BTRFS_RAID5_P_STRIPE;
++			} else {
++				/* Q */
++				stripe->logical = BTRFS_RAID6_Q_STRIPE;
++			}
++		}
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
++			 u64 length, struct btrfs_map_block **map_ret)
++{
++	struct cache_extent *ce;
++	struct map_lookup *map;
++	struct btrfs_map_block *map_block;
++	int ret;
++
++	/* Eearly parameter check */
++	if (!length || !map_ret) {
++		error("wrong parameter for %s", __func__);
++		return -EINVAL;
 +	}
 +
- 	ret = add_qgroup_item(trans, quota_root, qgroupid);
- 	if (ret)
- 		goto out;
-@@ -1282,7 +1336,8 @@ int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
- }
- 
- int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
--			struct btrfs_fs_info *fs_info, u64 qgroupid)
-+			struct btrfs_fs_info *fs_info, u64 qgroupid,
-+			int check_subvol_exists)
++	ce = search_cache_extent(&fs_info->mapping_tree.cache_tree, logical);
++	if (!ce)
++		return -ENOENT;
++	if (ce->start > logical)
++		return -ENOENT;
++
++	map = container_of(ce, struct map_lookup, ce);
++	/*
++	 * Allocate a full map_block anyway
++	 *
++	 * For write, we need the full map_block anyway.
++	 * For read, it will be striped to the needed stripe before returning.
++	 */
++	map_block = alloc_map_block(map->num_stripes);
++	if (!map_block)
++		return -ENOMEM;
++	ret = fill_full_map_block(map, logical, length, map_block);
++	if (ret < 0) {
++		free(map_block);
++		return ret;
++	}
++	/* TODO: Remove unrelated map_stripes for READ operation */
++
++	*map_ret = map_block;
++	return 0;
++}
++
+ struct btrfs_device *btrfs_find_device(struct btrfs_fs_info *fs_info, u64 devid,
+ 				       u8 *uuid, u8 *fsid)
  {
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
-@@ -1300,13 +1355,24 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
- 	if (!qgroup) {
- 		ret = -ENOENT;
- 		goto out;
--	} else {
--		/* check if there are no children of this qgroup */
--		if (!list_empty(&qgroup->members)) {
-+	}
-+
-+	if (check_subvol_exists && btrfs_qgroup_level(qgroupid) == 0) {
-+		ret = btrfs_subvolume_exists(fs_info, qgroupid);
-+		if (ret < 0)
-+			goto out;
-+		if (ret) {
- 			ret = -EBUSY;
- 			goto out;
- 		}
- 	}
-+
-+	/* check if there are no children of this qgroup */
-+	if (!list_empty(&qgroup->members)) {
-+		ret = -EBUSY;
-+		goto out;
-+	}
-+
- 	ret = del_qgroup_item(trans, quota_root, qgroupid);
- 
- 	if (ret && ret != -ENOENT)
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index d9984e8..3f63d4d 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -125,9 +125,11 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans,
- int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans,
- 			      struct btrfs_fs_info *fs_info, u64 src, u64 dst);
- int btrfs_create_qgroup(struct btrfs_trans_handle *trans,
--			struct btrfs_fs_info *fs_info, u64 qgroupid);
-+			struct btrfs_fs_info *fs_info, u64 qgroupid,
-+			int check_subvol_exists);
- int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
--			      struct btrfs_fs_info *fs_info, u64 qgroupid);
-+			struct btrfs_fs_info *fs_info, u64 qgroupid,
-+			int check_subvol_exists);
- int btrfs_limit_qgroup(struct btrfs_trans_handle *trans,
- 		       struct btrfs_fs_info *fs_info, u64 qgroupid,
- 		       struct btrfs_qgroup_limit *limit);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 9aa74f3..aea8504 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -676,6 +676,18 @@ struct btrfs_ioctl_qgroup_create_args {
- 	__u64 create;
- 	__u64 qgroupid;
+diff --git a/volumes.h b/volumes.h
+index d35a4e6..2d765f7 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -108,6 +108,51 @@ struct map_lookup {
+ 	struct btrfs_bio_stripe stripes[];
  };
+ 
++struct btrfs_map_stripe {
++	struct btrfs_device *dev;
 +
-+/*
-+ * Allows for the deletion of qgroups even if they are associated with active
-+ * volumes.
-+ */
-+#define BTRFS_QGROUP_NO_SUBVOL_CHECK	(1ULL << 0)
-+struct btrfs_ioctl_qgroup_args_v2 {
-+	__u64 qgroupid;
-+	__u64 flags;
-+	__u64 reserved[16];
++	/*
++	 * Logical address of the stripe start.
++	 * Caller should check if this logical is the desired map start.
++	 * It's possible that the logical is smaller or larger than desired
++	 * map range.
++	 *
++	 * For P/Q stipre, it will be BTRFS_RAID5_P_STRIPE
++	 * and BTRFS_RAID6_Q_STRIPE.
++	 */
++	u64 logical;
++
++	u64 physical;
++
++	/* The length of the stripe */
++	u64 length;
 +};
 +
- struct btrfs_ioctl_timespec {
- 	__u64 sec;
- 	__u32 nsec;
-@@ -841,5 +853,9 @@ enum btrfs_err_code {
- 				   struct btrfs_ioctl_feature_flags[3])
- #define BTRFS_IOC_RM_DEV_V2 _IOW(BTRFS_IOCTL_MAGIC, 58, \
- 				   struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_QGROUP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 59, \
-+					struct btrfs_ioctl_qgroup_args_v2)
-+#define BTRFS_IOC_QGROUP_REMOVE_V2 _IOW(BTRFS_IOCTL_MAGIC, 60, \
-+					struct btrfs_ioctl_qgroup_args_v2)
- 
- #endif /* _UAPI_LINUX_BTRFS_H */
++struct btrfs_map_block {
++	/*
++	 * The logical start of the whole map block.
++	 * For RAID5/6 it will be the bytenr of the full stripe start,
++	 * so it's possible that @start is smaller than desired map range
++	 * start.
++	 */
++	u64 start;
++
++	/*
++	 * The logical length of the map block.
++	 * For RAID5/6 it will be total data stripe size
++	 */
++	u64 length;
++
++	/* Block group type */
++	u64 type;
++
++	/* Stripe length, for non-stripped mode, it will be 0 */
++	u32 stripe_len;
++
++	int num_stripes;
++	struct btrfs_map_stripe stripes[];
++};
++
+ #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
+ 			    (sizeof(struct btrfs_bio_stripe) * (n)))
+ #define btrfs_map_lookup_size(n) (sizeof(struct map_lookup) + \
+@@ -187,6 +232,39 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		    u64 logical, u64 *length,
+ 		    struct btrfs_multi_bio **multi_ret, int mirror_num,
+ 		    u64 **raid_map_ret);
++
++/*
++ * TODO: Use this map_block_v2 to replace __btrfs_map_block()
++ *
++ * New btrfs_map_block(), unlike old one, each stripe will contain the
++ * physical offset *AND* logical address.
++ * So caller won't ever need to care about how the stripe/mirror is organized.
++ * Which makes csum check quite easy.
++ *
++ * Only P/Q based profile needs to care their P/Q stripe.
++ *
++ * @map_ret example:
++ * Raid1:
++ * Map block: logical=128M len=10M type=RAID1 stripe_len=0 nr_stripes=2
++ * Stripe 0: logical=128M physical=X len=10M dev=devid1
++ * Stripe 1: logical=128M physical=Y len=10M dev=devid2
++ *
++ * Raid10:
++ * Map block: logical=64K len=128K type=RAID10 stripe_len=64K nr_stripes=4
++ * Stripe 0: logical=64K physical=X len=64K dev=devid1
++ * Stripe 1: logical=64K physical=Y len=64K dev=devid2
++ * Stripe 2: logical=128K physical=Z len=64K dev=devid3
++ * Stripe 3: logical=128K physical=W len=64K dev=devid4
++ *
++ * Raid6:
++ * Map block: logical=64K len=128K type=RAID6 stripe_len=64K nr_stripes=4
++ * Stripe 0: logical=64K physical=X len=64K dev=devid1
++ * Stripe 1: logical=128K physical=Y len=64K dev=devid2
++ * Stripe 2: logical=RAID5_P physical=Z len=64K dev=devid3
++ * Stripe 3: logical=RAID6_Q physical=W len=64K dev=devid4
++ */
++int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
++			 u64 length, struct btrfs_map_block **map_ret);
+ int btrfs_next_bg(struct btrfs_fs_info *map_tree, u64 *logical,
+ 		     u64 *size, u64 type);
+ static inline int btrfs_next_bg_metadata(struct btrfs_fs_info *fs_info,
 -- 
-2.9.3
+2.9.4
+
+
 

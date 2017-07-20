@@ -1,62 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:42468 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:42474 "EHLO
         mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964876AbdGTPUN (ORCPT
+        with ESMTP id S935486AbdGTPUR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2017 11:20:13 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-01.dd24.net (Postfix) with ESMTP id C55D65FED6
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 15:20:11 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-        with ESMTP id PplMXKr7pW_J for <linux-btrfs@vger.kernel.org>;
-        Thu, 20 Jul 2017 15:20:06 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-82-135-93-9.dynamic.mnet-online.de [82.135.93.9])
-        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mailgw-01.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 15:20:06 +0000 (UTC)
-Message-ID: <1500564005.7266.7.camel@scientia.net>
+        Thu, 20 Jul 2017 11:20:17 -0400
+Message-ID: <1500564013.7266.8.camel@scientia.net>
 Subject: Re: strange No space left on device issues
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Thu, 20 Jul 2017 17:20:05 +0200
+Cc: Martin Raiber <martin@urbackup.org>
+Date: Thu, 20 Jul 2017 17:20:13 +0200
 In-Reply-To: <0102015d6083ffde-e6d15fd5-6e66-41a0-9ddf-af163c96ebd8-000000@eu-west-1.amazonses.com>
 References: <1500561549.7266.1.camel@scientia.net>
          <0102015d6083ffde-e6d15fd5-6e66-41a0-9ddf-af163c96ebd8-000000@eu-west-1.amazonses.com>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-390BCLOGYrI19357PaZk"
+        boundary="=-nHzTWiscP21iysZ+n2GK"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-390BCLOGYrI19357PaZk
+--=-nHzTWiscP21iysZ+n2GK
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
 On Thu, 2017-07-20 at 15:00 +0000, Martin Raiber wrote:
-> there are patches on this list/upstream which could fix this ( e.g.
-> "fix
-> delalloc accounting leak caused by u32 overflow"/"fix early ENOSPC
-> due
-> to delalloc").
-
-mhh... it's a bit problematic to test these on that nodes...
-
-
-> Do you use compression?
-
-nope...
-
-
 > It would be interesting if lowering the dirty ratio is a viable
 > work-around (sysctl vm.dirty_background_bytes=3D314572800 && sysctl
 > vm.dirty_bytes=3D1258291200).
+>=20
+> Regards,
+> Martin
 
-doesn't seem to change anything.
---=-390BCLOGYrI19357PaZk
+I took away a trailing 0 for each of them... and then it goes through
+without error....
+
+sysctl vm.dirty_bytes=3D125829120
+vm.dirty_bytes =3D 125829120
+sysctl vm.dirty_background_bytes=3D31457280
+vm.dirty_background_bytes =3D 31457280
+
+
+But what does that mean now... could there be still any corruptions?
+And do you need to permanently set the value (until this is fixed in
+stable), or is this just necessary when I had this large copying
+operation?
+
+
+Cheers,
+Chris.
+--=-nHzTWiscP21iysZ+n2GK
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -148,25 +142,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMTUyMDA1WjBPBgkqhkiG9w0BCQQxQgRAYkA6
-GEeOhBvnlfww9o2rsgT92VQW/bVUZRRDeRlfHIJJ0s1KuCzemvUUhseWwGIZ25QkP1SpVLcdhP8R
-N0uPWTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMTUyMDEzWjBPBgkqhkiG9w0BCQQxQgRA0rvF
+q8JAclKluRZenka0dbWmleefblgiV73+PV/uiCDj1syD3PcBsGA6yJkpKnG7xrcaccKh7z5hjSfV
+qjK6rTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAFixr
-/kgJ8VOUy8eCooBFNfQO9TlukLm3wxHbhkcLxbP5ey6SdxDhRujW8th0V9xxur2Vx7at87M5dR/G
-+hr2VgZJLRfNZEMA85vmru7hgCnhAozl2wRGLyxIweNxLyeRmN/dmoFO1cNUWpZ5J0IbhZzh2epx
-qRmk2e7yOaTawsttUpdfjeje97ep9VlzwaZ3x2IfOLMx968Unhe95SiaVQ5xcqishBxX5icV4ZMn
-Rm06Bhr5ngaZDEJBVxiyNi8Y5TpVJqNksnxdQHc7NmFIHI3agJdY6LyWl6nLc5jQ/xSm6AHl0PpJ
-GZn1OcWqj4Gdw5ycweJf1xbpmICFm/vuLe3txViOloiREQg/NmJlF5aKx1bklZm03wBYJ97qJp2E
-bwAq33ErUenMYunHPrg1JrXs6mDLQqGKM69QvYFbfMKemZ8/dkyHQEg2cFIY/PGhXcG+kZaJgg2O
-Z5F+8QVGLGkIIRYhWENVi69YdaGBrqolOc/A8d+RkETBsosBVRBmQULP6IQmTEJVeneDcgLQzYrP
-56rRnGMHb3YBoqwZZYN2UbwCoynL6+I9tgeI+Z/yq3repVNphBdSAVFAzo+5zavS7IDXBjdLjxog
-w2r1s4CRC0LXP8rpH48xI9JhiyuY9GIy9QWxP6eOz+EHZrorI4VVBo34ivXr5lQKwmj9LDUAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAbjAi
+KNqERDiGIr/HEydJIGoElO67nAcrHO7nCxEfq5rL6aKdunjzeFy3kfhTGJ7+SvtadyfXPQfWax7x
+V1huN0mbhoBk2/HJU9jVsPRN37Oc8DnmUcHuhyrIVk6UwWgaVZ9l/OzwXPEBMv4ReX9QRcHHmR2a
+Cg4WAU30Zg5oVU6P8Da1D89hB+m8xKRjEyTC7fzPXCHKTOXAf57WtVrAQI4q7VxxSEUIPVgnz5TB
+BYF+LXAgHH7blWsIIylpnS/00SNfRaHiaUcjNdQX+0hiXwJ1RFvui7uDf79mYxRvEkMXW2g4hioB
+V6X9Fv5iGtArCEcj1yRRCwp1QbKrYbVHe678VPir/dngZIEFTD2uw+QNTgArk0j0SkbDzMOOVosT
+IBKu7UQrTHUT9xtmg5Haumypgpa47gfCNadR9f1rHfu6X6BPWdUonn+xG7VH4ratMiKVWYqvUM1e
+MPoEiFKFoPwUqAaizfez68p4UoVSqsYDLPdrlNzvN9BzjWUN/lFRVA0PgphPo2PJ0f0HqvpC8i//
+5H6ECqKVCGYL8ft6N+P1H+8Xn4O4hdiRm9g5ZLUqME/bGvDfzp3Dbx7rqN8Sfo0FxRqs0dDvmCz7
+zSj/ZUF9PWozLc36a2ruzJn3/YaoWjrDz67sOjMCroZ7fb7UBll0wLffmRlym7I7fCrSdYMAAAAA
 AAA=
 
 
---=-390BCLOGYrI19357PaZk--
+--=-nHzTWiscP21iysZ+n2GK--
 

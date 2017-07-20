@@ -1,108 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f53.google.com ([209.85.214.53]:38355 "EHLO
-        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933731AbdGTITv (ORCPT
+Received: from smtpcmd04131.aruba.it ([62.149.158.131]:49649 "EHLO
+        smtpcmd04131.aruba.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934554AbdGTIz4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2017 04:19:51 -0400
-Received: by mail-it0-f53.google.com with SMTP id h199so12395793ith.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 01:19:51 -0700 (PDT)
+        Thu, 20 Jul 2017 04:55:56 -0400
+Subject: Re: [PATCH 00/15] Btrfs-progs offline scrub
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Gu Jinxiang <gujx@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+References: <20170715091053.19725-1-gujx@cn.fujitsu.com>
+ <20170718063357.12450-1-gujx@cn.fujitsu.com>
+ <e0cbd6df-d88b-1753-f58d-0652afdd5233@prismatelecomtesting.com>
+ <7ff53bf4-4755-2e76-8ea5-eb9c38969985@gmx.com>
+From: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
+Message-ID: <ca725bd3-5e6e-e257-d4e7-4a6acdb3a324@prismatelecomtesting.com>
+Date: Thu, 20 Jul 2017 10:55:46 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAEQdt1LLXd1_Oq8QR2dmi0n-CzOeA7GZJwOzuoHWLXSCpZpa=A@mail.gmail.com>
-References: <CAEQdt1LLXd1_Oq8QR2dmi0n-CzOeA7GZJwOzuoHWLXSCpZpa=A@mail.gmail.com>
-From: Chen Chiang CHAI <ccchai86@gmail.com>
-Date: Thu, 20 Jul 2017 18:19:50 +1000
-Message-ID: <CAEQdt1JyOLRZpuU83GVjOpw0esnx6Djw-=Zfk9=9maO=J-g13g@mail.gmail.com>
-Subject: Re: btrfs cant mount -d single 4 volumes of different sizes hard drives
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <7ff53bf4-4755-2e76-8ea5-eb9c38969985@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I shoulda mentioned; I did change the sata port back but the same
-error still occured..
+On 20/07/2017 05:39, Qu Wenruo wrote:
+> 
+> 
+> On 2017年07月20日 00:45, Marco Lorenzo Crociani wrote:
+>> On 18/07/2017 08:33, Gu Jinxiang wrote:
+>>> For any one who wants to try it, it can be get from my repo:
+>>> https://github.com/gujx2017/btrfs-progs/tree/offline_scrub
+>>>
+>>
+>> Hi,
+>> I'm getting this error during make:
+>>
+>>      [CC]     csum.o
+>> csum.c: In function ‘btrfs_read_data_csums’:
+>> csum.c:119:3: error: ‘for’ loop initial declarations are only allowed 
+>> in C99 mode
+>>     for (u32 i = 0; i != final_len / csum_size; i++)
+>>     ^
+> 
+> Oh, this is indeed a problem.
+> Introduced in the version which bitmap for csum is introduced.
+> 
+> Should be fixed to use c90 standard (at least gnu90).
+> 
+>> csum.c:119:3: note: use option -std=c99 or -std=gnu99 to compile your 
+>> code
+>> make: *** [csum.o] Errore 1
+>>
+>>
+>> git clone https://github.com/gujx2017/btrfs-progs.git
+>> git checkout offline_scrub
+>> ./autogen.sh
+>> ./configure
+>> make
+>>
+>> CentOS 7.3
+>> kernel 4.12
+> 
+> Seems to be related to gcc version.
+> Newer gcc use higher std which doesn't have such problem, while gcc 4.8 
+> is still using lower standard and will print output such warning.
+> 
+> I'll try to enhance the Makefile to use gnu90 standard to avoid such 
+> problem.
+> 
+> Thanks,
+> Qu
+> 
+> 
+> 
+>>
+>> No problem compiling official btrfs-progs v4.11.1
+>>
+>> Regards,
+>>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Scanning for Btrfs filesystems
-~ >>> sudo btrfs fi show
-Label: none  uuid: 489e95eb-03c5-40e1-bd57-cd6e17584404
-Total devices 1 FS bytes used 5.41TiB
-devid    1 size 7.28TiB used 5.74TiB path /dev/sda
 
-Label: none  uuid: 72977fa6-09de-43f0-a6db-ddfdbc668e50
-Total devices 4 FS bytes used 1.02TiB
-devid    1 size 465.76GiB used 195.01GiB path /dev/sdc
-devid    3 size 931.51GiB used 659.03GiB path /dev/sde
-devid    5 size 1.82TiB used 194.03GiB path /dev/sdd
-*** Some devices missing
+Hi Qu,
+now I got only a warning:
 
-~ >>> sudo mount /dev/sdc /mediastuff -o degraded
-mount: wrong fs type, bad option, bad superblock on /dev/sdc,
-       missing codepage or helper program, or other error
+cmds-subvolume.c: In function 'cmd_subvol_show':
+cmds-subvolume.c:964:7: warning: 'rootid_arg' may be used uninitialized 
+in this function [-Wmaybe-uninitialized]
+    ret = get_subvol_info_by_rootid(fullpath, &get_ri, rootid_arg);
 
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
-~ >>> dmesg | tail
-                            [32]
-[   11.120313] Ebtables v2.0 registered
-[   11.173684] IPv6: ADDRCONF(NETDEV_UP): wlp3s0: link is not ready
-[   13.825637] r8168: enp4s0: link up
-[   13.825675] IPv6: ADDRCONF(NETDEV_CHANGE): enp4s0: link becomes ready
-[  116.017800] BTRFS info (device sdc): allowing degraded mounts
-[  116.017804] BTRFS info (device sdc): disk space caching is enabled
-[  116.017805] BTRFS info (device sdc): has skinny extents
-[  116.033734] BTRFS error (device sdc): super_num_devices 4 mismatch
-with num_devices 3 found here
-[  116.033738] BTRFS error (device sdc): failed to read chunk tree: -22
-[  116.057822] BTRFS error (device sdc): open_ctree failed
-~ >>>
+I tried to run scrub on an umounted btrfs raid6 filesystem but instead 
+of "ERROR: '/dev/sda1' is not a mounted btrfs device" I got:
 
-On Thu, Jul 20, 2017 at 5:06 PM, Chen Chiang CHAI <ccchai86@gmail.com> wrote:
-> Hello Sir,
->
-> my btrfs -d single(4 drives) is failing when one of my hard drive is
-> slowly dying.
->
-> because of that, i wanted to remove the hard drive thats responsible
-> for it, so i used btrfs device delete /dev/sdf after it mounted.
-> It was successful, so i have 3 drives left and its working.
->
-> So i physically removed the dying drive and move one of the working
-> drive to a different sata port( probably shouldnt have done that:
-> silly me )
->
-> Now when i start up my archlinux 4.11.10,
-> This problem occured as below:
->
-> Scanning for Btrfs filesystems
-> ~ >>> sudo btrfs fi show
-> Label: none  uuid: 72977fa6-09de-43f0-a6db-ddfdbc668e50
-> Total devices 4 FS bytes used 1.02TiB
-> devid    1 size 465.76GiB used 195.01GiB path /dev/sdb
-> devid    3 size 931.51GiB used 659.03GiB path /dev/sdd
-> devid    5 size 1.82TiB used 194.03GiB path /dev/sde
-> *** Some devices missing
->
-> I tried to mount in -o degraded this the error it produced when dmesg ｜ tail
-> ~ >>> dmesg | tail
->                             [32]
-> [  382.410910] BTRFS error (device sdb): failed to read chunk tree: -22
-> [  382.442944] BTRFS error (device sdb): open_ctree failed
-> [  671.080860] IPv6: ADDRCONF(NETDEV_UP): wlp3s0: link is not ready
-> [  986.041955] IPv6: ADDRCONF(NETDEV_UP): wlp3s0: link is not ready
-> [ 1196.432643] BTRFS info (device sdb): allowing degraded mounts
-> [ 1196.432647] BTRFS info (device sdb): disk space caching is enabled
-> [ 1196.432648] BTRFS info (device sdb): has skinny extents
-> [ 1196.502252] BTRFS error (device sdb): super_num_devices 4 mismatch
-> with num_devices 3 found here
-> [ 1196.502256] BTRFS error (device sdb): failed to read chunk tree: -22
-> [ 1196.531619] BTRFS error (device sdb): open_ctree failed
->
-> search all over the net for that mismatch error.. only one mailing
-> list comes out saying something about using a tool to set
-> super_num_devices but there's no solution to it..
->
-> Sorry if my english is just weird not my first language.
->
-> Please help Thank you very much
->
-> sincerely yours,
-> Desparate Fool
+btrfs scrub start --offline /dev/sda1
+couldn't open RDWR because of unsupported option features (3).
+ERROR: cannot open file system
+Segmentation fault (core dumped)
+
+[1182841.663283] btrfs[30198]: segfault at 46474e548 ip 00007f0eeeac838c 
+sp 00007fff35a52c58 error 4 in libc-2.17.so[7f0eeea48000+1b7000]
+
+Regards,
+
+-- 
+Marco Crociani

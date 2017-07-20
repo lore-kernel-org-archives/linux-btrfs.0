@@ -1,58 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32863 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752865AbdGSS1O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jul 2017 14:27:14 -0400
-Date: Wed, 19 Jul 2017 20:25:59 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [bug report] btrfs: get fs_info from eb in btrfs_print_leaf,
- remove argument
-Message-ID: <20170719182558.GC2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170719131307.v7houpsugk5te247@mwanda>
+Received: from mout.gmx.net ([212.227.17.21]:59205 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933027AbdGTJkQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 20 Jul 2017 05:40:16 -0400
+Subject: Re: [PATCH] btrfs-progs: Use '-t btrfs' mount option in tests.
+To: dsterba@suse.cz, Adam Buchbinder <abuchbinder@google.com>,
+        linux-btrfs@vger.kernel.org
+References: <20170712200522.18830-1-abuchbinder@google.com>
+ <20170712215259.GL2866@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <70c530f5-24fa-c2ff-6aa1-a3f9e7963e47@gmx.com>
+Date: Thu, 20 Jul 2017 17:40:00 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170719131307.v7houpsugk5te247@mwanda>
+In-Reply-To: <20170712215259.GL2866@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 19, 2017 at 04:13:07PM +0300, Dan Carpenter wrote:
-> Hello David Sterba,
-> 
-> This is a semi-automatic email about new static checker warnings.
-> 
-> The patch c042dd070450: "btrfs: get fs_info from eb in
-> btrfs_print_leaf, remove argument" from Jun 29, 2017, leads to the
-> following Smatch complaint:
-> 
->     fs/btrfs/print-tree.c:181 btrfs_print_leaf()
->     warn: variable dereferenced before check 'l' (see line 166)
-> 
-> fs/btrfs/print-tree.c
->    165	{
->    166		struct btrfs_fs_info *fs_info = l->fs_info;
->                                                 ^^^^^^^^^^
-> New dereference.
-> 
->    167		int i;
->    168		u32 type, nr;
->    169		struct btrfs_item *item;
->    170		struct btrfs_root_item *ri;
->    171		struct btrfs_dir_item *di;
->    172		struct btrfs_inode_item *ii;
->    173		struct btrfs_block_group_item *bi;
->    174		struct btrfs_file_extent_item *fi;
->    175		struct btrfs_extent_data_ref *dref;
->    176		struct btrfs_shared_data_ref *sref;
->    177		struct btrfs_dev_extent *dev_extent;
->    178		struct btrfs_key key;
->    179		struct btrfs_key found_key;
->    180	
->    181		if (!l)
->                     ^^
-> Checked too late.
 
-Thanks, I've moved the fs_info initialization after this check. In both
-patches (btrfs_print_leaf and btrfs_print_tree).
+
+On 2017年07月13日 05:52, David Sterba wrote:
+> On Wed, Jul 12, 2017 at 01:05:22PM -0700, Adam Buchbinder wrote:
+>> Without it, mount (at least from util-linux 2.20.1) tries (and
+>> fails) to mount some filesystems as NTFS.
+>>
+>> Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
+> 
+> Applied, thanks.
+
+This patch will break convert self test.
+
+Convert test will try to mount ext* filesystem and re-check its content.
+
+So I'm afraid it's not suitable for test cases.
+
+Thanks,
+Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

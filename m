@@ -1,156 +1,272 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:34440 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965694AbdGTU2T (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:60104 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S935802AbdGTVCx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2017 16:28:19 -0400
-Message-ID: <1500582495.7266.16.camel@scientia.net>
-Subject: Re: strange No space left on device issues
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Martin Raiber <martin@urbackup.org>
-Date: Thu, 20 Jul 2017 22:28:15 +0200
-In-Reply-To: <20170720181438.GC29924@vader.DHCP.thefacebook.com>
-References: <1500561549.7266.1.camel@scientia.net>
-         <0102015d6083ffde-e6d15fd5-6e66-41a0-9ddf-af163c96ebd8-000000@eu-west-1.amazonses.com>
-         <1500564013.7266.8.camel@scientia.net>
-         <20170720173214.GA29924@vader.DHCP.thefacebook.com>
-         <1500572904.7266.11.camel@scientia.net>
-         <20170720175551.GB29924@vader.DHCP.thefacebook.com>
-         <1500574012.7266.13.camel@scientia.net>
-         <20170720181438.GC29924@vader.DHCP.thefacebook.com>
-Content-Type: multipart/signed; micalg="sha-512";
-        protocol="application/x-pkcs7-signature";
-        boundary="=-0fQ3ld9qWcTH2MjHn6vG"
-Mime-Version: 1.0
+        Thu, 20 Jul 2017 17:02:53 -0400
+Subject: Re: kernel btrfs file system wedged -- is it toast?
+To: Paul Jackson <pj@usa.net>, linux-btrfs@vger.kernel.org
+References: <1500576442.3508802.1047392992.202A4606@webmail.messagingengine.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <3dd83854-362d-001a-e075-2156931a5cc2@mendix.com>
+Date: Thu, 20 Jul 2017 23:02:49 +0200
+MIME-Version: 1.0
+In-Reply-To: <1500576442.3508802.1047392992.202A4606@webmail.messagingengine.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---=-0fQ3ld9qWcTH2MjHn6vG
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+On 07/20/2017 08:47 PM, Paul Jackson wrote:
+> 
+> This may be a repeat, in a slightly variant form, of the problem that
+> Marc MERLIN reports in:
+> 
+>   https://www.spinics.net/lists/linux-btrfs/msg67393.html
+>   20170716160658.r4uxuqlfe24hgi5n@merlins.org
+>   BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17 Object already exists (since 3.4 / 2012)
 
-On Thu, 2017-07-20 at 11:14 -0700, Omar Sandoval wrote:
-> Yes, that's a safe enough workaround. It's a good idea to change the
-> parameters back after the copy.
-you mean even without having the fix, right?
+No, it's not the same. You don't have an 'errno=-17 Object already
+exists' error in btrfs_run_delayed_refs.
 
-So AFAIU, the bug doesn't really cause FS corruption, but just "false"
-ENOSPC and these happen during having meta-data creating (e.g. during
-operations like mine) only?
---=-0fQ3ld9qWcTH2MjHn6vG
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+> [...]
+> I was running both a "btrfs balance" and a "btrfs receive" into the same file system.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwNzIwMjAyODE1WjBPBgkqhkiG9w0BCQQxQgRAeHHZ
-CRV6xMqjxLJwW7TX9HGF7r31WXQmAS5mM0Qj06zRRq1Km/1nynX9CFryXsBnaX3OiHvtrBPhpwLu
-si2ThjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAoYMc
-6oLPXncmcJ2eLSoR0TpB90HPRow2Ajc5BpzBFM4Lee22kK3lrqz/xFeEW8KcQjXAw4g94A8U1IfD
-Wvw6Nb9KRBAVT1iV/cyoj3oXdiH8karOJV1JCwVINdR992yNNKMM7n9Aqb2rjMVj0BvAL1kuPy+B
-H53QlFuD4x5XhtJfZCpDfx45avLGP7mefiutORVkcZe+J2tKBK57uCpiqdhF0wU93zR+PypmwzJC
-kkVMG8FjgT/Ysm1SgEoXYxNx2H6qh/BKUjHy8MxwUljxLmrVIv7kXc4RHIciHIUtb/Othq/Q5L0D
-NvZIK8rBNTFUABTzxtyctC4alUJ5C7iQrkjuu2+Ia/b8RcghZv2de7x+Wuxg2gLuiOPZSEJrniJF
-95dyOZ7U5IXa63Ofl08Ak31QlV9WkGGCciAf1wD5s+2Ppg+vzYYy0JB9E4TkSyHrhdzMMt3pP0Up
-YHIr6J7oZ1XYugtwttXAbyR+HEAIIVTgrvCl8N9Y6esTo7I8cHVxyczQOr5dc3KzIAudkESIwvmJ
-whpCzPYoPD7UtjLo5ELJlQ/z4mz1DUiRyQc8sojKk+/Vj+z3lkT/GNuG6FekJ76pguawNE/nUIb5
-GN0opKy8UuEeEzTOoAVYHiH5r0/Asb6jMhlTst7Mum3+6yVsUBUOYvWsszZ+x1oBrS16UWIAAAAA
-AAA=
+Just curious, what was the reason for using balance?
 
+> Then I noticed that the disk light (on an 8TB helium filled 5400 RPM drive) stopped blinking
+> (it should have been blinking for many more hours, just on the btrfs balance command.)
+> 
+> My dmesg output shows (including the last few successful balance entries):
+> 
+> ======================
+> [50583.100966] BTRFS info (device sde1): relocating block group 5980234448896 flags data
+> [50607.655851] BTRFS info (device sde1): found 5076 extents
+> [50650.791868] BTRFS info (device sde1): found 5076 extents
+> [50651.561918] BTRFS info (device sde1): relocating block group 5979160707072 flags data
+> [50671.583960] BTRFS info (device sde1): found 5326 extents
+> [50715.786757] BTRFS info (device sde1): found 5326 extents
+> [50716.365571] BTRFS info (device sde1): relocating block group 5978086965248 flags data
+> [50738.280469] BTRFS info (device sde1): found 5539 extents
+> [50779.009891] BTRFS info (device sde1): found 5539 extents
+> [50781.939661] BTRFS info (device sde1): relocating block group 5977013223424 flags data
+> [50805.881194] BTRFS info (device sde1): found 10658 extents
+> [...]
 
---=-0fQ3ld9qWcTH2MjHn6vG--
+Here's the first one, the cleaner thread, which is apparently looking
+around if it can delete block groups that are completely empty to return
+them as unallocated space. It's waiting for another thread which is
+keeping a lock, it seems.
 
+> [51239.838954] INFO: task btrfs-cleaner:9958 blocked for more than 120 seconds.
+> [51239.838956]       Tainted: G           O    4.11.10-1-MANJARO #1
+> [51239.838956] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [51239.838957] btrfs-cleaner   D    0  9958      2 0x00000000
+> [51239.838959] Call Trace:
+> [51239.838964]  __schedule+0x22e/0x8e0
+> [51239.838965]  schedule+0x3d/0x90
+> [51239.838966]  schedule_preempt_disabled+0x15/0x20
+> [51239.838967]  __mutex_lock.isra.0+0x2ac/0x530
+> [51239.838969]  __mutex_lock_slowpath+0x13/0x20
+> [51239.838970]  ? __mutex_lock_slowpath+0x13/0x20
+> [51239.838970]  mutex_lock+0x25/0x30
+> [51239.838980]  btrfs_delete_unused_bgs+0xc2/0x3b0 [btrfs]
+> [51239.838981]  ? iput+0x1ae/0x240
+> [51239.838987]  cleaner_kthread+0x15e/0x170 [btrfs]
+> [51239.838988]  kthread+0x125/0x140
+> [51239.838993]  ? btrfs_destroy_pinned_extent+0xd0/0xd0 [btrfs]
+> [51239.838994]  ? kthread_create_on_node+0x70/0x70
+> [51239.838995]  ret_from_fork+0x25/0x30
+
+Second one is the btrfs balance, which is relocating a block group, and
+wants to complete a transaction, and waits for that to happen:
+
+> [51239.838997] INFO: task btrfs:23561 blocked for more than 120 seconds.
+> [51239.838997]       Tainted: G           O    4.11.10-1-MANJARO #1
+> [51239.838997] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [51239.838998] btrfs           D    0 23561   5610 0x00000000
+> [51239.838999] Call Trace:
+> [51239.839000]  __schedule+0x22e/0x8e0
+> [51239.839001]  schedule+0x3d/0x90
+> [51239.839002]  schedule_timeout+0x224/0x3c0
+> [51239.839004]  ? wake_up_process+0x15/0x20
+> [51239.839005]  wait_for_common+0xb9/0x180
+> [51239.839005]  ? wait_for_common+0xb9/0x180
+> [51239.839006]  ? wake_up_q+0x80/0x80
+> [51239.839007]  wait_for_completion+0x1d/0x20
+> [51239.839012]  btrfs_async_run_delayed_refs+0x119/0x140 [btrfs]
+> [51239.839017]  __btrfs_end_transaction+0x1fa/0x300 [btrfs]
+> [51239.839022]  btrfs_end_transaction_throttle+0x13/0x20 [btrfs]
+> [51239.839028]  relocate_block_group+0x3f2/0x620 [btrfs]
+> [51239.839034]  btrfs_relocate_block_group+0x18c/0x270 [btrfs]
+> [51239.839040]  btrfs_relocate_chunk+0x38/0xd0 [btrfs]
+> [51239.839045]  btrfs_balance+0xbdc/0x1340 [btrfs]
+> [51239.839046]  ? ttwu_do_wakeup.isra.16+0x1e/0x170
+> [51239.839053]  btrfs_ioctl_balance+0x316/0x380 [btrfs]
+> [51239.839058]  btrfs_ioctl+0x1177/0x24a0 [btrfs]
+> [51239.839060]  ? tty_flip_buffer_push+0x2b/0x30
+> [51239.839061]  ? remove_wait_queue+0x4d/0x60
+> [51239.839062]  ? __wake_up+0x44/0x50
+> [51239.839064]  do_vfs_ioctl+0xa5/0x600
+> [51239.839065]  ? do_vfs_ioctl+0xa5/0x600
+> [51239.839066]  ? vfs_write+0x168/0x1a0
+> [51239.839067]  SyS_ioctl+0x79/0x90
+> [51239.839069]  entry_SYSCALL_64_fastpath+0x1a/0xa9
+> [51239.839069] RIP: 0033:0x7fb06bfe6c47
+> [51239.839070] RSP: 002b:00007ffdc77cd118 EFLAGS: 00000206 ORIG_RAX: 0000000000000010
+> [51239.839071] RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007fb06bfe6c47
+> [51239.839071] RDX: 00007ffdc77cd1b0 RSI: 00000000c4009420 RDI: 0000000000000003
+> [51239.839072] RBP: 0000000000000003 R08: 00007fb06cf2f8c0 R09: 00007fb06cf2f8c0
+> [51239.839072] R10: 0000000000000545 R11: 0000000000000206 R12: 00007ffdc77cd1b0
+> [51239.839073] R13: 0000000000480525 R14: 0000000000000000 R15: 00007ffdc77cf591
+
+Third one is probably btrfs receive, which is also waiting for the
+transaction:
+
+> [51239.839076] INFO: task btrfs:29186 blocked for more than 120 seconds.
+> [51239.839077]       Tainted: G           O    4.11.10-1-MANJARO #1
+> [51239.839077] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [51239.839078] btrfs           D    0 29186  27726 0x00000000
+> [51239.839079] Call Trace:
+> [51239.839080]  __schedule+0x22e/0x8e0
+> [51239.839081]  schedule+0x3d/0x90
+> [51239.839082]  schedule_timeout+0x224/0x3c0
+> [51239.839086]  ? btrfs_leaf_free_space+0x54/0xa0 [btrfs]
+> [51239.839087]  ? wake_up_process+0x15/0x20
+> [51239.839088]  wait_for_common+0xb9/0x180
+> [51239.839089]  ? wait_for_common+0xb9/0x180
+> [51239.839089]  ? wake_up_q+0x80/0x80
+> [51239.839090]  wait_for_completion+0x1d/0x20
+> [51239.839095]  btrfs_async_run_delayed_refs+0x119/0x140 [btrfs]
+> [51239.839100]  __btrfs_end_transaction+0x1fa/0x300 [btrfs]
+> [51239.839105]  btrfs_end_transaction+0x10/0x20 [btrfs]
+> [51239.839110]  btrfs_setattr+0x129/0x3b0 [btrfs]
+> [51239.839111]  notify_change+0x2c7/0x430
+> [51239.839112]  do_truncate+0x73/0xc0
+> [51239.839113]  vfs_truncate+0x14e/0x190
+> [51239.839114]  ? user_path_at_empty+0x36/0x40
+> [51239.839115]  do_sys_truncate.part.0+0x8a/0xa0
+> [51239.839116]  SyS_truncate+0x13/0x20
+> [51239.839117]  entry_SYSCALL_64_fastpath+0x1a/0xa9
+> [51239.839118] RIP: 0033:0x7f325f704ce7
+> [51239.839118] RSP: 002b:00007ffda084a908 EFLAGS: 00000297 ORIG_RAX: 000000000000004c
+> [51239.839119] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f325f704ce7
+> [51239.839119] RDX: 0000000000000000 RSI: 000000001124aa3b RDI: 00007ffda084a910
+> [51239.839120] RBP: 00007ffda084ba20 R08: 0000000000000057 R09: 0000000001e56170
+> [51239.839120] R10: 0000000001e561c0 R11: 0000000000000297 R12: 000000000000000f
+> [51239.839121] R13: 000000000000c06b R14: 00000000e37b700a R15: 00007ffda084ba24
+> [...]
+
+There's probably another process, I suspect it being the
+btrfs-transaction kernel thread, that is actually active at the same
+time, taking long to get its work done, letting the other processes
+wait, and maybe also even holding the lock which the cleaner is waiting for.
+
+> ======================
+> 
+> I also have issued a "btrfs balance pause" command, which is now in an unkillable
+> wait in the kernel.
+
+Yes, that just waits for the balance to finish the block group it's
+currently busy with, and then makes sure it doesn't start working on a
+new one. So it's just joining the queue with blocked processes.
+
+> I will reboot after sending this present email and see what I can see.
+
+Rebooting while all those things are still busy is possible, but I think
+it means you'll probably lose whatever was part of this transaction that
+was being finished.
+
+> But based on Marc's thread mentioned above, I am quite concerned
+> that I should NEVER trust this particular btrfs file system again, and
+> that I should reformat that 8 TB disk partition and rebuild the file
+> store on that disk from scratch.
+> 
+> If so, I must conclude that I should NEVER trust btrfs again.
+
+Don't panic. There's no big error anywhere yet.
+
+Find out which process is the actually running process (all the other
+ones reported in the log are waiting for that one), and see what it's
+doing. 100% cpu? or a lot of disk reads and writes?
+
+> ======================
+> 
+> Questions:
+> 
+> Is there anyway to recover this receiving btrfs file system?
+
+Wait a bit until the busy process completes, and in the meantime try to
+figure out what it's doing. Maybe the people on IRC can help a bit.
+
+> Is there anyway to know, with confidence, that this receiving btrfs  file
+> system is healthy?
+
+I think there are no really big unhealty things happening yet, although
+it's a bit inconvenient.
+
+> If not is there any reliable way to avoid hitting this disaster again?
+
+Doing 'big things' at the same time can lead to situations in which
+similar things as seen above happen. Just avoid them. Don't remove 100
+subvolumes at the same time as doing a receive and doing balance and
+also doing another send somewhere. Or pointing balance at metadata and
+then remove subvolumes (last time I saw that explode was in a 4.5 kernel).
+
+The only really problematic combination I know is using send and balance
+at the same time. Last two times I (accidentally) tried that I ended up
+with one filesystem that ended up being broken in memory, crashed, and
+was fine after a reboot again because it couldn't write its broken state
+to disk. The other one crashed its send process in the kernel, and was
+also fine again after a reboot.
+
+> ===
+> 
+> If not that either, then know that I will necessarily throw out the
+> last couple of months work I've spent, developing a backup system
+> for my particular purposes that relies heavily on btrfs snapshots,
+> sent and received to create off-site and off-line backups from multiple
+> locations.
+> 
+> Just rebuilding the file system I was sending to would take me days
+> of work.  This target file system contains backups of a half dozen
+> other btrfs file systems.
+
+Yeah, well... Btrfs is great, especially for things like backup servers
+with snapshots (I'm doing that myself too), but you have to be very careful.
+
+As I already said above, don't fire up too many fancy things at once. It
+might go well, or they're already disallowed to do dangerous things at
+the same time (leading to one being able to work, and the others hang
+and wait), or it can trigger bugs which are lurking around in the
+multithreaded code.
+
+Also, choose your kernel versions wisely. Right now, the 4.9 LTS kernel
+is a good bet. New kernels have fixes, new features but also new bugs.
+In the case of btrfs, the LTS kernel sadly usually doesn't get most of
+the bugfixes that fix "inconveniences" which are not causing actual data
+corruption, but at least you can find out what the known issues are.
+Data corruption bugs have a high chance of showing up in the latest LTS
+though.
+
+And if it all suddenly falls apart on a sunday night at 4AM and eats all
+your data... then you're left with the pieces.
+
+> [...]
+> 
+> P.S. -- About 50 minutes after issuing the above "btrfs balance pause",
+> just before I was about to hit send on this email, I noticed:
+> 
+> 1.  my disk light flashing again
+> 2.  that pause command returnedto the shell prompt (pause command exited),
+> 3. the in progress balance command also exited, stating "balance paused by user"), and
+> 4. the sequence of "btrfs receives" into that file system resumed progress.
+> 
+> Is that good news, bad news, or impossible to say news?
+
+Well, there it is. :-) Whatever the busy thread was doing finished and
+allowed the other ones to also continue again.
+
+-- 
+Hans van Kranenburg

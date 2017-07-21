@@ -1,45 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44119 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751145AbdGMLLO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Jul 2017 07:11:14 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id AA223AC03
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Jul 2017 11:11:12 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Remove never reached error handling code in __add_reloc_root
-Date: Thu, 13 Jul 2017 14:11:07 +0300
-Message-Id: <1499944267-31130-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <20170712145000.GD2866@twin.jikos.cz>
-References: <20170712145000.GD2866@twin.jikos.cz>
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:34743 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754231AbdGUR3N (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Jul 2017 13:29:13 -0400
+Received: by mail-qt0-f194.google.com with SMTP id o3so3120247qto.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2017 10:29:13 -0700 (PDT)
+From: josef@toxicpanda.com
+To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 1/3] btrfs: don't allow trans ioctl on a directory
+Date: Fri, 21 Jul 2017 13:29:07 -0400
+Message-Id: <1500658149-20410-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One of the error handling paths in __add_reloc_root contains btrfs_panic()
-followed by some other code. As the name implies what it does is print
-some error message and call BUG, naturally what follow afterwards is not
-invoked. So remove this extra code.
+From: Josef Bacik <jbacik@fb.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+We need to use file->private_data for readdir on directories, so just
+don't allow user space transactions on directories.
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/relocation.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/ioctl.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 65661d1aae4e..1a532bb72eab 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1308,8 +1308,6 @@ static int __must_check __add_reloc_root(struct btrfs_root *root)
- 		btrfs_panic(fs_info, -EEXIST,
- 			    "Duplicate root found for start=%llu while inserting into relocation tree",
- 			    node->bytenr);
--		kfree(node);
--		return -EEXIST;
- 	}
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index bedeec6..ddb3811 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3968,6 +3968,9 @@ static long btrfs_ioctl_trans_start(struct file *file)
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
  
- 	list_add_tail(&root->root_list, &rc->reloc_roots);
++	if (S_ISDIR(inode->i_mode))
++		return -EINVAL;
++
+ 	ret = -EPERM;
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		goto out;
 -- 
 2.7.4
 

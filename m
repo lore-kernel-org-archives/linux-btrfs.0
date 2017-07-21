@@ -1,113 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:37904 "EHLO
-        mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751748AbdGUOgP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2017 10:36:15 -0400
-Received: by mail-wm0-f48.google.com with SMTP id w191so15786853wmw.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2017 07:36:14 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:56560 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750849AbdGUSM1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Jul 2017 14:12:27 -0400
+Date: Fri, 21 Jul 2017 20:11:11 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: make use of inode_need_compress()
+Message-ID: <20170721181111.GO2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170718093747.19046-1-anand.jain@oracle.com>
+ <20170718150125.GT2866@twin.jikos.cz>
+ <e48652eb-78bb-d6b7-4bbf-3722f0af2fb7@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20170717155400.GN2866@twin.jikos.cz>
-References: <CAJCQCtR+dJr8H2co41LB0hEUZCFSnkixeyv46ccdureMiBVTWg@mail.gmail.com>
- <74c792e3-d8f6-fb09-c6ee-62dfdf59650c@gmail.com> <CAJCQCtTnfLiiURTzLre-ZYY5xQBjFf2Qrz02gqGvh6BbaF2=KQ@mail.gmail.com>
- <20170717155400.GN2866@twin.jikos.cz>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 21 Jul 2017 08:36:13 -0600
-Message-ID: <CAJCQCtTjKRZxN+MxyM0=DJmqF94WBrV3Uoz7kw5SGq_xQ1fzrg@mail.gmail.com>
-Subject: Re: btrfs device ready purpose
-To: David Sterba <dsterba@suse.cz>, Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <e48652eb-78bb-d6b7-4bbf-3722f0af2fb7@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 17, 2017 at 9:54 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Fri, Jul 07, 2017 at 11:40:04AM -0600, Chris Murphy wrote:
->> On Fri, Jul 7, 2017 at 10:59 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->> > 07.07.2017 19:42, Chris Murphy пишет:
->> >> I'm digging through piles of list emails and not really finding an
->> >> answer to this. Maybe it's Friday and I'm just confused...
->> >>
->> >>
->> >> [root@f26s ~]# btrfs device ready /dev/sda1
->> >> [root@f26s ~]# echo $?
->> >> 0
->> >> [root@f26s ~]# btrfs device ready /dev/mapper/vg-1
->> >> [root@f26s ~]# echo $?
->> >> 0
->> >>
->> >>
->> >> /dev/sda1 is a single device btrfs and it is present, 'btrfs fi show' finds it.
->> >> /dev/mapper/vg-1 is one member of a two device Btrfs volume, the
->> >> missing device is /dev/mapper/vg-2 and 'btrfs fi show' sees 1 but not
->> >> 2 and says a device is missing.
->> >>
->> >> And yet the ready command completes and the exit code is the same, and
->> >> I just don't understand the purpose of this command. The man page says
->> >> "wait" but I don't see any waiting, so at the very least we probably
->> >> need to come up with a more descriptive man page description.
->> >>
->> >
->> > Here on Ubuntu 16.04.2 man page says
->> >
->> >        ready <device>
->> >            Check device to see if it has all of it’s devices in cache
->> > for mounting.
->>
->> 4.11 man page says for 'btrfs device ready'
->> Wait until all devices of a multiple-device filesystem are scanned and
->> registered within the kernel module.
->>
->> Not sure when it was updated.
->>
->>
->> >
->> > Nothing about "wait".
->> >
->> > btrfs device ready is only useful during startup. The only check it does
->> > - whether kernel knows about all devices or not. It is really intended
->> > to be used from udev rule to delay attempt to mount filesystem until all
->> > devices have been seen. And it is only useful with systemd as it is the
->> > only program that actually pays attention to it.
->>
->> OK that make sense. I'm just not used to the convention where a user
->> space tool does literally nothing for the user, and also has a man
->> page entry as if it is for users. And I get that developers are users
->> too, it just seems like an odd convention but whatever.
->
-> The command is just a simple wrapper around the DEVICES_READY ioctl, but
-> now that systemd has it's own wrapper tool, there are probably no users
-> of that subcommand in 'btrfs' tool itself. We can enhance the
-> documentation to state the expected purpose and that normal users can
-> ignore it.
+On Thu, Jul 20, 2017 at 10:22:13AM +0800, Anand Jain wrote:
+> >> @@ -1189,11 +1189,10 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+> >>   		async_cow->locked_page = locked_page;
+> >>   		async_cow->start = start;
+> >>   
+> >> -		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
+> >> -		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
+> >> -			cur_end = end;
+> >> -		else
+> >> +		if (inode_need_compress(inode))
+> >>   			cur_end = min(end, start + SZ_512K - 1);
+> >> +		else
+> >> +			cur_end = end;
+> > 
+> > The opencoded test should be cleaned up, however cow_file_range_async is
+> > called from run_delalloc_range if the inode_need_compress passes the
+> > 'inode_need_compress' condition. So at minimum, checking again here is
+> > redundant,
+> 
+>   David, no its not redundant. If the preceding SZ_512K block is not
+>   compressible, then we would have already set the BTRFS_INODE_NOCOMPRESS
+>   flag, which then we would straightaway go up to the end.
 
-What is the expected purpose? It flat out does not seem to work at
-all. It doesn't wait when devices are missing, as the man description
-says. And echo ? returns a 0 instead of 1. I'd expect the exit code is
-0 to mean "yes all devices are ready", and exit code 1 "some devices
-not ready". But right now, I get the same result no matter what.
+Right, I missed that it's using 'start', that changes in the loop and
+that NOCOMPRESS can get set indirectly through the async write between
+the iterations.
 
-So it seems to me it needs to be fixed in user space or it just needs
-to be removed.
-
-Where this stems from, is this 'help wanted' issue
-https://github.com/storaged-project/libblockdev/issues/244
-
-The gist is that libblockdev needs to know whether a device can be
-mounted successfully without -o degraded, and that's basically what
-BTRFS_IOC_DEVICES_READY does. But at least in startup, the udev usage
-of this ioctl causes a hang. Literally systemd just sits there and
-will not try to mount such a volume, and it waits indefinitely, which
-is itself suboptimal. I think it'd be better to return a code.
-0: is complete, degraded not required
-1: is incomplete, degraded should mount it
-2: is incomplete, degraded won't mount it
-
-Something like that.
-
-
-
--- 
-Chris Murphy
+I'm still counting too many times where the expensive "should we
+compress" check can get triggerd. It's at least once before we go to
+cow_file_range_async and then again for each compressed range in
+compress_file_range. I think we can fix that by two modes of
+inode_need_compres or separate the lightweight and expensive checks.

@@ -1,56 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60461 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751078AbdGZI0c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jul 2017 04:26:32 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A95ADAB9B
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2017 08:26:31 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@susze.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Deprecate userspace transaction ioctls
-Date: Wed, 26 Jul 2017 11:26:28 +0300
-Message-Id: <1501057588-7542-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <20170725154623.GB2866@suse.cz>
-References: <20170725154623.GB2866@suse.cz>
+Received: from aserp1040.oracle.com ([141.146.126.69]:38698 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750980AbdGUEyN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 Jul 2017 00:54:13 -0400
+Subject: Re: [PATCH v3] Btrfs: add skeleton code for compression heuristic
+To: dsterba@suse.cz, Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <20170717135258.15865-1-nefelim4ag@gmail.com>
+ <20170717183035.GR2866@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <f85d6fa7-4d1e-bfb8-7e64-ef02c468e42d@oracle.com>
+Date: Fri, 21 Jul 2017 13:00:56 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170717183035.GR2866@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Userspace transactions were introduced in commit
-6bf13c0cc833 ("Btrfs: transaction ioctls") to provide semantics that Ceph's
-object store required. However, things have changed significantly since then,
-to the point where btrfs is no longer suitable as a backend for ceph and in fact
-it's actively advised against such usages. Considering this, there doesn't
-seem to be a widespread, legit use case of userspace transaction. They also
-clutter the file->private pointer.
 
-So to end the agony let's nuke the userspace transaction ioctls. As a first
-step let's give time for people to voice their objection by just WARN()ining
-when the userspace transaction is used.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ioctl.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+On 07/18/2017 02:30 AM, David Sterba wrote:
+> So it basically looks good, I could not resist and rewrote the changelog
+> and comments. There's one code fix:
+> 
+> On Mon, Jul 17, 2017 at 04:52:58PM +0300, Timofey Titovets wrote:
+>> -static inline int inode_need_compress(struct inode *inode)
+>> +static inline int inode_need_compress(struct inode *inode, u64 start, u64 end)
+>>   {
+>>   	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>>
+>>   	/* force compress */
+>>   	if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
+>> -		return 1;
+>> +		return btrfs_compress_heuristic(inode, start, end);
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fa1b78cf25f6..10d78d71df96 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4000,6 +4000,12 @@ static long btrfs_ioctl_trans_start(struct file *file)
- 	struct btrfs_trans_handle *trans;
- 	int ret;
- 
-+	btrfs_warn(fs_info, "Userspace transaction mechanism is considered
-+		   deprecated and slated to be removed in the near future "
-+		   "(1 or 2 releases). If you have a valid use case please
-+		   speak up on the mailing list");
-+	WARN_ON_ONCE(1);
-+
- 	ret = -EPERM;
- 	if (!capable(CAP_SYS_ADMIN))
- 		goto out;
--- 
-2.7.4
 
+
+> This must stay 'return 1', if force-compress is on, so the change is
+> reverted.
+
+  Initially I thought 'return 1' is correct, but looking in depth,
+  it is not correct as below..
+
+  The biggest beneficiary of the estimating the compression ratio
+  in advance (heuristic) is when customers are using the
+  -o compress-force. But 'return 1' here is making them not to
+  use heuristic. So definitely something is wrong.
+
+  -o compress is about the whether each of the compression-granular bytes
+  (BTRFS_MAX_UNCOMPRESSED) of the inode should be tried to compress OR
+  just give up for the whole inode by looking at the compression ratio
+  of the current compression-granular.
+  This approach can be overridden by -o compress-force. So in
+  -o compress-force there will be a lot more efforts in _trying_
+  to compression than in -o compress. We must use heuristic for
+  -o compress-force.
+
+  btrfs_compress_heuristic is about the way of figuring out
+  whether the current compression-granular is compression capable.
+  Currently we are doing this part by trial-method (which is more
+  accurate than the heuristic approach), in the function
+  btrfs_compress_pages() and then we giving up in the function
+  compress_file_range(). So IMO. btrfs_compress_heuristic() should
+  be called at these functions.
+
+  Further, heuristic is just estimating which may go wrong based
+  on future compression algorithm ? (I am not sure).
+
+  IMO. its a good idea to either add an option to enable/disable
+  the heuristic.
+
+Thanks, Anand
+
+
+
+> I'm adding the patch to for-next.
+> 
+>>   	/* bad compression ratios */
+>>   	if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
+>>   		return 0;
+>>   	if (btrfs_test_opt(fs_info, COMPRESS) ||
+>>   	    BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
+>>   	    BTRFS_I(inode)->force_compress)
+>> -		return 1;
+>> +		return btrfs_compress_heuristic(inode, start, end);
+>>   	return 0;
+>>   }
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

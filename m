@@ -1,38 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36430 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752336AbdGXPfV (ORCPT
+Received: from mail-qk0-f194.google.com ([209.85.220.194]:34039 "EHLO
+        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751504AbdGUTK6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2017 11:35:21 -0400
-Subject: Re: [PATCH v3] Btrfs: add skeleton code for compression heuristic
-To: dsterba@suse.cz, Adam Borowski <kilobyte@angband.pl>,
-        Roman Mamedov <rm@romanrm.net>,
-        Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20170717135258.15865-1-nefelim4ag@gmail.com>
- <20170717183035.GR2866@twin.jikos.cz>
- <f85d6fa7-4d1e-bfb8-7e64-ef02c468e42d@oracle.com>
- <20170721233749.5175d611@natsu> <20170721210027.3qoexc63zcbbnqxl@angband.pl>
- <20170724145356.GX2866@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <950a249d-9fb2-103a-0101-d37e6609ba8f@oracle.com>
-Date: Mon, 24 Jul 2017 23:40:17 +0800
+        Fri, 21 Jul 2017 15:10:58 -0400
+Received: by mail-qk0-f194.google.com with SMTP id q66so4937210qki.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2017 12:10:58 -0700 (PDT)
+Date: Fri, 21 Jul 2017 15:10:56 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
+        stable@vger.kernel.org
+Subject: Re: [PATCH RESEND] Btrfs: fix early ENOSPC due to delalloc
+Message-ID: <20170721191055.GB17477@destiny>
+References: <33ac56aa74691de6109709168939cfe9f56cbd70.1500588286.git.osandov@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20170724145356.GX2866@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <33ac56aa74691de6109709168939cfe9f56cbd70.1500588286.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Jul 20, 2017 at 03:10:35PM -0700, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> If a lot of metadata is reserved for outstanding delayed allocations, we
+> rely on shrink_delalloc() to reclaim metadata space in order to fulfill
+> reservation tickets. However, shrink_delalloc() has a shortcut where if
+> it determines that space can be overcommitted, it will stop early. This
+> made sense before the ticketed enospc system, but now it means that
+> shrink_delalloc() will often not reclaim enough space to fulfill any
+> tickets, leading to an early ENOSPC. (Reservation tickets don't care
+> about being able to overcommit, they need every byte accounted for.)
+> 
+> Fix it by getting rid of the shortcut so that shrink_delalloc() reclaims
+> all of the metadata it is supposed to. This fixes early ENOSPCs we were
+> seeing when doing a btrfs receive to populate a new filesystem, as well
+> as early ENOSPCs Christoph saw when doing a big cp -r onto Btrfs.
+> 
+> Fixes: 957780eb2788 ("Btrfs: introduce ticketed enospc infrastructure")
+> Tested-by: Christoph Anton Mitterer <mail@christoph.anton.mitterer.name>
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
 
-> Eg. files that are already compressed would increase the cpu consumption
-> with compress-force, while they'd be hopefully detected as
-> incompressible with 'compress' and clever heuristics. So the NOCOMPRESS
-> bit would better reflect the status of the file.
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
-  current NOCOMPRESS is based on trial and error method and is more
-  accurate than heuristic also loss of cpu power is only one time ?
+Thanks,
 
-  May be the only opportunity that heuristic can facilitate is at the
-  logic to monitor and reset the NOCOMPRESS, as of now there is no
-  such a logic.
-
-Thanks, Anand
+Josef

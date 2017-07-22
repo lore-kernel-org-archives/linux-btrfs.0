@@ -1,137 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:37098 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752178AbdGUP4Z (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:52420 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754985AbdGVLf1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2017 11:56:25 -0400
-Subject: Re: [PATCH v3 0/4] Add xxhash and zstd modules
-To: Nick Terrell <terrelln@fb.com>
-Cc: Herbert Xu <herbert@gondor.apana.org.au>, kernel-team@fb.com,
-        Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
-        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
+        Sat, 22 Jul 2017 07:35:27 -0400
+Date: Sat, 22 Jul 2017 13:35:03 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Nick Terrell <terrelln@fb.com>, Herbert Xu <herbert@gondor.apana.org.au>,
+        kernel-team@fb.com, Chris Mason <clm@fb.com>,
+        Yann Collet <cyan@fb.com>, David Sterba <dsterba@suse.cz>,
         squashfs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3 0/4] Add xxhash and zstd modules
+Message-ID: <20170722113503.nf227bdrzx6637wl@angband.pl>
 References: <20170720212743.3351201-1-terrelln@fb.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <cb9deeb3-dc04-45a4-9583-1da9e8a3f779@gmail.com>
-Date: Fri, 21 Jul 2017 11:56:21 -0400
+ <cb9deeb3-dc04-45a4-9583-1da9e8a3f779@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20170720212743.3351201-1-terrelln@fb.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <cb9deeb3-dc04-45a4-9583-1da9e8a3f779@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-07-20 17:27, Nick Terrell wrote:
-> Hi all,
+On Fri, Jul 21, 2017 at 11:56:21AM -0400, Austin S. Hemmelgarn wrote:
+> On 2017-07-20 17:27, Nick Terrell wrote:
+> > This patch set adds xxhash, zstd compression, and zstd decompression
+> > modules. It also adds zstd support to BtrFS and SquashFS.
+> > 
+> > Each patch has relevant summaries, benchmarks, and tests.
 > 
-> This patch set adds xxhash, zstd compression, and zstd decompression
-> modules. It also adds zstd support to BtrFS and SquashFS.
+> For patches 2-3, I've compile tested and had runtime testing running for
+> about 18 hours now with no issues, so you can add:
 > 
-> Each patch has relevant summaries, benchmarks, and tests.
-> 
-> Best,
-> Nick Terrell
+> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 
-For patches 2-3, I've compile tested and had runtime testing running for 
-about 18 hours now with no issues, so you can add:
+I assume you haven't tried it on arm64, right?
 
-Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+I had no time to get 'round to it before, and just got the following build
+failure:
 
-For patch 1, I've only compile tested it, but had no issues and got no 
-warnings about it when booting to test 2-4.
+  CC      fs/btrfs/zstd.o
+In file included from fs/btrfs/zstd.c:28:0:
+fs/btrfs/compression.h:39:2: error: unknown type name ‘refcount_t’
+  refcount_t pending_bios;
+  ^~~~~~~~~~
+scripts/Makefile.build:302: recipe for target 'fs/btrfs/zstd.o' failed
 
-For patch 4, I've compile tested it and done some really basic runtime 
-testing using a couple of hand-crafted SquashFS images.  It appears to 
-run fine, but I've not done enough that I feel it warrants a Tested-by 
-tag from me.
-> 
-> Changelog:
-> 
-> v1 -> v2:
-> - Make pointer in lib/xxhash.c:394 non-const (1/4)
-> - Use div_u64() for division of u64s (2/4)
-> - Reduce stack usage of ZSTD_compressSequences(), ZSTD_buildSeqTable(),
->    ZSTD_decompressSequencesLong(), FSE_buildDTable(), FSE_decompress_wksp(),
->    HUF_writeCTable(), HUF_readStats(), HUF_readCTable(),
->    HUF_compressWeights(), HUF_readDTableX2(), and HUF_readDTableX4() (2/4)
-> - No zstd function uses more than 400 B of stack space (2/4)
-> 
-> v2 -> v3:
-> - Work around gcc-7 bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81388
->    (2/4)
-> - Fix bug in dictionary compression from upstream commit cc1522351f (2/4)
-> - Port upstream BtrFS commits e1ddce71d6, 389a6cfc2a, and 6acafd1eff (3/4)
-> - Change default compression level for BtrFS to 3 (3/4)
-> 
-> Nick Terrell (4):
->    lib: Add xxhash module
->    lib: Add zstd modules
->    btrfs: Add zstd support
->    squashfs: Add zstd support
-> 
->   fs/btrfs/Kconfig           |    2 +
->   fs/btrfs/Makefile          |    2 +-
->   fs/btrfs/compression.c     |    1 +
->   fs/btrfs/compression.h     |    6 +-
->   fs/btrfs/ctree.h           |    1 +
->   fs/btrfs/disk-io.c         |    2 +
->   fs/btrfs/ioctl.c           |    6 +-
->   fs/btrfs/props.c           |    6 +
->   fs/btrfs/super.c           |   12 +-
->   fs/btrfs/sysfs.c           |    2 +
->   fs/btrfs/zstd.c            |  435 ++++++
->   fs/squashfs/Kconfig        |   14 +
->   fs/squashfs/Makefile       |    1 +
->   fs/squashfs/decompressor.c |    7 +
->   fs/squashfs/decompressor.h |    4 +
->   fs/squashfs/squashfs_fs.h  |    1 +
->   fs/squashfs/zstd_wrapper.c |  150 ++
->   include/linux/xxhash.h     |  236 +++
->   include/linux/zstd.h       | 1157 +++++++++++++++
->   include/uapi/linux/btrfs.h |    8 +-
->   lib/Kconfig                |   11 +
->   lib/Makefile               |    3 +
->   lib/xxhash.c               |  500 +++++++
->   lib/zstd/Makefile          |   18 +
->   lib/zstd/bitstream.h       |  374 +++++
->   lib/zstd/compress.c        | 3479 ++++++++++++++++++++++++++++++++++++++++++++
->   lib/zstd/decompress.c      | 2526 ++++++++++++++++++++++++++++++++
->   lib/zstd/entropy_common.c  |  243 ++++
->   lib/zstd/error_private.h   |   53 +
->   lib/zstd/fse.h             |  575 ++++++++
->   lib/zstd/fse_compress.c    |  795 ++++++++++
->   lib/zstd/fse_decompress.c  |  332 +++++
->   lib/zstd/huf.h             |  212 +++
->   lib/zstd/huf_compress.c    |  770 ++++++++++
->   lib/zstd/huf_decompress.c  |  960 ++++++++++++
->   lib/zstd/mem.h             |  151 ++
->   lib/zstd/zstd_common.c     |   75 +
->   lib/zstd/zstd_internal.h   |  250 ++++
->   lib/zstd/zstd_opt.h        | 1014 +++++++++++++
->   39 files changed, 14382 insertions(+), 12 deletions(-)
->   create mode 100644 fs/btrfs/zstd.c
->   create mode 100644 fs/squashfs/zstd_wrapper.c
->   create mode 100644 include/linux/xxhash.h
->   create mode 100644 include/linux/zstd.h
->   create mode 100644 lib/xxhash.c
->   create mode 100644 lib/zstd/Makefile
->   create mode 100644 lib/zstd/bitstream.h
->   create mode 100644 lib/zstd/compress.c
->   create mode 100644 lib/zstd/decompress.c
->   create mode 100644 lib/zstd/entropy_common.c
->   create mode 100644 lib/zstd/error_private.h
->   create mode 100644 lib/zstd/fse.h
->   create mode 100644 lib/zstd/fse_compress.c
->   create mode 100644 lib/zstd/fse_decompress.c
->   create mode 100644 lib/zstd/huf.h
->   create mode 100644 lib/zstd/huf_compress.c
->   create mode 100644 lib/zstd/huf_decompress.c
->   create mode 100644 lib/zstd/mem.h
->   create mode 100644 lib/zstd/zstd_common.c
->   create mode 100644 lib/zstd/zstd_internal.h
->   create mode 100644 lib/zstd/zstd_opt.h
-> 
-> --
-> 2.9.3
-> 
+It's trivially fixably by:
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -24,6 +24,7 @@
+ #include <linux/sched.h>
+ #include <linux/pagemap.h>
+ #include <linux/bio.h>
++#include <linux/refcount.h>
+ #include <linux/zstd.h>
+ #include "compression.h"
 
+after which it works fine, although half an hour of testing isn't exactly
+exhaustive.
+
+
+Alas, the armhf machine I ran stress tests (Debian archive rebuilds) on
+doesn't boot with 4.13-rc1 due to some unrelated regression, bisecting that
+would be quite painful so I did not try yet.  I guess re-testing your patch
+set on 4.12, even with btrfs-for-4.13 (which it had for a while), wouldn't
+be of much help.  So far, previous versions have been running for weeks,
+with no issue since you fixed workspace flickering.
+
+
+On amd64 all is fine.
+
+
+I haven't tested SquashFS at all.
+
+
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
+⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
+⠈⠳⣄⠀⠀⠀⠀ A master species delegates.

@@ -1,119 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:49170 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751464AbdGVBNX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jul 2017 21:13:23 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:53918)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dYiyu-0001AZ-Nz
-        for linux-btrfs@vger.kernel.org; Sat, 22 Jul 2017 02:13:20 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dYiyo-0001UK-Kb
-        for <linux-btrfs@vger.kernel.org>; Sat, 22 Jul 2017 02:13:14 +0100
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:35428 "EHLO
+        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750798AbdGVFz0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 22 Jul 2017 01:55:26 -0400
+Received: by mail-lf0-f68.google.com with SMTP id b127so2182262lfb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2017 22:55:25 -0700 (PDT)
+Subject: Re: btrfs device ready purpose
+To: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
+References: <CAJCQCtR+dJr8H2co41LB0hEUZCFSnkixeyv46ccdureMiBVTWg@mail.gmail.com>
+ <74c792e3-d8f6-fb09-c6ee-62dfdf59650c@gmail.com>
+ <CAJCQCtTnfLiiURTzLre-ZYY5xQBjFf2Qrz02gqGvh6BbaF2=KQ@mail.gmail.com>
+ <20170717155400.GN2866@twin.jikos.cz>
+ <CAJCQCtTjKRZxN+MxyM0=DJmqF94WBrV3Uoz7kw5SGq_xQ1fzrg@mail.gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <9a16f6d5-90cd-bd04-a0ea-63e88cc3faf4@gmail.com>
+Date: Sat, 22 Jul 2017 08:55:23 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22898.42666.281306.537876@tree.ty.sabi.co.uk>
-Date: Sat, 22 Jul 2017 02:13:14 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel btrfs file system wedged -- is it toast?
-In-Reply-To: <1500663236.2611541.1048467944.0014B72B@webmail.messagingengine.com>
-References: <1500576442.3508802.1047392992.202A4606@webmail.messagingengine.com>
-        <3dd83854-362d-001a-e075-2156931a5cc2@mendix.com>
-        <1500593465.333509.1047657672.4D69CB55@webmail.messagingengine.com>
-        <1500617212.422990.1047894640.3B975261@webmail.messagingengine.com>
-        <6f8c41cc-39a0-270e-0b8b-5debbdf455c9@codepoets.co.uk>
-        <1500663236.2611541.1048467944.0014B72B@webmail.messagingengine.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <CAJCQCtTjKRZxN+MxyM0=DJmqF94WBrV3Uoz7kw5SGq_xQ1fzrg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> [ ... ] announce loudly and clearly to any potential users, in
-> multiple places (perhaps a key announcement in a few places
-> and links to that announcement from many places,
+21.07.2017 17:36, Chris Murphy пишет:
+>>
+>> The command is just a simple wrapper around the DEVICES_READY ioctl, but
+>> now that systemd has it's own wrapper tool, there are probably no users
+>> of that subcommand in 'btrfs' tool itself. We can enhance the
+>> documentation to state the expected purpose and that normal users can
+>> ignore it.
+> 
+> What is the expected purpose? It flat out does not seem to work at
+> all. It doesn't wait when devices are missing, as the man description
+> says.
 
-https://btrfs.wiki.kernel.org/index.php/Gotchas#Having_many_subvolumes_can_be_very_slow
+That's man page that is misleading. The intent was to let caller of
+"btrfs device ready" to know when it has to wait.
 
-> ... DO expect to first have to learn, the hard way, of
-> ... whatever special mitigations might apply in ones
-> ... particular circumstances, before considering deploying
-> ... btrfs into a production environment where this, or other
-> ... (what other?) surprising limitations of btrfs may apply.
+> And echo ? returns a 0 instead of 1. I'd expect the exit code is
+> 0 to mean "yes all devices are ready", and exit code 1 "some devices
+> not ready". But right now, I get the same result no matter what.
+> 
 
-In computer jargon that is called "being a system engineer".
+That's not what I observe.
 
-> All the prominent places that respond to the question of
-> whether btrfs is ready for production use (spanning several
-> years now) should if possible display this warning.
+linux-gtrk:~ # btrfs device ready /dev/sdb
+linux-gtrk:~ # echo $?
+1
+linux-gtrk:~ # btrfs-debug-tree /dev/sdb
+btrfs-progs v4.5.3+20160729
+warning, device 2 is missing
+...
 
-https://btrfs.wiki.kernel.org/index.php/Status
-  "The table below aims to serve as an overview for the stability
-  status of the features BTRFS supports. While a feature may be
-  functionally safe and reliable, it does not necessarily mean
-  that its useful, for example in meeting your performance
-  expectations for your specific workload."
+But if you call "btrfs device ready" AFTER kernel has already seen (or
+decided about) all devices, then it returns 0. Basically, this is not
+"filesystem ready" but "does kernel know about all devices for this
+filesystem".
 
-> [ ... ] Back in my day, such a performance bug would have made
-> the software containing it unreleasable, _especially_ in
-> software such as a major file system that is expected to
-> provide reliable service, where "reliable" means both
-> preserving data integrity and doing so within an order of
-> magnitude of a reasonably expected time.
+> So it seems to me it needs to be fixed in user space or it just needs
+> to be removed.
+> 
+> Where this stems from, is this 'help wanted' issue
+> https://github.com/storaged-project/libblockdev/issues/244
+> 
+> The gist is that libblockdev needs to know whether a device can be
+> mounted successfully without -o degraded, and that's basically what
+> BTRFS_IOC_DEVICES_READY does. But at least in startup, the udev usage
+> of this ioctl causes a hang. Literally systemd just sits there and
+> will not try to mount such a volume, and it waits indefinitely, which
+> is itself suboptimal.
 
-For the past several decades, since perhaps the Manchester MARK I
-(or the ZUSE probably), it has been known to "system engineers"
-and "programmers" that most features of "hardware" and "software"
-have very anisotropic performance envelopes, both as to speed and
-usability and reliability, and not all potentially syntactically
-valid combinations of features are equally robust and excellent
-under every possible workload, and indeed very few are, and it is
-part of "being a system engineer" or "being a programmer" to
-develop insight and experience, leading to knowledge ideally, as
-to what combinations work well and which work badly.
+Please do not confuse independent things. "btrfs device ready" simply
+tells caller whether all devices have been seen by kernel. This is poor
+man's solution for "can I mount it". What caller does with this
+information is outside of scope of btrfs.
 
-Considering somewhat imprecise car analogies, jet engines on cars
-tend not to be wholly desirable, even if syntactically valid, and
-using cars to plow fields does not necessarily yield the highest
-productivity, even if also syntactically valid.
+> I think it'd be better to return a code.
+> 0: is complete, degraded not required
+> 1: is incomplete, degraded should mount it
+> 2: is incomplete, degraded won't mount it
+> 
 
-General introduction about anisotropy and performance:
-
-  http://www.sabi.co.uk/blog/15-two.html?151023#151023
-
-In storage system and filesystems "system engineers" often have
-to confront a large number of pathological cases of anisotropy,
-some examples I can find quickly in my links:
-
-  http://www.sabi.co.uk/blog/1005May.html?100520#100520
-  http://www.sabi.co.uk/blog/16-one.html?160322#160322
-  http://www.sabi.co.uk/blog/15-one.html?150203#150203
-  http://www.sabi.co.uk/blog/12-fou.html?121218#121218
-  http://www.sabi.co.uk/blog/0802feb.html?080210#080210
-  http://www.sabi.co.uk/blog/0802feb.html?080216#080216
-
-I try to keep lists of "known pathologies" of various types here:
-
-  http://www.sabi.co.uk/Notes/linuxStor.html
-  http://www.sabi.co.uk/Notes/linuxFS.html#fsHints
-
-Even "legendary" 'ext3' has/had pathological (and common) cases:
-
-  https://lwn.net/Articles/328370/
-  https://lwn.net/Articles/328363/
-  https://bugzilla.kernel.org/show_bug.cgi?id=12309
-  https://news.ycombinator.com/item?id=7376750
-  https://news.ycombinator.com/item?id=7377315
-
-  https://lkml.org/lkml/2009/4/6/331
-    the difference between the occasional 5+ second pause and the
-    occasional 10+ second pause wasn't really all that
-    interesting. They were both unusuable, and both made me kill
-    the background writer almost immediately
-
-Wisely L Torvalds writes:
-
-  https://lkml.org/lkml/2010/11/10/233
-    ext3 [f]sync sucks. We know. All filesystems suck.
-    They just tend to do it in different dimensions.
+There is no way systemd can make use of this information using current
+static unit dependencies. Really, this topic came up more than once
+(including by you as well). systemd does not have adequate ways to
+represent multi-device objects (this goes beyond btrfs, Linux MD is good
+example). Sometimes it is possible to workaround it (Linux MD again).
+But at the end, systemd needs to offer framework where btrfs et al can
+plug in by providing status. Until this happens, discussion on this list
+is pointless.

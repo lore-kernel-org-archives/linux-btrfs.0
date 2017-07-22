@@ -1,66 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f41.google.com ([74.125.83.41]:33945 "EHLO
-        mail-pg0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965416AbdGTWKn (ORCPT
+Received: from mail-lf0-f46.google.com ([209.85.215.46]:34126 "EHLO
+        mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750989AbdGVH6r (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2017 18:10:43 -0400
-Received: by mail-pg0-f41.google.com with SMTP id 123so20254443pgj.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jul 2017 15:10:43 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
-        stable@vger.kernel.org
-Subject: [PATCH RESEND] Btrfs: fix early ENOSPC due to delalloc
-Date: Thu, 20 Jul 2017 15:10:35 -0700
-Message-Id: <33ac56aa74691de6109709168939cfe9f56cbd70.1500588286.git.osandov@fb.com>
+        Sat, 22 Jul 2017 03:58:47 -0400
+Received: by mail-lf0-f46.google.com with SMTP id g25so26257292lfh.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Jul 2017 00:58:47 -0700 (PDT)
+Received: from [192.168.1.6] (ppp109-252-90-242.pppoe.spdop.ru. [109.252.90.242])
+        by smtp.gmail.com with ESMTPSA id 2sm1314271ljo.48.2017.07.22.00.58.44
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 22 Jul 2017 00:58:45 -0700 (PDT)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Subject: How to detect "orphaned" subvolume attachment point in snapshot?
+Message-ID: <9d5e5337-8b67-cce0-f85b-431639afaf48@gmail.com>
+Date: Sat, 22 Jul 2017 10:58:44 +0300
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+Here is structure of snapshots in openSUSE; all snapshots of root volume
+are created under /.snapshots subvolume:
 
-If a lot of metadata is reserved for outstanding delayed allocations, we
-rely on shrink_delalloc() to reclaim metadata space in order to fulfill
-reservation tickets. However, shrink_delalloc() has a shortcut where if
-it determines that space can be overcommitted, it will stop early. This
-made sense before the ticketed enospc system, but now it means that
-shrink_delalloc() will often not reclaim enough space to fulfill any
-tickets, leading to an early ENOSPC. (Reservation tickets don't care
-about being able to overcommit, they need every byte accounted for.)
+linux-gtrk:/host/home/src/python-btrfs/examples # sudo mount -o
+ro,subvol=/ /dev/sda3 /mnt
+linux-gtrk:/host/home/src/python-btrfs/examples #
+./show_directory_contents.py /mnt/
+directory /mnt/@ tree 257 inum 256
+inode generation 6 transid 315 size 72 nbytes 0 block_group 0 mode 40755
+nlink 1 uid 0 gid 0 rdev 0 flags 0x0(none)
+inode ref index 0 name utf-8 ..
+...
+dir item list hash 1921786525 size 1
+    dir item location (258 ROOT_ITEM -1) type DIR name utf-8 .snapshots
+...
+linux-gtrk:/host/home/src/python-btrfs/examples #
+./show_directory_contents.py /mnt/@/.snapshots/251/snapshot/
+directory /mnt/@/.snapshots/251/snapshot/ tree 774 inum 256
+inode generation 6 transid 15867 size 164 nbytes 0 block_group 0 mode
+40755 nlink 1 uid 0 gid 0 rdev 0 flags 0x0(none)
+inode ref index 0 name utf-8 ..
+...
+dir item list hash 1921786525 size 1
+    dir item location (258 ROOT_ITEM -1) type DIR name utf-8 .snapshots
+...
+linux-gtrk:/host/home/src/python-btrfs/examples #
 
-Fix it by getting rid of the shortcut so that shrink_delalloc() reclaims
-all of the metadata it is supposed to. This fixes early ENOSPCs we were
-seeing when doing a btrfs receive to populate a new filesystem, as well
-as early ENOSPCs Christoph saw when doing a big cp -r onto Btrfs.
+Note that both directory items in /mnt/@ and
+/mnt/@/.snapshots/251/snapshot store the same tree ID for .snapshots
+item - 258. This causes grub2 btrfs driver loop - when it comes to
+/mnt/@/.snapshots/251/snapshot and looks for .snapshots it jumps back to
+/mnt/@/.snapshots tree.
 
-Fixes: 957780eb2788 ("Btrfs: introduce ticketed enospc infrastructure")
-Tested-by: Christoph Anton Mitterer <mail@christoph.anton.mitterer.name>
-Cc: stable@vger.kernel.org
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
-Resending with the fixes tag, Cc: stable, Christoph's tested-by, and
-some info about how Christoph hit the same issue. Nikolay also said it
-helped slightly with some of his ENOSPC problems. Based on v4.13-rc1.
-Can we get this in 4.13 and applied to stable?
+I see that in Linux kernel somehow distinguishes between both of them; I
+am not sure how it actually does it though.
 
- fs/btrfs/extent-tree.c | 4 ----
- 1 file changed, 4 deletions(-)
+What on-disk information should we check to find out "orphaned" snapshot
+directory?
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 375f8c728d91..5ef0cf399667 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4825,10 +4825,6 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
- 		else
- 			flush = BTRFS_RESERVE_NO_FLUSH;
- 		spin_lock(&space_info->lock);
--		if (can_overcommit(fs_info, space_info, orig, flush, false)) {
--			spin_unlock(&space_info->lock);
--			break;
--		}
- 		if (list_empty(&space_info->tickets) &&
- 		    list_empty(&space_info->priority_tickets)) {
- 			spin_unlock(&space_info->lock);
--- 
-2.13.3
+TIA
+
+-andrei
+
 

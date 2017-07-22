@@ -1,93 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f68.google.com ([209.85.215.68]:35428 "EHLO
-        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750798AbdGVFz0 (ORCPT
+Received: from smtp97.iad3a.emailsrvr.com ([173.203.187.97]:39438 "EHLO
+        smtp97.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750750AbdGVGZZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 22 Jul 2017 01:55:26 -0400
-Received: by mail-lf0-f68.google.com with SMTP id b127so2182262lfb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jul 2017 22:55:25 -0700 (PDT)
-Subject: Re: btrfs device ready purpose
-To: Chris Murphy <lists@colorremedies.com>, David Sterba <dsterba@suse.cz>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAJCQCtR+dJr8H2co41LB0hEUZCFSnkixeyv46ccdureMiBVTWg@mail.gmail.com>
- <74c792e3-d8f6-fb09-c6ee-62dfdf59650c@gmail.com>
- <CAJCQCtTnfLiiURTzLre-ZYY5xQBjFf2Qrz02gqGvh6BbaF2=KQ@mail.gmail.com>
- <20170717155400.GN2866@twin.jikos.cz>
- <CAJCQCtTjKRZxN+MxyM0=DJmqF94WBrV3Uoz7kw5SGq_xQ1fzrg@mail.gmail.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <9a16f6d5-90cd-bd04-a0ea-63e88cc3faf4@gmail.com>
-Date: Sat, 22 Jul 2017 08:55:23 +0300
+        Sat, 22 Jul 2017 02:25:25 -0400
+Received: from smtp5.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp5.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id AF8B125477
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Jul 2017 02:25:24 -0400 (EDT)
+Received: by smtp5.relay.iad3a.emailsrvr.com (Authenticated sender: m.khalili-AT-rqc.ru) with ESMTPSA id 264482546A
+        for <linux-btrfs@vger.kernel.org>; Sat, 22 Jul 2017 02:25:23 -0400 (EDT)
+Date: Sat, 22 Jul 2017 09:25:18 +0300
+In-Reply-To: <1500663236.2611541.1048467944.0014B72B@webmail.messagingengine.com>
+References: <1500576442.3508802.1047392992.202A4606@webmail.messagingengine.com> <3dd83854-362d-001a-e075-2156931a5cc2@mendix.com> <1500593465.333509.1047657672.4D69CB55@webmail.messagingengine.com> <1500617212.422990.1047894640.3B975261@webmail.messagingengine.com> <6f8c41cc-39a0-270e-0b8b-5debbdf455c9@codepoets.co.uk> <1500663236.2611541.1048467944.0014B72B@webmail.messagingengine.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTjKRZxN+MxyM0=DJmqF94WBrV3Uoz7kw5SGq_xQ1fzrg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain;
+ charset=utf-8
+Subject: Re: kernel btrfs file system wedged -- is it toast?
+To: linux-btrfs@vger.kernel.org
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <F141B30A-8B05-40D6-B9BF-439007CAFC3F@rqc.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-21.07.2017 17:36, Chris Murphy пишет:
->>
->> The command is just a simple wrapper around the DEVICES_READY ioctl, but
->> now that systemd has it's own wrapper tool, there are probably no users
->> of that subcommand in 'btrfs' tool itself. We can enhance the
->> documentation to state the expected purpose and that normal users can
->> ignore it.
-> 
-> What is the expected purpose? It flat out does not seem to work at
-> all. It doesn't wait when devices are missing, as the man description
-> says.
 
-That's man page that is misleading. The intent was to let caller of
-"btrfs device ready" to know when it has to wait.
+> The btrfs developers should have known this, and announced this,
+a long time ago, in various prominent ways that it would be difficult
+for potential new users to miss. 
 
-> And echo ? returns a 0 instead of 1. I'd expect the exit code is
-> 0 to mean "yes all devices are ready", and exit code 1 "some devices
-> not ready". But right now, I get the same result no matter what.
-> 
+I'm also a user like you, and I felt like this too when I came here (BTW there are several traps in BTRFS, and other are causing partial or whole filesystem loss, so you're lucky). There's truth in your words that some warning is needed, but in this open-source business it is not clear who should give it to whom. Developers in the list are actually spending their time on adding such warnings to kernel and command-line tools, but e.g. people using GUI and not reading dmesg over breakfast won't see them anyways. All situation is unfortunate because hardware and OS vendors keep hyping BTRFS and making it default in their products when it is clearly not ready, but you're now talking to and blaming the wrong people.
 
-That's not what I observe.
+Personally for me coming to this list was the most helpful thing in understanding BTRFS current state and limitations. I'm still using it, although in a very careful and controlled manner. But browsing the list every day sadly takes time. If you can't afford it or are running something absolutely critical, better look to other, more mature filesystems. After all, as adage says: "legacy is what we run in production".
+-- 
 
-linux-gtrk:~ # btrfs device ready /dev/sdb
-linux-gtrk:~ # echo $?
-1
-linux-gtrk:~ # btrfs-debug-tree /dev/sdb
-btrfs-progs v4.5.3+20160729
-warning, device 2 is missing
-...
-
-But if you call "btrfs device ready" AFTER kernel has already seen (or
-decided about) all devices, then it returns 0. Basically, this is not
-"filesystem ready" but "does kernel know about all devices for this
-filesystem".
-
-> So it seems to me it needs to be fixed in user space or it just needs
-> to be removed.
-> 
-> Where this stems from, is this 'help wanted' issue
-> https://github.com/storaged-project/libblockdev/issues/244
-> 
-> The gist is that libblockdev needs to know whether a device can be
-> mounted successfully without -o degraded, and that's basically what
-> BTRFS_IOC_DEVICES_READY does. But at least in startup, the udev usage
-> of this ioctl causes a hang. Literally systemd just sits there and
-> will not try to mount such a volume, and it waits indefinitely, which
-> is itself suboptimal.
-
-Please do not confuse independent things. "btrfs device ready" simply
-tells caller whether all devices have been seen by kernel. This is poor
-man's solution for "can I mount it". What caller does with this
-information is outside of scope of btrfs.
-
-> I think it'd be better to return a code.
-> 0: is complete, degraded not required
-> 1: is incomplete, degraded should mount it
-> 2: is incomplete, degraded won't mount it
-> 
-
-There is no way systemd can make use of this information using current
-static unit dependencies. Really, this topic came up more than once
-(including by you as well). systemd does not have adequate ways to
-represent multi-device objects (this goes beyond btrfs, Linux MD is good
-example). Sometimes it is possible to workaround it (Linux MD again).
-But at the end, systemd needs to offer framework where btrfs et al can
-plug in by providing status. Until this happens, discussion on this list
-is pointless.
+With Best Regards,
+Marat Khalili

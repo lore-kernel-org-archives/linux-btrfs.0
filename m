@@ -1,55 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f54.google.com ([74.125.82.54]:37466 "EHLO
-        mail-wm0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754741AbdGXUn3 (ORCPT
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:37071 "EHLO
+        mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932668AbdGXUzC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2017 16:43:29 -0400
-Received: by mail-wm0-f54.google.com with SMTP id c184so41090130wmd.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 13:43:29 -0700 (PDT)
+        Mon, 24 Jul 2017 16:55:02 -0400
+Received: by mail-wm0-f44.google.com with SMTP id c184so41276051wmd.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 13:55:01 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAMp4zn8YUdVShFibUKCXtwZTZpicCbmm7zSYMn7+K5CNt-cxGA@mail.gmail.com>
-References: <CAJCQCtQiCcWZXhXo1nDt0qeGHr=WQH1cs8Syrbc9cXwez8ENjg@mail.gmail.com>
- <20170713223205.GB6181@lim.localdomain> <CAJCQCtSpJkVzH=jL7+1J2jHncCBxwFS_eDNs_q+q6uUdTG8DAQ@mail.gmail.com>
- <9a73851d-e4c7-f395-285e-5cf3e835c2b7@gmx.com> <CAMp4zn8YUdVShFibUKCXtwZTZpicCbmm7zSYMn7+K5CNt-cxGA@mail.gmail.com>
+In-Reply-To: <20170724204257.GJ7140@carfax.org.uk>
+References: <1500895655.2781.6.camel@cloud.haefemeier.eu> <CAJCQCtT3nEaHox7jiO-jf6hCjpUSRz=AahrapgZDajJdeYr1Rw@mail.gmail.com>
+ <20170724204257.GJ7140@carfax.org.uk>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 24 Jul 2017 14:43:28 -0600
-Message-ID: <CAJCQCtQRX0pwh2DgMdZOqc3Gk8zhYL2Bjt1+Z4gw8VntV6BVrQ@mail.gmail.com>
-Subject: Re: Containers, Btrfs vs Btrfs + overlayfs
-To: Sargun Dhillon <sargun@sargun.me>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Chris Murphy <lists@colorremedies.com>,
-        bo.li.liu@oracle.com, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 24 Jul 2017 14:55:00 -0600
+Message-ID: <CAJCQCtTpdn0zNmogkbDr0h4RjNvb8u21w7Sj3xjUrj77A+ss8w@mail.gmail.com>
+Subject: Re: Best Practice: Add new device to RAID1 pool
+To: Hugo Mills <hugo@carfax.org.uk>, Chris Murphy <lists@colorremedies.com>,
+        Cloud Admin <admin@cloud.haefemeier.eu>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 13, 2017 at 8:24 PM, Sargun Dhillon <sargun@sargun.me> wrote:
+On Mon, Jul 24, 2017 at 2:42 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 
-> We've been running Btrfs with Docker at appreciable scale for a few
-> months now (100-200k containers  / day ).
+>
+>    In my experience, it's pretty consistent at about a minute per 1
+> GiB for data on rotational drives on RAID-1. For metadata, it can go
+> up to several hours (or more) per 256 MiB chunk, depending on what
+> kind of metadata it is. With extents shared between lots of files, it
+> slows down. In my case, with a few hundred snapshots of the same
+> thing, my system was taking 4h per chunk for the chunks full of the
+> extent tree.
 
-Is this on a single Btrfs file system? Or is it distributed among
-multiple Btrfs file systems?
+Egads.
 
-I'm curious how many containers or more specifically how many
-snapshots you've typically accumulated before doing cleanups (deleting
-containers and their snapshots).
+Maybe Cloud Admin ought to consider using a filter to just balance the
+data chunks across the three devices, and just leave the metadata on
+the original two disks?
 
+Maybe
 
-> Since containers are ephemeral, they really shouldn't fsync. One of
-> the biggest (recent) problems has been workloads that use O_SYNC, or
-> sync after a large number of operations -- this stalls out all of the
-> containers (subvolumes) on the machine because the transaction lock is
-> under hold. This, in turn, manifests itself in soft lockups, and
-> operational trouble. Our plan to work around it is patch the VFS
-> layer, and stub out sync for certain cgroups.
-
-This could even be useful for out of band OS updates. That use case is
-a much smaller scale, so it's not such a big problem. But I see heavy
-fsyncing for OS/application updates in the RPM world, and it's just
-not necessary if the update is happening on its own tree. If there's a
-problem with the update, just blow away the partially updated snapshot
-and start over. The fsyncing throughout gains nothing but slow downs.
-
+sudo btrfs balance start -dusage=100 <mp>
 
 
 -- 

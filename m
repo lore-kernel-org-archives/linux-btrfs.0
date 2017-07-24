@@ -1,64 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:35476 "EHLO
+Received: from mail-qk0-f193.google.com ([209.85.220.193]:38188 "EHLO
         mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753936AbdGXOBY (ORCPT
+        with ESMTP id S1753409AbdGXOCc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2017 10:01:24 -0400
-Received: by mail-qk0-f193.google.com with SMTP id k2so2530955qkf.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 07:01:23 -0700 (PDT)
-Date: Mon, 24 Jul 2017 10:01:21 -0400
+        Mon, 24 Jul 2017 10:02:32 -0400
+Received: by mail-qk0-f193.google.com with SMTP id t2so9985825qkc.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 07:02:32 -0700 (PDT)
+Date: Mon, 24 Jul 2017 10:02:30 -0400
 From: Josef Bacik <josef@toxicpanda.com>
 To: dsterba@suse.cz, josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH 2/3] btrfs: fix readdir deadlock with pagefault
-Message-ID: <20170724140121.GB9406@destiny>
+Subject: Re: [PATCH 1/3] btrfs: don't allow trans ioctl on a directory
+Message-ID: <20170724140229.GC9406@destiny>
 References: <1500658149-20410-1-git-send-email-jbacik@fb.com>
- <1500658149-20410-2-git-send-email-jbacik@fb.com>
- <20170724125050.GR2866@twin.jikos.cz>
- <20170724131408.GT2866@twin.jikos.cz>
+ <20170724124229.GQ2866@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170724131408.GT2866@twin.jikos.cz>
+In-Reply-To: <20170724124229.GQ2866@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 24, 2017 at 03:14:08PM +0200, David Sterba wrote:
-> On Mon, Jul 24, 2017 at 02:50:50PM +0200, David Sterba wrote:
-> > On Fri, Jul 21, 2017 at 01:29:08PM -0400, josef@toxicpanda.com wrote:
-> > > From: Josef Bacik <jbacik@fb.com>
-> > > 
-> > > Readdir does dir_emit while under the btree lock.  dir_emit can trigger
-> > > the page fault which means we can deadlock.  Fix this by allocating a
-> > > buffer on opening a directory and copying the readdir into this buffer
-> > > and doing dir_emit from outside of the tree lock.
-> > > 
-> > > Signed-off-by: Josef Bacik <jbacik@fb.com>
-> > > ---
-> > >  fs/btrfs/inode.c | 110 +++++++++++++++++++++++++++++++++++++++++--------------
-> > >  1 file changed, 83 insertions(+), 27 deletions(-)
-> > > 
-> > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > > index 9a4413a..61396e3 100644
-> > > --- a/fs/btrfs/inode.c
-> > > +++ b/fs/btrfs/inode.c
-> > > @@ -5877,6 +5877,56 @@ unsigned char btrfs_filetype_table[] = {
-> > >  	DT_UNKNOWN, DT_REG, DT_DIR, DT_CHR, DT_BLK, DT_FIFO, DT_SOCK, DT_LNK
-> > >  };
-> > >  
-> > > +/*
-> > > + * All this infrastructure exists because dir_emit can fault, and we are holding
-> > > + * the tree lock when doing readdir.  For now just allocate a buffer and copy
-> > > + * our information into that, and then dir_emit from the buffer.  This is
-> > > + * similar to what NFS does, only we don't keep the buffer around in pagecache
-> > > + * because I'm afraid I'll fuck that up.
+On Mon, Jul 24, 2017 at 02:42:29PM +0200, David Sterba wrote:
+> On Fri, Jul 21, 2017 at 01:29:07PM -0400, josef@toxicpanda.com wrote:
+> > From: Josef Bacik <jbacik@fb.com>
+> > 
+> > We need to use file->private_data for readdir on directories, so just
+> > don't allow user space transactions on directories.
+> > 
+> > Signed-off-by: Josef Bacik <jbacik@fb.com>
+> > ---
+> >  fs/btrfs/ioctl.c | 3 +++
+> >  1 file changed, 3 insertions(+)
+> > 
+> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > index bedeec6..ddb3811 100644
+> > --- a/fs/btrfs/ioctl.c
+> > +++ b/fs/btrfs/ioctl.c
+> > @@ -3968,6 +3968,9 @@ static long btrfs_ioctl_trans_start(struct file *file)
+> >  	struct btrfs_trans_handle *trans;
+> >  	int ret;
+> >  
+> > +	if (S_ISDIR(inode->i_mode))
+> > +		return -EINVAL;
 > 
-> Can you please explain the concern in more detail?
+> You can't do this, starting a transaction on a directory needs to work.
+> The most natural way to run the ioctl is on the mount point.
+> 
+> The file private data would need to be able to hold multipe values, so
+> you can add
+> 
+> struct btrfs_inode {
+> 	...
+> 	struct priv_data {
+> 		void *for_readdir;
+> 		void *for_tranc_ioctl;
+> 	};
+> 	...
+> };
+> 
+> then set file->file_private = &btrfs_inode->priv_data; and update all
+> uses to check for the embedded pointers.
 > 
 
-If we keep the cache I'll have to have mechanisms to invalidate the page cache
-so it can be regenerated at the next readdir.  Then I also have to wire up
-releasepage and stuff for directories and make sure it doesn't do anything
-bonkers like accidently try to write the data out for a directory.  All in all
-it's not worth the headache I don't think.  Thanks,
+Blah I really want to just jetison the user space transaction stuff altogether
+so I was hoping this would be a first step.  But yeah we can do it your way too.
+Thanks,
 
 Josef

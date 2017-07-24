@@ -1,84 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56384 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753214AbdGCJDZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Jul 2017 05:03:25 -0400
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: Re: [PATCH v2] btrfs: fix validation of XATTR_ITEM dir items
-To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
-CC: <fdmanana@gmail.com>, <nborisov@suse.com>
-References: <20170629182015.3000-1-dsterba@suse.com>
-Message-ID: <34edb95c-0b5f-d8c8-fe45-a051fae56312@cn.fujitsu.com>
-Date: Mon, 3 Jul 2017 17:05:36 +0800
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:34197 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750796AbdGXUAk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Jul 2017 16:00:40 -0400
+Received: by mail-qt0-f194.google.com with SMTP id i19so2479066qte.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 13:00:40 -0700 (PDT)
+Date: Mon, 24 Jul 2017 16:00:38 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: Re: [PATCH v14.4 01/15] btrfs: improve inode's outstanding_extents
+ computation
+Message-ID: <20170724200037.GA15181@destiny>
+References: <20170712085002.23241-1-lufq.fnst@cn.fujitsu.com>
+ <20170712085002.23241-2-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20170629182015.3000-1-dsterba@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170712085002.23241-2-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks a lot.
-I'm sorry for that I hadn't noticed those emails during the vacation.
+On Wed, Jul 12, 2017 at 04:49:48PM +0800, Lu Fengqi wrote:
+> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+> 
+> This issue was revealed by modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB,
+> When modifying BTRFS_MAX_EXTENT_SIZE(128MB) to 64KB, fsstress test often
+> gets these warnings from btrfs_destroy_inode():
+> 	WARN_ON(BTRFS_I(inode)->outstanding_extents);
+> 	WARN_ON(BTRFS_I(inode)->reserved_extents);
+> 
+> Simple test program below can reproduce this issue steadily.
+> Note: you need to modify BTRFS_MAX_EXTENT_SIZE to 64KB to have test,
+> otherwise there won't be such WARNING.
+> 	#include <string.h>
+> 	#include <unistd.h>
+> 	#include <sys/types.h>
+> 	#include <sys/stat.h>
+> 	#include <fcntl.h>
+> 
+> 	int main(void)
+> 	{
+> 		int fd;
+> 		char buf[68 *1024];
+> 
+> 		memset(buf, 0, 68 * 1024);
+> 		fd = open("testfile", O_CREAT | O_EXCL | O_RDWR);
+> 		pwrite(fd, buf, 68 * 1024, 64 * 1024);
+> 		return;
+> 	}
+> 
+> When BTRFS_MAX_EXTENT_SIZE is 64KB, and buffered data range is:
+> 64KB						128K		132KB
+> |-----------------------------------------------|---------------|
+>                          64 + 4KB
+> 
+> 1) for above data range, btrfs_delalloc_reserve_metadata() will reserve
+> metadata and set BTRFS_I(inode)->outstanding_extents to 2.
+> (68KB + 64KB - 1) / 64KB == 2
+> 
+> Outstanding_extents: 2
+> 
+> 2) then btrfs_dirty_page() will be called to dirty pages and set
+> EXTENT_DELALLOC flag. In this case, btrfs_set_bit_hook() will be called
+> twice.
+> The 1st set_bit_hook() call will set DEALLOC flag for the first 64K.
+> 64KB						128KB
+> |-----------------------------------------------|
+> 	64KB DELALLOC
+> Outstanding_extents: 2
+> 
+> Set_bit_hooks() uses FIRST_DELALLOC flag to avoid re-increase
+> outstanding_extents counter.
+> So for 1st set_bit_hooks() call, it won't modify outstanding_extents,
+> it's still 2.
+> 
+> Then FIRST_DELALLOC flag is *CLEARED*.
+> 
+> 3) 2nd btrfs_set_bit_hook() call.
+> Because FIRST_DELALLOC have been cleared by previous set_bit_hook(),
+> btrfs_set_bit_hook() will increase BTRFS_I(inode)->outstanding_extents by
+> one, so now BTRFS_I(inode)->outstanding_extents is 3.
+> 64KB                                            128KB            132KB
+> |-----------------------------------------------|----------------|
+> 	64K DELALLOC				   4K DELALLOC
+> Outstanding_extents: 3
+> 
+> But the correct outstanding_extents number should be 2, not 3.
+> The 2nd btrfs_set_bit_hook() call just screwed up this, and leads to the
+> WARN_ON().
+> 
+> Normally, we can solve it by only increasing outstanding_extents in
+> set_bit_hook().
+> But the problem is for delalloc_reserve/release_metadata(), we only have
+> a 'length' parameter, and calculate in-accurate outstanding_extents.
+> If we only rely on set_bit_hook() release_metadata() will crew things up
+> as it will decrease inaccurate number.
+> 
+> So the fix we use is:
+> 1) Increase *INACCURATE* outstanding_extents at delalloc_reserve_meta
+>    Just as a place holder.
+> 2) Increase *accurate* outstanding_extents at set_bit_hooks()
+>    This is the real increaser.
+> 3) Decrease *INACCURATE* outstanding_extents before returning
+>    This makes outstanding_extents to correct value.
+> 
+> For 128M BTRFS_MAX_EXTENT_SIZE, due to limitation of
+> __btrfs_buffered_write(), each iteration will only handle about 2MB
+> data.
+> So btrfs_dirty_pages() won't need to handle cases cross 2 extents.
+> 
 
-On 06/30/2017 02:20 AM, David Sterba wrote:
-> The XATTR_ITEM is a type of a directory item so we use the common
-> validator helper. Unlike other dir items, it can have data. The way the
-> name len validation is currently implemented does not reflect that. We'd
-> have to adjust by the data_len when comparing the read and item limits.
-> 
-> However, this will not work for multi-item xattr dir items.
-> 
-> Example from tree dump of generic/337:
-> 
->          item 7 key (257 XATTR_ITEM 751495445) itemoff 15667 itemsize 147
->                  location key (0 UNKNOWN.0 0) type XATTR
->                  transid 8 data_len 3 name_len 11
->                  name: user.foobar
->                  data 123
->                  location key (0 UNKNOWN.0 0) type XATTR
->                  transid 8 data_len 6 name_len 13
->                  name: user.WvG1c1Td
->                  data qwerty
->                  location key (0 UNKNOWN.0 0) type XATTR
->                  transid 8 data_len 5 name_len 19
->                  name: user.J3__T_Km3dVsW_
->                  data hello
-> 
-> At the point of btrfs_is_name_len_valid call we don't have access to the
-> data_len value of the 2nd and 3rd sub-item. So simple btrfs_dir_data_len(leaf,
-> di) would always return 3, although we'd need to get 6 and 5 respectively to
-> get the claculations right. (read_end + name_len + data_len vs item_end)
-> 
-> We'd have to also pass data_len externally, which is not point of the
-> name validation. The last check is supposed to test if there's at least
-> one dir item space after the one we're processing. I don't think this is
-> particularly useful, validation of the next item would catch that too.
-> So the check is removed and we don't weaken the validation. Now tests
-> btrfs/048, btrfs/053, generic/273 and generic/337 pass. >
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
-> 
->   fs/btrfs/dir-item.c | 8 --------
->   1 file changed, 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-> index 2b00dd746118..41cb9196eaa8 100644
-> --- a/fs/btrfs/dir-item.c
-> +++ b/fs/btrfs/dir-item.c
-> @@ -550,14 +550,6 @@ bool btrfs_is_name_len_valid(struct extent_buffer *leaf, int slot,
->   		goto out;
->   	}
->   
-> -	/*
-> -	 * This may be the last item in the slot
-> -	 * Or same type item(s) is left between read_end and item_end
-> -	 */
-> -	if (item_end != read_end && item_end - read_end < size) {
-> -		ret = false;
-> -		goto out;
-> -	}
->   out:
->   	if (!ret)
->   		btrfs_crit(fs_info, "invalid dir item name len: %u",
-> 
+NACK on this, it just makes a crappy problem harder to understand.  We need to
+stop using outstanding_extents as both a reservation thing _and_ an accurate
+count.  I'll rework this and fix the other issues related to over-reservation
+with compression.  Thanks,
 
-
+Josef

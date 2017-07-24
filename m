@@ -1,49 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f178.google.com ([209.85.192.178]:36266 "EHLO
-        mail-pf0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751579AbdGZUsI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jul 2017 16:48:08 -0400
-Received: by mail-pf0-f178.google.com with SMTP id z129so35685996pfb.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2017 13:48:08 -0700 (PDT)
-From: Matthias Kaehlcke <mka@chromium.org>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Doug Anderson <dianders@chromium.org>,
-        Matthias Kaehlcke <mka@chromium.org>
-Subject: [PATCH] btrfs: Remove extra parentheses from condition in copy_items()
-Date: Wed, 26 Jul 2017 13:47:59 -0700
-Message-Id: <20170726204759.160649-1-mka@chromium.org>
+Received: from mx2.suse.de ([195.135.220.15]:34066 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753515AbdGXSAc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 Jul 2017 14:00:32 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 994DAAB1E
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 18:00:28 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/4] Trivial cleanups
+Date: Mon, 24 Jul 2017 19:59:06 +0200
+Message-Id: <cover.1500919093.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no need for the extra pair of parentheses, remove it. This
-fixes the following warning when building with clang:
+David Sterba (4):
+  btrfs: fix spelling of snapshotting
+  btrfs: drop ancient page flag mappings
+  btrfs: remove trivial wrapper btrfs_force_ra
+  btrfs: drop chunk locks at the end of close_ctree
 
-fs/btrfs/tree-log.c:3694:10: warning: equality comparison with extraneous
-  parentheses [-Wparentheses-equality]
-                if ((i == (nr - 1)))
-                     ~~^~~~~~~~~~~
+ fs/btrfs/ctree.h       | 21 +++------------------
+ fs/btrfs/disk-io.c     |  4 +---
+ fs/btrfs/extent-tree.c | 22 +++++++++++-----------
+ fs/btrfs/file.c        | 10 +++++-----
+ fs/btrfs/inode.c       | 22 +++++++++++-----------
+ fs/btrfs/ioctl.c       | 14 +++++++-------
+ fs/btrfs/send.c        |  2 +-
+ 7 files changed, 39 insertions(+), 56 deletions(-)
 
-Signed-off-by: Matthias Kaehlcke <mka@chromium.org>
----
- fs/btrfs/tree-log.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f20ef211a73d..b92408a3f834 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3691,7 +3691,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 
- 		src_offset = btrfs_item_ptr_offset(src, start_slot + i);
- 
--		if ((i == (nr - 1)))
-+		if (i == (nr - 1))
- 			last_key = ins_keys[i];
- 
- 		if (ins_keys[i].type == BTRFS_INODE_ITEM_KEY) {
 -- 
-2.14.0.rc0.400.g1c36432dff-goog
+2.13.0
 

@@ -1,83 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:56461 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753132AbdGXSyI (ORCPT
+Received: from mail-it0-f65.google.com ([209.85.214.65]:36070 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753523AbdGXTG5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jul 2017 14:54:08 -0400
+        Mon, 24 Jul 2017 15:06:57 -0400
+Received: by mail-it0-f65.google.com with SMTP id r9so7324600ita.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Jul 2017 12:06:57 -0700 (PDT)
 Subject: Re: [PATCH] Btrfs: Do not use data_alloc_cluster in ssd mode
-To: <dsterba@suse.cz>, Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        <linux-btrfs@vger.kernel.org>
+To: Chris Mason <clm@fb.com>, dsterba@suse.cz,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
 References: <20170721114711.20229-1-hans.van.kranenburg@mendix.com>
  <20170724142508.GW2866@twin.jikos.cz>
  <25d92d3d-52a8-8763-0936-c891d903c588@fb.com>
  <20170724184135.GA2866@twin.jikos.cz>
-From: Chris Mason <clm@fb.com>
-Message-ID: <f4b9d041-6c07-fc31-91d2-b4f2f034df61@fb.com>
-Date: Mon, 24 Jul 2017 14:53:52 -0400
+ <f4b9d041-6c07-fc31-91d2-b4f2f034df61@fb.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <779fdedf-1318-bf2d-414d-693168d994d6@gmail.com>
+Date: Mon, 24 Jul 2017 15:06:53 -0400
 MIME-Version: 1.0
-In-Reply-To: <20170724184135.GA2866@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <f4b9d041-6c07-fc31-91d2-b4f2f034df61@fb.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 07/24/2017 02:41 PM, David Sterba wrote:
-> On Mon, Jul 24, 2017 at 02:01:07PM -0400, Chris Mason wrote:
->> On 07/24/2017 10:25 AM, David Sterba wrote:
+On 2017-07-24 14:53, Chris Mason wrote:
+> On 07/24/2017 02:41 PM, David Sterba wrote:
 >>
->>> Thanks for the extensive historical summary, this change really deserves
->>> it.
->>>
->>> Decoupling the assumptions about the device's block management is really
->>> a good thing, mount option 'ssd' should mean that the device just has
->>> cheap seeks. Moving the the allocation tweaks to ssd_spread provides a
->>> way to keep the behaviour for anybody who wants it.
->>>
->>> I'd like to push this change to 4.13-rc3, as I don't think we need more
->>> time to let other users to test this. The effects of current ssd
->>> implementation have been debated and debugged on IRC for a long time.
+>> would it be ok for you to keep ssd_working as before?
 >>
->> The description is great, but I'd love to see many more benchmarks.  At
->> Facebook we use the current ssd_spread mode in production on top of
->> hardware raid5/6 (spinning storage) because it dramatically reduces the
->> read/modify/write cycles done for metadata writes.
+>> I'd really like to get this patch merged soon because "do not use ssd
+>> mode for ssd" has started to be the recommended workaround. Once this
+>> sticks, we won't need to have any ssd mode anymore ...
 > 
-> Well, I think this is an example that ssd got misused because of the
-> side effects of the allocation. If you observe good patterns for raid5,
-> then the allocator should be adapted for that case, otherwise
-> ssd/ssd_spread should be independent of the raid level.
-
-Absolutely.  The optimizations that made ssd_spread useful for first 
-generation flash are the same things that raid5/6 need.  Big writes, or 
-said differently a minimum size for fast writes.
-
-> 
->> If we're going to play around with these, we need a good way to measure
->> free space fragmentation as part of benchmarks, as well as the IO
->> patterns coming out of the allocator.
-> 
-> Hans has a tool that visualizes the fragmentation. Most complaints I've
-> seen were about 'ssd' itself, excessive fragmentation, early ENOSPC. Not
-> many people use ssd_spread, 'ssd' gets turned on automatically so it has
-> much wider impact.
-> 
->> At least for our uses, ssd_spread matters much more for metadata than
->> data (the data writes are large and metadata is small).
-> 
->  From the changes overview:
-> 
->> 1. Throw out the current ssd_spread behaviour.
-> 
-> would it be ok for you to keep ssd_working as before?
-> 
-> I'd really like to get this patch merged soon because "do not use ssd
-> mode for ssd" has started to be the recommended workaround. Once this
-> sticks, we won't need to have any ssd mode anymore ...
-
-Works for me.  I do want to make sure that commits in this area include 
-the workload they were targeting, how they were measured and what 
-impacts they had.  That way when we go back to try and change this again 
-we'll understand what profiles we want to preserve.
-
--chris
+> Works for me.  I do want to make sure that commits in this area include 
+> the workload they were targeting, how they were measured and what 
+> impacts they had.  That way when we go back to try and change this again 
+> we'll understand what profiles we want to preserve.
+Just thinking long term here, but might it make sense to (eventually) 
+allow the user to tune how big a chunk of space to look for?  I know 
+that ext* have options to do this kind of thing, and I think XFS does 
+too (but they do it at filesystem creation time), and I do know people 
+who make use of those to make sure things are working at their absolute 
+best.

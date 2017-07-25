@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44918 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44917 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752859AbdGYUvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752857AbdGYUvD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 25 Jul 2017 16:51:03 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3F59DAEC4
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 42A85AEC5
         for <linux-btrfs@vger.kernel.org>; Tue, 25 Jul 2017 20:51:01 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 6/7] btrfs-progs: backref: use separate list for missing keys
-Date: Tue, 25 Jul 2017 16:51:37 -0400
-Message-Id: <20170725205138.28376-6-jeffm@suse.com>
+Subject: [PATCH 7/7] btrfs-progs: backref: use separate list for indirect refs
+Date: Tue, 25 Jul 2017 16:51:38 -0400
+Message-Id: <20170725205138.28376-7-jeffm@suse.com>
 In-Reply-To: <20170725205138.28376-1-jeffm@suse.com>
 References: <20170725205138.28376-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,107 +19,90 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-Rather than iterate over all outstanding backrefs to resolve missing keys,
-use a separate list that only contains refs that need missing keys resolved.
+Rather than iterate over all outstanding backrefs to resolve indirect refs,
+use a separate list that only contains indirect refs.
 
-Once the missing key is resolved, move the ref to the pending list.
+When we process missing keys, the ref moves to the indirect ref list.
+Once the indirect ref is resolved, move the ref to the pending list.
+
+Eventually these lists will be replaced by rbtrees.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- backref.c | 28 +++++++++++++++++-----------
- 1 file changed, 17 insertions(+), 11 deletions(-)
+ backref.c | 23 ++++++++++-------------
+ 1 file changed, 10 insertions(+), 13 deletions(-)
 
 diff --git a/backref.c b/backref.c
-index be3376a..1d670ee 100644
+index 1d670ee..2f262cf 100644
 --- a/backref.c
 +++ b/backref.c
-@@ -137,11 +137,13 @@ static struct __prelim_ref *list_first_pref(struct list_head *head)
- 
+@@ -138,12 +138,14 @@ static struct __prelim_ref *list_first_pref(struct list_head *head)
  struct pref_state {
  	struct list_head pending;
-+	struct list_head pending_missing_keys;
+ 	struct list_head pending_missing_keys;
++	struct list_head pending_indirect_refs;
  };
  
  static void init_pref_state(struct pref_state *prefstate)
  {
  	INIT_LIST_HEAD(&prefstate->pending);
-+	INIT_LIST_HEAD(&prefstate->pending_missing_keys);
+ 	INIT_LIST_HEAD(&prefstate->pending_missing_keys);
++	INIT_LIST_HEAD(&prefstate->pending_indirect_refs);
  }
  
  /*
-@@ -188,7 +190,7 @@ static int __add_prelim_ref(struct pref_state *prefstate, u64 root_id,
- 			    u64 parent, u64 wanted_disk_byte, int count,
- 			    gfp_t gfp_mask)
+@@ -370,11 +372,10 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 				   struct btrfs_path *path, u64 time_seq,
+ 				   const u64 *extent_item_pos, u64 total_refs)
  {
 -	struct list_head *head = &prefstate->pending;
-+	struct list_head *head;
++	struct list_head *head = &prefstate->pending_indirect_refs;
+ 	int err;
+ 	int ret = 0;
  	struct __prelim_ref *ref;
- 
- 	if (root_id == BTRFS_DATA_RELOC_TREE_OBJECTID)
-@@ -199,16 +201,20 @@ static int __add_prelim_ref(struct pref_state *prefstate, u64 root_id,
+-	struct __prelim_ref *ref_safe;
+ 	struct __prelim_ref *new_ref;
+ 	struct ulist *parents;
+ 	struct ulist_node *node;
+@@ -384,16 +385,11 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 	if (!parents)
  		return -ENOMEM;
  
- 	ref->root_id = root_id;
--	if (key)
-+	if (key) {
- 		ref->key_for_search = *key;
--	else
-+		head = &prefstate->pending;
-+	} else {
- 		memset(&ref->key_for_search, 0, sizeof(ref->key_for_search));
-+		head = &prefstate->pending_missing_keys;
-+	}
- 
- 	ref->inode_list = NULL;
- 	ref->level = level;
- 	ref->count = count;
- 	ref->parent = parent;
- 	ref->wanted_disk_byte = wanted_disk_byte;
-+
- 	list_add_tail(&ref->list, head);
- 
- 	return 0;
-@@ -454,18 +460,15 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
- static int __add_missing_keys(struct btrfs_fs_info *fs_info,
- 			      struct pref_state *prefstate)
- {
--	struct list_head *head = &prefstate->pending;
--	struct list_head *pos;
- 	struct extent_buffer *eb;
- 
--	list_for_each(pos, head) {
-+	while(!list_empty(&prefstate->pending_missing_keys)) {
- 		struct __prelim_ref *ref;
--		ref = list_entry(pos, struct __prelim_ref, list);
-+		ref = list_first_pref(&prefstate->pending_missing_keys);
- 
--		if (ref->parent)
+-	/*
+-	 * _safe allows us to insert directly after the current item without
+-	 * iterating over the newly inserted items.
+-	 * we're also allowed to re-assign ref during iteration.
+-	 */
+-	list_for_each_entry_safe(ref, ref_safe, head, list) {
+-		if (ref->parent)	/* already direct */
 -			continue;
--		if (ref->key_for_search.type)
+-		if (ref->count == 0)
 -			continue;
-+		ASSERT(ref->root_id);
-+		ASSERT(!ref->parent);
-+		ASSERT(ref->key_for_search.type);
- 		BUG_ON(!ref->wanted_disk_byte);
- 		eb = read_tree_block(fs_info->tree_root, ref->wanted_disk_byte,
- 				     fs_info->tree_root->nodesize, 0);
-@@ -478,6 +481,7 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
- 		else
- 			btrfs_node_key_to_cpu(eb, &ref->key_for_search, 0);
- 		free_extent_buffer(eb);
++	while (!list_empty(head)) {
++		ref = list_first_pref(head);
 +		list_move(&ref->list, &prefstate->pending);
++		ASSERT(!ref->parent);	/* already direct */
++		ASSERT(ref->count);
+ 		err = __resolve_indirect_ref(fs_info, path, time_seq, ref,
+ 					     parents, extent_item_pos,
+ 					     total_refs);
+@@ -426,7 +422,7 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 			new_ref->parent = node->val;
+ 			new_ref->inode_list = (struct extent_inode_elem *)
+ 							(uintptr_t)node->aux;
+-			list_add(&new_ref->list, &ref->list);
++			list_add_tail(&new_ref->list, &prefstate->pending);
+ 		}
+ 		ulist_reinit(parents);
  	}
- 	return 0;
- }
-@@ -808,6 +812,8 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 
+@@ -813,6 +809,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
  	__merge_refs(&prefstate, 2);
  
-+	BUG_ON(!list_empty(&prefstate.pending_missing_keys));
-+
+ 	BUG_ON(!list_empty(&prefstate.pending_missing_keys));
++	BUG_ON(!list_empty(&prefstate.pending_indirect_refs));
+ 
  	while (!list_empty(&prefstate.pending)) {
  		ref = list_first_pref(&prefstate.pending);
- 		WARN_ON(ref->count < 0);
 -- 
 2.11.0
 

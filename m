@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44906 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44907 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752815AbdGYUvC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752824AbdGYUvC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 25 Jul 2017 16:51:02 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0C7AEAEC3
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 127F9AEC8
         for <linux-btrfs@vger.kernel.org>; Tue, 25 Jul 2017 20:51:01 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 3/7] btrfs-progs: extent-cache: actually cache extent buffers
-Date: Tue, 25 Jul 2017 16:51:34 -0400
-Message-Id: <20170725205138.28376-3-jeffm@suse.com>
+Subject: [PATCH 4/7] btrfs-progs: backref: push state tracking into a helper structure
+Date: Tue, 25 Jul 2017 16:51:35 -0400
+Message-Id: <20170725205138.28376-4-jeffm@suse.com>
 In-Reply-To: <20170725205138.28376-1-jeffm@suse.com>
 References: <20170725205138.28376-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,230 +19,252 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-We have the infrastructure to cache extent buffers but we don't actually
-do the caching.  As soon as the last reference is dropped, the buffer
-is dropped.  This patch keeps the extent buffers around until the max
-cache size is reached (defaults to 25% of memory) and then it drops
-the last 10% of the LRU to free up cache space for reallocation.  The
-cache size is configurable (for use by e.g. lowmem) when the cache is
-initialized.
+Eventually, we'll have several lists and trees, as well as some statistics.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- extent_io.c | 74 ++++++++++++++++++++++++++++++++++++++++++++++++++-----------
- extent_io.h |  4 ++++
- utils.c     | 12 ++++++++++
- utils.h     |  3 +++
- 4 files changed, 80 insertions(+), 13 deletions(-)
+ backref.c | 75 ++++++++++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 45 insertions(+), 30 deletions(-)
 
-diff --git a/extent_io.c b/extent_io.c
-index 915c6ed..937ff90 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -27,6 +27,7 @@
- #include "list.h"
- #include "ctree.h"
- #include "volumes.h"
-+#include "utils.h"
- #include "internal.h"
- 
- void extent_io_tree_init(struct extent_io_tree *tree)
-@@ -35,6 +36,14 @@ void extent_io_tree_init(struct extent_io_tree *tree)
- 	cache_tree_init(&tree->cache);
- 	INIT_LIST_HEAD(&tree->lru);
- 	tree->cache_size = 0;
-+	tree->max_cache_size = (u64)(total_memory() * 1024) / 4;
-+}
-+
-+void extent_io_tree_init_cache_max(struct extent_io_tree *tree,
-+				   u64 max_cache_size)
-+{
-+	extent_io_tree_init(tree);
-+	tree->max_cache_size = max_cache_size;
- }
- 
- static struct extent_state *alloc_extent_state(void)
-@@ -67,16 +76,20 @@ static void free_extent_state_func(struct cache_extent *cache)
- 	btrfs_free_extent_state(es);
- }
- 
-+static void free_extent_buffer_final(struct extent_buffer *eb);
- void extent_io_tree_cleanup(struct extent_io_tree *tree)
- {
- 	struct extent_buffer *eb;
- 
- 	while(!list_empty(&tree->lru)) {
- 		eb = list_entry(tree->lru.next, struct extent_buffer, lru);
--		fprintf(stderr, "extent buffer leak: "
--			"start %llu len %u\n",
--			(unsigned long long)eb->start, eb->len);
--		free_extent_buffer(eb);
-+		if (eb->refs) {
-+			fprintf(stderr, "extent buffer leak: "
-+				"start %llu len %u\n",
-+				(unsigned long long)eb->start, eb->len);
-+			free_extent_buffer_nocache(eb);
-+		} else
-+			free_extent_buffer_final(eb);
- 	}
- 
- 	cache_tree_free_extents(&tree->state, free_extent_state_func);
-@@ -567,7 +580,21 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
- 	return new;
- }
- 
--void free_extent_buffer(struct extent_buffer *eb)
-+static void free_extent_buffer_final(struct extent_buffer *eb)
-+{
-+	struct extent_io_tree *tree = eb->tree;
-+
-+	BUG_ON(eb->refs);
-+	BUG_ON(tree->cache_size < eb->len);
-+	list_del_init(&eb->lru);
-+	if (!(eb->flags & EXTENT_BUFFER_DUMMY)) {
-+		remove_cache_extent(&tree->cache, &eb->cache_node);
-+		tree->cache_size -= eb->len;
-+	}
-+	free(eb);
-+}
-+
-+static void free_extent_buffer_internal(struct extent_buffer *eb, int free_now)
- {
- 	if (!eb || IS_ERR(eb))
- 		return;
-@@ -575,19 +602,23 @@ void free_extent_buffer(struct extent_buffer *eb)
- 	eb->refs--;
- 	BUG_ON(eb->refs < 0);
- 	if (eb->refs == 0) {
--		struct extent_io_tree *tree = eb->tree;
- 		BUG_ON(eb->flags & EXTENT_DIRTY);
--		list_del_init(&eb->lru);
- 		list_del_init(&eb->recow);
--		if (!(eb->flags & EXTENT_BUFFER_DUMMY)) {
--			BUG_ON(tree->cache_size < eb->len);
--			remove_cache_extent(&tree->cache, &eb->cache_node);
--			tree->cache_size -= eb->len;
--		}
--		free(eb);
-+		if (eb->flags & EXTENT_BUFFER_DUMMY || free_now)
-+			free_extent_buffer_final(eb);
- 	}
- }
- 
-+void free_extent_buffer(struct extent_buffer *eb)
-+{
-+	free_extent_buffer_internal(eb, 0);
-+}
-+
-+void free_extent_buffer_nocache(struct extent_buffer *eb)
-+{
-+	free_extent_buffer_internal(eb, 1);
-+}
-+
- struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
- 					 u64 bytenr, u32 blocksize)
- {
-@@ -619,6 +650,21 @@ struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
- 	return eb;
- }
- 
-+static void
-+trim_extent_buffer_cache(struct extent_io_tree *tree)
-+{
-+	struct extent_buffer *eb, *tmp;
-+	u64 count = 0;
-+	list_for_each_entry_safe(eb, tmp, &tree->lru, lru) {
-+		if (eb->refs == 0) {
-+			free_extent_buffer_final(eb);
-+			count++;
-+		}
-+		if (tree->cache_size <= ((tree->max_cache_size * 9) / 10))
-+			break;
-+	}
-+}
-+
- struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
- 					  u64 bytenr, u32 blocksize)
- {
-@@ -649,6 +695,8 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
- 		}
- 		list_add_tail(&eb->lru, &tree->lru);
- 		tree->cache_size += blocksize;
-+		if (tree->cache_size >= tree->max_cache_size)
-+			trim_extent_buffer_cache(tree);
- 	}
- 	return eb;
- }
-diff --git a/extent_io.h b/extent_io.h
-index e617489..17a4a82 100644
---- a/extent_io.h
-+++ b/extent_io.h
-@@ -75,6 +75,7 @@ struct extent_io_tree {
- 	struct cache_tree cache;
- 	struct list_head lru;
- 	u64 cache_size;
-+	u64 max_cache_size;
+diff --git a/backref.c b/backref.c
+index e1f41e1..ac1b506 100644
+--- a/backref.c
++++ b/backref.c
+@@ -130,6 +130,15 @@ struct __prelim_ref {
+ 	u64 wanted_disk_byte;
  };
  
- struct extent_state {
-@@ -106,6 +107,8 @@ static inline void extent_buffer_get(struct extent_buffer *eb)
- }
- 
- void extent_io_tree_init(struct extent_io_tree *tree);
-+void extent_io_tree_init_cache_max(struct extent_io_tree *tree,
-+				   u64 max_cache_size);
- void extent_io_tree_cleanup(struct extent_io_tree *tree);
- int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, int bits);
- int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, int bits);
-@@ -146,6 +149,7 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
- 					  u64 bytenr, u32 blocksize);
- struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
- void free_extent_buffer(struct extent_buffer *eb);
-+void free_extent_buffer_nocache(struct extent_buffer *eb);
- int read_extent_from_disk(struct extent_buffer *eb,
- 			  unsigned long offset, unsigned long len);
- int write_extent_to_disk(struct extent_buffer *eb);
-diff --git a/utils.c b/utils.c
-index d2489e7..c565e08 100644
---- a/utils.c
-+++ b/utils.c
-@@ -24,6 +24,7 @@
- #include <sys/mount.h>
- #include <sys/types.h>
- #include <sys/stat.h>
-+#include <sys/sysinfo.h>
- #include <uuid/uuid.h>
- #include <fcntl.h>
- #include <unistd.h>
-@@ -2521,3 +2522,14 @@ u8 rand_u8(void)
- void btrfs_config_init(void)
- {
- }
++struct pref_state {
++	struct list_head pending;
++};
 +
-+unsigned long total_memory(void)
++static void init_pref_state(struct pref_state *prefstate)
 +{
-+        struct sysinfo  si;
-+
-+        if (sysinfo(&si) < 0) {
-+                error("can't determine memory size");
-+                return -1UL;
-+        }
-+        return (si.totalram >> 10) * si.mem_unit;       /* kilobytes */
++	INIT_LIST_HEAD(&prefstate->pending);
 +}
-diff --git a/utils.h b/utils.h
-index 24d0a20..6be0d6f 100644
---- a/utils.h
-+++ b/utils.h
-@@ -148,6 +148,9 @@ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode);
- int string_is_numerical(const char *str);
- int prefixcmp(const char *str, const char *prefix);
- 
-+/* Returns total size of main memory in KiB units. -1ULL if error. */
-+unsigned long total_memory(void);
 +
  /*
-  * Global program state, configurable by command line and available to
-  * functions without extra context passing.
+  * the rules for all callers of this function are:
+  * - obtaining the parent is the goal
+@@ -169,11 +178,12 @@ struct __prelim_ref {
+  * block might help in merging entries to gain some speed.
+  */
+ 
+-static int __add_prelim_ref(struct list_head *head, u64 root_id,
++static int __add_prelim_ref(struct pref_state *prefstate, u64 root_id,
+ 			    struct btrfs_key *key, int level,
+ 			    u64 parent, u64 wanted_disk_byte, int count,
+ 			    gfp_t gfp_mask)
+ {
++	struct list_head *head = &prefstate->pending;
+ 	struct __prelim_ref *ref;
+ 
+ 	if (root_id == BTRFS_DATA_RELOC_TREE_OBJECTID)
+@@ -345,10 +355,11 @@ out:
+  * resolve all indirect backrefs from the list
+  */
+ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
++				   struct pref_state *prefstate,
+ 				   struct btrfs_path *path, u64 time_seq,
+-				   struct list_head *head,
+ 				   const u64 *extent_item_pos, u64 total_refs)
+ {
++	struct list_head *head = &prefstate->pending;
+ 	int err;
+ 	int ret = 0;
+ 	struct __prelim_ref *ref;
+@@ -436,8 +447,9 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
+  * read tree blocks and add keys where required.
+  */
+ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
+-			      struct list_head *head)
++			      struct pref_state *prefstate)
+ {
++	struct list_head *head = &prefstate->pending;
+ 	struct list_head *pos;
+ 	struct extent_buffer *eb;
+ 
+@@ -475,8 +487,9 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
+  *           having a parent).
+  * mode = 2: merge identical parents
+  */
+-static void __merge_refs(struct list_head *head, int mode)
++static void __merge_refs(struct pref_state *prefstate, int mode)
+ {
++	struct list_head *head = &prefstate->pending;
+ 	struct list_head *pos1;
+ 
+ 	list_for_each(pos1, head) {
+@@ -527,9 +540,9 @@ static void __merge_refs(struct list_head *head, int mode)
+  * add all inline backrefs for bytenr to the list
+  */
+ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
++			     struct pref_state *prefstate,
+ 			     struct btrfs_path *path, u64 bytenr,
+-			     int *info_level, struct list_head *prefs,
+-			     u64 *total_refs)
++			     int *info_level, u64 *total_refs)
+ {
+ 	int ret = 0;
+ 	int slot;
+@@ -541,7 +554,6 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_extent_item *ei;
+ 	u64 flags;
+ 	u64 item_size;
+-
+ 	/*
+ 	 * enumerate all inline refs
+ 	 */
+@@ -584,7 +596,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 
+ 		switch (type) {
+ 		case BTRFS_SHARED_BLOCK_REF_KEY:
+-			ret = __add_prelim_ref(prefs, 0, NULL,
++			ret = __add_prelim_ref(prefstate, 0, NULL,
+ 						*info_level + 1, offset,
+ 						bytenr, 1, GFP_NOFS);
+ 			break;
+@@ -594,12 +606,12 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 
+ 			sdref = (struct btrfs_shared_data_ref *)(iref + 1);
+ 			count = btrfs_shared_data_ref_count(leaf, sdref);
+-			ret = __add_prelim_ref(prefs, 0, NULL, 0, offset,
++			ret = __add_prelim_ref(prefstate, 0, NULL, 0, offset,
+ 					       bytenr, count, GFP_NOFS);
+ 			break;
+ 		}
+ 		case BTRFS_TREE_BLOCK_REF_KEY:
+-			ret = __add_prelim_ref(prefs, offset, NULL,
++			ret = __add_prelim_ref(prefstate, offset, NULL,
+ 					       *info_level + 1, 0,
+ 					       bytenr, 1, GFP_NOFS);
+ 			break;
+@@ -615,7 +627,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 			key.type = BTRFS_EXTENT_DATA_KEY;
+ 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+ 			root = btrfs_extent_data_ref_root(leaf, dref);
+-			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
++			ret = __add_prelim_ref(prefstate, root, &key, 0, 0,
+ 					       bytenr, count, GFP_NOFS);
+ 			break;
+ 		}
+@@ -634,8 +646,9 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+  * add all non-inline backrefs for bytenr to the list
+  */
+ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
++			    struct pref_state *prefstate,
+ 			    struct btrfs_path *path, u64 bytenr,
+-			    int info_level, struct list_head *prefs)
++			    int info_level)
+ {
+ 	struct btrfs_root *extent_root = fs_info->extent_root;
+ 	int ret;
+@@ -665,7 +678,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 
+ 		switch (key.type) {
+ 		case BTRFS_SHARED_BLOCK_REF_KEY:
+-			ret = __add_prelim_ref(prefs, 0, NULL,
++			ret = __add_prelim_ref(prefstate, 0, NULL,
+ 						info_level + 1, key.offset,
+ 						bytenr, 1, GFP_NOFS);
+ 			break;
+@@ -676,12 +689,12 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 			sdref = btrfs_item_ptr(leaf, slot,
+ 					      struct btrfs_shared_data_ref);
+ 			count = btrfs_shared_data_ref_count(leaf, sdref);
+-			ret = __add_prelim_ref(prefs, 0, NULL, 0, key.offset,
++			ret = __add_prelim_ref(prefstate, 0, NULL, 0, key.offset,
+ 						bytenr, count, GFP_NOFS);
+ 			break;
+ 		}
+ 		case BTRFS_TREE_BLOCK_REF_KEY:
+-			ret = __add_prelim_ref(prefs, key.offset, NULL,
++			ret = __add_prelim_ref(prefstate, key.offset, NULL,
+ 					       info_level + 1, 0,
+ 					       bytenr, 1, GFP_NOFS);
+ 			break;
+@@ -698,7 +711,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
+ 			key.type = BTRFS_EXTENT_DATA_KEY;
+ 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+ 			root = btrfs_extent_data_ref_root(leaf, dref);
+-			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
++			ret = __add_prelim_ref(prefstate, root, &key, 0, 0,
+ 					       bytenr, count, GFP_NOFS);
+ 			break;
+ 		}
+@@ -730,12 +743,12 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	int info_level = 0;
+ 	int ret;
+-	struct list_head prefs;
++	struct pref_state prefstate;
+ 	struct __prelim_ref *ref;
+ 	struct extent_inode_elem *eie = NULL;
+ 	u64 total_refs = 0;
+ 
+-	INIT_LIST_HEAD(&prefs);
++	init_pref_state(&prefstate);
+ 
+ 	key.objectid = bytenr;
+ 	key.offset = (u64)-1;
+@@ -764,34 +777,35 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 		if (key.objectid == bytenr &&
+ 		    (key.type == BTRFS_EXTENT_ITEM_KEY ||
+ 		     key.type == BTRFS_METADATA_ITEM_KEY)) {
+-			ret = __add_inline_refs(fs_info, path, bytenr,
+-						&info_level, &prefs,
++			ret = __add_inline_refs(fs_info, &prefstate, path,
++						bytenr, &info_level,
+ 						&total_refs);
+ 			if (ret)
+ 				goto out;
+-			ret = __add_keyed_refs(fs_info, path, bytenr,
+-					       info_level, &prefs);
++			ret = __add_keyed_refs(fs_info, &prefstate, path,
++					       bytenr, info_level);
+ 			if (ret)
+ 				goto out;
+ 		}
+ 	}
+ 	btrfs_release_path(path);
+ 
+-	ret = __add_missing_keys(fs_info, &prefs);
++	ret = __add_missing_keys(fs_info, &prefstate);
+ 	if (ret)
+ 		goto out;
+ 
+-	__merge_refs(&prefs, 1);
++	__merge_refs(&prefstate, 1);
+ 
+-	ret = __resolve_indirect_refs(fs_info, path, time_seq, &prefs,
++	ret = __resolve_indirect_refs(fs_info, &prefstate, path, time_seq,
+ 				      extent_item_pos, total_refs);
+ 	if (ret)
+ 		goto out;
+ 
+-	__merge_refs(&prefs, 2);
++	__merge_refs(&prefstate, 2);
+ 
+-	while (!list_empty(&prefs)) {
+-		ref = list_first_entry(&prefs, struct __prelim_ref, list);
++	while (!list_empty(&prefstate.pending)) {
++		ref = list_first_entry(&prefstate.pending,
++				       struct __prelim_ref, list);
+ 		WARN_ON(ref->count < 0);
+ 		if (roots && ref->count && ref->root_id && ref->parent == 0) {
+ 			/* no parent == root of tree */
+@@ -842,8 +856,9 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 
+ out:
+ 	btrfs_free_path(path);
+-	while (!list_empty(&prefs)) {
+-		ref = list_first_entry(&prefs, struct __prelim_ref, list);
++	while (!list_empty(&prefstate.pending)) {
++		ref = list_first_entry(&prefstate.pending,
++				       struct __prelim_ref, list);
+ 		list_del(&ref->list);
+ 		kfree(ref);
+ 	}
 -- 
 2.11.0
 

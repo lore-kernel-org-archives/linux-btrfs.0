@@ -1,123 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44799 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750839AbdGYUtS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Jul 2017 16:49:18 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 1FF72AEC0
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jul 2017 20:49:16 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs-progs: quota: Add -W option to rescan to wait without starting rescan
-Date: Tue, 25 Jul 2017 16:49:51 -0400
-Message-Id: <20170725204951.28014-1-jeffm@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:47877 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750908AbdGZRIY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Jul 2017 13:08:24 -0400
+Date: Wed, 26 Jul 2017 10:07:17 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: "Janos Toth F." <toth.f.janos@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: write corruption due to bio cloning on raid5/6
+Message-ID: <20170726160717.GA32451@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <CANznX5FxavW+0_YdA4hir9_A3KrobRLyV9+CNadigDT3uNUkXw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CANznX5FxavW+0_YdA4hir9_A3KrobRLyV9+CNadigDT3uNUkXw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+On Mon, Jul 24, 2017 at 10:22:53PM +0200, Janos Toth F. wrote:
+> I accidentally ran into this problem (it's pretty silly because I
+> almost never run RC kernels or do dio writes but somehow I just
+> happened to do both at once, exactly before I read your patch notes).
+> I didn't initially catch any issues (I see no related messages in the
+> kernel log) but after seeing your patch, I started a scrub (*) and it
+> hung.
+> 
+> Is there a way to fix a filesystem corrupted by this bug or does it
+> need to be destroyed and recreated? (It's m=s=raid10, d=raid5 with
+> 5x4Tb HDDs.) There is a partial backup (of everything really
+> important, the rest is not important enough to be kept in multiple
+> copies, hence the desire for raid5...) and everything seems to be
+> readable anyway (so could be saved if needed) but nuking a big fs is
+> never fun...
 
-This patch adds a new -W option to wait for a rescan without starting a
-new operation.  This is useful for things like xfstests where we want
-do to do a "btrfs quota enable" and not continue until the subsequent
-rescan has finished.
+It should only affect the dio-written files, the mentioned bug makes
+btrfs write garbage into those files, so checksum fails when reading
+files, nothing else from this bug.
 
-In addition to documenting the new option in the man page, I've cleaned
-up the rescan entry to document the -w option a bit better.
+As you use m=s=raid10, filesystem metadata is OK, so I think hang of
+scrub could be another problem.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- Documentation/btrfs-quota.asciidoc | 10 +++++++---
- cmds-quota.c                       | 21 +++++++++++++++------
- 2 files changed, 22 insertions(+), 9 deletions(-)
 
-diff --git a/Documentation/btrfs-quota.asciidoc b/Documentation/btrfs-quota.asciidoc
-index ef2e5d3..16ba864 100644
---- a/Documentation/btrfs-quota.asciidoc
-+++ b/Documentation/btrfs-quota.asciidoc
-@@ -222,15 +222,19 @@ Disable subvolume quota support for a filesystem.
- *enable* <path>::
- Enable subvolume quota support for a filesystem.
- 
--*rescan* [-s] <path>::
-+*rescan* [-s|-w|-W] <path>::
- Trash all qgroup numbers and scan the metadata again with the current config.
- +
- `Options`
- +
- -s::::
--show status of a running rescan operation.
-+Show status of a running rescan operation.
-+
- -w::::
--wait for rescan operation to finish(can be already in progress).
-+Start rescan operation and wait until it has finished before exiting.  If a rescan is already running, wait until it finishes and then exit without starting a new one.
-+
-+-W::::
-+Wait for rescan operation to finish and then exit.  If a rescan is not already running, exit silently.
- 
- EXIT STATUS
- -----------
-diff --git a/cmds-quota.c b/cmds-quota.c
-index 15bd4b9..43d184d 100644
---- a/cmds-quota.c
-+++ b/cmds-quota.c
-@@ -122,14 +122,20 @@ static int cmd_quota_rescan(int argc, char **argv)
- 	int wait_for_completion = 0;
- 
- 	while (1) {
--		int c = getopt(argc, argv, "sw");
-+		int c = getopt(argc, argv, "swW");
- 		if (c < 0)
- 			break;
- 		switch (c) {
- 		case 's':
- 			ioctlnum = BTRFS_IOC_QUOTA_RESCAN_STATUS;
- 			break;
-+		case 'W':
-+			ioctlnum = 0;
-+			wait_for_completion = 1;
-+			break;
- 		case 'w':
-+			/* Reset it in case the user did both -W and -w */
-+			ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
- 			wait_for_completion = 1;
- 			break;
- 		default:
-@@ -137,8 +143,9 @@ static int cmd_quota_rescan(int argc, char **argv)
- 		}
- 	}
- 
--	if (ioctlnum != BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
--		error("switch -w cannot be used with -s");
-+	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_completion) {
-+		error("switch -%c cannot be used with -s",
-+		      ioctlnum ? 'w' : 'W');
- 		return 1;
- 	}
- 
-@@ -152,8 +159,10 @@ static int cmd_quota_rescan(int argc, char **argv)
- 	if (fd < 0)
- 		return 1;
- 
--	ret = ioctl(fd, ioctlnum, &args);
--	e = errno;
-+	if (ioctlnum) {
-+		ret = ioctl(fd, ioctlnum, &args);
-+		e = errno;
-+	}
- 
- 	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
- 		close_file_or_dir(fd, dirstream);
-@@ -170,7 +179,7 @@ static int cmd_quota_rescan(int argc, char **argv)
- 		return 0;
- 	}
- 
--	if (ret == 0) {
-+	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN && ret == 0) {
- 		printf("quota rescan started\n");
- 		fflush(stdout);
- 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
--- 
-2.11.0
+> 
+> Scrub just hangs and pretty much makes the whole system hanging (it
+> needs a power cycling for a reboot). Although everything runs smooth
+> besides this. Btrfs check (read-only normal-mem mode) finds no errors,
+> the kernel log is clean, etc.
+> 
+> I think I deleted all the affected dio-written test-files even before
+> I started scrubbing, so that doesn't seem to do the trick. Any other
+> ideas?
+>
 
+A hang could normally be caught by sysrq-w, could you please try it
+and see if there is a difference in kernel log?
+
+Thanks,
+
+-liubo
+> 
+> * By the way, I see raid56 scrub is still painfully slow (~30Mb/s /
+> disk with raw disk speeds of >100 Mb/s). I forgot about this issue
+> since I last used raid5 a few years ago.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

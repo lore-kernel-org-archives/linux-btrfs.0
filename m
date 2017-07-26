@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36672 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37916 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750893AbdGZRE5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jul 2017 13:04:57 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C0E1CAE17
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2017 17:04:52 +0000 (UTC)
-Date: Wed, 26 Jul 2017 19:03:36 +0200
+        id S1751823AbdGZROF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 26 Jul 2017 13:14:05 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 1F4A5AE17
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2017 17:14:04 +0000 (UTC)
+Date: Wed, 26 Jul 2017 19:12:47 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Nikolay Borisov <nborisov@suse.com>
 Cc: dsterba@susze.cz, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] btrfs: Deprecate userspace transaction ioctls
-Message-ID: <20170726170335.GI2866@twin.jikos.cz>
+Message-ID: <20170726171247.GJ2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170725154623.GB2866@suse.cz>
  <1501057588-7542-1-git-send-email-nborisov@suse.com>
@@ -49,29 +49,45 @@ On Wed, Jul 26, 2017 at 11:26:28AM +0300, Nikolay Borisov wrote:
 >  
 > +	btrfs_warn(fs_info, "Userspace transaction mechanism is considered
 > +		   deprecated and slated to be removed in the near future "
-
-Compiler complains about the string
-
-fs/btrfs/ioctl.c:5635:0: error: unterminated argument list invoking macro "btrfs_warn"
-
-as it is trivial I'll fix it.
-
-
 > +		   "(1 or 2 releases). If you have a valid use case please
-
-So this patch will get released in 4.14, the last release that'll have
-the ioctl is 4.16. I'll make that explicit in the message.
-
 > +		   speak up on the mailing list");
 > +	WARN_ON_ONCE(1);
 > +
 >  	ret = -EPERM;
 >  	if (!capable(CAP_SYS_ADMIN))
 >  		goto out;
-> -- 
-> 2.7.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+The warning must go after the permission checks and warn really just only once,
+so we need to keep the local state anyway.
+
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3967,17 +3967,22 @@ static long btrfs_ioctl_trans_start(struct file *file)
+        struct btrfs_root *root = BTRFS_I(inode)->root;
+        struct btrfs_trans_handle *trans;
+        int ret;
+-
+-       btrfs_warn(fs_info, "Userspace transaction mechanism is considered
+-                  deprecated and slated to be removed in the near future "
+-                  "(1 or 2 releases). If you have a valid use case please
+-                  speak up on the mailing list");
+-       WARN_ON_ONCE(1);
++       static bool warned = false;
+
+        ret = -EPERM;
+        if (!capable(CAP_SYS_ADMIN))
+                goto out;
+
++       if (!warned) {
++               btrfs_warn(fs_info,
++                       "Userspace transaction mechanism is considered "
++                       "deprecated and slated to be removed in 4.17. "
++                       "If you have a valid use case please "
++                       "speak up on the mailing list");
++               WARN_ON(1);
++               warned = true;
++       }
++
+        ret = -EINPROGRESS;
+        if (file->private_data)
+                goto out;

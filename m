@@ -1,47 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:63371 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750746AbdGTE6E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jul 2017 00:58:04 -0400
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Received: from [195.159.176.226] ([195.159.176.226]:40945 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751497AbdG0VCd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jul 2017 17:02:33 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dapvI-0000j6-4S
+        for linux-btrfs@vger.kernel.org; Thu, 27 Jul 2017 23:02:20 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: [PATCH] btrfs-progs: Specify C standard to gnu90 explicitly
-Date: Thu, 20 Jul 2017 13:57:57 +0900
-Message-Id: <20170720045757.18399-1-quwenruo.btrfs@gmx.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH 2/2] btrfs-progs: Use named constants for common sizes
+Date: Thu, 27 Jul 2017 21:02:12 +0000 (UTC)
+Message-ID: <pan$9b8a8$c35443cf$d85bd4b7$f5299060@cox.net>
+References: <1501143420-28062-1-git-send-email-nborisov@suse.com>
+        <1501143420-28062-2-git-send-email-nborisov@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Different C compilers have different default language standard.
-This sometimes causes problem on different system.
+Nikolay Borisov posted on Thu, 27 Jul 2017 11:17:00 +0300 as excerpted:
 
-For distribution like CentOS/RHEL7, its gcc is still 4.8 and will report
-error for c90 style declaration, while most developers are using newer
-gcc which will just ignore it.
-This makes us hard to detect such language standard problem.
+> diff --git a/convert/main.c b/convert/main.c
+> index c56382e915fd..49ab829b5641 100644
+> --- a/convert/main.c
+> +++ b/convert/main.c
 
-This patch will specify standard to gnu90 explicitly to avoid such problem.
-Gnu90 is a good mix of c90 while provide a lot of useful gnu extension,
-and is supported by all modern gcc and clang.
+> @@ -1586,7 +1586,7 @@ next:
+>   * |   RSV 1   |  | Old  |   |    RSV 2  | | Old  | |   RSV 3   |
+>   * |   0~1M    |  | Fs   |   | SB2 + 64K | | Fs   | | SB3 + 64K |
+>   *
+> - * On the other hande, the converted fs image in btrfs is a completely 
+> + * On the other hande, the converted fs image in btrfs is a completely
+>   * valid old fs.
+>   *
+>   * |<-----------------Converted fs image in btrfs-------------------->|
 
-Reported-by: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
-Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
----
- Makefile | 1 +
- 1 file changed, 1 insertion(+)
+If you're going to kill the line-terminating space, you might as well
+do the spell-correct in the same line:
 
-diff --git a/Makefile b/Makefile
-index 81598df1..cb1b3c5f 100644
---- a/Makefile
-+++ b/Makefile
-@@ -58,6 +58,7 @@ TOPDIR := $(shell pwd)
- 
- # Common build flags
- CFLAGS = $(SUBST_CFLAGS) \
-+	 -std=gnu90 \
- 	 -include config.h \
- 	 -DBTRFS_FLAT_INCLUDES \
- 	 -D_XOPEN_SOURCE=700  \
+s/hande/hand/
+
+(Or avoid the noise of doing either.  I'm not sure which the devs prefer.)
+
 -- 
-2.13.2
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

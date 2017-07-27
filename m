@@ -1,107 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:36994 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751607AbdG0UHr (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:47836 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751441AbdG0UZw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 16:07:47 -0400
-Received: by mail-it0-f42.google.com with SMTP id v127so88691336itd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2017 13:07:47 -0700 (PDT)
-MIME-Version: 1.0
-From: Alan Brand <alan@georgiabrands.com>
-Date: Thu, 27 Jul 2017 16:07:46 -0400
-Message-ID: <CAFcRpx4O=rxSmd0=TgBF2r_Jzc4dE6WSy90n8HXsQkE=deVsHg@mail.gmail.com>
+        Thu, 27 Jul 2017 16:25:52 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dapLm-00020Z-Ax
+        for linux-btrfs@vger.kernel.org; Thu, 27 Jul 2017 22:25:38 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Raid0 rescue
-To: hugo@carfax.org.uk, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Date: Thu, 27 Jul 2017 20:25:19 +0000 (UTC)
+Message-ID: <pan$2c543$d5ad45a3$4b673920$5f7cee9a@cox.net>
+References: <CAFcRpx4q7N1zG4gz-g6MgkU6c-F_gQ6+2-4ibgm+nyRCp5pTXQ@mail.gmail.com>
+        <20170727151038.GT7140@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > Correct, I should have said 'superblock'.
-> > It is/was raid0.  Funny thing is that this all happened when I was
-> > prepping to convert to raid1.
->    If youre metadata was also RAID-0, then your filesystem is almost
-> certainly toast. If any part of the btrfs metadata was overwritten by
-> some of the NTFS metadata, then the FS will be broken (somewhere) and
-> probably not in a fixable way.
+Hugo Mills posted on Thu, 27 Jul 2017 15:10:38 +0000 as excerpted:
 
+> On Thu, Jul 27, 2017 at 10:49:37AM -0400, Alan Brand wrote:
+>> I know I am screwed but hope someone here can point at a possible
+>> solution.
+>> 
+>> I had a pair of btrfs drives in a raid0 configuration.  One of the
+>> drives was pulled by mistake, put in a windows box, and a quick NTFS
+>> format was done.  Then much screaming occurred.
+>> 
+>> I know the data is still there. [...]
 
-It should have been raid-1 as I believe that is the default for
-metadata when creating a btrfs volume
-How do i put the good copy back on the corrupt volume?
-I cant even look at the metadata on the good disk as it complains
-about one of the disk being missing.
+>> I can't run a normal recovery as only half of each file is there.
+> 
+>    Welcome to RAID-0...
 
-> running a btrfs-find-root shows this (which gives me hope)
-> Well block 4871870791680(gen: 73257 level: 1) seems good, but
-> generation/level doesn't match, want gen: 73258 level: 1
-> Well block 4639933562880(gen: 73256 level: 1) seems good, but
-> generation/level doesn't match, want gen: 73258 level: 1
-> Well block 4639935168512(gen: 73255 level: 1) seems good, but
-> generation/level doesn't match, want gen: 73258 level: 1
-> Well block 4639926239232(gen: 73242 level: 0) seems good, but
-> generation/level doesn't match, want gen: 73258 level: 1
->
-> but when I run btrfs
-> inspect-internal dump-tree -r /dev/sdc1
->
-> checksum verify failed on 874856448 found 5A85B5D9 wanted 17E3CB7D
-> checksum verify failed on 874856448 found 5A85B5D9 wanted 17E3CB7D
-> checksum verify failed on 874856448 found 2204C752 wanted C6ADDF7E
-> checksum verify failed on 874856448 found 2204C752 wanted C6ADDF7E
-> bytenr mismatch, want=874856448, have=8568478783891655077
+Hugo, Chris Murphy, or one of the devs should they take an interest, are 
+your best bets for current recovery.  This reply only tries to fill in 
+some recommendations for an eventual rebuild.
 
-   This would suggest that some fairly important part of the metadata
-was damaged. You'll probably spend far less effort recovering the data
-by restoring your backups than trying to fix this.
+As Hugo implies, RAID-0 mode, not just for btrfs but in general, is well 
+known among admins for being "garbage data not worth trying to recover" 
+mode.  Not only is there no redundancy, but with raid0 you're 
+deliberately increasing the chances of loss because now loss of any one 
+device pretty well makes garbage of the entire array, and loss of any 
+single device in a group of more than one is more likely than loss of any 
+single device by itself.
 
-   Hugo.
+So first rule of raid0, don't use it unless the data you're putting on it 
+is indeed not worth trying to rebuild, either because you keep the 
+backups updated and it's easier to just go back to them than to even try 
+recovery of the raid0, or because the data really is garbage data, 
+internet cache, temp files, etc, that it's really just better to scrap 
+and let the cache rebuild, etc, than try to recover.
 
-> root tree: 4871875543040 level 1
-> chunk tree: 20971520 level 1
-> extent tree key (EXTENT_TREE ROOT_ITEM 0) 4871875559424 level 2
-> device tree key (DEV_TREE ROOT_ITEM 0) 4635801976832 level 1
-> fs tree key (FS_TREE ROOT_ITEM 0) 4871870414848 level 3
-> checksum tree key (CSUM_TREE ROOT_ITEM 0) 4871876034560 level 3
-> uuid tree key (UUID_TREE ROOT_ITEM 0) 29376512 level 0
-> checksum verify failed on 728891392 found 75E2752C wanted D6CA4FB4
-> checksum verify failed on 728891392 found 75E2752C wanted D6CA4FB4
-> checksum verify failed on 728891392 found F4F3A4AD wanted E6D063C7
-> checksum verify failed on 728891392 found 75E2752C wanted D6CA4FB4
-> bytenr mismatch, want=728891392, have=269659807399918462
-> total bytes 5000989728768
-> bytes used 3400345264128
->
->
->
-> On Thu, Jul 27, 2017 at 11:10 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> > On Thu, Jul 27, 2017 at 10:49:37AM -0400, Alan Brand wrote:
-> >> I know I am screwed but hope someone here can point at a possible solution.
-> >>
-> >> I had a pair of btrfs drives in a raid0 configuration.  One of the
-> >> drives was pulled by mistake, put in a windows box, and a quick NTFS
-> >> format was done.  Then much screaming occurred.
-> >>
-> >> I know the data is still there.
-> >
-> >    Well, except for all the parts overwritten by a blank NTFS metadata
-> > structure.
-> >
-> >>   Is there anyway to rebuild the raid
-> >> bringing in the bad disk?  I know some info is still good, for example
-> >> metadata0 is corrupt but 1 and 2 are good.
-> >
-> >    I assume you mean superblock there.
-> >
-> >> The trees look bad which is probably the killer.
-> >
-> >    We really should improve the error messages at some point. Whatever
-> > you're inferring from the kernel logs is probably not quite right. :)
-> >
-> >    What's the metadata configuration on this FS? Also RAID-0? or RAID-1?
-> >
-> >> I can't run a normal recovery as only half of each file is there.
-> >
-> >    Welcome to RAID-0...
-> >
-> >    Hugo.
-> >
+That's in general.  For btrfs in particular, there's some additional 
+considerations altho they don't change the above.  If the data isn't 
+quite down to the raid0-garbage, just-give-up-and-start-over, level, with 
+btrfs, what you likely want is metadata raid1, data single, mode, which 
+is the btrfs multi-device default.
+
+The raid1 metadata mode will mean there's two copies of metadata, one on 
+each of two different devices, so it'll tolerate loss of a single device 
+and still let you at least know where the files are located and give you 
+a chance at recovery.  But since metadata is typically a small fraction 
+of the total, you'll not be sacrificing /too/ much space for that 
+additional safety.
+
+The single data mode will normally put files (under a gig filesize 
+anyway, tho as the size increases toward a gig the chances of it all 
+being on a single device go down) all on one device, so with a loss of a 
+device, you'll either still have the file or you won't.  The contrast 
+with raid0 mode is that its line is 64k instead of a gig, above which the 
+file will be striped across multiple devices, so indeed, with a two-
+device raid0, half of each file, in alternating 64k pieces, is what you 
+have left if one of the devices goes bad, while with single, your chances 
+of whole-file recovery, assuming it wasn't /entirely/ on the bad device, 
+are pretty good upto a gig or so.
+
+And because btrfs is still in the stabilizing, "get-the-code-correct-
+before-you-worry-about-optimizing-it" mode, unlike more mature raid 
+implementations such as the kernel's mdraid, btrfs still normally 
+accesses only one device at a time, so btrfs raid0 only gets you the 
+space advantage, not the usual raid0 speed advantage.  So btrfs single 
+mode isn't really much if any slower than raid0, while being much safer 
+and offering the same (or even better in the case of differing device 
+sizes) size advantage as raid0.
+
+Put differently, there's really very little case for choosing btrfs raid0 
+mode at this time.  Maybe some years in the future when raid0 mode is 
+speed-optimized that will change, but for now, single mode is safer and 
+in the case of unequal device sizes makes better use of space, while 
+being generally as fast, as raid0 mode, so single mode is almost 
+certainly a better choice.
+
+Meanwhile, back to the general case again:  Admin's first rule of 
+backups:  The *true* value you place on your your data is defined not by 
+arbitrary claims, but by the number of backups of that data you have.  No 
+backups, much like putting the data on raid0, defines that data as of 
+garbage value, not worth the trouble to try to recover in the case of 
+raid0, not worth the trouble of making the backup in the first place in 
+the case of no backup.  Of course really valuable data will have multiple 
+backups, generally some of which are off-site in case the entire site is 
+lost (flood, fire, earthquake, bomb, etc), while others are on-site in 
+ordered to facilitate easy recovery from a less major disaster, should it 
+be necessary.
+
+Which means, regardless of whether files are lost or not, what was of 
+most value as defined by an admin's actions (or lack of them in the case 
+of not having a backup) is always saved, either the time/resources/
+trouble to make the backup in the first place if the data wasn't worth 
+it, or the data, if the backup was made and is thus available for 
+recovery purposes.
+
+So if you lost the data and didn't have a backup, particularly if it was 
+on a raid0 which declares at least that instance of the data to be not 
+really worth the trouble of an attempt at recovery anyway, at least you 
+can be glad you saved what your actions defined as most important, the 
+time/resources/trouble to make that backup that you didn't have, because 
+the value of the data wasn't worth having a backup. =:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

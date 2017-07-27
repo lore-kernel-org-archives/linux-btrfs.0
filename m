@@ -1,39 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:60280 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751834AbdG0TyS (ORCPT
+Received: from mail-it0-f42.google.com ([209.85.214.42]:36994 "EHLO
+        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751607AbdG0UHr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 15:54:18 -0400
-Date: Thu, 27 Jul 2017 19:53:57 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Alan Brand <alan@georgiabrands.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Raid0 rescue
-Message-ID: <20170727195357.GV7140@carfax.org.uk>
-References: <CAFcRpx4q7N1zG4gz-g6MgkU6c-F_gQ6+2-4ibgm+nyRCp5pTXQ@mail.gmail.com>
- <20170727151038.GT7140@carfax.org.uk>
- <CAFcRpx7d=RPdt7iWY7bVeRdX8K7vV7=JYMRg8MVHveC=3qdfqg@mail.gmail.com>
+        Thu, 27 Jul 2017 16:07:47 -0400
+Received: by mail-it0-f42.google.com with SMTP id v127so88691336itd.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2017 13:07:47 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="f5XwDZYQieeN6n9K"
-In-Reply-To: <CAFcRpx7d=RPdt7iWY7bVeRdX8K7vV7=JYMRg8MVHveC=3qdfqg@mail.gmail.com>
+From: Alan Brand <alan@georgiabrands.com>
+Date: Thu, 27 Jul 2017 16:07:46 -0400
+Message-ID: <CAFcRpx4O=rxSmd0=TgBF2r_Jzc4dE6WSy90n8HXsQkE=deVsHg@mail.gmail.com>
+Subject: Re: Raid0 rescue
+To: hugo@carfax.org.uk, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> > Correct, I should have said 'superblock'.
+> > It is/was raid0.  Funny thing is that this all happened when I was
+> > prepping to convert to raid1.
+>    If youre metadata was also RAID-0, then your filesystem is almost
+> certainly toast. If any part of the btrfs metadata was overwritten by
+> some of the NTFS metadata, then the FS will be broken (somewhere) and
+> probably not in a fixable way.
 
---f5XwDZYQieeN6n9K
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-On Thu, Jul 27, 2017 at 03:43:37PM -0400, Alan Brand wrote:
-> Correct, I should have said 'superblock'.
-> It is/was raid0.  Funny thing is that this all happened when I was
-> prepping to convert to raid1.
-
-   If youre metadata was also RAID-0, then your filesystem is almost
-certainly toast. If any part of the btrfs metadata was overwritten by
-some of the NTFS metadata, then the FS will be broken (somewhere) and
-probably not in a fixable way.
+It should have been raid-1 as I believe that is the default for
+metadata when creating a btrfs volume
+How do i put the good copy back on the corrupt volume?
+I cant even look at the metadata on the good disk as it complains
+about one of the disk being missing.
 
 > running a btrfs-find-root shows this (which gives me hope)
 > Well block 4871870791680(gen: 73257 level: 1) seems good, but
@@ -44,10 +40,10 @@ probably not in a fixable way.
 > generation/level doesn't match, want gen: 73258 level: 1
 > Well block 4639926239232(gen: 73242 level: 0) seems good, but
 > generation/level doesn't match, want gen: 73258 level: 1
-> 
+>
 > but when I run btrfs
 > inspect-internal dump-tree -r /dev/sdc1
-> 
+>
 > checksum verify failed on 874856448 found 5A85B5D9 wanted 17E3CB7D
 > checksum verify failed on 874856448 found 5A85B5D9 wanted 17E3CB7D
 > checksum verify failed on 874856448 found 2204C752 wanted C6ADDF7E
@@ -74,9 +70,9 @@ by restoring your backups than trying to fix this.
 > bytenr mismatch, want=728891392, have=269659807399918462
 > total bytes 5000989728768
 > bytes used 3400345264128
-> 
-> 
-> 
+>
+>
+>
 > On Thu, Jul 27, 2017 at 11:10 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
 > > On Thu, Jul 27, 2017 at 10:49:37AM -0400, Alan Brand wrote:
 > >> I know I am screwed but hope someone here can point at a possible solution.
@@ -109,33 +105,3 @@ by restoring your backups than trying to fix this.
 > >
 > >    Hugo.
 > >
-
--- 
-Hugo Mills             | Great oxymorons of the world, no. 1:
-hugo@... carfax.org.uk | Family Holiday
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---f5XwDZYQieeN6n9K
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJZekTVAAoJEFheFHXiqx3kPgAP/3/GcOStjMT/LNjF0PYYWKSq
-nm0nD1gl7piLq7dShBP4NH5aeCoTO/+W9gZIDU1Uyz45YpuHnjUfxvgACQjn7Jaj
-jO6Y3uM8eTxaXiWrR7lfM0Z9t1l2POsFqyIs1pcn7Ry6sfALpu572Gi3UeKtSqZT
-YSImiW5WyPUPZ4pj8InEUl3MyAQTHMtD6QfirntGCX6T7KOjeuM2C4kstYe8eQPp
-jwqOolRPT1WxtRfb7HalgD85M31KDVtN2G/ukOejGjp9RP+Uiw4vLqYQ1EAmQCM0
-RKn/TJPOOUlxVLlpKZTBs5dD7JS3vDJxMQCBDO3sRPx933NUJPs7MjuQhgRPzgXN
-qO3hUJuiutR6I9m+25GH/34pEpgOiTTzRH2lrRRucXHjeVF+k62BoUuXHkUmj2RP
-wLIiaygOxkSKLou13m2/+ahv+n36txgGHE02UuL1T/u0RVMvexx4HpkF7bmuYQty
-BwwMi2ceQsr9zUHohZCJKCMWGWj78Mylb0IFpC7pPmH7z7x2jO4UEPYnUgkGNdTE
-OLAR2TiFwjIzSzGwcan+IXXNYUC9N6VR0HZbuB0EZGwApW4IGdNRxVJLZMfA4bT9
-9d48KlTCVo0SjvfjK40Hn5vm0nmicguu2TuzeuWfxsXnjhglgkNkQk/a83XxeKVU
-91wFhLzvgFKDWMlDDo0X
-=2GdJ
------END PGP SIGNATURE-----
-
---f5XwDZYQieeN6n9K--

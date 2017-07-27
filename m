@@ -1,113 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54905 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54901 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751030AbdG0Rgr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 13:36:47 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6AFF7AE7C
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2017 17:36:44 +0000 (UTC)
+        id S1751030AbdG0Rgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jul 2017 13:36:42 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 230BFAE7C
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2017 17:36:41 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/2] btrfs: Simplify btrfs_alloc_dev_extent
-Date: Thu, 27 Jul 2017 20:36:37 +0300
-Message-Id: <1501176997-24059-2-git-send-email-nborisov@suse.com>
-In-Reply-To: <1501176997-24059-1-git-send-email-nborisov@suse.com>
-References: <1501176997-24059-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 1/2] btrfs: remove superfluous chunk_tree argument from btrfs_alloc_dev_extent
+Date: Thu, 27 Jul 2017 20:36:36 +0300
+Message-Id: <1501176997-24059-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs_alloc_dev_extent essentially open codes btrfs_insert_item. So
-let's remove the superfluous code, leaving only the important bits, namely
-initialising the device extent and just calling btrfs_insert_item. So first add
-definition for the stack-based set/get function. And then use them.
-Additionally, remove the code which sets the uuid of the block header, since
-this is something which is already handled by the core btree code.
+Currently this function is always called with the object id of the root key of
+the chunk_tree, which is always BTRFS_CHUNK_TREE_OBJECTID. So let's subsume it
+straight into the function itself. No functional change.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h   |  8 ++++++++
- fs/btrfs/volumes.c | 34 ++++++++++++----------------------
- 2 files changed, 20 insertions(+), 22 deletions(-)
+ fs/btrfs/volumes.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index cd9497bcdb1e..567fbf186257 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1740,6 +1740,14 @@ BTRFS_SETGET_FUNCS(dev_extent_chunk_objectid, struct btrfs_dev_extent,
- BTRFS_SETGET_FUNCS(dev_extent_chunk_offset, struct btrfs_dev_extent,
- 		   chunk_offset, 64);
- BTRFS_SETGET_FUNCS(dev_extent_length, struct btrfs_dev_extent, length, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_chunk_tree, struct btrfs_dev_extent,
-+			 chunk_tree, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_chunk_objectid,
-+			 struct btrfs_dev_extent, chunk_objectid, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_chunk_offset, struct btrfs_dev_extent,
-+			 chunk_offset, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_length, struct btrfs_dev_extent,
-+			 length, 64);
- 
- static inline unsigned long btrfs_dev_extent_chunk_tree_uuid(struct btrfs_dev_extent *dev)
- {
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5a1913956f20..94e98261dbd0 100644
+index 1c0a5fff0e2f..5a1913956f20 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1581,42 +1581,32 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
- 				  u64 chunk_offset, u64 start, u64 num_bytes)
+@@ -1578,8 +1578,7 @@ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
+ 
+ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_device *device,
+-				  u64 chunk_tree, u64 chunk_offset, u64 start,
+-				  u64 num_bytes)
++				  u64 chunk_offset, u64 start, u64 num_bytes)
  {
  	int ret;
--	struct btrfs_path *path;
--	struct btrfs_fs_info *fs_info = device->fs_info;
--	struct btrfs_root *root = fs_info->dev_root;
-+	struct btrfs_root *root = device->fs_info->dev_root;
- 	struct btrfs_dev_extent *extent;
--	struct extent_buffer *leaf;
- 	struct btrfs_key key;
- 
- 	WARN_ON(!device->in_fs_metadata);
- 	WARN_ON(device->is_tgtdev_for_dev_replace);
--	path = btrfs_alloc_path();
--	if (!path)
-+
-+	extent = kzalloc(sizeof(*extent), GFP_NOFS);
-+	if (!extent)
- 		return -ENOMEM;
- 
- 	key.objectid = device->devid;
- 	key.offset = start;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
--	ret = btrfs_insert_empty_item(trans, root, path, &key,
--				      sizeof(*extent));
--	if (ret)
--		goto out;
- 
--	leaf = path->nodes[0];
--	extent = btrfs_item_ptr(leaf, path->slots[0],
--				struct btrfs_dev_extent);
--	btrfs_set_dev_extent_chunk_tree(leaf, extent,
--					BTRFS_CHUNK_TREE_OBJECTID);
--	btrfs_set_dev_extent_chunk_objectid(leaf, extent,
-+	btrfs_set_stack_dev_extent_chunk_tree(extent,
-+					      BTRFS_CHUNK_TREE_OBJECTID);
-+	btrfs_set_stack_dev_extent_chunk_objectid(extent,
+ 	struct btrfs_path *path;
+@@ -1606,7 +1605,8 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 	leaf = path->nodes[0];
+ 	extent = btrfs_item_ptr(leaf, path->slots[0],
+ 				struct btrfs_dev_extent);
+-	btrfs_set_dev_extent_chunk_tree(leaf, extent, chunk_tree);
++	btrfs_set_dev_extent_chunk_tree(leaf, extent,
++					BTRFS_CHUNK_TREE_OBJECTID);
+ 	btrfs_set_dev_extent_chunk_objectid(leaf, extent,
  					    BTRFS_FIRST_CHUNK_TREE_OBJECTID);
--	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
-+	btrfs_set_stack_dev_extent_chunk_offset(extent, chunk_offset);
-+	btrfs_set_stack_dev_extent_length(extent, num_bytes);
- 
--	write_extent_buffer_chunk_tree_uuid(leaf, fs_info->chunk_tree_uuid);
-+	ret = btrfs_insert_item(trans, root, &key, extent, sizeof(*extent));
-+	if (ret)
-+		kfree(extent);
- 
--	btrfs_set_dev_extent_length(leaf, extent, num_bytes);
--	btrfs_mark_buffer_dirty(leaf);
--out:
--	btrfs_free_path(path);
- 	return ret;
- }
- 
+ 	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
+@@ -4931,10 +4931,8 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_update_device(trans, device);
+ 		if (ret)
+ 			break;
+-		ret = btrfs_alloc_dev_extent(trans, device,
+-					     chunk_root->root_key.objectid,
+-					     chunk_offset, dev_offset,
+-					     stripe_size);
++		ret = btrfs_alloc_dev_extent(trans, device, chunk_offset,
++					     dev_offset, stripe_size);
+ 		if (ret)
+ 			break;
+ 	}
 -- 
 2.7.4
 

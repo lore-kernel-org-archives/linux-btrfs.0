@@ -1,57 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48791 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:43451 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751014AbdG0Kzz (ORCPT
+        with ESMTP id S1750765AbdG0HTV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 06:55:55 -0400
+        Thu, 27 Jul 2017 03:19:21 -0400
+Subject: Re: [PATCH] btrfs: prepare for extensions in compression options
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20170717162222.16926-1-dsterba@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs: use appropriate define for the fsid
-Date: Thu, 27 Jul 2017 19:02:36 +0800
-Message-Id: <20170727110236.20232-1-anand.jain@oracle.com>
+Message-ID: <ad1a3fdc-fe64-cf84-ba02-746c3eaa0a3b@oracle.com>
+Date: Thu, 27 Jul 2017 15:25:37 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170717162222.16926-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Though BTRFS_FSID_SIZE and BTRFS_UUID_SIZE or of same size,
-for the purpose of doing it correctly use BTRFS_FSID_SIZE instead.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/disk-io.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 086dcbadce09..ed840e0cabc5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -529,7 +529,7 @@ static int check_tree_block_fsid(struct btrfs_fs_info *fs_info,
- 				 struct extent_buffer *eb)
- {
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
--	u8 fsid[BTRFS_UUID_SIZE];
-+	u8 fsid[BTRFS_FSID_SIZE];
- 	int ret = 1;
- 
- 	read_extent_buffer(eb, fsid, btrfs_header_fsid(), BTRFS_FSID_SIZE);
-@@ -3731,7 +3731,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 		btrfs_set_stack_device_io_width(dev_item, dev->io_width);
- 		btrfs_set_stack_device_sector_size(dev_item, dev->sector_size);
- 		memcpy(dev_item->uuid, dev->uuid, BTRFS_UUID_SIZE);
--		memcpy(dev_item->fsid, dev->fs_devices->fsid, BTRFS_UUID_SIZE);
-+		memcpy(dev_item->fsid, dev->fs_devices->fsid, BTRFS_FSID_SIZE);
- 
- 		flags = btrfs_super_flags(sb);
- 		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
-@@ -4172,7 +4172,7 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
- 		ret = -EINVAL;
- 	}
- 
--	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_UUID_SIZE) != 0) {
-+	if (memcmp(fs_info->fsid, sb->dev_item.fsid, BTRFS_FSID_SIZE) != 0) {
- 		btrfs_err(fs_info,
- 			   "dev_item UUID does not match fsid: %pU != %pU",
- 			   fs_info->fsid, sb->dev_item.fsid);
--- 
-2.13.1
+On 07/18/2017 12:22 AM, David Sterba wrote:
+> This is a minimal patch intended to be backported to older kernels.
+> We're going to extend the string specifying the compression method and
+> this would fail on kernels before that change (the string is compared
+> exactly).
+> 
+> Relax the string matching only to the prefix, ie. ignoring anything that
+> goes after "zlib" or "lzo", regardless of th format extension we decide
+> to use. This applies to the mount options and properties.
+> 
+> That way, patched old kernels could be booted on systems already
+> utilizing the new compression spec.
 
+  In the view of older kernel with this patch, we need extra logic to
+  continue to fail bad string after lzo..
+   ----
+         mount -o compress=lzoJUNK /dev/sdb /btrfs
+           mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+
+           [ 2128.045252] BTRFS error (device sdb): open_ctree failed
+    ----
+
+   With this patch. I guess the above mount (or for that matter property
+   as well) will be successful. ?
+
+Thanks, Anand
+
+
+> Applicable since commit 63541927c8d11, v3.14.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>   fs/btrfs/props.c | 4 ++--
+>   fs/btrfs/super.c | 4 ++--
+>   2 files changed, 4 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+> index 4b23ae5d0e5c..f41654f05719 100644
+> --- a/fs/btrfs/props.c
+> +++ b/fs/btrfs/props.c
+> @@ -408,9 +408,9 @@ static int prop_compression_apply(struct inode *inode,
+>   		return 0;
+>   	}
+>   
+> -	if (!strncmp("lzo", value, len))
+> +	if (!strncmp("lzo", value, 3))
+>   		type = BTRFS_COMPRESS_LZO;
+> -	else if (!strncmp("zlib", value, len))
+> +	else if (!strncmp("zlib", value, 4))
+>   		type = BTRFS_COMPRESS_ZLIB;
+>   	else
+>   		return -EINVAL;
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 74e47794e63f..147330454c17 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -498,14 +498,14 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>   				btrfs_test_opt(info, FORCE_COMPRESS);
+>   			if (token == Opt_compress ||
+>   			    token == Opt_compress_force ||
+> -			    strcmp(args[0].from, "zlib") == 0) {
+> +			    strncmp(args[0].from, "zlib", 4) == 0) {
+>   				compress_type = "zlib";
+>   				info->compress_type = BTRFS_COMPRESS_ZLIB;
+>   				btrfs_set_opt(info->mount_opt, COMPRESS);
+>   				btrfs_clear_opt(info->mount_opt, NODATACOW);
+>   				btrfs_clear_opt(info->mount_opt, NODATASUM);
+>   				no_compress = 0;
+> -			} else if (strcmp(args[0].from, "lzo") == 0) {
+> +			} else if (strncmp(args[0].from, "lzo", 3) == 0) {
+>   				compress_type = "lzo";
+>   				info->compress_type = BTRFS_COMPRESS_LZO;
+>   				btrfs_set_opt(info->mount_opt, COMPRESS);
+> 

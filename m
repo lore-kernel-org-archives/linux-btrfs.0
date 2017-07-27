@@ -1,103 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:36550 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755092AbdGVLPI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 22 Jul 2017 07:15:08 -0400
-Subject: Re: How to detect "orphaned" subvolume attachment point in snapshot?
-To: Andrei Borzenkov <arvidjaar@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <9d5e5337-8b67-cce0-f85b-431639afaf48@gmail.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <53a80f27-52f1-a132-2afe-863fb3d16474@mendix.com>
-Date: Sat, 22 Jul 2017 13:15:06 +0200
+Received: from mx2.suse.de ([195.135.220.15]:41586 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751413AbdG0PiM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jul 2017 11:38:12 -0400
+Date: Thu, 27 Jul 2017 17:36:54 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: dsterba@suse.cz, Adam Borowski <kilobyte@angband.pl>,
+        Roman Mamedov <rm@romanrm.net>,
+        Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] Btrfs: add skeleton code for compression heuristic
+Message-ID: <20170727153653.GO2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170717135258.15865-1-nefelim4ag@gmail.com>
+ <20170717183035.GR2866@twin.jikos.cz>
+ <f85d6fa7-4d1e-bfb8-7e64-ef02c468e42d@oracle.com>
+ <20170721233749.5175d611@natsu>
+ <20170721210027.3qoexc63zcbbnqxl@angband.pl>
+ <20170724145356.GX2866@twin.jikos.cz>
+ <950a249d-9fb2-103a-0101-d37e6609ba8f@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <9d5e5337-8b67-cce0-f85b-431639afaf48@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <950a249d-9fb2-103a-0101-d37e6609ba8f@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/22/2017 09:58 AM, Andrei Borzenkov wrote:
-> Here is structure of snapshots in openSUSE; all snapshots of root volume
-> are created under /.snapshots subvolume:
+On Mon, Jul 24, 2017 at 11:40:17PM +0800, Anand Jain wrote:
 > 
-> linux-gtrk:/host/home/src/python-btrfs/examples # sudo mount -o
-> ro,subvol=/ /dev/sda3 /mnt
-> linux-gtrk:/host/home/src/python-btrfs/examples #
-> ./show_directory_contents.py /mnt/
-> directory /mnt/@ tree 257 inum 256
-> inode generation 6 transid 315 size 72 nbytes 0 block_group 0 mode 40755
-> nlink 1 uid 0 gid 0 rdev 0 flags 0x0(none)
-> inode ref index 0 name utf-8 ..
-> ...
-> dir item list hash 1921786525 size 1
->     dir item location (258 ROOT_ITEM -1) type DIR name utf-8 .snapshots
-> ...
-> linux-gtrk:/host/home/src/python-btrfs/examples #
-> ./show_directory_contents.py /mnt/@/.snapshots/251/snapshot/
-> directory /mnt/@/.snapshots/251/snapshot/ tree 774 inum 256
-> inode generation 6 transid 15867 size 164 nbytes 0 block_group 0 mode
-> 40755 nlink 1 uid 0 gid 0 rdev 0 flags 0x0(none)
-> inode ref index 0 name utf-8 ..
-> ...
-> dir item list hash 1921786525 size 1
->     dir item location (258 ROOT_ITEM -1) type DIR name utf-8 .snapshots
-> ...
-> linux-gtrk:/host/home/src/python-btrfs/examples #
+> > Eg. files that are already compressed would increase the cpu consumption
+> > with compress-force, while they'd be hopefully detected as
+> > incompressible with 'compress' and clever heuristics. So the NOCOMPRESS
+> > bit would better reflect the status of the file.
 > 
-> Note that both directory items in /mnt/@ and
-> /mnt/@/.snapshots/251/snapshot store the same tree ID for .snapshots
-> item - 258. This causes grub2 btrfs driver loop - when it comes to
-> /mnt/@/.snapshots/251/snapshot and looks for .snapshots it jumps back to
-> /mnt/@/.snapshots tree.
-> 
-> I see that in Linux kernel somehow distinguishes between both of them; I
-> am not sure how it actually does it though.
-> 
-> What on-disk information should we check to find out "orphaned" snapshot
-> directory?
+>   current NOCOMPRESS is based on trial and error method and is more
+>   accurate than heuristic also loss of cpu power is only one time ?
 
-The information is not stored in the subvolume that contains the
-"attachment point". So you cannot get the info at that location.
+Curreently, force-compress beats everything, so even a file with
+NOCOMPRESS will be compressed, all new writes will be passed to the
+compression and stored uncompressed eventually. Each time the
+compression code will run and fail, so it's not one time.
 
-If it was, that would mean that when creating a snapshot, some process
-would need to walk the entire directory structure and change all the
-locations in the tree that looked like if there was another nested
-subvolume placed there before.
+Although you can say it's more 'accurate', it's also more expensive.
 
-In tree 1, the tree of trees, there's information about root 258:
+>   May be the only opportunity that heuristic can facilitate is at the
+>   logic to monitor and reset the NOCOMPRESS, as of now there is no
+>   such a logic.
 
--# btrfs inspect-internal dump-tree -t 1 /dev/[...]/blaat
-[...]
-item 19 key (258 ROOT_ITEM 0) itemoff 12635 itemsize 439
-     root data bytenr 21397504 level 0 dirid 256 refs 1 gen 11 lastsnap 0
-    flags 0x0(none)
-    uuid d7fe436b-35b5-9b4e-805d-20b9294a55d0
-    ctransid 11 otransid 9 stransid 0 rtransid 0
-item 20 key (258 ROOT_BACKREF 257) itemoff 12616 itemsize 19
-    root backref key dirid 256 sequence 2 name b
-
-I think the ROOT_BACKREF says that the only location where the contents
-of the nested subvolume should really be shown is when it's looked at
-via the "attachment point" in tree 257, directory 256, index 2 in the
-directory with name b.
-
-When looking at it via the VFS, you get a special inode 2 number when
-looking at it in a place that does not match the BACKREF again:
-
--# stat b
-  File: b
-  Size: 0         	Blocks: 0          IO Block: 4096   directory
-Device: 55h/85d	Inode: 2           Links: 1
-Access: (0755/drwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
-Access: 2017-07-22 13:08:59.217456707 +0200
-Modify: 2017-07-22 13:08:59.217456707 +0200
-Change: 2017-07-22 13:08:59.217456707 +0200
- Birth: -
-
-I don't have all structures of the root tree yet in python-btrfs it
-seems. Would be nice to create an example script that does a pretty
-printed version of tree 1.
-
--- 
-Hans van Kranenburg
+The heurictic can be made adaptive, and examine data even for NOCOMPRESS
+files, but that's a few steps ahead of where we are now.

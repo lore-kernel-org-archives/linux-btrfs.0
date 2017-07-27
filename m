@@ -1,79 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53563 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751017AbdGaVak (ORCPT
+Received: from mail-it0-f66.google.com ([209.85.214.66]:34009 "EHLO
+        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751451AbdG0R5g (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jul 2017 17:30:40 -0400
-From: Nick Terrell <terrelln@fb.com>
-To: Phillip Lougher <phillip.lougher@gmail.com>
-CC: "Austin S . Hemmelgarn" <ahferroin7@gmail.com>,
-        Herbert Xu <herbert@gondor.apana.org.au>,
-        Kernel Team <Kernel-team@fb.com>, Chris Mason <clm@fb.com>,
-        Yann Collet <cyan@fb.com>, Adam Borowski <kilobyte@angband.pl>,
-        David Sterba <dsterba@suse.cz>,
-        SquashFS developers <squashfs-devel@lists.sourceforge.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>, "Sean Purcell" <me@seanp.xyz>
-Subject: Re: [PATCH v3 4/4] squashfs: Add zstd support
-Date: Mon, 31 Jul 2017 21:30:08 +0000
-Message-ID: <65F25A58-E706-4D93-847E-1E4016E7367F@fb.com>
-References: <20170720212743.3351201-1-terrelln@fb.com>
- <20170720212743.3351201-5-terrelln@fb.com>
- <CAB3wodemv=aP-9chLo5VyN3WC+QNpgRNr1=iPU5ZxmZ37Sk-rw@mail.gmail.com>
-In-Reply-To: <CAB3wodemv=aP-9chLo5VyN3WC+QNpgRNr1=iPU5ZxmZ37Sk-rw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"
+        Thu, 27 Jul 2017 13:57:36 -0400
+Received: by mail-it0-f66.google.com with SMTP id t78so12068147ita.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2017 10:57:35 -0700 (PDT)
 MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1501176997-24059-2-git-send-email-nborisov@suse.com>
+References: <1501176997-24059-1-git-send-email-nborisov@suse.com> <1501176997-24059-2-git-send-email-nborisov@suse.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Thu, 27 Jul 2017 18:57:34 +0100
+Message-ID: <CAL3q7H7Em8aqkCqvvJP3zkOCFjJy1=19qdz+v79tnJ3qHt+6fw@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs: Simplify btrfs_alloc_dev_extent
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7/30/17, 6:50 PM, "Phillip Lougher" <phillip.lougher@gmail.com> wrote:
-> On Thu, Jul 20, 2017 at 10:27 PM, Nick Terrell <terrelln@fb.com> wrote:
->> Add zstd compression and decompression support to SquashFS. zstd is a
->> great fit for SquashFS because it can compress at ratios approaching xz,
->> while decompressing twice as fast as zlib. For SquashFS in particular,
->> it can decompress as fast as lzo and lz4. It also has the flexibility
->> to turn down the compression ratio for faster compression times.
->
-> Hi Nick,
->
-> This patch (and none of the previous versions) is showing up on
-> squashfs-devel@lists.sourceforge.net.  I also think you should have
-> emailed me directly as a courtesy, as I'm the Squashfs author and
-> maintainer.
+On Thu, Jul 27, 2017 at 6:36 PM, Nikolay Borisov <nborisov@suse.com> wrote:
+> Currently btrfs_alloc_dev_extent essentially open codes btrfs_insert_item. So
+> let's remove the superfluous code, leaving only the important bits, namely
+> initialising the device extent and just calling btrfs_insert_item. So first add
+> definition for the stack-based set/get function. And then use them.
+> Additionally, remove the code which sets the uuid of the block header, since
+> this is something which is already handled by the core btree code.
 
-Sorry about that Phillip, it was an oversight on my part. I've added you to
-the CC list going forward, and have subscribed to the mailing list.
+Quite honestly, I don't see the value of this change at all.
+It doesn't make things simpler nor more readable nor nothing.
+We have many, really many places using btrfs_insert_empty_item()
+instead of calling btrfs_insert_item(), are you planning on sending a
+patch to do the replacement for each of them? What's the point?
 
->> | Method>> | Ratio | Compression MB/s | Decompression MB/s |
->> |----------------|-------|------------------|--------------------|
->> | gzip>>   |  2.92 |>>>   15 |>>>>128 |
->> | lzo>>>|  2.64 |>>>  9.5 |>>>>217 |
->> | lz4>>>|  2.12 |>>>   94 |>>>>218 |
->> | xz>>> |  3.43 |>>>  5.5 |>>>> 35 |
->> | xz 256 KB>  |  3.53 |>>>  5.4 |>>>> 40 |
->> | zstd 1>> |  2.71 |>>>   96 |>>>>210 |
->> | zstd 5>> |  2.93 |>>>   69 |>>>>198 |
->> | zstd 10>>|  3.01 |>>>   41 |>>>>225 |
->> | zstd 15>>|  3.13 |>>> 11.4 |>>>>224 |
->> | zstd 16 256 KB |  3.24 |>>>  8.1 |>>>>210 |
->
->
-> Those numbers look good to me.
->
->>
->> This patch was written by Sean Purcell <me@seanp.xyz>, but I will be
->> taking over the submission process.
->>
->> [1] http://releases.ubuntu.com/16.10/
->> [2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/squashfs-benchmark.sh
->
-> I can't find your patch that adds zstd to the user-land
-> Squashfs-tools.  That would be handy to do any testing :-)
->
-> Phillip
+Plus you are introducing now a memory leak. See below.
 
-I'll include the squashfs-tools patch that Sean just posted in the next
-version.
+>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/ctree.h   |  8 ++++++++
+>  fs/btrfs/volumes.c | 34 ++++++++++++----------------------
+>  2 files changed, 20 insertions(+), 22 deletions(-)
+>
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index cd9497bcdb1e..567fbf186257 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1740,6 +1740,14 @@ BTRFS_SETGET_FUNCS(dev_extent_chunk_objectid, struct btrfs_dev_extent,
+>  BTRFS_SETGET_FUNCS(dev_extent_chunk_offset, struct btrfs_dev_extent,
+>                    chunk_offset, 64);
+>  BTRFS_SETGET_FUNCS(dev_extent_length, struct btrfs_dev_extent, length, 64);
+> +BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_chunk_tree, struct btrfs_dev_extent,
+> +                        chunk_tree, 64);
+> +BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_chunk_objectid,
+> +                        struct btrfs_dev_extent, chunk_objectid, 64);
+> +BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_chunk_offset, struct btrfs_dev_extent,
+> +                        chunk_offset, 64);
+> +BTRFS_SETGET_STACK_FUNCS(stack_dev_extent_length, struct btrfs_dev_extent,
+> +                        length, 64);
+>
+>  static inline unsigned long btrfs_dev_extent_chunk_tree_uuid(struct btrfs_dev_extent *dev)
+>  {
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 5a1913956f20..94e98261dbd0 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1581,42 +1581,32 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+>                                   u64 chunk_offset, u64 start, u64 num_bytes)
+>  {
+>         int ret;
+> -       struct btrfs_path *path;
+> -       struct btrfs_fs_info *fs_info = device->fs_info;
+> -       struct btrfs_root *root = fs_info->dev_root;
+> +       struct btrfs_root *root = device->fs_info->dev_root;
+>         struct btrfs_dev_extent *extent;
+> -       struct extent_buffer *leaf;
+>         struct btrfs_key key;
+>
+>         WARN_ON(!device->in_fs_metadata);
+>         WARN_ON(device->is_tgtdev_for_dev_replace);
+> -       path = btrfs_alloc_path();
+> -       if (!path)
+> +
+> +       extent = kzalloc(sizeof(*extent), GFP_NOFS);
+> +       if (!extent)
+>                 return -ENOMEM;
+>
+>         key.objectid = device->devid;
+>         key.offset = start;
+>         key.type = BTRFS_DEV_EXTENT_KEY;
+> -       ret = btrfs_insert_empty_item(trans, root, path, &key,
+> -                                     sizeof(*extent));
+> -       if (ret)
+> -               goto out;
+>
+> -       leaf = path->nodes[0];
+> -       extent = btrfs_item_ptr(leaf, path->slots[0],
+> -                               struct btrfs_dev_extent);
+> -       btrfs_set_dev_extent_chunk_tree(leaf, extent,
+> -                                       BTRFS_CHUNK_TREE_OBJECTID);
+> -       btrfs_set_dev_extent_chunk_objectid(leaf, extent,
+> +       btrfs_set_stack_dev_extent_chunk_tree(extent,
+> +                                             BTRFS_CHUNK_TREE_OBJECTID);
+> +       btrfs_set_stack_dev_extent_chunk_objectid(extent,
+>                                             BTRFS_FIRST_CHUNK_TREE_OBJECTID);
+> -       btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
+> +       btrfs_set_stack_dev_extent_chunk_offset(extent, chunk_offset);
+> +       btrfs_set_stack_dev_extent_length(extent, num_bytes);
+>
+> -       write_extent_buffer_chunk_tree_uuid(leaf, fs_info->chunk_tree_uuid);
+> +       ret = btrfs_insert_item(trans, root, &key, extent, sizeof(*extent));
+> +       if (ret)
+> +               kfree(extent);
+
+Even if ret is 0 (success), you need to kfree(extent).
+
+thanks
+
+>
+> -       btrfs_set_dev_extent_length(leaf, extent, num_bytes);
+> -       btrfs_mark_buffer_dirty(leaf);
+> -out:
+> -       btrfs_free_path(path);
+>         return ret;
+>  }
+>
+> --
+> 2.7.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+
+-- 
+Filipe David Manana,
+
+â€œWhether you think you can, or you think you can't â€” you're right.â€

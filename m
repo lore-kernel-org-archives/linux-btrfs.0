@@ -1,56 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:58400 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751554AbdG0Uo3 (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:39712 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751113AbdG0Xik (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 16:44:29 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dapdk-0006Yd-B8
-        for linux-btrfs@vger.kernel.org; Thu, 27 Jul 2017 22:44:12 +0200
+        Thu, 27 Jul 2017 19:38:40 -0400
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1dasMW-0002zq-HK
+        for linux-btrfs@vger.kernel.org; Fri, 28 Jul 2017 01:38:36 +0200
+Date: Fri, 28 Jul 2017 01:38:36 +0200
+From: Adam Borowski <kilobyte@angband.pl>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: write corruption due to bio cloning on raid5/6
-Date: Thu, 27 Jul 2017 20:44:04 +0000 (UTC)
-Message-ID: <pan$ec007$3f43fe2a$2f099431$cc969edd@cox.net>
-References: <CANznX5FxavW+0_YdA4hir9_A3KrobRLyV9+CNadigDT3uNUkXw@mail.gmail.com>
-        <20170726160717.GA32451@localhost.localdomain>
-        <CANznX5Hx57JbwS75usDHwWBHbmiLj7dVHrfgZ5Swn=8zX=2iHw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Raid0 rescue
+Message-ID: <20170727233836.hdwljehqvjjmtc2x@angband.pl>
+References: <CAFcRpx4q7N1zG4gz-g6MgkU6c-F_gQ6+2-4ibgm+nyRCp5pTXQ@mail.gmail.com>
+ <20170727151038.GT7140@carfax.org.uk>
+ <pan$2c543$d5ad45a3$4b673920$5f7cee9a@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$2c543$d5ad45a3$4b673920$5f7cee9a@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Janos Toth F. posted on Thu, 27 Jul 2017 16:14:47 +0200 as excerpted:
+On Thu, Jul 27, 2017 at 08:25:19PM +0000, Duncan wrote:
+> >    Welcome to RAID-0...
+> 
+> As Hugo implies, RAID-0 mode, not just for btrfs but in general, is well 
+> known among admins for being "garbage data not worth trying to recover" 
+> mode.  Not only is there no redundancy, but with raid0 you're 
+> deliberately increasing the chances of loss because now loss of any one 
+> device pretty well makes garbage of the entire array, and loss of any 
+> single device in a group of more than one is more likely than loss of any 
+> single device by itself.
 
-> * This is off-topic but raid5 scrub is painful. The disks run at
-> constant ~100% utilization while performing at ~1/5 of their sequential
-> read speeds. And despite explicitly asking idle IO priority when
-> launching scrub, the filesystem becomes unbearably slow (while scrub
-> takes a days or so to finish ... or get to the point where it hung the
-> last time around, close to the end).
+Disks don't quite die once a week, you see.  Using raid0 is actually quite
+rational in a good part of setups.
 
-That's because basically all the userspace scrub command does is make the 
-appropriate kernel calls to have it do the real scrub.  So priority-
-idling the userspace scrub doesn't do what it does on normal userspace 
-jobs that do much of the work themselves.
+* You need backups _anyway_.  No raid level removes this requirement.
+* You can give a machine twice as much immediate storage with raid0 than
+  with raid1.
+* You get twice as many disks you can use for backup.
 
-The problem is that idle-prioritizing the kernel threads actually doing 
-the work could risk a deadlock due to lock inversion, since they're 
-kernel threads and aren't designed with the idea of people messing with 
-their priority in mind.
+Redundant raid is good for two things:
+* uptime
+* reducing the chance for loss of data between last backup and the failure
 
-Meanwhile, that's yet another reason btrfs raid56 mode isn't recommended 
-at this time.  Try btrfs raid1 or raid10 mode instead, or possible btrfs 
-raid1, single or raid0 mode on top of a pair of mdraid5s or similar.  Tho 
-parity-raid mode in general (that is, not btrfs-specific) is known for 
-being slow in various cases, with raid10 normally being the best 
-performing closest alternative.  (Tho in the btrfs-specific case, btrfs 
-raid1 on top of a pair of mdraid/dmraid/whatever raid0s, is the normally 
-recommended higher performance reasonably low danger alternative.)
+For the second point, do you happen to know of a filesystem that gives you
+cheap hourly backups that avoid taking half an hour just to stat?
 
+
+Thus, you need to make a decision: would you prefer to take time trying to
+recover, with a good chance of failure anyway -- or a-priori accept that
+every failure means hitting the backups?  Obviously, depends on the use
+case.
+
+This said, I don't have a raid0 anywhere.
+
+
+Meow!
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+⢀⣴⠾⠻⢶⣦⠀ What Would Jesus Do, MUD/MMORPG edition:
+⣾⠁⢰⠒⠀⣿⡁ • multiplay with an admin char to benefit your mortal
+⢿⡄⠘⠷⠚⠋⠀ • abuse item cloning bugs (the five fishes + two breads affair)
+⠈⠳⣄⠀⠀⠀⠀ • use glitches to walk on water

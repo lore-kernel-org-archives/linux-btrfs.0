@@ -1,270 +1,275 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44907 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752824AbdGYUvC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Jul 2017 16:51:02 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 127F9AEC8
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Jul 2017 20:51:01 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 4/7] btrfs-progs: backref: push state tracking into a helper structure
-Date: Tue, 25 Jul 2017 16:51:35 -0400
-Message-Id: <20170725205138.28376-4-jeffm@suse.com>
-In-Reply-To: <20170725205138.28376-1-jeffm@suse.com>
-References: <20170725205138.28376-1-jeffm@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:30267 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750950AbdG0HqJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jul 2017 03:46:09 -0400
+Subject: Re: [PATCH preview] btrfs: allow to set compression level for zlib
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20170724172939.24527-1-dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <e6381f64-0c24-e3ac-ef9a-f9ff761ab74e@oracle.com>
+Date: Thu, 27 Jul 2017 15:52:56 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170724172939.24527-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
 
-Eventually, we'll have several lists and trees, as well as some statistics.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- backref.c | 75 ++++++++++++++++++++++++++++++++++++++-------------------------
- 1 file changed, 45 insertions(+), 30 deletions(-)
+On 07/25/2017 01:29 AM, David Sterba wrote:
+> Preliminary support for setting compression level for zlib, the
+> following works:
 
-diff --git a/backref.c b/backref.c
-index e1f41e1..ac1b506 100644
---- a/backref.c
-+++ b/backref.c
-@@ -130,6 +130,15 @@ struct __prelim_ref {
- 	u64 wanted_disk_byte;
- };
- 
-+struct pref_state {
-+	struct list_head pending;
-+};
-+
-+static void init_pref_state(struct pref_state *prefstate)
-+{
-+	INIT_LIST_HEAD(&prefstate->pending);
-+}
-+
- /*
-  * the rules for all callers of this function are:
-  * - obtaining the parent is the goal
-@@ -169,11 +178,12 @@ struct __prelim_ref {
-  * block might help in merging entries to gain some speed.
-  */
- 
--static int __add_prelim_ref(struct list_head *head, u64 root_id,
-+static int __add_prelim_ref(struct pref_state *prefstate, u64 root_id,
- 			    struct btrfs_key *key, int level,
- 			    u64 parent, u64 wanted_disk_byte, int count,
- 			    gfp_t gfp_mask)
- {
-+	struct list_head *head = &prefstate->pending;
- 	struct __prelim_ref *ref;
- 
- 	if (root_id == BTRFS_DATA_RELOC_TREE_OBJECTID)
-@@ -345,10 +355,11 @@ out:
-  * resolve all indirect backrefs from the list
-  */
- static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
-+				   struct pref_state *prefstate,
- 				   struct btrfs_path *path, u64 time_seq,
--				   struct list_head *head,
- 				   const u64 *extent_item_pos, u64 total_refs)
- {
-+	struct list_head *head = &prefstate->pending;
- 	int err;
- 	int ret = 0;
- 	struct __prelim_ref *ref;
-@@ -436,8 +447,9 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
-  * read tree blocks and add keys where required.
-  */
- static int __add_missing_keys(struct btrfs_fs_info *fs_info,
--			      struct list_head *head)
-+			      struct pref_state *prefstate)
- {
-+	struct list_head *head = &prefstate->pending;
- 	struct list_head *pos;
- 	struct extent_buffer *eb;
- 
-@@ -475,8 +487,9 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
-  *           having a parent).
-  * mode = 2: merge identical parents
-  */
--static void __merge_refs(struct list_head *head, int mode)
-+static void __merge_refs(struct pref_state *prefstate, int mode)
- {
-+	struct list_head *head = &prefstate->pending;
- 	struct list_head *pos1;
- 
- 	list_for_each(pos1, head) {
-@@ -527,9 +540,9 @@ static void __merge_refs(struct list_head *head, int mode)
-  * add all inline backrefs for bytenr to the list
-  */
- static int __add_inline_refs(struct btrfs_fs_info *fs_info,
-+			     struct pref_state *prefstate,
- 			     struct btrfs_path *path, u64 bytenr,
--			     int *info_level, struct list_head *prefs,
--			     u64 *total_refs)
-+			     int *info_level, u64 *total_refs)
- {
- 	int ret = 0;
- 	int slot;
-@@ -541,7 +554,6 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
- 	struct btrfs_extent_item *ei;
- 	u64 flags;
- 	u64 item_size;
--
- 	/*
- 	 * enumerate all inline refs
- 	 */
-@@ -584,7 +596,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
- 
- 		switch (type) {
- 		case BTRFS_SHARED_BLOCK_REF_KEY:
--			ret = __add_prelim_ref(prefs, 0, NULL,
-+			ret = __add_prelim_ref(prefstate, 0, NULL,
- 						*info_level + 1, offset,
- 						bytenr, 1, GFP_NOFS);
- 			break;
-@@ -594,12 +606,12 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
- 
- 			sdref = (struct btrfs_shared_data_ref *)(iref + 1);
- 			count = btrfs_shared_data_ref_count(leaf, sdref);
--			ret = __add_prelim_ref(prefs, 0, NULL, 0, offset,
-+			ret = __add_prelim_ref(prefstate, 0, NULL, 0, offset,
- 					       bytenr, count, GFP_NOFS);
- 			break;
- 		}
- 		case BTRFS_TREE_BLOCK_REF_KEY:
--			ret = __add_prelim_ref(prefs, offset, NULL,
-+			ret = __add_prelim_ref(prefstate, offset, NULL,
- 					       *info_level + 1, 0,
- 					       bytenr, 1, GFP_NOFS);
- 			break;
-@@ -615,7 +627,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
- 			key.type = BTRFS_EXTENT_DATA_KEY;
- 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
- 			root = btrfs_extent_data_ref_root(leaf, dref);
--			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
-+			ret = __add_prelim_ref(prefstate, root, &key, 0, 0,
- 					       bytenr, count, GFP_NOFS);
- 			break;
- 		}
-@@ -634,8 +646,9 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
-  * add all non-inline backrefs for bytenr to the list
-  */
- static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
-+			    struct pref_state *prefstate,
- 			    struct btrfs_path *path, u64 bytenr,
--			    int info_level, struct list_head *prefs)
-+			    int info_level)
- {
- 	struct btrfs_root *extent_root = fs_info->extent_root;
- 	int ret;
-@@ -665,7 +678,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
- 
- 		switch (key.type) {
- 		case BTRFS_SHARED_BLOCK_REF_KEY:
--			ret = __add_prelim_ref(prefs, 0, NULL,
-+			ret = __add_prelim_ref(prefstate, 0, NULL,
- 						info_level + 1, key.offset,
- 						bytenr, 1, GFP_NOFS);
- 			break;
-@@ -676,12 +689,12 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
- 			sdref = btrfs_item_ptr(leaf, slot,
- 					      struct btrfs_shared_data_ref);
- 			count = btrfs_shared_data_ref_count(leaf, sdref);
--			ret = __add_prelim_ref(prefs, 0, NULL, 0, key.offset,
-+			ret = __add_prelim_ref(prefstate, 0, NULL, 0, key.offset,
- 						bytenr, count, GFP_NOFS);
- 			break;
- 		}
- 		case BTRFS_TREE_BLOCK_REF_KEY:
--			ret = __add_prelim_ref(prefs, key.offset, NULL,
-+			ret = __add_prelim_ref(prefstate, key.offset, NULL,
- 					       info_level + 1, 0,
- 					       bytenr, 1, GFP_NOFS);
- 			break;
-@@ -698,7 +711,7 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
- 			key.type = BTRFS_EXTENT_DATA_KEY;
- 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
- 			root = btrfs_extent_data_ref_root(leaf, dref);
--			ret = __add_prelim_ref(prefs, root, &key, 0, 0,
-+			ret = __add_prelim_ref(prefstate, root, &key, 0, 0,
- 					       bytenr, count, GFP_NOFS);
- 			break;
- 		}
-@@ -730,12 +743,12 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	struct btrfs_path *path;
- 	int info_level = 0;
- 	int ret;
--	struct list_head prefs;
-+	struct pref_state prefstate;
- 	struct __prelim_ref *ref;
- 	struct extent_inode_elem *eie = NULL;
- 	u64 total_refs = 0;
- 
--	INIT_LIST_HEAD(&prefs);
-+	init_pref_state(&prefstate);
- 
- 	key.objectid = bytenr;
- 	key.offset = (u64)-1;
-@@ -764,34 +777,35 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 		if (key.objectid == bytenr &&
- 		    (key.type == BTRFS_EXTENT_ITEM_KEY ||
- 		     key.type == BTRFS_METADATA_ITEM_KEY)) {
--			ret = __add_inline_refs(fs_info, path, bytenr,
--						&info_level, &prefs,
-+			ret = __add_inline_refs(fs_info, &prefstate, path,
-+						bytenr, &info_level,
- 						&total_refs);
- 			if (ret)
- 				goto out;
--			ret = __add_keyed_refs(fs_info, path, bytenr,
--					       info_level, &prefs);
-+			ret = __add_keyed_refs(fs_info, &prefstate, path,
-+					       bytenr, info_level);
- 			if (ret)
- 				goto out;
- 		}
- 	}
- 	btrfs_release_path(path);
- 
--	ret = __add_missing_keys(fs_info, &prefs);
-+	ret = __add_missing_keys(fs_info, &prefstate);
- 	if (ret)
- 		goto out;
- 
--	__merge_refs(&prefs, 1);
-+	__merge_refs(&prefstate, 1);
- 
--	ret = __resolve_indirect_refs(fs_info, path, time_seq, &prefs,
-+	ret = __resolve_indirect_refs(fs_info, &prefstate, path, time_seq,
- 				      extent_item_pos, total_refs);
- 	if (ret)
- 		goto out;
- 
--	__merge_refs(&prefs, 2);
-+	__merge_refs(&prefstate, 2);
- 
--	while (!list_empty(&prefs)) {
--		ref = list_first_entry(&prefs, struct __prelim_ref, list);
-+	while (!list_empty(&prefstate.pending)) {
-+		ref = list_first_entry(&prefstate.pending,
-+				       struct __prelim_ref, list);
- 		WARN_ON(ref->count < 0);
- 		if (roots && ref->count && ref->root_id && ref->parent == 0) {
- 			/* no parent == root of tree */
-@@ -842,8 +856,9 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 
- out:
- 	btrfs_free_path(path);
--	while (!list_empty(&prefs)) {
--		ref = list_first_entry(&prefs, struct __prelim_ref, list);
-+	while (!list_empty(&prefstate.pending)) {
-+		ref = list_first_entry(&prefstate.pending,
-+				       struct __prelim_ref, list);
- 		list_del(&ref->list);
- 		kfree(ref);
- 	}
--- 
-2.11.0
+  I got too busy with stuff outside of btrfs, though I agreed to work
+  on this, sorry that I couldn't prioritize ahead of yours. Now deleted
+  this from my list.
 
+> $ mount -o compess=zlib                 # default
+> $ mount -o compess=zlib0                # same
+> $ mount -o compess=zlib9                # level 9, slower sync, less data
+> $ mount -o compess=zlib1                # level 1, faster sync, more data
+> $ mount -o remount,compress=zlib3	# level set by remount
+
+  this is much better than what I was initially thinking..
+
+> The level is visible in the same format in /proc/mounts. Level set via
+> file property does not work yet.
+> 
+> Required patch: "btrfs: prepare for extensions in compression options"
+
+  one concern as mentioned in the respective thread.
+
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>   fs/btrfs/compression.c | 20 +++++++++++++++++++-
+>   fs/btrfs/compression.h |  6 +++++-
+>   fs/btrfs/ctree.h       |  1 +
+>   fs/btrfs/inode.c       |  5 ++++-
+>   fs/btrfs/lzo.c         |  5 +++++
+>   fs/btrfs/super.c       |  7 +++++--
+>   fs/btrfs/zlib.c        | 12 +++++++++++-
+>   7 files changed, 50 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 8ba1b86c9b72..142206d68495 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -866,6 +866,11 @@ static void free_workspaces(void)
+>    * Given an address space and start and length, compress the bytes into @pages
+>    * that are allocated on demand.
+>    *
+> + * @type_level is encoded algorithm and level, where level 0 means whatever
+> + * default the algorithm chooses and is opaque here;
+> + * - compression algo are 0-3
+> + * - the level are bits 4-7
+> + *
+
+  nice ! ..
+
+>    * @out_pages is an in/out parameter, holds maximum number of pages to allocate
+>    * and returns number of actually allocated pages
+>    *
+> @@ -880,7 +885,7 @@ static void free_workspaces(void)
+>    * @max_out tells us the max number of bytes that we're allowed to
+>    * stuff into pages
+>    */
+> -int btrfs_compress_pages(int type, struct address_space *mapping,
+> +int btrfs_compress_pages(unsigned int type_level, struct address_space *mapping,
+>   			 u64 start, struct page **pages,
+>   			 unsigned long *out_pages,
+>   			 unsigned long *total_in,
+> @@ -888,9 +893,11 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+>   {
+>   	struct list_head *workspace;
+>   	int ret;
+> +	int type = type_level & 0xF;
+>   
+>   	workspace = find_workspace(type);
+>   
+> +	btrfs_compress_op[type - 1]->set_level(workspace, type_level);
+>   	ret = btrfs_compress_op[type-1]->compress_pages(workspace, mapping,
+>   						      start, pages,
+>   						      out_pages,
+> @@ -1047,3 +1054,14 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+>   
+>   	return 1;
+>   }
+> +
+> +unsigned int btrfs_compress_str2level(const char *str)
+> +{
+> +	if (strncmp(str, "zlib", 4) != 0)
+> +		return 0;
+> +
+> +	if ('1' <= str[4] && str[4] <= '9' )
+> +		return str[4] - '0';
+> +
+> +	return 0;
+> +}
+> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+> index 89bcf975efb8..8a6db02d8732 100644
+> --- a/fs/btrfs/compression.h
+> +++ b/fs/btrfs/compression.h
+> @@ -76,7 +76,7 @@ struct compressed_bio {
+>   void btrfs_init_compress(void);
+>   void btrfs_exit_compress(void);
+>   
+> -int btrfs_compress_pages(int type, struct address_space *mapping,
+> +int btrfs_compress_pages(unsigned int type_level, struct address_space *mapping,
+>   			 u64 start, struct page **pages,
+>   			 unsigned long *out_pages,
+>   			 unsigned long *total_in,
+> @@ -95,6 +95,8 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+>   int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+>   				 int mirror_num, unsigned long bio_flags);
+>   
+> +unsigned btrfs_compress_str2level(const char *str);
+> +
+>   enum btrfs_compression_type {
+>   	BTRFS_COMPRESS_NONE  = 0,
+>   	BTRFS_COMPRESS_ZLIB  = 1,
+> @@ -124,6 +126,8 @@ struct btrfs_compress_op {
+>   			  struct page *dest_page,
+>   			  unsigned long start_byte,
+>   			  size_t srclen, size_t destlen);
+> +
+> +	void (*set_level)(struct list_head *ws, unsigned int type);
+>   };
+>   
+>   extern const struct btrfs_compress_op btrfs_zlib_compress;
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 5bdd36664421..3393aed07132 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -791,6 +791,7 @@ struct btrfs_fs_info {
+>   	 */
+>   	unsigned long pending_changes;
+>   	unsigned long compress_type:4;
+> +	unsigned int compress_level;
+>   	int commit_interval;
+>   	/*
+>   	 * It is a suggestive number, the read side is safe even it gets a
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index eb495e956d53..a832bf8cebab 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -525,7 +525,10 @@ static noinline void compress_file_range(struct inode *inode,
+>   		 */
+>   		extent_range_clear_dirty_for_io(inode, start, end);
+>   		redirty = 1;
+> -		ret = btrfs_compress_pages(compress_type,
+> +
+> +		/* Compression level is applied here and only here */
+> +		ret = btrfs_compress_pages(
+> +			compress_type | (fs_info->compress_level << 4),
+>   					   inode->i_mapping, start,
+>   					   pages,
+>   					   &nr_pages,
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index d433e75d489a..6c7f18cd3b61 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -430,10 +430,15 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
+>   	return ret;
+>   }
+>   
+> +static void lzo_set_level(struct list_head *ws, unsigned int type)
+> +{
+> +}
+> +
+>   const struct btrfs_compress_op btrfs_lzo_compress = {
+>   	.alloc_workspace	= lzo_alloc_workspace,
+>   	.free_workspace		= lzo_free_workspace,
+>   	.compress_pages		= lzo_compress_pages,
+>   	.decompress_bio		= lzo_decompress_bio,
+>   	.decompress		= lzo_decompress,
+> +	.set_level		= lzo_set_level,
+>   };
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 147330454c17..25ffebb101c9 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -501,6 +501,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>   			    strncmp(args[0].from, "zlib", 4) == 0) {
+>   				compress_type = "zlib";
+>   				info->compress_type = BTRFS_COMPRESS_ZLIB;
+> +				info->compress_level = btrfs_compress_str2level(args[0].from);
+>   				btrfs_set_opt(info->mount_opt, COMPRESS);
+>   				btrfs_clear_opt(info->mount_opt, NODATACOW);
+>   				btrfs_clear_opt(info->mount_opt, NODATASUM);
+> @@ -540,9 +541,9 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>   			      compress_force != saved_compress_force)) ||
+>   			    (!btrfs_test_opt(info, COMPRESS) &&
+>   			     no_compress == 1)) {
+> -				btrfs_info(info, "%s %s compression",
+> +				btrfs_info(info, "%s %s compression, level %d",
+>   					   (compress_force) ? "force" : "use",
+> -					   compress_type);
+> +					   compress_type, info->compress_level);
+>   			}
+>   			compress_force = false;
+>   			break;
+> @@ -1234,6 +1235,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+>   			seq_printf(seq, ",compress-force=%s", compress_type);
+>   		else
+>   			seq_printf(seq, ",compress=%s", compress_type);
+> +		if (info->compress_level)
+> +			seq_printf(seq, "%d", info->compress_level);
+>   	}
+>   	if (btrfs_test_opt(info, NOSSD))
+>   		seq_puts(seq, ",nossd");
+> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+> index c248f9286366..c890032e680f 100644
+> --- a/fs/btrfs/zlib.c
+> +++ b/fs/btrfs/zlib.c
+> @@ -37,6 +37,7 @@ struct workspace {
+>   	z_stream strm;
+>   	char *buf;
+>   	struct list_head list;
+> +	int level;
+>   };
+
+  No need to set it for the workspace. We could just redefine the
+  function prototype for btrfs_compress_op->compress_pages()
+  and pass as an argument.
+
+Thanks, Anand
+
+>   static void zlib_free_workspace(struct list_head *ws)
+> @@ -96,7 +97,7 @@ static int zlib_compress_pages(struct list_head *ws,
+>   	*total_out = 0;
+>   	*total_in = 0;
+>   
+> -	if (Z_OK != zlib_deflateInit(&workspace->strm, 3)) {
+> +	if (Z_OK != zlib_deflateInit(&workspace->strm, workspace->level)) {
+>   		pr_warn("BTRFS: deflateInit failed\n");
+>   		ret = -EIO;
+>   		goto out;
+> @@ -402,10 +403,19 @@ static int zlib_decompress(struct list_head *ws, unsigned char *data_in,
+>   	return ret;
+>   }
+>   
+> +static void zlib_set_level(struct list_head *ws, unsigned int type)
+> +{
+> +	struct workspace *workspace = list_entry(ws, struct workspace, list);
+> +	unsigned level = (type & 0xF0) >> 4;
+> +
+> +	workspace->level = level > 0 ? level : 3;
+> +}
+> +
+>   const struct btrfs_compress_op btrfs_zlib_compress = {
+>   	.alloc_workspace	= zlib_alloc_workspace,
+>   	.free_workspace		= zlib_free_workspace,
+>   	.compress_pages		= zlib_compress_pages,
+>   	.decompress_bio		= zlib_decompress_bio,
+>   	.decompress		= zlib_decompress,
+> +	.set_level              = zlib_set_level,
+>   };
+> 
+
+
+How about the compress-force to accept the compression levels ?
+or I wonder if your are planning to deprecate it in the long run.
+
+Thanks, Anand

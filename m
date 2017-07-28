@@ -1,25 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:33489 "EHLO
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:33589 "EHLO
         smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751367AbdGZT72 (ORCPT
+        with ESMTP id S1751719AbdG1Gbc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jul 2017 15:59:28 -0400
+        Fri, 28 Jul 2017 02:31:32 -0400
 Received: from mekker.bofh.hq.mendix.net (mekker.bofh.hq.mendix.net [IPv6:2001:828:13c8:10b::21])
-        by smtp.dpl.mendix.net (Postfix) with ESMTP id AAB4E20103
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2017 21:59:25 +0200 (CEST)
+        by smtp.dpl.mendix.net (Postfix) with ESMTP id 5E9DB20092
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 08:31:28 +0200 (CEST)
 From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: Do not use data_alloc_cluster in ssd mode
-Date: Wed, 26 Jul 2017 21:59:25 +0200
-Message-Id: <20170726195925.10715-1-hans.van.kranenburg@mendix.com>
+Subject: [PATCH v3] btrfs: Do not use data_alloc_cluster in ssd mode
+Date: Fri, 28 Jul 2017 08:31:28 +0200
+Message-Id: <20170728063128.22400-1-hans.van.kranenburg@mendix.com>
+In-Reply-To: <20170726195925.10715-1-hans.van.kranenburg@mendix.com>
+References: <20170726195925.10715-1-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-    The purpose of this patch is providing a band aid to improve the
-'out of the box' behaviour of btrfs for disks that are detected as being
-an ssd.  In a general purpose mixed workload scenario, the current ssd
-mode causes overallocation of available raw disk space for data, while
-leaving behind increasing amounts of unused fragmented free space. This
+    This patch provides a band aid to improve the 'out of the box'
+behaviour of btrfs for disks that are detected as being an ssd.  In a
+general purpose mixed workload scenario, the current ssd mode causes
+overallocation of available raw disk space for data, while leaving
+behind increasing amounts of unused fragmented free space. This
 situation leads to early ENOSPC problems which are harming user
 experience and adoption of btrfs as a general purpose filesystem.
 
@@ -140,22 +142,33 @@ Notes for whoever wants to backport this patch to their 4.9 LTS kernel:
 
 Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 ---
- fs/btrfs/ctree.h       |  4 ++--
+
+Changes since v1 -> v2:
+* Keep ssd_spread behaviour unchanged
+* Add summary at the beginning of the commit message
+
+Changes since v2 -> v3:
+* More clear wording of comment in ctree.h
+* Commit message cosmetics and grammar
+
+ fs/btrfs/ctree.h       |  6 +++---
  fs/btrfs/disk-io.c     |  6 ++----
  fs/btrfs/extent-tree.c | 11 ++++++-----
  fs/btrfs/super.c       | 16 +++++++++-------
- 4 files changed, 19 insertions(+), 18 deletions(-)
+ 4 files changed, 20 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4f8f75d9e839..b091dd3f5b38 100644
+index 4f8f75d9e839..ae7d83641363 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -472,7 +472,7 @@ struct btrfs_block_rsv {
+@@ -471,8 +471,8 @@ struct btrfs_block_rsv {
+ 
  /*
   * free clusters are used to claim free space in relatively large chunks,
-  * allowing us to do less seeky writes.  They are used for all metadata
+- * allowing us to do less seeky writes.  They are used for all metadata
 - * allocations and data allocations in ssd mode.
-+ * allocations and data allocations in ssd_spread mode.
++ * allowing us to do less seeky writes. They are used for all metadata
++ * allocations. In ssd_spread mode they are also used for data allocations.
   */
  struct btrfs_free_cluster {
  	spinlock_t lock;

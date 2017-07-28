@@ -1,54 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f47.google.com ([74.125.83.47]:38659 "EHLO
-        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751566AbdG0Va4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 17:30:56 -0400
-Received: by mail-pg0-f47.google.com with SMTP id k190so37298925pgk.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Jul 2017 14:30:56 -0700 (PDT)
-From: Matthias Kaehlcke <mka@chromium.org>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Doug Anderson <dianders@chromium.org>,
-        Matthias Kaehlcke <mka@chromium.org>
-Subject: [PATCH v2] btrfs: Remove extra parentheses from condition in copy_items()
-Date: Thu, 27 Jul 2017 14:30:23 -0700
-Message-Id: <20170727213023.68063-1-mka@chromium.org>
+Received: from mx2.suse.de ([195.135.220.15]:36517 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751606AbdG1HuT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Jul 2017 03:50:19 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id ECE42AC05
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 07:50:17 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Remove redundant setting of uuid in btrfs_block_header.
+Date: Fri, 28 Jul 2017 10:50:14 +0300
+Message-Id: <1501228214-11103-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no need for the extra pair of parentheses, remove it. This
-fixes the following warning when building with clang:
+btrfs_alloc_dev_extent currently unconditionally sets the uuid in the leaf block
+header the function is working with. This is unnecessary since this operation
+is peformed by the core btree handling code (splitting a node, allocating a new
+btree block etc). So let's remove it.
 
-fs/btrfs/tree-log.c:3694:10: warning: equality comparison with extraneous
-  parentheses [-Wparentheses-equality]
-                if ((i == (nr - 1)))
-                     ~~^~~~~~~~~~~
-
-Also remove the unnecessary parentheses around the substraction.
-
-Signed-off-by: Matthias Kaehlcke <mka@chromium.org>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
-Changes in v2:
- - also remove parentheses around substraction
+ fs/btrfs/volumes.c | 2 --
+ 1 file changed, 2 deletions(-)
 
- fs/btrfs/tree-log.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f20ef211a73d..385ec758df08 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3691,7 +3691,7 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5a1913956f20..84501e9d486c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1611,8 +1611,6 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 					    BTRFS_FIRST_CHUNK_TREE_OBJECTID);
+ 	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
  
- 		src_offset = btrfs_item_ptr_offset(src, start_slot + i);
- 
--		if ((i == (nr - 1)))
-+		if (i == nr - 1)
- 			last_key = ins_keys[i];
- 
- 		if (ins_keys[i].type == BTRFS_INODE_ITEM_KEY) {
+-	write_extent_buffer_chunk_tree_uuid(leaf, fs_info->chunk_tree_uuid);
+-
+ 	btrfs_set_dev_extent_length(leaf, extent, num_bytes);
+ 	btrfs_mark_buffer_dirty(leaf);
+ out:
 -- 
-2.14.0.rc0.400.g1c36432dff-goog
+2.7.4
 

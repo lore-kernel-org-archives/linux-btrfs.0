@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:59717 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:52018 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751607AbdG1BNa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 27 Jul 2017 21:13:30 -0400
-Subject: Re: [PATCH 1/5] btrfs-progs: convert: properly handle reserved ranges
- while iterating files
+        id S1751577AbdG1BVA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 27 Jul 2017 21:21:00 -0400
+Subject: Re: [PATCH 3/5] btrfs-progs: convert: use search_cache_extent in
+ migrate_one_reserved_range
 To: jeffm@suse.com, linux-btrfs@vger.kernel.org
 References: <20170727154723.2208-1-jeffm@suse.com>
- <20170727154723.2208-2-jeffm@suse.com>
+ <20170727154723.2208-4-jeffm@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <39df375c-833e-c3c1-cdec-b9fecba6bbe4@gmx.com>
-Date: Fri, 28 Jul 2017 09:12:50 +0800
+Message-ID: <3150ecb7-ca3a-0942-6647-c6f89f616241@gmx.com>
+Date: Fri, 28 Jul 2017 09:20:18 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170727154723.2208-2-jeffm@suse.com>
+In-Reply-To: <20170727154723.2208-4-jeffm@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -22,96 +22,52 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 2017年07月27日 23:47, jeffm@suse.com wrote:
 > From: Jeff Mahoney <jeffm@suse.com>
 > 
-> Commit 522ef705e38 (btrfs-progs: convert: Introduce function to calculate
-> the available space) changed how we handle migrating file data so that
-> we never have btrfs space associated with the reserved ranges.  This
-> works pretty well and when we iterate over the file blocks, the
-> associations are redirected to the migrated locations.
+> When we are looking for extents in migrate_one_reserved_range, it's likely
+> that there will be multiple extents that fall into the 0-1MB range.
 > 
-> This commit missed the case in block_iterate_proc where we just check
-> for intersection with a superblock location before looking up a block
-> group.  intersect_with_sb checks to see if the range intersects with
-> a stripe containing a superblock but, in fact, we've reserved the
-> full 0-1MB range at the start of the disk.  So a file block located
-> at e.g. 160kB will fall in the reserved region but won't be excepted
-> in block_iterate_block.  We ultimately hit a BUG_ON when we fail
-> to look up the block group for that location.
+> If lookup_cache_extent is called with a range that covers multiple cache
+> entries, it will return the first entry it encounters while searching
+> from the top of the tree that happens to fall in that range.  That
+> means that we can end up skipping regions within that range, resulting
+> in a file system image that can't be rolled back since it wasn't
+> all migrated properly.
+
+Thanks for catching this one.
+
 > 
-> This is reproducible using convert-tests/003-ext4-basic.
+> This is reproducible using convert-tests/008-readonly-image.  There was
+> a range from 0-160kB, but the only entry that was returned began at
+> ~ 280kB.
 > 
-> The fix is to have intersect_with_sb and block_iterate_proc understand
-> the full size of the reserved ranges.  Since we use the range to
-> determine the boundary for the block iterator, let's just return the
-> boundary.  0 isn't a valid boundary and means that we proceed normally
-> with block group lookup.
-> 
+> The fix is to use search_cache_extent to iterate through multiple regions
+> within that range >
 > Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
 Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
 Thanks,
 Qu
+
 > ---
->   convert/source-fs.c | 25 +++++++++++--------------
->   1 file changed, 11 insertions(+), 14 deletions(-)
+>   convert/main.c | 4 +++-
+>   1 file changed, 3 insertions(+), 1 deletion(-)
 > 
-> diff --git a/convert/source-fs.c b/convert/source-fs.c
-> index 80e4e41..09f6995 100644
-> --- a/convert/source-fs.c
-> +++ b/convert/source-fs.c
-> @@ -28,18 +28,16 @@ const struct simple_range btrfs_reserved_ranges[3] = {
->   	{ BTRFS_SB_MIRROR_OFFSET(2), SZ_64K }
->   };
->   
-> -static int intersect_with_sb(u64 bytenr, u64 num_bytes)
-> +static u64 intersect_with_reserved(u64 bytenr, u64 num_bytes)
->   {
->   	int i;
-> -	u64 offset;
->   
-> -	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-> -		offset = btrfs_sb_offset(i);
-> -		offset &= ~((u64)BTRFS_STRIPE_LEN - 1);
-> +	for (i = 0; i < ARRAY_SIZE(btrfs_reserved_ranges); i++) {
-> +		const struct simple_range *range = &btrfs_reserved_ranges[i];
->   
-> -		if (bytenr < offset + BTRFS_STRIPE_LEN &&
-> -		    bytenr + num_bytes > offset)
-> -			return 1;
-> +		if (bytenr < range_end(range) &&
-> +		    bytenr + num_bytes >= range->start)
-> +			return range_end(range);
->   	}
->   	return 0;
->   }
-> @@ -64,14 +62,14 @@ int block_iterate_proc(u64 disk_block, u64 file_block,
->   		              struct blk_iterate_data *idata)
->   {
->   	int ret = 0;
-> -	int sb_region;
-> +	u64 reserved_boundary;
->   	int do_barrier;
->   	struct btrfs_root *root = idata->root;
->   	struct btrfs_block_group_cache *cache;
->   	u64 bytenr = disk_block * root->sectorsize;
->   
-> -	sb_region = intersect_with_sb(bytenr, root->sectorsize);
-> -	do_barrier = sb_region || disk_block >= idata->boundary;
-> +	reserved_boundary = intersect_with_reserved(bytenr, root->sectorsize);
-> +	do_barrier = reserved_boundary || disk_block >= idata->boundary;
->   	if ((idata->num_blocks > 0 && do_barrier) ||
->   	    (file_block > idata->first_block + idata->num_blocks) ||
->   	    (disk_block != idata->disk_block + idata->num_blocks)) {
-> @@ -91,9 +89,8 @@ int block_iterate_proc(u64 disk_block, u64 file_block,
->   				goto fail;
->   		}
->   
-> -		if (sb_region) {
-> -			bytenr += BTRFS_STRIPE_LEN - 1;
-> -			bytenr &= ~((u64)BTRFS_STRIPE_LEN - 1);
-> +		if (reserved_boundary) {
-> +			bytenr = reserved_boundary;
->   		} else {
->   			cache = btrfs_lookup_block_group(root->fs_info, bytenr);
->   			BUG_ON(!cache);
+> diff --git a/convert/main.c b/convert/main.c
+> index 01657a6..24ed1de 100644
+> --- a/convert/main.c
+> +++ b/convert/main.c
+> @@ -340,10 +340,12 @@ static int migrate_one_reserved_range(struct btrfs_trans_handle *trans,
+>   	 * migrate ranges that covered by old fs data.
+>   	 */
+>   	while (cur_off < range_end(range)) {
+> -		cache = lookup_cache_extent(used, cur_off, cur_len);
+> +		cache = search_cache_extent(used, cur_off);
+>   		if (!cache)
+>   			break;
+>   		cur_off = max(cache->start, cur_off);
+> +		if (cur_off >= range_end(range))
+> +			break;
+>   		cur_len = min(cache->start + cache->size, range_end(range)) -
+>   			  cur_off;
+>   		BUG_ON(cur_len < root->sectorsize);
 > 

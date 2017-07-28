@@ -1,159 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.arhont.com ([178.248.108.132]:34407 "EHLO mail.arhont.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752484AbdG1Qrl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Jul 2017 12:47:41 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mail1.arhont.com (Postfix) with ESMTP id A74C4980853
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 17:40:51 +0100 (BST)
-Received: from mail.arhont.com ([127.0.0.1])
-        by localhost (mail1.arhont.com [127.0.0.1]) (amavisd-new, port 10032)
-        with ESMTP id BKFn2VGn63nu for <linux-btrfs@vger.kernel.org>;
-        Fri, 28 Jul 2017 17:40:51 +0100 (BST)
-Received: from localhost (localhost [127.0.0.1])
-        by mail1.arhont.com (Postfix) with ESMTP id 76547980855
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 17:40:51 +0100 (BST)
-Received: from mail.arhont.com ([127.0.0.1])
-        by localhost (mail1.arhont.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id WC9r-DW766_s for <linux-btrfs@vger.kernel.org>;
-        Fri, 28 Jul 2017 17:40:51 +0100 (BST)
-Received: from mail1.arhont.com (mail1.arhont.com [178.248.108.132])
-        by mail1.arhont.com (Postfix) with ESMTP id 45A08980853
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 17:40:51 +0100 (BST)
-Date: Fri, 28 Jul 2017 17:40:50 +0100 (BST)
-From: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>
+Received: from mail-lf0-f46.google.com ([209.85.215.46]:35474 "EHLO
+        mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752027AbdG1R05 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 28 Jul 2017 13:26:57 -0400
+Received: by mail-lf0-f46.google.com with SMTP id t128so64115567lff.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 10:26:56 -0700 (PDT)
+Received: from [192.168.0.10] (m80-170-192-61.cust.tele2.se. [80.170.192.61])
+        by smtp.gmail.com with ESMTPSA id c79sm4279012lfh.89.2017.07.28.10.26.54
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 28 Jul 2017 10:26:54 -0700 (PDT)
 To: linux-btrfs@vger.kernel.org
-Message-ID: <8446582.541.1501260065690.JavaMail.gkos@dynomob>
-In-Reply-To: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
-Subject: Btrfs + compression = slow performance and high cpu usage
+From: A L <crimsoncottage@gmail.com>
+Subject: Btrfs incremental send | receive fails with Error: File not found
+Message-ID: <59b8cc62-66fa-6665-45f9-89c6fe91ceaa@gmail.com>
+Date: Fri, 28 Jul 2017 19:26:53 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list, 
+I often hit the following error when doing incremental btrfs send-receive:
+Btrfs incremental send | receive fails with Error: File not found
 
-I am stuck with a problem of btrfs slow performance when using compression.
+Sometimes I can do two-three incremental snapshots, but then the same 
+error (different file) happens again. It seems that the files were 
+changed or replaced between snapshots, which is causing the problems for 
+send-receive. I have tried to delete all snapshots and started over but 
+the problem comes back, so I think it must be a bug.
 
-when the compress-force=lzo mount flag is enabled, the performance drops to 30-40 mb/s and one of the btrfs processes utilises 100% cpu time.
-mount options: btrfs relatime,discard,autodefrag,compress=lzo,compress-force,space_cache=v2,commit=10
-
-The command I am testing the write throughput is
-
-# pv -tpreb /dev/sdb | dd of=./testfile bs=1M oflag=direct
-
-# top -d 1 
-top - 15:49:13 up  1:52,  2 users,  load average: 5.28, 2.32, 1.39
-Tasks: 320 total,   2 running, 318 sleeping,   0 stopped,   0 zombie
-%Cpu0  :  0.0 us,  2.0 sy,  0.0 ni, 77.0 id, 21.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu1  :  0.0 us,  1.0 sy,  0.0 ni, 90.0 id,  9.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu2  :  0.0 us,  1.0 sy,  0.0 ni, 72.0 id, 27.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu3  :  0.0 us,100.0 sy,  0.0 ni,  0.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu4  :  0.0 us,  1.0 sy,  0.0 ni, 57.0 id, 42.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu5  :  0.0 us,  0.0 sy,  0.0 ni, 96.0 id,  4.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu6  :  0.0 us,  0.0 sy,  0.0 ni, 94.0 id,  6.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu7  :  0.0 us,  1.0 sy,  0.0 ni, 95.1 id,  3.9 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu8  :  1.0 us,  2.0 sy,  0.0 ni, 24.0 id, 73.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu9  :  0.0 us,  0.0 sy,  0.0 ni, 81.8 id, 18.2 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu10 :  1.0 us,  0.0 sy,  0.0 ni, 98.0 id,  1.0 wa,  0.0 hi,  0.0 si,  0.0 st
-%Cpu11 :  0.0 us,  2.0 sy,  0.0 ni, 83.3 id, 14.7 wa,  0.0 hi,  0.0 si,  0.0 st
-KiB Mem : 32934136 total, 10137496 free,   602244 used, 22194396 buff/cache
-KiB Swap:        0 total,        0 free,        0 used. 30525664 avail Mem 
-
-  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND                                                                                                                               
-37017 root      20   0       0      0      0 R 100.0  0.0   0:32.42 kworker/u49:8                                                                                                                         
-36732 root      20   0       0      0      0 D   4.0  0.0   0:02.40 btrfs-transacti                                                                                                                       
-40105 root      20   0    8388   3040   2000 D   4.0  0.0   0:02.88 dd       
+The source volume is:   /mnt/storagePool (with RAID1 profile)
+with subvolume:   volume/userData
+Backup disk is:   /media/usb-backup (external USB disk)
 
 
-The keyworker process that causes the high cpu usage is  most likely searching for the free space.
+# cat /proc/version
+Linux version 4.13.0-rc2 (root@e350) (gcc version 6.3.0 (Gentoo 6.3.0 
+p1.0)) #2 SMP PREEMPT Fri Jul 28 14:25:15 CEST 2017
 
-# echo l > /proc/sysrq-trigger
+# btrfs version
+btrfs-progs v4.11.1
 
-# dmest -T
-Fri Jul 28 15:57:51 2017] CPU: 1 PID: 36430 Comm: kworker/u49:2 Not tainted 4.10.0-28-generic #32~16.04.2-Ubuntu
-[Fri Jul 28 15:57:51 2017] Hardware name: Supermicro X8DTL/X8DTL, BIOS 2.1b       11/16/2012
-[Fri Jul 28 15:57:51 2017] Workqueue: btrfs-delalloc btrfs_delalloc_helper [btrfs]
-[Fri Jul 28 15:57:51 2017] task: ffff9ddce6206a40 task.stack: ffffaa9121f6c000
-[Fri Jul 28 15:57:51 2017] RIP: 0010:rb_next+0x1e/0x40
-[Fri Jul 28 15:57:51 2017] RSP: 0018:ffffaa9121f6fb40 EFLAGS: 00000282
-[Fri Jul 28 15:57:51 2017] RAX: ffff9dddc34df1b0 RBX: 0000000000010000 RCX: 0000000000001000
-[Fri Jul 28 15:57:51 2017] RDX: ffff9dddc34df708 RSI: ffff9ddccaf470a4 RDI: ffff9dddc34df2d0
-[Fri Jul 28 15:57:51 2017] RBP: ffffaa9121f6fb40 R08: 0000000000000001 R09: 0000000000003000
-[Fri Jul 28 15:57:51 2017] R10: 0000000000000000 R11: 0000000000020000 R12: ffff9ddccaf47080
-[Fri Jul 28 15:57:51 2017] R13: 0000000000001000 R14: ffffaa9121f6fc50 R15: ffff9dddc34df2d0
-[Fri Jul 28 15:57:51 2017] FS:  0000000000000000(0000) GS:ffff9ddcefa40000(0000) knlGS:0000000000000000
-[Fri Jul 28 15:57:51 2017] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[Fri Jul 28 15:57:51 2017] Call Trace:_space_for_alloc+0xde/0x270 [btrfs]
-[Fri Jul 28 15:57:51 2017]  btrfs_find_space_for_alloc+0xde/0x270 [btrfs]
-[Fri Jul 28 15:57:51 2017]  find_free_extent.isra.68+0x3c6/0x1040 [btrfs]s]
-[Fri Jul 28 15:57:51 2017]  btrfs_reserve_extent+0xab/0x210 [btrfs]btrfs]
-[Fri Jul 28 15:57:51 2017]  submit_compressed_extents+0x154/0x580 [btrfs]s]
-[Fri Jul 28 15:57:51 2017]  ? submit_compressed_extents+0x580/0x580 [btrfs]
-[Fri Jul 28 15:57:51 2017]  async_cow_submit+0x82/0x90 [btrfs]00 [btrfs]
-[Fri Jul 28 15:57:51 2017]  btrfs_scrubparity_helper+0x1fe/0x300 [btrfs]
-[Fri Jul 28 15:57:51 2017]  btrfs_delalloc_helper+0xe/0x10 [btrfs]
-[Fri Jul 28 15:57:51 2017]  process_one_work+0x16b/0x4a0a0
-[Fri Jul 28 15:57:51 2017]  worker_thread+0x4b/0x500+0x60/0x60
-[Fri Jul 28 15:57:51 2017]  kthread+0x109/0x1400x4a0/0x4a0
+# btrfs fi show:
+Label: 'Backup'  uuid: f021a039-87d6-4498-a0f5-6bbba3dfb1f1
+         Total devices 1 FS bytes used 362.85GiB
+         devid    1 size 931.51GiB used 367.06GiB path /dev/sdf1
+
+Label: 'pool'  uuid: ea4f1d6d-c2c5-4247-a903-15b36ee276a7
+         Total devices 2 FS bytes used 362.33GiB
+         devid    1 size 927.51GiB used 367.03GiB path /dev/sdc2
+         devid    2 size 927.51GiB used 367.03GiB path /dev/sdd2
 
 
+(backup) /media/usb-backup/volumes/userData # btrfs sub list .
+ID 258 gen 30 top level 5 path scripts
+ID 1622 gen 3227 top level 5 path volumes/userData/userData.20170727T1222
+ID 1999 gen 3251 top level 5 path volumes/userData/userData.20170727T2102
+
+(source) /mnt/storagePool/snapshots # btrfs sub list .
+ID 262 gen 118703 top level 5 path volume/userData
+ID 1928 gen 118105 top level 5 path snapshots/userData.20170727T1222
+ID 1930 gen 118151 top level 5 path snapshots/userData.20170727T2102
+ID 1932 gen 118167 top level 5 path snapshots/userData.20170727T2300
+ID 1936 gen 118390 top level 5 path snapshots/userData.20170728T0100
+ID 1939 gen 118502 top level 5 path snapshots/userData.20170728T0200
+ID 1955 gen 118667 top level 5 path snapshots/userData.20170728T1300
+ID 1960 gen 118695 top level 5 path snapshots/userData.20170728T1700
+ID 1962 gen 118699 top level 5 path snapshots/userData.20170728T1800
 
 
-When the compression is turned off, I am able to get the maximum 500-600 mb/s write speed on this disk (raid array) with minimal cpu usage.
-
-mount options: relatime,discard,autodefrag,space_cache=v2,commit=10
-
-# iostat -m 1 
-avg-cpu:  %user   %nice %system %iowait  %steal   %idle
-           0.08    0.00    7.74   10.77    0.00   81.40
-
-Device:            tps    MB_read/s    MB_wrtn/s    MB_read    MB_wrtn
-sda            2376.00         0.00       594.01          0        594
-
-
-I have tried deleting mounting with nospace_cache, clear_cache, and then rebuilding with space_cache=v2
-but it doesn't make any difference. The same sluggish performance is experienced when I try to write over the NFS.
-
-Any ideas why the compression makes such a big difference and causes a bottleneck?
-
-
-
-
-
-# uname -a
-Linux backup1 4.10.0-28-generic #32~16.04.2-Ubuntu SMP Thu Jul 20 10:19:48 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
-
-# btrfs --version
-btrfs-progs v4.8.1
-
-# cat /etc/issue
-Ubuntu 16.04.2 LTS \n \l
-
-# btrfs fi show
-Label: none  uuid: f56bdc4a-239d-4268-81d8-01cdd7a3c1c9
-        Total devices 1 FS bytes used 9.32TiB
-        devid    2 size 21.83TiB used 9.33TiB path /dev/sda
-
-# btrfs fi df /mnt/arh-backup1/
-Data, single: total=9.28TiB, used=9.28TiB
-System, single: total=32.00MiB, used=1.00MiB
-Metadata, single: total=46.00GiB, used=44.20GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-# btrfs device usage /mnt/arh-backup1/
-/dev/sda, ID: 2
-   Device size:            21.83TiB
-   Device slack:              0.00B
-   Data,single:             9.29TiB
-   Metadata,single:        46.00GiB
-   System,single:          32.00MiB
-   Unallocated:            12.49TiB
+# btrfs subvolume list -p -a -c -g -u -q -R -t /mnt/storagePool/snapshots
+ID      gen     cgen    parent  top level       parent_uuid 
+received_uuid   uuid    path
+--      ---     ----    ------  ---------       ----------- 
+-------------   ----    ----
+260     118702  24      5       5               - 
+6e20167e-8d72-cc42-b486-10c6a5516ca7 
+dd86162c-4df2-d646-a65f-77768adc132d    volume/mail
+262     118703  39      5       5               - 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+94c256cb-970e-e349-a660-ff4d9291c829    volume/userData
+506     118691  333     5       5               - 
+d0c6ff24-1766-b049-abe9-80396795448f 
+c759b1cc-106e-134a-8cef-f1da1bc5e169    volume/storageTemp
+1469    78671   78671   5       5               -       - 
+8a94524e-a956-c14b-bb8d-d453627f27d5    volume/mysql
+1928    118105  118105  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+7aed8444-34a7-c54d-ae06-e0e80ead3c18 snapshots/userData.20170727T1222
+1930    118151  118151  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+20b4fab3-f75c-4445-914a-23465e09626c snapshots/userData.20170727T2102
+1932    118167  118167  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+2b0069dc-5d71-df49-9c32-d5e0f17c09e9 snapshots/userData.20170727T2300
+1936    118390  118390  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+8aa3ea70-b703-b740-8012-373be0616720 snapshots/userData.20170728T0100
+1939    118502  118502  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+ad84276f-a481-d04a-ad26-301dd79b158f snapshots/userData.20170728T0200
+1955    118667  118667  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+605cf43c-5e01-9d4e-ad22-77488f0d3e90 snapshots/userData.20170728T1300
+1960    118695  118695  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+31c72ce0-5765-b042-a073-8c4296e111ec snapshots/userData.20170728T1700
+1962    118699  118699  5       5 94c256cb-970e-e349-a660-ff4d9291c829 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+feadb1df-867b-7245-86d0-5472cd3c899b snapshots/userData.20170728T1800
 
 
-thanks in advance.
-kos
+# btrfs subvolume list -p -a -c -g -u -q -R -t 
+/media/usb-backup/volumes/userData
+ID      gen     cgen    parent  top level       parent_uuid 
+received_uuid   uuid    path
+--      ---     ----    ------  ---------       ----------- 
+-------------   ----    ----
+258     30      9       5       5               -       - 
+95dafde0-677c-7542-9d18-9bbfdbf7c9b3    scripts
+1622    3227    2532    5       5               - 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+cfe52e52-b7dd-7e48-8616-43286f5a11e0 volumes/userData/userData.20170727T1222
+1999    3251    3224    5       5 cfe52e52-b7dd-7e48-8616-43286f5a11e0 
+8464242d-0e81-e84e-ba93-78b1c8f00fc9 
+c2625b3d-7d3f-fa48-9c73-3d67209bf3f8 volumes/userData/userData.20170727T2102
+
+
+
+
+
+
+###
+### Running the incremental send, using an existing snapshot as parent.
+###
+
+# btrfs send -p /mnt/storagePool/snapshots/userData.20170727T2102 
+/mnt/storagePool/snapshots/userData.20170727T2300 | btrfs receive 
+/media/usb-backup/volumes/userData/
+At subvol /mnt/storagePool/snapshots/userData.20170727T2300
+At snapshot userData.20170727T2300
+ERROR: unlink Documents/Art & Craft/Scrapbook-Journal/FAR FAR 
+HILL/Paper/000_29082014_w.zip failed. No such file or directory
+
+
+
+There are no kernel errors in dmesg. The file was changed between 
+snapshots from a Windows client. The volume 'userData' is shared by Samba.
+
+
+# ls -l
+-rw-rwx---+ 1 user user 112643654 Jul 27 17:46 
+'/mnt/storagePool/snapshots/userData.20170727T2102/Documents/Art & 
+Craft/Scrapbook-Journal/FAR FAR HILL/Paper/000_29082014_w.zip'
+-rw-rw----  1 user user  88269510 Jul 27 22:28 
+'/mnt/storagePool/snapshots/userData.20170727T2300/Documents/Art & 
+Craft/Scrapbook-Journal/FAR FAR HILL/Paper/000_29082014_w.zip'
+-rw-rwx---+ 1 user user 112643654 Jul 27 17:46 
+'/media/usb-backup/volumes/userData/userData.20170727T2102/Documents/Art 
+& Craft/Scrapbook-Journal/FAR FAR HILL/Paper/000_29082014_w.zip'
+
+# getfattr -d -m ".*"
+file: mnt/storagePool/snapshots/userData.20170727T2102/Documents/Art & 
+Craft/Scrapbook-Journal/FAR FAR HILL/Paper/000_29082014_w.zip
+system.posix_acl_access=0sAgAAAAEABgD/////AgAGAOgDAAAEAAYA/////wgABgDoAwAAEAAHAP////8gAAAA/////w==
+user.DOSATTRIB=0sMHgyMAAAAwADAAAAEQAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALb7FertBtMBAAAAAAAAAAA=
+
+file: mnt/storagePool/snapshots/userData.20170727T2300/Documents/Art & 
+Craft/Scrapbook-Journal/FAR FAR HILL/Paper/000_29082014_w.zip
+user.DOSATTRIB=0sMHgyMAAAAwADAAAAEQAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGbb2O8WB9MBAAAAAAAAAAA=
+
+file: 
+media/usb-backup/volumes/userData/userData.20170727T2102/Documents/Art & 
+Craft/Scrapbook-Journal/FAR FAR HILL/Paper/000_29082014_w.zip
+system.posix_acl_access=0sAgAAAAEABgD/////AgAGAOgDAAAEAAYA/////wgABgDoAwAAEAAHAP////8gAAAA/////w==
+user.DOSATTRIB=0sMHgyMAAAAwADAAAAEQAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALb7FertBtMBAAAAAAAAAAA=
+
 
 
 

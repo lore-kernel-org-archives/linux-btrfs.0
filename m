@@ -1,35 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f43.google.com ([209.85.215.43]:36616 "EHLO
-        mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751454AbdG2T3s (ORCPT
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.219]:27836 "EHLO
+        mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751661AbdG2XEd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Jul 2017 15:29:48 -0400
-Received: by mail-lf0-f43.google.com with SMTP id o85so42121535lff.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jul 2017 12:29:47 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <pan$2b9aa$a4dca8a2$fc1e4ebe$a8fffbe3@cox.net>
-References: <20170501170641.GG3516@merlins.org> <20170707163834.GA6083@merlins.org>
- <20170709043417.GE6704@merlins.org> <21425367.VGcO8ck7Vu@merkaba>
- <MEXPR01MB216863F67F4553F8564CC3CD9EA80@MEXPR01MB2168.ausprd01.prod.outlook.com>
- <pan$2b9aa$a4dca8a2$fc1e4ebe$a8fffbe3@cox.net>
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Sat, 29 Jul 2017 21:29:46 +0200
-Message-ID: <CAK5rZE7sj+T8-x0q=wPXeHKN4zBZGc2Jhj9NYA7ZQcV+yk2XSA@mail.gmail.com>
-Subject: Re: 4.11.6 / more corruption / root 15455 has a root item with a more
- recent gen (33682) compared to the found root node (0)
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+        Sat, 29 Jul 2017 19:04:33 -0400
+Received: from mordor.fritz.box (x5f7486d8.dyn.telefonica.de [95.116.134.216])
+        by smtp.strato.de (RZmta 41.1 DYNA|AUTH)
+        with ESMTPSA id L070e0t6TN4ScfP
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (curve secp521r1 with 521 ECDH bits, eq. 15360 bits RSA))
+        (Client did not present a certificate)
+        for <linux-btrfs@vger.kernel.org>;
+        Sun, 30 Jul 2017 01:04:28 +0200 (CEST)
+Message-ID: <1501369468.2795.1.camel@cloud.haefemeier.eu>
+Subject: Re: Best Practice: Add new device to RAID1 pool (Summary)
+From: Cloud Admin <admin@cloud.haefemeier.eu>
+To: linux-btrfs@vger.kernel.org
+Date: Sun, 30 Jul 2017 01:04:28 +0200
+In-Reply-To: <1500914457.2781.10.camel@cloud.haefemeier.eu>
+References: <1500895655.2781.6.camel@cloud.haefemeier.eu>
+         <18d96f74-00a8-9bb9-dddc-f50940d0971e@gmail.com>
+         <1500905566.2781.8.camel@cloud.haefemeier.eu>
+         <4b768b97-2c0b-bf67-dec0-1c5a1f7181b2@gmail.com>
+         <1500914457.2781.10.camel@cloud.haefemeier.eu>
 Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7/9/17, Duncan <1i5t5.duncan@cox.net> wrote:
-> I have however just upgraded to new ssds then wiped and setup the old
-> ones as another backup set, so everything is on brand new filesystems on
-> fast ssds, no possibility of old undetected corruption suddenly
-> triggering problems.
->
-> Also, all my btrfs are raid1 or dup for checksummed redundancy
+Am Montag, den 24.07.2017, 18:40 +0200 schrieb Cloud Admin:
+> Am Montag, den 24.07.2017, 10:25 -0400 schrieb Austin S. Hemmelgarn:
+> > On 2017-07-24 10:12, Cloud Admin wrote:
+> > > Am Montag, den 24.07.2017, 09:46 -0400 schrieb Austin S.
+> > > Hemmelgarn:
+> > > > On 2017-07-24 07:27, Cloud Admin wrote:
+> > > > > Hi,
+> > > > > I have a multi-device pool (three discs) as RAID1. Now I want
+> > > > > to
+> > > > > add a
+> > > > > new disc to increase the pool. I followed the description on
+> > > > > https:
+> > > > > //bt
+> > > > > rfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devic
+> > > > > es
+> > > > > and
+> > > > > used 'btrfs add <device> <btrfs path>'. After that I called a
+> > > > > balance
+> > > > > for rebalancing the RAID1 using 'btrfs balance start <btrfs
+> > > > > path>'.
+> > > > > Is that anything or should I need to call a resize (for
+> > > > > example) or
+> > > > > anything else? Or do I need to specify filter/profile
+> > > > > parameters
+> > > > > for
+> > > > > balancing?
+> > > > > I am a little bit confused because the balance command is
+> > > > > running
+> > > > > since
+> > > > > 12 hours and only 3GB of data are touched. This would mean
+> > > > > the
+> > > > > whole
+> > > > > balance process (new disc has 8TB) would run a long, long
+> > > > > time...
+> > > > > and
+> > > > > is using one cpu by 100%.
+> > > > 
+> > > > Based on what you're saying, it sounds like you've either run
+> > > > into a
+> > > > bug, or have a huge number of snapshots on this filesystem.
+> > > 
+> > > It depends what you define as huge. The call of 'btrfs sub list
+> > > <btrfs
+> > > path>' returns a list of 255 subvolume.
+> > 
+> > OK, this isn't horrible, especially if most of them aren't
+> > snapshots 
+> > (it's cross-subvolume reflinks that are most of the issue when it
+> > comes 
+> > to snapshots, not the fact that they're subvolumes).
+> > > I think this is not too huge. The most of this subvolumes was
+> > > created
+> > > using docker itself. I cancel the balance (this will take awhile)
+> > > and will try to delete such of these subvolumes/snapshots.
+> > > What can I do more?
+> > 
+> > As Roman mentioned in his reply, it may also be qgroup related.  If
+> > you run:
+> > btrfs quota disable
+> 
+> It seems quota was one part of it. Thanks for the tip. I disabled and
+> started balance new.
+> Now approx. each 5 min. one chunk will be relocated. But if I take
+> the
+> reported 10860 chunks and calc. the time it will take ~37 days to
+> finish... So, it seems I have to investigate more time into figure
+> out
+> the subvolume / snapshots structure created by docker.
+> A first deeper look shows, there is a subvolume with a snapshot,
+> which
+> has itself a snapshot, and so forth.
+> > 
+> > 
+Now, the balance process finished after 127h the new disc is in the
+pool... Not so long as expected but in my opinion long enough. Quota
+seems one big driver in my case. What I could see over the time at the
+beginning many extends was relocated ignoring the new disc. Properly it
+could be a good idea to rebalance using filter (like -dusage=30 for
+example) before add the new disc to decrease the time. 
+But only theory. It will try to keep it in my mind for the next time.
 
-Do you have any experience/advice/comment regarding
-dup data on ssds?
+Thanks all for your tips, ideas and time!
+	Frank
+

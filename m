@@ -1,107 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:49990 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:60173 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751661AbdG2XFZ (ORCPT
+        with ESMTP id S1751969AbdG2Xic (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Jul 2017 19:05:25 -0400
+        Sat, 29 Jul 2017 19:38:32 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dbanK-0001yE-F0
-        for linux-btrfs@vger.kernel.org; Sun, 30 Jul 2017 01:05:14 +0200
+        id 1dbbJQ-0008Pe-8a
+        for linux-btrfs@vger.kernel.org; Sun, 30 Jul 2017 01:38:24 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: write corruption due to bio cloning on raid5/6
-Date: Sat, 29 Jul 2017 23:05:07 +0000 (UTC)
-Message-ID: <pan$6c020$e98b46d2$7e8ca956$7078db6d@cox.net>
-References: <CANznX5FxavW+0_YdA4hir9_A3KrobRLyV9+CNadigDT3uNUkXw@mail.gmail.com>
-        <20170726160717.GA32451@localhost.localdomain>
-        <CANznX5Hx57JbwS75usDHwWBHbmiLj7dVHrfgZ5Swn=8zX=2iHw@mail.gmail.com>
-        <pan$ec007$3f43fe2a$2f099431$cc969edd@cox.net>
-        <CANznX5GNuSXRNq7Zo7pghi4AM=jh_C9yGLd-zdi7P88xRE5Tqw@mail.gmail.com>
+Subject: Re: 4.11.6 / more corruption / root 15455 has a root item with a more
+ recent gen (33682) compared to the found root node (0)
+Date: Sat, 29 Jul 2017 23:38:10 +0000 (UTC)
+Message-ID: <pan$12269$5fb80e78$f5b26ca4$74a3427f@cox.net>
+References: <20170501170641.GG3516@merlins.org>
+        <20170707163834.GA6083@merlins.org> <20170709043417.GE6704@merlins.org>
+        <21425367.VGcO8ck7Vu@merkaba>
+        <MEXPR01MB216863F67F4553F8564CC3CD9EA80@MEXPR01MB2168.ausprd01.prod.outlook.com>
+        <pan$2b9aa$a4dca8a2$fc1e4ebe$a8fffbe3@cox.net>
+        <CAK5rZE7sj+T8-x0q=wPXeHKN4zBZGc2Jhj9NYA7ZQcV+yk2XSA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Janos Toth F. posted on Sat, 29 Jul 2017 05:02:48 +0200 as excerpted:
+Imran Geriskovan posted on Sat, 29 Jul 2017 21:29:46 +0200 as excerpted:
 
-> The read-only scrub finished without errors/hangs (with kernel
-> 4.12.3). So, I guess the hangs were caused by:
-> 1: other bug in 4.13-RC1
-> 2: crazy-random SATA/disk-controller issue
-> 3: interference between various btrfs tools [*]
-> 4: something in the background did DIO write with 4.13-RC1 (but all
-> affected content was eventually overwritten/deleted between the scrub
-> attempts)
+> On 7/9/17, Duncan <1i5t5.duncan@cox.net> wrote:
+>> I have however just upgraded to new ssds then wiped and setup the old
+>> ones as another backup set, so everything is on brand new filesystems 
+on
+>> fast ssds, no possibility of old undetected corruption suddenly
+>> triggering problems.
+>>
+>> Also, all my btrfs are raid1 or dup for checksummed redundancy
 > 
-> [*] I expected scrub to finish in ~5 rather than ~40 hours (and didn't
-> expect interference issues), so I didn't disable the scheduled
-> maintenance script which deletes old files, recursively defrags the
-> whole fs and runs a balance with usage=33 filters. I guess either of
-> those (especially balance) could potentially cause scrub to hang.
+> Do you have any experience/advice/comment regarding
+> dup data on ssds?
 
-That #3, interference between btrfs tools, could be it.  It seems btrfs
-in general is getting stable enough now that we're beginning to see
-bugs exposed from running two or more tools at once, because the devs
-have apparently caught and fixed enough of the single-usage race bugs
-that individual tools are working reasonably well, and it's now the
-concurrent multi-usage case races that no one was thinking about when
-they were writing the code that are being exposed.  At least, there
-have been a number of such bugs either definitely or probability-traced
-to concurrent usage, reported and traced/fixed, lately, more than I
-remember seeing in the past.
+Very good question. =:^)
 
+Limited.  Most of my btrfs are raid1, with dup only used on the device-
+respective /boot btrfs (of which there are four, one on each of the two 
+ssds that otherwise form the btrfs raid1 pairs, for each of the working 
+and backup copy pairs -- I can use BIOS to select any of the four to 
+boot), and those are all sub-GiB mixed-bg mode.
 
-(TL;DR folks can stop at that.)
+So all my dup experience is sub-GiB mixed-blockgroup mode.
 
-Incidentally, that's one more advantage to my own strategy of multiple
-independent small btrfs, keeping everything small enough that
-maintenance jobs are at least tolerably short, making it actually
-practical to run them.
+Within that limitation, my only btrfs problem has been that at my 
+initially chosen size of 256 MiB, mkfs.btrfs at least used to create an 
+initial data/metadata chunk of 64 MiB.  Remember, this is dup mode, so 
+there's two of them = 128 MiB.  Because there's also a system chunk, that 
+means the initial chunk cannot be balanced even with an entirely empty 
+filesystem, because there's not enough space to write a second 64 MiB 
+chunk duped to 128 MiB.
 
-Tho my case is surely an extreme, with everything on ssd and my largest
-btrfs, even after recently switching my media filesystems to ssd and
-btrfs, being 80 GiB (usable and per device, btrfs raid1 on paired
-partitions, each on a different physical ssd).  I use neither quotas,
-which don't scale well on btrfs and I don't need them, nor snapshots,
-which have a bit of a scaling issue (tho apparently not as bad as
-quotas) as well, because weekly or monthly backups are enough here, and
-the filesystems are small enough (and on ssd) to do full-copy backups
-in minutes each.  In fact, making backups easier was a major reason I
-switched even the backups and media devices to all ssd, this time.
+Between that and the 256 MiB in dup mode size meaning under 128 MiB 
+usable, and the fact that I routinely run and sometimes need to bisect 
+pre-release kernels, I was routinely running out of space, then cleaning 
+up, but not being able to do a full cleanup without a blow-away and new 
+mkfs.btrfs, because I couldn't balance.
 
-So scrubs are trivially short enough I can run them and wait for the
-results while composing posts such as this (bscrub is my scrub script,
-run here by my admin user with a stub setup so sudo isn't required):
+When I recently purchased the second pair of (now larger) ssds in ordered 
+to put everything, including the media and backups that were previously 
+still on spinning rust, on ssd, I redid the layout and made the /boots 
+512 MiB, still mixed-bg dup mode.  That seems to have solved the problem, 
+and I can now rebalance the first mkfs.btrfs-created mixed-bg chunk, as 
+it's now small enough that it's less than half the filesystem even when 
+duped.
 
-$$ bscrub /mm 
-scrub device /dev/sda11 (id 1) done
-        scrub started at Sat Jul 29 14:50:54 2017 and finished after 00:01:08
-        total bytes scrubbed: 33.98GiB with 0 errors
-scrub device /dev/sdb11 (id 2) done
-        scrub started at Sat Jul 29 14:50:54 2017 and finished after 00:01:08
-        total bytes scrubbed: 33.98GiB with 0 errors
-
-Just over a minute for a scrub of both devices on my largest 80 gig per
-device btrfs. =:^)  Tho projecting to full it might be 2 and a half minutes...
-
-Tho of course parity-raid scrubs would be far slower, at a WAG an hour or two,
-for similar size on spinning rust...
-
-Balances are similar, but being on ssd and not needing one on any of the still
-relatively freshly redone filesystems ATM, I don't feel inclined to needlessly
-spend a write cycle just for demonstration.
-
-With filesystem maintenance runtimes of a minute, definitely under five minutes,
-per filesystem, and with full backups under 10, I don't /need/ to run more than
-one tool at once, and backups can trivially be kept fresh enough that I don't
-really feel the need to schedule maintenance and risk running more than one
-that way, either, particularly when I know it'll be done in minutes if I run it
-manually. =:^)
-
-Like I said, I'm obviously an extreme case, but equally obviously, while I see
-the runtime concurrency bug reports on the list, it's not something likely to
-affect me personally. =:^)
+Because it's now 512 MiB, however, I can't say for sure whether the 
+previous problem with mkfs.btrfs creating an initial mixed-bg chunk of a 
+quarter the 256 MiB filesystem size, so in dup mode it can't be balanced 
+because it's half the total filesystem size and with the system chunk as 
+well, the other half is partially used so there's no space to write the 
+balance destination chunks, is fixed, or not.  What I can say is that the 
+problem doesn't affect the new 512 MiB size, at least with btrfs-progs 
+4.11.x, which is what I used to mkfs.btrfs the new layout.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

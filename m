@@ -1,128 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f65.google.com ([209.85.215.65]:34498 "EHLO
-        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751797AbdGZMuN (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:34763 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753720AbdG2NhH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jul 2017 08:50:13 -0400
-Received: by mail-lf0-f65.google.com with SMTP id d80so4955927lfg.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jul 2017 05:50:12 -0700 (PDT)
+        Sat, 29 Jul 2017 09:37:07 -0400
+Received: by mail-wm0-f66.google.com with SMTP id x64so6130752wmg.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jul 2017 06:37:06 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v2 3/3] Btrfs: heuristic add byte core set calculation
-Date: Wed, 26 Jul 2017 15:49:58 +0300
-Message-Id: <20170726124958.18837-4-nefelim4ag@gmail.com>
-In-Reply-To: <20170726124958.18837-1-nefelim4ag@gmail.com>
-References: <20170726124958.18837-1-nefelim4ag@gmail.com>
+Subject: [PATCH v3 0/3] Btrfs: populate heuristic with detection logic
+Date: Sat, 29 Jul 2017 16:36:52 +0300
+Message-Id: <20170729133655.31260-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Calculate byte core set for data sample:
-Sort bucket's numbers in decreasing order
-Count how many numbers use 90% of sample
-If core set are low (<=25%), data are easily compressible
-If core set high (>=80%), data are not compressible
+Based on kdave for-next
+As heuristic skeleton already merged
+Populate heuristic with basic code.
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/compression.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/compression.h |  2 ++
- 2 files changed, 59 insertions(+)
+First patch: add simple sampling code
+It's get 16 byte samples with 256 bytes shifts
+over input data. Collect info about how many
+different bytes (symbols) has been found in sample data
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 1429b11f2c5f..314cbdd8d175 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -1069,6 +1069,42 @@ static inline int byte_set_size(const struct heuristic_bucket_item *bucket)
- 	return byte_set_size;
- }
+Second patch: add code for calculate
+how many unique bytes has been
+found in sample data
+That can fast detect easy compressible data
 
-+/* For bucket sorting */
-+static inline int heuristic_bucket_compare(const void *lv, const void *rv)
-+{
-+	struct heuristic_bucket_item *l = (struct heuristic_bucket_item *)(lv);
-+	struct heuristic_bucket_item *r = (struct heuristic_bucket_item *)(rv);
-+
-+	return r->count - l->count;
-+}
-+
-+/*
-+ * Byte Core set size
-+ * How many bytes use 90% of sample
-+ */
-+static inline int byte_core_set_size(struct heuristic_bucket_item *bucket,
-+				     u32 core_set_threshold)
-+{
-+	int a = 0;
-+	u32 coreset_sum = 0;
-+
-+	for (; a < BTRFS_HEURISTIC_BYTE_CORE_SET_LOW; a++)
-+		coreset_sum += bucket[a].count;
-+
-+	if (coreset_sum > core_set_threshold)
-+		return a;
-+
-+	for (; a < BTRFS_HEURISTIC_BYTE_CORE_SET_HIGH; a++) {
-+		if (bucket[a].count == 0)
-+			break;
-+		coreset_sum += bucket[a].count;
-+		if (coreset_sum > core_set_threshold)
-+			break;
-+	}
-+
-+	return a;
-+}
-+
- /*
-  * Compression heuristic.
-  *
-@@ -1092,6 +1128,8 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 	struct heuristic_bucket_item *bucket;
- 	int a, b, ret;
- 	u8 symbol, *input_data;
-+	u32 core_set_threshold;
-+	u64 input_size = start - end;
+Third patch: add code for calculate byte core set size
+i.e. how many unique bytes use 90% of sample data
+That code require that numbers in bucket must be sorted
+That can detect easy compressible data with many repeated bytes
+That can detect not compressible data with evenly distributed bytes
 
- 	ret = 1;
+Changes v1 -> v2:
+  - Change input data iterator shift 512 -> 256
+  - Replace magic macro numbers with direct values
+  - Drop useless symbol population in bucket
+    as no one care about where and what symbol stored
+    in bucket at now
 
-@@ -1123,6 +1161,25 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 		goto out;
- 	}
+Changes v2 -> v3 (only update #3 patch):
+  - Fix u64 division problem by use u32 for input_size
+  - Fix input size calculation start - end -> end - start
+  - Add missing sort.h header
 
-+	/* Sort in reverse order */
-+	sort(bucket, BTRFS_HEURISTIC_BUCKET_SIZE,
-+	     sizeof(struct heuristic_bucket_item), &heuristic_bucket_compare,
-+	     NULL);
-+
-+	core_set_threshold = input_size*90/BTRFS_HEURISTIC_ITER_OFFSET/100;
-+	core_set_threshold *= BTRFS_HEURISTIC_READ_SIZE;
-+
-+	a = byte_core_set_size(bucket, core_set_threshold);
-+	if (a <= BTRFS_HEURISTIC_BYTE_CORE_SET_LOW) {
-+		ret = 2;
-+		goto out;
-+	}
-+
-+	if (a >= BTRFS_HEURISTIC_BYTE_CORE_SET_HIGH) {
-+		ret = 0;
-+		goto out;
-+	}
-+
- out:
- 	kfree(bucket);
- 	return ret;
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 03857967815a..0fcd1a485adb 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -139,6 +139,8 @@ struct heuristic_bucket_item {
- #define BTRFS_HEURISTIC_ITER_OFFSET 256
- #define BTRFS_HEURISTIC_BUCKET_SIZE 256
- #define BTRFS_HEURISTIC_BYTE_SET_THRESHOLD 64
-+#define BTRFS_HEURISTIC_BYTE_CORE_SET_LOW  BTRFS_HEURISTIC_BYTE_SET_THRESHOLD
-+#define BTRFS_HEURISTIC_BYTE_CORE_SET_HIGH 200 // 80%
+Timofey Titovets (3):
+  Btrfs: heuristic add simple sampling logic
+  Btrfs: heuristic add byte set calculation
+  Btrfs: heuristic add byte core set calculation
 
- int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
+ fs/btrfs/compression.c | 109 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/compression.h |  13 ++++++
+ 2 files changed, 120 insertions(+), 2 deletions(-)
 
 --
 2.13.3

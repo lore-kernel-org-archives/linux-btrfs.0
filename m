@@ -1,207 +1,288 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:56560 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751974AbdG3F1A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 30 Jul 2017 01:27:00 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dbgkZ-0000dI-Gu
-        for linux-btrfs@vger.kernel.org; Sun, 30 Jul 2017 07:26:47 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: write corruption due to bio cloning on raid5/6
-Date: Sun, 30 Jul 2017 05:26:41 +0000 (UTC)
-Message-ID: <pan$d09f2$d737b3f9$17473592$74a95e7@cox.net>
-References: <CANznX5FxavW+0_YdA4hir9_A3KrobRLyV9+CNadigDT3uNUkXw@mail.gmail.com>
-        <20170726160717.GA32451@localhost.localdomain>
-        <CANznX5Hx57JbwS75usDHwWBHbmiLj7dVHrfgZ5Swn=8zX=2iHw@mail.gmail.com>
-        <pan$ec007$3f43fe2a$2f099431$cc969edd@cox.net>
-        <CANznX5GNuSXRNq7Zo7pghi4AM=jh_C9yGLd-zdi7P88xRE5Tqw@mail.gmail.com>
-        <pan$6c020$e98b46d2$7e8ca956$7078db6d@cox.net>
-        <CANznX5E9nONAbOA-RQWgdL2G7wgwkP73mUDL2d5v2AB9n3inqw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail1.arhont.com ([178.248.108.132]:49102 "EHLO mail.arhont.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751360AbdG3NnN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 30 Jul 2017 09:43:13 -0400
+Date: Sun, 30 Jul 2017 14:42:41 +0100 (BST)
+From: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Cc: Peter Grandi <pg@btrfs.list.sabi.co.UK>
+Message-ID: <19527869.26.1501422186960.JavaMail.gkos@dynomob>
+In-Reply-To: <22907.32175.311827.10738@tree.ty.sabi.co.uk>
+References: <33040946.535.1501254718807.JavaMail.gkos@dynomob> <8446582.541.1501260065690.JavaMail.gkos@dynomob> <22907.32175.311827.10738@tree.ty.sabi.co.uk>
+Subject: Re: Btrfs + compression = slow performance and high cpu usage
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Janos Toth F. posted on Sun, 30 Jul 2017 03:39:10 +0200 as excerpted:
+Thanks for the comments. Initially the system performed well, I don't have the benchmark details written, but the compressed vs non compressed speeds were more or less similar. However, after several weeks of usage, the system started experiencing the described slowdowns, thus I started investigating the problem. This indeed is a backup drive, but it predominantly contains large files.
 
-[OT but related topic continues...]
+# ls -lahR | awk '/^-/ {print $5}' | sort | uniq -c  | sort -n | tail -n 15
+      5 322
+      5 396
+      5 400
+      6 1000G
+      6 11
+      6 200G
+      8 24G
+      8 48G
+     13 500G
+     20 8.0G
+     25 165G
+     32 20G
+     57 100G
+    103 50G
+    201 10G
 
-> I still get shivers if I need to resize a filesystems due to the
-> memories of those early tragic experiences when I never won the lottery
-> on the "trial and error" runs but lost filesystems with both hands and
-> learned what wild-spread silent corruption is and how you can refresh
-> your backups with corrupted copies...). Let's not take me back to those
-> early days, please. I don't want to live in a cave anymore. Thank you
-> modern filesystems (and their authors). :)
-> 
-> And on that note... Assuming I had interference problems, it was caused
-> by my human mistake/negligence. I can always make similar or bigger
-> human mistakes, independent of disk-level segregation. (For example, no
-> amount of partitions will save any data if I accidentally wipe the
-> entire drive with DD, or if I have it security-locked by the controller
-> and loose the passwords, etc...)
 
-I was glad to say goodbye to MSDOS/MBR style partitions as well, but just 
-as happy to enthusiastically endorse GPT/EFI style partitions, with their 
-effectively unlimited partition numbers (128 allowed at the default table 
-size), no primary/logical partition stuff to worry about, partition (as 
-opposed to filesystem in the partition) labels/names, integrity 
-checksums, and second copy at the other end of the device. =:^)
+# grep 'model name' /proc/cpuinfo | sort -u 
+model name      : Intel(R) Xeon(R) CPU           E5645  @ 2.40GHz
 
-And while all admins have their fat-finger or fat-head, aka brown-bag, 
-experiences, I've never erased the wrong partition, tho I can certainly 
-remember being /very/ careful the first couple times I did partitioning, 
-back in the 90s on MSDOS.  Thankfully, these days even ssds are 
-"reasonably" priced, and spinning rust is the trivial cost of perhaps a 
-couple meals out, so as long as there's backups on other physical 
-devices, getting even the device name wrong simply means losing perhaps 
-your working copy instead of redoing the layout of one of your backups.
+# lsscsi | grep 'sd[ae]'
+[4:2:0:0]    disk    LSI      MR9260-8i        2.13  /dev/sda 
 
-And of course you can see the existing layout on the device before you 
-repartition it, and if it's not what you expected or there are any other 
-problems, you just back out without doing that final writeout of the new 
-partition table.
 
-FWIW my last brown-bag was writing and running a script as root, with a 
-variable-name typo that made varname empty with an rm -rf $varname/.  I 
-caught and stopped it after it had emptied /bin, while it was in /etc, I 
-believe.  Luckily I could boot to the (primary) backup.
+The sda device is a hardware RAID5 consisting of 4x8TB drives.
 
-But meanwhile, two experiences that set in concrete the practicality of 
-separate filesystems on their own partitions, for me:
+Virtual Drive: 0 (Target Id: 0)
+Name                :
+RAID Level          : Primary-5, Secondary-0, RAID Level Qualifier-3
+Size                : 21.830 TB
+Sector Size         : 512
+Is VD emulated      : Yes
+Parity Size         : 7.276 TB
+State               : Optimal
+Strip Size          : 256 KB
+Number Of Drives    : 4
+Span Depth          : 1
+Default Cache Policy: WriteBack, ReadAhead, Direct, No Write Cache if Bad BBU
+Current Cache Policy: WriteBack, ReadAhead, Direct, No Write Cache if Bad BBU
+Default Access Policy: Read/Write
+Current Access Policy: Read/Write
+Disk Cache Policy   : Disk's Default
+Encryption Type     : None
+Bad Blocks Exist: No
+Is VD Cached: No
+Number of Spans: 1
+Span: 0 - Number of PDs: 4
 
-1) Back on MS, IE4-beta era.  I was running the public beta when the MSIE 
-devs decided that for performance reasons they needed to write directly 
-to the IE cache index on disk, bypassing the usual filesystem methods.  
-What they didn't think about, however, was IE's new integration into the 
-Explorer shell, meaning it was running all the time.
 
-So along come people running the beta, running their scheduled defrag, 
-which decides the index is fragmented and moves it out from under the of 
-course still running Explorer shell, so the next time it direct-writes to 
-what WAS the cache index, it's overwriting whatever file defrag moved to 
-that spot after it moved the cache file out.
+I have changed the mount flags as suggested, and I don't see the previously reported behaviour of one of the kworker consuming 100% of the cputime, but the write speed difference between the compression ON vs OFF is pretty large. 
+Have run several tests under with zlib, lzo and no compression and the results are rather strange.
 
-The eventual fix was to set the system attribute on the cache index, so 
-the defragger wouldn't touch it.
+mountflags: (rw,relatime,compress-force=zlib,space_cache=v2,subvolid=5,subvol=/)
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress 
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 93.3418 s, 57.5 MB/s
 
-I know a number of people running that beta that lost important files to 
-that, when those files got moved into the old on-disk location of the 
-cache index file and overwritten by IE when it direct-wrote to what it 
-/thought/ was still the on-disk location of its index file.
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress oflag=direct
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 26.0685 s, 206 MB/s
 
-But I was fine, never in any danger, because IE's "Temporary Internet 
-Files" cache was on a dedicated tempfiles filesystem.  So the only files 
-it overwrote for me were temporary in any case.
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress conv=fsync
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 77.4845 s, 69.3 MB/s
 
-2) Some years ago, during a Phoenix summer, my AC went out.  I was in a 
-trailer at the time, so without the AC it got hot pretty quickly, and I 
-was away, with the computer left on, at the time it went out.
 
-The high in the shade that day was about 47C/117F, and the trailer was in 
-the sun, so it easily hit 55-60C/131-140F inside.  The computer was 
-obviously going to be hotter than that, and the spinning disk in the 
-computer hotter still, so it easily hit 70C/158F or higher.
 
-The CPU shut down of course, and was fine when I turned it back on after 
-a cooldown.
+mountflags: (rw,relatime,compress-force=lzo,space_cache=v2,subvolid=5,subvol=/)
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress 
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 116.246 s, 46.2 MB/s
 
-The disk... not so fine.  I'm sure it physically head-crashed and if I 
-had taken it apart I'd have found grooves on the platter.
 
-But... disks were a lot more expensive back then, and I didn't have 
-another disk with backups.
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress oflag=direct
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 14.704 s, 365 MB/s
 
-What I *DID* have were backup partitions on the same disk, and because 
-they weren't mounted at the time, the head didn't try seeking to them, 
-and they weren't damaged (at least not beyond what could be repaired). 
-When I went to assess things after everything cooled down, the damage was 
-(almost) all on the mounted partitions, damaged beyond repair, but I 
-continued to run that disk from what had been the backup partitions, 
-until some months later when I scraped together enough money to buy more 
-disks, this time enough of them to do RAID and make proper other-physical-
-device backups.  (Prices were by that time starting to come down enough 
-so I could by multiple at a time and I bought four 300-gig disks, my 
-first SATAs, as the mobo had four SATA ports.)
 
-Had I not had it partitioned off, the seeks across the much bigger single 
-active partition would have been very likely to do far greater damage, 
-and I'd have probably lost everything.
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress conv=fsync
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 122.321 s, 43.9 MB/s
 
-Tho I /did/ decide I had it /too/ partitioned up at that time, because I 
-ended up working off of a / backup from one date, a /var backup from 
-another, and a /usr backup from a third, which really complicated package 
-management trying to get things back to sanity, because the package 
-manager database on /var didn't match the actual package versions running 
-on / and /usr.  That's why these days, with a small exception for the 
-operational-writable-mount-necessary /var/lib since / is operational read-
-only mounted, everything the package manager touches, including both what 
-it installs and its installation database, is on /, so regardless of what 
-backup I end up on, the installation database now on / matches what's 
-actually installed on that /.
 
-Meanwhile, as mentioned, these days I keep /, including /bin /etc /usr 
-and (most of) /var, mounted read-only, so it's unlikely to be damaged 
-unless I'm actually updating at the time of a mishap.  /boot is its own 
-partition, unmounted most of the time.  /var/log is its own sub-GiB 
-partition (with journald set to volatile only, syslog-ng does the logging 
-to permanent storage), so it's actually writable, but a runaway log won't 
-fill up anything critical.  /home is its own partition, with a /home/var/
-lib with a symlink from the read-only /var/lib for the rather small 
-quantity of generic system stuff that needs to be writable.  I'm a 
-gentooer so I build all my updates, and the gentoo and overlay trees, 
-along with sources, the local binpkg cache, ccache and the kernel tree, 
-are all on /pkgs, which is only mounted when I'm updating.  That's the 
-core.  Then there's a media partitions and the text and binary news 
-partitions, separate from each other and from /home both so usage is 
-controlled (quota-by-filesystem-size) and so they can be unmounted if I'm 
-not using them, reducing the amount of potential damage should a mishap 
-occur.
 
-Then of course there's two levels of backup of everything, with each 
-backup partition and filesystem the same size as the working copy, with 
-one backup on the same large working pair of ssds, and the other on a 
-smaller backup pair.
+mountflags: (rw,relatime,space_cache=v2,subvolid=5,subvol=/)
 
-Because only what's necessary for normal ops and for whatever I'm doing 
-at that time are mounted, and root is mounted read-only unless I'm 
-updating, both the likely potential damage and total filesystem-loss 
-scenarios are much more limited and thus much easier to recover from than 
-if the entire working system was on the same filesystem.
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress 
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 32.2551 s, 166 MB/s
 
-I actually learned /that/ lesson the hard way, tho, when I had everything 
-on massive mdraid, and it took hours to rebuild from a simple ungraceful 
-shutdown (this was before write-intent bitmaps).  After redoing the 
-layout to multiple mdraids, each assembled from parallel partitions on 
-the respective physical devices, then spinning rust, rebuild of a single 
-mdraid was under 10 minutes, where after the first one I could go back to 
-work with less disruption, and rebuild of all the typically active mdraids 
-was under 30 minutes.  The difference was in all the data that wasn't in 
-actual use at the time, but still assembled into the active raid under 
-the first setup, while under the second, the other raids weren't even 
-active.
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress oflag=direct
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 19.9464 s, 269 MB/s
 
-Meanwhile, thru multiple generations of layout revisions and updates, I 
-now have all filesystems at pretty close to their perfect sizes, so 
-filesystem size, far from being an inconvenient barrier to workaround, 
-actually works as convenient size-quota enforcement. If one of the 
-filesystems starts getting too full, it's time to investigate why, take 
-corrective action and do some cleanup. =:^)
+dd if=/dev/sdb  of=./testing count=5120 bs=1M status=progress conv=fsync
+5368709120 bytes (5.4 GB, 5.0 GiB) copied, 10.1033 s, 531 MB/s
 
-And if I actually decide I need more room than is free on that filesystem 
-for something, worst-case, I have a set of backups on a second pair of 
-ssds, that I can make sure are current, then blkdiscard the entire 
-physical device for the pair of working-copy ssds, and redo the layout.  
-But I'm close enough to optimal now, that I usually only need to do that 
-when I'm updating devices anyway.  Or at least, I've found the last two 
-existing layouts more than workable until I updated physical devices and 
-needed to do a new layout for them anyway. =:^)
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+The CPU usage is pretty low as well. For example when the  force-compress=zlib is in effect, the cpu usage is pretty low now.
 
+Linux 4.10.0-28-generic (ais-backup1)   30/07/17        _x86_64_        (12 CPU)
+
+14:31:27        CPU     %user     %nice   %system   %iowait    %steal     %idle
+14:31:28        all      0.00      0.00      1.50      0.00      0.00     98.50
+14:31:29        all      0.00      0.00      4.78      3.52      0.00     91.69
+14:31:30        all      0.08      0.00      4.92      3.75      0.00     91.25
+14:31:31        all      0.00      0.00      4.76      3.76      0.00     91.49
+14:31:32        all      0.00      0.00      4.76      3.76      0.00     91.48
+14:31:33        all      0.08      0.00      4.67      3.76      0.00     91.49
+14:31:34        all      0.00      0.00      4.76      3.68      0.00     91.56
+14:31:35        all      0.08      0.00      4.76      3.76      0.00     91.40
+14:31:36        all      0.00      0.00      4.60      3.77      0.00     91.63
+14:31:37        all      0.00      0.00      4.68      3.68      0.00     91.64
+14:31:38        all      0.08      0.00      4.52      3.76      0.00     91.64
+14:31:39        all      0.08      0.00      4.68      3.76      0.00     91.48
+14:31:40        all      0.08      0.00      4.52      3.76      0.00     91.64
+14:31:41        all      0.00      0.00      4.61      3.77      0.00     91.62
+14:31:42        all      0.08      0.00      5.07      3.74      0.00     91.10
+14:31:43        all      0.00      0.00      4.68      3.68      0.00     91.64
+14:31:44        all      0.00      0.00      4.84      5.09      0.00     90.08
+14:31:45        all      0.17      0.00      4.67      4.75      0.00     90.42
+14:31:46        all      0.00      0.00      4.60      3.76      0.00     91.64
+14:31:47        all      0.08      0.00      5.07      3.66      0.00     91.18
+14:31:48        all      0.00      0.00      5.01      3.68      0.00     91.31
+14:31:49        all      0.00      0.00      4.76      3.68      0.00     91.56
+14:31:50        all      0.08      0.00      4.59      3.59      0.00     91.73
+14:31:51        all      0.00      0.00      2.67      1.92      0.00     95.41
+
+
+
+
+
+
+----- Original Message -----
+From: "Peter Grandi" <pg@btrfs.list.sabi.co.UK>
+To: "Linux fs Btrfs" <linux-btrfs@vger.kernel.org>
+Sent: Friday, 28 July, 2017 8:08:47 PM
+Subject: Re: Btrfs + compression = slow performance and high cpu usage
+
+> I am stuck with a problem of btrfs slow performance when using
+> compression. [ ... ]
+
+That to me looks like an issue with speed, not performance, and
+in particular with PEBCAK issues.
+
+As to high CPU usage, when you find a way to do both compression
+and checksumming without using much CPU time, please send patches
+urgently :-).
+
+In your case the increase in CPU time is bizarre. I have the
+Ubuntu 4.4 "lts-xenial" kernel and what you report does not
+happen here (with a few little changes):
+
+  soft#  grep 'model name' /proc/cpuinfo | sort -u
+  model name      : AMD FX(tm)-6100 Six-Core Processor
+  soft#  cpufreq-info | grep 'current CPU frequency'
+    current CPU frequency is 3.30 GHz (asserted by call to hardware).
+    current CPU frequency is 3.30 GHz (asserted by call to hardware).
+    current CPU frequency is 3.30 GHz (asserted by call to hardware).
+    current CPU frequency is 3.30 GHz (asserted by call to hardware).
+    current CPU frequency is 3.30 GHz (asserted by call to hardware).
+    current CPU frequency is 3.30 GHz (asserted by call to hardware).
+
+  soft#  lsscsi | grep 'sd[ae]'
+  [0:0:0:0]    disk    ATA      HFS256G32MNB-220 3L00  /dev/sda
+  [5:0:0:0]    disk    ATA      ST2000DM001-1CH1 CC44  /dev/sde
+
+  soft#  mkfs.btrfs -f /dev/sde3
+  [ ... ]
+  soft#  mount -t btrfs -o discard,autodefrag,compress=lzo,compress-force,commit=10 /dev/sde3 /mnt/sde3
+
+  soft#  df /dev/sda6 /mnt/sde3
+  Filesystem     1M-blocks  Used Available Use% Mounted on
+  /dev/sda6          90048 76046     14003  85% /
+  /dev/sde3         237568    19    235501   1% /mnt/sde3
+
+The above is useful context information that was "amazingly"
+omitted from your reported.
+
+In dmesg I see (not the "force zlib compression"):
+
+  [327730.917285] BTRFS info (device sde3): turning on discard
+  [327730.917294] BTRFS info (device sde3): enabling auto defrag
+  [327730.917300] BTRFS info (device sde3): setting 8 feature flag
+  [327730.917304] BTRFS info (device sde3): force zlib compression
+  [327730.917313] BTRFS info (device sde3): disk space caching is enabled
+  [327730.917315] BTRFS: has skinny extents
+  [327730.917317] BTRFS: flagging fs with big metadata feature
+  [327730.920740] BTRFS: creating UUID tree
+
+and the result is:
+
+  soft#  pv -tpreb /dev/sda6 | time dd iflag=fullblock of=/mnt/sde3/testfile bs=1M count=10000 oflag=direct
+  10000+0 records in17MB/s] [==>                                ] 11% ETA 0:15:06
+  10000+0 records out
+  10485760000 bytes (10 GB) copied, 112.845 s, 92.9 MB/s
+  0.05user 9.93system 1:53.20elapsed 8%CPU (0avgtext+0avgdata 3016maxresident)k
+  120inputs+20496000outputs (1major+346minor)pagefaults 0swaps
+  9.77GB 0:01:53 [88.3MB/s] [==>                                ]
+  11%
+
+  soft#  btrfs fi df /mnt/sde3/
+  Data, single: total=10.01GiB, used=9.77GiB
+  System, DUP: total=8.00MiB, used=16.00KiB
+  Metadata, DUP: total=1.00GiB, used=11.66MiB
+  GlobalReserve, single: total=16.00MiB, used=0.00B
+
+As it was running system CPU time was under 20% of one CPU:
+
+  top - 18:57:29 up 3 days, 19:27,  4 users,  load average: 5.44, 2.82, 1.45
+  Tasks: 325 total,   1 running, 324 sleeping,   0 stopped,   0 zombie
+  %Cpu0  :  0.0 us,  2.3 sy,  0.0 ni, 91.3 id,  6.3 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu1  :  0.0 us,  1.3 sy,  0.0 ni, 78.5 id, 20.2 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu2  :  0.3 us,  5.8 sy,  0.0 ni, 81.0 id, 12.5 wa,  0.0 hi,  0.3 si,  0.0 st
+  %Cpu3  :  0.3 us,  3.4 sy,  0.0 ni, 91.9 id,  4.4 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu4  :  0.3 us, 10.6 sy,  0.0 ni, 55.4 id, 33.7 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu5  :  0.0 us,  0.3 sy,  0.0 ni, 99.7 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+  KiB Mem:   8120660 total,  5162236 used,  2958424 free,  4440100 buffers
+  KiB Swap:        0 total,        0 used,        0 free.   351848 cached Mem
+
+    PID  PPID USER      PR  NI    VIRT    RES    DATA  %CPU %MEM     TIME+ TTY      COMMAND
+  21047 21046 root      20   0    8872   2616    1364  12.9  0.0   0:02.31 pts/3    dd iflag=fullblo+
+  21045  3535 root      20   0    7928   1948     460  12.3  0.0   0:00.72 pts/3    pv -tpreb /dev/s+
+  21019     2 root      20   0       0      0       0   1.3  0.0   0:42.88 ?        [kworker/u16:1]
+
+Of course "oflag=direct" is a rather "optimistic" option in this
+context, so I tried again with something more sensible:
+
+  soft#  pv -tpreb /dev/sda6 | time dd iflag=fullblock of=/mnt/sde3/testfile bs=1M count=10000 conv=fsync
+  10000+0 records in.4MB/s] [==>                                ] 11% ETA 0:14:41
+  10000+0 records out
+  10485760000 bytes (10 GB) copied, 110.523 s, 94.9 MB/s
+  0.03user 8.94system 1:50.71elapsed 8%CPU (0avgtext+0avgdata 3024maxresident)k
+  136inputs+20499648outputs (1major+348minor)pagefaults 0swaps
+  9.77GB 0:01:50 [90.3MB/s] [==>                                ] 11%
+
+  soft#  btrfs fi df /mnt/sde3/
+  Data, single: total=7.01GiB, used=6.35GiB
+  System, DUP: total=8.00MiB, used=16.00KiB
+  Metadata, DUP: total=1.00GiB, used=15.81MiB
+  GlobalReserve, single: total=16.00MiB, used=0.00B
+
+As it was running system as expected CPU time was around 55-60%
+of each of 6 CPUs:
+
+  top - 18:56:03 up 3 days, 19:26,  4 users,  load average: 2.31, 1.39, 0.90
+  Tasks: 325 total,   5 running, 320 sleeping,   0 stopped,   0 zombie
+  %Cpu0  :  0.0 us, 57.9 sy,  0.0 ni, 28.3 id, 13.8 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu1  :  0.0 us, 46.8 sy,  0.0 ni, 36.9 id, 16.3 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu2  :  0.0 us, 72.8 sy,  0.0 ni, 13.4 id, 12.8 wa,  0.0 hi,  1.0 si,  0.0 st
+  %Cpu3  :  0.3 us, 63.8 sy,  0.0 ni, 17.4 id, 17.4 wa,  0.0 hi,  1.0 si,  0.0 st
+  %Cpu4  :  0.0 us, 53.3 sy,  0.0 ni, 29.7 id, 17.0 wa,  0.0 hi,  0.0 si,  0.0 st
+  %Cpu5  :  0.0 us, 54.0 sy,  0.0 ni, 32.7 id, 13.3 wa,  0.0 hi,  0.0 si,  0.0 st
+  KiB Mem:   8120660 total,  7988368 used,   132292 free,  3646496 buffers
+  KiB Swap:        0 total,        0 used,        0 free.  3967692 cached Mem
+
+    PID  PPID USER      PR  NI    VIRT    RES    DATA  %CPU %MEM     TIME+ TTY      COMMAND
+  21022     2 root      20   0       0      0       0  45.2  0.0   0:19.69 ?        [kworker/u16:5]
+  21028     2 root      20   0       0      0       0  39.9  0.0   0:27.84 ?        [kworker/u16:11]
+  21043     2 root      20   0       0      0       0  39.9  0.0   0:04.26 ?        [kworker/u16:19]
+  21009     2 root      20   0       0      0       0  38.2  0.0   0:24.50 ?        [kworker/u16:0]
+  21037     2 root      20   0       0      0       0  34.2  0.0   0:17.94 ?        [kworker/u16:17]
+  21021     2 root      20   0       0      0       0  19.9  0.0   0:14.83 ?        [kworker/u16:3]
+  21019     2 root      20   0       0      0       0  19.3  0.0   0:29.98 ?        [kworker/u16:1]
+  21034     2 root      20   0       0      0       0  19.3  0.0   0:28.18 ?        [kworker/u16:14]
+  21030     2 root      20   0       0      0       0  17.9  0.0   0:24.85 ?        [kworker/u16:13]
+  21035     2 root      20   0       0      0       0  17.6  0.0   0:20.75 ?        [kworker/u16:15]
+  21023     2 root      20   0       0      0       0  15.0  0.0   0:28.20 ?        [kworker/u16:6]
+  21020     2 root      20   0       0      0       0   9.6  0.0   0:27.02 ?        [kworker/u16:2]
+  21040  3535 root      20   0    7928   1872     460   8.6  0.0   0:04.11 pts/3    pv -tpreb /dev/s+
+  21042 21041 root      20   0    8872   2628    1364   8.3  0.0   0:05.19 pts/3    dd iflag=fullblo+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

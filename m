@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:38121 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752987AbdG2A0f (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:37283 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752698AbdG3CSp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Jul 2017 20:26:35 -0400
-Received: by mail-qt0-f193.google.com with SMTP id p3so14122654qtg.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jul 2017 17:26:34 -0700 (PDT)
-Date: Fri, 28 Jul 2017 21:26:29 -0300
+        Sat, 29 Jul 2017 22:18:45 -0400
+Received: by mail-qt0-f195.google.com with SMTP id d10so14483683qtb.4
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jul 2017 19:18:45 -0700 (PDT)
+Date: Sat, 29 Jul 2017 23:18:39 -0300
 From: Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
         <ernesto.mnd.fernandez@gmail.com>
 To: linux-btrfs@vger.kernel.org
@@ -14,10 +14,12 @@ Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>,
         Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
         <ernesto.mnd.fernandez@gmail.com>
-Subject: [PATCH] btrfs: preserve i_mode if __btrfs_set_acl() fails
-Message-ID: <20170729002626.GA6759@debian.home>
+Subject: [PATCH v2] btrfs: preserve i_mode if __btrfs_set_acl() fails
+Message-ID: <20170730021838.GA4565@debian.home>
+References: <20170729002626.GA6759@debian.home>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170729002626.GA6759@debian.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -31,22 +33,26 @@ assume that the mask permission bits are actual group permission bits,
 potentially granting access to the wrong users.
 
 Prevent this by starting the journal transaction before calling
-__btrfs_set_acl and only changing the inode mode after it returns
+__btrfs_set_acl and only changing the inode mode after the acl is set
 successfully.
 
 Signed-off-by: Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
 ---
-This issue is covered by generic/449 in xfstests. Several filesystems
-are affected; some of them have already applied patches:
-  - fe26569 ext2: preserve i_mode if ext2_set_acl() fails
-  - f070e5a jfs: preserve i_mode if __jfs_set_acl() fails
-  - fcea8ae reiserfs: preserve i_mode if __reiserfs_set_acl() fails
+Changes in v2:
+  - Take the code that checks if we are setting a default acl on something
+    that is not a dir, remove it from the __btrfs_set_acl function, and
+    place it in btrfs_set_acl instead. This should fix the issue pointed out
+    by Josef Bacik, that I was sometimes updating the inode even when there
+    was no change.
+  - Don't call BUG_ON when the inode failed to update. Also requested by
+    Josef Bacik. It should be noted that __btrfs_setxattr was already
+    calling BUG_ON before my patch; that has not been changed.
 
- fs/btrfs/acl.c | 29 ++++++++++++++++++++++++++---
- 1 file changed, 26 insertions(+), 3 deletions(-)
+ fs/btrfs/acl.c | 31 +++++++++++++++++++++++++++----
+ 1 file changed, 27 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 8d8370d..d041526 100644
+index 8d8370d..f62e8ac 100644
 --- a/fs/btrfs/acl.c
 +++ b/fs/btrfs/acl.c
 @@ -27,6 +27,7 @@
@@ -57,7 +63,16 @@ index 8d8370d..d041526 100644
  
  struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
  {
-@@ -113,14 +114,36 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
+@@ -80,8 +81,6 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
+ 		name = XATTR_NAME_POSIX_ACL_ACCESS;
+ 		break;
+ 	case ACL_TYPE_DEFAULT:
+-		if (!S_ISDIR(inode->i_mode))
+-			return acl ? -EINVAL : 0;
+ 		name = XATTR_NAME_POSIX_ACL_DEFAULT;
+ 		break;
+ 	default:
+@@ -113,14 +112,38 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
  
  int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
  {
@@ -65,6 +80,16 @@ index 8d8370d..d041526 100644
 +	struct btrfs_trans_handle *trans;
  	int ret;
 +	umode_t mode = inode->i_mode;
+ 
++	if (type == ACL_TYPE_DEFAULT && !S_ISDIR(inode->i_mode))
++		return acl ? -EINVAL : 0;
+ 	if (type == ACL_TYPE_ACCESS && acl) {
+-		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
++		ret = posix_acl_update_mode(inode, &mode, &acl);
+ 		if (ret)
+ 			return ret;
+ 	}
+-	return __btrfs_set_acl(NULL, inode, acl, type);
 +
 +	if (btrfs_root_readonly(root))
 +		return -EROFS;
@@ -72,15 +97,7 @@ index 8d8370d..d041526 100644
 +	trans = btrfs_start_transaction(root, 2);
 +	if (IS_ERR(trans))
 +		return PTR_ERR(trans);
- 
- 	if (type == ACL_TYPE_ACCESS && acl) {
--		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-+		ret = posix_acl_update_mode(inode, &mode, &acl);
- 		if (ret)
--			return ret;
-+			goto out;
- 	}
--	return __btrfs_set_acl(NULL, inode, acl, type);
++
 +	ret = __btrfs_set_acl(trans, inode, acl, type);
 +	if (ret)
 +		goto out;
@@ -90,7 +107,6 @@ index 8d8370d..d041526 100644
 +	inode->i_ctime = current_time(inode);
 +	set_bit(BTRFS_INODE_COPY_EVERYTHING, &BTRFS_I(inode)->runtime_flags);
 +	ret = btrfs_update_inode(trans, root, inode);
-+	BUG_ON(ret);
 +out:
 +	btrfs_end_transaction(trans);
 +	return ret;
@@ -99,4 +115,5 @@ index 8d8370d..d041526 100644
  /*
 -- 
 2.1.4
+
 

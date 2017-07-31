@@ -1,88 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:36854 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750987AbdGaMuS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jul 2017 08:50:18 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:34877)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dcA9J-0008JN-54
-        for linux-btrfs@vger.kernel.org; Mon, 31 Jul 2017 13:50:17 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dcA8d-0001W7-UZ
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2017 13:49:35 +0100
+Received: from mail-wr0-f196.google.com ([209.85.128.196]:36754 "EHLO
+        mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752132AbdGaOdu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Jul 2017 10:33:50 -0400
+Received: by mail-wr0-f196.google.com with SMTP id y67so30888775wrb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2017 07:33:49 -0700 (PDT)
+Subject: Re: btrfs-freespace ever doing anything?
+To: Sebastian Ochmann <ochmann@cs.uni-bonn.de>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <bf03be69-e9c4-f0c3-6853-936647630d05@cs.uni-bonn.de>
+ <76fe586d-37af-5e4d-106e-7f6f0d92e2bb@gmail.com>
+ <3a87aaa8-7341-27a3-399d-d3051257fa24@cs.uni-bonn.de>
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Message-ID: <ecbc620b-db6e-85bb-f12a-563db3a2be1f@gmail.com>
+Date: Mon, 31 Jul 2017 17:33:46 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22911.10079.563227.197860@tree.ty.sabi.co.uk>
-Date: Mon, 31 Jul 2017 13:49:35 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs + compression = slow performance and high cpu usage
-In-Reply-To: <22911.9142.450242.405693@tree.ty.sabi.co.uk>
-References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
-        <8446582.541.1501260065690.JavaMail.gkos@dynomob>
-        <22907.32175.311827.10738@tree.ty.sabi.co.uk>
-        <19527869.26.1501422186960.JavaMail.gkos@dynomob>
-        <22911.5971.350346.969146@tree.ty.sabi.co.uk>
-        <22911.9142.450242.405693@tree.ty.sabi.co.uk>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <3a87aaa8-7341-27a3-399d-d3051257fa24@cs.uni-bonn.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ ... ]
 
-> Also added:
 
-Feeling very generous :-) today, adding these too:
+On 31.07.2017 15:30, Sebastian Ochmann wrote:
+> On 31.07.2017 14:08, Austin S. Hemmelgarn wrote:
+>> On 2017-07-31 06:51, Sebastian Ochmann wrote:
+>>> Hello,
+>>>
+>>> I have a quite simple and possibly stupid question. Since I'm
+>>> occasionally seeing warnings about failed loading of free space
+>>> cache, I wanted to clear and rebuild space cache. So I mounted the
+>>> filesystem(s) with -o clear_cache and subsequently with my regular
+>>> options which includes space_cache. Indeed, dmesg tells me:
+>>>
+>>> [   60.285190] BTRFS info (device dm-1): force clearing of disk cache
+>>>
+>>> and then
+>>>
+>>> [  137.151845] BTRFS info (device dm-1): use ssd allocation scheme
+>>> [  137.151850] BTRFS info (device dm-1): disk space caching is enabled
+>>> [  137.151852] BTRFS info (device dm-1): has skinny extents
+>>>
+>>> To my understanding, btrfs-freespace should then start working to
+>>> rebuild the free space cache. However, I can't remember that I have
+>>> ever seen btrfs work hard after clearing the space cache. The drives
+>>> aren't working much, and the btrfs-freespace processes (which are
+>>> indeed there) don't do anything either.
+>>>
+>>> So simple question: Can anyone try to clear their space cache and
+>>> confirm that btrfs actually does something after doing so? Is there
+>>> anything I could do to confirm that something is happening?
+>> Based on my (limited) understanding of that code, assuming you're
+>> using the original free space cache (which I think is the case, since
+>> you said you're using the regular 'space_cache' option instead of
+>> 'space_cache=v2'), there's not _much_ work that needs to be done
+>> unless free space is heavily fragmented and the disk is reasonably
+>> full.  The original free space cache is pretty similar to an
+>> allocation bitmap, and computing that is not hard to do (you just
+>> figure out which blocks are actually used).
+>>
+>> Based on my own experience, you'll see almost zero activity most of
+>> the time when rebuilding the free space cache regardless of which you
+>> are using (the original, or the new version), although the newer free
+>> space tree code appears to do a bit more work.
+> 
+> Ah, that's interesting, I have to admit I wasn't even aware of
+> space_cache v2. That said, the btrfs wiki doesn't state its existence on
+> the mount options page. It's only mentioned at the bottom of the Status
+> page where clearing the space cache for v2 using "btrfs check" is
+> explained.
+> 
+> The man page of "btrfs-check" states something interesting regarding the
+> clearing of space cache using the "clear_cache" mount option when using v1:
+> 
+> "For free space cache v1, the clear_cache kernel mount option only
+> rebuilds the free space cache for block groups that are modified while
+> the filesystem is mounted with that option."
+> 
+> So "clear_cache" is, to my understanding, pretty much a misnomer. Only
+> for v2, it actually clears the whole cache. I now used "btrfs check
+> --clear-space-cache v1" on one of the devices and it took a while to
+> clear the cache (way longer than when using the clear_cache mount
+> option) (rebuilding still seems to be quick though).
+> 
+> The explanation of the space_cache and clear_cache options in the Wiki
+> should be updated. The mount options page doesn't mention space_cache v2
+> and the clear_cache option supposedly clears "all the free space caches"
+> according to the wiki which contradicts the btrfs check manpage.
 
-  soft#  mkfs.btrfs -mraid10 -draid10 -L test5 /dev/sd{b,c,d,e}3
-  [ ... ]
-  soft#  mount -t btrfs -o commit=10,compress-force=zlib /dev/sdb3 /mnt/test5
 
-  soft#  rm -f /mnt/test5/testfile
-  soft#  /usr/bin/time dd iflag=fullblock if=/dev/sda6 of=/mnt/test5/testfile bs=1M count=3000 conv=fsync
-  3000+0 records in
-  3000+0 records out
-  3145728000 bytes (3.1 GB) copied, 14.2166 s, 221 MB/s
-  0.00user 2.54system 0:14.21elapsed 17%CPU (0avgtext+0avgdata 3056maxresident)k
-  0inputs+6144768outputs (0major+346minor)pagefaults 0swaps
+In case you are interested in learning a bit more on v2 you can check
+Omar's presentation:
+events.linuxfoundation.org/sites/events/files/slides/vault2016_0.pdf
 
-  soft#  rm -f /mnt/test5/testfile
-  soft#  /usr/bin/time dd iflag=fullblock if=/dev/sda6 of=/mnt/test5/testfile bs=128k count=3000 conv=fsync                                                    
-  3000+0 records in
-  3000+0 records out
-  393216000 bytes (393 MB) copied, 2.05933 s, 191 MB/s
-  0.00user 0.32system 0:02.06elapsed 15%CPU (0avgtext+0avgdata 1996maxresident)k
-  0inputs+772512outputs (0major+124minor)pagefaults 0swaps
-
-  soft#  rm -f /mnt/test5/testfile
-  soft#  /usr/bin/time dd iflag=fullblock if=/dev/sda6 bs=1M count=1000 | dd iflag=fullblock of=/mnt/test5/testfile bs=1M oflag=sync                           
-  1000+0 records in
-  1000+0 records out
-  1048576000 bytes (1.0 GB) copied, 60.6019 s, 17.3 MB/s
-  0.01user 1.04system 1:00.60elapsed 1%CPU (0avgtext+0avgdata 2888maxresident)k
-  0inputs+0outputs (0major+348minor)pagefaults 0swaps
-  1000+0 records in
-  1000+0 records out
-  1048576000 bytes (1.0 GB) copied, 60.4116 s, 17.4 MB/s
-
-  soft#  rm -f /mnt/test5/testfile
-  soft#  /usr/bin/time dd iflag=fullblock if=/dev/sda6 bs=128k count=3000 | dd iflag=fullblock of=/mnt/test5/testfile bs=128k oflag=sync
-  3000+0 records in
-  3000+0 records out
-  393216000 bytes (393 MB) copied, 148.04 s, 2.7 MB/s
-  0.00user 0.62system 2:28.04elapsed 0%CPU (0avgtext+0avgdata 1996maxresident)k
-  0inputs+0outputs (0major+125minor)pagefaults 0swaps
-  3000+0 records in
-  3000+0 records out
-  393216000 bytes (393 MB) copied, 148.083 s, 2.7 MB/s
-
-  soft#  sysctl vm/drop_caches=3
-  vm.drop_caches = 3
-  soft#  /usr/bin/time dd iflag=fullblock if=/mnt/test5/testfile bs=128k count=3000 of=/dev/zero                                                               
-  3000+0 records in
-  3000+0 records out
-  393216000 bytes (393 MB) copied, 1.09729 s, 358 MB/s
-  0.00user 0.24system 0:01.10elapsed 23%CPU (0avgtext+0avgdata 2164maxresident)k
-  459768inputs+0outputs (3major+121minor)pagefaults 0swaps
+> 
+>>> The drives in question are a SSD and a HDD, both in the range of 1-2
+>>> TB in size.
+>>>
+>>> I'm on Arch Linux, kernel 4.12.3, btrfs-progs 4.11.1
+>>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,89 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20005 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750940AbdGaSOz (ORCPT
+Received: from mail-wm0-f49.google.com ([74.125.82.49]:36832 "EHLO
+        mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750954AbdGaSau (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jul 2017 14:14:55 -0400
-Date: Mon, 31 Jul 2017 11:12:01 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: "marcel.cochem" <marcel.cochem@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS error: bad tree block start 0 623771648
-Message-ID: <20170731181200.GA3459@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAN_=hu0k8+FmrSOw5P5TAZyjzjvGyqv_ByYr27s8rZY456k87Q@mail.gmail.com>
+        Mon, 31 Jul 2017 14:30:50 -0400
+Received: by mail-wm0-f49.google.com with SMTP id t201so187096106wmt.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2017 11:30:50 -0700 (PDT)
+Received: from localhost ([88.98.201.53])
+        by smtp.gmail.com with ESMTPSA id m77sm4201526wmd.21.2017.07.31.11.30.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Mon, 31 Jul 2017 11:30:48 -0700 (PDT)
+Date: Mon, 31 Jul 2017 19:30:47 +0100
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Slow mounting raid1
+Message-ID: <20170731183047.x2p4vyqd2pvf7t4g@tiamat>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAN_=hu0k8+FmrSOw5P5TAZyjzjvGyqv_ByYr27s8rZY456k87Q@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 30, 2017 at 06:14:35PM +0200, marcel.cochem wrote:
-> Hello,
-> 
-> I had to shut down my PC because it hang up, after the next reboot i
-> got the following error:
->     BTRFS error on /dev/nvme0n1p4 bad tree block start 0 623771648
->     open_ctree failed
->     mount wrong fs type
->     bad superblock
->     missing codepage or helper program, or other error.
-> 
-> I had no backup (schame on my, now i made a backup of my failed parition)
-> I can't check or rescure any data, because all btrfs-progs stop with
-> messages like:
-> 
->     root@marcel-debug:/mnt# btrfs restore  /dev/nvme0n1p4 /mnt/1
->     checksum verify failed on 623771648 found E4E3BDB6 wanted 00000000
->     checksum verify failed on 623771648 found E4E3BDB6 wanted 00000000
->     bytenr mismatch, want=623771648, have=0
->     Couldn't read tree root
+Hello,
 
-Superblock and chunk tree root is OK, looks like the header part of
-the tree root is now all-zero, but I'm unable to think of a btrfs bug
-which can lead to that (if there is, it is a serious enough one), and
-on ssd like disks, by default there is only one copy for metadata.
+I got a raid1 setup of btrfs on a HDD array of 2 disks. The fstab has
+the following mount settings:
+  # cat /etc/fstab | grep raid1
+  UUID=c9db91e6-0ba8-4ae6-b471-8fd4ff7ee72d /media/raid1 btrfs rw,relatime,compress=lzo,space_cache 0 0
 
-Now that all progs has been stuck in reading tree root node, one
-workaround is to hijack the btrfs code to bypass that whole
-check(including checksum checking) for reading metadata blocks to let
-us read the block no matter what mismatch it may have and see if the
-content is meaningful to us.  The function that needs to be hijacked
-is btree_readpage_end_io_hook() in fs/btrfs/disk-io.c
+When I try to mount the array it's consistent about 5 seconds+
+  # time umount /media/raid1
+  
+  real    0m0.358s
+  user    0m0.010s
+  sys     0m0.010s
+  # time mount /media/raid1
+  
+  real    0m5.605s
+  user    0m0.504s
+  sys     0m0.071s
 
-But please note you should play this trick on the backup copy disk
-you've aleady made, instead of the original one.  The best situation
-would be that tree root node is the only corrupted node.  Good luck.
+I have this setup for sometime now and from the time I made it the mount
+time went up (I notice that on boot). When I first build that was
+almost instant. In terms of maintenance I regularly run a scrub and
+rebalance every now and then.
 
-thanks,
+Running kernel 4.11.12 (with -ck patchs)
 
--liubo
+Is there something I can do to speed it up (apart buying 2 SSDs :D ). I
+feel like I'm missing something as the usage of the raid is not really
+frequent - just backup mainly.
 
-> 
-> or
-> 
->     root@marcel-debug:/home/marcel/Desktop/btrfs-progs#
-> ./btrfs-find-root /dev/nvme0n1p4
->     Couldn't read tree root
->     Superblock thinks the generation is 82096
->     Superblock thinks the level is 1
-> 
-> My bad installation had kernel 4.11 and my rescue installation has
-> also 4.11 installed. However the btrfs-progs had some problems
-> (endless loop for btrfs-find-root), so i decided to compile them
-> myself with the newest version 4.12 . However neither version works.
-> 
-> I am pretty sure that not all data is lost as i can grep thorugh the
-> 100 GB SSD partition. But my question is, if there is a tool to rescue
-> all (intact) data and maybe have only a few corrupt files which can't
-> be recovered.
-> 
-> I put detailed information and commands outputs in pastebin:
-> https://pastebin.com/7kzjb4Ae
-> 
-> Best regards,
-> Marcel
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks for your time.
+
+-- 
+Leonidas Spyropoulos
+
+A: Because it messes up the order in which people normally read text.
+Q: Why is it such a bad thing?
+A: Top-posting.
+Q: What is the most annoying thing on usenet and in e-mail?
+

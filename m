@@ -1,111 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:35913 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750933AbdGaLwS (ORCPT
+Received: from mail-it0-f50.google.com ([209.85.214.50]:37333 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750933AbdGaMIV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jul 2017 07:52:18 -0400
-Received: by mail-io0-f182.google.com with SMTP id g35so77386929ioi.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2017 04:52:18 -0700 (PDT)
-Subject: Re: Best Practice: Add new device to RAID1 pool (Summary)
-To: Cloud Admin <admin@cloud.haefemeier.eu>, linux-btrfs@vger.kernel.org
-References: <1500895655.2781.6.camel@cloud.haefemeier.eu>
- <18d96f74-00a8-9bb9-dddc-f50940d0971e@gmail.com>
- <1500905566.2781.8.camel@cloud.haefemeier.eu>
- <4b768b97-2c0b-bf67-dec0-1c5a1f7181b2@gmail.com>
- <1500914457.2781.10.camel@cloud.haefemeier.eu>
- <1501369468.2795.1.camel@cloud.haefemeier.eu>
+        Mon, 31 Jul 2017 08:08:21 -0400
+Received: by mail-it0-f50.google.com with SMTP id v127so125090689itd.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2017 05:08:21 -0700 (PDT)
+Subject: Re: btrfs-freespace ever doing anything?
+To: Sebastian Ochmann <ochmann@cs.uni-bonn.de>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <bf03be69-e9c4-f0c3-6853-936647630d05@cs.uni-bonn.de>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <cc38811f-98fe-1612-e34a-8ba8125a0d00@gmail.com>
-Date: Mon, 31 Jul 2017 07:52:15 -0400
+Message-ID: <76fe586d-37af-5e4d-106e-7f6f0d92e2bb@gmail.com>
+Date: Mon, 31 Jul 2017 08:08:17 -0400
 MIME-Version: 1.0
-In-Reply-To: <1501369468.2795.1.camel@cloud.haefemeier.eu>
+In-Reply-To: <bf03be69-e9c4-f0c3-6853-936647630d05@cs.uni-bonn.de>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-07-29 19:04, Cloud Admin wrote:
-> Am Montag, den 24.07.2017, 18:40 +0200 schrieb Cloud Admin:
->> Am Montag, den 24.07.2017, 10:25 -0400 schrieb Austin S. Hemmelgarn:
->>> On 2017-07-24 10:12, Cloud Admin wrote:
->>>> Am Montag, den 24.07.2017, 09:46 -0400 schrieb Austin S.
->>>> Hemmelgarn:
->>>>> On 2017-07-24 07:27, Cloud Admin wrote:
->>>>>> Hi,
->>>>>> I have a multi-device pool (three discs) as RAID1. Now I want
->>>>>> to
->>>>>> add a
->>>>>> new disc to increase the pool. I followed the description on
->>>>>> https:
->>>>>> //bt
->>>>>> rfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devic
->>>>>> es
->>>>>> and
->>>>>> used 'btrfs add <device> <btrfs path>'. After that I called a
->>>>>> balance
->>>>>> for rebalancing the RAID1 using 'btrfs balance start <btrfs
->>>>>> path>'.
->>>>>> Is that anything or should I need to call a resize (for
->>>>>> example) or
->>>>>> anything else? Or do I need to specify filter/profile
->>>>>> parameters
->>>>>> for
->>>>>> balancing?
->>>>>> I am a little bit confused because the balance command is
->>>>>> running
->>>>>> since
->>>>>> 12 hours and only 3GB of data are touched. This would mean
->>>>>> the
->>>>>> whole
->>>>>> balance process (new disc has 8TB) would run a long, long
->>>>>> time...
->>>>>> and
->>>>>> is using one cpu by 100%.
->>>>>
->>>>> Based on what you're saying, it sounds like you've either run
->>>>> into a
->>>>> bug, or have a huge number of snapshots on this filesystem.
->>>>
->>>> It depends what you define as huge. The call of 'btrfs sub list
->>>> <btrfs
->>>> path>' returns a list of 255 subvolume.
->>>
->>> OK, this isn't horrible, especially if most of them aren't
->>> snapshots
->>> (it's cross-subvolume reflinks that are most of the issue when it
->>> comes
->>> to snapshots, not the fact that they're subvolumes).
->>>> I think this is not too huge. The most of this subvolumes was
->>>> created
->>>> using docker itself. I cancel the balance (this will take awhile)
->>>> and will try to delete such of these subvolumes/snapshots.
->>>> What can I do more?
->>>
->>> As Roman mentioned in his reply, it may also be qgroup related.  If
->>> you run:
->>> btrfs quota disable
->>
->> It seems quota was one part of it. Thanks for the tip. I disabled and
->> started balance new.
->> Now approx. each 5 min. one chunk will be relocated. But if I take
->> the
->> reported 10860 chunks and calc. the time it will take ~37 days to
->> finish... So, it seems I have to investigate more time into figure
->> out
->> the subvolume / snapshots structure created by docker.
->> A first deeper look shows, there is a subvolume with a snapshot,
->> which
->> has itself a snapshot, and so forth.
->>>
->>>
-> Now, the balance process finished after 127h the new disc is in the
-> pool... Not so long as expected but in my opinion long enough. Quota
-> seems one big driver in my case. What I could see over the time at the
-> beginning many extends was relocated ignoring the new disc. Properly it
-> could be a good idea to rebalance using filter (like -dusage=30 for
-> example) before add the new disc to decrease the time.
-> But only theory. It will try to keep it in my mind for the next time.
-FWIW, in my own experience, I've found that this does help, although I 
-usually use '-dusage=50 -musage=50'.  The same goes for converting to a 
-different profile, as in both cases, balance seems to naively assume 
-that there is only one partially filled chunk (optimal behavior differs 
-between that and the realistic case).
+On 2017-07-31 06:51, Sebastian Ochmann wrote:
+> Hello,
+> 
+> I have a quite simple and possibly stupid question. Since I'm 
+> occasionally seeing warnings about failed loading of free space cache, I 
+> wanted to clear and rebuild space cache. So I mounted the filesystem(s) 
+> with -o clear_cache and subsequently with my regular options which 
+> includes space_cache. Indeed, dmesg tells me:
+> 
+> [   60.285190] BTRFS info (device dm-1): force clearing of disk cache
+> 
+> and then
+> 
+> [  137.151845] BTRFS info (device dm-1): use ssd allocation scheme
+> [  137.151850] BTRFS info (device dm-1): disk space caching is enabled
+> [  137.151852] BTRFS info (device dm-1): has skinny extents
+> 
+> To my understanding, btrfs-freespace should then start working to 
+> rebuild the free space cache. However, I can't remember that I have ever 
+> seen btrfs work hard after clearing the space cache. The drives aren't 
+> working much, and the btrfs-freespace processes (which are indeed there) 
+> don't do anything either.
+> 
+> So simple question: Can anyone try to clear their space cache and 
+> confirm that btrfs actually does something after doing so? Is there 
+> anything I could do to confirm that something is happening?
+Based on my (limited) understanding of that code, assuming you're using 
+the original free space cache (which I think is the case, since you said 
+you're using the regular 'space_cache' option instead of 
+'space_cache=v2'), there's not _much_ work that needs to be done unless 
+free space is heavily fragmented and the disk is reasonably full.  The 
+original free space cache is pretty similar to an allocation bitmap, and 
+computing that is not hard to do (you just figure out which blocks are 
+actually used).
+
+Based on my own experience, you'll see almost zero activity most of the 
+time when rebuilding the free space cache regardless of which you are 
+using (the original, or the new version), although the newer free space 
+tree code appears to do a bit more work.
+> 
+> The drives in question are a SSD and a HDD, both in the range of 1-2 TB 
+> in size.
+> 
+> I'm on Arch Linux, kernel 4.12.3, btrfs-progs 4.11.1
+

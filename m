@@ -1,72 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44976 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751906AbdGLXV6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Jul 2017 19:21:58 -0400
-Date: Thu, 13 Jul 2017 01:20:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: report errors when checksum is not found
-Message-ID: <20170712232043.GW2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170711204316.11283-1-bo.li.liu@oracle.com>
- <20170712144036.GC2866@twin.jikos.cz>
- <20170712174628.GB4268@localhost.localdomain>
- <20170712213542.GC4268@localhost.localdomain>
+Received: from mail-wm0-f49.google.com ([74.125.82.49]:38153 "EHLO
+        mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751126AbdGaWAz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Jul 2017 18:00:55 -0400
+Received: by mail-wm0-f49.google.com with SMTP id m85so2119906wma.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jul 2017 15:00:54 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170712213542.GC4268@localhost.localdomain>
+In-Reply-To: <20170731211750.bpo4roiqkr4t5iae@merlins.org>
+References: <20170501170641.GG3516@merlins.org> <20170707163834.GA6083@merlins.org>
+ <20170709043417.GE6704@merlins.org> <21425367.VGcO8ck7Vu@merkaba>
+ <CAMG9ccyWS87NwUrJGNvF6Dt440yhCp_P9_-hFeJE70YDRwpfNg@mail.gmail.com> <20170731211750.bpo4roiqkr4t5iae@merlins.org>
+From: Justin Maggard <jmaggard10@gmail.com>
+Date: Mon, 31 Jul 2017 15:00:53 -0700
+Message-ID: <CAKgsxVST3+DVxAoZ87JW0hLW56CakeHy8LUbLLs6Sp_X2UXOCg@mail.gmail.com>
+Subject: Re: 4.11.6 / more corruption / root 15455 has a root item with a more
+ recent gen (33682) compared to the found root node (0)
+To: Marc MERLIN <marc@merlins.org>
+Cc: Ivan Sizov <sivan606@gmail.com>, Martin Steigerwald <martin@lichtvoll.de>,
+        Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>, Duncan <1i5t5.duncan@cox.net>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 12, 2017 at 03:35:43PM -0600, Liu Bo wrote:
-> On Wed, Jul 12, 2017 at 11:46:29AM -0600, Liu Bo wrote:
-> > On Wed, Jul 12, 2017 at 04:40:36PM +0200, David Sterba wrote:
-> > > On Tue, Jul 11, 2017 at 02:43:16PM -0600, Liu Bo wrote:
-> > > > When btrfs fails the checksum check, it'll fill the whole page with
-> > > > "1".
-> > > 
-> > > One could ask, why is the page filled with 1s. Brought by commit
-> > > 07157aacb1ecd394a54949 from 2007, without mentioning any justification.
-> > > I'm more inclined to revisit this behaviour and drop it eventually.
-> > > 
-> > > > However, if %csum_expected is 0 (which means there is no checksum), then
-> > > > for some unknown reason, we just pretend that the read is correct, so
-> > > > userspace would be confused about the dilemma that read is successful but
-> > > > getting a page with all content being "1".
-> > > 
-> > > Here 'no checksum' means that no checksum was found but was expected,
-> > > right?
-> > 
-> > Yes, no checksum was found.
-> > 
-> > > An EIO would fail the read, I don't see a reason why the page
-> > > needs to be "zeroed". The contents would be inaccessible anyway.
-> > >
-> > 
-> > Right, resetting page's content is needed when we return 0 instead of
-> > -EIO.  I guess it was introduced for testing.  So yes, I'm glad to
-> > remove that part, will do in a v2.
-> >
-> 
-> Since this __readpage_endio_check() is also called by directIO's
-> btrfs_retry_endio(), in the dio case, userspace can read out the page
-> content.
-> 
-> For that reason, I think we would have to keep it and return errors to
-> userspace.
+On Mon, Jul 31, 2017 at 2:17 PM, Marc MERLIN <marc@merlins.org> wrote:
+> On Tue, Aug 01, 2017 at 12:07:14AM +0300, Ivan Sizov wrote:
+>> 2017-07-09 10:57 GMT+03:00 Martin Steigerwald <martin@lichtvoll.de>:
+>> > Hello Marc.
+>> >
+>> > Marc MERLIN - 08.07.17, 21:34:
+>> >> Sigh,
+>> >>
+>> >> This is now the 3rd filesystem I have (on 3 different machines) that is
+>> >> getting corruption of some kind (on 4.11.6).
+>> >
+>> > Anyone else getting corruptions with 4.11?
+>> Yes, a lot. There are at least 3 cases, probably I've missed something.
+>> https://www.spinics.net/lists/linux-btrfs/msg67177.html
+>> https://www.spinics.net/lists/linux-btrfs/msg67681.html
+>> https://unix.stackexchange.com/questions/369133/dealing-with-btrfs-ref-backpointer-mismatches-backref-missing/369275
+>
+> Indeed. My main server is happy back on 4.9.36 and while my laptop is
+> stuck on 4.11 due to other kernel issues that prevent me from going back
+> to 4.9, it only corrupted a single filesystem so far, and no other ones
+> that I've noticed yet.
+> Hopefully that will hold :-/
+>
 
-We can decide what to do in case of the error:
+Marc, do you have quotas enabled?  IIRC, you're a send/receive user.
+The combination of quotas and btrfs receive can corrupt your
+filesystem, as shown by the xfstest I sent to the list a little while
+ago.
 
-a) this is what we read from the disk and is presumably the expected
-   content yet with some corruptions. Ie. "this is what we found but EIO
-   tells you that it's not valid, you may still salvage some data"
-
-b) if the page contents is random and possibly contains sensitive data
-   of somebody else, then it should be zeroed.
-
-Although zeoring will be completely safe, I know people are asking about
-a way to get the data even if the checksum does not match (other than
-manually locating the data on the device). This would need to audit the
-call paths leading to __readpage_endio_check.
+-Justin

@@ -1,62 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f41.google.com ([209.85.214.41]:35481 "EHLO
-        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751912AbdHATOz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 15:14:55 -0400
-Subject: Re: Odd fallocate behavior on BTRFS.
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-References: <80c607b1-8798-8b86-8657-df2c1992186c@gmail.com>
- <91e33876-8f21-cd92-6b52-84dd2fb085b7@applied-asynchrony.com>
- <f09151f3-b893-c24b-8eb6-364d3ffddd89@applied-asynchrony.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <43495fb1-7bdc-15c1-b08c-e2f4a93780ea@gmail.com>
-Date: Tue, 1 Aug 2017 15:14:50 -0400
+Received: from azure.uno.uk.net ([95.172.254.11]:51016 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752016AbdHAUJP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Aug 2017 16:09:15 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:50906)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1dcdTd-0000IA-IV
+        for linux-btrfs@vger.kernel.org; Tue, 01 Aug 2017 21:09:13 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dcdTT-0002vF-Oo
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 21:09:03 +0100
 MIME-Version: 1.0
-In-Reply-To: <f09151f3-b893-c24b-8eb6-364d3ffddd89@applied-asynchrony.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22912.57311.417226.447973@tree.ty.sabi.co.uk>
+Date: Tue, 1 Aug 2017 21:09:03 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Btrfs + compression = slow performance and high cpu usage
+In-Reply-To: <15990599.40.1501611004053.JavaMail.gkos@dynomob>
+References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
+        <8446582.541.1501260065690.JavaMail.gkos@dynomob>
+        <22907.32175.311827.10738@tree.ty.sabi.co.uk>
+        <19527869.26.1501422186960.JavaMail.gkos@dynomob>
+        <22911.5971.350346.969146@tree.ty.sabi.co.uk>
+        <6022267.255.1501581534233.JavaMail.gkos@dynomob>
+        <22912.32415.601826.757780@tree.ty.sabi.co.uk>
+        <15990599.40.1501611004053.JavaMail.gkos@dynomob>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-01 15:07, Holger Hoffstätte wrote:
-> On 08/01/17 20:15, Holger Hoffstätte wrote:
->> On 08/01/17 19:34, Austin S. Hemmelgarn wrote:
->> [..]
->>> Apparently, if you call fallocate() on a file with an offset of 0 and
->>> a length longer than the length of the file itself, BTRFS will
->>> allocate that exact amount of space, instead of just filling in holes
->>> in the file and allocating space to extend it.  If there isn't enough
->>> space on the filesystem for this, then it will fail, even though it
->>> would succeed on ext4, XFS, and F2FS.
->> [..]
->>> I'm curious to hear anybody's thoughts on this, namely: 1. Is this
->>> behavior that should be considered implementation defined? 2. If not,
->>> is my assessment that BTRFS is behaving incorrectly in this case
->>> accurate?
->>
->> IMHO no and yes, respectively. Both fallocate(2) and posix_fallocate(3)
->> make it very clear that the expected default behaviour is to extend.
->> I don't think this can be interpreted in any other way than incorrect
->> behaviour on behalf of btrfs.
->>
->> Your script reproduces for me, so that's a start.
-> 
-> Your reproducer should never ENOSPC because it requires exactly 0 new bytes
-> to be allocated, yet it also fails with --keep-size.
-Unless I'm doing the math wrong, it should require exactly 2 new bytes. 
-65536 (the block size for dd) times 32768 (the block count for dd) is 
-2147483648 (2^31), while the fallocate call requests a total size of 
-2147483650 bytes.  It may not need to allocate a new block, but it 
-should definitely be extending the file.>
->  From a quick look it seems that btrfs_fallocate() unconditionally calls
-> btrfs_alloc_data_chunk_ondemand(inode, alloc_end - alloc_start) to lazily
-> allocate the necessary extent(s), which goes ENOSPC because that size
-> is again the full size of the requested range, not the difference between
-> the existing file size and the new range length.
-> But I might be misreading things..
-As far as I can tell, that is correct.  However, we can't just extend 
-the range, because the existing file might have sparse regions, and 
-those need to have allocations forced too (and based on the code, this 
-will also cause issues any time the fallocate range includes already 
-allocated extents, so I don't think it can be special cased either).
+>> [ ... ] a "RAID5 with 128KiB writes and a 768KiB stripe
+>> size". [ ... ] several back-to-back 128KiB writes [ ... ] get
+>> merged by the 3ware firmware only if it has a persistent
+>> cache, and maybe your 3ware does not have one,
+
+> KOS: No I don't have persistent cache. Only the 512 Mb cache
+> on board of a controller, that is BBU.
+
+If it is a persistent cache, that can be battery-backed (as I
+wrote, but it seems that you don't have too much time to read
+replies) then the size of the write, 128KiB or not, should not
+matter much; the write will be reported complete when it hits
+the persistent cache (whichever technology it used), and then
+the HA fimware will spill write cached data to the disks using
+the optimal operation width.
+
+Unless the 3ware firmware is really terrible (and depending on
+model and vintage it can be amazingly terrible) or the battery
+is no longer recharging and then the host adapter switches to
+write-through.
+
+That you see very different rates between uncompressed and
+compressed writes, where the main difference is the limitation
+on the segment size, seems to indicate that compressed writes
+involve a lot of RMW, that is sub-stripe updates. As I mentioned
+already, it would be interesting to retry 'dd' with different
+'bs' values without compression and with 'sync' (or 'direct'
+which only makes sense without compression).
+
+> If I had additional SSD caching on the controller I would have
+> mentioned it.
+
+So far you had not mentioned the presence of BBU cache either,
+which is equivalent, even if in one of your previous message
+(which I try to read carefully) there were these lines:
+
+>>>> Default Cache Policy: WriteBack, ReadAhead, Direct, No Write Cache if Bad BBU
+>>>> Current Cache Policy: WriteBack, ReadAhead, Direct, No Write Cache if Bad BBU
+
+So perhaps someone else would have checked long ago the status
+of the BBU and whether the "No Write Cache if Bad BBU" case has
+happened. If the BBU is still working and the policy is still
+"WriteBack" then things are stranger still.
+
+> I was also under impression, that in a situation where mostly
+> extra large files will be stored on the massive, the bigger
+> strip size would indeed increase the speed, thus I went with
+> with the 256 Kb strip size.
+
+That runs counter to this simple story: suppose a program is
+doing 64KiB IO:
+
+* For *reads*, there are 4 data drives and the strip size is
+  16KiB: the 64KiB will be read in parallel on 4 drives. If the
+  strip size is 256KiB then the 64KiB will be read sequentially
+  from just one disk, and 4 successive reads will be read
+  sequentially from the same drive.
+
+* For *writes* on a parity RAID like RAID5 things are much, much
+  more extreme: the 64KiB will be written with 16KiB strips on a
+  5-wide RAID5 set in parallel to 5 drives, with 4 stripes being
+  updated with RMW. But with 256KiB strips it will partially
+  update 5 drives, because the stripe is 1024+256KiB, and it
+  needs to do RMW, and four successive 64KiB drives will need to
+  do that too, even if only one drive is updated. Usually for
+  RAID5 there is an optimization that means that only the
+  specific target drive and the parity drives(s) need RMW, but
+  it is still very expensive.
+
+This is the "storage for beginners" version, what happens in
+practice however depends a lot on specific workload profile
+(typical read/write size and latencies and rates), caching and
+queueing algorithms in both Linux and the HA firmware.
+
+> Would I be correct in assuming that the RAID strip size of 128
+> Kb will be a better choice if one plans to use the BTRFS with
+> compression?
+
+That would need to be tested, because of "depends a lot on
+specific workload profile, caching and queueing algorithms", but
+my expectation is the the lower the better. Given that you have
+4 drives giving a 3+1 RAID set, perhaps a 32KiB or 64KiB strip
+size, given a data stripe size of 96KiB or 192KiB, would be
+better.

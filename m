@@ -1,58 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-me1aus01on0057.outbound.protection.outlook.com ([104.47.116.57]:3296
-        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751101AbdHAKxv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Aug 2017 06:53:51 -0400
-From: Paul Jones <paul@pauljones.id.au>
-To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>,
-        Peter Grandi <pg@btrfs.list.sabi.co.UK>
-CC: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: RE: Btrfs + compression = slow performance and high cpu usage
-Date: Tue, 1 Aug 2017 10:53:48 +0000
-Message-ID: <MEXPR01MB216832C336FC052D1D3B7F6C9EB30@MEXPR01MB2168.ausprd01.prod.outlook.com>
-References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
- <8446582.541.1501260065690.JavaMail.gkos@dynomob>
- <22907.32175.311827.10738@tree.ty.sabi.co.uk>
- <19527869.26.1501422186960.JavaMail.gkos@dynomob>
- <22911.5971.350346.969146@tree.ty.sabi.co.uk>
- <6022267.255.1501581534233.JavaMail.gkos@dynomob>
-In-Reply-To: <6022267.255.1501581534233.JavaMail.gkos@dynomob>
-Content-Type: text/plain; charset="utf-8"
+Received: from ip-88.staren.nu ([77.110.19.88]:37353 "EHLO iapetus.neab.net"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751199AbdHAMNx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Aug 2017 08:13:53 -0400
+Received: from pwm (helo=localhost)
+        by iapetus.neab.net with local-esmtp (Exim 4.80)
+        (envelope-from <pwm@iapetus.neab.net>)
+        id 1dcVa7-00089n-1u
+        for linux-btrfs@vger.kernel.org; Tue, 01 Aug 2017 13:43:23 +0200
+Date: Tue, 1 Aug 2017 13:43:23 +0200 (CEST)
+From: pwm <pwm@iapetus.neab.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Massive loss of disk space
+Message-ID: <alpine.DEB.2.02.1708011253230.31126@iapetus.neab.net>
 MIME-Version: 1.0
+Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Konstantin V. Gavrilenko
-> Sent: Tuesday, 1 August 2017 7:58 PM
-> To: Peter Grandi <pg@btrfs.list.sabi.co.UK>
-> Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-> Subject: Re: Btrfs + compression = slow performance and high cpu usage
-> 
-> Peter, I don't think the filefrag is showing the correct fragmentation status of
-> the file when the compression is used.
-> At least the one that is installed by default in Ubuntu 16.04 -  e2fsprogs |
-> 1.42.13-1ubuntu1
-> 
-> So for example, fragmentation of compressed file is 320 times more then
-> uncompressed one.
-> 
-> root@homenas:/mnt/storage/NEW# filefrag test5g-zeroes
-> test5g-zeroes: 40903 extents found
-> 
-> root@homenas:/mnt/storage/NEW# filefrag test5g-data
-> test5g-data: 129 extents found
+I have a 10TB file system with a parity file for a snapraid. However, I 
+can suddenly not extend the parity file despite the file system only being 
+about 50% filled - I should have 5TB of unallocated space. When trying to 
+extend the parity file, fallocate() just returns ENOSPC, i.e. that the 
+disk is full.
 
-Compressed extents are about 128kb, uncompressed extents are about 128Mb. (can't remember the exact numbers.) 
-I've had trouble with slow filesystems when using compression. The problem seems to go away when removing compression.
+Machine was originally a Debian 8 (Jessie) but after I detected the issue 
+and no btrfs tool did show any errors, I have updated to Debian 9 (Snatch) 
+to get a newer kernel and newer btrfs tools.
 
-Paul.
+pwm@europium:/mnt$ btrfs --version
+btrfs-progs v4.7.3
+pwm@europium:/mnt$ uname -a
+Linux europium 4.9.0-3-amd64 #1 SMP Debian 4.9.30-2+deb9u2 (2017-06-26) 
+x86_64 GNU/Linux
 
 
 
 
+pwm@europium:/mnt/snap_04$ ls -l
+total 4932703608
+-rw------- 1 root root     319148889 Jul  8 04:21 snapraid.content
+-rw------- 1 root root     283115520 Aug  1 04:08 snapraid.content.tmp
+-rw------- 1 root root 5050486226944 Jul 31 17:14 snapraid.parity
 
 
-ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m
+
+pwm@europium:/mnt/snap_04$ df .
+Filesystem      1K-blocks       Used  Available Use% Mounted on
+/dev/sdg1      9766434816 4944614648 4819831432  51% /mnt/snap_04
+
+
+
+pwm@europium:/mnt/snap_04$ sudo btrfs fi show .
+Label: 'snap_04'  uuid: c46df8fa-03db-4b32-8beb-5521d9931a31
+         Total devices 1 FS bytes used 4.60TiB
+         devid    1 size 9.09TiB used 9.09TiB path /dev/sdg1
+
+Compare this with the second snapraid parity disk:
+pwm@europium:/mnt/snap_04$ sudo btrfs fi show /mnt/snap_05/
+Label: 'snap_05'  uuid: bac477e3-e78c-43ee-8402-6bdfff194567
+         Total devices 1 FS bytes used 4.69TiB
+         devid    1 size 9.09TiB used 4.70TiB path /dev/sdi1
+
+So on one parity disk, devid is 9.09TiB used - on the other only 4.70TiB.
+While almost the same amount of file system usage. And almost identical 
+usage pattern. It's an archival RAID, so there is hardly any writes to the 
+parity files because there are almost no file changes to the data files. 
+The main usage is that the parity file gets extended when one of the data 
+disks reaches a new high water mark.
+
+The only file that gets regularly rewritten is the snapraid.content file 
+that gets regenerated after every scrub.
+
+
+
+pwm@europium:/mnt/snap_04$ sudo btrfs fi df .
+Data, single: total=9.08TiB, used=4.59TiB
+System, DUP: total=8.00MiB, used=992.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=6.00GiB, used=4.81GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+
+pwm@europium:/mnt/snap_04$ sudo btrfs filesystem du .
+      Total   Exclusive  Set shared  Filename
+    4.59TiB     4.59TiB           -  ./snapraid.parity
+  304.37MiB   304.37MiB           -  ./snapraid.content
+  270.00MiB   270.00MiB           -  ./snapraid.content.tmp
+    4.59TiB     4.59TiB       0.00B  .
+
+
+
+pwm@europium:/mnt/snap_04$ sudo btrfs filesystem usage .
+Overall:
+     Device size:                   9.09TiB
+     Device allocated:              9.09TiB
+     Device unallocated:              0.00B
+     Device missing:                  0.00B
+     Used:                          4.60TiB
+     Free (estimated):              4.49TiB      (min: 4.49TiB)
+     Data ratio:                       1.00
+     Metadata ratio:                   2.00
+     Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,single: Size:9.08TiB, Used:4.59TiB
+    /dev/sdg1       9.08TiB
+
+Metadata,single: Size:8.00MiB, Used:0.00B
+    /dev/sdg1       8.00MiB
+
+Metadata,DUP: Size:6.00GiB, Used:4.81GiB
+    /dev/sdg1      12.00GiB
+
+System,single: Size:4.00MiB, Used:0.00B
+    /dev/sdg1       4.00MiB
+
+System,DUP: Size:8.00MiB, Used:992.00KiB
+    /dev/sdg1      16.00MiB
+
+Unallocated:
+    /dev/sdg1         0.00B
+
+
+
+pwm@europium:~$ sudo btrfs check /dev/sdg1
+Checking filesystem on /dev/sdg1
+UUID: c46df8fa-03db-4b32-8beb-5521d9931a31
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 5057294639104 bytes used err is 0
+total csum bytes: 4529856120
+total tree bytes: 5170151424
+total fs tree bytes: 178700288
+total extent tree bytes: 209616896
+btree space waste bytes: 182357204
+file data blocks allocated: 5073330888704
+  referenced 5052040339456
+
+
+
+pwm@europium:~$ sudo btrfs scrub status /mnt/snap_04/
+scrub status for c46df8fa-03db-4b32-8beb-5521d9931a31
+         scrub started at Mon Jul 31 21:26:50 2017 and finished after 
+06:53:47
+         total bytes scrubbed: 4.60TiB with 0 errors
+
+
+
+So where have my 5TB disk space gone lost?
+And what should I do to be able to get it back again?
+
+I could obviously reformat the partition and rebuild the parity since I 
+still have one good parity, but that doesn't feel like a good route. It 
+isn't impossible this might happen again.
+
+/Per W

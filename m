@@ -1,57 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36939 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751035AbdHAWqf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 18:46:35 -0400
-Date: Tue, 1 Aug 2017 15:45:19 -0600
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: "marcel.cochem" <marcel.cochem@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS error: bad tree block start 0 623771648
-Message-ID: <20170801214519.GF26357@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CAN_=hu0k8+FmrSOw5P5TAZyjzjvGyqv_ByYr27s8rZY456k87Q@mail.gmail.com>
- <20170731181200.GA3459@lim.localdomain>
- <20170801110410.0813a03a@natsu>
+Received: from azure.uno.uk.net ([95.172.254.11]:54694 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751029AbdHAXyM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Aug 2017 19:54:12 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:40426)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1dcgzK-0003U1-AB
+        for linux-btrfs@vger.kernel.org; Wed, 02 Aug 2017 00:54:10 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dcgzI-00027D-A1
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Aug 2017 00:54:08 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170801110410.0813a03a@natsu>
+Message-ID: <22913.5277.694308.689951@tree.ty.sabi.co.uk>
+Date: Wed, 2 Aug 2017 00:54:05 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Btrfs + compression = slow performance and high cpu usage
+In-Reply-To: <22912.57311.417226.447973@tree.ty.sabi.co.uk>
+References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
+        <8446582.541.1501260065690.JavaMail.gkos@dynomob>
+        <22907.32175.311827.10738@tree.ty.sabi.co.uk>
+        <19527869.26.1501422186960.JavaMail.gkos@dynomob>
+        <22911.5971.350346.969146@tree.ty.sabi.co.uk>
+        <6022267.255.1501581534233.JavaMail.gkos@dynomob>
+        <22912.32415.601826.757780@tree.ty.sabi.co.uk>
+        <15990599.40.1501611004053.JavaMail.gkos@dynomob>
+        <22912.57311.417226.447973@tree.ty.sabi.co.uk>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 01, 2017 at 11:04:10AM +0500, Roman Mamedov wrote:
-> On Mon, 31 Jul 2017 11:12:01 -0700
-> Liu Bo <bo.li.liu@oracle.com> wrote:
-> 
-> > Superblock and chunk tree root is OK, looks like the header part of
-> > the tree root is now all-zero, but I'm unable to think of a btrfs bug
-> > which can lead to that (if there is, it is a serious enough one)
-> 
-> I see that the FS is being mounted with "discard". So maybe it was a TRIM gone
-> bad (wrong location or in a wrong sequence).
->
+[ ... ]
 
-By checking discard path in btrfs, looks OK to me, more likely it's
-caused by problems from underlying stuff.
+> This is the "storage for beginners" version, what happens in
+> practice however depends a lot on specific workload profile
+> (typical read/write size and latencies and rates), caching and
+> queueing algorithms in both Linux and the HA firmware.
 
-Thanks,
+To add a bit of slightly more advanced discussion, the main
+reason for larger strips ("chunk size) is to avoid the huge
+latencies of disk rotation using unsynchronized disk drives, as
+detailed here:
 
--liubo
+  http://www.sabi.co.uk/blog/12-thr.html?120310#120310
 
-> Generally it appears to be not recommended to use "discard" by now (because of
-> its performance impact, and maybe possible issues like this), instead schedule
-> to call "fstrim <mountpoint>" once a day or so, and/or on boot-up.
-> 
-> > on ssd like disks, by default there is only one copy for metadata.
-> 
-> Time and time again, the default of "single" metadata for SSD is a terrible
-> idea. Most likely DUP metadata would save the FS in this case.
-> 
-> -- 
-> With respect,
-> Roman
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That relates weakly to Btrfs.

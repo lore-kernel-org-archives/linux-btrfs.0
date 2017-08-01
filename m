@@ -1,100 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:49950 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751761AbdHASPu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 14:15:50 -0400
-Date: Tue, 1 Aug 2017 18:15:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Liu Bo <bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:41722 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751928AbdHASZV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 14:25:21 -0400
+Date: Tue, 1 Aug 2017 11:24:12 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: kreijack@inwind.it
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 00/14 RFC] Btrfs: Add journal for raid5/6 writes
-Message-ID: <20170801181547.GZ7140@carfax.org.uk>
+Message-ID: <20170801172411.GE26357@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <20170801161439.13426-1-bo.li.liu@oracle.com>
- <20170801172857.GY7140@carfax.org.uk>
- <20170801165639.GB26357@localhost.localdomain>
+ <ac334d78-77e1-081d-1cf0-48e36e25268f@libero.it>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="+hGRuEBnBrDfOHI9"
-In-Reply-To: <20170801165639.GB26357@localhost.localdomain>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <ac334d78-77e1-081d-1cf0-48e36e25268f@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---+hGRuEBnBrDfOHI9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Aug 01, 2017 at 10:56:39AM -0600, Liu Bo wrote:
-> On Tue, Aug 01, 2017 at 05:28:57PM +0000, Hugo Mills wrote:
-> >    Hi,
-> > 
-> >    Great to see something addressing the write hole at last.
-> > 
-> > On Tue, Aug 01, 2017 at 10:14:23AM -0600, Liu Bo wrote:
-> > > This aims to fix write hole issue on btrfs raid5/6 setup by adding a
-> > > separate disk as a journal (aka raid5/6 log), so that after unclean
-> > > shutdown we can make sure data and parity are consistent on the raid
-> > > array by replaying the journal.
-> > 
-> >    What's the behaviour of the FS if the log device dies during use?
-> >
+On Tue, Aug 01, 2017 at 07:42:14PM +0200, Goffredo Baroncelli wrote:
+> Hi Liu,
 > 
-> Error handling on IOs is still under construction (belongs to known
-> limitations).
+> On 2017-08-01 18:14, Liu Bo wrote:
+> > This aims to fix write hole issue on btrfs raid5/6 setup by adding a
+> > separate disk as a journal (aka raid5/6 log), so that after unclean
+> > shutdown we can make sure data and parity are consistent on the raid
+> > array by replaying the journal.
+> > 
 > 
-> If the log device dies suddenly, I think we could skip the writeback
-> to backend raid arrays and follow the rule in btrfs, filp FS to
-> readonly as it may expose data loss.  What do you think?
+> it would be possible to have more information ?
+> - what is logged ? data, parity or data + parity ?
 
-   I think the key thing for me is that the overall behaviour of the
-redundancy in the FS is not compromised by the logging solution. That
-is, the same guarantees still hold: For RAID-5, you can lose up to one
-device of the FS (*including* any log devices), and the FS will
-continue to operate normally, but degraded. For RAID-6, you can lose
-up to two devices without losing any capabilities of the FS. Dropping
-to read-only if the (single) log device fails would break those
-guarantees.
+Patch 5 has more details(sorry for not making it clear that in the
+cover letter).
 
-   I quite like the idea of embedding the log chunks into the
-allocated structure of the FS -- although as pointed out, this is
-probably going to need a new chunk type, and (to retain the guarantees
-of the RAID-6 behaviour above) the ability to do 3-way RAID-1 on those
-chunks. You'd also have to be able to balance the log structures while
-in flight. It sounds like a lot more work for you, though.
+So both data and parity are logged so that while replaying the journal
+everything is written to whichever disk it should be written to.
 
-   Hmm... if 3-way RAID-1 (3c) is available, then you could also have
-RAID-1*3 on metadata, RAID-6 on data, and have 2-device redundancy
-throughout. That's also a very attractive configuration in many
-respects. (Analagous to RAID-1 metadata and RAID-5 data).
+> - in the past I thought that it would be sufficient to log only the stripe position involved by a RMW cycle, and then start a scrub on these stripes in case of an unclean shutdown: do you think that it is feasible ?
 
-   Hugo.
+An unclean shutdown causes inconsistence between data and parity, so
+scrub won't help as it's not able to tell which one (data or parity)
+is valid.
 
--- 
-Hugo Mills             | That's not rain, that's a lake with slots in it.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+With nodatacow, we do overwrite, so RMW during unclean shutdown is not safe.
+With datacow, we don't do overwrite, but the following situation may happen,
+say we have a raid5 setup with 3 disks, the stripe length is 64k, so
 
---+hGRuEBnBrDfOHI9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+1) write 64K  --> now the raid layout is
+[64K data + 64K random + 64K parity]
+2) write another 64K --> now the raid layout after RMW is
+[64K 1)'s data + 64K 2)'s data + 64K new parity]
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+If unclean shutdown occurs before 2) finishes, then parity may be
+corrupted and then 1)'s data may be recovered wrongly if the disk
+which holds 1)'s data is offline.
 
-iQIcBAEBAgAGBQJZgMVTAAoJEFheFHXiqx3kogkQAKmFHf6n3tBWChxP5q6YbUTL
-3RgSSLStTUvR9uhvixUYWcX656sGc5VMndeFv0rrmifGHdIIJ9h7DJBGWj2/Qi2s
-puAkX8KKK3aVT66DJohqllacbvMWBuNL4qF/n7YvlMd7a3m/XXxlYi7l1Dx2RecH
-mQPhgZ1WDgKRbhr/aHm/VwqpKh3VZFq3k3szxZs1VDslVlF8mtXRRgsISMAAlW//
-U34eTu4RkOvKL4OGi53aYirbm+/r2vlAVtuLUPtY7B4JYqNRuCkD9E62EsiZLNlS
-QjJdbGj9Es5zMeGMILxJqQJ+32TkNsRt5qg2/6+qNVz4N+e8zlrHFZe5umsEg53P
-I8Kv6JndECY9yB8fGX+spE1KE/398VNSjX3P5A7Tv+OtSKUo/WCHlGkequwa7Hvu
-B++CePvpy3enNMsulCbW092Xg4eygQ3F2nrTEKswjwK/THp6+0CdsFQfCK2iHayo
-p3qEDn2VTZcrV4C1F+PO0R+4xIgMd6EqjhE5FEDzpXyWYLZA7V8WgUS9LZb/ScfJ
-eCoG/w3g69qO/fdrBWV8OYYx1E/KDZcjzPptduU9fPKioTuCxireEtuwRVWq4xRO
-fsJszmVZ6L1t/QMudKm8xLLcxJXRc6YnxY8tzgn0iklOKmOVZapYKOUY833am0AM
-7xiVLjM1aIR9wVgkl5KR
-=2HZN
------END PGP SIGNATURE-----
+> - does this journal disk also host other btrfs log ?
+>
 
---+hGRuEBnBrDfOHI9--
+No, purely data/parity and some associated metadata.
+
+Thanks,
+
+-liubo
+
+> > The idea and the code are similar to the write-through mode of md
+> > raid5-cache, so ppl(partial parity log) is also feasible to implement.
+> > (If you've been familiar with md, you may find this patch set is
+> > boring to read...)
+> > 
+> > Patch 1-3 are about adding a log disk, patch 5-8 are the main part of
+> > the implementation, the rest patches are improvements and bugfixes,
+> > eg. readahead for recovery, checksum.
+> > 
+> > Two btrfs-progs patches are required to play with this patch set, one
+> > is to enhance 'btrfs device add' to add a disk as raid5/6 log with the
+> > option '-L', the other is to teach 'btrfs-show-super' to show
+> > %journal_tail.
+> > 
+> > This is currently based on 4.12-rc3.
+> > 
+> > The patch set is tagged with RFC, and comments are always welcome,
+> > thanks.
+> > 
+> > Known limitations:
+> > - Deleting a log device is not implemented yet.
+> > 
+> > 
+> > Liu Bo (14):
+> >   Btrfs: raid56: add raid56 log via add_dev v2 ioctl
+> >   Btrfs: raid56: do not allocate chunk on raid56 log
+> >   Btrfs: raid56: detect raid56 log on mount
+> >   Btrfs: raid56: add verbose debug
+> >   Btrfs: raid56: add stripe log for raid5/6
+> >   Btrfs: raid56: add reclaim support
+> >   Btrfs: raid56: load r5log
+> >   Btrfs: raid56: log recovery
+> >   Btrfs: raid56: add readahead for recovery
+> >   Btrfs: raid56: use the readahead helper to get page
+> >   Btrfs: raid56: add csum support
+> >   Btrfs: raid56: fix error handling while adding a log device
+> >   Btrfs: raid56: initialize raid5/6 log after adding it
+> >   Btrfs: raid56: maintain IO order on raid5/6 log
+> > 
+> >  fs/btrfs/ctree.h                |   16 +-
+> >  fs/btrfs/disk-io.c              |   16 +
+> >  fs/btrfs/ioctl.c                |   48 +-
+> >  fs/btrfs/raid56.c               | 1429 ++++++++++++++++++++++++++++++++++-----
+> >  fs/btrfs/raid56.h               |   82 +++
+> >  fs/btrfs/transaction.c          |    2 +
+> >  fs/btrfs/volumes.c              |   56 +-
+> >  fs/btrfs/volumes.h              |    7 +-
+> >  include/uapi/linux/btrfs.h      |    3 +
+> >  include/uapi/linux/btrfs_tree.h |    4 +
+> >  10 files changed, 1487 insertions(+), 176 deletions(-)
+> > 
+> 
+> 
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

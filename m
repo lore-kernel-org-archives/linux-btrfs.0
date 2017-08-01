@@ -1,105 +1,310 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58872 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751010AbdHCMpD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Aug 2017 08:45:03 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 6AE43AB22
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Aug 2017 12:45:02 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Move skip checksum check from btrfs_submit_direct to __btrfs_submit_dio_bio
-Date: Thu,  3 Aug 2017 15:44:58 +0300
-Message-Id: <1501764298-24522-1-git-send-email-nborisov@suse.com>
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:34007 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752044AbdHATvC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 15:51:02 -0400
+Received: by mail-qt0-f193.google.com with SMTP id i19so2648493qte.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 12:51:02 -0700 (PDT)
+From: josef@toxicpanda.com
+To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 1/2][v3] btrfs: fix readdir deadlock with pagefault
+Date: Tue,  1 Aug 2017 15:50:59 -0400
+Message-Id: <1501617060-30366-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently the code checks whether we should do data checksumming in
-btrfs_submit_direct and the boolean result of this check is passed to
-btrfs_submit_direct_hook, in turn passing it to __btrfs_submit_dio_bio which
-actually consumes it. The last function actually has all the necessary context
-to figure out whether to skip the check or not, so let's move the check closer
-to where it's being consumed. No functional changes.
+From: Josef Bacik <jbacik@fb.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Readdir does dir_emit while under the btree lock.  dir_emit can trigger
+the page fault which means we can deadlock.  Fix this by allocating a
+buffer on opening a directory and copying the readdir into this buffer
+and doing dir_emit from outside of the tree lock.
+
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/inode.c | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+v2->v3: actually set the filp->private_data properly for ioctl trans.
 
+ fs/btrfs/ctree.h |   5 +++
+ fs/btrfs/file.c  |   9 ++++-
+ fs/btrfs/inode.c | 107 +++++++++++++++++++++++++++++++++++++++++--------------
+ fs/btrfs/ioctl.c |  22 ++++++++----
+ 4 files changed, 109 insertions(+), 34 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5ee9f10..33e942b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1264,6 +1264,11 @@ struct btrfs_root {
+ 	atomic64_t qgroup_meta_rsv;
+ };
+ 
++struct btrfs_file_private {
++	struct btrfs_trans_handle *trans;
++	void *filldir_buf;
++};
++
+ static inline u32 btrfs_inode_sectorsize(const struct inode *inode)
+ {
+ 	return btrfs_sb(inode->i_sb)->sectorsize;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 0f102a1..1897c3b 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1973,8 +1973,15 @@ static ssize_t btrfs_file_write_iter(struct kiocb *iocb,
+ 
+ int btrfs_release_file(struct inode *inode, struct file *filp)
+ {
+-	if (filp->private_data)
++	struct btrfs_file_private *private = filp->private_data;
++
++	if (private && private->trans)
+ 		btrfs_ioctl_trans_end(filp);
++	if (private && private->filldir_buf)
++		kfree(private->filldir_buf);
++	kfree(private);
++	filp->private_data = NULL;
++
+ 	/*
+ 	 * ordered_data_close is set by settattr when we are about to truncate
+ 	 * a file from a non-zero size to a zero size.  This tries to
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5e48d2c10152..a8bd0f951454 100644
+index 9a4413a..bbdbeea 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8424,8 +8424,7 @@ static inline blk_status_t btrfs_lookup_and_bind_dio_csum(struct inode *inode,
- }
+@@ -5877,25 +5877,73 @@ unsigned char btrfs_filetype_table[] = {
+ 	DT_UNKNOWN, DT_REG, DT_DIR, DT_CHR, DT_BLK, DT_FIFO, DT_SOCK, DT_LNK
+ };
  
- static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
--					 u64 file_offset, int skip_sum,
--					 int async_submit)
-+					 u64 file_offset, int async_submit)
++/*
++ * All this infrastructure exists because dir_emit can fault, and we are holding
++ * the tree lock when doing readdir.  For now just allocate a buffer and copy
++ * our information into that, and then dir_emit from the buffer.  This is
++ * similar to what NFS does, only we don't keep the buffer around in pagecache
++ * because I'm afraid I'll fuck that up.  Long term we need to make filldir do
++ * copy_to_user_inatomic so we don't have to worry about page faulting under the
++ * tree lock.
++ */
++static int btrfs_opendir(struct inode *inode, struct file *file)
++{
++	struct btrfs_file_private *private;
++
++	private = kzalloc(sizeof(struct btrfs_file_private), GFP_KERNEL);
++	if (!private)
++		return -ENOMEM;
++	private->filldir_buf = kzalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!private->filldir_buf) {
++		kfree(private);
++		return -ENOMEM;
++	}
++	file->private_data = private;
++	return 0;
++}
++
++struct dir_entry {
++	u64 ino;
++	u64 offset;
++	unsigned type;
++	int name_len;
++};
++
++static int btrfs_filldir(void *addr, int entries, struct dir_context *ctx)
++{
++	while (entries--) {
++		struct dir_entry *entry = addr;
++		char *name = (char *)(entry + 1);
++		ctx->pos = entry->offset;
++		if (!dir_emit(ctx, name, entry->name_len, entry->ino,
++			      entry->type))
++			return 1;
++		addr += sizeof(struct dir_entry) + entry->name_len;
++		ctx->pos++;
++	}
++	return 0;
++}
++
+ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
  {
+ 	struct inode *inode = file_inode(file);
  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_dio_private *dip = bio->bi_private;
-@@ -8443,7 +8442,7 @@ static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
- 			goto err;
- 	}
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_file_private *private = file->private_data;
+ 	struct btrfs_dir_item *di;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+ 	struct btrfs_path *path;
++	void *addr;
+ 	struct list_head ins_list;
+ 	struct list_head del_list;
+ 	int ret;
+ 	struct extent_buffer *leaf;
+ 	int slot;
+-	unsigned char d_type;
+-	int over = 0;
+-	char tmp_name[32];
+ 	char *name_ptr;
+ 	int name_len;
++	int entries = 0;
++	int total_len = 0;
+ 	bool put = false;
+ 	struct btrfs_key location;
  
--	if (skip_sum)
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
- 		goto map;
+@@ -5906,12 +5954,14 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	if (!path)
+ 		return -ENOMEM;
  
- 	if (write && async_submit) {
-@@ -8473,8 +8472,7 @@ static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
- 	return ret;
- }
++	addr = private->filldir_buf;
+ 	path->reada = READA_FORWARD;
  
--static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
--				    int skip_sum)
-+static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
- {
- 	struct inode *inode = dip->inode;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-@@ -8537,7 +8535,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 		 */
- 		atomic_inc(&dip->pending_bios);
+ 	INIT_LIST_HEAD(&ins_list);
+ 	INIT_LIST_HEAD(&del_list);
+ 	put = btrfs_readdir_get_delayed_items(inode, &ins_list, &del_list);
  
--		ret = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
-+		ret = __btrfs_submit_dio_bio(bio, inode, file_offset,
- 					     async_submit);
- 		if (ret) {
- 			bio_put(bio);
-@@ -8557,8 +8555,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 	} while (submit_len > 0);
++again:
+ 	key.type = BTRFS_DIR_INDEX_KEY;
+ 	key.offset = ctx->pos;
+ 	key.objectid = btrfs_ino(BTRFS_I(inode));
+@@ -5921,6 +5971,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 		goto err;
  
- submit:
--	ret = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
--				     async_submit);
-+	ret = __btrfs_submit_dio_bio(bio, inode, file_offset, async_submit);
- 	if (!ret)
- 		return 0;
- 
-@@ -8583,12 +8580,9 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 	struct btrfs_dio_private *dip = NULL;
- 	struct bio *bio = NULL;
- 	struct btrfs_io_bio *io_bio;
--	int skip_sum;
- 	bool write = (bio_op(dio_bio) == REQ_OP_WRITE);
- 	int ret = 0;
- 
--	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+ 	while (1) {
++		struct dir_entry *entry;
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+ 		if (slot >= btrfs_header_nritems(leaf)) {
+@@ -5942,41 +5993,44 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 			goto next;
+ 		if (btrfs_should_delete_dir_index(&del_list, found_key.offset))
+ 			goto next;
 -
- 	bio = btrfs_bio_clone(dio_bio);
+-		ctx->pos = found_key.offset;
+-
+ 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
+ 		if (verify_dir_item(fs_info, leaf, slot, di))
+ 			goto next;
  
- 	dip = kzalloc(sizeof(*dip), GFP_NOFS);
-@@ -8631,7 +8625,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 			dio_data->unsubmitted_oe_range_end;
+ 		name_len = btrfs_dir_name_len(leaf, di);
+-		if (name_len <= sizeof(tmp_name)) {
+-			name_ptr = tmp_name;
+-		} else {
+-			name_ptr = kmalloc(name_len, GFP_KERNEL);
+-			if (!name_ptr) {
+-				ret = -ENOMEM;
+-				goto err;
+-			}
++		if ((total_len + sizeof(struct dir_entry) + name_len) >=
++		    PAGE_SIZE) {
++			btrfs_release_path(path);
++			ret = btrfs_filldir(private->filldir_buf, entries,
++					    ctx);
++			if (ret)
++				goto nopos;
++			addr = private->filldir_buf;
++			entries = 0;
++			total_len = 0;
++			goto again;
+ 		}
++
++		entry = addr;
++		entry->name_len = name_len;
++		name_ptr = (char *)(entry + 1);
+ 		read_extent_buffer(leaf, name_ptr, (unsigned long)(di + 1),
+ 				   name_len);
+-
+-		d_type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
++		entry->type = btrfs_filetype_table[btrfs_dir_type(leaf, di)];
+ 		btrfs_dir_item_key_to_cpu(leaf, di, &location);
+-
+-		over = !dir_emit(ctx, name_ptr, name_len, location.objectid,
+-				 d_type);
+-
+-		if (name_ptr != tmp_name)
+-			kfree(name_ptr);
+-
+-		if (over)
+-			goto nopos;
+-		ctx->pos++;
++		entry->ino = location.objectid;
++		entry->offset = found_key.offset;
++		entries++;
++		addr += sizeof(struct dir_entry) + name_len;
++		total_len += sizeof(struct dir_entry) + name_len;
+ next:
+ 		path->slots[0]++;
  	}
++	btrfs_release_path(path);
++
++	ret = btrfs_filldir(private->filldir_buf, entries, ctx);
++	if (ret)
++		goto nopos;
  
--	ret = btrfs_submit_direct_hook(dip, skip_sum);
-+	ret = btrfs_submit_direct_hook(dip);
- 	if (!ret)
- 		return;
+ 	ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list);
+ 	if (ret)
+@@ -10777,6 +10831,7 @@ static const struct file_operations btrfs_dir_file_operations = {
+ 	.llseek		= generic_file_llseek,
+ 	.read		= generic_read_dir,
+ 	.iterate_shared	= btrfs_real_readdir,
++	.open		= btrfs_opendir,
+ 	.unlocked_ioctl	= btrfs_ioctl,
+ #ifdef CONFIG_COMPAT
+ 	.compat_ioctl	= btrfs_compat_ioctl,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index bedeec6..2c79ba0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3966,6 +3966,7 @@ static long btrfs_ioctl_trans_start(struct file *file)
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_trans_handle *trans;
++	struct btrfs_file_private *private;
+ 	int ret;
+ 
+ 	ret = -EPERM;
+@@ -3973,8 +3974,16 @@ static long btrfs_ioctl_trans_start(struct file *file)
+ 		goto out;
+ 
+ 	ret = -EINPROGRESS;
+-	if (file->private_data)
++	private = file->private_data;
++	if (private && private->trans)
+ 		goto out;
++	if (!private) {
++		private = kzalloc(sizeof(struct btrfs_file_private),
++				  GFP_KERNEL);
++		if (!private)
++			return -ENOMEM;
++		file->private_data = private;
++	}
+ 
+ 	ret = -EROFS;
+ 	if (btrfs_root_readonly(root))
+@@ -3991,7 +4000,7 @@ static long btrfs_ioctl_trans_start(struct file *file)
+ 	if (IS_ERR(trans))
+ 		goto out_drop;
+ 
+-	file->private_data = trans;
++	private->trans = trans;
+ 	return 0;
+ 
+ out_drop:
+@@ -4246,14 +4255,13 @@ long btrfs_ioctl_trans_end(struct file *file)
+ {
+ 	struct inode *inode = file_inode(file);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	struct btrfs_trans_handle *trans;
++	struct btrfs_file_private *private = file->private_data;
+ 
+-	trans = file->private_data;
+-	if (!trans)
++	if (!private || !private->trans)
+ 		return -EINVAL;
+-	file->private_data = NULL;
+ 
+-	btrfs_end_transaction(trans);
++	btrfs_end_transaction(private->trans);
++	private->trans = NULL;
+ 
+ 	atomic_dec(&root->fs_info->open_ioctl_trans);
  
 -- 
 2.7.4

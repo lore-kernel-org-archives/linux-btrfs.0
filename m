@@ -1,41 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:56084 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751761AbdHASPp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 14:15:45 -0400
-Subject: Re: Odd fallocate behavior on BTRFS.
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>
-References: <80c607b1-8798-8b86-8657-df2c1992186c@gmail.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <91e33876-8f21-cd92-6b52-84dd2fb085b7@applied-asynchrony.com>
-Date: Tue, 1 Aug 2017 20:15:43 +0200
+Received: from mail-wm0-f54.google.com ([74.125.82.54]:35308 "EHLO
+        mail-wm0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751866AbdHASYD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 14:24:03 -0400
+Received: by mail-wm0-f54.google.com with SMTP id m85so22272021wma.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 11:24:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <80c607b1-8798-8b86-8657-df2c1992186c@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAFcRpx4q7N1zG4gz-g6MgkU6c-F_gQ6+2-4ibgm+nyRCp5pTXQ@mail.gmail.com>
+References: <CAFcRpx4q7N1zG4gz-g6MgkU6c-F_gQ6+2-4ibgm+nyRCp5pTXQ@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Tue, 1 Aug 2017 12:24:01 -0600
+Message-ID: <CAJCQCtQ=NXO_ZG0ZUnvhMZQYSrK9+LEBjhMKVYUG1gOnioKVig@mail.gmail.com>
+Subject: Re: Raid0 rescue
+To: Alan Brand <alan@georgiabrands.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/01/17 19:34, Austin S. Hemmelgarn wrote:
-[..]
-> Apparently, if you call fallocate() on a file with an offset of 0 and
-> a length longer than the length of the file itself, BTRFS will
-> allocate that exact amount of space, instead of just filling in holes
-> in the file and allocating space to extend it.  If there isn't enough
-> space on the filesystem for this, then it will fail, even though it
-> would succeed on ext4, XFS, and F2FS.
-[..]
-> I'm curious to hear anybody's thoughts on this, namely: 1. Is this
-> behavior that should be considered implementation defined? 2. If not,
-> is my assessment that BTRFS is behaving incorrectly in this case
-> accurate?
+On Thu, Jul 27, 2017 at 8:49 AM, Alan Brand <alan@georgiabrands.com> wrote:
+> I know I am screwed but hope someone here can point at a possible solution.
+>
+> I had a pair of btrfs drives in a raid0 configuration.  One of the
+> drives was pulled by mistake, put in a windows box, and a quick NTFS
+> format was done.  Then much screaming occurred.
+>
+> I know the data is still there.  Is there anyway to rebuild the raid
+> bringing in the bad disk?  I know some info is still good, for example
+> metadata0 is corrupt but 1 and 2 are good.
+> The trees look bad which is probably the killer.
 
-IMHO no and yes, respectively. Both fallocate(2) and posix_fallocate(3)
-make it very clear that the expected default behaviour is to extend.
-I don't think this can be interpreted in any other way than incorrect
-behaviour on behalf of btrfs.
+Well the first step is to check and fix the super blocks. And then the
+normal code should just discover the bad stuff, and get good copies
+from the good drive, and copy them to the corrupt one, passively, and
+eventually fix the file system itself. There's probably only a few
+files corrupted irrecoverably.
 
-Your script reproduces for me, so that's a start.
+It's probably worth testing for this explicitly. It's not a wild
+scenario, and it's something Btrfs should be able to recover from
+gracefully. The gotcha part of a totally automatic recovery is the
+superblocks because there's no *one true right way* for the kernel to
+just assume the remaining Btrfs supers are more valid than the NTFS
+supers.
 
--h
+So then the question is, which tool should fix this up? I'd say both
+'btrfs rescue super-recover' and 'btrfs check' should do this. The
+difference being super-recover would fix only the supers, with kernel
+code doing passive fixups as problems are encountered once the fs is
+mounted. And 'check --repair' would fix supers and additionally fix
+missing metadata on the corrupt drive, using user space code with an
+unmounted system.
+
+Both should work, or at least both should be fail safe.
+
+-- 
+Chris Murphy

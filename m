@@ -1,118 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:51016 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752016AbdHAUJP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Aug 2017 16:09:15 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:50906)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dcdTd-0000IA-IV
-        for linux-btrfs@vger.kernel.org; Tue, 01 Aug 2017 21:09:13 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dcdTT-0002vF-Oo
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 21:09:03 +0100
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:35637 "EHLO
+        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752025AbdHAUWB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 16:22:01 -0400
+Received: by mail-wm0-f45.google.com with SMTP id m85so24635166wma.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 13:22:01 -0700 (PDT)
+Received: from localhost ([88.98.201.53])
+        by smtp.gmail.com with ESMTPSA id w64sm1858796wmw.1.2017.08.01.13.21.58
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
+        Tue, 01 Aug 2017 13:21:58 -0700 (PDT)
+Date: Tue, 1 Aug 2017 21:21:57 +0100
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Slow mounting raid1
+Message-ID: <20170801202157.rdirjulcvmosuxze@tiamat>
+References: <20170731183047.x2p4vyqd2pvf7t4g@tiamat>
+ <pan$1eb89$fa81c30b$fe750acd$9555f678@cox.net>
+ <20170801064305.b6pgarooqu73gg3o@tiamat>
+ <CAJtFHURKa-9oUty5Q4=oMGVVFR62AEH-qxo38VG0O5WCVziXqg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Message-ID: <22912.57311.417226.447973@tree.ty.sabi.co.uk>
-Date: Tue, 1 Aug 2017 21:09:03 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs + compression = slow performance and high cpu usage
-In-Reply-To: <15990599.40.1501611004053.JavaMail.gkos@dynomob>
-References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
-        <8446582.541.1501260065690.JavaMail.gkos@dynomob>
-        <22907.32175.311827.10738@tree.ty.sabi.co.uk>
-        <19527869.26.1501422186960.JavaMail.gkos@dynomob>
-        <22911.5971.350346.969146@tree.ty.sabi.co.uk>
-        <6022267.255.1501581534233.JavaMail.gkos@dynomob>
-        <22912.32415.601826.757780@tree.ty.sabi.co.uk>
-        <15990599.40.1501611004053.JavaMail.gkos@dynomob>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <CAJtFHURKa-9oUty5Q4=oMGVVFR62AEH-qxo38VG0O5WCVziXqg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> [ ... ] a "RAID5 with 128KiB writes and a 768KiB stripe
->> size". [ ... ] several back-to-back 128KiB writes [ ... ] get
->> merged by the 3ware firmware only if it has a persistent
->> cache, and maybe your 3ware does not have one,
+On 01/08/17, E V wrote:
+> In general I think btrfs takes time proportional to the size of your
+> metadata to mount. Bigger and/or fragmented metadata leads to longer
+> mount times. My big backup fs with >300GB of metadata takes over
+> 20minutes to mount, and that's with the space tree which is
+> significantly faster then space cache v1.
+> 
+Hmm my raid1 doesn't seem near to full or has a significant Metadata so
+I don't I'm on this case:
+  # btrfs fi show /media/raid1/
+  Label: 'raid1'  uuid: c9db91e6-0ba8-4ae6-b471-8fd4ff7ee72d
+         Total devices 2 FS bytes used 516.18GiB
+         devid    1 size 931.51GiB used 518.03GiB path /dev/sdd
+         devid    2 size 931.51GiB used 518.03GiB path /dev/sde
 
-> KOS: No I don't have persistent cache. Only the 512 Mb cache
-> on board of a controller, that is BBU.
+  # btrfs fi df /media/raid1/
+  Data, RAID1: total=513.00GiB, used=512.21GiB
+  System, RAID1: total=32.00MiB, used=112.00KiB
+  Metadata, RAID1: total=5.00GiB, used=3.97GiB
+  GlobalReserve, single: total=512.00MiB, used=0.00B
 
-If it is a persistent cache, that can be battery-backed (as I
-wrote, but it seems that you don't have too much time to read
-replies) then the size of the write, 128KiB or not, should not
-matter much; the write will be reported complete when it hits
-the persistent cache (whichever technology it used), and then
-the HA fimware will spill write cached data to the disks using
-the optimal operation width.
+I tried the space_cache=v2 just to see if it would do any
+difference but nothing changed
+  # cat /etc/fstab | grep raid1
+  UUID=c9db91e6-0ba8-4ae6-b471-8fd4ff7ee72d   /media/raid1 btrfs   rw,noatime,compress=lzo,space_cache=v2         0 0
+  # time umount /media/raid1 && time mount /media/raid1/
 
-Unless the 3ware firmware is really terrible (and depending on
-model and vintage it can be amazingly terrible) or the battery
-is no longer recharging and then the host adapter switches to
-write-through.
+  real    0m0.807s
+  user    0m0.237s
+  sys     0m0.441s
 
-That you see very different rates between uncompressed and
-compressed writes, where the main difference is the limitation
-on the segment size, seems to indicate that compressed writes
-involve a lot of RMW, that is sub-stripe updates. As I mentioned
-already, it would be interesting to retry 'dd' with different
-'bs' values without compression and with 'sync' (or 'direct'
-which only makes sense without compression).
+  real    0m5.494s
+  user    0m0.618s
+  sys     0m0.116s
 
-> If I had additional SSD caching on the controller I would have
-> mentioned it.
+I did a couple of rebalances on metadata and data and it improved a bit:
+  # btrfs balance start -musage=100 /media/raid1/
+  # btrfs balance start -dusage=10 /media/raid1/
+  [.. incremental dusage 10 -> 95]
+  # btrfs balance start -dusage=95 /media/raid1
 
-So far you had not mentioned the presence of BBU cache either,
-which is equivalent, even if in one of your previous message
-(which I try to read carefully) there were these lines:
+Down to 3.7 sec
+  # time umount /media/raid1 && time mount /media/raid1/
 
->>>> Default Cache Policy: WriteBack, ReadAhead, Direct, No Write Cache if Bad BBU
->>>> Current Cache Policy: WriteBack, ReadAhead, Direct, No Write Cache if Bad BBU
+  real    0m0.807s
+  user    0m0.237s
+  sys     0m0.441s
 
-So perhaps someone else would have checked long ago the status
-of the BBU and whether the "No Write Cache if Bad BBU" case has
-happened. If the BBU is still working and the policy is still
-"WriteBack" then things are stranger still.
+  real    0m3.790s
+  user    0m0.430s
+  sys     0m0.031s
 
-> I was also under impression, that in a situation where mostly
-> extra large files will be stored on the massive, the bigger
-> strip size would indeed increase the speed, thus I went with
-> with the 256 Kb strip size.
+I think maybe the next step is to disable compression if I want to mount
+it faster. Is this normal for BTRFS that performance would degrade after
+some time?
 
-That runs counter to this simple story: suppose a program is
-doing 64KiB IO:
+Regards,
 
-* For *reads*, there are 4 data drives and the strip size is
-  16KiB: the 64KiB will be read in parallel on 4 drives. If the
-  strip size is 256KiB then the 64KiB will be read sequentially
-  from just one disk, and 4 successive reads will be read
-  sequentially from the same drive.
+-- 
+Leonidas Spyropoulos
 
-* For *writes* on a parity RAID like RAID5 things are much, much
-  more extreme: the 64KiB will be written with 16KiB strips on a
-  5-wide RAID5 set in parallel to 5 drives, with 4 stripes being
-  updated with RMW. But with 256KiB strips it will partially
-  update 5 drives, because the stripe is 1024+256KiB, and it
-  needs to do RMW, and four successive 64KiB drives will need to
-  do that too, even if only one drive is updated. Usually for
-  RAID5 there is an optimization that means that only the
-  specific target drive and the parity drives(s) need RMW, but
-  it is still very expensive.
+A: Because it messes up the order in which people normally read text.
+Q: Why is it such a bad thing?
+A: Top-posting.
+Q: What is the most annoying thing on usenet and in e-mail?
 
-This is the "storage for beginners" version, what happens in
-practice however depends a lot on specific workload profile
-(typical read/write size and latencies and rates), caching and
-queueing algorithms in both Linux and the HA firmware.
-
-> Would I be correct in assuming that the RAID strip size of 128
-> Kb will be a better choice if one plans to use the BTRFS with
-> compression?
-
-That would need to be tested, because of "depends a lot on
-specific workload profile, caching and queueing algorithms", but
-my expectation is the the lower the better. Given that you have
-4 drives giving a 3+1 RAID set, perhaps a 32KiB or 64KiB strip
-size, given a data stripe size of 96KiB or 192KiB, would be
-better.

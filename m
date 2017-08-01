@@ -1,106 +1,260 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:48038 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751115AbdHANOQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Aug 2017 09:14:16 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:38350)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dcX02-0001Of-BP
-        for linux-btrfs@vger.kernel.org; Tue, 01 Aug 2017 14:14:14 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dcWzw-0001ht-25
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 14:14:08 +0100
+Received: from ip-88.staren.nu ([77.110.19.88]:37400 "EHLO iapetus.neab.net"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751685AbdHAOjz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Aug 2017 10:39:55 -0400
+Date: Tue, 1 Aug 2017 16:39:52 +0200 (CEST)
+From: pwm <pwm@iapetus.neab.net>
+To: Hugo Mills <hugo@carfax.org.uk>
+cc: linux-btrfs@vger.kernel.org
+Subject: Re: Massive loss of disk space
+In-Reply-To: <20170801122039.GX7140@carfax.org.uk>
+Message-ID: <alpine.DEB.2.02.1708011520490.31126@iapetus.neab.net>
+References: <alpine.DEB.2.02.1708011253230.31126@iapetus.neab.net> <20170801122039.GX7140@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22912.32415.601826.757780@tree.ty.sabi.co.uk>
-Date: Tue, 1 Aug 2017 14:14:07 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs + compression = slow performance and high cpu usage
-In-Reply-To: <6022267.255.1501581534233.JavaMail.gkos@dynomob>
-References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
-        <8446582.541.1501260065690.JavaMail.gkos@dynomob>
-        <22907.32175.311827.10738@tree.ty.sabi.co.uk>
-        <19527869.26.1501422186960.JavaMail.gkos@dynomob>
-        <22911.5971.350346.969146@tree.ty.sabi.co.uk>
-        <6022267.255.1501581534233.JavaMail.gkos@dynomob>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Peter, I don't think the filefrag is showing the correct
-> fragmentation status of the file when the compression is used.
+Thanks for the links and suggestions.
 
-As reported on a previous message the output of 'filefrag -v'
-which can be used to see what is going on:
+I did try your suggestions but it didn't solve the underlying problem.
 
->>>> filefrag /mnt/sde3/testfile 
->>>>   /mnt/sde3/testfile: 49287 extents found
 
->>>> Most the latter extents are mercifully rather contiguous, their
->>>> size is just limited by the compression code, here is an extract
->>>> from 'filefrag -v' from around the middle:
 
->>>>   24757:  1321888.. 1321919:   11339579..  11339610:     32:   11339594:
->>>>   24758:  1321920.. 1321951:   11339597..  11339628:     32:   11339611:
->>>>   24759:  1321952.. 1321983:   11339615..  11339646:     32:   11339629:
->>>>   24760:  1321984.. 1322015:   11339632..  11339663:     32:   11339647:
->>>>   24761:  1322016.. 1322047:   11339649..  11339680:     32:   11339664:
->>>>   24762:  1322048.. 1322079:   11339667..  11339698:     32:   11339681:
->>>>   24763:  1322080.. 1322111:   11339686..  11339717:     32:   11339699:
->>>>   24764:  1322112.. 1322143:   11339703..  11339734:     32:   11339718:
->>>>   24765:  1322144.. 1322175:   11339720..  11339751:     32:   11339735:
->>>>   24766:  1322176.. 1322207:   11339737..  11339768:     32:   11339752:
->>>>   24767:  1322208.. 1322239:   11339754..  11339785:     32:   11339769:
->>>>   24768:  1322240.. 1322271:   11339771..  11339802:     32:   11339786:
->>>>   24769:  1322272.. 1322303:   11339789..  11339820:     32:   11339803:
+pwm@europium:~$ sudo btrfs balance start -v -dusage=20 /mnt/snap_04
+Dumping filters: flags 0x1, state 0x0, force is off
+   DATA (flags 0x2): balancing, usage=20
+Done, had to relocate 4596 out of 9317 chunks
 
->>>> But again this is on a fresh empty Btrfs volume.
 
-As I wrote, "their size is just limited by the compression code"
-which results in "128KiB writes". On a "fresh empty Btrfs volume"
-the compressed extents limited to 128KiB also happen to be pretty
-physically contiguous, but on a more fragmented free space list
-they can be more scattered.
+pwm@europium:~$ sudo btrfs balance start -mconvert=dup,soft /mnt/snap_04/
+Done, had to relocate 2 out of 4721 chunks
 
-As I already wrote the main issue here seems to be that we are
-talking about a "RAID5 with 128KiB writes and a 768KiB stripe
-size". On MD RAID5 the slowdown because of RMW seems only to be
-around 30-40%, but it looks like that several back-to-back 128KiB
-writes get merged by the Linux IO subsystem (not sure whether
-that's thoroughly legal), and perhaps they get merged by the 3ware
-firmware only if it has a persistent cache, and maybe your 3ware
-does not have one, but you have kept your counsel as to that.
 
-My impression is that you read the Btrfs documentation and my
-replies with a lot less attention than I write them. Some of the
-things you have done and said make me think that you did not read
-https://btrfs.wiki.kernel.org/index.php/Compression and 'man 5
-btrfs', for example:
+pwm@europium:~$ sudo btrfs fi df /mnt/snap_04
+Data, single: total=4.60TiB, used=4.59TiB
+System, DUP: total=40.00MiB, used=512.00KiB
+Metadata, DUP: total=6.50GiB, used=4.81GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-   "How does compression interact with direct IO or COW?
 
-     Compression does not work with DIO, does work with COW and
-     does not work for NOCOW files. If a file is opened in DIO
-     mode, it will fall back to buffered IO.
+pwm@europium:~$ sudo btrfs fi show /mnt/snap_04
+Label: 'snap_04'  uuid: c46df8fa-03db-4b32-8beb-5521d9931a31
+         Total devices 1 FS bytes used 4.60TiB
+         devid    1 size 9.09TiB used 4.61TiB path /dev/sdg1
 
-   Are there speed penalties when doing random access to a
-   compressed file?
 
-     Yes. The compression processes ranges of a file of maximum
-     size 128 KiB and compresses each 4 KiB (or page-sized) block
-     separately."
+So now device 1 usage is down from 9.09TiB to 4.61TiB.
 
-> I am currently defragmenting that mountpoint, ensuring that
-> everrything is compressed with zlib.
+But if I test to fallocate() to grow the large parity file, I directly 
+fail. I wrote a little help program that just focuses on fallocate() 
+instead of having to run snapraid with lots of unknown additional actions 
+being performed.
 
-Defragmenting the used space might help find more contiguous
-allocations.
 
-> p.s. any other suggestion that might help with the fragmentation
-> and data allocation. Should I try and rebalance the data on the
-> drive?
+Original file size is  5050486226944 bytes
+Trying to grow file to 5151751667712 bytes
+Failed fallocate [No space left on device]
 
-Yes, regularly, as that defragments the unused space.
+
+
+And result after shows 'used' have jumped up to 9.09TiB again.
+
+root@europium:/mnt# btrfs fi show snap_04
+Label: 'snap_04'  uuid: c46df8fa-03db-4b32-8beb-5521d9931a31
+         Total devices 1 FS bytes used 4.60TiB
+         devid    1 size 9.09TiB used 9.09TiB path /dev/sdg1
+
+root@europium:/mnt# btrfs fi df /mnt/snap_04/
+Data, single: total=9.08TiB, used=4.59TiB
+System, DUP: total=40.00MiB, used=992.00KiB
+Metadata, DUP: total=6.50GiB, used=4.81GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+It's almost like the file system have decided that it needs to make a 
+snapshot and store two complete copies of the complete file, which is 
+obviously not going to work with a file larger than 50% of the file 
+system.
+
+No issue at all to grow the parity file on the other parity disk. And 
+that's why I wonder if there is some undetected file system corruption.
+
+/Per W
+
+On Tue, 1 Aug 2017, Hugo Mills wrote:
+
+>   Hi, Per,
+>
+>   Start here:
+>
+> https://btrfs.wiki.kernel.org/index.php/FAQ#if_your_device_is_large_.28.3E16GiB.29
+>
+>   In your case, I'd suggest using "-dusage=20" to start with, as
+> it'll probably free up quite a lot of your existing allocation.
+>
+> And this may also be of interest, in how to read the output of the
+> tools:
+>
+> https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_original_tools
+>
+>   Finally, I note that you've still got some "single" chunks present
+> for metadata. It won't affect your space allocation issues, but I
+> would recommend getting rid of them anyway:
+>
+> # btrfs balance start -mconvert=dup,soft
+>
+>   Hugo.
+>
+> On Tue, Aug 01, 2017 at 01:43:23PM +0200, pwm wrote:
+>> I have a 10TB file system with a parity file for a snapraid.
+>> However, I can suddenly not extend the parity file despite the file
+>> system only being about 50% filled - I should have 5TB of
+>> unallocated space. When trying to extend the parity file,
+>> fallocate() just returns ENOSPC, i.e. that the disk is full.
+>>
+>> Machine was originally a Debian 8 (Jessie) but after I detected the
+>> issue and no btrfs tool did show any errors, I have updated to
+>> Debian 9 (Snatch) to get a newer kernel and newer btrfs tools.
+>>
+>> pwm@europium:/mnt$ btrfs --version
+>> btrfs-progs v4.7.3
+>> pwm@europium:/mnt$ uname -a
+>> Linux europium 4.9.0-3-amd64 #1 SMP Debian 4.9.30-2+deb9u2
+>> (2017-06-26) x86_64 GNU/Linux
+>>
+>>
+>>
+>>
+>> pwm@europium:/mnt/snap_04$ ls -l
+>> total 4932703608
+>> -rw------- 1 root root     319148889 Jul  8 04:21 snapraid.content
+>> -rw------- 1 root root     283115520 Aug  1 04:08 snapraid.content.tmp
+>> -rw------- 1 root root 5050486226944 Jul 31 17:14 snapraid.parity
+>>
+>>
+>>
+>> pwm@europium:/mnt/snap_04$ df .
+>> Filesystem      1K-blocks       Used  Available Use% Mounted on
+>> /dev/sdg1      9766434816 4944614648 4819831432  51% /mnt/snap_04
+>>
+>>
+>>
+>> pwm@europium:/mnt/snap_04$ sudo btrfs fi show .
+>> Label: 'snap_04'  uuid: c46df8fa-03db-4b32-8beb-5521d9931a31
+>>         Total devices 1 FS bytes used 4.60TiB
+>>         devid    1 size 9.09TiB used 9.09TiB path /dev/sdg1
+>>
+>> Compare this with the second snapraid parity disk:
+>> pwm@europium:/mnt/snap_04$ sudo btrfs fi show /mnt/snap_05/
+>> Label: 'snap_05'  uuid: bac477e3-e78c-43ee-8402-6bdfff194567
+>>         Total devices 1 FS bytes used 4.69TiB
+>>         devid    1 size 9.09TiB used 4.70TiB path /dev/sdi1
+>>
+>> So on one parity disk, devid is 9.09TiB used - on the other only 4.70TiB.
+>> While almost the same amount of file system usage. And almost
+>> identical usage pattern. It's an archival RAID, so there is hardly
+>> any writes to the parity files because there are almost no file
+>> changes to the data files. The main usage is that the parity file
+>> gets extended when one of the data disks reaches a new high water
+>> mark.
+>>
+>> The only file that gets regularly rewritten is the snapraid.content
+>> file that gets regenerated after every scrub.
+>>
+>>
+>>
+>> pwm@europium:/mnt/snap_04$ sudo btrfs fi df .
+>> Data, single: total=9.08TiB, used=4.59TiB
+>> System, DUP: total=8.00MiB, used=992.00KiB
+>> System, single: total=4.00MiB, used=0.00B
+>> Metadata, DUP: total=6.00GiB, used=4.81GiB
+>> Metadata, single: total=8.00MiB, used=0.00B
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>
+>>
+>>
+>> pwm@europium:/mnt/snap_04$ sudo btrfs filesystem du .
+>>      Total   Exclusive  Set shared  Filename
+>>    4.59TiB     4.59TiB           -  ./snapraid.parity
+>>  304.37MiB   304.37MiB           -  ./snapraid.content
+>>  270.00MiB   270.00MiB           -  ./snapraid.content.tmp
+>>    4.59TiB     4.59TiB       0.00B  .
+>>
+>>
+>>
+>> pwm@europium:/mnt/snap_04$ sudo btrfs filesystem usage .
+>> Overall:
+>>     Device size:                   9.09TiB
+>>     Device allocated:              9.09TiB
+>>     Device unallocated:              0.00B
+>>     Device missing:                  0.00B
+>>     Used:                          4.60TiB
+>>     Free (estimated):              4.49TiB      (min: 4.49TiB)
+>>     Data ratio:                       1.00
+>>     Metadata ratio:                   2.00
+>>     Global reserve:              512.00MiB      (used: 0.00B)
+>>
+>> Data,single: Size:9.08TiB, Used:4.59TiB
+>>    /dev/sdg1       9.08TiB
+>>
+>> Metadata,single: Size:8.00MiB, Used:0.00B
+>>    /dev/sdg1       8.00MiB
+>>
+>> Metadata,DUP: Size:6.00GiB, Used:4.81GiB
+>>    /dev/sdg1      12.00GiB
+>>
+>> System,single: Size:4.00MiB, Used:0.00B
+>>    /dev/sdg1       4.00MiB
+>>
+>> System,DUP: Size:8.00MiB, Used:992.00KiB
+>>    /dev/sdg1      16.00MiB
+>>
+>> Unallocated:
+>>    /dev/sdg1         0.00B
+>>
+>>
+>>
+>> pwm@europium:~$ sudo btrfs check /dev/sdg1
+>> Checking filesystem on /dev/sdg1
+>> UUID: c46df8fa-03db-4b32-8beb-5521d9931a31
+>> checking extents
+>> checking free space cache
+>> checking fs roots
+>> checking csums
+>> checking root refs
+>> found 5057294639104 bytes used err is 0
+>> total csum bytes: 4529856120
+>> total tree bytes: 5170151424
+>> total fs tree bytes: 178700288
+>> total extent tree bytes: 209616896
+>> btree space waste bytes: 182357204
+>> file data blocks allocated: 5073330888704
+>>  referenced 5052040339456
+>>
+>>
+>>
+>> pwm@europium:~$ sudo btrfs scrub status /mnt/snap_04/
+>> scrub status for c46df8fa-03db-4b32-8beb-5521d9931a31
+>>         scrub started at Mon Jul 31 21:26:50 2017 and finished after
+>> 06:53:47
+>>         total bytes scrubbed: 4.60TiB with 0 errors
+>>
+>>
+>>
+>> So where have my 5TB disk space gone lost?
+>> And what should I do to be able to get it back again?
+>>
+>> I could obviously reformat the partition and rebuild the parity
+>> since I still have one good parity, but that doesn't feel like a
+>> good route. It isn't impossible this might happen again.
+>>
+>> /Per W
+>
+> -- 
+> Hugo Mills             | Well, sir, the floor is yours. But remember, the
+> hugo@... carfax.org.uk | roof is ours!
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |                                             The Goons
+>

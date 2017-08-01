@@ -1,75 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:36738 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751784AbdHAQlt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 12:41:49 -0400
-Received: by mail-wm0-f45.google.com with SMTP id t201so19948111wmt.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 09:41:48 -0700 (PDT)
+Received: from ip-88.staren.nu ([77.110.19.88]:37455 "EHLO iapetus.neab.net"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751670AbdHAQu0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Aug 2017 12:50:26 -0400
+Date: Tue, 1 Aug 2017 18:50:23 +0200 (CEST)
+From: pwm <pwm@iapetus.neab.net>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: Massive loss of disk space
+In-Reply-To: <d674fb90-9fa7-a0e9-2688-e6a5045726b5@gmail.com>
+Message-ID: <alpine.DEB.2.02.1708011839340.31126@iapetus.neab.net>
+References: <alpine.DEB.2.02.1708011253230.31126@iapetus.neab.net> <20170801122039.GX7140@carfax.org.uk> <alpine.DEB.2.02.1708011520490.31126@iapetus.neab.net> <b30d1b78-7cbd-9bf5-3507-b028b9b8191f@gmail.com> <7f2b5c3a-2f5c-e857-d2dc-3ea16b58ecaf@gmail.com>
+ <alpine.DEB.2.02.1708011717000.31126@iapetus.neab.net> <d674fb90-9fa7-a0e9-2688-e6a5045726b5@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAMG9ccx5zyYJTfGfT6RaRbNtipxHJS+mD3Z6Ux_zmp_aorJLuw@mail.gmail.com>
-References: <20170501170641.GG3516@merlins.org> <20170707163834.GA6083@merlins.org>
- <20170709043417.GE6704@merlins.org> <21425367.VGcO8ck7Vu@merkaba>
- <CAMG9ccyWS87NwUrJGNvF6Dt440yhCp_P9_-hFeJE70YDRwpfNg@mail.gmail.com>
- <20170731211750.bpo4roiqkr4t5iae@merlins.org> <CAMG9ccx5zyYJTfGfT6RaRbNtipxHJS+mD3Z6Ux_zmp_aorJLuw@mail.gmail.com>
-From: Ivan Sizov <sivan606@gmail.com>
-Date: Tue, 1 Aug 2017 19:41:27 +0300
-Message-ID: <CAMG9ccxLNtnvA9CMciBXf_sD80HMWzVU5-+_K=OhZ=GKwWJ6Tw@mail.gmail.com>
-Subject: Re: 4.11.6 / more corruption / root 15455 has a root item with a more
- recent gen (33682) compared to the found root node (0)
-To: Marc MERLIN <marc@merlins.org>
-Cc: Martin Steigerwald <martin@lichtvoll.de>,
-        Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>, Duncan <1i5t5.duncan@cox.net>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-08-01 0:39 GMT+03:00 Ivan Sizov <sivan606@gmail.com>:
-> 2017-08-01 0:17 GMT+03:00 Marc MERLIN <marc@merlins.org>:
->> On Tue, Aug 01, 2017 at 12:07:14AM +0300, Ivan Sizov wrote:
->>> 2017-07-09 10:57 GMT+03:00 Martin Steigerwald <martin@lichtvoll.de>:
->>> > Hello Marc.
->>> >
->>> > Marc MERLIN - 08.07.17, 21:34:
->>> >> Sigh,
->>> >>
->>> >> This is now the 3rd filesystem I have (on 3 different machines) that is
->>> >> getting corruption of some kind (on 4.11.6).
->>> >
->>> > Anyone else getting corruptions with 4.11?
->>> Yes, a lot. There are at least 3 cases, probably I've missed something.
->>> https://www.spinics.net/lists/linux-btrfs/msg67177.html
->>> https://www.spinics.net/lists/linux-btrfs/msg67681.html
->>> https://unix.stackexchange.com/questions/369133/dealing-with-btrfs-ref-backpointer-mismatches-backref-missing/369275
->>
->> Indeed. My main server is happy back on 4.9.36 and while my laptop is
->> stuck on 4.11 due to other kernel issues that prevent me from going back
->> to 4.9, it only corrupted a single filesystem so far, and no other ones
->> that I've noticed yet.
->> Hopefully that will hold :-/
->>
->> Marc
->> --
->> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->> Microsoft is to operating systems ....
->>                                       .... what McDonalds is to gourmet cooking
->> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
->
-> I want to try mounting and checking FS under Live images with
-> different kernels tomorrow. Today's Fedora Rawhide image seems to be
-> built incorrectly. Can you advice me where to get a fresh live image
-> with 4.12 kernel (it's not important which distro that will be)?
->
-> --
-> Ivan Sizov
-Mounting problem persists:
-on 4.13.0 with btrfs-progs v4.11.1 (latest Fedora Rawhide Live)
-on 4.10.0 with btrfs-progs v4.9.1 (Ubuntu 17.04 Live)
-on 4.9.0 with btrfs-progs v 4.7.3 (Debian 9 Stretch Live)
-"btrfs check --readonly" also gives the same output on 4.11, 4.10 and 4.9.
+I did a temporary patch of the snapraid code to start fallocate() from the 
+previous parity file size.
 
-Marc, how did you roll back and fix those errors?
+Finally have a snapraid sync up and running. Looks good, but will take 
+quite a while before I can try a scrub command to double-check everything.
 
--- 
-Ivan Sizov
+Thanks for the help.
+
+/Per W
+
+On Tue, 1 Aug 2017, Austin S. Hemmelgarn wrote:
+
+> On 2017-08-01 11:24, pwm wrote:
+>> Yes, the test code is as below - trying to match what snapraid tries to do:
+>> 
+>> #include <sys/types.h>
+>> #include <sys/stat.h>
+>> #include <fcntl.h>
+>> #include <stdio.h>
+>> #include <string.h>
+>> #include <unistd.h>
+>> #include <errno.h>
+>> 
+>> int main() {
+>>      int fd = open("/mnt/snap_04/snapraid.parity",O_NOFOLLOW|O_RDWR);
+>>      if (fd < 0) {
+>>          printf("Failed opening parity file [%s]\n",strerror(errno));
+>>          return 1;
+>>      }
+>>
+>>      off_t filesize = 5151751667712ull;
+>>      int res;
+>>
+>>      struct stat statbuf;
+>>      if (fstat(fd,&statbuf)) {
+>>          printf("Failed stat [%s]\n",strerror(errno));
+>>          close(fd);
+>>          return 1;
+>>      }
+>>
+>>      printf("Original file size is  %llu bytes\n",i
+>>             (unsigned long long)statbuf.st_size);
+>>      printf("Trying to grow file to %llu bytes\n",i
+>>             (unsigned long long)filesize);
+>>
+>>      res = fallocate(fd,0,0,filesize);
+>>      if (res) {
+>>          printf("Failed fallocate [%s]\n",strerror(errno));
+>>          close(fd);
+>>          return 1;
+>>      }
+>>
+>>      if (fsync(fd)) {
+>>          printf("Failed fsync [%s]\n",fsync(errno));
+>>          close(fd);
+>>          return 1;
+>>      }
+>>
+>>      close(fd);
+>>      return 0;
+>> }
+>> 
+>> So the call doesn't make use of the previous file size as offset for the 
+>> extension.
+>> 
+>> int fallocate(int fd, int mode, off_t offset, off_t len);
+>> 
+>> What you are implying here is that if the fallocate() call is modified to:
+>>
+>>    res = fallocate(fd,0,old_size,new_size-old_size);
+>> 
+>> then everything should work as expected?
+> Based on what I've seen testing on my end, yes, that should cause things to 
+> work correctly.  That said, given what snapraid does, the fact that they call 
+> fallocate covering the full desired size of the file is correct usage (the 
+> point is to make behavior deterministic, and calling it on the whole file 
+> makes sure that the file isn't sparse, which can impact performance).
+>
+> Given both the fact that calling fallocate() to extend the file without 
+> worrying about an offset is a legitimate use case, and that both ext4 and XFS 
+> (and I suspect almost every other Linux filesystem) works in this situation, 
+> I'd argue that the behavior of BTRFS in this situation is incorrect.
+>> 
+>> /Per W
+>> 
+>> On Tue, 1 Aug 2017, Austin S. Hemmelgarn wrote:
+>> 
+>>> On 2017-08-01 10:47, Austin S. Hemmelgarn wrote:
+>>>> On 2017-08-01 10:39, pwm wrote:
+>>>>> Thanks for the links and suggestions.
+>>>>> 
+>>>>> I did try your suggestions but it didn't solve the underlying problem.
+>>>>> 
+>>>>> 
+>>>>> 
+>>>>> pwm@europium:~$ sudo btrfs balance start -v -dusage=20 /mnt/snap_04
+>>>>> Dumping filters: flags 0x1, state 0x0, force is off
+>>>>>    DATA (flags 0x2): balancing, usage=20
+>>>>> Done, had to relocate 4596 out of 9317 chunks
+>>>>> 
+>>>>> 
+>>>>> pwm@europium:~$ sudo btrfs balance start -mconvert=dup,soft 
+>>>>> /mnt/snap_04/
+>>>>> Done, had to relocate 2 out of 4721 chunks
+>>>>> 
+>>>>> 
+>>>>> pwm@europium:~$ sudo btrfs fi df /mnt/snap_04
+>>>>> Data, single: total=4.60TiB, used=4.59TiB
+>>>>> System, DUP: total=40.00MiB, used=512.00KiB
+>>>>> Metadata, DUP: total=6.50GiB, used=4.81GiB
+>>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>>> 
+>>>>> 
+>>>>> pwm@europium:~$ sudo btrfs fi show /mnt/snap_04
+>>>>> Label: 'snap_04'  uuid: c46df8fa-03db-4b32-8beb-5521d9931a31
+>>>>>          Total devices 1 FS bytes used 4.60TiB
+>>>>>          devid    1 size 9.09TiB used 4.61TiB path /dev/sdg1
+>>>>> 
+>>>>> 
+>>>>> So now device 1 usage is down from 9.09TiB to 4.61TiB.
+>>>>> 
+>>>>> But if I test to fallocate() to grow the large parity file, I directly 
+>>>>> fail. I wrote a little help program that just focuses on fallocate() 
+>>>>> instead of having to run snapraid with lots of unknown additional 
+>>>>> actions being performed.
+>>>>> 
+>>>>> 
+>>>>> Original file size is  5050486226944 bytes
+>>>>> Trying to grow file to 5151751667712 bytes
+>>>>> Failed fallocate [No space left on device]
+>>>>> 
+>>>>> 
+>>>>> 
+>>>>> And result after shows 'used' have jumped up to 9.09TiB again.
+>>>>> 
+>>>>> root@europium:/mnt# btrfs fi show snap_04
+>>>>> Label: 'snap_04'  uuid: c46df8fa-03db-4b32-8beb-5521d9931a31
+>>>>>          Total devices 1 FS bytes used 4.60TiB
+>>>>>          devid    1 size 9.09TiB used 9.09TiB path /dev/sdg1
+>>>>> 
+>>>>> root@europium:/mnt# btrfs fi df /mnt/snap_04/
+>>>>> Data, single: total=9.08TiB, used=4.59TiB
+>>>>> System, DUP: total=40.00MiB, used=992.00KiB
+>>>>> Metadata, DUP: total=6.50GiB, used=4.81GiB
+>>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>>> 
+>>>>> 
+>>>>> It's almost like the file system have decided that it needs to make a 
+>>>>> snapshot and store two complete copies of the complete file, which is 
+>>>>> obviously not going to work with a file larger than 50% of the file 
+>>>>> system.
+>>>> I think I _might_ understand what's going on here.  Is that test program 
+>>>> calling fallocate using the desired total size of the file, or just 
+>>>> trying to allocate the range beyond the end to extend the file?  I've 
+>>>> seen issues with the first case on BTRFS before, and I'm starting to 
+>>>> think that it might actually be trying to allocate the exact amount of 
+>>>> space requested by fallocate, even if part of the range is already 
+>>>> allocated space.
+>>> 
+>>> OK, I just did a dead simple test by hand, and it looks like I was right. 
+>>> The method I used to check this is as follows:
+>>> 1. Create and mount a reasonably small filesystem (I used an 8G temporary 
+>>> LV for this, a file would work too though).
+>>> 2. Using dd or a similar tool, create a test file that takes up half of 
+>>> the size of the filesystem.  It is important that this _not_ be 
+>>> fallocated, but just written out.
+>>> 3. Use `fallocate -l` to try and extend the size of the file beyond half 
+>>> the size of the filesystem.
+>>> 
+>>> For BTRFS, this will result in -ENOSPC, while for ext4 and XFS, it will 
+>>> succeed with no error.  Based on this and some low-level inspection, it 
+>>> looks like BTRFS treats the full range of the fallocate call as 
+>>> unallocated, and thus is trying to allocate space for regions of that 
+>>> range that are already allocated.
+>>> 
+>>>>> 
+>>>>> No issue at all to grow the parity file on the other parity disk. And 
+>>>>> that's why I wonder if there is some undetected file system corruption.
+>>>>> 
+>>> 
+>
+>

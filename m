@@ -1,50 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:54694 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751029AbdHAXyM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 1 Aug 2017 19:54:12 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:40426)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dcgzK-0003U1-AB
-        for linux-btrfs@vger.kernel.org; Wed, 02 Aug 2017 00:54:10 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dcgzI-00027D-A1
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Aug 2017 00:54:08 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22913.5277.694308.689951@tree.ty.sabi.co.uk>
-Date: Wed, 2 Aug 2017 00:54:05 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs + compression = slow performance and high cpu usage
-In-Reply-To: <22912.57311.417226.447973@tree.ty.sabi.co.uk>
-References: <33040946.535.1501254718807.JavaMail.gkos@dynomob>
-        <8446582.541.1501260065690.JavaMail.gkos@dynomob>
-        <22907.32175.311827.10738@tree.ty.sabi.co.uk>
-        <19527869.26.1501422186960.JavaMail.gkos@dynomob>
-        <22911.5971.350346.969146@tree.ty.sabi.co.uk>
-        <6022267.255.1501581534233.JavaMail.gkos@dynomob>
-        <22912.32415.601826.757780@tree.ty.sabi.co.uk>
-        <15990599.40.1501611004053.JavaMail.gkos@dynomob>
-        <22912.57311.417226.447973@tree.ty.sabi.co.uk>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Received: from [195.159.176.226] ([195.159.176.226]:55049 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751773AbdHBDWx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 23:22:53 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dckFA-00083n-Nv
+        for linux-btrfs@vger.kernel.org; Wed, 02 Aug 2017 05:22:44 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS error: bad tree block start 0 623771648
+Date: Wed, 2 Aug 2017 03:22:32 +0000 (UTC)
+Message-ID: <pan$4d60$25808f7d$ec32dcbb$a11fc6f7@cox.net>
+References: <CAN_=hu0k8+FmrSOw5P5TAZyjzjvGyqv_ByYr27s8rZY456k87Q@mail.gmail.com>
+        <20170801110805.09226fc3@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ ... ]
+Roman Mamedov posted on Tue, 01 Aug 2017 11:08:05 +0500 as excerpted:
 
-> This is the "storage for beginners" version, what happens in
-> practice however depends a lot on specific workload profile
-> (typical read/write size and latencies and rates), caching and
-> queueing algorithms in both Linux and the HA firmware.
+> On Sun, 30 Jul 2017 18:14:35 +0200 "marcel.cochem"
+> <marcel.cochem@googlemail.com> wrote:
+> 
+>> I am pretty sure that not all data is lost as i can grep thorugh the
+>> 100 GB SSD partition. But my question is, if there is a tool to rescue
+>> all (intact) data and maybe have only a few corrupt files which can't
+>> be recovered.
+> 
+> There is such a tool, see
+> https://btrfs.wiki.kernel.org/index.php/Restore
 
-To add a bit of slightly more advanced discussion, the main
-reason for larger strips ("chunk size) is to avoid the huge
-latencies of disk rotation using unsynchronized disk drives, as
-detailed here:
+I was going to suggest that too... and even started a reply to do so... 
+upon which I read a bit closer and saw he'd actually tried restore 
+already...
 
-  http://www.sabi.co.uk/blog/12-thr.html?120310#120310
+And before you suggest it, he tried btrfs-find-root as well, and it 
+didn't work either, so he can't do the advanced/technical mode of 
+restore, feeding it addresses from btrfs-find-root, either. =:^(
 
-That relates weakly to Btrfs.
+It's in the post...
+
+So unfortunately he's pretty much left with manual hacking and scraping, 
+and that's at a level beyond what I at least am able to help him with...
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

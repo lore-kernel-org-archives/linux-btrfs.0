@@ -1,72 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:38313 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751895AbdHBNru (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Aug 2017 09:47:50 -0400
-Received: by mail-io0-f193.google.com with SMTP id o9so3729673iod.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Aug 2017 06:47:50 -0700 (PDT)
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Lutz Vieweg <lvml@5t9.de>, linux-btrfs@vger.kernel.org
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
- <1cfc817b-2f35-9ca5-9d6c-ab2c6ec53ba9@gmail.com>
- <olsi37$qhm$1@blaine.gmane.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5b59dfbb-ea90-d44a-e745-22d6543a93a1@gmail.com>
-Date: Wed, 2 Aug 2017 09:47:46 -0400
+Received: from smtp-36-wd.italiaonline.it ([212.48.13.170]:37658 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752118AbdHBSAn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Aug 2017 14:00:43 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: Massive loss of disk space
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, pwm <pwm@iapetus.neab.net>,
+        Hugo Mills <hugo@carfax.org.uk>
+Cc: linux-btrfs@vger.kernel.org
+References: <alpine.DEB.2.02.1708011253230.31126@iapetus.neab.net>
+ <20170801122039.GX7140@carfax.org.uk>
+ <alpine.DEB.2.02.1708011520490.31126@iapetus.neab.net>
+ <b30d1b78-7cbd-9bf5-3507-b028b9b8191f@gmail.com>
+ <7f2b5c3a-2f5c-e857-d2dc-3ea16b58ecaf@gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <798a9077-bcbd-076c-a458-3403010ce8ac@libero.it>
+Date: Wed, 2 Aug 2017 19:52:30 +0200
 MIME-Version: 1.0
-In-Reply-To: <olsi37$qhm$1@blaine.gmane.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <7f2b5c3a-2f5c-e857-d2dc-3ea16b58ecaf@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-02 08:55, Lutz Vieweg wrote:
-> On 08/02/2017 01:25 PM, Austin S. Hemmelgarn wrote:
->> And this is a worst-case result of the fact that most
->> distros added BTRFS support long before it was ready.
+Hi,
+
+On 2017-08-01 17:00, Austin S. Hemmelgarn wrote:
+> OK, I just did a dead simple test by hand, and it looks like I was right.  The method I used to check this is as follows:
+> 1. Create and mount a reasonably small filesystem (I used an 8G temporary LV for this, a file would work too though).
+> 2. Using dd or a similar tool, create a test file that takes up half of the size of the filesystem.  It is important that this _not_ be fallocated, but just written out.
+> 3. Use `fallocate -l` to try and extend the size of the file beyond half the size of the filesystem.
 > 
-> RedHat still advertises "Ceph", and given Ceph initially recommended 
-> btrfs as
-> the filesystem to use for its nodes, it is interesting to read how clearly
-> they recommend against btrfs now:
-> 
-> http://docs.ceph.com/docs/master/rados/configuration/filesystem-recommendations/ 
-> 
->> We recommand against using btrfs due to the lack of a stable version
->> to test against and frequent bugs in the ENOSPC handling.
-Yes, and the one thing they don't mention there is that Ceph is already 
-doing most of the same things that BTRFS is, so you end up having 
-performance issues due to duplicated work too.  What they specifically 
-call out though is first the reason that it should not be supported yet 
-in RHEL, OEL, and many other distros (I'm explicitly leaving 
-SLES/OpenSUSE off of that list, because while I disagree with their 
-choices of default behavior WRT BTRFS, they are actively involved in 
-it's development, unlike most of the other distros that 'support' it), 
-and then second one of the biggest issues for regular usage.
-> 
-> German IT magazine "Golem" speculates that RedHat's decision
-> is influenced by its recent acquisition of Permabit.
-> 
-> But I don't really see how XFS or Permabit tackle the problem
-> that if you need to create consistent backups of file systems while they 
-> are
-> in use, block-device level snapshots damage the write performance
-> big time.
-When you're talking about data safety though, most people are willing to 
-sacrifice write performance in favor of significantly lowering perceived 
-risk.  The misguided early support of BTRFS without sufficient 
-explanation of exactly how 'in-development' it is by many distros means 
-that there are a lot of stories of issues and failures with BTRFS than 
-ones of success (partly also because the filesystem is one of those 
-things that people tend to complain about if it breaks, and not praise 
-all that much if it works), and as a result, the general perception 
-outside of people who use it actively is that it's pretty risky to use 
-(which is absolutely accurate if you don't do routine maintenance on it).
-> 
-> (That backup topic is the one reason we use btrfs for a lot of
-> /home/ directories.)
-> 
-> I understand that XFS is expected to get some COW-features in the future
-> as well - but it remains to be seen what performance and robustness
-> implications that will have on XFS.
-I believe basic reflink functionality is already upstream, and I wasn't 
-aware of any other specific development for XFS.
+> For BTRFS, this will result in -ENOSPC, while for ext4 and XFS, it will succeed with no error.  Based on this and some low-level inspection, it looks like BTRFS treats the full range of the fallocate call as unallocated, and thus is trying to allocate space for regions of that range that are already allocated.
+
+I can confirm this behavior; below some step to reproduce it [2]; however I don't think that it is a bug, but this is the correct behavior for a COW filesystem (see below).
+
+
+Looking at the function btrfs_fallocate() (file fs/btrfs/file.c)
+
+
+static long btrfs_fallocate(struct file *file, int mode,
+                            loff_t offset, loff_t len)
+{
+[...]
+        alloc_start = round_down(offset, blocksize);        
+        alloc_end = round_up(offset + len, blocksize);
+[...]
+        /*
+         * Only trigger disk allocation, don't trigger qgroup reserve
+         *
+         * For qgroup space, it will be checked later.
+         */
+        ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
+                        alloc_end - alloc_start)
+
+
+it seems that BTRFS always allocate the maximum space required, without consider the one already allocated. Is it too conservative ? I think no: consider the following scenario:
+
+a) create a 2GB file
+b) fallocate -o 1GB -l 2GB
+c) write from 1GB to 3GB
+
+after b), the expectation is that c) always succeed [1]: i.e. there is enough space on the filesystem. Due to the COW nature of BTRFS, you cannot rely on the already allocated space because there could be a small time window where both the old and the new data exists on the disk. 
+
+My opinion is that in general this behavior is correct due to the COW nature of BTRFS. 
+The only exception that I can find, is about the "nocow" file. For these cases taking in accout the already allocated space would be better.
+
+Comments are welcome.
+
+BR
+G.Baroncelli
+
+[1] from man 2 fallocate
+[...]
+       After  a  successful call, subsequent writes into the range specified by offset and len are
+       guaranteed not to fail because of lack of disk space.
+[...]
+
+
+[2]
+
+-- create a 5G btrfs filesystem
+
+# mkdir t1
+# truncate --size 5G disk
+# losetup /dev/loop0 disk
+# mkfs.btrfs /dev/loop0
+# mount /dev/loop0 t1
+
+-- test
+-- create a 1500 MB file, the expand it to 4000MB
+-- expected result: the file is 4000MB size
+-- result: fail: the expansion fails
+
+# fallocate -l $((1024*1024*100*15))  file.bin
+# fallocate -l $((1024*1024*100*40))  file.bin
+fallocate: fallocate failed: No space left on device
+# ls -lh file.bin 
+-rw-r--r-- 1 root root 1.5G Aug  2 19:09 file.bin
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

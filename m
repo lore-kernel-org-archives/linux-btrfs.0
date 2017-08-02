@@ -1,47 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55645 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752199AbdHNQHG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 12:07:06 -0400
-Date: Mon, 14 Aug 2017 18:05:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Ernesto =?iso-8859-1?Q?A=2E_Fern=E1ndez?=
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:38331 "EHLO
+        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751020AbdHBGSc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Aug 2017 02:18:32 -0400
+Received: by mail-qt0-f196.google.com with SMTP id p3so3713976qtg.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 23:18:32 -0700 (PDT)
+Date: Wed, 2 Aug 2017 03:18:27 -0300
+From: Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
         <ernesto.mnd.fernandez@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH v3] btrfs: preserve i_mode if __btrfs_set_acl() fails
-Message-ID: <20170814160543.GW2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
+        <ernesto.mnd.fernandez@gmail.com>
+Subject: [PATCH v3] btrfs: preserve i_mode if __btrfs_set_acl() fails
+Message-ID: <20170802061825.GA8058@debian.home>
 References: <20170729002626.GA6759@debian.home>
  <20170730021838.GA4565@debian.home>
- <20170802061825.GA8058@debian.home>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <20170802061825.GA8058@debian.home>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170730021838.GA4565@debian.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 02, 2017 at 03:18:27AM -0300, Ernesto A. Fern·ndez wrote:
-> When changing a file's acl mask, btrfs_set_acl() will first set the
-> group bits of i_mode to the value of the mask, and only then set the
-> actual extended attribute representing the new acl.
-> 
-> If the second part fails (due to lack of space, for example) and the
-> file had no acl attribute to begin with, the system will from now on
-> assume that the mask permission bits are actual group permission bits,
-> potentially granting access to the wrong users.
-> 
-> Prevent this by restoring the original mode bits if __btrfs_set_acl
-> fails.
-> 
-> Signed-off-by: Ernesto A. Fern·ndez <ernesto.mnd.fernandez@gmail.com>
-> ---
-> Please ignore the two previous versions, this is far simpler and has the
-> same effect. To Josef Bacik: thank you for your review, I'm sorry I
-> wasted your time.
+When changing a file's acl mask, btrfs_set_acl() will first set the
+group bits of i_mode to the value of the mask, and only then set the
+actual extended attribute representing the new acl.
 
-This version is much better, starting the transaction would add some
-overhead and would need to be measured so we have an idea about the
-impact.
+If the second part fails (due to lack of space, for example) and the
+file had no acl attribute to begin with, the system will from now on
+assume that the mask permission bits are actual group permission bits,
+potentially granting access to the wrong users.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Prevent this by restoring the original mode bits if __btrfs_set_acl
+fails.
+
+Signed-off-by: Ernesto A. Fern√°ndez <ernesto.mnd.fernandez@gmail.com>
+---
+Please ignore the two previous versions, this is far simpler and has the
+same effect. To Josef Bacik: thank you for your review, I'm sorry I
+wasted your time.
+
+ fs/btrfs/acl.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index 8d8370d..1ba49eb 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -114,13 +114,17 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
+ int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
+ {
+ 	int ret;
++	umode_t old_mode = inode->i_mode;
+ 
+ 	if (type == ACL_TYPE_ACCESS && acl) {
+ 		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
+ 		if (ret)
+ 			return ret;
+ 	}
+-	return __btrfs_set_acl(NULL, inode, acl, type);
++	ret = __btrfs_set_acl(NULL, inode, acl, type);
++	if (ret)
++		inode->i_mode = old_mode;
++	return ret;
+ }
+ 
+ /*
+-- 
+2.1.4
+
+

@@ -1,80 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f48.google.com ([209.85.213.48]:33444 "EHLO
-        mail-vk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752109AbdHNCXa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Aug 2017 22:23:30 -0400
+Received: from mx2.suse.de ([195.135.220.15]:38271 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750725AbdHBGK4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 2 Aug 2017 02:10:56 -0400
+Subject: Re: [PATCH] btrfs: verify_dir_item fails in replay_xattr_deletes
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: Su Yue <suy.fnst@cn.fujitsu.com>
+References: <20170802053521.22053-1-lufq.fnst@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <51264c09-335f-d6fe-4dc8-a757642024a8@suse.com>
+Date: Wed, 2 Aug 2017 09:10:53 +0300
 MIME-Version: 1.0
-In-Reply-To: <CAMuHMdXGR2zG+LS9Qa1foLfWCzpFSmq2f=mNJp-65bH3ZwjoAA@mail.gmail.com>
-References: <20170804201921.156890-1-terrelln@fb.com> <20170804201921.156890-5-terrelln@fb.com>
- <CAMuHMdXGR2zG+LS9Qa1foLfWCzpFSmq2f=mNJp-65bH3ZwjoAA@mail.gmail.com>
-From: Phillip Lougher <phillip.lougher@gmail.com>
-Date: Mon, 14 Aug 2017 03:23:28 +0100
-Message-ID: <CAB3wodfARQsBPb2Cw97AmjsTwTXBdeRmsbs+uajt4idhXAf=QA@mail.gmail.com>
-Subject: Re: [PATCH v4 4/5] squashfs: Add zstd support
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Nick Terrell <terrelln@fb.com>,
-        "Austin S . Hemmelgarn" <ahferroin7@gmail.com>,
-        Herbert Xu <herbert@gondor.apana.org.au>, kernel-team@fb.com,
-        Chris Mason <clm@fb.com>, Yann Collet <cyan@fb.com>,
-        Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
-        SquashFS developers <squashfs-devel@lists.sourceforge.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Phillip Lougher <phillip@squashfs.org.uk>, Sean Purcell <me@seanp.xyz>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20170802053521.22053-1-lufq.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 13, 2017 at 9:31 AM, Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
-> On Fri, Aug 4, 2017 at 10:19 PM, Nick Terrell <terrelln@fb.com> wrote:
->> --- a/fs/squashfs/decompressor.c
->> +++ b/fs/squashfs/decompressor.c
->> @@ -65,6 +65,12 @@ static const struct squashfs_decompressor squashfs_zlib_comp_ops = {
->>  };
->>  #endif
->>
->> +#ifndef CONFIG_SQUASHFS_ZSTD
->> +static const struct squashfs_decompressor squashfs_zstd_comp_ops = {
->> +       NULL, NULL, NULL, NULL, ZSTD_COMPRESSION, "zstd", 0
->
-> Can you please use designated initializers?
 
-I prefer it as it is.  It matches the coding style that I used in the
-rest of that file to declare the "unsupported" compressor entries (if
-this patch uses a different style it would look odd).    There's no
-pointers to functions being assigned here, and it makes it a short and
-concise one-line.
 
-Phillip
+On  2.08.2017 08:35, Lu Fengqi wrote:
+> From: Su Yue <suy.fnst@cn.fujitsu.com>
+> 
+> In replay_xattr_deletes(), the argument @slot of verify_dir_item()
+> should be variable @i instead of path->slots[0].
 
->
->> +};
->> +#endif
->> +
->>  static const struct squashfs_decompressor squashfs_unknown_comp_ops = {
->>         NULL, NULL, NULL, NULL, 0, "unknown", 0
->> ;
->
->> +const struct squashfs_decompressor squashfs_zstd_comp_ops = {
->> +       .init = zstd_init,
->> +       .free = zstd_free,
->> +       .decompress = zstd_uncompress,
->> +       .id = ZSTD_COMPRESSION,
->> +       .name = "zstd",
->> +       .supported = 1
->> +};
->
-> ... like you did here.
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+
+This was already fix in a patch sent by Filipe. Title is:
+
+[PATCH] Btrfs: fix dir item validation when replaying xattr deletes
+
+> 
+> The bug causes failure of generic/066 and shared/002 in xfstest.
+> dmesg:
+> [12507.810781] BTRFS critical (device dm-0): invalid dir item name len: 10
+> [12507.811185] BTRFS: error (device dm-0) in btrfs_replay_log:2475: errno=-5 IO failure (Failed to recover log tree)
+> [12507.811928] BTRFS error (device dm-0): cleaner transaction attach returned -30
+> [12507.821020] BTRFS error (device dm-0): open_ctree failed
+> [12508.131526] BTRFS info (device dm-0): disk space caching is enabled
+> [12508.132145] BTRFS info (device dm-0): has skinny extents
+> [12508.136265] BTRFS critical (device dm-0): invalid dir item name len: 10
+> [12508.136678] BTRFS: error (device dm-0) in btrfs_replay_log:2475: errno=-5 IO failure (Failed to recover log tree)
+> [12508.137501] BTRFS error (device dm-0): cleaner transaction attach returned -30
+> [12508.147982] BTRFS error (device dm-0): open_ctree failed
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  fs/btrfs/tree-log.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index f20ef211a73d..3a11ae63676e 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -2153,8 +2153,7 @@ static int replay_xattr_deletes(struct btrfs_trans_handle *trans,
+>  			u32 this_len = sizeof(*di) + name_len + data_len;
+>  			char *name;
+>  
+> -			ret = verify_dir_item(fs_info, path->nodes[0],
+> -					      path->slots[0], di);
+> +			ret = verify_dir_item(fs_info, path->nodes[0], i, di);
+>  			if (ret) {
+>  				ret = -EIO;
+>  				goto out;
+> 

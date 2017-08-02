@@ -1,53 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f173.google.com ([209.85.161.173]:36581 "EHLO
-        mail-yw0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751177AbdHBJLJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Aug 2017 05:11:09 -0400
-Received: by mail-yw0-f173.google.com with SMTP id u207so25201891ywc.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Aug 2017 02:11:09 -0700 (PDT)
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:35728 "EHLO
+        mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752344AbdHBJRJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Aug 2017 05:17:09 -0400
+Received: by mail-wm0-f52.google.com with SMTP id m85so35999520wma.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Aug 2017 02:17:08 -0700 (PDT)
+From: Thomas Wurfbaum <thomas@wurfbaum.net>
+To: linux-btrfs@vger.kernel.org
+Reply-To: thomas@wurfbaum.net
+Subject: Re: Crashed filesystem, nothing helps
+Date: Wed, 02 Aug 2017 11:17:04 +0200
+Message-ID: <3415313.AO7fCVCIcW@nimrod.thomas.wurfbaum.net>
+In-Reply-To: <20170802090709.GA7140@carfax.org.uk>
+References: <1569935.QpkscbukDQ@nimrod.thomas.wurfbaum.net> <20170802090709.GA7140@carfax.org.uk>
 MIME-Version: 1.0
-In-Reply-To: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
-From: Wang Shilong <wangshilong1991@gmail.com>
-Date: Wed, 2 Aug 2017 17:11:08 +0800
-Message-ID: <CAP9B-QnJ_=jeA=3bgzzVtpsvwaVmK-=cxY7PBOWh660viWmVMA@mail.gmail.com>
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Brendan Hide <brendan@swiftspirit.co.za>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; boundary="nextPart2166221.ScdlDXhye1"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I haven't seen active btrfs developers from some time, Redhat looks
-put most of their efforts on XFS, It is time to switch to SLES/opensuse!
+--nextPart2166221.ScdlDXhye1
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="ISO-8859-1"
+
+Maybe you are right, but i just followed the Suse guide:
+https://en.opensuse.org/SDB:BTRFS
+How to repair a broken/unmountable btrfs filesystem
+
+I already tried the commands 
+mount with the
+-o usebackuproot option. (And -o usebackuproot,ro as well)
+But they just produce this in dmesg:
+[61054.470771] BTRFS info (device sdb1): trying to use backup root at mount 
+time
+[61054.470778] BTRFS info (device sdb1): disk space caching is enabled
+[61054.470782] BTRFS info (device sdb1): has skinny extents
+[61054.560876] BTRFS error (device sdb1): parent transid verify failed on 
+29392896 wanted 1486833 found 1486836
+[61054.563423] BTRFS error (device sdb1): parent transid verify failed on 
+29392896 wanted 1486833 found 1486836
+[61054.604057] BTRFS error (device sdb1): open_ctree failed
+[61079.137435] BTRFS info (device sdb1): trying to use backup root at mount 
+time
+[61079.137443] BTRFS info (device sdb1): disk space caching is enabled
+[61079.137445] BTRFS info (device sdb1): has skinny extents
+[61079.227242] BTRFS error (device sdb1): parent transid verify failed on 
+29392896 wanted 1486833 found 1486836
+[61079.230087] BTRFS error (device sdb1): parent transid verify failed on 
+29392896 wanted 1486833 found 1486836
+[61079.260062] BTRFS error (device sdb1): open_ctree failed
+
+And on the cli i get the following:
+mainframe:~ # mount -o usebackuproot,ro /dev/sdb1 /data
+mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
+       missing codepage or helper program, or other error
+
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+
+A restore does also not help:
+mainframe:~ # btrfs restore /dev/sdb1 /mnt
+parent transid verify failed on 29392896 wanted 1486833 found 1486836
+parent transid verify failed on 29392896 wanted 1486833 found 1486836
+parent transid verify failed on 29392896 wanted 1486833 found 1486836
+parent transid verify failed on 29392896 wanted 1486833 found 1486836
+Ignoring transid failure
+parent transid verify failed on 29409280 wanted 1486829 found 1486833
+parent transid verify failed on 29409280 wanted 1486829 found 1486833
+parent transid verify failed on 29409280 wanted 1486829 found 1486833
+parent transid verify failed on 29409280 wanted 1486829 found 1486833
+Ignoring transid failure
+parent transid verify failed on 29376512 wanted 1327723 found 1486833
+parent transid verify failed on 29376512 wanted 1327723 found 1486833
+parent transid verify failed on 29376512 wanted 1327723 found 1486833
+parent transid verify failed on 29376512 wanted 1327723 found 1486833
+Ignoring transid failure
 
 
-On Wed, Aug 2, 2017 at 4:38 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
-> The title seems alarmist to me - and I suspect it is going to be
-> misconstrued. :-/
->
-> From the release notes at
-> https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/7.4_Release_Notes/chap-Red_Hat_Enterprise_Linux-7.4_Release_Notes-Deprecated_Functionality.html
->
-> "Btrfs has been deprecated
->
-> The Btrfs file system has been in Technology Preview state since the initial
-> release of Red Hat Enterprise Linux 6. Red Hat will not be moving Btrfs to a
-> fully supported feature and it will be removed in a future major release of
-> Red Hat Enterprise Linux.
->
-> The Btrfs file system did receive numerous updates from the upstream in Red
-> Hat Enterprise Linux 7.4 and will remain available in the Red Hat Enterprise
-> Linux 7 series. However, this is the last planned update to this feature.
->
-> Red Hat will continue to invest in future technologies to address the use
-> cases of our customers, specifically those related to snapshots,
-> compression, NVRAM, and ease of use. We encourage feedback through your Red
-> Hat representative on features and requirements you have for file systems
-> and storage technology."
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+-- 
+Thomas Wurfbaum
+Starkertshofen 15
+85084 Reichertshofen
+
+Tel.: +49-160-3696336
+Mail: thomas@wurfbaum.net
+
+Google+:http://google.com/+ThomasWurfbaum
+Facebook: https://www.facebook.com/profile.php?id=100006061335414
+Xing: https://www.xing.com/profile/Thomas_Wurfbaum
+--nextPart2166221.ScdlDXhye1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEib0Z9ILinUsMTE1rXgeiU5j4BKYFAlmBmJAACgkQXgeiU5j4
+BKagcg/+JMwijehXy/IXl4QOZ9OMHllp9mz4F6KduaZt3VGBtYR8MesVIZqk5D4C
+Wy6p/BpVPTXQS/geMqHm6cJIs83axaRSELh24PldiwQsssStULKlCGQHIatXDNcw
+DjPzCqGa+p+CfIEQ51tfjsL2RGEF5P5e2ZJC7BdgdV6IHBy9oboeopzUFo/nay3Q
+wNluZvvpX/LU6umxHdAyL68IbGoIg5Pd0EEgL01FPoG7nTajl1cMHImdZ23I4nV6
+mBblmkhTIAJv/rbOMSPP5fQNMvwUADuYIdMJBG8m2ei4ILYcg+0oN0v+H37tJ85P
+cWjvFv+9NvQo5jH6sE7AplV5c33OiZqwTOSBZyzFcEJpJMcMDyrYrKDQ9mmFLq+Z
+i0/4cJ4NGST246tV5C0Pu8gN5mmZWbQq52/n0cyZgt8Rmb2Dj/82EwGGIB0G4AAK
+PJN1KT9armjcondbydUASfTbnApGIdtfwyr4CcZnFOPIU9MMDR7U1EVtuA1CUHF6
+TNFiMNmaLGlemNQVan5/5YHcgTIFuIOJtiuM7H4grEeVkcOyJ3FDwtGTR88DiNqq
+F7lnpAhOouQmTu0CiuKbe/Qm4JfU2M47W9nSBzUzU+DToLP3bACBcv9lUB5E9svX
+rxIJghToR2tsMfiexfNrkNhxpMtGt4gkBgeLVij/AMF3Q8AUT8Q=
+=hkls
+-----END PGP SIGNATURE-----
+
+--nextPart2166221.ScdlDXhye1--
+

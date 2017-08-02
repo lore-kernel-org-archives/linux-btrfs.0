@@ -1,62 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:30896 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:34231 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751166AbdHAPgv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 11:36:51 -0400
-Date: Tue, 1 Aug 2017 08:36:44 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+        with ESMTP id S1751083AbdHBFzR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Aug 2017 01:55:17 -0400
+From: Anand Jain <anand.jain@oracle.com>
 Subject: Re: [PATCH] btrfs: copy fsid to super_block s_uuid
-Message-ID: <20170801153644.GA4457@magnolia>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
 References: <20170801103508.19746-1-anand.jain@oracle.com>
+ <20170801153644.GA4457@magnolia>
+Message-ID: <14c243df-4532-33ab-7e72-89de96f19b2e@oracle.com>
+Date: Wed, 2 Aug 2017 14:02:11 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170801103508.19746-1-anand.jain@oracle.com>
+In-Reply-To: <20170801153644.GA4457@magnolia>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 01, 2017 at 06:35:08PM +0800, Anand Jain wrote:
-> We didn't copy fsid to struct super_block.s_uuid so Overlay disables
-> index feature with btrfs as the lower FS.
-> 
-> kernel: overlayfs: fs on '/lower' does not support file handles, falling back to index=off.
-> 
-> Fix this by publishing the fsid through struct super_block.s_uuid.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> I tried to know if in case did we deliberately missed this for some reason,
-> however there is no information on that. If we mount a non-default subvol in
-> the next mount/remount, its still the same FS, so publishing the FSID
-> instead of subvol uuid is correct, OR I can't think any other reason for
-> not using s_uuid for btrfs.
-> 
-> 
->  fs/btrfs/disk-io.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 080e2ebb8aa0..b7e72d040442 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2899,6 +2899,7 @@ int open_ctree(struct super_block *sb,
->  
->  	sb->s_blocksize = sectorsize;
->  	sb->s_blocksize_bits = blksize_bits(sectorsize);
-> +	memcpy(&sb->s_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
 
-uuid_copy()?
+Hi Darrick,
 
---D
+  Thanks for commenting..
 
->  
->  	mutex_lock(&fs_info->chunk_mutex);
->  	ret = btrfs_read_sys_array(fs_info);
-> -- 
-> 2.13.1
+>> +	memcpy(&sb->s_uuid, fs_info->fsid, BTRFS_FSID_SIZE);
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> uuid_copy()?
+
+   It requires a larger migration to use uuid_t, IMO it can be done all
+   together, in a separate patch ?
+
+   Just for experiment, starting with struct btrfs_fs_info.fsid and
+   to check its foot prints, I just renamed fsid to fs_id, and compiled.
+   It reports 73 'has no member named ‘fsid'' errors.
+   So looks like redefining u8 fsid[] to uuid_t fsid and further updating
+   all its foot prints, has to be simplified. Any suggestions ?
+
+Thanks, Anand
+

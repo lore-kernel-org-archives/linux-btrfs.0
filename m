@@ -1,124 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:34531 "EHLO
-        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751696AbdHCTD4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Aug 2017 15:03:56 -0400
-Received: by mail-it0-f54.google.com with SMTP id m34so4155957iti.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Aug 2017 12:03:56 -0700 (PDT)
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: waxhead@dirtcellar.net, Brendan Hide <brendan@swiftspirit.co.za>,
-        linux-btrfs@vger.kernel.org
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
- <fb2cf0a6-12b2-9356-657a-ffd58b375c75@dirtcellar.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <b5feb803-c57c-b910-7775-30eaed7b681e@gmail.com>
-Date: Thu, 3 Aug 2017 15:03:53 -0400
+Received: from mail-wm0-f42.google.com ([74.125.82.42]:36609 "EHLO
+        mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751754AbdHCTSW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Aug 2017 15:18:22 -0400
+Received: by mail-wm0-f42.google.com with SMTP id t201so3136464wmt.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Aug 2017 12:18:21 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <fb2cf0a6-12b2-9356-657a-ffd58b375c75@dirtcellar.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAP9B-QnJ_=jeA=3bgzzVtpsvwaVmK-=cxY7PBOWh660viWmVMA@mail.gmail.com>
+References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za> <CAP9B-QnJ_=jeA=3bgzzVtpsvwaVmK-=cxY7PBOWh660viWmVMA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 3 Aug 2017 13:18:20 -0600
+Message-ID: <CAJCQCtREAS53cG_eF8jfg-iqL15ErTqH7gryQ6yYO5sz1BpADw@mail.gmail.com>
+Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
+To: Wang Shilong <wangshilong1991@gmail.com>
+Cc: Brendan Hide <brendan@swiftspirit.co.za>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-03 14:08, waxhead wrote:
-> Brendan Hide wrote:
->> The title seems alarmist to me - and I suspect it is going to be 
->> misconstrued. :-/
->>
->> From the release notes at 
->> https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/7.4_Release_Notes/chap-Red_Hat_Enterprise_Linux-7.4_Release_Notes-Deprecated_Functionality.html 
->>
->>
->> "Btrfs has been deprecated
->>
->> The Btrfs file system has been in Technology Preview state since the 
->> initial release of Red Hat Enterprise Linux 6. Red Hat will not be 
->> moving Btrfs to a fully supported feature and it will be removed in a 
->> future major release of Red Hat Enterprise Linux.
->>
->> The Btrfs file system did receive numerous updates from the upstream 
->> in Red Hat Enterprise Linux 7.4 and will remain available in the Red 
->> Hat Enterprise Linux 7 series. However, this is the last planned 
->> update to this feature.
->>
->> Red Hat will continue to invest in future technologies to address the 
->> use cases of our customers, specifically those related to snapshots, 
->> compression, NVRAM, and ease of use. We encourage feedback through 
->> your Red Hat representative on features and requirements you have for 
->> file systems and storage technology."
->>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> First of all I am not a BTRFS dev, but I use it for various projects and 
-> have high hopes for what it can become.
-> 
-> Now, the fact that Red Hat depreciate BTRFS does not mean that BTRFS is 
-> depreciated. It not removed from the kernel and so far BTRFS offers 
-> features that other filesystems don't have. ZFS is something that people 
-> brag about all the time as a viable alternative, but for me it seems to 
-> be a pain to manage properly. E.g. grow, add/remove devices, shrink 
-> etc... good luck doing that right!
-> 
-> BTRFS biggest problem is not that there are some bits and pieces that 
-> are thoroughly screwed up (raid5/6 (which just got some fixes by the 
-> way)), but  the fact that the documentation is rather dated.
-> 
-> There is a simple status page here 
-> https://btrfs.wiki.kernel.org/index.php/Status
-> 
-> As others have pointed out already the explanations on the status page 
-> is not exactly good. For example compression (that was also mentioned) 
-> is as of writing this marked as 'Mostly ok'  '(needs verification and 
-> source) - auto repair and compression may crash'
-> 
-> Now, I am aware that many use compression without trouble. I am not sure 
-> how many that has compression with disk issues and don't have trouble , 
-> but I would at least expect to see more people yelling on the mailing 
-> list if that where the case. The problem here is that this message is 
-> rather scary and certainly does NOT sound like 'mostly ok' for most people.
-> 
-> What exactly needs verification and source? the mostly ok statement or 
-> something else?! A more detailed explanation would be required here to 
-> avoid scaring people away.
-Not certain what was meant here, but there were (a while back) some 
-known issues with compressed extents, but I thought those had been fixed.
-> 
-> Same thing with the trim feature that is marked OK . It clearly says 
-> that is has performance implications. It is marked OK so one would 
-> expect it to not cause the filesystem to fail, but if the performance 
-> becomes so slow that the filesystem gets practically unusable it is of 
-> course not "OK". The relevant information is missing for people to make 
-> a decent choice and I certainly don't know how serious these performance 
-> implications are, if they are at all relevant...
-The performance implications bit shouldn't be listed, that's a given for 
-any filesystem with discard (TRIM is the ATA and eMMC command, UNMAP is 
-the SCSI one, and ERASE is the name on SD cards, discard is the generic 
-kernel term) support.  The issue arises from devices that don't have 
-support for queuing such commands, which is quite rare for SSD's these days.
-> 
-> Most people interested in BTRFS are probably a bit more paranoid and 
-> concerned about their data than the average computer user. What people 
-> tend to forget is that other filesystems either have NO redundancy, 
-> auto-repair and other fancy features that BTRFS have. So for the 
-> compression example above... if you run compressed files on ext4 and 
-> your disk gets some corruption you are in a no better state than what 
-> you would be with btrfs either (in fact probably worse). Also nothing is 
-> stopping you from putting btrfs DUP on a mdadm raid5 or 6 which mean you 
-> should be VERY safe.
-> 
-> Simple documentation is the key so HERE ARE MY DEMANDS!!!..... ehhh.... 
-> so here is what I think should be done:
-> 
-> 1. The documentation needs to either be improved (or old non-relevant 
-> stuff simply removed / archived somewhere)
-> 2. The status page MUST always be up to date for the latest kernel 
-> release (It's ok so far , let's hope nobody sleeps here)
-> 3. Proper explanations must be given so the layman and reasonably 
-> technical people understand the risks / issues for non-ok stuff.
-> 4. There should be links to roadmaps for each feature on the status page 
-> that clearly stats what is being worked on for the NEXT kernel release
-I entirely agree on all of this, but there is a severe lack of people 
-willing to maintain it (I for example do not have the patience to 
-maintain it, let alone the time).
+On Wed, Aug 2, 2017 at 3:11 AM, Wang Shilong <wangshilong1991@gmail.com> wrote:
+> I haven't seen active btrfs developers from some time, Redhat looks
+> put most of their efforts on XFS, It is time to switch to SLES/opensuse!
+
+I disagree. We need one or more Btrfs developers involved in Fedora.
+
+Fedora runs fairly unmodified upstream kernels, which are kept up to
+date. By default, Fedora 24, 25, 26 users today are on kernel 4.11.11
+or 4.11.12. Fedora 25, 26 will soon be rebased to probably 4.12.5.
+That's the stable repo. You can optionally get newer non-rc ones from
+testing repo. And nightly Rawhide kernels are built as well with the
+latest patchset in between rc's. Both Btrfs and Fedora are heavily
+developing in containerize deployments, so it seems like a good fit
+for both camps.
+
+The problem is the Fedora kernel team has no one sufficiently familiar
+with Btrfs, nor anyone at Red Hat to fall back on. But they do have
+this with ext4, XFS, device-mapper, and LVM developers. So they're not
+going to take on a burden like Btrfs by default without a
+knowledgeable pair of eyes to triage issues as they come up. And
+instead they're moving to XFS + overlayfs.
+
+There's more opportunity for Btrfs than just as a default file system.
+I like the idea of using Btrfs on install media to eliminate the
+monolithic isomd5sum most users skip to test their USB install media;
+eliminate device-mapper based persistent overlay for the install media
+and use Btrfs seed/sprout instead (which would help the Sugar on a
+Stick project as well); and at least for nightly composes eliminate
+squashfs xz based images in favor of Btrfs compression (faster
+compression and decompression, bigger file sizes but these are daily
+throw aways so I think time is more important).
+
+Anyway - point is that converging on SUSE doesn't help. If anything I
+think it'll shrink the market for Btrfs as a general purpose file
+system, rather than grow it.
+
+-- 
+Chris Murphy

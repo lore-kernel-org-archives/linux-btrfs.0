@@ -1,96 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:55962 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752374AbdHNQyg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 12:54:36 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id EDA9D23956
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Aug 2017 16:54:35 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: incremental send, fix emission of invalid clone operations
-Date: Thu, 10 Aug 2017 22:54:51 +0100
-Message-Id: <20170810215451.4240-1-fdmanana@kernel.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:59045 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751133AbdHCPHw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Aug 2017 11:07:52 -0400
+Subject: Re: [PATCH] btrfs: Move skip checksum check from btrfs_submit_direct
+ to __btrfs_submit_dio_bio
+To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <1501764298-24522-1-git-send-email-nborisov@suse.com>
+From: Chris Mason <clm@fb.com>
+Message-ID: <d5c7b3dd-268f-131f-ce57-dbc4ff5baf63@fb.com>
+Date: Thu, 3 Aug 2017 11:07:39 -0400
+MIME-Version: 1.0
+In-Reply-To: <1501764298-24522-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
 
-When doing an incremental send it's possible that the computed send stream
-contains clone operations that will fail on the receiver if the receiver
-has compression enabled and the clone operations target a sector sized
-extent that starts at a zero file offset, is not compressed on the source
-filesystem but ends up being compressed and inlined at the destination
-filesystem.
 
-Example scenario:
+On 08/03/2017 08:44 AM, Nikolay Borisov wrote:
+> Currently the code checks whether we should do data checksumming in
+> btrfs_submit_direct and the boolean result of this check is passed to
+> btrfs_submit_direct_hook, in turn passing it to __btrfs_submit_dio_bio which
+> actually consumes it. The last function actually has all the necessary context
+> to figure out whether to skip the check or not, so let's move the check closer
+> to where it's being consumed. No functional changes.
 
-  $ mkfs.btrfs -f /dev/sdb
-  $ mount -o compress /dev/sdb /mnt
+I like it, thanks.
 
-  # By doing a direct IO write, the data is not compressed.
-  $ xfs_io -f -d -c "pwrite -S 0xab 0 4K" /mnt/foobar
-  $ btrfs subvolume snapshot -r /mnt /mnt/mysnap1
+Reviewed-by: Chris Mason <clm@fb.com>
 
-  $ xfs_io -c "reflink /mnt/foobar 0 8K 4K" /mnt/foobar
-  $ btrfs subvolume snapshot -r /mnt /mnt/mysnap2
-
-  $ btrfs send -f /tmp/1.snap /mnt/mysnap1
-  $ btrfs send -f /tmp/2.snap -p /mnt/mysnap1 /mnt/mysnap2
-  $ umount /mnt
-
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount -o compress /dev/sdc /mnt
-  $ btrfs receive -f /tmp/1.snap /mnt
-  $ btrfs receive -f /tmp/2.snap /mnt
-  ERROR: failed to clone extents to foobar
-  Operation not supported
-
-The same could be achieved by mounting the source filesystem without
-compression and doing a buffered IO write instead of a direct IO one,
-and mounting the destination filesystem with compression enabled.
-
-So fix this by issuing regular write operations in the send stream
-instead of clone operations when the source offset is zero and the
-range has a length matching the sector size.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index b082210df9c8..460be72ab78b 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4992,6 +4992,25 @@ static int clone_range(struct send_ctx *sctx,
- 	struct btrfs_key key;
- 	int ret;
- 
-+	/*
-+	 * Prevent cloning from a zero offset with a length matching the sector
-+	 * size because in some scenarios this will make the receiver fail.
-+	 *
-+	 * For example, if in the source filesystem the extent at offset 0
-+	 * has a length of sectorsize and it was written using direct IO, then
-+	 * it can never be an inline extent (even if compression is enabled).
-+	 * Then this extent can be cloned in the original filesystem to a non
-+	 * zero file offset, but it may not be possible to clone in the
-+	 * destination filesystem because it can be inlined due to compression
-+	 * on the destination filesystem (as the receiver's write operations are
-+	 * always done using buffered IO). The same happens when the original
-+	 * filesystem does not have compression enabled but the destination
-+	 * filesystem has.
-+	 */
-+	if (clone_root->offset == 0 &&
-+	    len == sctx->send_root->fs_info->sectorsize)
-+		return send_extent_data(sctx, offset, len);
-+
- 	path = alloc_path_for_send();
- 	if (!path)
- 		return -ENOMEM;
--- 
-2.11.0
-
+-chris

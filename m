@@ -1,115 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:33599 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751754AbdHCWAY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Aug 2017 18:00:24 -0400
-Received: by mail-wm0-f67.google.com with SMTP id q189so3754217wmd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Aug 2017 15:00:23 -0700 (PDT)
+Received: from ip-88.staren.nu ([77.110.19.88]:38816 "EHLO iapetus.neab.net"
+        rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+        id S1751736AbdHCWvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Aug 2017 18:51:18 -0400
+Date: Fri, 4 Aug 2017 00:51:12 +0200 (CEST)
+From: pwm <pwm@iapetus.neab.net>
+To: Goffredo Baroncelli <kreijack@inwind.it>
+cc: Marat Khalili <mkh@rqc.ru>, "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Massive loss of disk space
+In-Reply-To: <ed61fc9b-6d12-f9d1-6e5a-b11b357d377c@inwind.it>
+Message-ID: <alpine.DEB.2.02.1708040038310.31126@iapetus.neab.net>
+References: <alpine.DEB.2.02.1708011253230.31126@iapetus.neab.net> <20170801122039.GX7140@carfax.org.uk> <alpine.DEB.2.02.1708011520490.31126@iapetus.neab.net> <b30d1b78-7cbd-9bf5-3507-b028b9b8191f@gmail.com> <7f2b5c3a-2f5c-e857-d2dc-3ea16b58ecaf@gmail.com>
+ <798a9077-bcbd-076c-a458-3403010ce8ac@libero.it> <e8abbe21-8cde-1650-8012-9b20a3fcfeec@rqc.ru> <ed61fc9b-6d12-f9d1-6e5a-b11b357d377c@inwind.it>
 MIME-Version: 1.0
-In-Reply-To: <ce5ca6f1-19ef-3bfc-541b-90d526e29e5c@swiftspirit.co.za>
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
- <fb2cf0a6-12b2-9356-657a-ffd58b375c75@dirtcellar.net> <1501784952.4789.3.camel@scientia.net>
- <fd0875d1-c96c-b1ac-0284-50613af0bd76@gmail.com> <ce5ca6f1-19ef-3bfc-541b-90d526e29e5c@swiftspirit.co.za>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 3 Aug 2017 16:00:22 -0600
-Message-ID: <CAJCQCtSCFvPYt_L9WwpMX7PhOLA-0_60miCxtczCWZbVAV8eQw@mail.gmail.com>
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Brendan Hide <brendan@swiftspirit.co.za>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 3, 2017 at 2:45 PM, Brendan Hide <brendan@swiftspirit.co.za> wrote:
+In 30 seconds I should be able to fill about 200MB * 30 = 6GB.
+
+Requiring the parity to not grow larger than there is a 6GB additional 
+space is possible to live with on a 10TB disk.
+
+It seems that for SnapRAID to have any chance to work correctly with 
+parity on a BTRFS partition, it would need a min-free configuration 
+paramter to make sure there is always enough free space for one parity 
+file update.
+
+But as it is right now, requiring that the disc isn't filled past 50% 
+because fallocate() wants enough free space for 100% of the original file 
+data to be rewritten obviously is not a working solution.
+
+Right now, it sounds like I should change all parity disks to a different 
+file system to avoid the CoW issue. There doesn't seem to be any way to 
+turn off CoW for an already existing file, and the parity data is already 
+way past 50% so I can't make a copy.
+
+/Per W
+
+On Thu, 3 Aug 2017, Goffredo Baroncelli wrote:
+
+> On 2017-08-03 13:44, Marat Khalili wrote:
+>> On 02/08/17 20:52, Goffredo Baroncelli wrote:
+>>> consider the following scenario:
+>>>
+>>> a) create a 2GB file
+>>> b) fallocate -o 1GB -l 2GB
+>>> c) write from 1GB to 3GB
+>>>
+>>> after b), the expectation is that c) always succeed [1]: i.e. there is enough space on the filesystem. Due to the COW nature of BTRFS, you cannot rely on the already allocated space because there could be a small time window where both the old and the new data exists on the disk.
+>> Just curious. With current implementation, in the following case:
+>> a) create a 2GB file1 && create a 2GB file2
+>> b) fallocate -o 1GB -l 2GB file1 && fallocate -o 1GB -l 2GB file2
 >
-> To counter, I think this is a big problem with btrfs, especially in terms of
-> user attrition. We don't need "GUI" tools. At all. But we do need that btrfs
-> is self-sufficient enough that regular users don't get burnt by what they
-> would view as unexpected behaviour.  We have currently a situation where
-> btrfs is too demanding on inexperienced users.
-
-I think the top complaint is the manual nature of balancing to avoid
-enospc when there's free space, followed by balancing needed to
-avoid/reduce free space fragmentation and thus maintain consistent
-performance.
-
-Obviously the kernel needs more intelligent code to free up partially
-full block groups, more correctly to free up contiguous space for it
-to write to. That solve both problems.
-
-But in the meantime, btrfs-progs should ship a policy to do some
-minimal balance to totally obviate this and find the edge cases. Maybe
-it's dusage=3 every day. And dusage=10 one a week. And dusage=20
-musage=20 once a month. I don't know but some iteration in this area
-is better than saying, PUNT! And putting it on the user's lap.
-
-Better would be a trigger that is statistics based rather than time
-based. The metric might be some combination of workload (i.e. idle)
-and ratios found in sysfs.
-
-Anyway, the first step is for people on this list to stop
-micromanaging their own volumes, and try to center on a sane one size
-fits all solution. And then iterate better and better solutions as we
-determine the edge cases where one size doesn't fit all. We're
-throwing hammers at the problem by default because it's a learned
-behavior. We all need to just stop balancing and act like regular
-users. And then figure out how to automatically optimize.
-
-
-
-
+> A this step you are trying to allocate 3GB+3GB = 6GB, so you exhausted the filesystem space.
 >
-> I feel we need better worst-case behaviours. For example, if *I* have a
-> btrfs on its second-to-last-available chunk, it means I'm not micro-managing
-> properly. But users shouldn't have to micro-manage in the first place. Btrfs
-> (or a management tool) should just know to balance the least-used chunk
-> and/or delete the lowest-priority snapshot, etc. It shouldn't cause my
-> services/apps to give diskspace errors when, clearly, there is free space
-> available.
-
-Ideally the kernel code needs to do a better job freeing up partial
-block groups. But in the meantime, this can be set as an optimization
-policy in user space. And it should be in btrfs-progs so it's
-consistent across distros. SUSE has a distro specific balancer, on a
-systemd timer, but I don't think it's enabled by default and I also
-think it's weirdly too aggressive.
-
-If it could be made smarter, with a trigger other than a timer, that'd
-be even better.
-
-But doing nothing has been one of the most consistently negative user
-responses about Btrfs is the manual balance to maintain performance.
-
-
-
-> The other "high-level" aspect would be along the lines of better guidance
-> and standardisation for distros on how best to configure btrfs. This would
-> include guidance/best practices for things like appropriate subvolume
-> mountpoints and snapshot paths, sensible schedules or logic (or perhaps even
-> example tools/scripts) for balancing and scrubbing the filesystem.
-
-Would they listen? My experience with openSUSE is, nope.
-
-
-> I don't have all the answers. But I also don't want to have to tell people
-> they can't adopt it because a) they don't (or never will) understand it; and
-> b) they're going to resent me for their irresponsibly losing their own data.
-
-Sure.
-
-You can read on the linux-raid@ list where there are still constant
-problems with users doing crazy things like mdadm --create to fix a
-raid assembly problem, and obliterate their data by doing this and
-then getting pissed. It's like, where the hell do people keep getting
-the idea of doing that?
-
-There are six ways to Sunday ways of fixing a Btrfs volume. It reads
-like a choose your own adventure book. No, actually it's worse because
-at least the choose your own adventure book tells you what page to go
-to next, and Btrfs gives you zero advice what order to try things in.
-
-
--- 
-Chris Murphy
+>> c) write from 1GB to 3GB file1 && write from 1GB to 3GB file2
+>> will (c) always succeed? I.e. does fallocate really allocate 2GB per file, or does it only allocate additional 1GB and check free space for another 1GB? If it's only the latter, it is useless.
+> The file is physically extended
+>
+> ghigo@venice:/tmp$ fallocate -l 1000 foo.txt
+> ghigo@venice:/tmp$ ls -l foo.txt
+> -rw-r--r-- 1 ghigo ghigo 1000 Aug  3 18:00 foo.txt
+> ghigo@venice:/tmp$ fallocate -o 500 -l 1000 foo.txt
+> ghigo@venice:/tmp$ ls -l foo.txt
+> -rw-r--r-- 1 ghigo ghigo 1500 Aug  3 18:00 foo.txt
+> ghigo@venice:/tmp$
+>
+>>
+>> --
+>>
+>> With Best Regards,
+>> Marat Khalili
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>
+>
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

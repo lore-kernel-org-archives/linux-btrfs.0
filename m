@@ -1,45 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:34818 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752179AbdHATvD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Aug 2017 15:51:03 -0400
-Received: by mail-qt0-f195.google.com with SMTP id t37so2639121qtg.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 12:51:03 -0700 (PDT)
-From: josef@toxicpanda.com
-To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 2/2] btrfs: increase ctx->pos for delayed dir index
-Date: Tue,  1 Aug 2017 15:51:00 -0400
-Message-Id: <1501617060-30366-2-git-send-email-jbacik@fb.com>
-In-Reply-To: <1501617060-30366-1-git-send-email-jbacik@fb.com>
-References: <1501617060-30366-1-git-send-email-jbacik@fb.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56188 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751739AbdHCPCS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 3 Aug 2017 11:02:18 -0400
+Subject: Re: [PATCH] Btrfs: avoid unnecessarily locking inode when clearing a
+ range
+To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
+References: <20170727185255.5122-1-fdmanana@kernel.org>
+From: Chris Mason <clm@fb.com>
+Message-ID: <e19d649f-8ee6-fade-f4d9-c303a2e01fcc@fb.com>
+Date: Thu, 3 Aug 2017 11:00:14 -0400
+MIME-Version: 1.0
+In-Reply-To: <20170727185255.5122-1-fdmanana@kernel.org>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
 
-Our dir_context->pos is supposed to hold the next position we're
-supposed to look.  If we successfully insert a delayed dir index we
-could end up with a duplicate entry because we don't increase ctx->pos
-after doing the dir_emit.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/delayed-inode.c | 1 +
- 1 file changed, 1 insertion(+)
+On 07/27/2017 02:52 PM, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If the range being cleared was not marked for defrag and we are not
+> about to clear the range from the defrag status, we don't need to
+> lock and unlock the inode.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 8ae409b..19e4ad2 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1727,6 +1727,7 @@ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
- 
- 		if (over)
- 			return 1;
-+		ctx->pos++;
- 	}
- 	return 0;
- }
--- 
-2.7.4
+Thanks Filipe, looks like it goes all the way back to:
 
+commit 47059d930f0e002ff851beea87d738146804726d
+Author: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
+Date:   Thu Jul 3 18:22:07 2014 +0800
+
+     Btrfs: make defragment work with nodatacow option
+
+I can't see how the inode lock is required here.
+
+Reviewed-by: Chris Mason <clm@fb.com>
+
+-chris
+
+> ---
+>   fs/btrfs/inode.c | 7 ++++---
+>   1 file changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index eb495e956d53..51c45c0a8553 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1797,10 +1797,11 @@ static void btrfs_clear_bit_hook(void *private_data,
+>   	u64 len = state->end + 1 - state->start;
+>   	u32 num_extents = count_max_extents(len);
+>   
+> -	spin_lock(&inode->lock);
+> -	if ((state->state & EXTENT_DEFRAG) && (*bits & EXTENT_DEFRAG))
+> +	if ((state->state & EXTENT_DEFRAG) && (*bits & EXTENT_DEFRAG)) {
+> +		spin_lock(&inode->lock);
+>   		inode->defrag_bytes -= len;
+> -	spin_unlock(&inode->lock);
+> +		spin_unlock(&inode->lock);
+> +	}
+>   
+>   	/*
+>   	 * set_bit and clear bit hooks normally require _irqsave/restore
+> 

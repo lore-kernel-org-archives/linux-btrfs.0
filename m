@@ -1,49 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.121.75.85]:50296 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751284AbdHDHoq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Aug 2017 03:44:46 -0400
-Received: from natsu (unknown [IPv6:fd39::e9:9eff:fe8f:1bcf])
-        by len.romanrm.net (Postfix) with SMTP id CA1A920409
-        for <linux-btrfs@vger.kernel.org>; Fri,  4 Aug 2017 07:44:45 +0000 (UTC)
-Date: Fri, 4 Aug 2017 12:44:44 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: linux-btrfs@vger.kernel.org
-Subject: SQLite Re: csum errors on top of dm-crypt
-Message-ID: <20170804124444.6d102183@natsu>
-In-Reply-To: <20170804121858.1c860065@natsu>
-References: <20170804121858.1c860065@natsu>
+Received: from mail-oi0-f48.google.com ([209.85.218.48]:34296 "EHLO
+        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751278AbdHDHtk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Aug 2017 03:49:40 -0400
+Received: by mail-oi0-f48.google.com with SMTP id x3so8527379oia.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Aug 2017 00:49:40 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <20170804072229.4h534hr54ne3d764@angband.pl>
+References: <CANT5p=rND=6FZYz6+x0924JHs3G8RH+G9GXqDfoS-ndtQUXuKQ@mail.gmail.com>
+ <20170804060007.blgcu5khfo4juwfe@angband.pl> <CANT5p=qvu9tCf73+_PuAj9Ryy69p3JjAyHFY_pAA9eUsTz_ELA@mail.gmail.com>
+ <20170804072229.4h534hr54ne3d764@angband.pl>
+From: Shyam Prasad N <nspmangalore@gmail.com>
+Date: Fri, 4 Aug 2017 13:19:39 +0530
+Message-ID: <CANT5p=r9gMUu1F8Vkgs6=O1UBfBLn=96XAZBzB6OsHnSQw0C5A@mail.gmail.com>
+Subject: Re: Power down tests...
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 4 Aug 2017 12:18:58 +0500
-Roman Mamedov <rm@romanrm.net> wrote:
+Oh ok. I read this in the man page and assumed that it's on by default:
+       flushoncommit, noflushoncommit
+           (default: on)
 
-> What I find weird is why the expected csum is the same on all of these.
-> Any idea what this might point to as the cause?
-> 
-> What is 0x98f94189, is it not a csum of a block of zeroes by any chance?
+           This option forces any data dirtied by a write in a prior
+transaction to commit as part of the current commit. This makes the
+committed state a fully consistent view of the file system from the
+           application’s perspective (i.e., it includes all completed
+file system operations). This was previously the behavior only when a
+snapshot was created.
 
-It does seem to be something of that sort, as it appears in
-https://www.spinics.net/lists/linux-btrfs/msg67281.html 
-(though as factual csum, not the expected one).
+           Disabling flushing may improve performance but is not crash-safe.
 
-> a few files turned out to be unreadable
 
-Actually, turns out ALL of those are sqlite files(!)
+Maybe this needs a correction?
 
-.mozilla/firefox/.../places.sqlite <- 4 instances (for 4 users)
-.moonchild productions/pale moon/.../urlclassifier3.sqlite
-.config/chromium/Default/Application Cache/Cache/data_3 <- twice (for 2 users)
-.config/chromium/Default/History
-.config/chromium/Default/Top Sites
+On Fri, Aug 4, 2017 at 12:52 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+> On Fri, Aug 04, 2017 at 12:15:12PM +0530, Shyam Prasad N wrote:
+>> Is flushoncommit not a default option on version
+>> 4.4? Do I need specifically set this option?
+>
+> It's not the default.
+>
+> --
+> ⢀⣴⠾⠻⢶⣦⠀ What Would Jesus Do, MUD/MMORPG edition:
+> ⣾⠁⢰⠒⠀⣿⡁ • multiplay with an admin char to benefit your mortal
+> ⢿⡄⠘⠷⠚⠋⠀ • abuse item cloning bugs (the five fishes + two breads affair)
+> ⠈⠳⣄⠀⠀⠀⠀ • use glitches to walk on water
 
-nothing else affected.
 
-Forgot to mention that the kernel version is 4.9.40.
 
 -- 
-With respect,
-Roman
+-Shyam

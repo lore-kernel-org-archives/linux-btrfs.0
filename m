@@ -1,464 +1,268 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f47.google.com ([74.125.83.47]:37817 "EHLO
-        mail-pg0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753341AbdHWGqO (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57331 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752105AbdHDVvt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 02:46:14 -0400
-Received: by mail-pg0-f47.google.com with SMTP id y129so3969473pgy.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 23:46:14 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH 1/7] Btrfs: fix blk_status_t/errno confusion
-Date: Tue, 22 Aug 2017 23:45:59 -0700
-Message-Id: <f67c635fab2edc4212f0a30cdb0dfe709f1583f0.1503470354.git.osandov@fb.com>
-In-Reply-To: <cover.1503470354.git.osandov@fb.com>
-References: <cover.1503470354.git.osandov@fb.com>
-In-Reply-To: <cover.1503470354.git.osandov@fb.com>
-References: <cover.1503470354.git.osandov@fb.com>
+        Fri, 4 Aug 2017 17:51:49 -0400
+From: Nick Terrell <terrelln@fb.com>
+To: "dsterba@suse.com" <dsterba@suse.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH preview] btrfs: allow to set compression level for zlib
+Date: Fri, 4 Aug 2017 21:51:44 +0000
+Message-ID: <689C76C1-60F4-4F1D-8AFF-C6250B788A49@fb.com>
+In-Reply-To: <<20170724172939.24527-1-dsterba@suse.com>>
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+On 07/25/2017 01:29 AM, David Sterba wrote:
+> Preliminary support for setting compression level for zlib, the
+> following works:
 
-This fixes several instances of blk_status_t and bare errno ints being
-mixed up, some of which are real bugs.
+Thanks for working on this, I think it is a great feature.
+I have a few comments relating to how it would work with zstd.
 
-Fixes: 4e4cbee93d56 ("block: switch bios to blk_status_t")
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/disk-io.c |  4 ++--
- fs/btrfs/inode.c   | 70 +++++++++++++++++++++++++++++-------------------------
- fs/btrfs/raid56.c  | 34 +++++++++++++-------------
- fs/btrfs/volumes.c | 10 ++++----
- fs/btrfs/volumes.h |  6 ++---
- 5 files changed, 64 insertions(+), 60 deletions(-)
+> 
+> $ mount -o compess=zlib                 # default
+> $ mount -o compess=zlib0                # same
+> $ mount -o compess=zlib9                # level 9, slower sync, less data
+> $ mount -o compess=zlib1                # level 1, faster sync, more data
+> $ mount -o remount,compress=zlib3	# level set by remount
+> 
+> The level is visible in the same format in /proc/mounts. Level set via
+> file property does not work yet.
+> 
+> Required patch: "btrfs: prepare for extensions in compression options"
+> 
+> Signed-off-by: David Sterba <dsterba@xxxxxxxx>
+> ---
+>  fs/btrfs/compression.c | 20 +++++++++++++++++++-
+>  fs/btrfs/compression.h |  6 +++++-
+>  fs/btrfs/ctree.h       |  1 +
+>  fs/btrfs/inode.c       |  5 ++++-
+>  fs/btrfs/lzo.c         |  5 +++++
+>  fs/btrfs/super.c       |  7 +++++--
+>  fs/btrfs/zlib.c        | 12 +++++++++++-
+>  7 files changed, 50 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 8ba1b86c9b72..142206d68495 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -866,6 +866,11 @@ static void free_workspaces(void)
+>   * Given an address space and start and length, compress the bytes into @pages
+>   * that are allocated on demand.
+>   *
+> + * @type_level is encoded algorithm and level, where level 0 means whatever
+> + * default the algorithm chooses and is opaque here;
+> + * - compression algo are 0-3
+> + * - the level are bits 4-7
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 080e2ebb8aa0..f45b61fe9a9a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3516,7 +3516,7 @@ static blk_status_t wait_dev_flush(struct btrfs_device *device)
- 	struct bio *bio = device->flush_bio;
- 
- 	if (!device->flush_bio_sent)
--		return 0;
-+		return BLK_STS_OK;
- 
- 	device->flush_bio_sent = 0;
- 	wait_for_completion_io(&device->flush_wait);
-@@ -3563,7 +3563,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 			continue;
- 
- 		write_dev_flush(dev);
--		dev->last_flush_error = 0;
-+		dev->last_flush_error = BLK_STS_OK;
- 	}
- 
- 	/* wait for all the barriers */
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 95c212037095..24bcd5cd9cf2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7924,11 +7924,12 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	return ret;
- }
- 
--static inline int submit_dio_repair_bio(struct inode *inode, struct bio *bio,
--					int mirror_num)
-+static inline blk_status_t submit_dio_repair_bio(struct inode *inode,
-+						 struct bio *bio,
-+						 int mirror_num)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	int ret;
-+	blk_status_t ret;
- 
- 	BUG_ON(bio_op(bio) == REQ_OP_WRITE);
- 
-@@ -7980,10 +7981,10 @@ static int btrfs_check_dio_repairable(struct inode *inode,
- 	return 1;
- }
- 
--static int dio_read_error(struct inode *inode, struct bio *failed_bio,
--			struct page *page, unsigned int pgoff,
--			u64 start, u64 end, int failed_mirror,
--			bio_end_io_t *repair_endio, void *repair_arg)
-+static blk_status_t dio_read_error(struct inode *inode, struct bio *failed_bio,
-+				   struct page *page, unsigned int pgoff,
-+				   u64 start, u64 end, int failed_mirror,
-+				   bio_end_io_t *repair_endio, void *repair_arg)
- {
- 	struct io_failure_record *failrec;
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-@@ -7993,18 +7994,19 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
- 	int read_mode = 0;
- 	int segs;
- 	int ret;
-+	blk_status_t status;
- 
- 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
- 
- 	ret = btrfs_get_io_failure_record(inode, start, end, &failrec);
- 	if (ret)
--		return ret;
-+		return errno_to_blk_status(ret);
- 
- 	ret = btrfs_check_dio_repairable(inode, failed_bio, failrec,
- 					 failed_mirror);
- 	if (!ret) {
- 		free_io_failure(failure_tree, io_tree, failrec);
--		return -EIO;
-+		return BLK_STS_IOERR;
- 	}
- 
- 	segs = bio_segments(failed_bio);
-@@ -8022,13 +8024,13 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
- 		    "Repair DIO Read Error: submitting new dio read[%#x] to this_mirror=%d, in_validation=%d\n",
- 		    read_mode, failrec->this_mirror, failrec->in_validation);
- 
--	ret = submit_dio_repair_bio(inode, bio, failrec->this_mirror);
--	if (ret) {
-+	status = submit_dio_repair_bio(inode, bio, failrec->this_mirror);
-+	if (status) {
- 		free_io_failure(failure_tree, io_tree, failrec);
- 		bio_put(bio);
- 	}
- 
--	return ret;
-+	return status;
- }
- 
- struct btrfs_retry_complete {
-@@ -8065,8 +8067,8 @@ static void btrfs_retry_endio_nocsum(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static int __btrfs_correct_data_nocsum(struct inode *inode,
--				       struct btrfs_io_bio *io_bio)
-+static blk_status_t __btrfs_correct_data_nocsum(struct inode *inode,
-+						struct btrfs_io_bio *io_bio)
- {
- 	struct btrfs_fs_info *fs_info;
- 	struct bio_vec bvec;
-@@ -8076,8 +8078,8 @@ static int __btrfs_correct_data_nocsum(struct inode *inode,
- 	unsigned int pgoff;
- 	u32 sectorsize;
- 	int nr_sectors;
--	int ret;
--	int err = 0;
-+	blk_status_t ret;
-+	blk_status_t err = BLK_STS_OK;
- 
- 	fs_info = BTRFS_I(inode)->root->fs_info;
- 	sectorsize = fs_info->sectorsize;
-@@ -8183,11 +8185,12 @@ static blk_status_t __btrfs_subio_endio_read(struct inode *inode,
- 	int csum_pos;
- 	bool uptodate = (err == 0);
- 	int ret;
-+	blk_status_t status;
- 
- 	fs_info = BTRFS_I(inode)->root->fs_info;
- 	sectorsize = fs_info->sectorsize;
- 
--	err = 0;
-+	err = BLK_STS_OK;
- 	start = io_bio->logical;
- 	done.inode = inode;
- 	io_bio->bio.bi_iter = io_bio->iter;
-@@ -8209,12 +8212,12 @@ static blk_status_t __btrfs_subio_endio_read(struct inode *inode,
- 		done.start = start;
- 		init_completion(&done.done);
- 
--		ret = dio_read_error(inode, &io_bio->bio, bvec.bv_page,
--				pgoff, start, start + sectorsize - 1,
--				io_bio->mirror_num,
--				btrfs_retry_endio, &done);
--		if (ret) {
--			err = errno_to_blk_status(ret);
-+		status = dio_read_error(inode, &io_bio->bio, bvec.bv_page,
-+					pgoff, start, start + sectorsize - 1,
-+					io_bio->mirror_num, btrfs_retry_endio,
-+					&done);
-+		if (status) {
-+			err = status;
- 			goto next;
- 		}
- 
-@@ -8250,7 +8253,7 @@ static blk_status_t btrfs_subio_endio_read(struct inode *inode,
- 		if (unlikely(err))
- 			return __btrfs_correct_data_nocsum(inode, io_bio);
- 		else
--			return 0;
-+			return BLK_STS_OK;
- 	} else {
- 		return __btrfs_subio_endio_read(inode, io_bio, err);
- 	}
-@@ -8423,9 +8426,9 @@ static inline blk_status_t btrfs_lookup_and_bind_dio_csum(struct inode *inode,
- 	return 0;
- }
- 
--static inline int __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode,
--					 u64 file_offset, int skip_sum,
--					 int async_submit)
-+static inline blk_status_t
-+__btrfs_submit_dio_bio(struct bio *bio, struct inode *inode, u64 file_offset,
-+		       int skip_sum, int async_submit)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_dio_private *dip = bio->bi_private;
-@@ -8488,6 +8491,7 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 	int clone_offset = 0;
- 	int clone_len;
- 	int ret;
-+	blk_status_t status;
- 
- 	map_length = orig_bio->bi_iter.bi_size;
- 	submit_len = map_length;
-@@ -8537,9 +8541,9 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 		 */
- 		atomic_inc(&dip->pending_bios);
- 
--		ret = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
--					     async_submit);
--		if (ret) {
-+		status = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
-+						async_submit);
-+		if (status) {
- 			bio_put(bio);
- 			atomic_dec(&dip->pending_bios);
- 			goto out_err;
-@@ -8557,9 +8561,9 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip,
- 	} while (submit_len > 0);
- 
- submit:
--	ret = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
--				     async_submit);
--	if (!ret)
-+	status = __btrfs_submit_dio_bio(bio, inode, file_offset, skip_sum,
-+					async_submit);
-+	if (!status)
- 		return 0;
- 
- 	bio_put(bio);
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 208638384cd2..2cf6ba40f7c4 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -905,7 +905,7 @@ static void raid_write_end_io(struct bio *bio)
- 	if (!atomic_dec_and_test(&rbio->stripes_pending))
- 		return;
- 
--	err = 0;
-+	err = BLK_STS_OK;
- 
- 	/* OK, we have read all the stripes we need to. */
- 	max_errors = (rbio->operation == BTRFS_RBIO_PARITY_SCRUB) ?
-@@ -1324,7 +1324,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
- 	return;
- 
- cleanup:
--	rbio_orig_end_io(rbio, -EIO);
-+	rbio_orig_end_io(rbio, BLK_STS_IOERR);
- }
- 
- /*
-@@ -1475,7 +1475,7 @@ static void raid_rmw_end_io(struct bio *bio)
- 
- cleanup:
- 
--	rbio_orig_end_io(rbio, -EIO);
-+	rbio_orig_end_io(rbio, BLK_STS_IOERR);
- }
- 
- static void async_rmw_stripe(struct btrfs_raid_bio *rbio)
-@@ -1579,7 +1579,7 @@ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
- 	return 0;
- 
- cleanup:
--	rbio_orig_end_io(rbio, -EIO);
-+	rbio_orig_end_io(rbio, BLK_STS_IOERR);
- 	return -EIO;
- 
- finish:
-@@ -1795,12 +1795,12 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 	void **pointers;
- 	int faila = -1, failb = -1;
- 	struct page *page;
--	int err;
-+	blk_status_t err;
- 	int i;
- 
- 	pointers = kcalloc(rbio->real_stripes, sizeof(void *), GFP_NOFS);
- 	if (!pointers) {
--		err = -ENOMEM;
-+		err = BLK_STS_RESOURCE;
- 		goto cleanup_io;
- 	}
- 
-@@ -1856,7 +1856,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 					 * a bad data or Q stripe.
- 					 * TODO, we should redo the xor here.
- 					 */
--					err = -EIO;
-+					err = BLK_STS_IOERR;
- 					goto cleanup;
- 				}
- 				/*
-@@ -1882,7 +1882,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 			if (rbio->bbio->raid_map[failb] == RAID6_Q_STRIPE) {
- 				if (rbio->bbio->raid_map[faila] ==
- 				    RAID5_P_STRIPE) {
--					err = -EIO;
-+					err = BLK_STS_IOERR;
- 					goto cleanup;
- 				}
- 				/*
-@@ -1954,13 +1954,13 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 		}
- 	}
- 
--	err = 0;
-+	err = BLK_STS_OK;
- cleanup:
- 	kfree(pointers);
- 
- cleanup_io:
- 	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
--		if (err == 0)
-+		if (err == BLK_STS_OK)
- 			cache_rbio_pages(rbio);
- 		else
- 			clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
-@@ -1968,7 +1968,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 		rbio_orig_end_io(rbio, err);
- 	} else if (rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
- 		rbio_orig_end_io(rbio, err);
--	} else if (err == 0) {
-+	} else if (err == BLK_STS_OK) {
- 		rbio->faila = -1;
- 		rbio->failb = -1;
- 
-@@ -2005,7 +2005,7 @@ static void raid_recover_end_io(struct bio *bio)
- 		return;
- 
- 	if (atomic_read(&rbio->error) > rbio->bbio->max_errors)
--		rbio_orig_end_io(rbio, -EIO);
-+		rbio_orig_end_io(rbio, BLK_STS_IOERR);
- 	else
- 		__raid_recover_end_io(rbio);
- }
-@@ -2104,7 +2104,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
- cleanup:
- 	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
- 	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING)
--		rbio_orig_end_io(rbio, -EIO);
-+		rbio_orig_end_io(rbio, BLK_STS_IOERR);
- 	return -EIO;
- }
- 
-@@ -2431,7 +2431,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 	nr_data = bio_list_size(&bio_list);
- 	if (!nr_data) {
- 		/* Every parity is right */
--		rbio_orig_end_io(rbio, 0);
-+		rbio_orig_end_io(rbio, BLK_STS_OK);
- 		return;
- 	}
- 
-@@ -2451,7 +2451,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 	return;
- 
- cleanup:
--	rbio_orig_end_io(rbio, -EIO);
-+	rbio_orig_end_io(rbio, BLK_STS_IOERR);
- }
- 
- static inline int is_data_stripe(struct btrfs_raid_bio *rbio, int stripe)
-@@ -2519,7 +2519,7 @@ static void validate_rbio_for_parity_scrub(struct btrfs_raid_bio *rbio)
- 	return;
- 
- cleanup:
--	rbio_orig_end_io(rbio, -EIO);
-+	rbio_orig_end_io(rbio, BLK_STS_IOERR);
- }
- 
- /*
-@@ -2633,7 +2633,7 @@ static void raid56_parity_scrub_stripe(struct btrfs_raid_bio *rbio)
- 	return;
- 
- cleanup:
--	rbio_orig_end_io(rbio, -EIO);
-+	rbio_orig_end_io(rbio, BLK_STS_IOERR);
- 	return;
- 
- finish:
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e8b9a269fdde..bd679bc7a1a9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6212,8 +6212,8 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
- 	}
- }
- 
--int btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
--		  int mirror_num, int async_submit)
-+blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
-+			   int mirror_num, int async_submit)
- {
- 	struct btrfs_device *dev;
- 	struct bio *first_bio = bio;
-@@ -6233,7 +6233,7 @@ int btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 				&map_length, &bbio, mirror_num, 1);
- 	if (ret) {
- 		btrfs_bio_counter_dec(fs_info);
--		return ret;
-+		return errno_to_blk_status(ret);
- 	}
- 
- 	total_devs = bbio->num_stripes;
-@@ -6256,7 +6256,7 @@ int btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 		}
- 
- 		btrfs_bio_counter_dec(fs_info);
--		return ret;
-+		return errno_to_blk_status(ret);
- 	}
- 
- 	if (map_length < length) {
-@@ -6283,7 +6283,7 @@ int btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 				  dev_nr, async_submit);
- 	}
- 	btrfs_bio_counter_dec(fs_info);
--	return 0;
-+	return BLK_STS_OK;
- }
- 
- struct btrfs_device *btrfs_find_device(struct btrfs_fs_info *fs_info, u64 devid,
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6f45fd60d15a..93277fc60930 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -74,7 +74,7 @@ struct btrfs_device {
- 	int missing;
- 	int can_discard;
- 	int is_tgtdev_for_dev_replace;
--	int last_flush_error;
-+	blk_status_t last_flush_error;
- 	int flush_bio_sent;
- 
- #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
-@@ -416,8 +416,8 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		      struct btrfs_fs_info *fs_info, u64 type);
- void btrfs_mapping_init(struct btrfs_mapping_tree *tree);
- void btrfs_mapping_tree_free(struct btrfs_mapping_tree *tree);
--int btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
--		  int mirror_num, int async_submit);
-+blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
-+			   int mirror_num, int async_submit);
- int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
- int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
--- 
-2.14.1
+zstd has 19 levels, but we can either only allow the first 15 + default, or
+provide a mapping from zstd-level to BtrFS zstd-level.
 
+> + *
+>   * @out_pages is an in/out parameter, holds maximum number of pages to allocate
+>   * and returns number of actually allocated pages
+>   *
+> @@ -880,7 +885,7 @@ static void free_workspaces(void)
+>   * @max_out tells us the max number of bytes that we're allowed to
+>   * stuff into pages
+>   */
+> -int btrfs_compress_pages(int type, struct address_space *mapping,
+> +int btrfs_compress_pages(unsigned int type_level, struct address_space *mapping,
+>  			 u64 start, struct page **pages,
+>  			 unsigned long *out_pages,
+>  			 unsigned long *total_in,
+> @@ -888,9 +893,11 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+>  {
+>  	struct list_head *workspace;
+>  	int ret;
+> +	int type = type_level & 0xF;
+>  
+>  	workspace = find_workspace(type);
+>  
+> +	btrfs_compress_op[type - 1]->set_level(workspace, type_level);
+
+zlib uses the same amount of memory independently of the compression level,
+but zstd uses a different amount of memory for each level. zstd will have
+to allocate memory here if it doesn't have enough (or has way to much),
+will that be okay?
+
+>  	ret = btrfs_compress_op[type-1]->compress_pages(workspace, mapping,
+>  						      start, pages,
+>  						      out_pages,
+> @@ -1047,3 +1054,14 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+>  
+>  	return 1;
+>  }
+> +
+> +unsigned int btrfs_compress_str2level(const char *str)
+> +{
+> +	if (strncmp(str, "zlib", 4) != 0)
+> +		return 0;
+> +
+> +	if ('1' <= str[4] && str[4] <= '9' )
+> +		return str[4] - '0';
+> +
+> +	return 0;
+> +}
+> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+> index 89bcf975efb8..8a6db02d8732 100644
+> --- a/fs/btrfs/compression.h
+> +++ b/fs/btrfs/compression.h
+> @@ -76,7 +76,7 @@ struct compressed_bio {
+>  void btrfs_init_compress(void);
+>  void btrfs_exit_compress(void);
+>  
+> -int btrfs_compress_pages(int type, struct address_space *mapping,
+> +int btrfs_compress_pages(unsigned int type_level, struct address_space *mapping,
+>  			 u64 start, struct page **pages,
+>  			 unsigned long *out_pages,
+>  			 unsigned long *total_in,
+> @@ -95,6 +95,8 @@ int btrfs_submit_compressed_write(struct inode *inode, u64 start,
+>  int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+>  				 int mirror_num, unsigned long bio_flags);
+>  
+> +unsigned btrfs_compress_str2level(const char *str);
+> +
+>  enum btrfs_compression_type {
+>  	BTRFS_COMPRESS_NONE  = 0,
+>  	BTRFS_COMPRESS_ZLIB  = 1,
+> @@ -124,6 +126,8 @@ struct btrfs_compress_op {
+>  			  struct page *dest_page,
+>  			  unsigned long start_byte,
+>  			  size_t srclen, size_t destlen);
+> +
+> +	void (*set_level)(struct list_head *ws, unsigned int type);
+>  };
+>  
+>  extern const struct btrfs_compress_op btrfs_zlib_compress;
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 5bdd36664421..3393aed07132 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -791,6 +791,7 @@ struct btrfs_fs_info {
+>  	 */
+>  	unsigned long pending_changes;
+>  	unsigned long compress_type:4;
+> +	unsigned int compress_level;
+>  	int commit_interval;
+>  	/*
+>  	 * It is a suggestive number, the read side is safe even it gets a
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index eb495e956d53..a832bf8cebab 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -525,7 +525,10 @@ static noinline void compress_file_range(struct inode *inode,
+>  		 */
+>  		extent_range_clear_dirty_for_io(inode, start, end);
+>  		redirty = 1;
+> -		ret = btrfs_compress_pages(compress_type,
+> +
+> +		/* Compression level is applied here and only here */
+> +		ret = btrfs_compress_pages(
+> +			compress_type | (fs_info->compress_level << 4),
+>  					   inode->i_mapping, start,
+>  					   pages,
+>  					   &nr_pages,
+> diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+> index d433e75d489a..6c7f18cd3b61 100644
+> --- a/fs/btrfs/lzo.c
+> +++ b/fs/btrfs/lzo.c
+> @@ -430,10 +430,15 @@ static int lzo_decompress(struct list_head *ws, unsigned char *data_in,
+>  	return ret;
+>  }
+>  
+> +static void lzo_set_level(struct list_head *ws, unsigned int type)
+> +{
+> +}
+> +
+>  const struct btrfs_compress_op btrfs_lzo_compress = {
+>  	.alloc_workspace	= lzo_alloc_workspace,
+>  	.free_workspace		= lzo_free_workspace,
+>  	.compress_pages		= lzo_compress_pages,
+>  	.decompress_bio		= lzo_decompress_bio,
+>  	.decompress		= lzo_decompress,
+> +	.set_level		= lzo_set_level,
+>  };
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 147330454c17..25ffebb101c9 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -501,6 +501,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>  			    strncmp(args[0].from, "zlib", 4) == 0) {
+>  				compress_type = "zlib";
+>  				info->compress_type = BTRFS_COMPRESS_ZLIB;
+> +				info->compress_level = btrfs_compress_str2level(args[0].from);
+>  				btrfs_set_opt(info->mount_opt, COMPRESS);
+>  				btrfs_clear_opt(info->mount_opt, NODATACOW);
+>  				btrfs_clear_opt(info->mount_opt, NODATASUM);
+> @@ -540,9 +541,9 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+>  			      compress_force != saved_compress_force)) ||
+>  			    (!btrfs_test_opt(info, COMPRESS) &&
+>  			     no_compress == 1)) {
+> -				btrfs_info(info, "%s %s compression",
+> +				btrfs_info(info, "%s %s compression, level %d",
+>  					   (compress_force) ? "force" : "use",
+> -					   compress_type);
+> +					   compress_type, info->compress_level);
+>  			}
+>  			compress_force = false;
+>  			break;
+> @@ -1234,6 +1235,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+>  			seq_printf(seq, ",compress-force=%s", compress_type);
+>  		else
+>  			seq_printf(seq, ",compress=%s", compress_type);
+> +		if (info->compress_level)
+> +			seq_printf(seq, "%d", info->compress_level);
+>  	}
+>  	if (btrfs_test_opt(info, NOSSD))
+>  		seq_puts(seq, ",nossd");
+> diff --git a/fs/btrfs/zlib.c b/fs/btrfs/zlib.c
+> index c248f9286366..c890032e680f 100644
+> --- a/fs/btrfs/zlib.c
+> +++ b/fs/btrfs/zlib.c
+> @@ -37,6 +37,7 @@ struct workspace {
+>  	z_stream strm;
+>  	char *buf;
+>  	struct list_head list;
+> +	int level;
+>  };
+>  
+>  static void zlib_free_workspace(struct list_head *ws)
+> @@ -96,7 +97,7 @@ static int zlib_compress_pages(struct list_head *ws,
+>  	*total_out = 0;
+>  	*total_in = 0;
+>  
+> -	if (Z_OK != zlib_deflateInit(&workspace->strm, 3)) {
+> +	if (Z_OK != zlib_deflateInit(&workspace->strm, workspace->level)) {
+>  		pr_warn("BTRFS: deflateInit failed\n");
+>  		ret = -EIO;
+>  		goto out;
+> @@ -402,10 +403,19 @@ static int zlib_decompress(struct list_head *ws, unsigned char *data_in,
+>  	return ret;
+>  }
+>  
+> +static void zlib_set_level(struct list_head *ws, unsigned int type)
+> +{
+> +	struct workspace *workspace = list_entry(ws, struct workspace, list);
+> +	unsigned level = (type & 0xF0) >> 4;
+> +
+> +	workspace->level = level > 0 ? level : 3;
+> +}
+> +
+>  const struct btrfs_compress_op btrfs_zlib_compress = {
+>  	.alloc_workspace	= zlib_alloc_workspace,
+>  	.free_workspace		= zlib_free_workspace,
+>  	.compress_pages		= zlib_compress_pages,
+>  	.decompress_bio		= zlib_decompress_bio,
+>  	.decompress		= zlib_decompress,
+> +	.set_level              = zlib_set_level,
+>  };
+> -- 
+> 2.13.0
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

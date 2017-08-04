@@ -1,75 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:33232 "EHLO
-        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752568AbdHDMJi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Aug 2017 08:09:38 -0400
-Received: by mail-oi0-f65.google.com with SMTP id e124so1340107oig.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Aug 2017 05:09:37 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.19]:59159 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752491AbdHDOFn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 4 Aug 2017 10:05:43 -0400
+Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
+To: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
+Date: Fri, 4 Aug 2017 22:05:32 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170804145401.78e50990@job>
-References: <CANT5p=rND=6FZYz6+x0924JHs3G8RH+G9GXqDfoS-ndtQUXuKQ@mail.gmail.com>
- <20170804060007.blgcu5khfo4juwfe@angband.pl> <CANT5p=qvu9tCf73+_PuAj9Ryy69p3JjAyHFY_pAA9eUsTz_ELA@mail.gmail.com>
- <20170804072229.4h534hr54ne3d764@angband.pl> <CANT5p=r9gMUu1F8Vkgs6=O1UBfBLn=96XAZBzB6OsHnSQw0C5A@mail.gmail.com>
- <20170804145401.78e50990@job>
-From: Shyam Prasad N <nspmangalore@gmail.com>
-Date: Fri, 4 Aug 2017 17:39:36 +0530
-Message-ID: <CANT5p=rpTpO8svMzkbtQEb0_CK=OjS5gr55nNdyTjFbbeOAGrA@mail.gmail.com>
-Subject: Re: Power down tests...
-To: Dmitrii Tcvetkov <demfloro@demfloro.ru>,
-        Adam Borowski <kilobyte@angband.pl>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks guys. I've enabled that option now. Let's see how it goes.
-One general question regarding the stability of btrfs in kernel
-version 4.4. Is this okay for power off test cases? Or are there many
-important fixes in newer kernels?
-
-On Fri, Aug 4, 2017 at 5:24 PM, Dmitrii Tcvetkov <demfloro@demfloro.ru> wrote:
-> On Fri, 4 Aug 2017 13:19:39 +0530
-> Shyam Prasad N <nspmangalore@gmail.com> wrote:
->
->> Oh ok. I read this in the man page and assumed that it's on by
->> default: flushoncommit, noflushoncommit
->>            (default: on)
->>
->>            This option forces any data dirtied by a write in a prior
->> transaction to commit as part of the current commit. This makes the
->> committed state a fully consistent view of the file system from the
->>            application’s perspective (i.e., it includes all completed
->> file system operations). This was previously the behavior only when a
->> snapshot was created.
->>
->>            Disabling flushing may improve performance but is not
->> crash-safe.
->>
->>
->> Maybe this needs a correction?
->
-> In 4.12 btrfs-progs man pages it's already updated.
->
-> $ man 5 btrfs
-> ...
->        flushoncommit, noflushoncommit
->            (default: off)
->
->            This option forces any data dirtied by a write in a prior
->            transaction to commit as part of the current commit,
->            effectively a full filesystem sync.
->
->            This makes the committed state a fully consistent view of
->            the file system from the application’s perspective (i.e., it
->            includes all completed file system operations). This was
->            previously the behavior only when a snapshot was created.
->
->            When off, the filesystem is consistent but buffered writes
->            may last more than one transaction commit.
->
->
 
 
+On 2017年08月02日 16:38, Brendan Hide wrote:
+> The title seems alarmist to me - and I suspect it is going to be 
+> misconstrued. :-/
+> 
+>  From the release notes at 
+> https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/7.4_Release_Notes/chap-Red_Hat_Enterprise_Linux-7.4_Release_Notes-Deprecated_Functionality.html 
+> 
+> 
+> "Btrfs has been deprecated
+> 
+> The Btrfs file system has been in Technology Preview state since the 
+> initial release of Red Hat Enterprise Linux 6. Red Hat will not be 
+> moving Btrfs to a fully supported feature and it will be removed in a 
+> future major release of Red Hat Enterprise Linux.
+> 
+> The Btrfs file system did receive numerous updates from the upstream in 
+> Red Hat Enterprise Linux 7.4 and will remain available in the Red Hat 
+> Enterprise Linux 7 series. However, this is the last planned update to 
+> this feature.
+> 
+> Red Hat will continue to invest in future technologies to address the 
+> use cases of our customers, specifically those related to snapshots, 
+> compression, NVRAM, and ease of use. We encourage feedback through your 
+> Red Hat representative on features and requirements you have for file 
+> systems and storage technology."
 
--- 
--Shyam
+Personally speaking, unlike most of the btrfs supporters, I think Red 
+Hat is doing the correct thing for their enterprise use case.
+
+(To clarify, I'm not going to Red Hat, just in case anyone wonders why 
+I'm not supporting btrfs)
+
+[Good things of btrfs]
+Btrfs is indeed a technic pioneer in a lot of aspects (at least in linux 
+world):
+
+1) Metadata CoW instead of traditional journal
+2) Snapshot and delta-backup
+     I think this is the killer feature of Btrfs, and why SUSE is using 
+it for root fs.
+3) Default data CoW
+4) Data checksum and scrubbing
+5) Multi-device management
+6) Online resize/balancing
+And a lot of more.
+
+[Bad things of btrfs]
+But for enterprise usage, it's too advanced and has several problems 
+preventing them being widely applied:
+
+1) Low performance from metadata/data CoW
+     This is a little complicated dilemma.
+     Although Btrfs can disable data CoW, nodatacow also disables data 
+checksum, which is another main feature for btrfs.
+     So Btrfs can't default to nodatacow, unlike XFS.
+
+     And metadata CoW causes extra metadata write along with superblock 
+update (FUA), further degrading the performance.
+
+     Such pioneered design makes traditional performance-intense use 
+case very unhappy.
+     Especially for almost all kind of databases. (Note that nodatacow 
+can't always solve the performance problem).
+     Most performance intense usage is still based on tradtional fs 
+design (journal with no CoW)
+
+2) Low concurrency caused by tree design.
+      Unlike traditional one-tree-for-one-inode design, btrfs uses 
+one-tree-for-one-subvolume.
+      The design makes snapshot implementation very easy, while makes 
+tree very hot when a lot of modifiers are trying to modify any metadata.
+
+      Btrfs has a lot of different way to solve it.
+      For extent tree (the most busy tree), we are using delayed-ref to 
+speed up extent tree update.
+      For fs tree fsync, we have log tree to speed things up.
+      These approaches work, at the cost of complexity and bugs, and we 
+still have slow fs tree modification speed.
+
+3) Low code reusage of device-mapper.
+      I totally understand that, due to the unique support for data 
+csum, btrfs can't use device-mapper directly, as we must verify the data 
+read out from device before passing it to higher level.
+     So Btrfs uses its own device-mapper like implementation to handle 
+multi-device management.
+
+     The result is mixed. For easy to handle case like RAID0/1/10 btrfs 
+is doing well.
+     While for RAID5/6, everyone knows the result.
+
+     Such btrfs *enhanced* re-implementation not only makes btrfs larger 
+but also more complex and bug-prune.
+
+In short, btrfs is too advanced for generic use cases (performance) and 
+developers (bugs), unfortunately.
+
+And even SUSE is just pushing btrfs as root fs, mainly for the snapshot 
+feature.
+But still ext4/xfs for data or performance intense use case.
+
+
+[Other solution on the table]
+On the other hand, I think RedHat is pushing storage technology based on 
+LVM (thin) and Xfs.
+
+For traditional LVM, it's stable but its snapshot design is old-fashion 
+and low-performance.
+While new thin-provision LVM solves the problem using a method just like 
+Btrfs, but at block level.
+
+And for XFS, it's still traditional designed, journal based, 
+one-tree-for-one-inode.
+But with fancy new features like data CoW.
+
+Even XFS + LVM-thin lacks ability to shrink fs or scrub data or delta 
+backup, it can do a lot of things just like Btrfs.
+ From snapshot to multi-device management.
+
+And more importantly, has better performance for things like DB.
+
+So, for old use cases, the performance stays almost the same.
+For developers, guys are still focusing on their old fields, less to 
+concern and more focused to debug. The old UNIX method still works here, 
+do one thing and do it well.
+
+It provides some of the fancy features from btrfs, but not too fancy.
+It's a compromising move, but a good move for enterprise usage.
+
+[The future]
+When btrfs is almost as good as traditional solutions for both 
+performance and stability, I think it will be widely applied no matter 
+whether RedHat uses it or not, especially since btrfs still has features 
+which LVM-thin + XFS can't provide.
+
+But the future is still full of challenges.
+1) Complexity of btrfs makes development slow.
+     Developers are already doing their work well, but the numbers of 
+lines are twice of traditional fs.
+
+2) New device-mapper based solution may come out fast
+     Dm-thin is already here, and I won't be surprised that one day 
+there will be hooks/API for device-mapper to communicate with higher levels.
+
+     For example, if one day there is some dm-csum to support verify 
+csum of given ranges (and skip unrelated ones specified by higher 
+levels), btrfs support for data csum is no longer an exclusive feature.
+
+Thanks,
+Qu
+> 
+> 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

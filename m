@@ -1,20 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:44514 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752224AbdHDU0S (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:39179 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1752565AbdHDU0h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Aug 2017 16:26:18 -0400
-Received: from pps.filterd (m0109331.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.21/8.16.0.21) with SMTP id v74KMTJT031835
-        for <linux-btrfs@vger.kernel.org>; Fri, 4 Aug 2017 13:26:18 -0700
+        Fri, 4 Aug 2017 16:26:37 -0400
+Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
+        by m0089730.ppops.net (8.16.0.21/8.16.0.21) with SMTP id v74KNnUs001679
+        for <linux-btrfs@vger.kernel.org>; Fri, 4 Aug 2017 13:26:37 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2c4yh1g3ab-2
+        by m0089730.ppops.net with ESMTP id 2c4v7v0y66-1
         (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Aug 2017 13:26:18 -0700
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Aug 2017 13:26:37 -0700
 Received: from facebook.com (2401:db00:21:6023:face:0:9:0)      by
  mx-out.facebook.com (10.212.232.59) with ESMTP id
- 2a6219ae795311e7abcb0002c991e86a-a525e150 for <linux-btrfs@vger.kernel.org>;
-        Fri, 04 Aug 2017 13:26:16 -0700
+ 35e7bf54795311e7947c0002c991e86a-a8a65150 for <linux-btrfs@vger.kernel.org>;
+        Fri, 04 Aug 2017 13:26:35 -0700
 From: Nick Terrell <terrelln@fb.com>
 To: Nick Terrell <terrelln@fb.com>
 CC: "Austin S . Hemmelgarn" <ahferroin7@gmail.com>,
@@ -23,11 +23,10 @@ CC: "Austin S . Hemmelgarn" <ahferroin7@gmail.com>,
         Adam Borowski <kilobyte@angband.pl>, David Sterba <dsterba@suse.cz>,
         <squashfs-devel@lists.sourceforge.net>, <linux-btrfs@vger.kernel.org>,
         <linux-kernel@vger.kernel.org>,
-        "Phillip Lougher" <phillip@squashfs.org.uk>,
-        Sean Purcell <me@seanp.xyz>
-Subject: [PATCH v4 4/5] squashfs: Add zstd support
-Date: Fri, 4 Aug 2017 13:19:20 -0700
-Message-ID: <20170804201921.156890-5-terrelln@fb.com>
+        Phillip Lougher <phillip@squashfs.org.uk>
+Subject: [PATCH v4 5/5] crypto: Add zstd support
+Date: Fri, 4 Aug 2017 13:19:21 -0700
+Message-ID: <20170804201921.156890-6-terrelln@fb.com>
 In-Reply-To: <20170804201921.156890-1-terrelln@fb.com>
 References: <20170804201921.156890-1-terrelln@fb.com>
 MIME-Version: 1.0
@@ -35,298 +34,423 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add zstd compression and decompression support to SquashFS. zstd is a
-great fit for SquashFS because it can compress at ratios approaching xz,
-while decompressing twice as fast as zlib. For SquashFS in particular,
-it can decompress as fast as lzo and lz4. It also has the flexibility
-to turn down the compression ratio for faster compression times.
+Adds zstd support to crypto and scompress. Only supports the default
+level.
 
-The compression benchmark is run on the file tree from the SquashFS archive
-found in ubuntu-16.10-desktop-amd64.iso [1]. It uses `mksquashfs` with the
-default block size (128 KB) and and various compression algorithms/levels.
-xz and zstd are also benchmarked with 256 KB blocks. The decompression
-benchmark times how long it takes to `tar` the file tree into `/dev/null`.
-See the benchmark file in the upstream zstd source repository located under
-`contrib/linux-kernel/squashfs-benchmark.sh` [2] for details.
-
-I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
-The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
-16 GB of RAM, and a SSD.
-
-| Method         | Ratio | Compression MB/s | Decompression MB/s |
-|----------------|-------|------------------|--------------------|
-| gzip           |  2.92 |               15 |                128 |
-| lzo            |  2.64 |              9.5 |                217 |
-| lz4            |  2.12 |               94 |                218 |
-| xz             |  3.43 |              5.5 |                 35 |
-| xz 256 KB      |  3.53 |              5.4 |                 40 |
-| zstd 1         |  2.71 |               96 |                210 |
-| zstd 5         |  2.93 |               69 |                198 |
-| zstd 10        |  3.01 |               41 |                225 |
-| zstd 15        |  3.13 |             11.4 |                224 |
-| zstd 16 256 KB |  3.24 |              8.1 |                210 |
-
-This patch was written by Sean Purcell <me@seanp.xyz>, but I will be
-taking over the submission process.
-
-[1] http://releases.ubuntu.com/16.10/
-[2] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/squashfs-benchmark.sh
-
-zstd source repository: https://github.com/facebook/zstd
-
-Cc: Sean Purcell <me@seanp.xyz>
 Signed-off-by: Nick Terrell <terrelln@fb.com>
 ---
-v3 -> v4:
-- Fix minor linter warnings
+ crypto/Kconfig   |   9 ++
+ crypto/Makefile  |   1 +
+ crypto/testmgr.c |  10 +++
+ crypto/testmgr.h |  71 +++++++++++++++
+ crypto/zstd.c    | 265 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 356 insertions(+)
+ create mode 100644 crypto/zstd.c
 
- fs/squashfs/Kconfig        |  14 +++++
- fs/squashfs/Makefile       |   1 +
- fs/squashfs/decompressor.c |   7 +++
- fs/squashfs/decompressor.h |   4 ++
- fs/squashfs/squashfs_fs.h  |   1 +
- fs/squashfs/zstd_wrapper.c | 149 +++++++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 176 insertions(+)
- create mode 100644 fs/squashfs/zstd_wrapper.c
-
-diff --git a/fs/squashfs/Kconfig b/fs/squashfs/Kconfig
-index ffb093e..1adb334 100644
---- a/fs/squashfs/Kconfig
-+++ b/fs/squashfs/Kconfig
-@@ -165,6 +165,20 @@ config SQUASHFS_XZ
-
- 	  If unsure, say N.
-
-+config SQUASHFS_ZSTD
-+	bool "Include support for ZSTD compressed file systems"
-+	depends on SQUASHFS
+diff --git a/crypto/Kconfig b/crypto/Kconfig
+index caa770e..4fc3936 100644
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -1662,6 +1662,15 @@ config CRYPTO_LZ4HC
+ 	help
+ 	  This is the LZ4 high compression mode algorithm.
+ 
++config CRYPTO_ZSTD
++	tristate "Zstd compression algorithm"
++	select CRYPTO_ALGAPI
++	select CRYPTO_ACOMP2
++	select ZSTD_COMPRESS
 +	select ZSTD_DECOMPRESS
 +	help
-+	  Saying Y here includes support for reading Squashfs file systems
-+	  compressed with ZSTD compression.  ZSTD gives better compression than
-+	  the default ZLIB compression, while using less CPU.
++	  This is the zstd algorithm.
 +
-+	  ZSTD is not the standard compression used in Squashfs and so most
-+	  file systems will be readable without selecting this option.
-+
-+	  If unsure, say N.
-+
- config SQUASHFS_4K_DEVBLK_SIZE
- 	bool "Use 4K device block size?"
- 	depends on SQUASHFS
-diff --git a/fs/squashfs/Makefile b/fs/squashfs/Makefile
-index 246a6f3..6655631 100644
---- a/fs/squashfs/Makefile
-+++ b/fs/squashfs/Makefile
-@@ -15,3 +15,4 @@ squashfs-$(CONFIG_SQUASHFS_LZ4) += lz4_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_LZO) += lzo_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_XZ) += xz_wrapper.o
- squashfs-$(CONFIG_SQUASHFS_ZLIB) += zlib_wrapper.o
-+squashfs-$(CONFIG_SQUASHFS_ZSTD) += zstd_wrapper.o
-diff --git a/fs/squashfs/decompressor.c b/fs/squashfs/decompressor.c
-index d2bc136..8366398 100644
---- a/fs/squashfs/decompressor.c
-+++ b/fs/squashfs/decompressor.c
-@@ -65,6 +65,12 @@ static const struct squashfs_decompressor squashfs_zlib_comp_ops = {
- };
- #endif
-
-+#ifndef CONFIG_SQUASHFS_ZSTD
-+static const struct squashfs_decompressor squashfs_zstd_comp_ops = {
-+	NULL, NULL, NULL, NULL, ZSTD_COMPRESSION, "zstd", 0
-+};
-+#endif
-+
- static const struct squashfs_decompressor squashfs_unknown_comp_ops = {
- 	NULL, NULL, NULL, NULL, 0, "unknown", 0
- };
-@@ -75,6 +81,7 @@ static const struct squashfs_decompressor *decompressor[] = {
- 	&squashfs_lzo_comp_ops,
- 	&squashfs_xz_comp_ops,
- 	&squashfs_lzma_unsupported_comp_ops,
-+	&squashfs_zstd_comp_ops,
- 	&squashfs_unknown_comp_ops
- };
-
-diff --git a/fs/squashfs/decompressor.h b/fs/squashfs/decompressor.h
-index a25713c..0f5a8e4 100644
---- a/fs/squashfs/decompressor.h
-+++ b/fs/squashfs/decompressor.h
-@@ -58,4 +58,8 @@ extern const struct squashfs_decompressor squashfs_lzo_comp_ops;
- extern const struct squashfs_decompressor squashfs_zlib_comp_ops;
- #endif
-
-+#ifdef CONFIG_SQUASHFS_ZSTD
-+extern const struct squashfs_decompressor squashfs_zstd_comp_ops;
-+#endif
-+
- #endif
-diff --git a/fs/squashfs/squashfs_fs.h b/fs/squashfs/squashfs_fs.h
-index 506f4ba..24d12fd 100644
---- a/fs/squashfs/squashfs_fs.h
-+++ b/fs/squashfs/squashfs_fs.h
-@@ -241,6 +241,7 @@ struct meta_index {
- #define LZO_COMPRESSION		3
- #define XZ_COMPRESSION		4
- #define LZ4_COMPRESSION		5
-+#define ZSTD_COMPRESSION	6
-
- struct squashfs_super_block {
- 	__le32			s_magic;
-diff --git a/fs/squashfs/zstd_wrapper.c b/fs/squashfs/zstd_wrapper.c
-new file mode 100644
-index 0000000..d70efa8
---- /dev/null
-+++ b/fs/squashfs/zstd_wrapper.c
-@@ -0,0 +1,149 @@
-+/*
-+ * Squashfs - a compressed read only filesystem for Linux
-+ *
-+ * Copyright (c) 2016-present, Facebook, Inc.
-+ * All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2,
-+ * or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * zstd_wrapper.c
-+ */
-+
-+#include <linux/mutex.h>
-+#include <linux/buffer_head.h>
-+#include <linux/slab.h>
-+#include <linux/zstd.h>
-+#include <linux/vmalloc.h>
-+
-+#include "squashfs_fs.h"
-+#include "squashfs_fs_sb.h"
-+#include "squashfs.h"
-+#include "decompressor.h"
-+#include "page_actor.h"
-+
-+struct workspace {
-+	void *mem;
-+	size_t mem_size;
-+};
-+
-+static void *zstd_init(struct squashfs_sb_info *msblk, void *buff)
-+{
-+	struct workspace *wksp = kmalloc(sizeof(*wksp), GFP_KERNEL);
-+
-+	if (wksp == NULL)
-+		goto failed;
-+	wksp->mem_size = ZSTD_DStreamWorkspaceBound(max_t(size_t,
-+				msblk->block_size, SQUASHFS_METADATA_SIZE));
-+	wksp->mem = vmalloc(wksp->mem_size);
-+	if (wksp->mem == NULL)
-+		goto failed;
-+
-+	return wksp;
-+
-+failed:
-+	ERROR("Failed to allocate zstd workspace\n");
-+	kfree(wksp);
-+	return ERR_PTR(-ENOMEM);
-+}
-+
-+
-+static void zstd_free(void *strm)
-+{
-+	struct workspace *wksp = strm;
-+
-+	if (wksp)
-+		vfree(wksp->mem);
-+	kfree(wksp);
-+}
-+
-+
-+static int zstd_uncompress(struct squashfs_sb_info *msblk, void *strm,
-+	struct buffer_head **bh, int b, int offset, int length,
-+	struct squashfs_page_actor *output)
-+{
-+	struct workspace *wksp = strm;
-+	ZSTD_DStream *stream;
-+	size_t total_out = 0;
-+	size_t zstd_err;
-+	int k = 0;
-+	ZSTD_inBuffer in_buf = { NULL, 0, 0 };
-+	ZSTD_outBuffer out_buf = { NULL, 0, 0 };
-+
-+	stream = ZSTD_initDStream(wksp->mem_size, wksp->mem, wksp->mem_size);
-+
-+	if (!stream) {
-+		ERROR("Failed to initialize zstd decompressor\n");
-+		goto out;
-+	}
-+
-+	out_buf.size = PAGE_SIZE;
-+	out_buf.dst = squashfs_first_page(output);
-+
-+	do {
-+		if (in_buf.pos == in_buf.size && k < b) {
-+			int avail = min(length, msblk->devblksize - offset);
-+
-+			length -= avail;
-+			in_buf.src = bh[k]->b_data + offset;
-+			in_buf.size = avail;
-+			in_buf.pos = 0;
-+			offset = 0;
-+		}
-+
-+		if (out_buf.pos == out_buf.size) {
-+			out_buf.dst = squashfs_next_page(output);
-+			if (out_buf.dst == NULL) {
-+				/* Shouldn't run out of pages
-+				 * before stream is done.
-+				 */
-+				squashfs_finish_page(output);
-+				goto out;
+ comment "Random Number Generation"
+ 
+ config CRYPTO_ANSI_CPRNG
+diff --git a/crypto/Makefile b/crypto/Makefile
+index d41f033..b22e1e8 100644
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -133,6 +133,7 @@ obj-$(CONFIG_CRYPTO_USER_API_HASH) += algif_hash.o
+ obj-$(CONFIG_CRYPTO_USER_API_SKCIPHER) += algif_skcipher.o
+ obj-$(CONFIG_CRYPTO_USER_API_RNG) += algif_rng.o
+ obj-$(CONFIG_CRYPTO_USER_API_AEAD) += algif_aead.o
++obj-$(CONFIG_CRYPTO_ZSTD) += zstd.o
+ 
+ ecdh_generic-y := ecc.o
+ ecdh_generic-y += ecdh.o
+diff --git a/crypto/testmgr.c b/crypto/testmgr.c
+index 7125ba3..8a124d3 100644
+--- a/crypto/testmgr.c
++++ b/crypto/testmgr.c
+@@ -3603,6 +3603,16 @@ static const struct alg_test_desc alg_test_descs[] = {
+ 				.decomp = __VECS(zlib_deflate_decomp_tv_template)
+ 			}
+ 		}
++	}, {
++		.alg = "zstd",
++		.test = alg_test_comp,
++		.fips_allowed = 1,
++		.suite = {
++			.comp = {
++				.comp = __VECS(zstd_comp_tv_template),
++				.decomp = __VECS(zstd_decomp_tv_template)
 +			}
-+			out_buf.pos = 0;
-+			out_buf.size = PAGE_SIZE;
 +		}
+ 	}
+ };
+ 
+diff --git a/crypto/testmgr.h b/crypto/testmgr.h
+index 6ceb0e2..e6b5920 100644
+--- a/crypto/testmgr.h
++++ b/crypto/testmgr.h
+@@ -34631,4 +34631,75 @@ static const struct comp_testvec lz4hc_decomp_tv_template[] = {
+ 	},
+ };
+ 
++static const struct comp_testvec zstd_comp_tv_template[] = {
++	{
++		.inlen	= 68,
++		.outlen	= 39,
++		.input	= "The algorithm is zstd. "
++			  "The algorithm is zstd. "
++			  "The algorithm is zstd.",
++		.output	= "\x28\xb5\x2f\xfd\x00\x50\xf5\x00\x00\xb8\x54\x68\x65"
++			  "\x20\x61\x6c\x67\x6f\x72\x69\x74\x68\x6d\x20\x69\x73"
++			  "\x20\x7a\x73\x74\x64\x2e\x20\x01\x00\x55\x73\x36\x01"
++			  ,
++	},
++	{
++		.inlen	= 244,
++		.outlen	= 151,
++		.input	= "zstd, short for Zstandard, is a fast lossless "
++			  "compression algorithm, targeting real-time "
++			  "compression scenarios at zlib-level and better "
++			  "compression ratios. The zstd compression library "
++			  "provides in-memory compression and decompression "
++			  "functions.",
++		.output	= "\x28\xb5\x2f\xfd\x00\x50\x75\x04\x00\x42\x4b\x1e\x17"
++			  "\x90\x81\x31\x00\xf2\x2f\xe4\x36\xc9\xef\x92\x88\x32"
++			  "\xc9\xf2\x24\x94\xd8\x68\x9a\x0f\x00\x0c\xc4\x31\x6f"
++			  "\x0d\x0c\x38\xac\x5c\x48\x03\xcd\x63\x67\xc0\xf3\xad"
++			  "\x4e\x90\xaa\x78\xa0\xa4\xc5\x99\xda\x2f\xb6\x24\x60"
++			  "\xe2\x79\x4b\xaa\xb6\x6b\x85\x0b\xc9\xc6\x04\x66\x86"
++			  "\xe2\xcc\xe2\x25\x3f\x4f\x09\xcd\xb8\x9d\xdb\xc1\x90"
++			  "\xa9\x11\xbc\x35\x44\x69\x2d\x9c\x64\x4f\x13\x31\x64"
++			  "\xcc\xfb\x4d\x95\x93\x86\x7f\x33\x7f\x1a\xef\xe9\x30"
++			  "\xf9\x67\xa1\x94\x0a\x69\x0f\x60\xcd\xc3\xab\x99\xdc"
++			  "\x42\xed\x97\x05\x00\x33\xc3\x15\x95\x3a\x06\xa0\x0e"
++			  "\x20\xa9\x0e\x82\xb9\x43\x45\x01",
++	},
++};
 +
-+		total_out -= out_buf.pos;
-+		zstd_err = ZSTD_decompressStream(stream, &out_buf, &in_buf);
-+		total_out += out_buf.pos; /* add the additional data produced */
++static const struct comp_testvec zstd_decomp_tv_template[] = {
++	{
++		.inlen	= 43,
++		.outlen	= 68,
++		.input	= "\x28\xb5\x2f\xfd\x04\x50\xf5\x00\x00\xb8\x54\x68\x65"
++			  "\x20\x61\x6c\x67\x6f\x72\x69\x74\x68\x6d\x20\x69\x73"
++			  "\x20\x7a\x73\x74\x64\x2e\x20\x01\x00\x55\x73\x36\x01"
++			  "\x6b\xf4\x13\x35",
++		.output	= "The algorithm is zstd. "
++			  "The algorithm is zstd. "
++			  "The algorithm is zstd.",
++	},
++	{
++		.inlen	= 155,
++		.outlen	= 244,
++		.input	= "\x28\xb5\x2f\xfd\x04\x50\x75\x04\x00\x42\x4b\x1e\x17"
++			  "\x90\x81\x31\x00\xf2\x2f\xe4\x36\xc9\xef\x92\x88\x32"
++			  "\xc9\xf2\x24\x94\xd8\x68\x9a\x0f\x00\x0c\xc4\x31\x6f"
++			  "\x0d\x0c\x38\xac\x5c\x48\x03\xcd\x63\x67\xc0\xf3\xad"
++			  "\x4e\x90\xaa\x78\xa0\xa4\xc5\x99\xda\x2f\xb6\x24\x60"
++			  "\xe2\x79\x4b\xaa\xb6\x6b\x85\x0b\xc9\xc6\x04\x66\x86"
++			  "\xe2\xcc\xe2\x25\x3f\x4f\x09\xcd\xb8\x9d\xdb\xc1\x90"
++			  "\xa9\x11\xbc\x35\x44\x69\x2d\x9c\x64\x4f\x13\x31\x64"
++			  "\xcc\xfb\x4d\x95\x93\x86\x7f\x33\x7f\x1a\xef\xe9\x30"
++			  "\xf9\x67\xa1\x94\x0a\x69\x0f\x60\xcd\xc3\xab\x99\xdc"
++			  "\x42\xed\x97\x05\x00\x33\xc3\x15\x95\x3a\x06\xa0\x0e"
++			  "\x20\xa9\x0e\x82\xb9\x43\x45\x01\xaa\x6d\xda\x0d",
++		.output	= "zstd, short for Zstandard, is a fast lossless "
++			  "compression algorithm, targeting real-time "
++			  "compression scenarios at zlib-level and better "
++			  "compression ratios. The zstd compression library "
++			  "provides in-memory compression and decompression "
++			  "functions.",
++	},
++};
+ #endif	/* _CRYPTO_TESTMGR_H */
+diff --git a/crypto/zstd.c b/crypto/zstd.c
+new file mode 100644
+index 0000000..9a76b3e
+--- /dev/null
++++ b/crypto/zstd.c
+@@ -0,0 +1,265 @@
++/*
++ * Cryptographic API.
++ *
++ * Copyright (c) 2017-present, Facebook, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ */
++#include <linux/crypto.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/mm.h>
++#include <linux/module.h>
++#include <linux/net.h>
++#include <linux/vmalloc.h>
++#include <linux/zstd.h>
++#include <crypto/internal/scompress.h>
 +
-+		if (in_buf.pos == in_buf.size && k < b)
-+			put_bh(bh[k++]);
-+	} while (zstd_err != 0 && !ZSTD_isError(zstd_err));
 +
-+	squashfs_finish_page(output);
++#define ZSTD_DEF_LEVEL	3
 +
-+	if (ZSTD_isError(zstd_err)) {
-+		ERROR("zstd decompression error: %d\n",
-+				(int)ZSTD_getErrorCode(zstd_err));
++struct zstd_ctx {
++	ZSTD_CCtx *cctx;
++	ZSTD_DCtx *dctx;
++	void *cwksp;
++	void *dwksp;
++};
++
++static ZSTD_parameters zstd_params(void)
++{
++	return ZSTD_getParams(ZSTD_DEF_LEVEL, 0, 0);
++}
++
++static int zstd_comp_init(struct zstd_ctx *ctx)
++{
++	int ret = 0;
++	const ZSTD_parameters params = zstd_params();
++	const size_t wksp_size = ZSTD_CCtxWorkspaceBound(params.cParams);
++
++	ctx->cwksp = vzalloc(wksp_size);
++	if (!ctx->cwksp) {
++		ret = -ENOMEM;
 +		goto out;
 +	}
 +
-+	if (k < b)
-+		goto out;
-+
-+	return (int)total_out;
-+
++	ctx->cctx = ZSTD_initCCtx(ctx->cwksp, wksp_size);
++	if (!ctx->cctx) {
++		ret = -EINVAL;
++		goto out_free;
++	}
 +out:
-+	for (; k < b; k++)
-+		put_bh(bh[k]);
-+
-+	return -EIO;
++	return ret;
++out_free:
++	vfree(ctx->cwksp);
++	goto out;
 +}
 +
-+const struct squashfs_decompressor squashfs_zstd_comp_ops = {
-+	.init = zstd_init,
-+	.free = zstd_free,
-+	.decompress = zstd_uncompress,
-+	.id = ZSTD_COMPRESSION,
-+	.name = "zstd",
-+	.supported = 1
++static int zstd_decomp_init(struct zstd_ctx *ctx)
++{
++	int ret = 0;
++	const size_t wksp_size = ZSTD_DCtxWorkspaceBound();
++
++	ctx->dwksp = vzalloc(wksp_size);
++	if (!ctx->dwksp) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	ctx->dctx = ZSTD_initDCtx(ctx->dwksp, wksp_size);
++	if (!ctx->dctx) {
++		ret = -EINVAL;
++		goto out_free;
++	}
++out:
++	return ret;
++out_free:
++	vfree(ctx->dwksp);
++	goto out;
++}
++
++static void zstd_comp_exit(struct zstd_ctx *ctx)
++{
++	vfree(ctx->cwksp);
++	ctx->cwksp = NULL;
++	ctx->cctx = NULL;
++}
++
++static void zstd_decomp_exit(struct zstd_ctx *ctx)
++{
++	vfree(ctx->dwksp);
++	ctx->dwksp = NULL;
++	ctx->dctx = NULL;
++}
++
++static int __zstd_init(void *ctx)
++{
++	int ret;
++
++	ret = zstd_comp_init(ctx);
++	if (ret)
++		return ret;
++	ret = zstd_decomp_init(ctx);
++	if (ret)
++		zstd_comp_exit(ctx);
++	return ret;
++}
++
++static void *zstd_alloc_ctx(struct crypto_scomp *tfm)
++{
++	int ret;
++	struct zstd_ctx *ctx;
++
++	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
++	if (!ctx)
++		return ERR_PTR(-ENOMEM);
++
++	ret = __zstd_init(ctx);
++	if (ret) {
++		kfree(ctx);
++		return ERR_PTR(ret);
++	}
++
++	return ctx;
++}
++
++static int zstd_init(struct crypto_tfm *tfm)
++{
++	struct zstd_ctx *ctx = crypto_tfm_ctx(tfm);
++
++	return __zstd_init(ctx);
++}
++
++static void __zstd_exit(void *ctx)
++{
++	zstd_comp_exit(ctx);
++	zstd_decomp_exit(ctx);
++}
++
++static void zstd_free_ctx(struct crypto_scomp *tfm, void *ctx)
++{
++	__zstd_exit(ctx);
++	kzfree(ctx);
++}
++
++static void zstd_exit(struct crypto_tfm *tfm)
++{
++	struct zstd_ctx *ctx = crypto_tfm_ctx(tfm);
++
++	__zstd_exit(ctx);
++}
++
++static int __zstd_compress(const u8 *src, unsigned int slen,
++			   u8 *dst, unsigned int *dlen, void *ctx)
++{
++	size_t out_len;
++	struct zstd_ctx *zctx = ctx;
++	const ZSTD_parameters params = zstd_params();
++
++	out_len = ZSTD_compressCCtx(zctx->cctx, dst, *dlen, src, slen, params);
++	if (ZSTD_isError(out_len))
++		return -EINVAL;
++	*dlen = out_len;
++	return 0;
++}
++
++static int zstd_compress(struct crypto_tfm *tfm, const u8 *src,
++			 unsigned int slen, u8 *dst, unsigned int *dlen)
++{
++	struct zstd_ctx *ctx = crypto_tfm_ctx(tfm);
++
++	return __zstd_compress(src, slen, dst, dlen, ctx);
++}
++
++static int zstd_scompress(struct crypto_scomp *tfm, const u8 *src,
++			  unsigned int slen, u8 *dst, unsigned int *dlen,
++			  void *ctx)
++{
++	return __zstd_compress(src, slen, dst, dlen, ctx);
++}
++
++static int __zstd_decompress(const u8 *src, unsigned int slen,
++			     u8 *dst, unsigned int *dlen, void *ctx)
++{
++	size_t out_len;
++	struct zstd_ctx *zctx = ctx;
++
++	out_len = ZSTD_decompressDCtx(zctx->dctx, dst, *dlen, src, slen);
++	if (ZSTD_isError(out_len))
++		return -EINVAL;
++	*dlen = out_len;
++	return 0;
++}
++
++static int zstd_decompress(struct crypto_tfm *tfm, const u8 *src,
++			   unsigned int slen, u8 *dst, unsigned int *dlen)
++{
++	struct zstd_ctx *ctx = crypto_tfm_ctx(tfm);
++
++	return __zstd_decompress(src, slen, dst, dlen, ctx);
++}
++
++static int zstd_sdecompress(struct crypto_scomp *tfm, const u8 *src,
++			    unsigned int slen, u8 *dst, unsigned int *dlen,
++			    void *ctx)
++{
++	return __zstd_decompress(src, slen, dst, dlen, ctx);
++}
++
++static struct crypto_alg alg = {
++	.cra_name		= "zstd",
++	.cra_flags		= CRYPTO_ALG_TYPE_COMPRESS,
++	.cra_ctxsize		= sizeof(struct zstd_ctx),
++	.cra_module		= THIS_MODULE,
++	.cra_init		= zstd_init,
++	.cra_exit		= zstd_exit,
++	.cra_u			= { .compress = {
++	.coa_compress		= zstd_compress,
++	.coa_decompress		= zstd_decompress } }
 +};
---
++
++static struct scomp_alg scomp = {
++	.alloc_ctx		= zstd_alloc_ctx,
++	.free_ctx		= zstd_free_ctx,
++	.compress		= zstd_scompress,
++	.decompress		= zstd_sdecompress,
++	.base			= {
++		.cra_name	= "zstd",
++		.cra_driver_name = "zstd-scomp",
++		.cra_module	 = THIS_MODULE,
++	}
++};
++
++static int __init zstd_mod_init(void)
++{
++	int ret;
++
++	ret = crypto_register_alg(&alg);
++	if (ret)
++		return ret;
++
++	ret = crypto_register_scomp(&scomp);
++	if (ret)
++		crypto_unregister_alg(&alg);
++
++	return ret;
++}
++
++static void __exit zstd_mod_fini(void)
++{
++	crypto_unregister_alg(&alg);
++	crypto_unregister_scomp(&scomp);
++}
++
++module_init(zstd_mod_init);
++module_exit(zstd_mod_fini);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Zstd Compression Algorithm");
++MODULE_ALIAS_CRYPTO("zstd");
+-- 
 2.9.3
+

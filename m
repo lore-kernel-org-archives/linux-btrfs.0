@@ -1,174 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:59159 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752491AbdHDOFn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Aug 2017 10:05:43 -0400
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
-Date: Fri, 4 Aug 2017 22:05:32 +0800
+Received: from smtp-36-wd.italiaonline.it ([212.48.13.170]:40660 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751944AbdHDOpv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 4 Aug 2017 10:45:51 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: Massive loss of disk space
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, pwm <pwm@iapetus.neab.net>,
+        Hugo Mills <hugo@carfax.org.uk>
+Cc: linux-btrfs@vger.kernel.org
+References: <alpine.DEB.2.02.1708011253230.31126@iapetus.neab.net>
+ <20170801122039.GX7140@carfax.org.uk>
+ <alpine.DEB.2.02.1708011520490.31126@iapetus.neab.net>
+ <b30d1b78-7cbd-9bf5-3507-b028b9b8191f@gmail.com>
+ <7f2b5c3a-2f5c-e857-d2dc-3ea16b58ecaf@gmail.com>
+ <798a9077-bcbd-076c-a458-3403010ce8ac@libero.it>
+ <6dc6ca6a-7f55-4176-e2b7-ae8ab69eca00@gmail.com>
+ <f227b82c-171a-4475-e08c-6abb53de51f2@inwind.it>
+ <0abbc952-99d1-8b23-41ee-f58afca11d08@gmail.com>
+ <cab4df59-a5ce-9944-22cb-367173dab108@inwind.it>
+ <8344dc9f-d213-b2d8-5b6c-5c1a54041ef1@gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <e19345c3-87c7-e248-fa4c-9dd608680640@inwind.it>
+Date: Fri, 4 Aug 2017 16:45:48 +0200
 MIME-Version: 1.0
-In-Reply-To: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <8344dc9f-d213-b2d8-5b6c-5c1a54041ef1@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2017-08-03 19:23, Austin S. Hemmelgarn wrote:
+> On 2017-08-03 12:37, Goffredo Baroncelli wrote:
+>> On 2017-08-03 13:39, Austin S. Hemmelgarn wrote:
+[...]
+
+>>> Also, as I said below, _THIS WORKS ON ZFS_.  That immediately means that a CoW filesystem _does not_ need to behave like BTRFS is.
+>>
+>> It seems that ZFS on linux doesn't support fallocate
+>>
+>> see https://github.com/zfsonlinux/zfs/issues/326
+>>
+>> So I think that you are referring to a posix_fallocate and ZFS on solaris, which I can't test so I can't comment.
+> Both Solaris, and FreeBSD (I've got a FreeNAS system at work i checked on).
+
+For fun I checked the freebsd source and zfs source. To me it seems that ZFS on freebsd doesn't implement posix_fallocate() (VOP_ALLOCATE in freebas jargon), but instead relies on the freebsd default one.
+
+	http://fxr.watson.org/fxr/source/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_vnops.c#L7212
+
+Following the chain of function pointers
+
+	http://fxr.watson.org/fxr/source/kern/vfs_default.c?im=10#L110
+
+it seems that the freebsd vop_allocate() is implemented in vop_stdallocate()
+
+	http://fxr.watson.org/fxr/source/kern/vfs_default.c?im=excerpts#L912
+
+which simply calls read() and write() on the range [offset...offset+len), which for a "conventional" filesystem ensure the block allocation. Of course it is an expensive solution.
+
+So I think (but I am not familiar with freebsd) that ZFS doesn't implement a real posix_allocate but it try to simulate it. Of course this don't
 
 
-On 2017年08月02日 16:38, Brendan Hide wrote:
-> The title seems alarmist to me - and I suspect it is going to be 
-> misconstrued. :-/
 > 
->  From the release notes at 
-> https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/7.4_Release_Notes/chap-Red_Hat_Enterprise_Linux-7.4_Release_Notes-Deprecated_Functionality.html 
-> 
-> 
-> "Btrfs has been deprecated
-> 
-> The Btrfs file system has been in Technology Preview state since the 
-> initial release of Red Hat Enterprise Linux 6. Red Hat will not be 
-> moving Btrfs to a fully supported feature and it will be removed in a 
-> future major release of Red Hat Enterprise Linux.
-> 
-> The Btrfs file system did receive numerous updates from the upstream in 
-> Red Hat Enterprise Linux 7.4 and will remain available in the Red Hat 
-> Enterprise Linux 7 series. However, this is the last planned update to 
-> this feature.
-> 
-> Red Hat will continue to invest in future technologies to address the 
-> use cases of our customers, specifically those related to snapshots, 
-> compression, NVRAM, and ease of use. We encourage feedback through your 
-> Red Hat representative on features and requirements you have for file 
-> systems and storage technology."
+> That said, I'm starting to wonder if just failing fallocate() calls to allocate space is actually the right thing to do here after all.  Aside from this, we don't reserve metadata space for checksums and similar things for the eventual writes (so it's possible to get -ENOSPC on a write to an fallocate'ed region anyway because of metadata exhaustion), and splitting extents can also cause it to fail, so it's perfectly possible for the fallocate assumption to not hole on BTRFS.  
 
-Personally speaking, unlike most of the btrfs supporters, I think Red 
-Hat is doing the correct thing for their enterprise use case.
+posix_fallocate in BTRFS is not reliable for another reason. This syscall guarantees that a BG is allocated, but I think that the allocated BG is available to all processes, so a parallel process my exhaust all the available space before the first process uses it.
 
-(To clarify, I'm not going to Red Hat, just in case anyone wonders why 
-I'm not supporting btrfs)
+My opinion is that BTRFS is not reliable when the space is exhausted, so it needs to work with an amount of disk space free. The size of this disk space should be O(2*size_of_biggest_write), and for operation like fallocate this means O(2*length).
 
-[Good things of btrfs]
-Btrfs is indeed a technic pioneer in a lot of aspects (at least in linux 
-world):
+I think that is not casual that the fallocate implemented by ZFSONLINUX works with the flag FALLOC_FL_PUNCH_HOLE mode.
 
-1) Metadata CoW instead of traditional journal
-2) Snapshot and delta-backup
-     I think this is the killer feature of Btrfs, and why SUSE is using 
-it for root fs.
-3) Default data CoW
-4) Data checksum and scrubbing
-5) Multi-device management
-6) Online resize/balancing
-And a lot of more.
+https://github.com/zfsonlinux/zfs/blob/master/module/zfs/zpl_file.c#L662
+[...]
+/*
+ * The only flag combination which matches the behavior of zfs_space()
+ * is FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE.  The FALLOC_FL_PUNCH_HOLE
+ * flag was introduced in the 2.6.38 kernel.
+ */
+#if defined(HAVE_FILE_FALLOCATE) || defined(HAVE_INODE_FALLOCATE)
+long
+zpl_fallocate_common(struct inode *ip, int mode, loff_t offset, loff_t len)
+{
+	int error = -EOPNOTSUPP;
 
-[Bad things of btrfs]
-But for enterprise usage, it's too advanced and has several problems 
-preventing them being widely applied:
+#if defined(FALLOC_FL_PUNCH_HOLE) && defined(FALLOC_FL_KEEP_SIZE)
+	cred_t *cr = CRED();
+	flock64_t bf;
+	loff_t olen;
+	fstrans_cookie_t cookie;
 
-1) Low performance from metadata/data CoW
-     This is a little complicated dilemma.
-     Although Btrfs can disable data CoW, nodatacow also disables data 
-checksum, which is another main feature for btrfs.
-     So Btrfs can't default to nodatacow, unlike XFS.
+	if (mode != (FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
+		return (error);
 
-     And metadata CoW causes extra metadata write along with superblock 
-update (FUA), further degrading the performance.
+[...]
 
-     Such pioneered design makes traditional performance-intense use 
-case very unhappy.
-     Especially for almost all kind of databases. (Note that nodatacow 
-can't always solve the performance problem).
-     Most performance intense usage is still based on tradtional fs 
-design (journal with no CoW)
-
-2) Low concurrency caused by tree design.
-      Unlike traditional one-tree-for-one-inode design, btrfs uses 
-one-tree-for-one-subvolume.
-      The design makes snapshot implementation very easy, while makes 
-tree very hot when a lot of modifiers are trying to modify any metadata.
-
-      Btrfs has a lot of different way to solve it.
-      For extent tree (the most busy tree), we are using delayed-ref to 
-speed up extent tree update.
-      For fs tree fsync, we have log tree to speed things up.
-      These approaches work, at the cost of complexity and bugs, and we 
-still have slow fs tree modification speed.
-
-3) Low code reusage of device-mapper.
-      I totally understand that, due to the unique support for data 
-csum, btrfs can't use device-mapper directly, as we must verify the data 
-read out from device before passing it to higher level.
-     So Btrfs uses its own device-mapper like implementation to handle 
-multi-device management.
-
-     The result is mixed. For easy to handle case like RAID0/1/10 btrfs 
-is doing well.
-     While for RAID5/6, everyone knows the result.
-
-     Such btrfs *enhanced* re-implementation not only makes btrfs larger 
-but also more complex and bug-prune.
-
-In short, btrfs is too advanced for generic use cases (performance) and 
-developers (bugs), unfortunately.
-
-And even SUSE is just pushing btrfs as root fs, mainly for the snapshot 
-feature.
-But still ext4/xfs for data or performance intense use case.
-
-
-[Other solution on the table]
-On the other hand, I think RedHat is pushing storage technology based on 
-LVM (thin) and Xfs.
-
-For traditional LVM, it's stable but its snapshot design is old-fashion 
-and low-performance.
-While new thin-provision LVM solves the problem using a method just like 
-Btrfs, but at block level.
-
-And for XFS, it's still traditional designed, journal based, 
-one-tree-for-one-inode.
-But with fancy new features like data CoW.
-
-Even XFS + LVM-thin lacks ability to shrink fs or scrub data or delta 
-backup, it can do a lot of things just like Btrfs.
- From snapshot to multi-device management.
-
-And more importantly, has better performance for things like DB.
-
-So, for old use cases, the performance stays almost the same.
-For developers, guys are still focusing on their old fields, less to 
-concern and more focused to debug. The old UNIX method still works here, 
-do one thing and do it well.
-
-It provides some of the fancy features from btrfs, but not too fancy.
-It's a compromising move, but a good move for enterprise usage.
-
-[The future]
-When btrfs is almost as good as traditional solutions for both 
-performance and stability, I think it will be widely applied no matter 
-whether RedHat uses it or not, especially since btrfs still has features 
-which LVM-thin + XFS can't provide.
-
-But the future is still full of challenges.
-1) Complexity of btrfs makes development slow.
-     Developers are already doing their work well, but the numbers of 
-lines are twice of traditional fs.
-
-2) New device-mapper based solution may come out fast
-     Dm-thin is already here, and I won't be surprised that one day 
-there will be hooks/API for device-mapper to communicate with higher levels.
-
-     For example, if one day there is some dm-csum to support verify 
-csum of given ranges (and skip unrelated ones specified by higher 
-levels), btrfs support for data csum is no longer an exclusive feature.
-
-Thanks,
-Qu
-> 
-> 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

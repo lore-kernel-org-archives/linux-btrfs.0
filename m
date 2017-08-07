@@ -1,138 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36003 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751429AbdHGSKp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 7 Aug 2017 14:10:45 -0400
-Subject: Re: Btrfs umount hang
-From: Jeff Mahoney <jeffm@suse.com>
-To: Angel Shtilianov <kernel@kyup.com>, linux-btrfs@vger.kernel.org
-References: <CAJM9R-JxTptrU6GZzrMwvugpOqsmhu09Q8RAcA+TviOaK1RY4Q@mail.gmail.com>
- <c9fbfedd-1a3b-b6f4-8773-1a7e5f79f18a@suse.com>
-Message-ID: <1d36851e-6a1c-1c32-ee00-96f43ead55d2@suse.com>
-Date: Mon, 7 Aug 2017 14:10:41 -0400
-MIME-Version: 1.0
-In-Reply-To: <c9fbfedd-1a3b-b6f4-8773-1a7e5f79f18a@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="GuHfS0MR3aSD90IHmOu4j7Ew3TktcSWiv"
+Received: from [195.159.176.226] ([195.159.176.226]:47946 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751743AbdHGWYb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Aug 2017 18:24:31 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1deqRj-00062x-EM
+        for linux-btrfs@vger.kernel.org; Tue, 08 Aug 2017 00:24:23 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: kernel BUG at
+ =?us-ascii?Q?=2Fbuild=2Flinux-H5UzH8=2Flinux-4=2E10=2E0=2Ffs=2Fbtr?=
+ =?us-ascii?Q?fs=2Fextent=5Fio=2Ec=3A2318?=
+Date: Mon, 7 Aug 2017 22:24:11 +0000 (UTC)
+Message-ID: <pan$b52c9$ae2c3bc9$d4d1cbcf$e8f8d076@cox.net>
+References: <b6624a14-d63f-4372-b6b8-662a61973547@siedziba.pl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---GuHfS0MR3aSD90IHmOu4j7Ew3TktcSWiv
-Content-Type: multipart/mixed; boundary="Rugn154bbLgXSDKSBbQVsOJEJ40w6Jome";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Angel Shtilianov <kernel@kyup.com>, linux-btrfs@vger.kernel.org
-Message-ID: <1d36851e-6a1c-1c32-ee00-96f43ead55d2@suse.com>
-Subject: Re: Btrfs umount hang
-References: <CAJM9R-JxTptrU6GZzrMwvugpOqsmhu09Q8RAcA+TviOaK1RY4Q@mail.gmail.com>
- <c9fbfedd-1a3b-b6f4-8773-1a7e5f79f18a@suse.com>
-In-Reply-To: <c9fbfedd-1a3b-b6f4-8773-1a7e5f79f18a@suse.com>
+Piotr Pawłow posted on Mon, 07 Aug 2017 15:26:16 +0200 as excerpted:
 
---Rugn154bbLgXSDKSBbQVsOJEJ40w6Jome
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> # uname -a
+> Linux pps 4.10.0-30-generic #34-Ubuntu SMP
+> Mon Jul 31 19:38:17 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
 
-On 8/7/17 1:19 PM, Jeff Mahoney wrote:
-> On 8/7/17 10:12 AM, Angel Shtilianov wrote:
->> Hi there,
->> I'm investigating sporadic hanging during btrfs umount. The FS is
->> contained in a loop mounted file.
->> I have no reproduction scenario and the issue may happen once a day or=
+This is a general principles reply and chances are wouldn't help with 
+your issue since the spread isn't /too/ large yet and I've no knowledge 
+of a specific fix for your issue in newer kernels, but FWIW...
 
->> once a month. It is rare, but frustrating.
->> I have a crashdump (the server has been manually crashed and collected=
+This being the btrfs development list and btrfs, while stabilizing (but 
+not yet to be considered fully stable) still being under rather intense 
+development, with significant changes every kernel cycle, list focus 
+tends to be quite forward looking, with most interest and the best chance 
+of fixes on relatively current kernels.
 
->> a crashdump), so I could take look through the data structures.
->> What happens is that umount is getting in D state and a the kernel
->> complains about hung tasks. We are using kernel 4.4.y The actual back
->> trace is from 4.4.70, but this happens with all the 4.4 kernels I've
->> used (4.4.30 through 4.4.70).
->> Tasks like:
->> INFO: task kworker/u32:9:27574 blocked for more than 120 seconds.
->> INFO: task kworker/u32:12:27575 blocked for more than 120 seconds.
->> INFO: task btrfs-transacti:31625 blocked for more than 120 seconds.
->> are getting blocked waiting for btrfs_tree_read_lock, which is owned
->> by task umount:31696 (which is also blocked for more than 120 seconds)=
+What we try to support, in addition to development kernels, is the latest 
+two release kernel series in two tracks, (mainline/Linus) current and LTS.
 
->> regarding the lock debug.
->>
->> umount is hung in "cache_block_group", see the '>' mark:
->>        while (cache->cached =3D=3D BTRFS_CACHE_FAST) {
->>                 struct btrfs_caching_control *ctl;
->>
->>                 ctl =3D cache->caching_ctl;
->>                 atomic_inc(&ctl->count);
->>                 prepare_to_wait(&ctl->wait, &wait, TASK_UNINTERRUPTIBL=
-E);
->>                 spin_unlock(&cache->lock);
->>
->>>                schedule();
->>
->>                 finish_wait(&ctl->wait, &wait);
->>                 put_caching_control(ctl);
->>                 spin_lock(&cache->lock);
->>         }
->>
->> The complete backtraces could be found in the attached log.
->>
->> Do you have any ideas ?
->=20
-> Hi Angel -
->=20
-> In your log, it says lockdep is disabled.  What tripped it earlier?
-> Lockdep really should be catching locking deadlocks in situations like
-> this, if that's really the underlying cause.
+On the current track, 4.12 is the newest release so 4.12 and 4.11 are 
+best supported, tho the 4.11 series is already listed as EOL on 
+kernel.org.  On the LTS track, 4.9 and 4.4 are the latest LTS releases, 
+with 4.1 the previous one but already well out of btrfs focus range.
 
-Actually, I'm not sure if lockdep would catch this one.  Here's my
-hypothesis:
+That puts 4.10 out of the list's best-supported focus range, with 4.11 
+still in focus but EOL.  Beyond that we still try, but you're not as 
+likely to get interest from the developers themselves, and for the other 
+btrfs-user-regulars here, as the spread gets wider, the support gets more 
+difficult as it's harder to remember where things were back then.
 
-kworker/u32:9 is waiting on a read lock while reading the free space
-cache, which means it owns the cache->cached value and will issue the
-wakeup when it completes.
+So the recommendation would be to either upgrade to 4.12 current if you 
+want to stay on current track, or downgrade to the latest 4.9 release if 
+you prefer stable track.
 
-umount is waiting on for the wakeup from kworker/u32:9 but is holding
-some tree locks in write mode.
+Other alternatives would include getting support from your distro if 
+you're running a distro kernel (as seems to be your case), since they 
+know what they've backported and what they haven't, and are thus in a 
+better position to support it, and of course, simply sticking with what 
+you have and accepting that you won't get quite the support or interest 
+on your list posts since you're out of primary focus range.
 
-If kworker/u32:9 is waiting on the locks that umount holds, we have a
-deadlock.
+Of course you can also keep a current kernel available and boot to it to 
+try to duplicate any issues before reporting, while otherwise sticking to 
+your older kernel, but unless you have a specific reason to do that, it 
+would seem more trouble than simply running the current kernel by default.
 
-Can you dump the extent buffer that kworker/u32:9 is waiting on?  Part
-of that will contain the PID of the holder, and if matches umount, we
-found the cause.
+So 4.10 isn't /too/ far out of range yet, but I'd strongly consider 
+upgrading (or downgrading to 4.9 LTS) as soon as it's reasonably 
+convenient, before 4.13 in any case.  Unless you prefer to go the distro 
+support route, of course.
 
--Jeff
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---Rugn154bbLgXSDKSBbQVsOJEJ40w6Jome--
-
---GuHfS0MR3aSD90IHmOu4j7Ew3TktcSWiv
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIVAwUBWYitIh57S2MheeWyAQg8ehAAniO0aXHQoheaQtQMqUgY96P5xkZCdmiX
-UanXD/40Xs33WwevWNixH17+Hp38ctPopkiEwu+Za8OCMj8ozdtPJOiWkCa7rASL
-t0hngSeCEyJuHJmC/Sd1POWDS5/2No7OGzLkkjZN+r1Rew9EAiyJvDGhrGQPSH+7
-tjKfqBxDHgdUMs4RTBO4kg4K74FFxI1tF6U3CdR27t3m+aqqKxpKemIf5hM/GaAG
-C8otU3yh7HpN8OkQkZV67iHjO+BUJFrMOSqwaMn1sb0DLwt7A4F3cgjC7uate63I
-dH97DxsMmfkjNWImiaYX7xczc73Vq+NNpKmXGKAtXS43bKC+6NtiDoVmJHsoTz1P
-UuUb1X10RS6pOpmxDSf/uaNt7X7qJTBF9VKvSLUU9le0nH8Fv+/RfXWWGMOEd/iD
-EMl/6fYEOitNiyYWEDltVHd8oGjyYWQjnO96F/xIUTceupC/paqkgq6EJ5bQSRji
-js3bpEOkpjc/ByE6Bza9Jg/ayPp7a0xHNbagPFp7N4aFLdVfXMlKHLiAjA8GQf4L
-Y/Sl/aGqY0rhPBqcXWD9MoMtLAyMPYiRXPP7nyU/U7af5EIGQo+mtTl8tlOAdR8z
-L+o1GeLeFtQJqp6j9InN/v33QiJH1MUJrVnorvR3nee/nPEKHwEd8wfpqE3SeTtM
-cYcBRTw+jPQ=
-=Lw4o
------END PGP SIGNATURE-----
-
---GuHfS0MR3aSD90IHmOu4j7Ew3TktcSWiv--

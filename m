@@ -1,49 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:34977 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751837AbdHGCXA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Aug 2017 22:23:00 -0400
-Received: by mail-wm0-f67.google.com with SMTP id r77so12183852wmd.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Aug 2017 19:23:00 -0700 (PDT)
+Received: from mail-wm0-f49.google.com ([74.125.82.49]:36545 "EHLO
+        mail-wm0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751247AbdHGCZa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Aug 2017 22:25:30 -0400
+Received: by mail-wm0-f49.google.com with SMTP id t201so57461213wmt.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Aug 2017 19:25:30 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CANT5p=rND=6FZYz6+x0924JHs3G8RH+G9GXqDfoS-ndtQUXuKQ@mail.gmail.com>
+In-Reply-To: <CANT5p=rpTpO8svMzkbtQEb0_CK=OjS5gr55nNdyTjFbbeOAGrA@mail.gmail.com>
 References: <CANT5p=rND=6FZYz6+x0924JHs3G8RH+G9GXqDfoS-ndtQUXuKQ@mail.gmail.com>
+ <20170804060007.blgcu5khfo4juwfe@angband.pl> <CANT5p=qvu9tCf73+_PuAj9Ryy69p3JjAyHFY_pAA9eUsTz_ELA@mail.gmail.com>
+ <20170804072229.4h534hr54ne3d764@angband.pl> <CANT5p=r9gMUu1F8Vkgs6=O1UBfBLn=96XAZBzB6OsHnSQw0C5A@mail.gmail.com>
+ <20170804145401.78e50990@job> <CANT5p=rpTpO8svMzkbtQEb0_CK=OjS5gr55nNdyTjFbbeOAGrA@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 6 Aug 2017 20:22:59 -0600
-Message-ID: <CAJCQCtT0TLV3zJN2JgC+Z-QeanP299MxTo_qfH0j9O5qYanVRQ@mail.gmail.com>
+Date: Sun, 6 Aug 2017 20:25:28 -0600
+Message-ID: <CAJCQCtSScyxYSObrLo4MwZqiJiuKsudne+fAtoJPmtJdZ4kDhg@mail.gmail.com>
 Subject: Re: Power down tests...
 To: Shyam Prasad N <nspmangalore@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Dmitrii Tcvetkov <demfloro@demfloro.ru>,
+        Adam Borowski <kilobyte@angband.pl>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 3, 2017 at 11:51 PM, Shyam Prasad N <nspmangalore@gmail.com> wrote:
-> Hi all,
->
-> We're running a couple of experiments on our servers with btrfs
-> (kernel version 4.4).
-> And we're running some abrupt power-off tests for a couple of scenarios:
->
-> 1. We have a filesystem on top of two different btrfs filesystems
-> (distributed across N disks).
+On Fri, Aug 4, 2017 at 6:09 AM, Shyam Prasad N <nspmangalore@gmail.com> wrote:
+> Thanks guys. I've enabled that option now. Let's see how it goes.
+> One general question regarding the stability of btrfs in kernel
+> version 4.4. Is this okay for power off test cases? Or are there many
+> important fixes in newer kernels?
 
-What's the layout from physical devices all the way to your 16M file?
-This is hardware raid, lvm linear, Btrfs raid? All of that matters.
 
-Do the drives have write caching disabled? You might be better off
-with the drive write cache disabled, and then add bcache or dm-cache
-and an SSD to compensate. But that's just speculation on my part. The
-write cache in the drives is definitely volatile. And disabling them
-will definitely make writes slower. So, you might have slightly better
-luck with another layout.
+$ git log --grep=power tags/v4.4...tags/v4.12 -- fs/btrfs
 
-But the bottom line is, you need to figure out a way to avoid *any*
-data loss in your files because otherwise that means the 2nd file
-system has data loss and even corruption. This is not something a file
-system choice can solve. You need reliable power and reliable
-shutdown. And you may also need a cluster file system like ceph or
-glusterfs instead of depending on a single box to stay upright.
+The answer is yes there are power failure related fixes since 4.4. I
+can't tell you off hand to what degree they're backported, you'd have
+to do a search with whatever specific sub version of 4.4 you're using.
 
 
 

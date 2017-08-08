@@ -1,78 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:47946 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751743AbdHGWYb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Aug 2017 18:24:31 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1deqRj-00062x-EM
-        for linux-btrfs@vger.kernel.org; Tue, 08 Aug 2017 00:24:23 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: kernel BUG at
- =?us-ascii?Q?=2Fbuild=2Flinux-H5UzH8=2Flinux-4=2E10=2E0=2Ffs=2Fbtr?=
- =?us-ascii?Q?fs=2Fextent=5Fio=2Ec=3A2318?=
-Date: Mon, 7 Aug 2017 22:24:11 +0000 (UTC)
-Message-ID: <pan$b52c9$ae2c3bc9$d4d1cbcf$e8f8d076@cox.net>
-References: <b6624a14-d63f-4372-b6b8-662a61973547@siedziba.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:36062 "EHLO
+        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751464AbdHHLaj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2017 07:30:39 -0400
+Received: by mail-wm0-f46.google.com with SMTP id t201so4659466wmt.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2017 04:30:38 -0700 (PDT)
+Received: from mail-wm0-f44.google.com (mail-wm0-f44.google.com. [74.125.82.44])
+        by smtp.gmail.com with ESMTPSA id b45sm827451eda.15.2017.08.08.04.30.36
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 08 Aug 2017 04:30:37 -0700 (PDT)
+Received: by mail-wm0-f44.google.com with SMTP id m85so4606707wma.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Aug 2017 04:30:36 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1d36851e-6a1c-1c32-ee00-96f43ead55d2@suse.com>
+References: <CAJM9R-JxTptrU6GZzrMwvugpOqsmhu09Q8RAcA+TviOaK1RY4Q@mail.gmail.com>
+ <c9fbfedd-1a3b-b6f4-8773-1a7e5f79f18a@suse.com> <1d36851e-6a1c-1c32-ee00-96f43ead55d2@suse.com>
+From: Angel Shtilianov <kernel@kyup.com>
+Date: Tue, 8 Aug 2017 14:30:35 +0300
+Message-ID: <CAJM9R-+=ww-7Zz9rgsGuCmiPZFZ+U8zhLHA4bEuzNederH49OQ@mail.gmail.com>
+Subject: Re: Btrfs umount hang
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Angel Shtilianov <kernel@kyup.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Piotr Pawłow posted on Mon, 07 Aug 2017 15:26:16 +0200 as excerpted:
+crash> bt -f 31625
+PID: 31625  TASK: ffff88046a833400  CPU: 7   COMMAND: "btrfs-transacti"
+wants to acquire struct extent_buffer ffff88000460aca0 lock, whose
+lock_owner is 27574.
 
-> # uname -a
-> Linux pps 4.10.0-30-generic #34-Ubuntu SMP
-> Mon Jul 31 19:38:17 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+here is pid 27574:
+PID: 27574  TASK: ffff88038b469a00  CPU: 4   COMMAND: "kworker/u32:9"
+which is also is trying to acquire eb lock ffff8802598b6200, and here
+the owner is 31696.
 
-This is a general principles reply and chances are wouldn't help with 
-your issue since the spread isn't /too/ large yet and I've no knowledge 
-of a specific fix for your issue in newer kernels, but FWIW...
+31696 is
+PID: 31696  TASK: ffff88044b59ce00  CPU: 5   COMMAND: "umount"
 
-This being the btrfs development list and btrfs, while stabilizing (but 
-not yet to be considered fully stable) still being under rather intense 
-development, with significant changes every kernel cycle, list focus 
-tends to be quite forward looking, with most interest and the best chance 
-of fixes on relatively current kernels.
+So definitely here is a kind of deadlock.
+umount holds the lock needed by the workers to complete and waits them
+to complete.
+Lockdep wouldn't complain about that.
+I am still about to investigate what has previously triggered/disabled lockdep.
+I have to obtain the log from the machine, but I need some time to get it.
 
-What we try to support, in addition to development kernels, is the latest 
-two release kernel series in two tracks, (mainline/Linus) current and LTS.
+Jeff, you were right.
+Could you help demystifying how we ended up here?
 
-On the current track, 4.12 is the newest release so 4.12 and 4.11 are 
-best supported, tho the 4.11 series is already listed as EOL on 
-kernel.org.  On the LTS track, 4.9 and 4.4 are the latest LTS releases, 
-with 4.1 the previous one but already well out of btrfs focus range.
+Best regards,
+Angel
 
-That puts 4.10 out of the list's best-supported focus range, with 4.11 
-still in focus but EOL.  Beyond that we still try, but you're not as 
-likely to get interest from the developers themselves, and for the other 
-btrfs-user-regulars here, as the spread gets wider, the support gets more 
-difficult as it's harder to remember where things were back then.
-
-So the recommendation would be to either upgrade to 4.12 current if you 
-want to stay on current track, or downgrade to the latest 4.9 release if 
-you prefer stable track.
-
-Other alternatives would include getting support from your distro if 
-you're running a distro kernel (as seems to be your case), since they 
-know what they've backported and what they haven't, and are thus in a 
-better position to support it, and of course, simply sticking with what 
-you have and accepting that you won't get quite the support or interest 
-on your list posts since you're out of primary focus range.
-
-Of course you can also keep a current kernel available and boot to it to 
-try to duplicate any issues before reporting, while otherwise sticking to 
-your older kernel, but unless you have a specific reason to do that, it 
-would seem more trouble than simply running the current kernel by default.
-
-So 4.10 isn't /too/ far out of range yet, but I'd strongly consider 
-upgrading (or downgrading to 4.9 LTS) as soon as it's reasonably 
-convenient, before 4.13 in any case.  Unless you prefer to go the distro 
-support route, of course.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Mon, Aug 7, 2017 at 9:10 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+> On 8/7/17 1:19 PM, Jeff Mahoney wrote:
+>> On 8/7/17 10:12 AM, Angel Shtilianov wrote:
+>>> Hi there,
+>>> I'm investigating sporadic hanging during btrfs umount. The FS is
+>>> contained in a loop mounted file.
+>>> I have no reproduction scenario and the issue may happen once a day or
+>>> once a month. It is rare, but frustrating.
+>>> I have a crashdump (the server has been manually crashed and collected
+>>> a crashdump), so I could take look through the data structures.
+>>> What happens is that umount is getting in D state and a the kernel
+>>> complains about hung tasks. We are using kernel 4.4.y The actual back
+>>> trace is from 4.4.70, but this happens with all the 4.4 kernels I've
+>>> used (4.4.30 through 4.4.70).
+>>> Tasks like:
+>>> INFO: task kworker/u32:9:27574 blocked for more than 120 seconds.
+>>> INFO: task kworker/u32:12:27575 blocked for more than 120 seconds.
+>>> INFO: task btrfs-transacti:31625 blocked for more than 120 seconds.
+>>> are getting blocked waiting for btrfs_tree_read_lock, which is owned
+>>> by task umount:31696 (which is also blocked for more than 120 seconds)
+>>> regarding the lock debug.
+>>>
+>>> umount is hung in "cache_block_group", see the '>' mark:
+>>>        while (cache->cached == BTRFS_CACHE_FAST) {
+>>>                 struct btrfs_caching_control *ctl;
+>>>
+>>>                 ctl = cache->caching_ctl;
+>>>                 atomic_inc(&ctl->count);
+>>>                 prepare_to_wait(&ctl->wait, &wait, TASK_UNINTERRUPTIBLE);
+>>>                 spin_unlock(&cache->lock);
+>>>
+>>>>                schedule();
+>>>
+>>>                 finish_wait(&ctl->wait, &wait);
+>>>                 put_caching_control(ctl);
+>>>                 spin_lock(&cache->lock);
+>>>         }
+>>>
+>>> The complete backtraces could be found in the attached log.
+>>>
+>>> Do you have any ideas ?
+>>
+>> Hi Angel -
+>>
+>> In your log, it says lockdep is disabled.  What tripped it earlier?
+>> Lockdep really should be catching locking deadlocks in situations like
+>> this, if that's really the underlying cause.
+>
+> Actually, I'm not sure if lockdep would catch this one.  Here's my
+> hypothesis:
+>
+> kworker/u32:9 is waiting on a read lock while reading the free space
+> cache, which means it owns the cache->cached value and will issue the
+> wakeup when it completes.
+>
+> umount is waiting on for the wakeup from kworker/u32:9 but is holding
+> some tree locks in write mode.
+>
+> If kworker/u32:9 is waiting on the locks that umount holds, we have a
+> deadlock.
+>
+> Can you dump the extent buffer that kworker/u32:9 is waiting on?  Part
+> of that will contain the PID of the holder, and if matches umount, we
+> found the cause.
+>
+> -Jeff
+>
+> --
+> Jeff Mahoney
+> SUSE Labs
+>

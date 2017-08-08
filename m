@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:46378 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:52908 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752062AbdHHIsT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 8 Aug 2017 04:48:19 -0400
+        id S1752529AbdHHIsK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 8 Aug 2017 04:48:10 -0400
 From: Ming Lei <ming.lei@redhat.com>
 To: Jens Axboe <axboe@fb.com>, Christoph Hellwig <hch@infradead.org>,
         Huang Ying <ying.huang@intel.com>,
@@ -12,55 +12,109 @@ Cc: linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
         Ming Lei <ming.lei@redhat.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, Liu Bo <bo.li.liu@oracle.com>
-Subject: [PATCH v3 12/49] btrfs: avoid to access bvec table directly for a cloned bio
-Date: Tue,  8 Aug 2017 16:45:11 +0800
-Message-Id: <20170808084548.18963-13-ming.lei@redhat.com>
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 11/49] btrfs: avoid access to .bi_vcnt directly
+Date: Tue,  8 Aug 2017 16:45:10 +0800
+Message-Id: <20170808084548.18963-12-ming.lei@redhat.com>
 In-Reply-To: <20170808084548.18963-1-ming.lei@redhat.com>
 References: <20170808084548.18963-1-ming.lei@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 17347cec15f919901c90(Btrfs: change how we iterate bios in endio)
-mentioned that for dio the submitted bio may be fast cloned, we
-can't access the bvec table directly for a cloned bio, so use
-bio_get_first_bvec() to retrieve the 1st bvec.
+BTRFS uses bio->bi_vcnt to figure out page numbers, this
+way becomes not correct once we start to enable multipage
+bvec.
+
+So use bio_for_each_segment_all() to do that instead.
 
 Cc: Chris Mason <clm@fb.com>
 Cc: Josef Bacik <jbacik@fb.com>
 Cc: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
-Cc: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-Acked: David Sterba <dsterba@suse.com>
+Acked-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Ming Lei <ming.lei@redhat.com>
 ---
- fs/btrfs/inode.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 20 ++++++++++++++++----
+ fs/btrfs/extent_io.h |  2 +-
+ 2 files changed, 17 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 95c212037095..5cf320ee7ea0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7993,6 +7993,7 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0aff9b278c19..0e7367817b92 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2258,7 +2258,7 @@ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 	return 0;
+ }
+ 
+-bool btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
++bool btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
+ 			   struct io_failure_record *failrec, int failed_mirror)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+@@ -2282,7 +2282,7 @@ bool btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
+ 	 *	a) deliver good data to the caller
+ 	 *	b) correct the bad sectors on disk
+ 	 */
+-	if (failed_bio->bi_vcnt > 1) {
++	if (failed_bio_pages > 1) {
+ 		/*
+ 		 * to fulfill b), we need to know the exact failing sectors, as
+ 		 * we don't want to rewrite any more than the failed ones. thus,
+@@ -2355,6 +2355,17 @@ struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+ 	return bio;
+ }
+ 
++static unsigned int get_bio_pages(struct bio *bio)
++{
++	unsigned i;
++	struct bio_vec *bv;
++
++	bio_for_each_segment_all(bv, bio, i)
++		;
++
++	return i;
++}
++
+ /*
+  * this is a generic handler for readpage errors (default
+  * readpage_io_failed_hook). if other copies exist, read those and write back
+@@ -2375,6 +2386,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
  	int read_mode = 0;
- 	int segs;
+ 	blk_status_t status;
  	int ret;
-+	struct bio_vec bvec;
++	unsigned failed_bio_pages = get_bio_pages(failed_bio);
  
  	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
  
-@@ -8008,8 +8009,9 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
+@@ -2382,13 +2394,13 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+ 	if (ret)
+ 		return ret;
+ 
+-	if (!btrfs_check_repairable(inode, failed_bio, failrec,
++	if (!btrfs_check_repairable(inode, failed_bio_pages, failrec,
+ 				    failed_mirror)) {
+ 		free_io_failure(failure_tree, tree, failrec);
+ 		return -EIO;
  	}
  
- 	segs = bio_segments(failed_bio);
-+	bio_get_first_bvec(failed_bio, &bvec);
- 	if (segs > 1 ||
--	    (failed_bio->bi_io_vec->bv_len > btrfs_inode_sectorsize(inode)))
-+	    (bvec.bv_len > btrfs_inode_sectorsize(inode)))
+-	if (failed_bio->bi_vcnt > 1)
++	if (failed_bio_pages > 1)
  		read_mode |= REQ_FAILFAST_DEV;
  
- 	isector = start - btrfs_io_bio(failed_bio)->logical;
+ 	phy_offset >>= inode->i_sb->s_blocksize_bits;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 4f030912f3ef..300ee10f39f2 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -539,7 +539,7 @@ void btrfs_free_io_failure_record(struct btrfs_inode *inode, u64 start,
+ 		u64 end);
+ int btrfs_get_io_failure_record(struct inode *inode, u64 start, u64 end,
+ 				struct io_failure_record **failrec_ret);
+-bool btrfs_check_repairable(struct inode *inode, struct bio *failed_bio,
++bool btrfs_check_repairable(struct inode *inode, unsigned failed_bio_pages,
+ 			    struct io_failure_record *failrec, int fail_mirror);
+ struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
+ 				    struct io_failure_record *failrec,
 -- 
 2.9.4
 

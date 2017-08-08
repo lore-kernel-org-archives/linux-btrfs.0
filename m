@@ -1,49 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44109 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750876AbdHNOFE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 10:05:04 -0400
-Date: Mon, 14 Aug 2017 16:03:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Hallo32 <Hallo32@gmx.net>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs-v4.12: cross compiling
-Message-ID: <20170814140341.GU2866@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <e8d480c6-758e-0e7d-a024-e9d12d7bf852@gmx.net>
- <20170814130608.GS2866@twin.jikos.cz>
- <46edbc7c-8bd9-0507-950e-be5182356772@gmx.com>
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:32671 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752030AbdHHRkf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Aug 2017 13:40:35 -0400
+From: Jay Bartlett <Jay.Bartlett@wdc.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: BTRfs Mailing List Subscribe
+Date: Tue, 8 Aug 2017 17:39:48 +0000
+Message-ID: <5A2D346E-EC94-4B3F-8962-6ED860F1FBC9@wdc.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <46edbc7c-8bd9-0507-950e-be5182356772@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 14, 2017 at 09:17:08PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2017å¹´08æœˆ14æ—¥ 21:06, David Sterba wrote:
-> > On Mon, Aug 14, 2017 at 02:17:26PM +0200, Hallo32 wrote:
-> >> Since versions 4.12 btrfs-progs is complicated to cross compile for
-> >> other systems.
-> >> The problem is, that this version includes mktables, which needs to be
-> >> compiled for the host system and executed there for the creation of
-> >> tables.c.
-> >>
-> >> Are there any changes planed for the next version of btrfs-progs to make
-> >> the cross compiling as simple as in the past? A included tables.c for
-> >> example?
-> > 
-> > Yes, keeping the generated tables.c around is fine. There's no reason it
-> > needs to be generated each time during build. I'll fix that in 4.12.1.
-> 
-> But the number of lines and impossibility to review it makes it not 
-> suitable to be managed by git.
+Please subscribe me to the BTRfs mailing list.
 
-I don't understand your concern. The file is generated from a set of
-formulas, not intended to be updated directly.
-> 
-> What about using script to generate it?
 
-We do have the mktables utility to generate it and I'll regenerate it
-should there be a change to kernel-lib/mktables.c
+
+Jay Jason Bartlett
+PLM, G-RACK 12
+
+G-Technology Product Line Marketing
+M:760.429.3444
+W: g-technology.com <http://www.g-technology.com/> E: jay.bartlett@wdc.com
+G-Technology, a Western Digital Corporation Brand
+ 
+
+Western Digital Corporation (and its subsidiaries) E-mail Confidentiality Notice & Disclaimer:
+This e-mail and any files transmitted with it may contain confidential or legally privileged information of WDC and/or its affiliates, and are intended solely for the use of the individual or entity to which they are addressed. If you are not the intended recipient, any disclosure, copying, distribution or any action taken or omitted to be taken in reliance on it, is prohibited. If you have received this e-mail in error, please notify the sender immediately and delete the e-mail in its entirety from your system.                   
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f67.google.com ([209.85.214.67]:35115 "EHLO
-        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751443AbdHIRfs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Aug 2017 13:35:48 -0400
-Received: by mail-it0-f67.google.com with SMTP id 76so167214ith.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Aug 2017 10:35:47 -0700 (PDT)
+Received: from mail-it0-f65.google.com ([209.85.214.65]:33670 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752594AbdHIRkF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Aug 2017 13:40:05 -0400
+Received: by mail-it0-f65.google.com with SMTP id m34so184005iti.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Aug 2017 10:40:05 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
 In-Reply-To: <20170809163114.19539-1-bo.li.liu@oracle.com>
 References: <20170807193903.9093-1-bo.li.liu@oracle.com> <20170809163114.19539-1-bo.li.liu@oracle.com>
 From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 9 Aug 2017 18:35:46 +0100
-Message-ID: <CAL3q7H7bNGQOz5eF_T=A+omSgWOe3ZHRJm3xPkN_oyCCuBduqw@mail.gmail.com>
+Date: Wed, 9 Aug 2017 18:40:04 +0100
+Message-ID: <CAL3q7H6+B5uiOq6Lx-6Zx+ETDAaUEN7QhV9uBeNnOO2a+eHAQA@mail.gmail.com>
 Subject: Re: [PATCH v2] Btrfs: fix out of bounds array access while reading
  extent buffer
 To: Liu Bo <bo.li.liu@oracle.com>
@@ -48,15 +48,10 @@ On Wed, Aug 9, 2017 at 5:31 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
 > ie. 'general protection fault', before it's too late.
 >
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
 > ---
 >
 > v2: Improve the commit log to clarify that this can only happen if
 > metadata is corrupted.
-
-Thanks for adding the clarification!
-
 >
 >  fs/btrfs/extent_io.c | 22 ++++++++++++++--------
 >  1 file changed, 14 insertions(+), 8 deletions(-)
@@ -70,6 +65,11 @@ Thanks for adding the clarification!
 >         size_t start_offset = eb->start & ((u64)PAGE_SIZE - 1);
 >         unsigned long i = (start_offset + start) >> PAGE_SHIFT;
 > +       unsigned long num_pages = num_extent_pages(eb->start, eb->len);
+
+Forgot to note that if CONFIG_BTRFS_ASSERT is not set, this variable
+is unused and the compiler and static checkers will emit a warning.
+Other than that all looks fine. Thanks.
+
 >
 > -       WARN_ON(start > eb->len);
 > -       WARN_ON(start + len > eb->start + eb->len);

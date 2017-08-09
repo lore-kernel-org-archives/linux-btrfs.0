@@ -1,24 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41953 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:24964 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751829AbdHGUkP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Aug 2017 16:40:15 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v77KeEug032335
+        with ESMTP id S1751443AbdHIRc2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Aug 2017 13:32:28 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v79HWRnm016250
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 7 Aug 2017 20:40:14 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v77KeDgk003983
+        for <linux-btrfs@vger.kernel.org>; Wed, 9 Aug 2017 17:32:27 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v79HWQAt023629
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 7 Aug 2017 20:40:14 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v77KeDTL032187
-        for <linux-btrfs@vger.kernel.org>; Mon, 7 Aug 2017 20:40:13 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 9 Aug 2017 17:32:27 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v79HWQnd021934
+        for <linux-btrfs@vger.kernel.org>; Wed, 9 Aug 2017 17:32:26 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix out of bounds array access while reading extent buffer
-Date: Mon,  7 Aug 2017 13:39:03 -0600
-Message-Id: <20170807193903.9093-1-bo.li.liu@oracle.com>
+Subject: [PATCH v2] Btrfs: fix out of bounds array access while reading extent buffer
+Date: Wed,  9 Aug 2017 10:31:14 -0600
+Message-Id: <20170809163114.19539-1-bo.li.liu@oracle.com>
+In-Reply-To: <20170807193903.9093-1-bo.li.liu@oracle.com>
+References: <20170807193903.9093-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -37,13 +39,23 @@ corner case, but it'd actually try to access the eb->pages out of
 bounds because of (start + len > eb->len).
 
 The case is found by switching extent inline ref type from shared data
-ref to non-shared data ref.
+ref to non-shared data ref, which is a kind of metadata corruption.
+
+It'd use the wrong helper to access the eb,
+eg. btrfs_extent_data_ref_root(eb, ref) is used but the %ref passing
+here is "struct btrfs_shared_data_ref".  And if the extent item
+happens to be the first item in the eb, then offset/length will get
+over eb->len which ends up an invalid memory access.
 
 This is adding proper checks in order to avoid invalid memory access,
-ie. 'general protection', before it's too late.
+ie. 'general protection fault', before it's too late.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+
+v2: Improve the commit log to clarify that this can only happen if
+metadata is corrupted.
+
  fs/btrfs/extent_io.c | 22 ++++++++++++++--------
  1 file changed, 14 insertions(+), 8 deletions(-)
 

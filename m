@@ -1,60 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:33851 "EHLO
-        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751944AbdHIR76 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Aug 2017 13:59:58 -0400
-Received: by mail-wm0-f47.google.com with SMTP id t138so15584905wmt.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Aug 2017 10:59:57 -0700 (PDT)
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:37870 "EHLO
+        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752383AbdHIWaL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Aug 2017 18:30:11 -0400
+Received: by mail-wm0-f41.google.com with SMTP id i66so7855878wmg.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Aug 2017 15:30:09 -0700 (PDT)
+Received: from mail-wr0-f173.google.com (mail-wr0-f173.google.com. [209.85.128.173])
+        by smtp.gmail.com with ESMTPSA id a11sm2274082edb.8.2017.08.09.15.30.08
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 09 Aug 2017 15:30:08 -0700 (PDT)
+Received: by mail-wr0-f173.google.com with SMTP id c24so23138087wra.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Aug 2017 15:30:08 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <22169.183.88.87.49.1502260598.squirrel@mail>
-References: <21234.192.168.42.222.1502253143.squirrel@mail>
- <CAJCQCtRNT_WL41j7ZBsO3N_=5xAkj4=j7djrh+Ryg3gAV5qyZg@mail.gmail.com> <22169.183.88.87.49.1502260598.squirrel@mail>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 9 Aug 2017 11:59:56 -0600
-Message-ID: <CAJCQCtTpE26mxLq7ufUxCin37sajcXhnM3QsgjXjVd8x_Pw9PA@mail.gmail.com>
-Subject: Re: btrfs issue with mariadb incremental backup
-To: siranee.ja@tpc.co.th
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>, voravat@tpcorp.co.th
+In-Reply-To: <0bea5669-f6de-b14b-4e40-15f144a60976@suse.com>
+References: <CAJM9R-JxTptrU6GZzrMwvugpOqsmhu09Q8RAcA+TviOaK1RY4Q@mail.gmail.com>
+ <c9fbfedd-1a3b-b6f4-8773-1a7e5f79f18a@suse.com> <1d36851e-6a1c-1c32-ee00-96f43ead55d2@suse.com>
+ <CAJM9R-+=ww-7Zz9rgsGuCmiPZFZ+U8zhLHA4bEuzNederH49OQ@mail.gmail.com> <0bea5669-f6de-b14b-4e40-15f144a60976@suse.com>
+From: Angel Shtilianov <kernel@kyup.com>
+Date: Thu, 10 Aug 2017 01:30:07 +0300
+Message-ID: <CAJM9R-JCUkVXg+BAY4ri_w8f39xS0QqMYHv2j6ck_3tpH+3Mxw@mail.gmail.com>
+Subject: Re: Btrfs umount hang
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Angel Shtilianov <kernel@kyup.com>, linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 9, 2017 at 12:36 AM,  <siranee.ja@tpc.co.th> wrote:
+Hi Jeff,
+That's exactly what I am observing in the backtraces.
+umount reaches cache_block_group passing through btrfs_search_slot,
+which looks like got the wr_lock (to be confirmed tomorrow when I'm in
+the office) and all other btrfs worker threads are fighting for the
+btrfs_tree_read_lock.
+Umount is hanging on the cache_block_group wait, all others are
+hanging on the read_lock. So caching seems to be the bottleneck,
+blocking all others. Good catch! I'll take a look at the commit
+tomorrow morning (with large cup of coffee of course).
 
->   488  btrfs sub snap mysql_201707230830 mysql
->   489  systemctl start mariadb
->   490  btrfs sub list .
->   491  cat /var/log/mariadb/mariadb.log
+By the way, looking through the logs I can see one more pattern -
+umount after drop snapshot reaches similar state. The common is that
+drop snapshot will also call search slot, get the readlock, drop it
+and get the write lock. In the same time there is umount causing
+fs_sync going concurently. I've seen at least three such hangs today
+and I've started the corresponding crashdumps to get copied to my
+machine. Tomorrow I'll take a look at them. It seems the common is
+that umount again reaches to the same place - cache_block_group and
+hangs. Tomorrow I'll take a look at the crash dump for the workers
+state.
 
-OK so mysql_201707230830 once on machine B is inconsistent somehow. So
-the questions I have are:
+Thank you,
+Angel
 
-Is mysql_201707230830 on machine A really identical to
-mysql_201707230830 on machine B? You can do an rsync -anc (double
-check those options) which should independently check whether those
-two subvolumes are in fact identical. The -n is a no op, which doesn't
-really matter much because as read only subvolumes any attempt to sync
-will just result in noisy messages. The -c causes rsync to do its own
-checksum verification on both sides.
-
-If the subvolumes are different, we need to find out why.
-
-If the subvolumes are the same, then I wonder if you can reproduce the
-mariadb complaint on machine A merely by making a rw snapshot of
-mysql_201707230830 and trying to start it. If so, then it's not a send
-receive problem, it sounds like the snapshot itself is inconsistent,
-maybe mariadb hasn't actually completely closed out the database at
-the time the read only snapshot was taken? I'm not sure.
-
-If the subvolumes are different, I'm going to recommend updating at
-least the btrfs-progs because 4.4 is kinda old at this point. The
-kernel code is what's mainly responsible for the send stream, and the
-user space code is mainly responsible for receiving. And I don't off
-hand know or want to look up all the send receive changes between 4.4
-and 4.12 to speculate on whether this is has already been fixed.
-
-What's the kernel version?
-
--- 
-Chris Murphy
+On Wed, Aug 9, 2017 at 6:42 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+> On 8/8/17 7:30 AM, Angel Shtilianov wrote:
+>> crash> bt -f 31625
+>> PID: 31625  TASK: ffff88046a833400  CPU: 7   COMMAND: "btrfs-transacti"
+>> wants to acquire struct extent_buffer ffff88000460aca0 lock, whose
+>> lock_owner is 27574.
+>>
+>> here is pid 27574:
+>> PID: 27574  TASK: ffff88038b469a00  CPU: 4   COMMAND: "kworker/u32:9"
+>> which is also is trying to acquire eb lock ffff8802598b6200, and here
+>> the owner is 31696.
+>>
+>> 31696 is
+>> PID: 31696  TASK: ffff88044b59ce00  CPU: 5   COMMAND: "umount"
+>>
+>> So definitely here is a kind of deadlock.
+>> umount holds the lock needed by the workers to complete and waits them
+>> to complete.
+>> Lockdep wouldn't complain about that.
+>> I am still about to investigate what has previously triggered/disabled lockdep.
+>> I have to obtain the log from the machine, but I need some time to get it.
+>>
+>> Jeff, you were right.
+>> Could you help demystifying how we ended up here?
+>
+> Hi Angel -
+>
+> It looks like a regression introduced by 291c7d2f5, but that's a very
+> old commit.  As that commit says, it's a rare occurence to hit that
+> wait, and that's probably why we haven't seen this issue sooner.
+>
+> There's potential for this to happen whenever two threads are modifying
+> the tree at once and one needs to find a free extent.  I'll need to
+> think a bit on how to fix it.
+>
+> -Jeff
+>
+>> Best regards,
+>> Angel
+>>
+>> On Mon, Aug 7, 2017 at 9:10 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+>>> On 8/7/17 1:19 PM, Jeff Mahoney wrote:
+>>>> On 8/7/17 10:12 AM, Angel Shtilianov wrote:
+>>>>> Hi there,
+>>>>> I'm investigating sporadic hanging during btrfs umount. The FS is
+>>>>> contained in a loop mounted file.
+>>>>> I have no reproduction scenario and the issue may happen once a day or
+>>>>> once a month. It is rare, but frustrating.
+>>>>> I have a crashdump (the server has been manually crashed and collected
+>>>>> a crashdump), so I could take look through the data structures.
+>>>>> What happens is that umount is getting in D state and a the kernel
+>>>>> complains about hung tasks. We are using kernel 4.4.y The actual back
+>>>>> trace is from 4.4.70, but this happens with all the 4.4 kernels I've
+>>>>> used (4.4.30 through 4.4.70).
+>>>>> Tasks like:
+>>>>> INFO: task kworker/u32:9:27574 blocked for more than 120 seconds.
+>>>>> INFO: task kworker/u32:12:27575 blocked for more than 120 seconds.
+>>>>> INFO: task btrfs-transacti:31625 blocked for more than 120 seconds.
+>>>>> are getting blocked waiting for btrfs_tree_read_lock, which is owned
+>>>>> by task umount:31696 (which is also blocked for more than 120 seconds)
+>>>>> regarding the lock debug.
+>>>>>
+>>>>> umount is hung in "cache_block_group", see the '>' mark:
+>>>>>        while (cache->cached == BTRFS_CACHE_FAST) {
+>>>>>                 struct btrfs_caching_control *ctl;
+>>>>>
+>>>>>                 ctl = cache->caching_ctl;
+>>>>>                 atomic_inc(&ctl->count);
+>>>>>                 prepare_to_wait(&ctl->wait, &wait, TASK_UNINTERRUPTIBLE);
+>>>>>                 spin_unlock(&cache->lock);
+>>>>>
+>>>>>>                schedule();
+>>>>>
+>>>>>                 finish_wait(&ctl->wait, &wait);
+>>>>>                 put_caching_control(ctl);
+>>>>>                 spin_lock(&cache->lock);
+>>>>>         }
+>>>>>
+>>>>> The complete backtraces could be found in the attached log.
+>>>>>
+>>>>> Do you have any ideas ?
+>>>>
+>>>> Hi Angel -
+>>>>
+>>>> In your log, it says lockdep is disabled.  What tripped it earlier?
+>>>> Lockdep really should be catching locking deadlocks in situations like
+>>>> this, if that's really the underlying cause.
+>>>
+>>> Actually, I'm not sure if lockdep would catch this one.  Here's my
+>>> hypothesis:
+>>>
+>>> kworker/u32:9 is waiting on a read lock while reading the free space
+>>> cache, which means it owns the cache->cached value and will issue the
+>>> wakeup when it completes.
+>>>
+>>> umount is waiting on for the wakeup from kworker/u32:9 but is holding
+>>> some tree locks in write mode.
+>>>
+>>> If kworker/u32:9 is waiting on the locks that umount holds, we have a
+>>> deadlock.
+>>>
+>>> Can you dump the extent buffer that kworker/u32:9 is waiting on?  Part
+>>> of that will contain the PID of the holder, and if matches umount, we
+>>> found the cause.
+>>>
+>>> -Jeff
+>>>
+>>> --
+>>> Jeff Mahoney
+>>> SUSE Labs
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>
+>
+> --
+> Jeff Mahoney
+> SUSE Labs
+>

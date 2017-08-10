@@ -1,94 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:53670 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752266AbdHJAgK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 9 Aug 2017 20:36:10 -0400
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Brendan Hide <brendan@swiftspirit.co.za>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
- <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
- <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
-Date: Thu, 10 Aug 2017 08:35:56 +0800
+Received: from mail.a-tech.co.th ([202.149.98.155]:37141 "EHLO tpcorp.co.th"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752098AbdHJCDS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 9 Aug 2017 22:03:18 -0400
+Message-ID: <2136.49.228.125.166.1502330595.squirrel@mail>
+In-Reply-To: <CAJCQCtTpE26mxLq7ufUxCin37sajcXhnM3QsgjXjVd8x_Pw9PA@mail.gmail.com>
+References: <21234.192.168.42.222.1502253143.squirrel@mail>
+    <CAJCQCtRNT_WL41j7ZBsO3N_=5xAkj4=j7djrh+Ryg3gAV5qyZg@mail.gmail.com>
+    <22169.183.88.87.49.1502260598.squirrel@mail>
+    <CAJCQCtTpE26mxLq7ufUxCin37sajcXhnM3QsgjXjVd8x_Pw9PA@mail.gmail.com>
+Date: Thu, 10 Aug 2017 09:03:15 +0700 (ICT)
+Subject: Re: btrfs issue with mariadb incremental backup
+From: siranee.ja@tpc.co.th
+To: "Chris Murphy" <lists@colorremedies.com>
+Cc: "Chris Murphy" <lists@colorremedies.com>,
+        "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>, voravat@tpcorp.co.th
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain;charset=tis-620
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'll test and response the result to you soon.
+
+I have another question about the combination within Host lxd ubuntu and lxd
+container centos
+
+Host Machine X (16.04.3 LTS with lxd 2.0.10 and btrfs-progs v4.4
+ kernel 4.4 ) set 1 lvm raw partitions and format to btrfs filesystem (on host)
+Partition A  mount to /opt/partA
+
+Container A (CentOS Linux release 7.3.1611 (Core) )  is in Host Machine X
+mount /opt/partA to /var/lib/mariadb in container A
+
+Container A making local readonly snapshot everyday
+
+The Options are (online "btrfs send ||ssh btrfs receive" or batch "btrfs send >
+file.btrfs" and scp from local to remote then "btrfs receive -f file.btrfs")
+1. use btrfs send from Host Machine X to Host Machine Y
+2. use btrfs send from Container A to Host Machine Y
+3. use btrfs send from Container A to Container B
+4. use btrfs send incremental from Host Machine X to Host Machine Y
+5. use btrfs send incremental from Container A to Host Machine Y
+6. use btrfs send incremental from Container A to Container B
 
 
-On 2017年08月07日 23:27, Chris Murphy wrote:
-> On Fri, Aug 4, 2017 at 8:05 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>      For example, if one day there is some dm-csum to support verify csum of
->> given ranges (and skip unrelated ones specified by higher levels), btrfs
->> support for data csum is no longer an exclusive feature.
-> 
-> How would dm-csum differ from dm-integrity?
-> https://www.kernel.org/doc/Documentation/device-mapper/dm-integrity.txt
+Host Machine Y (16.04.3 LTS with lxd 2.0.10 and btrfs-progs v4.4
+ kernel 4.4 ) set 1 lvm raw partitions and format to btrfs filesystem (on host)
+Partition B  mount to /opt/partB
 
-Well, pretty much the same what I want.
+Container B (CentOS Linux release 7.3.1611 (Core) ) is in Host Machine Y
+mount /opt/partB to /var/lib/mariadb in container B
 
-While my idea is to do n-way buffered csum update. (n=2 should be most 
-common case)
-That's to say, for CRC32(4 bytes) of 4K write, the csum space will be 
-reserved as 4bytes * n.
-Even crash happened, one can verify all the csum slots if it's either 
-old or new data.
+The Options are (online "btrfs send ||ssh btrfs receive" or batch "btrfs send >
+file.btrfs" and scp from local to remote then "btrfs receive -f file.btrfs")
 
-That's just a degraded journal anyway, and may still cause data loss for 
-power loss if data is still updated half way.
+1. use btrfs receive from Host Machine X to Host Machine Y
+2. use btrfs receive from Container A to Host Machine Y
+3. use btrfs receive from Container A to Container B
+4. use btrfs receive incremental from Host Machine X to Host Machine Y
+5. use btrfs receive incremental from Container A to Host Machine Y
+6. use btrfs receive incremental from Container A to Container B
 
-> 
-> By that description it uses a journal to guarantee atomicity. If
-> multiqueue maybe the performance implications are neutral. But
-> certainly on spinning drives that would slow things down, especially
-> if the file system is also journaling, and the workload is metadata
-> heavy.
+Could you please suggest me what is the combination that should work properly with
+btrfs send and receive?
 
-That's what btrfs is good at, better co-operation between different layers.
-But this doesn't mean traditional dm solution can't figure out its way.
+I plan to setup 2 Site (Production Site and DR site) each site has 1 box (Host
+Machine X and Y) and want to test btrfs to send incremental.
 
-[No double-csum for metadata for btrfs]
-Btrfs will not double calculate csum for metadata, which has its own 
-csum at its header.
-And nodatacow data will not cause csum calculation.
+Best Regards,
 
-But if we have extra flag bits for bio to co-operate fs and dm/block 
-driver, it can still be solved. (Maybe even easier)
+Siranee Jarwachirakul.
 
-For example, if there is extra bio flags to info dm-integrity or any 
-supported block device driver not to calculate csum for specified bio, 
-then we can avoid such useless double-csum for metadata or nodatacow write.
 
-[Good solution on data cow and csum]
-Despite of that possible performance improvement, btrfs also solves the 
-problem of async data and csum write, by disabling csum completely for 
-nocow contents, so there is no need to journal csum write and data. 
-(Journaling data is super slow).
+> On Wed, Aug 9, 2017 at 12:36 AM,  <siranee.ja@tpc.co.th> wrote:
+>
+>>   488  btrfs sub snap mysql_201707230830 mysql
+>>   489  systemctl start mariadb
+>>   490  btrfs sub list .
+>>   491  cat /var/log/mariadb/mariadb.log
+>
+> OK so mysql_201707230830 once on machine B is inconsistent somehow. So
+> the questions I have are:
+>
+> Is mysql_201707230830 on machine A really identical to
+> mysql_201707230830 on machine B? You can do an rsync -anc (double
+> check those options) which should independently check whether those
+> two subvolumes are in fact identical. The -n is a no op, which doesn't
+> really matter much because as read only subvolumes any attempt to sync
+> will just result in noisy messages. The -c causes rsync to do its own
+> checksum verification on both sides.
+>
+> If the subvolumes are different, we need to find out why.
+>
+> If the subvolumes are the same, then I wonder if you can reproduce the
+> mariadb complaint on machine A merely by making a rw snapshot of
+> mysql_201707230830 and trying to start it. If so, then it's not a send
+> receive problem, it sounds like the snapshot itself is inconsistent,
+> maybe mariadb hasn't actually completely closed out the database at
+> the time the read only snapshot was taken? I'm not sure.
+>
+> If the subvolumes are different, I'm going to recommend updating at
+> least the btrfs-progs because 4.4 is kinda old at this point. The
+> kernel code is what's mainly responsible for the send stream, and the
+> user space code is mainly responsible for receiving. And I don't off
+> hand know or want to look up all the send receive changes between 4.4
+> and 4.12 to speculate on whether this is has already been fixed.
+>
+> What's the kernel version?
+>
+> --
+> Chris Murphy
+>
 
-However nowadays, fs like XFS also has its own extent backref tree to 
-know if given write is new (or CoWed) write or rewrite.
 
-So following the method above, if we have another flag to info 
-dm-integrity that a given bio is rewriting or not, then it can be 
-handled much better.
-
-For example, if a bio is rewriting data and dm-integrity is configured 
-for better performance, then just let dm-integrity to mark that bio 
-range to nocsum and ignore existing csum.
-So that dm-integrity can avoid must of its data and csum journal. (New 
-or CoWed write won't need to be journaled, just like what btrfs is doing)
-
-In short, there is always method to do more or less the same thing btrfs 
-can do.
-So I will not be surprised if one day there is a solution to do 
-everything current btrfs can do, with robust code base and less 
-modification to current kernel.
-
-Thanks,
-Qu

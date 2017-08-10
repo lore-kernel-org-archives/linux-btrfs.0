@@ -1,143 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:60379 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752882AbdHJTRA (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:45787 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753270AbdHJTZS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Aug 2017 15:17:00 -0400
-From: Nick Terrell <terrelln@fb.com>
-To: Eric Biggers <ebiggers3@gmail.com>
-CC: Herbert Xu <herbert@gondor.apana.org.au>, Kernel Team <Kernel-team@fb.com>,
-        "squashfs-devel@lists.sourceforge.net"
-        <squashfs-devel@lists.sourceforge.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>
+        Thu, 10 Aug 2017 15:25:18 -0400
+Date: Thu, 10 Aug 2017 19:25:06 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Mason <clm@fb.com>
+Cc: Eric Biggers <ebiggers3@gmail.com>, Nick Terrell <terrelln@fb.com>,
+        Herbert Xu <herbert@gondor.apana.org.au>, kernel-team@fb.com,
+        squashfs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-crypto@vger.kernel.org
 Subject: Re: [PATCH v5 2/5] lib: Add zstd modules
-Date: Thu, 10 Aug 2017 19:16:45 +0000
-Message-ID: <A38BC5B4-7951-4045-B3F0-F1D923C08EB7@fb.com>
+Message-ID: <20170810192506.GF7140@carfax.org.uk>
 References: <20170810023553.3200875-1-terrelln@fb.com>
  <20170810023553.3200875-3-terrelln@fb.com>
  <20170810083017.GA10462@zzz.localdomain>
-In-Reply-To: <20170810083017.GA10462@zzz.localdomain>
-Content-Type: text/plain; charset="utf-8"
+ <0ceeccb4-1a0f-cacb-dd2b-2913e1cf73ab@fb.com>
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="vMk55pD2JuhdWiRw"
+In-Reply-To: <0ceeccb4-1a0f-cacb-dd2b-2913e1cf73ab@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/10/17, 1:30 AM, "Eric Biggers" <ebiggers3@gmail.com> wrote:
-> On Wed, Aug 09, 2017 at 07:35:53PM -0700, Nick Terrell wrote:
->>
->> It can compress at speeds approaching lz4, and quality approaching lzma.
+
+--vMk55pD2JuhdWiRw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Thu, Aug 10, 2017 at 01:41:21PM -0400, Chris Mason wrote:
+> On 08/10/2017 04:30 AM, Eric Biggers wrote:
+> >
+> >Theses benchmarks are misleading because they compress the whole file as a
+> >single stream without resetting the dictionary, which isn't how data will
+> >typically be compressed in kernel mode.  With filesystem compression the data
+> >has to be divided into small chunks that can each be decompressed independently.
+> >That eliminates one of the primary advantages of Zstandard (support for large
+> >dictionary sizes).
 > 
-> Well, for a very loose definition of "approaching", and certainly not at the
-> same time.  I doubt there's a use case for using the highest compression levels
-> in kernel mode --- especially the ones using zstd_opt.h.
+> I did btrfs benchmarks of kernel trees and other normal data sets as
+> well.  The numbers were in line with what Nick is posting here.
+> zstd is a big win over both lzo and zlib from a btrfs point of view.
 > 
->> 
->> The code was ported from the upstream zstd source repository.
-> 
-> What version?
+> It's true Nick's patches only support a single compression level in
+> btrfs, but that's because btrfs doesn't have a way to pass in the
+> compression ratio.  It could easily be a mount option, it was just
+> outside the scope of Nick's initial work.
 
-zstd-1.1.4 with patches applied from upstream. I'll include it in the
-next patch version.
+   Could we please not add more mount options? I get that they're easy
+to implement, but it's a very blunt instrument. What we tend to see
+(with both nodatacow and compress) is people using the mount options,
+then asking for exceptions, discovering that they can't do that, and
+then falling back to doing it with attributes or btrfs properties.
+Could we just start with btrfs properties this time round, and cut out
+the mount option part of this cycle.
 
->> `linux/zstd.h` header was modified to match linux kernel style.
->> The cross-platform and allocation code was stripped out. Instead zstd
->> requires the caller to pass a preallocated workspace. The source files
->> were clang-formatted [1] to match the Linux Kernel style as much as
->> possible. 
-> 
-> It would be easier to compare to the upstream version if it was not all
-> reformatted.  There is a chance that bugs were introduced by Linux-specific
-> changes, and it would be nice if they could be easily reviewed.  (Also I don't
-> know what clang-format settings you used, but there are still a lot of
-> differences from the Linux coding style.)
+   In the long run, it'd be great to see most of the btrfs-specific
+mount options get deprecated and ultimately removed entirely, in
+favour of attributes/properties, where feasible.
 
-The clang-format settings I used are available in the zstd repo [1]. I left
-the line length long, since it looked terrible otherwise.I set up a branch
-in my zstd GitHub fork called "original-formatted" [2]. I've taken the source
-I based the kernel patches off of [3] and ran clang-format without any other
-changes. If you have any suggestions to improve the clang-formatting
-please let me know.
+   Hugo.
 
->> 
->> I benchmarked zstd compression as a special character device. I ran zstd
->> and zlib compression at several levels, as well as performing no
->> compression, which measure the time spent copying the data to kernel space.
->> Data is passed to the compresser 4096 B at a time. The benchmark file is
->> located in the upstream zstd source repository under
->> `contrib/linux-kernel/zstd_compress_test.c` [2].
->> 
->> I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
->> The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
->> 16 GB of RAM, and a SSD. I benchmarked using `silesia.tar` [3], which is
->> 211,988,480 B large. Run the following commands for the benchmark:
->> 
->>     sudo modprobe zstd_compress_test
->>     sudo mknod zstd_compress_test c 245 0
->>     sudo cp silesia.tar zstd_compress_test
->> 
->> The time is reported by the time of the userland `cp`.
->> The MB/s is computed with
->> 
->>     1,536,217,008 B / time(buffer size, hash)
->> 
->> which includes the time to copy from userland.
->> The Adjusted MB/s is computed with
->> 
->>     1,536,217,088 B / (time(buffer size, hash) - time(buffer size, none)).
->> 
->> The memory reported is the amount of memory the compressor requests.
->> 
->> | Method   | Size (B) | Time (s) | Ratio | MB/s    | Adj MB/s | Mem (MB) |
->> |----------|----------|----------|-------|---------|----------|----------|
->> | none     | 11988480 |    0.100 |     1 | 2119.88 |        - |        - |
->> | zstd -1  | 73645762 |    1.044 | 2.878 |  203.05 |   224.56 |     1.23 |
->> | zstd -3  | 66988878 |    1.761 | 3.165 |  120.38 |   127.63 |     2.47 |
->> | zstd -5  | 65001259 |    2.563 | 3.261 |   82.71 |    86.07 |     2.86 |
->> | zstd -10 | 60165346 |   13.242 | 3.523 |   16.01 |    16.13 |    13.22 |
->> | zstd -15 | 58009756 |   47.601 | 3.654 |    4.45 |     4.46 |    21.61 |
->> | zstd -19 | 54014593 |  102.835 | 3.925 |    2.06 |     2.06 |    60.15 |
->> | zlib -1  | 77260026 |    2.895 | 2.744 |   73.23 |    75.85 |     0.27 |
->> | zlib -3  | 72972206 |    4.116 | 2.905 |   51.50 |    52.79 |     0.27 |
->> | zlib -6  | 68190360 |    9.633 | 3.109 |   22.01 |    22.24 |     0.27 |
->> | zlib -9  | 67613382 |   22.554 | 3.135 |    9.40 |     9.44 |     0.27 |
->> 
-> 
-> Theses benchmarks are misleading because they compress the whole file as a
-> single stream without resetting the dictionary, which isn't how data will
-> typically be compressed in kernel mode.  With filesystem compression the data
-> has to be divided into small chunks that can each be decompressed independently.
-> That eliminates one of the primary advantages of Zstandard (support for large
-> dictionary sizes).
+-- 
+Hugo Mills             | Klytus! Are your men on the right pills? Maybe you
+hugo@... carfax.org.uk | should execute their trainer!
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                      Ming the Merciless, Flash Gordon
 
-This benchmark isn't meant to be representative of a filesystem scenario. I
-wanted to show off zstd without anything else going on. Even in filesystems
-where the data is chunked, zstd uses the whole chunk as the window (128 KB
-in BtrFS and SquashFS by default), where zlib uses 32 KB. I have benchmarks
-for BtrFS and SquashFS in their respective patches [4][5], and I've copied
-the BtrFS table below (which was run with 2 threads).
+--vMk55pD2JuhdWiRw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-| Method  | Ratio | Compression MB/s | Decompression speed |
-|---------|-------|------------------|---------------------|
-| None    |  0.99 |              504 |                 686 |
-| lzo     |  1.66 |              398 |                 442 |
-| zlib    |  2.58 |               65 |                 241 |
-| zstd 1  |  2.57 |              260 |                 383 |
-| zstd 3  |  2.71 |              174 |                 408 |
-| zstd 6  |  2.87 |               70 |                 398 |
-| zstd 9  |  2.92 |               43 |                 406 |
-| zstd 12 |  2.93 |               21 |                 408 |
-| zstd 15 |  3.01 |               11 |                 354 |
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-> 
-> Eric
-> 
+iQIcBAEBAgAGBQJZjLMRAAoJEFheFHXiqx3kedQP/A3+EFG+DMMW0h6GspoeN4Wy
+dvp4dInu85BiKF2Po4EncmtE7fvtjsrvAejreSToBTsnpHY8WBW8YCB7G0ZL8mU7
+eal2tviCB8OTaMj8StjzewJJOxx7HKd46K9F/A6oNj7dx+uRUrX9Wn+luq7zR23y
+x0kVrFWRRO8nF3Pq6Efo21vQ9LhTLNlh+g0NwSTkjbm//Acy51NEJpeGz4ZVBYMR
+Fty/cQe6v54FLlVHb49tQ+5Tsrlqm9QsUXg2xJrFmdeNr/b/fS+FRvG8UsjhWhPA
+QP3pwGYX6PtATojZ8IK0sSeBdW64X0xxIvP/FjXDtWVQPauwJuAiLoaLvAoY8Z6G
+uBiA9eqSdKhCR/Eu/X96GTENIl54hoYwupnbqIDDJulPWGRVjH4Cyuog9Q7gmIJJ
+Q88RKs6YU21g6trq6GLGLrfkPfTepINnwkmhZK9eYE1sZs/uoP9lnIKjlKHmRekR
+D3icZaU/MnmUBVrWcRDEIsi0WsNXokLb2Ww9emPZlSlwlebGMTYcKeqObRnkGeZ2
+z4JqLDZk/nW9xjpxFmNrc0juN3Bi2YdRjjXm2Yq8ZUFqg6M156vFqdcRTwJpJC+G
+AwOx7MXH2rvRbpH3hVuqnZCdCShQDngacssxpylobtJU/dBe4RY6cS/14JLrrUgl
+ZGavyNViPMHIEv7BMRJ7
+=hnJL
+-----END PGP SIGNATURE-----
 
-[1] https://github.com/facebook/zstd/blob/dev/contrib/linux-kernel/lib/zstd/.clang-format
-[2] https://github.com/terrelln/zstd/tree/original-formatted/contrib/linux-kernel/original-formatted
-[3] https://github.com/facebook/zstd/commit/b1c6bb87022404da56cc3015c85494c0ffcec520
-[4] https://lkml.kernel.org/r/20170810023902.3231324-1-terrelln@fb.com
-[5] https://lkml.kernel.org/r/20170810024236.3243941-1-terrelln@fb.com
-
-ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m
+--vMk55pD2JuhdWiRw--

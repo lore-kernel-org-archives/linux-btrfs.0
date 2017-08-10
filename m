@@ -1,93 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:45787 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753270AbdHJTZS (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41153 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753007AbdHJTZP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Aug 2017 15:25:18 -0400
-Date: Thu, 10 Aug 2017 19:25:06 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Mason <clm@fb.com>
-Cc: Eric Biggers <ebiggers3@gmail.com>, Nick Terrell <terrelln@fb.com>,
-        Herbert Xu <herbert@gondor.apana.org.au>, kernel-team@fb.com,
-        squashfs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-crypto@vger.kernel.org
+        Thu, 10 Aug 2017 15:25:15 -0400
+From: Nick Terrell <terrelln@fb.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Eric Biggers <ebiggers3@gmail.com>
+CC: Herbert Xu <herbert@gondor.apana.org.au>, Kernel Team <Kernel-team@fb.com>,
+        "squashfs-devel@lists.sourceforge.net"
+        <squashfs-devel@lists.sourceforge.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>
 Subject: Re: [PATCH v5 2/5] lib: Add zstd modules
-Message-ID: <20170810192506.GF7140@carfax.org.uk>
+Date: Thu, 10 Aug 2017 19:24:59 +0000
+Message-ID: <A7F36E6F-D224-4064-811B-9548AEF9601A@fb.com>
 References: <20170810023553.3200875-1-terrelln@fb.com>
  <20170810023553.3200875-3-terrelln@fb.com>
  <20170810083017.GA10462@zzz.localdomain>
- <0ceeccb4-1a0f-cacb-dd2b-2913e1cf73ab@fb.com>
+ <ba64934b-0170-1718-fc1e-0acb462abb20@gmail.com>
+ <20170810172342.GA90916@gmail.com>
+ <724f5a31-9ebf-3770-5911-3ee9cb67faca@gmail.com>
+In-Reply-To: <724f5a31-9ebf-3770-5911-3ee9cb67faca@gmail.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="vMk55pD2JuhdWiRw"
-In-Reply-To: <0ceeccb4-1a0f-cacb-dd2b-2913e1cf73ab@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 8/10/17, 10:48 AM, "Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
+>On 2017-08-10 13:24, Eric Biggers wrote:
+>>On Thu, Aug 10, 2017 at 07:32:18AM -0400, Austin S. Hemmelgarn wrote:
+>>>On 2017-08-10 04:30, Eric Biggers wrote:
+>>>>On Wed, Aug 09, 2017 at 07:35:53PM -0700, Nick Terrell wrote:
+>>>>>
+>>>>> It can compress at speeds approaching lz4, and quality approaching lzma.
+>>>>
+>>>> Well, for a very loose definition of "approaching", and certainly not at the
+>>>> same time.  I doubt there's a use case for using the highest compression levels
+>>>> in kernel mode --- especially the ones using zstd_opt.h.
+>>> Large data-sets with WORM access patterns and infrequent writes
+>>> immediately come to mind as a use case for the highest compression
+>>> level.
+>>>
+>>> As a more specific example, the company I work for has a very large
+>>> amount of documentation, and we keep all old versions.  This is all
+>>> stored on a file server which is currently using BTRFS.  Once a
+>>> document is written, it's almost never rewritten, so write
+>>> performance only matters for the first write.  However, they're read
+>>> back pretty frequently, so we need good read performance.  As of
+>>> right now, the system is set to use LZO compression by default, and
+>>> then when a new document is added, the previous version of that
+>>> document gets re-compressed using zlib compression, which actually
+>>> results in pretty significant space savings most of the time.  I
+>>> would absolutely love to use zstd compression with this system with
+>>> the highest compression level, because most people don't care how
+>>> long it takes to write the file out, but they do care how long it
+>>> takes to read a file (even if it's an older version).
+>> 
+>> This may be a reasonable use case, but note this cannot just be the regular
+>> "zstd" compression setting, since filesystem compression by default must provide
+>> reasonable performance for many different access patterns.  See the patch in
+>> this series which actually adds zstd compression to btrfs; it only uses level 1.
+>> I do not see a patch which adds a higher compression mode.  It would need to be
+>> a special setting like "zstdhc" that users could opt-in to on specific
+>> directories.  It also would need to be compared to simply compressing in
+>> userspace.  In many cases compressing in userspace is probably the better
+>> solution for the use case in question because it works on any filesystem, allows
+>> using any compression algorithm, and if random access is not needed it is
+>> possible to compress each file as a single stream (like a .xz file), which
+>> produces a much better compression ratio than the block-by-block compression
+>> that filesystems have to use.
+> There has been discussion as well as (I think) initial patches merged 
+> for support of specifying the compression level for algorithms which 
+> support multiple compression levels in BTRFS.  I was actually under the 
+> impression that we had decided to use level 3 as the default for zstd, 
+> but that apparently isn't the case, and with the benchmark issues, it 
+> may not be once proper benchmarks are run.
 
---vMk55pD2JuhdWiRw
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+There are some initial patches to add compression levels to BtrFS [1]. Once
+it's ready, we can add compression levels to zstd. The default compression
+level in the current patch is 3.
 
-On Thu, Aug 10, 2017 at 01:41:21PM -0400, Chris Mason wrote:
-> On 08/10/2017 04:30 AM, Eric Biggers wrote:
-> >
-> >Theses benchmarks are misleading because they compress the whole file as a
-> >single stream without resetting the dictionary, which isn't how data will
-> >typically be compressed in kernel mode.  With filesystem compression the data
-> >has to be divided into small chunks that can each be decompressed independently.
-> >That eliminates one of the primary advantages of Zstandard (support for large
-> >dictionary sizes).
-> 
-> I did btrfs benchmarks of kernel trees and other normal data sets as
-> well.  The numbers were in line with what Nick is posting here.
-> zstd is a big win over both lzo and zlib from a btrfs point of view.
-> 
-> It's true Nick's patches only support a single compression level in
-> btrfs, but that's because btrfs doesn't have a way to pass in the
-> compression ratio.  It could easily be a mount option, it was just
-> outside the scope of Nick's initial work.
+[1] https://lkml.kernel.org/r/20170724172939.24527-1-dsterba@suse.com
 
-   Could we please not add more mount options? I get that they're easy
-to implement, but it's a very blunt instrument. What we tend to see
-(with both nodatacow and compress) is people using the mount options,
-then asking for exceptions, discovering that they can't do that, and
-then falling back to doing it with attributes or btrfs properties.
-Could we just start with btrfs properties this time round, and cut out
-the mount option part of this cycle.
 
-   In the long run, it'd be great to see most of the btrfs-specific
-mount options get deprecated and ultimately removed entirely, in
-favour of attributes/properties, where feasible.
-
-   Hugo.
-
--- 
-Hugo Mills             | Klytus! Are your men on the right pills? Maybe you
-hugo@... carfax.org.uk | should execute their trainer!
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                      Ming the Merciless, Flash Gordon
-
---vMk55pD2JuhdWiRw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJZjLMRAAoJEFheFHXiqx3kedQP/A3+EFG+DMMW0h6GspoeN4Wy
-dvp4dInu85BiKF2Po4EncmtE7fvtjsrvAejreSToBTsnpHY8WBW8YCB7G0ZL8mU7
-eal2tviCB8OTaMj8StjzewJJOxx7HKd46K9F/A6oNj7dx+uRUrX9Wn+luq7zR23y
-x0kVrFWRRO8nF3Pq6Efo21vQ9LhTLNlh+g0NwSTkjbm//Acy51NEJpeGz4ZVBYMR
-Fty/cQe6v54FLlVHb49tQ+5Tsrlqm9QsUXg2xJrFmdeNr/b/fS+FRvG8UsjhWhPA
-QP3pwGYX6PtATojZ8IK0sSeBdW64X0xxIvP/FjXDtWVQPauwJuAiLoaLvAoY8Z6G
-uBiA9eqSdKhCR/Eu/X96GTENIl54hoYwupnbqIDDJulPWGRVjH4Cyuog9Q7gmIJJ
-Q88RKs6YU21g6trq6GLGLrfkPfTepINnwkmhZK9eYE1sZs/uoP9lnIKjlKHmRekR
-D3icZaU/MnmUBVrWcRDEIsi0WsNXokLb2Ww9emPZlSlwlebGMTYcKeqObRnkGeZ2
-z4JqLDZk/nW9xjpxFmNrc0juN3Bi2YdRjjXm2Yq8ZUFqg6M156vFqdcRTwJpJC+G
-AwOx7MXH2rvRbpH3hVuqnZCdCShQDngacssxpylobtJU/dBe4RY6cS/14JLrrUgl
-ZGavyNViPMHIEv7BMRJ7
-=hnJL
------END PGP SIGNATURE-----
-
---vMk55pD2JuhdWiRw--
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

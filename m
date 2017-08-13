@@ -1,55 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:15040 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753268AbdHOJye (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:21755 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752282AbdHMD4A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Aug 2017 05:54:34 -0400
-Date: Tue, 15 Aug 2017 17:54:26 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Eryu Guan <eguan@redhat.com>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>,
-        <bo.li.liu@oracle.com>
-Subject: Re: [PATCH] fstests: btrfs: enhance regression test for nocsum dio
- read's repair
-Message-ID: <20170815095426.GC512@fnst>
-References: <20170814070313.20092-1-lufq.fnst@cn.fujitsu.com>
- <20170815091606.GG14807@eguan.usersys.redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20170815091606.GG14807@eguan.usersys.redhat.com>
+        Sat, 12 Aug 2017 23:56:00 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/4] btrfs: remove unused BTRFS_COMPRESS_LAST
+Date: Sun, 13 Aug 2017 12:02:41 +0800
+Message-Id: <20170813040244.18841-2-anand.jain@oracle.com>
+In-Reply-To: <20170813040244.18841-1-anand.jain@oracle.com>
+References: <20170813040244.18841-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 15, 2017 at 05:16:06PM +0800, Eryu Guan wrote:
->On Mon, Aug 14, 2017 at 03:03:13PM +0800, Lu Fengqi wrote:
->> I catch this following error from dmesg when this testcase fails.
->> 
->> [17446.661127] Buffer I/O error on dev sdb1, logical block 64, async page read
->> 
->> We expect to inject disk IO errors on the device when xfs_io reads the
->> specific file, but other processes may trigger IO error earlier. So, we
->> can use task-filter to solve this problem.
->> 
->> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
->
->This looks OK to me. Does btrfs/143 need a similar fix?
->
->Thanks,
->Eryu
->
->
+We aren't using this define, so removing it.
 
-Although btrfs/143 has a similar problem, this method doesn't work for it.
-Unlike btrfs/142, the second IO error needs to be triggered by another process,
-not by xfs_io. So we can't simply set task-filter to solve this problem.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/compression.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-I'm still investigating a way to solve the problem.
-
-Do you have any ideas?
-Any help will be greatly appreciated.
-
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index 87f6d3332163..e749df6dd39a 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -100,7 +100,6 @@ enum btrfs_compression_type {
+ 	BTRFS_COMPRESS_ZLIB  = 1,
+ 	BTRFS_COMPRESS_LZO   = 2,
+ 	BTRFS_COMPRESS_TYPES = 2,
+-	BTRFS_COMPRESS_LAST  = 3,
+ };
+ 
+ struct btrfs_compress_op {
 -- 
-Thanks,
-Lu
-
+2.13.1
 

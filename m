@@ -1,114 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28678 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:28696 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752373AbdHMD4I (ORCPT
+        with ESMTP id S1752403AbdHMD4L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 12 Aug 2017 23:56:08 -0400
+        Sat, 12 Aug 2017 23:56:11 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 3/4] btrfs: decode compress type for tracing
-Date: Sun, 13 Aug 2017 12:02:43 +0800
-Message-Id: <20170813040244.18841-4-anand.jain@oracle.com>
+Subject: [PATCH 4/4 v3] btrfs: add compression trace points
+Date: Sun, 13 Aug 2017 12:02:44 +0800
+Message-Id: <20170813040244.18841-5-anand.jain@oracle.com>
 In-Reply-To: <20170813040244.18841-1-anand.jain@oracle.com>
 References: <20170813040244.18841-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So with this now we see the compression type in string.
+From: Anand Jain <Anand.Jain@oracle.com>
+
+This patch adds compression and decompression trace points for the
+purpose of debugging.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- include/trace/events/btrfs.h | 25 ++++++++++++++++---------
- 1 file changed, 16 insertions(+), 9 deletions(-)
+v3:
+ . Rename to a simple names, without worrying about being
+   compatible with the future naming.
+ . The type was not working fixed it.
+v2:
+ . Use better naming.
+   (If transform is not good enough I have run out of ideas, pls suggest).
+ . To be applied on top of
+   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+   (tested without namelen check patch set)
+ fs/btrfs/compression.c       | 11 +++++++++++
+ include/trace/events/btrfs.h | 39 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
 
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index d2ef9ac2a630..4a652f67ee87 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -895,6 +895,10 @@ int btrfs_compress_pages(int type, struct address_space *mapping,
+ 						      start, pages,
+ 						      out_pages,
+ 						      total_in, total_out);
++
++	trace_btrfs_compress(1, 1, mapping->host, type, *total_in,
++						*total_out, start, ret);
++
+ 	free_workspace(type, workspace);
+ 	return ret;
+ }
+@@ -921,6 +925,10 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
+ 
+ 	workspace = find_workspace(type);
+ 	ret = btrfs_compress_op[type - 1]->decompress_bio(workspace, cb);
++
++	trace_btrfs_compress(0, 0, cb->inode, type,
++				cb->compressed_len, cb->len, cb->start, ret);
++
+ 	free_workspace(type, workspace);
+ 
+ 	return ret;
+@@ -943,6 +951,9 @@ int btrfs_decompress(int type, unsigned char *data_in, struct page *dest_page,
+ 						  dest_page, start_byte,
+ 						  srclen, destlen);
+ 
++	trace_btrfs_compress(0, 1, dest_page->mapping->host,
++				type, srclen, destlen, start_byte, ret);
++
+ 	free_workspace(type, workspace);
+ 	return ret;
+ }
 diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index c4e4b9427b81..d412c49f5a6a 100644
+index d412c49f5a6a..db33d6649d12 100644
 --- a/include/trace/events/btrfs.h
 +++ b/include/trace/events/btrfs.h
-@@ -190,6 +190,12 @@ DEFINE_EVENT(btrfs__inode, btrfs_inode_evict,
- 		{ (1 << EXTENT_FLAG_FILLING),	 	"FILLING" 	},\
- 		{ (1 << EXTENT_FLAG_FS_MAPPING),	"FS_MAPPING"	})
+@@ -1629,6 +1629,45 @@ TRACE_EVENT(qgroup_meta_reserve,
+ 		show_root_type(__entry->refroot), __entry->diff)
+ );
  
-+#define show_compress_type(type)		 \
-+	__print_symbolic(type,			 \
-+		{ BTRFS_COMPRESS_NONE, 	"none" },\
-+		{ BTRFS_COMPRESS_ZLIB, 	"zlib" },\
-+		{ BTRFS_COMPRESS_LZO, 	"lzo" })
++TRACE_EVENT(btrfs_compress,
 +
- TRACE_EVENT_CONDITION(btrfs_get_extent,
++	TP_PROTO(int compress, int page, struct inode *inode,
++			unsigned int type,
++			unsigned long len_before, unsigned long len_after,
++			unsigned long start, int ret),
++
++	TP_ARGS(compress, page, inode, type, len_before,
++					len_after, start, ret),
++
++	TP_STRUCT__entry_btrfs(
++		__field(int,				compress)
++		__field(int,				page)
++		__field(ino_t,				i_ino)
++		__field(unsigned int,			type)
++		__field(unsigned long,			len_before)
++		__field(unsigned long,			len_after)
++		__field(unsigned long,			start)
++		__field(int,				ret)
++	),
++
++	TP_fast_assign_btrfs(btrfs_sb(inode->i_sb),
++		__entry->compress	= compress;
++		__entry->page		= page;
++		__entry->i_ino		= inode->i_ino;
++		__entry->type		= type;
++		__entry->len_before	= len_before;
++		__entry->len_after	= len_after;
++		__entry->start		= start;
++		__entry->ret		= ret;
++	),
++
++	TP_printk_btrfs("%s %s ino=%lu type=%s len_before=%lu len_after=%lu start=%lu ret=%d",
++		__entry->compress ? "compress":"uncompress",
++		__entry->page ? "page":"bio", __entry->i_ino,
++		show_compress_type(__entry->type),
++		__entry->len_before, __entry->len_after, __entry->start,
++		__entry->ret)
++);
+ #endif /* _TRACE_BTRFS_H */
  
- 	TP_PROTO(struct btrfs_root *root, struct btrfs_inode *inode,
-@@ -228,7 +234,7 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 	TP_printk_btrfs("root=%llu(%s) ino=%llu start=%llu len=%llu "
- 		  "orig_start=%llu block_start=%llu(%s) "
- 		  "block_len=%llu flags=%s refs=%u "
--		  "compress_type=%u",
-+		  "compress_type=%s",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long long)__entry->ino,
- 		  (unsigned long long)__entry->start,
-@@ -236,8 +242,8 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		  (unsigned long long)__entry->orig_start,
- 		  show_map_type(__entry->block_start),
- 		  (unsigned long long)__entry->block_len,
--		  show_map_flags(__entry->flags),
--		  __entry->refs, __entry->compress_type)
-+		  show_map_flags(__entry->flags), __entry->refs,
-+		  show_compress_type(__entry->compress_type))
- );
- 
- /* file extent item */
-@@ -285,14 +291,14 @@ DECLARE_EVENT_CLASS(btrfs__file_extent_item_regular,
- 		"file extent range=[%llu %llu] "
- 		"(num_bytes=%llu ram_bytes=%llu disk_bytenr=%llu "
- 		"disk_num_bytes=%llu extent_offset=%llu type=%s "
--		"compression=%u",
-+		"compression=%s",
- 		show_root_type(__entry->root_obj), __entry->ino,
- 		__entry->isize,
- 		__entry->disk_isize, __entry->extent_start,
- 		__entry->extent_end, __entry->num_bytes, __entry->ram_bytes,
- 		__entry->disk_bytenr, __entry->disk_num_bytes,
- 		__entry->extent_offset, show_fi_type(__entry->extent_type),
--		__entry->compression)
-+		show_compress_type(__entry->compression))
- );
- 
- DECLARE_EVENT_CLASS(
-@@ -329,11 +335,11 @@ DECLARE_EVENT_CLASS(
- 	TP_printk_btrfs(
- 		"root=%llu(%s) inode=%llu size=%llu disk_isize=%llu "
- 		"file extent range=[%llu %llu] "
--		"extent_type=%s compression=%u",
-+		"extent_type=%s compression=%s",
- 		show_root_type(__entry->root_obj), __entry->ino, __entry->isize,
- 		__entry->disk_isize, __entry->extent_start,
- 		__entry->extent_end, show_fi_type(__entry->extent_type),
--		__entry->compression)
-+		show_compress_type(__entry->compression))
- );
- 
- DEFINE_EVENT(
-@@ -424,7 +430,7 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 	TP_printk_btrfs("root=%llu(%s) ino=%llu file_offset=%llu "
- 		  "start=%llu len=%llu disk_len=%llu "
- 		  "truncated_len=%llu "
--		  "bytes_left=%llu flags=%s compress_type=%d "
-+		  "bytes_left=%llu flags=%s compress_type=%s "
- 		  "refs=%d",
- 		  show_root_type(__entry->root_objectid),
- 		  (unsigned long long)__entry->ino,
-@@ -435,7 +441,8 @@ DECLARE_EVENT_CLASS(btrfs__ordered_extent,
- 		  (unsigned long long)__entry->truncated_len,
- 		  (unsigned long long)__entry->bytes_left,
- 		  show_ordered_flags(__entry->flags),
--		  __entry->compress_type, __entry->refs)
-+		  show_compress_type(__entry->compress_type),
-+		  __entry->refs)
- );
- 
- DEFINE_EVENT(btrfs__ordered_extent, btrfs_ordered_extent_add,
+ /* This part must be outside protection */
 -- 
 2.13.1
 

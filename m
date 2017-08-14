@@ -1,114 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32-i6.italiaonline.it ([212.48.14.166]:55791 "EHLO
+Received: from smtp-34-i6.italiaonline.it ([212.48.14.168]:39896 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751565AbdHNUTA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 16:19:00 -0400
+        id S1752294AbdHNU1N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Aug 2017 16:27:13 -0400
 Reply-To: kreijack@inwind.it
-Subject: Re: [RFC] Checksum of the parity
+Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
 To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5d703b4c-e8ac-21dc-e327-ff1d8e232ee9@inwind.it>
- <CAJCQCtToFj4BowawgYPT-GiUnZPAXsjtuZO2=imcoyOZmaQzug@mail.gmail.com>
- <e4506812-53a8-7a95-61e6-279af20c8303@inwind.it>
- <CAJCQCtTTgdyfMzZKGqMo+LyA2dW+Csq+xp6TqoGyqEmsQ-j8eQ@mail.gmail.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Christoph Hellwig <hch@infradead.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Liu Bo <bo.li.liu@oracle.com>
+References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
+ <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
+ <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
+ <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
+ <1502496618.6092.6.camel@scientia.net> <20170812074248.GA3352@infradead.org>
+ <1502538706.3996.1.camel@scientia.net> <20170812121257.GZ7140@carfax.org.uk>
+ <1219eff6-7020-444c-efd7-6afb5ef551d9@libero.it>
+ <86a8d523-8dc3-8406-af4c-8bb93e7859c5@gmx.com>
+ <97904d09-60ef-6262-9cec-11f4ebd8af6c@inwind.it>
+ <CAJCQCtT5hgvHqiUDuahdyVasppV=UZhks4rpXNfWC4XEa34ywA@mail.gmail.com>
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <23b09099-7cb5-82fe-c941-4701136f952e@inwind.it>
-Date: Mon, 14 Aug 2017 22:18:48 +0200
+Message-ID: <13652e95-6264-1a86-7c4a-ec2fccdfe705@inwind.it>
+Date: Mon, 14 Aug 2017 22:27:10 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTTgdyfMzZKGqMo+LyA2dW+Csq+xp6TqoGyqEmsQ-j8eQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtT5hgvHqiUDuahdyVasppV=UZhks4rpXNfWC4XEa34ywA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/14/2017 09:28 PM, Chris Murphy wrote:
-> On Mon, Aug 14, 2017 at 8:12 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
->> On 08/13/2017 08:45 PM, Chris Murphy wrote:
->>> [2]
->>> Is Btrfs subject to the write hole problem manifesting on disk? I'm
->>> not sure, sadly I don't read the code well enough. But if all Btrfs
->>> raid56 writes are full stripe CoW writes, and if the prescribed order
->>> guarantees still happen: data CoW to disk > metadata CoW to disk >
->>> superblock update, then I don't see how the write hole happens. Write
->>> hole requires: RMW of a stripe, which is a partial stripe overwrite,
->>> and a crash during the modification of the stripe making that stripe
->>> inconsistent as well as still pointed to by metadata.
->>
->>
->> RAID5 is *single* failure prof. And in order to have the write hole bug we need two failure:
->> 1) a transaction is aborted (e.g. due to a power failure) and the results is that data and parity are mis-aligned
->> 2) a disk disappears
->>
->> These two events may happen even in different moment.
->>
->> The key is that when a disk disappear, all remaining ones are used to rebuild the missing one. So if data and parity are mis-aligned the rebuild disk is wrong.
->>
->> Let me to show an example
->>
->> Disk 1            Disk 2         Disk 3  (parity)
->> AAAAAA            BBBBBB         CCCCCC
->>
->> where CCCCCC = AAAAA ^ BBBBB
->>
->> Note1: AAAAA is a valid data
->>
->> Supposing to update B and due to a power failure you can't update parity, you have:
->>
->>
->> Disk 1            Disk 2         Disk 3  (parity)
->> AAAAAA            DDDDDDD        CCCCCC
->>
->> Of course CCCCCC != AAAAA ^ DDDDD  (data and parity are misaligned).
->>
->>
->> Pay attention that AAAAAA is still valid data.
->>
->> Now suppose to loose disk1. If you want to read from it, you have to perform a read of disk2 and disk3 to compute disk1.
->>
->> However Disk2 and disk3 are misaligned, so doing a DDDDD ^ CCCCC you don't got AAAAA anymore.
->>
->>
->> Note that it is not important if DDDDDD or BBBBB are valid or invalid data.
+On 08/14/2017 09:08 PM, Chris Murphy wrote:
+> On Mon, Aug 14, 2017 at 8:23 AM, Goffredo Baroncelli <kreijack@inwind.it> wrote:
 > 
+>> Form a theoretical point of view, if you have a "PURE" COW file-system, you don't need a journal. Unfortunately a RAID5/6 stripe update is a RMW cycle, so you need a journal to keep it in sync. The same is true for the NOCOW file (and their checksums)
+>>
 > 
-> Doesn't matter on Btrfs. Bad reconstruction due to wrong parity
-> results in csum mismatch. This I've tested.
-
-I never argued about that. The write hole is related to *loss* of "valid data" due to a mis-alignement between data and parity.
-The fact that  BTRFS is capable to detect the problem and return an -EIO, doesn't mitigate the loss of valid data. Pay attention that in my example AAAAA reached the disk before the "failure events"
-
-> 
-> I vaguely remember a while ago doing a dd conv=notrunc modification of
-> a file that's raid5, and there was no RMW, what happened is the whole
-> stripe was CoW'd and had the modification. So that would, hardware
-> behaving correctly, mean that the raid5 data CoW succeeds, then there
-> is a metadata CoW to point to it, then the super block is updated to
-> point to the new tree.
-> 
-> At any point, if there's an interruption, we have the old super
-> pointing to the old tree which points to premodified data.
-> 
-> Anyway, I do wish I read the code better, so I knew exactly where, if
-> at all, the RMW code was happening on disk rather than just in memory.
-> There very clearly is RMW in memory code as a performanc optimizer,
-> before a stripe gets written out it's possible to RMW it to add in
-> more changes or new files, that way raid56 isn't dog slow CoW'ing
-> literally a handful of 16KiB leaves each time, that then translate
-> into a minimum of 384K of writes.
-
-In case of a fully stripe write, there is no RMW cycle, so no "write hole". Unfortunately not all writes are full stripe size. I never checked the code, but I hope that during a commit of the transaction all the writing are grouped in "full stripe write" as possible.
-
-Just of curiosity, what is "minimum of 384k" ? In a 3 disks raid5 case, the minimum data is 64k * 2 (+ 64kb of parity).....
-
-> But yeah, Qu just said in another thread that Liu is working on a
-> journal for the raid56 write hole problem. Thing is I don't see when
-> it happens in the code or in practice (so far, it's really tedious to
-> poke a file system with a stick).
+> I'm pretty sure the raid56 rmw is in memory only, I don't think we
+> have a case where a stripe is getting partial writes (a block in a
+> stripe is being overwritten). Partial stripe updates with rmw *on
+> disk* would mean Btrfs raid56 is not CoW.
 > 
 
+I am not sure about that. Consider the following cases:
+- what if we have to wrote less than a stripe ?
+- supposing to remove a file with length of 4k. If you don't allow a RMW cycle, this means the space would be lost forever....
 
+Pay attention that the size of a stripe (theoretically) could be quite big: suppose to have an (insanely) raid compose by 20disks, the stripe would be about 20*64k = ~1.2MB....)
 
-> 
-> 
+BR
+G.Baroncelli
 
 
 -- 

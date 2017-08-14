@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:60651 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:33121 "EHLO
         mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750910AbdHNTkC (ORCPT
+        with ESMTP id S1752216AbdHNTyw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 15:40:02 -0400
-Message-ID: <1502739597.5384.1.camel@scientia.net>
+        Mon, 14 Aug 2017 15:54:52 -0400
+Message-ID: <1502740488.5384.5.camel@scientia.net>
 Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 14 Aug 2017 21:39:57 +0200
-In-Reply-To: <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 14 Aug 2017 21:54:48 +0200
+In-Reply-To: <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
 References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
          <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
          <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
@@ -20,113 +20,92 @@ References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
          <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
          <1502713484.3608.1.camel@scientia.net>
          <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
+         <49ebcfb9-b0c8-0feb-3570-a5b19c3e3b33@cobb.uk.net>
+         <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-GPh7pHfCFwl0fbkp550d"
+        boundary="=-o2giHmy0L2cNwl0tjnj2"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-GPh7pHfCFwl0fbkp550d
+--=-o2giHmy0L2cNwl0tjnj2
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2017-08-14 at 10:23 -0400, Austin S. Hemmelgarn wrote:
-> Assume you have higher level verification.=C2=A0=C2=A0Would you rather no=
-t be
-> able=C2=A0
-> to read the data regardless of if it's correct or not, or be able to=C2=
+On Mon, 2017-08-14 at 11:53 -0400, Austin S. Hemmelgarn wrote:
+> Quite a few applications actually _do_ have some degree of secondary=C2=
 =A0
-> read it and determine yourself if it's correct or not?
+> verification or protection from a crash.=C2=A0=C2=A0Go look at almost any
+> database=C2=A0
+> software.
+Then please give proper references for this!
 
-What would be the difference here then to the CoW+checksuming+some-
-data-corruption-case?!
-btrfs would also give EIO and all these applications you mention would
-fail then.
-
-As I've said previous, one could provide end users with the means to
-still access the faulty data. Or they could simply mount with
-nochecksum.
-
-
+This is from 2015, where you claimed this already and I looked up all
+the bigger DBs and they either couldn't do it at all, didn't to it per
+default, or it required application support (i.e. from the programs
+using the DB)
+https://www.spinics.net/lists/linux-btrfs/msg50258.html
 
 
-> For almost=C2=A0
-> anybody, the answer is going to be the second case, because the=C2=A0
-> application knows better than the OS if the data is correct (and=C2=A0
-> 'correct' may be a threshold, not some binary determination).
-You've made that claim already once with VMs and DBs, and your claim
-proved simply wrong.
+> It usually will not have checksumming, but it will almost=C2=A0
+> always have support for a journal, which is enough to cover the=C2=A0
+> particular data loss scenario we're talking about (unexpected
+> unclean=C2=A0
+> shutdown).
 
-Most applications don't do this kind of verification.
+I don't think we talk about this:
+We talk about people wanting checksuming to notice e.g. silent data
+corruption.
 
-And those that do probably rather just check whether the data is valid
-and if not give an error or at best fall back to some automatical
-backups (e.g. what package managers do).
-
-I'd know only few programs who'd really be capable to use data they
-know is bogus and recover from that automagically... the only examples
-I'd know are some archive formats which include error correcting codes.
-And I really mean using the blocks for recovery for which the csum
-wouldn't verify (i.e. the ones that gives an EIO)... without ECCs, how
-would a program know what do to with such data?
+The crash case is only the corner case about what happens then if data
+is written correctly but csums not.
 
 
-I cannot image that many people would choose the second option, to be
-honest.
-Working with bogus data?! What should be the benefit of this?
+> In my own experience, the things that use nodatacow fall into one of
+> 4=C2=A0
+> categories:
+> 1. Cases where the data is non-critical, and data loss will be=C2=A0
+> inconvenient but not fatal.=C2=A0=C2=A0Systemd journal files are a good e=
+xample
+> of=C2=A0
+> this, as are web browser profiles when you're using profile sync.
+
+I'd guess many people would want to have their log files valid and
+complete. Same for their profiles (especially since people concerned
+about their integrity might not want to have these synced to
+Mozilla/Google etc.)
 
 
+> 2. Cases where the upper level can reasonably be expected to have
+> some=C2=A0
+> degree of handling, even if it's not correction.=C2=A0=C2=A0VM disk image=
+s and=C2=A0
+> most database applications fall into this category.
 
-> =C2=A0=C2=A0At that=C2=A0
-> point, you need to make the checksum error a warning instead of=C2=A0
-> returning -EIO.=C2=A0=C2=A0How do you intend to communicate that warning =
-back
-> to=C2=A0
-> the application?=C2=A0=C2=A0The kernel log won't work, because on any
-> reasonably=C2=A0
-> secure system it's not visible to anyone but root.
-
-Still same problem with CoW + any data corruption...
-
-> =C2=A0=C2=A0There's also no side=C2=A0
-> channel for the read() system calls that you can utilize.=C2=A0=C2=A0That=
- then=C2=A0
-> means that the checksums end up just being a means for the
-> administrator=C2=A0
-> to know some data wasn't written correctly, but they should know
-> that=C2=A0
-> anyway because the system crashed.
-
-No, they'd have no idea if any / which data was written during the
-crash.
+No. Wrong. Or prove me that I'm wrong ;-)
+And these two (VMs, DBs) are actually *the* main cases for nodatacow.
 
 
+> And I and most other sysadmins I know would prefer the opposite with
+> the=C2=A0
+> addition of a secondary notification method.=C2=A0=C2=A0You can still hoo=
+k the=C2=A0
+> notification to stop the application, but you don't have to if you
+> don't=C2=A0
+> want to (and in cases 1 and 2 I listed above, you probably don't want
+> to).
 
-> Looking at this from a different angle: Without background, what
-> would=C2=A0
-> you assume the behavior to be for this?=C2=A0=C2=A0For most people, the
-> assumption=C2=A0
-> would be that this provides the same degree of data safety that the=C2=A0
-> checksums do when the data is CoW.
-
-I don't think the average use would have any such assumption. Most
-people likely don't even know that there is implicitly no checksuming
-if nodatacow is enabled.
-
-
-What people may however have heard of is, that btrfs does doe
-checksuming and they'd assume that their filesystem gives them always
-just valid data (or an error)... and IMO that's actually what each
-modern fs should do per default.
-Relying on higher levels providing such means is simply not realistic.
+Then I guess btrfs is generally not the right thing for such people, as
+in the CoW case it will also give them EIO on any corruptions and their
+programs will fail.
 
 
 
 Cheers,
 Chris.
---=-GPh7pHfCFwl0fbkp550d
+--=-o2giHmy0L2cNwl0tjnj2
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -218,25 +197,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODE0MTkzOTU3WjBPBgkqhkiG9w0BCQQxQgRAzWeA
-18VpA2l3oRXRrbRwVVWzCZhTrRQbmRbe+TDTI2zbvwKf/gMPqKpXhZLNP4SheNtgnE8knTKCRoz3
-GIpCBzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODE0MTk1NDQ4WjBPBgkqhkiG9w0BCQQxQgRArz40
+941j0VBSanVnAg6ytRhHTf+LP/7dKPRA3R0d0yncnEnbwJJOT/mpwcvazIxHY2GtShv1kivekVG+
+8oa5wTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAG0sD
-6kAki6OcePG1t2cajmCVFJGbePz6Sd1lZn2oKiLBHwBPmIhYh2k1LwK3OiGZnfRL22AJZ6i67QU/
-QgjuTQcIFSkS5S745maey/+IYwgvMeo1Uix1L6doPUBAEhmWm7V6zzX8IVmiDgUM0WRsO/uk+m86
-UfxFXKRxW6b9n9zqgN0p+G1QqYUwxmigz5pb0u8bzRdsmYUD/UTi54DGzu/1LgWhSvr9Jd+EyavF
-kk/Ioey2cQZOSfdCRVer3dT977U67bEuCjVMr1j48PsnT+zHodjdsiwGWiwFu+Cig/fqTPyiBIC0
-MJx0ewDBA7VdlfUQKDzyjKQXqPZfJU9xnDSDjvNuOnFqvpIYtuCaUF9s0LibSjpVk3gTbQ+lrwJk
-RsbzIfrqIGJJ9+L8Am9rNYhJB4Q1r9YETcYxoO6ovUGh/z5QNpDyNFbAdONEKaMcGxF8UhfrX49Q
-dchvi5DPi7815r70WGy3ZuX9LCellLicuh9JvRSqALsmKus5ePBGLvdx2Xw6NdsdcDmfXRMQkV8a
-PBhGjgNT7e9ojlWgjAkSUqd6CP5GxVV6tbxX+qkq5CSgR4Xxkz2r4TWb/P68TsUCxeW6FzFY5dcz
-At+VlTaNXIBGygZ12I9n9yJMa3AoPtSIUSDvP4h4W+jy8+aLduPTiCbUTKxqGG4FcLTYlh4AAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAjdBr
+PTfbiao3ROOiSyMmIzUuYr7dpRDfrgRWgBbHLyIaMRjZTcOf2MLZx4bmLefWlwtQ09M9cJUkp8Vy
+gH39S3FF1iQYBuULYoXUJ2PdZRxlRWEWClZlc3u0u61nLOGQMBQrYZK7s0QFNIObi4KTYXopnV9w
+HF3vE5/iFiVVMnZ5c8yS7JJ8cR2R7ibtoFbI8512Jz+2ON6zM4zq38SdUytUST2/F7UWdpOhO7Ih
+56EDEONY4QQYeakGEyIZEigkacAz2Hvgp/Pi1BBis01xIahs6eh+aWO1h56wlFjbRlzCh545VfcN
+MGEC+8yT4jnr22MecbfftFwuMgimh3W1JSv2nXwVAH15MzL0K5a/bx9Sm0ifRvxmHzZjsNU4dmo6
+axN8aaZIeO6iP0Jfj8IUn6hsu3OXHkuwF4+yUAyrnF85Zq9Jy5/Rzs1NTEoVWqtnqyfHxI7s3qTX
+xU/Sc6REKyjoYeoaEtzPML8MxTHIwglXsAMOk7VHtPOgMJNFMoLP2507+GTM4ip4gG0U12tp+czz
+UiINWx1fILxt6Nj1PDdw/SKKrJw1abbZgXVodlnAZUGIQtpyPaHQFOW5lbmlYTcvfEHEp/e9w/ap
+/JPD71VjmOQMfdatrwsRn0JDEcynTD7/vGxLWaA5qtZmKwn3YZhi4pHmlxIPl+yQHeLBnCQAAAAA
 AAA=
 
 
---=-GPh7pHfCFwl0fbkp550d--
+--=-o2giHmy0L2cNwl0tjnj2--
 

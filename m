@@ -1,47 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33169 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:55645 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752240AbdHDLlW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 4 Aug 2017 07:41:22 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id D4B70ABB1
-        for <linux-btrfs@vger.kernel.org>; Fri,  4 Aug 2017 11:41:20 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Fix -EOVERFLOW handling in btrfs_ioctl_tree_search_v2
-Date: Fri,  4 Aug 2017 14:41:18 +0300
-Message-Id: <1501846878-10627-1-git-send-email-nborisov@suse.com>
+        id S1752199AbdHNQHG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Aug 2017 12:07:06 -0400
+Date: Mon, 14 Aug 2017 18:05:43 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Ernesto =?iso-8859-1?Q?A=2E_Fern=E1ndez?=
+        <ernesto.mnd.fernandez@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH v3] btrfs: preserve i_mode if __btrfs_set_acl() fails
+Message-ID: <20170814160543.GW2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170729002626.GA6759@debian.home>
+ <20170730021838.GA4565@debian.home>
+ <20170802061825.GA8058@debian.home>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <20170802061825.GA8058@debian.home>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The buffer passed to btrfs_ioctl_tree_search* functions have to be at least
-sizeof(struct btrfs_ioctl_search_header). If this is not the case then the
-ioctl should return -EOVERFLOW and set the uarg->buf_size to the minimum
-required size. Currently btrfs_ioctl_tree_search_v2 would return an -EOVERFLOW
-error with ->buf_size being set to the value passed by user space. Fix this by
-removing the size check and relying on search_ioctl, which already includes it
-and correctly sets buf_size.
+On Wed, Aug 02, 2017 at 03:18:27AM -0300, Ernesto A. Fernández wrote:
+> When changing a file's acl mask, btrfs_set_acl() will first set the
+> group bits of i_mode to the value of the mask, and only then set the
+> actual extended attribute representing the new acl.
+> 
+> If the second part fails (due to lack of space, for example) and the
+> file had no acl attribute to begin with, the system will from now on
+> assume that the mask permission bits are actual group permission bits,
+> potentially granting access to the wrong users.
+> 
+> Prevent this by restoring the original mode bits if __btrfs_set_acl
+> fails.
+> 
+> Signed-off-by: Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
+> ---
+> Please ignore the two previous versions, this is far simpler and has the
+> same effect. To Josef Bacik: thank you for your review, I'm sorry I
+> wasted your time.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ioctl.c | 3 ---
- 1 file changed, 3 deletions(-)
+This version is much better, starting the transaction would add some
+overhead and would need to be measured so we have an idea about the
+impact.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fa1b78cf25f6..e80950b3f340 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2201,9 +2201,6 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
- 
- 	buf_size = args.buf_size;
- 
--	if (buf_size < sizeof(struct btrfs_ioctl_search_header))
--		return -EOVERFLOW;
--
- 	/* limit result size to 16MB */
- 	if (buf_size > buf_limit)
- 		buf_size = buf_limit;
--- 
-2.7.4
-
+Reviewed-by: David Sterba <dsterba@suse.com>

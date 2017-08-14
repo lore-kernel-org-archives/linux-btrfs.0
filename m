@@ -1,346 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.a-tech.co.th ([202.149.98.155]:44290 "EHLO tpcorp.co.th"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752245AbdHNCEZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Aug 2017 22:04:25 -0400
-Message-ID: <1646.49.228.115.25.1502676263.squirrel@mail>
-In-Reply-To: <CAJCQCtSQWt51877J42bxF=4i66_axarS9JoKLYC4ub_teSyRww@mail.gmail.com>
-References: <21234.192.168.42.222.1502253143.squirrel@mail>
-    <CAJCQCtRNT_WL41j7ZBsO3N_=5xAkj4=j7djrh+Ryg3gAV5qyZg@mail.gmail.com>
-    <22169.183.88.87.49.1502260598.squirrel@mail>
-    <CAJCQCtTpE26mxLq7ufUxCin37sajcXhnM3QsgjXjVd8x_Pw9PA@mail.gmail.com>
-    <27218.183.88.87.49.1502426431.squirrel@mail>
-    <13031.192.168.42.222.1502431206.squirrel@mail>
-    <CAJCQCtRY-693NH7qYFX2E3uEWX_b-xhq0_Z+avsRZMqWBJe-ww@mail.gmail.com>
-    <1243.49.228.123.163.1502505534.squirrel@mail>
-    <CAJCQCtQ2exGHj3zq0221aXDqMAok+_G6vwpaiQVfy8_1ybJKYQ@mail.gmail.com>
-    <1420.49.228.123.163.1502514511.squirrel@mail>
-    <CAJCQCtRqkigHcGLorR3EN5TbGSRCJG3YkdGE_BG80SBXFes7vA@mail.gmail.com>
-    <6341.49.228.122.75.1502590802.squirrel@mail>
-    <CAJCQCtTNw0Y_yg_dyOjE7JPm4rRZ-WMnexh+4E4mRmQ8BFPAWQ@mail.gmail.com>
-    <1318.49.228.122.75.1502595606.squirrel@mail>
-    <f63baa3e-c955-ef5e-fe51-ef9d835bcae6@gmail.com>
-    <7255.49.228.115.25.1502621539.squirrel@mail>
-    <CAJCQCtSQWt51877J42bxF=4i66_axarS9JoKLYC4ub_teSyRww@mail.gmail.com>
-Date: Mon, 14 Aug 2017 09:04:23 +0700 (ICT)
-Subject: Re: btrfs issue with mariadb incremental backup
-From: siranee.ja@tpc.co.th
-To: "Chris Murphy" <lists@colorremedies.com>
-Cc: "A L" <crimsoncottage@gmail.com>,
-        "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain;charset=tis-620
+Received: from [195.159.176.226] ([195.159.176.226]:45026 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752111AbdHNCtM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 13 Aug 2017 22:49:12 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dh5R2-0004Yd-2J
+        for linux-btrfs@vger.kernel.org; Mon, 14 Aug 2017 04:48:56 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Btrfs data recovery
+Date: Mon, 14 Aug 2017 02:48:47 +0000 (UTC)
+Message-ID: <pan$effce$b89465ea$9a575516$efd8eafa@cox.net>
+References: <1386d7aa-10c2-4463-a26b-50f2b022f6b6@email.android.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Christian Rene Thelen posted on Sun, 13 Aug 2017 19:12:48 +0200 as
+excerpted:
 
-Thank you very much for your suggestion.
+> I have formated an encrypted disk, containing a LVM with a btrfs system.
+> 
+> All superblocks appear to be destroyed; the btrfs-progs tools can't find
+> the root tree anymore and scalpel, binwalk, foremost & co return only
+> scrap. The filesystem was on an ssd and mounted with -o compression=lzo.
+> 
+> How screwed am I? Any chances to recover some files? Is there a
+> plausible way to rebuild the superblock manually? Checking the raw image
+> with xxd gives me not a single readable word.
+> 
+> I managed to decrypt the LV and dd it to an image. What can I do?
 
-I didn't remember which steps that I made a mistake and made the mysql had Received
-UUID.
+Sysadmin's rule #1 of backups:  The value of your data is not defined by
+arbitrary claims, but by the number of backups you consider it worth the
+trouble to make.  No backups, you defined the data as worth less to you
+than the trouble and resources it would take to make them, and unlike
+words, actions, or lack thereof, are facts that don't lie.
 
-I have done the following and it work as it should be right now.
+So regardless, you're not screwed, because if you had backups you can
+always recover from them, and if you didn't, then you considered the time
+and trouble to make backups worth more than the data itself, so in either
+case, you saved what your actions defined as of most importance to you,
+and actions don't lie.
 
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708070830
-rw_201708070830
-Create a snapshot of 'mbroken_201708070830' in './rw_201708070830'
-[root@backuplogC7 mariadb]# btrfs sub list .
-ID 257 gen 542 top level 5 path mbroken
-ID 317 gen 576 top level 5 path mbroken_201708070830
-ID 318 gen 568 top level 5 path mbroken_201708080830
-ID 319 gen 569 top level 5 path mbroken_201708090830
-ID 320 gen 570 top level 5 path mbroken_201708100830
-ID 321 gen 571 top level 5 path mbroken_201708110830
-ID 322 gen 572 top level 5 path mbroken_201708120830
-ID 323 gen 573 top level 5 path mbroken_201708130830
-ID 324 gen 543 top level 5 path mysql
-ID 348 gen 576 top level 5 path rw_201708070830
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708080830
-rw_201708080830
-Create a snapshot of 'mbroken_201708080830' in './rw_201708080830'
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708090830
-rw_201708090830
-Create a snapshot of 'mbroken_201708090830' in './rw_201708090830'
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708100830
-rw_201708100830
-Create a snapshot of 'mbroken_201708100830' in './rw_201708100830'
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708110830
-rw_201708110830
-Create a snapshot of 'mbroken_201708110830' in './rw_201708110830'
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708120830
-rw_201708120830
-Create a snapshot of 'mbroken_201708120830' in './rw_201708120830'
-[root@backuplogC7 mariadb]# btrfs subvolume snapshot mbroken_201708130830
-rw_201708130830
-Create a snapshot of 'mbroken_201708130830' in './rw_201708130830'
-[root@backuplogC7 mariadb]# btrfs sub list .
-ID 257 gen 542 top level 5 path mbroken
-ID 317 gen 576 top level 5 path mbroken_201708070830
-ID 318 gen 577 top level 5 path mbroken_201708080830
-ID 319 gen 578 top level 5 path mbroken_201708090830
-ID 320 gen 579 top level 5 path mbroken_201708100830
-ID 321 gen 580 top level 5 path mbroken_201708110830
-ID 322 gen 581 top level 5 path mbroken_201708120830
-ID 323 gen 582 top level 5 path mbroken_201708130830
-ID 324 gen 543 top level 5 path mysql
-ID 348 gen 576 top level 5 path rw_201708070830
-ID 349 gen 577 top level 5 path rw_201708080830
-ID 350 gen 578 top level 5 path rw_201708090830
-ID 351 gen 579 top level 5 path rw_201708100830
-ID 352 gen 580 top level 5 path rw_201708110830
-ID 353 gen 581 top level 5 path rw_201708120830
-ID 354 gen 582 top level 5 path rw_201708130830
-[root@backuplogC7 mariadb]# btrfs subvolume list -a -R . | grep
-"3ad0334a-4063-654c-add6-b1cbcdeaa639"
-ID 257 gen 542 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken
-ID 317 gen 576 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708070830
-ID 318 gen 577 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708080830
-ID 319 gen 578 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708090830
-ID 320 gen 579 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708100830
-ID 321 gen 580 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708110830
-ID 322 gen 581 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708120830
-ID 323 gen 582 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708130830
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708070830 mysql_201708070830
-Create a readonly snapshot of 'rw_201708070830' in './mysql_201708070830'
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708080830 mysql_201708080830
-Create a readonly snapshot of 'rw_201708080830' in './mysql_201708080830'
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708090830 mysql_201708090830
-Create a readonly snapshot of 'rw_201708090830' in './mysql_201708090830'
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708100830 mysql_201708100830
-Create a readonly snapshot of 'rw_201708100830' in './mysql_201708100830'
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708110830 mysql_201708110830
-Create a readonly snapshot of 'rw_201708110830' in './mysql_201708110830'
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708120830 mysql_201708120830
-Create a readonly snapshot of 'rw_201708120830' in './mysql_201708120830'
-[root@backuplogC7 mariadb]# btrfs sub snap -r rw_201708130830 mysql_201708130830
-Create a readonly snapshot of 'rw_201708130830' in './mysql_201708130830'
-[root@backuplogC7 mariadb]# btrfs sub list .
-ID 257 gen 542 top level 5 path mbroken
-ID 317 gen 576 top level 5 path mbroken_201708070830
-ID 318 gen 577 top level 5 path mbroken_201708080830
-ID 319 gen 578 top level 5 path mbroken_201708090830
-ID 320 gen 579 top level 5 path mbroken_201708100830
-ID 321 gen 580 top level 5 path mbroken_201708110830
-ID 322 gen 581 top level 5 path mbroken_201708120830
-ID 323 gen 582 top level 5 path mbroken_201708130830
-ID 324 gen 584 top level 5 path mysql
-ID 348 gen 583 top level 5 path rw_201708070830
-ID 349 gen 584 top level 5 path rw_201708080830
-ID 350 gen 585 top level 5 path rw_201708090830
-ID 351 gen 586 top level 5 path rw_201708100830
-ID 352 gen 587 top level 5 path rw_201708110830
-ID 353 gen 588 top level 5 path rw_201708120830
-ID 354 gen 589 top level 5 path rw_201708130830
-ID 355 gen 583 top level 5 path mysql_201708070830
-ID 356 gen 584 top level 5 path mysql_201708080830
-ID 357 gen 585 top level 5 path mysql_201708090830
-ID 358 gen 586 top level 5 path mysql_201708100830
-ID 359 gen 587 top level 5 path mysql_201708110830
-ID 360 gen 588 top level 5 path mysql_201708120830
-ID 361 gen 589 top level 5 path mysql_201708130830
+It sounds like you can be happy that you saved the real important time and
+resources you would have otherwise put into making those backups, which
+means you can be happy, because the data was self-evidently worth less to
+you than the time and resources you saved.
 
-[root@backuplogC7 mariadb]# btrfs subvolume list -a -R . | grep
-"3ad0334a-4063-654c-add6-b1cbcdeaa639"
-ID 257 gen 542 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken
-ID 317 gen 576 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708070830
-ID 318 gen 577 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708080830
-ID 319 gen 578 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708090830
-ID 320 gen 579 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708100830
-ID 321 gen 580 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708110830
-ID 322 gen 581 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708120830
-ID 323 gen 582 top level 5 received_uuid 3ad0334a-4063-654c-add6-b1cbcdeaa639 path
-mbroken_201708130830
-[root@backuplogC7 mariadb]# btrfs send /var/lib/mariadb/mysql_201708070830 | ssh
-192.168.45.166 btrfs receive /var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708070830
-At subvol mysql_201708070830
-[root@backuplogC7 mariadb]# btrfs sub show mysql_201708070830
-/var/lib/mariadb/mysql_201708070830
-        Name:                   mysql_201708070830
-        UUID:                   70ee3c31-126d-574a-814c-e3b4c81b414e
-        Parent UUID:            1d5bb8eb-b0df-2549-8b62-552cfa517609
-        Received UUID:          -
-        Creation time:          2017-08-14 07:00:08 +0700
-        Subvolume ID:           355
-        Generation:             583
-        Gen at creation:        583
-        Parent ID:              5
-        Top level ID:           5
-        Flags:                  readonly
-        Snapshot(s):
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708070830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708070830/
-sending incremental file list
-./
+=:^)
 
-sent 3773 bytes  received 19 bytes  1083.43 bytes/sec
-total size is 718361496  speedup is 189441.32 (DRY RUN)
-[root@backuplogC7 mariadb]# btrfs send -p /var/lib/mariadb/mysql_201708070830
-/var/lib/mariadb/mysql_201708080830 | ssh 192.168.45.166 btrfs receive
-/var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708080830
-At snapshot mysql_201708080830
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708080830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708080830/
-sending incremental file list
-./
+Meanwhile/alternatively, because I've learned the value of my data as
+defined by backups too... Consider the lesson of Hurricane Katrina.
 
-sent 3769 bytes  received 19 bytes  688.73 bytes/sec
-total size is 718361496  speedup is 189641.37 (DRY RUN)
-[root@backuplogC7 mariadb]# btrfs send -p /var/lib/mariadb/mysql_201708080830
-/var/lib/mariadb/mysql_201708090830 | ssh 192.168.45.166 btrfs receive
-/var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708090830
-At snapshot mysql_201708090830
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708090830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708090830/
-sending incremental file list
-./
+During the hurricane and the immediate aftermath, Intercosmos/drectNIC (a
+hosting company located in New Orleans) had a small team that stayed on-
+site, keeping the servers up and the data available, and blogging about
+their experience.
 
-sent 3773 bytes  received 19 bytes  583.38 bytes/sec
-total size is 718361496  speedup is 189441.32 (DRY RUN)
-[root@backuplogC7 mariadb]# btrfs send -p /var/lib/mariadb/mysql_201708090830
-/var/lib/mariadb/mysql_201708100830 | ssh 192.168.45.166 btrfs receive
-/var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708100830
-At snapshot mysql_201708100830
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708100830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708100830/
-sending incremental file list
-./
+Many sysadmins and other technically inclined users were glued to that
+blog, living for each update.  I was certainly among them. (2005)
 
-sent 3773 bytes  received 19 bytes  689.45 bytes/sec
-total size is 718361496  speedup is 189441.32 (DRY RUN)
-[root@backuplogC7 mariadb]# btrfs send -p /var/lib/mariadb/mysql_201708100830
-/var/lib/mariadb/mysql_201708110830 | ssh 192.168.45.166 btrfs receive
-/var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708110830
-At snapshot mysql_201708110830
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708110830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708110830/
-sending incremental file list
-./
+https://www.feld.com/archives/2005/09/blogging-from-a-new-orleans-data-center.html
 
-sent 3773 bytes  received 19 bytes  689.45 bytes/sec
-total size is 718361496  speedup is 189441.32 (DRY RUN)
-[root@backuplogC7 mariadb]# btrfs send -p /var/lib/mariadb/mysql_201708110830
-/var/lib/mariadb/mysql_201708120830 | ssh 192.168.45.166 btrfs receive
-/var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708120830
-At snapshot mysql_201708120830
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708120830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708120830/
-sending incremental file list
-./
+But at the same time I was seeing the wider news out of New Orleans.  The
+looting.  The people who /thought/ they were safe on that bridge, only to
+be slain by the police that were /supposed/ to be protecting them.  The
+aftermath with the raw sewage, and bloated and decaying animal and
+occasional human bodies floating by.
 
-sent 3773 bytes  received 19 bytes  689.45 bytes/sec
-total size is 718361496  speedup is 189441.32 (DRY RUN)
-[root@backuplogC7 mariadb]# btrfs send -p /var/lib/mariadb/mysql_201708120830
-/var/lib/mariadb/mysql_201708130830 | ssh 192.168.45.166 btrfs receive
-/var/lib/mariadb
-At subvol /var/lib/mariadb/mysql_201708130830
-At snapshot mysql_201708130830
-[root@backuplogC7 mariadb]# rsync -avnc /var/lib/mariadb/mysql_201708130830/
-root@192.168.45.166:/var/lib/mariadb/mysql_201708130830/
-sending incremental file list
-./
+Of course that got me thinking about /real/ tragedy.  I am (If you are)
+still relatively healthy, have a home to go to at night, food on the
+table, in the fridge, or money to buy it at the burger/taco/sandwich shop
+down the street, and a family and/or friends likewise fortunate, you have
+the /truly/ important stuff, and with a bit of perspective, the triviality
+of loss of some data in the bigger picture can be seen.  Even if that data
+was irreplaceable family photos, consider how much more fortunate you are
+than the folks who just lost all that and more to a fire or flood... or as
+refugees just robbed of the last /truly/ valuable thing they had other
+than life itself, their family, or part of it, washed overboard.
 
-sent 3773 bytes  received 19 bytes  689.45 bytes/sec
-total size is 718361496  speedup is 189441.32 (DRY RUN)
-[root@backuplogC7 mariadb]#
+https://en.wikipedia.org/wiki/Death_of_Alan_Kurdi (2015)
 
+And if your lack of backups defined the data as trivial and you now regret
+it, well... be glad you'll live another day and get the chance to create
+more... this time, defining the data as more valuable than what you lost,
+by having more and/or more frequently updated backups thereof.
 
-Best Regards,
-Siranee Jaraswachirakul.
-
-
-
-
-
-
-> On Sun, Aug 13, 2017 at 4:52 AM,  <siranee.ja@tpc.co.th> wrote:
->> Hi "A L",
->>
->> [root@backuplogC7 ~]# btrfs sub show /var/lib/mariadb/mysql
->> /var/lib/mariadb/mysql
->>         Name:                   mysql
->>         UUID:                   92f319c5-e132-3249-9b13-d39ee77a2b44
->>         Parent UUID:            -
->>         Received UUID:          3ad0334a-4063-654c-add6-b1cbcdeaa639
->>         Creation time:          2017-06-21 13:27:41 +0700
->>         Subvolume ID:           257
->>         Generation:             539
->>         Gen at creation:        9
->>         Parent ID:              5
->>         Top level ID:           5
->>         Flags:                  -
->>         Snapshot(s):
->>                                 mysql_201708060830
->>                                 mysql_201708070830
->>                                 mysql_201708080830
->>                                 mysql_201708090830
->>                                 mysql_201708100830
->>                                 mysql_201708110830
->>                                 mysql_201708120830
->>                                 mysql_201708130830
->>
->> yes I think it has Received UUID because I restored the source from snapshot
->> mysql_201708040830 for prove that the local snapshot was work.
->>
->> How to clear the Received UUID ?
->> What to do next?
->
->
-> I'm using btrfs-progs 4.12, and I just did a btrfs send/receive from
-> file system A to B; and then on B I took a rw snapshot of the ro
-> snapshot. The ro snapshot has Received UUID, but the rw snapshot made
-> from it does not have Received UUID. So now I'm confused how you have
-> a rw snapshot with Received UUID set.
->
->
-> Did you ever use 'btrfs property set' to change a ro snapshot to rw?
-> That's the only way I can think it's possible. The only other thing is
-> maybe the behavior has changed since btrfs-progs 4.4.
->
-> It is possible this behavior has changed since btrfs-progs 4.4. The
-> changelogs shows there are improvements in send/receive in particular
-> 4.8.3 and 4.8.4, but also others. I have no idea which are related.
-> But anyway, this is one of the reasons why the expert users on this
-> almost always say use something newer because it's just too hard to
-> remember, even with changelogs, what's fixed and where.
->
-> My suggestion is to investigate moving to kernel 4.9 series; and it
-> should be safe to move to btrfs-progs 4.12 now. Any new features in
-> 4.12 that can't be supported with an older kernel should fail
-> gracefully.
->
-> No matter what, you must have separate backups. You can't depend
-> exclusively on one backup, no matter the method. It's fine to use
-> send/receive for backup1. But backup2 should be a conventional backup,
-> e.g. XFS with rsync. Basically this is a game of risk and the more
-> independent backups you have, the more failure cases (especially user
-> error) you can recover from, at the expense of some complexity.
->
->
->
-> --
-> Chris Murphy
->
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

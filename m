@@ -1,53 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:50050 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751529AbdHNHVm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 03:21:42 -0400
-Subject: Re: Building a BTRFS test machine
-To: Cerem Cem ASLAN <ceremcem@ceremcem.net>, linux-btrfs@vger.kernel.org
-References: <CAN4oSBdO8GfBQA1CrLVa1atA+QJquCy63KBqOHhh49Uz=1sgjQ@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <22521430-e019-7ebe-4553-02a344733e52@gmx.com>
-Date: Mon, 14 Aug 2017 15:21:35 +0800
+Received: from mail-me1aus01on0059.outbound.protection.outlook.com ([104.47.116.59]:62115
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752316AbdHNHnM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Aug 2017 03:43:12 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Christoph Hellwig <hch@infradead.org>,
+        Christoph Anton Mitterer <calestyo@scientia.net>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: RE: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
+Date: Mon, 14 Aug 2017 07:43:09 +0000
+Message-ID: <MEXPR01MB2168FD458234B54167D9674F9E8C0@MEXPR01MB2168.ausprd01.prod.outlook.com>
+References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
+ <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
+ <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
+ <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
+ <1502496618.6092.6.camel@scientia.net> <20170812074248.GA3352@infradead.org>
+ <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+In-Reply-To: <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <CAN4oSBdO8GfBQA1CrLVa1atA+QJquCy63KBqOHhh49Uz=1sgjQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2017å¹´08æœˆ14æ—¥ 09:01, Cerem Cem ASLAN wrote:
-> Would that be useful to build a BTRFS test machine, which will perform
-> both software tests (btrfs send | btrfs receive, read/write random
-> data etc.) and hardware tests, such as abrupt power off test, abruptly
-> removing a raid-X disk physically, etc.
-
-If you want to contribute to btrfs development/bug report, then it's 
-definitely helpful.
-
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of Qu Wenruo
+> Sent: Monday, 14 August 2017 4:37 PM
+> To: Christoph Hellwig <hch@infradead.org>; Christoph Anton Mitterer
+> <calestyo@scientia.net>
+> Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+> Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
 > 
-> If it would be useful, what tests should it cover?
-
-At least fstests (old xfstests, and some tests are known to fail, so you 
-need some knowledge to judge which failure is real problem), selftest 
-from btrfs-progs, and fs related tests from Linux Test Project.
-
-The hard part to integrate all these different tests and make them 
-automatic.
-
-I'm not familiar with hardware crash test, but it would definitely help, 
-as currently we're only using dm-flakey to *emulate* power loss, still 
-not true power off.
-
-Other test like performance test from variant other projects like 
-postgresql/apache will also help.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
+> 
+> On 2017å¹´08æœˆ12æ—¥ 15:42, Christoph Hellwig wrote:
+> > On Sat, Aug 12, 2017 at 02:10:18AM +0200, Christoph Anton Mitterer wrote:
+> >> Qu Wenruo wrote:
+> >>> Although Btrfs can disable data CoW, nodatacow also disables data
+> >>> checksum, which is another main feature for btrfs.
+> >>
+> >> Then decoupling of the two should probably decoupled and support for
+> >> notdatacow+checksumming be implemented?!
+> >
+> > And how are you going to write your data and checksum atomically when
+> > doing in-place updates?
+> 
+> Exactly, that's the main reason I can figure out why btrfs disables checksum
+> for nodatacow.
+
+But does it matter if it's not strictly atomic? By turning off COW it implies you accept the risk of an ill-timed failure. 
+Although from my point of view any reason that would require COW to be disabled implies you're using the wrong filesystem anyway.
+
+Paul.
+
+
+
+
+
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

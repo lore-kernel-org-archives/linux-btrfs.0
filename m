@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:49996 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:50583 "EHLO
         mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753138AbdHNMYs (ORCPT
+        with ESMTP id S1753074AbdHNMc4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 08:24:48 -0400
-Message-ID: <1502713484.3608.1.camel@scientia.net>
+        Mon, 14 Aug 2017 08:32:56 -0400
+Message-ID: <1502713969.3608.3.camel@scientia.net>
 Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 14 Aug 2017 14:24:44 +0200
-In-Reply-To: <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+Date: Mon, 14 Aug 2017 14:32:49 +0200
+In-Reply-To: <d06d02ec-93b7-078b-55f5-4cc94787a480@gmx.com>
 References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
          <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
          <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
@@ -18,49 +18,66 @@ References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
          <1502496618.6092.6.camel@scientia.net>
          <20170812074248.GA3352@infradead.org>
          <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+         <MEXPR01MB2168FD458234B54167D9674F9E8C0@MEXPR01MB2168.ausprd01.prod.outlook.com>
+         <d06d02ec-93b7-078b-55f5-4cc94787a480@gmx.com>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-IprEY21byLQoRAPCQkwr"
+        boundary="=-Wt9eUz2xK2cedPtcZvDY"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-IprEY21byLQoRAPCQkwr
+--=-Wt9eUz2xK2cedPtcZvDY
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2017-08-14 at 14:36 +0800, Qu Wenruo wrote:
-> > And how are you going to write your data and checksum atomically
-> > when
-> > doing in-place updates?
->=20
-> Exactly, that's the main reason I can figure out why btrfs disables=C2=A0
-> checksum for nodatacow.
+On Mon, 2017-08-14 at 15:46 +0800, Qu Wenruo wrote:
+> The problem here is, if you enable csum and even data is updated=C2=A0
+> correctly, only metadata is trashed, then you can't even read out
+> the=C2=A0
+> correct data.
 
-Still, I don't get the problem here...
+So what?
+This problem occurs anyway *only* in case of a crash,.. and *only* if
+notdatacow+checksumung would be used.
+A case in which currently, the user can either only hope that his data
+is fine (unless higher levels provide some checksumming means[0]), or
+anyway needs to recover from a backup.
 
-Yes it cannot be done atomically (without workarounds like a journal or
-so), but this should be only an issue in case of a crash or similar.
-
-And in this case nodatacow+nochecksum is anyway already bad, it's also
-not atomic, so data may be completely garbage (e.g. half written)...
-just that no one will ever notice.
-
-The only problem that nodatacow + checksuming + nonatomic should give
-is when the data was actually correctly written at a crash, but the
-cheksum was not, in which case the bogus checksum would invalidate the
-good data on next read.
-
-Or do I miss something?
+Intuitively I'd also say it's much less likely that the data (which is
+more in terms of space) is written correctly while the checksum is not.
+Or is it?
 
 
-To me that sounds still much better than having no protection at all.
+
+[0] And when I've investigated back when discussion rose up the first
+time and some list member claimed that most typical cases (DBs, VM
+images) would anyway do their own checksuming,... I came to the
+conclusion that most did not even support it and even if they would
+it's no enabled per default and not really a *full* checksumming in
+most cases.
+
+
+
+> As btrfs csum checker will just prevent you from reading out any
+> data=C2=A0
+> which doesn't match with csum.
+As I've said before, a tool could be provided, that re-computes the
+checksums then (making the data accessible again)... or one could
+simply mount the fs with nochecksum or some other special option, which
+allows bypassing any checks.
+
+> Now it's not just data corruption, but data loss then.
+I think the former is worse than the later. The later gives you a
+chance of noting it, and either recover from a backup, regenerate the
+data (if possible) or manually mark the data as being "good" (though
+corrupted) again.
 
 
 Cheers,
 Chris.
---=-IprEY21byLQoRAPCQkwr
+--=-Wt9eUz2xK2cedPtcZvDY
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -152,25 +169,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODE0MTIyNDQ0WjBPBgkqhkiG9w0BCQQxQgRAD/b9
-gY7+pKGQXAQOs7y8WtzqD1PYb3Z4y+sTzd5uz8Q4wksjPkjyOgOhCiS4NWzkeqJU2dMH1ZbzsqlN
-E/u/7zCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODE0MTIzMjQ5WjBPBgkqhkiG9w0BCQQxQgRAqU6J
+Gfew9LHZp0ifzackcKAOP0aHuZ/Xxg1uynSxuzWFI2eAJWPmghlAzcopiQieS8zrgHqac1sHpilk
+K+ODXzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAsN9R
-p9e8vQ9V53b1Vn/Dvhqs2yCHE5GcIGUTlaKz0KJQxeFmhvisfu5kAY00jYVnoKw8SRodQkG2ItjG
-EGEEmzQTbQcgPEQVa3M3lgaK0Xj4BXB8nq5IseV5H+5JBJlPmNsJXIcM2Az8mUgLVeJtixR9Y2+o
-x+2SPhWbLHDhn3EgU6+gLfGQoHTRXFJWPOt4PNm+YEdhEs8NhokuUoLy4rjhGLaRrS1uIBFHMEfw
-71lXIq7ioX5uTcwfkeFlf0j3v6OjcVoOnIwYzLFyFjVDMWdpVchls+sui7kYuWdsNAmPzW53mkDS
-+mZ14nAu+zb4ypfBvJnUJiuRBvpqfErlvkV0oN0/WIfN2/xRJdmTUNKm/3Jd914HB+EapBIiCIa/
-xzl7iuV8HFUDe44go1XsovkyvXCv9iPIFfeWG4/Evtfxczs++Ztaob7+POmcekMBFXiqSM2sniCM
-eOkqQ8UKB+O7Lz1xbdokgYNyXgq0iydX0l3VyB+vSGVzbP53eoEOjtuuF+fju+T2T72inprwC4qE
-bhWLp1ZBhhcGGPYVUxwVtkuPIOy7ktf13IKLEvc3XhT59qtZYXOxwLpPHPqLUtrwRv1mFpnda/ZW
-loFM1bDaIxwsP8r47T7GBG/lDQbuUfqXqfX4RmC63vSXjf3BtkeBL49Rxem+cZbFIHNHneIAAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAh0az
+frtVRMP+UzPPJ5NAAi38tDxeBp2bjeXMkEriGAKoszd0UNnuVPA8k+vBdtGWeEmYcODsSBPscboo
+o1oaGRWIG0rHnntF39WsfUB1wjJKXbi33ArZJIj5z8WlX2remFKDL6ijMT2jzxAlXskyL/VVwSxW
+Qr4DUumrhxuG2Sn7sEfWubWxtVoJDQPp5ZOY7yRqLFhApXxOHCCYyvzEHEcug3tknSISFAtIcpTy
+t99vJ2+LznBFYho6qc+PKHBQdbmoocgrXpkKv5fkGiAUr/IjQ67NwPZTPum3n9C76tqLMe4CeU60
+YDBpcJfoL4TzDI0wDLY/w4n8R+WohtSNFvefKTlNNbNpfCNE9vzJ4ZFEew8OSaO3hmJ2nNtgIHC3
++8tloPzBWnAaTOhRxIDMyR8Vnl1U1UvWohvUCPobLsMFfnlyu1fLjjzJJYD/vJgdlJFR8KwFsXbO
+HDp71FeZklCTZxv6Am7Pa3kg6ZIWFIrTIlSUWb8OcZ9OOWuu7CPS7kgCtyx2NSxHyFMuYrjvRsZC
+ruRcJHoNbHl3gL0xIs1UVknPN+waMBfl2+oW7KHDRTyUm/NVnhIJ0tTDeDCf+A0QoHB2UN+LEJY+
+MKJU10lpc0MIJVVTfslu22KQdV3rp1FoVxCkrZX+R45nh2NAbH9bOY9pokRywzefrIBDfhgAAAAA
 AAA=
 
 
---=-IprEY21byLQoRAPCQkwr--
+--=-Wt9eUz2xK2cedPtcZvDY--
 

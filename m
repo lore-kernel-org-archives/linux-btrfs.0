@@ -1,78 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:62936 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751567AbdHNHri (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 03:47:38 -0400
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Paul Jones <paul@pauljones.id.au>, Christoph Hellwig <hch@infradead.org>,
-        Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
- <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
- <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
- <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
- <1502496618.6092.6.camel@scientia.net> <20170812074248.GA3352@infradead.org>
- <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
- <MEXPR01MB2168FD458234B54167D9674F9E8C0@MEXPR01MB2168.ausprd01.prod.outlook.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d06d02ec-93b7-078b-55f5-4cc94787a480@gmx.com>
-Date: Mon, 14 Aug 2017 15:46:59 +0800
+Received: from mail-ua0-f170.google.com ([209.85.217.170]:38569 "EHLO
+        mail-ua0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752500AbdHNH7l (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Aug 2017 03:59:41 -0400
+Received: by mail-ua0-f170.google.com with SMTP id w45so33883548uac.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Aug 2017 00:59:40 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <MEXPR01MB2168FD458234B54167D9674F9E8C0@MEXPR01MB2168.ausprd01.prod.outlook.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAN4oSBdO8GfBQA1CrLVa1atA+QJquCy63KBqOHhh49Uz=1sgjQ@mail.gmail.com>
+References: <CAN4oSBdO8GfBQA1CrLVa1atA+QJquCy63KBqOHhh49Uz=1sgjQ@mail.gmail.com>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Mon, 14 Aug 2017 13:28:59 +0530
+Message-ID: <CAKuJGC-O8ws3tp0=dhfi6RW27d+hgpb9pw8vdV24P7cxQPw8LA@mail.gmail.com>
+Subject: Re: Building a BTRFS test machine
+To: Cerem Cem ASLAN <ceremcem@ceremcem.net>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Definitely it will be useful.  For quite sometime, I was thinking about:
+1. Creating test cases for each BTRFS features. (ex:
+https://btrfs.wiki.kernel.org/index.php/Scrub_corruption_cases)
+2. Automate these  feature specific test scripts using bash/python
+while maintaining them in public git repos.
+3. Launching BTRFS test machines in cloud (aws spot instance are very cheap) .
+4. Run those feature specific tests and publish the results into wiki
+or/and bugs into bugzilla.
+5. Destroy the test machines.
+
+Such setup will require quite good effort. As Qu mentioned, the
+challenging part will be integrating existing different tests and make
+it automatic.
+
+Another thought on BTRFS testing:
+At this moment, when someone sends a patch - i assume, they
+automatically pushed into patchwork.kernel.org (based on some back-end
+configuration I guess).
+
+On Btrfs mailing-list,we have lot of bug reports so using something
+like [1] we can write a
+program which parses mailing-list for specific keyword like
+"BUGREPORT:<bug description>" similar to "PATCH:<patch description>"
+and create a new
+bug or update the details on bugzilla.kernel.org? This will ensure we
+can keep track of bugs on
+bugzilla.
+
+I think updating bugs based on mailing-list responses will be little
+tricky than creating new bugs.
+something like that can be useful as well.
+
+I can help a bit on such testbed setup  :-) Thanks!
+
+----
+Cheers,
+Lakshmipathi.G
+http://www.giis.co.in http://www.webminal.org
 
 
-On 2017年08月14日 15:43, Paul Jones wrote:
->> -----Original Message-----
->> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
->> owner@vger.kernel.org] On Behalf Of Qu Wenruo
->> Sent: Monday, 14 August 2017 4:37 PM
->> To: Christoph Hellwig <hch@infradead.org>; Christoph Anton Mitterer
->> <calestyo@scientia.net>
->> Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
->> Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
->>
->>
->>
->> On 2017年08月12日 15:42, Christoph Hellwig wrote:
->>> On Sat, Aug 12, 2017 at 02:10:18AM +0200, Christoph Anton Mitterer wrote:
->>>> Qu Wenruo wrote:
->>>>> Although Btrfs can disable data CoW, nodatacow also disables data
->>>>> checksum, which is another main feature for btrfs.
->>>>
->>>> Then decoupling of the two should probably decoupled and support for
->>>> notdatacow+checksumming be implemented?!
->>>
->>> And how are you going to write your data and checksum atomically when
->>> doing in-place updates?
->>
->> Exactly, that's the main reason I can figure out why btrfs disables checksum
->> for nodatacow.
-> 
-> But does it matter if it's not strictly atomic? By turning off COW it implies you accept the risk of an ill-timed failure.
-
-The problem here is, if you enable csum and even data is updated 
-correctly, only metadata is trashed, then you can't even read out the 
-correct data.
-
-As btrfs csum checker will just prevent you from reading out any data 
-which doesn't match with csum.
-
-Now it's not just data corruption, but data loss then.
-
-Thanks,
-Qu
-
-> Although from my point of view any reason that would require COW to be disabled implies you're using the wrong filesystem anyway.
-> 
-> Paul.
-> 
-> 
-> 
-> 
-> 
-> 
-> 
+On Mon, Aug 14, 2017 at 6:31 AM, Cerem Cem ASLAN <ceremcem@ceremcem.net> wrote:
+> Would that be useful to build a BTRFS test machine, which will perform
+> both software tests (btrfs send | btrfs receive, read/write random
+> data etc.) and hardware tests, such as abrupt power off test, abruptly
+> removing a raid-X disk physically, etc.
+>
+> If it would be useful, what tests should it cover?
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

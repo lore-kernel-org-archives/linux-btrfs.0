@@ -1,77 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32-i6.italiaonline.it ([212.48.14.166]:44154 "EHLO
+Received: from smtp-32-i6.italiaonline.it ([212.48.14.166]:50829 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752360AbdHNOMq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Aug 2017 10:12:46 -0400
+        id S1751098AbdHNOXN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Aug 2017 10:23:13 -0400
 Reply-To: kreijack@inwind.it
-Subject: Re: [RFC] Checksum of the parity
-To: Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5d703b4c-e8ac-21dc-e327-ff1d8e232ee9@inwind.it>
- <CAJCQCtToFj4BowawgYPT-GiUnZPAXsjtuZO2=imcoyOZmaQzug@mail.gmail.com>
+Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Christoph Anton Mitterer <calestyo@scientia.net>,
+        Christoph Hellwig <hch@infradead.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Liu Bo <bo.li.liu@oracle.com>
+References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
+ <4c094049-f8c8-a0ea-674b-33c6905d744a@gmx.com>
+ <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
+ <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
+ <1502496618.6092.6.camel@scientia.net> <20170812074248.GA3352@infradead.org>
+ <1502538706.3996.1.camel@scientia.net> <20170812121257.GZ7140@carfax.org.uk>
+ <1219eff6-7020-444c-efd7-6afb5ef551d9@libero.it>
+ <86a8d523-8dc3-8406-af4c-8bb93e7859c5@gmx.com>
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <e4506812-53a8-7a95-61e6-279af20c8303@inwind.it>
-Date: Mon, 14 Aug 2017 16:12:42 +0200
+Message-ID: <97904d09-60ef-6262-9cec-11f4ebd8af6c@inwind.it>
+Date: Mon, 14 Aug 2017 16:23:11 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtToFj4BowawgYPT-GiUnZPAXsjtuZO2=imcoyOZmaQzug@mail.gmail.com>
+In-Reply-To: <86a8d523-8dc3-8406-af4c-8bb93e7859c5@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/13/2017 08:45 PM, Chris Murphy wrote:
-> [2]
-> Is Btrfs subject to the write hole problem manifesting on disk? I'm
-> not sure, sadly I don't read the code well enough. But if all Btrfs
-> raid56 writes are full stripe CoW writes, and if the prescribed order
-> guarantees still happen: data CoW to disk > metadata CoW to disk >
-> superblock update, then I don't see how the write hole happens. Write
-> hole requires: RMW of a stripe, which is a partial stripe overwrite,
-> and a crash during the modification of the stripe making that stripe
-> inconsistent as well as still pointed to by metadata.
+On 08/14/2017 09:08 AM, Qu Wenruo wrote:
+> 
+>>
+>> Supposing to log for each transaction BTRFS which "data NOCOW blocks" will be updated and their checksum, in case a transaction is interrupted you know which blocks have to be checked and are able to verify if the checksum matches and correct the mismatch. Logging also the checksum could help to identify if:
+>> - the data is old
+>> - the data is updated
+>> - the updated data is correct
+>>
+>> The same approach could be used also to solving also the issue related to the infamous RAID5/6 hole: logging which block are updated, in case of transaction aborted you can check the parity which have to be rebuild.
+> Indeed Liu is using journal to solve RAID5/6 write hole.
+> 
+> But to address the lack-of-journal nature of btrfs, he introduced a journal device to handle it, since btrfs metadata is either written or trashed, we can't rely existing btrfs metadata to handle journal.
+
+The Liu's solution is a lot heavier. With the Liu's solution, you need to write both the data and parity 2 times. I am only suggest to track the block to update. And it would be only need for the stripes involved by a RMW cycle. This is a lot less data to write (8 byte vs 4Kbyte)
+
+> 
+> PS: This reminds me why ZFS is still using journal (called ZFS intent log) but not mandatory metadata CoW of btrfs.
+
+Form a theoretical point of view, if you have a "PURE" COW file-system, you don't need a journal. Unfortunately a RAID5/6 stripe update is a RMW cycle, so you need a journal to keep it in sync. The same is true for the NOCOW file (and their checksums)
 
 
-RAID5 is *single* failure prof. And in order to have the write hole bug we need two failure:
-1) a transaction is aborted (e.g. due to a power failure) and the results is that data and parity are mis-aligned
-2) a disk disappears
-
-These two events may happen even in different moment.
-
-The key is that when a disk disappear, all remaining ones are used to rebuild the missing one. So if data and parity are mis-aligned the rebuild disk is wrong.
-
-Let me to show an example
-
-Disk 1            Disk 2         Disk 3  (parity)
-AAAAAA            BBBBBB         CCCCCC
-
-where CCCCCC = AAAAA ^ BBBBB
-
-Note1: AAAAA is a valid data
-
-Supposing to update B and due to a power failure you can't update parity, you have:
-
-
-Disk 1            Disk 2         Disk 3  (parity)
-AAAAAA            DDDDDDD        CCCCCC
-
-Of course CCCCCC != AAAAA ^ DDDDD  (data and parity are misaligned).
-
-
-Pay attention that AAAAAA is still valid data.
-
-Now suppose to loose disk1. If you want to read from it, you have to perform a read of disk2 and disk3 to compute disk1. 
-
-However Disk2 and disk3 are misaligned, so doing a DDDDD ^ CCCCC you don't got AAAAA anymore.
-
-
-Note that it is not important if DDDDDD or BBBBB are valid or invalid data.
-
-
-Moreover I have to point out that a simple scrub process between 1 and 2, is able to rebuild a correct parity. This would reduce the likelihood of the "write hole" bug. 
-The only case which would still exists is when 1) and 2) happen at the same time (which is not impossible: i.e. if a disk die, it is not infrequent that the user shutdown the machine without waiting a clean shutdown).
-
-BR
-G.Baroncelli
-
+> 
+> Thanks,
+> Qu
 
 
 -- 

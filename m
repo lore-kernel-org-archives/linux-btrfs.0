@@ -1,49 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34203 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751949AbdHPPPe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 11:15:34 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id B666CACFF
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Aug 2017 15:15:32 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: expose internal free space tree routine only if sanity tests are enabled
-Date: Wed, 16 Aug 2017 18:15:23 +0300
-Message-Id: <1502896523-2431-1-git-send-email-nborisov@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:40818 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751580AbdHORql (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Aug 2017 13:46:41 -0400
+Date: Tue, 15 Aug 2017 10:45:26 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: incremental send, fix emission of invalid clone
+ operations
+Message-ID: <20170815164526.GA18477@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20170810215451.4240-1-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170810215451.4240-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The internal free space tree management routines are always exposed for testing
-purposes. Make them dependent on SANITY_TESTS being on so that they are exposed
-only when they really have to.
+On Thu, Aug 10, 2017 at 10:54:51PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When doing an incremental send it's possible that the computed send stream
+> contains clone operations that will fail on the receiver if the receiver
+> has compression enabled and the clone operations target a sector sized
+> extent that starts at a zero file offset, is not compressed on the source
+> filesystem but ends up being compressed and inlined at the destination
+> filesystem.
+> 
+> Example scenario:
+> 
+>   $ mkfs.btrfs -f /dev/sdb
+>   $ mount -o compress /dev/sdb /mnt
+> 
+>   # By doing a direct IO write, the data is not compressed.
+>   $ xfs_io -f -d -c "pwrite -S 0xab 0 4K" /mnt/foobar
+>   $ btrfs subvolume snapshot -r /mnt /mnt/mysnap1
+> 
+>   $ xfs_io -c "reflink /mnt/foobar 0 8K 4K" /mnt/foobar
+>   $ btrfs subvolume snapshot -r /mnt /mnt/mysnap2
+> 
+>   $ btrfs send -f /tmp/1.snap /mnt/mysnap1
+>   $ btrfs send -f /tmp/2.snap -p /mnt/mysnap1 /mnt/mysnap2
+>   $ umount /mnt
+> 
+>   $ mkfs.btrfs -f /dev/sdc
+>   $ mount -o compress /dev/sdc /mnt
+>   $ btrfs receive -f /tmp/1.snap /mnt
+>   $ btrfs receive -f /tmp/2.snap /mnt
+>   ERROR: failed to clone extents to foobar
+>   Operation not supported
+> 
+> The same could be achieved by mounting the source filesystem without
+> compression and doing a buffered IO write instead of a direct IO one,
+> and mounting the destination filesystem with compression enabled.
+> 
+> So fix this by issuing regular write operations in the send stream
+> instead of clone operations when the source offset is zero and the
+> range has a length matching the sector size.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/free-space-tree.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-diff --git a/fs/btrfs/free-space-tree.h b/fs/btrfs/free-space-tree.h
-index 54ffced3bce8..ba3787df43c3 100644
---- a/fs/btrfs/free-space-tree.h
-+++ b/fs/btrfs/free-space-tree.h
-@@ -44,7 +44,7 @@ int remove_from_free_space_tree(struct btrfs_trans_handle *trans,
- 				struct btrfs_fs_info *fs_info,
- 				u64 start, u64 size);
- 
--/* Exposed for testing. */
-+#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- struct btrfs_free_space_info *
- search_free_space_info(struct btrfs_trans_handle *trans,
- 		       struct btrfs_fs_info *fs_info,
-@@ -68,5 +68,6 @@ int convert_free_space_to_extents(struct btrfs_trans_handle *trans,
- 				  struct btrfs_path *path);
- int free_space_test_bit(struct btrfs_block_group_cache *block_group,
- 			struct btrfs_path *path, u64 offset);
-+#endif
- 
- #endif
--- 
-2.7.4
+Thanks,
 
+-liubo
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/send.c | 19 +++++++++++++++++++
+>  1 file changed, 19 insertions(+)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index b082210df9c8..460be72ab78b 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -4992,6 +4992,25 @@ static int clone_range(struct send_ctx *sctx,
+>  	struct btrfs_key key;
+>  	int ret;
+>  
+> +	/*
+> +	 * Prevent cloning from a zero offset with a length matching the sector
+> +	 * size because in some scenarios this will make the receiver fail.
+> +	 *
+> +	 * For example, if in the source filesystem the extent at offset 0
+> +	 * has a length of sectorsize and it was written using direct IO, then
+> +	 * it can never be an inline extent (even if compression is enabled).
+> +	 * Then this extent can be cloned in the original filesystem to a non
+> +	 * zero file offset, but it may not be possible to clone in the
+> +	 * destination filesystem because it can be inlined due to compression
+> +	 * on the destination filesystem (as the receiver's write operations are
+> +	 * always done using buffered IO). The same happens when the original
+> +	 * filesystem does not have compression enabled but the destination
+> +	 * filesystem has.
+> +	 */
+> +	if (clone_root->offset == 0 &&
+> +	    len == sctx->send_root->fs_info->sectorsize)
+> +		return send_extent_data(sctx, offset, len);
+> +
+>  	path = alloc_path_for_send();
+>  	if (!path)
+>  		return -ENOMEM;
+> -- 
+> 2.11.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

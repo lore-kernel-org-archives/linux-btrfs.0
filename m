@@ -1,71 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55592 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751494AbdHOMtb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Aug 2017 08:49:31 -0400
-Date: Tue, 15 Aug 2017 14:48:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Hallo32 <Hallo32@gmx.net>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, kreijack@inwind.it, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs-v4.12: cross compiling
-Message-ID: <20170815124807.GZ2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <e8d480c6-758e-0e7d-a024-e9d12d7bf852@gmx.net>
- <20170814130608.GS2866@twin.jikos.cz>
- <46edbc7c-8bd9-0507-950e-be5182356772@gmx.com>
- <20170814140341.GU2866@suse.cz>
- <159b3db0-6eae-7cff-d166-3c4b0c2513ac@gmx.com>
- <20170814151052.GV2866@twin.jikos.cz>
- <340e3677-4abd-5390-58bb-a64160a31862@libero.it>
- <880007a9-4882-e4a6-7411-a262e5296ab0@gmx.com>
- <082833d5-8f2a-6ed6-fa22-042a161a0dec@gmx.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <082833d5-8f2a-6ed6-fa22-042a161a0dec@gmx.net>
+Received: from mout.gmx.net ([212.227.17.22]:56822 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753049AbdHOCTN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 14 Aug 2017 22:19:13 -0400
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: [PATCH] btrfs-progs: Fix cross-compile error for mktables
+Date: Tue, 15 Aug 2017 11:19:03 +0900
+Message-Id: <20170815021903.6923-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 15, 2017 at 02:44:07PM +0200, Hallo32 wrote:
-> Am 15.08.2017 um 01:39 schrieb Qu Wenruo:
-> > On 2017年08月15日 02:57, Goffredo Baroncelli wrote:
-> >> On 08/14/2017 05:10 PM, David Sterba wrote:
-> >>> On Mon, Aug 14, 2017 at 10:14:42PM +0800, Qu Wenruo wrote:
-> >> [...]
-> >>> mktables.c is synced from kernel sources, taking updates from there is
-> >>> easier than porting any changes to the proposed scripted 
-> >>> implementation.
-> >>>
-> >>> The workflow is simple:
-> >>> - copy kernel mktables.c changes to btrfs-progs mktables.c
-> >>
-> >> How the kernel deals with this kind of problem ?
-> >> Looking at the source of btrfs Makefile, it is more simple to replace
-> >>
-> >>    mktables: kernel-lib/mktables.c
-> >>          @echo "    [CC]     $@"
-> >>          $(Q)$(CC) $(CFLAGS) $< -o $@
-> >>
-> >> with
-> >>
-> >>
-> >>    mktables: kernel-lib/mktables.c
-> >>          @echo "    [HOSTCC] $@"
-> >>          $(Q)$(HOSTCC) $(CFLAGS) $< -o $@
-> >>
-> >> where HOSTCC is defined as
-> >>
-> >> HOSTCC=gcc
-> >>
-> >>
-> >> (may be the same applied also to CFLAGS <-> HOSTCFLAGS ?)
-> >
-> > If using HOSTCC then I'm fine with it.
-> 
-> CFLAGS needs also be replaced by something like HOSTCFLAGS, because if 
-> you use something like mips/architecture specific CFLAGS, they may be 
-> not applicably on the host system.
+When cross compiling btrfs-progs, following error will prevent
+btrfs-progs to be compiled:
 
-Good point. Without a regular/automated cross-compilation build testing
-I think we could break it quite easily. I'm going to keep the
-pregenerated file in git.
+    [CC]     mktables
+    [TABLE]  kernel-lib/tables.c
+/bin/sh: ./mktables: cannot execute binary file: Exec format error
+make: *** No rule to make target 'kernel-lib/tables.c', needed by 'kernel-lib/tables.o'.  Stop.
+
+"mktables" should only be executed in host environment, while @CC
+set by autoconf will follow host/build/target setting, causing mktables
+to be cross-compiled.
+
+The fix is to introduce a new @HOSTCC for mktables, which will not be
+affected by host/build/target settings.
+
+Reported-by: Hallo32 <Hallo32@gmx.net>
+Suggested-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+---
+Tested with AArch64 cross-toolchain created by buildroot.
+---
+ Makefile        | 2 +-
+ Makefile.inc.in | 1 +
+ configure.ac    | 1 +
+ 3 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index b3e2b636..0395e37f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -323,7 +323,7 @@ version.h: version.sh version.h.in configure.ac
+ 
+ mktables: kernel-lib/mktables.c
+ 	@echo "    [CC]     $@"
+-	$(Q)$(CC) $(CFLAGS) $< -o $@
++	$(Q)$(HOSTCC) $(CFLAGS) $< -o $@
+ 
+ kernel-lib/tables.c: mktables
+ 	@echo "    [TABLE]  $@"
+diff --git a/Makefile.inc.in b/Makefile.inc.in
+index 4e1b68cb..308acca3 100644
+--- a/Makefile.inc.in
++++ b/Makefile.inc.in
+@@ -4,6 +4,7 @@
+ export
+ 
+ CC = @CC@
++HOSTCC = @HOSTCC@
+ LN_S = @LN_S@
+ AR = @AR@
+ RM = @RM@
+diff --git a/configure.ac b/configure.ac
+index 30055f85..f6051ebd 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -26,6 +26,7 @@ AC_CONFIG_SRCDIR([btrfs.c])
+ AC_PREFIX_DEFAULT([/usr/local])
+ 
+ AC_PROG_CC
++AC_PATH_PROGS([HOSTCC], [gcc clang])
+ AC_CANONICAL_HOST
+ AC_C_CONST
+ AC_C_VOLATILE
+-- 
+2.14.0
+

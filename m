@@ -1,95 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:53530 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:60798 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752328AbdHPAN6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Aug 2017 20:13:58 -0400
-Subject: Re: btrfs-progs-v4.12: cross compiling
-To: Eric Sandeen <sandeen@redhat.com>, dsterba@suse.cz,
-        Hallo32 <Hallo32@gmx.net>, kreijack@inwind.it,
-        linux-btrfs@vger.kernel.org
-References: <e8d480c6-758e-0e7d-a024-e9d12d7bf852@gmx.net>
- <20170814130608.GS2866@twin.jikos.cz>
- <46edbc7c-8bd9-0507-950e-be5182356772@gmx.com>
- <20170814140341.GU2866@suse.cz>
- <159b3db0-6eae-7cff-d166-3c4b0c2513ac@gmx.com>
- <20170814151052.GV2866@twin.jikos.cz>
- <340e3677-4abd-5390-58bb-a64160a31862@libero.it>
- <880007a9-4882-e4a6-7411-a262e5296ab0@gmx.com>
- <082833d5-8f2a-6ed6-fa22-042a161a0dec@gmx.net>
- <20170815124807.GZ2866@twin.jikos.cz>
- <0f50ee70-d546-6aff-b57d-1283eadefa15@redhat.com>
+        id S1752593AbdHPARl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Aug 2017 20:17:41 -0400
+Subject: Re: [PATCH] btrfs-progs: fix cross-compile build
+To: Eric Sandeen <sandeen@redhat.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Hallo32@gmx.net, David Sterba <dsterba@suse.com>
+References: <8f01ac45-1b6e-be1d-b6e3-48fe6cdc4833@redhat.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <b2cd316f-5678-1461-0040-60f6a59ae88a@gmx.com>
-Date: Wed, 16 Aug 2017 08:13:39 +0800
+Message-ID: <9a81d05e-68ab-45a1-a4dc-386b89f4c733@gmx.com>
+Date: Wed, 16 Aug 2017 08:17:00 +0800
 MIME-Version: 1.0
-In-Reply-To: <0f50ee70-d546-6aff-b57d-1283eadefa15@redhat.com>
+In-Reply-To: <8f01ac45-1b6e-be1d-b6e3-48fe6cdc4833@redhat.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年08月16日 01:28, Eric Sandeen wrote:
-> On 8/15/17 7:48 AM, David Sterba wrote:
->> On Tue, Aug 15, 2017 at 02:44:07PM +0200, Hallo32 wrote:
+On 2017年08月16日 02:11, Eric Sandeen wrote:
+> The mktables binary needs to be build with the host
+> compiler at built time, not the target compiler, because
+> it runs at build time to generate the raid tables.
 > 
-> ...
+> Copy auto-fu from xfsprogs and modify Makefile to
+> accomodate this.
 > 
->>>>> How the kernel deals with this kind of problem ?
->>>>> Looking at the source of btrfs Makefile, it is more simple to replace
->>>>>
->>>>>     mktables: kernel-lib/mktables.c
->>>>>           @echo "    [CC]     $@"
->>>>>           $(Q)$(CC) $(CFLAGS) $< -o $@
->>>>>
->>>>> with
->>>>>
->>>>>
->>>>>     mktables: kernel-lib/mktables.c
->>>>>           @echo "    [HOSTCC] $@"
->>>>>           $(Q)$(HOSTCC) $(CFLAGS) $< -o $@
->>>>>
->>>>> where HOSTCC is defined as
->>>>>
->>>>> HOSTCC=gcc
->>>>>
->>>>>
->>>>> (may be the same applied also to CFLAGS <-> HOSTCFLAGS ?)
->>>>
->>>> If using HOSTCC then I'm fine with it.
->>>
->>> CFLAGS needs also be replaced by something like HOSTCFLAGS, because if
->>> you use something like mips/architecture specific CFLAGS, they may be
->>> not applicably on the host system.
->>
->> Good point. Without a regular/automated cross-compilation build testing
->> I think we could break it quite easily. I'm going to keep the
->> pregenerated file in git.
-> 
-> Isn't using the host compiler for some binaries during a cross-compile
-> a very standard thing to do?
-> 
-> The kernel manages it, as shown above.  xfsprogs does it (see libxfs/Makefile
-> for the crc32table.h and crc32selftest targets), e2fsprogs does it (see
-> gen_crc32ctable target in lib/ext2fs/Makefile), etc.
+> Reported-by: Hallo32 <Hallo32@gmx.net>
+> Signed-off-by: Eric Sandeen <sandeen@redhat.com>
 
-Only if I can find it earlier.
+Looks better than my previous patch.
+With @BUILD_CLFAGS support and better BUILD_CC/CLFAGS detection for 
+native build environment.
 
-> 
-> Seems that checking in a generated file would be more prone to eventual
-> errors, no?
-
-Also my concern.
-
-> 
-> I guess it's harder to do in btrfs-progs since it's not using autotools...
-
-And your patch does do a better job, especially for BUILD_CFLAGS and 
-build cc detection.
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
 Thanks,
 Qu
-
+> ---
 > 
-> -Eric
+> diff --git a/Makefile b/Makefile
+> index b3e2b63..2647b95 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -323,7 +323,7 @@ version.h: version.sh version.h.in configure.ac
+>   
+>   mktables: kernel-lib/mktables.c
+>   	@echo "    [CC]     $@"
+> -	$(Q)$(CC) $(CFLAGS) $< -o $@
+> +	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) $< -o $@
+>   
+>   kernel-lib/tables.c: mktables
+>   	@echo "    [TABLE]  $@"
+> diff --git a/Makefile.inc.in b/Makefile.inc.in
+> index 4e1b68c..0570bf8 100644
+> --- a/Makefile.inc.in
+> +++ b/Makefile.inc.in
+> @@ -4,6 +4,8 @@
+>   export
+>   
+>   CC = @CC@
+> +BUILD_CC = @BUILD_CC@
+> +BUILD_CFLAGS = @BUILD_CFLAGS@
+>   LN_S = @LN_S@
+>   AR = @AR@
+>   RM = @RM@
+> diff --git a/configure.ac b/configure.ac
+> index 30055f8..bc590cc 100644
+> --- a/configure.ac
+> +++ b/configure.ac
+> @@ -26,6 +26,23 @@ AC_CONFIG_SRCDIR([btrfs.c])
+>   AC_PREFIX_DEFAULT([/usr/local])
+>   
+>   AC_PROG_CC
+> +AC_ARG_VAR(BUILD_CC, [C compiler for build tools])
+> +if test "${BUILD_CC+set}" != "set"; then
+> +  if test $cross_compiling = no; then
+> +    BUILD_CC="$CC"
+> +  else
+> +    AC_CHECK_PROGS(BUILD_CC, gcc cc) > +  fi
+> +fi
+> +AC_ARG_VAR(BUILD_CFLAGS, [C compiler flags for build tools])
+> +if test "${BUILD_CFLAGS+set}" != "set"; then
+> +  if test $cross_compiling = no; then
+> +    BUILD_CFLAGS="$CFLAGS"
+> +  else
+> +    BUILD_CFLAGS="-g -O2"
+> +  fi
+> +fi
+> +
+>   AC_CANONICAL_HOST
+>   AC_C_CONST
+>   AC_C_VOLATILE
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 

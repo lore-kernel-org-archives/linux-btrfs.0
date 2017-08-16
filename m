@@ -1,9 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:22520 "EHLO
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:41586 "EHLO
         cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752028AbdHPMiN (ORCPT
+        by vger.kernel.org with ESMTP id S1751580AbdHPMqf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 08:38:13 -0400
+        Wed, 16 Aug 2017 08:46:35 -0400
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
 Subject: Re: slow btrfs with a single kworker process using 100% CPU
 To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>,
         Roman Mamedov <rm@romanrm.net>
@@ -17,9 +18,8 @@ References: <eab2f725-ab6e-d2ac-30e1-d9c964ce8be8@profihost.ag>
  <18522132.418.1502884115575.JavaMail.gkos@dynomob>
  <20170816170003.3f47321d@natsu>
  <31057849.442.1502886546489.JavaMail.gkos@dynomob>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <6aa66d3c-f7cc-2f46-191b-32ce9e6a3f70@profihost.ag>
-Date: Wed, 16 Aug 2017 14:38:12 +0200
+Message-ID: <c750108a-f769-9061-93fa-ce0843989495@profihost.ag>
+Date: Wed, 16 Aug 2017 14:46:34 +0200
 MIME-Version: 1.0
 In-Reply-To: <31057849.442.1502886546489.JavaMail.gkos@dynomob>
 Content-Type: text/plain; charset=utf-8

@@ -1,96 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56712 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58024 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752330AbdHPSJT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 14:09:19 -0400
-Date: Wed, 16 Aug 2017 20:07:55 +0200
+        id S1751772AbdHPSUs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Aug 2017 14:20:48 -0400
+Date: Wed, 16 Aug 2017 20:19:24 +0200
 From: David Sterba <dsterba@suse.cz>
-To: waxhead <waxhead@dirtcellar.net>
-Cc: Brendan Hide <brendan@swiftspirit.co.za>, linux-btrfs@vger.kernel.org
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Christoph Anton Mitterer <calestyo@scientia.net>, Chris Mason <clm@fb.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-Message-ID: <20170816180755.GK2866@twin.jikos.cz>
+Message-ID: <20170816181924.GL2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <84806456-eed9-00b9-b3f6-99e46cefba33@swiftspirit.co.za>
- <fb2cf0a6-12b2-9356-657a-ffd58b375c75@dirtcellar.net>
+References: <20170812074248.GA3352@infradead.org>
+ <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+ <1502713484.3608.1.camel@scientia.net>
+ <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
+ <49ebcfb9-b0c8-0feb-3570-a5b19c3e3b33@cobb.uk.net>
+ <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
+ <1502740488.5384.5.camel@scientia.net>
+ <20170816131230.GA28619@clm-mbp.thefacebook.com>
+ <1502890308.5446.5.camel@scientia.net>
+ <152c3e70-72e2-0d26-e145-979f602257b7@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <fb2cf0a6-12b2-9356-657a-ffd58b375c75@dirtcellar.net>
+In-Reply-To: <152c3e70-72e2-0d26-e145-979f602257b7@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 03, 2017 at 08:08:59PM +0200, waxhead wrote:
-> BTRFS biggest problem is not that there are some bits and pieces that 
-> are thoroughly screwed up (raid5/6 (which just got some fixes by the 
-> way)), but  the fact that the documentation is rather dated.
-> 
-> There is a simple status page here 
-> https://btrfs.wiki.kernel.org/index.php/Status
-> 
-> As others have pointed out already the explanations on the status page 
-> is not exactly good. For example compression (that was also mentioned) 
-> is as of writing this marked as 'Mostly ok'  '(needs verification and 
-> source) - auto repair and compression may crash'
-> 
-> Now, I am aware that many use compression without trouble. I am not sure 
-> how many that has compression with disk issues and don't have trouble , 
-> but I would at least expect to see more people yelling on the mailing 
-> list if that where the case. The problem here is that this message is 
-> rather scary and certainly does NOT sound like 'mostly ok' for most people.
-> 
-> What exactly needs verification and source? the mostly ok statement or 
-> something else?! A more detailed explanation would be required here to 
-> avoid scaring people away.
-> 
-> Same thing with the trim feature that is marked OK . It clearly says 
-> that is has performance implications. It is marked OK so one would 
-> expect it to not cause the filesystem to fail, but if the performance 
-> becomes so slow that the filesystem gets practically unusable it is of 
-> course not "OK". The relevant information is missing for people to make 
-> a decent choice and I certainly don't know how serious these performance 
-> implications are, if they are at all relevant...
+On Wed, Aug 16, 2017 at 09:53:57AM -0400, Austin S. Hemmelgarn wrote:
+> > So apart from some central DBs for the storage management system
+> > itself, CoW is mostly no issue for us.
+> > But I've talked to some friend at the local super computing centre and
+> > they have rather general issues with CoW at their virtualisation
+> > cluster.
+> > Like SUSE's snapper making many snapshots leading the storage images of
+> > VMs apparently to explode (in terms of space usage).
+> SUSE is pathological case of brain-dead defaults.  Snapper needs to 
+> either die or have some serious sense beat into it.  When you turn off 
+> the automatic snapshot generation for everything but updates and set the 
+> retention policy to not keep almost everything, it's actually not bad at 
+> all.
 
-I'll try to restructure the page so it reflects status of the features
-from more aspects, like overall/performance/"known bad scenarios". The
-in-row notes are proably bad idea as they are short on details, the
-section under table will be better for that.
+The defaults for timeline are really bad, the partition is almost never
+big enough to hold 10 months worth of data updates, not to say 10 years.
+A rolling distro can fill the space even with the daily or weeky
+settings set to low numbers. But certain people had different oppinion
+and I was not successful to change that. The least I did was to document
+some of the usecases and the hints that could allow one to have a bit
+more understanding of the effects.
 
-> Most people interested in BTRFS are probably a bit more paranoid and 
-> concerned about their data than the average computer user. What people 
-> tend to forget is that other filesystems either have NO redundancy, 
-> auto-repair and other fancy features that BTRFS have. So for the 
-> compression example above... if you run compressed files on ext4 and 
-> your disk gets some corruption you are in a no better state than what 
-> you would be with btrfs either (in fact probably worse). Also nothing is 
-> stopping you from putting btrfs DUP on a mdadm raid5 or 6 which mean you 
-> should be VERY safe.
-> 
-> Simple documentation is the key so HERE ARE MY DEMANDS!!!..... ehhh.... 
-> so here is what I think should be done:
-> 
-> 1. The documentation needs to either be improved (or old non-relevant 
-> stuff simply removed / archived somewhere)
+https://github.com/kdave/btrfsmaintenance#tuning-periodic-snapshotting
 
-Agreed, this happens from time.
-
-> 2. The status page MUST always be up to date for the latest kernel 
-> release (It's ok so far , let's hope nobody sleeps here)
-
-I'm watching over the page. It's been locked from edits so there's a
-mandatory review of the new contents, the update process is documented
-on the page.
-
-> 3. Proper explanations must be given so the layman and reasonably 
-> technical people understand the risks / issues for non-ok stuff.
-
-This can be hard, the audience are both technical and non-technical
-users. The page is supposed to give quick overview, the more detailed
-information is either in the notes or on separate pages linked from
-there. I believe this structure should be able to cover what you need,
-but the acutal contents hasn't been written and there are not enough
-people willing/capable of writing it.
-
-> 4. There should be links to roadmaps for each feature on the status page 
-> that clearly stats what is being worked on for the NEXT kernel release
-
-We've tried something like that in the past, the page got out of sync
-with reality over time and was deleted.
+> > For some of their storage backends there simply seem to be no de-
+> > duplication available (or other reasons that prevent it's usage).
+> If the snapshots are being CoW'ed, then dedupe won't save them any 
+> space.  Also, nodatacow is inherently at odds with reflinks used for dedupe.
+> > 
+> >  From that I'd guess there would be still people who want the nice
+> > features of btrfs (snapshots, checksumming, etc.), while still being
+> > able to nodatacow in specific cases.
+> Snapshots work fine with nodatacow, each block gets CoW'ed once when 
+> it's first written to, and then goes back to being NOCOW.  The only 
+> caveat is that you probably want to defrag either once everything has 
+> been rewritten, or right after the snapshot.

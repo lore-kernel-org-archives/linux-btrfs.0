@@ -1,31 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53609 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37601 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752612AbdHQLsD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2017 07:48:03 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 0B03BABB1
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 11:48:02 +0000 (UTC)
-Date: Thu, 17 Aug 2017 13:46:39 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs: Remove unused sectorsize variable from struct
- map_lookup
-Message-ID: <20170817114639.GP2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1502898104-4920-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1502898104-4920-1-git-send-email-nborisov@suse.com>
+        id S1752246AbdHPPls (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Aug 2017 11:41:48 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 06478AE63
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Aug 2017 15:41:47 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Remove unused sectorsize variable from struct map_lookup
+Date: Wed, 16 Aug 2017 18:41:44 +0300
+Message-Id: <1502898104-4920-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 16, 2017 at 06:41:44PM +0300, Nikolay Borisov wrote:
-> This variable was added in 1abe9b8a138c ("Btrfs: add initial tracepointi
-> support for btrfs"), yet it never really got used, only assigned to. So let's
-> remove it.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+This variable was added in 1abe9b8a138c ("Btrfs: add initial tracepointi
+support for btrfs"), yet it never really got used, only assigned to. So let's
+remove it.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/volumes.c | 2 --
+ fs/btrfs/volumes.h | 1 -
+ 2 files changed, 3 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f93ac3d7e997..47a0cb1dcc5e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4836,7 +4836,6 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 						   j * stripe_size;
+ 		}
+ 	}
+-	map->sector_size = info->sectorsize;
+ 	map->stripe_len = raid_stripe_len;
+ 	map->io_align = raid_stripe_len;
+ 	map->io_width = raid_stripe_len;
+@@ -6491,7 +6490,6 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 	map->num_stripes = num_stripes;
+ 	map->io_width = btrfs_chunk_io_width(leaf, chunk);
+ 	map->io_align = btrfs_chunk_io_align(leaf, chunk);
+-	map->sector_size = btrfs_chunk_sector_size(leaf, chunk);
+ 	map->stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+ 	map->type = btrfs_chunk_type(leaf, chunk);
+ 	map->sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6f45fd60d15a..d0193e795dc2 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -353,7 +353,6 @@ struct map_lookup {
+ 	int io_align;
+ 	int io_width;
+ 	u64 stripe_len;
+-	int sector_size;
+ 	int num_stripes;
+ 	int sub_stripes;
+ 	struct btrfs_bio_stripe stripes[];
+-- 
+2.7.4
+

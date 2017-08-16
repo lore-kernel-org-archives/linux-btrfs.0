@@ -1,80 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:39045 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751744AbdHPNES (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:37798 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751287AbdHPNMy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 09:04:18 -0400
-Subject: Re: slow btrfs with a single kworker process using 100% CPU
-To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>,
-        Roman Mamedov <rm@romanrm.net>
-Cc: Marat Khalili <mkh@rqc.ru>, linux-btrfs@vger.kernel.org,
-        Peter Grandi <pg@btrfs.list.sabi.co.uk>
-References: <eab2f725-ab6e-d2ac-30e1-d9c964ce8be8@profihost.ag>
- <4772c3f2-0074-d86f-24c4-02ff0730fce7@rqc.ru>
- <064eaaed-7748-7064-874e-19d270d0854e@profihost.ag>
- <4669553.344.1502874134710.JavaMail.gkos@dynomob>
- <f6f3998b-3ca7-7344-a577-6b02a5b11359@profihost.ag>
- <18522132.418.1502884115575.JavaMail.gkos@dynomob>
- <20170816170003.3f47321d@natsu>
- <31057849.442.1502886546489.JavaMail.gkos@dynomob>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Message-ID: <3ebc1237-ed85-7ee4-626d-f68517d97b33@profihost.ag>
-Date: Wed, 16 Aug 2017 15:04:17 +0200
+        Wed, 16 Aug 2017 09:12:54 -0400
+Date: Wed, 16 Aug 2017 09:12:31 -0400
+From: Chris Mason <clm@fb.com>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+CC: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
+Message-ID: <20170816131230.GA28619@clm-mbp.thefacebook.com>
+References: <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
+ <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
+ <1502496618.6092.6.camel@scientia.net>
+ <20170812074248.GA3352@infradead.org>
+ <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+ <1502713484.3608.1.camel@scientia.net>
+ <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
+ <49ebcfb9-b0c8-0feb-3570-a5b19c3e3b33@cobb.uk.net>
+ <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
+ <1502740488.5384.5.camel@scientia.net>
 MIME-Version: 1.0
-In-Reply-To: <31057849.442.1502886546489.JavaMail.gkos@dynomob>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="iso-8859-1"; format=flowed
+In-Reply-To: <1502740488.5384.5.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Aug 14, 2017 at 09:54:48PM +0200, Christoph Anton Mitterer wrote:
+>On Mon, 2017-08-14 at 11:53 -0400, Austin S. Hemmelgarn wrote:
+>> Quite a few applications actually _do_ have some degree of secondary 
+>> verification or protection from a crash.  Go look at almost any
+>> database 
+>> software.
+>Then please give proper references for this!
+>
+>This is from 2015, where you claimed this already and I looked up all
+>the bigger DBs and they either couldn't do it at all, didn't to it per
+>default, or it required application support (i.e. from the programs
+>using the DB)
+>https://www.spinics.net/lists/linux-btrfs/msg50258.html
+>
+>
+>> It usually will not have checksumming, but it will almost 
+>> always have support for a journal, which is enough to cover the 
+>> particular data loss scenario we're talking about (unexpected
+>> unclean 
+>> shutdown).
+>
+>I don't think we talk about this:
+>We talk about people wanting checksuming to notice e.g. silent data
+>corruption.
+>
+>The crash case is only the corner case about what happens then if data
+>is written correctly but csums not.
 
-Am 16.08.2017 um 14:29 schrieb Konstantin V. Gavrilenko:
-> Roman, initially I had a single process occupying 100% CPU, when sysrq it was indicating as "btrfs_find_space_for_alloc"
-> but that's when I used the autodefrag, compress, forcecompress and commit=10 mount flags and space_cache was v1 by default.
-> when I switched to "relatime,compress-force=zlib,space_cache=v2" the 100% cpu has dissapeared, but the shite performance remained.
+We use the crcs to catch storage gone wrong, both in terms of simple 
+things like cabling, bus errors, drives gone crazy or exotic problems 
+like every time I reboot the box a handful of sectors return EFI 
+partition table headers instead of the data I wrote.  You don't need 
+data center scale for this to happen, but it does help...
 
-space_cache=v2 is not supported by the opensuse kernel - but as i
-compile the kernel myself anyway. Is there a patchset to add support for
-space_cache=v2?
+So, we do catch crc errors in prod and they do keep us from replicating 
+bad data over good data.  Some databases also crc, and all drives have 
+correction bits of of some kind.  There's nothing wrong with crcs 
+happening at lots of layers.
 
-Greets,
-Stefan
+Btrfs couples the crcs with COW because it's the least complicated way 
+to protect against:
 
-> 
-> As to the chunk size, there is no information in the article about the type of data that was used. While in our case we are pretty certain about the compressed block size (32-128). I am currently inclining towards 32k as it might be ideal in a situation when we have a 5 disk raid5 array.
-> 
-> In theory
-> 1. The minimum compressed write (32k) would fill the chunk on a single disk, thus the IO cost of the operation would be 2 reads (original chunk + original parity)  and 2 writes (new chunk + new parity)
-> 
-> 2. The maximum compressed write (128k) would require the update of 1 chunk on each of the 4 data disks + 1 parity  write 
-> 
-> 
-> 
-> Stefan what mount flags do you use?
-> 
-> kos
-> 
-> 
-> 
-> ----- Original Message -----
-> From: "Roman Mamedov" <rm@romanrm.net>
-> To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>
-> Cc: "Stefan Priebe - Profihost AG" <s.priebe@profihost.ag>, "Marat Khalili" <mkh@rqc.ru>, linux-btrfs@vger.kernel.org, "Peter Grandi" <pg@btrfs.list.sabi.co.uk>
-> Sent: Wednesday, 16 August, 2017 2:00:03 PM
-> Subject: Re: slow btrfs with a single kworker process using 100% CPU
-> 
-> On Wed, 16 Aug 2017 12:48:42 +0100 (BST)
-> "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com> wrote:
-> 
->> I believe the chunk size of 512kb is even worth for performance then the default settings on my HW RAID of  256kb.
-> 
-> It might be, but that does not explain the original problem reported at all.
-> If mdraid performance would be the bottleneck, you would see high iowait,
-> possibly some CPU load from the mdX_raidY threads. But not a single Btrfs
-> thread pegging into 100% CPU.
-> 
->> So now I am moving the data from the array and will be rebuilding it with 64
->> or 32 chunk size and checking the performance.
-> 
-> 64K is the sweet spot for RAID5/6:
-> http://louwrentius.com/linux-raid-level-and-chunk-size-the-benchmarks.html
-> 
+* bits flipping
+* IO getting lost on the way to the drive, leaving stale but valid data 
+in place
+* IO from sector A going to sector B instead, overwriting valid data 
+with other valid data.
+
+It's possible to protect against all three without COW, but all 
+solutions have their own tradeoffs and this is the setup we chose.  It's 
+easy to trust and easy to debug and at scale that really helps.
+
+In general, production storage environments prefer clearly defined 
+errors when the storage has the wrong data.  EIOs happen often, and you 
+want to be able to quickly pitch the bad data and replicate in good 
+data.
+
+My real goal is to make COW fast enough that we can leave it on for the 
+database applications too.  Obviously I haven't quite finished that one 
+yet ;) But I'd rather keep the building block of all the other btrfs 
+features in place than try to do crcs differently.
+
+-chris

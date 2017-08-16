@@ -1,68 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f171.google.com ([209.85.217.171]:38773 "EHLO
-        mail-ua0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752313AbdHPWwg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 18:52:36 -0400
-Received: by mail-ua0-f171.google.com with SMTP id y36so19386603uac.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Aug 2017 15:52:36 -0700 (PDT)
+Received: from azure.uno.uk.net ([95.172.254.11]:33054 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752382AbdHPXV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Aug 2017 19:21:56 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:44294)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1di7dK-000469-Bp
+        for linux-btrfs@vger.kernel.org; Thu, 17 Aug 2017 00:21:54 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1di7dG-0008KF-68
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 00:21:50 +0100
 MIME-Version: 1.0
-In-Reply-To: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
-References: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 16 Aug 2017 16:52:35 -0600
-Message-ID: <CAJCQCtQONfPPumkMaisrSxNZJyXMYTXufsYVY45ypMP+6ve9ZA@mail.gmail.com>
-Subject: Re: BTRFS error (device sda4): failed to read chunk tree: -5
-To: Zirconium Hacker <jared.e.vb@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22932.54157.816854.309537@tree.ty.sabi.co.uk>
+Date: Thu, 17 Aug 2017 00:21:49 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: slow btrfs with a single kworker process using 100% CPU
+In-Reply-To: <4669553.344.1502874134710.JavaMail.gkos@dynomob>
+References: <eab2f725-ab6e-d2ac-30e1-d9c964ce8be8@profihost.ag>
+        <4772c3f2-0074-d86f-24c4-02ff0730fce7@rqc.ru>
+        <064eaaed-7748-7064-874e-19d270d0854e@profihost.ag>
+        <4669553.344.1502874134710.JavaMail.gkos@dynomob>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 16, 2017 at 4:25 PM, Zirconium Hacker <jared.e.vb@gmail.com> wrote:
-> Hi,
-> This is my first time using a mailing list, and I hope I'm doing this right.
->
-> $ uname -a
-> Linux thinkpad 4.12.6-1-ARCH #1 SMP PREEMPT Sat Aug 12 09:16:22 CEST
-> 2017 x86_64 GNU/Linux
-> $ btrfs --version
-> btrfs-progs v4.12
-> $ sudo mount -o ro,recovery /dev/sda4 /mnt
-> mount: /mnt: wrong fs type, bad option, bad superblock on /dev/sda4,
-> missing codepage or helper program, or other error.
-> $ dmesg | tail
-> <snip>
-> [ 1289.087439] BTRFS warning (device sda4): 'recovery' is deprecated,
-> use 'usebackuproot' instead
-> [ 1289.087440] BTRFS info (device sda4): trying to use backup root at mount time
-> [ 1289.087442] BTRFS info (device sda4): disk space caching is enabled
-> [ 1289.097757] BTRFS error (device sda4): failed to read chunk tree: -5
-> [ 1289.135222] BTRFS error (device sda4): open_ctree failed
-> <snip>
-> $ sudo btrfs check /dev/sda4
-> bytenr mismatch, want=61809344512, have=0
-> Couldn't read tree root
-> ERROR: cannot open file system
-> $ sudo btrfs restore -vvvv -D /dev/sda4 .
-> bytenr mismatch, want=61809344512, have=0
-> Couldn't read tree root
-> Could not open root, trying backup super
-> bytenr mismatch, want=61809344512, have=0
-> Couldn't read tree root
-> Could not open root, trying backup super
-> ERROR: superblock bytenr 274877906944 is larger than device size 58056507392
-> Could not open root, trying backup super
->
+>>> I've one system where a single kworker process is using 100%
+>>> CPU sometimes a second process comes up with 100% CPU
+>>> [btrfs-transacti]. [ ... ]
 
-What happened before this?
+>> [ ... ]1413 Snapshots. I'm deleting 50 of them every night. But
+>> btrfs-cleaner process isn't running / consuming CPU currently.
 
-What do you get for:
+Reminder that:
 
-btrfs rescue super -v /dev/sda4
+https://btrfs.wiki.kernel.org/index.php/Gotchas#Having_many_subvolumes_can_be_very_slow
 
+"The cost of several operations, including currently balance, device
+delete and fs resize, is proportional to the number of subvolumes,
+including snapshots, and (slightly super-linearly) the number of
+extents in the subvolumes."
 
+>> [ ... ] btrfs is mounted with compress-force=zlib
 
+> Could be similar issue as what I had recently, with the RAID5 and
+> 256kb chunk size. please provide more information about your RAID
+> setup.
 
--- 
-Chris Murphy
+It is similar, but updating in-place compressed files can create
+this situation even without RAID5 RMW:
+
+https://btrfs.wiki.kernel.org/index.php/Gotchas#Fragmentation
+
+"Files with a lot of random writes can become heavily fragmented
+(10000+ extents) causing thrashing on HDDs and excessive multi-second
+spikes of CPU load on systems with an SSD or large amount a RAM. ...
+Symptoms include btrfs-transacti and btrfs-endio-wri taking up a lot
+of CPU time (in spikes, possibly triggered by syncs)."

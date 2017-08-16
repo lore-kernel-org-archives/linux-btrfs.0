@@ -1,133 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55646 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752417AbdHOT1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Aug 2017 15:27:32 -0400
+Received: from mout.gmx.net ([212.227.17.21]:53530 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752328AbdHPAN6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 15 Aug 2017 20:13:58 -0400
 Subject: Re: btrfs-progs-v4.12: cross compiling
-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Hallo32 <Hallo32@gmx.net>, linux-btrfs@vger.kernel.org
+To: Eric Sandeen <sandeen@redhat.com>, dsterba@suse.cz,
+        Hallo32 <Hallo32@gmx.net>, kreijack@inwind.it,
+        linux-btrfs@vger.kernel.org
 References: <e8d480c6-758e-0e7d-a024-e9d12d7bf852@gmx.net>
  <20170814130608.GS2866@twin.jikos.cz>
  <46edbc7c-8bd9-0507-950e-be5182356772@gmx.com>
  <20170814140341.GU2866@suse.cz>
  <159b3db0-6eae-7cff-d166-3c4b0c2513ac@gmx.com>
  <20170814151052.GV2866@twin.jikos.cz>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <24619940-8384-59f9-6fd8-f390cc4bee23@suse.com>
-Date: Tue, 15 Aug 2017 15:27:25 -0400
+ <340e3677-4abd-5390-58bb-a64160a31862@libero.it>
+ <880007a9-4882-e4a6-7411-a262e5296ab0@gmx.com>
+ <082833d5-8f2a-6ed6-fa22-042a161a0dec@gmx.net>
+ <20170815124807.GZ2866@twin.jikos.cz>
+ <0f50ee70-d546-6aff-b57d-1283eadefa15@redhat.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <b2cd316f-5678-1461-0040-60f6a59ae88a@gmx.com>
+Date: Wed, 16 Aug 2017 08:13:39 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170814151052.GV2866@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="Hw2RTm8DkXhIMhhHDRe9plgFOJIxcD8pi"
+In-Reply-To: <0f50ee70-d546-6aff-b57d-1283eadefa15@redhat.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Hw2RTm8DkXhIMhhHDRe9plgFOJIxcD8pi
-Content-Type: multipart/mixed; boundary="Gs7opH05SQaxNFDNrIOis3jGtqawwrSvR";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
- Hallo32 <Hallo32@gmx.net>, linux-btrfs@vger.kernel.org
-Message-ID: <24619940-8384-59f9-6fd8-f390cc4bee23@suse.com>
-Subject: Re: btrfs-progs-v4.12: cross compiling
-References: <e8d480c6-758e-0e7d-a024-e9d12d7bf852@gmx.net>
- <20170814130608.GS2866@twin.jikos.cz>
- <46edbc7c-8bd9-0507-950e-be5182356772@gmx.com>
- <20170814140341.GU2866@suse.cz>
- <159b3db0-6eae-7cff-d166-3c4b0c2513ac@gmx.com>
- <20170814151052.GV2866@twin.jikos.cz>
-In-Reply-To: <20170814151052.GV2866@twin.jikos.cz>
 
---Gs7opH05SQaxNFDNrIOis3jGtqawwrSvR
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
-On 8/14/17 11:10 AM, David Sterba wrote:
-> On Mon, Aug 14, 2017 at 10:14:42PM +0800, Qu Wenruo wrote:
->> On 2017=E5=B9=B408=E6=9C=8814=E6=97=A5 22:03, David Sterba wrote:
->>> On Mon, Aug 14, 2017 at 09:17:08PM +0800, Qu Wenruo wrote:
->>>> On 2017=E5=B9=B408=E6=9C=8814=E6=97=A5 21:06, David Sterba wrote:
->>>>> On Mon, Aug 14, 2017 at 02:17:26PM +0200, Hallo32 wrote:
->>>>>> Since versions 4.12 btrfs-progs is complicated to cross compile fo=
-r
->>>>>> other systems.
->>>>>> The problem is, that this version includes mktables, which needs t=
-o be
->>>>>> compiled for the host system and executed there for the creation o=
-f
->>>>>> tables.c.
->>>>>>
->>>>>> Are there any changes planed for the next version of btrfs-progs t=
-o make
->>>>>> the cross compiling as simple as in the past? A included tables.c =
-for
->>>>>> example?
+On 2017年08月16日 01:28, Eric Sandeen wrote:
+> On 8/15/17 7:48 AM, David Sterba wrote:
+>> On Tue, Aug 15, 2017 at 02:44:07PM +0200, Hallo32 wrote:
+> 
+> ...
+> 
+>>>>> How the kernel deals with this kind of problem ?
+>>>>> Looking at the source of btrfs Makefile, it is more simple to replace
 >>>>>
->>>>> Yes, keeping the generated tables.c around is fine. There's no reas=
-on it
->>>>> needs to be generated each time during build. I'll fix that in 4.12=
-=2E1.
+>>>>>     mktables: kernel-lib/mktables.c
+>>>>>           @echo "    [CC]     $@"
+>>>>>           $(Q)$(CC) $(CFLAGS) $< -o $@
+>>>>>
+>>>>> with
+>>>>>
+>>>>>
+>>>>>     mktables: kernel-lib/mktables.c
+>>>>>           @echo "    [HOSTCC] $@"
+>>>>>           $(Q)$(HOSTCC) $(CFLAGS) $< -o $@
+>>>>>
+>>>>> where HOSTCC is defined as
+>>>>>
+>>>>> HOSTCC=gcc
+>>>>>
+>>>>>
+>>>>> (may be the same applied also to CFLAGS <-> HOSTCFLAGS ?)
 >>>>
->>>> But the number of lines and impossibility to review it makes it not
->>>> suitable to be managed by git.
+>>>> If using HOSTCC then I'm fine with it.
 >>>
->>> I don't understand your concern. The file is generated from a set of
->>> formulas, not intended to be updated directly.
+>>> CFLAGS needs also be replaced by something like HOSTCFLAGS, because if
+>>> you use something like mips/architecture specific CFLAGS, they may be
+>>> not applicably on the host system.
 >>
->> Yes, it should never be updated directly, so it's generated by a less =
+>> Good point. Without a regular/automated cross-compilation build testing
+>> I think we could break it quite easily. I'm going to keep the
+>> pregenerated file in git.
+> 
+> Isn't using the host compiler for some binaries during a cross-compile
+> a very standard thing to do?
+> 
+> The kernel manages it, as shown above.  xfsprogs does it (see libxfs/Makefile
+> for the crc32table.h and crc32selftest targets), e2fsprogs does it (see
+> gen_crc32ctable target in lib/ext2fs/Makefile), etc.
 
->> than 400 lines program, instead of a whole 10K+ lines file managed by =
-git.
->=20
-> mktables.c is synced from kernel sources, taking updates from there is
-> easier than porting any changes to the proposed scripted implementation=
-=2E
->=20
-> The workflow is simple:
-> - copy kernel mktables.c changes to btrfs-progs mktables.c
-> - compile mktables
-> - run 'make kernel-lib/tables.c'
+Only if I can find it earlier.
 
-Can't this happen as part of a make dist (that we don't do right now)?
+> 
+> Seems that checking in a generated file would be more prone to eventual
+> errors, no?
 
-> - commit the changes to git
+Also my concern.
 
-=2E.. and anyone using the git repo directly can sort out how to build it=
-?
+> 
+> I guess it's harder to do in btrfs-progs since it's not using autotools...
 
--Jeff
+And your patch does do a better job, especially for BUILD_CFLAGS and 
+build cc detection.
 
---=20
-Jeff Mahoney
-SUSE Labs
+Thanks,
+Qu
 
-
---Gs7opH05SQaxNFDNrIOis3jGtqawwrSvR--
-
---Hw2RTm8DkXhIMhhHDRe9plgFOJIxcD8pi
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIVAwUBWZNLIB57S2MheeWyAQg48w//c5WWNDAnTKqFbgRFOta9WsT+PTb9KYtD
-q4VYfVFabt1ZdMHWso3hFY+D+tYuOOdmkM71BLC8FQlHSJjJYHLFaTxNBl7iWEFn
-meK1AGJS3l6fCyy4m7HnJk3mb5cME2PnYpFFjJLRXhBFYn0X9PhdsSakRAahOkXH
-ErqqrIoUv+JKLcNWvFnQj7jATTsLCC5Ct9wnqwBNQjxTqJ5Fe8t0YTfjmKCJSBmP
-SBSUYa4n98sNiFIegk/ukQiuyJe0lIiqeqCePW00SOh1YLXOOPwQVK0WlBb7MJkQ
-lVJi+WO+f68LHxnvun6zYaa+Ms5aIc26DTlhvNgwBB5VstxUZBz1Vph1j+YXxczE
-jA//dUeMi/fO+imF8k5wBdbso4+sMoOzfye5SPFhIMua4MBg8x81cLJ0nXRAENpd
-XlfqTbA2SyDS+8jZYit3OuwBI5hiqD1GUut2unhxp4D1YX4hpTC5IiJfv0N5Rc02
-eucFNZDoT5Rv2CdFaRIVRZkwkNZh6kcq3n83dzu7oq1nn+Dls4VI9xTOCW3+cS2P
-DjgVydS1e2ir9QDG3SV73Hpl/WmL6TRTxPMCUmi2t/aYDJ+bEnblrqkRfXnwQJtL
-Dxs/5o68dA5tJlYux8strzb+rJzk22PEjVaiJx3L9HiXZWQulr30qZk5FSvK5qrC
-nNiTZEB61Ao=
-=9oDJ
------END PGP SIGNATURE-----
-
---Hw2RTm8DkXhIMhhHDRe9plgFOJIxcD8pi--
+> 
+> -Eric
+> 

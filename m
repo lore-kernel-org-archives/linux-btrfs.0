@@ -1,36 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43764 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751893AbdHPU0h (ORCPT
+Received: from mail-wr0-f173.google.com ([209.85.128.173]:37185 "EHLO
+        mail-wr0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752353AbdHPWZ4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 16:26:37 -0400
-Subject: Re: [PATCH 2/4] btrfs: convert enum btrfs_compression_type to define
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20170813040244.18841-1-anand.jain@oracle.com>
- <20170813040244.18841-3-anand.jain@oracle.com>
- <20170816135941.GE2866@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <6117a0fa-b540-c31f-af10-805fce5b7cfc@oracle.com>
-Date: Thu, 17 Aug 2017 04:33:41 +0800
+        Wed, 16 Aug 2017 18:25:56 -0400
+Received: by mail-wr0-f173.google.com with SMTP id z91so18582577wrc.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Aug 2017 15:25:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170816135941.GE2866@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Zirconium Hacker <jared.e.vb@gmail.com>
+Date: Wed, 16 Aug 2017 18:25:54 -0400
+Message-ID: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
+Subject: BTRFS error (device sda4): failed to read chunk tree: -5
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+This is my first time using a mailing list, and I hope I'm doing this right.
 
+$ uname -a
+Linux thinkpad 4.12.6-1-ARCH #1 SMP PREEMPT Sat Aug 12 09:16:22 CEST
+2017 x86_64 GNU/Linux
+$ btrfs --version
+btrfs-progs v4.12
+$ sudo mount -o ro,recovery /dev/sda4 /mnt
+mount: /mnt: wrong fs type, bad option, bad superblock on /dev/sda4,
+missing codepage or helper program, or other error.
+$ dmesg | tail
+<snip>
+[ 1289.087439] BTRFS warning (device sda4): 'recovery' is deprecated,
+use 'usebackuproot' instead
+[ 1289.087440] BTRFS info (device sda4): trying to use backup root at mount time
+[ 1289.087442] BTRFS info (device sda4): disk space caching is enabled
+[ 1289.097757] BTRFS error (device sda4): failed to read chunk tree: -5
+[ 1289.135222] BTRFS error (device sda4): open_ctree failed
+<snip>
+$ sudo btrfs check /dev/sda4
+bytenr mismatch, want=61809344512, have=0
+Couldn't read tree root
+ERROR: cannot open file system
+$ sudo btrfs restore -vvvv -D /dev/sda4 .
+bytenr mismatch, want=61809344512, have=0
+Couldn't read tree root
+Could not open root, trying backup super
+bytenr mismatch, want=61809344512, have=0
+Couldn't read tree root
+Could not open root, trying backup super
+ERROR: superblock bytenr 274877906944 is larger than device size 58056507392
+Could not open root, trying backup super
 
-On 08/16/2017 09:59 PM, David Sterba wrote:
-> On Sun, Aug 13, 2017 at 12:02:42PM +0800, Anand Jain wrote:
->> There isn't a huge list to manage the types, which can be managed
->> with defines. It helps to easily print the types in tracing as well.
-> 
-> We use enums in a lot of places, I'd rather keep it as it is.
+A script called btrfs-undelete
+(https://gist.github.com/Changaco/45f8d171027ea2655d74) also fails
+with similar errors.
 
-  This patch converts all of them, and it was at only one place.
-  I hope I didn't miss any. Further the next patch 3/4 needs it
-  to be define instead of enums, handling enums in the tracing
-  isn't as easy as define.
+I'd like to recover at least one folder, my desktop -- everything else
+was backed up.
+I'm using PhotoRec to try and recover some files, but I'd like a
+better solution that keeps filenames and at least some folder
+structure.
 
-Thanks, Anand
-
+Thanks in advance!

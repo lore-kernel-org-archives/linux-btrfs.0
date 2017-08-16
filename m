@@ -1,112 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:34116 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751370AbdHPPID (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 11:08:03 -0400
-Received: by mail-io0-f171.google.com with SMTP id o9so14082570iod.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Aug 2017 08:08:03 -0700 (PDT)
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
- <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
- <1502496618.6092.6.camel@scientia.net> <20170812074248.GA3352@infradead.org>
- <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
- <1502713484.3608.1.camel@scientia.net>
- <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
- <49ebcfb9-b0c8-0feb-3570-a5b19c3e3b33@cobb.uk.net>
- <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
- <1502740488.5384.5.camel@scientia.net>
- <20170816131230.GA28619@clm-mbp.thefacebook.com>
- <1502890308.5446.5.camel@scientia.net>
- <152c3e70-72e2-0d26-e145-979f602257b7@gmail.com>
- <1502892678.5446.7.camel@scientia.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <4ab82797-a2fb-4c5e-2778-e711d192e0d0@gmail.com>
-Date: Wed, 16 Aug 2017 11:07:59 -0400
+Received: from azure.uno.uk.net ([95.172.254.11]:56542 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751638AbdHPQoa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 16 Aug 2017 12:44:30 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:41632)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1di1Qj-000456-4W
+        for linux-btrfs@vger.kernel.org; Wed, 16 Aug 2017 17:44:29 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1di1Qf-0006Cr-6G
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Aug 2017 17:44:25 +0100
 MIME-Version: 1.0
-In-Reply-To: <1502892678.5446.7.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22932.30312.797284.229182@tree.ty.sabi.co.uk>
+Date: Wed, 16 Aug 2017 17:44:24 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
+In-Reply-To: <20170816131230.GA28619@clm-mbp.thefacebook.com>
+References: <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
+        <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com>
+        <1502496618.6092.6.camel@scientia.net>
+        <20170812074248.GA3352@infradead.org>
+        <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
+        <1502713484.3608.1.camel@scientia.net>
+        <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
+        <49ebcfb9-b0c8-0feb-3570-a5b19c3e3b33@cobb.uk.net>
+        <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
+        <1502740488.5384.5.camel@scientia.net>
+        <20170816131230.GA28619@clm-mbp.thefacebook.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-16 10:11, Christoph Anton Mitterer wrote:
-> On Wed, 2017-08-16 at 09:53 -0400, Austin S. Hemmelgarn wrote:
->> Go try BTRFS on top of dm-integrity, or on a
->> system with T10-DIF or T13-EPP support
-> 
-> When dm-integrity is used... would that be enough for btrfs to do a
-> proper repair in the RAID+nodatacow case? I assume it can't do repairs
-> now there, because how should it know which copy is valid.
-dm-integrity is functionally a 1:1 mapping target (it uses a secondary 
-device for storing the integrity info, but it requires one table per 
-target).  It takes one backing device, and gives one mapped device.  The 
-setup I'm suggesting would involve putting that on each device that you 
-have BTRFS configured to use.  When the checksum there fails, you get a 
-read error (AFAIK at least), which will trigger the regular BTRFS 
-recovery code just like a failed checksum.  So in this case, it should 
-recover just fine if one copy is bogus (assuming it's a media issue and 
-not something between the the block device and the filesystem.
+> We use the crcs to catch storage gone wrong, [ ... ]
 
-In all honesty, putting BTRFS on dm-integrity is going to be slow.  If 
-you can find some T10 DIF or T13 EPP hardware, that will almost 
-certainly be faster.
-> 
-> 
->>   (which you should have access to
->> given the amount of funding CERN gets)
-> Hehe, CERN may get that funding (I don't know),... but the universities
-> rather don't ;-)
-Point taken, I often forget that funding isn't exactly distributed in 
-the most obvious ways.
-> 
-> 
->> Except it isn't clear with nodatacow, because it might be a false
->> positive.
-> 
-> Sure, never claimed the opposite... just that I'd expect this to be
-> less likely than the other way round, and less of a problem in
-> practise.
-Any number of hardware failures or errors can cause the same net effect 
-as an unclean shutdown, and even some much more complicated issues (a 
-loose data cable to a storage device is probably one of the best 
-examples, as it's trivial to explain and not as rare as most people think).
-> 
-> 
-> 
->> SUSE is pathological case of brain-dead defaults.  Snapper needs to
->> either die or have some serious sense beat into it.  When you turn
->> off
->> the automatic snapshot generation for everything but updates and set
->> the
->> retention policy to not keep almost everything, it's actually not bad
->> at
->> all.
-> 
-> Well, still, with CoW (unless you have some form of deduplication,
-> which in e.g. their use case would have to be on the layers below
-> btrfs), your storage usage will grow probably more significantly than
-> without.
-Yes, and for most VM use cases I would advocate not using BTRFS 
-snapshots inside the VM and instead using snapshot functionality in the 
-VM software itself.  That still has performance issues in some cases, 
-but at least it's easier to see where the data is actually being used.
-> 
-> And as you've mentioned yourself in the other mail, there's still the
-> issue with fragmentation.
-> 
-> 
->> Snapshots work fine with nodatacow, each block gets CoW'ed once when
->> it's first written to, and then goes back to being NOCOW.  The only
->> caveat is that you probably want to defrag either once everything
->> has
->> been rewritten, or right after the snapshot.
-> 
-> I thought defrag would unshare the reflinks?
-Which is exactly why you might want to do it.  It will get rid of the 
-overhead of the single CoW operation, and it will make sure there is 
-minimal fragmentation.  IOW, when mixing NOCOW and snapshots, you either 
-have to use extra space, or you deal with performance issues.  Aside 
-from that though, it works just fine and has no special issues as 
-compared to snapshots without NOCOW.
+And that's an opportunistically feasible idea given that current
+CPUs can do that in real-time.
+
+> [ ... ] It's possible to protect against all three without COW,
+> but all solutions have their own tradeoffs and this is the setup
+> we chose. It's easy to trust and easy to debug and at scale that
+> really helps.
+
+Indeed all filesystem designs have pathological workloads, and
+system administrators and applications developers who are "more
+prepared" know which one is best for which workload, or try to
+figure it out.
+
+> Some databases also crc, and all drives have correction bits of
+> of some kind. There's nothing wrong with crcs happening at lots
+> of layers.
+
+Well, there is: in theory checksumming should be end-to-end, that
+is entirely application level, so applications that don't need it
+don't pay the price, but having it done at other layers can help
+the very many applications that don't do it and should do it, and
+it is cheap, and can help when troubleshooting exactly there the
+problem is. It is an opportunistic thing to do.
+
+> [ ... ] My real goal is to make COW fast enough that we can
+> leave it on for the database applications too.  Obviously I
+> haven't quite finished that one yet ;) [ ... ]
+
+And this worries me because it portends the usual "marketing" goal
+of making Btrfs all things to all workloads, the "OpenStack of
+filesystems", with little consideration for complexity,
+maintainability, or even sometimes reality.
+
+The reality is that all known storage media have hugely
+anisotropic performance envelopes, both as to functionality, cost,
+speed, reliability, and there is no way to have an automagic
+filesystem that "just works" in all cases, despite the constant
+demands for one by "less prepared" storage administrators and
+application developers. The reality is also that if one such
+filesystem could automagically adapt to cover optimally the
+performance envelopes of every possible device and workload, it
+would be so complex as to be unmaintainable in practice.
+
+So Btrfs, in its base "Rodeh" functionality, with COW, checksums,
+subvolumes, shapshots, *on a single device*, works pretty well and
+reliably and it is already very useful, for most workloads. Some
+people also like some of its exotic complexities like in-place
+compression and defragmentation, but they come at a high cost.
+
+For workloads that inflict lots of small random in-place updates
+on storage, like tablespaces for DBMSes etc, perhaps simpler less
+featureful storage abstraction layers are more appropriate, from
+OCFS2 to simple DM/LVM2 LVs, and Btrfs NOCOW approximates them
+well.
+
+BTW as to the specifics of DBMSes and filesystems, there is a
+classic paper making eminently reasonable, practical, suggestions
+that have been ignored for only 35 years and some:
+
+  %A M. R. Stonebraker
+  %T Operating system support for database management
+  %J CACM
+  %V 24
+  %D JUL 1981
+  %P 412-418

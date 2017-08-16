@@ -1,10 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:41586 "EHLO
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:39045 "EHLO
         cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751580AbdHPMqf (ORCPT
+        by vger.kernel.org with ESMTP id S1751744AbdHPNES (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Aug 2017 08:46:35 -0400
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+        Wed, 16 Aug 2017 09:04:18 -0400
 Subject: Re: slow btrfs with a single kworker process using 100% CPU
 To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>,
         Roman Mamedov <rm@romanrm.net>
@@ -18,8 +17,9 @@ References: <eab2f725-ab6e-d2ac-30e1-d9c964ce8be8@profihost.ag>
  <18522132.418.1502884115575.JavaMail.gkos@dynomob>
  <20170816170003.3f47321d@natsu>
  <31057849.442.1502886546489.JavaMail.gkos@dynomob>
-Message-ID: <c750108a-f769-9061-93fa-ce0843989495@profihost.ag>
-Date: Wed, 16 Aug 2017 14:46:34 +0200
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Message-ID: <3ebc1237-ed85-7ee4-626d-f68517d97b33@profihost.ag>
+Date: Wed, 16 Aug 2017 15:04:17 +0200
 MIME-Version: 1.0
 In-Reply-To: <31057849.442.1502886546489.JavaMail.gkos@dynomob>
 Content-Type: text/plain; charset=utf-8
@@ -31,7 +31,14 @@ Am 16.08.2017 um 14:29 schrieb Konstantin V. Gavrilenko:
 > Roman, initially I had a single process occupying 100% CPU, when sysrq it was indicating as "btrfs_find_space_for_alloc"
 > but that's when I used the autodefrag, compress, forcecompress and commit=10 mount flags and space_cache was v1 by default.
 > when I switched to "relatime,compress-force=zlib,space_cache=v2" the 100% cpu has dissapeared, but the shite performance remained.
-> 
+
+space_cache=v2 is not supported by the opensuse kernel - but as i
+compile the kernel myself anyway. Is there a patchset to add support for
+space_cache=v2?
+
+Greets,
+Stefan
+
 > 
 > As to the chunk size, there is no information in the article about the type of data that was used. While in our case we are pretty certain about the compressed block size (32-128). I am currently inclining towards 32k as it might be ideal in a situation when we have a 5 disk raid5 array.
 > 
@@ -43,13 +50,7 @@ Am 16.08.2017 um 14:29 schrieb Konstantin V. Gavrilenko:
 > 
 > 
 > Stefan what mount flags do you use?
-
-noatime,compress-force=zlib,noacl,space_cache,skip_balance,subvolid=5,subvol=/
-
-Greets,
-Stefan
-
-
+> 
 > kos
 > 
 > 

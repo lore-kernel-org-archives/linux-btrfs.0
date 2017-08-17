@@ -1,93 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:57034 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752632AbdHQWmK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2017 18:42:10 -0400
-Subject: Re: BTRFS error (device sda4): failed to read chunk tree: -5
-To: Chris Murphy <lists@colorremedies.com>,
-        Zirconium Hacker <jared.e.vb@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
- <CAJCQCtQONfPPumkMaisrSxNZJyXMYTXufsYVY45ypMP+6ve9ZA@mail.gmail.com>
- <CALsQ4_x13pBuZ0wDmO=28m6xAEXFjOkORJsxDeFASOeA5oDeLg@mail.gmail.com>
- <CAJCQCtRTiZy2YNZNLLx_KWuLMuNxPK26u1Orz91MqtDRFNRVNg@mail.gmail.com>
- <CALsQ4_xkiyWuwJ4mVOV7QhWx6RFD80Y23fDNdPam2UFpRi1Gxw@mail.gmail.com>
- <CAJCQCtTx_i_PrqgRbA-P9+zKX926KKeT1nwAJT=dkr-qcOpCCg@mail.gmail.com>
- <CALsQ4_wZLvdqHdKa9DyjRXTmf1CV47+11-O_SqLRQJoQDT+gqQ@mail.gmail.com>
- <CAJCQCtRYxb4QdN__WcUX_Jhs=GyguwJV79pKUp4PYhC9h_H-xA@mail.gmail.com>
- <CALsQ4_xWte-vOJD-ppOPkvfHpLtu_-24KZPj2H9Tp99S7jDGcw@mail.gmail.com>
- <CAJCQCtR-+o_GA7fCfSe8Lfwp8h6FzfiSR=qz8ekc4=dy98mtiQ@mail.gmail.com>
- <CALsQ4_zTdxgfN25pkbhtXfj5EMVUbZ2=FrUHUocNxjynHhYhuA@mail.gmail.com>
- <CAJCQCtTuxjKcZqLOqQvVYZANXyke1_ZeKXF_fr8UG-5mUb=hhw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <38bbcea5-882b-1637-1970-e147cb141d39@gmx.com>
-Date: Fri, 18 Aug 2017 06:42:03 +0800
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:33906 "EHLO
+        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752872AbdHQXjT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Aug 2017 19:39:19 -0400
+Received: by mail-qt0-f196.google.com with SMTP id i19so7627591qte.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 16:39:19 -0700 (PDT)
+Date: Thu, 17 Aug 2017 19:39:17 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Paulo Dias <paulo.miguel.dias@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
+Message-ID: <20170817233916.GA25527@destiny>
+References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTuxjKcZqLOqQvVYZANXyke1_ZeKXF_fr8UG-5mUb=hhw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2017年08月18日 00:53, Chris Murphy wrote:
-> Readding Btrfslist, and adding Qu:
+On Tue, Aug 15, 2017 at 10:12:28PM -0300, Paulo Dias wrote:
+> Hello/2 all
 > 
+> I'm using libvirt with a qcow2 image and everytime i run btrfs scrub
+> -H /home (subvolume where the image is), i get:
 > 
-> On Thu, Aug 17, 2017 at 12:48 AM, Zirconium Hacker <jared.e.vb@gmail.com> wrote:
->> Oh, sorry, I guess the output of the command I ran wasn't clear -- it
->> was collecting the output of running the debug command on all 1,084
->> and showing that it was the same.  Here's specifically what you asked
->> for:
->>
->> $ sudo btrfs-debug-tree -b 61809344512 /dev/sda4
->> btrfs-progs v4.12
->> bytenr mismatch, want=61809344512, have=0
->> Couldn't read tree root
->> ERROR: unable to open /dev/sda4
->> $ sudo btrfs-debug-tree -b 1085440000 /dev/sda4
->> btrfs-progs v4.12
->> bytenr mismatch, want=61809344512, have=0
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): bdev
+> /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 30, gen 0
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): unable to
+> fixup (regular) error at logical 289831161856 on dev /dev/sda3
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): bdev
+> /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 31, gen 0
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): unable to
+> fixup (regular) error at logical 289830309888 on dev /dev/sda3
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): bdev
+> /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 32, gen 0
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): unable to
+> fixup (regular) error at logical 289831055360 on dev /dev/sda3
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): bdev
+> /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 33, gen 0
+> ago 15 21:58:08 kerberos kernel: BTRFS error (device sda3): unable to
+> fixup (regular) error at logical 289861591040 on dev /dev/sda3
+> ago 15 21:58:09 kerberos kernel: BTRFS warning (device sda3): checksum
+> error at logical 290297204736 on dev /dev/sda3, sector 67982824, root
+> 258, inode 968837, offset 17455849472, length 4096, links 1 (path:
+> groo/Fedora/Fedora.qcow2)
+> ago 15 21:58:09 kerberos kernel: BTRFS error (device sda3): bdev
+> /dev/sda3 errs: wr 0, rd 0, flush 0, corrupt 34, gen 0
+> ago 15 21:58:09 kerberos kernel: BTRFS error (device sda3): unable to
+> fixup (regular) error at logical 290297204736 on dev /dev/sda3
+>
 
-This means either chunk root is corrupted, or system chunk array in 
-superblock is corrupted.
-Bytenr mismatch is normally impossible for normal operation.
+Tried replying from my phone, forgot the app defaults to HTML, trying again.
 
-BTW are you using discard mount option? Sometimes it can cause problem.
+This is happening because the app (the guest OS in this case, we saw this a lot
+with windows guests) is changing the pages while they are in flight.  We
+calculate the checksum of the page before it's written, so if it changes while
+in flight we'll end up with a csum mismatch.
 
-And please also paste the following output:
+To fix this change kvm to not use O_DIRECT or set NODATASUM on your qcow2 image.
+You'll have to re-create the image because NODATASUM won't apply to the already
+invalid checksums.  Thanks,
 
-# btrfs-show-super -fa /dev/sda4
-# btrfs-find-root -o 5 /dev/sda4
-
-The first is to output the full backup roots and current chunk root for 
-us to debug.
-The second one will try to iterate your whole disk to find a valid but 
-old chunk root.
-If we could find one (even a little old), it may make it possible to 
-mount the fs.
-
-Thanks,
-Qu
->> Couldn't read tree root
->> ERROR: unable to open /dev/sda4
->>
->> I'm using GMail, and it's confusing me by trimming off quotes and
->> stuff, so sorry if I miss something.
->>
-> 
-> OK well now we're in the bad part of Btrfs repair where the error
-> messages don't help. > It's one thing for it to complain about
-> 1085440000 being invalid, because by now it might have been
-> overwritten, but to say it wants some other root that we already know
-> it can't read, and then fail reading that root is not helpful
-> information.
-> Maybe Qu has an idea. But it does sound like something really
-> catastrophic happened to blow away all of the backup root trees.
-> 
-> Going back to your first email, -o ro,usebackuproot failed with a
-> chunk tree error. I wonder if 'rescue chunk' might help.
-> 
-> Try 'btrfs rescue chunk -v' and see what you get.
-> 
-> 
+Josef 

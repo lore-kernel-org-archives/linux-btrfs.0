@@ -1,43 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f171.google.com ([209.85.161.171]:34838 "EHLO
-        mail-yw0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752820AbdHQUvc (ORCPT
+Received: from mail-vk0-f49.google.com ([209.85.213.49]:38338 "EHLO
+        mail-vk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753165AbdHQU6w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2017 16:51:32 -0400
-Received: by mail-yw0-f171.google.com with SMTP id n83so20461910ywn.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 13:51:32 -0700 (PDT)
-Date: Thu, 17 Aug 2017 13:51:29 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Zirconium Hacker <jared.e.vb@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS error (device sda4): failed to read chunk tree: -5
-Message-ID: <20170817205129.GD2459@vader>
-References: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
+        Thu, 17 Aug 2017 16:58:52 -0400
+Received: by mail-vk0-f49.google.com with SMTP id g189so26460476vke.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 13:58:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
+In-Reply-To: <CADJPUQ_va-S7BjG6f0a+Wu8fx6jnWjG8kMDVWQ=bj8W443MQmg@mail.gmail.com>
+References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
+ <CAJCQCtQPMNnC4wHfubV1aHstdUnZXQoRMuss85=_ZAv51qFpSw@mail.gmail.com>
+ <pan$b0a14$8f1e0555$f8f395d6$3ede559@cox.net> <CAJCQCtQjh07f6EYGVUPpWL7aXChVSXdok1DOg-+ZwOSqNMq_7Q@mail.gmail.com>
+ <CADJPUQ_va-S7BjG6f0a+Wu8fx6jnWjG8kMDVWQ=bj8W443MQmg@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 17 Aug 2017 14:58:50 -0600
+Message-ID: <CAJCQCtTudHOYHwNemGaGWHWD_Q0rc+_06gx9FjZZ6VNuy+n9fw@mail.gmail.com>
+Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
+To: Paulo Dias <paulo.miguel.dias@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 16, 2017 at 06:25:54PM -0400, Zirconium Hacker wrote:
-> Hi,
-> This is my first time using a mailing list, and I hope I'm doing this right.
-> 
-> $ uname -a
-> Linux thinkpad 4.12.6-1-ARCH #1 SMP PREEMPT Sat Aug 12 09:16:22 CEST
-> 2017 x86_64 GNU/Linux
-> $ btrfs --version
-> btrfs-progs v4.12
-> $ sudo mount -o ro,recovery /dev/sda4 /mnt
-> mount: /mnt: wrong fs type, bad option, bad superblock on /dev/sda4,
-> missing codepage or helper program, or other error.
-> $ dmesg | tail
-> <snip>
-> [ 1289.087439] BTRFS warning (device sda4): 'recovery' is deprecated,
-> use 'usebackuproot' instead
-> [ 1289.087440] BTRFS info (device sda4): trying to use backup root at mount time
-> [ 1289.087442] BTRFS info (device sda4): disk space caching is enabled
-> [ 1289.097757] BTRFS error (device sda4): failed to read chunk tree: -5
-> [ 1289.135222] BTRFS error (device sda4): open_ctree failed
+First post
 
-Errno 5 is EIO, are there any I/O errors in your logs?
+235 POR_Recovery_Count      0x0012   099   099   000    Old_age
+Always       -       54
+
+Recent post
+
+235 POR_Recovery_Count      -O--C-   099   099   000    -    55
+
+So you've had one more of these POR events.
+
+http://www.samsung.com/semiconductor/minisite/ssd/downloads/document/Samsung_SSD_White_Paper.pdf
+ID # 235 Power Recovery Count
+A count of the number of sudden power off cases. If there is a sudden
+power off, the firmware must recover all of the
+mapping and user data during the next power on. This is a count of the
+number of times this has happened.
+
+I wonder if there is a correlation with these POR events and
+corruption? And I wonder what's causing the POR event? Is this machine
+crashing/hanging and you're doing a force power off? Or is it suspend
+to RAM or suspend to disk? And if you stop doing those things, does
+the corruption still happen?
+
+
+--------------
+Chris Murphy

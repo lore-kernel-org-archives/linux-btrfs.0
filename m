@@ -1,168 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f53.google.com ([209.85.213.53]:36875 "EHLO
-        mail-vk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752632AbdHQUew (ORCPT
+Received: from smtp.domeneshop.no ([194.63.252.55]:44954 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753147AbdHQUmC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2017 16:34:52 -0400
-Received: by mail-vk0-f53.google.com with SMTP id r199so26298040vke.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 13:34:52 -0700 (PDT)
+        Thu, 17 Aug 2017 16:42:02 -0400
+Received: from 68.79-160-168.customer.lyse.net ([79.160.168.68]:39700 helo=[10.0.0.10])
+        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.84_2)
+        (envelope-from <waxhead@dirtcellar.net>)
+        id 1diRc8-0004nU-AA
+        for linux-btrfs@vger.kernel.org; Thu, 17 Aug 2017 22:42:00 +0200
+Reply-To: waxhead@dirtcellar.net
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: waxhead <waxhead@dirtcellar.net>
+Subject: 8 disk metadata radi10 + data raid1
+Message-ID: <07f6dc04-7163-fe49-63ae-460b401f369c@dirtcellar.net>
+Date: Thu, 17 Aug 2017 22:41:59 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTbaU=A5RQgS1F41tH2m558PgyUb0Gm4WStpA=PM3Ykrg@mail.gmail.com>
-References: <CAJCQCtRGUBWD6Mw6pAiKGAPgGz+vqy3sgmbEBDETPYsxJw8G7w@mail.gmail.com>
- <b14a36dd-fcab-a38b-cbf9-adbd096da3a3@gmx.com> <1502496618.6092.6.camel@scientia.net>
- <20170812074248.GA3352@infradead.org> <e560ba2d-ad11-abe6-bb3a-788d7b5a7562@gmx.com>
- <1502713484.3608.1.camel@scientia.net> <b0e0e9e4-5b7f-ac84-b05c-8724762b16ea@gmail.com>
- <49ebcfb9-b0c8-0feb-3570-a5b19c3e3b33@cobb.uk.net> <53633949-b04b-ec5c-f300-c0b702d22374@gmail.com>
- <1502740488.5384.5.camel@scientia.net> <20170816131230.GA28619@clm-mbp.thefacebook.com>
- <51e051fa-3731-d2fe-7eab-cb324fd38576@gmx.com> <CAJCQCtSgGdsctmiJ4Sq+E5Qr1aoC87EiFUrkH7Eeu8GTZ6XvyQ@mail.gmail.com>
- <CAP8EXU2VnPMp4TdXo=GcNQ6Y1ymTMsO=t8+AEEM=LygRpTUWMA@mail.gmail.com>
- <118e3a18-bf01-919f-0e21-7101313cd164@gmail.com> <CAJCQCtTbaU=A5RQgS1F41tH2m558PgyUb0Gm4WStpA=PM3Ykrg@mail.gmail.com>
-From: GWB <gwb@2realms.com>
-Date: Thu, 17 Aug 2017 15:34:10 -0500
-Message-ID: <CAP8EXU3TaY6Pts_CpNo+9g8UmvaoRwHtitS6omOgPM4oj0Eanw@mail.gmail.com>
-Subject: Re: RedHat 7.4 Release Notes: "Btrfs has been deprecated" - wut?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Peter Grandi <pg@btrfs.list.sabi.co.uk>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yep, and thank you to Suse, Fujitsu, and all the contributors.
+Hi,
 
-I suppose we can all be charitable when reading this from the Red Hat
-Whitepaper at:
+On one of my machines I run a BTRFS filesystem with the following 
+configuration
 
-https://www.redhat.com/whitepapers/rha/gfs/GFS_INS0032US.pdf:
+Kernel: 4.11.0-1-amd64 #1 SMP Debian 4.11.6-1 (2017-06-19) x86_64 GNU/Linux
+Disks: 8
+Metadata: Raid 10
+Data: Raid1
 
-<<
- Red Hat GFS is the world’s leading cluster file system for Linux.
->>
+One of the disks is going bad , and while the system still runs fine I 
+ran some md5sum's on a few files and hit this bug.
 
-If that is GFS2, it is a different use case than Gluster
-(https://www.redhat.com/en/technologies/storage).  So perhaps
-marketing might tweak that a little bit, maybe:
+Currently the only non-zero output from btrfs de st / is about 270000 
+write_io_errs and 278000 read_io_errs
 
-<<
- Red Hat GFS is the world’s leading cluster file system for Linux for
-Oracle RAC Database Clustering.
->>
+I do have backups (hah! you did not expect that Duncan did you!)
+and the data is not important on this filesystem.
+Even if I got thrown the below stuff in dmesg the system keeps running 
+fine.
 
-But you can see how Oracle might quibble with that.  So Red Hat goes
-as far as it can in the Whitepaper:
+...the failed device disappeared as of writing this... so now the 
+filesystem have one missing device.
 
-<<
- Red Hat GFS simplifies the installation, configuration, and on-going
-maintenance of the SAN infrastructure necessary for Oracle RAC
-clustering. Oracle tables, log files, program files, and archive
-information can all be stored in GFS files, avoiding the complexity
-and difficulties of managing raw storage devices on a SAN while
-achieving excellent performance.
->>
+---snip--- ( https://pastebin.ca/3856147 )
+[120678.569637]  ? worker_thread+0x4d/0x490
+[120678.570931]  ? kthread+0xfc/0x130
+[120678.572206]  ? process_one_work+0x430/0x430
+[120678.573480]  ? kthread_create_on_node+0x70/0x70
+[120678.574756]  ? do_group_exit+0x3a/0xa0
+[120678.576024]  ? ret_from_fork+0x26/0x40
+[120678.577287] Code: 00 00 c7 43 28 00 00 00 00 b9 01 00 00 00 31 c0 eb 
+d8 8d 48 02 eb da 41 89 e8 48 c7 c6 d8 67 4a c0 4c 89 e7 e8 c0 b9 fa ff 
+eb 80 <0f> 0b 66 90 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 41 57
+[120678.580003] RIP: btrfs_check_repairable+0xe2/0xf0 [btrfs] RSP: 
+ffffac3a419ffd60
+[120678.581377] ------------[ cut here ]------------
+[120678.581526] ---[ end trace 1f2b98046a799b47 ]---
+[120678.584109] kernel BUG at 
+/build/linux-C5oXKu/linux-4.11.6/fs/btrfs/extent_io.c:2315!
+[120678.585477] invalid opcode: 0000 [#5] SMP
+[120678.586821] Modules linked in: ebtable_filter ebtables 
+ip6table_filter ip6_tables iptable_filter cpufreq_userspace 
+cpufreq_powersave cpufreq_conservative intel_powerclamp iTCO_wdt 
+iTCO_vendor_support coretemp kvm_intel cdc_ether usbnet mii kvm joydev 
+mgag200 ttm irqbypass intel_cstate evdev intel_uncore drm_kms_helper drm 
+pcspkr i2c_algo_bit lpc_ich mfd_core ioatdma sg ipmi_si ipmi_devintf dca 
+ipmi_msghandler i7core_edac button edac_core i5500_temp shpchp 
+acpi_cpufreq binfmt_misc ip_tables x_tables autofs4 btrfs crc32c_generic 
+xor raid6_pq sd_mod hid_generic usbhid hid sr_mod cdrom ata_generic 
+crc32c_intel ata_piix i2c_i801 libata mptsas ehci_pci scsi_transport_sas 
+uhci_hcd mptscsih mptbase ehci_hcd scsi_mod usbcore usb_common bnx2
+[120678.595485] CPU: 0 PID: 15305 Comm: kworker/u32:3 Tainted: G      D 
+  I     4.11.0-1-amd64 #1 Debian 4.11.6-1
+[120678.596960] Hardware name: IBM Lenovo ThinkServer RD220 
+-[379811G]-/59Y3827     , BIOS -[D6EL28AUS-1.03]- 08/20/2009
+[120678.598476] Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
+[120678.599943] task: ffff9a4dc7bd6d40 task.stack: ffffac3a44214000
+[120678.601431] RIP: 0010:btrfs_check_repairable+0xe2/0xf0 [btrfs]
+[120678.602867] RSP: 0000:ffffac3a44217d60 EFLAGS: 00010297
+[120678.604271] RAX: 0000000000000001 RBX: ffff9a4daa28e080 RCX: 
+0000000000000000
+[120678.605660] RDX: 0000000000000002 RSI: 0000000000000000 RDI: 
+ffff9a4de67d6e18
+[120678.607017] RBP: 0000000000000001 R08: 00000dbbb2240000 R09: 
+00000dbbf2240000
+[120678.608344] R10: 0000000000000000 R11: 00000000fffffffb R12: 
+ffff9a4de67d6000
+[120678.609641] R13: ffff9a4cfea6dda8 R14: ffff9a4cfea6dda8 R15: 
+0000000000000000
+[120678.610921] FS:  0000000000000000(0000) GS:ffff9a4def200000(0000) 
+knlGS:0000000000000000
+[120678.612190] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[120678.613435] CR2: 00005627a2d96ff0 CR3: 000000039310f000 CR4: 
+00000000000006f0
+[120678.614687] Call Trace:
+[120678.615965]  ? end_bio_extent_readpage+0x42e/0x580 [btrfs]
+[120678.617244]  ? btrfs_scrubparity_helper+0xcf/0x300 [btrfs]
+[120678.618488]  ? process_one_work+0x197/0x430
+[120678.619728]  ? worker_thread+0x4d/0x490
+[120678.620960]  ? kthread+0xfc/0x130
+[120678.622185]  ? process_one_work+0x430/0x430
+[120678.623408]  ? kthread_create_on_node+0x70/0x70
+[120678.624620]  ? do_group_exit+0x3a/0xa0
+[120678.625817]  ? ret_from_fork+0x26/0x40
+[120678.626994] Code: 00 00 c7 43 28 00 00 00 00 b9 01 00 00 00 31 c0 eb 
+d8 8d 48 02 eb da 41 89 e8 48 c7 c6 d8 67 4a c0 4c 89 e7 e8 c0 b9 fa ff 
+eb 80 <0f> 0b 66 90 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 41 57
+[120678.629525] RIP: btrfs_check_repairable+0xe2/0xf0 [btrfs] RSP: 
+ffffac3a44217d60
+[120678.630795] ------------[ cut here ]------------
+[120678.630839] ---[ end trace 1f2b98046a799b48 ]---
+[120678.633382] kernel BUG at 
+/build/linux-C5oXKu/linux-4.11.6/fs/btrfs/extent_io.c:2315!
+[120678.634625] invalid opcode: 0000 [#6] SMP
+[120678.635820] Modules linked in: ebtable_filter ebtables 
+ip6table_filter ip6_tables iptable_filter cpufreq_userspace 
+cpufreq_powersave cpufreq_conservative intel_powerclamp iTCO_wdt 
+iTCO_vendor_support coretemp kvm_intel cdc_ether usbnet mii kvm joydev 
+mgag200 ttm irqbypass intel_cstate evdev intel_uncore drm_kms_helper drm 
+pcspkr i2c_algo_bit lpc_ich mfd_core ioatdma sg ipmi_si ipmi_devintf dca 
+ipmi_msghandler i7core_edac button edac_core i5500_temp shpchp 
+acpi_cpufreq binfmt_misc ip_tables x_tables autofs4 btrfs crc32c_generic 
+xor raid6_pq sd_mod hid_generic usbhid hid sr_mod cdrom ata_generic 
+crc32c_intel ata_piix i2c_i801 libata mptsas ehci_pci scsi_transport_sas 
+uhci_hcd mptscsih mptbase ehci_hcd scsi_mod usbcore usb_common bnx2
+[120678.643664] CPU: 1 PID: 15318 Comm: kworker/u32:5 Tainted: G      D 
+  I     4.11.0-1-amd64 #1 Debian 4.11.6-1
+[120678.645017] Hardware name: IBM Lenovo ThinkServer RD220 
+-[379811G]-/59Y3827     , BIOS -[D6EL28AUS-1.03]- 08/20/2009
+[120678.646437] Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
+[120678.647808] task: ffff9a4dcf809240 task.stack: ffffac3a43e14000
+[120678.649192] RIP: 0010:btrfs_check_repairable+0xe2/0xf0 [btrfs]
+[120678.650530] RSP: 0000:ffffac3a43e17d60 EFLAGS: 00010297
+[120678.651838] RAX: 0000000000000001 RBX: ffff9a4daa28ec80 RCX: 
+0000000000000000
+[120678.653134] RDX: 0000000000000002 RSI: 0000000000000000 RDI: 
+ffff9a4de67d6e18
+[120678.654403] RBP: 0000000000000001 R08: 00000dbbb2240000 R09: 
+00000dbbf2240000
+[120678.655644] R10: 0000000000000000 R11: 00000000fffffffb R12: 
+ffff9a4de67d6000
+[120678.656853] R13: ffff9a4de4aa7728 R14: ffff9a4de4aa7728 R15: 
+0000000000000000
+[120678.658043] FS:  0000000000000000(0000) GS:ffff9a4def240000(0000) 
+knlGS:0000000000000000
+[120678.659227] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[120678.660386] CR2: 00007f335364dd3c CR3: 000000039310f000 CR4: 
+00000000000006e0
+[120678.661559] Call Trace:
+[120678.662752]  ? end_bio_extent_readpage+0x42e/0x580 [btrfs]
+[120678.663944]  ? btrfs_scrubparity_helper+0xcf/0x300 [btrfs]
+[120678.665105]  ? process_one_work+0x197/0x430
+[120678.666260]  ? worker_thread+0x4d/0x490
+[120678.667410]  ? kthread+0xfc/0x130
+[120678.668557]  ? process_one_work+0x430/0x430
+[120678.669698]  ? kthread_create_on_node+0x70/0x70
+[120678.670825]  ? do_group_exit+0x3a/0xa0
+[120678.671939]  ? ret_from_fork+0x26/0x40
+[120678.673037] Code: 00 00 c7 43 28 00 00 00 00 b9 01 00 00 00 31 c0 eb 
+d8 8d 48 02 eb da 41 89 e8 48 c7 c6 d8 67 4a c0 4c 89 e7 e8 c0 b9 fa ff 
+eb 80 <0f> 0b 66 90 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90 41 57
+[120678.675384] RIP: btrfs_check_repairable+0xe2/0xf0 [btrfs] RSP: 
+ffffac3a43e17d60
+[120678.676613] ---[ end trace 1f2b98046a799b49 ]---
+[120702.863359] btrfs_dev_stat_print_on_error: 252 callbacks suppressed
+[120702.863367] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270268, rd 278596, flush 0, corrupt 0, gen 0
+[120702.863491] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270269, rd 278596, flush 0, corrupt 0, gen 0
+[120702.863604] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270270, rd 278596, flush 0, corrupt 0, gen 0
+[120702.863716] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270271, rd 278596, flush 0, corrupt 0, gen 0
+[120702.863839] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270272, rd 278596, flush 0, corrupt 0, gen 0
+[120703.353885] BTRFS warning (device sda1): lost page write due to IO 
+error on /dev/sda1
+[120703.353893] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270273, rd 278596, flush 0, corrupt 0, gen 0
+[120703.353900] BTRFS warning (device sda1): lost page write due to IO 
+error on /dev/sda1
+[120703.353903] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270274, rd 278596, flush 0, corrupt 0, gen 0
+[120703.353909] BTRFS warning (device sda1): lost page write due to IO 
+error on /dev/sda1
+[120703.353911] BTRFS error (device sda1): bdev /dev/sda1 errs: wr 
+270275, rd 278596, flush 0, corrupt 0, gen 0
+---snap---
 
-Which avoids a comparison between, say, an Oracle Sparc server
-(probably made by Fujitsu) hosting Oracle Rack Clusters on Solaris.
-Given the price of Oracle's sparc servers, Red Hat may be as good as
-an Oracle RAC DB server can get for a price less than the annual
-budget of a small country.
-
-Well, great news, Austin and Chris, that clears it up for me, and now
-I know of yet another use case for btrfs as the dmu for Gluster.  So,
-again, I'm not too worried about Red Hat deprecating btrfs, given the
-number of supporters and developers.  If Oracle or Suse drops out,
-then I would worry.
-
-Gordon
-
-On Thu, Aug 17, 2017 at 2:00 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Thu, Aug 17, 2017 at 5:47 AM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->
->> Also, I don't think I've ever seen any patches posted from a Red Hat address
->> on the ML, so I don't think they were really all that involved in
->> development to begin with.
->
-> Unfortunately the email domain doesn't tell the whole story who's
-> backing development, the company or the individual.
->
-> [chris@f26s linux]$ git log --since=”2016-01-01” --pretty=format:"%an
-> %ae" --no-merges -- fs/btrfs | sort -u | grep redhat
-> Andreas Gruenbacher agruenba@redhat.com
-> David Howells dhowells@redhat.com
-> Eric Sandeen sandeen@redhat.com
-> Jeff Layton jlayton@redhat.com
-> Mike Christie mchristi@redhat.com
-> Miklos Szeredi mszeredi@redhat.com
-> $
->
->
->
->> GFS and GlusterFS are different technologies, unless Red Hat's marketing
->> department is trying to be actively deceptive.
->
-> https://www.redhat.com/en/technologies/storage
->
-> Seems very clear. I don't even see GFS or GFS2 on here. It's Gluster and Ceph.
->
->
->>
->> SUSE is also pretty actively involved in the development too, and I think
->> Fujitsu is as well.
->
->
->
->>>
->>>
->>> I'm not too worried.  I'll keep using btrfs as it is now, within the
->>> limits of what it can consistently do, and do what I can to help
->>> support the effort.  I'm not a file system coder, but I very much
->>> appreciate the enormous amount of work that goes into btrfs.
->>>
->>> Steady on, ButterFS people.  Back now to cat videos.
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> Big bunch of SUSE contributions (yes David Sterba is counted three
-> times here), and Fujitsu.
->
-> [chris@f26s linux]$ git log --since=”2016-01-01” --pretty=format:"%an
-> %ae" --no-merges -- fs/btrfs | sort -u | grep suse
-> Borislav Petkov bp@suse.de
-> David Sterba dsterba@suse.com
-> David Sterba DSterba@suse.com
-> David Sterba dsterba@suse.cz
-> Edmund Nadolski enadolski@suse.com
-> Filipe Manana fdmanana@suse.com
-> Goldwyn Rodrigues rgoldwyn@suse.com
-> Guoqing Jiang gqjiang@suse.com
-> Jan Kara jack@suse.cz
-> Jeff Mahoney jeffm@suse.com
-> Jiri Kosina jkosina@suse.cz
-> Mark Fasheh mfasheh@suse.de
-> Michal Hocko mhocko@suse.com
-> NeilBrown neilb@suse.com
-> Nikolay Borisov nborisov@suse.com
-> Petr Mladek pmladek@suse.com
->
-> [chris@f26s linux]$ git log --since=”2016-01-01” --pretty=format:"%an
-> %ae" --no-merges -- fs/btrfs | sort -u | grep fujitsu
-> Lu Fengqi lufq.fnst@cn.fujitsu.com
-> Qu Wenruo quwenruo@cn.fujitsu.com
-> Satoru Takeuchi takeuchi_satoru@jp.fujitsu.com
-> Su Yue suy.fnst@cn.fujitsu.com
-> Tsutomu Itoh t-itoh@jp.fujitsu.com
-> Wang Xiaoguang wangxg.fnst@cn.fujitsu.com
-> Xiaoguang Wang wangxg.fnst@cn.fujitsu.com
-> Zhao Lei zhaolei@cn.fujitsu.com
->
->
-> Over the past 18 months, it's about 100 Btrfs contributors, 71 ext4,
-> 63 XFS. So all three have many contributors. That of course does not
-> tell the whole story by any means.
->
-> --
-> Chris Murphy

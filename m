@@ -1,52 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f49.google.com ([209.85.213.49]:38338 "EHLO
-        mail-vk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753165AbdHQU6w (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Aug 2017 16:58:52 -0400
-Received: by mail-vk0-f49.google.com with SMTP id g189so26460476vke.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Aug 2017 13:58:52 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CADJPUQ_va-S7BjG6f0a+Wu8fx6jnWjG8kMDVWQ=bj8W443MQmg@mail.gmail.com>
-References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
- <CAJCQCtQPMNnC4wHfubV1aHstdUnZXQoRMuss85=_ZAv51qFpSw@mail.gmail.com>
- <pan$b0a14$8f1e0555$f8f395d6$3ede559@cox.net> <CAJCQCtQjh07f6EYGVUPpWL7aXChVSXdok1DOg-+ZwOSqNMq_7Q@mail.gmail.com>
- <CADJPUQ_va-S7BjG6f0a+Wu8fx6jnWjG8kMDVWQ=bj8W443MQmg@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 17 Aug 2017 14:58:50 -0600
-Message-ID: <CAJCQCtTudHOYHwNemGaGWHWD_Q0rc+_06gx9FjZZ6VNuy+n9fw@mail.gmail.com>
-Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
-To: Paulo Dias <paulo.miguel.dias@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
+Received: from smtp-32-i6.italiaonline.it ([212.48.14.166]:47361 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753297AbdHQU7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Aug 2017 16:59:37 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: btrfs fi du -s gives Inappropriate ioctl for device
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Piotr Szymaniak <szarpaj@grubelek.pl>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+References: <20170814225740.GK19638@pontus.sran>
+ <ac3d9310-9b88-dc18-56bf-3e02b15686df@libero.it>
+ <CAJCQCtTU9EGhjeug-AzS0TDfySwTQi=dPrFLRDE1Go71E7+W+g@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <9d24b092-6b03-8d97-b4bd-feb36e00b9e0@inwind.it>
+Date: Thu, 17 Aug 2017 22:59:33 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtTU9EGhjeug-AzS0TDfySwTQi=dPrFLRDE1Go71E7+W+g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-First post
+Hi,
 
-235 POR_Recovery_Count      0x0012   099   099   000    Old_age
-Always       -       54
+On 08/17/2017 08:43 PM, Chris Murphy wrote:
+> # btrfs sub create test1
+> Create subvolume './test1'
+> # btrfs sub create test1/test2
+> Create subvolume 'test1/test2'
+> # btrfs sub snap test1 test1.snap
+> Create a snapshot of 'test1' in './test1.snap'
+> # btrfs fi du -s test1
+>      Total   Exclusive  Set shared  Filename
+>      0.00B       0.00B       0.00B  test1
+> # btrfs fi du -s test1.snap
+>      Total   Exclusive  Set shared  Filename
+> ERROR: cannot check space of 'test1.snap': Inappropriate ioctl for device
+> #
+> 
 
-Recent post
+tanks for the test case. Now I was able to reproduce the problem. The bug(s) are two:
 
-235 POR_Recovery_Count      -O--C-   099   099   000    -    55
+1) to get the treeid of the files/directory, the function lookup_path_rootid() is used, which behaves strangely when it is called on a directory that is BTRFS_EMPTY_SUBVOL_DIR_OBJECTID. In fact this function is commented as following:
+[....]
+/*
+ * For a given:
+ * - file or directory return the containing tree root id
+ * - subvolume return its own tree id
+ * - BTRFS_EMPTY_SUBVOL_DIR_OBJECTID (directory with ino == 2) the result is
+ *   undefined and function returns -1
+ */
+int lookup_path_rootid(int fd, u64 *rootid)
+{
+[....]
 
-So you've had one more of these POR events.
+The caller (du_add_file()) doesn't consider this case.
 
-http://www.samsung.com/semiconductor/minisite/ssd/downloads/document/Samsung_SSD_White_Paper.pdf
-ID # 235 Power Recovery Count
-A count of the number of sudden power off cases. If there is a sudden
-power off, the firmware must recover all of the
-mapping and user data during the next power on. This is a count of the
-number of times this has happened.
+2) in the function du_walk_dir(), an error returned by du_add_file() is ignored, but the return value is not reset. So if the last entry has ino BTRFS_EMPTY_SUBVOL_DIR_OBJECTID (directory with ino == 2) an error is returned. But if there is another directory item no error is returned !
 
-I wonder if there is a correlation with these POR events and
-corruption? And I wonder what's causing the POR event? Is this machine
-crashing/hanging and you're doing a force power off? Or is it suspend
-to RAM or suspend to disk? And if you stop doing those things, does
-the corruption still happen?
+See the following tests cases:
+
+# btrfs sub create test1
+# btrfs sub create test1/test2
+# btrfs sub snap test1 test1.snap
+# btrfs fi du -s test1
+     Total   Exclusive  Set shared  Filename
+     0.00B       0.00B       0.00B  test1
+# btrfs fi du -s test1.snap
+     Total   Exclusive  Set shared  Filename
+ERROR: cannot check space of 'test1.snap': Inappropriate ioctl for device
+
+But if you add *another* file/dir in test1.snap you got:
+
+# mkdir test1.snap/dir
+# btrfs fi du -s test1.snap
+     Total   Exclusive  Set shared  Filename
+     0.00B       0.00B       0.00B  test1.snap
+
+The error disappear !
+
+Patches will follow shortly
+
+> 
+> # uname -r
+> 4.13.0-0.rc4.git1.1.fc27.x86_64
+> # rpm -q btrfs-progs
+> btrfs-progs-4.12-1.fc27.x86_64
+> 
+> 
+> ----
+> Chris Murphy
+> 
 
 
---------------
-Chris Murphy
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

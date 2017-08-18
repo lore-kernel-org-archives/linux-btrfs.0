@@ -1,58 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38930 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43241 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752315AbdHROX3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 10:23:29 -0400
-Date: Fri, 18 Aug 2017 16:22:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: fdmanana@gmail.com,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] btrfs: Simplify btrfs_alloc_dev_extent
-Message-ID: <20170818142205.GX2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1501176997-24059-1-git-send-email-nborisov@suse.com>
- <1501176997-24059-2-git-send-email-nborisov@suse.com>
- <CAL3q7H7Em8aqkCqvvJP3zkOCFjJy1=19qdz+v79tnJ3qHt+6fw@mail.gmail.com>
- <0817db46-3069-ad0c-778c-78f8253771d8@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0817db46-3069-ad0c-778c-78f8253771d8@suse.com>
+        id S1750971AbdHRO63 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Aug 2017 10:58:29 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id C9D78AEB2
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 14:58:27 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/2] btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
+Date: Fri, 18 Aug 2017 17:58:22 +0300
+Message-Id: <1503068303-27545-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20170818141402.GW2866@twin.jikos.cz>
+References: <20170818141402.GW2866@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 28, 2017 at 08:59:12AM +0300, Nikolay Borisov wrote:
-> 
-> 
-> On 27.07.2017 20:57, Filipe Manana wrote:
-> > On Thu, Jul 27, 2017 at 6:36 PM, Nikolay Borisov <nborisov@suse.com> wrote:
-> >> Currently btrfs_alloc_dev_extent essentially open codes btrfs_insert_item. So
-> >> let's remove the superfluous code, leaving only the important bits, namely
-> >> initialising the device extent and just calling btrfs_insert_item. So first add
-> >> definition for the stack-based set/get function. And then use them.
-> >> Additionally, remove the code which sets the uuid of the block header, since
-> >> this is something which is already handled by the core btree code.
-> > 
-> > Quite honestly, I don't see the value of this change at all.
-> > It doesn't make things simpler nor more readable nor nothing.
-> > We have many, really many places using btrfs_insert_empty_item()
-> > instead of calling btrfs_insert_item(), are you planning on sending a
-> > patch to do the replacement for each of them? What's the point?
-> 
-> I beg you to differ. Some of the code in btrfs is a mess, it's working
-> but it's messy. There is constant violation of abstractions (as is the
-> case in this function, heck the uuid setting of the block header
-> function doesn't even belong here). All of this hampers reading
-> comprehension of the code for newcomers. You are experienced in the code
-> and likely this doesn't apply to you but since I'm someone relatively
-> new to the code this has been my experience. And I believe any effort to
-> actually simplify the code, make it more coherent and succinct is a win
-> long-term.
-> 
-> I will wait for other feedback, if people feel patches like that are
-> just bikeshedding then I will refrain from such cleanups in the future.
+THe function is always called with chunk_objectid set to
+BTRFS_FIRST_CHUNK_TREE_OBJECTID. Let's collapse the parameter in the function
+itself. No functional changes
 
-What I don't like about this patch, also pointed out by Filipe, is the
-additional memory allocation. Just for the sake of code beauty, this is
-not the direction the cleanups should go. The function is IMHO readable
-and below my current threshold of cleanup need.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/volumes.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a37a31ba6843..63608c5f4487 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1571,8 +1571,8 @@ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
+ 
+ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_device *device,
+-				  u64 chunk_tree, u64 chunk_objectid,
+-				  u64 chunk_offset, u64 start, u64 num_bytes)
++				  u64 chunk_tree, u64 chunk_offset, u64 start,
++				  u64 num_bytes)
+ {
+ 	int ret;
+ 	struct btrfs_path *path;
+@@ -1600,7 +1600,8 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 	extent = btrfs_item_ptr(leaf, path->slots[0],
+ 				struct btrfs_dev_extent);
+ 	btrfs_set_dev_extent_chunk_tree(leaf, extent, chunk_tree);
+-	btrfs_set_dev_extent_chunk_objectid(leaf, extent, chunk_objectid);
++	btrfs_set_dev_extent_chunk_objectid(leaf, extent,
++					    BTRFS_FIRST_CHUNK_TREE_OBJECTID);
+ 	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
+ 
+ 	btrfs_set_dev_extent_length(leaf, extent, num_bytes);
+@@ -4904,7 +4905,6 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 			break;
+ 		ret = btrfs_alloc_dev_extent(trans, device,
+ 					     chunk_root->root_key.objectid,
+-					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+ 					     chunk_offset, dev_offset,
+ 					     stripe_size);
+ 		if (ret)
+-- 
+2.7.4
+

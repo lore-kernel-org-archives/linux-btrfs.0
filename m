@@ -1,93 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:59461 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:53264 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751059AbdHRXVN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 19:21:13 -0400
-Subject: Re: BTRFS error (device sda4): failed to read chunk tree: -5
-To: Zirconium Hacker <jared.e.vb@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
- <CALsQ4_wZLvdqHdKa9DyjRXTmf1CV47+11-O_SqLRQJoQDT+gqQ@mail.gmail.com>
- <CAJCQCtRYxb4QdN__WcUX_Jhs=GyguwJV79pKUp4PYhC9h_H-xA@mail.gmail.com>
- <CALsQ4_xWte-vOJD-ppOPkvfHpLtu_-24KZPj2H9Tp99S7jDGcw@mail.gmail.com>
- <CAJCQCtR-+o_GA7fCfSe8Lfwp8h6FzfiSR=qz8ekc4=dy98mtiQ@mail.gmail.com>
- <CALsQ4_zTdxgfN25pkbhtXfj5EMVUbZ2=FrUHUocNxjynHhYhuA@mail.gmail.com>
- <CAJCQCtTuxjKcZqLOqQvVYZANXyke1_ZeKXF_fr8UG-5mUb=hhw@mail.gmail.com>
- <38bbcea5-882b-1637-1970-e147cb141d39@gmx.com>
- <CAJCQCtTGy1yw+b2ZWNdBA_OZwywzsA0efO2tCrrr02922oKoAg@mail.gmail.com>
- <CALsQ4_y=36OQPqq-o5mB4LQeui4h4qoc5QZnj0cCTBULbRX-dA@mail.gmail.com>
- <5193c358-f64b-6b1f-bc55-c9e423a1ac8c@gmx.com>
- <CALsQ4_yw0zbtuCbRQiUXCeft0OaukD9N=2UKM-bk36D8-8iiBQ@mail.gmail.com>
- <CAJCQCtT4v0T0Y_w5wkJ1u1zsYYeAV4XwByQdKEGQYGPHr3Q7bQ@mail.gmail.com>
- <CALsQ4_zECmJeJredhKOQYuNV+TMwQPRuDMfFHK7aQwm3v+JgLA@mail.gmail.com>
+        id S1751045AbdHRXaJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Aug 2017 19:30:09 -0400
+Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
+To: Josef Bacik <josef@toxicpanda.com>, kreijack@inwind.it
+Cc: Paulo Dias <paulo.miguel.dias@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
+ <20170817233916.GA25527@destiny>
+ <ceb36a9a-b73f-96c1-cb58-24f149b24001@libero.it>
+ <20170818174356.GA1526@destiny>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <abf0086a-e6c0-8694-e505-2ab98e19a895@gmx.com>
-Date: Sat, 19 Aug 2017 07:21:06 +0800
+Message-ID: <0bcc37c7-8e4c-3ab5-5689-295d47024d1c@gmx.com>
+Date: Sat, 19 Aug 2017 07:29:56 +0800
 MIME-Version: 1.0
-In-Reply-To: <CALsQ4_zECmJeJredhKOQYuNV+TMwQPRuDMfFHK7aQwm3v+JgLA@mail.gmail.com>
+In-Reply-To: <20170818174356.GA1526@destiny>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年08月19日 05:52, Zirconium Hacker wrote:
-> Ok, so since it's clear now that I need that 5 GB device to be
-> present... I found the image file.  But how do I get BTRFS to
-> recognize the image as a device?
+On 2017年08月19日 01:43, Josef Bacik wrote:
+> On Fri, Aug 18, 2017 at 06:23:18PM +0200, Goffredo Baroncelli wrote:
+>> On 08/18/2017 01:39 AM, Josef Bacik wrote:
+>> [...]
+>>> This is happening because the app (the guest OS in this case, we saw this a lot
+>>> with windows guests) is changing the pages while they are in flight.  We
+>>> calculate the checksum of the page before it's written, so if it changes while
+>>> in flight we'll end up with a csum mismatch.
+>>>
+>>> To fix this change kvm to not use O_DIRECT or set NODATASUM on your qcow2 image.
+>>> You'll have to re-create the image because NODATASUM won't apply to the already
+>>> invalid checksums.  Thanks,
+>>
+>> Hi Josef,
+>>
+>> could you elaborate: do you are saying that using O_DIRECT is incompatible with DATASUM ?
+>>
+> 
+> No, I'm saying using O_DIRECT with applications that don't protect in-flight
+> memory are incompatible with DATASUM.  We have no way of making sure nobody
+> touches the page while we're writing it out, so after we calculate the checksum
+> any changes to the page are going to cause a checksum mismatch.  O_DIRECT are
+> user space pages, there's nothing we can do to stop user space from doing stupid
+> things.
+> 
+> The options I looked into before were things like detecting the page had changed
+> since we calculated the checksum, and re-submitting the write.  This punishes
+> applications that do the right thing (databases for example) by forcing us to
+> calculate checksums twice.
 
-# losetup -f
-Remember the loop*, here use /dev/loop1 as example.
+Just curious about this.
 
-# losetup /dev/loop1 <your image>
-# partprobe /dev/loop1
-Then you should have /dev/loop1p1
+Why not just scrubbing data/metadata in commit roots?
+And don't use any page cache, but always read them out from disk?
 
-# btrfs dev rescan
-If nothing wrong happened, you should be good to go.
+For datacsum case, it's always cowed, so it won't change in-flight.
+
+Although the cost is obvious, such method can only check data/metadata 
+in previous trans and doesn't use page cache means tons of IO.
 
 Thanks,
 Qu
-
->  I have zero experience with
-> multi-device systems.  Setting it up as a loop device doesn't fix
-> mounting, and wipefs doesn't detect the BTRFS magic number, but
-> printing some of it to console shows it does have real data.  Writing
-> the magic number onto it (it's a copy of the original to be safe)
-> shows in dump-super, but all other values are zero.
 > 
-> I tried sending the above on my phone earlier but it was detected as a
-> "virus" because it contained HTML.  Whoops.
+> This is a shit situation because users aren't going to understand this
+> limitation, and it bites them in the ass with all these weird errors.  I think
+> maybe we need to go back to the double-checksum thing by default, and have a
+> flag or something for users to set if they know their application behaves
+> properly.  Thanks,
 > 
-> On Fri, Aug 18, 2017 at 11:00 AM, Chris Murphy <lists@colorremedies.com> wrote:
->> On Fri, Aug 18, 2017 at 2:47 AM, Zirconium Hacker <jared.e.vb@gmail.com> wrote:
->>
->>> I vaguely remember following this guide at some point:
->>> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
->>> -- specifically the "Balance cannot run because the filesystem is
->>> full" part.  This may have broken some things?
->>>
->>
->> If you don't do 'btrfs device delete /dev/loop0' or if that command
->> does not complete, then it's possible to get into the situation you're
->> in.
->>
->> Have you ever mounted this file system with -o degraded?
->>
->> I'm going to guess the history is something like:
->> 1. enospc
->> 2. btrfs dev add
->> 3. some kind of filtered balance, which only causes data block groups
->> to be moved to the 2nd device
->> 4. 2nd device is physically removed without first 'btrfs dev del'
->>
->> Zirco's superblock very clearly says num_devices  2, so I'd expect
->> normal mount to always fail unless both devices are present. Is there
->> some weird edge case where Btrfs might permit non-degraded mount when
->> only data bg's are on a 2nd device? And then trouble only happens
->> later when a balance is done and it goes looking for these bg's? And
->> then, boom!
->>
->> --
->> Chris Murphy
+> Josef
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

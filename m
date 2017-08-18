@@ -1,54 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48351 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751865AbdHCP24 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 3 Aug 2017 11:28:56 -0400
-Subject: Re: [PATCH] Btrfs: avoid unnecessarily locking inode when clearing a
- range
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: <fdmanana@kernel.org>, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20170727185255.5122-1-fdmanana@kernel.org>
- <e19d649f-8ee6-fade-f4d9-c303a2e01fcc@fb.com>
- <CAP9B-QnAMtTHGxTe-A72uK_1m-vmAxSKj-No63R3NSXjwE=b1g@mail.gmail.com>
-From: Chris Mason <clm@fb.com>
-Message-ID: <0fd7da41-9111-0ab6-0aa4-bf68bfa671be@fb.com>
-Date: Thu, 3 Aug 2017 11:28:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:52651 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751572AbdHRMRm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Aug 2017 08:17:42 -0400
+Date: Fri, 18 Aug 2017 14:16:17 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs: use btrfsic_submit_bio instead of submit_bio in
+ write_dev_flush
+Message-ID: <20170818121617.GT2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170818083807.12572-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAP9B-QnAMtTHGxTe-A72uK_1m-vmAxSKj-No63R3NSXjwE=b1g@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170818083807.12572-1-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Aug 18, 2017 at 04:38:07PM +0800, Lu Fengqi wrote:
+> Although this bio has no data attached, it will reach this condition
+> (bio->bi_opf & REQ_PREFLUSH) and then update the flush_gen of dev_state
+> in __btrfsic_submit_bio. So we should still submit it through integrity
+> checker. Otherwise, the integrity checker will throw the following warning
+> when I mount a newly created btrfs filesystem.
 
+Right, thanks.
 
-On 08/03/2017 11:25 AM, Wang Shilong wrote:
-> On Thu, Aug 3, 2017 at 11:00 PM, Chris Mason <clm@fb.com> wrote:
->>
->>
->> On 07/27/2017 02:52 PM, fdmanana@kernel.org wrote:
->>>
->>> From: Filipe Manana <fdmanana@suse.com>
->>>
->>> If the range being cleared was not marked for defrag and we are not
->>> about to clear the range from the defrag status, we don't need to
->>> lock and unlock the inode.
->>>
->>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->>
->>
->> Thanks Filipe, looks like it goes all the way back to:
->>
->> commit 47059d930f0e002ff851beea87d738146804726d
->> Author: Wang Shilong <wangsl.fnst@cn.fujitsu.com>
->> Date:   Thu Jul 3 18:22:07 2014 +0800
->>
->>      Btrfs: make defragment work with nodatacow option
->>
->> I can't see how the inode lock is required here.
-> 
-> This blames to me, thanks for fixing it.
-
-No blame ;)  I'll take code that works any day.
-
--chris
+Reviewed-by: David Sterba <dsterba@suse.com>

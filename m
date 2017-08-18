@@ -1,73 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f196.google.com ([209.85.216.196]:38331 "EHLO
-        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751020AbdHBGSc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Aug 2017 02:18:32 -0400
-Received: by mail-qt0-f196.google.com with SMTP id p3so3713976qtg.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Aug 2017 23:18:32 -0700 (PDT)
-Date: Wed, 2 Aug 2017 03:18:27 -0300
-From: Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
-        <ernesto.mnd.fernandez@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>,
-        Ernesto =?utf-8?Q?A=2E_Fern=C3=A1ndez?=
-        <ernesto.mnd.fernandez@gmail.com>
-Subject: [PATCH v3] btrfs: preserve i_mode if __btrfs_set_acl() fails
-Message-ID: <20170802061825.GA8058@debian.home>
-References: <20170729002626.GA6759@debian.home>
- <20170730021838.GA4565@debian.home>
+Received: from mx2.suse.de ([195.135.220.15]:46786 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750881AbdHRPik (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Aug 2017 11:38:40 -0400
+Date: Fri, 18 Aug 2017 17:37:14 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Giovanni Cabiddu <giovanni.cabiddu@intel.com>
+Cc: Nick Terrell <terrelln@fb.com>,
+        "Austin S . Hemmelgarn" <ahferroin7@gmail.com>,
+        Herbert Xu <herbert@gondor.apana.org.au>,
+        "kernel-team@fb.com" <kernel-team@fb.com>, Chris Mason <clm@fb.com>,
+        Yann Collet <cyan@fb.com>, Adam Borowski <kilobyte@angband.pl>,
+        David Sterba <dsterba@suse.cz>,
+        "squashfs-devel@lists.sourceforge.net"
+        <squashfs-devel@lists.sourceforge.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-crypto@vger.kernel.org" <linux-crypto@vger.kernel.org>,
+        Weigang Li <weigang.li@intel.com>, Brian Will <brian.will@intel.com>,
+        Brian A Keating <brian.a.keating@intel.com>,
+        Giovanni Cabiddu <giovanni.cabiddu@gmail.com>
+Subject: Re: [PATCH v3 3/4] btrfs: Add zstd support
+Message-ID: <20170818153714.GZ2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170720212743.3351201-1-terrelln@fb.com>
+ <20170720212743.3351201-4-terrelln@fb.com>
+ <20170725231929.GA28789@silv-upstream1.ir.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170730021838.GA4565@debian.home>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170725231929.GA28789@silv-upstream1.ir.intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When changing a file's acl mask, btrfs_set_acl() will first set the
-group bits of i_mode to the value of the mask, and only then set the
-actual extended attribute representing the new acl.
+On Wed, Jul 26, 2017 at 12:19:29AM +0100, Giovanni Cabiddu wrote:
+> Hi Nick,
+> 
+> On Thu, Jul 20, 2017 at 10:27:42PM +0100, Nick Terrell wrote:
+> > Add zstd compression and decompression support to BtrFS. zstd at its
+> > fastest level compresses almost as well as zlib, while offering much
+> > faster compression and decompression, approaching lzo speeds.
+> Can we look at integrating the zstd implementation below the acomp API
+> available in the crypto subsystem?
+> (https://github.com/torvalds/linux/blob/master/crypto/acompress.c)
+> Acomp was designed to provide a generic and uniform API for compression
+> in the kernel which hides algorithm specific details to frameworks.
+> In future it would be nice to see btrfs using exclusively acomp
+> for compression. This way when a new compression algorithm is exposed
+> through acomp, it will be available immediately in btrfs.
 
-If the second part fails (due to lack of space, for example) and the
-file had no acl attribute to begin with, the system will from now on
-assume that the mask permission bits are actual group permission bits,
-potentially granting access to the wrong users.
-
-Prevent this by restoring the original mode bits if __btrfs_set_acl
-fails.
-
-Signed-off-by: Ernesto A. Fernández <ernesto.mnd.fernandez@gmail.com>
----
-Please ignore the two previous versions, this is far simpler and has the
-same effect. To Josef Bacik: thank you for your review, I'm sorry I
-wasted your time.
-
- fs/btrfs/acl.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 8d8370d..1ba49eb 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -114,13 +114,17 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
- int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- {
- 	int ret;
-+	umode_t old_mode = inode->i_mode;
- 
- 	if (type == ACL_TYPE_ACCESS && acl) {
- 		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
- 		if (ret)
- 			return ret;
- 	}
--	return __btrfs_set_acl(NULL, inode, acl, type);
-+	ret = __btrfs_set_acl(NULL, inode, acl, type);
-+	if (ret)
-+		inode->i_mode = old_mode;
-+	return ret;
- }
- 
- /*
--- 
-2.1.4
-
-
+The compression algorithm is considered part of the filesystem format
+and must be covered by an incompatibility bit. Regarding the acomp API,
+I don't see much point adding the extra abstraction layer for the two
+currently supported algorithms. We only call 2 functions, for
+compression and decompression, no need to allocate the acomp helper
+structures and call the functions indirectly.

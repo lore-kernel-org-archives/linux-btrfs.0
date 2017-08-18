@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f180.google.com ([209.85.216.180]:38174 "EHLO
-        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750846AbdHRRn7 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:26875 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750913AbdHRSCy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 13:43:59 -0400
-Received: by mail-qt0-f180.google.com with SMTP id t37so57309155qtg.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 10:43:59 -0700 (PDT)
-Date: Fri, 18 Aug 2017 13:43:57 -0400
-From: Josef Bacik <josef@toxicpanda.com>
+        Fri, 18 Aug 2017 14:02:54 -0400
+Date: Fri, 18 Aug 2017 10:59:39 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
 To: kreijack@inwind.it
 Cc: Josef Bacik <josef@toxicpanda.com>,
         Paulo Dias <paulo.miguel.dias@gmail.com>, linux-btrfs@vger.kernel.org
 Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
-Message-ID: <20170818174356.GA1526@destiny>
+Message-ID: <20170818175939.GA25986@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
  <20170817233916.GA25527@destiny>
  <ceb36a9a-b73f-96c1-cb58-24f149b24001@libero.it>
@@ -37,24 +36,23 @@ On Fri, Aug 18, 2017 at 06:23:18PM +0200, Goffredo Baroncelli wrote:
 > Hi Josef,
 > 
 > could you elaborate: do you are saying that using O_DIRECT is incompatible with DATASUM ?
-> 
+>
 
-No, I'm saying using O_DIRECT with applications that don't protect in-flight
-memory are incompatible with DATASUM.  We have no way of making sure nobody
-touches the page while we're writing it out, so after we calculate the checksum
-any changes to the page are going to cause a checksum mismatch.  O_DIRECT are
-user space pages, there's nothing we can do to stop user space from doing stupid
-things.
+They're compatible, but applications need to be careful.
 
-The options I looked into before were things like detecting the page had changed
-since we calculated the checksum, and re-submitting the write.  This punishes
-applications that do the right thing (databases for example) by forcing us to
-calculate checksums twice.
+O_DIRECT takes userspace page, and it works like
+DIO write
+  p = get_user_page();
+  add p to bio
+  #btrfs submits this bio
+  calc_checksum(bio);
+  submit_bio();
 
-This is a shit situation because users aren't going to understand this
-limitation, and it bites them in the ass with all these weird errors.  I think
-maybe we need to go back to the double-checksum thing by default, and have a
-flag or something for users to set if they know their application behaves
-properly.  Thanks,
+There's a chance that page p got changed between calc_checksum() and
+submit_bio(), which then causes the mismatch.
 
-Josef
+For buffered IO, dirty page cache pages is synchronized with page
+fault by page lock and page writeback bit.
+
+thanks,
+-liubo

@@ -1,88 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f175.google.com ([209.85.220.175]:32903 "EHLO
-        mail-qk0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751446AbdHRS0B (ORCPT
+Received: from mail-wm0-f45.google.com ([74.125.82.45]:35095 "EHLO
+        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751695AbdHRVw4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 14:26:01 -0400
-Received: by mail-qk0-f175.google.com with SMTP id a77so57365548qkb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 11:26:01 -0700 (PDT)
+        Fri, 18 Aug 2017 17:52:56 -0400
+Received: by mail-wm0-f45.google.com with SMTP id m85so9017928wma.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 14:52:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170818175939.GA25986@lim.localdomain>
-References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
- <20170817233916.GA25527@destiny> <ceb36a9a-b73f-96c1-cb58-24f149b24001@libero.it>
- <20170818175939.GA25986@lim.localdomain>
-From: Paulo Dias <paulo.miguel.dias@gmail.com>
-Date: Fri, 18 Aug 2017 15:25:39 -0300
-Message-ID: <CADJPUQ-DEFbGeXeBKqraWNZt8qrvrK+9RkduMJs0E8oCOXhsPA@mail.gmail.com>
-Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
-To: bo.li.liu@oracle.com
-Cc: kreijack@inwind.it, Josef Bacik <josef@toxicpanda.com>,
+In-Reply-To: <CAJCQCtT4v0T0Y_w5wkJ1u1zsYYeAV4XwByQdKEGQYGPHr3Q7bQ@mail.gmail.com>
+References: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
+ <CALsQ4_x13pBuZ0wDmO=28m6xAEXFjOkORJsxDeFASOeA5oDeLg@mail.gmail.com>
+ <CAJCQCtRTiZy2YNZNLLx_KWuLMuNxPK26u1Orz91MqtDRFNRVNg@mail.gmail.com>
+ <CALsQ4_xkiyWuwJ4mVOV7QhWx6RFD80Y23fDNdPam2UFpRi1Gxw@mail.gmail.com>
+ <CAJCQCtTx_i_PrqgRbA-P9+zKX926KKeT1nwAJT=dkr-qcOpCCg@mail.gmail.com>
+ <CALsQ4_wZLvdqHdKa9DyjRXTmf1CV47+11-O_SqLRQJoQDT+gqQ@mail.gmail.com>
+ <CAJCQCtRYxb4QdN__WcUX_Jhs=GyguwJV79pKUp4PYhC9h_H-xA@mail.gmail.com>
+ <CALsQ4_xWte-vOJD-ppOPkvfHpLtu_-24KZPj2H9Tp99S7jDGcw@mail.gmail.com>
+ <CAJCQCtR-+o_GA7fCfSe8Lfwp8h6FzfiSR=qz8ekc4=dy98mtiQ@mail.gmail.com>
+ <CALsQ4_zTdxgfN25pkbhtXfj5EMVUbZ2=FrUHUocNxjynHhYhuA@mail.gmail.com>
+ <CAJCQCtTuxjKcZqLOqQvVYZANXyke1_ZeKXF_fr8UG-5mUb=hhw@mail.gmail.com>
+ <38bbcea5-882b-1637-1970-e147cb141d39@gmx.com> <CAJCQCtTGy1yw+b2ZWNdBA_OZwywzsA0efO2tCrrr02922oKoAg@mail.gmail.com>
+ <CALsQ4_y=36OQPqq-o5mB4LQeui4h4qoc5QZnj0cCTBULbRX-dA@mail.gmail.com>
+ <5193c358-f64b-6b1f-bc55-c9e423a1ac8c@gmx.com> <CALsQ4_yw0zbtuCbRQiUXCeft0OaukD9N=2UKM-bk36D8-8iiBQ@mail.gmail.com>
+ <CAJCQCtT4v0T0Y_w5wkJ1u1zsYYeAV4XwByQdKEGQYGPHr3Q7bQ@mail.gmail.com>
+From: Zirconium Hacker <jared.e.vb@gmail.com>
+Date: Fri, 18 Aug 2017 17:52:54 -0400
+Message-ID: <CALsQ4_zECmJeJredhKOQYuNV+TMwQPRuDMfFHK7aQwm3v+JgLA@mail.gmail.com>
+Subject: Re: BTRFS error (device sda4): failed to read chunk tree: -5
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-HI all..
+Ok, so since it's clear now that I need that 5 GB device to be
+present... I found the image file.  But how do I get BTRFS to
+recognize the image as a device?  I have zero experience with
+multi-device systems.  Setting it up as a loop device doesn't fix
+mounting, and wipefs doesn't detect the BTRFS magic number, but
+printing some of it to console shows it does have real data.  Writing
+the magic number onto it (it's a copy of the original to be safe)
+shows in dump-super, but all other values are zero.
 
-So this sucks, having to check every single disk image so it wont get
-corrupted stuff, while it works on other filesystems isn't exactly
-stellar.
+I tried sending the above on my phone earlier but it was detected as a
+"virus" because it contained HTML.  Whoops.
 
-i changed the qcow2 settings per this page:
-https://pve.proxmox.com/wiki/Performance_Tweaks
-
-i went with cache=writeback since it neither uses O_DSYNC nor O_DIRECT
-semantics.
-
-I understand the reasons checksumming might fail and that isn't
-exactly btrfs fault but i scoured the entire btrfs wiki and couldnt
-find anything warning about btrfs + qcow2 (or other image types) in
-the wiki pages. Maybe adding some warning would help unlucky ppl like
-myself?
-
-Also, is is safe to enable compress=lzo , or is it also a no no, im
-also starting to suspect that discard wasnt the culprit since i have
-it enabled for more then a year and the only problem i got with
-corruption was precisely this images?
-| Paulo Dias
-| paulo.miguel.dias@gmail.com
-
-Tempora mutantur, nos et mutamur in illis.
-
-
-On Fri, Aug 18, 2017 at 2:59 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Fri, Aug 18, 2017 at 06:23:18PM +0200, Goffredo Baroncelli wrote:
->> On 08/18/2017 01:39 AM, Josef Bacik wrote:
->> [...]
->> > This is happening because the app (the guest OS in this case, we saw this a lot
->> > with windows guests) is changing the pages while they are in flight.  We
->> > calculate the checksum of the page before it's written, so if it changes while
->> > in flight we'll end up with a csum mismatch.
->> >
->> > To fix this change kvm to not use O_DIRECT or set NODATASUM on your qcow2 image.
->> > You'll have to re-create the image because NODATASUM won't apply to the already
->> > invalid checksums.  Thanks,
->>
->> Hi Josef,
->>
->> could you elaborate: do you are saying that using O_DIRECT is incompatible with DATASUM ?
+On Fri, Aug 18, 2017 at 11:00 AM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Fri, Aug 18, 2017 at 2:47 AM, Zirconium Hacker <jared.e.vb@gmail.com> wrote:
+>
+>> I vaguely remember following this guide at some point:
+>> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
+>> -- specifically the "Balance cannot run because the filesystem is
+>> full" part.  This may have broken some things?
 >>
 >
-> They're compatible, but applications need to be careful.
+> If you don't do 'btrfs device delete /dev/loop0' or if that command
+> does not complete, then it's possible to get into the situation you're
+> in.
 >
-> O_DIRECT takes userspace page, and it works like
-> DIO write
->   p = get_user_page();
->   add p to bio
->   #btrfs submits this bio
->   calc_checksum(bio);
->   submit_bio();
+> Have you ever mounted this file system with -o degraded?
 >
-> There's a chance that page p got changed between calc_checksum() and
-> submit_bio(), which then causes the mismatch.
+> I'm going to guess the history is something like:
+> 1. enospc
+> 2. btrfs dev add
+> 3. some kind of filtered balance, which only causes data block groups
+> to be moved to the 2nd device
+> 4. 2nd device is physically removed without first 'btrfs dev del'
 >
-> For buffered IO, dirty page cache pages is synchronized with page
-> fault by page lock and page writeback bit.
+> Zirco's superblock very clearly says num_devices  2, so I'd expect
+> normal mount to always fail unless both devices are present. Is there
+> some weird edge case where Btrfs might permit non-degraded mount when
+> only data bg's are on a 2nd device? And then trouble only happens
+> later when a balance is done and it goes looking for these bg's? And
+> then, boom!
 >
-> thanks,
-> -liubo
+> --
+> Chris Murphy

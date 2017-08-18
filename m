@@ -1,69 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18698 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753665AbdHUT5X (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:42186 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750984AbdHRSpA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 15:57:23 -0400
-Date: Mon, 21 Aug 2017 12:54:06 -0700
+        Fri, 18 Aug 2017 14:45:00 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v7IIixme013629
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 18:44:59 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v7IIixO1027602
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 18:44:59 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v7IIixph017351
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 18:44:59 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: make plug in writing meta blocks really work
-Message-ID: <20170821195405.GC26279@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170818174207.21613-1-bo.li.liu@oracle.com>
- <20170821174800.GF23807@destiny>
- <20170821191416.GB26279@lim.localdomain>
- <20170821192329.GG23807@destiny>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170821192329.GG23807@destiny>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: make plug in writing meta blocks really work
+Date: Fri, 18 Aug 2017 11:42:07 -0600
+Message-Id: <20170818174207.21613-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 21, 2017 at 03:23:30PM -0400, Josef Bacik wrote:
-> On Mon, Aug 21, 2017 at 12:14:16PM -0700, Liu Bo wrote:
-> > On Mon, Aug 21, 2017 at 01:48:01PM -0400, Josef Bacik wrote:
-> > > On Fri, Aug 18, 2017 at 11:42:07AM -0600, Liu Bo wrote:
-> > > > We have started plug in btrfs_write_and_wait_marked_extents() but the
-> > > > generated IOs actually go to device's schedule IO list where the work
-> > > > is doing in another task, thus the started plug doesn't make any
-> > > > sense.
-> > > > 
-> > > > And since we wait for IOs immediately after writing meta blocks, it's
-> > > > the same case as writing log tree, doing sync submit can merge more
-> > > > IOs.
-> > > > 
-> > > 
-> > > We're plugging when we do the per-device scheduled IO right?
-> > 
-> > Yes, we are.
-> > 
-> > > So we aren't
-> > > really gaining anything by it being async.  Also we do a lot of work between the
-> > > time that we start writing the marked extents for the tree-log and when we
-> > > actually wait for them, so we really don't want to do a synchronous write out in
-> > > that case.
-> > 
-> > Hmm, we've always been doing sync write for meta blocks of log
-> > tree/log root tree, because of EXTENT_BIO_TREE_LOG (introduced in
-> > commit de0022b9da616b95ea5b41eab32da825b0b5150f), and the commit log
-> > claimed about 15% performance gaining in O_SYNC workloads (maybe we
-> > need to re-evaluate it?).
-> > 
-> > > Instead move the sync_writers into write_and_wait_marked_extents.
-> > > Thanks,
-> > 
-> > I'm OK with the change, but if sync write benefits both transaction
-> > commit case and log tree case, we can unify them to %sync_writers
-> > instead of a bio_flag.
-> > 
-> 
-> Sigh you're right, I forgot about all of that.  Just delete the magic bio flags
-> stuff and then this is fine.  Thanks,
->
+We have started plug in btrfs_write_and_wait_marked_extents() but the
+generated IOs actually go to device's schedule IO list where the work
+is doing in another task, thus the started plug doesn't make any
+sense.
 
-OK, good to know it, thanks for the comments.
+And since we wait for IOs immediately after writing meta blocks, it's
+the same case as writing log tree, doing sync submit can merge more
+IOs.
 
-thanks,
--liubo
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c     | 6 ++++--
+ fs/btrfs/transaction.c | 2 ++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 080e2eb..8d097ba 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1005,8 +1005,10 @@ static blk_status_t __btree_submit_bio_done(void *private_data, struct bio *bio,
+ 	return ret;
+ }
+ 
+-static int check_async_write(unsigned long bio_flags)
++static int check_async_write(struct btrfs_inode *bi, unsigned long bio_flags)
+ {
++	if (atomic_read(&bi->sync_writers))
++		return 0;
+ 	if (bio_flags & EXTENT_BIO_TREE_LOG)
+ 		return 0;
+ #ifdef CONFIG_X86
+@@ -1022,7 +1024,7 @@ static blk_status_t btree_submit_bio_hook(void *private_data, struct bio *bio,
+ {
+ 	struct inode *inode = private_data;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+-	int async = check_async_write(bio_flags);
++	int async = check_async_write(BTRFS_I(inode), bio_flags);
+ 	blk_status_t ret;
+ 
+ 	if (bio_op(bio) != REQ_OP_WRITE) {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index f615d59..9c5f126 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -950,6 +950,7 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
+ 	u64 start = 0;
+ 	u64 end;
+ 
++	atomic_inc(&BTRFS_I(fs_info->btree_inode)->sync_writers);
+ 	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
+ 				      mark, &cached_state)) {
+ 		bool wait_writeback = false;
+@@ -985,6 +986,7 @@ int btrfs_write_marked_extents(struct btrfs_fs_info *fs_info,
+ 		cond_resched();
+ 		start = end + 1;
+ 	}
++	atomic_dec(&BTRFS_I(fs_info->btree_inode)->sync_writers);
+ 	return werr;
+ }
+ 
+-- 
+2.9.4
+

@@ -1,79 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:35095 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751695AbdHRVw4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 17:52:56 -0400
-Received: by mail-wm0-f45.google.com with SMTP id m85so9017928wma.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 14:52:55 -0700 (PDT)
+Received: from smtp-17-i6.italiaonline.it ([212.48.14.163]:42848 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750988AbdHRWUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 18 Aug 2017 18:20:02 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: qcow2 images make scrub believe the filesystem is corrupted.
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: Paulo Dias <paulo.miguel.dias@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CADJPUQ9awnz30XzGZLGQAUhAqeH5ek6stDN5N5JTzc3dGtdiug@mail.gmail.com>
+ <20170817233916.GA25527@destiny>
+ <ceb36a9a-b73f-96c1-cb58-24f149b24001@libero.it>
+ <20170818174356.GA1526@destiny>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <5165a965-ef9d-9db3-d618-f9bef6bfbe5e@inwind.it>
+Date: Sat, 19 Aug 2017 00:19:59 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtT4v0T0Y_w5wkJ1u1zsYYeAV4XwByQdKEGQYGPHr3Q7bQ@mail.gmail.com>
-References: <CALsQ4_wnfHtJ+Drn3DJsQxdkX9=ZYDqH_H=hi3BxdSrnDZpqmw@mail.gmail.com>
- <CALsQ4_x13pBuZ0wDmO=28m6xAEXFjOkORJsxDeFASOeA5oDeLg@mail.gmail.com>
- <CAJCQCtRTiZy2YNZNLLx_KWuLMuNxPK26u1Orz91MqtDRFNRVNg@mail.gmail.com>
- <CALsQ4_xkiyWuwJ4mVOV7QhWx6RFD80Y23fDNdPam2UFpRi1Gxw@mail.gmail.com>
- <CAJCQCtTx_i_PrqgRbA-P9+zKX926KKeT1nwAJT=dkr-qcOpCCg@mail.gmail.com>
- <CALsQ4_wZLvdqHdKa9DyjRXTmf1CV47+11-O_SqLRQJoQDT+gqQ@mail.gmail.com>
- <CAJCQCtRYxb4QdN__WcUX_Jhs=GyguwJV79pKUp4PYhC9h_H-xA@mail.gmail.com>
- <CALsQ4_xWte-vOJD-ppOPkvfHpLtu_-24KZPj2H9Tp99S7jDGcw@mail.gmail.com>
- <CAJCQCtR-+o_GA7fCfSe8Lfwp8h6FzfiSR=qz8ekc4=dy98mtiQ@mail.gmail.com>
- <CALsQ4_zTdxgfN25pkbhtXfj5EMVUbZ2=FrUHUocNxjynHhYhuA@mail.gmail.com>
- <CAJCQCtTuxjKcZqLOqQvVYZANXyke1_ZeKXF_fr8UG-5mUb=hhw@mail.gmail.com>
- <38bbcea5-882b-1637-1970-e147cb141d39@gmx.com> <CAJCQCtTGy1yw+b2ZWNdBA_OZwywzsA0efO2tCrrr02922oKoAg@mail.gmail.com>
- <CALsQ4_y=36OQPqq-o5mB4LQeui4h4qoc5QZnj0cCTBULbRX-dA@mail.gmail.com>
- <5193c358-f64b-6b1f-bc55-c9e423a1ac8c@gmx.com> <CALsQ4_yw0zbtuCbRQiUXCeft0OaukD9N=2UKM-bk36D8-8iiBQ@mail.gmail.com>
- <CAJCQCtT4v0T0Y_w5wkJ1u1zsYYeAV4XwByQdKEGQYGPHr3Q7bQ@mail.gmail.com>
-From: Zirconium Hacker <jared.e.vb@gmail.com>
-Date: Fri, 18 Aug 2017 17:52:54 -0400
-Message-ID: <CALsQ4_zECmJeJredhKOQYuNV+TMwQPRuDMfFHK7aQwm3v+JgLA@mail.gmail.com>
-Subject: Re: BTRFS error (device sda4): failed to read chunk tree: -5
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20170818174356.GA1526@destiny>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok, so since it's clear now that I need that 5 GB device to be
-present... I found the image file.  But how do I get BTRFS to
-recognize the image as a device?  I have zero experience with
-multi-device systems.  Setting it up as a loop device doesn't fix
-mounting, and wipefs doesn't detect the BTRFS magic number, but
-printing some of it to console shows it does have real data.  Writing
-the magic number onto it (it's a copy of the original to be safe)
-shows in dump-super, but all other values are zero.
-
-I tried sending the above on my phone earlier but it was detected as a
-"virus" because it contained HTML.  Whoops.
-
-On Fri, Aug 18, 2017 at 11:00 AM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Fri, Aug 18, 2017 at 2:47 AM, Zirconium Hacker <jared.e.vb@gmail.com> wrote:
->
->> I vaguely remember following this guide at some point:
->> http://marc.merlins.org/perso/btrfs/post_2014-05-04_Fixing-Btrfs-Filesystem-Full-Problems.html
->> -- specifically the "Balance cannot run because the filesystem is
->> full" part.  This may have broken some things?
+On 08/18/2017 07:43 PM, Josef Bacik wrote:
+> On Fri, Aug 18, 2017 at 06:23:18PM +0200, Goffredo Baroncelli wrote:
+>> On 08/18/2017 01:39 AM, Josef Bacik wrote:
+>> [...]
+>>> This is happening because the app (the guest OS in this case, we saw this a lot
+>>> with windows guests) is changing the pages while they are in flight.  We
+>>> calculate the checksum of the page before it's written, so if it changes while
+>>> in flight we'll end up with a csum mismatch.
+>>>
+>>> To fix this change kvm to not use O_DIRECT or set NODATASUM on your qcow2 image.
+>>> You'll have to re-create the image because NODATASUM won't apply to the already
+>>> invalid checksums.  Thanks,
 >>
->
-> If you don't do 'btrfs device delete /dev/loop0' or if that command
-> does not complete, then it's possible to get into the situation you're
-> in.
->
-> Have you ever mounted this file system with -o degraded?
->
-> I'm going to guess the history is something like:
-> 1. enospc
-> 2. btrfs dev add
-> 3. some kind of filtered balance, which only causes data block groups
-> to be moved to the 2nd device
-> 4. 2nd device is physically removed without first 'btrfs dev del'
->
-> Zirco's superblock very clearly says num_devices  2, so I'd expect
-> normal mount to always fail unless both devices are present. Is there
-> some weird edge case where Btrfs might permit non-degraded mount when
-> only data bg's are on a 2nd device? And then trouble only happens
-> later when a balance is done and it goes looking for these bg's? And
-> then, boom!
->
-> --
-> Chris Murphy
+>> Hi Josef,
+>>
+>> could you elaborate: do you are saying that using O_DIRECT is incompatible with DATASUM ?
+>>
+> 
+> No, I'm saying using O_DIRECT with applications that don't protect in-flight
+> memory are incompatible with DATASUM.  
+
+This is what I call an 'incompatibility'. Even is a "corner" case, it is still an incompatibility. And to be honest, it is still difficult to say that a "VM" is a "corner" case.
+
+> We have no way of making sure nobody
+> touches the page while we're writing it out, so after we calculate the checksum
+> any changes to the page are going to cause a checksum mismatch.  O_DIRECT are
+> user space pages, there's nothing we can do to stop user space from doing stupid
+> things.
+
+I understand the technical difficulties; however I can't agree about "user space [...] doing *stupid* things". If it is not explicitly forbidden, it is legal; not "stupid"
+
+How the application know that the page aren't in-flight anymore ? It is sufficient to wait the end of the write() syscall ? Or it has to wait the end of a fsync() ?
+ 
+> The options I looked into before were things like detecting the page had changed
+> since we calculated the checksum, and re-submitting the write.  This punishes
+> applications that do the right thing (databases for example) by forcing us to
+> calculate checksums twice.
+
+There are other "cases" where it is possible to have the same problem ? It is the same for mmap() ?
+
+> 
+> This is a shit situation because users aren't going to understand this
+> limitation, and it bites them in the ass with all these weird errors.  I think
+> maybe we need to go back to the double-checksum thing by default, and have a
+> flag or something for users to set if they know their application behaves
+> properly.  
+
+Or... disable checksum for the "O_DIRECT" writings... If you can't trust the checksums at 100%, these don't make sense.
+
+> 
+> Josef
+> 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

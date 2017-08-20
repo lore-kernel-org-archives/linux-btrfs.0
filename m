@@ -1,93 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f196.google.com ([209.85.128.196]:35672 "EHLO
-        mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753328AbdHTSL1 (ORCPT
+Received: from mail-wr0-f193.google.com ([209.85.128.193]:36280 "EHLO
+        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753323AbdHTSL2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 Aug 2017 14:11:27 -0400
-Received: by mail-wr0-f196.google.com with SMTP id p8so11484040wrf.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Aug 2017 11:11:27 -0700 (PDT)
+        Sun, 20 Aug 2017 14:11:28 -0400
+Received: by mail-wr0-f193.google.com with SMTP id f8so9040499wrf.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Aug 2017 11:11:28 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v4 1/3] Btrfs: heuristic add simple sampling logic
-Date: Sun, 20 Aug 2017 21:11:14 +0300
-Message-Id: <20170820181116.5131-2-nefelim4ag@gmail.com>
+Subject: [PATCH v4 2/3] Btrfs: heuristic add byte set calculation
+Date: Sun, 20 Aug 2017 21:11:15 +0300
+Message-Id: <20170820181116.5131-3-nefelim4ag@gmail.com>
 In-Reply-To: <20170820181116.5131-1-nefelim4ag@gmail.com>
 References: <20170820181116.5131-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Get small sample from input data and calculate
-byte type count for that sample into bucket.
-Bucket will store info about which bytes
-and how many has been detected in sample
+Calculate byte set size for data sample:
+Calculate how many unique bytes has been in sample
+By count all bytes in bucket with count > 0
+If byte set low (~25%), data are easily compressible
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/compression.c | 24 ++++++++++++++++++++++--
- fs/btrfs/compression.h |  8 ++++++++
- 2 files changed, 30 insertions(+), 2 deletions(-)
+ fs/btrfs/compression.c | 27 +++++++++++++++++++++++++++
+ fs/btrfs/compression.h |  1 +
+ 2 files changed, 28 insertions(+)
 
 diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 883ecc58fd0d..c078c8d8c034 100644
+index c078c8d8c034..fe26a44bcc9b 100644
 --- a/fs/btrfs/compression.c
 +++ b/fs/btrfs/compression.c
-@@ -1068,15 +1068,35 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 	u64 index = start >> PAGE_SHIFT;
- 	u64 end_index = end >> PAGE_SHIFT;
- 	struct page *page;
--	int ret = 1;
-+	struct heuristic_bucket_item *bucket;
-+	int a, b, ret;
-+	u8 symbol, *input_data;
-+
-+	ret = 1;
-+
-+	bucket = kcalloc(BTRFS_HEURISTIC_BUCKET_SIZE,
-+		sizeof(struct heuristic_bucket_item), GFP_NOFS);
-+
-+	if (!bucket)
-+		goto out;
+@@ -1048,6 +1048,27 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+ 	return 1;
+ }
 
- 	while (index <= end_index) {
- 		page = find_get_page(inode->i_mapping, index);
--		kmap(page);
-+		input_data = kmap(page);
-+		a = 0;
-+		while (a < PAGE_SIZE) {
-+			for (b = 0; b < BTRFS_HEURISTIC_READ_SIZE; b++) {
-+				symbol = input_data[a+b];
-+				bucket[symbol].count++;
-+			}
-+			a += BTRFS_HEURISTIC_ITER_OFFSET;
++static inline int byte_set_size(const struct heuristic_bucket_item *bucket)
++{
++	int a = 0;
++	int byte_set_size = 0;
++
++	for (; a < BTRFS_HEURISTIC_BYTE_SET_THRESHOLD; a++) {
++		if (bucket[a].count > 0)
++			byte_set_size++;
++	}
++
++	for (; a < BTRFS_HEURISTIC_BUCKET_SIZE; a++) {
++		if (bucket[a].count > 0) {
++			byte_set_size++;
++			if (byte_set_size > BTRFS_HEURISTIC_BYTE_SET_THRESHOLD)
++				return byte_set_size;
 +		}
- 		kunmap(page);
- 		put_page(page);
++	}
++
++	return byte_set_size;
++}
++
+ /*
+  * Compression heuristic.
+  *
+@@ -1096,6 +1117,12 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
  		index++;
  	}
 
-+out:
-+	kfree(bucket);
++	a = byte_set_size(bucket);
++	if (a > BTRFS_HEURISTIC_BYTE_SET_THRESHOLD) {
++		ret = 1;
++		goto out;
++	}
++
+ out:
+ 	kfree(bucket);
  	return ret;
- }
 diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 3b1b0ac15fdc..e0421705b80b 100644
+index e0421705b80b..07e3d0652e62 100644
 --- a/fs/btrfs/compression.h
 +++ b/fs/btrfs/compression.h
-@@ -128,6 +128,14 @@ struct btrfs_compress_op {
- extern const struct btrfs_compress_op btrfs_zlib_compress;
- extern const struct btrfs_compress_op btrfs_lzo_compress;
+@@ -135,6 +135,7 @@ struct heuristic_bucket_item {
+ #define BTRFS_HEURISTIC_READ_SIZE 16
+ #define BTRFS_HEURISTIC_ITER_OFFSET 256
+ #define BTRFS_HEURISTIC_BUCKET_SIZE 256
++#define BTRFS_HEURISTIC_BYTE_SET_THRESHOLD 64
 
-+struct heuristic_bucket_item {
-+	u32 count;
-+};
-+
-+#define BTRFS_HEURISTIC_READ_SIZE 16
-+#define BTRFS_HEURISTIC_ITER_OFFSET 256
-+#define BTRFS_HEURISTIC_BUCKET_SIZE 256
-+
  int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
 
- #endif
 --
 2.14.1

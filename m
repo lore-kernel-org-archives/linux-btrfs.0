@@ -1,29 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.web.de ([212.227.15.4]:54276 "EHLO mout.web.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753808AbdHUNam (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 09:30:42 -0400
-Subject: Re: btrfs: Delete an unnecessary variable initialisation in
- tree_mod_log_eb_copy()
-To: Timofey Titovets <nefelim4ag@gmail.com>
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:36791 "EHLO
+        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753210AbdHUOYL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Aug 2017 10:24:11 -0400
+MIME-Version: 1.0
+In-Reply-To: <0e547ca8-2318-a63f-8b43-d7717a0a227b@users.sourceforge.net>
+References: <360126ba-e45b-0a8d-57b6-83764c4c2bce@users.sourceforge.net>
+ <933141a6-96cd-cef3-bbd3-e3b3d8def177@users.sourceforge.net>
+ <CAGqmi7560BKUagZPPEEsmZYZnf_rhSTxg18-XGiOgDcATCexFg@mail.gmail.com> <0e547ca8-2318-a63f-8b43-d7717a0a227b@users.sourceforge.net>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Mon, 21 Aug 2017 17:23:30 +0300
+Message-ID: <CAGqmi74KXiq1KQHqsFu5BFSb6k-OoowYTiRqnFU=SJHT-UUBTQ@mail.gmail.com>
+Subject: Re: btrfs: Adjust 32 checks for null pointers
+To: SF Markus Elfring <elfring@users.sourceforge.net>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
         LKML <linux-kernel@vger.kernel.org>, kernel-janitors@vger.kernel.org
-References: <360126ba-e45b-0a8d-57b6-83764c4c2bce@users.sourceforge.net>
- <31e6e888-586c-3480-7d57-dbf96989a26c@users.sourceforge.net>
- <CAGqmi75EiV4nX+QCv0GR9wRbjNS5d7UernMSBdHEVsA+ubGBaQ@mail.gmail.com>
-From: SF Markus Elfring <elfring@users.sourceforge.net>
-Message-ID: <b487a820-20e4-8346-9196-654682c63b4e@users.sourceforge.net>
-Date: Mon, 21 Aug 2017 15:30:39 +0200
-MIME-Version: 1.0
-In-Reply-To: <CAGqmi75EiV4nX+QCv0GR9wRbjNS5d7UernMSBdHEVsA+ubGBaQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Don't needed, and you did miss several similar places (L573 & L895) in
-> that file with explicit initialisation.
+Sorry Markus, but main problem with your patches described at that page:
+https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#How_not_to_start
 
-Would you like to adjust any remaining places in such source files?
+I.e. it's cool that you try to help as you can, but not that way, thanks.
 
-Regards,
-Markus
+2017-08-21 16:27 GMT+03:00 SF Markus Elfring <elfring@users.sourceforge.net>:
+>> That's will work,
+>
+> Thanks for your acknowledgement.
+>
+>
+>> but that's don't improve anything.
+>
+> Do you like a small source code reduction here?
+>
+> Regards,
+> Markus
+
+
+
+-- 
+Have a nice day,
+Timofey.

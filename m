@@ -1,76 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:65458 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751114AbdHRIdD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 04:33:03 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 6968947243A5
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Aug 2017 16:32:54 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs-progs: delete not-used parameter fd
-Date: Fri, 18 Aug 2017 01:32:46 -0700
-Message-ID: <1503045166-18612-2-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1503045166-18612-1-git-send-email-gujx@cn.fujitsu.com>
-References: <1503045166-18612-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:38839 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753899AbdHURHW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Aug 2017 13:07:22 -0400
+Date: Mon, 21 Aug 2017 19:05:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: Doc: Fix asciidoc grammar of btrfs-rescue
+Message-ID: <20170821170558.GQ2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170821065704.12119-1-quwenruo.btrfs@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170821065704.12119-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Parameter fd is not used in function make_image and
-traverse_directory of mkfs.
-Delete it.
+On Mon, Aug 21, 2017 at 03:57:04PM +0900, Qu Wenruo wrote:
+> Code block of kernel backtrace lacks leading change line, causing the
+> following man page result:
+> ------
+>            One can determine whether zero-log is needed according to the
+>            kernel backtrace:
+> 
+>            ? replay_one_dir_item+0xb5/0xb5 [btrfs]
+>            ? walk_log_tree+0x9c/0x19d [btrfs]
+>            ? btrfs_read_fs_root_no_radix+0x169/0x1a1 [btrfs]
+>            ? btrfs_recover_log_trees+0x195/0x29c [btrfs]
+>            ? replay_one_dir_item+0xb5/0xb5 [btrfs]
+>            ? btree_read_extent_buffer_pages+0x76/0xbc [btrfs]
+>            ? open_ctree+0xff6/0x132c [btrfs]
+> 
+>        + If the errors are like above, then zero-log should be used to clear
+>        the log and the filesystem may be mounted normally again. The keywords
+> ------
+> 
+> Not only "+" is rendered as is, but also wrong indent.
+> 
+> Fix it by adding change line before code block.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- mkfs/main.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
-
-diff --git a/mkfs/main.c b/mkfs/main.c
-index ec82565..3e9c1b8 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -801,7 +801,7 @@ static char *make_path(const char *dir, const char *name)
- 
- static int traverse_directory(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root, const char *dir_name,
--			      struct directory_name_entry *dir_head, int out_fd)
-+			      struct directory_name_entry *dir_head)
- {
- 	int ret = 0;
- 
-@@ -1029,8 +1029,7 @@ static int create_chunks(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--static int make_image(const char *source_dir, struct btrfs_root *root,
--		int out_fd)
-+static int make_image(const char *source_dir, struct btrfs_root *root)
- {
- 	int ret;
- 	struct btrfs_trans_handle *trans;
-@@ -1048,7 +1047,7 @@ static int make_image(const char *source_dir, struct btrfs_root *root,
- 	INIT_LIST_HEAD(&dir_head.list);
- 
- 	trans = btrfs_start_transaction(root, 1);
--	ret = traverse_directory(trans, root, source_dir, &dir_head, out_fd);
-+	ret = traverse_directory(trans, root, source_dir, &dir_head);
- 	if (ret) {
- 		error("unable to traverse directory %s: %d", source_dir, ret);
- 		goto fail;
-@@ -1882,7 +1881,7 @@ raid_groups:
- 			goto out;
- 		}
- 
--		ret = make_image(source_dir, root, fd);
-+		ret = make_image(source_dir, root);
- 		if (ret) {
- 			error("error wihle filling filesystem: %d", ret);
- 			goto out;
--- 
-1.9.1
-
-
-
+Applied, thanks.

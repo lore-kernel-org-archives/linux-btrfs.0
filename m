@@ -1,75 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f66.google.com ([209.85.218.66]:34240 "EHLO
-        mail-oi0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753799AbdHUNHZ (ORCPT
+Received: from mail-qt0-f175.google.com ([209.85.216.175]:37452 "EHLO
+        mail-qt0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753726AbdHURg6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 09:07:25 -0400
-Received: by mail-oi0-f66.google.com with SMTP id v11so15738051oif.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 06:07:24 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1503308630-6652-4-git-send-email-nborisov@suse.com>
-References: <1503308630-6652-1-git-send-email-nborisov@suse.com> <1503308630-6652-4-git-send-email-nborisov@suse.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Mon, 21 Aug 2017 16:06:44 +0300
-Message-ID: <CAGqmi77X2h1jzaU8cKdb_19dEssMBiBwNR+Jr53ivddq=-15NQ@mail.gmail.com>
-Subject: Re: [PATCH 03/10] btrfs: Remove unused variable
+        Mon, 21 Aug 2017 13:36:58 -0400
+Received: by mail-qt0-f175.google.com with SMTP id 16so85810165qtz.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 10:36:58 -0700 (PDT)
+Date: Mon, 21 Aug 2017 13:36:56 -0400
+From: Josef Bacik <josef@toxicpanda.com>
 To: Nikolay Borisov <nborisov@suse.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/10] Unused parameter cleanup
+Message-ID: <20170821173655.GD23807@destiny>
+References: <1503308630-6652-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1503308630-6652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reviewed-by: Timofey Titovets <nefelim4ag@gmail.com>
+On Mon, Aug 21, 2017 at 12:43:40PM +0300, Nikolay Borisov wrote:
+> Hello, 
+> 
+> Here is a series that I've been sitting on for a while. It removes unused 
+> parameter in various functions, no functional changes. Patch 09/10 reworks
+> some error handling to eliminate an if branch in __btrfs_alloc_chunk, but it's
+> still a minor refactoring. 
+> 
+> Nikolay Borisov (10):
+>   btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
+>   btrfs: remove superfluous chunk_tree argument from
+>     btrfs_alloc_dev_extent
+>   btrfs: Remove unused variable
+>   btrfs: Remove unused parameters from various functions
+>   btrfs: Remove unused arguments from btrfs_changed_cb_t
+>   btrfs: Remove unused parameter from check_direct_IO
+>   btrfs: Remove unused parameter from extent_clear_unlock_delalloc
+>   btrfs: remove unused parameter in cow_file_range
+>   btrfs: Rework error handling of add_extent_mapping in
+>     __btrfs_alloc_chunk
+>   btrfs: Remove redundant argument of __link_block_group
+> 
 
-2017-08-21 12:43 GMT+03:00 Nikolay Borisov <nborisov@suse.com>:
-> Src was initially part of 31ff1cd25d37 ("Btrfs: Copy into the log tree in
-> big batches"), however 16e7549f045d ("Btrfs: incompatible format change to remove hole extents") changed parameters passed to copy_items which made the src
-> variable redundant.
->
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  fs/btrfs/tree-log.c | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index ad7f4bab640b..cb29528a8bba 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -2740,7 +2740,7 @@ static inline void btrfs_remove_log_ctx(struct btrfs_root *root,
->         mutex_unlock(&root->log_mutex);
->  }
->
-> -/*
-> +/*
->   * Invoked in log mutex context, or be sure there is no other task which
->   * can access the list.
->   */
-> @@ -4637,7 +4637,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
->         struct btrfs_key min_key;
->         struct btrfs_key max_key;
->         struct btrfs_root *log = root->log_root;
-> -       struct extent_buffer *src = NULL;
->         LIST_HEAD(logged_list);
->         u64 last_extent = 0;
->         int err = 0;
-> @@ -4880,7 +4879,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
->                         goto next_slot;
->                 }
->
-> -               src = path->nodes[0];
->                 if (ins_nr && ins_start_slot + ins_nr == path->slots[0]) {
->                         ins_nr++;
->                         goto next_slot;
-> --
-> 2.7.4
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+You can add
 
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
+to the whole series.  Thanks,
 
--- 
-Have a nice day,
-Timofey.
+Josef

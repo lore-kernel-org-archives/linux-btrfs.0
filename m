@@ -1,55 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40285 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932530AbdHWTRB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 15:17:01 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v7NJH0TN013352
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 19:17:00 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v7NJGx8P015084
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 19:16:59 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v7NJGxfT011617
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 19:16:59 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: do not reset bio->bi_ops while writing bio
-Date: Wed, 23 Aug 2017 12:15:09 -0600
-Message-Id: <20170823181509.19816-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:48373 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751897AbdHUJny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Aug 2017 05:43:54 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id A7EA2ABBC
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 09:43:53 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 00/10] Unused parameter cleanup
+Date: Mon, 21 Aug 2017 12:43:40 +0300
+Message-Id: <1503308630-6652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-flush_epd_write_bio() sets bio->bi_ops by itself to honor REQ_SYNC,
-but it's not needed at all since bio->bi_ops has set up properly in
-both __extent_writepage() and write_one_eb(), and in the case of
-write_one_eb(), it also sets REQ_META, which we will lose in
-flush_epd_write_bio().
+Hello, 
 
-This remove this unnecessary bio->bi_ops setting.
+Here is a series that I've been sitting on for a while. It removes unused 
+parameter in various functions, no functional changes. Patch 09/10 reworks
+some error handling to eliminate an if branch in __btrfs_alloc_chunk, but it's
+still a minor refactoring. 
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c | 3 ---
- 1 file changed, 3 deletions(-)
+Nikolay Borisov (10):
+  btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
+  btrfs: remove superfluous chunk_tree argument from
+    btrfs_alloc_dev_extent
+  btrfs: Remove unused variable
+  btrfs: Remove unused parameters from various functions
+  btrfs: Remove unused arguments from btrfs_changed_cb_t
+  btrfs: Remove unused parameter from check_direct_IO
+  btrfs: Remove unused parameter from extent_clear_unlock_delalloc
+  btrfs: remove unused parameter in cow_file_range
+  btrfs: Rework error handling of add_extent_mapping in
+    __btrfs_alloc_chunk
+  btrfs: Remove redundant argument of __link_block_group
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b61d68f..a454a10 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4054,9 +4054,6 @@ static void flush_epd_write_bio(struct extent_page_data *epd)
- 	if (epd->bio) {
- 		int ret;
- 
--		bio_set_op_attrs(epd->bio, REQ_OP_WRITE,
--				 epd->sync_io ? REQ_SYNC : 0);
--
- 		ret = submit_one_bio(epd->bio, 0, 0);
- 		BUG_ON(ret < 0); /* -ENOMEM */
- 		epd->bio = NULL;
+ fs/btrfs/ctree.c       | 15 +++++----------
+ fs/btrfs/ctree.h       |  4 +---
+ fs/btrfs/extent-tree.c |  8 ++++----
+ fs/btrfs/extent_io.c   |  3 +--
+ fs/btrfs/extent_io.h   |  2 +-
+ fs/btrfs/inode.c       | 47 ++++++++++++++++++-----------------------------
+ fs/btrfs/send.c        | 33 ++++++++++++++-------------------
+ fs/btrfs/tree-log.c    |  4 +---
+ fs/btrfs/volumes.c     | 24 +++++++++++-------------
+ 9 files changed, 56 insertions(+), 84 deletions(-)
+
 -- 
-2.9.4
+2.7.4
 

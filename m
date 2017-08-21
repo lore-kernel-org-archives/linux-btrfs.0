@@ -1,67 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48405 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48392 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753208AbdHUJn6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 05:43:58 -0400
+        id S1752421AbdHUJn4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Aug 2017 05:43:56 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id CD78CABF3
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 09:43:56 +0000 (UTC)
+        by mx1.suse.de (Postfix) with ESMTP id 764FFABD6
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 09:43:55 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 10/10] btrfs: Remove redundant argument of __link_block_group
-Date: Mon, 21 Aug 2017 12:43:50 +0300
-Message-Id: <1503308630-6652-11-git-send-email-nborisov@suse.com>
+Subject: [PATCH 06/10] btrfs: Remove unused parameter from check_direct_IO
+Date: Mon, 21 Aug 2017 12:43:46 +0300
+Message-Id: <1503308630-6652-7-git-send-email-nborisov@suse.com>
 In-Reply-To: <1503308630-6652-1-git-send-email-nborisov@suse.com>
 References: <1503308630-6652-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-__link_block_group is called from only 2 places and at each call site the
-space_info being passed is the same as the space info assigned to the passed
-cache struct. Let's remove the redundant argument and make the function
-reference the space_info from the passed block_group_cache. No functional
-changes
+Introduced by 5a5f79b57069 ("Btrfs: allow unaligned DIO") and never used, 
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1a80f6e58296..6ca75dc62a3c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9886,9 +9886,9 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 	return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 61f1ad89e97a..f1b3d6146924 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8764,7 +8764,6 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
  }
  
--static void __link_block_group(struct btrfs_space_info *space_info,
--			       struct btrfs_block_group_cache *cache)
-+static void __link_block_group(struct btrfs_block_group_cache *cache)
+ static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
+-			       struct kiocb *iocb,
+ 			       const struct iov_iter *iter, loff_t offset)
  {
-+	struct btrfs_space_info *space_info = cache->space_info;
- 	int index = get_block_group_index(cache);
- 	bool first = false;
+ 	int seg;
+@@ -8811,7 +8810,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 	bool relock = false;
+ 	ssize_t ret;
  
-@@ -10096,7 +10096,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
+-	if (check_direct_IO(fs_info, iocb, iter, offset))
++	if (check_direct_IO(fs_info, iter, offset))
+ 		return 0;
  
- 		cache->space_info = space_info;
- 
--		__link_block_group(space_info, cache);
-+		__link_block_group(cache);
- 
- 		set_avail_alloc_bits(info, cache->flags);
- 		if (btrfs_chunk_readonly(info, cache->key.objectid)) {
-@@ -10255,7 +10255,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 				cache->bytes_super, &cache->space_info);
- 	update_global_block_rsv(fs_info);
- 
--	__link_block_group(cache->space_info, cache);
-+	__link_block_group(cache);
- 
- 	list_add_tail(&cache->bg_list, &trans->new_bgs);
- 
+ 	inode_dio_begin(inode);
 -- 
 2.7.4
 

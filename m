@@ -1,52 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp73.iad3a.emailsrvr.com ([173.203.187.73]:51038 "EHLO
-        smtp73.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752848AbdHTMeR (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:54216 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753468AbdHUC3I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 Aug 2017 08:34:17 -0400
-Subject: Re: slow btrfs with a single kworker process using 100% CPU
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Cc: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>,
-        Roman Mamedov <rm@romanrm.net>, linux-btrfs@vger.kernel.org,
-        Peter Grandi <pg@btrfs.list.sabi.co.uk>
-References: <eab2f725-ab6e-d2ac-30e1-d9c964ce8be8@profihost.ag>
- <4772c3f2-0074-d86f-24c4-02ff0730fce7@rqc.ru>
- <064eaaed-7748-7064-874e-19d270d0854e@profihost.ag>
- <4669553.344.1502874134710.JavaMail.gkos@dynomob>
- <f6f3998b-3ca7-7344-a577-6b02a5b11359@profihost.ag>
- <18522132.418.1502884115575.JavaMail.gkos@dynomob>
- <20170816170003.3f47321d@natsu>
- <31057849.442.1502886546489.JavaMail.gkos@dynomob>
- <a7ecda6e-6b75-c7b9-3546-4f3150de08d3@profihost.ag>
- <27208cbf-0715-970c-5804-fdc7d65193ef@profihost.ag>
- <d6d5e7d6-0d1b-2cb0-70f4-f803d01803bf@profihost.ag>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <f254f6e5-cc98-5025-99dd-02fbeb77e3d3@rqc.ru>
-Date: Sun, 20 Aug 2017 15:34:13 +0300
-MIME-Version: 1.0
-In-Reply-To: <d6d5e7d6-0d1b-2cb0-70f4-f803d01803bf@profihost.ag>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Sun, 20 Aug 2017 22:29:08 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+        by mailgw-01.dd24.net (Postfix) with ESMTP id 11DB360091
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 02:29:07 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+        with ESMTP id fDDs5D4qhIjZ for <linux-btrfs@vger.kernel.org>;
+        Mon, 21 Aug 2017 02:29:04 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-82-135-81-99.dynamic.mnet-online.de [82.135.81.99])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-01.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 02:29:04 +0000 (UTC)
+Message-ID: <1503282544.4669.10.camel@scientia.net>
+Subject: BTRFS warning (device dm-0): unhandled fiemap cache detected
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 21 Aug 2017 04:29:04 +0200
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-8I0GpYC3ixmlrmjOTbKc"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm a btrfs user, not a developer; developers can probably provide more 
-detailed explanation by looking at stack traces in dmesg etc., but it's 
-possible that there's just no quick fix (yet). I presume these are 1413 
-_full-volume_ snapshots. Then some operations have to process 
-43.65TiB*1413=62PiB of data -- well, metadata for that data, but it's 
-still a lot as you may guess, especially if it's all heavily fragmented. 
-You can either gradually reduce number of snapshots and wait (it may 
-drag for weeks and months), or copy everything to a different device and 
-reformat this one, then don't create that many snapshots again.
 
-As for "blocked for more than 120 seconds" messages in dmesg, I see them 
-every night after I delete about a dozen of snapshots ~10TiB in _total_ 
-volume, albeit with qgroups. These messages usually subside after about 
-couple of hours. They only tell you what you already know: some btrfs 
-operations are painfully slow.
+--=-8I0GpYC3ixmlrmjOTbKc
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
---
+Hey.
 
-With Best Regards,
-Marat Khalili
+Just got the following with 4.12.6:
+
+Aug 21 03:29:51 heisenberg kernel: BTRFS warning (device dm-0): unhandled f=
+iemap cache detected: offset=3D0 phys=3D812641906688 len=3D12288 flags=3D0x=
+0
+Aug 21 03:29:56 heisenberg kernel: BTRFS warning (device dm-0): unhandled f=
+iemap cache detected: offset=3D0 phys=3D812641906688 len=3D12288 flags=3D0x=
+0
+Aug 21 03:30:58 heisenberg kernel: BTRFS warning (device dm-0): unhandled f=
+iemap cache detected: offset=3D0 phys=3D813760614400 len=3D32768 flags=3D0x=
+0
+Aug 21 03:31:15 heisenberg kernel: BTRFS warning (device dm-0): unhandled f=
+iemap cache detected: offset=3D0 phys=3D812641906688 len=3D12288 flags=3D0x=
+0
+
+Is it what should be fixed with:
+https://patchwork.kernel.org/patch/9803291/
+
+?
+
+Is this harmless or must I assume that some part of my data/fs is now
+corrupt and should I recover from backup?
+
+Thanks,
+Chris.
+--=-8I0GpYC3ixmlrmjOTbKc
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODIxMDIyOTA0WjBPBgkqhkiG9w0BCQQxQgRANQul
+qrZ0+eQ0zYlEHcTsJPJwvdct0djw+fapnAsmvP9PDqyZEnomLQW4Hfe7wip+H2XQ5E9Ay+U6R2QY
+edPZzjCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAl8dn
+zjFeDLIi6bEz62sXFB4sGWoz8oVs3xQBPPHbtewXJh551F9vWoYhwGPzgaY8ltWQFuA8hZlItKlF
+Re+areB1sIbY7O43zyI6Otk5IqCx7vnpsS32VKvI64T++ylPxRcYhDbru5ApdL55PMvq3Nz0nZ48
+KfMJ4mAu+HmBSYO+2nSZvtXSAXFCBUXGfW+1h+gVAD4Bdg7rw991Y4BbqasjdgDJJ/8c153YVBnF
+5M1xfGq9dxD80Mg36vvD8Pl7v5xljPlCVsO2vl5d1TWS3jSC2PK7YIgH7dDWRaK/KpvkgjCSazbT
+YaT1Z9pNI64wyPz5SVHt9BKft/qrtH6kHoD6s69uSdnTaj3kSfe2EFg/2/NLZi78v9WWi7A71Osz
+QwhNEjd75ujPWBTWFIdsQtAhiCKGpgzF0F3UcCSmxTswGsT8gEwOkZ/U608jCtFJTAh3+Ja7t57X
+O/c6AHapq9kIVN3bnmsRmlF/n5KshnZTJN4fF06Sk88NN5+Ly+/T7r3M3cwC53y3NaxbUYWgh2JI
+BU2hg0h3ZFX6lwkdHhkNJHLr52DXb7nQATY6kubW0220McdxNFTzF2PPeE/f/4GNxz5rc2tyLfL/
+7MfafPjBBv5QTtFtp+Z56rC7Olh41gTuxuYLqbzqYs/HKqS2L9Potlxt+yQBTJvo+CH+kkQAAAAA
+AAA=
+
+
+--=-8I0GpYC3ixmlrmjOTbKc--
 

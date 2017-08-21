@@ -1,52 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48373 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751897AbdHUJny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 05:43:54 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A7EA2ABBC
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 09:43:53 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 00/10] Unused parameter cleanup
-Date: Mon, 21 Aug 2017 12:43:40 +0300
-Message-Id: <1503308630-6652-1-git-send-email-nborisov@suse.com>
+Received: from mail-oi0-f68.google.com ([209.85.218.68]:36469 "EHLO
+        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752234AbdHUM0A (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 21 Aug 2017 08:26:00 -0400
+Received: by mail-oi0-f68.google.com with SMTP id p62so5233304oih.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 05:25:59 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1503308630-6652-7-git-send-email-nborisov@suse.com>
+References: <1503308630-6652-1-git-send-email-nborisov@suse.com> <1503308630-6652-7-git-send-email-nborisov@suse.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Mon, 21 Aug 2017 15:25:19 +0300
+Message-ID: <CAGqmi75yEtURKxnyKiHXow9ZzqXWV=Y8opHS2VfcSRP=1OF7Zw@mail.gmail.com>
+Subject: Re: [PATCH 06/10] btrfs: Remove unused parameter from check_direct_IO
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello, 
+Reviewed-by: Timofey Titovets <nefelim4ag@gmail.com>
 
-Here is a series that I've been sitting on for a while. It removes unused 
-parameter in various functions, no functional changes. Patch 09/10 reworks
-some error handling to eliminate an if branch in __btrfs_alloc_chunk, but it's
-still a minor refactoring. 
+2017-08-21 12:43 GMT+03:00 Nikolay Borisov <nborisov@suse.com>:
+> Introduced by 5a5f79b57069 ("Btrfs: allow unaligned DIO") and never used,
+>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/inode.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 61f1ad89e97a..f1b3d6146924 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -8764,7 +8764,6 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
+>  }
+>
+>  static ssize_t check_direct_IO(struct btrfs_fs_info *fs_info,
+> -                              struct kiocb *iocb,
+>                                const struct iov_iter *iter, loff_t offset)
+>  {
+>         int seg;
+> @@ -8811,7 +8810,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>         bool relock = false;
+>         ssize_t ret;
+>
+> -       if (check_direct_IO(fs_info, iocb, iter, offset))
+> +       if (check_direct_IO(fs_info, iter, offset))
+>                 return 0;
+>
+>         inode_dio_begin(inode);
+> --
+> 2.7.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Nikolay Borisov (10):
-  btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
-  btrfs: remove superfluous chunk_tree argument from
-    btrfs_alloc_dev_extent
-  btrfs: Remove unused variable
-  btrfs: Remove unused parameters from various functions
-  btrfs: Remove unused arguments from btrfs_changed_cb_t
-  btrfs: Remove unused parameter from check_direct_IO
-  btrfs: Remove unused parameter from extent_clear_unlock_delalloc
-  btrfs: remove unused parameter in cow_file_range
-  btrfs: Rework error handling of add_extent_mapping in
-    __btrfs_alloc_chunk
-  btrfs: Remove redundant argument of __link_block_group
 
- fs/btrfs/ctree.c       | 15 +++++----------
- fs/btrfs/ctree.h       |  4 +---
- fs/btrfs/extent-tree.c |  8 ++++----
- fs/btrfs/extent_io.c   |  3 +--
- fs/btrfs/extent_io.h   |  2 +-
- fs/btrfs/inode.c       | 47 ++++++++++++++++++-----------------------------
- fs/btrfs/send.c        | 33 ++++++++++++++-------------------
- fs/btrfs/tree-log.c    |  4 +---
- fs/btrfs/volumes.c     | 24 +++++++++++-------------
- 9 files changed, 56 insertions(+), 84 deletions(-)
 
 -- 
-2.7.4
-
+Have a nice day,
+Timofey.

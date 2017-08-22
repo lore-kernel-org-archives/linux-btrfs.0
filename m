@@ -1,115 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:33048 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751128AbdHWWqD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 18:46:03 -0400
-Received: by mail-wm0-f65.google.com with SMTP id b79so973612wmf.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 15:46:02 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v6 6/6] Btrfs: heuristic add byte core set calculation
-Date: Thu, 24 Aug 2017 01:45:45 +0300
-Message-Id: <20170823224545.16375-7-nefelim4ag@gmail.com>
-In-Reply-To: <20170823224545.16375-1-nefelim4ag@gmail.com>
-References: <20170823224545.16375-1-nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:52084 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S933001AbdHVPqK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 11:46:10 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 30E9BABB4
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 15:46:09 +0000 (UTC)
+Date: Tue, 22 Aug 2017 17:44:45 +0200
+From: David Sterba <dsterba@suse.cz>
+To: jeffm@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/7] btrfs-progs: extent-cache: actually cache extent
+ buffers
+Message-ID: <20170822154445.GA2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170725205138.28376-1-jeffm@suse.com>
+ <20170725205138.28376-3-jeffm@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170725205138.28376-3-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Calculate byte core set for data sample:
-Sort bucket's numbers in decreasing order
-Count how many numbers use 90% of sample
-If core set are low (<=25%), data are easily compressible
-If core set high (>=80%), data are not compressible
+On Tue, Jul 25, 2017 at 04:51:34PM -0400, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> We have the infrastructure to cache extent buffers but we don't actually
+> do the caching.  As soon as the last reference is dropped, the buffer
+> is dropped.  This patch keeps the extent buffers around until the max
+> cache size is reached (defaults to 25% of memory) and then it drops
+> the last 10% of the LRU to free up cache space for reallocation.  The
+> cache size is configurable (for use by e.g. lowmem) when the cache is
+> initialized.
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/heuristic.c | 51 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 50 insertions(+), 1 deletion(-)
+I've started to merge the series, changed code according to the review.
+In this patch, test-mkfs and test-check fail (segfaults and assertions).
+A debugging build or asan (make D=all,asan) does not reproduce the
+errors so this will need to be found by other means.
 
-diff --git a/fs/btrfs/heuristic.c b/fs/btrfs/heuristic.c
-index 4815d1becf7e..8a5397b74597 100644
---- a/fs/btrfs/heuristic.c
-+++ b/fs/btrfs/heuristic.c
-@@ -18,6 +18,7 @@
- #include <linux/pagemap.h>
- #include <linux/string.h>
- #include <linux/bio.h>
-+#include <linux/sort.h>
- #include "compression.h"
+I also fixed some trivial coding style issues, so the changes are now in
+the branch
+https://github.com/kdave/btrfs-progs/tree/ext/jeffm/extent-cache
 
- #define READ_SIZE 16
-@@ -25,6 +26,8 @@
- #define BUCKET_SIZE 256
- #define MAX_SAMPLE_SIZE (BTRFS_MAX_UNCOMPRESSED*READ_SIZE/ITER_SHIFT)
- #define BYTE_SET_THRESHOLD 64
-+#define BYTE_CORE_SET_LOW  BYTE_SET_THRESHOLD
-+#define BYTE_CORE_SET_HIGH 200 // ~80%
-
- struct bucket_item {
- 	u32 count;
-@@ -67,6 +70,45 @@ static struct list_head *heuristic_alloc_workspace(void)
- 	return ERR_PTR(-ENOMEM);
- }
-
-+/* For bucket sorting */
-+static inline int bucket_compare(const void *lv, const void *rv)
-+{
-+	struct bucket_item *l = (struct bucket_item *)(lv);
-+	struct bucket_item *r = (struct bucket_item *)(rv);
-+
-+	return r->count - l->count;
-+}
-+
-+/*
-+ * Byte Core set size
-+ * How many bytes use 90% of sample
-+ */
-+static int byte_core_set_size(struct workspace *ws)
-+{
-+	u32 a = 0;
-+	u32 coreset_sum = 0;
-+	u32 core_set_threshold = ws->sample_size*90/100;
-+	struct bucket_item *bucket = ws->bucket;
-+
-+	/* Sort in reverse order */
-+	sort(bucket, BUCKET_SIZE, sizeof(*bucket),
-+	     &bucket_compare, NULL);
-+
-+	for (; a < BYTE_CORE_SET_LOW; a++)
-+		coreset_sum += bucket[a].count;
-+
-+	if (coreset_sum > core_set_threshold)
-+		return a;
-+
-+	for (; a < BYTE_CORE_SET_HIGH && bucket[a].count > 0; a++) {
-+		coreset_sum += bucket[a].count;
-+		if (coreset_sum > core_set_threshold)
-+			break;
-+	}
-+
-+	return a;
-+}
-+
- static u32 byte_set_size(const struct workspace *ws)
- {
- 	u32 a = 0;
-@@ -167,7 +209,14 @@ static int heuristic(struct list_head *ws, struct inode *inode,
- 	if (a > BYTE_SET_THRESHOLD)
- 		return 2;
-
--	return 1;
-+	a = byte_core_set_size(workspace);
-+	if (a <= BYTE_CORE_SET_LOW)
-+		return 3;
-+
-+	if (a >= BYTE_CORE_SET_HIGH)
-+		return 0;
-+
-+	return 4;
- }
-
- const struct btrfs_compress_op btrfs_heuristic = {
---
-2.14.1
+Please use this as a starting point, I'm fine with resending just this
+patch or an incremental.

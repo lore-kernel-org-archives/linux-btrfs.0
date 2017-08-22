@@ -1,48 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60507 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35811 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751244AbdHVRLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 13:11:18 -0400
+        id S1751289AbdHVSP6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 14:15:58 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E2D7EAD32
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 17:11:16 +0000 (UTC)
-Date: Tue, 22 Aug 2017 19:09:53 +0200
+        by mx1.suse.de (Postfix) with ESMTP id 70F1FAD6F
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 18:15:56 +0000 (UTC)
+Date: Tue, 22 Aug 2017 20:14:32 +0200
 From: David Sterba <dsterba@suse.cz>
 To: jeffm@suse.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs-progs: convert: add support for converting
- reiserfs
-Message-ID: <20170822170953.GB2866@twin.jikos.cz>
+Subject: Re: [PATCH 0/5 v2] btrfs-progs: convert fixes + reiserfs support
+Message-ID: <20170822181432.GC2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170725205443.29874-1-jeffm@suse.com>
- <20170725205443.29874-3-jeffm@suse.com>
+References: <20170727154723.2208-1-jeffm@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170725205443.29874-3-jeffm@suse.com>
+In-Reply-To: <20170727154723.2208-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 25, 2017 at 04:54:43PM -0400, jeffm@suse.com wrote:
+On Thu, Jul 27, 2017 at 11:47:18AM -0400, jeffm@suse.com wrote:
 > From: Jeff Mahoney <jeffm@suse.com>
 > 
-> This patch adds support to convert reiserfs file systems in-place to btrfs.
+> Changes since v1:
+> - reiserfs conversion:
+>   - use bool instead of int
+>   - catch 'impossible' condition of multiple discontiguous tails
+>   - properly handle hole followed by tail
+>   - add testing for combinations of real blocks, tails, and holes
+>   - print error indicating filename (and key) that caused a failure
+>   - constify buffer arg to btrfs_insert_inline_extent
+>   - add tails=on to reiserfs mount options
+>   - fixed absence of libreiserfscore to be non-fatal unless specificially
+>     enabled
 > 
-> It will convert extended attribute files to btrfs extended attributes,
-> translate ACLs, coalesce tails that consist of multiple items into one item,
-> and convert tails that are too big into indirect files.
+> - btrfs-progs: convert: use search_cache_extent in migrate_one_reserved_range
+>   - In testing, we would not be able to roll back to part of the 0-1MB range
+>     not being migrated.
 > 
-> This requires that libreiserfscore 3.6.27 be available.
-> 
-> Many of the test cases for convert apply regardless of what the source
-> file system is and using ext4 is sufficient.  I've included several
-> test cases that are reiserfs-specific.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> - btrfs-progs: tests: fix typo in convert-tests/008-readonly-image
+>   - The test used ext2_save instead of ext2_saved as the filename
 
-Patches merged, with quite a few small fixups here and there. It took me
-less time to fix them on the way than to take it through the
-mailinglist. The tests were split to separate patch. I'm fine with
-keeping the reiserfs bits in one patch as it's an isolated feature.
-The tests are now running, I'll let it finish. There's some code or
-test code duplication that can be cleaned up eventually, but now I
-consider reiserfs conversion support done. Thanks.
+Oh crap, I noticed v2 after I had finished merging v1. The changes have
+been now transferred, so the version in devel is v2 + my fixups. The 2
+new patches ("use search_cache_extent in migrate_one_reserved_range" and
+"tests: fix typo in convert-tests/008-readonly-image") have been also
+added.

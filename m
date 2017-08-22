@@ -1,70 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:35711 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932833AbdHVNhN (ORCPT
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:35558 "EHLO
+        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932856AbdHVNo6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 09:37:13 -0400
-Received: by mail-io0-f180.google.com with SMTP id 1so26926233ioy.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 06:37:13 -0700 (PDT)
-Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.gmail.com with ESMTPSA id i127sm4979787ita.3.2017.08.22.06.37.11
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 22 Aug 2017 06:37:11 -0700 (PDT)
-Subject: Re: finding root filesystem of a subvolume?
-To: linux-btrfs@vger.kernel.org
-References: <20170822122350.GA14804@rus.uni-stuttgart.de>
- <20170822124036.GA32302@carfax.org.uk>
- <20170822125030.GB14804@rus.uni-stuttgart.de>
- <16778020-9167-b7cc-4768-ee33dca2bbb7@gmail.com>
- <20170822133030.GE14804@rus.uni-stuttgart.de>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <0c35fba9-a514-31dd-a703-17f4727ed229@gmail.com>
-Date: Tue, 22 Aug 2017 09:37:10 -0400
+        Tue, 22 Aug 2017 09:44:58 -0400
+Received: by mail-lf0-f42.google.com with SMTP id k186so23813954lfe.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 06:44:58 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20170822133030.GE14804@rus.uni-stuttgart.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170822132208.GD14804@rus.uni-stuttgart.de>
+References: <20170822132208.GD14804@rus.uni-stuttgart.de>
+From: Peter Becker <floyd.net@gmail.com>
+Date: Tue, 22 Aug 2017 15:44:56 +0200
+Message-ID: <CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
+Subject: Re: netapp-alike snapshots?
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-22 09:30, Ulli Horlacher wrote:
-> On Tue 2017-08-22 (09:27), Austin S. Hemmelgarn wrote:
-> 
->>>>> root@fex:~# df -T
->>>>> Filesystem     Type  1K-blocks      Used Available Use% Mounted on
->>>>> -              -    1073740800 104244552 967773976  10% /local/.backup/home
->>>>
->>>>      I've never seen the "- -" output from df before. Is this a bind
->>>> mount or something?
->>>
->>> No, /local/.backup/home is just a btrfs subvolume
->>
->> It arguably shouldn't be showing up here then if it's not been
->> explicitly mounted.  I'm betting you're running OpenSUSE or SLES
-> 
-> No:
-> 
-> root@fex:~# cat /etc/os-release
-> NAME="Ubuntu"
-> VERSION="14.04.5 LTS, Trusty Tahr"
-> ID=ubuntu
-> ID_LIKE=debian
-> PRETTY_NAME="Ubuntu 14.04.5 LTS"
-> VERSION_ID="14.04"
-> HOME_URL="http://www.ubuntu.com/"
-> SUPPORT_URL="http://help.ubuntu.com/"
-> BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
-> 
-> root@fex:~# df -T /local/.backup/home
-> Filesystem     Type  1K-blocks      Used Available Use% Mounted on
-> -              -    1073740800 104252160 967766336  10% /local/.backup/home
-> 
-> root@fex:~# type df
-> df is hashed (/bin/df)
-> 
-> root@fex:~# dpkg -S /bin/df
-> coreutils: /bin/df
-> 
-Hmm, now I'm really confused, I just checked on the Ubuntu 17.04 and 
-16.04.3 VM's I have (I only run current and the most recent LTS 
-version), and neither of them behave like this.
+Is use: https://github.com/jf647/btrfs-snap
+
+2017-08-22 15:22 GMT+02:00 Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
+> With Netapp/waffle you have automatic hourly/daily/weekly snapshots.
+> You can find these snapshots in every local directory (readonly).
+> Example:
+>
+> framstag@fex:/sw/share: ll .snapshot/
+> drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-15_0010
+> drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-16_0010
+> drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-17_0010
+> drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-18_0010
+> drwxr-xr-x  framstag root - 2017-08-18 23:59:29 .snapshot/daily.2017-08-19_0010
+> drwxr-xr-x  framstag root - 2017-08-19 21:01:25 .snapshot/daily.2017-08-20_0010
+> drwxr-xr-x  framstag root - 2017-08-20 19:48:40 .snapshot/daily.2017-08-21_0010
+> drwxr-xr-x  framstag root - 2017-08-20 02:50:18 .snapshot/hourly.2017-08-20_1210
+> drwxr-xr-x  framstag root - 2017-08-20 02:50:18 .snapshot/hourly.2017-08-20_1610
+> drwxr-xr-x  framstag root - 2017-08-20 19:48:40 .snapshot/hourly.2017-08-20_2010
+> drwxr-xr-x  framstag root - 2017-08-21 00:42:28 .snapshot/hourly.2017-08-21_0810
+> drwxr-xr-x  framstag root - 2017-08-21 00:42:28 .snapshot/hourly.2017-08-21_1210
+> drwxr-xr-x  framstag root - 2017-08-21 13:05:28 .snapshot/hourly.2017-08-21_1610
+>
+> I would like to have something similar with btrfs.
+> Programming such a feature is not a general problem for me, but I think I
+> am not the first one who wants this kind of auto-snapshooting.
+> Is there (where?) such a tool?
+>
+> I know snapper, but it has a totally different approach.
+>
+> --
+> Ullrich Horlacher              Server und Virtualisierung
+> Rechenzentrum TIK
+> Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+> Allmandring 30a                Tel:    ++49-711-68565868
+> 70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+> REF:<20170822132208.GD14804@rus.uni-stuttgart.de>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

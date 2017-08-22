@@ -1,29 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44834 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60507 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932849AbdHVOdE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 10:33:04 -0400
+        id S1751244AbdHVRLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 13:11:18 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id E4513AE1F
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 14:33:02 +0000 (UTC)
-Date: Tue, 22 Aug 2017 16:31:39 +0200
+        by mx1.suse.de (Postfix) with ESMTP id E2D7EAD32
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 17:11:16 +0000 (UTC)
+Date: Tue, 22 Aug 2017 19:09:53 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
+To: jeffm@suse.com
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs-progs: Use named constants for common sizes
-Message-ID: <20170822143139.GZ2866@twin.jikos.cz>
+Subject: Re: [PATCH 3/3] btrfs-progs: convert: add support for converting
+ reiserfs
+Message-ID: <20170822170953.GB2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1501143420-28062-1-git-send-email-nborisov@suse.com>
- <1501143420-28062-2-git-send-email-nborisov@suse.com>
+References: <20170725205443.29874-1-jeffm@suse.com>
+ <20170725205443.29874-3-jeffm@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1501143420-28062-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <20170725205443.29874-3-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 27, 2017 at 11:17:00AM +0300, Nikolay Borisov wrote:
-> There multiple places where we use well-known sizes - 1,8,16,32 megabytes. We
-> also have them defined as constants in the sizes.h header. So let's use them.
-> No functional changes.
+On Tue, Jul 25, 2017 at 04:54:43PM -0400, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> This patch adds support to convert reiserfs file systems in-place to btrfs.
+> 
+> It will convert extended attribute files to btrfs extended attributes,
+> translate ACLs, coalesce tails that consist of multiple items into one item,
+> and convert tails that are too big into indirect files.
+> 
+> This requires that libreiserfscore 3.6.27 be available.
+> 
+> Many of the test cases for convert apply regardless of what the source
+> file system is and using ext4 is sufficient.  I've included several
+> test cases that are reiserfs-specific.
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-Both applied, thanks.
+Patches merged, with quite a few small fixups here and there. It took me
+less time to fix them on the way than to take it through the
+mailinglist. The tests were split to separate patch. I'm fine with
+keeping the reiserfs bits in one patch as it's an isolated feature.
+The tests are now running, I'll let it finish. There's some code or
+test code duplication that can be cleaned up eventually, but now I
+consider reiserfs conversion support done. Thanks.

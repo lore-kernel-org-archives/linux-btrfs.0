@@ -1,50 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43263 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44826 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932510AbdHVOOB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 10:14:01 -0400
-Date: Tue, 22 Aug 2017 16:12:36 +0200
+        id S932849AbdHVOcz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 10:32:55 -0400
+Date: Tue, 22 Aug 2017 16:31:30 +0200
 From: David Sterba <dsterba@suse.cz>
-To: zhangyu-fnst@cn.fujitsu.com
+To: Duncan <1i5t5.duncan@cox.net>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: Check root before printing item
-Message-ID: <20170822141236.GX2866@twin.jikos.cz>
+Subject: Re: [PATCH 2/2] btrfs-progs: Use named constants for common sizes
+Message-ID: <20170822143130.GY2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170821075713.32051-1-zhangyu-fnst@cn.fujitsu.com>
+References: <1501143420-28062-1-git-send-email-nborisov@suse.com>
+ <1501143420-28062-2-git-send-email-nborisov@suse.com>
+ <pan$9b8a8$c35443cf$d85bd4b7$f5299060@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170821075713.32051-1-zhangyu-fnst@cn.fujitsu.com>
+In-Reply-To: <pan$9b8a8$c35443cf$d85bd4b7$f5299060@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 21, 2017 at 03:57:13PM +0800, zhangyu-fnst@cn.fujitsu.com wrote:
-> From: Zhang Yu <zhangyu-fnst@cn.fujitsu.com>
+On Thu, Jul 27, 2017 at 09:02:12PM +0000, Duncan wrote:
+> Nikolay Borisov posted on Thu, 27 Jul 2017 11:17:00 +0300 as excerpted:
 > 
-> [TEST/fuzz] case: 004-simple-dump-tree
+> > diff --git a/convert/main.c b/convert/main.c
+> > index c56382e915fd..49ab829b5641 100644
+> > --- a/convert/main.c
+> > +++ b/convert/main.c
 > 
-> Since the wrong key(DATA_RELOC_TREE CHUNK_ITEM 0) in root tree,
-> error calling print_chunk(), resulting in num_stripes == 0.
+> > @@ -1586,7 +1586,7 @@ next:
+> >   * |   RSV 1   |  | Old  |   |    RSV 2  | | Old  | |   RSV 3   |
+> >   * |   0~1M    |  | Fs   |   | SB2 + 64K | | Fs   | | SB3 + 64K |
+> >   *
+> > - * On the other hande, the converted fs image in btrfs is a completely 
+> > + * On the other hande, the converted fs image in btrfs is a completely
+> >   * valid old fs.
+> >   *
+> >   * |<-----------------Converted fs image in btrfs-------------------->|
 > 
-> ERROR:
->      [TEST/fuzz]   004-simple-dump-tree
-> ctree.h:317: btrfs_chunk_item_size: BUG_ON `num_stripes == 0`
->         triggered, value 1
+> If you're going to kill the line-terminating space, you might as well
+> do the spell-correct in the same line:
 > 
-> failed (ignored, ret=134): /myproject/btrfs-progs/btrfs
-> inspect-internal dump-tree
-> /myproject/btrfs-progs/tests/fuzz-tests/images/
-> bko-155201-wrong-chunk-item-in-root-tree.raw.restored
-> 
-> test failed for case 004-simple-dump-tree
-> Makefile:288: recipe for target 'test-fuzz' failed
-> make: *** [test-fuzz] Error 1
-> 
-> So, before printing item, determine the root is valid or not.
+> s/hande/hand/
 
-I don't think this is the right way to fix it. The print-tree function
-should print everything that's found, possibly doing sanity checks and
-then only skip the bad data. For debugging or other purposes, we want to
-get exact state of the trees.
-
-The original problem you found is wrong number of stripes, so it should
-be dealt with in print_chunk.
+Fixed.

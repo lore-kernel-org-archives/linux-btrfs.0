@@ -1,100 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:58674 "EHLO mout.gmx.net"
+Received: from mout2.freenet.de ([195.4.92.92]:55088 "EHLO mout2.freenet.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751384AbdHVGkv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 02:40:51 -0400
-Subject: Re: Btrfs Raid5 issue.
-To: Robert LeBlanc <robert@leblancnet.us>, lists@colorremedies.com,
-        linux-btrfs@vger.kernel.org
-References: <CAANLjFo714ED=kMHZh0fTWc2WhQwkyZ4a7SZtThm9xwPghn1_Q@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <9e3e3576-d4a0-17b0-f95f-8923f6ce89ef@gmx.com>
-Date: Tue, 22 Aug 2017 14:40:09 +0800
+        id S932295AbdHVJjX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 05:39:23 -0400
+From: g6094199@freenet.de
+Subject: Re: degraded BTRFS RAID 1 not mountable: open_ctree failed, unable to
+ find block group for 0
+To: linux-btrfs@vger.kernel.org
+Cc: rm@romanrm.net
+Message-ID: <2bee7fc8-3724-0ade-ed7f-28cc296c0595@chefmail.de>
+Date: Tue, 22 Aug 2017 11:31:23 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAANLjFo714ED=kMHZh0fTWc2WhQwkyZ4a7SZtThm9xwPghn1_Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+He guys,
 
 
-On 2017年08月22日 13:19, Robert LeBlanc wrote:
-> Chris and Qu thanks for your help. I was able to restore the data off
-> the volume. I only could not read one file that I tried to rsync (a
-> MySQl bin log), but it wasn't critical as I had an off-site snapshot
-> from that morning and ownclould could resync the files that were
-> changed anyway. This turned out much better than the md RAID failure
-> that I had a year ago. Much faster recovery thanks to snapshots.
-> 
-> Is there anything you would like from this damaged filesystem to help
-> determine what went wrong and to help make btrfs better? If I don't
-> hear back from you in a day, I'll destroy it so that I can add the
-> disks into the new btrfs volumes to restore redundancy.
-Feel free to destroy the old images.
+picking up this old topic cause i'm running into a similar problem.
 
-If nologreplay works, that's good enough.
-The problem seems to be extent tree, but it's too hard to locate the 
-real problem.
 
-> 
-> Bcache wasn't providing the performance I was hoping for, so I'm
-> putting the root and roots for my LXC containers on the SSDs (btrfs
-> RAID1) and the bulk stuff on the three spindle drives (btrfs RAID1).
+Running a Ubuntu 16.04 (HWE K4.8) server with 2 nvme SSD as Raid1 as /.
+Since one nvme died i had to replace it, where the trouble began. I
+replaced the nvme, bootet degraded, added the new disk to the raid
+(btrfs dev add) and removed the missing/dead device (btrfs dev del).
+Everything worked well. BUT as i rebooted i ran into the "BTRFS RAID 1
+not mountable: open_ctree failed, unable to find block group for 0"
+because of a MISSING disk?! I checked the btrfs list and found that
+there was a patch that enabled a more strict behavior in handing missing
+devices (atm cant find the related patch anymore), which was merged some
+kernels before k4.8 but was NOT in k4.4. So i managed to install the
+k4.4 ubuntu kernel and the system startet booting and working again. So
+my pitty is that i cant update to anything after k4.4 with this
+production machine. :-(
 
-Well, I'm more interested in the bcache performance.
+So 1st should be investigating why did the disk not get removed
+correctly? Btrfs dev del should remove the device corretly, right? Is
+there a bug?
 
-I was considering to using my Intel 600P NVMe to cache one 2.5' HGST 1T 
-HDD (7200rpm) in my btrfs KVM host (also my daily machine).
+2nd Was the restriction on handling missing devices to strikt? Is there
+a bug?
 
-Would you please share more details about the performance problem?
-(Maybe it's about some btrfs performance problems, not bcache. Btrfs is 
-not good at workload like DB or metadata heavy operations)
+3rd i saw https://patchwork.kernel.org/patch/9419189/ from Roman. Did he
+receive any comments on his patch? This one could help on this problem,
+too. 
 
-> For some reason, it seemed that the btrfs RAID5 setup required one of
-> the drives, but I thought I had data with RAID5 and metadata with 2
-> copies. Was I missing something else that prevented mounting with that
-> specific drive? I don't want to get into a situation where one drive
-> dies and I can't get to any data.
 
-The direct cause is btrfs fails to replay its log, and it's corrupted 
-extent tree causing log replay failed.
-And normally such failure will definitely cause problem, so btrfs just 
-stop the mount procedure.
+Regards
 
-In your case, if "nologreplay" is specified, btrfs skips the problem, 
-and since you must specify RO for nologrelay, btrfs has nothing to do 
-with extent tree at all.
-So btrfs can be mounted.
+Sash
 
-Why extent tree get corrupted is still unknown. If your metadata is also 
-RAID5, then write-hole may be the cause.
-If your metadata profile is RAID1, then I don't know why this could happen.
-
-So from this point of view, even we fixed btrfs scrub/race problems, 
-it's still not good enough to survive a disk removal in real world.
-
-With RAID1 setup, at least we don't need to care about write hole and 
-csum will help us to determine which copy is correct, so I think it will 
-be much better than RAID56.
-
-If you have spare time, you could try to hot-plug RAID1 devices to 
-verify how it works.
-But please note that, re-attach plugged device may need to umount the fs 
-and re-scan btrfs.
-
-And even you're using 3 devices with RAID1, it's still 2 copies.
-So you can lose at most 1 device.
-
-Thanks,
-Qu
-
-> 
-> Thank you again.
-> ----------------
-> Robert LeBlanc
-> PGP Fingerprint 79A2 9CA4 6CC4 45DD A904  C70E E654 3BB2 FA62 B9F1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

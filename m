@@ -1,101 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f43.google.com ([209.85.214.43]:36586 "EHLO
-        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932647AbdHVOiB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 10:38:01 -0400
-Received: by mail-it0-f43.google.com with SMTP id x187so537219ite.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 07:38:00 -0700 (PDT)
-Subject: Re: finding root filesystem of a subvolume?
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-References: <20170822122350.GA14804@rus.uni-stuttgart.de>
- <20170822124036.GA32302@carfax.org.uk>
- <20170822125030.GB14804@rus.uni-stuttgart.de>
- <16778020-9167-b7cc-4768-ee33dca2bbb7@gmail.com>
- <20170822133030.GE14804@rus.uni-stuttgart.de>
- <0c35fba9-a514-31dd-a703-17f4727ed229@gmail.com>
- <20170822135301.GF14804@rus.uni-stuttgart.de>
- <ebb608fe-15f3-3b51-b06f-28c1dcfb6612@gmail.com>
- <20170822142336.GB32302@carfax.org.uk>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <ccc4d5e7-8aa7-bf6b-c639-74fcd0204ad3@gmail.com>
-Date: Tue, 22 Aug 2017 10:37:57 -0400
+Received: from azure.uno.uk.net ([95.172.254.11]:36704 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932913AbdHVOnT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 10:43:19 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:51144)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1dkAOj-0004Mz-MH
+        for linux-btrfs@vger.kernel.org; Tue, 22 Aug 2017 15:43:17 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dkAOa-0007fb-49
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 15:43:08 +0100
 MIME-Version: 1.0
-In-Reply-To: <20170822142336.GB32302@carfax.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22940.17147.756378.347580@tree.ty.sabi.co.uk>
+Date: Tue, 22 Aug 2017 15:43:07 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: finding root filesystem of a subvolume?
+In-Reply-To: <20170822122350.GA14804@rus.uni-stuttgart.de>
+References: <20170822122350.GA14804@rus.uni-stuttgart.de>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-22 10:23, Hugo Mills wrote:
-> On Tue, Aug 22, 2017 at 10:12:25AM -0400, Austin S. Hemmelgarn wrote:
->> On 2017-08-22 09:53, Ulli Horlacher wrote:
->>> On Tue 2017-08-22 (09:37), Austin S. Hemmelgarn wrote:
->>>
->>>>> root@fex:~# df -T /local/.backup/home
->>>>> Filesystem     Type  1K-blocks      Used Available Use% Mounted on
->>>>> -              -    1073740800 104252160 967766336  10% /local/.backup/home
->>>>
->>>> Hmm, now I'm really confused, I just checked on the Ubuntu 17.04 and
->>>> 16.04.3 VM's I have (I only run current and the most recent LTS
->>>> version), and neither of them behave like this.
->>>
->>> I have this kind of output on all of my Ubuntu hosts:
->>>
->>> root@moep:~# grep PRETTY_NAME /etc/os-release
->>> PRETTY_NAME="Ubuntu 16.04.3 LTS"
->>>
->>> root@moep:~# df -T /usb/UF/tmp/blubb
->>> Filesystem     Type 1K-blocks    Used Available Use% Mounted on
->>> -              -     12581888 3690524   7253700  34% /usb/UF/tmp/blubb
->>>
->>> root@moep:~# btrfs subvolume show /usb/UF/tmp/blubb
->>> /usb/UF/tmp/blubb
->>>          Name:                   blubb
->>>          UUID:                   ecf8c804-d4a3-9948-89fe-b0c1971c25cb
->>>          Parent UUID:            -
->>>          Received UUID:          -
->>>          Creation time:          2017-08-22 12:54:16 +0200
->>>          Subvolume ID:           262
->>>          Generation:             23
->>>          Gen at creation:        22
->>>          Parent ID:              5
->>>          Top level ID:           5
->>>          Flags:                  -
->>>          Snapshot(s):
->>>
->>> root@moep:~# dpkg -l | grep btrfs
->>> ii  btrfs-tools                                 4.4-1ubuntu1                                 amd64        Checksumming Copy on Write Filesystem utilities
->>>
->> Hmm, interesting.  Are you using qgroups by chance?
-> 
->     I get this behaviour (the "- -") only if it's a non-mounted
-> subvolume:
-> 
-> hrm@amelia:~ $ df -T .
-> Filesystem     Type  1K-blocks     Used Available Use% Mounted on
-> /dev/sdb1      btrfs 117220284 95271852  18611060  84% /home
-> 
-> hrm@amelia:~ $ sudo btrfs sub crea foo
-> Create subvolume './foo'
-> 
-> hrm@amelia:~ $ df -T ./foo
-> Filesystem     Type 1K-blocks     Used Available Use% Mounted on
-> -              -    117220284 95271880  18611032  84% /home/hrm/foo
-> 
-> hrm@amelia:~ $ sudo mkdir foo/bar
-> hrm@amelia:~ $ df -T foo/bar
-> Filesystem     Type 1K-blocks     Used Available Use% Mounted on
-> -              -    117220284 95271852  18611060  84% /home/hrm/foo
-> 
-> hrm@amelia:~ $ mkdir foo2
-> 
-> hrm@amelia:~ $ sudo mount /dev/sdb1 ./foo2 -o subvol=home/hrm/foo
-> 
-> hrm@amelia:~ $ df -T foo2
-> Filesystem     Type  1K-blocks     Used Available Use% Mounted on
-> /dev/sdb1      btrfs 117220284 95272384  18610528  84% /home/hrm/foo2
-> 
-Wait, I think I see what's up here.  I was just calling `df -T` without 
-pointing at the subvolume (which correctly ignores it because it's not 
-actually mounted).  It looks like this is a side effect of the (rather 
-irritating) fake mount-point behavior of subvolumes.
+> How do I find the root filesystem of a subvolume?
+> Example:
+> root@fex:~# df -T 
+> Filesystem     Type  1K-blocks      Used Available Use% Mounted on
+> -              -    1073740800 104244552 967773976  10% /local/.backup/home
+[ ... ]
+> I know, the root filesystem is /local,
+
+That question is somewhat misunderstood and uses the wrong
+concepts and terms. In UNIX filesystems a filesystem "root" is a
+directory inode with a number that is local to itself, and can
+be "mounted" anywhere, or left unmounted, and that is a property
+of the running system, not of the filesystem "root". Usually
+UNIX filesystems have a single "root" directory inode.
+
+In the case of Btrfs the main volume and its subvolumes all have
+filesystem "root" directory inodes, which may or may not be
+"mounted", anywhere the administrators of the running system
+pleases, as a property of the running system. There is no fixed
+relationship between the root directory inode of a subvolume and
+the root directory inode of any other subvolume or the main
+volume.
+
+Note: in Btrfs terminology "volume" seems to mean both the main
+volume and the collection of devices where it and subvolumes are
+hosted.
+
+> but who can I show it by command?
+
+The system does not keep an explicit record of which Btrfs
+"root" directory inode is related to which other Btrfs "root"
+directory inode in the same volume, whether mounted or
+unmounted.
+
+That relationship has to be discovered by using volume UUIDs,
+which are the same for the main subvolume and the other
+subvolumes, whether mounted or not, so one has to do:
+
+  * For the indicated mounted subvolume "root" read its UUID.
+  * For every mounted filesystem "root", check whether its type
+    is 'btrfs' and if it is obtain its UUID.
+  * If the UUID is the same, and the subvolume id is '5', that's
+    the main subvolume, and terminate.
+  * For every block device which is not mounted, check whether it
+    has a Btrfs superblock.
+  * If the type is 'btrfs' and the volume UUIS is the same as
+    that of the subvolume, list the block device.
+
+In the latter case since the main volume is not mounted the only
+way to identify it is to list the block devices that host it.

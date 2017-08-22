@@ -1,75 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:37942 "EHLO azure.uno.uk.net"
+Received: from smtp01.belwue.de ([129.143.71.86]:48384 "EHLO smtp01.belwue.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751496AbdHVRlo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 13:41:44 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:54932)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <pg@btrfs.list.sabi.co.uk>)
-        id 1dkDBO-0001vL-Bt
-        for linux-btrfs@vger.kernel.org; Tue, 22 Aug 2017 18:41:42 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dkDBG-0002rm-Gq
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 18:41:34 +0100
+        id S1751716AbdHVSB5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 14:01:57 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp01.belwue.de (Postfix) with SMTP id CF9128B70
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 20:01:55 +0200 (MEST)
+Date: Tue, 22 Aug 2017 20:01:55 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: netapp-alike snapshots?
+Message-ID: <20170822180155.GM14804@rus.uni-stuttgart.de>
+References: <20170822132208.GD14804@rus.uni-stuttgart.de>
+ <CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
+ <20170822142451.GI14804@rus.uni-stuttgart.de>
+ <20170822214531.44538589@natsu>
+ <20170822165725.GL14804@rus.uni-stuttgart.de>
+ <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Message-ID: <22940.27854.159264.779233@tree.ty.sabi.co.uk>
-Date: Tue, 22 Aug 2017 18:41:34 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: finding root filesystem of a subvolume?
-In-Reply-To: <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
-References: <20170822122350.GA14804@rus.uni-stuttgart.de>
-        <22940.17147.756378.347580@tree.ty.sabi.co.uk>
-        <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ ... ]
+On Tue 2017-08-22 (19:19), A L wrote:
+> Perhaps using a bind mount? It would look and work the same as a ordinary fs. Just need to make sure du uses one filesystem.
+> 
+> ---- From: Ulli Horlacher <framstag@rus.uni-stuttgart.de> -- Sent: 2017-08-22 - 18:57 ----
+> 
+> > On Tue 2017-08-22 (21:45), Roman Mamedov wrote:
+> > 
+> >> It is beneficial to not have snapshots in-place. With a local directory of
+> >> snapshots, issuing things like "find", "grep -r" or even "du" will take an
+> >> inordinate amount of time and will produce a result you do not expect.
+> > 
+> > Netapp snapshots are invisible for tools doing opendir()/readdir()
+> > One could simulate this with symlinks for the snapshot directory:
+> > store the snapshot elsewhere (not inplace) and create a symlink to it, in
+> > every directory.
 
->> There is no fixed relationship between the root directory
->> inode of a subvolume and the root directory inode of any
->> other subvolume or the main volume.
+Not only du works recursivly, but also find and with option also ls, grep,
+etc.
 
-> Actually, there is, because it's inherently rooted in the
-> hierarchy of the volume itself. That root inode for the
-> subvolume is anchored somewhere under the next higher
-> subvolume.
+And it would require a bind mount for EVERY directory. There can be
+hundreds... thousends!
 
-This stupid point relies on ignoring that it is not mandatory to
-mount the main volume, and that therefore "There is no fixed
-relationship between the root directory inode of a subvolume and
-the root directory inode of any other subvolume or the main
-volume", because the "root directory inode" of the "main volume"
-may not be mounted at all.
 
-This stupid point also relies on ignoring that subvolumes can be
-mounted *also* under another directory, even if the main volume
-is mounted somewhere else. Suppose that the following applies:
-
-  subvol=5	/local
-  subvol=383	/local/.backup/home
-  subvol=383	/mnt/home-backup
-
-and you are given the mountpoint '/mnt/home-backup', how can you
-find the main volume mountpoint '/local' from that?
-
-Please explain how '/mnt/home-backup' is indeed "inherently
-rooted in the hierarchy of the volume itself", because there is
-always a "fixed relationship between the root directory inode of
-a subvolume and the root directory inode of any other subvolume
-or the main volume".
-
-[ ... ]
-
-> Again, it does, it's just not inherently exposed to userspace
-> unless you mount the top-level subvolume (subvolid=5 and/or
-> subvol=/ in mount options).
-
-This extra stupid point is based on ignoring that to "mount the
-top-level subvolume" relies on knowing already which one is the
-"top-level subvolume", which is begging the question.
-
-[ ... ]
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<ab52f32.7ade2c3f.15e0af46ee9@gmail.com>

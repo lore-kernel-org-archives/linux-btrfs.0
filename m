@@ -1,62 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.121.75.85]:44544 "EHLO len.romanrm.net"
+Received: from azure.uno.uk.net ([95.172.254.11]:37942 "EHLO azure.uno.uk.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751486AbdHVRgt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 13:36:49 -0400
-Date: Tue, 22 Aug 2017 22:36:47 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: netapp-alike snapshots?
-Message-ID: <20170822223647.350ca27d@natsu>
-In-Reply-To: <20170822165725.GL14804@rus.uni-stuttgart.de>
-References: <20170822132208.GD14804@rus.uni-stuttgart.de>
-        <CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
-        <20170822142451.GI14804@rus.uni-stuttgart.de>
-        <20170822214531.44538589@natsu>
-        <20170822165725.GL14804@rus.uni-stuttgart.de>
+        id S1751496AbdHVRlo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 13:41:44 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:54932)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <pg@btrfs.list.sabi.co.uk>)
+        id 1dkDBO-0001vL-Bt
+        for linux-btrfs@vger.kernel.org; Tue, 22 Aug 2017 18:41:42 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dkDBG-0002rm-Gq
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 18:41:34 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22940.27854.159264.779233@tree.ty.sabi.co.uk>
+Date: Tue, 22 Aug 2017 18:41:34 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: finding root filesystem of a subvolume?
+In-Reply-To: <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
+References: <20170822122350.GA14804@rus.uni-stuttgart.de>
+        <22940.17147.756378.347580@tree.ty.sabi.co.uk>
+        <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 22 Aug 2017 18:57:25 +0200
-Ulli Horlacher <framstag@rus.uni-stuttgart.de> wrote:
+[ ... ]
 
-> On Tue 2017-08-22 (21:45), Roman Mamedov wrote:
-> 
-> > It is beneficial to not have snapshots in-place. With a local directory of
-> > snapshots, issuing things like "find", "grep -r" or even "du" will take an
-> > inordinate amount of time and will produce a result you do not expect.
-> 
-> Netapp snapshots are invisible for tools doing opendir()/readdir()
-> One could simulate this with symlinks for the snapshot directory:
-> store the snapshot elsewhere (not inplace) and create a symlink to it, in
-> every directory.
-> 
-> 
-> > Personally I prefer to have a /snapshots directory on every FS
-> 
-> My users want the snapshots locally in a .snapshot subdirectory.
-> Because Netapp do it this way - for at least 20 years and we have a
-> multi-PB Netapp storage environment.
-> No chance to change this.
+>> There is no fixed relationship between the root directory
+>> inode of a subvolume and the root directory inode of any
+>> other subvolume or the main volume.
 
-Just a side note, you do know that only subvolumes can be snapshotted on Btrfs,
-not any regular directory? And that snapshots are not recursive, i.e. if a
-subvolume "contains" other subvolumes (hint: it really doesn't), snapshots of
-the parent one will not include content of subvolumes below that in the tree.
+> Actually, there is, because it's inherently rooted in the
+> hierarchy of the volume itself. That root inode for the
+> subvolume is anchored somewhere under the next higher
+> subvolume.
 
-I don't know how Netapp does this, from the way you describe that setup it
-feels like with Btrfs you're still in for some bad surprises and a part of
-your expectations will not be met.
+This stupid point relies on ignoring that it is not mandatory to
+mount the main volume, and that therefore "There is no fixed
+relationship between the root directory inode of a subvolume and
+the root directory inode of any other subvolume or the main
+volume", because the "root directory inode" of the "main volume"
+may not be mounted at all.
 
-Do you plan to make each and every directory and subdirectory a subvolume (so
-that it could have a trail of its own snapshots)? There will be performance
-implications to that. Also deleting subvolumes can only be done via the
-"btrfs" tool, they won't delete like normal dirs, e.g. when trying to do that
-remotely via NFS or Samba share.
+This stupid point also relies on ignoring that subvolumes can be
+mounted *also* under another directory, even if the main volume
+is mounted somewhere else. Suppose that the following applies:
 
--- 
-With respect,
-Roman
+  subvol=5	/local
+  subvol=383	/local/.backup/home
+  subvol=383	/mnt/home-backup
+
+and you are given the mountpoint '/mnt/home-backup', how can you
+find the main volume mountpoint '/local' from that?
+
+Please explain how '/mnt/home-backup' is indeed "inherently
+rooted in the hierarchy of the volume itself", because there is
+always a "fixed relationship between the root directory inode of
+a subvolume and the root directory inode of any other subvolume
+or the main volume".
+
+[ ... ]
+
+> Again, it does, it's just not inherently exposed to userspace
+> unless you mount the top-level subvolume (subvolid=5 and/or
+> subvol=/ in mount options).
+
+This extra stupid point is based on ignoring that to "mount the
+top-level subvolume" relies on knowing already which one is the
+"top-level subvolume", which is begging the question.
+
+[ ... ]

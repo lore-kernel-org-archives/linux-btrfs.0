@@ -1,38 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39918 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42832 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754429AbdHURRl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 13:17:41 -0400
-Date: Mon, 21 Aug 2017 19:16:16 +0200
+        id S932510AbdHVOIm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 10:08:42 -0400
+Date: Tue, 22 Aug 2017 16:07:17 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, jared.e.vb@gmail.com
-Subject: Re: [PATCH] btrfs-progs: Allow inspect dump-tree to show specified
- tree block even some tree roots are corrupted
-Message-ID: <20170821171616.GR2866@twin.jikos.cz>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Make in-place exit to a common exit block
+Message-ID: <20170822140717.GW2866@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170818093630.9892-1-quwenruo.btrfs@gmx.com>
+References: <1503380106-44682-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170818093630.9892-1-quwenruo.btrfs@gmx.com>
+In-Reply-To: <1503380106-44682-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 18, 2017 at 06:36:30PM +0900, Qu Wenruo wrote:
-> For btrfs inspect-internal dump-tree, if we use "-b" parameter to show
-> specified tree block, then we don't really need extra tree roots.
+On Tue, Aug 22, 2017 at 01:35:06PM +0800, Gu Jinxiang wrote:
+> As comment pointed out by David, make in-place exit
+> to a common exit block of mkfs.
 > 
-> Only chunk root is needed to build up the whole chunk mapping so we can
-> read tree blocks.
+> v1:
+> Add some close(fd) when error occures in mkfs.
+> And add close(fd) when end use it.
 > 
-> This patch will add __OPEN_CTREE_RETURN_CHUNK_ROOT flag when show
-> speicifed tree block.
-> So even root tree is corrupted, we can still use inspect-internal
-> dump-tree to do some debugging.
-
-Sounds useful.
-
-> Reported-by: Zirconium Hacker <jared.e.vb@gmail.com>
-> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 
 Applied, thanks.

@@ -1,51 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp01.belwue.de ([129.143.71.86]:46734 "EHLO smtp01.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933040AbdHVPpj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 11:45:39 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id EE5C48484
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 17:45:37 +0200 (MEST)
-Date: Tue, 22 Aug 2017 17:45:37 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: finding root filesystem of a subvolume?
-Message-ID: <20170822154537.GJ14804@rus.uni-stuttgart.de>
-References: <20170822122350.GA14804@rus.uni-stuttgart.de>
- <22940.17147.756378.347580@tree.ty.sabi.co.uk>
- <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:34384 "EHLO
+        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751043AbdHVQIz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 12:08:55 -0400
+Received: by mail-lf0-f47.google.com with SMTP id g77so49218130lfg.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 09:08:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
+In-Reply-To: <20170822142451.GI14804@rus.uni-stuttgart.de>
+References: <20170822132208.GD14804@rus.uni-stuttgart.de> <CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
+ <20170822142451.GI14804@rus.uni-stuttgart.de>
+From: Peter Becker <floyd.net@gmail.com>
+Date: Tue, 22 Aug 2017 18:08:53 +0200
+Message-ID: <CAEtw4r1Dj4APzHuLfKR6LDNkjoDvX89mV-92Q0ntNueR+sss_Q@mail.gmail.com>
+Subject: Re: netapp-alike snapshots?
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 2017-08-22 (11:03), Austin S. Hemmelgarn wrote:
+This is possible. Use the -b or -B option.
 
+-b basedir places the snapshot in basedir with a directory structure
+that mimics the mountpoint
+-B basedir places the snapshots in basedir with NO additional
+subdirectory structure
 
-> Or alternatively, repeatedly call `btrfs filesystem show` on the path, 
-> removing one component from the end each time until you get a zero 
-> return code.  The path you called it on that got a zero return code is 
-> where the mount is (and thus what filesystem that subvolume is part of), 
-> and the output just gave you a list of devices it's on.
-
-"btrfs filesystem show" is relative slow (2.6 s), 
-"btrfs subvolume show" is MUCH faster (0.02 s).
-
-
-In perl I have now:
-
-$root = $volume;
-while (`btrfs subvolume show "$root" 2>/dev/null` !~ /toplevel subvolume/) {
-  $root = dirname($root);
-  last if $root eq '/';
-}
-
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
+2017-08-22 16:24 GMT+02:00 Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
+> On Tue 2017-08-22 (15:44), Peter Becker wrote:
+>> Is use: https://github.com/jf647/btrfs-snap
+>>
+>> 2017-08-22 15:22 GMT+02:00 Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
+>> > With Netapp/waffle you have automatic hourly/daily/weekly snapshots.
+>> > You can find these snapshots in every local directory (readonly).
+>> > Example:
+>> >
+>> > framstag@fex:/sw/share: ll .snapshot/
+>> > drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-15_0010
+>> > drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-16_0010
+>> > drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-17_0010
+>> > drwxr-xr-x  framstag root - 2017-08-14 10:21:47 .snapshot/daily.2017-08-18_0010
+>> > drwxr-xr-x  framstag root - 2017-08-18 23:59:29 .snapshot/daily.2017-08-19_0010
+>> > drwxr-xr-x  framstag root - 2017-08-19 21:01:25 .snapshot/daily.2017-08-20_0010
+>> > drwxr-xr-x  framstag root - 2017-08-20 19:48:40 .snapshot/daily.2017-08-21_0010
+>> > drwxr-xr-x  framstag root - 2017-08-20 02:50:18 .snapshot/hourly.2017-08-20_1210
+>> > drwxr-xr-x  framstag root - 2017-08-20 02:50:18 .snapshot/hourly.2017-08-20_1610
+>> > drwxr-xr-x  framstag root - 2017-08-20 19:48:40 .snapshot/hourly.2017-08-20_2010
+>> > drwxr-xr-x  framstag root - 2017-08-21 00:42:28 .snapshot/hourly.2017-08-21_0810
+>> > drwxr-xr-x  framstag root - 2017-08-21 00:42:28 .snapshot/hourly.2017-08-21_1210
+>> > drwxr-xr-x  framstag root - 2017-08-21 13:05:28 .snapshot/hourly.2017-08-21_1610
+>
+> btrfs-snap does not create local .snapshot/ sub-directories, but saves the
+> snapshots in the toplevel root volume directory.
+>
+>
+>
+> --
+> Ullrich Horlacher              Server und Virtualisierung
+> Rechenzentrum TIK
+> Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+> Allmandring 30a                Tel:    ++49-711-68565868
+> 70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+> REF:<CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

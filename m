@@ -1,45 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp89.ord1c.emailsrvr.com ([108.166.43.89]:60154 "EHLO
-        smtp89.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932787AbdHVNGl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 09:06:41 -0400
-Received: from smtp12.relay.ord1c.emailsrvr.com (localhost [127.0.0.1])
-        by smtp12.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id 09450C0584
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 08:58:30 -0400 (EDT)
-Received: from smtp89.ord1d.emailsrvr.com (relay.ord1c.rsapps.net [172.28.255.120])
-        by smtp12.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTPS id 043AAC057E
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 08:58:30 -0400 (EDT)
-Received: from smtp12.relay.ord1d.emailsrvr.com (localhost [127.0.0.1])
-        by smtp12.relay.ord1d.emailsrvr.com (SMTP Server) with ESMTP id 6A22CE0061
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 08:58:29 -0400 (EDT)
-Received: by smtp12.relay.ord1d.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id 1533BE0085
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 08:58:28 -0400 (EDT)
-Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
-        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id 02771F693
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 12:58:26 +0000 (UTC)
-Subject: Re: finding root filesystem of a subvolume?
+Received: from smtp02.belwue.de ([129.143.71.87]:45043 "EHLO smtp02.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932657AbdHVNM0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 09:12:26 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp02.belwue.de (Postfix) with SMTP id 2173945C8
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 15:12:25 +0200 (MEST)
+Date: Tue, 22 Aug 2017 15:12:13 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
 To: linux-btrfs@vger.kernel.org
+Subject: Re: finding root filesystem of a subvolume?
+Message-ID: <20170822131213.GC14804@rus.uni-stuttgart.de>
 References: <20170822122350.GA14804@rus.uni-stuttgart.de>
  <20170822124036.GA32302@carfax.org.uk>
  <20170822125030.GB14804@rus.uni-stuttgart.de>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <fb1f381a-9f88-95cf-529c-2b12059fdae7@rqc.ru>
-Date: Tue, 22 Aug 2017 15:58:26 +0300
+ <fb1f381a-9f88-95cf-529c-2b12059fdae7@rqc.ru>
 MIME-Version: 1.0
-In-Reply-To: <20170822125030.GB14804@rus.uni-stuttgart.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <fb1f381a-9f88-95cf-529c-2b12059fdae7@rqc.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22/08/17 15:50, Ulli Horlacher wrote:
-> It seems, I have to scan the subvolume path upwards until I found a real
-> mount point,
-I think searching /proc/mounts for the same device and subvol=/ in 
-options is most straightforward. But what makes you think it's mounted 
-at all?
+On Tue 2017-08-22 (15:58), Marat Khalili wrote:
+> On 22/08/17 15:50, Ulli Horlacher wrote:
+> 
+> > It seems, I have to scan the subvolume path upwards until I found a real
+> > mount point,
+> 
+> I think searching /proc/mounts for the same device and subvol=/ in 
+> options is most straightforward.
 
---
+I have no subvol=/ option at all:
 
-With Best Regards,
-Marat Khalili
+root@fex:~# grep btrfs /proc/mounts
+/dev/sdf1 /backup btrfs rw,relatime,compress=zlib,space_cache 0 0
+/dev/sde1 /local btrfs rw,relatime,compress=zlib,space_cache 0 0
+
+
+> But what makes you think it's mounted at all?
+
+I am only interested in mounted volumes.
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<fb1f381a-9f88-95cf-529c-2b12059fdae7@rqc.ru>

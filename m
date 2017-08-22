@@ -1,36 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from demfloro.ru ([188.166.0.225]:51160 "EHLO demfloro.ru"
+Received: from smtp02.belwue.de ([129.143.71.87]:40828 "EHLO smtp02.belwue.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932222AbdHVK2k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 06:28:40 -0400
-Date: Tue, 22 Aug 2017 13:28:16 +0300
-From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-To: g6094199@freenet.de
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: degraded BTRFS RAID 1 not mountable: open_ctree failed, unable
- to find block group for 0
-Message-ID: <20170822132816.1bd0a511@job>
-In-Reply-To: <2bee7fc8-3724-0ade-ed7f-28cc296c0595@chefmail.de>
-References: <2bee7fc8-3724-0ade-ed7f-28cc296c0595@chefmail.de>
+        id S932706AbdHVMaC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 22 Aug 2017 08:30:02 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp02.belwue.de (Postfix) with SMTP id 976978150
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 14:23:50 +0200 (MEST)
+Date: Tue, 22 Aug 2017 14:23:50 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: finding root filesystem of a subvolume?
+Message-ID: <20170822122350.GA14804@rus.uni-stuttgart.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 22 Aug 2017 11:31:23 +0200
-g6094199@freenet.de wrote:
-> So 1st should be investigating why did the disk not get removed
-> correctly? Btrfs dev del should remove the device corretly, right? Is
-> there a bug?
+How do I find the root filesystem of a subvolume?
+Example:
 
-It should and probably did. To check that we need to see output of 
-btrfs filesystem show 
-and output of 
-btrfs filesystem usage <mountpoint>
+root@fex:~# df -T 
+Filesystem     Type  1K-blocks      Used Available Use% Mounted on
+-              -    1073740800 104244552 967773976  10% /local/.backup/home
 
-If there are non-raid1 chunks then you need to do soft balance:
-btrfs balance start -mconvert=raid1,soft -dconvert=raid1,soft <mountpoint>
+root@fex:~# btrfs subvolume show /local/.backup/home
+/local/.backup/home
+        Name:                   home
+        uuid:                   f86a2db0-6a82-124f-9a71-1cd4c20fd6fb
+        Parent uuid:            ba4d388f-44bf-7b46-b2b8-00e2a9a87181
+        Creation time:          2017-08-10 22:19:15
+        Object ID:              383
+        Generation (Gen):       148
+        Gen at creation:        148
+        Parent:                 5
+        Top Level:              5
+        Flags:                  readonly
+        Snapshot(s):
 
-The balance should finish very quickly as you probably have only one of
-data and metadata single chunks. They appeared during writes when the
-filesystem was mounted read-write in degraded mode.
+
+I know, the root filesystem is /local, but who can I show it by command?
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20170822122350.GA14804@rus.uni-stuttgart.de>

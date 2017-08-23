@@ -1,82 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f194.google.com ([209.85.128.194]:35196 "EHLO
-        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752770AbdHWA1H (ORCPT
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:37268 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932111AbdHWRzQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 20:27:07 -0400
-Received: by mail-wr0-f194.google.com with SMTP id p8so148773wrf.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 17:27:07 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v5 0/6] Btrfs: populate heuristic with code
-Date: Wed, 23 Aug 2017 03:26:44 +0300
-Message-Id: <20170823002650.3133-1-nefelim4ag@gmail.com>
+        Wed, 23 Aug 2017 13:55:16 -0400
+Received: by mail-wm0-f51.google.com with SMTP id b189so4285501wmd.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 10:55:16 -0700 (PDT)
+From: Diego Calleja <diegocg@gmail.com>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v5 4/6] Btrfs: heuristic add detection of zeroed sample
+Date: Wed, 23 Aug 2017 19:55:12 +0200
+Message-ID: <4756671.4QeJesEyyX@archlinux>
+In-Reply-To: <20170823002650.3133-5-nefelim4ag@gmail.com>
+References: <20170823002650.3133-1-nefelim4ag@gmail.com> <20170823002650.3133-5-nefelim4ag@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Based on kdave for-next
+El miércoles, 23 de agosto de 2017 2:26:48 (CEST) Timofey Titovets escribió:
+> +	for (i = 0; i < workspace->sample_size; i += sizeof(zero)) {
+> +		if (memcmp(&workspace->sample[i], &zero, sizeof(zero)))
+> +			return false;
 
-Patches short:
-1. Move heuristic to use compression workspaces
-   Bit tricky, but works.
+Instead of just checking for 0, wouldn't it be a better idea to check
+for any kind of repetitions?
 
-2. Add heuristic counters and buffer to workspaces
-
-3. Implement simple input data sampling
-   It's get 16 byte samples with 256 bytes shifts
-   over input data. Collect info about how many
-   different bytes (symbols) has been found in sample data
-
-4. Implement check sample to zeroes
-   Just check all bytes in sample to 0
-
-5. Add code for calculate
-   how many unique bytes has been found in sample data
-   That can fast detect easy compressible data
-
-6. Add code for calculate byte core set size
-   i.e. how many unique bytes use 90% of sample data
-   That code require that numbers in bucket must be sorted
-   That can detect easy compressible data with many repeated bytes
-   That can detect not compressible data with evenly distributed bytes
-
-Changes v1 -> v2:
-  - Change input data iterator shift 512 -> 256
-  - Replace magic macro numbers with direct values
-  - Drop useless symbol population in bucket
-    as no one care about where and what symbol stored
-    in bucket at now
-
-Changes v2 -> v3 (only update #3 patch):
-  - Fix u64 division problem by use u32 for input_size
-  - Fix input size calculation start - end -> end - start
-  - Add missing sort.h header
-
-Changes v3 -> v4 (only update #1 patch):
-  - Change counter type in bucket item u16 -> u32
-  - Drop other fields from bucket item for now,
-    no one use it
-
-Change v4 -> v5
-  - Move heuristic code to external file
-  - Make heuristic use compression workspaces
-  - Add check sample to zeroes
-
-Timofey Titovets (6):
-  Btrfs: heuristic make use compression workspaces
-  Btrfs: heuristic workspace add bucket and sample items
-  Btrfs: Implement heuristic sampling logic
-  Btrfs: heuristic add detection of zeroed sample
-  Btrfs: heuristic add byte set calculation
-  Btrfs: heuristic add byte core set calculation
-
- fs/btrfs/Makefile      |   2 +-
- fs/btrfs/compression.c |  18 ++--
- fs/btrfs/compression.h |   7 +-
- fs/btrfs/heuristic.c   | 220 +++++++++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 234 insertions(+), 13 deletions(-)
- create mode 100644 fs/btrfs/heuristic.c
-
---
-2.14.1
+As in, iterate over the sample and memcmp() each part of sample with
+the previous one. The cost would be the same, and it would detect not
+just zeros, but any kind of repeated data. Is there any reason I'm
+missing for not doing this?

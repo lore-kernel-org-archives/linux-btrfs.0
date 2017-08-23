@@ -1,98 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tty0.vserver.softronics.ch ([91.214.169.36]:33092 "EHLO
-        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753915AbdHWNTF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 09:19:05 -0400
-Received: from [10.0.1.10] (77-56-149-155.dclient.hispeed.ch [77.56.149.155])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by fe1.digint.ch (Postfix) with ESMTPSA id BEC2C30470
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 15:14:25 +0200 (CEST)
-Subject: Re: finding root filesystem of a subvolume?
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <20170822122350.GA14804@rus.uni-stuttgart.de>
- <22940.17147.756378.347580@tree.ty.sabi.co.uk>
- <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
- <22940.27854.159264.779233@tree.ty.sabi.co.uk>
- <3026f8a6-0ea6-0ed2-41c7-7d25c51a32fe@gmail.com>
-From: Axel Burri <axel@tty0.ch>
-Message-ID: <391cbefd-80e1-fc3c-d743-c15e6a5e20e4@tty0.ch>
-Date: Wed, 23 Aug 2017 15:14:04 +0200
-MIME-Version: 1.0
-In-Reply-To: <3026f8a6-0ea6-0ed2-41c7-7d25c51a32fe@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Received: from [195.159.176.226] ([195.159.176.226]:54235 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932443AbdHWUPP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Aug 2017 16:15:15 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dkc3M-0004LR-Sv
+        for linux-btrfs@vger.kernel.org; Wed, 23 Aug 2017 22:15:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Ferry Toth <ftoth@telfort.nl>
+Subject: Re: number of subvolumes
+Date: Wed, 23 Aug 2017 16:48:20 +0000 (UTC)
+Message-ID: <onkbkk$qs1$1@blaine.gmane.org>
+References: <20170822132208.GD14804@rus.uni-stuttgart.de>
+        <CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
+        <20170822142451.GI14804@rus.uni-stuttgart.de>
+        <20170822214531.44538589@natsu>
+        <20170822165725.GL14804@rus.uni-stuttgart.de>
+        <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
+        <20170822180155.GM14804@rus.uni-stuttgart.de>
+        <22940.31139.194399.982315@tree.ty.sabi.co.uk>
+        <20170822204811.GO14804@rus.uni-stuttgart.de>
+        <20170823071821.GA28319@rus.uni-stuttgart.de>
+        <f75e66d.7ade2c40.15e0e3ced5c@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-23 14:07, Austin S. Hemmelgarn wrote:
-> On 2017-08-22 13:41, Peter Grandi wrote:
-> [ ... ]
->> This stupid point relies on ignoring that it is not mandatory to
->> mount the main volume, and that therefore "There is no fixed
->> relationship between the root directory inode of a subvolume and
->> the root directory inode of any other subvolume or the main
->> volume", because the "root directory inode" of the "main volume"
->> may not be mounted at all.
->>
->> This stupid point also relies on ignoring that subvolumes can be
->> mounted *also* under another directory, even if the main volume
->> is mounted somewhere else. Suppose that the following applies:
->>
->>    subvol=5    /local
->>    subvol=383    /local/.backup/home
->>    subvol=383    /mnt/home-backup
->>
->> and you are given the mountpoint '/mnt/home-backup', how can you
->> find the main volume mountpoint '/local' from that?Assuming
->> /mnt/home-backup is mounted and visible in /proc/mounts (your 
-> explanation requires it was either mounted directly via a subvol option
-> or indirectly via a bind mount), then the following generic method works
-> (and should always work on a modern kernel):
-> 1. Find it in /proc/mounts or the output of `mount` run without any
-> arguments.
-> 2. If the mount type is 'bind', the device field will point to the
-> source directory.  Using any method you like, figure out what the actual
-> mount point that is under is, and repeat from step one with that mount
-> point.
-> 3. If the mount type is 'btrfs', and 'subvolid=5' is present in the
-> mount options (this gets added automatically on any recent kernel), you
-> just found the top level subvolume.
-> 4. If the mount type is 'btrfs', and 'subvolid=5' is not present in the
-> mount options, scan /proc/mounts for other entries with the same device
-> value (this is going to be consistent).
-> 5. If another entry does exist, and has 'subvolid=5' in the mount
-> options, that's the top level subvolume.
-> 6. If other entries exist, but 'subvolid=5' not in the mount options for
-> any of them, or no other entries exist, the top level volume isn't
-> mounted, and you can view it by mounting the device with 'subvolid=5'.
+Op Wed, 23 Aug 2017 10:37:07 +0200, schreef A L:
+
+> ---- From: Ulli Horlacher <framstag@rus.uni-stuttgart.de> -- Sent:
+> 2017-08-23 - 09:18 ----
 > 
-> In the event that you need to know where the next higher level subvolume
-> is mounted instead of the root subvolume for the volume, you can use the
-> same method, but add the following after step two to figure out what
-> subvolid to look for:
-> 2b. Run `btrfs subvol show` on the mount point (it by definition has to
-> be a subvolume because it's mounted and it's not a bind mount in
-> userspace).  Find the 'Top level ID' (note that this just points to the
-> next higher subvolume, not the root subvolume) value in the output, and
-> use that instead of 5 when looking for 'subvolid=' options.
+>> On Tue 2017-08-22 (22:48), Ulli Horlacher wrote:
+>> 
+>>> > Assumptions that all Btrfs features such as snapshots are infinitely
+>>> > scalable at no cost may be optimistic:
+>>> > 
+>>> >   https://btrfs.wiki.kernel.org/index.php/
+Gotchas#Having_many_subvolumes_can_be_very_slow
+>>> 
+>>> "when you do device removes on file systems with a lot of snapshots,
+>>> it
+>>>  is unbelievably slow ... took nearly a week to move 20GB of FS data
+>>>  from one device to the other using that method"
+>>>   
+>>> "a balance on 2TB of data that was heavily snapshotted - it took 3
+>>> months"
+>> 
+>> This is a vanilla SLES12 installation:
+>> 
+>> root@ptm1:~# grep PRETTY_NAME /etc/os-release PRETTY_NAME="SUSE Linux
+>> Enterprise Server 12 SP1"
+>> 
+>> root@ptm1:~# btrfs subvolume list /
+>> ID 257 gen 358277 top level 5 path @
+>> ID 258 gen 978361 top level 257 path @/home ID 259 gen 1252501 top
+>> level 257 path @/opt ID 260 gen 883012 top level 257 path @/srv ID 261
+>> gen 1252673 top level 257 path @/tmp ID 262 gen 1252501 top level 257
+>> path @/usr/local ID 263 gen 882958 top level 257 path @/var/crash ID
+>> 264 gen 1252673 top level 257 path @/var/log ID 265 gen 882923 top
+>> level 257 path @/var/opt ID 266 gen 1252673 top level 257 path
+>> @/var/spool ID 267 gen 1252668 top level 257 path @/var/tmp ID 270 gen
+>> 1252668 top level 257 path @/.snapshots ID 452 gen 358277 top level 270
+>> path @/.snapshots/127/snapshot ID 453 gen 1252670 top level 270 path
+>> @/.snapshots/128/snapshot ID 540 gen 368554 top level 270 path
+>> @/.snapshots/191/snapshot ID 542 gen 419566 top level 270 path
+>> @/.snapshots/192/snapshot ID 1035 gen 1027889 top level 270 path
+>> @/.snapshots/539/snapshot ID 1036 gen 1027889 top level 270 path
+>> @/.snapshots/540/snapshot ID 1045 gen 1048327 top level 270 path
+>> @/.snapshots/545/snapshot ID 1046 gen 1048327 top level 270 path
+>> @/.snapshots/546/snapshot ID 1062 gen 1068800 top level 270 path
+>> @/.snapshots/555/snapshot ID 1063 gen 1068800 top level 270 path
+>> @/.snapshots/556/snapshot ID 1122 gen 1130369 top level 270 path
+>> @/.snapshots/595/snapshot ID 1123 gen 1130369 top level 270 path
+>> @/.snapshots/596/snapshot ID 1124 gen 1171229 top level 270 path
+>> @/.snapshots/597/snapshot ID 1125 gen 1171229 top level 270 path
+>> @/.snapshots/598/snapshot ID 1135 gen 1171229 top level 270 path
+>> @/.snapshots/605/snapshot ID 1136 gen 1171229 top level 270 path
+>> @/.snapshots/606/snapshot ID 1137 gen 1171229 top level 270 path
+>> @/.snapshots/607/snapshot ID 1138 gen 1171229 top level 270 path
+>> @/.snapshots/608/snapshot ID 1139 gen 1171229 top level 270 path
+>> @/.snapshots/609/snapshot ID 1140 gen 1171229 top level 270 path
+>> @/.snapshots/610/snapshot ID 1141 gen 1171229 top level 270 path
+>> @/.snapshots/611/snapshot ID 1142 gen 1171229 top level 270 path
+>> @/.snapshots/612/snapshot ID 1158 gen 1172970 top level 270 path
+>> @/.snapshots/613/snapshot ID 1159 gen 1172972 top level 270 path
+>> @/.snapshots/614/snapshot
+>> 
+>> Why does SUSE ignore this "not too many subvolumes" warning?
+> 
+> Using hundreds or thousands of snapshots is probably fine mostly.
+> perhaps the slow performance is more related to what changed between
+> them? I have regularly that many snapshots and export many as "Previous
+> Versions" to Windows clients over Samba without any performance issues.
+> But my data doesn't change that much.
+> 
+> I think those comments on the Wiki are a little misleading without
+> better details to what workloads are affected this way.
+> Perhaps someone can set up some tests and publish the results?
+> 
 
-In order to have a complete view of all mounts, this is what btrbk does
-here (which basically matches Austins explanation):
+We find that typically apt is very slow on a machine with 50 or so 
+snapshots and raid10. Slow as in probably 10x slower as doing the same 
+update on a machine with 'single' and no snapshots.
 
-1. Buld a complete tree from:
+Other operations seem to be the same speed, especially disk benchmarks do 
+not seem to indicate any performance degradation.
 
-    # btrfs subvolume list -a -u /mnt/home-backup
+>> 
+>> --
+>> Ullrich Horlacher              Server und Virtualisierung Rechenzentrum
+>> TIK Universitaet Stuttgart         E-Mail:
+>> horlacher@tik.uni-stuttgart.de Allmandring 30a                Tel:   
+>> ++49-711-68565868 70569 Stuttgart (Germany)      WWW:   
+>> http://www.tik.uni-stuttgart.de/
+>> REF:<20170822204811.GO14804@rus.uni-stuttgart.de>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>> in the body of a message to majordomo@vger.kernel.org More majordomo
+>> info at  http://vger.kernel.org/majordomo-info.html
 
-2. Correlate all subvolume ID's  with mount points (second column) and
-"subvolid=" from mount options:
 
-    # cat /proc/self/mounts
-
-Now you have a complete view of all mounts. In order to query a given
-subvolume, fetch "Subvolume ID" (or "UUID") from:
-
-    # btrfs subvolume show /local/.backup/home
-
-see: https://github.com/digint/btrbk/blob/v0.25.1/btrbk
-(I apologize that Github has broken display of perl source files at the
-time being...)

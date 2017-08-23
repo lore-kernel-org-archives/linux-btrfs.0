@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f54.google.com ([74.125.83.54]:34459 "EHLO
-        mail-pg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753238AbdHWGqS (ORCPT
+Received: from mail-pg0-f48.google.com ([74.125.83.48]:32954 "EHLO
+        mail-pg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753389AbdHWGqT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 02:46:18 -0400
-Received: by mail-pg0-f54.google.com with SMTP id s14so4042321pgs.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 23:46:18 -0700 (PDT)
+        Wed, 23 Aug 2017 02:46:19 -0400
+Received: by mail-pg0-f48.google.com with SMTP id t3so4072703pgt.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 23:46:19 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 6/7] Btrfs: make some volumes.c functions static
-Date: Tue, 22 Aug 2017 23:46:04 -0700
-Message-Id: <cc1060b3024f9731796e5d57fc272a0862661efb.1503470354.git.osandov@fb.com>
+Subject: [PATCH 7/7] Btrfs: fix __user casting in ioctl.c
+Date: Tue, 22 Aug 2017 23:46:05 -0700
+Message-Id: <a59180cb6452c0813ce7d3a86f85a8abcd74d78c.1503470354.git.osandov@fb.com>
 In-Reply-To: <cover.1503470354.git.osandov@fb.com>
 References: <cover.1503470354.git.osandov@fb.com>
 In-Reply-To: <cover.1503470354.git.osandov@fb.com>
@@ -21,56 +21,45 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-These aren't used outside of volumes.c.
-
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/volumes.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+ fs/btrfs/ioctl.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9b7a8e6257ee..9f2ed74a2c81 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -594,7 +594,7 @@ static void pending_bios_fn(struct btrfs_work *work)
- }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index cf71d0304671..7a7a82e0963c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2210,7 +2210,7 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
  
+ 	inode = file_inode(file);
+ 	ret = search_ioctl(inode, &args.key, &buf_size,
+-			   (char *)(&uarg->buf[0]));
++			   (char __user *)(&uarg->buf[0]));
+ 	if (ret == 0 && copy_to_user(&uarg->key, &args.key, sizeof(args.key)))
+ 		ret = -EFAULT;
+ 	else if (ret == -EOVERFLOW &&
+@@ -4512,8 +4512,8 @@ static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
+ 		ipath->fspath->val[i] = rel_ptr;
+ 	}
  
--void btrfs_free_stale_device(struct btrfs_device *cur_dev)
-+static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
- {
- 	struct btrfs_fs_devices *fs_devs;
- 	struct btrfs_device *dev;
-@@ -1110,14 +1110,15 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 	return ret;
- }
+-	ret = copy_to_user((void *)(unsigned long)ipa->fspath,
+-			   (void *)(unsigned long)ipath->fspath, size);
++	ret = copy_to_user((void __user *)(unsigned long)ipa->fspath,
++			   ipath->fspath, size);
+ 	if (ret) {
+ 		ret = -EFAULT;
+ 		goto out;
+@@ -4584,8 +4584,8 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+ 	if (ret < 0)
+ 		goto out;
  
--void btrfs_release_disk_super(struct page *page)
-+static void btrfs_release_disk_super(struct page *page)
- {
- 	kunmap(page);
- 	put_page(page);
- }
- 
--int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
--		struct page **page, struct btrfs_super_block **disk_super)
-+static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
-+				 struct page **page,
-+				 struct btrfs_super_block **disk_super)
- {
- 	void *p;
- 	pgoff_t index;
-@@ -1860,8 +1861,9 @@ static int btrfs_check_raid_min_devices(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
--struct btrfs_device *btrfs_find_next_active_device(struct btrfs_fs_devices *fs_devs,
--					struct btrfs_device *device)
-+static struct btrfs_device *
-+btrfs_find_next_active_device(struct btrfs_fs_devices *fs_devs,
-+			      struct btrfs_device *device)
- {
- 	struct btrfs_device *next_device;
+-	ret = copy_to_user((void *)(unsigned long)loi->inodes,
+-			   (void *)(unsigned long)inodes, size);
++	ret = copy_to_user((void __user *)(unsigned long)loi->inodes, inodes,
++			   size);
+ 	if (ret)
+ 		ret = -EFAULT;
  
 -- 
 2.14.1

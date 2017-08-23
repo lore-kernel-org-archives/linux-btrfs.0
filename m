@@ -1,136 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f194.google.com ([209.85.128.194]:36285 "EHLO
+Received: from mail-wr0-f194.google.com ([209.85.128.194]:35196 "EHLO
         mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753332AbdHTSL3 (ORCPT
+        with ESMTP id S1752770AbdHWA1H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 Aug 2017 14:11:29 -0400
-Received: by mail-wr0-f194.google.com with SMTP id f8so9040557wrf.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Aug 2017 11:11:28 -0700 (PDT)
+        Tue, 22 Aug 2017 20:27:07 -0400
+Received: by mail-wr0-f194.google.com with SMTP id p8so148773wrf.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 17:27:07 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v4 3/3] Btrfs: heuristic add byte core set calculation
-Date: Sun, 20 Aug 2017 21:11:16 +0300
-Message-Id: <20170820181116.5131-4-nefelim4ag@gmail.com>
-In-Reply-To: <20170820181116.5131-1-nefelim4ag@gmail.com>
-References: <20170820181116.5131-1-nefelim4ag@gmail.com>
+Subject: [PATCH v5 0/6] Btrfs: populate heuristic with code
+Date: Wed, 23 Aug 2017 03:26:44 +0300
+Message-Id: <20170823002650.3133-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Calculate byte core set for data sample:
-Sort bucket's numbers in decreasing order
-Count how many numbers use 90% of sample
-If core set are low (<=25%), data are easily compressible
-If core set high (>=80%), data are not compressible
+Based on kdave for-next
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/compression.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/compression.h |  2 ++
- 2 files changed, 60 insertions(+)
+Patches short:
+1. Move heuristic to use compression workspaces
+   Bit tricky, but works.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index fe26a44bcc9b..8dc92f42f7c2 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -33,6 +33,7 @@
- #include <linux/bit_spinlock.h>
- #include <linux/slab.h>
- #include <linux/sched/mm.h>
-+#include <linux/sort.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -1069,6 +1070,42 @@ static inline int byte_set_size(const struct heuristic_bucket_item *bucket)
- 	return byte_set_size;
- }
+2. Add heuristic counters and buffer to workspaces
 
-+/* For bucket sorting */
-+static inline int heuristic_bucket_compare(const void *lv, const void *rv)
-+{
-+	struct heuristic_bucket_item *l = (struct heuristic_bucket_item *)(lv);
-+	struct heuristic_bucket_item *r = (struct heuristic_bucket_item *)(rv);
-+
-+	return r->count - l->count;
-+}
-+
-+/*
-+ * Byte Core set size
-+ * How many bytes use 90% of sample
-+ */
-+static inline int byte_core_set_size(struct heuristic_bucket_item *bucket,
-+				     u32 core_set_threshold)
-+{
-+	int a = 0;
-+	u32 coreset_sum = 0;
-+
-+	for (; a < BTRFS_HEURISTIC_BYTE_CORE_SET_LOW; a++)
-+		coreset_sum += bucket[a].count;
-+
-+	if (coreset_sum > core_set_threshold)
-+		return a;
-+
-+	for (; a < BTRFS_HEURISTIC_BYTE_CORE_SET_HIGH; a++) {
-+		if (bucket[a].count == 0)
-+			break;
-+		coreset_sum += bucket[a].count;
-+		if (coreset_sum > core_set_threshold)
-+			break;
-+	}
-+
-+	return a;
-+}
-+
- /*
-  * Compression heuristic.
-  *
-@@ -1092,6 +1129,8 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 	struct heuristic_bucket_item *bucket;
- 	int a, b, ret;
- 	u8 symbol, *input_data;
-+	u32 core_set_threshold;
-+	u32 input_size = end - start;
+3. Implement simple input data sampling
+   It's get 16 byte samples with 256 bytes shifts
+   over input data. Collect info about how many
+   different bytes (symbols) has been found in sample data
 
- 	ret = 1;
+4. Implement check sample to zeroes
+   Just check all bytes in sample to 0
 
-@@ -1123,6 +1162,25 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 		goto out;
- 	}
+5. Add code for calculate
+   how many unique bytes has been found in sample data
+   That can fast detect easy compressible data
 
-+	/* Sort in reverse order */
-+	sort(bucket, BTRFS_HEURISTIC_BUCKET_SIZE,
-+	     sizeof(struct heuristic_bucket_item), &heuristic_bucket_compare,
-+	     NULL);
-+
-+	core_set_threshold = (input_size*90)/(BTRFS_HEURISTIC_ITER_OFFSET*100);
-+	core_set_threshold *= BTRFS_HEURISTIC_READ_SIZE;
-+
-+	a = byte_core_set_size(bucket, core_set_threshold);
-+	if (a <= BTRFS_HEURISTIC_BYTE_CORE_SET_LOW) {
-+		ret = 2;
-+		goto out;
-+	}
-+
-+	if (a >= BTRFS_HEURISTIC_BYTE_CORE_SET_HIGH) {
-+		ret = 0;
-+		goto out;
-+	}
-+
- out:
- 	kfree(bucket);
- 	return ret;
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 07e3d0652e62..b369a95c1241 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -136,6 +136,8 @@ struct heuristic_bucket_item {
- #define BTRFS_HEURISTIC_ITER_OFFSET 256
- #define BTRFS_HEURISTIC_BUCKET_SIZE 256
- #define BTRFS_HEURISTIC_BYTE_SET_THRESHOLD 64
-+#define BTRFS_HEURISTIC_BYTE_CORE_SET_LOW  BTRFS_HEURISTIC_BYTE_SET_THRESHOLD
-+#define BTRFS_HEURISTIC_BYTE_CORE_SET_HIGH 200 // 80%
+6. Add code for calculate byte core set size
+   i.e. how many unique bytes use 90% of sample data
+   That code require that numbers in bucket must be sorted
+   That can detect easy compressible data with many repeated bytes
+   That can detect not compressible data with evenly distributed bytes
 
- int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
+Changes v1 -> v2:
+  - Change input data iterator shift 512 -> 256
+  - Replace magic macro numbers with direct values
+  - Drop useless symbol population in bucket
+    as no one care about where and what symbol stored
+    in bucket at now
+
+Changes v2 -> v3 (only update #3 patch):
+  - Fix u64 division problem by use u32 for input_size
+  - Fix input size calculation start - end -> end - start
+  - Add missing sort.h header
+
+Changes v3 -> v4 (only update #1 patch):
+  - Change counter type in bucket item u16 -> u32
+  - Drop other fields from bucket item for now,
+    no one use it
+
+Change v4 -> v5
+  - Move heuristic code to external file
+  - Make heuristic use compression workspaces
+  - Add check sample to zeroes
+
+Timofey Titovets (6):
+  Btrfs: heuristic make use compression workspaces
+  Btrfs: heuristic workspace add bucket and sample items
+  Btrfs: Implement heuristic sampling logic
+  Btrfs: heuristic add detection of zeroed sample
+  Btrfs: heuristic add byte set calculation
+  Btrfs: heuristic add byte core set calculation
+
+ fs/btrfs/Makefile      |   2 +-
+ fs/btrfs/compression.c |  18 ++--
+ fs/btrfs/compression.h |   7 +-
+ fs/btrfs/heuristic.c   | 220 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 234 insertions(+), 13 deletions(-)
+ create mode 100644 fs/btrfs/heuristic.c
 
 --
 2.14.1

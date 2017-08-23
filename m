@@ -1,63 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:38226 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751003AbdHWWqB (ORCPT
+Received: from mail-wr0-f195.google.com ([209.85.128.195]:37172 "EHLO
+        mail-wr0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750715AbdHWWqC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 18:46:01 -0400
-Received: by mail-wm0-f68.google.com with SMTP id a70so936118wmd.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 15:46:00 -0700 (PDT)
+        Wed, 23 Aug 2017 18:46:02 -0400
+Received: by mail-wr0-f195.google.com with SMTP id 72so520463wrc.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 15:46:02 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v6 4/6] Btrfs: heuristic add detection of repeated data patterns
-Date: Thu, 24 Aug 2017 01:45:43 +0300
-Message-Id: <20170823224545.16375-5-nefelim4ag@gmail.com>
+Subject: [PATCH v6 5/6] Btrfs: heuristic add byte set calculation
+Date: Thu, 24 Aug 2017 01:45:44 +0300
+Message-Id: <20170823224545.16375-6-nefelim4ag@gmail.com>
 In-Reply-To: <20170823224545.16375-1-nefelim4ag@gmail.com>
 References: <20170823224545.16375-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Walk over data sample and use memcmp to detect
-repeated data (like zeroed)
+Calculate byte set size for data sample:
+Calculate how many unique bytes has been in sample
+By count all bytes in bucket with count > 0
+If byte set low (~25%), data are easily compressible
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/heuristic.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ fs/btrfs/heuristic.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
 diff --git a/fs/btrfs/heuristic.c b/fs/btrfs/heuristic.c
-index 001118f98143..8df56ea93064 100644
+index 8df56ea93064..4815d1becf7e 100644
 --- a/fs/btrfs/heuristic.c
 +++ b/fs/btrfs/heuristic.c
-@@ -66,6 +66,19 @@ static struct list_head *heuristic_alloc_workspace(void)
+@@ -24,6 +24,7 @@
+ #define ITER_SHIFT 256
+ #define BUCKET_SIZE 256
+ #define MAX_SAMPLE_SIZE (BTRFS_MAX_UNCOMPRESSED*READ_SIZE/ITER_SHIFT)
++#define BYTE_SET_THRESHOLD 64
+
+ struct bucket_item {
+ 	u32 count;
+@@ -66,6 +67,27 @@ static struct list_head *heuristic_alloc_workspace(void)
  	return ERR_PTR(-ENOMEM);
  }
 
-+static bool sample_repeated_patterns(struct workspace *ws)
++static u32 byte_set_size(const struct workspace *ws)
 +{
-+	u32 i = 0;
-+	u8 *p = ws->sample;
++	u32 a = 0;
++	u32 byte_set_size = 0;
 +
-+	for (; i < ws->sample_size - READ_SIZE; i += READ_SIZE) {
-+		if(memcpy(&p[i], &p[i + READ_SIZE], READ_SIZE))
-+			return false;
++	for (; a < BYTE_SET_THRESHOLD; a++) {
++		if (ws->bucket[a].count > 0)
++			byte_set_size++;
 +	}
 +
-+	return true;
++	for (; a < BUCKET_SIZE; a++) {
++		if (ws->bucket[a].count > 0) {
++			byte_set_size++;
++			if (byte_set_size > BYTE_SET_THRESHOLD)
++				return byte_set_size;
++		}
++	}
++
++	return byte_set_size;
 +}
 +
- static int heuristic(struct list_head *ws, struct inode *inode,
- 		     u64 start, u64 end)
+ static bool sample_repeated_patterns(struct workspace *ws)
  {
-@@ -118,6 +131,9 @@ static int heuristic(struct list_head *ws, struct inode *inode,
+ 	u32 i = 0;
+@@ -141,6 +163,10 @@ static int heuristic(struct list_head *ws, struct inode *inode,
+ 		workspace->bucket[byte].count++;
+ 	}
 
- 	workspace->sample_size = b;
-
-+	if (sample_repeated_patterns(workspace))
-+		return 1;
++	a = byte_set_size(workspace);
++	if (a > BYTE_SET_THRESHOLD)
++		return 2;
 +
- 	memset(workspace->bucket, 0, sizeof(*workspace->bucket)*BUCKET_SIZE);
+ 	return 1;
+ }
 
- 	for (a = 0; a < workspace->sample_size; a++) {
 --
 2.14.1

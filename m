@@ -1,101 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout2.freenet.de ([195.4.92.92]:32794 "EHLO mout2.freenet.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753915AbdHWNSC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 09:18:02 -0400
-Date: Wed, 23 Aug 2017 15:12:45 +0200
-From: g6094199@freenet.de
-Subject: Re: degraded BTRFS RAID 1 not mountable: open_ctree failed, unable to find block group for 0
-To: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-Cc: linux-btrfs@vger.kernel.org
+Received: from tty0.vserver.softronics.ch ([91.214.169.36]:33092 "EHLO
+        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753915AbdHWNTF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Aug 2017 09:19:05 -0400
+Received: from [10.0.1.10] (77-56-149-155.dclient.hispeed.ch [77.56.149.155])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by fe1.digint.ch (Postfix) with ESMTPSA id BEC2C30470
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 15:14:25 +0200 (CEST)
+Subject: Re: finding root filesystem of a subvolume?
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <20170822122350.GA14804@rus.uni-stuttgart.de>
+ <22940.17147.756378.347580@tree.ty.sabi.co.uk>
+ <62494c0c-0c27-5b36-3727-b8755eb2cb58@gmail.com>
+ <22940.27854.159264.779233@tree.ty.sabi.co.uk>
+ <3026f8a6-0ea6-0ed2-41c7-7d25c51a32fe@gmail.com>
+From: Axel Burri <axel@tty0.ch>
+Message-ID: <391cbefd-80e1-fc3c-d743-c15e6a5e20e4@tty0.ch>
+Date: Wed, 23 Aug 2017 15:14:04 +0200
 MIME-Version: 1.0
-Message-Id: <500286930a95a0600dec24257c9d793b@email.freenet.de>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <3026f8a6-0ea6-0ed2-41c7-7d25c51a32fe@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Ursprüngliche Nachricht-----
-> Von: Dmitrii Tcvetkov 
-> Gesendet: Di. 22.08.2017 12:28
-> An: g6094199@freenet.de
-> Kopie: linux-btrfs@vger.kernel.org
-> Betreff: Re: degraded BTRFS RAID 1 not mountable: open_ctree failed, unable to find block group for 0
->
-> On Tue, 22 Aug 2017 11:31:23 +0200
-> g6094199@freenet.de wrote:
->> So 1st should be investigating why did the disk not get removed
->> correctly? Btrfs dev del should remove the device corretly, right? Is
->> there a bug?
->
-> It should and probably did. To check that we need to see output of 
-> btrfs filesystem show 
-> and output of 
-> btrfs filesystem usage
+On 2017-08-23 14:07, Austin S. Hemmelgarn wrote:
+> On 2017-08-22 13:41, Peter Grandi wrote:
+> [ ... ]
+>> This stupid point relies on ignoring that it is not mandatory to
+>> mount the main volume, and that therefore "There is no fixed
+>> relationship between the root directory inode of a subvolume and
+>> the root directory inode of any other subvolume or the main
+>> volume", because the "root directory inode" of the "main volume"
+>> may not be mounted at all.
+>>
+>> This stupid point also relies on ignoring that subvolumes can be
+>> mounted *also* under another directory, even if the main volume
+>> is mounted somewhere else. Suppose that the following applies:
+>>
+>>    subvol=5    /local
+>>    subvol=383    /local/.backup/home
+>>    subvol=383    /mnt/home-backup
+>>
+>> and you are given the mountpoint '/mnt/home-backup', how can you
+>> find the main volume mountpoint '/local' from that?Assuming
+>> /mnt/home-backup is mounted and visible in /proc/mounts (your 
+> explanation requires it was either mounted directly via a subvol option
+> or indirectly via a bind mount), then the following generic method works
+> (and should always work on a modern kernel):
+> 1. Find it in /proc/mounts or the output of `mount` run without any
+> arguments.
+> 2. If the mount type is 'bind', the device field will point to the
+> source directory.  Using any method you like, figure out what the actual
+> mount point that is under is, and repeat from step one with that mount
+> point.
+> 3. If the mount type is 'btrfs', and 'subvolid=5' is present in the
+> mount options (this gets added automatically on any recent kernel), you
+> just found the top level subvolume.
+> 4. If the mount type is 'btrfs', and 'subvolid=5' is not present in the
+> mount options, scan /proc/mounts for other entries with the same device
+> value (this is going to be consistent).
+> 5. If another entry does exist, and has 'subvolid=5' in the mount
+> options, that's the top level subvolume.
+> 6. If other entries exist, but 'subvolid=5' not in the mount options for
+> any of them, or no other entries exist, the top level volume isn't
+> mounted, and you can view it by mounting the device with 'subvolid=5'.
+> 
+> In the event that you need to know where the next higher level subvolume
+> is mounted instead of the root subvolume for the volume, you can use the
+> same method, but add the following after step two to figure out what
+> subvolid to look for:
+> 2b. Run `btrfs subvol show` on the mount point (it by definition has to
+> be a subvolume because it's mounted and it's not a bind mount in
+> userspace).  Find the 'Top level ID' (note that this just points to the
+> next higher subvolume, not the root subvolume) value in the output, and
+> use that instead of 5 when looking for 'subvolid=' options.
 
-He Dimitry!
+In order to have a complete view of all mounts, this is what btrbk does
+here (which basically matches Austins explanation):
 
-THX fror your suggestions.
+1. Buld a complete tree from:
 
-root@vHost1:~# btrfs fi show /
-Label: 'System'  uuid: 35fdbfd4-5809-4a30-94c1-5e3ca206ca4d
-    Total devices 2 FS bytes used 17.00GiB
-    devid    6 size 50.00GiB used 22.03GiB path /dev/nvme0n1p1
-    devid    7 size 48.83GiB used 22.03GiB path /dev/sda1
+    # btrfs subvolume list -a -u /mnt/home-backup
 
-root@vHost1:~# btrfs fi df /
-Data, RAID1: total=19.00GiB, used=15.68GiB
-System, RAID1: total=32.00MiB, used=16.00KiB
-Metadata, RAID1: total=3.00GiB, used=1.32GiB
-GlobalReserve, single: total=384.00MiB, used=0.00B
+2. Correlate all subvolume ID's  with mount points (second column) and
+"subvolid=" from mount options:
 
-root@vHost1:/var/log#  btrfs filesystem usag /
-Overall:
-    Device size:          98.83GiB
-    Device allocated:          44.06GiB
-    Device unallocated:          54.76GiB
-    Device missing:             0.00B
-    Used:              34.11GiB
-    Free (estimated):          30.68GiB    (min: 30.68GiB)
-    Data ratio:                  2.00
-    Metadata ratio:              2.00
-    Global reserve:         384.00MiB    (used: 0.00B)
+    # cat /proc/self/mounts
 
-Data,RAID1: Size:19.00GiB, Used:15.70GiB
-   /dev/nvme0n1p1      19.00GiB
-   /dev/sda1      19.00GiB
+Now you have a complete view of all mounts. In order to query a given
+subvolume, fetch "Subvolume ID" (or "UUID") from:
 
-Metadata,RAID1: Size:3.00GiB, Used:1.36GiB
-   /dev/nvme0n1p1       3.00GiB
-   /dev/sda1       3.00GiB
+    # btrfs subvolume show /local/.backup/home
 
-System,RAID1: Size:32.00MiB, Used:16.00KiB
-   /dev/nvme0n1p1      32.00MiB
-   /dev/sda1      32.00MiB
-
-Unallocated:
-   /dev/nvme0n1p1      27.97GiB
-   /dev/sda1      26.80GiB
-
- 
-> If there are non-raid1 chunks then you need to do soft balance:
-> btrfs balance start -mconvert=raid1,soft -dconvert=raid1,soft
-
-Yes of cause i did a balance after replacing the disk (see above). I'm aware of the problems occuring with single chunks, etc. I did again a soft balance as you have suggested, which finished within seconds.
- 
-> The balance should finish very quickly as you probably have only one of
-> data and metadata single chunks. They appeared during writes when the
-> filesystem was mounted read-write in degraded mode.
-
-I guess the typical erros are now sorted out. i will reboot the machine with a currect hwe kernel and send the logs. Anything else i can do?
-
-regards
-sash
-
-
-
-MIT TRAVELXTRA PROFITIEREN SIE VON 5% RÜCKVERGÜTUNG AUF DEN
-REISEPREIS ? bekannte dt. Reiseanbieter und ein umfangreiches
-Reiseangebot wie im Reisebüro!
-https://email.freenet.de/reisen/index.html
-[https://email.freenet.de/reisen/index.html?utm_medium=Text&utm_source=Footersatz&utm_campaign=Footersatz_Reisen07082017&epid=e9900000699&utm_content=Text]
-
+see: https://github.com/digint/btrbk/blob/v0.25.1/btrbk
+(I apologize that Github has broken display of perl source files at the
+time being...)

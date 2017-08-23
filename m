@@ -1,88 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:37002 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751417AbdH2OLm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Aug 2017 10:11:42 -0400
-Received: by mail-qt0-f195.google.com with SMTP id g13so2870495qta.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Aug 2017 07:11:42 -0700 (PDT)
-From: josef@toxicpanda.com
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] btrfs: log csums for all modified extents
-Date: Tue, 29 Aug 2017 10:11:39 -0400
-Message-Id: <1504015899-13655-1-git-send-email-jbacik@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:48285 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932109AbdHWROr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Aug 2017 13:14:47 -0400
+Date: Wed, 23 Aug 2017 19:13:21 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs-progs: fsck-test: case for corrupted dir item
+ name
+Message-ID: <20170823171321.GE2866@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170714074746.28177-1-suy.fnst@cn.fujitsu.com>
+ <20170714074746.28177-3-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170714074746.28177-3-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+On Fri, Jul 14, 2017 at 03:47:46PM +0800, Su Yue wrote:
+> In this test case, all name in dir_item, dir_index, inode_ref
+> are corrupted to another one.
+> btrfs check should report errors about the corrupted dir_item but
+> btrfs can't repair the case now.
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  .../fsck-tests/026-bad-dir-item-name/default_case.img.xz | Bin 0 -> 1924 bytes
+>  tests/fsck-tests/026-bad-dir-item-name/test.sh           |  13 +++++++++++++
+>  2 files changed, 13 insertions(+)
+>  create mode 100644 tests/fsck-tests/026-bad-dir-item-name/default_case.img.xz
+>  create mode 100755 tests/fsck-tests/026-bad-dir-item-name/test.sh
+> 
+> diff --git a/tests/fsck-tests/026-bad-dir-item-name/default_case.img.xz b/tests/fsck-tests/026-bad-dir-item-name/default_case.img.xz
+> new file mode 100644
+> index 0000000000000000000000000000000000000000..27e8553f103095170420c0e115cab4bc889c2af5
+> GIT binary patch
+> literal 1924
+> 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
+> K000001X)^)|E<>m
+> 
+> literal 0
+> HcmV?d00001
+> 
+> diff --git a/tests/fsck-tests/026-bad-dir-item-name/test.sh b/tests/fsck-tests/026-bad-dir-item-name/test.sh
+> new file mode 100755
+> index 00000000..00a550ce
+> --- /dev/null
+> +++ b/tests/fsck-tests/026-bad-dir-item-name/test.sh
+> @@ -0,0 +1,13 @@
+> +#!/bin/bash
+> +#
+> +# confirm whether btrfsck supports to check name and hash mismatch in dir_item
+> +
+> +source "$TOP/tests/common"
+> +
+> +check_prereq btrfs
+> +
+> +image=$(extract_image "./default_case.img.xz")
+> +
+> +run_mustfail "$TOP/btrfs" check "$image"
 
-Amir reported a bug discovered by his cleaned up version of my
-dm-log-writes xfstests where we were missing csums at certain replay
-points.  This is because fsx was doing an msync(), which essentially
-fsync()'s a specific range of a file.  We will log all modified extents,
-but only search for the checksums in the range we are being asked to
-sync.  We cannot simply log the extents in the range we're being asked
-because we are logging the inode item as it is currently, which if it
-has had a i_size update before the msync means we will miss extents when
-replaying.  We could possibly get around this by marking the inode with
-the transaction that extended the i_size to see if we have this case,
-but this would be racy and we'd have to lock the whole range of the
-inode to make sure we didn't have an ordered extent outside of our range
-that was in the middle of completing.
+run_mustfail requires 1st argument to be a string that's printed in case
+the command (2nd parameter) unexpectedly succeeds. So this test really
+fails but because it does not find the 'check' command, not something we
+want of course. I'll fix that and add some sort of assertion to
+run_mustfail so this is caught when the test is being developed, I think
+the 1st extra parameter is too easy to forget.
 
-Fix this simply by keeping track of the modified extents range and
-logging the csums for the entire range of extents that we are logging.
-This makes the xfstest pass.
-
-Reported-by: Amir Goldstein <amir73il@gmail.com>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/tree-log.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 3a11ae6..1d7b527 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4183,6 +4183,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	struct extent_map *em, *n;
- 	struct list_head extents;
- 	struct extent_map_tree *tree = &inode->extent_tree;
-+	u64 logged_start = start, logged_end = end;
- 	u64 test_gen;
- 	int ret = 0;
- 	int num = 0;
-@@ -4195,7 +4196,6 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 
- 	list_for_each_entry_safe(em, n, &tree->modified_extents, list) {
- 		list_del_init(&em->list);
--
- 		/*
- 		 * Just an arbitrary number, this can be really CPU intensive
- 		 * once we start getting a lot of extents, and really once we
-@@ -4210,6 +4210,12 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 
- 		if (em->generation <= test_gen)
- 			continue;
-+
-+		if (em->start < logged_start)
-+			logged_start = em->start;
-+		if ((em->start + em->len - 1) > logged_end)
-+			logged_end = em->start +em->len - 1;
-+
- 		/* Need a ref to keep it from getting evicted from cache */
- 		refcount_inc(&em->refs);
- 		set_bit(EXTENT_FLAG_LOGGING, &em->flags);
-@@ -4218,7 +4224,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 	}
- 
- 	list_sort(NULL, &extents, extent_cmp);
--	btrfs_get_logged_extents(inode, logged_list, start, end);
-+	btrfs_get_logged_extents(inode, logged_list, logged_start, logged_end);
- 	/*
- 	 * Some ordered extents started by fsync might have completed
- 	 * before we could collect them into the list logged_list, which
--- 
-2.7.4
-
+The patches look otherwise ok, 1-3 fixed applied.

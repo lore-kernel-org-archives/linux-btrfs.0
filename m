@@ -1,46 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp02.belwue.de ([129.143.71.87]:65469 "EHLO smtp02.belwue.de"
+Received: from demfloro.ru ([188.166.0.225]:38984 "EHLO demfloro.ru"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751728AbdHWVN1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 17:13:27 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id 8CABA6118
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 23:13:25 +0200 (MEST)
-Date: Wed, 23 Aug 2017 23:13:25 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: user snapshots
-Message-ID: <20170823211325.GC28319@rus.uni-stuttgart.de>
-References: <20170822214531.44538589@natsu>
- <20170822165725.GL14804@rus.uni-stuttgart.de>
- <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
- <20170822180155.GM14804@rus.uni-stuttgart.de>
- <22940.31139.194399.982315@tree.ty.sabi.co.uk>
- <20170822215343.GP14804@rus.uni-stuttgart.de>
- <124CEBB9-BF23-4688-B23C-294EDCAD27AA@demfloro.ru>
- <20170823101635.114d02d2@job>
- <20170823072048.GB28319@rus.uni-stuttgart.de>
- <22941.27164.739577.517915@tree.ty.sabi.co.uk>
+        id S1751272AbdHXMYn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Aug 2017 08:24:43 -0400
+Date: Thu, 24 Aug 2017 15:24:18 +0300
+From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+To: master.b.at.raven@chefmail.de
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS RAID 1 not mountable: open_ctree failed,
+ super_num_devices 3 mismatch with num_devices 2 found here
+Message-ID: <20170824152418.542e9dfa@job>
+In-Reply-To: <a49007a603563cf8d837d0ffa305fb35@email.freenet.de>
+References: <a49007a603563cf8d837d0ffa305fb35@email.freenet.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <22941.27164.739577.517915@tree.ty.sabi.co.uk>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed 2017-08-23 (12:42), Peter Grandi wrote:
-> > So, still: What is the problem with user_subvol_rm_allowed?
+>  I rebootet with HWE K4.11
 > 
-> As usual, it is complicated: mostly that while subvol creation
-> is very cheap, subvol deletion can be very expensive. But then
-> so can be creating many snapshots, as in this:
+> and took a pic of the error message (see attachment).
+> 
+> It seems btrfs still sees the removed NVME. 
+> There is a mismatch from super_num_devices (3) to num_devices (2)
+> with indicates something strage is going on here, imho. 
+> 
+> Then i returned and booted K4.4, which boots fine.
+> 
+> root@vHost1:~# btrfs dev stat /
+> [/dev/nvme0n1p1].write_io_errs   0
+> [/dev/nvme0n1p1].read_io_errs    0
+> [/dev/nvme0n1p1].flush_io_errs   0
+> [/dev/nvme0n1p1].corruption_errs 0
+> [/dev/nvme0n1p1].generation_errs 0
+> [/dev/sda1].write_io_errs   0
+> [/dev/sda1].read_io_errs    0
+> [/dev/sda1].flush_io_errs   0
+> [/dev/sda1].corruption_errs 0
+> [/dev/sda1].generation_errs 0
+> 
+> Btw i edited the subject to match the correct error.
+> 
+> 
+> Sash
 
-But it seems one cannot prohibit a user making snapshots?
-Then root must delete them?
+Thats very odd, if super_num_devices in superblocks don't match real number of devices
+then 4.4 kernel shouldn't mount the filesystem too.
 
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<22941.27164.739577.517915@tree.ty.sabi.co.uk>
+We probably need help from one of btrfs developers since I'm not one, I'm just btrfs user.
+Can you provide outpus of:
+btrfs inspect-internal dump-super -f /dev/sda1
+btrfs inspect-internal dump-super -f /dev/nvme0n1p1
+
+Depending on version of btrfs-progs you may need to use btrfs-dump-super instead of "btrfs inspect-internal dump-super"
+
+>3rd i saw https://patchwork.kernel.org/patch/9419189/ from Roman. Did
+>he receive any comments on his patch? This one could help on this
+>problem, too. 
+
+Don't know about this patch from Roman per se, but there is a patchset[1] which is aimed to be merged in 4.14 merge window AFAIK.
+
+[1] https://www.spinics.net/lists/linux-btrfs/msg66891.html

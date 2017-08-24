@@ -1,44 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53671 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752748AbdHXPYX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Aug 2017 11:24:23 -0400
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fix for rc7
-Date: Thu, 24 Aug 2017 17:22:54 +0200
-Message-Id: <cover.1503588032.git.dsterba@suse.com>
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:23657 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750806AbdHXEPE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Aug 2017 00:15:04 -0400
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id EE3A6AC0127
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Aug 2017 13:03:41 +0900 (JST)
+Received: from G01JPEXCHKW17.g01.fujitsu.local (G01JPEXCHKW17.g01.fujitsu.local [10.0.194.56])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 58F056926E3
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Aug 2017 13:03:41 +0900 (JST)
+To: <linux-btrfs@vger.kernel.org>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH 1/3] btrfs-progs: fix option handling for some commands
+Message-ID: <c24c91e1-1e0e-c398-bf84-59fecb76637e@jp.fujitsu.com>
+Date: Thu, 24 Aug 2017 13:03:37 +0900
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I found some btrfs commands options are not working because of 
+inappropriate getopt_long() setting.
 
-we have one more fixup that stems from the blk_status_t conversion that did not
-quite cover everything. The normal cases were not affected because the code is
-0, but any error and retries could mix up new and old values. Please pull, thanks.
+This fixes "btrfs check -Q/-E"
 
-----------------------------------------------------------------
-The following changes since commit 14ccee78fc82f5512908f4424f541549a5705b89:
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+---
+  cmds-check.c | 2 +-
+  1 file changed, 1 insertion(+), 1 deletion(-)
 
-  Linux 4.13-rc6 (2017-08-20 14:13:52 -0700)
+diff --git a/cmds-check.c b/cmds-check.c
+index c5faa2b..465fd17 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -12745,7 +12745,7 @@ int cmd_check(int argc, char **argv)
+                         { NULL, 0, NULL, 0}
+                 };
 
-are available in the git repository at:
+-               c = getopt_long(argc, argv, "as:br:p", long_options, NULL);
++               c = getopt_long(argc, argv, "as:br:pQE:", long_options, 
+NULL);
+                 if (c < 0)
+                         break;
+                 switch(c) {
+-- 
+2.9.4
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-rc7
-
-for you to fetch changes up to 58efbc9f5463308c43d812fd0748a4dee44c8a16:
-
-  Btrfs: fix blk_status_t/errno confusion (2017-08-24 17:19:02 +0200)
-
-----------------------------------------------------------------
-Omar Sandoval (1):
-      Btrfs: fix blk_status_t/errno confusion
-
- fs/btrfs/disk-io.c |  4 ++--
- fs/btrfs/inode.c   | 70 +++++++++++++++++++++++++++++-------------------------
- fs/btrfs/raid56.c  | 34 +++++++++++++-------------
- fs/btrfs/volumes.c | 10 ++++----
- fs/btrfs/volumes.h |  6 ++---
- 5 files changed, 64 insertions(+), 60 deletions(-)

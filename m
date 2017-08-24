@@ -1,71 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f194.google.com ([209.85.128.194]:37062 "EHLO
-        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932287AbdHWRXt (ORCPT
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:33312 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753411AbdHXVNF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 13:23:49 -0400
-Received: by mail-wr0-f194.google.com with SMTP id 72so84612wrc.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Aug 2017 10:23:48 -0700 (PDT)
+        Thu, 24 Aug 2017 17:13:05 -0400
+Received: by mail-wm0-f67.google.com with SMTP id e67so685503wmd.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Aug 2017 14:13:05 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [RFC PATCH] Btrfs: clear_dirty only on pages in compression range
-Date: Wed, 23 Aug 2017 20:23:29 +0300
-Message-Id: <20170823172329.5794-1-nefelim4ag@gmail.com>
+Subject: [RFC PATCH] Btrfs: handle unaligned tail of data ranges more efficient
+Date: Fri, 25 Aug 2017 00:12:35 +0300
+Message-Id: <20170824211235.23152-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At now while compressing data range code touch dirty
-page status on whole range on each 128kb iteration, that's costs time
+At now while switch page bits in data ranges
+we always hande +1 page, for cover case
+where end of data range is not page aligned
 
-As we care only about page status in range that will be compressed
-in current iteration, let's touch dirty status only for actual
-compression range
+Let's handle that case more obvious and efficient
+Check end aligment directly and touch +1 page
+only then needed
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/inode.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c | 12 ++++++++++--
+ fs/btrfs/inode.c     |  6 +++++-
+ 2 files changed, 15 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 98d85d2009f8..ccb66c1485e2 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1360,7 +1360,11 @@ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
+ 	unsigned long end_index = end >> PAGE_SHIFT;
+ 	struct page *page;
+
+-	while (index <= end_index) {
++	/* Don't miss unaligned end */
++	if (end%PAGE_SIZE > 0)
++		end_index++;
++
++	while (index < end_index) {
+ 		page = find_get_page(inode->i_mapping, index);
+ 		BUG_ON(!page); /* Pages should be in the extent_io_tree */
+ 		clear_page_dirty_for_io(page);
+@@ -1375,7 +1379,11 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
+ 	unsigned long end_index = end >> PAGE_SHIFT;
+ 	struct page *page;
+
+-	while (index <= end_index) {
++	/* Don't miss unaligned end */
++	if (end%PAGE_SIZE > 0)
++		end_index++;
++
++	while (index < end_index) {
+ 		page = find_get_page(inode->i_mapping, index);
+ 		BUG_ON(!page); /* Pages should be in the extent_io_tree */
+ 		__set_page_dirty_nobuffers(page);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2b92478fe7ec..cb7779b08aaf 100644
+index cb7779b08aaf..79feaea0fede 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -449,6 +449,7 @@ static noinline void compress_file_range(struct inode *inode,
- 	u64 num_bytes;
- 	u64 blocksize = fs_info->sectorsize;
- 	u64 actual_end;
-+	u64 compress_range_end;
- 	u64 isize = i_size_read(inode);
- 	int ret = 0;
- 	struct page **pages = NULL;
-@@ -500,6 +501,8 @@ static noinline void compress_file_range(struct inode *inode,
- 	num_bytes = max(blocksize,  num_bytes);
- 	total_in = 0;
- 	ret = 0;
-+	compress_range_end = start + min_t(u64, BTRFS_MAX_UNCOMPRESSED,
-+					   end - start);
+@@ -10745,7 +10745,11 @@ void btrfs_set_range_writeback(void *private_data, u64 start, u64 end)
+ 	unsigned long end_index = end >> PAGE_SHIFT;
+ 	struct page *page;
 
- 	/*
- 	 * we do compression for mount -o compress and when the
-@@ -528,7 +531,8 @@ static noinline void compress_file_range(struct inode *inode,
- 		 * If the compression fails for any reason, we set the pages
- 		 * dirty again later on.
- 		 */
--		extent_range_clear_dirty_for_io(inode, start, end);
-+		extent_range_clear_dirty_for_io(inode, start,
-+						compress_range_end);
- 		redirty = 1;
- 		ret = btrfs_compress_pages(compress_type,
- 					   inode->i_mapping, start,
-@@ -667,7 +671,7 @@ static noinline void compress_file_range(struct inode *inode,
- 		/* unlocked later on in the async handlers */
-
- 	if (redirty)
--		extent_range_redirty_for_io(inode, start, end);
-+		extent_range_redirty_for_io(inode, start, compress_range_end);
- 	add_async_extent(async_cow, start, end - start + 1, 0, NULL, 0,
- 			 BTRFS_COMPRESS_NONE);
- 	*num_added += 1;
+-	while (index <= end_index) {
++	/* Don't miss unaligned end */
++	if (end%PAGE_SIZE > 0)
++		end_index++;
++
++	while (index < end_index) {
+ 		page = find_get_page(inode->i_mapping, index);
+ 		ASSERT(page); /* Pages should be in the extent_io_tree */
+ 		set_page_writeback(page);
 --
 2.14.1

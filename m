@@ -1,82 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58834 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752574AbdHOSLb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Aug 2017 14:11:31 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Eric Sandeen <sandeen@redhat.com>
-Subject: [PATCH] btrfs-progs: fix cross-compile build
-Cc: Hallo32@gmx.net, David Sterba <dsterba@suse.com>
-Message-ID: <8f01ac45-1b6e-be1d-b6e3-48fe6cdc4833@redhat.com>
-Date: Tue, 15 Aug 2017 13:11:30 -0500
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from mx2.suse.de ([195.135.220.15]:53671 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752748AbdHXPYX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 24 Aug 2017 11:24:23 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fix for rc7
+Date: Thu, 24 Aug 2017 17:22:54 +0200
+Message-Id: <cover.1503588032.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The mktables binary needs to be build with the host
-compiler at built time, not the target compiler, because
-it runs at build time to generate the raid tables.
+Hi,
 
-Copy auto-fu from xfsprogs and modify Makefile to
-accomodate this.
+we have one more fixup that stems from the blk_status_t conversion that did not
+quite cover everything. The normal cases were not affected because the code is
+0, but any error and retries could mix up new and old values. Please pull, thanks.
 
-Reported-by: Hallo32 <Hallo32@gmx.net>
-Signed-off-by: Eric Sandeen <sandeen@redhat.com>
----
+----------------------------------------------------------------
+The following changes since commit 14ccee78fc82f5512908f4424f541549a5705b89:
 
-diff --git a/Makefile b/Makefile
-index b3e2b63..2647b95 100644
---- a/Makefile
-+++ b/Makefile
-@@ -323,7 +323,7 @@ version.h: version.sh version.h.in configure.ac
- 
- mktables: kernel-lib/mktables.c
- 	@echo "    [CC]     $@"
--	$(Q)$(CC) $(CFLAGS) $< -o $@
-+	$(Q)$(BUILD_CC) $(BUILD_CFLAGS) $< -o $@
- 
- kernel-lib/tables.c: mktables
- 	@echo "    [TABLE]  $@"
-diff --git a/Makefile.inc.in b/Makefile.inc.in
-index 4e1b68c..0570bf8 100644
---- a/Makefile.inc.in
-+++ b/Makefile.inc.in
-@@ -4,6 +4,8 @@
- export
- 
- CC = @CC@
-+BUILD_CC = @BUILD_CC@
-+BUILD_CFLAGS = @BUILD_CFLAGS@
- LN_S = @LN_S@
- AR = @AR@
- RM = @RM@
-diff --git a/configure.ac b/configure.ac
-index 30055f8..bc590cc 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -26,6 +26,23 @@ AC_CONFIG_SRCDIR([btrfs.c])
- AC_PREFIX_DEFAULT([/usr/local])
- 
- AC_PROG_CC
-+AC_ARG_VAR(BUILD_CC, [C compiler for build tools])
-+if test "${BUILD_CC+set}" != "set"; then
-+  if test $cross_compiling = no; then
-+    BUILD_CC="$CC"
-+  else
-+    AC_CHECK_PROGS(BUILD_CC, gcc cc)
-+  fi
-+fi
-+AC_ARG_VAR(BUILD_CFLAGS, [C compiler flags for build tools])
-+if test "${BUILD_CFLAGS+set}" != "set"; then
-+  if test $cross_compiling = no; then
-+    BUILD_CFLAGS="$CFLAGS"
-+  else
-+    BUILD_CFLAGS="-g -O2"
-+  fi
-+fi
-+
- AC_CANONICAL_HOST
- AC_C_CONST
- AC_C_VOLATILE
+  Linux 4.13-rc6 (2017-08-20 14:13:52 -0700)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.13-rc7
+
+for you to fetch changes up to 58efbc9f5463308c43d812fd0748a4dee44c8a16:
+
+  Btrfs: fix blk_status_t/errno confusion (2017-08-24 17:19:02 +0200)
+
+----------------------------------------------------------------
+Omar Sandoval (1):
+      Btrfs: fix blk_status_t/errno confusion
+
+ fs/btrfs/disk-io.c |  4 ++--
+ fs/btrfs/inode.c   | 70 +++++++++++++++++++++++++++++-------------------------
+ fs/btrfs/raid56.c  | 34 +++++++++++++-------------
+ fs/btrfs/volumes.c | 10 ++++----
+ fs/btrfs/volumes.h |  6 ++---
+ 5 files changed, 64 insertions(+), 60 deletions(-)

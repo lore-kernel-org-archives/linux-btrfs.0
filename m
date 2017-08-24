@@ -1,73 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:12353 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751790AbdHXKjw (ORCPT
+Received: from bombadil.infradead.org ([65.50.211.133]:46210 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751140AbdHXOKl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Aug 2017 06:39:52 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 049FF4724000
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Aug 2017 18:39:53 +0800 (CST)
-From: <zhangyu-fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhang Yu <zhangyu-fnst@cn.fujitsu.com>
-Subject: [PATCH] Btrfs-progs: Check on num_stripes in print_chunk
-Date: Thu, 24 Aug 2017 18:38:41 +0800
-Message-ID: <20170824103841.16259-1-zhangyu-fnst@cn.fujitsu.com>
+        Thu, 24 Aug 2017 10:10:41 -0400
+Date: Thu, 24 Aug 2017 07:10:41 -0700
+From: Christoph Hellwig <hch@infradead.org>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: do not reset bio->bi_ops while writing bio
+Message-ID: <20170824141041.GA25871@infradead.org>
+References: <20170823181509.19816-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170823181509.19816-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhang Yu <zhangyu-fnst@cn.fujitsu.com>
+On Wed, Aug 23, 2017 at 12:15:09PM -0600, Liu Bo wrote:
+> flush_epd_write_bio() sets bio->bi_ops by itself to honor REQ_SYNC,
+> but it's not needed at all since bio->bi_ops has set up properly in
+> both __extent_writepage() and write_one_eb(), and in the case of
+> write_one_eb(), it also sets REQ_META, which we will lose in
+> flush_epd_write_bio().
+> 
+> This remove this unnecessary bio->bi_ops setting.
 
-[TEST/fuzz] case: 004-simple-dump-tree
-
-Since the wrong key(DATA_RELOC_TREE CHUNK_ITEM 0) in root tree,
-error calling print_chunk(), resulting in num_stripes == 0.
-
-ERROR:
-     [TEST/fuzz]   004-simple-dump-tree
-ctree.h:317: btrfs_chunk_item_size: BUG_ON `num_stripes == 0`
-        triggered, value 1
-
-failed (ignored, ret=134): /myproject/btrfs-progs/btrfs
-inspect-internal dump-tree
-/myproject/btrfs-progs/tests/fuzz-tests/images/
-bko-155201-wrong-chunk-item-in-root-tree.raw.restored
-
-test failed for case 004-simple-dump-tree
-Makefile:288: recipe for target 'test-fuzz' failed
-make: *** [test-fuzz] Error 1
-
-So, check on num_stripes in print_chunk
-
-Signed-off-by: Zhang Yu <zhangyu-fnst@cn.fujitsu.com>
----
- print-tree.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/print-tree.c b/print-tree.c
-index a0d3395..08f7edb 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -199,6 +199,15 @@ void print_chunk(struct extent_buffer *eb, struct btrfs_chunk *chunk)
- {
- 	int num_stripes = btrfs_chunk_num_stripes(eb, chunk);
- 	int i;
-+	/*
-+	 * check on num_stripes
-+	 * Btrfs_chunk contains at least one stripes
-+	 */
-+	if (num_stripes < 1) {
-+		printf("invalid num_stripes: %u\n", num_stripes);
-+		return;
-+	}
-+
- 	u32 chunk_item_size = btrfs_chunk_item_size(num_stripes);
- 	char chunk_flags_str[32] = {0};
- 
--- 
-2.9.4
-
-
-
+Nitpick: it's bi_op, not bi_ops.

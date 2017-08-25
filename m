@@ -1,48 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52084 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S933001AbdHVPqK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Aug 2017 11:46:10 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 30E9BABB4
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 15:46:09 +0000 (UTC)
-Date: Tue, 22 Aug 2017 17:44:45 +0200
-From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/7] btrfs-progs: extent-cache: actually cache extent
- buffers
-Message-ID: <20170822154445.GA2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170725205138.28376-1-jeffm@suse.com>
- <20170725205138.28376-3-jeffm@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170725205138.28376-3-jeffm@suse.com>
+Received: from mail-wr0-f195.google.com ([209.85.128.195]:38227 "EHLO
+        mail-wr0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754834AbdHYJTK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Aug 2017 05:19:10 -0400
+Received: by mail-wr0-f195.google.com with SMTP id o76so727545wrb.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 02:19:09 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH v7 0/6] Btrfs: populate heuristic with code
+Date: Fri, 25 Aug 2017 12:18:39 +0300
+Message-Id: <20170825091845.4120-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 25, 2017 at 04:51:34PM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> We have the infrastructure to cache extent buffers but we don't actually
-> do the caching.  As soon as the last reference is dropped, the buffer
-> is dropped.  This patch keeps the extent buffers around until the max
-> cache size is reached (defaults to 25% of memory) and then it drops
-> the last 10% of the LRU to free up cache space for reallocation.  The
-> cache size is configurable (for use by e.g. lowmem) when the cache is
-> initialized.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Based on kdave for-next
 
-I've started to merge the series, changed code according to the review.
-In this patch, test-mkfs and test-check fail (segfaults and assertions).
-A debugging build or asan (make D=all,asan) does not reproduce the
-errors so this will need to be found by other means.
+Patches short:
+1. Move heuristic to use compression workspaces
+   Bit tricky, but works.
 
-I also fixed some trivial coding style issues, so the changes are now in
-the branch
-https://github.com/kdave/btrfs-progs/tree/ext/jeffm/extent-cache
+2. Add heuristic counters and buffer to workspaces
 
-Please use this as a starting point, I'm fine with resending just this
-patch or an incremental.
+3. Implement simple input data sampling
+   It's get 16 byte samples with 256 bytes shifts
+   over input data. Collect info about how many
+   different bytes (symbols) has been found in sample data
+
+4. Implement check sample to repeated data
+   Just iterate over sample and do memcmp()
+
+5. Add code for calculate
+   how many unique bytes has been found in sample data
+   That can fast detect easy compressible data
+
+6. Add code for calculate byte core set size
+   i.e. how many unique bytes use 90% of sample data
+   That code require that numbers in bucket must be sorted
+   That can detect easy compressible data with many repeated bytes
+   That can detect not compressible data with evenly distributed bytes
+
+Changes v1 -> v2:
+  - Change input data iterator shift 512 -> 256
+  - Replace magic macro numbers with direct values
+  - Drop useless symbol population in bucket
+    as no one care about where and what symbol stored
+    in bucket at now
+
+Changes v2 -> v3 (only update #3 patch):
+  - Fix u64 division problem by use u32 for input_size
+  - Fix input size calculation start - end -> end - start
+  - Add missing sort.h header
+
+Changes v3 -> v4 (only update #1 patch):
+  - Change counter type in bucket item u16 -> u32
+  - Drop other fields from bucket item for now,
+    no one use it
+
+Change v4 -> v5
+  - Move heuristic code to external file
+  - Make heuristic use compression workspaces
+  - Add check sample to zeroes
+
+Change v5 -> v6
+  - Add some code to hande page unaligned range start/end
+  - replace sample zeroed check with check for repeated data
+
+Change v6 -> v7
+  - Add missing part of first patch
+  - Make use of IS_ALIGNED() for check tail aligment
+
+Timofey Titovets (6):
+  Btrfs: heuristic make use compression workspaces
+  Btrfs: heuristic workspace add bucket and sample items
+  Btrfs: implement heuristic sampling logic
+  Btrfs: heuristic add detection of repeated data patterns
+  Btrfs: heuristic add byte set calculation
+  Btrfs: heuristic add byte core set calculation
+
+ fs/btrfs/Makefile      |   2 +-
+ fs/btrfs/compression.c |  18 ++--
+ fs/btrfs/compression.h |   7 +-
+ fs/btrfs/heuristic.c   | 223 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 237 insertions(+), 13 deletions(-)
+ create mode 100644 fs/btrfs/heuristic.c
+
+--
+2.14.1

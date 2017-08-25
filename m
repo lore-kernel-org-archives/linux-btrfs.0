@@ -1,91 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32-i6.italiaonline.it ([212.48.14.166]:56378 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750808AbdHRHE0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Aug 2017 03:04:26 -0400
-From: Goffredo Baroncelli <kreijack@libero.it>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, Piotr Szymaniak <szarpaj@grubelek.pl>,
-        Chris Murphy <lists@colorremedies.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/2] Don't call lookup_path_rootid() when ino=BTRFS_EMPTY_SUBVOL_DIR_OBJECTID
-Date: Fri, 18 Aug 2017 09:04:21 +0200
-Message-Id: <20170818070421.2696-3-kreijack@libero.it>
-In-Reply-To: <20170818070421.2696-1-kreijack@libero.it>
-References: <20170818070421.2696-1-kreijack@libero.it>
+Received: from mx2.suse.de ([195.135.220.15]:40586 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S933519AbdHYPRZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Aug 2017 11:17:25 -0400
+Subject: Re: [PATCH][v2] btrfs-progs: print the csum length in debug-tree
+To: josef@toxicpanda.com, linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>
+References: <1503673906-14342-1-git-send-email-jbacik@fb.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <55179339-8ff5-34fe-ff87-801c492f2edd@suse.com>
+Date: Fri, 25 Aug 2017 18:17:23 +0300
+MIME-Version: 1.0
+In-Reply-To: <1503673906-14342-1-git-send-email-jbacik@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
 
-When ino = BTRFS_EMPTY_SUBVOL_DIR_OBJECTID, the item is not referred
-to any file-tree. So lookup_path_rootid() doesn't return any sensate
-value.
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- cmds-fi-du.c | 25 ++++++++++++++++---------
- ctree.h      |  2 ++
- 2 files changed, 18 insertions(+), 9 deletions(-)
+On 25.08.2017 18:11, josef@toxicpanda.com wrote:
+> From: Josef Bacik <jbacik@fb.com>
+> 
+> While looking at a log of a corrupted fs I needed to verify we were
+> missing csums for a given range.  Make this easier by printing out the
+> range of bytes a csum item covers.
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-diff --git a/cmds-fi-du.c b/cmds-fi-du.c
-index 4bf6af3e..013f8dfd 100644
---- a/cmds-fi-du.c
-+++ b/cmds-fi-du.c
-@@ -433,7 +433,6 @@ static int du_add_file(const char *filename, int dirfd,
- 	u64 file_total = 0;
- 	u64 file_shared = 0;
- 	u64 dir_set_shared = 0;
--	u64 subvol;
- 	int fd;
- 	DIR *dirstream = NULL;
- 
-@@ -462,16 +461,24 @@ static int du_add_file(const char *filename, int dirfd,
- 		goto out;
- 	}
- 
--	ret = lookup_path_rootid(fd, &subvol);
--	if (ret)
--		goto out_close;
-+	/*
-+	 * st.st_ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID (==2)
-+	 * there is no any related tree
-+	 */
-+	if (st.st_ino != BTRFS_EMPTY_SUBVOL_DIR_OBJECTID) {
-+		u64 subvol;
- 
--	if (inode_seen(st.st_ino, subvol))
--		goto out_close;
-+		ret = lookup_path_rootid(fd, &subvol);
-+		if (ret)
-+			goto out_close;
- 
--	ret = mark_inode_seen(st.st_ino, subvol);
--	if (ret)
--		goto out_close;
-+		if (inode_seen(st.st_ino, subvol))
-+			goto out_close;
-+
-+		ret = mark_inode_seen(st.st_ino, subvol);
-+		if (ret)
-+			goto out_close;
-+	}
- 
- 	if (S_ISREG(st.st_mode)) {
- 		ret = du_calc_file_space(fd, shared_extents, &file_total,
-diff --git a/ctree.h b/ctree.h
-index 48ae8903..2fc67b06 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -138,6 +138,8 @@ struct btrfs_free_space_ctl;
-  */
- #define BTRFS_DEV_ITEMS_OBJECTID 1ULL
- 
-+#define BTRFS_EMPTY_SUBVOL_DIR_OBJECTID 2
-+
- /*
-  * the max metadata block size.  This limit is somewhat artificial,
-  * but the memmove costs go through the roof for larger blocks.
--- 
-2.14.1
-
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+> v1->v2:
+> - print the byte range instead of just the length
+> 
+>  print-tree.c | 11 +++++++++--
+>  1 file changed, 9 insertions(+), 2 deletions(-)
+> 
+> diff --git a/print-tree.c b/print-tree.c
+> index 5927ed3..2aead6a 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -1103,9 +1103,16 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *eb)
+>  		case BTRFS_CSUM_ITEM_KEY:
+>  			printf("\t\tcsum item\n");
+>  			break;
+> -		case BTRFS_EXTENT_CSUM_KEY:
+> -			printf("\t\textent csum item\n");
+> +		case BTRFS_EXTENT_CSUM_KEY: {
+> +			u16 csum_size =
+> +				btrfs_super_csum_size(root->fs_info->super_copy);
+> +			u32 size = (item_size / csum_size) *
+> +				root->fs_info->sectorsize;
+> +			printf("\t\textent csum item range %llu-%llu\n",
+> +			       (unsigned long long)disk_key.offset,
+> +			       (unsigned long long)disk_key.offset + size);
+>  			break;
+> +			}
+>  		case BTRFS_EXTENT_DATA_KEY:
+>  			print_file_extent_item(eb, item, i, ptr);
+>  			break;
+> 

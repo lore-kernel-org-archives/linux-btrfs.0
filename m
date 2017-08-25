@@ -1,83 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:33316 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754836AbdHYJTM (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:38539 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754834AbdHYJTM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 25 Aug 2017 05:19:12 -0400
-Received: by mail-wm0-f65.google.com with SMTP id e67so1976258wmd.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 02:19:11 -0700 (PDT)
+Received: by mail-wm0-f68.google.com with SMTP id z132so1937374wmg.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 02:19:12 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v7 2/6] Btrfs: heuristic workspace add bucket and sample items
-Date: Fri, 25 Aug 2017 12:18:41 +0300
-Message-Id: <20170825091845.4120-3-nefelim4ag@gmail.com>
+Subject: [PATCH v7 3/6] Btrfs: implement heuristic sampling logic
+Date: Fri, 25 Aug 2017 12:18:42 +0300
+Message-Id: <20170825091845.4120-4-nefelim4ag@gmail.com>
 In-Reply-To: <20170825091845.4120-1-nefelim4ag@gmail.com>
 References: <20170825091845.4120-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Heuristic workspace:
- - Add bucket for storing byte type counters
- - Add sample array for storing partial copy of
-   input data range
- - Add counter for store current sample size to workspace
+Copy sample data from input data range to sample buffer
+then calculate byte type count for that sample into bucket.
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/heuristic.c | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ fs/btrfs/heuristic.c | 38 +++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 37 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/heuristic.c b/fs/btrfs/heuristic.c
-index 92f9335bafd4..e3924c87af08 100644
+index e3924c87af08..5192e51ab81e 100644
 --- a/fs/btrfs/heuristic.c
 +++ b/fs/btrfs/heuristic.c
-@@ -20,13 +20,29 @@
- #include <linux/bio.h>
- #include "compression.h"
-
-+#define READ_SIZE 16
-+#define ITER_SHIFT 256
-+#define BUCKET_SIZE 256
-+#define MAX_SAMPLE_SIZE (BTRFS_MAX_UNCOMPRESSED*READ_SIZE/ITER_SHIFT)
-+
-+struct bucket_item {
-+	u32 count;
-+};
-+
- struct workspace {
-+	u8  *sample;
-+	/* Partial copy of input data */
-+	u32 sample_size;
-+	/* Bucket store counter for each byte type */
-+	struct bucket_item bucket[BUCKET_SIZE];
- 	struct list_head list;
- };
-
- static void heuristic_free_workspace(struct list_head *ws)
- {
- 	struct workspace *workspace = list_entry(ws, struct workspace, list);
-+
-+	kvfree(workspace->sample);
- 	kfree(workspace);
- }
-
-@@ -38,9 +54,16 @@ static struct list_head *heuristic_alloc_workspace(void)
- 	if (!workspace)
- 		return ERR_PTR(-ENOMEM);
-
-+	workspace->sample = kvmalloc(MAX_SAMPLE_SIZE, GFP_KERNEL);
-+	if (!workspace->sample)
-+		goto fail;
-+
- 	INIT_LIST_HEAD(&workspace->list);
-
- 	return &workspace->list;
-+fail:
-+	heuristic_free_workspace(&workspace->list);
-+	return ERR_PTR(-ENOMEM);
- }
-
+@@ -69,8 +69,20 @@ static struct list_head *heuristic_alloc_workspace(void)
  static int heuristic(struct list_head *ws, struct inode *inode,
+ 		     u64 start, u64 end)
+ {
++	struct workspace *workspace = list_entry(ws, struct workspace, list);
+ 	struct page *page;
+ 	u64 index, index_end;
++	u32 a, b;
++	u8 *in_data, *sample = workspace->sample;
++	u8 byte;
++
++	/*
++	 * Compression only handle first 128kb of input range
++	 * And just shift over range in loop for compressing it.
++	 * Let's do the same.
++	*/
++	if (end - start > BTRFS_MAX_UNCOMPRESSED)
++		end = start + BTRFS_MAX_UNCOMPRESSED;
+
+ 	index = start >> PAGE_SHIFT;
+ 	index_end = end >> PAGE_SHIFT;
+@@ -79,13 +91,37 @@ static int heuristic(struct list_head *ws, struct inode *inode,
+ 	if (!IS_ALIGNED(end, PAGE_SIZE))
+ 		index_end++;
+
++	b = 0;
+ 	for (; index < index_end; index++) {
+ 		page = find_get_page(inode->i_mapping, index);
+-		kmap(page);
++		in_data = kmap(page);
++		/* Handle case where start unaligned to PAGE_SIZE */
++		a = start%PAGE_SIZE;
++		while (a < PAGE_SIZE - READ_SIZE) {
++			/* Prevent sample overflow */
++			if (b >= MAX_SAMPLE_SIZE)
++				break;
++			/* Don't sample mem trash from last page */
++			if (start > end - READ_SIZE)
++				break;
++			memcpy(&sample[b], &in_data[a], READ_SIZE);
++			a += ITER_SHIFT;
++			start += ITER_SHIFT;
++			b += READ_SIZE;
++		}
+ 		kunmap(page);
+ 		put_page(page);
+ 	}
+
++	workspace->sample_size = b;
++
++	memset(workspace->bucket, 0, sizeof(*workspace->bucket)*BUCKET_SIZE);
++
++	for (a = 0; a < workspace->sample_size; a++) {
++		byte = sample[a];
++		workspace->bucket[byte].count++;
++	}
++
+ 	return 1;
+ }
+
 --
 2.14.1

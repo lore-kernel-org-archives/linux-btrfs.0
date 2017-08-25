@@ -1,99 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39049 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751800AbdHYGAi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2017 02:00:38 -0400
-Subject: Re: [RFC PATCH] Btrfs: handle unaligned tail of data ranges more
- efficient
-To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20170824211235.23152-1-nefelim4ag@gmail.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <85e72504-51a8-e46e-15eb-a105d1678ed1@suse.com>
-Date: Fri, 25 Aug 2017 09:00:36 +0300
+Received: from mail-io0-f171.google.com ([209.85.223.171]:37484 "EHLO
+        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755258AbdHYL3E (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 25 Aug 2017 07:29:04 -0400
+Received: by mail-io0-f171.google.com with SMTP id d81so6711782ioj.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 04:29:04 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id a15sm585692itj.43.2017.08.25.04.29.02
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 25 Aug 2017 04:29:02 -0700 (PDT)
+Subject: Re: user snapshots
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <20170822214531.44538589@natsu>
+ <20170822165725.GL14804@rus.uni-stuttgart.de>
+ <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
+ <20170822180155.GM14804@rus.uni-stuttgart.de>
+ <22940.31139.194399.982315@tree.ty.sabi.co.uk>
+ <20170822215343.GP14804@rus.uni-stuttgart.de>
+ <124CEBB9-BF23-4688-B23C-294EDCAD27AA@demfloro.ru>
+ <20170823101635.114d02d2@job> <20170823072048.GB28319@rus.uni-stuttgart.de>
+ <22941.27164.739577.517915@tree.ty.sabi.co.uk>
+ <20170823211325.GC28319@rus.uni-stuttgart.de>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <3950fb01-e9b1-d48e-9c51-061a2f896193@gmail.com>
+Date: Fri, 25 Aug 2017 07:28:58 -0400
 MIME-Version: 1.0
-In-Reply-To: <20170824211235.23152-1-nefelim4ag@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170823211325.GC28319@rus.uni-stuttgart.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 25.08.2017 00:12, Timofey Titovets wrote:
-> At now while switch page bits in data ranges
-> we always hande +1 page, for cover case
-> where end of data range is not page aligned
+On 2017-08-23 17:13, Ulli Horlacher wrote:
+> On Wed 2017-08-23 (12:42), Peter Grandi wrote:
+>>> So, still: What is the problem with user_subvol_rm_allowed?
+>>
+>> As usual, it is complicated: mostly that while subvol creation
+>> is very cheap, subvol deletion can be very expensive. But then
+>> so can be creating many snapshots, as in this:
 > 
-> Let's handle that case more obvious and efficient
-> Check end aligment directly and touch +1 page
-> only then needed
+> But it seems one cannot prohibit a user making snapshots?
+> Then root must delete them?
 > 
-> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
-> ---
->  fs/btrfs/extent_io.c | 12 ++++++++++--
->  fs/btrfs/inode.c     |  6 +++++-
->  2 files changed, 15 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 98d85d2009f8..ccb66c1485e2 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -1360,7 +1360,11 @@ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
->  	unsigned long end_index = end >> PAGE_SHIFT;
->  	struct page *page;
-> 
-> -	while (index <= end_index) {
-> +	/* Don't miss unaligned end */
-> +	if (end%PAGE_SIZE > 0)
-> +		end_index++;
-
-if (!IS_ALIGNED(end, PAGE_SIZE)).
-
-
-
-> +
-> +	while (index < end_index) {
->  		page = find_get_page(inode->i_mapping, index);
->  		BUG_ON(!page); /* Pages should be in the extent_io_tree */
->  		clear_page_dirty_for_io(page);
-> @@ -1375,7 +1379,11 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
->  	unsigned long end_index = end >> PAGE_SHIFT;
->  	struct page *page;
-> 
-> -	while (index <= end_index) {
-> +	/* Don't miss unaligned end */
-> +	if (end%PAGE_SIZE > 0)
-> +		end_index++;
-
-ditto
-
-> +
-> +	while (index < end_index) {
->  		page = find_get_page(inode->i_mapping, index);
->  		BUG_ON(!page); /* Pages should be in the extent_io_tree */
->  		__set_page_dirty_nobuffers(page);
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index cb7779b08aaf..79feaea0fede 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -10745,7 +10745,11 @@ void btrfs_set_range_writeback(void *private_data, u64 start, u64 end)
->  	unsigned long end_index = end >> PAGE_SHIFT;
->  	struct page *page;
-> 
-> -	while (index <= end_index) {
-> +	/* Don't miss unaligned end */
-> +	if (end%PAGE_SIZE > 0)
-> +		end_index++;
-Ditto
-
-> +
-> +	while (index < end_index) {
->  		page = find_get_page(inode->i_mapping, index);
->  		ASSERT(page); /* Pages should be in the extent_io_tree */
->  		set_page_writeback(page);
-> --
-> 2.14.1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+That is correct.  This is one of the big outstanding issues with BTRFS 
+being practical for enterprise usage, because it means anyone with basic 
+shell access and either the ability to run arbitrary byte code or access 
+to execute /sbin/btrfs can exhaust system resources with no effort 
+whatsoever.  Taken together with how subvolume creation interacts with 
+qgroups, it also means that qgroups are useless in the same situation 
+because it's trivial to escape them.

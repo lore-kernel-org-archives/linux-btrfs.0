@@ -1,44 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:44245 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751411AbdHYFQQ (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:50405 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753911AbdHYBWi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2017 01:16:16 -0400
-Subject: [PATCH] btrfs: fix NULL pointer dereference from free_reloc_roots()
-From: Naohiro Aota <naohiro.aota@wdc.com>
+        Thu, 24 Aug 2017 21:22:38 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v7P1Mbn1000656
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 01:22:37 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v7P1Mb40000826
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 01:22:37 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v7P1MbOR018178
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 01:22:37 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, clm@fb.com, dsterba@suse.com
-Date: Fri, 25 Aug 2017 14:15:14 +0900
-Message-ID: <150363811494.24591.5585689547237978902.stgit@naota.dhcp.fujisawa.hgst.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Subject: [PATCH] Btrfs: use the new helper wbc_to_write_flags
+Date: Thu, 24 Aug 2017 18:19:48 -0600
+Message-Id: <20170825001948.7759-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-__del_reloc_root should be called before freeing up reloc_root->node.
-If not, calling __del_reloc_root() dereference reloc_root->node, causing
-the system BUG.
+This updates btrfs to use the helper wbc_to_write_flags which has been
+applied in ext4/xfs/f2fs/block.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Please note that, with this, btrfs's dirty pages written by a
+writeback job will carry the flag REQ_BACKGROUND, which is currently
+used by writeback-throttle to determine whether it should go to get a
+request or wait.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/relocation.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 65661d1aae4e..6445de8e9ece 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2393,11 +2393,11 @@ void free_reloc_roots(struct list_head *list)
- 	while (!list_empty(list)) {
- 		reloc_root = list_entry(list->next, struct btrfs_root,
- 					root_list);
-+		__del_reloc_root(reloc_root);
- 		free_extent_buffer(reloc_root->node);
- 		free_extent_buffer(reloc_root->commit_root);
- 		reloc_root->node = NULL;
- 		reloc_root->commit_root = NULL;
--		__del_reloc_root(reloc_root);
- 	}
- }
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a454a10..825fad6 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3467,8 +3467,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+ 	int write_flags = 0;
+ 	unsigned long nr_written = 0;
  
+-	if (wbc->sync_mode == WB_SYNC_ALL)
+-		write_flags = REQ_SYNC;
++	write_flags = wbc_to_write_flags(wbc);
+ 
+ 	trace___extent_writepage(page, inode, wbc);
+ 
+@@ -3713,7 +3712,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 	u32 nritems;
+ 	unsigned long i, num_pages;
+ 	unsigned long start, end;
+-	int write_flags = (epd->sync_io ? REQ_SYNC : 0) | REQ_META;
++	int write_flags = wbc_to_write_flags(wbc) | REQ_META;
+ 	int ret = 0;
+ 
+ 	clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags);
+-- 
+2.9.4
 

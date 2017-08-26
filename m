@@ -1,127 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:35171 "EHLO
-        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751083AbdHZUbf (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:34075 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751085AbdHZVlq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 26 Aug 2017 16:31:35 -0400
-Received: by mail-oi0-f42.google.com with SMTP id k77so21425124oib.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Aug 2017 13:31:35 -0700 (PDT)
-MIME-Version: 1.0
-From: Adam Bahe <adambahe@gmail.com>
-Date: Sat, 26 Aug 2017 15:30:54 -0500
-Message-ID: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
-Subject: cause of dmesg call traces?
+        Sat, 26 Aug 2017 17:41:46 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dlipb-000632-R3
+        for linux-btrfs@vger.kernel.org; Sat, 26 Aug 2017 23:41:27 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: cause of dmesg call traces?
+Date: Sat, 26 Aug 2017 21:41:21 +0000 (UTC)
+Message-ID: <pan$b1d1f$b7a32c53$b09186ba$df8c5d45@cox.net>
+References: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all. Recently I added another 10TB sas drive to my btrfs array
-and I have received the following messages in dmesg during the
-balance. I was hoping someone could clarify what seems to be causing
-this.
+Adam Bahe posted on Sat, 26 Aug 2017 15:30:54 -0500 as excerpted:
 
-Some additional info, I did a smartctl long test and one of my brand
-new 8TB drives warned me with this:
+> Hello all. Recently I added another 10TB sas drive to my btrfs array and
+> I have received the following messages in dmesg during the balance. I
+> was hoping someone could clarify what seems to be causing this.
+> 
+> Some additional info, I did a smartctl long test and one of my brand new
+> 8TB drives warned me with this:
+> 
+>     197 Current_Pending_Sector 0x0022 100 100 000 Old_age Always - 136 #
+>     5  Extended offline    Completed: servo/seek failure 90%
+> 474         0
+> 
+> Are the messages in dmesg caused by the issues with the hard drive, or
+> something else entirely?
 
-    197 Current_Pending_Sector 0x0022 100 100 000 Old_age Always - 136
-    # 5  Extended offline    Completed: servo/seek failure 90%
-474         0
+I am not a developer, just a btrfs user and list regular, with my reply 
+being based on what I've seen on-list.  For a more authoritative answer 
+you can wait for other replies, but this one can cover a few basics.
 
-Are the messages in dmesg caused by the issues with the hard drive, or
-something else entirely? A few months ago I had a total failure
-requiring a complete nuke and pave so I am trying to track down any
-potential issues aggressively and appreciate any help. Thanks!
+Answering the above question, FWIW, the dmesg below seems to be something 
+else...
 
-Also, how many current_pending_sectors do you tolerate before you swap
-a drive? I am going to pull this drive as soon as this current balance
-finishes. But for future reference it would be good to keep an eye on.
+> A few months ago I had a total failure
+> requiring a complete nuke and pave so I am trying to track down any
+> potential issues aggressively and appreciate any help. Thanks!
+> 
+> Also, how many current_pending_sectors do you tolerate before you swap a
+> drive? I am going to pull this drive as soon as this current balance
+> finishes. But for future reference it would be good to keep an eye on.
+> 
+> 
+> 
+> [Sat Aug 26 03:01:53 2017] WARNING: CPU: 30 PID: 5516 at
+> fs/btrfs/extent-tree.c:3197 btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
 
+Note warning, not error...  It's unexpected but not fatal, and the 
+balance should continue without making whatever triggered the warning 
+worse.
 
+If I'm not mistaken (and if I am it doesn't change the conclusion), the 
+triggering of this warning is a known issue related to a rather narrow 
+kernel version window.  A newer current series kernel, or potentially 
+older LTS series kernel, could well fix the problem.   See below.
 
-[Sat Aug 26 03:01:53 2017] WARNING: CPU: 30 PID: 5516 at
-fs/btrfs/extent-tree.c:3197 btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
+> [Sat Aug 26 03:01:53 2017] CPU: 30 PID: 5516 Comm: kworker/u97:5
+> Tainted: G        W       4.10.6-1.el7.elrepo.x86_64 #1
 
-[Sat Aug 26 03:01:53 2017] Modules linked in: dm_mod rpcrdma ib_isert
-iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi ib_srpt
-target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm ib_ucm
-ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core sb_edac
-edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm
-irqbypass iTCO_wdt crct10dif_pclmul iTCO_vendor_support crc32_pclmul
-ghash_clmulni_intel pcbc ext4 aesni_intel jbd2 crypto_simd mbcache
-glue_helper cryptd intel_cstate intel_rapl_perf ses enclosure pcspkr
-mei_me lpc_ich input_leds i2c_i801 joydev mfd_core mei sg ioatdma
-shpchp wmi ipmi_si ipmi_devintf ipmi_msghandler acpi_power_meter
-acpi_pad nfsd auth_rpcgss nfs_acl 8021q lockd garp grace mrp sunrpc
-ip_tables btrfs xor raid6_pq mlx4_en sd_mod crc32c_intel mlx4_core ast
-i2c_algo_bit ata_generic
+Kernel 4.10.x.  That's outside this list's recommended and best supported 
+range, tho not massively so.  Given that this list is development focused 
+and btrfs, while stabilizing, isn't yet considered fully stable and 
+mature, emphasis tends to be forward-focused toward relatively new 
+kernels.
 
-[Sat Aug 26 03:01:53 2017]  pata_acpi drm_kms_helper syscopyarea
-sysfillrect sysimgblt fb_sys_fops ttm drm ixgbe ata_piix mdio mpt3sas
-ptp raid_class pps_core libata scsi_transport_sas dca fjes
+The list recommendation is therefore one of the two latest kernel release 
+series in either current-mainline-stable or mainline-LTS support tracks.
 
-[Sat Aug 26 03:01:53 2017] CPU: 30 PID: 5516 Comm: kworker/u97:5
-Tainted: G        W       4.10.6-1.el7.elrepo.x86_64 #1
+For current track, 4.12 is the latest release (with 4.13 getting close), 
+so 4.12 and 4.11 are best supported, and with 4.13 nearing release 4.11 
+is actually already EOLed with no further mainline updates.
 
-[Sat Aug 26 03:01:53 2017] Hardware name: Supermicro Super
-Server/X10DRi-T4+, BIOS 2.0 12/17/2015
+For LTS track, 4.9 is the latest LTS series, with 4.4 the previous one, 
+and 4.1 the one before that, tho btrfs development is moving fast enough 
+that it's no longer recommended and even with 4.4, requests to duplicate 
+reported issues with 4.9 may be expected.
 
-[Sat Aug 26 03:01:53 2017] Workqueue: writeback wb_workfn (flush-btrfs-2)
+So 4.10 has dropped off the recommended list as a non-LTS series kernel 
+that's too old, and the recommendation would be to either upgrade to the 
+latest 4.12-stable release (4.12.9 according to kernel.org as I post), or 
+downgrade to the latest 4.9-LTS release (4.9.45 ATM).
 
-[Sat Aug 26 03:01:53 2017] Call Trace:
+And if I'm not mixing up issues and that's the one I think it is, the 
+latest 4.12 should have that fix (tho 4.12.0 may not, IIRC the fix made 
+4.13 and was backported to 4.12.x), and 4.9, IIRC, wasn't subject to the 
+issue.
 
-[Sat Aug 26 03:01:53 2017]  dump_stack+0x63/0x87
+If you continue to see that warning with 4.13-rc6+, 4.12.9+ or 4.9.45+, 
+then I'm obviously mixed up, and the devs may well be quite interested as 
+it may be a new issue.
 
-[Sat Aug 26 03:01:53 2017]  __warn+0xd1/0xf0
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-[Sat Aug 26 03:01:53 2017]  warn_slowpath_null+0x1d/0x20
-
-[Sat Aug 26 03:01:53 2017]  btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  run_delalloc_nocow+0x6e7/0xc00 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  ? test_range_bit+0xd0/0x160 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  run_delalloc_range+0x7d/0x3a0 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  ?
-find_lock_delalloc_range.constprop.56+0x1d1/0x200 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  writepage_delalloc.isra.48+0x10c/0x170 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  __extent_writepage+0xd6/0x2e0 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]
-extent_write_cache_pages.isra.44.constprop.59+0x2c4/0x480 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  extent_writepages+0x5c/0x90 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  ? btrfs_submit_direct+0x8b0/0x8b0 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  btrfs_writepages+0x28/0x30 [btrfs]
-
-[Sat Aug 26 03:01:53 2017]  do_writepages+0x1e/0x30
-
-[Sat Aug 26 03:01:53 2017]  __writeback_single_inode+0x45/0x330
-
-[Sat Aug 26 03:01:53 2017]  writeback_sb_inodes+0x280/0x570
-
-[Sat Aug 26 03:01:53 2017]  __writeback_inodes_wb+0x8c/0xc0
-
-[Sat Aug 26 03:01:53 2017]  wb_writeback+0x276/0x310
-
-[Sat Aug 26 03:01:53 2017]  wb_workfn+0x2e1/0x410
-
-[Sat Aug 26 03:01:53 2017]  process_one_work+0x165/0x410
-
-[Sat Aug 26 03:01:53 2017]  worker_thread+0x137/0x4c0
-
-[Sat Aug 26 03:01:53 2017]  kthread+0x101/0x140
-
-[Sat Aug 26 03:01:53 2017]  ? rescuer_thread+0x3b0/0x3b0
-
-[Sat Aug 26 03:01:53 2017]  ? kthread_park+0x90/0x90
-
-[Sat Aug 26 03:01:53 2017]  ret_from_fork+0x2c/0x40
-
-[Sat Aug 26 03:01:53 2017] ---[ end trace 7ba8e3b5c60c322d ]---

@@ -1,184 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:33548 "EHLO
-        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754535AbdHYTSb (ORCPT
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:35171 "EHLO
+        mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751083AbdHZUbf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2017 15:18:31 -0400
-Received: by mail-io0-f179.google.com with SMTP id s101so2476891ioe.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Aug 2017 12:18:30 -0700 (PDT)
-Subject: Re: number of subvolumes
-To: Ferry Toth <ftoth@telfort.nl>, linux-btrfs@vger.kernel.org
-References: <20170822132208.GD14804@rus.uni-stuttgart.de>
- <CAEtw4r1cDuE0F_MXe6mHDUr03BhEueBWeq7YaRYjNhhf=UD6KQ@mail.gmail.com>
- <20170822142451.GI14804@rus.uni-stuttgart.de> <20170822214531.44538589@natsu>
- <20170822165725.GL14804@rus.uni-stuttgart.de>
- <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
- <20170822180155.GM14804@rus.uni-stuttgart.de>
- <22940.31139.194399.982315@tree.ty.sabi.co.uk>
- <20170822204811.GO14804@rus.uni-stuttgart.de>
- <20170823071821.GA28319@rus.uni-stuttgart.de>
- <f75e66d.7ade2c40.15e0e3ced5c@gmail.com> <onkbkk$qs1$1@blaine.gmane.org>
- <BD7091A7-DE7F-4A86-9BDE-8BA63060CBAF@rqc.ru> <onni1n$bic$2@blaine.gmane.org>
- <2828ac64-8b68-8b1c-554c-489bda3b70d1@gmail.com>
- <onp6n7$oi6$1@blaine.gmane.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <dd8b6053-94eb-a260-e812-2db96598a423@gmail.com>
-Date: Fri, 25 Aug 2017 15:18:27 -0400
+        Sat, 26 Aug 2017 16:31:35 -0400
+Received: by mail-oi0-f42.google.com with SMTP id k77so21425124oib.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Aug 2017 13:31:35 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <onp6n7$oi6$1@blaine.gmane.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Adam Bahe <adambahe@gmail.com>
+Date: Sat, 26 Aug 2017 15:30:54 -0500
+Message-ID: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
+Subject: cause of dmesg call traces?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-25 08:55, Ferry Toth wrote:
-> Op Fri, 25 Aug 2017 07:45:44 -0400, schreef Austin S. Hemmelgarn:
-> 
->> On 2017-08-24 17:56, Ferry Toth wrote:
->>> Op Thu, 24 Aug 2017 22:40:54 +0300, schreef Marat Khalili:
->>>
->>>>> We find that typically apt is very slow on a machine with 50 or so
->>>>> snapshots and raid10. Slow as in probably 10x slower as doing the
->>>>> same update on a machine with 'single' and no snapshots.
->>>>>
->>>>> Other operations seem to be the same speed, especially disk
->>>>> benchmarks do not seem to indicate any performance degradation.
->>>>
->>>> For meaningful discussion it is important to take into account the
->>>> fact
->>>
->>> Doing daily updates on a desktop is not uncommon and when 3 minutes
->>> become 30 then many would call that meaningful.
->> I think the more meaningful aspect here is that it's 30 minutes where
->> persistent storage is liable to be unusable, not necessarily that it's
->> 30 minutes.
-> 
-> Unusable - probably less (depending on your definition)
-And depending on both your hardware and how many updates you're handling 
-(if things are stalling with dpkg calling fsync, it's probably going to 
-be bad for other stuff too, even if it's still 'usable').
+Hello all. Recently I added another 10TB sas drive to my btrfs array
+and I have received the following messages in dmesg during the
+balance. I was hoping someone could clarify what seems to be causing
+this.
 
-> Irritating - yes
-Still nothing compared to Windows 10 deciding to download updates right 
-after you start a round in an FPS or RTS game...
+Some additional info, I did a smartctl long test and one of my brand
+new 8TB drives warned me with this:
 
-In all seriousness though, I'm kind of used to half-hour daily updates 
-(or 2 plus hour ones if GCC, LLVM, or glibc are being updated), I run 
-Gentoo on most of my systems, so everything gets built locally.
-> 
->>> Similar for a single office server, which is upgraded twice a year,
->>> where an upgrade normally would take an hour or 2, but now more than a
->>> working day. In the meantime, take samba and postgresql offline,
->>> preventing people to work for a few hours.
->> That should only be the case if:
->> 1. You don't have your data set properly segregated from the rest of
->> your system (it should not be part of the upgrade snapshot, but an
->> independent snapshot taken separately).
->> 2. You are updating the main system, instead of updating the snapshot
->> you took.
->>
->> The ideal method of handling an upgrade in this case is:
->> 1. Snapshot the system, but not the data set.
->> 2. Run your updates on the snapshot of the system.
->> 3. Rename the snapshot and the root subvolume so that you boot into the
->> snapshot.
->> 4. During the next maintenance window (or overnight), shutdown the
->> system services, snapshot the data set (so you can roll back if the
->> update screws up the database).
->> 5. Reboot.
->>
->> That provides minimal downtime, and removes the need to roll-back if the
->> upgrade fails part way through (you just nuke the snapshot and start
->> over, instead of having to manually switch to the snapshot and reboot).
-> 
-> Wow, yes that does sound ideal. Is that how you do it?
-It's what I've been trying to get working on my Gentoo systems for 
-months now with varying degrees of success.  We do some similar trickery 
-with updates for our embedded systems where I work (albeit a bit 
-differently), but we're also directly calling RPM for package installs 
-instead of using higher level tools like Yum or DNF, so it's easy to 
-point things somewhere else for the install target.  I'm pretty sure 
-this is essentially what NixOS does for updates too, but I don't think 
-it has BTRFS snapshot support (they use LVM2), and it's a pain to get 
-used to the declarative system configuration it uses.
+    197 Current_Pending_Sector 0x0022 100 100 000 Old_age Always - 136
+    # 5  Extended offline    Completed: servo/seek failure 90%
+474         0
 
-FWIW, it would be even easier if BTRFS supported operation as a lower 
-layer for OverlayFS, then you could put /etc and similar stuff on 
-OverlayFS, and the package manager never needs to ask if you want to 
-update config files because it just puts them on the lower layer.
-> 
-> Now I just need Cananonical to update there installer to take of this.
-> (that is: tell it to update the system on another partition (subvolume)
-> than the one mounted on /, and not stop any running system services).
-Yeah, that's one of the things I kind of hate about many mainstream 
-distros.  Gentoo is nice in this respect, you can just run the update 
-command with ROOT=/whatever in the environment, and it will use that for 
-installing packages, and it expects the admin to handle restarting 
-services.  RPM actually has an option to handle this too these days, but 
-not Yum or DNF (don't know about Zypper or YaST2, but I think they do 
-have such an option).  dkpg itself probably does, but last I checked, 
-apt-get, aptitude, and most of the graphical frontends don't.
+Are the messages in dmesg caused by the issues with the hard drive, or
+something else entirely? A few months ago I had a total failure
+requiring a complete nuke and pave so I am trying to track down any
+potential issues aggressively and appreciate any help. Thanks!
 
-It's technically possible to work around this using containers (that is, 
-you spawn a container with the snapshot as it's root filesystem, and run 
-the update from there), it's just not easy to do right now.
-> 
-> Or run a virtual machine on the server that boots from the snapshot and
-> that update. Oh no, the virtual machine would slow down my running server
-> to much.
-Depends on how you put it together.  This also has issues because of 
-starting a new instance of init.
-> 
-> Eh, share the snapshot via cifs or nfs to another machine that does a
-> netboot and let that do the update.
-This won't work reliably for other reasons, and will probably kill your 
-network performance.
-> 
-> O wait, I forgot, I installed btrfs to make our system maintenance easier
-> than with ext. Maybe that was a mistake, at least until distros take
-> advantage of the aadvantage and start avoiding the pitfalls?
-It really depends on your particular use case.
-> 
->>> My point is: fsync is not targeted specifically in many common disk
->>> bench marks (phoronix?), it might be posible that there is no trigger
->>> to spend much time on optimizations in that area. That doesn't make it
->>> meaningless.
->>>
->>>> that dpkg infamously calls fsync after changing every bit of
->>>> information, so basically you're measuring fsync speed. Which is slow
->>>> on btrfs (compared to simpler filesystems), but unrelated to normal
->>>> work.
->>>
->>> OTOH it would be nice if dpkg would at last start making use btrfs
->>> snapshot features and abandon these unnecssary fsyncs completely,
->>> instead restoring a failed install from a snapshot. This would probably
->>> result in a performance improve compared to ext4.
->> Not dpkg, apt-get and wherever other frontedd you use (although all the
->> other dpkg frontends I know of are actually apt-get frontends).  Take a
->> look at how SUSE actually does this integration, it's done through
->> Zypper/YaST2, not RPM.  If you do it through dpkg, or RPM, or whatever
->> other low-level package tool, you need to do a snapshot per package so
->> that it works reliably, while what you really need is a snapshot per
->> high-level transaction.
->>
->> FWIW, if you can guarantee that the system won't crash during an update
->> (or are actually able to roll back by hand easily if it won't boot), you
->> can install libeatmydata and LD_PRELOAD it for the apt-get (or aptitude,
->> or synaptic, or whatever else) call, then call sync afterwards and
->> probably see a significant perofrmance improvement.  The library itself
->> overloads *sync() calls to be no-ops, so it's not safe to use when you
->> don't have good fallback options, but it tends to severely improve
->> performance for stuff like dpkg.
-> 
-> Yeah I can guarantee that it can crash... All you need to do is start the
-> upgrade from a remote terminal, forget to use screen and then close the
-> terminal. And if not the installer will run until the first 'do you want
-> to replace the conf file Y/n' in the background, at which point you have
-> no choice than to nuke it.
-I meant the system itself, not the update.  What matters is that the 
-filesystem isn't shut down unexpectedly, not that the update fails part 
-way through (if you're using snapshots to give restore points, you've 
-already got the case of the update failing covered).
-> 
-> But probably if you take a snapshot before eating the data you should be
-> able to recover.
-Indeed.
+Also, how many current_pending_sectors do you tolerate before you swap
+a drive? I am going to pull this drive as soon as this current balance
+finishes. But for future reference it would be good to keep an eye on.
+
+
+
+[Sat Aug 26 03:01:53 2017] WARNING: CPU: 30 PID: 5516 at
+fs/btrfs/extent-tree.c:3197 btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
+
+[Sat Aug 26 03:01:53 2017] Modules linked in: dm_mod rpcrdma ib_isert
+iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi ib_srpt
+target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm ib_ucm
+ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core sb_edac
+edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm
+irqbypass iTCO_wdt crct10dif_pclmul iTCO_vendor_support crc32_pclmul
+ghash_clmulni_intel pcbc ext4 aesni_intel jbd2 crypto_simd mbcache
+glue_helper cryptd intel_cstate intel_rapl_perf ses enclosure pcspkr
+mei_me lpc_ich input_leds i2c_i801 joydev mfd_core mei sg ioatdma
+shpchp wmi ipmi_si ipmi_devintf ipmi_msghandler acpi_power_meter
+acpi_pad nfsd auth_rpcgss nfs_acl 8021q lockd garp grace mrp sunrpc
+ip_tables btrfs xor raid6_pq mlx4_en sd_mod crc32c_intel mlx4_core ast
+i2c_algo_bit ata_generic
+
+[Sat Aug 26 03:01:53 2017]  pata_acpi drm_kms_helper syscopyarea
+sysfillrect sysimgblt fb_sys_fops ttm drm ixgbe ata_piix mdio mpt3sas
+ptp raid_class pps_core libata scsi_transport_sas dca fjes
+
+[Sat Aug 26 03:01:53 2017] CPU: 30 PID: 5516 Comm: kworker/u97:5
+Tainted: G        W       4.10.6-1.el7.elrepo.x86_64 #1
+
+[Sat Aug 26 03:01:53 2017] Hardware name: Supermicro Super
+Server/X10DRi-T4+, BIOS 2.0 12/17/2015
+
+[Sat Aug 26 03:01:53 2017] Workqueue: writeback wb_workfn (flush-btrfs-2)
+
+[Sat Aug 26 03:01:53 2017] Call Trace:
+
+[Sat Aug 26 03:01:53 2017]  dump_stack+0x63/0x87
+
+[Sat Aug 26 03:01:53 2017]  __warn+0xd1/0xf0
+
+[Sat Aug 26 03:01:53 2017]  warn_slowpath_null+0x1d/0x20
+
+[Sat Aug 26 03:01:53 2017]  btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  run_delalloc_nocow+0x6e7/0xc00 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  ? test_range_bit+0xd0/0x160 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  run_delalloc_range+0x7d/0x3a0 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  ?
+find_lock_delalloc_range.constprop.56+0x1d1/0x200 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  writepage_delalloc.isra.48+0x10c/0x170 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  __extent_writepage+0xd6/0x2e0 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]
+extent_write_cache_pages.isra.44.constprop.59+0x2c4/0x480 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  extent_writepages+0x5c/0x90 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  ? btrfs_submit_direct+0x8b0/0x8b0 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  btrfs_writepages+0x28/0x30 [btrfs]
+
+[Sat Aug 26 03:01:53 2017]  do_writepages+0x1e/0x30
+
+[Sat Aug 26 03:01:53 2017]  __writeback_single_inode+0x45/0x330
+
+[Sat Aug 26 03:01:53 2017]  writeback_sb_inodes+0x280/0x570
+
+[Sat Aug 26 03:01:53 2017]  __writeback_inodes_wb+0x8c/0xc0
+
+[Sat Aug 26 03:01:53 2017]  wb_writeback+0x276/0x310
+
+[Sat Aug 26 03:01:53 2017]  wb_workfn+0x2e1/0x410
+
+[Sat Aug 26 03:01:53 2017]  process_one_work+0x165/0x410
+
+[Sat Aug 26 03:01:53 2017]  worker_thread+0x137/0x4c0
+
+[Sat Aug 26 03:01:53 2017]  kthread+0x101/0x140
+
+[Sat Aug 26 03:01:53 2017]  ? rescuer_thread+0x3b0/0x3b0
+
+[Sat Aug 26 03:01:53 2017]  ? kthread_park+0x90/0x90
+
+[Sat Aug 26 03:01:53 2017]  ret_from_fork+0x2c/0x40
+
+[Sat Aug 26 03:01:53 2017] ---[ end trace 7ba8e3b5c60c322d ]---

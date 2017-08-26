@@ -1,67 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56709 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40436 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1757365AbdHYSFP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Aug 2017 14:05:15 -0400
-Date: Fri, 25 Aug 2017 20:03:48 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Adam Buchbinder <abuchbinder@google.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Enable ThreadSanitizer, using D=tsan.
-Message-ID: <20170825180348.GK2866@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170712200449.18638-1-abuchbinder@google.com>
+        id S1750737AbdHZGjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 26 Aug 2017 02:39:11 -0400
+Subject: Re: [PATCH] btrfs: resume qgroup rescan on rw remount
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, stable@vger.kernel.org
+References: <20170704114906.8419-1-asarai@suse.de>
+ <725eb058-4fb4-a167-9ba4-a062de718555@suse.com>
+ <532a6e98-1745-4181-260a-38f4d5015857@suse.com>
+ <20170711170335.GV2866@twin.jikos.cz>
+From: Aleksa Sarai <asarai@suse.de>
+Message-ID: <dd27c645-b952-c2a2-161e-0ee543a49739@suse.de>
+Date: Sat, 26 Aug 2017 16:39:02 +1000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170712200449.18638-1-abuchbinder@google.com>
+In-Reply-To: <20170711170335.GV2866@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 12, 2017 at 01:04:49PM -0700, Adam Buchbinder wrote:
-> Tested with clang-3.9.
+On 07/12/2017 03:03 AM, David Sterba wrote:
+> On Mon, Jul 10, 2017 at 04:56:36PM +0300, Nikolay Borisov wrote:
+>> On 10.07.2017 16:12, Nikolay Borisov wrote:
+>>> On  4.07.2017 14:49, Aleksa Sarai wrote:
+>>>> Several distributions mount the "proper root" as ro during initrd and
+>>>> then remount it as rw before pivot_root(2). Thus, if a rescan had been
+>>>> aborted by a previous shutdown, the rescan would never be resumed.
+>>>>
+>>>> This issue would manifest itself as several btrfs ioctl(2)s causing the
+>>>> entire machine to hang when btrfs_qgroup_wait_for_completion was hit
+>>>> (due to the fs_info->qgroup_rescan_running flag being set but the rescan
+>>>> itself not being resumed). Notably, Docker's btrfs storage driver makes
+>>>> regular use of BTRFS_QUOTA_CTL_DISABLE and BTRFS_IOC_QUOTA_RESCAN_WAIT
+>>>> (causing this problem to be manifested on boot for some machines).
+>>>>
+>>>> Cc: <stable@vger.kernel.org> # v3.11+
+>>>> Cc: Jeff Mahoney <jeffm@suse.com>
+>>>> Fixes: b382a324b60f ("Btrfs: fix qgroup rescan resume on mount")
+>>>> Signed-off-by: Aleksa Sarai <asarai@suse.de>
+>>>
+>>> Indeed, looking at the code it seems that b382a324b60f ("Btrfs: fix
+>>> qgroup rescan resume on mount") missed adding the qgroup_rescan_resume
+>>> in the remount path. One thing which I couldn't verify though is whether
+>>> reading fs_info->qgroup_flags without any locking is safe from remount
+>>> context.
+>>>
+>>> During remount I don't see any locks taken that prevent operations which
+>>> can modify qgroup_flags.
+>>
+>> Further inspection reveals that the access rules to qgroup_flags are
+>> somewhat broken so this patch doesn't really make things any worse than
+>> they are.
 > 
-> Signed-off-by: Adam Buchbinder <abuchbinder@google.com>
-> ---
->  Makefile | 6 ++++++
->  1 file changed, 6 insertions(+)
+> The usage follows a pattern for a bitfield, updated by set_bit/clear_bit
+> etc. The updates to the state or inconsistency is not safe, so some
+> updates could get lost under some circumstances.
 > 
-> diff --git a/Makefile b/Makefile
-> index 81598df..8948301 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -17,6 +17,7 @@
->  #                  abort   - call abort() on first error (dumps core)
->  #                  all     - shortcut for all of the above
->  #                  asan    - enable address sanitizer compiler feature
-> +#                  tsan    - enable thread sanitizer compiler feature
->  #                  ubsan   - undefined behaviour sanitizer compiler feature
->  #                  bcheck  - extended build checks
->  #   W=123          build with warnings (default: off)
-> @@ -157,6 +158,11 @@ ifneq (,$(findstring asan,$(D)))
->    DEBUG_CFLAGS_INTERNAL += -fsanitize=address
->  endif
->  
-> +ifneq (,$(findstring tsan,$(D)))
-> +  DEBUG_CFLAGS_INTERNAL += -fsanitize=thread -fPIE
-> +  LD_FLAGS += -fsanitize=thread -ltsan -pie
+> Patch added to devel queue, possibly will be submitted to 4.13 so stable
+> can pick it.
 
-I did not notice that first, but there's no variable LD_FLAGS, it's
-LDFLAGS. So either clang assumes this variable and used it or this
-magically worked independent of the flags you set here.
+Looks like it wasn't merged in the 4.13 window (so stable hasn't picked 
+it), will this be submitted for 4.14? Thanks.
 
-The LDFLAGS should be set in a similar way as DEBUG_CFLAGS_INTERNAL,
-I'll fix that myself. Then the linker flags are then passed and it also
-works with gcc.
-
-The libbtrfs library still fails to build, complaining about the missing
-fPIC flags, which is a bit puzzling as the flags are there.
-
-    [CC]     send-stream.o
-gcc -g -O1 -Wall -D_FORTIFY_SOURCE=2 -std=gnu90 -include config.h -DBTRFS_FLAT_INCLUDES -D_XOPEN_SOURCE=700 -fno-strict-aliasing -fPIC -I/labs/dsterba/gits/btrfs-progs -I/labs/dsterba/gits/btrfs-progs/kernel-lib  -O0 -U_FORTIFY_SOURCE -ggdb3  -fsanitize=thread -fPIE  -c send-stream.c -o send-stream.o
-    [LD]     libbtrfs.so.0.1
-gcc -g -O1 -Wall -D_FORTIFY_SOURCE=2 -std=gnu90 -include config.h -DBTRFS_FLAT_INCLUDES -D_XOPEN_SOURCE=700 -fno-strict-aliasing -fPIC -I/labs/dsterba/gits/btrfs-progs -I/labs/dsterba/gits/btrfs-progs/kernel-lib  -O0 -U_FORTIFY_SOURCE -ggdb3  -fsanitize=thread -fPIE  send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o kernel-lib/crc32c.o messages.o uuid-tree.o utils-lib.o rbtree-utils.o  -rdynamic -L/labs/dsterba/gits/btrfs-progs -fsanitize=thread -ltsan -pie  -luuid -lblkid -L. -pthread \
-        -shared -Wl,-soname,libbtrfs.so.0 -o libbtrfs.so.0.1
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: send-stream.o: relocation R_X86_64_PC32 against symbol `stderr@@GLIBC_2.2.5' can not be used when making a shared object; recompile with -fPIC
-/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/bin/ld: final link failed: Bad value
-collect2: error: ld returned 1 exit status
-make: *** [Makefile:347: libbtrfs.so.0.1] Error 1
+-- 
+Aleksa Sarai
+Software Engineer (Containers)
+SUSE Linux GmbH
+https://www.cyphar.com/

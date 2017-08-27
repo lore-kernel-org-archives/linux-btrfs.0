@@ -1,80 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f67.google.com ([74.125.82.67]:33312 "EHLO
-        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753411AbdHXVNF (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:35775 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751294AbdH0UGa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Aug 2017 17:13:05 -0400
-Received: by mail-wm0-f67.google.com with SMTP id e67so685503wmd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Aug 2017 14:13:05 -0700 (PDT)
+        Sun, 27 Aug 2017 16:06:30 -0400
+Received: by mail-wm0-f66.google.com with SMTP id r187so5074397wma.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Aug 2017 13:06:29 -0700 (PDT)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [RFC PATCH] Btrfs: handle unaligned tail of data ranges more efficient
-Date: Fri, 25 Aug 2017 00:12:35 +0300
-Message-Id: <20170824211235.23152-1-nefelim4ag@gmail.com>
+Subject: [RFC PATCH] Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
+Date: Sun, 27 Aug 2017 23:06:16 +0300
+Message-Id: <20170827200616.17799-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At now while switch page bits in data ranges
-we always hande +1 page, for cover case
-where end of data range is not page aligned
+At now btrfs_dedupe_file_range() restricted to 16MiB range for
+limit locking time and memory requirement for dedup ioctl()
 
-Let's handle that case more obvious and efficient
-Check end aligment directly and touch +1 page
-only then needed
+For too big input rage code silently set range to 16MiB
+
+Let's remove that restriction by do iterating over dedup range.
+That's backward compatible and will not change anything for request
+less then 16MiB.
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/extent_io.c | 12 ++++++++++--
- fs/btrfs/inode.c     |  6 +++++-
- 2 files changed, 15 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 98d85d2009f8..ccb66c1485e2 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1360,7 +1360,11 @@ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
- 	unsigned long end_index = end >> PAGE_SHIFT;
- 	struct page *page;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ae8fbf9d3de2..7e77d192776f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3226,11 +3226,9 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 	struct inode *src = file_inode(src_file);
+ 	struct inode *dst = file_inode(dst_file);
+ 	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
++	u64 i, tail_len, chunk_count;
+ 	ssize_t res;
 
--	while (index <= end_index) {
-+	/* Don't miss unaligned end */
-+	if (end%PAGE_SIZE > 0)
-+		end_index++;
+-	if (olen > BTRFS_MAX_DEDUPE_LEN)
+-		olen = BTRFS_MAX_DEDUPE_LEN;
+-
+ 	if (WARN_ON_ONCE(bs < PAGE_SIZE)) {
+ 		/*
+ 		 * Btrfs does not support blocksize < page_size. As a
+@@ -3240,7 +3238,23 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 		return -EINVAL;
+ 	}
+
+-	res = btrfs_extent_same(src, loff, olen, dst, dst_loff);
++	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
++	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
 +
-+	while (index < end_index) {
- 		page = find_get_page(inode->i_mapping, index);
- 		BUG_ON(!page); /* Pages should be in the extent_io_tree */
- 		clear_page_dirty_for_io(page);
-@@ -1375,7 +1379,11 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
- 	unsigned long end_index = end >> PAGE_SHIFT;
- 	struct page *page;
-
--	while (index <= end_index) {
-+	/* Don't miss unaligned end */
-+	if (end%PAGE_SIZE > 0)
-+		end_index++;
++	for (i = 0; i < chunk_count; i++) {
++		res = btrfs_extent_same(src, loff, BTRFS_MAX_DEDUPE_LEN,
++					dst, dst_loff);
++		if (res)
++			return res;
 +
-+	while (index < end_index) {
- 		page = find_get_page(inode->i_mapping, index);
- 		BUG_ON(!page); /* Pages should be in the extent_io_tree */
- 		__set_page_dirty_nobuffers(page);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index cb7779b08aaf..79feaea0fede 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -10745,7 +10745,11 @@ void btrfs_set_range_writeback(void *private_data, u64 start, u64 end)
- 	unsigned long end_index = end >> PAGE_SHIFT;
- 	struct page *page;
-
--	while (index <= end_index) {
-+	/* Don't miss unaligned end */
-+	if (end%PAGE_SIZE > 0)
-+		end_index++;
++		loff += BTRFS_MAX_DEDUPE_LEN;
++		dst_loff += BTRFS_MAX_DEDUPE_LEN;
++	}
 +
-+	while (index < end_index) {
- 		page = find_get_page(inode->i_mapping, index);
- 		ASSERT(page); /* Pages should be in the extent_io_tree */
- 		set_page_writeback(page);
++	if (tail_len > 0)
++		res = btrfs_extent_same(src, loff, tail_len,
++					dst, dst_loff);
++
+ 	if (res)
+ 		return res;
+ 	return olen;
 --
 2.14.1

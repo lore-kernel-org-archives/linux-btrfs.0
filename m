@@ -1,143 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f176.google.com ([209.85.128.176]:33822 "EHLO
-        mail-wr0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750866AbdH1H2J (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:51705 "EHLO
+        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751615AbdH1IHF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Aug 2017 03:28:09 -0400
-Received: by mail-wr0-f176.google.com with SMTP id z91so15888389wrc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Aug 2017 00:28:08 -0700 (PDT)
-Subject: Re: cause of dmesg call traces?
-To: Adam Bahe <adambahe@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <0252110d-6f07-cabc-823f-c9ab5be07b67@gmail.com>
-Date: Mon, 28 Aug 2017 10:28:06 +0300
-MIME-Version: 1.0
-In-Reply-To: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        Mon, 28 Aug 2017 04:07:05 -0400
+Message-ID: <1503907621.1671.5.camel@scientia.net>
+Subject: Re: deleted subvols don't go away?
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Nikolay Borisov <n.borisov.lkml@gmail.com>,
+        "Janos Toth F." <toth.f.janos@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 28 Aug 2017 10:07:01 +0200
+In-Reply-To: <cab790fa-22f7-b05d-b18e-000c7d1a81cd@gmail.com>
+References: <1503854146.5155.2.camel@scientia.net>
+         <CANznX5Hs9i5PzeJib=XGuDwPzUCEbbvh8LrY1+7xwpadB8BiNQ@mail.gmail.com>
+         <cab790fa-22f7-b05d-b18e-000c7d1a81cd@gmail.com>
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-T+wMmTujmN7fd/kqwEeo"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--=-T+wMmTujmN7fd/kqwEeo
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 26.08.2017 23:30, Adam Bahe wrote:
-> Hello all. Recently I added another 10TB sas drive to my btrfs array
-> and I have received the following messages in dmesg during the
-> balance. I was hoping someone could clarify what seems to be causing
-> this.
-> 
-> Some additional info, I did a smartctl long test and one of my brand
-> new 8TB drives warned me with this:
-> 
->     197 Current_Pending_Sector 0x0022 100 100 000 Old_age Always - 136
->     # 5  Extended offline    Completed: servo/seek failure 90%
-> 474         0
-> 
-> Are the messages in dmesg caused by the issues with the hard drive, or
-> something else entirely? A few months ago I had a total failure
-> requiring a complete nuke and pave so I am trying to track down any
-> potential issues aggressively and appreciate any help. Thanks!
-> 
-> Also, how many current_pending_sectors do you tolerate before you swap
-> a drive? I am going to pull this drive as soon as this current balance
-> finishes. But for future reference it would be good to keep an eye on.
-> 
-> 
-> 
-> [Sat Aug 26 03:01:53 2017] WARNING: CPU: 30 PID: 5516 at
-> fs/btrfs/extent-tree.c:3197 btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017] Modules linked in: dm_mod rpcrdma ib_isert
-> iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi ib_srpt
-> target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm ib_ucm
-> ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core sb_edac
-> edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm
-> irqbypass iTCO_wdt crct10dif_pclmul iTCO_vendor_support crc32_pclmul
-> ghash_clmulni_intel pcbc ext4 aesni_intel jbd2 crypto_simd mbcache
-> glue_helper cryptd intel_cstate intel_rapl_perf ses enclosure pcspkr
-> mei_me lpc_ich input_leds i2c_i801 joydev mfd_core mei sg ioatdma
-> shpchp wmi ipmi_si ipmi_devintf ipmi_msghandler acpi_power_meter
-> acpi_pad nfsd auth_rpcgss nfs_acl 8021q lockd garp grace mrp sunrpc
-> ip_tables btrfs xor raid6_pq mlx4_en sd_mod crc32c_intel mlx4_core ast
-> i2c_algo_bit ata_generic
-> 
-> [Sat Aug 26 03:01:53 2017]  pata_acpi drm_kms_helper syscopyarea
-> sysfillrect sysimgblt fb_sys_fops ttm drm ixgbe ata_piix mdio mpt3sas
-> ptp raid_class pps_core libata scsi_transport_sas dca fjes
-> 
-> [Sat Aug 26 03:01:53 2017] CPU: 30 PID: 5516 Comm: kworker/u97:5
-> Tainted: G        W       4.10.6-1.el7.elrepo.x86_64 #1
+Thanks...
 
-You are not even using upstream kernel, but some redhat-like derivative.
-If you'd like to get support on this list, please test with an upstream
-kernel otherwise all bets are off what kind of code you might be running.
+Still a bit strange that it displays that entry... especially with a
+generation that seems newer than what I thought was the actually last
+generation on the fs.
+
+Cheers,
+Chris.
+--=-T+wMmTujmN7fd/kqwEeo
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwODI4MDgwNzAxWjBPBgkqhkiG9w0BCQQxQgRApoff
+yc1Tj+sLtlekHVuwAl22oT9mfwDIhe0b9lIO3ajaeAhK4t6bdbs2K8Te7lH9uFHcnaCaIQH0Qb3i
+RHmEHTCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAgSCU
+fYsSvpWJmwx8ielPQxbL5P9FZ/TuuTMwmFiP2pKTBVpN55uv6BRwJjpal8byk4FDdh12qmYnJGvK
+GjOX/yPerPvNegRTCu0s1HUPTb8H8vFLbSyEfFDDkEjgRBnis56VGKA3azN2amD3aRd2zcA55K13
++qeLKF8PDhi7U2Wb9zJw8hdp1+XeGD8Qgh+4C5ocxCcQnzwcrcPvXKXkkg+mVanKFOmrHAULbJbQ
+ERKfXHiNaubl1imepwtQAMOP07lWTsapShly0QXMm4Wsu/9r0SV7UwWhNViw8MUofWgwzXfLHECM
+N6o2jXqQeOvARFMopUp5pQHcBNoISvgd8aX6b6UZ1qDp3Per3PLYbRTGoDgyzpL56R+5OdaJ9GaM
+adv1nmO86ZVwGq1xUc2w4/ufmOv1Pn5FHxJFhs/ASxu4gR51L7LA85SJs6BN+/2lhMG11Sdi5qKc
+uzZf093vAoPBFuE128+/BXK7orve/q6ymA7eOvuvnW+vgp/o7v0KGhfXFsPCGuMqS/d0xPgVmoUX
+BG1bxCiLhCGISQ4wITYholiSjUKIaMjzXzTUR2i5k2LwMkLKnZirk5meFosEwqr8641ZFvQHtf0S
+n6Rcq4lUi27zMvzjjZMz7GzKwOkSSIf404c/0dZyHFMl7AgGNlxUKA/i4NjKr82bLjI2IbMAAAAA
+AAA=
 
 
-> 
-> [Sat Aug 26 03:01:53 2017] Hardware name: Supermicro Super
-> Server/X10DRi-T4+, BIOS 2.0 12/17/2015
-> 
-> [Sat Aug 26 03:01:53 2017] Workqueue: writeback wb_workfn (flush-btrfs-2)
-> 
-> [Sat Aug 26 03:01:53 2017] Call Trace:
-> 
-> [Sat Aug 26 03:01:53 2017]  dump_stack+0x63/0x87
-> 
-> [Sat Aug 26 03:01:53 2017]  __warn+0xd1/0xf0
-> 
-> [Sat Aug 26 03:01:53 2017]  warn_slowpath_null+0x1d/0x20
-> 
-> [Sat Aug 26 03:01:53 2017]  btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  run_delalloc_nocow+0x6e7/0xc00 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  ? test_range_bit+0xd0/0x160 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  run_delalloc_range+0x7d/0x3a0 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  ?
-> find_lock_delalloc_range.constprop.56+0x1d1/0x200 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  writepage_delalloc.isra.48+0x10c/0x170 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  __extent_writepage+0xd6/0x2e0 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]
-> extent_write_cache_pages.isra.44.constprop.59+0x2c4/0x480 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  extent_writepages+0x5c/0x90 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  ? btrfs_submit_direct+0x8b0/0x8b0 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  btrfs_writepages+0x28/0x30 [btrfs]
-> 
-> [Sat Aug 26 03:01:53 2017]  do_writepages+0x1e/0x30
-> 
-> [Sat Aug 26 03:01:53 2017]  __writeback_single_inode+0x45/0x330
-> 
-> [Sat Aug 26 03:01:53 2017]  writeback_sb_inodes+0x280/0x570
-> 
-> [Sat Aug 26 03:01:53 2017]  __writeback_inodes_wb+0x8c/0xc0
-> 
-> [Sat Aug 26 03:01:53 2017]  wb_writeback+0x276/0x310
-> 
-> [Sat Aug 26 03:01:53 2017]  wb_workfn+0x2e1/0x410
-> 
-> [Sat Aug 26 03:01:53 2017]  process_one_work+0x165/0x410
-> 
-> [Sat Aug 26 03:01:53 2017]  worker_thread+0x137/0x4c0
-> 
-> [Sat Aug 26 03:01:53 2017]  kthread+0x101/0x140
-> 
-> [Sat Aug 26 03:01:53 2017]  ? rescuer_thread+0x3b0/0x3b0
-> 
-> [Sat Aug 26 03:01:53 2017]  ? kthread_park+0x90/0x90
-> 
-> [Sat Aug 26 03:01:53 2017]  ret_from_fork+0x2c/0x40
-> 
-> [Sat Aug 26 03:01:53 2017] ---[ end trace 7ba8e3b5c60c322d ]---
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+--=-T+wMmTujmN7fd/kqwEeo--
+

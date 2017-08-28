@@ -1,81 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f182.google.com ([209.85.128.182]:38009 "EHLO
-        mail-wr0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750865AbdH1GnJ (ORCPT
+Received: from mail-wr0-f176.google.com ([209.85.128.176]:33822 "EHLO
+        mail-wr0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750866AbdH1H2J (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Aug 2017 02:43:09 -0400
-Received: by mail-wr0-f182.google.com with SMTP id y14so7385228wrd.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 Aug 2017 23:43:08 -0700 (PDT)
-Subject: Re: deleted subvols don't go away?
-To: "Janos Toth F." <toth.f.janos@gmail.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <1503854146.5155.2.camel@scientia.net>
- <CANznX5Hs9i5PzeJib=XGuDwPzUCEbbvh8LrY1+7xwpadB8BiNQ@mail.gmail.com>
+        Mon, 28 Aug 2017 03:28:09 -0400
+Received: by mail-wr0-f176.google.com with SMTP id z91so15888389wrc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Aug 2017 00:28:08 -0700 (PDT)
+Subject: Re: cause of dmesg call traces?
+To: Adam Bahe <adambahe@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
 From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <cab790fa-22f7-b05d-b18e-000c7d1a81cd@gmail.com>
-Date: Mon, 28 Aug 2017 09:43:06 +0300
+Message-ID: <0252110d-6f07-cabc-823f-c9ab5be07b67@gmail.com>
+Date: Mon, 28 Aug 2017 10:28:06 +0300
 MIME-Version: 1.0
-In-Reply-To: <CANznX5Hs9i5PzeJib=XGuDwPzUCEbbvh8LrY1+7xwpadB8BiNQ@mail.gmail.com>
+In-Reply-To: <CACzgC9h7xiVQswvLgbSi=7bNyrO=hKV5dxO7yXz4Zy3C5Sdx0g@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 28.08.2017 06:43, Janos Toth F. wrote:
-> ID=5 is the default, "root" or "toplevel" subvolume which can't be
-> deleted anyway (at least normally, I am not sure if some debug-magic
-> can achieve that).
-> I just checked this (out of curiosity) and all my Btrfs filesystems
-> report something very similar to yours (I thought DELETED was a made
-> up example but I see it was literal...):
+On 26.08.2017 23:30, Adam Bahe wrote:
+> Hello all. Recently I added another 10TB sas drive to my btrfs array
+> and I have received the following messages in dmesg during the
+> balance. I was hoping someone could clarify what seems to be causing
+> this.
 > 
-> ~ # btrfs sub list -a /
-> ID 303 gen 172881 top level 5 path <FS_TREE>/gentoo
-> ~ # btrfs sub list -ad /
-> ID 5 gen 172564 top level 0 path <FS_TREE>/DELETED
+> Some additional info, I did a smartctl long test and one of my brand
+> new 8TB drives warned me with this:
+> 
+>     197 Current_Pending_Sector 0x0022 100 100 000 Old_age Always - 136
+>     # 5  Extended offline    Completed: servo/seek failure 90%
+> 474         0
+> 
+> Are the messages in dmesg caused by the issues with the hard drive, or
+> something else entirely? A few months ago I had a total failure
+> requiring a complete nuke and pave so I am trying to track down any
+> potential issues aggressively and appreciate any help. Thanks!
+> 
+> Also, how many current_pending_sectors do you tolerate before you swap
+> a drive? I am going to pull this drive as soon as this current balance
+> finishes. But for future reference it would be good to keep an eye on.
+> 
+> 
+> 
+> [Sat Aug 26 03:01:53 2017] WARNING: CPU: 30 PID: 5516 at
+> fs/btrfs/extent-tree.c:3197 btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017] Modules linked in: dm_mod rpcrdma ib_isert
+> iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi ib_srpt
+> target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm ib_ucm
+> ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core sb_edac
+> edac_core x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm
+> irqbypass iTCO_wdt crct10dif_pclmul iTCO_vendor_support crc32_pclmul
+> ghash_clmulni_intel pcbc ext4 aesni_intel jbd2 crypto_simd mbcache
+> glue_helper cryptd intel_cstate intel_rapl_perf ses enclosure pcspkr
+> mei_me lpc_ich input_leds i2c_i801 joydev mfd_core mei sg ioatdma
+> shpchp wmi ipmi_si ipmi_devintf ipmi_msghandler acpi_power_meter
+> acpi_pad nfsd auth_rpcgss nfs_acl 8021q lockd garp grace mrp sunrpc
+> ip_tables btrfs xor raid6_pq mlx4_en sd_mod crc32c_intel mlx4_core ast
+> i2c_algo_bit ata_generic
+> 
+> [Sat Aug 26 03:01:53 2017]  pata_acpi drm_kms_helper syscopyarea
+> sysfillrect sysimgblt fb_sys_fops ttm drm ixgbe ata_piix mdio mpt3sas
+> ptp raid_class pps_core libata scsi_transport_sas dca fjes
+> 
+> [Sat Aug 26 03:01:53 2017] CPU: 30 PID: 5516 Comm: kworker/u97:5
+> Tainted: G        W       4.10.6-1.el7.elrepo.x86_64 #1
 
-This seems to be coming form the userspace tools, specifically the
-filter_and_sort_subvol() function. So this function in turn calls
-resolve_root and if it returns -ENOENT, meaning it couldn't resolve a
-root. Then DELETED is returned.
-
-On a quick inspection of the code it seems that even for deleted
-subvolumes btrfs still retains the ROOT_ITEM for the subvolume but since
-all ROOT_BACKREF are deleted then the name of the tree cannot be
-resolved (since it's stored in the root_backref). For example I did:
-
-btrfs subvolume create /media/scratch/subvol1 && sync
-btrfs inspect-internal dump-tree -t root /dev/vdc
-
-	item 14 key (258 ROOT_ITEM 0) itemoff 12972 itemsize 439
-		generation 11 root_dirid 256 bytenr 29949952 level 0 refs 1
-		lastsnap 0 byte_limit 0 bytes_used 16384 flags 0x0(none)
-		uuid 217fd861-4606-1146-b5ee-59fba8d37f8c
-		ctransid 11 otransid 10 stransid 0 rtransid 0
-		drop key (0 UNKNOWN.0 0) level 0
-
-	item 15 key (258 ROOT_BACKREF 5) itemoff 12947 itemsize 25
-		root backref key dirid 256 sequence 4 name subvol1
-
-Afterwards, I deleted the subvolume:
-btrfs subvolume delete -v /media/scratch/subvol1/ && sync
-
-	item 13 key (258 ROOT_ITEM 0) itemoff 12997 itemsize 439
-		generation 11 root_dirid 256 bytenr 29949952 level 0 refs 0
-		lastsnap 0 byte_limit 0 bytes_used 16384 flags 0x1000000000000(none)
-		uuid 217fd861-4606-1146-b5ee-59fba8d37f8c
-		ctransid 11 otransid 10 stransid 0 rtransid 0
-		drop key (0 UNKNOWN.0 0) level 0
-
+You are not even using upstream kernel, but some redhat-like derivative.
+If you'd like to get support on this list, please test with an upstream
+kernel otherwise all bets are off what kind of code you might be running.
 
 
 > 
-> I guess this entry is some placeholder, like a hidden "trash"
-> directory on some filesystems. I don't think this means all Btrfs
-> filesystems forever hold on to their last deleted subvolumes (and only
-> one).
+> [Sat Aug 26 03:01:53 2017] Hardware name: Supermicro Super
+> Server/X10DRi-T4+, BIOS 2.0 12/17/2015
+> 
+> [Sat Aug 26 03:01:53 2017] Workqueue: writeback wb_workfn (flush-btrfs-2)
+> 
+> [Sat Aug 26 03:01:53 2017] Call Trace:
+> 
+> [Sat Aug 26 03:01:53 2017]  dump_stack+0x63/0x87
+> 
+> [Sat Aug 26 03:01:53 2017]  __warn+0xd1/0xf0
+> 
+> [Sat Aug 26 03:01:53 2017]  warn_slowpath_null+0x1d/0x20
+> 
+> [Sat Aug 26 03:01:53 2017]  btrfs_cross_ref_exist+0xd1/0xf0 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  run_delalloc_nocow+0x6e7/0xc00 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  ? test_range_bit+0xd0/0x160 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  run_delalloc_range+0x7d/0x3a0 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  ?
+> find_lock_delalloc_range.constprop.56+0x1d1/0x200 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  writepage_delalloc.isra.48+0x10c/0x170 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  __extent_writepage+0xd6/0x2e0 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]
+> extent_write_cache_pages.isra.44.constprop.59+0x2c4/0x480 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  extent_writepages+0x5c/0x90 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  ? btrfs_submit_direct+0x8b0/0x8b0 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  btrfs_writepages+0x28/0x30 [btrfs]
+> 
+> [Sat Aug 26 03:01:53 2017]  do_writepages+0x1e/0x30
+> 
+> [Sat Aug 26 03:01:53 2017]  __writeback_single_inode+0x45/0x330
+> 
+> [Sat Aug 26 03:01:53 2017]  writeback_sb_inodes+0x280/0x570
+> 
+> [Sat Aug 26 03:01:53 2017]  __writeback_inodes_wb+0x8c/0xc0
+> 
+> [Sat Aug 26 03:01:53 2017]  wb_writeback+0x276/0x310
+> 
+> [Sat Aug 26 03:01:53 2017]  wb_workfn+0x2e1/0x410
+> 
+> [Sat Aug 26 03:01:53 2017]  process_one_work+0x165/0x410
+> 
+> [Sat Aug 26 03:01:53 2017]  worker_thread+0x137/0x4c0
+> 
+> [Sat Aug 26 03:01:53 2017]  kthread+0x101/0x140
+> 
+> [Sat Aug 26 03:01:53 2017]  ? rescuer_thread+0x3b0/0x3b0
+> 
+> [Sat Aug 26 03:01:53 2017]  ? kthread_park+0x90/0x90
+> 
+> [Sat Aug 26 03:01:53 2017]  ret_from_fork+0x2c/0x40
+> 
+> [Sat Aug 26 03:01:53 2017] ---[ end trace 7ba8e3b5c60c322d ]---
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

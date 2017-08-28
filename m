@@ -1,535 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:64067 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751405AbdH0Xjv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 Aug 2017 19:39:51 -0400
+Received: from smtp-17-i6.italiaonline.it ([212.48.14.163]:51072 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751230AbdH1R3x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 28 Aug 2017 13:29:53 -0400
+Reply-To: kreijack@inwind.it
 Subject: Re: [PATCH 1/1] btrfs-progs: mkfs: add subvolume support to mkfs
-To: Yingyi Luo <yingyil@google.com>, linux-btrfs@vger.kernel.org
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Yingyi Luo <yingyil@google.com>,
+        linux-btrfs@vger.kernel.org
 References: <20170825232101.10859-1-yingyil@google.com>
  <20170825232101.10859-2-yingyil@google.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <0744c469-3e3f-9568-a60e-50c1872f71c1@gmx.com>
-Date: Mon, 28 Aug 2017 07:39:42 +0800
+ <0744c469-3e3f-9568-a60e-50c1872f71c1@gmx.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <baa82a76-adb3-a4ef-b0b0-bc34d8a62f77@libero.it>
+Date: Mon, 28 Aug 2017 19:29:50 +0200
 MIME-Version: 1.0
-In-Reply-To: <20170825232101.10859-2-yingyil@google.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <0744c469-3e3f-9568-a60e-50c1872f71c1@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi All,
 
 
-On 2017年08月26日 07:21, Yingyi Luo wrote:
-> From: yingyil <yingyil@google.com>
-> 
-> Add -S/--subvol [NAME] option to configure. It enables users to create a
-> subvolume under the toplevel volume and populate the created subvolume
-> with files from the rootdir specified by -r/--rootdir option.
-> 
-> Two functions link_subvol() and create_subvol() are moved from
-> convert/main.c to utils.c to enable code reuse.
+unfortunately, your patch crashes on my PC
 
-What about split the patch as the code move of link/create_subvol() 
-makes review a little difficult.
+$ truncate -s 100G /tmp/disk.img
+$ sudo losetup -f /tmp/disk.img
 
-BTW, if exporting link/create_subvol(), what about adding "btrfs_" prefix?
+$ # good case
+$ sudo ./mkfs.btrfs -f -r /tmp/empty/  /dev/loop0
+btrfs-progs v4.12.1-1-gf80d059c
+See http://btrfs.wiki.kernel.org for more information.
 
-Thanks,
-Qu
+Making image is completed.
+Label:              (null)
+UUID:               7cb4927c-d24a-41b3-8151-277ad9064008
+Node size:          16384
+Sector size:        4096
+Filesystem size:    28.00MiB
+Block group profiles:
+  Data:             single           10.75MiB
+  System:           DUP               4.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1    28.00MiB  /dev/loop0
+
+$ # bad case
+$ sudo ./mkfs.btrfs -f -S prova -r /tmp/empty/  /dev/loop0
+btrfs-progs v4.12.1-1-gf80d059c
+See http://btrfs.wiki.kernel.org for more information.
+
+ERROR: failed to create subvolume: -17
+transaction.h:42: btrfs_start_transaction: BUG_ON `fs_info->running_transaction` triggered, value 884442943152
+./mkfs.btrfs(+0x15674)[0xcdeb52c674]
+./mkfs.btrfs(close_ctree_fs_info+0x313)[0xcdeb52e80f]
+./mkfs.btrfs(main+0x1028)[0xcdeb52381e]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f85a5d1f2e1]
+./mkfs.btrfs(_start+0x2a)[0xcdeb520e9a]
+Aborted
+
+
+Below some further comments
+
+On 08/28/2017 01:39 AM, Qu Wenruo wrote:
 > 
-> Signed-off-by: yingyil <yingyil@google.com>
-> ---
->   convert/main.c | 161 ---------------------------------------------------------
->   mkfs/main.c    |  73 ++++++++++++++++++++++++--
->   utils.c        | 161 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->   utils.h        |   5 ++
->   4 files changed, 234 insertions(+), 166 deletions(-)
 > 
-> diff --git a/convert/main.c b/convert/main.c
-> index 0deccd9..93609ed 100644
-> --- a/convert/main.c
-> +++ b/convert/main.c
-> @@ -832,167 +832,6 @@ out:
->   	return ret;
->   }
->   
-> -static struct btrfs_root* link_subvol(struct btrfs_root *root,
-> -		const char *base, u64 root_objectid)
-> -{
-> -	struct btrfs_trans_handle *trans;
-> -	struct btrfs_fs_info *fs_info = root->fs_info;
-> -	struct btrfs_root *tree_root = fs_info->tree_root;
-> -	struct btrfs_root *new_root = NULL;
-> -	struct btrfs_path path;
-> -	struct btrfs_inode_item *inode_item;
-> -	struct extent_buffer *leaf;
-> -	struct btrfs_key key;
-> -	u64 dirid = btrfs_root_dirid(&root->root_item);
-> -	u64 index = 2;
-> -	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
-> -	int len;
-> -	int i;
-> -	int ret;
-> -
-> -	len = strlen(base);
-> -	if (len == 0 || len > BTRFS_NAME_LEN)
-> -		return NULL;
-> -
-> -	btrfs_init_path(&path);
-> -	key.objectid = dirid;
-> -	key.type = BTRFS_DIR_INDEX_KEY;
-> -	key.offset = (u64)-1;
-> -
-> -	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-> -	if (ret <= 0) {
-> -		error("search for DIR_INDEX dirid %llu failed: %d",
-> -				(unsigned long long)dirid, ret);
-> -		goto fail;
-> -	}
-> -
-> -	if (path.slots[0] > 0) {
-> -		path.slots[0]--;
-> -		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-> -		if (key.objectid == dirid && key.type == BTRFS_DIR_INDEX_KEY)
-> -			index = key.offset + 1;
-> -	}
-> -	btrfs_release_path(&path);
-> -
-> -	trans = btrfs_start_transaction(root, 1);
-> -	if (!trans) {
-> -		error("unable to start transaction");
-> -		goto fail;
-> -	}
-> -
-> -	key.objectid = dirid;
-> -	key.offset = 0;
-> -	key.type =  BTRFS_INODE_ITEM_KEY;
-> -
-> -	ret = btrfs_lookup_inode(trans, root, &path, &key, 1);
-> -	if (ret) {
-> -		error("search for INODE_ITEM %llu failed: %d",
-> -				(unsigned long long)dirid, ret);
-> -		goto fail;
-> -	}
-> -	leaf = path.nodes[0];
-> -	inode_item = btrfs_item_ptr(leaf, path.slots[0],
-> -				    struct btrfs_inode_item);
-> -
-> -	key.objectid = root_objectid;
-> -	key.offset = (u64)-1;
-> -	key.type = BTRFS_ROOT_ITEM_KEY;
-> -
-> -	memcpy(buf, base, len);
-> -	for (i = 0; i < 1024; i++) {
-> -		ret = btrfs_insert_dir_item(trans, root, buf, len,
-> -					    dirid, &key, BTRFS_FT_DIR, index);
-> -		if (ret != -EEXIST)
-> -			break;
-> -		len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
-> -		if (len < 1 || len > BTRFS_NAME_LEN) {
-> -			ret = -EINVAL;
-> -			break;
-> -		}
-> -	}
-> -	if (ret)
-> -		goto fail;
-> -
-> -	btrfs_set_inode_size(leaf, inode_item, len * 2 +
-> -			     btrfs_inode_size(leaf, inode_item));
-> -	btrfs_mark_buffer_dirty(leaf);
-> -	btrfs_release_path(&path);
-> -
-> -	/* add the backref first */
-> -	ret = btrfs_add_root_ref(trans, tree_root, root_objectid,
-> -				 BTRFS_ROOT_BACKREF_KEY,
-> -				 root->root_key.objectid,
-> -				 dirid, index, buf, len);
-> -	if (ret) {
-> -		error("unable to add root backref for %llu: %d",
-> -				root->root_key.objectid, ret);
-> -		goto fail;
-> -	}
-> -
-> -	/* now add the forward ref */
-> -	ret = btrfs_add_root_ref(trans, tree_root, root->root_key.objectid,
-> -				 BTRFS_ROOT_REF_KEY, root_objectid,
-> -				 dirid, index, buf, len);
-> -	if (ret) {
-> -		error("unable to add root ref for %llu: %d",
-> -				root->root_key.objectid, ret);
-> -		goto fail;
-> -	}
-> -
-> -	ret = btrfs_commit_transaction(trans, root);
-> -	if (ret) {
-> -		error("transaction commit failed: %d", ret);
-> -		goto fail;
-> -	}
-> -
-> -	new_root = btrfs_read_fs_root(fs_info, &key);
-> -	if (IS_ERR(new_root)) {
-> -		error("unable to fs read root: %lu", PTR_ERR(new_root));
-> -		new_root = NULL;
-> -	}
-> -fail:
-> -	btrfs_init_path(&path);
-> -	return new_root;
-> -}
-> -
-> -static int create_subvol(struct btrfs_trans_handle *trans,
-> -			 struct btrfs_root *root, u64 root_objectid)
-> -{
-> -	struct extent_buffer *tmp;
-> -	struct btrfs_root *new_root;
-> -	struct btrfs_key key;
-> -	struct btrfs_root_item root_item;
-> -	int ret;
-> -
-> -	ret = btrfs_copy_root(trans, root, root->node, &tmp,
-> -			      root_objectid);
-> -	if (ret)
-> -		return ret;
-> -
-> -	memcpy(&root_item, &root->root_item, sizeof(root_item));
-> -	btrfs_set_root_bytenr(&root_item, tmp->start);
-> -	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
-> -	btrfs_set_root_generation(&root_item, trans->transid);
-> -	free_extent_buffer(tmp);
-> -
-> -	key.objectid = root_objectid;
-> -	key.type = BTRFS_ROOT_ITEM_KEY;
-> -	key.offset = trans->transid;
-> -	ret = btrfs_insert_root(trans, root->fs_info->tree_root,
-> -				&key, &root_item);
-> -
-> -	key.offset = (u64)-1;
-> -	new_root = btrfs_read_fs_root(root->fs_info, &key);
-> -	if (!new_root || IS_ERR(new_root)) {
-> -		error("unable to fs read root: %lu", PTR_ERR(new_root));
-> -		return PTR_ERR(new_root);
-> -	}
-> -
-> -	ret = btrfs_make_root_dir(trans, new_root, BTRFS_FIRST_FREE_OBJECTID);
-> -
-> -	return ret;
-> -}
-> -
->   /*
->    * New make_btrfs() has handle system and meta chunks quite well.
->    * So only need to add remaining data chunks.
-> diff --git a/mkfs/main.c b/mkfs/main.c
-> index 2b109a5..107cfc2 100644
-> --- a/mkfs/main.c
-> +++ b/mkfs/main.c
-> @@ -365,6 +365,7 @@ static void print_usage(int ret)
->   	printf("  creation:\n");
->   	printf("\t-b|--byte-count SIZE    set filesystem size to SIZE (on the first device)\n");
->   	printf("\t-r|--rootdir DIR        copy files from DIR to the image root directory\n");
-> +	printf("\t-S|--subvol NAME        create a sunvolume with NAME and copy files from ROOTDIR to the subvolume\n");
->   	printf("\t-K|--nodiscard          do not perform whole device TRIM\n");
->   	printf("\t-f|--force              force overwrite of existing filesystem\n");
->   	printf("  general:\n");
-> @@ -413,6 +414,18 @@ static char *parse_label(const char *input)
->   	return strdup(input);
->   }
->   
-> +static char *parse_subvol_name(const char *input)
-> +{
-> +	int len = strlen(input);
-> +
-> +	if (len >= BTRFS_SUBVOL_NAME_MAX) {
-> +		error("subvolume name %s is too long (max %d)",
-> +			input, BTRFS_SUBVOL_NAME_MAX - 1);
-> +		exit(1);
-> +	}
-> +	return strdup(input);
-> +}
-> +
->   static int add_directory_items(struct btrfs_trans_handle *trans,
->   			       struct btrfs_root *root, u64 objectid,
->   			       ino_t parent_inum, const char *name,
-> @@ -1420,6 +1433,8 @@ int main(int argc, char **argv)
->   	int discard = 1;
->   	int ssd = 0;
->   	int force_overwrite = 0;
-> +	char *subvol_name = NULL;
-> +	int subvol_name_set = 0;
->   	char *source_dir = NULL;
->   	int source_dir_set = 0;
->   	u64 num_of_meta_chunks = 0;
-> @@ -1446,6 +1461,7 @@ int main(int argc, char **argv)
->   			{ "sectorsize", required_argument, NULL, 's' },
->   			{ "data", required_argument, NULL, 'd' },
->   			{ "version", no_argument, NULL, 'V' },
-> +			{ "subvol", required_argument, NULL, 'S'},
->   			{ "rootdir", required_argument, NULL, 'r' },
->   			{ "nodiscard", no_argument, NULL, 'K' },
->   			{ "features", required_argument, NULL, 'O' },
-> @@ -1455,7 +1471,7 @@ int main(int argc, char **argv)
->   			{ NULL, 0, NULL, 0}
->   		};
->   
-> -		c = getopt_long(argc, argv, "A:b:fl:n:s:m:d:L:O:r:U:VMKq",
-> +		c = getopt_long(argc, argv, "A:b:fl:n:s:m:d:L:O:S:r:U:VMKq",
->   				long_options, NULL);
->   		if (c < 0)
->   			break;
-> @@ -1517,6 +1533,10 @@ int main(int argc, char **argv)
->   						PACKAGE_STRING);
->   				exit(0);
->   				break;
-> +			case 'S':
-> +				subvol_name = parse_subvol_name(optarg);
-> +				subvol_name_set = 1;
-> +				break;
->   			case 'r':
->   				source_dir = optarg;
->   				source_dir_set = 1;
-> @@ -1537,6 +1557,11 @@ int main(int argc, char **argv)
->   		}
->   	}
->   
-> +	if (subvol_name_set && !source_dir_set) {
-> +		error("root directory needs to be set");
-> +		exit(1);
-> +	}
-> +
->   	if (verbose) {
->   		printf("%s\n", PACKAGE_STRING);
->   		printf("See %s for more information.\n\n", PACKAGE_URL);
-> @@ -1876,10 +1901,48 @@ raid_groups:
->   			goto out;
->   		}
->   
-> -		ret = make_image(source_dir, root, fd);
-> -		if (ret) {
-> -			error("error wihle filling filesystem: %d", ret);
-> -			goto out;
-> +		if (subvol_name_set) {
-> +			u64 dirid, objectid;
-> +			struct btrfs_root *file_root;
-> +
-> +			dirid = btrfs_root_dirid(&fs_info->tree_root->root_item);
-> +			ret = btrfs_find_free_objectid(NULL, fs_info->tree_root, dirid, &objectid);
-> +			if (ret) {
-> +				error("unable to find a free objectid: %d", ret);
-> +				goto out;
-> +			}
-> +			trans = btrfs_start_transaction(root, 1);
-> +			if (!trans) {
-> +				error("unable to start transaction");
-> +				ret = -EINVAL;
-> +				goto out;
-> +			}
-> +			ret = create_subvol(trans, root, objectid);
-> +			if (ret < 0) {
-> +				error("failed to create subvolume: %d", ret);
-> +				goto out;
-> +			}
-> +			ret = btrfs_commit_transaction(trans, root);
-> +			if (ret) {
-> +				error("unable to commit transaction: %d", ret);
-> +				goto out;
-> +			}
-> +			file_root = link_subvol(root, subvol_name, objectid);
-> +			if (!file_root) {
-> +				error("unable to link the subvolume %s", subvol_name);
-> +				goto out;
-> +			}
-> +			ret = make_image(source_dir, file_root, fd);
-> +			if (ret) {
-> +				error("error while filling filesystem: %d", ret);
-> +				goto out;
-> +			}
-> +		} else {
-> +			ret = make_image(source_dir, root, fd);
-> +			if (ret) {
-> +				error("error while filling filesystem: %d", ret);
-> +				goto out;
-> +			}
->   		}
->   	}
->   	ret = cleanup_temp_chunks(fs_info, &allocation, data_profile,
-> diff --git a/utils.c b/utils.c
-> index bb04913..c9bbbed 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -2574,3 +2574,164 @@ u8 rand_u8(void)
->   void btrfs_config_init(void)
->   {
->   }
-> +
-> +struct btrfs_root *link_subvol(struct btrfs_root *root,
-> +		const char *base, u64 root_objectid)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_fs_info *fs_info = root->fs_info;
-> +	struct btrfs_root *tree_root = fs_info->tree_root;
-> +	struct btrfs_root *new_root = NULL;
-> +	struct btrfs_path path;
-> +	struct btrfs_inode_item *inode_item;
-> +	struct extent_buffer *leaf;
-> +	struct btrfs_key key;
-> +	u64 dirid = btrfs_root_dirid(&root->root_item);
-> +	u64 index = 2;
-> +	char buf[BTRFS_NAME_LEN + 1]; /* for snprintf null */
-> +	int len;
-> +	int i;
-> +	int ret;
-> +
-> +	len = strlen(base);
-> +	if (len == 0 || len > BTRFS_NAME_LEN)
-> +		return NULL;
-> +
-> +	btrfs_init_path(&path);
-> +	key.objectid = dirid;
-> +	key.type = BTRFS_DIR_INDEX_KEY;
-> +	key.offset = (u64)-1;
-> +
-> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-> +	if (ret <= 0) {
-> +		error("search for DIR_INDEX dirid %llu failed: %d",
-> +				(unsigned long long)dirid, ret);
-> +		goto fail;
-> +	}
-> +
-> +	if (path.slots[0] > 0) {
-> +		path.slots[0]--;
-> +		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-> +		if (key.objectid == dirid && key.type == BTRFS_DIR_INDEX_KEY)
-> +			index = key.offset + 1;
-> +	}
-> +	btrfs_release_path(&path);
-> +
-> +	trans = btrfs_start_transaction(root, 1);
-> +	if (!trans) {
-> +		error("unable to start transaction");
-> +		goto fail;
-> +        }
-> +
-> +	key.objectid = dirid;
-> +	key.offset = 0;
-> +	key.type =  BTRFS_INODE_ITEM_KEY;
-> +
-> +	ret = btrfs_lookup_inode(trans, root, &path, &key, 1);
-> +	if (ret) {
-> +		error("search for INODE_ITEM %llu failed: %d",
-> +				(unsigned long long)dirid, ret);
-> +		goto fail;
-> +	}
-> +	leaf = path.nodes[0];
-> +	inode_item = btrfs_item_ptr(leaf, path.slots[0],
-> +				    struct btrfs_inode_item);
-> +
-> +	key.objectid = root_objectid;
-> +	key.offset = (u64)-1;
-> +	key.type = BTRFS_ROOT_ITEM_KEY;
-> +
-> +	memcpy(buf, base, len);
-> +	for (i = 0; i < 1024; i++) {
-> +		ret = btrfs_insert_dir_item(trans, root, buf, len,
-> +					    dirid, &key, BTRFS_FT_DIR, index);
-> +		if (ret != -EEXIST)
-> +			break;
-> +		len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
-> +		if (len < 1 || len > BTRFS_NAME_LEN) {
-> +			ret = -EINVAL;
-> +			break;
-> +		}
-> +	}
-> +	if (ret)
-> +		goto fail;
-> +
-> +	btrfs_set_inode_size(leaf, inode_item, len * 2 +
-> +			     btrfs_inode_size(leaf, inode_item));
-> +	btrfs_mark_buffer_dirty(leaf);
-> +	btrfs_release_path(&path);
-> +
-> +	/* add the backref first */
-> +	ret = btrfs_add_root_ref(trans, tree_root, root_objectid,
-> +				 BTRFS_ROOT_BACKREF_KEY,
-> +				 root->root_key.objectid,
-> +				 dirid, index, buf, len);
-> +	if (ret) {
-> +		error("unable to add root backref for %llu: %d",
-> +				root->root_key.objectid, ret);
-> +		goto fail;
-> +	}
-> +
-> +        /* now add the forward ref */
-> +	ret = btrfs_add_root_ref(trans, tree_root, root->root_key.objectid,
-> +				 BTRFS_ROOT_REF_KEY, root_objectid,
-> +				 dirid, index, buf, len);
-> +	if (ret) {
-> +		error("unable to add root ref for %llu: %d",
-> +				root->root_key.objectid, ret);
-> +		goto fail;
-> +	}
-> +
-> +	ret = btrfs_commit_transaction(trans, root);
-> +	if (ret) {
-> +		error("transaction commit failed: %d", ret);
-> +		goto fail;
-> +	}
-> +
-> +	new_root = btrfs_read_fs_root(fs_info, &key);
-> +	if (IS_ERR(new_root)) {
-> +		error("unable to fs read root: %lu", PTR_ERR(new_root));
-> +		new_root = NULL;
-> +	}
-> +fail:
-> +	btrfs_init_path(&path);
-> +	return new_root;
-> +}
-> +
-> +int create_subvol(struct btrfs_trans_handle *trans,
-> +		  struct btrfs_root *root, u64 root_objectid)
-> +{
-> +	struct extent_buffer *tmp;
-> +	struct btrfs_root *new_root;
-> +	struct btrfs_key key;
-> +	struct btrfs_root_item root_item;
-> +	int ret;
-> +
-> +	ret = btrfs_copy_root(trans, root, root->node, &tmp,
-> +			      root_objectid);
-> +	if (ret)
-> +		return ret;
-> +
-> +	memcpy(&root_item, &root->root_item, sizeof(root_item));
-> +	btrfs_set_root_bytenr(&root_item, tmp->start);
-> +	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
-> +	btrfs_set_root_generation(&root_item, trans->transid);
-> +	free_extent_buffer(tmp);
-> +
-> +	key.objectid = root_objectid;
-> +	key.type = BTRFS_ROOT_ITEM_KEY;
-> +	key.offset = trans->transid;
-> +	ret = btrfs_insert_root(trans, root->fs_info->tree_root,
-> +				&key, &root_item);
-> +
-> +	key.offset = (u64)-1;
-> +	new_root = btrfs_read_fs_root(root->fs_info, &key);
-> +	if (!new_root || IS_ERR(new_root)) {
-> +		error("unable to fs read root: %lu", PTR_ERR(new_root));
-> +		return PTR_ERR(new_root);
-> +	}
-> +
-> +	ret = btrfs_make_root_dir(trans, new_root, BTRFS_FIRST_FREE_OBJECTID);
-> +
-> +	return ret;
-> +}
-> diff --git a/utils.h b/utils.h
-> index 091f8fa..777476f 100644
-> --- a/utils.h
-> +++ b/utils.h
-> @@ -170,4 +170,9 @@ u64 rand_u64(void);
->   unsigned int rand_range(unsigned int upper);
->   void init_rand_seed(u64 seed);
->   
-> +struct btrfs_root *link_subvol(struct btrfs_root *root,
-> +			       const char *base, u64 root_objectid);
-> +int create_subvol(struct btrfs_trans_handle *trans,
-> +		  struct btrfs_root *root, u64 root_objectid);
-> +
->   #endif
+> On 2017年08月26日 07:21, Yingyi Luo wrote:
+>> From: yingyil <yingyil@google.com>
+>>
+>> Add -S/--subvol [NAME] option to configure. It enables users to create a
+>> subvolume under the toplevel volume and populate the created subvolume
+>> with files from the rootdir specified by -r/--rootdir option.
+>>
+>> Two functions link_subvol() and create_subvol() are moved from
+>> convert/main.c to utils.c to enable code reuse.
 > 
+> What about split the patch as the code move of link/create_subvol() makes review a little difficult.
+> 
+> BTW, if exporting link/create_subvol(), what about adding "btrfs_" prefix?
+> 
+> Thanks,
+> Qu
+>>
+>> Signed-off-by: yingyil <yingyil@google.com>
+>> ---
+[...]
+>> --- a/mkfs/main.c
+>> +++ b/mkfs/main.c
+>> @@ -365,6 +365,7 @@ static void print_usage(int ret)
+>>       printf("  creation:\n");
+>>       printf("\t-b|--byte-count SIZE    set filesystem size to SIZE (on the first device)\n");
+>>       printf("\t-r|--rootdir DIR        copy files from DIR to the image root directory\n");
+>> +    printf("\t-S|--subvol NAME        create a sunvolume with NAME and copy files from ROOTDIR to the subvolume\n");
+>>       printf("\t-K|--nodiscard          do not perform whole device TRIM\n");
+>>       printf("\t-f|--force              force overwrite of existing filesystem\n");
+>>       printf("  general:\n");
+>> @@ -413,6 +414,18 @@ static char *parse_label(const char *input)
+>>       return strdup(input);
+>>   }
+>>   +static char *parse_subvol_name(const char *input)
+>> +{
+>> +    int len = strlen(input);
+>> +
+>> +    if (len >= BTRFS_SUBVOL_NAME_MAX) {
+>> +        error("subvolume name %s is too long (max %d)",
+>> +            input, BTRFS_SUBVOL_NAME_MAX - 1);
+>> +        exit(1);
+>> +    }
+>> +    return strdup(input);
+
+why use strdup ?
+
+>> +}
+>> +
+[...]
+
+>> @@ -1517,6 +1533,10 @@ int main(int argc, char **argv)
+>>                           PACKAGE_STRING);
+>>                   exit(0);
+>>                   break;
+>> +            case 'S':
+>> +                subvol_name = parse_subvol_name(optarg);
+>> +                subvol_name_set = 1;
+>> +                break;
+>>               case 'r':
+>>                   source_dir = optarg;
+>>                   source_dir_set = 1;
+>> @@ -1537,6 +1557,11 @@ int main(int argc, char **argv)
+>>           }
+>>       }
+>> +    if (subvol_name_set && !source_dir_set) {
+>> +        error("root directory needs to be set");
+>> +        exit(1);
+>> +    }
+>> +
+
+To me it seems reasonable to create an empty subvolume (below more comments)
+
+>>       if (verbose) {
+>>           printf("%s\n", PACKAGE_STRING);
+>>           printf("See %s for more information.\n\n", PACKAGE_URL);
+>> @@ -1876,10 +1901,48 @@ raid_groups:
+>>               goto out;
+>>           }
+[...]
+
+>>       ret = cleanup_temp_chunks(fs_info, &allocation, data_profile,
+>> diff --git a/utils.c b/utils.c
+>> index bb04913..c9bbbed 100644
+>> --- a/utils.c
+>> +++ b/utils.c
+>> @@ -2574,3 +2574,164 @@ u8 rand_u8(void)
+>>   void btrfs_config_init(void)
+>>   {
+>>   }
+>> +
+>> +struct btrfs_root *link_subvol(struct btrfs_root *root,
+>> +        const char *base, u64 root_objectid)
+>> +{
+>> +    struct btrfs_trans_handle *trans;
+[....]
+
+>> +
+>> +    memcpy(buf, base, len);
+>> +    for (i = 0; i < 1024; i++) {
+>> +        ret = btrfs_insert_dir_item(trans, root, buf, len,
+>> +                        dirid, &key, BTRFS_FT_DIR, index);
+>> +        if (ret != -EEXIST)
+>> +            break;
+>> +        len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
+>> +        if (len < 1 || len > BTRFS_NAME_LEN) {
+>> +            ret = -EINVAL;
+>> +            break;
+>> +        }
+>> +    }
+
+Does make sense this ? If the subvolume creation fails, what is the reason to try to create another subvolume with the same name followed by a number ? I suppose that there is some corner case for the convert code...
+
+>> +    if (ret)
+>> +        goto fail;
+>> +
+>> +    btrfs_set_inode_size(leaf, inode_item, len * 2 +
+>> +                 btrfs_inode_size(leaf, inode_item));
+>> +    btrfs_mark_buffer_dirty(leaf);
+>> +    btrfs_release_path(&path);
+[...]
+
+
+If possible I would like to ask another feature: an option to mark default the created subvolume. Use case: usually the root filesystem is stored inside the subvolid=5; this is a complication if you want to swap it with a snapshot. I think that it would be useful if the mkfs.btrfs creates a "default" subvolume inside the root subvolume (id=5), and set it as default. So a subsequent snapshot+swap will be more easy. 
+
+Ideally it would be useful if this could be the default behavior. But I suppose that someone (i.e. the distribution installer) could encounter some regressions.
+
+
+BR
+G.Baroncelli
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

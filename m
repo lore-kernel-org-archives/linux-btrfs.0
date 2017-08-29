@@ -1,55 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55034 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751238AbdH2SXx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Aug 2017 14:23:53 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
-        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
-        "fdmanana@suse.com" <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists (since 3.4 / 2012)
-Date: Tue, 29 Aug 2017 18:22:38 +0000
-Message-ID: <EEF8B32C-179F-431A-880F-A27AD96B4BEF@fb.com>
-References: <20170715004828.f4bom5wq34abe4lz@merlins.org>
- <20170711062155.hvlx5ud4zphpzjnp@merlins.org>
- <20170715012216.njq6az3y34qyomtb@merlins.org>
- <20170715231245.GA28281@merlins.org> <20170829031637.GA15290@merlins.org>
- <F952197E-3A13-410A-B299-F5C0791A99DF@fb.com>
- <20170829143955.GD15290@merlins.org>
-In-Reply-To: <20170829143955.GD15290@merlins.org>
-Content-Type: text/plain; charset="utf-8"
+Received: from mail.nic.cz ([217.31.204.67]:33305 "EHLO mail.nic.cz"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751275AbdH2XIO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 29 Aug 2017 19:08:14 -0400
+Received: from localhost (unknown [172.20.6.218])
+        by mail.nic.cz (Postfix) with ESMTPS id B8C2461DF8
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Aug 2017 01:08:12 +0200 (CEST)
+Date: Wed, 30 Aug 2017 01:07:56 +0200
+From: Marek Behun <marek.behun@nic.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Can a compressed file extent have non-zero offset?
+Message-ID: <20170830010756.05d8f9f3@nic.cz>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-How much metadata do you have on this fs?  I was going to hold everything in bpf hash trees, but Iâ€™m worried weâ€™ll hit collisions and then the tracing will be useless.  If itâ€™s too big Iâ€™ll have to dump everything to userspace and let python take care of keeping everything in memory, so if you have a lot of metadata hopefully you have lots of memory too ;).  Thanks,
+Hello,
 
-Josef
+I cannot find this in the documentation (and the sources are too long),
+so I am trying here:
 
-On 8/29/17, 10:40 AM, "Marc MERLIN" <marc@merlins.org> wrote:
+can a file_extent_item with
+  item.type == BTRFS_FILE_EXTENT_REG
+and
+  item.compression != BTRFS_COMPRESS_NONE
 
-On Tue, Aug 29, 2017 at 02:30:19PM +0000, Josef Bacik wrote:
-> Sorry Marc, Iâ€™ll wire up a bcc script to try and catch when this
-> happens.  In order for it to work itâ€™ll need to read the extent tree in
-> before you mount the fs, is that something youâ€™ll be able to swing or is
-> this your root fs?  Also is it the only btrfs fs on the system?  Thanks,
+have non zero offset (item.offset != 0) ?
 
-HI Josef, thanks for your reply.
+What does it mean in such a case? That compressed data start at 0, but
+in the uncompressed data, the data begin at item.offset? What does
+item.num_bytes in this case mean - the valid number of bytes from
+position item.offset, or the number of all bytes, even those before
+position item.offset?
 
-Thankfully it's not the root FS.
-There are 3 btrfs filesystems on that system.
+Thank you.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIDaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=Rb6fFZaTtI5fFzN4MD03GPvT0eSOYGuRNKKA4pDehzY&s=sMstwHEsJAdwf4N0fDnuUedvuGEPnDiEV-YmTYK8Zxc&e=   
-
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+Marek

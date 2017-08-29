@@ -1,60 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:34363 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751276AbdH2RoH (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:55034 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751238AbdH2SXx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Aug 2017 13:44:07 -0400
-Received: by mail-io0-f195.google.com with SMTP id d81so3761397ioj.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Aug 2017 10:44:07 -0700 (PDT)
-Subject: Re: Decompression success/failure dependent on PAGE_SIZE?
-To: =?UTF-8?Q?Marek_Beh=c3=ban?= <marek.behun@nic.cz>,
-        linux-btrfs@vger.kernel.org
-References: <20170829184342.2f6ec0b0@dellmb.labs.office.nic.cz>
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <bfe3e720-00e5-1a5a-7b08-c2cd32b62a08@gmail.com>
-Date: Tue, 29 Aug 2017 20:44:03 +0300
+        Tue, 29 Aug 2017 14:23:53 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Marc MERLIN <marc@merlins.org>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
+        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
+        "fdmanana@suse.com" <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
+ errno=-17 Object already exists (since 3.4 / 2012)
+Date: Tue, 29 Aug 2017 18:22:38 +0000
+Message-ID: <EEF8B32C-179F-431A-880F-A27AD96B4BEF@fb.com>
+References: <20170715004828.f4bom5wq34abe4lz@merlins.org>
+ <20170711062155.hvlx5ud4zphpzjnp@merlins.org>
+ <20170715012216.njq6az3y34qyomtb@merlins.org>
+ <20170715231245.GA28281@merlins.org> <20170829031637.GA15290@merlins.org>
+ <F952197E-3A13-410A-B299-F5C0791A99DF@fb.com>
+ <20170829143955.GD15290@merlins.org>
+In-Reply-To: <20170829143955.GD15290@merlins.org>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <20170829184342.2f6ec0b0@dellmb.labs.office.nic.cz>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+How much metadata do you have on this fs?  I was going to hold everything in bpf hash trees, but Iâ€™m worried weâ€™ll hit collisions and then the tracing will be useless.  If itâ€™s too big Iâ€™ll have to dump everything to userspace and let python take care of keeping everything in memory, so if you have a lot of metadata hopefully you have lots of memory too ;).  Thanks,
+
+Josef
+
+On 8/29/17, 10:40 AM, "Marc MERLIN" <marc@merlins.org> wrote:
+
+On Tue, Aug 29, 2017 at 02:30:19PM +0000, Josef Bacik wrote:
+> Sorry Marc, Iâ€™ll wire up a bcc script to try and catch when this
+> happens.  In order for it to work itâ€™ll need to read the extent tree in
+> before you mount the fs, is that something youâ€™ll be able to swing or is
+> this your root fs?  Also is it the only btrfs fs on the system?  Thanks,
+
+HI Josef, thanks for your reply.
+
+Thankfully it's not the root FS.
+There are 3 btrfs filesystems on that system.
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIDaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=Rb6fFZaTtI5fFzN4MD03GPvT0eSOYGuRNKKA4pDehzY&s=sMstwHEsJAdwf4N0fDnuUedvuGEPnDiEV-YmTYK8Zxc&e=   
 
 
-On 29.08.2017 19:43, Marek BehÃºn wrote:
-> Hello,
-> 
-> so I've been studying the linux btrfs code and have come across this:
-> 
-> in inode.c function uncompress_inline the max_size size variable is set
-> to min(max_size, PAGE_SIZE) and only max_size of output data are
-> decompressed.
-> 
-> The code for compression (in lzo.c for example) uses PAGE_SIZEd chunks
-> to compress an inline extent.
-> 
-> If I understand it correctly, then if the filesystem is created and used
-> on a computer with PAGE_SIZE for example 16KB, and an extent of size
-> 16KB is compressed to (for example 9KB) and stored as inline extent,
-> and then the filesystem is mounted on a computer with PAGE_SIZE = 4KB,
-> reading the extent will result in a failure or incomplete read.
-> 
-> Is this a bug, or is this behaviour a feature?
-
-Please have a look in btrfs_check_super_valid(), which is being called
-from open_ctree, which in turn is called when a filesystem is mounted.
-
-Currently btrfs supports a single blocksize value - PAGE_SIZE, also it's
-forbidden to mount a filesystem on systems with different page_sizes.
-When the sub-page blocksizes patch is merged this might be have to be
-taken into consideration but certainly not at present times.
-
-> 
-> Thank you.
-> 
-> Marek
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

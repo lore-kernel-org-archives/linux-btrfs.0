@@ -1,25 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:35200 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751656AbdH2RNW (ORCPT
+Received: from mail-io0-f195.google.com ([209.85.223.195]:34363 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751276AbdH2RoH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 29 Aug 2017 13:13:22 -0400
-Received: by mail-io0-f182.google.com with SMTP id k22so23446327iod.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Aug 2017 10:13:21 -0700 (PDT)
+        Tue, 29 Aug 2017 13:44:07 -0400
+Received: by mail-io0-f195.google.com with SMTP id d81so3761397ioj.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Aug 2017 10:44:07 -0700 (PDT)
 Subject: Re: Decompression success/failure dependent on PAGE_SIZE?
 To: =?UTF-8?Q?Marek_Beh=c3=ban?= <marek.behun@nic.cz>,
         linux-btrfs@vger.kernel.org
 References: <20170829184342.2f6ec0b0@dellmb.labs.office.nic.cz>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <974aff07-4549-1a7f-be13-e8a6ec6e16f2@gmail.com>
-Date: Tue, 29 Aug 2017 13:13:18 -0400
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Message-ID: <bfe3e720-00e5-1a5a-7b08-c2cd32b62a08@gmail.com>
+Date: Tue, 29 Aug 2017 20:44:03 +0300
 MIME-Version: 1.0
 In-Reply-To: <20170829184342.2f6ec0b0@dellmb.labs.office.nic.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-29 12:43, Marek Behún wrote:
+
+
+On 29.08.2017 19:43, Marek Behún wrote:
 > Hello,
 > 
 > so I've been studying the linux btrfs code and have come across this:
@@ -38,10 +40,21 @@ On 2017-08-29 12:43, Marek Behún wrote:
 > reading the extent will result in a failure or incomplete read.
 > 
 > Is this a bug, or is this behaviour a feature?
-It's absolutely not a feature.  I've not actually seen this issue 
-mentioned anywhere myself, but I'm willing to bet that the consensus 
-among developers will be that its an unintentional limitation of the 
-current design.  There are in fact issues when trying to use a 
-filesystem with a block size smaller than PAGE_SIZE as well, so the 
-general consensus is to not mix filesystems from different architectures 
-unless you know the page size matches.
+
+Please have a look in btrfs_check_super_valid(), which is being called
+from open_ctree, which in turn is called when a filesystem is mounted.
+
+Currently btrfs supports a single blocksize value - PAGE_SIZE, also it's
+forbidden to mount a filesystem on systems with different page_sizes.
+When the sub-page blocksizes patch is merged this might be have to be
+taken into consideration but certainly not at present times.
+
+> 
+> Thank you.
+> 
+> Marek
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,22 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:54687 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751213AbdH2DQl (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:48217 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1753257AbdH2Oam (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Aug 2017 23:16:41 -0400
-Date: Mon, 28 Aug 2017 20:16:37 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org, Chris Murphy <lists@colorremedies.com>
-Cc: Chris Mason <clm@fb.com>, bo.li.liu@oracle.com, fdmanana@suse.com,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17 Object already exists (since 3.4 / 2012)
-Message-ID: <20170829031637.GA15290@merlins.org>
-References: <20170715004828.f4bom5wq34abe4lz@merlins.org> <20170711062155.hvlx5ud4zphpzjnp@merlins.org> <20170715012216.njq6az3y34qyomtb@merlins.org> <20170715231245.GA28281@merlins.org>
+        Tue, 29 Aug 2017 10:30:42 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Marc MERLIN <marc@merlins.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>
+CC: Chris Mason <clm@fb.com>, "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
+        "fdmanana@suse.com" <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
+ errno=-17 Object already exists (since 3.4 / 2012)
+Date: Tue, 29 Aug 2017 14:30:19 +0000
+Message-ID: <F952197E-3A13-410A-B299-F5C0791A99DF@fb.com>
+References: <20170715004828.f4bom5wq34abe4lz@merlins.org>
+ <20170711062155.hvlx5ud4zphpzjnp@merlins.org>
+ <20170715012216.njq6az3y34qyomtb@merlins.org>
+ <20170715231245.GA28281@merlins.org> <20170829031637.GA15290@merlins.org>
+In-Reply-To: <20170829031637.GA15290@merlins.org>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170715231245.GA28281@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Sorry Marc, Iâ€™ll wire up a bcc script to try and catch when this happens.  In order for it to work itâ€™ll need to read the extent tree in before you mount the fs, is that something youâ€™ll be able to swing or is this your root fs?  Also is it the only btrfs fs on the system?  Thanks,
+
+Josef
+
+On 8/28/17, 11:17 PM, "Marc MERLIN" <marc@merlins.org> wrote:
 
 On Sat, Jul 15, 2017 at 04:12:45PM -0700, Marc MERLIN wrote:
 > On Fri, Jul 14, 2017 at 06:22:16PM -0700, Marc MERLIN wrote:
@@ -80,4 +93,7 @@ Marc
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
 Microsoft is to operating systems ....
                                       .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIBAg&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=qcSpYy8ZFdhWPMDeFU0pClrt2eWlHLnDl5rqwzlssdk&s=591MXZleq8AqL3ZpDgJYq2y-sRj1LSE4F_32mkIa9Pg&e=   
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

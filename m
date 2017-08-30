@@ -1,66 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f48.google.com ([74.125.83.48]:32954 "EHLO
-        mail-pg0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753389AbdHWGqT (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35681 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751317AbdH3O3u (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Aug 2017 02:46:19 -0400
-Received: by mail-pg0-f48.google.com with SMTP id t3so4072703pgt.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Aug 2017 23:46:19 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+        Wed, 30 Aug 2017 10:29:50 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH 7/7] Btrfs: fix __user casting in ioctl.c
-Date: Tue, 22 Aug 2017 23:46:05 -0700
-Message-Id: <a59180cb6452c0813ce7d3a86f85a8abcd74d78c.1503470354.git.osandov@fb.com>
-In-Reply-To: <cover.1503470354.git.osandov@fb.com>
-References: <cover.1503470354.git.osandov@fb.com>
-In-Reply-To: <cover.1503470354.git.osandov@fb.com>
-References: <cover.1503470354.git.osandov@fb.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: declare TRACE_DEFINE_ENUM for each of show_flush_state enum
+Date: Wed, 30 Aug 2017 22:36:48 +0800
+Message-Id: <20170830143648.3960-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+So that perf can show the state symbol.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/ioctl.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ include/trace/events/btrfs.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index cf71d0304671..7a7a82e0963c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2210,7 +2210,7 @@ static noinline int btrfs_ioctl_tree_search_v2(struct file *file,
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index d412c49f5a6a..64002f898717 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -27,6 +27,13 @@ struct __btrfs_workqueue;
+ struct btrfs_qgroup_extent_record;
+ struct btrfs_qgroup;
  
- 	inode = file_inode(file);
- 	ret = search_ioctl(inode, &args.key, &buf_size,
--			   (char *)(&uarg->buf[0]));
-+			   (char __user *)(&uarg->buf[0]));
- 	if (ret == 0 && copy_to_user(&uarg->key, &args.key, sizeof(args.key)))
- 		ret = -EFAULT;
- 	else if (ret == -EOVERFLOW &&
-@@ -4512,8 +4512,8 @@ static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
- 		ipath->fspath->val[i] = rel_ptr;
- 	}
- 
--	ret = copy_to_user((void *)(unsigned long)ipa->fspath,
--			   (void *)(unsigned long)ipath->fspath, size);
-+	ret = copy_to_user((void __user *)(unsigned long)ipa->fspath,
-+			   ipath->fspath, size);
- 	if (ret) {
- 		ret = -EFAULT;
- 		goto out;
-@@ -4584,8 +4584,8 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
- 	if (ret < 0)
- 		goto out;
- 
--	ret = copy_to_user((void *)(unsigned long)loi->inodes,
--			   (void *)(unsigned long)inodes, size);
-+	ret = copy_to_user((void __user *)(unsigned long)loi->inodes, inodes,
-+			   size);
- 	if (ret)
- 		ret = -EFAULT;
- 
++TRACE_DEFINE_ENUM(FLUSH_DELAYED_ITEMS_NR);
++TRACE_DEFINE_ENUM(FLUSH_DELAYED_ITEMS);
++TRACE_DEFINE_ENUM(FLUSH_DELALLOC);
++TRACE_DEFINE_ENUM(FLUSH_DELALLOC_WAIT);
++TRACE_DEFINE_ENUM(ALLOC_CHUNK);
++TRACE_DEFINE_ENUM(COMMIT_TRANS);
++
+ #define show_ref_type(type)						\
+ 	__print_symbolic(type,						\
+ 		{ BTRFS_TREE_BLOCK_REF_KEY, 	"TREE_BLOCK_REF" },	\
 -- 
-2.14.1
+2.13.1
 

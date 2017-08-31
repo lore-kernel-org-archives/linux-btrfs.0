@@ -1,163 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33666 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753555AbdHUWvj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Aug 2017 18:51:39 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v7LMpcbf022512
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 22:51:38 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v7LMpbi3024958
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 22:51:38 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v7LMpbp5031520
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Aug 2017 22:51:37 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: remove bio_flags which indicates a meta block of log-tree
-Date: Mon, 21 Aug 2017 15:50:00 -0600
-Message-Id: <20170821215000.2987-2-bo.li.liu@oracle.com>
-In-Reply-To: <20170821215000.2987-1-bo.li.liu@oracle.com>
-References: <20170821215000.2987-1-bo.li.liu@oracle.com>
+Received: from smtp-32-i6.italiaonline.it ([212.48.14.166]:39965 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751947AbdHaR1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Aug 2017 13:27:40 -0400
+Reply-To: kreijack@inwind.it
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: [btrfs-progs] Bug in mkfs.btrfs -r
+Message-ID: <7d08fad3-1a73-08c1-dbb1-e845f88cf039@libero.it>
+Date: Thu, 31 Aug 2017 19:27:36 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since both committing transaction and writing log-tree are doing
-plugging on metadata IO, we can unify to use %sync_writers to benefit
-both cases, instead of checking bio_flags while writing meta blocks of
-log-tree.
+Hi All,
 
-This removes the bio_flags related stuff for writing log-tree.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/disk-io.c   |  6 ++----
- fs/btrfs/extent_io.c | 13 ++-----------
- fs/btrfs/extent_io.h |  1 -
- 3 files changed, 4 insertions(+), 16 deletions(-)
+I found a bug in mkfs.btrfs, when it is used the option '-r'. It seems that it is not visible the full disk.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8d097ba..b0e353e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1005,12 +1005,10 @@ static blk_status_t __btree_submit_bio_done(void *private_data, struct bio *bio,
- 	return ret;
- }
- 
--static int check_async_write(struct btrfs_inode *bi, unsigned long bio_flags)
-+static int check_async_write(struct btrfs_inode *bi)
- {
- 	if (atomic_read(&bi->sync_writers))
- 		return 0;
--	if (bio_flags & EXTENT_BIO_TREE_LOG)
--		return 0;
- #ifdef CONFIG_X86
- 	if (static_cpu_has(X86_FEATURE_XMM4_2))
- 		return 0;
-@@ -1024,7 +1022,7 @@ static blk_status_t btree_submit_bio_hook(void *private_data, struct bio *bio,
- {
- 	struct inode *inode = private_data;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	int async = check_async_write(BTRFS_I(inode), bio_flags);
-+	int async = check_async_write(BTRFS_I(inode));
- 	blk_status_t ret;
- 
- 	if (bio_op(bio) != REQ_OP_WRITE) {
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0aff9b2..b61d68f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -110,7 +110,6 @@ struct extent_page_data {
- 	struct bio *bio;
- 	struct extent_io_tree *tree;
- 	get_extent_t *get_extent;
--	unsigned long bio_flags;
- 
- 	/* tells writepage not to lock the state bits for this range
- 	 * it still does the unlocking
-@@ -3713,7 +3712,6 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	u64 offset = eb->start;
- 	u32 nritems;
- 	unsigned long i, num_pages;
--	unsigned long bio_flags = 0;
- 	unsigned long start, end;
- 	int write_flags = (epd->sync_io ? REQ_SYNC : 0) | REQ_META;
- 	int ret = 0;
-@@ -3721,8 +3719,6 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags);
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	atomic_set(&eb->io_pages, num_pages);
--	if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
--		bio_flags = EXTENT_BIO_TREE_LOG;
- 
- 	/* set btree blocks beyond nritems with 0 to avoid stale content. */
- 	nritems = btrfs_header_nritems(eb);
-@@ -3749,8 +3745,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 					 p, offset >> 9, PAGE_SIZE, 0, bdev,
- 					 &epd->bio,
- 					 end_bio_extent_buffer_writepage,
--					 0, epd->bio_flags, bio_flags, false);
--		epd->bio_flags = bio_flags;
-+					 0, 0, 0, false);
- 		if (ret) {
- 			set_btree_ioerr(p);
- 			if (PageWriteback(p))
-@@ -3787,7 +3782,6 @@ int btree_write_cache_pages(struct address_space *mapping,
- 		.tree = tree,
- 		.extent_locked = 0,
- 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
--		.bio_flags = 0,
- 	};
- 	int ret = 0;
- 	int done = 0;
-@@ -4063,7 +4057,7 @@ static void flush_epd_write_bio(struct extent_page_data *epd)
- 		bio_set_op_attrs(epd->bio, REQ_OP_WRITE,
- 				 epd->sync_io ? REQ_SYNC : 0);
- 
--		ret = submit_one_bio(epd->bio, 0, epd->bio_flags);
-+		ret = submit_one_bio(epd->bio, 0, 0);
- 		BUG_ON(ret < 0); /* -ENOMEM */
- 		epd->bio = NULL;
- 	}
-@@ -4086,7 +4080,6 @@ int extent_write_full_page(struct extent_io_tree *tree, struct page *page,
- 		.get_extent = get_extent,
- 		.extent_locked = 0,
- 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
--		.bio_flags = 0,
- 	};
- 
- 	ret = __extent_writepage(page, wbc, &epd);
-@@ -4111,7 +4104,6 @@ int extent_write_locked_range(struct extent_io_tree *tree, struct inode *inode,
- 		.get_extent = get_extent,
- 		.extent_locked = 1,
- 		.sync_io = mode == WB_SYNC_ALL,
--		.bio_flags = 0,
- 	};
- 	struct writeback_control wbc_writepages = {
- 		.sync_mode	= mode,
-@@ -4151,7 +4143,6 @@ int extent_writepages(struct extent_io_tree *tree,
- 		.get_extent = get_extent,
- 		.extent_locked = 0,
- 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
--		.bio_flags = 0,
- 	};
- 
- 	ret = extent_write_cache_pages(mapping, wbc, __extent_writepage, &epd,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 4f03091..353dd3b 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -33,7 +33,6 @@
-  * type for this bio
-  */
- #define EXTENT_BIO_COMPRESSED 1
--#define EXTENT_BIO_TREE_LOG 2
- #define EXTENT_BIO_FLAG_SHIFT 16
- 
- /* these are bit numbers for test/set bit */
+$ uname -a
+Linux venice.bhome 4.12.8 #268 SMP Thu Aug 17 09:03:26 CEST 2017 x86_64 GNU/Linux
+$ btrfs --version
+btrfs-progs v4.12
+
+
+--- First try without '-r' (/dev/sda is about 80GB)
+
+$ sudo mkfs.btrfs  -f /dev/sda4
+btrfs-progs v4.12
+See http://btrfs.wiki.kernel.org for more information.
+
+Label:              (null)
+UUID:               6f11971d-a945-4f33-8750-c16a7438a15d
+Node size:          16384
+Sector size:        4096
+Filesystem size:    83.73GiB
+Block group profiles:
+  Data:             single            8.00MiB
+  Metadata:         DUP               1.00GiB
+  System:           DUP               8.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1    83.73GiB  /dev/sda4
+
+
+All the disk (~80GB) is visible
+
+
+---- Now try with '-r'
+
+$ sudo mkfs.btrfs  -r /tmp/test/ -f /dev/sda4
+btrfs-progs v4.12
+See http://btrfs.wiki.kernel.org for more information.
+
+Making image is completed.
+Label:              (null)
+UUID:               60ea1c38-e5b1-403d-8a25-1cac2258922d
+Node size:          16384
+Sector size:        4096
+Filesystem size:    52.00MiB
+Block group profiles:
+  Data:             single           29.19MiB
+  Metadata:         DUP               5.19MiB
+  System:           DUP               4.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1    52.00MiB  /dev/sda4
+
+
+where /tmp/test contains:
+$ ls -l /tmp/test/
+total 16392
+-rw-r--r-- 1 ghigo ghigo        5 Aug 31 18:26 123
+-rw-r--r-- 1 ghigo ghigo 16777216 Aug 31 18:26 123456
+-rw-r--r-- 1 ghigo ghigo        5 Aug 31 18:26 456
+
+
+BTRFS sees only 52MB instead of ~80GB.
+
+Even if I try to mount and umount, the thing doesn't change.
+
+$ sudo mount /dev/sda4 /mnt/other/
+$ echo 123 | sudo tee /mnt/other/9999
+123
+$ sync
+$ sudo umount /mnt/other 
+$ sudo mount /dev/sda4 /mnt/other/
+
+Below an output of "btrfs fi us"
+
+$ sudo btrfs fi us /mnt/other/
+Overall:
+    Device size:		  52.00MiB
+    Device allocated:		  52.00MiB
+    Device unallocated:		     0.00B
+    Device missing:		     0.00B
+    Used:			  16.16MiB
+    Free (estimated):		  13.19MiB	(min: 13.19MiB)
+    Data ratio:			      1.00
+    Metadata ratio:		      1.00
+    Global reserve:		  16.00MiB	(used: 0.00B)
+
+Data,single: Size:29.19MiB, Used:16.00MiB
+   /dev/sda4	  29.19MiB
+
+Metadata,single: Size:18.81MiB, Used:144.00KiB
+   /dev/sda4	  18.81MiB
+
+System,single: Size:4.00MiB, Used:16.00KiB
+   /dev/sda4	   4.00MiB
+
+Unallocated:
+   /dev/sda4	     0.00B
+
+
+
+And a balance is impossible
+
+$ sudo btrfs bala start --full-balance /mnt/other/
+ERROR: error during balancing '/mnt/other/': No space left on device
+There may be more info in syslog - try dmesg | tail
+
+$ dmesg | tail
+[ 2034.684649] BTRFS: device fsid 60ea1c38-e5b1-403d-8a25-1cac2258922d devid 1 transid 7 /dev/sda4
+[ 2140.835629] BTRFS info (device sda4): disk space caching is enabled
+[ 2140.835632] BTRFS info (device sda4): has skinny extents
+[ 2140.835633] BTRFS info (device sda4): flagging fs with big metadata feature
+[ 2140.837381] BTRFS info (device sda4): creating UUID tree
+[ 2171.646349] BTRFS info (device sda4): disk space caching is enabled
+[ 2171.646362] BTRFS info (device sda4): has skinny extents
+[ 2273.696914] BTRFS info (device sda4): relocating block group 20512768 flags data
+[ 2273.721995] BTRFS info (device sda4): relocating block group 9633792 flags data
+[ 2273.746950] BTRFS info (device sda4): 6 enospc errors during balance
+
+
+I tried several btrfs-progs version ( I go back until v0.20-rc1: 2012!!!), and the behavior is the same: with '-r' the disk is not fully used. So I suppose that it is a kernel problem (IIRC the kernel should "complete" the mkfs at the first mount). Any idea ? 
+
+BR
+G.Baroncelli
+
 -- 
-2.9.4
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

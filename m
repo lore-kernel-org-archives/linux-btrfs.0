@@ -1,117 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloudserver020138.home.net.pl ([62.129.239.72]:53113 "EHLO
-        cloudserver020138.home.net.pl" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751034AbdHaOo5 (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36386 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751034AbdHaOxS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Aug 2017 10:44:57 -0400
-Message-ID: <59A81F56.70708@sarach.com.pl>
-Date: Thu, 31 Aug 2017 16:38:14 +0200
-From: =?UTF-8?B?TWljaGHFgiBTb2tvxYJvd3NraQ==?= <michal@sarach.com.pl>
+        Thu, 31 Aug 2017 10:53:18 -0400
+From: Josef Bacik <jbacik@fb.com>
+To: Marc MERLIN <marc@merlins.org>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
+        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
+        "fdmanana@suse.com" <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
+ errno=-17 Object already exists (since 3.4 / 2012)
+Date: Thu, 31 Aug 2017 14:52:56 +0000
+Message-ID: <D6E7AD8E-AF2B-4A17-9692-FDE17F31A8D2@fb.com>
+References: <20170715004828.f4bom5wq34abe4lz@merlins.org>
+ <20170711062155.hvlx5ud4zphpzjnp@merlins.org>
+ <20170715012216.njq6az3y34qyomtb@merlins.org>
+ <20170715231245.GA28281@merlins.org> <20170829031637.GA15290@merlins.org>
+ <F952197E-3A13-410A-B299-F5C0791A99DF@fb.com>
+ <20170829143955.GD15290@merlins.org>
+ <EEF8B32C-179F-431A-880F-A27AD96B4BEF@fb.com>
+ <20170830034001.rlwaqsitco65exqi@merlins.org>
+In-Reply-To: <20170830034001.rlwaqsitco65exqi@merlins.org>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: number of subvolumes
-References: <20170822214531.44538589@natsu> <20170822165725.GL14804@rus.uni-stuttgart.de> <ab52f32.7ade2c3f.15e0af46ee9@gmail.com> <20170822180155.GM14804@rus.uni-stuttgart.de> <22940.31139.194399.982315@tree.ty.sabi.co.uk> <20170822204811.GO14804@rus.uni-stuttgart.de> <20170823071821.GA28319@rus.uni-stuttgart.de> <f75e66d.7ade2c40.15e0e3ced5c@gmail.com> <onkbkk$qs1$1@blaine.gmane.org> <22943.4266.793339.528061@tree.ty.sabi.co.uk> <20170831064916.GA5783@rus.uni-stuttgart.de> <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>
-In-Reply-To: <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms050903040800000002040706"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hello,
 
---------------ms050903040800000002040706
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Sorry I really thought I could accomplish this with BPF, but ref tracking is just too complicated to work properly with BPF.  I forward ported my ref verification patch to the latest kernel, you can find it in the btrfs-readdir branch of my btrfs-next tree here
 
-On 08/31/2017 01:18 PM, Austin S. Hemmelgarn wrote:
-> [...]
->> Any hint here?
-> Having compression enabled causes no issues with defray and balance.
-> There appears to be a prevalent belief however that defrag is
-> pointless if you're using compression, probably because some versions
-> of `filefrag` don't report compressed extents properly (they list each
-> 128k compressed unit as one extent, which is wrong).
-Is there another tool to verify fragments number of given file when
-using compression?
+git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+
+Just check that out, git checkout btrfs-readdir, build with CONFIG_BTRFS_FS_REF_VERIFY=y, and then mount the problematic fs with ‚Äìo ref_verify and then grab the full output when it blows up and we should be able to work out what is happening from there.  Thanks,
+
+Josef
+
+On 8/29/17, 11:41 PM, "Marc MERLIN" <marc@merlins.org> wrote:
+
+On Tue, Aug 29, 2017 at 06:22:38PM +0000, Josef Bacik wrote:
+> How much metadata do you have on this fs?  I was going to hold everything in bpf hash trees, but I‚Äôm worried we‚Äôll hit collisions and then the tracing will be useless.  If it‚Äôs too big I‚Äôll have to dump everything to userspace and let python take care of keeping everything in memory, so if you have a lot of metadata hopefully you have lots of memory too ;).  Thanks,
+
+gargamel:~# btrfs fi df /mnt/btrfs_pool1
+Data, single: total=10.60TiB, used=10.54TiB
+System, DUP: total=32.00MiB, used=1.19MiB
+Metadata, DUP: total=58.00GiB, used=12.69GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIDaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=q-HXS1ddbqcYmJLp6pXcQoJL7qBXplbRAFRQ4eGSQYw&s=yyIlFUXCBjQ2xLoWBYzasW3BtBiLrITfkKLWvnhqgOs&e=                          | PGP 1024R/763BE901
 
 
-
---------------ms050903040800000002040706
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIILDzCC
-BSUwggQNoAMCAQICEGaJgd+Elrs3JDTMTgSd0fQwDQYJKoZIhvcNAQELBQAwdTELMAkGA1UE
-BhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRp
-ZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBD
-QTAeFw0xNjA3MjkxMjA0MjRaFw0xOTEwMjkxMjA0MjRaMGwxJjAkBgNVBA0MHUZvciBsb2dp
-biBhdXRoZW50aWNhdGlvbiBvbmx5MR0wGwYDVQQDDBRtaWNoYWxAc2FyYWNoLmNvbS5wbDEj
-MCEGCSqGSIb3DQEJARYUbWljaGFsQHNhcmFjaC5jb20ucGwwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDD6nNl0HXUSQbyTtcgn6++PUyDTzlkutl1Gao/bT1OMbapBroQoMNr
-431UUq7TWlaVkQoHojWOr5xZPXCjg3g9lL8CaT/r07K/dy6M9kKTFRB30QFFqEDNNuToGm0p
-pjLdgXz1KZoXb47gAR5zo7nuDOyTRUHPNXHibYcJ/t9qVSzTl2F5pvgiePAJ+znZR3lQzWor
-omYsYBpMaC8oxOEl4IZRVnd+0iyrXND/4g8qQj93OakyJiW17n6hh5PAdRLwt37t6qmX6suv
-wLw3MjITsmoNLEcsNIOoaX57OOB7WdxhWrzLsrhZRVfmyC6BIxKd5DvvG7Tq9l+ieSnNvCdZ
-AgMBAAGjggG4MIIBtDAOBgNVHQ8BAf8EBAMCBLAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsG
-AQUFBwMEMAkGA1UdEwQCMAAwHQYDVR0OBBYEFA8czJfA8oqHl1tdqBjuSetTl9ZOMB8GA1Ud
-IwQYMBaAFCSBbDlhvkkPj7cbRivJKLUnSG1oMG8GCCsGAQUFBwEBBGMwYTAkBggrBgEFBQcw
-AYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDkGCCsGAQUFBzAChi1odHRwOi8vYWlhLnN0
-YXJ0c3NsLmNvbS9jZXJ0cy9zY2EuY2xpZW50MS5jcnQwOAYDVR0fBDEwLzAtoCugKYYnaHR0
-cDovL2NybC5zdGFydHNzbC5jb20vc2NhLWNsaWVudDEuY3JsMB8GA1UdEQQYMBaBFG1pY2hh
-bEBzYXJhY2guY29tLnBsMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tLzBH
-BgNVHSAEQDA+MDwGCysGAQQBgbU3AQIFMC0wKwYIKwYBBQUHAgEWH2h0dHBzOi8vd3d3LnN0
-YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggEBAAoJvbh14v6Pji08WKR4nVub
-FOGh8+7Sme/HalNJzNk2tTScivwvp8+pamict5BkBhM2W9tLIrHCzo0Gb06sF0idqCwzuhBl
-XKzjOKI4dLZXZDCgBvEfMcOQSvwkHglw6Q1WAgpfXaP/ALw9gvvwh1OUQt+9GgQrxf3HKBbp
-YtM2PddIV1Zi4fdwYNQ/AlM9smKl0DhU3Akj0EBjdKwPVEya2jbUMQI7YbM1I1p1c/s+OUOw
-EPagagPVkx0SaWu5ySNe3aFIqvTyma+U4zNn34iVR05X7I5UeceLmOkWducPTQo//ZrHNn0o
-ll6mlU8bF51YGULZdGvev1K6Ob0p/kcwggXiMIIDyqADAgECAhBrp4p9CteI1lEK+Vnk57Th
-MA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQu
-MSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQD
-EyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTEyMTYwMTAwMDVaFw0z
-MDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkw
-JwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3Rh
-cnRDb20gQ2xhc3MgMSBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
-AQC9fdr3w6J9g/Zbgv3bW1+uHht1wLUZr5gkrLtXedg17AkefMyUGwrQdvwObhajcVmnKVxh
-rUwkZPXRAwZZosRHfEIi5FH7x6SV/8Sp5lZEuiMnvMFG2MzLA84J6Ws5T4NfXZ0qn4TPgnr3
-X2vPVS51M7Ua9nIJgn8jvTra4eyyQzxvuA/GZwKg7VQfDCmCS+kICslYYWgXOMt2xlsSslxL
-ce0CGWRsT8EpMyt1iDflSjXZIsE7m1uTyHaKZspMLyIyz6mySu8j8BWWHpChNNeTrFuhVfrO
-AyDPFJVUvKZCLKBhibTLloyy+LatoWELrjdI4a8StZY8+dIR9t4APXGzAgMBAAGjggFkMIIB
-YDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1Ud
-EwEB/wQIMAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5j
-b20vc2ZzY2EuY3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Au
-c3RhcnRzc2wuY29tMDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0
-cy9jYS5jcnQwHQYDVR0OBBYEFCSBbDlhvkkPj7cbRivJKLUnSG1oMB8GA1UdIwQYMBaAFE4L
-7xqkQFulF2mHMMo0aEPQQa7yMD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5o
-dHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAIvj94fs
-AYuErQ8BAluc4SMnIwS9NPBwAm5SH9uh2NCXTq7im61g7F1LIiNI/+wq37fUuaMbz4g7VarK
-QTgf8ubs0p7NZWcIe7Bvem2AWaXBsxsaRTYw5kG3DN8pd1hSEUuFoTa7DmNeFe8tiK1BrL3r
-bA/m48jp4AiFXgvxprJrW7izsyetOrRHPbkW4Y07v29MdhaPv3u1JELyszXqOzjIYo4sWlC8
-iDQXwgSW/ntvWy2n4LuiaozlCfXl149tKeqvwlvrla2Yklue/quWp9j9ou4T/OY0CXMuY+B8
-wNK0ohd2D4ShgFlMSjzAFRoHGKF81snTr2d1A7Ew02oF6UQyCkC2aNNsK5cWOojBar5c7Hpl
-X9aHYUCZouxIeU28SONJAxnATgR4cJ2jrpmYSz/kliUJ46S6UpVDo/ebn9c6PaM/XtDYCCaM
-/7XX6wc3s++sbQ7CtCn1Ax7df6ufQbwyO0V+oFa9H0KAsjHMzcwk3EV2B2NLatidKE/m7G+r
-B9m+FlVgIiSp0mGlg43QO9Kh1+JqvTCIzv2bJJkmPMLQJNuKKwHNL8F4GGp6jbAV+WL+LDeG
-fVcq8DHS3LrD+xyYEXQBiqZEdiPVOMxLDSUCXsDO0uCWpaNQ8j6y6S9p0xE/Ga0peVLadVHh
-qf9nXqKaxnr358VgfrxzUIrvOaOjMYIDvDCCA7gCAQEwgYkwdTELMAkGA1UEBhMCSUwxFjAU
-BgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24g
-QXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SW
-uzckNMxOBJ3R9DAJBgUrDgMCGgUAoIICBzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
-CSqGSIb3DQEJBTEPFw0xNzA4MzExNDM4MTRaMCMGCSqGSIb3DQEJBDEWBBQ0OtsQuyQQwaZ6
-Ue6CDrSulXTonTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIw
-CgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0G
-CCqGSIb3DQMCAgEoMIGaBgkrBgEEAYI3EAQxgYwwgYkwdTELMAkGA1UEBhMCSUwxFjAUBgNV
-BAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0
-aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SWuzck
-NMxOBJ3R9DCBnAYLKoZIhvcNAQkQAgsxgYyggYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
-DVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9y
-aXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SWuzckNMxO
-BJ3R9DANBgkqhkiG9w0BAQEFAASCAQCuNz8VdDObSRrKTOuTDH2I8KlSymO6ghIK0VTFu6C7
-3J3pZC7hotnpSSLsH9Tb6QEuRINXxgVWtQP46OGU2ByHKIFo2KBEjvgtlvf859Np+rXe26y/
-LNAMA+WGLRHcCRjA0i+elENyNQPDBX23P3GDpMbXM+8hd2hVb20lGD+aZKth0V+Rsy734r5F
-dtJ1BXbIXrRse18rEYiERboirqTBKjNpCbt7VlwHC5zvynHimZlkPZo3db5usONGxoPNrK1O
-sXgWjIWpr7fUXum6o1Cx1OGsH58ka9DsD3lJl0b0nMkLm03tZGVRa4Kb66if/C+rdYd6um5p
-uU5L9TtX/dpCAAAAAAAA
---------------ms050903040800000002040706--
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

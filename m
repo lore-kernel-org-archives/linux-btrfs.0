@@ -1,67 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:49228 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751724AbdHaON5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Aug 2017 10:13:57 -0400
-Subject: Re: mount time for big filesystems
-To: Roman Mamedov <rm@romanrm.net>,
-        Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <556e7650-8556-d5ca-273e-6c158c1d032e@prismatelecomtesting.com>
- <20170831163656.6be88191@natsu>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <aecfb058-83bd-9ebd-b043-add6e245051b@gmx.com>
-Date: Thu, 31 Aug 2017 22:13:46 +0800
+Received: from cloudserver020138.home.net.pl ([62.129.239.72]:53113 "EHLO
+        cloudserver020138.home.net.pl" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751034AbdHaOo5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Aug 2017 10:44:57 -0400
+Message-ID: <59A81F56.70708@sarach.com.pl>
+Date: Thu, 31 Aug 2017 16:38:14 +0200
+From: =?UTF-8?B?TWljaGHFgiBTb2tvxYJvd3NraQ==?= <michal@sarach.com.pl>
 MIME-Version: 1.0
-In-Reply-To: <20170831163656.6be88191@natsu>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: number of subvolumes
+References: <20170822214531.44538589@natsu> <20170822165725.GL14804@rus.uni-stuttgart.de> <ab52f32.7ade2c3f.15e0af46ee9@gmail.com> <20170822180155.GM14804@rus.uni-stuttgart.de> <22940.31139.194399.982315@tree.ty.sabi.co.uk> <20170822204811.GO14804@rus.uni-stuttgart.de> <20170823071821.GA28319@rus.uni-stuttgart.de> <f75e66d.7ade2c40.15e0e3ced5c@gmail.com> <onkbkk$qs1$1@blaine.gmane.org> <22943.4266.793339.528061@tree.ty.sabi.co.uk> <20170831064916.GA5783@rus.uni-stuttgart.de> <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>
+In-Reply-To: <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms050903040800000002040706"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
+
+--------------ms050903040800000002040706
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+On 08/31/2017 01:18 PM, Austin S. Hemmelgarn wrote:
+> [...]
+>> Any hint here?
+> Having compression enabled causes no issues with defray and balance.
+> There appears to be a prevalent belief however that defrag is
+> pointless if you're using compression, probably because some versions
+> of `filefrag` don't report compressed extents properly (they list each
+> 128k compressed unit as one extent, which is wrong).
+Is there another tool to verify fragments number of given file when
+using compression?
 
 
-On 2017年08月31日 19:36, Roman Mamedov wrote:
-> On Thu, 31 Aug 2017 12:43:19 +0200
-> Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com> wrote:
-> 
->> Hi,
->> this 37T filesystem took some times to mount. It has 47
->> subvolumes/snapshots and is mounted with
->> noatime,compress=zlib,space_cache. Is it normal, due to its size?
 
-Just like Han said, this is caused by BLOCK_GROUP_ITEM scattered in the 
-large extent tree.
-So, it's hard to improve soon.
+--------------ms050903040800000002040706
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-Some ideas like delay BLOCK_GROUP_ITEM loading can greatly enhance the 
-mount speed.
-But such enhancement may affect extent allocator (that's to say we can't 
-do any write before at least some BLOCK_GROUP_ITEM is loaded) and may 
-cause more bugs.
-
-Other ideas like per-chunk extent tree may also greatly reduce mount 
-time but need on-disk format change.
-(Well, in fact btrfs on-disk format is never well designed anyway, so if 
-anyone is really doing this, please make a comprehensive wiki/white 
-paper for this)
-
-> 
-> If you could implement SSD caching in front of your FS (such as lvmcache or
-> bcache), that would work wonders for performance in general, and especially
-> for mount times. I have seen amazing results with lvmcache (of just 32 GB) for
-> a 14 TB FS.
-
-That's impressive.
-Since extent tree is a super hot tree (any CoW will modify extent tree), 
-it makes sense.
-
-> 
-> As for in general, with your FS size perhaps you should be using
-> "space_cache=v2" for better performance, but I'm not sure if that will have
-> any effect on mount time (aside from slowing down the first mount with that).
-> 
-Unfortunately, space tree is not loaded until used (at least for v1), so 
-space_cache may not help much.
-
-Thanks,
-Qu
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIILDzCC
+BSUwggQNoAMCAQICEGaJgd+Elrs3JDTMTgSd0fQwDQYJKoZIhvcNAQELBQAwdTELMAkGA1UE
+BhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRp
+ZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBD
+QTAeFw0xNjA3MjkxMjA0MjRaFw0xOTEwMjkxMjA0MjRaMGwxJjAkBgNVBA0MHUZvciBsb2dp
+biBhdXRoZW50aWNhdGlvbiBvbmx5MR0wGwYDVQQDDBRtaWNoYWxAc2FyYWNoLmNvbS5wbDEj
+MCEGCSqGSIb3DQEJARYUbWljaGFsQHNhcmFjaC5jb20ucGwwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDD6nNl0HXUSQbyTtcgn6++PUyDTzlkutl1Gao/bT1OMbapBroQoMNr
+431UUq7TWlaVkQoHojWOr5xZPXCjg3g9lL8CaT/r07K/dy6M9kKTFRB30QFFqEDNNuToGm0p
+pjLdgXz1KZoXb47gAR5zo7nuDOyTRUHPNXHibYcJ/t9qVSzTl2F5pvgiePAJ+znZR3lQzWor
+omYsYBpMaC8oxOEl4IZRVnd+0iyrXND/4g8qQj93OakyJiW17n6hh5PAdRLwt37t6qmX6suv
+wLw3MjITsmoNLEcsNIOoaX57OOB7WdxhWrzLsrhZRVfmyC6BIxKd5DvvG7Tq9l+ieSnNvCdZ
+AgMBAAGjggG4MIIBtDAOBgNVHQ8BAf8EBAMCBLAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsG
+AQUFBwMEMAkGA1UdEwQCMAAwHQYDVR0OBBYEFA8czJfA8oqHl1tdqBjuSetTl9ZOMB8GA1Ud
+IwQYMBaAFCSBbDlhvkkPj7cbRivJKLUnSG1oMG8GCCsGAQUFBwEBBGMwYTAkBggrBgEFBQcw
+AYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDkGCCsGAQUFBzAChi1odHRwOi8vYWlhLnN0
+YXJ0c3NsLmNvbS9jZXJ0cy9zY2EuY2xpZW50MS5jcnQwOAYDVR0fBDEwLzAtoCugKYYnaHR0
+cDovL2NybC5zdGFydHNzbC5jb20vc2NhLWNsaWVudDEuY3JsMB8GA1UdEQQYMBaBFG1pY2hh
+bEBzYXJhY2guY29tLnBsMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tLzBH
+BgNVHSAEQDA+MDwGCysGAQQBgbU3AQIFMC0wKwYIKwYBBQUHAgEWH2h0dHBzOi8vd3d3LnN0
+YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggEBAAoJvbh14v6Pji08WKR4nVub
+FOGh8+7Sme/HalNJzNk2tTScivwvp8+pamict5BkBhM2W9tLIrHCzo0Gb06sF0idqCwzuhBl
+XKzjOKI4dLZXZDCgBvEfMcOQSvwkHglw6Q1WAgpfXaP/ALw9gvvwh1OUQt+9GgQrxf3HKBbp
+YtM2PddIV1Zi4fdwYNQ/AlM9smKl0DhU3Akj0EBjdKwPVEya2jbUMQI7YbM1I1p1c/s+OUOw
+EPagagPVkx0SaWu5ySNe3aFIqvTyma+U4zNn34iVR05X7I5UeceLmOkWducPTQo//ZrHNn0o
+ll6mlU8bF51YGULZdGvev1K6Ob0p/kcwggXiMIIDyqADAgECAhBrp4p9CteI1lEK+Vnk57Th
+MA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQu
+MSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQD
+EyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTEyMTYwMTAwMDVaFw0z
+MDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkw
+JwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3Rh
+cnRDb20gQ2xhc3MgMSBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+AQC9fdr3w6J9g/Zbgv3bW1+uHht1wLUZr5gkrLtXedg17AkefMyUGwrQdvwObhajcVmnKVxh
+rUwkZPXRAwZZosRHfEIi5FH7x6SV/8Sp5lZEuiMnvMFG2MzLA84J6Ws5T4NfXZ0qn4TPgnr3
+X2vPVS51M7Ua9nIJgn8jvTra4eyyQzxvuA/GZwKg7VQfDCmCS+kICslYYWgXOMt2xlsSslxL
+ce0CGWRsT8EpMyt1iDflSjXZIsE7m1uTyHaKZspMLyIyz6mySu8j8BWWHpChNNeTrFuhVfrO
+AyDPFJVUvKZCLKBhibTLloyy+LatoWELrjdI4a8StZY8+dIR9t4APXGzAgMBAAGjggFkMIIB
+YDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1Ud
+EwEB/wQIMAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5j
+b20vc2ZzY2EuY3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Au
+c3RhcnRzc2wuY29tMDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0
+cy9jYS5jcnQwHQYDVR0OBBYEFCSBbDlhvkkPj7cbRivJKLUnSG1oMB8GA1UdIwQYMBaAFE4L
+7xqkQFulF2mHMMo0aEPQQa7yMD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5o
+dHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAIvj94fs
+AYuErQ8BAluc4SMnIwS9NPBwAm5SH9uh2NCXTq7im61g7F1LIiNI/+wq37fUuaMbz4g7VarK
+QTgf8ubs0p7NZWcIe7Bvem2AWaXBsxsaRTYw5kG3DN8pd1hSEUuFoTa7DmNeFe8tiK1BrL3r
+bA/m48jp4AiFXgvxprJrW7izsyetOrRHPbkW4Y07v29MdhaPv3u1JELyszXqOzjIYo4sWlC8
+iDQXwgSW/ntvWy2n4LuiaozlCfXl149tKeqvwlvrla2Yklue/quWp9j9ou4T/OY0CXMuY+B8
+wNK0ohd2D4ShgFlMSjzAFRoHGKF81snTr2d1A7Ew02oF6UQyCkC2aNNsK5cWOojBar5c7Hpl
+X9aHYUCZouxIeU28SONJAxnATgR4cJ2jrpmYSz/kliUJ46S6UpVDo/ebn9c6PaM/XtDYCCaM
+/7XX6wc3s++sbQ7CtCn1Ax7df6ufQbwyO0V+oFa9H0KAsjHMzcwk3EV2B2NLatidKE/m7G+r
+B9m+FlVgIiSp0mGlg43QO9Kh1+JqvTCIzv2bJJkmPMLQJNuKKwHNL8F4GGp6jbAV+WL+LDeG
+fVcq8DHS3LrD+xyYEXQBiqZEdiPVOMxLDSUCXsDO0uCWpaNQ8j6y6S9p0xE/Ga0peVLadVHh
+qf9nXqKaxnr358VgfrxzUIrvOaOjMYIDvDCCA7gCAQEwgYkwdTELMAkGA1UEBhMCSUwxFjAU
+BgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24g
+QXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SW
+uzckNMxOBJ3R9DAJBgUrDgMCGgUAoIICBzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
+CSqGSIb3DQEJBTEPFw0xNzA4MzExNDM4MTRaMCMGCSqGSIb3DQEJBDEWBBQ0OtsQuyQQwaZ6
+Ue6CDrSulXTonTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIw
+CgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0G
+CCqGSIb3DQMCAgEoMIGaBgkrBgEEAYI3EAQxgYwwgYkwdTELMAkGA1UEBhMCSUwxFjAUBgNV
+BAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0
+aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SWuzck
+NMxOBJ3R9DCBnAYLKoZIhvcNAQkQAgsxgYyggYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
+DVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9y
+aXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SWuzckNMxO
+BJ3R9DANBgkqhkiG9w0BAQEFAASCAQCuNz8VdDObSRrKTOuTDH2I8KlSymO6ghIK0VTFu6C7
+3J3pZC7hotnpSSLsH9Tb6QEuRINXxgVWtQP46OGU2ByHKIFo2KBEjvgtlvf859Np+rXe26y/
+LNAMA+WGLRHcCRjA0i+elENyNQPDBX23P3GDpMbXM+8hd2hVb20lGD+aZKth0V+Rsy734r5F
+dtJ1BXbIXrRse18rEYiERboirqTBKjNpCbt7VlwHC5zvynHimZlkPZo3db5usONGxoPNrK1O
+sXgWjIWpr7fUXum6o1Cx1OGsH58ka9DsD3lJl0b0nMkLm03tZGVRa4Kb66if/C+rdYd6um5p
+uU5L9TtX/dpCAAAAAAAA
+--------------ms050903040800000002040706--

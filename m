@@ -1,59 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34453 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751700AbdHCUyq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Aug 2017 16:54:46 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v73KsigY003002
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 3 Aug 2017 20:54:45 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v73KsiW6015348
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 3 Aug 2017 20:54:44 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v73Ksitd003569
-        for <linux-btrfs@vger.kernel.org>; Thu, 3 Aug 2017 20:54:44 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:37340 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750998AbdHaKGm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Aug 2017 06:06:42 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id 8F840AB43
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Aug 2017 10:06:41 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: search parity device wisely
-Date: Thu,  3 Aug 2017 13:53:31 -0600
-Message-Id: <20170803195331.20079-1-bo.li.liu@oracle.com>
-In-Reply-To: <20170802203246.27121-1-bo.li.liu@oracle.com>
-References: <20170802203246.27121-1-bo.li.liu@oracle.com>
+Cc: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Remove redundant forward declarations
+Date: Thu, 31 Aug 2017 11:48:51 +0300
+Message-Id: <1504169331-24953-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After mapping block with BTRFS_MAP_WRITE, parities have been sorted to
-the end position, so this search can start from the first parity
-stripe.
+Some static functions are needlessly forward declared. Let's remove those
+declarations since they add no value.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
-v2: fix typo (data_stripes -> nr_data).
 
- fs/btrfs/raid56.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Here is a less invasive version of my previous patch removing the fwd 
+declarations in extent-tree. This time I've limited myself to only those 
+declarations which can be removed without moving code around and creating
+needless noise. 
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 2086383..88a5b7b 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -2229,12 +2229,13 @@ raid56_parity_alloc_scrub_rbio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 	ASSERT(!bio->bi_iter.bi_size);
- 	rbio->operation = BTRFS_RBIO_PARITY_SCRUB;
+ fs/btrfs/extent-tree.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 21c78c48e15b..4c9e87efdaa1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -61,9 +61,6 @@ enum {
+ 	CHUNK_ALLOC_FORCE = 2,
+ };
  
--	for (i = 0; i < rbio->real_stripes; i++) {
-+	for (i = rbio->nr_data; i < rbio->real_stripes; i++) {
- 		if (bbio->stripes[i].dev == scrub_dev) {
- 			rbio->scrubp = i;
- 			break;
- 		}
- 	}
-+	ASSERT(i < rbio->real_stripes);
- 
- 	/* Now we just support the sectorsize equals to page size */
- 	ASSERT(fs_info->sectorsize == PAGE_SIZE);
+-static int update_block_group(struct btrfs_trans_handle *trans,
+-			      struct btrfs_fs_info *fs_info, u64 bytenr,
+-			      u64 num_bytes, int alloc);
+ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_fs_info *fs_info,
+ 				struct btrfs_delayed_ref_node *node, u64 parent,
+@@ -91,17 +88,8 @@ static int find_next_key(struct btrfs_path *path, int level,
+ static void dump_space_info(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_space_info *info, u64 bytes,
+ 			    int dump_block_groups);
+-static int btrfs_add_reserved_bytes(struct btrfs_block_group_cache *cache,
+-				    u64 ram_bytes, u64 num_bytes, int delalloc);
+-static int btrfs_free_reserved_bytes(struct btrfs_block_group_cache *cache,
+-				     u64 num_bytes, int delalloc);
+ static int block_rsv_use_bytes(struct btrfs_block_rsv *block_rsv,
+ 			       u64 num_bytes);
+-static int __reserve_metadata_bytes(struct btrfs_fs_info *fs_info,
+-				    struct btrfs_space_info *space_info,
+-				    u64 orig_bytes,
+-				    enum btrfs_reserve_flush_enum flush,
+-				    bool system_chunk);
+ static void space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
+ 				     struct btrfs_space_info *space_info,
+ 				     u64 num_bytes);
 -- 
-2.9.4
+2.7.4
 

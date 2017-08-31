@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f169.google.com ([209.85.161.169]:32955 "EHLO
-        mail-yw0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751285AbdHaOtE (ORCPT
+Received: from mail-yw0-f180.google.com ([209.85.161.180]:36062 "EHLO
+        mail-yw0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751399AbdHaP0E (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Aug 2017 10:49:04 -0400
-Received: by mail-yw0-f169.google.com with SMTP id s143so4472159ywg.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Aug 2017 07:49:04 -0700 (PDT)
+        Thu, 31 Aug 2017 11:26:04 -0400
+Received: by mail-yw0-f180.google.com with SMTP id h127so4959617ywf.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 31 Aug 2017 08:26:04 -0700 (PDT)
 From: josef@toxicpanda.com
 To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] Btrfs: add a extent ref verify tool
-Date: Thu, 31 Aug 2017 10:49:01 -0400
-Message-Id: <1504190941-12042-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH][v2] Btrfs: add a extent ref verify tool
+Date: Thu, 31 Aug 2017 11:26:01 -0400
+Message-Id: <1504193161-22558-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -26,20 +26,24 @@ positives.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
+v1->v2:
+- fix compile errors caught by buildbot
+
  fs/btrfs/Kconfig       |   10 +
  fs/btrfs/Makefile      |    1 +
- fs/btrfs/ctree.h       |   13 +-
+ fs/btrfs/ctree.c       |    2 +-
+ fs/btrfs/ctree.h       |   14 +-
  fs/btrfs/disk-io.c     |   15 +
  fs/btrfs/extent-tree.c |   44 ++-
  fs/btrfs/file.c        |   10 +-
  fs/btrfs/inode.c       |    9 +-
  fs/btrfs/ioctl.c       |    2 +-
- fs/btrfs/ref-verify.c  | 1006 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ref-verify.c  | 1019 ++++++++++++++++++++++++++++++++++++++++++++++++
  fs/btrfs/ref-verify.h  |   51 +++
  fs/btrfs/relocation.c  |   14 +-
  fs/btrfs/super.c       |   17 +
  fs/btrfs/tree-log.c    |    2 +-
- 13 files changed, 1163 insertions(+), 31 deletions(-)
+ 14 files changed, 1178 insertions(+), 32 deletions(-)
  create mode 100644 fs/btrfs/ref-verify.c
  create mode 100644 fs/btrfs/ref-verify.h
 
@@ -73,8 +77,21 @@ index 128ce17..3172751 100644
  
  btrfs-$(CONFIG_BTRFS_FS_RUN_SANITY_TESTS) += tests/free-space-tests.o \
  	tests/extent-buffer-tests.o tests/btrfs-tests.o \
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 6d49db7..a4812ce 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -192,7 +192,7 @@ struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root)
+  * tree until you end up with a lock on the root.  A locked buffer
+  * is returned, with a reference held.
+  */
+-static struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root)
++struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root)
+ {
+ 	struct extent_buffer *eb;
+ 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d49b045..d50c21a 100644
+index d49b045..4fa3ddd 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
 @@ -1098,6 +1098,12 @@ struct btrfs_fs_info {
@@ -125,6 +142,14 @@ index d49b045..d50c21a 100644
  			 u64 bytenr, u64 num_bytes, u64 parent,
  			 u64 root_objectid, u64 owner, u64 offset);
  
+@@ -2803,6 +2810,7 @@ void btrfs_set_item_key_safe(struct btrfs_fs_info *fs_info,
+ 			     const struct btrfs_key *new_key);
+ struct extent_buffer *btrfs_root_node(struct btrfs_root *root);
+ struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root);
++struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root);
+ int btrfs_find_next_key(struct btrfs_root *root, struct btrfs_path *path,
+ 			struct btrfs_key *key, int lowest_level,
+ 			u64 min_trans);
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
 index 4a41158..32215e5 100644
 --- a/fs/btrfs/disk-io.c
@@ -420,10 +445,10 @@ index 137402f..d4e3eb6 100644
  							btrfs_ino(BTRFS_I(inode)),
 diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
 new file mode 100644
-index 0000000..fbda370
+index 0000000..1d03605
 --- /dev/null
 +++ b/fs/btrfs/ref-verify.c
-@@ -0,0 +1,1006 @@
+@@ -0,0 +1,1019 @@
 +/*
 + * Copyright (C) 2014 Facebook.  All rights reserved.
 + *
@@ -652,6 +677,7 @@ index 0000000..fbda370
 +	be->num_refs++;
 +}
 +
++#ifdef CONFIG_STACK_TRACE
 +static void __save_stack_trace(struct ref_action *ra)
 +{
 +	struct stack_trace stack_trace;
@@ -663,6 +689,21 @@ index 0000000..fbda370
 +	save_stack_trace(&stack_trace);
 +	ra->trace_len = stack_trace.nr_entries;
 +}
++
++static void __print_stack_trace(struct ref_action *ra)
++{
++	struct stack_trace trace;
++	trace.nr_entries = ra->trace_len;
++	trace.entries = ra->trace;
++	print_stack_trace(&trace, 2);
++}
++#else
++static void inline __save_stack_trace(struct ref_action *ra) {}
++static void inline __print_stack_trace(struct ref_action *ra)
++{
++	printk(KERN_ERR "  No stacktrace support\n");
++}
++#endif
 +
 +static void free_block_entry(struct block_entry *be)
 +{
@@ -1037,17 +1078,14 @@ index 0000000..fbda370
 +	return ret;
 +}
 +
++
 +static void dump_ref_action(struct ref_action *ra)
 +{
-+	struct stack_trace trace;
-+
 +	printk(KERN_ERR "  Ref action %d, root %llu, ref_root %llu, parent "
 +	       "%llu, owner %llu, offset %llu, num_refs %llu\n",
 +	       ra->action, ra->root, ra->ref.root_objectid, ra->ref.parent,
 +	       ra->ref.owner, ra->ref.offset, ra->ref.num_refs);
-+	trace.nr_entries = ra->trace_len;
-+	trace.entries = ra->trace;
-+	print_stack_trace(&trace, 2);
++	__print_stack_trace(ra);
 +}
 +
 +/*

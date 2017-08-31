@@ -1,44 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp01.belwue.de ([129.143.71.86]:53853 "EHLO smtp01.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750872AbdHaHGA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Aug 2017 03:06:00 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id C6BC189BB
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Aug 2017 09:05:58 +0200 (MEST)
-Date: Thu, 31 Aug 2017 09:05:58 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+Received: from smtpcmd15176.aruba.it ([62.149.156.176]:51181 "EHLO
+        smtpcmd10101.aruba.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750772AbdHaKuV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Aug 2017 06:50:21 -0400
 To: linux-btrfs@vger.kernel.org
-Subject: btrfs filesystem defragment -r -- does it affect subvolumes?
-Message-ID: <20170831070558.GB5783@rus.uni-stuttgart.de>
+From: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
+Subject: mount time for big filesystems
+Message-ID: <556e7650-8556-d5ca-273e-6c158c1d032e@prismatelecomtesting.com>
+Date: Thu, 31 Aug 2017 12:43:19 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When I do a 
-btrfs filesystem defragment -r /directory
-does it defragment really all files in this directory tree, even if it
-contains subvolumes?
-The man page does not mention subvolumes on this topic.
+Hi,
+this 37T filesystem took some times to mount. It has 47 
+subvolumes/snapshots and is mounted with 
+noatime,compress=zlib,space_cache. Is it normal, due to its size?
 
-I have an older script (written by myself) which does a 
-"btrfs filesystem defragment -r" on all subvolumes recursivly:
+# time mount /data/R6HW
 
-  btrfs filesystem defragment -r $m
-  for s in $(btrfs subvolume list $m | awk '{ print $NF }'); do
-    [[ "$s" =~ ^@ ]] && continue
-    [[ $(btrfs subvolume show $m/$s) =~ Flags:.*readonly ]] && continue
-    btrfs filesystem defragment -r $m/$s
-  done
+real	1m32.383s
+user	0m0.000s
+sys	0m1.348s
 
-I wonder why I have done it that way :-}
+# time umount /data/R6HW
 
+real	0m2.562s
+user	0m0.000s
+sys	0m0.466s
+
+
+# df -h
+/dev/sdo                          37T   20T     18T  53% /data/R6HW
+
+# btrfs fi df /data/R6HW/
+Data, single: total=19.12TiB, used=19.12TiB
+System, DUP: total=8.00MiB, used=2.05MiB
+Metadata, DUP: total=37.50GiB, used=36.52GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+# btrfs device usage /data/R6HW/
+/dev/sdo, ID: 1
+    Device size:            36.38TiB
+    Device slack:              0.00B
+    Data,single:            19.12TiB
+    Metadata,DUP:           75.00GiB
+    System,DUP:             16.00MiB
+    Unallocated:            17.18TiB
+
+Regards,
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20170831070558.GB5783@rus.uni-stuttgart.de>
+Marco Crociani

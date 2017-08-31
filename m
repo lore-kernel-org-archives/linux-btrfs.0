@@ -1,58 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.121.75.85]:59400 "EHLO len.romanrm.net"
+Received: from mout.gmx.net ([212.227.17.22]:49228 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751080AbdHaMQX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Aug 2017 08:16:23 -0400
-Date: Thu, 31 Aug 2017 17:16:21 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>,
-        linux-btrfs@vger.kernel.org
+        id S1751724AbdHaON5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 31 Aug 2017 10:13:57 -0400
 Subject: Re: mount time for big filesystems
-Message-ID: <20170831171621.2605458b@natsu>
-In-Reply-To: <d4214656-ec36-4a1e-7c4d-a528c0ae61be@gmail.com>
+To: Roman Mamedov <rm@romanrm.net>,
+        Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
+Cc: linux-btrfs@vger.kernel.org
 References: <556e7650-8556-d5ca-273e-6c158c1d032e@prismatelecomtesting.com>
  <20170831163656.6be88191@natsu>
- <d4214656-ec36-4a1e-7c4d-a528c0ae61be@gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <aecfb058-83bd-9ebd-b043-add6e245051b@gmx.com>
+Date: Thu, 31 Aug 2017 22:13:46 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <20170831163656.6be88191@natsu>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 31 Aug 2017 07:45:55 -0400
-"Austin S. Hemmelgarn" <ahferroin7@gmail.com> wrote:
 
-> If you use dm-cache (what LVM uses), you need to be _VERY_ careful and 
-> can't use it safely at all with multi-device volumes because it leaves 
-> the underlying block device exposed.
 
-It locks the underlying device so it can't be seen by Btrfs and cause problems.
+On 2017年08月31日 19:36, Roman Mamedov wrote:
+> On Thu, 31 Aug 2017 12:43:19 +0200
+> Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com> wrote:
+> 
+>> Hi,
+>> this 37T filesystem took some times to mount. It has 47
+>> subvolumes/snapshots and is mounted with
+>> noatime,compress=zlib,space_cache. Is it normal, due to its size?
 
-# btrfs dev scan
-Scanning for Btrfs filesystems
+Just like Han said, this is caused by BLOCK_GROUP_ITEM scattered in the 
+large extent tree.
+So, it's hard to improve soon.
 
-# btrfs fi show
-Label: none  uuid: 62ff7619-8202-47f6-8c7e-cef6f082530e
-	Total devices 1 FS bytes used 112.00KiB
-	devid    1 size 16.00GiB used 2.02GiB path /dev/mapper/vg-OriginLV
+Some ideas like delay BLOCK_GROUP_ITEM loading can greatly enhance the 
+mount speed.
+But such enhancement may affect extent allocator (that's to say we can't 
+do any write before at least some BLOCK_GROUP_ITEM is loaded) and may 
+cause more bugs.
 
-# ls -la /dev/mapper/
-total 0
-drwxr-xr-x  2 root root     140 Aug 31 12:01 .
-drwxr-xr-x 16 root root    2980 Aug 31 12:01 ..
-crw-------  1 root root 10, 236 Aug 31 11:59 control
-lrwxrwxrwx  1 root root       7 Aug 31 12:01 vg-CacheDataLV_cdata -> ../dm-1
-lrwxrwxrwx  1 root root       7 Aug 31 12:01 vg-CacheDataLV_cmeta -> ../dm-2
-lrwxrwxrwx  1 root root       7 Aug 31 12:06 vg-OriginLV -> ../dm-0
-lrwxrwxrwx  1 root root       7 Aug 31 12:01 vg-OriginLV_corig -> ../dm-3
+Other ideas like per-chunk extent tree may also greatly reduce mount 
+time but need on-disk format change.
+(Well, in fact btrfs on-disk format is never well designed anyway, so if 
+anyone is really doing this, please make a comprehensive wiki/white 
+paper for this)
 
-# btrfs dev scan /dev/dm-0
-Scanning for Btrfs filesystems in '/dev/mapper/vg-OriginLV'
+> 
+> If you could implement SSD caching in front of your FS (such as lvmcache or
+> bcache), that would work wonders for performance in general, and especially
+> for mount times. I have seen amazing results with lvmcache (of just 32 GB) for
+> a 14 TB FS.
 
-# btrfs dev scan /dev/dm-3
-Scanning for Btrfs filesystems in '/dev/mapper/vg-OriginLV_corig'
-ERROR: device scan failed on '/dev/mapper/vg-OriginLV_corig': Device or resource busy
+That's impressive.
+Since extent tree is a super hot tree (any CoW will modify extent tree), 
+it makes sense.
 
--- 
-With respect,
-Roman
+> 
+> As for in general, with your FS size perhaps you should be using
+> "space_cache=v2" for better performance, but I'm not sure if that will have
+> any effect on mount time (aside from slowing down the first mount with that).
+> 
+Unfortunately, space tree is not loaded until used (at least for v1), so 
+space_cache may not help much.
+
+Thanks,
+Qu

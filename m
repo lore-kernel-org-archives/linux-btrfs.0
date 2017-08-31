@@ -1,61 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36386 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751034AbdHaOxS (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:36966 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751857AbdHaQTR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Aug 2017 10:53:18 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
-        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
-        "fdmanana@suse.com" <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists (since 3.4 / 2012)
-Date: Thu, 31 Aug 2017 14:52:56 +0000
-Message-ID: <D6E7AD8E-AF2B-4A17-9692-FDE17F31A8D2@fb.com>
-References: <20170715004828.f4bom5wq34abe4lz@merlins.org>
- <20170711062155.hvlx5ud4zphpzjnp@merlins.org>
- <20170715012216.njq6az3y34qyomtb@merlins.org>
- <20170715231245.GA28281@merlins.org> <20170829031637.GA15290@merlins.org>
- <F952197E-3A13-410A-B299-F5C0791A99DF@fb.com>
- <20170829143955.GD15290@merlins.org>
- <EEF8B32C-179F-431A-880F-A27AD96B4BEF@fb.com>
- <20170830034001.rlwaqsitco65exqi@merlins.org>
-In-Reply-To: <20170830034001.rlwaqsitco65exqi@merlins.org>
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
+        Thu, 31 Aug 2017 12:19:17 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dnSBQ-000878-PK
+        for linux-btrfs@vger.kernel.org; Thu, 31 Aug 2017 18:19:08 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: number of subvolumes
+Date: Thu, 31 Aug 2017 16:18:52 +0000 (UTC)
+Message-ID: <pan$30aee$f76230b$532de4a7$4d3a9985@cox.net>
+References: <20170822214531.44538589@natsu>
+        <20170822165725.GL14804@rus.uni-stuttgart.de>
+        <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
+        <20170822180155.GM14804@rus.uni-stuttgart.de>
+        <22940.31139.194399.982315@tree.ty.sabi.co.uk>
+        <20170822204811.GO14804@rus.uni-stuttgart.de>
+        <20170823071821.GA28319@rus.uni-stuttgart.de>
+        <f75e66d.7ade2c40.15e0e3ced5c@gmail.com> <onkbkk$qs1$1@blaine.gmane.org>
+        <22943.4266.793339.528061@tree.ty.sabi.co.uk>
+        <20170831064916.GA5783@rus.uni-stuttgart.de>
+        <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>
+        <59A81F56.70708@sarach.com.pl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Micha≈Ç Soko≈Çowski posted on Thu, 31 Aug 2017 16:38:14 +0200 as excerpted:
 
-Sorry I really thought I could accomplish this with BPF, but ref tracking is just too complicated to work properly with BPF.  I forward ported my ref verification patch to the latest kernel, you can find it in the btrfs-readdir branch of my btrfs-next tree here
+> On 08/31/2017 01:18 PM, Austin S. Hemmelgarn wrote:
+>> [...]
+>>> Any hint here?
+>> Having compression enabled causes no issues with defray and balance.
+>> There appears to be a prevalent belief however that defrag is pointless
+>> if you're using compression, probably because some versions of
+>> `filefrag` don't report compressed extents properly (they list each
+>> 128k compressed unit as one extent, which is wrong).
+> Is there another tool to verify fragments number of given file when
+> using compression?
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+AFAIK there isn't an official one, tho someone posted a script (python, 
+IIRC) at one point and may repost it here.
 
-Just check that out, git checkout btrfs-readdir, build with CONFIG_BTRFS_FS_REF_VERIFY=y, and then mount the problematic fs with ‚Äìo ref_verify and then grab the full output when it blows up and we should be able to work out what is happening from there.  Thanks,
+You can actually get the information needed from filefrag -v (and the 
+script does), but it takes a bit more effort than usual, scripted or 
+brain-power, to convert the results into real fragmentation numbers.
 
-Josef
+The problem is that btrfs compression works in 128 KiB blocks, and 
+filefrag sees each of those as a fragment.  The extra effort involves 
+checking the addresses of the reported 128 KiB blocks to see if they are 
+actually contiguous, that is, one starts just after the previous one 
+ends.  If so it's actually not fragmented at that point.  But if the 
+addresses aren't contiguous, there's fragmentation at that point.
 
-On 8/29/17, 11:41 PM, "Marc MERLIN" <marc@merlins.org> wrote:
+I don't personally worry too much about it here, for two reasons.  First, 
+I /always/ run with the autodefrag mount option, which keeps 
+fragmentation manageable in any case[1], and second, I'm on ssd, where 
+the effects of fragmentation aren't as pronounced.  (On spinning rust 
+it's generally the seek times that dominate.  On ssds that's 0, but 
+there's still an IOPS cost.)
 
-On Tue, Aug 29, 2017 at 06:22:38PM +0000, Josef Bacik wrote:
-> How much metadata do you have on this fs?  I was going to hold everything in bpf hash trees, but I‚Äôm worried we‚Äôll hit collisions and then the tracing will be useless.  If it‚Äôs too big I‚Äôll have to dump everything to userspace and let python take care of keeping everything in memory, so if you have a lot of metadata hopefully you have lots of memory too ;).  Thanks,
+So while I've run filefrag -v and looked at the results a few times out 
+of curiousity, and indeed could see the reported fragmentation that was 
+actually contiguous, it was simply a curiosity to me, thus my not 
+grabbing that script and putting it to immediate use.
 
-gargamel:~# btrfs fi df /mnt/btrfs_pool1
-Data, single: total=10.60TiB, used=10.54TiB
-System, DUP: total=32.00MiB, used=1.19MiB
-Metadata, DUP: total=58.00GiB, used=12.69GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+---
+[1] AFAIK autodefrag checks fragmentation on writes, and rewrites 16 MiB 
+blocks if necessary.  If like me you always run it from the moment you 
+start putting data on the filesystem, that should work pretty well.  If 
+however you haven't been running it or doing manual defrag, because 
+defrag only works on writes and the free space may be fragmented enough 
+there's not 16 MiB blocks to write into, it may take awhile to "catch 
+up", and of course won't defrag anything that's never written to again, 
+but is often reread, making its existing fragmentation an issue.
 
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIDaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=q-HXS1ddbqcYmJLp6pXcQoJL7qBXplbRAFRQ4eGSQYw&s=yyIlFUXCBjQ2xLoWBYzasW3BtBiLrITfkKLWvnhqgOs&e=                          | PGP 1024R/763BE901
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

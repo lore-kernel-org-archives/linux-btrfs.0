@@ -1,88 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:64668 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:61315 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751725AbdIALAk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Sep 2017 07:00:40 -0400
-Subject: Re: [PATCH 1/2] btrfs: clear ordered flag on cleaning up ordered
- extents
+        id S1751479AbdIALcu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Sep 2017 07:32:50 -0400
+Subject: Re: [PATCH 2/2] btrfs: finish ordered extent cleaning if no progress
+ is found
 To: Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
 Cc: fdmanana@suse.com, clm@fb.com, dsterba@suse.com, jbacik@fb.com
 References: <150425632766.4737.133868215044509089.stgit@naota.dhcp.fujisawa.hgst.com>
+ <150425634736.4737.8343712690392096633.stgit@naota.dhcp.fujisawa.hgst.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <8faafb31-e88d-d7d4-ea8d-94b87630bd6a@gmx.com>
-Date: Fri, 1 Sep 2017 18:59:49 +0800
+Message-ID: <741949a9-32e6-ce18-0e7c-ca259edf909b@gmx.com>
+Date: Fri, 1 Sep 2017 19:31:58 +0800
 MIME-Version: 1.0
-In-Reply-To: <150425632766.4737.133868215044509089.stgit@naota.dhcp.fujisawa.hgst.com>
+In-Reply-To: <150425634736.4737.8343712690392096633.stgit@naota.dhcp.fujisawa.hgst.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年09月01日 16:58, Naohiro Aota wrote:
-> commit 524272607e88 ("btrfs: Handle delalloc error correctly to avoid
-> ordered extent hang") introduced btrfs_cleanup_ordered_extents() to cleanup
-> submitted ordered extents. However, it does not clear the ordered bit
-> (Private2) of coresponding pages. Thus, the following BUG occurs from
-> free_pages_check_bad() (on btrfs/125 with nospace_cache).
+On 2017年09月01日 16:59, Naohiro Aota wrote:
+> __endio_write_update_ordered() repeats the search until it reaches the end
+> of the specified range. This works well with direct IO path, because before
+> the function is called, it's ensured that there are ordered extents filling
+> whole the range. It's not the case, however, when it's called from
+> run_delalloc_range(): it is possible to have error in the midle of the loop
+> in e.g. run_delalloc_nocow(), so that there exisits the range not covered
+> by any ordered extents. By cleaning such "uncomplete" range,
+> __endio_write_update_ordered() stucks at offset where there're no ordered
+> extents.
 > 
-> BUG: Bad page state in process btrfs  pfn:3fa787
-> page:ffffdf2acfe9e1c0 count:0 mapcount:0 mapping:          (null) index:0xd
-> flags: 0x8000000000002008(uptodate|private_2)
-> raw: 8000000000002008 0000000000000000 000000000000000d 00000000ffffffff
-> raw: ffffdf2acf5c1b20 ffffb443802238b0 0000000000000000 0000000000000000
-> page dumped because: PAGE_FLAGS_CHECK_AT_FREE flag(s) set
-> bad because of flags: 0x2000(private_2)
-> 
-> This patch clear the flag as same as other places calling
-> btrfs_dec_test_ordered_pending() for every page in the specified range.
+> Since the ordered extents are created from head to tail, we can stop the
+> search if there are no offset progress.
 > 
 > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 > Fixes: 524272607e88 ("btrfs: Handle delalloc error correctly to avoid ordered extent hang")
 > Cc: <stable@vger.kernel.org> # 4.12
 > ---
->   fs/btrfs/inode.c |   12 ++++++++++++
->   1 file changed, 12 insertions(+)
+>   fs/btrfs/inode.c |    4 ++++
+>   1 file changed, 4 insertions(+)
 > 
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 24bcd5cd9cf2..ae4c0a1bef38 100644
+> index ae4c0a1bef38..fd5934121b4b 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -135,6 +135,18 @@ static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
->   						 const u64 offset,
->   						 const u64 bytes)
->   {
-> +	unsigned long index = offset >> PAGE_SHIFT;
-> +	unsigned long end_index = (offset + bytes - 1) >> PAGE_SHIFT;
-> +	struct page *page;
-> +
-> +	while (index <= end_index) {
-> +		page = find_get_page(inode->i_mapping, index);
-> +		index++;
-> +		if (!page)
-> +			continue;
-> +		ClearPagePrivate2(page);
-> +		put_page(page);
-> +	}
+> @@ -8309,6 +8309,7 @@ static void __endio_write_update_ordered(struct inode *inode,
+>   	btrfs_work_func_t func;
+>   	u64 ordered_offset = offset;
+>   	u64 ordered_bytes = bytes;
+> +	u64 last_offset;
+>   	int ret;
+>   
+>   	if (btrfs_is_free_space_inode(BTRFS_I(inode))) {
+> @@ -8320,6 +8321,7 @@ static void __endio_write_update_ordered(struct inode *inode,
+>   	}
+>   
+>   again:
+> +	last_offset = ordered_offset;
+>   	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+>   						   &ordered_offset,
+>   						   ordered_bytes,
+> @@ -8330,6 +8332,8 @@ static void __endio_write_update_ordered(struct inode *inode,
+>   	btrfs_init_work(&ordered->work, func, finish_ordered_fn, NULL, NULL);
+>   	btrfs_queue_work(wq, &ordered->work);
+>   out_test:
+> +	if (ordered_offset == last_offset)
+> +		return;
 
-At first glance, explicitly clearing Private2 flag here seems a little 
-strange to me.
-However btrfs_invalidatepage() is also doing the same thing, I think 
-it's fine.
+Such check seems strange to me.
 
-Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+For ordered_offset == last_offset case, it means 
+btrfs_dec_test_ordered_pending() doesn't find any ordered extent in that 
+range, so we can exit.
+This takes me a while to dig into btrfs_dec_test_first_ordered_pending().
 
-BTW, Private2 flag is set by extent_clear_unlock_delalloc() with 
-page_ops |= PAGE_SET_PRIVATE2, but we're clearing the page flag without 
-any encapsulation, it may be better to use similar function to clear 
-Private2 flag.
+Extra comment will help here, or to modify 
+btrfs_dev_test_ordered_pending() to explicitly info caller there is no 
+extra pending ordered extent.
 
 Thanks,
 Qu
 
->   	return __endio_write_update_ordered(inode, offset + PAGE_SIZE,
->   					    bytes - PAGE_SIZE, false);
->   }
+>   	/*
+>   	 * our bio might span multiple ordered extents.  If we haven't
+>   	 * completed the accounting for the whole dio, go back and try again
 > 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

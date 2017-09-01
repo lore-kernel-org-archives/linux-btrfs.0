@@ -1,71 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:34212 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751499AbdIALtJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 07:49:09 -0400
-Received: by mail-io0-f193.google.com with SMTP id z67so808261iof.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 04:49:09 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.18]:51407 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751479AbdIALtz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Sep 2017 07:49:55 -0400
 Subject: Re: [btrfs-progs] Bug in mkfs.btrfs -r
-To: kreijack@inwind.it, linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, kreijack@inwind.it,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <7d08fad3-1a73-08c1-dbb1-e845f88cf039@libero.it>
- <2f83f856-031a-9c52-2443-1b8a530e51f8@gmail.com>
- <9fd28041-3f49-4dc7-d4a3-120edfe47964@inwind.it>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <67a445ef-ce53-534a-8473-a5057b64d0fa@gmail.com>
-Date: Fri, 1 Sep 2017 07:49:05 -0400
+ <113498a8-e9c4-0a9e-c9b0-14489512ee49@gmx.com>
+ <6faf4ff6-6913-bfce-6e48-f161452a713a@gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <20381200-2f35-2edc-a20b-8852744ed050@gmx.com>
+Date: Fri, 1 Sep 2017 19:49:43 +0800
 MIME-Version: 1.0
-In-Reply-To: <9fd28041-3f49-4dc7-d4a3-120edfe47964@inwind.it>
+In-Reply-To: <6faf4ff6-6913-bfce-6e48-f161452a713a@gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-08-31 16:29, Goffredo Baroncelli wrote:
-> On 2017-08-31 20:49, Austin S. Hemmelgarn wrote:
->> On 2017-08-31 13:27, Goffredo Baroncelli wrote:
+
+
+On 2017年09月01日 19:28, Austin S. Hemmelgarn wrote:
+> On 2017-08-31 20:13, Qu Wenruo wrote:
+>>
+>>
+>> On 2017年09月01日 01:27, Goffredo Baroncelli wrote:
 >>> Hi All,
 >>>
 >>>
->>> I found a bug in mkfs.btrfs, when it is used the option '-r'. It
+>>> I found a bug in mkfs.btrfs, when it is used the option '-r'. It 
 >>> seems that it is not visible the full disk.
->>>
->>> $ uname -a Linux venice.bhome 4.12.8 #268 SMP Thu Aug 17 09:03:26
->>> CEST 2017 x86_64 GNU/Linux $ btrfs --version btrfs-progs v4.12
->> As far as I understand it, this is intended behavior.  Tools that
->> offer equivalent options (genext2fs for example) are designed to
->> generate pre-packaged system images that can then be resized to fit
->> the target device's space.  As an example use case, I do full system
->> image updates on some of my systems (that is, I keep per-system
->> configuration to a minimum and replace the entire root filesystem
->> when I update the system) I use this option to generate a base-image,
->> which then gets automatically resized by my update scripts to fill
->> the partition during the update process.
-> 
-> Sorry, but I am a bit confused. If I run "mkfs.btrfs -r ...." on a partition... how I can detect the end of the filesystem in order to cut the unused space ?
-> 
->  From your explanation I should do
-> 
-> # mkfs.btrfs -r <source> /dev/sdX
-> 
-> then
-> 
-> # dd if=/dev/sdX of=/tmp/image bs=1M count=NNNN
-> 
-> What I have to put in NNNN ?
-Mount the filesystem, and see what size `btrfs filesystem show` reports 
-for the device, then go just over that (to account for rounding).
-> 
-> genext2fs in effect works generating a file. Instead mkfs.btrfs seems to work only with disks (or file already created)...
-Most mkfs tools require a file to already exist because they were 
-designed to create fixed size filesystem images.
-> 
 >>
->> Overall, this could probably stand to be documented better though
->> (I'll look at writing a patch to update the documentation to clarify
->> this when I have some spare time over the weekend).
-> 
-> This would be great. However I think that some code should be update in order to generate a file instead of rely on a block device.
-> 
-> BR
-> G.Baroncelli
-> 
+>> Despite the new bug you found, -r has several existing bugs.
+> Is this actually a bug though?  Every other filesystem creation  tool 
+> that I know of that offers functionality like this generates the 
+> filesystem just large enough to contain the data you want in it, so I 
+> would argue that making this use the whole device is actually breaking 
+> consistency with other tools, not to mention removing functionality that 
+> is useful (even aside from the system image generation use case I 
+> mentioned, there are other practical applications (seed 'device' 
+> generation comes to mind).
 
+Well, then documentation bug.
+
+And I'm not sure the chunk size is correct or optimized.
+Even for btrfs-convert, which will make data chunks very scattered, we 
+still try to make a large chunk to cover scattered data extents.
+
+At least to me, it's not the case for chunk created by -r option.
+
+BTW, seed device is RO anyway, how much or how less spare space we have 
+is not a problem at all.
+
+So to me, even follow other tools -r, we should follow the normal extent 
+allocator behavior to create data/metadata, and then set the device size 
+to end of its dev extents.
+
+>>
+>> For example it will create dev extent starting from physical offset 0, 
+>> while kernel and mkfs will avoid that range, as 0~1M on each device is 
+>> reserved.
+>>
+>> According to the code, -r will modify chunk layout by itself, not the 
+>> traditional way kernel is doing.
+>>
+>> I'll fix them (if I'm not a lazybone), before that fix, please don't 
+>> use -r option as it's not well maintained or fully tested.
+> FWIW, based on my own testing, filesystems generated with '-r' work just 
+> fine as long as you don't try to embed boot code in the FS itself.
+
+It works fine because btrfs extent allocator will try to avoid superblock.
+But it doesn't mean we should put dev extents into 0~1M range.
+
+In fact, there is a deprecated mount option, alloc_start, to set how 
+many bytes we should reserve for *each* device.
+And since it's deprecated, we'd better follow the 1M reservation for 
+each device.
+
+Anyway, kernel balance and plain mkfs won't create chunk stripe in 0~1M 
+range of each device, mkfs -r should also follow it.
+
+Thanks,
+Qu
+
+> 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

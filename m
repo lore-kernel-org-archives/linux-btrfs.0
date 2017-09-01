@@ -1,51 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48423 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751543AbdIGAvo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 20:51:44 -0400
-Date: Wed, 6 Sep 2017 17:48:10 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: avoid wake_up if possible
-Message-ID: <20170907004810.GD16924@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20170901221430.10131-2-bo.li.liu@oracle.com>
- <20170906141904.GN31874@twin.jikos.cz>
+Received: from mx1.redhat.com ([209.132.183.28]:47818 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751413AbdIAHEn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Sep 2017 03:04:43 -0400
+Date: Fri, 1 Sep 2017 15:04:41 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Add new common filter function
+Message-ID: <20170901070441.GQ27835@eguan.usersys.redhat.com>
+References: <5f6cd84d-6e12-2b23-09fc-c0f744d1d2f2@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170906141904.GN31874@twin.jikos.cz>
+In-Reply-To: <5f6cd84d-6e12-2b23-09fc-c0f744d1d2f2@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 06, 2017 at 04:19:04PM +0200, David Sterba wrote:
-> On Fri, Sep 01, 2017 at 04:14:27PM -0600, Liu Bo wrote:
-> > wake_up() will go to check whether someone is on the waiting list with
-> > holding spin_lock().
-> >
-> > Around some btrfs code, we don't check waitqueue_active() firstly, so
-> > the spin_lock() pair in wake_up() is called even if no one is waiting
-> > on the queue.
-> > 
-> > There are more wake_up()s without waitqueue_active(), but these two
-> > are the hottest one I've run into so far.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+On Fri, Sep 01, 2017 at 02:39:44PM +0900, Misono, Tomohiro wrote:
+> Several tests uses both _filter_test_dir and _filter_scratch
+> concatenated by pipe to filter $TEST_DIR and $SCRATCH_MNT. However, this
+> would fail if the shorter string is a substring of the other (like
+> "/mnt" and "/mnt2").
 > 
-> Can you please split the patch and address both separately, as they are
-> not affecting the same data structure? It would be good to mention the
-> other parts of code specifically (not just "around some code"), or
-> briefly describe the state transitions where it matters for the wake
-> ups.
->
+> This patch introduces new common filter function to safely call both
+> _filter_test_dir and _filter_scratch.
+> 
+> I chedked this with btrfs/029, generic/409,410,411, and generic/381,383,
+> xfs/106,108 (which calls _filter_quota). Thanks Eryu for advice.
+> 
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
-OK.
+Thanks! Though I don't think we need two separate patches, so I merged
+the two patches together at commit time.
 
-> A missed wakeup appears as if the system is hung, but it's not a
-> deadlock and we don't have much help debugging that when it happens. I'd
-> like to review that in a way where I can make sure you have checked all
-> the possible lost wakeups.
+> ---
+>  common/filter | 11 +++++++++++
+>  1 file changed, 11 insertions(+)
+> 
+> diff --git a/common/filter b/common/filter
+> index 1ef342b..75570f9 100644
+> --- a/common/filter
+> +++ b/common/filter
+> @@ -295,6 +295,17 @@ _filter_scratch()
+>  	    -e "/.use_space/d"
+>  }
+>  
+> +_filter_testdir_and_scratch()
+> +{
+> +	# filter both $TEST_DIR and $SCRATCH_MNT, but always filter the longer
+> +	# string first if the other string is a substring of the first one
+> +	if echo "$TEST_DIR" | grep -q "$SCRATCH_MNT"; then
+> +	  _filter_test_dir | _filter_scratch
+> +	else
+> +	  _filter_scratch | _filter_test_dir
 
-Good point, but it seems that we could only prove it on code level
-(like the comments put around the code).
+And fixed the indention here, used tab :)
 
--liubo
+Thanks,
+Eryu
+
+> +	fi
+> +}
+> +
+>  # Turn any device in the scratch pool into SCRATCH_DEV
+>  _filter_scratch_pool()
+>  {
+> -- 
+> 2.9.5
+> 

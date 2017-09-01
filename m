@@ -1,74 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:58313 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:64668 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753221AbdIDDna (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Sep 2017 23:43:30 -0400
+        id S1751725AbdIALAk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Sep 2017 07:00:40 -0400
+Subject: Re: [PATCH 1/2] btrfs: clear ordered flag on cleaning up ordered
+ extents
+To: Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
+Cc: fdmanana@suse.com, clm@fb.com, dsterba@suse.com, jbacik@fb.com
+References: <150425632766.4737.133868215044509089.stgit@naota.dhcp.fujisawa.hgst.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/2] btrfs-progs: test/mkfs: Add test case for rootdir parameter
-Date: Mon,  4 Sep 2017 12:43:20 +0900
-Message-Id: <20170904034320.25744-2-quwenruo.btrfs@gmx.com>
-In-Reply-To: <20170904034320.25744-1-quwenruo.btrfs@gmx.com>
-References: <20170904034320.25744-1-quwenruo.btrfs@gmx.com>
+Message-ID: <8faafb31-e88d-d7d4-ea8d-94b87630bd6a@gmx.com>
+Date: Fri, 1 Sep 2017 18:59:49 +0800
+MIME-Version: 1.0
+In-Reply-To: <150425632766.4737.133868215044509089.stgit@naota.dhcp.fujisawa.hgst.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add test case which checks if -r|--rootdir mount option can handle
-softlink/char/block/fifo files.
 
-Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
----
- .../009-special-files-for-rootdir/test.sh          | 40 ++++++++++++++++++++++
- 1 file changed, 40 insertions(+)
- create mode 100755 tests/mkfs-tests/009-special-files-for-rootdir/test.sh
 
-diff --git a/tests/mkfs-tests/009-special-files-for-rootdir/test.sh b/tests/mkfs-tests/009-special-files-for-rootdir/test.sh
-new file mode 100755
-index 00000000..bc5297d0
---- /dev/null
-+++ b/tests/mkfs-tests/009-special-files-for-rootdir/test.sh
-@@ -0,0 +1,40 @@
-+#!/bin/bash
-+# Check if --rootdir can handle special files (socket/fifo/char/block) correctly
-+#
-+# --rootdir had a problem of filling dir items/indexes with wrong type
-+# and caused btrfs check to report such error
-+
-+source "$TOP/tests/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper		# For mknod
-+prepare_test_dev 128M
-+
-+# mknod can create FIFO/CHAR/BLOCK file but not SOCK.
-+# No neat tool to create socket file, unless using python or similar.
-+# So no SOCK is tested here
-+check_global_prereq mknod
-+
-+# Also check regular file
-+check_global_prereq dd
-+
-+# And dir
-+check_global_prereq mkdir
-+
-+tmp="/tmp/btrfs_selftest_$$"
-+
-+run_check mkdir $tmp
-+run_check mkdir $tmp/dir
-+run_check mkdir -p $tmp/dir/in/dir
-+run_check mknod $tmp/fifo p
-+run_check $SUDO_HELPER mknod $tmp/char c 1 1
-+run_check $SUDO_HELPER mknod $tmp/block b 1 1
-+run_check dd if=/dev/zero bs=1M count=1 of=$tmp/regular
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -r "$tmp" $TEST_DEV
-+
-+rm "$tmp" -rf
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" check $TEST_DEV
--- 
-2.14.1
+On 2017年09月01日 16:58, Naohiro Aota wrote:
+> commit 524272607e88 ("btrfs: Handle delalloc error correctly to avoid
+> ordered extent hang") introduced btrfs_cleanup_ordered_extents() to cleanup
+> submitted ordered extents. However, it does not clear the ordered bit
+> (Private2) of coresponding pages. Thus, the following BUG occurs from
+> free_pages_check_bad() (on btrfs/125 with nospace_cache).
+> 
+> BUG: Bad page state in process btrfs  pfn:3fa787
+> page:ffffdf2acfe9e1c0 count:0 mapcount:0 mapping:          (null) index:0xd
+> flags: 0x8000000000002008(uptodate|private_2)
+> raw: 8000000000002008 0000000000000000 000000000000000d 00000000ffffffff
+> raw: ffffdf2acf5c1b20 ffffb443802238b0 0000000000000000 0000000000000000
+> page dumped because: PAGE_FLAGS_CHECK_AT_FREE flag(s) set
+> bad because of flags: 0x2000(private_2)
+> 
+> This patch clear the flag as same as other places calling
+> btrfs_dec_test_ordered_pending() for every page in the specified range.
+> 
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> Fixes: 524272607e88 ("btrfs: Handle delalloc error correctly to avoid ordered extent hang")
+> Cc: <stable@vger.kernel.org> # 4.12
+> ---
+>   fs/btrfs/inode.c |   12 ++++++++++++
+>   1 file changed, 12 insertions(+)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 24bcd5cd9cf2..ae4c0a1bef38 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -135,6 +135,18 @@ static inline void btrfs_cleanup_ordered_extents(struct inode *inode,
+>   						 const u64 offset,
+>   						 const u64 bytes)
+>   {
+> +	unsigned long index = offset >> PAGE_SHIFT;
+> +	unsigned long end_index = (offset + bytes - 1) >> PAGE_SHIFT;
+> +	struct page *page;
+> +
+> +	while (index <= end_index) {
+> +		page = find_get_page(inode->i_mapping, index);
+> +		index++;
+> +		if (!page)
+> +			continue;
+> +		ClearPagePrivate2(page);
+> +		put_page(page);
+> +	}
 
+At first glance, explicitly clearing Private2 flag here seems a little 
+strange to me.
+However btrfs_invalidatepage() is also doing the same thing, I think 
+it's fine.
+
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+
+BTW, Private2 flag is set by extent_clear_unlock_delalloc() with 
+page_ops |= PAGE_SET_PRIVATE2, but we're clearing the page flag without 
+any encapsulation, it may be better to use similar function to clear 
+Private2 flag.
+
+Thanks,
+Qu
+
+>   	return __endio_write_update_ordered(inode, offset + PAGE_SIZE,
+>   					    bytes - PAGE_SIZE, false);
+>   }
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f181.google.com ([209.85.220.181]:36470 "EHLO
-        mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752151AbdIANjI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 09:39:08 -0400
-Received: by mail-qk0-f181.google.com with SMTP id o63so1086562qkb.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 06:39:07 -0700 (PDT)
+Received: from mail-qt0-f172.google.com ([209.85.216.172]:38046 "EHLO
+        mail-qt0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751999AbdIANm5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 09:42:57 -0400
+Received: by mail-qt0-f172.google.com with SMTP id w42so1135521qtg.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 06:42:57 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <20170831201124.GD30990@carfax.org.uk>
 References: <CAJ_hD5By15sSvur7849XWQ8jkBoGj0cO5vQfY8MguVDCneMX8Q@mail.gmail.com>
@@ -12,8 +12,8 @@ References: <CAJ_hD5By15sSvur7849XWQ8jkBoGj0cO5vQfY8MguVDCneMX8Q@mail.gmail.com>
  <20170831185922.GC30990@carfax.org.uk> <CAJ_hD5DLufKpJPHpvFhsq8fj-oL++=NMkMPEHe9y=dCcsbUwtg@mail.gmail.com>
  <20170831201124.GD30990@carfax.org.uk>
 From: Eric Wolf <19wolf@gmail.com>
-Date: Fri, 1 Sep 2017 09:38:46 -0400
-Message-ID: <CAJ_hD5DVimZjM5Y54AU6GeruN-T8fCvwKtufJO3=rMwqmU3aKQ@mail.gmail.com>
+Date: Fri, 1 Sep 2017 09:42:36 -0400
+Message-ID: <CAJ_hD5ADewQN5Uh6YcoMmLpZ+nu-HOMREh6dxeETWBraoo21oQ@mail.gmail.com>
 Subject: Re: BTRFS critical (device sda2): corrupt leaf, bad key order:
  block=293438636032, root=1, slot=11
 To: Hugo Mills <hugo@carfax.org.uk>, Eric Wolf <19wolf@gmail.com>,
@@ -21,15 +21,6 @@ To: Hugo Mills <hugo@carfax.org.uk>, Eric Wolf <19wolf@gmail.com>,
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-
-Okay,
-I have a hex editor open. Now what? Your instructions seems
-straightforward, but I have no idea what I'm doing.
----
-Eric Wolf
-(201) 316-6098
-19wolf@gmail.com
-
 
 On Thu, Aug 31, 2017 at 4:11 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 > On Thu, Aug 31, 2017 at 03:21:07PM -0400, Eric Wolf wrote:
@@ -57,10 +48,7 @@ On Thu, Aug 31, 2017 at 4:11 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 >
 >    Hugo.
 >
->> ---
->> Eric Wolf
->> (201) 316-6098
->> 19wolf@gmail.com
+>>
 >>
 >>
 >> On Thu, Aug 31, 2017 at 2:59 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
@@ -149,3 +137,7 @@ On Thu, Aug 31, 2017 at 4:11 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
 > hugo@... carfax.org.uk | to talk to you about a cure for the common cold."
 > http://carfax.org.uk/  |
 > PGP: E2AB1DE4          |                           Stephen Franklin, Babylon 5
+
+
+I think I may have top leveled again.. So anyway, I have my hex editor
+open, but am completely lost as what to do?

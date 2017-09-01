@@ -1,39 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f182.google.com ([209.85.220.182]:34182 "EHLO
-        mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751777AbdIAMi2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 08:38:28 -0400
-Received: by mail-qk0-f182.google.com with SMTP id a77so437113qkb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 05:38:27 -0700 (PDT)
-Date: Fri, 1 Sep 2017 08:38:26 -0400
+Received: from mail-qk0-f193.google.com ([209.85.220.193]:33366 "EHLO
+        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751777AbdIAMiv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 08:38:51 -0400
+Received: by mail-qk0-f193.google.com with SMTP id k126so85634qkb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 05:38:51 -0700 (PDT)
+Date: Fri, 1 Sep 2017 08:38:49 -0400
 From: Josef Bacik <josef@toxicpanda.com>
 To: Naohiro Aota <naohiro.aota@wdc.com>
 Cc: linux-btrfs@vger.kernel.org, fdmanana@suse.com, clm@fb.com,
         dsterba@suse.com, jbacik@fb.com, quwenruo.btrfs@gmx.com
-Subject: Re: [PATCH 2/2] btrfs: finish ordered extent cleaning if no progress
- is found
-Message-ID: <20170901123824.fcnopokccdxuvb3r@destiny>
+Subject: Re: [PATCH 1/2] btrfs: clear ordered flag on cleaning up ordered
+ extents
+Message-ID: <20170901123848.x7m3rlgaow55bznv@destiny>
 References: <150425632766.4737.133868215044509089.stgit@naota.dhcp.fujisawa.hgst.com>
- <150425634736.4737.8343712690392096633.stgit@naota.dhcp.fujisawa.hgst.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <150425634736.4737.8343712690392096633.stgit@naota.dhcp.fujisawa.hgst.com>
+In-Reply-To: <150425632766.4737.133868215044509089.stgit@naota.dhcp.fujisawa.hgst.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 01, 2017 at 05:59:07PM +0900, Naohiro Aota wrote:
-> __endio_write_update_ordered() repeats the search until it reaches the end
-> of the specified range. This works well with direct IO path, because before
-> the function is called, it's ensured that there are ordered extents filling
-> whole the range. It's not the case, however, when it's called from
-> run_delalloc_range(): it is possible to have error in the midle of the loop
-> in e.g. run_delalloc_nocow(), so that there exisits the range not covered
-> by any ordered extents. By cleaning such "uncomplete" range,
-> __endio_write_update_ordered() stucks at offset where there're no ordered
-> extents.
+On Fri, Sep 01, 2017 at 05:58:47PM +0900, Naohiro Aota wrote:
+> commit 524272607e88 ("btrfs: Handle delalloc error correctly to avoid
+> ordered extent hang") introduced btrfs_cleanup_ordered_extents() to cleanup
+> submitted ordered extents. However, it does not clear the ordered bit
+> (Private2) of coresponding pages. Thus, the following BUG occurs from
+> free_pages_check_bad() (on btrfs/125 with nospace_cache).
 > 
-> Since the ordered extents are created from head to tail, we can stop the
-> search if there are no offset progress.
+> BUG: Bad page state in process btrfs  pfn:3fa787
+> page:ffffdf2acfe9e1c0 count:0 mapcount:0 mapping:          (null) index:0xd
+> flags: 0x8000000000002008(uptodate|private_2)
+> raw: 8000000000002008 0000000000000000 000000000000000d 00000000ffffffff
+> raw: ffffdf2acf5c1b20 ffffb443802238b0 0000000000000000 0000000000000000
+> page dumped because: PAGE_FLAGS_CHECK_AT_FREE flag(s) set
+> bad because of flags: 0x2000(private_2)
+> 
+> This patch clear the flag as same as other places calling
+> btrfs_dec_test_ordered_pending() for every page in the specified range.
 > 
 
 Reviewed-by: Josef Bacik <jbacik@fb.com>

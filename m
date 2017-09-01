@@ -1,131 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:37450 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751512AbdIAJKR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 05:10:17 -0400
-Date: Fri, 1 Sep 2017 09:10:15 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Anthony Riley <anth1y@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: joining to contribute
-Message-ID: <20170901091015.GE30990@carfax.org.uk>
-References: <CANM+MUmnKX0UJk-SN9t=aBz7Xfq6Dfn73AhZBO5EBpdSh+HVtw@mail.gmail.com>
- <07225e42-1ffe-0289-27a1-811cd6e579a5@gmx.com>
+Received: from mail-lf0-f48.google.com ([209.85.215.48]:37153 "EHLO
+        mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751759AbdIAKVX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 06:21:23 -0400
+Received: by mail-lf0-f48.google.com with SMTP id y128so7600109lfd.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 03:21:22 -0700 (PDT)
+Message-ID: <59A9349E.1000302@gmail.com>
+Date: Fri, 01 Sep 2017 12:21:18 +0200
+From: ein <ein.net@gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="7CZp05NP8/gJM8Cl"
-In-Reply-To: <07225e42-1ffe-0289-27a1-811cd6e579a5@gmx.com>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: number of subvolumes
+References: <20170822214531.44538589@natsu>        <20170822165725.GL14804@rus.uni-stuttgart.de>        <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>        <20170822180155.GM14804@rus.uni-stuttgart.de>        <22940.31139.194399.982315@tree.ty.sabi.co.uk>        <20170822204811.GO14804@rus.uni-stuttgart.de>        <20170823071821.GA28319@rus.uni-stuttgart.de>        <f75e66d.7ade2c40.15e0e3ced5c@gmail.com> <onkbkk$qs1$1@blaine.gmane.org>        <22943.4266.793339.528061@tree.ty.sabi.co.uk>        <20170831064916.GA5783@rus.uni-stuttgart.de>        <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>        <59A81F56.70708@sarach.com.pl> <pan$30aee$f76230b$532de4a7$4d3a9985@cox.net>
+In-Reply-To: <pan$30aee$f76230b$532de4a7$4d3a9985@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 08/31/2017 06:18 PM, Duncan wrote:
+[...]
+> Michał Sokołowski posted on Thu, 31 Aug 2017 16:38:14 +0200 as excerpted:
+>> Is there another tool to verify fragments number of given file when
+>> using compression?
+> AFAIK there isn't an official one, tho someone posted a script (python, 
+> IIRC) at one point and may repost it here.
+>
+> You can actually get the information needed from filefrag -v (and the 
+> script does), but it takes a bit more effort than usual, scripted or 
+> brain-power, to convert the results into real fragmentation numbers.
+>
+> The problem is that btrfs compression works in 128 KiB blocks, and 
+> filefrag sees each of those as a fragment.  The extra effort involves 
+> checking the addresses of the reported 128 KiB blocks to see if they are 
+> actually contiguous, that is, one starts just after the previous one 
+> ends.  If so it's actually not fragmented at that point.  But if the 
+> addresses aren't contiguous, there's fragmentation at that point.
+>
+> I don't personally worry too much about it here, for two reasons.  First, 
+> I /always/ run with the autodefrag mount option, which keeps 
+> fragmentation manageable in any case[1], and second, I'm on ssd, where 
+> the effects of fragmentation aren't as pronounced.  (On spinning rust 
+> it's generally the seek times that dominate.  On ssds that's 0, but 
+> there's still an IOPS cost.)
+>
+> So while I've run filefrag -v and looked at the results a few times out 
+> of curiousity, and indeed could see the reported fragmentation that was 
+> actually contiguous, it was simply a curiosity to me, thus my not 
+> grabbing that script and putting it to immediate use.
+>
+> ---
+> [1] AFAIK autodefrag checks fragmentation on writes, and rewrites 16 MiB 
+> blocks if necessary.  If like me you always run it from the moment you 
+> start putting data on the filesystem, that should work pretty well.  If 
+> however you haven't been running it or doing manual defrag, because 
+> defrag only works on writes and the free space may be fragmented enough 
+> there's not 16 MiB blocks to write into, it may take awhile to "catch 
+> up", and of course won't defrag anything that's never written to again, 
+> but is often reread, making its existing fragmentation an issue.
 
---7CZp05NP8/gJM8Cl
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, Sep 01, 2017 at 01:15:45PM +0800, Qu Wenruo wrote:
-> On 2017=E5=B9=B409=E6=9C=8801=E6=97=A5 11:36, Anthony Riley wrote:
-> >Hey folks,
-> >
-> >I thought I would finally take a swing at things I've wanted to be an
-> >kernel/fs dev fora few years now. My current $job is as an
-> >Infrastructure Engineer. I'm currently teaching myself C and have
-> >background in shell scripting & python. I love doing deep dives and
-> >learning about linux internals.  I've read the btrfs.wiki and can't
-> >really decide which project to choose to start.
-> >
-> >Also should I go through this https://kernelnewbies.org/FirstKernelPatch=
- first?
-> >Or should i start with something in Userspace?
->=20
-> Well, personally I strongly recommended to start with btrfs on-disk
-> format first, and then btrfs-progs/test cases, and kernel
-> contribution as final objective.
-
-   Pick a project which bothers you -- is there some feature that you
-want to have, or a particular bug, or a sharp corner that needs
-rounding off?
-
-   This next bit is purely my opinion. Feel free to ignore it if it
-doesn't float your boat.
-
-   For a relatively easy example (from a code point of view), there's
-a bug with send-receive where stuff breaks if you try snapshotting and
-then sending a subvolume which already has a received-uuid set.
-There's probably several ways of dealing with this.
-
-   Alongside this, there's also a requirement for being able to do
-round-trip send/receive while preserving the ability to do incremental
-sends. This is likely to be related to the above bug-fix. I did a
-complete write-up of what's happening, and what needs to happen, here:
-
-http://www.spinics.net/lists/linux-btrfs/msg44089.html
-
-   If you can fix the first bug in a way that doesn't rule out the
-round-trip work, that's great. If you can also get the round-trip
-stuff working, that's even better (but be warned that it will get
-postponed until kdave is ready for all the stream format changes to
-happen at once).
-
-> BTW, if you want to start with btrfs on-disk format, print-tree.c
-> from btrfs-progs is a good start point and btrfs wiki has relatively
-> well documented entry for it.
-
-   Seconded on this. For the on-disk format, it's also useful to
-create a small test filesystem and use btrfs-debug-tree on it as you
-do stuff to it (create files, create subvols, make links, modify
-files). Do this in conjunction with the "Data Structures" page, and
-you can see how it all actually fits together.
-
-   It took me a couple of weeks to learn how it all worked the first
-time round, but I didn't have much detailed documentation to work from
-back then.
-
-   Since you speak python, there's also Hans's python-btrfs:
-
-https://github.com/knorrie/python-btrfs
-
-> https://btrfs.wiki.kernel.org/index.php/Btrfs_design
-> https://btrfs.wiki.kernel.org/index.php/Btree_Items
-
-And, more generally: https://btrfs.wiki.kernel.org/index.php/Main_Page#Deve=
-loper_documentation
-
-I'd also point out the Data Structures and Trees pages linked
-there. Some of the information is a bit out of date, or represents a
-prototype of what it's describing. The source code is canonical -- use
-the documentation as a guide to help you see where in the source to
-look.
-
-   Hugo.
-
---=20
-Hugo Mills             | I'm always right. But I might be wrong about that.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---7CZp05NP8/gJM8Cl
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJZqSP3AAoJEFheFHXiqx3kl54P/AnOT36Wb57qEENX4kr9yL2E
-lcf8ig40Sd+7A5TjQEyn+wkbUIFlvXG0lTGusreCq7+W17CO1ZKO/EN37qCHtGO0
-ZrG+KEdqQ18PDkoYlZ8g6SF+ri1BzUummdE9aBVy0rQdjOcr+qtDeJSfdawsuiR9
-Sy/1ZaY0VQVusHzH1bcKKpspEhNHtNgxf3lYnw8KYLsmNrejGB55qQHQuUzpBntl
-HAwRxKzj5VOG7xOpqiCF2zDYyKKg+UR4XHhxOa/7CvGf2uh/QzJTcnfJqsDhunvN
-nptqIh2+ZN9IhQQdFb0IG1IcHs1j11xojb//r6K24yimBliZvjV1iHrxtz0P2sCp
-WD0WEKx5gg/jOZdMrO4T5H8A1wusRbUhgkElPRhcEEJvS6nDsrO/fjKJNzle0T5x
-JcvMqP7Wm6SVew8hKltg0+bUR01kpgPh/4U+ZUgrwP/kq1WSORBEy1N237L0U/R2
-3BvcxPJKsJwrpmNXRnoeicDIIBXGNQCLXZta5VniVPHA+YLgSRBXKyA0jwUFM4ve
-4ycV8lmc4ucFKfU0/ZzLut2h2ktlbAO5ViqW28sfBtCxEVss0670PxtjrsOnL7nv
-c68eVlBmmAADNQZt0TTINU2KsoFEdvzAzwY4H9ydIO16vncfYfSNkYMBx7rbTm1r
-DcZ6qWYNyCk/kBlaIjvT
-=IU6Z
------END PGP SIGNATURE-----
-
---7CZp05NP8/gJM8Cl--
+Very comprehensive, thank you. I was asking because I'd like to learn
+how really random writes by VM affects BTRFS (vs XFS,Ext4) performance
+and try to develop some workaround to reduce/prevent it while having
+csums, cow (snapshots) and compression.

@@ -1,82 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:37242 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751521AbdIALrK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 07:47:10 -0400
-Received: by mail-io0-f169.google.com with SMTP id d78so14600531ioe.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 04:47:10 -0700 (PDT)
-Subject: Re: number of subvolumes
-To: ein <ein.net@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20170822214531.44538589@natsu>
- <20170822165725.GL14804@rus.uni-stuttgart.de>
- <ab52f32.7ade2c3f.15e0af46ee9@gmail.com>
- <20170822180155.GM14804@rus.uni-stuttgart.de>
- <22940.31139.194399.982315@tree.ty.sabi.co.uk>
- <20170822204811.GO14804@rus.uni-stuttgart.de>
- <20170823071821.GA28319@rus.uni-stuttgart.de>
- <f75e66d.7ade2c40.15e0e3ced5c@gmail.com> <onkbkk$qs1$1@blaine.gmane.org>
- <22943.4266.793339.528061@tree.ty.sabi.co.uk>
- <20170831064916.GA5783@rus.uni-stuttgart.de>
- <0b8ff573-ae13-121a-dd14-29d0de72ef58@gmail.com>
- <59A81F56.70708@sarach.com.pl> <pan$30aee$f76230b$532de4a7$4d3a9985@cox.net>
- <59A9349E.1000302@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f0708aac-ac36-20f5-7ea7-d6f515813aed@gmail.com>
-Date: Fri, 1 Sep 2017 07:47:05 -0400
+Received: from mail-qk0-f181.google.com ([209.85.220.181]:36470 "EHLO
+        mail-qk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752151AbdIANjI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 09:39:08 -0400
+Received: by mail-qk0-f181.google.com with SMTP id o63so1086562qkb.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 06:39:07 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <59A9349E.1000302@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170831201124.GD30990@carfax.org.uk>
+References: <CAJ_hD5By15sSvur7849XWQ8jkBoGj0cO5vQfY8MguVDCneMX8Q@mail.gmail.com>
+ <20170831183302.GB30990@carfax.org.uk> <CAJ_hD5D49amQEq7YMu=d-EhRK-CkJerbT=uAc1+rpg+_12KFsQ@mail.gmail.com>
+ <20170831185922.GC30990@carfax.org.uk> <CAJ_hD5DLufKpJPHpvFhsq8fj-oL++=NMkMPEHe9y=dCcsbUwtg@mail.gmail.com>
+ <20170831201124.GD30990@carfax.org.uk>
+From: Eric Wolf <19wolf@gmail.com>
+Date: Fri, 1 Sep 2017 09:38:46 -0400
+Message-ID: <CAJ_hD5DVimZjM5Y54AU6GeruN-T8fCvwKtufJO3=rMwqmU3aKQ@mail.gmail.com>
+Subject: Re: BTRFS critical (device sda2): corrupt leaf, bad key order:
+ block=293438636032, root=1, slot=11
+To: Hugo Mills <hugo@carfax.org.uk>, Eric Wolf <19wolf@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-09-01 06:21, ein wrote:
-> Very comprehensive, thank you. I was asking because I'd like to learn
-> how really random writes by VM affects BTRFS (vs XFS,Ext4) performance
-> and try to develop some workaround to reduce/prevent it while having
-> csums, cow (snapshots) and compression.
+Okay,
+I have a hex editor open. Now what? Your instructions seems
+straightforward, but I have no idea what I'm doing.
+---
+Eric Wolf
+(201) 316-6098
+19wolf@gmail.com
 
-I've actually done some significant testing of VM's using BTRFS as 
-backing storage, and would suggest the following:
 
-1. Use raw images in sparse files, and expose them to the VM like SSD's 
-(so that DISCARD support works).  Assuming your guests actually support 
-DISCARD commands, this will save you just as much space as using 
-allocate-on-demand formats like qcow2 or VDI, while providing access 
-patterns that BTRFS is a bit better at dealing with.  There are a couple 
-of specific caveats to doing this however, namely that you can't use the 
-regular VirtIO block device when using QEMU, and have to use VirtIO SCSI 
-instead, and you'll need smarter tools to copy images around (ddrescue 
-is what I would personally suggest, it can handle sparse files 
-correctly, and gives you a nice progress indicator).
-
-2. Provide separate disks to the VM for any data you need to store in 
-them.  By keeping this separate from the root filesystem's disk, you 
-reduce what gets fragmented, and also aren't tied to a particular guest 
-OS to the same degree.  As a more concrete example, if you're running a 
-database server in a VM, give it a separate disk image for storing the 
-database from the one the root filesystem is on.
-
-3. Run with autodefrag on the host system.  Unless you're hitting the 
-disks hard from inside the VM, this will actually do a reasonably good 
-job of handling fragmentation.
-
-4. Make sure the filesystem you're storing the disk images on has extra 
-space.  Ideally, I would set things up so that it has enough room to 
-store a second copy of the largest disk image you expect to use.  By 
-keeping lots of extra space, you give the allocator in BTRFS more 
-opportunity to arrange things intelligently.
-
-5. Defragmet your disk images regularly (even when using autodefrag), 
-both inside and outside the VM's.  Ideally, run a full defrag inside the 
-VM, then shut it down and defragment the disk image outside the VM. 
-Defragmenting inside the VM first will compact free space, which in turn 
-means that defragmenting outside the VM will do a better job, and that 
-future fragmentation will be less likely.  In general, I'd suggest doing 
-this at least monthly (possibly a lot more frequently if you're running 
-databases or similar random access workloads in the VM).
-
-6. Avoid using a CoW filesystem inside the VM's.  This sounds odd at 
-first, but is actually one of the biggest things you can do to reduce 
-fragmentation.  In particular, try to avoid using BTRFS or ZFS on a VM 
-disk that is stored on BTRFS, both of them will make usual fragmentation 
-problems look nonexistent in comparison.
+On Thu, Aug 31, 2017 at 4:11 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Thu, Aug 31, 2017 at 03:21:07PM -0400, Eric Wolf wrote:
+>> I've previously confirmed it's a bad ram module which I have already
+>> submitted an RMA for. Any advice for manually fixing the bits?
+>
+>    What I'd do... use a hex editor and the contents of ctree.h as
+> documentation to find the byte in question, change it back to what it
+> should be, mount the FS, try reading the directory again, look up the
+> csum failure in dmesg, edit the block again to fix up the csum, and
+> it's done. (Yes, I've done this before, and I'm a massive nerd).
+>
+>    It's also possible to use Hans van Kranenberg's btrfs-python to fix
+> up this kind of thing, but I've not done it myself. There should be a
+> couple of talk-throughs from Hans in various archives -- both this
+> list (find it on, say, http://www.spinics.net/lists/linux-btrfs/), and
+> on the IRC archives (http://logs.tvrrug.org.uk/logs/%23btrfs/latest.html).
+>
+>> Sorry for top leveling, not sure how mailing lists work (again sorry
+>> if this message is top leveled, how do I ensure it's not?)
+>
+>    Just write your answers _after_ the quoted text that you're
+> replying to, not before. It's a convention, rather than a technical
+> thing...
+>
+>    Hugo.
+>
+>> ---
+>> Eric Wolf
+>> (201) 316-6098
+>> 19wolf@gmail.com
+>>
+>>
+>> On Thu, Aug 31, 2017 at 2:59 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> >    (Please don't top-post; edited for conversation flow)
+>> >
+>> > On Thu, Aug 31, 2017 at 02:44:39PM -0400, Eric Wolf wrote:
+>> >> On Thu, Aug 31, 2017 at 2:33 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> >> > On Thu, Aug 31, 2017 at 01:53:58PM -0400, Eric Wolf wrote:
+>> >> >> I'm having issues with a bad block(?) on my root ssd.
+>> >> >>
+>> >> >> dmesg is consistently outputting "BTRFS critical (device sda2):
+>> >> >> corrupt leaf, bad key order: block=293438636032, root=1, slot=11"
+>> >> >>
+>> >> >> "btrfs scrub stat /" outputs "scrub status for b2c9ff7b-[snip]-48a02cc4f508
+>> >> >> scrub started at Wed Aug 30 11:51:49 2017 and finished after 00:02:55
+>> >> >> total bytes scrubbed: 53.41GiB with 2 errors
+>> >> >> error details: verify=2
+>> >> >> corrected errors: 0, uncorrectable errors: 2, unverified errors: 0"
+>> >> >>
+>> >> >> Running "btrfs check --repair /dev/sda2" from a live system stalls
+>> >> >> after telling me corrupt leaf etc etc then "11 12". CPU usage hits
+>> >> >> 100% and disk activity remains at 0.
+>> >> >
+>> >> >    This error is usually attributable to bad hardware. Typically RAM,
+>> >> > but might also be marginal power regulation (blown capacitor
+>> >> > somewhere) or a slightly broken CPU.
+>> >> >
+>> >> >    Can you show us the output of "btrfs-debug-tree -b 293438636032 /dev/sda2"?
+>> >
+>> >    Here's the culprit:
+>> >
+>> > [snip]
+>> >> item 10 key (890553 EXTENT_DATA 0) itemoff 14685 itemsize 269
+>> >>    inline extent data size 248 ram 248 compress 0
+>> >> item 11 key (890554 INODE_ITEM 0) itemoff 14525 itemsize 160
+>> >>    inode generation 5386763 transid 5386764 size 135 nbytes 135
+>> >>    block group 0 mode 100644 links 1 uid 100000 gid 100000
+>> >>    rdev 0 flags 0x0
+>> >> item 12 key (856762 INODE_REF 31762) itemoff 14496 itemsize 29
+>> >>    inode ref index 2745 namelen 19 name: dpkg.statoverride.0
+>> >> item 13 key (890554 EXTENT_DATA 0) itemoff 14340 itemsize 156
+>> >>    inline extent data size 135 ram 135 compress 0
+>> > [snip]
+>> >
+>> >    Note the objectid field -- the first number in the brackets after
+>> > "key" for each item. This sequence of values should be non-decreasing.
+>> > Thus, item 12 should have an objectid of 890554 to match the items
+>> > either side of it, and instead it has 856762.
+>> >
+>> >    In hex, these are:
+>> >
+>> >>>> hex(890554)
+>> > '0xd96ba'
+>> >>>> hex(856762)
+>> > '0xd12ba'
+>> >
+>> >    Which means you've had two bitflips close together:
+>> >
+>> >>>> hex(856762 ^ 890554)
+>> > '0x8400'
+>> >
+>> >    Given that everything else is OK, and it's just one byte affected
+>> > in the middle of a load of data that's really quite sensitive to
+>> > errors, it's very unlikely that it's the result of a misplaced pointer
+>> > in the kernel, or some other subsystem accidentally walking over that
+>> > piece of RAM. It is, therefore, almost certainly your hardware that's
+>> > at fault.
+>> >
+>> >    I would strongly suggest running memtest86 on your machine -- I'd
+>> > usually say a minimum of 8 hours, or longer if you possibly can (24
+>> > hours), or until you have errors reported. If you get errors reported
+>> > in the same place on multiple passes, then it's the RAM. If you have
+>> > errors scattered around seemingly at random, then it's probably your
+>> > power regulation (PSU or motherboard).
+>> >
+>> >    Sadly, btrfs check on its own won't be able to fix this, as it's
+>> > two bits flipped. (It can cope with one bit flipped in the key, most
+>> > of the time, but not two). It can be fixed manually, if you're
+>> > familiar with a hex editor and the on-disk data structures.
+>> >
+>> >    Hugo.
+>> >
+>
+> --
+> Hugo Mills             | "There's a Martian war machine outside -- they want
+> hugo@... carfax.org.uk | to talk to you about a cure for the common cold."
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |                           Stephen Franklin, Babylon 5

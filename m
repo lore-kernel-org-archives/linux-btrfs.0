@@ -1,59 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51055 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751463AbdIOTBA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 15:01:00 -0400
-Date: Fri, 15 Sep 2017 20:59:29 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Timofey Titovets <nefelim4ag@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Nick Terrell <terrelln@fb.com>, David Sterba <dsterba@suse.cz>
-Subject: Re: \o/ compsize
-Message-ID: <20170915185929.GB29043@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170904151154.vkhshc57t2mi2sze@angband.pl>
- <CAGqmi762p8wKRv3Gz0Z5BABUvKLn7-8XhB6=v-gbdqsGMV8rUg@mail.gmail.com>
- <20170904184229.cjarg6p7tbgy7gka@angband.pl>
+Received: from mail3-relais-sop.national.inria.fr ([192.134.164.104]:2028 "EHLO
+        mail3-relais-sop.national.inria.fr" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750910AbdIAFwE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Sep 2017 01:52:04 -0400
+Date: Fri, 1 Sep 2017 07:52:02 +0200 (CEST)
+From: Julia Lawall <julia.lawall@lip6.fr>
+To: Josef Bacik <jbacik@fb.com>
+cc: linux-btrfs@vger.kernel.org, kbuild-all@01.org
+Subject: [josef-btrfs:btrfs-readdir 4/5] fs/btrfs/ref-verify.c:322:12-14:
+ ERROR: reference preceded by free on line 321 (fwd)
+Message-ID: <alpine.DEB.2.20.1709010749590.2199@hadrien>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170904184229.cjarg6p7tbgy7gka@angband.pl>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 04, 2017 at 08:42:29PM +0200, Adam Borowski wrote:
-> On Mon, Sep 04, 2017 at 07:07:25PM +0300, Timofey Titovets wrote:
-> > 2017-09-04 18:11 GMT+03:00 Adam Borowski <kilobyte@angband.pl>:
-> > > Here's an utility to measure used compression type + ratio on a set of files
-> > > or directories: https://github.com/kilobyte/compsize
-> > >
-> > > It should be of great help for users, and also if you:
-> > > * muck with compression levels
-> > > * add new compression types
-> > > * add heurestics that could err on withholding compression too much
-> > 
-> > Packaged to AUR:
-> > https://aur.archlinux.org/packages/compsize-git/
-> 
-> Cool!  I'd wait until people say the code is sane (I don't really know these
-> ioctls) but if you want to make poor AUR folks our beta testers, that's ok.
-> 
-> However, one issue: I did not set a license; your packaging says GPL3. 
-> It would be better to have something compatible with btrfs-progs which are
-> GPL2-only.  What about GPL2-or-higher?
-> 
-> After adding some related info (like wasted space in pinned extents, reuse
-> of extents), it'd be nice to have this tool inside btrfs-progs, either as a
-> part of "fi du" or another command.
+It does not look correct to access &be->node on line 322 after freeing be
+on line 321.
 
-I've now implemented a prototype that calculates the compressed size of
-extents per-file. As 'fi du' knows about what extents are shared, the
-compression can be also calculated shared/exclusive.
+julia
 
-There's no summary like compsize does, this would need a bit more
-precise tracking of the extents, not just the compressed size but also
-which algo was used. I can imagine all sorts of output enhancements,
-like summarize the inline-compressed extents or print the algo summary
-per-file. This should be easy once the calclation code is there. I
-haven't reused compsize.c, as I needed only the ioctl part and wire it
-to 'fi du', but the search ioctl is the same.
+---------- Forwarded message ----------
+Date: Fri, 1 Sep 2017 07:41:26 +0800
+From: kbuild test robot <fengguang.wu@intel.com>
+To: kbuild@01.org
+Cc: Julia Lawall <julia.lawall@lip6.fr>
+Subject: [josef-btrfs:btrfs-readdir 4/5] fs/btrfs/ref-verify.c:322:12-14: ERROR:
+     reference preceded by free on line 321
+
+CC: kbuild-all@01.org
+CC: linux-btrfs@vger.kernel.org
+TO: Josef Bacik <jbacik@fb.com>
+
+tree:   https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git btrfs-readdir
+head:   707c82dec33ba199538c4b20885873c32c0c4259
+commit: b5bfaee4fb7028e8ac44e1feab4d99b917b876d7 [4/5] Btrfs: add a extent ref verify tool
+:::::: branch date: 5 hours ago
+:::::: commit date: 8 hours ago
+
+>> fs/btrfs/ref-verify.c:322:12-14: ERROR: reference preceded by free on line 321
+
+# https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git/commit/?id=b5bfaee4fb7028e8ac44e1feab4d99b917b876d7
+git remote add josef-btrfs https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+git remote update josef-btrfs
+git checkout b5bfaee4fb7028e8ac44e1feab4d99b917b876d7
+vim +322 fs/btrfs/ref-verify.c
+
+b5bfaee4 Josef Bacik 2014-05-09  284
+b5bfaee4 Josef Bacik 2014-05-09  285  static struct block_entry *add_block_entry(struct btrfs_root *root, u64 bytenr,
+b5bfaee4 Josef Bacik 2014-05-09  286  					   u64 len, u64 root_objectid)
+b5bfaee4 Josef Bacik 2014-05-09  287  {
+b5bfaee4 Josef Bacik 2014-05-09  288  	struct btrfs_fs_info *fs_info = root->fs_info;
+b5bfaee4 Josef Bacik 2014-05-09  289  	struct block_entry *be = NULL, *exist;
+b5bfaee4 Josef Bacik 2014-05-09  290  	struct root_entry *re = NULL;
+b5bfaee4 Josef Bacik 2014-05-09  291
+b5bfaee4 Josef Bacik 2014-05-09  292  	re = kmalloc(sizeof(struct root_entry), GFP_NOFS);
+b5bfaee4 Josef Bacik 2014-05-09  293  	be = kmalloc(sizeof(struct block_entry), GFP_NOFS);
+b5bfaee4 Josef Bacik 2014-05-09  294  	if (!be || !re) {
+b5bfaee4 Josef Bacik 2014-05-09  295  		kfree(re);
+b5bfaee4 Josef Bacik 2014-05-09  296  		kfree(be);
+b5bfaee4 Josef Bacik 2014-05-09  297  		return ERR_PTR(-ENOMEM);
+b5bfaee4 Josef Bacik 2014-05-09  298  	}
+b5bfaee4 Josef Bacik 2014-05-09  299  	be->bytenr = bytenr;
+b5bfaee4 Josef Bacik 2014-05-09  300  	be->len = len;
+b5bfaee4 Josef Bacik 2014-05-09  301
+b5bfaee4 Josef Bacik 2014-05-09  302  	re->root_objectid = root_objectid;
+b5bfaee4 Josef Bacik 2014-05-09  303  	re->num_refs = 0;
+b5bfaee4 Josef Bacik 2014-05-09  304
+b5bfaee4 Josef Bacik 2014-05-09  305  	spin_lock(&fs_info->ref_verify_lock);
+b5bfaee4 Josef Bacik 2014-05-09  306  	exist = insert_block_entry(&fs_info->block_tree, be);
+b5bfaee4 Josef Bacik 2014-05-09  307  	if (exist) {
+b5bfaee4 Josef Bacik 2014-05-09  308  		update_block_entry(root, exist, re);
+b5bfaee4 Josef Bacik 2014-05-09  309  		kfree(be);
+b5bfaee4 Josef Bacik 2014-05-09  310  		be = exist;
+b5bfaee4 Josef Bacik 2014-05-09  311  		goto out;
+b5bfaee4 Josef Bacik 2014-05-09  312  	}
+b5bfaee4 Josef Bacik 2014-05-09  313
+b5bfaee4 Josef Bacik 2014-05-09  314  	be->num_refs = 1;
+b5bfaee4 Josef Bacik 2014-05-09  315  	be->metadata = 0;
+b5bfaee4 Josef Bacik 2014-05-09  316  	be->roots = RB_ROOT;
+b5bfaee4 Josef Bacik 2014-05-09  317  	be->refs = RB_ROOT;
+b5bfaee4 Josef Bacik 2014-05-09  318  	INIT_LIST_HEAD(&be->actions);
+b5bfaee4 Josef Bacik 2014-05-09  319  	if (insert_root_entry(&be->roots, re)) {
+b5bfaee4 Josef Bacik 2014-05-09  320  		kfree(re);
+b5bfaee4 Josef Bacik 2014-05-09 @321  		kfree(be);
+b5bfaee4 Josef Bacik 2014-05-09 @322  		rb_erase(&be->node, &fs_info->block_tree);
+b5bfaee4 Josef Bacik 2014-05-09  323  		be = ERR_PTR(-EINVAL);
+b5bfaee4 Josef Bacik 2014-05-09  324  		ASSERT(0);
+b5bfaee4 Josef Bacik 2014-05-09  325  	}
+b5bfaee4 Josef Bacik 2014-05-09  326  out:
+b5bfaee4 Josef Bacik 2014-05-09  327  	spin_unlock(&fs_info->ref_verify_lock);
+b5bfaee4 Josef Bacik 2014-05-09  328  	return be;
+b5bfaee4 Josef Bacik 2014-05-09  329  }
+b5bfaee4 Josef Bacik 2014-05-09  330
+
+---
+0-DAY kernel test infrastructure                Open Source Technology Center
+https://lists.01.org/pipermail/kbuild-all                   Intel Corporation

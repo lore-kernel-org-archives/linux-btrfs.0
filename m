@@ -1,49 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:35222 "EHLO
-        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751966AbdIAN7e (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 09:59:34 -0400
-Received: by mail-io0-f170.google.com with SMTP id z67so1829359iof.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 06:59:34 -0700 (PDT)
-Subject: Re: mount time for big filesystems
-To: Juan Orti Alcaine <j.orti.alcaine@gmail.com>,
-        Roman Mamedov <rm@romanrm.net>
-Cc: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <556e7650-8556-d5ca-273e-6c158c1d032e@prismatelecomtesting.com>
- <20170831163656.6be88191@natsu>
- <CAC+fKQXozVX4OsKOVxPEdRPkO=5iakEJenaxLHoaQ4FieSUmLA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <437dddb7-6d3f-6ad8-7802-51b62e22d708@gmail.com>
-Date: Fri, 1 Sep 2017 09:59:26 -0400
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:34386 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751969AbdIAOUj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 10:20:39 -0400
+Subject: Re: joining to contribute
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Anthony Riley <anth1y@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <CANM+MUmnKX0UJk-SN9t=aBz7Xfq6Dfn73AhZBO5EBpdSh+HVtw@mail.gmail.com>
+ <07225e42-1ffe-0289-27a1-811cd6e579a5@gmx.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <498b52ea-3d97-a3a1-77d9-c707cb49146e@mendix.com>
+Date: Fri, 1 Sep 2017 16:20:36 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAC+fKQXozVX4OsKOVxPEdRPkO=5iakEJenaxLHoaQ4FieSUmLA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <07225e42-1ffe-0289-27a1-811cd6e579a5@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-09-01 09:52, Juan Orti Alcaine wrote:
-> 2017-08-31 13:36 GMT+02:00 Roman Mamedov <rm@romanrm.net>:
->> If you could implement SSD caching in front of your FS (such as lvmcache or
->> bcache), that would work wonders for performance in general, and especially
->> for mount times. I have seen amazing results with lvmcache (of just 32 GB) for
->> a 14 TB FS.
+On 09/01/2017 07:15 AM, Qu Wenruo wrote:
 > 
-> I'm thinking about adding a SSD for my 4 disks RAID1 filesystem, but I
-> have doubts about how to correctly do it in a multidevice filesystem.
 > 
-> I guess I should make 4 partitions on the SSD and pair them with my
-> backing devices, then create the btrfs on top of bcache0, bcache1,...
-> is this the right way to do it?
-If you are going to use bcache, you don't need separate caches for each 
-device (and in fact, you're probably better off sharing a cache across 
-devices).
+> On 2017年09月01日 11:36, Anthony Riley wrote:
+>> Hey folks,
+>>
+>> I thought I would finally take a swing at things I've wanted to be an
+>> kernel/fs dev fora few years now. My current $job is as an
+>> Infrastructure Engineer. I'm currently teaching myself C and have
+>> background in shell scripting & python. I love doing deep dives and
+>> learning about linux internals.  I've read the btrfs.wiki and can't
+>> really decide which project to choose to start.
+>>
+>> Also should I go through this
+>> https://kernelnewbies.org/FirstKernelPatch first?
+>> Or should i start with something in Userspace?
+> 
+> Well, personally I strongly recommended to start with btrfs on-disk
+> format first, and then btrfs-progs/test cases, and kernel contribution
+> as final objective.
+> 
+> BTW, if you want to start with btrfs on-disk format, print-tree.c from
+> btrfs-progs is a good start point and btrfs wiki has relatively well
+> documented entry for it.
+> https://btrfs.wiki.kernel.org/index.php/Btrfs_design
+> https://btrfs.wiki.kernel.org/index.php/Btree_Items
+> 
 
-If instead you're going to use dm-cache/LVM, you will need two logical 
-volumes per-device for the cache, one big one (for the actual cache), 
-and one little one (for metadata, usually a few hundred MB is fine).
+(Insert THX sound effect here)
 
-In general though, you're correct, it is preferred to do things in the 
-order you suggested.  It is technically possible sometimes to convert an 
-existing device to being cached in-place, but it's risky, and restoring 
-from a backup onto a clean filesystem has other benefits too.
+Previous very useful Qu answer:
+
+https://www.spinics.net/lists/linux-btrfs/msg66489.html
+
+-- 
+Hans van Kranenburg

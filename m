@@ -1,63 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:34158 "EHLO
-        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752329AbdIAU3T (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 16:29:19 -0400
-Received: by mail-oi0-f46.google.com with SMTP id w10so10589484oie.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Sep 2017 13:29:19 -0700 (PDT)
+Received: from magic.merlins.org ([209.81.13.136]:35551 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752397AbdIAUnb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 16:43:31 -0400
+Date: Fri, 1 Sep 2017 13:43:29 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
+        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
+        "fdmanana@suse.com" <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960: errno=-17 Object already exists (since 3.4 / 2012)
+Message-ID: <20170901204329.GH30689@merlins.org>
+References: <20170715012216.njq6az3y34qyomtb@merlins.org> <20170715231245.GA28281@merlins.org> <20170829031637.GA15290@merlins.org> <F952197E-3A13-410A-B299-F5C0791A99DF@fb.com> <20170829143955.GD15290@merlins.org> <EEF8B32C-179F-431A-880F-A27AD96B4BEF@fb.com> <20170830034001.rlwaqsitco65exqi@merlins.org> <D6E7AD8E-AF2B-4A17-9692-FDE17F31A8D2@fb.com> <20170831173607.GM15290@merlins.org> <5320FF2E-D183-4D2A-A155-49424E1CD60F@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJ_hD5DVimZjM5Y54AU6GeruN-T8fCvwKtufJO3=rMwqmU3aKQ@mail.gmail.com>
-References: <CAJ_hD5By15sSvur7849XWQ8jkBoGj0cO5vQfY8MguVDCneMX8Q@mail.gmail.com>
- <20170831183302.GB30990@carfax.org.uk> <CAJ_hD5D49amQEq7YMu=d-EhRK-CkJerbT=uAc1+rpg+_12KFsQ@mail.gmail.com>
- <20170831185922.GC30990@carfax.org.uk> <CAJ_hD5DLufKpJPHpvFhsq8fj-oL++=NMkMPEHe9y=dCcsbUwtg@mail.gmail.com>
- <20170831201124.GD30990@carfax.org.uk> <CAJ_hD5DVimZjM5Y54AU6GeruN-T8fCvwKtufJO3=rMwqmU3aKQ@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 1 Sep 2017 14:29:18 -0600
-Message-ID: <CAJCQCtTY6+xRsEVrnr9U9OhJ2DsPuUFqiNeC8cuz47ctViviiA@mail.gmail.com>
-Subject: Re: BTRFS critical (device sda2): corrupt leaf, bad key order:
- block=293438636032, root=1, slot=11
-To: Eric Wolf <19wolf@gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <5320FF2E-D183-4D2A-A155-49424E1CD60F@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 1, 2017 at 7:38 AM, Eric Wolf <19wolf@gmail.com> wrote:
-> Okay,
-> I have a hex editor open. Now what? Your instructions seems
-> straightforward, but I have no idea what I'm doing.
+On Thu, Aug 31, 2017 at 05:48:23PM +0000, Josef Bacik wrote:
+> We are using 4.11 in production at fb with backports from recent (a month ago?) stuff.  I’m relatively certain nothing bad will happen, and this branch has the most recent fsync() corruption fix (which exists in your kernel so it’s not new).  That said if you are uncomfortable I can rebase this patch onto whatever base you want and push out a branch, it’s your choice.  Keep in mind this is going to hold a lot of shit in memory, so I hope you have enough, and I’d definitely remove the sleep’s from your script, there’s no telling if this is a race condition or not and the overhead of the ref-verify stuff may cause it to be less likely to happen.  Thanks,
 
-First step, backup as much as you can, because if you don't know what
-you're doing, good chance you make a mistake and break the file
-system. So be prepared for making things worse.
+Thanks for the warning. I have 32GB of RAM in the server, and I probably use
+8. Most of the rest is so that I can do btrfs check --repair without the
+machine dying :-/
 
-Next, you need to get the physical sector(s) for the leaf containing
-the error. Use btrfs-map-logical -l <address> for this, where address
-is the same one you used before with btrfs-debug-tree. If this is a
-default file system, the leaf is 16KiB, that's 32 512 byte sectors.
-And btrfs-map-logical will report back LBA based on 512 bytes *if*
-this is a 512e drive, which most drives are, but you should make sure.
+I am concerned that I have a lot more metadata than I have memory:
+gargamel:~# btrfs fi df /mnt/btrfs_pool1
+Data, single: total=10.66TiB, used=10.60TiB
+System, DUP: total=32.00MiB, used=1.20MiB
+Metadata, DUP: total=58.00GiB, used=12.76GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+gargamel:~# btrfs fi df /mnt/btrfs_pool2
+Data, single: total=5.07TiB, used=4.78TiB
+System, DUP: total=8.00MiB, used=640.00KiB
+Metadata, DUP: total=70.50GiB, used=66.58GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-]$ sudo blockdev --getss /dev/nvme0n1
-512
+That's 13GB + 67GB.
+Is it going to fall over if I only have 32GB of RAM?
 
-If it's 512 bytes, your bad item is in one of 32 sectors starting from
-the LBA reported by btrfs-map-logical. If it's 4096 bytes then it's
-one of four sectors starting from that LBA. Find out which sector the
-bad key is in, which you have to do looking at hex, literally you will
-have to go byte by byte from the beginning, learning how to parse the
-on-disk format. And fix the bad item object id as described by Hugo.
-And then after you fix that, mount the volume, scrub (or read a file
-that will trigger the problem if you can) this time you'll get a bad
-csum error instead of the original corrupt leaf error. And that csum
-error will tell you what csum it found and what csum it expects. So
-now you go back to that first sector, which is where the csum is
-stored, find it, and replace it with the expected csum. And maybe (not
-sure) the csum error will be in decimal, in which case you'd have to
-convert to hex to find the bad one and replace with the good one.
+If I stop mounting /mnt/btrfs_pool2 for a while, will 32GB of RAM
+cover the 13GB of metadata from /mnt/btrfs_pool1 ?
 
-Tedious. Maybe the Hans van Kranenberg's btrfs-python is easier, I have no idea.
-
-
+Thanks,
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

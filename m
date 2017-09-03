@@ -1,63 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:54922 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751287AbdICTcQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Sep 2017 15:32:16 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:50218)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1doaNQ-0000S1-II
-        for linux-btrfs@vger.kernel.org; Sun, 03 Sep 2017 20:16:12 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1doaNL-00073l-0q
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Sep 2017 20:16:07 +0100
+Received: from magic.merlins.org ([209.81.13.136]:54848 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751598AbdICUUu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 16:20:50 -0400
+Date: Sun, 3 Sep 2017 13:20:36 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
+        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
+        "fdmanana@suse.com" <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.cz>
+Message-ID: <20170903202036.b7j6fcknfiisrnsl@merlins.org>
+References: <20170902160942.imo2hotpur3pnops@merlins.org>
+ <B8F93BCF-0976-4450-A58E-13F6A3C48573@fb.com>
+ <20170902235344.sb55vzaloglmqaad@merlins.org>
+ <73427BC6-B85B-422C-BCA0-778C7BA203A8@fb.com>
+ <20170903010127.eafg2i7ry2tprro7@merlins.org>
+ <5D0BC86A-D427-4529-A40E-492A98BA5D16@fb.com>
+ <20170903143142.7thdjvkmkdekrzc5@merlins.org>
+ <1E7DEC47-01A8-4F50-B266-FA4949090687@fb.com>
+ <20170903144237.svgnaclwmcfdfikt@merlins.org>
+ <AD68E364-AF7F-49AA-8376-49E0C7C92998@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Message-ID: <22956.21750.526687.370823@tree.ty.sabi.co.uk>
-Date: Sun, 3 Sep 2017 20:16:06 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: speed up big btrfs volumes with ssds
-In-Reply-To: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
-References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <AD68E364-AF7F-49AA-8376-49E0C7C92998@fb.com>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
+ errno=-17 Object already exists (since 3.4 / 2012)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> [ ... ] - needed volume size is 60TB
+On Sun, Sep 03, 2017 at 05:33:33PM +0000, Josef Bacik wrote:
+> Alright pushed, sorry about that.
+ 
+I'm reasonably sure I'm running the new code, but still got this:
+[ 2104.336513] Dropping a ref for a root that doesn't have a ref on the block
+[ 2104.358226] Dumping block entry [115253923840 155648], num_refs 1, metadata 0, from disk 1
+[ 2104.384037]   Ref root 0, parent 3414272884736, owner 262813, offset 0, num_refs 18446744073709551615
+[ 2104.412766]   Ref root 418, parent 0, owner 262813, offset 0, num_refs 1
+[ 2104.433888]   Root entry 418, num_refs 1
+[ 2104.446648]   Root entry 69869, num_refs 0
+[ 2104.459904]   Ref action 2, root 69869, ref_root 0, parent 3414272884736, owner 262813, offset 0, num_refs 18446744073709551615
+[ 2104.496244]   No Stacktrace
 
-I wonder how long that takes to 'scrub', 'balance', 'check',
-'subvolume delete', 'find', etc.
+Now, in the background I had a monthly md check of the underlying device
+(mdadm raid 5), and got some of those. Obviously that's not good, and 
+I'm assuming that md raid5 may not have a checksum on blocks, so it won't know
+which drive has the corrupted data.
+Does that sound right?
 
-> [ ... ] 4x HW Raid 5 with 1GB controller memory of 4TB 3,5"
-> devices and using btrfs as raid 0 for data and metadata on top
-> of those 4 raid 5. [ ... ]  the write speed is not as good as
-> i would like - especially for random 8k-16k I/O. [ ... ]
+Now, the good news is that btrfs on top does have checksums, so running a scrub should
+hopefully find those corrupted blocks if they happen to be in use by the filesystem
+(maybe they are free).
+But as a reminder, this whole thread started with my FS maybe not being in a good state, but both
+check --repair and scrub returning clean. Maybe I'll use the opportunity to re-run a check --repair
+and a scrub after that to see what state things are in.
 
-Also I noticed that the rain is wet and cold - especially if one
-walks around for a few hours in a t-shirt, shorts and sandals.
-:-)
+md6: mismatch sector in range 3581539536-3581539544
+md6: mismatch sector in range 3581539544-3581539552
+md6: mismatch sector in range 3581539552-3581539560
+md6: mismatch sector in range 3581539560-3581539568  
+md6: mismatch sector in range 3581543792-3581543800
+md6: mismatch sector in range 3581543800-3581543808
+md6: mismatch sector in range 3581543808-3581543816
+md6: mismatch sector in range 3581543816-3581543824
+md6: mismatch sector in range 3581544112-3581544120
+md6: mismatch sector in range 3581544120-3581544128
 
-> My current idea is to use a pcie flash card with bcache on top
-> of each raid 5. Is this something which makes sense to speed
-> up the write speed.
+As for your patch, no idea why it's not giving me a stacktrace, sorry :-/
 
-Well 'bcache' in the role of write buffer allegedly helps
-turning unaligned writes into aligned writes, so might help, but
-I wonder how effective that will be in this case, plus it won't
-turn low random IOPS-per-TB 4TB devices into high ones. Anyhow
-if they are battery-backed the 1GB of HW HBA cache/buffer should
-do exactly that, excep that again in this case that is rather
-optimistic.
+Git log of my tree does show:
+commit aa162d2908bd7452805ea812b7550232b0b6ed53
+Author: Josef Bacik <jbacik@fb.com>
+Date:   Sun Sep 3 13:32:17 2017 -0400
 
-But this reminds me of the common story: "Doctor, if I stab
-repeatedly my hand with a fork it hurts a lot, how to fix that?"
-"Don't do it".
-:-)
+    Btrfs: use be->metadata just in case
+    
+    I suspect we're not getting the owner in some cases, so we want to just
+    use the known value.
+    
+    Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-PS Random writes of 8-16KiB over 60TB might seem like storing
-small records/images in small files. That would be "brave".
-On a 60TB RAID50 of 20x 4TB disk drives that might mean around
-5-10MB/s of random small writes, including both data and
-metadata.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

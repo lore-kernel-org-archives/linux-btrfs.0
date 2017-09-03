@@ -1,53 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:37789 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751068AbdICSGi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 14:06:38 -0400
-Date: Sun, 3 Sep 2017 20:06:36 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Cloud Admin <admin@cloud.haefemeier.eu>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How to disable/revoke 'compression'?
-Message-ID: <20170903180636.ayrubvma7awbki6i@angband.pl>
-References: <1504459921.8809.3.camel@cloud.haefemeier.eu>
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:23009 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751071AbdICSc4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 3 Sep 2017 14:32:56 -0400
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Subject: speed up big btrfs volumes with ssds
+Message-ID: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
+Date: Sun, 3 Sep 2017 20:32:53 +0200
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <1504459921.8809.3.camel@cloud.haefemeier.eu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 03, 2017 at 07:32:01PM +0200, Cloud Admin wrote:
-> Hi,
-> I used the mount option 'compression' on some mounted sub volumes. How
-> can I revoke the compression? Means to delete the option and get all
-> data uncompressed on this volume.
-> Is it enough to remount the sub volume without this option? Or is it
-> necessary to do some addional step (balancing?) to get all stored data
-> uncompressed.
+Hello,
 
-If you set it via mount option, removing the option is enough to disable
-compression for _new_ files.  Other ways are chattr +c and btrfs-property,
-but if you haven't heard about those you almost surely don't have such
-attributes set.
+i'm trying to speed up big btrfs volumes.
 
-After remounting, you may uncompress existing files.  Balancing won't do
-this as it moves extents around without looking inside; defrag on the other
-hand rewrites extents thus as a side effect it applies new [non]compression
-settings.  Thus: ｢btrfs fi defrag -r /path/to/filesystem｣.
+Some facts:
+- Kernel will be 4.13-rc7
+- needed volume size is 60TB
 
-> Beside of it, is it possible to find out what the real and compressed size
-> of a file, for example or the ratio?
+Currently without any ssds i get the best speed with:
+- 4x HW Raid 5 with 1GB controller memory of 4TB 3,5" devices
 
-Currently not.
+and using btrfs as raid 0 for data and metadata on top of those 4 raid 5.
 
-I've once written a tool which does this, but 1. it's extremely slow, 2.
-insane, 3. so insane a certain member of this list would kill me had I
-distributed the tool.  Thus, I'd need to rewrite it first...
+I can live with a data loss every now and and than ;-) so a raid 0 on
+top of the 4x radi5 is acceptable for me.
 
+Currently the write speed is not as good as i would like - especially
+for random 8k-16k I/O.
 
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ 
-⣾⠁⢰⠒⠀⣿⡁ Vat kind uf sufficiently advanced technology iz dis!?
-⢿⡄⠘⠷⠚⠋⠀                                 -- Genghis Ht'rok'din
-⠈⠳⣄⠀⠀⠀⠀ 
+My current idea is to use a pcie flash card with bcache on top of each
+raid 5.
+
+Is this something which makes sense to speed up the write speed.
+
+Greets,
+Stefan

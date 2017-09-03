@@ -1,43 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([83.144.122.22]:57044 "EHLO zlom.siedziba.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751592AbdICLhg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Sep 2017 07:37:36 -0400
-From: =?UTF-8?Q?Piotr_Paw=c5=82ow?= <btrfs@pp.siedziba.pl>
-Subject: Re: joining to contribute
-To: Hugo Mills <hugo@carfax.org.uk>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Anthony Riley <anth1y@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CANM+MUmnKX0UJk-SN9t=aBz7Xfq6Dfn73AhZBO5EBpdSh+HVtw@mail.gmail.com>
- <07225e42-1ffe-0289-27a1-811cd6e579a5@gmx.com>
- <20170901091015.GE30990@carfax.org.uk>
-Message-ID: <cfda77b9-e49f-28dd-72d1-b70dd6183201@siedziba.pl>
-Date: Sun, 3 Sep 2017 13:35:43 +0200
+Received: from magic.merlins.org ([209.81.13.136]:48627 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753016AbdICObw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 10:31:52 -0400
+Date: Sun, 3 Sep 2017 07:31:42 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
+        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
+        "fdmanana@suse.com" <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.cz>
+Message-ID: <20170903143142.7thdjvkmkdekrzc5@merlins.org>
+References: <20170831173607.GM15290@merlins.org>
+ <5320FF2E-D183-4D2A-A155-49424E1CD60F@fb.com>
+ <20170901204329.GH30689@merlins.org>
+ <11510543-DAC5-400B-8204-C1FCC12CF335@fb.com>
+ <20170902160942.imo2hotpur3pnops@merlins.org>
+ <B8F93BCF-0976-4450-A58E-13F6A3C48573@fb.com>
+ <20170902235344.sb55vzaloglmqaad@merlins.org>
+ <73427BC6-B85B-422C-BCA0-778C7BA203A8@fb.com>
+ <20170903010127.eafg2i7ry2tprro7@merlins.org>
+ <5D0BC86A-D427-4529-A40E-492A98BA5D16@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20170901091015.GE30990@carfax.org.uk>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5D0BC86A-D427-4529-A40E-492A98BA5D16@fb.com>
+Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
+ errno=-17 Object already exists (since 3.4 / 2012)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
->
->    Alongside this, there's also a requirement for being able to do
-> round-trip send/receive while preserving the ability to do incremental
-> sends. This is likely to be related to the above bug-fix. I did a
-> complete write-up of what's happening, and what needs to happen, here:
->
-> http://www.spinics.net/lists/linux-btrfs/msg44089.html
+On Sun, Sep 03, 2017 at 03:26:34AM +0000, Josef Bacik wrote:
+> I was looking through the code for other ways to cut down memory usage when I noticed we only catch improper re-allocations, not adding another ref for metadata which is what I suspect your problem is.  I added another patch and pushed it out, sorry for the churn.
 
-I missed that discussion, but I proposed a different solution in a similar thread about send/receive (https://www.spinics.net/lists/linux-btrfs/msg60694.html)
+Installed.
 
-I think it's not very useful that received_uuid encodes where the subvolume comes from. All that send / receive should care about, is that the contents of source(s) used for incremental send match the contents of subvolumes on the receive side. Let's call it, for example, "contents_uuid". The rules would be simple: operations that preserve contents preserve contents_uuid ; operations that change contents change contents_uuid. For simplicity and performance reasons, in order to not need tracking of changes, we could allow for some false positives, where contents_uuid changed when data did not. A simpler to implement set of rules could look like this:
+For now, I've seen this once, but otherwise no issues:
+Dropping a ref for a root that doesn't have a ref on the block
+Dumping block entry [26538725376 4096], num_refs 2, metadata 0, from disk 1
+  Ref root 0, parent 29818880, owner 23608, offset 0, num_refs 18446744073709551615
+  Ref root 0, parent 202129408, owner 23608, offset 0, num_refs 1
+  Ref root 418, parent 0, owner 23608, offset 0, num_refs 1
+  Root entry 418, num_refs 1
+  Root entry 69809, num_refs 0
+  Ref action 1, root 418, ref_root 0, parent 202129408, owner 23608, offset 0, num_refs 1
+  No stacktrace support
+  Ref action 2, root 69809, ref_root 0, parent 29818880, owner 23608, offset 0, num_refs 18446744073709551615
+  No stacktrace support
 
-- rw subvolumes have no contents_uuid
-- changing rw subvolume to ro assigns a random contents_uuid
-- ro snapshot of rw subvolume gets a random contents_uuid
-- ro snapshot of ro subvolume preserves contents_uuid
-- send/receive preserves contents_uuid (after successful receive)
 
-And then the rule for send / receive would be:
-- send transmits contents_uuid of subvolumes used as clone sources, which are matched to subvolumes having identical contents_uuid on the receive side.
+I'm assuming this was done by your patch?
+Should I worry about 'No stacktrace support' ?
 
-Does it make sense? Did I miss something? I haven't received any feedback last time, which is why I bring it up again for discussion.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

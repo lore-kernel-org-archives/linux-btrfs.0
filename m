@@ -1,89 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:54848 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751598AbdICUUu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 16:20:50 -0400
-Date: Sun, 3 Sep 2017 13:20:36 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Josef Bacik <jbacik@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
-        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
-        "fdmanana@suse.com" <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.cz>
-Message-ID: <20170903202036.b7j6fcknfiisrnsl@merlins.org>
-References: <20170902160942.imo2hotpur3pnops@merlins.org>
- <B8F93BCF-0976-4450-A58E-13F6A3C48573@fb.com>
- <20170902235344.sb55vzaloglmqaad@merlins.org>
- <73427BC6-B85B-422C-BCA0-778C7BA203A8@fb.com>
- <20170903010127.eafg2i7ry2tprro7@merlins.org>
- <5D0BC86A-D427-4529-A40E-492A98BA5D16@fb.com>
- <20170903143142.7thdjvkmkdekrzc5@merlins.org>
- <1E7DEC47-01A8-4F50-B266-FA4949090687@fb.com>
- <20170903144237.svgnaclwmcfdfikt@merlins.org>
- <AD68E364-AF7F-49AA-8376-49E0C7C92998@fb.com>
+Received: from mout.gmx.net ([212.227.17.21]:64977 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753036AbdICXzg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 3 Sep 2017 19:55:36 -0400
+Subject: Re: How to disable/revoke 'compression'?
+To: Adam Borowski <kilobyte@angband.pl>,
+        Cloud Admin <admin@cloud.haefemeier.eu>
+Cc: linux-btrfs@vger.kernel.org
+References: <1504459921.8809.3.camel@cloud.haefemeier.eu>
+ <20170903180636.ayrubvma7awbki6i@angband.pl>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <5e49c33f-ce4b-523d-24e6-befd379503a9@gmx.com>
+Date: Mon, 4 Sep 2017 07:55:27 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <AD68E364-AF7F-49AA-8376-49E0C7C92998@fb.com>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists (since 3.4 / 2012)
+In-Reply-To: <20170903180636.ayrubvma7awbki6i@angband.pl>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 03, 2017 at 05:33:33PM +0000, Josef Bacik wrote:
-> Alright pushed, sorry about that.
- 
-I'm reasonably sure I'm running the new code, but still got this:
-[ 2104.336513] Dropping a ref for a root that doesn't have a ref on the block
-[ 2104.358226] Dumping block entry [115253923840 155648], num_refs 1, metadata 0, from disk 1
-[ 2104.384037]   Ref root 0, parent 3414272884736, owner 262813, offset 0, num_refs 18446744073709551615
-[ 2104.412766]   Ref root 418, parent 0, owner 262813, offset 0, num_refs 1
-[ 2104.433888]   Root entry 418, num_refs 1
-[ 2104.446648]   Root entry 69869, num_refs 0
-[ 2104.459904]   Ref action 2, root 69869, ref_root 0, parent 3414272884736, owner 262813, offset 0, num_refs 18446744073709551615
-[ 2104.496244]   No Stacktrace
 
-Now, in the background I had a monthly md check of the underlying device
-(mdadm raid 5), and got some of those. Obviously that's not good, and 
-I'm assuming that md raid5 may not have a checksum on blocks, so it won't know
-which drive has the corrupted data.
-Does that sound right?
 
-Now, the good news is that btrfs on top does have checksums, so running a scrub should
-hopefully find those corrupted blocks if they happen to be in use by the filesystem
-(maybe they are free).
-But as a reminder, this whole thread started with my FS maybe not being in a good state, but both
-check --repair and scrub returning clean. Maybe I'll use the opportunity to re-run a check --repair
-and a scrub after that to see what state things are in.
+On 2017年09月04日 02:06, Adam Borowski wrote:
+> On Sun, Sep 03, 2017 at 07:32:01PM +0200, Cloud Admin wrote:
+>> Hi,
+>> I used the mount option 'compression' on some mounted sub volumes. How
+>> can I revoke the compression? Means to delete the option and get all
+>> data uncompressed on this volume.
+>> Is it enough to remount the sub volume without this option? Or is it
+>> necessary to do some addional step (balancing?) to get all stored data
+>> uncompressed.
+> 
+> If you set it via mount option, removing the option is enough to disable
+> compression for _new_ files.  Other ways are chattr +c and btrfs-property,
+> but if you haven't heard about those you almost surely don't have such
+> attributes set.
+> 
+> After remounting, you may uncompress existing files.  Balancing won't do
+> this as it moves extents around without looking inside; defrag on the other
+> hand rewrites extents thus as a side effect it applies new [non]compression
+> settings.  Thus: ｢btrfs fi defrag -r /path/to/filesystem｣.
+> 
+>> Beside of it, is it possible to find out what the real and compressed size
+>> of a file, for example or the ratio?
+> 
+> Currently not.
+> 
+> I've once written a tool which does this, but 1. it's extremely slow, 2.
+> insane, 3. so insane a certain member of this list would kill me had I
+> distributed the tool.  Thus, I'd need to rewrite it first...
 
-md6: mismatch sector in range 3581539536-3581539544
-md6: mismatch sector in range 3581539544-3581539552
-md6: mismatch sector in range 3581539552-3581539560
-md6: mismatch sector in range 3581539560-3581539568  
-md6: mismatch sector in range 3581543792-3581543800
-md6: mismatch sector in range 3581543800-3581543808
-md6: mismatch sector in range 3581543808-3581543816
-md6: mismatch sector in range 3581543816-3581543824
-md6: mismatch sector in range 3581544112-3581544120
-md6: mismatch sector in range 3581544120-3581544128
+AFAIK the only method to determine the compression ratio is to check the 
+EXTENT_DATA key and its corresponding file_extent_item structure.
+(Which I assume Adam is doing this way)
 
-As for your patch, no idea why it's not giving me a stacktrace, sorry :-/
+In that structure is records its on-disk data size and in-memory data 
+size. (All rounded up to sectorsize, which is 4K in most case)
+So in theory it's possible to determine the compression ratio.
 
-Git log of my tree does show:
-commit aa162d2908bd7452805ea812b7550232b0b6ed53
-Author: Josef Bacik <jbacik@fb.com>
-Date:   Sun Sep 3 13:32:17 2017 -0400
+The only method I can think of (maybe I forgot some methods?) is to use 
+offline tool (btrfs-debug-tree) to check that.
+FS APIs like fiemap doesn't even support to report on-disk data size so 
+we can't use it.
 
-    Btrfs: use be->metadata just in case
-    
-    I suspect we're not getting the owner in some cases, so we want to just
-    use the known value.
-    
-    Signed-off-by: Josef Bacik <jbacik@fb.com>
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+But the problem is more complicated, especially when compressed CoW is 
+involved.
+
+For example, there is an extent (A) which represents the data for inode 
+258, range [0,128k).
+On disk size its just 4K.
+
+And when we write the range [32K, 64K), which get CoWed and compressed, 
+resulting a new file extent (B) for inode 258, range [32K, 64K), and on 
+disk size is 4K as an example.
+
+Then file extent layout for 258 will be:
+[0,32k):  range [0,32K) of uncompressed Extent A
+[32k, 64k): range [0,32k) of uncompressed Extent B
+[64k, 128k): range [64k, 128K) of uncompressed Extent A.
+
+And on disk extent size is 4K (compressed Extent A) + 4K (compressed 
+Extent B) = 8K.
+
+Before the write, the compresstion ratio is 4K/128K = 3.125%
+While after write, the compression ratio is 8K/128K = 6.25%
+
+Not to mention that it's possible to have uncompressed file extent.
+
+So it's complicated even we're just using offline tool to determine the 
+compression ratio of btrfs compressed file.
+
+Thanks,
+Qu
+
+> 
+> 
+> Meow!
+> 

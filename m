@@ -1,96 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:59052 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:58505 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753180AbdIDCRl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Sep 2017 22:17:41 -0400
-Subject: Re: How to disable/revoke 'compression'?
-To: Adam Borowski <kilobyte@angband.pl>
-Cc: Cloud Admin <admin@cloud.haefemeier.eu>, linux-btrfs@vger.kernel.org
-References: <1504459921.8809.3.camel@cloud.haefemeier.eu>
- <20170903180636.ayrubvma7awbki6i@angband.pl>
- <5e49c33f-ce4b-523d-24e6-befd379503a9@gmx.com>
- <20170904001440.il6kmsl2cioklcie@angband.pl>
+        id S1750903AbdIDE5p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Sep 2017 00:57:45 -0400
+Subject: Re: block group 11778977169408 has wrong amount of free space
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        linux-btrfs@vger.kernel.org
+References: <1504485081.5569.2.camel@scientia.net>
+ <1504489875.5569.4.camel@scientia.net>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f9528d6b-7bad-5cbd-fbfc-3067b50e7d3b@gmx.com>
-Date: Mon, 4 Sep 2017 10:17:32 +0800
+Message-ID: <64955e14-a40d-6de0-13ac-b289dfb32c62@gmx.com>
+Date: Mon, 4 Sep 2017 12:57:38 +0800
 MIME-Version: 1.0
-In-Reply-To: <20170904001440.il6kmsl2cioklcie@angband.pl>
+In-Reply-To: <1504489875.5569.4.camel@scientia.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年09月04日 08:14, Adam Borowski wrote:
-> On Mon, Sep 04, 2017 at 07:55:27AM +0800, Qu Wenruo wrote:
->> On 2017年09月04日 02:06, Adam Borowski wrote:
->>> I've once written a tool which does this, but 1. it's extremely slow, 2.
->>> insane, 3. so insane a certain member of this list would kill me had I
->>> distributed the tool.  Thus, I'd need to rewrite it first...
->>
->> AFAIK the only method to determine the compression ratio is to check the
->> EXTENT_DATA key and its corresponding file_extent_item structure.
->> (Which I assume Adam is doing this way)
->>
->> In that structure is records its on-disk data size and in-memory data size.
->> (All rounded up to sectorsize, which is 4K in most case)
->> So in theory it's possible to determine the compression ratio.
->>
->> The only method I can think of (maybe I forgot some methods?) is to use
->> offline tool (btrfs-debug-tree) to check that.
->> FS APIs like fiemap doesn't even support to report on-disk data size so we
->> can't use it.
+On 2017年09月04日 09:51, Christoph Anton Mitterer wrote:
+> Did another mount with clear_cache,rw (cause it was ro before)... now I
+> get even more errors:
+> # btrfs check  /dev/mapper/data-a2 ; echo $?
+> Checking filesystem on /dev/mapper/data-a2
+> UUID: f8acb432-7604-46ba-b3ad-0abe8e92c4db
+> checking extents
+> checking free space cache
+> block group 9857516175360 has wrong amount of free space
+> failed to load free space cache for block group 9857516175360
+> block group 11778977169408 has wrong amount of free space
+> failed to load free space cache for block group 11778977169408
+> checking fs roots
+> checking csums
+> checking root refs
+> found 4404625330176 bytes used, no error found
+> total csum bytes: 4293007908
+> total tree bytes: 7511883776
+> total fs tree bytes: 1856258048
+> total extent tree bytes: 1097842688
+> btree space waste bytes: 887738230
+> file data blocks allocated: 4397113446400
+>   referenced 4515055595520
+> 0
 > 
-> BTRFS_IOC_TREE_SEARCH_V2 returns all we want to know; its only downside is
-> being root only.
+> what the???
+>
 
-Just forgot that.
+IIRC clear_cache will only clear the cache of modified block groups for 
+v1 space cache.
 
-> 
->> But the problem is more complicated, especially when compressed CoW is
->> involved.
->>
->> For example, there is an extent (A) which represents the data for inode 258,
->> range [0,128k).
->> On disk size its just 4K.
->>
->> And when we write the range [32K, 64K), which get CoWed and compressed,
->> resulting a new file extent (B) for inode 258, range [32K, 64K), and on disk
->> size is 4K as an example.
->>
->> Then file extent layout for 258 will be:
->> [0,32k):  range [0,32K) of uncompressed Extent A
->> [32k, 64k): range [0,32k) of uncompressed Extent B
->> [64k, 128k): range [64k, 128K) of uncompressed Extent A.
->>
->> And on disk extent size is 4K (compressed Extent A) + 4K (compressed Extent
->> B) = 8K.
->>
->> Before the write, the compresstion ratio is 4K/128K = 3.125%
->> While after write, the compression ratio is 8K/128K = 6.25%
-> 
-> There's no real meaningful way to speak about compression ratio of a partial
-> extent.  Thus, I decided to, for every extent, take compressed:uncompressed
-> sizes of the whole extent, no matter whether the file uses only a few bytes
-> of that extent or references it a thousand times.
-
-Very clever move.
-
-> 
->> Not to mention that it's possible to have uncompressed file extent.
-> 
-> Yeah, the tool gives a report like:
-> all   74%  9.2M/  13M
-> lzo   68%  7.1M/  11M
-> none 100%  2.1M/ 2.1M
-> as you typically have a mix of compressible and uncompressible data.
-
-Looks quite nice!
+And that's why we have btrfs check --clear-space-cache v1, which will 
+wipe out all (v1) space cache.
 
 Thanks,
 Qu
-
-> 
-> 
-> 喵!
-> 

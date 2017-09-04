@@ -1,47 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:50296 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:50996 "EHLO
         mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753120AbdIDBEE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 21:04:04 -0400
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-        by mailgw-02.dd24.net (Postfix) with ESMTP id 35FCC5FE2F
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 01:04:03 +0000 (UTC)
+        with ESMTP id S1753120AbdIDBvX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 21:51:23 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id 25BDA5FDAD
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 01:51:22 +0000 (UTC)
 Received: from mailgw-02.dd24.net ([192.168.1.36])
-        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-        with ESMTP id FPxTxj-g00Pa for <linux-btrfs@vger.kernel.org>;
-        Mon,  4 Sep 2017 01:03:57 +0000 (UTC)
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id ZfyMMhAams50 for <linux-btrfs@vger.kernel.org>;
+        Mon,  4 Sep 2017 01:51:16 +0000 (UTC)
 Received: from schliemann.scientia.net (p57B04EBD.dip0.t-ipconnect.de [87.176.78.189])
         (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
         by mailgw-02.dd24.net (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 01:03:57 +0000 (UTC)
-Message-ID: <1504487036.5569.3.camel@scientia.net>
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 01:51:16 +0000 (UTC)
+Message-ID: <1504489875.5569.4.camel@scientia.net>
 Subject: Re: block group 11778977169408 has wrong amount of free space
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Date: Mon, 04 Sep 2017 03:03:56 +0200
+Date: Mon, 04 Sep 2017 03:51:15 +0200
 In-Reply-To: <1504485081.5569.2.camel@scientia.net>
 References: <1504485081.5569.2.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
         protocol="application/x-pkcs7-signature";
-        boundary="=-KvJ8i374r93N8BjMPaRJ"
+        boundary="=-uIthDuhxhSuTjxVGkXqg"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-KvJ8i374r93N8BjMPaRJ
+--=-uIthDuhxhSuTjxVGkXqg
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Just checked, and mounting with clear_cache, and then re-fscking
-doesn't even fix the problem...
+Did another mount with clear_cache,rw (cause it was ro before)... now I
+get even more errors:
+# btrfs check  /dev/mapper/data-a2 ; echo $?
+Checking filesystem on /dev/mapper/data-a2
+UUID: f8acb432-7604-46ba-b3ad-0abe8e92c4db
+checking extents
+checking free space cache
+block group 9857516175360 has wrong amount of free space
+failed to load free space cache for block group 9857516175360
+block group 11778977169408 has wrong amount of free space
+failed to load free space cache for block group 11778977169408
+checking fs roots
+checking csums
+checking root refs
+found 4404625330176 bytes used, no error found
+total csum bytes: 4293007908
+total tree bytes: 7511883776
+total fs tree bytes: 1856258048
+total extent tree bytes: 1097842688
+btree space waste bytes: 887738230
+file data blocks allocated: 4397113446400
+ referenced 4515055595520
+0
 
-Output stays the same.
-
-Cheers,
-Chris.
---=-KvJ8i374r93N8BjMPaRJ
+what the???
+--=-uIthDuhxhSuTjxVGkXqg
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -133,25 +151,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTA0MDEwMzU2WjBPBgkqhkiG9w0BCQQxQgRAvuHE
-Ls/tnBYCGHLrj3qcYw1YyEwB2LxJF8YEMZleoaJEUWy9nk5m35duCZdtpFo9t7tTHuIWEWmTkiaw
-YPIcGzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTA0MDE1MTE1WjBPBgkqhkiG9w0BCQQxQgRAlkpQ
+zT6SAqfpwq7toIlGS0YJHROvnaJLz/bJ6Cha9hExCmdb9WgtawVribokDzox0y+7j6KWC+40gFus
+1BhDrzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAZnL2
-c0RApi4jqqn0mE4BOeQHc2AM91HCSlyvfqyHX1p/U/etjKU3LqETycbY1dhAuG7iviXDDWR6X0CX
-vdhVu0rEzEA1voqBd2b0vw7Igsqpm4lUhNEmQDb0aDVuvEx059t9E28gg71maq0cw3d6EsBXCiDn
-ekMALSEuttSojSHc/Xi1atwbiVdPHJG6k12QD94th+Vk8GL3zI+O8gvsHjfXXCKMOmMews0AMMwD
-byu2k0NsCZ7gizzvbdRa+t7UHduVhXC3CL2kBMnDF3lVHRnSwIDBHOyhGfBu5XyBNdeMNU4TcHoJ
-iHG6bUQaNT2AmSnOw6XHt56PLmOsNmu+Y09yjFb41Q/w/xkGXsd5ykOlZswOrNqElXIB2Dz/zSTr
-ZnzQbEuhyi+BiYjr8tSGsaucs9oXELpHusNW58WA3YdIp/MxtXOzje3OGGayK6qAPhOuiRx+l7oa
-HYZgopt0DQnAFs7gNn89t6QiTQ2G8eOV4MFRXro/72gg03KSo9t87fQ2wh6BfFEjhPGygRxAecbn
-nWDkDSmlZlmVjXEfGhNrZILOTFniFUwyo1RvDA71436tQiJB2hFSk2FbdIfHOUySH+AvO1JP0vOc
-Z/ADHJW+QSPEojtb63vWbsIlsogq6p2LNb5IDsOvRBLsgl2/q0cnl11wZlpf/KVAFPlMQD4AAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIALfZ3
+4twbMElT5f4xOoWezpd3r9DquZZjhLvEXo9N1fLeXY4ABwPTE8zfFW7L7eu86rdPkzamiCEh6EC7
+Tcp/1v6cUUXPscZnL1sa5NNDe4XAL8AAK/WJWyyVjA6VWmqCPCMWJJFAeghYiMP/lOgAS6BvOct1
+d0GiTZYgjZGIrxgfehmCv5P30BN7Xv7tcogbjilGDCcB/NzaNJgH9yQmK6UigH+kBxnWqiEF9tyt
+/gom7Lbq6lcoVtDyhaIfxYGYgBQXqqiUbT4LdMadF7OY6bnNCEsvXxcDMWgIV+s0MkNErrNUy0o+
+zEmje12Ojy24JsMiJjD6txRFBr3Dsg7r/JSGQIUUt2DQfH7+pmjc55YV68DgH0abIFnXY+VybnBQ
+s+ZjJnWFdbNwYz8o0HFM5/mHKbac/aIWZVglj/YVLZm3RJ754uDtQfIHMG1JNquiWQnmFlzpHr21
+Y4w1ngZj49HwaBD6bJ6jYbEwq6VOahFaSLNI6dty68EsqhhCVSaQoVSQvVbp0onaQEebRWOsuXk0
+DaIDAQGUzX/AN6ZrGzNEJltnkC4UXaEvIFvTMRG8y1uZA5ePrCsS8cS7EswrLnwooTajdqkpQIOd
+eLiyx4JBu4tkRT6YX71T+lsNkFhs+XakPJWgJ4q2cIBsuwofWxhx+MZ9Tqm0BNuiNjjA5ncAAAAA
 AAA=
 
 
---=-KvJ8i374r93N8BjMPaRJ--
+--=-uIthDuhxhSuTjxVGkXqg--
 

@@ -1,98 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53435 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753108AbdIDA4E (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Sep 2017 20:56:04 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
-        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
-        "fdmanana@suse.com" <fdmanana@suse.com>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists (since 3.4 / 2012)
-Date: Mon, 4 Sep 2017 00:55:23 +0000
-Message-ID: <F961488D-33A8-4A57-89AC-397F3C1C5E2E@fb.com>
-References: <20170902160942.imo2hotpur3pnops@merlins.org>
- <B8F93BCF-0976-4450-A58E-13F6A3C48573@fb.com>
- <20170902235344.sb55vzaloglmqaad@merlins.org>
- <73427BC6-B85B-422C-BCA0-778C7BA203A8@fb.com>
- <20170903010127.eafg2i7ry2tprro7@merlins.org>
- <5D0BC86A-D427-4529-A40E-492A98BA5D16@fb.com>
- <20170903143142.7thdjvkmkdekrzc5@merlins.org>
- <1E7DEC47-01A8-4F50-B266-FA4949090687@fb.com>
- <20170903144237.svgnaclwmcfdfikt@merlins.org>
- <AD68E364-AF7F-49AA-8376-49E0C7C92998@fb.com>,<20170903202036.b7j6fcknfiisrnsl@merlins.org>
-In-Reply-To: <20170903202036.b7j6fcknfiisrnsl@merlins.org>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+Received: from mailgw-02.dd24.net ([193.46.215.43]:50296 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753120AbdIDBEE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Sep 2017 21:04:04 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id 35FCC5FE2F
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 01:04:03 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id FPxTxj-g00Pa for <linux-btrfs@vger.kernel.org>;
+        Mon,  4 Sep 2017 01:03:57 +0000 (UTC)
+Received: from schliemann.scientia.net (p57B04EBD.dip0.t-ipconnect.de [87.176.78.189])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-02.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 01:03:57 +0000 (UTC)
+Message-ID: <1504487036.5569.3.camel@scientia.net>
+Subject: Re: block group 11778977169408 has wrong amount of free space
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 04 Sep 2017 03:03:56 +0200
+In-Reply-To: <1504485081.5569.2.camel@scientia.net>
+References: <1504485081.5569.2.camel@scientia.net>
+Content-Type: multipart/signed; micalg="sha-512";
+        protocol="application/x-pkcs7-signature";
+        boundary="=-KvJ8i374r93N8BjMPaRJ"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok this output looked fishy and so I went and tested it on my box again.  It looks like I wasn't testing modifying a snapshot with an existing fs so I never saw these errors, but I see them as well.  I definitely fucked the building of the initial ref tree.  It's too late tonight for me to rework it and have it working for you, but I should be able to get it into shape in the morning.  I'll let you know when I have something useful to test, sorry about the mess,
 
-Josef
+--=-KvJ8i374r93N8BjMPaRJ
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Sent from my iPhone
+Just checked, and mounting with clear_cache, and then re-fscking
+doesn't even fix the problem...
 
-> On Sep 3, 2017, at 4:21 PM, Marc MERLIN <marc@merlins.org> wrote:
-> 
->> On Sun, Sep 03, 2017 at 05:33:33PM +0000, Josef Bacik wrote:
->> Alright pushed, sorry about that.
-> 
-> I'm reasonably sure I'm running the new code, but still got this:
-> [ 2104.336513] Dropping a ref for a root that doesn't have a ref on the block
-> [ 2104.358226] Dumping block entry [115253923840 155648], num_refs 1, metadata 0, from disk 1
-> [ 2104.384037]   Ref root 0, parent 3414272884736, owner 262813, offset 0, num_refs 18446744073709551615
-> [ 2104.412766]   Ref root 418, parent 0, owner 262813, offset 0, num_refs 1
-> [ 2104.433888]   Root entry 418, num_refs 1
-> [ 2104.446648]   Root entry 69869, num_refs 0
-> [ 2104.459904]   Ref action 2, root 69869, ref_root 0, parent 3414272884736, owner 262813, offset 0, num_refs 18446744073709551615
-> [ 2104.496244]   No Stacktrace
-> 
-> Now, in the background I had a monthly md check of the underlying device
-> (mdadm raid 5), and got some of those. Obviously that's not good, and 
-> I'm assuming that md raid5 may not have a checksum on blocks, so it won't know
-> which drive has the corrupted data.
-> Does that sound right?
-> 
-> Now, the good news is that btrfs on top does have checksums, so running a scrub should
-> hopefully find those corrupted blocks if they happen to be in use by the filesystem
-> (maybe they are free).
-> But as a reminder, this whole thread started with my FS maybe not being in a good state, but both
-> check --repair and scrub returning clean. Maybe I'll use the opportunity to re-run a check --repair
-> and a scrub after that to see what state things are in.
-> 
-> md6: mismatch sector in range 3581539536-3581539544
-> md6: mismatch sector in range 3581539544-3581539552
-> md6: mismatch sector in range 3581539552-3581539560
-> md6: mismatch sector in range 3581539560-3581539568  
-> md6: mismatch sector in range 3581543792-3581543800
-> md6: mismatch sector in range 3581543800-3581543808
-> md6: mismatch sector in range 3581543808-3581543816
-> md6: mismatch sector in range 3581543816-3581543824
-> md6: mismatch sector in range 3581544112-3581544120
-> md6: mismatch sector in range 3581544120-3581544128
-> 
-> As for your patch, no idea why it's not giving me a stacktrace, sorry :-/
-> 
-> Git log of my tree does show:
-> commit aa162d2908bd7452805ea812b7550232b0b6ed53
-> Author: Josef Bacik <jbacik@fb.com>
-> Date:   Sun Sep 3 13:32:17 2017 -0400
-> 
->    Btrfs: use be->metadata just in case
-> 
->    I suspect we're not getting the owner in some cases, so we want to just
->    use the known value.
-> 
->    Signed-off-by: Josef Bacik <jbacik@fb.com>
-> 
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                      .... what McDonalds is to gourmet cooking
-> Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIBAg&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=BaH33jtavN-1wWyV3yseE5v7ImIAaTXLnjChSr4HnQw&s=3JczS4Mo254uip2aIsYiC_EUHsmGYcCJUUMl6si8NQ8&e=                          | PGP 1024R/763BE901
+Output stays the same.
+
+Cheers,
+Chris.
+--=-KvJ8i374r93N8BjMPaRJ
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTcwOTA0MDEwMzU2WjBPBgkqhkiG9w0BCQQxQgRAvuHE
+Ls/tnBYCGHLrj3qcYw1YyEwB2LxJF8YEMZleoaJEUWy9nk5m35duCZdtpFo9t7tTHuIWEWmTkiaw
+YPIcGzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAZnL2
+c0RApi4jqqn0mE4BOeQHc2AM91HCSlyvfqyHX1p/U/etjKU3LqETycbY1dhAuG7iviXDDWR6X0CX
+vdhVu0rEzEA1voqBd2b0vw7Igsqpm4lUhNEmQDb0aDVuvEx059t9E28gg71maq0cw3d6EsBXCiDn
+ekMALSEuttSojSHc/Xi1atwbiVdPHJG6k12QD94th+Vk8GL3zI+O8gvsHjfXXCKMOmMews0AMMwD
+byu2k0NsCZ7gizzvbdRa+t7UHduVhXC3CL2kBMnDF3lVHRnSwIDBHOyhGfBu5XyBNdeMNU4TcHoJ
+iHG6bUQaNT2AmSnOw6XHt56PLmOsNmu+Y09yjFb41Q/w/xkGXsd5ykOlZswOrNqElXIB2Dz/zSTr
+ZnzQbEuhyi+BiYjr8tSGsaucs9oXELpHusNW58WA3YdIp/MxtXOzje3OGGayK6qAPhOuiRx+l7oa
+HYZgopt0DQnAFs7gNn89t6QiTQ2G8eOV4MFRXro/72gg03KSo9t87fQ2wh6BfFEjhPGygRxAecbn
+nWDkDSmlZlmVjXEfGhNrZILOTFniFUwyo1RvDA71436tQiJB2hFSk2FbdIfHOUySH+AvO1JP0vOc
+Z/ADHJW+QSPEojtb63vWbsIlsogq6p2LNb5IDsOvRBLsgl2/q0cnl11wZlpf/KVAFPlMQD4AAAAA
+AAA=
+
+
+--=-KvJ8i374r93N8BjMPaRJ--
+

@@ -1,57 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:58505 "EHLO mout.gmx.net"
+Received: from smtp.sws.net.au ([203.15.121.86]:60462 "EHLO smtp.sws.net.au"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750903AbdIDE5p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Sep 2017 00:57:45 -0400
-Subject: Re: block group 11778977169408 has wrong amount of free space
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-References: <1504485081.5569.2.camel@scientia.net>
- <1504489875.5569.4.camel@scientia.net>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <64955e14-a40d-6de0-13ac-b289dfb32c62@gmx.com>
-Date: Mon, 4 Sep 2017 12:57:38 +0800
+        id S1750703AbdIDFTe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Sep 2017 01:19:34 -0400
+Received: from athena.localnet (unknown [1.152.175.208])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        (Authenticated sender: russell@coker.com.au)
+        by smtp.sws.net.au (Postfix) with ESMTPSA id 6DE1BEDDD
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 15:19:35 +1000 (AEST)
+From: Russell Coker <russell+btrfs@coker.com.au>
+To: linux-btrfs@vger.kernel.org
+Reply-To: russell+btrfs@coker.com.au
+Subject: read-only for no good reason on 4.9.30
+Date: Mon, 04 Sep 2017 15:19:30 +1000
+Message-ID: <1841512.lHhB7WV3Ld@russell.coker.com.au>
 MIME-Version: 1.0
-In-Reply-To: <1504489875.5569.4.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I have a system with less than 50% disk space used.  It just started rejecting 
+writes due to lack of disk space.  I ran "btrfs balance" and then it started 
+working correctly again.  It seems that a btrfs filesystem if left alone will 
+eventually get fragmented enough that it rejects writes (I've had similar 
+issues with other systems running BTRFS with other kernel versions).
 
+Is this a known issue?
 
-On 2017年09月04日 09:51, Christoph Anton Mitterer wrote:
-> Did another mount with clear_cache,rw (cause it was ro before)... now I
-> get even more errors:
-> # btrfs check  /dev/mapper/data-a2 ; echo $?
-> Checking filesystem on /dev/mapper/data-a2
-> UUID: f8acb432-7604-46ba-b3ad-0abe8e92c4db
-> checking extents
-> checking free space cache
-> block group 9857516175360 has wrong amount of free space
-> failed to load free space cache for block group 9857516175360
-> block group 11778977169408 has wrong amount of free space
-> failed to load free space cache for block group 11778977169408
-> checking fs roots
-> checking csums
-> checking root refs
-> found 4404625330176 bytes used, no error found
-> total csum bytes: 4293007908
-> total tree bytes: 7511883776
-> total fs tree bytes: 1856258048
-> total extent tree bytes: 1097842688
-> btree space waste bytes: 887738230
-> file data blocks allocated: 4397113446400
->   referenced 4515055595520
-> 0
-> 
-> what the???
->
+Is there any good way of recognising when it's likely to happen?  Is there 
+anything I can do other than rewriting a medium size file to determine when 
+it's happened?
 
-IIRC clear_cache will only clear the cache of modified block groups for 
-v1 space cache.
+# uname -a 
+Linux trex 4.9.0-3-amd64 #1 SMP Debian 4.9.30-2+deb9u2 (2017-06-26) x86_64 
+GNU/Linux
+# df -h / 
+Filesystem      Size  Used Avail Use% Mounted on 
+/dev/sdc        239G  113G  126G  48% /
+# btrfs fi df / 
+Data, RAID1: total=117.00GiB, used=111.81GiB 
+System, RAID1: total=32.00MiB, used=48.00KiB 
+Metadata, RAID1: total=1.00GiB, used=516.00MiB 
+GlobalReserve, single: total=246.59MiB, used=0.00B
+# btrfs dev usa / 
+/dev/sdc, ID: 1 
+  Device size:           238.47GiB 
+  Device slack:              0.00B 
+  Data,RAID1:            117.00GiB 
+  Metadata,RAID1:          1.00GiB 
+  System,RAID1:           32.00MiB 
+  Unallocated:           120.44GiB 
 
-And that's why we have btrfs check --clear-space-cache v1, which will 
-wipe out all (v1) space cache.
+/dev/sdd, ID: 2 
+  Device size:           238.47GiB 
+  Device slack:              0.00B 
+  Data,RAID1:            117.00GiB 
+  Metadata,RAID1:          1.00GiB 
+  System,RAID1:           32.00MiB 
+  Unallocated:           120.44GiB
 
-Thanks,
-Qu
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/
+

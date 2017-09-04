@@ -1,97 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48924 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751321AbdIDKfp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 06:35:45 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dooj7-000150-Fy
-        for linux-btrfs@vger.kernel.org; Mon, 04 Sep 2017 12:35:33 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Is autodefrag recommended?
-Date: Mon, 4 Sep 2017 10:34:57 +0000 (UTC)
-Message-ID: <pan$75cde$b9b6710$ed24172a$22c271cc@cox.net>
-References: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-qk0-f169.google.com ([209.85.220.169]:36822 "EHLO
+        mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751368AbdIDKxU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 06:53:20 -0400
+Received: by mail-qk0-f169.google.com with SMTP id z143so439027qkb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2017 03:53:19 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
+References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
+From: Henk Slager <eye1tm@gmail.com>
+Date: Mon, 4 Sep 2017 12:53:18 +0200
+Message-ID: <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com>
+Subject: Re: speed up big btrfs volumes with ssds
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marat Khalili posted on Mon, 04 Sep 2017 12:31:54 +0300 as excerpted:
+On Sun, Sep 3, 2017 at 8:32 PM, Stefan Priebe - Profihost AG
+<s.priebe@profihost.ag> wrote:
+> Hello,
+>
+> i'm trying to speed up big btrfs volumes.
+>
+> Some facts:
+> - Kernel will be 4.13-rc7
+> - needed volume size is 60TB
+>
+> Currently without any ssds i get the best speed with:
+> - 4x HW Raid 5 with 1GB controller memory of 4TB 3,5" devices
+>
+> and using btrfs as raid 0 for data and metadata on top of those 4 raid 5.
+>
+> I can live with a data loss every now and and than ;-) so a raid 0 on
+> top of the 4x radi5 is acceptable for me.
+>
+> Currently the write speed is not as good as i would like - especially
+> for random 8k-16k I/O.
+>
+> My current idea is to use a pcie flash card with bcache on top of each
+> raid 5.
 
-> Hello list,
-> good time of the day,
-> 
-> More than once I see mentioned in this list that autodefrag option 
-> solves problems with no apparent drawbacks, but it's not the default. 
-> Can you recommend to just switch it on indiscriminately on all 
-> installations?
-> 
-> I'm currently on kernel 4.4, can switch to 4.10 if necessary (it's 
-> Ubuntu that gives us this strange choice, no idea why it's not 4.9). 
-> Only spinning rust here, no SSDs.
+If it can speed up depends quite a lot on what the use-case is, for
+some not-so-much-parallel-access it might work. So this 60TB is then
+20 4TB disks or so and the 4x 1GB cache is simply not very helpful I
+think. The working set doesn't fit in it I guess. If there is mostly
+single or a few users of the fs, a single pcie based bcacheing 4
+devices can work, but for SATA SSD, I would use 1 SSD per HWraid5.
 
-AFAIK autodefrag is recommended in general, but may not be for certain 
-specific use-cases.
+Then roughly make sure the complete set of metadata blocks fits in the
+cache. For an fs of this size let's say/estimate 150G. Then maybe same
+of double for data, so an SSD of 500G would be a first try.
 
-* Because the mechanism involves watching written files for fragmentation 
-and scheduling areas that are too fragmented for later rewrite, if the 
-filesystem is operating at near capacity already, adding the extra load 
-of the defragmenting rewrites may actually reduce throughput and increase 
-latency, at least short term.  (Longer term the additional fragmentation 
-from /not/ using it will become a factor and reduce throughput even more.)
-
-* Users just turning autodefrag on after not using it for an extended 
-period, thus having an already highly fragmented filesystem, may well see 
-a period of higher latencies and lower throughput until the system 
-"catches up" and has defragged frequently written-to files.  (This is 
-avoided with a policy of always having it on from the first time the 
-filesystem is mounted, so it's on at initial filesystem population.)
-
-* As with many issues on a COW-based filesystem such as btrfs, it's the 
-frequently written into (aka internal-rewrite-pattern) files that are the 
-biggest test case.  At-once written files that are never in-place 
-rewritten (for file safety many editors make a temporary copy, fsync it, 
-and then atomically replace the original with a rename, thus not being in-
-place rewrites) don't tend to be an issue, unless the filesystem is 
-already fragmented enough at write time that the file must be fragmented 
-as it is initially written.
-
-In general, this internal-rewrite-pattern is most commonly seen for 
-database files and virtual machines, with systemd's journal files likely 
-being the most common example of the former -- they're NOT the common 
-append-only log file format that so-called "legacy" text-based log files 
-tend to be.  Also extremely common are the browser database files used by 
-both gecko and webkit based browsers (and browser-based apps such as 
-thunderbird).
-
-* Autodefrag works very well when these internal-rewrite-pattern files 
-are relatively small, say a quarter GiB or less, but, again with near-
-capacity throughput, not necessarily so well with larger databases or VM 
-images of a GiB or larger.  (The quarter-gig to gig size is intermediate, 
-not as often a problem and not a problem for many, but it can be for 
-slower devices, while those on fast ssds may not see a problem until 
-sizes reach multiple GiB.)
-
-For larger internal-rewrite-pattern files, again, starting at a gig or so 
-depending on device speed as well as rewrite activity, where 
-fragmentation AND performance are issues, the NOCOW file attribute may be 
-useful, tho there are side effects (losing btrfs checksumming and 
-compression functionality, interaction with btrfs snapshotting forcing 
-COW1, etc).
-
-However, in general COW-based filesystems, including btrfs, are not going 
-to perform well with this use-case, and those operating large DBs or VMs 
-with performance considerations may find more traditional filesystems (or 
-even operation on bare-device, bypassing the filesystem layer entirely) a 
-better match for their needs, and I personally consider NOCOW an 
-unacceptable compromise, losing many of the advantages that make btrfs so 
-nice in general, so IMO it's then better to just use a different 
-filesystem better suited to that use-case.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+You give the impression that reliability for this fs is not the
+highest prio, so if you go full risk, then put bcache in write-back
+mode, then you will have your desired random 8k-16k I/O speedup after
+the cache is warmed up. But any SW or HW failure wil result in total
+fs loss normally if SSD and HDD get out of sync somehow. Bcache
+write-through might also be acceptable, you will need extensive
+monitoring and tuning of all (bcache) parameters etc to be sure of the
+right choice of size and setup etc.

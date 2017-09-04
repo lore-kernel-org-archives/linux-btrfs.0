@@ -1,45 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.sws.net.au ([203.15.121.86]:53624 "EHLO smtp.sws.net.au"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753604AbdIDNi5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Sep 2017 09:38:57 -0400
-Received: from athena.localnet (ppp118-209-117-33.bras1.mel11.internode.on.net [118.209.117.33])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        (Authenticated sender: russell@coker.com.au)
-        by smtp.sws.net.au (Postfix) with ESMTPSA id 0BB39EFF6
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 23:38:59 +1000 (AEST)
-From: Russell Coker <russell@coker.com.au>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Reply-To: russell@coker.com.au
-Subject: Re: speed up big btrfs volumes with ssds
-Date: Mon, 04 Sep 2017 23:38:54 +1000
-Message-ID: <4162920.CfW0nAYGZq@russell.coker.com.au>
-In-Reply-To: <e43a6dea-0e4c-50e4-da0d-03ac3ab9a97f@profihost.ag>
-References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag> <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com> <e43a6dea-0e4c-50e4-da0d-03ac3ab9a97f@profihost.ag>
+Received: from tartarus.angband.pl ([89.206.35.136]:50343 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753699AbdIDPEv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 11:04:51 -0400
+Date: Mon, 4 Sep 2017 17:04:47 +0200
+From: Adam Borowski <kilobyte@angband.pl>
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Cc: Cloud Admin <admin@cloud.haefemeier.eu>, linux-btrfs@vger.kernel.org
+Subject: Re: How to disable/revoke 'compression'?
+Message-ID: <20170904150447.neyzhuunnslnaaqr@angband.pl>
+References: <1504459921.8809.3.camel@cloud.haefemeier.eu>
+ <20170903180636.ayrubvma7awbki6i@angband.pl>
+ <e5ac8e29-ef97-0b9b-cdaa-cb928686d0d6@mendix.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <e5ac8e29-ef97-0b9b-cdaa-cb928686d0d6@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday, 4 September 2017 2:57:18 PM AEST Stefan Priebe - Profihost AG 
-wrote:
-> > Then roughly make sure the complete set of metadata blocks fits in the
-> > cache. For an fs of this size let's say/estimate 150G. Then maybe same
-> > of double for data, so an SSD of 500G would be a first try.
+On Sun, Sep 03, 2017 at 08:30:59PM +0200, Hans van Kranenburg wrote:
+> On 09/03/2017 08:06 PM, Adam Borowski wrote:
+> > On Sun, Sep 03, 2017 at 07:32:01PM +0200, Cloud Admin wrote:
+> >> Beside of it, is it possible to find out what the real and compressed size
+> >> of a file, for example or the ratio?
+> > 
+> > Currently not.
+> > 
+> > I've once written a tool which does this, but 1. it's extremely slow, 2.
+> > insane, 3. so insane a certain member of this list would kill me had I
+> > distributed the tool.  Thus, I'd need to rewrite it first...
 > 
-> I would use 1TB devices for each Raid or a 4TB PCIe card.
+> Heh, I wouldn't do that, since I need you to do my debian uploads. :D
+> 
+> But it would certainly help to be a bit less stubborn only wanting to
+> code in the language that matches your country code. :O
 
-One thing I've considered is to create a filesystem with a RAID-1 of SSDs and 
-then create lots of files with long names to use up a lot of space on the 
-SSDs.  Then delete those files and add disks to the filesystem.  Then BTRFS 
-should keep using the allocated metadata blocks on the SSD for all metadata 
-and use disks for just data.
+It's even funnier that I prefer the C.UTF-8 locale over pl_PL.UTF-8, and
+the C code works several orders of magnitude faster than the Perl+Python
+version.
 
-I haven't yet tried bcache, but would prefer something simpler with one less 
-layer.
+Ok, ok, in this case it's C++ but only because I couldn't be arsed to
+implement a <set> the hard way.
 
+> Or maybe I can help a bit, since it sounds like a nice one for the
+> coding examples in the lib. ;]
+
+The lib is a great help -- the ioctls are totally undocumented, your code is
+a lot easier than RTFKing.
+
+
+Meow!
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
-
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢰⠒⠀⣿⡁ Vat kind uf sufficiently advanced technology iz dis!?
+⢿⡄⠘⠷⠚⠋⠀                                 -- Genghis Ht'rok'din
+⠈⠳⣄⠀⠀⠀⠀ 

@@ -1,92 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36700 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752563AbdIAXQS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 19:16:18 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v81NGGGq006103
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:17 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v81NGG2r008011
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:16 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v81NGFh9023427
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:15 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: protect conditions within root->log_mutex while waiting
-Date: Fri,  1 Sep 2017 16:14:30 -0600
-Message-Id: <20170901221430.10131-5-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:48072 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753885AbdIDRpG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Sep 2017 13:45:06 -0400
+Date: Mon, 4 Sep 2017 19:43:38 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 2/2] btrfs-progs: test/mkfs: Add test case for rootdir
+ parameter
+Message-ID: <20170904174338.GE31874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170904034320.25744-1-quwenruo.btrfs@gmx.com>
+ <20170904034320.25744-2-quwenruo.btrfs@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170904034320.25744-2-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Both wait_for_commit() and wait_for_writer() are checking the
-condition out of the mutex lock.
+On Mon, Sep 04, 2017 at 12:43:20PM +0900, Qu Wenruo wrote:
+> Add test case which checks if -r|--rootdir mount option can handle
+> softlink/char/block/fifo files.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
-This refactors code a bit to be lock safe.
+Patch 1 applied, please fix up the test as commented below.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/tree-log.c | 30 ++++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
+> ---
+>  .../009-special-files-for-rootdir/test.sh          | 40 ++++++++++++++++++++++
+>  1 file changed, 40 insertions(+)
+>  create mode 100755 tests/mkfs-tests/009-special-files-for-rootdir/test.sh
+> 
+> diff --git a/tests/mkfs-tests/009-special-files-for-rootdir/test.sh b/tests/mkfs-tests/009-special-files-for-rootdir/test.sh
+> new file mode 100755
+> index 00000000..bc5297d0
+> --- /dev/null
+> +++ b/tests/mkfs-tests/009-special-files-for-rootdir/test.sh
+> @@ -0,0 +1,40 @@
+> +#!/bin/bash
+> +# Check if --rootdir can handle special files (socket/fifo/char/block) correctly
+> +#
+> +# --rootdir had a problem of filling dir items/indexes with wrong type
+> +# and caused btrfs check to report such error
+> +
+> +source "$TOP/tests/common"
+> +
+> +check_prereq mkfs.btrfs
+> +check_prereq btrfs
+> +
+> +setup_root_helper		# For mknod
+> +prepare_test_dev 128M
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 3a11ae6..434dcd5 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2701,34 +2701,36 @@ static void wait_log_commit(struct btrfs_root *root, int transid)
- 	 * so we know that if ours is more than 2 older than the
- 	 * current transaction, we're done
- 	 */
--	do {
-+	for (;;) {
- 		prepare_to_wait(&root->log_commit_wait[index],
- 				&wait, TASK_UNINTERRUPTIBLE);
--		mutex_unlock(&root->log_mutex);
- 
--		if (root->log_transid_committed < transid &&
--		    atomic_read(&root->log_commit[index]))
--			schedule();
-+		if (!(root->log_transid_committed < transid &&
-+		      atomic_read(&root->log_commit[index])))
-+			break;
- 
--		finish_wait(&root->log_commit_wait[index], &wait);
-+		mutex_unlock(&root->log_mutex);
-+		schedule();
- 		mutex_lock(&root->log_mutex);
--	} while (root->log_transid_committed < transid &&
--		 atomic_read(&root->log_commit[index]));
-+	}
-+	finish_wait(&root->log_commit_wait[index], &wait);
- }
- 
- static void wait_for_writer(struct btrfs_root *root)
- {
- 	DEFINE_WAIT(wait);
- 
--	while (atomic_read(&root->log_writers)) {
--		prepare_to_wait(&root->log_writer_wait,
--				&wait, TASK_UNINTERRUPTIBLE);
-+	for (;;) {
-+		prepare_to_wait(&root->log_writer_wait, &wait,
-+				TASK_UNINTERRUPTIBLE);
-+		if (!atomic_read(&root->log_writers))
-+			break;
-+
- 		mutex_unlock(&root->log_mutex);
--		if (atomic_read(&root->log_writers))
--			schedule();
--		finish_wait(&root->log_writer_wait, &wait);
-+		schedule();
- 		mutex_lock(&root->log_mutex);
- 	}
-+	finish_wait(&root->log_writer_wait, &wait);
- }
- 
- static inline void btrfs_remove_log_ctx(struct btrfs_root *root,
--- 
-2.9.4
+Device size should be default (ie. no size), unless really required.
 
+> +
+> +# mknod can create FIFO/CHAR/BLOCK file but not SOCK.
+> +# No neat tool to create socket file, unless using python or similar.
+> +# So no SOCK is tested here
+
+Ok, we can live without that.
+
+> +check_global_prereq mknod
+> +
+> +# Also check regular file
+> +check_global_prereq dd
+> +
+> +# And dir
+> +check_global_prereq mkdir
+
+We can assume the base utilities to exist, so cp, rm, mkdir, and several
+more.
+
+> +tmp="/tmp/btrfs_selftest_$$"
+
+Please use something like $(mktemp --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
+
+> +
+> +run_check mkdir $tmp
+> +run_check mkdir $tmp/dir
+> +run_check mkdir -p $tmp/dir/in/dir
+> +run_check mknod $tmp/fifo p
+> +run_check $SUDO_HELPER mknod $tmp/char c 1 1
+> +run_check $SUDO_HELPER mknod $tmp/block b 1 1
+> +run_check dd if=/dev/zero bs=1M count=1 of=$tmp/regular
+> +
+> +run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -r "$tmp" $TEST_DEV
+> +
+> +rm "$tmp" -rf
+
+This should be options first, then arguments.
+
+> +
+> +run_check $SUDO_HELPER "$TOP/btrfs" check $TEST_DEV
+> -- 
+> 2.14.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

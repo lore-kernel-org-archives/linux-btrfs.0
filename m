@@ -1,78 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:35599 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753965AbdIDUgA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 16:36:00 -0400
-Received: by mail-oi0-f48.google.com with SMTP id n18so11177347oig.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2017 13:36:00 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <05997689-bcdb-d136-a35a-6c0c7beeb1c0@profihost.ag>
-References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
- <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com>
- <e43a6dea-0e4c-50e4-da0d-03ac3ab9a97f@profihost.ag> <CAGqmi7537YtkTLfkk8tUoA5Zn9SMvUoGicg+R_4Nm6LupALEow@mail.gmail.com>
- <05997689-bcdb-d136-a35a-6c0c7beeb1c0@profihost.ag>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Mon, 4 Sep 2017 23:35:19 +0300
-Message-ID: <CAGqmi76_WpVTfaSNJK4GV=Xsf7KcF_A8EJCbHLFPoPXO-ai4ag@mail.gmail.com>
-Subject: Re: speed up big btrfs volumes with ssds
-To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Cc: Henk Slager <eye1tm@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Received: from [195.159.176.226] ([195.159.176.226]:49337 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753978AbdIDW2Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 18:28:24 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dozqb-000272-JL
+        for linux-btrfs@vger.kernel.org; Tue, 05 Sep 2017 00:28:01 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Is autodefrag recommended?
+Date: Mon, 4 Sep 2017 22:27:45 +0000 (UTC)
+Message-ID: <pan$901c4$d132d63e$15fedc9c$216210f8@cox.net>
+References: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru>
+        <pan$75cde$b9b6710$ed24172a$22c271cc@cox.net>
+        <CAPmG0jaQL5PcRWUrTBkboLxhmfpQ5-W8h3toPasSK1nvk42e3Q@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-09-04 21:32 GMT+03:00 Stefan Priebe - Profihost AG <s.priebe@profihost.ag>:
->> May be you can make work your raid setup faster by:
->> 1. Use Single Profile
->
-> I'm already using the raid0 profile - see below:
+Henk Slager posted on Mon, 04 Sep 2017 13:09:24 +0200 as excerpted:
 
-If i understand correctly, you have a very big data set with random RW
-access, so:
-I'm saying about single profile for compact writes to one device, that
-can make WB cache more effective
-Because writes will not spread on several devices and as result that
-increase chance that full stripe will be overwriten
-That's will just work as raid0 with very big stripe size.
+> On Mon, Sep 4, 2017 at 12:34 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> 
+>> * Autodefrag works very well when these internal-rewrite-pattern files
+>> are relatively small, say a quarter GiB or less, but, again with near-
+>> capacity throughput, not necessarily so well with larger databases or
+>> VM images of a GiB or larger.  (The quarter-gig to gig size is
+>> intermediate,
+>> not as often a problem and not a problem for many, but it can be for
+>> slower devices, while those on fast ssds may not see a problem until
+>> sizes reach multiple GiB.)
+> 
+> I have seen you stating this before about some quarter GiB filesize or
+> so, but it is irrelevant, it is simply not how it works. See explanation
+> of Hugo for how it works. I can post/store an actual filefrag output of
+> a vm image that is around for 2 years on the one of my btrfs fs, then
+> you can do some statistics on it and see from there how it works.
 
-> Data,RAID0: Size:22.57TiB, Used:21.08TiB
-> Metadata,RAID0: Size:90.00GiB, Used:82.28GiB
-> System,RAID0: Size:64.00MiB, Used:1.53MiB
->
->> 2. Use different stripe size for HW RAID5:
->>     i think 16kb will be optimal with 5 devices per raid group
->>     That will give you 64kb data stripe and 16kb parity
->>     Btrfs raid0 use 64kb as stripe so that can make data access
->> unaligned (or use single profile for btrfs)
->
-> That sounds like an interesting idea except for the unaligned writes.
-> Will need to test this.
+FWIW...
 
-Afaik btrfs also use 64kb for metadata:
-https://github.com/torvalds/linux/blob/e26f1bea3b833fb2c16fb5f0a949da1efa219de3/fs/btrfs/extent-tree.c#L6678
+I believe it did work that way (whole-file autodefrag) at one point.  
+Because back in the early kernel 3.x era at least, we had complaints 
+about autodefrag performance with larger internal-rewrite-pattern files 
+where the larger the file the worse the performance, and the 
+documentation mentioned something about being appropriate for small files 
+but less so far large files as well.
 
->> 3. Use btrfs ssd_spread to decrease RMW cycles.
-> Can you explain this?
+But I also believe you're correct that it no longer works that way (if it 
+ever did, maybe the complaints were due to some unrelated side effect, in 
+any case I've not seen any for quite some time now), and hasn't since 
+before anything we're still trying to reasonably support on this list 
+(IOW, back two LTS kernel series ago, so to 4.4).
 
-Long description:
-https://www.spinics.net/lists/linux-btrfs/msg67515.html
+So I should drop the size factor, or mention that it's not nearly the 
+problem it once was, at least.
 
-Short:
-that option will change allocator logic.
-Allocator will spread writes more aggressively and always try write to
-new/empty area.
-So in theory that will write new data to new empty chunk, so if you
-have much free space that will make some guaranty to not touch old
-data, so not do RWM and in theory always do full stripe write.
+Thanks for forcing the reckoning. =:^)
 
-But if you expect that you array will be near full and you don't want
-do defragment on that, that can easy get you enospace error.
-
-> Stefan
-
-That just my IMHO,
-Thanks.
 -- 
-Have a nice day,
-Timofey.
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

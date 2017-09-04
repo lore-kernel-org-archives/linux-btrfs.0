@@ -1,36 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f173.google.com ([209.85.220.173]:32845 "EHLO
-        mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753411AbdIDLJZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 07:09:25 -0400
-Received: by mail-qk0-f173.google.com with SMTP id o129so610077qkd.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2017 04:09:25 -0700 (PDT)
+Received: from azure.uno.uk.net ([95.172.254.11]:33368 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753474AbdIDLny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Sep 2017 07:43:54 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:37156)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <postmaster@root.t00.sabi.co.uk>)
+        id 1dopnE-0005xA-JA
+        for linux-btrfs@vger.kernel.org; Mon, 04 Sep 2017 12:43:52 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dopn3-00069R-La
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2017 12:43:41 +0100
 MIME-Version: 1.0
-In-Reply-To: <pan$75cde$b9b6710$ed24172a$22c271cc@cox.net>
-References: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru> <pan$75cde$b9b6710$ed24172a$22c271cc@cox.net>
-From: Henk Slager <eye1tm@gmail.com>
-Date: Mon, 4 Sep 2017 13:09:24 +0200
-Message-ID: <CAPmG0jaQL5PcRWUrTBkboLxhmfpQ5-W8h3toPasSK1nvk42e3Q@mail.gmail.com>
-Subject: Re: Is autodefrag recommended?
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22957.15468.827250.540465@tree.ty.sabi.co.uk>
+Date: Mon, 4 Sep 2017 12:43:40 +0100
+To: linux-btrfs@vger.kernel.org
+Subject: Re: speed up big btrfs volumes with ssds
+In-Reply-To: <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com>
+References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
+        <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 4, 2017 at 12:34 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> [ ... ] Currently the write speed is not as good as i would
+>> like - especially for random 8k-16k I/O. [ ... ]
 
-> * Autodefrag works very well when these internal-rewrite-pattern files
-> are relatively small, say a quarter GiB or less, but, again with near-
-> capacity throughput, not necessarily so well with larger databases or VM
-> images of a GiB or larger.  (The quarter-gig to gig size is intermediate,
-> not as often a problem and not a problem for many, but it can be for
-> slower devices, while those on fast ssds may not see a problem until
-> sizes reach multiple GiB.)
+> [ ... ] So this 60TB is then 20 4TB disks or so and the 4x 1GB
+> cache is simply not very helpful I think. The working set
+> doesn't fit in it I guess. If there is mostly single or a few
+> users of the fs, a single pcie based bcacheing 4 devices can
+> work, but for SATA SSD, I would use 1 SSD per HWraid5. [ ... ]
 
-I have seen you stating this before about some quarter GiB filesize or
-so, but it is irrelevant, it is simply not how it works. See
-explanation of Hugo for how it works. I can post/store an actual
-filefrag output of a vm image that is around for 2 years on the one of
-my btrfs fs, then you can do some statistics on it and see from there
-how it works.
+Probably the idea of the cacheable working set of a random small
+write workload is a major new scientific discovery. :-)

@@ -1,57 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:50343 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753699AbdIDPEv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 11:04:51 -0400
-Date: Mon, 4 Sep 2017 17:04:47 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: Cloud Admin <admin@cloud.haefemeier.eu>, linux-btrfs@vger.kernel.org
-Subject: Re: How to disable/revoke 'compression'?
-Message-ID: <20170904150447.neyzhuunnslnaaqr@angband.pl>
-References: <1504459921.8809.3.camel@cloud.haefemeier.eu>
- <20170903180636.ayrubvma7awbki6i@angband.pl>
- <e5ac8e29-ef97-0b9b-cdaa-cb928686d0d6@mendix.com>
+Received: from azure.uno.uk.net ([95.172.254.11]:36252 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753932AbdIDSYD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Sep 2017 14:24:03 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:39532)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <postmaster@root.t00.sabi.co.uk>)
+        id 1dow2T-0004CJ-PH
+        for linux-btrfs@vger.kernel.org; Mon, 04 Sep 2017 19:24:01 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dow2M-0007Mc-Su
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2017 19:23:54 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <e5ac8e29-ef97-0b9b-cdaa-cb928686d0d6@mendix.com>
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <22957.39482.437159.954917@tree.ty.sabi.co.uk>
+Date: Mon, 4 Sep 2017 19:23:54 +0100
+To: linux-btrfs@vger.kernel.org
+Subject: Re: speed up big btrfs volumes with ssds
+In-Reply-To: <CAGqmi7537YtkTLfkk8tUoA5Zn9SMvUoGicg+R_4Nm6LupALEow@mail.gmail.com>
+References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
+        <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com>
+        <e43a6dea-0e4c-50e4-da0d-03ac3ab9a97f@profihost.ag>
+        <CAGqmi7537YtkTLfkk8tUoA5Zn9SMvUoGicg+R_4Nm6LupALEow@mail.gmail.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 03, 2017 at 08:30:59PM +0200, Hans van Kranenburg wrote:
-> On 09/03/2017 08:06 PM, Adam Borowski wrote:
-> > On Sun, Sep 03, 2017 at 07:32:01PM +0200, Cloud Admin wrote:
-> >> Beside of it, is it possible to find out what the real and compressed size
-> >> of a file, for example or the ratio?
-> > 
-> > Currently not.
-> > 
-> > I've once written a tool which does this, but 1. it's extremely slow, 2.
-> > insane, 3. so insane a certain member of this list would kill me had I
-> > distributed the tool.  Thus, I'd need to rewrite it first...
-> 
-> Heh, I wouldn't do that, since I need you to do my debian uploads. :D
-> 
-> But it would certainly help to be a bit less stubborn only wanting to
-> code in the language that matches your country code. :O
+>>> [ ... ] Currently without any ssds i get the best speed with:
+>>> - 4x HW Raid 5 with 1GB controller memory of 4TB 3,5" devices
+>>> and using btrfs as raid 0 for data and metadata on top of
+>>> those 4 raid 5. [ ... ] the write speed is not as good as i
+>>> would like - especially for random 8k-16k I/O. [ ... ]
 
-It's even funnier that I prefer the C.UTF-8 locale over pl_PL.UTF-8, and
-the C code works several orders of magnitude faster than the Perl+Python
-version.
+> [ ... ] 64kb data stripe and 16kb parity Btrfs raid0 use 64kb
+> as stripe so that can make data access unaligned (or use single
+> profile for btrfs) 3. Use btrfs ssd_spread to decrease RMW
+> cycles.
 
-Ok, ok, in this case it's C++ but only because I couldn't be arsed to
-implement a <set> the hard way.
+This is not a "revolutionary" scientific discovery as the idea of
+a working set of a small-size random-write workload, but it still
+takes a lot of "optimism" to imagine that it is possible to
+"decrease RMW cycles" for "random 8k-16k" writes on 64KiB+16KiB
+RAID5 stripes, whether with 'ssd_spread' or not.
 
-> Or maybe I can help a bit, since it sounds like a nice one for the
-> coding examples in the lib. ;]
-
-The lib is a great help -- the ioctls are totally undocumented, your code is
-a lot easier than RTFKing.
-
-
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ 
-⣾⠁⢰⠒⠀⣿⡁ Vat kind uf sufficiently advanced technology iz dis!?
-⢿⡄⠘⠷⠚⠋⠀                                 -- Genghis Ht'rok'din
-⠈⠳⣄⠀⠀⠀⠀ 
+To "decrease RMW cycles" seems inded to me the better aim than
+following the "radical" aim of caching the working set of a
+random-small-write workload, but it may be less easy to achieve
+than desirable :-). http://www.baarf.dk/

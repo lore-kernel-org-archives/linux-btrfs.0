@@ -1,48 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:60538 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750839AbdIDIqM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Sep 2017 04:46:12 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:61766)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1don1G-0007f3-Ja
-        for linux-btrfs@vger.kernel.org; Mon, 04 Sep 2017 09:46:10 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1don1A-0005Nu-Sp
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Sep 2017 09:46:04 +0100
+Received: from smtp81.iad3a.emailsrvr.com ([173.203.187.81]:34544 "EHLO
+        smtp81.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753333AbdIDJb4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Sep 2017 05:31:56 -0400
+Received: from smtp19.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp19.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id DD7384FF4
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 05:31:55 -0400 (EDT)
+Received: by smtp19.relay.iad3a.emailsrvr.com (Authenticated sender: intranet-AT-rqc.ru) with ESMTPSA id 8CF7D50DE
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 05:31:55 -0400 (EDT)
+Received: from CM01.administration.intranet.rqc.ru (unknown [10.101.2.94])
+        by postfix.thinky.servers.rqc.ru (Postfix) with ESMTPS id 0E14CFED1
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Sep 2017 09:31:54 +0000 (UTC)
+To: linux-btrfs@vger.kernel.org
+From: Marat Khalili <mkh@rqc.ru>
+Subject: Is autodefrag recommended?
+Message-ID: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru>
+Date: Mon, 4 Sep 2017 12:31:54 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <22957.4812.405800.654436@tree.ty.sabi.co.uk>
-Date: Mon, 4 Sep 2017 09:46:04 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: read-only for no good reason on 4.9.30
-In-Reply-To: <1841512.lHhB7WV3Ld@russell.coker.com.au>
-References: <1841512.lHhB7WV3Ld@russell.coker.com.au>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> [ ... ] I ran "btrfs balance" and then it started working
-> correctly again. It seems that a btrfs filesystem if left
-> alone will eventually get fragmented enough that it rejects
-> writes [ ... ]
+Hello list,
+good time of the day,
 
-Free space will get fragmented, because Btrfs has a 2-level
-allocator scheme (chunks within devices and leaves within
-chunks). The issue is "free space" vs. "unallocated chunks".
+More than once I see mentioned in this list that autodefrag option 
+solves problems with no apparent drawbacks, but it's not the default. 
+Can you recommend to just switch it on indiscriminately on all 
+installations?
 
-> Is this a known issue?
+I'm currently on kernel 4.4, can switch to 4.10 if necessary (it's 
+Ubuntu that gives us this strange choice, no idea why it's not 4.9). 
+Only spinning rust here, no SSDs.
 
-https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_get_.22No_space_left_on_device.22_errors.2C_but_df_says_I.27ve_got_lots_of_space
-https://btrfs.wiki.kernel.org/index.php/FAQ#if_your_device_is_large_.28.3E16GiB.29
-https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_new_tools
-https://btrfs.wiki.kernel.org/index.php/FAQ#Why_is_free_space_so_complicated.3F
-https://btrfs.wiki.kernel.org/index.php/FAQ#What_does_.22balance.22_do.3F
+--
 
-That problem is particularly frequent with the 'ssd' mount
-option which probably should never be used:
-
-https://btrfs.wiki.kernel.org/index.php/Gotchas#The_ssd_mount_option
+With Best Regards,
+Marat Khalili

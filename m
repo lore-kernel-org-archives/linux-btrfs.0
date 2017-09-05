@@ -1,109 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:57637 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751071AbdIEIFX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Sep 2017 04:05:23 -0400
+Received: from [195.159.176.226] ([195.159.176.226]:45847 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751036AbdIEIzk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 04:55:40 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dp9da-0001vf-PA
+        for linux-btrfs@vger.kernel.org; Tue, 05 Sep 2017 10:55:14 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs check --repair now runs in minutes instead of hours?
  aborting
-To: Marc MERLIN <marc@merlins.org>
-Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
+Date: Tue, 5 Sep 2017 08:54:44 +0000 (UTC)
+Message-ID: <pan$ab2ea$1e2cfcc0$b183d655$79c920da@cox.net>
 References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
- <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
- <20170905025556.GA6392@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
-Date: Tue, 5 Sep 2017 16:05:04 +0800
-MIME-Version: 1.0
-In-Reply-To: <20170905025556.GA6392@merlins.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
+        <20170905025556.GA6392@merlins.org>
+        <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Qu Wenruo posted on Tue, 05 Sep 2017 16:05:04 +0800 as excerpted:
 
-
-On 2017年09月05日 10:55, Marc MERLIN wrote:
-> On Tue, Sep 05, 2017 at 09:21:55AM +0800, Qu Wenruo wrote:
->>
->>
->> On 2017年09月05日 09:05, Marc MERLIN wrote:
->>> Ok, I don't want to sound like I'm complaining :) but I updated
->>> btrfs-progs to top of tree in git, installed it, and ran it on an 8TiB
->>> filesystem that used to take 12H or so to check.
->>
->> How much space allocated for that 8T fs?
->> If metadata is not that large, 10min is valid.
->>
->> Here fi df output could help.
+> On 2017年09月05日 10:55, Marc MERLIN wrote:
+>> 
+>> gargamel:~# btrfs fi df /mnt/btrfs_pool1
+>> Data, single: total.60TiB, used.54TiB
+>> System, DUP: total2.00MiB, used=1.19MiB
+>> Metadata, DUP: totalX.00GiB, used.69GiB
 > 
-> gargamel:~# btrfs fi df /mnt/btrfs_pool1
-> Data, single: total.60TiB, used.54TiB
-> System, DUP: total2.00MiB, used=1.19MiB
-> Metadata, DUP: totalX.00GiB, used.69GiB
-
-Wait for a minute.
-
-Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the 
-format (again)?
-This output format must be changed, at least to 0.69 GiB, or 706 MiB.
-
-I'll fix this first.
-
-> GlobalReserve, single: totalQ2.00MiB, used=0.00B
+> Wait for a minute.
 > 
->> And, without --repair, how much time it takes to run?
-> 
-> Well, funny that you ask, it's now been running for hours, still waiting...
->   
-> Just before, I ran lowmem, and it was pretty quick too (didn't time it,
-> but less than 1h):
+> Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the
+> format (again)?
 
-You mean lowmem is actually FASTER than original mode?
-That's very surprising.
+It appears to be your end.  Based on the fact that I'm seeing a a bunch 
+of weird characters in your quote of the message that I didn't see in the 
+original, I'm guessing it's charset related, very possibly due to the 
+"equal" sign being an escape character for mime/quoted-printable (tho his 
+post was text/plain; charset equals utf-8, full 8-bit, so not quoted-
+printable encoded at all) and I believe various i18n escapes as well, 
+with the latter being an issue if the client assumes local charset 
+despite the utf8 specified in the header.
 
-Is there any special operation done for that btrfs?
-Like offline dedupe or tons of reflinks?
+See if these numbers, copied and reformatted from his post with spaces 
+inserted either side of the numbers and the equals signs deleted, arrive 
+any less garbled:
 
-IIRC original mode did a quite slow check for tons of reflink, which may 
-be related.
+Data, single: total 10.60 TiB, used 10.54 TiB
+System, DUP: total 32.00 MiB, used 1.19 MiB
+Metadata, DUP: total 58.00 GiB, used 12.69 GiB
+GlobalReserve, single: total 512.00 MiB, used 0.00 B
 
-BTW, how many subvolumes do you have in the fs?
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-> gargamel:/var/local/src/btrfs-progs# btrfs check --mode=wmem
-> /dev/mapper/dshelf1
-> Checking filesystem on /dev/mapper/dshelf1
-> UUID: 36f5079e-ca6c-4855-8639-ccb82695c18d
-> checking extents
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-> checking fs roots
-> checking csums
-> checking root refs
-> found 11674263330816 bytes used, no error found
-> total csum bytes: 11384482936
-> total tree bytes: 13738737664
-> total fs tree bytes: 758988800
-> total extent tree bytes: 482623488
-> btree space waste bytes: 1171475737
-> file data blocks allocated: 12888981110784
->   referenced 12930453286912
-> 
-> Now, this is good news for my filesystem being probably clean (previous
-> versions of lowmem before my git update found issues that were unclear, but
-> apparently errors in the code, and this version finds nothing)
-> 
-> But I'm not sure why --repair would be fast, and not --repair would be slow?
-
-This looks like a bug. My first guess is related to number of 
-subvolumes/reflinks, but I'm not sure since I don't have many real-world 
-btrfs.
-
-I'll take sometime to look into it.
-
-Thanks for the very interesting report,
-Qu
-
-> 
-> Marc
-> 

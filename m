@@ -1,82 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:56877 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750707AbdIEF6t (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Sep 2017 01:58:49 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Subject: btrfs is slow while looping in search_bitmap
- <-btrfs_find_space_for_alloc
-Message-ID: <89bd6888-71a5-895d-43db-622ff129d56b@profihost.ag>
-Date: Tue, 5 Sep 2017 07:58:47 +0200
+Received: from mout.gmx.net ([212.227.15.19]:57637 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751071AbdIEIFX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Sep 2017 04:05:23 -0400
+Subject: Re: btrfs check --repair now runs in minutes instead of hours?
+ aborting
+To: Marc MERLIN <marc@merlins.org>
+Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
+ <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
+ <20170905025556.GA6392@merlins.org>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
+Date: Tue, 5 Sep 2017 16:05:04 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20170905025556.GA6392@merlins.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-while expecting slow btrfs volumes i switched to kernel v4.13 and to
-space_cache=v2.
 
-But i'm still expecting slow performance and single kworker processes
-using 100% CPU.
+On 2017年09月05日 10:55, Marc MERLIN wrote:
+> On Tue, Sep 05, 2017 at 09:21:55AM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2017年09月05日 09:05, Marc MERLIN wrote:
+>>> Ok, I don't want to sound like I'm complaining :) but I updated
+>>> btrfs-progs to top of tree in git, installed it, and ran it on an 8TiB
+>>> filesystem that used to take 12H or so to check.
+>>
+>> How much space allocated for that 8T fs?
+>> If metadata is not that large, 10min is valid.
+>>
+>> Here fi df output could help.
+> 
+> gargamel:~# btrfs fi df /mnt/btrfs_pool1
+> Data, single: total.60TiB, used.54TiB
+> System, DUP: total2.00MiB, used=1.19MiB
+> Metadata, DUP: totalX.00GiB, used.69GiB
 
-Tracing the kworker process shows me:
-# sed 's/.*: //' /trace | sort | uniq -c | sort -n
-  21595 tree_search_offset.isra.23 <-btrfs_find_space_for_alloc
-  21610 btrfs_find_space_for_alloc <-find_free_extent
-  21619 _raw_spin_lock <-btrfs_find_space_for_alloc
-  27431 _cond_resched <-find_free_extent
-  27437 down_read <-find_free_extent
-  27451 block_group_cache_done.isra.29 <-find_free_extent
-  27451 btrfs_put_block_group <-find_free_extent
-  27464 up_read <-find_free_extent
-  27486 __get_raid_index <-find_free_extent
-  27503 _raw_spin_lock <-find_free_extent
-  48335 search_bitmap <-btrfs_find_space_for_alloc
+Wait for a minute.
 
-Is there anything to optimize? Can i speed up this?
+Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the 
+format (again)?
+This output format must be changed, at least to 0.69 GiB, or 706 MiB.
 
-There's still plenty of unallocated space:
-# btrfs fi usage /vmbackup/
-Overall:
-    Device size:                  58.20TiB
-    Device allocated:             22.66TiB
-    Device unallocated:           35.54TiB
-    Device missing:                  0.00B
-    Used:                         21.07TiB
-    Free (estimated):             37.12TiB      (min: 37.12TiB)
-    Data ratio:                       1.00
-    Metadata ratio:                   1.00
-    Global reserve:              512.00MiB      (used: 0.00B)
+I'll fix this first.
 
-Data,RAID0: Size:22.57TiB, Used:20.99TiB
-   /dev/sdc1       5.64TiB
-   /dev/sdd1       5.64TiB
-   /dev/sde1       5.64TiB
-   /dev/sdf1       5.64TiB
+> GlobalReserve, single: totalQ2.00MiB, used=0.00B
+> 
+>> And, without --repair, how much time it takes to run?
+> 
+> Well, funny that you ask, it's now been running for hours, still waiting...
+>   
+> Just before, I ran lowmem, and it was pretty quick too (didn't time it,
+> but less than 1h):
 
-Metadata,RAID0: Size:90.00GiB, Used:81.60GiB
-   /dev/sdc1      22.50GiB
-   /dev/sdd1      22.50GiB
-   /dev/sde1      22.50GiB
-   /dev/sdf1      22.50GiB
+You mean lowmem is actually FASTER than original mode?
+That's very surprising.
 
-System,RAID0: Size:64.00MiB, Used:1.53MiB
-   /dev/sdc1      16.00MiB
-   /dev/sdd1      16.00MiB
-   /dev/sde1      16.00MiB
-   /dev/sdf1      16.00MiB
+Is there any special operation done for that btrfs?
+Like offline dedupe or tons of reflinks?
 
-Unallocated:
-   /dev/sdc1       8.88TiB
-   /dev/sdd1       8.88TiB
-   /dev/sde1       8.88TiB
-   /dev/sdf1       8.88TiB
+IIRC original mode did a quite slow check for tons of reflink, which may 
+be related.
 
-Is btrfs trying to hard to find free space?
+BTW, how many subvolumes do you have in the fs?
 
-Greets,
-Stefan
+> gargamel:/var/local/src/btrfs-progs# btrfs check --mode=wmem
+> /dev/mapper/dshelf1
+> Checking filesystem on /dev/mapper/dshelf1
+> UUID: 36f5079e-ca6c-4855-8639-ccb82695c18d
+> checking extents
+> checking free space cache
+> cache and super generation don't match, space cache will be invalidated
+> checking fs roots
+> checking csums
+> checking root refs
+> found 11674263330816 bytes used, no error found
+> total csum bytes: 11384482936
+> total tree bytes: 13738737664
+> total fs tree bytes: 758988800
+> total extent tree bytes: 482623488
+> btree space waste bytes: 1171475737
+> file data blocks allocated: 12888981110784
+>   referenced 12930453286912
+> 
+> Now, this is good news for my filesystem being probably clean (previous
+> versions of lowmem before my git update found issues that were unclear, but
+> apparently errors in the code, and this version finds nothing)
+> 
+> But I'm not sure why --repair would be fast, and not --repair would be slow?
+
+This looks like a bug. My first guess is related to number of 
+subvolumes/reflinks, but I'm not sure since I don't have many real-world 
+btrfs.
+
+I'll take sometime to look into it.
+
+Thanks for the very interesting report,
+Qu
+
+> 
+> Marc
+> 

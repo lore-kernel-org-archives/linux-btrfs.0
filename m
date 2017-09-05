@@ -1,50 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f45.google.com ([209.85.215.45]:36175 "EHLO
-        mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751350AbdIEMgN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 08:36:13 -0400
-Received: by mail-lf0-f45.google.com with SMTP id m199so10328744lfe.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2017 05:36:12 -0700 (PDT)
-Received: from m176-71-216-251.cust.tele2.se ([2a00:801:210:fb6:6464:df0e:ccb4:edb0])
-        by smtp.googlemail.com with ESMTPSA id h100sm118494lji.58.2017.09.05.05.36.09
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256/256);
-        Tue, 05 Sep 2017 05:36:10 -0700 (PDT)
-Date: Tue, 5 Sep 2017 14:36:06 +0200 (GMT+02:00)
-From: A L <crimsoncottage@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <967c296.1c5a576e.15e520a6623@gmail.com>
-In-Reply-To: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru>
-References: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru>
-Subject: Re: Is autodefrag recommended?
+Received: from mail-qt0-f173.google.com ([209.85.216.173]:33550 "EHLO
+        mail-qt0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751547AbdIEMtx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 08:49:53 -0400
+Received: by mail-qt0-f173.google.com with SMTP id i50so11499147qtf.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2017 05:49:53 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <533ebd2e-8b95-d875-4cbc-48821b150eac@gmail.com>
+References: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru> <20170904105444.GA23980@carfax.org.uk>
+ <533ebd2e-8b95-d875-4cbc-48821b150eac@gmail.com>
+From: Henk Slager <eye1tm@gmail.com>
+Date: Tue, 5 Sep 2017 14:49:51 +0200
+Message-ID: <CAPmG0jZApuPggvJ98Ko9Yps+N3ixNjAEzTgfDNWoqa2a_Tdd2w@mail.gmail.com>
+Subject: Re: Is autodefrag recommended?
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is a drawback in that defragmentation re-dups data that is previously deduped or shared in snapshots/subvolumes.
+On Tue, Sep 5, 2017 at 1:45 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
 
----- From: Marat Khalili <mkh@rqc.ru> -- Sent: 2017-09-04 - 11:31 ----
+>>   - You end up duplicating more data than is strictly necessary. This
+>>     is, IIRC, something like 128 KiB for a write.
+>
+> FWIW< I'm pretty sure you can mitigate this first issue by running a regular
+> defrag on a semi-regular basis (monthly is what I would probably suggest).
 
-> Hello list,
-> good time of the day,
-> 
-> More than once I see mentioned in this list that autodefrag option 
-> solves problems with no apparent drawbacks, but it's not the default. 
-> Can you recommend to just switch it on indiscriminately on all 
-> installations?
-> 
-> I'm currently on kernel 4.4, can switch to 4.10 if necessary (it's 
-> Ubuntu that gives us this strange choice, no idea why it's not 4.9). 
-> Only spinning rust here, no SSDs.
-> 
-> --
-> 
-> With Best Regards,
-> Marat Khalili
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+No, both autodefrag and regular defrag duplicate data, so if you keep
+snapshots around for weeks or months, it can eat up a significant
+amount of space.

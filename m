@@ -1,47 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48501 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751370AbdIEJgj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 05:36:39 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dpAHN-000235-6s
-        for linux-btrfs@vger.kernel.org; Tue, 05 Sep 2017 11:36:21 +0200
+Received: from smtpcmd12131.aruba.it ([62.149.156.131]:46887 "EHLO
+        smtpcmd12131.aruba.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751017AbdIEJr2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 05:47:28 -0400
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs check --repair now runs in minutes instead of hours?
- aborting
-Date: Tue, 5 Sep 2017 09:35:54 +0000 (UTC)
-Message-ID: <pan$e7996$b54e0a7c$da3c930$cb876c52@cox.net>
-References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
-        <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
-        <20170905025556.GA6392@merlins.org>
-        <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
-        <pan$ab2ea$1e2cfcc0$b183d655$79c920da@cox.net>
-        <c8188db0-f10f-7e16-11d7-f3123790ae99@gmx.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
+Subject: Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
+Message-ID: <737e0bff-dad1-d779-4de8-46f8995d5f42@prismatelecomtesting.com>
+Date: Tue, 5 Sep 2017 11:47:26 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Tue, 05 Sep 2017 17:06:35 +0800 as excerpted:
+Hi,
+I was transferring some data with rsync to a btrfs filesystem when I got:
 
->> See if these numbers, copied and reformatted from his post with spaces
->> inserted either side of the numbers and the equals signs deleted,
->> arrive any less garbled:
->> 
->> Data, single: total 10.60 TiB, used 10.54 TiB System, DUP: total 32.00
->> MiB, used 1.19 MiB Metadata, DUP: total 58.00 GiB, used 12.69 GiB
->> GlobalReserve, single: total 512.00 MiB, used 0.00 B
->> 
-> Thanks a lot for this.
+set 04 14:59:05  kernel: INFO: task kworker/u33:2:25015 blocked for more 
+than 120 seconds.
+set 04 14:59:05  kernel:       Not tainted 4.12.10-1.el7.elrepo.x86_64 #1
+set 04 14:59:05  kernel: "echo 0 > 
+/proc/sys/kernel/hung_task_timeout_secs" disables this message.
+set 04 14:59:05  kernel: kworker/u33:2   D    0 25015      2 0x00000080
+set 04 14:59:05  kernel: Workqueue: events_unbound 
+btrfs_async_reclaim_metadata_space [btrfs]
+set 04 14:59:05  kernel: Call Trace:
+set 04 14:59:05  kernel:  __schedule+0x28a/0x880
+set 04 14:59:05  kernel:  schedule+0x36/0x80
+set 04 14:59:05  kernel:  wb_wait_for_completion+0x64/0x90
+set 04 14:59:05  kernel:  ? remove_wait_queue+0x60/0x60
+set 04 14:59:05  kernel:  __writeback_inodes_sb_nr+0x8e/0xb0
+set 04 14:59:05  kernel:  writeback_inodes_sb_nr+0x10/0x20
+set 04 14:59:05  kernel:  flush_space+0x469/0x580 [btrfs]
+set 04 14:59:05  kernel:  ? dequeue_task_fair+0x577/0x830
+set 04 14:59:05  kernel:  ? pick_next_task_fair+0x122/0x550
+set 04 14:59:05  kernel:  btrfs_async_reclaim_metadata_space+0x112/0x430 
+[btrfs]
+set 04 14:59:05  kernel:  process_one_work+0x149/0x360
+set 04 14:59:05  kernel:  worker_thread+0x4d/0x3c0
+set 04 14:59:05  kernel:  kthread+0x109/0x140
+set 04 14:59:05  kernel:  ? rescuer_thread+0x380/0x380
+set 04 14:59:05  kernel:  ? kthread_park+0x60/0x60
+set 04 14:59:05  kernel:  ? do_syscall_64+0x67/0x150
+set 04 14:59:05  kernel:  ret_from_fork+0x25/0x30
 
-It worked. =:^)  (But thinking about it now, that smiley with an equals 
-sign probably won't!)
+btrfs fi df /data
+Data, single: total=20.63TiB, used=20.63TiB
+System, DUP: total=8.00MiB, used=2.20MiB
+Metadata, DUP: total=41.50GiB, used=40.61GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
+btrfs fi show /dev/sdo
+Label: 'Storage'  uuid: 429e42f4-dd9e-4267-b353-aa0831812f87
+	Total devices 1 FS bytes used 20.67TiB
+	devid    1 size 36.38TiB used 20.71TiB path /dev/sdo
+
+Is it serious? Can I provide other info?
+
+Regards,
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Marco Crociani

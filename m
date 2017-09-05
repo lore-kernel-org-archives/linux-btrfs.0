@@ -1,83 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:41692 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751159AbdIEOpp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 10:45:45 -0400
-Date: Tue, 5 Sep 2017 07:45:25 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Message-ID: <20170905144525.rzvncaxil2enxjwe@merlins.org>
-References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
- <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
- <20170905025556.GA6392@merlins.org>
- <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:38748 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752524AbdIER2o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 13:28:44 -0400
+Date: Tue, 5 Sep 2017 10:27:18 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Marco Lorenzo Crociani <marcoc@prismatelecomtesting.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Workqueue: events_unbound btrfs_async_reclaim_metadata_space
+ [btrfs]
+Message-ID: <20170905162718.GC14677@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
+References: <737e0bff-dad1-d779-4de8-46f8995d5f42@prismatelecomtesting.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
-Subject: Re: btrfs check --repair now runs in minutes instead of hours?
- aborting
+In-Reply-To: <737e0bff-dad1-d779-4de8-46f8995d5f42@prismatelecomtesting.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 05, 2017 at 04:05:04PM +0800, Qu Wenruo wrote:
-> > gargamel:~# btrfs fi df /mnt/btrfs_pool1
-> > Data, single: total.60TiB, used.54TiB
-> > System, DUP: total2.00MiB, used=1.19MiB
-> > Metadata, DUP: totalX.00GiB, used.69GiB
+On Tue, Sep 05, 2017 at 11:47:26AM +0200, Marco Lorenzo Crociani wrote:
+> Hi,
+> I was transferring some data with rsync to a btrfs filesystem when I got:
 > 
-> Wait for a minute.
+> set 04 14:59:05  kernel: INFO: task kworker/u33:2:25015 blocked for more
+> than 120 seconds.
+> set 04 14:59:05  kernel:       Not tainted 4.12.10-1.el7.elrepo.x86_64 #1
+> set 04 14:59:05  kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+> disables this message.
+> set 04 14:59:05  kernel: kworker/u33:2   D    0 25015      2 0x00000080
+> set 04 14:59:05  kernel: Workqueue: events_unbound
+> btrfs_async_reclaim_metadata_space [btrfs]
+> set 04 14:59:05  kernel: Call Trace:
+> set 04 14:59:05  kernel:  __schedule+0x28a/0x880
+> set 04 14:59:05  kernel:  schedule+0x36/0x80
+> set 04 14:59:05  kernel:  wb_wait_for_completion+0x64/0x90
+> set 04 14:59:05  kernel:  ? remove_wait_queue+0x60/0x60
+> set 04 14:59:05  kernel:  __writeback_inodes_sb_nr+0x8e/0xb0
+> set 04 14:59:05  kernel:  writeback_inodes_sb_nr+0x10/0x20
+> set 04 14:59:05  kernel:  flush_space+0x469/0x580 [btrfs]
+> set 04 14:59:05  kernel:  ? dequeue_task_fair+0x577/0x830
+> set 04 14:59:05  kernel:  ? pick_next_task_fair+0x122/0x550
+> set 04 14:59:05  kernel:  btrfs_async_reclaim_metadata_space+0x112/0x430
+> [btrfs]
+> set 04 14:59:05  kernel:  process_one_work+0x149/0x360
+> set 04 14:59:05  kernel:  worker_thread+0x4d/0x3c0
+> set 04 14:59:05  kernel:  kthread+0x109/0x140
+> set 04 14:59:05  kernel:  ? rescuer_thread+0x380/0x380
+> set 04 14:59:05  kernel:  ? kthread_park+0x60/0x60
+> set 04 14:59:05  kernel:  ? do_syscall_64+0x67/0x150
+> set 04 14:59:05  kernel:  ret_from_fork+0x25/0x30
 > 
-> Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the format
-> (again)?
-> This output format must be changed, at least to 0.69 GiB, or 706 MiB.
- 
-Email client problem. I see control characters in what you quoted.
-
-Let's try again
-gargamel:~# btrfs fi df /mnt/btrfs_pool1
-Data, single: total=10.66TiB, used=10.60TiB      => 10TB
-System, DUP: total=64.00MiB, used=1.20MiB        => 1.2MB
-Metadata, DUP: total=57.50GiB, used=12.76GiB     => 13GB
-GlobalReserve, single: total=512.00MiB, used=0.00B  => 0
-
-> You mean lowmem is actually FASTER than original mode?
-> That's very surprising.
- 
-Correct, unless I add --repair and then original mode is 2x faster than
-lowmem.
-
-> Is there any special operation done for that btrfs?
-> Like offline dedupe or tons of reflinks?
-
-In this case, no.
-Note that btrfs check used to take many hours overnight until I did a
-git pull of btrfs progs and built the latest from TOT.
-
-> BTW, how many subvolumes do you have in the fs?
- 
-gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | wc -l
-91
-
-If I remove snapshots for btrfs send and historical 'backups':
-gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | grep -Ev '(hourly|daily|weekly|rw|ro)' | wc -l
-5
-
-> This looks like a bug. My first guess is related to number of
-> subvolumes/reflinks, but I'm not sure since I don't have many real-world
-> btrfs.
+> btrfs fi df /data
+> Data, single: total=20.63TiB, used=20.63TiB
+> System, DUP: total=8.00MiB, used=2.20MiB
+> Metadata, DUP: total=41.50GiB, used=40.61GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
 > 
-> I'll take sometime to look into it.
+> btrfs fi show /dev/sdo
+> Label: 'Storage'  uuid: 429e42f4-dd9e-4267-b353-aa0831812f87
+> 	Total devices 1 FS bytes used 20.67TiB
+> 	devid    1 size 36.38TiB used 20.71TiB path /dev/sdo
 > 
-> Thanks for the very interesting report,
+> Is it serious? Can I provide other info?
+>
 
-Thanks for having a look :)
+I think we're still cool here, the stack shows that btrfs is trying to
+gain metadata space by flushing dirty pages via writeback threads, and
+perhaps there're too much to flush to get enough metadata.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+
+Thanks,
+
+-liubo

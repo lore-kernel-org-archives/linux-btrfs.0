@@ -1,79 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:49571 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750858AbdIEOjQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 10:39:16 -0400
-Date: Tue, 5 Sep 2017 14:39:14 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Marat Khalili <mkh@rqc.ru>
-Cc: linux-btrfs@vger.kernel.org, Henk Slager <eye1tm@gmail.com>,
-        Duncan <1i5t5.duncan@cox.net>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        A L <crimsoncottage@gmail.com>
-Subject: Re: Is autodefrag recommended? -- re-duplication???
-Message-ID: <20170905143914.GB23980@carfax.org.uk>
-References: <710ec5d1-adbf-4ce5-50a5-8b8266ccb672@rqc.ru>
- <82e453bf-ff11-a911-c432-3e0173b223b2@rqc.ru>
+Received: from magic.merlins.org ([209.81.13.136]:41692 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751159AbdIEOpp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 10:45:45 -0400
+Date: Tue, 5 Sep 2017 07:45:25 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Message-ID: <20170905144525.rzvncaxil2enxjwe@merlins.org>
+References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
+ <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
+ <20170905025556.GA6392@merlins.org>
+ <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="tsOsTdHNUZQcU9Ye"
-In-Reply-To: <82e453bf-ff11-a911-c432-3e0173b223b2@rqc.ru>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
+Subject: Re: btrfs check --repair now runs in minutes instead of hours?
+ aborting
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---tsOsTdHNUZQcU9Ye
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Sep 05, 2017 at 05:01:10PM +0300, Marat Khalili wrote:
-> Dear experts,
+On Tue, Sep 05, 2017 at 04:05:04PM +0800, Qu Wenruo wrote:
+> > gargamel:~# btrfs fi df /mnt/btrfs_pool1
+> > Data, single: total.60TiB, used.54TiB
+> > System, DUP: total2.00MiB, used=1.19MiB
+> > Metadata, DUP: totalX.00GiB, used.69GiB
 > 
-> At first reaction to just switching autodefrag on was positive, but
-> mentions of re-duplication are very scary. Main use of BTRFS here is
-> backup snapshots, so re-duplication would be disastrous.
+> Wait for a minute.
 > 
-> In order to stick to concrete example, let there be two files, 4KB
-> and 4GB in size, referenced in read-only snapshots 100 times each,
-> and some 4KB of both files are rewritten each night and then another
-> snapshot is created (let's ignore snapshots deletion here). AFAIU
-> 8KB of additional space (+metadata) will be allocated each night
-> without autodefrag. With autodefrag will it be perhaps 4KB+128KB or
-> something much worse?
+> Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the format
+> (again)?
+> This output format must be changed, at least to 0.69 GiB, or 706 MiB.
+ 
+Email client problem. I see control characters in what you quoted.
 
-   I'm going for 132 KiB (4+128).
+Let's try again
+gargamel:~# btrfs fi df /mnt/btrfs_pool1
+Data, single: total=10.66TiB, used=10.60TiB      => 10TB
+System, DUP: total=64.00MiB, used=1.20MiB        => 1.2MB
+Metadata, DUP: total=57.50GiB, used=12.76GiB     => 13GB
+GlobalReserve, single: total=512.00MiB, used=0.00B  => 0
 
-   Of course, if there's two 4 KiB writes close together, then there's
-less overhead, as they'll share the range.
+> You mean lowmem is actually FASTER than original mode?
+> That's very surprising.
+ 
+Correct, unless I add --repair and then original mode is 2x faster than
+lowmem.
 
-   Hugo.
+> Is there any special operation done for that btrfs?
+> Like offline dedupe or tons of reflinks?
 
+In this case, no.
+Note that btrfs check used to take many hours overnight until I did a
+git pull of btrfs progs and built the latest from TOT.
+
+> BTW, how many subvolumes do you have in the fs?
+ 
+gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | wc -l
+91
+
+If I remove snapshots for btrfs send and historical 'backups':
+gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | grep -Ev '(hourly|daily|weekly|rw|ro)' | wc -l
+5
+
+> This looks like a bug. My first guess is related to number of
+> subvolumes/reflinks, but I'm not sure since I don't have many real-world
+> btrfs.
+> 
+> I'll take sometime to look into it.
+> 
+> Thanks for the very interesting report,
+
+Thanks for having a look :)
+
+Marc
 -- 
-Hugo Mills             | Once is happenstance; twice is coincidence; three
-hugo@... carfax.org.uk | times is enemy action.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---tsOsTdHNUZQcU9Ye
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJZrrcSAAoJEFheFHXiqx3kjq0P/RYmo0pekHxkLgoBrpSXF8hO
-vWIBlF4oyz/nuEHMjq2DtfQ+1FMkb6Iq4gCoe+Ms/q36UMs5yltCxTdtzvVwrl4Z
-UF8hlBuEJQ4Czaa2Ca8p6WkwEB4YbVvaqOqQyclBmwh9yhzwInFx0qoc4NlE4M3G
-W1dEvRB9z7s9x8khdbPTYcVE9DhE5Eyv++/kiV3EWvSjtirJ1OVWl5GssNNGslK7
-8LvuxoZWWkXl2Jy5BfsBa1Y8z/PDfKbk1dZZGdkiOKFzJuAmA9E6G2qjws8ZA47i
-nuM0ria6YeG8Uh+guRAnP03CzLbcCkNjJrOVXjFQ+gMjMX8GwsHrcgFkZtVB7FUC
-TWGNOgt+nJQ1LClEv3ou8wjhnSlpdXqUVNmj1Tnej45jqJQbpyFuFuF/DJJIWrpX
-z9kKGSnDnJFlhQUIO2jbhRnoIxCMFluhboye8KDLY4QlBUs6/I0YkQv8PSif8KFV
-VrwTVpvjwgkHCJTd8s2n2rTxkhCbf8qtowouU/lLwJ6wBFUKvpgYmN2zc7dmNQ8Q
-00U/QM1IwZuXzdRrCUgy37ebHmyziORf/SazQcOTimwHQlmj/7cNNGE67TakgGHs
-dRJ6iApXIBOaPYPvVz9N7bRFWMFv88qEnh5NXAx8DnNARYyeAQfI5M0YE2zpSzxs
-qCpzEOV1oh7tYKt1Bov2
-=FoIh
------END PGP SIGNATURE-----
-
---tsOsTdHNUZQcU9Ye--
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,76 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:53294 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754066AbdIEBYX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Sep 2017 21:24:23 -0400
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs-progs: test/mkfs: Add test case for rootdir parameter
-Date: Tue,  5 Sep 2017 10:24:15 +0900
-Message-Id: <20170905012415.26687-1-quwenruo.btrfs@gmx.com>
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:15551 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750807AbdIEFtR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 01:49:17 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 0F41EAC00C9
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2017 14:49:09 +0900 (JST)
+Received: from g01jpexchyt37.g01.fujitsu.local (unknown [10.128.193.4])
+        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 61D4D46E77D
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Sep 2017 14:49:08 +0900 (JST)
+To: <linux-btrfs@vger.kernel.org>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: test: fix run_check_stdout() call _fail()
+Message-ID: <64ab304a-6b5f-d2ac-3b74-90952371404e@jp.fujitsu.com>
+Date: Tue, 5 Sep 2017 14:49:02 +0900
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add test case which checks if -r|--rootdir mount option can handle
-softlink/char/block/fifo files.
+run_check_stdout() uses "... | tee ... || _fail".  However, since tee
+won't fail, _fail() is not called even if first command fails. 
 
-Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
----
-changelog:
-v2:
-  Use mktemp instead of $$
-  Use default test device size
-  Remove unnecessary global prereq for basic tools like mkdir
-  Put option before parameter for rm command
-  All suggested by David.
----
- .../009-special-files-for-rootdir/test.sh          | 36 ++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
- create mode 100755 tests/mkfs-tests/009-special-files-for-rootdir/test.sh
+Fix this by checking PIPESTATUS in the end.
 
-diff --git a/tests/mkfs-tests/009-special-files-for-rootdir/test.sh b/tests/mkfs-tests/009-special-files-for-rootdir/test.sh
-new file mode 100755
-index 00000000..3cf91dee
---- /dev/null
-+++ b/tests/mkfs-tests/009-special-files-for-rootdir/test.sh
-@@ -0,0 +1,36 @@
-+#!/bin/bash
-+# Check if --rootdir can handle special files (socket/fifo/char/block) correctly
-+#
-+# --rootdir had a problem of filling dir items/indexes with wrong type
-+# and caused btrfs check to report such error
-+
-+source "$TOP/tests/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper		# For mknod
-+prepare_test_dev
-+
-+# mknod can create FIFO/CHAR/BLOCK file but not SOCK.
-+# No neat tool to create socket file, unless using python or similar.
-+# So no SOCK is tested here
-+check_global_prereq mknod
-+
-+# Also check regular file
-+check_global_prereq dd
-+
-+tmp=$(mktemp -d --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
-+
-+run_check mkdir $tmp/dir
-+run_check mkdir -p $tmp/dir/in/dir
-+run_check mknod $tmp/fifo p
-+run_check $SUDO_HELPER mknod $tmp/char c 1 1
-+run_check $SUDO_HELPER mknod $tmp/block b 1 1
-+run_check dd if=/dev/zero bs=1M count=1 of=$tmp/regular
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -r "$tmp" $TEST_DEV
-+
-+rm -rf "$tmp"
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" check $TEST_DEV
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+---
+ tests/common | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/tests/common b/tests/common
+index d0324a6..b7d3436 100644
+--- a/tests/common
++++ b/tests/common
+@@ -154,9 +154,12 @@ run_check_stdout()
+ 	echo "############### $@" >> "$RESULTS" 2>&1
+ 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(stdout): $@" > /dev/tty; fi
+ 	if [ "$1" = 'root_helper' ]; then
+-		"$@" 2>&1 | tee -a "$RESULTS" || _fail "failed: $@"
++		"$@" 2>&1 | tee -a "$RESULTS"
+ 	else
+-		$INSTRUMENT "$@" 2>&1 | tee -a "$RESULTS" || _fail "failed: $@"
++		$INSTRUMENT "$@" 2>&1 | tee -a "$RESULTS"
++	fi
++	if [ ${PIPESTATUS[0]} -ne 0 ]; then
++		_fail "failed: $@"
+ 	fi
+ }
+ 
 -- 
-2.14.1
+2.9.5
 

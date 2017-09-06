@@ -1,27 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52392 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48454 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751289AbdILL7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2017 07:59:31 -0400
-Date: Tue, 12 Sep 2017 13:58:00 +0200
+        id S1753484AbdIFMvg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Sep 2017 08:51:36 -0400
+Date: Wed, 6 Sep 2017 14:50:07 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Alberto Bursi <alberto.bursi@outlook.it>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: dead links in wiki about why not using lz4
-Message-ID: <20170912115800.GL14538@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: use wait_event instead of a single function
+Message-ID: <20170906125007.GJ31874@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <AM3PR08MB0642E6253ECA0099AEC6E06A92690@AM3PR08MB0642.eurprd08.prod.outlook.com>
+References: <20170901221430.10131-4-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <AM3PR08MB0642E6253ECA0099AEC6E06A92690@AM3PR08MB0642.eurprd08.prod.outlook.com>
+In-Reply-To: <20170901221430.10131-4-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 12, 2017 at 09:19:14AM +0000, Alberto Bursi wrote:
-> Since zstd was added in btrfs there are people wondering why not lz4 too.
+On Fri, Sep 01, 2017 at 04:14:29PM -0600, Liu Bo wrote:
+> Since TASK_UNINTERRUPTIBLE has been used here, wait_event() can do the
+> same job.
 > 
-> The wiki paragraph [1] cites a couple dead links as explanations on why 
-> it's not a good idea to have lz4 in btrfs.
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Regarding dead links, there's no replacement for the web interface of
-gmane.org, so there are now many left.
+Reviewed-by: David Sterba <dsterba@suse.com>

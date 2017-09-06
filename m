@@ -1,44 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:51864 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753258AbdIDGlZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Sep 2017 02:41:25 -0400
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 5/5] btrfs-progs: Doc/mkfs: Add explanation for rootdir parameter
-Date: Mon,  4 Sep 2017 15:41:10 +0900
-Message-Id: <20170904064110.25951-6-quwenruo.btrfs@gmx.com>
-In-Reply-To: <20170904064110.25951-1-quwenruo.btrfs@gmx.com>
-References: <20170904064110.25951-1-quwenruo.btrfs@gmx.com>
+Received: from mx2.suse.de ([195.135.220.15]:57573 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932286AbdIFOUd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Sep 2017 10:20:33 -0400
+Date: Wed, 6 Sep 2017 16:19:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: avoid wake_up if possible
+Message-ID: <20170906141904.GN31874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170901221430.10131-2-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170901221430.10131-2-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Original --rootdir parameter will shrink the filesystem to its minimal
-size, which is quite confusing for some users.
+On Fri, Sep 01, 2017 at 04:14:27PM -0600, Liu Bo wrote:
+> wake_up() will go to check whether someone is on the waiting list with
+> holding spin_lock().
+>
+> Around some btrfs code, we don't check waitqueue_active() firstly, so
+> the spin_lock() pair in wake_up() is called even if no one is waiting
+> on the queue.
+> 
+> There are more wake_up()s without waitqueue_active(), but these two
+> are the hottest one I've run into so far.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Add extra note for this behavior.
+Can you please split the patch and address both separately, as they are
+not affecting the same data structure? It would be good to mention the
+other parts of code specifically (not just "around some code"), or
+briefly describe the state transitions where it matters for the wake
+ups.
 
-Reported-by: Goffredo Baroncelli <kreijack@libero.it>
-Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
----
- Documentation/mkfs.btrfs.asciidoc | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
-index d53d9e26..8977761f 100644
---- a/Documentation/mkfs.btrfs.asciidoc
-+++ b/Documentation/mkfs.btrfs.asciidoc
-@@ -106,6 +106,9 @@ Please see the mount option 'discard' for that in `btrfs`(5).
- *-r|--rootdir <rootdir>*::
- Populate the toplevel subvolume with files from 'rootdir'.  This does not
- require root permissions and does not mount the filesystem.
-++
-+NOTE: Result btrfs will be shrink to it minimal size, exceeding space will not
-+be accessible unless resized.
- 
- *-O|--features <feature1>[,<feature2>...]*::
- A list of filesystem features turned on at mkfs time. Not all features are
--- 
-2.14.1
-
+A missed wakeup appears as if the system is hung, but it's not a
+deadlock and we don't have much help debugging that when it happens. I'd
+like to review that in a way where I can make sure you have checked all
+the possible lost wakeups.

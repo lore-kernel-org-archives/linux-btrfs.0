@@ -1,26 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:52622 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754039AbdIFDUS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Sep 2017 23:20:18 -0400
+Received: from mail-io0-f176.google.com ([209.85.223.176]:35680 "EHLO
+        mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753307AbdIFLbU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 07:31:20 -0400
+Received: by mail-io0-f176.google.com with SMTP id i14so4142945ioe.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Sep 2017 04:31:19 -0700 (PDT)
 Subject: Re: [PATCH 0/5] Mkfs: Rework --rootdir to a more generic behavior
-To: kreijack@inwind.it, dsterba@suse.cz, linux-btrfs@vger.kernel.org
+To: kreijack@inwind.it, Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
+        linux-btrfs@vger.kernel.org
 References: <20170904064110.25951-1-quwenruo.btrfs@gmx.com>
  <20170904180856.GG31874@twin.jikos.cz>
  <b2299128-307f-b35f-e4c7-396d3a5d3a17@gmx.com>
  <a82d6478-9af3-6876-6b29-1b9c4d73b291@libero.it>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <724a29dd-54c1-77ae-3c3b-82c409e5d20b@gmx.com>
-Date: Wed, 6 Sep 2017 11:20:06 +0800
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <f5b527c8-e81c-5052-a963-11797d0c7dd7@gmail.com>
+Date: Wed, 6 Sep 2017 07:31:16 -0400
 MIME-Version: 1.0
 In-Reply-To: <a82d6478-9af3-6876-6b29-1b9c4d73b291@libero.it>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2017年09月06日 03:05, Goffredo Baroncelli wrote:
+On 2017-09-05 15:05, Goffredo Baroncelli wrote:
 > On 09/05/2017 10:19 AM, Qu Wenruo wrote:
 >>
 >>
@@ -49,6 +50,34 @@ On 2017年09月06日 03:05, Goffredo Baroncelli wrote:
 > a2) dd  (copy and truncate the image and store it in the archive)
 > a3) dd  (take the archived image, and restore it)
 > a4) btrfs fi resize (expand the image)
+The primary use case for this is to generate installation images.  Using 
+this method removes the need for tar in the installation environment, 
+and if you defer step a4 until the first boot of the system, it also 
+removes the need to have btrfs-progs in the installation environment. 
+Taken together, that's a pretty significant space savings.
+
+It's also somewhat useful for creating minimalistic seed device images, 
+which have a couple of interesting uses, namely:
+
+* Base system images for 'factory reset'.  The general principal is 
+simple, your base system is a seed device, plus a storage device 
+associated with it.  When you want to do a factory reset, you wipe the 
+storage partition, and recreate an empty one associated with the seed 
+image.  This usage pretty much requires a minimally sized filesystem, as 
+anything more wastes space that would be otherwise usable by the end user.
+
+* Seed-device based install images.  The general concept for this has 
+been tossed around a couple of times before.  You start with a minimal 
+seed device, boot to a live system using that and a temporary in-memory 
+device for root, set up the persistent storage, re-balance everything to 
+persistent storage, then remove the seed device and in-memory device so 
+the user can keep using the system without needing to reboot.  This also 
+needs a minimalistic image, for the same reason any install disc needs 
+to have a minimal base image.
+
+Note that without resize being able to shrink chunks (and ideally 
+completely shrink them so there is no slack space in the FS), you have 
+to use a hex editor to get a truly minimalistic filesystem image.
 > 
 > in the second case I have to
 > b1) tar cf ... (create the image an store it in the archive, this is a1+a2)
@@ -68,21 +97,13 @@ On 2017年09月06日 03:05, Goffredo Baroncelli wrote:
 > where <file-to-be-created> doesn't have to exists before mkfs.btrfs, and after
 > a) <file-to-be-created> contains the image
 > b) <file-to-be-created> is the smallest possible size.
-
-Yes, that's the original behavior. And what my rework can't do yet.
-It can't determine the size of the device, so it can't continue.
-
-If we decide to follow the original behavior, then I have to create 
-sparse file first and truncate the file at the end.
-But still quite easy to do.
-
-And if we decide to follow mkfs.ext -d behavior, then I just need to 
-remove 2 patches from the patchset (shrink patch and doc patch, which 
-adds about 100 lines), and slightly modify the rework patch to remove 
-the O_CREATE open flag.
-
 > 
 > Definitely I don't like the truncate done by the operator by hand after the mkfs.btrfs (current behavior).
+FWIW, the current release behavior doesn't require the truncate, and 
+properly generates the file for the filesystem.  It also does some odd 
+things with chunk placement (including putting data in the 0-1M range 
+which is supposed to be reserved), and that odd behavior is primarily 
+what prompted this patch set.
 > 
 > BTW I compiled successfully the patches, and these seems to work.
 > 
@@ -99,15 +120,6 @@ the O_CREATE open flag.
 > ERROR: open ctree failed
 > 
 > However this problem exists even with a plain v4.12.1. The first error seems to suggest that there is some endian-ness issue
-
-I'd better get one cheap ARM board if I want to do native debug.
-
-BTW, what's the output of dump-super here?
-Which may gives us some clue to fix it.
-
-Thanks,
-Qu
-
 > 
 > BR
 > G.Baroncelli
@@ -122,19 +134,3 @@ Qu
 >> Functionally, both behavior can be implemented with current method, but I hope to make sure which is the designed behavior so I can stick to it.
 >>
 >> I hope you could make the final decision on this so I can update the patchset.
->>
->> Thanks,
->> Qu
->>
->>> -- 
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> 

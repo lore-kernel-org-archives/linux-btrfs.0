@@ -1,58 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-36-i6.italiaonline.it ([212.48.14.170]:48343 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751345AbdIFSo2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Sep 2017 14:44:28 -0400
-Reply-To: kreijack@inwind.it
+Received: from mail-io0-f195.google.com ([209.85.223.195]:37743 "EHLO
+        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751328AbdIFSqN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 14:46:13 -0400
+Received: by mail-io0-f195.google.com with SMTP id p63so44038ioe.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Sep 2017 11:46:12 -0700 (PDT)
 Subject: Re: [PATCH 0/5] Mkfs: Rework --rootdir to a more generic behavior
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, dsterba@suse.cz,
-        linux-btrfs@vger.kernel.org
+To: kreijack@inwind.it, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>
 References: <20170904064110.25951-1-quwenruo.btrfs@gmx.com>
  <20170904180856.GG31874@twin.jikos.cz>
  <b2299128-307f-b35f-e4c7-396d3a5d3a17@gmx.com>
  <a82d6478-9af3-6876-6b29-1b9c4d73b291@libero.it>
- <724a29dd-54c1-77ae-3c3b-82c409e5d20b@gmx.com>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <7028aaba-7ce6-956a-415f-695414c11115@inwind.it>
-Date: Wed, 6 Sep 2017 20:44:26 +0200
+ <f5b527c8-e81c-5052-a963-11797d0c7dd7@gmail.com>
+ <50438174-ffce-031c-1148-f2e61bf35f68@inwind.it>
+ <8aa1c1e2-e938-f011-7306-8480e1f06c49@gmail.com>
+ <66d243a6-e3e0-bccc-1f29-008189fb612d@inwind.it>
+ <ad587709-7299-9607-6a21-e96f212eb65a@gmail.com>
+ <03325479-bb84-2d07-f4dc-e22c81da92d8@inwind.it>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <3663191e-7358-0ba2-1575-d0eda3d97fff@gmail.com>
+Date: Wed, 6 Sep 2017 14:46:09 -0400
 MIME-Version: 1.0
-In-Reply-To: <724a29dd-54c1-77ae-3c3b-82c409e5d20b@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <03325479-bb84-2d07-f4dc-e22c81da92d8@inwind.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/06/2017 05:20 AM, Qu Wenruo wrote:
->>
->> BTW I compiled successfully the patches, and these seems to work.
->>
->> PS: I tried to cross-compile mkfs.btrfs ton arm, but mkfs.btrfs was unable to work:
->>
->> $ uname -a
->> Linux bananapi 4.4.66-bananian #2 SMP Sat May 6 19:26:50 UTC 2017 armv7l GNU/Linux
->> $ sudo ./mkfs.btrfs /dev/loop0
->> btrfs-progs v4.12.1-5-g3c9451cd
->> See http://btrfs.wiki.kernel.org for more information.
->>
->> ERROR: superblock magic doesn't match
->> Performing full device TRIM /dev/loop0 (10.00GiB) ...
->> ERROR: open ctree failed
->>
->> However this problem exists even with a plain v4.12.1. The first error seems to suggest that there is some endian-ness issue
+On 2017-09-06 14:31, Goffredo Baroncelli wrote:
+> On 09/06/2017 08:02 PM, Austin S. Hemmelgarn wrote:
+>> On 2017-09-06 13:48, Goffredo Baroncelli wrote:
+>>> On 09/06/2017 07:16 PM, Austin S. Hemmelgarn wrote:
+> [...]
+>>>>> Sorry but I don't understand. If you reach the step a3; you have:
+>>>>> - the final disk, and an environment fully working. So I am still inclined to think that using "mkfs.btrfs --root-dir" is more complicated in *this case*.
+>>>> With the current released code (without these patches), `-r` can be used to generate a filesystem image that has zero free space.  In that case, step a3 does not give you a fully working environment,
+>>>
+>>> True, this doesn't *give* you a filly working environment, _but_ you perform the step a3 in a "fully working environment", an you have at hand the target disk..
+>> You could just as easily be booted into a minimalistic install environment, and if you netbooted that, then it's pretty likely that you want it as small as possible, and not needing tar or btrfs-progs for the actual install will save a lot of space (multiple MB doesn't sound like much, but when you're dealing with a tiny system to begin with, it can be very significant).
 > 
-> I'd better get one cheap ARM board if I want to do native debug.
+> Step a3 need to have access to the raw disk image build at step1; this is quite incompatible with a "minimalistic install environment"; and even if you have access it via net, in the same way you can have access to a fully working environment....
+The pretty standard case for a netboot install environment for Linux is 
+to have a small netboot image (usually less than 50MB) that runs 
+entirely from RAM, and then downloads the system image or packages to 
+install.
 > 
-> BTW, what's the output of dump-super here?
-
-Further tests seems to highlight that it was a my setup problem. Before I build mkfs.btrfs cross-compiling from an amd64, and I got the error; retrying on the native environment I was unable to reproduce the problem.
-
-So please ignore the previous email.
-
-> Which may gives us some clue to fix it.
 > 
-> Thanks,
-> Qu
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> [...]
+> 
+>>>>>>>
+>>>>>>> where <file-to-be-created> doesn't have to exists before mkfs.btrfs, and after
+>>>>>>> a) <file-to-be-created> contains the image
+>>>>>>> b) <file-to-be-created> is the smallest possible size.
+>>>>>>>
+>>>>>>> Definitely I don't like the truncate done by the operator by hand after the mkfs.btrfs (current behavior).
+>>>>>> FWIW, the current release behavior doesn't require the truncate, and properly generates the file for the filesystem.
+>>>>> If you don't do truncate, you have the fully partition... Or there is something that I miss ?
+>>>> The current release, without these patches, run using a non-existent file and the `-r` option, will produce a filesystem image of the exact size needed to hold everything in the directory passed to `-r`.  It doesn't require truncation unless used on a file that already exists.
+>>>
+>>> Of course the truncate is not needed, because you are using a sparse file. But if you use a sparse file..... it is not even needed the shrinking! Because the file will consume the same space on the disk !
+> 
+>> Unless you want to use the file elsewhere.  It's a pretty rare occurrence outside of testing that you generate a filesystem image and use it as-is without transferring it somewhere (usually onto an actual storage device).  Once you're talking about moving it, whether or not the file itself is sparse usually doesn't matter, especially if the file is leaving the local system by some means other than NFS or rsync.
+> 
+> ????
+> If you don't truncate you have the full-image in any case....
+How about a more concrete example.  Say you're creating a filesystem 
+image on your local system for a VM you'll run on some server.  Unless 
+you use rsync, NFS, or some custom software, you will probably need 
+enough free space on the server to hold the entirety of the filesystem 
+image including all the free space that's sparse on the local system, 
+because almost any other software doesn't properly do sparse writes, and 
+you'll need to call `fallocate -d` on the file on the server to make it 
+sparse again.  Even working locally, there are quite a few tools that 
+won't copy the file sparsely.

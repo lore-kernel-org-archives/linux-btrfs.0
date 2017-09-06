@@ -1,50 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26799 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752604AbdIAXQT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 19:16:19 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v81NGFHT028350
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:15 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v81NGFG9007983
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:15 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v81NGFBq028148
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:15 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: move finish_wait out of the loop
-Date: Fri,  1 Sep 2017 16:14:28 -0600
-Message-Id: <20170901221430.10131-3-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:54417 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753237AbdIFNvf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Sep 2017 09:51:35 -0400
+Date: Wed, 6 Sep 2017 15:50:06 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: protect conditions within root->log_mutex while
+ waiting
+Message-ID: <20170906135006.GL31874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170901221430.10131-5-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170901221430.10131-5-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we're still going to wait after schedule(), we don't have to do
-finish_wait() to remove our %wait_queue_entry since prepare_to_wait()
-won't add the same %wait_queue_entry twice.
+On Fri, Sep 01, 2017 at 04:14:30PM -0600, Liu Bo wrote:
+> Both wait_for_commit() and wait_for_writer() are checking the
+> condition out of the mutex lock.
+> 
+> This refactors code a bit to be lock safe.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fa1b78c..19e4dec 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -651,8 +651,8 @@ static void btrfs_wait_for_no_snapshoting_writes(struct btrfs_root *root)
- 		if (writers)
- 			schedule();
- 
--		finish_wait(&root->subv_writers->wait, &wait);
- 	} while (writers);
-+	finish_wait(&root->subv_writers->wait, &wait);
- }
- 
- static int create_snapshot(struct btrfs_root *root, struct inode *dir,
--- 
-2.9.4
-
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,73 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:47609 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752021AbdIGAo0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Sep 2017 20:44:26 -0400
-From: Nick Terrell <terrelln@fb.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>
-CC: Kernel Team <Kernel-team@fb.com>, Chris Mason <clm@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs-progs: Add zstd support
-Date: Thu, 7 Sep 2017 00:44:19 +0000
-Message-ID: <7E192AED-9551-4E28-81C5-822B1BCF9101@fb.com>
-References: <20170830215322.782399-1-terrelln@fb.com>
- <20170904180207.GF31874@twin.jikos.cz>
-In-Reply-To: <20170904180207.GF31874@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"
+Received: from mx2.suse.de ([195.135.220.15]:56117 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750957AbdIFRxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Sep 2017 13:53:21 -0400
+Date: Wed, 6 Sep 2017 19:51:52 +0200
+From: David Sterba <dsterba@suse.cz>
+To: zhangyu-fnst@cn.fujitsu.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs-progs: Check on num_stripes in print_chunk
+Message-ID: <20170906175152.GA31874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170824103841.16259-1-zhangyu-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170824103841.16259-1-zhangyu-fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 9/4/17, 11:03 AM, "linux-btrfs-owner@vger.kernel.org on behalf of David Sterba" <linux-btrfs-owner@vger.kernel.org on behalf of dsterba@suse.cz> wrote:
-> On Wed, Aug 30, 2017 at 02:53:22PM -0700, Nick Terrell wrote:
-> > Adds zstd support to the btrfs program, and a dependency on libzstd >=
-> > 1.0.0.
+On Thu, Aug 24, 2017 at 06:38:41PM +0800, zhangyu-fnst@cn.fujitsu.com wrote:
+> From: Zhang Yu <zhangyu-fnst@cn.fujitsu.com>
 > 
-> I'm afraid we'll have to make the build optional for now, as the distros
-> may not provide it and I'd like to give at least some heads-up first. My
-> idea is:
+> [TEST/fuzz] case: 004-simple-dump-tree
 > 
-> - check if zstd library is found, use it
-> - otherwise warn that's it's going to be on by default in near future
-
-I can see a few options, what do you want to see?
-
-1. Require zstd for building `btrfs' but statically link it so users don't
-   need to have zstd installed, unless they install from source.
-2. Require zstd to build `btrfs', but dynamically link and use `dlopen' and
-   `dlsym' to access the decompression function (and check the library
-   version).
-3. Make zstd optional in the build process, and completely disable it if
-   unavailable. Otherwise dynamically link and do the same as (2).
-4. Same as (3) but statically link if it is available.
-
-I'm thinking that (3) is the best option for consistency with the other
-libraries, at the expense of making the user install zstd if they want to
-use it. We can put a nice warning message in `btrfs restore' that says you
-need to install zstd.
-
-> 'btrfs restore' would need to be enhanced to dump what's built in (in a
-> similar way convert now prints the supported filesystem), and possibly
-> warn that there are data compressed by zstd but there's no
-> decrompression support.
-
-Sounds good.
-
-> > The patch is also available in my fork of btrfs-progs [1], which passes
-> > Travis-CI. I tested each command that is effected in my test script [2].
+> Since the wrong key(DATA_RELOC_TREE CHUNK_ITEM 0) in root tree,
+> error calling print_chunk(), resulting in num_stripes == 0.
 > 
-> The test requires zstd kernel support, which may be not available for
-> some time in the testing environments. But as restore is userspace-only,
-> we can create and use various images with zstd compressed data.
-
-I'll modify my tests and add them to the test suite.
-
-> > I haven't updated Android.mk since I have no way to test it, and am not
-> > certain if it is used.
+> ERROR:
+>      [TEST/fuzz]   004-simple-dump-tree
+> ctree.h:317: btrfs_chunk_item_size: BUG_ON `num_stripes == 0`
+>         triggered, value 1
 > 
-> The anodroid build verification will work eventually through travis and
-> I'm aware it could be out of sync, you don't need to care about that
-> right now.
+> failed (ignored, ret=134): /myproject/btrfs-progs/btrfs
+> inspect-internal dump-tree
+> /myproject/btrfs-progs/tests/fuzz-tests/images/
+> bko-155201-wrong-chunk-item-in-root-tree.raw.restored
+> 
+> test failed for case 004-simple-dump-tree
+> Makefile:288: recipe for target 'test-fuzz' failed
+> make: *** [test-fuzz] Error 1
+> 
+> So, check on num_stripes in print_chunk
+> 
+> Signed-off-by: Zhang Yu <zhangyu-fnst@cn.fujitsu.com>
+> ---
+>  print-tree.c | 9 +++++++++
+>  1 file changed, 9 insertions(+)
+> 
+> diff --git a/print-tree.c b/print-tree.c
+> index a0d3395..08f7edb 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -199,6 +199,15 @@ void print_chunk(struct extent_buffer *eb, struct btrfs_chunk *chunk)
+>  {
+>  	int num_stripes = btrfs_chunk_num_stripes(eb, chunk);
+>  	int i;
+> +	/*
+> +	 * check on num_stripes
+> +	 * Btrfs_chunk contains at least one stripes
+> +	 */
+> +	if (num_stripes < 1) {
+> +		printf("invalid num_stripes: %u\n", num_stripes);
+> +		return;
+> +	}
 
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm
+This inserts statements inside the declaration block. Although this is
+allowed in C, this does not conform to the preferred coding style
+(kernel or btrfs-progs). Please fix it, thanks.
+
+> +
+>  	u32 chunk_item_size = btrfs_chunk_item_size(num_stripes);
+>  	char chunk_flags_str[32] = {0};
+>  
+> -- 
+> 2.9.4
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

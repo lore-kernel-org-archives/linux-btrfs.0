@@ -1,44 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57981 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58883 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932286AbdIFO02 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Sep 2017 10:26:28 -0400
-Date: Wed, 6 Sep 2017 16:24:59 +0200
+        id S932553AbdIFOjg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Sep 2017 10:39:36 -0400
+Date: Wed, 6 Sep 2017 16:38:06 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
-        jbacik@fb.com, clm@fb.com, dsterba@suse.com
-Subject: Re: [PATCH] btrfs: fix NULL pointer dereference from
- free_reloc_roots()
-Message-ID: <20170906142459.GP31874@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: use the new helper wbc_to_write_flags
+Message-ID: <20170906143806.GQ31874@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <150363811494.24591.5585689547237978902.stgit@naota.dhcp.fujisawa.hgst.com>
- <ee561c2e-b998-a264-3f9b-a36b26a3c626@suse.com>
+References: <20170825001948.7759-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ee561c2e-b998-a264-3f9b-a36b26a3c626@suse.com>
+In-Reply-To: <20170825001948.7759-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 25, 2017 at 08:49:11AM +0300, Nikolay Borisov wrote:
-> 
-> 
-> On 25.08.2017 08:15, Naohiro Aota wrote:
-> > __del_reloc_root should be called before freeing up reloc_root->node.
-> > If not, calling __del_reloc_root() dereference reloc_root->node, causing
-> > the system BUG.
-> > 
-> > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> 
-> This patch should also have:
-> 
-> Fixes: 6bdf131fac23 ("Btrfs: don't leak reloc root nodes on error")
-> Cc: <stable@vger.kernel.org> # 4.9
-> 
-> With that:
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+On Thu, Aug 24, 2017 at 06:19:48PM -0600, Liu Bo wrote:
+> This updates btrfs to use the helper wbc_to_write_flags which has been
+> applied in ext4/xfs/f2fs/block.
+
+Added in commit 7637241e651ec36e4094 in 11/2016, I wonder why btrfs
+wasn't been changed as well as it uses the same code patterns as the
+other filesystems.
+
+> Please note that, with this, btrfs's dirty pages written by a
+> writeback job will carry the flag REQ_BACKGROUND, which is currently
+> used by writeback-throttle to determine whether it should go to get a
+> request or wait.
+
+Which in my understanding of the WBT behaviour is what we want, right?
+
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
 Reviewed-by: David Sterba <dsterba@suse.com>
 
-I'll add the other tags, thanks.
+I'm still expecting some surprises (== performance drop) from the recent
+WBT changes, as we still may miss some request flags, but more subtle
+than eg. the superblock REQ_ tags.

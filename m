@@ -1,60 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:33410 "EHLO
-        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752273AbdIEUm2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 16:42:28 -0400
-Received: by mail-oi0-f41.google.com with SMTP id r20so2644848oie.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2017 13:42:28 -0700 (PDT)
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:38763 "EHLO
+        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751029AbdIFFhj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 01:37:39 -0400
+Received: by mail-wm0-f53.google.com with SMTP id 187so26433053wmn.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2017 22:37:39 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1841512.lHhB7WV3Ld@russell.coker.com.au>
-References: <1841512.lHhB7WV3Ld@russell.coker.com.au>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 5 Sep 2017 14:42:26 -0600
-Message-ID: <CAJCQCtTLtKzPW1JONLQ51oykX6wbEShCHDUWSDm-UG4v8bCJZg@mail.gmail.com>
-Subject: Re: read-only for no good reason on 4.9.30
-To: russell+btrfs@coker.com.au
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Dave <davestechshop@gmail.com>
+Date: Wed, 6 Sep 2017 01:37:17 -0400
+Message-ID: <CAH=dxU6uVGXbdYc_65P6XbSby76A6Y=qoM6=cXMHkWDV8JRHVg@mail.gmail.com>
+Subject: send | receive: received snapshot is missing recent files
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 3, 2017 at 11:19 PM, Russell Coker
-<russell+btrfs@coker.com.au> wrote:
-> I have a system with less than 50% disk space used.  It just started rejecting
-> writes due to lack of disk space.
+I'm running Arch Linux on BTRFS. I use Snapper to take hourly
+snapshots and it works without any issues.
 
-What's the error? Is it ENOSPC? Kinda needs kernel messages, and also
-if it's ENOSPC to have mounted with enospc_debug option. Also
-everytime this has come up before, devs have asked for
+I have a bash script that uses send | receive to transfer snapshots to
+a couple external HDD's. The script runs daily on a systemd timer. I
+set all this up recently and I first noticed that it runs every day
+and that the expected snapshots are received.
 
-$ grep -R . /sys/fs/btrfs/fsuuid/allocation/
+At a glance, everything looked correct. However, today was my day to
+drill down and really make sure everything was working.
 
-I have no idea how to parse that myself, but there is probably a way
-to anticipate enoscp from that information if you can learn how to
-parse it.
+To my surprise, the newest received incremental snapshots are missing
+all recent files. These new snapshots reflect the system state from
+weeks ago and no files more recent than a certain date are in the
+snapshots.
 
+However, the snapshots are newly created and newly received. The work
+is being done fresh each day when my script runs, but the results are
+anchored back in time at this earlier date. Weird.
 
+I'm not really sure where to start troubleshooting, so I'll start by
+sharing part of my script. I'm sure the problem is in my script, and
+is not related to BTRFS or snapper functionality. (As I said, the
+Snapper snapshots are totally OK before being sent | received.
 
->  I ran "btrfs balance" and then it started
-> working correctly again.  It seems that a btrfs filesystem if left alone will
-> eventually get fragmented enough that it rejects writes (I've had similar
-> issues with other systems running BTRFS with other kernel versions).
->
-> Is this a known issue?
+These are the key lines of the script I'm using to send | receive a snapshot:
 
-Sounds like old thread "BTRFS constantly reports "No space left on
-device" even with a huge unallocated space" but that's a long time
-ago, and kernel ~4.7.3 fixed it. Whatever that was should be in
-4.9.30.
+    old_num=$(snapper -c "$config" list -t single | awk
+'/'"$selected_uuid"'/ {print $1}')
+    old_snap=$SUBVOLUME/.snapshots/$old_num/snapshot
+    new_num=$(snapper -c "$config" create --print-number)
+    new_snap=$SUBVOLUME/.snapshots/$new_num/snapshot
+    btrfs send -c "$old_snap" "$new_snap" | $ssh btrfs receive
+"$backup_location"
 
-Another possibility is there's a small bug in some cases where things
-go around the new ticketed enospc infrastructure, and that was fixed
-in 4.9.42 and 4.12.6. So you should try one of those and see if it
-fixes the problem.
+I have to admit that even after reading the following page half a
+dozen times, I barely understand the difference between -c and -p.
+https://btrfs.wiki.kernel.org/index.php/FAQ#What_is_the_difference_between_-c_and_-p_in_send.3F
 
+After reading that page again today, I feel like I should switch to -p
+(maybe). However, the -c vs -p choice probably isn't my problem.
 
-
-
-
--- 
-Chris Murphy
+Any ideas what my problem could be?

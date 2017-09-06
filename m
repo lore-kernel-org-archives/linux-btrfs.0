@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f53.google.com ([74.125.82.53]:38763 "EHLO
-        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751029AbdIFFhj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 01:37:39 -0400
-Received: by mail-wm0-f53.google.com with SMTP id 187so26433053wmn.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Sep 2017 22:37:39 -0700 (PDT)
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:10687 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753525AbdIFBnG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 21:43:06 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 967D64725550
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Sep 2017 09:43:02 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs-progs: Use clean_tree_block when btrfs_update_root fail
+Date: Wed, 6 Sep 2017 09:42:58 +0800
+Message-ID: <1504662179-21877-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-From: Dave <davestechshop@gmail.com>
-Date: Wed, 6 Sep 2017 01:37:17 -0400
-Message-ID: <CAH=dxU6uVGXbdYc_65P6XbSby76A6Y=qoM6=cXMHkWDV8JRHVg@mail.gmail.com>
-Subject: send | receive: received snapshot is missing recent files
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm running Arch Linux on BTRFS. I use Snapper to take hourly
-snapshots and it works without any issues.
+In btrfs_fsck_reinit_root, when btrfs_alloc_free_block fail, it will
+update on original root.
+Before update it, used btrfs_mark_buffer_dirty to set the flag to EXTENT_DIRTY.
+So, we should call clean_tree_block to clear the flag if update fail.
 
-I have a bash script that uses send | receive to transfer snapshots to
-a couple external HDD's. The script runs daily on a systemd timer. I
-set all this up recently and I first noticed that it runs every day
-and that the expected snapshots are received.
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+ cmds-check.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-At a glance, everything looked correct. However, today was my day to
-drill down and really make sure everything was working.
+diff --git a/cmds-check.c b/cmds-check.c
+index 006edbde..6bd55e90 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -11652,6 +11652,7 @@ init:
+ 		ret = btrfs_update_root(trans, root->fs_info->tree_root,
+ 					&root->root_key, &root->root_item);
+ 		if (ret) {
++			clean_tree_block(trans, root, c);
+ 			free_extent_buffer(c);
+ 			return ret;
+ 		}
+-- 
+2.13.5
 
-To my surprise, the newest received incremental snapshots are missing
-all recent files. These new snapshots reflect the system state from
-weeks ago and no files more recent than a certain date are in the
-snapshots.
 
-However, the snapshots are newly created and newly received. The work
-is being done fresh each day when my script runs, but the results are
-anchored back in time at this earlier date. Weird.
 
-I'm not really sure where to start troubleshooting, so I'll start by
-sharing part of my script. I'm sure the problem is in my script, and
-is not related to BTRFS or snapper functionality. (As I said, the
-Snapper snapshots are totally OK before being sent | received.
-
-These are the key lines of the script I'm using to send | receive a snapshot:
-
-    old_num=$(snapper -c "$config" list -t single | awk
-'/'"$selected_uuid"'/ {print $1}')
-    old_snap=$SUBVOLUME/.snapshots/$old_num/snapshot
-    new_num=$(snapper -c "$config" create --print-number)
-    new_snap=$SUBVOLUME/.snapshots/$new_num/snapshot
-    btrfs send -c "$old_snap" "$new_snap" | $ssh btrfs receive
-"$backup_location"
-
-I have to admit that even after reading the following page half a
-dozen times, I barely understand the difference between -c and -p.
-https://btrfs.wiki.kernel.org/index.php/FAQ#What_is_the_difference_between_-c_and_-p_in_send.3F
-
-After reading that page again today, I feel like I should switch to -p
-(maybe). However, the -c vs -p choice probably isn't my problem.
-
-Any ideas what my problem could be?

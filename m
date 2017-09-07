@@ -1,42 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f181.google.com ([209.85.192.181]:34014 "EHLO
-        mail-pf0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751829AbdIGRKE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2017 13:10:04 -0400
-Received: by mail-pf0-f181.google.com with SMTP id e1so465678pfk.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Sep 2017 10:10:04 -0700 (PDT)
-Date: Thu, 7 Sep 2017 10:10:01 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 3/7] Move Btrfs RCU string to common library
-Message-ID: <20170907171001.GA17057@vader.DHCP.thefacebook.com>
-References: <cover.1503470354.git.osandov@fb.com>
- <1270f0e6bfea72e136a42c058afce74f01deab62.1503470354.git.osandov@fb.com>
- <20170906151506.GT31874@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:34719 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1754859AbdIGSy1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Sep 2017 14:54:27 -0400
+Date: Thu, 7 Sep 2017 20:52:58 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/4] btrfs: convert enum btrfs_compression_type to define
+Message-ID: <20170907185258.GG31874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170813040244.18841-1-anand.jain@oracle.com>
+ <20170813040244.18841-3-anand.jain@oracle.com>
+ <20170816135941.GE2866@twin.jikos.cz>
+ <6117a0fa-b540-c31f-af10-805fce5b7cfc@oracle.com>
+ <20170817115706.GS2866@twin.jikos.cz>
+ <34d203c9-f647-ea71-712b-74637abc8d2d@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170906151506.GT31874@twin.jikos.cz>
+In-Reply-To: <34d203c9-f647-ea71-712b-74637abc8d2d@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 06, 2017 at 05:15:06PM +0200, David Sterba wrote:
-> On Tue, Aug 22, 2017 at 11:46:01PM -0700, Omar Sandoval wrote:
-> > From: Omar Sandoval <osandov@fb.com>
+On Wed, Aug 30, 2017 at 10:38:21PM +0800, Anand Jain wrote:
+> On 08/17/2017 07:57 PM, David Sterba wrote:
+> > On Thu, Aug 17, 2017 at 04:33:41AM +0800, Anand Jain wrote:
+> >>
+> >>
+> >> On 08/16/2017 09:59 PM, David Sterba wrote:
+> >>> On Sun, Aug 13, 2017 at 12:02:42PM +0800, Anand Jain wrote:
+> >>>> There isn't a huge list to manage the types, which can be managed
+> >>>> with defines. It helps to easily print the types in tracing as well.
+> >>>
+> >>> We use enums in a lot of places, I'd rather keep it as it is.
+> >>
+> >>    This patch converts all of them, and it was at only one place.
 > > 
-> > The RCU-friendly string API used internally by Btrfs is generic enough
-> > for common use. This doesn't add any new functionality but instead just
-> > moves the code and documents the existing API.
+> > Yeah, but I mean the enum vs define style of constant definition.
+> > 
+> >>    I hope I didn't miss any. Further the next patch 3/4 needs it
+> >>    to be define instead of enums, handling enums in the tracing
+> >>    isn't as easy as define.
+> > 
+> > Interesting, in what way are defines better use in tracepoints? I see
+> > eg. show_flush_state using enum btrfs_flush_state in btrfs_flush_space,
+> > the same pattern applies to patch 3/4.
 > 
-> Ok for the changes, but please drop anything that just reformats the
-> argument list and/or shifts the long strings out of 80 columns. I
-> personally hate the "arguments aligned under the opening (" style
+>   As of now TRACE_DEFINE_ENUM() for show_flush_state is missing (patch 
+> sent) which is needed for the state= symbol in the user space as shown 
+> below,
+> 
+> perf record -e 'btrfs:btrfs_flush_space' -a fill_and_bal /btrfs/sv1 
+> 10000 && perf script
+> 
+> ::
+> kworker/u2:4  4220 [000] 19032.858184: btrfs:btrfs_flush_space: (nil)U: 
+> state=1() flags=4(METADATA) num_bytes=173015040 orig_bytes=173015040 ret=0
+> 
+> (%p does not work in user space, ignore it for now).
+> 
+> sysfs trace is fine.
+> cat ./trace_pipe
+> ---
+> kworker/u2:3-4219  [000] .... 18952.145677: btrfs_flush_space: 
+> f0918b8d-88a6-4e9f-8ca6-02e2fc290380: state=1(FLUSH_DELAYED_ITEMS_NR) 
+> flags=4(METADATA) num_bytes
+> ---
+> 
+>   So for BTRFS_COMPRESS.. its either TRADE_DEFINE_ENUM() and enum or 
+> just #define. I am ok either ways.
 
-Well that's the kernel style ;)
+Thanks for the examples, I've updated wiki so we don't forget about it.
+The enums look more convenient, as we'll just copy the names to the
+defining macro, unlike a set of defnies that would need
+__print_symbolic.
 
-> and can somehow live with that in new code, but if it's part of a patch
-> that's pure noise as I have to read all the changed lines and figure out
-> if they really are different or not. Thanks.
-
-I only reflowed calls where I changed something, so that shouldn't be an
-issue. If you really prefer I can resend it without reflowing anything,
-but that's going to leave the code looking worse than before.
+Looking at current use of __print_symbolic, the printed strings are
+shortened versions of the macros that have a prefix, this may be
+better suited for the trace output.

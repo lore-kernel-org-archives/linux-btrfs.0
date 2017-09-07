@@ -1,83 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26802 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:48423 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752605AbdIAXQT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Sep 2017 19:16:19 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v81NGFdl028355
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:16 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v81NGFlP026134
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:15 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v81NGFnj028562
-        for <linux-btrfs@vger.kernel.org>; Fri, 1 Sep 2017 23:16:15 GMT
+        with ESMTP id S1751543AbdIGAvo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 20:51:44 -0400
+Date: Wed, 6 Sep 2017 17:48:10 -0700
 From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: avoid wake_up if possible
-Date: Fri,  1 Sep 2017 16:14:27 -0600
-Message-Id: <20170901221430.10131-2-bo.li.liu@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: avoid wake_up if possible
+Message-ID: <20170907004810.GD16924@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20170901221430.10131-2-bo.li.liu@oracle.com>
+ <20170906141904.GN31874@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170906141904.GN31874@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-wake_up() will go to check whether someone is on the waiting list with
-holding spin_lock().
+On Wed, Sep 06, 2017 at 04:19:04PM +0200, David Sterba wrote:
+> On Fri, Sep 01, 2017 at 04:14:27PM -0600, Liu Bo wrote:
+> > wake_up() will go to check whether someone is on the waiting list with
+> > holding spin_lock().
+> >
+> > Around some btrfs code, we don't check waitqueue_active() firstly, so
+> > the spin_lock() pair in wake_up() is called even if no one is waiting
+> > on the queue.
+> > 
+> > There are more wake_up()s without waitqueue_active(), but these two
+> > are the hottest one I've run into so far.
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> 
+> Can you please split the patch and address both separately, as they are
+> not affecting the same data structure? It would be good to mention the
+> other parts of code specifically (not just "around some code"), or
+> briefly describe the state transitions where it matters for the wake
+> ups.
+>
 
-Around some btrfs code, we don't check waitqueue_active() firstly, so
-the spin_lock() pair in wake_up() is called even if no one is waiting
-on the queue.
+OK.
 
-There are more wake_up()s without waitqueue_active(), but these two
-are the hottest one I've run into so far.
+> A missed wakeup appears as if the system is hung, but it's not a
+> deadlock and we don't have much help debugging that when it happens. I'd
+> like to review that in a way where I can make sure you have checked all
+> the possible lost wakeups.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_io.c    | 9 ++++++++-
- fs/btrfs/ordered-data.c | 8 +++++++-
- 2 files changed, 15 insertions(+), 2 deletions(-)
+Good point, but it seems that we could only prove it on code level
+(like the comments put around the code).
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 825fad6..e2dc042 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -536,8 +536,15 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 	clear_state_cb(tree, state, bits);
- 	add_extent_changeset(state, bits_to_clear, changeset, 0);
- 	state->state &= ~bits_to_clear;
--	if (wake)
-+
-+	assert_spin_locked(&tree->lock);
-+	/*
-+	 * spin_lock is acquired by both waker and waiter, thus no
-+	 * need to restrict the order.
-+	 **/
-+	if (wake && waitqueue_active(&state->wq))
- 		wake_up(&state->wq);
-+
- 	if (state->state == 0) {
- 		next = next_state(state);
- 		if (extent_state_in_tree(state)) {
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index a3aca49..e439fb4 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -647,7 +647,13 @@ void btrfs_remove_ordered_extent(struct inode *inode,
- 		spin_unlock(&fs_info->ordered_root_lock);
- 	}
- 	spin_unlock(&root->ordered_extent_lock);
--	wake_up(&entry->wait);
-+
-+	/*
-+	 * setting flag is protected by spin_lock pair, which has a
-+	 * implicit memory barrier.
-+	 */
-+	if (waitqueue_active(&entry->wait))
-+		wake_up(&entry->wait);
- }
- 
- static void btrfs_run_ordered_extent_work(struct btrfs_work *work)
--- 
-2.9.4
-
+-liubo

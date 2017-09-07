@@ -1,46 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40859 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60750 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751456AbdIGTkt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Sep 2017 15:40:49 -0400
-Date: Thu, 7 Sep 2017 21:39:20 +0200
+        id S1755713AbdIGSlS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Sep 2017 14:41:18 -0400
+Date: Thu, 7 Sep 2017 20:39:48 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
-        nefelim4ag@gmail.com
-Subject: Re: [PATCH 00/10] Unused parameter cleanup
-Message-ID: <20170907193920.GL31874@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: search parity device wisely
+Message-ID: <20170907183948.GF31874@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1503308630-6652-1-git-send-email-nborisov@suse.com>
+References: <20170802203246.27121-1-bo.li.liu@oracle.com>
+ <20170803195331.20079-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1503308630-6652-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20170803195331.20079-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 21, 2017 at 12:43:40PM +0300, Nikolay Borisov wrote:
-> Here is a series that I've been sitting on for a while. It removes unused 
-> parameter in various functions, no functional changes. Patch 09/10 reworks
-> some error handling to eliminate an if branch in __btrfs_alloc_chunk, but it's
-> still a minor refactoring. 
+On Thu, Aug 03, 2017 at 01:53:31PM -0600, Liu Bo wrote:
+> After mapping block with BTRFS_MAP_WRITE, parities have been sorted to
+> the end position, so this search can start from the first parity
+> stripe.
 > 
-> Nikolay Borisov (10):
->   btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
->   btrfs: remove superfluous chunk_tree argument from
->     btrfs_alloc_dev_extent
->   btrfs: Remove unused variable
->   btrfs: Remove unused parameters from various functions
->   btrfs: Remove unused arguments from btrfs_changed_cb_t
->   btrfs: Remove unused parameter from check_direct_IO
->   btrfs: Remove unused parameter from extent_clear_unlock_delalloc
->   btrfs: remove unused parameter in cow_file_range
->   btrfs: Rework error handling of add_extent_mapping in
->     __btrfs_alloc_chunk
->   btrfs: Remove redundant argument of __link_block_group
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Some of the patches have been applied earlier and are now in the frozen
-branch for the pull request so I did not update them with the reviewed
-tags.
-
-The remaining patches are now in the 4.15 devel queue, with the reviewed
-tags that have been sent.
+Reviewed-by: David Sterba <dsterba@suse.com>

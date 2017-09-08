@@ -1,241 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44634 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36822 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932214AbdIHSKa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Sep 2017 14:10:30 -0400
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs for 4.14
-Date: Fri,  8 Sep 2017 20:08:59 +0200
-Message-Id: <cover.1504892447.git.dsterba@suse.com>
+        id S1753545AbdIHQmp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Sep 2017 12:42:45 -0400
+Date: Fri, 8 Sep 2017 18:41:15 +0200
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.13
+Message-ID: <20170908164115.GT31874@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-please pull the following btrfs branch to 4.14. The changes range through all
-types: cleanups, core chagnes, sanity checks, fixes, other user visible
-changes, detailed list below.
-
-Merging notes: there's a minor conflict with the blk_status_t fix that went to
-4.13-rc7 while this pull is on top of 4.13-rc5 as I did not want to rebase. The
-resolution is simple, there's a removed parameter 'skip_sum' in function
-__btrfs_submit_dio_bio. My resolution can be found in branch for-4.14-merged.
+btrfs-progs version 4.13 have been released.
 
 Changes:
-* deprecated: user transaction ioctl
-* mount option ssd does not change allocation alignments
-* degraded read-write mount is allowed if all the raid profile constraints are
-  met, now based on more accurate check
-* defrag: do not reset compression afterwards; the NOCOMPRESS flag can be now
-  overriden by defrag
-* prep work for better extent reference tracking (related to the qgroup
-  slowness with balance)
-* prep work for compression heuristics
-* memory allocation reductions (may help latencies on a loaded system)
-* better accounting for io waiting states
-* error handling improvements (removed BUGs)
-* added more sanity checks for shared refs
-* fix readdir vs pagefault deadlock under some circumstances
-* fix for 'no-hole' mode, certain combination of compressed and inline extents
-* send: fix emission of invalid clone operations
-* fixup file mode if setting acls fail
-* more fixes from fuzzing
-* oher cleanups
+  * convert: reiserfs support
+  * check: new option --force to allow check of a mounted filesystem (no repair)
+  * mkfs: --rootdir will now copy special files
+  * dump-tree: minor output changes
+  * inspect rootid: accept file as arugment
+  * dev usage: don't calculate slack space for missing devices
+  * fi du: don't print error on EMPTY_SUBVOL (inode number 2)
+  * build:
+    * fixed support for sanitization features on gcc (tsan, asan, ubsan)
+    * fix PIE build
+  * other:
+    * misc cleanups and stability fixes
+    * travis CI enhancements
+    * new tests, fuzzed images
+    * testsuite cleanups
 
-The following changes since commit ef954844c7ace62f773f4f23e28d2d915adc419f:
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-  Linux 4.13-rc5 (2017-08-13 16:01:32 -0700)
+Shortlog:
 
-are available in the git repository at:
+David Sterba (74):
+      btrfs-progs: docs: update btrfs-convert regarding reiserfs
+      btrfs-progs: convert: move duplicated acl code to common header
+      btrfs-progs: convert: move acl helper to common source file
+      btrfs-progs: convert: move and rename dev_t helpers to common file
+      btrfs-progs: convert: move reiserfs struct definitions to header
+      btrfs-progs: build: fix PIE build
+      btrfs-progs: drop local blocksize variables if they're nodesize
+      btrfs-progs: drop blocksize from read_tree_block
+      btrfs-progs: check: cleanup use of level_size
+      btrfs-progs: drop redundant check of blocksize in read_tree_block
+      btrfs-progs: drop blocksize argument from btrfs_find_create_tree_block
+      btrfs-progs: drop blocksize argument from readahead_tree_block
+      btrfs-progs: handle blockgroup errors when opening filesystem
+      btrfs-progs: tests: add more fuzzed images from bugzilla
+      btrfs-progs: build: add internal LDFLAGS for the D= features
+      btrfs-progs: build: properly pass the LDFLAGS during tsan build
+      btrfs-progs: build: fix building libbtrfs.so with tsan
+      btrfs-progs: build: fix asan and ubsan build
+      btrfs-progs: tests: add build checks for sanitization features
+      btrfs-progs: tests: pull and build reiserfs lib inside CI
+      btrfs-progs: add crude error handling when transaction start fails
+      btrfs-progs: return errors from btrfs_start_transaction
+      btrfs-progs: switch fs_info::system_allocs to bit
+      btrfs-progs: use kzalloc to allocate transaction handle
+      btrfs-progs: move transaction implementation out of header
+      btrfs-progs: move transaction code out of disk-io
+      btrfs-progs: store pointer to fs_info in transaction handle
+      btrfs-progs: start framework for transaction abort
+      btrfs-progs: don't start or commit after transaction abort
+      btrfs-progs: tests: build preparation phases out of script section
+      btrfs-progs: tests: add more checks for tools used in convert tests
+      btrfs-progs: tests: install missing CI packages
+      btrfs-progs: tests: update README
+      btrfs-progs: handle transaction start failure in close_ctree
+      btrfs-progs: tests: fix TEST_LOG=dump in convert tests
+      btrfs-progs: add more error handling to btrfs_free_block_group
+      btrfs-progs: handle failed search in find_search_start better
+      btrfs-progs: tests: limit size of log dump from conver tests
+      btrfs-progs: convert: don't print message when fs is not recognized, ext2
+      btrfs-progs: tests: add more sanitizer message patterns to log scanner
+      btrfs-progs: check: remove old mixed backref code
+      btrfs-progs: check: move more of space cache clearing to a helper
+      btrfs-progs: check: verify critical root pointers before use
+      btrfs-progs: check: pass fs_info to check_chunks_and_extents
+      btrfs-progs: check: use local fs_info in check_chunks_and_extents
+      btrfs-progs: check: pass fs_info to check_chunks_and_extents_v2
+      btrfs-progs: check: move chunk and extent check mode switch to a helper
+      btrfs-progs: check: pass fs_info to check_fs_roots
+      btrfs-progs: check: cleanup use of fs_info in check_fs_roots
+      btrfs-progs: check: move fs roots check mode switch to a helper
+      btrfs-progs: print-tree: rename item callbacks to match the key name
+      btrfs-progs: print-tree: don't print the item type for all items
+      btrfs-progs: print-tree: factor out block_group_item dump
+      btrfs-progs: print-tree: factor out extent_data_ref dump
+      btrfs-progs: print-tree: factor out shared_data_ref dump
+      btrfs-progs: print-tree: factor out free_space_info dump
+      btrfs-progs: print-tree: factor out dev_extent dump
+      btrfs-progs: print-tree: factor out qgroup_status dump
+      btrfs-progs: print-tree: factor out qgroup_info dump
+      btrfs-progs: print-tree: factor out qgroup_limit dump
+      btrfs-progs: print-tree: factor out persistent_item dump
+      btrfs-progs: print-tree: factor out temporary_item dump
+      btrfs-progs: check: add option to skip mount checks
+      btrfs-progs: tests: add test for check --force
+      btrfs-progs: tests: add testcase for 'fi du' and empty subvol
+      btrfs-progs: print-tree: factor out extent_csum dump
+      btrfs-progs: tests: cleanup loop device helpers
+      btrfs-progs: tests: move loopdev helpers out of the testcase to common
+      btrfs-progs: tests: convert misc/006-image-on-missing-device to loopdevs
+      btrfs-progs: tests: convert misc/011-delete-missing-device to loopdevs
+      btrfs-progs: tests: missing device and slack space report
+      btrfs-progs: tests: enhance post-rollback fsck tests
+      btrfs-progs: tests: check for kernel support for reiserfs
+      btrfs-progs: update CHANGES for v4.13
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.14
+Goffredo Baroncelli (2):
+      btrfs-progs: reset the ret value when ignoring an error from du_add_file
+      btrfs-progs: fi du: don't call lookup_path_rootid for BTRFS_EMPTY_SUBVOL_DIR_OBJECTID
 
-for you to fetch changes up to db95c876c568cef951fbbd4c0118cb5386e4bb99:
+Gu Jinxiang (2):
+      btrfs-progs: mkfs: Replace number with enum
+      btrfs-progs: mkfs: Move the tree root creation to own function
 
-  btrfs: submit superblock io with REQ_META and REQ_PRIO (2017-08-22 13:22:05 +0200)
+Jeff Mahoney (2):
+      btrfs-progs: convert: add support for converting reiserfs
+      btrfs-progs: tests: add support for converting reiserfs
 
-----------------------------------------------------------------
-Aleksa Sarai (1):
-      btrfs: resume qgroup rescan on rw remount
+Josef Bacik (1):
+      btrfs-progs: print the csum length in debug-tree
 
-Anand Jain (4):
-      btrfs: btrfs_inherit_iflags() can be static
-      btrfs: use appropriate define for the fsid
-      btrfs: use BTRFS_FSID_SIZE for fsid
-      btrfs: remove unused BTRFS_COMPRESS_LAST
+Misono, Tomohiro (4):
+      btrfs-progs: inspect rootid: Allow a file to be specified
+      btrfs-progs: test: fix run_check_stdout() call _fail()
+      btrfs-progs: test: fix name generation not to contain trailing spaces
+      btrfs-progs: test: add new test for inspect-internal rootid
 
-Colin Ian King (1):
-      btrfs: remove redundant check on ret being non-zero
+Nikolay Borisov (1):
+      btrfs-progs: Use named constants for common sizes
 
-David Sterba (30):
-      btrfs: drop newlines from strings when using btrfs_* helpers
-      btrfs: use GFP_KERNEL in mount and remount
-      btrfs: use GFP_KERNEL in btrfs_defrag_file
-      btrfs: defrag: make readahead state allocation failure non-fatal
-      btrfs: factor reading progress out of btrfs_dev_replace_status
-      btrfs: simplify btrfs_dev_replace_kthread
-      btrfs: get fs_info from eb in btrfs_print_leaf, remove argument
-      btrfs: get fs_info from eb in btrfs_print_tree, remove argument
-      btrfs: cleanup types storing REQ_*
-      btrfs: merge REQ_OP and REQ_ flags to one parameter in submit_extent_page
-      btrfs: merge alloc_device helpers
-      btrfs: refactor find_device helper
-      btrfs: split write_dev_supers to two functions
-      btrfs: use named constant for bdev blocksize
-      btrfs: fix spelling of snapshotting
-      btrfs: drop ancient page flag mappings
-      btrfs: remove trivial wrapper btrfs_force_ra
-      btrfs: drop chunk locks at the end of close_ctree
-      btrfs: account that we're waiting for DIO read
-      btrfs: account that we're waiting for IO in scrub_submit_raid56_bio_wait
-      btrfs: rename variable holding per-inode compression type
-      btrfs: separate defrag and property compression
-      btrfs: defrag: cleanup checking for compression status
-      btrfs: allow defrag compress to override NOCOMPRESS attribute
-      btrfs: prepare for extensions in compression options
-      btrfs: scrub: use bool for flush_all_writes
-      btrfs: scrub: clean up division in __scrub_mark_bitmap
-      btrfs: scrub: clean up division in scrub_find_csum
-      btrfs: scrub: simplify scrub worker initialization
-      btrfs: submit superblock io with REQ_META and REQ_PRIO
+Patrik Lundquist (1):
+      btrfs-progs: device usage: don't calculate slack on missing device
 
-Edmund Nadolski (6):
-      btrfs: btrfs_check_shared should manage its own transaction
-      btrfs: remove ref_tree implementation from backref.c
-      btrfs: convert prelimary reference tracking to use rbtrees
-      btrfs: add cond_resched() calls when resolving backrefs
-      btrfs: allow backref search checks for shared extents
-      btrfs: clean up extraneous computations in add_delayed_refs
+Qu Wenruo (2):
+      btrfs-progs: mkfs: Fix wrong file type for dir items and indexes when specifying root directory
+      btrfs-progs: tests: Add test case for mkfs --rootdir parameter
 
-Ernesto A. Fernández (1):
-      btrfs: preserve i_mode if __btrfs_set_acl() fails
-
-Filipe Manana (3):
-      Btrfs: avoid unnecessarily locking inode when clearing a range
-      Btrfs: fix assertion failure during fsync in no-holes mode
-      Btrfs: incremental send, fix emission of invalid clone operations
-
-Hans van Kranenburg (1):
-      btrfs: Do not use data_alloc_cluster in ssd mode
-
-Jeff Mahoney (9):
-      btrfs: struct-funcs, constify readers
-      btrfs: constify tracepoint arguments
-      btrfs: backref, constify some arguments
-      btrfs: backref, add unode_aux_to_inode_list helper
-      btrfs: backref, cleanup __ namespace abuse
-      btrfs: add a node counter to each of the rbtrees
-      btrfs: backref, add tracepoints for prelim_ref insertion and merging
-      btrfs: account for pinned bytes in should_alloc_chunk
-      btrfs: pass fs_info to btrfs_del_root instead of tree_root
-
-Josef Bacik (2):
-      btrfs: fix readdir deadlock with pagefault
-      btrfs: increase ctx->pos for delayed dir index
-
-Liu Bo (9):
-      Btrfs: report errors when checksum is not found
-      Btrfs: fix out of bounds array access while reading extent buffer
-      Btrfs: add a helper to retrive extent inline ref type
-      Btrfs: convert to use btrfs_get_extent_inline_ref_type
-      Btrfs: remove BUG() in btrfs_extent_inline_ref_size
-      Btrfs: remove BUG() in print_extent_item
-      Btrfs: remove BUG() in add_data_reference
-      Btrfs: remove BUG_ON in __add_tree_block
-      Btrfs: add one more sanity check for shared ref type
-
-Lu Fengqi (1):
-      btrfs: use btrfsic_submit_bio instead of submit_bio in write_dev_flush
-
-Matthias Kaehlcke (1):
-      btrfs: Remove extra parentheses from condition in copy_items()
-
-Nick Terrell (1):
-      btrfs: Keep one more workspace around
-
-Nikolay Borisov (27):
-      btrfs: convert while loop to list_for_each_entry
-      btrfs: Use explicit round_down call rather than open-coding it
-      btrfs: Be explicit about usage of min()
-      btrfs: remove unused sectorsize member
-      btrfs: Remove redundant argument of flush_space
-      btrfs: Remove redundant checks from btrfs_alloc_data_chunk_ondemand
-      btrfs: Prevent possible ERR_PTR() dereference
-      btrfs: qgroups: Fix BUG_ON condition in tree level check
-      btrfs: Use explicit round_down macro in btrfs resize ioctl handler
-      btrfs: Remove find_raid56_stripe_len
-      btrfs: Remove unused variables
-      btrfs: Remove unused parameters from volume.c functions
-      btrfs: Remove never reached error handling code in __add_reloc_root
-      btrfs: Deprecate userspace transaction ioctls
-      btrfs: Make flush_space return void
-      btrfs: Simplify math in should_alloc chunk
-      btrfs: Remove never-reached WARN_ON
-      btrfs: Remove unused sectorsize variable from struct map_lookup
-      btrfs: expose internal free space tree routine only if sanity tests are enabled
-      btrfs: Move skip checksum check from btrfs_submit_direct to __btrfs_submit_dio_bio
-      btrfs: Fix -EOVERFLOW handling in btrfs_ioctl_tree_search_v2
-      btrfs: Remove redundant setting of uuid in btrfs_block_header
-      btrfs: Remove chunk_objectid argument from btrfs_make_block_group
-      btrfs: Remove extraneous chunk_objectid variable
-      btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
-      btrfs: remove superfluous chunk_tree argument from btrfs_alloc_dev_extent
-      btrfs: remove unnecessary memory barrier in btrfs_direct_IO
-
-Qu Wenruo (6):
-      btrfs: Introduce a function to check if all chunks a OK for degraded rw mount
-      btrfs: Do chunk level check for degraded rw mount
-      btrfs: Do chunk level check for degraded remount
-      btrfs: Allow barrier_all_devices to do chunk level device check
-      btrfs: Cleanup num_tolerated_disk_barrier_failures
-      btrfs: Enhance message when a device is missing during mount
-
-Timofey Titovets (1):
-      Btrfs: add skeleton code for compression heuristic
-
- fs/btrfs/acl.c                         |    6 +-
- fs/btrfs/async-thread.c                |    6 +-
- fs/btrfs/async-thread.h                |    6 +-
- fs/btrfs/backref.c                     | 1085 ++++++++++++++------------------
- fs/btrfs/backref.h                     |   16 +-
- fs/btrfs/btrfs_inode.h                 |   13 +-
- fs/btrfs/check-integrity.c             |    8 +-
- fs/btrfs/compression.c                 |   35 +-
- fs/btrfs/compression.h                 |    3 +-
- fs/btrfs/ctree.c                       |   14 +-
- fs/btrfs/ctree.h                       |  183 +++---
- fs/btrfs/delayed-inode.c               |    1 +
- fs/btrfs/dev-replace.c                 |   74 ++-
- fs/btrfs/disk-io.c                     |  242 +++----
- fs/btrfs/disk-io.h                     |   10 +-
- fs/btrfs/extent-tree.c                 |  200 ++++--
- fs/btrfs/extent_io.c                   |   92 ++-
- fs/btrfs/extent_io.h                   |   19 +-
- fs/btrfs/file.c                        |   19 +-
- fs/btrfs/free-space-cache.c            |    2 +-
- fs/btrfs/free-space-tree.c             |    2 +-
- fs/btrfs/free-space-tree.h             |    3 +-
- fs/btrfs/inode.c                       |  221 +++++--
- fs/btrfs/ioctl.c                       |  116 ++--
- fs/btrfs/print-tree.c                  |   40 +-
- fs/btrfs/print-tree.h                  |    4 +-
- fs/btrfs/props.c                       |   10 +-
- fs/btrfs/qgroup.c                      |    7 +-
- fs/btrfs/relocation.c                  |   32 +-
- fs/btrfs/root-tree.c                   |    9 +-
- fs/btrfs/scrub.c                       |   47 +-
- fs/btrfs/send.c                        |   21 +-
- fs/btrfs/struct-funcs.c                |    9 +-
- fs/btrfs/super.c                       |   41 +-
- fs/btrfs/tests/btrfs-tests.c           |    1 -
- fs/btrfs/tests/free-space-tree-tests.c |    2 +-
- fs/btrfs/tree-log.c                    |    9 +-
- fs/btrfs/volumes.c                     |  296 ++++-----
- fs/btrfs/volumes.h                     |    8 +-
- include/trace/events/btrfs.h           |  331 ++++++----
- 40 files changed, 1702 insertions(+), 1541 deletions(-)
+Zhang Yu (1):
+      Btrfs-progs: print-tree: check num_stripes in print_chunk

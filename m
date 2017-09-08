@@ -1,171 +1,241 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f66.google.com ([209.85.214.66]:35208 "EHLO
-        mail-it0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750911AbdILGag (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2017 02:30:36 -0400
+Received: from mx2.suse.de ([195.135.220.15]:44634 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932214AbdIHSKa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Sep 2017 14:10:30 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs for 4.14
+Date: Fri,  8 Sep 2017 20:08:59 +0200
+Message-Id: <cover.1504892447.git.dsterba@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <459700c1-4fb9-1e66-bc9a-b2322119e8e4@fb.com>
-References: <de155140-8773-1a78-2dab-1d722ede3dc1@fb.com> <459700c1-4fb9-1e66-bc9a-b2322119e8e4@fb.com>
-From: Phillip Lougher <phillip.lougher@gmail.com>
-Date: Tue, 12 Sep 2017 07:30:34 +0100
-Message-ID: <CAB3woder6Cf0AUOnxyCvR5W=vqXbg738ZyMF3jr3jcre6YFPOA@mail.gmail.com>
-Subject: Re: [GIT PULL v2] zstd support (lib, btrfs, squashfs, nocrypto)
-To: Chris Mason <clm@fb.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Herbert Xu <herbert@gondor.apana.org.au>,
-        Nick Terrell <terrelln@fb.com>,
-        Phillip Lougher <phillip@squashfs.org.uk>, Sean Purcell <me@seanp.xyz>,
-        David Sterba <dsterba@suse.cz>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 11, 2017 at 8:24 PM, Chris Mason <clm@fb.com> wrote:
-> Hi Linus,
->
-> Nick Terrell's patch series to add zstd support to the kernel has been
-> floating around for a while.  After talking with Dave Sterba, Herbert
-> and Phillip, we decided to send the whole thing in as one pull request.
+Hi,
 
-As the Squashfs maintainer I have ACKed the Squashfs patch, and I
-confirm that I've agreed to have it included in this one pull request.
+please pull the following btrfs branch to 4.14. The changes range through all
+types: cleanups, core chagnes, sanity checks, fixes, other user visible
+changes, detailed list below.
 
-Phillip
+Merging notes: there's a minor conflict with the blk_status_t fix that went to
+4.13-rc7 while this pull is on top of 4.13-rc5 as I did not want to rebase. The
+resolution is simple, there's a removed parameter 'skip_sum' in function
+__btrfs_submit_dio_bio. My resolution can be found in branch for-4.14-merged.
 
->
-> Herbert had asked about the crypto patch when we discussed the pull, but
-> I didn't realize he really meant not-right-now.  I've rebased it out of
-> this branch, and none of the other patches depended on it.
->
-> I have things in my zstd-minimal branch:
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git zstd-minimal
->
-> There's a trivial conflict with the main btrfs pull from last week.
-> Dave's pull deletes BTRFS_COMPRESS_LAST in fs/btrfs/compression.h, and
-> I've put the sample resolution in a branch named zstd-4.14-merge.
->
-> zstd is a big win in speed over zlib and in compression ratio over lzo,
-> and the compression team here at FB has gotten great results using it in
-> production.  Nick will continue to update the kernel side with new
-> improvements from the open source zstd userland code.
->
-> Nick has a number of benchmarks for the main zstd code in his lib/zstd
-> commit:
->
-> ============
-> I ran the benchmarks on a Ubuntu 14.04 VM with 2 cores and 4 GiB of RAM.
-> The VM is running on a MacBook Pro with a 3.1 GHz Intel Core i7 processor,
-> 16 GB of RAM, and a SSD. I benchmarked using `silesia.tar` [3], which is
-> 211,988,480 B large. Run the following commands for the benchmark:
->
->     sudo modprobe zstd_compress_test
->     sudo mknod zstd_compress_test c 245 0
->     sudo cp silesia.tar zstd_compress_test
->
-> The time is reported by the time of the userland `cp`.
-> The MB/s is computed with
->
->     1,536,217,008 B / time(buffer size, hash)
->
-> which includes the time to copy from userland.
-> The Adjusted MB/s is computed with
->
->     1,536,217,088 B / (time(buffer size, hash) - time(buffer size, none)).
->
-> The memory reported is the amount of memory the compressor requests.
->
-> | Method   | Size (B) | Time (s) | Ratio | MB/s    | Adj MB/s | Mem (MB) |
-> |----------|----------|----------|-------|---------|----------|----------|
-> | none     | 11988480 |    0.100 |     1 | 2119.88 |        - |        - |
-> | zstd -1  | 73645762 |    1.044 | 2.878 |  203.05 |   224.56 |     1.23 |
-> | zstd -3  | 66988878 |    1.761 | 3.165 |  120.38 |   127.63 |     2.47 |
-> | zstd -5  | 65001259 |    2.563 | 3.261 |   82.71 |    86.07 |     2.86 |
-> | zstd -10 | 60165346 |   13.242 | 3.523 |   16.01 |    16.13 |    13.22 |
-> | zstd -15 | 58009756 |   47.601 | 3.654 |    4.45 |     4.46 |    21.61 |
-> | zstd -19 | 54014593 |  102.835 | 3.925 |    2.06 |     2.06 |    60.15 |
-> | zlib -1  | 77260026 |    2.895 | 2.744 |   73.23 |    75.85 |     0.27 |
-> | zlib -3  | 72972206 |    4.116 | 2.905 |   51.50 |    52.79 |     0.27 |
-> | zlib -6  | 68190360 |    9.633 | 3.109 |   22.01 |    22.24 |     0.27 |
-> | zlib -9  | 67613382 |   22.554 | 3.135 |    9.40 |     9.44 |     0.27 |
->
-> I benchmarked zstd decompression using the same method on the same machine.
-> The benchmark file is located in the upstream zstd repo under
-> `contrib/linux-kernel/zstd_decompress_test.c` [4]. The memory reported is
-> the amount of memory required to decompress data compressed with the given
-> compression level. If you know the maximum size of your input, you can
-> reduce the memory usage of decompression irrespective of the compression
-> level.
->
-> | Method   | Time (s) | MB/s    | Adjusted MB/s | Memory (MB) |
-> |----------|----------|---------|---------------|-------------|
-> | none     |    0.025 | 8479.54 |             - |           - |
-> | zstd -1  |    0.358 |  592.15 |        636.60 |        0.84 |
-> | zstd -3  |    0.396 |  535.32 |        571.40 |        1.46 |
-> | zstd -5  |    0.396 |  535.32 |        571.40 |        1.46 |
-> | zstd -10 |    0.374 |  566.81 |        607.42 |        2.51 |
-> | zstd -15 |    0.379 |  559.34 |        598.84 |        4.61 |
-> | zstd -19 |    0.412 |  514.54 |        547.77 |        8.80 |
-> | zlib -1  |    0.940 |  225.52 |        231.68 |        0.04 |
-> | zlib -3  |    0.883 |  240.08 |        247.07 |        0.04 |
-> | zlib -6  |    0.844 |  251.17 |        258.84 |        0.04 |
-> | zlib -9  |    0.837 |  253.27 |        287.64 |        0.04 |
->
-> =======================
->
-> I ran a long series of tests and benchmarks on the btrfs side and
-> the gains are very similar to the core benchmarks Nick ran.
->
-> Nick Terrell (3) commits (+14222/-12):
->     btrfs: Add zstd support (+468/-12)
->     lib: Add zstd modules (+13014/-0)
->     lib: Add xxhash module (+740/-0)
->
-> Sean Purcell (1) commits (+178/-0):
->     squashfs: Add zstd support
->
-> Total: (4) commits (+14400/-12)
->
->  fs/btrfs/Kconfig           |    2 +
->  fs/btrfs/Makefile          |    2 +-
->  fs/btrfs/compression.c     |    1 +
->  fs/btrfs/compression.h     |    6 +-
->  fs/btrfs/ctree.h           |    1 +
->  fs/btrfs/disk-io.c         |    2 +
->  fs/btrfs/ioctl.c           |    6 +-
->  fs/btrfs/props.c           |    6 +
->  fs/btrfs/super.c           |   12 +-
->  fs/btrfs/sysfs.c           |    2 +
->  fs/btrfs/zstd.c            |  432 ++++++
->  fs/squashfs/Kconfig        |   14 +
->  fs/squashfs/Makefile       |    1 +
->  fs/squashfs/decompressor.c |    7 +
->  fs/squashfs/decompressor.h |    4 +
->  fs/squashfs/squashfs_fs.h  |    1 +
->  fs/squashfs/zstd_wrapper.c |  151 ++
->  include/linux/xxhash.h     |  236 +++
->  include/linux/zstd.h       | 1157 +++++++++++++++
->  include/uapi/linux/btrfs.h |    8 +-
->  lib/Kconfig                |   11 +
->  lib/Makefile               |    3 +
->  lib/xxhash.c               |  500 +++++++
->  lib/zstd/Makefile          |   18 +
->  lib/zstd/bitstream.h       |  374 +++++
->  lib/zstd/compress.c        | 3484 ++++++++++++++++++++++++++++++++++++++++++++
->  lib/zstd/decompress.c      | 2528 ++++++++++++++++++++++++++++++++
->  lib/zstd/entropy_common.c  |  243 +++
->  lib/zstd/error_private.h   |   53 +
->  lib/zstd/fse.h             |  575 ++++++++
->  lib/zstd/fse_compress.c    |  795 ++++++++++
->  lib/zstd/fse_decompress.c  |  332 +++++
->  lib/zstd/huf.h             |  212 +++
->  lib/zstd/huf_compress.c    |  770 ++++++++++
->  lib/zstd/huf_decompress.c  |  960 ++++++++++++
->  lib/zstd/mem.h             |  151 ++
->  lib/zstd/zstd_common.c     |   75 +
->  lib/zstd/zstd_internal.h   |  263 ++++
->  lib/zstd/zstd_opt.h        | 1014 +++++++++++++
->  39 files changed, 14400 insertions(+), 12 deletions(-)
+Changes:
+* deprecated: user transaction ioctl
+* mount option ssd does not change allocation alignments
+* degraded read-write mount is allowed if all the raid profile constraints are
+  met, now based on more accurate check
+* defrag: do not reset compression afterwards; the NOCOMPRESS flag can be now
+  overriden by defrag
+* prep work for better extent reference tracking (related to the qgroup
+  slowness with balance)
+* prep work for compression heuristics
+* memory allocation reductions (may help latencies on a loaded system)
+* better accounting for io waiting states
+* error handling improvements (removed BUGs)
+* added more sanity checks for shared refs
+* fix readdir vs pagefault deadlock under some circumstances
+* fix for 'no-hole' mode, certain combination of compressed and inline extents
+* send: fix emission of invalid clone operations
+* fixup file mode if setting acls fail
+* more fixes from fuzzing
+* oher cleanups
+
+The following changes since commit ef954844c7ace62f773f4f23e28d2d915adc419f:
+
+  Linux 4.13-rc5 (2017-08-13 16:01:32 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.14
+
+for you to fetch changes up to db95c876c568cef951fbbd4c0118cb5386e4bb99:
+
+  btrfs: submit superblock io with REQ_META and REQ_PRIO (2017-08-22 13:22:05 +0200)
+
+----------------------------------------------------------------
+Aleksa Sarai (1):
+      btrfs: resume qgroup rescan on rw remount
+
+Anand Jain (4):
+      btrfs: btrfs_inherit_iflags() can be static
+      btrfs: use appropriate define for the fsid
+      btrfs: use BTRFS_FSID_SIZE for fsid
+      btrfs: remove unused BTRFS_COMPRESS_LAST
+
+Colin Ian King (1):
+      btrfs: remove redundant check on ret being non-zero
+
+David Sterba (30):
+      btrfs: drop newlines from strings when using btrfs_* helpers
+      btrfs: use GFP_KERNEL in mount and remount
+      btrfs: use GFP_KERNEL in btrfs_defrag_file
+      btrfs: defrag: make readahead state allocation failure non-fatal
+      btrfs: factor reading progress out of btrfs_dev_replace_status
+      btrfs: simplify btrfs_dev_replace_kthread
+      btrfs: get fs_info from eb in btrfs_print_leaf, remove argument
+      btrfs: get fs_info from eb in btrfs_print_tree, remove argument
+      btrfs: cleanup types storing REQ_*
+      btrfs: merge REQ_OP and REQ_ flags to one parameter in submit_extent_page
+      btrfs: merge alloc_device helpers
+      btrfs: refactor find_device helper
+      btrfs: split write_dev_supers to two functions
+      btrfs: use named constant for bdev blocksize
+      btrfs: fix spelling of snapshotting
+      btrfs: drop ancient page flag mappings
+      btrfs: remove trivial wrapper btrfs_force_ra
+      btrfs: drop chunk locks at the end of close_ctree
+      btrfs: account that we're waiting for DIO read
+      btrfs: account that we're waiting for IO in scrub_submit_raid56_bio_wait
+      btrfs: rename variable holding per-inode compression type
+      btrfs: separate defrag and property compression
+      btrfs: defrag: cleanup checking for compression status
+      btrfs: allow defrag compress to override NOCOMPRESS attribute
+      btrfs: prepare for extensions in compression options
+      btrfs: scrub: use bool for flush_all_writes
+      btrfs: scrub: clean up division in __scrub_mark_bitmap
+      btrfs: scrub: clean up division in scrub_find_csum
+      btrfs: scrub: simplify scrub worker initialization
+      btrfs: submit superblock io with REQ_META and REQ_PRIO
+
+Edmund Nadolski (6):
+      btrfs: btrfs_check_shared should manage its own transaction
+      btrfs: remove ref_tree implementation from backref.c
+      btrfs: convert prelimary reference tracking to use rbtrees
+      btrfs: add cond_resched() calls when resolving backrefs
+      btrfs: allow backref search checks for shared extents
+      btrfs: clean up extraneous computations in add_delayed_refs
+
+Ernesto A. Fernández (1):
+      btrfs: preserve i_mode if __btrfs_set_acl() fails
+
+Filipe Manana (3):
+      Btrfs: avoid unnecessarily locking inode when clearing a range
+      Btrfs: fix assertion failure during fsync in no-holes mode
+      Btrfs: incremental send, fix emission of invalid clone operations
+
+Hans van Kranenburg (1):
+      btrfs: Do not use data_alloc_cluster in ssd mode
+
+Jeff Mahoney (9):
+      btrfs: struct-funcs, constify readers
+      btrfs: constify tracepoint arguments
+      btrfs: backref, constify some arguments
+      btrfs: backref, add unode_aux_to_inode_list helper
+      btrfs: backref, cleanup __ namespace abuse
+      btrfs: add a node counter to each of the rbtrees
+      btrfs: backref, add tracepoints for prelim_ref insertion and merging
+      btrfs: account for pinned bytes in should_alloc_chunk
+      btrfs: pass fs_info to btrfs_del_root instead of tree_root
+
+Josef Bacik (2):
+      btrfs: fix readdir deadlock with pagefault
+      btrfs: increase ctx->pos for delayed dir index
+
+Liu Bo (9):
+      Btrfs: report errors when checksum is not found
+      Btrfs: fix out of bounds array access while reading extent buffer
+      Btrfs: add a helper to retrive extent inline ref type
+      Btrfs: convert to use btrfs_get_extent_inline_ref_type
+      Btrfs: remove BUG() in btrfs_extent_inline_ref_size
+      Btrfs: remove BUG() in print_extent_item
+      Btrfs: remove BUG() in add_data_reference
+      Btrfs: remove BUG_ON in __add_tree_block
+      Btrfs: add one more sanity check for shared ref type
+
+Lu Fengqi (1):
+      btrfs: use btrfsic_submit_bio instead of submit_bio in write_dev_flush
+
+Matthias Kaehlcke (1):
+      btrfs: Remove extra parentheses from condition in copy_items()
+
+Nick Terrell (1):
+      btrfs: Keep one more workspace around
+
+Nikolay Borisov (27):
+      btrfs: convert while loop to list_for_each_entry
+      btrfs: Use explicit round_down call rather than open-coding it
+      btrfs: Be explicit about usage of min()
+      btrfs: remove unused sectorsize member
+      btrfs: Remove redundant argument of flush_space
+      btrfs: Remove redundant checks from btrfs_alloc_data_chunk_ondemand
+      btrfs: Prevent possible ERR_PTR() dereference
+      btrfs: qgroups: Fix BUG_ON condition in tree level check
+      btrfs: Use explicit round_down macro in btrfs resize ioctl handler
+      btrfs: Remove find_raid56_stripe_len
+      btrfs: Remove unused variables
+      btrfs: Remove unused parameters from volume.c functions
+      btrfs: Remove never reached error handling code in __add_reloc_root
+      btrfs: Deprecate userspace transaction ioctls
+      btrfs: Make flush_space return void
+      btrfs: Simplify math in should_alloc chunk
+      btrfs: Remove never-reached WARN_ON
+      btrfs: Remove unused sectorsize variable from struct map_lookup
+      btrfs: expose internal free space tree routine only if sanity tests are enabled
+      btrfs: Move skip checksum check from btrfs_submit_direct to __btrfs_submit_dio_bio
+      btrfs: Fix -EOVERFLOW handling in btrfs_ioctl_tree_search_v2
+      btrfs: Remove redundant setting of uuid in btrfs_block_header
+      btrfs: Remove chunk_objectid argument from btrfs_make_block_group
+      btrfs: Remove extraneous chunk_objectid variable
+      btrfs: Remove chunk_objectid parameter of btrfs_alloc_dev_extent
+      btrfs: remove superfluous chunk_tree argument from btrfs_alloc_dev_extent
+      btrfs: remove unnecessary memory barrier in btrfs_direct_IO
+
+Qu Wenruo (6):
+      btrfs: Introduce a function to check if all chunks a OK for degraded rw mount
+      btrfs: Do chunk level check for degraded rw mount
+      btrfs: Do chunk level check for degraded remount
+      btrfs: Allow barrier_all_devices to do chunk level device check
+      btrfs: Cleanup num_tolerated_disk_barrier_failures
+      btrfs: Enhance message when a device is missing during mount
+
+Timofey Titovets (1):
+      Btrfs: add skeleton code for compression heuristic
+
+ fs/btrfs/acl.c                         |    6 +-
+ fs/btrfs/async-thread.c                |    6 +-
+ fs/btrfs/async-thread.h                |    6 +-
+ fs/btrfs/backref.c                     | 1085 ++++++++++++++------------------
+ fs/btrfs/backref.h                     |   16 +-
+ fs/btrfs/btrfs_inode.h                 |   13 +-
+ fs/btrfs/check-integrity.c             |    8 +-
+ fs/btrfs/compression.c                 |   35 +-
+ fs/btrfs/compression.h                 |    3 +-
+ fs/btrfs/ctree.c                       |   14 +-
+ fs/btrfs/ctree.h                       |  183 +++---
+ fs/btrfs/delayed-inode.c               |    1 +
+ fs/btrfs/dev-replace.c                 |   74 ++-
+ fs/btrfs/disk-io.c                     |  242 +++----
+ fs/btrfs/disk-io.h                     |   10 +-
+ fs/btrfs/extent-tree.c                 |  200 ++++--
+ fs/btrfs/extent_io.c                   |   92 ++-
+ fs/btrfs/extent_io.h                   |   19 +-
+ fs/btrfs/file.c                        |   19 +-
+ fs/btrfs/free-space-cache.c            |    2 +-
+ fs/btrfs/free-space-tree.c             |    2 +-
+ fs/btrfs/free-space-tree.h             |    3 +-
+ fs/btrfs/inode.c                       |  221 +++++--
+ fs/btrfs/ioctl.c                       |  116 ++--
+ fs/btrfs/print-tree.c                  |   40 +-
+ fs/btrfs/print-tree.h                  |    4 +-
+ fs/btrfs/props.c                       |   10 +-
+ fs/btrfs/qgroup.c                      |    7 +-
+ fs/btrfs/relocation.c                  |   32 +-
+ fs/btrfs/root-tree.c                   |    9 +-
+ fs/btrfs/scrub.c                       |   47 +-
+ fs/btrfs/send.c                        |   21 +-
+ fs/btrfs/struct-funcs.c                |    9 +-
+ fs/btrfs/super.c                       |   41 +-
+ fs/btrfs/tests/btrfs-tests.c           |    1 -
+ fs/btrfs/tests/free-space-tree-tests.c |    2 +-
+ fs/btrfs/tree-log.c                    |    9 +-
+ fs/btrfs/volumes.c                     |  296 ++++-----
+ fs/btrfs/volumes.h                     |    8 +-
+ include/trace/events/btrfs.h           |  331 ++++++----
+ 40 files changed, 1702 insertions(+), 1541 deletions(-)

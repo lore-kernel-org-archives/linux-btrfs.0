@@ -1,80 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34719 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1754859AbdIGSy1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Sep 2017 14:54:27 -0400
-Date: Thu, 7 Sep 2017 20:52:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] btrfs: convert enum btrfs_compression_type to define
-Message-ID: <20170907185258.GG31874@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170813040244.18841-1-anand.jain@oracle.com>
- <20170813040244.18841-3-anand.jain@oracle.com>
- <20170816135941.GE2866@twin.jikos.cz>
- <6117a0fa-b540-c31f-af10-805fce5b7cfc@oracle.com>
- <20170817115706.GS2866@twin.jikos.cz>
- <34d203c9-f647-ea71-712b-74637abc8d2d@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <34d203c9-f647-ea71-712b-74637abc8d2d@oracle.com>
+Received: from [195.159.176.226] ([195.159.176.226]:58930 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1753044AbdIHDYw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Sep 2017 23:24:52 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dq9uC-0006tt-LS
+        for linux-btrfs@vger.kernel.org; Fri, 08 Sep 2017 05:24:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Workqueue: events_unbound btrfs_async_reclaim_metadata_space
+ [btrfs]
+Date: Fri, 8 Sep 2017 03:24:07 +0000 (UTC)
+Message-ID: <pan$aafff$36d2107c$9936e94e$19ccbbe4@cox.net>
+References: <737e0bff-dad1-d779-4de8-46f8995d5f42@prismatelecomtesting.com>
+        <20170905162718.GC14677@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+        <315fef6d-e60a-3155-e10c-bebdf21cb55a@prismatelecomtesting.com>
+        <CAEtw4r0By7Gmdo6=yFKi2t6LyKHAOygKdMW-+2OUkQ041zWZ7Q@mail.gmail.com>
+        <ed7cf7b6-e848-e581-e079-6c0cec383140@prismatelecomtesting.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 30, 2017 at 10:38:21PM +0800, Anand Jain wrote:
-> On 08/17/2017 07:57 PM, David Sterba wrote:
-> > On Thu, Aug 17, 2017 at 04:33:41AM +0800, Anand Jain wrote:
-> >>
-> >>
-> >> On 08/16/2017 09:59 PM, David Sterba wrote:
-> >>> On Sun, Aug 13, 2017 at 12:02:42PM +0800, Anand Jain wrote:
-> >>>> There isn't a huge list to manage the types, which can be managed
-> >>>> with defines. It helps to easily print the types in tracing as well.
-> >>>
-> >>> We use enums in a lot of places, I'd rather keep it as it is.
-> >>
-> >>    This patch converts all of them, and it was at only one place.
-> > 
-> > Yeah, but I mean the enum vs define style of constant definition.
-> > 
-> >>    I hope I didn't miss any. Further the next patch 3/4 needs it
-> >>    to be define instead of enums, handling enums in the tracing
-> >>    isn't as easy as define.
-> > 
-> > Interesting, in what way are defines better use in tracepoints? I see
-> > eg. show_flush_state using enum btrfs_flush_state in btrfs_flush_space,
-> > the same pattern applies to patch 3/4.
-> 
->   As of now TRACE_DEFINE_ENUM() for show_flush_state is missing (patch 
-> sent) which is needed for the state= symbol in the user space as shown 
-> below,
-> 
-> perf record -e 'btrfs:btrfs_flush_space' -a fill_and_bal /btrfs/sv1 
-> 10000 && perf script
-> 
-> ::
-> kworker/u2:4  4220 [000] 19032.858184: btrfs:btrfs_flush_space: (nil)U: 
-> state=1() flags=4(METADATA) num_bytes=173015040 orig_bytes=173015040 ret=0
-> 
-> (%p does not work in user space, ignore it for now).
-> 
-> sysfs trace is fine.
-> cat ./trace_pipe
-> ---
-> kworker/u2:3-4219  [000] .... 18952.145677: btrfs_flush_space: 
-> f0918b8d-88a6-4e9f-8ca6-02e2fc290380: state=1(FLUSH_DELAYED_ITEMS_NR) 
-> flags=4(METADATA) num_bytes
-> ---
-> 
->   So for BTRFS_COMPRESS.. its either TRADE_DEFINE_ENUM() and enum or 
-> just #define. I am ok either ways.
+Marco Lorenzo Crociani posted on Thu, 07 Sep 2017 16:37:08 +0200 as
+excerpted:
 
-Thanks for the examples, I've updated wiki so we don't forget about it.
-The enums look more convenient, as we'll just copy the names to the
-defining macro, unlike a set of defnies that would need
-__print_symbolic.
+>   This e-mail (including any attachments) is private and confidential,
+> and may be privileged.  It is for the exclusive use of the intended
+> recipient(s).  If you have received this email in error, please inform
+> the sender immediately and then delete this email.  Unless you have been
+> given specific permission to do so, please do not distribute or copy
+> this email or its contents.
 
-Looking at current use of __print_symbolic, the printed strings are
-shortened versions of the macros that have a prefix, this may be
-better suited for the trace output.
+Hmm... That sort of legal notice attached to a message sent to a mailing 
+list?  Kinda defeats the purpose, IMO.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

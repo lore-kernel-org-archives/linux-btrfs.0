@@ -1,68 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp01.belwue.de ([129.143.71.86]:56771 "EHLO smtp01.belwue.de"
+Received: from azure.uno.uk.net ([95.172.254.11]:47304 "EHLO azure.uno.uk.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754719AbdIHIyr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Sep 2017 04:54:47 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id 80E1480B1
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Sep 2017 10:54:46 +0200 (MEST)
-Date: Fri, 8 Sep 2017 10:54:46 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: test if a subvolume is a snapshot?
-Message-ID: <20170908085446.GA7876@rus.uni-stuttgart.de>
+        id S1751654AbdIHLCY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Sep 2017 07:02:24 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:54826)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <postmaster@root.t00.sabi.co.uk>)
+        id 1dqH3F-0008EV-2m
+        for linux-btrfs@vger.kernel.org; Fri, 08 Sep 2017 12:02:21 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dqH39-0005wl-58
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Sep 2017 12:02:15 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+Message-ID: <22962.30901.85878.65754@tree.ty.sabi.co.uk>
+Date: Fri, 8 Sep 2017 12:02:13 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 4.13: No space left with plenty of free space
+ (/home/kernel/COD/linux/fs/btrfs/extent-tree.c:6989
+ __btrfs_free_extent.isra.62+0xc2c/0xdb0)
+In-Reply-To: <7459bb074e417c066b525d832d8006ca@wpkg.org>
+References: <7459bb074e417c066b525d832d8006ca@wpkg.org>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-How can I test if a subvolume is a snapshot?
+[ ... ]
+> [233787.921018] Call Trace:
+> [233787.921031]  ? btrfs_merge_delayed_refs+0x62/0x550 [btrfs]
+> [233787.921039]  __btrfs_run_delayed_refs+0x6f0/0x1380 [btrfs]
+> [233787.921047]  btrfs_run_delayed_refs+0x6b/0x250 [btrfs]
+> [233787.921054]  btrfs_write_dirty_block_groups+0x158/0x390 [btrfs]
+> [233787.921063]  commit_cowonly_roots+0x221/0x2c0 [btrfs]
+> [233787.921071]  btrfs_commit_transaction+0x46e/0x8d0 [btrfs]
+[ ... ]
+> [233787.921191] BTRFS: error (device md2) in 
+> btrfs_run_delayed_refs:3009: errno=-28 No space left
+> [233789.507669] BTRFS warning (device md2): Skipping commit of aborted 
+> transaction.
+> [233789.507672] BTRFS: error (device md2) in cleanup_transaction:1873: 
+> errno=-28 No space left
+[ ... ]
 
-Example:
+So the numbers that matter are:
 
-/test/.snapshot/2017-09-08_1037.single is a snapshot (of /test)
-/test/data is a regular subvolume
+> Data,single: Size:12.84TiB, Used:7.13TiB
+>     /dev/md2       12.84TiB
+> Metadata,DUP: Size:79.00GiB, Used:77.87GiB
+>     /dev/md2      158.00GiB
+> Unallocated:
+>     /dev/md2        3.31TiB
 
-I know this, because I have created them with suitable names :-)
+The metadata allocations is nearly full, so it could be the
+usual story with the two-level allocator that there are not
+unallocated chunks for metadata expansion, but since you have
+3TiB of 'unallocated' space there is no obvious reason why
+allocation of the metadata to do a new root transaction flush
+should abort, so this is about "guessing" which corner case or
+bug applies:
 
-But how can I see/test it?
+* If you are using the 'space_cache' it has a known issue:
+    https://btrfs.wiki.kernel.org/index.php/Gotchas#Free_space_cache
+* Some versions of Btrfs (IIRC around 4.8-4.9) had some other
+  allocator bug.
+* Maybe some previous issue, hw or sw, had damaged internal
+  filesystem structures.
 
-root@fex:~/bin# btrfs subvol show /test/.snapshot/2017-09-08_1037.single
-/test/.snapshot/2017-09-08_1037.single
-        Name:                   2017-09-08_1037.single
-        UUID:                   eff1cebb-b885-6b47-ae69-36a7c3f266eb
-        Parent UUID:            -
-        Received UUID:          -
-        Creation time:          2017-09-08 10:37:04 +0200
-        Subvolume ID:           354
-        Generation:             237
-        Gen at creation:        237
-        Parent ID:              5
-        Top level ID:           5
-        Flags:                  readonly
-        Snapshot(s):
+I also notice that your volume's data free space seems to be
+extremely fragmented, as the large difference here shows
+"Data,single: Size:12.84TiB, Used:7.13TiB".
 
-root@fex:~/bin# btrfs subvol show /test/data
-/test/data
-        Name:                   data
-        UUID:                   b32a5949-dfd6-ef45-8616-34ae4cdf6fb8
-        Parent UUID:            -
-        Received UUID:          -
-        Creation time:          2017-09-06 18:30:33 +0200
-        Subvolume ID:           257
-        Generation:             224
-        Gen at creation:        8
-        Parent ID:              5
-        Top level ID:           5
-        Flags:                  -
-
-root@fex:~/bin# btrfs subvol show /test
-/test is toplevel subvolume
-
--- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20170908085446.GA7876@rus.uni-stuttgart.de>
+Which may mean that it is mounted with 'ssd' and/or has gone a
+long time without a 'balance', and conceivably this can make it
+easier for the free space cache to fail finding space (some
+handwaving here).

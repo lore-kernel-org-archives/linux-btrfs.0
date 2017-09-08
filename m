@@ -1,104 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:35283 "EHLO
-        mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756832AbdIHTvh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2017 15:51:37 -0400
-Received: by mail-lf0-f49.google.com with SMTP id d17so7767074lfe.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Sep 2017 12:51:36 -0700 (PDT)
-Received: from [192.168.0.10] (m37-2-41-92.cust.tele2.se. [37.2.41.92])
-        by smtp.gmail.com with ESMTPSA id l14sm421598lfb.71.2017.09.08.12.51.34
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 08 Sep 2017 12:51:34 -0700 (PDT)
-To: linux-btrfs@vger.kernel.org
-From: A L <crimsoncottage@gmail.com>
-Subject: btrfs check --clear-space-cache v1 fails if not --clear-space-cache
- v2 first
-Message-ID: <67a9a252-22ad-7057-fd91-c8abec0f4df9@gmail.com>
-Date: Fri, 8 Sep 2017 21:51:32 +0200
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:38004 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756832AbdIHT5W (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2017 15:57:22 -0400
+Received: by mail-qt0-f193.google.com with SMTP id k2so2143566qte.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Sep 2017 12:57:21 -0700 (PDT)
+Date: Fri, 8 Sep 2017 15:57:19 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: 4.13: No space left with plenty of free space
+ (/home/kernel/COD/linux/fs/btrfs/extent-tree.c:6989
+ __btrfs_free_extent.isra.62+0xc2c/0xdb0)
+Message-ID: <20170908195718.pxtff7anbvj2kh2g@destiny>
+References: <7459bb074e417c066b525d832d8006ca@wpkg.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <7459bb074e417c066b525d832d8006ca@wpkg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seems to be some inconsistency with btrfs check --clear-space-cache v1. 
-It only worked after clearing v2 space cache. See below result.
+On Fri, Sep 08, 2017 at 01:33:43PM +0900, Tomasz Chmielewski wrote:
+> Just got this one in dmesg with btrfs RAID-1 on top of Linux software
+> RAID-5.
+> 
+> Why does it say "No space left" if we have 9 TB free there?
+> 
 
-Background. Since some time I was running with space_cache mount option. 
-I recently changed to space_cache=v2 and used "clear_cache" mount option 
-to clear out the old v1 cache. From reading this mailings list I found 
-that I should really use btrfs check --clear-space-cache v1 to truly 
-clear the old version space cache.
+We've exhausted the global reserve.  I have a patch that I'm pretty sure fixes
+this problem, would you mind trying
 
-btrfs-progs-4.13
-kernel-4.13
+git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git btrfs-readdir
 
-    # btrfs check --clear-space-cache v1 /dev/sdb1
-    couldn't open RDWR because of unsupported option features (3).
-    ERROR: cannot open file system
+You need to make sure you are on the btrfs-readdir branch, and that you have the
+patch entitled
 
-    # btrfs check /dev/sdb1
-    Checking filesystem on /dev/sdb1
-    UUID: e0ea1dc2-948a-488c-ad46-98236939b373
-    checking extents
-    checking free space tree
-    cache and super generation don't match, space cache will be invalidated
-    checking fs roots
-    checking csums
-    checking root refs
-    found 305286168601 bytes used, no error found
-    total csum bytes: 246501768
-    total tree bytes: 415334400
-    total fs tree bytes: 87130112
-    total extent tree bytes: 45481984
-    btree space waste bytes: 65894664
-    file data blocks allocated: 5691562237952
-      referenced 341901901824
+Btrfs: only check delayed ref usage in should_end_transaction
 
-    # btrfs check --clear-space-cache v1 /dev/sdb1
-    couldn't open RDWR because of unsupported option features (3).
-    ERROR: cannot open file system
+If you still see the problem let me know, I really want to nail this issue down
+and haven't been able to reproduce locally.  Thanks,
 
-    # btrfs check --clear-space-cache v2 /dev/sdb1
-    Checking filesystem on /dev/sdb1
-    UUID: e0ea1dc2-948a-488c-ad46-98236939b373
-    Clear free space cache v2
-    free space cache v2 cleared
-
-    # btrfs check --clear-space-cache v2 /dev/sdb1
-    Checking filesystem on /dev/sdb1
-    UUID: e0ea1dc2-948a-488c-ad46-98236939b373
-    no free space cache v2 to clear
-
-    # btrfs check --clear-space-cache v1 /dev/sdb1
-    Checking filesystem on /dev/sdb1
-    UUID: e0ea1dc2-948a-488c-ad46-98236939b373
-    Clearing free space cache
-    Free space cache cleared
-
-    # btrfs check /dev/sdb1
-    Checking filesystem on /dev/sdb1
-    UUID: e0ea1dc2-948a-488c-ad46-98236939b373
-    checking extents
-    checking free space tree
-    checking fs roots
-    checking csums
-    checking root refs
-    found 305220087844 bytes used, no error found
-    total csum bytes: 246501768
-    total tree bytes: 415236096
-    total fs tree bytes: 87130112
-    total extent tree bytes: 45481984
-    btree space waste bytes: 65905890
-    file data blocks allocated: 5691495915520
-      referenced 341835579392
-
-Now, why do I not get "no free space cache v1 to clear" when running it 
-several times more?
-
-    # btrfs check --clear-space-cache v1 /dev/sdb1
-    Checking filesystem on /dev/sdb1
-    UUID: e0ea1dc2-948a-488c-ad46-98236939b373
-    Clearing free space cache
-
-The exact same happen on my other volumes, both single devices and RAID1.
+Josef

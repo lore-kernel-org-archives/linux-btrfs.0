@@ -1,68 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:54885 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753471AbdIIMUn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Sep 2017 08:20:43 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dqekH-00051Z-6s
-        for linux-btrfs@vger.kernel.org; Sat, 09 Sep 2017 14:20:21 +0200
+Received: from smtp02.belwue.de ([129.143.71.87]:33338 "EHLO smtp02.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753485AbdIIN0Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Sep 2017 09:26:16 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp02.belwue.de (Postfix) with SMTP id C61698A82
+        for <linux-btrfs@vger.kernel.org>; Sat,  9 Sep 2017 15:26:14 +0200 (MEST)
+Date: Sat, 9 Sep 2017 15:26:14 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Please help with exact actions for raid1 hot-swap
-Date: Sat, 9 Sep 2017 12:19:49 +0000 (UTC)
-Message-ID: <pan$2f301$e10816b5$b2720187$72f9315c@cox.net>
-References: <01258ddc-1d34-4cc9-d668-21cbe88ab1d0@rqc.ru>
-        <9D2B6B65-7DE9-4922-82DC-08BF3A3A2E09@rqc.ru>
-        <CAA7pwKMuv69dsXZGXEASN=qarSv3tCYU=-k1sHquL_tm4FU0kw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: netapp-alike snapshots?
+Message-ID: <20170909132614.GA20299@rus.uni-stuttgart.de>
+References: <20170822132208.GD14804@rus.uni-stuttgart.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170822132208.GD14804@rus.uni-stuttgart.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patrik Lundquist posted on Sat, 09 Sep 2017 12:29:08 +0200 as excerpted:
+On Tue 2017-08-22 (15:22), Ulli Horlacher wrote:
+> With Netapp/waffle you have automatic hourly/daily/weekly snapshots.
+> You can find these snapshots in every local directory (readonly).
 
-> On 9 September 2017 at 12:05, Marat Khalili <mkh@rqc.ru> wrote:
->> Forgot to add, I've got a spare empty bay if it can be useful here.
-> 
-> That makes it much easier since you don't have to mount it degraded,
-> with the risks involved.
-> 
-> Add and partition the disk.
-> 
-> # btrfs replace start /dev/sdb7 /dev/sdc(?)7 /mnt/data
-> 
-> Remove the old disk when it is done.
+> I would like to have something similar with btrfs.
+> Is there (where?) such a tool?
 
-I did this with my dozen-plus (but small) btrfs raid1s on ssd partitions 
-several kernel cycles ago.  It went very smoothly. =:^)
+I have found none, so I have implemented it by myself:
 
-(TL;DR can stop there.)
+https://fex.rus.uni-stuttgart.de/snaprotate.html
 
-I had actually been taking advantage of btrfs raid1's checksumming and 
-scrub ability to continue running a failing ssd, with more and more 
-sectors going bad and being replaced from spares, for quite some time 
-after I'd have otherwise replaced it.  Everything of value was backed up, 
-and I was simply doing it for the experience with both btrfs raid1 
-scrubbing and continuing ssd sector failure.  But eventually the scrubs 
-were finding and fixing errors every boot, especially when off for 
-several hours, and further experience was of diminishing value while the 
-hassle factor was building fast, so I attached the spare ssd, partitioned 
-it up, did a final scrub on all the btrfs, and then one btrfs at a time 
-btrfs replaced the devices from the old ssd's partitions to the new one's 
-partitions.  Given that I was already used to running scrubs at every 
-boot, the entirely uneventful replacements were actually somewhat 
-anticlimactic, but that was a good thing! =:^)
+In contrast to Netapp, with snaprotate the local host administrator can
+create a snapshot at any time or by cronjob.
 
-Then more recently I bought a larger/newer pair of ssds (1 TB each, the 
-old ones were quarter TB each) and converted my media partitions and 
-secondary backups, which had still been on reiserfs on spinning rust, to 
-btrfs raid1 on ssd as well, making me all-btrfs on all-ssd now, with 
-everything but /boot and its backups on the other ssds being btrfs raid1, 
-and /boot and its backups being btrfs dup. =:^)
+Example:
+
+root@fex:~# snaprotate single 3 /local/home
+Create a readonly snapshot of '/local/home' in '/local/home/.snapshot/2017-09-09_1518.single'
+Delete subvolume '/local/home/.snapshot/2017-09-09_1255.single'
+
+root@fex:~# snaprotate -l
+/local/home/.snapshot/2017-09-08_0000.daily
+/local/home/.snapshot/2017-09-09_0000.daily
+/local/home/.snapshot/2017-09-09_1331.single
+/local/home/.snapshot/2017-09-09_1332.single
+/local/home/.snapshot/2017-09-09_1400.hourly
+/local/home/.snapshot/2017-09-09_1500.hourly
+/local/home/.snapshot/2017-09-09_1518.single
+
+root@fex:~# crontab -l | grep snaprotate
+0 * * * * /root/bin/snaprotate -q hourly 2 /local/home
+0 0 * * * /root/bin/snaprotate -q daily  3 /local/home
+0 0 * * 1 /root/bin/snaprotate -q weekly 1 /local/home
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20170822132208.GD14804@rus.uni-stuttgart.de>

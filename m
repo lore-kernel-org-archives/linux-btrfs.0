@@ -1,61 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp02.belwue.de ([129.143.71.87]:33338 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753485AbdIIN0Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 9 Sep 2017 09:26:16 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id C61698A82
-        for <linux-btrfs@vger.kernel.org>; Sat,  9 Sep 2017 15:26:14 +0200 (MEST)
-Date: Sat, 9 Sep 2017 15:26:14 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+Received: from magic.merlins.org ([209.81.13.136]:54343 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753485AbdIINgX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Sep 2017 09:36:23 -0400
+Received: from svh-gw.merlins.org ([173.11.111.145]:57422 helo=legolas.merlins.org)
+        by mail1.merlins.org with esmtps
+        (Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.87 #1)
+        id 1dqfvh-0008PZ-Cd
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Sep 2017 06:36:18 -0700
+Received: from merlin by legolas.merlins.org with local (Exim 4.80)
+        (envelope-from <marc@merlins.org>)
+        id 1dqfvg-00024Y-KE
+        for linux-btrfs@vger.kernel.org; Sat, 09 Sep 2017 06:36:12 -0700
+Date: Sat, 9 Sep 2017 06:36:12 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: netapp-alike snapshots?
-Message-ID: <20170909132614.GA20299@rus.uni-stuttgart.de>
+Message-ID: <20170909133612.7iqwr6cbjxzvfny6@merlins.org>
 References: <20170822132208.GD14804@rus.uni-stuttgart.de>
+ <20170909132614.GA20299@rus.uni-stuttgart.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170822132208.GD14804@rus.uni-stuttgart.de>
+In-Reply-To: <20170909132614.GA20299@rus.uni-stuttgart.de>
+Subject: Re: netapp-alike snapshots?
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 2017-08-22 (15:22), Ulli Horlacher wrote:
-> With Netapp/waffle you have automatic hourly/daily/weekly snapshots.
-> You can find these snapshots in every local directory (readonly).
+On Sat, Sep 09, 2017 at 03:26:14PM +0200, Ulli Horlacher wrote:
+> On Tue 2017-08-22 (15:22), Ulli Horlacher wrote:
+> > With Netapp/waffle you have automatic hourly/daily/weekly snapshots.
+> > You can find these snapshots in every local directory (readonly).
+> 
+> > I would like to have something similar with btrfs.
+> > Is there (where?) such a tool?
+> 
+> I have found none, so I have implemented it by myself:
+> 
+> https://fex.rus.uni-stuttgart.de/snaprotate.html
 
-> I would like to have something similar with btrfs.
-> Is there (where?) such a tool?
+Not sure how you looked :)
+https://www.google.com/search?q=btrfs+netapp+snapshot
+http://marc.merlins.org/perso/btrfs/post_2014-03-21_Btrfs-Tips_-How-To-Setup-Netapp-Style-Snapshots.html
 
-I have found none, so I have implemented it by myself:
+Might not be exactly what you wanted, but been using it for 3 years.
 
-https://fex.rus.uni-stuttgart.de/snaprotate.html
-
-In contrast to Netapp, with snaprotate the local host administrator can
-create a snapshot at any time or by cronjob.
-
-Example:
-
-root@fex:~# snaprotate single 3 /local/home
-Create a readonly snapshot of '/local/home' in '/local/home/.snapshot/2017-09-09_1518.single'
-Delete subvolume '/local/home/.snapshot/2017-09-09_1255.single'
-
-root@fex:~# snaprotate -l
-/local/home/.snapshot/2017-09-08_0000.daily
-/local/home/.snapshot/2017-09-09_0000.daily
-/local/home/.snapshot/2017-09-09_1331.single
-/local/home/.snapshot/2017-09-09_1332.single
-/local/home/.snapshot/2017-09-09_1400.hourly
-/local/home/.snapshot/2017-09-09_1500.hourly
-/local/home/.snapshot/2017-09-09_1518.single
-
-root@fex:~# crontab -l | grep snaprotate
-0 * * * * /root/bin/snaprotate -q hourly 2 /local/home
-0 0 * * * /root/bin/snaprotate -q daily  3 /local/home
-0 0 * * 1 /root/bin/snaprotate -q weekly 1 /local/home
-
+Marc
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20170822132208.GD14804@rus.uni-stuttgart.de>
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

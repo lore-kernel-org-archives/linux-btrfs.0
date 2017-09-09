@@ -1,60 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp02.belwue.de ([129.143.71.87]:33816 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753485AbdIINo2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 9 Sep 2017 09:44:28 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id E600B8CB7
-        for <linux-btrfs@vger.kernel.org>; Sat,  9 Sep 2017 15:44:26 +0200 (MEST)
-Date: Sat, 9 Sep 2017 15:44:26 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: netapp-alike snapshots?
-Message-ID: <20170909134426.GB20299@rus.uni-stuttgart.de>
-References: <20170822132208.GD14804@rus.uni-stuttgart.de>
- <20170909132614.GA20299@rus.uni-stuttgart.de>
- <20170909133612.7iqwr6cbjxzvfny6@merlins.org>
+Received: from magic.merlins.org ([209.81.13.136]:58417 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751384AbdIIRog (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Sep 2017 13:44:36 -0400
+Date: Sat, 9 Sep 2017 10:44:26 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Message-ID: <20170909174426.dvifafqeuqy4axpx@merlins.org>
+References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
+ <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
+ <20170905025556.GA6392@merlins.org>
+ <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
+ <20170905144525.rzvncaxil2enxjwe@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170909133612.7iqwr6cbjxzvfny6@merlins.org>
+In-Reply-To: <20170905144525.rzvncaxil2enxjwe@merlins.org>
+Subject: Re: btrfs check --repair now runs in minutes instead of hours?
+ aborting
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat 2017-09-09 (06:36), Marc MERLIN wrote:
+So, should I assume that btrfs progs git has some issue since there is
+no plausible way that a check --repair should be faster than a regular
+check?
 
-> > On Tue 2017-08-22 (15:22), Ulli Horlacher wrote:
-> > > With Netapp/waffle you have automatic hourly/daily/weekly snapshots.
-> > > You can find these snapshots in every local directory (readonly).
+Thanks,
+Marc
+
+On Tue, Sep 05, 2017 at 07:45:25AM -0700, Marc MERLIN wrote:
+> On Tue, Sep 05, 2017 at 04:05:04PM +0800, Qu Wenruo wrote:
+> > > gargamel:~# btrfs fi df /mnt/btrfs_pool1
+> > > Data, single: total.60TiB, used.54TiB
+> > > System, DUP: total2.00MiB, used=1.19MiB
+> > > Metadata, DUP: totalX.00GiB, used.69GiB
 > > 
-> > I have found none, so I have implemented it by myself:
+> > Wait for a minute.
 > > 
-> > https://fex.rus.uni-stuttgart.de/snaprotate.html
+> > Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the format
+> > (again)?
+> > This output format must be changed, at least to 0.69 GiB, or 706 MiB.
+>  
+> Email client problem. I see control characters in what you quoted.
 > 
-> Not sure how you looked :)
-> http://marc.merlins.org/perso/btrfs/post_2014-03-21_Btrfs-Tips_-How-To-Setup-Netapp-Style-Snapshots.html
+> Let's try again
+> gargamel:~# btrfs fi df /mnt/btrfs_pool1
+> Data, single: total=10.66TiB, used=10.60TiB      => 10TB
+> System, DUP: total=64.00MiB, used=1.20MiB        => 1.2MB
+> Metadata, DUP: total=57.50GiB, used=12.76GiB     => 13GB
+> GlobalReserve, single: total=512.00MiB, used=0.00B  => 0
 > 
-> Might not be exactly what you wanted, but been using it for 3 years.
-
-Your tool does not create .snapshot subdirectories in EVERY directory like
-Netapp does.
-Example:
-
-framstag@fex:~: cd ~/Mail/.snapshot/
-framstag@fex:~/Mail/.snapshot: l
-lR-X - 2017-09-09 09:55 2017-09-09_0000.daily -> /local/home/.snapshot/2017-09-09_0000.daily/framstag/Mail
-lR-X - 2017-09-09 14:00 2017-09-09_1400.hourly -> /local/home/.snapshot/2017-09-09_1400.hourly/framstag/Mail
-lR-X - 2017-09-09 15:00 2017-09-09_1500.hourly -> /local/home/.snapshot/2017-09-09_1500.hourly/framstag/Mail
-lR-X - 2017-09-09 15:18 2017-09-09_1518.single -> /local/home/.snapshot/2017-09-09_1518.single/framstag/Mail
-lR-X - 2017-09-09 15:20 2017-09-09_1520.single -> /local/home/.snapshot/2017-09-09_1520.single/framstag/Mail
-lR-X - 2017-09-09 15:22 2017-09-09_1522.single -> /local/home/.snapshot/2017-09-09_1522.single/framstag/Mail
-
-My users (and I) need snapshots in this way.
-
+> > You mean lowmem is actually FASTER than original mode?
+> > That's very surprising.
+>  
+> Correct, unless I add --repair and then original mode is 2x faster than
+> lowmem.
+> 
+> > Is there any special operation done for that btrfs?
+> > Like offline dedupe or tons of reflinks?
+> 
+> In this case, no.
+> Note that btrfs check used to take many hours overnight until I did a
+> git pull of btrfs progs and built the latest from TOT.
+> 
+> > BTW, how many subvolumes do you have in the fs?
+>  
+> gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | wc -l
+> 91
+> 
+> If I remove snapshots for btrfs send and historical 'backups':
+> gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | grep -Ev '(hourly|daily|weekly|rw|ro)' | wc -l
+> 5
+> 
+> > This looks like a bug. My first guess is related to number of
+> > subvolumes/reflinks, but I'm not sure since I don't have many real-world
+> > btrfs.
+> > 
+> > I'll take sometime to look into it.
+> > 
+> > Thanks for the very interesting report,
+> 
+> Thanks for having a look :)
+> 
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20170909133612.7iqwr6cbjxzvfny6@merlins.org>
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

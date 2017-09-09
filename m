@@ -1,52 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60460 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1757173AbdIIAoR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Sep 2017 20:44:17 -0400
-Subject: Re: [GIT PULL] zstd support (lib, btrfs, squashfs)
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
+Received: from orcrist.hmeau.com ([104.223.48.154]:59198 "EHLO
+        deadmen.hmeau.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757209AbdIIBgW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2017 21:36:22 -0400
+Date: Sat, 9 Sep 2017 09:35:59 +0800
+From: Herbert Xu <herbert@gondor.apana.org.au>
+To: Chris Mason <clm@fb.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Herbert Xu <herbert@gondor.apana.org.au>,
         Nick Terrell <terrelln@fb.com>,
-        Phillip Lougher <phillip@squashfs.org.uk>, Sean Purcell <me@seanp.xyz>
-CC: David Sterba <dsterba@suse.cz>
+        Phillip Lougher <phillip@squashfs.org.uk>, Sean Purcell <me@seanp.xyz>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [GIT PULL] zstd support (lib, btrfs, squashfs)
+Message-ID: <20170909013559.GA29188@gondor.apana.org.au>
 References: <de155140-8773-1a78-2dab-1d722ede3dc1@fb.com>
-Message-ID: <c721b754-aee4-d1ac-3fa7-64fd6c7725c1@fb.com>
-Date: Fri, 8 Sep 2017 20:43:52 -0400
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <de155140-8773-1a78-2dab-1d722ede3dc1@fb.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Sep 08, 2017 at 03:33:05PM -0400, Chris Mason wrote:
+>                                                                           
+>  crypto/Kconfig             |    9 +                                            
+>  crypto/Makefile            |    1 +                                            
+>  crypto/testmgr.c           |   10 +                                            
+>  crypto/testmgr.h           |   71 +                                            
+>  crypto/zstd.c              |  265 ++++                                         
 
+Is there anyone going to use zstd through the crypto API? If not
+then I don't see the point in adding it at this point.  Especially
+as the compression API is still in a state of flux.
 
-On 09/08/2017 03:33 PM, Chris Mason wrote:
-> Hi Linus,
-> 
-> Nick Terrell's patch series to add zstd support to the kernel has been
-> floating around for a while.  After talking with Dave Sterba, Herbert and
-> Phillip, we decided to send the whole thing in as one pull request.
-> 
-> I have it in my zstd branch:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git zstd
-> 
-> There's a trivial conflict with the main btrfs pull that Dave Sterba just
-> sent.  His pull deletes BTRFS_COMPRESS_LAST in fs/btrfs/compression.h, and
-> I've put the sample resolution in a branch named zstd-4.14-merge.  My
-> idea was that you'd take our main btrfs pull first and this one second,
-> but the conflicts are small enough it's not a big deal.
-> 
-> zstd is a big win in speed over zlib and in compression ratio over lzo, and
-> the compression team here at FB has gotten great results using it in production.
-> Nick will continue to update the kernel side with new improvements from the
-> open source zstd userland code.
-
-Just to clarify, we've been testing the kernel side of this here at FB, 
-but our zstd use in prod is limited to the application side.
-
--chris
+Thanks,
+-- 
+Email: Herbert Xu <herbert@gondor.apana.org.au>
+Home Page: http://gondor.apana.org.au/~herbert/
+PGP Key: http://gondor.apana.org.au/~herbert/pubkey.txt

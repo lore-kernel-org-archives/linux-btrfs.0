@@ -1,92 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:36240 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:36256 "EHLO
         frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757293AbdIILAa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Sep 2017 07:00:30 -0400
-Received: from hrm by frost.carfax.org.uk with local (Exim 4.80)
-        (envelope-from <hrm@carfax.org.uk>)
-        id 1dqdUz-0007O8-Q5
-        for linux-btrfs@vger.kernel.org; Sat, 09 Sep 2017 11:00:29 +0000
-Date: Sat, 9 Sep 2017 11:00:29 +0000
+        with ESMTP id S1756862AbdIILGf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Sep 2017 07:06:35 -0400
+Date: Sat, 9 Sep 2017 11:06:32 +0000
 From: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, framstag@rus.uni-stuttgart.de
 Subject: Re: generic name for volume and subvolume root?
-Message-ID: <20170909110029.GF23980@carfax.org.uk>
+Message-ID: <20170909110632.GG23980@carfax.org.uk>
 References: <20170909083551.GC22060@rus.uni-stuttgart.de>
+ <48008a58-a82e-d9f7-327e-eeb905e18aa1@gmx.com>
+ <20170909104845.GW12642@rus.uni-stuttgart.de>
+ <9911ae20-6181-5ce2-0374-e601a1034c4a@gmx.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="3yNHWXBV/QO9xKNm"
-In-Reply-To: <20170909083551.GC22060@rus.uni-stuttgart.de>
+        protocol="application/pgp-signature"; boundary="XaUbO9McV5wPQijU"
+In-Reply-To: <9911ae20-6181-5ce2-0374-e601a1034c4a@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---3yNHWXBV/QO9xKNm
-Content-Type: text/plain; charset=us-ascii
+--XaUbO9McV5wPQijU
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Sat, Sep 09, 2017 at 10:35:51AM +0200, Ulli Horlacher wrote:
-> As I am writing some documentation abount creating snapshots:
-> Is there a generic name for both volume and subvolume root?
-> 
-> Example:
-> 
-> root@fex:~# btrfs subvol show /mnt
-> ERROR: not a subvolume: /mnt
-> 
-> root@fex:~# btrfs subvol show /mnt/test
-> /mnt/test is toplevel subvolume
-> 
-> root@fex:~# btrfs subvol show /mnt/test/data
-> /mnt/test/data
->         Name:                   data
->         UUID:                   b32a5949-dfd6-ef45-8616-34ae4cdf6fb8
-> (...)
-> 
-> root@fex:~# btrfs subvol show /mnt/test/data/sw
-> ERROR: not a subvolume: /mnt/test/data/sw
-> 
-> 
-> I can create snapshots of /mnt/test and /mnt/test/data, but not of /mnt
-> and /mnt/test/data/sw
-> 
-> Is there a simple name for directories I can snapshot?
+On Sat, Sep 09, 2017 at 06:58:38PM +0800, Qu Wenruo wrote:
+>=20
+>=20
+> On 2017=E5=B9=B409=E6=9C=8809=E6=97=A5 18:48, Ulli Horlacher wrote:
+> >On Sat 2017-09-09 (18:40), Qu Wenruo wrote:
+> >
+> >>>Is there a generic name for both volume and subvolume root?
+> >>
+> >>Nope, subvolume (including snapshot) is not distinguished by its
+> >>filename/path/directory name.
+> >>
+> >>And you can only do snapshot on subvolume (snapshot is one kind of
+> >>subvolume) boundary.
+> >
+> >So, I can name a btrfs root volume also btrfs subvolume?
+>=20
+> Yes, root volume is also a subvolume, so just call "btrfs root volume"
+> a "subvolume".
 
-   Subvolume. If you can snapshot it, it's a subvolume. Some
-subvolumes are also snapshots. (And all snapshots are subvolumes).
+   I find it's best to avoid the word "root" entirely, as it's got
+several meanings, and it tends to get confusing in conversation.
+Instead, we have:
 
-   The subvolume with ID 5 (or ID 0, which is an alias) is the "top
-level subvolume", and has the unique property that it can't be
-renamed, deleted or replaced, where all other subvolumes can be.
+ - "the top level" (subvolid=3D5)
+ - "/"             (what you see at / in your running system)
+ - "<top-level>/@" or similar names
+                   (the subvolume that's mounted at /)
+
+> >I am talking about documentation, not coding!
+> >
+> >I just want yo use the correct terms.
+>=20
+> If you're referring to the term, I think subvolume is good enough.
+> Which represents your original term, "directories one can snapshot".
+>=20
+>=20
+> For the whole btrfs "volume", I would just call it "filesystem" to
+> avoid the name "volume" or "subvolume" at all.
+
+   Yes, it's a filesystem. (Although that does occasionally cause
+confusion between "the conceptual filesystem implemented by btrfs.ko"
+and "the concrete filesystem stored on /dev/sda1", but it's generally
+far less confusing than the overloading of "root").
 
    Hugo.
 
--- 
+--=20
 Hugo Mills             | Well, you don't get to be a kernel hacker simply by
 hugo@... carfax.org.uk | looking good in Speedos.
 http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                         Rusty Russell
+PGP: E2AB1DE4          |                                         Rusty Russ=
+ell
 
---3yNHWXBV/QO9xKNm
+--XaUbO9McV5wPQijU
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJZs8nNAAoJEFheFHXiqx3kYMAP/2epPkkbbCc89PZXZHKM//iJ
-8MlEVvOGaX7nh1V3Ag4K+JQWBdG3yMjq4Y7shsRFI3Soz9EuIS35z3LZwfg0uPIu
-SySO0jjUjiYTR5P0B3esNkMbH01L08+BGcAUF1ffxMu1+ATxhe8SXUCx2BSgYd2S
-c6XEVNObd1TNrf26LbckyXgf8cCMJQMC0INM/x8joVHvDzt4i65DDpbojVBk0Je5
-9Ux09hMChrea1KvYwPWG0zyUpPFIgUMa2gh7po1cZd2VIx1kYZuYvk4/Q7elFOLo
-t7rZrvfaQ6r8JiG5eVu4SiikX38twZ4JS/UxeGz6p32L3vpk7ppLWen6t3pKIZDp
-6kFesxNch+b/q1sIVsPSFj9xpfUqmyRZFYERmW+rTgIcZZvRl44mV81qONZ9rcEB
-7czu1lKY+4RwgFVzK1BfG8KKS4LgPRbP54dp9c1n6wAYRoAlL6iXgno4p4gfk7hP
-SzxTimskorkcu1rSd9ggyULfiDdMpkWNzH8sjl3AIM0Q0QV/VNmnIgam6VBOtMYD
-eMYM9ua7uhI+DlBptbu7ONRVCtXUH3D45Q2bj/6Wa3bhZXRT2NfvNNjdoUdufF+w
-WbWfVzGDxjjaw0R933IyKfGHligjH4Q8AhKqHQZRyz1rkxB8e3s4Z++xD41zDmco
-oqQPW4M9RIZP0nDdagEc
-=e10i
+iQIcBAEBAgAGBQJZs8s4AAoJEFheFHXiqx3kUn8P/RPkfl+P5/SxX9zLtZ1Corjj
+ZEV1zKmVbY8qdniQrYtoXXieUIr/NnZFfBr+DyVQSllR6FKzxWkeycQ8b9198hDM
+d0brQRn3Y3XCUUfP6BkNnR8+5rm8DrrEccCT6a4r/GRBNkoWmpF3QzXO3pLZfmkH
+qMUrvthBR4FPT3ROuhnDRkPJpvuPGFPFvxbGRbyWW/6g/HVPlQ4lIGKtdgQiGWhU
+UgpTADg/j6vP9Wc3AnNARLPN2J2B0o6IIYMRuRx3sjkCeXaJX4zXYkvzYORdF3Gn
+P199v0/KsAZs1wXpCTt2Gq58KezZa5CYb0R5Cr7OgMhI2XF1yvujzkT8rUDYQgAQ
+s0F4dbf6ej6gKD4unGNJQXwjkB0ioSxqOPZ+f9KCaSsd9KMCBc2Aq15aYwrCmNhC
+q5KVs8IZACFBYJkdvaCkc2iSBJADN820SD+yB6p+hql6PuX15ZnafNdrm+W7n8EV
+BTJyO/YPMylBUVezoeXwjbwlAOXjQdUC5MEt8clqMMAMe9ruB0d5oBshH0+fxNXt
+q+2gMne1tSXf2nCd7TwJkZwioFILS/x5h6m5q4g0u5lPsUOO6Sc46W70242TQQr5
+MYPVkqr3q+xspFcYoibudlKWYrDDKKa0+vLnlVzYgD8CqZDWaLLM0TD73Ih3QRtD
+VnH9hOCfmlFwWXWgthp2
+=Tr/v
 -----END PGP SIGNATURE-----
 
---3yNHWXBV/QO9xKNm--
+--XaUbO9McV5wPQijU--

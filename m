@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f194.google.com ([209.85.220.194]:34252 "EHLO
-        mail-qk0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752578AbdI2Tof (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Sep 2017 15:44:35 -0400
-Received: by mail-qk0-f194.google.com with SMTP id d70so412330qkc.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Sep 2017 12:44:35 -0700 (PDT)
-From: Josef Bacik <josef@toxicpanda.com>
-To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 19/21] btrfs: don't call btrfs_start_delalloc_roots in flushoncommit
-Date: Fri, 29 Sep 2017 15:44:03 -0400
-Message-Id: <1506714245-23072-20-git-send-email-jbacik@fb.com>
-In-Reply-To: <1506714245-23072-1-git-send-email-jbacik@fb.com>
-References: <1506714245-23072-1-git-send-email-jbacik@fb.com>
+Received: from smtp02.belwue.de ([129.143.71.87]:55168 "EHLO smtp02.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1757412AbdIIIfx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Sep 2017 04:35:53 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp02.belwue.de (Postfix) with SMTP id B7E0588EB
+        for <linux-btrfs@vger.kernel.org>; Sat,  9 Sep 2017 10:35:51 +0200 (MEST)
+Date: Sat, 9 Sep 2017 10:35:51 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: generic name for volume and subvolume root?
+Message-ID: <20170909083551.GC22060@rus.uni-stuttgart.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We're holding the sb_start_intwrite lock at this point, and doing async
-filemap_flush of the inodes will result in a deadlock if we freeze the
-fs during this operation.  This is because we could do a
-btrfs_join_transaction() in the thread we are waiting on which would
-block at sb_start_intwrite, and thus deadlock.  Using
-writeback_inodes_sb() side steps the problem by not introducing all of
-these extra locking dependencies.
+As I am writing some documentation abount creating snapshots:
+Is there a generic name for both volume and subvolume root?
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/transaction.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Example:
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 68c3e1c04bca..9fed8c67b6e8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1917,7 +1917,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
- static inline int btrfs_start_delalloc_flush(struct btrfs_fs_info *fs_info)
- {
- 	if (btrfs_test_opt(fs_info, FLUSHONCOMMIT))
--		return btrfs_start_delalloc_roots(fs_info, 1, -1);
-+		writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
- 	return 0;
- }
- 
+root@fex:~# btrfs subvol show /mnt
+ERROR: not a subvolume: /mnt
+
+root@fex:~# btrfs subvol show /mnt/test
+/mnt/test is toplevel subvolume
+
+root@fex:~# btrfs subvol show /mnt/test/data
+/mnt/test/data
+        Name:                   data
+        UUID:                   b32a5949-dfd6-ef45-8616-34ae4cdf6fb8
+(...)
+
+root@fex:~# btrfs subvol show /mnt/test/data/sw
+ERROR: not a subvolume: /mnt/test/data/sw
+
+
+I can create snapshots of /mnt/test and /mnt/test/data, but not of /mnt
+and /mnt/test/data/sw
+
+Is there a simple name for directories I can snapshot?
+
+
 -- 
-2.7.4
-
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20170909083551.GC22060@rus.uni-stuttgart.de>

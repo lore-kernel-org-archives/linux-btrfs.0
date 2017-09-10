@@ -1,54 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:48707 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751571AbdIJNSn (ORCPT
+Received: from mail-pf0-f178.google.com ([209.85.192.178]:34474 "EHLO
+        mail-pf0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751551AbdIJNqY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Sep 2017 09:18:43 -0400
-Date: Sun, 10 Sep 2017 06:18:32 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Message-ID: <20170910131832.kgogo7y62td6l7tb@merlins.org>
-References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
- <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
- <20170905025556.GA6392@merlins.org>
- <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
- <20170905144525.rzvncaxil2enxjwe@merlins.org>
- <20170909174426.dvifafqeuqy4axpx@merlins.org>
- <b2eb3d47-e30a-d938-c879-2aaec38e749a@gmx.com>
+        Sun, 10 Sep 2017 09:46:24 -0400
+Received: by mail-pf0-f178.google.com with SMTP id e1so10571713pfk.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Sep 2017 06:46:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <b2eb3d47-e30a-d938-c879-2aaec38e749a@gmx.com>
-Subject: Re: btrfs check --repair now runs in minutes instead of hours?
- aborting
+From: FLJ <feci2048@gmail.com>
+Date: Sun, 10 Sep 2017 15:45:42 +0200
+Message-ID: <CAOsOv4morDsVyrWEitL8L+7mXjS+0mXXsd9213Y8cdR44qrLYg@mail.gmail.com>
+Subject: Help me understand what is going on with my RAID1 FS
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 10, 2017 at 02:01:58PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2017年09月10日 01:44, Marc MERLIN wrote:
-> > So, should I assume that btrfs progs git has some issue since there is
-> > no plausible way that a check --repair should be faster than a regular
-> > check?
-> 
-> Yes, the assumption that repair should be no faster than RO check is
-> correct.
-> Especially for clean fs, repair should just behave the same as RO check.
-> 
-> And I'll first submit a patch (or patches) to output the consumed time for
-> each tree, so we could have a clue what is going wrong.
-> (Digging the code is just a little too boring for me)
+Hello all,
 
-Cool. Let me know when I should sync and re-try.
-In the meantime, though, my check --repair went back to 170mn after
-triggering an FS bug for Josef, so it seems back to normal.
+I have a BTRFS RAID1 volume running for the past year. I avoided all
+pitfalls known to me that would mess up this volume. I never
+experimented with quotas, no-COW, snapshots, defrag, nothing really.
+The volume is a RAID1 from day 1 and is working reliably until now.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Until yesterday it consisted of two 3 TB drives, something along the lines:
+
+Label: 'BigVault'  uuid: a37ad5f5-a21b-41c7-970b-13b6c4db33db
+        Total devices 2 FS bytes used 2.47TiB
+        devid    1 size 2.73TiB used 2.47TiB path /dev/sdb
+        devid    2 size 2.73TiB used 2.47TiB path /dev/sdc
+
+Yesterday I've added a new drive to the FS and did a full rebalance
+(without filters) over night, which went through without any issues.
+
+Now I have:
+ Label: 'BigVault'  uuid: a37ad5f5-a21b-41c7-970b-13b6c4db33db
+        Total devices 3 FS bytes used 2.47TiB
+        devid    1 size 2.73TiB used 1.24TiB path /dev/sdb
+        devid    2 size 2.73TiB used 1.24TiB path /dev/sdc
+        devid    3 size 7.28TiB used 2.48TiB path /dev/sda
+
+# btrfs fi df /mnt/BigVault/
+Data, RAID1: total=2.47TiB, used=2.47TiB
+System, RAID1: total=32.00MiB, used=384.00KiB
+Metadata, RAID1: total=4.00GiB, used=2.74GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+But still df -h is giving me:
+Filesystem           Size  Used Avail Use% Mounted on
+/dev/sdb             6.4T  2.5T  1.5T  63% /mnt/BigVault
+
+Although I've heard and read about the difficulty in reporting free
+space due to the flexibility of BTRFS, snapshots and subvolumes, etc.,
+but I only have a single volume, no subvolumes, no snapshots, no
+quotas and both data and metadata are RAID1.
+
+My expectation would've been that in case of BigVault Size == Used + Avail.
+
+Actually based on http://carfax.org.uk/btrfs-usage/index.html I
+would've expected 6 TB of usable space. Here I get 6.4 which is odd,
+but that only 1.5 TB is available is even stranger.
+
+Could anyone explain what I did wrong or why my expectations are wrong?
+
+Thank you in advance

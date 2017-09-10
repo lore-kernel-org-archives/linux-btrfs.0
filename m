@@ -1,114 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:55514 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750853AbdIJGCU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Sep 2017 02:02:20 -0400
-Subject: Re: btrfs check --repair now runs in minutes instead of hours?
- aborting
-To: Marc MERLIN <marc@merlins.org>
-Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
- <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
- <20170905025556.GA6392@merlins.org>
- <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
- <20170905144525.rzvncaxil2enxjwe@merlins.org>
- <20170909174426.dvifafqeuqy4axpx@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <b2eb3d47-e30a-d938-c879-2aaec38e749a@gmx.com>
-Date: Sun, 10 Sep 2017 14:01:58 +0800
+Received: from smtp105.iad3a.emailsrvr.com ([173.203.187.105]:35915 "EHLO
+        smtp105.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750943AbdIJGeA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Sep 2017 02:34:00 -0400
+Date: Sun, 10 Sep 2017 09:33:52 +0300
+In-Reply-To: <CAA7pwKMuv69dsXZGXEASN=qarSv3tCYU=-k1sHquL_tm4FU0kw@mail.gmail.com>
+References: <01258ddc-1d34-4cc9-d668-21cbe88ab1d0@rqc.ru> <9D2B6B65-7DE9-4922-82DC-08BF3A3A2E09@rqc.ru> <CAA7pwKMuv69dsXZGXEASN=qarSv3tCYU=-k1sHquL_tm4FU0kw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20170909174426.dvifafqeuqy4axpx@merlins.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain;
+ charset=utf-8
+Subject: Re: Please help with exact actions for raid1 hot-swap
+To: Patrik Lundquist <patrik.lundquist@gmail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <BB503B0C-5A1A-4ADE-9EDA-B07D9C6DA138@rqc.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+It doesn't need replaced disk to be readable, right? Then what prevents same procedure to work without a spare bay?
+-- 
 
+With Best Regards,
+Marat Khalili
 
-On 2017年09月10日 01:44, Marc MERLIN wrote:
-> So, should I assume that btrfs progs git has some issue since there is
-> no plausible way that a check --repair should be faster than a regular
-> check?
-
-Yes, the assumption that repair should be no faster than RO check is 
-correct.
-Especially for clean fs, repair should just behave the same as RO check.
-
-And I'll first submit a patch (or patches) to output the consumed time 
-for each tree, so we could have a clue what is going wrong.
-(Digging the code is just a little too boring for me)
-
-Thanks,
-Qu
-
-> 
-> Thanks,
-> Marc
-> 
-> On Tue, Sep 05, 2017 at 07:45:25AM -0700, Marc MERLIN wrote:
->> On Tue, Sep 05, 2017 at 04:05:04PM +0800, Qu Wenruo wrote:
->>>> gargamel:~# btrfs fi df /mnt/btrfs_pool1
->>>> Data, single: total.60TiB, used.54TiB
->>>> System, DUP: total2.00MiB, used=1.19MiB
->>>> Metadata, DUP: totalX.00GiB, used.69GiB
->>>
->>> Wait for a minute.
->>>
->>> Is that .69GiB means 706 MiB? Or my email client/GMX screwed up the format
->>> (again)?
->>> This output format must be changed, at least to 0.69 GiB, or 706 MiB.
->>   
->> Email client problem. I see control characters in what you quoted.
->>
->> Let's try again
->> gargamel:~# btrfs fi df /mnt/btrfs_pool1
->> Data, single: total=10.66TiB, used=10.60TiB      => 10TB
->> System, DUP: total=64.00MiB, used=1.20MiB        => 1.2MB
->> Metadata, DUP: total=57.50GiB, used=12.76GiB     => 13GB
->> GlobalReserve, single: total=512.00MiB, used=0.00B  => 0
->>
->>> You mean lowmem is actually FASTER than original mode?
->>> That's very surprising.
->>   
->> Correct, unless I add --repair and then original mode is 2x faster than
->> lowmem.
->>
->>> Is there any special operation done for that btrfs?
->>> Like offline dedupe or tons of reflinks?
->>
->> In this case, no.
->> Note that btrfs check used to take many hours overnight until I did a
->> git pull of btrfs progs and built the latest from TOT.
->>
->>> BTW, how many subvolumes do you have in the fs?
->>   
->> gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | wc -l
->> 91
->>
->> If I remove snapshots for btrfs send and historical 'backups':
->> gargamel:/mnt/btrfs_pool1# btrfs subvolume list . | grep -Ev '(hourly|daily|weekly|rw|ro)' | wc -l
->> 5
->>
->>> This looks like a bug. My first guess is related to number of
->>> subvolumes/reflinks, but I'm not sure since I don't have many real-world
->>> btrfs.
->>>
->>> I'll take sometime to look into it.
->>>
->>> Thanks for the very interesting report,
->>
->> Thanks for having a look :)
->>
->> Marc
->> -- 
->> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
->> Microsoft is to operating systems ....
->>                                        .... what McDonalds is to gourmet cooking
->> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+On September 9, 2017 1:29:08 PM GMT+03:00, Patrik Lundquist <patrik.lundquist@gmail.com> wrote:
+>On 9 September 2017 at 12:05, Marat Khalili <mkh@rqc.ru> wrote:
+>> Forgot to add, I've got a spare empty bay if it can be useful here.
+>
+>That makes it much easier since you don't have to mount it degraded,
+>with the risks involved.
+>
+>Add and partition the disk.
+>
+># btrfs replace start /dev/sdb7 /dev/sdc(?)7 /mnt/data
+>
+>Remove the old disk when it is done.
+>
 >> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>
+>> With Best Regards,
+>> Marat Khalili
+>>
+>> On September 9, 2017 10:46:10 AM GMT+03:00, Marat Khalili
+><mkh@rqc.ru> wrote:
+>>>Dear list,
+>>>
+>>>I'm going to replace one hard drive (partition actually) of a btrfs
+>>>raid1. Can you please spell exactly what I need to do in order to get
+>>>my
+>>>filesystem working as RAID1 again after replacement, exactly as it
+>was
+>>>before? I saw some bad examples of drive replacement in this list so
+>I
+>>>afraid to just follow random instructions on wiki, and putting this
+>>>system out of action even temporarily would be very inconvenient.
+>>>
+>>>For this filesystem:
+>>>
+>>>> $ sudo btrfs fi show /dev/sdb7
+>>>> Label: 'data'  uuid: 37d3313a-e2ad-4b7f-98fc-a01d815952e0
+>>>>     Total devices 2 FS bytes used 106.23GiB
+>>>>     devid    1 size 2.71TiB used 126.01GiB path /dev/sda7
+>>>>     devid    2 size 2.71TiB used 126.01GiB path /dev/sdb7
+>>>> $ grep /mnt/data /proc/mounts
+>>>> /dev/sda7 /mnt/data btrfs
+>>>> rw,noatime,space_cache,autodefrag,subvolid=5,subvol=/ 0 0
+>>>> $ sudo btrfs fi df /mnt/data
+>>>> Data, RAID1: total=123.00GiB, used=104.57GiB
+>>>> System, RAID1: total=8.00MiB, used=48.00KiB
+>>>> Metadata, RAID1: total=3.00GiB, used=1.67GiB
+>>>> GlobalReserve, single: total=512.00MiB, used=0.00B
+>>>> $ uname -a
+>>>> Linux host 4.4.0-93-generic #116-Ubuntu SMP Fri Aug 11 21:17:51 UTC
+>>>> 2017 x86_64 x86_64 x86_64 GNU/Linux
+>>>
+>>>I've got this in dmesg:
+>>>
+>>>> [Sep 8 20:31] ata6.00: exception Emask 0x0 SAct 0x7ecaa5ef SErr 0x0
+>>>> action 0x0
+>>>> [  +0.000051] ata6.00: irq_stat 0x40000008
+>>>> [  +0.000029] ata6.00: failed command: READ FPDMA QUEUED
+>>>> [  +0.000038] ata6.00: cmd 60/70:18:50:6c:f3/00:00:79:00:00/40 tag
+>3
+>>>> ncq 57344 in
+>>>>                        res 41/40:00:68:6c:f3/00:00:79:00:00/40
+>Emask
+>>>> 0x409 (media error) <F>
+>>>> [  +0.000094] ata6.00: status: { DRDY ERR }
+>>>> [  +0.000026] ata6.00: error: { UNC }
+>>>> [  +0.001195] ata6.00: configured for UDMA/133
+>>>> [  +0.000030] sd 6:0:0:0: [sdb] tag#3 FAILED Result:
+>hostbyte=DID_OK
+>>>> driverbyte=DRIVER_SENSE
+>>>> [  +0.000005] sd 6:0:0:0: [sdb] tag#3 Sense Key : Medium Error
+>>>> [current] [descriptor]
+>>>> [  +0.000004] sd 6:0:0:0: [sdb] tag#3 Add. Sense: Unrecovered read
+>>>> error - auto reallocate failed
+>>>> [  +0.000005] sd 6:0:0:0: [sdb] tag#3 CDB: Read(16) 88 00 00 00 00
+>00
+>>>
+>>>> 79 f3 6c 50 00 00 00 70 00 00
+>>>> [  +0.000003] blk_update_request: I/O error, dev sdb, sector
+>>>2045996136
+>>>> [  +0.000047] BTRFS error (device sda7): bdev /dev/sdb7 errs: wr 0,
+>>>rd
+>>>> 1, flush 0, corrupt 0, gen 0
+>>>> [  +0.000062] BTRFS error (device sda7): bdev /dev/sdb7 errs: wr 0,
+>>>rd
+>>>> 2, flush 0, corrupt 0, gen 0
+>>>> [  +0.000077] ata6: EH complete
+>>>
+>>>There's still 1 in Current_Pending_Sector line of smartctl output as
+>of
+>>>
+>>>now, so it probably won't heal by itself.
+>>>
+>>>--
+>>>
+>>>With Best Regards,
+>>>Marat Khalili
+>>>--
+>>>To unsubscribe from this list: send the line "unsubscribe
+>linux-btrfs"
+>>>in
+>>>the body of a message to majordomo@vger.kernel.org
+>>>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe
+>linux-btrfs" in
 >> the body of a message to majordomo@vger.kernel.org
 >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html

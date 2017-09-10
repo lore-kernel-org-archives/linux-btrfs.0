@@ -1,138 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp105.iad3a.emailsrvr.com ([173.203.187.105]:35915 "EHLO
-        smtp105.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750943AbdIJGeA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Sep 2017 02:34:00 -0400
-Date: Sun, 10 Sep 2017 09:33:52 +0300
-In-Reply-To: <CAA7pwKMuv69dsXZGXEASN=qarSv3tCYU=-k1sHquL_tm4FU0kw@mail.gmail.com>
-References: <01258ddc-1d34-4cc9-d668-21cbe88ab1d0@rqc.ru> <9D2B6B65-7DE9-4922-82DC-08BF3A3A2E09@rqc.ru> <CAA7pwKMuv69dsXZGXEASN=qarSv3tCYU=-k1sHquL_tm4FU0kw@mail.gmail.com>
+Received: from mout.gmx.net ([212.227.17.22]:54922 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750994AbdIJGmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Sep 2017 02:42:01 -0400
+Subject: Re: Regarding handling of file renames in Btrfs
+To: Rohan Kadekodi <kadekodirohan@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: Vijaychidambaram Velayudhan Pillai <vijay@cs.utexas.edu>,
+        Jayashree Mohan <jayashree2912@gmail.com>
+References: <CADb0YN=G1MT=VwLcfbbrnppeXRKe3Zi4EsmwSs+xw89wR9rb4A@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <571bed07-1525-0115-358c-23d98104c907@gmx.com>
+Date: Sun, 10 Sep 2017 14:41:40 +0800
 MIME-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8
-Subject: Re: Please help with exact actions for raid1 hot-swap
-To: Patrik Lundquist <patrik.lundquist@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <BB503B0C-5A1A-4ADE-9EDA-B07D9C6DA138@rqc.ru>
+In-Reply-To: <CADb0YN=G1MT=VwLcfbbrnppeXRKe3Zi4EsmwSs+xw89wR9rb4A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It doesn't need replaced disk to be readable, right? Then what prevents same procedure to work without a spare bay?
--- 
 
-With Best Regards,
-Marat Khalili
 
-On September 9, 2017 1:29:08 PM GMT+03:00, Patrik Lundquist <patrik.lundquist@gmail.com> wrote:
->On 9 September 2017 at 12:05, Marat Khalili <mkh@rqc.ru> wrote:
->> Forgot to add, I've got a spare empty bay if it can be useful here.
->
->That makes it much easier since you don't have to mount it degraded,
->with the risks involved.
->
->Add and partition the disk.
->
-># btrfs replace start /dev/sdb7 /dev/sdc(?)7 /mnt/data
->
->Remove the old disk when it is done.
->
->> --
->>
->> With Best Regards,
->> Marat Khalili
->>
->> On September 9, 2017 10:46:10 AM GMT+03:00, Marat Khalili
-><mkh@rqc.ru> wrote:
->>>Dear list,
->>>
->>>I'm going to replace one hard drive (partition actually) of a btrfs
->>>raid1. Can you please spell exactly what I need to do in order to get
->>>my
->>>filesystem working as RAID1 again after replacement, exactly as it
->was
->>>before? I saw some bad examples of drive replacement in this list so
->I
->>>afraid to just follow random instructions on wiki, and putting this
->>>system out of action even temporarily would be very inconvenient.
->>>
->>>For this filesystem:
->>>
->>>> $ sudo btrfs fi show /dev/sdb7
->>>> Label: 'data'  uuid: 37d3313a-e2ad-4b7f-98fc-a01d815952e0
->>>>     Total devices 2 FS bytes used 106.23GiB
->>>>     devid    1 size 2.71TiB used 126.01GiB path /dev/sda7
->>>>     devid    2 size 2.71TiB used 126.01GiB path /dev/sdb7
->>>> $ grep /mnt/data /proc/mounts
->>>> /dev/sda7 /mnt/data btrfs
->>>> rw,noatime,space_cache,autodefrag,subvolid=5,subvol=/ 0 0
->>>> $ sudo btrfs fi df /mnt/data
->>>> Data, RAID1: total=123.00GiB, used=104.57GiB
->>>> System, RAID1: total=8.00MiB, used=48.00KiB
->>>> Metadata, RAID1: total=3.00GiB, used=1.67GiB
->>>> GlobalReserve, single: total=512.00MiB, used=0.00B
->>>> $ uname -a
->>>> Linux host 4.4.0-93-generic #116-Ubuntu SMP Fri Aug 11 21:17:51 UTC
->>>> 2017 x86_64 x86_64 x86_64 GNU/Linux
->>>
->>>I've got this in dmesg:
->>>
->>>> [Sep 8 20:31] ata6.00: exception Emask 0x0 SAct 0x7ecaa5ef SErr 0x0
->>>> action 0x0
->>>> [  +0.000051] ata6.00: irq_stat 0x40000008
->>>> [  +0.000029] ata6.00: failed command: READ FPDMA QUEUED
->>>> [  +0.000038] ata6.00: cmd 60/70:18:50:6c:f3/00:00:79:00:00/40 tag
->3
->>>> ncq 57344 in
->>>>                        res 41/40:00:68:6c:f3/00:00:79:00:00/40
->Emask
->>>> 0x409 (media error) <F>
->>>> [  +0.000094] ata6.00: status: { DRDY ERR }
->>>> [  +0.000026] ata6.00: error: { UNC }
->>>> [  +0.001195] ata6.00: configured for UDMA/133
->>>> [  +0.000030] sd 6:0:0:0: [sdb] tag#3 FAILED Result:
->hostbyte=DID_OK
->>>> driverbyte=DRIVER_SENSE
->>>> [  +0.000005] sd 6:0:0:0: [sdb] tag#3 Sense Key : Medium Error
->>>> [current] [descriptor]
->>>> [  +0.000004] sd 6:0:0:0: [sdb] tag#3 Add. Sense: Unrecovered read
->>>> error - auto reallocate failed
->>>> [  +0.000005] sd 6:0:0:0: [sdb] tag#3 CDB: Read(16) 88 00 00 00 00
->00
->>>
->>>> 79 f3 6c 50 00 00 00 70 00 00
->>>> [  +0.000003] blk_update_request: I/O error, dev sdb, sector
->>>2045996136
->>>> [  +0.000047] BTRFS error (device sda7): bdev /dev/sdb7 errs: wr 0,
->>>rd
->>>> 1, flush 0, corrupt 0, gen 0
->>>> [  +0.000062] BTRFS error (device sda7): bdev /dev/sdb7 errs: wr 0,
->>>rd
->>>> 2, flush 0, corrupt 0, gen 0
->>>> [  +0.000077] ata6: EH complete
->>>
->>>There's still 1 in Current_Pending_Sector line of smartctl output as
->of
->>>
->>>now, so it probably won't heal by itself.
->>>
->>>--
->>>
->>>With Best Regards,
->>>Marat Khalili
->>>--
->>>To unsubscribe from this list: send the line "unsubscribe
->linux-btrfs"
->>>in
->>>the body of a message to majordomo@vger.kernel.org
->>>More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> --
->> To unsubscribe from this list: send the line "unsubscribe
->linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On 2017年09月10日 07:50, Rohan Kadekodi wrote:
+> Hello,
+> 
+> I was trying to understand how file renames are handled in Btrfs. I
+> read the code documentation, but had a problem understanding a few
+> things.
+> 
+> During a file rename, btrfs_commit_transaction() is called which is
+> because Btrfs has to commit the whole FS before storing the
+> information related to the new renamed file. It has to commit the FS
+> because a rename first does an unlink, which is not recorded in the
+> btrfs_rename() transaction and so is not logged in the log tree. Is my
+> understanding correct? If yes, my questions are as follows:
+
+Not familiar with rename kernel code, so not much help for rename opeartion.
+
+> 
+> 1. What does committing the whole FS mean?
+
+Committing the whole fs means a lot of things, but generally speaking, 
+it makes that the on-disk data is inconsistent with each other.
+
+For obvious part, it writes modified fs/subvolume trees to disk (with 
+handling of tree operations so no half modified trees).
+
+Also other trees like extent tree (very hot since every CoW will update 
+it, and the most complicated one), csum tree if modified.
+
+After transaction is committed, the on-disk btrfs will represent the 
+states when commit trans is called, and every tree should match each other.
+
+Despite of this, after a transaction is committed, generation of the fs 
+get increased and modified tree blocks will have the same generation number.
+
+> Blktrace shows that there
+> are 2       256KB writes, which are essentially writes to the data of
+> the root directory of the file system (which I found out through
+> btrfs-debug-tree).
+
+I'd say you didn't check btrfs-debug-tree output carefully enough.
+I strongly recommend to do vimdiff to get what tree is modified.
+
+At least the following trees are modified:
+
+1) fs/subvolume tree
+    Rename modified the DIR_INDEX/DIR_ITEM/INODE_REF at least, and
+    updated inode time.
+    So fs/subvolume tree must be CoWed.
+
+2) extent tree
+    CoW of above metadata operation will definitely cause extent
+    allocation and freeing, extent tree will also get updated.
+
+3) root tree
+    Both extent tree and fs/subvolume tree modified, their root bytenr
+    needs to be updated and root tree must be updated.
+
+And finally superblocks.
+
+I just verified the behavior with empty btrfs created on a 1G file, only 
+one file to do the rename.
+
+In that case (with 4K sectorsize and 16K nodesize), the total IO should 
+be (3 * 16K) * 2 + 4K * 2 = 104K.
+
+"3" = number of tree blocks get modified
+"16K" = nodesize
+1st "*2" = DUP profile for metadata
+"4K" = superblock size
+2nd "*2" = 2 superblocks for 1G fs.
+
+If your extent/root/fs trees have higher level, then more tree blocks 
+needs to be updated.
+And if your fs is very large, you may have 3 superblocks.
+
+> Is this equivalent to doing a shell sync, as the
+> same block groups are written during a shell sync too?
+
+For shell "sync" the difference is that, "sync" will write all dirty 
+data pages to disk, and then commit transaction.
+While only calling btrfs_commit_transacation() doesn't trigger dirty 
+page writeback.
+
+So there is a difference.
+
+And furthermore, if there is nothing to modified at all, sync will just 
+skip the fs, so btrfs_commit_transaction() is not ensured if you call 
+"sync".
+
+> Also, does it
+> imply that all the metadata held by the log tree is now checkpointed
+> to the respective trees?
+
+Log tree part is a little tricky, as the log tree is not really a 
+journal for btrfs.
+Btrfs uses CoW for metadata so in theory (and in fact) btrfs doesn't 
+need any journal.
+
+Log tree is mainly used for enhancing btrfs fsync performance.
+You can totally disable log tree by notreelog mount option and btrfs 
+will behave just fine.
+
+And furthermore, I'm not very familiar with log tree, I need to verify 
+the code to see if log tree is used in rename, so I can't say much right 
+now.
+
+But to make things easy, I strongly recommend to ignore log tree for now.
+
+> 
+> 2. Why are there 2 complete writes to the data held by the root
+> directory and not just 1? These writes are 256KB each, which is the
+> size of the extent allocated to the root directory
+
+Check my first calculation and verify the debug-tree output before and 
+after rename.
+
+I think there is some extra factors affecting the number, from the tree 
+height to your fs tree organization.
+
+> 
+> 3. Why are the writes being done to the root directory of the file
+> system / subvolume and not just the parent directory where the unlink
+> happened?
+
+That's why I strongly recommend to understand btrfs on-disk format first.
+A lot of things can be answered after understanding the on-disk layout, 
+without asking any other guys.
+
+The short answer is, btrfs puts all its child dir/inode info into one 
+tree for one subvolume.
+(And the term "root directory" here is a little confusing, are you 
+talking about the fs tree root or the root tree?)
+
+Not the common one tree for one inode layout.
+
+So if you rename one file in a subvolume, the subvolume tree get CoWed, 
+which means from the leaf containing the key/item you want to modify, to 
+the tree root will be CoWed.
+
+Thanks,
+Qu
+> 
+> It would be great if I could get the answers to these questions.
+> 
+> Thanks,
+> Rohan
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,78 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:50363 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751238AbdIJOyh (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:39926 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751435AbdIJPs3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Sep 2017 10:54:37 -0400
-Date: Sun, 10 Sep 2017 07:54:30 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Andrei Borzenkov <arvidjaar@gmail.com>, framstag@rus.uni-stuttgart.de
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20170910145430.zzxuvaqthob4ufrs@merlins.org>
-References: <20170822132208.GD14804@rus.uni-stuttgart.de>
- <20170909132614.GA20299@rus.uni-stuttgart.de>
- <20170909133612.7iqwr6cbjxzvfny6@merlins.org>
- <20170909134426.GB20299@rus.uni-stuttgart.de>
- <14c87878-a5a0-d7d3-4a76-c55812e751a3@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <14c87878-a5a0-d7d3-4a76-c55812e751a3@gmail.com>
-Subject: Re: netapp-alike snapshots?
+        Sun, 10 Sep 2017 11:48:29 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dr4Sv-0004KW-N9
+        for linux-btrfs@vger.kernel.org; Sun, 10 Sep 2017 17:48:09 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: Help me understand what is going on with my RAID1 FS
+Date: Sun, 10 Sep 2017 17:47:50 +0200
+Message-ID: <20170910174750.544a4146@jupiter.sol.kaishome.de>
+References: <CAOsOv4morDsVyrWEitL8L+7mXjS+0mXXsd9213Y8cdR44qrLYg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 09, 2017 at 10:43:16PM +0300, Andrei Borzenkov wrote:
-> 09.09.2017 16:44, Ulli Horlacher пишет:
-> > 
-> > Your tool does not create .snapshot subdirectories in EVERY directory like
+Am Sun, 10 Sep 2017 15:45:42 +0200
+schrieb FLJ <feci2048@gmail.com>:
+
+> Hello all,
 > 
-> Neither does NetApp. Those "directories" are magic handles that do not
-> really exist.
- 
-Correct, thanks for saving me typing the same thing (I actually did work
-at netapp many years back, so I'm familiar with how they work)
-
-> > Netapp does.
-> > Example:
-> > 
-> > framstag@fex:~: cd ~/Mail/.snapshot/
-> > framstag@fex:~/Mail/.snapshot: l
-> > lR-X - 2017-09-09 09:55 2017-09-09_0000.daily -> /local/home/.snapshot/2017-09-09_0000.daily/framstag/Mail
+> I have a BTRFS RAID1 volume running for the past year. I avoided all
+> pitfalls known to me that would mess up this volume. I never
+> experimented with quotas, no-COW, snapshots, defrag, nothing really.
+> The volume is a RAID1 from day 1 and is working reliably until now.
 > 
-> Apart from obvious problem with recursive directory traversal (NetApp
-> .snapshot are not visible with normal directory list) those will also be
-> captured in snapshots and cannot be removed. NetApp snapshots themselves
-> do not expose .snapshot "directories".
+> Until yesterday it consisted of two 3 TB drives, something along the
+> lines:
+> 
+> Label: 'BigVault'  uuid: a37ad5f5-a21b-41c7-970b-13b6c4db33db
+>         Total devices 2 FS bytes used 2.47TiB
+>         devid    1 size 2.73TiB used 2.47TiB path /dev/sdb
+>         devid    2 size 2.73TiB used 2.47TiB path /dev/sdc
+> 
+> Yesterday I've added a new drive to the FS and did a full rebalance
+> (without filters) over night, which went through without any issues.
+> 
+> Now I have:
+>  Label: 'BigVault'  uuid: a37ad5f5-a21b-41c7-970b-13b6c4db33db
+>         Total devices 3 FS bytes used 2.47TiB
+>         devid    1 size 2.73TiB used 1.24TiB path /dev/sdb
+>         devid    2 size 2.73TiB used 1.24TiB path /dev/sdc
+>         devid    3 size 7.28TiB used 2.48TiB path /dev/sda
+> 
+> # btrfs fi df /mnt/BigVault/
+> Data, RAID1: total=2.47TiB, used=2.47TiB
+> System, RAID1: total=32.00MiB, used=384.00KiB
+> Metadata, RAID1: total=4.00GiB, used=2.74GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> But still df -h is giving me:
+> Filesystem           Size  Used Avail Use% Mounted on
+> /dev/sdb             6.4T  2.5T  1.5T  63% /mnt/BigVault
+> 
+> Although I've heard and read about the difficulty in reporting free
+> space due to the flexibility of BTRFS, snapshots and subvolumes, etc.,
+> but I only have a single volume, no subvolumes, no snapshots, no
+> quotas and both data and metadata are RAID1.
+> 
+> My expectation would've been that in case of BigVault Size == Used +
+> Avail.
+> 
+> Actually based on http://carfax.org.uk/btrfs-usage/index.html I
+> would've expected 6 TB of usable space. Here I get 6.4 which is odd,
+> but that only 1.5 TB is available is even stranger.
+> 
+> Could anyone explain what I did wrong or why my expectations are
+> wrong?
+> 
+> Thank you in advance
 
-Correct. Netapp knows this of course, which is why those .snapshot
-directories are "magic" and hidden to ls(1), find(1) and others when
-they do a readdir(3)
+Btrfs reports estimated free space from the free space of the smallest
+member as it can only guarantee that. In your case this is 2.73 minus
+1.24 free which is roughly around 1.5T. But since this free space
+distributes across three disks with one having much more free space, it
+probably will use up that space at half the rate of actual allocation.
+But due to how btrfs allocates from free space in chunks, that may not
+be possible - thus the low unexpected value. You will probably need to
+run balance once in a while to evenly redistribute allocated chunks
+across all disks.
 
-> > lR-X - 2017-09-09 14:00 2017-09-09_1400.hourly -> /local/home/.snapshot/2017-09-09_1400.hourly/framstag/Mail
-> > lR-X - 2017-09-09 15:00 2017-09-09_1500.hourly -> /local/home/.snapshot/2017-09-09_1500.hourly/framstag/Mail
-> > lR-X - 2017-09-09 15:18 2017-09-09_1518.single -> /local/home/.snapshot/2017-09-09_1518.single/framstag/Mail
-> > lR-X - 2017-09-09 15:20 2017-09-09_1520.single -> /local/home/.snapshot/2017-09-09_1520.single/framstag/Mail
-> > lR-X - 2017-09-09 15:22 2017-09-09_1522.single -> /local/home/.snapshot/2017-09-09_1522.single/framstag/Mail
-> > 
-> > My users (and I) need snapshots in this way.
+It may give you better estimates if you combine sdb and sdc into one
+logical device, e.g. using raid0 or jbod via md or lvm.
 
-You are used to them being there, I was too :)
-While you could create lots of symlinks, I opted not to since it would
-have littered the filesystem.
-I can simply cd $(SNAPROOT)/volname_hourly/$(PWD)
-and end up where I wanted to be.
 
-I suppose you could make a snapcd shell function that does this for you.
-The only issue is that volname_hourly comes before the rest of the path,
-so you aren't given a list of all the snapshots available for a given
-path, you have to cd into the given snapshot first, and then add the
-path.
-I agree it's not as nice as netapp, but honestly I don't think you can
-do better with btrfs at this point.
-
-Marc
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Regards,
+Kai
+
+Replies to list-only preferred.
+

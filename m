@@ -1,54 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:49468 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751643AbdIJNSD (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:48707 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751571AbdIJNSn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Sep 2017 09:18:03 -0400
-From: Josef Bacik <jbacik@fb.com>
-To: Marc MERLIN <marc@merlins.org>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>, Chris Mason <clm@fb.com>,
-        "bo.li.liu@oracle.com" <bo.li.liu@oracle.com>,
-        "fdmanana@suse.com" <fdmanana@suse.com>,
+        Sun, 10 Sep 2017 09:18:43 -0400
+Date: Sun, 10 Sep 2017 06:18:32 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: quwenruo@cn.fujitsu.com, Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Chris Mason <clm@fb.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.cz>
-Subject: Re: BTRFS: error (device dm-2) in btrfs_run_delayed_refs:2960:
- errno=-17 Object already exists (since 3.4 / 2012)
-Date: Sun, 10 Sep 2017 13:16:26 +0000
-Message-ID: <BA7507E1-FBFF-461D-9724-39FC784EE485@fb.com>
-References: <20170903143142.7thdjvkmkdekrzc5@merlins.org>
- <1E7DEC47-01A8-4F50-B266-FA4949090687@fb.com>
- <20170903144237.svgnaclwmcfdfikt@merlins.org>
- <AD68E364-AF7F-49AA-8376-49E0C7C92998@fb.com>
- <20170903202036.b7j6fcknfiisrnsl@merlins.org>
- <D509EEE0-1430-40C2-8AD4-117729CFADDD@fb.com>
- <20170909183918.guot5vuphgabevxi@merlins.org>
- <63F04FB0-47AD-4732-ACD6-B493C51F9ED4@fb.com>
- <20170910023658.4y7u77tku3c6wj2t@merlins.org>
- <5E342E49-3C3A-4A77-A2CB-46508684AD8D@fb.com>,<20170910131437.y2wxt65ps7go42av@merlins.org>
-In-Reply-To: <20170910131437.y2wxt65ps7go42av@merlins.org>
-Content-Type: text/plain; charset="us-ascii"
+Message-ID: <20170910131832.kgogo7y62td6l7tb@merlins.org>
+References: <20170905010531.rfvun5isjwrb5ur5@merlins.org>
+ <75b0ebd3-41ea-7f45-bec4-f7d9ec6efee1@gmx.com>
+ <20170905025556.GA6392@merlins.org>
+ <92e0486d-a7b5-01f8-5ef4-6773f8939bec@gmx.com>
+ <20170905144525.rzvncaxil2enxjwe@merlins.org>
+ <20170909174426.dvifafqeuqy4axpx@merlins.org>
+ <b2eb3d47-e30a-d938-c879-2aaec38e749a@gmx.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <b2eb3d47-e30a-d938-c879-2aaec38e749a@gmx.com>
+Subject: Re: btrfs check --repair now runs in minutes instead of hours?
+ aborting
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Great, if the free space cache is fucked again after the next go around then I need to expand the verifier to watch entries being added to the cache as well.  Thanks,
+On Sun, Sep 10, 2017 at 02:01:58PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2017年09月10日 01:44, Marc MERLIN wrote:
+> > So, should I assume that btrfs progs git has some issue since there is
+> > no plausible way that a check --repair should be faster than a regular
+> > check?
+> 
+> Yes, the assumption that repair should be no faster than RO check is
+> correct.
+> Especially for clean fs, repair should just behave the same as RO check.
+> 
+> And I'll first submit a patch (or patches) to output the consumed time for
+> each tree, so we could have a clue what is going wrong.
+> (Digging the code is just a little too boring for me)
 
-Josef
+Cool. Let me know when I should sync and re-try.
+In the meantime, though, my check --repair went back to 170mn after
+triggering an FS bug for Josef, so it seems back to normal.
 
-Sent from my iPhone
-
-> On Sep 10, 2017, at 9:14 AM, Marc MERLIN <marc@merlins.org> wrote:
-> 
->> On Sun, Sep 10, 2017 at 03:12:16AM +0000, Josef Bacik wrote:
->> Ok mount -o clear_cache, umount and run fsck again just to make sure.  Then if it comes out clean mount with ref_verify again and wait for it to blow up again.  Thanks,
-> 
-> Ok, just did the 2nd fsck, came back clean after mount -o clear_cache
-> 
-> I'll re-trigger the exact same bug and repeat the whole cycle then.
-> 
-> Marc
-> -- 
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                      .... what McDonalds is to gourmet cooking
-> Home page: https://urldefense.proofpoint.com/v2/url?u=http-3A__marc.merlins.org_&d=DwIBAg&c=5VD0RTtNlTh3ycd41b3MUw&r=sDzg6MvHymKOUgI8SFIm4Q&m=46Ubpt2icp5_meAcqMuzd4whl0dZVSwf02fqYoDbzKw&s=nb55W48Rh0IzH8FH4eykviziYCc2S72iYmmNxdpjbOc&e=                          | PGP 1024R/763BE901
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

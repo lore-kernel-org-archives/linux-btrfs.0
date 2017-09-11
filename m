@@ -1,109 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53437 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751207AbdIOM5h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 08:57:37 -0400
-Date: Fri, 15 Sep 2017 14:56:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, kreijack@inwind.it, linux-btrfs@vger.kernel.org,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-Subject: Re: [PATCH v2 7/7] btrfs-progs: Doc/mkfs: Add extra condition for
- rootdir option
-Message-ID: <20170915125605.GY29043@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mout.gmx.net ([212.227.15.19]:57902 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750878AbdIKGgW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 02:36:22 -0400
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 1/7] btrfs-progs: Refactor find_next_chunk() to get rid of parameter root and objectid
+Date: Mon, 11 Sep 2017 15:36:06 +0900
+Message-Id: <20170911063612.32114-2-quwenruo.btrfs@gmx.com>
+In-Reply-To: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
 References: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
- <20170911063612.32114-8-quwenruo.btrfs@gmx.com>
- <20170912170304.GD29043@twin.jikos.cz>
- <0a949fd9-f0cf-22c5-4e91-ebb1bfad1355@libero.it>
- <20170912180753.GI29043@suse.cz>
- <0c906ea3-bfdb-a088-f940-4b63a3da8d2f@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <0c906ea3-bfdb-a088-f940-4b63a3da8d2f@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 13, 2017 at 08:32:50AM +0800, Qu Wenruo wrote:
-> On 2017年09月13日 02:07, David Sterba wrote:
-> > On Tue, Sep 12, 2017 at 07:50:19PM +0200, Goffredo Baroncelli wrote:
-> >> On 09/12/2017 07:03 PM, David Sterba wrote:
-> >>> Say I want to prepare a minimal image but will provide a large file
-> >>                                                  ^^^^^^^^^^^^^^^^^^^^^^
-> >>
-> >> I think that if the target is a file AND --minimize is passed, it is a
-> >> reasonable expectation that the file is created "on the fly" and grown
-> >> up to what needed.
-> >>
-> >> What I mean is that "--minimize" is passed (and a file is passed), mkfs.btrfs should
-> >> a) create the file if it doesn't exist, and avoid any check about its length
-> >> b) truncate the file at the end
-> > 
-> > I think the farthest-offset write will extend the file size, so we
-> > should not truncate it, in the sense 'make it smaller than it is', but
-> > rather 'align it to the size where the filesystem expects live data".
-> 
-> Unfortunately, that's not the case.
-> 
-> Current implementation must determine its size at the very beginning.
-> 
-> That's to say, if mkfs determines that it's going to use 1G size, then 
-> current btrfs-progs will be guaranteed that no write over 1G boundary.
-> (Unless there is some hidden bug)
-> 
-> So if we are realling going to implement "--minimize" option, we are 
-> doing asymmetric behavior:
-> 
-> 1) For fs smaller than file
->     Good, we truncate it
-> 
-> 2) For fs larger than file
->     Bad, we will get ENOSPC error.
-> 
-> One workaround I mentioned in V1 is to make a large enough sparse file 
-> first and then truncate it.
-> 
-> But such workaround has some problem, especially related to the chunk 
-> allocator.
-> 
-> For a 1G sparse file as example, we will have about 100M data chunk.
-> While for 128M space file, we will have about 10M data chunk.
-> That will cause a lot of space wasted if using large spare file and then 
-> truncating it than using a small existing file.
-> 
-> Considering the all the variables involved, I choose the KISS method.
-> Let user to handle it, and mkfs.btrfs --rootdir will just do the copy work.
-> 
-> If user really wants to do a minimal image, the best (AFAIK the only 
-> correct) method is to implement btrfs-progs balance (offline balanace) 
-> to compact all these meta and data, then truncate it (offline resize).
-> 
-> The initial --rootdir is doing too many things at the same time in mkfs.
-> And that's why I want to make it simple.
-> 
-> BTW, just as I stated in cover letter, "mkfs.ext4" -d is doing it easy 
-> as what I did here, and the complex work is handled by out of e2fsprogs 
-> utility, genext2fs.
-> 
-> 
-> 
-> And there may be some use case relying on this truncation, but hey, if 
-> the need is really high, there should already be a lot of complains 
-> about --rootdir shrinking fs, and more tested/documented --rootdir 
-> implementation.
-> 
-> So it's not really worth it to implement a complex code base to handle 
-> something while there is not much user base.
+Function find_next_chunk() is used to find next chunk start position,
+which should only do search on chunk tree and objectid is fixed to
+BTRFS_FIRST_CHUNK_TREE_OBJECTID.
 
-I think all points have been covered, thanks.
+So refactor the parameter list to get rid of @root, which should be get
+from fs_info->chunk_root, and @objectid, which is fixed to
+BTRFS_FIRST_CHUNK_TREE_OBJECTID.
 
-The backward compatibility does not seem to be broken, the difference
-between old and new --rootdir is only the size of the resulting
-filesystem, otherwise the file size is left untouched and sufficient
-size is required.
+Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+---
+ volumes.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-Minimizing can come as a separate step, either using off-line balance,
-or possibly also as an option to mkfs.
+diff --git a/volumes.c b/volumes.c
+index 2ae2d1bb..2209e5a9 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -505,8 +505,9 @@ err:
+ 	return ret;
+ }
+ 
+-static int find_next_chunk(struct btrfs_root *root, u64 objectid, u64 *offset)
++static int find_next_chunk(struct btrfs_fs_info *fs_info, u64 *offset)
+ {
++	struct btrfs_root *root = fs_info->chunk_root;
+ 	struct btrfs_path *path;
+ 	int ret;
+ 	struct btrfs_key key;
+@@ -517,7 +518,7 @@ static int find_next_chunk(struct btrfs_root *root, u64 objectid, u64 *offset)
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	key.objectid = objectid;
++	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 
+@@ -533,7 +534,7 @@ static int find_next_chunk(struct btrfs_root *root, u64 objectid, u64 *offset)
+ 	} else {
+ 		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
+ 				      path->slots[0]);
+-		if (found_key.objectid != objectid)
++		if (found_key.objectid != BTRFS_FIRST_CHUNK_TREE_OBJECTID)
+ 			*offset = 0;
+ 		else {
+ 			chunk = btrfs_item_ptr(path->nodes[0], path->slots[0],
+@@ -995,8 +996,7 @@ again:
+ 		}
+ 		return -ENOSPC;
+ 	}
+-	ret = find_next_chunk(chunk_root, BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+-			      &offset);
++	ret = find_next_chunk(info, &offset);
+ 	if (ret)
+ 		return ret;
+ 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+@@ -1129,9 +1129,7 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 	} else {
+ 		u64 tmp;
+ 
+-		ret = find_next_chunk(chunk_root,
+-				      BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+-				      &tmp);
++		ret = find_next_chunk(info, &tmp);
+ 		key.offset = tmp;
+ 		if (ret)
+ 			return ret;
+-- 
+2.14.1
 
-I'm going to review & merge this series to devel. Tests and
-documentation should be updated to make the usecase clear.

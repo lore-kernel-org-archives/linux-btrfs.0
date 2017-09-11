@@ -1,32 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:27674 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751114AbdIKJX5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 05:23:57 -0400
-Subject: Re: btrfs is slow while looping in search_bitmap
- <-btrfs_find_space_for_alloc
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <89bd6888-71a5-895d-43db-622ff129d56b@profihost.ag>
-Message-ID: <37fc4210-2549-5d97-a40b-cffd1a5ce4c6@profihost.ag>
-Date: Mon, 11 Sep 2017 11:23:56 +0200
+Received: from mout.gmx.net ([212.227.15.18]:64980 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751114AbdIKJZa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 05:25:30 -0400
+Subject: Re: BTRFS Deduplication
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: shally verma <shallyvermacavium@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, "Verma, Shally" <shally.verma@cavium.com>
+References: <CAP9W88gEje_unDuNTGCZXn5PKoDwHtTgrjc7Cwzn0a_2KWtWow@mail.gmail.com>
+ <03f4db85-bd2c-679d-e369-65ccc5d61ad7@gmx.com>
+ <CAP9W88hGwo_L6k_-s7SUQpn7e-oVeFWydM9eiK=wtAK-kBDEXg@mail.gmail.com>
+ <32a55320-4e4f-2dea-4345-2c12b1b98eaf@gmx.com>
+ <CAP9W88j1htZZ893CHqWwGg__A2DizZhRQ_9QodbgmQrDHRiJFg@mail.gmail.com>
+ <314f6a92-98a6-a02f-a2fd-bd252585c27c@gmx.com>
+Message-ID: <15829e40-451e-77d9-743b-a59365b27830@gmx.com>
+Date: Mon, 11 Sep 2017 17:25:20 +0800
 MIME-Version: 1.0
-In-Reply-To: <89bd6888-71a5-895d-43db-622ff129d56b@profihost.ag>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <314f6a92-98a6-a02f-a2fd-bd252585c27c@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 05.09.2017 um 07:58 schrieb Stefan Priebe - Profihost AG:
-> Hello,
-> 
-> while expecting slow btrfs volumes i switched to kernel v4.13 and to
-> space_cache=v2.
-...
-> 
-> Is btrfs trying to hard to find free space?
-Even nobody replied - i reply to myself. I could completely "fix" this
-by using ssd_spread option for my raid50.
 
-Greets,
-Stefan
+
+On 2017年09月11日 17:14, Qu Wenruo wrote:
+> 
+> 
+> On 2017年09月11日 16:57, shally verma wrote:
+>> On Mon, Sep 11, 2017 at 1:42 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> 
+>> wrote:
+>>>
+>>>
+>>> On 2017年09月11日 15:54, shally verma wrote:
+>>>>
+>>>> On Mon, Sep 11, 2017 at 12:16 PM, Qu Wenruo <quwenruo.btrfs@gmx.com>
+>>>> wrote:
+>>>>>
+>>>>>
+>>>>>
+>>>>> On 2017年09月11日 14:05, shally verma wrote:
+>>>>>>
+>>>>>>
+>>>>>> I was going through  BTRFS Deduplication page
+>>>>>> (https://btrfs.wiki.kernel.org/index.php/Deduplication) and I read
+>>>>>>
+>>>>>> "As such, xfs_io, is able to perform deduplication on a BTRFS file
+>>>>>> system," ..
+>>>>>>
+>>>>>> following this, I followed on to xfs_io link
+>>>>>> https://linux.die.net/man/8/xfs_io
+>>>>>>
+>>>>>> As I understand, these are set of commands allow us to do different
+>>>>>> operations on "xfs" filesystem.
+>>>>>
+>>>>>
+>>>>>
+>>>>> Nope, it's just a tool triggering different read/write or ioctls.
+>>>>> In fact most of its command is fs independent.
+>>>>> Only a limited number of operations are only supported by XFS.
+>>>>>
+>>>>> It's just due to historical reasons it's still named as xfs_io.
+>>>>>
+>>>>> I won't be surprised if one day it's split as an independent tool.
+>>>>>
+>>>>>> and command set mentioned here, couldn't see which is command to
+>>>>>> invoke dedupe task.
+>>>>>
+>>>>>
+>>>>>
+>>>>> "dedupe" and "reflink" command.
+>>>>
+>>>> Oh. That means page link referred on BTRFS Wiki page is not updated
+>>>> with this. I googled another page that has reference of these two
+>>>> command in xfs_io here
+>>>> https://www.systutorials.com/docs/linux/man/8-xfs_io/
+>>>> May be Wiki need an update here.
+>>>
+>>>
+>>> If XFS has a regularly updated online man page, we can just use that.
+>>> (But unfortunately, not every fs user tools use asciidoc like btrfs, 
+>>> which
+>>> can generate both man page and html).
+>>>
+>>>>
+>>>>>
+>>>>>> and how this works with BTRFS.
+>>>>>
+>>>>>
+>>>>>
+>>>>> Fs support FIDEDUPERANGE or BTRFS_IOC_FILE_EXTENT_SAME ioctl can 
+>>>>> use it
+>>>>> to
+>>>>> determine if two ranges are containing identical data.
+>>>>>
+>>>>> And if they are identical, we use FICLONERANGE or 
+>>>>> BTRFS_IOC_CLONE_RANGE
+>>>>> ioctl to reflink one to another, freeing one of them.
+>>>>>
+>>>>> BTW nowadays, such dedupe and reflink ioctl is genericized in VFS.
+>>>>> file_operations structure now includes both clone_file_range() and
+>>>>> dedupe_file_range() callbacks now.
+>>>>
+>>>> Yea. Understand that part. So going by description of "dedupe" and
+>>>> "reflink", seems through these commands, one can do deduplication part
+>>>> and NOT duplicate find part.
+>>>
+>>>
+>>> Yes, one don't need to call "dedupe" ioctl if they already knows some 
+>>> data
+>>> is identical and can go reflink straightforward.
+>>>
+>>>> That's still out of xfs_io command scope.
+>>>
+>>>
+>>> Not sure what the scope here you mean, sorry for that.
+>>>
+>> By "scope", I meant duplicate find part but that contradicts statement
+>> you just written below:
+>>> Since xfs_io can be used to find duplication,
+>>
+>> Since "dedupe" command input only a "source file" and src and
+>> dst_offset within that, so it can deduplicate the content within a
+>> file where actual FS dedupe IOCTL can first ensure if two extents are
+>> identical and if yes, then deduplicate them.
+> 
+> By "deduplicate", if you mean "removing duplication" then xfs_io 
+> "dedupe" command itself doesn't do that.
+> 
+> The old btrfs ioctl describe this better, FILE_EXTENT_SAME.
+> "dedupe" command itself is only verifying if they have the same content.
+> 
+> So to make it clear, "dedupe" command and ioctl only do the 
+> *verification* work.
+
+Sorry, I just checked the code and tried the ioctl.
+
+If they are the same, "dedupe" will do "reflink" part also.
+
+Code also shows that:
+---
+         /* pass original length for comparison so we stay within i_size */
+         ret = btrfs_cmp_data(olen, &cmp);
+         if (ret == 0)
+                 ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+---
+
+So "dedupe" ioctl itself can do de-duplication.
+And my previous answer is just totally wrong.
+
+Sorry for that,
+Qu
+
+> 
+> "Reflink" will really remove the duplication (or even non-duplicated 
+> data if you really want).
+> 
+> 
+> But please be careful, "reflink" is much like copy, so it can be 
+> executed on file ranges with different contents.
+> In that case, reflink can free some space, but it also modifies the 
+> content.
+> 
+> So for full de-duplication, one must go through the full *verify* then 
+> *reflink* circle.
+> Although "dedupe"(FILE_EXTENT_SAME) ioctl provides one verification 
+> method, it's not the only solution.
+> 
+> But anyway, "dedupe" and "reflink" command provided by xfs_io does 
+> provide every pieces to do de-duplication, so the wiki is still correct 
+> IMHO.
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> Is that correct?
+>>
+>> Thanks
+>> Shally
+>>
+>>   and can remove duplication, I
+>>> don't find anything strange in that wiki page.
+>>> (Especially considering how popular the tool is, you can't find any more
+>>> handy tool than xfs_io)
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>>> Is that understanding correct?
+>>>> Thanks
+>>>> Shally
+>>>>>
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> So, can anyone help here and point me what am I missing here.
+>>>>>>
+>>>>>> Thanks
+>>>>>> Shally
+>>>>>> -- 
+>>>>>> To unsubscribe from this list: send the line "unsubscribe 
+>>>>>> linux-btrfs"
+>>>>>> in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>
+>>>>>
+>>>> -- 
+>>>> To unsubscribe from this list: send the line "unsubscribe 
+>>>> linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
+>>>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

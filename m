@@ -1,81 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:50665 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:65416 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750926AbdIKGgZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 02:36:25 -0400
+        id S1750878AbdIKGg0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 02:36:26 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 4/7] btrfs-progs: mkfs: Update allocation info before verbose output
-Date: Mon, 11 Sep 2017 15:36:09 +0900
-Message-Id: <20170911063612.32114-5-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v2 5/7] btrfs-progs: Avoid BUG_ON for chunk allocation when ENOSPC happens
+Date: Mon, 11 Sep 2017 15:36:10 +0900
+Message-Id: <20170911063612.32114-6-quwenruo.btrfs@gmx.com>
 In-Reply-To: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
 References: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since new --rootdir can allocate chunk, it will modify the chunk
-allocation result.
+When passing directory larger than block device using --rootdir
+parameter, we get the following backtrace:
 
-This patch will update allocation info before verbose output to reflect
-such info.
+------
+extent-tree.c:2693: btrfs_reserve_extent: BUG_ON `ret` triggered, value -28
+./mkfs.btrfs(+0x1a05d)[0x557939e6b05d]
+./mkfs.btrfs(btrfs_reserve_extent+0xb5a)[0x557939e710c8]
+./mkfs.btrfs(+0xb0b6)[0x557939e5c0b6]
+./mkfs.btrfs(main+0x15d5)[0x557939e5de04]
+/usr/lib/libc.so.6(__libc_start_main+0xea)[0x7f83b101af6a]
+./mkfs.btrfs(_start+0x2a)[0x557939e5af5a]
+------
+
+Nothing special, just BUG_ON() abusing from ancient code.
+
+Fix them by using correct return.
 
 Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 ---
- mkfs/main.c | 33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
+ extent-tree.c |  3 ++-
+ volumes.c     | 18 ++++++++++++++----
+ 2 files changed, 16 insertions(+), 5 deletions(-)
 
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 0ce1ae26..6561ac52 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1276,6 +1276,38 @@ out:
+diff --git a/extent-tree.c b/extent-tree.c
+index 525a237e..055582c3 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -2690,7 +2690,8 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+ 			       search_start, search_end, hint_byte, ins,
+ 			       trans->alloc_exclude_start,
+ 			       trans->alloc_exclude_nr, data);
+-	BUG_ON(ret);
++	if (ret < 0)
++		return ret;
+ 	clear_extent_dirty(&info->free_space_cache,
+ 			   ins->objectid, ins->objectid + ins->offset - 1);
  	return ret;
+diff --git a/volumes.c b/volumes.c
+index 2209e5a9..e1ee27d5 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1032,11 +1032,13 @@ again:
+ 			     info->chunk_root->root_key.objectid,
+ 			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
+ 			     calc_size, &dev_offset, 0);
+-		BUG_ON(ret);
++		if (ret < 0)
++			goto out_chunk_map;
+ 
+ 		device->bytes_used += calc_size;
+ 		ret = btrfs_update_device(trans, device);
+-		BUG_ON(ret);
++		if (ret < 0)
++			goto out_chunk_map;
+ 
+ 		map->stripes[index].dev = device;
+ 		map->stripes[index].physical = dev_offset;
+@@ -1075,16 +1077,24 @@ again:
+ 	map->ce.size = *num_bytes;
+ 
+ 	ret = insert_cache_extent(&info->mapping_tree.cache_tree, &map->ce);
+-	BUG_ON(ret);
++	if (ret < 0)
++		goto out_chunk_map;
+ 
+ 	if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		ret = btrfs_add_system_chunk(info, &key,
+ 				    chunk, btrfs_chunk_item_size(num_stripes));
+-		BUG_ON(ret);
++		if (ret < 0)
++			goto out_chunk;
+ 	}
+ 
+ 	kfree(chunk);
+ 	return ret;
++
++out_chunk_map:
++	kfree(map);
++out_chunk:
++	kfree(chunk);
++	return ret;
  }
  
-+/*
-+ * Just update chunk allocation info, since --rootdir may allocate new
-+ * chunks which is not updated in @allocation structure.
-+ */
-+static void update_chunk_allocation(struct btrfs_fs_info *fs_info,
-+				    struct mkfs_allocation *allocation)
-+{
-+	struct btrfs_block_group_cache *bg_cache;
-+	u64 mixed_flag = BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA;
-+	u64 search_start = 0;
-+
-+	allocation->mixed = 0;
-+	allocation->data = 0;
-+	allocation->metadata = 0;
-+	allocation->system = 0;
-+	while (1) {
-+		bg_cache = btrfs_lookup_first_block_group(fs_info,
-+							  search_start);
-+		if (!bg_cache)
-+			break;
-+		if ((bg_cache->flags & mixed_flag) == mixed_flag)
-+			allocation->mixed += bg_cache->key.offset;
-+		else if (bg_cache->flags & BTRFS_BLOCK_GROUP_DATA)
-+			allocation->data += bg_cache->key.offset;
-+		else if (bg_cache->flags & BTRFS_BLOCK_GROUP_METADATA)
-+			allocation->metadata += bg_cache->key.offset;
-+		else
-+			allocation->system += bg_cache->key.offset;
-+		search_start = bg_cache->key.objectid + bg_cache->key.offset;
-+	}
-+}
-+
- int main(int argc, char **argv)
- {
- 	char *file;
-@@ -1733,6 +1765,7 @@ raid_groups:
- 	if (verbose) {
- 		char features_buf[64];
- 
-+		update_chunk_allocation(fs_info, &allocation);
- 		printf("Label:              %s\n", label);
- 		printf("UUID:               %s\n", mkfs_cfg.fs_uuid);
- 		printf("Node size:          %u\n", nodesize);
+ /*
 -- 
 2.14.1
 

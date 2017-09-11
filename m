@@ -1,188 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:59816 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751292AbdIKJPB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 05:15:01 -0400
-Subject: Re: BTRFS Deduplication
-To: shally verma <shallyvermacavium@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, "Verma, Shally" <shally.verma@cavium.com>
-References: <CAP9W88gEje_unDuNTGCZXn5PKoDwHtTgrjc7Cwzn0a_2KWtWow@mail.gmail.com>
- <03f4db85-bd2c-679d-e369-65ccc5d61ad7@gmx.com>
- <CAP9W88hGwo_L6k_-s7SUQpn7e-oVeFWydM9eiK=wtAK-kBDEXg@mail.gmail.com>
- <32a55320-4e4f-2dea-4345-2c12b1b98eaf@gmx.com>
- <CAP9W88j1htZZ893CHqWwGg__A2DizZhRQ_9QodbgmQrDHRiJFg@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <314f6a92-98a6-a02f-a2fd-bd252585c27c@gmx.com>
-Date: Mon, 11 Sep 2017 17:14:48 +0800
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:30597 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751127AbdIKJW6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 05:22:58 -0400
+Subject: Re: speed up big btrfs volumes with ssds
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: Henk Slager <eye1tm@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <7318d2b7-73a0-1cc9-f9cc-e03314c19e85@profihost.ag>
+ <CAPmG0jaJFUpgAbtzNO2jnqbN7u7q6RM4T_BPw_hwhx2wS+Fnhg@mail.gmail.com>
+ <e43a6dea-0e4c-50e4-da0d-03ac3ab9a97f@profihost.ag>
+ <CAGqmi7537YtkTLfkk8tUoA5Zn9SMvUoGicg+R_4Nm6LupALEow@mail.gmail.com>
+ <05997689-bcdb-d136-a35a-6c0c7beeb1c0@profihost.ag>
+Message-ID: <9ea1c914-f5af-ec7f-47d0-9d1424a729d9@profihost.ag>
+Date: Mon, 11 Sep 2017 11:22:56 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAP9W88j1htZZ893CHqWwGg__A2DizZhRQ_9QodbgmQrDHRiJFg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <05997689-bcdb-d136-a35a-6c0c7beeb1c0@profihost.ag>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
-
-On 2017年09月11日 16:57, shally verma wrote:
-> On Mon, Sep 11, 2017 at 1:42 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->> On 2017年09月11日 15:54, shally verma wrote:
+Am 04.09.2017 um 20:32 schrieb Stefan Priebe - Profihost AG:
+> Am 04.09.2017 um 15:28 schrieb Timofey Titovets:
+>> 2017-09-04 15:57 GMT+03:00 Stefan Priebe - Profihost AG <s.priebe@profihost.ag>:
+>>> Am 04.09.2017 um 12:53 schrieb Henk Slager:
+>>>> On Sun, Sep 3, 2017 at 8:32 PM, Stefan Priebe - Profihost AG
+>>>> <s.priebe@profihost.ag> wrote:
+>>>>> Hello,
+>>>>>
+>>>>> i'm trying to speed up big btrfs volumes.
+>>>>>
+>>>>> Some facts:
+>>>>> - Kernel will be 4.13-rc7
+>>>>> - needed volume size is 60TB
+>>>>>
+>>>>> Currently without any ssds i get the best speed with:
+>>>>> - 4x HW Raid 5 with 1GB controller memory of 4TB 3,5" devices
+>>>>>
+>>>>> and using btrfs as raid 0 for data and metadata on top of those 4 raid 5.
+>>>>>
+>>>>> I can live with a data loss every now and and than ;-) so a raid 0 on
+>>>>> top of the 4x radi5 is acceptable for me.
+>>>>>
+>>>>> Currently the write speed is not as good as i would like - especially
+>>>>> for random 8k-16k I/O.
+>>>>>
+>>>>> My current idea is to use a pcie flash card with bcache on top of each
+>>>>> raid 5.
+>>>>
+>>>> If it can speed up depends quite a lot on what the use-case is, for
+>>>> some not-so-much-parallel-access it might work. So this 60TB is then
+>>>> 20 4TB disks or so and the 4x 1GB cache is simply not very helpful I
+>>>> think. The working set doesn't fit in it I guess. If there is mostly
+>>>> single or a few users of the fs, a single pcie based bcacheing 4
+>>>> devices can work, but for SATA SSD, I would use 1 SSD per HWraid5.
 >>>
->>> On Mon, Sep 11, 2017 at 12:16 PM, Qu Wenruo <quwenruo.btrfs@gmx.com>
->>> wrote:
->>>>
->>>>
->>>>
->>>> On 2017年09月11日 14:05, shally verma wrote:
->>>>>
->>>>>
->>>>> I was going through  BTRFS Deduplication page
->>>>> (https://btrfs.wiki.kernel.org/index.php/Deduplication) and I read
->>>>>
->>>>> "As such, xfs_io, is able to perform deduplication on a BTRFS file
->>>>> system," ..
->>>>>
->>>>> following this, I followed on to xfs_io link
->>>>> https://linux.die.net/man/8/xfs_io
->>>>>
->>>>> As I understand, these are set of commands allow us to do different
->>>>> operations on "xfs" filesystem.
->>>>
->>>>
->>>>
->>>> Nope, it's just a tool triggering different read/write or ioctls.
->>>> In fact most of its command is fs independent.
->>>> Only a limited number of operations are only supported by XFS.
->>>>
->>>> It's just due to historical reasons it's still named as xfs_io.
->>>>
->>>> I won't be surprised if one day it's split as an independent tool.
->>>>
->>>>> and command set mentioned here, couldn't see which is command to
->>>>> invoke dedupe task.
->>>>
->>>>
->>>>
->>>> "dedupe" and "reflink" command.
+>>> Yes that's roughly my idea as well and yes the workload is 4 users max
+>>> writing data. 50% sequential, 50% random.
 >>>
->>> Oh. That means page link referred on BTRFS Wiki page is not updated
->>> with this. I googled another page that has reference of these two
->>> command in xfs_io here
->>> https://www.systutorials.com/docs/linux/man/8-xfs_io/
->>> May be Wiki need an update here.
->>
->>
->> If XFS has a regularly updated online man page, we can just use that.
->> (But unfortunately, not every fs user tools use asciidoc like btrfs, which
->> can generate both man page and html).
->>
+>>>> Then roughly make sure the complete set of metadata blocks fits in the
+>>>> cache. For an fs of this size let's say/estimate 150G. Then maybe same
+>>>> of double for data, so an SSD of 500G would be a first try.
 >>>
->>>>
->>>>> and how this works with BTRFS.
->>>>
->>>>
->>>>
->>>> Fs support FIDEDUPERANGE or BTRFS_IOC_FILE_EXTENT_SAME ioctl can use it
->>>> to
->>>> determine if two ranges are containing identical data.
->>>>
->>>> And if they are identical, we use FICLONERANGE or BTRFS_IOC_CLONE_RANGE
->>>> ioctl to reflink one to another, freeing one of them.
->>>>
->>>> BTW nowadays, such dedupe and reflink ioctl is genericized in VFS.
->>>> file_operations structure now includes both clone_file_range() and
->>>> dedupe_file_range() callbacks now.
+>>> I would use 1TB devices for each Raid or a 4TB PCIe card.
 >>>
->>> Yea. Understand that part. So going by description of "dedupe" and
->>> "reflink", seems through these commands, one can do deduplication part
->>> and NOT duplicate find part.
+>>>> You give the impression that reliability for this fs is not the
+>>>> highest prio, so if you go full risk, then put bcache in write-back
+>>>> mode, then you will have your desired random 8k-16k I/O speedup after
+>>>> the cache is warmed up. But any SW or HW failure wil result in total
+>>>> fs loss normally if SSD and HDD get out of sync somehow. Bcache
+>>>> write-through might also be acceptable, you will need extensive
+>>>> monitoring and tuning of all (bcache) parameters etc to be sure of the
+>>>> right choice of size and setup etc.
+>>>
+>>> Yes i wanted to use the write back mode. Has anybody already made some
+>>> test or experience with a setup like this?
+>>>
 >>
->>
->> Yes, one don't need to call "dedupe" ioctl if they already knows some data
->> is identical and can go reflink straightforward.
->>
->>> That's still out of xfs_io command scope.
->>
->>
->> Not sure what the scope here you mean, sorry for that.
->>
-> By "scope", I meant duplicate find part but that contradicts statement
-> you just written below:
->> Since xfs_io can be used to find duplication,
+>> May be you can make work your raid setup faster by:
+>> 1. Use Single Profile
 > 
-> Since "dedupe" command input only a "source file" and src and
-> dst_offset within that, so it can deduplicate the content within a
-> file where actual FS dedupe IOCTL can first ensure if two extents are
-> identical and if yes, then deduplicate them.
-
-By "deduplicate", if you mean "removing duplication" then xfs_io 
-"dedupe" command itself doesn't do that.
-
-The old btrfs ioctl describe this better, FILE_EXTENT_SAME.
-"dedupe" command itself is only verifying if they have the same content.
-
-So to make it clear, "dedupe" command and ioctl only do the 
-*verification* work.
-
-"Reflink" will really remove the duplication (or even non-duplicated 
-data if you really want).
-
-
-But please be careful, "reflink" is much like copy, so it can be 
-executed on file ranges with different contents.
-In that case, reflink can free some space, but it also modifies the content.
-
-So for full de-duplication, one must go through the full *verify* then 
-*reflink* circle.
-Although "dedupe"(FILE_EXTENT_SAME) ioctl provides one verification 
-method, it's not the only solution.
-
-But anyway, "dedupe" and "reflink" command provided by xfs_io does 
-provide every pieces to do de-duplication, so the wiki is still correct 
-IMHO.
-
-Thanks,
-Qu
-
+> I'm already using the raid0 profile - see below:
 > 
-> Is that correct?
+> Data,RAID0: Size:22.57TiB, Used:21.08TiB
+> Metadata,RAID0: Size:90.00GiB, Used:82.28GiB
+> System,RAID0: Size:64.00MiB, Used:1.53MiB
 > 
-> Thanks
-> Shally
+>> 2. Use different stripe size for HW RAID5:
+>>     i think 16kb will be optimal with 5 devices per raid group
+>>     That will give you 64kb data stripe and 16kb parity
+>>     Btrfs raid0 use 64kb as stripe so that can make data access
+>> unaligned (or use single profile for btrfs)
 > 
->   and can remove duplication, I
->> don't find anything strange in that wiki page.
->> (Especially considering how popular the tool is, you can't find any more
->> handy tool than xfs_io)
->>
->> Thanks,
->> Qu
->>
->>
->>> Is that understanding correct?
->>> Thanks
->>> Shally
->>>>
->>>>
->>>> Thanks,
->>>> Qu
->>>>>
->>>>>
->>>>>
->>>>> So, can anyone help here and point me what am I missing here.
->>>>>
->>>>> Thanks
->>>>> Shally
->>>>> --
->>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>> in
->>>>> the body of a message to majordomo@vger.kernel.org
->>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
+> That sounds like an interesting idea except for the unaligned writes.
+> Will need to test this.
+> 
+>> 3. Use btrfs ssd_spread to decrease RMW cycles.
+> Can you explain this?
+> 
+> Stefan
+
+i was able to fix this issue with ssd_spread. Could it be that the
+default allocators nossd and ssd are searching to hard to free space?
+Even space_tree did not help.
+
+Greets,
+Stefan

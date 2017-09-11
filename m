@@ -1,58 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from youngberry.canonical.com ([91.189.89.112]:50539 "EHLO
-        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751563AbdIKPPd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 11:15:33 -0400
-From: Colin King <colin.king@canonical.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: avoid null pointer dereference on fs_info when calling btrfs_crit
-Date: Mon, 11 Sep 2017 16:15:28 +0100
-Message-Id: <20170911151528.26348-1-colin.king@canonical.com>
+Received: from smtp2.lkj.it ([188.213.165.207]:38712 "EHLO smtp2.lkj.it"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750742AbdIKHJP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 03:09:15 -0400
+Received: from mail.editarea.com (unknown [172.20.2.194])
+        by smtp2.lkj.it (Postfix) with ESMTPS id 4C23A64858
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 09:01:18 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by mail.editarea.com (Postfix) with ESMTP id 61213418CA49
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 09:01:17 +0200 (CEST)
+Received: from mail.editarea.com ([127.0.0.1])
+        by localhost (mail.editarea.com [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id exRBZhXwxuwS for <linux-btrfs@vger.kernel.org>;
+        Mon, 11 Sep 2017 09:01:16 +0200 (CEST)
+Received: from [192.168.1.101] (93-38-67-59.ip69.fastwebnet.it [93.38.67.59])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.editarea.com (Postfix) with ESMTPSA id 6E12A41846F7
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 09:01:15 +0200 (CEST)
+To: linux-btrfs@vger.kernel.org
+From: Alessandro Polverini <alex@polverini.org>
+Subject: btrfs send fails with ioctl error 524
+Message-ID: <6be3c5f6-b33e-cf5d-af76-7c07b688a554@polverini.org>
+Date: Mon, 11 Sep 2017 09:01:14 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Colin Ian King <colin.king@canonical.com>
+Hello,
+I've opened a bug report here:
 
-There are checks on fs_info in __btrfs_panic to avoid dereferencing a
-null fs_info, however, there is a call to btrfs_crit that may also
-dereference a null fs_info. Fix this by adding a check to see if fs_info
-is null and only print the s_id if fs_info is non-null.
+https://bugzilla.kernel.org/show_bug.cgi?id=196903
 
-Detected by CoverityScan CID#401973 ("Dereference after null check")
+because I'm unable to transfer snapshots any more, I get the error:
 
-Fixes: efe120a067c8 ("Btrfs: convert printk to btrfs_ and fix BTRFS prefix")
-Signed-off-by: Colin Ian King <colin.king@canonical.com>
----
- fs/btrfs/super.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ > ERROR: send ioctl failed with -524: Unknown error 524
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index e56a93f3113e..c669241f936e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -202,7 +202,6 @@ static struct ratelimit_state printk_limits[] = {
- 
- void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
- {
--	struct super_block *sb = fs_info->sb;
- 	char lvl[PRINTK_MAX_SINGLE_HEADER_LEN + 1] = "\0";
- 	struct va_format vaf;
- 	va_list args;
-@@ -228,7 +227,8 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
- 	vaf.va = &args;
- 
- 	if (__ratelimit(ratelimit))
--		printk("%sBTRFS %s (device %s): %pV\n", lvl, type, sb->s_id, &vaf);
-+		printk("%sBTRFS %s (device %s): %pV\n", lvl, type,
-+			fs_info ? fs_info->sb->s_id : "<unknown>", &vaf);
- 
- 	va_end(args);
- }
--- 
-2.14.1
+I don't know how to solve the problem, I'm stuck.
 
+Any help would be very welcome!
+
+Alex
+
+P.S.: I'm not subscribed to the list, please CC me

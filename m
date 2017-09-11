@@ -1,120 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:50960 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750789AbdIKIMm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 04:12:42 -0400
-Subject: Re: BTRFS Deduplication
-To: shally verma <shallyvermacavium@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, "Verma, Shally" <shally.verma@cavium.com>
-References: <CAP9W88gEje_unDuNTGCZXn5PKoDwHtTgrjc7Cwzn0a_2KWtWow@mail.gmail.com>
- <03f4db85-bd2c-679d-e369-65ccc5d61ad7@gmx.com>
- <CAP9W88hGwo_L6k_-s7SUQpn7e-oVeFWydM9eiK=wtAK-kBDEXg@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <32a55320-4e4f-2dea-4345-2c12b1b98eaf@gmx.com>
-Date: Mon, 11 Sep 2017 16:12:30 +0800
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:34459 "EHLO
+        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750922AbdIKITG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 04:19:06 -0400
+Received: by mail-pf0-f195.google.com with SMTP id g65so4385488pfe.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 01:19:06 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAP9W88hGwo_L6k_-s7SUQpn7e-oVeFWydM9eiK=wtAK-kBDEXg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <e7dd3f37-6088-c8e7-0c96-c7d5d612d29e@gmail.com>
+References: <CAOsOv4morDsVyrWEitL8L+7mXjS+0mXXsd9213Y8cdR44qrLYg@mail.gmail.com>
+ <1F3219B0-72B2-4201-8C96-E6FBFD02A413@demfloro.ru> <bae7bedb-4f3a-3779-e6c7-9d3879cb1d27@gmail.com>
+ <20170910231727.65bbb2aa@demfloro.ru> <e7dd3f37-6088-c8e7-0c96-c7d5d612d29e@gmail.com>
+From: FLJ <feci2048@gmail.com>
+Date: Mon, 11 Sep 2017 10:18:25 +0200
+Message-ID: <CAOsOv4nbUsaHisu9yGKJ8TsTaYwLwq80Hs7_t-dbtUStESwu1g@mail.gmail.com>
+Subject: Re: Help me understand what is going on with my RAID1 FS
+To: Andrei Borzenkov <arvidjaar@gmail.com>
+Cc: Dmitrii Tcvetkov <demfloro@demfloro.ru>, FLJ <feci2048@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks everyone for the helpful and detailed responses.
+Now that you confirmed that everything is fine with my FS, I'm all
+relaxed because I can for sure live with the output of df.
 
 
-On 2017年09月11日 15:54, shally verma wrote:
-> On Mon, Sep 11, 2017 at 12:16 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->> On 2017年09月11日 14:05, shally verma wrote:
+
+On Mon, Sep 11, 2017 at 5:29 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
+> 10.09.2017 23:17, Dmitrii Tcvetkov пишет:
+>>>> Drive1      Drive2    Drive3
+>>>> X           X
+>>>> X                         X
+>>>>             X             X
+>>>>
+>>>> Where X is a chunk of raid1 block group.
 >>>
->>> I was going through  BTRFS Deduplication page
->>> (https://btrfs.wiki.kernel.org/index.php/Deduplication) and I read
->>>
->>> "As such, xfs_io, is able to perform deduplication on a BTRFS file
->>> system," ..
->>>
->>> following this, I followed on to xfs_io link
->>> https://linux.die.net/man/8/xfs_io
->>>
->>> As I understand, these are set of commands allow us to do different
->>> operations on "xfs" filesystem.
+>>> But this table clearly shows that adding third drive increases free
+>>> space by 50%. You need to reallocate data to actually make use of it,
+>>> but it was done in this case.
 >>
+>> It increases it but I don't see how this space is in any way useful
+>> unless data is in single profile. After full balance chunks will be
+>> spread over 3 devices, how it helps in raid1 data profile case?
 >>
->> Nope, it's just a tool triggering different read/write or ioctls.
->> In fact most of its command is fs independent.
->> Only a limited number of operations are only supported by XFS.
->>
->> It's just due to historical reasons it's still named as xfs_io.
->>
->> I won't be surprised if one day it's split as an independent tool.
->>
->>> and command set mentioned here, couldn't see which is command to
->>> invoke dedupe task.
->>
->>
->> "dedupe" and "reflink" command.
-> Oh. That means page link referred on BTRFS Wiki page is not updated
-> with this. I googled another page that has reference of these two
-> command in xfs_io here
-> https://www.systutorials.com/docs/linux/man/8-xfs_io/
-> May be Wiki need an update here.
-
-If XFS has a regularly updated online man page, we can just use that.
-(But unfortunately, not every fs user tools use asciidoc like btrfs, 
-which can generate both man page and html).
-
-> 
->>
->>> and how this works with BTRFS.
->>
->>
->> Fs support FIDEDUPERANGE or BTRFS_IOC_FILE_EXTENT_SAME ioctl can use it to
->> determine if two ranges are containing identical data.
->>
->> And if they are identical, we use FICLONERANGE or BTRFS_IOC_CLONE_RANGE
->> ioctl to reflink one to another, freeing one of them.
->>
->> BTW nowadays, such dedupe and reflink ioctl is genericized in VFS.
->> file_operations structure now includes both clone_file_range() and
->> dedupe_file_range() callbacks now.
-> Yea. Understand that part. So going by description of "dedupe" and
-> "reflink", seems through these commands, one can do deduplication part
-> and NOT duplicate find part.
-
-Yes, one don't need to call "dedupe" ioctl if they already knows some 
-data is identical and can go reflink straightforward.
-
-> That's still out of xfs_io command scope.
-
-Not sure what the scope here you mean, sorry for that.
-
-Since xfs_io can be used to find duplication, and can remove 
-duplication, I don't find anything strange in that wiki page.
-(Especially considering how popular the tool is, you can't find any more 
-handy tool than xfs_io)
-
-Thanks,
-Qu
-
-> Is that understanding correct?
-> Thanks
-> Shally
->>
->> Thanks,
->> Qu
->>>
->>>
->>> So, can anyone help here and point me what am I missing here.
->>>
->>> Thanks
->>> Shally
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> A1 A2  => A1 A2 - => A1 A2 B1 => A1 A2 B1
+> B1 B2     B1 B2 -    -  B2  -    C1 B2 C2
+>
+> It is raid1 profile on three disks fully utilizing them (assuming equal
+> sizes of course). Where "raid1" means - each data block has two copies
+> on different devices.

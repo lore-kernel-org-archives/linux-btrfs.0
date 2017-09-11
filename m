@@ -1,94 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:36557 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751054AbdILQft (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:33010 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750957AbdIKVMm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2017 12:35:49 -0400
-Received: by mail-io0-f196.google.com with SMTP id n69so5643135ioi.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2017 09:35:49 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAGqmi77dYD90ni9H_HMiqD8Tp+y+hfgRRnoKZRGa+QH_+CdFxg@mail.gmail.com>
+        Mon, 11 Sep 2017 17:12:42 -0400
+Received: by mail-qt0-f195.google.com with SMTP id b1so3962069qtc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 14:12:41 -0700 (PDT)
+From: josef@toxicpanda.com
+To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Cc: Josef Bacik <jbacik@fb.com>
+Subject: [PATCH 01/10] btrfs: add a helper to return a head ref
+Date: Mon, 11 Sep 2017 17:12:27 -0400
+Message-Id: <1505164356-13474-2-git-send-email-jbacik@fb.com>
+In-Reply-To: <1505164356-13474-1-git-send-email-jbacik@fb.com>
 References: <1505164356-13474-1-git-send-email-jbacik@fb.com>
- <1505164356-13474-9-git-send-email-jbacik@fb.com> <CAGqmi77dYD90ni9H_HMiqD8Tp+y+hfgRRnoKZRGa+QH_+CdFxg@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Tue, 12 Sep 2017 19:35:08 +0300
-Message-ID: <CAGqmi75pFVkzJTVP0O1vY8-vrpq+Sx7T0OQsQ9ZuvBS7jegSTw@mail.gmail.com>
-Subject: Re: [PATCH 08/10] btrfs: switch args for comp_*_refs
-To: josef@toxicpanda.com
-Cc: kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fb.com>
-Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-09-12 19:21 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
-> 2017-09-12 0:12 GMT+03:00  <josef@toxicpanda.com>:
->> From: Josef Bacik <jbacik@fb.com>
->>
->> Because seriously?  ref2 and then ref1?
->>
->> Signed-off-by: Josef Bacik <jbacik@fb.com>
->> ---
->>  fs/btrfs/delayed-ref.c | 8 ++++----
->>  1 file changed, 4 insertions(+), 4 deletions(-)
->>
->> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
->> index 7374710..c5de6c7 100644
->> --- a/fs/btrfs/delayed-ref.c
->> +++ b/fs/btrfs/delayed-ref.c
->> @@ -40,8 +40,8 @@ struct kmem_cache *btrfs_delayed_extent_op_cachep;
->>  /*
->>   * compare two delayed tree backrefs with same bytenr and type
->>   */
->> -static int comp_tree_refs(struct btrfs_delayed_tree_ref *ref2,
->> -                         struct btrfs_delayed_tree_ref *ref1)
->> +static int comp_tree_refs(struct btrfs_delayed_tree_ref *ref1,
->> +                         struct btrfs_delayed_tree_ref *ref2)
->>  {
->>         if (ref1->node.type == BTRFS_TREE_BLOCK_REF_KEY) {
->>                 if (ref1->root < ref2->root)
->> @@ -60,8 +60,8 @@ static int comp_tree_refs(struct btrfs_delayed_tree_ref *ref2,
->>  /*
->>   * compare two delayed data backrefs with same bytenr and type
->>   */
->> -static int comp_data_refs(struct btrfs_delayed_data_ref *ref2,
->> -                         struct btrfs_delayed_data_ref *ref1)
->> +static int comp_data_refs(struct btrfs_delayed_data_ref *ref1,
->> +                         struct btrfs_delayed_data_ref *ref2)
->>  {
->>         if (ref1->node.type == BTRFS_EXTENT_DATA_REF_KEY) {
->>                 if (ref1->root < ref2->root)
->> --
->> 2.7.4
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> Result of that function does not used anywhere (i.e. only as bool),
-> may be let's rename that like:
->   compr_tree_refs_eq()
-> and simplify to
->   if (ref1->root != ref2->root)
->        return 0;
->
-> (same for comp_data_refs())
->
-> This can made that more obvious and remove useless if. as that not
-> used in any "sorting" code
->
-> Thanks.
->
-> Reviewed-by: Timofey Titovets <nefelim4ag@gmail.com>
->
-> --
-> Have a nice day,
-> Timofey.
+From: Josef Bacik <jbacik@fb.com>
 
-Oh, sorry, you want convert list to RB tree, so result will be used.
-Just ignore my comment.
+Simplify the error handling in __btrfs_run_delayed_refs by breaking out
+the code used to return a head back to the delayed_refs tree for
+processing into a helper function.
 
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/extent-tree.c | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b68fb8c..636aac0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2508,6 +2508,17 @@ select_delayed_ref(struct btrfs_delayed_ref_head *head)
+ 	return ref;
+ }
+ 
++static void
++unselect_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
++			  struct btrfs_delayed_ref_head *head)
++{
++	spin_lock(&delayed_refs->lock);
++	head->processing = 0;
++	delayed_refs->num_heads_ready++;
++	spin_unlock(&delayed_refs->lock);
++	btrfs_delayed_ref_unlock(head);
++}
++
+ /*
+  * Returns 0 on success or if called with an already aborted transaction.
+  * Returns -ENOMEM or -EIO on failure and will abort the transaction.
+@@ -2581,11 +2592,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 		if (ref && ref->seq &&
+ 		    btrfs_check_delayed_seq(fs_info, delayed_refs, ref->seq)) {
+ 			spin_unlock(&locked_ref->lock);
+-			spin_lock(&delayed_refs->lock);
+-			locked_ref->processing = 0;
+-			delayed_refs->num_heads_ready++;
+-			spin_unlock(&delayed_refs->lock);
+-			btrfs_delayed_ref_unlock(locked_ref);
++			unselect_delayed_ref_head(delayed_refs, locked_ref);
+ 			locked_ref = NULL;
+ 			cond_resched();
+ 			count++;
+@@ -2631,14 +2638,11 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 					 */
+ 					if (must_insert_reserved)
+ 						locked_ref->must_insert_reserved = 1;
+-					spin_lock(&delayed_refs->lock);
+-					locked_ref->processing = 0;
+-					delayed_refs->num_heads_ready++;
+-					spin_unlock(&delayed_refs->lock);
++					unselect_delayed_ref_head(delayed_refs,
++								  locked_ref);
+ 					btrfs_debug(fs_info,
+ 						    "run_delayed_extent_op returned %d",
+ 						    ret);
+-					btrfs_delayed_ref_unlock(locked_ref);
+ 					return ret;
+ 				}
+ 				continue;
+@@ -2696,11 +2700,7 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 
+ 		btrfs_free_delayed_extent_op(extent_op);
+ 		if (ret) {
+-			spin_lock(&delayed_refs->lock);
+-			locked_ref->processing = 0;
+-			delayed_refs->num_heads_ready++;
+-			spin_unlock(&delayed_refs->lock);
+-			btrfs_delayed_ref_unlock(locked_ref);
++			unselect_delayed_ref_head(delayed_refs, locked_ref);
+ 			btrfs_put_delayed_ref(ref);
+ 			btrfs_debug(fs_info, "run_one_delayed_ref returned %d",
+ 				    ret);
 -- 
-Have a nice day,
-Timofey.
+2.7.4
+

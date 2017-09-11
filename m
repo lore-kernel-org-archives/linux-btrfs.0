@@ -1,213 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:57883 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750715AbdIKFXE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 01:23:04 -0400
-Subject: Re: Regarding handling of file renames in Btrfs
-To: Martin Raiber <martin@urbackup.org>,
-        Rohan Kadekodi <kadekodirohan@gmail.com>, linux-btrfs@vger.kernel.org
-Cc: Vijaychidambaram Velayudhan Pillai <vijay@cs.utexas.edu>,
-        Jayashree Mohan <jayashree2912@gmail.com>
-References: <CADb0YN=G1MT=VwLcfbbrnppeXRKe3Zi4EsmwSs+xw89wR9rb4A@mail.gmail.com>
- <571bed07-1525-0115-358c-23d98104c907@gmx.com>
- <7adde771-3434-ca25-60a4-e9f1fdd4f671@gmx.com>
- <0102015e6c3664dc-9943256b-8e87-487e-807b-65f2dd7c7556-000000@eu-west-1.amazonses.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d8c737bc-6a20-6b5a-8e8f-058b75445de4@gmx.com>
-Date: Mon, 11 Sep 2017 13:22:35 +0800
+Received: from mail-it0-f53.google.com ([209.85.214.53]:45238 "EHLO
+        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750966AbdIKFpw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 01:45:52 -0400
+Received: by mail-it0-f53.google.com with SMTP id v19so11609102ite.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Sep 2017 22:45:52 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <0102015e6c3664dc-9943256b-8e87-487e-807b-65f2dd7c7556-000000@eu-west-1.amazonses.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAG+QAKXZwsTmrNFYNk9RmbL1DZGZ-oAe1GykVRdBOFxkLTwH9g@mail.gmail.com>
+References: <CAG+QAKXZwsTmrNFYNk9RmbL1DZGZ-oAe1GykVRdBOFxkLTwH9g@mail.gmail.com>
+From: Rich Rauenzahn <rrauenza@gmail.com>
+Date: Sun, 10 Sep 2017 22:45:50 -0700
+Message-ID: <CAG+QAKXNhA3YCjLAp5yOam05-egoHgY4YszR3XJFF=vUC-+Cdg@mail.gmail.com>
+Subject: Re: btrfs_remove_chunk call trace?
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+...and can it be related to the Samsung 840 SSD's not supporting NCQ
+Trim?  (Although I can't tell which device this trace is from -- it
+could be a mechanical Western Digital.)
 
-
-On 2017年09月10日 22:34, Martin Raiber wrote:
-> Hi,
-> 
-> On 10.09.2017 08:45 Qu Wenruo wrote:
->>
->>
->> On 2017年09月10日 14:41, Qu Wenruo wrote:
->>>
->>>
->>> On 2017年09月10日 07:50, Rohan Kadekodi wrote:
->>>> Hello,
->>>>
->>>> I was trying to understand how file renames are handled in Btrfs. I
->>>> read the code documentation, but had a problem understanding a few
->>>> things.
->>>>
->>>> During a file rename, btrfs_commit_transaction() is called which is
->>>> because Btrfs has to commit the whole FS before storing the
->>>> information related to the new renamed file. It has to commit the FS
->>>> because a rename first does an unlink, which is not recorded in the
->>>> btrfs_rename() transaction and so is not logged in the log tree. Is my
->>>> understanding correct? If yes, my questions are as follows:
->>>
->>> Not familiar with rename kernel code, so not much help for rename
->>> opeartion.
->>>
->>>>
->>>> 1. What does committing the whole FS mean?
->>>
->>> Committing the whole fs means a lot of things, but generally
->>> speaking, it makes that the on-disk data is inconsistent with each
->>> other.
->>
->>> For obvious part, it writes modified fs/subvolume trees to disk (with
->>> handling of tree operations so no half modified trees).
->>>
->>> Also other trees like extent tree (very hot since every CoW will
->>> update it, and the most complicated one), csum tree if modified.
->>>
->>> After transaction is committed, the on-disk btrfs will represent the
->>> states when commit trans is called, and every tree should match each
->>> other.
->>>
->>> Despite of this, after a transaction is committed, generation of the
->>> fs get increased and modified tree blocks will have the same
->>> generation number.
->>>
->>>> Blktrace shows that there
->>>> are 2       256KB writes, which are essentially writes to the data of
->>>> the root directory of the file system (which I found out through
->>>> btrfs-debug-tree).
->>>
->>> I'd say you didn't check btrfs-debug-tree output carefully enough.
->>> I strongly recommend to do vimdiff to get what tree is modified.
->>>
->>> At least the following trees are modified:
->>>
->>> 1) fs/subvolume tree
->>>      Rename modified the DIR_INDEX/DIR_ITEM/INODE_REF at least, and
->>>      updated inode time.
->>>      So fs/subvolume tree must be CoWed.
->>>
->>> 2) extent tree
->>>      CoW of above metadata operation will definitely cause extent
->>>      allocation and freeing, extent tree will also get updated.
->>>
->>> 3) root tree
->>>      Both extent tree and fs/subvolume tree modified, their root bytenr
->>>      needs to be updated and root tree must be updated.
->>>
->>> And finally superblocks.
->>>
->>> I just verified the behavior with empty btrfs created on a 1G file,
->>> only one file to do the rename.
->>>
->>> In that case (with 4K sectorsize and 16K nodesize), the total IO
->>> should be (3 * 16K) * 2 + 4K * 2 = 104K.
->>>
->>> "3" = number of tree blocks get modified
->>> "16K" = nodesize
->>> 1st "*2" = DUP profile for metadata
->>> "4K" = superblock size
->>> 2nd "*2" = 2 superblocks for 1G fs.
->>>
->>> If your extent/root/fs trees have higher level, then more tree blocks
->>> needs to be updated.
->>> And if your fs is very large, you may have 3 superblocks.
->>>
->>>> Is this equivalent to doing a shell sync, as the
->>>> same block groups are written during a shell sync too?
->>>
->>> For shell "sync" the difference is that, "sync" will write all dirty
->>> data pages to disk, and then commit transaction.
->>> While only calling btrfs_commit_transacation() doesn't trigger dirty
->>> page writeback.
->>>
->>> So there is a difference.
-> 
-> this conversation made me realize why btrfs has sub-optimal meta-data
-> performance. Cow b-trees are not the best data structure for such small
-> changes. In my application I have multiple operations (e.g. renames)
-> which can be bundles up and (mostly) one writer.
-
-Things are more complicated in fact.
-
-For example, even you are only renaming/moving one file.
-But in fact you're going to at least modify 6 items, they are:
-
-1) Removing DIR_INDEX of original parent dir inode
-    Assume the original parent dir inode number is 300.
-    We are removing (300 DIR_INDEX <seq>).
-
-2) Removing DIR_ITEM of original parent dir inode
-    We are removing (300 DIR_ITEM <crc32 of the old filename>)
-
-3) Removing INODE_REF of the renamed inode
-    Assume the renamed inode number is 400
-    We are removing (400 INODE_REF 300).
-
-4) Adding new DIR_INDEX to new parent dir inode
-    Assume the new parent dir inode number is 500.
-    We are adding (500 DIR_INDEX <seq>)
-
-5) Adding new DIR_ITEM to new parent dir inode
-    We are adding (500 DIR_ITEM <crc32 of the new filename>)
-
-6) Adding new INODE_REF to renamed inode
-    We are adding (400 INODE_REF 500)
-
-As you can see, there are 6 keys modification, and we can't ensure they 
-are all in one leaf.
-In worst case, we need to CoW the tree 6 times for different leaves.
-(Although CoWed tree won't be CoWed again until written to disk, which 
-reduces overhead)
-
-And even more, if you modified one tree, you must also modify the 
-ROOT_ITEM pointing the tree, which leads to root tree CoW.
-
-
-I have a crazy idea to double buffering tree blocks.
-That's to say, one tree block is actually consisted of 2 real tree blocks.
-
-And when CoW happens, just switch to the other tree block.
-So that we don't really need to update its parent pointer, so we can 
-limit the CoW affected range to minimal.
-
-But it's trading space for IO (although metadata space is relatively 
-small), and it will definitely cause LARGE on-disk format change.
-
-> I guess using BTRFS_IOC_TRANS_START and BTRFS_IOC_TRANS_END would be one
-> way to reduce the cow overhead, but those are dangerous wrt. to ENOSPC
-> and there have been discussions about removing them.
-
-Nope. in current Btrfs behavior, only longer transaction can reduce 
-overhead.
-As already CoWed and unwritten tree block will not be CoWed again, but 
-just modified in memory.
-
-So you should try to avoid such ioctl and let btrfs to handle 
-transaction by itself.
-
-> Best would be if there were delayed metadata, where metadata is handled
-> the same as delayed allocations and data changes, i.e. commit on fsync,
-> commit interval or fssync. I assumed this was already the case...
-
-Already delayed, as CoWed but not written tree block will not be CoWed 
-again.
-
-And we even have double delay for extent tree update to improve performance.
-
-But don't forget that such *optimization* itself is trading robust for 
-performance.
-(More code always means more bugs, and delayed-ref for extent tree is 
-already bug-prone)
-
-Thanks,
-Qu
-
-> 
-> Please correct me if I got this wrong.
-> 
-> Regards,
-> Martin Raiber
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+On Sun, Sep 10, 2017 at 10:16 PM, Rich Rauenzahn <rrauenza@gmail.com> wrote:
+> Is this something to be concerned about?
+>
+> I'm running the latest mainline kernel on CentOS 7.
+>
+> [ 1338.882288] ------------[ cut here ]------------
+> [ 1338.883058] WARNING: CPU: 2 PID: 790 at fs/btrfs/ctree.h:1559
+> btrfs_update_device+0x1c5/0x1d0 [btrfs]
+> [ 1338.883809] Modules linked in: xt_nat veth ipt_MASQUERADE
+> nf_nat_masquerade_ipv4 xt_addrtype overlay loop nf_conntrack_ftp
+> nf_log_ipv4 nf_log_common xt_LOG xt_limit xt_comment xt_recent
+> xt_multiport xt_conntrack iptable_filter xt_REDIRECT nf_nat_redirect
+> iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nct6775
+> nf_nat nf_conntrack hwmon_vid jc42 vfat fat dm_mirror dm_region_hash
+> dm_log dm_mod dax xfs libcrc32c x86_pkg_temp_thermal intel_powerclamp
+> coretemp kvm_intel kvm snd_hda_codec_realtek snd_hda_codec_hdmi
+> snd_hda_codec_generic irqbypass crct10dif_pclmul crc32_pclmul
+> snd_hda_intel ghash_clmulni_intel pcbc snd_hda_codec aesni_intel
+> snd_hda_core iTCO_wdt snd_hwdep crypto_simd glue_helper cryptd
+> iTCO_vendor_support snd_seq mei_wdt snd_seq_device intel_cstate
+> cdc_acm snd_pcm intel_rapl_perf
+> [ 1338.888639]  input_leds snd_timer lpc_ich i2c_i801 pcspkr
+> intel_pch_thermal snd mfd_core sg mei_me soundcore mei acpi_pad shpchp
+> ie31200_edac nfsd auth_rpcgss nfs_acl lockd grace sunrpc ip_tables
+> btrfs xor raid6_pq sd_mod crc32c_intel ahci e1000e libahci
+> firewire_ohci igb i915 dca firewire_core ptp i2c_algo_bit crc_itu_t
+> libata pps_core drm_kms_helper syscopyarea sysfillrect sysimgblt
+> fb_sys_fops drm video
+> [ 1338.891412] CPU: 2 PID: 790 Comm: btrfs-cleaner Tainted: G        W
+>       4.13.1-1.el7.elrepo.x86_64 #1
+> [ 1338.892171] Hardware name: Supermicro X10SAE/X10SAE, BIOS 2.0a 05/09/2014
+> [ 1338.892884] task: ffff880407cec5c0 task.stack: ffffc90002624000
+> [ 1338.893613] RIP: 0010:btrfs_update_device+0x1c5/0x1d0 [btrfs]
+> [ 1338.894299] RSP: 0018:ffffc90002627d00 EFLAGS: 00010206
+> [ 1338.894956] RAX: 0000000000000fff RBX: ffff880407cd9930 RCX: 000001d1c1011e00
+> [ 1338.895647] RDX: ffff880000000000 RSI: ffff880336e80f9e RDI: ffff88028395bd88
+> [ 1338.896304] RBP: ffffc90002627d48 R08: 0000000000003fc2 R09: ffffc90002627cb8
+> [ 1338.896934] R10: 0000000000001000 R11: 0000000000000003 R12: ffff880405f68c00
+> [ 1338.897618] R13: 0000000000000000 R14: ffff88028395bd88 R15: 0000000000003f9e
+> [ 1338.898251] FS:  0000000000000000(0000) GS:ffff88041fa80000(0000)
+> knlGS:0000000000000000
+> [ 1338.898867] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [ 1338.899522] CR2: 00007ff82f2cb000 CR3: 0000000001c09000 CR4: 00000000001406e0
+> [ 1338.900157] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> [ 1338.900772] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+> [ 1338.901402] Call Trace:
+> [ 1338.902017]  btrfs_remove_chunk+0x2fb/0x8b0 [btrfs]
+> [ 1338.902673]  btrfs_delete_unused_bgs+0x363/0x440 [btrfs]
+> [ 1338.903304]  cleaner_kthread+0x150/0x180 [btrfs]
+> [ 1338.903908]  kthread+0x109/0x140
+> [ 1338.904593]  ? btree_invalidatepage+0xa0/0xa0 [btrfs]
+> [ 1338.905207]  ? kthread_park+0x60/0x60
+> [ 1338.905803]  ret_from_fork+0x25/0x30
+> [ 1338.906416] Code: 10 00 00 00 4c 89 fe e8 8a 30 ff ff 4c 89 f7 e8
+> 32 f6 fc ff e9 d3 fe ff ff b8 f4 ff ff ff e9 d4 fe ff ff 0f 1f 00 e8
+> cb 3e be e0 <0f> ff eb af 0f 1f 80 00 00 00 00 0f 1f 44 00 00 55 31 d2
+> be 02

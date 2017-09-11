@@ -1,169 +1,390 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:60871 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750715AbdIKF0c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 01:26:32 -0400
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, marc@merlins.org
-Subject: [PATCH] btrfs-progs: Output time elapsed for each major tree it checked
-Date: Mon, 11 Sep 2017 14:26:23 +0900
-Message-Id: <20170911052623.31999-1-quwenruo.btrfs@gmx.com>
+Received: from tty0.vserver.softronics.ch ([91.214.169.36]:51041 "EHLO
+        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750936AbdIKRxG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 13:53:06 -0400
+Subject: Re: send | receive: received snapshot is missing recent files
+To: Dave <davestechshop@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: A L <crimsoncottage@gmail.com>
+References: <CAH=dxU6uVGXbdYc_65P6XbSby76A6Y=qoM6=cXMHkWDV8JRHVg@mail.gmail.com>
+ <CAH=dxU7RM7s+pxT=wxE9WcUNMWjSG_A0=1pUWD1dWGVQ6g+g8Q@mail.gmail.com>
+ <CAH=dxU6xwikfvfY7zCfuPavnCMMdecnyPckOZ3nyYm+_PZtOrg@mail.gmail.com>
+ <CAH=dxU6kQdqp-x0nLbTk=T8VhgH3oX8UUA_BO4p6rLEmwBsHhQ@mail.gmail.com>
+ <b899f57.51efafb1.15e5b02df03@gmail.com>
+ <CAH=dxU4T8zB3ufn8JC1Jq0-QXkCnWt11NkXBLNBQnEi3RA1PDQ@mail.gmail.com>
+ <CAH=dxU6S7XLVb4NY0ueZapUJW6A_KM9JezpB3icjYW4nRB8OPA@mail.gmail.com>
+ <e9ec7ac7-781d-34e0-9f48-aeb8566e5787@tty0.ch>
+ <CAH=dxU7Qtfqq1nT1cm8nS+OG-0GRZdtNEj2wSt4N6aoQ7f8YUQ@mail.gmail.com>
+From: Axel Burri <axel@tty0.ch>
+Message-ID: <0f1e32f8-12c7-4aa7-246f-4f6805e6d3df@tty0.ch>
+Date: Mon, 11 Sep 2017 19:53:06 +0200
+MIME-Version: 1.0
+In-Reply-To: <CAH=dxU7Qtfqq1nT1cm8nS+OG-0GRZdtNEj2wSt4N6aoQ7f8YUQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc reported that "btrfs check --repair" runs much faster than "btrfs
-check", which is quite weird.
+On 2017-09-08 06:44, Dave wrote:
+> I'm referring to the link below. Using "btrfs subvolume snapshot -r"
+> copies the Received UUID from the source into the new snapshot. The
+> btrbk FAQ entry suggests otherwise. Has something changed?
 
-This patch will add time elapsed for each major tree it checked, for
-both original mode and lowmem mode, so we can have a clue what's going
-wrong.
+I don't think something has changed, the description for the read-only
+subvolumes on the btrbk FAQ was just wrong (fixed now).
 
-Reported-by: Marc MERLIN <marc@merlins.org>
-Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
----
- cmds-check.c | 21 +++++++++++++++++++--
- utils.h      | 24 ++++++++++++++++++++++++
- 2 files changed, 43 insertions(+), 2 deletions(-)
+> The only way I see to remove a Received UUID is to create a rw
+> snapshot (above command without the "-r"), which is not ideal in this
+> situation when cleaning up readonly source snapshots.
+> 
+> Any suggestions? Thanks
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 006edbde..fee806cd 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -5318,13 +5318,16 @@ static int do_check_fs_roots(struct btrfs_fs_info *fs_info,
- 			  struct cache_tree *root_cache)
- {
- 	int ret;
-+	struct timer timer;
- 
- 	if (!ctx.progress_enabled)
- 		fprintf(stderr, "checking fs roots\n");
-+	start_timer(&timer);
- 	if (check_mode == CHECK_MODE_LOWMEM)
- 		ret = check_fs_roots_v2(fs_info);
- 	else
- 		ret = check_fs_roots(fs_info, root_cache);
-+	printf("done in %d seconds\n", stop_timer(&timer));
- 
- 	return ret;
- }
-@@ -11584,14 +11587,16 @@ out:
- static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
- {
- 	int ret;
-+	struct timer timer;
- 
- 	if (!ctx.progress_enabled)
- 		fprintf(stderr, "checking extents\n");
-+	start_timer(&timer);
- 	if (check_mode == CHECK_MODE_LOWMEM)
- 		ret = check_chunks_and_extents_v2(fs_info);
- 	else
- 		ret = check_chunks_and_extents(fs_info);
--
-+	printf("done in %d seconds\n", stop_timer(&timer));
- 	return ret;
- }
- 
-@@ -12772,6 +12777,7 @@ int cmd_check(int argc, char **argv)
- 	int qgroups_repaired = 0;
- 	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
- 	int force = 0;
-+	struct timer timer;
- 
- 	while(1) {
- 		int c;
-@@ -12953,8 +12959,11 @@ int cmd_check(int argc, char **argv)
- 	if (repair)
- 		ctree_flags |= OPEN_CTREE_PARTIAL;
- 
-+	printf("opening btrfs filesystem\n");
-+	start_timer(&timer);
- 	info = open_ctree_fs_info(argv[optind], bytenr, tree_root_bytenr,
- 				  chunk_root_bytenr, ctree_flags);
-+	printf("done in %d seconds\n", stop_timer(&timer));
- 	if (!info) {
- 		error("cannot open file system");
- 		ret = -EIO;
-@@ -13115,8 +13124,10 @@ int cmd_check(int argc, char **argv)
- 		else
- 			fprintf(stderr, "checking free space cache\n");
- 	}
-+	start_timer(&timer);
- 	ret = check_space_cache(root);
- 	err |= !!ret;
-+	printf("done in %d seconds\n", stop_timer(&timer));
- 	if (ret) {
- 		if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE))
- 			error("errors found in free space tree");
-@@ -13140,18 +13151,22 @@ int cmd_check(int argc, char **argv)
- 	}
- 
- 	fprintf(stderr, "checking csums\n");
-+	start_timer(&timer);
- 	ret = check_csums(root);
- 	err |= !!ret;
-+	printf("done in %d seconds\n", stop_timer(&timer));
- 	if (ret) {
- 		error("errors found in csum tree");
- 		goto out;
- 	}
- 
--	fprintf(stderr, "checking root refs\n");
- 	/* For low memory mode, check_fs_roots_v2 handles root refs */
- 	if (check_mode != CHECK_MODE_LOWMEM) {
-+		fprintf(stderr, "checking root refs\n");
-+		start_timer(&timer);
- 		ret = check_root_refs(root, &root_cache);
- 		err |= !!ret;
-+		printf("done in %d seconds\n", stop_timer(&timer));
- 		if (ret) {
- 			error("errors found in root refs");
- 			goto out;
-@@ -13186,8 +13201,10 @@ int cmd_check(int argc, char **argv)
- 
- 	if (info->quota_enabled) {
- 		fprintf(stderr, "checking quota groups\n");
-+		start_timer(&timer);
- 		ret = qgroup_verify_all(info);
- 		err |= !!ret;
-+		printf("done in %d seconds\n", stop_timer(&timer));
- 		if (ret) {
- 			error("failed to check quota groups");
- 			goto out;
-diff --git a/utils.h b/utils.h
-index d28a05a6..159487db 100644
---- a/utils.h
-+++ b/utils.h
-@@ -172,4 +172,28 @@ u64 rand_u64(void);
- unsigned int rand_range(unsigned int upper);
- void init_rand_seed(u64 seed);
- 
-+/* Utils to report time duration */
-+struct timer {
-+	time_t start;
-+};
-+
-+static inline void start_timer(struct timer *t)
-+{
-+	time(&t->start);
-+}
-+
-+/*
-+ * Stop timer and return the time elapsed in int
-+ *
-+ * int should be large enough to "btrfs check" and avoid
-+ * type converting.
-+ */
-+static inline int stop_timer(struct timer *t)
-+{
-+	time_t end;
-+
-+	time(&end);
-+
-+	return (int)(difftime(end, t->start));
-+}
- #endif
--- 
-2.14.1
+No suggestions from my part, as far as I know there is no way to easily
+remove/change a received_uuid from a subvolume.
 
+As you mentioned, you can snapshot it twice:
+
+# btrfs subvolume snapshot mysubvol mysubvol.rw
+# btrfs subvolume delete mysubvol
+# btrfs subvolume snapshot -r mysubvol.rw mysubvol
+# btrfs subvolume delete mysubvol.rw
+
+Instead of the second snapshot operation, this time you could also use
+the (evil) command: "btrfs btrfs property set -ts mysnapshot ro true"
+
+> On Thu, Sep 7, 2017 at 10:33 AM, Axel Burri <axel@tty0.ch> wrote:
+>>
+>> Having a received_uuid set on the source volume ("/home" in your case)
+>> is indeed a bad thing when it comes to send/receive. You probably
+>> restored a backup with send/receive, and made it read/write using "btrfs
+>> property set -ts /home ro false". This is a an evil thing, as it leaves
+>> received_uuid intact. In order to make a subvolume read-write, I
+>> recommend to use "btrfs subvolume snapshot <ro-subvol> <rw-subvol>".
+>>
+>> There is a FAQ entry on btrbk on how to fix this:
+>>
+>> https://github.com/digint/btrbk/blob/master/doc/FAQ.md#im-getting-an-error-aborted-received-uuid-is-set
+>>
+>>
+>> On 2017-09-07 15:34, Dave wrote:
+>>> I just ran a test. The btrfs send - receive problem I described is
+>>> indeed fully resolved by removing the "problematic" snapshot on the
+>>> target device. I did not make any changes to the source volume. I did
+>>> not make any other changes in my steps (see earlier message for my
+>>> exact steps).
+>>>
+>>> Therefore, the problem I described in my earlier message is not due
+>>> exclusively to having a Received UUID on the source volume (or to any
+>>> other feature of the source volume). It is not related to any feature
+>>> of the directly specified parent volume either. More details are
+>>> included in my earlier email.
+>>>
+>>> Thanks for any further feedback, including answers to my questions and
+>>> comments about whether this is a known issue.
+>>>
+>>>
+>>> On Thu, Sep 7, 2017 at 8:39 AM, Dave <davestechshop@gmail.com> wrote:
+>>>>
+>>>> Hello. Can anyone further explain this issue ("you have a Received UUID on the source volume")?
+>>>>
+>>>> How does it happen?
+>>>> How does one remove a Received UUID from the source volume?
+>>>>
+>>>> And how does that explain my results where I showed that the problem
+>>>> is not dependent upon the source volume but is instead dependent upon
+>>>> some existing snapshot on the target volume?
+>>>>
+>>>> My results do not appear to be fully explained by a Received UUID on the source volume, as my prior message hopefully shows clearly.
+>>>>
+>>>> Thank you.
+>>>>
+>>>> On Thu, Sep 7, 2017 at 2:24 AM, A L <crimsoncottage@gmail.com> wrote:
+>>>>> The problem can be that you have a Received UUID on the source volume. This breaks send-receive.
+>>>>>
+>>>>> ---- From: Dave <davestechshop@gmail.com> -- Sent: 2017-09-07 - 06:43 ----
+>>>>>
+>>>>>> Here is more info and a possible (shocking) explanation. This
+>>>>>> aggregates my prior messages and it provides an almost complete set of
+>>>>>> steps to reproduce this problem.
+>>>>>>
+>>>>>> Linux srv 4.9.41-1-lts #1 SMP Mon Aug 7 17:32:35 CEST 2017 x86_64 GNU/Linux
+>>>>>> btrfs-progs v4.12
+>>>>>>
+>>>>>> My steps:
+>>>>>>
+>>>>>> [root@srv]# sync
+>>>>>> [root@srv]# mkdir /home/.snapshots/test1
+>>>>>> [root@srv]# btrfs su sn -r /home/ /home/.snapshots/test1/
+>>>>>> Create a readonly snapshot of '/home/' in '/home/.snapshots/test1//home'
+>>>>>> [root@srv]# sync
+>>>>>> [root@srv]# mkdir /mnt/x5a/home/test1
+>>>>>> [root@srv]# btrfs send /home/.snapshots/test1/home/ | btrfs receive
+>>>>>> /mnt/x5a/home/test1/
+>>>>>> At subvol /home/.snapshots/test1/home/
+>>>>>> At subvol home
+>>>>>> [root@srv]# ls -la /mnt/x5a/home/test1/home/user1/
+>>>>>> NOTE: all recent files are present
+>>>>>> [root@srv]# ls -la /mnt/x5a/home/test1/home/user2/Documents/
+>>>>>> NOTE: all recent files are present
+>>>>>> [root@srv]# mkdir /home/.snapshots/test2
+>>>>>> [root@srv]# mkdir /mnt/x5a/home/test2
+>>>>>> [root@srv]# btrfs su sn -r /home/ /home/.snapshots/test2/
+>>>>>> Create a readonly snapshot of '/home/' in '/home/.snapshots/test2//home'
+>>>>>> [root@srv]# sync
+>>>>>> [root@srv]# btrfs send -p /home/.snapshots/test1/home/
+>>>>>> /home/.snapshots/test2/home/ | btrfs receive /mnt/x5a/home/test2/
+>>>>>> At subvol /home/.snapshots/test2/home/
+>>>>>> At snapshot home
+>>>>>> [root@srv]# ls -la /mnt/x5a/home/test2/home/user1/
+>>>>>> NOTE: all recent files are MISSING
+>>>>>> [root@srv]# ls -la /mnt/x5a/home/test2/home/user2/Documents/
+>>>>>> NOTE: all recent files are MISSING
+>>>>>>
+>>>>>> Below I am including some rsync output to illustrate when a snapshot
+>>>>>> is missing files (or not):
+>>>>>>
+>>>>>> [root@srv]# rsync -aniv /home/.snapshots/test1/home/
+>>>>>> /home/.snapshots/test2/home/
+>>>>>> sending incremental file list
+>>>>>>
+>>>>>> sent 1,143,286 bytes  received 1,123 bytes  762,939.33 bytes/sec
+>>>>>> total size is 3,642,972,271  speedup is 3,183.28 (DRY RUN)
+>>>>>>
+>>>>>> This indicates that these two subvolumes contain the same files, which
+>>>>>> they should because test2 is a snapshot of test1 without any changes
+>>>>>> to files, and it was not sent to another physical device.
+>>>>>>
+>>>>>> The problem is when test2 is sent to another device as shown by the
+>>>>>> rsync results below.
+>>>>>>
+>>>>>> [root@srv]# rsync -aniv /home/.snapshots/test2/home/ /mnt/x5a/home/test2/home/
+>>>>>> sending incremental file list
+>>>>>> .d..t...... ./
+>>>>>> .d..t...... user1/
+>>>>>>> f.st...... user1/.bash_history
+>>>>>>> f.st...... user1/.bashrc
+>>>>>>> f+++++++++ user1/test2017-09-06.txt
+>>>>>> ...
+>>>>>> and a long list of other missing files
+>>>>>>
+>>>>>> The incrementally sent snapshot at /mnt/x5a/home/test2/home/ is
+>>>>>> missing all recent files (any files from the month of August or
+>>>>>> September), as my prior visual inspections had indicated. The same
+>>>>>> files are missing every time. There is no randomness to the missing
+>>>>>> data.
+>>>>>>
+>>>>>> The problem does not happen for me if the receive command target is
+>>>>>> located on the same physical device as shown next. (However, I suspect
+>>>>>> there's more to it than that, as explained further below.)
+>>>>>>
+>>>>>> [root@srv]# mkdir /home/.snapshots/test2rec
+>>>>>> [root@srv]# btrfs send -p /home/.snapshots/test1/home/
+>>>>>> /home/.snapshots/test2/home/ | btrfs receive
+>>>>>> /home/.snapshots/test2rec/
+>>>>>> At subvol /home/.snapshots/test2/home/
+>>>>>>
+>>>>>> # rsync -aniv /home/.snapshots/test2/home/ /home/.snapshots/test2rec/home/
+>>>>>> sending incremental file list
+>>>>>>
+>>>>>> sent 1,143,286 bytes  received 1,123 bytes  2,288,818.00 bytes/sec
+>>>>>> total size is 3,642,972,271  speedup is 3,183.28 (DRY RUN)
+>>>>>>
+>>>>>> The above (as well as visual inspection of files) indicates that these
+>>>>>> two subvolumes contain the same files, which was not the case when the
+>>>>>> same command had a target located on another physical device. Of
+>>>>>> course, a snapshot which resides on the same physical device is not a
+>>>>>> very good backup. So I do need to send it to another device, but that
+>>>>>> results in missing files when the -p or -c options are used with btrfs
+>>>>>> send. (Non-incremental sending to another physical device does work.)
+>>>>>>
+>>>>>> I can think of a couple possible explanations.
+>>>>>>
+>>>>>> One is that there is a problem when using the -p or -c options with
+>>>>>> btrfs send when the target is another physical device. I suspect this
+>>>>>> is the actual explanation, however.
+>>>>>>
+>>>>>> A second possibility is that the presence of prior existing snapshots
+>>>>>> at the target location (even if old and not referenced in any current
+>>>>>> btrfs command), can determine the outcome and final contents of an
+>>>>>> incremental send operation. I believe the info below suggests this to
+>>>>>> be the case.
+>>>>>>
+>>>>>> [root@srv]# btrfs su show /home/.snapshots/test2/home/
+>>>>>> test2/home
+>>>>>>         Name:                   home
+>>>>>>         UUID:                   292e8bbf-a95f-2a4e-8280-129202d389dc
+>>>>>>         Parent UUID:            62418df6-a1f8-d74a-a152-11f519593053
+>>>>>>         Received UUID:          e00d5318-6efd-824e-ac91-f25efa5c2a74
+>>>>>>         Creation time:          2017-09-06 15:38:16 -0400
+>>>>>>         Subvolume ID:           2000
+>>>>>>         Generation:             5020
+>>>>>>         Gen at creation:        5020
+>>>>>>         Parent ID:              257
+>>>>>>         Top level ID:           257
+>>>>>>         Flags:                  readonly
+>>>>>>         Snapshot(s):
+>>>>>>
+>>>>>> [root@srv]# btrfs su show /mnt/x5a/home/test1/home
+>>>>>> home/test1/home
+>>>>>>         Name:                   home
+>>>>>>         UUID:                   dc00b13d-f841-cf48-a169-aa61429a5679
+>>>>>>         Parent UUID:            -
+>>>>>>         Received UUID:          e00d5318-6efd-824e-ac91-f25efa5c2a74
+>>>>>>         Creation time:          2017-09-06 15:33:45 -0400
+>>>>>>         Subvolume ID:           656
+>>>>>>         Generation:             777
+>>>>>>         Gen at creation:        773
+>>>>>>         Parent ID:              257
+>>>>>>         Top level ID:           257
+>>>>>>         Flags:                  readonly
+>>>>>>         Snapshot(s):
+>>>>>>
+>>>>>> [root@srv]# btrfs su show /mnt/x5a/home/test2/home/
+>>>>>> home/test2/home
+>>>>>>         Name:                   home
+>>>>>>         UUID:                   b01ab63f-17a1-f442-b9d4-ed12a0d057ea
+>>>>>>         Parent UUID:            8bf40f97-10e0-9f47-a281-1a0b21bbbad0
+>>>>>>         Received UUID:          e00d5318-6efd-824e-ac91-f25efa5c2a74
+>>>>>>         Creation time:          2017-09-06 15:39:51 -0400
+>>>>>>         Subvolume ID:           660
+>>>>>>         Generation:             779
+>>>>>>         Gen at creation:        779
+>>>>>>         Parent ID:              257
+>>>>>>         Top level ID:           257
+>>>>>>         Flags:                  readonly
+>>>>>>         Snapshot(s):
+>>>>>>
+>>>>>> [root@srv]# btrfs su show /home/.snapshots/test2rec/home/
+>>>>>> test2rec/home
+>>>>>>         Name:                   home
+>>>>>>         UUID:                   bde1891d-1474-414f-b6ab-2a34c5af224e
+>>>>>>         Parent UUID:            62418df6-a1f8-d74a-a152-11f519593053
+>>>>>>         Received UUID:          e00d5318-6efd-824e-ac91-f25efa5c2a74
+>>>>>>         Creation time:          2017-09-06 17:36:19 -0400
+>>>>>>         Subvolume ID:           2003
+>>>>>>         Generation:             5027
+>>>>>>         Gen at creation:        5027
+>>>>>>         Parent ID:              257
+>>>>>>         Top level ID:           257
+>>>>>>         Flags:                  readonly
+>>>>>>         Snapshot(s):
+>>>>>>
+>>>>>> Below, we have old almost forgotten snapshot (date 2017-07-21) on
+>>>>>> device /mnt/x5a/home with a Received UUID that matches the Received
+>>>>>> UUID of test snapshots that were newly created today. How? Why?
+>>>>>>
+>>>>>> [root@thehulk home]# btrfs su show /mnt/x5a/home/107/snapshot
+>>>>>> home/107/snapshot
+>>>>>>         Name:                   snapshot
+>>>>>>         UUID:                   94d0bc47-dbf2-374e-b1c8-de06d729cde2
+>>>>>>         Parent UUID:            8bf40f97-10e0-9f47-a281-1a0b21bbbad0
+>>>>>>         Received UUID:          e00d5318-6efd-824e-ac91-f25efa5c2a74
+>>>>>>         Creation time:          2017-07-21 00:00:25 -0400
+>>>>>>         Subvolume ID:           433
+>>>>>>         Generation:             222
+>>>>>>         Gen at creation:        221
+>>>>>>         Parent ID:              257
+>>>>>>         Top level ID:           257
+>>>>>>         Flags:                  readonly
+>>>>>>         Snapshot(s):
+>>>>>>
+>>>>>> If my guess is correct, btrfs has found this old snapshot and
+>>>>>> referenced it without me telling it to do so. The result is that the
+>>>>>> newly executed btrfs commands shown above have a totally unexpected
+>>>>>> result.
+>>>>>>
+>>>>>> Today's new snapshot will not contain any files newer than 2017-07-21.
+>>>>>> Is this a known issue?
+>>>>>>
+>>>>>> Refer back to the commands at the top of this message. I created a new
+>>>>>> snapshot and did a full (non-incremental) send to the target location
+>>>>>> (/mnt/x5a/home). Then I created a snapshot and did a send which only
+>>>>>> referenced the prior snapshot created today. Nowhere did I reference
+>>>>>> the ancient /mnt/x5a/home/107/snapshot. (Many prior snapshots exist at
+>>>>>> this backup location -- it was intended to hold a lot of them.) Yet,
+>>>>>> the very presence of /mnt/x5a/home/107/snapshot on the target device
+>>>>>> resulted in today's backup (and all recent backups) being worthless
+>>>>>> due to them missing all files since  2017-07-21.
+>>>>>>
+>>>>>> These results are totally repeatable, given my set of existing
+>>>>>> backups. But it's bizarre to me. As I understand it, a staff person
+>>>>>> could transfer a btrfs snapshot to a target volume and it's mere
+>>>>>> presence there could make all subsequent backups (incremental sends)
+>>>>>> to that target volume invalid and useless. If that is true... wow.
+>>>>>>
+>>>>>> Another interesting observation is that the device that contains the
+>>>>>> source snapshot, /home/.snapshots, also contains many, many prior
+>>>>>> snapshots, going back to when this system was first set up. Why do
+>>>>>> none of them cause a problem? Is it because I had never used
+>>>>>> /home/.snapshots as the target of a receive operation (until I did so
+>>>>>> today in testing the steps above)?
+>>>>>>
+>>>>>> As far as repeating these steps, all this was totally repeatable for
+>>>>>> me as long as /mnt/x5a/home/107/snapshot existed on the target of the
+>>>>>> receive command (/mnt/x5a/home/). I do not know how to create such a
+>>>>>> "rogue" snapshot on purpose, but doing so may be key to reproducing my
+>>>>>> results.
+>>>>>>
+>>>>>> Maybe somebody can explain to me what's really happening. How is it
+>>>>>> possible that an old snapshot created  2017-07-21 could have the same
+>>>>>> Received UUID as snapshots created today? And how could that fact lead
+>>>>>> to the result I'm seeing, which seems very serious. (Unexpected
+>>>>>> missing files from a backup which was completed without errors is
+>>>>>> pretty serious in my book.)
+>>>>>>
+>>>>>> Most important question: how can we rely on automated incremental
+>>>>>> backups with btrfs send | receive given what I'm observing here
+>>>>>> (assuming my observations are roughly correct)?
+>>>>>>
+>>>>>> Here's more info just to confirm that my results are not due to
+>>>>>> filesystem corruption.
+>>>>>>
+>>>>>> running check on unmounted volume that contains /mnt/x5a/home/test2/home:
+>>>>>> [root@srv]# btrfs check -p /dev/mapper/x5a_luks
+>>>>>> Checking filesystem on /dev/mapper/x5a_luks
+>>>>>> UUID: 724f7cc1-41d8-456f-9fab-7ace457bd62a
+>>>>>> checking extents [o]
+>>>>>> checking free space cache [.]
+>>>>>> checking fs roots [o]
+>>>>>> checking csums
+>>>>>> checking root refs
+>>>>>> found 258178555904 bytes used, no error found
+>>>>>> total csum bytes: 250354776
+>>>>>> total tree bytes: 1752088576
+>>>>>> total fs tree bytes: 1308540928
+>>>>>> total extent tree bytes: 175161344
+>>>>>> btree space waste bytes: 215594634
+>>>>>> file data blocks allocated: 258634637312
+>>>>>>  referenced 292888985600
+>>>>>>
+>>>>>> [root@srv]# btrfs fi show /mnt/x5a/
+>>>>>> Label: 'x5a_top'  uuid: 724f7cc1-41d8-456f-9fab-7ace457bd62a
+>>>>>>         Total devices 1 FS bytes used 240.45GiB
+>>>>>>         devid    1 size 4.55TiB used 244.07GiB path /dev/mapper/x5a_luks
+>>>>>>
+>>>>>> [root@srv]# btrfs fi df /mnt/x5a/
+>>>>>> Data, single: total=239.01GiB, used=238.82GiB
+>>>>>> System, DUP: total=32.00MiB, used=48.00KiB
+>>>>>> Metadata, DUP: total=2.50GiB, used=1.63GiB
+>>>>>> GlobalReserve, single: total=422.73MiB, used=0.00B
+>>>>>>
+>>>>>> # btrfs scrub status -d /mnt/x5a/
+>>>>>> scrub status for 724f7cc1-41d8-456f-9fab-7ace457bd62a
+>>>>>> scrub device /dev/mapper/x5a_luks (id 1) history
+>>>>>>         scrub started at Wed Sep  6 17:09:58 2017 and finished after 01:42:30
+>>>>>>         total bytes scrubbed: 242.08GiB with 0 errors
+>>>>>> --
+>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>
+>>>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

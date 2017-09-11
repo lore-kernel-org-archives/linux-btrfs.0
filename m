@@ -1,86 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:57902 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:59403 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750878AbdIKGgW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 02:36:22 -0400
+        id S1750890AbdIKGgX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Sep 2017 02:36:23 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 1/7] btrfs-progs: Refactor find_next_chunk() to get rid of parameter root and objectid
-Date: Mon, 11 Sep 2017 15:36:06 +0900
-Message-Id: <20170911063612.32114-2-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v2 2/7] btrfs-progs: Fix one-byte overlap bug in free_block_group_cache
+Date: Mon, 11 Sep 2017 15:36:07 +0900
+Message-Id: <20170911063612.32114-3-quwenruo.btrfs@gmx.com>
 In-Reply-To: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
 References: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Function find_next_chunk() is used to find next chunk start position,
-which should only do search on chunk tree and objectid is fixed to
-BTRFS_FIRST_CHUNK_TREE_OBJECTID.
+free_block_group_cache() calls clear_extent_bits() with wrong end, which
+is one byte larger than the correct range.
 
-So refactor the parameter list to get rid of @root, which should be get
-from fs_info->chunk_root, and @objectid, which is fixed to
-BTRFS_FIRST_CHUNK_TREE_OBJECTID.
+This will cause the next adjacent cache state be split.
+And due to the split, private pointer (which points to block group
+cache) will be reset to NULL.
+
+This is very hard to detect as this function only gets called in
+cleanup_temp_chunks() which is just before mkfs finishes.
+This bug only get exposed when reworking --rootdir option.
 
 Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 ---
- volumes.c | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/volumes.c b/volumes.c
-index 2ae2d1bb..2209e5a9 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -505,8 +505,9 @@ err:
- 	return ret;
- }
- 
--static int find_next_chunk(struct btrfs_root *root, u64 objectid, u64 *offset)
-+static int find_next_chunk(struct btrfs_fs_info *fs_info, u64 *offset)
- {
-+	struct btrfs_root *root = fs_info->chunk_root;
- 	struct btrfs_path *path;
- 	int ret;
- 	struct btrfs_key key;
-@@ -517,7 +518,7 @@ static int find_next_chunk(struct btrfs_root *root, u64 objectid, u64 *offset)
- 	if (!path)
- 		return -ENOMEM;
- 
--	key.objectid = objectid;
-+	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
- 
-@@ -533,7 +534,7 @@ static int find_next_chunk(struct btrfs_root *root, u64 objectid, u64 *offset)
- 	} else {
- 		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
- 				      path->slots[0]);
--		if (found_key.objectid != objectid)
-+		if (found_key.objectid != BTRFS_FIRST_CHUNK_TREE_OBJECTID)
- 			*offset = 0;
- 		else {
- 			chunk = btrfs_item_ptr(path->nodes[0], path->slots[0],
-@@ -995,8 +996,7 @@ again:
- 		}
- 		return -ENOSPC;
+diff --git a/extent-tree.c b/extent-tree.c
+index eed56886..525a237e 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -3724,7 +3724,7 @@ static int free_block_group_cache(struct btrfs_trans_handle *trans,
+ 		btrfs_remove_free_space_cache(cache);
+ 		kfree(cache->free_space_ctl);
  	}
--	ret = find_next_chunk(chunk_root, BTRFS_FIRST_CHUNK_TREE_OBJECTID,
--			      &offset);
-+	ret = find_next_chunk(info, &offset);
- 	if (ret)
- 		return ret;
- 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
-@@ -1129,9 +1129,7 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
- 	} else {
- 		u64 tmp;
- 
--		ret = find_next_chunk(chunk_root,
--				      BTRFS_FIRST_CHUNK_TREE_OBJECTID,
--				      &tmp);
-+		ret = find_next_chunk(info, &tmp);
- 		key.offset = tmp;
- 		if (ret)
- 			return ret;
+-	clear_extent_bits(&fs_info->block_group_cache, bytenr, bytenr + len,
++	clear_extent_bits(&fs_info->block_group_cache, bytenr, bytenr + len - 1,
+ 			  (unsigned int)-1);
+ 	ret = free_space_info(fs_info, flags, len, 0, NULL);
+ 	if (ret < 0)
 -- 
 2.14.1
 

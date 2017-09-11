@@ -1,46 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:36547 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751544AbdINW6H (ORCPT
+Received: from mail-qk0-f179.google.com ([209.85.220.179]:37075 "EHLO
+        mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750957AbdIKVMk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2017 18:58:07 -0400
-Received: by mail-wm0-f68.google.com with SMTP id r136so1325350wmf.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Sep 2017 15:58:06 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH] Btrfs: cleanup 'start' subtraction from try uncompressed inline extent
-Date: Fri, 15 Sep 2017 01:57:26 +0300
-Message-Id: <20170914225726.31218-1-nefelim4ag@gmail.com>
+        Mon, 11 Sep 2017 17:12:40 -0400
+Received: by mail-qk0-f179.google.com with SMTP id b82so21392900qkc.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 14:12:40 -0700 (PDT)
+From: josef@toxicpanda.com
+To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Subject: [RFC][0/10] Cleanup and enhance delayed refs
+Date: Mon, 11 Sep 2017 17:12:26 -0400
+Message-Id: <1505164356-13474-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Was added in:
-  c8b978188c9a0fd3d535c13debd19d522b726f1f
-  "Btrfs: Add zlib compression support"
-Survive to near time (from 08.10.2008).
+I'm leaving for Linux Plumbers tomorrow so I wanted to get this out for people
+to look at and see if there were any general comments.  These patches have only
+been compiled, not tested in any way, so I wouldn't recommend trying them.  They
+do a few things
 
-Because 'start' checked for zero before branch, so it's
-safe to remove that subtraction.
+1) Cleanup empty delayed ref head handling.  We clean this up in a variety of
+different ways in different places, so I've unified it all in one helper and
+reduced the complexity of __btrfs_run_delayed_refs.
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+2) Removed the btrfs_delayed_ref_node from the btrfs_delayed_ref_head.  This
+used to be this way because we had heads and nodes all on the same list.  Since
+this is no longer the case it's just wasted space and weird complexity, so kill
+it.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 02ef32149c15..81123408e82e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -570,7 +570,7 @@ static noinline void compress_file_range(struct inode *inode,
- cont:
- 	if (start == 0) {
- 		/* lets try to make an inline extent */
--		if (ret || total_in < (actual_end - start)) {
-+		if (ret || total_in < actual_end) {
- 			/* we didn't compress the entire range, try
- 			 * to make an uncompressed inline extent.
- 			 */
--- 
-2.14.1
+3) Track delayed ref updates in an rb_tree on the head ref instead of in a list.
+Our merging stuff really sucks if we end up with lots of different changes to
+the same block.  You can end up blowing loads of cpu time during the transaction
+commit, which isn't helpful.  With the tree we can not loop as much, and make
+our insert time merging much better.
 
+Here is the diffstat
+
+ fs/btrfs/backref.c           |   9 +-
+ fs/btrfs/delayed-ref.c       | 294 ++++++++++++++++-----------------
+ fs/btrfs/delayed-ref.h       |  54 +++----
+ fs/btrfs/disk-io.c           |  22 +--
+ fs/btrfs/extent-tree.c       | 376 ++++++++++++++++++++-----------------------
+ include/trace/events/btrfs.h |  15 +-
+ 6 files changed, 363 insertions(+), 407 deletions(-)
+
+Let me know if you have any questions or feedback.  Thanks,
+
+Josef

@@ -1,251 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:37569 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751114AbdIKJ2C (ORCPT
+Received: from mail-it0-f53.google.com ([209.85.214.53]:44679 "EHLO
+        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751626AbdIKMom (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 05:28:02 -0400
-Received: by mail-qt0-f194.google.com with SMTP id u48so2346787qtc.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 02:28:02 -0700 (PDT)
+        Mon, 11 Sep 2017 08:44:42 -0400
+Received: by mail-it0-f53.google.com with SMTP id r131so6873135itc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 05:44:42 -0700 (PDT)
+Subject: Re: test if a subvolume is a snapshot?
+To: =?UTF-8?Q?Tomasz_K=c5=82oczko?= <kloczko.tomasz@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+References: <20170908085446.GA7876@rus.uni-stuttgart.de>
+ <20170908131035.GO31874@twin.jikos.cz>
+ <CABB28Cz6wb0gvFF3sAUG5fw2JfgiB3KGGKfzOwAW0_2xBRcEFQ@mail.gmail.com>
+ <20170908153816.GD23980@carfax.org.uk> <20170908163939.GS31874@twin.jikos.cz>
+ <CABB28CzBPffVMr5LW3x6Fhsj854X-=9h3H6uQ_fbVGy+TMh-jg@mail.gmail.com>
+ <f6cdd705-49a0-5a1a-da24-4b28fa13ac46@gmail.com>
+ <CABB28Cxf42y7DfHQ-WK381qyEZsQ4Coe3g_=WfFeN5MgGYmVaQ@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <0aec5bfd-fe7b-c87f-4905-f5093bb39ce6@gmail.com>
+Date: Mon, 11 Sep 2017 08:44:35 -0400
 MIME-Version: 1.0
-In-Reply-To: <15829e40-451e-77d9-743b-a59365b27830@gmx.com>
-References: <CAP9W88gEje_unDuNTGCZXn5PKoDwHtTgrjc7Cwzn0a_2KWtWow@mail.gmail.com>
- <03f4db85-bd2c-679d-e369-65ccc5d61ad7@gmx.com> <CAP9W88hGwo_L6k_-s7SUQpn7e-oVeFWydM9eiK=wtAK-kBDEXg@mail.gmail.com>
- <32a55320-4e4f-2dea-4345-2c12b1b98eaf@gmx.com> <CAP9W88j1htZZ893CHqWwGg__A2DizZhRQ_9QodbgmQrDHRiJFg@mail.gmail.com>
- <314f6a92-98a6-a02f-a2fd-bd252585c27c@gmx.com> <15829e40-451e-77d9-743b-a59365b27830@gmx.com>
-From: shally verma <shallyvermacavium@gmail.com>
-Date: Mon, 11 Sep 2017 14:57:30 +0530
-Message-ID: <CAP9W88gMXhHcCbaaSbqfbEs1P_ob3H+9awRKWEZ-EQmzN17m-w@mail.gmail.com>
-Subject: Re: BTRFS Deduplication
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org, "Verma, Shally" <shally.verma@cavium.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CABB28Cxf42y7DfHQ-WK381qyEZsQ4Coe3g_=WfFeN5MgGYmVaQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 11, 2017 at 2:55 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2017年09月11日 17:14, Qu Wenruo wrote:
+On 2017-09-08 16:54, Tomasz Kłoczko wrote:
+> On 8 September 2017 at 20:06, Austin S. Hemmelgarn <ahferroin7@gmail.com> wrote:
+> [..]
+>>> If you don't like awk you can use jq, sed, perl, python, ruby or
+>>> whatever you have/like/want.
 >>
->>
->>
->> On 2017年09月11日 16:57, shally verma wrote:
->>>
->>> On Mon, Sep 11, 2017 at 1:42 PM, Qu Wenruo <quwenruo.btrfs@gmx.com>
->>> wrote:
->>>>
->>>>
->>>>
->>>> On 2017年09月11日 15:54, shally verma wrote:
->>>>>
->>>>>
->>>>> On Mon, Sep 11, 2017 at 12:16 PM, Qu Wenruo <quwenruo.btrfs@gmx.com>
->>>>> wrote:
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>> On 2017年09月11日 14:05, shally verma wrote:
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>> I was going through  BTRFS Deduplication page
->>>>>>> (https://btrfs.wiki.kernel.org/index.php/Deduplication) and I read
->>>>>>>
->>>>>>> "As such, xfs_io, is able to perform deduplication on a BTRFS file
->>>>>>> system," ..
->>>>>>>
->>>>>>> following this, I followed on to xfs_io link
->>>>>>> https://linux.die.net/man/8/xfs_io
->>>>>>>
->>>>>>> As I understand, these are set of commands allow us to do different
->>>>>>> operations on "xfs" filesystem.
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>> Nope, it's just a tool triggering different read/write or ioctls.
->>>>>> In fact most of its command is fs independent.
->>>>>> Only a limited number of operations are only supported by XFS.
->>>>>>
->>>>>> It's just due to historical reasons it's still named as xfs_io.
->>>>>>
->>>>>> I won't be surprised if one day it's split as an independent tool.
->>>>>>
->>>>>>> and command set mentioned here, couldn't see which is command to
->>>>>>> invoke dedupe task.
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>> "dedupe" and "reflink" command.
->>>>>
->>>>>
->>>>> Oh. That means page link referred on BTRFS Wiki page is not updated
->>>>> with this. I googled another page that has reference of these two
->>>>> command in xfs_io here
->>>>> https://www.systutorials.com/docs/linux/man/8-xfs_io/
->>>>> May be Wiki need an update here.
->>>>
->>>>
->>>>
->>>> If XFS has a regularly updated online man page, we can just use that.
->>>> (But unfortunately, not every fs user tools use asciidoc like btrfs,
->>>> which
->>>> can generate both man page and html).
->>>>
->>>>>
->>>>>>
->>>>>>> and how this works with BTRFS.
->>>>>>
->>>>>>
->>>>>>
->>>>>>
->>>>>> Fs support FIDEDUPERANGE or BTRFS_IOC_FILE_EXTENT_SAME ioctl can use
->>>>>> it
->>>>>> to
->>>>>> determine if two ranges are containing identical data.
->>>>>>
->>>>>> And if they are identical, we use FICLONERANGE or
->>>>>> BTRFS_IOC_CLONE_RANGE
->>>>>> ioctl to reflink one to another, freeing one of them.
->>>>>>
->>>>>> BTW nowadays, such dedupe and reflink ioctl is genericized in VFS.
->>>>>> file_operations structure now includes both clone_file_range() and
->>>>>> dedupe_file_range() callbacks now.
->>>>>
->>>>>
->>>>> Yea. Understand that part. So going by description of "dedupe" and
->>>>> "reflink", seems through these commands, one can do deduplication part
->>>>> and NOT duplicate find part.
->>>>
->>>>
->>>>
->>>> Yes, one don't need to call "dedupe" ioctl if they already knows some
->>>> data
->>>> is identical and can go reflink straightforward.
->>>>
->>>>> That's still out of xfs_io command scope.
->>>>
->>>>
->>>>
->>>> Not sure what the scope here you mean, sorry for that.
->>>>
->>> By "scope", I meant duplicate find part but that contradicts statement
->>> you just written below:
->>>>
->>>> Since xfs_io can be used to find duplication,
->>>
->>>
->>> Since "dedupe" command input only a "source file" and src and
->>> dst_offset within that, so it can deduplicate the content within a
->>> file where actual FS dedupe IOCTL can first ensure if two extents are
->>> identical and if yes, then deduplicate them.
->>
->>
->> By "deduplicate", if you mean "removing duplication" then xfs_io "dedupe"
->> command itself doesn't do that.
->>
->> The old btrfs ioctl describe this better, FILE_EXTENT_SAME.
->> "dedupe" command itself is only verifying if they have the same content.
->>
->> So to make it clear, "dedupe" command and ioctl only do the *verification*
->> work.
->
->
-> Sorry, I just checked the code and tried the ioctl.
->
-> If they are the same, "dedupe" will do "reflink" part also.
->
-> Code also shows that:
-> ---
->         /* pass original length for comparison so we stay within i_size */
->         ret = btrfs_cmp_data(olen, &cmp);
->         if (ret == 0)
->                 ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
-> ---
->
-> So "dedupe" ioctl itself can do de-duplication.
-> And my previous answer is just totally wrong.
->
-Yea. That corroborate my findings too. Thanks for confirming that :).
+>> And which command is more readable?  Something like the above, or:
+>> btrfs device stats --format=json /
+> 
+> How many people you know who are communicating in json or using comma
+> separated lines of text?
+Directly between people?  Probably none other than CS students and 
+developers.  JSON is one of the few reliably unambiguous ways of 
+representing tables of data in a language agnostic manner while still 
+having them be easily machine parseable (and in fact, many programming 
+languages use a similar format for defining tables).
 
-Thanks
-Shally
+Indirectly between people?  Tens of millions at least.  At minimum, 
+almost everyone who uses social media is using JSON.
 
-> Sorry for that,
-> Qu
->
->
->>
->> "Reflink" will really remove the duplication (or even non-duplicated data
->> if you really want).
->>
->>
->> But please be careful, "reflink" is much like copy, so it can be executed
->> on file ranges with different contents.
->> In that case, reflink can free some space, but it also modifies the
->> content.
->>
->> So for full de-duplication, one must go through the full *verify* then
->> *reflink* circle.
->> Although "dedupe"(FILE_EXTENT_SAME) ioctl provides one verification
->> method, it's not the only solution.
->>
->> But anyway, "dedupe" and "reflink" command provided by xfs_io does provide
->> every pieces to do de-duplication, so the wiki is still correct IMHO.
->>
->> Thanks,
->> Qu
->>
->>>
->>> Is that correct?
->>>
->>> Thanks
->>> Shally
->>>
->>>   and can remove duplication, I
->>>>
->>>> don't find anything strange in that wiki page.
->>>> (Especially considering how popular the tool is, you can't find any more
->>>> handy tool than xfs_io)
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>
->>>>> Is that understanding correct?
->>>>> Thanks
->>>>> Shally
->>>>>>
->>>>>>
->>>>>>
->>>>>> Thanks,
->>>>>> Qu
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>>
->>>>>>> So, can anyone help here and point me what am I missing here.
->>>>>>>
->>>>>>> Thanks
->>>>>>> Shally
->>>>>>> --
->>>>>>> To unsubscribe from this list: send the line "unsubscribe
->>>>>>> linux-btrfs"
->>>>>>> in
->>>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>>>
->>>>>>
->>>>> --
->>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>> in
->>>>> the body of a message to majordomo@vger.kernel.org
->>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+When dealing with administering a computer?  No idea, but at least as 
+many people as use LVM and a number of widely used web application 
+frameworks (and web applications built from them).  There is quite a lot 
+of software that uses JSON files for configuration because it's easy to 
+parse and also pretty trivial for most people to understand (and allows 
+for certain particularly useful things that the INI format doesn't).
+
+> Maybe it is not obvious but such interface is not for the humans.
+But the code communicating using those formats _is_ for humans.  One of 
+the most basic rules of software development is to write code that is 
+easily maintainable, which in turn means easily readable.  My comment on 
+readability was not about the output, but about the means of generating 
+that output, which humans (more specifically, programmers) _do_ care about.
+
+Put slightly differently, here's a comparison of getting info about 
+device error counters in Python with and without JSON support in 
+btrfs-progs:
+
+Without JSON support (and without any error handling:
+```
+import subprocess
+
+raw = subprocess.check_output([
+           '/sbin/btrfs',
+           'device',
+           'stats',
+           '/'
+       ])
+raw = stats.splitlines()
+stats = dict()
+for i in range(0, len(raw)):
+     line = raw[i].split()
+     value = int(line[1])
+     device = line[0].split('.')[0].lstrip('[').rstrip(']')
+     counter = line[0].split('.')[1]
+     if not device in stats.keys():
+         stats[device] = dict()
+     stats[device][counter] = value
+```
+
+With JSON support in btrfs-progs (and also without error handling):
+```
+import subprocess
+import json
+
+raw = subprocess.check_output([
+           '/sbin/btrfs',
+           'device',
+           'stats',
+           '--format=json',
+           '/'
+       ])
+stats = json.loads(raw)
+```
+
+Notice that the second form is exponentially easier to follow (assuming 
+you already know that json.loads() parses a string as JSON, but if 
+you're working with Python you probably already know that), and will 
+probably run faster too.

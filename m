@@ -1,49 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f179.google.com ([209.85.220.179]:37075 "EHLO
-        mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750957AbdIKVMk (ORCPT
+Received: from mail-io0-f196.google.com ([209.85.223.196]:33109 "EHLO
+        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751410AbdILQIw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 17:12:40 -0400
-Received: by mail-qk0-f179.google.com with SMTP id b82so21392900qkc.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 14:12:40 -0700 (PDT)
-From: josef@toxicpanda.com
-To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [RFC][0/10] Cleanup and enhance delayed refs
-Date: Mon, 11 Sep 2017 17:12:26 -0400
-Message-Id: <1505164356-13474-1-git-send-email-jbacik@fb.com>
+        Tue, 12 Sep 2017 12:08:52 -0400
+Received: by mail-io0-f196.google.com with SMTP id j26so1411256iod.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2017 09:08:52 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1505164356-13474-8-git-send-email-jbacik@fb.com>
+References: <1505164356-13474-1-git-send-email-jbacik@fb.com> <1505164356-13474-8-git-send-email-jbacik@fb.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Tue, 12 Sep 2017 19:08:11 +0300
+Message-ID: <CAGqmi77R5nrt_C7R93+t_u6+t88OiU8=6Ka2L_1ptaj0gd9D=g@mail.gmail.com>
+Subject: Re: [PATCH 07/10] btrfs: remove type argument from comp_tree_refs
+To: josef@toxicpanda.com
+Cc: kernel-team@fb.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fb.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm leaving for Linux Plumbers tomorrow so I wanted to get this out for people
-to look at and see if there were any general comments.  These patches have only
-been compiled, not tested in any way, so I wouldn't recommend trying them.  They
-do a few things
+2017-09-12 0:12 GMT+03:00  <josef@toxicpanda.com>:
+> From: Josef Bacik <jbacik@fb.com>
+>
+> We can get this from the ref we've passed in.
+>
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/delayed-ref.c | 10 ++++------
+>  1 file changed, 4 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 7cb1172..7374710 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -41,9 +41,9 @@ struct kmem_cache *btrfs_delayed_extent_op_cachep;
+>   * compare two delayed tree backrefs with same bytenr and type
+>   */
+>  static int comp_tree_refs(struct btrfs_delayed_tree_ref *ref2,
+> -                         struct btrfs_delayed_tree_ref *ref1, int type)
+> +                         struct btrfs_delayed_tree_ref *ref1)
+>  {
+> -       if (type == BTRFS_TREE_BLOCK_REF_KEY) {
+> +       if (ref1->node.type == BTRFS_TREE_BLOCK_REF_KEY) {
+>                 if (ref1->root < ref2->root)
+>                         return -1;
+>                 if (ref1->root > ref2->root)
+> @@ -223,8 +223,7 @@ static bool merge_ref(struct btrfs_trans_handle *trans,
+>                 if ((ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
+>                      ref->type == BTRFS_SHARED_BLOCK_REF_KEY) &&
+>                     comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref),
+> -                                  btrfs_delayed_node_to_tree_ref(next),
+> -                                  ref->type))
+> +                                  btrfs_delayed_node_to_tree_ref(next)))
+>                         goto next;
+>                 if ((ref->type == BTRFS_EXTENT_DATA_REF_KEY ||
+>                      ref->type == BTRFS_SHARED_DATA_REF_KEY) &&
+> @@ -409,8 +408,7 @@ add_delayed_ref_tail_merge(struct btrfs_trans_handle *trans,
+>         if ((exist->type == BTRFS_TREE_BLOCK_REF_KEY ||
+>              exist->type == BTRFS_SHARED_BLOCK_REF_KEY) &&
+>             comp_tree_refs(btrfs_delayed_node_to_tree_ref(exist),
+> -                          btrfs_delayed_node_to_tree_ref(ref),
+> -                          ref->type))
+> +                          btrfs_delayed_node_to_tree_ref(ref)))
+>                 goto add_tail;
+>         if ((exist->type == BTRFS_EXTENT_DATA_REF_KEY ||
+>              exist->type == BTRFS_SHARED_DATA_REF_KEY) &&
+> --
+> 2.7.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-1) Cleanup empty delayed ref head handling.  We clean this up in a variety of
-different ways in different places, so I've unified it all in one helper and
-reduced the complexity of __btrfs_run_delayed_refs.
+Reviewed-by: Timofey Titovets <nefelim4ag@gmail.com>
 
-2) Removed the btrfs_delayed_ref_node from the btrfs_delayed_ref_head.  This
-used to be this way because we had heads and nodes all on the same list.  Since
-this is no longer the case it's just wasted space and weird complexity, so kill
-it.
-
-3) Track delayed ref updates in an rb_tree on the head ref instead of in a list.
-Our merging stuff really sucks if we end up with lots of different changes to
-the same block.  You can end up blowing loads of cpu time during the transaction
-commit, which isn't helpful.  With the tree we can not loop as much, and make
-our insert time merging much better.
-
-Here is the diffstat
-
- fs/btrfs/backref.c           |   9 +-
- fs/btrfs/delayed-ref.c       | 294 ++++++++++++++++-----------------
- fs/btrfs/delayed-ref.h       |  54 +++----
- fs/btrfs/disk-io.c           |  22 +--
- fs/btrfs/extent-tree.c       | 376 ++++++++++++++++++++-----------------------
- include/trace/events/btrfs.h |  15 +-
- 6 files changed, 363 insertions(+), 407 deletions(-)
-
-Let me know if you have any questions or feedback.  Thanks,
-
-Josef
+-- 
+Have a nice day,
+Timofey.

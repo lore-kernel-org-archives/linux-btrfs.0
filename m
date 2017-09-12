@@ -1,31 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52838 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52961 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751405AbdILR1S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2017 13:27:18 -0400
-Date: Tue, 12 Sep 2017 19:25:48 +0200
+        id S1751405AbdILR3p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Sep 2017 13:29:45 -0400
+Date: Tue, 12 Sep 2017 19:28:14 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Yingyi Luo <yingyil@google.com>
 Cc: linux-btrfs@vger.kernel.org, drosen@google.com
-Subject: Re: [PATCH 1/4 v2] btrfs-progs: convert: move link_subvol out of main
-Message-ID: <20170912172548.GE29043@twin.jikos.cz>
+Subject: Re: [PATCH 2/4 v2] btrfs-progs: add a parameter to btrfs_link_subvol
+Message-ID: <20170912172814.GF29043@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170825232101.10859-1-yingyil@google.com>
  <20170830172450.27460-1-yingyil@google.com>
- <20170830172450.27460-2-yingyil@google.com>
+ <20170830172450.27460-3-yingyil@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170830172450.27460-2-yingyil@google.com>
+In-Reply-To: <20170830172450.27460-3-yingyil@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 30, 2017 at 10:24:47AM -0700, Yingyi Luo wrote:
+On Wed, Aug 30, 2017 at 10:24:48AM -0700, Yingyi Luo wrote:
 > From: yingyil <yingyil@google.com>
 > 
-> link_subvol() is moved to utils.c and renamed as btrfs_link_subvol().
+> A convert parameter is added as a flag to indicate if btrfs_link_subvol()
+> is used for btrfs-convert. The change cascades down to the callchain.
+> 
+> Signed-off-by: yingyil <yingyil@google.com>
+> ---
+> v2: Added a flag for btrfs_link_subvol() function so that it can be used in a
+> more general way. For example, if mkfs calls this function, it will return
+> directly with an error code if the subvolume creation fails.
+> 
+>  convert/main.c |  2 +-
+>  utils.c        | 25 +++++++++++++++----------
+>  utils.h        |  2 +-
+>  3 files changed, 17 insertions(+), 12 deletions(-)
+> 
+> diff --git a/convert/main.c b/convert/main.c
+> index 8f7fec25..19a60782 100644
+> --- a/convert/main.c
+> +++ b/convert/main.c
+> @@ -1192,7 +1192,7 @@ static int do_convert(const char *devname, u32 convert_flags, u32 nodesize,
+>  		task_deinit(ctx.info);
+>  	}
+>  
+> -	image_root = btrfs_link_subvol(root, subvol_name, CONV_IMAGE_SUBVOL_OBJECTID);
+> +	image_root = btrfs_link_subvol(root, subvol_name, CONV_IMAGE_SUBVOL_OBJECTID, 1);
+>  	if (!image_root) {
+>  		error("unable to link subvolume %s", subvol_name);
+>  		goto fail;
+> diff --git a/utils.c b/utils.c
+> index 32382328..20ea9e74 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -2576,7 +2576,7 @@ void btrfs_config_init(void)
+>  }
+>  
+>  struct btrfs_root *btrfs_link_subvol(struct btrfs_root *root,
+> -		const char *base, u64 root_objectid)
+> +		const char *base, u64 root_objectid, int convert)
+>  {
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_fs_info *fs_info = root->fs_info;
+> @@ -2642,16 +2642,21 @@ struct btrfs_root *btrfs_link_subvol(struct btrfs_root *root,
+>  	key.type = BTRFS_ROOT_ITEM_KEY;
+>  
+>  	memcpy(buf, base, len);
+> -	for (i = 0; i < 1024; i++) {
+> -		ret = btrfs_insert_dir_item(trans, root, buf, len, dirid,
+> -					    &key, BTRFS_FT_DIR, index);
+> -		if (ret != -EEXIST)
+> -			break;
+> -		len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
+> -		if (len < 1 || len > BTRFS_NAME_LEN) {
+> -			ret = -EINVAL;
+> -			break;
+> +	if (convert) {
+> +		for (i = 0; i < 1024; i++) {
+> +			ret = btrfs_insert_dir_item(trans, root, buf, len, dirid,
+> +						    &key, BTRFS_FT_DIR, index);
+> +			if (ret != -EEXIST)
+> +				break;
+> +			len = snprintf(buf, ARRAY_SIZE(buf), "%s%d", base, i);
+> +			if (len < 1 || len > BTRFS_NAME_LEN) {
+> +				ret = -EINVAL;
+> +				break;
+> +			}
+>  		}
+> +	} else {
+> +		ret = btrfs_insert_dir_item(trans, root, buf, len, dirid, &key,
+> +					    BTRFS_FT_DIR, index);
+>  	}
+>  	if (ret)
+>  		goto fail;
+> diff --git a/utils.h b/utils.h
+> index 886590fd..28aa8373 100644
+> --- a/utils.h
+> +++ b/utils.h
+> @@ -171,6 +171,6 @@ unsigned int rand_range(unsigned int upper);
+>  void init_rand_seed(u64 seed);
+>  
+>  struct btrfs_root *btrfs_link_subvol(struct btrfs_root *root, const char *base,
+> -				     u64 root_objectid);
+> +				     u64 root_objectid, int convert);
 
-The file utils.c is a catch-all file, but the subvolume function belongs
-to inode features, similar as in the kernel sources (although there it's
-in ioctl.c . Currently link_subvol is misleading name, as it's really
-"create_subvol". Please rename it to btrfs_mksubvol and move it to
-inode.c.
+Please make it 'bool', otherwise ok.

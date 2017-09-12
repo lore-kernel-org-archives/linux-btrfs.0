@@ -1,53 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from phi.wiserhosting.co.uk ([77.245.66.218]:47661 "EHLO
-        phi.wiserhosting.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751216AbdIKWXu (ORCPT
+Received: from mail-wm0-f47.google.com ([74.125.82.47]:45895 "EHLO
+        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751304AbdILDTv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 18:23:50 -0400
-Received: from cpc129066-ando7-2-0-cust212.know.cable.virginm.net ([80.2.13.213]:35568 helo=[172.16.100.1])
-        by phi.wiserhosting.co.uk with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.89)
-        (envelope-from <pete@petezilla.co.uk>)
-        id 1drWO3-000Bbo-7y
-        for linux-btrfs@vger.kernel.org; Mon, 11 Sep 2017 22:37:00 +0100
-Subject: Re: Storage and snapshots as historical yearly
-To: linux-btrfs@vger.kernel.org
-References: <9208764.SjP1vfhOIA@pcsenen>
- <07ff0aeb-d4a8-ffb9-3a13-695ab9b2e65f@gmail.com>
-From: Pete <pete@petezilla.co.uk>
-Message-ID: <34d8d690-d999-0081-4a80-65a6de439639@petezilla.co.uk>
-Date: Mon, 11 Sep 2017 22:36:59 +0100
+        Mon, 11 Sep 2017 23:19:51 -0400
+Received: by mail-wm0-f47.google.com with SMTP id f199so52019691wme.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 20:19:50 -0700 (PDT)
+Subject: Re: send | receive: received snapshot is missing recent files
+To: Axel Burri <axel@tty0.ch>, Dave <davestechshop@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Cc: A L <crimsoncottage@gmail.com>
+References: <CAH=dxU6uVGXbdYc_65P6XbSby76A6Y=qoM6=cXMHkWDV8JRHVg@mail.gmail.com>
+ <CAH=dxU7RM7s+pxT=wxE9WcUNMWjSG_A0=1pUWD1dWGVQ6g+g8Q@mail.gmail.com>
+ <CAH=dxU6xwikfvfY7zCfuPavnCMMdecnyPckOZ3nyYm+_PZtOrg@mail.gmail.com>
+ <CAH=dxU6kQdqp-x0nLbTk=T8VhgH3oX8UUA_BO4p6rLEmwBsHhQ@mail.gmail.com>
+ <b899f57.51efafb1.15e5b02df03@gmail.com>
+ <CAH=dxU4T8zB3ufn8JC1Jq0-QXkCnWt11NkXBLNBQnEi3RA1PDQ@mail.gmail.com>
+ <CAH=dxU6S7XLVb4NY0ueZapUJW6A_KM9JezpB3icjYW4nRB8OPA@mail.gmail.com>
+ <e9ec7ac7-781d-34e0-9f48-aeb8566e5787@tty0.ch>
+ <CAH=dxU7Qtfqq1nT1cm8nS+OG-0GRZdtNEj2wSt4N6aoQ7f8YUQ@mail.gmail.com>
+ <0f1e32f8-12c7-4aa7-246f-4f6805e6d3df@tty0.ch>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <f7adba0b-9464-0d75-28f3-3b90187ee14e@gmail.com>
+Date: Tue, 12 Sep 2017 06:19:48 +0300
 MIME-Version: 1.0
-In-Reply-To: <07ff0aeb-d4a8-ffb9-3a13-695ab9b2e65f@gmail.com>
+In-Reply-To: <0f1e32f8-12c7-4aa7-246f-4f6805e6d3df@tty0.ch>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/11/2017 07:49 PM, Austin S. Hemmelgarn wrote:
-
-> Unfortunately, I don't know of any overlay mount implementation that
-> works correctly and reliably with BTRFS.  I know for a fact that
-> OverlayFS (the upstream in-kernel implementation) does not work, and I
-> believe that AUFS3 and UnionFS (the third-party options that are used by
-> most LiveCD's) don't work either.  UnionFS-FUSE (a userspace
-> implementation completely unrelated to UnionFS) might work, but I've
-> never tested it and it will likely have performance issues because it's
-> implemented in userspace.  As far as I know, whiteout support is the
-> primary missing piece here, but I may be mistaken.
+11.09.2017 20:53, Axel Burri пишет:
+> On 2017-09-08 06:44, Dave wrote:
+>> I'm referring to the link below. Using "btrfs subvolume snapshot -r"
+>> copies the Received UUID from the source into the new snapshot. The
+>> btrbk FAQ entry suggests otherwise. Has something changed?
+> 
+> I don't think something has changed, the description for the read-only
+> subvolumes on the btrbk FAQ was just wrong (fixed now).
+> 
+>> The only way I see to remove a Received UUID is to create a rw
+>> snapshot (above command without the "-r"), which is not ideal in this
+>> situation when cleaning up readonly source snapshots.
+>>
+>> Any suggestions? Thanks
+> 
+> No suggestions from my part, as far as I know there is no way to easily
+> remove/change a received_uuid from a subvolume.
 > 
 
-Diverting away from the original topic, what issues with overlayfs and
-btrfs?
+There is BTRFS_IOC_SET_RECEIVED_SUBVOL IOCTL which is used by "btrfs
+received". My understanding is that it can also be set to empty (this
+clearing it). You could write small program to do it.
 
-I'm using btrfs to create 'base' operating system containers (btrfs) and
-then using overlayfs for a few 'upper' containers for specific
-applications, so the upper parts of the overlays contain only the config
-and data files and I can apply OS updates only on the lower ones.
-
-I do note that changes in the 'base' os can take time to propagate to
-the upper containers and I'm probably not being sensible in not stopping
-the upper containers when updating the lower ones.  This is also does
-not seem to be what overlaysfs is intended for.  However, for my light
-usage it generally works OK and is useful to me.
-
-Pete
+In general it sounds like a bug - removing read-only flag from subvolume
+by any means should also clear Received UUID as we cannot anymore
+guarantee that subvolume content is the same.

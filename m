@@ -1,57 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:45895 "EHLO
-        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751304AbdILDTv (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:37092 "EHLO
+        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751022AbdILDeV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 23:19:51 -0400
-Received: by mail-wm0-f47.google.com with SMTP id f199so52019691wme.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 20:19:50 -0700 (PDT)
-Subject: Re: send | receive: received snapshot is missing recent files
-To: Axel Burri <axel@tty0.ch>, Dave <davestechshop@gmail.com>,
+        Mon, 11 Sep 2017 23:34:21 -0400
+Received: by mail-lf0-f52.google.com with SMTP id 80so23071167lfy.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 20:34:21 -0700 (PDT)
+Subject: Re: Storage and snapshots as historical yearly
+To: =?UTF-8?Q?Sen=c3=a9n_Vidal_Blanco?= <senenvidal@sgisoft.com>,
         linux-btrfs@vger.kernel.org
-Cc: A L <crimsoncottage@gmail.com>
-References: <CAH=dxU6uVGXbdYc_65P6XbSby76A6Y=qoM6=cXMHkWDV8JRHVg@mail.gmail.com>
- <CAH=dxU7RM7s+pxT=wxE9WcUNMWjSG_A0=1pUWD1dWGVQ6g+g8Q@mail.gmail.com>
- <CAH=dxU6xwikfvfY7zCfuPavnCMMdecnyPckOZ3nyYm+_PZtOrg@mail.gmail.com>
- <CAH=dxU6kQdqp-x0nLbTk=T8VhgH3oX8UUA_BO4p6rLEmwBsHhQ@mail.gmail.com>
- <b899f57.51efafb1.15e5b02df03@gmail.com>
- <CAH=dxU4T8zB3ufn8JC1Jq0-QXkCnWt11NkXBLNBQnEi3RA1PDQ@mail.gmail.com>
- <CAH=dxU6S7XLVb4NY0ueZapUJW6A_KM9JezpB3icjYW4nRB8OPA@mail.gmail.com>
- <e9ec7ac7-781d-34e0-9f48-aeb8566e5787@tty0.ch>
- <CAH=dxU7Qtfqq1nT1cm8nS+OG-0GRZdtNEj2wSt4N6aoQ7f8YUQ@mail.gmail.com>
- <0f1e32f8-12c7-4aa7-246f-4f6805e6d3df@tty0.ch>
+References: <9208764.SjP1vfhOIA@pcsenen>
 From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <f7adba0b-9464-0d75-28f3-3b90187ee14e@gmail.com>
-Date: Tue, 12 Sep 2017 06:19:48 +0300
+Message-ID: <aebb8966-ca9b-7008-d329-3e60989a5c01@gmail.com>
+Date: Tue, 12 Sep 2017 06:34:15 +0300
 MIME-Version: 1.0
-In-Reply-To: <0f1e32f8-12c7-4aa7-246f-4f6805e6d3df@tty0.ch>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <9208764.SjP1vfhOIA@pcsenen>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="4Sho1K9mxLxKVtSRv9Anh7xElDeSmoLAw"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-11.09.2017 20:53, Axel Burri пишет:
-> On 2017-09-08 06:44, Dave wrote:
->> I'm referring to the link below. Using "btrfs subvolume snapshot -r"
->> copies the Received UUID from the source into the new snapshot. The
->> btrbk FAQ entry suggests otherwise. Has something changed?
-> 
-> I don't think something has changed, the description for the read-only
-> subvolumes on the btrbk FAQ was just wrong (fixed now).
-> 
->> The only way I see to remove a Received UUID is to create a rw
->> snapshot (above command without the "-r"), which is not ideal in this
->> situation when cleaning up readonly source snapshots.
->>
->> Any suggestions? Thanks
-> 
-> No suggestions from my part, as far as I know there is no way to easily
-> remove/change a received_uuid from a subvolume.
-> 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--4Sho1K9mxLxKVtSRv9Anh7xElDeSmoLAw
+Content-Type: multipart/mixed; boundary="X411uKhgEk1m89R5daowVVaei5t5VVKrJ";
+ protected-headers="v1"
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+To: =?UTF-8?Q?Sen=c3=a9n_Vidal_Blanco?= <senenvidal@sgisoft.com>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <aebb8966-ca9b-7008-d329-3e60989a5c01@gmail.com>
+Subject: Re: Storage and snapshots as historical yearly
+References: <9208764.SjP1vfhOIA@pcsenen>
+In-Reply-To: <9208764.SjP1vfhOIA@pcsenen>
 
-There is BTRFS_IOC_SET_RECEIVED_SUBVOL IOCTL which is used by "btrfs
-received". My understanding is that it can also be set to empty (this
-clearing it). You could write small program to do it.
+--X411uKhgEk1m89R5daowVVaei5t5VVKrJ
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-In general it sounds like a bug - removing read-only flag from subvolume
-by any means should also clear Received UUID as we cannot anymore
-guarantee that subvolume content is the same.
+11.09.2017 21:17, Sen=C3=A9n Vidal Blanco =D0=BF=D0=B8=D1=88=D0=B5=D1=82:=
+
+> I am trying to implement a system that stores the data in a unit (A) wi=
+th=20
+> BTRFS format that is untouchable and that future files and folders crea=
+ted or=20
+> modified are stored in another physical unit (B) with BTRFS format.
+> Each year the new files will be moved to store A and start over.
+> =20
+> The idea is that a duplicate of disk A can be made to keep it in a safe=
+ place=20
+> and that the files stored there can not be modified until the mixture o=
+f (A) and=20
+> (B) is made.
+> =20
+
+This can probably be achieved using seed device. Mark original device as
+seed and all changes will go to another writable device, similar to
+overlay; then remove seed bit from original device, "btrfs device remove
+writable" device and it should relocate its content back. Rinse and repea=
+t.
+
+
+
+--X411uKhgEk1m89R5daowVVaei5t5VVKrJ--
+
+--4Sho1K9mxLxKVtSRv9Anh7xElDeSmoLAw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlm3VboACgkQR6LMutpd94xF8QCeObxrQkExj82l658XcVhHaPl9
+i0YAoKXifqXuhC7329XBcyUdoZIhl+T1
+=1sbc
+-----END PGP SIGNATURE-----
+
+--4Sho1K9mxLxKVtSRv9Anh7xElDeSmoLAw--

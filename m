@@ -1,25 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52616 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54301 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751444AbdILMAx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2017 08:00:53 -0400
-Date: Tue, 12 Sep 2017 13:59:20 +0200
+        id S1751379AbdILMS1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Sep 2017 08:18:27 -0400
+Date: Tue, 12 Sep 2017 14:16:57 +0200
 From: David Sterba <dsterba@suse.cz>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs-progs: cleanup whitespaces of btrfs-completion
-Message-ID: <20170912115920.GM14538@twin.jikos.cz>
+To: Satoru Takeuchi <satoru.takeuchi@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: convert all mount option checking code to use
+ btrfs_test_opt
+Message-ID: <20170912121657.GN14538@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <d95e0221-6079-3f80-93b7-de0e76a5785b@jp.fujitsu.com>
+References: <87o9qgw4x3.wl-satoru.takeuchi@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d95e0221-6079-3f80-93b7-de0e76a5785b@jp.fujitsu.com>
+In-Reply-To: <87o9qgw4x3.wl-satoru.takeuchi@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 12, 2017 at 10:04:10AM +0900, Misono, Tomohiro wrote:
-> Clean up spaces and use only tabs. No functional change.
-> 
-> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+On Tue, Sep 12, 2017 at 08:08:08PM +0900, Satoru Takeuchi wrote:
+> Signed-off-by: Satoru Takeuchi <satoru.takeuchi@gmail.com>
 
-Applied, thanks.
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,46 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44429 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48139 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751405AbdIKUFD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 16:05:03 -0400
-Date: Mon, 11 Sep 2017 22:03:33 +0200
+        id S1751289AbdILL2a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Sep 2017 07:28:30 -0400
+Date: Tue, 12 Sep 2017 13:26:58 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nick Terrell <terrelln@fb.com>
-Cc: kernel-team@fb.com, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs-progs: Add zstd support
-Message-ID: <20170911200333.GD14538@twin.jikos.cz>
+To: Colin King <colin.king@canonical.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: avoid null pointer dereference on fs_info when
+ calling btrfs_crit
+Message-ID: <20170912112658.GH14538@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170908202923.240776-1-terrelln@fb.com>
+References: <20170911151528.26348-1-colin.king@canonical.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170908202923.240776-1-terrelln@fb.com>
+In-Reply-To: <20170911151528.26348-1-colin.king@canonical.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 08, 2017 at 01:29:23PM -0700, Nick Terrell wrote:
-> Adds zstd support to the btrfs program. An optional dependency on libzstd
-> >= 1.0.0 is added. Autoconf accepts `--enable-zstd' or `--disable-zstd' and
-> defaults to detecting if libzstd is present using `pkg-config'. Adds tests
-> for the new features based on a prebuilt btrfs image with a zstd compressed
-> file.
+On Mon, Sep 11, 2017 at 04:15:28PM +0100, Colin King wrote:
+> From: Colin Ian King <colin.king@canonical.com>
 > 
-> The patch is also available in my fork of btrfs-progs [1], which passes
-> Travis-CI with the new tests. The prebuilt binary is available there.
+> There are checks on fs_info in __btrfs_panic to avoid dereferencing a
+> null fs_info, however, there is a call to btrfs_crit that may also
+> dereference a null fs_info. Fix this by adding a check to see if fs_info
+> is null and only print the s_id if fs_info is non-null.
 > 
-> I haven't updated Android.mk.
+> Detected by CoverityScan CID#401973 ("Dereference after null check")
 > 
-> [1] https://github.com/terrelln/btrfs-progs/tree/devel
-> 
-> Signed-off-by: Nick Terrell <terrelln@fb.com>
-> ---
-> v1 -> v2:
-> - Allow zstd support to be disabled, defaulting to auto detection
-> - Print if zstd is enabled/disabled when `./configure' finishes
-> - Add zstd test to patch with prebuilt image`
+> Fixes: efe120a067c8 ("Btrfs: convert printk to btrfs_ and fix BTRFS prefix")
+> Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
-Applied, with some changes. I've split the tests to own commit and
-cleaned up test.sh so it follows the coding patterns (dd instead of
-head, grep -q, minor things). The run_check should be used if possible,
-but dumping the 200k of zeros to log via run_check_stdout is OTOH not
-recomended. But, it's merged.
+Reviewed-by: David Sterba <dsterba@suse.com>

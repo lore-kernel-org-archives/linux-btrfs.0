@@ -1,49 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:54419 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750761AbdIQJCc (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:34148 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750957AbdILBHW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Sep 2017 05:02:32 -0400
-Received: by mail-it0-f42.google.com with SMTP id e134so6777950ite.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Sep 2017 02:02:32 -0700 (PDT)
-Date: Sun, 17 Sep 2017 09:02:29 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
-Subject: [PATCH] btrfs: Report error on removing qgroup if del_qgroup_item
- fails
-Message-ID: <20170917090226.GA30640@ircssh-2.c.rugged-nimbus-611.internal>
+        Mon, 11 Sep 2017 21:07:22 -0400
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 1AA2CAC0099
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2017 10:07:17 +0900 (JST)
+Received: from G01JPEXCHKW15.g01.fujitsu.local (G01JPEXCHKW15.g01.fujitsu.local [10.0.194.54])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 3649D69228E
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2017 10:07:16 +0900 (JST)
+Subject: Fwd: [PATCH] btrfs: remove BTRFS_FS_QUOTA_DISABLING flag
+References: <f624acec-ac1b-61ca-19c9-e7683fc0b4e2@jp.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <71dfa4de-3f10-2e86-7a0a-da4a30d94ae0@jp.fujitsu.com>
+Date: Tue, 12 Sep 2017 10:07:12 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <f624acec-ac1b-61ca-19c9-e7683fc0b4e2@jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Previously, we were calling del_qgroup_item, and ignoring the return code
-resulting in a potential to have divergent in-memory state without an
-error. Perhaps, it makes sense to handle this error code, and put the
-filesystem into a read only, or similar state.
+Hello,
 
-This patch only adds reporting of the error if the error is fatal,
-(any error other than qgroup not found).
+Does anyone have a comment on this?
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+Regards, Tomohiro
+
+-------- Forwarded Message --------
+Subject: [PATCH] btrfs: remove BTRFS_FS_QUOTA_DISABLING flag
+Date: Wed, 30 Aug 2017 16:33:16 +0900
+From: Misono, Tomohiro <misono.tomohiro@jp.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+
+Currently, "btrfs quota enable" would fail after "btrfs quota disable" on
+the first time with syslog output "qgroup_rescan_init failed with -22", but
+it would succeed on the second time.
+
+When "quota disable" is called, BTRFS_FS_QUOTA_DISABLING flag bit will be
+set in fs_info->flags in btrfs_quota_disable(), but it will not be droppd
+in btrfs_run_qgroups() (which is called in btrfs_commit_transaction())
+because quota_root has already been freed. If "quota enable" is called
+after that, both BTRFS_FS_QUOTA_DISABLING and BTRFS_FS_QUOTA_ENABLED flag
+would be dropped in the btrfs_run_qgroups() since quota_root is not NULL.
+This leads to the failure of "quota enable" on the first time.
+
+BTRFS_FS_QUOTA_DISABLING flag is not used outside of "quota disable"
+context and is equivalent to whether quota_root is NULL or not.
+btrfs_run_qgroups() checks whether quota_root is NULL or not in the first
+place. 
+
+So, let's remove BTRFS_FS_QUOTA_DISABLING flag.
+
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/ctree.h  | 1 -
+ fs/btrfs/qgroup.c | 4 ----
+ 2 files changed, 5 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3f3eb7b..49501c0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -709,7 +709,6 @@ struct btrfs_delayed_root;
+ #define BTRFS_FS_OPEN				5
+ #define BTRFS_FS_QUOTA_ENABLED			6
+ #define BTRFS_FS_QUOTA_ENABLING			7
+-#define BTRFS_FS_QUOTA_DISABLING		8
+ #define BTRFS_FS_UPDATE_UUID_TREE_GEN		9
+ #define BTRFS_FS_CREATING_FREE_SPACE_TREE	10
+ #define BTRFS_FS_BTREE_ERR			11
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 770f667269f5..e172d4843eae 100644
+index 4ce351e..f0b111e 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1305,6 +1305,8 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
- 		}
+@@ -807,7 +807,6 @@ static int btrfs_clean_quota_tree(struct btrfs_trans_handle *trans,
  	}
- 	ret = del_qgroup_item(trans, quota_root, qgroupid);
-+	if (ret && ret != -ENOENT)
-+		goto out;
+ 	ret = 0;
+ out:
+-	set_bit(BTRFS_FS_QUOTA_DISABLING, &root->fs_info->flags);
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+@@ -954,7 +953,6 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+ 	if (!fs_info->quota_root)
+ 		goto out;
+ 	clear_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+-	set_bit(BTRFS_FS_QUOTA_DISABLING, &fs_info->flags);
+ 	btrfs_qgroup_wait_for_completion(fs_info, false);
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	quota_root = fs_info->quota_root;
+@@ -2087,8 +2085,6 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
  
- 	while (!list_empty(&qgroup->groups)) {
- 		list = list_first_entry(&qgroup->groups,
+ 	if (test_and_clear_bit(BTRFS_FS_QUOTA_ENABLING, &fs_info->flags))
+ 		set_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+-	if (test_and_clear_bit(BTRFS_FS_QUOTA_DISABLING, &fs_info->flags))
+-		clear_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+ 
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	while (!list_empty(&fs_info->dirty_qgroups)) {
 -- 
-2.11.0
+2.9.5
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
 

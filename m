@@ -1,125 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f194.google.com ([209.85.128.194]:35132 "EHLO
-        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753335AbdI1Odz (ORCPT
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:21285 "EHLO
+        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750969AbdILDDL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2017 10:33:55 -0400
-Received: by mail-wr0-f194.google.com with SMTP id n64so2244532wrb.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Sep 2017 07:33:55 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v8 6/6] Btrfs: heuristic add byte core set calculation
-Date: Thu, 28 Sep 2017 17:33:41 +0300
-Message-Id: <20170928143341.24491-7-nefelim4ag@gmail.com>
-In-Reply-To: <20170928143341.24491-1-nefelim4ag@gmail.com>
-References: <20170928143341.24491-1-nefelim4ag@gmail.com>
+        Mon, 11 Sep 2017 23:03:11 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 47989AC011C
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Sep 2017 12:03:01 +0900 (JST)
+Subject: Re: [PATCH] btrfs: send: fix error code if an unknown inode type is
+ found
+To: David Sterba <dsterba@suse.com>
+References: <20170911165854.19460-1-dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Message-ID: <fa3a2302-b3cd-fafe-b9ec-9fd127706656@jp.fujitsu.com>
+Date: Tue, 12 Sep 2017 12:02:44 +0900
+MIME-Version: 1.0
+In-Reply-To: <20170911165854.19460-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Calculate byte core set for data sample:
-Sort bucket's numbers in decreasing order
-Count how many numbers use 90% of sample
-If core set are low (<=25%), data are easily compressible
-If core set high (>=80%), data are not compressible
+Hi David,
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/compression.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 68 insertions(+)
+On 2017/09/12 1:58, David Sterba wrote:
+> There are two types for "not supported", but the correct one is
+> EOPNOTSUPP, let's use that one. The error message in the error case is
+> not very helpful, enhance it at least with the inode number.
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 83daf2f9d051..1aa04ae214a7 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -33,6 +33,7 @@
- #include <linux/bit_spinlock.h>
- #include <linux/slab.h>
- #include <linux/sched/mm.h>
-+#include <linux/sort.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -1201,6 +1202,62 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
- }
+When I first posted a similar patch, you said "I'd rather make it EINVAL".
+https://marc.info/?l=linux-btrfs&m=145342170820262&w=2
+
+But I think that EOPNOTSUPP is also good.
+So, anyway,
+
+Reviewed-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+
+> 
+> The unknown type seems to be the block device (S_IFBLK)(as it's the only
+> unhandled case. Adding this type would need to extend the send protocol,
+> so this needs to stay as 'not supported'.
+> 
+> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=196903
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/send.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 8f1d3d6e7087..5f944f9135d6 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -2638,9 +2638,9 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
+>  	} else if (S_ISSOCK(mode)) {
+>  		cmd = BTRFS_SEND_C_MKSOCK;
+>  	} else {
+> -		btrfs_warn(sctx->send_root->fs_info, "unexpected inode type %o",
+> -				(int)(mode & S_IFMT));
+> -		ret = -ENOTSUPP;
+> +		btrfs_warn(fs_info, "unexpected type 0%o of inode %llu",
+> +				(int)(mode & S_IFMT), ino);
+> +		ret = -EOPNOTSUPP;
+>  		goto out;
+>  	}
+>  
+> 
 
 
-+/* Compare buckets by size, ascending */
-+static inline int bucket_comp_rev(const void *lv, const void *rv)
-+{
-+	const struct bucket_item *l = (struct bucket_item *)(lv);
-+	const struct bucket_item *r = (struct bucket_item *)(rv);
-+
-+	return r->count - l->count;
-+}
-+
-+/*
-+ * Byte Core set size
-+ * How many bytes use 90% of sample
-+ *
-+ * Several type of structure d binary data have in general
-+ * nearly all types of bytes, but distribution can be Uniform
-+ * where in bucket all byte types will have the nearly same count
-+ * (ex. Encrypted data)
-+ * and as ex. Normal (Gaussian), where count of bytes will be not so linear
-+ * in that case data can be compressible, probably compressible, and
-+ * not compressible, so assume:
-+ *
-+ * @BYTE_CORE_SET_LOW - main part of byte types repeated frequently
-+ *                      compression algo can easy fix that
-+ * @BYTE_CORE_SET_HIGH - data have Uniform distribution and with high
-+ *                       probability not compressible
-+ *
-+ */
-+
-+#define BYTE_CORE_SET_LOW  64
-+#define BYTE_CORE_SET_HIGH 200
-+
-+static int byte_core_set_size(struct heuristic_ws *ws)
-+{
-+	u32 i;
-+	u32 coreset_sum = 0;
-+	u32 core_set_threshold = ws->sample_size * 90 / 100;
-+	struct bucket_item *bucket = ws->bucket;
-+
-+	/* Sort in reverse order */
-+	sort(bucket, BUCKET_SIZE, sizeof(*bucket), &bucket_comp_rev, NULL);
-+
-+	for (i = 0; i < BYTE_CORE_SET_LOW; i++)
-+		coreset_sum += bucket[i].count;
-+
-+	if (coreset_sum > core_set_threshold)
-+		return i;
-+
-+	for (; i < BYTE_CORE_SET_HIGH && bucket[i].count > 0; i++) {
-+		coreset_sum += bucket[i].count;
-+		if (coreset_sum > core_set_threshold)
-+			break;
-+	}
-+
-+	return i;
-+}
-+
- /*
-  * Count byte types in bucket
-  * That heuristic can detect text like data (configs, xml, json, html & etc)
-@@ -1348,6 +1405,17 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 		goto out;
- 	}
-
-+	i = byte_core_set_size(ws);
-+	if (i <= BYTE_CORE_SET_LOW) {
-+		ret = 3;
-+		goto out;
-+	}
-+
-+	if (i >= BYTE_CORE_SET_HIGH) {
-+		ret = 0;
-+		goto out;
-+	}
-+
- out:
- 	__free_workspace(0, ws_list, true);
- 	return ret;
---
-2.14.2

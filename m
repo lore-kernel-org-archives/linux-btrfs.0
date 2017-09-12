@@ -1,59 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:53331 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750789AbdIKGgU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 02:36:20 -0400
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2 0/7] Mkfs: Rework --rootdir to a more generic behavior
-Date: Mon, 11 Sep 2017 15:36:05 +0900
-Message-Id: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
+Received: from mx2.suse.de ([195.135.220.15]:50973 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752332AbdILREf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Sep 2017 13:04:35 -0400
+Date: Tue, 12 Sep 2017 19:03:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2 7/7] btrfs-progs: Doc/mkfs: Add extra condition for
+ rootdir option
+Message-ID: <20170912170304.GD29043@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
+ <20170911063612.32114-8-quwenruo.btrfs@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170911063612.32114-8-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-mkfs.btrfs --rootdir provides user a method to generate btrfs with
-pre-written content while without the need of root privilege to mount
-the fs.
+On Mon, Sep 11, 2017 at 03:36:12PM +0900, Qu Wenruo wrote:
+> Add extra limitation explained for --rootdir option, including:
+> 1) Size limitation
+>    Now I decide to follow "mkfs.ext4 -d" behavior, so we user is
+>    responsible to make sure the block device/file is large enough.
 
-However the code is quite old and doesn't get much review or test.
-This makes some strange behavior, from customized chunk allocation
-(which uses the reserved 0~1M device space) to variant BUG_ON caused by
-ENOSPC or EPERM.
+That's fine and I'm ok for changing that to be the default now. But the
+shrinking could be still useful, if I read the usecase that Austin
+mentioned in the previous thread correctly.
 
-The reworked --rootdir will be based on traditional mkfs, everything is
-processed after traditional mkfs, so nothing is customized.
+Say I want to prepare a minimal image but will provide a large file at
+the beginning because I don't know what's the resulting size going to
+be. In this case, something like
 
-The result will be an equivalent of mkfs, mount, cp, umount.
-(If btrfs-progs chunk/extent allocator acts as the same as kernel)
+$ mkfs.btrfs --rootdir dir/ --minimize image
 
-And, add extra explanation for --rootdir, since the old implement
-introduced a confusing behavior to limit the filesystem size.
-
-Patch 1 is just a refactor I found during coding.
-Patch 2 fixes a bug that will cause BUG_ON if modifying the first DATA
-chunk after cleanup_temp_chunks().
-Patch 3 is the rework.
-Patch 4~5 fixes extra BUG_ON() caused by --rootdir in different error
-path.
-Patch 6 will add extra explanation for man page.
-
-Qu Wenruo (7):
-  btrfs-progs: Refactor find_next_chunk() to get rid of parameter root
-    and objectid
-  btrfs-progs: Fix one-byte overlap bug in free_block_group_cache
-  btrfs-progs: mkfs: Rework rootdir option to avoid custom chunk layout
-  btrfs-progs: mkfs: Update allocation info before verbose output
-  btrfs-progs: Avoid BUG_ON for chunk allocation when ENOSPC happens
-  btrfs-progs: mkfs: Workaround BUG_ON caused by rootdir option
-  btrfs-progs: Doc/mkfs: Add extra condition for rootdir option
-
- Documentation/mkfs.btrfs.asciidoc |  11 ++
- extent-tree.c                     |   5 +-
- mkfs/main.c                       | 281 +++++++++++---------------------------
- volumes.c                         |  32 +++--
- 4 files changed, 113 insertions(+), 216 deletions(-)
-
--- 
-2.14.1
-
+would make it possible. I'm not sure if somebody hasn't proposed that
+already, but this sounds good to me and I think it's a valid usecase.
+This means adding back the patch from V1 and then making it optional.

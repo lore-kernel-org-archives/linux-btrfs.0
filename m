@@ -1,54 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:46315 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751424AbdILKcQ (ORCPT
+Received: from smtp105.ord1d.emailsrvr.com ([184.106.54.105]:39961 "EHLO
+        smtp105.ord1d.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751313AbdILKjG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Sep 2017 06:32:16 -0400
-Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1driUJ-0002EH-2W
-        for linux-btrfs@vger.kernel.org; Tue, 12 Sep 2017 12:32:15 +0200
-Date: Tue, 12 Sep 2017 12:32:14 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org
+        Tue, 12 Sep 2017 06:39:06 -0400
 Subject: Re: qemu-kvm VM died during partial raid1 problems of btrfs
-Message-ID: <20170912103214.6dzjlugcr7q47x6g@angband.pl>
+To: Adam Borowski <kilobyte@angband.pl>, Duncan <1i5t5.duncan@cox.net>
 References: <2ee9f15b-a11a-886e-2460-557bb9f8d41d@rqc.ru>
  <CAGqmi770j8gO8zFNiMgie5n3b6rm2JVdvG+K+HMDJ-CpMCiEiw@mail.gmail.com>
  <69e843f4-1233-261a-3b88-306359ef20c9@rqc.ru>
  <pan$556a1$a0a94487$f12a0554$4371a5e6@cox.net>
+ <20170912103214.6dzjlugcr7q47x6g@angband.pl>
+Cc: linux-btrfs@vger.kernel.org
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <2a0186c7-7c56-2132-fa0d-da2129cde22c@rqc.ru>
+Date: Tue, 12 Sep 2017 13:39:04 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <pan$556a1$a0a94487$f12a0554$4371a5e6@cox.net>
+In-Reply-To: <20170912103214.6dzjlugcr7q47x6g@angband.pl>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 12, 2017 at 10:01:07AM +0000, Duncan wrote:
-> BTW, I am most definitely /not/ a VM expert, and won't pretend to 
-> understand the details or be able to explain further, but IIRC from what 
-> I've read on-list, qcow2 isn't the best alternative for hosting VMs on 
-> top of btrfs.  Something about it being cow-based as well, which means cow
-> (qcow2)-on-cow(btrfs), which tends to lead to /extreme/ fragmentation, 
-> leading to low performance.
-> 
-> I don't know enough about it to know what the alternatives to qcow2 are, 
-> but something that not itself cow when it's on cow-based btrfs, would 
-> presumably be a better alternative.
+On 12/09/17 13:01, Duncan wrote:
+> AFAIK that's wrong -- the only time the app should see the error on btrfs
+> raid1 is if the second copy is also bad
+So thought I, but...
 
-Just use raw -- btrfs already has every feature that qcow2 has, and does it
-better.  This doesn't mean btrfs is the best choice for hosting VM files,
-just that raw-over-btrfs is strictly better than qcow2-over-btrfs.
-
-And like qcow2, with raw over btrfs you have the choice between a fully
-pre-written nocow file and a sparse file.  For the latter, you want discard
-in the guest (not supported over ide and virtio, supported over scsi and
-virtio-scsi), and you get the full list of btrfs goodies like snapshots or
-dedup.
+> IIRC from what I've read on-list, qcow2 isn't the best alternative for hosting VMs on
+> top of btrfs.
+Yeah, I've seen discussions about it here too, but in my case VMs write 
+very little (mostly logs and distro updates), so I decided it can live 
+as it is for a while. But I'm looking for better solutions as long as 
+they are not too complicated.
 
 
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ I've read an article about how lively happy music boosts
-⣾⠁⢰⠒⠀⣿⡁ productivity.  You can read it, too, you just need the
-⢿⡄⠘⠷⠚⠋⠀ right music while doing so.  I recommend Skepticism
-⠈⠳⣄⠀⠀⠀⠀ (funeral doom metal).
+On 12/09/17 13:32, Adam Borowski wrote:
+> Just use raw -- btrfs already has every feature that qcow2 has, and does it
+> better.  This doesn't mean btrfs is the best choice for hosting VM files,
+> just that raw-over-btrfs is strictly better than qcow2-over-btrfs.
+Thanks for advice, I wasn't sure I won't lose features, and was too lazy 
+to investigate/ask. Now it looks simple.
+
+--
+
+With Best Regards,
+Marat Khalili

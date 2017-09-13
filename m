@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f194.google.com ([209.85.192.194]:34854 "EHLO
-        mail-pf0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751712AbdIMHcz (ORCPT
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:37222 "EHLO
+        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751250AbdIMHc7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 03:32:55 -0400
+        Wed, 13 Sep 2017 03:32:59 -0400
 From: Allen Pais <allen.lkml@gmail.com>
 To: linux-kernel@vger.kernel.org
 Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
@@ -12,9 +12,9 @@ Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
         megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
         linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Allen Pais <allen.lkml@gmail.com>
-Subject: [PATCH 06/10] drivers:ethernet: return -ENOMEM on allocation failure.
-Date: Wed, 13 Sep 2017 13:02:15 +0530
-Message-Id: <1505287939-14106-6-git-send-email-allen.lkml@gmail.com>
+Subject: [PATCH 07/10] driver:megaraid: return -ENOMEM on allocation failure.
+Date: Wed, 13 Sep 2017 13:02:16 +0530
+Message-Id: <1505287939-14106-7-git-send-email-allen.lkml@gmail.com>
 In-Reply-To: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,22 +22,24 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 ---
- drivers/net/ethernet/sun/cassini.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/scsi/megaraid/megaraid_mbox.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/sun/cassini.c b/drivers/net/ethernet/sun/cassini.c
-index 382993c..fc0ea3a 100644
---- a/drivers/net/ethernet/sun/cassini.c
-+++ b/drivers/net/ethernet/sun/cassini.c
-@@ -3984,7 +3984,7 @@ static inline int cas_alloc_rx_desc(struct cas *cp, int ring)
- 	size = RX_DESC_RINGN_SIZE(ring);
- 	for (i = 0; i < size; i++) {
- 		if ((page[i] = cas_page_alloc(cp, GFP_KERNEL)) == NULL)
--			return -1;
-+			return -ENOMEM;
- 	}
- 	return 0;
- }
+diff --git a/drivers/scsi/megaraid/megaraid_mbox.c b/drivers/scsi/megaraid/megaraid_mbox.c
+index ec3c438..b09a0a6 100644
+--- a/drivers/scsi/megaraid/megaraid_mbox.c
++++ b/drivers/scsi/megaraid/megaraid_mbox.c
+@@ -724,8 +724,8 @@ megaraid_init_mbox(adapter_t *adapter)
+ 	 * controllers
+ 	 */
+ 	raid_dev = kzalloc(sizeof(mraid_device_t), GFP_KERNEL);
+-	if (raid_dev == NULL) return -1;
+-
++	if (!raid_dev)
++		return -ENOMEM;
+ 
+ 	/*
+ 	 * Attach the adapter soft state to raid device soft state
 -- 
 2.7.4
 

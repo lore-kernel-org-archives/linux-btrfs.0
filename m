@@ -1,50 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f67.google.com ([74.125.83.67]:36578 "EHLO
-        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751626AbdIMHc2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 03:32:28 -0400
-From: Allen Pais <allen.lkml@gmail.com>
-To: linux-kernel@vger.kernel.org
-Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, MPT-FusionLinux.pdl@broadcom.com,
-        linux-scsi@vger.kernel.org, netdev@vger.kernel.org,
-        megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Allen Pais <allen.lkml@gmail.com>
-Subject: [PATCH 01/10] arch:powerpc: return -ENOMEM on failed allocation
-Date: Wed, 13 Sep 2017 13:02:10 +0530
-Message-Id: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
+Received: from vps0.lunn.ch ([178.209.37.122]:40949 "EHLO vps0.lunn.ch"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750949AbdIMMJN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Sep 2017 08:09:13 -0400
+Date: Wed, 13 Sep 2017 14:09:09 +0200
+From: Andrew Lunn <andrew@lunn.ch>
+To: Allen Pais <allen.lkml@gmail.com>
+Cc: linux-kernel@vger.kernel.org, nouveau@lists.freedesktop.org,
+        linux-crypto@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        MPT-FusionLinux.pdl@broadcom.com, linux-scsi@vger.kernel.org,
+        netdev@vger.kernel.org, megaraidlinux.pdl@broadcom.com,
+        target-devel@vger.kernel.org, linux-fbdev@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 05/10] drivers:net: return -ENOMEM on allocation failure.
+Message-ID: <20170913120909.GA11820@lunn.ch>
+References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
+ <1505287939-14106-5-git-send-email-allen.lkml@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1505287939-14106-5-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Allen Pais <allen.lkml@gmail.com>
----
- arch/powerpc/platforms/cell/spider-pci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+On Wed, Sep 13, 2017 at 01:02:14PM +0530, Allen Pais wrote:
+> Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 
-diff --git a/arch/powerpc/platforms/cell/spider-pci.c b/arch/powerpc/platforms/cell/spider-pci.c
-index d1e61e2..82aa3f7 100644
---- a/arch/powerpc/platforms/cell/spider-pci.c
-+++ b/arch/powerpc/platforms/cell/spider-pci.c
-@@ -106,7 +106,7 @@ static int __init spiderpci_pci_setup_chip(struct pci_controller *phb,
- 	dummy_page_va = kmalloc(PAGE_SIZE, GFP_KERNEL);
- 	if (!dummy_page_va) {
- 		pr_err("SPIDERPCI-IOWA:Alloc dummy_page_va failed.\n");
--		return -1;
-+		return -ENOMEM;
- 	}
- 
- 	dummy_page_da = dma_map_single(phb->parent, dummy_page_va,
-@@ -137,7 +137,7 @@ int __init spiderpci_iowa_init(struct iowa_bus *bus, void *data)
- 	if (!priv) {
- 		pr_err("SPIDERPCI-IOWA:"
- 		       "Can't allocate struct spiderpci_iowa_private");
--		return -1;
-+		return -ENOMEM;
- 	}
- 
- 	if (of_address_to_resource(np, 0, &r)) {
--- 
-2.7.4
+Hi Allen
 
+Although correct, if you look higher up the call chain, this appears
+to be not so useful.
+
+rlb_initialize() is only called by bond_alb_initialize(), and it
+propagates the -1. That is only called by bond_open() with:
+
+	if (bond_alb_initialize(bond, (BOND_MODE(bond) == BOND_MODE_ALB)))
+		return -ENOMEM;
+
+So you might want to also modify this code, to return the return
+value, rather than use the hard coded ENOMEM.
+
+Since you code is OK as far as it goes:
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+
+    Andrew

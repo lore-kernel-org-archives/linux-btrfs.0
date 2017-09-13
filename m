@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f68.google.com ([74.125.83.68]:35444 "EHLO
-        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751980AbdIMHdD (ORCPT
+Received: from mail-pf0-f194.google.com ([209.85.192.194]:34854 "EHLO
+        mail-pf0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751712AbdIMHcz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 03:33:03 -0400
+        Wed, 13 Sep 2017 03:32:55 -0400
 From: Allen Pais <allen.lkml@gmail.com>
 To: linux-kernel@vger.kernel.org
 Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
@@ -12,9 +12,9 @@ Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
         megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
         linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Allen Pais <allen.lkml@gmail.com>
-Subject: [PATCH 08/10] driver:cxgbit: return -NOMEM on allocation failure.
-Date: Wed, 13 Sep 2017 13:02:17 +0530
-Message-Id: <1505287939-14106-8-git-send-email-allen.lkml@gmail.com>
+Subject: [PATCH 06/10] drivers:ethernet: return -ENOMEM on allocation failure.
+Date: Wed, 13 Sep 2017 13:02:15 +0530
+Message-Id: <1505287939-14106-6-git-send-email-allen.lkml@gmail.com>
 In-Reply-To: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,22 +22,22 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 ---
- drivers/target/iscsi/cxgbit/cxgbit_target.c | 2 +-
+ drivers/net/ethernet/sun/cassini.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/target/iscsi/cxgbit/cxgbit_target.c b/drivers/target/iscsi/cxgbit/cxgbit_target.c
-index 514986b..47127d6 100644
---- a/drivers/target/iscsi/cxgbit/cxgbit_target.c
-+++ b/drivers/target/iscsi/cxgbit/cxgbit_target.c
-@@ -399,7 +399,7 @@ cxgbit_map_skb(struct iscsi_cmd *cmd, struct sk_buff *skb, u32 data_offset,
- 	if (padding) {
- 		page = alloc_page(GFP_KERNEL | __GFP_ZERO);
- 		if (!page)
+diff --git a/drivers/net/ethernet/sun/cassini.c b/drivers/net/ethernet/sun/cassini.c
+index 382993c..fc0ea3a 100644
+--- a/drivers/net/ethernet/sun/cassini.c
++++ b/drivers/net/ethernet/sun/cassini.c
+@@ -3984,7 +3984,7 @@ static inline int cas_alloc_rx_desc(struct cas *cp, int ring)
+ 	size = RX_DESC_RINGN_SIZE(ring);
+ 	for (i = 0; i < size; i++) {
+ 		if ((page[i] = cas_page_alloc(cp, GFP_KERNEL)) == NULL)
 -			return -1;
 +			return -ENOMEM;
- 		skb_fill_page_desc(skb, i, page, 0, padding);
- 		skb->data_len += padding;
- 		skb->len += padding;
+ 	}
+ 	return 0;
+ }
 -- 
 2.7.4
 

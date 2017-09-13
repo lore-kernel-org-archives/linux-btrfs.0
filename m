@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f193.google.com ([209.85.192.193]:36440 "EHLO
-        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751903AbdIMHcu (ORCPT
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:37187 "EHLO
+        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751712AbdIMHcq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 03:32:50 -0400
+        Wed, 13 Sep 2017 03:32:46 -0400
 From: Allen Pais <allen.lkml@gmail.com>
 To: linux-kernel@vger.kernel.org
 Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
@@ -12,9 +12,9 @@ Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
         megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
         linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Allen Pais <allen.lkml@gmail.com>
-Subject: [PATCH 05/10] drivers:net: return -ENOMEM on allocation failure.
-Date: Wed, 13 Sep 2017 13:02:14 +0530
-Message-Id: <1505287939-14106-5-git-send-email-allen.lkml@gmail.com>
+Subject: [PATCH 04/10] drivers:mpt: return -ENOMEM on allocation failure.
+Date: Wed, 13 Sep 2017 13:02:13 +0530
+Message-Id: <1505287939-14106-4-git-send-email-allen.lkml@gmail.com>
 In-Reply-To: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,22 +22,44 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 ---
- drivers/net/bonding/bond_alb.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/message/fusion/mptbase.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/net/bonding/bond_alb.c b/drivers/net/bonding/bond_alb.c
-index c02cc81..89df377 100644
---- a/drivers/net/bonding/bond_alb.c
-+++ b/drivers/net/bonding/bond_alb.c
-@@ -864,7 +864,7 @@ static int rlb_initialize(struct bonding *bond)
+diff --git a/drivers/message/fusion/mptbase.c b/drivers/message/fusion/mptbase.c
+index 84eab28..7920b2b 100644
+--- a/drivers/message/fusion/mptbase.c
++++ b/drivers/message/fusion/mptbase.c
+@@ -4328,15 +4328,15 @@ initChainBuffers(MPT_ADAPTER *ioc)
+ 	if (ioc->ReqToChain == NULL) {
+ 		sz = ioc->req_depth * sizeof(int);
+ 		mem = kmalloc(sz, GFP_ATOMIC);
+-		if (mem == NULL)
+-			return -1;
++		if (!mem)
++			return -ENOMEM;
  
- 	new_hashtbl = kmalloc(size, GFP_KERNEL);
- 	if (!new_hashtbl)
--		return -1;
-+		return -ENOMEM;
+ 		ioc->ReqToChain = (int *) mem;
+ 		dinitprintk(ioc, printk(MYIOC_s_DEBUG_FMT "ReqToChain alloc  @ %p, sz=%d bytes\n",
+ 			 	ioc->name, mem, sz));
+ 		mem = kmalloc(sz, GFP_ATOMIC);
+-		if (mem == NULL)
+-			return -1;
++		if (!mem)
++			return -ENOMEM;
  
- 	spin_lock_bh(&bond->mode_lock);
+ 		ioc->RequestNB = (int *) mem;
+ 		dinitprintk(ioc, printk(MYIOC_s_DEBUG_FMT "RequestNB alloc  @ %p, sz=%d bytes\n",
+@@ -4402,8 +4402,8 @@ initChainBuffers(MPT_ADAPTER *ioc)
+ 	sz = num_chain * sizeof(int);
+ 	if (ioc->ChainToChain == NULL) {
+ 		mem = kmalloc(sz, GFP_ATOMIC);
+-		if (mem == NULL)
+-			return -1;
++		if (!mem)
++			return -ENOMEM;
  
+ 		ioc->ChainToChain = (int *) mem;
+ 		dinitprintk(ioc, printk(MYIOC_s_DEBUG_FMT "ChainToChain alloc @ %p, sz=%d bytes\n",
 -- 
 2.7.4
 

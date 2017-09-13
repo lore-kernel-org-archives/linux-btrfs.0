@@ -1,62 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:47873 "EHLO
+Received: from mail-io0-f172.google.com ([209.85.223.172]:46036 "EHLO
         mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751133AbdIMM0r (ORCPT
+        with ESMTP id S1751120AbdIMMz2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 08:26:47 -0400
-Received: by mail-io0-f172.google.com with SMTP id j141so1513647ioj.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 05:26:46 -0700 (PDT)
-Subject: Re: Storage and snapshots as historical yearly
-To: Pete <pete@petezilla.co.uk>, linux-btrfs@vger.kernel.org
-References: <9208764.SjP1vfhOIA@pcsenen>
- <07ff0aeb-d4a8-ffb9-3a13-695ab9b2e65f@gmail.com>
- <34d8d690-d999-0081-4a80-65a6de439639@petezilla.co.uk>
- <3e3eae9d-f7d0-fafb-6faf-6eecdf724c8b@gmail.com>
- <d81cfebb-6b8d-94cf-2bfd-091b55fb86b8@petezilla.co.uk>
+        Wed, 13 Sep 2017 08:55:28 -0400
+Received: by mail-io0-f172.google.com with SMTP id g32so1726145ioj.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 05:55:28 -0700 (PDT)
+Subject: Re: qemu-kvm VM died during partial raid1 problems of btrfs
+To: Timofey Titovets <nefelim4ag@gmail.com>,
+        Adam Borowski <kilobyte@angband.pl>
+Cc: Marat Khalili <mkh@rqc.ru>, Duncan <1i5t5.duncan@cox.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <2a0186c7-7c56-2132-fa0d-da2129cde22c@rqc.ru>
+ <CAGqmi776z5DzXZbXF=mS6wtUGk4YMhcWT9uJUXOFzwAd5KMU3g@mail.gmail.com>
+ <20170912111159.jcwej7s6uluz4dsz@angband.pl>
+ <2679f652-2fee-b1ee-dcce-8b77b02f9b01@rqc.ru>
+ <20170912172125.rb6gtqdxqneb36js@angband.pl>
+ <d1f6450c-fc09-171c-82c8-32caa2cbd230@gmail.com>
+ <20170912184359.hovirdaj55isvwwg@angband.pl>
+ <7019ace9-723e-0220-6136-473ac3574b55@gmail.com>
+ <20170912200057.3mrgtahlvszkg334@angband.pl>
+ <e169336d-db31-276f-1d71-bf897cf10d4b@gmail.com>
+ <20170912211346.uxzqfu7uh2ikrg2m@angband.pl>
+ <CAGqmi74UxBRj6pPJ2aEon-raAq46R=29sef_f_wWWGQY1WpwDA@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <943e78f9-8feb-ff5c-46eb-b035a3f0971c@gmail.com>
-Date: Wed, 13 Sep 2017 08:26:42 -0400
+Message-ID: <b925e250-0507-55b8-c6da-47d8a5266c9f@gmail.com>
+Date: Wed, 13 Sep 2017 08:55:24 -0400
 MIME-Version: 1.0
-In-Reply-To: <d81cfebb-6b8d-94cf-2bfd-091b55fb86b8@petezilla.co.uk>
+In-Reply-To: <CAGqmi74UxBRj6pPJ2aEon-raAq46R=29sef_f_wWWGQY1WpwDA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-09-13 07:51, Pete wrote:
-> On 09/12/2017 01:16 PM, Austin S. Hemmelgarn wrote:
+On 2017-09-12 20:52, Timofey Titovets wrote:
+> No, no, no, no...
+> No new ioctl, no change in fallocate.
+> Fisrt: VM can do punch hole, if you use qemu -> qemu know how to do it.
+> Windows Guest also know how to do it.
 > 
->>> Diverting away from the original topic, what issues with overlayfs and
->>> btrfs?
->> As mentioned, I thought whiteout support was missing, but if you're
->> using it without issue, I might be wrong.
+> Different Hypervisor? -> google -> Make issue to support, all
+> Linux/Windows/Mac OS support holes in files.
+Not everybody who uses sparse files is using virtual machines.
 > 
-> Whiteout works fine.  Upper and lower layers and working directory are
-> all on btrfs subvolumes.  Snapshotting seems fine.
-Hmm, just double checked myself.  Apparently I was operating based on 
-old information.
+> No new code, no new strange stuff to fix not broken things.
+Um, the fallocate PUNCH_HOLE mode _is_ broken.  There's a race condition 
+that can trivially cause data loss.
 > 
+> You want replace zeroes? EXTENT_SAME can do that.
+But only on a small number of filesystems, and it requires extra work 
+that shouldn't be necessary.
 > 
+> truncate -s 4M test_hole
+> dd if=/dev/zero of=./test_zero bs=4M
 > 
->>> I'm using btrfs to create 'base' operating system containers (btrfs) and
->>> then using overlayfs for a few 'upper' containers for specific
->>> applications, so the upper parts of the overlays contain only the config
->>> and data files and I can apply OS updates only on the lower ones.
->>>
->>> I do note that changes in the 'base' os can take time to propagate to
->>> the upper containers and I'm probably not being sensible in not stopping
->>> the upper containers when updating the lower ones.  This is also does
->>> not seem to be what overlaysfs is intended for.  However, for my light
->>> usage it generally works OK and is useful to me.
->> Actually, this is pretty well in-line with one of the intended use cases
->> (it was mostly designed for efficient multiple instantiation of Docker
->> or LXC containers).  The other big use case is 'live' systems that only
->> retain state while powered on, like most install images.
-> 
-> OK, I only spotted the latter use case when reading up, apart from one
-> website which seemed to mention using it for containers.
-Yeah, containers are the other big one.  It's not unusual for someone to 
-need to spin up a dozen or more instances of essentially the same 
-container (think large build systems), and without an overlay mount, you 
-end up multiplying the space for the base image times the number of 
-containers.
+> duperemove -vhrd ./test_hole ./test_zero
+And performance for this approach is absolute shit compared to fallocate -d.
 
+Actual numbers, using a 4G test file (which is still small for what 
+you're talking about) and a 4M hole file:
+fallocate -d:		0.19 user, 0.85 system, 1.26 real
+duperemove -vhrd:	0.75 user, 137.70 system, 144.80 real
+
+So, for a 4G file, it took duperemove (and the EXTENT_SAME ioctl) 114.92 
+times as long to achieve the same net effect.  From a practical 
+perspective, this isn't viable for regular usage just because of how 
+long it takes.  Most of that overhead is that the EXTENT_SAME ioctl does 
+a byte-by-byte comparison of the ranges to make sure they match, but 
+that isn't strictly necessary to avoid this race condition.  All that's 
+actually needed is determining if there is outstanding I/O on that 
+region, and if so, some special handling prior to freezing the region is 
+needed.

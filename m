@@ -1,67 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:12803 "EHLO
-        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751703AbdIOCft (ORCPT
+Received: from emh07.mail.saunalahti.fi ([62.142.5.117]:35732 "EHLO
+        emh07.mail.saunalahti.fi" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751054AbdIMJjK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2017 22:35:49 -0400
-Subject: Re: [PATCH 1/2] btrfs-progs: build: generate all dependency files
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <150538384653.24503.41288304442819820.stgit@naota.dhcp.fujisawa.hgst.com>
- <20170914124108.GS29043@suse.cz>
-From: Naohiro Aota <naohiro.aota@wdc.com>
-Message-ID: <63173644-5453-ba53-2ca1-f3bdf49998bf@wdc.com>
-Date: Fri, 15 Sep 2017 11:34:54 +0900
+        Wed, 13 Sep 2017 05:39:10 -0400
+Date: Wed, 13 Sep 2017 12:33:06 +0300
+From: Pasi =?iso-8859-1?Q?K=E4rkk=E4inen?= <pasik@iki.fi>
+To: peterh <peterh@synology.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: incremental send, apply asynchronous page cache
+ readahead
+Message-ID: <20170913093306.GJ4090@reaktio.net>
+References: <1505284729-11844-1-git-send-email-peterh@synology.com>
 MIME-Version: 1.0
-In-Reply-To: <20170914124108.GS29043@suse.cz>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1505284729-11844-1-git-send-email-peterh@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017年09月14日 21:41, David Sterba wrote:
-> On Thu, Sep 14, 2017 at 07:10:46PM +0900, Naohiro Aota wrote:
->> We're missing several dependency files like:
->>
->> $ diff -u <(find -name '*.o'|cut -d. -f2|sort) <(find -name '*.o.d'|cut -d. -f2|sort)
->>    --- /proc/self/fd/11    2017-09-14 18:17:44.460564620 +0900
->>    +++ /proc/self/fd/12    2017-09-14 18:17:44.460564620 +0900
-> 
-> Please note that an actual diff in the changelog is understood as start
-> of the patch by git-am, indenting the --- or +++ lines makes it work
-> again.
+Hi,
 
-Oops, I forgot about that limitation. Thank you for the fix.
+On Wed, Sep 13, 2017 at 02:38:49PM +0800, peterh wrote:
+> From: Kuanling Huang <peterh@synology.com>
+> 
+> By analyzing the perf on btrfs send, we found it take large
+> amount of cpu time on page_cache_sync_readahead. This effort
+> can be reduced after switching to asynchronous one. Overall
+> performance gain on HDD and SSD were 9 and 15 respectively if
+> simply send a large file.
+>
 
+hmm, 9 and 15 what?
+
+
+-- Pasi
+ 
+> Signed-off-by: Kuanling Huang <peterh@synology.com>
+> ---
+>  fs/btrfs/send.c | 21 ++++++++++++++++-----
+>  1 file changed, 16 insertions(+), 5 deletions(-)
 > 
->> @@ -3,7 +3,6 @@
->>  /btrfs-corrupt-block
->>  /btrfs-debug-tree
->>  /btrfs-find-root
->> -/btrfs-list
->>  /btrfs-map-logical
->>  /btrfs-select-super
->>  /btrfstune
->> @@ -29,11 +28,6 @@
->>  /cmds-scrub
->>  /cmds-send
->>  /cmds-subvolume
->> -/convert/common
->> -/convert/main
->> -/convert/source-ext2
->> -/convert/source-fs
->> -/convert/source-reiserfs
->>  /ctree
->>  /dir-item
->>  /disk-io
->> <snip>
->>
->> This is due to moving things out of objects and cmds_objects variables. Such
->> missing dependency files cause mis-building of some source files (try touch
->> utils.h; make mkfs/main.o).
->>
->> This patch introduce a new variable "all_objects" to keep all the objects and
->> use the variable to generate proper dependency file building rules.
->>
->> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> 
-> Applied, thanks.
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 63a6152..ac67ff6 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -4475,16 +4475,27 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
+>  	/* initial readahead */
+>  	memset(&sctx->ra, 0, sizeof(struct file_ra_state));
+>  	file_ra_state_init(&sctx->ra, inode->i_mapping);
+> -	btrfs_force_ra(inode->i_mapping, &sctx->ra, NULL, index,
+> -		       last_index - index + 1);
+>  
+>  	while (index <= last_index) {
+>  		unsigned cur_len = min_t(unsigned, len,
+>  					 PAGE_CACHE_SIZE - pg_offset);
+> -		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
+> +		page = find_lock_page(inode->i_mapping, index);
+>  		if (!page) {
+> -			ret = -ENOMEM;
+> -			break;
+> +			page_cache_sync_readahead(inode->i_mapping,
+> +				&sctx->ra, NULL, index,
+> +				last_index + 1 - index);
+> +
+> +			page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
+> +			if (unlikely(!page)) {
+> +				ret = -ENOMEM;
+> +				break;
+> +			}
+> +		}
+> +
+> +		if (PageReadahead(page)) {
+> +			page_cache_async_readahead(inode->i_mapping,
+> +				&sctx->ra, NULL, page, index,
+> +				last_index + 1 - index);
+>  		}
+>  
+>  		if (!PageUptodate(page)) {
+> -- 
+> 1.9.1
 > 

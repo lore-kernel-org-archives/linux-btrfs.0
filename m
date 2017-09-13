@@ -1,56 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31778 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751112AbdIMT1I (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 15:27:08 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v8DJR73m007629
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 19:27:08 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v8DJR7Ce006467
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 19:27:07 GMT
-Received: from ubhmp0007.oracle.com (ubhmp0007.oracle.com [156.151.24.60])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v8DJR7AO003596
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 19:27:07 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: do not backup tree roots when fsync
-Date: Wed, 13 Sep 2017 12:25:21 -0600
-Message-Id: <20170913182521.31304-1-bo.li.liu@oracle.com>
+Received: from mout.gmx.net ([212.227.17.21]:51619 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751105AbdIMB2z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Sep 2017 21:28:55 -0400
+Subject: Re: [PATCH] btrfs: prevent to set invalid default subvolid
+To: Satoru Takeuchi <satoru.takeuchi@gmail.com>, linux-btrfs@vger.kernel.org
+References: <87mv60vxr7.wl-satoru.takeuchi@gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <ef1e2715-8da2-b7eb-f084-0d76a35b474d@gmx.com>
+Date: Wed, 13 Sep 2017 09:28:48 +0800
+MIME-Version: 1.0
+In-Reply-To: <87mv60vxr7.wl-satoru.takeuchi@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It doens't make sense to backup tree roots when doing fsync, since
-during fsync those tree roots have not been consistent on disk.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/disk-io.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 79ac228..a145a88 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3668,7 +3668,14 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 	u64 flags;
- 
- 	do_barriers = !btrfs_test_opt(fs_info, NOBARRIER);
--	backup_super_roots(fs_info);
-+
-+	/*
-+	 * max_mirrors == 0 indicates we're from commit_transaction,
-+	 * not from fsync where the tree roots in fs_info have not
-+	 * been consistent on disk.
-+	 */
-+	if (max_mirrors == 0)
-+		backup_super_roots(fs_info);
- 
- 	sb = fs_info->super_for_commit;
- 	dev_item = &sb->dev_item;
--- 
-2.9.4
+On 2017年09月12日 21:42, Satoru Takeuchi wrote:
+> `btrfs sub set-default` succeeds to set an ID which isn't corresponding to any
+> fs/file tree. If such the bad ID is set to a filesystem, we can't mount this
+> filesystem without specifying `subvol` or `subvolid` mount options.
+> 
+> Signed-off-by: Satoru Takeuchi <satoru.takeuchi@gmail.com>
 
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+
+I was a little worried about the handling of special treeid like RECLOC 
+and DATA_RELOC, but is_fstree() called btrfs_qgroup_level() check so we 
+don't need to worry about that.
+
+Nice catch.
+
+Thanks,
+Qu
+> -
+>   fs/btrfs/ioctl.c | 4 ++++
+>   1 file changed, 4 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index ae8fbf9..8e1bc19 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4057,6 +4057,10 @@ static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
+>   		ret = PTR_ERR(new_root);
+>   		goto out;
+>   	}
+> +	if (!is_fstree(new_root->objectid)) {
+> +		ret = -ENOENT;
+> +		goto out;
+> +	}
+>   
+>   	path = btrfs_alloc_path();
+>   	if (!path) {
+> 

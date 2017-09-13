@@ -1,44 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38454 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54307 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751224AbdI2RX3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Sep 2017 13:23:29 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id A5A4BAC3E
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Sep 2017 17:23:28 +0000 (UTC)
-Date: Fri, 29 Sep 2017 19:21:54 +0200
+        id S1751083AbdIMPft (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Sep 2017 11:35:49 -0400
+Date: Wed, 13 Sep 2017 17:34:19 +0200
 From: David Sterba <dsterba@suse.cz>
-To: jeffm@suse.com
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/7] btrfs-progs: check: supplement extent backref list
- with rbtree
-Message-ID: <20170929172154.GR31640@twin.jikos.cz>
+Subject: Re: [PATCH RFC] Btrfs: fix confusing worker helper info
+Message-ID: <20170913153419.GO29043@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20170725205138.28376-1-jeffm@suse.com>
+References: <20170908213445.1601-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170725205138.28376-1-jeffm@suse.com>
+In-Reply-To: <20170908213445.1601-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 25, 2017 at 04:51:32PM -0400, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
+On Fri, Sep 08, 2017 at 03:34:45PM -0600, Liu Bo wrote:
+> We've seen the following backtrace stack in ftrace or dmesg log,
 > 
-> For the pathlogical case, like xfstests generic/297 that creates a
-> large file consisting of one, repeating reflinked extent, fsck can
-> take hours.  The root cause is that calling find_data_backref while
-> iterating the extent records is an O(n^2) algorithm.  For my
-> example test run, n was 2*2^20 and fsck was at 8 hours and counting.
+>   kworker/u16:10-4244  [000] 241942.480955: function:             btrfs_put_ordered_extent
+>   kworker/u16:10-4244  [000] 241942.480956: kernel_stack:         <stack trace>
+> => finish_ordered_fn (ffffffffa0384475)
+> => btrfs_scrubparity_helper (ffffffffa03ca577)
+> => btrfs_freespace_write_helper (ffffffffa03ca98e)
+> => process_one_work (ffffffff81117b2f)
+> => worker_thread (ffffffff81118c2a)
+> => kthread (ffffffff81121de0)
+> => ret_from_fork (ffffffff81d7087a)
 > 
-> This patch supplements the list with an rbtree and drops the runtime
-> of that testcase to about 20 seconds.
+> btrfs_scrubparity_helper really shouldn't be shown up.
 > 
-> A previous version of this patch introduced a regression that would
-> have corrupted file systems during repair.  It was traced to the
-> compare algorithm honoring ->bytes regardless of whether the
-> reference had been found and a failure to reinsert nodes after
-> the target reference was found.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> It's caused by compiler doing inline for our helper function, adding a
+> noinline tag can fix that.
 
-Josef has fixed the crash so I've added the patchset to devel.
+Isn't it the other way around then? Noninline would make the function
+object exist separately and then it would appear in the stacktrace. And
+I think this is desired, so you see the call stack withtou the shortcuts
+that the inlining can cause.

@@ -1,37 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f65.google.com ([209.85.215.65]:37244 "EHLO
-        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751019AbdIMNGB (ORCPT
+Received: from smtprelay0248.hostedemail.com ([216.40.44.248]:39671 "EHLO
+        smtprelay.hostedemail.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1750993AbdIMPBl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 09:06:01 -0400
-MIME-Version: 1.0
-In-Reply-To: <20170913120909.GA11820@lunn.ch>
+        Wed, 13 Sep 2017 11:01:41 -0400
+Message-ID: <1505314401.8969.11.camel@perches.com>
+Subject: Re: [PATCH 01/10] arch:powerpc: return -ENOMEM on failed allocation
+From: Joe Perches <joe@perches.com>
+To: Allen Pais <allen.lkml@gmail.com>, linux-kernel@vger.kernel.org
+Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, MPT-FusionLinux.pdl@broadcom.com,
+        linux-scsi@vger.kernel.org, netdev@vger.kernel.org,
+        megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org
+Date: Wed, 13 Sep 2017 07:53:21 -0700
+In-Reply-To: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
- <1505287939-14106-5-git-send-email-allen.lkml@gmail.com> <20170913120909.GA11820@lunn.ch>
-From: Allen <allen.lkml@gmail.com>
-Date: Wed, 13 Sep 2017 18:35:58 +0530
-Message-ID: <CAOMdWSKGuEBJPropUwveuP-Lr3NSAxdoNvCUWRGC_jWpNYQfFA@mail.gmail.com>
-Subject: Re: [PATCH 05/10] drivers:net: return -ENOMEM on allocation failure.
-To: Andrew Lunn <andrew@lunn.ch>
-Cc: linux-kernel@vger.kernel.org, nouveau@lists.freedesktop.org,
-        linux-crypto@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        MPT-FusionLinux.pdl@broadcom.com, linux-scsi@vger.kernel.org,
-        netdev@vger.kernel.org, megaraidlinux.pdl@broadcom.com,
-        target-devel@vger.kernel.org, linux-fbdev@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="ISO-8859-1"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> propagates the -1. That is only called by bond_open() with:
->
->         if (bond_alb_initialize(bond, (BOND_MODE(bond) == BOND_MODE_ALB)))
->                 return -ENOMEM;
->
-> So you might want to also modify this code, to return the return
-> value, rather than use the hard coded ENOMEM.
->
+On Wed, 2017-09-13 at 13:02 +0530, Allen Pais wrote:
+> Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 
- I'll modify the above and send it out a separate patch.
+I think the changelog for this series of conversions
+should show that you've validated the change by
+inspecting the return call chain at each modified line.
 
-Thank you.
+Also, it seems you've cc'd the same mailing lists for
+all of the patches modified by this series.
+
+It would be better to individually address each patch
+in the series only cc'ing the appropriate maintainers
+and mailing lists.
+
+A cover letter would be good too.
+
+> ---
+>  arch/powerpc/platforms/cell/spider-pci.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/powerpc/platforms/cell/spider-pci.c b/arch/powerpc/platforms/cell/spider-pci.c
+> index d1e61e2..82aa3f7 100644
+> --- a/arch/powerpc/platforms/cell/spider-pci.c
+> +++ b/arch/powerpc/platforms/cell/spider-pci.c
+> @@ -106,7 +106,7 @@ static int __init spiderpci_pci_setup_chip(struct pci_controller *phb,
+>  	dummy_page_va = kmalloc(PAGE_SIZE, GFP_KERNEL);
+>  	if (!dummy_page_va) {
+>  		pr_err("SPIDERPCI-IOWA:Alloc dummy_page_va failed.\n");
+> -		return -1;
+> +		return -ENOMEM;
+>  	}
+>  
+>  	dummy_page_da = dma_map_single(phb->parent, dummy_page_va,
+> @@ -137,7 +137,7 @@ int __init spiderpci_iowa_init(struct iowa_bus *bus, void *data)
+>  	if (!priv) {
+>  		pr_err("SPIDERPCI-IOWA:"
+>  		       "Can't allocate struct spiderpci_iowa_private");
+> -		return -1;
+> +		return -ENOMEM;
+>  	}
+>  
+>  	if (of_address_to_resource(np, 0, &r)) {

@@ -1,38 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57853 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751236AbdIFOYj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Sep 2017 10:24:39 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 4D145AC93
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Sep 2017 14:24:38 +0000 (UTC)
-Date: Wed, 6 Sep 2017 16:23:09 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs: Remove redundant forward declarations
-Message-ID: <20170906142309.GO31874@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1504169331-24953-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1504169331-24953-1-git-send-email-nborisov@suse.com>
+Received: from mail-pf0-f196.google.com ([209.85.192.196]:37031 "EHLO
+        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752015AbdIMHdM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Sep 2017 03:33:12 -0400
+From: Allen Pais <allen.lkml@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, MPT-FusionLinux.pdl@broadcom.com,
+        linux-scsi@vger.kernel.org, netdev@vger.kernel.org,
+        megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Allen Pais <allen.lkml@gmail.com>
+Subject: [PATCH 10/10] fs:btrfs: return -ENOMEM on allocation failure.
+Date: Wed, 13 Sep 2017 13:02:19 +0530
+Message-Id: <1505287939-14106-10-git-send-email-allen.lkml@gmail.com>
+In-Reply-To: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
+References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 31, 2017 at 11:48:51AM +0300, Nikolay Borisov wrote:
-> Some static functions are needlessly forward declared. Let's remove those
-> declarations since they add no value.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
-> 
-> Here is a less invasive version of my previous patch removing the fwd 
-> declarations in extent-tree. This time I've limited myself to only those 
-> declarations which can be removed without moving code around and creating
-> needless noise. 
+Signed-off-by: Allen Pais <allen.lkml@gmail.com>
+---
+ fs/btrfs/check-integrity.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I can't find the previous patches, but this one is ok. This kind of
-cleanup can be done in one big patch, if you are going to send more.
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 7d5a9b5..efa4c23 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2913,7 +2913,7 @@ int btrfsic_mount(struct btrfs_fs_info *fs_info,
+ 	state = kvzalloc(sizeof(*state), GFP_KERNEL);
+ 	if (!state) {
+ 		pr_info("btrfs check-integrity: allocation failed!\n");
+-		return -1;
++		return -ENOMEM;
+ 	}
+ 
+ 	if (!btrfsic_is_initialized) {
+-- 
+2.7.4
 
-Reviewed-by: David Sterba <dsterba@suse.com>

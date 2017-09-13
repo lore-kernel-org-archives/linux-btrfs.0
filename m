@@ -1,58 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:44376 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751052AbdIMQxJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 12:53:09 -0400
-Received: by mail-io0-f182.google.com with SMTP id v36so4376383ioi.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 09:53:09 -0700 (PDT)
+Received: from smtp-33-wd.italiaonline.it ([212.48.13.167]:36518 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751090AbdIMRwo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Sep 2017 13:52:44 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: qemu-kvm VM died during partial raid1 problems of btrfs
+To: Marat Khalili <mkh@rqc.ru>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fb.com>
+References: <2ee9f15b-a11a-886e-2460-557bb9f8d41d@rqc.ru>
+ <CAJCQCtTEJXvTS=YzUrwYvg7KCisgwLVYqu_Jb9-95sYswAspXg@mail.gmail.com>
+ <d64202f0-c598-f98a-fcb4-a42b112c9024@rqc.ru>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <da267f70-4b7f-89b9-380b-d49e9a839099@libero.it>
+Date: Wed, 13 Sep 2017 19:52:40 +0200
 MIME-Version: 1.0
-In-Reply-To: <f7adba0b-9464-0d75-28f3-3b90187ee14e@gmail.com>
-References: <CAH=dxU6uVGXbdYc_65P6XbSby76A6Y=qoM6=cXMHkWDV8JRHVg@mail.gmail.com>
- <CAH=dxU7RM7s+pxT=wxE9WcUNMWjSG_A0=1pUWD1dWGVQ6g+g8Q@mail.gmail.com>
- <CAH=dxU6xwikfvfY7zCfuPavnCMMdecnyPckOZ3nyYm+_PZtOrg@mail.gmail.com>
- <CAH=dxU6kQdqp-x0nLbTk=T8VhgH3oX8UUA_BO4p6rLEmwBsHhQ@mail.gmail.com>
- <b899f57.51efafb1.15e5b02df03@gmail.com> <CAH=dxU4T8zB3ufn8JC1Jq0-QXkCnWt11NkXBLNBQnEi3RA1PDQ@mail.gmail.com>
- <CAH=dxU6S7XLVb4NY0ueZapUJW6A_KM9JezpB3icjYW4nRB8OPA@mail.gmail.com>
- <e9ec7ac7-781d-34e0-9f48-aeb8566e5787@tty0.ch> <CAH=dxU7Qtfqq1nT1cm8nS+OG-0GRZdtNEj2wSt4N6aoQ7f8YUQ@mail.gmail.com>
- <0f1e32f8-12c7-4aa7-246f-4f6805e6d3df@tty0.ch> <f7adba0b-9464-0d75-28f3-3b90187ee14e@gmail.com>
-From: Dave <davestechshop@gmail.com>
-Date: Wed, 13 Sep 2017 12:52:48 -0400
-Message-ID: <CAH=dxU5NqUxuWffdca1ft4FmE+hhu5ho0Fc04SQhdLvBA0ynXw@mail.gmail.com>
-Subject: Re: send | receive: received snapshot is missing recent files
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Axel Burri <axel@tty0.ch>, linux-btrfs@vger.kernel.org,
-        A L <crimsoncottage@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <d64202f0-c598-f98a-fcb4-a42b112c9024@rqc.ru>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 11, 2017 at 11:19 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> 11.09.2017 20:53, Axel Burri пишет:
->> On 2017-09-08 06:44, Dave wrote:
->>> I'm referring to the link below. Using "btrfs subvolume snapshot -r"
->>> copies the Received UUID from the source into the new snapshot. The
->>> btrbk FAQ entry suggests otherwise. Has something changed?
->>
->> I don't think something has changed, the description for the read-only
->> subvolumes on the btrbk FAQ was just wrong (fixed now).
->>
->>> The only way I see to remove a Received UUID is to create a rw
->>> snapshot (above command without the "-r"), which is not ideal in this
->>> situation when cleaning up readonly source snapshots.
->>>
->>> Any suggestions? Thanks
->>
->> No suggestions from my part, as far as I know there is no way to easily
->> remove/change a received_uuid from a subvolume.
->>
->
-> There is BTRFS_IOC_SET_RECEIVED_SUBVOL IOCTL which is used by "btrfs
-> received". My understanding is that it can also be set to empty (this
-> clearing it). You could write small program to do it.
->
-> In general it sounds like a bug - removing read-only flag from subvolume
-> by any means should also clear Received UUID as we cannot anymore
-> guarantee that subvolume content is the same.
+On 09/13/2017 04:15 PM, Marat Khalili wrote:
+> On 13/09/17 16:23, Chris Murphy wrote:
+>> Right, known problem. To use o_direct implies also using nodatacow (or
+>> at least nodatasum), e.g. xattr +C is set, done by qemu-img -o
+>> nocow=on
+>> https://www.spinics.net/lists/linux-btrfs/msg68244.html
+> Can you please elaborate? I don't have exactly the same problem as described by the link, but I'm still worried that particularly qemu can be less resilient to partial raid1 failures even on newer kernels, due to missing checksums for instance. (BTW I didn't find any xattrs on my VM images, nor do I plan to set any.)
 
-Yes! That makes a great deal of sense.
+>From what Josef Bacik wrote, I understood that it is not only related to RAID1. I tried to ask further clarifications without success :(
+
+It seems that simply using O_DIRECT could allow checksums mismatch. My understand is that to avoid to copy the data between buffer, the checksum computation is subject to data race: i.e. it is possible that the kernel computes the checksum *and* the user space program change the data. 
+This lead to an io error during a subsequent read.
+
+To avoid that BTRFS should copy in a temporary buffer the data, and then compute the checksum. But this is what the common sense suggest that O_DIRECT should avoid.
+
+If I understood correctly (which is a BIG if), i think that O_DIRECT should be unsupported (i.e. return -EINVAL) if the file is "not marked" as "nodatacsum"
+
+I looked to what ZFSOL does: it seems that it doesn't support O_DIRECT [1] for the same reason (see the comments ' ryao commented on Jul 23, 2015' for further details).
+
+Anyway I suggest to read what the open(2) man page says about O_DIRECT: it seems that O_DIRECT has to be used carefully when doing fork; the man page concludes:
+[...]
+In  summary,  O_DIRECT  is  a  potentially powerful tool that should be used with caution.  It is recommended that applications treat use of O_DIRECT as a performance option which is disabled by default.
+[...]
+
+[1] https://github.com/zfsonlinux/zfs/issues/224
+
+
+> 
+> -- 
+> 
+> With Best Regards,
+> Marat Khalili
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+BR
+G.Baroncelli
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

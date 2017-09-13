@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f67.google.com ([209.85.215.67]:36733 "EHLO
-        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751611AbdIMNEV (ORCPT
+Received: from mail-lf0-f65.google.com ([209.85.215.65]:37244 "EHLO
+        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751019AbdIMNGB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 09:04:21 -0400
+        Wed, 13 Sep 2017 09:06:01 -0400
 MIME-Version: 1.0
-In-Reply-To: <20170913121628.GB11820@lunn.ch>
+In-Reply-To: <20170913120909.GA11820@lunn.ch>
 References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
- <1505287939-14106-6-git-send-email-allen.lkml@gmail.com> <20170913121628.GB11820@lunn.ch>
+ <1505287939-14106-5-git-send-email-allen.lkml@gmail.com> <20170913120909.GA11820@lunn.ch>
 From: Allen <allen.lkml@gmail.com>
-Date: Wed, 13 Sep 2017 18:34:17 +0530
-Message-ID: <CAOMdWS+mOcm=6722SD=-SvfD59AeXpwAARLhT31UycQSqWTxdg@mail.gmail.com>
-Subject: Re: [PATCH 06/10] drivers:ethernet: return -ENOMEM on allocation failure.
+Date: Wed, 13 Sep 2017 18:35:58 +0530
+Message-ID: <CAOMdWSKGuEBJPropUwveuP-Lr3NSAxdoNvCUWRGC_jWpNYQfFA@mail.gmail.com>
+Subject: Re: [PATCH 05/10] drivers:net: return -ENOMEM on allocation failure.
 To: Andrew Lunn <andrew@lunn.ch>
 Cc: linux-kernel@vger.kernel.org, nouveau@lists.freedesktop.org,
         linux-crypto@vger.kernel.org, dri-devel@lists.freedesktop.org,
@@ -23,34 +23,15 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> propagates the -1. That is only called by bond_open() with:
 >
-> static int cas_alloc_rxds(struct cas *cp)
-> {
->         int i;
+>         if (bond_alb_initialize(bond, (BOND_MODE(bond) == BOND_MODE_ALB)))
+>                 return -ENOMEM;
 >
->         for (i = 0; i < N_RX_DESC_RINGS; i++) {
->                 if (cas_alloc_rx_desc(cp, i) < 0) {
->                         cas_free_rxds(cp);
->                         return -1;
->                 }
->         }
->         return 0;
-> }
+> So you might want to also modify this code, to return the return
+> value, rather than use the hard coded ENOMEM.
 >
-> Again, your change is correct, but in the end the value is not used.
-> And if you fix it at the cas_alloc_rxds level, you also need a fix at
-> the next level up:
->
->         err = -ENOMEM;
->         if (cas_tx_tiny_alloc(cp) < 0)
->                 goto err_unlock;
->
->         /* alloc rx descriptors */
->         if (cas_alloc_rxds(cp) < 0)
->                 goto err_tx_tiny;
->
-> again, the return value is discarded.
 
- I agree. I could send out v2 with fixes at both level.
+ I'll modify the above and send it out a separate patch.
 
-- Allen
+Thank you.

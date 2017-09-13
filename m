@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f195.google.com ([209.85.192.195]:36414 "EHLO
-        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751772AbdIMHcl (ORCPT
+Received: from mail-pg0-f67.google.com ([74.125.83.67]:36578 "EHLO
+        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751626AbdIMHc2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 03:32:41 -0400
+        Wed, 13 Sep 2017 03:32:28 -0400
 From: Allen Pais <allen.lkml@gmail.com>
 To: linux-kernel@vger.kernel.org
 Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
@@ -12,32 +12,39 @@ Cc: nouveau@lists.freedesktop.org, linux-crypto@vger.kernel.org,
         megaraidlinux.pdl@broadcom.com, target-devel@vger.kernel.org,
         linux-fbdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Allen Pais <allen.lkml@gmail.com>
-Subject: [PATCH 03/10] driver:gpu: return -ENOMEM on allocation failure.
-Date: Wed, 13 Sep 2017 13:02:12 +0530
-Message-Id: <1505287939-14106-3-git-send-email-allen.lkml@gmail.com>
-In-Reply-To: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
-References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
+Subject: [PATCH 01/10] arch:powerpc: return -ENOMEM on failed allocation
+Date: Wed, 13 Sep 2017 13:02:10 +0530
+Message-Id: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 ---
- drivers/gpu/drm/gma500/mid_bios.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/powerpc/platforms/cell/spider-pci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpu/drm/gma500/mid_bios.c b/drivers/gpu/drm/gma500/mid_bios.c
-index d75ecb3..1fa1633 100644
---- a/drivers/gpu/drm/gma500/mid_bios.c
-+++ b/drivers/gpu/drm/gma500/mid_bios.c
-@@ -237,7 +237,7 @@ static int mid_get_vbt_data_r10(struct drm_psb_private *dev_priv, u32 addr)
- 
- 	gct = kmalloc(sizeof(*gct) * vbt.panel_count, GFP_KERNEL);
- 	if (!gct)
+diff --git a/arch/powerpc/platforms/cell/spider-pci.c b/arch/powerpc/platforms/cell/spider-pci.c
+index d1e61e2..82aa3f7 100644
+--- a/arch/powerpc/platforms/cell/spider-pci.c
++++ b/arch/powerpc/platforms/cell/spider-pci.c
+@@ -106,7 +106,7 @@ static int __init spiderpci_pci_setup_chip(struct pci_controller *phb,
+ 	dummy_page_va = kmalloc(PAGE_SIZE, GFP_KERNEL);
+ 	if (!dummy_page_va) {
+ 		pr_err("SPIDERPCI-IOWA:Alloc dummy_page_va failed.\n");
 -		return -1;
 +		return -ENOMEM;
+ 	}
  
- 	gct_virtual = ioremap(addr + sizeof(vbt),
- 			sizeof(*gct) * vbt.panel_count);
+ 	dummy_page_da = dma_map_single(phb->parent, dummy_page_va,
+@@ -137,7 +137,7 @@ int __init spiderpci_iowa_init(struct iowa_bus *bus, void *data)
+ 	if (!priv) {
+ 		pr_err("SPIDERPCI-IOWA:"
+ 		       "Can't allocate struct spiderpci_iowa_private");
+-		return -1;
++		return -ENOMEM;
+ 	}
+ 
+ 	if (of_address_to_resource(np, 0, &r)) {
 -- 
 2.7.4
 

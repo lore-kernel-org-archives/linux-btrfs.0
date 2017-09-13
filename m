@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f42.google.com ([209.85.218.42]:46116 "EHLO
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:43032 "EHLO
         mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751312AbdIMM6R (ORCPT
+        with ESMTP id S1751412AbdIMNJC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Sep 2017 08:58:17 -0400
-Received: by mail-oi0-f42.google.com with SMTP id x190so808720oix.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 05:58:17 -0700 (PDT)
+        Wed, 13 Sep 2017 09:09:02 -0400
+Received: by mail-oi0-f42.google.com with SMTP id r20so1084696oie.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Sep 2017 06:09:02 -0700 (PDT)
 MIME-Version: 1.0
-From: Chris Murphy <chris@colorremedies.com>
-Date: Wed, 13 Sep 2017 14:58:16 +0200
-Message-ID: <CAJCQCtTbYvz3hRbOcS=0U39DaukSZ4J4idC5D-fg7HsOn+B5=w@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 13 Sep 2017 15:09:01 +0200
+Message-ID: <CAJCQCtRu=MW78-pFdMNzUUEZDb2-7-TmJ3w1H343NxoCw1OOGg@mail.gmail.com>
 Subject: discard and rollback
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
@@ -46,8 +46,10 @@ Btrfs much more fragile than it would otherwise be.
 
 It's not broken, so I have no fix proposal. Of course discard is not
 the default mount option, and a viable work around is fstrim.timer
-executed once a week or even once per hour. Possibly a better option
-is a delayed discard list. i.e. current discard list accumulates
+executed once a week or even once per hour.
+
+Possibly better would be a delayed discard list. i.e. current discard
+list accumulates
 discards for e.g. 5 minutes, and then current list becomes a static
 delayed list, and a new current list is started. After another 5
 minutes, delayed list is executed for discards, and current list
@@ -56,6 +58,7 @@ minutes old.
 
 I guess there are security implications by delaying discard, so there
 might be a use case for non-delayed discards (?)
+
 
 
 -- 

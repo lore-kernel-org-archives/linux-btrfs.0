@@ -1,81 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f182.google.com ([209.85.128.182]:47378 "EHLO
-        mail-wr0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751165AbdINNbu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2017 09:31:50 -0400
-Received: by mail-wr0-f182.google.com with SMTP id k20so5890139wre.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Sep 2017 06:31:50 -0700 (PDT)
+Received: from smtp01.belwue.de ([129.143.71.86]:48014 "EHLO smtp01.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751738AbdINO5l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Sep 2017 10:57:41 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp01.belwue.de (Postfix) with SMTP id 4AEA88C93
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Sep 2017 16:57:39 +0200 (MEST)
+Date: Thu, 14 Sep 2017 16:57:39 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: snapshots of encrypted directories?
+Message-ID: <20170914145739.GA32347@rus.uni-stuttgart.de>
 MIME-Version: 1.0
-In-Reply-To: <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
-From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
-Date: Thu, 14 Sep 2017 14:31:48 +0100
-Message-ID: <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
-Subject: Re: defragmenting best practice?
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 14 September 2017 at 12:38, Kai Krakow <hurikhan77@gmail.com> wrote:
-[..]
->
-> I suggest you only ever defragment parts of your main subvolume or rely
-> on autodefrag, and let bees do optimizing the snapshots.
->
-> Also, I experimented with adding btrfs support to shake, still working
-> on better integration but currently lacking time... :-(
->
-> Shake is an adaptive defragger which rewrites files. With my current
-> patches it clones each file, and then rewrites it to its original
-> location. This approach is currently not optimal as it simply bails out
-> if some other process is accessing the file and leaves you with an
-> (intact) temporary copy you need to move back in place manually.
+I use encfs on top of btrfs.
+I can create btrfs snapshots, but I have no suggestive access to the files
+in these snaspshots, because they look like:
 
-If you really want to have real and *ideal* distribution of the data
-across physical disk first you need to build time travel device. This
-device will allow you to put all blocks which needs to be read in
-perfect order (to read all data only sequentially without seek).
-However it will be working only in case of spindles because in case of
-SSDs there is no seek time.
-Please let us know when you will write drivers/timetravel/ Linux kernel driver.
-When such driver will be available I promise I'll write all necessary
-btrfs code by myself in matter of few days (it will be piece of cake
-compare to build such device).
+drwx------  framstag users        - 2017-09-08 11:47:18 uHjprldmxo3-nSfLmcH54HMW
+drwxr-xr-x  framstag users        - 2017-09-08 11:47:18 wNEWaDCgyXTj0d-Myk8wXZfh
+-rw-r--r--  framstag users      377 2015-06-12 14:02:53 -zDmc7xfobKDkbl8z7oKOHxv
+-rw-r--r--  framstag users    2,367 2012-07-10 14:32:30 7pfKs27K9k5zANE4WOQEuFa2
+-rw-------  framstag users      692 2009-10-20 13:45:41 8SQElYCph85kDdcFasUHybVr
+-rw-------  framstag users    2,872 2017-08-31 16:21:52 bm,yNi1e4fsAClDv7lNxxSfJ
+lrwxrwxrwx  framstag users        - 2017-06-01 15:53:00 GZxNYI0Gy96R18fz40f7k5rl -> wvuQKHYzdFbar18fW6jjOerXk2IsS4OAA2fnHalBZjMQ,7Kw0j-zE3IJqxhmmGBN8G9
+-rw-r--r--  framstag users      182 2016-12-01 13:34:31 rqtNBbiYDym0hPMbBL-VLJZcFZu6nkNxlsjTX-sU88I4I1
 
-But seriously ..
-Only context/scenario when you may want to lower defragmentation is
-when you are something needs to allocate continuous area lower than
-free space and larger than largest free chunk. Something like this
-happens only when volume is working on almost 100% allocated space.
-In such scenario even you bees cannot do to much as it may be not
-enough free space to move some other data in larger chunks to
-defragment FS physical space. If your workload will be still writing
-new data to FS such defragmentation may give you (maybe) few more
-seconds and just after this FS will be 100% full,
+I have to mount the snapshot with encfs, to have access to the (decrypted)
+files. 
 
-In other words if someone is thinking that such defragmentation daemon
-is solving any problems he/she may be 100% right .. such person is
-only *thinking* that this is truth.
+Any better ideas?
 
-kloczek
-PS. Do you know first McGyver rule? -> "If it ain't broke, don't fix it".
-So first show that fragmentation is hurting latency of the access to
-btrfs data and it will be possible to measurable such impact.
-Before you will start measuring this you need to learn how o sample
-for example VFS layer latency. Do you know how to do this to deliver
-such proof?
-PS2. The same "discussions" about fragmentation where in the past
-about +10 years ago after ZFS has been introduced. Just to let you
-know that after initial ZFS introduction up to now was not written
-even single line of ZFS code to handle active fragmentation and no one
-been able to prove that something about active defragmentation needs
-to be done in case of ZFS.
-Why? Because all stands on the shoulders of enough cleaver *allocation
-algorithm*. Only this and nothing more.
-PS3. Please can we stop this/EOT?
---
-Tomasz Kłoczko | LinkedIn: http://lnkd.in/FXPWxH
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20170914145739.GA32347@rus.uni-stuttgart.de>

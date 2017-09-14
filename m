@@ -1,30 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58383 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751516AbdINMne (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2017 08:43:34 -0400
-Date: Thu, 14 Sep 2017 14:42:03 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Naohiro Aota <naohiro.aota@wdc.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: build: omit unnecessary -MD flag
-Message-ID: <20170914124203.GT29043@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <150538384653.24503.41288304442819820.stgit@naota.dhcp.fujisawa.hgst.com>
- <150538385685.24503.15875606860945494531.stgit@naota.dhcp.fujisawa.hgst.com>
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:31602 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751268AbdINKLs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Sep 2017 06:11:48 -0400
+Subject: [PATCH 1/2] btrfs-progs: build: generate all dependency files
+From: Naohiro Aota <naohiro.aota@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com
+Date: Thu, 14 Sep 2017 19:10:46 +0900
+Message-ID: <150538384653.24503.41288304442819820.stgit@naota.dhcp.fujisawa.hgst.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <150538385685.24503.15875606860945494531.stgit@naota.dhcp.fujisawa.hgst.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 14, 2017 at 07:10:56PM +0900, Naohiro Aota wrote:
-> According to gcc(1), "-MD is equivalent to -M -MF file, except that -E is not
-> implied." Since the rule in the Makefile is just generating dependency file
-> and not building object file, it is no use to have "-MD" here. Also, it's
-> overridden and conflicting with the following "-MM" flag. I guess we can drop
-> it.
-> 
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+We're missing several dependency files like:
 
-Applied, thanks.
+$ diff -u <(find -name '*.o'|cut -d. -f2|sort) <(find -name '*.o.d'|cut -d. -f2|sort)
+--- /proc/self/fd/11    2017-09-14 18:17:44.460564620 +0900
++++ /proc/self/fd/12    2017-09-14 18:17:44.460564620 +0900
+@@ -3,7 +3,6 @@
+ /btrfs-corrupt-block
+ /btrfs-debug-tree
+ /btrfs-find-root
+-/btrfs-list
+ /btrfs-map-logical
+ /btrfs-select-super
+ /btrfstune
+@@ -29,11 +28,6 @@
+ /cmds-scrub
+ /cmds-send
+ /cmds-subvolume
+-/convert/common
+-/convert/main
+-/convert/source-ext2
+-/convert/source-fs
+-/convert/source-reiserfs
+ /ctree
+ /dir-item
+ /disk-io
+<snip>
+
+This is due to moving things out of objects and cmds_objects variables. Such
+missing dependency files cause mis-building of some source files (try touch
+utils.h; make mkfs/main.o).
+
+This patch introduce a new variable "all_objects" to keep all the objects and
+use the variable to generate proper dependency file building rules.
+
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ Makefile |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index a114eca..c00dff6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -121,6 +121,9 @@ libbtrfs_headers = send-stream.h send-utils.h send.h kernel-lib/rbtree.h btrfs-l
+ convert_objects = convert/main.o convert/common.o convert/source-fs.o \
+ 		  convert/source-ext2.o convert/source-reiserfs.o
+ mkfs_objects = mkfs/main.o mkfs/common.o
++image_objects = image/main.o
++all_objects = $(objects) $(cmds_objects) $(libbtrfs_objects) $(convert_objects) \
++	      $(mkfs_objects) $(image_objects)
+ 
+ TESTS = fsck-tests.sh convert-tests.sh
+ 
+@@ -591,5 +594,5 @@ uninstall:
+ 	cd $(DESTDIR)$(bindir); $(RM) -f -- btrfsck fsck.btrfs $(progs_install)
+ 
+ ifneq ($(MAKECMDGOALS),clean)
+--include $(objects:.o=.o.d) $(cmds_objects:.o=.o.d) $(subst .btrfs,, $(filter-out btrfsck.o.d, $(progs:=.o.d)))
++-include $(all_objects:.o=.o.d) $(subst .btrfs,, $(filter-out btrfsck.o.d, $(progs:=.o.d)))
+ endif
+

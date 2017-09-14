@@ -1,40 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f67.google.com ([209.85.215.67]:33630 "EHLO
-        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750740AbdINEnl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2017 00:43:41 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58323 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751612AbdINMmj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Sep 2017 08:42:39 -0400
+Date: Thu, 14 Sep 2017 14:41:08 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Naohiro Aota <naohiro.aota@wdc.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: build: generate all dependency files
+Message-ID: <20170914124108.GS29043@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <150538384653.24503.41288304442819820.stgit@naota.dhcp.fujisawa.hgst.com>
 MIME-Version: 1.0
-In-Reply-To: <1505314401.8969.11.camel@perches.com>
-References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com> <1505314401.8969.11.camel@perches.com>
-From: Allen <allen.lkml@gmail.com>
-Date: Thu, 14 Sep 2017 10:13:38 +0530
-Message-ID: <CAOMdWSJvQMNJSnfekmM=N-CCaaJF_3HkP8ypZG+vWgWf0gWgfw@mail.gmail.com>
-Subject: Re: [PATCH 01/10] arch:powerpc: return -ENOMEM on failed allocation
-To: Joe Perches <joe@perches.com>
-Cc: linux-kernel@vger.kernel.org, nouveau@lists.freedesktop.org,
-        linux-crypto@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        MPT-FusionLinux.pdl@broadcom.com, linux-scsi@vger.kernel.org,
-        netdev@vger.kernel.org, megaraidlinux.pdl@broadcom.com,
-        target-devel@vger.kernel.org, linux-fbdev@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <150538384653.24503.41288304442819820.stgit@naota.dhcp.fujisawa.hgst.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I think the changelog for this series of conversions
-> should show that you've validated the change by
-> inspecting the return call chain at each modified line.
->
-> Also, it seems you've cc'd the same mailing lists for
-> all of the patches modified by this series.
->
-> It would be better to individually address each patch
-> in the series only cc'ing the appropriate maintainers
-> and mailing lists.
->
-> A cover letter would be good too.
+On Thu, Sep 14, 2017 at 07:10:46PM +0900, Naohiro Aota wrote:
+> We're missing several dependency files like:
+> 
+> $ diff -u <(find -name '*.o'|cut -d. -f2|sort) <(find -name '*.o.d'|cut -d. -f2|sort)
+>    --- /proc/self/fd/11    2017-09-14 18:17:44.460564620 +0900
+>    +++ /proc/self/fd/12    2017-09-14 18:17:44.460564620 +0900
 
- Point noted. Thanks.
+Please note that an actual diff in the changelog is understood as start
+of the patch by git-am, indenting the --- or +++ lines makes it work
+again.
 
-- Allen
+> @@ -3,7 +3,6 @@
+>  /btrfs-corrupt-block
+>  /btrfs-debug-tree
+>  /btrfs-find-root
+> -/btrfs-list
+>  /btrfs-map-logical
+>  /btrfs-select-super
+>  /btrfstune
+> @@ -29,11 +28,6 @@
+>  /cmds-scrub
+>  /cmds-send
+>  /cmds-subvolume
+> -/convert/common
+> -/convert/main
+> -/convert/source-ext2
+> -/convert/source-fs
+> -/convert/source-reiserfs
+>  /ctree
+>  /dir-item
+>  /disk-io
+> <snip>
+> 
+> This is due to moving things out of objects and cmds_objects variables. Such
+> missing dependency files cause mis-building of some source files (try touch
+> utils.h; make mkfs/main.o).
+> 
+> This patch introduce a new variable "all_objects" to keep all the objects and
+> use the variable to generate proper dependency file building rules.
+> 
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+
+Applied, thanks.

@@ -1,45 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:19605 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753635AbdIHIts (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2017 04:49:48 -0400
-Subject: [PATCH] btrfs: propagate error to btrfs_cmp_data_prepare caller
-From: Naohiro Aota <naohiro.aota@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: mfasheh@suse.de, dsterba@suse.com
-Date: Fri, 08 Sep 2017 17:48:55 +0900
-Message-ID: <150486053591.31637.4198233649091096390.stgit@naota.dhcp.fujisawa.hgst.com>
+Received: from mail-lf0-f67.google.com ([209.85.215.67]:33630 "EHLO
+        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750740AbdINEnl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Sep 2017 00:43:41 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <1505314401.8969.11.camel@perches.com>
+References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com> <1505314401.8969.11.camel@perches.com>
+From: Allen <allen.lkml@gmail.com>
+Date: Thu, 14 Sep 2017 10:13:38 +0530
+Message-ID: <CAOMdWSJvQMNJSnfekmM=N-CCaaJF_3HkP8ypZG+vWgWf0gWgfw@mail.gmail.com>
+Subject: Re: [PATCH 01/10] arch:powerpc: return -ENOMEM on failed allocation
+To: Joe Perches <joe@perches.com>
+Cc: linux-kernel@vger.kernel.org, nouveau@lists.freedesktop.org,
+        linux-crypto@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        MPT-FusionLinux.pdl@broadcom.com, linux-scsi@vger.kernel.org,
+        netdev@vger.kernel.org, megaraidlinux.pdl@broadcom.com,
+        target-devel@vger.kernel.org, linux-fbdev@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_cmp_data_prepare() (almost) always returns 0 i.e. ignoring errors
-from gather_extent_pages(). While the pages are freed by
-btrfs_cmp_data_free(), cmp->num_pages still has > 0. Then,
-btrfs_extent_same() try to access the already freed pages causing faults
-(or violates PageLocked assertion).
+> I think the changelog for this series of conversions
+> should show that you've validated the change by
+> inspecting the return call chain at each modified line.
+>
+> Also, it seems you've cc'd the same mailing lists for
+> all of the patches modified by this series.
+>
+> It would be better to individually address each patch
+> in the series only cc'ing the appropriate maintainers
+> and mailing lists.
+>
+> A cover letter would be good too.
 
-This patch just return the error as is so that the caller stop the process.
+ Point noted. Thanks.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-Fixes: f441460202cb ("btrfs: fix deadlock with extent-same and readpage")
-Cc: <stable@vger.kernel.org> # 4.2
----
- fs/btrfs/ioctl.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ae8fbf9d3de2..b5971923f15f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3028,7 +3028,7 @@ static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
- out:
- 	if (ret)
- 		btrfs_cmp_data_free(cmp);
--	return 0;
-+	return ret;
- }
- 
- static int btrfs_cmp_data(u64 len, struct cmp_pages *cmp)
-
+- Allen

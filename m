@@ -1,67 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:46322 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754074AbdIFC4u (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Sep 2017 22:56:50 -0400
-Date: Wed, 6 Sep 2017 04:56:48 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: A L <crimsoncottage@gmail.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:51055 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751463AbdIOTBA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Sep 2017 15:01:00 -0400
+Date: Fri, 15 Sep 2017 20:59:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Nick Terrell <terrelln@fb.com>, David Sterba <dsterba@suse.cz>
 Subject: Re: \o/ compsize
-Message-ID: <20170906025648.42rxtzfp6xr6z2ql@angband.pl>
+Message-ID: <20170915185929.GB29043@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170904151154.vkhshc57t2mi2sze@angband.pl>
- <8eb521a6-03d9-a8d3-b7e7-bf86d5320235@gmail.com>
+ <CAGqmi762p8wKRv3Gz0Z5BABUvKLn7-8XhB6=v-gbdqsGMV8rUg@mail.gmail.com>
+ <20170904184229.cjarg6p7tbgy7gka@angband.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <8eb521a6-03d9-a8d3-b7e7-bf86d5320235@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170904184229.cjarg6p7tbgy7gka@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 04, 2017 at 10:33:40PM +0200, A L wrote:
-> On 9/4/2017 5:11 PM, Adam Borowski wrote:
-> > Hi!
-> > Here's an utility to measure used compression type + ratio on a set of files
-> > or directories: https://github.com/kilobyte/compsize
+On Mon, Sep 04, 2017 at 08:42:29PM +0200, Adam Borowski wrote:
+> On Mon, Sep 04, 2017 at 07:07:25PM +0300, Timofey Titovets wrote:
+> > 2017-09-04 18:11 GMT+03:00 Adam Borowski <kilobyte@angband.pl>:
+> > > Here's an utility to measure used compression type + ratio on a set of files
+> > > or directories: https://github.com/kilobyte/compsize
+> > >
+> > > It should be of great help for users, and also if you:
+> > > * muck with compression levels
+> > > * add new compression types
+> > > * add heurestics that could err on withholding compression too much
+> > 
+> > Packaged to AUR:
+> > https://aur.archlinux.org/packages/compsize-git/
 > 
-> Great tool. Just tried it on some of my backup snapshots.
+> Cool!  I'd wait until people say the code is sane (I don't really know these
+> ioctls) but if you want to make poor AUR folks our beta testers, that's ok.
 > 
->    # compsize portage.20170904T2200
->    142432 files.
->    all   78%  329M/ 422M
->    none 100%  227M/ 227M
->    zlib  52%  102M/ 195M
+> However, one issue: I did not set a license; your packaging says GPL3. 
+> It would be better to have something compatible with btrfs-progs which are
+> GPL2-only.  What about GPL2-or-higher?
 > 
->    # du -sh  portage.20170904T2200
->    787M    portage.20170904T2200
-> 
->    # btrfs fi du -s  portage.20170904T2200
->         Total   Exclusive  Set shared  Filename
->     271.61MiB     6.34MiB   245.51MiB portage.20170904T2200
-> 
-> Interesting results. How do I interpret them?
+> After adding some related info (like wasted space in pinned extents, reuse
+> of extents), it'd be nice to have this tool inside btrfs-progs, either as a
+> part of "fi du" or another command.
 
-I've added some documentation; especially in the man page.
+I've now implemented a prototype that calculates the compressed size of
+extents per-file. As 'fi du' knows about what extents are shared, the
+compression can be also calculated shared/exclusive.
 
-(Sorry for not pushing this earlier, Timofey went wild on this tool and I
-wanted to avoid conflicts.)
-
-> Compsize also doesn't seem to like some non-standard files and throws an
-> error (even though they should be ignored?):
-> 
-> # compsize usb-backup/volumes/root/root.20170727T2321/
-> open("usb-backup/volumes/root/root.20170727T2321//tmp/screen/S-root/2757.pts-1.e350"):
-> No such device or address
-> 
-> # dir
-> usb-backup/volumes/root/root.20170727T2321//tmp/screen/S-root/2757.pts-1.e350
-> srwx------ 1 root root 0 Dec 31  2015 usb-backup/volumes/root/root.20170727T2321//tmp/screen/S-root/2757.pts-1.e350=
-
-Fixed.
-
-
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ 
-⣾⠁⢰⠒⠀⣿⡁ Vat kind uf sufficiently advanced technology iz dis!?
-⢿⡄⠘⠷⠚⠋⠀                                 -- Genghis Ht'rok'din
-⠈⠳⣄⠀⠀⠀⠀ 
+There's no summary like compsize does, this would need a bit more
+precise tracking of the extents, not just the compressed size but also
+which algo was used. I can imagine all sorts of output enhancements,
+like summarize the inline-compressed extents or print the algo summary
+per-file. This should be easy once the calclation code is there. I
+haven't reused compsize.c, as I needed only the ioctl part and wire it
+to 'fi du', but the search ioctl is the same.

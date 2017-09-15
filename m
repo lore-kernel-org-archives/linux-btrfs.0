@@ -1,108 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:42946 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754018AbdIED6f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Sep 2017 23:58:35 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dp50A-0005j3-JF
-        for linux-btrfs@vger.kernel.org; Tue, 05 Sep 2017 05:58:14 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [btrfs-progs] Bug in mkfs.btrfs -r
-Date: Tue, 5 Sep 2017 03:57:56 +0000 (UTC)
-Message-ID: <pan$8861e$4d63ba40$47e0003f$7600c860@cox.net>
-References: <7d08fad3-1a73-08c1-dbb1-e845f88cf039@libero.it>
-        <113498a8-e9c4-0a9e-c9b0-14489512ee49@gmx.com>
-        <6faf4ff6-6913-bfce-6e48-f161452a713a@gmail.com>
-        <20381200-2f35-2edc-a20b-8852744ed050@gmx.com>
-        <c3b7396a-f3c6-40e8-f85e-32fa1150046c@gmail.com>
-        <d819f106-b073-444d-7d71-1eff2bd3a896@gmx.com>
-        <eebf3457-9ba2-6267-9d75-dc5752cab11f@gmail.com>
-        <49c0e633-bb3f-714a-0ef6-48dfa2133bd6@gmx.com>
-        <fb4721b1-1c79-73fb-405a-cfc8fa4d710c@gmail.com>
-        <pan$9833c$c04b7334$d8bed9c4$4b7b46fb@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:38036 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751152AbdIOPtf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Sep 2017 11:49:35 -0400
+Date: Fri, 15 Sep 2017 17:48:03 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: kreijack@inwind.it, linux-btrfs@vger.kernel.org,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
+Subject: Re: [PATCH v2 7/7] btrfs-progs: Doc/mkfs: Add extra condition for
+ rootdir option
+Message-ID: <20170915154803.GA29043@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
+ <20170911063612.32114-8-quwenruo.btrfs@gmx.com>
+ <20170912170304.GD29043@twin.jikos.cz>
+ <0a949fd9-f0cf-22c5-4e91-ebb1bfad1355@libero.it>
+ <20170912180753.GI29043@suse.cz>
+ <0c906ea3-bfdb-a088-f940-4b63a3da8d2f@gmx.com>
+ <20170915125605.GY29043@twin.jikos.cz>
+ <9d514995-7706-0157-6b98-93632fe3dce7@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <9d514995-7706-0157-6b98-93632fe3dce7@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan posted on Sat, 02 Sep 2017 04:03:06 +0000 as excerpted:
-
-> Austin S. Hemmelgarn posted on Fri, 01 Sep 2017 10:07:47 -0400 as
-> excerpted:
+On Fri, Sep 15, 2017 at 09:24:19PM +0800, Qu Wenruo wrote:
+> > I'm going to review & merge this series to devel. Tests and
+> > documentation should be updated to make the usecase clear.
 > 
->>  On 2017-09-01 09:54, Qu Wenruo wrote:
->>> 
->>> On 2017年09月01日 20:47, Austin S. Hemmelgarn wrote:
-> 
->>>> On 2017-09-01 08:19, Qu Wenruo wrote:
->>>>>
->>>>> Current kernel (and btrfs-progs also tries to follow kernel chunk
->>>>> allocator's behavior) will not make a chunk larger than 10% of RW
->>>>> space.
->>>>> So for small filesystem chunk won't be too maximally sized.
-> 
->>>> Are you sure about this?  I've got a couple of sub 10GB BTRFS volumes
->>>> that definitely have more than one 1GB data chunk.
->>> 
->>> Yes, check the following code:
->>> 
->>>          /* we don't want a chunk larger than 10% of writeable
->>>          space */
->>>          max_chunk_size = min(div_factor(fs_devices->total_rw_bytes,
->>>          1),
->>>                               max_chunk_size);
->>>
->>> Which is in __btrfs_alloc_chunk() function in fs/btrfs/volumes.c
-> 
->> Huh, I may have the remnants of an old bug present on those filesystems
->> then, I'll have to look further into this.
-> 
-> Please do.
+> I'm happy to address any comment, both code and doc/test.
 
-> Meanwhile, I might have some free time to do my own checks tomorrow.
-> It'd be worth it just to my own peace of mind to settle the issue,
-> since it frustrated me for so long.
+For the tests I'd like to see:
 
-Just finished testing, and no, as of btrfs-progs 4.12, mkfs.btrfs does 
-*NOT* always limit chunk sizes to 1/10 filesystem size, despite smaller 
-chunk sizes being available.
+* with file target, try non-existent file, zero-length file, too-small
+  file and large-enough
 
-Try this.
+* for block device target, I think loop device would do, too-small and
+  large-enough
 
-256 MiB partition.
-
-mkfs.btrfs -d dup -m dup -O extref,skinny-metadata,no-holes --mixed 
-<device>
-
-mkfs.btrfs will create a 64 MiB mixed-mode chunk, a quarter the 256 MiB 
-filesystem size, duped to 128 MiB, half the filesystem size.
-
-That chunk cannot be balanced because there's no room for the write-into 
-chunk and its dup on the filesystem, due to the system chunk of several 
-MiB taking up part of the other half.
-
-This despite further writes creating smaller chunks, so it's definitely 
-possible to have 32 MiB and I believe 16 MiB chunks (at least, don't know 
-if smaller is possible).
-
-So as of -progs 4.12 at least, whatever code is there to try to keep 
-mkfs.btrfs max chunk size under 10% of the filesystem size, is broken, at 
-least for some configurations (check mixed-mode, sub-GiB).
-
-So I'm glad I upsized /boot to half a GiB when I upgraded SSDs and redid 
-my layout.  At least with half a gig, 64 MiB (still 12.5%, over the 10% 
-limit) doubled to 128 MiB is still only a quarter the filesystem size, so 
-rebalancing is actually possible.
-
-(FWIW my /var/log is still 256 MiB per device, but it's raid1, so only a 
-single copy of each chunk per device, and the 64 MiB chunk size is only a 
-quarter of the device, so it can at least still be balanced, even with 
-chunks more than double the broken 10% ceiling.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+* after the test, verify that the files have same size and contents

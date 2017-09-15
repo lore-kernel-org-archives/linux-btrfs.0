@@ -1,101 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:50583 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751722AbdIOC0j (ORCPT
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:46466 "EHLO
+        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751797AbdIODpZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Sep 2017 22:26:39 -0400
-Received: by mail-wm0-f45.google.com with SMTP id v142so4767038wmv.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Sep 2017 19:26:38 -0700 (PDT)
+        Thu, 14 Sep 2017 23:45:25 -0400
+Received: by mail-lf0-f47.google.com with SMTP id m199so1163053lfe.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Sep 2017 20:45:24 -0700 (PDT)
+Subject: Re: snapshots of encrypted directories?
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+References: <20170914145739.GA32347@rus.uni-stuttgart.de>
+ <20170914153222.GC7067@carfax.org.uk>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <ac97097d-f107-042c-f402-580a2ab5aa76@gmail.com>
+Date: Fri, 15 Sep 2017 06:45:21 +0300
 MIME-Version: 1.0
-In-Reply-To: <928da79f-4373-dd95-d458-1b136146b704@gmail.com>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
- <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
- <928da79f-4373-dd95-d458-1b136146b704@gmail.com>
-From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
-Date: Fri, 15 Sep 2017 03:26:37 +0100
-Message-ID: <CABB28Cwd2efbDzF3uK01VQcWdMJ_ABf8z_Q4MfWz30=xuLLCHw@mail.gmail.com>
-Subject: Re: defragmenting best practice?
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20170914153222.GC7067@carfax.org.uk>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="x10DxpCVVSfKiCrrRTVNPvn7F1Ftja6Ga"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 14 September 2017 at 19:53, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-[..]
-> While it's not for BTRFS< a tool called e4rat might be of interest to you
-> regarding this.  It reorganizes files on an ext4 filesystem so that stuff
-> used by the boot loader is right at the beginning of the device, and I've
-> know people to get insane performance improvements (on the order of 20x in
-> some pathologicallyb ad cases) in the time taken from the BIOS handing
-> things off to GRUB to GRUB handing execution off to the kernel.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--x10DxpCVVSfKiCrrRTVNPvn7F1Ftja6Ga
+Content-Type: multipart/mixed; boundary="cDirKATLsa3f3i7tLC8vlGbrL2IbBChcX";
+ protected-headers="v1"
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Message-ID: <ac97097d-f107-042c-f402-580a2ab5aa76@gmail.com>
+Subject: Re: snapshots of encrypted directories?
+References: <20170914145739.GA32347@rus.uni-stuttgart.de>
+ <20170914153222.GC7067@carfax.org.uk>
+In-Reply-To: <20170914153222.GC7067@carfax.org.uk>
 
-Do you know that what you've just wrote has nothing to do with fragmentation?
-Intentionally or not you just trying to change the subject.
+--cDirKATLsa3f3i7tLC8vlGbrL2IbBChcX
+Content-Type: text/plain; charset=UTF-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-[..]
-> This shouldn't need examples.  It's trivial math combined with basic
-> knowledge of hardware behavior.  Every request to a device has a minimum
-> amount of overhead.  On traditional hard drives, this is usually dominated
-> by seek latency, but on SSD's, the request setup, dispatch, and completion
-> are the dominant factor.  Assumign you have a 2 micro-second overhead
-> per-request (not an exact number, just chosen for demonstration purposes
-> because it makes the math easy), and a 1GB file, the time difference between
-> reading ten 100MB extents and reading ten thousand 100kB extents is just
-> short of 0.02 seconds, or a factor of about one thousand (which, no surprise
-> here, is the factor of difference between the number of extents).
+14.09.2017 18:32, Hugo Mills =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> On Thu, Sep 14, 2017 at 04:57:39PM +0200, Ulli Horlacher wrote:
+>> I use encfs on top of btrfs.
+>> I can create btrfs snapshots, but I have no suggestive access to the f=
+iles
+>> in these snaspshots, because they look like:
+>>
+>> drwx------  framstag users        - 2017-09-08 11:47:18 uHjprldmxo3-nS=
+fLmcH54HMW
+>> drwxr-xr-x  framstag users        - 2017-09-08 11:47:18 wNEWaDCgyXTj0d=
+-Myk8wXZfh
+>> -rw-r--r--  framstag users      377 2015-06-12 14:02:53 -zDmc7xfobKDkb=
+l8z7oKOHxv
+>> -rw-r--r--  framstag users    2,367 2012-07-10 14:32:30 7pfKs27K9k5zAN=
+E4WOQEuFa2
+>> -rw-------  framstag users      692 2009-10-20 13:45:41 8SQElYCph85kDd=
+cFasUHybVr
+>> -rw-------  framstag users    2,872 2017-08-31 16:21:52 bm,yNi1e4fsACl=
+Dv7lNxxSfJ
+>> lrwxrwxrwx  framstag users        - 2017-06-01 15:53:00 GZxNYI0Gy96R18=
+fz40f7k5rl -> wvuQKHYzdFbar18fW6jjOerXk2IsS4OAA2fnHalBZjMQ,7Kw0j-zE3IJqxh=
+mmGBN8G9
+>> -rw-r--r--  framstag users      182 2016-12-01 13:34:31 rqtNBbiYDym0hP=
+MbBL-VLJZcFZu6nkNxlsjTX-sU88I4I1
+>>
+>> I have to mount the snapshot with encfs, to have access to the (decryp=
+ted)
+>> files.=20
+>>
+>> Any better ideas?
+>=20
+>    I'd say it's doing exactly what it should be doing. You're making a
+> copy of an encrypted data store,
 
-So to produce few seconds delay during boot you need to make few
-hundreds thousands if not millions more IOs  and on reading everything
-using ideal long sequential reads.
-Almost every package upgrade on rewrite some files in 100% will
-produce by using COW fully continuous areas per file.
-You know .. there is no so many files in typical distribution
-installation to produce such measurable impact.
-On my current laptop I have a lot of devel and debug stuff installed
-and still I have only
+With all respect - snapshot is not a copy.
 
-$ rpm -qal | wc -l
-276489
+> and the result is encrypted. In order
+> to read it, it needs to have the decrpytion layer applied to it with
+> the correct key (which is the need to mount the snapshot with encfs).
+>=20
 
-files (from which only small fractions are ELF DSOs or executables)
-installed by:
+But snapshot *is* mounted implicitly as it is part of mounted btrfs
+filesystem. So I can see that this behavior could be rather unexpected.
 
-$ rpm -qa | wc -l
-2314
+>    Would you _really_ want a system where the encrypted contents of a
+> subvolume can be decrypted by simply snapshotting it?
 
-packages.
+The actual question is - do you need to mount each individual btrfs
+subvolume when using encfs? If yes, this behavior is at least
+consistent. If not - how are snapshots different?
 
-I can bet that during even very complicated boot process it will be
-touched (by read IOs) only few hundreds files. None of those files
-will be read sequentially because this is not how executable content
-is usually loaded into the buffer cache. Simple change block device
-read ahead may improve boot time enough without putting all blocks in
-perfect order. All what you need is start enough early "blockdev
---setra N" where N is greater than default 256 blocks. All this can be
-done without thinking about fragmentation.
-Seems you don't know that Linux by default is reading data from block
-dev using at least 256 blocks (1KB each one) chunks because such IO
-size is part of default RA settings, You can change those settings
-just for boot time and you will have way lower number of IOs and sill
-no significant improvement like few times shorter time. Fragmentation
-will be in such case secondary factor.
-All this could be done without bothering about fragmentation.
 
-In other words still you are talking about some institutionally
-possible results which will be falsified if you will try at least one
-time do some real tests and measurements.
-Last time when I've been doing some boot time measurements it was
-about using sequential start of all services vs. maximum
-palatalization. And yes by this it was possible to improve boot time
-by few times. All without bothering about fragmentation.
+--cDirKATLsa3f3i7tLC8vlGbrL2IbBChcX--
 
-Current fedora systemd base services definition can be improved in
-many places by add more dependencies and execute many small services
-in parallel. All those corrections can be done without even thinking
-about fragmentation. Because these base sett of systemd services comes
-with systemd source code those improvements can be done for almost all
-Linux systemd based distros.
+--x10DxpCVVSfKiCrrRTVNPvn7F1Ftja6Ga
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-kloczek
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlm7TNEACgkQR6LMutpd94wVZgCggwp/pZGpGs89mmL4M41df0gp
+t4EAniSDvoTocmyjj7QCbN4lpXTnM8Cw
+=LIqq
+-----END PGP SIGNATURE-----
+
+--x10DxpCVVSfKiCrrRTVNPvn7F1Ftja6Ga--

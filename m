@@ -1,84 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f177.google.com ([209.85.223.177]:52799 "EHLO
-        mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751184AbdIOMfz (ORCPT
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:46641 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751323AbdIONHX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 08:35:55 -0400
-Received: by mail-io0-f177.google.com with SMTP id i197so7964760ioe.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 05:35:54 -0700 (PDT)
-Subject: Re: snapshots of encrypted directories?
-To: Andrei Borzenkov <arvidjaar@gmail.com>, Hugo Mills <hugo@carfax.org.uk>,
-        linux-btrfs@vger.kernel.org
-References: <20170914145739.GA32347@rus.uni-stuttgart.de>
- <20170914153222.GC7067@carfax.org.uk>
- <ac97097d-f107-042c-f402-580a2ab5aa76@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <298c5a7b-d8f8-0d37-d157-16bb4939505a@gmail.com>
-Date: Fri, 15 Sep 2017 08:35:49 -0400
+        Fri, 15 Sep 2017 09:07:23 -0400
+Received: by mail-wm0-f51.google.com with SMTP id i189so8187127wmf.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 06:07:22 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <ac97097d-f107-042c-f402-580a2ab5aa76@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <59BBB15E.8010002@sarach.com.pl>
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
+ <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
+ <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+ <59BBB15E.8010002@sarach.com.pl>
+From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
+Date: Fri, 15 Sep 2017 14:07:21 +0100
+Message-ID: <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
+Subject: Re: defragmenting best practice?
+To: =?UTF-8?Q?Micha=C5=82_Soko=C5=82owski?= <michal@sarach.com.pl>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-09-14 23:45, Andrei Borzenkov wrote:
-> 14.09.2017 18:32, Hugo Mills пишет:
->> On Thu, Sep 14, 2017 at 04:57:39PM +0200, Ulli Horlacher wrote:
->>> I use encfs on top of btrfs.
->>> I can create btrfs snapshots, but I have no suggestive access to the files
->>> in these snaspshots, because they look like:
->>>
->>> drwx------  framstag users        - 2017-09-08 11:47:18 uHjprldmxo3-nSfLmcH54HMW
->>> drwxr-xr-x  framstag users        - 2017-09-08 11:47:18 wNEWaDCgyXTj0d-Myk8wXZfh
->>> -rw-r--r--  framstag users      377 2015-06-12 14:02:53 -zDmc7xfobKDkbl8z7oKOHxv
->>> -rw-r--r--  framstag users    2,367 2012-07-10 14:32:30 7pfKs27K9k5zANE4WOQEuFa2
->>> -rw-------  framstag users      692 2009-10-20 13:45:41 8SQElYCph85kDdcFasUHybVr
->>> -rw-------  framstag users    2,872 2017-08-31 16:21:52 bm,yNi1e4fsAClDv7lNxxSfJ
->>> lrwxrwxrwx  framstag users        - 2017-06-01 15:53:00 GZxNYI0Gy96R18fz40f7k5rl -> wvuQKHYzdFbar18fW6jjOerXk2IsS4OAA2fnHalBZjMQ,7Kw0j-zE3IJqxhmmGBN8G9
->>> -rw-r--r--  framstag users      182 2016-12-01 13:34:31 rqtNBbiYDym0hPMbBL-VLJZcFZu6nkNxlsjTX-sU88I4I1
->>>
->>> I have to mount the snapshot with encfs, to have access to the (decrypted)
->>> files.
->>>
->>> Any better ideas?
->>
->>     I'd say it's doing exactly what it should be doing. You're making a
->> copy of an encrypted data store,
-> 
-> With all respect - snapshot is not a copy.
- From a userspace perspective, it is, and that's what matters since 
-EncFS is a userspace tool.  In fact, part of the point of a snapshot is 
-that it's functionally indistinguishable from a direct copy of the data 
-unless you start looking at block layouts (which nothing in userspace 
-that isn't an administration tool should be doing).
-> 
->> and the result is encrypted. In order
->> to read it, it needs to have the decrpytion layer applied to it with
->> the correct key (which is the need to mount the snapshot with encfs).
->>
-> 
-> But snapshot *is* mounted implicitly as it is part of mounted btrfs
-> filesystem. So I can see that this behavior could be rather unexpected.
-> 
->>     Would you _really_ want a system where the encrypted contents of a
->> subvolume can be decrypted by simply snapshotting it?
-> 
-> The actual question is - do you need to mount each individual btrfs
-> subvolume when using encfs? If yes, this behavior is at least
-> consistent. If not - how are snapshots different?
-I think you're not understanding the layering here.  EncFS is a FUSE 
-filesystem that is run as a separate layer on top of another filesystem. 
-  It is completely agnostic of the underlying data storage 
-implementation, provided that said data storage enforces POSIX I/O 
-semantics.
+On 15 September 2017 at 11:54, Michał Sokołowski <michal@sarach.com.pl> wrote:
+[..]
+>> Just please some example which I can try to replay which ill be
+>> showing that we have similar results.
+>
+> Case #1
+> 2x 7200 rpm HDD -> md raid 1 -> host BTRFS rootfs -> qemu cow2 storage
+> -> guest BTRFS filesystem
+> SQL table row insertions per second: 1-2
+>
+> Case #2
+> 2x 7200 rpm HDD -> md raid 1 -> host BTRFS rootfs -> qemu raw storage ->
+> guest EXT4 filesystem
+> SQL table row insertions per second: 10-15
 
-To clarify, the procedure for mounting an EncFS volume is:
-1. Mount the underlying filesystem (usually done at boot by the init 
-system).
-2. Mount the EncFS instance that is using that underlying filesystem as 
-storage (usually done on user log-in by the session manager or PAM).
+Q -1) why you are comparing btrfs against ext4 on top of the btrfs
+which is doing own COW operations on bottom of such sandwiches ..  if
+we SUPPOSE to be talking about impact of the fragmentation on top of
+btrfs?
+Q 0) what do you think that you measure here?
+Q 1) how did you produce those time measurements? time command?
+looking on the watch?
+Q 2) why there are ranges of timings? did you repeat some operations
+few times (how many times and with or without dropping caches or doing
+reboots?)
+Q 3) What kind of SQL engine? with what kind of settings? with what
+kind of tables? (indexes? foreign keys?) What kind of transactions
+semantics?
+Q 4) where is the example set of inserts which I can replay in my
+setup? did you drop caches before batch of inserts? (do you know that
+every insert generates as well some number of read IOs so information
+is something is already cached before batch of inserts is *crucial*)
+Did you restart SQL engine?
+Q 5) are both test have been executed on the same box? if not which
+one version of the kernel(s) have been used?
+Q 6) ) effectively how many IOs have been done during those tests? how
+did you measured those numbers (dtrace? perf? systemtap?)
+Q7) why you are running your tests over qemu? Is it anything more
+running on the host system during those tests?
+.
+.
+.
+I can probably make this list of questions 2 or 3 times longer.
 
-On BTRFS, step 1 is implicit if it's a subvolume, but step 2 is never 
-implicit, regardless of the filesystem.  Hugo's mention of needing 
-mounting the snapshot with EncFS refers to the second step here, not the 
-first.
+koczek
+--
+Tomasz Kłoczko | LinkedIn: http://lnkd.in/FXPWxH

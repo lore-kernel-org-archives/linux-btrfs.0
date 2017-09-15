@@ -1,44 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f52.google.com ([209.85.215.52]:55853 "EHLO
-        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751157AbdIOKPx (ORCPT
+Received: from cloudserver020138.home.net.pl ([62.129.239.72]:43146 "EHLO
+        cloudserver020138.home.net.pl" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751157AbdIOKyW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 06:15:53 -0400
-Received: by mail-lf0-f52.google.com with SMTP id u21so1909818lfk.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 03:15:52 -0700 (PDT)
+        Fri, 15 Sep 2017 06:54:22 -0400
+Message-ID: <59BBB15E.8010002@sarach.com.pl>
+Date: Fri, 15 Sep 2017 12:54:22 +0200
+From: =?UTF-8?B?TWljaGHFgiBTb2tvxYJvd3NraQ==?= <michal@sarach.com.pl>
 MIME-Version: 1.0
-In-Reply-To: <20170915100103.GB32347@rus.uni-stuttgart.de>
-References: <20170914145739.GA32347@rus.uni-stuttgart.de> <20170914153222.GC7067@carfax.org.uk>
- <ac97097d-f107-042c-f402-580a2ab5aa76@gmail.com> <20170915100103.GB32347@rus.uni-stuttgart.de>
-From: Peter Becker <floyd.net@gmail.com>
-Date: Fri, 15 Sep 2017 12:15:50 +0200
-Message-ID: <CAEtw4r1KUQJGZkKEA+e3J=3+4a9hW+-ZBRBfTXhwYn4Ae30CCw@mail.gmail.com>
-Subject: Re: snapshots of encrypted directories?
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+To: =?UTF-8?B?VG9tYXN6IEvFgm9jemtv?= <kloczko.tomasz@gmail.com>
+CC: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: defragmenting best practice?
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de> <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com> <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+In-Reply-To: <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080603060304080809010706"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-09-15 12:01 GMT+02:00 Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
-> On Fri 2017-09-15 (06:45), Andrei Borzenkov wrote:
->
->> The actual question is - do you need to mount each individual btrfs
->> subvolume when using encfs?
->
-> And even worse it goes with ecryptfs: I do not know at all how to mount a
-> snapshot, so that the user has access to it.
+This is a cryptographically signed message in MIME format.
 
-A snapshot is simply a subvolume.
+--------------ms080603060304080809010706
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Get the ID of the snapshot and mount it:
+On 09/14/2017 07:48 PM, Tomasz K=C5=82oczko wrote:
+> On 14 September 2017 at 16:24, Kai Krakow <hurikhan77@gmail.com> wrote:=
 
-btrfs subvolume list /btrfs
-mount -o subvolid=<ID> /dev/<DISK> /<MOUNTPOINT_ENCRYPTED>
+> [..]
+>> > Getting e.g. boot files into read order or at least nearby improves
+>> > boot time a lot. Similar for loading applications.
+> [...]
+> Just please some example which I can try to replay which ill be
+> showing that we have similar results.
 
-Or mount the snapshot directly by path:
+Case #1
+2x 7200 rpm HDD -> md raid 1 -> host BTRFS rootfs -> qemu cow2 storage
+-> guest BTRFS filesystem
+SQL table row insertions per second: 1-2
 
-mount -o subvol=/snapshots/home/2015-12-01 /<MOUNTPOINT_ENCRYPTED>
+Case #2
+2x 7200 rpm HDD -> md raid 1 -> host BTRFS rootfs -> qemu raw storage ->
+guest EXT4 filesystem
+SQL table row insertions per second: 10-15
 
-And then mount enryptfs:
 
-mount.ecryptfs /<MOUNTPOINT_ENCRYPTED> /<MOUNTPOINT_DECRYPTED>
+
+--------------ms080603060304080809010706
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIILDzCC
+BSUwggQNoAMCAQICEGaJgd+Elrs3JDTMTgSd0fQwDQYJKoZIhvcNAQELBQAwdTELMAkGA1UE
+BhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRp
+ZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBD
+QTAeFw0xNjA3MjkxMjA0MjRaFw0xOTEwMjkxMjA0MjRaMGwxJjAkBgNVBA0MHUZvciBsb2dp
+biBhdXRoZW50aWNhdGlvbiBvbmx5MR0wGwYDVQQDDBRtaWNoYWxAc2FyYWNoLmNvbS5wbDEj
+MCEGCSqGSIb3DQEJARYUbWljaGFsQHNhcmFjaC5jb20ucGwwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDD6nNl0HXUSQbyTtcgn6++PUyDTzlkutl1Gao/bT1OMbapBroQoMNr
+431UUq7TWlaVkQoHojWOr5xZPXCjg3g9lL8CaT/r07K/dy6M9kKTFRB30QFFqEDNNuToGm0p
+pjLdgXz1KZoXb47gAR5zo7nuDOyTRUHPNXHibYcJ/t9qVSzTl2F5pvgiePAJ+znZR3lQzWor
+omYsYBpMaC8oxOEl4IZRVnd+0iyrXND/4g8qQj93OakyJiW17n6hh5PAdRLwt37t6qmX6suv
+wLw3MjITsmoNLEcsNIOoaX57OOB7WdxhWrzLsrhZRVfmyC6BIxKd5DvvG7Tq9l+ieSnNvCdZ
+AgMBAAGjggG4MIIBtDAOBgNVHQ8BAf8EBAMCBLAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsG
+AQUFBwMEMAkGA1UdEwQCMAAwHQYDVR0OBBYEFA8czJfA8oqHl1tdqBjuSetTl9ZOMB8GA1Ud
+IwQYMBaAFCSBbDlhvkkPj7cbRivJKLUnSG1oMG8GCCsGAQUFBwEBBGMwYTAkBggrBgEFBQcw
+AYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29tMDkGCCsGAQUFBzAChi1odHRwOi8vYWlhLnN0
+YXJ0c3NsLmNvbS9jZXJ0cy9zY2EuY2xpZW50MS5jcnQwOAYDVR0fBDEwLzAtoCugKYYnaHR0
+cDovL2NybC5zdGFydHNzbC5jb20vc2NhLWNsaWVudDEuY3JsMB8GA1UdEQQYMBaBFG1pY2hh
+bEBzYXJhY2guY29tLnBsMCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tLzBH
+BgNVHSAEQDA+MDwGCysGAQQBgbU3AQIFMC0wKwYIKwYBBQUHAgEWH2h0dHBzOi8vd3d3LnN0
+YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggEBAAoJvbh14v6Pji08WKR4nVub
+FOGh8+7Sme/HalNJzNk2tTScivwvp8+pamict5BkBhM2W9tLIrHCzo0Gb06sF0idqCwzuhBl
+XKzjOKI4dLZXZDCgBvEfMcOQSvwkHglw6Q1WAgpfXaP/ALw9gvvwh1OUQt+9GgQrxf3HKBbp
+YtM2PddIV1Zi4fdwYNQ/AlM9smKl0DhU3Akj0EBjdKwPVEya2jbUMQI7YbM1I1p1c/s+OUOw
+EPagagPVkx0SaWu5ySNe3aFIqvTyma+U4zNn34iVR05X7I5UeceLmOkWducPTQo//ZrHNn0o
+ll6mlU8bF51YGULZdGvev1K6Ob0p/kcwggXiMIIDyqADAgECAhBrp4p9CteI1lEK+Vnk57Th
+MA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQu
+MSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQD
+EyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0xNTEyMTYwMTAwMDVaFw0z
+MDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkw
+JwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3Rh
+cnRDb20gQ2xhc3MgMSBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+AQC9fdr3w6J9g/Zbgv3bW1+uHht1wLUZr5gkrLtXedg17AkefMyUGwrQdvwObhajcVmnKVxh
+rUwkZPXRAwZZosRHfEIi5FH7x6SV/8Sp5lZEuiMnvMFG2MzLA84J6Ws5T4NfXZ0qn4TPgnr3
+X2vPVS51M7Ua9nIJgn8jvTra4eyyQzxvuA/GZwKg7VQfDCmCS+kICslYYWgXOMt2xlsSslxL
+ce0CGWRsT8EpMyt1iDflSjXZIsE7m1uTyHaKZspMLyIyz6mySu8j8BWWHpChNNeTrFuhVfrO
+AyDPFJVUvKZCLKBhibTLloyy+LatoWELrjdI4a8StZY8+dIR9t4APXGzAgMBAAGjggFkMIIB
+YDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1Ud
+EwEB/wQIMAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5j
+b20vc2ZzY2EuY3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Au
+c3RhcnRzc2wuY29tMDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0
+cy9jYS5jcnQwHQYDVR0OBBYEFCSBbDlhvkkPj7cbRivJKLUnSG1oMB8GA1UdIwQYMBaAFE4L
+7xqkQFulF2mHMMo0aEPQQa7yMD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5o
+dHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAIvj94fs
+AYuErQ8BAluc4SMnIwS9NPBwAm5SH9uh2NCXTq7im61g7F1LIiNI/+wq37fUuaMbz4g7VarK
+QTgf8ubs0p7NZWcIe7Bvem2AWaXBsxsaRTYw5kG3DN8pd1hSEUuFoTa7DmNeFe8tiK1BrL3r
+bA/m48jp4AiFXgvxprJrW7izsyetOrRHPbkW4Y07v29MdhaPv3u1JELyszXqOzjIYo4sWlC8
+iDQXwgSW/ntvWy2n4LuiaozlCfXl149tKeqvwlvrla2Yklue/quWp9j9ou4T/OY0CXMuY+B8
+wNK0ohd2D4ShgFlMSjzAFRoHGKF81snTr2d1A7Ew02oF6UQyCkC2aNNsK5cWOojBar5c7Hpl
+X9aHYUCZouxIeU28SONJAxnATgR4cJ2jrpmYSz/kliUJ46S6UpVDo/ebn9c6PaM/XtDYCCaM
+/7XX6wc3s++sbQ7CtCn1Ax7df6ufQbwyO0V+oFa9H0KAsjHMzcwk3EV2B2NLatidKE/m7G+r
+B9m+FlVgIiSp0mGlg43QO9Kh1+JqvTCIzv2bJJkmPMLQJNuKKwHNL8F4GGp6jbAV+WL+LDeG
+fVcq8DHS3LrD+xyYEXQBiqZEdiPVOMxLDSUCXsDO0uCWpaNQ8j6y6S9p0xE/Ga0peVLadVHh
+qf9nXqKaxnr358VgfrxzUIrvOaOjMYIDvDCCA7gCAQEwgYkwdTELMAkGA1UEBhMCSUwxFjAU
+BgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24g
+QXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SW
+uzckNMxOBJ3R9DAJBgUrDgMCGgUAoIICBzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwG
+CSqGSIb3DQEJBTEPFw0xNzA5MTUxMDU0MjJaMCMGCSqGSIb3DQEJBDEWBBTQjzrx0K3mCBze
+U2M/M8ZNa5TkwzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIw
+CgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0G
+CCqGSIb3DQMCAgEoMIGaBgkrBgEEAYI3EAQxgYwwgYkwdTELMAkGA1UEBhMCSUwxFjAUBgNV
+BAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0
+aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SWuzck
+NMxOBJ3R9DCBnAYLKoZIhvcNAQkQAgsxgYyggYkwdTELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
+DVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENlcnRpZmljYXRpb24gQXV0aG9y
+aXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAxIENsaWVudCBDQQIQZomB34SWuzckNMxO
+BJ3R9DANBgkqhkiG9w0BAQEFAASCAQAl81PYk64JHeEg5kw5OVof7zyXnVj3xXu4NwwAiIP9
+ss6NYh7hZ7p4ZPk2vZVeEBr7s90F3vDoNLCa94tPshjfzJh6CGdGPICv1ZiZVA5Yc5z3mKxj
+IHkBWmwF3foQBzGdv+Yu6250//6caPP624l6zliMJhiE4MKNOe00SyTRuQTK2nmwyeKfO0ci
+WIsJuS6eWpa2Lcw/EMtZrZoqXz78oEx97SR5WF62cCNo35IX0yqIUV6KBOHCV80tolYyts5d
+OHor2vKacdp9rM/DDq60Ng8LYfnncBTnTgvVRtRMowqN2mZINNd8RipbW/KuS+EhObA8m4Jt
+RicCScQo+0M/AAAAAAAA
+--------------ms080603060304080809010706--

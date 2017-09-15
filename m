@@ -1,40 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:50156 "EHLO
-        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751581AbdIOTKX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 15:10:23 -0400
-Received: by mail-wm0-f47.google.com with SMTP id e71so10635482wmg.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 12:10:23 -0700 (PDT)
+Received: from smtp01.belwue.de ([129.143.71.86]:34983 "EHLO smtp01.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751778AbdIOTcN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Sep 2017 15:32:13 -0400
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp01.belwue.de (Postfix) with SMTP id 5B0538892
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 21:32:11 +0200 (MEST)
+Date: Fri, 15 Sep 2017 21:32:11 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: A user cannot remove his readonly snapshots?!
+Message-ID: <20170915193211.GE32347@rus.uni-stuttgart.de>
+References: <20170915163736.GD32347@rus.uni-stuttgart.de>
+ <38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
- <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
- <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
- <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
-From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
-Date: Fri, 15 Sep 2017 20:10:21 +0100
-Message-ID: <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
-Subject: Re: defragmenting best practice?
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 15 September 2017 at 18:08, Kai Krakow <hurikhan77@gmail.com> wrote:
-[..]
-> According to Tomasz, your tests should not run at vastly different
-> speeds because fragmentation has no impact on performance, quod est
-> demonstrandum... I think we will not get to the "erat" part.
+On Fri 2017-09-15 (13:08), Austin S. Hemmelgarn wrote:
+> On 2017-09-15 12:37, Ulli Horlacher wrote:
+> 
+> > I have my btrfs filesystem mounted with option user_subvol_rm_allowed
+> > tux@xerus: btrfs subvolume delete /test/tux/zz/.snapshot/2017-09-15_1824.test
+> > Delete subvolume (no-commit): '/test/tux/zz/.snapshot/2017-09-15_1824.test'
+> > ERROR: cannot delete '/test/tux/zz/.snapshot/2017-09-15_1824.test': Read-only file system
+> > 
+> > root can delete this snapshot, but not the user. Why?
+> > 
+> 
+> Add 'user_subvol_rm' to the mount options and try again.
 
-No. This is not precisely what I'm trying to tell.
-Now however seeing that there is no precise/fully repeatable
-methodology of performing proposed test I have huge doubts about what
-is reported has effect has anything to do do with fragmentation or it
-is side effect of using COW (which allow glue some number random
-updates into larger sequential write IOs).
+root@xerus:~# mount -vo user_subvol_rm /dev/sdd4 /test
+mount: wrong fs type, bad option, bad superblock on /dev/sdd4,
+       missing codepage or helper program, or other error
 
-kloczek
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+
+root@xerus:~# dmesg | tail -2
+[1514588.018991] BTRFS info (device sdd4): unrecognized mount option 'user_subvol_rm'
+[1514588.028430] BTRFS: open_ctree failed
+
+user_subvol_rm is not listed on
+https://btrfs.wiki.kernel.org/index.php/Mount_options
+
+Did you mean user_subvol_rm_allowed?
+I have already used this option, without success. See above.
+
+
 -- 
-Tomasz Kłoczko  LinkedIn: http://lnkd.in/FXPWxH
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>

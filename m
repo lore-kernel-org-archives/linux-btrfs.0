@@ -1,54 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp01.belwue.de ([129.143.71.86]:34983 "EHLO smtp01.belwue.de"
+Received: from smtp01.belwue.de ([129.143.71.86]:35093 "EHLO smtp01.belwue.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751778AbdIOTcN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 15:32:13 -0400
+        id S1751733AbdIOTl2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Sep 2017 15:41:28 -0400
 Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id 5B0538892
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 21:32:11 +0200 (MEST)
-Date: Fri, 15 Sep 2017 21:32:11 +0200
+        by smtp01.belwue.de (Postfix) with SMTP id C2A4D891E
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Sep 2017 21:41:26 +0200 (MEST)
+Date: Fri, 15 Sep 2017 21:41:26 +0200
 From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: A user cannot remove his readonly snapshots?!
-Message-ID: <20170915193211.GE32347@rus.uni-stuttgart.de>
-References: <20170915163736.GD32347@rus.uni-stuttgart.de>
- <38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: snapshots of encrypted directories?
+Message-ID: <20170915194126.GF32347@rus.uni-stuttgart.de>
+References: <20170914145739.GA32347@rus.uni-stuttgart.de>
+ <20170914153222.GC7067@carfax.org.uk>
+ <ac97097d-f107-042c-f402-580a2ab5aa76@gmail.com>
+ <20170915100103.GB32347@rus.uni-stuttgart.de>
+ <CAEtw4r1KUQJGZkKEA+e3J=3+4a9hW+-ZBRBfTXhwYn4Ae30CCw@mail.gmail.com>
+ <20170915162825.GC32347@rus.uni-stuttgart.de>
+ <6cd1ef22-7cab-4c8c-0b73-d254aeca83ad@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>
+In-Reply-To: <6cd1ef22-7cab-4c8c-0b73-d254aeca83ad@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 2017-09-15 (13:08), Austin S. Hemmelgarn wrote:
-> On 2017-09-15 12:37, Ulli Horlacher wrote:
-> 
-> > I have my btrfs filesystem mounted with option user_subvol_rm_allowed
-> > tux@xerus: btrfs subvolume delete /test/tux/zz/.snapshot/2017-09-15_1824.test
-> > Delete subvolume (no-commit): '/test/tux/zz/.snapshot/2017-09-15_1824.test'
-> > ERROR: cannot delete '/test/tux/zz/.snapshot/2017-09-15_1824.test': Read-only file system
+On Fri 2017-09-15 (13:16), Austin S. Hemmelgarn wrote:
+
+> >> And then mount enryptfs:
+> >>
+> >> mount.ecryptfs /<MOUNTPOINT_ENCRYPTED> /<MOUNTPOINT_DECRYPTED>
 > > 
-> > root can delete this snapshot, but not the user. Why?
-> > 
+> > This only possible by root.
+> > For a user it is not possible to have access for his own snapshots.
+> > Bad.
 > 
-> Add 'user_subvol_rm' to the mount options and try again.
+> Which is why you use EncFS (which is a FUSE module that runs in 
+> userspace and requires no root privileges) instead of eCryptFS (which is 
+> a kernel assisted filesystem that doesn't use FUSE, has more complicated 
+> setup constraints, and requires CAP_SYS_ADMIN or root access).
 
-root@xerus:~# mount -vo user_subvol_rm /dev/sdd4 /test
-mount: wrong fs type, bad option, bad superblock on /dev/sdd4,
-       missing codepage or helper program, or other error
+I use both, encfs and ecryptfs, for different use cases.
+I use ecryptfs on my notebooks for $HOME, which has some kind of
+automounter on login (via pam).
+This setup is not possible with encfs, which is also much slower and has
+a lower security level.
 
-       In some cases useful info is found in syslog - try
-       dmesg | tail or so.
-
-root@xerus:~# dmesg | tail -2
-[1514588.018991] BTRFS info (device sdd4): unrecognized mount option 'user_subvol_rm'
-[1514588.028430] BTRFS: open_ctree failed
-
-user_subvol_rm is not listed on
-https://btrfs.wiki.kernel.org/index.php/Mount_options
-
-Did you mean user_subvol_rm_allowed?
-I have already used this option, without success. See above.
-
+But even for encfs it is very circumstantial for a user to have access to
+snapshots.
 
 -- 
 Ullrich Horlacher              Server und Virtualisierung
@@ -56,4 +54,4 @@ Rechenzentrum TIK
 Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
 Allmandring 30a                Tel:    ++49-711-68565868
 70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>
+REF:<6cd1ef22-7cab-4c8c-0b73-d254aeca83ad@gmail.com>

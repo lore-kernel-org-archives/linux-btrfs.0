@@ -1,68 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55056 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751164AbdIOXW7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 19:22:59 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dszwg-0006uR-7u
-        for linux-btrfs@vger.kernel.org; Sat, 16 Sep 2017 01:22:50 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: A user cannot remove his readonly snapshots?!
-Date: Sat, 16 Sep 2017 01:22:48 +0200
-Message-ID: <20170916012248.0870f72d@jupiter.sol.kaishome.de>
-References: <20170915163736.GD32347@rus.uni-stuttgart.de>
-        <22972.16657.822204.646994@tree.ty.sabi.co.uk>
-        <20170915214434.GG32347@rus.uni-stuttgart.de>
-        <20170915220201.GH32347@rus.uni-stuttgart.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mout.gmx.net ([212.227.15.19]:59056 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751211AbdIPBPx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Sep 2017 21:15:53 -0400
+Subject: Re: [PATCH v2 7/7] btrfs-progs: Doc/mkfs: Add extra condition for
+ rootdir option
+To: dsterba@suse.cz, kreijack@inwind.it, linux-btrfs@vger.kernel.org,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
+References: <20170911063612.32114-1-quwenruo.btrfs@gmx.com>
+ <20170911063612.32114-8-quwenruo.btrfs@gmx.com>
+ <20170912170304.GD29043@twin.jikos.cz>
+ <0a949fd9-f0cf-22c5-4e91-ebb1bfad1355@libero.it>
+ <20170912180753.GI29043@suse.cz>
+ <0c906ea3-bfdb-a088-f940-4b63a3da8d2f@gmx.com>
+ <20170915125605.GY29043@twin.jikos.cz>
+ <9d514995-7706-0157-6b98-93632fe3dce7@gmx.com>
+ <20170915154803.GA29043@suse.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <ab64da7a-c974-2f5c-ba4a-49a9560a2ea9@gmx.com>
+Date: Sat, 16 Sep 2017 09:15:38 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170915154803.GA29043@suse.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sat, 16 Sep 2017 00:02:01 +0200
-schrieb Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
 
-> On Fri 2017-09-15 (23:44), Ulli Horlacher wrote:
-> > On Fri 2017-09-15 (22:07), Peter Grandi wrote:
-> >   
->  [...]  
-> > > 
-> > > Ordinary permissions still apply both to 'create' and 'delete':  
-> > 
-> > My user tux is the owner of the snapshot directory, because he has
-> > created it!  
+
+On 2017年09月15日 23:48, David Sterba wrote:
+> On Fri, Sep 15, 2017 at 09:24:19PM +0800, Qu Wenruo wrote:
+>>> I'm going to review & merge this series to devel. Tests and
+>>> documentation should be updated to make the usecase clear.
+>>
+>> I'm happy to address any comment, both code and doc/test.
 > 
-> I can delete normal subvolumes but not the readonly snapshots:
+> For the tests I'd like to see:
 > 
-> tux@xerus:/test/tux/zz/.snapshot: btrfs subvolume create test
-> Create subvolume './test'
+> * with file target, try non-existent file, zero-length file, too-small
+>    file and large-enough
+
+No problem.
+
+But it would be better to define the expected behavior first.
+I'll show the behavior difference below to see if you're OK with it.
+
+For non-existent file:
+New: Fail, no such file at the very beginning
+Old: Create new one
+
+Zero-length:
+New: Fail, too small file at the very beginning
+Old: Expand file and continue mkfs
+
+Too-small:
+New: Fail, showing -28 errno half way
+Old: Same as zero length.
+
+Large-enough:
+New: Success, without shrink
+Old: Success, shrink
+
 > 
-> tux@xerus:/test/tux/zz/.snapshot: ll
-> drwxr-xr-x  tux      users    - 2017-09-15 18:22:26
-> 2017-09-15_1822.test drwxr-xr-x  tux      users    - 2017-09-15
-> 18:22:26 2017-09-15_1824.test drwxr-xr-x  tux      users    -
-> 2017-09-15 18:57:39 2017-09-15_1859.test drwxr-xr-x  tux
-> users    - 2017-09-15 23:58:51 test
+> * for block device target, I think loop device would do, too-small and
+>    large-enough
+
+Same as above too-small and large-enough case.
+
 > 
-> tux@xerus:/test/tux/zz/.snapshot: btrfs subvolume delete test
-> Delete subvolume (no-commit): '/test/tux/zz/.snapshot/test'
-> 
-> tux@xerus:/test/tux/zz/.snapshot: btrfs subvolume delete
-> 2017-09-15_1859.test Delete subvolume (no-commit):
-> '/test/tux/zz/.snapshot/2017-09-15_1859.test' ERROR: cannot delete
-> '/test/tux/zz/.snapshot/2017-09-15_1859.test': Read-only file system
+> * after the test, verify that the files have same size and contents
 
-See "man mount" in section btrfs mount options: There is a mount option
-to allow normal user to delete snapshots. But this is said to has
-security implication I cannot currently tell. Maybe someone else knows.
+I'll reuse convert facilities to do that.
 
+And I'll add one extra test case:
+No enough privilege to read some file in the directory:
+New: Fail gracefully
+Old: Fail with BUG_ON.
 
--- 
-Regards,
-Kai
+If you're OK with the behavior difference, I'll create new test cases 
+for mkfs --rootdir.
 
-Replies to list-only preferred.
-
+Thanks,
+Qu

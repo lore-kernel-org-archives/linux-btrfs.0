@@ -1,52 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp01.belwue.de ([129.143.71.86]:46326 "EHLO smtp01.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751050AbdIPIyS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Sep 2017 04:54:18 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id 1962D852C
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Sep 2017 10:54:16 +0200 (MEST)
-Date: Sat, 16 Sep 2017 10:54:12 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
+Received: from smtp-34-i6.italiaonline.it ([212.48.14.168]:47174 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751170AbdIPJEQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Sep 2017 05:04:16 -0400
+Reply-To: kreijack@inwind.it
 Subject: Re: A user cannot remove his readonly snapshots?!
-Message-ID: <20170916085412.GJ32347@rus.uni-stuttgart.de>
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
 References: <20170915163736.GD32347@rus.uni-stuttgart.de>
- <ce51b681-b86a-242a-1ac1-106454c32ddb@libero.it>
+ <22972.16657.822204.646994@tree.ty.sabi.co.uk>
+ <20170915214434.GG32347@rus.uni-stuttgart.de>
+ <20170915220201.GH32347@rus.uni-stuttgart.de>
+ <20170916012248.0870f72d@jupiter.sol.kaishome.de>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <2d343791-7b32-bd53-a03d-a5b26465d358@libero.it>
+Date: Sat, 16 Sep 2017 11:04:13 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ce51b681-b86a-242a-1ac1-106454c32ddb@libero.it>
+In-Reply-To: <20170916012248.0870f72d@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat 2017-09-16 (10:10), Goffredo Baroncelli wrote:
-
-> > tux@xerus: btrfs subvolume snapshot -r /test/tux/zz /test/tux/zz/.snapshot/2017-09-15_1824.test
-> > tux@xerus: btrfs subvolume delete /test/tux/zz/.snapshot/2017-09-15_1824.test
-> > Delete subvolume (no-commit): '/test/tux/zz/.snapshot/2017-09-15_1824.test'
-> > ERROR: cannot delete '/test/tux/zz/.snapshot/2017-09-15_1824.test': Read-only file system
-> > 
-> > root can delete this snapshot, but not the user. Why?
+On 09/16/2017 01:22 AM, Kai Krakow wrote:
+> Am Sat, 16 Sep 2017 00:02:01 +0200
+> schrieb Ulli Horlacher <framstag@rus.uni-stuttgart.de>:
 > 
-> You should change the "ro" property to false before deleting it
+>> On Fri 2017-09-15 (23:44), Ulli Horlacher wrote:
+[...]
 > 
-> 	btrfs property set /test/tux/zz/.snapshot/2017-09-15_1824.test ro false
+> See "man mount" in section btrfs mount options: There is a mount option
+> to allow normal user to delete snapshots. But this is said to has
+> security implication I cannot currently tell. Maybe someone else knows.
 
-tux@xerus: btrfs property set /test/tux/zz/.snapshot/2017-09-15_1824.test ro false
-tux@xerus: btrfs subvolume delete /test/tux/zz/.snapshot/2017-09-15_1824.test
-Delete subvolume (no-commit): '/test/tux/zz/.snapshot/2017-09-15_1824.test'
+"btrfs sub del" removes a subvolume independently by its contents: it doesn't check the subvolume files/directories and their permission/ownership. 
 
-That's it! It works (now)! Great! Thanks!
+This is different from a "rm -rf", which (e.g.) can't delete a directory owned by a different user with files
 
-Up to now I was thinking about a sudo solution, but this is not necessary
-any more. Less complex solutions are always better :-)
+ghigo@venice:/tmp$ mkdir d
+ghigo@venice:/tmp$ mkdir d/d
+ghigo@venice:/tmp$ touch d/d/f
+ghigo@venice:/tmp$ sudo chown nobody d/d
+ghigo@venice:/tmp$ rm -rf d
+rm: cannot remove 'd/d/f': Permission denied
 
-I *love* this mailing list :-)
+In the past I proposed to allow an ordinary user to remove an *empty* subvolume with a simple rmdir (if he has the permissions). This would solve this kind of problem.
+
+https://www.spinics.net/lists/linux-btrfs/msg06499.html
+
+or to relax the check around "btrfs sub del", so an user can remove an _empty_ subvolume
+
+https://www.spinics.net/lists/linux-btrfs/msg06522.html
+
+> 
+> 
+BR
+G.Baroncelli
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<ce51b681-b86a-242a-1ac1-106454c32ddb@libero.it>
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

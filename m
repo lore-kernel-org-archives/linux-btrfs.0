@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp02.belwue.de ([129.143.71.87]:38045 "EHLO smtp02.belwue.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750909AbdIPHgf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Sep 2017 03:36:35 -0400
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp02.belwue.de (Postfix) with SMTP id 1581291D0
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Sep 2017 09:36:34 +0200 (MEST)
-Date: Sat, 16 Sep 2017 09:36:33 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
+Received: from smtp-33-wd.italiaonline.it ([212.48.13.167]:43864 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751183AbdIPIKv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Sep 2017 04:10:51 -0400
+Reply-To: kreijack@inwind.it
 Subject: Re: A user cannot remove his readonly snapshots?!
-Message-ID: <20170916073633.GI32347@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
 References: <20170915163736.GD32347@rus.uni-stuttgart.de>
- <22972.16657.822204.646994@tree.ty.sabi.co.uk>
- <20170915214434.GG32347@rus.uni-stuttgart.de>
- <20170915220201.GH32347@rus.uni-stuttgart.de>
- <20170916012248.0870f72d@jupiter.sol.kaishome.de>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <ce51b681-b86a-242a-1ac1-106454c32ddb@libero.it>
+Date: Sat, 16 Sep 2017 10:10:48 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170916012248.0870f72d@jupiter.sol.kaishome.de>
+In-Reply-To: <20170915163736.GD32347@rus.uni-stuttgart.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat 2017-09-16 (01:22), Kai Krakow wrote:
-
-> > tux@xerus:/test/tux/zz/.snapshot: btrfs subvolume delete
-> > 2017-09-15_1859.test Delete subvolume (no-commit):
-> > '/test/tux/zz/.snapshot/2017-09-15_1859.test' ERROR: cannot delete
-> > '/test/tux/zz/.snapshot/2017-09-15_1859.test': Read-only file system
+On 09/15/2017 06:37 PM, Ulli Horlacher wrote:
+> I have my btrfs filesystem mounted with option user_subvol_rm_allowed
 > 
-> See "man mount" in section btrfs mount options: There is a mount option
-> to allow normal user to delete snapshots.
+> tux@xerus: btrfs --version
+> btrfs-progs v4.4
+> 
+> tux@xerus: uname -a
+> Linux xerus 4.4.0-93-generic #116-Ubuntu SMP Fri Aug 11 21:17:51 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+> 
+> tux@xerus: id
+> uid=1000(tux) gid=100(users) groups=100(users)
+> 
+> tux@xerus: btrfs subvolume snapshot -r /test/tux/zz /test/tux/zz/.snapshot/2017-09-15_1824.test
+> tux@xerus: btrfs subvolume delete /test/tux/zz/.snapshot/2017-09-15_1824.test
+> Delete subvolume (no-commit): '/test/tux/zz/.snapshot/2017-09-15_1824.test'
+> ERROR: cannot delete '/test/tux/zz/.snapshot/2017-09-15_1824.test': Read-only file system
+> 
+> root can delete this snapshot, but not the user. Why?
 
-As I wrote first: "I have mounted with option user_subvol_rm_allowed"
+You should change the "ro" property to false before deleting it
 
-tux@xerus:/test/tux/zz/.snapshot: mount | grep /test
-/dev/sdd4 on /test type btrfs (rw,relatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
+	btrfs property set /test/tux/zz/.snapshot/2017-09-15_1824.test ro false
 
-This does not help. A user cannot remove a readonly snapshot he just has
-created.
 
+BR
+G.Baroncelli
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20170916012248.0870f72d@jupiter.sol.kaishome.de>
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

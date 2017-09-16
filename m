@@ -1,46 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:52202 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751240AbdIPMjM (ORCPT
+Received: from a4-2.smtp-out.eu-west-1.amazonses.com ([54.240.4.2]:57350 "EHLO
+        a4-2.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751234AbdIPMkz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Sep 2017 08:39:12 -0400
-Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by syrinx.knorrie.org (Postfix) with ESMTPSA id 34FA9253732E
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Sep 2017 14:39:11 +0200 (CEST)
-Subject: Re: subvolume list as user?
-To: linux-btrfs@vger.kernel.org
-References: <20170916094504.GL32347@rus.uni-stuttgart.de>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <684fb723-4270-9589-b80b-e60ccc6dadfe@mendix.com>
-Date: Sat, 16 Sep 2017 14:39:10 +0200
+        Sat, 16 Sep 2017 08:40:55 -0400
+Subject: Re: Regarding handling of file renames in Btrfs
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Rohan Kadekodi <kadekodirohan@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: Vijaychidambaram Velayudhan Pillai <vijay@cs.utexas.edu>,
+        Jayashree Mohan <jayashree2912@gmail.com>
+References: <CADb0YN=G1MT=VwLcfbbrnppeXRKe3Zi4EsmwSs+xw89wR9rb4A@mail.gmail.com>
+ <a2bf5d89-6753-2893-2dac-89fcbc924096@mendix.com>
+From: Martin Raiber <martin@urbackup.org>
+Message-ID: <0102015e8ab4b62a-8fdaae03-6fd2-41de-a0fa-a42c8b892445-000000@eu-west-1.amazonses.com>
+Date: Sat, 16 Sep 2017 12:40:52 +0000
 MIME-Version: 1.0
-In-Reply-To: <20170916094504.GL32347@rus.uni-stuttgart.de>
+In-Reply-To: <a2bf5d89-6753-2893-2dac-89fcbc924096@mendix.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/16/2017 11:45 AM, Ulli Horlacher wrote:
-> Every user can create subvolumes (and root cannot prevent it!).
-> But how can a user list these subvolumes?
-> 
-> tux@xerus:/test/tux: btrfs subvolume create test
-> Create subvolume './test'
+Hi,
 
->From your other posts I don't quickly get if you actually do want to
-have this possible, or accept that it's currently like that and try to
-do damage control by having users also remove their things again.
+On 16.09.2017 14:27 Hans van Kranenburg wrote:
+> On 09/10/2017 01:50 AM, Rohan Kadekodi wrote:
+>> I was trying to understand how file renames are handled in Btrfs. I
+>> read the code documentation, but had a problem understanding a few
+>> things.
+>>
+>> During a file rename, btrfs_commit_transaction() is called which is
+>> because Btrfs has to commit the whole FS before storing the
+>> information related to the new renamed file.
+> Can you point to which lines of code you're looking at?
+>
+>> It has to commit the FS
+>> because a rename first does an unlink, which is not recorded in the
+>> btrfs_rename() transaction and so is not logged in the log tree. Is my
+>> understanding correct? [...]
+> Can you also point to where exactly you see this happening? I'd also
+> like to understand more about this.
+>
+> The whole mail thread following this message continues about what a
+> transaction commit is and does etc, but the above question is never
+> answered I think.
+>
+> And I think it's an interesting question. Is a rename a "heavier"
+> operation relative to other file operations?
+>
+as far as I can see it only uses the log tree in some cases where the
+log tree was already used for the file or the parent directory. The
+cases are documented here
+https://github.com/torvalds/linux/blob/master/fs/btrfs/tree-log.c#L45 .
+So rename isn't much heavier than unlink+create.
 
-Actually, if you don't want this I think it's quite easily to patch your
-kernel with one or two lines of code to disallow it.
+Regards,
+Martin Raiber
 
-> tux@xerus:/test/tux: btrfs subvolume list .
-> ERROR: can't perform the search - Operation not permitted
-
-Yes, because the SEARCH ioctl only allows root to directly query any of
-the filesystem metadata from kernel memory. subvolume list uses this
-SEARCH ioctl to find it's info.
-
--- 
-Hans van Kranenburg

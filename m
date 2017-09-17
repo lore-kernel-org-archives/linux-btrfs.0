@@ -1,222 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:54803 "EHLO mout.gmx.net"
+Received: from mail.virtall.com ([46.4.129.203]:55410 "EHLO mail.virtall.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750885AbdIQM1j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Sep 2017 08:27:39 -0400
-Subject: Re: [PATCH] btrfs-progs: Output time elapsed for each major tree it
- checked
-To: Satoru Takeuchi <satoru.takeuchi@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, marc@merlins.org
-References: <20170911052623.31999-1-quwenruo.btrfs@gmx.com>
- <87mv5tztta.wl-satoru.takeuchi@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <2563aaf7-a262-8095-c303-4496ccafd0f8@gmx.com>
-Date: Sun, 17 Sep 2017 20:27:26 +0800
+        id S1751298AbdIQPC4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Sep 2017 11:02:56 -0400
+Received: from mail.virtall.com (localhost [127.0.0.1])
+        by mail.virtall.com (Postfix) with ESMTP id 6B98AB3A6FB
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Sep 2017 15:02:49 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
+        by mail.virtall.com (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Sep 2017 15:02:49 +0000 (UTC)
 MIME-Version: 1.0
-In-Reply-To: <87mv5tztta.wl-satoru.takeuchi@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Mon, 18 Sep 2017 00:02:46 +0900
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: how to run balance successfully (No space left on device)?
+Message-ID: <5ff267d206ae631e9d259eacacdf7924@wpkg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'm trying to run balance on a 4.13.2 kernel without much luck:
+
+# time btrfs balance start -v /var/lib/lxd -dusage=5 -musage=5
+Dumping filters: flags 0x7, state 0x0, force is off
+   DATA (flags 0x2): balancing, usage=5
+   METADATA (flags 0x2): balancing, usage=5
+   SYSTEM (flags 0x2): balancing, usage=5
+Done, had to relocate 1 out of 353 chunks
+
+real    0m2.356s
+user    0m0.005s
+sys     0m0.175s
 
 
-On 2017年09月17日 15:08, Satoru Takeuchi wrote:
-> At Mon, 11 Sep 2017 14:26:23 +0900,
-> Qu Wenruo wrote:
->>
->> Marc reported that "btrfs check --repair" runs much faster than "btrfs
->> check", which is quite weird.
->>
->> This patch will add time elapsed for each major tree it checked, for
->> both original mode and lowmem mode, so we can have a clue what's going
->> wrong.
->>
->> Reported-by: Marc MERLIN <marc@merlins.org>
->> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
->> ---
->>   cmds-check.c | 21 +++++++++++++++++++--
->>   utils.h      | 24 ++++++++++++++++++++++++
->>   2 files changed, 43 insertions(+), 2 deletions(-)
->>
->> diff --git a/cmds-check.c b/cmds-check.c
->> index 006edbde..fee806cd 100644
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -5318,13 +5318,16 @@ static int do_check_fs_roots(struct btrfs_fs_info *fs_info,
->>   			  struct cache_tree *root_cache)
->>   {
->>   	int ret;
->> +	struct timer timer;
->>   
->>   	if (!ctx.progress_enabled)
->>   		fprintf(stderr, "checking fs roots\n");
->> +	start_timer(&timer);
->>   	if (check_mode == CHECK_MODE_LOWMEM)
->>   		ret = check_fs_roots_v2(fs_info);
->>   	else
->>   		ret = check_fs_roots(fs_info, root_cache);
->> +	printf("done in %d seconds\n", stop_timer(&timer));
-> 
-> How about adding the prefixes to show which part of check/repair is done
-> before showing the elaplsed time, like "checking fs roots done in XX seconds"
-> and "checking extents done in XX seconds"?
+# time btrfs balance start -v /var/lib/lxd -dusage=0 -musage=0
+Dumping filters: flags 0x7, state 0x0, force is off
+   DATA (flags 0x2): balancing, usage=0
+   METADATA (flags 0x2): balancing, usage=0
+   SYSTEM (flags 0x2): balancing, usage=0
+Done, had to relocate 0 out of 353 chunks
 
-Nice advice.
+real    0m0.076s
+user    0m0.004s
+sys     0m0.008s
 
-I'll update the patch to add a prefix for this.
 
-Thanks,
-Qu
+# time btrfs balance start -v /var/lib/lxd
+Dumping filters: flags 0x7, state 0x0, force is off
+   DATA (flags 0x0): balancing
+   METADATA (flags 0x0): balancing
+   SYSTEM (flags 0x0): balancing
+WARNING:
 
-> 
-> Current message, "done in XX seconds" for all parts, is hard to understand
-> which part takes such the time, especially when something wrong happens
-> in some parts. For example, please see the following example of repairing
-> the image based on tests/fsck-tests/002-bad-transid/default_case.img
-> 
-> ===
-> ...
-> opening btrfs filesystem
-> parent transid verify failed on 29360128 wanted 9 found 755944791
-> parent transid verify failed on 29360128 wanted 9 found 755944791
-> parent transid verify failed on 29360128 wanted 9 found 755944791
-> parent transid verify failed on 29360128 wanted 9 found 755944791
-> Ignoring transid failure
-> done in 0 seconds
-> ...
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-> done in 0 seconds
-> ...
-> ===
-> 
-> Thanks,
-> Satoru
-> 
->>   
->>   	return ret;
->>   }
->> @@ -11584,14 +11587,16 @@ out:
->>   static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
->>   {
->>   	int ret;
->> +	struct timer timer;
->>   
->>   	if (!ctx.progress_enabled)
->>   		fprintf(stderr, "checking extents\n");
->> +	start_timer(&timer);
->>   	if (check_mode == CHECK_MODE_LOWMEM)
->>   		ret = check_chunks_and_extents_v2(fs_info);
->>   	else
->>   		ret = check_chunks_and_extents(fs_info);
->> -
->> +	printf("done in %d seconds\n", stop_timer(&timer));
->>   	return ret;
->>   }
->>   
->> @@ -12772,6 +12777,7 @@ int cmd_check(int argc, char **argv)
->>   	int qgroups_repaired = 0;
->>   	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
->>   	int force = 0;
->> +	struct timer timer;
->>   
->>   	while(1) {
->>   		int c;
->> @@ -12953,8 +12959,11 @@ int cmd_check(int argc, char **argv)
->>   	if (repair)
->>   		ctree_flags |= OPEN_CTREE_PARTIAL;
->>   
->> +	printf("opening btrfs filesystem\n");
->> +	start_timer(&timer);
->>   	info = open_ctree_fs_info(argv[optind], bytenr, tree_root_bytenr,
->>   				  chunk_root_bytenr, ctree_flags);
->> +	printf("done in %d seconds\n", stop_timer(&timer));
->>   	if (!info) {
->>   		error("cannot open file system");
->>   		ret = -EIO;
->> @@ -13115,8 +13124,10 @@ int cmd_check(int argc, char **argv)
->>   		else
->>   			fprintf(stderr, "checking free space cache\n");
->>   	}
->> +	start_timer(&timer);
->>   	ret = check_space_cache(root);
->>   	err |= !!ret;
->> +	printf("done in %d seconds\n", stop_timer(&timer));
->>   	if (ret) {
->>   		if (btrfs_fs_compat_ro(info, FREE_SPACE_TREE))
->>   			error("errors found in free space tree");
->> @@ -13140,18 +13151,22 @@ int cmd_check(int argc, char **argv)
->>   	}
->>   
->>   	fprintf(stderr, "checking csums\n");
->> +	start_timer(&timer);
->>   	ret = check_csums(root);
->>   	err |= !!ret;
->> +	printf("done in %d seconds\n", stop_timer(&timer));
->>   	if (ret) {
->>   		error("errors found in csum tree");
->>   		goto out;
->>   	}
->>   
->> -	fprintf(stderr, "checking root refs\n");
->>   	/* For low memory mode, check_fs_roots_v2 handles root refs */
->>   	if (check_mode != CHECK_MODE_LOWMEM) {
->> +		fprintf(stderr, "checking root refs\n");
->> +		start_timer(&timer);
->>   		ret = check_root_refs(root, &root_cache);
->>   		err |= !!ret;
->> +		printf("done in %d seconds\n", stop_timer(&timer));
->>   		if (ret) {
->>   			error("errors found in root refs");
->>   			goto out;
->> @@ -13186,8 +13201,10 @@ int cmd_check(int argc, char **argv)
->>   
->>   	if (info->quota_enabled) {
->>   		fprintf(stderr, "checking quota groups\n");
->> +		start_timer(&timer);
->>   		ret = qgroup_verify_all(info);
->>   		err |= !!ret;
->> +		printf("done in %d seconds\n", stop_timer(&timer));
->>   		if (ret) {
->>   			error("failed to check quota groups");
->>   			goto out;
->> diff --git a/utils.h b/utils.h
->> index d28a05a6..159487db 100644
->> --- a/utils.h
->> +++ b/utils.h
->> @@ -172,4 +172,28 @@ u64 rand_u64(void);
->>   unsigned int rand_range(unsigned int upper);
->>   void init_rand_seed(u64 seed);
->>   
->> +/* Utils to report time duration */
->> +struct timer {
->> +	time_t start;
->> +};
->> +
->> +static inline void start_timer(struct timer *t)
->> +{
->> +	time(&t->start);
->> +}
->> +
->> +/*
->> + * Stop timer and return the time elapsed in int
->> + *
->> + * int should be large enough to "btrfs check" and avoid
->> + * type converting.
->> + */
->> +static inline int stop_timer(struct timer *t)
->> +{
->> +	time_t end;
->> +
->> +	time(&end);
->> +
->> +	return (int)(difftime(end, t->start));
->> +}
->>   #endif
->> -- 
->> 2.14.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+         Full balance without filters requested. This operation is very
+         intense and takes potentially very long. It is recommended to
+         use the balance filters to narrow down the balanced data.
+         Use 'btrfs balance start --full-balance' option to skip this
+         warning. The operation will start in 10 seconds.
+         Use Ctrl-C to stop it.
+10 9 8 7 6 5 4 3 2 1
+Starting balance without any filters.
+ERROR: error during balancing '/var/lib/lxd': No space left on device
+There may be more info in syslog - try dmesg | tail
+
+real    284m58.541s
+user    0m0.000s
+sys     47m39.037s
+
+
+
+
+# df -h /var/lib/lxd
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda3       424G  318G  105G  76% /var/lib/lxd
+
+
+# btrfs fi df /var/lib/lxd
+Data, RAID1: total=318.00GiB, used=313.82GiB
+System, RAID1: total=32.00MiB, used=80.00KiB
+Metadata, RAID1: total=5.00GiB, used=3.17GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+# btrfs fi show /var/lib/lxd
+Label: 'btrfs'  uuid: f5f30428-ec5b-4497-82de-6e20065e6f61
+         Total devices 2 FS bytes used 316.98GiB
+         devid    1 size 423.13GiB used 323.03GiB path /dev/sda3
+         devid    2 size 423.13GiB used 323.03GiB path /dev/sdb3
+
+
+# btrfs fi usage /var/lib/lxd
+Overall:
+     Device size:                 846.25GiB
+     Device allocated:            646.06GiB
+     Device unallocated:          200.19GiB
+     Device missing:                  0.00B
+     Used:                        633.97GiB
+     Free (estimated):            104.28GiB      (min: 104.28GiB)
+     Data ratio:                       2.00
+     Metadata ratio:                   2.00
+     Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,RAID1: Size:318.00GiB, Used:313.82GiB
+    /dev/sda3     318.00GiB
+    /dev/sdb3     318.00GiB
+
+Metadata,RAID1: Size:5.00GiB, Used:3.17GiB
+    /dev/sda3       5.00GiB
+    /dev/sdb3       5.00GiB
+
+System,RAID1: Size:32.00MiB, Used:80.00KiB
+    /dev/sda3      32.00MiB
+    /dev/sdb3      32.00MiB
+
+Unallocated:
+    /dev/sda3     100.10GiB
+    /dev/sdb3     100.10GiB
+
+
+Mount flags in /etc/fstab are:
+
+LABEL=btrfs /var/lib/lxd btrfs 
+defaults,noatime,space_cache=v2,device=/dev/sda3,device=/dev/sdb3,discard 
+0 0
+
+
+
+Last pieces logged in dmesg:
+
+[46867.225334] BTRFS info (device sda3): relocating block group 
+2996254998528 flags data|raid1
+[46874.563631] BTRFS info (device sda3): found 9250 extents
+[46894.827895] BTRFS info (device sda3): found 9250 extents
+[46898.463053] BTRFS info (device sda3): found 201 extents
+[46898.562564] BTRFS info (device sda3): relocating block group 
+2995181256704 flags data|raid1
+[46903.555976] BTRFS info (device sda3): found 7299 extents
+[46914.188044] BTRFS info (device sda3): found 7299 extents
+[46914.303476] BTRFS info (device sda3): relocating block group 
+2947936616448 flags metadata|raid1
+[46939.570810] BTRFS info (device sda3): found 42022 extents
+[46945.053488] BTRFS info (device sda3): 2 enospc errors during balance
+
+
+
+Tomasz Chmielewski
+https://lxadm.com

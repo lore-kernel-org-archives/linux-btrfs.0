@@ -1,67 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:44322 "EHLO synology.com"
+Received: from mout.gmx.net ([212.227.15.19]:61565 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750838AbdIOIrf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 04:47:35 -0400
-From: peterh <peterh@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Kuanling Huang <peterh@synology.com>
-Subject: [PATCH] Btrfs: send, apply asynchronous page cache readahead to enhance page read
-Date: Fri, 15 Sep 2017 16:47:45 +0800
-Message-Id: <1505465265-9764-1-git-send-email-peterh@synology.com>
+        id S1750862AbdIQMZ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 17 Sep 2017 08:25:56 -0400
+Subject: Re: [PATCH] btrfs: Report error on removing qgroup if del_qgroup_item
+ fails
+To: Sargun Dhillon <sargun@sargun.me>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
+References: <20170917090226.GA30640@ircssh-2.c.rugged-nimbus-611.internal>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <b55672b3-c84d-46b8-f2b8-8b206ad32ccb@gmx.com>
+Date: Sun, 17 Sep 2017 20:25:43 +0800
+MIME-Version: 1.0
+In-Reply-To: <20170917090226.GA30640@ircssh-2.c.rugged-nimbus-611.internal>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Kuanling Huang <peterh@synology.com>
 
-By analyzing the perf on btrfs send, we found it take large
-amount of cpu time on page_cache_sync_readahead. This effort
-can be reduced after switching to asynchronous one. Overall
-performance gain on HDD and SSD were 9 and 15 percent if
-simply send a large file.
 
-Signed-off-by: Kuanling Huang <peterh@synology.com>
----
- fs/btrfs/send.c | 21 ++++++++++++++++-----
- 1 file changed, 16 insertions(+), 5 deletions(-)
+On 2017年09月17日 17:02, Sargun Dhillon wrote:
+> Previously, we were calling del_qgroup_item, and ignoring the return code
+> resulting in a potential to have divergent in-memory state without an
+> error. Perhaps, it makes sense to handle this error code, and put the
+> filesystem into a read only, or similar state.
+> 
+> This patch only adds reporting of the error if the error is fatal,
+> (any error other than qgroup not found).
+> 
+> Signed-off-by: Sargun Dhillon <sargun@sargun.me>
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 63a6152..7a5eb66 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4475,16 +4475,27 @@ static ssize_t fill_read_buf(struct send_ctx *sctx, u64 offset, u32 len)
- 	/* initial readahead */
- 	memset(&sctx->ra, 0, sizeof(struct file_ra_state));
- 	file_ra_state_init(&sctx->ra, inode->i_mapping);
--	btrfs_force_ra(inode->i_mapping, &sctx->ra, NULL, index,
--		       last_index - index + 1);
- 
- 	while (index <= last_index) {
- 		unsigned cur_len = min_t(unsigned, len,
- 					 PAGE_CACHE_SIZE - pg_offset);
--		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
-+		page = find_lock_page(inode->i_mapping, index);
- 		if (!page) {
--			ret = -ENOMEM;
--			break;
-+			page_cache_sync_readahead(inode->i_mapping,
-+				&sctx->ra, NULL, index,
-+				last_index + 1 - index);
-+
-+			page = find_or_create_page(inode->i_mapping, index, GFP_KERNEL);
-+			if (!page) {
-+				ret = -ENOMEM;
-+				break;
-+			}
-+		}
-+
-+		if (PageReadahead(page)) {
-+			page_cache_async_readahead(inode->i_mapping,
-+				&sctx->ra, NULL, page, index,
-+				last_index + 1 - index);
- 		}
- 
- 		if (!PageUptodate(page)) {
--- 
-1.9.1
+Looks good to me.
 
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+
+Thanks,
+Qu
+
+> ---
+>   fs/btrfs/qgroup.c | 2 ++
+>   1 file changed, 2 insertions(+)
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 770f667269f5..e172d4843eae 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1305,6 +1305,8 @@ int btrfs_remove_qgroup(struct btrfs_trans_handle *trans,
+>   		}
+>   	}
+>   	ret = del_qgroup_item(trans, quota_root, qgroupid);
+> +	if (ret && ret != -ENOENT)
+> +		goto out >
+>   	while (!list_empty(&qgroup->groups)) {
+>   		list = list_first_entry(&qgroup->groups,
+> 

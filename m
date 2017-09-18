@@ -1,65 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:55029 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:59281 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751832AbdIRHVz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 03:21:55 -0400
+        id S1751861AbdIRHV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Sep 2017 03:21:56 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 06/14] btrfs-progs: mkfs: Workaround BUG_ON caused by rootdir option
-Date: Mon, 18 Sep 2017 16:21:31 +0900
-Message-Id: <20170918072139.6300-7-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v3 07/14] btrfs-progs: Doc/mkfs: Add extra condition for rootdir option
+Date: Mon, 18 Sep 2017 16:21:32 +0900
+Message-Id: <20170918072139.6300-8-quwenruo.btrfs@gmx.com>
 In-Reply-To: <20170918072139.6300-1-quwenruo.btrfs@gmx.com>
 References: <20170918072139.6300-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---rootdir option will start a transaction to fill the fs, however if
-something goes wrong, from ENOSPC to lack of permission, we won't commit
-transaction and cause BUG_ON trigger by uncommitted transaction:
+Add extra limitation explained for --rootdir option, including:
+1) Size limitation
+   Now I decide to follow "mkfs.ext4 -d" behavior, so user is
+   responsible to make sure the block device/file is large enough.
 
-------
-extent buffer leak: start 29392896 len 16384
-extent_io.c:579: free_extent_buffer: BUG_ON `eb->flags & EXTENT_DIRTY` triggered, value 1
-------
+2) Read permission
+   If user can't read the content, mkfs will just fail.
+   So user is also responsible to make sure to have enough privilege.
 
-The root fix is to introduce btrfs_abort_transaction() in btrfs-progs,
-however in this particular case, we can workaround it by force
-committing the transaction.
-
-Since during mkfs, the magic of btrfs is set to an invalid one, without
-setting fs_info->finalize_on_close() the fs is never able to be mounted.
-So even we force to commit wrong transaction we won't screw up things
-worse.
+3) Extra warning about the behavior change
+   Since we we don't shrink fs the create file image, add such warning
+   in documentation.
 
 Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 ---
- mkfs/main.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ Documentation/mkfs.btrfs.asciidoc | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 6561ac52..f78c24ce 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1025,6 +1025,18 @@ static int make_image(const char *source_dir, struct btrfs_root *root)
- 		printf("Making image is completed.\n");
- 	return 0;
- fail:
-+	/*
-+	 * XXX:
-+	 * To avoid BUG_ON() triggered by uncommitted transaction,
-+	 * here we must commit transaction before we have proper
-+	 * btrfs_abort_transaction() in btrfs-progs.
-+	 *
-+	 * Don't worry, the magic number is not valid so the fs can't be
-+	 * mounted by kernel even we commit the trans.
-+	 * And we don't want to pollute the original error, so we ignore
-+	 * the return value from btrfs_commit_transaction().
-+	 */
-+	btrfs_commit_transaction(trans, root);
- 	while (!list_empty(&dir_head.list)) {
- 		dir_entry = list_entry(dir_head.list.next,
- 				       struct directory_name_entry, list);
+diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
+index d53d9e26..645a2881 100644
+--- a/Documentation/mkfs.btrfs.asciidoc
++++ b/Documentation/mkfs.btrfs.asciidoc
+@@ -106,6 +106,19 @@ Please see the mount option 'discard' for that in `btrfs`(5).
+ *-r|--rootdir <rootdir>*::
+ Populate the toplevel subvolume with files from 'rootdir'.  This does not
+ require root permissions and does not mount the filesystem.
+++
++With this option, only one device can be specified.
+++
++NOTE: User should make sure the block device/file has large enough space to
++contain the source directory and has enough previllege to read source directory.
++Or mkfs will just fail.
+++
++WARNING: Before v4.14 btrfs-progs, *--rootdir* will shrink the filesystem,
++prevent user to make use of the remaining space.
++In v4.14 btrfs-progs, this behavior is changed, and will not shrink the fs.
++The result should be the same as `mkfs`, `mount` and then `cp -r`. +
++Also, if destination file/block device does not exist, *--rootdir* will not
++create the image file, to make it follow the normal mkfs behavior.
+ 
+ *-O|--features <feature1>[,<feature2>...]*::
+ A list of filesystem features turned on at mkfs time. Not all features are
 -- 
 2.14.1
 

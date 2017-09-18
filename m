@@ -1,42 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51500 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:16502 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932707AbdIRRTA (ORCPT
+        with ESMTP id S932707AbdIRRTu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 13:19:00 -0400
-Date: Mon, 18 Sep 2017 10:17:27 -0600
+        Mon, 18 Sep 2017 13:19:50 -0400
+Date: Mon, 18 Sep 2017 10:18:19 -0600
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-        <holger@applied-asynchrony.com>
+To: Goffredo Baroncelli <kreijack@inwind.it>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: fix unexpected result when dio reading corrupted
  blocks
-Message-ID: <20170918161727.GA6357@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Message-ID: <20170918161819.GB6357@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
 Reply-To: bo.li.liu@oracle.com
 References: <20170915210651.8385-1-bo.li.liu@oracle.com>
- <1dc28ce4-219f-1d2b-10ae-423a8dc6bb2a@applied-asynchrony.com>
+ <56ce21c9-406d-7cfe-f162-f21454ba3b2a@inwind.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1dc28ce4-219f-1d2b-10ae-423a8dc6bb2a@applied-asynchrony.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56ce21c9-406d-7cfe-f162-f21454ba3b2a@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 18, 2017 at 03:49:34PM +0200, Holger Hoffstätte wrote:
-> 
-> Hello, quick question for backporting..
-> 
-> On 09/15/17 23:06, Liu Bo wrote:
+On Sat, Sep 16, 2017 at 01:58:34PM +0200, Goffredo Baroncelli wrote:
+> On 09/15/2017 11:06 PM, Liu Bo wrote:
 > > commit 4246a0b63bd8 ("block: add a bi_error field to struct bio")
 > > changed the logic of how dio read endio reports errors.
-> [snip]
+> > 
+> > For single stripe dio read, %bio->bi_status reflects the error before
+> > verifying checksum, and now we're updating it when data block matches
+> > with its checksum, while in the mismatching case, %bio->bi_status is
+> > not updated to relfect that.
+> > 
+> > When some blocks in a file have been corrupted on disk, reading such a
+> > file ends up with
+> > 
+> > 1) checksum errros are reported in kernel log
+> > 2) read(2) returns successfully with some content being 0x01.
+> > 
+> > In order to fix it, we need to report its checksum mismatch error to
+> > the upper layer (dio layer in this case) as well.
 > 
-> I've tried to merge this into my 4.9.x++ tree but have a question since
-> the DIO APIs changed recently and itt's hard to tell what is a bug
-> and what is a feature.. :-/
+> I tested it, and now it works: even using O_DIRECT -EIO is returned if the file is corrupted.
+> 
+> ghigo@venice:~/btrfs/crash-o-direct/t$ ls -li
+> total 16384
+> 257 -rw-r--r-- 1 root root 16777216 Sep 15 20:51 abcd
+> ghigo@venice:~/btrfs/crash-o-direct/t$ date
+> Sat Sep 16 13:56:26 CEST 2017
+> 
+> ghigo@venice:~/btrfs/crash-o-direct/t$ cat abcd 
+> cat: abcd: Input/output error
+> ghigo@venice:~/btrfs/crash-o-direct/t$ dmesg -T | tail -1
+> [Sat Sep 16 13:56:29 2017] BTRFS warning (device sdd5): csum failed root 5 ino 257 off 0 csum 0x98f94189 expected csum 0x0ab6be80 mirror 1
+> 
+> ghigo@venice:~/btrfs/crash-o-direct/t$ dd if=abcd iflag=direct
+> dd: error reading 'abcd': Input/output error
+> 0+0 records in
+> 0+0 records out
+> 0 bytes copied, 0.000404156 s, 0.0 kB/s
+> ghigo@venice:~/btrfs/crash-o-direct/t$ dmesg -T | tail -1
+> [Sat Sep 16 13:56:41 2017] BTRFS warning (device sdd5): csum failed root 5 ino 257 off 0 csum 0x98f94189 expected csum 0x0ab6be80 mirror 1
 >
 
-Good point, hopefully it's the last change on those API.
+Thanks a lot, any chance I can get your 'Tested-by' tag?
 
+Thanks,
+
+-liubo
+> 
+> 
+> 
+> > 
+> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> > Reported-by: Goffredo Baroncelli <kreijack@inwind.it>
+> > cc: Goffredo Baroncelli <kreijack@inwind.it>
+> > ---
+> >  fs/btrfs/inode.c | 7 ++-----
+> >  1 file changed, 2 insertions(+), 5 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 24bcd5c..a46799e 100644
 > > --- a/fs/btrfs/inode.c
 > > +++ b/fs/btrfs/inode.c
 > > @@ -8267,11 +8267,8 @@ static void btrfs_endio_direct_read(struct bio *bio)
@@ -52,10 +94,6 @@ Good point, hopefully it's the last change on those API.
 > >  
 > >  	unlock_extent(&BTRFS_I(inode)->io_tree, dip->logical_offset,
 > >  		      dip->logical_offset + dip->bytes - 1);
-> 
-> This hunk is fairly easy, just reverse bi_status to bi->error.
-> However..
-> 
 > > @@ -8279,7 +8276,7 @@ static void btrfs_endio_direct_read(struct bio *bio)
 > >  
 > >  	kfree(dip);
@@ -63,29 +101,11 @@ Good point, hopefully it's the last change on those API.
 > > -	dio_bio->bi_status = bio->bi_status;
 > > +	dio_bio->bi_status = err;
 > >  	dio_end_io(dio_bio);
->         ^^^^^^^^^^^^^^^^^^^
+> >  
+> >  	if (io_bio->end_io)
+> > 
 > 
-> Same here, except that the call to dio_end_io used to take a second parameter
-> (the error code, which has been moved into bi_status in 4.10+) and looked
-> like this:
 > 
->     dio_end_io(dio_bio, bio->bi_error);
-> 
-> Given that "bio->bi_error" should have been "err" instead, I think err should
-> also be passed to dio_end_io(), so that the whole hunk would look like:
-> 
-> ..
-> -    dio_bio->bi_error = bio->bi_error;
-> -    dio_end_io(dio_bio, bio->bi_error);
-> +    dio_bio->bi_error = err;
-> +    dio_end_io(dio_bio, err);
-> ..
-> 
-> Would this be correct or did I misunderstand some subtle aspect about the
-> DIO error handling?
-
-Yes, the diff looks good to me.
-
-Thanks,
-
--liubo
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

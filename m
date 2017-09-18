@@ -1,72 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([46.4.129.203]:48720 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753372AbdIRJ1M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 05:27:12 -0400
+Received: from mail-io0-f182.google.com ([209.85.223.182]:52680 "EHLO
+        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755500AbdIRLgR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Sep 2017 07:36:17 -0400
+Received: by mail-io0-f182.google.com with SMTP id i197so1277890ioe.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 04:36:17 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id i76sm3067845itf.3.2017.09.18.04.36.15
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 18 Sep 2017 04:36:15 -0700 (PDT)
+Subject: Re: A user cannot remove his readonly snapshots?!
+To: linux-btrfs@vger.kernel.org
+References: <20170915163736.GD32347@rus.uni-stuttgart.de>
+ <38b35e41-313a-1eed-667a-ee3138c8170d@gmail.com>
+ <20170915193211.GE32347@rus.uni-stuttgart.de>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <7600502f-bad7-9802-1a0b-146869236133@gmail.com>
+Date: Mon, 18 Sep 2017 07:36:12 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Mon, 18 Sep 2017 18:27:09 +0900
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: how to run balance successfully (No space left on device)?
-In-Reply-To: <CAA91j0W5YNU-StfRY_M4YUC=aLY-W+VEZ+wP2XciiHmDB1q7gQ@mail.gmail.com>
-References: <5ff267d206ae631e9d259eacacdf7924@wpkg.org>
- <19a1770cf67e63a84c3baeeb44af9e9a@wpkg.org>
- <CAA91j0W5YNU-StfRY_M4YUC=aLY-W+VEZ+wP2XciiHmDB1q7gQ@mail.gmail.com>
-Message-ID: <d4dce3d04c11e171b44a1924114f5ddd@wpkg.org>
+In-Reply-To: <20170915193211.GE32347@rus.uni-stuttgart.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-09-18 17:29, Andrei Borzenkov wrote:
-> On Mon, Sep 18, 2017 at 11:20 AM, Tomasz Chmielewski <mangoo@wpkg.org> 
-> wrote:
->>>> # df -h /var/lib/lxd
->>>> 
->>>> FWIW, standard (aka util-linux) df is effectively useless in a 
->>>> situation
->>>> such as this, as it really doesn't give you the information you need 
->>>> (it
->>>> can say you have lots of space available, but if btrfs has all of it
->>>> allocated into chunks, even if the chunks have space in them still, 
->>>> there
->>>> can be problems).
->> 
->> 
->> I see here on RAID-1, "df -h" it shows pretty much the same amount of 
->> free
->> space as "btrfs fi show":
->> 
->> - "df -h" shows 105G free
->> - "btrfs fi show" says: Free (estimated):            104.28GiB      
->> (min:
->> 104.28GiB)
->> 
+On 2017-09-15 15:32, Ulli Horlacher wrote:
+> On Fri 2017-09-15 (13:08), Austin S. Hemmelgarn wrote:
+>> On 2017-09-15 12:37, Ulli Horlacher wrote:
+>>
+>>> I have my btrfs filesystem mounted with option user_subvol_rm_allowed
+>>> tux@xerus: btrfs subvolume delete /test/tux/zz/.snapshot/2017-09-15_1824.test
+>>> Delete subvolume (no-commit): '/test/tux/zz/.snapshot/2017-09-15_1824.test'
+>>> ERROR: cannot delete '/test/tux/zz/.snapshot/2017-09-15_1824.test': Read-only file system
+>>>
+>>> root can delete this snapshot, but not the user. Why?
+>>>
+>>
+>> Add 'user_subvol_rm' to the mount options and try again.
 > 
-> I think both use the same algorithm to compute free space (df at the
-> end just shows what kernel returns). The problem is that this
-> algorithm itself is just approximation in general case. For uniform
-> RAID1 profile it should be correct though.
+> root@xerus:~# mount -vo user_subvol_rm /dev/sdd4 /test
+> mount: wrong fs type, bad option, bad superblock on /dev/sdd4,
+>         missing codepage or helper program, or other error
+> 
+>         In some cases useful info is found in syslog - try
+>         dmesg | tail or so.
+> 
+> root@xerus:~# dmesg | tail -2
+> [1514588.018991] BTRFS info (device sdd4): unrecognized mount option 'user_subvol_rm'
+> [1514588.028430] BTRFS: open_ctree failed
+> 
+> user_subvol_rm is not listed on
+> https://btrfs.wiki.kernel.org/index.php/Mount_options
+> 
+> Did you mean user_subvol_rm_allowed?
+Yes, that's what I meant, sorry about the confusion.
+> I have already used this option, without success. See above.
+I missed that, sorry.
 
-And perhaps more important - can I assume that right now, with the 
-latest stable kernel (4.13.2 right now), running "btrfs balance" is not 
-safe and can lead to data corruption or loss?
-
-
-Consider the following case:
-
-- system admin runs btrfs balance on a filesystem with 100 GB free and 
-assumes it is enough space to complete successfully
-
-- btrfs balance fails due to some bug with "No space left on device"
-
-- at the same time, a database using this filesystem will fail with "No 
-space left on device", apt/rpm will fail a package upgrade, some program 
-using temp space will fail, log collector will fail to catch some data, 
-because of "No space left on device" and so on?
-
-
-
-Tomasz Chmielewski
-https://lxadm.com

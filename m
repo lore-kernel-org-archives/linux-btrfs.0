@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:50219 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:65520 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752470AbdIRHWD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 03:22:03 -0400
+        id S1750711AbdIRHgJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Sep 2017 03:36:09 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 11/14] btrfs-progs: tests/mkfs: Add basic test case for rootdir parameter
-Date: Mon, 18 Sep 2017 16:21:36 +0900
-Message-Id: <20170918072139.6300-12-quwenruo.btrfs@gmx.com>
-In-Reply-To: <20170918072139.6300-1-quwenruo.btrfs@gmx.com>
-References: <20170918072139.6300-1-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v3.1 11/14] btrfs-progs: tests/mkfs: Add basic test case for rootdir parameter
+Date: Mon, 18 Sep 2017 16:35:59 +0900
+Message-Id: <20170918073559.6446-1-quwenruo.btrfs@gmx.com>
+In-Reply-To: <20170918072139.6300-12-quwenruo.btrfs@gmx.com>
+References: <20170918072139.6300-12-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -22,16 +22,20 @@ convert-tests/001-ext2-basic.
 
 Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 ---
- tests/mkfs-tests/010-basic-rootdir/test.sh | 78 ++++++++++++++++++++++++++++++
- 1 file changed, 78 insertions(+)
+changelog:
+v3.1:
+    Cleanup the temporary rootdir directory.
+---
+ tests/mkfs-tests/010-basic-rootdir/test.sh | 79 ++++++++++++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
  create mode 100755 tests/mkfs-tests/010-basic-rootdir/test.sh
 
 diff --git a/tests/mkfs-tests/010-basic-rootdir/test.sh b/tests/mkfs-tests/010-basic-rootdir/test.sh
 new file mode 100755
-index 00000000..6ff3e1af
+index 00000000..49f9b860
 --- /dev/null
 +++ b/tests/mkfs-tests/010-basic-rootdir/test.sh
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,79 @@
 +#!/bin/bash
 +# Check basic operations for "mkfs.btrfs --rootdir", including:
 +# 1)	Checksum, permission and acl
@@ -101,6 +105,7 @@ index 00000000..6ff3e1af
 +	rm -- "$csum_tmp"
 +	rm -- "$perm_tmp"
 +	rm -- "$acl_tmp"
++	run_check $SUDO_HELPER rm -rf -- "$src_dir"
 +}
 +
 +for feature in '' 'extref' 'skinny-metadata' 'no-holes'; do

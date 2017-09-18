@@ -1,90 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:56590 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750710AbdIRGK7 (ORCPT
+Received: from mail-qk0-f182.google.com ([209.85.220.182]:56184 "EHLO
+        mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752403AbdIRHhQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 02:10:59 -0400
-Received: by mail-io0-f180.google.com with SMTP id m103so15979963iod.13
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Sep 2017 23:10:59 -0700 (PDT)
+        Mon, 18 Sep 2017 03:37:16 -0400
+Received: by mail-qk0-f182.google.com with SMTP id u73so6392473qkl.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 00:37:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
-References: <CAH=dxU7t=p8MVh1y2Tv7wPrP=1ntYcHCy7W6aBQGRtMp_gaaRA@mail.gmail.com>
- <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
-From: Dave <davestechshop@gmail.com>
-Date: Mon, 18 Sep 2017 02:10:37 -0400
-Message-ID: <CAH=dxU4yTdKQwZX3L-oOMs2ZYiR82m1-F0GhbSU4SV_K2jrBGA@mail.gmail.com>
-Subject: Re: ERROR: parent determination failed (btrfs send-receive)
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+From: shally verma <shallyvermacavium@gmail.com>
+Date: Mon, 18 Sep 2017 13:06:45 +0530
+Message-ID: <CAP9W88j+UZCiF6-Bj6Nyh83L=jpTfM5vF-Pz0y09TJ5dsbciZw@mail.gmail.com>
+Subject: using fio to test btrfs compression
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 18, 2017 at 12:23 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> 18.09.2017 05:31, Dave пишет:
->> Sometimes when using btrfs send-receive, I get errors like this:
->>
->> ERROR: parent determination failed for <subvolume name>
->>
->> When this happens, btrfs send-receive backups fail. And all subsequent
->> backups fail too.
->>
->> The issue seems to stem from the fact that an automated cleanup
->> process removes certain earlier subvolumes. (I'm using Snapper.)
->>
->> I'd like to understand exactly what is happening so that my backups do
->> not unexpectedly fail.
->>
->
-> You try to send incremental changes but you deleted subvolume to compute
-> changes against. It is hard to tell more without seeing subvolume list
-> with uuid/parent uuid.
+Hi
 
-I do not have a current subvolume list to provide UUID's. To ensure
-integrity of my backups, I was forced to delete all backup snapshots
-and start over. (After this initial parent determination error, my
-attempted solution created a new problem related to Received UUID's,
-so removing all backups was the best solution in the end.)
+I wanted to test btrfs compression using fio command but somehow
+during fio writes, I don't see code taking route of compression blocks
+where as If I do a copy to btrfs compression enabled mount point then
+I can easily see code falling through compression.c.
 
-For my understanding, what are the restrictions on deleting snapshots?
+Here's how I do my setup
 
-What scenarios can lead to "ERROR: parent determination failed"?
+1. mkfs.btrfs /dev/sdb1
+2. mount -t btrfs -o compress=zlib,compress-force /dev/sdb1 /mnt
+3. cp <some large test file> /mnt
+4. dmesg shows print staments from compression.c and zlib.c confirming
+compression routine was invoked during write
+5. now, copy back from btrfs mount point to home directory also shows
+decompress call invokation
 
-After all, it should not be necessary to retain every snapshot ever
-made. We have to delete snapshots periodically.
+Now, try same with fio commands:
 
-In my case, I still retained every snapshot on the target volume. None
-had ever been deleted (yet). And I also retained around 30 recent
-snapshots on the source, according to the snapper timeline cleanup
-config. Yet I still ran into "ERROR: parent determination failed".
+fio command
 
->
->> In my scenario, no parent subvolumes have been deleted from the
->> target. Some subvolumes have been deleted from the source, but why
->> does that matter? I am able to take a valid snapshot at this time and
->> every snapshot ever taken continues to reside at the target backup
->> destination (seemingly meaning that a parent subvolume can be found at
->> the target).
->>
->> This issue seems to make btrfs send-receive a very fragile backup
->> solution.
->
-> btrfs send/receive is not backup solution - it is low level tool that
-> does exactly what it is told to do. You may create backup solution that
-> is using btrfs send/receive to transfer data stream, but then do not
-> blame tool for incorrect usage.
->
-> To give better advice how to fix your situation you need to describe
-> your backup solution - how exactly you select/create snapshots.
+fio --directory=/mnt/ --numjobs=1 --direct=0 --buffered=1
+--ioengine=libaio --group_reporting --bs=64k --rw=write --iodepth=128
+--name=test --size=10G --runtime=180 --time_based
 
-I use snap-sync to create and send snapshots.
+But it seems to write uncompressed data.
 
-GitHub - wesbarnett/snap-sync: Use snapper snapshots to backup to external drive
-https://github.com/wesbarnett/snap-sync
+Any help here? what's missing?
 
->
-> I hope, instead, there is some knowledge I'm missing, that
->> when learned, will make this a robust backup solution.
->>
->> Thanks
->> --
+Thanks
+Shally

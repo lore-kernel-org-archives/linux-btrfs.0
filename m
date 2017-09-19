@@ -1,87 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:46995 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:33132 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750789AbdISC7f (ORCPT
+        with ESMTP id S1750921AbdISDqE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 22:59:35 -0400
+        Mon, 18 Sep 2017 23:46:04 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1du8kv-0000Sv-NO
-        for linux-btrfs@vger.kernel.org; Tue, 19 Sep 2017 04:59:25 +0200
+        id 1du9Tt-0003SC-Py
+        for linux-btrfs@vger.kernel.org; Tue, 19 Sep 2017 05:45:53 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: how to run balance successfully (No space left on device)?
-Date: Tue, 19 Sep 2017 02:59:19 +0000 (UTC)
-Message-ID: <pan$7ed29$8cce4f45$b9679fc8$79ad166d@cox.net>
-References: <5ff267d206ae631e9d259eacacdf7924@wpkg.org>
-        <19a1770cf67e63a84c3baeeb44af9e9a@wpkg.org>
-        <CAA91j0W5YNU-StfRY_M4YUC=aLY-W+VEZ+wP2XciiHmDB1q7gQ@mail.gmail.com>
-        <d4dce3d04c11e171b44a1924114f5ddd@wpkg.org>
+Subject: Re: Help Recovering BTRFS array
+Date: Tue, 19 Sep 2017 03:45:46 +0000 (UTC)
+Message-ID: <pan$9e3e5$2f9856f7$962326f5$3ac936bc@cox.net>
+References: <15e95fb9dad.106adde5c581450.625084479133539284@gcfam.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Chmielewski posted on Mon, 18 Sep 2017 18:27:09 +0900 as excerpted:
+grondinm posted on Mon, 18 Sep 2017 14:14:08 -0300 as excerpted:
 
-> And perhaps more important - can I assume that right now, with the
-> latest stable kernel (4.13.2 right now), running "btrfs balance" is not
-> safe and can lead to data corruption or loss?
+> superblock: bytenr=65536, device=/dev/md0
+> ---------------------------------------------------------
+> ERROR: bad magic on superblock on /dev/md0 at 65536
 > 
+> superblock: bytenr=67108864, device=/dev/md0
+> ---------------------------------------------------------
+> ERROR: bad magic on superblock on /dev/md0 at 67108864
 > 
-> Consider the following case:
+> superblock: bytenr=274877906944, device=/dev/md0
+> ---------------------------------------------------------
+> ERROR: bad magic on superblock on /dev/md0 at 274877906944
 > 
-> - system admin runs btrfs balance on a filesystem with 100 GB free and
-> assumes it is enough space to complete successfully
-> 
-> - btrfs balance fails due to some bug with "No space left on device"
-> 
-> - at the same time, a database using this filesystem will fail with "No
-> space left on device", apt/rpm will fail a package upgrade, some program
-> using temp space will fail, log collector will fail to catch some data,
-> because of "No space left on device" and so on?
+> Now i'm really panicked. Is the FS toast? Can any recovery be attempted?
 
-To the best of my knowledge that shouldn't be a problem, certainly not 
-one I'd worry about if you're following the sysadmin's first rule of 
-backups, the true value of data to you is defined not by any claims but 
-by the number of backups you consider it worth having of that data, so it 
-follows that no backups means you've defined the data as worth less than 
-the time/trouble/resources it would take to create at least that one 
-backup.
+First I'm a user and list regular, not a dev.  With luck they can help 
+beyond the below suggestions...
 
-The ENOSPC is because the internal calculation for the reserved-space 
-requirement is buggy ATM, but AFAIK it's just that, an /internal/ 
-calculation, that goes waayyy wild, and stops any action it's going to 
-stop before it goes anywhere -- it doesn't get to the point of affecting 
-anything else because the reserve space calculation goes wild and stops 
-it before it can actually reserve the space.
+However, there's no need to panic in any case, due to the sysadmin's 
+first rule of backups: The true value of any data is defined by the 
+number of backups of that data you consider(ed) it worth having.
 
-Talking about which... I've not seen it mentioned in the bug discussion, 
-but I wonder if doing a btrfs balance start -d, followed by a another 
-balance with -m replacing the -d, thus separating the data and metadata 
-balances, might work around the problem.  At least you could know for 
-sure which is causing it that way, and complete a balance of the other 
-one.  And if that blocks on one or the other, you could split the job up 
-further using the devid= and drange= filters (see the btrfs-balance 
-manpage), doing only part of the filesystem at a time.  My speculation is 
-that you should be able to divide the operation up enough so that even if 
-the reserve space calculation is off, it'll still complete.
+As a result, there are precisely two possibilities, neither one of which 
+calls for panic.
 
-Meanwhile, I don't believe it's just balance that's affected, either, tho 
-it's the most commonly reported.  By my understanding, any sufficiently 
-large operation could trigger it, tho obviously a full btrfs balance is 
-about the largest operation a btrfs is likely to have, so it stands to 
-reason that would trigger it more reliably than common generic filesystem 
-operations.
+1) No need to panic because you have a backup, and recovery is as simple 
+as restoring from that backup.
 
-Of course if you're paranoid, you can refrain from doing balances until 
-you know the bug is fixed, but then I'd have to ask, if you're that 
-paranoid of a filesystem failure, why are you running the still 
-stabilizing, not yet entirely stable and mature, btrfs, in the first 
-place?  Seems a bit like the folks still running RHEL/CentOS 6 with their 
-stable kernels because they want stability, yet choosing to run the still 
-not entirely stable btrfs, definitely not entirely stable on that old a 
-kernel, on top of them.
+2) You don't have a backup, in which case the lack of that backup means 
+you have defined the value of the data as only trivial, worth less than 
+the time/trouble/resources you saved by not making that backup.  Because 
+the data is only of trivial value anyway, and you saved the more valuable 
+assets of the time/trouble/resources you would have put into that backup 
+were the data of more than trivial value, you've still saved the stuff 
+you considered most valuable, so again, no need to panic.
+
+It's a binary state.  There's no third possibility available, and no 
+possibility you lost what your actions, or lack of them in the case of no 
+backup, defined as of most value to you.
+
+(As for the freshness of that backup, the same rule applies, but to the 
+data delta between the state as of the backup and the current state.  If 
+the value of the changed data is worth it to you to have it backed up, 
+you'll have freshened your backup.  If not, you defined it to be as of 
+such trivial value as to not be worth the time/trouble/resources to do 
+so.)
+
+
+That said, at the time you're calculating the value of the data against 
+the value of the time/trouble/resources required to back it up, the loss 
+potential remains theoretical.  Once something actually happens to the 
+data, it's no longer theoretical, and the data, while of trivial enough 
+value to be worth the risk when it was theoretical, may still be valuable 
+enough to you to spend at least some time/trouble on trying to recover it.
+
+In that case, since you can still mount, I'd suggest mounting read-only 
+to prevent any further damage, and then do a copy off of the data you 
+can, to a different, unaffected, filesystem.
+
+Then if there's still data you want that you couldn't simply copy off, 
+you can try btrfs restore.  While I do have backups here, a couple times 
+when things went bad, btrfs restore was able to get back pretty much 
+everything to current, while were I to have had to restore from backups, 
+I'd have lost enough changed data to hurt, even if I had defined it as of 
+trivial enough value when the risk remained theoretical that I hadn't yet 
+freshened the backup.  (Since then I upgraded the rest of my storage to 
+ssd, thus lowering the time and hassle cost of backups, encouraging me to 
+do them more frequently.  Talking about which, I need to freshen them in 
+the near future.  It's now on my list for my next day off...)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

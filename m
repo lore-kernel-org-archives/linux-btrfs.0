@@ -1,89 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:54435 "EHLO
-        mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750713AbdISGwl (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:55388 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750948AbdISKYQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 02:52:41 -0400
-Received: by mail-io0-f176.google.com with SMTP id h66so7671292ioh.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 23:52:41 -0700 (PDT)
+        Tue, 19 Sep 2017 06:24:16 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 35EC89BA09
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 11:24:14 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id 0CA8F5FAEB
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 11:24:14 +0100 (BST)
+Subject: Re: difference between -c and -p for send-receive?
+To: linux-btrfs@vger.kernel.org
+References: <CAH=dxU5NfenfKfsuXuZ8uBYKBb5a0VOEqan6taAwZTT0oM8xcQ@mail.gmail.com>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <caf3072a-0c70-7c1d-fe55-40f01d410464@cobb.uk.net>
+Date: Tue, 19 Sep 2017 11:24:13 +0100
 MIME-Version: 1.0
-In-Reply-To: <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
-References: <CAH=dxU7t=p8MVh1y2Tv7wPrP=1ntYcHCy7W6aBQGRtMp_gaaRA@mail.gmail.com>
- <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
-From: Dave <davestechshop@gmail.com>
-Date: Tue, 19 Sep 2017 02:52:20 -0400
-Message-ID: <CAH=dxU6cae36FhTir9rPZcBgoeOaMKDXqr0pgZSJGevz9fgX4Q@mail.gmail.com>
-Subject: Re: ERROR: parent determination failed (btrfs send-receive)
-To: Andrei Borzenkov <arvidjaar@gmail.com>, g.btrfs@cobb.uk.net
-Cc: linux-btrfs@vger.kernel.org, 1i5t5.duncan@cox.net
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAH=dxU5NfenfKfsuXuZ8uBYKBb5a0VOEqan6taAwZTT0oM8xcQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 18, 2017 at 12:23 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->
-> 18.09.2017 05:31, Dave пишет:
-> > Sometimes when using btrfs send-receive, I get errors like this:
-> >
-> > ERROR: parent determination failed for <subvolume name>
-> >
-> > When this happens, btrfs send-receive backups fail. And all subsequent
-> > backups fail too.
-> >
-> > The issue seems to stem from the fact that an automated cleanup
-> > process removes certain earlier subvolumes. (I'm using Snapper.)
-> >
-> > I'd like to understand exactly what is happening so that my backups do
-> > not unexpectedly fail.
-> >
->
-> You try to send incremental changes but you deleted subvolume to compute
-> changes against. It is hard to tell more without seeing subvolume list
-> with uuid/parent uuid.
->
+On 19/09/17 01:41, Dave wrote:
+> Would it be correct to say the following?
 
-Thanks to Duncan <1i5t5.duncan@cox.net> I have a bit better
-understanding of -c and -p now.
+Like Duncan, I am just a user, and I haven't checked the code. I
+recommend Duncan's explanation, but in case you are looking for
+something simpler, how about thinking with the following analogy...
 
-My backup tool is using only the -c option. (The tool is GitHub -
-wesbarnett/snap-sync https://github.com/wesbarnett/snap-sync .)
+Think of -p as like doing an incremental backup: it tells send to just
+send the instructions for the changes to get from the "parent" subvolume
+to the current subvolume. Without -p it is like a full backup:
+everything in the current subvolume is sent.
 
-No subvolume at the destination had ever been deleted.
+-c is different: it says "and by the way, these files also already exist
+on the destination so they might be useful to skip actually sending some
+of the file contents". Imagine that whenever a file content is about to
+be sent (whether incremental or full), btrfs-send checks to see if the
+data is in one of the -c subvolumes and, if it is, it sends "get the
+data by reflinking to this file over here" instead of sending the data
+itself. -c is really just an optimisation to save sending data if you
+know the data is already available somewhere else on the destination.
 
-At the source, a number (about 30 in this case) preceding snapshots
-(subvolumes) exist, but some others have been cleaned up with
-Snapper's timeline algorithm.
+Be aware that this is really just an analogy (like "hard linking" is an
+analogy for reflinking using the clone range ioctl). Duncan's email
+provides more real details.
 
-I think I understand that with the -c option, it is **not** strictly
-necessary that the specified snapshots exist on both the source and
-destination. It seems I had sufficient subvolumes available for the
-incremental send to work with the -c option.
+In particular, this analogy doesn't explain the original questioner's
+problem. In the analogy, -c might work without the files actually being
+present on the source (as long as they are on the destination). But, in
+reality, because the underlying mechanism is extent range cloning, the
+files have to be present on **both** the source and the destination in
+order for btrfs-send to work out what commands to send.
 
-Therefore, it still isn't clear why I got the error: ERROR: parent
-determination failed.
+By the way, like Duncan, I was surprised that the man page suggests that
+-c without -p causes one of the clones to be treated as a parent. I have
+not checked the code to see if that is actually how it works.
 
-Further general comments will be helpful.
-
-I understand the limits in getting too specific in replies because I
-cannot give subvolume lists with uuid's.
-
-As mentioned, I cannot give that info because I tried to fix the above
-error by sending a subvolume from the destination back to the target.
-This resulted in my source volume having a "Received UUID" which
-wrecked all subsequent backups.
-
-I now understand that (for my use cases) a source subvolume for a
-send-receive should **never** have a Received UUID. (If that is indeed
-a general rule, it seems btrfs tools should check it. Or possibly
-something about this the pitfalls of a "Received UUID" in a source
-could be listed on the BTRFS incremental backup wiki page?)
-
-I was previously referred to the FAQ here:
-https://github.com/digint/btrbk/blob/master/doc/FAQ.md#im-getting-an-error-aborted-received-uuid-is-set
-
-But in the end, I decided the safest strategy was to delete all prior
-backup subvolumes so I could be sure my backups were valid going
-forward.
-
-I am asking these questions now to avoid getting into a situation like
-this again (hopefully). Any general comments are appreciated.
+Graham

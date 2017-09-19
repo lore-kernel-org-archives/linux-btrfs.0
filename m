@@ -1,43 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:46236 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750964AbdISHuR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 03:50:17 -0400
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 83D00AC005E
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 16:50:10 +0900 (JST)
-Received: from G01JPEXCHKW17.g01.fujitsu.local (G01JPEXCHKW17.g01.fujitsu.local [10.0.194.56])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id D9864BD6702
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 16:50:09 +0900 (JST)
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: btrfs-progs: suggestion of removing --commit-after option of subvol
- delete
-To: <linux-btrfs@vger.kernel.org>
-Message-ID: <3fab29e2-179e-2109-6217-1cb079f97f9e@jp.fujitsu.com>
-Date: Tue, 19 Sep 2017 16:50:04 +0900
+Received: from mout.gmx.net ([212.227.15.15]:58108 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750974AbdISIcG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Sep 2017 04:32:06 -0400
+Subject: Re: btrfs-progs: suggestion of removing --commit-after option of
+ subvol delete
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+References: <3fab29e2-179e-2109-6217-1cb079f97f9e@jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <46ffdb8c-025c-9557-6f0a-d9e10dd3e834@gmx.com>
+Date: Tue, 19 Sep 2017 16:31:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <3fab29e2-179e-2109-6217-1cb079f97f9e@jp.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-I read the code of "subvolume delete" and found that --commit-after option is
-not working well.
 
-Since it issues BTRFS_IOC_START/WAIT_SYNC to the last fd (of directory
-containing the last deleted subvolume),
-1. sync operation affects only the last fd's filesystem.
-   ("subvolume delete" can take multiple subvolumes on different filesystems.)
-2. if the last delete action fails to open the path (fd == -1),
-   SYNC is not issued at all.
+On 2017年09月19日 15:50, Misono, Tomohiro wrote:
+> Hello,
+> 
+> I read the code of "subvolume delete" and found that --commit-after option is
+> not working well.
+> 
+> Since it issues BTRFS_IOC_START/WAIT_SYNC to the last fd (of directory
+> containing the last deleted subvolume),
+> 1. sync operation affects only the last fd's filesystem.
+>     ("subvolume delete" can take multiple subvolumes on different filesystems.)
+> 2. if the last delete action fails to open the path (fd == -1),
+>     SYNC is not issued at all.
+> 
+> One solution is to keep every fd for deleted subvolumes, but I think it takes
+> too much cost. Since we can just use "btrfs filesystem sync" after delete if
+> needed, I think it is ok to remove --comit-after option.
 
-One solution is to keep every fd for deleted subvolumes, but I think it takes
-too much cost. Since we can just use "btrfs filesystem sync" after delete if
-needed, I think it is ok to remove --comit-after option.
+Personally speaking I'm OK removing --commit-after, as implementing a 
+full working --commit-after seems too complex for a minor feature.
+(Need to finding the same fs of multiple subvolume and doing commit for 
+each fs, and fallback to other fd if open failed)
 
-Regards,
-Tomohiro Misono
-(misono.tomohiro@jp.fujitsu.com)
+Since --commit-after is a relatively lightweight solution compared to 
+--commit-each, and both can only ensure subvolume doesn't show up, while 
+"fi sync" can do a "deeper" sync to ensure the whole subvolume get 
+removed on disk.
 
+But instead of deleting the option, it would be better to keep it 
+deprecated for a while.
+Showing a message informing user this option is deprecated and falling 
+back to --commit-each seems to be a better solution.
+
+Thanks,
+Qu
+> 
+> Regards,
+> Tomohiro Misono
+> (misono.tomohiro@jp.fujitsu.com)
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

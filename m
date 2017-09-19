@@ -1,129 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:60340 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750713AbdISEki (ORCPT
+Received: from mail-io0-f176.google.com ([209.85.223.176]:54435 "EHLO
+        mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750713AbdISGwl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 00:40:38 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1duAKi-0002JI-B8
-        for linux-btrfs@vger.kernel.org; Tue, 19 Sep 2017 06:40:28 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: difference between -c and -p for send-receive?
-Date: Tue, 19 Sep 2017 04:40:22 +0000 (UTC)
-Message-ID: <pan$20f4$7c35f3ca$81a749bf$c4b2102e@cox.net>
-References: <CAH=dxU5NfenfKfsuXuZ8uBYKBb5a0VOEqan6taAwZTT0oM8xcQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Tue, 19 Sep 2017 02:52:41 -0400
+Received: by mail-io0-f176.google.com with SMTP id h66so7671292ioh.11
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 23:52:41 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
+References: <CAH=dxU7t=p8MVh1y2Tv7wPrP=1ntYcHCy7W6aBQGRtMp_gaaRA@mail.gmail.com>
+ <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
+From: Dave <davestechshop@gmail.com>
+Date: Tue, 19 Sep 2017 02:52:20 -0400
+Message-ID: <CAH=dxU6cae36FhTir9rPZcBgoeOaMKDXqr0pgZSJGevz9fgX4Q@mail.gmail.com>
+Subject: Re: ERROR: parent determination failed (btrfs send-receive)
+To: Andrei Borzenkov <arvidjaar@gmail.com>, g.btrfs@cobb.uk.net
+Cc: linux-btrfs@vger.kernel.org, 1i5t5.duncan@cox.net
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave posted on Mon, 18 Sep 2017 20:41:45 -0400 as excerpted:
+On Mon, Sep 18, 2017 at 12:23 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
+>
+> 18.09.2017 05:31, Dave пишет:
+> > Sometimes when using btrfs send-receive, I get errors like this:
+> >
+> > ERROR: parent determination failed for <subvolume name>
+> >
+> > When this happens, btrfs send-receive backups fail. And all subsequent
+> > backups fail too.
+> >
+> > The issue seems to stem from the fact that an automated cleanup
+> > process removes certain earlier subvolumes. (I'm using Snapper.)
+> >
+> > I'd like to understand exactly what is happening so that my backups do
+> > not unexpectedly fail.
+> >
+>
+> You try to send incremental changes but you deleted subvolume to compute
+> changes against. It is hard to tell more without seeing subvolume list
+> with uuid/parent uuid.
+>
 
->> Well, I do not immediately see why -c must imply incremental send. We
->> want to reduce amount of data that is transferred, so reuse data from
->> existing snapshots, but it is really orthogonal to whether we send full
->> subvolume or just changes since another snapshot.
->>
->>
-> Starting months ago when I began using btrfs serious, I have been
-> reading,
-> rereading and trying to understand this:
-> 
-> FAQ - btrfs Wiki
-> https://btrfs.wiki.kernel.org/index.php/
-FAQ#What_is_the_difference_between_-c_and_-p_in_send.3F
-> 
-> The comment above suddenly gives me another clue...
-> 
-> However, I still don't understand terms like "clone range ioctl",
-> although I can guess it is something like a hard link.
-> 
-> Would it be correct to say the following?
-> 
-> 1. "-c" causes (appropriate) files in the newly transferred snapshot to
-> be "hard linked" to existing files in another snapshot on the
-> destination.
+Thanks to Duncan <1i5t5.duncan@cox.net> I have a bit better
+understanding of -c and -p now.
 
-Technically, it's not a hard link but a reflink.  However, it's a 
-reasonably accurate analogy for understanding the process, it's just at a 
-different layer.
+My backup tool is using only the -c option. (The tool is GitHub -
+wesbarnett/snap-sync https://github.com/wesbarnett/snap-sync .)
 
-> Doesn't "-p" do something equivalent though?
+No subvolume at the destination had ever been deleted.
 
-Yes.  See below for the difference.
+At the source, a number (about 30 in this case) preceding snapshots
+(subvolumes) exist, but some others have been cleaned up with
+Snapper's timeline algorithm.
 
-> 2. The -c and -p options can be used together or individually.
+I think I understand that with the -c option, it is **not** strictly
+necessary that the specified snapshots exist on both the source and
+destination. It seems I had sufficient subvolumes available for the
+incremental send to work with the -c option.
 
-Yes.
+Therefore, it still isn't clear why I got the error: ERROR: parent
+determination failed.
 
-> Questions:
-> 
-> If "-c" "will send all of the metadata of @B.1, but will leave out the
-> data for @B.1/bigfile, because it's already in the backups filesystem,
-> and can be reflinked from there" what will -p do in contrast?
-> 
-> Will "-p" not send all the metadata?
-> 
-> Will "-p" also leave out the data for @B.1/bigfile, when it's also
-> already in the backups?
+Further general comments will be helpful.
 
--c is less strict than -p, and sends more metadata over the wire as a 
-result, but where the data is the same (reflink points to the same 
-extent), it won't be sent in either case.  See below.
+I understand the limits in getting too specific in replies because I
+cannot give subvolume lists with uuid's.
 
-> What would make me choose one of these options over the other? I still
-> struggle to see the difference.
+As mentioned, I cannot give that info because I tried to fix the above
+error by sending a subvolume from the destination back to the target.
+This resulted in my source volume having a "Received UUID" which
+wrecked all subsequent backups.
 
-What -p does is tell send that the named snapshot is a snapshot of an 
-earlier state of the snapshot being sent, and that said earlier-state 
-snapshot exists on both the send and receive end, so only the changes 
-(both data and metadata) from the earlier snapshot must be sent.
+I now understand that (for my use cases) a source subvolume for a
+send-receive should **never** have a Received UUID. (If that is indeed
+a general rule, it seems btrfs tools should check it. Or possibly
+something about this the pitfalls of a "Received UUID" in a source
+could be listed on the BTRFS incremental backup wiki page?)
 
-Put a different way, the snapshot being sent is the parent, plus any 
-changes since then, so to recreate the new snapshot, only the operations 
-needed to update the state from the previous to the new state must be 
-sent, and done by receive on the other end.
+I was previously referred to the FAQ here:
+https://github.com/digint/btrbk/blob/master/doc/FAQ.md#im-getting-an-error-aborted-received-uuid-is-set
 
--c is less strict than -p.  It doesn't consider the named snapshot to be 
-an earlier state of the snapshot being sent, but simply says that the two 
-may have some data in common, as defined by reflinks to the same shared 
-extents.
+But in the end, I decided the safest strategy was to delete all prior
+backup subvolumes so I could be sure my backups were valid going
+forward.
 
-So -c will send more over the wire, in particular, it'll send much more 
-metadata, I believe (being no dev or expert, just a list regular) 
-essentially all metadata, because no claim as to the relationship of the 
-metadata between the snapshot being sent and the clone is assumed.  But 
-it can and does still assume that any extents reflinked in common can be 
-simply sent by reference, instead of sending the literal data in that 
-extent, because -c says the other end already has the snapshot named as a 
-clone and that it can simply reflink it there, as well.
-
-The wording of the manpage description for -c suggests that it picks one 
-(and only one if there's more than one) -c clone and considers it a 
-parent, which would allow it to shortcut sending the metadata in common 
-for it as well, but not being a dev, I haven't looked at the code to be 
-sure, and in any case, there can be only one parent, so it can do it for 
-only one clone, even if there's more than one -c snapshot supplied.
-
-
-So -p is primarily for the case where the named snapshot is an earlier 
-state of the one being sent, and should be much more efficient than -c in 
-that case.  However, the less strict -c should also work, and if the 
-wording of the manpage can be believed, a single named -c snapshot will 
-be treated as -p anyway.  But -c can also be used for snapshots that 
-aren't related with one being an earlier state of the other, where 
-there's simply some reflinks in common, perhaps due to dedup.  It should 
-still result in the data with the common reflinks being only sent by 
-reference, but much more metadata will be sent, and if there's not a lot 
-of reflinks in common, it's likely to require enough additional 
-processing that the relatively trivial amount of common reflinked data it 
-might save may not be worth it, compared to simply sending a full non-
-incremental snapshot.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+I am asking these questions now to avoid getting into a situation like
+this again (hopefully). Any general comments are appreciated.

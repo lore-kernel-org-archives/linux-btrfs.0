@@ -1,95 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27811 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751396AbdITTXK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 15:23:10 -0400
-Date: Wed, 20 Sep 2017 12:19:16 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, Paul Jones <paul@pauljones.id.au>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:1989
-Message-ID: <20170920191916.GA10216@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <MEXPR01MB2168C2FE0ABD1B78F120044E9E630@MEXPR01MB2168.ausprd01.prod.outlook.com>
- <20170918170930.GC6357@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <MEXPR01MB2168CB4F1A1E9F616997FBD89E600@MEXPR01MB2168.ausprd01.prod.outlook.com>
- <20170919150725.GF29043@twin.jikos.cz>
- <20170919161239.GA18597@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <20170920125356.GI29043@twin.jikos.cz>
+Received: from mout.gmx.net ([212.227.15.19]:57946 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751205AbdISIso (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Sep 2017 04:48:44 -0400
+Subject: Re: [PATCH] btrfs-progs: check: check invalid extent_inline_ref type
+ in lowmem
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20170919083213.9082-1-suy.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <ab586271-41f9-611f-ec0b-179a3a030f67@gmx.com>
+Date: Tue, 19 Sep 2017 16:48:30 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170920125356.GI29043@twin.jikos.cz>
+In-Reply-To: <20170919083213.9082-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 20, 2017 at 02:53:57PM +0200, David Sterba wrote:
-> On Tue, Sep 19, 2017 at 10:12:39AM -0600, Liu Bo wrote:
-> > On Tue, Sep 19, 2017 at 05:07:25PM +0200, David Sterba wrote:
-> > > On Tue, Sep 19, 2017 at 11:32:46AM +0000, Paul Jones wrote:
-> > > > > This 'mirror 0' looks fishy, (as mirror comes from btrfs_io_bio->mirror_num,
-> > > > > which should be at least 1 if raid1 setup is in use.)
-> > > > > 
-> > > > > Not sure if 4.13.2-gentoo made any changes on btrfs, but can you please
-> > > > > verify with the upstream kernel, say, v4.13?
-> > > > 
-> > > > It's basically a vanilla kernel with a handful of unrelated patches.
-> > > > The filesystem fell apart overnight, there were a few thousand
-> > > > checksum errors and eventually it went read-only. I tried to remount
-> > > > it, but got open_ctree failed. Btrfs check segfaulted, lowmem mode
-> > > > completed with so many errors I gave up and will restore from the
-> > > > backup.
-> > > > 
-> > > > I think I know the problem now - the lvm cache was in writeback mode
-> > > > (by accident) so during a defrag there would be gigabytes of unwritten
-> > > > data in memory only, which was all lost when the system crashed
-> > > > (motherboard failure). No wonder the filesystem didn't quite survive.
-> > > 
-> > > Yeah, the caching layer was my first suspicion, and lack of propagating
-> > > of the barriers. Good that you were able to confirm that as the root cause.
-> > > 
-> > > > I must say though, I'm seriously impressed at the data integrity of
-> > > > BTRFS - there were near 10,000 checksum errors, 4 which were
-> > > > uncorrectable, and from what I could tell nearly all of the data was
-> > > > still intact according to rsync checksums.
-> > > 
-> > > Yay!
-> > 
-> > But still don't get why mirror_num is 0, do you have an idea on how
-> > does writeback cache make that?
+
+
+On 2017年09月19日 16:32, Su Yue wrote:
+> Lowmem check does not skip invalid type in extent_inline_ref then
+> calls btrfs_extent_inline_ref_size(type) which causes crash.
 > 
-> My first idea was that the cached blocks were zeroed, so we'd see the ino
-> and mirror as 0. But this is not correct as the blocks would not pass
-> the checksum tests, so the blocks must be from some previous generation.
-> Ie. the transid verify failure. And all the error reports appear after
-> that so I'm slightly suspicious about the way it's actually reported.
+> Example:
+> $ ./btrfs-corrupt-block -e -l 20971520 /tmp/data_small
+> corrupting extent record: key 20971520 169 0
+> $ btrfs check --mode=lowmem  /tmp/data_small
+> Checking filesystem on /tmp/data_small
+> UUID: ee205d69-8724-4aa2-a4f5-bc8558a62169
+> checking extents
+> ERROR: extent[20971520 16384] backref type mismatch, missing bit: 2
+> ERROR: extent[20971520 16384] backref generation mismatch,
+> wanted: 7, have: 0
+> ERROR: extent[20971520 16384] is referred by other roots than 3
+> ctree.h:1754: btrfs_extent_inline_ref_size: BUG_ON `1` triggered,
+> value 1
+> btrfs(+0x543db)[0x55fabc2ab3db]
+> btrfs(+0x587f7)[0x55fabc2af7f7]
+> btrfs(+0x5fa44)[0x55fabc2b6a44]
+> btrfs(cmd_check+0x194a)[0x55fabc2bd717]
+> btrfs(main+0x88)[0x55fabc2682e0]
+> /usr/lib/libc.so.6(__libc_start_main+0xea)[0x7f021c3824ca]
+> btrfs(_start+0x2a)[0x55fabc267e7a]
+> [1]    5188 abort (core dumped)  btrfs check --mode=lowmem /tmp/data_small
 > 
-> btrfs_print_data_csum_error takes mirror from either io_bio or
-> compressed_bio structures, so there might be a case when the structures
-> are initialized. If the transid check is ok, then the structures are
-> updated. If the check fails we'd see the initial mirror number. All of
-> that is just a hypothesis, I haven't checked with the code.
->
+> Fix it by checking type before obtaining inline_ref size.
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-Thanks a lot for the input, you're right, mirror_num 0 should come
-from compressed read where it doesn't record the bbio->mirror_num but
-the mirror passing from the upper layer, and it's not metadata as we
-don't yet compress metadata, so this all makes sense.
+Code itself looks good.
+And test case please.
 
-I think it also disables the ability of read-repair from raid1 for
-compressed data, and that's what caused the bug where it hits
-BUG_ON(mirror_num == 0) in cleanup_io_failure().
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
-The good news is that I can reproduce it, will send a patch and a
-testcase.
+However, such whac-a-mole fix will finally be a nightmare to maintain.
 
-> I don't have a theoretical explanation for the ino 0. The inode pointer
-> that goes to btrfs_print_data_csum_error should be from a properly
-> initialized inode and we print the number using btrfs_ino. That will use
-> the vfs i_ino value and we should never get 0 out of that.
+What about integrating all of such validation checkers into one place?
+So fsck part will only need to check their cross reference without 
+bothering such corruption.
 
-ino 0 comes from metadata read-repair, some cleanup may be needed to
-make it less confusing.
+Just like the kernel patch I submitted some times ago.
+https://www.spinics.net/lists/linux-btrfs/msg68498.html
 
-thanks,
--liubo
+Thanks,
+Qu
+
+> ---
+>   cmds-check.c | 9 +++++++++
+>   1 file changed, 9 insertions(+)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 4e0b0fe4..74c10c75 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -11565,6 +11565,10 @@ static int check_tree_block_ref(struct btrfs_root *root,
+>   						offset, level + 1, owner,
+>   						NULL);
+>   			}
+> +		} else {
+> +			error("extent[%llu %u %llu] has unknown ref type: %d",
+> +			      key.objectid, key.type, key.offset, type);
+> +			break;
+>   		}
+>   
+>   		if (found_ref)
+> @@ -11831,6 +11835,11 @@ static int check_extent_data_item(struct btrfs_root *root,
+>   			found_dbackref = !check_tree_block_ref(root, NULL,
+>   				btrfs_extent_inline_ref_offset(leaf, iref),
+>   				0, owner, NULL);
+> +		} else {
+> +			error("extent[%llu %u %llu] has unknown ref type: %d",
+> +			      disk_bytenr, BTRFS_EXTENT_DATA_KEY,
+> +			      disk_num_bytes, type);
+> +			break;
+>   		}
+>   
+>   		if (found_dbackref)
+> 

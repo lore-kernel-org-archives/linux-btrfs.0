@@ -1,85 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:49358 "EHLO
-        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750895AbdISTUC (ORCPT
+Received: from mail-lf0-f67.google.com ([209.85.215.67]:33554 "EHLO
+        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750733AbdISThe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 15:20:02 -0400
-Received: by mail-it0-f52.google.com with SMTP id w204so553139itc.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 12:20:02 -0700 (PDT)
-Subject: Re: Storage and snapshots as historical yearly
-To: Andrei Borzenkov <arvidjaar@gmail.com>,
-        =?UTF-8?Q?Sen=c3=a9n_Vidal_Blanco?= <senenvidal@sgisoft.com>
+        Tue, 19 Sep 2017 15:37:34 -0400
+Received: by mail-lf0-f67.google.com with SMTP id y15so320098lfd.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 12:37:34 -0700 (PDT)
+Subject: Re: ERROR: parent determination failed (btrfs send-receive)
+To: Dave <davestechshop@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-References: <9208764.SjP1vfhOIA@pcsenen>
- <aebb8966-ca9b-7008-d329-3e60989a5c01@gmail.com> <2457840.3HpkerP4PG@pcsenen>
- <d83f3017-ded3-fabf-856c-95e6d71747e2@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7653471f-72b9-c1c2-6783-85fba1f61ffe@gmail.com>
-Date: Tue, 19 Sep 2017 15:19:56 -0400
+References: <CAH=dxU7t=p8MVh1y2Tv7wPrP=1ntYcHCy7W6aBQGRtMp_gaaRA@mail.gmail.com>
+ <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com>
+ <CAH=dxU4yTdKQwZX3L-oOMs2ZYiR82m1-F0GhbSU4SV_K2jrBGA@mail.gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <a8df8ca2-8bc4-994a-2de0-fda8e9fc3985@gmail.com>
+Date: Tue, 19 Sep 2017 22:37:31 +0300
 MIME-Version: 1.0
-In-Reply-To: <d83f3017-ded3-fabf-856c-95e6d71747e2@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAH=dxU4yTdKQwZX3L-oOMs2ZYiR82m1-F0GhbSU4SV_K2jrBGA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-09-19 14:33, Andrei Borzenkov wrote:
-> 19.09.2017 14:49, Senén Vidal Blanco пишет:
->> Perfect!! Just what I was looking for.
->> Sorry for the delay, because before doing so, I preferred to test to see if it
->> actually worked.
->>
->> I have a doubt. The system works perfectly, but at the time of deleting the
->> writing disk and merging the data on the read-only disk I fail to understand
->> the process.
->>
->> I have tried to remove the seed bit on disk A and delete the write B as you
->> mention, and so move the data to A, but tells me that disk B does not exist.
->> These are the orders I have made:
->>
->> md127-> A
->> md126-> B
->>
->> btrfstune -S 0 /dev /md127
->> mount /dev/md127 /mnt (I mount this disk since the md126 gives error)
->> btrfs device delete /dev/md126 /mnt
->> ERROR: error removing device '/dev/md126': No such file or directory
->>
->> Another thing I've tried is to remove disk B without removing the seed bit,
->> but it gives me the error:
->>
->> ERROR: error removing device '/dev/md126': unable to remove the only writeable
->> device.
->>
->> Any ideas about it?
+18.09.2017 09:10, Dave пишет:
+> I use snap-sync to create and send snapshots.
 > 
-> Yes, sorry about it. Clearing seed flag on device invalidates
-> filesystem. What you can do, is to rotate devices. I.e. remove
-> /dev/md126, set seed flag on md127 and add md126 back.
-> 
-> I actually tested it and it works for me.
-Same.  FWIW, this (like many other things in BTRFS) could stand to be 
-better documented, especially since it's not likely to be intuitive for 
-most people.
-> 
->> Thank you very much for the reply.
->> Greetings.
->>
->> El martes, 12 de septiembre de 2017 6:34:15 (CEST) Andrei Borzenkov escribió:
->>> 11.09.2017 21:17, Senén Vidal Blanco пишет:
->>>> I am trying to implement a system that stores the data in a unit (A) with
->>>> BTRFS format that is untouchable and that future files and folders created
->>>> or modified are stored in another physical unit (B) with BTRFS format.
->>>> Each year the new files will be moved to store A and start over.
->>>>
->>>> The idea is that a duplicate of disk A can be made to keep it in a safe
->>>> place and that the files stored there can not be modified until the
->>>> mixture of (A) and (B) is made.
->>>
->>> This can probably be achieved using seed device. Mark original device as
->>> seed and all changes will go to another writable device, similar to
->>> overlay; then remove seed bit from original device, "btrfs device remove
->>> writable" device and it should relocate its content back. Rinse and repeat.
->>
-> 
+> GitHub - wesbarnett/snap-sync: Use snapper snapshots to backup to external drive
+> https://github.com/wesbarnett/snap-sync
 > 
 
+Are you trying to backup top-level subvolume? I just reproduced this
+behavior with this tool. The problem is, snapshots of top-level
+subvolume do not have parent UUID (I am not even sure if UUID exists at
+all TBH). If you mount any other subvolume, it will work. On openSUSE
+root is always mounted as subvolume (actually, the very first snapshot)
+which explains why I did not see it before.
+
+I.e.
+
+mkfs -t btrfs /dev/sdb1
+mount /dev/sdb1 /test
+snapper -c test create-config /test
+
+attempt to "snap-sync -c test" will fail second time. But
+
+btrfs sub create /test/@
+umount /test
+mount -o subvol=@ /dev/sdb1 /test
+snapper -c test create-config /test
+...
+
+will work.
+
+As I told you in the first reply, showing output of "btrfs su li -qu
+/path/to/src" would explain your problem much earlier.
+
+Actually if snap-sync used "btrfs send -p" instead of "btrfs send -c" it
+would work as well, as then no parent search would be needed (and as I
+mentioned in another mail both commands are functionally equivalent).
+But this becomes really off-topic on this list. As already suggested,
+open issue for snap-sync.

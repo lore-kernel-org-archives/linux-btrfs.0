@@ -1,94 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:33132 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:60340 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750921AbdISDqE (ORCPT
+        with ESMTP id S1750713AbdISEki (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 23:46:04 -0400
+        Tue, 19 Sep 2017 00:40:38 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1du9Tt-0003SC-Py
-        for linux-btrfs@vger.kernel.org; Tue, 19 Sep 2017 05:45:53 +0200
+        id 1duAKi-0002JI-B8
+        for linux-btrfs@vger.kernel.org; Tue, 19 Sep 2017 06:40:28 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Help Recovering BTRFS array
-Date: Tue, 19 Sep 2017 03:45:46 +0000 (UTC)
-Message-ID: <pan$9e3e5$2f9856f7$962326f5$3ac936bc@cox.net>
-References: <15e95fb9dad.106adde5c581450.625084479133539284@gcfam.net>
+Subject: Re: difference between -c and -p for send-receive?
+Date: Tue, 19 Sep 2017 04:40:22 +0000 (UTC)
+Message-ID: <pan$20f4$7c35f3ca$81a749bf$c4b2102e@cox.net>
+References: <CAH=dxU5NfenfKfsuXuZ8uBYKBb5a0VOEqan6taAwZTT0oM8xcQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-grondinm posted on Mon, 18 Sep 2017 14:14:08 -0300 as excerpted:
+Dave posted on Mon, 18 Sep 2017 20:41:45 -0400 as excerpted:
 
-> superblock: bytenr=65536, device=/dev/md0
-> ---------------------------------------------------------
-> ERROR: bad magic on superblock on /dev/md0 at 65536
+>> Well, I do not immediately see why -c must imply incremental send. We
+>> want to reduce amount of data that is transferred, so reuse data from
+>> existing snapshots, but it is really orthogonal to whether we send full
+>> subvolume or just changes since another snapshot.
+>>
+>>
+> Starting months ago when I began using btrfs serious, I have been
+> reading,
+> rereading and trying to understand this:
 > 
-> superblock: bytenr=67108864, device=/dev/md0
-> ---------------------------------------------------------
-> ERROR: bad magic on superblock on /dev/md0 at 67108864
+> FAQ - btrfs Wiki
+> https://btrfs.wiki.kernel.org/index.php/
+FAQ#What_is_the_difference_between_-c_and_-p_in_send.3F
 > 
-> superblock: bytenr=274877906944, device=/dev/md0
-> ---------------------------------------------------------
-> ERROR: bad magic on superblock on /dev/md0 at 274877906944
+> The comment above suddenly gives me another clue...
 > 
-> Now i'm really panicked. Is the FS toast? Can any recovery be attempted?
+> However, I still don't understand terms like "clone range ioctl",
+> although I can guess it is something like a hard link.
+> 
+> Would it be correct to say the following?
+> 
+> 1. "-c" causes (appropriate) files in the newly transferred snapshot to
+> be "hard linked" to existing files in another snapshot on the
+> destination.
 
-First I'm a user and list regular, not a dev.  With luck they can help 
-beyond the below suggestions...
+Technically, it's not a hard link but a reflink.  However, it's a 
+reasonably accurate analogy for understanding the process, it's just at a 
+different layer.
 
-However, there's no need to panic in any case, due to the sysadmin's 
-first rule of backups: The true value of any data is defined by the 
-number of backups of that data you consider(ed) it worth having.
+> Doesn't "-p" do something equivalent though?
 
-As a result, there are precisely two possibilities, neither one of which 
-calls for panic.
+Yes.  See below for the difference.
 
-1) No need to panic because you have a backup, and recovery is as simple 
-as restoring from that backup.
+> 2. The -c and -p options can be used together or individually.
 
-2) You don't have a backup, in which case the lack of that backup means 
-you have defined the value of the data as only trivial, worth less than 
-the time/trouble/resources you saved by not making that backup.  Because 
-the data is only of trivial value anyway, and you saved the more valuable 
-assets of the time/trouble/resources you would have put into that backup 
-were the data of more than trivial value, you've still saved the stuff 
-you considered most valuable, so again, no need to panic.
+Yes.
 
-It's a binary state.  There's no third possibility available, and no 
-possibility you lost what your actions, or lack of them in the case of no 
-backup, defined as of most value to you.
+> Questions:
+> 
+> If "-c" "will send all of the metadata of @B.1, but will leave out the
+> data for @B.1/bigfile, because it's already in the backups filesystem,
+> and can be reflinked from there" what will -p do in contrast?
+> 
+> Will "-p" not send all the metadata?
+> 
+> Will "-p" also leave out the data for @B.1/bigfile, when it's also
+> already in the backups?
 
-(As for the freshness of that backup, the same rule applies, but to the 
-data delta between the state as of the backup and the current state.  If 
-the value of the changed data is worth it to you to have it backed up, 
-you'll have freshened your backup.  If not, you defined it to be as of 
-such trivial value as to not be worth the time/trouble/resources to do 
-so.)
+-c is less strict than -p, and sends more metadata over the wire as a 
+result, but where the data is the same (reflink points to the same 
+extent), it won't be sent in either case.  See below.
+
+> What would make me choose one of these options over the other? I still
+> struggle to see the difference.
+
+What -p does is tell send that the named snapshot is a snapshot of an 
+earlier state of the snapshot being sent, and that said earlier-state 
+snapshot exists on both the send and receive end, so only the changes 
+(both data and metadata) from the earlier snapshot must be sent.
+
+Put a different way, the snapshot being sent is the parent, plus any 
+changes since then, so to recreate the new snapshot, only the operations 
+needed to update the state from the previous to the new state must be 
+sent, and done by receive on the other end.
+
+-c is less strict than -p.  It doesn't consider the named snapshot to be 
+an earlier state of the snapshot being sent, but simply says that the two 
+may have some data in common, as defined by reflinks to the same shared 
+extents.
+
+So -c will send more over the wire, in particular, it'll send much more 
+metadata, I believe (being no dev or expert, just a list regular) 
+essentially all metadata, because no claim as to the relationship of the 
+metadata between the snapshot being sent and the clone is assumed.  But 
+it can and does still assume that any extents reflinked in common can be 
+simply sent by reference, instead of sending the literal data in that 
+extent, because -c says the other end already has the snapshot named as a 
+clone and that it can simply reflink it there, as well.
+
+The wording of the manpage description for -c suggests that it picks one 
+(and only one if there's more than one) -c clone and considers it a 
+parent, which would allow it to shortcut sending the metadata in common 
+for it as well, but not being a dev, I haven't looked at the code to be 
+sure, and in any case, there can be only one parent, so it can do it for 
+only one clone, even if there's more than one -c snapshot supplied.
 
 
-That said, at the time you're calculating the value of the data against 
-the value of the time/trouble/resources required to back it up, the loss 
-potential remains theoretical.  Once something actually happens to the 
-data, it's no longer theoretical, and the data, while of trivial enough 
-value to be worth the risk when it was theoretical, may still be valuable 
-enough to you to spend at least some time/trouble on trying to recover it.
-
-In that case, since you can still mount, I'd suggest mounting read-only 
-to prevent any further damage, and then do a copy off of the data you 
-can, to a different, unaffected, filesystem.
-
-Then if there's still data you want that you couldn't simply copy off, 
-you can try btrfs restore.  While I do have backups here, a couple times 
-when things went bad, btrfs restore was able to get back pretty much 
-everything to current, while were I to have had to restore from backups, 
-I'd have lost enough changed data to hurt, even if I had defined it as of 
-trivial enough value when the risk remained theoretical that I hadn't yet 
-freshened the backup.  (Since then I upgraded the rest of my storage to 
-ssd, thus lowering the time and hassle cost of backups, encouraging me to 
-do them more frequently.  Talking about which, I need to freshen them in 
-the near future.  It's now on my list for my next day off...)
+So -p is primarily for the case where the named snapshot is an earlier 
+state of the one being sent, and should be much more efficient than -c in 
+that case.  However, the less strict -c should also work, and if the 
+wording of the manpage can be believed, a single named -c snapshot will 
+be treated as -p anyway.  But -c can also be used for snapshots that 
+aren't related with one being an earlier state of the other, where 
+there's simply some reflinks in common, perhaps due to dedup.  It should 
+still result in the data with the common reflinks being only sent by 
+reference, but much more metadata will be sent, and if there's not a lot 
+of reflinks in common, it's likely to require enough additional 
+processing that the relatively trivial amount of common reflinked data it 
+might save may not be worth it, compared to simply sending a full non-
+incremental snapshot.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,86 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f169.google.com ([209.85.220.169]:56365 "EHLO
-        mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750964AbdISLa7 (ORCPT
+Received: from s17634251.onlinehome-server.info ([87.106.5.14]:54599 "EHLO
+        s17634251.onlinehome-server.info" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751458AbdISLts (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 07:30:59 -0400
-Received: by mail-qk0-f169.google.com with SMTP id u7so3209391qku.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 04:30:58 -0700 (PDT)
+        Tue, 19 Sep 2017 07:49:48 -0400
+From: =?ISO-8859-1?Q?Sen=E9n?= Vidal Blanco <senenvidal@sgisoft.com>
+To: Andrei Borzenkov <arvidjaar@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Storage and snapshots as historical yearly
+Date: Tue, 19 Sep 2017 13:49:40 +0200
+Message-ID: <2457840.3HpkerP4PG@pcsenen>
+In-Reply-To: <aebb8966-ca9b-7008-d329-3e60989a5c01@gmail.com>
+References: <9208764.SjP1vfhOIA@pcsenen>
+ <aebb8966-ca9b-7008-d329-3e60989a5c01@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <caf3072a-0c70-7c1d-fe55-40f01d410464@cobb.uk.net>
-References: <CAH=dxU5NfenfKfsuXuZ8uBYKBb5a0VOEqan6taAwZTT0oM8xcQ@mail.gmail.com>
- <caf3072a-0c70-7c1d-fe55-40f01d410464@cobb.uk.net>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Date: Tue, 19 Sep 2017 14:30:57 +0300
-Message-ID: <CAA91j0Ve_46RM6DFTqs52g=GK4+g7TgAbK8FYBskdEe4puYCjg@mail.gmail.com>
-Subject: Re: difference between -c and -p for send-receive?
-To: Graham Cobb <g.btrfs@cobb.uk.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; boundary="nextPart13690649.5KosvGdWia";
+ micalg="pgp-sha1"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 19, 2017 at 1:24 PM, Graham Cobb <g.btrfs@cobb.uk.net> wrote:
-> On 19/09/17 01:41, Dave wrote:
->> Would it be correct to say the following?
->
-> Like Duncan, I am just a user, and I haven't checked the code. I
-> recommend Duncan's explanation, but in case you are looking for
-> something simpler, how about thinking with the following analogy...
->
-> Think of -p as like doing an incremental backup: it tells send to just
-> send the instructions for the changes to get from the "parent" subvolume
-> to the current subvolume. Without -p it is like a full backup:
-> everything in the current subvolume is sent.
->
-> -c is different:
+--nextPart13690649.5KosvGdWia
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="UTF-8"
 
-It is not really different - it is extra. You have -p and optionally
--c which modifies its behavior.
+Perfect!! Just what I was looking for.
+Sorry for the delay, because before doing so, I preferred to test to see if=
+ it=20
+actually worked.
 
-> it says "and by the way, these files also already exist
-> on the destination so they might be useful to skip actually sending some
-> of the file contents". Imagine that whenever a file content is about to
-> be sent (whether incremental or full), btrfs-send checks to see if the
-> data is in one of the -c subvolumes and, if it is, it sends "get the
-> data by reflinking to this file over here" instead of sending the data
-> itself. -c is really just an optimisation to save sending data if you
-> know the data is already available somewhere else on the destination.
->
-> Be aware that this is really just an analogy (like "hard linking" is an
-> analogy for reflinking using the clone range ioctl). Duncan's email
-> provides more real details.
->
-> In particular, this analogy doesn't explain the original questioner's
-> problem. In the analogy, -c might work without the files actually being
-> present on the source (as long as they are on the destination). But, in
-> reality, because the underlying mechanism is extent range cloning, the
-> files have to be present on **both** the source and the destination in
-> order for btrfs-send to work out what commands to send.
->
+I have a doubt. The system works perfectly, but at the time of deleting the=
+=20
+writing disk and merging the data on the read-only disk I fail to understan=
+d=20
+the process.
 
-Yes. Decision whether to send full data or reflink is taken on source,
-so data must be present on source.
+I have tried to remove the seed bit on disk A and delete the write B as you=
+=20
+mention, and so move the data to A, but tells me that disk B does not exist.
+These are the orders I have made:
 
-> By the way, like Duncan, I was surprised that the man page suggests that
-> -c without -p causes one of the clones to be treated as a parent. I have
-> not checked the code to see if that is actually how it works.
->
+md127-> A
+md126-> B
 
-It is. As implemented, -c *requires* parent snapshot, either
-explicitly via -p option or implicitly. What it does:
+btrfstune -S 0 /dev /md127
+mount /dev/md127 /mnt (I mount this disk since the md126 gives error)
+btrfs device delete /dev/md126 /mnt
+ERROR: error removing device '/dev/md126': No such file or directory
 
-a) checks that both snapshot to transfer and all snapshots given as
-arguments to -c have the same parent uuid;
-b) selects "best match" by comparing how close snapshots from -c
-option are to parent. As far as I can tell it chooses the oldest
-snapshot (with minimal difference to the parent) as base (implicit
--p).
+Another thing I've tried is to remove disk B without removing the seed bit,=
+=20
+but it gives me the error:
 
-Which implies that "btrfs send -c foo bar" is entirely equivalent to
-"btrfs send -p foo bar".
+ERROR: error removing device '/dev/md126': unable to remove the only writea=
+ble=20
+device.
 
-Which still does not explain why script fails. As mentioned, as
-snapshots created by snapper should have the same parent uuid, which
-leaves only possibility of non-existent subvolume, but then script
-should have failed much earlier.
+Any ideas about it?
+Thank you very much for the reply.
+Greetings.
+
+El martes, 12 de septiembre de 2017 6:34:15 (CEST) Andrei Borzenkov escribi=
+=C3=B3:
+> 11.09.2017 21:17, Sen=C3=A9n Vidal Blanco =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> > I am trying to implement a system that stores the data in a unit (A) wi=
+th
+> > BTRFS format that is untouchable and that future files and folders crea=
+ted
+> > or modified are stored in another physical unit (B) with BTRFS format.
+> > Each year the new files will be moved to store A and start over.
+> >=20
+> > The idea is that a duplicate of disk A can be made to keep it in a safe
+> > place and that the files stored there can not be modified until the
+> > mixture of (A) and (B) is made.
+>=20
+> This can probably be achieved using seed device. Mark original device as
+> seed and all changes will go to another writable device, similar to
+> overlay; then remove seed bit from original device, "btrfs device remove
+> writable" device and it should relocate its content back. Rinse and repea=
+t.
+
+=2D-=20
+	Sen=C3=A9n Vidal Blanco - SGISoft S.L.
+=20
+	Tlf.: 986413322 - 660923711
+	GPG ID 466431A8AF01F99A
+	http://www.sgisoft.com/
+=2D-
+=20
+
+--nextPart13690649.5KosvGdWia
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iF0EABECAB0WIQSK7dSjHxedEO9Hp55GZDGorwH5mgUCWcEEVAAKCRBGZDGorwH5
+mrEgAKC9h0NN1UMeem+G38GqXaEx3AS6qwCeKmgZGkjKMNOK5FB4ChFrkz/WPww=
+=Rbu4
+-----END PGP SIGNATURE-----
+
+--nextPart13690649.5KosvGdWia--
+

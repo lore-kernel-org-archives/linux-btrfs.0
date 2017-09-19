@@ -1,75 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:39448 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750918AbdISHmF (ORCPT
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:33422 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750862AbdISPac (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 03:42:05 -0400
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 71902AC009E
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 16:41:56 +0900 (JST)
-Received: from G01JPEXCHYT18.g01.fujitsu.local (G01JPEXCHYT18.g01.fujitsu.local [10.128.194.57])
-        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id C4E0D46E474
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 16:41:55 +0900 (JST)
-To: <linux-btrfs@vger.kernel.org>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: subvolume: outputs message only when operation
- succeeds
-Message-ID: <cdca7f92-93c0-9906-f2ed-57c3d0a97fae@jp.fujitsu.com>
-Date: Tue, 19 Sep 2017 16:41:52 +0900
+        Tue, 19 Sep 2017 11:30:32 -0400
+Received: by mail-wm0-f66.google.com with SMTP id m127so4246592wmm.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Sep 2017 08:30:32 -0700 (PDT)
+Received: from [10.3.28.18] ([155.210.222.97])
+        by smtp.gmail.com with ESMTPSA id u186sm1679963wmd.19.2017.09.19.08.30.30
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 19 Sep 2017 08:30:30 -0700 (PDT)
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Pat Sailor <psalleetsile@gmail.com>
+Subject: SSD caching an existing btrfs raid1
+Message-ID: <4ed24e33-09e1-c03a-912c-9d1b2bbdc835@gmail.com>
+Date: Tue, 19 Sep 2017 17:30:30 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"btrfs subvolume create/delete" outputs the message of "Create/Delete
-subvolume ..." even when an operation fails.
-Since it is confusing, let's outputs the message only when an operation succeeds.
+Hello,
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
----
- cmds-subvolume.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+I have a half-filled raid1 on top of six spinning devices. Now I have 
+come into a spare SSD I'd like to use for caching, if possible without 
+having to rebuild or, failing that, without having to renounce to btrfs 
+and flexible reshaping.
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 666f6e0..6d4b0fe 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -189,7 +189,6 @@ static int cmd_subvol_create(int argc, char **argv)
- 	if (fddst < 0)
- 		goto out;
- 
--	printf("Create subvolume '%s/%s'\n", dstdir, newname);
- 	if (inherit) {
- 		struct btrfs_ioctl_vol_args_v2	args;
- 
-@@ -213,6 +212,7 @@ static int cmd_subvol_create(int argc, char **argv)
- 		error("cannot create subvolume: %s", strerror(errno));
- 		goto out;
- 	}
-+	printf("Create subvolume '%s/%s'\n", dstdir, newname);
- 
- 	retval = 0;	/* success */
- out:
-@@ -337,9 +337,6 @@ again:
- 		goto out;
- 	}
- 
--	printf("Delete subvolume (%s): '%s/%s'\n",
--		commit_mode == 2 || (commit_mode == 1 && cnt + 1 == argc)
--		? "commit" : "no-commit", dname, vname);
- 	memset(&args, 0, sizeof(args));
- 	strncpy_null(args.name, vname);
- 	res = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
-@@ -349,6 +346,9 @@ again:
- 		ret = 1;
- 		goto out;
- 	}
-+	printf("Delete subvolume (%s): '%s/%s'\n",
-+		commit_mode == 2 || (commit_mode == 1 && cnt + 1 == argc)
-+		? "commit" : "no-commit", dname, vname);
- 
- 	if (commit_mode == 1) {
- 		res = wait_for_commit(fd);
--- 
-2.9.5
+I've been reading about the several options out there; I thought that 
+EnhanceIO would be the simplest bet but unfortunately I couldn't get it 
+to build with my recent kernel (last commits are from years ago).
+
+Failing that, I read that lvmcache could be the way to go. However, I 
+can't think of a way of setting it up in which I retain the ability to 
+add/remove/replace drives as I can do now with pure btrfs; if I opted to 
+drop btrfs to go to ext4 I still would have to offline the filesystem 
+for downsizes. Not a frequent occurrence I hope, but now I'm used to 
+keep working while I reshape things in btrfs, and it's better if I can 
+avoid large downtimes.
+
+Is what I want doable at all? Thanks in advance for any 
+suggestions/experiences to proceed.
 

@@ -1,57 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtpoutz25.laposte.net ([194.117.213.100]:52841 "EHLO
-        smtp.laposte.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753501AbdIRSCj (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:48273 "EHLO
+        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750733AbdISAmH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Sep 2017 14:02:39 -0400
-Received: from smtp.laposte.net (localhost [127.0.0.1])
-        by lpn-prd-vrout013 (Postfix) with ESMTP id 5352610468C
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 20:02:37 +0200 (CEST)
-Received: from smtp.laposte.net (localhost [127.0.0.1])
-        by lpn-prd-vrout013 (Postfix) with ESMTP id 46978105386
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 20:02:37 +0200 (CEST)
-Received: from lpn-prd-vrin002 (lpn-prd-vrin002.laposte [10.128.63.3])
-        by lpn-prd-vrout013 (Postfix) with ESMTP id 4289D10468C
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 20:02:37 +0200 (CEST)
-Received: from lpn-prd-vrin002 (localhost [127.0.0.1])
-        by lpn-prd-vrin002 (Postfix) with ESMTP id 352515C365F
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 20:02:37 +0200 (CEST)
-Subject: Re: cp --reflink and qgroup limit
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <d424bbbb-3c11-e874-9b12-4bae12e3d07e@laposte.net>
- <7eeb31e6-0145-2923-443e-e1e2b3bef79c@gmx.com>
-From: Antoine Belvire <antoine.belvire@laposte.net>
-Message-ID: <fc540011-caf6-ca44-3594-62ba4a90dbda@laposte.net>
-Date: Mon, 18 Sep 2017 20:00:51 +0200
+        Mon, 18 Sep 2017 20:42:07 -0400
+Received: by mail-io0-f180.google.com with SMTP id n69so6358841ioi.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Sep 2017 17:42:07 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <7eeb31e6-0145-2923-443e-e1e2b3bef79c@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Dave <davestechshop@gmail.com>
+Date: Mon, 18 Sep 2017 20:41:45 -0400
+Message-ID: <CAH=dxU5NfenfKfsuXuZ8uBYKBb5a0VOEqan6taAwZTT0oM8xcQ@mail.gmail.com>
+Subject: difference between -c and -p for send-receive?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Qu,
+new subject for new question
 
-Le 18/09/2017 à 01:33, Qu Wenruo a écrit :
-> That's a bug, and should be fixed.
+On Mon, Sep 18, 2017 at 1:37 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
 
-OK.
+> >> What scenarios can lead to "ERROR: parent determination failed"?
+> >
+> > The man page for btrfs-send is reasonably clear on the requirements
+> > btrfs imposes. If you want to use incremental sends (i.e. the -c or -p
+> > options) then the specified snapshots must exist on both the source and
+> > destination. If you don't have a suitable existing snapshot then don't
+> > use -c or -p and just do a full send.
+> >
+>
+> Well, I do not immediately see why -c must imply incremental send. We
+> want to reduce amount of data that is transferred, so reuse data from
+> existing snapshots, but it is really orthogonal to whether we send full
+> subvolume or just changes since another snapshot.
+>
 
-> But it's a little complicated to fix.
-> The biggest problem is, until reflink is done and we commit a 
-> transaction, we don't know if the the reflink operation will increase 
-> "rfer" or not.
-> (Considering a case where both reflink source and destination is inside 
-> the same subvolume)
-> 
-> Yes, we can always try to reserve the size of the data, and cause false 
-> alert, but the handling of reserved data range will be another problem.
-> 
-> I'll check if we can solve it.
+Starting months ago when I began using btrfs serious, I have been
+reading, rereading and trying to understand this:
 
-Thanks for your explanation. I'm looking forward to hearing good news 
-about this then :)
+FAQ - btrfs Wiki
+https://btrfs.wiki.kernel.org/index.php/FAQ#What_is_the_difference_between_-c_and_-p_in_send.3F
 
-Regards,
+The comment above suddenly gives me another clue...
 
---
-Antoine
+However, I still don't understand terms like "clone range ioctl",
+although I can guess it is something like a hard link.
+
+Would it be correct to say the following?
+
+1. "-c" causes (appropriate) files in the newly transferred snapshot
+to be "hard linked" to existing files in another snapshot on the
+destination. Doesn't "-p" do something equivalent though?
+
+2. The -c and -p options can be used together or individually.
+
+Questions:
+
+If "-c" "will send all of the metadata of @B.1, but will leave out the
+data for @B.1/bigfile, because it's already in the backups filesystem,
+and can be reflinked from there" what will -p do in contrast?
+
+Will "-p" not send all the metadata?
+
+Will "-p" also leave out the data for @B.1/bigfile, when it's also
+already in the backups?
+
+What would make me choose one of these options over the other? I still
+struggle to see the difference.

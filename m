@@ -1,80 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:53584 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751074AbdITAXK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Sep 2017 20:23:10 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49028 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751663AbdITOFA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Sep 2017 10:05:00 -0400
+Date: Wed, 20 Sep 2017 16:03:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: btrfs-progs: suggestion of removing --commit-after option of
  subvol delete
-To: dsterba@suse.cz, "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20170920140328.GJ29043@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <3fab29e2-179e-2109-6217-1cb079f97f9e@jp.fujitsu.com>
  <20170919144836.GE29043@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <18fc2d5c-de1a-7e0e-dd8f-bcae3fd24fef@gmx.com>
-Date: Wed, 20 Sep 2017 08:22:54 +0800
+ <18fc2d5c-de1a-7e0e-dd8f-bcae3fd24fef@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20170919144836.GE29043@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <18fc2d5c-de1a-7e0e-dd8f-bcae3fd24fef@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2017年09月19日 22:48, David Sterba wrote:
-> On Tue, Sep 19, 2017 at 04:50:04PM +0900, Misono, Tomohiro wrote:
->> I read the code of "subvolume delete" and found that --commit-after option is
->> not working well.
->>
->> Since it issues BTRFS_IOC_START/WAIT_SYNC to the last fd (of directory
->> containing the last deleted subvolume),
->> 1. sync operation affects only the last fd's filesystem.
->>     ("subvolume delete" can take multiple subvolumes on different filesystems.)
+On Wed, Sep 20, 2017 at 08:22:54AM +0800, Qu Wenruo wrote:
+> The costly part will be tracking the filesystems of subvolumes.
+> We must do it for each subvolume and batch them to address the final 
+> transaction commit for each fs.
 > 
-> You're right, though I don't think this is a common usecase.
-> 
->> 2. if the last delete action fails to open the path (fd == -1),
->>     SYNC is not issued at all.
->>
->> One solution is to keep every fd for deleted subvolumes, but I think it takes
->> too much cost.
-> 
-> How do you evaluate the cost? We'd have to keep track of all the
-> distinct filesystems of the subvolumes, so we issue sync on each of them
-> in the end.
+> I didn't see any easy ioctl to get the UUID from fd, meaning (if didn't 
+> miss anything) we need to iterate the path until reaching the mount 
+> boundary and then refer to mountinfo to find the fs.
 
-The costly part will be tracking the filesystems of subvolumes.
-We must do it for each subvolume and batch them to address the final 
-transaction commit for each fs.
+The FS_INFO ioctl will tell you the fsid from a fd.  Iterating the paths
+will not work reliably, due to some potentially very creative use of
+mounts that could build up the path components.
 
-I didn't see any easy ioctl to get the UUID from fd, meaning (if didn't 
-miss anything) we need to iterate the path until reaching the mount 
-boundary and then refer to mountinfo to find the fs.
-
-Not to mention that the possible softlink in the path may make things 
-more complex.
-
-Yes, this may be fixed with tons of code, but I don't think the 
-complexity worthy for a minor feature.
-(Remember how --rootdir get untested and buggy over time? And we even 
-don't know how to make test case to verify --commit-after/each)
-
-Thanks,
-Qu
-
+> Not to mention that the possible softlink in the path may make things 
+> more complex.
 > 
->> Since we can just use "btrfs filesystem sync" after delete if
->> needed, I think it is ok to remove --comit-after option.
-> 
-> The point of the option is to allow the sync in the same command as the
-> subvolume deletion. Even with the sync, the user would still have to
-> know all the filesystems where the the subvolumes were, so some way of
-> tracking them would need to be done.
-> 
-> I don't want to remove the option unless it's really not working as
-> expected and could mislead the users. What you found are bugs that can
-> be fixed.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> Yes, this may be fixed with tons of code, but I don't think the 
+> complexity worthy for a minor feature.
+
+So what if we fix it like that:
+
+- iterate over subvolumes
+- check if the fsid is same as for the previous subvolume
+  - if it is, continue
+  - if not, do the sync
+
+IOW, sync when we leave subvolumes of one filesystem. In the degenerate
+case, we can have subvolumes interleaved that we'd sync after each,
+effectively --commit-each.
+
+The simple tracking should avoid keeping all the filedescriptors open
+and I think this won't need tons of code to implement.
+
+The typical could be 'btrfs subvol delete -c path/*', ie. deleting from
+just one filesystem. If we happen to cross more filesystems, each of
+them will get the sync, but possibly more than one. I don't think this
+is too serious.

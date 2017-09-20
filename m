@@ -1,60 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49028 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751663AbdITOFA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 10:05:00 -0400
-Date: Wed, 20 Sep 2017 16:03:28 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
+Received: from mout.gmx.net ([212.227.17.20]:52404 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751378AbdITOVX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Sep 2017 10:21:23 -0400
 Subject: Re: btrfs-progs: suggestion of removing --commit-after option of
  subvol delete
-Message-ID: <20170920140328.GJ29043@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: dsterba@suse.cz, "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
 References: <3fab29e2-179e-2109-6217-1cb079f97f9e@jp.fujitsu.com>
  <20170919144836.GE29043@twin.jikos.cz>
  <18fc2d5c-de1a-7e0e-dd8f-bcae3fd24fef@gmx.com>
+ <20170920140328.GJ29043@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <a226d151-b9b7-39ab-253d-40885d7b0739@gmx.com>
+Date: Wed, 20 Sep 2017 22:21:07 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <18fc2d5c-de1a-7e0e-dd8f-bcae3fd24fef@gmx.com>
+In-Reply-To: <20170920140328.GJ29043@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 20, 2017 at 08:22:54AM +0800, Qu Wenruo wrote:
-> The costly part will be tracking the filesystems of subvolumes.
-> We must do it for each subvolume and batch them to address the final 
-> transaction commit for each fs.
+
+
+On 2017年09月20日 22:03, David Sterba wrote:
+> On Wed, Sep 20, 2017 at 08:22:54AM +0800, Qu Wenruo wrote:
+>> The costly part will be tracking the filesystems of subvolumes.
+>> We must do it for each subvolume and batch them to address the final
+>> transaction commit for each fs.
+>>
+>> I didn't see any easy ioctl to get the UUID from fd, meaning (if didn't
+>> miss anything) we need to iterate the path until reaching the mount
+>> boundary and then refer to mountinfo to find the fs.
 > 
-> I didn't see any easy ioctl to get the UUID from fd, meaning (if didn't 
-> miss anything) we need to iterate the path until reaching the mount 
-> boundary and then refer to mountinfo to find the fs.
+> The FS_INFO ioctl will tell you the fsid from a fd.  Iterating the paths
+> will not work reliably, due to some potentially very creative use of
+> mounts that could build up the path components.
 
-The FS_INFO ioctl will tell you the fsid from a fd.  Iterating the paths
-will not work reliably, due to some potentially very creative use of
-mounts that could build up the path components.
+The biggest concern is about how to get fsid reliably.
+And since FS_INFO ioctl solves this, I'm completely fine.
+(I just search "UUID" for ioctls and get no hit, so I assume it may be a 
+problem)
 
-> Not to mention that the possible softlink in the path may make things 
-> more complex.
 > 
-> Yes, this may be fixed with tons of code, but I don't think the 
-> complexity worthy for a minor feature.
+>> Not to mention that the possible softlink in the path may make things
+>> more complex.
+>>
+>> Yes, this may be fixed with tons of code, but I don't think the
+>> complexity worthy for a minor feature.
+> 
+> So what if we fix it like that:
+> 
+> - iterate over subvolumes
+> - check if the fsid is same as for the previous subvolume
+>    - if it is, continue
+>    - if not, do the sync
 
-So what if we fix it like that:
+I prefer to maintain a subvolume <-> fs mapping, and only address 
+transaction commit after all subvolumes are iterated.
 
-- iterate over subvolumes
-- check if the fsid is same as for the previous subvolume
-  - if it is, continue
-  - if not, do the sync
+> 
+> IOW, sync when we leave subvolumes of one filesystem. In the degenerate
+> case, we can have subvolumes interleaved that we'd sync after each,
+> effectively --commit-each.
 
-IOW, sync when we leave subvolumes of one filesystem. In the degenerate
-case, we can have subvolumes interleaved that we'd sync after each,
-effectively --commit-each.
+Since we have a subvolume <-> fs mapping, we can commit each fs after 
+iterating all subvolumes.
 
-The simple tracking should avoid keeping all the filedescriptors open
-and I think this won't need tons of code to implement.
+AFAIK "--commit-after" user would like to introduce the minimal commits, 
+so each fs only get committed once seems better to me.
 
-The typical could be 'btrfs subvol delete -c path/*', ie. deleting from
-just one filesystem. If we happen to cross more filesystems, each of
-them will get the sync, but possibly more than one. I don't think this
-is too serious.
+> 
+> The simple tracking should avoid keeping all the filedescriptors open
+> and I think this won't need tons of code to implement.
+
+Indeed, since there is reliable fs UUID ioctl.
+
+And above subvolume <-> fs mapping can also be used to resolve missing 
+fd problems.
+Just adding a fds <-> fs mapping, and try to call commit ioctl on first 
+good fd.
+
+> 
+> The typical could be 'btrfs subvol delete -c path/*', ie. deleting from
+> just one filesystem. If we happen to cross more filesystems, each of
+> them will get the sync, but possibly more than one. I don't think this
+> is too serious.
+
+Well, after we implemented above user case, some facility can be reused 
+for this case.
+
+Thanks,
+Qu
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

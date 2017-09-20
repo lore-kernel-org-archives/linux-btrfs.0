@@ -1,78 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:57078 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750919AbdITUpc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 16:45:32 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1duls0-0003oh-Im
-        for linux-btrfs@vger.kernel.org; Wed, 20 Sep 2017 22:45:20 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: SSD caching an existing btrfs raid1
-Date: Wed, 20 Sep 2017 22:45:20 +0200
-Message-ID: <20170920224520.044d4c45@jupiter.sol.kaishome.de>
-References: <4ed24e33-09e1-c03a-912c-9d1b2bbdc835@gmail.com>
-        <2a208f7c-a140-3ac6-12c6-2e953f3f96ec@gmail.com>
-        <36669362-6401-72e3-f963-41de0debd0a4@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mout.gmx.net ([212.227.15.15]:58749 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751547AbdITXTu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Sep 2017 19:19:50 -0400
+Subject: Re: WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
+ btrfs_update_device+0x1c5/0x1d0 [btrfs]
+To: Rich Rauenzahn <rich@shroop.net>, Rich Rauenzahn <rrauenza@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
+ <69ee49ff-d2d6-bec9-055c-18697b71ec20@gmx.com>
+ <1f8d39cd-a36a-6b4d-dea8-7a9acd9f9396@shroop.net>
+ <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
+ <8df27746-487b-c5f2-59a0-8eb24b95571a@gmx.com>
+ <eda7f67a-ee75-2536-96d6-27bd816c34f0@gmx.com>
+ <417135a6-2cba-578b-e2a2-264f8cd53ce5@shroop.net>
+ <c2161464-65e0-93b9-f118-2f3938deef00@shroop.net>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <b45b34b5-1dc5-deda-6725-6e281d0e343c@gmx.com>
+Date: Thu, 21 Sep 2017 07:19:39 +0800
+MIME-Version: 1.0
+In-Reply-To: <c2161464-65e0-93b9-f118-2f3938deef00@shroop.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Wed, 20 Sep 2017 17:51:15 +0200
-schrieb Psalle <psalleetsile@gmail.com>:
 
-> On 19/09/17 17:47, Austin S. Hemmelgarn wrote:
-> (...)
-> >
-> > A better option if you can afford to remove a single device from
-> > that array temporarily is to use bcache.  Bcache has one specific
-> > advantage in this case, multiple backend devices can share the same
-> > cache device. This means you don't have to carve out dedicated
-> > cache space for each disk on the SSD and leave some unused space so
-> > that you can add new devices if needed.  The downside is that you
-> > can't convert each device in-place, but because you're using BTRFS,
-> > you can still convert the volume as a whole in-place.  The
-> > procedure for doing so looks like this:
-> >
-> > 1. Format the SSD as a bcache cache.
-> > 2. Use `btrfs device delete` to remove a single hard drive from the 
-> > array.
-> > 3. Set up the drive you just removed as a bcache backing device
-> > bound to the cache you created in step 1.
-> > 4. Add the new bcache device to the array.
-> > 5. Repeat from step 2 until the whole array is converted.
-> >
-> > A similar procedure can actually be used to do almost any
-> > underlying storage conversion (for example, switching to whole disk
-> > encryption, or adding LVM underneath BTRFS) provided all your data
-> > can fit on one less disk than you have.  
+
+On 2017年09月21日 02:10, Rich Rauenzahn wrote:
 > 
-> Thanks Austin, that's just great. For some reason I had discarded
-> bcache thinking that it would force me to rebuild from scratch, but
-> this kind of incremental migration is exactly why I hoped was
-> possible. I have plenty of space to replace the devices one by one.
+> On 9/20/2017 9:58 AM, Rich Rauenzahn wrote:
+>>
+>> What's the most direct way to do that?  (Was about to risk breaking 
+>> the mirror and repartitioning!  I'd rather not!)
+>>
+>> Hmm -- maybe this worked:
+>>
+>> $ sudo btrfs filesystem resize -1m /.MEDIA/
+>> Resize '/.MEDIA/' of '-1m'
+> No, doesn't seem to have worked.  I used btrfs fi show --raw /.MEDIA to 
+> see the size in bytes, and then ...
 > 
-> I will report back my experience in a few days, I hope.
+> sudo btrfs filesystem resize N:SIZE /.MEDIA/
+> 
 
-I've done it exactly that way in the past and it worked flawlessly (but
-it took 24+ hours). But it was easy for me because I was also adding a
-third disk to the pool, so existing stuff could easily move.
+Yes, this is what I did to my fs.
+While in fact you can do it better by using:
 
-I suggest to initialize bcache to writearound mode while converting, so
-your maybe terabytes of disk don't go through the SSD.
+btrfs fi resize N:max <path>
 
-If you later decide to remove bcache or not sure about future bcache
-usage, you can wrap any partition into a bcache container - just don't
-connect it to a cache and it will work like a normal partition.
+Or
 
+btrfs fi resize N:-1 <path>
 
--- 
-Regards,
-Kai
+The first one will resize the devid N to its max size.
+The 2nd one will resize the devid N to current size - 1 (byte).
 
-Replies to list-only preferred.
+Both will go through shrink routine, which will do the round_down.
 
+Thanks,
+Qu
 
+> Where N was the disk number in the show output, and SIZE was the number 
+> of bytes to set it to that was a multiple of 4k.
+> 
+> Rich

@@ -1,45 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-11v.sys.comcast.net ([96.114.154.170]:41610 "EHLO
-        resqmta-po-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751307AbdITSLK (ORCPT
+Received: from smtpoutz25.laposte.net ([194.117.213.100]:43638 "EHLO
+        smtp.laposte.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750938AbdITTHG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 14:11:10 -0400
-Subject: Re: WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
- btrfs_update_device+0x1c5/0x1d0 [btrfs]
-From: Rich Rauenzahn <rich@shroop.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Rich Rauenzahn <rrauenza@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
- <69ee49ff-d2d6-bec9-055c-18697b71ec20@gmx.com>
- <1f8d39cd-a36a-6b4d-dea8-7a9acd9f9396@shroop.net>
- <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
- <8df27746-487b-c5f2-59a0-8eb24b95571a@gmx.com>
- <eda7f67a-ee75-2536-96d6-27bd816c34f0@gmx.com>
- <417135a6-2cba-578b-e2a2-264f8cd53ce5@shroop.net>
-Message-ID: <c2161464-65e0-93b9-f118-2f3938deef00@shroop.net>
-Date: Wed, 20 Sep 2017 11:10:57 -0700
+        Wed, 20 Sep 2017 15:07:06 -0400
+Received: from smtp.laposte.net (localhost [127.0.0.1])
+        by lpn-prd-vrout013 (Postfix) with ESMTP id B6914104FB2
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 21:07:03 +0200 (CEST)
+Received: from smtp.laposte.net (localhost [127.0.0.1])
+        by lpn-prd-vrout013 (Postfix) with ESMTP id A8D93104FC1
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 21:07:03 +0200 (CEST)
+Received: from lpn-prd-vrin002 (lpn-prd-vrin002.prosodie [10.128.63.3])
+        by lpn-prd-vrout013 (Postfix) with ESMTP id A3CE1104FB2
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 21:07:03 +0200 (CEST)
+Received: from lpn-prd-vrin002 (localhost [127.0.0.1])
+        by lpn-prd-vrin002 (Postfix) with ESMTP id 9443B5C3678
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 21:07:03 +0200 (CEST)
+References: <5d7494af-0d18-8663-57a5-3007252fa0e3@gmail.com>
+Subject: Re: difference between -c and -p for send-receive?
+From: Antoine Belvire <antoine.belvire@laposte.net>
+In-Reply-To: <5d7494af-0d18-8663-57a5-3007252fa0e3@gmail.com>
+To: linux-btrfs@vger.kernel.org, arvidjaar@gmail.com
+Message-ID: <e664b01f-0628-ed2b-4fd4-c93012239af3@laposte.net>
+Date: Wed, 20 Sep 2017 21:05:17 +0200
 MIME-Version: 1.0
-In-Reply-To: <417135a6-2cba-578b-e2a2-264f8cd53ce5@shroop.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
-On 9/20/2017 9:58 AM, Rich Rauenzahn wrote:
->
-> What's the most direct way to do that?  (Was about to risk breaking 
-> the mirror and repartitioning!  I'd rather not!)
->
-> Hmm -- maybe this worked:
->
-> $ sudo btrfs filesystem resize -1m /.MEDIA/
-> Resize '/.MEDIA/' of '-1m'
-No, doesn't seem to have worked.  I used btrfs fi show --raw /.MEDIA to 
-see the size in bytes, and then ...
+ > All snapshots listed in -c options and snapshot that we want to
+ > transfer must have the same parent uuid, unless -p is explicitly
+ > provided.
 
-sudo btrfs filesystem resize N:SIZE /.MEDIA/
+It's rather the same mount point than the same parent uuid, like cp 
+--reflink, isn't it?
 
-Where N was the disk number in the show output, and SIZE was the number 
-of bytes to set it to that was a multiple of 4k.
+~# btrfs subvolume create /test2/
+Create subvolume '//test2'
+~# btrfs subvolume create /test2/foo
+Create subvolume '/test2/foo'
+~# cd /test2	
+~# btrfs subvolume snapshot -r . .1
+Create a readonly snapshot of '.' in './.1'
+~#
+~# # a: 40 MiB in /test2/
+~# dd if=/dev/urandom of=a bs=4k count=10k
+10240+0 records in
+10240+0 records out
+41943040 bytes (42 MB, 40 MiB) copied, 0.198961 s, 211 MB/s
+~#
+~# # b: 80 MiB in /test2/foo
+~# dd if=/dev/urandom of=foo/b bs=4k count=20k
+0480+0 records in
+20480+0 records out
+83886080 bytes (84 MB, 80 MiB) copied, 0.393823 s, 213 MB/s
+~#
+~# # copy-clone /test2/foo/b to /test2/b
+~# cp --reflink foo/b .
+~#
+~# btrfs subvolume -s . .2
+Create a readonly snapshot of '.' in './.2'
+~#
+~# # Sending .2 with only .1 as parent (.1 already sent)
+~# btrfs send -p .1 .2 | wc -c
+At subvol .2
+125909258 # 120 Mio = 'a' + 'b'
+~#
+~# # Sending .2 with .1 and foo as clone sources (.1 and foo already
+~# # sent), .1 is automatically picked as parent
+~# btrfs property set foo ro true
+~# btrfs send -c .1 -c foo .2 | wc -c
+At subvol .2
+41970349 # 40 Mio, only 'a'
+~#
 
-Rich
+UUIDs on the sending side:
+
+~# btrfs subvolume list -uq / | grep test2
+ID 6141 gen 454658 top level 6049 parent_uuid - uuid 
+bbf936dd-ca84-f749-9b9b-09f7081879a2 path test2
+ID 6142 gen 454658 top level 6141 parent_uuid - uuid 
+54a7cdea-6198-424a-9349-8116172d0c17 path test2/foo
+ID 6143 gen 454655 top level 6141 parent_uuid 
+bbf936dd-ca84-f749-9b9b-09f7081879a2 uuid 
+28f1d7db-7341-f545-a2ac-d8819d22a5b5 path test2/.1
+ID 6144 gen 454658 top level 6141 parent_uuid 
+bbf936dd-ca84-f749-9b9b-09f7081879a2 uuid 
+db9ad2b1-aee1-544c-b368-d698b4a05119 path test2/.2
+~#
+
+On the receiving side, .1 is used as parent:
+
+~# btrfs subvolume list -uq /var/run/media/antoine/backups/ | grep dest
+ID 298 gen 443 top level 5 parent_uuid - uuid 
+7695cba7-dfbf-2f44-bd79-18c9820fdb2f path dest/.1
+ID 299 gen 443 top level 5 parent_uuid - uuid 
+c32c06ec-0a17-cf42-9b04-3804ad72f836 path dest/foo
+ID 300 gen 446 top level 5 parent_uuid 
+7695cba7-dfbf-2f44-bd79-18c9820fdb2f uuid 
+552b1d51-38bf-d546-a47f-4bc667ec4128 path dest/.2
+~#
+
+Regards,
+
+--
+Antoine

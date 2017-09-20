@@ -1,40 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:53931 "EHLO
-        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751465AbdITUbr (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:49970 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750919AbdITUp0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 16:31:47 -0400
-Received: by mail-io0-f179.google.com with SMTP id q11so6333896ioe.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 13:31:47 -0700 (PDT)
+        Wed, 20 Sep 2017 16:45:26 -0400
+Subject: Re: RFC: Btrfs does not store checksum type? Only size? O_o
+To: Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAGqmi76MPGYFiksk5Jt05wjhQoQXpQuu1CiJFhxQw8QEB0gPpw@mail.gmail.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <fd5c3de5-bf9a-171c-35e8-6c1ffc1da398@mendix.com>
+Date: Wed, 20 Sep 2017 22:45:25 +0200
 MIME-Version: 1.0
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Wed, 20 Sep 2017 23:31:05 +0300
-Message-ID: <CAGqmi76MPGYFiksk5Jt05wjhQoQXpQuu1CiJFhxQw8QEB0gPpw@mail.gmail.com>
-Subject: RFC: Btrfs does not store checksum type? Only size? O_o
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAGqmi76MPGYFiksk5Jt05wjhQoQXpQuu1CiJFhxQw8QEB0gPpw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was reading the kernel code and docs and didn't find anything about
-some info like "cheksum type" as btrfs have for compression code.
-(I only found some silent "hack" in btrfs-progs, that print "checksum
-type", but get "checksum size")
+On 09/20/2017 10:31 PM, Timofey Titovets wrote:
+> I was reading the kernel code and docs and didn't find anything about
+> some info like "cheksum type" as btrfs have for compression code.
+> (I only found some silent "hack" in btrfs-progs, that print "checksum
+> type", but get "checksum size")
+> 
+> If i understood all correctly btrfs only store checksum size, i.e. 4
+> for current CRC32C.
 
-If i understood all correctly btrfs only store checksum size, i.e. 4
-for current CRC32C.
+The checksum type is set in the superblock:
 
-May be that can be useful to rewrite some part of code and reuse
-checksum size, as checksum type.
+csum_type		0 (crc32c)
+csum_size		4
+[...]
 
-For backward compatibility current CRC32C size can be used for identify CRC32C.
-As that will not add any new checksum, that allow make that with zero "blood".
-And later if we add new checksum type, that possible to add compat
-flag for that.
+So in the current design, you probably could have different checksum
+types, but you will have to choose one of them when creating a filesystem.
 
-What you think?
-
-Thanks.
 -- 
-Have a nice day,
-Timofey.
+Hans van Kranenburg

@@ -1,67 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp2-g21.free.fr ([212.27.42.2]:13998 "EHLO smtp2-g21.free.fr"
+Received: from mout.gmx.net ([212.227.15.18]:53856 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751779AbdITGO2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 02:14:28 -0400
-Subject: Re: Problems with debian install
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <055f00d8-4910-64eb-ea60-58b41815f2d8@couderc.eu>
- <13fa5006-12ed-f3f8-cf85-b48b7a1d5b8a@gmx.com>
-From: Pierre Couderc <pierre@couderc.eu>
-Message-ID: <a65e2f3f-9367-0408-9981-4a273095ec9b@couderc.eu>
-Date: Wed, 20 Sep 2017 08:14:24 +0200
+        id S1751691AbdITGXt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Sep 2017 02:23:49 -0400
+Subject: Re: WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
+ btrfs_update_device+0x1c5/0x1d0 [btrfs]
+To: nborisov <nborisov@suse.de>
+Cc: Rich Rauenzahn <rich@shroop.net>, Rich Rauenzahn <rrauenza@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
+ <69ee49ff-d2d6-bec9-055c-18697b71ec20@gmx.com>
+ <1f8d39cd-a36a-6b4d-dea8-7a9acd9f9396@shroop.net>
+ <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
+ <8df27746-487b-c5f2-59a0-8eb24b95571a@gmx.com>
+ <eda7f67a-ee75-2536-96d6-27bd816c34f0@gmx.com>
+ <25600b6b3bd712edb60962357c42d163@suse.de>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c0be1b97-43d1-1ebb-f745-b7308e6a9eba@gmx.com>
+Date: Wed, 20 Sep 2017 14:23:30 +0800
 MIME-Version: 1.0
-In-Reply-To: <13fa5006-12ed-f3f8-cf85-b48b7a1d5b8a@gmx.com>
+In-Reply-To: <25600b6b3bd712edb60962357c42d163@suse.de>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/20/2017 02:39 AM, Qu Wenruo wrote:
->
->
-> On 2017年09月20日 05:35, Pierre Couderc wrote:
->> I am trying to install stretch on a computer with 2 btrfs disks and EFI.
+
+
+On 2017年09月20日 14:11, nborisov wrote:
+> On 2017-09-20 07:39, Qu Wenruo wrote:
+>> On 2017年09月20日 13:10, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2017年09月20日 12:59, Qu Wenruo wrote:
+>>>>
+>>>>
+>>>> On 2017年09月20日 12:49, Rich Rauenzahn wrote:
+>>>>>
+>>>>>
+>>>>> On 9/19/2017 5:31 PM, Qu Wenruo wrote:
+>>>>>> On 2017年09月19日 23:56, Rich Rauenzahn wrote:
+>>>>>>> [    4.747377] WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
+>>>>>>> btrfs_update_device+0x1c5/0x1d0 [btrfs]
+>>>>>>
+>>>>>> Is that line the following WARN_ON()?
+>>>>>> ---
+>>>>>> static inline void btrfs_set_device_total_bytes(struct 
+>>>>>> extent_buffer *eb,
+>>>>>>                         struct btrfs_dev_item *s,
+>>>>>>                         u64 val)
+>>>>>> {
+>>>>>>     BUILD_BUG_ON(sizeof(u64) !=
+>>>>>>              sizeof(((struct btrfs_dev_item *)0))->total_bytes);
+>>>>>>     WARN_ON(!IS_ALIGNED(val, eb->fs_info->sectorsize)); <<<
+>>>>>>     btrfs_set_64(eb, s, offsetof(struct btrfs_dev_item, 
+>>>>>> total_bytes), val);
+>>>>>> }
+>>>>>> ---
+>>>>>>
+>>>>>> If so, that means your devices size is not aligned to 4K.
+>>>>>>
+>>>>>> Is your block device still using old 512 block size?
+>>>>>> AFAIK nowadays most HDDs are using 4K blocksize and it's 
+>>>>>> recommended to use it.
+>>>>>>
+>>>>>> It's not a big problem and one can easily remove the WARN_ON().
+>>>>>> But I think we'd better fix the caller to do round_down() before 
+>>>>>> calling this function.
+>>>>>>
+>>>>>
+>>>>> That's interesting!  I believe I made an effort to align them when 
+>>>>> I set it up years ago, but never knew how to verify.
+>>>>
+>>>> Well, best verifying if that's the line causing the warning, since I 
+>>>> don't have the source of RedHat kernel.
+>>>>
+>>>>>
+>>>>> I have three mirrored filesystems:
+>>>>>
+>>> [snip]
+>>>>>
+>>>>> Number  Start (sector)    End (sector)  Size       Code Name
+>>>>>     1              40      3907029134   1.8 TiB     8300 BTRFS MEDIA
+>>>>> GPT fdisk (gdisk) version 0.8.6
+>>>>
+>>>> At least this size is not aligned to 4K.
+>>>>
+>>>>>
+>>>>> Partition table scan:
+>>> [snip]
+>>>>>
+>>>>> .....and one is aligned differently!
+>>>>>
+>>>>> Could it be /dev/sdd that's the issue?  But it's aligned at 4096 -- 
+>>>>> so I'm not sure that's the issue after all.
+>>>>
+>>>> Its start sector is aligned, but end point is not, so the size is 
+>>>> not aligned either.
+>>>>
+>>>> BTW, is /dev/sdd added to btrfs using "btrfs device add"?
+>>>> In my test, if making btrfs on a unaligned file, it will round down 
+>>>> to its sectorsize boundary.
+>>>
+>>> Confirmed that "btrfs device add" won't round down the size.
+>>> Check the btrfs-debug-tree output:
+>>> ------
+>>>          item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
+>>>                  devid 1 total_bytes 10737418240 bytes_used 2172649472
+>>>                  io_align 4096 io_width 4096 sector_size 4096 type 0
+>>>                  generation 0 start_offset 0 dev_group 0
+>>>                  seek_speed 0 bandwidth 0
+>>>                  uuid 243a1117-ca31-4d87-8656-81c5630aafb2
+>>>                  fsid 6452cde7-14d5-4541-aa07-b265a400bad0
+>>>          item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
+>>>                  devid 2 total_bytes 1073742336 bytes_used 0
+>>>                  io_align 4096 io_width 4096 sector_size 4096 type 0
+>>>                  generation 0 start_offset 0 dev_group 0
+>>>                  seek_speed 0 bandwidth 0
+>>>                  uuid 6bb07260-d230-4e22-88b1-1eabb46622ed
+>>>                  fsid 6452cde7-14d5-4541-aa07-b265a400bad0
+>>> ------
 >>
->> Is there a howto to do that ? Did someone success ?
+>> Sorry, the output is from v4.12.x, so no kernel warning nor the patch
+>> rounding down the value.
 >>
->> I get problems as soon as the partionning in debian installer. What 
->> partitions do I need ? I understand the grub needs them even if btrfs 
->> does not require them. But I am lost, I think due to EFI...
->
-> For EFI, you must have one EFI system partition, which must be 
-> formatted as FAT.
->
-> So, at least you can't use Btrfs for ESP.
->
-> Despite of that, everything can be read/understood by kernel can be 
-> your /boot (mainly for grub) or /.
->
->
-> It will be even simpler if using systemd-boot (previously called 
-> gummiboot), just put kernel (with EFI-stub configured) and initrd into 
-> ESP, mounting ESP as /boot, then everything is done.
->
->
-> For reference, my current fs layout is just like this:
-> nvme0n1          259:0    0 238.5G  0 disk
-> ├─nvme0n1p1      259:1    0   512M  0 part /boot
-> └─nvme0n1p2      259:2    0   238G  0 part
->   ├─system-root  254:0    0    32G  0 lvm  /
->   ├─system-swap  254:1    0     4G  0 lvm  [SWAP]
->   └─system-home  254:2    0   150G  0 lvm  /home
->
-> As you can see, I'm using systemd-boot, reusing ESP as /boot.
-> Then as long as one fs/stacked block device is supported by kernel, 
-> you can use it as you wish.
->
+>>>
+>>> Where first device is completely aligned, the 2nd device which is 
+>>> just 1G + 512, definitely not aligned.
+>>>
+>>> So if you're using single device purely created by mkfs.btrfs, you're 
+>>> OK.
+>>> But if any new device added, you're not OK and causing the false alert.
+>>>
+>>> Any way, it should not be hard to fix.
+>>> Just remove the WARN_ON() and add extra round_down when adding device.
 >>
->> I see nothing on that in google.
->
-> Well, Archlinux has quite nice wiki page for this:
-> https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface 
->
->
-Thank you very much.
-I have to study that carefully  as I am lost in your terminology as I am 
-used to debian...
-PC
+>> In v4.13 kernel, the newly added devices are in fact rounded down.
+>> But existing device doesn't get the round down.
+> 
+> We got a report internally at Suse of this problem and it prevented a 
+> filesystem from being mounted due to the
+> following check failing: 
+> http://elixir.free-electrons.com/linux/latest/source/fs/btrfs/volumes.c#L6893. 
+> 
+> 
+> Hence I added the rounding down fixes. And this warning was put 
+> specifically to catch future offenders and see
+> if I had missed a place to patch it. So removing the warning is the 
+> wrong solution to the problem.
+
+Then at least only enable it for BTRFS_DEBUG.
+
+For end user it's just confusing.
+
+I have submitted a patch to do the check at mounting time, and warning 
+user to do shrink to fix it.
+(Although still removed the WARN_ON)
+
+I think such warning breaks backward compatibility should be as gentle 
+as possible for end users.
+
+Thanks,
+Qu
+
+> Generally if
+> balancing kicked in had to resize his disk everything would be back to 
+> normal. >
+>>
+>> So it's recommended to resize (shrink) your fs for very small size to
+>> fix it if you don't want to wait for the kernel fix.
+>>
+>> Thanks,
+>> Qu
+>>>
+>>> Thanks for the report,
+>>> Qu
+>>>
+>>>>
+>>>> So I'm wondering if it's caused by added new btrfs device.
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>
+>>>>> -- To unsubscribe from this list: send the line "unsubscribe 
+>>>>> linux-btrfs" in
+>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> -- To unsubscribe from this list: send the line "unsubscribe 
+>>> linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

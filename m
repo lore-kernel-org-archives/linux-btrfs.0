@@ -1,210 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:59266 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:55207 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751544AbdITE7d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 00:59:33 -0400
+        id S1750785AbdITFLC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Sep 2017 01:11:02 -0400
 Subject: Re: WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
  btrfs_update_device+0x1c5/0x1d0 [btrfs]
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Rich Rauenzahn <rich@shroop.net>, Rich Rauenzahn <rrauenza@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
  <69ee49ff-d2d6-bec9-055c-18697b71ec20@gmx.com>
  <1f8d39cd-a36a-6b4d-dea8-7a9acd9f9396@shroop.net>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
-Date: Wed, 20 Sep 2017 12:59:19 +0800
+ <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
+Message-ID: <8df27746-487b-c5f2-59a0-8eb24b95571a@gmx.com>
+Date: Wed, 20 Sep 2017 13:10:45 +0800
 MIME-Version: 1.0
-In-Reply-To: <1f8d39cd-a36a-6b4d-dea8-7a9acd9f9396@shroop.net>
+In-Reply-To: <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年09月20日 12:49, Rich Rauenzahn wrote:
+On 2017年09月20日 12:59, Qu Wenruo wrote:
 > 
 > 
-> On 9/19/2017 5:31 PM, Qu Wenruo wrote:
->> On 2017年09月19日 23:56, Rich Rauenzahn wrote:
->>> [    4.747377] WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
->>> btrfs_update_device+0x1c5/0x1d0 [btrfs]
+> On 2017年09月20日 12:49, Rich Rauenzahn wrote:
 >>
->> Is that line the following WARN_ON()?
->> ---
->> static inline void btrfs_set_device_total_bytes(struct extent_buffer *eb,
->>                         struct btrfs_dev_item *s,
->>                         u64 val)
->> {
->>     BUILD_BUG_ON(sizeof(u64) !=
->>              sizeof(((struct btrfs_dev_item *)0))->total_bytes);
->>     WARN_ON(!IS_ALIGNED(val, eb->fs_info->sectorsize)); <<<
->>     btrfs_set_64(eb, s, offsetof(struct btrfs_dev_item, total_bytes), 
->> val);
->> }
->> ---
 >>
->> If so, that means your devices size is not aligned to 4K.
+>> On 9/19/2017 5:31 PM, Qu Wenruo wrote:
+>>> On 2017年09月19日 23:56, Rich Rauenzahn wrote:
+>>>> [    4.747377] WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
+>>>> btrfs_update_device+0x1c5/0x1d0 [btrfs]
+>>>
+>>> Is that line the following WARN_ON()?
+>>> ---
+>>> static inline void btrfs_set_device_total_bytes(struct extent_buffer 
+>>> *eb,
+>>>                         struct btrfs_dev_item *s,
+>>>                         u64 val)
+>>> {
+>>>     BUILD_BUG_ON(sizeof(u64) !=
+>>>              sizeof(((struct btrfs_dev_item *)0))->total_bytes);
+>>>     WARN_ON(!IS_ALIGNED(val, eb->fs_info->sectorsize)); <<<
+>>>     btrfs_set_64(eb, s, offsetof(struct btrfs_dev_item, total_bytes), 
+>>> val);
+>>> }
+>>> ---
+>>>
+>>> If so, that means your devices size is not aligned to 4K.
+>>>
+>>> Is your block device still using old 512 block size?
+>>> AFAIK nowadays most HDDs are using 4K blocksize and it's recommended 
+>>> to use it.
+>>>
+>>> It's not a big problem and one can easily remove the WARN_ON().
+>>> But I think we'd better fix the caller to do round_down() before 
+>>> calling this function.
+>>>
 >>
->> Is your block device still using old 512 block size?
->> AFAIK nowadays most HDDs are using 4K blocksize and it's recommended 
->> to use it.
+>> That's interesting!  I believe I made an effort to align them when I 
+>> set it up years ago, but never knew how to verify.
+> 
+> Well, best verifying if that's the line causing the warning, since I 
+> don't have the source of RedHat kernel.
+> 
 >>
->> It's not a big problem and one can easily remove the WARN_ON().
->> But I think we'd better fix the caller to do round_down() before 
->> calling this function.
+>> I have three mirrored filesystems:
 >>
+[snip]
+>>
+>> Number  Start (sector)    End (sector)  Size       Code Name
+>>     1              40      3907029134   1.8 TiB     8300 BTRFS MEDIA
+>> GPT fdisk (gdisk) version 0.8.6
 > 
-> That's interesting!  I believe I made an effort to align them when I set 
-> it up years ago, but never knew how to verify.
+> At least this size is not aligned to 4K.
+> 
+>>
+>> Partition table scan:
+[snip]
+>>
+>> .....and one is aligned differently!
+>>
+>> Could it be /dev/sdd that's the issue?  But it's aligned at 4096 -- so 
+>> I'm not sure that's the issue after all.
+> 
+> Its start sector is aligned, but end point is not, so the size is not 
+> aligned either.
+> 
+> BTW, is /dev/sdd added to btrfs using "btrfs device add"?
+> In my test, if making btrfs on a unaligned file, it will round down to 
+> its sectorsize boundary.
 
-Well, best verifying if that's the line causing the warning, since I 
-don't have the source of RedHat kernel.
+Confirmed that "btrfs device add" won't round down the size.
+Check the btrfs-debug-tree output:
+------
+         item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 16185 itemsize 98
+                 devid 1 total_bytes 10737418240 bytes_used 2172649472
+                 io_align 4096 io_width 4096 sector_size 4096 type 0
+                 generation 0 start_offset 0 dev_group 0
+                 seek_speed 0 bandwidth 0
+                 uuid 243a1117-ca31-4d87-8656-81c5630aafb2
+                 fsid 6452cde7-14d5-4541-aa07-b265a400bad0
+         item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16087 itemsize 98
+                 devid 2 total_bytes 1073742336 bytes_used 0
+                 io_align 4096 io_width 4096 sector_size 4096 type 0
+                 generation 0 start_offset 0 dev_group 0
+                 seek_speed 0 bandwidth 0
+                 uuid 6bb07260-d230-4e22-88b1-1eabb46622ed
+                 fsid 6452cde7-14d5-4541-aa07-b265a400bad0
+------
 
-> 
-> I have three mirrored filesystems:
-> 
-> $ for i in /dev/sd[abcdef]; do sudo gdisk -l $i; done
-> GPT fdisk (gdisk) version 0.8.6
-> 
-> Partition table scan:
->    MBR: protective
->    BSD: not present
->    APM: not present
->    GPT: present
-> 
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sda: 3907029168 sectors, 1.8 TiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): 03FFF12A-2EF5-4916-92D9-59C244EFDF5B
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 3907029134
-> Partitions will be aligned on 2048-sector boundaries
-> Total free space is 2014 sectors (1007.0 KiB)
-> 
-> Number  Start (sector)    End (sector)  Size       Code Name
->     1            2048      3907029134   1.8 TiB     8300 BTRFS BACKUPS
-> GPT fdisk (gdisk) version 0.8.6
-> 
-> Partition table scan:
->    MBR: protective
->    BSD: not present
->    APM: not present
->    GPT: present
-> 
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sdb: 3907029168 sectors, 1.8 TiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): B0CF9AC1-7DD0-46CD-AF62-2E54761686C7
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 3907029134
-> Partitions will be aligned on 2048-sector boundaries
-> Total free space is 2014 sectors (1007.0 KiB)
-> 
-> Number  Start (sector)    End (sector)  Size       Code Name
->     1            2048      3907029134   1.8 TiB     8300 BTRFS BACKUPS
-> GPT fdisk (gdisk) version 0.8.6
-> 
-> Partition table scan:
->    MBR: protective
->    BSD: not present
->    APM: not present
->    GPT: present
-> 
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sdc: 3907029168 sectors, 1.8 TiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): 21CA2468-8185-4ECA-B63D-8A9A1557F302
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 3907029134
-> Partitions will be aligned on 2048-sector boundaries
-> Total free space is 2014 sectors (1007.0 KiB)
-> 
-> Number  Start (sector)    End (sector)  Size       Code Name
->     1            2048      3907029134   1.8 TiB     8300 BTRFS MEDIA
-> GPT fdisk (gdisk) version 0.8.6
-> 
-> Partition table scan:
->    MBR: protective
->    BSD: not present
->    APM: not present
->    GPT: present
-> 
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sdd: 3907029168 sectors, 1.8 TiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): 5214ED9D-769A-4DF8-886F-8EEC3FDD4D0D
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 3907029134
-> Partitions will be aligned on 8-sector boundaries
-> Total free space is 6 sectors (3.0 KiB)
-> 
-> Number  Start (sector)    End (sector)  Size       Code Name
->     1              40      3907029134   1.8 TiB     8300 BTRFS MEDIA
-> GPT fdisk (gdisk) version 0.8.6
+Where first device is completely aligned, the 2nd device which is just 
+1G + 512, definitely not aligned.
 
-At least this size is not aligned to 4K.
+So if you're using single device purely created by mkfs.btrfs, you're OK.
+But if any new device added, you're not OK and causing the false alert.
 
-> 
-> Partition table scan:
->    MBR: protective
->    BSD: not present
->    APM: not present
->    GPT: present
-> 
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sde: 234441648 sectors, 111.8 GiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): D0E4B890-0002-4DA1-B011-24CE7FD435FE
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 234441614
-> Partitions will be aligned on 2048-sector boundaries
-> Total free space is 2925 sectors (1.4 MiB)
-> 
-> Number  Start (sector)    End (sector)  Size       Code Name
->     1            2048          411647   200.0 MiB   EF00 EFI System 
-> Partition
->     2          411648         1435647   500.0 MiB   0700 Primary /boot
->     3         1435648       234440703   111.1 GiB   0700 Primary /home
-> GPT fdisk (gdisk) version 0.8.6
-> 
-> Partition table scan:
->    MBR: protective
->    BSD: not present
->    APM: not present
->    GPT: present
-> 
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sdf: 234441648 sectors, 111.8 GiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): D1523F65-B975-4A94-8519-3D1679A50342
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 234441614
-> Partitions will be aligned on 2048-sector boundaries
-> Total free space is 2014 sectors (1007.0 KiB)
-> 
-> Number  Start (sector)    End (sector)  Size       Code Name
->     1            2048          411647   200.0 MiB   EF00 EFI System
->     2          411648         1435647   500.0 MiB   0700 Secondary /boot
->     3         1435648       234441614   111.1 GiB   0700 Secondary /home
-> 
-> .....and one is aligned differently!
-> 
-> Could it be /dev/sdd that's the issue?  But it's aligned at 4096 -- so 
-> I'm not sure that's the issue after all.
+Any way, it should not be hard to fix.
+Just remove the WARN_ON() and add extra round_down when adding device.
 
-Its start sector is aligned, but end point is not, so the size is not 
-aligned either.
-
-BTW, is /dev/sdd added to btrfs using "btrfs device add"?
-In my test, if making btrfs on a unaligned file, it will round down to 
-its sectorsize boundary.
-
-So I'm wondering if it's caused by added new btrfs device.
-
-Thanks,
+Thanks for the report,
 Qu
 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> So I'm wondering if it's caused by added new btrfs device.
+> 
+> Thanks,
+> Qu
+> 
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

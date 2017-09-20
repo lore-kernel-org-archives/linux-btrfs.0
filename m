@@ -1,57 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:62225 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751636AbdITX1M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 19:27:12 -0400
-Subject: Re: RFC: Btrfs does not store checksum type? Only size? O_o
-To: Timofey Titovets <nefelim4ag@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAGqmi76MPGYFiksk5Jt05wjhQoQXpQuu1CiJFhxQw8QEB0gPpw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <28d9d0f8-11b7-29c8-e540-61f18f1aa9a7@gmx.com>
-Date: Thu, 21 Sep 2017 07:27:04 +0800
-MIME-Version: 1.0
-In-Reply-To: <CAGqmi76MPGYFiksk5Jt05wjhQoQXpQuu1CiJFhxQw8QEB0gPpw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from aserp1040.oracle.com ([141.146.126.69]:17075 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751584AbdIUAzf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Sep 2017 20:55:35 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: btrfs/150 regression test for reading compressed data
+Date: Wed, 20 Sep 2017 17:52:43 -0600
+Message-Id: <20170920235243.11822-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We had a bug in btrfs compression code which could end up with a
+kernel panic.
 
+This is adding a regression test for the bug and I've also sent a
+kernel patch to fix the bug.
 
-On 2017年09月21日 04:31, Timofey Titovets wrote:
-> I was reading the kernel code and docs and didn't find anything about
-> some info like "cheksum type" as btrfs have for compression code.
-> (I only found some silent "hack" in btrfs-progs, that print "checksum
-> type", but get "checksum size")
+The patch is "Btrfs: fix kernel oops while reading compressed data".
 
-Checksum type is global, so one btrfs fs uses the same checksum type for 
-all its meta and data.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ tests/btrfs/150     | 102 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/150.out |   3 ++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 106 insertions(+)
+ create mode 100755 tests/btrfs/150
+ create mode 100644 tests/btrfs/150.out
 
-So checksum type is in superblock. Check btrfs_super_block->csum_type.
+diff --git a/tests/btrfs/150 b/tests/btrfs/150
+new file mode 100755
+index 0000000..834be51
+--- /dev/null
++++ b/tests/btrfs/150
+@@ -0,0 +1,102 @@
++#! /bin/bash
++# FS QA Test btrfs/150
++#
++# This is a regression test which ends up with a kernel oops in btrfs.
++# It occurs when btrfs's read repair happens while reading a compressed
++# extent.
++# The patch for this is 
++# xxxxx
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2017 Liu Bo.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_fail_make_request
++_require_scratch_dev_pool 2 
++
++SYSFS_BDEV=`_sysfs_dev $SCRATCH_DEV`
++enable_io_failure()
++{
++        echo 100 > $DEBUGFS_MNT/fail_make_request/probability
++        echo 1000 > $DEBUGFS_MNT/fail_make_request/times
++        echo 0 > $DEBUGFS_MNT/fail_make_request/verbose
++        echo 1 > $SYSFS_BDEV/make-it-fail
++}
++
++disable_io_failure()
++{
++        echo 0 > $SYSFS_BDEV/make-it-fail
++        echo 0 > $DEBUGFS_MNT/fail_make_request/probability
++        echo 0 > $DEBUGFS_MNT/fail_make_request/times
++}
++
++_scratch_pool_mkfs "-d raid1 -b 1G" >> $seqres.full 2>&1
++
++# It doesn't matter which compression algorithm we use.
++_scratch_mount -ocompress
++
++# Create a file with all data being compressed
++$XFS_IO_PROG -f -c "pwrite -W 0 8K" $SCRATCH_MNT/foobar | _filter_xfs_io
++
++# Raid1 consists of two copies and btrfs decides which copy to read by reader's
++# %pid.  Now we inject errors to copy #1 and copy #0 is good.  We want to read
++# the bad copy to trigger read-repair.
++while true; do
++	disable_io_failure
++	# invalidate the page cache
++	$XFS_IO_PROG -f -c "fadvise -d 0 128K" $SCRATCH_MNT/foobar | _filter_xfs_io
++
++	enable_io_failure
++	od -x $SCRATCH_MNT/foobar > /dev/null &
++	pid=$!
++	wait
++	[ $((pid % 2)) == 1 ] && break
++done
++
++disable_io_failure
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/150.out b/tests/btrfs/150.out
+new file mode 100644
+index 0000000..c492c24
+--- /dev/null
++++ b/tests/btrfs/150.out
+@@ -0,0 +1,3 @@
++QA output created by 150
++wrote 8192/8192 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 70c3f05..b70a122 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -152,3 +152,4 @@
+ 147 auto quick send
+ 148 auto quick rw
+ 149 auto quick send compress
++150 auto quick
+-- 
+2.5.0
 
-> 
-> If i understood all correctly btrfs only store checksum size, i.e. 4
-> for current CRC32C.
-
-Yes.
-
-> 
-> May be that can be useful to rewrite some part of code and reuse
-> checksum size, as checksum type.
-> 
-> For backward compatibility current CRC32C size can be used for identify CRC32C.
-
-Since we have superblock csum type, why introducing new one?
-(Unless you're going to allow multi csum algorithm to co-exist in one 
-btrfs fs)
-
-Thanks,
-Qu
-> As that will not add any new checksum, that allow make that with zero "blood".
-> And later if we add new checksum type, that possible to add compat
-> flag for that.
-> 
-> What you think?
-> 
-> Thanks.
-> 

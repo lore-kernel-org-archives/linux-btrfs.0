@@ -1,56 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f180.google.com ([209.85.128.180]:44462 "EHLO
-        mail-wr0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751610AbdITPvS (ORCPT
+Received: from resqmta-po-01v.sys.comcast.net ([96.114.154.160]:60884 "EHLO
+        resqmta-po-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751192AbdITQxT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 11:51:18 -0400
-Received: by mail-wr0-f180.google.com with SMTP id v109so2549424wrc.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 08:51:18 -0700 (PDT)
-Subject: Re: SSD caching an existing btrfs raid1
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Wed, 20 Sep 2017 12:53:19 -0400
+Subject: Re: WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
+ btrfs_update_device+0x1c5/0x1d0 [btrfs]
+To: nborisov <nborisov@suse.de>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Rich Rauenzahn <rrauenza@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <4ed24e33-09e1-c03a-912c-9d1b2bbdc835@gmail.com>
- <2a208f7c-a140-3ac6-12c6-2e953f3f96ec@gmail.com>
-From: Psalle <psalleetsile@gmail.com>
-Message-ID: <36669362-6401-72e3-f963-41de0debd0a4@gmail.com>
-Date: Wed, 20 Sep 2017 17:51:15 +0200
+References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
+ <69ee49ff-d2d6-bec9-055c-18697b71ec20@gmx.com>
+ <1f8d39cd-a36a-6b4d-dea8-7a9acd9f9396@shroop.net>
+ <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
+ <8df27746-487b-c5f2-59a0-8eb24b95571a@gmx.com>
+ <eda7f67a-ee75-2536-96d6-27bd816c34f0@gmx.com>
+ <25600b6b3bd712edb60962357c42d163@suse.de>
+ <c0be1b97-43d1-1ebb-f745-b7308e6a9eba@gmx.com>
+ <2e940d95b1e00ebb2a873b89760ec236@suse.de>
+From: Rich Rauenzahn <rich@shroop.net>
+Message-ID: <34aba268-300b-3cfc-8854-3f0661832af7@shroop.net>
+Date: Wed, 20 Sep 2017 09:53:13 -0700
 MIME-Version: 1.0
-In-Reply-To: <2a208f7c-a140-3ac6-12c6-2e953f3f96ec@gmail.com>
+In-Reply-To: <2e940d95b1e00ebb2a873b89760ec236@suse.de>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 19/09/17 17:47, Austin S. Hemmelgarn wrote:
-(...)
->
-> A better option if you can afford to remove a single device from that 
-> array temporarily is to use bcache.  Bcache has one specific advantage 
-> in this case, multiple backend devices can share the same cache 
-> device. This means you don't have to carve out dedicated cache space 
-> for each disk on the SSD and leave some unused space so that you can 
-> add new devices if needed.  The downside is that you can't convert 
-> each device in-place, but because you're using BTRFS, you can still 
-> convert the volume as a whole in-place.  The procedure for doing so 
-> looks like this:
->
-> 1. Format the SSD as a bcache cache.
-> 2. Use `btrfs device delete` to remove a single hard drive from the 
-> array.
-> 3. Set up the drive you just removed as a bcache backing device bound 
-> to the cache you created in step 1.
-> 4. Add the new bcache device to the array.
-> 5. Repeat from step 2 until the whole array is converted.
->
-> A similar procedure can actually be used to do almost any underlying 
-> storage conversion (for example, switching to whole disk encryption, 
-> or adding LVM underneath BTRFS) provided all your data can fit on one 
-> less disk than you have.
-
-Thanks Austin, that's just great. For some reason I had discarded bcache 
-thinking that it would force me to rebuild from scratch, but this kind 
-of incremental migration is exactly why I hoped was possible. I have 
-plenty of space to replace the devices one by one.
-
-I will report back my experience in a few days, I hope.
+For the warning -- is there anyway to add in the filesystem/disk causing 
+the issue?  I didn't see any identifier in the message that told me 
+which it was.

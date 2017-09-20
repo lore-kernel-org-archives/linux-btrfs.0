@@ -1,11 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-01v.sys.comcast.net ([96.114.154.160]:34792 "EHLO
-        resqmta-po-01v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751614AbdITQ7E (ORCPT
+Received: from resqmta-po-11v.sys.comcast.net ([96.114.154.170]:41610 "EHLO
+        resqmta-po-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751307AbdITSLK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 12:59:04 -0400
+        Wed, 20 Sep 2017 14:11:10 -0400
 Subject: Re: WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559
  btrfs_update_device+0x1c5/0x1d0 [btrfs]
+From: Rich Rauenzahn <rich@shroop.net>
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Rich Rauenzahn <rrauenza@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
@@ -14,38 +15,31 @@ References: <CAG+QAKXTRiC0s5pH_EQoz7Zd7nNfMC5++AN+EFgU6yY=3uvckw@mail.gmail.com>
  <a7334014-9f8e-55e0-83d1-0c14ce1522f6@gmx.com>
  <8df27746-487b-c5f2-59a0-8eb24b95571a@gmx.com>
  <eda7f67a-ee75-2536-96d6-27bd816c34f0@gmx.com>
-From: Rich Rauenzahn <rich@shroop.net>
-Message-ID: <417135a6-2cba-578b-e2a2-264f8cd53ce5@shroop.net>
-Date: Wed, 20 Sep 2017 09:58:59 -0700
+ <417135a6-2cba-578b-e2a2-264f8cd53ce5@shroop.net>
+Message-ID: <c2161464-65e0-93b9-f118-2f3938deef00@shroop.net>
+Date: Wed, 20 Sep 2017 11:10:57 -0700
 MIME-Version: 1.0
-In-Reply-To: <eda7f67a-ee75-2536-96d6-27bd816c34f0@gmx.com>
+In-Reply-To: <417135a6-2cba-578b-e2a2-264f8cd53ce5@shroop.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-
-On 9/19/2017 10:39 PM, Qu Wenruo wrote:
+On 9/20/2017 9:58 AM, Rich Rauenzahn wrote:
 >
-> In v4.13 kernel, the newly added devices are in fact rounded down.
-> But existing device doesn't get the round down.
+> What's the most direct way to do that?  (Was about to risk breaking 
+> the mirror and repartitioning!  I'd rather not!)
 >
-> So it's recommended to resize (shrink) your fs for very small size to 
-> fix it if you don't want to wait for the kernel fix.
+> Hmm -- maybe this worked:
 >
+> $ sudo btrfs filesystem resize -1m /.MEDIA/
+> Resize '/.MEDIA/' of '-1m'
+No, doesn't seem to have worked.  I used btrfs fi show --raw /.MEDIA to 
+see the size in bytes, and then ...
 
-What's the most direct way to do that?  (Was about to risk breaking the 
-mirror and repartitioning!  I'd rather not!)
+sudo btrfs filesystem resize N:SIZE /.MEDIA/
 
-Hmm -- maybe this worked:
+Where N was the disk number in the show output, and SIZE was the number 
+of bytes to set it to that was a multiple of 4k.
 
-$ sudo btrfs filesystem resize -1m /.MEDIA/
-Resize '/.MEDIA/' of '-1m'
-
-> Thanks,
-> Qu
->>>
->>> So I'm wondering if it's caused by added new btrfs device.
->>>
-
-Possibly... I've added and removed disks to some of the btrfs fs's.
+Rich

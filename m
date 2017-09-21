@@ -1,58 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:52826 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751547AbdITXhq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 19:37:46 -0400
-Received: by mail-io0-f180.google.com with SMTP id i197so7252127ioe.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 16:37:46 -0700 (PDT)
+Received: from mail-me1aus01on0050.outbound.protection.outlook.com ([104.47.116.50]:64022
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751652AbdIUGYC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Sep 2017 02:24:02 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: SSD caching an existing btrfs raid1
+Date: Thu, 21 Sep 2017 06:23:59 +0000
+Message-ID: <MEXPR01MB2168811AC03C93E7122642379E660@MEXPR01MB2168.ausprd01.prod.outlook.com>
+References: <4ed24e33-09e1-c03a-912c-9d1b2bbdc835@gmail.com>
+        <2a208f7c-a140-3ac6-12c6-2e953f3f96ec@gmail.com>
+        <36669362-6401-72e3-f963-41de0debd0a4@gmail.com>
+ <20170920224520.044d4c45@jupiter.sol.kaishome.de>
+In-Reply-To: <20170920224520.044d4c45@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <a8df8ca2-8bc4-994a-2de0-fda8e9fc3985@gmail.com>
-References: <CAH=dxU7t=p8MVh1y2Tv7wPrP=1ntYcHCy7W6aBQGRtMp_gaaRA@mail.gmail.com>
- <1fa167f4-a8ba-84c7-8e06-9c7e9f3d30e7@gmail.com> <CAH=dxU4yTdKQwZX3L-oOMs2ZYiR82m1-F0GhbSU4SV_K2jrBGA@mail.gmail.com>
- <a8df8ca2-8bc4-994a-2de0-fda8e9fc3985@gmail.com>
-From: Dave <davestechshop@gmail.com>
-Date: Wed, 20 Sep 2017 19:37:24 -0400
-Message-ID: <CAH=dxU6VW_T2P_gnNhPTywWZKyqCboy8m5A1CUNwc78OemGnXg@mail.gmail.com>
-Subject: Re: ERROR: parent determination failed (btrfs send-receive)
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Dave <davestechshop@gmail.com>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 19, 2017 at 3:37 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> 18.09.2017 09:10, Dave Ğ¿Ğ¸ÑˆĞµÑ‚:
->> I use snap-sync to create and send snapshots.
->>
->> GitHub - wesbarnett/snap-sync: Use snapper snapshots to backup to external drive
->> https://github.com/wesbarnett/snap-sync
->>
->
-> Are you trying to backup top-level subvolume?
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of Kai Krakow
+> Sent: Thursday, 21 September 2017 6:45 AM
+> To: linux-btrfs@vger.kernel.org
+> Subject: Re: SSD caching an existing btrfs raid1
+> 
+> Am Wed, 20 Sep 2017 17:51:15 +0200
+> schrieb Psalle <psalleetsile@gmail.com>:
+> 
+> > On 19/09/17 17:47, Austin S. Hemmelgarn wrote:
+> > (...)
+> > >
+> > > A better option if you can afford to remove a single device from
+> > > that array temporarily is to use bcache.Â  Bcache has one specific
+> > > advantage in this case, multiple backend devices can share the same
+> > > cache device. This means you don't have to carve out dedicated cache
+> > > space for each disk on the SSD and leave some unused space so that
+> > > you can add new devices if needed.Â  The downside is that you can't
+> > > convert each device in-place, but because you're using BTRFS, you
+> > > can still convert the volume as a whole in-place.Â  The procedure for
+> > > doing so looks like this:
+> > >
+> > > 1. Format the SSD as a bcache cache.
+> > > 2. Use `btrfs device delete` to remove a single hard drive from the
+> > > array.
+> > > 3. Set up the drive you just removed as a bcache backing device
+> > > bound to the cache you created in step 1.
+> > > 4. Add the new bcache device to the array.
+> > > 5. Repeat from step 2 until the whole array is converted.
+> > >
+> > > A similar procedure can actually be used to do almost any underlying
+> > > storage conversion (for example, switching to whole disk encryption,
+> > > or adding LVM underneath BTRFS) provided all your data can fit on
+> > > one less disk than you have.
+> >
+> > Thanks Austin, that's just great. For some reason I had discarded
+> > bcache thinking that it would force me to rebuild from scratch, but
+> > this kind of incremental migration is exactly why I hoped was
+> > possible. I have plenty of space to replace the devices one by one.
+> >
+> > I will report back my experience in a few days, I hope.
+> 
+> I've done it exactly that way in the past and it worked flawlessly (but it took
+> 24+ hours). But it was easy for me because I was also adding a third disk to
+> the pool, so existing stuff could easily move.
 
-No. I never mount the top-level subvolume.
+Device delete takes freaking ages! I would avoid using it if you can. Device replace is much faster.
 
->  I just reproduced this > behavior with this tool. The problem is, snapshots of top-level
-> subvolume do not have parent UUID (I am not even sure if UUID exists at
-> all TBH). If you mount any other subvolume, it will work.
 
-Well, that's not exactly my issue but it still helps me gain
-additional understanding.  It may help me reproduce my original
-problem too. Thank you.
+Paul.
 
->
->
-> As I told you in the first reply, showing output of "btrfs su li -qu
-> /path/to/src" would explain your problem much earlier.
->
-> Actually if snap-sync used "btrfs send -p" instead of "btrfs send -c" it
-> would work as well, as then no parent search would be needed (and as I
-> mentioned in another mail both commands are functionally equivalent).
-> But this becomes really off-topic on this list. As already suggested,
-> open issue for snap-sync.
 
-Thank you for this also. I will simply edit my current copy of the
-snap-sync script to use "-p" now. That's a simple change I am
-implement immediately.
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

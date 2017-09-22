@@ -1,169 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:45592 "EHLO
-        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751882AbdIVRGG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2017 13:06:06 -0400
-Received: by mail-io0-f178.google.com with SMTP id g32so4516377ioj.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2017 10:06:06 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.17.20]:55973 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751845AbdIVU3l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Sep 2017 16:29:41 -0400
+Received: from thetick.localnet ([93.181.44.247]) by mail.gmx.com (mrgmx102
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 0LnDof-1dReXO3u3R-00hO8g for
+ <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2017 22:29:40 +0200
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: defragmenting best practice?
+Date: Fri, 22 Sep 2017 22:29:34 +0200
+Message-ID: <6912497.aQNEZV21sa@thetick>
+In-Reply-To: <fd4d55ff-3b6c-3ed1-6a8e-1823083243d9@gmail.com>
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170921221013.5576f90e@jupiter.sol.kaishome.de> <fd4d55ff-3b6c-3ed1-6a8e-1823083243d9@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAP9W88hH32dYTLocRtTaFhCfY1qSgUA-F=ThKWmWMtsK7XDNGQ@mail.gmail.com>
-References: <CAP9W88j+UZCiF6-Bj6Nyh83L=jpTfM5vF-Pz0y09TJ5dsbciZw@mail.gmail.com>
- <CAGqmi74XQkpRwhZ23qyNg7EuGi=aC8aKymUU8g8XeMsLmNHkVA@mail.gmail.com>
- <CAP9W88gs6xYh4MxU--ktS-Ozv8vqs3q84vp52x8OM=Rz3a12vg@mail.gmail.com>
- <CAGqmi74Es55Ptfkyd=sBHdfSoE_rqqyis4juZBbiKc9+LAwMGA@mail.gmail.com>
- <CAP9W88ig1fXyrE0KURbP-1Z0-t63ODADA4HO0tO4KM3eVrRtLg@mail.gmail.com>
- <CAP9W88ifgTWGE_9Xpro=wUJkMSs9263e0Sw6yeG8Km16rdD6AA@mail.gmail.com>
- <CAGqmi75DoErKwwHu7+abu62sUbbEgjMZ1ExzpCpQ68JKmTF==g@mail.gmail.com>
- <CAP9W88ip0ef7yFc3-o8LNO=WsBjhpADbSuzQoppz6yC5KpRTQg@mail.gmail.com>
- <CAGqmi75wKaxpJNO6HfjUJZU4tESQA-r_4rTfe7MY9KW5C67JaQ@mail.gmail.com>
- <CAP9W88hrM+9vPTL=RFXC9+VdWSLMvM1UAtR+XX89FcvorYLqvQ@mail.gmail.com>
- <CAGqmi77ZFmaeSf_Ehoe_T76_RqnG2YcG68y57w8UVpuJ=_awcA@mail.gmail.com>
- <CAP9W88g-XpOcL0CyVOHEGkTc7YN=Kodpb7XCVF45TcO+equ2Vw@mail.gmail.com>
- <CAGqmi74eviuSf=LL7sGEJnH1YYqu_pHdaGDvq4Qdr4aSpvqxkQ@mail.gmail.com> <CAP9W88hH32dYTLocRtTaFhCfY1qSgUA-F=ThKWmWMtsK7XDNGQ@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Fri, 22 Sep 2017 20:05:25 +0300
-Message-ID: <CAGqmi75r0zLs9EjuMFwDTOTFnDQUgkSy37TM+_QKNqdZxY--dw@mail.gmail.com>
-Subject: Re: using fio to test btrfs compression
-To: shally verma <shallyvermacavium@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, vikas.aggarwal@cavium.com,
-        "Narayana, Prasad Athreya" <PrasadAthreya.Narayana@cavium.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; boundary="nextPart1818318.LJRaCilf5L"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-09-22 8:33 GMT+03:00 shally verma <shallyvermacavium@gmail.com>:
-> On Wed, Sep 20, 2017 at 5:26 PM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
->> 2017-09-20 14:10 GMT+03:00 shally verma <shallyvermacavium@gmail.com>:
->>> Interesting part is I dont see "encoded" under flags. I couldn't
->>> understand if flags are retrieved from btrfs file metadata info. As
->>> you are running on 4.14 and I am on 4.9
->>>
->>> So, am still under doubt, even with dd if files are getting compressed.
->>>
->>> What is the filesize shown if you run
->>> btrfs fi du /mnt/test0.0 .. is it less or actual size?
->>>
->>> Is there any command that i can run to confirm file has been compressed?
->>>
->>> So far, I had my prints enabled in kernel/fs/btrfs/compression.c and
->>> check in dmesg that code jumped to compress_page() func.
->>>
->>> Thanks
->>> Shally
->>>
->>
->> Okay, lets play different.
->> encoded work for last several years for kernel releases, so you must see that.
->>
->> Reproduction script:
->> #!/bin/bash -e
->>
->> FILE_NAME=$RANDOM$RANDOM
->> TMP_DIR=$(mktemp -d)
->> IMAGE_FILE="$HOME/$FILE_NAME"
->>
->> truncate -s 4G $IMAGE_FILE
->> mkfs.btrfs -m single -L COMPRESS_TEST $IMAGE_FILE
->> mount -o compress-force $IMAGE_FILE $TMP_DIR
->> dd if=/dev/zero bs=128K count=2 of=$TMP_DIR/zero
->> sync
->> filefrag -v $TMP_DIR/zero
->> umount $TMP_DIR
->> rm -v $IMAGE_FILE
->>
->> Example output:
->> ~ sudo ./btrfs_compress_test.sh
->> btrfs-progs v4.13
->> See http://btrfs.wiki.kernel.org for more information.
->>
->> Label:              COMPRESS_TEST
->> UUID:               abfedc39-dd94-4105-87d6-49eedb13467f
->> Node size:          16384
->> Sector size:        4096
->> Filesystem size:    4.00GiB
->> Block group profiles:
->>  Data:             single            8.00MiB
->>  Metadata:         single            8.00MiB
->>  System:           single            4.00MiB
->> SSD detected:       no
->> Incompat features:  extref, skinny-metadata
->> Number of devices:  1
->> Devices:
->>   ID        SIZE  PATH
->>    1     4.00GiB  /root/322906281
->>
->> 2+0 records in
->> 2+0 records out
->> 262144 bytes (262 kB, 256 KiB) copied, 0.000197746 s, 1.3 GB/s
->> Filesystem type is: 9123683e
->> File size of /tmp/tmp.bDyt3EkEG5/zero is 262144 (64 blocks of 4096 bytes)
->> ext:     logical_offset:        physical_offset: length:   expected: flags:
->>   0:        0..      31:       3072..      3103:     32:             encoded
->>   1:       32..      63:       3073..      3104:     32:       3104:
->> last,encoded,eof
->> /tmp/tmp.bDyt3EkEG5/zero: 2 extents found
->> removed '/root/322906281'
->>
->> Good luck.
-> Here's my output - Everything is same except:
->
-> 1. nodesize and sector size = 64K
-> 2. extent length = 2
-> 3. I  don't see "encoded" in filefrag here.
->
-> btrfs-progs v4.13
-> See http://btrfs.wiki.kernel.org for more information.
->
-> Label:              COMPRESS_TEST
-> UUID:               fad6907e-d4eb-4dbb-9014-3918a822c9ce
-> Node size:          65536
-> Sector size:        65536
-> Filesystem size:    4.00GiB
-> Block group profiles:
->   Data:             single            8.00MiB
->   Metadata:         single            8.00MiB
->   System:           single            4.00MiB
-> SSD detected:       no
-> Incompat features:  extref, skinny-metadata
-> Number of devices:  1
-> Devices:
->    ID        SIZE  PATH
->     1     4.00GiB  /root/2808626087
->
-> 2+0 records in
-> 2+0 records out
-> 262144 bytes (262 kB) copied, 0.00028777 s, 911 MB/s
-> Filesystem type is: 9123683e
-> File size of /tmp/tmp.346ESCdOIi/zero is 262144 (4 blocks of 65536 bytes)
->  ext:     logical_offset:        physical_offset: length:   expected: flags:
->    0:        0..       1:        192..       193:      2:
->    1:        2..       3:        193..       194:      2:        194: eof
-> /tmp/tmp.346ESCdOIi/zero: 2 extents found
-> removed '/root/2808626087'
->
-> And this is my dmesg
->
-> [170127.417119] BTRFS: device label COMPRESS_TEST devid 1 transid 5 /dev/loop0
-> [170127.417493] BTRFS info (device loop0): force zlib compression
-> [170127.417496] BTRFS info (device loop0): disk space caching is enabled
-> [170127.417499] BTRFS info (device loop0): has skinny extents
-> [170127.425858] BTRFS info (device loop0): creating UUID tree
->
-> This is fio --version
-> fio-3.0
->
-> What do we doubt here?
->
-> Thanks
-> Shally
->
->> --
->> Have a nice day,
->> Timofey.
+--nextPart1818318.LJRaCilf5L
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-Sorry, no idea.
+Am Freitag, 22. September 2017, 13:22:52 CEST schrieb Austin S. Hemmelgarn:
+> > I'm not sure where Firefox puts its cache, I only use it on very rare
+> > occasions. But I think it's going to .cache/mozilla last time looked
+> > at it.
+> 
+> I'm pretty sure that is correct.
+
+FWIW, on my system Firefox's cache looks like this:
+
+% du -hsc (find .cache/mozilla/firefox/ -type f) | wc -l
+9008                                                                                                                                                                                                                                                                           
+% du -hsc (find .cache/mozilla/firefox/ -type f) | sort -h | tail
+5,4M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+83CEC8ADA08D9A9658458AB872BE107A216E71C6
+5,5M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+C60061B33D3BB91ED45951C922BAA1BB40022CB7
+5,7M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+0900D9EA8E3222EB8690348C2482C69308B15A20
+5,7M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+F8E90D121B884360E36BCB1735CC5A8B1B7A744B
+5,8M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+903C4CD01ABD74E353C7484C6E21A053AAC5DCC2
+6,1M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+3A0D4193B009700155811D14A28DBE38C37C0067
+6,1M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/startupCache/
+scriptCache-current.bin
+6,5M    .cache/mozilla/firefox/cb236e4s.default-1464421886682/cache2/entries/
+304405168662C3624D57AF98A74345464F32A0DB
+8,8M    .cache/mozilla/firefox/ik7qsfwb.Temp/cache2/entries/
+BD7CA4125B3AA87D6B16C987741F33C65DBFFFDD
+427M    insgesamt
+
+So lots of files, many of which are (I suppose) relatively large, but do not 
+look "everything in one database" large to me.
+
+(This is with Firefox 55.0.2.)
 
 -- 
-Have a nice day,
-Timofey.
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--nextPart1818318.LJRaCilf5L
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCAAdFiEEax7Ya5gDQFOJHKGQv9DmhiyIePQFAlnFcq4ACgkQv9DmhiyI
+ePQUuA/+I5bQUtxjApOruoicirRsgI2PC+ng9MqOgS6T27KSqEfv50TRb5s+/LZE
+JzmNxuHidc2GuZekIKk9D8FfbYYPc4VRfC46bRBRj29qHXej0VsgAqfGNuyjuAAv
+FZtgFjSIObmQOiF/G1JWmfsg82xvmToyC00jqa9n2D1IoUz+B+0LHMr09oIa2jMY
+cX8XNxN3GShXAcw+csX9faOLeTEmDkgG44iLuACrfOOSFR+UB7/v84CRhQCfNfU2
+Tps2unD69y7ht4/BJ5Xgr6dv2HTgim9q6g3tBB1nawlCO0RKUbaGq9DSwzBn34TD
+X5r/usqq3gXeLhaQ7Y0GzgjqWV7Dgi29Bp9cZYN+tEYp9BIkK9X0z5qo/sO2Llno
+hAap/O2uAjj02YLcgy7LXEuLZPxrMLFiBXYlh6JBkujQEnzBU+dbGV/pvYRPNeEu
+r9BNA09dWe8hXdRVIhGdIkXokRqIEHfQupo+B7TqNpmMkxA/0hjd/dvXnX/p9wGc
+HDTV0HQfoO6ldkHh+9JYhk2WU7lE5sanxtcXR5kK66wNpdRltW4xmGY86lc05Ecc
+LsePmujOs0+WsNMH6eJJitXfKb+lPEw6UDq2/ORVgHRVB0JzmQkOTJP8MO61x84b
+RsyQdlU1hdOfSrnxzBUajLaTfFA3MgjJgupbRgWpr77j5JzDYzs=
+=xNTm
+-----END PGP SIGNATURE-----
+
+--nextPart1818318.LJRaCilf5L--
+

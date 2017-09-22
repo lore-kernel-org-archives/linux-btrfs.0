@@ -1,62 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:40801 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750847AbdI2HVS (ORCPT
+Received: from mail-qt0-f182.google.com ([209.85.216.182]:56334 "EHLO
+        mail-qt0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751637AbdIVGcD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Sep 2017 03:21:18 -0400
-Subject: [PATCH] btrfs: fix max chunk size on dup
-From: Naohiro Aota <naohiro.aota@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, clm@fb.com, dsterba@suse.com
-Date: Fri, 29 Sep 2017 16:20:51 +0900
-Message-ID: <150666965116.9802.15216393306253897797.stgit@naota.dhcp.fujisawa.hgst.com>
+        Fri, 22 Sep 2017 02:32:03 -0400
+Received: by mail-qt0-f182.google.com with SMTP id l25so148300qtf.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2017 23:32:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+From: shally verma <shallyvermacavium@gmail.com>
+Date: Fri, 22 Sep 2017 12:01:32 +0530
+Message-ID: <CAP9W88hYMu5y-7MjKnSpTymo8WiBsZ1sag-NY9a_kLfqctaz5g@mail.gmail.com>
+Subject: Running compsize utility on btrfs compress mount point
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: "Verma, Shally" <shally.verma@cavium.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Balancing a fresh METADATA=dup btrfs file system (with size < 50G)
-generates a 128MB sized block group. While we set max_stripe_size =
-max_chunk_size = 256MB, we get this half sized block group:
+Hi
 
-$ btrfs ins dump-t -t CHUNK_TREE btrfs.img|grep length
-                length 8388608 owner 2 stripe_len 65536 type DATA
-                length 33554432 owner 2 stripe_len 65536 type SYSTEM|DUP
-                length 134217728 owner 2 stripe_len 65536 type METADATA|DUP
+This email is in context of another thread initiated by me (with
+Subject: using fio to test btrfs compression).
 
-Before commit 86db25785a6e ("Btrfs: fix max chunk size on raid5/6"), we
-used "stripe_size * ndevs > max_chunk_size * ncopies" to check the max
-chunk size. Since stripe_size = 256MB * dev_stripes (= 2) = 512MB, ndevs
-= 1, max_chunk_size = 256MB, and ncopies = 2, we allowed 256MB
-METADATA|DUP block group.
+Just as brief background, I am trying to verify btrfs compression
+where I am writing data using
+fio, dd or cp command.
 
-But now, we use "stripe_size * data_stripes > max_chunk_size". Since
-data_stripes = 1 on DUP, it disallows the block group to have > 128MB.
-What missing here is "dev_stripes". Proper logical space used by the block
-group is "stripe_size * data_stripes / dev_stripes". Tweak the equations to
-use the right value.
+In response to my question in another thread:
+> Is there any command that i can run to confirm file has been compressed?
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- fs/btrfs/volumes.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+I've gotten response from Duncan:
+>>There is the quite recently posted (and actively updated since then)
+>>compsize command.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0e8f16c305df..d1ac3e1fb753 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4751,10 +4751,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	 * is really going to be in terms of logical address space,
- 	 * and compare that answer with the max chunk size
- 	 */
--	if (stripe_size * data_stripes > max_chunk_size) {
-+	if (stripe_size * data_stripes > max_chunk_size * dev_stripes) {
- 		u64 mask = (1ULL << 24) - 1;
- 
--		stripe_size = div_u64(max_chunk_size, data_stripes);
-+		stripe_size = div_u64(max_chunk_size * dev_stripes,
-+				      data_stripes);
- 
- 		/* bump the answer up to a 16MB boundary */
- 		stripe_size = (stripe_size + mask) & ~mask;
+>>https://github.com/kilobyte/compsize
 
+On running compsize on btrfs mount point created, I get following:
+
+Type       Perc     Disk Usage   Uncompressed Referenced
+Data        50%      128K         256K         256K
+zlib          50%      128K         256K         256K
+Data       100%       10G          10G          10G
+none       100%       10G          10G          10G
+
+but then how do I interpret above information?
+if I go by each line, then Does ..
+
+1st entry means
+Data        50%      128K         256K         256K
+ - It is just raw uncompressed data but occupying only 50% of disk
+space w.r.t its size (may be because of its CoW or deduplication?)
+
+zlib          50%      128K         256K         256K
+- This is zlib compressed data occupying 50% of disk usage ?
+
+Data       100%       10G          10G          10G
+- This is uncompressed data with no compression/cow/deduplication
+occupying 100% of disk of its size?
+
+none       100%       10G          10G          10G
+- Did not understand how to interpret none entry here.. any help?
+
+Thanks
+Shally

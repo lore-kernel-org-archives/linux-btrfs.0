@@ -1,95 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:38042 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751748AbdIUX7A (ORCPT
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:33469 "EHLO
+        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750839AbdIVFeB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Sep 2017 19:59:00 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dvBMn-0002Zl-2G
-        for linux-btrfs@vger.kernel.org; Fri, 22 Sep 2017 01:58:49 +0200
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: defragmenting best practice?
-Date: Fri, 22 Sep 2017 01:58:50 +0200
-Message-ID: <20170922015850.136145fd@jupiter.sol.kaishome.de>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de>
-        <20170912162843.GA32233@rus.uni-stuttgart.de>
-        <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
-        <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
-        <20170914172434.39eae89d@jupiter.sol.kaishome.de>
-        <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
-        <59BBB15E.8010002@sarach.com.pl>
-        <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
-        <59BBDFA6.4020500@sarach.com.pl>
-        <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
-        <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
-        <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
-        <6ab6ffd8-a556-800d-b812-e5361b13ea8d@gmail.com>
-        <20170921221013.5576f90e@jupiter.sol.kaishome.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+        Fri, 22 Sep 2017 01:34:01 -0400
+Received: by mail-qt0-f196.google.com with SMTP id b1so64179qtc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Sep 2017 22:34:01 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAGqmi74eviuSf=LL7sGEJnH1YYqu_pHdaGDvq4Qdr4aSpvqxkQ@mail.gmail.com>
+References: <CAP9W88j+UZCiF6-Bj6Nyh83L=jpTfM5vF-Pz0y09TJ5dsbciZw@mail.gmail.com>
+ <CAGqmi74XQkpRwhZ23qyNg7EuGi=aC8aKymUU8g8XeMsLmNHkVA@mail.gmail.com>
+ <CAP9W88gs6xYh4MxU--ktS-Ozv8vqs3q84vp52x8OM=Rz3a12vg@mail.gmail.com>
+ <CAGqmi74Es55Ptfkyd=sBHdfSoE_rqqyis4juZBbiKc9+LAwMGA@mail.gmail.com>
+ <CAP9W88ig1fXyrE0KURbP-1Z0-t63ODADA4HO0tO4KM3eVrRtLg@mail.gmail.com>
+ <CAP9W88ifgTWGE_9Xpro=wUJkMSs9263e0Sw6yeG8Km16rdD6AA@mail.gmail.com>
+ <CAGqmi75DoErKwwHu7+abu62sUbbEgjMZ1ExzpCpQ68JKmTF==g@mail.gmail.com>
+ <CAP9W88ip0ef7yFc3-o8LNO=WsBjhpADbSuzQoppz6yC5KpRTQg@mail.gmail.com>
+ <CAGqmi75wKaxpJNO6HfjUJZU4tESQA-r_4rTfe7MY9KW5C67JaQ@mail.gmail.com>
+ <CAP9W88hrM+9vPTL=RFXC9+VdWSLMvM1UAtR+XX89FcvorYLqvQ@mail.gmail.com>
+ <CAGqmi77ZFmaeSf_Ehoe_T76_RqnG2YcG68y57w8UVpuJ=_awcA@mail.gmail.com>
+ <CAP9W88g-XpOcL0CyVOHEGkTc7YN=Kodpb7XCVF45TcO+equ2Vw@mail.gmail.com> <CAGqmi74eviuSf=LL7sGEJnH1YYqu_pHdaGDvq4Qdr4aSpvqxkQ@mail.gmail.com>
+From: shally verma <shallyvermacavium@gmail.com>
+Date: Fri, 22 Sep 2017 11:03:30 +0530
+Message-ID: <CAP9W88hH32dYTLocRtTaFhCfY1qSgUA-F=ThKWmWMtsK7XDNGQ@mail.gmail.com>
+Subject: Re: using fio to test btrfs compression
+To: Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: vikas.aggarwal@cavium.com,
+        "Narayana, Prasad Athreya" <PrasadAthreya.Narayana@cavium.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Thu, 21 Sep 2017 22:10:13 +0200
-schrieb Kai Krakow <hurikhan77@gmail.com>:
+On Wed, Sep 20, 2017 at 5:26 PM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
+> 2017-09-20 14:10 GMT+03:00 shally verma <shallyvermacavium@gmail.com>:
+>> Interesting part is I dont see "encoded" under flags. I couldn't
+>> understand if flags are retrieved from btrfs file metadata info. As
+>> you are running on 4.14 and I am on 4.9
+>>
+>> So, am still under doubt, even with dd if files are getting compressed.
+>>
+>> What is the filesize shown if you run
+>> btrfs fi du /mnt/test0.0 .. is it less or actual size?
+>>
+>> Is there any command that i can run to confirm file has been compressed?
+>>
+>> So far, I had my prints enabled in kernel/fs/btrfs/compression.c and
+>> check in dmesg that code jumped to compress_page() func.
+>>
+>> Thanks
+>> Shally
+>>
+>
+> Okay, lets play different.
+> encoded work for last several years for kernel releases, so you must see that.
+>
+> Reproduction script:
+> #!/bin/bash -e
+>
+> FILE_NAME=$RANDOM$RANDOM
+> TMP_DIR=$(mktemp -d)
+> IMAGE_FILE="$HOME/$FILE_NAME"
+>
+> truncate -s 4G $IMAGE_FILE
+> mkfs.btrfs -m single -L COMPRESS_TEST $IMAGE_FILE
+> mount -o compress-force $IMAGE_FILE $TMP_DIR
+> dd if=/dev/zero bs=128K count=2 of=$TMP_DIR/zero
+> sync
+> filefrag -v $TMP_DIR/zero
+> umount $TMP_DIR
+> rm -v $IMAGE_FILE
+>
+> Example output:
+> ~ sudo ./btrfs_compress_test.sh
+> btrfs-progs v4.13
+> See http://btrfs.wiki.kernel.org for more information.
+>
+> Label:              COMPRESS_TEST
+> UUID:               abfedc39-dd94-4105-87d6-49eedb13467f
+> Node size:          16384
+> Sector size:        4096
+> Filesystem size:    4.00GiB
+> Block group profiles:
+>  Data:             single            8.00MiB
+>  Metadata:         single            8.00MiB
+>  System:           single            4.00MiB
+> SSD detected:       no
+> Incompat features:  extref, skinny-metadata
+> Number of devices:  1
+> Devices:
+>   ID        SIZE  PATH
+>    1     4.00GiB  /root/322906281
+>
+> 2+0 records in
+> 2+0 records out
+> 262144 bytes (262 kB, 256 KiB) copied, 0.000197746 s, 1.3 GB/s
+> Filesystem type is: 9123683e
+> File size of /tmp/tmp.bDyt3EkEG5/zero is 262144 (64 blocks of 4096 bytes)
+> ext:     logical_offset:        physical_offset: length:   expected: flags:
+>   0:        0..      31:       3072..      3103:     32:             encoded
+>   1:       32..      63:       3073..      3104:     32:       3104:
+> last,encoded,eof
+> /tmp/tmp.bDyt3EkEG5/zero: 2 extents found
+> removed '/root/322906281'
+>
+> Good luck.
+Here's my output - Everything is same except:
 
-> Am Wed, 20 Sep 2017 07:46:52 -0400
-> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
-> 
-> > >      Fragmentation: Files with a lot of random writes can become
-> > > heavily fragmented (10000+ extents) causing excessive multi-second
-> > > spikes of CPU load on systems with an SSD or large amount a RAM.
-> > > On desktops this primarily affects application databases
-> > > (including Firefox). Workarounds include manually defragmenting
-> > > your home directory using btrfs fi defragment. Auto-defragment
-> > > (mount option autodefrag) should solve this problem.
-> > > 
-> > > Upon reading that I am wondering if fragmentation in the Firefox
-> > > profile is part of my issue. That's one thing I never tested
-> > > previously. (BTW, this system has 256 GB of RAM and 20 cores.)    
-> > Almost certainly.  Most modern web browsers are brain-dead and
-> > insist on using SQLite databases (or traditional DB files) for
-> > everything, including the cache, and the usage for the cache in
-> > particular kills performance when fragmentation is an issue.  
-> 
-> At least in Chrome, you can turn on simple cache backend, which, I
-> think, is using many small instead of one huge file. This suit btrfs
-> much better:
-> 
-> chrome://flags/#enable-simple-cache-backend
-> 
-> 
-> And then I suggest also doing this (as your login user):
-> 
-> $ cd $HOME
-> $ mv .cache .cache.old
-> $ mkdir .cache
-> $ lsattr +C .cache
+1. nodesize and sector size = 64K
+2. extent length = 2
+3. I  don't see "encoded" in filefrag here.
 
-Oops, of course that's chattr, not lsattr
+btrfs-progs v4.13
+See http://btrfs.wiki.kernel.org for more information.
 
-> $ rsync -av .cache.old/ .cache/
-> $ rm -Rf .cache.old
-> 
-> This makes caches for most applications nocow. Chrome performance was
-> completely fixed for me by doing this.
-> 
-> I'm not sure where Firefox puts its cache, I only use it on very rare
-> occasions. But I think it's going to .cache/mozilla last time looked
-> at it.
-> 
-> You may want to close all apps before converting the cache directory.
-> 
-> Also, I don't see any downsides in making this nocow. That directory
-> could easily be also completely volatile. If something breaks due to
-> no longer protected by data csum, just clean it out.
+Label:              COMPRESS_TEST
+UUID:               fad6907e-d4eb-4dbb-9014-3918a822c9ce
+Node size:          65536
+Sector size:        65536
+Filesystem size:    4.00GiB
+Block group profiles:
+  Data:             single            8.00MiB
+  Metadata:         single            8.00MiB
+  System:           single            4.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1     4.00GiB  /root/2808626087
 
+2+0 records in
+2+0 records out
+262144 bytes (262 kB) copied, 0.00028777 s, 911 MB/s
+Filesystem type is: 9123683e
+File size of /tmp/tmp.346ESCdOIi/zero is 262144 (4 blocks of 65536 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..       1:        192..       193:      2:
+   1:        2..       3:        193..       194:      2:        194: eof
+/tmp/tmp.346ESCdOIi/zero: 2 extents found
+removed '/root/2808626087'
 
--- 
-Regards,
-Kai
+And this is my dmesg
 
-Replies to list-only preferred.
+[170127.417119] BTRFS: device label COMPRESS_TEST devid 1 transid 5 /dev/loop0
+[170127.417493] BTRFS info (device loop0): force zlib compression
+[170127.417496] BTRFS info (device loop0): disk space caching is enabled
+[170127.417499] BTRFS info (device loop0): has skinny extents
+[170127.425858] BTRFS info (device loop0): creating UUID tree
 
+This is fio --version
+fio-3.0
+
+What do we doubt here?
+
+Thanks
+Shally
+
+> --
+> Have a nice day,
+> Timofey.

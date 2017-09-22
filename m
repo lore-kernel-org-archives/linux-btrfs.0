@@ -1,69 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53016 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752437AbdIXN02 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Sep 2017 09:26:28 -0400
-Date: Sun, 24 Sep 2017 15:24:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: use self-explaining variable
-Message-ID: <20170924132454.GS29043@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170913182521.31304-1-bo.li.liu@oracle.com>
- <20170922233618.20034-1-bo.li.liu@oracle.com>
- <4d9fe9dd-ccde-964c-ea88-bce4eeafc81a@gmx.com>
- <20170923004837.GD8109@lim.localdomain>
- <02a5af04-f1b3-cdef-d77d-55c0517c12ad@gmx.com>
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:41938 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751637AbdIVF5Y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Sep 2017 01:57:24 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 54C12AC0129
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2017 14:57:18 +0900 (JST)
+To: <linux-btrfs@vger.kernel.org>
+CC: <anand.jain@oracle.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH v2 0/3] btrfs: cleanup mount path
+Message-ID: <afc0d4c0-e89c-9786-8583-e4bedaf9557e@jp.fujitsu.com>
+Date: Fri, 22 Sep 2017 14:56:49 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <02a5af04-f1b3-cdef-d77d-55c0517c12ad@gmx.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 23, 2017 at 09:09:24AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2017年09月23日 08:48, Liu Bo wrote:
-> > On Sat, Sep 23, 2017 at 08:46:55AM +0800, Qu Wenruo wrote:
-> >>
-> >>
-> >> On 2017年09月23日 07:36, Liu Bo wrote:
-> >>> This uses a bool 'do_backup' to help understand this piece of code.
-> >>>
-> >>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> >>> ---
-> >>> This is based on a patch "Btrfs: do not backup tree roots when fsync".
-> >>>
-> >>>    fs/btrfs/disk-io.c | 3 ++-
-> >>>    1 file changed, 2 insertions(+), 1 deletion(-)
-> >>>
-> >>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> >>> index cdb7043..9811b9d 100644
-> >>> --- a/fs/btrfs/disk-io.c
-> >>> +++ b/fs/btrfs/disk-io.c
-> >>> @@ -3691,6 +3691,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
-> >>>    	int max_errors;
-> >>>    	int total_errors = 0;
-> >>>    	u64 flags;
-> >>> +	bool do_backup = (max_mirrors == 0);
-> >>
-> >> Why not replacing @max_mirrors with @do_backup as parameter?
-> > 
-> > If I read the code correctly, max_mirrors is not just for deciding
-> > backup.
-> 
-> That's strange.
-> 
-> write_all_supers() only uses @max_mirrors by passing it to 
-> write_dev_supers() and wait_dev_supers().
-> 
-> Both of the write/wait_dev_supers() will replace @max_mirrors to 
-> BTRFS_SUPER_MIRROR_MAX if it's zero.
-> 
-> Further more, all write_all_supers() callers just pass @max_mirrors as 
-> bool (either 0 or 1).
-> 
-> So I don't see any point not replacing the parameter as bool.
+Summary:
+Cleanup mount path by avoiding calling btrfs_mount() twice.
+No functional change.
 
-Agreed, the idea was to replace the parameter by the bool.
+change to v2: split the patch into three parts.
+
+Long Explanation:
+btrfs uses mount_subtree() to mount a subvolume directly.  This function
+needs a vfsmount* of device's root (/), which is a return value of
+vfs_kern_mount() (therefore root has to be mounted internally anyway).
+
+Current approach of getting root's vfsmount* in mount time is a bit tricky:
+1. mount systemcall calls vfs_kern_mount() on the way
+2. btrfs_mount() is called 
+3. btrfs_parse_early_options() parses "subvolid=" mount option and set the
+   value to subvol_objectid. Otherwise, subvol_objectid has the initial
+   value of 0
+4. check subvol_objectid is 5 or not. This time id is not 5, and
+   btrfs_mount() returns by calling mount_subvol()
+5. In mount_subvol(), original mount options are modified to contain
+   "subvolid=0" in setup_root_args(). Then, vfs_kern_mount() is called with
+   this new options to get root's vfsmount*
+6. btrfs_mount() is called again
+7. btrfs_parse_early_options() parses "subvolid=0" and set 5 (instead of 0)
+   to subvol_objectid
+8. check subvol_objectid is 5 or not. This time id is 5 and mount_subvol()
+   is not called. btrfs_mount() finishes mounting a root
+9. (in mount_subvol()) with using a return vale of vfs_kern_mount(), it
+   calls mount_subtree()
+10 return subvolume's dentry
+
+As illustrated above, calling btrfs_mount() twice complicates the problem.
+Callback function of mount time (btrfs_mount()) is specified in struct
+file_system_type which is passed to vfs_kern_mount(). Therefore, we can
+avoid this by using another file_system_type for arguments of our
+vfs_kern_mount() call. There is no need of modifying mount options.
+
+In this approach: 
+1. btrfs_mount() is called
+2. parse "subvolid=" opiton and set the value to subvol_objectid
+3. mount device's root by calling vfs_kern_mount() with different
+   file_system_type specified. Then, different callback function is called
+   (mount_root()). Most of this new function is the same as the original
+   btrfs_mount()
+4. return by calling mount_subtree()
+
+I think this approach is the same as nfsv4, which is the only other
+filesystem using mount_subtree() currently, and easy to understand.
+
+Most of the change is done by just reorganizing the original code of
+btrfs_mount()/mount_subvol() into btrfs_mount()/mount_subvol()/mount_root()
+
+btrfs_parse_early_options() is split into two parts to avoid "device="
+option will be handled twice (though it cause no harm). setup_root_args()
+is deleted as not needed anymore.
+
+Tomohiro Misono (3):
+  change btrfs_mount() to mount_root()
+  split parse_early_options() in two
+  introduce new btrfs_mount()
+
+ fs/btrfs/super.c | 231 ++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 128 insertions(+), 103 deletions(-)
+
+-- 
+2.9.5
+

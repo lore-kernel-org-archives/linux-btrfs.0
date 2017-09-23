@@ -1,142 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:40116 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752198AbdIVR6v (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:41654 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751495AbdIWUif (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2017 13:58:51 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] btrfs: LOGICAL_INO enhancements
-Date: Fri, 22 Sep 2017 13:58:44 -0400
-Message-Id: <20170922175847.6071-1-ce3g8jdj@umail.furryterror.org>
+        Sat, 23 Sep 2017 16:38:35 -0400
+Subject: Re: [PATCH 2/3] btrfs: add a flags argument to LOGICAL_INO and call
+ it LOGICAL_INO_V2
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
+References: <20170922175847.6071-1-ce3g8jdj@umail.furryterror.org>
+ <20170922175847.6071-3-ce3g8jdj@umail.furryterror.org>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <837ce8ff-bf06-5e0b-6dd2-3ced42cf45aa@mendix.com>
+Date: Sat, 23 Sep 2017 22:38:33 +0200
+MIME-Version: 1.0
+In-Reply-To: <20170922175847.6071-3-ce3g8jdj@umail.furryterror.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changelog:
+On 09/22/2017 07:58 PM, Zygo Blaxell wrote:
+> Now that check_extent_in_eb()'s extent offset filter can be turned off,
+> we need a way to do it from userspace.
+> 
+> Add a 'flags' field to the btrfs_logical_ino_args structure to disable
+> extent offset filtering, taking the place of one of the existing
+> reserved[] fields.
+> 
+> Previous versions of LOGICAL_INO neglected to check whether any of the
+> reserved fields have non-zero values.  Assigning meaning to those fields
+> now may change the behavior of existing programs that left these fields
+> uninitialized.  The lack of a zero check also means that new programs
+> have no way to know whether the kernel is honoring the flags field.
+> 
+> To avoid these problems, define a new ioctl LOGICAL_INO_V2.  We can
+> use the same argument layout as LOGICAL_INO, but shorten the reserved[]
+> array by one element and turn it into the 'flags' field.  The V2 ioctl
+> explicitly checks that reserved fields and unsupported flag bits are zero
+> so that userspace can negotiate future feature bits as they are defined.
+> 
+> Since the memory layouts of the two ioctls' arguments are compatible,
+> there is no need for a separate function for logical_to_ino_v2 (contrast
+> with tree_search_v2 vs tree_search where the layout and code are quite
+> different).  A version parameter and an 'if' statement will suffice.
+> 
+> Now that we have a flags field in logical_ino_args, add a flag
+> BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET to get the behavior we want,
+> and pass it down the stack to iterate_inodes_from_logical.
 
-v3-v2:
+Nice! This is a very welcome addition for userspace. I have seen the
+question: "ok, but which files are using any part of this extent"
+regularly in the past, and it caused some disappointment when I was
+first implementing that ioctl, since I was hoping I could do that easily. :)
 
-	- Stricter check on reserved[] field - now must be all zero, or
-	userspace gets EINVAL.	This prevents userspace from setting any
-	of the reserved bits without the kernel providing an unambiguous
-	interpretation of them, and doesn't require us to burn a flag
-	bit for each one.
+Today I built a 4.14-rc1 with the 3 patches on top. I have been testing
+with python-btrfs (of course :D) so I can quickly try out things.
 
-	- Moved 'flags' to the end of the reserved[] array.  This allows
-	existing source code using version 1 of the ioctl to behave the
-	same way when using version 2 of the btrfs_ioctl_logical_ino_args
-	struct definition (i.e. reserved[3] becomes an alias for 'flags',
-	and the addresses of reserved[0-2] don't change).
+https://github.com/knorrie/python-btrfs/commits/logical_ino_v2
 
-	- Clarified the reasoning in the commit message for patch 2,
-	"btrfs: add a flags argument to LOGICAL_INO and call it LOGICAL_INO_V2".
+> Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> ---
+>  fs/btrfs/ioctl.c           | 26 +++++++++++++++++++++++---
+>  include/uapi/linux/btrfs.h |  8 +++++++-
+>  2 files changed, 30 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index b7de32568082..f4281ffd1833 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -4536,13 +4536,14 @@ static int build_ino_list(u64 inum, u64 offset, u64 root, void *ctx)
+>  }
+>  
+>  static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+> -					void __user *arg)
+> +					void __user *arg, int version)
+>  {
+>  	int ret = 0;
+>  	int size;
+>  	struct btrfs_ioctl_logical_ino_args *loi;
+>  	struct btrfs_data_container *inodes = NULL;
+>  	struct btrfs_path *path = NULL;
+> +	bool ignore_offset;
+>  
+>  	if (!capable(CAP_SYS_ADMIN))
+>  		return -EPERM;
+> @@ -4551,6 +4552,22 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+>  	if (IS_ERR(loi))
+>  		return PTR_ERR(loi);
+>  
+> +	if (version == 1) {
+> +		ignore_offset = false;
+> +	} else {
+> +		/* All reserved bits must be 0 for now */
+> +		if (memchr_inv(loi->reserved, 0, sizeof(loi->reserved))) {
+> +			ret = -EINVAL;
+> +			goto out_loi;
+> +		}
 
-v2:
+If I put a non-zero bit in the reserved field, it explodes with OSError:
+[Errno 22] Invalid argument, check.
 
-	- added patch series intro text
+> +		/* Only accept flags we have defined so far */
+> +		if (loi->flags & ~(BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET)) {
+> +			ret = -EINVAL;
+> +			goto out_loi;
+> +		}
 
-	- rebased on 4.14-rc1.
+If I put any other flag in than nothing or only the first set, it
+explodes with OSError: [Errno 22] Invalid argument, check.
 
-v1:
+> +		ignore_offset = loi->flags & BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET;
+> +	}
+> +
+>  	path = btrfs_alloc_path();
+>  	if (!path) {
+> [...]
 
-This patch series fixes some weaknesses in the btrfs LOGICAL_INO ioctl.
+Testing:
 
-Background:
+-# cp /boot/vmlinuz-4.14.0-rc1-zygo1 /btrfs
 
-Suppose we have a file with one extent:
+-# ./show_block_groups.py /btrfs
+block group vaddr 0 length 4194304 flags SYSTEM used 16384 used_pct 0
+block group vaddr 4194304 length 8388608 flags METADATA used 131072
+used_pct 2
+block group vaddr 12582912 length 8388608 flags DATA used 0 used_pct 0
+block group vaddr 20971520 length 268435456 flags METADATA used 0 used_pct 0
 
-    root@tester:~# zcat /usr/share/doc/cpio/changelog.gz > /test/a
-    root@tester:~# sync
+Using 'v1':
 
-Split the extent by overwriting it in the middle:
+-# ./show_block_group_data_extent_filenames.py 12582912 /btrfs
+block group vaddr 12582912 length 8388608 flags DATA used 4198400
+used_pct 50
+extent vaddr 12582912 length 4198400 refs 1 gen 17 flags DATA
+    root 5 inode 258 offset 0 path utf-8 vmlinuz-4.14.0-rc1-zygo1
 
-    root@tester:~# cat /dev/urandom | dd bs=4k seek=2 skip=2 count=1 conv=notrunc of=/test/a
+Let's overwrite the first few blocks:
 
-We should now have 3 extent refs to 2 extents, with one block unreachable.
-The extent tree looks like:
+-# dd if=/dev/urandom bs=16K conv=notrunc
+of=/btrfs/vmlinuz-4.14.0-rc1-zygo1 count=1
+1+0 records in
+1+0 records out
+16384 bytes (16 kB, 16 KiB) copied, 0.000191925 s, 85.4 MB/s
 
-    root@tester:~# btrfs-debug-tree /dev/vdc -t 2
-    [...]
-            item 9 key (1103101952 EXTENT_ITEM 73728) itemoff 15942 itemsize 53
-                    extent refs 2 gen 29 flags DATA
-                    extent data backref root 5 objectid 261 offset 0 count 2
-    [...]
-            item 11 key (1103175680 EXTENT_ITEM 4096) itemoff 15865 itemsize 53
-                    extent refs 1 gen 30 flags DATA
-                    extent data backref root 5 objectid 261 offset 8192 count 1
-    [...]
+Here we see the limitation of the 'v1' ioctl. I get no name back for the
+first extent any more:
 
-and the ref tree looks like:
+-# ./show_block_group_data_extent_filenames.py 12582912 /btrfs
+block group vaddr 12582912 length 8388608 flags DATA used 4214784
+used_pct 50
+extent vaddr 12582912 length 4198400 refs 1 gen 17 flags DATA
+extent vaddr 16781312 length 16384 refs 1 gen 19 flags DATA
+    root 5 inode 258 offset 0 path utf-8 vmlinuz-4.14.0-rc1-zygo1
 
-    root@tester:~# btrfs-debug-tree /dev/vdc -t 5
-    [...]
-            item 6 key (261 EXTENT_DATA 0) itemoff 15825 itemsize 53
-                    extent data disk byte 1103101952 nr 73728
-                    extent data offset 0 nr 8192 ram 73728
-                    extent compression(none)
-            item 7 key (261 EXTENT_DATA 8192) itemoff 15772 itemsize 53
-                    extent data disk byte 1103175680 nr 4096
-                    extent data offset 0 nr 4096 ram 4096
-                    extent compression(none)
-            item 8 key (261 EXTENT_DATA 12288) itemoff 15719 itemsize 53
-                    extent data disk byte 1103101952 nr 73728
-                    extent data offset 12288 nr 61440 ram 73728
-                    extent compression(none)
-    [...]
+(And to test that the 'v1' also still works...)
+When I change it to use LOGICAL_INO_V2, it shows the same:
 
-There are two references to the same extent with different, non-overlapping
-byte offsets:
+-# ./show_block_group_data_extent_filenames2.py 12582912 /btrfs
+block group vaddr 12582912 length 8388608 flags DATA used 4214784
+used_pct 50
+extent vaddr 12582912 length 4198400 refs 1 gen 17 flags DATA
+extent vaddr 16781312 length 16384 refs 1 gen 19 flags DATA
+    root 5 inode 258 offset 0 path utf-8 vmlinuz-4.14.0-rc1-zygo1
 
-    [------------------72K extent at 1103101952----------------------]
-    [--8K----------------|--4K unreachable----|--60K-----------------]
-    ^                                         ^
-    |                                         |
-    [--8K ref offset 0--][--4K ref offset 0--][--60K ref offset 12K--]
-                         |         
-                         v
-                         [-----4K extent-----] at 1103175680
+When I also set the ignore_offset flag:
 
-We want to find all of the references to extent bytenr 1103101952.
+-# ./show_block_group_data_extent_filenames2.py 12582912 /btrfs
+block group vaddr 12582912 length 8388608 flags DATA used 4214784
+used_pct 50
+extent vaddr 12582912 length 4198400 refs 1 gen 17 flags DATA
+    root 5 inode 258 offset 16384 path utf-8 vmlinuz-4.14.0-rc1-zygo1
+extent vaddr 16781312 length 16384 refs 1 gen 19 flags DATA
+    root 5 inode 258 offset 0 path utf-8 vmlinuz-4.14.0-rc1-zygo1
 
-Without the patch (and without running btrfs-debug-tree), we have to
-do it with 18 LOGICAL_INO calls:
+Moo! No more brute forcing needed!
 
-    root@tester:~# btrfs ins log 1103101952 -P /test/
-    Using LOGICAL_INO
-    inode 261 offset 0 root 5
+Reviewed-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Tested-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 
-    root@tester:~# for x in $(seq 0 17); do btrfs ins log $((1103101952 + x * 4096)) -P /test/; done 2>&1 | grep inode
-    inode 261 offset 0 root 5
-    inode 261 offset 4096 root 5   <- same extent ref as offset 0
-                                   (offset 8192 returns empty set, not reachable)
-    inode 261 offset 12288 root 5
-    inode 261 offset 16384 root 5  \
-    inode 261 offset 20480 root 5  |
-    inode 261 offset 24576 root 5  |
-    inode 261 offset 28672 root 5  |
-    inode 261 offset 32768 root 5  |
-    inode 261 offset 36864 root 5  \
-    inode 261 offset 40960 root 5   > all the same extent ref as offset 12288.
-    inode 261 offset 45056 root 5  /  More processing required in userspace
-    inode 261 offset 49152 root 5  |  to figure out these are all duplicates.
-    inode 261 offset 53248 root 5  |
-    inode 261 offset 57344 root 5  |
-    inode 261 offset 61440 root 5  |
-    inode 261 offset 65536 root 5  |
-    inode 261 offset 69632 root 5  /
-
-In the worst case the extents are 128MB long, and we have to do 32768
-iterations of the loop to find one 4K extent ref.
-
-With the patch, we just use one call to map all refs to the extent at once:
-
-    root@tester:~# btrfs ins log 1103101952 -P /test/
-    Using LOGICAL_INO_V2
-    inode 261 offset 0 root 5
-    inode 261 offset 12288 root 5
-
-The TREE_SEARCH ioctl allows userspace to retrieve the offset and
-extent bytenr fields easily once the root, inode and offset are known.
-This is sufficient information to build a complete map of the extent
-and all of its references.  Userspace can use this information to make
-better choices to dedup or defrag.
+-- 
+Hans van Kranenburg

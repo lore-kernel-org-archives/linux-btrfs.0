@@ -1,22 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:54956 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752400AbdIXOK7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Sep 2017 10:10:59 -0400
-Subject: Re: AW: Btrfs performance with small blocksize on SSD
-To: "Fuhrmann, Carsten" <carsten.fuhrmann@rwth-aachen.de>,
+Received: from mail-out-1.itc.rwth-aachen.de ([134.130.5.46]:24047 "EHLO
+        mail-out-1.itc.rwth-aachen.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752349AbdIXOWb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Sep 2017 10:22:31 -0400
+From: "Fuhrmann, Carsten" <carsten.fuhrmann@rwth-aachen.de>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: AW: AW: Btrfs performance with small blocksize on SSD
+Date: Sun, 24 Sep 2017 14:22:29 +0000
+Message-ID: <92a69cde2d0548f68b5e9a8644ee84b5@rwth-aachen.de>
 References: <3321b3c199da4d378bbfa3dbac3c4059@rwth-aachen.de>
  <f05a6500-19d6-fc7c-7461-905417c855b7@gmx.com>
  <b9067303023a49158bae2cdc34393716@rwth-aachen.de>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <bedeafc0-9ee3-e5c3-f7d6-94c58a4d3759@gmx.com>
-Date: Sun, 24 Sep 2017 22:10:52 +0800
+ <bedeafc0-9ee3-e5c3-f7d6-94c58a4d3759@gmx.com>
+In-Reply-To: <bedeafc0-9ee3-e5c3-f7d6-94c58a4d3759@gmx.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <b9067303023a49158bae2cdc34393716@rwth-aachen.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+
+1)
+Every test has it's own file. So the 2k blocksize write to a different file then the 4k blocksize test. In the End there are 5 files on the disk (2k, 8k,...)
+
+2)
+Well I think it is 2 as well since for 4k and higher the performance is much better .
+I'm gonna test the -o max_inline and test with 4k blocksize as well.
+
+Thank you for your help
+
+Carsten
+
+-----UrsprÃ¼ngliche Nachricht-----
+Von: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com] 
+Gesendet: Sonntag, 24. September 2017 16:11
+An: Fuhrmann, Carsten <carsten.fuhrmann@rwth-aachen.de>; linux-btrfs@vger.kernel.org
+Betreff: Re: AW: Btrfs performance with small blocksize on SSD
 
 
 
@@ -77,7 +97,8 @@ Qu
 > -----UrsprÃ¼ngliche Nachricht-----
 > Von: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com]
 > Gesendet: Sonntag, 24. September 2017 15:41
-> An: Fuhrmann, Carsten <carsten.fuhrmann@rwth-aachen.de>; linux-btrfs@vger.kernel.org
+> An: Fuhrmann, Carsten <carsten.fuhrmann@rwth-aachen.de>; 
+> linux-btrfs@vger.kernel.org
 > Betreff: Re: Btrfs performance with small blocksize on SSD
 > 
 > 
@@ -121,14 +142,14 @@ Qu
 > Qu
 > 
 >>
->> I attached my results from raid 1 random write HDD (rH1), SSD (rS1)
+>> I attached my results from raid 1 random write HDD (rH1), SSD (rS1) 
 >> and from sequential write HDD (sH1), SSD (sS1)
 >>
 >> Hopefully you have an explanation for that.
 >>
 >> raid@raid-PowerEdge-T630:~$ uname -a
->> Linux raid-PowerEdge-T630 4.10.0-33-generic #37~16.04.1-Ubuntu SMP Fri
->> Aug 11 14:07:24 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+>> Linux raid-PowerEdge-T630 4.10.0-33-generic #37~16.04.1-Ubuntu SMP 
+>> Fri Aug 11 14:07:24 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux 
 >> raid@raid-PowerEdge-T630:~$ btrfs --version btrfs-progs v4.4
 >>
 >>
@@ -136,5 +157,7 @@ Qu
 >>
 >> Carsten
 >>
-> Nï¿½ï¿½ï¿½ï¿½ï¿½rï¿½ï¿½yï¿½ï¿½ï¿½bï¿½Xï¿½ï¿½Ç§vï¿½^ï¿½)Şº{.nï¿½+ï¿½ï¿½ï¿½ï¿½{ï¿½nï¿½ß²)ï¿½ï¿½ï¿½w*jgï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½İ¢j/ï¿½ï¿½ï¿½zï¿½Ş–ï¿½ï¿½2ï¿½Ş™ï¿½ï¿½ï¿½&ï¿½)ß¡ï¿½aï¿½ï¿½ï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½hï¿½ï¿½j:+vï¿½ï¿½ï¿½wï¿½Ù¥
+> N     r  y   b X  Ç§v ^ )Şº{.n +    { n ß²)   w*jg        İ¢j/   z Ş–  2 
+> Ş™   & )ß¡ a     G   h  j:+v   w Ù¥
 > 
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

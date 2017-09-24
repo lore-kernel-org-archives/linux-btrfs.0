@@ -1,31 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:37397 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751795AbdIVGFu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2017 02:05:50 -0400
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id C2896AC00E5
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Sep 2017 15:05:43 +0900 (JST)
-Subject: Re: [PATCH v2 3/3] btrfs: introduce new btrfs_mount()
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:52934 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752319AbdIXNYD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Sep 2017 09:24:03 -0400
+Date: Sun, 24 Sep 2017 15:22:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, anand.jain@oracle.com
+Subject: Re: [PATCH v2 0/3] btrfs: cleanup mount path
+Message-ID: <20170924132229.GR29043@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <afc0d4c0-e89c-9786-8583-e4bedaf9557e@jp.fujitsu.com>
- <66665dfc-2a24-8c34-8662-6b87ba681d06@jp.fujitsu.com>
-Message-ID: <270278af-da8b-f6e0-cb5d-cf58366919f9@jp.fujitsu.com>
-Date: Fri, 22 Sep 2017 15:05:38 +0900
 MIME-Version: 1.0
-In-Reply-To: <66665dfc-2a24-8c34-8662-6b87ba681d06@jp.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <afc0d4c0-e89c-9786-8583-e4bedaf9557e@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> (1) parse subvol id related options for later use in mount_subtree()
-> (3) return by calling mount_subtree()
+On Fri, Sep 22, 2017 at 02:56:49PM +0900, Misono, Tomohiro wrote:
+> Summary:
+> Cleanup mount path by avoiding calling btrfs_mount() twice.
 
-Sorry, this is not mount_subtree(), but mount_subvol().
+That would be great to get rid of it, but please do it in smaller steps,
+each of them being bisectable and preserving the existing functionality.
 
-Thanks,
-Tomohiro
+Patch 1/3 does not compile on any branch (master, v4.13, current devel
+queue), removes the ability to mount via subvolume. I don't undserstand
+(yet) why the other filesystem type is introduced as it is exactly the
+same as the one we have now.
 
+The description in the cover leter of the overall logic of the mount
+should be added as a comment before btrfs_mount.

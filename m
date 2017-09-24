@@ -1,60 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:29076 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752004AbdIWAiK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Sep 2017 20:38:10 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v8N0c99j011400
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Sep 2017 00:38:09 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v8N0c8Y5002066
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Sep 2017 00:38:08 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v8N0c8eD024676
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Sep 2017 00:38:08 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: use self-explaining variable
-Date: Fri, 22 Sep 2017 17:36:18 -0600
-Message-Id: <20170922233618.20034-1-bo.li.liu@oracle.com>
-In-Reply-To: <20170913182521.31304-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:53016 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752437AbdIXN02 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Sep 2017 09:26:28 -0400
+Date: Sun, 24 Sep 2017 15:24:54 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: use self-explaining variable
+Message-ID: <20170924132454.GS29043@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20170913182521.31304-1-bo.li.liu@oracle.com>
+ <20170922233618.20034-1-bo.li.liu@oracle.com>
+ <4d9fe9dd-ccde-964c-ea88-bce4eeafc81a@gmx.com>
+ <20170923004837.GD8109@lim.localdomain>
+ <02a5af04-f1b3-cdef-d77d-55c0517c12ad@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <02a5af04-f1b3-cdef-d77d-55c0517c12ad@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This uses a bool 'do_backup' to help understand this piece of code.
+On Sat, Sep 23, 2017 at 09:09:24AM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2017年09月23日 08:48, Liu Bo wrote:
+> > On Sat, Sep 23, 2017 at 08:46:55AM +0800, Qu Wenruo wrote:
+> >>
+> >>
+> >> On 2017年09月23日 07:36, Liu Bo wrote:
+> >>> This uses a bool 'do_backup' to help understand this piece of code.
+> >>>
+> >>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> >>> ---
+> >>> This is based on a patch "Btrfs: do not backup tree roots when fsync".
+> >>>
+> >>>    fs/btrfs/disk-io.c | 3 ++-
+> >>>    1 file changed, 2 insertions(+), 1 deletion(-)
+> >>>
+> >>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> >>> index cdb7043..9811b9d 100644
+> >>> --- a/fs/btrfs/disk-io.c
+> >>> +++ b/fs/btrfs/disk-io.c
+> >>> @@ -3691,6 +3691,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+> >>>    	int max_errors;
+> >>>    	int total_errors = 0;
+> >>>    	u64 flags;
+> >>> +	bool do_backup = (max_mirrors == 0);
+> >>
+> >> Why not replacing @max_mirrors with @do_backup as parameter?
+> > 
+> > If I read the code correctly, max_mirrors is not just for deciding
+> > backup.
+> 
+> That's strange.
+> 
+> write_all_supers() only uses @max_mirrors by passing it to 
+> write_dev_supers() and wait_dev_supers().
+> 
+> Both of the write/wait_dev_supers() will replace @max_mirrors to 
+> BTRFS_SUPER_MIRROR_MAX if it's zero.
+> 
+> Further more, all write_all_supers() callers just pass @max_mirrors as 
+> bool (either 0 or 1).
+> 
+> So I don't see any point not replacing the parameter as bool.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-This is based on a patch "Btrfs: do not backup tree roots when fsync".
-
- fs/btrfs/disk-io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index cdb7043..9811b9d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3691,6 +3691,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 	int max_errors;
- 	int total_errors = 0;
- 	u64 flags;
-+	bool do_backup = (max_mirrors == 0);
- 
- 	do_barriers = !btrfs_test_opt(fs_info, NOBARRIER);
- 
-@@ -3699,7 +3700,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 	 * not from fsync where the tree roots in fs_info have not
- 	 * been consistent on disk.
- 	 */
--	if (max_mirrors == 0)
-+	if (do_backup)
- 		backup_super_roots(fs_info);
- 
- 	sb = fs_info->super_for_commit;
--- 
-2.9.4
-
+Agreed, the idea was to replace the parameter by the bool.

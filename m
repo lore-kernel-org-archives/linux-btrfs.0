@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51579 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53846 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752334AbdIXNGP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Sep 2017 09:06:15 -0400
-Date: Sun, 24 Sep 2017 15:04:41 +0200
+        id S1752198AbdIXNrN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 24 Sep 2017 09:47:13 -0400
+Date: Sun, 24 Sep 2017 15:45:39 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 1/2] Btrfs: fix kernel oops while reading compressed data
-Message-ID: <20170924130441.GQ29043@twin.jikos.cz>
+Message-ID: <20170924134539.GT29043@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170920235019.10508-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
@@ -27,7 +27,11 @@ On Wed, Sep 20, 2017 at 05:50:18PM -0600, Liu Bo wrote:
 > It's showing that read-repair code is using an improper mirror index.
 > This is due to the fact that compression read's endio hasn't recorded
 > the failed mirror index in %cb->orig_bio.
+> 
+> With this, btrfs's read-repair can work properly on reading compressed
+> data.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> Reported-by: Paul Jones <paul@pauljones.id.au>
 
-This sounds like the corner case of raid1 repair that was reported i the
-past and actually is the only thing because of which we are not so
-comfortable to mark raid1 'completely ok' in the Status page.
+Reviewed-by: David Sterba <dsterba@suse.com>

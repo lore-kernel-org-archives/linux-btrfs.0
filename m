@@ -1,31 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47170 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59753 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S933681AbdIYMtj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 08:49:39 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id C4E1AAB9B
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2017 12:49:38 +0000 (UTC)
-Date: Mon, 25 Sep 2017 14:48:06 +0200
+        id S932107AbdIYPTI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 11:19:08 -0400
+Date: Mon, 25 Sep 2017 17:17:34 +0200
 From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: Wiki updates
-Message-ID: <20170925124806.GC31640@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2 0/3] Introduce comprehensive sanity check framework and
+Message-ID: <20170925151734.GK31640@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
+References: <20170823075759.13982-1-quwenruo.btrfs@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170823075759.13982-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Wed, Aug 23, 2017 at 04:57:55PM +0900, Qu Wenruo wrote:
+> The patchset introduce a new framework to do more comprehensive (if not
+> the most) sanity check when reading out a leaf.
+> 
+> The new sanity checker will include:
+> 
+> 1) Key order
+>    Existing code
+> 
+> 2) Item boundary
+>    Existing code with enhanced checker to ensure item pointer doesn't
+>    overlap with item itself.
+> 
+> 3) Key type based sanity checker
+>    Only EXTENT_DATA and EXTENT_CSUM checker is implemented yet.
+>    As each checker should go through review and tests, or it can easily
+>    make a valid btrfs failed to be mounted.
+>    So only two checkers are implemented as an example.
+> 
+>    Existing checker like INODE_REF checker can be moved to this
+>    framework easily, and we can centralize all existing checkers, make
+>    the rest of codes more clean.
+> 
+> Performance wise, it's just iterating a leaf.
+> And it will only get triggered when reading a leaf, cached leaf will
+> not go through such checker.
+> So it won't be a performance breaker.
 
-I've updated the Status page and synced the manual pages from
-btrfs-progs git.
-
-The status of various features is split to one more column, Performance.
-There's a section for each 'mostly OK' status below the table and linked
-from the note. This will hopefully be more understandable than just a
-single color table cell.
-
-Please note that the page is locked, so either drop me a mail or use the
-talk page to suggest edits.
+The series looks great, I really like it. Some of the error messages
+could be more verbose about what exactly went wrong, eg. what is the
+value that's not expected. I'll reply to the patches with examples what
+I'd expect.

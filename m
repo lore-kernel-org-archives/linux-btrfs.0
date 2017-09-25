@@ -1,186 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:51419 "EHLO
-        mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932135AbdIYH2s (ORCPT
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:65103 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932135AbdIYH3S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 03:28:48 -0400
+        Mon, 25 Sep 2017 03:29:18 -0400
 Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-        by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 4D050AC00AF
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2017 16:28:43 +0900 (JST)
-Subject: [PATCH 3/4] btrfs: split parse_early_options() in two
+        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 9C20EAC00E3
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2017 16:29:15 +0900 (JST)
+Subject: [PATCH 4/4] btrfs: remove unused setup_root_args()
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>, <anand.jain@oracle.com>
 References: <4786f7cc-adc7-1b99-5abf-d068acee56c2@jp.fujitsu.com>
-Message-ID: <bdace123-46f7-9381-4421-c96615e5bd35@jp.fujitsu.com>
-Date: Mon, 25 Sep 2017 16:28:36 +0900
+Message-ID: <27005af2-b895-86f5-92d6-fb2d6aacb1f2@jp.fujitsu.com>
+Date: Mon, 25 Sep 2017 16:29:10 +0900
 MIME-Version: 1.0
 In-Reply-To: <4786f7cc-adc7-1b99-5abf-d068acee56c2@jp.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now parse_early_options() is used by both btrfs_mount() and mount_root().
-However, the former only needs subvol related part and the latter needs
-the others.
-
-Therefore extract the subvol related parts from parse_early_options() and
-move it to new parse function (parse_subvol_options()).
+Since setup_root_args() is not used anymore, just remove it.
 
 Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 ---
- fs/btrfs/super.c | 85 +++++++++++++++++++++++++++++++++++++++-----------------
- 1 file changed, 60 insertions(+), 25 deletions(-)
+ fs/btrfs/super.c | 35 -----------------------------------
+ 1 file changed, 35 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 1c34ca6..7edd74d 100644
+index 7edd74d..f589c5b 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -448,7 +448,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 		case Opt_subvolrootid:
- 		case Opt_device:
- 			/*
--			 * These are parsed by btrfs_parse_early_options
-+			 * These are parsed by btrfs_parse_subvol_options
-+			 * and btrfs_parse_early_options
- 			 * and can be happily ignored here.
- 			 */
- 			break;
-@@ -855,11 +856,63 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
-  * only when we need to allocate a new super block.
-  */
- static int btrfs_parse_early_options(const char *options, fmode_t flags,
--		void *holder, char **subvol_name, u64 *subvol_objectid,
--		struct btrfs_fs_devices **fs_devices)
-+		void *holder, struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
- 	char *device_name, *opts, *orig, *p;
-+	int error = 0;
-+
-+	if (!options)
-+		return 0;
-+
-+	/*
-+	 * strsep changes the string, duplicate it because btrfs_parse_options
-+	 * gets called later
-+	 */
-+	opts = kstrdup(options, GFP_KERNEL);
-+	if (!opts)
-+		return -ENOMEM;
-+	orig = opts;
-+
-+	while ((p = strsep(&opts, ",")) != NULL) {
-+		int token;
-+		if (!*p)
-+			continue;
-+
-+		token = match_token(p, tokens, args);
-+		switch (token) {
-+		case Opt_device:
-+			device_name = match_strdup(&args[0]);
-+			if (!device_name) {
-+				error = -ENOMEM;
-+				goto out;
-+			}
-+			error = btrfs_scan_one_device(device_name,
-+					flags, holder, fs_devices);
-+			kfree(device_name);
-+			if (error)
-+				goto out;
-+			break;
-+		default:
-+			break;
-+		}
-+	}
-+
-+out:
-+	kfree(orig);
-+	return error;
-+}
-+
-+/*
-+ * Parse mount options that are related to subvolume id
-+ *
-+ * The value is later passed to mount_subvol()
-+ */
-+static int btrfs_parse_subvol_options(const char *options, fmode_t flags,
-+		void *holder, char **subvol_name, u64 *subvol_objectid)
-+{
-+	substring_t args[MAX_OPT_ARGS];
-+	char *opts, *orig, *p;
- 	char *num = NULL;
- 	int error = 0;
+@@ -1367,41 +1367,6 @@ static inline int is_subvolume_inode(struct inode *inode)
+ 	return 0;
+ }
  
-@@ -867,8 +920,8 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		return 0;
- 
- 	/*
--	 * strsep changes the string, duplicate it because parse_options
--	 * gets called twice
-+	 * strsep changes the string, duplicate it because
-+	 * btrfs_parse_early_options gets called later
- 	 */
- 	opts = kstrdup(options, GFP_KERNEL);
- 	if (!opts)
-@@ -907,18 +960,6 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		case Opt_subvolrootid:
- 			pr_warn("BTRFS: 'subvolrootid' mount option is deprecated and has no effect\n");
- 			break;
--		case Opt_device:
--			device_name = match_strdup(&args[0]);
--			if (!device_name) {
--				error = -ENOMEM;
--				goto out;
--			}
--			error = btrfs_scan_one_device(device_name,
--					flags, holder, fs_devices);
--			kfree(device_name);
--			if (error)
--				goto out;
+-/*
+- * This will add subvolid=0 to the argument string while removing any subvol=
+- * and subvolid= arguments to make sure we get the top-level root for path
+- * walking to the subvol we want.
+- */
+-static char *setup_root_args(char *args)
+-{
+-	char *buf, *dst, *sep;
+-
+-	if (!args)
+-		return kstrdup("subvolid=0", GFP_NOFS);
+-
+-	/* The worst case is that we add ",subvolid=0" to the end. */
+-	buf = dst = kmalloc(strlen(args) + strlen(",subvolid=0") + 1, GFP_NOFS);
+-	if (!buf)
+-		return NULL;
+-
+-	while (1) {
+-		sep = strchrnul(args, ',');
+-		if (!strstarts(args, "subvol=") &&
+-		    !strstarts(args, "subvolid=")) {
+-			memcpy(dst, args, sep - args);
+-			dst += sep - args;
+-			*dst++ = ',';
+-		}
+-		if (*sep)
+-			args = sep + 1;
+-		else
 -			break;
- 		default:
- 			break;
- 		}
-@@ -1492,18 +1533,14 @@ static struct dentry *mount_root(struct file_system_type *fs_type, int flags,
- 	struct btrfs_fs_info *fs_info = NULL;
- 	struct security_mnt_opts new_sec_opts;
- 	fmode_t mode = FMODE_READ;
--	char *subvol_name = NULL;
--	u64 subvol_objectid = 0;
- 	int error = 0;
- 
- 	if (!(flags & MS_RDONLY))
- 		mode |= FMODE_WRITE;
- 
- 	error = btrfs_parse_early_options(data, mode, fs_type,
--					  &subvol_name, &subvol_objectid,
- 					  &fs_devices);
- 	if (error) {
--		kfree(subvol_name);
- 		return ERR_PTR(error);
- 	}
- 
-@@ -1614,7 +1651,6 @@ static struct dentry *mount_root(struct file_system_type *fs_type, int flags,
- static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 		const char *device_name, void *data)
- {
--	struct btrfs_fs_devices *fs_devices = NULL;
- 	struct vfsmount *mnt_root;
- 	struct dentry *root;
- 	fmode_t mode = FMODE_READ;
-@@ -1625,9 +1661,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	if (!(flags & MS_RDONLY))
- 		mode |= FMODE_WRITE;
- 
--	error = btrfs_parse_early_options(data, mode, fs_type,
--					  &subvol_name, &subvol_objectid,
--					  &fs_devices);
-+	error = btrfs_parse_subvol_options(data, mode, fs_type,
-+					  &subvol_name, &subvol_objectid);
- 	if (error) {
- 		kfree(subvol_name);
- 		return ERR_PTR(error);
+-	}
+-	strcpy(dst, "subvolid=0");
+-
+-	return buf;
+-}
+-
+ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
+ 				   int flags, const char *device_name,
+ 				   char *data, struct vfsmount *mnt)
 -- 
 2.9.5
 

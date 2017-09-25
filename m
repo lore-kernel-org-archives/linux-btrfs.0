@@ -1,50 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp97.ord1c.emailsrvr.com ([108.166.43.97]:41685 "EHLO
-        smtp97.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932404AbdIYJ1i (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 05:27:38 -0400
-Subject: Re: [PATCH] btrfs-progs: subvolume: outputs message only when
- operation succeeds
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Nikolay Borisov <nborisov@suse.com>,
-        "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <cdca7f92-93c0-9906-f2ed-57c3d0a97fae@jp.fujitsu.com>
- <3b6d4951-dd71-989d-3287-12ffe643bfae@suse.com>
- <b1b5a231-ffc3-700b-b59d-e82accf2f2e7@rqc.ru>
- <095397b6-4865-1ea3-ae0d-6725b84c447c@gmx.com>
- <20170925075250.GC25529@carfax.org.uk>
- <7a345608-6c5d-bdc9-9b5f-74a8052ea228@gmx.com>
- <5f24c41c-bc22-0821-b807-e73869116b84@gmx.com>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <cc21a341-05f5-4926-5ba8-9ca9af0fd66b@rqc.ru>
-Date: Mon, 25 Sep 2017 12:27:36 +0300
+Received: from vs2.lukas-pirl.de ([5.45.100.90]:36702 "EHLO pim.lukas-pirl.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751408AbdIYJ7N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 05:59:13 -0400
+Received: from [172.27.3.191] (unknown [195.37.142.77])
+        by pim.lukas-pirl.de (Postfix) with ESMTPSA id 516D56BA5736
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2017 11:50:33 +0200 (CEST)
+From: Lukas Pirl <btrfs@lukas-pirl.de>
+Subject: btrfs scrub crashes OS
+To: linux-btrfs@vger.kernel.org
+Message-ID: <6e6dc9a3-b3e9-2831-8149-94f7c11b9df1@lukas-pirl.de>
+Date: Mon, 25 Sep 2017 11:50:29 +0200
 MIME-Version: 1.0
-In-Reply-To: <5f24c41c-bc22-0821-b807-e73869116b84@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25/09/17 11:08, Qu Wenruo wrote:
->> What about redirecting stdout to /dev/null and redirecting stderr to 
->> mail if return value is not 0?
-> s/if return value is not 0/if return value is 0/.
->
-> The main point is, if btrfs returns 0, then nothing to worry about.
-> (Unless there is a bug, even in that case keep an eye on stderr should 
-> be enough to catch that)
+Dear all,
 
-Redirection to /dev/null will work. However,
+I experience reproducible OS crashes when scrubbing a btrfs file system.
+Apart from that, the file system mounts rw and is usable without any
+problems (including modifying snapshots and all that).
 
-1) It will always looks suspicious. grep -v with expected message is at 
-least clear about its intent and consequences.
+When the system crashes (i.e., freezes), there are no errors printed to
+the system logs or via `dmesg` (had a display connected).
 
-2) Although shorter than grep -v, it will still take space in shell 
-scripts and force one to remember btrfs commands one has to add it 
-after. This is already inconvenient enough to want a fix.
+Recovery is only possible via power-cycling the machine.
 
---
+The host experienced a lot of crashes and ATA errors due to hardware
+failures in the past.
+To the best of my knowledge, the hardware is stable now.
 
-With Best Regards,
-Marat Khalili
+`btrfs device stats` outputs zeros for all counters.
+
+`btrfsck --readonly --mode lowmem` outputs a bunch of
+  referencer count mismatch …
+and
+  ERROR: data extent[… …] backref lost
+see https://pastebin.com/seC4fReP for the full log.
+
+System info:
+btrfs RAID 1 (~1.5 years old), 7 SATA HDDs
+  MIXED_BACKREF, BIG_METADATA, EXTENDED_IREF, SKINNY_METADATA, NO_HOLES
+  no quotas in use
+  see also https://pastebin.com/4me6zDsN for more details
+btrfs-progs v4.12
+GNU/Linux 4.12.0-0.bpo.1-amd64 #1 SMP Debian 4.12.6-1~bpo9+1 x86_64
+
+The question, obviously, is how can I make this fs "scrubable" again?
+Are the errors found by btrfsck safe to repair using btrfsck or some
+other tool?
+
+Thank you so much in advance,
+
+Lukas

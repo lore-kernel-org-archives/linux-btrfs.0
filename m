@@ -1,56 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:58359 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933851AbdIYNDg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 09:03:36 -0400
-Subject: Re: [PATCH 1/3] btrfs: undo writable when sprouting fails
+Received: from mx2.suse.de ([195.135.220.15]:48677 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S934495AbdIYNHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 09:07:48 -0400
+Subject: Re: [PATCH 2/3] btrfs: cleanup btrfs_init_new_device()
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
 References: <20170925123104.16526-1-anand.jain@oracle.com>
- <20170925123104.16526-2-anand.jain@oracle.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <e1d2a7a4-3207-da8f-2cb0-f26bdf4e1685@gmx.com>
-Date: Mon, 25 Sep 2017 21:03:22 +0800
+ <20170925123104.16526-3-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <6af9ec03-712a-d78e-6ad5-f4aff0f0dd61@suse.com>
+Date: Mon, 25 Sep 2017 16:07:45 +0300
 MIME-Version: 1.0
-In-Reply-To: <20170925123104.16526-2-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20170925123104.16526-3-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年09月25日 20:31, Anand Jain wrote:
+On 25.09.2017 15:31, Anand Jain wrote:
+> Moves btrfs_abort_transaction() to the error goto and renames
+> error_trans to error_sysfs. This is a preparatory patch to
+> remove the BUG_ON() in btrfs_init_new_device().
+> 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-The error_trans tag needs to revert the RDONLY flag without doubt.
-
-
-But just a small question.
-
-Just lines before error_trans tag, we're committing transaction and then 
-relocating system chunks.
-In which we don't use goto error branch but returning directly.
-
-Don't we need to to revert the RDONLY flag in that error handler?
-
-Thanks,
-Qu
-
 > ---
->   fs/btrfs/volumes.c | 2 ++
->   1 file changed, 2 insertions(+)
+>  fs/btrfs/volumes.c | 23 +++++++++--------------
+>  1 file changed, 9 insertions(+), 14 deletions(-)
 > 
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 0e8f16c305df..9d64700cc9b6 100644
+> index 9d64700cc9b6..5c34eea9d12d 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -2501,6 +2501,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->   	return ret;
->   
->   error_trans:
-> +	if (seeding_dev)
-> +		sb->s_flags |= MS_RDONLY;
->   	btrfs_end_transaction(trans);
->   	rcu_string_free(device->name);
->   	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+> @@ -2443,26 +2443,20 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  		mutex_lock(&fs_info->chunk_mutex);
+>  		ret = init_first_rw_device(trans, fs_info);
+>  		mutex_unlock(&fs_info->chunk_mutex);
+> -		if (ret) {
+> -			btrfs_abort_transaction(trans, ret);
+> -			goto error_trans;
+> -		}
+> +		if (ret)
+> +			goto error_sysfs;
+>  	}
+>  
+>  	ret = btrfs_add_device(trans, fs_info, device);
+> -	if (ret) {
+> -		btrfs_abort_transaction(trans, ret);
+> -		goto error_trans;
+> -	}
+> +	if (ret)
+> +		goto error_sysfs;
+>  
+>  	if (seeding_dev) {
+>  		char fsid_buf[BTRFS_UUID_UNPARSED_SIZE];
+>  
+>  		ret = btrfs_finish_sprout(trans, fs_info);
+> -		if (ret) {
+> -			btrfs_abort_transaction(trans, ret);
+> -			goto error_trans;
+> -		}
+> +		if (ret)
+> +			goto error_sysfs;
+>  
+>  		/* Sprouting would change fsid of the mounted root,
+>  		 * so rename the fsid on the sysfs
+> @@ -2500,12 +2494,13 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	update_dev_time(device_path);
+>  	return ret;
+>  
+> -error_trans:
+> +error_sysfs:
+> +	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+
+Any reason why you move btrfs_sysfs_rm_device_link?
+
+>  	if (seeding_dev)
+>  		sb->s_flags |= MS_RDONL> +	btrfs_abort_transaction(trans, ret);
+>  	btrfs_end_transaction(trans);
+>  	rcu_string_free(device->name);
+> -	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+>  	kfree(device);>  error:
+>  	blkdev_put(bdev, FMODE_EXCL);
+
+Also which branch is your code based on since in Linus' master the error
+handling (before your patch) looks a bit different. E.g. the MS_RDONL
+stuff look wrong.
+
+error_trans:
+
+        btrfs_end_transaction(trans);
+
+        rcu_string_free(device->name);
+
+        btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+
+        kfree(device);
+
+error:
+
+        blkdev_put(bdev, FMODE_EXCL);
+
+        if (seeding_dev) {
+
+                mutex_unlock(&uuid_mutex);
+
+                up_write(&sb->s_umount);
+
+        }
+
+        return ret;
+
 > 

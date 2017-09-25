@@ -1,163 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:35474 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932817AbdIYJaf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 05:30:35 -0400
-Subject: Re: [PATCH] btrfs-progs: check: check invalid extent_inline_ref type
- in lowmem
-To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <20170919083213.9082-1-suy.fnst@cn.fujitsu.com>
- <ab586271-41f9-611f-ec0b-179a3a030f67@gmx.com>
- <e23db2e8-955e-b7bd-7877-9a005ed07ff0@cn.fujitsu.com>
- <8902982e-7a39-e01e-719d-fef2a859b227@gmx.com>
- <ef97b663-d58d-f065-5b9c-bdffeb4c8ad5@suse.com>
-CC: David Sterba <dsterba@suse.cz>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <5a7cb7b6-a557-3f18-f361-bd14450bc117@cn.fujitsu.com>
-Date: Mon, 25 Sep 2017 17:33:33 +0800
+Received: from mx2.suse.de ([195.135.220.15]:44462 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932656AbdIYMSd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 08:18:33 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx1.suse.de (Postfix) with ESMTP id BB032AC82
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2017 12:18:31 +0000 (UTC)
+Subject: Re: [PATCH 08/10] btrfs: remove unused parameter in cow_file_range
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <1503308630-6652-1-git-send-email-nborisov@suse.com>
+ <1503308630-6652-9-git-send-email-nborisov@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <13b784de-e906-7334-8aae-39cb7ce8c85e@suse.com>
+Date: Mon, 25 Sep 2017 15:18:31 +0300
 MIME-Version: 1.0
-In-Reply-To: <ef97b663-d58d-f065-5b9c-bdffeb4c8ad5@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <1503308630-6652-9-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 09/24/2017 10:17 PM, Nikolay Borisov wrote:
+On 21.08.2017 12:43, Nikolay Borisov wrote:
+> The delalloc_end parameter was only passed to extent_clear_unlock_delalloc, but
+> since its usage was removed form that function let's also remove it from the
+> caller's parameter list.
 > 
-> 
-> On 19.09.2017 13:00, Qu Wenruo wrote:
->>
->>
->> On 2017年09月19日 17:48, Su Yue wrote:
->>>
->>>
->>> On 09/19/2017 04:48 PM, Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2017年09月19日 16:32, Su Yue wrote:
->>>>> Lowmem check does not skip invalid type in extent_inline_ref then
->>>>> calls btrfs_extent_inline_ref_size(type) which causes crash.
->>>>>
->>>>> Example:
->>>>> $ ./btrfs-corrupt-block -e -l 20971520 /tmp/data_small
->>>>> corrupting extent record: key 20971520 169 0
->>>>> $ btrfs check --mode=lowmem  /tmp/data_small
->>>>> Checking filesystem on /tmp/data_small
->>>>> UUID: ee205d69-8724-4aa2-a4f5-bc8558a62169
->>>>> checking extents
->>>>> ERROR: extent[20971520 16384] backref type mismatch, missing bit: 2
->>>>> ERROR: extent[20971520 16384] backref generation mismatch,
->>>>> wanted: 7, have: 0
->>>>> ERROR: extent[20971520 16384] is referred by other roots than 3
->>>>> ctree.h:1754: btrfs_extent_inline_ref_size: BUG_ON `1` triggered,
->>>>> value 1
->>>>> btrfs(+0x543db)[0x55fabc2ab3db]
->>>>> btrfs(+0x587f7)[0x55fabc2af7f7]
->>>>> btrfs(+0x5fa44)[0x55fabc2b6a44]
->>>>> btrfs(cmd_check+0x194a)[0x55fabc2bd717]
->>>>> btrfs(main+0x88)[0x55fabc2682e0]
->>>>> /usr/lib/libc.so.6(__libc_start_main+0xea)[0x7f021c3824ca]
->>>>> btrfs(_start+0x2a)[0x55fabc267e7a]
->>>>> [1]    5188 abort (core dumped)  btrfs check --mode=lowmem
->>>>> /tmp/data_small
->>>>>
->>>>> Fix it by checking type before obtaining inline_ref size.
->>>>>
->>>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->>>>
->>>> Code itself looks good.
->>>> And test case please.
->>>>
->>> Thanks for review. I'll add test case in next version.
->>>
->>>> Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
->>>>
->>>> However, such whac-a-mole fix will finally be a nightmare to maintain.
->>>>
->>>> What about integrating all of such validation checkers into one place?
->>>> So fsck part will only need to check their cross reference without
->>>> bothering such corruption.
->>>>
->>> I was confused how to fix the bug(new checker or little changes
->>> in this patch).
->>> The reason why I fix it in this way is that most callers do
->>> check type before calling btrfs_extent_inline_ref_size().
->>>
->>> Since you prefer the former, I'm going to do it.
->>
->> Current version looks good enough as a fix.>
->> Just saying we'd better using an integrated solution later.
-> 
-> I agree with you that we should have an integrated solution but frankly
-> I'd rather see it sooner rather than later, because history has shown
-> that if something is not done when it's first talked about it usually
-> gets bogged down by other work.  With this in mind, Su, might I ask you
-> that you repost the patch but with the centralised idea of handling the
-> validation lifted from Qu's kernel side patches.
-> 
-OK. Thanks for your suggestion:).
-Most of work has been finished. But I found the original mode can
-not handle the new test case correctly. I'm Working on it.
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Thanks,
-Su
->>
->> Thanks,
->> Qu
->>>
->>> Thanks
->>> Su
->>>
->>>> Just like the kernel patch I submitted some times ago.
->>>> https://www.spinics.net/lists/linux-btrfs/msg68498.html
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>> ---
->>>>>    cmds-check.c | 9 +++++++++
->>>>>    1 file changed, 9 insertions(+)
->>>>>
->>>>> diff --git a/cmds-check.c b/cmds-check.c
->>>>> index 4e0b0fe4..74c10c75 100644
->>>>> --- a/cmds-check.c
->>>>> +++ b/cmds-check.c
->>>>> @@ -11565,6 +11565,10 @@ static int check_tree_block_ref(struct
->>>>> btrfs_root *root,
->>>>>                            offset, level + 1, owner,
->>>>>                            NULL);
->>>>>                }
->>>>> +        } else {
->>>>> +            error("extent[%llu %u %llu] has unknown ref type: %d",
->>>>> +                  key.objectid, key.type, key.offset, type);
->>>>> +            break;
->>>>>            }
->>>>>            if (found_ref)
->>>>> @@ -11831,6 +11835,11 @@ static int check_extent_data_item(struct
->>>>> btrfs_root *root,
->>>>>                found_dbackref = !check_tree_block_ref(root, NULL,
->>>>>                    btrfs_extent_inline_ref_offset(leaf, iref),
->>>>>                    0, owner, NULL);
->>>>> +        } else {
->>>>> +            error("extent[%llu %u %llu] has unknown ref type: %d",
->>>>> +                  disk_bytenr, BTRFS_EXTENT_DATA_KEY,
->>>>> +                  disk_num_bytes, type);
->>>>> +            break;
->>>>>            }
->>>>>            if (found_dbackref)
->>>>>
->>>>
->>>>
->>>
->>>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> 
+ping, since most of the series has been merged but this one has been
+left out I assume it could have been missed.
 
-
+> ---
+>  fs/btrfs/inode.c | 20 +++++++++-----------
+>  1 file changed, 9 insertions(+), 11 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 98b56aca0a6f..156be9face5b 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -105,9 +105,9 @@ static int btrfs_truncate(struct inode *inode);
+>  static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
+>  static noinline int cow_file_range(struct inode *inode,
+>  				   struct page *locked_page,
+> -				   u64 start, u64 end, u64 delalloc_end,
+> -				   int *page_started, unsigned long *nr_written,
+> -				   int unlock, struct btrfs_dedupe_hash *hash);
+> +				   u64 start, u64 end, int *page_started,
+> +				   unsigned long *nr_written, int unlock,
+> +				   struct btrfs_dedupe_hash *hash);
+>  static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
+>  				       u64 orig_start, u64 block_start,
+>  				       u64 block_len, u64 orig_block_len,
+> @@ -739,8 +739,6 @@ static noinline void submit_compressed_extents(struct inode *inode,
+>  					     async_extent->start,
+>  					     async_extent->start +
+>  					     async_extent->ram_size - 1,
+> -					     async_extent->start +
+> -					     async_extent->ram_size - 1,
+>  					     &page_started, &nr_written, 0,
+>  					     NULL);
+>  
+> @@ -930,9 +928,9 @@ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
+>   */
+>  static noinline int cow_file_range(struct inode *inode,
+>  				   struct page *locked_page,
+> -				   u64 start, u64 end, u64 delalloc_end,
+> -				   int *page_started, unsigned long *nr_written,
+> -				   int unlock, struct btrfs_dedupe_hash *hash)
+> +				   u64 start, u64 end, int *page_started,
+> +				   unsigned long *nr_written, int unlock,
+> +				   struct btrfs_dedupe_hash *hash)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> @@ -1431,7 +1429,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+>  		if (cow_start != (u64)-1) {
+>  			ret = cow_file_range(inode, locked_page,
+>  					     cow_start, found_key.offset - 1,
+> -					     end, page_started, nr_written, 1,
+> +					     page_started, nr_written, 1,
+>  					     NULL);
+>  			if (ret) {
+>  				if (!nolock && nocow)
+> @@ -1517,7 +1515,7 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+>  	}
+>  
+>  	if (cow_start != (u64)-1) {
+> -		ret = cow_file_range(inode, locked_page, cow_start, end, end,
+> +		ret = cow_file_range(inode, locked_page, cow_start, end,
+>  				     page_started, nr_written, 1, NULL);
+>  		if (ret)
+>  			goto error;
+> @@ -1574,7 +1572,7 @@ static int run_delalloc_range(void *private_data, struct page *locked_page,
+>  		ret = run_delalloc_nocow(inode, locked_page, start, end,
+>  					 page_started, 0, nr_written);
+>  	} else if (!inode_need_compress(inode, start, end)) {
+> -		ret = cow_file_range(inode, locked_page, start, end, end,
+> +		ret = cow_file_range(inode, locked_page, start, end,
+>  				      page_started, nr_written, 1, NULL);
+>  	} else {
+>  		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+> 

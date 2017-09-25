@@ -1,95 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:49302 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752591AbdI3DdV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Sep 2017 23:33:21 -0400
-Subject: Re: [PATCH v3 07/14] btrfs-progs: Doc/mkfs: Add extra condition for
- rootdir option
-To: kreijack@inwind.it, dsterba@suse.cz,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20170918072139.6300-8-quwenruo.btrfs@gmx.com>
- <7cec48bd-c007-618f-b361-d4425c757c5c@oracle.com>
- <trinity-eef9a61f-60ab-47a3-9771-d638cb0083c9-1506076766926@3c-app-mailcom-bs16>
- <9f598cb9-0267-158d-c54b-13f4372eadd5@gmail.com>
- <9652f4f4-b91c-0382-fa2a-01d45dde7fbb@gmx.com>
- <5e079410-cd64-3d40-8914-b3d48ecdebfd@gmail.com>
- <808d11d8-f22b-f26e-ba3f-7d148915db5a@gmx.com>
- <5b26f9dd-8bae-a35a-4920-4a617b52f9f7@oracle.com>
- <c0652f30-5ca7-b917-7f15-78dfdb2e1205@libero.it>
- <7af34399-f969-dfe5-d006-3e7fb293b9df@gmail.com>
- <20170927162032.GM31640@twin.jikos.cz>
- <287aaa56-f2a2-d44c-1068-ec6f87b7a2f3@gmx.com>
- <cdd1e7c5-80c1-cd41-0e62-a1302c6682c5@inwind.it>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ffe46217-1112-8a3c-649b-c66d823527b1@gmx.com>
-Date: Sat, 30 Sep 2017 11:33:03 +0800
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:29939 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933433AbdIYH0p (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 03:26:45 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 25370AC01EC
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Sep 2017 16:26:39 +0900 (JST)
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>, <anand.jain@oracle.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH v3 0/4] btrfs: cleanup mount path
+Message-ID: <4786f7cc-adc7-1b99-5abf-d068acee56c2@jp.fujitsu.com>
+Date: Mon, 25 Sep 2017 16:26:30 +0900
 MIME-Version: 1.0
-In-Reply-To: <cdd1e7c5-80c1-cd41-0e62-a1302c6682c5@inwind.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Summary:
+Cleanup mount path by avoiding calling btrfs_mount() twice.
+No functional change. See below for longer explanation.
 
+Changelog:
+v3:
+  Reorganized patches again into four and added comments to the source.
+  Each patch can be applied and compiled while maintaining functionality.
+  The first one is the preparation and the second one is the main part.
+  The last two are small cleanups.
 
-On 2017年09月30日 00:57, Goffredo Baroncelli wrote:
-> On 09/28/2017 02:00 AM, Qu Wenruo wrote:
->>
->>
->> On 2017年09月28日 00:20, David Sterba wrote:
->>> On Mon, Sep 25, 2017 at 07:15:30AM -0400, Austin S. Hemmelgarn wrote:
->>>> On 2017-09-24 10:08, Goffredo Baroncelli wrote:
->>>>> On 09/24/2017 12:10 PM, Anand Jain wrote:
->>>
->>> A lot of points in this thread, let me address them here.
->>>
->>> I don't want to remove --rootdir functionality, the fix that's being
->>> proposed removes the minimalization -- feature that was not well known,
->>> but I understand it's useful (and already used).
->>>
->>> I'd like to fix that in another way, eg. as an option to mkfs or a
->>> separate tool.
->>>
->>> I'm not worried about adding more code or code complexity. If we do it
->>> right it's not a problem in the long run. But people for some reason
->>> like to delete other people's code or functionality.
->>>
->>> Regarding guessing number of users, this is always hard. So if there's
->>> one vocal enough to let us know about the usecase, it's IMHO good time
->>> to explore the it, code-wise and documentation-wise, and fix it or
->>> improve.
->>>
->>> So, what next. I'd like to get rid of the custom chunk allocator, namely
->>> because of the known 1MB area misuse and duplication.
->>>
->>> Implementing the minimalization might need some preparatory work and I
->>> don't have a realistic ETA now.
->>
->> Well, if using over-reserve-then-shrink method, it could be done, without much hassle.
-> 
-> What about doing it on a file instead of a device ? As sparse file, it would be less expensive to enlarge then shrink. I think that who need to build a filesystem with "shrink", doesn't need to create it on a real block device
+v2:
+  Split the patch into three parts.
 
-For device, nothing different, just v3 patchset will handle it.
+Tomohiro Misono (4):
+  btrfs: add mount_root() and new file_system_type
+  btrfs: cleanup btrfs_mount() using mount_root()
+  btrfs: split parse_early_options() in two
+  btrfs: remove unused setup_root_args()
 
-For file, sparse file of course.
+ fs/btrfs/super.c | 252 ++++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 149 insertions(+), 103 deletions(-)
 
-Thanks,
-Qu
+====================
+Background Explanation:
+btrfs uses mount_subtree() to mount a subvolume directly.  This function
+needs a vfsmount* of device's root (/), which is a return value of
+vfs_kern_mount() (therefore root has to be mounted internally anyway).
 
->>
->> However ETA maybe delayed to middle of Oct, as I'm going to enjoy my holiday during 1st Oct to 7th Oct.
->>
->> Thanks,
->> Qu
->>
->>> Ideally we'd fix both problems in one
->>> version, as I'd rather avoid "temporary" solution to drop the
->>> minimalization with the promise to put it back later.
->>>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> 
+Current approach of getting root's vfsmount* in mount time is a bit tricky:
+0. VFS layer calls vfs_kern_mount() with registered file_system_type
+   (for btrfs, btrfs_fs_type). btrfs_mount() is called on the way.
+1. btrfs_parse_early_options() parses "subvolid=" mount option and set the
+   value to subvol_objectid. Otherwise, subvol_objectid has the initial
+   value of 0
+2. check subvol_objectid is 5 or not. This time id is not 5, and
+   btrfs_mount() returns by calling mount_subvol()
+3. In mount_subvol(), original mount options are modified to contain
+   "subvolid=0" in setup_root_args(). Then, vfs_kern_mount() is called with
+   btrfs_fs_type and new options
+4. btrfs_mount() is called again
+5. btrfs_parse_early_options() parses "subvolid=0" and set 5 (instead of 0)
+   to subvol_objectid
+6. check subvol_objectid is 5 or not. This time id is 5 and mount_subvol()
+   is not called. btrfs_mount() finishes mounting a root
+7. (in mount_subvol()) with using a return vale of vfs_kern_mount(), it
+   calls mount_subtree()
+8 return subvolume's dentry
+
+As illustrated above, calling btrfs_mount() twice complicates the problem.
+We can use another file_system_type (which has different callback
+function to mount root) for arguments of our vfs_kern_mount() call to 
+avoid this.
+
+In this approach: 
+1. parse subvol id related options for later use in mount_subvol()
+2. mount device's root by calling vfs_kern_mount() with
+   different file_system_type
+3. return by calling mount_subvol()
+
+I think this approach is the same as nfsv4, which is the only other
+filesystem using mount_subtree() currently, and easy to understand.
+
+Most of the change is done by just reorganizing the original code of
+btrfs_mount()/mount_subvol() into btrfs_mount()/mount_subvol()/mount_root()
+
+btrfs_parse_early_options() is split into two parts to avoid "device="
+option will be handled twice (though it cause no harm). setup_root_args()
+is deleted as not needed anymore.
+
+-- 
+2.9.5
+

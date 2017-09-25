@@ -1,31 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52909 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S932698AbdIYOKV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 10:10:21 -0400
-Date: Mon, 25 Sep 2017 16:08:47 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com
-Subject: Re: [PATCH] btrfs: Remove memory barrier from block_group_cache_done
-Message-ID: <20170925140847.GG31640@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1504110942-23146-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1504110942-23146-1-git-send-email-nborisov@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:23858 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932656AbdIYMXY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 08:23:24 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/3] fix bug in btrfs_init_new_device()
+Date: Mon, 25 Sep 2017 20:31:01 +0800
+Message-Id: <20170925123104.16526-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 30, 2017 at 07:35:42PM +0300, Nikolay Borisov wrote:
-> This memory barrier was introduced in 817d52f8dba2 ("Btrfs: async block group
-> caching"), but even at that time it's usage was broken since it didn't pair
-> with anything. There was one situation where the cached member was set to
-> BTRFS_CACHE_FINISHED in a spinlock region which *might* have acted as a pairing
-> barrier. Since there is no clear semantics how it's supposed to work better
-> to just remove it.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+1/3 fixes a bug which failed to reset writable when sprouting failed
+2/3 is cleanup and preparatory to fix 3/3
+3/3 fixes BUG_ON in btrfs_init_new_device()
 
-As discussed offline, this needs a better description that removing the
-barrier will not break it.
+Anand Jain (3):
+  btrfs: undo writable when sprouting fails
+  btrfs: cleanup btrfs_init_new_device()
+  btrfs: fix BUG_ON in btrfs_init_new_device()
+
+ fs/btrfs/volumes.c | 27 +++++++++++++--------------
+ 1 file changed, 13 insertions(+), 14 deletions(-)
+
+-- 
+2.13.1
+

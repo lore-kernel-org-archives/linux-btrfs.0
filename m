@@ -1,58 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:50965 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751169AbdIOPhN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Sep 2017 11:37:13 -0400
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org, Nick Terrell <terrelln@fb.com>,
-        David Sterba <dsterba@suse.cz>
-Cc: Adam Borowski <kilobyte@angband.pl>
-Date: Fri, 15 Sep 2017 17:36:58 +0200
-Message-Id: <20170915153659.24603-2-kilobyte@angband.pl>
-In-Reply-To: <20170915153659.24603-1-kilobyte@angband.pl>
-References: <20170915153457.dt5zjcbrryn3qj3t@angband.pl>
- <20170915153659.24603-1-kilobyte@angband.pl>
-Subject: [RFC PATCH 2/3] btrfs: allow setting zlib compression level via :9
+Received: from mx2.suse.de ([195.135.220.15]:45836 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S967750AbdIZJYt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Sep 2017 05:24:49 -0400
+Subject: Re: [PATCH] Btrfs: compress_file_range() remove dead variable
+ num_bytes
+To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20170911211517.22441-1-nefelim4ag@gmail.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <ac3b4cef-7099-a67b-4d78-03fcde34c9e8@suse.com>
+Date: Tue, 26 Sep 2017 12:24:47 +0300
+MIME-Version: 1.0
+In-Reply-To: <20170911211517.22441-1-nefelim4ag@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is bikeshedding, but it seems people are drastically more likely to
-understand "zlib:9" as compression level rather than an algorithm version
-compared to "zlib9".
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- fs/btrfs/compression.c | 2 ++
- fs/btrfs/super.c       | 2 +-
- 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 70a50194fcf5..71782ec976c7 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -1096,6 +1096,8 @@ unsigned int btrfs_compress_str2level(const char *str)
- 
- 	if ('1' <= str[4] && str[4] <= '9' )
- 		return str[4] - '0';
-+	if (str[4] == ':' && '1' <= str[5] && str[5] <= '9')
-+		return str[5] - '0';
- 
- 	return 0;
- }
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 5467187701ef..537e04120457 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1248,7 +1248,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		else
- 			seq_printf(seq, ",compress=%s", compress_type);
- 		if (info->compress_level)
--			seq_printf(seq, "%d", info->compress_level);
-+			seq_printf(seq, ":%d", info->compress_level);
- 	}
- 	if (btrfs_test_opt(info, NOSSD))
- 		seq_puts(seq, ",nossd");
--- 
-2.14.1
+On 12.09.2017 00:15, Timofey Titovets wrote:
+> Remove dead assigment of num_bytes
+> 
+> Also as num_bytes only used in will_compress block as
+> copy of total_in just replace that with total_in and drop num_bytes entire
+> 
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/inode.c | 10 +++-------
+>  1 file changed, 3 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 17ad018da0a2..1ff4fa461555 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -446,7 +446,6 @@ static noinline void compress_file_range(struct inode *inode,
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> -	u64 num_bytes;
+>  	u64 blocksize = fs_info->sectorsize;
+>  	u64 actual_end;
+>  	u64 isize = i_size_read(inode);
+> @@ -496,8 +495,6 @@ static noinline void compress_file_range(struct inode *inode,
+>  
+>  	total_compressed = min_t(unsigned long, total_compressed,
+>  			BTRFS_MAX_UNCOMPRESSED);
+> -	num_bytes = ALIGN(end - start + 1, blocksize);
+> -	num_bytes = max(blocksize,  num_bytes);
+>  	total_in = 0;
+>  	ret = 0;
+>  
+> @@ -613,7 +610,6 @@ static noinline void compress_file_range(struct inode *inode,
+>  		 */
+>  		total_in = ALIGN(total_in, PAGE_SIZE);
+>  		if (total_compressed + blocksize <= total_in) {
+> -			num_bytes = total_in;
+>  			*num_added += 1;
+>  
+>  			/*
+> @@ -621,12 +617,12 @@ static noinline void compress_file_range(struct inode *inode,
+>  			 * allocation on disk for these compressed pages, and
+>  			 * will submit them to the elevator.
+>  			 */
+> -			add_async_extent(async_cow, start, num_bytes,
+> +			add_async_extent(async_cow, start, total_in,
+>  					total_compressed, pages, nr_pages,
+>  					compress_type);
+>  
+> -			if (start + num_bytes < end) {
+> -				start += num_bytes;
+> +			if (start + total_in < end) {
+> +				start += total_in;
+>  				pages = NULL;
+>  				cond_resched();
+>  				goto again;
+> 

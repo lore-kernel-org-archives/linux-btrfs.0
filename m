@@ -1,47 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:38451 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S935892AbdIZQuY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 12:50:24 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dwt3h-0003mf-3T
-        for linux-btrfs@vger.kernel.org; Tue, 26 Sep 2017 18:50:09 +0200
-To: linux-btrfs@vger.kernel.org
-From: Ferry Toth <ftoth@telfort.nl>
-Subject: Give up on bcache?
-Date: Tue, 26 Sep 2017 16:50:00 +0000 (UTC)
-Message-ID: <oqe0fo$keo$1@blaine.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from len.romanrm.net ([91.121.75.85]:50334 "EHLO len.romanrm.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1031574AbdIZSfw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Sep 2017 14:35:52 -0400
+Date: Tue, 26 Sep 2017 23:33:19 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Ferry Toth <ftoth@telfort.nl>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Give up on bcache?
+Message-ID: <20170926233319.6324764d@natsu>
+In-Reply-To: <oqe0fo$keo$1@blaine.gmane.org>
+References: <oqe0fo$keo$1@blaine.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looking at the Phoronix benchmark here:
+On Tue, 26 Sep 2017 16:50:00 +0000 (UTC)
+Ferry Toth <ftoth@telfort.nl> wrote:
 
-https://www.phoronix.com/scan.php?page=article&item=linux414-bcache-
-raid&num=2
+> https://www.phoronix.com/scan.php?page=article&item=linux414-bcache-
+> raid&num=2
+> 
+> I think it might be idle hopes to think bcache can be used as a ssd cache 
+> for btrfs to significantly improve performance..
 
-I think it might be idle hopes to think bcache can be used as a ssd cache 
-for btrfs to significantly improve performance.. True, the benchmark is 
-using ext.
+My personal real-world experience shows that SSD caching -- with lvmcache --
+does indeed significantly improve performance of a large Btrfs filesystem with
+slowish base storage.
 
-But the most important one (where btrfs always shows to be a little slow) 
-would be the SQLLite test. And with ext at least performance _degrades_ 
-except for the Writeback mode, and even there is nowhere near what the 
-SSD is capable of.
+And that article, sadly, only demonstrates once again the general mediocre
+quality of Phoronix content: it is an astonishing oversight to not check out
+lvmcache in the same setup, to at least try to draw some useful conclusion, is
+it Bcache that is strangely deficient, or SSD caching as a general concept
+does not work well in the hardware setup utilized.
 
-I think with btrfs it will be even worse and that it is a fundamental 
-problem: caching is complex and the cache can not how how the data on the 
-fs is used.
-
-I think the original idea of hot data tracking has a much better chance 
-to significantly improve performance. This of course as the SSD's and 
-HDD's then will be equal citizens and btrfs itself gets to decide on 
-which drive the data is best stored.
-
-With this implemented right, it would also finally silence the never 
-ending discussion why not btrfs and why zfs, ext, xfs etc. Which would be 
-a plus by its own right.
-
+-- 
+With respect,
+Roman

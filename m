@@ -1,44 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:56864 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S966054AbdIYUS2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 16:18:28 -0400
-From: Goffredo Baroncelli <kreijack@libero.it>
-To: linux-btrfs@vger.kernel.org
-Subject: [RFC] btrfs: new ioctl BTRFS_IOC_GET_CHUNK_INFO
-Date: Mon, 25 Sep 2017 22:10:09 +0200
-Message-Id: <20170925201010.9958-1-kreijack@libero.it>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:27826 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S966346AbdIZC6J (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 22:58:09 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 92FA446BA7D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 10:57:58 +0800 (CST)
+To: <linux-btrfs@vger.kernel.org>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Subject: question: behavior of original check
+Message-ID: <4a380ce4-b57f-a524-85ae-170602d3d33b@cn.fujitsu.com>
+Date: Tue, 26 Sep 2017 11:01:04 +0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The aim of this patch is to replace the BTRFS_IOC_TREE_SEARCH ioctl when
-it is used to obtain information about the chunks/block groups. 
+Hi
 
-The problems in using the BTRFS_IOC_TREE_SEARCH is that it access
-the very low data structure of BTRFS. This means: 
-1) this would be complicated a possible change of the disk format
-2) it requires the root privileges
+During writing patches about check, I found something confusing
+about btrfs-progs original check.
 
-The new BTRFS_IOC_GET_CHUNK_INFO is an attempt to address these issue.
-This ioctl can be called from a not root user: I think that the data exposed 
-are not sensibile data.
+Setup:
+Version: Btrfs progs v4.13.1
 
-In a separate patches set, there is an update to the btrfs utility to
-allow it to use this new ioctl int the load_chunk_info() function.
-So now it is possible to do "btrfs fi us" without root privileges.
+$ make TEST=006\* test-fsck
+[TEST]   fsck-tests.sh
+[TEST/fsck]   006-bad-root-items
 
-This is an RFC, because I want to be sure that
-1) it is right my understanding that the chunk info are not a "sensibile data"
-2) the api is a good api. In particular I am not sure that returning -EAGAIN is
-the right thing to do when further data is available but the buffer is not
-enough.
+$ cat tests/fsck-tests-results.txt | tail -n  25
+############### .../btrfs-progs/btrfs check test.img
+checking extents
+ref mismatch on [15474688 905216] extent item 1, found 4
+Backref 15474688 parent 30883840 owner 0 offset 0 num_refs 0 not found 
+in extent tree
+Incorrect local backref count on 15474688 parent 30883840 owner 0 offset 
+0 found 1 wanted 0 back 0x561cdc0b2770
+Backref 15474688 parent 31326208 owner 0 offset 0 num_refs 0 not found 
+in extent tree
+Incorrect local backref count on 15474688 parent 31326208 owner 0 offset 
+0 found 1 wanted 0 back 0x561cdc0b5390
+Backref 15474688 parent 31817728 owner 0 offset 0 num_refs 0 not found 
+in extent tree
+Incorrect local backref count on 15474688 parent 31817728 owner 0 offset 
+0 found 1 wanted 0 back 0x561cdc0b5330
+backpointer mismatch on [15474688 905216]
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on test.img
+UUID: 3857c23d-4219-4600-a636-ac7707dc4ff3
+cache and super generation don't match, space cache will be invalidated
+found 6291456 bytes used, *no error* found
+total csum bytes: 660
+total tree bytes: 786432
+total fs tree bytes: 688128
+total extent tree bytes: 16384
+btree space waste bytes: 459860
+file data blocks allocated: 35536896
+  referenced 25890816
 
-Comments are welcome
-BR
-G.Baroncelli
 
+It seems that errors in extent-tree are not important so btrfs-progs 
+just returns 0.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Is this behavior normal(on purpose)?
+I have written a patch to fix it but then test-fsck/006 will fail due to
+nonzero value progs returned.
+
+Thanks,
+Su
+
 

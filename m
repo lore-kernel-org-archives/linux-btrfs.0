@@ -1,39 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f173.google.com ([209.85.220.173]:53472 "EHLO
-        mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753951AbdIZPCV (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:38451 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S935892AbdIZQuY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 11:02:21 -0400
-Received: by mail-qk0-f173.google.com with SMTP id t184so10339740qke.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 08:02:21 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJ_hD5Dw0H+2c0qztzUc2kEhZZ-PbRTMpzR+R_isQ_S0ph99iQ@mail.gmail.com>
-References: <CAJ_hD5Dw0H+2c0qztzUc2kEhZZ-PbRTMpzR+R_isQ_S0ph99iQ@mail.gmail.com>
-From: Eric Wolf <19wolf@gmail.com>
-Date: Tue, 26 Sep 2017 11:02:00 -0400
-Message-ID: <CAJ_hD5Af8YLw_Q0XOC4LLN+=HKKg7oSj+ide1sm4Sr2b7Qq1YA@mail.gmail.com>
-Subject: Re: rm: it is dangerous to operate recursively on '/data/Backup/@'
- (same as '/')
+        Tue, 26 Sep 2017 12:50:24 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dwt3h-0003mf-3T
+        for linux-btrfs@vger.kernel.org; Tue, 26 Sep 2017 18:50:09 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+From: Ferry Toth <ftoth@telfort.nl>
+Subject: Give up on bcache?
+Date: Tue, 26 Sep 2017 16:50:00 +0000 (UTC)
+Message-ID: <oqe0fo$keo$1@blaine.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So somehow my @ and @home subvolumes became mounted at /data/Backup in
-addition to their normal locations (/ and /home). So when I used 'dd'
-I was outputting to my OS drive instead of my data pool. How did this
-happen? How do I undo it? I'll try restarting now, but I'll await
-further responses before replying to myself again.
----
-Eric Wolf
-(201) 316-6098
-19wolf@gmail.com
+Looking at the Phoronix benchmark here:
 
+https://www.phoronix.com/scan.php?page=article&item=linux414-bcache-
+raid&num=2
 
-On Tue, Sep 26, 2017 at 10:41 AM, Eric Wolf <19wolf@gmail.com> wrote:
-> I accidentally filled my OS drive with a copy of itself? The problem
-> is, /data/ is a separate pool from the OS drive. And now it looks like
-> I can't erase it? I don't even know how I got here. All I did was "dd
-> if=/dev/sda of=/data/Backup/backup-new.img && mv
-> /data/Backup/backup-new.img /data/Backup/backup.img" I don't really
-> know where to go from here.
+I think it might be idle hopes to think bcache can be used as a ssd cache 
+for btrfs to significantly improve performance.. True, the benchmark is 
+using ext.
+
+But the most important one (where btrfs always shows to be a little slow) 
+would be the SQLLite test. And with ext at least performance _degrades_ 
+except for the Writeback mode, and even there is nowhere near what the 
+SSD is capable of.
+
+I think with btrfs it will be even worse and that it is a fundamental 
+problem: caching is complex and the cache can not how how the data on the 
+fs is used.
+
+I think the original idea of hot data tracking has a much better chance 
+to significantly improve performance. This of course as the SSD's and 
+HDD's then will be equal citizens and btrfs itself gets to decide on 
+which drive the data is best stored.
+
+With this implemented right, it would also finally silence the never 
+ending discussion why not btrfs and why zfs, ext, xfs etc. Which would be 
+a plus by its own right.
+

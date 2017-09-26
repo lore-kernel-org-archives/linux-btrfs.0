@@ -1,56 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:38963 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S935367AbdIZUMp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 16:12:45 -0400
-Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
-        (envelope-from <kilobyte@angband.pl>)
-        id 1dwwDj-0005Bj-L9
-        for linux-btrfs@vger.kernel.org; Tue, 26 Sep 2017 22:12:43 +0200
-Date: Tue, 26 Sep 2017 22:12:43 +0200
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Give up on bcache?
-Message-ID: <20170926201243.x75zx7v6uecrme4u@angband.pl>
-References: <oqe0fo$keo$1@blaine.gmane.org>
- <20170926233319.6324764d@natsu>
+Received: from azure.uno.uk.net ([95.172.254.11]:48252 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S964856AbdIZUjw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Sep 2017 16:39:52 -0400
+Received: from ty.sabi.co.uk ([95.172.230.208]:60064)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <postmaster@root.t00.sabi.co.uk>)
+        id 1dwwdw-0004qh-Vn
+        for linux-btrfs@vger.kernel.org; Tue, 26 Sep 2017 21:39:49 +0100
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1dwwY4-0001hY-5m
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 21:33:44 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20170926233319.6324764d@natsu>
+Content-Type: text/plain; charset=iso-8859-15
+Message-ID: <22986.47527.263713.439274@tree.ty.sabi.co.uk>
+Date: Tue, 26 Sep 2017 21:33:43 +0100
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Btrfs performance with small blocksize on SSD
+In-Reply-To: <3321b3c199da4d378bbfa3dbac3c4059@rwth-aachen.de>
+References: <3321b3c199da4d378bbfa3dbac3c4059@rwth-aachen.de>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 26, 2017 at 11:33:19PM +0500, Roman Mamedov wrote:
-> On Tue, 26 Sep 2017 16:50:00 +0000 (UTC)
-> Ferry Toth <ftoth@telfort.nl> wrote:
-> 
-> > https://www.phoronix.com/scan.php?page=article&item=linux414-bcache-
-> > raid&num=2
-> > 
-> > I think it might be idle hopes to think bcache can be used as a ssd cache 
-> > for btrfs to significantly improve performance..
-> 
-> My personal real-world experience shows that SSD caching -- with lvmcache --
-> does indeed significantly improve performance of a large Btrfs filesystem with
-> slowish base storage.
-> 
-> And that article, sadly, only demonstrates once again the general mediocre
-> quality of Phoronix content: it is an astonishing oversight to not check out
-> lvmcache in the same setup, to at least try to draw some useful conclusion, is
-> it Bcache that is strangely deficient, or SSD caching as a general concept
-> does not work well in the hardware setup utilized.
+> i run a few performance tests comparing mdadm, hardware raid
+> and the btrfs raid.
 
-Also, it looks as if Phoronix' tests don't stress metadata at all.  Btrfs is
-all about metadata, speeding it up greatly helps most workloads.
+Fantastic beginning already! :-)
 
-A pipe-dream wishlist would be:
-* store and access master copy of metadata on SSD only
-* pin all data blocks referenced by generations not yet mirrored
-* slowly copy over metadata to HDD
+> I noticed that the performance
 
--- 
-⢀⣴⠾⠻⢶⣦⠀ We domesticated dogs 36000 years ago; together we chased
-⣾⠁⢰⠒⠀⣿⡁ animals, hung out and licked or scratched our private parts.
-⢿⡄⠘⠷⠚⠋⠀ Cats domesticated us 9500 years ago, and immediately we got
-⠈⠳⣄⠀⠀⠀⠀ agriculture, towns then cities.     -- whitroth on /.
+I have seen over the years a lot of messages like this where
+there is a wanton display of amusing misuses of terminology, of
+which the misuse of the word "performance" to mean "speed" is
+common, and your results are work-per-time which is a "speed":
+http://www.sabi.co.uk/blog/15-two.html?151023#151023
+
+The "tl;dr" is: you and another guy are told to race the 100m to
+win a �10,000 prize, but you have to carry a sack with a 50Kg
+weight. It takes you a lot longer, as your speed is much lower,
+and the other guy gets the prize. Was that because your
+performance was much worse? :-)
+
+> for small blocksizes (2k) is very bad on SSD in general and on
+> HDD for sequential writing.
+
+Your graphs show pretty decent performance for small-file IO on
+Btrfs, depending on conditions, and you are very astutely not
+explaining the conditions, even if some can be guessed.
+
+> I wonder about that result, because you say on the wiki that
+> btrfs is very effective for small files.
+
+Effectivess/efficiency are not the same as performance or speed
+either. My own simplistic but somewhat meaningful tests show
+that Btrfs does relatively well on small files:
+
+  http://www.sabi.co.uk/blog/17-one.html?170302#170302
+
+As to "small files" in general I have read about many attempts
+to use filesystems as DBMSes, and I consider them intensely
+stupid:
+
+  http://www.sabi.co.uk/blog/anno05-4th.html?051016#051016
+
+> I attached my results from raid 1 random write HDD (rH1), SSD
+> (rS1) and from sequential write HDD (sH1), SSD (sS1)
+
+Ah, so it was specifically about small *writes* (and presumably
+because of other wording not small-updates-in-place of large
+files, but creating and writing small files).
+
+It is a very basic beginner level notion that most storage
+systems are very anisotropic as to IO size, and also for read
+vs. write, and never mind with and without 'fsync'. SSDs without
+supercapacitor backed buffers in particular are an issue.
+
+Btrfs has a performance envelope where the speed of small writes
+(in particular small in-place updates, but also because of POSIX
+small file creation) has been sacrificed for good reasons:
+
+https://btrfs.wiki.kernel.org/index.php/SysadminGuide#Copy_on_Write_.28CoW.29
+https://btrfs.wiki.kernel.org/index.php/Gotchas#Fragmentation
+
+Also consider the consequences of the 'max_inline' option for
+'mount' and the 'nodesize' option for 'mkfs.btrfs'.
+
+> Hopefully you have an explanation for that.
+
+The best explanation seems to me (euphemism alert) quite
+extensive "misknowledge" in the message I am responding to.

@@ -1,94 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38833 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S935560AbdIYQib (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Sep 2017 12:38:31 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.13.1
-Date: Mon, 25 Sep 2017 18:36:53 +0200
-Message-Id: <20170925163653.32108-1-dsterba@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:61250 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S965729AbdIZB0z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Sep 2017 21:26:55 -0400
+Date: Tue, 26 Sep 2017 09:26:30 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <dsterba@suse.cz>, <josef@toxicpanda.com>, <linux-btrfs@vger.kernel.org>,
+        <kernel-team@fb.com>, Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH] Btrfs: rework outstanding_extents
+Message-ID: <20170926012630.GA24648@fnst.localdomain>
+References: <1502989289-22098-1-git-send-email-jbacik@fb.com>
+ <20170824093114.GA9506@fnst>
+ <20170925140009.GE31640@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20170925140009.GE31640@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon, Sep 25, 2017 at 04:00:09PM +0200, David Sterba wrote:
+>On Thu, Aug 24, 2017 at 05:31:15PM +0800, Lu Fengqi wrote:
+>> On Thu, Aug 17, 2017 at 01:01:29PM -0400, josef@toxicpanda.com wrote:
+>> >From: Josef Bacik <jbacik@fb.com>
+>> >
+>> >Right now we do a lot of weird hoops around outstanding_extents in order
+>> >to keep the extent count consistent.  This is because we logically
+>> >transfer the outstanding_extent count from the initial reservation
+>> >through the set_delalloc_bits.  This makes it pretty difficult to get a
+>> >handle on how and when we need to mess with outstanding_extents.
+>> >
+>> >Fix this by revamping the rules of how we deal with outstanding_extents.
+>> >Now instead everybody that is holding on to a delalloc extent is
+>> >required to increase the outstanding extents count for itself.  This
+>> >means we'll have something like this
+>> >
+>> >btrfs_dealloc_reserve_metadata	- outstanding_extents = 1
+>> > btrfs_set_delalloc		- outstanding_extents = 2
+>> >btrfs_release_delalloc_extents	- outstanding_extents = 1
+>> >
+>> >for an initial file write.  Now take the append write where we extend an
+>> >existing delalloc range but still under the maximum extent size
+>> >
+>> >btrfs_delalloc_reserve_metadata - outstanding_extents = 2
+>> >  btrfs_set_delalloc
+>> >    btrfs_set_bit_hook		- outstanding_extents = 3
+>> >    btrfs_merge_bit_hook	- outstanding_extents = 2
+>> >btrfs_release_delalloc_extents	- outstanding_extnets = 1
+>> >
+>> >In order to make the ordered extent transition we of course must now
+>> >make ordered extents carry their own outstanding_extent reservation, so
+>> >for cow_file_range we end up with
+>> >
+>> >btrfs_add_ordered_extent	- outstanding_extents = 2
+>> >clear_extent_bit		- outstanding_extents = 1
+>> >btrfs_remove_ordered_extent	- outstanding_extents = 0
+>> >
+>> >This makes all manipulations of outstanding_extents much more explicit.
+>> >Every successful call to btrfs_reserve_delalloc_metadata _must_ now be
+>> >combined with btrfs_release_delalloc_extents, even in the error case, as
+>> >that is the only function that actually modifies the
+>> >outstanding_extents counter.
+>> 
+>> s/btrfs_reserve_delalloc_metadata/btrfs_delalloc_reserve_metadata
+>> s/btrfs_release_delalloc_extents/btrfs_delalloc_release_extents
+>> 
+>> Acked-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+>
+>BTW,
+>
+>Documentation/process/5.Posting.rst
+>
+>216  - Acked-by: indicates an agreement by another developer (often a
+>217    maintainer of the relevant code) that the patch is appropriate for
+>218    inclusion into the kernel.
+>
+>and is commonly used by maintainers when someone else modifies the
+>respective codebase by tree-wide, API or similar.
+>
+>If you agree with the way the patch is solving a particular problem and
+>think it's important enough to be stated, you can write that in plain
+>text.
+>
+>
 
-btrfs-progs version 4.13.1 have been released.
+Sorry for any inconvenience caused. I misunderstood about the meaning of
+Acked-by.
 
-The ZSTD support has been added, the kernel code will land in 4.14. Now
-configure will detect if libzstd is available and will use it. In the future
-this will become a mandatory dependency. Please check your distro for libzstd
-and ask them to add it eventually. As a fallback, it is and will be possible to
-disable zstd detection (and btrfs restore will obviously lack the support).
+I just want to express that it looks good to me.
 
-Changes:
-  * image: speed up generating the sanitized names, do not generate unprintable chars
-  * completion: add missing commands, better mount point detection
-  * restore: add zstd support; libzstd detected automatically, will be
-    requested by default in the future, or can be configured out
-  * other:
-    * misc fixes found by sparse
-    * doc enhancements, ioctl manual page started
-    * updated and new tests
-    * build fixes
+-- 
+Thanks,
+Lu
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (18):
-      btrfs-progs: README: update links, enhance contribution section
-      btrfs-progs: tests: fix run_mustfail in cli-tests/007-check-force
-      btrfs-progs: build: sync Makefile to Android.mk
-      btrfs-progs: convert: use correct string printing for errcode_t
-      btrfs-progs: tests: remove temporary loopdev files
-      btrfs-progs: tests: remove temporary images in mkfs/005 and mkfs/006
-      btrfs-progs: build: whitespace adjustment of [LD] fssum
-      btrfs-progs: tests: make sure _is_file_or_command does not get confused
-      btrfs-progs: docs: start ioctl documentation manual page
-      btrfs-progs: fix debugging macro checks
-      btrfs-progs: print-tree: use proper helper for reading offset
-      btrfs-progs: free-space-cache: fix endianity when reading from disk_key
-      btrfs-progs: updated and add missing function attributes to the definition
-      btrfs-progs: build: add missing defines for the C=1 build
-      btrfs-progs: build: use -std=gnu89 for sparse
-      btrfs-progs: build: add more sparse warning checks
-      btrfs-progs: tests: check there are no unprintable characters in btrfs-image -ss output
-      btrfs-progs: update CHANGES for v4.13.1
-
-Misono, Tomohiro (2):
-      btrfs-progs: update btrfs-completion
-      btrfs-progs: cleanup whitespaces of btrfs-completion
-
-Naohiro Aota (2):
-      btrfs-progs: build: generate all dependency files
-      btrfs-progs: build: omit unnecessary -MD flag
-
-Nicholas D Steeves (2):
-      btrfs-progs: tests: Add required IETF Trust copyright to SHA implementation
-      btrfs-progs: tests: Remove misleading BCP 78 boilerplate from SHA implementation
-
-Nick Terrell (2):
-      btrfs-progs: Add zstd support
-      btrfs-progs: tests: add testing image for zstd for btrfs-restore
-
-Piotr Pawlow (6):
-      btrfs-progs: image: fix non-printable characters in generated file names
-      btrfs-progs: image: move core find_collision code to a separate function
-      btrfs-progs: image: add reverse CRC32C table
-      btrfs-progs: image: add a function to calculate CRC32C collisions
-      btrfs-progs: image: add a function to check if generated filename suffix is valid
-      btrfs-progs: image: use CRC32C reversing instead of brute force to find collisions
-
-Qu Wenruo (2):
-      btrfs-progs: Refactor find_next_chunk to get rid of parameter root and objectid
-      btrfs-progs: Fix one-byte overlap bug in free_block_group_cache
-
-Uli Heller (1):
-      btrfs-progs: Removed missing header file, fixes compilation error
-
-yingyil (1):
-      btrfs-progs: mkfs: refactor create_data_reloc_tree
 

@@ -1,39 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:21068 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:24853 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964889AbdIZIhu (ORCPT
+        with ESMTP id S964790AbdIZHlE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 04:37:50 -0400
-Subject: Re: [PATCH 2/3] btrfs: cleanup btrfs_init_new_device()
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <20170925123104.16526-1-anand.jain@oracle.com>
- <20170925123104.16526-3-anand.jain@oracle.com>
- <6af9ec03-712a-d78e-6ad5-f4aff0f0dd61@suse.com>
- <bbd6b15b-146a-9373-7242-f69a69bd0c4f@suse.com>
- <26696307-d343-e75a-5dd8-b401a8fe02d0@oracle.com>
- <03b419bf-95de-00cf-6e43-9c462c8f1872@suse.com>
+        Tue, 26 Sep 2017 03:41:04 -0400
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <2a7e6110-3517-98ad-8f30-3ff9ec8a5817@oracle.com>
-Date: Tue, 26 Sep 2017 16:45:06 +0800
-MIME-Version: 1.0
-In-Reply-To: <03b419bf-95de-00cf-6e43-9c462c8f1872@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 1/3] btrfs: undo writable when sprouting fails
+Date: Tue, 26 Sep 2017 15:48:41 +0800
+Message-Id: <20170926074843.31910-2-anand.jain@oracle.com>
+In-Reply-To: <20170926074843.31910-1-anand.jain@oracle.com>
+References: <20170925123104.16526-1-anand.jain@oracle.com>
+ <20170926074843.31910-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+When new device is being added to seed FS, seed FS is marked writable,
+but when we fail to bring in the new device, we missed to undo the
+writable part. This patch fixes it.
 
->>> The
->>> sysfs rm stands though
->>
->>   This is a preparatory patch for 3/3, at BUG_ON it needs an exit
->> without  the btrfs_sysfs_add_device_link() part.
-> 
-> In this case I'd rather you have this change in 3/3, because on its own
-> it doesn't really make sense and cannot easily be figured out if doing
-> git blame.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: add commit log
+ fs/btrfs/volumes.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-  Fixed in v3. Thanks for suggesting.
-
--Anand
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0e8f16c305df..9d64700cc9b6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2501,6 +2501,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	return ret;
+ 
+ error_trans:
++	if (seeding_dev)
++		sb->s_flags |= MS_RDONLY;
+ 	btrfs_end_transaction(trans);
+ 	rcu_string_free(device->name);
+ 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+-- 
+2.13.1
 

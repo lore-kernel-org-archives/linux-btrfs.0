@@ -1,41 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33053 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38984 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751345AbdI1QQ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2017 12:16:27 -0400
+        id S965704AbdIZRlO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Sep 2017 13:41:14 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 743CEAAD0
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Sep 2017 16:16:26 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Use DIV_ROUND_UP rathen than opencoding it
-Date: Thu, 28 Sep 2017 16:48:19 +0300
-Message-Id: <1506606499-15127-1-git-send-email-nborisov@suse.com>
+        by mx1.suse.de (Postfix) with ESMTP id 9B036AD7A
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 17:41:12 +0000 (UTC)
+Date: Tue, 26 Sep 2017 19:39:39 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, fdmanana@suse.com
+Subject: Re: [PATCH 1/2] btrfs: Abort transaction if btrfs_update_root fails
+ in btrfs_ioctl_subvol_setflags
+Message-ID: <20170926173939.GV31640@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1506436062-23825-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1506436062-23825-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/extent-tree.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+On Tue, Sep 26, 2017 at 05:27:41PM +0300, Nikolay Borisov wrote:
+> btrfs_update_root can fail for any number of reasons, however the only error
+> handling we do is to revert the modified flags, yet we do not abort the
+> transaction but proceed to commit it.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e2d7e86b51d1..9e67616892cd 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2896,9 +2896,8 @@ u64 btrfs_csum_bytes_to_leaves(struct btrfs_fs_info *fs_info, u64 csum_bytes)
- 	num_csums_per_leaf = div64_u64(csum_size,
- 			(u64)btrfs_super_csum_size(fs_info->super_copy));
- 	num_csums = div64_u64(csum_bytes, fs_info->sectorsize);
--	num_csums += num_csums_per_leaf - 1;
--	num_csums = div64_u64(num_csums, num_csums_per_leaf);
--	return num_csums;
-+
-+	return DIV_ROUND_UP(num_csums, num_csums_per_leaf);
- }
- 
- int btrfs_check_space_for_delayed_refs(struct btrfs_trans_handle *trans,
--- 
-2.7.4
+AFAICS btrfs_update_root aborts the transaction itself, so it's not
+needed in the caller.
 
+> Fix this by explicitly checking if the
+> update root routine has failed and abort the transaction.
+> 
+> Fixes: 0caa102da827 ("Btrfs: Add BTRFS_IOC_SUBVOL_GETFLAGS/SETFLAGS ioctls")
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/ioctl.c | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index d6715c2bcdc4..09fcd51f0e8c 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1842,8 +1842,11 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>  
+>  	ret = btrfs_update_root(trans, fs_info->tree_root,
+>  				&root->root_key, &root->root_item);
+> +	if (ret < 0)
+> +		btrfs_abort_transaction(trans, ret);
+>  
+>  	btrfs_commit_transaction(trans);
+
+I think the error from commit_transaction should be returned as well if
+we get here.
+
+So:
+
+ret = btrfs_update_root();
+
+if (ret < 0) {
+	end_transaction();
+	goto out_reset;
+}
+
+ret = btrfs_commit_transaction();
+
+out_reset:
+/* and then as it is */
+if (ret)
+	btrfs_set_root_flags(...);
+
+etc.
+
+
+
+> +
+>  out_reset:
+>  	if (ret)
+>  		btrfs_set_root_flags(&root->root_item, root_flags);
+> -- 
+> 2.7.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

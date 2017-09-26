@@ -1,94 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:48252 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964856AbdIZUjw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 16:39:52 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:60064)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1dwwdw-0004qh-Vn
-        for linux-btrfs@vger.kernel.org; Tue, 26 Sep 2017 21:39:49 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dwwY4-0001hY-5m
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 21:33:44 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Message-ID: <22986.47527.263713.439274@tree.ty.sabi.co.uk>
-Date: Tue, 26 Sep 2017 21:33:43 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Btrfs performance with small blocksize on SSD
-In-Reply-To: <3321b3c199da4d378bbfa3dbac3c4059@rwth-aachen.de>
-References: <3321b3c199da4d378bbfa3dbac3c4059@rwth-aachen.de>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Received: from [195.159.176.226] ([195.159.176.226]:52884 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S935403AbdIZWWT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Sep 2017 18:22:19 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dwyEz-0000zr-Ks
+        for linux-btrfs@vger.kernel.org; Wed, 27 Sep 2017 00:22:09 +0200
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: dmesg: csum "varying number" expected csum 0x0 mirror 1 (with
+ trace/oops)
+Date: Wed, 27 Sep 2017 00:21:55 +0200
+Message-ID: <20170927002155.4f1959f9@jupiter.sol.kaishome.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> i run a few performance tests comparing mdadm, hardware raid
-> and the btrfs raid.
+Hello!
 
-Fantastic beginning already! :-)
+I came across noting some kernel messages which seem to be related to
+btrfs, should I worry?
 
-> I noticed that the performance
+I'm currently running scrub on the device now.
 
-I have seen over the years a lot of messages like this where
-there is a wanton display of amusing misuses of terminology, of
-which the misuse of the word "performance" to mean "speed" is
-common, and your results are work-per-time which is a "speed":
-http://www.sabi.co.uk/blog/15-two.html?151023#151023
+inode-resolve points to an unimportant, easily recoverable file:
 
-The "tl;dr" is: you and another guy are told to race the 100m to
-win a ¤10,000 prize, but you have to carry a sack with a 50Kg
-weight. It takes you a lot longer, as your speed is much lower,
-and the other guy gets the prize. Was that because your
-performance was much worse? :-)
+$ sudo btrfs inspect-internal inode-resolve -v 1229624 /mnt/btrfs-pool/gentoo/usr/portage/
+ioctl ret=0, bytes_left=4033, bytes_missing=0, cnt=1, missed=0
+/mnt/btrfs-pool/gentoo/usr/portage//packages/dev-lang/tcl/tcl-8.6.6-2.xpak
 
-> for small blocksizes (2k) is very bad on SSD in general and on
-> HDD for sequential writing.
+The file wasn't modified in month and it has been in order previously
+because the backup didn't choke on it:
 
-Your graphs show pretty decent performance for small-file IO on
-Btrfs, depending on conditions, and you are very astutely not
-explaining the conditions, even if some can be guessed.
+$ ls -alt
+-rw-r--r-- 1 root root 11241835 19. Apr 22:11 /mnt/btrfs-pool/gentoo/usr/portage//packages/dev-lang/tcl/tcl-8.6.6-2.xpak
 
-> I wonder about that result, because you say on the wiki that
-> btrfs is very effective for small files.
+I can read the file without problems, no new messages in dmesg:
 
-Effectivess/efficiency are not the same as performance or speed
-either. My own simplistic but somewhat meaningful tests show
-that Btrfs does relatively well on small files:
+$ cat /mnt/btrfs-pool/gentoo/usr/portage//packages/dev-lang/tcl/tcl-8.6.6-2.xpak >/dev/null
 
-  http://www.sabi.co.uk/blog/17-one.html?170302#170302
+What's strange is the long time gaps between the btrfs reports and the
+kernel backtraces... Also, expected csum=0 looks strange.
 
-As to "small files" in general I have read about many attempts
-to use filesystems as DBMSes, and I consider them intensely
-stupid:
+That mount is subvol_id=0. Not sure if inode-resolve works that way. I
+retried for the important subvolumes and it resolved for none.
 
-  http://www.sabi.co.uk/blog/anno05-4th.html?051016#051016
+Just in case, I have a backlog of multiple daily backups.
 
-> I attached my results from raid 1 random write HDD (rH1), SSD
-> (rS1) and from sequential write HDD (sH1), SSD (sS1)
+$ uname -a
+Linux jupiter 4.12.14-ck #1 SMP PREEMPT Fri Sep 22 02:47:44 CEST 2017
+x86_64 Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz GenuineIntel GNU/Linux
 
-Ah, so it was specifically about small *writes* (and presumably
-because of other wording not small-updates-in-place of large
-files, but creating and writing small files).
 
-It is a very basic beginner level notion that most storage
-systems are very anisotropic as to IO size, and also for read
-vs. write, and never mind with and without 'fsync'. SSDs without
-supercapacitor backed buffers in particular are an issue.
+[88597.792462] BTRFS info (device bcache48): no csum found for inode 1229624 start 1650688
+[88597.793304] BTRFS warning (device bcache48): csum failed root 280 ino 1229624 off 1650688 csum 0x953c1e92 expected csum 0x00000000 mirror 1
+[128569.451376] ------------[ cut here ]------------
+[128569.451382] WARNING: CPU: 7 PID: 146 at kernel/workqueue.c:2041 process_one_work+0x44/0x310
+[128569.451383] Modules linked in: cifs ccm fuse bridge stp llc veth rfcomm bnep cachefiles btusb af_packet btintel iTCO_wdt bluetooth tun iTCO_vendor_support rfkill ecdh_generic kvm_intel snd_hda_codec_hdmi snd_hda_codec_realtek kvm snd_hda_codec_generic snd_hda_intel snd_hda_codec snd_hda_core rtc_cmos snd_pcm snd_timer snd soundcore lpc_ich irqbypass uas usb_storage r8168(O) nvidia_drm(PO) vboxpci(O) vboxnetadp(O) vboxnetflt(O) vboxdrv(O) nvidia_modeset(PO) nvidia(PO) nct6775 hwmon_vid coretemp hwmon efivarfs
+[128569.451406] CPU: 7 PID: 146 Comm: bcache Tainted: P           O    4.12.14-ck #1
+[128569.451407] Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./Z68 Pro3, BIOS L2.16A 02/22/2013
+[128569.451410] task: ffff880419bf8bc0 task.stack: ffffc900005c4000
+[128569.451412] RIP: 0010:process_one_work+0x44/0x310
+[128569.451412] RSP: 0000:ffffc900005c7e78 EFLAGS: 00013002
+[128569.451413] RAX: 0000000000000007 RBX: ffff880419bdcf00 RCX: ffff88042f2d8020
+[128569.451414] RDX: ffff88042f2d8018 RSI: ffff880120454f08 RDI: ffff880419bdcf00
+[128569.451415] RBP: ffff88042f2d8000 R08: 0000000000000000 R09: 0000000000000000
+[128569.451415] R10: 00008a209a609e79 R11: 0000000000000000 R12: 0000000000000000
+[128569.451416] R13: ffff88042f2e1b00 R14: ffff88042f2e1b80 R15: ffff880419bdcf30
+[128569.451417] FS:  0000000000000000(0000) GS:ffff88042f3c0000(0000) knlGS:0000000000000000
+[128569.451418] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[128569.451418] CR2: 00000000000000b0 CR3: 00000003f23ef000 CR4: 00000000001406e0
+[128569.451419] Call Trace:
+[128569.451422]  ? rescuer_thread+0x20b/0x370
+[128569.451424]  ? kthread+0xf2/0x130
+[128569.451425]  ? process_one_work+0x310/0x310
+[128569.451426]  ? kthread_create_on_node+0x40/0x40
+[128569.451428]  ? ret_from_fork+0x22/0x30
+[128569.451429] Code: 04 b8 00 00 00 00 4c 0f 44 e8 49 8b 45 08 44 8b a0 00 01 00 00 41 83 e4 20 f6 45 10 04 75 0e 65 8b 05 79 38 f7 7e 3b 45 04 74 02 <0f> ff 48 ba eb 83 b5 80 46 86 c8 61 48 0f af d6 48 c1 ea 3a 48 
+[128569.451449] ---[ end trace d00a1585e5166d18 ]---
+[148997.934146] BUG: unable to handle kernel paging request at ffffc900006af000
+[148997.934154] IP: memcpy_erms+0x6/0x10
+[148997.934155] PGD 41d021067
+[148997.934156] P4D 41d021067
+[148997.934157] PUD 41d022067
+[148997.934158] PMD 41961c067
+[148997.934158] PTE 0
+[148997.934162] Oops: 0002 [#1] PREEMPT SMP
+[148997.934163] Modules linked in: cifs ccm fuse bridge stp llc veth rfcomm bnep cachefiles btusb af_packet btintel iTCO_wdt bluetooth tun iTCO_vendor_support rfkill ecdh_generic kvm_intel snd_hda_codec_hdmi snd_hda_codec_realtek kvm snd_hda_codec_generic snd_hda_intel snd_hda_codec snd_hda_core rtc_cmos snd_pcm snd_timer snd soundcore lpc_ich irqbypass uas usb_storage r8168(O) nvidia_drm(PO) vboxpci(O) vboxnetadp(O) vboxnetflt(O) vboxdrv(O) nvidia_modeset(PO) nvidia(PO) nct6775 hwmon_vid coretemp hwmon efivarfs
+[148997.934188] CPU: 6 PID: 966 Comm: kworker/u16:16 Tainted: P        W  O    4.12.14-ck #1
+[148997.934190] Hardware name: To Be Filled By O.E.M. To Be Filled By O.E.M./Z68 Pro3, BIOS L2.16A 02/22/2013
+[148997.934193] Workqueue: btrfs-endio btrfs_endio_helper
+[148997.934194] task: ffff88001496a340 task.stack: ffffc90011b68000
+[148997.934196] RIP: 0010:memcpy_erms+0x6/0x10
+[148997.934197] RSP: 0018:ffffc90011b6bd78 EFLAGS: 00010202
+[148997.934199] RAX: ffffc900006aeff8 RBX: 0000000000001000 RCX: 0000000000000ff8
+[148997.934200] RDX: 0000000000001000 RSI: ffff88010fe8d008 RDI: ffffc900006af000
+[148997.934201] RBP: ffff88010fe8d000 R08: ffffc900006ad000 R09: 0000000000000000
+[148997.934203] R10: 0000000000000000 R11: 0000000000001000 R12: 0000000000000000
+[148997.934204] R13: 00000000036034c0 R14: 00000000036034c8 R15: ffff880403d76c98
+[148997.934205] FS:  0000000000000000(0000) GS:ffff88042f380000(0000) knlGS:0000000000000000
+[148997.934206] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[148997.934208] CR2: ffffc900006af000 CR3: 00000000045b6000 CR4: 00000000001406e0
+[148997.934209] Call Trace:
+[148997.934212]  ? lzo_decompress_bio+0x197/0x240
+[148997.934214]  ? end_compressed_bio_read+0x29a/0x360
+[148997.934218]  ? process_one_work+0x114/0x310
+[148997.934219]  ? worker_thread+0x42/0x3d0
+[148997.934222]  ? kthread+0xf2/0x130
+[148997.934223]  ? create_worker+0x190/0x190
+[148997.934225]  ? kthread_create_on_node+0x40/0x40
+[148997.934227]  ? do_group_exit+0x35/0xa0
+[148997.934229]  ? ret_from_fork+0x22/0x30
+[148997.934230] Code: 90 90 90 90 90 eb 1e 0f 1f 00 48 89 f8 48 89 d1 48 c1 e9 03 83 e2 07 f3 48 a5 89 d1 f3 a4 c3 66 0f 1f 44 00 00 48 89 f8 48 89 d1 <f3> a4 c3 0f 1f 80 00 00 00 00 48 89 f8 48 83 fa 20 72 7e 40 38
+[148997.934252] RIP: memcpy_erms+0x6/0x10 RSP: ffffc90011b6bd78
+[148997.934253] CR2: ffffc900006af000
+[148997.934255] ---[ end trace d00a1585e5166d19 ]---
 
-Btrfs has a performance envelope where the speed of small writes
-(in particular small in-place updates, but also because of POSIX
-small file creation) has been sacrificed for good reasons:
 
-https://btrfs.wiki.kernel.org/index.php/SysadminGuide#Copy_on_Write_.28CoW.29
-https://btrfs.wiki.kernel.org/index.php/Gotchas#Fragmentation
+Also, this looks very inconsistent:
 
-Also consider the consequences of the 'max_inline' option for
-'mount' and the 'nodesize' option for 'mkfs.btrfs'.
+$ dmesg|grep csum
+[88597.792462] BTRFS info (device bcache48): no csum found for inode 1229624 start 1650688
+[88597.793304] BTRFS warning (device bcache48): csum failed root 280 ino 1229624 off 1650688 csum 0x953c1e92 expected csum 0x00000000 mirror 1
+[174974.122658] BTRFS info (device bcache48): no csum found for inode 1229624 start 1650688
+[174974.131443] BTRFS warning (device bcache48): csum failed root 280 ino 1229624 off 1650688 csum 0x31588b99 expected csum 0x00000000 mirror 1
+[261351.328665] BTRFS info (device bcache48): no csum found for inode 1229624 start 1650688
+[261351.329472] BTRFS warning (device bcache48): csum failed root 280 ino 1229624 off 1650688 csum 0x9de9452c expected csum 0x00000000 mirror 1
+[343346.197852] BTRFS info (device bcache48): no csum found for inode 1229624 start 1650688
+[343346.215808] BTRFS warning (device bcache48): csum failed root 280 ino 1229624 off 1650688 csum 0x8df498cc expected csum 0x00000000 mirror 1
 
-> Hopefully you have an explanation for that.
 
-The best explanation seems to me (euphemism alert) quite
-extensive "misknowledge" in the message I am responding to.
+While not tested lately, I'm pretty sure this is no hardware problem.
+The hardware components were each tested at install time, hard disks
+show no errors, the system is stable.
+
+
+-- 
+Regards,
+Kai
+
+Replies to list-only preferred.
+

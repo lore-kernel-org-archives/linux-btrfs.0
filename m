@@ -1,19 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:15502 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32217 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751882AbdI0Gbx (ORCPT
+        with ESMTP id S1750917AbdI0Hzp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Sep 2017 02:31:53 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id EEDDD47CAAD1
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 14:31:40 +0800 (CST)
+        Wed, 27 Sep 2017 03:55:45 -0400
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/5] btrfs-progs: check: call repair_root_items() before any repair
-Date: Wed, 27 Sep 2017 14:34:37 +0800
-Message-ID: <20170927063440.25961-3-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20170927063440.25961-1-suy.fnst@cn.fujitsu.com>
-References: <20170927063440.25961-1-suy.fnst@cn.fujitsu.com>
+CC: <quwenruo.btrfs@gmx.com>
+Subject: [PATCH v2 2/5] btrfs-progs: check: call repair_root_items() before any repair
+Date: Wed, 27 Sep 2017 15:58:42 +0800
+Message-ID: <20170927075842.4444-1-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20170927063440.25961-3-suy.fnst@cn.fujitsu.com>
+References: <20170927063440.25961-3-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,17 +23,22 @@ makes other repair code delete or modify backrefs in the extent tree
 for example, which will result in an inconsistent fs after repairing
 the root items."
 
-However, the rule was broken by commit
-"6896ab801d47419fa06d886bae4bf31d0287ced1" which intends to fix
-failure of test-fsck/013.
+However, the rule was broken by commit 1f728b1a514f.
+The commit intends to fix failure of test-fsck/013 so it moves
+repair_root_items() after check_extents_and_chunks().
+
 The correct way is to skip calling repair_root_item() when
 init_extent_tree is nonzero.
-
 Now put repair_root_items() before do_check_chunks_and_extents() and
 not call repair_root_items() if do init_extent_tree.
 Then test-fsck/013 works well.
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+Changelog:
+v2:
+   Correct commit number reported. (Suggested by Qu Wenruo)
+
+   Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
  cmds-check.c | 43 +++++++++++++++++++++++--------------------
  1 file changed, 23 insertions(+), 20 deletions(-)

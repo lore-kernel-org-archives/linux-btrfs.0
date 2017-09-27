@@ -1,85 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f180.google.com ([209.85.128.180]:34967 "EHLO
+Received: from mail-wr0-f180.google.com ([209.85.128.180]:56097 "EHLO
         mail-wr0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750957AbdIKVGs (ORCPT
+        with ESMTP id S1753185AbdI0OGP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Sep 2017 17:06:48 -0400
-Received: by mail-wr0-f180.google.com with SMTP id m18so17043361wrm.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Sep 2017 14:06:48 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v2] Btrfs: clear_dirty only on pages in compression range
-Date: Tue, 12 Sep 2017 00:06:37 +0300
-Message-Id: <20170911210637.24510-1-nefelim4ag@gmail.com>
+        Wed, 27 Sep 2017 10:06:15 -0400
+Received: by mail-wr0-f180.google.com with SMTP id l39so16695870wrl.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 07:06:15 -0700 (PDT)
+Subject: Re: Wrong device?
+To: Lukas Pirl <mail@lukas-pirl.de>, linux-btrfs@oh3mqu.pp.hyper.fi
+Cc: linux-btrfs@vger.kernel.org
+References: <cdca7f92-93c0-9906-f2ed-57c3d0a97fae@jp.fujitsu.com>
+ <3b6d4951-dd71-989d-3287-12ffe643bfae@suse.com>
+ <b1b5a231-ffc3-700b-b59d-e82accf2f2e7@rqc.ru>
+ <095397b6-4865-1ea3-ae0d-6725b84c447c@gmx.com>
+ <20170925075250.GC25529@carfax.org.uk>
+ <7a345608-6c5d-bdc9-9b5f-74a8052ea228@gmx.com>
+ <20170925141951.GD25529@carfax.org.uk>
+ <d0e2c24a-c6c6-c154-c8ad-d37fdea669d5@gmx.com>
+ <345d459f-0d32-0ff9-19d3-86f86f165dfe@rqc.ru>
+ <alpine.LFD.2.00.1709251835060.25674@titan.hyper.fi>
+ <b07d7c1e-5337-c098-7aeb-eb2ec989e93f@lukas-pirl.de>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <614e375e-b98a-da9c-c4eb-bd24eb97af11@gmail.com>
+Date: Wed, 27 Sep 2017 17:06:08 +0300
+MIME-Version: 1.0
+In-Reply-To: <b07d7c1e-5337-c098-7aeb-eb2ec989e93f@lukas-pirl.de>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="M7rbLV8rfgtpsHAHtCArsCndIQCh0wWiR"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At now while compressing data range code touch dirty
-page status on whole range on each BTRFS_MAX_UNCOMPRESSED (128kb)
-iteration, that's costs time
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--M7rbLV8rfgtpsHAHtCArsCndIQCh0wWiR
+Content-Type: multipart/mixed; boundary="9HdfDXSlTrvfmh4HAuwfTi5oQ286R1s2u";
+ protected-headers="v1"
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+To: Lukas Pirl <mail@lukas-pirl.de>, linux-btrfs@oh3mqu.pp.hyper.fi
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <614e375e-b98a-da9c-c4eb-bd24eb97af11@gmail.com>
+Subject: Re: Wrong device?
+References: <cdca7f92-93c0-9906-f2ed-57c3d0a97fae@jp.fujitsu.com>
+ <3b6d4951-dd71-989d-3287-12ffe643bfae@suse.com>
+ <b1b5a231-ffc3-700b-b59d-e82accf2f2e7@rqc.ru>
+ <095397b6-4865-1ea3-ae0d-6725b84c447c@gmx.com>
+ <20170925075250.GC25529@carfax.org.uk>
+ <7a345608-6c5d-bdc9-9b5f-74a8052ea228@gmx.com>
+ <20170925141951.GD25529@carfax.org.uk>
+ <d0e2c24a-c6c6-c154-c8ad-d37fdea669d5@gmx.com>
+ <345d459f-0d32-0ff9-19d3-86f86f165dfe@rqc.ru>
+ <alpine.LFD.2.00.1709251835060.25674@titan.hyper.fi>
+ <b07d7c1e-5337-c098-7aeb-eb2ec989e93f@lukas-pirl.de>
+In-Reply-To: <b07d7c1e-5337-c098-7aeb-eb2ec989e93f@lukas-pirl.de>
 
-As we care only about page status in range that will be compressed
-in current iteration, let's touch dirty status only for actual
-compression range
+--9HdfDXSlTrvfmh4HAuwfTi5oQ286R1s2u
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-v1 -> v2:
- - Make that more obviously and more safeprone
+26.09.2017 10:31, Lukas Pirl =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+> On 09/25/2017 06:11 PM, linux-btrfs@oh3mqu.pp.hyper.fi wrote as excerpt=
+ed:
+>> After a long googling (about more complex situations) I suddenly
+>> noticed "device sdb" WTF???=C2=A0 Filesystem is mounted from /dev/md3 =
+(sdb
+>> is part of that mdraid) so btrfs should not even know anything about
+>> that /dev/sdb.
+>=20
+> I would be interested in explanations regarding this too. It happened
+> to me as well, that I was confused by /dev/sd* device paths being
+> printed by btrfs in the logs, even though it runs on /dev/md-*
+> (/dev/mapper/*) devices exclusively.
+>=20
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/inode.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+Could be related:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 17ad018da0a2..8229a000c538 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -449,6 +449,7 @@ static noinline void compress_file_range(struct inode *inode,
- 	u64 num_bytes;
- 	u64 blocksize = fs_info->sectorsize;
- 	u64 actual_end;
-+	u64 current_end;
- 	u64 isize = i_size_read(inode);
- 	int ret = 0;
- 	struct page **pages = NULL;
-@@ -498,6 +499,10 @@ static noinline void compress_file_range(struct inode *inode,
- 			BTRFS_MAX_UNCOMPRESSED);
- 	num_bytes = ALIGN(end - start + 1, blocksize);
- 	num_bytes = max(blocksize,  num_bytes);
-+	if (end - start > BTRFS_MAX_UNCOMPRESSED)
-+		current_end = start + BTRFS_MAX_UNCOMPRESSED;
-+	else
-+		current_end = end;
- 	total_in = 0;
- 	ret = 0;
+https://forums.opensuse.org/showthread.php/526696-Upgrade-destroys-dmraid=
+?p=3D2838207#post2838207
 
-@@ -506,7 +511,7 @@ static noinline void compress_file_range(struct inode *inode,
- 	 * inode has not been flagged as nocompress.  This flag can
- 	 * change at any time if we discover bad compression ratios.
- 	 */
--	if (inode_need_compress(inode, start, end)) {
-+	if (inode_need_compress(inode, start, current_end)) {
- 		WARN_ON(pages);
- 		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
- 		if (!pages) {
-@@ -528,7 +533,7 @@ static noinline void compress_file_range(struct inode *inode,
- 		 * If the compression fails for any reason, we set the pages
- 		 * dirty again later on.
- 		 */
--		extent_range_clear_dirty_for_io(inode, start, end);
-+		extent_range_clear_dirty_for_io(inode, start, current_end);
- 		redirty = 1;
- 		ret = btrfs_compress_pages(compress_type,
- 					   inode->i_mapping, start,
-@@ -667,7 +672,7 @@ static noinline void compress_file_range(struct inode *inode,
- 		/* unlocked later on in the async handlers */
 
- 	if (redirty)
--		extent_range_redirty_for_io(inode, start, end);
-+		extent_range_redirty_for_io(inode, start, current_end);
- 	add_async_extent(async_cow, start, end - start + 1, 0, NULL, 0,
- 			 BTRFS_COMPRESS_NONE);
- 	*num_added += 1;
---
-2.14.1
+
+--9HdfDXSlTrvfmh4HAuwfTi5oQ286R1s2u--
+
+--M7rbLV8rfgtpsHAHtCArsCndIQCh0wWiR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iEYEARECAAYFAlnLsFAACgkQR6LMutpd94zZtwCdHuE4PiIgTSFnAbplGnn2LtMR
+03kAn2fDcfQEH9XsnLPqpx/cxHYKdQeZ
+=Ok7i
+-----END PGP SIGNATURE-----
+
+--M7rbLV8rfgtpsHAHtCArsCndIQCh0wWiR--

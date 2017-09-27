@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:32217 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:65072 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750917AbdI0Hzp (ORCPT
+        with ESMTP id S1752329AbdI0I0P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Sep 2017 03:55:45 -0400
+        Wed, 27 Sep 2017 04:26:15 -0400
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <quwenruo.btrfs@gmx.com>
-Subject: [PATCH v2 2/5] btrfs-progs: check: call repair_root_items() before any repair
-Date: Wed, 27 Sep 2017 15:58:42 +0800
-Message-ID: <20170927075842.4444-1-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 2/5] btrfs-progs: check: call repair_root_items() before any repair
+Date: Wed, 27 Sep 2017 16:28:39 +0800
+Message-ID: <20170927082839.5693-1-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20170927063440.25961-3-suy.fnst@cn.fujitsu.com>
 References: <20170927063440.25961-3-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -23,7 +23,8 @@ makes other repair code delete or modify backrefs in the extent tree
 for example, which will result in an inconsistent fs after repairing
 the root items."
 
-However, the rule was broken by commit 1f728b1a514f.
+However, the rule was broken by commit 1f728b1a514f ("Btrfs-progs,
+fsck: move root items repair after root rebuilding").
 The commit intends to fix failure of test-fsck/013 so it moves
 repair_root_items() after check_extents_and_chunks().
 
@@ -33,13 +34,14 @@ Now put repair_root_items() before do_check_chunks_and_extents() and
 not call repair_root_items() if do init_extent_tree.
 Then test-fsck/013 works well.
 
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
 Changelog:
 v2:
    Correct commit number reported. (Suggested by Qu Wenruo)
-
-   Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
+v3:
+   Change commit format. (Suggested by Qu Wenruo)
+   
  cmds-check.c | 43 +++++++++++++++++++++++--------------------
  1 file changed, 23 insertions(+), 20 deletions(-)
 

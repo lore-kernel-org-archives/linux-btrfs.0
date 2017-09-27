@@ -1,64 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:30447 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965704AbdI0CAp (ORCPT
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:36737 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965241AbdI0CBV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 22:00:45 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 47062AC0104
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 11:00:40 +0900 (JST)
-Received: from g01jpexchyt38.g01.fujitsu.local (unknown [10.128.193.4])
-        by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 836C36D67D2
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 11:00:39 +0900 (JST)
-To: <linux-btrfs@vger.kernel.org>
+        Tue, 26 Sep 2017 22:01:21 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 4267EAC005A
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 11:01:14 +0900 (JST)
+Received: from g01jpexchyt37.g01.fujitsu.local (unknown [10.128.193.4])
+        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 6C39046E7DA
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 11:01:13 +0900 (JST)
+Subject: [PATCH v2 1/5] btrfs-progs: subvol: exchange subvol del
+ --commit-after and --commit-each
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH v2 0/5] btrfs-progs: subvol: fix del --commit-after
-Message-ID: <7610069d-bd81-2239-0be8-6635478c2dda@jp.fujitsu.com>
-Date: Wed, 27 Sep 2017 11:00:35 +0900
+To: <linux-btrfs@vger.kernel.org>
+References: <7610069d-bd81-2239-0be8-6635478c2dda@jp.fujitsu.com>
+Message-ID: <4ea9ba07-a36e-57f6-57a5-331f064482da@jp.fujitsu.com>
+Date: Wed, 27 Sep 2017 11:01:09 +0900
 MIME-Version: 1.0
+In-Reply-To: <7610069d-bd81-2239-0be8-6635478c2dda@jp.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix subvol del --commit-after to work properly:
- - SYNC ioctl will be issued even when last delete is failed
- - SYNC ioctl will be issued on each file system only once in the end
+Current code is reversed in --commit-after and --commit-each operation.
+i.e. --commit-after means --commit-each actually. This patch fix this
+and also introduces enum type for more readable code.
 
-To achieve this, each deleted subvol's (parent's) fsid is checked each
-time. If the fsid is seen for the first time, its fd will be kept in order
-to issue SYNC ioctl in the end.
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+---
+ cmds-subvolume.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-There already exists get_fsid() in cmds-property.c and seen_fsid which
-keeps fsid in hush function in cmds-filesystem.c. This patch utilizes
-them.
-
-First patch is the independent but critical. Current code is reversed in
---commit-after and --commit-each operation. i.e. --commit-after means
---commit-each actually. The patch fix this.
-
-2rd to 4th patches make functions stated above to common and last one is
-the main part.
-
-Thanks Qu for reviewing whole patches.
-
-change to v2:
-	split the cleanup part of 4th patch and make it the independent patch
-	(1st patch in new series).
-
-Tomohiro Misono (5):
-  btrfs-progs: subvol: exchange subvol del --commit-after and --commit-each
-  btrfs-progs: move get_fsid() to util.c
-  btrfs-progs: move seen_fsid to util.c
-  btrfs-progs: change seen_fsid to hold fd and DIR*
-  btrfs-progs: subvol: fix subvol del --commit-after
-
- cmds-filesystem.c |  88 +++------------------------------------------
- cmds-property.c   |  30 ----------------
- cmds-subvolume.c  |  72 +++++++++++++++++++++++++++----------
- utils.c           | 105 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h           |  15 ++++++++
- 5 files changed, 179 insertions(+), 131 deletions(-)
-
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 666f6e0..9e561f3 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -263,6 +263,7 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	DIR	*dirstream = NULL;
+ 	int verbose = 0;
+ 	int commit_mode = 0;
++	enum { COMMIT_AFTER = 1, COMMIT_EACH = 2 };
+ 
+ 	while (1) {
+ 		int c;
+@@ -279,10 +280,10 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 
+ 		switch(c) {
+ 		case 'c':
+-			commit_mode = 1;
++			commit_mode = COMMIT_AFTER;
+ 			break;
+ 		case 'C':
+-			commit_mode = 2;
++			commit_mode = COMMIT_EACH;
+ 			break;
+ 		case 'v':
+ 			verbose++;
+@@ -298,7 +299,7 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	if (verbose > 0) {
+ 		printf("Transaction commit: %s\n",
+ 			!commit_mode ? "none (default)" :
+-			commit_mode == 1 ? "at the end" : "after each");
++			commit_mode == COMMIT_AFTER ? "at the end" : "after each");
+ 	}
+ 
+ 	cnt = optind;
+@@ -338,7 +339,7 @@ again:
+ 	}
+ 
+ 	printf("Delete subvolume (%s): '%s/%s'\n",
+-		commit_mode == 2 || (commit_mode == 1 && cnt + 1 == argc)
++		commit_mode == COMMIT_EACH || (commit_mode == COMMIT_AFTER && cnt + 1 == argc)
+ 		? "commit" : "no-commit", dname, vname);
+ 	memset(&args, 0, sizeof(args));
+ 	strncpy_null(args.name, vname);
+@@ -350,7 +351,7 @@ again:
+ 		goto out;
+ 	}
+ 
+-	if (commit_mode == 1) {
++	if (commit_mode == COMMIT_EACH) {
+ 		res = wait_for_commit(fd);
+ 		if (res < 0) {
+ 			error("unable to wait for commit after '%s': %s",
+@@ -373,7 +374,7 @@ out:
+ 		goto again;
+ 	}
+ 
+-	if (commit_mode == 2 && fd != -1) {
++	if (commit_mode == COMMIT_AFTER && fd != -1) {
+ 		res = wait_for_commit(fd);
+ 		if (res < 0) {
+ 			error("unable to do final sync after deletion: %s",
 -- 
 2.9.5
 

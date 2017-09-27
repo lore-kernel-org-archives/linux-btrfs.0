@@ -1,62 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34339 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757154AbdIHWhV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Sep 2017 18:37:21 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v88MbKtk029381
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Sep 2017 22:37:20 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v88MbJJ6000781
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Sep 2017 22:37:19 GMT
-Received: from ubhmp0006.oracle.com (ubhmp0006.oracle.com [156.151.24.59])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v88MbJAC029410
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Sep 2017 22:37:19 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] Btrfs: fix confusing worker helper info
-Date: Fri,  8 Sep 2017 15:34:45 -0600
-Message-Id: <20170908213445.1601-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:40425 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752654AbdI0NOX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Sep 2017 09:14:23 -0400
+Date: Wed, 27 Sep 2017 15:12:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v7 1/6] Btrfs: heuristic make use compression workspaces
+Message-ID: <20170927131249.GA31640@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170825091845.4120-1-nefelim4ag@gmail.com>
+ <20170825091845.4120-2-nefelim4ag@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170825091845.4120-2-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've seen the following backtrace stack in ftrace or dmesg log,
+On Fri, Aug 25, 2017 at 12:18:40PM +0300, Timofey Titovets wrote:
+> Move heuristic to external file
+> Implement compression workspaces support for
+> heuristic resources
 
-  kworker/u16:10-4244  [000] 241942.480955: function:             btrfs_put_ordered_extent
-  kworker/u16:10-4244  [000] 241942.480956: kernel_stack:         <stack trace>
-=> finish_ordered_fn (ffffffffa0384475)
-=> btrfs_scrubparity_helper (ffffffffa03ca577)
-=> btrfs_freespace_write_helper (ffffffffa03ca98e)
-=> process_one_work (ffffffff81117b2f)
-=> worker_thread (ffffffff81118c2a)
-=> kthread (ffffffff81121de0)
-=> ret_from_fork (ffffffff81d7087a)
+I think the file compression.c is suitable, there's not that much code
+the heuristic adds and it its only related to compresession.
 
-btrfs_scrubparity_helper really shouldn't be shown up.
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/Makefile      |  2 +-
+>  fs/btrfs/compression.c | 18 +++++--------
+>  fs/btrfs/compression.h |  7 ++++-
+>  fs/btrfs/heuristic.c   | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>  4 files changed, 87 insertions(+), 13 deletions(-)
+>  create mode 100644 fs/btrfs/heuristic.c
+> 
+> diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+> index 128ce17a80b0..6fa8479dff43 100644
+> --- a/fs/btrfs/Makefile
+> +++ b/fs/btrfs/Makefile
+> @@ -9,7 +9,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+>  	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
+>  	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+>  	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+> -	   uuid-tree.o props.o hash.o free-space-tree.o
+> +	   uuid-tree.o props.o hash.o free-space-tree.o heuristic.o
+> 
+>  btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+>  btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 883ecc58fd0d..f0aaf27bcc95 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -704,6 +704,7 @@ static struct {
+>  static const struct btrfs_compress_op * const btrfs_compress_op[] = {
+>  	&btrfs_zlib_compress,
+>  	&btrfs_lzo_compress,
+> +	&btrfs_heuristic,
+>  };
+> 
+>  void __init btrfs_init_compress(void)
+> @@ -1065,18 +1066,13 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+>   */
+>  int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
+>  {
+> -	u64 index = start >> PAGE_SHIFT;
+> -	u64 end_index = end >> PAGE_SHIFT;
+> -	struct page *page;
+> -	int ret = 1;
+> +	int ret;
+> +	enum btrfs_compression_type type = BTRFS_HEURISTIC;
+> +	struct list_head *workspace = find_workspace(type);
+> 
+> -	while (index <= end_index) {
+> -		page = find_get_page(inode->i_mapping, index);
+> -		kmap(page);
+> -		kunmap(page);
+> -		put_page(page);
+> -		index++;
+> -	}
+> +	ret = btrfs_compress_op[type-1]->heuristic(workspace, inode,
+> +						   start, end);
+> 
+> +	free_workspace(type, workspace);
+>  	return ret;
+>  }
+> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+> index 3b1b0ac15fdc..10e9ffa6dfa4 100644
+> --- a/fs/btrfs/compression.h
+> +++ b/fs/btrfs/compression.h
+> @@ -99,7 +99,8 @@ enum btrfs_compression_type {
+>  	BTRFS_COMPRESS_NONE  = 0,
+>  	BTRFS_COMPRESS_ZLIB  = 1,
+>  	BTRFS_COMPRESS_LZO   = 2,
+> -	BTRFS_COMPRESS_TYPES = 2,
+> +	BTRFS_HEURISTIC = 3,
+> +	BTRFS_COMPRESS_TYPES = 3,
 
-It's caused by compiler doing inline for our helper function, adding a
-noinline tag can fix that.
+Compression cannot be another type, I get it's for the workspace
+management, that would need to be managed in another way anyway.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/async-thread.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index ff0b0be..593709a 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -67,7 +67,7 @@ struct btrfs_workqueue {
- static void normal_work_helper(struct btrfs_work *work);
- 
- #define BTRFS_WORK_HELPER(name)					\
--void btrfs_##name(struct work_struct *arg)				\
-+noinline void btrfs_##name(struct work_struct *arg)			\
- {									\
- 	struct btrfs_work *work = container_of(arg, struct btrfs_work,	\
- 					       normal_work);		\
--- 
-2.9.4
-
+>  };
+> 
+>  struct btrfs_compress_op {
+> @@ -123,10 +124,14 @@ struct btrfs_compress_op {
+>  			  struct page *dest_page,
+>  			  unsigned long start_byte,
+>  			  size_t srclen, size_t destlen);
+> +
+> +	int (*heuristic)(struct list_head *workspace,
+> +			 struct inode *inode, u64 start, u64 end);
+>  };
+> 
+>  extern const struct btrfs_compress_op btrfs_zlib_compress;
+>  extern const struct btrfs_compress_op btrfs_lzo_compress;
+> +extern const struct btrfs_compress_op btrfs_heuristic;
+> 
+>  int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end);
+> 
+> diff --git a/fs/btrfs/heuristic.c b/fs/btrfs/heuristic.c
+> new file mode 100644
+> index 000000000000..92f9335bafd4
+> --- /dev/null
+> +++ b/fs/btrfs/heuristic.c
+> @@ -0,0 +1,73 @@
+> +/*
+> + * Copyright (c) 2017
+> + * All rights reserved.
+> + *
+> + * This program is free software; you can redistribute it and/or
+> + * modify it under the terms of the GNU General Public
+> + * License v2 as published by the Free Software Foundation.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+> + * General Public License for more details.
+> + */
+> +
+> +#include <linux/kernel.h>
+> +#include <linux/types.h>
+> +#include <linux/sizes.h>
+> +#include <linux/pagemap.h>
+> +#include <linux/string.h>
+> +#include <linux/bio.h>
+> +#include "compression.h"
+> +
+> +struct workspace {
+> +	struct list_head list;
+> +};
+> +
+> +static void heuristic_free_workspace(struct list_head *ws)
+> +{
+> +	struct workspace *workspace = list_entry(ws, struct workspace, list);
+> +	kfree(workspace);
+> +}
+> +
+> +static struct list_head *heuristic_alloc_workspace(void)
+> +{
+> +	struct workspace *workspace;
+> +
+> +	workspace = kzalloc(sizeof(*workspace), GFP_KERNEL);
+> +	if (!workspace)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	INIT_LIST_HEAD(&workspace->list);
+> +
+> +	return &workspace->list;
+> +}
+> +
+> +static int heuristic(struct list_head *ws, struct inode *inode,
+> +		     u64 start, u64 end)
+> +{
+> +	struct page *page;
+> +	u64 index, index_end;
+> +
+> +	index = start >> PAGE_SHIFT;
+> +	index_end = end >> PAGE_SHIFT;
+> +
+> +	/* Don't miss unaligned end */
+> +	if (!IS_ALIGNED(end, PAGE_SIZE))
+> +		index_end++;
+> +
+> +	for (; index < index_end; index++) {
+> +		page = find_get_page(inode->i_mapping, index);
+> +		kmap(page);
+> +		kunmap(page);
+> +		put_page(page);
+> +	}
+> +
+> +	return 1;
+> +}
+> +
+> +const struct btrfs_compress_op btrfs_heuristic = {
+> +	.alloc_workspace	= heuristic_alloc_workspace,
+> +	.free_workspace		= heuristic_free_workspace,
+> +	.heuristic              = heuristic,
+> +};
+> --
+> 2.14.1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

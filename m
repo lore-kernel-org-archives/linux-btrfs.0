@@ -1,99 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44522 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1030409AbdIZIjz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Sep 2017 04:39:55 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v8Q8ds2C015829
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 08:39:55 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v8Q8ds2p029888
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 08:39:54 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v8Q8dsX5009788
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Sep 2017 08:39:54 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/2] btrfs: fix BUG_ON in btrfs_init_new_device()
-Date: Tue, 26 Sep 2017 16:47:38 +0800
-Message-Id: <20170926084738.3558-3-anand.jain@oracle.com>
-In-Reply-To: <20170926084738.3558-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:48250 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752356AbdI0OX6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Sep 2017 10:23:58 -0400
+Date: Wed, 27 Sep 2017 16:22:24 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 0/2] fix bug in btrfs_init_new_device()
+Message-ID: <20170927142224.GJ31640@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170926084738.3558-1-anand.jain@oracle.com>
+ <612a7520-a83d-9032-bbbb-7b13ab76f43f@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <612a7520-a83d-9032-bbbb-7b13ab76f43f@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <20170926084738.3558-1-anand.jain@oracle.com>
 
-Instead of BUG_ON return error to the caller. And handle the fail
-condition by calling the abort transaction and going through the
-error path.
+On Tue, Sep 26, 2017 at 03:14:27PM +0300, Nikolay Borisov wrote:
+> 
+> 
+> On 26.09.2017 11:47, Anand Jain wrote:
+> > 1/2 fixes a bug which failed to reset writable when sprouting failed
+> > 2/2 fixes BUG_ON in btrfs_init_new_device()
+> > 
+> > Anand Jain (2):
+> >   btrfs: undo writable when sprouting fails
+> >   btrfs: fix BUG_ON in btrfs_init_new_device()
+> 
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: do not consolidate btrfs_abort_transaction()
-v3: meld 2/3 and 3/3 from v2
+Please note that this would lead to unexpected unlocks of uuid_mutex and
+sb::s_umount:
 
- fs/btrfs/volumes.c | 14 +++++++++-----
- 1 file changed, 9 insertions(+), 5 deletions(-)
+2465         ret = btrfs_commit_transaction(trans);
+2466
+2467         if (seeding_dev) {
+2468                 mutex_unlock(&uuid_mutex);
+2469                 up_write(&sb->s_umount);
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9d64700cc9b6..4cb575fbf643 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2399,7 +2399,10 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	if (seeding_dev) {
- 		sb->s_flags &= ~MS_RDONLY;
- 		ret = btrfs_prepare_sprout(fs_info);
--		BUG_ON(ret); /* -ENOMEM */
-+		if (ret) {
-+			btrfs_abort_transaction(trans, ret);
-+			goto error_trans;
-+		}
- 	}
- 
- 	device->fs_devices = fs_info->fs_devices;
-@@ -2445,14 +2448,14 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 		mutex_unlock(&fs_info->chunk_mutex);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
--			goto error_trans;
-+			goto error_sysfs;
- 		}
- 	}
- 
- 	ret = btrfs_add_device(trans, fs_info, device);
- 	if (ret) {
- 		btrfs_abort_transaction(trans, ret);
--		goto error_trans;
-+		goto error_sysfs;
- 	}
- 
- 	if (seeding_dev) {
-@@ -2461,7 +2464,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 		ret = btrfs_finish_sprout(trans, fs_info);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, ret);
--			goto error_trans;
-+			goto error_sysfs;
- 		}
- 
- 		/* Sprouting would change fsid of the mounted root,
-@@ -2500,12 +2503,13 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	update_dev_time(device_path);
- 	return ret;
- 
-+error_sysfs:
-+	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
- error_trans:
- 	if (seeding_dev)
- 		sb->s_flags |= MS_RDONLY;
- 	btrfs_end_transaction(trans);
- 	rcu_string_free(device->name);
--	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
- 	kfree(device);
- error:
- 	blkdev_put(bdev, FMODE_EXCL);
--- 
-2.13.1
+first unlocks
 
+2470
+2471                 if (ret) /* transaction commit */
+2472                         return ret;
+2473
+2474                 ret = btrfs_relocate_sys_chunks(fs_info);
+2475                 if (ret < 0)
+2476                         btrfs_handle_fs_error(fs_info, ret,
+2477                                     "Failed to relocate sys chunks after device initialization. This can be fixed using the \"btrfs balance\"
+2478                 trans = btrfs_attach_transaction(root);
+2479                 if (IS_ERR(trans)) {
+2480                         if (PTR_ERR(trans) == -ENOENT)
+2481                                 return 0;
+2482                         return PTR_ERR(trans);
+^^^^
+
+this becomes goto 2494
+
+2483                 }
+2484                 ret = btrfs_commit_transaction(trans);
+2485         }
+2486
+2487         /* Update ctime/mtime for libblkid */
+2488         update_dev_time(device_path);
+2489         return ret;
+2490
+2491 error_trans:
+2492         btrfs_end_transaction(trans);
+2493         rcu_string_free(device->name);
+2494         btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+
+here
+
+2495         kfree(device);
+2496 error:
+2497         blkdev_put(bdev, FMODE_EXCL);
+2498         if (seeding_dev) {
+2499                 mutex_unlock(&uuid_mutex);
+2500                 up_write(&sb->s_umount);
+
+and unlocking again
+
+2501         }
+2502         return ret;
+
+So the in-place returns had a meaning but are quite confusing.

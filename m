@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45514 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45632 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753050AbdI0N4U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Sep 2017 09:56:20 -0400
-Date: Wed, 27 Sep 2017 15:54:46 +0200
+        id S1753057AbdI0N6K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Sep 2017 09:58:10 -0400
+Date: Wed, 27 Sep 2017 15:56:36 +0200
 From: David Sterba <dsterba@suse.cz>
 To: Timofey Titovets <nefelim4ag@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v7 6/6] Btrfs: heuristic add byte core set calculation
-Message-ID: <20170927135446.GF31640@twin.jikos.cz>
+Message-ID: <20170927135636.GG31640@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20170825091845.4120-1-nefelim4ag@gmail.com>
  <20170825091845.4120-7-nefelim4ag@gmail.com>
@@ -48,9 +48,6 @@ On Fri, Aug 25, 2017 at 12:18:45PM +0300, Timofey Titovets wrote:
 >  #define BYTE_SET_THRESHOLD 64
 > +#define BYTE_CORE_SET_LOW  BYTE_SET_THRESHOLD
 > +#define BYTE_CORE_SET_HIGH 200 // ~80%
-
-Please don't use the // c++ style of comments.
-
 > 
 >  struct bucket_item {
 >  	u32 count;
@@ -59,16 +56,10 @@ Please don't use the // c++ style of comments.
 >  }
 > 
 > +/* For bucket sorting */
-
-"Compare buckets by size, ascending */
-
 > +static inline int bucket_compare(const void *lv, const void *rv)
 > +{
 > +	struct bucket_item *l = (struct bucket_item *)(lv);
 > +	struct bucket_item *r = (struct bucket_item *)(rv);
-
-The const should be used also for the specific types.
-
 > +
 > +	return r->count - l->count;
 > +}
@@ -82,17 +73,9 @@ The const should be used also for the specific types.
 > +	u32 a = 0;
 > +	u32 coreset_sum = 0;
 > +	u32 core_set_threshold = ws->sample_size*90/100;
-
-	u32 core_set_threshold = ws->sample_size * 90 / 100;
-
 > +	struct bucket_item *bucket = ws->bucket;
 > +
 > +	/* Sort in reverse order */
-
-So if it's reverse, please add _rev to the end of the comparator
-function. The common naming is "comp_WHAT" so I suggest to use
-comp_bucket_rev.
-
 > +	sort(bucket, BUCKET_SIZE, sizeof(*bucket),
 > +	     &bucket_compare, NULL);
 > +
@@ -127,12 +110,6 @@ comp_bucket_rev.
 > +		return 0;
 > +
 > +	return 4;
->  }
-> 
->  const struct btrfs_compress_op btrfs_heuristic = {
-> --
-> 2.14.1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+So the return value determines guessed compressibility, this could use
+some human readable enums or defines.

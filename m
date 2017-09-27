@@ -1,59 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45959 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752102AbdI1Ipb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2017 04:45:31 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 3FDE8AAB9
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Sep 2017 08:45:30 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 1/2] btrfs: Refactor transaction handling
-Date: Thu, 28 Sep 2017 11:45:26 +0300
-Message-Id: <1506588327-6616-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1506509327-18862-1-git-send-email-nborisov@suse.com>
-References: <1506509327-18862-1-git-send-email-nborisov@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:41592 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751782AbdI0Gbs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Sep 2017 02:31:48 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id C69C947CAACF
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 14:31:39 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/5] btrfs-progs: check: original and lowmem mode fix
+Date: Wed, 27 Sep 2017 14:34:35 +0800
+Message-ID: <20170927063440.25961-1-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If btrfs_transaction_commit fails it will proceed to call cleanup_transaction,
-which in turn already does btrfs_abort_transaction. So let's remove the
-unnecessary code duplication. Also let's be explicit about handling failure
-of btrfs_uuid_tree_add by calling btrfs_end_transaction.
+The head three patches is independent from later two.
+Include:
+1) Let check_extent_refs() return error instead of 0 if something wrong
+   is found in original mode.
+2) repair_root_items() should be called before any repair. Put it
+   before do_check_chunks_and_extents();
+3) Error status should not be modified if repair_root_items() succeeded
+   in original repair.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
+The late two patches are about invalid type in extent_inline_ref.
 
-v2:
- * Collapse previous 1/3 and 2/3 into a single patch
- * Add the btrfs_end_transaction() call 
+Only original mode applied 001-003 patches can handle the case in the
+last patch. So I gather those 5 patches together.
 
- fs/btrfs/ioctl.c | 7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d6715c2bcdc4..21f14f755f86 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5156,15 +5156,12 @@ static long _btrfs_ioctl_set_received_subvol(struct file *file,
- 					  root->root_key.objectid);
- 		if (ret < 0 && ret != -EEXIST) {
- 			btrfs_abort_transaction(trans, ret);
-+			btrfs_end_transaction(trans);
- 			goto out;
-+
- 		}
- 	}
- 	ret = btrfs_commit_transaction(trans);
--	if (ret < 0) {
--		btrfs_abort_transaction(trans, ret);
--		goto out;
--	}
--
- out:
- 	up_write(&fs_info->subvol_sem);
- 	mnt_drop_write_file(file);
+Su Yue (5):
+  btrfs-progs: check: return value of check_extent_refs()
+  btrfs-progs: check: call repair_root_items() before any repair
+  btrfs-progs: check: error or return value of repair_root_items()
+  btrfs-progs: check: check extent_inline_ref in lowmem
+  btrfs-progs: fsck-tests: 027/bad_extent_inline_ref_type
+
+ cmds-check.c                                       |  83 +++++++++++++++------
+ .../bad-extent-inline-ref-type.raw.xz              | Bin 0 -> 17144 bytes
+ 2 files changed, 62 insertions(+), 21 deletions(-)
+ create mode 100644 tests/fsck-tests/027-bad-extent-inline-ref-type/bad-extent-inline-ref-type.raw.xz
+
 -- 
-2.7.4
+2.14.1
+
+
 

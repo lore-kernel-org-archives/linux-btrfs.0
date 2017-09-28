@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxsystems.it ([79.7.78.67]:39905 "EHLO
-        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752367AbdI0VrQ (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:49543 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751236AbdI1GYv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Sep 2017 17:47:16 -0400
-Received: from localhost (unknown [192.168.1.197])
-        by mail.linuxsystems.it (Postfix) with ESMTPSA id A9886B3D77
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Sep 2017 23:47:14 +0200 (CEST)
-From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
-To: <linux-btrfs@vger.kernel.org>
-Subject: Cannot fix btrfs errors after system crash
-Date: Wed, 27 Sep 2017 23:47:04 +0200
+        Thu, 28 Sep 2017 02:24:51 -0400
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [PATCH] btrfs-progs: Resolve memory-leak in btrfs qgroup show
+ when quota disabled
+Date: Thu, 28 Sep 2017 06:24:44 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01479BD6FB@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1506418111-26620-1-git-send-email-gujx@cn.fujitsu.com>
+ <20170926112732.GP31640@twin.jikos.cz>
+In-Reply-To: <20170926112732.GP31640@twin.jikos.cz>
+Content-Type: text/plain; charset="gb2312"
 MIME-Version: 1.0
-Message-ID: <67acfe4b-e08b-44a2-8f1f-52676b1654b7@linuxsystems.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
-I was trying to use AMDGPU-PRO's OpenCL stack (with the mainline 4.12.13 
-kernel) while it suddently crashed the whole system, not even magic sysrq 
-keys did work anymore.
-With no surprise, at the next reboot I found several btrfs warnings (see 
-https://paste.pound-python.org/show/S5zBG2tXZUTLG699saE5/).
-Since btrfs scrub didn't find any error I decided to reboot into a live usb 
-and start a btrfs check (I'm using btrfs-progs 4.13).
-It did found lots of errors indeed (see 
-https://paste.pound-python.org/show/IPxh9sly0EEb0MKPi2dw/).
-So I made a full backup with dd and I started a btrfs check --repair (see 
-https://paste.pound-python.org/show/c9AlT8ehKKJy6l5xhzXk/).
-I also wiped the space cache with --clear-space-cache v1.
-A subsequent btrfs check revealed it indeed fixed lots of errors (see 
-https://paste.pound-python.org/show/1m2Wodd1q3n0eRlxLpZB/), but 
-unfortunately i still have the following errors:
+I am so sorry for that this patch brings a new problem of double free in normal scenes.
+So I send a new patch .
+Please revert this one and use the new patch.
 
-unresolved ref dir 7450239 index 2 namelen 6 name 431886 filetype 1 errors 
-80, filetype mismatch
-unresolved ref dir 7450595 index 2 namelen 6 name 431886 filetype 1 errors 
-80, filetype mismatch
-unresolved ref dir 7457122 index 2 namelen 6 name 431886 filetype 1 errors 
-80, filetype mismatch
 
-I'm already quite satisfied to be honest: two years ago repair used to eat 
-my data, making things worse.
-Anyway, why didn't btrfs-check repair them? Is there anything I can do to 
-fix them?
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Tuesday, September 26, 2017 7:28 PM
+> To: Gu, Jinxiang/¹Ë ½ğÏã <gujx@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: [PATCH] btrfs-progs: Resolve memory-leak in btrfs qgroup show when quota disabled
+> 
+> On Tue, Sep 26, 2017 at 05:28:31PM +0800, Gu Jinxiang wrote:
+> > When quota disabled, btrfs qgroup show exit with a error message, but
+> > the allocated memory is not freed.
+> >
+> > By the way, this bug marked as issue#20 in github.
+> >
+> > Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> 
+> Applied, thanks.
+> 
 
-Thanks,
-NiccolÃ²
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

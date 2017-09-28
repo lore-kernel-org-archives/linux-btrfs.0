@@ -1,82 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:41402 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751883AbdI1H0Y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2017 03:26:24 -0400
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH] btrfs-progs: tests: arg override in command line
-Date: Thu, 28 Sep 2017 15:29:19 +0800
-Message-ID: <20170928072919.13610-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mout.gmx.net ([212.227.17.22]:61560 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752343AbdI1DgV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Sep 2017 23:36:21 -0400
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/5] Enhance tree block validation checker
+Date: Thu, 28 Sep 2017 12:36:05 +0900
+Message-Id: <20170928033610.16882-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lowmem mode only repairs few cases which has a beacon file
-".lowmem_repairable" in the case' directory.
+The patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/checker_enhance
 
-However, defining TEST_ENABLE_OVERRIDE=true in command line does work
-in above strategy.
-Because _skip_spec() in tests/common.local isn't interpreted by shell
-in that case.
+It's based on David's misc-next branch, with following commit as base:
+a5e50b4b444c ("btrfs: Add checker for EXTENT_CSUM")
 
-Solve it by making _skip_spec() always be defined in common.local.
+According to David's suggestion, enhance the output format of tree block
+validation checker.
 
-Reported-by: David Sterba <dsterba@suse.cz>
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+And move them into one separate file: tree-checker.c.
+
+Some example output using btrfsck fsck-test images looks like:
+
+For unagliend file extent member:
 ---
- tests/common       |  8 ++------
- tests/common.local | 11 +++++------
- 2 files changed, 7 insertions(+), 12 deletions(-)
+BTRFS critical (device loop0): corrupt leaf root=1 tree_block=29360128 slot=7 ino=257 file_offset=0: invalid file extent disk_bytenr, have 755944791, should be aligned to 4096
+BTRFS error (device loop0): open_ctree failed
+---
 
-diff --git a/tests/common b/tests/common
-index eb525a4d..690fee93 100644
---- a/tests/common
-+++ b/tests/common
-@@ -97,12 +97,8 @@ _get_spec_ins()
- _cmd_spec()
- {
- 	if [ "$TEST_ENABLE_OVERRIDE" = 'true' ]; then
--		# if defined via common.local, use it, otherwise pass make
--		# arguments
--		if [ "$(type -t _skip_spec)" = 'function' ]; then
--			if _skip_spec "$@"; then
--				return
--			fi
-+		if _skip_spec "$@"; then
-+			return
- 		fi
- 		case "$1" in
- 	  		check) echo -n "$TEST_ARGS_CHECK" ;;
-diff --git a/tests/common.local b/tests/common.local
-index 4864e391..f5e96f5b 100644
---- a/tests/common.local
-+++ b/tests/common.local
-@@ -3,14 +3,13 @@
- # additional arguments to various commands
- 
- # already defined, eg. via make argument
--if [ -n "$TEST_ENABLE_OVERRIDE" ]; then
--	return
--fi
-+if [ -z "$TEST_ENABLE_OVERRIDE" ]; then
-+    # set to 'true'
-+    TEST_ENABLE_OVERRIDE=false
- 
--# set to 'true'
--TEST_ENABLE_OVERRIDE=false
-+    TEST_ARGS_CHECK=--mode=lowmem
-+fi
- 
--TEST_ARGS_CHECK=--mode=lowmem
- 
- # gets arguments of a current command and can decide if the argument insertion
- # should happen, eg. if some option combination does not make sense or would
+For bad leaf holes:
+---
+BTRFS critical (device loop0): corrupt leaf root=1 block=29360128 slot=28: uncontinuous item end, have 9387 expect 15018
+BTRFS error (device loop0): open_ctree failed
+---
+
+
+Qu Wenruo (5):
+  btrfs-progs: Move leaf and node validation checker to tree-checker.c
+  btrfs: tree-checker: Enhance btrfs_check_node output
+  btrfs: tree-checker: Enhance output for btrfs_check_leaf
+  btrfs: tree-checker: Enhance output for check_csum_item
+  btrfs: tree-checker: Enhance output for check_extent_data_item
+
+ fs/btrfs/Makefile       |   2 +-
+ fs/btrfs/ctree.h        |   4 +
+ fs/btrfs/disk-io.c      | 284 +--------------------------------
+ fs/btrfs/tree-checker.c | 417 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 425 insertions(+), 282 deletions(-)
+ create mode 100644 fs/btrfs/tree-checker.c
+
 -- 
 2.14.1
-
-
 

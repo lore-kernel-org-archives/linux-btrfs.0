@@ -1,54 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:60160 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751404AbdI3Py3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Sep 2017 11:54:29 -0400
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: David Sterba <dsterba@suse.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Subject: [PATCH] btrfs-progs: right-align number columns in btrfs-debugfs
- output
-Message-ID: <59f60b49-3e74-547d-5124-8ce0097059ff@applied-asynchrony.com>
-Date: Sat, 30 Sep 2017 17:54:27 +0200
+Received: from mx2.suse.de ([195.135.220.15]:43441 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752162AbdI2SHE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Sep 2017 14:07:04 -0400
+Date: Fri, 29 Sep 2017 20:05:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, hch@lst.de
+Subject: Re: [PATCH] btrfs: Use bd_dev to generate index when
+ dev_state_hashtable add items.
+Message-ID: <20170929180529.GW31640@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1506672995-12488-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1506672995-12488-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Sep 29, 2017 at 04:16:35PM +0800, Gu Jinxiang wrote:
+> From: Gu JinXiang <gujx@cn.fujitsu.com>
+> 
+> Fix bug of
+> <f8f84b2dfda5> (<btrfs: index check-integrity state hash by a dev_t>).
 
-The values for block group offset, length etc. in btrfs-debugfs' output
-are left-aligned, which creates unaligned output and makes the usage
-percentage hard to read/process further. This patch adds right-aligning
-format specifiers for the number values.
-Ideally the format values wouldn't be hardcoded but instead derived from
-the filesystem size, but this seems to work for now.
-
-Signed-off-by: Holger Hoffstätte <holger@applied-asynchrony.com>
----
- btrfs-debugfs | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
-
-diff --git a/btrfs-debugfs b/btrfs-debugfs
-index dfb88539..a7ecd16d 100755
---- a/btrfs-debugfs
-+++ b/btrfs-debugfs
-@@ -356,8 +356,13 @@ def print_block_groups(mountpoint):
- 
-                 ctypes.memmove(ctypes.addressof(bg), p, ctypes.sizeof(bg))
-                 if bg.flags & BTRFS_BLOCK_GROUP_DATA:
--                    print "block group offset %Lu len %Lu used %Lu chunk_objectid %Lu flags %Lu usage %.2f" %\
--                     (header.objectid, header.offset, bg.used, bg.chunk_objectid, bg.flags, float(bg.used) / float(header.offset))
-+                    print "block group offset %s len %s used %s chunk_objectid %Lu flags %Lu usage %.2f" %\
-+                     ('{:>14}'.format(header.objectid),
-+                      '{:>10}'.format(header.offset),
-+                      '{:>10}'.format(bg.used),
-+                      bg.chunk_objectid,
-+                      bg.flags,
-+                      float(bg.used) / float(header.offset))
- 
-                     total_free += (header.offset - bg.used)
-                     if min_used >= bg.used:
--- 
-2.14.2
-
+Please explain what bug are you fixing.

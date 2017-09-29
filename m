@@ -1,127 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48938 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54403 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751972AbdI2TPc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Sep 2017 15:15:32 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 5856FAD4D
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Sep 2017 19:15:31 +0000 (UTC)
-Subject: Re: [PATCH v3 2/2] btrfs: Remove received_uuid during received
- snapshot ro->rw switch
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@suse.com
-References: <20170927140007.GH31640@twin.jikos.cz>
- <1506585198-32494-1-git-send-email-nborisov@suse.com>
- <1506585198-32494-2-git-send-email-nborisov@suse.com>
- <20170929175645.GV31640@twin.jikos.cz>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <d1ad211a-fa4a-8aed-3327-81610277679a@suse.com>
-Date: Fri, 29 Sep 2017 22:15:30 +0300
-MIME-Version: 1.0
-In-Reply-To: <20170929175645.GV31640@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+        id S1751920AbdI2PIC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Sep 2017 11:08:02 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 4.14-rc3
+Date: Fri, 29 Sep 2017 17:06:23 +0200
+Message-Id: <cover.1506696049.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
+we've collected a bunch of isolated fixes, for crashes, user-visible behaviour
+or missing bits from other subsystem cleanups from the past.  The overall
+number is not small but I was not able to make it significantly smaller. Most
+of the patches are supposed to go to stable. There are no merge conflicts.
+Please pull, thanks.
 
-On 29.09.2017 20:56, David Sterba wrote:
-> On Thu, Sep 28, 2017 at 10:53:18AM +0300, Nikolay Borisov wrote:
->> Currently when a read-only snapshot is received and subsequently its ro property
->> is set to false i.e. switched to rw-mode the received_uuid of that subvol remains
->> intact. However, once the received volume is switched to RW mode we cannot
->> guaranteee that it contains the same data, so it makes sense to remove the
->> received uuid. The presence of the received_uuid can also cause problems when
->> the volume is being send.
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>
->> v3:
->>  * Rework the patch considering latest feedback from David Sterba i.e. 
->>  explicitly use btrfs_end_transaction 
->>
->>  fs/btrfs/ioctl.c | 36 +++++++++++++++++++++++++++++-------
->>  1 file changed, 29 insertions(+), 7 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index ee4ee7cbba72..c0374125cec2 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -1811,6 +1811,17 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->>  		goto out_drop_sem;
->>  
->>  	root_flags = btrfs_root_flags(&root->root_item);
->> +
->> +	/*
->> +	 * 1 - root item
->> +	 * 1 - uuid item
->> +	 */
->> +	trans = btrfs_start_transaction(root, 2);
->> +	if (IS_ERR(trans)) {
->> +		ret = PTR_ERR(trans);
->> +		goto out_drop_sem;
->> +	}
->> +
->>  	if (flags & BTRFS_SUBVOL_RDONLY) {
->>  		btrfs_set_root_flags(&root->root_item,
->>  				     root_flags | BTRFS_ROOT_SUBVOL_RDONLY);
->> @@ -1824,22 +1835,33 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->>  			btrfs_set_root_flags(&root->root_item,
->>  				     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
->>  			spin_unlock(&root->root_item_lock);
->> +			if (!btrfs_is_empty_uuid(root->root_item.received_uuid)) {
->> +				ret = btrfs_uuid_tree_rem(trans, fs_info,
->> +                                          root->root_item.received_uuid,
->> +                                          BTRFS_UUID_KEY_RECEIVED_SUBVOL,
->> +                                          root->root_key.objectid);
->> +
->> +				if (ret && ret != -ENOENT) {
->> +					btrfs_abort_transaction(trans, ret);
->> +					btrfs_end_transaction(trans);
->> +					goto out_reset;
->> +				}
->> +
->> +				memset(root->root_item.received_uuid, 0,
->> +				       BTRFS_UUID_SIZE);
->> +			}
->>  		} else {
->>  			spin_unlock(&root->root_item_lock);
->>  			btrfs_warn(fs_info,
->>  				   "Attempt to set subvolume %llu read-write during send",
->>  				   root->root_key.objectid);
->>  			ret = -EPERM;
->> -			goto out_drop_sem;
->> +			btrfs_abort_transaction(trans, ret);
->> +			btrfs_end_transaction(trans);
->> +			goto out_reset;
-> 
-> Adding the transaction before the "if (flags & BTRFS_SUBVOL_RDONLY)"
-> condition makes it much worse. The "is subvolume in send" test is
-> supposed to be lightweight and should not shoot down the whole
-> filesystem. The usecase is explained in 2c68653787f91c62f8.
-> 
-> Also the received_uuid must be changed under the root_item_lock.
-> 
-> I think it should be fine to keep the transaction start where it is,
-> change the received_uuid eventually and let it commit. You can set the
-> transaction units to 2 unconditionally.
+The following changes since commit db95c876c568cef951fbbd4c0118cb5386e4bb99:
 
-So what you are suggesting is to not move the transaction start before
-the if check? But then how would you structure the code to remove the
-uuid only if we are switchin RO->RW and not in send without duplicating
-the checks right before btrfs_update_root?
+  btrfs: submit superblock io with REQ_META and REQ_PRIO (2017-08-22 13:22:05 +0200)
 
+are available in the git repository at:
 
-> 
->>  		}
->>  	}
->>  
->> -	trans = btrfs_start_transaction(root, 1);
->> -	if (IS_ERR(trans)) {
->> -		ret = PTR_ERR(trans);
->> -		goto out_reset;
->> -	}
->> -
->>  	ret = btrfs_update_root(trans, fs_info->tree_root,
->>  				&root->root_key, &root->root_item);
->>  	if (ret < 0) {
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.14-rc3
+
+for you to fetch changes up to 8c6c592831a09a28428448e68fb08c6bbb8b9b8b:
+
+  btrfs: log csums for all modified extents (2017-09-26 14:54:16 +0200)
+
+----------------------------------------------------------------
+Josef Bacik (1):
+      btrfs: log csums for all modified extents
+
+Liu Bo (7):
+      Btrfs: use the new helper wbc_to_write_flags
+      Btrfs: do not reset bio->bi_ops while writing bio
+      Btrfs: do not backup tree roots when fsync
+      Btrfs: use btrfs_op instead of bio_op in __btrfs_map_block
+      Btrfs: fix kernel oops while reading compressed data
+      Btrfs: skip checksum when reading compressed data if some IO have failed
+      Btrfs: fix unexpected result when dio reading corrupted blocks
+
+Misono, Tomohiro (1):
+      btrfs: remove BTRFS_FS_QUOTA_DISABLING flag
+
+Naohiro Aota (4):
+      btrfs: clear ordered flag on cleaning up ordered extents
+      btrfs: finish ordered extent cleaning if no progress is found
+      btrfs: fix NULL pointer dereference from free_reloc_roots()
+      btrfs: propagate error to btrfs_cmp_data_prepare caller
+
+Omar Sandoval (1):
+      Btrfs: fix incorrect {node,sector}size endianness from BTRFS_IOC_FS_INFO
+
+Sargun Dhillon (1):
+      btrfs: Report error on removing qgroup if del_qgroup_item fails
+
+Tsutomu Itoh (1):
+      Btrfs: send: fix error number for unknown inode types
+
+satoru takeuchi (1):
+      btrfs: prevent to set invalid default subvolid
+
+ fs/btrfs/compression.c | 18 +++++++++++++++++-
+ fs/btrfs/ctree.h       |  1 -
+ fs/btrfs/disk-io.c     |  9 ++++++++-
+ fs/btrfs/extent_io.c   |  8 ++------
+ fs/btrfs/inode.c       | 27 ++++++++++++++++++++++-----
+ fs/btrfs/ioctl.c       | 12 ++++++++----
+ fs/btrfs/qgroup.c      |  6 ++----
+ fs/btrfs/relocation.c  |  2 +-
+ fs/btrfs/send.c        |  2 +-
+ fs/btrfs/tree-log.c    | 12 ++++++++++--
+ fs/btrfs/volumes.c     |  2 +-
+ 11 files changed, 72 insertions(+), 27 deletions(-)

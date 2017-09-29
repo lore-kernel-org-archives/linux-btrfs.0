@@ -1,188 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:59407 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:60475 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751344AbdI2BhX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Sep 2017 21:37:23 -0400
+        id S1750899AbdI2Gtc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Sep 2017 02:49:32 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH v2 5/5] btrfs: tree-checker: Enhance output for check_extent_data_item
-Date: Fri, 29 Sep 2017 10:37:02 +0900
-Message-Id: <20170929013702.17814-6-quwenruo.btrfs@gmx.com>
-In-Reply-To: <20170929013702.17814-1-quwenruo.btrfs@gmx.com>
-References: <20170929013702.17814-1-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v3 0/5] Enhance tree block validation checker
+Date: Fri, 29 Sep 2017 06:48:44 +0000
+Message-Id: <20170929064849.15086-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Output the invalid member name and its bad value, along with its
-expected value range or alignment.
+The patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/checker_enhance
 
-Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+It's based on David's misc-next branch, with following commit as base:
+a5e50b4b444c ("btrfs: Add checker for EXTENT_CSUM")
+
+According to David's suggestion, enhance the output format of tree block
+validation checker.
+
+And move them into one separate file: tree-checker.c.
+
+Also added a output format rule to try to make all output message
+follow the same format.
+
+Some example output using btrfsck fsck-test images looks like:
+
+For unagliend file extent member:
 ---
- fs/btrfs/tree-checker.c | 98 +++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 70 insertions(+), 28 deletions(-)
+BTRFS critical (device loop0): corrupt leaf: root=1 block=29360128 slot=7 ino=257 file_offset=0, invalid disk_bytenr for file extent, have 755944791, should be aligned to 4096
+---
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index a5b743763362..9aeb5a288e2b 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -31,12 +31,6 @@
- #include "disk-io.h"
- #include "compression.h"
- 
--#define CORRUPT(reason, eb, root, slot)					\
--	btrfs_crit(root->fs_info,					\
--		   "corrupt %s, %s: block=%llu, root=%llu, slot=%d",	\
--		   btrfs_header_level(eb) == 0 ? "leaf" : "node",	\
--		   reason, btrfs_header_bytenr(eb), root->objectid, slot)
--
- /*
-  * Error message should follow the format below:
-  * corrupt <type>: <identifier>, <reason>[, <bad_value>]
-@@ -79,6 +73,47 @@ static void generic_err(const struct btrfs_root *root,
- 	va_end(args);
- }
- 
-+/*
-+ * Customized reporter for extent data item, since its key objectid and
-+ * offset has its own meaning.
-+ */
-+__printf(4, 5)
-+static void file_extent_err(const struct btrfs_root *root,
-+			    const struct extent_buffer *eb,
-+			    int slot, const char *fmt, ...)
-+{
-+	struct btrfs_key key;
-+	struct va_format vaf;
-+	va_list args;
-+
-+	btrfs_item_key_to_cpu(eb, &key, slot);
-+	va_start(args, fmt);
-+
-+	vaf.fmt = fmt;
-+	vaf.va = &args;
-+
-+	btrfs_crit(root->fs_info,
-+		"corrupt %s: root=%llu block=%llu slot=%d ino=%llu file_offset=%llu, %pV",
-+		btrfs_header_level(eb) == 0 ? "leaf" : "node",
-+		root->objectid, btrfs_header_bytenr(eb), slot,
-+		key.objectid, key.offset, &vaf);
-+	va_end(args);
-+}
-+
-+/*
-+ * Return 0 if the btrfs_file_extent_##name is aligned to @align
-+ * Else return 1
-+ */
-+#define CHECK_FI_ALIGN(root, leaf, slot, fi, name, align)		\
-+({									\
-+	if (!IS_ALIGNED(btrfs_file_extent_##name(leaf, fi), align))	\
-+		file_extent_err(root, leaf, slot,			\
-+			"invalid %s for file extent, have %llu, should be aligned to %u",\
-+			#name, btrfs_file_extent_##name(leaf, fi),	\
-+			align);						\
-+	(!IS_ALIGNED(btrfs_file_extent_##name(leaf, fi), align));	\
-+})
-+
- static int check_extent_data_item(struct btrfs_root *root,
- 				  struct extent_buffer *leaf,
- 				  struct btrfs_key *key, int slot)
-@@ -88,15 +123,19 @@ static int check_extent_data_item(struct btrfs_root *root,
- 	u32 item_size = btrfs_item_size_nr(leaf, slot);
- 
- 	if (!IS_ALIGNED(key->offset, sectorsize)) {
--		CORRUPT("unaligned key offset for file extent",
--			leaf, root, slot);
-+		file_extent_err(root, leaf, slot,
-+			"unaligned file_offset for file extent, have %llu should be aligned to %u",
-+			key->offset, sectorsize);
- 		return -EUCLEAN;
- 	}
- 
- 	fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
- 
- 	if (btrfs_file_extent_type(leaf, fi) > BTRFS_FILE_EXTENT_TYPES) {
--		CORRUPT("invalid file extent type", leaf, root, slot);
-+		file_extent_err(root, leaf, slot,
-+			"invalid type for file extent, have %u expect range [0, %u]",
-+			btrfs_file_extent_type(leaf, fi),
-+			BTRFS_FILE_EXTENT_TYPES);
- 		return -EUCLEAN;
- 	}
- 
-@@ -105,18 +144,24 @@ static int check_extent_data_item(struct btrfs_root *root,
- 	 * and must be caught in open_ctree().
- 	 */
- 	if (btrfs_file_extent_compression(leaf, fi) > BTRFS_COMPRESS_TYPES) {
--		CORRUPT("invalid file extent compression", leaf, root, slot);
-+		file_extent_err(root, leaf, slot,
-+			"invalid compression for file extent, have %u expect range [0, %u]",
-+			btrfs_file_extent_compression(leaf, fi),
-+			BTRFS_COMPRESS_TYPES);
- 		return -EUCLEAN;
- 	}
- 	if (btrfs_file_extent_encryption(leaf, fi)) {
--		CORRUPT("invalid file extent encryption", leaf, root, slot);
-+		file_extent_err(root, leaf, slot,
-+			"invalid encryption for file extent, have %u expect 0",
-+			btrfs_file_extent_encryption(leaf, fi));
- 		return -EUCLEAN;
- 	}
- 	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
- 		/* Inline extent must have 0 as key offset */
- 		if (key->offset) {
--			CORRUPT("inline extent has non-zero key offset",
--				leaf, root, slot);
-+			file_extent_err(root, leaf, slot,
-+				"invalid file_offset for inline file extent, have %llu expect 0",
-+				key->offset);
- 			return -EUCLEAN;
- 		}
- 
-@@ -128,8 +173,10 @@ static int check_extent_data_item(struct btrfs_root *root,
- 		/* Uncompressed inline extent size must match item size */
- 		if (item_size != BTRFS_FILE_EXTENT_INLINE_DATA_START +
- 		    btrfs_file_extent_ram_bytes(leaf, fi)) {
--			CORRUPT("plaintext inline extent has invalid size",
--				leaf, root, slot);
-+			file_extent_err(root, leaf, slot,
-+				"invalid ram_bytes for uncompressed inline extent, have %u expect %llu",
-+				item_size, BTRFS_FILE_EXTENT_INLINE_DATA_START +
-+				btrfs_file_extent_ram_bytes(leaf, fi));
- 			return -EUCLEAN;
- 		}
- 		return 0;
-@@ -137,22 +184,17 @@ static int check_extent_data_item(struct btrfs_root *root,
- 
- 	/* Regular or preallocated extent has fixed item size */
- 	if (item_size != sizeof(*fi)) {
--		CORRUPT(
--		"regluar or preallocated extent data item size is invalid",
--			leaf, root, slot);
-+		file_extent_err(root, leaf, slot,
-+			"invalid item size for reg/prealloc file extent, have %u expect %lu",
-+			item_size, sizeof(*fi));
- 		return -EUCLEAN;
- 	}
--	if (!IS_ALIGNED(btrfs_file_extent_ram_bytes(leaf, fi), sectorsize) ||
--	    !IS_ALIGNED(btrfs_file_extent_disk_bytenr(leaf, fi), sectorsize) ||
--	    !IS_ALIGNED(btrfs_file_extent_disk_num_bytes(leaf, fi), sectorsize) ||
--	    !IS_ALIGNED(btrfs_file_extent_offset(leaf, fi), sectorsize) ||
--	    !IS_ALIGNED(btrfs_file_extent_num_bytes(leaf, fi), sectorsize)) {
--		CORRUPT(
--		"regular or preallocated extent data item has unaligned value",
--			leaf, root, slot);
-+	if (CHECK_FI_ALIGN(root, leaf, slot, fi, ram_bytes, sectorsize) ||
-+	    CHECK_FI_ALIGN(root, leaf, slot, fi, disk_bytenr, sectorsize) ||
-+	    CHECK_FI_ALIGN(root, leaf, slot, fi, disk_num_bytes, sectorsize) ||
-+	    CHECK_FI_ALIGN(root, leaf, slot, fi, offset, sectorsize) ||
-+	    CHECK_FI_ALIGN(root, leaf, slot, fi, num_bytes, sectorsize))
- 		return -EUCLEAN;
--	}
--
- 	return 0;
- }
- 
+For bad leaf holes:
+---
+BTRFS critical (device loop0): corrupt leaf: root=1 block=29360128 slot=28, discontinious item end, have 9387 expect 15018
+---
+
+Changelog:
+v2:
+  Unify the error string format, so it should be easier to grep them
+  from dmesg. Thanks Nikolay for pointing this out.
+  Remove unused CORRUPT() macro.
+v3:
+  Replace EIO with EUCLEAN in 2nd patch. Thanks Nikolay for pointing
+  this out.
+  Correct "btrfs-progs:" to "btrfs:" for 1st patch.
+
+Qu Wenruo (5):
+  btrfs: Move leaf and node validation checker to tree-checker.c
+  btrfs: tree-checker: Enhance btrfs_check_node output
+  btrfs: tree-checker: Enhance output for btrfs_check_leaf
+  btrfs: tree-checker: Enhance output for check_csum_item
+  btrfs: tree-checker: Enhance output for check_extent_data_item
+
+ fs/btrfs/Makefile       |   2 +-
+ fs/btrfs/ctree.h        |   4 +
+ fs/btrfs/disk-io.c      | 284 +-------------------------------
+ fs/btrfs/tree-checker.c | 429 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 437 insertions(+), 282 deletions(-)
+ create mode 100644 fs/btrfs/tree-checker.c
+
 -- 
 2.14.2
 

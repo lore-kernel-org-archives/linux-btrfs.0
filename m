@@ -1,49 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f179.google.com ([209.85.220.179]:33756 "EHLO
-        mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753326AbdIFQDa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Sep 2017 12:03:30 -0400
-Received: by mail-qk0-f179.google.com with SMTP id o129so20599183qkd.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Sep 2017 09:03:30 -0700 (PDT)
-From: josef@toxicpanda.com
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH] Btrfs: only check delayed ref usage in should_end_transaction
-Date: Wed,  6 Sep 2017 12:03:27 -0400
-Message-Id: <1504713807-8250-1-git-send-email-jbacik@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:33094 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750847AbdI2HPD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Sep 2017 03:15:03 -0400
+To: miaox@cn.fujitsu.com
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Nikolay Borisov <nborisov@suse.com>
+Subject: delayed inodes implementation questions
+Message-ID: <f44de3db-b49a-d1af-350d-5f08a0445abf@suse.com>
+Date: Fri, 29 Sep 2017 10:15:01 +0300
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+Hello,
 
-We were only doing btrfs_check_space_for_delayed_refs() if the metadata
-space was full, ie we couldn't allocate chunks.  This assumes we'll be
-able to allocate chunks during transaction commit, but since nothing
-does a LIMIT flush during the transaction commit this won't actually
-happen unless we happen to run shy of actual space.  We already take
-into account a full fs in btrfs_check_space_for_delayed_refs() so just
-kill this extra check to make sure we're ending the transaction when we
-need to.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/transaction.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+I've been studying the implementation of the delayed inodes feature and
+have a couple of questions.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f615d59..02548ff 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -797,8 +797,7 @@ static int should_end_transaction(struct btrfs_trans_handle *trans)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 
--	if (fs_info->global_block_rsv.space_info->full &&
--	    btrfs_check_space_for_delayed_refs(trans, fs_info))
-+	if (btrfs_check_space_for_delayed_refs(trans, fs_info))
- 		return 1;
- 
- 	return !!btrfs_block_rsv_check(&fs_info->global_block_rsv, 5);
--- 
-2.7.4
+1. Why are there 2 lists when each and every node is on both lists at
+the same time? So if we happen to be running the async worker we are
+processing nodes based on the prepared_list, at the same time if there
+is a concurent transaction commit happening then the exact some nodes
+are going to be processed from the node_list - it's not a functional
+problem but the presence of 2 lists and each node being on the same list
+at the same time just seems a bit redundant.
 
+2. in btrfs_next_delayed_node can this code really trigger:
+
+ if (!test_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags)) {
+                /* not in the list */
+
+                if (list_empty(&delayed_root->node_list))
+
+                        goto out;
+
+                p = delayed_root->node_list.next;
+
+In order for !test_bit(BTRFS_DELAYED_NODE_IN_LIST, &node->flags) to be
+true this means this node should have been btrfs_dequeue_delayed_node
+underneath us? Can this really happen e.g. have multiple concurrent
+__btrfs_run_delayed_items executions?

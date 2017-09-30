@@ -1,64 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:46322 "EHLO
-        mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751408AbdITWEy (ORCPT
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:44578 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751202AbdI3Wdp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Sep 2017 18:04:54 -0400
-Received: by mail-io0-f175.google.com with SMTP id d16so6892873ioj.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Sep 2017 15:04:54 -0700 (PDT)
+        Sat, 30 Sep 2017 18:33:45 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id D798F9B81B
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 23:33:42 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id A502A5FBB1
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 23:33:42 +0100 (BST)
+Subject: Re: [PATCH] btrfs-progs: add option to only list parent subvolumes
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
+ <264aa617-9484-a5fe-ad47-8ed052d6764e@cobb.uk.net>
+ <e20b2520-5bed-7f61-57b6-dd9e41918680@applied-asynchrony.com>
+ <a6f89874-2048-6903-9ebc-d28991a00adc@applied-asynchrony.com>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <14a105c2-548b-39fc-97c8-6a5678549910@cobb.uk.net>
+Date: Sat, 30 Sep 2017 23:33:42 +0100
 MIME-Version: 1.0
-In-Reply-To: <63fd4cdb-52d4-4aee-cc82-dbb7eba72a06@redhat.com>
-References: <CAGqmi74kxPpkuYCBwfdyzxUKAHE6TP9x1FGDz0FURud21u=nOA@mail.gmail.com>
- <63fd4cdb-52d4-4aee-cc82-dbb7eba72a06@redhat.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Thu, 21 Sep 2017 01:04:04 +0300
-Message-ID: <CAGqmi74r6FfC2KG8A5FaVTvDSNc7XLrV7SHULXVQ+A6a3U1uQg@mail.gmail.com>
-Subject: Re: Does btrfs use crc32 for error correction?
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <a6f89874-2048-6903-9ebc-d28991a00adc@applied-asynchrony.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-09-19 19:51 GMT+03:00 Eric Sandeen <sandeen@redhat.com>:
-> On 9/19/17 10:35 AM, Timofey Titovets wrote:
->> Stupid question:
->> Does btrfs use crc32 for error correction?
->> If no, why?
+On 30/09/17 19:17, Holger Hoffstätte wrote:
+> On 09/30/17 19:56, Holger Hoffstätte wrote:
+>> shell hackery as alternative. Anyway, I was sure that at the time the
+>> other letters sounded even worse/were taken, but that may just have been
+>> in my head. ;-)
 >>
->> (AFAIK if using CRC that possible to fix 1 bit flip)
->>
->> P.S. I try check that (i create image, create text file, flip bit, try
->> read and btrfs show IO-error)
->>
->> Thanks!
->
-> I wasn't aware that crc32 could (in general) be used for single bit correction; I've read up on that, and it seems pretty cool.
->
-> However, I don't think that the generator polynomial used in crc32c /can/ be used for error correction.  I just skimmed some reading, but that seems to be the case if I understand it correctly.
->
-> -Eric
+>> I just rechecked and -S is still available, so that's good.
+> 
+> Except that it isn't really, since there is already an 'S'
+> case in cmds-subvolume.c as shortcut to --sort:
 
-That possible, but if i understood doc about CRC16 bit correction
-correctly, that need some tricks (As example preprocess all possible
-bit flips and have a map of that) for fast find bit error.
-Also in theory for CRC32C that possible with some state machine, to
-move algo backward and forward over data.
+That's a shame (and it is also a shame to waste a single letter option
+without documenting it!).
 
-I also check [1], so CRC32C (for our case) have hamming distance about 4.
-So CRC32 in theory can fix up to HD-1 ~= 3 bit (If i understand all
-things correctly);
+I still would encourage you to avoid -P. I think there is user confusion
+by "parent" having more than one meaning even within btrfs. And I feel
+it also tends to perpetuate the mistaken belief that snapshots are
+somehow "special", and different from other subvolumes (rather than just
+a piece of information about how two subvolumes are related). It also
+allows -P to be used one day for the "search by parent UUID" feature.
 
-So that possible to just brute force over data and flip 1-3 bit, and
-try check if CRC fixed %)
-In theory that safe for 1-2 bit error (Because again HD for input
-data) (Proof of concept[2]).
+Given the constraints, I would suggest -n. It is mostly arbitrary but it
+is the second letter of snapshot and also the first of "not a snapshot".
 
-Thanks.
+Thanks for considering.
 
-1. https://users.ece.cmu.edu/~koopman/networks/dsn02/dsn02_koopman.pdf
-2. https://github.com/Nefelim4ag/CRC32C_AND_8Byte_parity/commit/cb0fe76eac2ff036468bbc5ea75ebc06cb1e9928
-
--- 
-Have a nice day,
-Timofey.
+Graham

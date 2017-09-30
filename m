@@ -1,60 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:40942 "EHLO
-        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751099AbdI3QhR (ORCPT
+Received: from mail-lf0-f65.google.com ([209.85.215.65]:50533 "EHLO
+        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751467AbdI3Qii (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Sep 2017 12:37:17 -0400
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id 633429BAA0
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 17:37:12 +0100 (BST)
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id 306DC5FBB1
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 17:37:12 +0100 (BST)
-Subject: Re: [PATCH] btrfs-progs: add option to only list parent subvolumes
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
-From: Graham Cobb <g.btrfs@cobb.uk.net>
-Message-ID: <264aa617-9484-a5fe-ad47-8ed052d6764e@cobb.uk.net>
-Date: Sat, 30 Sep 2017 17:37:11 +0100
+        Sat, 30 Sep 2017 12:38:38 -0400
+Received: by mail-lf0-f65.google.com with SMTP id d4so2254841lfj.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 09:38:38 -0700 (PDT)
+Subject: Re: What means "top level" in "btrfs subvolume list" ?
+To: Peter Grandi <pg@btrfs.list.sabi.co.UK>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <762acea0-3f55-4fc0-c5eb-604304152f3e@inwind.it>
+ <22991.45029.564275.154171@tree.ty.sabi.co.uk>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <ba6dad59-602b-61d8-8e55-1aa37028db29@gmail.com>
+Date: Sat, 30 Sep 2017 19:38:35 +0300
 MIME-Version: 1.0
-In-Reply-To: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
+In-Reply-To: <22991.45029.564275.154171@tree.ty.sabi.co.uk>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 30/09/17 14:08, Holger Hoffstätte wrote:
-> A "root" subvolume is identified by a null parent UUID, so adding a new
-> subvolume filter and flag -P ("Parent") does the trick. 
+30.09.2017 17:53, Peter Grandi пишет:
+>> I am trying to figure out which means "top level" in the
+>> output of "btrfs sub list"
+> 
+> The terminology (and sometimes the detailed behaviour) of Btrfs
+> is not extremely consistent, I guess because of permissive
+> editorship of the design, in a "let 1000 flowers bloom" sort
+> of fashion so that does not matter a lot.
+> 
+>> [ ... ] outputs a "top level ID" equal to the "parent ID" (on
+>> the basis of the code).
+> 
+> You could have used option '-p' and it would have printed out
+> both "top level ID" and "parent ID" for extra enlightenment.
+> 
 
-I don't like the naming. The flag you are proposing is really nothing to
-do with whether a subvolume is a parent or not: it is about whether it
-is a snapshot or not (many subvolumes are both snapshots and also
-parents of other snapshots, and many non-snapshots are not the parent of
-any subvolumes).
+How does it explain what "top level" is?
 
-I have two suggestions:
+>> But I am still asking which would be the RIGHT "top level id".
+> 
+> But perhaps one of them is now irrelevant, because 'man btrfs
+> subvolume says:
+> 
+>   "If -p is given, then parent <ID> is added to the output
+>   between ID and top level. The parent’s ID may be used at mount
+>   time via the subvolrootid= option."
+> 
+> and 'man 5 btrfs' says:
+> 
+>   "subvolrootid=objectid
+>     (irrelevant since: 3.2, formally deprecated since: 3.10)
+>     A workaround option from times (pre 3.2) when it was not
+>     possible to mount a subvolume that did not reside directly
+>     under the toplevel subvolume."
+> 
 
-1) Use -S (meaning "not a snapshot", the inverse of -s). Along with this
-change. I would change the usage text to say something like:
+This still does not explain what "top level" in "btrfs sub list" means.
 
- -s list subvolumes originally created as snapshots
- -S list subvolumes originally created not as snapshots
+>> My Hypothesis, it should be the ID of the root subvolume ( or
+>> 5 if it is not mounted). [ ... ]
+> 
+> Well, a POSIX filesystem typically has a root directory, and it
+> can be mounted as the system root or any other point. A Btrfs
+> filesystem has multiple root directories, that are mounted by
+> default "somewhere" (a design decision that I think was unwise,
+> but "whatever").
+> 
+> The subvolume containing the mountpoint directory of another
+> subvolume's root directory is is no way or sense its "parent",
+> as there is no derivation relationship; root directories are
+> independent of each other and their mountpoint is (or should be)
+> a runtime entity.
+> 
 
-Presumably specifying both -s and -S should be an error.
+With all respect that is not how it looks like. Each subvolume has very
+precise relationship to containing subvolume; you can only traverse
+subvolumes via this very explicit relationship. The fact that subvolumes
+can also be mounted individually on VFS level is rather irrelevant for
+filesystem structure.
 
-2) Add a -P (parent) option but make it take an argument: the UUID of
-the parent to match. This would display only subvolumes originally
-created as snapshots of the specified subvolume (which may or may not
-still exist, of course). A null value ('' -- or a special text like
-'NULL' or 'NONE' if you prefer) would create the search you were looking
-for: subvolumes with a null Parent UUID.
+Whether "parent" is correct name for containing subvolume is of course
+subject to opinion, but for me it fits - subvolumes do form a tree and
+have very well defined parent/child relationship.
 
-The second option is more code, of course, but I see being able to list
-all the snapshots of a particular subvolume as quite useful.
+> If there is a "parent" relationship that maybe be between
+> snapshot and origin subvolume (ignoring 'send'/'receive'...),
 
-If you do choose the second option you need to decide what to do if the
--P is specified more than once. Probably treat it as an error (unless
-you want to allow a list of UUIDs any of which can match). You might
-also want to reject an attempt to specify both -s and -P.
-
-Graham
+Yes, having the same name for entirely different types of hierarchical
+relationships is unfortunate. But it still does not explain what "top
+level" means :)

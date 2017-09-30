@@ -1,91 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:33996 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750994AbdI3Oxd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Sep 2017 10:53:33 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:39500)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1dyJ91-0002dr-BY
-        for linux-btrfs@vger.kernel.org; Sat, 30 Sep 2017 15:53:31 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1dyJ8w-0002Q7-IV
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 15:53:26 +0100
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:40942 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751099AbdI3QhR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 30 Sep 2017 12:37:17 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 633429BAA0
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 17:37:12 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id 306DC5FBB1
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 17:37:12 +0100 (BST)
+Subject: Re: [PATCH] btrfs-progs: add option to only list parent subvolumes
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <264aa617-9484-a5fe-ad47-8ed052d6764e@cobb.uk.net>
+Date: Sat, 30 Sep 2017 17:37:11 +0100
 MIME-Version: 1.0
+In-Reply-To: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
 Content-Type: text/plain; charset=utf-8
-Message-ID: <22991.45029.564275.154171@tree.ty.sabi.co.uk>
-Date: Sat, 30 Sep 2017 15:53:25 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: What means "top level" in "btrfs subvolume list" ?
-In-Reply-To: <762acea0-3f55-4fc0-c5eb-604304152f3e@inwind.it>
-References: <762acea0-3f55-4fc0-c5eb-604304152f3e@inwind.it>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I am trying to figure out which means "top level" in the
-> output of "btrfs sub list"
+On 30/09/17 14:08, Holger Hoffstätte wrote:
+> A "root" subvolume is identified by a null parent UUID, so adding a new
+> subvolume filter and flag -P ("Parent") does the trick. 
 
-The terminology (and sometimes the detailed behaviour) of Btrfs
-is not extremely consistent, I guess because of permissive
-editorship of the design, in a "let 1000 flowers bloom" sort
-of fashion so that does not matter a lot.
+I don't like the naming. The flag you are proposing is really nothing to
+do with whether a subvolume is a parent or not: it is about whether it
+is a snapshot or not (many subvolumes are both snapshots and also
+parents of other snapshots, and many non-snapshots are not the parent of
+any subvolumes).
 
-> [ ... ] outputs a "top level ID" equal to the "parent ID" (on
-> the basis of the code).
+I have two suggestions:
 
-You could have used option '-p' and it would have printed out
-both "top level ID" and "parent ID" for extra enlightenment.
+1) Use -S (meaning "not a snapshot", the inverse of -s). Along with this
+change. I would change the usage text to say something like:
 
-> But I am still asking which would be the RIGHT "top level id".
+ -s list subvolumes originally created as snapshots
+ -S list subvolumes originally created not as snapshots
 
-But perhaps one of them is now irrelevant, because 'man btrfs
-subvolume says:
+Presumably specifying both -s and -S should be an error.
 
-  "If -p is given, then parent <ID> is added to the output
-  between ID and top level. The parent’s ID may be used at mount
-  time via the subvolrootid= option."
+2) Add a -P (parent) option but make it take an argument: the UUID of
+the parent to match. This would display only subvolumes originally
+created as snapshots of the specified subvolume (which may or may not
+still exist, of course). A null value ('' -- or a special text like
+'NULL' or 'NONE' if you prefer) would create the search you were looking
+for: subvolumes with a null Parent UUID.
 
-and 'man 5 btrfs' says:
+The second option is more code, of course, but I see being able to list
+all the snapshots of a particular subvolume as quite useful.
 
-  "subvolrootid=objectid
-    (irrelevant since: 3.2, formally deprecated since: 3.10)
-    A workaround option from times (pre 3.2) when it was not
-    possible to mount a subvolume that did not reside directly
-    under the toplevel subvolume."
+If you do choose the second option you need to decide what to do if the
+-P is specified more than once. Probably treat it as an error (unless
+you want to allow a list of UUIDs any of which can match). You might
+also want to reject an attempt to specify both -s and -P.
 
-> My Hypothesis, it should be the ID of the root subvolume ( or
-> 5 if it is not mounted). [ ... ]
-
-Well, a POSIX filesystem typically has a root directory, and it
-can be mounted as the system root or any other point. A Btrfs
-filesystem has multiple root directories, that are mounted by
-default "somewhere" (a design decision that I think was unwise,
-but "whatever").
-
-The subvolume containing the mountpoint directory of another
-subvolume's root directory is is no way or sense its "parent",
-as there is no derivation relationship; root directories are
-independent of each other and their mountpoint is (or should be)
-a runtime entity.
-
-If there is a "parent" relationship that maybe be between
-snapshot and origin subvolume (ignoring 'send'/'receive'...),
-and I have created a few plain and snapshot subvolumes and I get
-this rather "confusing" output from version 4.4 of the 'btrfs'
-command:
-
-  base# btrfs subvol list -uq -a -p /fs/sda7 | sort -k 6,6n -k 8,8
-  ID 257 gen 718 parent 5 top level 5 parent_uuid - uuid 2d7b0606-76d9-f24b-8f75-d20a5c0f3521 path =
-  ID 356 gen 719 parent 5 top level 5 parent_uuid - uuid 9d201029-d2bf-2f43-8381-8c19d090483e path sl1
-  ID 358 gen 719 parent 5 top level 5 parent_uuid 2d7b0606-76d9-f24b-8f75-d20a5c0f3521 uuid bc0e6a33-b5dc-4d48-b2db-1452b705d227 path sn1
-  ID 357 gen 715 parent 356 top level 356 parent_uuid - uuid 2abc6399-956d-894f-836b-32eb5b603654 path <FS_TREE>/sl1/sl2
-  ID 360 gen 718 parent 356 top level 356 parent_uuid 2d7b0606-76d9-f24b-8f75-d20a5c0f3521 uuid ad896822-e9a5-c645-8cfd-0aca7f5a2298 path <FS_TREE>/sl1/sn3
-  ID 361 gen 719 parent 356 top level 356 parent_uuid bc0e6a33-b5dc-4d48-b2db-1452b705d227 uuid 9c1390d2-e485-cb4a-a41b-670248587bfb path <FS_TREE>/sl1/sn4
-  ID 359 gen 717 parent 358 top level 358 parent_uuid 2d7b0606-76d9-f24b-8f75-d20a5c0f3521 uuid 72d4f943-2881-6442-b398-2277be8f2fec path <FS_TREE>/sn1/sn2
-
-The "confusion" is that for some subvolumes the "parent" is the
-same but the "parent_uuid" is different, and viceversa.
-IIRC this has already been mentioned in part elsewhere.
+Graham

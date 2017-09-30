@@ -1,233 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f174.google.com ([209.85.223.174]:48288 "EHLO
-        mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751551AbdIQWIL (ORCPT
+Received: from mail02.iobjects.de ([188.40.134.68]:59866 "EHLO
+        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750810AbdI3NIR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Sep 2017 18:08:11 -0400
-Received: by mail-io0-f174.google.com with SMTP id n69so14763927ioi.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Sep 2017 15:08:11 -0700 (PDT)
-Date: Sun, 17 Sep 2017 22:08:09 +0000
-From: Sargun Dhillon <sargun@sargun.me>
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo.btrfs@gmx.com, dsterba@suse.cz
-Subject: [PATCH v2 1/1] btrfs: Add mechanism to configure automatic level-0
- qgroup removal
-Message-ID: <20170917220807.GA31521@ircssh-2.c.rugged-nimbus-611.internal>
+        Sat, 30 Sep 2017 09:08:17 -0400
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: David Sterba <dsterba@suse.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Subject: [PATCH] btrfs-progs: add option to only list parent subvolumes
+Message-ID: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
+Date: Sat, 30 Sep 2017 15:08:13 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <20170917220756.GA31512@ircssh-2.c.rugged-nimbus-611.internal>
 
-This patch introduces a persisted sysfs knob - qgroup_autoremove.
-The purpose of this knob is to cause btrfs (kernel) to automatically
-remove level-0 qgroups on subvolume removal. It does not try to
-traverse the qgroup tree, and delete other dangling qgroups.
+Hi,
 
-The knob is  disabled by default to avoid breaking userspace.
-Once the knob is enabled, it is persisted across remounts in
-qgroup_flags.
+When listing subvolumes it can be useful to filter out any snapshots;
+surprisingly enough I couldn't find an option to do this easily, only
+the opposite (list only snapshots).
 
-Signed-off-by: Sargun Dhillon <sargun@sargun.me>
+A "root" subvolume is identified by a null parent UUID, so adding a new
+subvolume filter and flag -P ("Parent") does the trick. 
+
+The same can of course be accomplished with shell hackery, e.g.:
+
+ btrfs subvol list -q -o <path> | grep -i "parent_uuid -" | cut -d " " -f 11
+
+but a built-in way seems less fragile.
+
+I originally cooked this up for myself, but David Sterba encouraged me to
+send this to the list, so here it is. I'm not too proud of the -P but
+couldn't find a better option letter; suggestions welcome. :)
+
+cheers,
+Holger
+
+Signed-off-by: Holger Hoffstätte <holger@applied-asynchrony.com>
 ---
- fs/btrfs/ctree.h                |  2 +-
- fs/btrfs/ioctl.c                | 14 +++++++
- fs/btrfs/sysfs.c                | 91 ++++++++++++++++++++++++++++++++++++-----
- include/uapi/linux/btrfs_tree.h |  7 ++++
- 4 files changed, 103 insertions(+), 11 deletions(-)
+ btrfs-list.c     | 6 ++++++
+ btrfs-list.h     | 1 +
+ cmds-subvolume.c | 8 +++++++-
+ 3 files changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9ded3e9154a5..65f8fa246a4d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1018,7 +1018,7 @@ struct btrfs_fs_info {
- #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
- 	u32 check_integrity_print_mask;
- #endif
--	/* is qgroup tracking in a consistent state? */
-+	/* qgroup configuration; is qgroup tracking in a consistent state? */
- 	u64 qgroup_flags;
- 
- 	/* holds configuration and tracking. Protected by qgroup_lock */
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 94934901d58c..d7ef13720374 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2315,6 +2315,7 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 	struct btrfs_ioctl_vol_args *vol_args;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_block_rsv block_rsv;
-+	bool remove_qgroup = false;
- 	u64 root_flags;
- 	u64 qgroup_reserved;
- 	int namelen;
-@@ -2497,6 +2498,19 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 		}
- 	}
- 
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	if (fs_info->qgroup_flags & BTRFS_QGROUP_AUTOREMOVE_FLAG)
-+		remove_qgroup = true;
-+	spin_unlock(&fs_info->qgroup_lock);
-+	if (remove_qgroup) {
-+		ret = btrfs_remove_qgroup(trans, fs_info,
-+					  dest->root_key.objectid);
-+		if (ret && ret != -ENOENT)
-+			btrfs_warn(fs_info,
-+				   "Failed to cleanup qgroup. err: %d", ret);
-+	}
-+
- out_end_trans:
- 	trans->block_rsv = NULL;
- 	trans->bytes_reserved = 0;
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index c2d5f3580b4c..9604778038fd 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -90,6 +90,15 @@ static int can_modify_feature(struct btrfs_feature_attr *fa)
- 	return val;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 4cc2ed49..6aa7a290 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1175,6 +1175,11 @@ static int filter_deleted(struct root_info *ri, u64 data)
+ 	return ri->deleted;
  }
  
-+static void set_pending_commit(struct btrfs_fs_info *fs_info)
++static int filter_parent_subvol_only(struct root_info *ri, u64 data)
 +{
-+	/*
-+	 * We don't want to do full transaction commit from inside sysfs
-+	 */
-+	btrfs_set_pending(fs_info, COMMIT);
-+	wake_up_process(fs_info->transaction_kthread);
++	return uuid_is_null(ri->puuid);
 +}
 +
- static ssize_t btrfs_feature_attr_show(struct kobject *kobj,
- 				       struct kobj_attribute *a, char *buf)
- {
-@@ -165,11 +174,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
- 	set_features(fs_info, fa->feature_set, features);
- 	spin_unlock(&fs_info->super_lock);
- 
--	/*
--	 * We don't want to do full transaction commit from inside sysfs
--	 */
--	btrfs_set_pending(fs_info, COMMIT);
--	wake_up_process(fs_info->transaction_kthread);
-+	set_pending_commit(fs_info);
- 
- 	return count;
- }
-@@ -405,11 +410,7 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
- 	memcpy(fs_info->super_copy->label, buf, p_len);
- 	spin_unlock(&fs_info->super_lock);
- 
--	/*
--	 * We don't want to do full transaction commit from inside sysfs
--	 */
--	btrfs_set_pending(fs_info, COMMIT);
--	wake_up_process(fs_info->transaction_kthread);
-+	set_pending_commit(fs_info);
- 
- 	return len;
- }
-@@ -487,12 +488,82 @@ static ssize_t quota_override_store(struct kobject *kobj,
- 
- BTRFS_ATTR_RW(quota_override, quota_override_show, quota_override_store);
- 
-+static ssize_t qgroup_autoremove_show(struct kobject *kobj,
-+				      struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	int qgroup_autoremove = 0;
-+
-+	mutex_lock(&fs_info->qgroup_ioctl_lock);
-+	/* Check if qgroups are enabled */
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
-+		goto out;
-+	if (!fs_info->quota_root)
-+		goto out;
-+
-+	if (fs_info->qgroup_flags & BTRFS_QGROUP_AUTOREMOVE_FLAG)
-+		qgroup_autoremove = 1;
-+
-+out:
-+	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+
-+	return snprintf(buf, PAGE_SIZE, "%d\n", qgroup_autoremove);
-+}
-+
-+static ssize_t qgroup_autoremove_store(struct kobject *kobj,
-+				       struct kobj_attribute *a,
-+				       const char *buf, size_t len)
-+{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	unsigned long knob;
-+	int err;
-+
-+	if (!fs_info)
-+		return -EPERM;
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	err = kstrtoul(buf, 10, &knob);
-+	if (err)
-+		return err;
-+	if (knob > 1)
-+		return -EINVAL;
-+
-+	err = -EINVAL;
-+
-+	mutex_lock(&fs_info->qgroup_ioctl_lock);
-+	/* Check if qgroups are enabled */
-+	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
-+		goto error;
-+	if (!fs_info->quota_root)
-+		goto error;
-+
-+	spin_lock(&fs_info->qgroup_lock);
-+	if (knob)
-+		fs_info->qgroup_flags |= BTRFS_QGROUP_AUTOREMOVE_FLAG;
-+	else
-+		fs_info->qgroup_flags &= ~BTRFS_QGROUP_AUTOREMOVE_FLAG;
-+	spin_unlock(&fs_info->qgroup_lock);
-+
-+	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+	set_pending_commit(fs_info);
-+
-+	return len;
-+
-+error:
-+	mutex_unlock(&fs_info->qgroup_ioctl_lock);
-+	return err;
-+}
-+
-+BTRFS_ATTR_RW(qgroup_autoremove, qgroup_autoremove_show, qgroup_autoremove_store);
-+
- static const struct attribute *btrfs_attrs[] = {
- 	BTRFS_ATTR_PTR(label),
- 	BTRFS_ATTR_PTR(nodesize),
- 	BTRFS_ATTR_PTR(sectorsize),
- 	BTRFS_ATTR_PTR(clone_alignment),
- 	BTRFS_ATTR_PTR(quota_override),
-+	BTRFS_ATTR_PTR(qgroup_autoremove),
- 	NULL,
+ static btrfs_list_filter_func all_filter_funcs[] = {
+ 	[BTRFS_LIST_FILTER_ROOTID]		= filter_by_rootid,
+ 	[BTRFS_LIST_FILTER_SNAPSHOT_ONLY]	= filter_snapshot,
+@@ -1189,6 +1194,7 @@ static btrfs_list_filter_func all_filter_funcs[] = {
+ 	[BTRFS_LIST_FILTER_FULL_PATH]		= filter_full_path,
+ 	[BTRFS_LIST_FILTER_BY_PARENT]		= filter_by_parent,
+ 	[BTRFS_LIST_FILTER_DELETED]		= filter_deleted,
++	[BTRFS_LIST_FILTER_PARENT_SUBVOL_ONLY]	= filter_parent_subvol_only,
  };
  
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 10689e1fdf11..ef17384ea498 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -924,6 +924,13 @@ static inline __u64 btrfs_qgroup_level(__u64 qgroupid)
-  * Turning qouta off and on again makes it inconsistent, too.
-  */
- #define BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT	(1ULL << 2)
-+/*
-+ * When the filesystem is mounted with this option enabled
-+ * level-0 qgroups will be automatically removed when their
-+ * associated subvolume is deleted. If mounted on on an older
-+ * version of btrfs, it will be ignored.
-+ */
-+#define BTRFS_QGROUP_AUTOREMOVE_FLAG		(1ULL << 3)
+ struct btrfs_list_filter_set *btrfs_list_alloc_filter_set(void)
+diff --git a/btrfs-list.h b/btrfs-list.h
+index 13f44c3a..54aab123 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -142,6 +142,7 @@ enum btrfs_list_filter_enum {
+ 	BTRFS_LIST_FILTER_FULL_PATH,
+ 	BTRFS_LIST_FILTER_BY_PARENT,
+ 	BTRFS_LIST_FILTER_DELETED,
++	BTRFS_LIST_FILTER_PARENT_SUBVOL_ONLY,
+ 	BTRFS_LIST_FILTER_MAX,
+ };
  
- #define BTRFS_QGROUP_STATUS_VERSION        1
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index e7ef67d3..2371338e 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -404,6 +404,7 @@ static const char * const cmd_subvol_list_usage[] = {
+ 	"-q           print the parent uuid of the snapshots",
+ 	"-R           print the uuid of the received snapshots",
+ 	"-t           print the result as a table",
++	"-P           list parent subvolumes only",
+ 	"-s           list snapshots only in the filesystem",
+ 	"-r           list readonly subvolumes (including snapshots)",
+ 	"-d           list deleted subvolumes that are not yet cleaned",
+@@ -445,7 +446,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		};
  
+ 		c = getopt_long(argc, argv,
+-				    "acdgopqsurRG:C:t", long_options, NULL);
++				    "acdgopPqsurRG:C:t", long_options, NULL);
+ 		if (c < 0)
+ 			break;
+ 
+@@ -473,6 +474,11 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		case 't':
+ 			is_tab_result = 1;
+ 			break;
++		case 'P':
++			btrfs_list_setup_filter(&filter_set,
++						BTRFS_LIST_FILTER_PARENT_SUBVOL_ONLY,
++						0);
++			break;
+ 		case 's':
+ 			btrfs_list_setup_filter(&filter_set,
+ 						BTRFS_LIST_FILTER_SNAPSHOT_ONLY,
 -- 
-2.11.0
+2.14.2
 

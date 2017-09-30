@@ -1,22 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:51574 "EHLO
+Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:55586 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751677AbdI3Lww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Sep 2017 07:52:52 -0400
+        id S1751677AbdI3L5U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 30 Sep 2017 07:57:20 -0400
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: What means "top level" in "btrfs subvolume list" ?
 Reply-To: kreijack@inwind.it
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: What means "top id" in "btrfs subvolume list" ?
-Message-ID: <8e1f7582-f9d9-7274-d9b6-929feb6a11d5@inwind.it>
-Date: Sat, 30 Sep 2017 13:52:50 +0200
+Message-ID: <762acea0-3f55-4fc0-c5eb-604304152f3e@inwind.it>
+Date: Sat, 30 Sep 2017 13:57:18 +0200
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+(please ignore my previous email, because I wrote somewhere "top id" instead of "top level")
 Hi All,
 
-I am trying to figure out which means "top id" in the output of "btrfs sub list"
+I am trying to figure out which means "top level" in the output of "btrfs sub list"
 
 
 ghigo@venice:~$ sudo btrfs sub list /

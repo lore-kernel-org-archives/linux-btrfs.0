@@ -1,43 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:45059 "EHLO
-        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752974AbdI3Ls3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Sep 2017 07:48:29 -0400
-Received: by mail-wm0-f47.google.com with SMTP id q124so3397932wmb.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Sep 2017 04:48:29 -0700 (PDT)
-Subject: Re: Can't remove device -> I/O error
-To: kreijack@inwind.it, linux-btrfs@vger.kernel.org
-References: <CACJO8mcmabFc1CdhVr+Xj=NH1h2zy5eMOeD-8+UGkXODH34rVQ@mail.gmail.com>
- <3b9a14cb-a88c-4604-6d36-d2706796acfd@libero.it>
- <cc58b693-a7f9-5373-0fdd-542e691de936@gmail.com>
- <1a111a09-b421-baf7-800b-f24dcdc84a82@inwind.it>
- <7d9687eb-8322-9a75-a4ce-80eb64e7a0ed@gmail.com>
- <a6b8c59a-dd64-daba-353a-b3299e977148@inwind.it>
- <7592946d-234c-5e34-b24c-19cac802fe39@gmail.com>
- <a374571f-a9ac-458d-31a7-8c07787aaeb3@inwind.it>
-From: DocMAX <docmax1978@gmail.com>
-Message-ID: <715ff49a-5633-d9e7-75f0-c003e039626d@gmail.com>
-Date: Sat, 30 Sep 2017 13:48:26 +0200
+Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:51574 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751677AbdI3Lww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 30 Sep 2017 07:52:52 -0400
+Reply-To: kreijack@inwind.it
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: What means "top id" in "btrfs subvolume list" ?
+Message-ID: <8e1f7582-f9d9-7274-d9b6-929feb6a11d5@inwind.it>
+Date: Sat, 30 Sep 2017 13:52:50 +0200
 MIME-Version: 1.0
-In-Reply-To: <a374571f-a9ac-458d-31a7-8c07787aaeb3@inwind.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for all your effort.
-In "normal" conditions i know that the remove/delete command is working 
-(i did that some times before).
-But in this case it seems that i have some inconsistent data which 
-prevents the operation to complete.
+Hi All,
+
+I am trying to figure out which means "top id" in the output of "btrfs sub list"
 
 
+ghigo@venice:~$ sudo btrfs sub list /
+[sudo] password for ghigo: 
+ID 257 gen 548185 top level 5 path debian
+ID 289 gen 418851 top level 257 path var/lib/machines
+ID 299 gen 537230 top level 5 path boot
+ID 532 gen 502364 top level 257 path tmp/test1
+ID 533 gen 502277 top level 532 path tmp/test1/test2
+ID 534 gen 502407 top level 257 path tmp/test1.snap
+ID 535 gen 502363 top level 532 path tmp/test1/test3
+ID 536 gen 502407 top level 257 path tmp/test1.snap2
+ID 537 gen 537132 top level 5 path test
+ID 538 gen 537130 top level 537 path test/sub1
 
-Am 30.09.2017 um 13:40 schrieb Goffredo Baroncelli:
-> On 09/30/2017 12:40 PM, DocMAX wrote:
->> I removed with "echo" command and also physically.
->>
->> Both quit with I/O error.
-> Below the step which I used to simulate (in a virtual machine) your issue:
->
+The root filesystem is mounted as
 
+mount -o subvol=debian ....
+
+
+I think that "btrfs sub list" is buggy, and it outputs a "top level ID" equal to the "parent ID" (on the basis of the code). But I am still asking which would be the RIGHT "top level id". My Hypothesis, it should be the ID of the root subvolume ( or 5 if it is not mounted). So the output should be
+
+ 
+ghigo@venice:~$ sudo btrfs sub list /
+[sudo] password for ghigo: 
+ID 257 gen 548185 top level 5 path debian
+ID 289 gen 418851 top level 257 path var/lib/machines
+ID 299 gen 537230 top level 5 path boot
+ID 532 gen 502364 top level 257 path tmp/test1
+ID 533 gen 502277 top level 257 path tmp/test1/test2
+ID 534 gen 502407 top level 257 path tmp/test1.snap
+ID 535 gen 502363 top level 257 path tmp/test1/test3
+ID 536 gen 502407 top level 257 path tmp/test1.snap2
+ID 537 gen 537132 top level 5 path test
+ID 538 gen 537130 top level 5 path test/sub1
+
+
+The subvolumes in the file system (mounted from /debian) are
+
+/				ID = 5
+/debian				ID = 257
+/debian/var/lib/machines	ID = 289
+/boot				ID = 299
+/debian/tmp/test1		ID = 532
+/debian/tmp/test1/test2		ID = 533
+/debian/tmp/test1.snap		ID = 534
+/debian/tmp/test1/test3		ID = 535
+/debian/tmp/test1.snap2		ID = 536
+/test				ID = 537
+/test/sub1			ID = 538
+
+BR
+G.Baroncelli
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

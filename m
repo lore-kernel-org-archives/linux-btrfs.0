@@ -1,247 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:43840 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752644AbdJMAcr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 20:32:47 -0400
-Received: by mail-wm0-f65.google.com with SMTP id m72so26003523wmc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 17:32:46 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [RFC PATCH] Btrfs: heuristic replace heap sort with radix sort
-Date: Fri, 13 Oct 2017 03:32:37 +0300
-Message-Id: <20171013003237.3061-1-nefelim4ag@gmail.com>
+Received: from mail-it0-f48.google.com ([209.85.214.48]:48590 "EHLO
+        mail-it0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750788AbdJBLra (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Oct 2017 07:47:30 -0400
+Received: by mail-it0-f48.google.com with SMTP id m123so6966721ita.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Oct 2017 04:47:30 -0700 (PDT)
+Subject: Re: [PATCH v3 07/14] btrfs-progs: Doc/mkfs: Add extra condition for
+ rootdir option
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, kreijack@inwind.it, dsterba@suse.cz,
+        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20170918072139.6300-8-quwenruo.btrfs@gmx.com>
+ <7cec48bd-c007-618f-b361-d4425c757c5c@oracle.com>
+ <trinity-eef9a61f-60ab-47a3-9771-d638cb0083c9-1506076766926@3c-app-mailcom-bs16>
+ <9f598cb9-0267-158d-c54b-13f4372eadd5@gmail.com>
+ <9652f4f4-b91c-0382-fa2a-01d45dde7fbb@gmx.com>
+ <5e079410-cd64-3d40-8914-b3d48ecdebfd@gmail.com>
+ <808d11d8-f22b-f26e-ba3f-7d148915db5a@gmx.com>
+ <5b26f9dd-8bae-a35a-4920-4a617b52f9f7@oracle.com>
+ <c0652f30-5ca7-b917-7f15-78dfdb2e1205@libero.it>
+ <7af34399-f969-dfe5-d006-3e7fb293b9df@gmail.com>
+ <20170927162032.GM31640@twin.jikos.cz>
+ <287aaa56-f2a2-d44c-1068-ec6f87b7a2f3@gmx.com>
+ <cdd1e7c5-80c1-cd41-0e62-a1302c6682c5@inwind.it>
+ <ffe46217-1112-8a3c-649b-c66d823527b1@gmx.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <61a2d5e6-d382-1620-d82d-34b29d712813@gmail.com>
+Date: Mon, 2 Oct 2017 07:47:26 -0400
+MIME-Version: 1.0
+In-Reply-To: <ffe46217-1112-8a3c-649b-c66d823527b1@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Slowest part of heuristic for now is kernel heap sort()
-It's can take up to 55% of runtime on sorting bucket items.
+On 2017-09-29 23:33, Qu Wenruo wrote:
+> 
+> 
+> On 2017年09月30日 00:57, Goffredo Baroncelli wrote:
+>> On 09/28/2017 02:00 AM, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2017年09月28日 00:20, David Sterba wrote:
+>>>> On Mon, Sep 25, 2017 at 07:15:30AM -0400, Austin S. Hemmelgarn wrote:
+>>>>> On 2017-09-24 10:08, Goffredo Baroncelli wrote:
+>>>>>> On 09/24/2017 12:10 PM, Anand Jain wrote:
+>>>>
+>>>> A lot of points in this thread, let me address them here.
+>>>>
+>>>> I don't want to remove --rootdir functionality, the fix that's being
+>>>> proposed removes the minimalization -- feature that was not well known,
+>>>> but I understand it's useful (and already used).
+>>>>
+>>>> I'd like to fix that in another way, eg. as an option to mkfs or a
+>>>> separate tool.
+>>>>
+>>>> I'm not worried about adding more code or code complexity. If we do it
+>>>> right it's not a problem in the long run. But people for some reason
+>>>> like to delete other people's code or functionality.
+>>>>
+>>>> Regarding guessing number of users, this is always hard. So if there's
+>>>> one vocal enough to let us know about the usecase, it's IMHO good time
+>>>> to explore the it, code-wise and documentation-wise, and fix it or
+>>>> improve.
+>>>>
+>>>> So, what next. I'd like to get rid of the custom chunk allocator, 
+>>>> namely
+>>>> because of the known 1MB area misuse and duplication.
+>>>>
+>>>> Implementing the minimalization might need some preparatory work and I
+>>>> don't have a realistic ETA now.
+>>>
+>>> Well, if using over-reserve-then-shrink method, it could be done, 
+>>> without much hassle.
+>>
+>> What about doing it on a file instead of a device ? As sparse file, it 
+>> would be less expensive to enlarge then shrink. I think that who need 
+>> to build a filesystem with "shrink", doesn't need to create it on a 
+>> real block device
+> 
+> For device, nothing different, just v3 patchset will handle it.
+Agreed on this point.
+> 
+> For file, sparse file of course.
+But not on this one.  Unless the image gets properly compacted, a sparse 
+file will only help when you're just storing the image on a filesystem. 
+It doesn't really help at all for when you need to put it on a physical 
+device afterwards (except possibly if you're using thin provisioning). 
+The reason I (at least) am complaining about losing this feature isn't 
+about having space efficiency when storing image files on a filesystem, 
+it's about time efficiency in transferring the image either to a device 
+after generation (if you're going to multiple devices, it makes more 
+sense to just generate an image file instead of writing directly to the 
+first device in most cases), or to another system where it will 
+ultimately be written to a device.
 
-As sorting will always call on most data sets to get correctly
-byte_core_set_size, the only way to speed up heuristic, is to
-speed up sort on bucket.
+As a more specific example, look at how installation of Linux 
+(preferably Raspbian) is typically done on a Raspberry Pi.  You have a 
+base SD-card image that is designed to fit on a 1G SD card, and the root 
+filesystem then gets resized automatically on first boot to fill the 
+card.  You still need to copy that whole 1G of data to a _slow_ SD card 
+before you can do anything with it, because you can't assume the card is 
+empty and do sparse writes (and very few tools used for writing out disk 
+images can do sparse writes).  You also have to copy all that data to 
+download the image, and while they're distributed compressed, 
+compressing runs of empty space still takes space.  If that instead used 
+image generation similar to the current behavior of the --rootdir 
+option, a reasonable amount of time would be saved in most steps, simply 
+because the image was smaller (the 1G image has 300MB or more of empty 
+space in it).
 
-So, add a general radix_sort function.
-Radix sort require 2 buffers, one full size of input array
-and one for store counters (jump addresses).
-
-So for buffer array, just allocate BUCKET_SIZE*2 for bucket,
-and use free tale as a buffer, to improve data locality.
-That increase usage per heuristic workspace +1KiB
-8KiB + 1KiB -> 8KiB + 2KiB
-
-That is LSD Radix, i use 4 bit as a base for calculating,
-to make counters array acceptable small (16el*8byte).
-
-Not tested on Big.Endian.
-I try handle that by some kernel macros.
-
-Performance tested in userspace copy of heuristic code,
-throughput:
-    - average <-> random data: ~3500 MiB/s      - heap  sort
-    - average <-> random data: ~6000 MiB/s +71% - radix sort
-
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/compression.c | 153 +++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 141 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 01738b9a8dc7..f320fbb1de17 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -753,6 +753,7 @@ struct heuristic_ws {
- 	u32 sample_size;
- 	/* Bucket store counter for each byte type */
- 	struct bucket_item *bucket;
-+	struct bucket_item *bucket_buf;
- 	struct list_head list;
- };
-
-@@ -778,10 +779,12 @@ static struct list_head *alloc_heuristic_ws(void){
- 	if (!ws->sample)
- 		goto fail;
-
--	ws->bucket = kcalloc(BUCKET_SIZE, sizeof(*ws->bucket), GFP_KERNEL);
-+	ws->bucket = kcalloc(BUCKET_SIZE*2, sizeof(*ws->bucket), GFP_KERNEL);
- 	if (!ws->bucket)
- 		goto fail;
-
-+	ws->bucket_buf = &ws->bucket[BUCKET_SIZE];
-+
- 	INIT_LIST_HEAD(&ws->list);
- 	return &ws->list;
- fail:
-@@ -1225,6 +1228,137 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
- 	return 1;
- }
-
-+#define RADIX_BASE 4
-+#define COUNTERS_SIZE (1 << RADIX_BASE)
-+
-+static inline u8 get4bits(u64 num, int shift) {
-+	u8 low4bits;
-+	num = num >> shift;
-+	/* Reverse order */
-+	low4bits = (COUNTERS_SIZE - 1) - (num % COUNTERS_SIZE);
-+	return low4bits;
-+}
-+
-+static inline void copy_cell(void *dst, const void *src)
-+{
-+	struct bucket_item *dstv = (struct bucket_item *) dst;
-+	struct bucket_item *srcv = (struct bucket_item *) src;
-+	*dstv = *srcv;
-+}
-+
-+static inline u64 get_num(const void *a)
-+{
-+	struct bucket_item *av = (struct bucket_item *) a;
-+	return cpu_to_le32(av->count);
-+}
-+
-+/*
-+ * Kernel compatible radix sort implementation
-+ * Use 4 bits as radix base
-+ * Use 16 64bit counters for calculating new possition in buf array
-+ * Tested only on Little Endian
-+ *
-+ * @array     - array that will be sorted
-+ * @array_buf - buffer array to store sorting results
-+ *              must be equal in size to @array
-+ * @num       - array size
-+ * @size      - item size
-+ * @max_cell  - Link to element with maximum possible value
-+ *              that can be used to cap radix sort iterations
-+ *              if we know maximum value before call sort
-+ * @get_num   - function to extract number from array
-+ * @copy_cell - function to copy data from array to array_buf
-+ *              and vise versa
-+ * @get4bits  - function to get 4 bits from number at specified offset
-+ */
-+static void radix_sort(void *array, void *array_buf,
-+		       int num, int size,
-+		       const void *max_cell,
-+		       u64 (*get_num)(const void *),
-+		       void (*copy_cell)(void *dest, const void* src),
-+		       u8 (*get4bits)(u64 num, int shift))
-+{
-+	u64 max_num;
-+	u64 buf_num;
-+	u64 counters[COUNTERS_SIZE];
-+	u64 new_addr;
-+	s64 i;
-+	int addr;
-+	int bitlen;
-+	int shift;
-+
-+	/*
-+	 * Try avoid useless loop iterations
-+	 * For small numbers stored in big counters
-+	 * example: 48 33 4 ... in 64bit array
-+	 */
-+	if (!max_cell) {
-+		max_num = get_num(array);
-+		for (i = 0 + size; i < num*size; i += size) {
-+			buf_num = get_num(array + i);
-+			if (le64_to_cpu(buf_num) > le64_to_cpu(max_num))
-+				max_num = buf_num;
-+		}
-+	} else {
-+		max_num = get_num(max_cell);
-+	}
-+
-+	buf_num = ilog2(le64_to_cpu(max_num));
-+	bitlen = ALIGN(buf_num, RADIX_BASE*2);
-+
-+	shift = 0;
-+	while (shift < bitlen) {
-+		memset(counters, 0, sizeof(counters));
-+
-+		for (i = 0; i < num*size; i += size) {
-+			buf_num = get_num(array + i);
-+			addr = get4bits(buf_num, shift);
-+			counters[addr]++;
-+		}
-+
-+		for (i = 1; i < COUNTERS_SIZE; i++)
-+			counters[i] += counters[i-1];
-+
-+		for (i = (num - 1) * size; i >= 0; i -= size) {
-+			buf_num = get_num(array + i);
-+			addr = get4bits(buf_num, shift);
-+			counters[addr]--;
-+			new_addr = counters[addr];
-+			copy_cell(array_buf + (new_addr*size), array + i);
-+		}
-+
-+		shift += RADIX_BASE;
-+
-+		/*
-+		 * For normal radix, that expected to
-+		 * move data from tmp array, to main.
-+		 * But that require some CPU time
-+		 * Avoid that by doing another sort iteration
-+		 * to origin array instead of memcpy()
-+		 */
-+		memset(counters, 0, sizeof(counters));
-+
-+		for (i = 0; i < num*size; i += size) {
-+			buf_num = get_num(array_buf + i);
-+			addr = get4bits(buf_num, shift);
-+			counters[addr]++;
-+		}
-+
-+		for (i = 1; i < COUNTERS_SIZE; i++)
-+			counters[i] += counters[i-1];
-+
-+		for (i = (num - 1) * size; i >= 0; i -= size) {
-+			buf_num = get_num(array_buf + i);
-+			addr = get4bits(buf_num, shift);
-+			counters[addr]--;
-+			new_addr = counters[addr];
-+			copy_cell(array + (new_addr*size), array_buf + i);
-+		}
-+
-+		shift += RADIX_BASE;
-+	}
-+}
-+
- /*
-  * Shannon Entropy calculation
-  *
-@@ -1280,15 +1414,6 @@ static u32 shannon_entropy(struct heuristic_ws *ws)
- 	return entropy_sum * 100 / entropy_max;
- }
-
--/* Compare buckets by size, ascending */
--static inline int bucket_comp_rev(const void *lv, const void *rv)
--{
--	const struct bucket_item *l = (struct bucket_item *)(lv);
--	const struct bucket_item *r = (struct bucket_item *)(rv);
--
--	return r->count - l->count;
--}
--
- /*
-  * Byte Core set size
-  * How many bytes use 90% of sample
-@@ -1317,9 +1442,13 @@ static int byte_core_set_size(struct heuristic_ws *ws)
- 	u32 coreset_sum = 0;
- 	u32 core_set_threshold = ws->sample_size * 90 / 100;
- 	struct bucket_item *bucket = ws->bucket;
-+	struct bucket_item max_cell;
-
--	/* Sort in reverse order */
--	sort(bucket, BUCKET_SIZE, sizeof(*bucket), &bucket_comp_rev, NULL);
-+	max_cell.count = MAX_SAMPLE_SIZE;
-+	radix_sort(bucket, ws->bucket_buf,
-+		   BUCKET_SIZE, sizeof(*bucket),
-+		   &max_cell,
-+		   get_num, copy_cell, get4bits);
-
- 	for (i = 0; i < BYTE_CORE_SET_LOW; i++)
- 		coreset_sum += bucket[i].count;
---
-2.14.2
+As another example, when dealing with seed devices, it makes just as 
+much if not more sense if you're using LVM to store the data to create 
+an LV that is exactly as large as needed for the seed device, and no 
+bigger.  Using sparse files similarly doesn't work for that unless 
+you're using thin provisioning and don't mind LVM complaining all the 
+time about over-provisioning your space.

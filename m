@@ -1,114 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:56630 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750950AbdJAJ5j (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Oct 2017 05:57:39 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1dyb04-0005WY-M1
-        for linux-btrfs@vger.kernel.org; Sun, 01 Oct 2017 11:57:28 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Cannot remove device, no space left on device
-Date: Sun, 1 Oct 2017 09:57:22 +0000 (UTC)
-Message-ID: <pan$aaead$785b887d$ea0bcdb5$7a154f5c@cox.net>
-References: <CACzgC9iBu13Ziiji134MDwxLcdCNqth-EJ=pSjfKpmzg22G_yg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:29281 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751148AbdJBAkw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Oct 2017 20:40:52 -0400
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id EFA65AC0140
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Oct 2017 09:40:42 +0900 (JST)
+Subject: Re: [PATCH] btrfs-progs: add option to only list parent subvolumes
+To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
+        Graham Cobb <g.btrfs@cobb.uk.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
+ <264aa617-9484-a5fe-ad47-8ed052d6764e@cobb.uk.net>
+ <e20b2520-5bed-7f61-57b6-dd9e41918680@applied-asynchrony.com>
+ <a6f89874-2048-6903-9ebc-d28991a00adc@applied-asynchrony.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <2f33c77a-c523-b602-72ab-e972ec7c9e7a@jp.fujitsu.com>
+Date: Mon, 2 Oct 2017 09:40:34 +0900
+MIME-Version: 1.0
+In-Reply-To: <a6f89874-2048-6903-9ebc-d28991a00adc@applied-asynchrony.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adam Bahe posted on Sun, 01 Oct 2017 02:48:19 -0500 as excerpted:
 
-> Hello,
 
-Hi, Just a user and list regular here, not a dev, but perhaps some of 
-this will be of help.
-
-> I have a hard drive that is about a year old with some pending sectors
-> on it. I'd like to RMA this drive out of an abundance of caution. Doing
-> so requires me removing it from my raid10 array. However I am unable to
-> do so as it eventually errors out by saying there is no space left on
-> the device. I have 21 drives in a raid10 array. Totalling about 100TB
-> raw. I'm using around 28TB. So I should have plenty of space left.
-
-Yes, and your btrfs * outputs below reflect plenty of space...
-
-> I have done a number of balances with incremental increases in dusage
-> and musage values from 5-100%. Each balance completed successfully. So
-> it looks as though my filesystem is balanced fine. I'm on kernel 4.10
-
-FWIW, this list, being btrfs development focused, with btrfs itself still 
-stabilizing, not fully stable and mature, tends to focus forward rather 
-than backward.  As such, our recommendation for best support is one of 
-the latest two mainline kernel series in either current or LTS track.  
-With the current kernel being 4.13, 4.13 and 4.12 are supported there.  
-On the LTS track 4.9 is the latest, with the second latest.  4.14 is 
-scheduled to be an LTS release as well, which is good because 4.4 was 
-quite a long time ago in btrfs history and is getting hard to support.
-
-Your 4.10 is a bit dated for current, and isn't an LTS, so the 
-recommendation would be to try a newer 4.12 or 4.13, or drop a notch to 
-4.9 LTS.
-
-We do still try to support out of the above range, but it won't be as 
-well, and similarly you're running a distro kernel, because we don't 
-track what they've added or backported and what they haven't backported.  
-Of course in the distro kernel case they're better placed to provide 
-support as they know what they've backported, etc.
-
-Meanwhile, as it happens there's a patch that should be in 4.14-rcs and 
-will eventually be backported to the stable series tho I'm not sure it 
-has been yet, that fixes an erroneous ENOSPC condition that triggers most 
-frequently during balances.  There was something reserving (or attempting 
-to reserve) waaayyy too much space in such large transactions, triggering 
-the ENOSPCs.
-
-Given your time constraints, I'd suggest trying first the latest 4.13.x 
-stable series kernel and hope it has that patch (which I haven't tracked 
-well enough to give you the summary of, or I would and you could check), 
-and if it doesn't work, 4.14-rc3, which should be out late today (Sunday, 
-US time), because your symptoms fit the description and it's very likely 
-to be fixed in at least the latest 4.14-rcs.
-
-Another less pressing note below...
-
-> btrfs device usage:
+On 2017/10/01 3:17, Holger Hoffstätte wrote:
+> On 09/30/17 19:56, Holger Hoffstätte wrote:
+>> shell hackery as alternative. Anyway, I was sure that at the time the
+>> other letters sounded even worse/were taken, but that may just have been
+>> in my head. ;-)
+>>
+>> I just rechecked and -S is still available, so that's good.
 > 
-> /dev/sdc, ID: 19
-> Device size:             9.10TiB
-> Device slack:              0.00B
-> Data,RAID10:           463.85GiB
-> Data,RAID10:            61.43GiB
-> Data,RAID10:           115.98GiB
-> Data,RAID10:           118.31GiB
-> Data,RAID10:            10.93GiB
-> Data,RAID10:           776.75GiB
-> Metadata,RAID10:         1.13GiB
-> Metadata,RAID10:        99.00MiB
-> Metadata,RAID10:       211.75MiB
-> Metadata,RAID10:        59.09MiB
-> System,RAID10:           2.16MiB
-> Unallocated:             7.58TiB
+> Except that it isn't really, since there is already an 'S'
+> case in cmds-subvolume.c as shortcut to --sort:
+> 
+> --
+>         case 'S':
+>             ret = btrfs_list_parse_sort_string(optarg,
+>                                &comparer_set);
+> --
+> 
+> ..which is why I picked P at the time.
 
-[Other devices similar]
+Hello,
 
-Those multiple entries for the same chunk type indicate chunks of 
-differing stripe widths.  That won't hurt but you might want the better 
-performance of a full stripe, and all those extra lines in the listing 
-would bother me.
+It is confusing, but the third args of getopt_long doesn't take 'S':
 
-Once you get that device removed and are in normal operation again, you 
-can, if desired, try balancing using the "stripes=" balance filter to try 
-to get them all to full stripe width, at least until your space on the 
-smallest drives is out and you have to drop to a lower stripe width.  
-You'll need a reasonably new btrfs-progs to recognize the stripes= 
-filter.  See the btrfs-balance manpage and/or previous threads here.  (On 
-a quick look I didn't see it on the wiki yet, but it's possible I missed 
-it.)
+ 445                 static const struct option long_options[] = {
+ 446                         {"sort", required_argument, NULL, 'S'},
+ 447                         {NULL, 0, NULL, 0}
+ 448                 };
+ 449 
+ 450                 c = getopt_long(argc, argv,
+ 451                                     "acdgopqsurRG:C:t", long_options, NULL);
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+So, you can use -S option if you change 'S' in L.446 to something.
+(I'm not sure this is intended or someone forgot to add 'S'.)
+
+> 
+> Holger
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

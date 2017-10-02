@@ -1,130 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:45026 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751148AbdJBKof (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Oct 2017 06:44:35 -0400
-Received: by mail-oi0-f48.google.com with SMTP id s145so2572118oie.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Oct 2017 03:44:35 -0700 (PDT)
+Received: from mail-me1aus01on0074.outbound.protection.outlook.com ([104.47.116.74]:9280
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1750878AbdJBLPG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Oct 2017 07:15:06 -0400
+From: Paul Jones <paul@pauljones.id.au>
+To: =?utf-8?B?TmljY29sw7IgQmVsbGk=?= <darkbasic@linuxsystems.it>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Why do full balance and deduplication reduce available free
+  space?
+Date: Mon, 2 Oct 2017 11:14:59 +0000
+Message-ID: <MEXPR01MB216878C061CDA1682E356D4A9E7D0@MEXPR01MB2168.ausprd01.prod.outlook.com>
+References: <49ec6395-19b4-46e0-83cf-806ef6cdd396@linuxsystems.it>
+ <e5bd0dc3-f7a5-7461-0630-6f755425009f@mendix.com>
+ <569fb850091001ea7476100eae050c00@linuxsystems.it>
+In-Reply-To: <569fb850091001ea7476100eae050c00@linuxsystems.it>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-From: Timothy White <timwhite88@gmail.com>
-Date: Mon, 2 Oct 2017 20:44:33 +1000
-Message-ID: <CAESLx0KUZaj68FS-+ndTEEHkih-46_NjPF45DgQeLFvhKAFiRQ@mail.gmail.com>
-Subject: Btrfs "failed to repair damaged filesystem" - RAID10 going RO when
- any write attempts are made
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a BTRFS RAID 10 filesystem that was crashing and going into RO
-mode. A did a kernel upgrade, upgraded btrfs tools to the latest. A
-scrub was going ok ish. btrfs check showed a number of messages such
-as:
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of Niccol√≤ Belli
+> Sent: Monday, 2 October 2017 9:29 PM
+> To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: Why do full balance and deduplication reduce available free
+> space?
+> 
+> Il 2017-10-02 12:16 Hans van Kranenburg ha scritto:
+> > On 10/02/2017 12:02 PM, Niccol√≤ Belli wrote:
+> >> [...]
+> >>
+> >> Since I use lots of snapshots [...] I had to create a systemd timer
+> >> to perform a full balance and deduplication each night.
+> >
+> > Can you explain what's your reasoning behind this 'because X it needs
+> > Y'? I don't follow.
+> 
+> Available free space is important to me, so I want snapshots to be
+> deduplicated as well. Since I cannot deduplicate snapshots because they are
+> read-only, then the data must be already deduplicated before the snapshots
+> are taken. I do not consider the hourly snapshots because in a day they will
+> be gone anyway, but daily snapshots will stay there for much longer so I want
+> them to be deduplicated.
 
-Backref 16562625503232 root 14628 owner 3609 offset 23793664 num_refs
-0 not found in extent tree
-Incorrect local backref count on 16562625503232 root 14628 owner 3609
-offset 23793664 found 1 wanted 0 back 0x5639c37689d0
-backpointer mismatch on [16562625503232 2703360]
+I use bees for deduplication and it will quite happily dedupe read-only snapshots. You could always change them to RW while dedupe is running then change back to RO.
 
-Root 14628 was a subvolume root ID (for docker), given that I didn't
-need any of that data, I removed all those subvolumes under the docker
-subvolume and the docker subvolume. This still showed errors, so I
-tried a btrfs check with repair, which eventually gave me the
-following.
 
-Backref 16563772112896 root 14628 owner 3608 offset 0 num_refs 0 not
-found in extent tree
-Incorrect local backref count on 16563772112896 root 14628 owner 3608
-offset 0 found 1 wanted 0 back 0x55f3403f40b0
-Backref disk bytenr does not match extent record,
-bytenr=16563772112896, ref bytenr=16563813335040
-Backref bytes do not match extent backref, bytenr=16563772112896, ref
-bytes=134217728, backref bytes=133079040
-Backref 16563772112896 root 14628 owner 3607 offset 0 num_refs 0 not
-found in extent tree
-Incorrect local backref count on 16563772112896 root 14628 owner 3607
-offset 0 found 1 wanted 0 back 0x55f3470cfed0
-Backref bytes do not match extent backref, bytenr=16563772112896, ref
-bytes=134217728, backref bytes=41222144
-backpointer mismatch on [16563772112896 134217728]
-attempting to repair backref discrepency for bytenr 16563772112896
-Ref is past the entry end, please take a btrfs-image of this file
-system and send it to a btrfs developer, ref 16563813335040
-failed to repair damaged filesystem, aborting
+Paul.
 
-I've taken a btrfs-image, however it's 12Gb, not sure if the
-developers want that, but I do have it.
 
-Filesystem still crashes and goes read only if I try and make changes
-(even deletes). The latest dmesg that includes that crash is at
-https://drive.google.com/open?id=0B5bmQmu6UugIRFM0RUxwWFdqOGc. I don't
-have the earlier ones.
 
-https://drive.google.com/open?id=0B5bmQmu6UugIYjZkYnA4ZFFpdlE is the
-output from running btrfs check with repair, followed by a second run
-with repair to see if it got anything different.
 
-At this stage, I expect to just blow away the filesystem and restore
-from backups. However it would be nice to fix whatever the issue is.
-Smartctl shows no underlying errors.
-
-What else do the devs want from me before I blow this away? (Or is it
-fixable with something I've missed, as that would save me many hours
-of restoration.
-
-The 12Gb btrfs-image can be uploaded to Google Drive (or FTP) if needed.
-
-Thanks
-
-Tim
-
-$ lsb_release -a
-No LSB modules are available.
-Distributor ID: Debian
-Description: Debian GNU/Linux 9.1 (stretch)
-Release: 9.1
-Codename: stretch
-
-$ uname -a
-Linux bruce 4.12.0-0.bpo.1-amd64 #1 SMP Debian 4.12.6-1~bpo9+1
-(2017-08-27) x86_64 GNU/Linux
-
-$ btrfs --version
-btrfs-progs v4.9.1
-
-$ btrfs fi show
-Label: 'Butter1'  uuid: b8d081ac-0271-4481-9a58-c113c921bf49
-Total devices 4 FS bytes used 5.19TiB
-devid    1 size 3.64TiB used 2.60TiB path /dev/sde
-devid    2 size 3.64TiB used 2.60TiB path /dev/sdf
-devid    3 size 3.64TiB used 2.60TiB path /dev/sdd
-devid    4 size 3.64TiB used 2.60TiB path /dev/sdc
-
-$ btrfs fi df /mnt/Butter1
-Data, RAID10: total=5.19TiB, used=5.17TiB
-System, RAID10: total=128.00MiB, used=560.00KiB
-Metadata, RAID10: total=12.00GiB, used=10.34GiB
-Metadata, single: total=16.00MiB, used=0.00B
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-$btrfs subvolume list /mnt/Butter1
-ID 258 gen 250368 top level 5 path data1
-ID 259 gen 250516 top level 5 path data2
-ID 3648 gen 250476 top level 5 path Photos
-ID 4597 gen 203041 top level 5 path Snapshots/Photos/20160304
-ID 4608 gen 203041 top level 5 path Snapshots/Photos/20160328
-ID 4628 gen 203041 top level 5 path Snapshots/Photos/20160421
-ID 4654 gen 250368 top level 5 path imap
-ID 4656 gen 203041 top level 5 path Snapshots/Photos/20160523
-ID 4893 gen 203041 top level 5 path Snapshots/Photos/20160702
-ID 4946 gen 203041 top level 5 path Snapshots/Photos/20160731
-ID 4947 gen 203041 top level 5 path Snapshots/Photos/20160813
-ID 4948 gen 203041 top level 5 path Snapshots/Photos/2016081301
-ID 4970 gen 203041 top level 5 path Snapshots/Photos/20160919
-ID 5038 gen 203041 top level 5 path Snapshots/Photos/20161229_0911
-ID 5063 gen 250515 top level 5 path mirror
-ID 13170 gen 250428 top level 5 path BizBackups
-ID 13214 gen 250368 top level 5 path SaraLaptopBackup
-ID 13485 gen 250368 top level 5 path PCOMDisks
-ID 16176 gen 229817 top level 5 path Snapshots/Photos/20170515
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

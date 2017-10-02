@@ -1,69 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:29281 "EHLO
-        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751148AbdJBAkw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Oct 2017 20:40:52 -0400
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id EFA65AC0140
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 Oct 2017 09:40:42 +0900 (JST)
-Subject: Re: [PATCH] btrfs-progs: add option to only list parent subvolumes
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        Graham Cobb <g.btrfs@cobb.uk.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <6c01643a-b6cd-21ae-45ec-e074995a5de2@applied-asynchrony.com>
- <264aa617-9484-a5fe-ad47-8ed052d6764e@cobb.uk.net>
- <e20b2520-5bed-7f61-57b6-dd9e41918680@applied-asynchrony.com>
- <a6f89874-2048-6903-9ebc-d28991a00adc@applied-asynchrony.com>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <2f33c77a-c523-b602-72ab-e972ec7c9e7a@jp.fujitsu.com>
-Date: Mon, 2 Oct 2017 09:40:34 +0900
+Received: from mail.linuxsystems.it ([79.7.78.67]:42282 "EHLO
+        mail.linuxsystems.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750978AbdJBKCa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Oct 2017 06:02:30 -0400
+Received: from localhost (unknown [192.168.1.197])
+        by mail.linuxsystems.it (Postfix) with ESMTPSA id 34F97B41F6
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Oct 2017 12:02:28 +0200 (CEST)
+From: =?iso-8859-1?Q?Niccol=F2_Belli?= <darkbasic@linuxsystems.it>
+To: <linux-btrfs@vger.kernel.org>
+Subject: Why do full balance and deduplication reduce available free =?iso-8859-1?Q?space=3F?=
+Date: Mon, 02 Oct 2017 12:02:16 +0200
 MIME-Version: 1.0
-In-Reply-To: <a6f89874-2048-6903-9ebc-d28991a00adc@applied-asynchrony.com>
-Content-Type: text/plain; charset="utf-8"
+Message-ID: <49ec6395-19b4-46e0-83cf-806ef6cdd396@linuxsystems.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+I have several subvolumes mounted with compress-force=lzo and autodefrag. 
+Since I use lots of snapshots (snapper keeps around 24 hourly snapshots, 7 
+daily snapshots and 4 weekly snapshots) I had to create a systemd timer to 
+perform a full balance and deduplication each night. In fact data needs to 
+be already deduplicated when snapshots are created, otherwise I have no 
+other way to deduplicate snapshots.
+
+This is how I performe balance: btrfs balance start --full-balance rootfs
+This is how I perform deduplication (duperemove is from git master):
+duperemove -drh --dedupe-options=noblock --hashfile=../rootfs.hash 
+<all_subvols_except_snapshots_ones>
+
+Looking at the logs I noticed something weird: available free space 
+actually decreases after balance or deduplication.
+
+This is just before the timer starts:
+
+Overall:
+    Device size:                 128.00GiB
+    Device allocated:             49.03GiB
+    Device unallocated:           78.97GiB
+    Device missing:                  0.00B
+    Used:                         43.78GiB
+    Free (estimated):             82.97GiB      (min: 82.97GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,single: Size:44.00GiB, Used:40.00GiB
+   /dev/sda5      44.00GiB
+
+Metadata,single: Size:5.00GiB, Used:3.78GiB
+   /dev/sda5       5.00GiB
+
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/sda5      32.00MiB
+
+Unallocated:
+   /dev/sda5      78.97GiB
 
 
-On 2017/10/01 3:17, Holger Hoffstätte wrote:
-> On 09/30/17 19:56, Holger Hoffstätte wrote:
->> shell hackery as alternative. Anyway, I was sure that at the time the
->> other letters sounded even worse/were taken, but that may just have been
->> in my head. ;-)
->>
->> I just rechecked and -S is still available, so that's good.
-> 
-> Except that it isn't really, since there is already an 'S'
-> case in cmds-subvolume.c as shortcut to --sort:
-> 
-> --
->         case 'S':
->             ret = btrfs_list_parse_sort_string(optarg,
->                                &comparer_set);
-> --
-> 
-> ..which is why I picked P at the time.
 
-Hello,
+I also manually performed a full balance just before the timer starts:
 
-It is confusing, but the third args of getopt_long doesn't take 'S':
+Overall:
+    Device size:                 128.00GiB
+    Device allocated:             46.03GiB
+    Device unallocated:           81.97GiB
+    Device missing:                  0.00B
+    Used:                         43.78GiB
+    Free (estimated):             82.96GiB      (min: 82.96GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:              512.00MiB      (used: 0.00B)
 
- 445                 static const struct option long_options[] = {
- 446                         {"sort", required_argument, NULL, 'S'},
- 447                         {NULL, 0, NULL, 0}
- 448                 };
- 449 
- 450                 c = getopt_long(argc, argv,
- 451                                     "acdgopqsurRG:C:t", long_options, NULL);
+Data,single: Size:41.00GiB, Used:40.01GiB
+   /dev/sda5      41.00GiB
 
-So, you can use -S option if you change 'S' in L.446 to something.
-(I'm not sure this is intended or someone forgot to add 'S'.)
+Metadata,single: Size:5.00GiB, Used:3.77GiB
+   /dev/sda5       5.00GiB
 
-> 
-> Holger
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/sda5      32.00MiB
 
+Unallocated:
+   /dev/sda5      81.97GiB
+
+
+
+As you can see even doing a full balance was enough to reduce the available 
+free space!
+
+Then the timer started and it performed the deduplication:
+
+Overall:
+    Device size:                 128.00GiB
+    Device allocated:             46.03GiB
+    Device unallocated:           81.97GiB
+    Device missing:                  0.00B
+    Used:                         43.87GiB
+    Free (estimated):             82.94GiB      (min: 82.94GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:              512.00MiB      (used: 176.00KiB)
+
+Data,single: Size:41.00GiB, Used:40.03GiB
+   /dev/sda5      41.00GiB
+
+Metadata,single: Size:5.00GiB, Used:3.84GiB
+   /dev/sda5       5.00GiB
+
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/sda5      32.00MiB
+
+Unallocated:
+   /dev/sda5      81.97GiB
+
+
+
+Once again it reduced the available free space!
+
+Then, after the deduplication, the timer also performed a full balance:
+
+Overall:
+    Device size:                 128.00GiB
+    Device allocated:             46.03GiB
+    Device unallocated:           81.97GiB
+    Device missing:                  0.00B
+    Used:                         44.00GiB
+    Free (estimated):             82.93GiB      (min: 82.93GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,single: Size:41.00GiB, Used:40.04GiB
+   /dev/sda5      41.00GiB
+
+Metadata,single: Size:5.00GiB, Used:3.97GiB
+   /dev/sda5       5.00GiB
+
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/sda5      32.00MiB
+
+Unallocated:
+   /dev/sda5      81.97GiB
+
+
+
+
+It further reduced the available free space! Balance and deduplication 
+actually reduced my available free space of 400MB!
+400MB each night!
+How is it possible? Should I avoid doing balances and deduplications at 
+all?
+
+Thanks,
+Niccolò

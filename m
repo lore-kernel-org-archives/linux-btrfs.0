@@ -1,94 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:45056 "EHLO
+Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:57390 "EHLO
         libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751717AbdJBU1q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 2 Oct 2017 16:27:46 -0400
+        id S1750806AbdJBVqh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 2 Oct 2017 17:46:37 -0400
 Reply-To: kreijack@inwind.it
-Subject: Re: Why do full balance and deduplication reduce available free
- space?
-To: =?UTF-8?Q?Niccol=c3=b2_Belli?= <darkbasic@linuxsystems.it>,
-        linux-btrfs@vger.kernel.org
-References: <49ec6395-19b4-46e0-83cf-806ef6cdd396@linuxsystems.it>
+Subject: Re: Mount error on 32 bits, ok on 64 bits
+To: Jean-Denis Girard <jd.girard@sysnux.pf>, linux-btrfs@vger.kernel.org
+References: <oqk7mb$gud$1@blaine.gmane.org> <oqklhq$mas$1@blaine.gmane.org>
+ <oqpnff$ob1$1@blaine.gmane.org> <oqtuql$k3j$1@blaine.gmane.org>
 From: Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <eaf9395a-ce2e-fac1-f344-9328e2816318@libero.it>
-Date: Mon, 2 Oct 2017 22:27:44 +0200
+Message-ID: <15e1f555-9557-0854-e910-300d882f321d@libero.it>
+Date: Mon, 2 Oct 2017 23:46:34 +0200
 MIME-Version: 1.0
-In-Reply-To: <49ec6395-19b4-46e0-83cf-806ef6cdd396@linuxsystems.it>
+In-Reply-To: <oqtuql$k3j$1@blaine.gmane.org>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/02/2017 12:02 PM, Niccolò Belli wrote:
-> Hi,
-> I have several subvolumes mounted with compress-force=lzo and autodefrag. 
->> Since I use lots of snapshots (snapper keeps around 24 hourly snapshots, 7 daily 
-> snapshots and 4 weekly snapshots) I had to create a systemd timer to perform a 
-> full balance and deduplication each night. In fact data needs to be 
-> already deduplicated when snapshots are created, otherwise I have no other way to deduplicate snapshots.
-
-
-[...] 
-> Data,single: Size:44.00GiB, Used:40.00GiB
->   /dev/sda5      44.00GiB
+On 10/02/2017 07:59 PM, Jean-Denis Girard wrote:
+> Le 30/09/2017 à 17:29, Jean-Denis Girard a écrit :
+>> Le 28/09/2017 à 19:26, Jean-Denis Girard a écrit :
+>> The problem seems to come from commit c821e7f3 "pass bytes to
+>> btrfs_bio_alloc" (https://patchwork.kernel.org/patch/9763081/): the
+>> system is now running fine on 4.13.4 with only that patch reverted.
 > 
-> Metadata,single: Size:5.00GiB, Used:3.78GiB
->   /dev/sda5       5.00GiB
-[...]
+> Same situation with 4.14-rc3: my system cannot mount root file-system.
+> If I revert the patch, the system boots normally. This is 100%
+> reproducible. How can I help resolve that issue?
 
-> Data,single: Size:41.00GiB, Used:40.01GiB
->   /dev/sda5      41.00GiB
-> 
-> Metadata,single: Size:5.00GiB, Used:3.77GiB
->   /dev/sda5       5.00GiB
-[...]
 
-> Data,single: Size:41.00GiB, Used:40.03GiB
->   /dev/sda5      41.00GiB
-> 
-> Metadata,single: Size:5.00GiB, Used:3.84GiB
->   /dev/sda5       5.00GiB
-[...]
+Looking at the patch, it seems suspect this chunk:
 
-> Data,single: Size:41.00GiB, Used:40.04GiB
->   /dev/sda5      41.00GiB
-> 
-> Metadata,single: Size:5.00GiB, Used:3.97GiB
->   /dev/sda5       5.00GiB
-[....]
-
+@@ -2798,7 +2798,7 @@  static int submit_extent_page(int op, int op_flags, struct extent_io_tree *tree,
+ 		}
+ 	}
  
+-	bio = btrfs_bio_alloc(bdev, sector);
++	bio = btrfs_bio_alloc(bdev, sector << 9);
+ 	bio_add_page(bio, page, page_size, offset);
+ 	bio->bi_end_io = end_io_func;
+ 	bio->bi_private = tree;
+
+Now sector, is defined as
+
+	sector_t   [1]
+
+which in turn it might be defined as 
+
+	unsigned long   [2]
+
+which on 32bit is 32 bit if CONFIG_LBDAF is _not_ defined (CONFIG_LBDAF == Support for large (2TB+) block devices and files)
+
+The point is that 
+
+	sector << 9 
+
+may overflow if the disk is bigger than 4GB (and in your case it seems to be 8 GB).
+
+If I am correct, could you please so kindly to 
+
+- repllay the patch
+- AND try to replace
+	bio = btrfs_bio_alloc(bdev, sector << 9);
+with
+	bio = btrfs_bio_alloc(bdev, (u64)sector << 9);
+
+
+[1] http://elixir.free-electrons.com/linux/latest/source/fs/btrfs/extent_io.c#L2762
+[2] http://elixir.free-electrons.com/linux/latest/source/include/linux/types.h#L133
 > 
-> It further reduced the available free space! Balance and deduplication actually reduced my available free space of 400MB!
-> 400MB each night!
-
-Your data increased by 40MB (over 40GB, so about ~0.1%); instead your metadata increased about 200MB (over ~4GB, about ~2%); so
-
-1) it seems to me that your data is quite "deduped"
-2) (NB this is a my guessing) I think that deduping (and or re-balancing) rearranges the metadata leading to a increase disk usage. The only explanation that I found is that the deduping breaks the sharing of metadata with the snapshots:
-- a snapshot share the metadata, which in turn refers to the data. Because the metadata is shared, there is only one copy. The metadata remains shared, until it is not changed/updated.
-- dedupe, when shares a file block, updates the metadata breaking the sharing with its snapshot, and thus creating a copy of these.
-NB: updating snapshot metadata is the same that updating subvolume metadata
-
-
-> How is it possible? Should I avoid doing balances and deduplications at all?
-
-Try few days without deduplication, and check if something change. May be that it would be sufficient to delay the deduping: not each night, but each week or month.
-Another option is running dedupe on all the files (including the snapshotted ones). In fact this would still break the metadata sharing, but the extents should still be shared (IMHO :-) ). Of course the cost of deduping will increasing a lot (about 24+7+4 = 35 times)
-
-
 > 
 > Thanks,
-> Niccolò
-
+> 
 BR
 G.Baroncelli
-
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
 
 -- 
 gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>

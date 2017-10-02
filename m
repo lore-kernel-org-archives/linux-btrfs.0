@@ -1,89 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:54773 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751133AbdJDVmJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Oct 2017 17:42:09 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH] btrfs: avoid overflow when sector_t is 32 bit
-To: bo.li.liu@oracle.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        Jean-Denis Girard <jd.girard@sysnux.pf>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-References: <20171003173110.14789-1-kreijack@libero.it>
- <20171004142228.GB3521@twin.jikos.cz>
- <20171004171350.GA4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-From: Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <68569aa6-8489-c7b0-4f90-43588f567d32@libero.it>
-Date: Wed, 4 Oct 2017 23:42:04 +0200
+Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:27003 "EHLO
+        mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750715AbdJBINa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Oct 2017 04:13:30 -0400
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 4A8A7AC0081
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Oct 2017 17:13:23 +0900 (JST)
+Received: from G01JPEXCHKW16.g01.fujitsu.local (G01JPEXCHKW16.g01.fujitsu.local [10.0.194.55])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 769C86925AB
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 Oct 2017 17:13:22 +0900 (JST)
+Subject: Re: [PATCH] btrfs-progs: subvol: change subvol set-default to also
+ accept subvol path
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <7faa2e3c-d157-f8f6-b818-5b95917cd7e7@jp.fujitsu.com>
+Message-ID: <57b99111-246f-c74b-d2d7-2acf55ab44b4@jp.fujitsu.com>
+Date: Mon, 2 Oct 2017 17:13:19 +0900
 MIME-Version: 1.0
-In-Reply-To: <20171004171350.GA4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <7faa2e3c-d157-f8f6-b818-5b95917cd7e7@jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/04/2017 07:13 PM, Liu Bo wrote:
-> On Wed, Oct 04, 2017 at 04:22:28PM +0200, David Sterba wrote:
->> On Tue, Oct 03, 2017 at 07:31:10PM +0200, Goffredo Baroncelli wrote:
->>> From: Goffredo Baroncelli <kreijack@inwind.it>
->>>
->>> Jean-Denis Girard noticed commit c821e7f3 "pass bytes to
->>> btrfs_bio_alloc" (https://patchwork.kernel.org/patch/9763081/) introduces a
->>> regression on 32 bit machines.
->>> When CONFIG_LBDAF is _not_ defined (CONFIG_LBDAF == Support for large
->>> (2TB+) block devices and files) sector_t is 32 bit on 32bit machines.
->>>
->>> In the function submit_extent_page, 'sector' (which is sector_t type) is
->>> multiplied by 512 to convert it from sectors to bytes, leading to an
->>> overflow when the disk is bigger than 4GB (!).
->>
->> That's not good. There are some known typedefs that hide the 32bit/64bit
->> differences but the LBDAF and sector_t is new to me. Thanks for the
->> report and fix, I'll get it to linus/master tree in the next batch so it
->> can go to stable tree.
->>
->> I've seen sector_t used in places where it is not necessary so I'll try
->> to minimize the usage and more surprises from the << 9 shifts.
->>
->> Reviewed-by: David Sterba <dsterba@suse.com>
->> Fixes: c821e7f3 ("btrfs: pass bytes to btrfs_bio_alloc")
->> CC: stable@vger.kernel.org # 4.13+
-> 
-> However, this sector_t is passed from its callers, e.g.
-> 
-> __do_readpage()
-> {
-> 	sector_t sector;
-> 	...
-> 	sector = em->block_start >> 9;
-> 	...
-> }
-> 
-> if sector_t is 32bit, the above %sector could also lose high bits.
-> Some cleanups are needed to use u64 directly.
+I rethink this and conclude that we should only allow the absolute path to
+the subvolume in order to prevent setting wrong filesystem by mistake when 
+multiple filesystems are used.
 
-If sector_t is  32bit, the kernel can't access disk bigger than 2TB. So I suppose that block_start is less than 4GB.
+I will submit the patch again and please ignore this.
+
+Regards,
+Tomohiro
+
+On 2017/10/02 15:25, Misono, Tomohiro wrote:
+> This patch changes "subvol set-default" to also accept the subvolume path
+> for convenience.
 > 
-> Even with this patch, I suspect that there might be errors from block
-> layer as sector_t is used everywhere in block layer.
+> This is the one of the issue on github:
+> https://github.com/kdave/btrfs-progs/issues/35
 > 
-> For a btrfs FS that is created and used on 64bit system, it'll be
-> causing trouble anyway if letting it mount 32bit system, lets refuse
-> the mount firstly.
-
-I think that the check should be:
-
-if sizeof(sector_t) < 8 && filesystem_end > 2TB then
-	do_not_mount_it
-
-
-I am not sure what the other fs does
-
+> If there are two args, they are assumed as subvol id and path to the fs
+> (the same as current behavior), and if there is only one arg, it is assumed
+> as the path to the subvolume. Therefore there is no ambiguity between subvol
+> id and subvol name, which is mentioned in the above issue page.
 > 
-> Thanks,
+> subvol id is resolved by get_subvol_info() which is used by "subvol show".
 > 
-> -liubo
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> ---
+>  Documentation/btrfs-subvolume.asciidoc | 10 +++----
+>  cmds-subvolume.c                       | 48 ++++++++++++++++++++++++++--------
+>  2 files changed, 42 insertions(+), 16 deletions(-)
+> 
+> diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
+> index 5cfe885..df27460 100644
+> --- a/Documentation/btrfs-subvolume.asciidoc
+> +++ b/Documentation/btrfs-subvolume.asciidoc
+> @@ -142,12 +142,12 @@ you can add \'\+' or \'-' in front of each items, \'+' means ascending,
+>  for --sort you can combine some items together by \',', just like
+>  --sort=+ogen,-gen,path,rootid.
+>  
+> -*set-default* <id> <path>::
+> -Set the subvolume of the filesystem <path> which is mounted as
+> -default.
+> +*set-default* [<subvolume>|<id> <path>]::
+> +Set the subvolume of the filesystem which is mounted as default.
+>  +
+> -The subvolume is identified by <id>, which is returned by the *subvolume list*
+> -command.
+> +If <id> and <path> is given, the subvolume is identified by <id>,
+> +which is returned by the *subvolume list* command. The filesystem
+> +is specified by <path>.
+>  
+>  *show* <path>::
+>  Show information of a given subvolume in the <path>.
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index 666f6e0..5bf8295 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -803,28 +803,54 @@ out:
+>  }
+>  
+>  static const char * const cmd_subvol_set_default_usage[] = {
+> -	"btrfs subvolume set-default <subvolid> <path>",
+> -	"Set the default subvolume of a filesystem",
+> +	"btrfs subvolume set-default [<subvolume>|<subvolid> <path>]",
+> +	"Set the default subvolume of the filesystem mounted as default.",
+> +	"The subvolume can be specified by its path,",
+> +	"or the pair of subvolume id and path to the filesystem.",
+>  	NULL
+>  };
+>  
+>  static int cmd_subvol_set_default(int argc, char **argv)
+>  {
+> -	int	ret=0, fd, e;
+> -	u64	objectid;
+> -	char	*path;
+> -	char	*subvolid;
+> -	DIR	*dirstream = NULL;
+> +	int ret = 0;
+> +	int fd, e;
+> +	u64 objectid;
+> +	char *path;
+> +	char *subvolid;
+> +	DIR *dirstream = NULL;
+>  
+>  	clean_args_no_options(argc, argv, cmd_subvol_set_default_usage);
+>  
+> -	if (check_argc_exact(argc - optind, 2))
+> +	if (check_argc_min(argc - optind, 1) ||
+> +			check_argc_max(argc - optind, 2))
+>  		usage(cmd_subvol_set_default_usage);
+>  
+> -	subvolid = argv[optind];
+> -	path = argv[optind + 1];
+> +	if (argc - optind == 1) {
+> +		/* path to the subvolume is specified */
+> +		struct root_info ri;
+> +		char *fullpath;
+>  
+> -	objectid = arg_strtou64(subvolid);
+> +		path = argv[optind];
+> +		fullpath = realpath(path, NULL);
+> +		if (!fullpath) {
+> +			error("cannot find real path for '%s': %s",
+> +				path, strerror(errno));
+> +			return 1;
+> +		}
+> +
+> +		ret = get_subvol_info(fullpath, &ri);
+> +		free(fullpath);
+> +
+> +		if (ret)
+> +			return 1;
+> +
+> +		objectid = ri.root_id;
+> +	} else {
+> +		/* subvol id and path to the filesystem are specified */
+> +		subvolid = argv[optind];
+> +		path = argv[optind + 1];
+> +		objectid = arg_strtou64(subvolid);
+> +	}
+>  
+>  	fd = btrfs_open_dir(path, &dirstream, 1);
+>  	if (fd < 0)
 > 
 
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

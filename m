@@ -1,37 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:51715 "EHLO
-        ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751115AbdJCUMx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 3 Oct 2017 16:12:53 -0400
-Date: Wed, 4 Oct 2017 07:10:35 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Martin Steigerwald <martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-xfs@vger.kernel.org
+Received: from bombadil.infradead.org ([65.50.211.133]:43161 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751084AbdJCUjZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Oct 2017 16:39:25 -0400
 Subject: Re: Something like ZFS Channel Programs for BTRFS & probably XFS or
  even VFS?
-Message-ID: <20171003201035.GL3666@dastard>
-References: <1799362.XC3pUdehxN@merkaba>
+To: Dave Chinner <david@fromorbit.com>,
+        Martin Steigerwald <martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+References: <1799362.XC3pUdehxN@merkaba> <20171003201035.GL3666@dastard>
+From: Randy Dunlap <rdunlap@infradead.org>
+Message-ID: <d023b845-b9a2-37fe-ad7d-bdd1796ccda6@infradead.org>
+Date: Tue, 3 Oct 2017 13:39:23 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1799362.XC3pUdehxN@merkaba>
+In-Reply-To: <20171003201035.GL3666@dastard>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 03, 2017 at 03:19:18PM +0200, Martin Steigerwald wrote:
-> [repost. I didn´t notice autocompletion gave me wrong address for fsdevel, 
-> blacklisted now]
+On 10/03/17 13:10, Dave Chinner wrote:
+> On Tue, Oct 03, 2017 at 03:19:18PM +0200, Martin Steigerwald wrote:
+>> [repost. I didnÂ´t notice autocompletion gave me wrong address for fsdevel, 
+>> blacklisted now]
+>>
+>> Hello.
+>>
+>> What do you think of
+>>
+>> http://open-zfs.org/wiki/Projects/ZFS_Channel_Programs
 > 
-> Hello.
-> 
-> What do you think of
-> 
-> http://open-zfs.org/wiki/Projects/ZFS_Channel_Programs
+> Domain not found.
 
-Domain not found.
+It works for me.
 
--Dave.
+
 -- 
-Dave Chinner
-david@fromorbit.com
+~Randy

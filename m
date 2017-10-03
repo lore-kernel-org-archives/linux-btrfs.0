@@ -1,50 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45236 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752844AbdJPRAv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Oct 2017 13:00:51 -0400
-From: David Sterba <dsterba@suse.com>
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:38153 "EHLO
+        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751980AbdJCPHG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Oct 2017 11:07:06 -0400
+Received: by mail-lf0-f68.google.com with SMTP id m199so3639137lfe.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Oct 2017 08:07:05 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.13.3
-Date: Mon, 16 Oct 2017 18:58:59 +0200
-Message-Id: <20171016165859.4101-1-dsterba@suse.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH 1/4] Btrfs: compress_file_range() remove dead variable num_bytes
+Date: Tue,  3 Oct 2017 18:06:01 +0300
+Message-Id: <20171003150604.19596-2-nefelim4ag@gmail.com>
+In-Reply-To: <20171003150604.19596-1-nefelim4ag@gmail.com>
+References: <20171003150604.19596-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Remove dead assigment of num_bytes
 
-btrfs-progs version 4.13.3 have been released.
+Also as num_bytes only used in will_compress block as
+copy of total_in just replace that with total_in and drop num_bytes entire
 
-This is a bugfix release, namely for the subvolume listing and deletion
-commands (again), and 'check --force'. Both were not caught by faulty tests,
-now fixed.
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-Changes:
-  * check: fix --force, wrong check for a mounted block device
-  * build: fix --with-convert parsing
-  * subvol list: don't list TOPLEVEL
-  * other: update tests
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b728397ba6e1..237df8fdf7b8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -458,7 +458,6 @@ static noinline void compress_file_range(struct inode *inode,
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	u64 num_bytes;
+ 	u64 blocksize = fs_info->sectorsize;
+ 	u64 actual_end;
+ 	u64 isize = i_size_read(inode);
+@@ -508,8 +507,6 @@ static noinline void compress_file_range(struct inode *inode,
+ 
+ 	total_compressed = min_t(unsigned long, total_compressed,
+ 			BTRFS_MAX_UNCOMPRESSED);
+-	num_bytes = ALIGN(end - start + 1, blocksize);
+-	num_bytes = max(blocksize,  num_bytes);
+ 	total_in = 0;
+ 	ret = 0;
+ 
+@@ -628,7 +625,6 @@ static noinline void compress_file_range(struct inode *inode,
+ 		 */
+ 		total_in = ALIGN(total_in, PAGE_SIZE);
+ 		if (total_compressed + blocksize <= total_in) {
+-			num_bytes = total_in;
+ 			*num_added += 1;
+ 
+ 			/*
+@@ -636,12 +632,12 @@ static noinline void compress_file_range(struct inode *inode,
+ 			 * allocation on disk for these compressed pages, and
+ 			 * will submit them to the elevator.
+ 			 */
+-			add_async_extent(async_cow, start, num_bytes,
++			add_async_extent(async_cow, start, total_in,
+ 					total_compressed, pages, nr_pages,
+ 					compress_type);
+ 
+-			if (start + num_bytes < end) {
+-				start += num_bytes;
++			if (start + total_in < end) {
++				start += total_in;
+ 				pages = NULL;
+ 				cond_resched();
+ 				goto again;
+-- 
+2.14.2
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-
-Shortlog:
-
-David Sterba (7):
-      btrfs-progs: check: drop exclusive open mode for --force
-      btrfs-progs: tests: fsck/007 fix so check --force works
-      btrfs-progs: build: move travis helper script to own directory
-      btrfs-progs: tests: add more configure option coverage
-      btrfs-progs: build: add absolute path for topdir
-      btrfs-progs: update CHANGES for v4.13.3
-      Btrfs progs v4.13.3
-
-Lu Fengqi (1):
-      btrfs-progs: subvol list: don't print deleted subvol as TOPLEVEL
-
-Naohiro Aota (1):
-      btrfs-progs: build: set include path relatively
-
-Sergei Trofimovich (1):
-      btrfs-progs: build: allow '--with-convert=' to accept comma-separated values
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

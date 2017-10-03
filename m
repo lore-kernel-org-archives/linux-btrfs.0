@@ -1,79 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43362 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751841AbdJFMxA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Oct 2017 08:53:00 -0400
-From: David Sterba <dsterba@suse.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:38343 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751117AbdJCIS1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Oct 2017 04:18:27 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.13.2
-Date: Fri,  6 Oct 2017 14:51:10 +0200
-Message-Id: <20171006125110.14138-1-dsterba@suse.com>
+Cc: linux-fsdevel@kernel.org, linux-xfs@vger.kernel.org
+Subject: Something like ZFS Channel Programs for BTRFS & probably XFS or even VFS?
+Date: Tue, 03 Oct 2017 10:18:25 +0200
+Message-ID: <2793908.SdtdllqrkY@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hello.
 
-btrfs-progs version 4.13.2 have been released.
+What do you think of
 
-This is a bugfix release for the subvolume listing and deletion commands, and
-performance improvement for the 'check' command that should decrease running
-time of some fstests.
+http://open-zfs.org/wiki/Projects/ZFS_Channel_Programs
 
-Changes:
-  * subvol list:
-    * don't list toplevel subvolume among deleted (broken since 4.8.3)
-    * minor adjustments of uuid print format
-  * subvol delete:
-    * fix swapped behaviour of --commit-each and --commit-after
-    * fix potentially lost sync if subvolumes are from different filesystems
-  * check: add cache for metadata blocks, should improve performance
-  * other:
-    * new tests, testsuite updates
-    * doc updates
-    * cleanups
+?
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+There are quite some BTRFS maintenance programs like the deduplication stuff. 
+Also regular scrubs… and in certain circumstances probably balances can make 
+sense.
 
-Shortlog:
+In addition to this XFS got scrub functionality as well.
 
-David Sterba (9):
-      btrfs-progs: mkfs: use existing helper for path concatenation
-      btrfs-progs: mkfs: remove unused function
-      btrfs-progs: docs: update btrfs-balance
-      btrfs-progs: subvol: group options in help
-      btrfs-progs: set fixed with for printing uuids of subvolumes
-      btrfs-progs: subvol list: don't list FS_TREE as deleted
-      btrfs-progs: tests: don't list toplevel subvolme in 'subvol list'
-      btrfs-progs: update CHANGES for v4.13.2
-      Btrfs progs v4.13.2
+Now putting the foundation for such a functionality in the kernel I think 
+would only be reasonable if it cannot be done purely within user space, so I 
+wonder about the safety from other concurrent ZFS modification and atomicity 
+that are mentioned on the wiki page. The second set of slides, those the 
+OpenZFS Developer Commit 2014, which are linked to on the wiki page explain 
+this more. (I didn´t look the first ones, as I am no fan of slideshare.net and 
+prefer a simple PDF to download and view locally anytime, not for privacy 
+reasons alone, but also to avoid a using a crappy webpage over a wonderfully 
+functional PDF viewer fat client like Okular)
 
-Holger Hoffstätte (1):
-      btrfs-progs: right-align number columns in btrfs-debugfs output
+Also I wonder about putting a lua interpreter into the kernel, but it seems at 
+least NetBSD developers added one to their kernel with version 7.0¹.
 
-Jeff Mahoney (7):
-      btrfs-progs: check: supplement extent backref list with rbtree
-      btrfs-progs: check: switch to iterating over the backref_tree
-      btrfs-progs: extent-cache: actually cache extent buffers
-      btrfs-progs: backref: push state tracking into a helper structure
-      btrfs-progs: backref: add list_first_pref helper
-      btrfs-progs: backref: use separate list for missing keys
-      btrfs-progs: backref: use separate list for indirect refs
+I also ask this cause I wondered about a kind of fsmaintd or volmaintd for 
+quite a while, and thought… it would be nice to do this in a generic way, as 
+BTRFS is not the only filesystem which supports maintenance operations. However 
+if it can all just nicely be done in userspace, I am all for it.
 
-Misono, Tomohiro (6):
-      btrfs-progs: subvol: exchange subvol del --commit-after and --commit-each
-      btrfs-progs: move get_fsid() to utils.c
-      btrfs-progs: move seen_fsid to utils.c
-      btrfs-progs: change seen_fsid to hold fd and DIR
-      btrfs-progs: subvol: fix subvol del --commit-after
-      btrfs-progs: misc-test: use raid1 for data to enable mount with -o degraded
+[1] http://www.netbsd.org/releases/formal-7/NetBSD-7.0.html
+(tons of presentation PDFs on their site as well)
 
-Su Yue (1):
-      btrfs-progs: tests: arg override in command line
-
-Yingyi Luo (2):
-      btrfs-progs: convert: move link_subvol out of main
-      btrfs-progs: add a parameter to btrfs_mksubvol
+Thanks,
+-- 
+Martin

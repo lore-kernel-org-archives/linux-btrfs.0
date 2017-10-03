@@ -1,32 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49370 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755866AbdJJMLv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 08:11:51 -0400
-Date: Tue, 10 Oct 2017 14:10:06 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "hch@lst.de" <hch@lst.de>
-Subject: Re: [PATCH] btrfs: Use bd_dev to generate index when
- dev_state_hashtable add items.
-Message-ID: <20171010121006.GK3521@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1506672995-12488-1-git-send-email-gujx@cn.fujitsu.com>
- <20170929180529.GW31640@twin.jikos.cz>
- <516DDBE5B1D92D42BCF7A2E37F045A5D01479C859B@G08CNEXMBPEKD02.g08.fujitsu.local>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:33531 "EHLO
+        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752137AbdJCNTU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Oct 2017 09:19:20 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Something like ZFS Channel Programs for BTRFS & probably XFS or even VFS?
+Date: Tue, 03 Oct 2017 15:19:18 +0200
+Message-ID: <1799362.XC3pUdehxN@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D01479C859B@G08CNEXMBPEKD02.g08.fujitsu.local>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 09, 2017 at 01:54:14AM +0000, Gu, Jinxiang wrote:
-> Hi,
-> sorry for reply too late.
-> 
-> This patch fix for the bug descriped below.
-> Use MOUNT_OPTIONS="-o check_int" when run xfstest, device
-> Can not be mount successfully. So xfstest can not run.
+[repost. I didn´t notice autocompletion gave me wrong address for fsdevel, 
+blacklisted now]
 
-So please update the changelog and resend. Thanks.
+Hello.
+
+What do you think of
+
+http://open-zfs.org/wiki/Projects/ZFS_Channel_Programs
+
+?
+
+There are quite some BTRFS maintenance programs like the deduplication stuff. 
+Also regular scrubs… and in certain circumstances probably balances can make 
+sense.
+
+In addition to this XFS got scrub functionality as well.
+
+Now putting the foundation for such a functionality in the kernel I think 
+would only be reasonable if it cannot be done purely within user space, so I 
+wonder about the safety from other concurrent ZFS modification and atomicity 
+that are mentioned on the wiki page. The second set of slides, those the 
+OpenZFS Developer Commit 2014, which are linked to on the wiki page explain 
+this more. (I didn´t look the first ones, as I am no fan of slideshare.net and 
+prefer a simple PDF to download and view locally anytime, not for privacy 
+reasons alone, but also to avoid a using a crappy webpage over a wonderfully 
+functional PDF viewer fat client like Okular)
+
+Also I wonder about putting a lua interpreter into the kernel, but it seems at 
+least NetBSD developers added one to their kernel with version 7.0¹.
+
+I also ask this cause I wondered about a kind of fsmaintd or volmaintd for 
+quite a while, and thought… it would be nice to do this in a generic way, as 
+BTRFS is not the only filesystem which supports maintenance operations. However 
+if it can all just nicely be done in userspace, I am all for it.
+
+[1] http://www.netbsd.org/releases/formal-7/NetBSD-7.0.html
+(tons of presentation PDFs on their site as well)
+
+Thanks,
+-- 
+Martin
+

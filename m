@@ -1,100 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20968 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751357AbdJEN5R (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 09:57:17 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v95DvGW8025699
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 5 Oct 2017 13:57:16 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v95DvFoN030202
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 5 Oct 2017 13:57:16 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v95DvFA4003557
-        for <linux-btrfs@vger.kernel.org>; Thu, 5 Oct 2017 13:57:15 GMT
-Subject: Re: [PATCH v8 2/2] btrfs: check device for critical errors and mark
- failed
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-References: <20171003155920.24925-1-anand.jain@oracle.com>
- <20171003155920.24925-3-anand.jain@oracle.com>
- <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <881db992-2240-ce30-4d05-d0bd1faa2aa4@oracle.com>
-Date: Thu, 5 Oct 2017 21:56:59 +0800
-MIME-Version: 1.0
-In-Reply-To: <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from mail-lf0-f67.google.com ([209.85.215.67]:50641 "EHLO
+        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752169AbdJCPHJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Oct 2017 11:07:09 -0400
+Received: by mail-lf0-f67.google.com with SMTP id a132so1956134lfa.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Oct 2017 08:07:09 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH 4/4] Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
+Date: Tue,  3 Oct 2017 18:06:04 +0300
+Message-Id: <20171003150604.19596-5-nefelim4ag@gmail.com>
+In-Reply-To: <20171003150604.19596-1-nefelim4ag@gmail.com>
+References: <20171003150604.19596-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+At now btrfs_dedupe_file_range() restricted to 16MiB range for
+limit locking time and memory requirement for dedup ioctl()
 
+For too big input rage code silently set range to 16MiB
 
-On 10/05/2017 04:11 AM, Liu Bo wrote:
-> On Tue, Oct 03, 2017 at 11:59:20PM +0800, Anand Jain wrote:
->> From: Anand Jain <Anand.Jain@oracle.com>
->>
->> Write and flush errors are critical errors, upon which the device fd
->> must be closed and marked as failed.
->>
-> 
-> Can we defer the job of closing device to umount?
+Let's remove that restriction by do iterating over dedup range.
+That's backward compatible and will not change anything for request
+less then 16MiB.
 
-  Originally I think it was designed to handle the bad disk
-  same as missing device. as below [1]. This patch just does that.
-  But I am curious to know if there is any issue to close failed
-  device ?
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+---
+ fs/btrfs/ioctl.c | 22 ++++++++++++++++++----
+ 1 file changed, 18 insertions(+), 4 deletions(-)
 
-[1]
------
-static int read_one_dev(struct btrfs_fs_info *fs_info,
-                         struct extent_buffer *leaf,
-                         struct btrfs_dev_item *dev_item)
-::
-             /*
-              * this happens when a device that was properly setup
-              * in the device info lists suddenly goes bad.
-              * device->bdev is NULL, and so we have to set
-              * device->missing to one here
-              */
-------
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 31407c62da63..4b468e5dfa11 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3200,11 +3200,9 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 	struct inode *src = file_inode(src_file);
+ 	struct inode *dst = file_inode(dst_file);
+ 	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
++	u64 i, tail_len, chunk_count;
+ 	ssize_t res;
 
-  So here I misuse the device missing scenario (device->bdev = NULL)
-  to the failed device scenario. (code comment mentioned it).
+-	if (olen > BTRFS_MAX_DEDUPE_LEN)
+-		olen = BTRFS_MAX_DEDUPE_LEN;
+-
+ 	if (WARN_ON_ONCE(bs < PAGE_SIZE)) {
+ 		/*
+ 		 * Btrfs does not support blocksize < page_size. As a
+@@ -3214,7 +3212,23 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 		return -EINVAL;
+ 	}
 
-  Secondly as in the patch 1/2 commit log and also Austin mentioned it,
-  if failed device close is deferred it will also defer the cleanup of
-  the failed device at the block layer.
-
-  But yes block layer can still clean up when btrfs closes the
-  device at the time of replace, also where in the long run, pulling
-  out of the failed disk would (planned) trigger a udev notification
-  into the btrfs sysfs interface and it can close the device.
-
-  Anything that I have missed ?
-
-  Further, jfyi closing of failed device isn't related to the
-  looping for device failure though.
-
-> We can go mark the device failed and skip it while doing read/write,
-> and umount can do the cleanup work.
-
-  In servers a need of umount is considered as downtime, things
-  shouldn't wait for umount to cleanup.
-
-> That way we don't need a dedicated thread looping around to detect a
-> rare situation.
-
-  I think its better to make it event based instead of thread looping,
-  pls take a look..
-
-    [PATCH v8.1 2/2] btrfs: mark device failed for write and flush errors
-
-Thanks, Anand
-
-
-> Thanks,
-> 
-> -liubo
+-	res = btrfs_extent_same(src, loff, olen, dst, dst_loff);
++	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
++	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
++
++	for (i = 0; i < chunk_count; i++) {
++		res = btrfs_extent_same(src, loff, BTRFS_MAX_DEDUPE_LEN,
++					dst, dst_loff);
++		if (res)
++			return res;
++
++		loff += BTRFS_MAX_DEDUPE_LEN;
++		dst_loff += BTRFS_MAX_DEDUPE_LEN;
++	}
++
++	if (tail_len > 0)
++		res = btrfs_extent_same(src, loff, tail_len,
++					dst, dst_loff);
++
+ 	if (res)
+ 		return res;
+ 	return olen;
+--
+2.14.2
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

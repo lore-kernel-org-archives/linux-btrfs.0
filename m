@@ -1,152 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f182.google.com ([209.85.220.182]:51663 "EHLO
-        mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751249AbdJDEAR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2017 00:00:17 -0400
-Received: by mail-qk0-f182.google.com with SMTP id 17so10244081qkq.8
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Oct 2017 21:00:16 -0700 (PDT)
-Subject: Re: Can't mount array with super_total_bytes mismatch with fs_devices
- total_rw_bytes
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <f561678d-17f0-f06e-b781-3445a59e0349@gmail.com>
- <9dc8fe6e-bda5-2b19-b616-ab64696f2102@gmx.com>
-From: Asif Youssuff <yoasif@gmail.com>
-Message-ID: <fdc1dcba-219b-bff2-0b67-eedd97a6d4ba@gmail.com>
-Date: Wed, 4 Oct 2017 00:00:13 -0400
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:47135 "EHLO
+        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750871AbdJDEiq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2017 00:38:46 -0400
+Received: by mail-oi0-f65.google.com with SMTP id p187so17757379oif.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Oct 2017 21:38:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <9dc8fe6e-bda5-2b19-b616-ab64696f2102@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAESLx0KUZaj68FS-+ndTEEHkih-46_NjPF45DgQeLFvhKAFiRQ@mail.gmail.com>
+References: <CAESLx0KUZaj68FS-+ndTEEHkih-46_NjPF45DgQeLFvhKAFiRQ@mail.gmail.com>
+From: Timothy White <timwhite88@gmail.com>
+Date: Wed, 4 Oct 2017 14:38:44 +1000
+Message-ID: <CAESLx0L7+ifAQYo3fcbMfmfb41FzvoifZcR3O7bHP0HFaiKBog@mail.gmail.com>
+Subject: Re: Btrfs "failed to repair damaged filesystem" - RAID10 going RO
+ when any write attempts are made
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the advice.
+Any suggestions on this? Or do I just blow it away and hope the bug is
+fixed in a newer version?
 
-On 10/03/2017 09:38 PM, Qu Wenruo wrote:
+Regards
 
+Tim
 
->>
->> [210017.281912] BTRFS info (device sdb): disk space caching is enabled
->> [210017.281915] BTRFS info (device sdb): has skinny extents
->> [210017.402084] BTRFS error (device sdb): super_total_bytes 
->> 92017859088384
->> mismatch with fs_devices total_rw_bytes 92017859094528
-> 
-> One of your device size is not aligned to 4K.
-> Which is fine, but recently enhanced validation checker does not allow it.
-> (Which should be a regression, and there is some other WARN_ON related 
-> to it)
-> 
->> [210017.402126] BTRFS error (device sdb): failed to read chunk tree: -22
->> [210017.461473] BTRFS error (device sdb): open_ctree failed
->>
->> I've tried a few steps --
->>
->> btrfs-chunk-recover, super-recover and I have run a btrfs check 
->> --repair on two of the disks in the array (this takes a very long 
->> time, so I'm hoping I don't have to run this on all of the disks).
->>
->> I had run into this problem once before in the past, and I'm not sure 
->> how I recovered from it; I may have simply rolled back the booted 
->> kernel to escape the extra checks around this mismatch.
->>
->> I'm at a loss for ideas and am running a btrfs-image so I can also 
->> report an issue -- I'm not sure whether 'btrfs-image -c9 -t4 /dev/sdo 
->> btrfs.image' is  the right command to run if it is a multi-device array.
->>
->> Any ideas would be helpful, and I am happy to provide further 
->> information.
->>
->> root@ubuntu-server:~#   uname -a
->> Linux ubuntu-server 4.14.0-041400rc2-generic #201709242031 SMP Mon Sep 
->> 25 00:33:13 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
-> 
-> You can rollback to an earlier kernel to mount the fs.
-> 
-> And manually find and resize the device with unaligned size:
-> 
-> # btrfs fi show -b
-> And check each device for its size:
-> Label: none  uuid: 839ddcfa-5701-4437-aff3-bcb2a26ae6dd
->      Total devices 1 FS bytes used 397312
->      devid    1 size <<10737418240>> used 2172649472 path 
-> /dev/mapper/data-btrfs
-> 
-> If it's not align, round it down to 4K, and resize it using devid:
-> 
-> # btrfs fi resize <devid>:<rounded_size> <mount_point>
-> 
-> All device must be rounded. And the command should finish almost in no 
-> time.
-
-I was able to mount the fs using kernel version 4.4 and rounded down 
-(took the size in bytes, and rounded down to a smaller number divisible 
-by 4096).
-
-This is what btrfs fi show looks like now:
-
-asif@ubuntu-server:~$ sudo btrfs fi show --raw
-[sudo] password for asif:
-Label: none  uuid: 48ed8a66-731d-499b-829e-dd07dd7260cc
-	Total devices 13 FS bytes used 44783241728000
-	devid    4 size 6001141571584 used 5955045097472 path /dev/sdh
-	devid    5 size 6001141571584 used 5955128983552 path /dev/sdg
-	devid    7 size 6001141571584 used 5955709960192 path /dev/sdk
-	devid    9 size 6001175126016 used 5955716186112 path /dev/sde
-	devid   10 size 6001141571584 used 5955145760768 path /dev/sdc
-	devid   11 size 8001563222016 used 7955416416256 path /dev/sdl
-	devid   12 size 6001175126016 used 5956054286336 path /dev/sdf
-	devid   14 size 8001563222016 used 7956009123840 path /dev/sdb
-	devid   15 size 8001563222016 used 7956373831680 path /dev/sdj
-	devid   17 size 8001563222016 used 6341094866944 path /dev/sdd
-	devid   18 size 8001563222016 used 7955827064832 path /dev/sdn
-	devid   20 size 8001563222016 used 7955378339840 path /dev/sdi
-	devid   21 size 8001563222016 used 7955386728448 path /dev/sdo
-
-> 
-> Then check if latest kernel can mount it.
-
-Unfortunately, the latest kernel still cannot mount it, showing  the 
-same errors as before.
-
-[  139.852862] BTRFS error (device sdj): super_total_bytes 
-92017859086336 mismatch with fs_devices total_rw_bytes 92017859092480
-[  139.852894] BTRFS error (device sdj): failed to read chunk tree: -22
-[  139.916645] BTRFS error (device sdj): open_ctree failed
-
-> 
-> I think it can be made as part of "btrfs check" to fix it.
-> (Although it should be handled by kernel well)
-> 
-> Thanks,
-> Qu
-
-Hope there are some other ideas (or please correct me if I have done 
-something wrong!).
-
-Thanks,
-Asif
-
-> 
->>
->> root@ubuntu-server:~#   btrfs --version
->> btrfs-progs v4.13.1
->>
->> root@ubuntu-server:~#   btrfs fi show
->> Label: none  uuid: 48ed8a66-731d-499b-829e-dd07dd7260cc
->> Total devices 13 FS bytes used 40.73TiB
->> devid    4 size 5.46TiB used 5.42TiB path /dev/sdo
->> devid    5 size 5.46TiB used 5.42TiB path /dev/sdn
->> devid    7 size 5.46TiB used 5.42TiB path /dev/sdc
->> devid    9 size 5.46TiB used 5.42TiB path /dev/sdk
->> devid   10 size 5.46TiB used 5.42TiB path /dev/sdj
->> devid   11 size 7.28TiB used 7.24TiB path /dev/sdd
->> devid   12 size 5.46TiB used 5.42TiB path /dev/sdm
->> devid   14 size 7.28TiB used 7.24TiB path /dev/sdh
->> devid   15 size 7.28TiB used 7.24TiB path /dev/sdb
->> devid   17 size 7.28TiB used 5.77TiB path /dev/sdl
->> devid   18 size 7.28TiB used 7.24TiB path /dev/sdf
->> devid   20 size 7.28TiB used 7.24TiB path /dev/sdi
->> devid   21 size 7.28TiB used 7.24TiB path /dev/sdg
->>
->> Thanks,
->> Asif
+On Mon, Oct 2, 2017 at 8:44 PM, Timothy White <timwhite88@gmail.com> wrote:
+> I have a BTRFS RAID 10 filesystem that was crashing and going into RO
+> mode. A did a kernel upgrade, upgraded btrfs tools to the latest. A
+> scrub was going ok ish. btrfs check showed a number of messages such
+> as:
+>
+> Backref 16562625503232 root 14628 owner 3609 offset 23793664 num_refs
+> 0 not found in extent tree
+> Incorrect local backref count on 16562625503232 root 14628 owner 3609
+> offset 23793664 found 1 wanted 0 back 0x5639c37689d0
+> backpointer mismatch on [16562625503232 2703360]
+>
+> Root 14628 was a subvolume root ID (for docker), given that I didn't
+> need any of that data, I removed all those subvolumes under the docker
+> subvolume and the docker subvolume. This still showed errors, so I
+> tried a btrfs check with repair, which eventually gave me the
+> following.
+>
+> Backref 16563772112896 root 14628 owner 3608 offset 0 num_refs 0 not
+> found in extent tree
+> Incorrect local backref count on 16563772112896 root 14628 owner 3608
+> offset 0 found 1 wanted 0 back 0x55f3403f40b0
+> Backref disk bytenr does not match extent record,
+> bytenr=16563772112896, ref bytenr=16563813335040
+> Backref bytes do not match extent backref, bytenr=16563772112896, ref
+> bytes=134217728, backref bytes=133079040
+> Backref 16563772112896 root 14628 owner 3607 offset 0 num_refs 0 not
+> found in extent tree
+> Incorrect local backref count on 16563772112896 root 14628 owner 3607
+> offset 0 found 1 wanted 0 back 0x55f3470cfed0
+> Backref bytes do not match extent backref, bytenr=16563772112896, ref
+> bytes=134217728, backref bytes=41222144
+> backpointer mismatch on [16563772112896 134217728]
+> attempting to repair backref discrepency for bytenr 16563772112896
+> Ref is past the entry end, please take a btrfs-image of this file
+> system and send it to a btrfs developer, ref 16563813335040
+> failed to repair damaged filesystem, aborting
+>
+> I've taken a btrfs-image, however it's 12Gb, not sure if the
+> developers want that, but I do have it.
+>
+> Filesystem still crashes and goes read only if I try and make changes
+> (even deletes). The latest dmesg that includes that crash is at
+> https://drive.google.com/open?id=0B5bmQmu6UugIRFM0RUxwWFdqOGc. I don't
+> have the earlier ones.
+>
+> https://drive.google.com/open?id=0B5bmQmu6UugIYjZkYnA4ZFFpdlE is the
+> output from running btrfs check with repair, followed by a second run
+> with repair to see if it got anything different.
+>
+> At this stage, I expect to just blow away the filesystem and restore
+> from backups. However it would be nice to fix whatever the issue is.
+> Smartctl shows no underlying errors.
+>
+> What else do the devs want from me before I blow this away? (Or is it
+> fixable with something I've missed, as that would save me many hours
+> of restoration.
+>
+> The 12Gb btrfs-image can be uploaded to Google Drive (or FTP) if needed.
+>
+> Thanks
+>
+> Tim
+>
+> $ lsb_release -a
+> No LSB modules are available.
+> Distributor ID: Debian
+> Description: Debian GNU/Linux 9.1 (stretch)
+> Release: 9.1
+> Codename: stretch
+>
+> $ uname -a
+> Linux bruce 4.12.0-0.bpo.1-amd64 #1 SMP Debian 4.12.6-1~bpo9+1
+> (2017-08-27) x86_64 GNU/Linux
+>
+> $ btrfs --version
+> btrfs-progs v4.9.1
+>
+> $ btrfs fi show
+> Label: 'Butter1'  uuid: b8d081ac-0271-4481-9a58-c113c921bf49
+> Total devices 4 FS bytes used 5.19TiB
+> devid    1 size 3.64TiB used 2.60TiB path /dev/sde
+> devid    2 size 3.64TiB used 2.60TiB path /dev/sdf
+> devid    3 size 3.64TiB used 2.60TiB path /dev/sdd
+> devid    4 size 3.64TiB used 2.60TiB path /dev/sdc
+>
+> $ btrfs fi df /mnt/Butter1
+> Data, RAID10: total=5.19TiB, used=5.17TiB
+> System, RAID10: total=128.00MiB, used=560.00KiB
+> Metadata, RAID10: total=12.00GiB, used=10.34GiB
+> Metadata, single: total=16.00MiB, used=0.00B
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+> $btrfs subvolume list /mnt/Butter1
+> ID 258 gen 250368 top level 5 path data1
+> ID 259 gen 250516 top level 5 path data2
+> ID 3648 gen 250476 top level 5 path Photos
+> ID 4597 gen 203041 top level 5 path Snapshots/Photos/20160304
+> ID 4608 gen 203041 top level 5 path Snapshots/Photos/20160328
+> ID 4628 gen 203041 top level 5 path Snapshots/Photos/20160421
+> ID 4654 gen 250368 top level 5 path imap
+> ID 4656 gen 203041 top level 5 path Snapshots/Photos/20160523
+> ID 4893 gen 203041 top level 5 path Snapshots/Photos/20160702
+> ID 4946 gen 203041 top level 5 path Snapshots/Photos/20160731
+> ID 4947 gen 203041 top level 5 path Snapshots/Photos/20160813
+> ID 4948 gen 203041 top level 5 path Snapshots/Photos/2016081301
+> ID 4970 gen 203041 top level 5 path Snapshots/Photos/20160919
+> ID 5038 gen 203041 top level 5 path Snapshots/Photos/20161229_0911
+> ID 5063 gen 250515 top level 5 path mirror
+> ID 13170 gen 250428 top level 5 path BizBackups
+> ID 13214 gen 250368 top level 5 path SaraLaptopBackup
+> ID 13485 gen 250368 top level 5 path PCOMDisks
+> ID 16176 gen 229817 top level 5 path Snapshots/Photos/20170515

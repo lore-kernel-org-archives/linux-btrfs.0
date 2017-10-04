@@ -1,88 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45051 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752242AbdJDPCX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Oct 2017 11:02:23 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 01EABAD06
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 Oct 2017 15:02:22 +0000 (UTC)
-Date: Wed, 4 Oct 2017 17:00:39 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@suse.com
-Subject: Re: [PATCH v3 2/2] btrfs: Remove received_uuid during received
- snapshot ro->rw switch
-Message-ID: <20171004150039.GE3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170927140007.GH31640@twin.jikos.cz>
- <1506585198-32494-1-git-send-email-nborisov@suse.com>
- <1506585198-32494-2-git-send-email-nborisov@suse.com>
- <20170929175645.GV31640@twin.jikos.cz>
- <d1ad211a-fa4a-8aed-3327-81610277679a@suse.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:30765 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751050AbdJDSPf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2017 14:15:35 -0400
+Date: Wed, 4 Oct 2017 11:13:51 -0600
+From: Liu Bo <bo.li.liu@oracle.com>
+To: dsterba@suse.cz, Goffredo Baroncelli <kreijack@libero.it>,
+        linux-btrfs@vger.kernel.org, Jean-Denis Girard <jd.girard@sysnux.pf>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH] btrfs: avoid overflow when sector_t is 32 bit
+Message-ID: <20171004171350.GA4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20171003173110.14789-1-kreijack@libero.it>
+ <20171004142228.GB3521@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <d1ad211a-fa4a-8aed-3327-81610277679a@suse.com>
+In-Reply-To: <20171004142228.GB3521@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 29, 2017 at 10:15:30PM +0300, Nikolay Borisov wrote:
-> > Adding the transaction before the "if (flags & BTRFS_SUBVOL_RDONLY)"
-> > condition makes it much worse. The "is subvolume in send" test is
-> > supposed to be lightweight and should not shoot down the whole
-> > filesystem. The usecase is explained in 2c68653787f91c62f8.
+On Wed, Oct 04, 2017 at 04:22:28PM +0200, David Sterba wrote:
+> On Tue, Oct 03, 2017 at 07:31:10PM +0200, Goffredo Baroncelli wrote:
+> > From: Goffredo Baroncelli <kreijack@inwind.it>
 > > 
-> > Also the received_uuid must be changed under the root_item_lock.
+> > Jean-Denis Girard noticed commit c821e7f3 "pass bytes to
+> > btrfs_bio_alloc" (https://patchwork.kernel.org/patch/9763081/) introduces a
+> > regression on 32 bit machines.
+> > When CONFIG_LBDAF is _not_ defined (CONFIG_LBDAF == Support for large
+> > (2TB+) block devices and files) sector_t is 32 bit on 32bit machines.
 > > 
-> > I think it should be fine to keep the transaction start where it is,
-> > change the received_uuid eventually and let it commit. You can set the
-> > transaction units to 2 unconditionally.
+> > In the function submit_extent_page, 'sector' (which is sector_t type) is
+> > multiplied by 512 to convert it from sectors to bytes, leading to an
+> > overflow when the disk is bigger than 4GB (!).
 > 
-> So what you are suggesting is to not move the transaction start before
-> the if check? But then how would you structure the code to remove the
-> uuid only if we are switchin RO->RW and not in send without duplicating
-> the checks right before btrfs_update_root?
+> That's not good. There are some known typedefs that hide the 32bit/64bit
+> differences but the LBDAF and sector_t is new to me. Thanks for the
+> report and fix, I'll get it to linus/master tree in the next batch so it
+> can go to stable tree.
+> 
+> I've seen sector_t used in places where it is not necessary so I'll try
+> to minimize the usage and more surprises from the << 9 shifts.
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
+> Fixes: c821e7f3 ("btrfs: pass bytes to btrfs_bio_alloc")
+> CC: stable@vger.kernel.org # 4.13+
 
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1772,6 +1772,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
-        u64 root_flags;
-        u64 flags;
-        int ret = 0;
-+       bool clear_received_uuid = false;
+However, this sector_t is passed from its callers, e.g.
 
-        if (!inode_owner_or_capable(inode))
-                return -EPERM;
-@@ -1820,6 +1821,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
-                        btrfs_set_root_flags(&root->root_item,
-                                     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
-                        spin_unlock(&root->root_item_lock);
-+                       clear_received_uuid = true;
-                } else {
-                        spin_unlock(&root->root_item_lock);
-                        btrfs_warn(fs_info,
-@@ -1836,6 +1838,24 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
-                goto out_reset;
-        }
+__do_readpage()
+{
+	sector_t sector;
+	...
+	sector = em->block_start >> 9;
+	...
+}
 
-+       if (clear_received_uuid) {
-+               if (!btrfs_is_empty_uuid(root->root_item.received_uuid)) {
-+                       ret = btrfs_uuid_tree_rem(trans, fs_info,
-+                                       root->root_item.received_uuid,
-+                                       BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+                                       root->root_key.objectid);
-+
-+                       if (ret && ret != -ENOENT) {
-+                               btrfs_abort_transaction(trans, ret);
-+                               btrfs_end_transaction(trans);
-+                               goto out_reset;
-+                       }
-+
-+                       memset(root->root_item.received_uuid, 0,
-+                                       BTRFS_UUID_SIZE);
-+               }
-+       }
-+
-        ret = btrfs_update_root(trans, fs_info->tree_root,
-                                &root->root_key, &root->root_item);
+if sector_t is 32bit, the above %sector could also lose high bits.
+Some cleanups are needed to use u64 directly.
 
+Even with this patch, I suspect that there might be errors from block
+layer as sector_t is used everywhere in block layer.
 
+For a btrfs FS that is created and used on 64bit system, it'll be
+causing trouble anyway if letting it mount 32bit system, lets refuse
+the mount firstly.
+
+Thanks,
+
+-liubo

@@ -1,170 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:64026 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750909AbdJDFSM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 4 Oct 2017 01:18:12 -0400
-Subject: Re: Can't mount array with super_total_bytes mismatch with fs_devices
- total_rw_bytes
-To: Asif Youssuff <yoasif@gmail.com>, linux-btrfs@vger.kernel.org
-References: <f561678d-17f0-f06e-b781-3445a59e0349@gmail.com>
- <9dc8fe6e-bda5-2b19-b616-ab64696f2102@gmx.com>
- <fdc1dcba-219b-bff2-0b67-eedd97a6d4ba@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <7cbdb7e9-3c1b-c5cb-4ff0-4530de23f6e1@gmx.com>
-Date: Wed, 4 Oct 2017 13:18:03 +0800
-MIME-Version: 1.0
-In-Reply-To: <fdc1dcba-219b-bff2-0b67-eedd97a6d4ba@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from [195.159.176.226] ([195.159.176.226]:59991 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750945AbdJDHBm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2017 03:01:42 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1dzdgI-0001kt-Ue
+        for linux-btrfs@vger.kernel.org; Wed, 04 Oct 2017 09:01:22 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Kickstarting snapshot-aware defrag?
+Date: Wed, 4 Oct 2017 07:01:10 +0000 (UTC)
+Message-ID: <pan$62483$d5c7557$57c5c20e$94893772@cox.net>
+References: <ec17105e-5602-4afd-96d5-77b871051184@linuxsystems.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Niccolò Belli posted on Tue, 03 Oct 2017 15:32:22 +0200 as excerpted:
 
+> Hi,
+> It seems to me that the proposal[1] for a snapshot-aware defrag has long
+> been abandoned. Since most peoples badly need this feature I tought
+> about how to possibly speed up the achievement of this goal.
 
-On 2017年10月04日 12:00, Asif Youssuff wrote:
-> Thanks for the advice.
-> 
-> On 10/03/2017 09:38 PM, Qu Wenruo wrote:
-> 
-> 
->>>
->>> [210017.281912] BTRFS info (device sdb): disk space caching is enabled
->>> [210017.281915] BTRFS info (device sdb): has skinny extents
->>> [210017.402084] BTRFS error (device sdb): super_total_bytes 
->>> 92017859088384
->>> mismatch with fs_devices total_rw_bytes 92017859094528
->>
->> One of your device size is not aligned to 4K.
->> Which is fine, but recently enhanced validation checker does not allow 
->> it.
->> (Which should be a regression, and there is some other WARN_ON related 
->> to it)
->>
->>> [210017.402126] BTRFS error (device sdb): failed to read chunk tree: -22
->>> [210017.461473] BTRFS error (device sdb): open_ctree failed
->>>
->>> I've tried a few steps --
->>>
->>> btrfs-chunk-recover, super-recover and I have run a btrfs check 
->>> --repair on two of the disks in the array (this takes a very long 
->>> time, so I'm hoping I don't have to run this on all of the disks).
->>>
->>> I had run into this problem once before in the past, and I'm not sure 
->>> how I recovered from it; I may have simply rolled back the booted 
->>> kernel to escape the extra checks around this mismatch.
->>>
->>> I'm at a loss for ideas and am running a btrfs-image so I can also 
->>> report an issue -- I'm not sure whether 'btrfs-image -c9 -t4 /dev/sdo 
->>> btrfs.image' is  the right command to run if it is a multi-device array.
->>>
->>> Any ideas would be helpful, and I am happy to provide further 
->>> information.
->>>
->>> root@ubuntu-server:~#   uname -a
->>> Linux ubuntu-server 4.14.0-041400rc2-generic #201709242031 SMP Mon 
->>> Sep 25 00:33:13 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
->>
->> You can rollback to an earlier kernel to mount the fs.
->>
->> And manually find and resize the device with unaligned size:
->>
->> # btrfs fi show -b
->> And check each device for its size:
->> Label: none  uuid: 839ddcfa-5701-4437-aff3-bcb2a26ae6dd
->>      Total devices 1 FS bytes used 397312
->>      devid    1 size <<10737418240>> used 2172649472 path 
->> /dev/mapper/data-btrfs
->>
->> If it's not align, round it down to 4K, and resize it using devid:
->>
->> # btrfs fi resize <devid>:<rounded_size> <mount_point>
->>
->> All device must be rounded. And the command should finish almost in no 
->> time.
-> 
-> I was able to mount the fs using kernel version 4.4 and rounded down 
-> (took the size in bytes, and rounded down to a smaller number divisible 
-> by 4096).
-> 
-> This is what btrfs fi show looks like now:
-> 
-> asif@ubuntu-server:~$ sudo btrfs fi show --raw
-> [sudo] password for asif:
-> Label: none  uuid: 48ed8a66-731d-499b-829e-dd07dd7260cc
->      Total devices 13 FS bytes used 44783241728000
->      devid    4 size 6001141571584 used 5955045097472 path /dev/sdh
->      devid    5 size 6001141571584 used 5955128983552 path /dev/sdg
->      devid    7 size 6001141571584 used 5955709960192 path /dev/sdk
->      devid    9 size 6001175126016 used 5955716186112 path /dev/sde
->      devid   10 size 6001141571584 used 5955145760768 path /dev/sdc
->      devid   11 size 8001563222016 used 7955416416256 path /dev/sdl
->      devid   12 size 6001175126016 used 5956054286336 path /dev/sdf
->      devid   14 size 8001563222016 used 7956009123840 path /dev/sdb
->      devid   15 size 8001563222016 used 7956373831680 path /dev/sdj
->      devid   17 size 8001563222016 used 6341094866944 path /dev/sdd
->      devid   18 size 8001563222016 used 7955827064832 path /dev/sdn
->      devid   20 size 8001563222016 used 7955378339840 path /dev/sdi
->      devid   21 size 8001563222016 used 7955386728448 path /dev/sdo
-> 
->>
->> Then check if latest kernel can mount it.
-> 
-> Unfortunately, the latest kernel still cannot mount it, showing  the 
-> same errors as before.
-> 
-> [  139.852862] BTRFS error (device sdj): super_total_bytes 
-> 92017859086336 mismatch with fs_devices total_rw_bytes 92017859092480
-> [  139.852894] BTRFS error (device sdj): failed to read chunk tree: -22
-> [  139.916645] BTRFS error (device sdj): open_ctree failed
+AFAIK it hasn't been /abandoned/, tho agreed it could seem that way on 
+the surface.  Rather, it was tried, and it simply didn't scale, making 
+defrag slow to effective impracticality (a snapshot-aware defrag that 
+takes a month might as well not exist at all), because many of the 
+operations it had to do behind the scenes simply didn't scale.
 
-Then the problem is btrfs doesn't update its super_total_bytes correctly.
+So the first attempt was rolled back so people could at least defrag in 
+reasonable time again, even if it was no longer snapshot-aware.
 
- From what I can see, grow/shrink only update its delta, not 
-re-calculate it.
+Now before snapshot-aware defrag can work reasonably, all those various 
+scaling issues have to be addressed.  That's happening, but it's not 
+something that can be done, at least not done /right/, in a day.
 
-Before we have a good way to fix it in kernel, the only way is to 
-manually modify the superblock to allow it pass kernel validation checker.
+Now I'm not a dev, but if I've been following the patches and discussion 
+properly, perhaps the biggest scaling issue has been the lack of an 
+ability to reverse-trace something in particular -- the lists work one 
+way and that's fast, but reversing things means going thru the entire 
+list looking for the item(s) of interest... and snapshot-aware-defrag 
+isn't the only thing with the problem, just the easiest to disable as a 
+workaround.  The same root problem is the reason TB-scale btrfs check 
+takes so much memory in normal mode, or so long in low-memory-mode, and 
+it's the reason behind the performance issues with qgroup-enabled 
+balance, thus the recommendation to disable qgroups if your balance is 
+taking unreasonably long, etc.
 
-Thanks,
-Qu
+Without getting too far into stuff I'm not entirely sure about as a non-
+dev, I believe a solution is known in general, but it's only recently 
+being looked at for implementation, because there were other more 
+pressing things that kept coming up, stuff that ended up needing fixed 
+first, etc.  And this /might/ be one of the things that's going to take 
+an on-device format change as well, that they're saving up in a list so 
+they can do them all together, for one more major change before the final 
+push to official btrfs stability, something I've seen mentioned in other 
+contexts, tho I'm not positive that it applies to this particular issue.
+
+So bottom line, they're working on it, but it's not something that's 
+going to be done in a day, or even a year, as time has demonstrated.  
+It's /not/ abandoned, and sure, it could be turned back on with little 
+effort in a kernel release cycle or two if they wanted, but until the 
+scaling issues are fixed, that wouldn't help, because while some of the 
+issues have been fixed and it might take a week to do an hour's work now 
+instead of a month, or even "only" a day now, that's not going to change 
+the fact that it's not going to be particularly practical, and a non-
+snapshot-aware defrag that actually works in reasonable time remains far 
+more practical than a snapshot-aware defrag that takes that long.
+
+> I know of several bounty-based kickstarting platforms, among them the
+> best ones are probably bountysource.com[2] and freedomsponsors.org[3].
+> With both platforms everyone interested can place a bounty on the issue
+> and if/when there will be someone interested to implement it he will get
+> the bounty.
+> I created an issue on both of them just to show how the platform will
+> handle it.
 > 
->>
->> I think it can be made as part of "btrfs check" to fix it.
->> (Although it should be handled by kernel well)
->>
->> Thanks,
->> Qu
-> 
-> Hope there are some other ideas (or please correct me if I have done 
-> something wrong!).
-> 
-> Thanks,
-> Asif
-> 
->>
->>>
->>> root@ubuntu-server:~#   btrfs --version
->>> btrfs-progs v4.13.1
->>>
->>> root@ubuntu-server:~#   btrfs fi show
->>> Label: none  uuid: 48ed8a66-731d-499b-829e-dd07dd7260cc
->>> Total devices 13 FS bytes used 40.73TiB
->>> devid    4 size 5.46TiB used 5.42TiB path /dev/sdo
->>> devid    5 size 5.46TiB used 5.42TiB path /dev/sdn
->>> devid    7 size 5.46TiB used 5.42TiB path /dev/sdc
->>> devid    9 size 5.46TiB used 5.42TiB path /dev/sdk
->>> devid   10 size 5.46TiB used 5.42TiB path /dev/sdj
->>> devid   11 size 7.28TiB used 7.24TiB path /dev/sdd
->>> devid   12 size 5.46TiB used 5.42TiB path /dev/sdm
->>> devid   14 size 7.28TiB used 7.24TiB path /dev/sdh
->>> devid   15 size 7.28TiB used 7.24TiB path /dev/sdb
->>> devid   17 size 7.28TiB used 5.77TiB path /dev/sdl
->>> devid   18 size 7.28TiB used 7.24TiB path /dev/sdf
->>> devid   20 size 7.28TiB used 7.24TiB path /dev/sdi
->>> devid   21 size 7.28TiB used 7.24TiB path /dev/sdg
->>>
->>> Thanks,
->>> Asif
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Since btrfs is a small community, before actually placing bounties and
+> sponsoring it I would like to know if there is someone against this
+> development model or someone interested in implementing a feature
+> because of a bounty.
+
+Glad you asked first, because...
+
+Honestly, this is going to go over like a lead balloon.  Similar things 
+have been tried before, and invariably, they fail, because it horribly 
+clashes with existing kernel culture and practices, and because it 
+incentivizes the wrong thing.
+
+What happens both with cash bounties, and with similar effect non-cash 
+bounties such as (bare) "get a patch accepted into the kernel" 
+requirements for development courses or resume puffery, is that it 
+clashes with the general kernel developer long view -- the patch series 
+may end up going thru 20 revisions over the course of a year or more, 
+fixing complaints from first one subsystem maintainer and then another, 
+only to finally be rejected in favor of someone else's different approach 
+because it's more maintainable, or works better with something else to be 
+built on top, or ... .  Or elements of both approaches (or five or six 
+approaches) may ultimately be combined, and the person who first proposed 
+a feature may not be the one that gets final authorship even if they 
+cooperated with the person and approach that did.
+
+Someone interested in a bounty simply isn't going to stick around for all 
+that.
+
+Additionally, there's a huge interest in developing kernel devs that will 
+stick around, both to help maintain code they've already submitted, and 
+to continue to work on other things.  Bounty-type solutions encourage 
+"one-shot-wonders" that disappear and are never seen or heard from 
+again.  While that might be fine for a one-line or even 10-line fix, and 
+there's normally many such one-shot-fixes in every kernel, those are 
+trivial fixes that don't normally need a bounty, while the larger 
+features where a bounty might appear to be useful, really need someone 
+that's going to stick around to maintain it.  But that's not what 
+bounties encourage!
+
+So a bounty simply isn't useful for kernel work, and proposing such 
+things, as I said, goes over like a lead balloon, because the experience 
+with such things has been **BAD**.
+
+OTOH, there's always room for individuals who are using the code 
+themselves, want to make it better, and take a longer term interest in 
+learning its ins and outs, and starting small, I've seen suggestions here 
+to start with the on-disk format and with btrfs-progs, since that doesn't 
+involve hard kernel issues such as machine-locking lock-inversions, or 
+data corrupting missing-lock concurrency issues.  Similarly for companies 
+willing to sponsor devs to take the time to come up to speed and make 
+meaningful contributions, even if it's going to take several man-months 
+of work before there's going to be much to show for it, and even if those 
+"meaningful contributions" end up coming in under someone else's 
+authorship, because that turned out to be the better longer-term solution 
+to the problem, tho there /was/ significant contribution to the finally 
+accepted solution, just not on the authorship line.
+
+But again, that's pretty much the utter antithesis of bounties.
+
+> [1]https://www.spinics.net/lists/linux-btrfs/msg34539.html
+> [2]https://www.bountysource.com/issues/50004702-feature-request-
+snapshot-aware-defrag
+> [3]https://freedomsponsors.org/issue/817/feature-request-snapshot-aware-
+defrag?alert=KICKSTART
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

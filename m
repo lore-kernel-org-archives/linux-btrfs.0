@@ -1,123 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:48904 "EHLO
-        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750951AbdJDWTt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2017 18:19:49 -0400
-Date: Wed, 4 Oct 2017 22:19:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Stephen Nesbitt <nesbittmeister@gmail.com>
-Cc: Stephen Nesbitt <snesbitt@aussieswithtails.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Seeking Help on Corruption Issues
-Message-ID: <20171004221947.GG3293@carfax.org.uk>
-References: <c67167b4-190b-dfdc-33a8-8cb75a4744ef@gmail.com>
- <20171003201047.GE3293@carfax.org.uk>
- <CAPXGFsE4HzGWhjKtp=E-4LN_-vQnFtqJDDhTva9Wkg9Gtm9D_w@mail.gmail.com>
- <20171003211121.GF3293@carfax.org.uk>
- <e531fc75-8080-eb82-86bb-2f787bf0ea43@gmail.com>
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:50474 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750951AbdJDXN2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Oct 2017 19:13:28 -0400
+Received: by mail-qt0-f195.google.com with SMTP id f15so22338389qtf.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Oct 2017 16:13:28 -0700 (PDT)
+Subject: Re: Can't mount array with super_total_bytes mismatch with fs_devices
+ total_rw_bytes
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <f561678d-17f0-f06e-b781-3445a59e0349@gmail.com>
+ <9dc8fe6e-bda5-2b19-b616-ab64696f2102@gmx.com>
+ <fdc1dcba-219b-bff2-0b67-eedd97a6d4ba@gmail.com>
+ <7cbdb7e9-3c1b-c5cb-4ff0-4530de23f6e1@gmx.com>
+From: Asif Youssuff <yoasif@gmail.com>
+Message-ID: <b109b1f1-9ebd-7dc8-d7fd-990d877cd2ab@gmail.com>
+Date: Wed, 4 Oct 2017 19:13:26 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="yQbNiKLmgenwUfTN"
-In-Reply-To: <e531fc75-8080-eb82-86bb-2f787bf0ea43@gmail.com>
+In-Reply-To: <7cbdb7e9-3c1b-c5cb-4ff0-4530de23f6e1@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---yQbNiKLmgenwUfTN
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-On Tue, Oct 03, 2017 at 03:49:25PM -0700, Stephen Nesbitt wrote:
+On 10/04/2017 01:18 AM, Qu Wenruo wrote:
 > 
-> On 10/3/2017 2:11 PM, Hugo Mills wrote:
-> >    Hi, Stephen,
-> >
-> >On Tue, Oct 03, 2017 at 08:52:04PM +0000, Stephen Nesbitt wrote:
-> >>Here it i. There are a couple of out-of-order entries beginning at 117. And
-> >>yes I did uncover a bad stick of RAM:
-> >>
-> >>btrfs-progs v4.9.1
-> >>leaf 2589782867968 items 134 free space 6753 generation 3351574 owner 2
-> >>fs uuid 24b768c3-2141-44bf-ae93-1c3833c8c8e3
-> >>chunk uuid 19ce12f0-d271-46b8-a691-e0d26c1790c6
-> >[snip]
-> >>item 116 key (1623012749312 EXTENT_ITEM 45056) itemoff 10908 itemsize 53
-> >>extent refs 1 gen 3346444 flags DATA
-> >>extent data backref root 271 objectid 24999978 offset 0 count 1
-> >>item 117 key (1621939052544 EXTENT_ITEM 8192) itemoff 10855 itemsize 53
-> >>extent refs 1 gen 3346495 flags DATA
-> >>extent data backref root 271 objectid 21751764 offset 6733824 count 1
-> >>item 118 key (1623012450304 EXTENT_ITEM 8192) itemoff 10802 itemsize 53
-> >>extent refs 1 gen 3351513 flags DATA
-> >>extent data backref root 271 objectid 5724364 offset 680640512 count 1
-> >>item 119 key (1623012802560 EXTENT_ITEM 12288) itemoff 10749 itemsize 53
-> >>extent refs 1 gen 3346376 flags DATA
-> >>extent data backref root 271 objectid 21751764 offset 6701056 count 1
-> >>>>hex(1623012749312)
-> >'0x179e3193000'
-> >>>>hex(1621939052544)
-> >'0x179a319e000'
-> >>>>hex(1623012450304)
-> >'0x179e314a000'
-> >>>>hex(1623012802560)
-> >'0x179e31a0000'
-> >
-> >    That's "e" -> "a" in the fourth hex digit, which is a single-bit
-> >flip, and should be fixable by btrfs check (I think). However, even
-> >fixing that, it's not ordered, because 118 is then before 117, which
-> >could be another bitflip ("9" -> "4" in the 7th digit), but two bad
-> >bits that close to each other seems unlikely to me.
-> >
-> >    Hugo.
 > 
-> Hope this is a duplicate reply - I might have fat fingered something.
+> On 2017年10月04日 12:00, Asif Youssuff wrote:
+>> Thanks for the advice.
+>>
+>> On 10/03/2017 09:38 PM, Qu Wenruo wrote:
+>>
+>>
+>>>>
+>>>> [210017.281912] BTRFS info (device sdb): disk space caching is enabled
+>>>> [210017.281915] BTRFS info (device sdb): has skinny extents
+>>>> [210017.402084] BTRFS error (device sdb): super_total_bytes 
+>>>> 92017859088384
+>>>> mismatch with fs_devices total_rw_bytes 92017859094528
+>>>
+>>> One of your device size is not aligned to 4K.
+>>> Which is fine, but recently enhanced validation checker does not 
+>>> allow it.
+>>> (Which should be a regression, and there is some other WARN_ON 
+>>> related to it)
+>>>
+>>>> [210017.402126] BTRFS error (device sdb): failed to read chunk tree: 
+>>>> -22
+>>>> [210017.461473] BTRFS error (device sdb): open_ctree failed
+>>>>
+>>>> I've tried a few steps --
+>>>>
+>>>> btrfs-chunk-recover, super-recover and I have run a btrfs check 
+>>>> --repair on two of the disks in the array (this takes a very long 
+>>>> time, so I'm hoping I don't have to run this on all of the disks).
+>>>>
+>>>> I had run into this problem once before in the past, and I'm not 
+>>>> sure how I recovered from it; I may have simply rolled back the 
+>>>> booted kernel to escape the extra checks around this mismatch.
+>>>>
+>>>> I'm at a loss for ideas and am running a btrfs-image so I can also 
+>>>> report an issue -- I'm not sure whether 'btrfs-image -c9 -t4 
+>>>> /dev/sdo btrfs.image' is  the right command to run if it is a 
+>>>> multi-device array.
+>>>>
+>>>> Any ideas would be helpful, and I am happy to provide further 
+>>>> information.
+>>>>
+>>>> root@ubuntu-server:~#   uname -a
+>>>> Linux ubuntu-server 4.14.0-041400rc2-generic #201709242031 SMP Mon 
+>>>> Sep 25 00:33:13 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+>>>
+>>> You can rollback to an earlier kernel to mount the fs.
+>>>
+>>> And manually find and resize the device with unaligned size:
+>>>
+>>> # btrfs fi show -b
+>>> And check each device for its size:
+>>> Label: none  uuid: 839ddcfa-5701-4437-aff3-bcb2a26ae6dd
+>>>      Total devices 1 FS bytes used 397312
+>>>      devid    1 size <<10737418240>> used 2172649472 path 
+>>> /dev/mapper/data-btrfs
+>>>
+>>> If it's not align, round it down to 4K, and resize it using devid:
+>>>
+>>> # btrfs fi resize <devid>:<rounded_size> <mount_point>
+>>>
+>>> All device must be rounded. And the command should finish almost in 
+>>> no time.
+>>
+>> I was able to mount the fs using kernel version 4.4 and rounded down 
+>> (took the size in bytes, and rounded down to a smaller number 
+>> divisible by 4096).
+>>
+>> This is what btrfs fi show looks like now:
+>>
+>> asif@ubuntu-server:~$ sudo btrfs fi show --raw
+>> [sudo] password for asif:
+>> Label: none  uuid: 48ed8a66-731d-499b-829e-dd07dd7260cc
+>>      Total devices 13 FS bytes used 44783241728000
+>>      devid    4 size 6001141571584 used 5955045097472 path /dev/sdh
+>>      devid    5 size 6001141571584 used 5955128983552 path /dev/sdg
+>>      devid    7 size 6001141571584 used 5955709960192 path /dev/sdk
+>>      devid    9 size 6001175126016 used 5955716186112 path /dev/sde
+>>      devid   10 size 6001141571584 used 5955145760768 path /dev/sdc
+>>      devid   11 size 8001563222016 used 7955416416256 path /dev/sdl
+>>      devid   12 size 6001175126016 used 5956054286336 path /dev/sdf
+>>      devid   14 size 8001563222016 used 7956009123840 path /dev/sdb
+>>      devid   15 size 8001563222016 used 7956373831680 path /dev/sdj
+>>      devid   17 size 8001563222016 used 6341094866944 path /dev/sdd
+>>      devid   18 size 8001563222016 used 7955827064832 path /dev/sdn
+>>      devid   20 size 8001563222016 used 7955378339840 path /dev/sdi
+>>      devid   21 size 8001563222016 used 7955386728448 path /dev/sdo
+>>
+>>>
+>>> Then check if latest kernel can mount it.
+>>
+>> Unfortunately, the latest kernel still cannot mount it, showing  the 
+>> same errors as before.
+>>
+>> [  139.852862] BTRFS error (device sdj): super_total_bytes 
+>> 92017859086336 mismatch with fs_devices total_rw_bytes 92017859092480
+>> [  139.852894] BTRFS error (device sdj): failed to read chunk tree: -22
+>> [  139.916645] BTRFS error (device sdj): open_ctree failed
 > 
-> The underlying file is disposable/replaceable. Any way to zero
-> out/zap the bad BTRFS entry?
+> Then the problem is btrfs doesn't update its super_total_bytes correctly.
+> 
+>  From what I can see, grow/shrink only update its delta, not 
+> re-calculate it.
+> 
+> Before we have a good way to fix it in kernel, the only way is to 
+> manually modify the superblock to allow it pass kernel validation checker.
+> 
 
-   Not really. Even trying to delete the related file(s), it's going
-to fall over when reading the metadata in in the first place. (The key
-order check is a metadata invariant, like the csum checks and transid
-checks).
+A manual edit of the superblock sounds painful unless there is good 
+documentation for that.
 
-   At best, you'd have to get btrfs check to fix it. It should be able
-to manage a single-bit error, but you've got two single-bit errors in
-close proximity, and I'm not sure it'll be able to deal with it. Might
-be worth trying it. The FS _might_ blow up as a result of an attempted
-fix, but you say it's replacable, so that's kind of OK. The worst I'd
-_expect_ to happen with btrfs check --repair is that it just won't be
-able to deal with it and you're left where you started.
+How can I follow up to get this fixed in the kernel? Do we have enough 
+information in this thread to create a bug on bugzilla?  Should I open one?
 
-   Go for it.
-
-   Hugo.
-
--- 
-Hugo Mills             | You shouldn't anthropomorphise computers. They
-hugo@... carfax.org.uk | really don't like that.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---yQbNiKLmgenwUfTN
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJZ1V6DAAoJEFheFHXiqx3kTn4P/R9kXt0Gjiq5bJ5nGthz2dvh
-ioDcQeVNd7lgZHLgk2a1ux0VgYKBIJLDRNFZwTiZxT3Ma+d2TYrrleK4ZksebxWu
-mkdSJE0IiP/XEIRXw75Lu4YNWA3XB38Trd9qgPLp5vaH/vEqGVvP0/V8sXVagUor
-iGoorL+rg6jAlIP+ry5Ulf/YYv32fvbD5BPBdG8HKMZBE/1YaLX32G+zmpFYPTGd
-tdcoBpiUrtQzmvaJ8f3oHu+Sa2w2etyAJ0pR3H/I9XeEo1LE0k1FuAUbZRtodO4C
-uiXvubjgeLMkuuXe1dAmZqZUggvIDV8Xv8cvufafZH1iEVKlx4OFNzCglQLwjxoA
-5C6YlGDxrM63RVl3VhXmLBBE9NcFnAmQgGmKkFZ++vMeRJttHE0shQPEY5s9tb6X
-4YEhHHsfF0Jnpq7lB9zm2x7wObbhr4BoNtgOAmTh735q5o42saBtlKxaD3mnUQyF
-5diC0y5FOMCfzr7+FF7BJozOQID6n9EPFoPmSScFAO883pdHybooh8cAYjvYOLwQ
-R9y6BrsqFwiVLEB+OpZYs5SG+/JWsKbSEaU+Bq2OjzN4vK1/nWY4yqbG/k1clYEO
-uhXIrd1Y2CDehaPrp1ZekvlpvKshs+Tk4+pyZh3IfnBzPzn7DArvwK0QwDZpg+vh
-OKyRdpw5iqvKW9Yc0sUR
-=jvhH
------END PGP SIGNATURE-----
-
---yQbNiKLmgenwUfTN--
+Thanks!
+> Thanks,
+> Qu
+>>
+>>>
+>>> I think it can be made as part of "btrfs check" to fix it.
+>>> (Although it should be handled by kernel well)
+>>>
+>>> Thanks,
+>>> Qu
+>>
+>> Hope there are some other ideas (or please correct me if I have done 
+>> something wrong!).
+>>
+>> Thanks,
+>> Asif
+>>
+>>>
+>>>>
+>>>> root@ubuntu-server:~#   btrfs --version
+>>>> btrfs-progs v4.13.1
+>>>>
+>>>> root@ubuntu-server:~#   btrfs fi show
+>>>> Label: none  uuid: 48ed8a66-731d-499b-829e-dd07dd7260cc
+>>>> Total devices 13 FS bytes used 40.73TiB
+>>>> devid    4 size 5.46TiB used 5.42TiB path /dev/sdo
+>>>> devid    5 size 5.46TiB used 5.42TiB path /dev/sdn
+>>>> devid    7 size 5.46TiB used 5.42TiB path /dev/sdc
+>>>> devid    9 size 5.46TiB used 5.42TiB path /dev/sdk
+>>>> devid   10 size 5.46TiB used 5.42TiB path /dev/sdj
+>>>> devid   11 size 7.28TiB used 7.24TiB path /dev/sdd
+>>>> devid   12 size 5.46TiB used 5.42TiB path /dev/sdm
+>>>> devid   14 size 7.28TiB used 7.24TiB path /dev/sdh
+>>>> devid   15 size 7.28TiB used 7.24TiB path /dev/sdb
+>>>> devid   17 size 7.28TiB used 5.77TiB path /dev/sdl
+>>>> devid   18 size 7.28TiB used 7.24TiB path /dev/sdf
+>>>> devid   20 size 7.28TiB used 7.24TiB path /dev/sdi
+>>>> devid   21 size 7.28TiB used 7.24TiB path /dev/sdg
+>>>>
+>>>> Thanks,
+>>>> Asif
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

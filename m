@@ -1,43 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43452 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750849AbdJFQQ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Oct 2017 12:16:27 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id EFBC1AB9B
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Oct 2017 16:16:25 +0000 (UTC)
-Date: Fri, 6 Oct 2017 18:14:43 +0200
+Received: from mx2.suse.de ([195.135.220.15]:38086 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751286AbdJERsK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Oct 2017 13:48:10 -0400
+Date: Thu, 5 Oct 2017 19:46:25 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH v2 2/2] btrfs: Fix transaction abort during failure in
- btrfs_rm_dev_item
-Message-ID: <20171006161443.GT3521@twin.jikos.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5] btrfs-progs: check: return value of
+ check_extent_refs()
+Message-ID: <20171005174625.GM3521@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1506509327-18862-1-git-send-email-nborisov@suse.com>
- <1506588327-6616-1-git-send-email-nborisov@suse.com>
- <1506588327-6616-2-git-send-email-nborisov@suse.com>
+References: <20170927063440.25961-1-suy.fnst@cn.fujitsu.com>
+ <20170927063440.25961-2-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1506588327-6616-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <20170927063440.25961-2-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 28, 2017 at 11:45:27AM +0300, Nikolay Borisov wrote:
-> btrfs_rm_dev_item calls several function under an activa transaction, however
-> it fails to abort it if an error happens. Fix this by adding explicit
-> btrfs_abort_transaction/btrfs_end_transaction calls
+On Wed, Sep 27, 2017 at 02:34:36PM +0800, Su Yue wrote:
+> In original check mode(without option "--repair"), check_extent_refs()
+> always returns 0.
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
+> Add a variable @error to record status while checking extents.
+> At the end of check_extent_refs(), let it return -EIO if @error is
+> nonzero.
 > 
-> v2: 
->  * Explicitly handle every failure case w.r.t transaction abort rather than 
->  rely on final btrfs_commit_transaction() to do the right thing. 
+> Example:
+> $ btrfs check bad-extent-inline-ref-type.raw
+> Checking filesystem on bad-extent-inline-ref-type.raw
+> UUID: 1942d6fe-617b-4499-9982-cc8ffae5447f
+> checking extents
+> corrupt extent record: key 29360128 169 16384
+> ref mismatch on [29360128 16384] extent item 0, found 1
+> Backref 29360128 parent 5 root 5 not found in extent tree
+> backpointer mismatch on [29360128 16384]
+> bad extent [29360128, 29376512), type mismatch with chunk
+> checking free space cache
+> checking fs roots
+> checking csums
+> checking root refs
+> found 114688 bytes used, no error found
+> total csum bytes: 0
+> total tree bytes: 114688
+> total fs tree bytes: 32768
+> total extent tree bytes: 16384
+> btree space waste bytes: 109471
+> file data blocks allocated: 0
+>  referenced 0
 > 
->  * Also consider the -ENOENT case from btrfs_search_slot as a failure.
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-The devid is checked in the caller, outside of the transaction, so it is
-fine to abort here, the devid is supposed to be there.
+With this patch applied, the test fsck/006 fails, is that intentional?
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Log from the last failing testcase:
+
+checking extents
+ref mismatch on [15474688 905216] extent item 1, found 4
+Data backref 15474688 parent 31817728 owner 0 offset 0 num_refs 0 not found in extent tree
+Incorrect local backref count on 15474688 parent 31817728 owner 0 offset 0 found 1 wanted 0 back 0x12d02f0
+Data backref 15474688 parent 30883840 owner 0 offset 0 num_refs 0 not found in extent tree
+Incorrect local backref count on 15474688 parent 30883840 owner 0 offset 0 found 1 wanted 0 back 0x12cd710
+Data backref 15474688 parent 31326208 owner 0 offset 0 num_refs 0 not found in extent tree
+Incorrect local backref count on 15474688 parent 31326208 owner 0 offset 0 found 1 wanted 0 back 0x12d2b80
+backpointer mismatch on [15474688 905216]
+ERROR: errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on test.img
+UUID: 3857c23d-4219-4600-a636-ac7707dc4ff3
+cache and super generation don't match, space cache will be invalidated
+found 6291456 bytes used, error(s) found
+total csum bytes: 660
+total tree bytes: 786432
+total fs tree bytes: 688128
+total extent tree bytes: 16384
+btree space waste bytes: 459860
+file data blocks allocated: 35536896
+ referenced 25890816
+failed: /mnt/big/dsterba/backup-labs-subv/gits/btrfs-progs/btrfs check test.img
+
+I haven't tried with the other patches applied, so it might get actually fixed.
+Even in that case, I'd rather keep the branches bisectable.

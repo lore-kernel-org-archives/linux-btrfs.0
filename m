@@ -1,42 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:37784 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751984AbdJELHr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 07:07:47 -0400
-Received: by mail-io0-f193.google.com with SMTP id m201so3954243iom.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Oct 2017 04:07:47 -0700 (PDT)
-Subject: Re: [PATCH v8 2/2] btrfs: check device for critical errors and mark
- failed
-To: bo.li.liu@oracle.com, Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <20171003155920.24925-1-anand.jain@oracle.com>
- <20171003155920.24925-3-anand.jain@oracle.com>
- <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <bd328a02-8823-a3a4-35ff-a9b890f00679@gmail.com>
-Date: Thu, 5 Oct 2017 07:07:44 -0400
+Received: from mout1.freenet.de ([195.4.92.91]:52418 "EHLO mout1.freenet.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751318AbdJELnG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 5 Oct 2017 07:43:06 -0400
+Received: from [195.4.92.21] (helo=mx11.freenet.de)
+        by mout1.freenet.de with esmtpsa (ID g6094199@freenet.de) (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256) (port 25) (Exim 4.89 #1)
+        id 1e04Ta-0001Qe-Tz
+        for linux-btrfs@vger.kernel.org; Thu, 05 Oct 2017 13:38:02 +0200
+Received: from web8.emo.freenet-rz.de ([194.97.107.144]:44832)
+        by mx11.freenet.de with esmtpa (ID g6094199@freenet.de) (port 587) (Exim 4.89 #1)
+        id 1e04Ta-0005h5-Q2
+        for linux-btrfs@vger.kernel.org; Thu, 05 Oct 2017 13:38:02 +0200
+Received: from localhost ([127.0.0.1] helo=emo.freenet.de)
+        by web8.emo.freenet-rz.de with esmtpa (Exim 4.84_2 2 (Panther_1))
+        id 1e04Ta-00066x-Nt
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Oct 2017 13:38:02 +0200
+Date: Thu, 05 Oct 2017 13:38:02 +0200
+From: g6094199@freenet.de
+Subject: How to get Super_num_devices in sync with num_devices again?!
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-In-Reply-To: <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Message-Id: <1bf24e337599ff54dc3d851ba3fbf913@email.freenet.de>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-04 16:11, Liu Bo wrote:
-> On Tue, Oct 03, 2017 at 11:59:20PM +0800, Anand Jain wrote:
->> From: Anand Jain <Anand.Jain@oracle.com>
->>
->> Write and flush errors are critical errors, upon which the device fd
->> must be closed and marked as failed.
->>
-> 
-> Can we defer the job of closing device to umount?
-> 
-> We can go mark the device failed and skip it while doing read/write,
-> and umount can do the cleanup work.
-> 
-> That way we don't need a dedicated thread looping around to detect a
-> rare situation.
-If BTRFS doesn't close the device, then it's 100% guaranteed if it 
-reconnects that it will show up under a different device node.  It would 
-also mean that the device node stays visible when there is in fact no 
-device connected to it, which is a pain from a monitoring perspective.
+He Guys!I have an ubuntu 16.04 machine (K4.4 and K4.11, btrfs-progs v4.5.2) running / on btrfs raid1 and for somemonth (after i had to replace a / disk) super_numdevices and num_devices are out of sync peventing me to bootKernels newer than around 4.7 (ifaik), where the kernels began the be more restictive on checking valid btrfsdisks.I tried to remove the raid and converted to single with several balances after that so that there are no raidchunks left.Label: 'System'  uuid: 35fdbfd4-5809-4a30-94c1-5e3ca206ca4d    Total devices 1 FS bytes used 14.86GiB    devid    6 size 50.00GiB used 17.31GiB path /dev/nvme0n1p1Data, single: total=15.00GiB, used=13.84GiBSystem, single: total=64.00MiB, used=16.00KiBMetadata, single: total=2.25GiB, used=1.02GiBGlobalReserve, single: total=336.00MiB, used=0.00B/dev/nvme0n1p1, ID: 6   Device size:            50.00GiB   Data,single:            15.00GiB   Metadata,single:         2.25GiB   System,single:          6400MiB   Unallocated:            32.69GiBOverall:    Device size:          50.00GiB    Device allocated:          17.31GiB    Device unallocated:          32.69GiB    Device missing:             0.00B    Used:              1486GiB    Free (estimated):          33.85GiB    (min: 33.85GiB)    Data ratio:                  1.00    Metadata ratio:              1.00    Global reserve:         336.00MiB    (used: 0.00B)Data,single: Size:15.00GiB, Used:13.84GiB   /dev/nvme0n1p1      15.00GiBMetadata,single: Size:2.25GiB, Used:1.02GiB   /dev/nvme0n1p1       2.25GiBSystem,single: Size:64.00MiB, Used:1600KiB   /dev/nvme0n1p1      64.00MiBUnallocated:   /dev/nvme0n1p1      32.69GiBBut again newer kernels refuse to boot with tlling me: "BTRFS error....: super_num_devices 2 missmatchwith num_devices 1 found here".So the the two counters are alwasy off by one, dont matter what i try.Question: how do i get thouse two counters in sync again so that my system acts again as expected?!regardsSash
+
+MIT TRAVELXTRA PROFITIEREN SIE VON 5% RÜCKVERGÜTUNG AUF DEN
+REISEPREIS ? bekannte dt. Reiseanbieter und ein umfangreiches
+Reiseangebot wie im Reisebüro!
+https://email.freenet.de/reisen/index.html
+[https://email.freenet.de/reisen/index.html?utm_medium=Text&utm_source=Footersatz&utm_campaign=Footersatz_Reisen07082017&epid=e9900000699&utm_content=Text]
+

@@ -1,35 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout1.freenet.de ([195.4.92.91]:52418 "EHLO mout1.freenet.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751318AbdJELnG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Oct 2017 07:43:06 -0400
-Received: from [195.4.92.21] (helo=mx11.freenet.de)
-        by mout1.freenet.de with esmtpsa (ID g6094199@freenet.de) (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256) (port 25) (Exim 4.89 #1)
-        id 1e04Ta-0001Qe-Tz
-        for linux-btrfs@vger.kernel.org; Thu, 05 Oct 2017 13:38:02 +0200
-Received: from web8.emo.freenet-rz.de ([194.97.107.144]:44832)
-        by mx11.freenet.de with esmtpa (ID g6094199@freenet.de) (port 587) (Exim 4.89 #1)
-        id 1e04Ta-0005h5-Q2
-        for linux-btrfs@vger.kernel.org; Thu, 05 Oct 2017 13:38:02 +0200
-Received: from localhost ([127.0.0.1] helo=emo.freenet.de)
-        by web8.emo.freenet-rz.de with esmtpa (Exim 4.84_2 2 (Panther_1))
-        id 1e04Ta-00066x-Nt
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Oct 2017 13:38:02 +0200
-Date: Thu, 05 Oct 2017 13:38:02 +0200
-From: g6094199@freenet.de
-Subject: How to get Super_num_devices in sync with num_devices again?!
-To: linux-btrfs@vger.kernel.org
+Received: from mail-qt0-f170.google.com ([209.85.216.170]:51732 "EHLO
+        mail-qt0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751280AbdJENik (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 09:38:40 -0400
+Received: by mail-qt0-f170.google.com with SMTP id q4so25355639qtq.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Oct 2017 06:38:40 -0700 (PDT)
 MIME-Version: 1.0
-Message-Id: <1bf24e337599ff54dc3d851ba3fbf913@email.freenet.de>
-Content-Type: text/plain; charset="utf-8"
+From: Eric Wolf <19wolf@gmail.com>
+Date: Thu, 5 Oct 2017 09:38:18 -0400
+Message-ID: <CAJ_hD5D4CUHW1eUour5HJKx2Zk69nm2ypFRiN2UXGt9ah7us6Q@mail.gmail.com>
+Subject: Mounting bad btrfs img file
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-He Guys!I have an ubuntu 16.04 machine (K4.4 and K4.11, btrfs-progs v4.5.2) running / on btrfs raid1 and for somemonth (after i had to replace a / disk) super_numdevices and num_devices are out of sync peventing me to bootKernels newer than around 4.7 (ifaik), where the kernels began the be more restictive on checking valid btrfsdisks.I tried to remove the raid and converted to single with several balances after that so that there are no raidchunks left.Label: 'System'  uuid: 35fdbfd4-5809-4a30-94c1-5e3ca206ca4d    Total devices 1 FS bytes used 14.86GiB    devid    6 size 50.00GiB used 17.31GiB path /dev/nvme0n1p1Data, single: total=15.00GiB, used=13.84GiBSystem, single: total=64.00MiB, used=16.00KiBMetadata, single: total=2.25GiB, used=1.02GiBGlobalReserve, single: total=336.00MiB, used=0.00B/dev/nvme0n1p1, ID: 6   Device size:            50.00GiB   Data,single:            15.00GiB   Metadata,single:         2.25GiB   System,single:          6400MiB   Unallocated:            32.69GiBOverall:    Device size:          50.00GiB    Device allocated:          17.31GiB    Device unallocated:          32.69GiB    Device missing:             0.00B    Used:              1486GiB    Free (estimated):          33.85GiB    (min: 33.85GiB)    Data ratio:                  1.00    Metadata ratio:              1.00    Global reserve:         336.00MiB    (used: 0.00B)Data,single: Size:15.00GiB, Used:13.84GiB   /dev/nvme0n1p1      15.00GiBMetadata,single: Size:2.25GiB, Used:1.02GiB   /dev/nvme0n1p1       2.25GiBSystem,single: Size:64.00MiB, Used:1600KiB   /dev/nvme0n1p1      64.00MiBUnallocated:   /dev/nvme0n1p1      32.69GiBBut again newer kernels refuse to boot with tlling me: "BTRFS error....: super_num_devices 2 missmatchwith num_devices 1 found here".So the the two counters are alwasy off by one, dont matter what i try.Question: how do i get thouse two counters in sync again so that my system acts again as expected?!regardsSash
+My OS drive had issues with metadata (disk full even though it wasn't
+etc), and so I reinstalled my OS and now I'm learning that my backup
+img is bad. What steps should I go through to fix it?
 
-MIT TRAVELXTRA PROFITIEREN SIE VON 5% RÜCKVERGÜTUNG AUF DEN
-REISEPREIS ? bekannte dt. Reiseanbieter und ein umfangreiches
-Reiseangebot wie im Reisebüro!
-https://email.freenet.de/reisen/index.html
-[https://email.freenet.de/reisen/index.html?utm_medium=Text&utm_source=Footersatz&utm_campaign=Footersatz_Reisen07082017&epid=e9900000699&utm_content=Text]
 
+$ sudo mount -o
+offset=8999927808,loop,recovery,ro,nospace_cache,nospace_cache
+/data/Backup/Nephele.img /mnt
+
+mount: wrong fs type, bad option, bad superblock on /dev/loop0,
+
+       missing codepage or helper program, or other error
+
+
+       In some cases useful info is found in syslog - try
+
+       dmesg | tail or so.
+
+nephele@Nephele:/data/Backup$ dmesg | tail
+
+[48539.443711] BTRFS error (device loop0): parent transid verify
+failed on 98021605376 wanted 85976 found 85978
+
+[48539.473837] BTRFS error (device loop0): parent transid verify
+failed on 98021605376 wanted 85976 found 85978
+
+[48539.485032] BTRFS: failed to read tree root on loop0
+
+[48539.494782] BTRFS error (device loop0): parent transid verify
+failed on 98049490944 wanted 85975 found 85981
+
+[48539.510541] BTRFS error (device loop0): parent transid verify
+failed on 98049490944 wanted 85975 found 85981
+
+[48539.523464] BTRFS: failed to read tree root on loop0
+
+[48539.526374] BTRFS error (device loop0): parent transid verify
+failed on 98020917248 wanted 85974 found 85979
+
+[48539.545628] BTRFS error (device loop0): parent transid verify
+failed on 98020917248 wanted 85974 found 85979
+
+[48539.560595] BTRFS: failed to read tree root on loop0
+
+[48539.589038] BTRFS: open_ctree failed

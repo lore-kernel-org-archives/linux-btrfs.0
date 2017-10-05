@@ -1,101 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29878 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751420AbdJEJEN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 05:04:13 -0400
-Subject: Re: [PATCH v4] btrfs: Remove received_uuid during received snapshot
- ro->rw switch
-To: Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz
+Received: from mail-io0-f193.google.com ([209.85.223.193]:37784 "EHLO
+        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751984AbdJELHr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 07:07:47 -0400
+Received: by mail-io0-f193.google.com with SMTP id m201so3954243iom.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Oct 2017 04:07:47 -0700 (PDT)
+Subject: Re: [PATCH v8 2/2] btrfs: check device for critical errors and mark
+ failed
+To: bo.li.liu@oracle.com, Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-References: <20171004150039.GE3521@twin.jikos.cz>
- <1507191773-23039-1-git-send-email-nborisov@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <f80cdc51-a077-60fa-01b3-3521c0adfdfb@oracle.com>
-Date: Thu, 5 Oct 2017 17:03:47 +0800
+References: <20171003155920.24925-1-anand.jain@oracle.com>
+ <20171003155920.24925-3-anand.jain@oracle.com>
+ <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <bd328a02-8823-a3a4-35ff-a9b890f00679@gmail.com>
+Date: Thu, 5 Oct 2017 07:07:44 -0400
 MIME-Version: 1.0
-In-Reply-To: <1507191773-23039-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 10/05/2017 04:22 PM, Nikolay Borisov wrote:
-> Currently when a read-only snapshot is received and subsequently its ro property
-> is set to false i.e. switched to rw-mode the received_uuid of that subvol remains
-> intact. However, once the received volume is switched to RW mode we cannot
-> guaranteee that it contains the same data, so it makes sense to remove the
-> received uuid. The presence of the received_uuid can also cause problems when
-> the volume is being send.
-
-
-Wonder if this [1] approach was considered
-[1]
-  - set a flag on the subvolume to indicate its dirtied so that 
-received_uuid can be kept forever just in case if user needs it for some 
-reference at a later point of time.
-
-Thanks, Anand
-
-
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> Suggested-by: David Sterba <dsterba@suse.cz>
-> ---
+On 2017-10-04 16:11, Liu Bo wrote:
+> On Tue, Oct 03, 2017 at 11:59:20PM +0800, Anand Jain wrote:
+>> From: Anand Jain <Anand.Jain@oracle.com>
+>>
+>> Write and flush errors are critical errors, upon which the device fd
+>> must be closed and marked as failed.
+>>
 > 
-> v4:
->   * Put the uuid tree removal code after the lightweight 'send in progress'
->   check and don't move btrfs_start_transaction as suggested by David
->   
-> v3:
->   * Rework the patch considering latest feedback from David Sterba i.e.
->    explicitly use btrfs_end_transaction
+> Can we defer the job of closing device to umount?
 > 
->   fs/btrfs/ioctl.c | 20 ++++++++++++++++++++
->   1 file changed, 20 insertions(+)
+> We can go mark the device failed and skip it while doing read/write,
+> and umount can do the cleanup work.
 > 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index ee4ee7cbba72..9328c091854b 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1775,6 +1775,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->   	struct btrfs_trans_handle *trans;
->   	u64 root_flags;
->   	u64 flags;
-> +	bool clear_received_uuid = false;
->   	int ret = 0;
->   
->   	if (!inode_owner_or_capable(inode))
-> @@ -1824,6 +1825,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->   			btrfs_set_root_flags(&root->root_item,
->   				     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
->   			spin_unlock(&root->root_item_lock);
-> +			clear_received_uuid = true;
->   		} else {
->   			spin_unlock(&root->root_item_lock);
->   			btrfs_warn(fs_info,
-> @@ -1840,6 +1842,24 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->   		goto out_reset;
->   	}
->   
-> +	if (clear_received_uuid) {
-> +	        if (!btrfs_is_empty_uuid(root->root_item.received_uuid)) {
-> +	                ret = btrfs_uuid_tree_rem(trans, fs_info,
-> +	                                root->root_item.received_uuid,
-> +	                                BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-> +	                                root->root_key.objectid);
-> +
-> +	                if (ret && ret != -ENOENT) {
-> +	                        btrfs_abort_transaction(trans, ret);
-> +	                        btrfs_end_transaction(trans);
-> +	                        goto out_reset;
-> +	                }
-> +
-> +	                memset(root->root_item.received_uuid, 0,
-> +	                                BTRFS_UUID_SIZE);
-> +	        }
-> +	}
-> +
->   	ret = btrfs_update_root(trans, fs_info->tree_root,
->   				&root->root_key, &root->root_item);
->   	if (ret < 0) {
-> 
+> That way we don't need a dedicated thread looping around to detect a
+> rare situation.
+If BTRFS doesn't close the device, then it's 100% guaranteed if it 
+reconnects that it will show up under a different device node.  It would 
+also mean that the device node stays visible when there is in fact no 
+device connected to it, which is a pain from a monitoring perspective.

@@ -1,84 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41070 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41077 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751807AbdJFMbk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Oct 2017 08:31:40 -0400
+        id S1751807AbdJFMbm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Oct 2017 08:31:42 -0400
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: bo.li.liu@oracle.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/3] btrfs: scrub: get rid of sector_t
-Date: Fri,  6 Oct 2017 14:29:56 +0200
-Message-Id: <9321364229bba40851c35fa63ba37c90ee1edf0a.1507292872.git.dsterba@suse.com>
+Subject: [PATCH 2/3] btrfs: rename page offset parameter in submit_extent_page
+Date: Fri,  6 Oct 2017 14:29:58 +0200
+Message-Id: <80af91917eb8f96c17af38deccbd9c96687841ca.1507292872.git.dsterba@suse.com>
 In-Reply-To: <cover.1507292872.git.dsterba@suse.com>
 References: <cover.1507292872.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The use of sector_t is not necessry, it's just for a warning. Switch to
-u64 and rename the variable. The messages are adjusted as well.
+We're going to remove sector_t and will use 'offset', so this patch
+frees the name.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/scrub.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_io.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index e3f6c49e5c4d..34ea2e7048c2 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -231,7 +231,7 @@ struct scrub_warning {
- 	struct btrfs_path	*path;
- 	u64			extent_item_size;
- 	const char		*errstr;
--	sector_t		sector;
-+	u64			physical;
- 	u64			logical;
- 	struct btrfs_device	*dev;
- };
-@@ -797,10 +797,10 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 	 */
- 	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
- 		btrfs_warn_in_rcu(fs_info,
--				  "%s at logical %llu on dev %s, sector %llu, root %llu, inode %llu, offset %llu, length %llu, links %u (path: %s)",
-+"%s at logical %llu on dev %s, physical %llu, root %llu, inode %llu, offset %llu, length %llu, links %u (path: %s)",
- 				  swarn->errstr, swarn->logical,
- 				  rcu_str_deref(swarn->dev->name),
--				  (unsigned long long)swarn->sector,
-+				  swarn->physical,
- 				  root, inum, offset,
- 				  min(isize - offset, (u64)PAGE_SIZE), nlink,
- 				  (char *)(unsigned long)ipath->fspath->val[i]);
-@@ -813,7 +813,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 			  "%s at logical %llu on dev %s, sector %llu, root %llu, inode %llu, offset %llu: path resolving failed with ret=%d",
- 			  swarn->errstr, swarn->logical,
- 			  rcu_str_deref(swarn->dev->name),
--			  (unsigned long long)swarn->sector,
-+			  swarn->physical,
- 			  root, inum, offset, ret);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 12ab19a4b93e..ea9ab934794b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2762,7 +2762,7 @@ static int merge_bio(struct extent_io_tree *tree, struct page *page,
+ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+ 			      struct writeback_control *wbc,
+ 			      struct page *page, sector_t sector,
+-			      size_t size, unsigned long offset,
++			      size_t size, unsigned long pg_offset,
+ 			      struct block_device *bdev,
+ 			      struct bio **bio_ret,
+ 			      bio_end_io_t end_io_func,
+@@ -2786,8 +2786,8 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
  
- 	free_ipath(ipath);
-@@ -845,7 +845,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
- 	if (!path)
- 		return;
+ 		if (prev_bio_flags != bio_flags || !contig ||
+ 		    force_bio_submit ||
+-		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
+-		    bio_add_page(bio, page, page_size, offset) < page_size) {
++		    merge_bio(tree, page, pg_offset, page_size, bio, bio_flags) ||
++		    bio_add_page(bio, page, page_size, pg_offset) < page_size) {
+ 			ret = submit_one_bio(bio, mirror_num, prev_bio_flags);
+ 			if (ret < 0) {
+ 				*bio_ret = NULL;
+@@ -2802,7 +2802,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+ 	}
  
--	swarn.sector = (sblock->pagev[0]->physical) >> 9;
-+	swarn.physical = sblock->pagev[0]->physical;
- 	swarn.logical = sblock->pagev[0]->logical;
- 	swarn.errstr = errstr;
- 	swarn.dev = NULL;
-@@ -868,10 +868,10 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
- 						      item_size, &ref_root,
- 						      &ref_level);
- 			btrfs_warn_in_rcu(fs_info,
--				"%s at logical %llu on dev %s, sector %llu: metadata %s (level %d) in tree %llu",
-+"%s at logical %llu on dev %s, physical %llu: metadata %s (level %d) in tree %llu",
- 				errstr, swarn.logical,
- 				rcu_str_deref(dev->name),
--				(unsigned long long)swarn.sector,
-+				swarn.physical,
- 				ref_level ? "node" : "leaf",
- 				ret < 0 ? -1 : ref_level,
- 				ret < 0 ? -1 : ref_root);
+ 	bio = btrfs_bio_alloc(bdev, sector << 9);
+-	bio_add_page(bio, page, page_size, offset);
++	bio_add_page(bio, page, page_size, pg_offset);
+ 	bio->bi_end_io = end_io_func;
+ 	bio->bi_private = tree;
+ 	bio->bi_write_hint = page->mapping->host->i_write_hint;
 -- 
 2.14.0
 

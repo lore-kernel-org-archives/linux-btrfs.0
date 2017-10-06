@@ -1,76 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f171.google.com ([209.85.220.171]:47582 "EHLO
-        mail-qk0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751318AbdJFHLE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2017 03:11:04 -0400
-Received: by mail-qk0-f171.google.com with SMTP id m189so12964877qke.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Oct 2017 00:11:04 -0700 (PDT)
-MIME-Version: 1.0
-From: Nick Gilmour <nickeforos@gmail.com>
-Date: Fri, 6 Oct 2017 09:10:23 +0200
-Message-ID: <CAH-drozmzhkB+M5r2XUYp-v80XBMGqZUMc23x=T7vORKCrOFhA@mail.gmail.com>
-Subject: "No space left on device"
+Received: from [195.159.176.226] ([195.159.176.226]:46572 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750714AbdJFHVI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2017 03:21:08 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1e0MwJ-0005Gm-Ma
+        for linux-btrfs@vger.kernel.org; Fri, 06 Oct 2017 09:20:55 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Mounting bad btrfs img file
+Date: Fri, 6 Oct 2017 07:20:48 +0000 (UTC)
+Message-ID: <pan$bd753$f3b30edf$786c7da8$c1119d4c@cox.net>
+References: <CAJ_hD5D4CUHW1eUour5HJKx2Zk69nm2ypFRiN2UXGt9ah7us6Q@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+Eric Wolf posted on Thu, 05 Oct 2017 09:38:18 -0400 as excerpted:
 
-I'm getting an error "No space left on device" on a VM in VirtualBox.
-It started as I was trying to convert the .vdi to .img. I wanted to
-shrink the size of the disk first and I followed the steps from here:
-https://superuser.com/questions/529149/how-to-compact-virtualboxs-vdi-file-size#529183
+> My OS drive had issues with metadata (disk full even though it wasn't
+> etc), and so I reinstalled my OS and now I'm learning that my backup img
+> is bad. What steps should I go through to fix it?
 
-and then I got the error:
-$ dd if=/dev/zero of=/tmp/bigemptyfile bs=4096k
-dd: error writing '/tmp/bigemptyfile': No space left on device
-94174+0 records in
-94173+0 records out
-394990190592 bytes (395 GB, 368 GiB) copied, 685.984 s, 576 MB/s
-$ rm /tmp/bigemptyfile
+Ugh...  Looks like you just got hit by the second sysadmin's rule of 
+backups:  A backup isn't a backup until it's tested.  A would-be backup 
+that's not tested isn't a backup, only a potential backup, because a 
+backup isn't complete until you've verified that you can restore from it.
 
-After I rebooted I got only a terminal prompt, no desktop environment,
-and I couldn't start it with startx (not even bash completion doesn't
-work).
+> $ sudo mount -o
+> offset=8999927808,loop,recovery,ro,nospace_cache,nospace_cache
+> /data/Backup/Nephele.img /mnt
+> 
+> mount: wrong fs type, bad option, bad superblock on /dev/loop0,
 
-I have tried with balancing following the steps from here:
-https://unix.stackexchange.com/questions/174446/btrfs-error-error-during-balancing-no-space-left-on-device
+> nephele@Nephele:/data/Backup$ dmesg | tail
+> 
+> [48539.443711] BTRFS error (device loop0): parent transid verify failed
+> on 98021605376 wanted 85976 found 85978
 
-but I keep getting:
-"Done, had to relocate 0 out of XX chunks"
-regardless of the increase of the dusage parameter.
+Those transids aren't too far apart, good. =:^)
 
+You're already trying ro,recovery (which BTW is deprecated, replaced by 
+usebackuproot), the first suggestion.
 
-Debug information (Copy & Paste was not possible, some text is missing...):
+While various repair options can be tried, that's best done with a 
+(tested) backup available.  Since this /is/ your backup and you don't 
+have a working copy...
 
-uname -a
-Linux VM-Ubuntu 4.4.0-83-generic
+I'd suggest trying btrfs restore.  This command will attempt to restore 
+files from the unmounted filesystem, writing them to a suitable 
+location.  Obviously that means you need another operational filesystem 
+available to write to, with a suitable amount of space available.  The 
+nice thing about restore is that unlike check with the repair option or 
+similar fix-or-make-worse options, while restore /does/ need space to 
+restore the files to, it doesn't actually write anything to the 
+filesystem it's restoring from, so it won't damage it further. =:^)
 
-btrfs --version
-btrfs-progs v4.4
+With luck restore will work in "simple" mode, and the fact that your 
+wanted transids are close to those found gives you a pretty good chance 
+simple mode will work just fine.  If it doesn't, then you have to try 
+manual mode, giving restore more information, found via btrfs-find-root 
+and fed to restore using -r.  There's a page on the wiki describing 
+restore usage in this mode, tho it may not be entirely current so some 
+additional translation of terms, etc, may be necessary.
 
-btrfs fi show
-Label: none uuid: x
-           Total devices 1 FS bytes used 473.68GiB
-            devid 1 size 492.00 GiB used 492.00GiB path /dev/sda1
+https://btrfs.wiki.kernel.org/index.php/Restore
 
-Label: 'extra' uuid: y
-           Total devices 1 FS bytes used 112.00KiB
-            devid 1 size 100.00 GiB used 2.02GiB path /dev/sdb1
+Note that in either mode you'll probably want the options to restore user 
+permissions, symlinks, etc, not just the raw files.  Without these 
+options you'll get the files, but written using normal user (root in this 
+case) and umask settings, and symlinks won't be restored.  My own last 
+usage was before these options were available, and I had to restore user/
+group and perms metadata manually, as well as symlinks.  Also, note the 
+dry-run option.  You can use this to see if it looks like restore will 
+work (if it looks like it's going to be able to get most of your files) 
+before actually trying it live.
 
-btrfs fi df /home
-Data, single: total=462.23GiB, used=462.23GiB
-System, DUP: total=8.00MiB, used=80.00KiB
-GlobalReserve, single: total=512.00 MiB, used=160.00KiB
+Once you have your files restored if possible, or have given up on btrfs 
+restore, you can try other stuff on the broken filesystem, or simply give 
+up and wipe it to start over.  Since I have (tested) backups (altho they 
+may not always be as current as I'd like, the reason I've had to try 
+restore here, generally with good luck), I may try a couple fairly simple 
+things like btrfs check --repair, but if that doesn't work, I generally 
+wipe and restore from backups, so I don't have experience with the real 
+complicated stuff.
 
-dmesg > dmesg.log
-dmesg: write failed: No space left on device
-dmesg: write error
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-Any ideas how can I fix this?
-Thanks.
-
-Regards,
-Nick

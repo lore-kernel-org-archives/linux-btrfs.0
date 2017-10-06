@@ -1,51 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45838 "EHLO mx1.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43362 "EHLO mx1.suse.de"
         rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751083AbdJEPPo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Oct 2017 11:15:44 -0400
-Date: Thu, 5 Oct 2017 17:14:00 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Cc: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] btrfs-progs: subvol: change subvol set-default to
- also accept subvol path
-Message-ID: <20171005151400.GI3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <5008967a-9da9-ad91-65e9-bcfbfb07feb0@jp.fujitsu.com>
- <CAA91j0WQ35e5KaZAEe_amwuDMazuAa6Mx1y3P18Y7EGvpxmAHQ@mail.gmail.com>
- <20171002090129.GB3293@carfax.org.uk>
- <45a84df9-fd06-ca72-3379-4594fceb4b5a@jp.fujitsu.com>
- <20171004180710.GF3521@twin.jikos.cz>
- <22943aba-b9c5-b16b-755f-d0c795280d51@jp.fujitsu.com>
+        id S1751841AbdJFMxA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Oct 2017 08:53:00 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.13.2
+Date: Fri,  6 Oct 2017 14:51:10 +0200
+Message-Id: <20171006125110.14138-1-dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <22943aba-b9c5-b16b-755f-d0c795280d51@jp.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 05, 2017 at 09:57:25AM +0900, Misono, Tomohiro wrote:
-> > I agree with Andrei and Hugo. We need to check that the subvolume path
-> > belongs to the filesystem anyway. I don't see that in the first version,
-> > so please fix it.
-> > 
-> 
-> I'm a bit confusing, but what is the meaning of "We need to check that the subvolume
-> path belongs to the filesystem"? Do you mean we should check whether the fs of current
-> directory and the fs of the subvolume specified are the same or not? However, current 
-> "set-default <id> <path>" does not check the <path> belong the same fs or not either.
-> Also, what if the subvolume is specified by absolute path?
+Hi,
 
-Ah my bad, specifying by path is enough of course. So the expected use
-is:
+btrfs-progs version 4.13.2 have been released.
 
-filesystem mounted under /mnt
+This is a bugfix release for the subvolume listing and deletion commands, and
+performance improvement for the 'check' command that should decrease running
+time of some fstests.
 
-$ cd /mnt
-$ btrfs subvol set-default ./subvol1
+Changes:
+  * subvol list:
+    * don't list toplevel subvolume among deleted (broken since 4.8.3)
+    * minor adjustments of uuid print format
+  * subvol delete:
+    * fix swapped behaviour of --commit-each and --commit-after
+    * fix potentially lost sync if subvolumes are from different filesystems
+  * check: add cache for metadata blocks, should improve performance
+  * other:
+    * new tests, testsuite updates
+    * doc updates
+    * cleanups
 
-or 
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-$ cd /
-$ btrfs subvol set-default /mnt/subvol1
+Shortlog:
+
+David Sterba (9):
+      btrfs-progs: mkfs: use existing helper for path concatenation
+      btrfs-progs: mkfs: remove unused function
+      btrfs-progs: docs: update btrfs-balance
+      btrfs-progs: subvol: group options in help
+      btrfs-progs: set fixed with for printing uuids of subvolumes
+      btrfs-progs: subvol list: don't list FS_TREE as deleted
+      btrfs-progs: tests: don't list toplevel subvolme in 'subvol list'
+      btrfs-progs: update CHANGES for v4.13.2
+      Btrfs progs v4.13.2
+
+Holger Hoffstätte (1):
+      btrfs-progs: right-align number columns in btrfs-debugfs output
+
+Jeff Mahoney (7):
+      btrfs-progs: check: supplement extent backref list with rbtree
+      btrfs-progs: check: switch to iterating over the backref_tree
+      btrfs-progs: extent-cache: actually cache extent buffers
+      btrfs-progs: backref: push state tracking into a helper structure
+      btrfs-progs: backref: add list_first_pref helper
+      btrfs-progs: backref: use separate list for missing keys
+      btrfs-progs: backref: use separate list for indirect refs
+
+Misono, Tomohiro (6):
+      btrfs-progs: subvol: exchange subvol del --commit-after and --commit-each
+      btrfs-progs: move get_fsid() to utils.c
+      btrfs-progs: move seen_fsid to utils.c
+      btrfs-progs: change seen_fsid to hold fd and DIR
+      btrfs-progs: subvol: fix subvol del --commit-after
+      btrfs-progs: misc-test: use raid1 for data to enable mount with -o degraded
+
+Su Yue (1):
+      btrfs-progs: tests: arg override in command line
+
+Yingyi Luo (2):
+      btrfs-progs: convert: move link_subvol out of main
+      btrfs-progs: add a parameter to btrfs_mksubvol

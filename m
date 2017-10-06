@@ -1,148 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22915 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752468AbdJGAZt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2017 20:25:49 -0400
-Date: Fri, 6 Oct 2017 17:21:02 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: get rid of sector_t and use u64 offset in
- submit_extent_page
-Message-ID: <20171007002101.GG19068@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Received: from mx2.suse.de ([195.135.220.15]:41070 "EHLO mx1.suse.de"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751807AbdJFMbk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Oct 2017 08:31:40 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: bo.li.liu@oracle.com, David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/3] btrfs: scrub: get rid of sector_t
+Date: Fri,  6 Oct 2017 14:29:56 +0200
+Message-Id: <9321364229bba40851c35fa63ba37c90ee1edf0a.1507292872.git.dsterba@suse.com>
+In-Reply-To: <cover.1507292872.git.dsterba@suse.com>
 References: <cover.1507292872.git.dsterba@suse.com>
- <9f23652a57d3144c14ceeafacfa5526793d68ffb.1507292872.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9f23652a57d3144c14ceeafacfa5526793d68ffb.1507292872.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 06, 2017 at 02:30:00PM +0200, David Sterba wrote:
-> The use of sector_t in the callchain of submit_extent_page is not
-> necessary, we'll pass plain u64 and avoid any con(tro)versions of sector_t.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/extent_io.c | 23 ++++++++++++-----------
->  1 file changed, 12 insertions(+), 11 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index ea9ab934794b..8d0834ee792b 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2761,7 +2761,7 @@ static int merge_bio(struct extent_io_tree *tree, struct page *page,
->   */
->  static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
->  			      struct writeback_control *wbc,
-> -			      struct page *page, sector_t sector,
-> +			      struct page *page, u64 offset,
->  			      size_t size, unsigned long pg_offset,
->  			      struct block_device *bdev,
->  			      struct bio **bio_ret,
-> @@ -2776,6 +2776,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
->  	int contig = 0;
->  	int old_compressed = prev_bio_flags & EXTENT_BIO_COMPRESSED;
->  	size_t page_size = min_t(size_t, size, PAGE_SIZE);
-> +	sector_t sector = offset >> 9;
->  
->  	if (bio_ret && *bio_ret) {
->  		bio = *bio_ret;
-> @@ -2801,7 +2802,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
->  		}
->  	}
->  
-> -	bio = btrfs_bio_alloc(bdev, sector << 9);
-> +	bio = btrfs_bio_alloc(bdev, offset);
->  	bio_add_page(bio, page, page_size, pg_offset);
->  	bio->bi_end_io = end_io_func;
->  	bio->bi_private = tree;
-> @@ -2892,7 +2893,6 @@ static int __do_readpage(struct extent_io_tree *tree,
->  	u64 last_byte = i_size_read(inode);
->  	u64 block_start;
->  	u64 cur_end;
-> -	sector_t sector;
->  	struct extent_map *em;
->  	struct block_device *bdev;
->  	int ret = 0;
-> @@ -2928,6 +2928,7 @@ static int __do_readpage(struct extent_io_tree *tree,
->  	}
->  	while (cur <= end) {
->  		bool force_bio_submit = false;
-> +		u64 offset;
->  
->  		if (cur >= last_byte) {
->  			char *userpage;
-> @@ -2967,9 +2968,9 @@ static int __do_readpage(struct extent_io_tree *tree,
->  		iosize = ALIGN(iosize, blocksize);
->  		if (this_bio_flag & EXTENT_BIO_COMPRESSED) {
->  			disk_io_size = em->block_len;
-> -			sector = em->block_start >> 9;
-> +			offset = em->block_start;
->  		} else {
-> -			sector = (em->block_start + extent_offset) >> 9;
-> +			offset = em->block_start + extent_offset;
->  			disk_io_size = iosize;
->  		}
->  		bdev = em->bdev;
-> @@ -3062,8 +3063,8 @@ static int __do_readpage(struct extent_io_tree *tree,
->  		}
->  
->  		ret = submit_extent_page(REQ_OP_READ | read_flags, tree, NULL,
-> -					 page, sector, disk_io_size, pg_offset,
-> -					 bdev, bio,
-> +					 page, offset, disk_io_size,
-> +					 pg_offset, bdev, bio,
->  					 end_bio_extent_readpage, mirror_num,
->  					 *bio_flags,
->  					 this_bio_flag,
-> @@ -3324,7 +3325,6 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
->  	u64 extent_offset;
->  	u64 block_start;
->  	u64 iosize;
-> -	sector_t sector;
->  	struct extent_map *em;
->  	struct block_device *bdev;
->  	size_t pg_offset = 0;
-> @@ -3367,6 +3367,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
->  
->  	while (cur <= end) {
->  		u64 em_end;
-> +		u64 offset;
->  
->  		if (cur >= i_size) {
->  			if (tree->ops && tree->ops->writepage_end_io_hook)
-> @@ -3388,7 +3389,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
->  		BUG_ON(end < cur);
->  		iosize = min(em_end - cur, end - cur + 1);
->  		iosize = ALIGN(iosize, blocksize);
-> -		sector = (em->block_start + extent_offset) >> 9;
-> +		offset = em->block_start + extent_offset;
->  		bdev = em->bdev;
->  		block_start = em->block_start;
->  		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
-> @@ -3431,7 +3432,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
->  		}
->  
->  		ret = submit_extent_page(REQ_OP_WRITE | write_flags, tree, wbc,
-> -					 page, sector, iosize, pg_offset,
-> +					 page, offset, iosize, pg_offset,
->  					 bdev, &epd->bio,
->  					 end_bio_extent_writepage,
->  					 0, 0, 0, false);
-> @@ -3748,7 +3749,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
->  		clear_page_dirty_for_io(p);
->  		set_page_writeback(p);
->  		ret = submit_extent_page(REQ_OP_WRITE | write_flags, tree, wbc,
-> -					 p, offset >> 9, PAGE_SIZE, 0, bdev,
-> +					 p, offset, PAGE_SIZE, 0, bdev,
->  					 &epd->bio,
->  					 end_bio_extent_buffer_writepage,
->  					 0, epd->bio_flags, bio_flags, false);
+The use of sector_t is not necessry, it's just for a warning. Switch to
+u64 and rename the variable. The messages are adjusted as well.
 
-You can have 
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/scrub.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index e3f6c49e5c4d..34ea2e7048c2 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -231,7 +231,7 @@ struct scrub_warning {
+ 	struct btrfs_path	*path;
+ 	u64			extent_item_size;
+ 	const char		*errstr;
+-	sector_t		sector;
++	u64			physical;
+ 	u64			logical;
+ 	struct btrfs_device	*dev;
+ };
+@@ -797,10 +797,10 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
+ 	 */
+ 	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
+ 		btrfs_warn_in_rcu(fs_info,
+-				  "%s at logical %llu on dev %s, sector %llu, root %llu, inode %llu, offset %llu, length %llu, links %u (path: %s)",
++"%s at logical %llu on dev %s, physical %llu, root %llu, inode %llu, offset %llu, length %llu, links %u (path: %s)",
+ 				  swarn->errstr, swarn->logical,
+ 				  rcu_str_deref(swarn->dev->name),
+-				  (unsigned long long)swarn->sector,
++				  swarn->physical,
+ 				  root, inum, offset,
+ 				  min(isize - offset, (u64)PAGE_SIZE), nlink,
+ 				  (char *)(unsigned long)ipath->fspath->val[i]);
+@@ -813,7 +813,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
+ 			  "%s at logical %llu on dev %s, sector %llu, root %llu, inode %llu, offset %llu: path resolving failed with ret=%d",
+ 			  swarn->errstr, swarn->logical,
+ 			  rcu_str_deref(swarn->dev->name),
+-			  (unsigned long long)swarn->sector,
++			  swarn->physical,
+ 			  root, inum, offset, ret);
+ 
+ 	free_ipath(ipath);
+@@ -845,7 +845,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	if (!path)
+ 		return;
+ 
+-	swarn.sector = (sblock->pagev[0]->physical) >> 9;
++	swarn.physical = sblock->pagev[0]->physical;
+ 	swarn.logical = sblock->pagev[0]->logical;
+ 	swarn.errstr = errstr;
+ 	swarn.dev = NULL;
+@@ -868,10 +868,10 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 						      item_size, &ref_root,
+ 						      &ref_level);
+ 			btrfs_warn_in_rcu(fs_info,
+-				"%s at logical %llu on dev %s, sector %llu: metadata %s (level %d) in tree %llu",
++"%s at logical %llu on dev %s, physical %llu: metadata %s (level %d) in tree %llu",
+ 				errstr, swarn.logical,
+ 				rcu_str_deref(dev->name),
+-				(unsigned long long)swarn.sector,
++				swarn.physical,
+ 				ref_level ? "node" : "leaf",
+ 				ret < 0 ? -1 : ref_level,
+ 				ret < 0 ? -1 : ref_root);
+-- 
+2.14.0
 
--liubo

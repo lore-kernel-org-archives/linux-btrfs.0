@@ -1,71 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32962 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754085AbdJIQTn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Oct 2017 12:19:43 -0400
-Date: Mon, 9 Oct 2017 18:17:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: prefix sysfs attribute struct names
-Message-ID: <20171009161758.GH3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171008203058.28931-1-hans.van.kranenburg@mendix.com>
+Received: from mail-qk0-f170.google.com ([209.85.220.170]:53185 "EHLO
+        mail-qk0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752276AbdJFVJ7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2017 17:09:59 -0400
+Received: by mail-qk0-f170.google.com with SMTP id b15so17044731qkg.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Oct 2017 14:09:59 -0700 (PDT)
+Date: Fri, 6 Oct 2017 17:09:57 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [ANNOUNCE] fsperf: a simple fs/block performance testing framework
+Message-ID: <20171006210956.vf326sydjiphsefo@destiny>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171008203058.28931-1-hans.van.kranenburg@mendix.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 08, 2017 at 10:30:58PM +0200, Hans van Kranenburg wrote:
-> Currently struct names for sysfs are generated only based on the
-> attribute names. This means that attribute names cannot be reused in
-> multiple places throughout the complete btrfs sysfs hierarchy.
-> 
-> E.g. allocation/data/total_bytes and allocation/data/single/total_bytes
-> result in the same struct name btrfs_attr_total_bytes. A workaround for
-> this case was made in the past by ad hoc creating an extra macro
-> wrapper, BTRFS_RAID_ATTR, that inserts some extra text in the struct
-> name.
-> 
-> Instead of polluting sysfs.h with such kind of extra macro definitions,
-> and only doing so when there are collisions, use a prefix which gets
-> inserted in the struct name, so we keep everything nicely grouped
-> together by default.
-> 
-> Current collections of attributes are:
-> * (the toplevel, empty prefix)
-> * allocation
-> * space_info
-> * raid
-> * features
-> 
-> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Hello,
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+One thing that comes up a lot every LSF is the fact that we have no general way
+that we do performance testing.  Every fs developer has a set of scripts or
+things that they run with varying degrees of consistency, but nothing central
+that we all use.  I for one am getting tired of finding regressions when we are
+deploying new kernels internally, so I wired this thing up to try and address
+this need.
 
-> @@ -277,7 +277,8 @@ static ssize_t raid_bytes_show(struct kobject *kobj,
->  
->  	down_read(&sinfo->groups_sem);
->  	list_for_each_entry(block_group, &sinfo->block_groups[index], list) {
-> -		if (&attr->attr == BTRFS_RAID_ATTR_PTR(total_bytes))
-> +		if (&attr->attr == \
+We all hate convoluted setups, the more brain power we have to put in to setting
+something up the less likely we are to use it, so I took the xfstests approach
+of making it relatively simple to get running and relatively easy to add new
+tests.  For right now the only thing this framework does is run fio scripts.  I
+chose fio because it already gathers loads of performance data about it's runs.
+We have everything we need there, latency, bandwidth, cpu time, and all broken
+down by reads, writes, and trims.  I figure most of us are familiar enough with
+fio and how it works to make it relatively easy to add new tests to the
+framework.
 
-the \ is not needed here, only in macro defintions that must be on one
-logical line
+I've posted my code up on github, you can get it here
 
-> +		    BTRFS_ATTR_PTR(raid, total_bytes))
->  			val += block_group->key.offset;
->  		else
->  			val += btrfs_block_group_used(&block_group->item);
-> @@ -331,19 +332,20 @@ SPACE_INFO_ATTR(bytes_may_use);
->  SPACE_INFO_ATTR(bytes_readonly);
->  SPACE_INFO_ATTR(disk_used);
->  SPACE_INFO_ATTR(disk_total);
-> -BTRFS_ATTR(total_bytes_pinned, btrfs_space_info_show_total_bytes_pinned);
-> +BTRFS_ATTR(space_info, total_bytes_pinned, \
+https://github.com/josefbacik/fsperf
 
-same here. will be fixed at commit time.
+All (well most) of the results from fio are stored in a local sqlite database.
+Right now the comparison stuff is very crude, it simply checks against the
+previous run and it only checks a few of the keys by default.  You can check
+latency if you want, but while writing this stuff up it seemed that latency was
+too variable from run to run to be useful in a "did my thing regress or improve"
+sort of way.
 
-> +	   btrfs_space_info_show_total_bytes_pinned);
->  
+The configuration is brain dead simple, the README has examples.  All you need
+to do is make your local.cfg, run ./setup and then run ./fsperf and you are good
+to go.
+
+The plan is to add lots of workloads as we discover regressions and such.  We
+don't want anything that takes too long to run otherwise people won't run this,
+so the existing tests don't take much longer than a few minutes each.  I will be
+adding some more comparison options so you can compare against averages of all
+previous runs and such.
+
+Another future goal is to parse the sqlite database and generate graphs of all
+runs for the tests so we can visualize changes over time.  This is where the
+latency measurements will be more useful so we can spot patterns rather than
+worrying about test to test variances.
+
+Please let me know if you have any feedback.  I'll take github pull requests for
+people who like that workflow, but email'ed patches work as well.  Thanks,
+
+Josef

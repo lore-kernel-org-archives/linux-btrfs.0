@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:64564 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:20286 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751395AbdJFBe6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 21:34:58 -0400
+        with ESMTP id S1751395AbdJFBjq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Oct 2017 21:39:46 -0400
 Subject: Re: [PATCH 1/5] btrfs-progs: check: return value of
  check_extent_refs()
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
@@ -10,8 +10,8 @@ References: <20170927063440.25961-1-suy.fnst@cn.fujitsu.com>
  <20170927063440.25961-2-suy.fnst@cn.fujitsu.com>
  <20171005174625.GM3521@twin.jikos.cz>
 From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <32020668-72b8-fe0c-cb13-145a46d1cbfe@cn.fujitsu.com>
-Date: Fri, 6 Oct 2017 09:38:05 +0800
+Message-ID: <1166dbf7-649f-9afc-fa14-1836596bb4fa@cn.fujitsu.com>
+Date: Fri, 6 Oct 2017 09:42:57 +0800
 MIME-Version: 1.0
 In-Reply-To: <20171005174625.GM3521@twin.jikos.cz>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -56,9 +56,6 @@ On 10/06/2017 01:46 AM, David Sterba wrote:
 > 
 > With this patch applied, the test fsck/006 fails, is that intentional?
 > 
-Yes, it's expected. This patch just let btrfs-progs return a correct
-value.
-
 > Log from the last failing testcase:
 > 
 > checking extents
@@ -88,20 +85,10 @@ value.
 >   referenced 25890816
 > failed: /mnt/big/dsterba/backup-labs-subv/gits/btrfs-progs/btrfs check test.img
 > 
-The log shows that there are errors in the extent-tree but no error
-value returned.
-
-And the abormal output was caused by commit 1f728b1a514f ("Btrfs-
-progs,fsck: move root items repair after root rebuilding").
-
 > I haven't tried with the other patches applied, so it might get actually fixed.
 > Even in that case, I'd rather keep the branches bisectable.
 > 
-It is described and fixed by the second and third patch in the
-patchset.
-
-Thanks,
-Su
+Understood, I will do it in next version.
 > 
 
 

@@ -1,54 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:38343 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751117AbdJCIS1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Oct 2017 04:18:27 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Cc: linux-fsdevel@kernel.org, linux-xfs@vger.kernel.org
-Subject: Something like ZFS Channel Programs for BTRFS & probably XFS or even VFS?
-Date: Tue, 03 Oct 2017 10:18:25 +0200
-Message-ID: <2793908.SdtdllqrkY@merkaba>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Received: from mx2.suse.de ([195.135.220.15]:37834 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751323AbdJFPgW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 6 Oct 2017 11:36:22 -0400
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 4.14-rc4
+Date: Fri,  6 Oct 2017 17:34:36 +0200
+Message-Id: <cover.1507303159.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello.
+Hi,
 
-What do you think of
+we have two more fixes for bugs introduced in 4.13. The sector_t problem with
+32bit architecture and !LBDAF config seems serious but the number of affected
+deployments is hopefully low.  The clashing status bits could lead to a
+confusing in-memory state of the whole-filesystem operations if used with the
+quota override sysfs knob.
 
-http://open-zfs.org/wiki/Projects/ZFS_Channel_Programs
+Please pull, thanks.
 
-?
+The following changes since commit 8c6c592831a09a28428448e68fb08c6bbb8b9b8b:
 
-There are quite some BTRFS maintenance programs like the deduplication stuff. 
-Also regular scrubs… and in certain circumstances probably balances can make 
-sense.
+  btrfs: log csums for all modified extents (2017-09-26 14:54:16 +0200)
 
-In addition to this XFS got scrub functionality as well.
+are available in the git repository at:
 
-Now putting the foundation for such a functionality in the kernel I think 
-would only be reasonable if it cannot be done purely within user space, so I 
-wonder about the safety from other concurrent ZFS modification and atomicity 
-that are mentioned on the wiki page. The second set of slides, those the 
-OpenZFS Developer Commit 2014, which are linked to on the wiki page explain 
-this more. (I didn´t look the first ones, as I am no fan of slideshare.net and 
-prefer a simple PDF to download and view locally anytime, not for privacy 
-reasons alone, but also to avoid a using a crappy webpage over a wonderfully 
-functional PDF viewer fat client like Okular)
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.14-rc4
 
-Also I wonder about putting a lua interpreter into the kernel, but it seems at 
-least NetBSD developers added one to their kernel with version 7.0¹.
+for you to fetch changes up to 69ad59767d094752c23c0fc180a79532fde073d0:
 
-I also ask this cause I wondered about a kind of fsmaintd or volmaintd for 
-quite a while, and thought… it would be nice to do this in a generic way, as 
-BTRFS is not the only filesystem which supports maintenance operations. However 
-if it can all just nicely be done in userspace, I am all for it.
+  Btrfs: fix overlap of fs_info::flags values (2017-10-04 16:44:18 +0200)
 
-[1] http://www.netbsd.org/releases/formal-7/NetBSD-7.0.html
-(tons of presentation PDFs on their site as well)
+----------------------------------------------------------------
+Goffredo Baroncelli (1):
+      btrfs: avoid overflow when sector_t is 32 bit
 
-Thanks,
--- 
-Martin
+Tsutomu Itoh (1):
+      Btrfs: fix overlap of fs_info::flags values
+
+ fs/btrfs/ctree.h     | 2 +-
+ fs/btrfs/extent_io.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)

@@ -1,94 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39227 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752580AbdJFPtw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Oct 2017 11:49:52 -0400
-Date: Fri, 6 Oct 2017 17:48:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Edmund Nadolski <enadolski@suse.de>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        bo.li.liu@oracle.com
-Subject: Re: [PATCH 1/3] btrfs: scrub: get rid of sector_t
-Message-ID: <20171006154807.GR3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:21430 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751869AbdJGAPk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Oct 2017 20:15:40 -0400
+Date: Fri, 6 Oct 2017 17:11:38 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] btrfs: rename page offset parameter in
+ submit_extent_page
+Message-ID: <20171007001138.GE19068@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <cover.1507292872.git.dsterba@suse.com>
- <9321364229bba40851c35fa63ba37c90ee1edf0a.1507292872.git.dsterba@suse.com>
- <6c8e69c0-6abf-acc9-9ea5-687f33a50726@suse.de>
+ <80af91917eb8f96c17af38deccbd9c96687841ca.1507292872.git.dsterba@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <6c8e69c0-6abf-acc9-9ea5-687f33a50726@suse.de>
+In-Reply-To: <80af91917eb8f96c17af38deccbd9c96687841ca.1507292872.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 06, 2017 at 09:22:42AM -0600, Edmund Nadolski wrote:
-> On 10/06/2017 06:29 AM, David Sterba wrote:
-> > The use of sector_t is not necessry, it's just for a warning. Switch to
-> > u64 and rename the variable. The messages are adjusted as well.
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > ---
-> >  fs/btrfs/scrub.c | 14 +++++++-------
-> >  1 file changed, 7 insertions(+), 7 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> > index e3f6c49e5c4d..34ea2e7048c2 100644
-> > --- a/fs/btrfs/scrub.c
-> > +++ b/fs/btrfs/scrub.c
-> > @@ -231,7 +231,7 @@ struct scrub_warning {
-> >  	struct btrfs_path	*path;
-> >  	u64			extent_item_size;
-> >  	const char		*errstr;
-> > -	sector_t		sector;
-> > +	u64			physical;
-> >  	u64			logical;
-> >  	struct btrfs_device	*dev;
-> >  };
+On Fri, Oct 06, 2017 at 02:29:58PM +0200, David Sterba wrote:
+> We're going to remove sector_t and will use 'offset', so this patch
+> frees the name.
 > 
-> Just a thought, 'physical' alone seems a bit ambiguous, so
-> a comment to add context would help clarify.
-
-The other thing that came to my mind was 'offset', but this would be
-confusing as well, as there is already the 'logical' member. The naming
-physical/logical is used in other structures, like btrfs_bio_stripe or
-scrub_page so I think this is kind of following the convention.
-
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 8 ++++----
+>  1 file changed, 4 insertions(+), 4 deletions(-)
 > 
-> 
-> > @@ -797,10 +797,10 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
-> >  	 */
-> >  	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
-> >  		btrfs_warn_in_rcu(fs_info,
-> > -				  "%s at logical %llu on dev %s, sector %llu, root %llu, inode %llu, offset %llu, length %llu, links %u (path: %s)",
-> > +"%s at logical %llu on dev %s, physical %llu, root %llu, inode %llu, offset %llu, length %llu, links %u (path: %s)",
-> >  				  swarn->errstr, swarn->logical,
-> >  				  rcu_str_deref(swarn->dev->name),
-> > -				  (unsigned long long)swarn->sector,
-> > +				  swarn->physical,
-> >  				  root, inum, offset,
-> >  				  min(isize - offset, (u64)PAGE_SIZE), nlink,
-> >  				  (char *)(unsigned long)ipath->fspath->val[i]);
-> > @@ -813,7 +813,7 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
-> >  			  "%s at logical %llu on dev %s, sector %llu, root %llu, inode %llu, offset %llu: path resolving failed with ret=%d",
-> 
-> This still says 'sector' here but was changed for the other print strings.
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 12ab19a4b93e..ea9ab934794b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2762,7 +2762,7 @@ static int merge_bio(struct extent_io_tree *tree, struct page *page,
+>  static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+>  			      struct writeback_control *wbc,
+>  			      struct page *page, sector_t sector,
+> -			      size_t size, unsigned long offset,
+> +			      size_t size, unsigned long pg_offset,
+>  			      struct block_device *bdev,
+>  			      struct bio **bio_ret,
+>  			      bio_end_io_t end_io_func,
+> @@ -2786,8 +2786,8 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+>  
+>  		if (prev_bio_flags != bio_flags || !contig ||
+>  		    force_bio_submit ||
+> -		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
+> -		    bio_add_page(bio, page, page_size, offset) < page_size) {
+> +		    merge_bio(tree, page, pg_offset, page_size, bio, bio_flags) ||
+> +		    bio_add_page(bio, page, page_size, pg_offset) < page_size) {
+>  			ret = submit_one_bio(bio, mirror_num, prev_bio_flags);
+>  			if (ret < 0) {
+>  				*bio_ret = NULL;
+> @@ -2802,7 +2802,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+>  	}
+>  
+>  	bio = btrfs_bio_alloc(bdev, sector << 9);
+> -	bio_add_page(bio, page, page_size, offset);
+> +	bio_add_page(bio, page, page_size, pg_offset);
+>  	bio->bi_end_io = end_io_func;
+>  	bio->bi_private = tree;
+>  	bio->bi_write_hint = page->mapping->host->i_write_hint;
 
-Right, I'll fix it.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-> >  			  swarn->errstr, swarn->logical,
-> >  			  rcu_str_deref(swarn->dev->name),
-> > -			  (unsigned long long)swarn->sector,
-> > +			  swarn->physical,
-> >  			  root, inum, offset, ret);
-> >  
-> >  	free_ipath(ipath);
-> > @@ -845,7 +845,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
-> >  	if (!path)
-> >  		return;
-> >  
-> > -	swarn.sector = (sblock->pagev[0]->physical) >> 9;
-> > +	swarn.physical = sblock->pagev[0]->physical;
-> 
-> Dropping the '>> 9', so this is a semantic change in addition to the rename?
-
-Yes, sector_t is traditionally in 512b units but we want "1b" where
-possible.  I'll update the changelog so it's clear.
+-liubo

@@ -1,103 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout2.freenet.de ([195.4.92.92]:54672 "EHLO mout2.freenet.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752880AbdJHAIf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 7 Oct 2017 20:08:35 -0400
-Received: from [195.4.92.141] (helo=mjail1.freenet.de)
-        by mout2.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (port 25) (Exim 4.89 #1)
-        id 1e0z8z-0000KW-VA
-        for linux-btrfs@vger.kernel.org; Sun, 08 Oct 2017 02:08:33 +0200
-Received: from [::1] (port=55312 helo=mjail1.freenet.de)
-        by mjail1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.89 #1)
-        id 1e0z8z-0004Y8-Rf
-        for linux-btrfs@vger.kernel.org; Sun, 08 Oct 2017 02:08:33 +0200
-Received: from mx12.freenet.de ([195.4.92.22]:34256)
-        by mjail1.freenet.de with esmtpa (ID master.b.at.raven@chefmail.de) (Exim 4.89 #1)
-        id 1e0z72-0004E0-Pl
-        for linux-btrfs@vger.kernel.org; Sun, 08 Oct 2017 02:06:32 +0200
-Received: from ppp-46-244-210-162.dynamic.mnet-online.de ([46.244.210.162]:39934 helo=[192.168.1.200])
-        by mx12.freenet.de with esmtpsa (ID master.b.at.raven@chefmail.de) (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128) (port 465) (Exim 4.89 #1)
-        id 1e0z72-0007HZ-JM
-        for linux-btrfs@vger.kernel.org; Sun, 08 Oct 2017 02:06:32 +0200
-Subject: Re: How to get Super_num_devices in sync with num_devices again?!
-From: g6094199@freenet.de
+Received: from out1-smtp.messagingengine.com ([66.111.4.25]:49541 "EHLO
+        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753380AbdJHJ6L (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 8 Oct 2017 05:58:11 -0400
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
+        by mailout.nyi.internal (Postfix) with ESMTP id 1066E20E5F
+        for <linux-btrfs@vger.kernel.org>; Sun,  8 Oct 2017 05:58:11 -0400 (EDT)
+Message-Id: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
+From: Kai Hendry <hendry@iki.fi>
 To: linux-btrfs@vger.kernel.org
-References: <1bf24e337599ff54dc3d851ba3fbf913@email.freenet.de>
-Message-ID: <8cae5d9b-db01-5154-1c92-86ede911db21@freenet.de>
-Date: Sun, 8 Oct 2017 02:06:31 +0200
 MIME-Version: 1.0
-In-Reply-To: <1bf24e337599ff54dc3d851ba3fbf913@email.freenet.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="utf-8"
+Date: Sun, 08 Oct 2017 17:58:10 +0800
+Subject: USB upgrade fun
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-He Guys!
+Hi there,
 
-Again now in a readable from....
+My /mnt/raid1 suddenly became full somewhat expectedly, so I bought 2
+new USB 4TB hard drives (one WD, one Seagate) to upgrade to.
 
-I have an Ubuntu 16.04 machine (K4.4 and K4.11, btrfs-progs v4.5.2) running / on btrfs raid1 and for some
-month (after i had to replace a / disk) super_numdevices and num_devices are out of sync peventing me to boot
-Kernels newer than around 4.7 (afaik), where the kernels began the be more restictive on checking valid btrfs
-disks.
-
-
-I tried to remove the raid and converted to single with several balances after that so that there are no raid
-chunks left.
-Label: 'System'  uuid: 35fdbfd4-5809-4a30-94c1-5e3ca206ca4d
-     Total devices 1 FS bytes used 14.86GiB
-     devid    6 size 50.00GiB used 17.31GiB path /dev/nvme0n1p1
+After adding sde and sdd I started to see errors in dmesg [2].
+https://s.natalian.org/2017-10-07/raid1-newdisks.txt
+[2] https://s.natalian.org/2017-10-07/btrfs-errors.txt
 
 
-Data, single: total=15.00GiB, used=13.84GiB
-System, single: total=64.00MiB, used=16.00KiB
-Metadata, single: total=2.25GiB, used=1.02GiB
-GlobalReserve, single: total=336.00MiB, used=0.00B
+I assumed it had to perhaps with the USB bus on my NUC5CPYB being maxed
+out, and to expedite the sync, I tried to remove one of the older 2TB
+sdc1.  However the load went crazy and my system went completely
+unstable. I shutdown the machine and after an hour I hard powered it
+down since it seemed to hang (it's headless).
+
+Sidenote: I've since learnt that removing a drive actually deletes the
+contents of the drive? I don't want that. I was hoping to put that drive
+into cold storage. How do I remove a drive without losing data from a
+RAID1 configuration?
 
 
-/dev/nvme0n1p1, ID: 6
-    Device size:            50.00GiB
-    Data,single:            15.00GiB
-    Metadata,single:         2.25GiB
-    System,single:          64.00MiB
-    Unallocated:            32.69GiB
-Overall:
-     Device size:          50.00GiB
-     Device allocated:          17.31GiB
-     Device unallocated:          32.69GiB
-     Device missing:             0.00B
-     Used:              14.86GiB
-     Free (estimated):          33.85GiB    (min: 33.85GiB)
-     Data ratio:                  1.00
-     Metadata ratio:              1.00
-     Global reserve:         336.00MiB    (used: 0.00B)
+After a reboot it failed, namely because "nofail" wasn't in my fstab and
+systemd is pedantic by default. After managing to get it booting into my
+system without /mnt/raid1 I faced these "open ctree failed" issues. 
+After running btrfs check on all the drives and getting nowhere, I
+decided to unplug the new drives and I discovered that when I take out
+the new 4TB WD drive, I could mount it with -o degraded.
 
-Data,single: Size:15.00GiB, Used:13.84GiB
-    /dev/nvme0n1p1      15.00GiB
+dmesg errors with the WD include "My Passport" Wrong diagnostic page;
+asked for 1 got 8 "Failed to get diagnostic page 0xffffffea" which
+raised my suspicions. The model number btw is WDBYFT0040BYI-WESN
 
-Metadata,single: Size:2.25GiB, Used:1.02GiB
-    /dev/nvme0n1p1       2.25GiB
+Anyway, I'm back up and running with 2x2TB  (one of them didn't finish
+removing, I don't know which) & 1x4TB.
 
-System,single: Size:64.00MiB, Used:16.00KiB
-    /dev/nvme0n1p1      64.00MiB
+[1] https://s.natalian.org/2017-10-08/usb-btrfs.txt
 
-Unallocated:
-    /dev/nvme0n1p1      32.69GiB
+I've decided to send the WD back for a refund. I've decided I want keep
+the 2x2TB and RAID1 with the new 1x4TB disk. So 4TB total. btrfs
+complains now of "Some devices missing" [1]. How do I fix this
+situation?
 
+Any tips how to name this individual disks? hdparm -I isn't a lot to go
+on.
 
-But again newer kernels refuse to boot with tlling me: "BTRFS error.....: super_num_devices 2 missmatch
-with num_devices 1 found here".
-So the the two counters are alwasy off by one, dont matter what i try.
+[hendry@nuc ~]$ sudo hdparm -I /dev/sdb1 | grep Model
+        Model Number:       ST4000LM024-2AN17V
+[hendry@nuc ~]$ sudo hdparm -I /dev/sdc1 | grep Model
+        Model Number:       ST2000LM003 HN-M201RAD
+[hendry@nuc ~]$ sudo hdparm -I /dev/sdd1 | grep Model
+        Model Number:       ST2000LM005 HN-M201AAD
 
 
-Question: how do i get thouse two counters in sync again so that my system acts again as expected?!
-
-
-regards
-Sash
-
-
-Am 05.10.2017 um 13:38 schrieb g6094199@freenet.de:
-> He Guys!I have an ubuntu 16.04 machine (K4.4 and K4.11, btrfs-progs v4.5.2) running / on btrfs raid1 and for somemonth (after i had to replace a / disk) super_numdevices and num_devices are out of sync peventing me to bootKernels newer than around 4.7 (ifaik), where the kernels began the be more restictive on checking valid btrfsdisks.I tried to remove the raid and converted to single with several balances after that so that there are no raidchunks left.Label: 'System'  uuid: 35fdbfd4-5809-4a30-94c1-5e3ca206ca4d    Total devices 1 FS bytes used 14.86GiB    devid    6 size 50.00GiB used 17.31GiB path /dev/nvme0n1p1Data, single: total=15.00GiB, used=13.84GiBSystem, single: total=64.00MiB, used=16.00KiBMetadata, single: total=2.25GiB, used=1.02GiBGlobalReserve, single: total=336.00MiB, used=0.00B/dev/nvme0n1p1, ID: 6   Device size:            50.00GiB   Data,single:            15.00GiB   Metadata,single:         2.25GiB   System,single:          6400MiB   Unallocated:            32.69GiBOverall:    Device size:          50.00GiB    Device allocated:          17.31GiB    Device unallocated:          32.69GiB    Device missing:             0.00B    Used:              1486GiB    Free (estimated):          33.85GiB    (min: 33.85GiB)    Data ratio:                  1.00    Metadata ratio:              1.00    Global reserve:         336.00MiB    (used: 0.00B)Data,single: Size:15.00GiB, Used:13.84GiB   /dev/nvme0n1p1      15.00GiBMetadata,single: Size:2.25GiB, Used:1.02GiB   /dev/nvme0n1p1       2.25GiBSystem,single: Size:64.00MiB, Used:1600KiB   /dev/nvme0n1p1      64.00MiBUnallocated:   /dev/nvme0n1p1      32.69GiBBut again newer kernels refuse to boot with tlling me: "BTRFS error....: super_num_devices 2 missmatchwith num_devices 1 found here".So the the two counters are alwasy off by one, dont matter what i try.Question: how do i get thouse two counters in sync again so that my system acts again as expected?!regardsSash
-
-
-
+Ok, thanks. Hope you can guide me,

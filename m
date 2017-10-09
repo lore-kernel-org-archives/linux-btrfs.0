@@ -1,193 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40157 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750791AbdJXGUf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 02:20:35 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9O6KY00031591
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 06:20:34 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9O6KYRL004960
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 06:20:34 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9O6KXo8032268
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 06:20:34 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: add write_flags for compression bio
-Date: Mon, 23 Oct 2017 23:18:16 -0600
-Message-Id: <20171024051816.8269-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171013211035.26765-1-bo.li.liu@oracle.com>
-References: <20171013211035.26765-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:57886 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754551AbdJIP6s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Oct 2017 11:58:48 -0400
+Date: Mon, 9 Oct 2017 17:57:03 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: heuristic add shannon entropy calculation
+Message-ID: <20171009155703.GF3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171008131159.31239-1-nefelim4ag@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171008131159.31239-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Compression code path has only flaged bios with REQ_OP_WRITE no matter
-where the bios come from, but it could be a sync write if fsync starts
-this writeback or a normal writeback write if wb kthread starts a
-periodic writeback.
+On Sun, Oct 08, 2017 at 04:11:59PM +0300, Timofey Titovets wrote:
+> Byte distribution check in heuristic will filter edge data
+> cases and some time fail to classificate input data
+> 
+> Let's fix that by adding Shannon entropy calculation,
+> that will cover classification of most other data types.
+> 
+> As Shannon entropy need log2 with some precision to work,
+> let's use ilog2(N) and for increase precision,
+> by do ilog2(pow(N, 4))
+> 
+> Shannon entropy slightly changed for avoiding signed numbers
+> and divisions.
+> 
+> Changes:
+>   v1 -> v2:
+>     - Replace log2_lshift4 wiht ilog2
+>     - To compensate accuracy errors of ilog2
+>       @ENTROPY_LVL_ACEPTABLE 70 -> 65
+>       @ENTROPY_LVL_HIGH      85 -> 80
+>     - Drop usage of u64 from shannon calculation
+> 
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/compression.c | 83 +++++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 file changed, 82 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 0060bc4ae5f2..8efbce5633b5 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -34,6 +34,7 @@
+>  #include <linux/slab.h>
+>  #include <linux/sched/mm.h>
+>  #include <linux/sort.h>
+> +#include <linux/log2.h>
+>  #include "ctree.h"
+>  #include "disk-io.h"
+>  #include "transaction.h"
+> @@ -1224,6 +1225,60 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+>  	return 1;
+>  }
+> 
+> +/*
+> + * Shannon Entropy calculation
+> + *
+> + * Pure byte distribution analyze fail to determine
+> + * compressiability of data. Try calculate entropy to
+> + * estimate the average minimum number of bits needed
+> + * to encode a sample data.
+> + *
+> + * For comfort, use return of percentage of needed bit's,
+> + * instead of bit's amaount directly.
+> + *
+> + * @ENTROPY_LVL_ACEPTABLE - below that threshold sample has low byte
+> + * entropy and can be compressible with high probability
+> + *
+> + * @ENTROPY_LVL_HIGH - data are not compressible with high probability,
+> + *
+> + * Use of ilog2() decrease precision, so to see ~ correct answer
+> + * LVL decreased by 5.
+> + */
+> +
+> +#define ENTROPY_LVL_ACEPTABLE 65
+> +#define ENTROPY_LVL_HIGH 80
+> +
+> +/*
+> + * For increase precision in shannon_entropy calculation
+> + * Let's do pow(n, M) to save more digits after comma
+> + *
+> + * Max int bit lengh 64
+> + * ilog2(MAX_SAMPLE_SIZE) -> 13
+> + * 13*4 = 52 < 64 -> M = 4
+> + * So use pow(n, 4)
+> + */
+> +static inline u32 ilog2_w(u64 n)
+> +{
+> +	return ilog2(n * n * n * n);
+> +}
+> +
+> +static u32 shannon_entropy(struct heuristic_ws *ws)
+> +{
+> +	const u32 entropy_max = 8*ilog2_w(2);
+> +	u32 entropy_sum = 0;
+> +	u32 p, p_base, sz_base;
+> +	u32 i;
+> +
+> +	sz_base = ilog2_w(ws->sample_size);
+> +	for (i = 0; i < BUCKET_SIZE && ws->bucket[i].count > 0; i++) {
+> +		p = ws->bucket[i].count;
+> +		p_base = ilog2_w(p);
+> +		entropy_sum += p * (sz_base - p_base);
+> +	}
+> +
+> +	entropy_sum /= ws->sample_size;
+> +	return entropy_sum * 100 / entropy_max;
+> +}
 
-It breaks the rule that sync writes and writeback writes need to be
-differentiated from each other, because from the POV of block layer,
-all bios need to be recognized by these flags in order to do some
-management, e.g. throttlling.
-
-This passes writeback_control to compression write path so that it can
-send bios with proper flags to block layer.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-
-v2: Enhance changlog with more background details.
-
- fs/btrfs/compression.c |  7 ++++---
- fs/btrfs/compression.h |  3 ++-
- fs/btrfs/extent_io.c   |  2 +-
- fs/btrfs/extent_io.h   |  3 ++-
- fs/btrfs/inode.c       | 15 +++++++++++----
- 5 files changed, 20 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 280384b..3dae2f5 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -292,7 +292,8 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 				 unsigned long len, u64 disk_start,
- 				 unsigned long compressed_len,
- 				 struct page **compressed_pages,
--				 unsigned long nr_pages)
-+				 unsigned long nr_pages,
-+				 unsigned int write_flags)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct bio *bio = NULL;
-@@ -324,7 +325,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 	bdev = fs_info->fs_devices->latest_bdev;
- 
- 	bio = btrfs_bio_alloc(bdev, first_byte);
--	bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
-+	bio->bi_opf = REQ_OP_WRITE | write_flags;
- 	bio->bi_private = cb;
- 	bio->bi_end_io = end_compressed_bio_write;
- 	refcount_set(&cb->pending_bios, 1);
-@@ -371,7 +372,7 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 			bio_put(bio);
- 
- 			bio = btrfs_bio_alloc(bdev, first_byte);
--			bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
-+			bio->bi_opf = REQ_OP_WRITE | write_flags;
- 			bio->bi_private = cb;
- 			bio->bi_end_io = end_compressed_bio_write;
- 			bio_add_page(bio, page, PAGE_SIZE, 0);
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index d2781ff..dc45b94 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -91,7 +91,8 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 				  unsigned long len, u64 disk_start,
- 				  unsigned long compressed_len,
- 				  struct page **compressed_pages,
--				  unsigned long nr_pages);
-+				  unsigned long nr_pages,
-+				  unsigned int write_flags);
- blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 				 int mirror_num, unsigned long bio_flags);
- 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3e5bb0c..ea64ad0 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3252,7 +3252,7 @@ static noinline_for_stack int writepage_delalloc(struct inode *inode,
- 					       delalloc_start,
- 					       delalloc_end,
- 					       &page_started,
--					       nr_written);
-+					       nr_written, wbc);
- 		/* File system has been set read-only */
- 		if (ret) {
- 			SetPageError(page);
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index faffa28..a92fd98 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -116,7 +116,8 @@ struct extent_io_ops {
- 	 */
- 	int (*fill_delalloc)(void *private_data, struct page *locked_page,
- 			     u64 start, u64 end, int *page_started,
--			     unsigned long *nr_written);
-+			     unsigned long *nr_written,
-+			     struct writeback_control *wbc);
- 
- 	int (*writepage_start_hook)(struct page *page, u64 start, u64 end);
- 	void (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 128f3e5..ee67773 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -367,6 +367,7 @@ struct async_cow {
- 	struct page *locked_page;
- 	u64 start;
- 	u64 end;
-+	unsigned int write_flags;
- 	struct list_head extents;
- 	struct btrfs_work work;
- };
-@@ -846,7 +847,8 @@ static noinline void submit_compressed_extents(struct inode *inode,
- 				    async_extent->ram_size,
- 				    ins.objectid,
- 				    ins.offset, async_extent->pages,
--				    async_extent->nr_pages)) {
-+				    async_extent->nr_pages,
-+				    async_cow->write_flags)) {
- 			struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
- 			struct page *p = async_extent->pages[0];
- 			const u64 start = async_extent->start;
-@@ -1176,7 +1178,8 @@ static noinline void async_cow_free(struct btrfs_work *work)
- 
- static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 				u64 start, u64 end, int *page_started,
--				unsigned long *nr_written)
-+				unsigned long *nr_written,
-+				unsigned int write_flags)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct async_cow *async_cow;
-@@ -1193,6 +1196,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
- 		async_cow->root = root;
- 		async_cow->locked_page = locked_page;
- 		async_cow->start = start;
-+		async_cow->write_flags = write_flags;
- 
- 		if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS &&
- 		    !btrfs_test_opt(fs_info, FORCE_COMPRESS))
-@@ -1569,11 +1573,13 @@ static inline int need_force_cow(struct inode *inode, u64 start, u64 end)
-  */
- static int run_delalloc_range(void *private_data, struct page *locked_page,
- 			      u64 start, u64 end, int *page_started,
--			      unsigned long *nr_written)
-+			      unsigned long *nr_written,
-+			      struct writeback_control *wbc)
- {
- 	struct inode *inode = private_data;
- 	int ret;
- 	int force_cow = need_force_cow(inode, start, end);
-+	unsigned int write_flags = wbc_to_write_flags(wbc);
- 
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
-@@ -1588,7 +1594,8 @@ static int run_delalloc_range(void *private_data, struct page *locked_page,
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
- 			&BTRFS_I(inode)->runtime_flags);
- 		ret = cow_file_range_async(inode, locked_page, start, end,
--					   page_started, nr_written);
-+					   page_started, nr_written,
-+					   write_flags);
- 	}
- 	if (ret)
- 		btrfs_cleanup_ordered_extents(inode, start, end - start + 1);
--- 
-2.9.4
-
+That's much better :) I'll add the patch to the rest of the heuristics.

@@ -1,138 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:40806 "EHLO mx1.redhat.com"
+Received: from imap.thunk.org ([74.207.234.97]:52006 "EHLO imap.thunk.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751647AbdJIGyh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Oct 2017 02:54:37 -0400
-Date: Mon, 9 Oct 2017 14:54:34 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Josef Bacik <josef@toxicpanda.com>, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-kernel@vger.kernel.org, tytso@mit.edu
+        id S1754160AbdJIMxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 9 Oct 2017 08:53:04 -0400
+Date: Mon, 9 Oct 2017 08:52:59 -0400
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Eryu Guan <eguan@redhat.com>
+Cc: Dave Chinner <david@fromorbit.com>, Josef Bacik <josef@toxicpanda.com>,
+        linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Subject: Re: [ANNOUNCE] fsperf: a simple fs/block performance testing
  framework
-Message-ID: <20171009065434.GD10593@eguan.usersys.redhat.com>
+Message-ID: <20171009125259.idxdvcom6krozywt@thunk.org>
 References: <20171006210956.vf326sydjiphsefo@destiny>
  <20171009005137.GA3666@dastard>
  <20171009022509.rz6goq3sec5ppxrr@destiny>
  <20171009051731.GK3666@dastard>
+ <20171009065434.GD10593@eguan.usersys.redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171009051731.GK3666@dastard>
+In-Reply-To: <20171009065434.GD10593@eguan.usersys.redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 09, 2017 at 04:17:31PM +1100, Dave Chinner wrote:
-> On Sun, Oct 08, 2017 at 10:25:10PM -0400, Josef Bacik wrote:
-> > On Mon, Oct 09, 2017 at 11:51:37AM +1100, Dave Chinner wrote:
-> > > On Fri, Oct 06, 2017 at 05:09:57PM -0400, Josef Bacik wrote:
-> > > > Hello,
-> > > > 
-> > > > One thing that comes up a lot every LSF is the fact that we have no general way
-> > > > that we do performance testing.  Every fs developer has a set of scripts or
-> > > > things that they run with varying degrees of consistency, but nothing central
-> > > > that we all use.  I for one am getting tired of finding regressions when we are
-> > > > deploying new kernels internally, so I wired this thing up to try and address
-> > > > this need.
-> > > > 
-> > > > We all hate convoluted setups, the more brain power we have to put in to setting
-> > > > something up the less likely we are to use it, so I took the xfstests approach
-> > > > of making it relatively simple to get running and relatively easy to add new
-> > > > tests.  For right now the only thing this framework does is run fio scripts.  I
-> > > > chose fio because it already gathers loads of performance data about it's runs.
-> > > > We have everything we need there, latency, bandwidth, cpu time, and all broken
-> > > > down by reads, writes, and trims.  I figure most of us are familiar enough with
-> > > > fio and how it works to make it relatively easy to add new tests to the
-> > > > framework.
-> > > > 
-> > > > I've posted my code up on github, you can get it here
-> > > > 
-> > > > https://github.com/josefbacik/fsperf
-> > > > 
-> > > > All (well most) of the results from fio are stored in a local sqlite database.
-> > > > Right now the comparison stuff is very crude, it simply checks against the
-> > > > previous run and it only checks a few of the keys by default.  You can check
-> > > > latency if you want, but while writing this stuff up it seemed that latency was
-> > > > too variable from run to run to be useful in a "did my thing regress or improve"
-> > > > sort of way.
-> > > > 
-> > > > The configuration is brain dead simple, the README has examples.  All you need
-> > > > to do is make your local.cfg, run ./setup and then run ./fsperf and you are good
-> > > > to go.
-> > > 
-> > > Why re-invent the test infrastructure? Why not just make it a
-> > > tests/perf subdir in fstests?
-> > > 
-> > 
-> > Probably should have led with that shouldn't I have?  There's nothing keeping me
-> > from doing it, but I didn't want to try and shoehorn in a python thing into
-> > fstests.  I need python to do the sqlite and the json parsing to dump into the
-> > sqlite database.
-> > 
-> > Now if you (and others) are not opposed to this being dropped into tests/perf
-> > then I'll work that up.  But it's definitely going to need to be done in python.
-> > I know you yourself have said you aren't opposed to using python in the past, so
-> > if that's still the case then I can definitely wire it all up.
+On Mon, Oct 09, 2017 at 02:54:34PM +0800, Eryu Guan wrote:
+> I have no problem either if python is really needed, after all this is a
+> very useful infrastructure improvement. But the python version problem
+> brought up by Ted made me a bit nervous, we need to work that round
+> carefully.
 > 
-> I have no problems with people using python for stuff like this but,
-> OTOH, I'm not the fstests maintainer anymore :P
+> OTOH, I'm just curious, what is the specific reason that python is a
+> hard requirement? If we can use perl, that'll be much easier for
+> fstests.
 
-I have no problem either if python is really needed, after all this is a
-very useful infrastructure improvement. But the python version problem
-brought up by Ted made me a bit nervous, we need to work that round
-carefully.
+Note that perl has its own versioning issues (but it's been easier
+given that Perl has been frozen so long waiting for Godot^H^H^H^H^H
+Perl6).  It's for similar reasons that Python 2.7 is nice and stable.
+Python 2 is frozen while Python 3 caught up.  The only downside is
+that Python 2.7 is now deprecated, and will stop getting security
+updates from Python Core in 2020.
 
-OTOH, I'm just curious, what is the specific reason that python is a
-hard requirement? If we can use perl, that'll be much easier for
-fstests.
+I'll note that Python 3.6 has some nice features that aren't in Python
+3.5 --- but Debian Stable only has Python 3.5, and Debian Unstable has
+Python 3.6.  Which is why I said, "it looks like you're using some
+variant of Python 3.x", but it wasn't obvious what version exactly was
+required by fsperf.  This version instability in Python and Perl is
+way Larry McVoy ended up using Tcl for Bitkeeper, by the way.  That
+was the only thing that was guaranteed to work everywhere, exactly the
+same, without random changes added by Perl/Python innovations...
 
-BTW, opinions from key fs developers/fstests users, like you, are also
-very important and welcomed :)
+It's a little easier for me with gce/kvm-xfstests, since I'm using a
+Debian Stable images/chroots, and I don't even going to _pretend_ that
+I care about cross-distro portability for the Test Appliance VM's that
+xfstests-bld creates.  But I suspect this will be more of an issue
+with xfstests.
 
-Thanks,
-Eryu
+Also, the same issues around versioning / "DLL hell" and provenance of
+various high-level package/modules exists with Perl just as much with
+Python.  Just substitute CPAN with PyPI.  And again, some of the
+popular Perl packages have been packaged by the distro's to solve the
+versioning / provenance problem, but exactly _which_ packages /
+modules are packaged varies from distro to distro.  (Hopefully the
+most popular ones will be packaged by both Red Hat, SuSE and Debian
+derivitives, but you'll have to check for each package / module you
+want to use.)
 
-> 
-> > > > The plan is to add lots of workloads as we discover regressions and such.  We
-> > > > don't want anything that takes too long to run otherwise people won't run this,
-> > > > so the existing tests don't take much longer than a few minutes each.  I will be
-> > > > adding some more comparison options so you can compare against averages of all
-> > > > previous runs and such.
-> > > 
-> > > Yup, that fits exactly into what fstests is for... :P
-> > > 
-> > > Integrating into fstests means it will be immediately available to
-> > > all fs developers, it'll run on everything that everyone already has
-> > > setup for filesystem testing, and it will have familiar mkfs/mount
-> > > option setup behaviour so there's no new hoops for everyone to jump
-> > > through to run it...
-> > > 
-> > 
-> > TBF I specifically made it as easy as possible because I know we all hate trying
-> > to learn new shit.
-> 
-> Yeah, it's also hard to get people to change their workflows to add
-> a whole new test harness into them. It's easy if it's just a new
-> command to an existing workflow :P
-> 
-> > I figured this was different enough to warrant a separate
-> > project, especially since I'm going to add block device jobs so Jens can test
-> > block layer things.  If we all agree we'd rather see this in fstests then I'm
-> > happy to do that too.  Thanks,
-> 
-> I'm not fussed either way - it's a good discussion to have, though.
-> 
-> If I want to add tests (e.g. my time-honoured fsmark tests), where
-> should I send patches?
-> 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+One way of solving the problem is just including those Perl / Python
+package modules in the sources of xfstests itself; that way you're not
+depending on which version of a particular module / package is
+available on a distro, and you're also not randomly downloading
+software over the network and hoping it works / hasn't been taken over
+by some hostile state power.  (I'd be much happier if PyPI or CPAN
+used SHA checksums of what you expect to be downloaded; even if you
+use Easy_Install's requirements.txt, you're still trusting PyPI to
+give you what it thinks is version of Junitparser 1.0.0.)
+
+This is why I've dropped my own copy of junitparser into the git repo
+of xfstests-bld.  It's the "ship your own version of the DLL" solution
+to the "DLL hell" problem, but it was the best I could come up with,
+especially since Debian hadn't packaged the Junitparser python module.
+I also figured it was much better at lowering the blood pressure of
+the friendly local secops types.  :-)
+
+     	      	 	   	      - Ted

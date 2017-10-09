@@ -1,100 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from outbound-smtp02.blacknight.com ([81.17.249.8]:35602 "EHLO
-        outbound-smtp02.blacknight.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1755344AbdJJJIT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 05:08:19 -0400
-Received: from mail.blacknight.com (pemlinmail04.blacknight.ie [81.17.254.17])
-        by outbound-smtp02.blacknight.com (Postfix) with ESMTPS id F284C989A4
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2017 09:00:53 +0000 (UTC)
-Date: Tue, 10 Oct 2017 10:00:53 +0100
-From: Mel Gorman <mgorman@techsingularity.net>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Josef Bacik <josef@toxicpanda.com>, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [ANNOUNCE] fsperf: a simple fs/block performance testing
- framework
-Message-ID: <20171010090053.nygtcdda2soiw3mq@techsingularity.net>
-References: <20171006210956.vf326sydjiphsefo@destiny>
- <20171009005137.GA3666@dastard>
- <20171009022509.rz6goq3sec5ppxrr@destiny>
- <20171009051731.GK3666@dastard>
- <20171009130050.ufnmdhslc53bwpgc@destiny>
- <20171009210920.GO3666@dastard>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:44913 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751228AbdJIByQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Oct 2017 21:54:16 -0400
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "hch@lst.de" <hch@lst.de>
+Subject: RE: [PATCH] btrfs: Use bd_dev to generate index when
+ dev_state_hashtable add items.
+Date: Mon, 9 Oct 2017 01:54:14 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01479C859B@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1506672995-12488-1-git-send-email-gujx@cn.fujitsu.com>
+ <20170929180529.GW31640@twin.jikos.cz>
+In-Reply-To: <20170929180529.GW31640@twin.jikos.cz>
+Content-Type: text/plain; charset="gb2312"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-In-Reply-To: <20171009210920.GO3666@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 10, 2017 at 08:09:20AM +1100, Dave Chinner wrote:
-> > I'd _like_ to expand fio for cases we come up with that aren't possible, as
-> > there's already a ton of measurements that are taken, especially around
-> > latencies.
+Hi,
+sorry for reply too late.
+
+This patch fix for the bug descriped below.
+Use MOUNT_OPTIONS="-o check_int" when run xfstest, device
+Can not be mount successfully. So xfstest can not run.
+
+
+
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Saturday, September 30, 2017 2:05 AM
+> To: Gu, Jinxiang/¹Ë ½ğÏã <gujx@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org; hch@lst.de
+> Subject: Re: [PATCH] btrfs: Use bd_dev to generate index when dev_state_hashtable add items.
 > 
-> To be properly useful it needs to support more than just fio to run
-> tests. Indeed, it's largely useless to me if that's all it can do or
-> it's a major pain to add support for different tools like fsmark.
+> On Fri, Sep 29, 2017 at 04:16:35PM +0800, Gu Jinxiang wrote:
+> > From: Gu JinXiang <gujx@cn.fujitsu.com>
+> >
+> > Fix bug of
+> > <f8f84b2dfda5> (<btrfs: index check-integrity state hash by a dev_t>).
 > 
-> e.g.  my typical perf regression test that you see the concurrnet
-> fsmark create workload is actually a lot more. It does:
-> 
-> 	fsmark to create 50m zero length files
-> 	umount,
-> 	run parallel xfs_repair (excellent mmap_sem/page fault punisher)
-> 	mount
-> 	run parallel find -ctime (readdir + lookup traversal)
-> 	unmount, mount
-> 	run parallel ls -R (readdir + dtype traversal)
-> 	unmount, mount
-> 	parallel rm -rf of 50m files
-> 
-> I have variants that use small 4k files or large files rather than
-> empty files, taht use different fsync patterns to stress the
-> log, use grep -R to traverse the data as well as
-> the directory/inode structure instead of find, etc.
+> Please explain what bug are you fixing.
 > 
 
-FWIW, this is partially implemented in mmtests as
-configs/config-global-dhp__io-xfsrepair. It covers the fsmark and
-xfs_repair part and an example report is
 
-http://beta.suse.com/private/mgorman/results/home/marvin/openSUSE-LEAP-42.2/global-dhp__io-xfsrepair-xfs/delboy/#xfsrepair
 
-(ignore 4.12.603, it's 4.12.3-stable with some additional patches that were
-pending for -stable at the time the test was executed). That config was
-added after a discussion with you a few years ago and I've kept it since as
-it has been useful in a number of contexts. Adding additional tests to cover
-parallel find, parallel ls and parallel rm would be relatively trivial but
-it's not there. This is a test that doesn't have proper graphing support
-but it could be added in 10-15 minutes as xfsrepair is the primary metric
-and it's simply reported as elapsed time.
-
-fsmark is also covered albeit not necessarily with parameters everyone wants
-as configs/config-global-dhp__io-metadata in mmtests.  Example report is
-
-http://beta.suse.com/private/mgorman/results/home/marvin/openSUSE-LEAP-42.2/global-dhp__io-metadata-xfs/delboy/#fsmark-threaded
-
-mmtests has been modified multiple times as according as methodologies
-were improved and it's far from perfect but it seems to me that fsperf
-is going to end up reimplementing a lot of it.
-
-It's not perfect as there are multiple quality-of-implementation issues
-as it often takes the shortest path to being able to collect data but
-it improves over time. When a test is found to be flawed, it's fixed and
-historical data is discarded. It doesn't store data in sqlite or anything
-fancy, just the raw logs are preserved and reports generated as required. In
-terms of tools required, the core is just bash scripts. Some of the tests
-require a number of packages to be installed but not all of them. It uses a
-tool to install packages if they are missing but the naming is all based on
-opensuse. It *can* map opensuse package names to fedora and debian but the
-mappings are not up-to-date as I do not personally run those distributions.
-
-Even with the quality-of-implementation issues, it seems to me that it
-covers a lot of the requirements that fsperf aims for.
-
--- 
-Mel Gorman
-SUSE Labs
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

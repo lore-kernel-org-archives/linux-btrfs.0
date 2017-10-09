@@ -1,151 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57456 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756194AbdJJJbP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 05:31:15 -0400
-Date: Tue, 10 Oct 2017 11:31:13 +0200
-From: Jan Kara <jack@suse.cz>
-To: Tejun Heo <tj@kernel.org>
-Cc: jack@suse.cz, axboe@kernel.dk, clm@fb.com, jbacik@fb.com,
-        kernel-team@fb.com, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] cgroup, writeback: implement submit_bh_blkcg_css()
-Message-ID: <20171010093113.GF775@quack2.suse.cz>
-References: <20171009212911.473208-1-tj@kernel.org>
- <20171009212911.473208-3-tj@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171009212911.473208-3-tj@kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:35029 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755143AbdJISl2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Oct 2017 14:41:28 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Fstest: btrfs/151: test if device delete ends up with losing raid profile
+Date: Mon,  9 Oct 2017 11:39:21 -0600
+Message-Id: <20171009173921.12569-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon 09-10-17 14:29:10, Tejun Heo wrote:
-> Add wbc->blkcg_css so that the blkcg_css association can be specified
-> independently and implement submit_bh_blkcg_css() using it.  This will
-> be used to override cgroup membership on specific buffer_heads.
-> 
-> Signed-off-by: Tejun Heo <tj@kernel.org>
-> Cc: Jan Kara <jack@suse.cz>
-> Cc: Jens Axboe <axboe@kernel.dk>
+Currently running 'btrfs device delete' can end up with losing data raid
+profile (if any), this test is to reproduce the problem.
 
-Hum, I dislike growing wbc just to pass blkcg_css through one function in
-fs/buffer.c (in otherwise empty wbc). Not that space would be a big concern
-for wbc but it just gets messier... Cannot we just refactor the code a
-bit like:
+The fix is
+     "Btrfs: avoid losing data raid profile when deleting a device"
 
-1) Create function
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ tests/btrfs/151     | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/151.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 76 insertions(+)
+ create mode 100755 tests/btrfs/151
+ create mode 100644 tests/btrfs/151.out
 
-struct bio *create_bio_bh(int op, int op_flags, struct buffer_head *bh,
-			  enum rw_hint write_hint);
-
-which would create bio from bh.
-
-2) Make submit_bh(), submit_bh_wbc(), submit_bh_blkcg_css() use this and
-the latter two would further tweak the bio as needed before submitting.
-
-Thoughts?
-
-								Honza
-
-
-> ---
->  fs/buffer.c                 | 12 ++++++++++++
->  fs/fs-writeback.c           |  1 +
->  include/linux/buffer_head.h | 11 +++++++++++
->  include/linux/writeback.h   |  6 ++++--
->  4 files changed, 28 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/buffer.c b/fs/buffer.c
-> index 170df85..fac4f9a 100644
-> --- a/fs/buffer.c
-> +++ b/fs/buffer.c
-> @@ -3143,6 +3143,18 @@ int submit_bh(int op, int op_flags, struct buffer_head *bh)
->  }
->  EXPORT_SYMBOL(submit_bh);
->  
-> +#ifdef CONFIG_CGROUP_WRITEBACK
-> +int submit_bh_blkcg_css(int op, int op_flags,  struct buffer_head *bh,
-> +			struct cgroup_subsys_state *blkcg_css)
-> +{
-> +	struct writeback_control wbc = { .blkcg_css = blkcg_css };
-> +
-> +	/* @wbc is used just to override the bio's blkcg_css */
-> +	return submit_bh_wbc(op, op_flags, bh, 0, &wbc);
-> +}
-> +EXPORT_SYMBOL(submit_bh_blkcg_css);
-> +#endif
-> +
->  /**
->   * ll_rw_block: low-level access to block devices (DEPRECATED)
->   * @op: whether to %READ or %WRITE
-> diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-> index 245c430..cd882e6 100644
-> --- a/fs/fs-writeback.c
-> +++ b/fs/fs-writeback.c
-> @@ -538,6 +538,7 @@ void wbc_attach_and_unlock_inode(struct writeback_control *wbc,
->  	}
->  
->  	wbc->wb = inode_to_wb(inode);
-> +	wbc->blkcg_css = wbc->wb->blkcg_css;
->  	wbc->inode = inode;
->  
->  	wbc->wb_id = wbc->wb->memcg_css->id;
-> diff --git a/include/linux/buffer_head.h b/include/linux/buffer_head.h
-> index c8dae55..abb4dd4 100644
-> --- a/include/linux/buffer_head.h
-> +++ b/include/linux/buffer_head.h
-> @@ -13,6 +13,7 @@
->  #include <linux/pagemap.h>
->  #include <linux/wait.h>
->  #include <linux/atomic.h>
-> +#include <linux/cgroup.h>
->  
->  #ifdef CONFIG_BLOCK
->  
-> @@ -205,6 +206,16 @@ int bh_submit_read(struct buffer_head *bh);
->  loff_t page_cache_seek_hole_data(struct inode *inode, loff_t offset,
->  				 loff_t length, int whence);
->  
-> +#ifdef CONFIG_CGROUP_WRITEBACK
-> +int submit_bh_blkcg(int op, int op_flags, struct buffer_head *bh,
-> +		    struct cgroup_subsys_state *blkcg_css);
-> +#else
-> +static inline int submit_bh_blkcg(int op, int op_flags, struct buffer_head *bh,
-> +				  struct cgroup_subsys_state *blkcg_css)
-> +{
-> +	return submit_bh(op, op_flags, bh);
-> +}
-> +#endif
->  extern int buffer_heads_over_limit;
->  
->  /*
-> diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-> index d581579..81e5946 100644
-> --- a/include/linux/writeback.h
-> +++ b/include/linux/writeback.h
-> @@ -91,6 +91,8 @@ struct writeback_control {
->  	unsigned for_sync:1;		/* sync(2) WB_SYNC_ALL writeback */
->  #ifdef CONFIG_CGROUP_WRITEBACK
->  	struct bdi_writeback *wb;	/* wb this writeback is issued under */
-> +	struct cgroup_subsys_state *blkcg_css; /* usually wb->blkcg_css but
-> +						  may be overridden */
->  	struct inode *inode;		/* inode being written out */
->  
->  	/* foreign inode detection, see wbc_detach_inode() */
-> @@ -277,8 +279,8 @@ static inline void wbc_init_bio(struct writeback_control *wbc, struct bio *bio)
->  	 * behind a slow cgroup.  Ultimately, we want pageout() to kick off
->  	 * regular writeback instead of writing things out itself.
->  	 */
-> -	if (wbc->wb)
-> -		bio_associate_blkcg(bio, wbc->wb->blkcg_css);
-> +	if (wbc->blkcg_css)
-> +		bio_associate_blkcg(bio, wbc->blkcg_css);
->  }
->  
->  #else	/* CONFIG_CGROUP_WRITEBACK */
-> -- 
-> 2.9.5
-> 
+diff --git a/tests/btrfs/151 b/tests/btrfs/151
+new file mode 100755
+index 0000000..1866cb6
+--- /dev/null
++++ b/tests/btrfs/151
+@@ -0,0 +1,73 @@
++#! /bin/bash
++# FS QA Test 151
++#
++# Test if it's losing data chunk's raid profile after 'btrfs device
++# remove'.
++#
++# The fix is
++#	Btrfs: avoid losing data raid profile when deleting a device
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2017 Oracle.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_scratch_dev_pool 3
++
++# create raid1 for data
++_scratch_pool_mkfs "-d raid1 -b 1G" >> $seqres.full 2>&1
++
++# we need an empty data chunk, so nospace_cache is required.
++_scratch_mount -onospace_cache
++
++# if data chunk is empty, 'btrfs device remove' can change raid1 to
++# single.
++$BTRFS_UTIL_PROG device delete 2 $SCRATCH_MNT >> $seqres.full
++
++df_ret=`$BTRFS_UTIL_PROG filesystem df $SCRATCH_MNT`
++echo $df_ret | $AWK_PROG -F ':' '/Data,/ {print $1}'
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/151.out b/tests/btrfs/151.out
+new file mode 100644
+index 0000000..0a1de06
+--- /dev/null
++++ b/tests/btrfs/151.out
+@@ -0,0 +1,2 @@
++QA output created by 151
++Data, RAID1
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e73bb1b..a7ff7b0 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -153,3 +153,4 @@
+ 148 auto quick rw
+ 149 auto quick send compress
+ 150 auto quick dangerous
++151 auto quick
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.5.0
+

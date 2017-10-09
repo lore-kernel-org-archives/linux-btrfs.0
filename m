@@ -1,137 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:55718 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:60622 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751308AbdJIBvW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 8 Oct 2017 21:51:22 -0400
+        id S1751365AbdJIBvX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 8 Oct 2017 21:51:23 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH v4 2/5] btrfs: tree-checker: Enhance btrfs_check_node output
-Date: Mon,  9 Oct 2017 01:51:03 +0000
-Message-Id: <20171009015106.9711-3-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v4 3/5] btrfs: tree-checker: Enhance output for btrfs_check_leaf
+Date: Mon,  9 Oct 2017 01:51:04 +0000
+Message-Id: <20171009015106.9711-4-quwenruo.btrfs@gmx.com>
 In-Reply-To: <20171009015106.9711-1-quwenruo.btrfs@gmx.com>
 References: <20171009015106.9711-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use inline function to replace macro since we don't need
-stringification.
-(Macro still exist until all caller get updated)
-
-And add more info about the error, and replace EIO with EUCLEAN.
-
-For nr_items error, report if it's too large or too small, and output
-valid value range.
-
-For node block pointer, added a new alignment checker.
-
-For key order, also output the next key to make the problem more
-obvious.
+Enhance the output to print:
+1) Reason
+2) Bad value
+   If reason can't explain enough
+3) Good value (range)
 
 Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 ---
- fs/btrfs/tree-checker.c | 70 ++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 63 insertions(+), 7 deletions(-)
+ fs/btrfs/tree-checker.c | 27 +++++++++++++++++++++------
+ 1 file changed, 21 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 63307e8426a6..b4ced8d3ce2a 100644
+index b4ced8d3ce2a..7bba195ecc8b 100644
 --- a/fs/btrfs/tree-checker.c
 +++ b/fs/btrfs/tree-checker.c
-@@ -38,6 +38,48 @@
- 		   btrfs_header_level(eb) == 0 ? "leaf" : "node",	\
- 		   reason, btrfs_header_bytenr(eb), root->objectid, slot)
+@@ -233,8 +233,9 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
+ 			eb = btrfs_root_node(check_root);
+ 			/* if leaf is the root, then it's fine */
+ 			if (leaf != eb) {
+-				CORRUPT("non-root leaf's nritems is 0",
+-					leaf, check_root, 0);
++				generic_err(check_root, leaf, 0,
++					"invalid nritems, have %u shouldn't be 0 for non-root leaf",
++					nritems);
+ 				free_extent_buffer(eb);
+ 				return -EUCLEAN;
+ 			}
+@@ -265,7 +266,11 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
  
-+/*
-+ * Error message should follow the format below:
-+ * corrupt <type>: <identifier>, <reason>[, <bad_value>]
-+ *
-+ * @type:	Either leaf or node
-+ * @identifier:	The necessary info to locate the leaf/node.
-+ * 		It's recommened to decode key.objecitd/offset if it's
-+ * 		meaningful.
-+ * @reason:	What's wrong
-+ * @bad_value:	Optional, it's recommened to output bad value and its
-+ *		expected value (range).
-+ *
-+ * Since comma is used to separate the components, only SPACE is allowed
-+ * inside each component.
-+ */
-+
-+/*
-+ * Append the generic "corrupt leaf/node root=%llu block=%llu slot=%d: " to
-+ * @fmt.
-+ * Allowing user to customize their output.
-+ */
-+__printf(4, 5)
-+static void generic_err(const struct btrfs_root *root,
-+			const struct extent_buffer *eb,
-+			int slot, const char *fmt, ...)
-+{
-+	struct va_format vaf;
-+	va_list args;
-+
-+	va_start(args, fmt);
-+
-+	vaf.fmt = fmt;
-+	vaf.va = &args;
-+
-+	btrfs_crit(root->fs_info,
-+		"corrupt %s: root=%llu block=%llu slot=%d, %pV",
-+		btrfs_header_level(eb) == 0 ? "leaf" : "node",
-+		root->objectid, btrfs_header_bytenr(eb), slot,
-+		&vaf);
-+	va_end(args);
-+}
-+
- static int check_extent_data_item(struct btrfs_root *root,
- 				  struct extent_buffer *leaf,
- 				  struct btrfs_key *key, int slot)
-@@ -283,9 +325,11 @@ int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node)
- 
- 	if (nr == 0 || nr > BTRFS_NODEPTRS_PER_BLOCK(root->fs_info)) {
- 		btrfs_crit(root->fs_info,
--			   "corrupt node: block %llu root %llu nritems %lu",
--			   node->start, root->objectid, nr);
--		return -EIO;
-+			   "corrupt node: root=%llu block=%llu, nritems too %s, have %lu expect range [1,%u]",
-+			   root->objectid, node->start,
-+			   nr == 0 ? "small" : "large", nr,
-+			   BTRFS_NODEPTRS_PER_BLOCK(root->fs_info));
-+		return -EUCLEAN;
- 	}
- 
- 	for (slot = 0; slot < nr - 1; slot++) {
-@@ -294,14 +338,26 @@ int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node)
- 		btrfs_node_key_to_cpu(node, &next_key, slot + 1);
- 
- 		if (!bytenr) {
--			CORRUPT("invalid item slot", node, root, slot);
--			ret = -EIO;
-+			generic_err(root, node, slot,
-+				"invalid NULL node pointer");
-+			ret = -EUCLEAN;
-+			goto out;
-+		}
-+		if (!IS_ALIGNED(bytenr, root->fs_info->sectorsize)) {
-+			generic_err(root, node, slot,
-+				"unaligned pointer, have %llu should be aligned to %u",
-+				bytenr, root->fs_info->sectorsize);
-+			ret = -EUCLEAN;
- 			goto out;
+ 		/* Make sure the keys are in the right order */
+ 		if (btrfs_comp_cpu_keys(&prev_key, &key) >= 0) {
+-			CORRUPT("bad key order", leaf, root, slot);
++			generic_err(root, leaf, slot,
++				"bad key order, prev key (%llu %u %llu) current key (%llu %u %llu)",
++				prev_key.objectid, prev_key.type,
++				prev_key.offset, key.objectid, key.type,
++				key.offset);
+ 			return -EUCLEAN;
  		}
  
- 		if (btrfs_comp_cpu_keys(&key, &next_key) >= 0) {
--			CORRUPT("bad key order", node, root, slot);
--			ret = -EIO;
-+			generic_err(root, node, slot,
-+				"bad key order, current key (%llu %u %llu) next key (%llu %u %llu)",
-+				key.objectid, key.type, key.offset,
-+				next_key.objectid, next_key.type,
-+				next_key.offset);
-+			ret = -EUCLEAN;
- 			goto out;
+@@ -280,7 +285,10 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
+ 			item_end_expected = btrfs_item_offset_nr(leaf,
+ 								 slot - 1);
+ 		if (btrfs_item_end_nr(leaf, slot) != item_end_expected) {
+-			CORRUPT("slot offset bad", leaf, root, slot);
++			generic_err(root, leaf, slot,
++				"discontinious item end, have %u expect %u",
++				btrfs_item_end_nr(leaf, slot),
++				item_end_expected);
+ 			return -EUCLEAN;
  		}
- 	}
+ 
+@@ -291,14 +299,21 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
+ 		 */
+ 		if (btrfs_item_end_nr(leaf, slot) >
+ 		    BTRFS_LEAF_DATA_SIZE(fs_info)) {
+-			CORRUPT("slot end outside of leaf", leaf, root, slot);
++			generic_err(root, leaf, slot,
++				"slot end outside of leaf, have %u expect range [0, %u]",
++				btrfs_item_end_nr(leaf, slot),
++				BTRFS_LEAF_DATA_SIZE(fs_info));
+ 			return -EUCLEAN;
+ 		}
+ 
+ 		/* Also check if the item pointer overlaps with btrfs item. */
+ 		if (btrfs_item_nr_offset(slot) + sizeof(struct btrfs_item) >
+ 		    btrfs_item_ptr_offset(leaf, slot)) {
+-			CORRUPT("slot overlap with its data", leaf, root, slot);
++			generic_err(root, leaf, slot,
++				"slot overlap with its data, item end %lu data start %lu",
++				btrfs_item_nr_offset(slot) +
++				sizeof(struct btrfs_item),
++				btrfs_item_ptr_offset(leaf, slot));
+ 			return -EUCLEAN;
+ 		}
+ 
 -- 
 2.14.2
 

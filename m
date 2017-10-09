@@ -1,57 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37266 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:57148 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751147AbdJKRWS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 13:22:18 -0400
-Date: Wed, 11 Oct 2017 19:20:32 +0200
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] Btrfs: remove nr_async_submits and
- async_submit_draining
-Message-ID: <20171011172032.GY3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170907172222.20444-1-bo.li.liu@oracle.com>
- <20170907172222.20444-4-bo.li.liu@oracle.com>
- <20170927123117.GZ31640@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20170927123117.GZ31640@twin.jikos.cz>
+        id S1751228AbdJIBvw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 8 Oct 2017 21:51:52 -0400
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, nborisov@suse.com
+Subject: [PATCH v4 0/5] Enhance tree block validation checker
+Date: Mon,  9 Oct 2017 01:51:01 +0000
+Message-Id: <20171009015106.9711-1-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 27, 2017 at 02:31:17PM +0200, David Sterba wrote:
-> On Thu, Sep 07, 2017 at 11:22:22AM -0600, Liu Bo wrote:
-> > Now that we have the combo of flushing twice, which can make sure IO
-> > have started since the second flush will wait for page lock which
-> > won't be unlocked unless setting page writeback and queuing ordered
-> > extents, we don't need %async_submit_draining, %async_delalloc_pages
-> > and %nr_async_submits to tell whether IO have actually started.
-> > 
-> > Moreover, all the flushers in use are followed by functions that wait
-> > for ordered extents to complete, so %nr_async_submits, which tracks
-> > whether bio's async submit has made progress, doesn't really make
-> > sense.
-> > 
-> > However, %async_delalloc_pages is still required by shrink_delalloc()
-> > as that function doesn't flush twice in the normal case (just issues a
-> > writeback with WB_REASON_FS_FREE_SPACE).
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Patches like this are almost impossible to review just from the code.
-> This has runtime implications that we'd need to observe in real on
-> various workloads.
-> 
-> So, the patches "look good", but I did not try to forsee all the
-> scenarios where threads interact through the counters. I think it should
-> be safe to add them to for-next and give enough time to test them.
-> 
-> The performance has varied wildly in the last cycle(s) so it's hard to
-> get a baseline, other than another major release. I do expect changes in
-> performance characteristics but still hope it'll be the same on average.
+The patchset can be fetched from github:
+https://github.com/adam900710/linux/tree/checker_enhance
 
-Testing appears normal, we get more weirdnes just by enabling the
-writeback throttling, but without that I haven't observed anything
-unusual. Patches go to the misc-next part, meaning I don't expect
-changes other than fixups, as separate patches. Thanks.
+It's based on David's misc-next branch, with following commit as base:
+a5e50b4b444c ("btrfs: Add checker for EXTENT_CSUM")
+
+According to David's suggestion, enhance the output format of tree block
+validation checker.
+
+And move them into separate files: tree-checker.[ch].
+
+Also added a output format rule to try to make all output message
+follow the same format.
+
+Some example output using btrfs-progs fsck-test images looks like:
+
+For unagliend file extent member:
+---
+BTRFS critical (device loop0): corrupt leaf: root=1 block=29360128 slot=7 ino=257 file_offset=0, invalid disk_bytenr for file extent, have 755944791, should be aligned to 4096
+---
+
+For bad leaf holes:
+---
+BTRFS critical (device loop0): corrupt leaf: root=1 block=29360128 slot=28, discontinious item end, have 9387 expect 15018
+---
+
+Changelog:
+v2:
+  Unify the error string format, so it should be easier to grep them
+  from dmesg. Thanks Nikolay for pointing this out.
+  Remove unused CORRUPT() macro.
+v3:
+  Replace EIO with EUCLEAN in 2nd patch. Thanks Nikolay for pointing
+  this out.
+  Correct "btrfs-progs:" to "btrfs:" for 1st patch.
+v4:
+  Code style change suggested by David.
+  Use more easy-to-understand error message for NULL node pointer,
+  suggested by Nikolay.
+  Helper macro enhancement, including naming change and argument
+  protection suggested by David.
+  Separate tree-checker.h suggested by David.
+
+
+Qu Wenruo (5):
+  btrfs: Move leaf and node validation checker to tree-checker.ch
+  btrfs: tree-checker: Enhance btrfs_check_node output
+  btrfs: tree-checker: Enhance output for btrfs_check_leaf
+  btrfs: tree-checker: Enhance output for check_csum_item
+  btrfs: tree-checker: Enhance output for check_extent_data_item
+
+ fs/btrfs/Makefile       |   2 +-
+ fs/btrfs/disk-io.c      | 285 +-------------------------------
+ fs/btrfs/tree-checker.c | 429 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/tree-checker.h |  23 +++
+ 4 files changed, 457 insertions(+), 282 deletions(-)
+ create mode 100644 fs/btrfs/tree-checker.c
+ create mode 100644 fs/btrfs/tree-checker.h
+
+-- 
+2.14.2
+

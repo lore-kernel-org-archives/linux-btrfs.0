@@ -1,81 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f42.google.com ([209.85.214.42]:48106 "EHLO
-        mail-it0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751840AbdJIL6z (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Oct 2017 07:58:55 -0400
-Received: by mail-it0-f42.google.com with SMTP id p138so13347250itp.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Oct 2017 04:58:55 -0700 (PDT)
-Subject: Re: [PATCH v8 2/2] btrfs: check device for critical errors and mark
- failed
-To: bo.li.liu@oracle.com
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171003155920.24925-1-anand.jain@oracle.com>
- <20171003155920.24925-3-anand.jain@oracle.com>
- <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <bd328a02-8823-a3a4-35ff-a9b890f00679@gmail.com>
- <20171006233357.GB19068@lim.localdomain>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7c4f262c-2843-0876-8914-761b371f9371@gmail.com>
-Date: Mon, 9 Oct 2017 07:58:49 -0400
-MIME-Version: 1.0
-In-Reply-To: <20171006233357.GB19068@lim.localdomain>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.163]:19189 "EHLO
+        mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754560AbdJIR0H (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Oct 2017 13:26:07 -0400
+Received: from mordor.fritz.box (x5f749eeb.dyn.telefonica.de [95.116.158.235])
+        by smtp.strato.de (RZmta 42.3 DYNA|AUTH)
+        with ESMTPSA id N06a0bt99HQ30ww
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (curve secp521r1 with 521 ECDH bits, eq. 15360 bits RSA))
+        (Client did not present a certificate)
+        for <linux-btrfs@vger.kernel.org>;
+        Mon, 9 Oct 2017 19:26:03 +0200 (CEST)
+Message-ID: <1507569963.2874.2.camel@cloud.haefemeier.eu>
+Subject: WARNING: ... at fs/btrfs/ctree.h:1559
+ btrfs_update_device+0x1be/0x1d0 [btrfs]
+From: Cloud Admin <admin@cloud.haefemeier.eu>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 09 Oct 2017 19:26:03 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-06 19:33, Liu Bo wrote:
-> On Thu, Oct 05, 2017 at 07:07:44AM -0400, Austin S. Hemmelgarn wrote:
->> On 2017-10-04 16:11, Liu Bo wrote:
->>> On Tue, Oct 03, 2017 at 11:59:20PM +0800, Anand Jain wrote:
->>>> From: Anand Jain <Anand.Jain@oracle.com>
->>>>
->>>> Write and flush errors are critical errors, upon which the device fd
->>>> must be closed and marked as failed.
->>>>
->>>
->>> Can we defer the job of closing device to umount?
->>>
->>> We can go mark the device failed and skip it while doing read/write,
->>> and umount can do the cleanup work.
->>>
->>> That way we don't need a dedicated thread looping around to detect a
->>> rare situation.
->> If BTRFS doesn't close the device, then it's 100% guaranteed if it
->> reconnects that it will show up under a different device node.  It would
->> also mean that the device node stays visible when there is in fact no device
->> connected to it, which is a pain from a monitoring perspective.
-> 
-> I see, you're assuming that these errors are due to disconnection of
-> disks, it could be bad sectors (although almost impossible from
-> enterprise hard disks) or some other errors across the stack.
-And we need to handle any of these cases.  If BTRFS is going to claim 
-handling of device failures, it needs to handle all types of device 
-failure it reasonably can without making assumptions about what type of 
-failure occurred.
-> 
-> I do agree that cleanup needs to be done if disk got disconnected, but
-> not doing cleanup here, a udev rule is needed to handle such an event.
-And why exactly does it need to involve userspace beyond notifying that 
-something bad happened?  We know the failure happened, why should we 
-tell userspace about it and require userspace to tell us to handle it? 
-It's not like this is a performance critical path since it won't happen 
-very often, and the primary concern is data safety, not performance, so 
-why exactly do we need to push something that isn't a policy decision 
-(and arguably isn't a decision, if we're not using a device, we 
-shouldn't be holding it open, period) out to userspace?
+Hi,
+I update kernel from 4.11.10 to 4.13.4 and since that I get the following message in the kernel journal calling 'scrub' or 'balance'. I use Fedora 26 with btrfs-progs v4.9.1.
+What does this mean and (more important) what can I do? 
+Bye
+	Frank
 
-Looking at it a bit differently though, every time I've seen any write 
-or flush errors, either the connection to the device was unstable, or 
-the storage device was failing, and neither case is something that 
-should require userspace to make a decision about how to handle things.
-
-To be entirely honest though, from a system administrator's perspective, 
-I would actually expect a device getting disconnected (or otherwise 
-disappearing off the bus) to end up in a 'Missing' state, not a 'Failed' 
-state.  I see no reason to treat it any differently than if it 
-disappeared before the volume was mounted, other than the requirement to 
-actually handle it.  That type of handling _will_ require userspace 
-involvement (because I seriously doubt there will ever be proper 
-notification from the block layer to holders that a device is gone), but 
-that's also largely orthogonal to this patch set (there's no reason that 
-we need to handle write or flush errors the same way).
+BTRFS info (device dm-7): relocating block group 44050690342912 flags system|raid1
+BTRFS info (device dm-7): found 117 extents
+------------[ cut here ]------------
+WARNING: CPU: 3 PID: 22095 at fs/btrfs/ctree.h:1559 btrfs_update_device+0x1be/0x1d0 [btrfs]
+Modules linked in: rpcsec_gss_krb5 veth xt_nat xt_addrtype br_netfilter xt_CHECKSUM ipt_MASQUERADE nf_nat_masquerade_ipv4 tun nf_conntrack_sane xt_CT ip6t_rpfilter ip6t_REJECT nf_reject_ipv6 xt_conntrack ip_set nfnetlink ebtable_nat ebtable_broute bridge stp llc ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_mangle ip6table_raw ip6table_security iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack libcrc32c iptable_mangle iptable_raw iptable_security ebtable_filter ebtables ip6table_filter ip6_tables ftsteutates btrfs xor raid6_pq tda18212 cxd2841er tpm_crb intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm iTCO_wdt irqbypass iTCO_vendor_support intel_cstate intel_uncore mei_wdt intel_rapl_perf ppdev hci_uart ddbridge dvb_core
+Okt 09 19:08:32 hypercloud.fritz.box kernel:  btbcm btqca btintel mei_me i2c_i801 shpchp bluetooth joydev mei intel_pch_thermal wmi intel_lpss_acpi intel_lpss pinctrl_sunrisepoint fujitsu_laptop parport_pc sparse_keymap ecdh_generic parport tpm_tis pinctrl_intel tpm_tis_core rfkill tpm acpi_pad nfsd auth_rpcgss nfs_acl lockd grace sunrpc dm_crypt i915 crct10dif_pclmul i2c_algo_bit crc32_pclmul drm_kms_helper crc32c_intel e1000e drm ghash_clmulni_intel serio_raw ptp pps_core video i2c_hid
+CPU: 3 PID: 22095 Comm: btrfs Tainted: G        W       4.13.4-200.fc26.x86_64 #1
+Hardware name: FUJITSU D3417-B1/D3417-B1, BIOS V5.0.0.11 R1.12.0 for D3417-B1x                    02/09/2016
+task: ffff8ecb59b026c0 task.stack: ffffb805cae90000
+RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
+RSP: 0018:ffffb805cae93ac8 EFLAGS: 00010206
+RAX: 0000000000000fff RBX: ffff8ed094bb11c0 RCX: 0000074702251e00
+RDX: 0000000000000004 RSI: 0000000000003efa RDI: ffff8ec9eb032c08
+RBP: ffffb805cae93b10 R08: 0000000000003efe R09: ffffb805cae93a80
+R10: 0000000000001000 R11: 0000000000000003 R12: ffff8ed0c7a3f000
+R13: 0000000000000000 R14: 0000000000003eda R15: ffff8ec9eb032c08
+FS:  00007f10b256a8c0(0000) GS:ffff8ed0ee4c0000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f6261c0d5f0 CR3: 00000005cad4c000 CR4: 00000000003406e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ btrfs_remove_chunk+0x365/0x870 [btrfs]
+ btrfs_relocate_chunk+0x7e/0xd0 [btrfs]
+ btrfs_balance+0xc07/0x1390 [btrfs]
+ btrfs_ioctl_balance+0x319/0x380 [btrfs]
+ btrfs_ioctl+0x9d5/0x24a0 [btrfs]
+ ? lru_cache_add+0x3a/0x80
+ ? lru_cache_add_active_or_unevictable+0x4c/0xf0
+ ? __handle_mm_fault+0x939/0x10b0
+ do_vfs_ioctl+0xa5/0x600
+ ? do_brk_flags+0x230/0x360
+ ? do_vfs_ioctl+0xa5/0x600
+ SyS_ioctl+0x79/0x90
+ entry_SYSCALL_64_fastpath+0x1a/0xa5
+RIP: 0033:0x7f10b15e65e7
+RSP: 002b:00007ffc9402ebe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 0000000000008041 RCX: 00007f10b15e65e7
+RDX: 00007ffc9402ec80 RSI: 00000000c4009420 RDI: 0000000000000003
+RBP: 00007f10b18abae0 R08: 000055b07a3b3010 R09: 0000000000000078
+R10: 00007f10b18abb38 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007f10b18abb38 R14: 0000000000008060 R15: 0000000000000000
+Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa 20 ff ff 4c 89 ff e8 72 ef fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9 d0 fe ff ff <0f> ff eb b6 e8 39 fd 78 c6 66 0f 1f 84 00 00 00 00 00 0f 1f 44 
+---[ end trace d1e1c8aff99bfeb8 ]---

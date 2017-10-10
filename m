@@ -1,184 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:50257 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:59680 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755430AbdJJIep (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 04:34:45 -0400
-Subject: Re: [PATCH 3/4] btrfs-progs: check: Also check unalignment/mismatch
- device and super size
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, yoasif@gmail.com, rrauenza@gmail.com
+        id S1755797AbdJJNSe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 09:18:34 -0400
+Date: Tue, 10 Oct 2017 15:16:48 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, yoasif@gmail.com,
+        rrauenza@gmail.com
+Subject: Re: [PATCH 2/4] btrfs-progs: fsck: Introduce --fix-dev-size option
+Message-ID: <20171010131648.GM3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20171010075113.10718-1-quwenruo.btrfs@gmx.com>
- <20171010075113.10718-4-quwenruo.btrfs@gmx.com>
- <15e1f9a0-370b-2348-6116-2ebc7df2847e@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ebb76afa-3fb9-6851-4131-0b250c1fda35@gmx.com>
-Date: Tue, 10 Oct 2017 16:34:23 +0800
+ <20171010075113.10718-3-quwenruo.btrfs@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <15e1f9a0-370b-2348-6116-2ebc7df2847e@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171010075113.10718-3-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Oct 10, 2017 at 07:51:11AM +0000, Qu Wenruo wrote:
+> Introduce --fix-dev-size option to fix device related problems.
 
+Please don't add it to 'check', this is not the right place for the
+targeted fixes. -> 'btrfs rescue'
 
-On 2017年10月10日 16:31, Nikolay Borisov wrote:
+> This repairing  is also included in --repair, but considering the safety
+> and potential affected users, it's better to provide a option to fix and
+> only fix device size related problem to avoid full --repair.
 > 
+> Reported-by: Asif Youssuff <yoasif@gmail.com>
+> Reported-by: Rich Rauenzahn <rrauenza@gmail.com>
+> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+> ---
+>  Documentation/btrfs-check.asciidoc | 23 +++++++++++++++++++++++
+>  cmds-check.c                       | 28 +++++++++++++++++++++++++++-
+>  2 files changed, 50 insertions(+), 1 deletion(-)
 > 
-> On 10.10.2017 10:51, Qu Wenruo wrote:
->> Along with the fix introduced, also introduce check for them.
->> Unlike normal check funtions, some of the check is optional, and even if
->> the image failed to pass optional check, kernel can still run fine.
->> (But may cause noisy kernel warning)
->>
->> So some check, mainly for alignment, will not cause btrfs check to fail,
->> but only to output warning and how to fix it.
->>
->> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
->> ---
->>   cmds-check.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 73 insertions(+)
->>
->> diff --git a/cmds-check.c b/cmds-check.c
->> index fdb6d832eee1..23dd3b51102b 100644
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -9879,6 +9879,67 @@ static int check_device_used(struct device_record *dev_rec,
->>   	}
->>   }
->>   
->> +/*
->> + * Extra (optional) check for dev_item size
->> + *
->> + * To avoid possible kernel warning for v4.14 kernel.
->> + * It's not a deadly problem, just to info v4.14 kernel user.
->> + * So it won't change the return value.
->> + */
->> +static void check_dev_size_alignment(u64 devid, u64 total_bytes,
->> +				     u32 sectorsize)
->> +{
->> +	if (!IS_ALIGNED(total_bytes, sectorsize)) {
->> +		warning("unaligned total_bytes detected for devid %llu, have %llu should be aligned to %u",
->> +			devid, total_bytes, sectorsize);
->> +		warning("this is OK for older kernel (<4.14), but may cause kernel warning for newer kernel (>=4.14)");
->> +		warning("this can be fixed by 'btrfs check --fix-dev-size'");
->> +	}
->> +}
->> +
->> +/*
->> + * Unlike device size alignment check above, some super total_bytes check
->> + * failure can lead to unmountable fs for kernel >=v4.6.
->> + *
->> + * So this function will return the error for fatal super total_bytes problem.
->> + */
->> +static int check_super_size(struct btrfs_fs_info *fs_info)
->> +{
->> +	struct btrfs_device *dev;
->> +	struct list_head *dev_list = &fs_info->fs_devices->devices;
->> +	u64 total_bytes = 0;
->> +	u64 super_bytes = btrfs_super_total_bytes(fs_info->super_copy);
->> +
->> +	list_for_each_entry(dev, dev_list, dev_list)
->> +		total_bytes += dev->total_bytes;
->> +
->> +	/* Important check, which can cause unmountable fs */
->> +	if (super_bytes < total_bytes) {
->> +		error("super total bytes %llu smaller than real devices size %llu",
->> +			super_bytes, total_bytes);
->> +		error("this fs will not be mountable for newer kernels (>=v4.6)");
->> +		error("this can be fixed by 'btrfs check --fix-dev-size'");
->> +		return 1;
->> +	}
->> +
->> +	/*
->> +	 * Optional check, just to make everything aligned and match with
->> +	 * each other.
->> +	 *
->> +	 * For btrfs-image restored fs, we don't need to check it anyway.
->> +	 */
->> +	if (btrfs_super_flags(fs_info->super_copy) &
->> +	    (BTRFS_SUPER_FLAG_METADUMP | BTRFS_SUPER_FLAG_METADUMP_V2))
->> +		return 0;
->> +	if (!IS_ALIGNED(super_bytes, fs_info->sectorsize) ||
->> +	    !IS_ALIGNED(total_bytes, fs_info->sectorsize) ||
->> +	    super_bytes != total_bytes) {
->> +		warning("minor unaligned/mismatch device size detected");
->> +		warning("recommended to use 'btrfs check --fix-dev-size' to fix it");
->> +	}
->> +	return 0;
->> +}
+> diff --git a/Documentation/btrfs-check.asciidoc b/Documentation/btrfs-check.asciidoc
+> index fbf48847ac25..e45c7a457bac 100644
+> --- a/Documentation/btrfs-check.asciidoc
+> +++ b/Documentation/btrfs-check.asciidoc
+> @@ -93,6 +93,29 @@ the entire free space cache. This option with 'v2' provides an alternative
+>  method of clearing the free space cache that doesn't require mounting the
+>  filesystem.
+>  
+> +--fix-dev-size::
+> +From v4.14-rc kernels, a more restrict device size checker is introduced, while
+> +old kernel doesn't strictly align its device size, so it may cause noisy kernel
+> +warning for newer kernel, like:
+> ++
+> +....
+> +WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree.h:1559 btrfs_update_device+0x1c5/0x1d0 [btrfs]
+> +....
+> ++
+> +And for some case where super block total device size may mismatch with all
+> +devices, and the filesystem will be unable to be mounted, with kernel message
+> +like:
+> ++
+> +....
+> +BTRFS error (device sdb): super_total_bytes 92017859088384 mismatch with fs_devices total_rw_bytes 92017859094528 
+> +....
+> ++
+> +This option will fix both problems by aligning all size of devices, and
+> +re-calculating superblock total bytes.
+> ++
+> +Although such repairing is included in *--repair* option, considering the
+> +safety of *--repair*, this option is provided to suppress all other dangerous
+> +repairing and only fix device sizes related problems.
+>  
+>  DANGEROUS OPTIONS
+>  -----------------
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 007781fa5d1b..fdb6d832eee1 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -11746,6 +11746,8 @@ out:
+>  	return err;
+>  }
+>  
+> +static int reset_devs_size(struct btrfs_fs_info *fs_info);
+> +
+>  static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+>  {
+>  	int ret;
+> @@ -11756,6 +11758,12 @@ static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+>  		ret = check_chunks_and_extents_v2(fs_info);
+>  	else
+>  		ret = check_chunks_and_extents(fs_info);
+> +	/* Also repair device sizes if needed */
+> +	if (repair && !ret) {
+> +		ret = reset_devs_size(fs_info);
+> +		if (ret > 0)
+> +			ret = 0;
+> +	}
+>  
+>  	return ret;
+>  }
+> @@ -13088,6 +13096,8 @@ const char * const cmd_check_usage[] = {
+>  	"-b|--backup                 use the first valid backup root copy",
+>  	"--force                     skip mount checks, repair is not possible",
+>  	"--repair                    try to repair the filesystem",
+> +	"--fix-dev-size              repair device size related problem",
+> +	"                            will not trigger other repair",
+>  	"--readonly                  run in read-only mode (default)",
+>  	"--init-csum-tree            create a new CRC tree",
+>  	"--init-extent-tree          create a new extent tree",
+> @@ -13128,6 +13138,7 @@ int cmd_check(int argc, char **argv)
+>  	int qgroups_repaired = 0;
+>  	unsigned ctree_flags = OPEN_CTREE_EXCLUSIVE;
+>  	int force = 0;
+> +	bool fix_dev_size = false;
+>  
+>  	while(1) {
+>  		int c;
+> @@ -13135,7 +13146,7 @@ int cmd_check(int argc, char **argv)
+>  			GETOPT_VAL_INIT_EXTENT, GETOPT_VAL_CHECK_CSUM,
+>  			GETOPT_VAL_READONLY, GETOPT_VAL_CHUNK_TREE,
+>  			GETOPT_VAL_MODE, GETOPT_VAL_CLEAR_SPACE_CACHE,
+> -			GETOPT_VAL_FORCE };
+> +			GETOPT_VAL_FORCE, GETOPT_VAL_FIX_DEV_SIZE };
+>  		static const struct option long_options[] = {
+>  			{ "super", required_argument, NULL, 's' },
+>  			{ "repair", no_argument, NULL, GETOPT_VAL_REPAIR },
+> @@ -13158,6 +13169,8 @@ int cmd_check(int argc, char **argv)
+>  			{ "clear-space-cache", required_argument, NULL,
+>  				GETOPT_VAL_CLEAR_SPACE_CACHE},
+>  			{ "force", no_argument, NULL, GETOPT_VAL_FORCE },
+> +			{ "fix-dev-size", no_argument, NULL,
+> +				GETOPT_VAL_FIX_DEV_SIZE },
+>  			{ NULL, 0, NULL, 0}
+>  		};
+>  
+> @@ -13245,6 +13258,11 @@ int cmd_check(int argc, char **argv)
+>  			case GETOPT_VAL_FORCE:
+>  				force = 1;
+>  				break;
+> +			case GETOPT_VAL_FIX_DEV_SIZE:
+> +				fix_dev_size = true;
+> +				repair = 1;
+> +				ctree_flags |= OPEN_CTREE_WRITES;
+> +				break;
+>  		}
+>  	}
+>  
+> @@ -13371,6 +13389,14 @@ int cmd_check(int argc, char **argv)
+>  			report_qgroups(1);
+>  		goto close_out;
+>  	}
+> +
+> +	if (fix_dev_size) {
+> +		ret = reset_devs_size(info);
+> +		if (ret > 0)
+> +			ret = 0;
+> +		err |= !!ret;
+> +		goto close_out;
+> +	}
+>  	if (subvolid) {
+>  		printf("Print extent state for subvolume %llu on %s\nUUID: %s\n",
+>  		       subvolid, argv[optind], uuidbuf);
+> -- 
+> 2.14.2
 > 
-> nit: Make the function return bool and perhaps rename it to
-> "is_super_size_aligned" or something like that ?
-> 
->> +
->>   /* check btrfs_dev_item -> btrfs_dev_extent */
->>   static int check_devices(struct rb_root *dev_cache,
->>   			 struct device_extent_tree *dev_extent_cache)
->> @@ -9896,6 +9957,11 @@ static int check_devices(struct rb_root *dev_cache,
->>   		if (err)
->>   			ret = err;
->>   
->> +		if (!IS_ALIGNED(dev_rec->total_byte, global_info->sectorsize)) {
->> +		}
->> +
->> +		check_dev_size_alignment(dev_rec->devid, dev_rec->total_byte,
->> +					 global_info->sectorsize);
->>   		dev_node = rb_next(dev_node);
-> 
-> Something funny is going on here, the body of the if is empty, perhaps
-> those function have to be inside?
-
-Oh...
-
-That's embarrassing, that's the old code where I didn't encapsulate the 
-check into check_dev_size_alignment().
-
-I'll update the patchset to address all your comment.
-
-Thanks,
-Qu
-> 
-> 
->>   	}
->>   	list_for_each_entry(dext_rec, &dev_extent_cache->no_device_orphans,
->> @@ -11141,6 +11207,7 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
->>   	struct btrfs_path path;
->>   	struct btrfs_key key;
->>   	struct btrfs_dev_extent *ptr;
->> +	u64 total_bytes;
->>   	u64 dev_id;
->>   	u64 used;
->>   	u64 total = 0;
->> @@ -11149,6 +11216,7 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
->>   	dev_item = btrfs_item_ptr(eb, slot, struct btrfs_dev_item);
->>   	dev_id = btrfs_device_id(eb, dev_item);
->>   	used = btrfs_device_bytes_used(eb, dev_item);
->> +	total_bytes = btrfs_device_total_bytes(eb, dev_item);
->>   
->>   	key.objectid = dev_id;
->>   	key.type = BTRFS_DEV_EXTENT_KEY;
->> @@ -11193,6 +11261,8 @@ next:
->>   			BTRFS_DEV_EXTENT_KEY, dev_id);
->>   		return ACCOUNTING_MISMATCH;
->>   	}
->> +	check_dev_size_alignment(dev_id, total_bytes, fs_info->sectorsize);
->> +
->>   	return 0;
->>   }
->>   
->> @@ -13471,6 +13541,9 @@ int cmd_check(int argc, char **argv)
->>   		error(
->>   		"errors found in extent allocation tree or chunk allocation");
->>   
->> +	/* Only re-check super size after we checked and repaired the fs */
->> +	err |= check_super_size(info);
->> +
->>   	ret = repair_root_items(info);
->>   	err |= !!ret;
->>   	if (ret < 0) {
->>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

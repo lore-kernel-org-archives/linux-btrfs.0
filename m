@@ -1,9 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:37701 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755344AbdJJLAX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 07:00:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40272 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756478AbdJJLIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 07:08:15 -0400
 Subject: Re: [PATCH] btrfs: use appropriate replacements for
  __sb_{start,end}_write calls
 To: Rakesh Pandit <rakesh@tuxera.com>, linux-btrfs@vger.kernel.org,
@@ -11,9 +10,9 @@ To: Rakesh Pandit <rakesh@tuxera.com>, linux-btrfs@vger.kernel.org,
 Cc: David Sterba <dsterba@suse.com>, Josef Bacik <jbacik@fb.com>,
         Chris Mason <clm@fb.com>
 References: <20171010104803.GA33133@dhcp-216.srv.tuxera.com>
-From: Nikolay Borisov <n.borisov.lkml@gmail.com>
-Message-ID: <ec870392-1d3a-8d7e-746c-30d75e76b03e@gmail.com>
-Date: Tue, 10 Oct 2017 14:00:20 +0300
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <6ada5c8b-4ad0-8421-cd76-9d90df5ea24b@suse.com>
+Date: Tue, 10 Oct 2017 14:08:11 +0300
 MIME-Version: 1.0
 In-Reply-To: <20171010104803.GA33133@dhcp-216.srv.tuxera.com>
 Content-Type: text/plain; charset=utf-8
@@ -46,10 +45,11 @@ On 10.10.2017 13:48, Rakesh Pandit wrote:
 > +				sb_end_write(sb)
 >  			else
 >  				return 0;
+
+On second thought, what's to prevent the filesystem to be frozen if
+sb_start_write/sb_end_write code executes? Or even after we are in the
+middle of btrfs_start_transaction?
+
+
 >  			trans = btrfs_start_transaction(root, 0);
-
-The non __ versions are just wrappers around the __ specific calls. So
-the code is identical.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
+> 

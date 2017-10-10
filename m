@@ -1,142 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51696 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752206AbdJIPWy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 9 Oct 2017 11:22:54 -0400
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: enadolski@suse.de, bo.li.liu@oracle.com, David Sterba <dsterba@suse.com>
-Subject: [PATCH v2 3/3] btrfs: get rid of sector_t and use u64 offset in submit_extent_page
-Date: Mon,  9 Oct 2017 17:21:09 +0200
-Message-Id: <c26107253df6db3c81bac791f224523345d9577a.1507562199.git.dsterba@suse.com>
-In-Reply-To: <cover.1507562199.git.dsterba@suse.com>
-References: <cover.1507562199.git.dsterba@suse.com>
+Received: from syrinx.knorrie.org ([82.94.188.77]:47694 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752207AbdJJIrm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 04:47:42 -0400
+Subject: Re: [PATCH] btrfs: prefix sysfs attribute struct names
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20171008203058.28931-1-hans.van.kranenburg@mendix.com>
+ <20171009161758.GH3521@twin.jikos.cz>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <7e436e83-e493-53a9-5f83-e17b0bf69b36@mendix.com>
+Date: Tue, 10 Oct 2017 10:47:40 +0200
+MIME-Version: 1.0
+In-Reply-To: <20171009161758.GH3521@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The use of sector_t in the callchain of submit_extent_page is not
-necessary.  Switch to u64 and rename the variable and use byte units
-instead of 512b, ie.  dropping the >> 9 shifts and avoiding the
-con(tro)versions of sector_t.
+On 10/09/2017 06:17 PM, David Sterba wrote:
+> On Sun, Oct 08, 2017 at 10:30:58PM +0200, Hans van Kranenburg wrote:
+>> Currently struct names for sysfs are generated only based on the
+>> attribute names. This means that attribute names cannot be reused in
+>> multiple places throughout the complete btrfs sysfs hierarchy.
+>>
+>> E.g. allocation/data/total_bytes and allocation/data/single/total_bytes
+>> result in the same struct name btrfs_attr_total_bytes. A workaround for
+>> this case was made in the past by ad hoc creating an extra macro
+>> wrapper, BTRFS_RAID_ATTR, that inserts some extra text in the struct
+>> name.
+>>
+>> Instead of polluting sysfs.h with such kind of extra macro definitions,
+>> and only doing so when there are collisions, use a prefix which gets
+>> inserted in the struct name, so we keep everything nicely grouped
+>> together by default.
+>>
+>> Current collections of attributes are:
+>> * (the toplevel, empty prefix)
+>> * allocation
+>> * space_info
+>> * raid
+>> * features
+>>
+>> Signed-off-by: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+> 
+> Reviewed-by: David Sterba <dsterba@suse.com>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/extent_io.c | 23 ++++++++++++-----------
- 1 file changed, 12 insertions(+), 11 deletions(-)
+Thanks! If anyone wonders why...
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ea9ab934794b..8d0834ee792b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2761,7 +2761,7 @@ static int merge_bio(struct extent_io_tree *tree, struct page *page,
-  */
- static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
- 			      struct writeback_control *wbc,
--			      struct page *page, sector_t sector,
-+			      struct page *page, u64 offset,
- 			      size_t size, unsigned long pg_offset,
- 			      struct block_device *bdev,
- 			      struct bio **bio_ret,
-@@ -2776,6 +2776,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
- 	int contig = 0;
- 	int old_compressed = prev_bio_flags & EXTENT_BIO_COMPRESSED;
- 	size_t page_size = min_t(size_t, size, PAGE_SIZE);
-+	sector_t sector = offset >> 9;
- 
- 	if (bio_ret && *bio_ret) {
- 		bio = *bio_ret;
-@@ -2801,7 +2802,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
- 		}
- 	}
- 
--	bio = btrfs_bio_alloc(bdev, sector << 9);
-+	bio = btrfs_bio_alloc(bdev, offset);
- 	bio_add_page(bio, page, page_size, pg_offset);
- 	bio->bi_end_io = end_io_func;
- 	bio->bi_private = tree;
-@@ -2892,7 +2893,6 @@ static int __do_readpage(struct extent_io_tree *tree,
- 	u64 last_byte = i_size_read(inode);
- 	u64 block_start;
- 	u64 cur_end;
--	sector_t sector;
- 	struct extent_map *em;
- 	struct block_device *bdev;
- 	int ret = 0;
-@@ -2928,6 +2928,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 	}
- 	while (cur <= end) {
- 		bool force_bio_submit = false;
-+		u64 offset;
- 
- 		if (cur >= last_byte) {
- 			char *userpage;
-@@ -2967,9 +2968,9 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		iosize = ALIGN(iosize, blocksize);
- 		if (this_bio_flag & EXTENT_BIO_COMPRESSED) {
- 			disk_io_size = em->block_len;
--			sector = em->block_start >> 9;
-+			offset = em->block_start;
- 		} else {
--			sector = (em->block_start + extent_offset) >> 9;
-+			offset = em->block_start + extent_offset;
- 			disk_io_size = iosize;
- 		}
- 		bdev = em->bdev;
-@@ -3062,8 +3063,8 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		}
- 
- 		ret = submit_extent_page(REQ_OP_READ | read_flags, tree, NULL,
--					 page, sector, disk_io_size, pg_offset,
--					 bdev, bio,
-+					 page, offset, disk_io_size,
-+					 pg_offset, bdev, bio,
- 					 end_bio_extent_readpage, mirror_num,
- 					 *bio_flags,
- 					 this_bio_flag,
-@@ -3324,7 +3325,6 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 	u64 extent_offset;
- 	u64 block_start;
- 	u64 iosize;
--	sector_t sector;
- 	struct extent_map *em;
- 	struct block_device *bdev;
- 	size_t pg_offset = 0;
-@@ -3367,6 +3367,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 
- 	while (cur <= end) {
- 		u64 em_end;
-+		u64 offset;
- 
- 		if (cur >= i_size) {
- 			if (tree->ops && tree->ops->writepage_end_io_hook)
-@@ -3388,7 +3389,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 		BUG_ON(end < cur);
- 		iosize = min(em_end - cur, end - cur + 1);
- 		iosize = ALIGN(iosize, blocksize);
--		sector = (em->block_start + extent_offset) >> 9;
-+		offset = em->block_start + extent_offset;
- 		bdev = em->bdev;
- 		block_start = em->block_start;
- 		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
-@@ -3431,7 +3432,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 		}
- 
- 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, tree, wbc,
--					 page, sector, iosize, pg_offset,
-+					 page, offset, iosize, pg_offset,
- 					 bdev, &epd->bio,
- 					 end_bio_extent_writepage,
- 					 0, 0, 0, false);
-@@ -3748,7 +3749,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 		clear_page_dirty_for_io(p);
- 		set_page_writeback(p);
- 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, tree, wbc,
--					 p, offset >> 9, PAGE_SIZE, 0, bdev,
-+					 p, offset, PAGE_SIZE, 0, bdev,
- 					 &epd->bio,
- 					 end_bio_extent_buffer_writepage,
- 					 0, epd->bio_flags, bio_flags, false);
+Last summer I was trying to build in some metadata cow counters per
+tree, and initially put them in sysfs, then I ran into the fact that I
+couldn't use the field free_space_tree as a counter because it was also
+used in the features.
+
+It was a nice exercise and the results clearly showed that my suspicions
+about extent tree rumination problems were right.
+
+However, then I discovered tracepoints and could throw away the code again.
+
+But I still finished this part, because it makes sysfs nicer for a
+future developer who wants to change something :D
+
+>> @@ -277,7 +277,8 @@ static ssize_t raid_bytes_show(struct kobject *kobj,
+>>  
+>>  	down_read(&sinfo->groups_sem);
+>>  	list_for_each_entry(block_group, &sinfo->block_groups[index], list) {
+>> -		if (&attr->attr == BTRFS_RAID_ATTR_PTR(total_bytes))
+>> +		if (&attr->attr == \
+> 
+> the \ is not needed here, only in macro defintions that must be on one
+> logical line
+
+Ha, yes... At some point the backslashes were dancing around before my
+eyes while getting all those macros in shape again. Some started
+wandering off it seems.
+
+> 
+>> +		    BTRFS_ATTR_PTR(raid, total_bytes))
+>>  			val += block_group->key.offset;
+>>  		else
+>>  			val += btrfs_block_group_used(&block_group->item);
+>> @@ -331,19 +332,20 @@ SPACE_INFO_ATTR(bytes_may_use);
+>>  SPACE_INFO_ATTR(bytes_readonly);
+>>  SPACE_INFO_ATTR(disk_used);
+>>  SPACE_INFO_ATTR(disk_total);
+>> -BTRFS_ATTR(total_bytes_pinned, btrfs_space_info_show_total_bytes_pinned);
+>> +BTRFS_ATTR(space_info, total_bytes_pinned, \
+> 
+> same here. will be fixed at commit time.
+> 
+>> +	   btrfs_space_info_show_total_bytes_pinned);
+>>  
+
+
 -- 
-2.14.0
-
+Hans van Kranenburg

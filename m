@@ -1,12 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f177.google.com ([209.85.216.177]:46615 "EHLO
-        mail-qt0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755475AbdJIVPG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Oct 2017 17:15:06 -0400
-Received: by mail-qt0-f177.google.com with SMTP id 1so5579596qtn.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Oct 2017 14:15:05 -0700 (PDT)
-Date: Mon, 9 Oct 2017 17:15:02 -0400
-From: Josef Bacik <josef@toxicpanda.com>
+Received: from outbound-smtp02.blacknight.com ([81.17.249.8]:35602 "EHLO
+        outbound-smtp02.blacknight.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1755344AbdJJJIT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 05:08:19 -0400
+Received: from mail.blacknight.com (pemlinmail04.blacknight.ie [81.17.254.17])
+        by outbound-smtp02.blacknight.com (Postfix) with ESMTPS id F284C989A4
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2017 09:00:53 +0000 (UTC)
+Date: Tue, 10 Oct 2017 10:00:53 +0100
+From: Mel Gorman <mgorman@techsingularity.net>
 To: Dave Chinner <david@fromorbit.com>
 Cc: Josef Bacik <josef@toxicpanda.com>, linux-fsdevel@vger.kernel.org,
         kernel-team@fb.com, linux-btrfs@vger.kernel.org,
@@ -14,7 +16,7 @@ Cc: Josef Bacik <josef@toxicpanda.com>, linux-fsdevel@vger.kernel.org,
         linux-xfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [ANNOUNCE] fsperf: a simple fs/block performance testing
  framework
-Message-ID: <20171009211501.vnyol76nzl4rma42@destiny>
+Message-ID: <20171010090053.nygtcdda2soiw3mq@techsingularity.net>
 References: <20171006210956.vf326sydjiphsefo@destiny>
  <20171009005137.GA3666@dastard>
  <20171009022509.rz6goq3sec5ppxrr@destiny>
@@ -22,63 +24,12 @@ References: <20171006210956.vf326sydjiphsefo@destiny>
  <20171009130050.ufnmdhslc53bwpgc@destiny>
  <20171009210920.GO3666@dastard>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=iso-8859-15
 In-Reply-To: <20171009210920.GO3666@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Tue, Oct 10, 2017 at 08:09:20AM +1100, Dave Chinner wrote:
-> On Mon, Oct 09, 2017 at 09:00:51AM -0400, Josef Bacik wrote:
-> > On Mon, Oct 09, 2017 at 04:17:31PM +1100, Dave Chinner wrote:
-> > > On Sun, Oct 08, 2017 at 10:25:10PM -0400, Josef Bacik wrote:
-> > > > > Integrating into fstests means it will be immediately available to
-> > > > > all fs developers, it'll run on everything that everyone already has
-> > > > > setup for filesystem testing, and it will have familiar mkfs/mount
-> > > > > option setup behaviour so there's no new hoops for everyone to jump
-> > > > > through to run it...
-> > > > > 
-> > > > 
-> > > > TBF I specifically made it as easy as possible because I know we all hate trying
-> > > > to learn new shit.
-> > > 
-> > > Yeah, it's also hard to get people to change their workflows to add
-> > > a whole new test harness into them. It's easy if it's just a new
-> > > command to an existing workflow :P
-> > > 
-> > 
-> > Agreed, so if you probably won't run this outside of fstests then I'll add it to
-> > xfstests.  I envision this tool as being run by maintainers to verify their pull
-> > requests haven't regressed since the last set of patches, as well as by anybody
-> > trying to fix performance problems.  So it's way more important to me that you,
-> > Ted, and all the various btrfs maintainers will run it than anybody else.
-> > 
-> > > > I figured this was different enough to warrant a separate
-> > > > project, especially since I'm going to add block device jobs so Jens can test
-> > > > block layer things.  If we all agree we'd rather see this in fstests then I'm
-> > > > happy to do that too.  Thanks,
-> > > 
-> > > I'm not fussed either way - it's a good discussion to have, though.
-> > > 
-> > > If I want to add tests (e.g. my time-honoured fsmark tests), where
-> > > should I send patches?
-> > > 
-> > 
-> > I beat you to that!  I wanted to avoid adding fs_mark to the suite because it
-> > means parsing another different set of outputs, so I added a new ioengine to fio
-> > for this
-> > 
-> > http://www.spinics.net/lists/fio/msg06367.html
-> > 
-> > and added a fio job to do 500k files
-> > 
-> > https://github.com/josefbacik/fsperf/blob/master/tests/500kemptyfiles.fio
-> > 
-> > The test is disabled by default for now because obviously the fio support hasn't
-> > landed yet.
-> 
-> That seems .... misguided. fio is good, but it's not a universal
-> solution.
-> 
 > > I'd _like_ to expand fio for cases we come up with that aren't possible, as
 > > there's already a ton of measurements that are taken, especially around
 > > latencies.
@@ -105,18 +56,45 @@ On Tue, Oct 10, 2017 at 08:09:20AM +1100, Dave Chinner wrote:
 > log, use grep -R to traverse the data as well as
 > the directory/inode structure instead of find, etc.
 > 
-> > That said I'm not opposed to throwing new stuff in there, it just
-> > means we have to add stuff to parse the output and store it in the database in a
-> > consistent way, which seems like more of a pain than just making fio do what we
-> > need it to.  Thanks,
-> 
-> fio is not going to be able to replace the sort of perf tests I run
-> from week to week. If that's all it's going to do then it's not
-> directly useful to me...
-> 
 
-Agreed, I'm just going to add this stuff to fstests since I'd like to be able to
-use the _require stuff to make sure we only run stuff we have support for.  I'll
-wire that up this week and send patches along.  Thanks,
+FWIW, this is partially implemented in mmtests as
+configs/config-global-dhp__io-xfsrepair. It covers the fsmark and
+xfs_repair part and an example report is
 
-Josef
+http://beta.suse.com/private/mgorman/results/home/marvin/openSUSE-LEAP-42.2/global-dhp__io-xfsrepair-xfs/delboy/#xfsrepair
+
+(ignore 4.12.603, it's 4.12.3-stable with some additional patches that were
+pending for -stable at the time the test was executed). That config was
+added after a discussion with you a few years ago and I've kept it since as
+it has been useful in a number of contexts. Adding additional tests to cover
+parallel find, parallel ls and parallel rm would be relatively trivial but
+it's not there. This is a test that doesn't have proper graphing support
+but it could be added in 10-15 minutes as xfsrepair is the primary metric
+and it's simply reported as elapsed time.
+
+fsmark is also covered albeit not necessarily with parameters everyone wants
+as configs/config-global-dhp__io-metadata in mmtests.  Example report is
+
+http://beta.suse.com/private/mgorman/results/home/marvin/openSUSE-LEAP-42.2/global-dhp__io-metadata-xfs/delboy/#fsmark-threaded
+
+mmtests has been modified multiple times as according as methodologies
+were improved and it's far from perfect but it seems to me that fsperf
+is going to end up reimplementing a lot of it.
+
+It's not perfect as there are multiple quality-of-implementation issues
+as it often takes the shortest path to being able to collect data but
+it improves over time. When a test is found to be flawed, it's fixed and
+historical data is discarded. It doesn't store data in sqlite or anything
+fancy, just the raw logs are preserved and reports generated as required. In
+terms of tools required, the core is just bash scripts. Some of the tests
+require a number of packages to be installed but not all of them. It uses a
+tool to install packages if they are missing but the naming is all based on
+opensuse. It *can* map opensuse package names to fedora and debian but the
+mappings are not up-to-date as I do not personally run those distributions.
+
+Even with the quality-of-implementation issues, it seems to me that it
+covers a lot of the requirements that fsperf aims for.
+
+-- 
+Mel Gorman
+SUSE Labs

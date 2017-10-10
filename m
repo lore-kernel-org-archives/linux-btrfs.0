@@ -1,64 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:60639 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751964AbdJYCzH (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 24 Oct 2017 22:55:07 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2 6/6] btrfs: qgroup: Cleanup the remaining old reservation counters
-Date: Wed, 25 Oct 2017 10:54:45 +0800
-Message-Id: <20171025025445.16617-7-wqu@suse.com>
-In-Reply-To: <20171025025445.16617-1-wqu@suse.com>
-References: <20171025025445.16617-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:43882 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755797AbdJJLdG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 07:33:06 -0400
+Date: Tue, 10 Oct 2017 13:31:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Naohiro Aota <naohiro.aota@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com
+Subject: Re: [PATCH] btrfs: fix max chunk size on dup
+Message-ID: <20171010113119.GJ3521@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <150666965116.9802.15216393306253897797.stgit@naota.dhcp.fujisawa.hgst.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <150666965116.9802.15216393306253897797.stgit@naota.dhcp.fujisawa.hgst.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So qgroup is switched to new separate types reservation system.
+Hi,
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 13 -------------
- fs/btrfs/qgroup.h |  1 -
- 2 files changed, 14 deletions(-)
+On Fri, Sep 29, 2017 at 04:20:51PM +0900, Naohiro Aota wrote:
+> Balancing a fresh METADATA=dup btrfs file system (with size < 50G)
+> generates a 128MB sized block group. While we set max_stripe_size =
+> max_chunk_size = 256MB, we get this half sized block group:
+> 
+> $ btrfs ins dump-t -t CHUNK_TREE btrfs.img|grep length
+>                 length 8388608 owner 2 stripe_len 65536 type DATA
+>                 length 33554432 owner 2 stripe_len 65536 type SYSTEM|DUP
+>                 length 134217728 owner 2 stripe_len 65536 type METADATA|DUP
+> 
+> Before commit 86db25785a6e ("Btrfs: fix max chunk size on raid5/6"), we
+> used "stripe_size * ndevs > max_chunk_size * ncopies" to check the max
+> chunk size. Since stripe_size = 256MB * dev_stripes (= 2) = 512MB, ndevs
+> = 1, max_chunk_size = 256MB, and ncopies = 2, we allowed 256MB
+> METADATA|DUP block group.
+> 
+> But now, we use "stripe_size * data_stripes > max_chunk_size". Since
+> data_stripes = 1 on DUP, it disallows the block group to have > 128MB.
+> What missing here is "dev_stripes". Proper logical space used by the block
+> group is "stripe_size * data_stripes / dev_stripes". Tweak the equations to
+> use the right value.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 0a38e65f55f7..4063004ae9d5 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1065,19 +1065,6 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
- 		list_add(&qgroup->dirty, &fs_info->dirty_qgroups);
- }
- 
--static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
--				      struct btrfs_qgroup *qgroup,
--				      u64 num_bytes)
--{
--#ifdef CONFIG_BTRFS_DEBUG
--	WARN_ON(qgroup->reserved < num_bytes);
--	btrfs_debug(fs_info,
--		"qgroup %llu reserved space underflow, have: %llu, to free: %llu",
--		qgroup->qgroupid, qgroup->reserved, num_bytes);
--#endif
--	qgroup->reserved = 0;
--}
--
- /*
-  * The easy accounting, we're updating qgroup relationship whose child qgroup
-  * only has exclusive extents.
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index fead9955af72..c8c81b923674 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -107,7 +107,6 @@ struct btrfs_qgroup {
- 	/*
- 	 * reservation tracking
- 	 */
--	u64 reserved;
- 	struct btrfs_qgroup_rsv rsv;
- 
- 	/*
--- 
-2.14.2
-
+I started looking into it and still don't fully understand it. Change
+deep in the allocator can easily break some blockgroup combinations, so
+I'm rather conservative here.

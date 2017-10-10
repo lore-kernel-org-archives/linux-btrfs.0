@@ -1,68 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f196.google.com ([209.85.216.196]:34432 "EHLO
-        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932142AbdJJPyu (ORCPT
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:44382 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932075AbdJJQna (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 11:54:50 -0400
+        Tue, 10 Oct 2017 12:43:30 -0400
+Date: Tue, 10 Oct 2017 09:43:26 -0700
 From: Tejun Heo <tj@kernel.org>
 To: jack@suse.cz, axboe@kernel.dk, clm@fb.com, jbacik@fb.com
 Cc: kernel-team@fb.com, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCHSET v2] cgroup, writeback, btrfs: make sure btrfs issues metadata IOs from the root cgroup
-Date: Tue, 10 Oct 2017 08:54:36 -0700
-Message-Id: <20171010155441.753966-1-tj@kernel.org>
+Subject: [PATCH v2 5/5] btrfs: ensure that metadata and flush are issued from
+ the root cgroup
+Message-ID: <20171010164325.GN3301751@devbig577.frc2.facebook.com>
+References: <20171010155441.753966-1-tj@kernel.org>
+ <20171010155441.753966-6-tj@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171010155441.753966-6-tj@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+>From 3bbed8c7747739cda48f592f165e8839da076a3a Mon Sep 17 00:00:00 2001
 
-Changes from the last version are
+Issuing metdata or otherwise shared IOs from !root cgroup can lead to
+priority inversion.  This patch ensures that those IOs are always
+issued from the root cgroup.
 
-* blkcg_root_css exported to fix build breakage on modular btrfs.
+This patch updates btrfs_update_iflags() to not set S_CGROUPWB on
+btree_inodes.  This isn't strictly necessary as those inodes don't
+call the function during init; however, this serves as documentation
+and prevents possible future mistakes.  If this isn't desirable,
+please feel free to drop the section.
 
-* Use ext4_should_journal_data() test instead of
-  EXT4_MOUNT_JOURNAL_DATA.
+v2: Fixed missing @bh in submit_bh_blkcg_css() call.
 
-* Separated out create_bh_bio() and used it to implement
-  submit_bh_blkcg_css() as suggested by Jan.
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+---
+ fs/btrfs/check-integrity.c | 2 +-
+ fs/btrfs/disk-io.c         | 4 ++++
+ fs/btrfs/ioctl.c           | 4 +++-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
 
-btrfs has different ways to issue metadata IOs and may end up issuing
-metadata or otherwise shared IOs from a non-root cgroup, which can
-lead to priority inversion and ineffective IO isolation.
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 7d5a9b5..d66774e 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2741,7 +2741,7 @@ int btrfsic_submit_bh(int op, int op_flags, struct buffer_head *bh)
+ 	struct btrfsic_dev_state *dev_state;
+ 
+ 	if (!btrfsic_is_initialized)
+-		return submit_bh(op, op_flags, bh);
++		return submit_bh_blkcg_css(op, op_flags, bh, blkcg_root_css);
+ 
+ 	mutex_lock(&btrfsic_mutex);
+ 	/* since btrfsic_submit_bh() might also be called before
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index dfdab84..fe8bbe1 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1025,6 +1025,8 @@ static blk_status_t btree_submit_bio_hook(void *private_data, struct bio *bio,
+ 	int async = check_async_write(bio_flags);
+ 	blk_status_t ret;
+ 
++	bio_associate_blkcg(bio, blkcg_root_css);
++
+ 	if (bio_op(bio) != REQ_OP_WRITE) {
+ 		/*
+ 		 * called for a read, do the setup so that checksum validation
+@@ -3512,6 +3514,8 @@ static void write_dev_flush(struct btrfs_device *device)
+ 		return;
+ 
+ 	bio_reset(bio);
++	bio_associate_blkcg(bio, blkcg_root_css);
++
+ 	bio->bi_end_io = btrfs_end_empty_barrier;
+ 	bio_set_dev(bio, device->bdev);
+ 	bio->bi_opf = REQ_OP_WRITE | REQ_SYNC | REQ_PREFLUSH;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 117cc63..8a7db6c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -150,7 +150,9 @@ void btrfs_update_iflags(struct inode *inode)
+ 		new_fl |= S_NOATIME;
+ 	if (ip->flags & BTRFS_INODE_DIRSYNC)
+ 		new_fl |= S_DIRSYNC;
+-	new_fl |= S_CGROUPWB;
++	/* btree_inodes are always in the root cgroup */
++	if (btrfs_ino(ip) != BTRFS_BTREE_INODE_OBJECTID)
++		new_fl |= S_CGROUPWB;
+ 
+ 	set_mask_bits(&inode->i_flags,
+ 		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC |
+-- 
+2.9.5
 
-This patchset makes sure that btrfs issues all metadata and shared IOs
-from the root cgroup by exempting btree_inodes from cgroup writeback
-and explicitly associating shared IOs with the root cgroup.
-
-This patchset containst he following three patches
-
- [PATCH 1/5] blkcg: export blkcg_root_css
- [PATCH 2/5] cgroup, writeback: replace SB_I_CGROUPWB with per-inode
- [PATCH 3/5] buffer_head: separate out create_bh_bio() from
- [PATCH 4/5] cgroup, buffer_head: implement submit_bh_blkcg_css()
- [PATCH 5/5] btrfs: ensure that metadata and flush are issued from the
-
-and is also available in the following git branch
-
- git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup.git review-cgroup-btrfs-metadata-v2
-
-diffstat follows.  Thanks.
-
- block/blk-cgroup.c          |    1 +
- fs/block_dev.c              |    3 +--
- fs/btrfs/check-integrity.c  |    2 +-
- fs/btrfs/disk-io.c          |    4 ++++
- fs/btrfs/ioctl.c            |    6 +++++-
- fs/btrfs/super.c            |    1 -
- fs/buffer.c                 |   42 ++++++++++++++++++++++++++++++++++--------
- fs/ext2/inode.c             |    3 ++-
- fs/ext2/super.c             |    1 -
- fs/ext4/inode.c             |    5 ++++-
- fs/ext4/super.c             |    2 --
- include/linux/backing-dev.h |    2 +-
- include/linux/buffer_head.h |    3 +++
- include/linux/fs.h          |    3 ++-
- 14 files changed, 58 insertions(+), 20 deletions(-)
-
---
-tejun

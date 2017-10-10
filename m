@@ -1,97 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:52673 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:50257 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755855AbdJJIcN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 04:32:13 -0400
-Subject: Re: [PATCH 0/4] btrfs-progs repair support for unaligned/mismatched
- device sizes
+        id S1755430AbdJJIep (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 04:34:45 -0400
+Subject: Re: [PATCH 3/4] btrfs-progs: check: Also check unalignment/mismatch
+ device and super size
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, yoasif@gmail.com, rrauenza@gmail.com
 References: <20171010075113.10718-1-quwenruo.btrfs@gmx.com>
- <2adcdf9e-3a38-8be1-4e5b-bec71038ee26@suse.com>
+ <20171010075113.10718-4-quwenruo.btrfs@gmx.com>
+ <15e1f9a0-370b-2348-6116-2ebc7df2847e@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <c2d9146b-1936-f684-9057-c9096ab1fb48@gmx.com>
-Date: Tue, 10 Oct 2017 16:31:51 +0800
+Message-ID: <ebb76afa-3fb9-6851-4131-0b250c1fda35@gmx.com>
+Date: Tue, 10 Oct 2017 16:34:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <2adcdf9e-3a38-8be1-4e5b-bec71038ee26@suse.com>
+In-Reply-To: <15e1f9a0-370b-2348-6116-2ebc7df2847e@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017年10月10日 16:15, Nikolay Borisov wrote:
+On 2017年10月10日 16:31, Nikolay Borisov wrote:
 > 
 > 
 > On 10.10.2017 10:51, Qu Wenruo wrote:
->> The patchset can be fetched from github:
->> https://github.com/adam900710/btrfs-progs/tree/check_unaligned_dev
+>> Along with the fix introduced, also introduce check for them.
+>> Unlike normal check funtions, some of the check is optional, and even if
+>> the image failed to pass optional check, kernel can still run fine.
+>> (But may cause noisy kernel warning)
 >>
->> There are several reports in mail list for btrfs device size related
->> problems.
+>> So some check, mainly for alignment, will not cause btrfs check to fail,
+>> but only to output warning and how to fix it.
 >>
->> 1) Unmountable fs, due to mismatched super total_bytes
->>     Unmountable if super total_bytes is smaller than total rw bytes of
->>     all devices.
->>     Root cause under investigation, but only one report here.
+>> Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+>> ---
+>>   cmds-check.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   1 file changed, 73 insertions(+)
+>>
+>> diff --git a/cmds-check.c b/cmds-check.c
+>> index fdb6d832eee1..23dd3b51102b 100644
+>> --- a/cmds-check.c
+>> +++ b/cmds-check.c
+>> @@ -9879,6 +9879,67 @@ static int check_device_used(struct device_record *dev_rec,
+>>   	}
+>>   }
+>>   
+>> +/*
+>> + * Extra (optional) check for dev_item size
+>> + *
+>> + * To avoid possible kernel warning for v4.14 kernel.
+>> + * It's not a deadly problem, just to info v4.14 kernel user.
+>> + * So it won't change the return value.
+>> + */
+>> +static void check_dev_size_alignment(u64 devid, u64 total_bytes,
+>> +				     u32 sectorsize)
+>> +{
+>> +	if (!IS_ALIGNED(total_bytes, sectorsize)) {
+>> +		warning("unaligned total_bytes detected for devid %llu, have %llu should be aligned to %u",
+>> +			devid, total_bytes, sectorsize);
+>> +		warning("this is OK for older kernel (<4.14), but may cause kernel warning for newer kernel (>=4.14)");
+>> +		warning("this can be fixed by 'btrfs check --fix-dev-size'");
+>> +	}
+>> +}
+>> +
+>> +/*
+>> + * Unlike device size alignment check above, some super total_bytes check
+>> + * failure can lead to unmountable fs for kernel >=v4.6.
+>> + *
+>> + * So this function will return the error for fatal super total_bytes problem.
+>> + */
+>> +static int check_super_size(struct btrfs_fs_info *fs_info)
+>> +{
+>> +	struct btrfs_device *dev;
+>> +	struct list_head *dev_list = &fs_info->fs_devices->devices;
+>> +	u64 total_bytes = 0;
+>> +	u64 super_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+>> +
+>> +	list_for_each_entry(dev, dev_list, dev_list)
+>> +		total_bytes += dev->total_bytes;
+>> +
+>> +	/* Important check, which can cause unmountable fs */
+>> +	if (super_bytes < total_bytes) {
+>> +		error("super total bytes %llu smaller than real devices size %llu",
+>> +			super_bytes, total_bytes);
+>> +		error("this fs will not be mountable for newer kernels (>=v4.6)");
+>> +		error("this can be fixed by 'btrfs check --fix-dev-size'");
+>> +		return 1;
+>> +	}
+>> +
+>> +	/*
+>> +	 * Optional check, just to make everything aligned and match with
+>> +	 * each other.
+>> +	 *
+>> +	 * For btrfs-image restored fs, we don't need to check it anyway.
+>> +	 */
+>> +	if (btrfs_super_flags(fs_info->super_copy) &
+>> +	    (BTRFS_SUPER_FLAG_METADUMP | BTRFS_SUPER_FLAG_METADUMP_V2))
+>> +		return 0;
+>> +	if (!IS_ALIGNED(super_bytes, fs_info->sectorsize) ||
+>> +	    !IS_ALIGNED(total_bytes, fs_info->sectorsize) ||
+>> +	    super_bytes != total_bytes) {
+>> +		warning("minor unaligned/mismatch device size detected");
+>> +		warning("recommended to use 'btrfs check --fix-dev-size' to fix it");
+>> +	}
+>> +	return 0;
+>> +}
 > 
-> Don't you mean mountable? We've internally seen mounting being a problem
-> due to said size mismatch.
+> nit: Make the function return bool and perhaps rename it to
+> "is_super_size_aligned" or something like that ?
+> 
+>> +
+>>   /* check btrfs_dev_item -> btrfs_dev_extent */
+>>   static int check_devices(struct rb_root *dev_cache,
+>>   			 struct device_extent_tree *dev_extent_cache)
+>> @@ -9896,6 +9957,11 @@ static int check_devices(struct rb_root *dev_cache,
+>>   		if (err)
+>>   			ret = err;
+>>   
+>> +		if (!IS_ALIGNED(dev_rec->total_byte, global_info->sectorsize)) {
+>> +		}
+>> +
+>> +		check_dev_size_alignment(dev_rec->devid, dev_rec->total_byte,
+>> +					 global_info->sectorsize);
+>>   		dev_node = rb_next(dev_node);
+> 
+> Something funny is going on here, the body of the if is empty, perhaps
+> those function have to be inside?
 
-I mean the fs is unable to be mounted.
-(Which is the correct single word to express "unable to be mounted"?)
+Oh...
 
-The direct cause is obvious, strict super block total_bytes checker.
+That's embarrassing, that's the old code where I didn't encapsulate the 
+check into check_dev_size_alignment().
 
-But I don't know how it happened.
-
-Maybe there is a window between some kernel release make it out of sync, 
-but anyway, your introduced alignment enhancement commit should handle 
-them well in v4.14.
-
-At least for worst case, such users with fs unable to mount, won't be 
-left in cold wind.
-And new users starting from v4.13 should not hit such problems.
+I'll update the patchset to address all your comment.
 
 Thanks,
 Qu
-
 > 
->>
->>     This patchset provides the tool to fix it offline.
->>     (At least better than unmountable forever)
->>
->> 2) Harmless kernel warning for btrfs_update_device()
->>     v4.14 introduced restrict device size checker.
->>     This somewhat break the backward compatibility and causing kernel
->>     warning.
->>
->>     It can be fixed online with "btrfs filesystem resize".
->>     (Although it is better to fixed it at mount time)
->>
->>     This patchset also provide a fallback method to fix it.
->>
->> Qu Wenruo (4):
->>    btrfs-progs: Introduce functions to repair unaligned/mismatch device
->>      size
->>    btrfs-progs: fsck: Introduce --fix-dev-size option
->>    btrfs-progs: check: Also check unalignment/mismatch device and super
->>      size
->>    btrfs-progs: test/fsck: Add test case image for --fix-dev-size
->>
->> Qu Wenruo (4):
->>    btrfs-progs: Introduce functions to repair unaligned/mismatch device
->>      size
->>    btrfs-progs: fsck: Introduce --fix-dev-size option
->>    btrfs-progs: check: Also check unalignment/mismatch device and super
->>      size
->>    btrfs-progs: test/fsck: Add test case image for --fix-dev-size
->>
->>   Documentation/btrfs-check.asciidoc                 |  23 ++
->>   cmds-check.c                                       | 292 ++++++++++++++++++++-
->>   .../dev_and_super_mismatch_unaligned.raw.xz        | Bin 0 -> 21536 bytes
->>   3 files changed, 314 insertions(+), 1 deletion(-)
->>   create mode 100644 tests/fsck-tests/027-unaligned-super-dev-sizes/dev_and_super_mismatch_unaligned.raw.xz
+> 
+>>   	}
+>>   	list_for_each_entry(dext_rec, &dev_extent_cache->no_device_orphans,
+>> @@ -11141,6 +11207,7 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
+>>   	struct btrfs_path path;
+>>   	struct btrfs_key key;
+>>   	struct btrfs_dev_extent *ptr;
+>> +	u64 total_bytes;
+>>   	u64 dev_id;
+>>   	u64 used;
+>>   	u64 total = 0;
+>> @@ -11149,6 +11216,7 @@ static int check_dev_item(struct btrfs_fs_info *fs_info,
+>>   	dev_item = btrfs_item_ptr(eb, slot, struct btrfs_dev_item);
+>>   	dev_id = btrfs_device_id(eb, dev_item);
+>>   	used = btrfs_device_bytes_used(eb, dev_item);
+>> +	total_bytes = btrfs_device_total_bytes(eb, dev_item);
+>>   
+>>   	key.objectid = dev_id;
+>>   	key.type = BTRFS_DEV_EXTENT_KEY;
+>> @@ -11193,6 +11261,8 @@ next:
+>>   			BTRFS_DEV_EXTENT_KEY, dev_id);
+>>   		return ACCOUNTING_MISMATCH;
+>>   	}
+>> +	check_dev_size_alignment(dev_id, total_bytes, fs_info->sectorsize);
+>> +
+>>   	return 0;
+>>   }
+>>   
+>> @@ -13471,6 +13541,9 @@ int cmd_check(int argc, char **argv)
+>>   		error(
+>>   		"errors found in extent allocation tree or chunk allocation");
+>>   
+>> +	/* Only re-check super size after we checked and repaired the fs */
+>> +	err |= check_super_size(info);
+>> +
+>>   	ret = repair_root_items(info);
+>>   	err |= !!ret;
+>>   	if (ret < 0) {
 >>
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

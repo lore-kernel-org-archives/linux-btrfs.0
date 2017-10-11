@@ -1,80 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38138 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753740AbdJIDIH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Oct 2017 23:08:07 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v99386nm028206
+Received: from userp1040.oracle.com ([156.151.31.81]:25868 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756943AbdJKA4c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 20:56:32 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9B0uVER011938
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Oct 2017 03:08:06 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v99385a0022056
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 00:56:31 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9B0uU84004196
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Oct 2017 03:08:06 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v99385G0018414
-        for <linux-btrfs@vger.kernel.org>; Mon, 9 Oct 2017 03:08:05 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/4] btrfs: declare btrfs_report_missing_device() static
-Date: Mon,  9 Oct 2017 11:07:45 +0800
-Message-Id: <20171009030746.16680-3-anand.jain@oracle.com>
-In-Reply-To: <20171009030746.16680-1-anand.jain@oracle.com>
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 00:56:31 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9B0uU20021679
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 00:56:30 GMT
+Date: Tue, 10 Oct 2017 17:52:29 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/4] btrfs: add_missing_dev() should return the actual
+ error
+Message-ID: <20171011005229.GB3283@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <20171009030746.16680-1-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171009030746.16680-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: This patch is a split from
-    [PATCH 2/2] btrfs: clean up btrfs_report_missing_device() usage
+On Mon, Oct 09, 2017 at 11:07:43AM +0800, Anand Jain wrote:
+> add_missing_dev() can return device pointer so that IS_ERR/
+> PTR_ERR can be used to check for the actual error occurred
+> in the function.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v2: This patch is a split from
+>     [PATCH 1/2] btrfs: fix read_one_chunk() return error code
+> 
+>  fs/btrfs/volumes.c | 13 ++++++++-----
+>  1 file changed, 8 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 0e8f16c305df..2f500a32089e 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6249,7 +6249,7 @@ static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
+>  
+>  	device = btrfs_alloc_device(NULL, &devid, dev_uuid);
+>  	if (IS_ERR(device))
+> -		return NULL;
+> +		return device;
+>  
+>  	list_add(&device->dev_list, &fs_devices->devices);
+>  	device->fs_devices = fs_devices;
+> @@ -6454,9 +6454,12 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>  			map->stripes[i].dev =
+>  				add_missing_dev(fs_info->fs_devices, devid,
+>  						uuid);
+> -			if (!map->stripes[i].dev) {
+> +			if (IS_ERR(map->stripes[i].dev)) {
+>  				free_extent_map(em);
+> -				return -EIO;
+> +				btrfs_err(fs_info,
+> +					"failed to init missing dev %llu %ld",
+> +					devid, PTR_ERR(map->stripes[i].dev));
+> +				return PTR_ERR(map->stripes[i].dev);
+>  			}
+>  			btrfs_report_missing_device(fs_info, devid, uuid);
+>  		}
+> @@ -6582,8 +6585,8 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+>  		}
+>  
+>  		device = add_missing_dev(fs_devices, devid, dev_uuid);
+> -		if (!device)
+> -			return -ENOMEM;
+> +		if (IS_ERR(device))
+> +			return PTR_ERR(device);
 
- fs/btrfs/volumes.c | 12 ++++++------
- fs/btrfs/volumes.h |  2 --
- 2 files changed, 6 insertions(+), 8 deletions(-)
+Could you please also add a btrfs_err() like above?
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 844ae25cff9e..6a041bef112c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6377,6 +6377,12 @@ static int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
-+static void btrfs_report_missing_device(struct btrfs_fs_info *fs_info,
-+						u64 devid, u8 *uuid)
-+{
-+	btrfs_warn_rl(fs_info, "devid %llu uuid %pU is missing", devid, uuid);
-+}
-+
- static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 			  struct extent_buffer *leaf,
- 			  struct btrfs_chunk *chunk)
-@@ -6759,12 +6765,6 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info)
- 	return -EIO;
- }
- 
--void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
--				 u8 *uuid)
--{
--	btrfs_warn_rl(fs_info, "devid %llu uuid %pU is missing", devid, uuid);
--}
--
- /*
-  * Check if all chunks in the fs are OK for read-write degraded mount
-  *
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6108fdfec67f..ff15208344a7 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -542,7 +542,5 @@ void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
- 
- bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
--void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
--				 u8 *uuid);
- 
- #endif
--- 
-2.7.0
+With that,
 
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
+-liubo
+
+>  		btrfs_report_missing_device(fs_info, devid, dev_uuid);
+>  	} else {
+>  		if (!device->bdev) {
+> -- 
+> 2.7.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

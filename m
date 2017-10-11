@@ -1,95 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49657 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752486AbdJKJWh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 05:22:37 -0400
-Subject: Re: [PATCH v3] btrfs: Use bd_dev to generate index when
- dev_state_hashtable add items.
-From: Nikolay Borisov <nborisov@suse.com>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <1507711467-50249-1-git-send-email-gujx@cn.fujitsu.com>
- <6bf1ac45-4c29-e60a-ce55-041948c6a940@suse.com>
-Message-ID: <780868f7-ef78-8bde-ea41-69e75193375f@suse.com>
-Date: Wed, 11 Oct 2017 12:22:35 +0300
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:5230 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1756569AbdJKIoi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Oct 2017 04:44:38 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id B463647CAAFF
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 16:44:31 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Gu JinXiang <gujx@cn.fujitsu.com>
+Subject: [PATCH v3] btrfs: Use bd_dev to generate index when dev_state_hashtable add items.
+Date: Wed, 11 Oct 2017 16:44:27 +0800
+Message-ID: <1507711467-50249-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <6bf1ac45-4c29-e60a-ce55-041948c6a940@suse.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Gu JinXiang <gujx@cn.fujitsu.com>
+
+Fix missing modify of
+commit f8f84b2dfda5 ("btrfs: index check-integrity state hash by a dev_t").
+Function btrfsic_dev_state_hashtable_lookup use dev_t to generate hashval
+when lookup a btrfsic_dev_state in hash table. So when add a
+btrfsic_dev_state into hash table, it should also use dev_t.
+
+Reproduce of this bug:
+Use MOUNT_OPTIONS="-o check_int" when run xfstest, device can not be
+mount successfully. So xfstest can not run. 
+
+changelog:
+v1->v2: Add how to reproduce this bug.
+v2->v3: Add description of this bug.
+
+Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
+---
+ fs/btrfs/check-integrity.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 9d3854839038..86d79bc4cfb3 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -613,7 +613,7 @@ static void btrfsic_dev_state_hashtable_add(
+ 		struct btrfsic_dev_state_hashtable *h)
+ {
+ 	const unsigned int hashval =
+-	    (((unsigned int)((uintptr_t)ds->bdev)) &
++	    (((unsigned int)((uintptr_t)ds->bdev->bd_dev)) &
+ 	     (BTRFSIC_DEV2STATE_HASHTABLE_SIZE - 1));
+ 
+ 	list_add(&ds->collision_resolving_node, h->table + hashval);
+-- 
+2.13.5
 
 
-On 11.10.2017 12:16, Nikolay Borisov wrote:
-> 
-> 
-> On 11.10.2017 11:44, Gu Jinxiang wrote:
->> From: Gu JinXiang <gujx@cn.fujitsu.com>
->>
->> Fix missing modify of
->> commit f8f84b2dfda5 ("btrfs: index check-integrity state hash by a dev_t").
->> Function btrfsic_dev_state_hashtable_lookup use dev_t to generate hashval
->> when lookup a btrfsic_dev_state in hash table. So when add a
->> btrfsic_dev_state into hash table, it should also use dev_t.
-> 
-> Your description contradicts the actual code as of a957fd420ca8.
-> btrfsic_block_hashtable_lookup creates the hash like so:
-> 
-> const unsigned int hashval =
->             (((unsigned int)(dev_bytenr >> 16)) ^
-> 
->              ((unsigned int)((uintptr_t)bdev))) &
-> 
->              (BTRFSIC_BLOCK_HASHTABLE_SIZE - 1)
-> 
-> and bdev is being passed as an argument. And hashtable_add also uses the
-> pointer of the bdev, which seems correct. So what's the deal here?
 
-Disregard, there seem to be multiple _lookup functions and I was looking
-at the wrong one. btrfsic_dev_state_hashtable_lookup definitely uses the
-passed in dev_t as the key. So this fix looks correct.
-
-
-On a slightly different note the check-integrity.c file could really
-make use of the hashtable.h API but that's a bit more work. In any case
-I think what could be done to reduce the likelihood of such errors is to
-introduce functions/macros which calculate the correct key when it's
-necessary rather than open-coding it.
-
-Any way:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> 
->>
->> Reproduce of this bug:
->> Use MOUNT_OPTIONS="-o check_int" when run xfstest, device can not be
->> mount successfully. So xfstest can not run. 
->>
->> changelog:
->> v1->v2: Add how to reproduce this bug.
->> v2->v3: Add description of this bug.
->>
->> Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
->> ---
->>  fs/btrfs/check-integrity.c | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
->> index 9d3854839038..86d79bc4cfb3 100644
->> --- a/fs/btrfs/check-integrity.c
->> +++ b/fs/btrfs/check-integrity.c
->> @@ -613,7 +613,7 @@ static void btrfsic_dev_state_hashtable_add(
->>  		struct btrfsic_dev_state_hashtable *h)
->>  {
->>  	const unsigned int hashval =
->> -	    (((unsigned int)((uintptr_t)ds->bdev)) &
->> +	    (((unsigned int)((uintptr_t)ds->bdev->bd_dev)) &
->>  	     (BTRFSIC_DEV2STATE_HASHTABLE_SIZE - 1));
->>  
->>  	list_add(&ds->collision_resolving_node, h->table + hashval);
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:19543 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:21995 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750741AbdJKEfJ (ORCPT
+        with ESMTP id S1750831AbdJKEqh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 00:35:09 -0400
+        Wed, 11 Oct 2017 00:46:37 -0400
 Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9B4Z8dp009584
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9B4kaOA017851
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:35:08 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:46:37 GMT
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9B4Z75O029786
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9B4kaYS003458
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:35:08 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9B4Z7pM005704
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:35:07 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:46:36 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9B4ka78009920
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:46:36 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2.1 1/4] btrfs: add_missing_dev() should return the actual error
-Date: Wed, 11 Oct 2017 12:34:50 +0800
-Message-Id: <20171011043450.18983-1-anand.jain@oracle.com>
+Subject: [PATCH v3 1/4] btrfs: add_missing_dev() should return the actual error
+Date: Wed, 11 Oct 2017 12:46:18 +0800
+Message-Id: <20171011044618.19621-1-anand.jain@oracle.com>
 In-Reply-To: <20171011005229.GB3283@lim.localdomain>
 References: <20171011005229.GB3283@lim.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -31,8 +31,11 @@ in the function.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
 ---
+v2: add btrfs_err in read_one_dev too
+v3: fix wrong commit id used for git send and
+    add missing change log
+
  fs/btrfs/volumes.c | 17 ++++++++++++-----
  1 file changed, 12 insertions(+), 5 deletions(-)
 

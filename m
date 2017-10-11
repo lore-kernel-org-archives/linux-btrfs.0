@@ -1,116 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f182.google.com ([209.85.217.182]:49805 "EHLO
-        mail-ua0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751918AbdJKPRZ (ORCPT
+Received: from mail-oi0-f67.google.com ([209.85.218.67]:53089 "EHLO
+        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751964AbdJKWih (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 11:17:25 -0400
-Received: by mail-ua0-f182.google.com with SMTP id h34so1291385uaa.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 08:17:25 -0700 (PDT)
+        Wed, 11 Oct 2017 18:38:37 -0400
+Received: by mail-oi0-f67.google.com with SMTP id c202so5459622oih.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 15:38:37 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <edf2cb77-6e85-98ea-f16e-1fa2399cbdc6@suse.com>
-References: <CAA85sZtPya5pQvRxyYpNB_HO0jfajvpg42EKNkKjuPuojZ-2pQ@mail.gmail.com>
- <4b291404-9f0a-e95d-e505-4a14fb1160d0@suse.com> <CAA85sZv2pctgR+yDR7biJO8H-0D4mwR5MhbdcrfG122rphbJ7A@mail.gmail.com>
- <edf2cb77-6e85-98ea-f16e-1fa2399cbdc6@suse.com>
-From: Ian Kumlien <ian.kumlien@gmail.com>
-Date: Wed, 11 Oct 2017 17:17:03 +0200
-Message-ID: <CAA85sZvo83aaMWnouSEtf2sqpfjPqE+XJm8iapOUWgixE5UdxA@mail.gmail.com>
-Subject: Re: Fatal failure, btrfs raid with duplicated metadata
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Thu, 12 Oct 2017 01:37:56 +0300
+Message-ID: <CAGqmi74m51khUNR0Q1VOKE0tZdOZ15_XZc6DEmQBfNrMNsmpfw@mail.gmail.com>
+Subject: [RFC] Btrfs: compression heuristic performance
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 11, 2017 at 2:42 PM, Jeff Mahoney <jeffm@suse.com> wrote:
-> On 10/11/17 2:20 PM, Ian Kumlien wrote:
->>
->>
->> On Wed, Oct 11, 2017 at 2:10 PM Jeff Mahoney <jeffm@suse.com
->> <mailto:jeffm@suse.com>> wrote:
->>
->>     On 10/11/17 12:41 PM, Ian Kumlien wrote:
->>
->> [--8<--]
->>
->>     > Eventually the filesystem becomes read-only and everything is odd...
->>
->>     Are you still able to mount it?  I'd be surprised if you could if check
->>     can't open the file system.
->>
->>
->> Nope, it's like there never was a filesystem in the first place...
->>
->> But since metadata should be duplicated all over, i'd assume that it
->> would be able to mount it and survive.... =)
->
-> If you'd been using RAID1 or something instead, you'd be able to mount
-> the file system and replace the disk.
+Hi David, (and list folks in CC of course).
 
-Yep, It wasn't a problem, i had a backup and so on (and the disks had
-been odd before)
+TL;DR
+Sorting is a slowest part of heuristic for now (in worst case ~55% of run time).
+Kernel use heap sort, i.e. heuristic also use that.
+Radix sort speedup heuristic a lot (~+30-40%).
+But radix have some tradeoffs (i.e. need more memory, but that can be
+easy fixed in theory),
+does that a normal idea to port radix sort for kernel?
 
->>     > Trying to run btrfs check on the disks results in:
->>     > btrfs check -b /dev/disk/by-uuid/8d431da9-dad4-481c-a5ad-5e6844f31da0
->>     > bytenr mismatch, want=912228352, have=0
->>     > Couldn't read tree root
->>     > ERROR: cannot open file system
->>     >
->>     > (For backup and normal)
->>     >
->>     > So even if the data is duplicated on all disks, something in the above
->>     > errors seemed to cause it to abort
->>     > (These disks are seagate sshd disks, never ever buying them again)
->>
->>     If you have metadata: dup, that doesn't mean the metadata is duplicated
->>     on every disk.  It means that there are two copies of the metadata on a
->>     single disk.  If that disk is going bad and returning failures for both
->>     copies of the metadata, you may be out of luck.  It's really intended
->>     for single spinning disks to get a little bit more resiliency in the
->>     face of bad sectors.
->>
->>
->> Oh? it looks like it would be 2 per 1 device, but ok - Then i could have
->> had a issue where the drive that keeps the metadata is gone... I
->> suspected that I did do DUP on multiple devices
->>
->> from the man page:
->>        Note 1: DUP may exist on more than 1 device if it starts on a
->> single device and another one is added. Since version 4.5.1,
->>        mkfs.btrfs will let you create DUP on multiple devices.
->
-> I can see how you'd reach that conclusion.  The wording is somewhat
-> confusing.  We allocate space in chunks that are usually about 1GB in
-> size.  When DUP is used, we allocate two chunks on the same device and
-> that is presented as a single usable chunk.  The constituent chunks will
-> be allocated on the same device, but which device is used can change
-> with each allocation.
->
-> Say you have 5 disks and 8 metadata chunks.  They can be allocated like so:
->
-> sda: A A D D
-> sdb: B B
-> sdc: C C
-> sde: F F G G
-> sdf: H H I I
->
-> There is no redundancy in the case of a disk failure, only for sector
-> failures.  To spread metadata across disks for redundancy you'll need to
-> use a raid mode instead.  If one of those disks is failing and it
-> contains a critical part of the metadata, the file system won't be
-> mountable.
+Long read version below.
+---
+I already mentioned that i reverse port heuristic code from kernel to
+userspace [1],
+to make some experiments and profiling easy for me.
 
-Yeah, thanks =)
+(So i spend about a week with some experiments and testings.)
 
->>     The check error above means that it wasn't able to map a logical address
->>     to a physical address.  Typically that means that the mapping was lost.
->>
->>
->> I was more reporting that it happened and if there was any useful data
->> that we could extract from this if it's a failure that shouldn't happen :)
->>
->> I haven't wiped anything yet - preparing to replace the disks though
->
-> Thanks for reporting it, but in this context, it's somewhat of an
-> expected failure mode.
+(I firstly profiling with Valgrind)
+So i found heuristic bottleneck for now, is a kernel heap sort()
+(sort uses about 55% of runtime, that look crazy for me)
 
-Yep, i see that now, thanks =)
+And as sort used in byte_core_set_size(), all not text data, sort will
+be called.
+i.e. from my point of view in 90% cases.
+
+(Tool have 2 mods in main, stats and non stats %) )
+For show the scale of a problem:
+  Stats mode:
+    - For average and worst case data (random) ~2600 MiB/s
+    - Zeroed data - ~3400 MiB/s
+  Non stats (kernel like)
+    - For average and worst case data (random) ~3000 MiB/s
+    - Zeroed data - ~8000 MiB/s
+
+
+I spend several days try to beat that by different way =\
+Only way that i found (i.e. that show good profit)
+Is replace kernel heap sort with radix_sort() [2]   =\
+
+With radix sort:
+  Stats mode:
+    - For average and worst case data (random) ~3800 MiB/s ~+31%
+    - Zeroed data - ~3400 MiB/s (not sure why performance are same)
+  Non stats (kernel like)
+    - For average and worst case data (random) ~4800 MiB/s ~+37%
+    - Zeroed data - ~8000 MiB/s
+
+(Inline Radix get additional show +200MiB/s)
+
+That seems cool, but please, wait a second nothing come free.
+
+Radix sort need a 2 buffers, one for counters, and one for output array.
+
+So in our case, (i use 4 bit as radix base),
+16 * 4 bytes for counters (stored at stack of sort function)
++ 4*256 bytes for bucket_buffer. (stored at heuristic workspace).
+
+So, in theory, that make a heuristic workspace weight more, i.e. +1KiB per CPU.
+
+As heuristic have some assumptions, i.e. we really care only about sample size.
+And sample size in our case are 8KiB max (i.e. 8KiB per CPU).
+That possible to replace u32 counters in buckets with u16 counters.
+
+And get same:
+8KiB sample per CPU
+1KiB buckets per CPU
+
+But main question:
+does that make a sense?
+
+Thanks!
+
+Links:
+1. https://github.com/Nefelim4ag/companalyze
+2. https://github.com/Nefelim4ag/companalyze/commit/1cd371eac5056927e5f567c6bd32e179ba859629
+-- 
+Have a nice day,
+Timofey.

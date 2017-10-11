@@ -1,52 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:18474 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754231AbdJKBzt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 21:55:49 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 4DE7B47CAAE4
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 09:55:45 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Gu JinXiang <gujx@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs: Use bd_dev to generate index when dev_state_hashtable add items.
-Date: Wed, 11 Oct 2017 09:55:41 +0800
-Message-ID: <1507686941-46390-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:40036 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752099AbdJKC0z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 Oct 2017 22:26:55 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id B9632AAAD
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 02:26:53 +0000 (UTC)
+From: Goldwyn Rodrigues <rgoldwyn@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [PATCH] btrfs: cleanup extent locking sequence
+Date: Tue, 10 Oct 2017 21:26:41 -0500
+Message-Id: <20171011022641.21202-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Gu JinXiang <gujx@cn.fujitsu.com>
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Fix bug of
-<f8f84b2dfda5> (<btrfs: index check-integrity state hash by a dev_t>).
+Code cleanup for better understanding:
+needs_unlock to be called extent_locked to show state as opposed to
+action.
+Changed the variable to int, to reduce code in the critical path(code usually
+executed).
 
-Description of this bug:
-Use MOUNT_OPTIONS="-o check_int" when run xfstest, device can not be
-mount successfully. So xfstest can not run.
-
-Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/check-integrity.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/file.c | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 9d3854839038..86d79bc4cfb3 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -613,7 +613,7 @@ static void btrfsic_dev_state_hashtable_add(
- 		struct btrfsic_dev_state_hashtable *h)
- {
- 	const unsigned int hashval =
--	    (((unsigned int)((uintptr_t)ds->bdev)) &
-+	    (((unsigned int)((uintptr_t)ds->bdev->bd_dev)) &
- 	     (BTRFSIC_DEV2STATE_HASHTABLE_SIZE - 1));
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index f6c6754cf52d..a3d006d14683 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1590,7 +1590,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 	int ret = 0;
+ 	bool only_release_metadata = false;
+ 	bool force_page_uptodate = false;
+-	bool need_unlock;
++	int extents_locked;
  
- 	list_add(&ds->collision_resolving_node, h->table + hashval);
+ 	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
+ 			PAGE_SIZE / (sizeof(struct page *)));
+@@ -1670,7 +1670,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		}
+ 
+ 		release_bytes = reserve_bytes;
+-		need_unlock = false;
+ again:
+ 		/*
+ 		 * This is going to setup the pages array with the number of
+@@ -1683,16 +1682,15 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		if (ret)
+ 			break;
+ 
+-		ret = lock_and_cleanup_extent_if_need(BTRFS_I(inode), pages,
++		extents_locked = lock_and_cleanup_extent_if_need(
++				BTRFS_I(inode), pages,
+ 				num_pages, pos, write_bytes, &lockstart,
+ 				&lockend, &cached_state);
+-		if (ret < 0) {
++		if (extents_locked < 0) {
+ 			if (ret == -EAGAIN)
+ 				goto again;
++			ret = extents_locked;
+ 			break;
+-		} else if (ret > 0) {
+-			need_unlock = true;
+-			ret = 0;
+ 		}
+ 
+ 		copied = btrfs_copy_from_user(pos, write_bytes, pages, i);
+@@ -1754,7 +1752,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		if (copied > 0)
+ 			ret = btrfs_dirty_pages(inode, pages, dirty_pages,
+ 						pos, copied, NULL);
+-		if (need_unlock)
++		if (extents_locked)
+ 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 					     lockstart, lockend, &cached_state,
+ 					     GFP_NOFS);
 -- 
-2.13.5
-
-
+2.14.2
 

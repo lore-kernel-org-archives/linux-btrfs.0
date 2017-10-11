@@ -1,92 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44821 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752525AbdJKR6A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 13:58:00 -0400
-Date: Wed, 11 Oct 2017 19:56:15 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH v4 3/5] btrfs: tree-checker: Enhance output for
- btrfs_check_leaf
-Message-ID: <20171011175615.GA3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171009015106.9711-1-quwenruo.btrfs@gmx.com>
- <20171009015106.9711-4-quwenruo.btrfs@gmx.com>
- <ddcf3b2b-5c56-055a-4a6d-6bc4ba76d4eb@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:37120 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754282AbdJKG4u (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 11 Oct 2017 02:56:50 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9B6umww014428
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 06:56:49 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9B6ummf003947
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 06:56:48 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9B6umcx004232
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 06:56:48 GMT
+Subject: Re: [PATCH] Btrfs: free btrfs_device in place
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
+        linux_lkml_grp@oracle.com
+References: <20171010215103.20828-2-bo.li.liu@oracle.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <a0b1173b-40ca-f051-ce66-3856c5985cee@oracle.com>
+Date: Wed, 11 Oct 2017 14:56:34 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <ddcf3b2b-5c56-055a-4a6d-6bc4ba76d4eb@suse.com>
+In-Reply-To: <20171010215103.20828-2-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 11, 2017 at 06:41:32PM +0300, Nikolay Borisov wrote:
-> 
-> 
-> On  9.10.2017 04:51, Qu Wenruo wrote:
-> > Enhance the output to print:
-> > 1) Reason
-> > 2) Bad value
-> >    If reason can't explain enough
-> > 3) Good value (range)
-> > 
-> > Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
-> > ---
-> >  fs/btrfs/tree-checker.c | 27 +++++++++++++++++++++------
-> >  1 file changed, 21 insertions(+), 6 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> > index b4ced8d3ce2a..7bba195ecc8b 100644
-> > --- a/fs/btrfs/tree-checker.c
-> > +++ b/fs/btrfs/tree-checker.c
-> > @@ -233,8 +233,9 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
-> >  			eb = btrfs_root_node(check_root);
-> >  			/* if leaf is the root, then it's fine */
-> >  			if (leaf != eb) {
-> > -				CORRUPT("non-root leaf's nritems is 0",
-> > -					leaf, check_root, 0);
-> > +				generic_err(check_root, leaf, 0,
-> > +					"invalid nritems, have %u shouldn't be 0 for non-root leaf",
-> > +					nritems);
-> 
-> I'm a bit confused by what this error messages wants to convey. Even
-> reading the previous version with CORRUPT() it still didn't make sense.
-> So what we want to say here is we shouldn't have empty leaf nodes. So
-> Something along the line of "Unexpected empty leaf".
-> 
-> Why would the (leaf != eb) check not trigger, given that we call
-> btrfs_check_leaf when we now that the item is a leaf (level is 0 )?
 
-I've merged the patches, with more adjusmtents to the wording, so any
-updates please send as separate patches.
 
-> 
-> 
-> >  				free_extent_buffer(eb);
-> >  				return -EUCLEAN;
-> >  			}
-> > @@ -265,7 +266,11 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
-> >  
-> >  		/* Make sure the keys are in the right order */
-> >  		if (btrfs_comp_cpu_keys(&prev_key, &key) >= 0) {
-> > -			CORRUPT("bad key order", leaf, root, slot);
-> > +			generic_err(root, leaf, slot,
-> > +				"bad key order, prev key (%llu %u %llu) current key (%llu %u %llu)",
-> > +				prev_key.objectid, prev_key.type,
-> > +				prev_key.offset, key.objectid, key.type,
-> > +				key.offset);
-> >  			return -EUCLEAN;
-> >  		}
-> >  
-> > @@ -280,7 +285,10 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
-> >  			item_end_expected = btrfs_item_offset_nr(leaf,
-> >  								 slot - 1);
-> >  		if (btrfs_item_end_nr(leaf, slot) != item_end_expected) {
-> > -			CORRUPT("slot offset bad", leaf, root, slot);
-> > +			generic_err(root, leaf, slot,
-> > +				"discontinious item end, have %u expect %u",
-> 
-> s/discontinious/unexpected ?
+On 10/11/2017 05:51 AM, Liu Bo wrote:
+> It's pointless to defer it to a kthread helper as we're not under any
+> special context.
 
-I've changed that to 'unexpected item end, ...'
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+Thanks, Anand
+
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>   fs/btrfs/volumes.c | 14 ++------------
+>   1 file changed, 2 insertions(+), 12 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d983cea..4a72c45 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -836,26 +836,16 @@ void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step)
+>   	mutex_unlock(&uuid_mutex);
+>   }
+>   
+> -static void __free_device(struct work_struct *work)
+> +static void free_device(struct rcu_head *head)
+>   {
+>   	struct btrfs_device *device;
+>   
+> -	device = container_of(work, struct btrfs_device, rcu_work);
+> +	device = container_of(head, struct btrfs_device, rcu);
+>   	rcu_string_free(device->name);
+>   	bio_put(device->flush_bio);
+>   	kfree(device);
+>   }
+>   
+> -static void free_device(struct rcu_head *head)
+> -{
+> -	struct btrfs_device *device;
+> -
+> -	device = container_of(head, struct btrfs_device, rcu);
+> -
+> -	INIT_WORK(&device->rcu_work, __free_device);
+> -	schedule_work(&device->rcu_work);
+> -}
+> -
+>   static void btrfs_close_bdev(struct btrfs_device *device)
+>   {
+>   	if (device->bdev && device->writeable) {
+> 

@@ -1,171 +1,207 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:51798 "EHLO
-        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753277AbdJLRTl (ORCPT
+Received: from smtp-out-no.shaw.ca ([64.59.134.12]:42966 "EHLO
+        smtp-out-no.shaw.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751067AbdJLRpA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 13:19:41 -0400
-Received: by mail-io0-f178.google.com with SMTP id b186so6261373iof.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 10:19:41 -0700 (PDT)
-Subject: Re: USB upgrade fun
-To: Chris Murphy <lists@colorremedies.com>, Kai Hendry <hendry@iki.fi>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
- <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <0a3e71f7-1a8e-9a4f-7470-4c5cc2fb11a0@gmail.com>
-Date: Thu, 12 Oct 2017 13:19:39 -0400
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Thu, 12 Oct 2017 13:45:00 -0400
+Date: Thu, 12 Oct 2017 11:44:58 -0600
+Message-Id: <87o9pcmfad.fsf@shaw.ca>
+From: Steve Leung <sjleung@shaw.ca>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs errors over NFS
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-12 12:57, Chris Murphy wrote:
-> On Sun, Oct 8, 2017 at 10:58 AM, Kai Hendry <hendry@iki.fi> wrote:
->> Hi there,
->>
->> My /mnt/raid1 suddenly became full somewhat expectedly, so I bought 2
->> new USB 4TB hard drives (one WD, one Seagate) to upgrade to.
->>
->> After adding sde and sdd I started to see errors in dmesg [2].
->> https://s.natalian.org/2017-10-07/raid1-newdisks.txt
->> [2] https://s.natalian.org/2017-10-07/btrfs-errors.txt
-> 
-> I'm not sure what the call traces mean exactly but they seem
-> non-fatal. The entire dmesg might be useful to see if there are device
-> or bus related errors.
-> 
-> I have a similar modeled NUC and I can tell you for sure it does not
-> provide enough USB bus power for 2.5" laptop drives. They must be
-> externally powered, or you need a really good USB hub with an even
-> better power supply that can handle e.g. 4 drives at the same time to
-> bus power them. I had lots of problems before I fixed this, but Btrfs
-> managed to recover gracefully once I solved the power issue.
-Same here on a pair of 3 year old NUC's.  Based on the traces and the 
-other information, I'd be willing to bet this is probably the root cause 
-of the issues.>>
->> I assumed it had to perhaps with the USB bus on my NUC5CPYB being maxed
->> out, and to expedite the sync, I tried to remove one of the older 2TB
->> sdc1.  However the load went crazy and my system went completely
->> unstable. I shutdown the machine and after an hour I hard powered it
->> down since it seemed to hang (it's headless).
-> 
-> I've notice recent kernels hanging under trivial scrub and balance
-> with hard drives. It does complete, but they are really laggy and
-> sometimes unresponsive to anything else unless the operation is
-> cancelled. I haven't had time to do regression testing. My assertion
-> about this is in the archives, about versions I think it started with.
->>
->> Sidenote: I've since learnt that removing a drive actually deletes the
->> contents of the drive? I don't want that. I was hoping to put that drive
->> into cold storage. How do I remove a drive without losing data from a
->> RAID1 configuration?
-> 
-> I'm pretty sure, but not certain of the following:  device
-> delete/remove is replicating chunk by chunk cow style. The entire
-> operation is not atomic. The chunk operations themselves are atomic. I
-> expect that metadata is updated as each chunk is properly replicated
-> so I don't think what you want is possible.
-This is correct.  Deleting a device first marks that device as zero size 
-so nothing tries to allocate data there, and then runs a balance 
-operation to force chunks onto other devices (I'm not sure if it only 
-moves chunks that are on the device being removed though).  This results 
-in two particularly important differences from most other RAID systems:
 
-1. The device being removed is functionally wiped (it will appear to be 
-empty), but not physically wiped (most of the data is still there, you 
-just can't get to it through BTRFS).
-2. The process as a whole is not atomic, but as a result of how it 
-works, it is generally possible to restart it if it got stopped part way 
-through (and you won't usually lose much progress).
+Hi list,
 
-That said, even if it was technically possible to remove the drive 
-without messing things up, it would be of limited utility.  You couldn't 
-later reconnect it and expect things to just work (you would have 
-generation mismatches, which would hopefully cause the old disk to 
-effectively be updated to match the new one, _IF_ the old disk even 
-registered properly as part of the filesystem), and it would be 
-non-trivial to get data off of it safely too (you would have to connect 
-it to a different system, and hope that BTRFS doesn't choke on half a 
-filesystem).
-> 
-> Again, pretty sure about this too, but not certain: device replace is
-> an atomic operation, the whole thing succeeds or fails, and at the end
-> merely the Btrfs signature is wiped from the deleted device(s). So you
-> could restore that signature and the device would be valid again;
-> HOWEVER it's going to have the same volume UUID as the new devices.
-> Even though the device UUIDs are unique, and should prevent confusion,
-> maybe confusion is possible.
-Also correct.  This is part of why it's preferred to use the replace 
-command instead of deleting and then adding a device to replace it (the 
-other reason being that it's significantly more efficient, especially if 
-the filesystem isn't full).
-> 
-> A better way, which currently doesn't exist, is to make the raid1 a
-> seed device, and then add two new devices and remove the seed. That
-> way you get the replication you want, the instant the sprout is
-> mounted rw, it can be used in production (all changes go to the
-> sprout), while the chunks from the seed are replicated. The reason
-> this isn't viable right now is the tools aren't mature enough to
-> handle multiple devices yet. Otherwise with a single device seed to a
-> single sprout, this works and would be the way to do what you want.
-Indeed, although it's worth noting that even with a single seed and 
-single sprout, things aren't as well tested as most of the rest of BTRFS.
-> 
-> A better way that does exist is to setup an overlay for the two
-> original devices. Mount the overlay devices, add the new devices,
-> delete the overlays. So the overlay devices get the writes that cause
-> those devices to be invalidated. The original devices aren't really
-> touched. There's a way to do this with dmsetup like how live boot
-> media work, and there's another way I haven't ever used before that's
-> described here:
-> 
-> https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file
-Using block-level overlays with BTRFS is probably a bad idea for the 
-same reasons that block-level copies are a bad idea, even with the 
-dmsetup methods (also, most live boot media does it at the filesystem 
-level, not the block level, it's safer and more efficient that way). 
-Your safest bet is probably seed devices, though that of course is not 
-very well documented.
-> 
->> After a reboot it failed, namely because "nofail" wasn't in my fstab and
->> systemd is pedantic by default. After managing to get it booting into my
->> system without /mnt/raid1 I faced these "open ctree failed" issues.
->> After running btrfs check on all the drives and getting nowhere, I
->> decided to unplug the new drives and I discovered that when I take out
->> the new 4TB WD drive, I could mount it with -o degraded.
->>
->> dmesg errors with the WD include "My Passport" Wrong diagnostic page;
->> asked for 1 got 8 "Failed to get diagnostic page 0xffffffea" which
->> raised my suspicions. The model number btw is WDBYFT0040BYI-WESN
->>
->> Anyway, I'm back up and running with 2x2TB  (one of them didn't finish
->> removing, I don't know which) & 1x4TB.
-> 
-> 
-> Be aware that you are likely in a very precarious position now.
-> Anytime raid1 volumes are mounted rw,degraded, one or more of the
-> devices will end up with new empty single chunks (there is a patch to
-> prevent this, I'm not sure if it's in 4.13). The consequence of these
-> new empty single chunks is that they will prevent any subsequent
-> degraded rw mount. You get a one time degraded,rw. Any subsquent
-> attempt will require ro,degraded to get it to mount. If you end up
-> snared in this, there are patches in the archives to inhibit the
-> kernels protection to allow mounting of such volumes. Super annoying.
-> You'll have to build a custom kernel.
-> 
-> My opinion is you should update backups before  you do anything else,
-> just in cas
-> Next, you have to figure out a way to get all devices to be used in
-> this volume healthy. Tricky as you technically have a 4 device raid 1
-> with a missing device. I propose first to check if you have single
-> chunks with either 'btrfs fi us' or 'btrfs fi df' and if so, get rid
-> of them with a filtered balance 'btrfs balance start
-> -mconvert=raid1,soft -dconvert=raid1,soft' and then in theory you
-> should be able to do 'btrfs delete missing' to end up with a valid
-> three device btrfs raid 1, which you can use until you get your USB
-> power supply issues sorted.
-I absolutely concur with Chris here, get your backups updated, and then 
-worry about repairing the filesystem.  Or, alternatively, get your 
-backups updated and then nuke the filesystem and rebuild it from scratch 
-(this may be more work, but it's guaranteed to work).
+  TL;DR: ran into some btrfs errors and weird behaviour, but things generally seem 
+  to work.  Just posting some details in case it helps devs or other users.
+
+I've run into a btrfs error trying to do a -j8 build of android on a btrfs 
+filesystem exported over NFSv3.  That in itself might be unwise, but should be 
+legal.  :)  This is on 64-bit Arch, kernel 4.13.3, and the filesystem is RAID1 on 4 
+devices, with nearly 4TiB unallocated.
+
+The build itself failed when part of the build process noticed that a file got 
+created with mode 000.  i.e. in "ls -l" the mode column looked like ?---------.
+
+That much happened without any errors in dmesg, though the NFS client complained 
+about some inodes having a mode of 0.
+
+Then when I tried to delete those files, I got the error below:
+
+[21476.546060] BTRFS error (device sdc1): err add delayed dir index item(index: 17) into the deletion tree of the delayed node(root id: 21780, inode id: 15668343, errno: -17)
+[21476.546194] ------------[ cut here ]------------
+[21476.546196] kernel BUG at fs/btrfs/delayed-inode.c:1552!
+[21476.546231] invalid opcode: 0000 [#1] PREEMPT SMP
+[21476.546258] Modules linked in: ipt_MASQUERADE nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack libcrc32c iptable_filter tun coretemp kvm_intel kvm iTCO_wdt ppdev gpio_ich iTCO_vendor_support evdev i915 input_leds psmouse pcspkr irqbypass i2c_i801 snd_hda_codec_idt snd_hda_codec_generic mac_hid lpc_ich tpm_tis tpm_tis_core parport_pc tpm parport video drm_kms_helper drm syscopyarea winbond_cir sysfillrect sysimgblt rc_core led_class snd_hda_intel snd_hda_codec snd_hda_core snd_hwdep snd_pcm snd_timer shpchp snd button e1000e soundcore intel_agp intel_gtt acpi_cpufreq mei_me mei fb_sys_fops i2c_algo_bit ptp pps_core sch_fq_codel nfsd auth_rpcgss oid_registry nfs_acl lockd grace sunrpc ip_tables x_tables crc32c_generic btrfs xor raid6_pq sr_mod cdrom
+[21476.546623]  sd_mod hid_generic usbhid hid serio_raw atkbd libps2 uhci_hcd pata_it821x ahci libahci libata firewire_ohci scsi_mod firewire_core crc_itu_t i8042 serio ehci_pci ehci_hcd usbcore usb_common
+[21476.546725] CPU: 0 PID: 984 Comm: rm Not tainted 4.13.3-1-ARCH #1
+[21476.546756] Hardware name:                  /DG33TL, BIOS DPP3510J.86A.0572.2009.0715.2346 07/15/2009
+[21476.546801] task: ffff943668131b80 task.stack: ffffaa3840da4000
+[21476.546854] RIP: 0010:btrfs_delete_delayed_dir_index+0x24d/0x330 [btrfs]
+[21476.546889] RSP: 0018:ffffaa3840da7d18 EFLAGS: 00010286
+[21476.546918] RAX: 0000000000000000 RBX: ffff94367c074b90 RCX: 0000000000000000
+[21476.546953] RDX: 0000000000000000 RSI: ffff9436abc0dc78 RDI: ffff9436abc0dc78
+[21476.546989] RBP: ffffaa3840da7d88 R08: 0000000000000323 R09: 0000000000000000
+[21476.547025] R10: ffffaa3840da7bd8 R11: 00000000ffffffff R12: ffff943583503100
+[21476.547060] R13: ffff94367c074bd8 R14: ffff94367c074bd0 R15: ffff943583503218
+[21476.547096] FS:  00007f57da0f6500(0000) GS:ffff9436abc00000(0000) knlGS:0000000000000000
+[21476.547138] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[21476.547167] CR2: 00007f57d9c809c0 CR3: 000000005e39b000 CR4: 00000000000006f0
+[21476.547203] Call Trace:
+[21476.547235]  __btrfs_unlink_inode+0x1bc/0x550 [btrfs]
+[21476.547278]  btrfs_unlink_inode+0x1c/0x50 [btrfs]
+[21476.547317]  btrfs_unlink+0x88/0xe0 [btrfs]
+[21476.547343]  vfs_unlink+0x111/0x1c0
+[21476.547365]  ? __lookup_hash+0x22/0xa0
+[21476.547389]  do_unlinkat+0x2b1/0x310
+[21476.547412]  SyS_unlinkat+0x1b/0x30
+[21476.547434]  entry_SYSCALL_64_fastpath+0x1a/0xa5
+[21476.547460] RIP: 0033:0x7f57d9c303d7
+[21476.547481] RSP: 002b:00007fff4bc1a6b8 EFLAGS: 00000246 ORIG_RAX: 0000000000000107
+[21476.547520] RAX: ffffffffffffffda RBX: 00005644fee69540 RCX: 00007f57d9c303d7
+[21476.547556] RDX: 0000000000000000 RSI: 00005644fee68310 RDI: 00000000ffffff9c
+[21476.547591] RBP: 00005644fee69648 R08: 0000000000000003 R09: 0000000000000000
+[21476.547627] R10: 0000000000000100 R11: 0000000000000246 R12: 00005644fee68280
+[21476.547662] R13: 00007fff4bc1a7f0 R14: 00005644fd37094f R15: 0000000000000000
+[21476.547700] Code: ff ff ff 48 8b 43 10 4c 8b 03 41 b9 ef ff ff ff 48 8b 55 b0 48 8b 7d a8 48 c7 c6 b0 99 3f c0 48 8b 88 38 03 00 00 e8 f3 0d f7 ff <0f> 0b 48 8b 4d a8 49 8b 7e 38 8b 81 70 10 00 00 48 8d b1 c8 01 
+[21476.547840] RIP: btrfs_delete_delayed_dir_index+0x24d/0x330 [btrfs] RSP: ffffaa3840da7d18
+[21476.549333] ---[ end trace 41039f5467d88882 ]---
+
+After that, a bunch of processes started hanging and I eventually stopped being 
+able to do useful things on the machine, so I hard rebooted it.
+
+It booted back up fine.  I tried scrubbing the filesystem at that point and scrub 
+returned with no errors.  I then noticed 4.13.5 had some btrfs fixes so I upgraded 
+to that.  Now, I still have one bogus file in a directory - it's in the directory 
+listing but nothing can stat the file to change it or remove it.  i.e.:
+
+  > ls -l
+  /bin/ls: cannot access 'tab_unselected_pressed_holo.9.png': No such file or directory
+  total 0
+  -????????? ? ? ? ?            ? tab_unselected_pressed_holo.9.png
+
+  > stat tab_unselected_pressed_holo.9.png 
+  stat: cannot stat 'tab_unselected_pressed_holo.9.png': No such file or directory
+
+  > rm tab_unselected_pressed_holo.9.png 
+  rm: cannot remove 'tab_unselected_pressed_holo.9.png': No such file or directory
+
+  > cp /dev/null tab_unselected_pressed_holo.9.png 
+  > ls -l
+  total 0
+  -rw-r--r-- 1 steve steve 0 Oct 12 10:43 tab_unselected_pressed_holo.9.png
+  -rw-r--r-- 1 steve steve 0 Oct 12 10:43 tab_unselected_pressed_holo.9.png
+
+  > rm tab_unselected_pressed_holo.9.png 
+
+  > ls -l
+  /bin/ls: cannot access 'tab_unselected_pressed_holo.9.png': No such file or directory
+  total 0
+  -????????? ? ? ? ?            ? tab_unselected_pressed_holo.9.png
+
+I'm guessing a btrfs check would fix this but haven't gotten around to running it 
+yet.
+
+After moving aside the dir with the bogus file, I was able to complete the Android 
+build successfully, but noticed these warnings in the log afterward:
+
+[11319.762849] ------------[ cut here ]------------
+[11319.762883] WARNING: CPU: 1 PID: 451 at fs/btrfs/ctree.h:1559 btrfs_update_device+0x1be/0x1d0 [btrfs]
+[11319.762884] Modules linked in: ipt_MASQUERADE nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack libcrc32c iptable_filter tun coretemp kvm_intel iTCO_wdt iTCO_vendor_support i915 gpio_ich ppdev kvm video i2c_algo_bit drm_kms_helper snd_hda_codec_idt snd_hda_codec_generic irqbypass drm syscopyarea psmouse sysfillrect snd_hda_intel pcspkr i2c_i801 e1000e mei_me sysimgblt snd_hda_codec evdev fb_sys_fops input_leds mei lpc_ich snd_hda_core snd_hwdep snd_pcm snd_timer snd soundcore parport_pc parport mac_hid ptp pps_core shpchp winbond_cir rc_core intel_agp intel_gtt led_class agpgart tpm_tis tpm_tis_core tpm button acpi_cpufreq nfsd auth_rpcgss oid_registry nfs_acl lockd grace sunrpc sch_fq_codel ip_tables x_tables crc32c_generic btrfs xor raid6_pq hid_generic
+[11319.762937]  sr_mod cdrom sd_mod usbhid hid serio_raw atkbd libps2 uhci_hcd firewire_ohci pata_it821x ahci libahci libata firewire_core scsi_mod crc_itu_t i8042 serio ehci_pci ehci_hcd usbcore usb_common
+[11319.762957] CPU: 1 PID: 451 Comm: nfsd Not tainted 4.13.5-1-ARCH #1
+[11319.762959] Hardware name:                  /DG33TL, BIOS DPP3510J.86A.0572.2009.0715.2346 07/15/2009
+[11319.762960] task: ffff90dce9e5b700 task.stack: ffff9e1fc1448000
+[11319.762975] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
+[11319.762977] RSP: 0018:ffff9e1fc144b468 EFLAGS: 00010206
+[11319.762978] RAX: 0000000000000fff RBX: ffff90dd227d7a80 RCX: 000003a3816d1e00
+[11319.762980] RDX: 0000000000000004 RSI: 0000000000007e98 RDI: ffff90dc990fbb58
+[11319.762981] RBP: ffff9e1fc144b4b0 R08: 0000000000007e9c R09: ffff9e1fc144b420
+[11319.762982] R10: 0000000000001000 R11: 0000000000000007 R12: ffff90dd21f77c00
+[11319.762984] R13: 0000000000000000 R14: 0000000000007e78 R15: ffff90dc990fbb58
+[11319.762985] FS:  0000000000000000(0000) GS:ffff90dd2bc80000(0000) knlGS:0000000000000000
+[11319.762987] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[11319.762988] CR2: 00005572c6c61c90 CR3: 000000016741a000 CR4: 00000000000006e0
+[11319.762990] Call Trace:
+[11319.763008]  btrfs_finish_chunk_alloc+0x136/0x4f0 [btrfs]
+[11319.763020]  ? btrfs_free_path.part.31+0x21/0x30 [btrfs]
+[11319.763033]  btrfs_create_pending_block_groups+0x135/0x250 [btrfs]
+[11319.763045]  ? btrfs_create_pending_block_groups+0x135/0x250 [btrfs]
+[11319.763060]  __btrfs_end_transaction+0x8e/0x2e0 [btrfs]
+[11319.763231]  btrfs_end_transaction+0x10/0x20 [btrfs]
+[11319.763243]  find_free_extent+0xc05/0x1020 [btrfs]
+[11319.763257]  btrfs_reserve_extent+0x9b/0x190 [btrfs]
+[11319.763272]  cow_file_range.isra.67+0x13a/0x420 [btrfs]
+[11319.763287]  run_delalloc_range+0x359/0x380 [btrfs]
+[11319.763302]  ? find_lock_delalloc_range.constprop.56+0x1cf/0x1f0 [btrfs]
+[11319.763317]  writepage_delalloc.isra.45+0xbc/0x170 [btrfs]
+[11319.763332]  __extent_writepage+0x17c/0x320 [btrfs]
+[11319.763348]  extent_write_cache_pages.constprop.53+0x1cd/0x460 [btrfs]
+[11319.763364]  extent_writepages+0x5d/0x90 [btrfs]
+[11319.763378]  ? btrfs_releasepage+0x20/0x20 [btrfs]
+[11319.763392]  btrfs_writepages+0x28/0x30 [btrfs]
+[11319.763396]  do_writepages+0x48/0xd0
+[11319.763400]  ? exportfs_decode_fh+0x100/0x390
+[11319.763404]  __filemap_fdatawrite_range+0xc1/0x100
+[11319.763405]  ? __filemap_fdatawrite_range+0xc1/0x100
+[11319.763408]  ? iter_div_u64_rem+0x20/0x20
+[11319.763411]  filemap_fdatawrite_range+0x13/0x20
+[11319.763425]  btrfs_fdatawrite_range+0x20/0x50 [btrfs]
+[11319.763440]  start_ordered_ops+0x19/0x30 [btrfs]
+[11319.763454]  btrfs_sync_file+0x76/0x420 [btrfs]
+[11319.763457]  ? get_empty_filp+0xc9/0x1b0
+[11319.763461]  vfs_fsync_range+0x4b/0xb0
+[11319.763473]  nfsd_commit+0xb1/0xe0 [nfsd]
+[11319.763481]  nfsd3_proc_commit+0x6e/0xd0 [nfsd]
+[11319.763487]  nfsd_dispatch+0xfb/0x230 [nfsd]
+[11319.763499]  svc_process_common+0x4a6/0x680 [sunrpc]
+[11319.763507]  svc_process+0xec/0x1c0 [sunrpc]
+[11319.763513]  nfsd+0xf4/0x160 [nfsd]
+[11319.763516]  kthread+0x125/0x140
+[11319.763522]  ? nfsd_destroy+0x70/0x70 [nfsd]
+[11319.763524]  ? kthread_create_on_node+0x70/0x70
+[11319.763528]  ret_from_fork+0x25/0x30
+[11319.763530] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa 21 ff ff 4c 89 ff e8 62 f3 fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9 d0 fe ff ff <0f> ff eb b6 e8 d9 e3 c5 d0 66 0f 1f 84 00 00 00 00 00 66 66 66 
+[11319.763568] ---[ end trace 40295351501208ff ]---
+
+[11330.152285] ------------[ cut here ]------------
+[11330.152319] WARNING: CPU: 0 PID: 203 at fs/btrfs/ctree.h:1559 btrfs_update_device+0x1be/0x1d0 [btrfs]
+[11330.152320] Modules linked in: ipt_MASQUERADE nf_nat_masquerade_ipv4 iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack libcrc32c iptable_filter tun coretemp kvm_intel iTCO_wdt iTCO_vendor_support i915 gpio_ich ppdev kvm video i2c_algo_bit drm_kms_helper snd_hda_codec_idt snd_hda_codec_generic irqbypass drm syscopyarea psmouse sysfillrect snd_hda_intel pcspkr i2c_i801 e1000e mei_me sysimgblt snd_hda_codec evdev fb_sys_fops input_leds mei lpc_ich snd_hda_core snd_hwdep snd_pcm snd_timer snd soundcore parport_pc parport mac_hid ptp pps_core shpchp winbond_cir rc_core intel_agp intel_gtt led_class agpgart tpm_tis tpm_tis_core tpm button acpi_cpufreq nfsd auth_rpcgss oid_registry nfs_acl lockd grace sunrpc sch_fq_codel ip_tables x_tables crc32c_generic btrfs xor raid6_pq hid_generic
+[11330.152389]  sr_mod cdrom sd_mod usbhid hid serio_raw atkbd libps2 uhci_hcd firewire_ohci pata_it821x ahci libahci libata firewire_core scsi_mod crc_itu_t i8042 serio ehci_pci ehci_hcd usbcore usb_common
+[11330.152409] CPU: 0 PID: 203 Comm: btrfs-cleaner Tainted: G        W       4.13.5-1-ARCH #1
+[11330.152410] Hardware name:                  /DG33TL, BIOS DPP3510J.86A.0572.2009.0715.2346 07/15/2009
+[11330.152411] task: ffff90dd221ec4c0 task.stack: ffff9e1fc13f4000
+[11330.152427] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
+[11330.152428] RSP: 0018:ffff9e1fc13f7d28 EFLAGS: 00010206
+[11330.152430] RAX: 0000000000000fff RBX: ffff90dd227d7c40 RCX: 000003a3816d1e00
+[11330.152431] RDX: 0000000000000004 RSI: 0000000000007e98 RDI: ffff90dcf76e2578
+[11330.152432] RBP: ffff9e1fc13f7d70 R08: 0000000000007e9c R09: ffff9e1fc13f7ce0
+[11330.152434] R10: 0000000000001000 R11: 0000000000000007 R12: ffff90dd21f77c00
+[11330.152435] R13: 0000000000000000 R14: 0000000000007e78 R15: ffff90dcf76e2578
+[11330.152437] FS:  0000000000000000(0000) GS:ffff90dd2bc00000(0000) knlGS:0000000000000000
+[11330.152438] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[11330.152440] CR2: 00007fec55264d30 CR3: 00000001703bf000 CR4: 00000000000006f0
+[11330.152441] Call Trace:
+[11330.152459]  btrfs_remove_chunk+0x365/0x890 [btrfs]
+[11330.152474]  btrfs_delete_unused_bgs+0x30d/0x3b0 [btrfs]
+[11330.152488]  cleaner_kthread+0x165/0x180 [btrfs]
+[11330.152493]  kthread+0x125/0x140
+[11330.152507]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
+[11330.152513]  ? kthread_create_on_node+0x70/0x70
+[11330.152516]  ret_from_fork+0x25/0x30
+[11330.152518] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa 21 ff ff 4c 89 ff e8 62 f3 fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9 d0 fe ff ff <0f> ff eb b6 e8 d9 e3 c5 d0 66 0f 1f 84 00 00 00 00 00 66 66 66 
+[11330.152556] ---[ end trace 4029535150120900 ]---
+
+That first warning appeared 13 times in the logs, and the second one appeared only 
+once.
+
+I haven't rebooted the machine since observing these warnings.  Things seem to be 
+working ok.  Please let me know if there's anything interesting to be learned from 
+it.
+
+Thanks!
+
+Steve

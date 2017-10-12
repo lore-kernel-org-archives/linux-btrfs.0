@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:57690 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:52314 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751632AbdJLH3G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 03:29:06 -0400
+        id S1751717AbdJLIuF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Oct 2017 04:50:05 -0400
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 2/2] btrfs-progs: test/mkfs: Test if the minimal device size is valid
-Date: Thu, 12 Oct 2017 00:28:58 -0700
-Message-Id: <20171012072858.19005-2-quwenruo.btrfs@gmx.com>
-In-Reply-To: <20171012072858.19005-1-quwenruo.btrfs@gmx.com>
-References: <20171012072858.19005-1-quwenruo.btrfs@gmx.com>
+Subject: [PATCH v2 2/2] btrfs-progs: test/mkfs: Test if the minimal device size is valid
+Date: Thu, 12 Oct 2017 01:49:58 -0700
+Message-Id: <20171012084958.19117-1-quwenruo.btrfs@gmx.com>
+In-Reply-To: <20171012072858.19005-2-quwenruo.btrfs@gmx.com>
+References: <20171012072858.19005-2-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -18,6 +18,12 @@ New test case to test if the minimal device size given by "mkfs.btrfs"
 failure case is valid.
 
 Signed-off-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+---
+changelog:
+v2:
+  Remove tailing whitespace.
+  Use more accurate regex to match minimal device size, suggested by Lu
+  Fengqi.
 ---
  tests/common                             | 57 +++++++++++++++++++++++++++++++-
  tests/mkfs-tests/010-small-image/test.sh | 51 ++++++++++++++++++++++++++++
@@ -101,7 +107,7 @@ index eb525a4d02c5..e026cc2f4d30 100644
  	echo "\$TEST_DEV not given, use $TOP/test/test.img as fallback" >> \
 diff --git a/tests/mkfs-tests/010-small-image/test.sh b/tests/mkfs-tests/010-small-image/test.sh
 new file mode 100755
-index 000000000000..f12c9c836bd6
+index 000000000000..2ed379f9b66f
 --- /dev/null
 +++ b/tests/mkfs-tests/010-small-image/test.sh
 @@ -0,0 +1,51 @@
@@ -124,7 +130,7 @@ index 000000000000..f12c9c836bd6
 +	prepare_test_dev 1M
 +	output=$(run_mustfail_stdout "mkfs.btrfs for small image" \
 +		 $TOP/mkfs.btrfs -f $@ "$TEST_DEV")
-+	good_size=$(echo $output | grep -o "[[:digit:]]\{3,\}")
++	good_size=$(echo $output | grep -oP "(?<=is )\d+")
 +
 +	prepare_test_dev "$good_size"
 +	run_check $TOP/mkfs.btrfs -f $@ "$TEST_DEV"
@@ -135,27 +141,27 @@ index 000000000000..f12c9c836bd6
 +do_test -n 4k	-m single	-d single
 +do_test -n 4k	-m single	-d dup
 +do_test -n 4k	-m dup		-d single
-+do_test -n 4k	-m dup		-d dup 
++do_test -n 4k	-m dup		-d dup
 +
 +do_test -n 8k	-m single	-d single
 +do_test -n 8k	-m single	-d dup
 +do_test -n 8k	-m dup		-d single
-+do_test -n 8k	-m dup		-d dup 
++do_test -n 8k	-m dup		-d dup
 +
 +do_test -n 16k	-m single	-d single
 +do_test -n 16k	-m single	-d dup
 +do_test -n 16k	-m dup		-d single
-+do_test -n 16k	-m dup		-d dup 
++do_test -n 16k	-m dup		-d dup
 +
 +do_test -n 32k	-m single	-d single
 +do_test -n 32k	-m single	-d dup
 +do_test -n 32k	-m dup		-d single
-+do_test -n 32k	-m dup		-d dup 
++do_test -n 32k	-m dup		-d dup
 +
 +do_test -n 64k	-m single	-d single
 +do_test -n 64k	-m single	-d dup
 +do_test -n 64k	-m dup		-d single
-+do_test -n 64k	-m dup		-d dup 
++do_test -n 64k	-m dup		-d dup
 -- 
 2.14.2
 

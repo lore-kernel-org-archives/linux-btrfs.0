@@ -1,37 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f178.google.com ([209.85.192.178]:46962 "EHLO
-        mail-pf0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751587AbdJLAsD (ORCPT
+Received: from out1-smtp.messagingengine.com ([66.111.4.25]:37331 "EHLO
+        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751757AbdJLC1D (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 20:48:03 -0400
-Received: by mail-pf0-f178.google.com with SMTP id p87so2639884pfj.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 17:48:03 -0700 (PDT)
-Received: from olive.ig.local ([71.68.150.33])
-        by smtp.gmail.com with ESMTPSA id h1sm21654414pgp.37.2017.10.11.17.48.01
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-CHACHA20-POLY1305 bits=256/256);
-        Wed, 11 Oct 2017 17:48:01 -0700 (PDT)
-Date: Wed, 11 Oct 2017 20:47:59 -0400
-From: Joseph Dunn <jdunn14@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs seed question
-Message-ID: <20171011204759.1848abd7@olive.ig.local>
+        Wed, 11 Oct 2017 22:27:03 -0400
+Message-Id: <1507775222.470249.1135998984.4D5929F4@webmail.messagingengine.com>
+From: Kai Hendry <hendry@iki.fi>
+To: Satoru Takeuchi <satoru.takeuchi@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="utf-8"
+References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
+ <87o9pf7o3g.wl-satoru.takeuchi@gmail.com>
+ <1507695493.605704.1134784560.530EF386@webmail.messagingengine.com>
+Date: Thu, 12 Oct 2017 10:27:02 +0800
+Subject: Re: USB upgrade fun
+In-Reply-To: <1507695493.605704.1134784560.530EF386@webmail.messagingengine.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After seeing how btrfs seeds work I wondered if it was possible to push
-specific files from the seed to the rw device.  I know that removing
-the seed device will flush all the contents over to the rw device, but
-what about flushing individual files on demand?
+A guy on #btrsfs suggests:
 
-I found that opening a file, reading the contents, seeking back to 0,
-and writing out the contents does what I want, but I was hoping for a
-bit less of a hack.
+15:09 <multicore> hendry: super_total_bytes 8001581707264 mismatch with
+fs_devices total_rw_bytes 8001581710848 that one is because unaligned
+partitions, 4.12 - 4.13 kernels are affected (at least some versions)
 
-Is there maybe an ioctl or something else that might trigger a similar
-action?
 
-Thanks,
--Joseph
+However I rebooted into 4.9.54-1-lts and I have the same issue.
+super_total_bytes 8001581707264 mismatch with fs_devices total_rw_bytes
+8001581710848
+
+https://s.natalian.org/2017-10-12/1507775104_2548x1398.png
+
+Any ideas what I can do now? I am getting rather nervous!
+
+Btw I checked sudo btrfs check -p /dev/sd{b,c,d}1 and they are all fine.
+
+Just can't mount my data! :(
+
+Hope you can help me,

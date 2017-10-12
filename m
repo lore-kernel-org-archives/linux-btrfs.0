@@ -1,41 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out1-smtp.messagingengine.com ([66.111.4.25]:37331 "EHLO
-        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751757AbdJLC1D (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:19139 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750729AbdJLESN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 22:27:03 -0400
-Message-Id: <1507775222.470249.1135998984.4D5929F4@webmail.messagingengine.com>
-From: Kai Hendry <hendry@iki.fi>
-To: Satoru Takeuchi <satoru.takeuchi@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+        Thu, 12 Oct 2017 00:18:13 -0400
+Subject: Re: btrfs seed question
+To: Joseph Dunn <jdunn14@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20171011204759.1848abd7@olive.ig.local>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <ff596f2f-7232-4ee0-7967-6888236cc831@oracle.com>
+Date: Thu, 12 Oct 2017 12:18:01 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
- <87o9pf7o3g.wl-satoru.takeuchi@gmail.com>
- <1507695493.605704.1134784560.530EF386@webmail.messagingengine.com>
-Date: Thu, 12 Oct 2017 10:27:02 +0800
-Subject: Re: USB upgrade fun
-In-Reply-To: <1507695493.605704.1134784560.530EF386@webmail.messagingengine.com>
+In-Reply-To: <20171011204759.1848abd7@olive.ig.local>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A guy on #btrsfs suggests:
-
-15:09 <multicore> hendry: super_total_bytes 8001581707264 mismatch with
-fs_devices total_rw_bytes 8001581710848 that one is because unaligned
-partitions, 4.12 - 4.13 kernels are affected (at least some versions)
 
 
-However I rebooted into 4.9.54-1-lts and I have the same issue.
-super_total_bytes 8001581707264 mismatch with fs_devices total_rw_bytes
-8001581710848
+On 10/12/2017 08:47 AM, Joseph Dunn wrote:
+> After seeing how btrfs seeds work I wondered if it was possible to push
+> specific files from the seed to the rw device.  I know that removing
+> the seed device will flush all the contents over to the rw device, but
+> what about flushing individual files on demand?
+> 
+> I found that opening a file, reading the contents, seeking back to 0,
+> and writing out the contents does what I want, but I was hoping for a
+> bit less of a hack.
+> 
+> Is there maybe an ioctl or something else that might trigger a similar
+> action?
 
-https://s.natalian.org/2017-10-12/1507775104_2548x1398.png
+   You mean to say - seed-device delete to trigger copy of only the 
+specified or the modified files only, instead of whole of seed-device ? 
+What's the use case around this ?
 
-Any ideas what I can do now? I am getting rather nervous!
 
-Btw I checked sudo btrfs check -p /dev/sd{b,c,d}1 and they are all fine.
+Thanks, Anand
 
-Just can't mount my data! :(
 
-Hope you can help me,
+> Thanks,
+> -Joseph
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,131 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f50.google.com ([209.85.214.50]:55682 "EHLO
-        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751517AbdJLPz4 (ORCPT
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:56548 "EHLO
+        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751518AbdJLQ5F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 11:55:56 -0400
-Received: by mail-it0-f50.google.com with SMTP id l196so7379354itl.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 08:55:55 -0700 (PDT)
-Subject: Re: btrfs seed question
-To: Chris Murphy <lists@colorremedies.com>, Joseph Dunn <jdunn14@gmail.com>
-Cc: Anand Jain <anand.jain@oracle.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <20171011204759.1848abd7@olive.ig.local>
- <ff596f2f-7232-4ee0-7967-6888236cc831@oracle.com>
- <20171012092028.1fbe79d9@olive.ig.local>
- <CAJCQCtREBoFKB6_gS2WpkRuiA4nV1Ar4pcRbDB6Gaf1t8vSkLw@mail.gmail.com>
- <20171012104438.4304e99a@olive.ig.local>
- <CAJCQCtRrCMqp3FHaCqe-ZjNLryOGvhZE3MoXMqarqO7zsK4_FQ@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <13ec83e8-f0a1-0f55-b755-00a02d68791d@gmail.com>
-Date: Thu, 12 Oct 2017 11:55:51 -0400
+        Thu, 12 Oct 2017 12:57:05 -0400
+Received: by mail-oi0-f46.google.com with SMTP id v9so9494176oif.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 09:57:04 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRrCMqp3FHaCqe-ZjNLryOGvhZE3MoXMqarqO7zsK4_FQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
+References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 12 Oct 2017 17:57:03 +0100
+Message-ID: <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
+Subject: Re: USB upgrade fun
+To: Kai Hendry <hendry@iki.fi>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-12 11:30, Chris Murphy wrote:
-> On Thu, Oct 12, 2017 at 3:44 PM, Joseph Dunn <jdunn14@gmail.com> wrote:
->> On Thu, 12 Oct 2017 15:32:24 +0100
->> Chris Murphy <lists@colorremedies.com> wrote:
->>
->>> On Thu, Oct 12, 2017 at 2:20 PM, Joseph Dunn <jdunn14@gmail.com> wrote:
->>>>
->>>> On Thu, 12 Oct 2017 12:18:01 +0800
->>>> Anand Jain <anand.jain@oracle.com> wrote:
->>>>
->>>>> On 10/12/2017 08:47 AM, Joseph Dunn wrote:
->>>>>> After seeing how btrfs seeds work I wondered if it was possible to push
->>>>>> specific files from the seed to the rw device.  I know that removing
->>>>>> the seed device will flush all the contents over to the rw device, but
->>>>>> what about flushing individual files on demand?
->>>>>>
->>>>>> I found that opening a file, reading the contents, seeking back to 0,
->>>>>> and writing out the contents does what I want, but I was hoping for a
->>>>>> bit less of a hack.
->>>>>>
->>>>>> Is there maybe an ioctl or something else that might trigger a similar
->>>>>> action?
->>>>>
->>>>>     You mean to say - seed-device delete to trigger copy of only the
->>>>> specified or the modified files only, instead of whole of seed-device ?
->>>>> What's the use case around this ?
->>>>>
->>>>
->>>> Not quite.  While the seed device is still connected I would like to
->>>> force some files over to the rw device.  The use case is basically a
->>>> much slower link to a seed device holding significantly more data than
->>>> we currently need.  An example would be a slower iscsi link to the seed
->>>> device and a local rw ssd.  I would like fast access to a certain subset
->>>> of files, likely larger than the memory cache will accommodate.  If at
->>>> a later time I want to discard the image as a whole I could unmount the
->>>> file system or if I want a full local copy I could delete the
->>>> seed-device to sync the fs.  In the mean time I would have access to
->>>> all the files, with some slower (iscsi) and some faster (ssd) and the
->>>> ability to pick which ones are in the faster group at the cost of one
->>>> content transfer.
->>>
->>>
->>> Multiple seeds?
->>>
->>> Seed A has everything, is remote. Create sprout B also remotely,
->>> deleting the things you don't absolutely need, then make it a seed.
->>> Now via iSCSI you can mount both A and B seeds. Add local rw sprout C
->>> to seed B, then delete B to move files to fast local storage.
->>>
->> Interesting thought.  I haven't tried working with multiple seeds but
->> I'll see what that can do.  I will say that this approach would require
->> more pre-planning meaning that the choice of fast files could not be
->> made based on current access patterns to tasks at hand.  This might
->> make sense for a core set of files, but it doesn't quite solve the
->> whole problem.
-> 
-> 
-> I think the use case really dictates a dynamic solution that's smarter
-> than either of the proposed ideas (mine or yours). Basically you want
-> something that recognizes slow vs fast storage, and intelligently
-> populates fast storage with frequently used files.
-> 
-> Ostensibly this is the realm of dmcache. But I can't tell you whether
-> dmcache or via LVM tools, if it's possible to set the proper policy to
-> make it work for your use case. And also I have no idea how to set it
-> up after the fact, on an already created file system, rather than
-> block devices.
-It is possible with dm-cache, but not at the file level (as befits any 
-good block layer, it doesn't care about files, just blocks).  Despite 
-that, it should work reasonably fine (I've done this before with NBD and 
-ATAoE devices, and it worked perfectly, so I would expect it to work 
-just as well for iSCSI), and actually may do better than caching whole 
-files locally depending on your workload.
+On Sun, Oct 8, 2017 at 10:58 AM, Kai Hendry <hendry@iki.fi> wrote:
+> Hi there,
+>
+> My /mnt/raid1 suddenly became full somewhat expectedly, so I bought 2
+> new USB 4TB hard drives (one WD, one Seagate) to upgrade to.
+>
+> After adding sde and sdd I started to see errors in dmesg [2].
+> https://s.natalian.org/2017-10-07/raid1-newdisks.txt
+> [2] https://s.natalian.org/2017-10-07/btrfs-errors.txt
 
-As far as setup after the fact, the degree of difficulty depends on 
-whether or not you want to use LVM.  Without LVM, you should have no 
-issue just setting up a device-mapper table for caching, you just need 
-enough room on the local SSD for both the cache data and cache metadata 
-partition.  When you create the table using dmsetup 9and eventually in 
-/etc/dmtab), it won't wipe the filesystem on the origin device, so you 
-can easily add a cache to anything this way, even if it's an existing 
-filesystem (though you will need to unmount the filesystem to add the 
-cache).  All things considered, it's no worse than setting it up on a 
-brand new device, the hardest part is making sure you get the device 
-sizes right for the device mapper table.
+I'm not sure what the call traces mean exactly but they seem
+non-fatal. The entire dmesg might be useful to see if there are device
+or bus related errors.
 
-With LVM however, it's somewhat more complicated, because it refuses to 
-work with anything it's not managing already, so you would have to 
-reprovision the iSCSI device as a PV, add it to the local VG, and then 
-work with that.
+I have a similar modeled NUC and I can tell you for sure it does not
+provide enough USB bus power for 2.5" laptop drives. They must be
+externally powered, or you need a really good USB hub with an even
+better power supply that can handle e.g. 4 drives at the same time to
+bus power them. I had lots of problems before I fixed this, but Btrfs
+managed to recover gracefully once I solved the power issue.
 
-If you don't mind reprovisioning, I would actually suggest bcache 
-instead of LVM here though.  It's less complicated to add and remove 
-caches, does somewhat better in recent versions of intelligently 
-deciding what to cache locally, and is also significantly less likely to 
-slow down the rest of your system than LVM (any management operations 
-will have to hit that remote iSCSI device, and LVM does a lot more with 
-data on the disk than bcache does).
-> 
-> The hot vs cold files thing, is something I thought the VFS folks were
-> looking into.
-I was under that impression too, but I haven't seen anything relating to 
-it recently (though I'm not subscribed to the linux-vfs list, so there 
-may be discussion there I'm not seeing).
+
+>
+>
+> I assumed it had to perhaps with the USB bus on my NUC5CPYB being maxed
+> out, and to expedite the sync, I tried to remove one of the older 2TB
+> sdc1.  However the load went crazy and my system went completely
+> unstable. I shutdown the machine and after an hour I hard powered it
+> down since it seemed to hang (it's headless).
+
+I've notice recent kernels hanging under trivial scrub and balance
+with hard drives. It does complete, but they are really laggy and
+sometimes unresponsive to anything else unless the operation is
+cancelled. I haven't had time to do regression testing. My assertion
+about this is in the archives, about versions I think it started with.
+
+
+
+
+>
+> Sidenote: I've since learnt that removing a drive actually deletes the
+> contents of the drive? I don't want that. I was hoping to put that drive
+> into cold storage. How do I remove a drive without losing data from a
+> RAID1 configuration?
+
+I'm pretty sure, but not certain of the following:  device
+delete/remove is replicating chunk by chunk cow style. The entire
+operation is not atomic. The chunk operations themselves are atomic. I
+expect that metadata is updated as each chunk is properly replicated
+so I don't think what you want is possible.
+
+Again, pretty sure about this too, but not certain: device replace is
+an atomic operation, the whole thing succeeds or fails, and at the end
+merely the Btrfs signature is wiped from the deleted device(s). So you
+could restore that signature and the device would be valid again;
+HOWEVER it's going to have the same volume UUID as the new devices.
+Even though the device UUIDs are unique, and should prevent confusion,
+maybe confusion is possible.
+
+A better way, which currently doesn't exist, is to make the raid1 a
+seed device, and then add two new devices and remove the seed. That
+way you get the replication you want, the instant the sprout is
+mounted rw, it can be used in production (all changes go to the
+sprout), while the chunks from the seed are replicated. The reason
+this isn't viable right now is the tools aren't mature enough to
+handle multiple devices yet. Otherwise with a single device seed to a
+single sprout, this works and would be the way to do what you want.
+
+A better way that does exist is to setup an overlay for the two
+original devices. Mount the overlay devices, add the new devices,
+delete the overlays. So the overlay devices get the writes that cause
+those devices to be invalidated. The original devices aren't really
+touched. There's a way to do this with dmsetup like how live boot
+media work, and there's another way I haven't ever used before that's
+described here:
+
+https://raid.wiki.kernel.org/index.php/Recovering_a_failed_software_RAID#Making_the_harddisks_read-only_using_an_overlay_file
+
+
+
+
+> After a reboot it failed, namely because "nofail" wasn't in my fstab and
+> systemd is pedantic by default. After managing to get it booting into my
+> system without /mnt/raid1 I faced these "open ctree failed" issues.
+> After running btrfs check on all the drives and getting nowhere, I
+> decided to unplug the new drives and I discovered that when I take out
+> the new 4TB WD drive, I could mount it with -o degraded.
+>
+> dmesg errors with the WD include "My Passport" Wrong diagnostic page;
+> asked for 1 got 8 "Failed to get diagnostic page 0xffffffea" which
+> raised my suspicions. The model number btw is WDBYFT0040BYI-WESN
+>
+> Anyway, I'm back up and running with 2x2TB  (one of them didn't finish
+> removing, I don't know which) & 1x4TB.
+
+
+Be aware that you are likely in a very precarious position now.
+Anytime raid1 volumes are mounted rw,degraded, one or more of the
+devices will end up with new empty single chunks (there is a patch to
+prevent this, I'm not sure if it's in 4.13). The consequence of these
+new empty single chunks is that they will prevent any subsequent
+degraded rw mount. You get a one time degraded,rw. Any subsquent
+attempt will require ro,degraded to get it to mount. If you end up
+snared in this, there are patches in the archives to inhibit the
+kernels protection to allow mounting of such volumes. Super annoying.
+You'll have to build a custom kernel.
+
+My opinion is you should update backups before  you do anything else,
+just in cas
+Next, you have to figure out a way to get all devices to be used in
+this volume healthy. Tricky as you technically have a 4 device raid 1
+with a missing device. I propose first to check if you have single
+chunks with either 'btrfs fi us' or 'btrfs fi df' and if so, get rid
+of them with a filtered balance 'btrfs balance start
+-mconvert=raid1,soft -dconvert=raid1,soft' and then in theory you
+should be able to do 'btrfs delete missing' to end up with a valid
+three device btrfs raid 1, which you can use until you get your USB
+power supply issues sorted.
+
+So I have a lot of nausea and something of a fever right now as I'm
+writing this, you should definitely not trust anything I've said at
+face value. Except the backup now business. That's probably good
+advice.
+
+-- 
+Chris Murphy

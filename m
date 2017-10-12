@@ -1,58 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:31948 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751657AbdJMCSQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 22:18:16 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: [PATCH] btrfs: fix call to btrfs_end_transaction without a transaction handler
-Date: Fri, 13 Oct 2017 10:16:54 +0800
-Message-Id: <20171013021654.14461-1-anand.jain@oracle.com>
-In-Reply-To: <20171012203900.dqdsfcpbfjyl7bea@mwanda>
-References: <20171012203900.dqdsfcpbfjyl7bea@mwanda>
+Received: from mout.gmx.net ([212.227.17.22]:57023 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751657AbdJLIvr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Oct 2017 04:51:47 -0400
+Subject: Re: [PATCH] btrfs: use need_full_stripe() in __btrfs_map_block()
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171012084300.4740-1-anand.jain@oracle.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <ad9c2566-8397-6d66-d2c1-38db65f5ea45@gmx.com>
+Date: Thu, 12 Oct 2017 16:51:34 +0800
+MIME-Version: 1.0
+In-Reply-To: <20171012084300.4740-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_init_new_device() when btrfs_attach_transaction() fails we
-shouldn't call btrfs_end_transaction(). Fix it.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Fixes:
-  btrfs: error out if btrfs_attach_transaction() fails
----
-Hi David,
-  Can you pls squash this changes to the patch which it
-  fixes. OR if its better to send the original the with
-  the fix, pls let me know I will do it.
-Thanks.
 
- fs/btrfs/volumes.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+On 2017年10月12日 16:43, Anand Jain wrote:
+> A cleanup patch, use need_full_stripe() to replace the open code.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 90805581ea10..efd502176915 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2477,6 +2477,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 			if (PTR_ERR(trans) == -ENOENT)
- 				return 0;
- 			ret = PTR_ERR(trans);
-+			trans = NULL;
- 			goto error_sysfs;
- 		}
- 		ret = btrfs_commit_transaction(trans);
-@@ -2491,7 +2492,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- error_trans:
- 	if (seeding_dev)
- 		sb->s_flags |= MS_RDONLY;
--	btrfs_end_transaction(trans);
-+	if (trans)
-+		btrfs_end_transaction(trans);
- 	rcu_string_free(device->name);
- 	kfree(device);
- error:
--- 
-2.13.1
+Reviewed-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
 
+Thanks,
+Qu
+> ---
+>   fs/btrfs/volumes.c | 16 ++++++----------
+>   1 file changed, 6 insertions(+), 10 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 3b3ba1ecd88b..f5dee43f8f3f 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -5673,10 +5673,10 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>   	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+>   		stripe_nr = div_u64_rem(stripe_nr, map->num_stripes,
+>   				&stripe_index);
+> -		if (op != BTRFS_MAP_WRITE && op != BTRFS_MAP_GET_READ_MIRRORS)
+> +		if (!need_full_stripe(op))
+>   			mirror_num = 1;
+>   	} else if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
+> -		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
+> +		if (need_full_stripe(op))
+>   			num_stripes = map->num_stripes;
+>   		else if (mirror_num)
+>   			stripe_index = mirror_num - 1;
+> @@ -5689,7 +5689,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>   		}
+>   
+>   	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
+> -		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS) {
+> +		if (need_full_stripe(op)) {
+>   			num_stripes = map->num_stripes;
+>   		} else if (mirror_num) {
+>   			stripe_index = mirror_num - 1;
+> @@ -5703,7 +5703,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>   		stripe_nr = div_u64_rem(stripe_nr, factor, &stripe_index);
+>   		stripe_index *= map->sub_stripes;
+>   
+> -		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
+> +		if (need_full_stripe(op))
+>   			num_stripes = map->sub_stripes;
+>   		else if (mirror_num)
+>   			stripe_index += mirror_num - 1;
+> @@ -5718,9 +5718,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>   		}
+>   
+>   	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+> -		if (need_raid_map &&
+> -		    (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS ||
+> -		     mirror_num > 1)) {
+> +		if (need_raid_map && (need_full_stripe(op) || mirror_num > 1)) {
+>   			/* push stripe_nr back to the start of the full stripe */
+>   			stripe_nr = div64_u64(raid56_full_stripe_start,
+>   					stripe_len * nr_data_stripes(map));
+> @@ -5747,9 +5745,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>   			/* We distribute the parity blocks across stripes */
+>   			div_u64_rem(stripe_nr + stripe_index, map->num_stripes,
+>   					&stripe_index);
+> -			if ((op != BTRFS_MAP_WRITE &&
+> -			     op != BTRFS_MAP_GET_READ_MIRRORS) &&
+> -			    mirror_num <= 1)
+> +			if (!need_full_stripe(op) && mirror_num <= 1)
+>   				mirror_num = 1;
+>   		}
+>   	} else {
+> 

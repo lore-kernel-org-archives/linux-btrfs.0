@@ -1,115 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:30070 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750729AbdJLRwQ (ORCPT
+Received: from mail-oi0-f43.google.com ([209.85.218.43]:50765 "EHLO
+        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752485AbdJLV6Q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 13:52:16 -0400
-From: Bart Van Assche <Bart.VanAssche@wdc.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: fs_reclaim() deadlock complaint
-Date: Thu, 12 Oct 2017 17:52:14 +0000
-Message-ID: <1507830733.2448.47.camel@wdc.com>
-Content-Type: text/plain; charset="utf-8"
+        Thu, 12 Oct 2017 17:58:16 -0400
+Received: by mail-oi0-f43.google.com with SMTP id q4so10703615oic.7
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 14:58:16 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <CAGqmi74m51khUNR0Q1VOKE0tZdOZ15_XZc6DEmQBfNrMNsmpfw@mail.gmail.com>
+References: <CAGqmi74m51khUNR0Q1VOKE0tZdOZ15_XZc6DEmQBfNrMNsmpfw@mail.gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Fri, 13 Oct 2017 00:57:35 +0300
+Message-ID: <CAGqmi75-+R=3=hyjkxQ-SHU=2cHfQf5FXGr9ijCimNBG0uZt0A@mail.gmail.com>
+Subject: Re: [RFC] Btrfs: compression heuristic performance
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Just info update.
 
-Since I started testing kernel v4.14-rc1 I see a deadlock complaint appearing
-in the kernel log during boot. Is this a known issue?
+I did some more benchmark, optimization and testing.
+(Write kernel generalized version of radix sort (that can be ported to sort.c))
+(Some memory allocating changes & etc)
+(Also i'm stupid and make a mistake with inversion of percentage numbers)
 
-$ cat /etc/fstab
-# <file system> <mount point>   <type>  <options>       <dump>  <pass>
-/dev/mapper/vg-root /               btrfs   defaults,subvol=@ 0       1
-/dev/mapper/vg-boot /boot           ext4    defaults        0       2
-/dev/mapper/vg-root /home           btrfs   defaults,subvol=@home 0       2
-UUID=5217d83f-213e-4b42-b86e-20013325ba6c none	swap	sw	0	0
+New, more clean numbers (I disable useless printf and etc):
+  Stats mode heap sort (in kernel):
+    - average ... random data - ~3000 MiB/s
+    - Zeroed - ~4400 MiB/s
+  Stats mode radix sort:
+    - average ... random data - ~4900 MiB/s +63%
+    - Zeroed - ~4100 MiB/s -7%  # radix have some problems with
+sorting zeroes :)
 
->From the system log:
+  Non stats mode heap sort:
+    - average ... random data - ~3500 MiB/s
+    - Zeroed - ~11500 MiB/s
+  Non stats mode radix sort:
+    - average ... random data - ~6000 MiB/s +71%
+    - Zeroed - ~11500 MiB/s # as expected no diff, sorting do nothing
+on that case
 
-systemd[1]: Started Session c5 of user root.
-kernel: 
-kernel: ============================================
-kernel: WARNING: possible recursive locking detected
-kernel: 4.14.0-rc3-dbg+ #11 Not tainted
-kernel: --------------------------------------------
-kernel: dpkg/10251 is trying to acquire lock:
-kernel: (fs_reclaim){+.+.}, at: [<ffffffffbc1766c0>] fs_reclaim_acquire.part.85+0x0/0x30
-kernel: 
-kernel: but task is already holding lock:
-kernel: (fs_reclaim){+.+.}, at: [<ffffffffbc1766c0>] fs_reclaim_acquire.part.85+0x0/0x30
-kernel: 
-kernel: other info that might help us debug this:
-kernel: Possible unsafe locking scenario:
-kernel: 
-kernel:       CPU0
-kernel:       ----
-kernel:  lock(fs_reclaim);
-kernel:  lock(fs_reclaim);
-kernel: 
-kernel: *** DEADLOCK ***
-kernel: 
-kernel: May be due to missing lock nesting notation
-kernel: 
-kernel: 2 locks held by dpkg/10251:
-kernel: #0:  (&mm->mmap_sem){++++}, at: [<ffffffffbc04c50f>] __do_page_fault+0x11f/0x460
-kernel: #1:  (fs_reclaim){+.+.}, at: [<ffffffffbc1766c0>] fs_reclaim_acquire.part.85+0x0/0x30
-kernel: 
-kernel: stack backtrace:
-kernel: CPU: 1 PID: 10251 Comm: dpkg Not tainted 4.14.0-rc3-dbg+ #11
-kernel: Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.0.0-prebuilt.qemu-project.org 04/01/2014
-kernel: Call Trace:
-kernel: dump_stack+0x86/0xcf
-kernel: __lock_acquire+0x720/0x1440
-kernel: ? unwind_get_return_address+0x1a/0x30
-kernel: ? __bfs+0x12e/0x210
-kernel: lock_acquire+0xf5/0x200
-kernel: ? lock_acquire+0xf5/0x200
-kernel: ? pageset_set_high_and_batch+0x90/0x90
-kernel: ? alloc_extent_state+0x1f/0x1a0 [btrfs]
-kernel: fs_reclaim_acquire.part.85+0x24/0x30
-kernel: ? pageset_set_high_and_batch+0x90/0x90
-kernel: fs_reclaim_acquire+0x14/0x20
-kernel: kmem_cache_alloc+0x2a/0x2c0
-kernel: ? lock_acquire+0xf5/0x200
-kernel: alloc_extent_state+0x1f/0x1a0 [btrfs]
-kernel: __clear_extent_bit+0x26f/0x3f0 [btrfs]
-kernel: ? test_range_bit+0xd1/0x100 [btrfs]
-kernel: try_release_extent_mapping+0x192/0x1e0 [btrfs]
-kernel: __btrfs_releasepage+0x2f/0x70 [btrfs]
-kernel: ? page_get_anon_vma+0x170/0x170
-kernel: btrfs_releasepage+0x3c/0x40 [btrfs]
-kernel: try_to_release_page+0x4e/0x60
-kernel: shrink_page_list+0xbc8/0x1010
-kernel: ? trace_hardirqs_on_caller+0xf4/0x190
-kernel: shrink_inactive_list+0x1a9/0x520
-kernel: shrink_node_memcg.constprop.80+0x4ae/0x750
-kernel: ? rcu_read_lock_sched_held+0x45/0x80
-kernel: shrink_node+0x45/0x1a0
-kernel: ? shrink_node+0x45/0x1a0
-kernel: do_try_to_free_pages+0xd1/0x2c0
-kernel: try_to_free_pages+0xed/0x330
-kernel: ? pageset_set_high_and_batch+0x90/0x90
-kernel: __alloc_pages_slowpath+0x454/0x1220
-kernel: __alloc_pages_nodemask+0x273/0x300
-kernel: mm_get_huge_zero_page+0x7f/0xf0
-kernel: do_huge_pmd_anonymous_page+0x301/0x500
-kernel: __handle_mm_fault+0xb42/0xd70
-kernel: handle_mm_fault+0x8d/0x100
-kernel: __do_page_fault+0x23f/0x460
-kernel: ? trace_hardirqs_on_caller+0xf4/0x190
-kernel: do_page_fault+0x2e/0x280
-kernel: do_async_page_fault+0x14/0x60
-kernel: async_page_fault+0x22/0x30
-kernel: RIP: 0033:0x55704b9c5263
-kernel: RSP: 002b:00007ffc8326c4a0 EFLAGS: 00010202
-kernel: RAX: 000055704c390f10 RBX: 0000000000000000 RCX: 00007f8ec8985b00
-kernel: RDX: 000055704c390f10 RSI: 000055704c390f40 RDI: 0000000000000000
-kernel: RBP: 000055704b9d2350 R08: 00007f8ec8987760 R09: 0000000000000040
-kernel: R10: 00007f8ec8985b58 R11: 0000000000000202 R12: 000055704b9ab410
-kernel: R13: 00007ffc8326c5f0 R14: 0000000000000000 R15: 0000000000000000
+Another hot (and slow) path in heuristic, is simple ilog2 =\
+i'm give up on porting in kernel ilog2 for x86, so i'm not sure that
+happens in kernel with that,
+so JFYI:
+it's have a significant value only with radix, because heap sort are
+much slower...
+So numbers:
+  Stats mode simple ilog2:
+    - average ... random data - ~3000 MiB/s
+    - Zeroed - ~4400 MiB/s
+    Stats mode fast ilog2[1]:
+    - average ... random data - ~3500 MiB/s +16%
+    - Zeroed - ~4400 MiB/s  # ilog2 just do nothing on zeroes
 
-Thanks,
+  Non stats mode simple ilog2:
+    - average ... random data - ~3500 MiB/s
+    - Zeroed - ~11500 MiB/s
+   Non stats mode fast ilog2:
+    # Because byte_core_set_size avoid from too bad data
+    - average ... random data - ~3600 MiB/s +2%
+    - Zeroed - ~11500 MiB/s # as expected no diff, ilog2 do nothing on that case
+    # with radix sort
+    - average ... random data - ~6200 MiB/s +77%
 
-Bart.ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm
+So, as heuristic is try save CPU time from compression,
+I think that acceptable to sacrifice 1KiB memory for buffered data
+(general time/memory trade-off)
+I will write a RFC with radix sort to compression.c in near time.
+I'm hard to found other kernel places where that can be used for now.
+IMHO, if someone also will want that, we will always can move that to lib later.
+
+Thanks.
+
+Notes:
+1. Fast cross platform 64 bit ilog2 (found in the web)
+const int tab64[64] = {
+    63,  0, 58,  1, 59, 47, 53,  2,
+    60, 39, 48, 27, 54, 33, 42,  3,
+    61, 51, 37, 40, 49, 18, 28, 20,
+    55, 30, 34, 11, 43, 14, 22,  4,
+    62, 57, 46, 52, 38, 26, 32, 41,
+    50, 36, 17, 19, 29, 10, 13, 21,
+    56, 45, 25, 31, 35, 16,  9, 12,
+    44, 24, 15,  8, 23,  7,  6,  5};
+
+int ilog2_64 (uint64_t value)
+{
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    value |= value >> 32;
+    return tab64[((uint64_t)((value - (value >> 1))*0x07EDD5E59A4E28C2)) >> 58];
+}
+
+-- 
+Have a nice day,
+Timofey.

@@ -1,70 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46205 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1757562AbdJKSGG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 14:06:06 -0400
-Date: Wed, 11 Oct 2017 20:04:20 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] Btrfs: remove nr_async_submits and
- async_submit_draining
-Message-ID: <20171011180420.GC3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20170907172222.20444-1-bo.li.liu@oracle.com>
- <20170907172222.20444-4-bo.li.liu@oracle.com>
- <20170927123117.GZ31640@twin.jikos.cz>
- <20171011172032.GY3521@twin.jikos.cz>
- <20171011164914.GA16979@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:52817 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752757AbdJLRzp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Oct 2017 13:55:45 -0400
+Received: by mail-wm0-f66.google.com with SMTP id k4so15506379wmc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 10:55:44 -0700 (PDT)
+Date: Thu, 12 Oct 2017 19:55:41 +0200
+From: Daniel Vetter <daniel@ffwll.ch>
+To: Allen Pais <allen.lkml@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-fbdev@vger.kernel.org,
+        linux-scsi@vger.kernel.org, nouveau@lists.freedesktop.org,
+        dri-devel@lists.freedesktop.org, target-devel@vger.kernel.org,
+        linux-crypto@vger.kernel.org, netdev@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, MPT-FusionLinux.pdl@broadcom.com,
+        megaraidlinux.pdl@broadcom.com
+Subject: Re: [Nouveau] [PATCH 03/10] driver:gpu: return -ENOMEM on allocation
+ failure.
+Message-ID: <20171012175541.5jh3ovdzpyj5fflv@phenom.ffwll.local>
+References: <1505287939-14106-1-git-send-email-allen.lkml@gmail.com>
+ <1505287939-14106-3-git-send-email-allen.lkml@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171011164914.GA16979@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+In-Reply-To: <1505287939-14106-3-git-send-email-allen.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 11, 2017 at 10:49:14AM -0600, Liu Bo wrote:
-> On Wed, Oct 11, 2017 at 07:20:32PM +0200, David Sterba wrote:
-> > On Wed, Sep 27, 2017 at 02:31:17PM +0200, David Sterba wrote:
-> > > On Thu, Sep 07, 2017 at 11:22:22AM -0600, Liu Bo wrote:
-> > > > Now that we have the combo of flushing twice, which can make sure IO
-> > > > have started since the second flush will wait for page lock which
-> > > > won't be unlocked unless setting page writeback and queuing ordered
-> > > > extents, we don't need %async_submit_draining, %async_delalloc_pages
-> > > > and %nr_async_submits to tell whether IO have actually started.
-> > > > 
-> > > > Moreover, all the flushers in use are followed by functions that wait
-> > > > for ordered extents to complete, so %nr_async_submits, which tracks
-> > > > whether bio's async submit has made progress, doesn't really make
-> > > > sense.
-> > > > 
-> > > > However, %async_delalloc_pages is still required by shrink_delalloc()
-> > > > as that function doesn't flush twice in the normal case (just issues a
-> > > > writeback with WB_REASON_FS_FREE_SPACE).
-> > > > 
-> > > > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > > 
-> > > Patches like this are almost impossible to review just from the code.
-> > > This has runtime implications that we'd need to observe in real on
-> > > various workloads.
-> > > 
-> > > So, the patches "look good", but I did not try to forsee all the
-> > > scenarios where threads interact through the counters. I think it should
-> > > be safe to add them to for-next and give enough time to test them.
-> > > 
-> > > The performance has varied wildly in the last cycle(s) so it's hard to
-> > > get a baseline, other than another major release. I do expect changes in
-> > > performance characteristics but still hope it'll be the same on average.
-> > 
-> > Testing appears normal, we get more weirdnes just by enabling the
-> > writeback throttling, but without that I haven't observed anything
-> > unusual. Patches go to the misc-next part, meaning I don't expect
-> > changes other than fixups, as separate patches. Thanks.
-> 
-> Thank you Dave, I'm interesting in that weirdness part, will look into
-> it.
+On Wed, Sep 13, 2017 at 01:02:12PM +0530, Allen Pais wrote:
+> Signed-off-by: Allen Pais <allen.lkml@gmail.com>
 
-The symptoms are long stalls, without any IO activity (tens of seconds)
-when the superblock is being written, this can be identified in the
-kernel stack of the process. This was partially fixed by the REQ_ flags
-added to the write requests, but I vaguely remember that even after that
-the stalls happen. I don't have more details, sorry.
+Applied to drm-misc-next, thanks.
+-Daniel
+
+> ---
+>  drivers/gpu/drm/gma500/mid_bios.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/gpu/drm/gma500/mid_bios.c b/drivers/gpu/drm/gma500/mid_bios.c
+> index d75ecb3..1fa1633 100644
+> --- a/drivers/gpu/drm/gma500/mid_bios.c
+> +++ b/drivers/gpu/drm/gma500/mid_bios.c
+> @@ -237,7 +237,7 @@ static int mid_get_vbt_data_r10(struct drm_psb_private *dev_priv, u32 addr)
+>  
+>  	gct = kmalloc(sizeof(*gct) * vbt.panel_count, GFP_KERNEL);
+>  	if (!gct)
+> -		return -1;
+> +		return -ENOMEM;
+>  
+>  	gct_virtual = ioremap(addr + sizeof(vbt),
+>  			sizeof(*gct) * vbt.panel_count);
+> -- 
+> 2.7.4
+> 
+> _______________________________________________
+> Nouveau mailing list
+> Nouveau@lists.freedesktop.org
+> https://lists.freedesktop.org/mailman/listinfo/nouveau
+
+-- 
+Daniel Vetter
+Software Engineer, Intel Corporation
+http://blog.ffwll.ch

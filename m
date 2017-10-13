@@ -1,347 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f50.google.com ([209.85.215.50]:54428 "EHLO
-        mail-lf0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757815AbdJMIkX (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:46812 "EHLO
+        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756708AbdJMI5P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 04:40:23 -0400
-Received: by mail-lf0-f50.google.com with SMTP id d10so8750998lfg.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 01:40:22 -0700 (PDT)
+        Fri, 13 Oct 2017 04:57:15 -0400
+Received: by mail-lf0-f52.google.com with SMTP id g70so8788489lfl.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 01:57:14 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
+References: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
 From: Juan Orti Alcaine <j.orti.alcaine@gmail.com>
-Date: Fri, 13 Oct 2017 10:40:20 +0200
-Message-ID: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
-Subject: Btrfs warnings in kernel 4.13.5
+Date: Fri, 13 Oct 2017 10:57:12 +0200
+Message-ID: <CAC+fKQV3GGrzRcW=jgOiz=rYrcFZhgr2XQWeGcW2eNwWOSOOSg@mail.gmail.com>
+Subject: Re: Btrfs warnings in kernel 4.13.5
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+2017-10-13 10:40 GMT+02:00 Juan Orti Alcaine <j.orti.alcaine@gmail.com>:
+> Hi,
+>
+> I've upgraded my system to Fedora 27 and now I see many btrfs
+> warnings, although the system seems to be working fine. Is this
+> something I should worry about?
 
-I've upgraded my system to Fedora 27 and now I see many btrfs
-warnings, although the system seems to be working fine. Is this
-something I should worry about?
 
-I have a scrub running with no errors so far:
+I'm getting more warnings:
 
-# btrfs scrub status /mnt/btrfs
-scrub status for 038b2b48-fd2d-4565-b2b1-d07847ecca8c
-        scrub started at Thu Oct 12 19:35:55 2017, running for 03:28:41
-        total bytes scrubbed: 3.35TiB with 0 errors
-
-# uname -a
-Linux xenon 4.13.5-300.fc27.x86_64 #1 SMP Thu Oct 5 16:57:11 UTC 2017
-x86_64 x86_64 x86_64 GNU/Linux
-
-# btrfs --version
-btrfs-progs v4.13.2
-
-# btrfs fi show
-Label: 'btrfs_raid1'  uuid: 038b2b48-fd2d-4565-b2b1-d07847ecca8c
-        Total devices 4 FS bytes used 1.81TiB
-        devid    4 size 1.82TiB used 1.19TiB path /dev/bcache32
-        devid    5 size 1.82TiB used 1.19TiB path /dev/bcache16
-        devid    6 size 1.82TiB used 1.19TiB path /dev/bcache0
-        devid    7 size 1.79TiB used 158.00GiB path /dev/bcache48
-
-# btrfs fi usage /mnt/btrfs
-Overall:
-    Device size:                   7.24TiB
-    Device allocated:              3.72TiB
-    Device unallocated:            3.53TiB
-    Device missing:                  0.00B
-    Used:                          3.62TiB
-    Free (estimated):              1.81TiB      (min: 1.81TiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,RAID1: Size:1.85TiB, Used:1.80TiB
-   /dev/bcache0    1.18TiB
-   /dev/bcache16           1.18TiB
-   /dev/bcache32           1.18TiB
-   /dev/bcache48         157.00GiB
-
-Metadata,RAID1: Size:7.00GiB, Used:5.78GiB
-   /dev/bcache0    5.00GiB
-   /dev/bcache16           4.00GiB
-   /dev/bcache32           4.00GiB
-   /dev/bcache48           1.00GiB
-
-System,RAID1: Size:32.00MiB, Used:320.00KiB
-   /dev/bcache16          32.00MiB
-   /dev/bcache32          32.00MiB
-
-Unallocated:
-   /dev/bcache0  647.02GiB
-   /dev/bcache16         647.98GiB
-   /dev/bcache32         645.98GiB
-   /dev/bcache48           1.63TiB
-
-All my bcache devices are in writethrough mode:
-
-# bcache-status -s
---- bcache ---
-UUID                        d82cf90a-756c-4b8a-b871-72714cdae024
-Block Size                  4.00 KiB
-Bucket Size                 2.0 MiB
-Congested?                  False
-Read Congestion             2.0ms
-Write Congestion            20.0ms
-Total Cache Size            95 GiB
-Total Cache Used            95 GiB    (100%)
-Total Cache Unused          0 B    (0%)
-Evictable Cache             95 GiB    (100%)
-Replacement Policy          [lru] fifo random
-Cache Mode                  [writethrough] writeback writearound none
-Total Hits                  150430    (62%)
-Total Misses                90622
-Total Bypass Hits           1036307    (100%)
-Total Bypass Misses         0
-Total Bypassed              2 GiB
---- Backing Device ---
-  Device File               /dev/sde4 (8:68)
-  bcache Device File        /dev/bcache48 (252:48)
-  Size                      2 TiB
-  Cache Mode                [writethrough] writeback writearound none
-  Readahead                 0.0k
-  Sequential Cutoff         4.0 MiB
-  Merge sequential?         False
-  State                     clean
-  Writeback?                True
-  Dirty Data                0 B
-  Total Hits                14066    (57%)
-  Total Misses              10363
-  Total Bypass Hits         40454    (100%)
-  Total Bypass Misses       0
-  Total Bypassed            134.3 MiB
---- Cache Device ---
-  Device File               /dev/sda4 (8:4)
-  Size                      95 GiB
-  Block Size                4.00 KiB
-  Bucket Size               2.0 MiB
-  Replacement Policy        [lru] fifo random
-  Discard?                  False
-  I/O Errors                0
-  Metadata Written          99.1 MiB
-  Data Written              6 GiB
-  Buckets                   48432
-  Cache Used                95 GiB    (100%)
-  Cache Unused              0 B    (0%)
---- Backing Device ---
-  Device File               /dev/sdb1 (8:17)
-  bcache Device File        /dev/bcache32 (252:32)
-  Size                      2 TiB
-  Cache Mode                [writethrough] writeback writearound none
-  Readahead                 0.0k
-  Sequential Cutoff         4.0 MiB
-  Merge sequential?         False
-  State                     clean
-  Writeback?                True
-  Dirty Data                0 B
-  Total Hits                28167    (40%)
-  Total Misses              42227
-  Total Bypass Hits         632707    (100%)
-  Total Bypass Misses       0
-  Total Bypassed            2 GiB
---- Backing Device ---
-  Device File               /dev/sdc1 (8:33)
-  bcache Device File        /dev/bcache16 (252:16)
-  Size                      2 TiB
-  Cache Mode                [writethrough] writeback writearound none
-  Readahead                 0.0k
-  Sequential Cutoff         4.0 MiB
-  Merge sequential?         False
-  State                     clean
-  Writeback?                True
-  Dirty Data                0 B
-  Total Hits                67948    (74%)
-  Total Misses              23356
-  Total Bypass Hits         201077    (100%)
-  Total Bypass Misses       0
-  Total Bypassed            576.0 MiB
---- Backing Device ---
-  Device File               /dev/sdd1 (8:49)
-  bcache Device File        /dev/bcache0 (252:0)
-  Size                      2 TiB
-  Cache Mode                [writethrough] writeback writearound none
-  Readahead                 0.0k
-  Sequential Cutoff         4.0 MiB
-  Merge sequential?         False
-  State                     clean
-  Writeback?                True
-  Dirty Data                0 B
-  Total Hits                40249    (73%)
-  Total Misses              14676
-  Total Bypass Hits         162406    (100%)
-  Total Bypass Misses       0
-  Total Bypassed            590.3 MiB
-
-[  337.813416] ------------[ cut here ]------------
-[  337.813453] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
-btrfs_update_device+0x1be/0x1d0 [btrfs]
-[  337.813454] Modules linked in: rfcomm fuse vhost_net vhost tap
-xt_CHECKSUM ipt_MASQUERADE nf_nat_masquerade_ipv4 tun
-nf_conntrack_netbios_ns nf_conntrack_broadcast xt_CT ip6t_rpfilter
-ip6t_REJECT nf_reject_ipv6 xt_conntrack ip_set nfnetlink ebtable_nat
-ebtable_broute ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6
-nf_nat_ipv6 ip6table_mangle ip6table_raw ip6table_security iptable_nat
-nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-libcrc32c iptable_mangle iptable_raw iptable_security bridge stp llc
-ebtable_filter ebtables ip6table_filter ip6_tables cmac bnep vfat fat
-intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel
-kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic
-snd_usb_audio snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
-snd_hda_core snd_usbmidi_lib eeepc_wmi
-[  337.813494]  btusb btrtl uvcvideo snd_hwdep crct10dif_pclmul
-crc32_pclmul videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 snd_seq
-videobuf2_core ghash_clmulni_intel videodev intel_cstate asus_wmi
-snd_rawmidi intel_uncore btbcm snd_seq_device btintel bluetooth
-intel_rapl_perf sparse_keymap media ecdh_generic joydev wmi_bmof
-snd_pcm rfkill i2c_i801 video iTCO_wdt iTCO_vendor_support mei_me mei
-snd_timer wmi snd soundcore shpchp lpc_ich nfsd auth_rpcgss nfs_acl
-lockd grace sunrpc binfmt_misc btrfs xor raid6_pq amdkfd amd_iommu_v2
-radeon bcache i2c_algo_bit drm_kms_helper crc32c_intel ttm r8169
-serio_raw drm mii
-[  337.813534] CPU: 5 PID: 459 Comm: btrfs-cleaner Not tainted
-4.13.5-300.fc27.x86_64 #1
-[  337.813535] Hardware name: System manufacturer System Product
-Name/P8Z68-V LE, BIOS 4102 09/09/2013
-[  337.813537] task: ffff9e98479ecc80 task.stack: ffffb3a4c2290000
-[  337.813561] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
-[  337.813563] RSP: 0018:ffffb3a4c2293d28 EFLAGS: 00010206
-[  337.813565] RAX: 0000000000000fff RBX: ffff9e9844f3ad20 RCX: 000001c97480fe00
-[  337.813566] RDX: 0000000000000004 RSI: 0000000000003e98 RDI: ffff9e9821e5e000
-[  337.813567] RBP: ffffb3a4c2293d70 R08: 0000000000003e9c R09: ffffb3a4c2293ce0
-[  337.813568] R10: 0000000000001000 R11: 0000000000000003 R12: ffff9e9843aed000
-[  337.813569] R13: 0000000000000000 R14: 0000000000003e78 R15: ffff9e9821e5e000
-[  337.813572] FS:  0000000000000000(0000) GS:ffff9e985ed40000(0000)
-knlGS:0000000000000000
-[  337.813573] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  337.813574] CR2: 00001f89b1c4d000 CR3: 000000037ce09000 CR4: 00000000000426e0
-[  337.813576] Call Trace:
-[  337.813603]  btrfs_remove_chunk+0x365/0x870 [btrfs]
-[  337.813624]  btrfs_delete_unused_bgs+0x30d/0x3d0 [btrfs]
-[  337.813644]  cleaner_kthread+0x165/0x180 [btrfs]
-[  337.813650]  kthread+0x125/0x140
-[  337.813667]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
-[  337.813670]  ? kthread_park+0x60/0x60
-[  337.813675]  ret_from_fork+0x25/0x30
-[  337.813677] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa
-20 ff ff 4c 89 ff e8 f2 ee fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
-d0 fe ff ff <0f> ff eb b6 e8 29 bd ab ca 66 0f 1f 84 00 00 00 00 00 66
-66 66
-[  337.813713] ---[ end trace 3609a7da677d8844 ]---
-[  337.814256] ------------[ cut here ]------------
-[  337.814281] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
-btrfs_update_device+0x1be/0x1d0 [btrfs]
-[  337.814281] Modules linked in: rfcomm fuse vhost_net vhost tap
-xt_CHECKSUM ipt_MASQUERADE nf_nat_masquerade_ipv4 tun
-nf_conntrack_netbios_ns nf_conntrack_broadcast xt_CT ip6t_rpfilter
-ip6t_REJECT nf_reject_ipv6 xt_conntrack ip_set nfnetlink ebtable_nat
-ebtable_broute ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6
-nf_nat_ipv6 ip6table_mangle ip6table_raw ip6table_security iptable_nat
-nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-libcrc32c iptable_mangle iptable_raw iptable_security bridge stp llc
-ebtable_filter ebtables ip6table_filter ip6_tables cmac bnep vfat fat
-intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel
-kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic
-snd_usb_audio snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
-snd_hda_core snd_usbmidi_lib eeepc_wmi
-[  337.814316]  btusb btrtl uvcvideo snd_hwdep crct10dif_pclmul
-crc32_pclmul videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 snd_seq
-videobuf2_core ghash_clmulni_intel videodev intel_cstate asus_wmi
-snd_rawmidi intel_uncore btbcm snd_seq_device btintel bluetooth
-intel_rapl_perf sparse_keymap media ecdh_generic joydev wmi_bmof
-snd_pcm rfkill i2c_i801 video iTCO_wdt iTCO_vendor_support mei_me mei
-snd_timer wmi snd soundcore shpchp lpc_ich nfsd auth_rpcgss nfs_acl
-lockd grace sunrpc binfmt_misc btrfs xor raid6_pq amdkfd amd_iommu_v2
-radeon bcache i2c_algo_bit drm_kms_helper crc32c_intel ttm r8169
-serio_raw drm mii
-[  337.814352] CPU: 5 PID: 459 Comm: btrfs-cleaner Tainted: G        W
-      4.13.5-300.fc27.x86_64 #1
-[  337.814353] Hardware name: System manufacturer System Product
-Name/P8Z68-V LE, BIOS 4102 09/09/2013
-[  337.814354] task: ffff9e98479ecc80 task.stack: ffffb3a4c2290000
-[  337.814375] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
-[  337.814376] RSP: 0018:ffffb3a4c2293d28 EFLAGS: 00010206
-[  337.814378] RAX: 0000000000000fff RBX: ffff9e9844f3ad20 RCX: 000001d1c100fe00
-[  337.814379] RDX: 0000000000000004 RSI: 0000000000003f5c RDI: ffff9e9821e5e000
-[  337.814380] RBP: ffffb3a4c2293d70 R08: 0000000000003f60 R09: ffffb3a4c2293ce0
-[  337.814381] R10: 0000000000001000 R11: 0000000000000003 R12: ffff9e9844995800
-[  337.814382] R13: 0000000000000000 R14: 0000000000003f3c R15: ffff9e9821e5e000
-[  337.814384] FS:  0000000000000000(0000) GS:ffff9e985ed40000(0000)
-knlGS:0000000000000000
-[  337.814385] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  337.814387] CR2: 00001f89b1c4d000 CR3: 000000037ce09000 CR4: 00000000000426e0
-[  337.814388] Call Trace:
-[  337.814410]  btrfs_remove_chunk+0x365/0x870 [btrfs]
-[  337.814443]  btrfs_delete_unused_bgs+0x30d/0x3d0 [btrfs]
-[  337.814462]  cleaner_kthread+0x165/0x180 [btrfs]
-[  337.814466]  kthread+0x125/0x140
-[  337.814483]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
-[  337.814485]  ? kthread_park+0x60/0x60
-[  337.814488]  ret_from_fork+0x25/0x30
-[  337.814490] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa
-20 ff ff 4c 89 ff e8 f2 ee fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
-d0 fe ff ff <0f> ff eb b6 e8 29 bd ab ca 66 0f 1f 84 00 00 00 00 00 66
-66 66
-[  337.814529] ---[ end trace 3609a7da677d8845 ]---
-[  337.822161] ------------[ cut here ]------------
-[  337.822185] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
-btrfs_update_device+0x1be/0x1d0 [btrfs]
-[  337.822185] Modules linked in: rfcomm fuse vhost_net vhost tap
-xt_CHECKSUM ipt_MASQUERADE nf_nat_masquerade_ipv4 tun
-nf_conntrack_netbios_ns nf_conntrack_broadcast xt_CT ip6t_rpfilter
-ip6t_REJECT nf_reject_ipv6 xt_conntrack ip_set nfnetlink ebtable_nat
-ebtable_broute ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6
-nf_nat_ipv6 ip6table_mangle ip6table_raw ip6table_security iptable_nat
-nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
-libcrc32c iptable_mangle iptable_raw iptable_security bridge stp llc
-ebtable_filter ebtables ip6table_filter ip6_tables cmac bnep vfat fat
-intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel
-kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic
-snd_usb_audio snd_hda_codec_hdmi snd_hda_intel snd_hda_codec
-snd_hda_core snd_usbmidi_lib eeepc_wmi
-[  337.822221]  btusb btrtl uvcvideo snd_hwdep crct10dif_pclmul
-crc32_pclmul videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 snd_seq
-videobuf2_core ghash_clmulni_intel videodev intel_cstate asus_wmi
-snd_rawmidi intel_uncore btbcm snd_seq_device btintel bluetooth
-intel_rapl_perf sparse_keymap media ecdh_generic joydev wmi_bmof
-snd_pcm rfkill i2c_i801 video iTCO_wdt iTCO_vendor_support mei_me mei
-snd_timer wmi snd soundcore shpchp lpc_ich nfsd auth_rpcgss nfs_acl
-lockd grace sunrpc binfmt_misc btrfs xor raid6_pq amdkfd amd_iommu_v2
-radeon bcache i2c_algo_bit drm_kms_helper crc32c_intel ttm r8169
-serio_raw drm mii
-[  337.822256] CPU: 5 PID: 459 Comm: btrfs-cleaner Tainted: G        W
-      4.13.5-300.fc27.x86_64 #1
-[  337.822257] Hardware name: System manufacturer System Product
-Name/P8Z68-V LE, BIOS 4102 09/09/2013
-[  337.822258] task: ffff9e98479ecc80 task.stack: ffffb3a4c2290000
-[  337.822278] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
-[  337.822279] RSP: 0018:ffffb3a4c2293d28 EFLAGS: 00010206
-[  337.822281] RAX: 0000000000000fff RBX: ffff9e9844f3ad20 RCX: 000001c97480fe00
-[  337.822282] RDX: 0000000000000004 RSI: 0000000000003e98 RDI: ffff9e9821e5e000
-[  337.822283] RBP: ffffb3a4c2293d70 R08: 0000000000003e9c R09: ffffb3a4c2293ce0
-[  337.822284] R10: 0000000000001000 R11: 0000000000000003 R12: ffff9e9843aed000
-[  337.822285] R13: 0000000000000000 R14: 0000000000003e78 R15: ffff9e9821e5e000
-[  337.822287] FS:  0000000000000000(0000) GS:ffff9e985ed40000(0000)
-knlGS:0000000000000000
-[  337.822288] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[  337.822289] CR2: 00001f89b1c4d000 CR3: 000000037ce09000 CR4: 00000000000426e0
-[  337.822290] Call Trace:
-[  337.822328]  btrfs_remove_chunk+0x365/0x870 [btrfs]
-[  337.822347]  btrfs_delete_unused_bgs+0x30d/0x3d0 [btrfs]
-[  337.822373]  cleaner_kthread+0x165/0x180 [btrfs]
-[  337.822376]  kthread+0x125/0x140
-[  337.822392]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
-[  337.822394]  ? kthread_park+0x60/0x60
-[  337.822409]  ret_from_fork+0x25/0x30
-[  337.822410] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa
-20 ff ff 4c 89 ff e8 f2 ee fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
-d0 fe ff ff <0f> ff eb b6 e8 29 bd ab ca 66 0f 1f 84 00 00 00 00 00 66
-66 66
-[  337.822446] ---[ end trace 3609a7da677d8846 ]---
 [  337.822868] ------------[ cut here ]------------
 [  337.822890] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
 btrfs_update_device+0x1be/0x1d0 [btrfs]
@@ -397,3 +83,166 @@ knlGS:0000000000000000
 d0 fe ff ff <0f> ff eb b6 e8 29 bd ab ca 66 0f 1f 84 00 00 00 00 00 66
 66 66
 [  337.823118] ---[ end trace 3609a7da677d8847 ]---
+[  805.824111] FS-Cache: Loaded
+[  805.835188] FS-Cache: Netfs 'nfs' registered for caching
+[  805.861120] Key type dns_resolver registered
+[  805.891629] NFS: Registering the id_resolver key type
+[  805.891635] Key type id_resolver registered
+[  805.891635] Key type id_legacy registered
+[  807.427618] nf_conntrack: default automatic helper assignment has
+been turned off for security reasons and CT-based  firewall rule not
+found. Use the iptables CT target to attach helpers instead.
+[ 2512.070835] ------------[ cut here ]------------
+[ 2512.070873] WARNING: CPU: 4 PID: 14051 at fs/btrfs/ctree.h:1559
+btrfs_update_device+0x1be/0x1d0 [btrfs]
+[ 2512.070874] Modules linked in: rpcsec_gss_krb5 nfsv4 dns_resolver
+nfs fscache rfcomm fuse vhost_net vhost tap xt_CHECKSUM ipt_MASQUERADE
+nf_nat_masquerade_ipv4 tun nf_conntrack_netbios_ns
+nf_conntrack_broadcast xt_CT ip6t_rpfilter ip6t_REJECT nf_reject_ipv6
+xt_conntrack ip_set nfnetlink ebtable_nat ebtable_broute ip6table_nat
+nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_mangle
+ip6table_raw ip6table_security iptable_nat nf_conntrack_ipv4
+nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack libcrc32c
+iptable_mangle iptable_raw iptable_security bridge stp llc
+ebtable_filter ebtables ip6table_filter ip6_tables cmac bnep vfat fat
+intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel
+kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic
+snd_usb_audio snd_hda_codec_hdmi snd_hda_intel
+[ 2512.070914]  snd_hda_codec snd_hda_core snd_usbmidi_lib eeepc_wmi
+btusb btrtl uvcvideo snd_hwdep crct10dif_pclmul crc32_pclmul
+videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 snd_seq
+videobuf2_core ghash_clmulni_intel videodev intel_cstate asus_wmi
+snd_rawmidi intel_uncore btbcm snd_seq_device btintel bluetooth
+intel_rapl_perf sparse_keymap media ecdh_generic joydev wmi_bmof
+snd_pcm rfkill i2c_i801 video iTCO_wdt iTCO_vendor_support mei_me mei
+snd_timer wmi snd soundcore shpchp lpc_ich nfsd auth_rpcgss nfs_acl
+lockd grace sunrpc binfmt_misc btrfs xor raid6_pq amdkfd amd_iommu_v2
+radeon bcache i2c_algo_bit drm_kms_helper crc32c_intel ttm r8169
+serio_raw drm mii
+[ 2512.070956] CPU: 4 PID: 14051 Comm: btrfs Tainted: G        W
+4.13.5-300.fc27.x86_64 #1
+[ 2512.070957] Hardware name: System manufacturer System Product
+Name/P8Z68-V LE, BIOS 4102 09/09/2013
+[ 2512.070959] task: ffff9e94fbc20000 task.stack: ffffb3a4cb1b8000
+[ 2512.070983] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
+[ 2512.070984] RSP: 0018:ffffb3a4cb1bb9b8 EFLAGS: 00010206
+[ 2512.070986] RAX: 0000000000000fff RBX: ffff9e984a1eea10 RCX: 000001c97480fe00
+[ 2512.070988] RDX: 0000000000000004 RSI: 0000000000003e98 RDI: ffff9e97f7ad3180
+[ 2512.070989] RBP: ffffb3a4cb1bba00 R08: 0000000000003e9c R09: ffffb3a4cb1bb970
+[ 2512.070990] R10: 0000000000001000 R11: 0000000000000003 R12: ffff9e9843aed000
+[ 2512.070991] R13: 0000000000000000 R14: 0000000000003e78 R15: ffff9e97f7ad3180
+[ 2512.070993] FS:  00007f7c32e81700(0000) GS:ffff9e985ed00000(0000)
+knlGS:0000000000000000
+[ 2512.070994] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 2512.070996] CR2: 00007fcec0f98028 CR3: 00000000d86b1000 CR4: 00000000000426e0
+[ 2512.070997] Call Trace:
+[ 2512.071023]  btrfs_finish_chunk_alloc+0x136/0x4f0 [btrfs]
+[ 2512.071046]  ? free_extent_buffer+0x4b/0xa0 [btrfs]
+[ 2512.071063]  ? btrfs_insert_item+0x80/0xf0 [btrfs]
+[ 2512.071082]  btrfs_create_pending_block_groups+0xea/0x250 [btrfs]
+[ 2512.071098]  ? btrfs_create_pending_block_groups+0xea/0x250 [btrfs]
+[ 2512.071119]  __btrfs_end_transaction+0x8e/0x2d0 [btrfs]
+[ 2512.071138]  btrfs_end_transaction+0x10/0x20 [btrfs]
+[ 2512.071186]  btrfs_inc_block_group_ro+0xe6/0x170 [btrfs]
+[ 2512.071219]  scrub_enumerate_chunks+0x1fc/0x6a0 [btrfs]
+[ 2512.071228]  ? remove_wait_queue+0x40/0x70
+[ 2512.071256]  btrfs_scrub_dev+0x20a/0x550 [btrfs]
+[ 2512.071260]  ? __mnt_want_write+0x46/0x60
+[ 2512.071290]  btrfs_ioctl+0x1343/0x24d0 [btrfs]
+[ 2512.071294]  ? wake_up_q+0x44/0x80
+[ 2512.071297]  ? rwsem_wake+0x8e/0xe0
+[ 2512.071302]  do_vfs_ioctl+0xa5/0x600
+[ 2512.071306]  ? ioc_create_icq+0x5b/0x1c0
+[ 2512.071309]  ? do_vfs_ioctl+0xa5/0x600
+[ 2512.071312]  ? get_task_io_context+0x46/0x80
+[ 2512.071316]  SyS_ioctl+0x79/0x90
+[ 2512.071321]  entry_SYSCALL_64_fastpath+0x1a/0xa5
+[ 2512.071324] RIP: 0033:0x7f7c32f91117
+[ 2512.071326] RSP: 002b:00007f7c32e80d48 EFLAGS: 00000246 ORIG_RAX:
+0000000000000010
+[ 2512.071329] RAX: ffffffffffffffda RBX: 00007f7c32e81700 RCX: 00007f7c32f91117
+[ 2512.071330] RDX: 00005610fd88a660 RSI: 00000000c400941b RDI: 0000000000000003
+[ 2512.071332] RBP: 0000000000000000 R08: 00007f7c32e81700 R09: 0000000000000000
+[ 2512.071333] R10: 00007f7c32e81700 R11: 0000000000000246 R12: 00007f7c32e80e40
+[ 2512.071335] R13: 00007ffd91b8af10 R14: 0000000000000000 R15: 0000000000000000
+[ 2512.071338] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa
+20 ff ff 4c 89 ff e8 f2 ee fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
+d0 fe ff ff <0f> ff eb b6 e8 29 bd ab ca 66 0f 1f 84 00 00 00 00 00 66
+66 66
+[ 2512.071391] ---[ end trace 3609a7da677d8848 ]---
+[ 2512.071476] ------------[ cut here ]------------
+[ 2512.071509] WARNING: CPU: 4 PID: 14051 at fs/btrfs/ctree.h:1559
+btrfs_update_device+0x1be/0x1d0 [btrfs]
+[ 2512.071510] Modules linked in: rpcsec_gss_krb5 nfsv4 dns_resolver
+nfs fscache rfcomm fuse vhost_net vhost tap xt_CHECKSUM ipt_MASQUERADE
+nf_nat_masquerade_ipv4 tun nf_conntrack_netbios_ns
+nf_conntrack_broadcast xt_CT ip6t_rpfilter ip6t_REJECT nf_reject_ipv6
+xt_conntrack ip_set nfnetlink ebtable_nat ebtable_broute ip6table_nat
+nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_mangle
+ip6table_raw ip6table_security iptable_nat nf_conntrack_ipv4
+nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack libcrc32c
+iptable_mangle iptable_raw iptable_security bridge stp llc
+ebtable_filter ebtables ip6table_filter ip6_tables cmac bnep vfat fat
+intel_rapl x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel
+kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic
+snd_usb_audio snd_hda_codec_hdmi snd_hda_intel
+[ 2512.071565]  snd_hda_codec snd_hda_core snd_usbmidi_lib eeepc_wmi
+btusb btrtl uvcvideo snd_hwdep crct10dif_pclmul crc32_pclmul
+videobuf2_vmalloc videobuf2_memops videobuf2_v4l2 snd_seq
+videobuf2_core ghash_clmulni_intel videodev intel_cstate asus_wmi
+snd_rawmidi intel_uncore btbcm snd_seq_device btintel bluetooth
+intel_rapl_perf sparse_keymap media ecdh_generic joydev wmi_bmof
+snd_pcm rfkill i2c_i801 video iTCO_wdt iTCO_vendor_support mei_me mei
+snd_timer wmi snd soundcore shpchp lpc_ich nfsd auth_rpcgss nfs_acl
+lockd grace sunrpc binfmt_misc btrfs xor raid6_pq amdkfd amd_iommu_v2
+radeon bcache i2c_algo_bit drm_kms_helper crc32c_intel ttm r8169
+serio_raw drm mii
+[ 2512.071624] CPU: 4 PID: 14051 Comm: btrfs Tainted: G        W
+4.13.5-300.fc27.x86_64 #1
+[ 2512.071626] Hardware name: System manufacturer System Product
+Name/P8Z68-V LE, BIOS 4102 09/09/2013
+[ 2512.071628] task: ffff9e94fbc20000 task.stack: ffffb3a4cb1b8000
+[ 2512.071657] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
+[ 2512.071659] RSP: 0018:ffffb3a4cb1bb9b8 EFLAGS: 00010206
+[ 2512.071662] RAX: 0000000000000fff RBX: ffff9e984a1eea10 RCX: 000001d1c100fe00
+[ 2512.071664] RDX: 0000000000000004 RSI: 0000000000003f5c RDI: ffff9e97f7ad3180
+[ 2512.071665] RBP: ffffb3a4cb1bba00 R08: 0000000000003f60 R09: ffffb3a4cb1bb970
+[ 2512.071667] R10: 0000000000001000 R11: 0000000000000003 R12: ffff9e9844995800
+[ 2512.071669] R13: 0000000000000000 R14: 0000000000003f3c R15: ffff9e97f7ad3180
+[ 2512.071676] FS:  00007f7c32e81700(0000) GS:ffff9e985ed00000(0000)
+knlGS:0000000000000000
+[ 2512.071677] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 2512.071679] CR2: 00007fcec0f98028 CR3: 00000000d86b1000 CR4: 00000000000426e0
+[ 2512.071681] Call Trace:
+[ 2512.071713]  btrfs_finish_chunk_alloc+0x136/0x4f0 [btrfs]
+[ 2512.071744]  btrfs_create_pending_block_groups+0xea/0x250 [btrfs]
+[ 2512.071771]  ? btrfs_create_pending_block_groups+0xea/0x250 [btrfs]
+[ 2512.071802]  __btrfs_end_transaction+0x8e/0x2d0 [btrfs]
+[ 2512.071829]  btrfs_end_transaction+0x10/0x20 [btrfs]
+[ 2512.071860]  btrfs_inc_block_group_ro+0xe6/0x170 [btrfs]
+[ 2512.071893]  scrub_enumerate_chunks+0x1fc/0x6a0 [btrfs]
+[ 2512.071899]  ? remove_wait_queue+0x40/0x70
+[ 2512.071931]  btrfs_scrub_dev+0x20a/0x550 [btrfs]
+[ 2512.071935]  ? __mnt_want_write+0x46/0x60
+[ 2512.071964]  btrfs_ioctl+0x1343/0x24d0 [btrfs]
+[ 2512.071968]  ? wake_up_q+0x44/0x80
+[ 2512.071972]  ? rwsem_wake+0x8e/0xe0
+[ 2512.071977]  do_vfs_ioctl+0xa5/0x600
+[ 2512.071981]  ? ioc_create_icq+0x5b/0x1c0
+[ 2512.071985]  ? do_vfs_ioctl+0xa5/0x600
+[ 2512.071988]  ? get_task_io_context+0x46/0x80
+[ 2512.071992]  SyS_ioctl+0x79/0x90
+[ 2512.071997]  entry_SYSCALL_64_fastpath+0x1a/0xa5
+[ 2512.071999] RIP: 0033:0x7f7c32f91117
+[ 2512.072001] RSP: 002b:00007f7c32e80d48 EFLAGS: 00000246 ORIG_RAX:
+0000000000000010
+[ 2512.072004] RAX: ffffffffffffffda RBX: 00007f7c32e81700 RCX: 00007f7c32f91117
+[ 2512.072006] RDX: 00005610fd88a660 RSI: 00000000c400941b RDI: 0000000000000003
+[ 2512.072007] RBP: 0000000000000000 R08: 00007f7c32e81700 R09: 0000000000000000
+[ 2512.072009] R10: 00007f7c32e81700 R11: 0000000000000246 R12: 00007f7c32e80e40
+[ 2512.072010] R13: 00007ffd91b8af10 R14: 0000000000000000 R15: 0000000000000000
+[ 2512.072013] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 fa
+20 ff ff 4c 89 ff e8 f2 ee fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
+d0 fe ff ff <0f> ff eb b6 e8 29 bd ab ca 66 0f 1f 84 00 00 00 00 00 66
+66 66
+[ 2512.072067] ---[ end trace 3609a7da677d8849 ]---

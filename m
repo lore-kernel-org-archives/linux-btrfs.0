@@ -1,53 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:54558 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751633AbdJMQj2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 12:39:28 -0400
-Received: from 82-132-216-97.dab.02.net ([82.132.216.97]:39214 helo=ty.sabi.co.UK)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1e32ze-0001m4-32
-        for linux-btrfs@vger.kernel.org; Fri, 13 Oct 2017 17:39:26 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1e32zM-0008Oa-9q
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 17:39:08 +0100
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:49588 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751670AbdJMSPl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Oct 2017 14:15:41 -0400
+Received: by mail-oi0-f50.google.com with SMTP id w197so15574540oif.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 11:15:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <23008.60459.486788.624046@tree.ty.sabi.co.uk>
-Date: Fri, 13 Oct 2017 17:39:07 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs errors over NFS
-In-Reply-To: <113b8299-1377-5a35-a727-ec21e67518f7@shaw.ca>
-References: <87o9pcmfad.fsf@shaw.ca>
-        <113b8299-1377-5a35-a727-ec21e67518f7@shaw.ca>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <pan$2aa3b$47885ead$d44bbe7e$37d6c337@cox.net>
+References: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
+ <pan$2aa3b$47885ead$d44bbe7e$37d6c337@cox.net>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 13 Oct 2017 19:15:39 +0100
+Message-ID: <CAJCQCtRney60+kqPn-9K_Efw1C-L5kMr4DXXwZTkq4==ivpQQg@mail.gmail.com>
+Subject: Re: Btrfs warnings in kernel 4.13.5
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> TL;DR: ran into some btrfs errors and weird behaviour, but
->> things generally seem to work. Just posting some details in
->> case it helps devs or other users. [ ... ] I've run into a
->> btrfs error trying to do a -j8 build of android on a btrfs
->> filesystem exported over NFSv3. [ ... ]
+On Fri, Oct 13, 2017 at 12:02 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Juan Orti Alcaine posted on Fri, 13 Oct 2017 10:40:20 +0200 as excerpted:
+>
+>> Hi,
+>>
+>> I've upgraded my system to Fedora 27 and now I see many btrfs warnings,
+>> although the system seems to be working fine. Is this something I should
+>> worry about?
+>
+>> # uname -a Linux xenon 4.13.5-300.fc27.x86_64 #1 SMP Thu Oct 5 16:57:11
+>> UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+>>
+>> # btrfs --version btrfs-progs v4.13.2
+>
+>> [  337.813416] ------------[ cut here ]------------
+>> [  337.813453] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
+>> btrfs_update_device+0x1be/0x1d0 [btrfs]
+>
+>> [  337.814256] ------------[ cut here ]------------
+>> [  337.814281] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
+>> btrfs_update_device+0x1be/0x1d0 [btrfs]
+>
+>> [  337.822161] ------------[ cut here ]------------
+>> [  337.822185] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
+>> btrfs_update_device+0x1be/0x1d0 [btrfs]
+>
+>> [  337.822868] ------------[ cut here ]------------
+>> [  337.822890] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
+>> btrfs_update_device+0x1be/0x1d0 [btrfs]
+>
+>
+> Those warnings aren't anything to be /too/ worried about.  They are
+> triggered when a btrfs device size isn't a multiple of the btrfs
+> sectorsize (currently 4 KiB on amd64 aka x86_64).  You can manually
+> shrink your btrfs devices the fraction to an exact 4 KiB multiple, or
+> wait a bit, and a new release of btrfs-tools should have a command to do
+> it for you.
 
-I have an NFS server from Btrfs filesystem, and it is mostly
-read-only and low-use, unlike a massive build, but so far it has
-worked for me. The issue that was reported a while ago was that
-the kernel NFS server does not report as errors to clients
-checksum validation failures, just prints a warning, so for that
-reason and a few others I switch to the Ganesha NFS server.
 
->From your stack traces I noticed that some go pretty deep so
-maybe there is an issue with that (but on 'amd64' the kernel
-stack is much bigger than it used to be on 'i386'). Another
-possibility is that the volume got somewhat damaged for other
-reasons (bugs, media errors, ...) and this is have further
-consequences.
+So it's an open question now why it was created with a device size
+that isn't divisible by 4KiB. Seems like a bad idea to make it easy to
+create virtual block devices based on 512 byte divisions, as it makes
+it easy to end up with unaligned sectors at some point if one of the
+underlying devices is an AF 512e device. Was it manually created? Or
+was it created via the OS installer? Some time ago there was a feature
+proposal for the Fedora installer being able to create bcache and
+dmcache devices, but I haven't seen anything yet.
 
-BTW 'errno 17' is "File exists", so perhaps there is a race
-condition over NFS. The bogus files with mode 0 seem to me to be
-bogus directory entries with no files linked to them, which
-could be again the result of race conditions. The problems with
-chunks allocation reported as "WARNING" are unfamiliar to me.
+
+-- 
+Chris Murphy

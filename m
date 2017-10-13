@@ -1,215 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43295 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751455AbdJMSvd (ORCPT
+Received: from mail-lf0-f48.google.com ([209.85.215.48]:44889 "EHLO
+        mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752944AbdJMV5E (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 14:51:33 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9DIpWtR004610
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:51:33 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9DIpWoO014214
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:51:32 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9DIpW55031244
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:51:32 GMT
-Date: Fri, 13 Oct 2017 11:47:29 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v8 1/2] btrfs: introduce device dynamic state transition
- to failed
-Message-ID: <20171013184728.GE1553@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20171003155920.24925-1-anand.jain@oracle.com>
- <20171003155920.24925-2-anand.jain@oracle.com>
+        Fri, 13 Oct 2017 17:57:04 -0400
+Received: by mail-lf0-f48.google.com with SMTP id 75so11076983lfx.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 14:57:03 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171003155920.24925-2-anand.jain@oracle.com>
+In-Reply-To: <CAJCQCtRney60+kqPn-9K_Efw1C-L5kMr4DXXwZTkq4==ivpQQg@mail.gmail.com>
+References: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
+ <pan$2aa3b$47885ead$d44bbe7e$37d6c337@cox.net> <CAJCQCtRney60+kqPn-9K_Efw1C-L5kMr4DXXwZTkq4==ivpQQg@mail.gmail.com>
+From: Juan Orti Alcaine <j.orti.alcaine@gmail.com>
+Date: Fri, 13 Oct 2017 23:57:02 +0200
+Message-ID: <CAC+fKQXnzNxvQzbqxTM_D5hW0A_H3ji+4-Jt0HCqtri58XxE0A@mail.gmail.com>
+Subject: Re: Btrfs warnings in kernel 4.13.5
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 03, 2017 at 11:59:19PM +0800, Anand Jain wrote:
-> From: Anand Jain <Anand.Jain@oracle.com>
-> 
-> This patch provides helper functions to force a device to failed,
-> and we need it for the following reasons,
-> 1) a. It can be reported that device has failed when it does and
->    b. Close the device when it goes offline so that blocklayer can
->       cleanup
-> 2) Identify the candidate for the auto replace
-> 3) Stop further RW to the failing device and
-> 4) A device in the multi device btrfs may fail, but as of now in
->    some system config whole of btrfs gets unmounted.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
-> ---
-> V8: General misc cleanup. Based on v4.14-rc2
-> 
->  fs/btrfs/volumes.c | 104 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/volumes.h |  15 +++++++-
->  2 files changed, 118 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 0e8f16c305df..06e7cf4cef81 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -7255,3 +7255,107 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
->  		fs_devices = fs_devices->seed;
->  	}
->  }
-> +
-> +static void do_close_device(struct work_struct *work)
-> +{
-> +	struct btrfs_device *device;
-> +
-> +	device = container_of(work, struct btrfs_device, rcu_work);
-> +
-> +	if (device->closing_bdev)
-> +		blkdev_put(device->closing_bdev, device->mode);
-> +
-> +	device->closing_bdev = NULL;
-> +}
-> +
-> +static void btrfs_close_one_device(struct rcu_head *head)
-> +{
-> +	struct btrfs_device *device;
-> +
-> +	device = container_of(head, struct btrfs_device, rcu);
-> +
-> +	INIT_WORK(&device->rcu_work, do_close_device);
-> +	schedule_work(&device->rcu_work);
-> +}
+2017-10-13 20:15 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
+> On Fri, Oct 13, 2017 at 12:02 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>> Those warnings aren't anything to be /too/ worried about.  They are
+>> triggered when a btrfs device size isn't a multiple of the btrfs
+>> sectorsize (currently 4 KiB on amd64 aka x86_64).  You can manually
+>> shrink your btrfs devices the fraction to an exact 4 KiB multiple, or
+>> wait a bit, and a new release of btrfs-tools should have a command to do
+>> it for you.
+>
+>
+> So it's an open question now why it was created with a device size
+> that isn't divisible by 4KiB. Seems like a bad idea to make it easy to
+> create virtual block devices based on 512 byte divisions, as it makes
+> it easy to end up with unaligned sectors at some point if one of the
+> underlying devices is an AF 512e device. Was it manually created? Or
+> was it created via the OS installer? Some time ago there was a feature
+> proposal for the Fedora installer being able to create bcache and
+> dmcache devices, but I haven't seen anything yet.
 
-No need to schedule the job to a worker.
 
-thanks,
-
--liubo
-
-> +
-> +void btrfs_force_device_close(struct btrfs_device *device)
-> +{
-> +	struct btrfs_fs_info *fs_info;
-> +	struct btrfs_fs_devices *fs_devices;
-> +
-> +	fs_devices = device->fs_devices;
-> +	fs_info = fs_devices->fs_info;
-> +
-> +	btrfs_sysfs_rm_device_link(fs_devices, device);
-> +
-> +	mutex_lock(&fs_devices->device_list_mutex);
-> +	mutex_lock(&fs_devices->fs_info->chunk_mutex);
-> +
-> +	btrfs_assign_next_active_device(fs_devices->fs_info, device, NULL);
-> +
-> +	if (device->bdev)
-> +		fs_devices->open_devices--;
-> +
-> +	if (device->writeable) {
-> +		list_del_init(&device->dev_alloc_list);
-> +		fs_devices->rw_devices--;
-> +	}
-> +	device->writeable = 0;
-> +
-> +	/*
-> +	 * Todo: We have miss-used missing flag all around, and here
-> +	 * too for now. (In the long run I want to keep missing to only
-> +	 * indicate that it was not present when RAID was assembled.)
-> +	 */
-> +	device->missing = 1;
-> +	fs_devices->missing_devices++;
-> +	device->closing_bdev = device->bdev;
-> +	device->bdev = NULL;
-> +
-> +	call_rcu(&device->rcu, btrfs_close_one_device);
-> +
-> +	mutex_unlock(&fs_devices->fs_info->chunk_mutex);
-> +	mutex_unlock(&fs_devices->device_list_mutex);
-> +
-> +	rcu_barrier();
-> +
-> +	btrfs_warn_in_rcu(fs_info, "device %s failed",
-> +				rcu_str_deref(device->name));
-> +
-> +	/*
-> +	 * We lost one/more disk, which means its not as it
-> +	 * was configured by the user. Show mount should show
-> +	 * degraded.
-> +	 */
-> +	btrfs_set_opt(fs_info->mount_opt, DEGRADED);
-> +
-> +	/*
-> +	 * Now having lost one of the device, check if chunk stripe
-> +	 * is incomplete and handle fatal error if needed.
-> +	 */
-> +	if (!btrfs_check_rw_degradable(fs_info))
-> +		btrfs_handle_fs_error(fs_info, -EIO,
-> +				"devices below critical level");
-> +}
-> +
-> +void btrfs_mark_device_failed(struct btrfs_device *dev)
-> +{
-> +	struct btrfs_fs_devices *fs_devices = dev->fs_devices;
-> +
-> +	/* This shouldn't be called if device is already missing */
-> +	if (dev->missing || !dev->bdev)
-> +		return;
-> +	if (dev->failed)
-> +		return;
-> +	dev->failed = 1;
-> +
-> +	/* Last RW device is requested to force close let FS handle it. */
-> +	if (fs_devices->rw_devices == 1) {
-> +		btrfs_handle_fs_error(fs_devices->fs_info, -EIO,
-> +					"Last RW device failed");
-> +		return;
-> +	}
-> +
-> +	/* Point of no return start here. */
-> +	btrfs_force_device_close(dev);
-> +}
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 6108fdfec67f..05b150c03995 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -65,13 +65,26 @@ struct btrfs_device {
->  	struct btrfs_pending_bios pending_sync_bios;
->  
->  	struct block_device *bdev;
-> +	struct block_device *closing_bdev;
->  
->  	/* the mode sent to blkdev_get */
->  	fmode_t mode;
->  
->  	int writeable;
->  	int in_fs_metadata;
-> +	/* missing: device not found at the time of mount */
->  	int missing;
-> +	/* failed: device confirmed to have experienced critical io failure */
-> +	int failed;
-> +	/*
-> +	* offline: system or user or block layer transport has removed
-> +	* offlined the device which was once present and without going
-> +	* through unmount. Implies an intriem communication break down
-> +	* and not necessarily a candidate for the device replace. And
-> +	* device might be online after user intervention or after
-> +	* block transport layer error recovery.
-> +	*/
-> +	int offline;
->  	int can_discard;
->  	int is_tgtdev_for_dev_replace;
->  	blk_status_t last_flush_error;
-> @@ -544,5 +557,5 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
->  void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
->  				 u8 *uuid);
-> -
-> +void btrfs_mark_device_failed(struct btrfs_device *dev);
->  #endif
-> -- 
-> 2.7.0
-> 
+I'm sure I created all bcache devices with a block size of 4k.

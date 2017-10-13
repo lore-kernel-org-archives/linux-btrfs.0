@@ -1,43 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:44889 "EHLO
-        mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752944AbdJMV5E (ORCPT
+Received: from mail-io0-f194.google.com ([209.85.223.194]:52039 "EHLO
+        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751510AbdJMWbs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 17:57:04 -0400
-Received: by mail-lf0-f48.google.com with SMTP id 75so11076983lfx.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 14:57:03 -0700 (PDT)
+        Fri, 13 Oct 2017 18:31:48 -0400
+Received: by mail-io0-f194.google.com with SMTP id b186so10500681iof.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 15:31:47 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRney60+kqPn-9K_Efw1C-L5kMr4DXXwZTkq4==ivpQQg@mail.gmail.com>
-References: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
- <pan$2aa3b$47885ead$d44bbe7e$37d6c337@cox.net> <CAJCQCtRney60+kqPn-9K_Efw1C-L5kMr4DXXwZTkq4==ivpQQg@mail.gmail.com>
-From: Juan Orti Alcaine <j.orti.alcaine@gmail.com>
-Date: Fri, 13 Oct 2017 23:57:02 +0200
-Message-ID: <CAC+fKQXnzNxvQzbqxTM_D5hW0A_H3ji+4-Jt0HCqtri58XxE0A@mail.gmail.com>
-Subject: Re: Btrfs warnings in kernel 4.13.5
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <20171010162228.GQ3521@twin.jikos.cz>
+References: <20171003150604.19596-1-nefelim4ag@gmail.com> <20171003150604.19596-3-nefelim4ag@gmail.com>
+ <20171010162228.GQ3521@twin.jikos.cz>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Sat, 14 Oct 2017 01:31:06 +0300
+Message-ID: <CAGqmi75QRdH8z-pcTKVy=YwjLWiQOczxuK7z=k+Y4Ca+cpY=Cw@mail.gmail.com>
+Subject: Re: [PATCH 2/4] Btrfs: clear_dirty only on pages only in compression range
+To: David Sterba <dsterba@suse.cz>, Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-10-13 20:15 GMT+02:00 Chris Murphy <lists@colorremedies.com>:
-> On Fri, Oct 13, 2017 at 12:02 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> Those warnings aren't anything to be /too/ worried about.  They are
->> triggered when a btrfs device size isn't a multiple of the btrfs
->> sectorsize (currently 4 KiB on amd64 aka x86_64).  You can manually
->> shrink your btrfs devices the fraction to an exact 4 KiB multiple, or
->> wait a bit, and a new release of btrfs-tools should have a command to do
->> it for you.
+2017-10-10 19:22 GMT+03:00 David Sterba <dsterba@suse.cz>:
+> On Tue, Oct 03, 2017 at 06:06:02PM +0300, Timofey Titovets wrote:
+>> We need to call extent_range_clear_dirty_for_io()
+>> on compression range to prevent application from changing
+>> page content, while pages compressing.
+>>
+>> but "(end - start)" can be much (up to 1024 times) bigger
+>> then compression range (BTRFS_MAX_UNCOMPRESSED), so optimize that
+>> by calculating compression range for
+>> that loop iteration, and flip bits only on that range
 >
->
-> So it's an open question now why it was created with a device size
-> that isn't divisible by 4KiB. Seems like a bad idea to make it easy to
-> create virtual block devices based on 512 byte divisions, as it makes
-> it easy to end up with unaligned sectors at some point if one of the
-> underlying devices is an AF 512e device. Was it manually created? Or
-> was it created via the OS installer? Some time ago there was a feature
-> proposal for the Fedora installer being able to create bcache and
-> dmcache devices, but I haven't seen anything yet.
+> I'm not sure this is safe to do. Compress_file_range gets the whole
+> range [start,end] from async_cow_start, and other parts of code might
+> rely on the status of the whole range, ie. not partially redirtied.
 
+I check some kernel code, io path are complex =\.
+I see 3 approaches:
+1. That used to signal upper level, that we fail to write that pages
+and on other sync() call, kernel can send that data again to writing.
+2. We lock pages from any changes while processing data.
+3. Serialize writes, i.e. if i understood correctly, that allow to
+not send down pages again for several sync requests.
 
-I'm sure I created all bcache devices with a block size of 4k.
+My code above will handle ok first and second case, and in theory will
+cause some issues with 3, but doesn't matter.
+
+The main design problem from my point of view for now, that we call
+that function many times in the loop, example:
+compress_file_range get: 0 - 1048576
+extent_range_clear_dirty_for_io(), will get a call for:
+0 - 1048576
+131072 - 1048576
+262144 - 1048576
+... & etc
+
+So, we can beat that in different way.
+I first think about move extent_range_clear_dirty_for_io() out of
+loop, but i think that a better approach.
+
+Whats about:
+if (!redirty) {
+    extent_range_clear_dirty_for_io(inode, start, end);
+    redirty = 1;
+}
+
+That will also cover all above cases, because that lock whole range, as before.
+But we only call that once, and that will fix design issue.
+
+That you think?
+
+Thanks.
+-- 
+Have a nice day,
+Timofey.

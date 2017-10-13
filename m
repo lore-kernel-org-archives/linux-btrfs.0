@@ -1,65 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:35473 "EHLO
-        out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1757812AbdJMBm5 (ORCPT
+Received: from smtp-out-so.shaw.ca ([64.59.136.138]:43196 "EHLO
+        smtp-out-so.shaw.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753292AbdJMCoK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 21:42:57 -0400
-Message-Id: <1507858974.1236555.1137202920.267B449B@webmail.messagingengine.com>
-From: Kai Hendry <hendry@iki.fi>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+        Thu, 12 Oct 2017 22:44:10 -0400
+Subject: Re: btrfs errors over NFS
+From: Steve Leung <sjleung@shaw.ca>
+To: linux-btrfs@vger.kernel.org
+References: <87o9pcmfad.fsf@shaw.ca>
+Message-ID: <113b8299-1377-5a35-a727-ec21e67518f7@shaw.ca>
+Date: Thu, 12 Oct 2017 20:36:00 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
- <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
- <0a3e71f7-1a8e-9a4f-7470-4c5cc2fb11a0@gmail.com>
-Date: Fri, 13 Oct 2017 09:42:54 +0800
-Subject: Re: USB upgrade fun
-In-Reply-To: <0a3e71f7-1a8e-9a4f-7470-4c5cc2fb11a0@gmail.com>
+In-Reply-To: <87o9pcmfad.fsf@shaw.ca>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you Austin & Chris for your replies!
+On 10/12/2017 11:44 AM, Steve Leung wrote:
+> Hi list,
+> 
+>    TL;DR: ran into some btrfs errors and weird behaviour, but things generally seem
+>    to work.  Just posting some details in case it helps devs or other users.
+> 
+> I've run into a btrfs error trying to do a -j8 build of android on a btrfs
+> filesystem exported over NFSv3.  That in itself might be unwise, but should be
+> legal.  :)  This is on 64-bit Arch, kernel 4.13.3, and the filesystem is RAID1 on 4
+> devices, with nearly 4TiB unallocated.
+> 
+> The build itself failed when part of the build process noticed that a file got
+> created with mode 000.  i.e. in "ls -l" the mode column looked like ?---------.
+> 
+....
+> 
+> It booted back up fine.  I tried scrubbing the filesystem at that point and scrub
+> returned with no errors.  I then noticed 4.13.5 had some btrfs fixes so I upgraded
+> to that.  Now, I still have one bogus file in a directory - it's in the directory
+> listing but nothing can stat the file to change it or remove it.  i.e.:
+> 
+>    > ls -l
+>    /bin/ls: cannot access 'tab_unselected_pressed_holo.9.png': No such file or directory
+>    total 0
+>    -????????? ? ? ? ?            ? tab_unselected_pressed_holo.9.png
+> 
+>    > stat tab_unselected_pressed_holo.9.png
+>    stat: cannot stat 'tab_unselected_pressed_holo.9.png': No such file or directory
+> 
+>    > rm tab_unselected_pressed_holo.9.png
+>    rm: cannot remove 'tab_unselected_pressed_holo.9.png': No such file or directory
+> 
+>    > cp /dev/null tab_unselected_pressed_holo.9.png
+>    > ls -l
+>    total 0
+>    -rw-r--r-- 1 steve steve 0 Oct 12 10:43 tab_unselected_pressed_holo.9.png
+>    -rw-r--r-- 1 steve steve 0 Oct 12 10:43 tab_unselected_pressed_holo.9.png
+> 
+>    > rm tab_unselected_pressed_holo.9.png
+> 
+>    > ls -l
+>    /bin/ls: cannot access 'tab_unselected_pressed_holo.9.png': No such file or directory
+>    total 0
+>    -????????? ? ? ? ?            ? tab_unselected_pressed_holo.9.png
+> 
+> I'm guessing a btrfs check would fix this but haven't gotten around to running it
+> yet.
 
-On Fri, 13 Oct 2017, at 01:19 AM, Austin S. Hemmelgarn wrote:
-> Same here on a pair of 3 year old NUC's.  Based on the traces and the 
-> other information, I'd be willing to bet this is probably the root cause 
-> of the issues.
+Just looked through the archives and noticed this is something
+Tomasz Chmielewski posted about a week or so ago.  But that thread 
+didn't seem to come to a definite conclusion.
 
-It probably is... since when I remove my new 4TB USB disk from the
-front, I am at least able to mount my two 2x2TB in degraded mode and see
-my data!
+I'm also in the situation where it's not that easy for me to blow away 
+the whole subvol that holds this file, but I can at least move its 
+directory to somewhere unnoticeable.  Until I can get around to trying 
+btrfs check anyway.
 
-So I am not quite sure what to do now. 
-I don't trust USB hubs. 
-
-On a different NUC I've noticed I can't charge my iPhone anymore!
-https://mail-archive.com/linux-usb@vger.kernel.org/msg95231.html So...
-is there any end in sight for the "USB power" problem? Does USB-C /
-Thunderbolt address this issue? :(
-
-Try return my new 4TB to Amazon and find an externally powered one
-
-
-> > merely the Btrfs signature is wiped from the deleted device(s). So you
-> > could restore that signature and the device would be valid again;
-
-Wonder how would you do that, in order to have a working snapshot that I
-can put in cold storage?
-
-Nonetheless I hope the btrfs developers can make it possible to remove a
-RAID1 drive, to put in cold storage use case, without any pfaffing.
-
-I ran that debug info: https://s.natalian.org/2017-10-13/btrfs-reply.txt
-To summarise:
-* sdb - new 4TB disk that makes my raid1 unmountable atm when connected
-* sd{c,d} - old 2tb
-
-Here's the accompanying dmesg.txt
-https://s.natalian.org/2017-10-13/dmesg.txt sorry, it might be difficult
-to follow since I was moving the 4TB between the front ports and such.
-
-Kind regards,
-
-
+Steve

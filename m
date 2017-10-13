@@ -1,88 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52822 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758036AbdJMNZH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 09:25:07 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3149DAAC5
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 13:25:06 +0000 (UTC)
-Date: Fri, 13 Oct 2017 15:23:21 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc: linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: Re: [PATCH] btrfs: cleanup extent locking sequence
-Message-ID: <20171013132321.GN3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171011022641.21202-1-rgoldwyn@suse.de>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:12814 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751589AbdJMJSD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Oct 2017 05:18:03 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 72D5247F13B3
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 17:17:58 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: subvol list: don't print deleted subvol as TOPLEVEL
+Date: Fri, 13 Oct 2017 17:17:22 +0800
+Message-ID: <20171013091722.2988-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171011022641.21202-1-rgoldwyn@suse.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 10, 2017 at 09:26:41PM -0500, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> Code cleanup for better understanding:
-> needs_unlock to be called extent_locked to show state as opposed to
-> action.
-> Changed the variable to int, to reduce code in the critical path(code usually
-> executed).
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> ---
->  fs/btrfs/file.c | 14 ++++++--------
->  1 file changed, 6 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index f6c6754cf52d..a3d006d14683 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1590,7 +1590,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->  	int ret = 0;
->  	bool only_release_metadata = false;
->  	bool force_page_uptodate = false;
-> -	bool need_unlock;
-> +	int extents_locked;
+We should use entry->root_id instead of top_id to determine whether it is
+the toplevel subvolume.
 
-The variable can be moved to the while() { } block
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+ btrfs-list.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->  
->  	nrptrs = min(DIV_ROUND_UP(iov_iter_count(i), PAGE_SIZE),
->  			PAGE_SIZE / (sizeof(struct page *)));
-> @@ -1670,7 +1670,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->  		}
->  
->  		release_bytes = reserve_bytes;
-> -		need_unlock = false;
->  again:
->  		/*
->  		 * This is going to setup the pages array with the number of
-> @@ -1683,16 +1682,15 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
->  		if (ret)
->  			break;
->  
-> -		ret = lock_and_cleanup_extent_if_need(BTRFS_I(inode), pages,
-> +		extents_locked = lock_and_cleanup_extent_if_need(
-> +				BTRFS_I(inode), pages,
->  				num_pages, pos, write_bytes, &lockstart,
->  				&lockend, &cached_state);
-> -		if (ret < 0) {
-> +		if (extents_locked < 0) {
->  			if (ret == -EAGAIN)
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 6f2d8774..4ea8edfd 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1279,7 +1279,7 @@ static void filter_and_sort_subvol(struct root_lookup *all_subvols,
+ 
+ 		ret = resolve_root(all_subvols, entry, top_id);
+ 		if (ret == -ENOENT) {
+-			if (top_id != BTRFS_FS_TREE_OBJECTID) {
++			if (entry->root_id != BTRFS_FS_TREE_OBJECTID) {
+ 				entry->full_path = strdup("DELETED");
+ 				entry->deleted = 1;
+ 			} else {
+-- 
+2.14.2
 
-either
 
-		if (extents_locked == -EAGAIN)
 
-or
-
-		move 'ret = extents_locked' above the if.
-
->  				goto again;
-> +			ret = extents_locked;
->  			break;
-> -		} else if (ret > 0) {
-> -			need_unlock = true;
-> -			ret = 0;
->  		}

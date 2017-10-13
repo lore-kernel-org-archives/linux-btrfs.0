@@ -1,72 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f50.google.com ([209.85.218.50]:49588 "EHLO
-        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751670AbdJMSPl (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:49881 "EHLO
+        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751981AbdJMS3A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 14:15:41 -0400
-Received: by mail-oi0-f50.google.com with SMTP id w197so15574540oif.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 11:15:41 -0700 (PDT)
+        Fri, 13 Oct 2017 14:29:00 -0400
+Received: by mail-oi0-f41.google.com with SMTP id w197so15625374oif.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 11:29:00 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$2aa3b$47885ead$d44bbe7e$37d6c337@cox.net>
-References: <CAC+fKQXPGpwuhVz7oNLzPLd0ydo+kiqG1vpcWvx+-DZ+2jL6Bg@mail.gmail.com>
- <pan$2aa3b$47885ead$d44bbe7e$37d6c337@cox.net>
+In-Reply-To: <d8ef3dde-553e-d8b5-6d8f-8a6e4929d739@gmail.com>
+References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
+ <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
+ <0a3e71f7-1a8e-9a4f-7470-4c5cc2fb11a0@gmail.com> <1507858974.1236555.1137202920.267B449B@webmail.messagingengine.com>
+ <d8ef3dde-553e-d8b5-6d8f-8a6e4929d739@gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 13 Oct 2017 19:15:39 +0100
-Message-ID: <CAJCQCtRney60+kqPn-9K_Efw1C-L5kMr4DXXwZTkq4==ivpQQg@mail.gmail.com>
-Subject: Re: Btrfs warnings in kernel 4.13.5
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Fri, 13 Oct 2017 19:28:59 +0100
+Message-ID: <CAJCQCtQ82=5xUKgwUFt4ETE5CLA228hkBMVaX=T4Bj-JjXvaGQ@mail.gmail.com>
+Subject: Re: USB upgrade fun
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Kai Hendry <hendry@iki.fi>, Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 13, 2017 at 12:02 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Juan Orti Alcaine posted on Fri, 13 Oct 2017 10:40:20 +0200 as excerpted:
->
->> Hi,
->>
->> I've upgraded my system to Fedora 27 and now I see many btrfs warnings,
->> although the system seems to be working fine. Is this something I should
->> worry about?
->
->> # uname -a Linux xenon 4.13.5-300.fc27.x86_64 #1 SMP Thu Oct 5 16:57:11
->> UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
->>
->> # btrfs --version btrfs-progs v4.13.2
->
->> [  337.813416] ------------[ cut here ]------------
->> [  337.813453] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
->> btrfs_update_device+0x1be/0x1d0 [btrfs]
->
->> [  337.814256] ------------[ cut here ]------------
->> [  337.814281] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
->> btrfs_update_device+0x1be/0x1d0 [btrfs]
->
->> [  337.822161] ------------[ cut here ]------------
->> [  337.822185] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
->> btrfs_update_device+0x1be/0x1d0 [btrfs]
->
->> [  337.822868] ------------[ cut here ]------------
->> [  337.822890] WARNING: CPU: 5 PID: 459 at fs/btrfs/ctree.h:1559
->> btrfs_update_device+0x1be/0x1d0 [btrfs]
->
->
-> Those warnings aren't anything to be /too/ worried about.  They are
-> triggered when a btrfs device size isn't a multiple of the btrfs
-> sectorsize (currently 4 KiB on amd64 aka x86_64).  You can manually
-> shrink your btrfs devices the fraction to an exact 4 KiB multiple, or
-> wait a bit, and a new release of btrfs-tools should have a command to do
-> it for you.
+On Fri, Oct 13, 2017 at 12:22 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+
+> From a practical perspective, you're almost certainly better off creating a
+> copy for cold storage without involving BTRFS.
+
+Yeah if you want to hedge your bets, and keep it simple, rsync to XFS.
+With some added risk (double) you can use mdadm linear or LVM to
+concat multiple devices if necessary. In theory you're not going to
+get a double failure. But really, the more backups you add, it
+increasingly doesn't matter what the strategy used.
 
 
-So it's an open question now why it was created with a device size
-that isn't divisible by 4KiB. Seems like a bad idea to make it easy to
-create virtual block devices based on 512 byte divisions, as it makes
-it easy to end up with unaligned sectors at some point if one of the
-underlying devices is an AF 512e device. Was it manually created? Or
-was it created via the OS installer? Some time ago there was a feature
-proposal for the Fedora installer being able to create bcache and
-dmcache devices, but I haven't seen anything yet.
+>As an alternative, I would
+> suggest one of the following approaches:
+>
+> 1. Take a snapshot of the filesystem, and use send/receive to transfer that
+> to another device which you then remove and store somewhere.
+
+This is what I do. Primary, and two separate backup (separate volume
+UUIDs), all three are Btrfs. The primary uses send/receive to the two
+backups. But my organization plan allows me to have only three
+subvolumes on the primary being snapshot and thus send/receive. So
+it's easy. Fourth copy, a subset of important data, is in the cloud.
+
+
+> 2. Use rsync to copy things to another device which you then remove and
+> store somewhere.
+
+A fifth copy, also a subset of important data is done doing this to
+XFS and a big drive kept offsite. It just accumulates. I don't
+consider it a backup, it's an archive, nothing is deleted. I treat it
+as WORM. Maybe one day I redo it based on dm-verity so I can add error
+detection and correction, the cryptographic aspects are a distant
+second for me.
+
+
+> Both these options are safer, less likely to screw up your existing
+> filesystem, and produce copies that can safely be connected to the original
+> system at the same time as the original filesystem.
+
+Keeping it simple is the only way you use it with any regularity, and
+can understand it well enough if (really when) you have to do a
+restore.
 
 
 -- 

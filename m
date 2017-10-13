@@ -1,73 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f41.google.com ([209.85.218.41]:49881 "EHLO
-        mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751981AbdJMS3A (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:42853 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752570AbdJMSuk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 14:29:00 -0400
-Received: by mail-oi0-f41.google.com with SMTP id w197so15625374oif.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 11:29:00 -0700 (PDT)
+        Fri, 13 Oct 2017 14:50:40 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9DIockE003587
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:50:39 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9DIocbN012023
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:50:38 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9DIochs031905
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:50:38 GMT
+Date: Fri, 13 Oct 2017 11:46:28 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v8 2/2] btrfs: check device for critical errors and mark
+ failed
+Message-ID: <20171013184628.GD1553@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20171003155920.24925-1-anand.jain@oracle.com>
+ <20171003155920.24925-3-anand.jain@oracle.com>
+ <20171004201154.GB4902@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+ <881db992-2240-ce30-4d05-d0bd1faa2aa4@oracle.com>
+ <20171006235645.GC19068@lim.localdomain>
+ <634a15da-a831-d196-55c6-8684a7288572@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <d8ef3dde-553e-d8b5-6d8f-8a6e4929d739@gmail.com>
-References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
- <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
- <0a3e71f7-1a8e-9a4f-7470-4c5cc2fb11a0@gmail.com> <1507858974.1236555.1137202920.267B449B@webmail.messagingengine.com>
- <d8ef3dde-553e-d8b5-6d8f-8a6e4929d739@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Fri, 13 Oct 2017 19:28:59 +0100
-Message-ID: <CAJCQCtQ82=5xUKgwUFt4ETE5CLA228hkBMVaX=T4Bj-JjXvaGQ@mail.gmail.com>
-Subject: Re: USB upgrade fun
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Kai Hendry <hendry@iki.fi>, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <634a15da-a831-d196-55c6-8684a7288572@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 13, 2017 at 12:22 PM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
+On Sun, Oct 08, 2017 at 10:23:58PM +0800, Anand Jain wrote:
+> 
+> 
+> On 10/07/2017 07:56 AM, Liu Bo wrote:
+> > On Thu, Oct 05, 2017 at 09:56:59PM +0800, Anand Jain wrote:
+> > > 
+> > > 
+> > > On 10/05/2017 04:11 AM, Liu Bo wrote:
+> > > > On Tue, Oct 03, 2017 at 11:59:20PM +0800, Anand Jain wrote:
+> > > > > From: Anand Jain <Anand.Jain@oracle.com>
+> > > > > 
+> > > > > Write and flush errors are critical errors, upon which the device fd
+> > > > > must be closed and marked as failed.
+> > > > > 
+> > > > 
+> > > > Can we defer the job of closing device to umount?
+> > > 
+> > >   Originally I think it was designed to handle the bad disk
+> > >   same as missing device. as below [1]. This patch just does that.
+> 
+> > >   But I am curious to know if there is any issue to close failed
+> > >   device ?
+> 
+>    Anything on this ?
 
-> From a practical perspective, you're almost certainly better off creating a
-> copy for cold storage without involving BTRFS.
+No big deal, it's just different with md's behavior, but surely it
+doesn't make a big difference whether we close device fd here or not.
 
-Yeah if you want to hedge your bets, and keep it simple, rsync to XFS.
-With some added risk (double) you can use mdadm linear or LVM to
-concat multiple devices if necessary. In theory you're not going to
-get a double failure. But really, the more backups you add, it
-increasingly doesn't matter what the strategy used.
+> 
+> 
+> > > [1]
+> > > -----
+> > > static int read_one_dev(struct btrfs_fs_info *fs_info,
+> > >                          struct extent_buffer *leaf,
+> > >                          struct btrfs_dev_item *dev_item)
+> > > ::
+> > >              /*
+> > >               * this happens when a device that was properly setup
+> > >               * in the device info lists suddenly goes bad.
+> > >               * device->bdev is NULL, and so we have to set
+> > >               * device->missing to one here
+> > >               */
+> > > ------
+> > > 
+> > >   So here I misuse the device missing scenario (device->bdev = NULL)
+> > >   to the failed device scenario. (code comment mentioned it).
+> > > 
+> > 
+> > This is OK to me, we can unify these stuff later, for now, ->missing
+> > is to bypass this failed disk for r/w.
+> > 
+> > >   Secondly as in the patch 1/2 commit log and also Austin mentioned it,
+> > >   if failed device close is deferred it will also defer the cleanup of
+> > >   the failed device at the block layer.
+> > > 
+> > >   But yes block layer can still clean up when btrfs closes the
+> > >   device at the time of replace, also where in the long run, pulling
+> > >   out of the failed disk would (planned) trigger a udev notification
+> > >   into the btrfs sysfs interface and it can close the device.
+> > > 
+> > >   Anything that I have missed ?
+> > > 
+> > 
+> > I'm more inclined to do cleanup by making udev call 'device remove',
+> > which is supposed to do all the validation checks you need to done
+> > here.
+> 
+>    Validation check like what ?
 
+OK, just realize that I was talking about what we should do upon
+device getting pulled out, in that case, validation check about raid
+profile is needed, such as can we keep the raid profile or do we need
+to degrade raid proflie, and 'device delete' can do that.
 
->As an alternative, I would
-> suggest one of the following approaches:
->
-> 1. Take a snapshot of the filesystem, and use send/receive to transfer that
-> to another device which you then remove and store somewhere.
+Although I agree with the fact that write/flush errors are critical
+ones, it's still too strict if it got only a few write/flush errors,
+given cable issues or timeout from some layers may also lead to those
+errors.  A compromised way is to have a threshold to give drives
+another chance.
 
-This is what I do. Primary, and two separate backup (separate volume
-UUIDs), all three are Btrfs. The primary uses send/receive to the two
-backups. But my organization plan allows me to have only three
-subvolumes on the primary being snapshot and thus send/receive. So
-it's easy. Fourth copy, a subset of important data, is in the cloud.
+thanks,
 
+-liubo
 
-> 2. Use rsync to copy things to another device which you then remove and
-> store somewhere.
-
-A fifth copy, also a subset of important data is done doing this to
-XFS and a big drive kept offsite. It just accumulates. I don't
-consider it a backup, it's an archive, nothing is deleted. I treat it
-as WORM. Maybe one day I redo it based on dm-verity so I can add error
-detection and correction, the cryptographic aspects are a distant
-second for me.
-
-
-> Both these options are safer, less likely to screw up your existing
-> filesystem, and produce copies that can safely be connected to the original
-> system at the same time as the original filesystem.
-
-Keeping it simple is the only way you use it with any regularity, and
-can understand it well enough if (really when) you have to do a
-restore.
-
-
--- 
-Chris Murphy
+> 
+> Thanks, Anand
+> 
+> > >   Further, jfyi closing of failed device isn't related to the
+> > >   looping for device failure though.
+> > > 
+> > > > We can go mark the device failed and skip it while doing read/write,
+> > > > and umount can do the cleanup work.
+> > > 
+> > >   In servers a need of umount is considered as downtime, things
+> > >   shouldn't wait for umount to cleanup.
+> > > 
+> > 
+> > OK.
+> > 
+> > > > That way we don't need a dedicated thread looping around to detect a
+> > > > rare situation.
+> > > 
+> > >   I think its better to make it event based instead of thread looping,
+> > >   pls take a look..
+> > > 
+> > >     [PATCH v8.1 2/2] btrfs: mark device failed for write and flush errors
+> > > 
+> > 
+> > Event based is good, for anything about failing disk, we would have to
+> > follow what md is doing eventually, i.e. let udev handle it.
+> > 
+> > thanks,
+> > -liubo
+> > 

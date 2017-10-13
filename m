@@ -1,446 +1,247 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:46854 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752387AbdJ0NcZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 09:32:25 -0400
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id E1F6B218AC
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 13:32:23 +0000 (UTC)
-From: fdmanana@kernel.org
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:43840 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752644AbdJMAcr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 12 Oct 2017 20:32:47 -0400
+Received: by mail-wm0-f65.google.com with SMTP id m72so26003523wmc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 17:32:46 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: add support for fallocate's zero range operation
-Date: Wed, 25 Oct 2017 15:59:08 +0100
-Message-Id: <20171025145908.7311-1-fdmanana@kernel.org>
-In-Reply-To: <20171025125344.2111-1-fdmanana@kernel.org>
-References: <20171025125344.2111-1-fdmanana@kernel.org>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [RFC PATCH] Btrfs: heuristic replace heap sort with radix sort
+Date: Fri, 13 Oct 2017 03:32:37 +0300
+Message-Id: <20171013003237.3061-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Slowest part of heuristic for now is kernel heap sort()
+It's can take up to 55% of runtime on sorting bucket items.
 
-This implements support the zero range operation of fallocate. For now
-at least it's as simple as possible while reusing most of the existing
-fallocate and hole punching infrastructure.
+As sorting will always call on most data sets to get correctly
+byte_core_set_size, the only way to speed up heuristic, is to
+speed up sort on bucket.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+So, add a general radix_sort function.
+Radix sort require 2 buffers, one full size of input array
+and one for store counters (jump addresses).
+
+So for buffer array, just allocate BUCKET_SIZE*2 for bucket,
+and use free tale as a buffer, to improve data locality.
+That increase usage per heuristic workspace +1KiB
+8KiB + 1KiB -> 8KiB + 2KiB
+
+That is LSD Radix, i use 4 bit as a base for calculating,
+to make counters array acceptable small (16el*8byte).
+
+Not tested on Big.Endian.
+I try handle that by some kernel macros.
+
+Performance tested in userspace copy of heuristic code,
+throughput:
+    - average <-> random data: ~3500 MiB/s      - heap  sort
+    - average <-> random data: ~6000 MiB/s +71% - radix sort
+
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
+ fs/btrfs/compression.c | 153 +++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 141 insertions(+), 12 deletions(-)
 
-V2: Removed double inode unlock on error path from failure to lock range.
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 01738b9a8dc7..f320fbb1de17 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -753,6 +753,7 @@ struct heuristic_ws {
+ 	u32 sample_size;
+ 	/* Bucket store counter for each byte type */
+ 	struct bucket_item *bucket;
++	struct bucket_item *bucket_buf;
+ 	struct list_head list;
+ };
 
- fs/btrfs/file.c | 332 +++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 290 insertions(+), 42 deletions(-)
+@@ -778,10 +779,12 @@ static struct list_head *alloc_heuristic_ws(void){
+ 	if (!ws->sample)
+ 		goto fail;
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index aafcc785f840..e0d15c0d1641 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2448,7 +2448,48 @@ static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
- 	return ret;
+-	ws->bucket = kcalloc(BUCKET_SIZE, sizeof(*ws->bucket), GFP_KERNEL);
++	ws->bucket = kcalloc(BUCKET_SIZE*2, sizeof(*ws->bucket), GFP_KERNEL);
+ 	if (!ws->bucket)
+ 		goto fail;
+
++	ws->bucket_buf = &ws->bucket[BUCKET_SIZE];
++
+ 	INIT_LIST_HEAD(&ws->list);
+ 	return &ws->list;
+ fail:
+@@ -1225,6 +1228,137 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
+ 	return 1;
  }
- 
--static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
-+static int btrfs_punch_hole_lock_range(struct inode *inode,
-+				       const u64 lockstart,
-+				       const u64 lockend,
-+				       struct extent_state **cached_state)
-+{
-+	while (1) {
-+		struct btrfs_ordered_extent *ordered;
-+		int ret;
+
++#define RADIX_BASE 4
++#define COUNTERS_SIZE (1 << RADIX_BASE)
 +
-+		truncate_pagecache_range(inode, lockstart, lockend);
-+
-+		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
-+				 cached_state);
-+		ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
-+
-+		/*
-+		 * We need to make sure we have no ordered extents in this range
-+		 * and nobody raced in and read a page in this range, if we did
-+		 * we need to try again.
-+		 */
-+		if ((!ordered ||
-+		    (ordered->file_offset + ordered->len <= lockstart ||
-+		     ordered->file_offset > lockend)) &&
-+		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
-+			if (ordered)
-+				btrfs_put_ordered_extent(ordered);
-+			break;
-+		}
-+		if (ordered)
-+			btrfs_put_ordered_extent(ordered);
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
-+				     lockend, cached_state, GFP_NOFS);
-+		ret = btrfs_wait_ordered_range(inode, lockstart,
-+					       lockend - lockstart + 1);
-+		if (ret)
-+			return ret;
-+	}
-+	return 0;
++static inline u8 get4bits(u64 num, int shift) {
++	u8 low4bits;
++	num = num >> shift;
++	/* Reverse order */
++	low4bits = (COUNTERS_SIZE - 1) - (num % COUNTERS_SIZE);
++	return low4bits;
 +}
 +
-+static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len,
-+			    bool lock_inode)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -2477,7 +2518,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	if (ret)
- 		return ret;
- 
--	inode_lock(inode);
-+	if (lock_inode)
-+		inode_lock(inode);
- 	ino_size = round_up(inode->i_size, fs_info->sectorsize);
- 	ret = find_first_non_hole(inode, &offset, &len);
- 	if (ret < 0)
-@@ -2516,7 +2558,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		truncated_block = true;
- 		ret = btrfs_truncate_block(inode, offset, 0, 0);
- 		if (ret) {
--			inode_unlock(inode);
-+			if (lock_inode)
-+				inode_unlock(inode);
- 			return ret;
- 		}
- 	}
-@@ -2564,38 +2607,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 		goto out_only_mutex;
- 	}
- 
--	while (1) {
--		struct btrfs_ordered_extent *ordered;
--
--		truncate_pagecache_range(inode, lockstart, lockend);
--
--		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
--				 &cached_state);
--		ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
--
--		/*
--		 * We need to make sure we have no ordered extents in this range
--		 * and nobody raced in and read a page in this range, if we did
--		 * we need to try again.
--		 */
--		if ((!ordered ||
--		    (ordered->file_offset + ordered->len <= lockstart ||
--		     ordered->file_offset > lockend)) &&
--		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
--			if (ordered)
--				btrfs_put_ordered_extent(ordered);
--			break;
--		}
--		if (ordered)
--			btrfs_put_ordered_extent(ordered);
--		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
--				     lockend, &cached_state, GFP_NOFS);
--		ret = btrfs_wait_ordered_range(inode, lockstart,
--					       lockend - lockstart + 1);
--		if (ret) {
-+	ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
-+					  &cached_state);
-+	if (ret) {
-+		if (lock_inode)
- 			inode_unlock(inode);
--			return ret;
--		}
-+		return ret;
- 	}
- 
- 	path = btrfs_alloc_path();
-@@ -2758,7 +2775,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 			ret = btrfs_end_transaction(trans);
- 		}
- 	}
--	inode_unlock(inode);
-+	if (lock_inode)
-+		inode_unlock(inode);
- 	if (ret && !err)
- 		err = ret;
- 	return err;
-@@ -2804,6 +2822,227 @@ static int add_falloc_range(struct list_head *head, u64 start, u64 len)
- 	return 0;
- }
- 
-+static int btrfs_zero_range_update_isize(struct inode *inode,
-+					 const loff_t offset,
-+					 const loff_t len,
-+					 const int mode)
++static inline void copy_cell(void *dst, const void *src)
 +{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
-+	const u64 end = offset + len;
-+	int ret;
-+
-+	if (mode & FALLOC_FL_KEEP_SIZE || end <= i_size_read(inode))
-+		return 0;
-+
-+	i_size_write(inode, end);
-+	btrfs_ordered_update_i_size(inode, end, NULL);
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+	} else {
-+		int err;
-+
-+		ret = btrfs_update_inode(trans, root, inode);
-+		err = btrfs_end_transaction(trans);
-+		ret = ret ? ret : err;
-+	}
-+	return ret;
++	struct bucket_item *dstv = (struct bucket_item *) dst;
++	struct bucket_item *srcv = (struct bucket_item *) src;
++	*dstv = *srcv;
 +}
 +
-+static int btrfs_zero_range_check_range_boundary(struct inode *inode,
-+						 u64 offset)
++static inline u64 get_num(const void *a)
 +{
-+	const u64 sectorsize = btrfs_inode_sectorsize(inode);
-+	struct extent_map *em = NULL;
-+	int ret = 0;
-+
-+	offset = round_down(offset, sectorsize);
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize, 0);
-+	if (IS_ERR(em))
-+		return PTR_ERR(em);
-+
-+	if (em->block_start == EXTENT_MAP_HOLE)
-+		ret = 1;
-+
-+	free_extent_map(em);
-+	return ret;
++	struct bucket_item *av = (struct bucket_item *) a;
++	return cpu_to_le32(av->count);
 +}
 +
-+static int btrfs_zero_range(struct inode *inode,
-+			    loff_t offset,
-+			    loff_t len,
-+			    const int mode)
++/*
++ * Kernel compatible radix sort implementation
++ * Use 4 bits as radix base
++ * Use 16 64bit counters for calculating new possition in buf array
++ * Tested only on Little Endian
++ *
++ * @array     - array that will be sorted
++ * @array_buf - buffer array to store sorting results
++ *              must be equal in size to @array
++ * @num       - array size
++ * @size      - item size
++ * @max_cell  - Link to element with maximum possible value
++ *              that can be used to cap radix sort iterations
++ *              if we know maximum value before call sort
++ * @get_num   - function to extract number from array
++ * @copy_cell - function to copy data from array to array_buf
++ *              and vise versa
++ * @get4bits  - function to get 4 bits from number at specified offset
++ */
++static void radix_sort(void *array, void *array_buf,
++		       int num, int size,
++		       const void *max_cell,
++		       u64 (*get_num)(const void *),
++		       void (*copy_cell)(void *dest, const void* src),
++		       u8 (*get4bits)(u64 num, int shift))
 +{
-+	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
-+	struct extent_map *em;
-+	struct extent_changeset *data_reserved = NULL;
-+	int ret;
-+	u64 alloc_hint = 0;
-+	const u64 sectorsize = btrfs_inode_sectorsize(inode);
-+	u64 alloc_start = round_down(offset, sectorsize);
-+	u64 alloc_end = round_up(offset + len, sectorsize);
-+	u64 bytes_to_reserve = 0;
-+	bool space_reserved = false;
-+	bool punch_hole = false;
-+
-+	inode_dio_wait(inode);
-+
-+	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
-+			      alloc_start, alloc_end - alloc_start, 0);
-+	if (IS_ERR(em)) {
-+		ret = PTR_ERR(em);
-+		goto out;
-+	}
++	u64 max_num;
++	u64 buf_num;
++	u64 counters[COUNTERS_SIZE];
++	u64 new_addr;
++	s64 i;
++	int addr;
++	int bitlen;
++	int shift;
 +
 +	/*
-+	 * Avoid hole punching and extent allocation for some cases. More cases
-+	 * could be considered, but these are unlikely common and we keep things
-+	 * as simple as possible for now. Also, intentionally, if the target
-+	 * range contains one or more prealloc extents together with regular
-+	 * extents and holes, we drop all the existing extents and allocate a
-+	 * new prealloc extent, so that we get a larger contiguous disk extent.
++	 * Try avoid useless loop iterations
++	 * For small numbers stored in big counters
++	 * example: 48 33 4 ... in 64bit array
 +	 */
-+	if (em->start <= alloc_start &&
-+	    test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
-+		const u64 em_end = em->start + em->len;
-+
-+		if (em_end >= offset + len) {
-+			/*
-+			 * The whole range is already a prealloc extent,
-+			 * do nothing except updating the inode's i_size if
-+			 * needed.
-+			 */
-+			free_extent_map(em);
-+			ret = btrfs_zero_range_update_isize(inode, offset,
-+							    len, mode);
-+			goto out;
++	if (!max_cell) {
++		max_num = get_num(array);
++		for (i = 0 + size; i < num*size; i += size) {
++			buf_num = get_num(array + i);
++			if (le64_to_cpu(buf_num) > le64_to_cpu(max_num))
++				max_num = buf_num;
 +		}
-+		/*
-+		 * Part of the range is already a prealloc extent, so operate
-+		 * only on the remaining part of the range.
-+		 */
-+		alloc_start = em_end;
-+		ASSERT(IS_ALIGNED(alloc_start, sectorsize));
-+		len = offset + len - alloc_start;
-+		offset = alloc_start;
-+		alloc_hint = em->block_start + em->len;
-+	}
-+	free_extent_map(em);
-+
-+	if (BTRFS_BYTES_TO_BLKS(fs_info, offset) ==
-+	    BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1)) {
-+		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
-+				      alloc_start, sectorsize, 0);
-+		if (IS_ERR(em)) {
-+			ret = PTR_ERR(em);
-+			goto out;
-+		}
-+
-+		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
-+			free_extent_map(em);
-+			ret = btrfs_zero_range_update_isize(inode, offset,
-+							    len, mode);
-+			goto out;
-+		}
-+		if (len < sectorsize && em->block_start != EXTENT_MAP_HOLE)
-+			punch_hole = true;
-+		free_extent_map(em);
-+		if (punch_hole)
-+			goto punch_hole;
-+		alloc_start = round_down(offset, sectorsize);
-+		alloc_end = alloc_start + sectorsize;
-+		goto reserve_space;
-+	}
-+
-+	alloc_start = round_up(offset, sectorsize);
-+	alloc_end = round_down(offset + len, sectorsize);
-+
-+	/*
-+	 * For unaligned ranges, check the pages at the boundaries, they might
-+	 * map to an extent, in which case we need to partially zero them, or
-+	 * they might map to a hole, in which case we need our allocation range
-+	 * to cover them.
-+	 */
-+	if (!IS_ALIGNED(offset, sectorsize)) {
-+		ret = btrfs_zero_range_check_range_boundary(inode, offset);
-+		if (ret < 0)
-+			goto out;
-+		if (ret) {
-+			alloc_start = round_down(offset, sectorsize);
-+			ret = 0;
-+		} else {
-+			ret = btrfs_truncate_block(inode, offset, 0, 0);
-+			if (ret)
-+				goto out;
-+		}
-+	}
-+
-+	if (!IS_ALIGNED(offset + len, sectorsize)) {
-+		ret = btrfs_zero_range_check_range_boundary(inode,
-+							    offset + len);
-+		if (ret < 0)
-+			goto out;
-+		if (ret) {
-+			alloc_end = round_up(offset + len, sectorsize);
-+			ret = 0;
-+		} else {
-+			ret = btrfs_truncate_block(inode, offset + len, 0, 1);
-+			if (ret)
-+				goto out;
-+		}
-+	}
-+
-+reserve_space:
-+	if (alloc_start < alloc_end)
-+		bytes_to_reserve += alloc_end - alloc_start;
-+
-+	if (!punch_hole && bytes_to_reserve > 0) {
-+		ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
-+						      bytes_to_reserve);
-+		if (ret < 0)
-+			goto out;
-+		space_reserved = true;
-+		ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
-+						alloc_start, bytes_to_reserve);
-+		if (ret)
-+			goto out;
-+	}
-+
-+punch_hole:
-+	if (punch_hole) {
-+		ret = btrfs_punch_hole(inode, offset, len, false);
-+		if (ret)
-+			goto out;
-+		ret = btrfs_zero_range_update_isize(inode, offset, len, mode);
 +	} else {
-+		struct extent_state *cached_state = NULL;
-+		const u64 lockstart = alloc_start;
-+		const u64 lockend = alloc_end - 1;
-+
-+		ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
-+						  &cached_state);
-+		if (ret)
-+			goto out;
-+		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
-+						alloc_end - alloc_start,
-+						i_blocksize(inode),
-+						offset + len, &alloc_hint);
-+		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
-+				     lockend, &cached_state, GFP_KERNEL);
-+		/* btrfs_prealloc_file_range releases reserved space on error */
-+		if (ret)
-+			space_reserved = false;
++		max_num = get_num(max_cell);
 +	}
-+ out:
-+	if (ret && space_reserved)
-+		btrfs_free_reserved_data_space(inode, data_reserved,
-+					       alloc_start, bytes_to_reserve);
-+	extent_changeset_free(data_reserved);
 +
-+	return ret;
++	buf_num = ilog2(le64_to_cpu(max_num));
++	bitlen = ALIGN(buf_num, RADIX_BASE*2);
++
++	shift = 0;
++	while (shift < bitlen) {
++		memset(counters, 0, sizeof(counters));
++
++		for (i = 0; i < num*size; i += size) {
++			buf_num = get_num(array + i);
++			addr = get4bits(buf_num, shift);
++			counters[addr]++;
++		}
++
++		for (i = 1; i < COUNTERS_SIZE; i++)
++			counters[i] += counters[i-1];
++
++		for (i = (num - 1) * size; i >= 0; i -= size) {
++			buf_num = get_num(array + i);
++			addr = get4bits(buf_num, shift);
++			counters[addr]--;
++			new_addr = counters[addr];
++			copy_cell(array_buf + (new_addr*size), array + i);
++		}
++
++		shift += RADIX_BASE;
++
++		/*
++		 * For normal radix, that expected to
++		 * move data from tmp array, to main.
++		 * But that require some CPU time
++		 * Avoid that by doing another sort iteration
++		 * to origin array instead of memcpy()
++		 */
++		memset(counters, 0, sizeof(counters));
++
++		for (i = 0; i < num*size; i += size) {
++			buf_num = get_num(array_buf + i);
++			addr = get4bits(buf_num, shift);
++			counters[addr]++;
++		}
++
++		for (i = 1; i < COUNTERS_SIZE; i++)
++			counters[i] += counters[i-1];
++
++		for (i = (num - 1) * size; i >= 0; i -= size) {
++			buf_num = get_num(array_buf + i);
++			addr = get4bits(buf_num, shift);
++			counters[addr]--;
++			new_addr = counters[addr];
++			copy_cell(array + (new_addr*size), array_buf + i);
++		}
++
++		shift += RADIX_BASE;
++	}
 +}
 +
- static long btrfs_fallocate(struct file *file, int mode,
- 			    loff_t offset, loff_t len)
- {
-@@ -2829,21 +3068,24 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	cur_offset = alloc_start;
- 
- 	/* Make sure we aren't being give some crap mode */
--	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
-+	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE |
-+		     FALLOC_FL_ZERO_RANGE))
- 		return -EOPNOTSUPP;
- 
- 	if (mode & FALLOC_FL_PUNCH_HOLE)
--		return btrfs_punch_hole(inode, offset, len);
-+		return btrfs_punch_hole(inode, offset, len, true);
- 
- 	/*
- 	 * Only trigger disk allocation, don't trigger qgroup reserve
- 	 *
- 	 * For qgroup space, it will be checked later.
- 	 */
--	ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
--			alloc_end - alloc_start);
--	if (ret < 0)
--		return ret;
-+	if (!(mode & FALLOC_FL_ZERO_RANGE)) {
-+		ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
-+						      alloc_end - alloc_start);
-+		if (ret < 0)
-+			return ret;
-+	}
- 
- 	inode_lock(inode);
- 
-@@ -2885,6 +3127,12 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	if (ret)
- 		goto out;
- 
-+	if (mode & FALLOC_FL_ZERO_RANGE) {
-+		ret = btrfs_zero_range(inode, offset, len, mode);
-+		inode_unlock(inode);
-+		return ret;
-+	}
-+
- 	locked_end = alloc_end - 1;
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
-@@ -3010,7 +3258,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- out:
- 	inode_unlock(inode);
- 	/* Let go of our reservation. */
--	if (ret != 0)
-+	if (ret != 0 && !(mode & FALLOC_FL_ZERO_RANGE))
- 		btrfs_free_reserved_data_space(inode, data_reserved,
- 				alloc_start, alloc_end - cur_offset);
- 	extent_changeset_free(data_reserved);
--- 
-2.11.0
+ /*
+  * Shannon Entropy calculation
+  *
+@@ -1280,15 +1414,6 @@ static u32 shannon_entropy(struct heuristic_ws *ws)
+ 	return entropy_sum * 100 / entropy_max;
+ }
 
+-/* Compare buckets by size, ascending */
+-static inline int bucket_comp_rev(const void *lv, const void *rv)
+-{
+-	const struct bucket_item *l = (struct bucket_item *)(lv);
+-	const struct bucket_item *r = (struct bucket_item *)(rv);
+-
+-	return r->count - l->count;
+-}
+-
+ /*
+  * Byte Core set size
+  * How many bytes use 90% of sample
+@@ -1317,9 +1442,13 @@ static int byte_core_set_size(struct heuristic_ws *ws)
+ 	u32 coreset_sum = 0;
+ 	u32 core_set_threshold = ws->sample_size * 90 / 100;
+ 	struct bucket_item *bucket = ws->bucket;
++	struct bucket_item max_cell;
+
+-	/* Sort in reverse order */
+-	sort(bucket, BUCKET_SIZE, sizeof(*bucket), &bucket_comp_rev, NULL);
++	max_cell.count = MAX_SAMPLE_SIZE;
++	radix_sort(bucket, ws->bucket_buf,
++		   BUCKET_SIZE, sizeof(*bucket),
++		   &max_cell,
++		   get_num, copy_cell, get4bits);
+
+ 	for (i = 0; i < BYTE_CORE_SET_LOW; i++)
+ 		coreset_sum += bucket[i].count;
+--
+2.14.2

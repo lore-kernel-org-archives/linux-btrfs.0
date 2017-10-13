@@ -1,55 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:48448 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753329AbdJMNSc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 09:18:32 -0400
-Received: by mail-qk0-f193.google.com with SMTP id d67so4943049qkg.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 06:18:32 -0700 (PDT)
-Date: Fri, 13 Oct 2017 09:18:30 -0400
-From: Josef Bacik <josef@toxicpanda.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
+Received: from mx2.suse.de ([195.135.220.15]:53628 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753231AbdJMNes (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Oct 2017 09:34:48 -0400
+Date: Fri, 13 Oct 2017 15:33:02 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: Nikolay Borisov <nborisov@suse.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 03/21] btrfs: make the delalloc block rsv per inode
-Message-ID: <20171013131829.3crywvezqhhhyauc@destiny>
+Subject: Re: [PATCH 01/21] Btrfs: rework outstanding_extents
+Message-ID: <20171013133301.GO3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1506714245-23072-1-git-send-email-jbacik@fb.com>
- <1506714245-23072-4-git-send-email-jbacik@fb.com>
- <71428c63-d89d-34dc-bf53-9a010ae4de1a@suse.com>
+ <1506714245-23072-2-git-send-email-jbacik@fb.com>
+ <704b1207-5219-89dd-6ddd-582ed74f759f@suse.com>
+ <20171013131050.q5huwryq444utast@destiny>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <71428c63-d89d-34dc-bf53-9a010ae4de1a@suse.com>
+In-Reply-To: <20171013131050.q5huwryq444utast@destiny>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 13, 2017 at 02:47:32PM +0300, Nikolay Borisov wrote:
+On Fri, Oct 13, 2017 at 09:10:52AM -0400, Josef Bacik wrote:
+> On Fri, Oct 13, 2017 at 11:39:15AM +0300, Nikolay Borisov wrote:
+> > 
+> > 
+> > On 29.09.2017 22:43, Josef Bacik wrote:
+> > >  
+> > > +static inline void btrfs_mod_outstanding_extents(struct btrfs_inode *inode,
+> > > +						 int mod)
+> > > +{
+> > > +	ASSERT(spin_is_locked(&inode->lock));
+> > > +	inode->outstanding_extents += mod;
+> > > +	if (btrfs_is_free_space_inode(inode))
+> > > +		return;
+> > > +}
+> > > +
+> > > +static inline void btrfs_mod_reserved_extents(struct btrfs_inode *inode,
+> > > +					      int mod)
+> > > +{
+> > > +	ASSERT(spin_is_locked(&inode->lock));
+> > 
+> > lockdep_assert_held(&inode->lock); for both functions. I've spoken with
+> > Peterz and he said any other way of checking whether a lock is held, I
+> > quote, "must die"
+> > 
 > 
-> 
-> > @@ -8848,7 +8849,6 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
-> >  	if (iov_iter_rw(iter) == WRITE) {
-> >  		up_read(&BTRFS_I(inode)->dio_sem);
-> >  		current->journal_info = NULL;
-> > -		btrfs_delalloc_release_extents(BTRFS_I(inode), count);
-> >  		if (ret < 0 && ret != -EIOCBQUEUED) {
-> >  			if (dio_data.reserve)
-> >  				btrfs_delalloc_release_space(inode, data_reserved,
-> > @@ -8869,6 +8869,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
-> >  		} else if (ret >= 0 && (size_t)ret < count)
-> >  			btrfs_delalloc_release_space(inode, data_reserved,
-> >  					offset, count - (size_t)ret);
-> 
-> In case we didn't manage to write everything we are releasing the extra
-> stuff that wasn't written.
-> 
-> > +		btrfs_delalloc_release_extents(BTRFS_I(inode), count);
-> In case btrfs_delalloc_release_space triggered wouldn't freeing metadata
-> here cause some sort of an underflow? Shouldn't we adjust count in case
-> we have already freed anything beforehand?
-> 
+> Blah I continually forget that's what we're supposed to use now.
 
-No, btrfs_delalloc_release_extents() is only for modifying the
-outstanding_extents and adjusting the reservation,
-btrfs_delalloc_release_space() takes care of the outstanding csum_bytes and
-adjusts the reservation.  Thanks,
+I try to keep such information on
+https://btrfs.wiki.kernel.org/index.php/Development_notes#BCP
 
-Josef
+Just started the section with best practices, feel free to add more.

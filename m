@@ -1,92 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33851 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751384AbdJLInP (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:19487 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751543AbdJMSFQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 04:43:15 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9C8hEGA013094
+        Fri, 13 Oct 2017 14:05:16 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9DI5FO3023812
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 08:43:14 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9C8hDgt008495
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:05:15 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9DI5FeR024950
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 08:43:14 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9C8hDFt023580
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Oct 2017 08:43:13 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: use need_full_stripe() in __btrfs_map_block()
-Date: Thu, 12 Oct 2017 16:43:00 +0800
-Message-Id: <20171012084300.4740-1-anand.jain@oracle.com>
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:05:15 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9DI5FdJ007691
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 18:05:15 GMT
+Date: Fri, 13 Oct 2017 11:01:12 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix false EIO for missing device
+Message-ID: <20171013180111.GB1553@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20171013134218.19048-1-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20171013134218.19048-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A cleanup patch, use need_full_stripe() to replace the open code.
+On Fri, Oct 13, 2017 at 09:42:18PM +0800, Anand Jain wrote:
+> When one of the device is missing, bbio_error() takes care
+> of setting the error status. And if its only IO that is
+> pending in that stripe, it fails to check the status of the
+> other IO at %bbio_error before setting the error %bi_status
+> for the %orig_bio. Fix this by checking if %bbio->error is
+> has crossed the %bbio->max_errors. Thxs.
+> 
+> Reproducer as below fdatasync error is seen intermittently.
+> 
+>  mount -o degraded /dev/sdc /btrfs
+>  dd status=none if=/dev/zero of=$(mktemp /btrfs/XXX) bs=4096 count=1 conv=fdatasync
+> 
+>  dd: fdatasync failed for ‘/btrfs/LSe’: Input/output error
+> 
+>  The reason for the intermittences of the problem is because..
+>  following condition has to be met, which depends on timely
+>  coordination.
+>  In btrfs_map_bio()
+>   . The RAID1 the missing device has to be at %dev_nr = 1
+>  In bbio_error()
+>   . Before bbio_error() is called the bio of the not-missing
+>     device at %dev_nr=0 must be completed so that the below
+>     condition is true
+>      if (atomic_dec_and_test(&bbio->stripes_pending)) {
+>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 16 ++++++----------
- 1 file changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3b3ba1ecd88b..f5dee43f8f3f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5673,10 +5673,10 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
- 		stripe_nr = div_u64_rem(stripe_nr, map->num_stripes,
- 				&stripe_index);
--		if (op != BTRFS_MAP_WRITE && op != BTRFS_MAP_GET_READ_MIRRORS)
-+		if (!need_full_stripe(op))
- 			mirror_num = 1;
- 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID1) {
--		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
-+		if (need_full_stripe(op))
- 			num_stripes = map->num_stripes;
- 		else if (mirror_num)
- 			stripe_index = mirror_num - 1;
-@@ -5689,7 +5689,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		}
- 
- 	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
--		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS) {
-+		if (need_full_stripe(op)) {
- 			num_stripes = map->num_stripes;
- 		} else if (mirror_num) {
- 			stripe_index = mirror_num - 1;
-@@ -5703,7 +5703,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		stripe_nr = div_u64_rem(stripe_nr, factor, &stripe_index);
- 		stripe_index *= map->sub_stripes;
- 
--		if (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS)
-+		if (need_full_stripe(op))
- 			num_stripes = map->sub_stripes;
- 		else if (mirror_num)
- 			stripe_index += mirror_num - 1;
-@@ -5718,9 +5718,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		}
- 
- 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		if (need_raid_map &&
--		    (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS ||
--		     mirror_num > 1)) {
-+		if (need_raid_map && (need_full_stripe(op) || mirror_num > 1)) {
- 			/* push stripe_nr back to the start of the full stripe */
- 			stripe_nr = div64_u64(raid56_full_stripe_start,
- 					stripe_len * nr_data_stripes(map));
-@@ -5747,9 +5745,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 			/* We distribute the parity blocks across stripes */
- 			div_u64_rem(stripe_nr + stripe_index, map->num_stripes,
- 					&stripe_index);
--			if ((op != BTRFS_MAP_WRITE &&
--			     op != BTRFS_MAP_GET_READ_MIRRORS) &&
--			    mirror_num <= 1)
-+			if (!need_full_stripe(op) && mirror_num <= 1)
- 				mirror_num = 1;
- 		}
- 	} else {
--- 
-2.13.1
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 9af633dcf015..efd502176915 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6131,7 +6131,10 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+>  
+>  		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
+>  		bio->bi_iter.bi_sector = logical >> 9;
+> -		bio->bi_status = BLK_STS_IOERR;
+> +		if (atomic_read(&bbio->error) > bbio->max_errors)
+> +			bio->bi_status = BLK_STS_IOERR;
+> +		else
+> +			bio->bi_status = 0;
 
+Thanks for the fix, I'd prefer BLK_STS_OK rather than 0.
+
+With that,
+
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
+-liubo
+>  		btrfs_end_bbio(bbio, bio);
+>  	}
+>  }
+> -- 
+> 2.13.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

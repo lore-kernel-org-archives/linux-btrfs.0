@@ -1,87 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:21995 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750831AbdJKEqh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 00:46:37 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9B4kaOA017851
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:46:37 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9B4kaYS003458
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:46:36 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9B4ka78009920
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 04:46:36 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/4] btrfs: add_missing_dev() should return the actual error
-Date: Wed, 11 Oct 2017 12:46:18 +0800
-Message-Id: <20171011044618.19621-1-anand.jain@oracle.com>
-In-Reply-To: <20171011005229.GB3283@lim.localdomain>
-References: <20171011005229.GB3283@lim.localdomain>
+Received: from mx2.suse.de ([195.135.220.15]:47431 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753258AbdJMMSg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Oct 2017 08:18:36 -0400
+Date: Fri, 13 Oct 2017 14:16:50 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/4] btrfs: fix EIO misuse to report missing degraded
+ option
+Message-ID: <20171013121650.GK3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171009030746.16680-1-anand.jain@oracle.com>
+ <20171009030746.16680-2-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171009030746.16680-2-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-add_missing_dev() can return device pointer so that IS_ERR/
-PTR_ERR can be used to check for the actual error occurred
-in the function.
+On Mon, Oct 09, 2017 at 11:07:44AM +0800, Anand Jain wrote:
+> EIO is only for the IO failure to the device, avoid it.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: add btrfs_err in read_one_dev too
-v3: fix wrong commit id used for git send and
-    add missing change log
+Updated changelog.
 
- fs/btrfs/volumes.c | 17 ++++++++++++-----
- 1 file changed, 12 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0e8f16c305df..1fb98c2ab9c0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6249,7 +6249,7 @@ static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
- 
- 	device = btrfs_alloc_device(NULL, &devid, dev_uuid);
- 	if (IS_ERR(device))
--		return NULL;
-+		return device;
- 
- 	list_add(&device->dev_list, &fs_devices->devices);
- 	device->fs_devices = fs_devices;
-@@ -6454,9 +6454,12 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
- 			map->stripes[i].dev =
- 				add_missing_dev(fs_info->fs_devices, devid,
- 						uuid);
--			if (!map->stripes[i].dev) {
-+			if (IS_ERR(map->stripes[i].dev)) {
- 				free_extent_map(em);
--				return -EIO;
-+				btrfs_err(fs_info,
-+					"failed to init missing dev %llu %ld",
-+					devid, PTR_ERR(map->stripes[i].dev));
-+				return PTR_ERR(map->stripes[i].dev);
- 			}
- 			btrfs_report_missing_device(fs_info, devid, uuid);
- 		}
-@@ -6582,8 +6585,12 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
- 		}
- 
- 		device = add_missing_dev(fs_devices, devid, dev_uuid);
--		if (!device)
--			return -ENOMEM;
-+		if (IS_ERR(device)) {
-+			btrfs_err(fs_info,
-+				"failed to add missing dev %llu %ld",
-+				devid, PTR_ERR(device));
-+			return PTR_ERR(device);
-+		}
- 		btrfs_report_missing_device(fs_info, devid, dev_uuid);
- 	} else {
- 		if (!device->bdev) {
--- 
-2.13.1
-
+Reviewed-by: David Sterba <dsterba@suse.com>

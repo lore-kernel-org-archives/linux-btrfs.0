@@ -1,74 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:18247 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752308AbdJKS7V (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:36512 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753394AbdJMNmq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 14:59:21 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9BIxKBm031720
+        Fri, 13 Oct 2017 09:42:46 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9DDgiZs016855
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 18:59:21 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9BIxK3X030640
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 13:42:45 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9DDgiTf014095
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 18:59:20 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9BIxKaQ021712
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 18:59:20 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 13:42:44 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9DDgiJj032636
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Oct 2017 13:42:44 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs-progs: do not add stale device into fs_devices
-Date: Wed, 11 Oct 2017 11:57:16 -0600
-Message-Id: <20171011175716.8885-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171011002852.2926-1-bo.li.liu@oracle.com>
-References: <20171011002852.2926-1-bo.li.liu@oracle.com>
+Subject: [PATCH] btrfs: fix false EIO for missing device
+Date: Fri, 13 Oct 2017 21:42:18 +0800
+Message-Id: <20171013134218.19048-1-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If one of btrfs's devices was pulled out and we've replaced it with a
-new one, then they have the same uuid.
+When one of the device is missing, bbio_error() takes care
+of setting the error status. And if its only IO that is
+pending in that stripe, it fails to check the status of the
+other IO at %bbio_error before setting the error %bi_status
+for the %orig_bio. Fix this by checking if %bbio->error is
+has crossed the %bbio->max_errors. Thxs.
 
-If that device gets reconnected, 'btrfs filesystem show' will show the
-stale one instead of the new one, but on kernel side btrfs has a fix
-to not include the stale one, this could confuse users as people may
-monitor btrfs by running that cli.
+Reproducer as below fdatasync error is seen intermittently.
 
-This does the similar thing to what kernel side has done.
+ mount -o degraded /dev/sdc /btrfs
+ dd status=none if=/dev/zero of=$(mktemp /btrfs/XXX) bs=4096 count=1 conv=fdatasync
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+ dd: fdatasync failed for ‘/btrfs/LSe’: Input/output error
+
+ The reason for the intermittences of the problem is because..
+ following condition has to be met, which depends on timely
+ coordination.
+ In btrfs_map_bio()
+  . The RAID1 the missing device has to be at %dev_nr = 1
+ In bbio_error()
+  . Before bbio_error() is called the bio of the not-missing
+    device at %dev_nr=0 must be completed so that the below
+    condition is true
+     if (atomic_dec_and_test(&bbio->stripes_pending)) {
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v2: remove a wrong parameter.
+ fs/btrfs/volumes.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
- volumes.c | 15 ++++++++++++++-
- 1 file changed, 14 insertions(+), 1 deletion(-)
-
-diff --git a/volumes.c b/volumes.c
-index 2f3943d..036c58d 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -138,7 +138,20 @@ static int device_list_add(const char *path,
- 		list_add(&device->dev_list, &fs_devices->devices);
- 		device->fs_devices = fs_devices;
- 	} else if (!device->name || strcmp(device->name, path)) {
--		char *name = strdup(path);
-+		char *name;
-+
-+		/*
-+		 * The existing device has newer generation, so this
-+		 * one could be a stale one, don't add it.
-+		 */
-+		if (found_transid < device->generation) {
-+			warning("adding device %s gen %llu but found an existing device %s gen %llu\n",
-+				path, found_transid, device->name,
-+				device->generation);
-+			return -EEXIST;
-+		}
-+
-+		name = strdup(path);
-                 if (!name)
-                         return -ENOMEM;
-                 kfree(device->name);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9af633dcf015..efd502176915 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6131,7 +6131,10 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+ 
+ 		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
+ 		bio->bi_iter.bi_sector = logical >> 9;
+-		bio->bi_status = BLK_STS_IOERR;
++		if (atomic_read(&bbio->error) > bbio->max_errors)
++			bio->bi_status = BLK_STS_IOERR;
++		else
++			bio->bi_status = 0;
+ 		btrfs_end_bbio(bbio, bio);
+ 	}
+ }
 -- 
-2.9.4
+2.13.1
 

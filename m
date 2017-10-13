@@ -1,46 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.gentoo.org ([140.211.166.183]:45578 "EHLO smtp.gentoo.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751434AbdJLMJE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Oct 2017 08:09:04 -0400
-From: Sergei Trofimovich <slyfox@gentoo.org>
-To: David Sterba <dsterba@suse.com>
-Cc: Sergei Trofimovich <slyfox@gentoo.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH] configure.ac: allow '--with-convert=' to accept comma-separated values
-Date: Thu, 12 Oct 2017 13:08:54 +0100
-Message-Id: <20171012120854.28748-1-slyfox@gentoo.org>
+Received: from mout.kundenserver.de ([212.227.17.13]:60498 "EHLO
+        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1758079AbdJMJ2L (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 13 Oct 2017 05:28:11 -0400
+From: Arnd Bergmann <arnd@arndb.de>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: tree-checker: use %zu format string for size_t
+Date: Fri, 13 Oct 2017 11:27:35 +0200
+Message-Id: <20171013092759.712725-1-arnd@arndb.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before the change configure refused to accept it's defaults explicitly:
-    $ ./configure --enable-convert --with-convert=ext2,reiserfs
-    ...
-    configure: error: unknown tokens for --with-convert: ,
+We now get a harmless compile-time on 32-bit architectures:
 
-After the change both converters are enabled:
-    $ ./configure --enable-convert --with-convert=ext2,reiserfs
-    ...
-            btrfs-convert:      yes (ext2,reiserfs)
+fs/btrfs/tree-checker.c: In function 'check_extent_data_item':
+fs/btrfs/tree-checker.c:189:70: error: format '%lu' expects argument of type 'long unsigned int', but argument 6 has type 'unsigned int' [-Werror=format=]
 
-Cc: linux-btrfs@vger.kernel.org
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+This changes the format string to use %zu instead of %lu for size_t.
+
+Fixes: c1f6520bf360 ("btrfs: tree-checker: Enhance output for check_extent_data_item")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- configure.ac | 2 +-
+ fs/btrfs/tree-checker.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/configure.ac b/configure.ac
-index f273bbe9..adceafc3 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -148,7 +148,7 @@ AC_SUBST([BTRFSCONVERT_EXT2])
- AC_SUBST([BTRFSCONVERT_REISERFS])
- 
- # catch typos
--tmp=$(echo "$with_convert" | sed -e 's/auto//' | sed -e 's/ext2//' | sed -e 's/reiserfs//' | sed -e 's/,\+/,/')
-+tmp=$(echo "$with_convert" | sed -e 's/auto//' | sed -e 's/ext2//' | sed -e 's/reiserfs//' | sed -e 's/,\+//')
- if ! test "x$tmp" = "x"; then
- 	AC_MSG_ERROR([unknown tokens for --with-convert: $tmp])
- fi
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index c7a09cc2a17c..388fb6553aa5 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -186,7 +186,7 @@ static int check_extent_data_item(struct btrfs_root *root,
+ 	/* Regular or preallocated extent has fixed item size */
+ 	if (item_size != sizeof(*fi)) {
+ 		file_extent_err(root, leaf, slot,
+-			"invalid item size for reg/prealloc file extent, have %u expect %lu",
++			"invalid item size for reg/prealloc file extent, have %u expect %zu",
+ 			item_size, sizeof(*fi));
+ 		return -EUCLEAN;
+ 	}
 -- 
-2.14.2
+2.9.0
 

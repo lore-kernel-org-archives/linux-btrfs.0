@@ -1,46 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:52262 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752099AbdJKCOe (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:60263 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750733AbdJMF1z (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 22:14:34 -0400
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id A1072AC00B1
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 11:14:30 +0900 (JST)
-Received: from G01JPEXCHKW17.g01.fujitsu.local (G01JPEXCHKW17.g01.fujitsu.local [10.0.194.56])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id EEB6DBD6728
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Oct 2017 11:14:29 +0900 (JST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH v2 0/3] btrfs-progs: device: update btrfs device remove
- missing
-Message-ID: <bb58e829-77d4-1bd1-4021-2db996809a6e@jp.fujitsu.com>
-Date: Wed, 11 Oct 2017 11:14:26 +0900
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+        Fri, 13 Oct 2017 01:27:55 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1e2sVZ-0008CT-51
+        for linux-btrfs@vger.kernel.org; Fri, 13 Oct 2017 07:27:41 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH v2 3/3] btrfs-progs: device: add remove missing-all
+Date: Fri, 13 Oct 2017 05:27:34 +0000 (UTC)
+Message-ID: <pan$48dd8$f51614da$34e59787$eb10b745@cox.net>
+References: <bb58e829-77d4-1bd1-4021-2db996809a6e@jp.fujitsu.com>
+        <be3e6086-5a2f-77d0-5dbc-dcb5a1a57815@jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This series updates "btrfs device remove missing".
+Misono, Tomohiro posted on Wed, 11 Oct 2017 11:18:50 +0900 as excerpted:
 
-Currently, the document lacks the description of "remove missing" which is
-written only in wikipage. First and second patch updates the documents.
-Third patch introduces new keyword "missing-all" to remove the all missing
-devices at once for improving usability.
+> Add 'btrfs remove missing-all' to remove all the missing devices at once
+> for improving usability.
+> 
+> Example:
+>  sudo mkfs.btrfs -f -d raid1 /dev/sdb1 /dev/sdb2 /dev/sdb3 /dev/sdb4
+>  sudo wipefs -a /dev/sdb1 /dev/sdb3
+>  sudo mount -o degraded /dev/sdb2 /mnt
+>  sudo btrfs filesystem show /mnt
+>  sudo btrfs device remove missing-all /mnt
+>  sudo btrfs filesystem show /mnt
 
-changelog:
-v1->v2:
- split the patch and add missing-all
- 
-Tomohiro Misono (3):
-	btrfs-progs: device: add description of alias to help message
-	btrfs-progs: doc: add description of missing and example of device remove
-	btrfs-progs: device: add remove missing-all
 
- Documentation/btrfs-device.asciidoc | 20 +++++++++++++++++++-
- cmds-device.c                       | 32 +++++++++++++++++++++++++++++++-
- 2 files changed, 50 insertions(+), 2 deletions(-)
+There's a reason remove missing-all hasn't yet been implemented.
+
+Note that the above would be very unlikely to work once a filesystem has 
+been used in any significant way, because raid1 and raid10 are explicitly 
+chunk pairs, *NOT* duplicated N times across N devices.  So with two 
+devices missing, chances are that both copies of some chunks will be 
+missing as well, so the filesystem would no longer be mountable degraded-
+writable, only degraded-readonly, in which case device remove won't work 
+at all because the filesystem is readonly.
+
+In fact, until the recent per-chunk check patches went in, it was 
+impossible to mount-writable a raid1 missing two devices at all, because 
+the safeguards simply assumed some chunks would be entirely missing.
+
+The only case in which more than a single device missing is likely to be 
+mountable degraded-writable (so device remove will work at all) is raid6, 
+tho with recent patches there's narrow cases in which it /might/ be 
+doable with raid1 as well.
+
+Now you may still wish to implement remove missing-all for raid6 mode and 
+for the unusual corner-case raid1/raid10 in which it might work, but the 
+documentation should be pretty clear that save for raid6 it can't be 
+expected to work in most cases.
+
+Given that, I think remove missing-all hasn't been implemented as it 
+simply hasn't been considered to be worth the bother for the narrow use-
+cases in which it will actually work.
 
 -- 
-2.9.5
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

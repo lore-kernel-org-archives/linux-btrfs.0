@@ -1,61 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:50078 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1753214AbdJQDvF (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:26214 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750731AbdJPE4f (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Oct 2017 23:51:05 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1e4Iu2-00065m-VS
-        for linux-btrfs@vger.kernel.org; Tue, 17 Oct 2017 05:50:50 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH v3 2/2] btrfs-progs: doc: add description of missing and
- example of device remove
-Date: Tue, 17 Oct 2017 03:50:42 +0000 (UTC)
-Message-ID: <pan$737d1$a91e4047$e60af25f$fab8213e@cox.net>
+        Mon, 16 Oct 2017 00:56:35 -0400
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 0329BAC008D
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Oct 2017 13:56:29 +0900 (JST)
+Received: from G01JPEXCHKW14.g01.fujitsu.local (G01JPEXCHKW14.g01.fujitsu.local [10.0.194.53])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 200146923B9
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Oct 2017 13:56:28 +0900 (JST)
+Subject: [PATCH v3 1/2] btrfs-progs: device: add description of alias to help
+ message
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <7dcb7f01-ce39-18a6-9a16-9230b76baf77@jp.fujitsu.com>
-        <d5e0465d-9606-1881-84a7-86c0d43e0033@jp.fujitsu.com>
-        <98ad3fcf-dc1c-babd-2876-c26953105a03@suse.com>
-        <bffa9bb9-bd2b-90b7-9517-f728bbbeb543@jp.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <0391ab9e-96ba-5e18-a36e-9269cd40a182@jp.fujitsu.com>
+Date: Mon, 16 Oct 2017 13:56:25 +0900
+MIME-Version: 1.0
+In-Reply-To: <7dcb7f01-ce39-18a6-9a16-9230b76baf77@jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Misono, Tomohiro posted on Tue, 17 Oct 2017 10:45:58 +0900 as excerpted:
+State the 'delete' is the alias of 'remove' as the man page says.
 
-> On 2017/10/16 18:22, Nikolay Borisov wrote:
->> 
->> 
->> On 16.10.2017 07:56, Misono, Tomohiro wrote:
->>>
->>> 1. Add explanation of 'missing' for 'device remove'. This is only
->>> written in wikipage currently.
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+Reviewed-by: Satoru Takeuchi <satoru.takeuchi@gmail.com>
+---
+ cmds-device.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->>> +++ b/Documentation/btrfs-device.asciidoc
-
->> Also, what happens if there are 2 or more devices missing, will those
->> be deleted as well or just the first device? If all missing devices are
->> handled then this needs to be reflected in the documentation.
-
-> How about adding a note in the end?:
-> ===
->  If filesystem is mounted in degraded mode (-o degraded), special term
->  "missing" can be used for <device>. In that case, the first device that
->  is described by the filesystem metadata, but not present at the mount
->  time will be removed.
-> 
->  NOTE: In most cases, there is only one missing device in degraded mode,
->  otherwise mount fails. If there are two or more devices missing (e.g.
->  possible in RAID 6), you need specify "missing" as many times as the
->  number of missing devices to remove all of them.
-> ===
-
-LGTM. =:^)
-
+diff --git a/cmds-device.c b/cmds-device.c
+index 4337eb2..3b6b985 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -237,7 +237,7 @@ static int cmd_device_remove(int argc, char **argv)
+ 
+ static const char * const cmd_device_delete_usage[] = {
+ 	"btrfs device delete <device>|<devid> [<device>|<devid>...] <path>",
+-	"Remove a device from a filesystem",
++	"Remove a device from a filesystem (alias of \"btrfs device remove\")",
+ 	NULL
+ };
+ 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.9.5
 

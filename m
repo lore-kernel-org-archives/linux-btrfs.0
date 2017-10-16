@@ -1,32 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47703 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45236 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753133AbdJPOwz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Oct 2017 10:52:55 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 68790AAF1
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Oct 2017 14:52:54 +0000 (UTC)
-Date: Mon, 16 Oct 2017 16:51:05 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Replace opencoded sizes with their symbolic
- constants
-Message-ID: <20171016145105.GS3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171016134125.GK3521@twin.jikos.cz>
- <1508161720-638-1-git-send-email-nborisov@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1508161720-638-1-git-send-email-nborisov@suse.com>
+        id S1752844AbdJPRAv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Oct 2017 13:00:51 -0400
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.13.3
+Date: Mon, 16 Oct 2017 18:58:59 +0200
+Message-Id: <20171016165859.4101-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 16, 2017 at 04:48:40PM +0300, Nikolay Borisov wrote:
-> Currently btrfs' code uses a mix of opencoded sizes and defines from sizes.h.
-> Let's unifiy the code base to always use the symbolic constants. No functional
-> changes
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Hi,
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+btrfs-progs version 4.13.3 have been released.
+
+This is a bugfix release, namely for the subvolume listing and deletion
+commands (again), and 'check --force'. Both were not caught by faulty tests,
+now fixed.
+
+Changes:
+  * check: fix --force, wrong check for a mounted block device
+  * build: fix --with-convert parsing
+  * subvol list: don't list TOPLEVEL
+  * other: update tests
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Shortlog:
+
+David Sterba (7):
+      btrfs-progs: check: drop exclusive open mode for --force
+      btrfs-progs: tests: fsck/007 fix so check --force works
+      btrfs-progs: build: move travis helper script to own directory
+      btrfs-progs: tests: add more configure option coverage
+      btrfs-progs: build: add absolute path for topdir
+      btrfs-progs: update CHANGES for v4.13.3
+      Btrfs progs v4.13.3
+
+Lu Fengqi (1):
+      btrfs-progs: subvol list: don't print deleted subvol as TOPLEVEL
+
+Naohiro Aota (1):
+      btrfs-progs: build: set include path relatively
+
+Sergei Trofimovich (1):
+      btrfs-progs: build: allow '--with-convert=' to accept comma-separated values

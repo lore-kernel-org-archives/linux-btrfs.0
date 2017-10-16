@@ -1,118 +1,346 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:60311 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1761926AbdJQNEJ (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 17 Oct 2017 09:04:09 -0400
-Subject: Re: reproducable oops in btrfs/130 with latests mainline
-To: Qu Wenruo <wqu@suse.com>, Po-Hsu Lin <po-hsu.lin@canonical.com>,
-        linux-btrfs@vger.kernel.org
-References: <20161125080723.GA12776@infradead.org>
- <190cc125&#45;d1c1&#45;6005&#45;c23b&#45;cc54c825f242@fb.com>
- <20171017111151.4316-1-po-hsu.lin@canonical.com>
- <4bd6e028-a4bf-6749-2894-e5f9a0e0f629@suse.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <86b47125-32e7-d8b5-fe42-0225b8c1d42a@suse.com>
-Date: Tue, 17 Oct 2017 09:03:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:39159 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752486AbdJPS46 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Oct 2017 14:56:58 -0400
+Date: Mon, 16 Oct 2017 20:55:11 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: qgroup: show subvol path when qgroup show
+Message-ID: <20171016185511.GW3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171010083709.30690-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <4bd6e028-a4bf-6749-2894-e5f9a0e0f629@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="COILsUPSlKRRhbf1SoWD05mvleTgniREt"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171010083709.30690-1-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---COILsUPSlKRRhbf1SoWD05mvleTgniREt
-Content-Type: multipart/mixed; boundary="dDimVnoQ89KfWHMCp7xW45CwlRPvrF0Rd";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Qu Wenruo <wqu@suse.com>, Po-Hsu Lin <po-hsu.lin@canonical.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <86b47125-32e7-d8b5-fe42-0225b8c1d42a@suse.com>
-Subject: Re: reproducable oops in btrfs/130 with latests mainline
-References: <20161125080723.GA12776@infradead.org>
- <190cc125&#45;d1c1&#45;6005&#45;c23b&#45;cc54c825f242@fb.com>
- <20171017111151.4316-1-po-hsu.lin@canonical.com>
- <4bd6e028-a4bf-6749-2894-e5f9a0e0f629@suse.com>
-In-Reply-To: <4bd6e028-a4bf-6749-2894-e5f9a0e0f629@suse.com>
+On Tue, Oct 10, 2017 at 04:37:09PM +0800, Lu Fengqi wrote:
+> Show the absolute subvol path for the associated level-0 qgroup.
+> 
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+> ---
+>  Documentation/btrfs-qgroup.asciidoc |   2 +
+>  cmds-qgroup.c                       |   7 +-
+>  qgroup.c                            | 130 +++++++++++++++++++++++++++++++++---
+>  qgroup.h                            |   1 +
+>  4 files changed, 129 insertions(+), 11 deletions(-)
+> 
+> diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
+> index 3053f2e6..fb48a917 100644
+> --- a/Documentation/btrfs-qgroup.asciidoc
+> +++ b/Documentation/btrfs-qgroup.asciidoc
+> @@ -93,6 +93,8 @@ Show all qgroups in the btrfs filesystem identified by <path>.
+>  print parent qgroup id.
+>  -c::::
+>  print child qgroup id.
+> +-P::::
+> +print subvol path.
+>  -r::::
+>  print limit of referenced size of qgroup.
+>  -e::::
+> diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+> index 38382ea9..9dce84ae 100644
+> --- a/cmds-qgroup.c
+> +++ b/cmds-qgroup.c
+> @@ -277,6 +277,7 @@ static const char * const cmd_qgroup_show_usage[] = {
+>  	"Show subvolume quota groups.",
+>  	"-p             print parent qgroup id",
+>  	"-c             print child qgroup id",
+> +	"-P             print subvol path",
 
---dDimVnoQ89KfWHMCp7xW45CwlRPvrF0Rd
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I think the path should be printed by default. A more intelligent way of
+specifying the columns is on the way, so I'd leave the path without an
+option. It's printed as a last item so hopefully will not break tools
+that parse the qgrou show output.
 
-On 10/17/17 8:46 AM, Qu Wenruo wrote:
->=20
->=20
-> On 2017=E5=B9=B410=E6=9C=8817=E6=97=A5 19:11, Po-Hsu Lin wrote:
->> Hello Chris,
->>
->> I can reproduce this on my side too, with Ubuntu 16.04 + 4.4.0-97 kern=
-el.
->=20
-> Btrfs/130 is a known bug.
->=20
-> I submitted it to raise the concern about such situation and purposed
-> one possible solution (just disable deduped file detection).
->=20
-> But the solution doesn't get accepted.
+>  	"-r             print limit of referenced size of qgroup",
+>  	"-e             print limit of exclusive size of qgroup",
+>  	"-F             list all qgroups which impact the given path",
+> @@ -322,7 +323,7 @@ static int cmd_qgroup_show(int argc, char **argv)
+>  			{ NULL, 0, NULL, 0 }
+>  		};
+>  
+> -		c = getopt_long(argc, argv, "pcreFf", long_options, NULL);
+> +		c = getopt_long(argc, argv, "pcPreFf", long_options, NULL);
+>  		if (c < 0)
+>  			break;
+>  		switch (c) {
+> @@ -334,6 +335,10 @@ static int cmd_qgroup_show(int argc, char **argv)
+>  			btrfs_qgroup_setup_print_column(
+>  				BTRFS_QGROUP_CHILD);
+>  			break;
+> +		case 'P':
+> +			btrfs_qgroup_setup_print_column(
+> +				BTRFS_QGROUP_PATH);
+> +			break;
+>  		case 'r':
+>  			btrfs_qgroup_setup_print_column(
+>  				BTRFS_QGROUP_MAX_RFER);
+> diff --git a/qgroup.c b/qgroup.c
+> index fffdbb12..d618107e 100644
+> --- a/qgroup.c
+> +++ b/qgroup.c
+> @@ -62,6 +62,9 @@ struct btrfs_qgroup {
+>  	struct list_head qgroups;
+>  	/*qgroups that are members of this group*/
+>  	struct list_head members;
+> +
+> +	/* level-0 qgroup's subvolume path */
+> +	char *path;
+>  };
+>  
+>  /*
+> @@ -133,6 +136,13 @@ static struct {
+>  		.unit_mode	= 0,
+>  		.max_len	= 5,
+>  	},
+> +	{
+> +		.name		= "path",
+> +		.column_name	= "Path",
+> +		.need_print	= 0,
+> +		.unit_mode	= 0,
+> +		.max_len	= 4,
+> +	},
+>  	{
+>  		.name		= NULL,
+>  		.column_name	= NULL,
+> @@ -253,6 +263,9 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+>  		len = print_child_column(qgroup);
+>  		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
+>  		break;
+> +	case BTRFS_QGROUP_PATH:
+> +		len = printf("%s", qgroup->path ? qgroup->path : "---");
+> +		print_qgroup_column_add_blank(BTRFS_QGROUP_PATH, len);
+>  	default:
+>  		break;
+>  	}
+> @@ -267,7 +280,7 @@ static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
+>  			continue;
+>  		print_qgroup_column(qgroup, i);
+>  
+> -		if (i != BTRFS_QGROUP_CHILD)
+> +		if (i != BTRFS_QGROUP_ALL - 1)
+>  			printf(" ");
+>  	}
+>  	printf("\n");
+> @@ -284,7 +297,7 @@ static void print_table_head(void)
+>  		if (!btrfs_qgroup_columns[i].need_print)
+>  			continue;
+>  		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
+> -			(i == BTRFS_QGROUP_CHILD))
+> +			(i == BTRFS_QGROUP_CHILD) | (i == BTRFS_QGROUP_PATH))
+>  			printf("%-*s", max_len, btrfs_qgroup_columns[i].name);
+>  		else
+>  			printf("%*s", max_len, btrfs_qgroup_columns[i].name);
+> @@ -296,7 +309,7 @@ static void print_table_head(void)
+>  		if (!btrfs_qgroup_columns[i].need_print)
+>  			continue;
+>  		if ((i == BTRFS_QGROUP_QGROUPID) | (i == BTRFS_QGROUP_PARENT) |
+> -			(i == BTRFS_QGROUP_CHILD)) {
+> +			(i == BTRFS_QGROUP_CHILD) | (i == BTRFS_QGROUP_PATH)) {
+>  			len = strlen(btrfs_qgroup_columns[i].name);
+>  			while (len--)
+>  				printf("-");
+> @@ -627,7 +640,7 @@ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+>  		      u64 generation, u64 rfer, u64 rfer_cmpr, u64 excl,
+>  		      u64 excl_cmpr, u64 flags, u64 max_rfer, u64 max_excl,
+>  		      u64 rsv_rfer, u64 rsv_excl, struct btrfs_qgroup *parent,
+> -		      struct btrfs_qgroup *child)
+> +		      struct btrfs_qgroup *child, char *path)
+>  {
+>  	struct btrfs_qgroup *bq;
+>  	struct btrfs_qgroup_list *list;
+> @@ -678,6 +691,8 @@ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+>  		list_add_tail(&list->next_qgroup, &child->qgroups);
+>  		list_add_tail(&list->next_member, &parent->members);
+>  	}
+> +	bq->path = path;
+> +
+>  	ret = qgroup_tree_insert(qgroup_lookup, bq);
+>  	if (ret) {
+>  		error("failed to insert %llu into tree: %s",
+> @@ -687,6 +702,88 @@ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+>  	return ret;
+>  }
+>  
+> +/*
+> + * Construct subvolume path for level-0 qgroup according to qgroupid.
+> + *
+> + * Return a potiner to the path string on success.
+> + * Return NULL on error or qgroup level > 0.
+> + */
+> +static char *qgroups_path_lookup(int fd, struct qgroup_lookup *qgroup_lookup,
+> +				 u64 qgroupid)
+> +{
+> +	struct btrfs_ioctl_search_args args;
+> +	struct btrfs_ioctl_search_key *sk = &args.key;
+> +	struct btrfs_root_ref *ref;
+> +	struct btrfs_ioctl_search_header sh;
+> +	struct btrfs_qgroup *bq;
+> +	char *name, *path;
+> +	u64 subvol_id;
+> +	int name_len;
+> +	int ret;
+> +
+> +	/* construct the path only if need print path */
+> +	if (!btrfs_qgroup_columns[BTRFS_QGROUP_PATH].need_print)
+> +		return NULL;
+> +
+> +	/* only level-0 qgroup has the corresponding subvolume*/
+> +	if (btrfs_qgroup_level(qgroupid))
+> +		return NULL;
+> +
+> +	subvol_id = btrfs_qgroup_subvid(qgroupid);
+> +	if (subvol_id < BTRFS_FIRST_FREE_OBJECTID ||
+> +			subvol_id > BTRFS_LAST_FREE_OBJECTID)
+> +		return NULL;
+> +
+> +	memset(&args, 0, sizeof(args));
+> +
+> +	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> +	sk->max_type = BTRFS_ROOT_BACKREF_KEY;
+> +	sk->min_type = BTRFS_ROOT_BACKREF_KEY;
+> +	sk->max_objectid = subvol_id;
+> +	sk->min_objectid = subvol_id;
+> +	sk->max_offset = (u64)-1;
+> +	sk->max_transid = (u64)-1;
+> +
+> +	sk->nr_items = 4096;
+> +	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> +	if (ret < 0)
+> +		return NULL;
+> +	if (!sk->nr_items)
+> +		return NULL;
+> +
+> +	/* resolve the ROOT_BACKREF to get the subvolume name*/
+> +	memcpy(&sh, args.buf, sizeof(sh));
+> +	ref = (struct btrfs_root_ref *)(args.buf + sizeof(sh));
+> +	name_len = btrfs_stack_root_ref_name_len(ref);
+> +	name = (char *)(ref + 1);
+> +
+> +	/*
+> +	 * directly return subvolume name if top level is the initial subvolume
+> +	 */
+> +	if (sh.offset == BTRFS_FS_TREE_OBJECTID)
+> +		return strndup(name, name_len);
+> +
+> +	/*
+> +	 * construct path based on the upper subvolume path and the subvolume
+> +	 * name
+> +	 */
+> +	bq = qgroup_tree_search(qgroup_lookup, sh.offset);
+> +	if (!bq || bq->qgroupid != sh.offset)
+> +		return NULL;
+> +
+> +	/*
+> +	 * 2 means the path delimiter '/' and the terminating null byte ('\0')
+> +	 */
+> +	path = malloc(strlen(name) + strlen(bq->path) + 2);
+> +	if (!path) {
+> +		perror("malloc failed");
+> +		exit(1);
+> +	}
+> +	sprintf(path, "%s/%s", bq->path, name);
+> +
+> +	return path;
+> +}
+> +
+>  static void __free_btrfs_qgroup(struct btrfs_qgroup *bq)
+>  {
+>  	struct btrfs_qgroup_list *list;
+> @@ -706,6 +803,8 @@ static void __free_btrfs_qgroup(struct btrfs_qgroup *bq)
+>  		list_del(&list->next_member);
+>  		free(list);
+>  	}
+> +	if (bq->path)
+> +		free(bq->path);
+>  	free(bq);
+>  }
+>  
+> @@ -979,6 +1078,11 @@ static void __update_columns_max_len(struct btrfs_qgroup *bq,
+>  		if (btrfs_qgroup_columns[column].max_len < len)
+>  			btrfs_qgroup_columns[column].max_len = len;
+>  		break;
+> +	case BTRFS_QGROUP_PATH:
+> +		len = bq->path ? strlen(bq->path) : 0;
+> +		if (btrfs_qgroup_columns[column].max_len < len)
+> +			btrfs_qgroup_columns[column].max_len = len;
+> +		break;
+>  	default:
+>  		break;
+>  	}
+> @@ -1092,8 +1196,12 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+>  				print_status_flag_warning(flags);
+>  			} else if (btrfs_search_header_type(sh)
+>  				   == BTRFS_QGROUP_INFO_KEY) {
+> +				u64 qgroupid;
+> +				char *path;
+> +
+>  				info = (struct btrfs_qgroup_info_item *)
+>  				       (args.buf + off);
+> +				qgroupid = btrfs_search_header_offset(sh);
+>  				a1 = btrfs_stack_qgroup_info_generation(info);
+>  				a2 = btrfs_stack_qgroup_info_referenced(info);
+>  				a3 =
+> @@ -1103,10 +1211,11 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+>  				a5 =
+>  				  btrfs_stack_qgroup_info_exclusive_compressed
+>  				  (info);
+> -				add_qgroup(qgroup_lookup,
+> -					btrfs_search_header_offset(sh), a1,
+> -					a2, a3, a4, a5, 0, 0, 0, 0, 0, NULL,
+> -					NULL);
+> +				path = qgroups_path_lookup(fd, qgroup_lookup,
+> +							   qgroupid);
+> +				add_qgroup(qgroup_lookup, qgroupid, a1, a2, a3,
+> +					   a4, a5, 0, 0, 0, 0, 0, NULL, NULL,
+> +					   path);
+>  			} else if (btrfs_search_header_type(sh)
+>  				   == BTRFS_QGROUP_LIMIT_KEY) {
+>  				limit = (struct btrfs_qgroup_limit_item *)
+> @@ -1124,7 +1233,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+>  				add_qgroup(qgroup_lookup,
+>  					   btrfs_search_header_offset(sh), 0,
+>  					   0, 0, 0, 0, a1, a2, a3, a4, a5,
+> -					   NULL, NULL);
+> +					   NULL, NULL, NULL);
+>  			} else if (btrfs_search_header_type(sh)
+>  				   == BTRFS_QGROUP_RELATION_KEY) {
+>  				if (btrfs_search_header_offset(sh)
+> @@ -1140,7 +1249,8 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+>  					goto skip;
+>  				add_qgroup(qgroup_lookup,
+>  					   btrfs_search_header_offset(sh), 0,
+> -					   0, 0, 0, 0, 0, 0, 0, 0, 0, bq, bq1);
+> +					   0, 0, 0, 0, 0, 0, 0, 0, 0, bq, bq1,
+> +					   NULL);
 
-It also works very well as a performance test for qgroup runtime
-improvements. :)
+Oh no, yet another argument, so it's 15 in total.
 
--Jeff
-
-> Thanks,
-> Qu
->>
->> PREEMPT config:
->> $ cat config-4.4.0-97-generic | grep PREEMPT
->> CONFIG_PREEMPT_NOTIFIERS=3Dy
->> # CONFIG_PREEMPT_NONE is not set
->> CONFIG_PREEMPT_VOLUNTARY=3Dy
->> # CONFIG_PREEMPT is not set
->>
->> Bug reports on launchpad:
->> https://bugs.launchpad.net/bugs/1718925
->> https://bugs.launchpad.net/bugs/1717443
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
- in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->=20
-
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---dDimVnoQ89KfWHMCp7xW45CwlRPvrF0Rd--
-
---COILsUPSlKRRhbf1SoWD05mvleTgniREt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2
-
-iQIVAwUBWeX/wB57S2MheeWyAQgqWhAAtOS83zAOixrZoJDG3Z9Eb7WUIQ9NoE3J
-lnZeDTZgHGsK7AnqqZsDoU6zKayWU1Zn1bRabbx+X3xZcMo15dB9JIdH3LCWrUZ5
-+EJ/RSJ8EcdDEmNgYyZJ1B1h1Rg7+xT17mCsu5AqySgC8waPW+5tiQf5UWgWRA4S
-0EOTZ7gl4qWWOfDOrfNpnC55AXk+qFQF8w8egq18ubXuklG1AeFf//7qiD+pozHL
-Ki/13AdwLJsvd5QfZ1LtUTS4CVmAjdYc+8z6qtAN3PTTIhiHKhcCVxAuHuSKDOQL
-qsdVJhJmL5/t85w4JxSGiN+HUVaIkJDyMHIaK3m394RKLLpVW9JnkcxFRvkT68gG
-/N/klF8TUf5SfQWUTq5bnm4B6myusVujuuI84GFauEM138VjDic0nImMq8H+n3ln
-XXM/a3eSQp691vvpp2vMT/8XohsX478xPSyGdLUENKdrvCzT+gN4NSY2yptUCMPk
-RRMbg78oYbUyseB9LSuYXTbCoqSbRgdoVxhYnlBgigPqFU9nrvY+cmotaHD9XSq4
-6i6SbG49NgX23Z601VKYXqPb8cBUrKYTo0WpiC/RVHPpc7X5qm/lI1m5KKchfwJi
-FSxJuINkwYFUoomqPfcNrYHeEBIyvaKOVOngVx42LfeJJjWHrIkEnW9QN5vqXdNB
-7LOx0xA6NV0=
-=aZKd
------END PGP SIGNATURE-----
-
---COILsUPSlKRRhbf1SoWD05mvleTgniREt--
+>  			} else
+>  				goto done;
+>  skip:
+> diff --git a/qgroup.h b/qgroup.h
+> index 875fbdf3..2003f834 100644
+> --- a/qgroup.h
+> +++ b/qgroup.h
+> @@ -59,6 +59,7 @@ enum btrfs_qgroup_column_enum {
+>  	BTRFS_QGROUP_MAX_EXCL,
+>  	BTRFS_QGROUP_PARENT,
+>  	BTRFS_QGROUP_CHILD,
+> +	BTRFS_QGROUP_PATH,
+>  	BTRFS_QGROUP_ALL,
+>  };
+>  
+> -- 
+> 2.14.2
+> 
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

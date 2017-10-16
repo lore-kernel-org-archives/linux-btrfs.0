@@ -1,54 +1,148 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33400 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44211 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753497AbdJNQsw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 14 Oct 2017 12:48:52 -0400
-Date: Fri, 13 Oct 2017 19:10:04 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 19/21] btrfs: don't call btrfs_start_delalloc_roots in
- flushoncommit
-Message-ID: <20171013171004.GB3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1752274AbdJPOFX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Oct 2017 10:05:23 -0400
+Subject: Re: [PATCH 09/21] btrfs: move extent_op cleanup to a helper
+To: Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
 References: <1506714245-23072-1-git-send-email-jbacik@fb.com>
- <1506714245-23072-20-git-send-email-jbacik@fb.com>
+ <1506714245-23072-10-git-send-email-jbacik@fb.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <762cd1c0-2a51-847d-5dbb-1ba8e7952b70@suse.com>
+Date: Mon, 16 Oct 2017 17:05:19 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1506714245-23072-20-git-send-email-jbacik@fb.com>
+In-Reply-To: <1506714245-23072-10-git-send-email-jbacik@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 29, 2017 at 03:44:03PM -0400, Josef Bacik wrote:
-> We're holding the sb_start_intwrite lock at this point, and doing async
-> filemap_flush of the inodes will result in a deadlock if we freeze the
-> fs during this operation.  This is because we could do a
-> btrfs_join_transaction() in the thread we are waiting on which would
-> block at sb_start_intwrite, and thus deadlock.  Using
-> writeback_inodes_sb() side steps the problem by not introducing all of
-> these extra locking dependencies.
+
+
+On 29.09.2017 22:43, Josef Bacik wrote:
+> Move the extent_op cleanup for an empty head ref to a helper function to
+> help simplify __btrfs_run_delayed_refs.
 > 
 > Signed-off-by: Josef Bacik <jbacik@fb.com>
 > ---
->  fs/btrfs/transaction.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+>  fs/btrfs/extent-tree.c | 77 ++++++++++++++++++++++++++------------------------
+>  1 file changed, 40 insertions(+), 37 deletions(-)
 > 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 68c3e1c04bca..9fed8c67b6e8 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1917,7 +1917,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
->  static inline int btrfs_start_delalloc_flush(struct btrfs_fs_info *fs_info)
->  {
->  	if (btrfs_test_opt(fs_info, FLUSHONCOMMIT))
-> -		return btrfs_start_delalloc_roots(fs_info, 1, -1);
-> +		writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index f356b4a66186..f4048b23c7be 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -2587,6 +2587,26 @@ unselect_delayed_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
+>  	btrfs_delayed_ref_unlock(head);
+>  }
+>  
+> +static int cleanup_extent_op(struct btrfs_trans_handle *trans,
+> +			     struct btrfs_fs_info *fs_info,
 
-This really needs a comment in the code, it's calling an external
-interface to do some internal stuff. I was not able to trace it from
-writeback_inodes_sb back to the dealloc in a reasonable time, so some
-pointers in the comment are highly appreciated. The changelog sort of
-explains what's going on, but it's still hard to find it in the code.
+Do we really need the fs_info as a separate argument, since we can
+obtain it from trans->fs_info, admittedly this would require refactoring
+run_delayed_extent_op as well? Looking at the other patches which
+simplify delayed refs there are numerous function which take both a
+transaction and a fs_info. Is there a case where trans' fs_info is not
+the same as the fs_info based, I'd say no?
 
-With writeback_inodes_sb, the function does not return any error and can
-be moved to the single caller.
+> +			     struct btrfs_delayed_ref_head *head)
+> +{
+> +	struct btrfs_delayed_extent_op *extent_op = head->extent_op;
+> +	int ret;
+> +
+> +	if (!extent_op)
+> +		return 0;
+> +	head->extent_op = NULL;
+> +	if (head->must_insert_reserved) {
+> +		btrfs_free_delayed_extent_op(extent_op);
+> +		return 0;
+> +	}
+> +	spin_unlock(&head->lock);
+> +	ret = run_delayed_extent_op(trans, fs_info, &head->node, extent_op);
+> +	btrfs_free_delayed_extent_op(extent_op);
+> +	return ret ? ret : 1;
+> +}
+> +
+>  /*
+>   * Returns 0 on success or if called with an already aborted transaction.
+>   * Returns -ENOMEM or -EIO on failure and will abort the transaction.
+> @@ -2667,16 +2687,6 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  			continue;
+>  		}
+>  
+> -		/*
+> -		 * record the must insert reserved flag before we
+> -		 * drop the spin lock.
+> -		 */
+> -		must_insert_reserved = locked_ref->must_insert_reserved;
+> -		locked_ref->must_insert_reserved = 0;
+> -
+> -		extent_op = locked_ref->extent_op;
+> -		locked_ref->extent_op = NULL;
+> -
+>  		if (!ref) {
+>  
+>  
+> @@ -2686,33 +2696,17 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  			 */
+>  			ref = &locked_ref->node;
+>  
+> -			if (extent_op && must_insert_reserved) {
+> -				btrfs_free_delayed_extent_op(extent_op);
+> -				extent_op = NULL;
+> -			}
+> -
+> -			if (extent_op) {
+> -				spin_unlock(&locked_ref->lock);
+> -				ret = run_delayed_extent_op(trans, fs_info,
+> -							    ref, extent_op);
+> -				btrfs_free_delayed_extent_op(extent_op);
+> -
+> -				if (ret) {
+> -					/*
+> -					 * Need to reset must_insert_reserved if
+> -					 * there was an error so the abort stuff
+> -					 * can cleanup the reserved space
+> -					 * properly.
+> -					 */
+> -					if (must_insert_reserved)
+> -						locked_ref->must_insert_reserved = 1;
+> -					unselect_delayed_ref_head(delayed_refs,
+> -								  locked_ref);
+> -					btrfs_debug(fs_info,
+> -						    "run_delayed_extent_op returned %d",
+> -						    ret);
+> -					return ret;
+> -				}
+> +			ret = cleanup_extent_op(trans, fs_info, locked_ref);
+> +			if (ret < 0) {
+> +				unselect_delayed_ref_head(delayed_refs,
+> +							  locked_ref);
+> +				btrfs_debug(fs_info,
+> +					    "run_delayed_extent_op returned %d",
+> +					    ret);
+> +				return ret;
+> +			} else if (ret > 0) {
+> +				/* We dropped our lock, we need to loop. */
+> +				ret = 0;
+>  				continue;
+>  			}
+>  
+> @@ -2761,6 +2755,15 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>  				WARN_ON(1);
+>  			}
+>  		}
+> +		/*
+> +		 * record the must insert reserved flag before we
+> +		 * drop the spin lock.
+> +		 */
+> +		must_insert_reserved = locked_ref->must_insert_reserved;
+> +		locked_ref->must_insert_reserved = 0;
+> +
+> +		extent_op = locked_ref->extent_op;
+> +		locked_ref->extent_op = NULL;
+>  		spin_unlock(&locked_ref->lock);
+>  
+>  		ret = run_one_delayed_ref(trans, fs_info, ref, extent_op,
+> 

@@ -1,89 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47164 "EHLO mx1.suse.de"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751393AbdJEIfD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 5 Oct 2017 04:35:03 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx1.suse.de (Postfix) with ESMTP id 542A0B00C
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 Oct 2017 08:35:02 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v4] btrfs: Remove received_uuid during received snapshot ro->rw switch
-Date: Thu,  5 Oct 2017 11:22:53 +0300
-Message-Id: <1507191773-23039-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <20171004150039.GE3521@twin.jikos.cz>
-References: <20171004150039.GE3521@twin.jikos.cz>
+Received: from zaphod.cobb.me.uk ([213.138.97.131]:37082 "EHLO
+        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752358AbdJPP7R (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 16 Oct 2017 11:59:17 -0400
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 7C0859BAA0
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Oct 2017 16:59:15 +0100 (BST)
+Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
+        by black.home.cobb.me.uk (Postfix) with ESMTPS id 30ADC5FBB1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Oct 2017 16:59:15 +0100 (BST)
+Subject: Re: Why isnt NOCOW attributes propogated on snapshot transfers?
+To: linux-btrfs@vger.kernel.org
+References: <CAN4oSBcZmqh+iK7Qyd4VBcOhQDfZVAu2B7_1pL60UKCb_oX3zg@mail.gmail.com>
+ <20171016132826.GH3521@twin.jikos.cz>
+From: Graham Cobb <g.btrfs@cobb.uk.net>
+Message-ID: <a3f7cc05-d6c0-f6c9-f93d-616c386db691@cobb.uk.net>
+Date: Mon, 16 Oct 2017 16:59:14 +0100
+MIME-Version: 1.0
+In-Reply-To: <20171016132826.GH3521@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently when a read-only snapshot is received and subsequently its ro property
-is set to false i.e. switched to rw-mode the received_uuid of that subvol remains
-intact. However, once the received volume is switched to RW mode we cannot
-guaranteee that it contains the same data, so it makes sense to remove the
-received uuid. The presence of the received_uuid can also cause problems when
-the volume is being send.
+On 16/10/17 14:28, David Sterba wrote:
+> On Sun, Oct 15, 2017 at 04:19:23AM +0300, Cerem Cem ASLAN wrote:
+>> `btrfs send | btrfs receive` removes NOCOW attributes. Is it a bug or
+>> a feature? If it's a feature, how can we keep these attributes if we
+>> need to?
+> 
+> This is a known defficiency of send protocol v1. And there are more,
+> listed on
+> https://btrfs.wiki.kernel.org/index.php/Design_notes_on_Send/Receive#Send_stream_v2_draft
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Suggested-by: David Sterba <dsterba@suse.cz>
----
-
-v4: 
- * Put the uuid tree removal code after the lightweight 'send in progress' 
- check and don't move btrfs_start_transaction as suggested by David
- 
-v3:
- * Rework the patch considering latest feedback from David Sterba i.e. 
-  explicitly use btrfs_end_transaction 
-
- fs/btrfs/ioctl.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ee4ee7cbba72..9328c091854b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1775,6 +1775,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
- 	struct btrfs_trans_handle *trans;
- 	u64 root_flags;
- 	u64 flags;
-+	bool clear_received_uuid = false;
- 	int ret = 0;
- 
- 	if (!inode_owner_or_capable(inode))
-@@ -1824,6 +1825,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
- 			btrfs_set_root_flags(&root->root_item,
- 				     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
- 			spin_unlock(&root->root_item_lock);
-+			clear_received_uuid = true;
- 		} else {
- 			spin_unlock(&root->root_item_lock);
- 			btrfs_warn(fs_info,
-@@ -1840,6 +1842,24 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
- 		goto out_reset;
- 	}
- 
-+	if (clear_received_uuid) {
-+	        if (!btrfs_is_empty_uuid(root->root_item.received_uuid)) {
-+	                ret = btrfs_uuid_tree_rem(trans, fs_info,
-+	                                root->root_item.received_uuid,
-+	                                BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-+	                                root->root_key.objectid);
-+
-+	                if (ret && ret != -ENOENT) {
-+	                        btrfs_abort_transaction(trans, ret);
-+	                        btrfs_end_transaction(trans);
-+	                        goto out_reset;
-+	                }
-+
-+	                memset(root->root_item.received_uuid, 0,
-+	                                BTRFS_UUID_SIZE);
-+	        }
-+	}
-+
- 	ret = btrfs_update_root(trans, fs_info->tree_root,
- 				&root->root_key, &root->root_item);
- 	if (ret < 0) {
--- 
-2.7.4
-
+It is not mentioned on the list (and I haven't tested to find out)...
+but if xattr are supported in the V1 protocol, any chance of `send`
+converting these file flags to xattr, and `receive` converting back? No
+need for a protocol bump and would even preserve the information
+(although not the effect) in the case of an old receiver.

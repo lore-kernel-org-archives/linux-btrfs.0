@@ -1,115 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f179.google.com ([209.85.192.179]:56500 "EHLO
-        mail-pf0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754553AbdJQUnV (ORCPT
+Received: from mail-it0-f51.google.com ([209.85.214.51]:45343 "EHLO
+        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S935002AbdJQV5i (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Oct 2017 16:43:21 -0400
-Received: by mail-pf0-f179.google.com with SMTP id b85so2192835pfj.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Oct 2017 13:43:20 -0700 (PDT)
-Received: from [192.168.0.200] ([67.159.144.49])
-        by smtp.gmail.com with ESMTPSA id b27sm20109191pfc.110.2017.10.17.13.43.18
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 17 Oct 2017 13:43:19 -0700 (PDT)
-From: Cameron Kelley <cameronkelley28@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Mount failing - unable to find logical
-Message-ID: <8aa155ab-4722-9448-0f9e-b383f37d7973@gmail.com>
-Date: Tue, 17 Oct 2017 13:43:18 -0700
+        Tue, 17 Oct 2017 17:57:38 -0400
+Received: by mail-it0-f51.google.com with SMTP id n195so4363457itg.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Oct 2017 14:57:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20171017202135.xdop4eko6utircmz@angband.pl>
+References: <CAGtRCvfqUP_79cKC_Rzs6MD_uZiVbjt9QW0_BeOpACN_c3ev5w@mail.gmail.com>
+ <d27ec863-d4fb-3ffd-78a4-c12789054bd9@gmail.com> <CAA-GF5vs_Mw9bW20ykXAr7Fr4DK_1bDM6qk0k54-oi5g-veK2g@mail.gmail.com>
+ <d15a82aa-7d6e-ba36-76cc-8771e0359379@gmail.com> <20171017011443.bupcsskm7joc73wb@angband.pl>
+ <e8497dd4-7341-a708-7828-282001738a95@gmail.com> <CAA-GF5sO78HjdWHRZKfENRwgGPF91Vz-Odm7PphiiEMVEENykg@mail.gmail.com>
+ <81e1136a-a846-9531-b1bf-9ad2aabb785d@gmail.com> <20171017170626.amfrohfyqlujdueu@angband.pl>
+ <1d5e9875-1c1e-f67e-1f5b-0741555d9517@gmail.com> <20171017202135.xdop4eko6utircmz@angband.pl>
+From: =?UTF-8?B?Wm9sdMOhbiBJdsOhbmZp?= <zoltan.ivanfi@gmail.com>
+Date: Tue, 17 Oct 2017 23:56:56 +0200
+Message-ID: <CAGtRCvdj6LXO8ou40u7B6KCKin6Wzh5FbayMX0-a9Y2fK_w8wg@mail.gmail.com>
+Subject: Re: Is it safe to use btrfs on top of different types of devices?
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey btrfs gurus,
+Hi,
 
-I have a 4 disk btrfs filesystem that has suddenly stopped mounting after a recent reboot. The data is in an odd configuration due to originally being in a 3 disk RAID1 before adding a 4th disk and running a balance to convert to RAID10. There wasn't enough free space to completely convert, so about half the data is still in RAID1 while the other half is in RAID10. Both metadata and system are RAID10. It has been in this configuration for 6 months or so now since adding the 4th disk. It just holds archived media and hasn't had any data added or modified in quite some time. I feel pretty stupid now for not correcting that sooner though.
+I understand that due to the lack of a write intent bitmap, btrfs does
+not know what needs to be resynced exactly, therefore syncing the two
+copies of a raid1 can not happen as fast in btrfs as in md. However, I
+don't understand why converting from raid1 to single is so slow. After
+all, btrfs would just have to discard one copy of each chunk. Still,
+in practice, converting from raid1 to single is just as slow as
+converting from single to raid1.
 
-I have tried mounting with different mount options for recovery, ro, degraded, etc. Log shows errors about "unable to find logical 3746892939264 length 4096"
+One more thing that is not clear to me is the replication profile of a
+volume. I see that balance can convert chunks between profiles, for
+example from single to raid1, but I don't see how the default profile
+for new chunks can be set or quiered. After all, the convert filter
+changes chunk profiles one by one, and it can be cancelled in the
+middle or filtered to a set of chunks only, so the profiles of
+different chunks may differ from each other. I don't know whether this
+is considered healthy in the long run, but at least during the
+conversion it is the expected state for a while. Yet I do not see any
+command mentioned anywhere to set or query the default profile for new
+chunks, only commands to convert existing chunks, which magically also
+seem to set the default profile of new chunks at some point during the
+conversion (probably at the end, because once after a convert I had to
+convert again since a new chunk got added during the first conversion
+with the old profile).
 
-When I do a btrfs check, it doesn't find any issues. Running btrfs-find-root comes up with a message about a block that the generation doesn't match. If I specify that block on the btrfs check, I get transid verify failures.
+Thanks,
 
-I ran a dry run of a recovery of the entire filesystem which runs through every file with no errors. I would just restore the data and start fresh, but unfortunately I don't have the free space at the moment for the ~4.5TB of data.
+Zoltan
 
-I also ran full smart self tests on all 4 disks with no errors.
-
-root@nas2:~# uname -a
-Linux nas2 4.13.7-041307-generic #201710141430 SMP Sat Oct 14 14:39:06 UTC 2017 i686 i686 i686 GNU/Linux
-
-root@nas2:~# btrfs version
-btrfs-progs v4.13.2
-
-root@nas2:~# btrfs fi show
-Label: none  uuid: 827029a4-8625-4a50-a22d-0fd28dbe2d36
-         Total devices 4 FS bytes used 4.60TiB
-         devid    1 size 2.73TiB used 2.33TiB path /dev/sdb1
-         devid    2 size 2.73TiB used 2.33TiB path /dev/sdc
-         devid    3 size 2.73TiB used 2.33TiB path /dev/sdd1
-         devid    4 size 2.73TiB used 2.33TiB path /dev/sde1
-
-root@nas2:~# mount /dev/sdb1 /mnt/nas2/
-mount: wrong fs type, bad option, bad superblock on /dev/sdb1,
-        missing codepage or helper program, or other error
-
-        In some cases useful info is found in syslog - try
-        dmesg | tail or so.
-
-root@nas2:~# dmesg | tail
-[  801.332623] BTRFS info (device sdb1): disk space caching is enabled
-[  801.332627] BTRFS info (device sdb1): has skinny extents
-[  801.333386] BTRFS critical (device sdb1): unable to find logical 3746892939264 length 4096
-[  801.333472] BTRFS critical (device sdb1): unable to find logical 3746892939264 length 4096
-[  801.333769] BTRFS critical (device sdb1): unable to find logical 3746892939264 length 4096
-[  801.333835] BTRFS critical (device sdb1): unable to find logical 3746892939264 length 4096
-[  801.333909] BTRFS critical (device sdb1): unable to find logical 3746892939264 length 4096
-[  801.333968] BTRFS critical (device sdb1): unable to find logical 3746892939264 length 4096
-[  801.334028] BTRFS error (device sdb1): failed to read chunk root
-[  801.365452] BTRFS error (device sdb1): open_ctree failed
-
-root@nas2:~# btrfs check /dev/sdb1
-Checking filesystem on /dev/sdb1
-UUID: 827029a4-8625-4a50-a22d-0fd28dbe2d36
-checking extents
-checking free space cache
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-checking csums
-checking root refs
-found 5054297628672 bytes used, no error found
-total csum bytes: 4929567064
-total tree bytes: 5197856768
-total fs tree bytes: 15237120
-total extent tree bytes: 43433984
-btree space waste bytes: 161510789
-file data blocks allocated: 5050024812544
-  referenced 5049610178560
-
-root@nas2:~# btrfs-find-root /dev/sdb1
-Superblock thinks the generation is 147970
-Superblock thinks the level is 1
-Found tree root at 21335861559296 gen 147970 level 1
-Well block 21335857758208(gen: 147969 level: 1) seems good, but generation/level doesn't match, want gen: 147970 level: 1
-
-root@nas2:~# btrfs check -r 21335857758208 /dev/sdb1
-parent transid verify failed on 21335857758208 wanted 147970 found 147969
-parent transid verify failed on 21335857758208 wanted 147970 found 147969
-parent transid verify failed on 21335857758208 wanted 147970 found 147969
-parent transid verify failed on 21335857758208 wanted 147970 found 147969
-Ignoring transid failure
-Checking filesystem on /dev/sdb1
-UUID: 827029a4-8625-4a50-a22d-0fd28dbe2d36
-checking extents
-checking free space cache
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-checking csums
-checking root refs
-ERROR: transid errors in file system
-found 5054297628672 bytes used, error(s) found
-total csum bytes: 4929567064
-total tree bytes: 5197856768
-total fs tree bytes: 15237120
-total extent tree bytes: 43433984
-btree space waste bytes: 161510789
-file data blocks allocated: 5050024812544
-  referenced 5049610178560
+On Tue, Oct 17, 2017 at 10:21 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+> On Tue, Oct 17, 2017 at 03:19:09PM -0400, Austin S. Hemmelgarn wrote:
+>> On 2017-10-17 13:06, Adam Borowski wrote:
+>> > On Tue, Oct 17, 2017 at 08:40:20AM -0400, Austin S. Hemmelgarn wrote:
+>> > > On 2017-10-17 07:42, Zoltan wrote:
+>> > > > On Tue, Oct 17, 2017 at 1:26 PM, Austin S. Hemmelgarn
+>> > > > <ahferroin7@gmail.com> wrote:
+>> > > >
+>> > > > > I forget sometimes that people insist on storing large volumes of data on
+>> > > > > unreliable storage...
+>> > > >
+>> > > > In my opinion the unreliability of the storage is the exact reason for
+>> > > > wanting to use raid1. And I think any problem one encounters with an
+>> > > > unreliable disk can likely happen with more reliable ones as well,
+>> > > > only less frequently, so if I don't feel comfortable using raid1 on an
+>> > > > unreliable medium then I wouldn't trust it on a more reliable one
+>> > > > either.
+>> >
+>> > > The thing is that you need some minimum degree of reliability in the other
+>> > > components in the storage stack for it to be viable to use any given storage
+>> > > technology.  If you don't meet that minimum degree of reliability, then you
+>> > > can't count on the reliability guarantees of the storage technology.
+>> >
+>> > The thing is, reliability guarantees required vary WILDLY depending on your
+>> > particular use cases.  On one hand, there's "even an one-minute downtime
+>> > would cost us mucho $$$s, can't have that!" -- on the other, "it died?
+>> > Okay, we got backups, lemme restore it after the weekend".
+>> Yes, but if you are in the second case, you arguably don't need replication,
+>> and would be better served by improving the reliability of your underlying
+>> storage stack than trying to work around it's problems. Even in that case,
+>> your overall reliability is still constrained by the least reliable
+>> component (in more idiomatic terms 'a chain is only as strong as it's
+>> weakest link').
+>
+> MD can handle this case well, there's no reason btrfs shouldn't do that too.
+> A RAID is not akin to serially connected chain, it's a parallel connected
+> chain: while pieces of the broken second chain hanging down from the first
+> don't make it strictly more resilient than having just a single chain, in
+> general case it _is_ more reliable even if the other chain is weaker.
+>
+> Don't we have a patchset that deals with marking a device as failed at
+> runtime floating on the mailing list?  I did not look at those patches yet,
+> but they are a step in this direction.
+>
+>> Using replication with a reliable device and a questionable device is
+>> essentially the same as trying to add redundancy to a machine by adding an
+>> extra linkage that doesn't always work and can get in the way of the main
+>> linkage it's supposed to be protecting from failure.  Yes, it will work most
+>> of the time, but the system is going to be less reliable than it is without
+>> the 'redundancy'.
+>
+> That's the current state of btrfs, but the design is sound, and reaching
+> more than parity with MD is a matter of implementation.
+>
+>> > Thus, I switched the machine to NBD (albeit it sucks on 100Mbit eth).  Alas,
+>> > the network driver allocates memory with GFP_NOIO which causes NBD
+>> > disconnects (somehow, this doesn't ever happen on swap where GFP_NOIO would
+>> > be obvious but on regular filesystem where throwing out userspace memory is
+>> > safe).  The disconnects happen around once per week.
+>> Somewhat off-topic, but you might try looking at ATAoE as an alternative,
+>> it's more reliable in my experience (if you've got a reliable network),
+>> gives better performance (there's less protocol overhead than NBD, and it
+>> runs on top of layer 2 instead of layer 4)
+>
+> I've tested it -- not on the Odroid-U2 but on Pine64 (fully working GbE).
+> NBD delivers 108MB/sec in a linear transfer, ATAoE is lucky to break
+> 40MB/sec, same target (Qnap-253a, spinning rust), both in default
+> configuration without further tuning.  NBD is over IPv6 for that extra 20
+> bytes per packet overhead.
+>
+> Also, NBD can be encrypted or arbitrarily routed.
+>
+>> > It's a single-device filesystem, thus disconnects are obviously fatal.  But,
+>> > they never caused even a single bit of damage (as scrub goes), thus proving
+>> > btrfs handles this kind of disconnects well.  Unlike times past, the kernel
+>> > doesn't get confused thus no reboot is needed, merely an unmount, "service
+>> > nbd-client restart", mount, restart the rebuild jobs.
+>> That's expected behavior though.  _Single_ device BTRFS has nothing to get
+>> out of sync most of the time, the only time there's any possibility of an
+>> issue is when you die after writing the first copy of a block that's in a
+>> dup profile chunk, but even that is not very likely to cause problems
+>> (you'll just lose at most the last <commit-time> worth of data).
+>
+> How come?  In a DUP profile, the writes are: chunk 1, chunk2, barrier,
+> superblock.  The two prior writes may be arbitrarily reordered -- both
+> between each other or even individual sectors inside the chunks, but unless
+> the disk lies about barriers, there's no way to have any corruption, thus
+> running scrub is not needed.
+>
+>> The moment you add another device though, that simplicity goes out the
+>> window.
+>
+> RAID1 doesn't seem less simple to me: if the new superblock has been
+> successfully written on at least one disk, barriers imply that at least one
+> copy is correct.  If the other disk was out to lunch before the final
+> unmount, those blocks will be degraded, but that's no different from one
+> pair of DUP blocks being corrupted.
+>
+> With RAID5, there be dragons, but that's due to implementation deficiencies;
+> if an upper layer says "hey you downstairs, the block you gave me has a
+> wrong csum/generation, try to recover it", there's no reason it shouldn't
+> be able to reliably recover it in all cases that don't involve a double
+> (RAID5) or triple (RAID6) failure.
+>
+>
+> Meow!
+> --
+> ⢀⣴⠾⠻⢶⣦⠀
+> ⣾⠁⢰⠒⠀⣿⡁ Imagine there are bandits in your house, your kid is bleeding out,
+> ⢿⡄⠘⠷⠚⠋⠀ the house is on fire, and seven big-ass trumpets are playing in the
+> ⠈⠳⣄⠀⠀⠀⠀ sky.  Your cat demands food.  The priority should be obvious...

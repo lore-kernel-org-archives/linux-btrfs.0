@@ -1,50 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:52260 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:55196 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S932782AbdJQW57 (ORCPT
+        with ESMTP id S1754306AbdJQXUS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Oct 2017 18:57:59 -0400
+        Tue, 17 Oct 2017 19:20:18 -0400
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1e4anw-0005Oq-VN
-        for linux-btrfs@vger.kernel.org; Wed, 18 Oct 2017 00:57:44 +0200
+        id 1e4b9X-0006gq-4T
+        for linux-btrfs@vger.kernel.org; Wed, 18 Oct 2017 01:20:03 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Best strategie to remove devices from pool
-Date: Tue, 17 Oct 2017 22:57:27 +0000 (UTC)
-Message-ID: <pan$9b46f$9dad1141$c719d4ab$389f4bee@cox.net>
-References: <1508263135.2887.1.camel@cloud.haefemeier.eu>
+Subject: Re: 4.13: "error in btrfs_run_delayed_refs:3009: errno=-28 No space
+ left" with 1.3TB unallocated / 737G free?
+Date: Tue, 17 Oct 2017 23:19:54 +0000 (UTC)
+Message-ID: <pan$7012a$2aa3b3f4$9c2bb50d$e909647e@cox.net>
+References: <5de6f85d-ddff-8448-ebc3-54df455c4961@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cloud Admin posted on Tue, 17 Oct 2017 19:58:55 +0200 as excerpted:
+Vladimir Panteleev posted on Tue, 17 Oct 2017 17:19:45 +0000 as excerpted:
 
-> Hi,
-> I want to remove two devices from a BTRFS RAID 1 pool. It should be
-> enough free space to do it, but what is the best strategie. Remove both
-> device in one call 'btrfs dev rem /dev/sda1 /dev/sdb1' (for example) or
-> should it be better in two separate calls? What is faster? Are there
-> other constraints to think about?
+> I'm experiencing some issues with a btrfs filesystem - mounting and
+> other operations taking forever, a balance that takes hours to start and
+> never completes (due to the error in the subject line), and I've also
+> seen the NULL pointer dereference in free_reloc_roots which Naohiro Aota
+> fixed in 4.13.5 (I was on 4.13.4 at the time).
 
-As a general policy, I'd first ensure that I had current backups in case 
-something goes wrong, unless of course you consider the data trivial 
-enough not to bother with backups.  No sense unnecessarily tempting fate. 
-=:^\
+You may be running into the huge-over-allocation bug in recent kernels.  
+There's a fix that should be in 4.14 that I'd have thought would be 
+backported to stable kernels by now, but perhaps not.
 
-Then I'd use the two devices in one call remove, because btrfs device 
-remove has an implicit rebalance that moves chunks off the device being 
-removed to the other available devices, and a rebalance can take awhile, 
-so doing two removals at once should go much faster than one at a time.
+So your options are:
 
-I'd also suggest that if you use btrfs quota functionality, you disable 
-it at least while doing the removes/balances, as trying to recalculate 
-the quotas constantly slows things down considerably, and if you have 
-lots of subvolume snapshots on the filesystem, I suggest you first delete 
-as many of those as you can reasonably delete (and turn off any scheduled 
-snapshotting during the remove/rebalance), as well, because they too can 
-slow down balances quite a bit.
+* try the balance on 4.14-rc5+, where the known bug should be fixed
+* wait for 4.14 release and try the balance there
+* wait for the backport to stable
+* revert to an earlier kernel, say the latest 4.9-LTS series kernel, and 
+try it there (tho I'm not sure if the bug had appeared yet on 4.9 or not, 
+if it had, then it's as unlikely to be fixed there as in 4.13 current)
+
+If you still see the bug on 4.14-rc5+, then you're likely running into 
+some other bug that has similar effects, as to the best of my knowledge 
+as a btrfs user following the list, it's fixed there.
+
+Reverting to the long-in-the-tooth-for-btrfs 4.4 LTS series should be 
+before that bug appeared for sure, and in theory, being an LTS, it should 
+have critical bug fixes since then, but I really hate to recommend it as 
+a lot really has happened in btrfs since then.  Here, I'm actually 
+running 4.14-rc5 (and ran 14 series from rc3 or so), tho I tend to far 
+smaller partitioned btrfs and haven't run into that particular problem, 
+but I'd obviously prefer 4.14-rc5 to the long-in-the-tooth-even-if-LTS 
+4.4.  YMMV.
+
+And of course your last option is to wait for a developer or regular more 
+closely following that particular bug and the patch fixing it to tell you 
+whether it's in 4.13.6 or not, and thus whether you're still affected by 
+it, or that it must be something else with similar symptoms.  But lacking 
+definitive word from them... well I'd obviously try 4.14-rc5+, since I'm 
+already running it.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

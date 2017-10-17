@@ -1,50 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-02.prod.phx3.secureserver.net ([184.168.200.140]:48204
-        "EHLO p3nlsmtpcp01-02.prod.phx3.secureserver.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751068AbdJ0GBg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 02:01:36 -0400
-Received: from [103.215.170.1] (port=1703 helo=giis.co.in)
-        by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:ECDHE-RSA-AES128-GCM-SHA256:128)
-        (Exim 4.88)
-        (envelope-from <lakshmipathi.g@giis.co.in>)
-        id 1e7xh4-00031X-71
-        for linux-btrfs@vger.kernel.org; Thu, 26 Oct 2017 23:00:34 -0700
-Date: Fri, 27 Oct 2017 11:30:24 +0530
-From: "Lakshmipathi.G" <lakshmipathi.g@giis.co.in>
+Received: from victor.provo.novell.com ([137.65.250.26]:48202 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934677AbdJQJNf (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 17 Oct 2017 05:13:35 -0400
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs-progs: tests/common: Display warning only after
- searching for btrfs kernel module
-Message-ID: <20171027060024.GA3847@giis.co.in>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 6/6] btrfs-progs: rescue: Fix zero-log mounted branch
+Date: Tue, 17 Oct 2017 17:13:12 +0800
+Message-Id: <20171017091312.31045-7-wqu@suse.com>
+In-Reply-To: <20171017091312.31045-1-wqu@suse.com>
+References: <20171017091312.31045-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Lakshmipathi.G <lakshmipathi.g@giis.co.in>
----
- tests/common | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+Seems to be a typo that, in (ret > 0) branch of check_mounted(),
+zero-log set the return value but doesn't return.
 
-diff --git a/tests/common b/tests/common
-index eb525a4..773b1e5 100644
---- a/tests/common
-+++ b/tests/common
-@@ -428,8 +428,12 @@ run_check_umount_test_dev()
- check_kernel_support()
- {
- 	if ! grep -iq 'btrfs' /proc/filesystems; then
--		echo "WARNING: btrfs filesystem not listed in /proc/filesystems, some tests might fail"
--		return 1
-+		run_check $SUDO_HELPER modprobe btrfs
-+			if ! grep -iq 'btrfs' /proc/filesystems; then
-+				echo "WARNING: btrfs filesystem not listed in \
-+				 /proc/filesystems, some tests might fail"
-+				return 1
-+			fi
- 	fi
- 	return 0
- }
+Fix it by adding back the missing return.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ cmds-rescue.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index 5b51952cdc10..c40088ad374e 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -178,6 +178,7 @@ static int cmd_rescue_zero_log(int argc, char **argv)
+ 	} else if (ret) {
+ 		error("%s is currently mounted", devname);
+ 		ret = -EBUSY;
++		goto out;
+ 	}
+ 
+ 	root = open_ctree(devname, 0, OPEN_CTREE_WRITES | OPEN_CTREE_PARTIAL);
 -- 
-2.7.4
+2.14.2
 

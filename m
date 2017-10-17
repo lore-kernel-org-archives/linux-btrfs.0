@@ -1,83 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42654 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750882AbdJ0QSb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 12:18:31 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C3964ACAB
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 16:18:29 +0000 (UTC)
-Date: Fri, 27 Oct 2017 18:16:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v2 0/6] Btrfs-progs: rescue: To fix device related
-Message-ID: <20171027161641.GL3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171017091312.31045-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from victor.provo.novell.com ([137.65.250.26]:34517 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934664AbdJQJNU (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 17 Oct 2017 05:13:20 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 1/6] btrfs-progs: Introduce function to fix unaligned device size
+Date: Tue, 17 Oct 2017 17:13:07 +0800
+Message-Id: <20171017091312.31045-2-wqu@suse.com>
 In-Reply-To: <20171017091312.31045-1-wqu@suse.com>
+References: <20171017091312.31045-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 17, 2017 at 05:13:06PM +0800, Qu Wenruo wrote:
-> The patchset can be fetched from github:
-> https://github.com/adam900710/btrfs-progs/tree/check_unaligned_dev
-> 
-> There are several reports in mail list for btrfs device size related
-> problems.
-> 
-> 1) kernel refuse to mount some fs, due to mismatched super total_bytes
->    Unmountable if super total_bytes is smaller than total rw bytes of
->    all devices.
->    Root cause seems to be that, at least for kernel v4.13, some
->    device resize/add operation on unaligned device can lead to super
->    size out of sync with device size.
->    And normally this will cause super size to be 1 page (4096) smaller
->    than all devices' size.
-> 
->    This patchset provides the tool to fix it offline.
->    (At least better than unmountable forever)
-> 
-> 2) Harmless kernel warning for btrfs_update_device()
->    v4.14 introduced restrict device size checker.
->    This is causing harmless but annoying kernel warnning.
-> 
->    It can be fixed online with "btrfs filesystem resize".
-> 
->    This patchset also provide a fallback method to fix it.
-> 
-> Finally, fix a typo which makes "btrfs rescue zero-log" to continue
-> execution even the fs is mounted and error message outputted.
-> 
-> Changelog:
-> v2:
->   Move the command line tool from "btrfs check" to "btrfs rescue",
->   suggested by David. Although fsck can still repair/detect it.
->   Function naming change for cmds-check.c part, suggested by Nikolay.
->   Remove inaccurate kernel version, suggested by Nikolay.
->   Fix a bug when coding in cmds-rescue.c.
->   Split the first patch to make review easier.
-> 
-> Qu Wenruo (6):
->   btrfs-progs: Introduce function to fix unaligned device size
->   btrfs-progs: Introduce function to fix super block total bytes
->   btrfs-progs: rescue: Introduce fix-device-size
->   btrfs-progs: check: Also check and repair unalignment/mismatch device
->     and super size
->   btrfs-progs: test/fsck: Add test case image for --fix-dev-size
->   btrfs-progs: rescue: Fix zero-log mounted branch
+Recent kernel introduced alignment check for dev item, however older
+kernel doesn't align device size when adding new device or shrinking
+existing device.
 
-Applied, thanks.
+This makes noisy kernel warning every time when any DEV_ITEM get updated.
 
->  Documentation/btrfs-rescue.asciidoc                |  29 ++++
->  cmds-check.c                                       |  76 +++++++++
->  cmds-rescue.c                                      |  49 ++++++
->  .../dev_and_super_mismatch_unaligned.raw.xz        | Bin 0 -> 21536 bytes
->  volumes.c                                          | 178 +++++++++++++++++++++
->  volumes.h                                          |   4 +
+Introduce function to fix device size in btrfs-progs to fix the problem
+offline.
 
-The repair functions do not belong to volumes.c, but we need to move and
-split cmds-check.c first so I'm going to apply it as-is.
+Reported-by: Asif Youssuff <yoasif@gmail.com>
+Reported-by: Rich Rauenzahn <rrauenza@gmail.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ volumes.c | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ volumes.h |  2 ++
+ 2 files changed, 73 insertions(+)
 
-I've also extended the test to exercise fix-device-size.
+diff --git a/volumes.c b/volumes.c
+index 2209e5a9100b..5462bf71c611 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -2332,3 +2332,74 @@ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
+ 	}
+ 	return stripe_len;
+ }
++
++/*
++ * Return 0 if size of @device is already good
++ * Return >0 if size of @device is not aligned but fixed without problem
++ * Return <0 if something wrong happened when aligning the size of @device
++ */
++int btrfs_fix_device_size(struct btrfs_fs_info *fs_info,
++			  struct btrfs_device *device)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_key key;
++	struct btrfs_path path;
++	struct btrfs_root *chunk_root = fs_info->chunk_root;
++	struct btrfs_dev_item *di;
++	u64 old_bytes = device->total_bytes;
++	int ret;
++
++	if (IS_ALIGNED(old_bytes, fs_info->sectorsize))
++		return 0;
++
++	/* Align the in-memory total_bytes first, and use it as correct size */
++	device->total_bytes = round_down(device->total_bytes,
++					 fs_info->sectorsize);
++
++	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
++	key.type = BTRFS_DEV_ITEM_KEY;
++	key.offset = device->devid;
++
++	trans = btrfs_start_transaction(chunk_root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		error("error starting transaction: %d (%s)",
++		      ret, strerror(-ret));
++		return ret;
++	}
++
++	btrfs_init_path(&path);
++	ret = btrfs_search_slot(trans, chunk_root, &key, &path, 0, 1);
++	if (ret > 0) {
++		error("failed to find DEV_ITEM for devid %llu",
++			device->devid);
++		ret = -ENOENT;
++		goto err;
++	}
++	if (ret < 0) {
++		error("failed to search chunk root: %d (%s)",
++			ret, strerror(-ret));
++		goto err;
++	}
++	di = btrfs_item_ptr(path.nodes[0], path.slots[0],
++			    struct btrfs_dev_item);
++	btrfs_set_device_total_bytes(path.nodes[0], di, device->total_bytes);
++	btrfs_mark_buffer_dirty(path.nodes[0]);
++	ret = btrfs_commit_transaction(trans, chunk_root);
++	if (ret < 0) {
++		error("failed to commit current transaction: %d (%s)",
++			ret, strerror(-ret));
++		btrfs_release_path(&path);
++		return ret;
++	}
++	btrfs_release_path(&path);
++	printf("Fixed device size for devid %llu, old size: %llu new size: %llu\n",
++		device->devid, old_bytes, device->total_bytes);
++	return 1;
++
++err:
++	/* We haven't modified anything, it's OK to commit current trans */
++	btrfs_commit_transaction(trans, chunk_root);
++	btrfs_release_path(&path);
++	return ret;
++}
+diff --git a/volumes.h b/volumes.h
+index d35a4e652b0d..89bd4aa81ae0 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -245,4 +245,6 @@ int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
+ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
+ 			struct extent_buffer *leaf,
+ 			struct btrfs_chunk *chunk);
++int btrfs_fix_device_size(struct btrfs_fs_info *fs_info,
++			  struct btrfs_device *device);
+ #endif
+-- 
+2.14.2
+

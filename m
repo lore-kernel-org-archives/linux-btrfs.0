@@ -1,126 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:34517 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:36676 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934664AbdJQJNU (ORCPT
+        with ESMTP id S934665AbdJQJNV (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 17 Oct 2017 05:13:20 -0400
+        Tue, 17 Oct 2017 05:13:21 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 1/6] btrfs-progs: Introduce function to fix unaligned device size
-Date: Tue, 17 Oct 2017 17:13:07 +0800
-Message-Id: <20171017091312.31045-2-wqu@suse.com>
+Subject: [PATCH v2 2/6] btrfs-progs: Introduce function to fix super block total bytes
+Date: Tue, 17 Oct 2017 17:13:08 +0800
+Message-Id: <20171017091312.31045-3-wqu@suse.com>
 In-Reply-To: <20171017091312.31045-1-wqu@suse.com>
 References: <20171017091312.31045-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Recent kernel introduced alignment check for dev item, however older
-kernel doesn't align device size when adding new device or shrinking
-existing device.
+Recent kernel (starting from v4.6) will refuse to mount if super block
+total bytes is smaller than all devices' size.
 
-This makes noisy kernel warning every time when any DEV_ITEM get updated.
+This makes end user unable to do anything to their otherwise quite
+healthy fs.
 
-Introduce function to fix device size in btrfs-progs to fix the problem
+To fix such problem, introduce repair function in btrfs-progs to fix it
 offline.
 
 Reported-by: Asif Youssuff <yoasif@gmail.com>
 Reported-by: Rich Rauenzahn <rrauenza@gmail.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- volumes.c | 71 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- volumes.h |  2 ++
- 2 files changed, 73 insertions(+)
+ volumes.c | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ volumes.h |  1 +
+ 2 files changed, 53 insertions(+)
 
 diff --git a/volumes.c b/volumes.c
-index 2209e5a9100b..5462bf71c611 100644
+index 5462bf71c611..c86f8a931742 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -2332,3 +2332,74 @@ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
- 	}
- 	return stripe_len;
+@@ -2403,3 +2403,55 @@ err:
+ 	btrfs_release_path(&path);
+ 	return ret;
  }
 +
 +/*
-+ * Return 0 if size of @device is already good
-+ * Return >0 if size of @device is not aligned but fixed without problem
-+ * Return <0 if something wrong happened when aligning the size of @device
++ * Return 0 if super block total bytes matches with all devices' total_bytes
++ * Return >0 if super block total bytes mismatch but fixed without problem
++ * Return <0 if we failed to fix super block total_bytes
 + */
-+int btrfs_fix_device_size(struct btrfs_fs_info *fs_info,
-+			  struct btrfs_device *device)
++int btrfs_fix_super_size(struct btrfs_fs_info *fs_info)
 +{
 +	struct btrfs_trans_handle *trans;
-+	struct btrfs_key key;
-+	struct btrfs_path path;
-+	struct btrfs_root *chunk_root = fs_info->chunk_root;
-+	struct btrfs_dev_item *di;
-+	u64 old_bytes = device->total_bytes;
++	struct btrfs_device *device;
++	struct list_head *dev_list = &fs_info->fs_devices->devices;
++	u64 total_bytes = 0;
++	u64 old_bytes = btrfs_super_total_bytes(fs_info->super_copy);
 +	int ret;
 +
-+	if (IS_ALIGNED(old_bytes, fs_info->sectorsize))
++	list_for_each_entry(device, dev_list, dev_list) {
++		/*
++		 * Caller should ensure this function is called after aligning
++		 * all devices' total_bytes.
++		 */
++		if (!IS_ALIGNED(device->total_bytes, fs_info->sectorsize)) {
++			error("device %llu total_bytes %llu not aligned to %u",
++				device->devid, device->total_bytes,
++				fs_info->sectorsize);
++			return -EUCLEAN;
++		}
++		total_bytes += device->total_bytes;
++	}
++
++	if (total_bytes == old_bytes)
 +		return 0;
 +
-+	/* Align the in-memory total_bytes first, and use it as correct size */
-+	device->total_bytes = round_down(device->total_bytes,
-+					 fs_info->sectorsize);
++	btrfs_set_super_total_bytes(fs_info->super_copy, total_bytes);
 +
-+	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
-+	key.type = BTRFS_DEV_ITEM_KEY;
-+	key.offset = device->devid;
-+
-+	trans = btrfs_start_transaction(chunk_root, 1);
++	/* Commit transaction to update all super blocks */
++	trans = btrfs_start_transaction(fs_info->tree_root, 1);
 +	if (IS_ERR(trans)) {
 +		ret = PTR_ERR(trans);
-+		error("error starting transaction: %d (%s)",
++		error("error starting transaction:  %d (%s)",
 +		      ret, strerror(-ret));
 +		return ret;
 +	}
-+
-+	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(trans, chunk_root, &key, &path, 0, 1);
-+	if (ret > 0) {
-+		error("failed to find DEV_ITEM for devid %llu",
-+			device->devid);
-+		ret = -ENOENT;
-+		goto err;
-+	}
-+	if (ret < 0) {
-+		error("failed to search chunk root: %d (%s)",
-+			ret, strerror(-ret));
-+		goto err;
-+	}
-+	di = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+			    struct btrfs_dev_item);
-+	btrfs_set_device_total_bytes(path.nodes[0], di, device->total_bytes);
-+	btrfs_mark_buffer_dirty(path.nodes[0]);
-+	ret = btrfs_commit_transaction(trans, chunk_root);
++	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
 +	if (ret < 0) {
 +		error("failed to commit current transaction: %d (%s)",
 +			ret, strerror(-ret));
-+		btrfs_release_path(&path);
 +		return ret;
 +	}
-+	btrfs_release_path(&path);
-+	printf("Fixed device size for devid %llu, old size: %llu new size: %llu\n",
-+		device->devid, old_bytes, device->total_bytes);
++	printf("Fixed super total bytes, old size: %llu new size: %llu\n",
++		old_bytes, total_bytes);
 +	return 1;
-+
-+err:
-+	/* We haven't modified anything, it's OK to commit current trans */
-+	btrfs_commit_transaction(trans, chunk_root);
-+	btrfs_release_path(&path);
-+	return ret;
 +}
 diff --git a/volumes.h b/volumes.h
-index d35a4e652b0d..89bd4aa81ae0 100644
+index 89bd4aa81ae0..d5bb5f8663a3 100644
 --- a/volumes.h
 +++ b/volumes.h
-@@ -245,4 +245,6 @@ int btrfs_check_chunk_valid(struct btrfs_fs_info *fs_info,
- u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
- 			struct extent_buffer *leaf,
+@@ -247,4 +247,5 @@ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
  			struct btrfs_chunk *chunk);
-+int btrfs_fix_device_size(struct btrfs_fs_info *fs_info,
-+			  struct btrfs_device *device);
+ int btrfs_fix_device_size(struct btrfs_fs_info *fs_info,
+ 			  struct btrfs_device *device);
++int btrfs_fix_super_size(struct btrfs_fs_info *fs_info);
  #endif
 -- 
 2.14.2

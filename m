@@ -1,55 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:62008 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:44640 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1755795AbdJQLe5 (ORCPT
+        with ESMTP id S1751129AbdJRDpC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Oct 2017 07:34:57 -0400
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <hch@lst.de>
-CC: Gu JinXiang <gujx@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Fix bug for misused dev_t when lookup in dev state hash table.
-Date: Tue, 17 Oct 2017 19:34:47 +0800
-Message-ID: <1508240087-36513-1-git-send-email-gujx@cn.fujitsu.com>
+        Tue, 17 Oct 2017 23:45:02 -0400
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: Nikolay Borisov <nborisov@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "hch@lst.de" <hch@lst.de>
+Subject: RE: [PATCH] btrfs: Fix bug for misused dev_t when lookup in dev
+ state hash table.
+Date: Wed, 18 Oct 2017 03:43:16 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01479D7330@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1508240087-36513-1-git-send-email-gujx@cn.fujitsu.com>
+ <8db5f416-920d-bc72-d206-e879d359f4d9@suse.com>
+In-Reply-To: <8db5f416-920d-bc72-d206-e879d359f4d9@suse.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Gu JinXiang <gujx@cn.fujitsu.com>
+Hiï¼Œ
 
-Fix bug of commit 74d46992e0d9
-("block: replace bi_bdev with a gendisk pointer and partitions index").
+> -----Original Message-----
+> From: Nikolay Borisov [mailto:nborisov@suse.com]
+> Sent: Tuesday, October 17, 2017 9:36 PM
+> To: Gu, Jinxiang/é¡¾ é‡‘é¦™ <gujx@cn.fujitsu.com>; linux-btrfs@vger.kernel.org; hch@lst.de
+> Subject: Re: [PATCH] btrfs: Fix bug for misused dev_t when lookup in dev state hash table.
+> 
+> 
+> 
+> On 17.10.2017 14:34, Gu Jinxiang wrote:
+> > From: Gu JinXiang <gujx@cn.fujitsu.com>
+> >
+> > Fix bug of commit 74d46992e0d9
+> > ("block: replace bi_bdev with a gendisk pointer and partitions index").
+> >
+> > In this modify, use bio_dev(bio) to find dev state in function
+> > __btrfsic_submit_bio. But when dev_state added to hashtable, it is
+> > using dev_t of block_device.
+> 
+> This is rather incomprehensible. So bio_dev(bio) actually returns the dev_t of the device to which this bio is submitted
+> and the same dev_t should be used when btrfsic_dev_state_hashtable_add is called? What am I missing in here?
+> 
 
-In this modify, use bio_dev(bio) to find dev state in function
-__btrfsic_submit_bio. But when dev_state added to hashtable, it is using
-dev_t of block_device.
+bio_dev(bio) returns a dev_t of part0 which is different from dev_t in block_device(bd_dev).
+bd_dev in block_device represents the exact partition.
+block_device.bd_dev = bio->bi_partno (same as block_device.bd_partno) + bio_dev(bio).
 
-Reproduce of this bug:
-Use MOUNT_OPTIONS="-o check_int" when run btrfs/001 in xfstest.
-Then there will be WARNING like below.
-WARNING:
-btrfs: attempt to write superblock which references block M @29523968 (sda7     /1111654400/2) which is never written!
+When add a dev_state into hashtable it is using the exact partition's dev_t.
+So when lookup it, it should also use the exact partition's dev_t.
 
-Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
----
- fs/btrfs/check-integrity.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> >
+> > Reproduce of this bug:
+> > Use MOUNT_OPTIONS="-o check_int" when run btrfs/001 in xfstest.
+> > Then there will be WARNING like below.
+> > WARNING:
+> > btrfs: attempt to write superblock which references block M @29523968 (sda7     /1111654400/2) which is never written!
+> >
+> > Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
+> > ---
+> >  fs/btrfs/check-integrity.c | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> >
+> > diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+> > index fb07e3c22b9a..02f9eb83173f 100644
+> > --- a/fs/btrfs/check-integrity.c
+> > +++ b/fs/btrfs/check-integrity.c
+> > @@ -2803,7 +2803,7 @@ static void __btrfsic_submit_bio(struct bio *bio)
+> >  	mutex_lock(&btrfsic_mutex);
+> >  	/* since btrfsic_submit_bio() is also called before
+> >  	 * btrfsic_mount(), this might return NULL */
+> > -	dev_state = btrfsic_dev_state_lookup(bio_dev(bio));
+> > +	dev_state = btrfsic_dev_state_lookup(bio_dev(bio) + bio->bi_partno);
+> 
+> So this function looks up in btrfsic_dev_state_hashtable. And stuff in this hashtable ias added via
+> btrfsic_dev_state_hashtable_add function which seems to be only using the dev_t (after your other patch is applied):
+> 
+> static void btrfsic_dev_state_hashtable_add(
+> 
+>                 struct btrfsic_dev_state *ds,
+> 
+>                 struct btrfsic_dev_state_hashtable *h)
+> 
+> {
+> 
+>         const unsigned int hashval =
+> 
+>             (((unsigned int)((uintptr_t)ds->bdev->bd_dev)) &
+> 
+>              (BTRFSIC_DEV2STATE_HASHTABLE_SIZE - 1));
+> 
+> 
+> 
+>         list_add(&ds->collision_resolving_node, h->table + hashval);
+> 
+> }
+> 
+> 
+> So how come your change is correct since you are passing the dev_t + partition number?
+> 
+> >  	if (NULL != dev_state &&
+> >  	    (bio_op(bio) == REQ_OP_WRITE) && bio_has_data(bio)) {
+> >  		unsigned int i = 0;
+> >
+> 
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index fb07e3c22b9a..02f9eb83173f 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -2803,7 +2803,7 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 	mutex_lock(&btrfsic_mutex);
- 	/* since btrfsic_submit_bio() is also called before
- 	 * btrfsic_mount(), this might return NULL */
--	dev_state = btrfsic_dev_state_lookup(bio_dev(bio));
-+	dev_state = btrfsic_dev_state_lookup(bio_dev(bio) + bio->bi_partno);
- 	if (NULL != dev_state &&
- 	    (bio_op(bio) == REQ_OP_WRITE) && bio_has_data(bio)) {
- 		unsigned int i = 0;
--- 
-2.13.5
 
 
-
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

@@ -1,138 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f171.google.com ([209.85.217.171]:54079 "EHLO
-        mail-ua0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750881AbdJROSv (ORCPT
+Received: from mail-it0-f49.google.com ([209.85.214.49]:49268 "EHLO
+        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751783AbdJROac (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Oct 2017 10:18:51 -0400
-Received: by mail-ua0-f171.google.com with SMTP id s41so3654754uab.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Oct 2017 07:18:51 -0700 (PDT)
-Received: from [10.0.0.120] (c-76-101-203-225.hsd1.fl.comcast.net. [76.101.203.225])
-        by smtp.gmail.com with ESMTPSA id x14sm4990805uab.13.2017.10.18.07.18.49
+        Wed, 18 Oct 2017 10:30:32 -0400
+Received: by mail-it0-f49.google.com with SMTP id y15so6460330ita.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Oct 2017 07:30:32 -0700 (PDT)
+Received: from [191.9.206.254] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id y136sm5904844iof.56.2017.10.18.07.30.29
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 18 Oct 2017 07:18:49 -0700 (PDT)
-From: Larkin Lowrey <llowrey@gmail.com>
-Subject: Unmountable fs. No root for superblock generation
-To: linux-btrfs@vger.kernel.org
-Message-ID: <4b86aa36-8a9d-5af6-06a9-351db3015107@gmail.com>
-Date: Wed, 18 Oct 2017 10:18:48 -0400
+        Wed, 18 Oct 2017 07:30:30 -0700 (PDT)
+Subject: Re: Is it safe to use btrfs on top of different types of devices?
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <CAGtRCvfkDnUBxqWNgEOXz+Gam0dPubatROQgqxE2D_uCAZhihQ@mail.gmail.com>
+ <CAGtRCvfqUP_79cKC_Rzs6MD_uZiVbjt9QW0_BeOpACN_c3ev5w@mail.gmail.com>
+ <d27ec863-d4fb-3ffd-78a4-c12789054bd9@gmail.com>
+ <CAA-GF5vs_Mw9bW20ykXAr7Fr4DK_1bDM6qk0k54-oi5g-veK2g@mail.gmail.com>
+ <d15a82aa-7d6e-ba36-76cc-8771e0359379@gmail.com>
+ <20171017011443.bupcsskm7joc73wb@angband.pl>
+ <e8497dd4-7341-a708-7828-282001738a95@gmail.com>
+ <CAA-GF5sO78HjdWHRZKfENRwgGPF91Vz-Odm7PphiiEMVEENykg@mail.gmail.com>
+ <23015.23766.971947.937708@tree.ty.sabi.co.uk>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <cc34039f-9e84-c280-c793-1e381cbb2001@gmail.com>
+Date: Wed, 18 Oct 2017 10:30:25 -0400
 MIME-Version: 1.0
+In-Reply-To: <23015.23766.971947.937708@tree.ty.sabi.co.uk>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am unable to mount one my my filesystems.  The superblock thinks the 
-latest generation is 2220927 but I can't seem to find a root with that 
-number. I can find 2220926 and 2220928 but not 2220927. Is there 
-anything that I can do to recover this FS?
+On 2017-10-18 09:53, Peter Grandi wrote:
+>>> I forget sometimes that people insist on storing large
+>>> volumes of data on unreliable storage...
+> 
+> Here obviously "unreliable" is used on the sense of storage that
+> can work incorrectly, not in the sense of storage that can fail.
+Um, in what world is a device randomly dropping off the bus (this is the 
+primary issue with USB for storage) not a failure?  Yes, it's not a 
+catastrophic failure (for BTRFS at least), and it's transient (the 
+kernel will re-enumerate the device when it resets the bus), but that 
+doesn't change the fact that the service that is supposed to be provided 
+by the device failed.
 
-# btrfs check /dev/Cached/Backups
-checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
-checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
-checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
-checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
-Csum didn't match
-Couldn't setup extent tree
-Couldn't open file system
+To clarify more concretely, when I say 'unreliable' in reference to 
+computers technology (and for that matter, almost anything else), I mean 
+something that encounters non-trivial error states, either correctable 
+or uncorrectable, at a frequency above that which is deemed reasonable 
+for the designed function of the device.
+> 
+>> In my opinion the unreliability of the storage is the exact
+>> reason for wanting to use raid1. And I think any problem one
+>> encounters with an unreliable disk can likely happen with more
+>> reliable ones as well, only less frequently, so if I don't
+>> feel comfortable using raid1 on an unreliable medium then I
+>> wouldn't trust it on a more reliable one either.
+> 
+> Oh please, please a bit less silliness would be welcome here.
+> In a previous comment on this tedious thread I had written:
+> 
+>    > If the block device abstraction layer and lower layers work
+>    > correctly, Btrfs does not have problems of that sort when
+>    > adding new devices; conversely if the block device layer and
+>    > lower layers do not work correctly, no mainline Linux
+>    > filesystem I know can cope with that.
+> 
+>    > Note: "work correctly" does not mean "work error-free".
+> 
+> The last line is very important and I added it advisedly.
+> 
+> You seem to be using "unreliable" in two completely different
+> meanings, without realizing it, as both "working incorrectly"
+> and "reporting a failure". They are really very different.
+And you seem to be using the term 'failure' to only mean 'catastrophic 
+failure'.  Strictly speaking, even that is 'working incorrectly', albeit 
+in a much more specific and permanent manner than just returning errors.
 
-# btrfs-find-root -g 2220927 /dev/Cached/Backups
-Couldn't setup extent tree
-Couldn't setup device tree
-Superblock thinks the generation is 2220927
-Superblock thinks the level is 2
-
-Found tree root at 159057884577792 gen 2220927 level 2
-Well block 101489031790592(gen: 2220928 level: 2) seems good, but 
-generation/level doesn't match, want gen: 2220927 level: 2
-
-# btrfs check --tree-root 159057884577792  /dev/Cached/Backups
-checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
-checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
-checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
-checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
-Csum didn't match
-Couldn't setup extent tree
-Couldn't open file system
-
-# btrfs check --tree-root 101489031790592 /dev/Cached/Backups
-parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
-parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
-parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
-parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
-Ignoring transid failure
-parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
-parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
-parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
-parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
-Ignoring transid failure
-parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
-parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
-parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
-parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
-Ignoring transid failure
-Checking filesystem on /dev/Cached/Backups
-UUID: 1b213dfd-6486-47d8-8459-bc5825882023
-checking extents
-parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
-parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
-parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
-parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
-parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
-parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
-parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
-parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
-parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
-parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
-parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
-parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
-parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
-parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
-parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
-parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
-parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
-parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
-parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
-parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
-parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
-parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
-parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
-parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
-parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
-Ignoring transid failure
-checksum verify failed on 159058014814208 found 406AAC5F wanted C07B44A6
-checksum verify failed on 159058014814208 found 406AAC5F wanted C07B44A6
-parent transid verify failed on 159058014814208 wanted 2220927 found 2220920
-checksum verify failed on 159058014814208 found 406AAC5F wanted C07B44A6
-Csum didn't match
-parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
-parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
-parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
-parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
-Ignoring transid failure
-parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
-parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
-parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
-parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
-Ignoring transid failure
-leaf parent key incorrect 114958975139840
-bad block 114958975139840
-Errors found in extent allocation tree or chunk allocation
-parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
-Ignoring transid failure
-leaf parent key incorrect 116329711550464
-
-
+Even looking at things that way though, Zoltan's assessment that 
+reliability is essentially a measure of error rate is correct.  Internal 
+SATA devices absolutely can randomly drop off the bus just like many USB 
+storage devices do, but it almost never happens (it's a statistical 
+impossibility if there are no hardware or firmware issues), so they are 
+more reliable in that respect.
+> 
+> The "working incorrectly" general case is the so called
+> "bizantine generals problem" and (depending on assumptions) it
+> is insoluble.
+> 
+> Btrfs has some limited ability to detect (and sometimes recover
+> from) "working incorrectly" storage layers, but don't expect too
+> much from that.

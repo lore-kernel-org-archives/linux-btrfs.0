@@ -1,217 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:56500 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:52849 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751485AbdJSFmB (ORCPT
+        with ESMTP id S933743AbdJRIBJ (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 19 Oct 2017 01:42:01 -0400
+        Wed, 18 Oct 2017 04:01:09 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH v2 6/6] btrfs-progs: mkfs: Move source dir size calculation to its own files
-Date: Thu, 19 Oct 2017 13:41:38 +0800
-Message-Id: <20171019054138.13965-7-wqu@suse.com>
-In-Reply-To: <20171019054138.13965-1-wqu@suse.com>
-References: <20171019054138.13965-1-wqu@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/5] Rootdir refactor and small bug fixes
+Date: Wed, 18 Oct 2017 16:00:49 +0800
+Message-Id: <20171018080054.25509-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Also rename the function from size_sourcedir() to mkfs_size_dir().
+First 3 patches are small bug fixes which can be applied even we don't
+touch the functionality of --rootdir.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
----
- mkfs/main.c    | 66 ++--------------------------------------------------------
- mkfs/rootdir.c | 63 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- mkfs/rootdir.h |  2 ++
- 3 files changed, 67 insertions(+), 64 deletions(-)
+The last two patches will refactor --rootdir related functions (mainly
+size_sourcedir and make_image) to mkfs/rootdir.[ch].
+And rename them to btrfs_mkfs_size_dir() and btrfs_mkfs_fill_dir()
+respectively.
+Functionality is not changed at all, so it will still shrink the device
+or using the first 1M reserved space.
 
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 7861e3075d6b..423b35579722 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -31,7 +31,6 @@
- #include <uuid/uuid.h>
- #include <ctype.h>
- #include <blkid/blkid.h>
--#include <ftw.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "volumes.h"
-@@ -448,67 +447,6 @@ static int create_chunks(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--/*
-- * This ignores symlinks with unreadable targets and subdirs that can't
-- * be read.  It's a best-effort to give a rough estimate of the size of
-- * a subdir.  It doesn't guarantee that prepopulating btrfs from this
-- * tree won't still run out of space.
-- */
--static u64 global_total_size;
--static u64 fs_block_size;
--static int ftw_add_entry_size(const char *fpath, const struct stat *st,
--			      int type)
--{
--	if (type == FTW_F || type == FTW_D)
--		global_total_size += round_up(st->st_size, fs_block_size);
--
--	return 0;
--}
--
--static u64 size_sourcedir(const char *dir_name, u64 sectorsize,
--			  u64 *num_of_meta_chunks_ret, u64 *size_of_data_ret)
--{
--	u64 dir_size = 0;
--	u64 total_size = 0;
--	int ret;
--	u64 default_chunk_size = SZ_8M;
--	u64 allocated_meta_size = SZ_8M;
--	u64 allocated_total_size = 20 * SZ_1M;	/* 20MB */
--	u64 num_of_meta_chunks = 0;
--	u64 num_of_data_chunks = 0;
--	u64 num_of_allocated_meta_chunks =
--			allocated_meta_size / default_chunk_size;
--
--	global_total_size = 0;
--	fs_block_size = sectorsize;
--	ret = ftw(dir_name, ftw_add_entry_size, 10);
--	dir_size = global_total_size;
--	if (ret < 0) {
--		error("ftw subdir walk of %s failed: %s", dir_name,
--			strerror(errno));
--		exit(1);
--	}
--
--	num_of_data_chunks = (dir_size + default_chunk_size - 1) /
--		default_chunk_size;
--
--	num_of_meta_chunks = (dir_size / 2) / default_chunk_size;
--	if (((dir_size / 2) % default_chunk_size) != 0)
--		num_of_meta_chunks++;
--	if (num_of_meta_chunks <= num_of_allocated_meta_chunks)
--		num_of_meta_chunks = 0;
--	else
--		num_of_meta_chunks -= num_of_allocated_meta_chunks;
--
--	total_size = allocated_total_size +
--		     (num_of_data_chunks * default_chunk_size) +
--		     (num_of_meta_chunks * default_chunk_size);
--
--	*num_of_meta_chunks_ret = num_of_meta_chunks;
--	*size_of_data_ret = num_of_data_chunks * default_chunk_size;
--	return total_size;
--}
--
- static int zero_output_file(int out_fd, u64 size)
- {
- 	int loop_num;
-@@ -1085,8 +1023,8 @@ int main(int argc, char **argv)
- 			goto error;
- 		}
- 
--		source_dir_size = size_sourcedir(source_dir, sectorsize,
--					     &num_of_meta_chunks, &size_of_data);
-+		source_dir_size = btrfs_mkfs_size_dir(source_dir, sectorsize,
-+					&num_of_meta_chunks, &size_of_data);
- 		if(block_count < source_dir_size)
- 			block_count = source_dir_size;
- 		ret = zero_output_file(fd, block_count);
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 2cc8a3ac06d8..83a3191d2bd7 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -24,6 +24,7 @@
- #include <dirent.h>
- #include <unistd.h>
- #include <fcntl.h>
-+#include <ftw.h>
- #include "ctree.h"
- #include "internal.h"
- #include "disk-io.h"
-@@ -33,6 +34,15 @@
- #include "mkfs/rootdir.h"
- #include "send-utils.h"
- 
-+/*
-+ * This ignores symlinks with unreadable targets and subdirs that can't
-+ * be read.  It's a best-effort to give a rough estimate of the size of
-+ * a subdir.  It doesn't guarantee that prepopulating btrfs from this
-+ * tree won't still run out of space.
-+ */
-+static u64 global_total_size;
-+static u64 fs_block_size;
-+
- static u64 index_cnt = 2;
- 
- static int add_directory_items(struct btrfs_trans_handle *trans,
-@@ -670,3 +680,56 @@ fail:
- out:
- 	return ret;
- }
-+
-+static int ftw_add_entry_size(const char *fpath, const struct stat *st,
-+			      int type)
-+{
-+	if (type == FTW_F || type == FTW_D)
-+		global_total_size += round_up(st->st_size, fs_block_size);
-+
-+	return 0;
-+}
-+
-+u64 btrfs_mkfs_size_dir(const char *dir_name, u64 sectorsize,
-+			u64 *num_of_meta_chunks_ret, u64 *size_of_data_ret)
-+{
-+	u64 dir_size = 0;
-+	u64 total_size = 0;
-+	int ret;
-+	u64 default_chunk_size = SZ_8M;
-+	u64 allocated_meta_size = SZ_8M;
-+	u64 allocated_total_size = 20 * SZ_1M;	/* 20MB */
-+	u64 num_of_meta_chunks = 0;
-+	u64 num_of_data_chunks = 0;
-+	u64 num_of_allocated_meta_chunks =
-+			allocated_meta_size / default_chunk_size;
-+
-+	global_total_size = 0;
-+	fs_block_size = sectorsize;
-+	ret = ftw(dir_name, ftw_add_entry_size, 10);
-+	dir_size = global_total_size;
-+	if (ret < 0) {
-+		error("ftw subdir walk of %s failed: %s", dir_name,
-+			strerror(errno));
-+		exit(1);
-+	}
-+
-+	num_of_data_chunks = (dir_size + default_chunk_size - 1) /
-+		default_chunk_size;
-+
-+	num_of_meta_chunks = (dir_size / 2) / default_chunk_size;
-+	if (((dir_size / 2) % default_chunk_size) != 0)
-+		num_of_meta_chunks++;
-+	if (num_of_meta_chunks <= num_of_allocated_meta_chunks)
-+		num_of_meta_chunks = 0;
-+	else
-+		num_of_meta_chunks -= num_of_allocated_meta_chunks;
-+
-+	total_size = allocated_total_size +
-+		     (num_of_data_chunks * default_chunk_size) +
-+		     (num_of_meta_chunks * default_chunk_size);
-+
-+	*num_of_meta_chunks_ret = num_of_meta_chunks;
-+	*size_of_data_ret = num_of_data_chunks * default_chunk_size;
-+	return total_size;
-+}
-diff --git a/mkfs/rootdir.h b/mkfs/rootdir.h
-index 68f88643bf7a..a557bd183f7b 100644
---- a/mkfs/rootdir.h
-+++ b/mkfs/rootdir.h
-@@ -27,4 +27,6 @@ struct directory_name_entry {
- 
- int btrfs_mkfs_fill_dir(const char *source_dir, struct btrfs_root *root,
- 			bool verbose);
-+u64 btrfs_mkfs_size_dir(const char *dir_name, u64 sectorsize,
-+			u64 *num_of_meta_chunks_ret, u64 *size_of_data_ret);
- #endif
+This moved about 700 lines, which reduced about 1/3 of original mkfs.c.
+
+And by moving this ancient code to its own files, I also fixed several
+small nits exposed by checkpatch script.
+
+This provides a clean environment for later rootdir rework.
+
+Qu Wenruo (5):
+  btrfs-progs: Avoid BUG_ON for chunk allocation when ENOSPC happens
+  btrfs-progs: mkfs: Fix overwritten return value for mkfs
+  btrfs-progs: mkfs: Error out gracefully for --rootdir
+  btrfs-progs: mkfs: Move image creation of rootdir to its own files
+  btrfs-progs: mkfs: Move source dir size calculation to its own files
+
+ Makefile       |   4 +-
+ extent-tree.c  |   3 +-
+ mkfs/main.c    | 710 +------------------------------------------------------
+ mkfs/rootdir.c | 735 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ mkfs/rootdir.h |  32 +++
+ volumes.c      |  18 +-
+ 6 files changed, 792 insertions(+), 710 deletions(-)
+ create mode 100644 mkfs/rootdir.c
+ create mode 100644 mkfs/rootdir.h
+
 -- 
 2.14.2
 

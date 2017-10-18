@@ -1,61 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:47348 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751620AbdJROHv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Oct 2017 10:07:51 -0400
-Received: from ty.sabi.co.uk ([95.172.230.208]:60334)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1e4p0f-0003yL-7u
-        for linux-btrfs@vger.kernel.org; Wed, 18 Oct 2017 15:07:49 +0100
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1e4ozw-0007OY-So
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Oct 2017 15:07:04 +0100
+Received: from mail-ua0-f171.google.com ([209.85.217.171]:54079 "EHLO
+        mail-ua0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750881AbdJROSv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Oct 2017 10:18:51 -0400
+Received: by mail-ua0-f171.google.com with SMTP id s41so3654754uab.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Oct 2017 07:18:51 -0700 (PDT)
+Received: from [10.0.0.120] (c-76-101-203-225.hsd1.fl.comcast.net. [76.101.203.225])
+        by smtp.gmail.com with ESMTPSA id x14sm4990805uab.13.2017.10.18.07.18.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 18 Oct 2017 07:18:49 -0700 (PDT)
+From: Larkin Lowrey <llowrey@gmail.com>
+Subject: Unmountable fs. No root for superblock generation
+To: linux-btrfs@vger.kernel.org
+Message-ID: <4b86aa36-8a9d-5af6-06a9-351db3015107@gmail.com>
+Date: Wed, 18 Oct 2017 10:18:48 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <23015.24582.659282.346242@tree.ty.sabi.co.uk>
-Date: Wed, 18 Oct 2017 15:07:02 +0100
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Is it safe to use btrfs on top of different types of devices?
-In-Reply-To: <CAGtRCvdj6LXO8ou40u7B6KCKin6Wzh5FbayMX0-a9Y2fK_w8wg@mail.gmail.com>
-References: <CAGtRCvfqUP_79cKC_Rzs6MD_uZiVbjt9QW0_BeOpACN_c3ev5w@mail.gmail.com>
-        <d27ec863-d4fb-3ffd-78a4-c12789054bd9@gmail.com>
-        <CAA-GF5vs_Mw9bW20ykXAr7Fr4DK_1bDM6qk0k54-oi5g-veK2g@mail.gmail.com>
-        <d15a82aa-7d6e-ba36-76cc-8771e0359379@gmail.com>
-        <20171017011443.bupcsskm7joc73wb@angband.pl>
-        <e8497dd4-7341-a708-7828-282001738a95@gmail.com>
-        <CAA-GF5sO78HjdWHRZKfENRwgGPF91Vz-Odm7PphiiEMVEENykg@mail.gmail.com>
-        <81e1136a-a846-9531-b1bf-9ad2aabb785d@gmail.com>
-        <20171017170626.amfrohfyqlujdueu@angband.pl>
-        <1d5e9875-1c1e-f67e-1f5b-0741555d9517@gmail.com>
-        <20171017202135.xdop4eko6utircmz@angband.pl>
-        <CAGtRCvdj6LXO8ou40u7B6KCKin6Wzh5FbayMX0-a9Y2fK_w8wg@mail.gmail.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> [ ... ] After all, btrfs would just have to discard one copy
-> of each chunk. [ ... ]  One more thing that is not clear to me
-> is the replication profile of a volume. I see that balance can
-> convert chunks between profiles, for example from single to
-> raid1, but I don't see how the default profile for new chunks
-> can be set or quiered. [ ... ]
+I am unable to mount one my my filesystems.  The superblock thinks the 
+latest generation is 2220927 but I can't seem to find a root with that 
+number. I can find 2220926 and 2220928 but not 2220927. Is there 
+anything that I can do to recover this FS?
 
-My impression is that the design rationale and aims for Btrfs
-two-level allocation (in other fields known as a "BIBOP" scheme)
-were not fully shared among Btrfs developers, that perhaps it
-could have benefited from some further reflection on its
-implications, and that its behaviour may have evolved
-"opportunistically", maybe without much worrying as to
-conceptual integrity. (I am trying to be euphemistic)
+# btrfs check /dev/Cached/Backups
+checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
+checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
+checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
+checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
+Csum didn't match
+Couldn't setup extent tree
+Couldn't open file system
 
-So while I am happy with the "Rodeh" core of Btrfs (COW,
-sbuvolumes, checksums), the RAID-profile functionality and
-especially the multi-device layer is not something I find
-particularly to my taste. (I am trying to be euphemistic)
+# btrfs-find-root -g 2220927 /dev/Cached/Backups
+Couldn't setup extent tree
+Couldn't setup device tree
+Superblock thinks the generation is 2220927
+Superblock thinks the level is 2
 
-So when it comes to allocation, RAID-profiles, multiple devices,
-I usually expect some random "surprising functionality". (I am
-trying to be euphemistic)
+Found tree root at 159057884577792 gen 2220927 level 2
+Well block 101489031790592(gen: 2220928 level: 2) seems good, but 
+generation/level doesn't match, want gen: 2220927 level: 2
+
+# btrfs check --tree-root 159057884577792  /dev/Cached/Backups
+checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
+checksum verify failed on 159057884594176 found 15284E33 wanted C8C5B54E
+checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
+checksum verify failed on 159057884594176 found 472037C9 wanted 9ACDCCB4
+Csum didn't match
+Couldn't setup extent tree
+Couldn't open file system
+
+# btrfs check --tree-root 101489031790592 /dev/Cached/Backups
+parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
+parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
+parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
+parent transid verify failed on 101489031790592 wanted 2220927 found 2220928
+Ignoring transid failure
+parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
+parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
+parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
+parent transid verify failed on 159057595138048 wanted 2220927 found 2220920
+Ignoring transid failure
+parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
+parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
+parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
+parent transid verify failed on 158652658122752 wanted 2220927 found 2220911
+Ignoring transid failure
+Checking filesystem on /dev/Cached/Backups
+UUID: 1b213dfd-6486-47d8-8459-bc5825882023
+checking extents
+parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
+parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
+parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
+parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
+parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
+parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
+parent transid verify failed on 116325928206336 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
+parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
+parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
+parent transid verify failed on 116329892970496 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
+parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
+parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
+parent transid verify failed on 116325929943040 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
+parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
+parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
+parent transid verify failed on 116325932679168 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
+parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
+parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
+parent transid verify failed on 116010673373184 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
+parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
+parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
+parent transid verify failed on 116329479405568 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
+parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
+parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
+parent transid verify failed on 116480660914176 wanted 2220928 found 2220921
+Ignoring transid failure
+checksum verify failed on 159058014814208 found 406AAC5F wanted C07B44A6
+checksum verify failed on 159058014814208 found 406AAC5F wanted C07B44A6
+parent transid verify failed on 159058014814208 wanted 2220927 found 2220920
+checksum verify failed on 159058014814208 found 406AAC5F wanted C07B44A6
+Csum didn't match
+parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
+parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
+parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
+parent transid verify failed on 116329821028352 wanted 2220928 found 2220921
+Ignoring transid failure
+parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
+parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
+parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
+parent transid verify failed on 114958975139840 wanted 2220928 found 2220920
+Ignoring transid failure
+leaf parent key incorrect 114958975139840
+bad block 114958975139840
+Errors found in extent allocation tree or chunk allocation
+parent transid verify failed on 116329711550464 wanted 2220928 found 2220921
+Ignoring transid failure
+leaf parent key incorrect 116329711550464
+
+

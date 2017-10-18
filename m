@@ -1,62 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58707 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934220AbdJRMXS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Oct 2017 08:23:18 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B235FABED
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Oct 2017 12:23:16 +0000 (UTC)
-Subject: Re: [PATCH 0/5] Rootdir refactor and small bug fixes
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Received: from victor.provo.novell.com ([137.65.250.26]:45829 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933938AbdJRIBJ (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 18 Oct 2017 04:01:09 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-References: <20171018080054.25509-1-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <38e45c82-4900-4a11-2fbd-bb2e8310e474@suse.com>
-Date: Wed, 18 Oct 2017 15:23:15 +0300
-MIME-Version: 1.0
+Subject: [PATCH 1/5] btrfs-progs: Avoid BUG_ON for chunk allocation when ENOSPC happens
+Date: Wed, 18 Oct 2017 16:00:50 +0800
+Message-Id: <20171018080054.25509-2-wqu@suse.com>
 In-Reply-To: <20171018080054.25509-1-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
+References: <20171018080054.25509-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+When passing directory larger than block device using --rootdir
+parameter, we get the following backtrace:
 
+------
+extent-tree.c:2693: btrfs_reserve_extent: BUG_ON `ret` triggered, value -28
+./mkfs.btrfs(+0x1a05d)[0x557939e6b05d]
+./mkfs.btrfs(btrfs_reserve_extent+0xb5a)[0x557939e710c8]
+./mkfs.btrfs(+0xb0b6)[0x557939e5c0b6]
+./mkfs.btrfs(main+0x15d5)[0x557939e5de04]
+/usr/lib/libc.so.6(__libc_start_main+0xea)[0x7f83b101af6a]
+./mkfs.btrfs(_start+0x2a)[0x557939e5af5a]
+------
 
-On 18.10.2017 11:00, Qu Wenruo wrote:
-> First 3 patches are small bug fixes which can be applied even we don't
-> touch the functionality of --rootdir.
-> 
-> The last two patches will refactor --rootdir related functions (mainly
-> size_sourcedir and make_image) to mkfs/rootdir.[ch].
-> And rename them to btrfs_mkfs_size_dir() and btrfs_mkfs_fill_dir()
-> respectively.
-> Functionality is not changed at all, so it will still shrink the device
-> or using the first 1M reserved space.
-> 
-> This moved about 700 lines, which reduced about 1/3 of original mkfs.c.
-> 
-> And by moving this ancient code to its own files, I also fixed several
-> small nits exposed by checkpatch script.
-> 
-> This provides a clean environment for later rootdir rework.
-> 
-> Qu Wenruo (5):
->   btrfs-progs: Avoid BUG_ON for chunk allocation when ENOSPC happens
->   btrfs-progs: mkfs: Fix overwritten return value for mkfs
->   btrfs-progs: mkfs: Error out gracefully for --rootdir
->   btrfs-progs: mkfs: Move image creation of rootdir to its own files
->   btrfs-progs: mkfs: Move source dir size calculation to its own files
+Nothing special, just BUG_ON() abusing from ancient code.
 
+Fix them by using correct return.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ extent-tree.c |  3 ++-
+ volumes.c     | 18 ++++++++++++++----
+ 2 files changed, 16 insertions(+), 5 deletions(-)
 
-> 
->  Makefile       |   4 +-
->  extent-tree.c  |   3 +-
->  mkfs/main.c    | 710 +------------------------------------------------------
->  mkfs/rootdir.c | 735 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  mkfs/rootdir.h |  32 +++
->  volumes.c      |  18 +-
->  6 files changed, 792 insertions(+), 710 deletions(-)
->  create mode 100644 mkfs/rootdir.c
->  create mode 100644 mkfs/rootdir.h
-> 
+diff --git a/extent-tree.c b/extent-tree.c
+index 525a237e5923..055582c36da6 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -2690,7 +2690,8 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+ 			       search_start, search_end, hint_byte, ins,
+ 			       trans->alloc_exclude_start,
+ 			       trans->alloc_exclude_nr, data);
+-	BUG_ON(ret);
++	if (ret < 0)
++		return ret;
+ 	clear_extent_dirty(&info->free_space_cache,
+ 			   ins->objectid, ins->objectid + ins->offset - 1);
+ 	return ret;
+diff --git a/volumes.c b/volumes.c
+index 2209e5a9100b..e1ee27d5f3ce 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1032,11 +1032,13 @@ again:
+ 			     info->chunk_root->root_key.objectid,
+ 			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
+ 			     calc_size, &dev_offset, 0);
+-		BUG_ON(ret);
++		if (ret < 0)
++			goto out_chunk_map;
+ 
+ 		device->bytes_used += calc_size;
+ 		ret = btrfs_update_device(trans, device);
+-		BUG_ON(ret);
++		if (ret < 0)
++			goto out_chunk_map;
+ 
+ 		map->stripes[index].dev = device;
+ 		map->stripes[index].physical = dev_offset;
+@@ -1075,16 +1077,24 @@ again:
+ 	map->ce.size = *num_bytes;
+ 
+ 	ret = insert_cache_extent(&info->mapping_tree.cache_tree, &map->ce);
+-	BUG_ON(ret);
++	if (ret < 0)
++		goto out_chunk_map;
+ 
+ 	if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		ret = btrfs_add_system_chunk(info, &key,
+ 				    chunk, btrfs_chunk_item_size(num_stripes));
+-		BUG_ON(ret);
++		if (ret < 0)
++			goto out_chunk;
+ 	}
+ 
+ 	kfree(chunk);
+ 	return ret;
++
++out_chunk_map:
++	kfree(map);
++out_chunk:
++	kfree(chunk);
++	return ret;
+ }
+ 
+ /*
+-- 
+2.14.2
+

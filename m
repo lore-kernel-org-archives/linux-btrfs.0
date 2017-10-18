@@ -1,43 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36974 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35812 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964958AbdJQNOK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Oct 2017 09:14:10 -0400
-Date: Tue, 17 Oct 2017 15:12:20 +0200
+        id S1753265AbdJRNI4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Oct 2017 09:08:56 -0400
+Date: Wed, 18 Oct 2017 15:07:08 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: "kernelci.org bot" <bot@kernelci.org>,
-        Kernel Build Reports Mailman List
-        <kernel-build-reports@lists.linaro.org>,
-        "open list:RALINK MIPS ARCHITECTURE" <linux-mips@linux-mips.org>,
-        Ralf Baechle <ralf@linux-mips.org>,
-        David Daney <david.daney@cavium.com>,
-        Carlos Munoz <cmunoz@caviumnetworks.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Mark Brown <broonie@linaro.org>, Josh Poimboeuf <jpoimboe@redhat.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: next/master build: 214 builds: 29 failed, 185 passed, 29 errors,
- 68 warnings (next-20171016)
-Message-ID: <20171017131220.GX3521@suse.cz>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: test: add new cli-test for subvol
+ get/set-default
+Message-ID: <20171018130707.GH3521@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <59e53a9c.0a98df0a.acf5c.fc96@mx.google.com>
- <CAK8P3a1Qk+H3zp23zR=3Wsh-Yp3YOZ0bF6BNcFHjnEHd9XnCjA@mail.gmail.com>
+References: <ac41cb86-7571-0c56-aa3b-29696bb1389b@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAK8P3a1Qk+H3zp23zR=3Wsh-Yp3YOZ0bF6BNcFHjnEHd9XnCjA@mail.gmail.com>
+In-Reply-To: <ac41cb86-7571-0c56-aa3b-29696bb1389b@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 17, 2017 at 11:00:04AM +0200, Arnd Bergmann wrote:
-> > 2 fs/btrfs/tree-checker.c:186:4: warning: format '%lu' expects argument of type 'long unsigned int', but argument 6 has type 'unsigned int' [-Wformat=]
-> > 1 fs/btrfs/tree-checker.c:186:70: warning: format '%lu' expects argument of type 'long unsigned int', but argument 6 has type 'unsigned int' [-Wformat=]
+On Wed, Oct 18, 2017 at 11:00:43AM +0900, Misono, Tomohiro wrote:
+> Add new test to check functionality of subvol get/set-default.
 > 
-> I sent a patch a few days ago, Dave Sterba reviewed it, but it hasn't
-> gone in yet.
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
-The patch was picked last Friday, and is now part of linux-next tree
+Thanks, applied with the following diff to fix style and failures
+when the test is not run as root initially:
 
-https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git/commit/?h=for-next&id=6881041b521fff47c3b31269ec9b8b5ebe7d631e
+- no command shortcuts
+- the subvolume id for set-default should be read from rootid
+- add missing SUDO_HELPER
+- prepare_test_dev without the device size (unless justified)
 
-There might be a few days delay, caused by testing, before my kernel.org
-for-next branch is updated and then picked by linux-next.
+--- a/tests/cli-tests/008-subvolume-get-set-default/test.sh
++++ b/tests/cli-tests/008-subvolume-get-set-default/test.sh
+@@ -3,7 +3,7 @@
+
+ check_default_id()
+ {
+-       id=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" sub get-def .) \
++       id=$(run_check_stdout $SUDO_HELPER "$TOP/btrfs" subvolume get-default .) \
+                || { echo "$id"; exit 1; }
+        if $(echo "$id" | grep -vq "ID $1"); then
+                _fail "subvolume get-default: default id is not $1, but $id"
+@@ -16,7 +16,7 @@ check_prereq mkfs.btrfs
+ check_prereq btrfs
+
+ setup_root_helper
+-prepare_test_dev 2g
++prepare_test_dev
+
+ run_check "$TOP/mkfs.btrfs" -f "$TEST_DEV"
+ run_check_mount_test_dev
+@@ -25,21 +25,23 @@ cd "$TEST_MNT"
+ check_default_id 5
+
+ # check "subvol set-default <subvolid> <path>"
+-run_check "$TOP/btrfs" subvol create sub
+-run_check $SUDO_HELPER "$TOP/btrfs" subvol set-default 257 .
+-check_default_id 257
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub
++id=$(run_check_stdout "$TOP/btrfs" inspect-internal rootid sub)
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume set-default "$id" .
++check_default_id "$id"
+
+ run_mustfail "set-default to non existent id" \
+-       $SUDO_HELPER "$TOP/btrfs" subvol set-default 100 .
++       $SUDO_HELPER "$TOP/btrfs" subvolume set-default 100 .
+
+ # check "subvol set-default <subvolume>"
+-run_check "$TOP/btrfs" subvol create sub2
+-run_check $SUDO_HELPER "$TOP/btrfs" subvol set-default ./sub2
+-check_default_id 258
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2
++id=$(run_check_stdout "$TOP/btrfs" inspect-internal rootid sub2)
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume set-default ./sub2
++check_default_id "$id"
+
+-run_check mkdir sub2/dir
++run_check $SUDO_HELPER mkdir sub2/dir
+ run_mustfail "set-default to normal directory" \
+-       $SUDO_HELPER "$TOP/btrfs" subvol set-default ./sub2/dir
++       $SUDO_HELPER "$TOP/btrfs" subvolume set-default ./sub2/dir
+
+ cd ..
+ run_check_umount_test_dev

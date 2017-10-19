@@ -1,105 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50917 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:51063 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751153AbdJSFlp (ORCPT
+        with ESMTP id S1751153AbdJSFmA (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 19 Oct 2017 01:41:45 -0400
+        Thu, 19 Oct 2017 01:42:00 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH v2 1/6] btrfs-progs: Avoid BUG_ON for chunk allocation when ENOSPC happens
-Date: Thu, 19 Oct 2017 13:41:33 +0800
-Message-Id: <20171019054138.13965-2-wqu@suse.com>
+Subject: [PATCH v2 2/6] btrfs-progs: mkfs: Avoid positive return value from cleanup_temp_chunks
+Date: Thu, 19 Oct 2017 13:41:34 +0800
+Message-Id: <20171019054138.13965-3-wqu@suse.com>
 In-Reply-To: <20171019054138.13965-1-wqu@suse.com>
 References: <20171019054138.13965-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When passing directory larger than block device using --rootdir
-parameter, we get the following backtrace:
+Since we're calling btrfs_search_slot() the return value can be
+positive.
+However we just pass that return value out, causing undefined return
+value.
 
-------
-extent-tree.c:2693: btrfs_reserve_extent: BUG_ON `ret` triggered, value -28
-./mkfs.btrfs(+0x1a05d)[0x557939e6b05d]
-./mkfs.btrfs(btrfs_reserve_extent+0xb5a)[0x557939e710c8]
-./mkfs.btrfs(+0xb0b6)[0x557939e5c0b6]
-./mkfs.btrfs(main+0x15d5)[0x557939e5de04]
-/usr/lib/libc.so.6(__libc_start_main+0xea)[0x7f83b101af6a]
-./mkfs.btrfs(_start+0x2a)[0x557939e5af5a]
-------
+This can cause mkfs return 1, which indicates something wrong.
 
-Nothing special, just BUG_ON() abusing from ancient code.
-
-Fix them by using correct return.
+Fix it.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- extent-tree.c |  3 ++-
- volumes.c     | 18 ++++++++++++++----
- 2 files changed, 16 insertions(+), 5 deletions(-)
+ mkfs/main.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/extent-tree.c b/extent-tree.c
-index 525a237e5923..055582c36da6 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -2690,7 +2690,8 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
- 			       search_start, search_end, hint_byte, ins,
- 			       trans->alloc_exclude_start,
- 			       trans->alloc_exclude_nr, data);
--	BUG_ON(ret);
-+	if (ret < 0)
-+		return ret;
- 	clear_extent_dirty(&info->free_space_cache,
- 			   ins->objectid, ins->objectid + ins->offset - 1);
- 	return ret;
-diff --git a/volumes.c b/volumes.c
-index 2209e5a9100b..e1ee27d5f3ce 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1032,11 +1032,13 @@ again:
- 			     info->chunk_root->root_key.objectid,
- 			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
- 			     calc_size, &dev_offset, 0);
--		BUG_ON(ret);
-+		if (ret < 0)
-+			goto out_chunk_map;
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 80e6089c37a1..9d53c6632b45 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1350,6 +1350,9 @@ static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
+ 		ret = btrfs_search_slot(trans, root, &key, &path, 0, 0);
+ 		if (ret < 0)
+ 			goto out;
++		/* Don't pollute ret for >0 case */
++		if (ret > 0)
++			ret = 0;
  
- 		device->bytes_used += calc_size;
- 		ret = btrfs_update_device(trans, device);
--		BUG_ON(ret);
-+		if (ret < 0)
-+			goto out_chunk_map;
- 
- 		map->stripes[index].dev = device;
- 		map->stripes[index].physical = dev_offset;
-@@ -1075,16 +1077,24 @@ again:
- 	map->ce.size = *num_bytes;
- 
- 	ret = insert_cache_extent(&info->mapping_tree.cache_tree, &map->ce);
--	BUG_ON(ret);
-+	if (ret < 0)
-+		goto out_chunk_map;
- 
- 	if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
- 		ret = btrfs_add_system_chunk(info, &key,
- 				    chunk, btrfs_chunk_item_size(num_stripes));
--		BUG_ON(ret);
-+		if (ret < 0)
-+			goto out_chunk;
- 	}
- 
- 	kfree(chunk);
- 	return ret;
-+
-+out_chunk_map:
-+	kfree(map);
-+out_chunk:
-+	kfree(chunk);
-+	return ret;
- }
- 
- /*
+ 		btrfs_item_key_to_cpu(path.nodes[0], &found_key,
+ 				      path.slots[0]);
 -- 
 2.14.2
 

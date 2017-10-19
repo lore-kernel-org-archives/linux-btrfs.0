@@ -1,57 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f169.google.com ([209.85.216.169]:45594 "EHLO
-        mail-qt0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753988AbdJSSQR (ORCPT
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:44458 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752466AbdJSSQS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Oct 2017 14:16:17 -0400
-Received: by mail-qt0-f169.google.com with SMTP id p1so15577202qtg.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 11:16:16 -0700 (PDT)
+        Thu, 19 Oct 2017 14:16:18 -0400
+Received: by mail-qt0-f195.google.com with SMTP id 8so15583436qtv.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 11:16:18 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
 To: kernel-team@fb.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/8] btrfs: don't call btrfs_start_delalloc_roots in flushoncommit
-Date: Thu, 19 Oct 2017 14:16:01 -0400
-Message-Id: <1508436962-6851-8-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH 8/8] btrfs: move btrfs_truncate_block out of trans handle
+Date: Thu, 19 Oct 2017 14:16:02 -0400
+Message-Id: <1508436962-6851-9-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1508436962-6851-1-git-send-email-josef@toxicpanda.com>
 References: <1508436962-6851-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We're holding the sb_start_intwrite lock at this point, and doing async
-filemap_flush of the inodes will result in a deadlock if we freeze the
-fs during this operation.  This is because we could do a
-btrfs_join_transaction() in the thread we are waiting on which would
-block at sb_start_intwrite, and thus deadlock.  Using
-writeback_inodes_sb() side steps the problem by not introducing all of
-these extra locking dependencies.
+Since we do a delalloc reserve in btrfs_truncate_block we can deadlock
+with freeze.  If somebody else is trying to allocate metadata for this
+inode and it gets stuck in start_delalloc_inodes because of freeze we
+will deadlock.  Be safe and move this outside of a trans handle.  This
+also has a side-effect of making sure that we're not leaving stale data
+behind in the other_encoding or encryption case.  Not an issue now since
+nobody uses it, but it would be a problem in the future.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/transaction.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 119 ++++++++++++++++++++-----------------------------------
+ 1 file changed, 44 insertions(+), 75 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 68c3e1c04bca..5a8c2649af2f 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1916,8 +1916,17 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 68e28375e159..c94e8938b574 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4357,47 +4357,11 @@ static int truncate_space_check(struct btrfs_trans_handle *trans,
  
- static inline int btrfs_start_delalloc_flush(struct btrfs_fs_info *fs_info)
- {
-+	/*
-+	 * We use writeback_inodes_sb here because if we used
-+	 * btrfs_start_delalloc_roots we would deadlock with fs freeze.
-+	 * Currently are holding the fs freeze lock, if we do an async flush
-+	 * we'll do btrfs_join_transaction() and deadlock because we need to
-+	 * wait for the fs freeze lock.  Using the direct flushing we benefit
-+	 * from already being in a transaction and our join_transaction doesn't
-+	 * have to re-take the fs freeze lock.
-+	 */
- 	if (btrfs_test_opt(fs_info, FLUSHONCOMMIT))
--		return btrfs_start_delalloc_roots(fs_info, 1, -1);
-+		writeback_inodes_sb(fs_info->sb, WB_REASON_SYNC);
- 	return 0;
  }
  
+-static int truncate_inline_extent(struct inode *inode,
+-				  struct btrfs_path *path,
+-				  struct btrfs_key *found_key,
+-				  const u64 item_end,
+-				  const u64 new_size)
+-{
+-	struct extent_buffer *leaf = path->nodes[0];
+-	int slot = path->slots[0];
+-	struct btrfs_file_extent_item *fi;
+-	u32 size = (u32)(new_size - found_key->offset);
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+-
+-	fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
+-
+-	if (btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE) {
+-		loff_t offset = new_size;
+-		loff_t page_end = ALIGN(offset, PAGE_SIZE);
+-
+-		/*
+-		 * Zero out the remaining of the last page of our inline extent,
+-		 * instead of directly truncating our inline extent here - that
+-		 * would be much more complex (decompressing all the data, then
+-		 * compressing the truncated data, which might be bigger than
+-		 * the size of the inline extent, resize the extent, etc).
+-		 * We release the path because to get the page we might need to
+-		 * read the extent item from disk (data not in the page cache).
+-		 */
+-		btrfs_release_path(path);
+-		return btrfs_truncate_block(inode, offset, page_end - offset,
+-					0);
+-	}
+-
+-	btrfs_set_file_extent_ram_bytes(leaf, fi, size);
+-	size = btrfs_file_extent_calc_inline_size(size);
+-	btrfs_truncate_item(root->fs_info, path, size, 1);
+-
+-	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+-		inode_sub_bytes(inode, item_end + 1 - new_size);
+-
+-	return 0;
+-}
++/*
++ * Return this if we need to call truncate_block for the last bit of the
++ * truncate.
++ */
++#define NEED_TRUNCATE_BLOCK 1
+ 
+ /*
+  * this can truncate away extent items, csum items and directory items.
+@@ -4558,11 +4522,6 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 		if (found_type != BTRFS_EXTENT_DATA_KEY)
+ 			goto delete;
+ 
+-		if (del_item)
+-			last_size = found_key.offset;
+-		else
+-			last_size = new_size;
+-
+ 		if (extent_type != BTRFS_FILE_EXTENT_INLINE) {
+ 			u64 num_dec;
+ 			extent_start = btrfs_file_extent_disk_bytenr(leaf, fi);
+@@ -4604,40 +4563,29 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 			 */
+ 			if (!del_item &&
+ 			    btrfs_file_extent_encryption(leaf, fi) == 0 &&
+-			    btrfs_file_extent_other_encoding(leaf, fi) == 0) {
+-
++			    btrfs_file_extent_other_encoding(leaf, fi) == 0 &&
++			    btrfs_file_extent_compression(leaf, fi) == 0) {
++				u32 size = (u32)(new_size - found_key.offset);
++				btrfs_set_file_extent_ram_bytes(leaf, fi, size);
++				size = btrfs_file_extent_calc_inline_size(size);
++				btrfs_truncate_item(root->fs_info, path, size, 1);
++			} else if (!del_item) {
+ 				/*
+-				 * Need to release path in order to truncate a
+-				 * compressed extent. So delete any accumulated
+-				 * extent items so far.
++				 * We have to bail so the last_size is set to
++				 * just before this extent.
+ 				 */
+-				if (btrfs_file_extent_compression(leaf, fi) !=
+-				    BTRFS_COMPRESS_NONE && pending_del_nr) {
+-					err = btrfs_del_items(trans, root, path,
+-							      pending_del_slot,
+-							      pending_del_nr);
+-					if (err) {
+-						btrfs_abort_transaction(trans,
+-									err);
+-						goto error;
+-					}
+-					pending_del_nr = 0;
+-				}
++				err = NEED_TRUNCATE_BLOCK;
++				break;
++			}
+ 
+-				err = truncate_inline_extent(inode, path,
+-							     &found_key,
+-							     item_end,
+-							     new_size);
+-				if (err) {
+-					btrfs_abort_transaction(trans, err);
+-					goto error;
+-				}
+-			} else if (test_bit(BTRFS_ROOT_REF_COWS,
+-					    &root->state)) {
++			if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+ 				inode_sub_bytes(inode, item_end + 1 - new_size);
+-			}
+ 		}
+ delete:
++		if (del_item)
++			last_size = found_key.offset;
++		else
++			last_size = new_size;
+ 		if (del_item) {
+ 			if (!pending_del_nr) {
+ 				/* no pending yet, add ourselves */
+@@ -9335,12 +9283,12 @@ static int btrfs_truncate(struct inode *inode)
+ 		ret = btrfs_truncate_inode_items(trans, root, inode,
+ 						 inode->i_size,
+ 						 BTRFS_EXTENT_DATA_KEY);
++		trans->block_rsv = &fs_info->trans_block_rsv;
+ 		if (ret != -ENOSPC && ret != -EAGAIN) {
+ 			err = ret;
+ 			break;
+ 		}
+ 
+-		trans->block_rsv = &fs_info->trans_block_rsv;
+ 		ret = btrfs_update_inode(trans, root, inode);
+ 		if (ret) {
+ 			err = ret;
+@@ -9364,6 +9312,27 @@ static int btrfs_truncate(struct inode *inode)
+ 		trans->block_rsv = rsv;
+ 	}
+ 
++	/*
++	 * We can't call btrfs_truncate_block inside a trans handle as we could
++	 * deadlock with freeze, if we got NEED_TRUNCATE_BLOCK then we know
++	 * we've truncated everything except the last little bit, and can do
++	 * btrfs_truncate_block and then update the disk_i_size.
++	 */
++	if (ret == NEED_TRUNCATE_BLOCK) {
++		btrfs_end_transaction(trans);
++		btrfs_btree_balance_dirty(fs_info);
++
++		ret = btrfs_truncate_block(inode, inode->i_size, 0, 0);
++		if (ret)
++			goto out;
++		trans = btrfs_start_transaction(root, 1);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			goto out;
++		}
++		btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
++	}
++
+ 	if (ret == 0 && inode->i_nlink > 0) {
+ 		trans->block_rsv = root->orphan_block_rsv;
+ 		ret = btrfs_orphan_del(trans, BTRFS_I(inode));
 -- 
 2.7.5
 

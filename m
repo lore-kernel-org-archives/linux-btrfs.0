@@ -1,83 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57275 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751099AbdJSDOs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Oct 2017 23:14:48 -0400
-Subject: Re: [PATCH 01/21] Btrfs: rework outstanding_extents
-To: Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
+Received: from mail-qk0-f177.google.com ([209.85.220.177]:46202 "EHLO
+        mail-qk0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753134AbdJSSKh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Oct 2017 14:10:37 -0400
+Received: by mail-qk0-f177.google.com with SMTP id k123so11455633qke.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 11:10:36 -0700 (PDT)
+Date: Thu, 19 Oct 2017 14:10:34 -0400
+From: Josef Bacik <josef@toxicpanda.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Josef Bacik <josef@toxicpanda.com>, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 01/21] Btrfs: rework outstanding_extents
+Message-ID: <20171019181032.7hl5keeasqwy5yk5@destiny>
 References: <1506714245-23072-1-git-send-email-jbacik@fb.com>
  <1506714245-23072-2-git-send-email-jbacik@fb.com>
-From: Edmund Nadolski <enadolski@suse.de>
-Message-ID: <5ef9232a-5b5c-0660-3d11-c453c65f70d1@suse.de>
-Date: Wed, 18 Oct 2017 21:14:31 -0600
+ <704b1207-5219-89dd-6ddd-582ed74f759f@suse.com>
+ <20171013131050.q5huwryq444utast@destiny>
+ <9dcaa11c-679c-0fda-4e69-327cf85d1ba5@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <1506714245-23072-2-git-send-email-jbacik@fb.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <9dcaa11c-679c-0fda-4e69-327cf85d1ba5@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-just a few quick things for the changelog:
-
-On 09/29/2017 01:43 PM, Josef Bacik wrote:
-> Right now we do a lot of weird hoops around outstanding_extents in order
-> to keep the extent count consistent.  This is because we logically
-> transfer the outstanding_extent count from the initial reservation
-> through the set_delalloc_bits.  This makes it pretty difficult to get a
-> handle on how and when we need to mess with outstanding_extents.
+On Fri, Oct 13, 2017 at 04:55:58PM +0300, Nikolay Borisov wrote:
 > 
-> Fix this by revamping the rules of how we deal with outstanding_extents.
-> Now instead everybody that is holding on to a delalloc extent is
-> required to increase the outstanding extents count for itself.  This
-> means we'll have something like this
+> > 
+> > The outstanding_extents accounting is consistent with only the items needed to
+> > handle the outstanding extent items.  However since changing the inode requires
+> > updating the inode item as well we have to keep this floating reservation for
+> > the inode item until we have 0 outstanding extents.  The way we do this is with
+> > the BTRFS_INODE_DELALLOC_META_RESERVED flag.  So if it isn't set we will
+> > allocate nr_exntents + 1 in btrfs_delalloc_reserve_metadata() and then set our
+> > bit.  If we ever steal this reservation we make sure to clear the flag so we
+> > know we don't have to clean it up when outstanding_extents goes to 0.  It's not
+> > super intuitive but needs to be done under the BTRFS_I(inode)->lock so this was
+> > the best place to put it.  I suppose we could move the logic out of here and put
+> > it somewhere else to make it more clear.
 > 
-> btrfs_dealloc_reserve_metadata	- outstanding_extents = 1
-
-s/dealloc/delalloc/
-
-
->  btrfs_set_delalloc		- outstanding_extents = 2
-
-should be btrfs_set_extent_delalloc?
-
-
-> btrfs_release_delalloc_extents	- outstanding_extents = 1
+> I think defining this logic in its own, discrete block of code would be
+> best w.r.t readibility. It's not super obvious.
 > 
-> for an initial file write.  Now take the append write where we extend an
-> existing delalloc range but still under the maximum extent size
-> 
-> btrfs_delalloc_reserve_metadata - outstanding_extents = 2
->   btrfs_set_delalloc
 
-btrfs_set_extent_delalloc?
+I went to do this and realized that I rip all of this out when we switch to
+per-inode block rsvs, so I'm just going to leave this patch as is.  Thanks,
 
-
->     btrfs_set_bit_hook		- outstanding_extents = 3
->     btrfs_merge_bit_hook	- outstanding_extents = 2
-
-should be btrfs_clear_bit_hook? (or btrfs_merge_extent_hook?)
-
-
-> btrfs_release_delalloc_extents	- outstanding_extnets = 1
-
-btrfs_delalloc_release_metadata?
-
-
-> 
-> In order to make the ordered extent transition we of course must now
-> make ordered extents carry their own outstanding_extent reservation, so
-> for cow_file_range we end up with
-> 
-> btrfs_add_ordered_extent	- outstanding_extents = 2
-> clear_extent_bit		- outstanding_extents = 1
-> btrfs_remove_ordered_extent	- outstanding_extents = 0
-> 
-> This makes all manipulations of outstanding_extents much more explicit.
-> Every successful call to btrfs_reserve_delalloc_metadata _must_ now be
-                           ^
-btrfs_delalloc_reserve_metadata?
-
-
-Thanks,
-Ed
-
+Josef

@@ -1,65 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:50524 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750902AbdJSPHt (ORCPT
+Received: from mtaextp1.scidom.de ([146.107.103.20]:46457 "EHLO
+        mtaextp1.scidom.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751898AbdJSRuz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Oct 2017 11:07:49 -0400
-Received: by mail-io0-f193.google.com with SMTP id 97so10146528iok.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 08:07:49 -0700 (PDT)
-Subject: Re: Is it safe to use btrfs on top of different types of devices?
-To: Zoltan <zoltan1980@gmail.com>
-Cc: Peter Grandi <pg@btrfs.list.sabi.co.uk>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <CAGtRCvfkDnUBxqWNgEOXz+Gam0dPubatROQgqxE2D_uCAZhihQ@mail.gmail.com>
- <CAGtRCvfqUP_79cKC_Rzs6MD_uZiVbjt9QW0_BeOpACN_c3ev5w@mail.gmail.com>
- <d27ec863-d4fb-3ffd-78a4-c12789054bd9@gmail.com>
- <CAA-GF5vs_Mw9bW20ykXAr7Fr4DK_1bDM6qk0k54-oi5g-veK2g@mail.gmail.com>
- <d15a82aa-7d6e-ba36-76cc-8771e0359379@gmail.com>
- <20171017011443.bupcsskm7joc73wb@angband.pl>
- <e8497dd4-7341-a708-7828-282001738a95@gmail.com>
- <CAA-GF5sO78HjdWHRZKfENRwgGPF91Vz-Odm7PphiiEMVEENykg@mail.gmail.com>
- <23015.23766.971947.937708@tree.ty.sabi.co.uk>
- <cc34039f-9e84-c280-c793-1e381cbb2001@gmail.com>
- <23016.34313.523398.532675@tree.ty.sabi.co.uk>
- <CAA-GF5vfbm=fzhRchfTK=w9bHbApUGHeDw7Bgm3awZ1HN6s0jg@mail.gmail.com>
- <0a93b5df-dad5-ff27-b7d3-ac2519892696@gmail.com>
- <CAA-GF5vaP-O+6rBiRVKF_cUnmfWHW9+Qp8a=RzecmizmEcoW1g@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <c28708f9-e6c4-4918-d4ef-3158dc3c973b@gmail.com>
-Date: Thu, 19 Oct 2017 11:07:46 -0400
+        Thu, 19 Oct 2017 13:50:55 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by mtaextp1.scidom.de (Postfix) with ESMTP id 14BCD14614B
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 19:43:41 +0200 (CEST)
+Received: from mtaextp1.scidom.de ([127.0.0.1])
+        by localhost (mtaextp1.scidom.de [127.0.0.1]) (amavisd-new, port 10032)
+        with ESMTP id S3sa24LnpokU for <linux-btrfs@vger.kernel.org>;
+        Thu, 19 Oct 2017 19:43:39 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaextp1.scidom.de (Postfix) with ESMTP id 41235146159
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 19:43:39 +0200 (CEST)
+Received: from mtaextp1.scidom.de ([127.0.0.1])
+        by localhost (mtaextp1.scidom.de [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id DALOvGJplMg6 for <linux-btrfs@vger.kernel.org>;
+        Thu, 19 Oct 2017 19:43:39 +0200 (CEST)
+Received: from mtaintp1.scidom.de (mtaintp1.scidom.de [146.107.8.104])
+        by mtaextp1.scidom.de (Postfix) with ESMTPS id 0E3A714614B
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 19:43:39 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaintp1.scidom.de (Postfix) with ESMTP id 06E2C100248
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 19:43:39 +0200 (CEST)
+Received: from mtaintp1.scidom.de ([127.0.0.1])
+        by localhost (mtaintp1.scidom.de [127.0.0.1]) (amavisd-new, port 10032)
+        with ESMTP id CFSBgkiuSAse for <linux-btrfs@vger.kernel.org>;
+        Thu, 19 Oct 2017 19:43:38 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaintp1.scidom.de (Postfix) with ESMTP id 5946E10066A
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 19:43:38 +0200 (CEST)
+Received: from mtaintp1.scidom.de ([127.0.0.1])
+        by localhost (mtaintp1.scidom.de [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id cvAXBJzxbiBZ for <linux-btrfs@vger.kernel.org>;
+        Thu, 19 Oct 2017 19:43:38 +0200 (CEST)
+Received: from mbxp1.scidom.de (mbxp1.scidom.de [146.107.8.101])
+        by mtaintp1.scidom.de (Postfix) with ESMTP id 3997C100248
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 19:43:38 +0200 (CEST)
+Date: Thu, 19 Oct 2017 19:43:37 +0200 (CEST)
+From: "Lentes, Bernd" <bernd.lentes@helmholtz-muenchen.de>
+To: Btrfs ML <linux-btrfs@vger.kernel.org>
+Message-ID: <1844960059.7648040.1508435017395.JavaMail.zimbra@helmholtz-muenchen.de>
+Subject: SLES 11 SP4: can't mount btrfs
 MIME-Version: 1.0
-In-Reply-To: <CAA-GF5vaP-O+6rBiRVKF_cUnmfWHW9+Qp8a=RzecmizmEcoW1g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-19 10:42, Zoltan wrote:
-> On Thu, Oct 19, 2017 at 4:27 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> 
->> and thus when the same device reappears (as it will when the disconnect was
->> due to a transient bus error, which happens a lot), it shows up as a
->> different device node, which gets scanned for filesystems by udev, and BTRFS
->> then gets really confused because it now sees 3 (or more) devices for a 2
->> device filesystem.
-> 
-> And what would happen with a regular, single-device BTRFS volume after
-> a reconnect? Isn't this issue just as bad for that case?
-No, because the multi-device code only gets used if the filesystem 
-claims to have more than one device, and it's a bug in the multi-device 
-code that causes this problem.  From a data safety perspective, the 
-disconnect will look like a power loss event if it was a single device 
-filesystem, and BTRFS handles that situation fine (though you would 
-probably need to remount the filesystem).
+Hi,
 
-FWIW, the same bug causes similar data loss problems with block-level 
-copies of BTRFS filesystems (if you then mount either the original or 
-the copy while both are visible to the system), and allows you to screw 
-up multi-device filesystems by connecting a storage device with a 
-carefully crafted bogus BTRFS filesystem on it.  Overall though, it's 
-not been seen as a high priority bug because:
+this is the continuation of a thread i started on a SLES forum (https://forums.suse.com/showthread.php?10109-lv-with-btrfs-corrupt-some-tips-please), but i think this is the more appropriate place.
+I have a SLES 11 SP4 with a btrfs on top of a logical volume i can't mount anymore. The host was fenced in a two-node cluster, and the boot procedure can't mount the lv, and i reside in simple shell (i assume the one from initrd).
 
-1. Nobody has come up with a reliable method of handling it that doesn't 
-break anything or require revising the on-disk layout.
-2. It's easy to work around (don't do block level copies and ensure 
-proper physical security of the system like you should be doing anyway).
+I have a second nearly identical node, so i can give you some information:
+
+ha-idg-2:/etc/corosync # uname -a
+Linux ha-idg-2 3.0.101-84-default #1 SMP Tue Oct 18 10:32:51 UTC 2016 (15251d6) x86_64 x86_64 x86_64 GNU/Linux
+
+ha-idg-2:/etc/corosync # rpm -qa|grep -i btrfs
+libbtrfs0-3.18.2-0.40.48
+btrfsmaintenance-0.1-3.1
+btrfsprogs-3.18.2-0.40.48
+
+I try to follow the recommendations on https://btrfs.wiki.kernel.org/index.php/Problem_FAQ.
+
+I booted the system now with knoppix 8.1, which has kernel 4.12.7 and btrfs-progs 4.7.3-1. Is that ok ?
+I tried:
+
+mount /dev/vg1/lv_root /lv_root -o recovery,ro
+and got:
+mount: wrong fs type, bad option, bad superblock on /dev/mapper/vg1-lv_root,
+       missing codepage or helper program, or other error
+
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+
+
+and got via dmesg:
+[92518.955408] BTRFS info (device dm-0): disk space caching is enabled
+[92518.990561] BTRFS error (device dm-0): parent transid verify failed on 196314759168 wanted 793932 found 793496
+[92518.990911] BTRFS error (device dm-0): parent transid verify failed on 196314759168 wanted 793932 found 793496
+[92518.990919] BTRFS error (device dm-0): failed to read block groups: -5
+[92519.070084] BTRFS error (device dm-0): open_ctree failed
+
+next step:
+
+root@Microknoppix:~# btrfs device scan
+Scanning for Btrfs filesystems
+root@Microknoppix:~#
+
+no result !?!
+
+Now i changed to https://btrfs.wiki.kernel.org/index.php/Restore:
+
+btrfs restore -smSvi /dev/vg1/lv_root /mnt/idg-2/SysAdmin_AG_Wurst/recover/ha-idg-1/ |tee /mnt/idg-2/SysAdmin_AG_Wurst/recover/ha-idg-1/recover.log
+
+I just started it. I get lines like:
+offset is 61440
+offset is 98304
+offset is 4096
+offset is 143360
+offset is 8192
+offset is 184320
+
+or
+
+Error searching /mnt/idg-2/SysAdmin_AG_Wurst/recover/ha-idg-1/@/tmp/localhpsum/assets/doc/help/en
+Error searching /mnt/idg-2/SysAdmin_AG_Wurst/recover/ha-idg-1/@/tmp/localhpsum/assets/doc/help/ja/images/callouts
+
+What does that mean ?
+
+
+Bernd
+
+
+
+-- 
+Bernd Lentes 
+
+Systemadministration 
+institute of developmental genetics 
+Gebäude 35.34 - Raum 208 
+HelmholtzZentrum München 
+bernd.lentes@helmholtz-muenchen.de 
+phone: +49 (0)89 3187 1241 
+fax: +49 (0)89 3187 2294 
+
+no backup - no mercy
+ 
+
+Helmholtz Zentrum Muenchen
+Deutsches Forschungszentrum fuer Gesundheit und Umwelt (GmbH)
+Ingolstaedter Landstr. 1
+85764 Neuherberg
+www.helmholtz-muenchen.de
+Aufsichtsratsvorsitzende: MinDir'in Baerbel Brumme-Bothe
+Geschaeftsfuehrer: Prof. Dr. Guenther Wess, Heinrich Bassler, Dr. Alfons Enhsen
+Registergericht: Amtsgericht Muenchen HRB 6466
+USt-IdNr: DE 129521671
+

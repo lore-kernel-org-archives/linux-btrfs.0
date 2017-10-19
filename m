@@ -1,48 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:51063 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:47991 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751153AbdJSFmA (ORCPT
+        with ESMTP id S1751462AbdJSFmA (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Thu, 19 Oct 2017 01:42:00 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH v2 2/6] btrfs-progs: mkfs: Avoid positive return value from cleanup_temp_chunks
-Date: Thu, 19 Oct 2017 13:41:34 +0800
-Message-Id: <20171019054138.13965-3-wqu@suse.com>
+Subject: [PATCH v2 3/6] btrfs-progs: mkfs: Fix overwritten return value for mkfs
+Date: Thu, 19 Oct 2017 13:41:35 +0800
+Message-Id: <20171019054138.13965-4-wqu@suse.com>
 In-Reply-To: <20171019054138.13965-1-wqu@suse.com>
 References: <20171019054138.13965-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we're calling btrfs_search_slot() the return value can be
-positive.
-However we just pass that return value out, causing undefined return
-value.
-
-This can cause mkfs return 1, which indicates something wrong.
-
-Fix it.
+For mkfs failure, especially --rootdir errors like EPERM/ENOSPC, the out
+branch will overwrite return value, causing wrong status code.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- mkfs/main.c | 3 +++
- 1 file changed, 3 insertions(+)
+ mkfs/main.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/mkfs/main.c b/mkfs/main.c
-index 80e6089c37a1..9d53c6632b45 100644
+index 9d53c6632b45..60250c011ac3 100644
 --- a/mkfs/main.c
 +++ b/mkfs/main.c
-@@ -1350,6 +1350,9 @@ static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
- 		ret = btrfs_search_slot(trans, root, &key, &path, 0, 0);
- 		if (ret < 0)
- 			goto out;
-+		/* Don't pollute ret for >0 case */
-+		if (ret > 0)
-+			ret = 0;
+@@ -1426,6 +1426,7 @@ int main(int argc, char **argv)
+ 	int zero_end = 1;
+ 	int fd = -1;
+ 	int ret;
++	int close_ret;
+ 	int i;
+ 	int mixed = 0;
+ 	int nodesize_forced = 0;
+@@ -1944,9 +1945,9 @@ raid_groups:
+ 	 */
+ 	fs_info->finalize_on_close = 1;
+ out:
+-	ret = close_ctree(root);
++	close_ret = close_ctree(root);
  
- 		btrfs_item_key_to_cpu(path.nodes[0], &found_key,
- 				      path.slots[0]);
+-	if (!ret) {
++	if (!close_ret) {
+ 		optind = saved_optind;
+ 		dev_cnt = argc - optind;
+ 		while (dev_cnt-- > 0) {
 -- 
 2.14.2
 

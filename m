@@ -1,50 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f174.google.com ([209.85.128.174]:43541 "EHLO
-        mail-wr0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752687AbdJSNsy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Oct 2017 09:48:54 -0400
-Received: by mail-wr0-f174.google.com with SMTP id p46so8404777wrb.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 06:48:53 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:40482 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753961AbdJSOHQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Oct 2017 10:07:16 -0400
+Date: Thu, 19 Oct 2017 16:05:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: linux-btrfs@vger.kernel.org, Nick Terrell <terrelln@fb.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [RFC 0/3]: settable compression level for zstd
+Message-ID: <20171019140528.GK3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20170915153457.dt5zjcbrryn3qj3t@angband.pl>
 MIME-Version: 1.0
-In-Reply-To: <23016.34313.523398.532675@tree.ty.sabi.co.uk>
-References: <CAGtRCvfkDnUBxqWNgEOXz+Gam0dPubatROQgqxE2D_uCAZhihQ@mail.gmail.com>
- <CAGtRCvfqUP_79cKC_Rzs6MD_uZiVbjt9QW0_BeOpACN_c3ev5w@mail.gmail.com>
- <d27ec863-d4fb-3ffd-78a4-c12789054bd9@gmail.com> <CAA-GF5vs_Mw9bW20ykXAr7Fr4DK_1bDM6qk0k54-oi5g-veK2g@mail.gmail.com>
- <d15a82aa-7d6e-ba36-76cc-8771e0359379@gmail.com> <20171017011443.bupcsskm7joc73wb@angband.pl>
- <e8497dd4-7341-a708-7828-282001738a95@gmail.com> <CAA-GF5sO78HjdWHRZKfENRwgGPF91Vz-Odm7PphiiEMVEENykg@mail.gmail.com>
- <23015.23766.971947.937708@tree.ty.sabi.co.uk> <cc34039f-9e84-c280-c793-1e381cbb2001@gmail.com>
- <23016.34313.523398.532675@tree.ty.sabi.co.uk>
-From: Zoltan <zoltan1980@gmail.com>
-Date: Thu, 19 Oct 2017 15:48:12 +0200
-Message-ID: <CAA-GF5vfbm=fzhRchfTK=w9bHbApUGHeDw7Bgm3awZ1HN6s0jg@mail.gmail.com>
-Subject: Re: Is it safe to use btrfs on top of different types of devices?
-To: Peter Grandi <pg@btrfs.list.sabi.co.uk>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20170915153457.dt5zjcbrryn3qj3t@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, Sep 15, 2017 at 05:34:57PM +0200, Adam Borowski wrote:
+> Hi!
+> Here's a patch set that allows changing the compression level for zstd,
+> currently at mount time only.  I've played with it for a month, so despite
+> being a quick hack, it's reasonably well tested.  Tested on 4.13 +
+> btrfs-for-4.14 only, though -- I've booted 11th-day-of-merge-window only an
+> hour ago on one machine, no explosions yet.
+> 
+> As a quick hack, it doesn't conserve memory as it should: all workspace
+> allocations assume level 15 and waste space otherwise.
+> 
+> Because of an (easily changeable) quirk of compression level encoding, the
+> max is set at 15, but I guess higher levels are pointless for 128KB blocks. 
+> Nick and co can tell us more -- for me zstd is mostly a black box so it's
+> you who knows anything about tuning it.
+> 
+> There are three patches:
+> * [David Sterba] btrfs: allow to set compression level for zlib
+>   Unmodified version of the patch from Jul 24, I'm re-sending it for
+>   convenience.
+> * btrfs: allow setting zlib compression level via :9
+>   Some bikeshedding: it looks like Chris Mason also favours zlib:9 over
+>   zlib9 as the former is more readable.  If you disagree... well, it's up
+>   to you to decide anyway.  This patch accepts both syntaxes.
 
-On Thu, Oct 19, 2017 at 1:01 PM, Peter Grandi <pg@btrfs.list.sabi.co.uk> wrote:
+FYI, I'm going to add the patches 1 and 2 to 4.15 pull, ie. there will
+be support for zlib levels.
 
-> What the OP was doing was using "unreliable" both for the case
-> where the device "lies" and the case where the device does not
-> "lie" but reports a failure. Both of these are malfunctions in a
-> wide sense:
->
->   * The [block] device "lies" as to its status or what it has done.
->   * The [block] device reports truthfully that an action has failed.
+Final syntax of the level specification is with ":". I've update the
+patches, dropping the "zlib9" way, plus some more changelog updates.
 
-Thanks for making this point, it made me realize that I had different
-assumption than what you use in your reasoning. I assumed that when
-writes to a USB device fail due to a temporary disconnection, the
-kernel can actually recognize that a write error happened. So are you
-saying that a write error due to USB problems can go completely
-unnoticed? That seems very strange to me; are USB drives really that
-unreliable or is that some software limitation?
+> * btrfs: allow setting zstd level
 
-Thanks,
-
-Zoltan
+Before the zstd levels are supported, we'll have to update the workspace
+allocation.

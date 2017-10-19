@@ -1,68 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f66.google.com ([74.125.82.66]:47995 "EHLO
-        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751113AbdJWW35 (ORCPT
+Received: from mail-io0-f176.google.com ([209.85.223.176]:51841 "EHLO
+        mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753298AbdJSWsn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Oct 2017 18:29:57 -0400
-Received: by mail-wm0-f66.google.com with SMTP id t69so12236782wmt.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Oct 2017 15:29:57 -0700 (PDT)
+        Thu, 19 Oct 2017 18:48:43 -0400
+Received: by mail-io0-f176.google.com with SMTP id b186so11500830iof.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 15:48:42 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <20171019153940.GL3521@twin.jikos.cz>
+References: <20170928143341.24491-1-nefelim4ag@gmail.com> <20170929162200.GP31640@twin.jikos.cz>
+ <20171019153940.GL3521@twin.jikos.cz>
 From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v4] Btrfs: compress_file_range() change page dirty status once
-Date: Tue, 24 Oct 2017 01:29:48 +0300
-Message-Id: <20171023222948.10648-1-nefelim4ag@gmail.com>
+Date: Fri, 20 Oct 2017 01:48:01 +0300
+Message-ID: <CAGqmi75Zz=RqsOymdFOHwHNE7X+2G3Viiitmq+ZROurBOon=FQ@mail.gmail.com>
+Subject: Re: [PATCH v8 0/6] Btrfs: populate heuristic with code
+To: David Sterba <dsterba@suse.cz>, Timofey Titovets <nefelim4ag@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need to call extent_range_clear_dirty_for_io()
-on compression range to prevent application from changing
-page content, while pages compressing.
+2017-10-19 18:39 GMT+03:00 David Sterba <dsterba@suse.cz>:
+> On Fri, Sep 29, 2017 at 06:22:00PM +0200, David Sterba wrote:
+>> On Thu, Sep 28, 2017 at 05:33:35PM +0300, Timofey Titovets wrote:
+>> > Compile tested, hand tested on live system
+>> >
+>> > Change v7 -> v8
+>> >   - All code moved to compression.c (again)
+>> >   - Heuristic workspaces inmplemented another way
+>> >     i.e. only share logic with compression workspaces
+>> >   - Some style fixes suggested by Devid
+>> >   - Move sampling function from heuristic code
+>> >     (I'm afraid of big functions)
+>> >   - Much more comments and explanations
+>>
+>> Thanks for the update, I went through the patches and they looked good
+>> enough to be put into for-next. I may have more comments about a few
+>> things, but nothing serious that would hinder testing.
+>
+> I did a final pass through the patches and edited comments wehre I was
+> not able to undrerstand them. Please check the updated patches in [1] if
+> I did not accidentally change the meaning.
 
-extent_range_clear_dirty_for_io() run on each loop iteration,
-"(end - start)" can be much (up to 1024 times) bigger
-then compression range (BTRFS_MAX_UNCOMPRESSED).
+I don't see a link [1] in mail, may be you missed it?
+I look at my patches in for-next branch, and that's not looks like
+changed, so i assume your link not point at kernel.org %).
 
-That produce extra calls to page managment code.
+> I'm about to add the patchset to the main patch pile for 4.15 soon.
+> Further tuning is possible and such patches will be probably accepted
+> during the 4.15 development cycle once the as parts have landed. It's
+> desirable to gather some testing results of heuristic effects on various
+> data types. So far I've been watching for performance drops only.
 
-Fix that behaviour by call extent_range_clear_dirty_for_io()
-only once.
+Just for my information, you compare compress + heuristic with
+compression force?
 
-v1 -> v2:
- - Make that more obviously and more safeprone
+P.S.
+Just to sync that we expect from heuristic:
+it's expected to get some performance drops on easy compressible data, because
+heuristic not free,
+but how much this drops?
+Main reason for heuristic, it's to win cpu/latency cost for bad
+compressible data.
+In compare to direct compression.
+That allow to provide some worst case stable latency/throughput for userspace.
 
-v2 -> v3:
- - Rebased on:
-   Btrfs: compress_file_range() remove dead variable num_bytes
- - Update change log
- - Add comments
+P.S.S.
+I send some emails before, where i show slow paths in heuristic
+(sort(), ilog2()).
+So i expect that kernel can see same slow downs on that paths.
+But i'm don't have enough skills for now, to perform kernel profiling.
 
-v3 -> v4:
- - Rebased on: kdave for-next
- - To avoid dirty bit clear/set behaviour change
-   call clear_bit once, istead of per compression range
+> In case the heuristic would turn out to cause problems we can't fix
+> during 4.15 cycle, we can still disable it. This is only a last resort
+> measure but we need to be prepared.
+kk
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/inode.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+Thanks.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b93fe05a39c7..5816dd3cb6e6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -536,8 +536,10 @@ static noinline void compress_file_range(struct inode *inode,
- 		 * If the compression fails for any reason, we set the pages
- 		 * dirty again later on.
- 		 */
--		extent_range_clear_dirty_for_io(inode, start, end);
--		redirty = 1;
-+		if (!redirty) {
-+			extent_range_clear_dirty_for_io(inode, start, end);
-+			redirty = 1;
-+		}
 
- 		/* Compression level is applied here and only here */
- 		ret = btrfs_compress_pages(
---
-2.14.2
+-- 
+Have a nice day,
+Timofey.

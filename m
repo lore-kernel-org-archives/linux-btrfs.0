@@ -1,40 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33627 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932127AbdJZRSr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Oct 2017 13:18:47 -0400
-Date: Thu, 26 Oct 2017 19:16:57 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-Cc: Qu Wenruo <wqu@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dsterba@suse.cz" <dsterba@suse.cz>
-Subject: Re: [PATCH] btrfs-progs: convert: Open the fs readonly for rollback
-Message-ID: <20171026171657.GB3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171026072837.27460-1-wqu@suse.com>
- <516DDBE5B1D92D42BCF7A2E37F045A5D01479E236E@G08CNEXMBPEKD02.g08.fujitsu.local>
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:39106 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751906AbdJSIej (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 19 Oct 2017 04:34:39 -0400
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id F14B2AC0109
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Oct 2017 17:34:32 +0900 (JST)
+Subject: Re: [PATCH] btrfs-progs: change mans to describe the third copy of
+ superblock
+To: Satoru Takeuchi <satoru.takeuchi@gmail.com>, <linux-btrfs@vger.kernel.org>
+References: <87y3o7zikq.wl-satoru.takeuchi@gmail.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <1451864a-8a7a-9cdc-d507-fb4f10059dea@jp.fujitsu.com>
+Date: Thu, 19 Oct 2017 17:34:22 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D01479E236E@G08CNEXMBPEKD02.g08.fujitsu.local>
+In-Reply-To: <87y3o7zikq.wl-satoru.takeuchi@gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 26, 2017 at 08:35:29AM +0000, Gu, Jinxiang wrote:
-> > Cc: dsterba@suse.cz
-> > Subject: [PATCH] btrfs-progs: convert: Open the fs readonly for rollback
-> > 
-> > For rollback, we only needs to open the fs to check if it meets the condition to rollback.
-> > And this RW read makes us failed to rollback btrfs with v2 space cache.
-> > 
-> > In fact, we don't even start a transaction during rollback.
-> > 
-> > So open the fs RO for rollback, to avoid v2 space cache problem.
-> > 
-> > Reported-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> > Signed-off-by: Qu Wenruo <wqu@suse.com>
+On 2017/10/19 16:45, Satoru Takeuchi wrote:
+> Some tools can select which superblock these commands use by "-s <superblock>"
+> option. Although this option says the valid values are 0-2, we can set 3
+> if filesystem is very large.
+> 
 
-> Reviewed-by: Gu JinXiang <gujx@cn.fujitsu.com>
-> Tested-by: Gu JinXiang <gujx@cn.fujitsu.com>
+Hello, 
+Wiki says there are 4 superblocks. However in the implementation BTRFS_SUPER_MIROR_MAX
+is 3 and 0 indicates the block at 64K (disk-io.h of btrfs-progs), therefore I think
+there is no 4th superblock actually.
 
-Applied, thanks.
+Regards,
+Tomohiro
+

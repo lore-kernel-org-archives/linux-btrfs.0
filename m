@@ -1,108 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37602 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36250 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751825AbdJXKrl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 06:47:41 -0400
+        id S1753132AbdJTLtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Oct 2017 07:49:01 -0400
+Subject: Re: [PATCH] btrfs: clean up btrfs_dev_stat_inc() usage
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171020095059.3730-1-anand.jain@oracle.com>
 From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: mathieu.desnoyers@efficios.com, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Fix memory barriers usage with device stats counters
-Date: Tue, 24 Oct 2017 13:47:37 +0300
-Message-Id: <1508842057-28901-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1508512259-16867-1-git-send-email-nborisov@suse.com>
-References: <1508512259-16867-1-git-send-email-nborisov@suse.com>
+Message-ID: <98a2136c-1335-d0b9-fb77-bd87d0c1eeb0@suse.com>
+Date: Fri, 20 Oct 2017 14:48:58 +0300
+MIME-Version: 1.0
+In-Reply-To: <20171020095059.3730-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is cleared")
-reworked the way device stats changes are tracked. A new atomic dev_stats_ccnt
-counter was introduced which is incremented every time any of the device stats
-counters are changed. This serves as a flag whether there are any pending stats
-changes. However, this patch only partially implemented the correct memory
-barriers necessary:
 
-- It only ordered the stores to the counters but not the reads e.g. btrfs_run_dev_stats
-- It completely omitted any comments documenting the intended design and how
-the memory barriers pair with each-other
 
-This patch provides the necessary comments as well as adds a missing smp_rmb in
-btrfs_run_dev_stats. Furthermore since dev_stats_cnt is only a snapshot at best
-there was no point in reading the counter twice - once in btrfs_dev_stats_dirty
-and then again when assigning stats_cnt. Just collapse both reads into 1.
+On 20.10.2017 12:50, Anand Jain wrote:
+> btrfs_end_bio() is using btrfs_dev_stat_inc() and then
+> btrfs_dev_stat_print_on_error() separately instead
+> use btrfs_dev_stat_inc_and_print() directly.
+> 
+> No need to worry about print lines one for read/write
+> and another if the source of IO request is flush, since
+> as mentioned in this patch
+>  [patch] btrfs: REQ_PREFLUSH does not use btrfs_end_bio() completion callback
+> there isn't any IO which is doing that.
+> 
+> This consolidation is a preparatory patch to add device
+> critical error handling in btrfs_dev_stat_inc_and_print()
+> and can be renamed as needed.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Fixes: addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is cleared")
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
 
-V2: 
- Reworded the comment in btrfs_run_dev_stats according to Mathieu Desnoyers'
- feedback 
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
- fs/btrfs/volumes.c | 18 ++++++++++++++++--
- fs/btrfs/volumes.h | 12 ++++++++++++
- 2 files changed, 28 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4de498817e8a..7f8ed3e08ece 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7084,10 +7084,24 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
- 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
--		if (!device->dev_stats_valid || !btrfs_dev_stats_dirty(device))
-+		stats_cnt = atomic_read(&device->dev_stats_ccnt);
-+		if (!device->dev_stats_valid || stats_cnt == 0)
- 			continue;
- 
--		stats_cnt = atomic_read(&device->dev_stats_ccnt);
-+
-+		/*
-+		 * There is a LOAD-LOAD control dependency between the value of
-+		 * dev_stats_ccnt and updating the on-disk values which requires
-+		 * reading the in-memory counters. Such control dependencies
-+		 * require explicit read memory barriers.
-+		 *
-+		 * This memory barriers pairs with smp_mb__before_atomic in
-+		 * btrfs_dev_stat_inc/btrfs_dev_stat_set and with the full
-+		 * barrier implied by atomic_xchg in
-+		 * btrfs_dev_stats_read_and_reset
-+		 */
-+		smp_rmb();
-+
- 		ret = update_dev_stat_item(trans, fs_info, device);
- 		if (!ret)
- 			atomic_sub(stats_cnt, &device->dev_stats_ccnt);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6108fdfec67f..c5dd48eb7b3d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -498,6 +498,12 @@ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
- 				      int index)
- {
- 	atomic_inc(dev->dev_stat_values + index);
-+	/*
-+	 * This memory barrier orders stores updating statistics before stores
-+	 * updating dev_stats_ccnt.
-+	 *
-+	 * It pairs with smp_rmb() in btrfs_run_dev_stats().
-+	 */
- 	smp_mb__before_atomic();
- 	atomic_inc(&dev->dev_stats_ccnt);
- }
-@@ -523,6 +529,12 @@ static inline void btrfs_dev_stat_set(struct btrfs_device *dev,
- 				      int index, unsigned long val)
- {
- 	atomic_set(dev->dev_stat_values + index, val);
-+	/*
-+	 * This memory barrier orders stores updating statistics before stores
-+	 * updating dev_stats_ccnt.
-+	 *
-+	 * It pairs with smp_rmb() in btrfs_run_dev_stats().
-+	 */
- 	smp_mb__before_atomic();
- 	atomic_inc(&dev->dev_stats_ccnt);
- }
--- 
-2.7.4
-
+> ---
+>  fs/btrfs/volumes.c | 7 +++----
+>  1 file changed, 3 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index efaf85dd91b0..d1d8aa226bff 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6004,15 +6004,14 @@ static void btrfs_end_bio(struct bio *bio)
+>  			dev = bbio->stripes[stripe_index].dev;
+>  			if (dev->bdev) {
+>  				if (bio_op(bio) == REQ_OP_WRITE)
+> -					btrfs_dev_stat_inc(dev,
+> +					btrfs_dev_stat_inc_and_print(dev,
+>  						BTRFS_DEV_STAT_WRITE_ERRS);
+>  				else
+> -					btrfs_dev_stat_inc(dev,
+> +					btrfs_dev_stat_inc_and_print(dev,
+>  						BTRFS_DEV_STAT_READ_ERRS);
+>  				if (bio->bi_opf & REQ_PREFLUSH)
+> -					btrfs_dev_stat_inc(dev,
+> +					btrfs_dev_stat_inc_and_print(dev,
+>  						BTRFS_DEV_STAT_FLUSH_ERRS);
+> -				btrfs_dev_stat_print_on_error(dev);
+>  			}
+>  		}
+>  	}
+> 

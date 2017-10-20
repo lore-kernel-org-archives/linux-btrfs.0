@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga07.intel.com ([134.134.136.100]:58930 "EHLO mga07.intel.com"
+Received: from mga07.intel.com ([134.134.136.100]:27837 "EHLO mga07.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752272AbdJTIQQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Oct 2017 04:16:16 -0400
+        id S1752414AbdJTIQV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 20 Oct 2017 04:16:21 -0400
 From: Elena Reshetova <elena.reshetova@intel.com>
 To: axboe@kernel.dk
 Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
@@ -11,9 +11,9 @@ Cc: james.bottomley@hansenpartnership.com, linux-kernel@vger.kernel.org,
         gregkh@linuxfoundation.org, fujita.tomonori@lab.ntt.co.jp,
         mingo@redhat.com, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
         keescook@chromium.org, Elena Reshetova <elena.reshetova@intel.com>
-Subject: [PATCH 2/6] block: convert blk_queue_tag.refcnt from atomic_t to refcount_t
-Date: Fri, 20 Oct 2017 11:15:58 +0300
-Message-Id: <1508487362-26663-3-git-send-email-elena.reshetova@intel.com>
+Subject: [PATCH 3/6] block: convert blkcg_gq.refcnt from atomic_t to refcount_t
+Date: Fri, 20 Oct 2017 11:15:59 +0300
+Message-Id: <1508487362-26663-4-git-send-email-elena.reshetova@intel.com>
 In-Reply-To: <1508487362-26663-1-git-send-email-elena.reshetova@intel.com>
 References: <1508487362-26663-1-git-send-email-elena.reshetova@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -33,7 +33,7 @@ refcount_t type and API that prevents accidental counter overflows
 and underflows. This is important since overflows and underflows
 can lead to use-after-free situation and be exploitable.
 
-The variable blk_queue_tag.refcnt is used as pure reference counter.
+The variable blkcg_gq.refcnt is used as pure reference counter.
 Convert it to refcount_t and fix up the operations.
 
 Suggested-by: Kees Cook <keescook@chromium.org>
@@ -41,71 +41,66 @@ Reviewed-by: David Windsor <dwindsor@gmail.com>
 Reviewed-by: Hans Liljestrand <ishkamiel@gmail.com>
 Signed-off-by: Elena Reshetova <elena.reshetova@intel.com>
 ---
- block/blk-tag.c        | 8 ++++----
- include/linux/blkdev.h | 3 ++-
- 2 files changed, 6 insertions(+), 5 deletions(-)
+ block/blk-cgroup.c         |  2 +-
+ include/linux/blk-cgroup.h | 11 ++++++-----
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/block/blk-tag.c b/block/blk-tag.c
-index e1a9c15..a7263e3 100644
---- a/block/blk-tag.c
-+++ b/block/blk-tag.c
-@@ -35,7 +35,7 @@ EXPORT_SYMBOL(blk_queue_find_tag);
-  */
- void blk_free_tags(struct blk_queue_tag *bqt)
- {
--	if (atomic_dec_and_test(&bqt->refcnt)) {
-+	if (refcount_dec_and_test(&bqt->refcnt)) {
- 		BUG_ON(find_first_bit(bqt->tag_map, bqt->max_depth) <
- 							bqt->max_depth);
+diff --git a/block/blk-cgroup.c b/block/blk-cgroup.c
+index d3f56ba..1e7cedc 100644
+--- a/block/blk-cgroup.c
++++ b/block/blk-cgroup.c
+@@ -107,7 +107,7 @@ static struct blkcg_gq *blkg_alloc(struct blkcg *blkcg, struct request_queue *q,
+ 	blkg->q = q;
+ 	INIT_LIST_HEAD(&blkg->q_node);
+ 	blkg->blkcg = blkcg;
+-	atomic_set(&blkg->refcnt, 1);
++	refcount_set(&blkg->refcnt, 1);
  
-@@ -130,7 +130,7 @@ static struct blk_queue_tag *__blk_queue_init_tags(struct request_queue *q,
- 	if (init_tag_map(q, tags, depth))
- 		goto fail;
- 
--	atomic_set(&tags->refcnt, 1);
-+	refcount_set(&tags->refcnt, 1);
- 	tags->alloc_policy = alloc_policy;
- 	tags->next_tag = 0;
- 	return tags;
-@@ -180,7 +180,7 @@ int blk_queue_init_tags(struct request_queue *q, int depth,
- 		queue_flag_set(QUEUE_FLAG_QUEUED, q);
- 		return 0;
- 	} else
--		atomic_inc(&tags->refcnt);
-+		refcount_inc(&tags->refcnt);
- 
- 	/*
- 	 * assign it, all done
-@@ -225,7 +225,7 @@ int blk_queue_resize_tags(struct request_queue *q, int new_depth)
- 	 * Currently cannot replace a shared tag map with a new
- 	 * one, so error out if this is the case
- 	 */
--	if (atomic_read(&bqt->refcnt) != 1)
-+	if (refcount_read(&bqt->refcnt) != 1)
- 		return -EBUSY;
- 
- 	/*
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 02fa42d..1fefdbb 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -26,6 +26,7 @@
- #include <linux/percpu-refcount.h>
- #include <linux/scatterlist.h>
- #include <linux/blkzoned.h>
+ 	/* root blkg uses @q->root_rl, init rl only for !root blkgs */
+ 	if (blkcg != &blkcg_root) {
+diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
+index 9d92153..c95d29d 100644
+--- a/include/linux/blk-cgroup.h
++++ b/include/linux/blk-cgroup.h
+@@ -19,6 +19,7 @@
+ #include <linux/radix-tree.h>
+ #include <linux/blkdev.h>
+ #include <linux/atomic.h>
 +#include <linux/refcount.h>
  
- struct module;
- struct scsi_ioctl_command;
-@@ -295,7 +296,7 @@ struct blk_queue_tag {
- 	unsigned long *tag_map;		/* bit map of free/busy tags */
- 	int max_depth;			/* what we will send to device */
- 	int real_max_depth;		/* what the array can hold */
--	atomic_t refcnt;		/* map can be shared */
-+	refcount_t refcnt;		/* map can be shared */
- 	int alloc_policy;		/* tag allocation policy */
- 	int next_tag;			/* next tag */
- };
+ /* percpu_counter batch for blkg_[rw]stats, per-cpu drift doesn't matter */
+ #define BLKG_STAT_CPU_BATCH	(INT_MAX / 2)
+@@ -122,7 +123,7 @@ struct blkcg_gq {
+ 	struct request_list		rl;
+ 
+ 	/* reference count */
+-	atomic_t			refcnt;
++	refcount_t			refcnt;
+ 
+ 	/* is this blkg online? protected by both blkcg and q locks */
+ 	bool				online;
+@@ -354,8 +355,8 @@ static inline int blkg_path(struct blkcg_gq *blkg, char *buf, int buflen)
+  */
+ static inline void blkg_get(struct blkcg_gq *blkg)
+ {
+-	WARN_ON_ONCE(atomic_read(&blkg->refcnt) <= 0);
+-	atomic_inc(&blkg->refcnt);
++	WARN_ON_ONCE(refcount_read(&blkg->refcnt) == 0);
++	refcount_inc(&blkg->refcnt);
+ }
+ 
+ void __blkg_release_rcu(struct rcu_head *rcu);
+@@ -366,8 +367,8 @@ void __blkg_release_rcu(struct rcu_head *rcu);
+  */
+ static inline void blkg_put(struct blkcg_gq *blkg)
+ {
+-	WARN_ON_ONCE(atomic_read(&blkg->refcnt) <= 0);
+-	if (atomic_dec_and_test(&blkg->refcnt))
++	WARN_ON_ONCE(refcount_read(&blkg->refcnt) == 0);
++	if (refcount_dec_and_test(&blkg->refcnt))
+ 		call_rcu(&blkg->rcu_head, __blkg_release_rcu);
+ }
+ 
 -- 
 2.7.4
 

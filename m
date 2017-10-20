@@ -1,190 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:41436 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:34459 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751798AbdJTB7c (ORCPT
+        with ESMTP id S1751729AbdJTB7R (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 19 Oct 2017 21:59:32 -0400
+        Thu, 19 Oct 2017 21:59:17 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 7/7] btrfs-progs: mkfs: Separate shrink from rootdir
-Date: Fri, 20 Oct 2017 09:59:07 +0800
-Message-Id: <20171020015907.25430-8-wqu@suse.com>
-In-Reply-To: <20171020015907.25430-1-wqu@suse.com>
-References: <20171020015907.25430-1-wqu@suse.com>
+Subject: [PATCH 0/7] btrfs-progs: mkfs: Reword --rootdir
+Date: Fri, 20 Oct 2017 09:59:00 +0800
+Message-Id: <20171020015907.25430-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Make --shrink a separate option for --rootdir, and make it default to
-off.
-So this will cause less confusion.
+Can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/mkfs_rootdir_rework
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Documentation/mkfs.btrfs.asciidoc | 11 +++++++++++
- mkfs/main.c                       | 27 +++++++++++++++++++++------
- mkfs/rootdir.c                    | 21 ++++++++++++++++++++-
- mkfs/rootdir.h                    |  3 ++-
- 4 files changed, 54 insertions(+), 8 deletions(-)
+And fetching from github is preferred method to test, as this patchset
+has 2 prerequisite:
 
-diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
-index d53d9e265fb7..5ddbedbcea97 100644
---- a/Documentation/mkfs.btrfs.asciidoc
-+++ b/Documentation/mkfs.btrfs.asciidoc
-@@ -106,6 +106,17 @@ Please see the mount option 'discard' for that in `btrfs`(5).
- *-r|--rootdir <rootdir>*::
- Populate the toplevel subvolume with files from 'rootdir'.  This does not
- require root permissions and does not mount the filesystem.
-++
-+NOTE: This option may enlarge the image or file to ensure it's large enough to
-+contain the files from 'rootdir'.
-+
-+*--shrink*:
-+Shrink the filesystem to its minimal size, only works with *-r|--rootdir*
-+option.
-++
-+NOTE: If the destination is regular file, this option will also reduce the
-+file size. Or it will only reduce the filesystem available space.
-+Extra space will not be usable unless resized using 'btrfs filesystem resize'.
- 
- *-O|--features <feature1>[,<feature2>...]*::
- A list of filesystem features turned on at mkfs time. Not all features are
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 6aefb50a8033..1d72702414bc 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -731,9 +731,11 @@ int main(int argc, char **argv)
- 	int ssd = 0;
- 	int force_overwrite = 0;
- 	char *source_dir = NULL;
--	int source_dir_set = 0;
-+	bool source_dir_set = false;
-+	bool shrink_rootdir = false;
- 	u64 source_dir_size = 0;
- 	u64 min_dev_size;
-+	u64 shrink_size;
- 	int dev_cnt = 0;
- 	int saved_optind;
- 	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
-@@ -743,6 +745,7 @@ int main(int argc, char **argv)
- 
- 	while(1) {
- 		int c;
-+		enum { GETOPT_VAL_SHRINK = 257 };
- 		static const struct option long_options[] = {
- 			{ "alloc-start", required_argument, NULL, 'A'},
- 			{ "byte-count", required_argument, NULL, 'b' },
-@@ -760,6 +763,7 @@ int main(int argc, char **argv)
- 			{ "features", required_argument, NULL, 'O' },
- 			{ "uuid", required_argument, NULL, 'U' },
- 			{ "quiet", 0, NULL, 'q' },
-+			{ "shrink", no_argument, NULL, GETOPT_VAL_SHRINK },
- 			{ "help", no_argument, NULL, GETOPT_VAL_HELP },
- 			{ NULL, 0, NULL, 0}
- 		};
-@@ -827,7 +831,7 @@ int main(int argc, char **argv)
- 				goto success;
- 			case 'r':
- 				source_dir = optarg;
--				source_dir_set = 1;
-+				source_dir_set = true;
- 				break;
- 			case 'U':
- 				strncpy(fs_uuid, optarg,
-@@ -839,6 +843,10 @@ int main(int argc, char **argv)
- 			case 'q':
- 				verbose = 0;
- 				break;
-+			case GETOPT_VAL_SHRINK:
-+				shrink_rootdir = true;
-+				break;
-+				break;
- 			case GETOPT_VAL_HELP:
- 			default:
- 				print_usage(c != GETOPT_VAL_HELP);
-@@ -861,6 +869,10 @@ int main(int argc, char **argv)
- 		error("the option -r is limited to a single device");
- 		goto error;
- 	}
-+	if (shrink_rootdir && !source_dir_set) {
-+		error("the option --shrink can only be paired with -r");
-+		goto error;
-+	}
- 
- 	if (*fs_uuid) {
- 		uuid_t dummy_uuid;
-@@ -1186,10 +1198,13 @@ raid_groups:
- 			error("error wihle filling filesystem: %d", ret);
- 			goto out;
- 		}
--		ret = btrfs_mkfs_shrink_fs(fs_info, NULL);
--		if (ret < 0) {
--			error("error while shrinking filesystem: %d", ret);
--			goto out;
-+		if (shrink_rootdir) {
-+			ret = btrfs_mkfs_shrink_fs(fs_info, &shrink_size,
-+						   shrink_rootdir);
-+			if (ret < 0) {
-+				error("error while shrinking filesystem: %d", ret);
-+				goto out;
-+			}
- 		}
- 	}
- 
-diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index 9593bbc25b39..aa42d186a43f 100644
---- a/mkfs/rootdir.c
-+++ b/mkfs/rootdir.c
-@@ -898,11 +898,13 @@ err:
- 	return ret;
- }
- 
--int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret)
-+int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret,
-+			 bool shrink_file_size)
- {
- 	u64 new_size;
- 	struct btrfs_device *device;
- 	struct list_head *cur;
-+	struct stat64 file_stat;
- 	int nr_devs = 0;
- 	int ret;
- 
-@@ -930,5 +932,22 @@ int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret)
- 		return ret;
- 	if (new_size_ret)
- 		*new_size_ret = new_size;
-+
-+	if (shrink_file_size) {
-+		ret = fstat64(device->fd, &file_stat);
-+		if (ret < 0) {
-+			error("failed to stat devid %llu: %s", device->devid,
-+				strerror(errno));
-+			return ret;
-+		}
-+		if (!S_ISREG(file_stat.st_mode))
-+			return ret;
-+		ret = ftruncate64(device->fd, new_size);
-+		if (ret < 0) {
-+			error("failed to truncate device file of devid %llu: %s",
-+				device->devid, strerror(errno));
-+			return ret;
-+		}
-+	}
- 	return ret;
- }
-diff --git a/mkfs/rootdir.h b/mkfs/rootdir.h
-index e5b739ede48a..78bc9c90f7c5 100644
---- a/mkfs/rootdir.h
-+++ b/mkfs/rootdir.h
-@@ -29,5 +29,6 @@ int btrfs_mkfs_fill_dir(const char *source_dir, struct btrfs_root *root,
- 			bool verbose);
- u64 btrfs_mkfs_size_dir(const char *dir_name, u32 sectorsize, u64 min_dev_size,
- 			u64 meta_profile, u64 data_profile);
--int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret);
-+int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret,
-+			 bool shrink_file_size);
- #endif
+1) Minimal device size patchset
+   The image size estimate algorithm heavily relies on the minimal
+   device size calculation
+
+2) Rootdir refactor
+   To make life a little easier.
+
+Both the prerequisite has no further modification in this patchset, just the
+version submitted to mail list, and rebased to v4.13.3 without any
+conflict.
+
+Rework 'mkfs.btrfs --rootdir' by:
+
+1) Not using custom chunk allocator
+   Use btrfs_alloc_chunk() only.
+   Although currently chunk allocator in btrfs-progs is not small device
+   friendly, which will try to allocate large chunk.
+   This can be addressed by image size estimate algorithm, so it won't
+   cause too much problem.
+   (But still, it follow the minimal device size from normal mkfs, which
+    is over 100M for default profile)
+
+2) New image size estimate algorithm
+   Use over-reserve-for-metadata method, which should ensure we can write
+   all content into the image.
+   And rely later shrink the shrink the fs size to minimal.
+
+   Although the method itself is based on over-reserve, but in fact it's
+   quite space efficient in most case.
+   For empty file case, we will use the allocated data/meta space
+   allocated in normal mkfs, so no shrink really needed.
+
+   For large file and small metadata case, the size difference between
+   shrunk and unshrunk image is less than 1%.
+
+   Although due to the nature we over-reserve for metadata, for
+   extremely unbalanced data/meta case, like tons of empty files, we
+   really need to rely shrink functionality.
+
+   And the algorithm itself only needs minimal amount of data.
+   It only uses number of inodes and file size of each regular inode.
+
+3) Shrinking the fs by device extent
+   As implemented in almost all version of rework which includes
+   shrinking, tried and true, and easier to implement.
+   And shrinking is completely independent now, can be easily modified
+   to shrink multi-device btrfs.
+
+4) Separate shrink functionality to '--shrink' option
+   This causes less confusion.
+   And due to my poor English, I only added basic explanation to the
+   mkfs doc. Although I think this is enough since each functionality
+   is easier to understand.
+
+5) Not wasting IO to wipe the whole image
+   Only to wipe the first 1M and create sparse file.
+
+Qu Wenruo (7):
+  btrfs-progs: mkfs: Don't use custom chunk allocator for rootdir
+  btrfs-progs: mkfs/rootdir: Use over-reserve method to make size
+    estimate easier
+  btrfs-progs: mkfs: Only zero out the first 1M for rootdir
+  btrfs-progs: mkfs/rootdir: Introduce function to get end position of
+    last device extent
+  btrfs-progs: mkfs/rootdir: Shrink fs for rootdir option
+  btrfs-progs: mkfs: Update allocation info before verbose output
+  btrfs-progs: mkfs: Separate shrink from rootdir
+
+ Documentation/mkfs.btrfs.asciidoc |  11 ++
+ mkfs/main.c                       | 260 ++++++++++++++++-----------------
+ mkfs/rootdir.c                    | 292 +++++++++++++++++++++++++++++++++-----
+ mkfs/rootdir.h                    |   6 +-
+ 4 files changed, 400 insertions(+), 169 deletions(-)
+
 -- 
 2.14.2
 

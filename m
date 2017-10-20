@@ -1,41 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51649 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751878AbdJTJvK (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25106 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753455AbdJTRpo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Oct 2017 05:51:10 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9K9p9BK020922
+        Fri, 20 Oct 2017 13:45:44 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9KHjhpi007675
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Oct 2017 09:51:10 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Oct 2017 17:45:43 GMT
 Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9K9p9Bb001423
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9KHjgbA027333
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Oct 2017 09:51:09 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9K9p9qo014170
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Oct 2017 09:51:09 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Oct 2017 17:45:43 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9KHjgMS017945
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Oct 2017 17:45:42 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: clean up btrfs_dev_stat_inc() usage
-Date: Fri, 20 Oct 2017 17:50:59 +0800
-Message-Id: <20171020095059.3730-1-anand.jain@oracle.com>
+Subject: [PATCH v2] btrfs: clean up btrfs_dev_stat_inc() usage
+Date: Sat, 21 Oct 2017 01:45:33 +0800
+Message-Id: <20171020174533.7766-1-anand.jain@oracle.com>
+In-Reply-To: <20171020095059.3730-1-anand.jain@oracle.com>
+References: <20171020095059.3730-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 btrfs_end_bio() is using btrfs_dev_stat_inc() and then
-btrfs_dev_stat_print_on_error() separately instead
-use btrfs_dev_stat_inc_and_print() directly.
+btrfs_dev_stat_print_on_error() separately instead use
+btrfs_dev_stat_inc_and_print() directly.
 
-No need to worry about print lines one for read/write
-and another if the source of IO request is flush, since
-as mentioned in this patch
- [patch] btrfs: REQ_PREFLUSH does not use btrfs_end_bio() completion callback
-there isn't any IO which is doing that.
+As of now there isn't any bio in btrfs which is - a non-empty write and
+also the REQ_PREFLUSH flag is set. So in actual the condition
+   if (bio->bi_opf & REQ_PREFLUSH)
+is never true in btrfs_end_bio(), and so there won't be any redundant error
+log by using btrfs_dev_stat_inc_and_print() separately one for write and
+another for flush.
 
-This consolidation is a preparatory patch to add device
-critical error handling in btrfs_dev_stat_inc_and_print()
-and can be renamed as needed.
+This consolidation will help to add the device critical error handles in the
+function btrfs_dev_stat_inc_and_print() and which can be renamed as needed.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---

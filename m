@@ -1,73 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54302 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932378AbdJYKcq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 Oct 2017 06:32:46 -0400
-Subject: Re: [PATCH] fstests: btrfs/143: make test case more reliable
-To: Liu Bo <bo.li.liu@oracle.com>, fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org
-References: <20171023205733.14896-1-bo.li.liu@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <c4849a9b-abe2-1729-0154-e301bc5e51b3@suse.com>
-Date: Wed, 25 Oct 2017 13:32:43 +0300
+Received: from userp1040.oracle.com ([156.151.31.81]:44263 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751101AbdJUFpf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 21 Oct 2017 01:45:35 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9L5jYsH009666
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2017 05:45:34 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9L5jXYY005334
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2017 05:45:34 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9L5jX7X020439
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Oct 2017 05:45:33 GMT
+Date: Fri, 20 Oct 2017 22:41:22 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: avoid deadlock in btrfs_async_run_delayed_root
+Message-ID: <20171021054122.GA1696@lim.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <20171020234012.9929-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20171023205733.14896-1-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171020234012.9929-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
+Please ignore this patch, I misunderstood the lock order.
 
-On 23.10.2017 23:57, Liu Bo wrote:
-> Currently drop_caches is used to invalidate file's page cache so that
-> buffered read can hit disk, but the problem is that it may also
-> invalidate metadata's page cache, so the test case may not get read
-> errors (and repair) if reading metadata has consumed the injected
-> faults.
+thanks,
+
+-liubo
+
+On Fri, Oct 20, 2017 at 05:40:12PM -0600, Liu Bo wrote:
+> Here %path is set with ->leave_spinning=1, thus it'll hold the rwlock
+> after btrfs_search_slot(), however, when processing delayed items in
+> __btrfs_commit_inode_delayed_items(), it goes to acquire node->mutex
+> which might sleep, that is, it may sleep under spin_lock.
 > 
-> This changes it to do 'fadvise -d' to firstly access all metadata it
-> needs to locate the file and then only drops the test file's page
-> cache.  Also this changes it to read the file only if pid%2 == 1.
+> Given node->mutex is necessary to avoid race between async works, this
+> remove the ->leave_spining setting.
 > 
-> Reported-by: Nikolay Borisov <nborisov@suse.com>
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
->  tests/btrfs/143 | 20 ++++++++++----------
->  1 file changed, 10 insertions(+), 10 deletions(-)
+>  fs/btrfs/delayed-inode.c | 1 -
+>  1 file changed, 1 deletion(-)
 > 
-> diff --git a/tests/btrfs/143 b/tests/btrfs/143
-> index da7bfd8..dabd03d 100755
-> --- a/tests/btrfs/143
-> +++ b/tests/btrfs/143
-> @@ -127,16 +127,16 @@ echo "step 3......repair the bad copy" >>$seqres.full
->  # since raid1 consists of two copies, and the bad copy was put on stripe #1
->  # while the good copy lies on stripe #0, the bad copy only gets access when the
->  # reader's pid % 2 == 1 is true
-> -while true; do
-> -	# start_fail only fails the following buffered read so the repair is
-> -	# supposed to work.
-> -	echo 3 > /proc/sys/vm/drop_caches
-> -	start_fail
-> -	$XFS_IO_PROG -c "pread 0 4K" "$SCRATCH_MNT/foobar" > /dev/null &
-> -	pid=$!
-> -	wait
-> -	stop_fail
-> -	[ $((pid % 2)) == 1 ] && break
-> +while [[ -z ${result} ]]; do
-> +    # invalidate the page cache.
-> +    $XFS_IO_PROG -c "fadvise -d 0 128K" $SCRATCH_MNT/foobar
-
-I think an even better approach would be to just unmount and then mount
-it. That ensures the page cache is truncated.
-
-> +
-> +    start_fail
-> +    result=$(bash -c "
-> +        if [[ \$((\$\$ % 2)) -eq 1 ]]; then
-> +                exec $XFS_IO_PROG -c \"pread 0 4K\" \"$SCRATCH_MNT/foobar\"
-> +        fi");
-> +    stop_fail
->  done
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index 19e4ad2..a857a2f 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -1331,7 +1331,6 @@ static void btrfs_async_run_delayed_root(struct btrfs_work *work)
+>  	if (!delayed_node)
+>  		goto free_path;
 >  
->  _scratch_unmount
+> -	path->leave_spinning = 1;
+>  	root = delayed_node->root;
+>  
+>  	trans = btrfs_join_transaction(root);
+> -- 
+> 2.9.4
 > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

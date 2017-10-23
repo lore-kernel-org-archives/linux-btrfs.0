@@ -1,81 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40621 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:26733 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753230AbdJNAeV (ORCPT
+        with ESMTP id S1751662AbdJWWAO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 13 Oct 2017 20:34:21 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9E0YK5i029885
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Oct 2017 00:34:20 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9E0YJYk019188
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Oct 2017 00:34:20 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9E0YJxt021927
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Oct 2017 00:34:19 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: fix false EIO for missing device
-Date: Sat, 14 Oct 2017 08:34:02 +0800
-Message-Id: <20171014003402.7230-1-anand.jain@oracle.com>
-In-Reply-To: <20171013134218.19048-1-anand.jain@oracle.com>
-References: <20171013134218.19048-1-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Mon, 23 Oct 2017 18:00:14 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] fstests: btrfs/143: make test case more reliable
+Date: Mon, 23 Oct 2017 14:57:33 -0600
+Message-Id: <20171023205733.14896-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When one of the device is missing, bbio_error() takes care
-of setting the error status. And if its only IO that is
-pending in that stripe, it fails to check the status of the
-other IO at %bbio_error before setting the error %bi_status
-for the %orig_bio. Fix this by checking if %bbio->error is
-has crossed the %bbio->max_errors. Thxs.
+Currently drop_caches is used to invalidate file's page cache so that
+buffered read can hit disk, but the problem is that it may also
+invalidate metadata's page cache, so the test case may not get read
+errors (and repair) if reading metadata has consumed the injected
+faults.
 
-Reproducer as below fdatasync error is seen intermittently.
+This changes it to do 'fadvise -d' to firstly access all metadata it
+needs to locate the file and then only drops the test file's page
+cache.  Also this changes it to read the file only if pid%2 == 1.
 
- mount -o degraded /dev/sdc /btrfs
- dd status=none if=/dev/zero of=$(mktemp /btrfs/XXX) bs=4096 count=1 conv=fdatasync
-
- dd: fdatasync failed for ‘/btrfs/LSe’: Input/output error
-
- The reason for the intermittences of the problem is because..
- following condition has to be met, which depends on timely
- coordination.
- In btrfs_map_bio()
-  . The RAID1 the missing device has to be at %dev_nr = 1
- In bbio_error()
-  . Before bbio_error() is called the bio of the not-missing
-    device at %dev_nr=0 must be completed so that the below
-    condition is true
-     if (atomic_dec_and_test(&bbio->stripes_pending)) {
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Reported-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-v2: Use BLK_STS_OK instead of 0.
+ tests/btrfs/143 | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
 
- fs/btrfs/volumes.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 41c02a3ffc78..15e017af756c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6131,7 +6131,10 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+diff --git a/tests/btrfs/143 b/tests/btrfs/143
+index da7bfd8..dabd03d 100755
+--- a/tests/btrfs/143
++++ b/tests/btrfs/143
+@@ -127,16 +127,16 @@ echo "step 3......repair the bad copy" >>$seqres.full
+ # since raid1 consists of two copies, and the bad copy was put on stripe #1
+ # while the good copy lies on stripe #0, the bad copy only gets access when the
+ # reader's pid % 2 == 1 is true
+-while true; do
+-	# start_fail only fails the following buffered read so the repair is
+-	# supposed to work.
+-	echo 3 > /proc/sys/vm/drop_caches
+-	start_fail
+-	$XFS_IO_PROG -c "pread 0 4K" "$SCRATCH_MNT/foobar" > /dev/null &
+-	pid=$!
+-	wait
+-	stop_fail
+-	[ $((pid % 2)) == 1 ] && break
++while [[ -z ${result} ]]; do
++    # invalidate the page cache.
++    $XFS_IO_PROG -c "fadvise -d 0 128K" $SCRATCH_MNT/foobar
++
++    start_fail
++    result=$(bash -c "
++        if [[ \$((\$\$ % 2)) -eq 1 ]]; then
++                exec $XFS_IO_PROG -c \"pread 0 4K\" \"$SCRATCH_MNT/foobar\"
++        fi");
++    stop_fail
+ done
  
- 		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
- 		bio->bi_iter.bi_sector = logical >> 9;
--		bio->bi_status = BLK_STS_IOERR;
-+		if (atomic_read(&bbio->error) > bbio->max_errors)
-+			bio->bi_status = BLK_STS_IOERR;
-+		else
-+			bio->bi_status = BLK_STS_OK;
- 		btrfs_end_bbio(bbio, bio);
- 	}
- }
+ _scratch_unmount
 -- 
-2.13.1
+2.5.0
 

@@ -1,44 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60849 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751336AbdJXUgR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 16:36:17 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3BEFDAC55
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 20:36:16 +0000 (UTC)
-Date: Tue, 24 Oct 2017 22:34:28 +0200
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Subject: Next btrfs development cycle open - 4.16
-Message-ID: <20171024203428.GV3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:18183 "EHLO
+        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750726AbdJWEnh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Oct 2017 00:43:37 -0400
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id E9F97AC019E
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Oct 2017 13:43:30 +0900 (JST)
+Received: from g01jpexchkw35.g01.fujitsu.local (unknown [10.0.193.4])
+        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 44A56BD667D
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Oct 2017 13:43:30 +0900 (JST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH 0/2] btrfs-progs: fi: enable fi usage for filesystem top of
+ seed device
+Message-ID: <01e66c4f-9f8d-0bf2-1f7a-bc5784a907f3@jp.fujitsu.com>
+Date: Mon, 23 Oct 2017 13:43:23 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Currently "fi usage" (and "dev usage") cannot run for the filesystem using
+seed device.
 
-a friendly reminder of the timetable and what's expected at this phase.
+This is because FS_INFO ioctl returns the number of devices excluding
+seeds, but load_device_info() tries to access valid device from devid 0
+to max_id, and results in accessing seeds too (thus causing mismatching
+of number of devices).
 
-4.13 - current
-4.14 - upcoming, urgent regression fixes only
-4.15 - development closed, pull request in prep, fixes or regressions only
-4.16 - development open, until 4.15-rc5
+Since only the size of non-seed devices is matter, fix this by just
+skipping seed device by checking device's fsid and comparing it to the fsid
+obtained by FS_INFO ioctl.
 
-(https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Development_schedule)
+Tomohiro Misono (2):
+ btrfs-progs: fi: move dev_to_fsid() to cmds-fi-usage for later use
+ btrfs-progs: fi: enable fi usage for filesystem top of seed device
 
-Besides the the usual cleanups and fixes, you can now start sending any
-patches that could be more intrusive and would benefit from a longer
-period of testing, or development revisions.
+ cmds-fi-usage.c   | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ cmds-fi-usage.h   |  1 +
+ cmds-filesystem.c | 27 ---------------------------
+ 3 files changed, 45 insertions(+), 27 deletions(-)
 
-The base of the patches should be the last announced pull request, which
-is going to be named 'for-4.15' in my k.org tree.  Reviewed patches will
-be collected in a branch that's usually named 'misc-next' in my devel
-git repos and is part of the for-next at k.org git repo.
+-- 
+2.9.5
 
-k.org: https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
-devel1: http://repo.or.cz/linux-2.6/btrfs-unstable.git
-devel2: https://github.com/kdave/btrfs-devel
-
-d.

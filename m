@@ -1,43 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:46601 "EHLO
-        mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751349AbdJVPIS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Oct 2017 11:08:18 -0400
-Received: by mail-wm0-f48.google.com with SMTP id m72so5282879wmc.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2017 08:08:18 -0700 (PDT)
-From: Vladimir Panteleev <thecybershadow@gmail.com>
-Subject: Re: 4.13: "error in btrfs_run_delayed_refs:3009: errno=-28 No space
- left" with 1.3TB unallocated / 737G free?
-To: Martin Raiber <martin@urbackup.org>, 1i5t5.duncan@cox.net,
-        linux-btrfs@vger.kernel.org
-References: <pan$7012a$2aa3b3f4$9c2bb50d$e909647e@cox.net>
- <0caa6041-8ba6-52f6-950e-f07ee0470b63@gmail.com>
- <0102015f348e9867-37a2530c-b78e-4efb-9528-d13136194eae-000000@eu-west-1.amazonses.com>
-Message-ID: <7ab8dd62-aaaa-b112-6643-6311290db03e@gmail.com>
-Date: Sun, 22 Oct 2017 15:08:14 +0000
+Received: from mout.perfora.net ([74.208.4.194]:57256 "EHLO mout.perfora.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750743AbdJWE0G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Oct 2017 00:26:06 -0400
+Received: from mail-yw0-f176.google.com ([209.85.161.176]) by
+ mrelay.perfora.net (mreueus001 [74.208.5.2]) with ESMTPSA (Nemesis) id
+ 0Lsj8x-1d4RTI3QyH-0129Sm for <linux-btrfs@vger.kernel.org>; Mon, 23 Oct 2017
+ 06:26:05 +0200
+Received: by mail-yw0-f176.google.com with SMTP id q126so8059477ywq.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Oct 2017 21:26:05 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <0102015f348e9867-37a2530c-b78e-4efb-9528-d13136194eae-000000@eu-west-1.amazonses.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Zak Kohler <y2k@y2kbugger.com>
+Date: Mon, 23 Oct 2017 00:25:34 -0400
+Message-ID: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
+Subject: btrfs send yields "ERROR: send ioctl failed with -5: Input/output error"
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-19 12:14, Martin Raiber wrote:
-> You could also mount with
-> "enospc_debug" to give the devs more infos about this issue.
-> I am having more ENOSPC issues with 4.9.x than with the latest 4.14.
+Was attempting my first btrfs send receive over ssh and continually
+received ioctl error at different points but always in the first 3
+minutes. The volume consists of three devices with only metadata
+duplication. I narrowed down the error to the send command by
+recreating the error while redirecting to /dev/null. Sometime it would
+happen after ~12Gib, or ~7.6Gib, right now rerunning multiple times it
+has stopped on exactly 3.76 multiple times.
 
-Here is the dmesg output with -o enospc_debug, hopefully it will be 
-useful for someone:
-https://dump.thecybershadow.net/266ad878bed7921ccca3a7f624df0cc7/scratch.txt
+$ sudo btrfs send /mnt/dataroot.2017.10.21/ | pv -i5 > /dev/null
+At subvol /mnt/dataroot.2017.10.21/
+ERROR: send ioctl failed with -5: Input/output error                    ]
+3.76GiB 0:00:13 [ 290MiB/s] [      <=>                                  ]
 
-> for me a work-around for something like this has been to reduce the
-> amount of dirty memory
 
-In the end I deleted some snapshots, that seemed to free up enough 
-metadata for the balance to continue. After 25 hours, a balance with 
--dusage=10 finished and freed up 344GB of "Device unallocated" space.
+First I checked the btrfs device stats, each of the 3 drives appear clean:
+$ sudo btrfs device stats /mnt
+[/dev/sdi].write_io_errs    0
+[/dev/sdi].read_io_errs     0
+[/dev/sdi].flush_io_errs    0
+[/dev/sdi].corruption_errs  0
+[/dev/sdi].generation_errs  0
+[/dev/sdh].write_io_errs    0
+[/dev/sdh].read_io_errs     0
+[/dev/sdh].flush_io_errs    0
+[/dev/sdh].corruption_errs  0
+[/dev/sdh].generation_errs  0
+[/dev/sdn].write_io_errs    0
+[/dev/sdn].read_io_errs     0
+[/dev/sdn].flush_io_errs    0
+[/dev/sdn].corruption_errs  0
+[/dev/sdn].generation_errs  0
 
--- 
-Best regards,
-  Vladimir
+The next thing I tried was running and checking that SMART short
+selftest passed on each of three drives with no error.
+$ sudo smartctl -l selftest /dev/sdh
+# 1  Short offline       Completed without error
+
+
+I read somewhere to check dmesg, which yielded some info:
+BTRFS warning (device sdn): csum failed ino 6407 off 7683907584 csum
+1745651892 expected csum 3952841867
+
+But when I when to see if scrub could detect the errors, nothing was found:
+$ sudo btrfs scrub status -d /mnt
+scrub status for 88406942-e3e1-42c6-ad71-e23bb315caa7
+scrub device /dev/sdi (id 1) history
+        scrub started at Sun Oct 22 14:43:20 2017 and finished after 01:57:00
+        total bytes scrubbed: 677.69GiB with 0 errors
+scrub device /dev/sdh (id 2) history
+        scrub started at Sun Oct 22 14:43:20 2017 and finished after 01:56:38
+        total bytes scrubbed: 677.44GiB with 0 errors
+scrub device /dev/sdn (id 3) history
+        scrub started at Sun Oct 22 14:43:20 2017 and finished after 01:56:38
+        total bytes scrubbed: 677.36GiB with 0 errors
+
+
+After all that scrubbing I still receive the ioctl error.
+
+
+Does anyone have any ideas of what to try next? Right now I am running
+the SMART 'long' self test.

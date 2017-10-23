@@ -1,197 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:56825 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751838AbdJ3AxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Oct 2017 20:53:21 -0400
-Subject: Re: [PATCH v3 2/2] btrfs-progs: test/mkfs: Test if the minimal device
- size is valid
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20171027005324.17950-1-wqu@suse.com>
- <20171027005324.17950-2-wqu@suse.com> <20171027165924.GN3521@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <8fb8d6d8-5a52-05b6-0b69-57cd487da730@gmx.com>
-Date: Mon, 30 Oct 2017 08:53:07 +0800
-MIME-Version: 1.0
-In-Reply-To: <20171027165924.GN3521@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe"
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:47995 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751113AbdJWW35 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Oct 2017 18:29:57 -0400
+Received: by mail-wm0-f66.google.com with SMTP id t69so12236782wmt.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Oct 2017 15:29:57 -0700 (PDT)
+From: Timofey Titovets <nefelim4ag@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH v4] Btrfs: compress_file_range() change page dirty status once
+Date: Tue, 24 Oct 2017 01:29:48 +0300
+Message-Id: <20171023222948.10648-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe
-Content-Type: multipart/mixed; boundary="dupo6XpjRSVWTvQSrjbpLJXkMTnt4ONuI";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <8fb8d6d8-5a52-05b6-0b69-57cd487da730@gmx.com>
-Subject: Re: [PATCH v3 2/2] btrfs-progs: test/mkfs: Test if the minimal device
- size is valid
-References: <20171027005324.17950-1-wqu@suse.com>
- <20171027005324.17950-2-wqu@suse.com> <20171027165924.GN3521@twin.jikos.cz>
-In-Reply-To: <20171027165924.GN3521@twin.jikos.cz>
+We need to call extent_range_clear_dirty_for_io()
+on compression range to prevent application from changing
+page content, while pages compressing.
 
---dupo6XpjRSVWTvQSrjbpLJXkMTnt4ONuI
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+extent_range_clear_dirty_for_io() run on each loop iteration,
+"(end - start)" can be much (up to 1024 times) bigger
+then compression range (BTRFS_MAX_UNCOMPRESSED).
 
+That produce extra calls to page managment code.
 
+Fix that behaviour by call extent_range_clear_dirty_for_io()
+only once.
 
-On 2017=E5=B9=B410=E6=9C=8828=E6=97=A5 00:59, David Sterba wrote:
-> On Fri, Oct 27, 2017 at 08:53:24AM +0800, Qu Wenruo wrote:
->> New test case to test if the minimal device size given by "mkfs.btrfs"=
+v1 -> v2:
+ - Make that more obviously and more safeprone
 
->> failure case is valid.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  tests/mkfs-tests/010-small-image/test.sh | 49 +++++++++++++++++++++++=
-+++++++++
->>  1 file changed, 49 insertions(+)
->>  create mode 100755 tests/mkfs-tests/010-small-image/test.sh
->>
->> diff --git a/tests/mkfs-tests/010-small-image/test.sh b/tests/mkfs-tes=
-ts/010-small-image/test.sh
->> new file mode 100755
->> index 000000000000..f55760df061f
->> --- /dev/null
->> +++ b/tests/mkfs-tests/010-small-image/test.sh
->> @@ -0,0 +1,49 @@
->> +#!/bin/bash
->> +# test if the reported minimal size of mkfs.btrfs is valid
->> +
->> +source "$TOP"/tests/common
->> +
->> +check_prereq mkfs.btrfs
->> +check_prereq btrfs
->> +
->> +setup_root_helper
->> +
->> +do_test()
->> +{
->> +	# Well, 1M small enough to fail, we just use the output
->> +	# to get the minimal device size
->> +	prepare_test_dev 1M
->> +	output=3D$(run_mustfail_stdout "mkfs.btrfs for small image" \
->> +		 "$TOP"/mkfs.btrfs -f $@ "$TEST_DEV")
->> +	good_size=3D$(echo "$output" | grep -oP "(?<=3Dis )\d+")
->> +
->> +	prepare_test_dev "$good_size"
->> +	run_check "$TOP"/mkfs.btrfs -f $@ "$TEST_DEV"
->> +	run_check $SUDO_HELPER mount "$TEST_DEV" "$TEST_MNT"
->> +	run_check $SUDO_HELPER umount "$TEST_MNT"
->=20
-> There are helpers for the default mounts, you can use them to save some=
+v2 -> v3:
+ - Rebased on:
+   Btrfs: compress_file_range() remove dead variable num_bytes
+ - Update change log
+ - Add comments
 
-> typing: run_check_mount_test_dev and run_check_umount_test_dev.
->=20
->> +}
->> +
->> +do_test -n 4k	-m single	-d single
->=20
-> I don't seem to get this test to work, it fails with this in the log:
+v3 -> v4:
+ - Rebased on: kdave for-next
+ - To avoid dirty bit clear/set behaviour change
+   call clear_bit once, istead of per compression range
 
-Forgot to mention, the test case is for minimal-device-size fix patchset:=
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+---
+ fs/btrfs/inode.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Enhance minimal device size calculation to fix mkfs failure on small file=
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b93fe05a39c7..5816dd3cb6e6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -536,8 +536,10 @@ static noinline void compress_file_range(struct inode *inode,
+ 		 * If the compression fails for any reason, we set the pages
+ 		 * dirty again later on.
+ 		 */
+-		extent_range_clear_dirty_for_io(inode, start, end);
+-		redirty = 1;
++		if (!redirty) {
++			extent_range_clear_dirty_for_io(inode, start, end);
++			redirty = 1;
++		}
 
-
-Considering I sent too many patchset recently and most of them have
-dependency, should I resend a big patchset to address the dependency?
-
-IIRC the dependency should be:
-rootdir rework -> rootdir refactor -> minimal device size fix (including
-test cases)
-
-And later mkfs qgroup support also depends on rootdir rework (just
-conflicts, not code dependency)
-
-Thanks,
-Qu
->=20
-> =3D=3D=3D Entering btrfs-progs/tests/mkfs-tests/010-small-image
-> $TEST_DEV not given, use btrfs-progs/test/test.img as fallback
-> ############### btrfs-progs/mkfs.btrfs -f -n 4k -m single -d single btr=
-fs-progs/tests/test.img
-> btrfs-progs v4.13.3-61-g0615ffa351c2
-> See http://btrfs.wiki.kernel.org for more information.
->=20
-> failed (expected): btrfs-progs/mkfs.btrfs -f -n 4k -m single -d single =
-btrfs-progs/tests/test.img
-> ############### btrfs-progs/mkfs.btrfs -f -n 4k -m single -d single btr=
-fs-progs/tests/test.img
-> btrfs-progs v4.13.3-61-g0615ffa351c2
-> See http://btrfs.wiki.kernel.org for more information.
->=20
-> Label:              (null)
-> UUID:               b9b55b1b-4096-46ee-acd0-15151a8050d6
-> Node size:          4096
-> Sector size:        4096
-> Filesystem size:    16.00MiB
-> Block group profiles:
->   Data:             single            1.56MiB
->   Metadata:         single            1.56MiB
->   System:           single            4.00MiB
-> SSD detected:       no
-> Incompat features:  extref, skinny-metadata
-> Number of devices:  1
-> Devices:
->    ID        SIZE  PATH
->     1    16.00MiB  btrfs-progs/tests/test.img
->=20
-> ############### root_helper mount btrfs-progs/tests/test.img btrfs-prog=
-s/tests/mnt
-> ############### root_helper umount btrfs-progs/tests/mnt
-> ############### btrfs-progs/mkfs.btrfs -f -n 4k -m single -d dup btrfs-=
-progs/tests/test.img
-> btrfs-progs v4.13.3-61-g0615ffa351c2
-> See http://btrfs.wiki.kernel.org for more information.
->=20
-> failed (expected): btrfs-progs/mkfs.btrfs -f -n 4k -m single -d dup btr=
-fs-progs/tests/test.img
-> ############### btrfs-progs/mkfs.btrfs -f -n 4k -m single -d dup btrfs-=
-progs/tests/test.img
-> ERROR: not enough free space to allocate chunk
-> btrfs-progs v4.13.3-61-g0615ffa351c2
-> See http://btrfs.wiki.kernel.org for more information.
->=20
-> failed: btrfs-progs/mkfs.btrfs -f -n 4k -m single -d dup btrfs-progs/te=
-sts/test.img
-> test failed for case 010-small-image
-> ---
->=20
-> The output is unexpected and does not contain the minimal size. The tes=
-ted
-> branch is current devel (7141063af3c9a423dda), your mkfs --rootdir rewo=
-rk
-> patches are there. Can you please have a look?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---dupo6XpjRSVWTvQSrjbpLJXkMTnt4ONuI--
-
---uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln2d/MXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qilUgf/Z6SamTCr0TJHRLsEeIb8PUqm
-1d+LGUcWaeNQExcixfNr9mrKxFS5G2zUUDlbAXlnvy6mhMCbrlgKZNqQDOl0+6xG
-kwIgjFSM459BGEjE7BqsVQ8H0L7bZQcXbFcUMpSAQeUIx0Vu4/GO/hk72WUoZeG4
-SJpyenOYUQ7XEGroDpe1qMlXFE71Nf9eN1uH9DiDiIJDPShctQuHcpYJkZjsP5T4
-FSk44Tooz3prEePhsw96Hv4hsZA8uC5IZCESjhQBYVCCYm868qeXtyHjg37pDbNm
-170AQN9pbuvWmybwrprLemTPmnWyEWm7H7OIl9Ve2MEI/tsA93qKGc4qQiIMRw==
-=6ZD2
------END PGP SIGNATURE-----
-
---uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe--
+ 		/* Compression level is applied here and only here */
+ 		ret = btrfs_compress_pages(
+--
+2.14.2

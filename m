@@ -1,22 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39202 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40210 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751819AbdJXLAV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 07:00:21 -0400
+        id S1751413AbdJXLHP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Oct 2017 07:07:15 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 60C3DADC9
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 11:00:20 +0000 (UTC)
-Subject: Re: [PATCH 1/6] btrfs: qgroup: Skeleton to support separate qgroup
- reservation type
+        by mx2.suse.de (Postfix) with ESMTP id 96B7AADC9
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 11:07:13 +0000 (UTC)
+Subject: Re: [PATCH 2/6] btrfs: qgroup: Introduce helpers to update and access
+ new qgroup rsv
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
 References: <20171024083941.21428-1-wqu@suse.com>
- <20171024083941.21428-2-wqu@suse.com>
+ <20171024083941.21428-3-wqu@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <5e6a7a3c-21ce-12e4-1bdc-78cdcb69d6c7@suse.com>
-Date: Tue, 24 Oct 2017 14:00:19 +0300
+Message-ID: <e2eda958-e17f-757b-f704-1b0371cd4ed7@suse.com>
+Date: Tue, 24 Oct 2017 14:07:12 +0300
 MIME-Version: 1.0
-In-Reply-To: <20171024083941.21428-2-wqu@suse.com>
+In-Reply-To: <20171024083941.21428-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -24,141 +24,115 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 24.10.2017 11:39, Qu Wenruo wrote:
-> Instead of single qgroup->reserved, use a new structure btrfs_qgroup_rsv
-> to restore different types of reservation.
+> Introduce helpers to:
 > 
-> This patch only updates the header and needed modification to pass
-> compile.
+> 1) Get total reserved space
+>    For limit calculation
+> 
+> 2) Increase reserved space for given type
+> 2) Decrease reserved space for given type
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/qgroup.c | 16 ++++++++++------
->  fs/btrfs/qgroup.h | 27 +++++++++++++++++++++++++--
->  2 files changed, 35 insertions(+), 8 deletions(-)
+>  fs/btrfs/qgroup.c | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 66 insertions(+)
 > 
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index e172d4843eae..fe3adb996883 100644
+> index fe3adb996883..04fd145516ad 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -2444,7 +2444,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
->  }
->  
->  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-> -			       u64 ref_root, u64 num_bytes)
-> +			       u64 ref_root, u64 num_bytes,
-> +			       enum btrfs_qgroup_rsv_type type)
->  {
->  	struct btrfs_root *quota_root;
->  	struct btrfs_qgroup *qgroup;
-> @@ -2936,7 +2937,8 @@ static int qgroup_free_reserved_data(struct inode *inode,
->  			goto out;
->  		freed += changeset.bytes_changed;
->  	}
-> -	btrfs_qgroup_free_refroot(root->fs_info, root->objectid, freed);
-> +	btrfs_qgroup_free_refroot(root->fs_info, root->objectid, freed,
-> +				  BTRFS_QGROUP_RSV_DATA);
->  	ret = freed;
->  out:
->  	extent_changeset_release(&changeset);
-> @@ -2968,7 +2970,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
->  	if (free)
->  		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
->  				BTRFS_I(inode)->root->objectid,
-> -				changeset.bytes_changed);
-> +				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
->  	ret = changeset.bytes_changed;
->  out:
->  	extent_changeset_release(&changeset);
-> @@ -3045,7 +3047,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
->  	if (reserved == 0)
->  		return;
->  	trace_qgroup_meta_reserve(root, -(s64)reserved);
-> -	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved);
-> +	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved,
-> +				  BTRFS_QGROUP_RSV_META);
->  }
->  
->  void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
-> @@ -3060,7 +3063,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
->  	WARN_ON(atomic64_read(&root->qgroup_meta_rsv) < num_bytes);
->  	atomic64_sub(num_bytes, &root->qgroup_meta_rsv);
->  	trace_qgroup_meta_reserve(root, -(s64)num_bytes);
-> -	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes);
-> +	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes,
-> +				  BTRFS_QGROUP_RSV_META);
->  }
->  
->  /*
-> @@ -3088,7 +3092,7 @@ void btrfs_qgroup_check_reserved_leak(struct inode *inode)
->  		}
->  		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
->  				BTRFS_I(inode)->root->objectid,
-> -				changeset.bytes_changed);
-> +				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
->  
->  	}
->  	extent_changeset_release(&changeset);
-> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> index d9984e87cddf..0b04cbc5b5ce 100644
-> --- a/fs/btrfs/qgroup.h
-> +++ b/fs/btrfs/qgroup.h
-> @@ -61,6 +61,26 @@ struct btrfs_qgroup_extent_record {
->  	struct ulist *old_roots;
->  };
->  
-> +enum btrfs_qgroup_rsv_type {
-> +	BTRFS_QGROUP_RSV_DATA = 0,
-> +	BTRFS_QGROUP_RSV_META = 1,
-> +	BTRFS_QGROUP_RSV_TYPES = 1,
-
-nit: Why not BTRFS_QGROUP_RSV_TYPES_MAX = 2;
-
-> +};
-> +
-> +/*
-> + * Represents how many bytes we reserved for this qgroup.
-> + *
-> + * Each type should have different reservation behavior.
-> + * E.g, data follows its io_tree flag modification, while
-> + * *currently* meta is just reserve-and-clear during transcation.
-> + *
-> + * TODO: Add new type for delalloc, which can exist across several
-> + * transaction.
-> + */
-> +struct btrfs_qgroup_rsv {
-> +	u64 values[BTRFS_QGROUP_RSV_TYPES + 1];
-
-nit: And here just BTRFS_QGROUP_RSV_TYPES_MAX rather than the +1 here,
-seems more idiomatic to me.
-
-> +};
-> +
->  /*
->   * one struct for each qgroup, organized in fs_info->qgroup_tree.
+> @@ -47,6 +47,72 @@
+>   *  - check all ioctl parameters
 >   */
-> @@ -88,6 +108,7 @@ struct btrfs_qgroup {
->  	 * reservation tracking
->  	 */
->  	u64 reserved;
-> +	struct btrfs_qgroup_rsv rsv;
 >  
->  	/*
->  	 * lists
-> @@ -228,12 +249,14 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
->  			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
->  			 struct btrfs_qgroup_inherit *inherit);
->  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-> -			       u64 ref_root, u64 num_bytes);
-> +			       u64 ref_root, u64 num_bytes,
-> +			       enum btrfs_qgroup_rsv_type type);
->  static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
->  						 u64 ref_root, u64 num_bytes)
+> +/*
+> + * Helpers to access qgroup reservation
+> + *
+> + * Callers should ensure the lock context and type are valid
+> + */
+> +
+> +static u64 qgroup_rsv_total(const struct btrfs_qgroup *qgroup)
+> +{
+> +	u64 ret = 0;
+> +	int i;
+> +
+> +	for (i = 0; i <= BTRFS_QGROUP_RSV_TYPES; i++)
+
+So if you actually take up on my idea of having an explicit value which
+denotes the end, the loop here would be just < *_END rather than the <=
+which instantly looks suspicious of an off-by-one error.
+
+> +		ret += qgroup->rsv.values[i];
+> +
+> +	return ret;
+> +}
+> +
+> +static const char *qgroup_rsv_type_str(enum btrfs_qgroup_rsv_type type)
+> +{
+> +	if (type == BTRFS_QGROUP_RSV_DATA)
+> +		return "data";
+> +	if (type == BTRFS_QGROUP_RSV_META)
+> +		return "meta";
+> +	return NULL;
+> +}
+> +
+> +static void qgroup_rsv_increase(struct btrfs_qgroup *qgroup, u64 num_bytes,
+> +				enum btrfs_qgroup_rsv_type type)
+> +{
+> +	qgroup->rsv.values[type] += num_bytes;
+> +}
+> +
+> +static void qgroup_rsv_decrease(struct btrfs_qgroup *qgroup, u64 num_bytes,
+> +				enum btrfs_qgroup_rsv_type type)
+> +{
+> +	if (qgroup->rsv.values[type] >= num_bytes) {
+> +		qgroup->rsv.values[type] -= num_bytes;
+> +		return;
+> +	}
+> +#ifdef CONFIG_BTRFS_DEBUG
+> +	WARN_RATELIMIT(1,
+> +		"qgroup %llu %s reserved space underflow, have %llu to free %llu",
+> +		qgroup->qgroupid, qgroup_rsv_type_str(type),
+> +		qgroup->rsv.values[type], num_bytes);
+> +#endif
+> +	qgroup->rsv.values[type] = 0;
+> +}
+
+
+Perhaps these could be modelled after
+block_rsv_use_bytes/block_rsv_add_bytes ? I'm not entirely sure of what
+increasing the value actually does - reserving bytes or using already
+reserved bytes, I guess it should be reserving. In this case what about
+qgroup_bytes_reserve/qgroup_bytes_(free|unreserve) ?
+
+
+> +
+> +static void qgroup_rsv_increase_by_qgroup(struct btrfs_qgroup *dest,
+> +					  struct btrfs_qgroup *src)
+> +{
+> +	int i;
+> +
+> +	for (i = 0; i <= BTRFS_QGROUP_RSV_TYPES; i++)
+> +		qgroup_rsv_increase(dest, src->rsv.values[i], i);
+> +}
+> +
+> +static void qgroup_rsv_decrease_by_qgroup(struct btrfs_qgroup *dest,
+> +					  struct btrfs_qgroup *src)
+> +{
+> +	int i;
+> +
+> +	for (i = 0; i <= BTRFS_QGROUP_RSV_TYPES; i++)
+> +		qgroup_rsv_decrease(dest, src->rsv.values[i], i);
+> +}
+
+Why don't you model these similar to what we already have for the block
+rsv. In this case I believe those would correspond to the
+btrfs_block_rsv_migrate. Admittedly we don't have a counterpart to
+rsv_decrease_by_qgroup.
+
+
+> +
+>  static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
+>  					   int mod)
 >  {
->  	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
-> -	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
-> +	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes,
-> +				  BTRFS_QGROUP_RSV_DATA);
->  }
->  
->  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
 > 

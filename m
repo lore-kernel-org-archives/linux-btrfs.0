@@ -1,203 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47887 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48393 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751912AbdJXMXw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 08:23:52 -0400
-Subject: Re: [PATCH 1/6] btrfs: qgroup: Skeleton to support separate qgroup
- reservation type
+        id S932273AbdJXM2n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Oct 2017 08:28:43 -0400
+Subject: Re: [PATCH 4/6] btrfs: qgroup: Fix wrong qgroup reservation
+ inheritance for relationship update
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
 References: <20171024083941.21428-1-wqu@suse.com>
- <20171024083941.21428-2-wqu@suse.com>
- <5e6a7a3c-21ce-12e4-1bdc-78cdcb69d6c7@suse.com>
- <44cac459-0d68-01e3-e7bd-9e4cf541aabd@gmx.com>
+ <20171024083941.21428-5-wqu@suse.com>
+ <a386a6bc-5add-a09f-e7ac-bc557bbcbfa2@suse.com>
+ <9e1af0bf-71d6-afdd-b6bd-9032cb16db18@gmx.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a8a86762-a432-5e17-aa3d-c695586da435@suse.com>
-Date: Tue, 24 Oct 2017 15:23:49 +0300
+Message-ID: <190e7775-ed3b-723b-ed45-c6be466e2384@suse.com>
+Date: Tue, 24 Oct 2017 15:28:41 +0300
 MIME-Version: 1.0
-In-Reply-To: <44cac459-0d68-01e3-e7bd-9e4cf541aabd@gmx.com>
+In-Reply-To: <9e1af0bf-71d6-afdd-b6bd-9032cb16db18@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 24.10.2017 14:51, Qu Wenruo wrote:
+On 24.10.2017 15:19, Qu Wenruo wrote:
 > 
 > 
-> On 2017年10月24日 19:00, Nikolay Borisov wrote:
+> On 2017年10月24日 20:01, Nikolay Borisov wrote:
 >>
 >>
 >> On 24.10.2017 11:39, Qu Wenruo wrote:
->>> Instead of single qgroup->reserved, use a new structure btrfs_qgroup_rsv
->>> to restore different types of reservation.
+>>> When modifying qgroup relationship, for qgroup which only owns exclusive
+>>> extents, we will go through quick update path.
 >>>
->>> This patch only updates the header and needed modification to pass
->>> compile.
+>>> In quick update path, we will just adding/removing exclusive and reference
+>>> number.
+>>>
+>>> However we did the opposite for qgroup reservation from the very
+>>> beginning.
+>>
+>> I'm afraid this sentence doesn't give much information about what's
+>> really going on.
+> 
+> I'll try to reorganize it to give a better explanation on this.
+> 
+>>
+>>>
+>>> In fact, we should also inherit the qgroup reservation space, just like
+>>> exclusive and reference numbers.
+>>>
+>>> Fix by using the newly introduced
+>>> qgroup_rsv_increase/decrease_by_qgroup() function call.
 >>>
 >>> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >>> ---
->>>  fs/btrfs/qgroup.c | 16 ++++++++++------
->>>  fs/btrfs/qgroup.h | 27 +++++++++++++++++++++++++--
->>>  2 files changed, 35 insertions(+), 8 deletions(-)
+>>>  fs/btrfs/qgroup.c | 39 ++++++++++++++++++---------------------
+>>>  1 file changed, 18 insertions(+), 21 deletions(-)
 >>>
 >>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
->>> index e172d4843eae..fe3adb996883 100644
+>>> index 7b89da9589c1..ba6f60fd0e96 100644
 >>> --- a/fs/btrfs/qgroup.c
 >>> +++ b/fs/btrfs/qgroup.c
->>> @@ -2444,7 +2444,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
+>>> @@ -1069,21 +1069,24 @@ static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
+>>>  #endif
+>>>  	qgroup->reserved = 0;
 >>>  }
->>>  
->>>  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
->>> -			       u64 ref_root, u64 num_bytes)
->>> +			       u64 ref_root, u64 num_bytes,
->>> +			       enum btrfs_qgroup_rsv_type type)
->>>  {
->>>  	struct btrfs_root *quota_root;
->>>  	struct btrfs_qgroup *qgroup;
->>> @@ -2936,7 +2937,8 @@ static int qgroup_free_reserved_data(struct inode *inode,
->>>  			goto out;
->>>  		freed += changeset.bytes_changed;
->>>  	}
->>> -	btrfs_qgroup_free_refroot(root->fs_info, root->objectid, freed);
->>> +	btrfs_qgroup_free_refroot(root->fs_info, root->objectid, freed,
->>> +				  BTRFS_QGROUP_RSV_DATA);
->>>  	ret = freed;
->>>  out:
->>>  	extent_changeset_release(&changeset);
->>> @@ -2968,7 +2970,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
->>>  	if (free)
->>>  		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
->>>  				BTRFS_I(inode)->root->objectid,
->>> -				changeset.bytes_changed);
->>> +				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
->>>  	ret = changeset.bytes_changed;
->>>  out:
->>>  	extent_changeset_release(&changeset);
->>> @@ -3045,7 +3047,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
->>>  	if (reserved == 0)
->>>  		return;
->>>  	trace_qgroup_meta_reserve(root, -(s64)reserved);
->>> -	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved);
->>> +	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved,
->>> +				  BTRFS_QGROUP_RSV_META);
->>>  }
->>>  
->>>  void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
->>> @@ -3060,7 +3063,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
->>>  	WARN_ON(atomic64_read(&root->qgroup_meta_rsv) < num_bytes);
->>>  	atomic64_sub(num_bytes, &root->qgroup_meta_rsv);
->>>  	trace_qgroup_meta_reserve(root, -(s64)num_bytes);
->>> -	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes);
->>> +	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes,
->>> +				  BTRFS_QGROUP_RSV_META);
->>>  }
->>>  
->>>  /*
->>> @@ -3088,7 +3092,7 @@ void btrfs_qgroup_check_reserved_leak(struct inode *inode)
->>>  		}
->>>  		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
->>>  				BTRFS_I(inode)->root->objectid,
->>> -				changeset.bytes_changed);
->>> +				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
->>>  
->>>  	}
->>>  	extent_changeset_release(&changeset);
->>> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
->>> index d9984e87cddf..0b04cbc5b5ce 100644
->>> --- a/fs/btrfs/qgroup.h
->>> +++ b/fs/btrfs/qgroup.h
->>> @@ -61,6 +61,26 @@ struct btrfs_qgroup_extent_record {
->>>  	struct ulist *old_roots;
->>>  };
->>>  
->>> +enum btrfs_qgroup_rsv_type {
->>> +	BTRFS_QGROUP_RSV_DATA = 0,
->>> +	BTRFS_QGROUP_RSV_META = 1,
->>> +	BTRFS_QGROUP_RSV_TYPES = 1,
->>
->> nit: Why not BTRFS_QGROUP_RSV_TYPES_MAX = 2;
-> 
-> My original plan is just as the same as yours.
-> 
-> However I still remember I did it before and David fixed it by using
-> TYPES, so I follow his naming schema here.
-
-I don't really care about whether it's called TYPES or _MAX. The more
-important thing is the fact that we have types set to the same value as
-the last valid value and thus when writing loops or checking ranges we
-need to use <= and + 1 respectively which IMO is a bit
-counter-intuitive. But as I said it's a nit so I don't have strong
-preference either way if this is the convention of btrfs so be it.
-> 
-> Kernel is also using this naming schema else where:
-> d91876496bcf ("btrfs: compress: put variables defined per compress type
-> in struct to make cache friendly")
-> 
->>
->>> +};
 >>> +
->>> +/*
->>> + * Represents how many bytes we reserved for this qgroup.
->>> + *
->>> + * Each type should have different reservation behavior.
->>> + * E.g, data follows its io_tree flag modification, while
->>> + * *currently* meta is just reserve-and-clear during transcation.
->>> + *
->>> + * TODO: Add new type for delalloc, which can exist across several
->>> + * transaction.
->>> + */
->>> +struct btrfs_qgroup_rsv {
->>> +	u64 values[BTRFS_QGROUP_RSV_TYPES + 1];
+>>>  /*
+>>> - * The easy accounting, if we are adding/removing the only ref for an extent
+>>> - * then this qgroup and all of the parent qgroups get their reference and
+>>> - * exclusive counts adjusted.
+>>> + * The easy accounting, we're updating qgroup relationship whose child qgroup
+>>> + * only have exclusive extents.
+>>> + * In this case, we only need to update the rfer/excl, and inherit rsv from
+>>> + * child qgroup (@src)
+>>>   *
+>>>   * Caller should hold fs_info->qgroup_lock.
+>>>   */
+>>>  static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+>>>  				    struct ulist *tmp, u64 ref_root,
+>>> -				    u64 num_bytes, int sign)
+>>> +				    struct btrfs_qgroup *src, int sign)
+>>>  {
+>>>  	struct btrfs_qgroup *qgroup;
+>>>  	struct btrfs_qgroup_list *glist;
+>>>  	struct ulist_node *unode;
+>>>  	struct ulist_iterator uiter;
+>>> +	u64 num_bytes = src->excl;
+>>>  	int ret = 0;
+>>>  
+>>>  	qgroup = find_qgroup_rb(fs_info, ref_root);
+>>> @@ -1096,13 +1099,12 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+>>>  	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+>>>  	qgroup->excl += sign * num_bytes;
+>>>  	qgroup->excl_cmpr += sign * num_bytes;
+>>> -	if (sign > 0) {
+>>> -		trace_qgroup_update_reserve(fs_info, qgroup, -(s64)num_bytes);
+>>> -		if (qgroup->reserved < num_bytes)
+>>> -			report_reserved_underflow(fs_info, qgroup, num_bytes);
+>>> -		else
+>>> -			qgroup->reserved -= num_bytes;
+>>> -	}
+>>> +
+>>> +	/* *Inherit* qgroup rsv info from @src */
+>>> +	if (sign > 0)
+>>> +		qgroup_rsv_increase_by_qgroup(qgroup, src);
+>>> +	else
+>>> +		qgroup_rsv_decrease_by_qgroup(qgroup, src);
 >>
->> nit: And here just BTRFS_QGROUP_RSV_TYPES_MAX rather than the +1 here,
->> seems more idiomatic to me.
+>>
+>> I'm a bit confused by the semantics of the 'sign' variable. So what you
+>> are doing is that if sign is > 0 then you are "adding a relationship"
+>> i.e. adding 'src reservation to 'qgroup', presumably because the src is
+>> a child of qgroup? So you are handling both adding and deletion in the
+>> if statement?
 > 
-> To follow same naming schema from David.
-> (IIRC it was about tree-checker patchset, checking file extent type part)
+> Yes, the original design of @sign is to allow single function to handle
+> both relationship adding and deleting.
+> just like the rest code, which uses @sign to handle both adding and
+> deleting without using if.
 > 
-> In fact, I crashed kernel several times due to the tiny +1, without even
-> a clue for hours just testing blindly, until latest gcc gives warning
-> about it.
+>>
+>> However, before that apparently only deleting a relation ship was
+>> handled by that same if (And I believe that was wrong since if sign > 0
+>> then we should be adding bytes but here we are subtracting). SO the bug
+>> being fixed by this commit are actually 2 bugs:
+>>
+>> 1. Completely missing the "adding a relation ship case"
+>> 2. Incorrect hanlding of sign < 0, since this was handled by the sign >
+>> 0 case?
+> 
+> Yes, in fact 2 bugs.
+> 
+> Although the original code is acting like it's allocating space inside
+> the new parent, so it reduces parent's reserved, and adding new excl/refer.
+> 
+> However it's not the case, it should do inheriting, not allocating from
+> parent.
+> 
+> For sign > 0, (adding relationship) parent should inherit all excl/rfer
+> and reserved space.
+> For sign < 0, (deleting relationshio) parent should have all its
+> excl/rfer along with reserved space removed.
+> 
+> ^^^ This should be the correct behavior.
 
-So you crashed the kernel because you were missing it or not ?
+In that case I think this explanation needs to go into the commit
+message itself.
 
+> 
+> The original code is just a copy of older code, as you can see in commit
+> 9c8b35b1ba21 ("btrfs: quota: Automatically update related qgroups or
+> mark INCONSISTENT flags when assigning/deleting a qgroup relations.").
+
+You can also add this about how the bug got introduced in the first place.
+
+> 
+> So it's a bug dating back to ancient days and it's my fault I didn't
+> expose it in the very beginning.
 > 
 > Thanks,
 > Qu
-> 
 >>
->>> +};
->>> +
->>>  /*
->>>   * one struct for each qgroup, organized in fs_info->qgroup_tree.
->>>   */
->>> @@ -88,6 +108,7 @@ struct btrfs_qgroup {
->>>  	 * reservation tracking
->>>  	 */
->>>  	u64 reserved;
->>> +	struct btrfs_qgroup_rsv rsv;
+>>
+>>
 >>>  
->>>  	/*
->>>  	 * lists
->>> @@ -228,12 +249,14 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
->>>  			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
->>>  			 struct btrfs_qgroup_inherit *inherit);
->>>  void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
->>> -			       u64 ref_root, u64 num_bytes);
->>> +			       u64 ref_root, u64 num_bytes,
->>> +			       enum btrfs_qgroup_rsv_type type);
->>>  static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
->>>  						 u64 ref_root, u64 num_bytes)
->>>  {
->>>  	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
->>> -	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
->>> +	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes,
->>> +				  BTRFS_QGROUP_RSV_DATA);
->>>  }
+>>>  	qgroup_dirty(fs_info, qgroup);
 >>>  
->>>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>>> @@ -1122,15 +1124,10 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+>>>  		qgroup->rfer_cmpr += sign * num_bytes;
+>>>  		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+>>>  		qgroup->excl += sign * num_bytes;
+>>> -		if (sign > 0) {
+>>> -			trace_qgroup_update_reserve(fs_info, qgroup,
+>>> -						    -(s64)num_bytes);
+>>> -			if (qgroup->reserved < num_bytes)
+>>> -				report_reserved_underflow(fs_info, qgroup,
+>>> -							  num_bytes);
+>>> -			else
+>>> -				qgroup->reserved -= num_bytes;
+>>> -		}
+>>> +		if (sign > 0)
+>>> +			qgroup_rsv_increase_by_qgroup(qgroup, src);
+>>> +		else
+>>> +			qgroup_rsv_decrease_by_qgroup(qgroup, src);
+>>>  		qgroup->excl_cmpr += sign * num_bytes;
+>>>  		qgroup_dirty(fs_info, qgroup);
+>>>  
+>>> @@ -1173,7 +1170,7 @@ static int quick_update_accounting(struct btrfs_fs_info *fs_info,
+>>>  	if (qgroup->excl == qgroup->rfer) {
+>>>  		ret = 0;
+>>>  		err = __qgroup_excl_accounting(fs_info, tmp, dst,
+>>> -					       qgroup->excl, sign);
+>>> +					       qgroup, sign);
+>>>  		if (err < 0) {
+>>>  			ret = err;
+>>>  			goto out;
 >>>
 >> --
 >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

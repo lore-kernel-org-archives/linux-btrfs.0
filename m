@@ -1,43 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53332 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37602 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751869AbdJTPLI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Oct 2017 11:11:08 -0400
+        id S1751825AbdJXKrl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Oct 2017 06:47:41 -0400
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com, mathieu.desnoyers@efficios.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/3] btrfs: Remove unused function
-Date: Fri, 20 Oct 2017 18:10:59 +0300
-Message-Id: <1508512259-16867-3-git-send-email-nborisov@suse.com>
+Cc: mathieu.desnoyers@efficios.com, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Fix memory barriers usage with device stats counters
+Date: Tue, 24 Oct 2017 13:47:37 +0300
+Message-Id: <1508842057-28901-1-git-send-email-nborisov@suse.com>
 In-Reply-To: <1508512259-16867-1-git-send-email-nborisov@suse.com>
 References: <1508512259-16867-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's sole callsite was removed in a previous patch so just nuke it for good.
+Commit addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is cleared")
+reworked the way device stats changes are tracked. A new atomic dev_stats_ccnt
+counter was introduced which is incremented every time any of the device stats
+counters are changed. This serves as a flag whether there are any pending stats
+changes. However, this patch only partially implemented the correct memory
+barriers necessary:
 
+- It only ordered the stores to the counters but not the reads e.g. btrfs_run_dev_stats
+- It completely omitted any comments documenting the intended design and how
+the memory barriers pair with each-other
+
+This patch provides the necessary comments as well as adds a missing smp_rmb in
+btrfs_run_dev_stats. Furthermore since dev_stats_cnt is only a snapshot at best
+there was no point in reading the counter twice - once in btrfs_dev_stats_dirty
+and then again when assigning stats_cnt. Just collapse both reads into 1.
+
+Fixes: addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is cleared")
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/volumes.h | 5 -----
- 1 file changed, 5 deletions(-)
 
+V2: 
+ Reworded the comment in btrfs_run_dev_stats according to Mathieu Desnoyers'
+ feedback 
+
+ fs/btrfs/volumes.c | 18 ++++++++++++++++--
+ fs/btrfs/volumes.h | 12 ++++++++++++
+ 2 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4de498817e8a..7f8ed3e08ece 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7084,10 +7084,24 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_lock(&fs_devices->device_list_mutex);
+ 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+-		if (!device->dev_stats_valid || !btrfs_dev_stats_dirty(device))
++		stats_cnt = atomic_read(&device->dev_stats_ccnt);
++		if (!device->dev_stats_valid || stats_cnt == 0)
+ 			continue;
+ 
+-		stats_cnt = atomic_read(&device->dev_stats_ccnt);
++
++		/*
++		 * There is a LOAD-LOAD control dependency between the value of
++		 * dev_stats_ccnt and updating the on-disk values which requires
++		 * reading the in-memory counters. Such control dependencies
++		 * require explicit read memory barriers.
++		 *
++		 * This memory barriers pairs with smp_mb__before_atomic in
++		 * btrfs_dev_stat_inc/btrfs_dev_stat_set and with the full
++		 * barrier implied by atomic_xchg in
++		 * btrfs_dev_stats_read_and_reset
++		 */
++		smp_rmb();
++
+ 		ret = update_dev_stat_item(trans, fs_info, device);
+ 		if (!ret)
+ 			atomic_sub(stats_cnt, &device->dev_stats_ccnt);
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 0b8ddcbf8462..3509a68d274f 100644
+index 6108fdfec67f..c5dd48eb7b3d 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -489,11 +489,6 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
- int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
- 		       struct btrfs_fs_info *fs_info, u64 chunk_offset);
- 
--static inline int btrfs_dev_stats_dirty(struct btrfs_device *dev)
--{
--	return atomic_read(&dev->dev_stats_ccnt);
--}
--
- static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+@@ -498,6 +498,12 @@ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
  				      int index)
  {
+ 	atomic_inc(dev->dev_stat_values + index);
++	/*
++	 * This memory barrier orders stores updating statistics before stores
++	 * updating dev_stats_ccnt.
++	 *
++	 * It pairs with smp_rmb() in btrfs_run_dev_stats().
++	 */
+ 	smp_mb__before_atomic();
+ 	atomic_inc(&dev->dev_stats_ccnt);
+ }
+@@ -523,6 +529,12 @@ static inline void btrfs_dev_stat_set(struct btrfs_device *dev,
+ 				      int index, unsigned long val)
+ {
+ 	atomic_set(dev->dev_stat_values + index, val);
++	/*
++	 * This memory barrier orders stores updating statistics before stores
++	 * updating dev_stats_ccnt.
++	 *
++	 * It pairs with smp_rmb() in btrfs_run_dev_stats().
++	 */
+ 	smp_mb__before_atomic();
+ 	atomic_inc(&dev->dev_stats_ccnt);
+ }
 -- 
 2.7.4
 

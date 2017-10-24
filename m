@@ -1,59 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:39247 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932286AbdJZIda (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Oct 2017 04:33:30 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id B612347F13C2
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Oct 2017 16:33:24 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: qgroup: fix qgroup show sort by multi items
-Date: Thu, 26 Oct 2017 16:32:51 +0800
-Message-ID: <20171026083251.13454-1-lufq.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:60849 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751336AbdJXUgR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Oct 2017 16:36:17 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3BEFDAC55
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 20:36:16 +0000 (UTC)
+Date: Tue, 24 Oct 2017 22:34:28 +0200
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Next btrfs development cycle open - 4.16
+Message-ID: <20171024203428.GV3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should not free the string until we don't call strtok any longer.
+Hi,
 
-If the string is freed in advance, in fact, the second and subsequent
-sort items will be ignored.
+a friendly reminder of the timetable and what's expected at this phase.
 
-Fixes: 9fcdf8f8945b ("btrfs-progs: don't write to optarg in btrfs_qgroup_parse_sort_string")
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
- qgroup.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+4.13 - current
+4.14 - upcoming, urgent regression fixes only
+4.15 - development closed, pull request in prep, fixes or regressions only
+4.16 - development open, until 4.15-rc5
 
-diff --git a/qgroup.c b/qgroup.c
-index fffdbb12..7e8ef079 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -1222,7 +1222,8 @@ int btrfs_qgroup_parse_sort_string(const char *opt_arg,
- 	if (!opt_tmp)
- 		return -ENOMEM;
- 
--	while ((p = strtok(opt_tmp, ",")) != NULL) {
-+	p = strtok(opt_tmp, ",");
-+	while (p) {
- 		flag = 0;
- 		ptr_argv = all_sort_items;
- 
-@@ -1262,8 +1263,7 @@ int btrfs_qgroup_parse_sort_string(const char *opt_arg,
- 			}
- 			btrfs_qgroup_setup_comparer(comps, what_to_sort, order);
- 		}
--		free(opt_tmp);
--		opt_tmp = NULL;
-+		p = strtok(NULL, ",");
- 	}
- 
- out:
--- 
-2.14.3
+(https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Development_schedule)
 
+Besides the the usual cleanups and fixes, you can now start sending any
+patches that could be more intrusive and would benefit from a longer
+period of testing, or development revisions.
 
+The base of the patches should be the last announced pull request, which
+is going to be named 'for-4.15' in my k.org tree.  Reviewed patches will
+be collected in a branch that's usually named 'misc-next' in my devel
+git repos and is part of the for-next at k.org git repo.
 
+k.org: https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git
+devel1: http://repo.or.cz/linux-2.6/btrfs-unstable.git
+devel2: https://github.com/kdave/btrfs-devel
+
+d.

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.efficios.com ([167.114.142.141]:39666 "EHLO
+Received: from mail.efficios.com ([167.114.142.141]:58442 "EHLO
         mail.efficios.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751791AbdJTPXv (ORCPT
+        with ESMTP id S932534AbdJXNWH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Oct 2017 11:23:51 -0400
-Date: Fri, 20 Oct 2017 15:26:02 +0000 (UTC)
+        Tue, 24 Oct 2017 09:22:07 -0400
+Date: Tue, 24 Oct 2017 13:24:28 +0000 (UTC)
 From: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
 To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
-Message-ID: <1699614047.45797.1508513162616.JavaMail.zimbra@efficios.com>
-In-Reply-To: <1508512259-16867-1-git-send-email-nborisov@suse.com>
-References: <1508512259-16867-1-git-send-email-nborisov@suse.com>
-Subject: Re: [PATCH 1/3] btrfs: Fix memory barriers usage with device stats
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <521452675.47433.1508851468745.JavaMail.zimbra@efficios.com>
+In-Reply-To: <1508842057-28901-1-git-send-email-nborisov@suse.com>
+References: <1508512259-16867-1-git-send-email-nborisov@suse.com> <1508842057-28901-1-git-send-email-nborisov@suse.com>
+Subject: Re: [PATCH v2] btrfs: Fix memory barriers usage with device stats
  counters
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
@@ -19,18 +19,15 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
------ On Oct 20, 2017, at 11:10 AM, Nikolay Borisov nborisov@suse.com wrote:
-
-> Commit addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is
-> cleared")
+----- Nikolay Borisov <nborisov@suse.com> wrote:
+> Commit addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is cleared")
 > reworked the way device stats changes are tracked. A new atomic dev_stats_ccnt
 > counter was introduced which is incremented every time any of the device stats
 > counters are changed. This serves as a flag whether there are any pending stats
 > changes. However, this patch only partially implemented the correct memory
 > barriers necessary:
 > 
-> - It only ordered the stores to the counters but not the reads e.g.
-> btrfs_run_dev_stats
+> - It only ordered the stores to the counters but not the reads e.g. btrfs_run_dev_stats
 > - It completely omitted any comments documenting the intended design and how
 > the memory barriers pair with each-other
 > 
@@ -39,28 +36,34 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > there was no point in reading the counter twice - once in btrfs_dev_stats_dirty
 > and then again when assigning stats_cnt. Just collapse both reads into 1.
 > 
-> Fixes: addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is
-> cleared")
+> Fixes: addc3fa74e5b ("Btrfs: Fix the problem that the dirty flag of dev stats is cleared")
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+
+Reviewed-by: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+
 > ---
-> fs/btrfs/volumes.c | 16 ++++++++++++++--
-> fs/btrfs/volumes.h | 12 ++++++++++++
-> 2 files changed, 26 insertions(+), 2 deletions(-)
+> 
+> V2: 
+>  Reworded the comment in btrfs_run_dev_stats according to Mathieu Desnoyers'
+>  feedback 
+> 
+>  fs/btrfs/volumes.c | 18 ++++++++++++++++--
+>  fs/btrfs/volumes.h | 12 ++++++++++++
+>  2 files changed, 28 insertions(+), 2 deletions(-)
 > 
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 4de498817e8a..b6ab8c53477f 100644
+> index 4de498817e8a..7f8ed3e08ece 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -7084,10 +7084,22 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle
-> *trans,
-> 
-> 	mutex_lock(&fs_devices->device_list_mutex);
-> 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+> @@ -7084,10 +7084,24 @@ int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+>  
+>  	mutex_lock(&fs_devices->device_list_mutex);
+>  	list_for_each_entry(device, &fs_devices->devices, dev_list) {
 > -		if (!device->dev_stats_valid || !btrfs_dev_stats_dirty(device))
 > +		stats_cnt = atomic_read(&device->dev_stats_ccnt);
 > +		if (!device->dev_stats_valid || stats_cnt == 0)
-> 			continue;
-> 
+>  			continue;
+>  
 > -		stats_cnt = atomic_read(&device->dev_stats_ccnt);
 > +
 > +		/*
@@ -70,60 +73,48 @@ List-ID: <linux-btrfs.vger.kernel.org>
 > +		 * require explicit read memory barriers.
 > +		 *
 > +		 * This memory barriers pairs with smp_mb__before_atomic in
-> +		 * btrfs_dev_stat_inc/btrfs_dev_stat_read_and_reset/btrfs_dev_stat_set
-
-should be:
-
-"This memory barriers pairs with smp_mb__before_atomic in
-btrfs_dev_stat_inc/btrfs_dev_stat_set, and with the full
-barrier implied by atomic_xchg in
-btrfs_dev_stat_read_and_reset"
-
-Thanks,
-
-Mathieu
-
-
+> +		 * btrfs_dev_stat_inc/btrfs_dev_stat_set and with the full
+> +		 * barrier implied by atomic_xchg in
+> +		 * btrfs_dev_stats_read_and_reset
 > +		 */
 > +		smp_rmb();
 > +
-> 		ret = update_dev_stat_item(trans, fs_info, device);
-> 		if (!ret)
-> 			atomic_sub(stats_cnt, &device->dev_stats_ccnt);
+>  		ret = update_dev_stat_item(trans, fs_info, device);
+>  		if (!ret)
+>  			atomic_sub(stats_cnt, &device->dev_stats_ccnt);
 > diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
 > index 6108fdfec67f..c5dd48eb7b3d 100644
 > --- a/fs/btrfs/volumes.h
 > +++ b/fs/btrfs/volumes.h
-> @@ -498,6 +498,12 @@ static inline void btrfs_dev_stat_inc(struct btrfs_device
-> *dev,
-> 				      int index)
-> {
-> 	atomic_inc(dev->dev_stat_values + index);
+> @@ -498,6 +498,12 @@ static inline void btrfs_dev_stat_inc(struct btrfs_device *dev,
+>  				      int index)
+>  {
+>  	atomic_inc(dev->dev_stat_values + index);
 > +	/*
 > +	 * This memory barrier orders stores updating statistics before stores
 > +	 * updating dev_stats_ccnt.
 > +	 *
 > +	 * It pairs with smp_rmb() in btrfs_run_dev_stats().
 > +	 */
-> 	smp_mb__before_atomic();
-> 	atomic_inc(&dev->dev_stats_ccnt);
-> }
-> @@ -523,6 +529,12 @@ static inline void btrfs_dev_stat_set(struct btrfs_device
-> *dev,
-> 				      int index, unsigned long val)
-> {
-> 	atomic_set(dev->dev_stat_values + index, val);
+>  	smp_mb__before_atomic();
+>  	atomic_inc(&dev->dev_stats_ccnt);
+>  }
+> @@ -523,6 +529,12 @@ static inline void btrfs_dev_stat_set(struct btrfs_device *dev,
+>  				      int index, unsigned long val)
+>  {
+>  	atomic_set(dev->dev_stat_values + index, val);
 > +	/*
 > +	 * This memory barrier orders stores updating statistics before stores
 > +	 * updating dev_stats_ccnt.
 > +	 *
 > +	 * It pairs with smp_rmb() in btrfs_run_dev_stats().
 > +	 */
-> 	smp_mb__before_atomic();
-> 	atomic_inc(&dev->dev_stats_ccnt);
-> }
-> --
+>  	smp_mb__before_atomic();
+>  	atomic_inc(&dev->dev_stats_ccnt);
+>  }
+> -- 
 > 2.7.4
+> 
 
 -- 
 Mathieu Desnoyers

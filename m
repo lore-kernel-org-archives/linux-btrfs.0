@@ -1,159 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f67.google.com ([209.85.215.67]:35735 "EHLO
-        mail-lf0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751168AbdJHNMK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Oct 2017 09:12:10 -0400
-Received: by mail-lf0-f67.google.com with SMTP id a132so817921lfa.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Oct 2017 06:12:09 -0700 (PDT)
-From: Timofey Titovets <nefelim4ag@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:57110 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932253AbdJXIum (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Oct 2017 04:50:42 -0400
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v2] Btrfs: heuristic add shannon entropy calculation
-Date: Sun,  8 Oct 2017 16:11:59 +0300
-Message-Id: <20171008131159.31239-1-nefelim4ag@gmail.com>
+Cc: bo.li.liu@oracle.com, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Remove redundant mirror_num arg
+Date: Tue, 24 Oct 2017 11:50:39 +0300
+Message-Id: <1508835039-26342-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Byte distribution check in heuristic will filter edge data
-cases and some time fail to classificate input data
+The following callpath is always invoked with mirror_num set to 0, so let's
+remove it as an argument and directly pass 0 to __do_redpage. No functional 
+change
 
-Let's fix that by adding Shannon entropy calculation,
-that will cover classification of most other data types.
+extent_readpages
+  __extent_readpages
+    __do_contiguous_readpages
+      __do_readpage
 
-As Shannon entropy need log2 with some precision to work,
-let's use ilog2(N) and for increase precision,
-by do ilog2(pow(N, 4))
-
-Shannon entropy slightly changed for avoiding signed numbers
-and divisions.
-
-Changes:
-  v1 -> v2:
-    - Replace log2_lshift4 wiht ilog2
-    - To compensate accuracy errors of ilog2
-      @ENTROPY_LVL_ACEPTABLE 70 -> 65
-      @ENTROPY_LVL_HIGH      85 -> 80
-    - Drop usage of u64 from shannon calculation
-
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/compression.c | 83 +++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 82 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 0060bc4ae5f2..8efbce5633b5 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -34,6 +34,7 @@
- #include <linux/slab.h>
- #include <linux/sched/mm.h>
- #include <linux/sort.h>
-+#include <linux/log2.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -1224,6 +1225,60 @@ int btrfs_decompress_buf2page(const char *buf, unsigned long buf_start,
- 	return 1;
- }
-
-+/*
-+ * Shannon Entropy calculation
-+ *
-+ * Pure byte distribution analyze fail to determine
-+ * compressiability of data. Try calculate entropy to
-+ * estimate the average minimum number of bits needed
-+ * to encode a sample data.
-+ *
-+ * For comfort, use return of percentage of needed bit's,
-+ * instead of bit's amaount directly.
-+ *
-+ * @ENTROPY_LVL_ACEPTABLE - below that threshold sample has low byte
-+ * entropy and can be compressible with high probability
-+ *
-+ * @ENTROPY_LVL_HIGH - data are not compressible with high probability,
-+ *
-+ * Use of ilog2() decrease precision, so to see ~ correct answer
-+ * LVL decreased by 5.
-+ */
-+
-+#define ENTROPY_LVL_ACEPTABLE 65
-+#define ENTROPY_LVL_HIGH 80
-+
-+/*
-+ * For increase precision in shannon_entropy calculation
-+ * Let's do pow(n, M) to save more digits after comma
-+ *
-+ * Max int bit lengh 64
-+ * ilog2(MAX_SAMPLE_SIZE) -> 13
-+ * 13*4 = 52 < 64 -> M = 4
-+ * So use pow(n, 4)
-+ */
-+static inline u32 ilog2_w(u64 n)
-+{
-+	return ilog2(n * n * n * n);
-+}
-+
-+static u32 shannon_entropy(struct heuristic_ws *ws)
-+{
-+	const u32 entropy_max = 8*ilog2_w(2);
-+	u32 entropy_sum = 0;
-+	u32 p, p_base, sz_base;
-+	u32 i;
-+
-+	sz_base = ilog2_w(ws->sample_size);
-+	for (i = 0; i < BUCKET_SIZE && ws->bucket[i].count > 0; i++) {
-+		p = ws->bucket[i].count;
-+		p_base = ilog2_w(p);
-+		entropy_sum += p * (sz_base - p_base);
-+	}
-+
-+	entropy_sum /= ws->sample_size;
-+	return entropy_sum * 100 / entropy_max;
-+}
-
- /* Compare buckets by size, ascending */
- static inline int bucket_comp_rev(const void *lv, const void *rv)
-@@ -1404,7 +1459,7 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 	struct heuristic_ws *ws;
- 	u32 i;
- 	u8 byte;
--	int ret = 1;
-+	int ret = 0;
-
- 	ws = list_entry(ws_list, struct heuristic_ws, list);
-
-@@ -1439,6 +1494,32 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 		goto out;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 970190cd347e..b0dea802f24b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3093,7 +3093,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+ 					     u64 start, u64 end,
+ 					     get_extent_t *get_extent,
+ 					     struct extent_map **em_cached,
+-					     struct bio **bio, int mirror_num,
++					     struct bio **bio,
+ 					     unsigned long *bio_flags,
+ 					     u64 *prev_em_start)
+ {
+@@ -3115,7 +3115,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+ 
+ 	for (index = 0; index < nr_pages; index++) {
+ 		__do_readpage(tree, pages[index], get_extent, em_cached, bio,
+-			      mirror_num, bio_flags, 0, prev_em_start);
++			      0, bio_flags, 0, prev_em_start);
+ 		put_page(pages[index]);
  	}
+ }
+@@ -3124,8 +3124,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
+ 			       struct page *pages[],
+ 			       int nr_pages, get_extent_t *get_extent,
+ 			       struct extent_map **em_cached,
+-			       struct bio **bio, int mirror_num,
+-			       unsigned long *bio_flags,
++			       struct bio **bio, unsigned long *bio_flags,
+ 			       u64 *prev_em_start)
+ {
+ 	u64 start = 0;
+@@ -3146,7 +3145,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
+ 			__do_contiguous_readpages(tree, &pages[first_index],
+ 						  index - first_index, start,
+ 						  end, get_extent, em_cached,
+-						  bio, mirror_num, bio_flags,
++						  bio, bio_flags,
+ 						  prev_em_start);
+ 			start = page_start;
+ 			end = start + PAGE_SIZE - 1;
+@@ -3158,8 +3157,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
+ 		__do_contiguous_readpages(tree, &pages[first_index],
+ 					  index - first_index, start,
+ 					  end, get_extent, em_cached, bio,
+-					  mirror_num, bio_flags,
+-					  prev_em_start);
++					  bio_flags, prev_em_start);
+ }
+ 
+ static int __extent_read_full_page(struct extent_io_tree *tree,
+@@ -4189,12 +4187,12 @@ int extent_readpages(struct extent_io_tree *tree,
+ 		if (nr < ARRAY_SIZE(pagepool))
+ 			continue;
+ 		__extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
+-				   &bio, 0, &bio_flags, &prev_em_start);
++				   &bio, &bio_flags, &prev_em_start);
+ 		nr = 0;
+ 	}
+ 	if (nr)
+ 		__extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
+-				   &bio, 0, &bio_flags, &prev_em_start);
++				   &bio, &bio_flags, &prev_em_start);
+ 
+ 	if (em_cached)
+ 		free_extent_map(em_cached);
+-- 
+2.7.4
 
-+	i = shannon_entropy(ws);
-+	if (i <= ENTROPY_LVL_ACEPTABLE) {
-+		ret = 4;
-+		goto out;
-+	}
-+
-+	/*
-+	 * At below entropy levels additional
-+	 * analysis needed for show green light to compression
-+	 * For now just assume that compression at that level are
-+	 * not worth for resources, becuase:
-+	 * 1. that possible to defrag data later
-+	 * 2. Case where that will really show compressible data are rare
-+	 *   ex. 150 byte types, every bucket have counter at level ~54
-+	 *   Heuristic will be confused, that can happen when data
-+	 *   have some internal repeated patterns abbacbbc..
-+	 *   that can be detected only by analize sample for byte pairs
-+	 */
-+	if (i < ENTROPY_LVL_HIGH) {
-+		ret = 5;
-+		goto out;
-+	} else {
-+		ret = 0;
-+		goto out;
-+	}
-+
- out:
- 	__free_workspace(0, ws_list, true);
- 	return ret;
---
-2.14.2

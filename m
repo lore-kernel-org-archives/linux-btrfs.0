@@ -1,29 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19483 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:20866 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751220AbdJXBmB (ORCPT
+        with ESMTP id S1751226AbdJXBsc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Oct 2017 21:42:01 -0400
-Subject: Re: [PATCH 1/2] btrfs-progs: fi: move dev_to_fsid() to cmds-fi-usage
- for later use
+        Mon, 23 Oct 2017 21:48:32 -0400
+Subject: Re: [PATCH 2/2] btrfs-progs: fi: enable fi usage for filesystem top
+ of seed device
 To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <01e66c4f-9f8d-0bf2-1f7a-bc5784a907f3@jp.fujitsu.com>
- <816d894d-58df-8dba-9e3c-10d2ea5eb5bb@jp.fujitsu.com>
+ <b9bb00ed-ff7c-df17-2228-60a3a36507f2@jp.fujitsu.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <dede4e79-3493-f27c-e6a4-29bd779964b5@oracle.com>
-Date: Tue, 24 Oct 2017 09:41:55 +0800
+Message-ID: <b49930eb-e971-da94-c554-1b2f1107aae0@oracle.com>
+Date: Tue, 24 Oct 2017 09:48:25 +0800
 MIME-Version: 1.0
-In-Reply-To: <816d894d-58df-8dba-9e3c-10d2ea5eb5bb@jp.fujitsu.com>
+In-Reply-To: <b9bb00ed-ff7c-df17-2228-60a3a36507f2@jp.fujitsu.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 10/23/2017 12:44 PM, Misono, Tomohiro wrote:
-> Move dev_to_fsid() from cmds-filesystem.c to cmds-fi-usage.c in order to
-> call it from both "fi show" and "fi usage".
+On 10/23/2017 12:45 PM, Misono, Tomohiro wrote:
+> Currently "fi usage" (and "dev usage") cannot run for the filesystem using
+> seed device.
+> 
+> This is because FS_INFO ioctl returns the number of devices excluding
+> seeds, but load_device_info() tries to access valid device from devid 0
+> to max_id, and results in accessing seeds too (thus causing mismatching
+> of number of devices).
+
+  A long time back I tried to fix this by fixing the FS_INFO num_devs
+  itself, but the concern was backward compatibility of the ioctl.
+  However there is no such a concern here. I am ok with this approach.
+
+> Since only the size of non-seed devices is matter, fix this by just
+> skipping seed device by checking device's fsid and comparing it to the fsid
+> obtained by FS_INFO ioctl.
 > 
 > Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
@@ -31,113 +44,49 @@ Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
 Thanks, Anand
 
+
 > ---
->   cmds-fi-usage.c   | 29 +++++++++++++++++++++++++++++
->   cmds-fi-usage.h   |  1 +
->   cmds-filesystem.c | 27 ---------------------------
->   3 files changed, 30 insertions(+), 27 deletions(-)
+>   cmds-fi-usage.c | 15 +++++++++++++++
+>   1 file changed, 15 insertions(+)
 > 
 > diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-> index 6c846c1..a72fb4e 100644
+> index a72fb4e..50c7e51 100644
 > --- a/cmds-fi-usage.c
 > +++ b/cmds-fi-usage.c
-> @@ -22,6 +22,7 @@
->   #include <errno.h>
->   #include <stdarg.h>
->   #include <getopt.h>
-> +#include <fcntl.h>
+> @@ -545,6 +545,7 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
+>   	struct btrfs_ioctl_fs_info_args fi_args;
+>   	struct btrfs_ioctl_dev_info_args dev_info;
+>   	struct device_info *info;
+> +	__u8 fsid[BTRFS_UUID_SIZE];
 >   
->   #include "utils.h"
->   #include "kerncompat.h"
-> @@ -29,6 +30,7 @@
->   #include "string-table.h"
->   #include "cmds-fi-usage.h"
->   #include "commands.h"
-> +#include "disk-io.h"
+>   	*device_info_count = 0;
+>   	*device_info_ptr = NULL;
+> @@ -568,6 +569,7 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
+>   		if (ndevs >= fi_args.num_devices) {
+>   			error("unexpected number of devices: %d >= %llu", ndevs,
+>   				(unsigned long long)fi_args.num_devices);
+> +			error("if seed device is used, try run as root.");
+>   			goto out;
+>   		}
+>   		memset(&dev_info, 0, sizeof(dev_info));
+> @@ -580,6 +582,19 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
+>   			goto out;
+>   		}
 >   
->   #include "version.h"
->   #include "help.h"
-> @@ -506,6 +508,33 @@ static int cmp_device_info(const void *a, const void *b)
->   			((struct device_info *)b)->path);
->   }
->   
-> +int dev_to_fsid(const char *dev, __u8 *fsid)
-> +{
-> +	struct btrfs_super_block *disk_super;
-> +	char buf[BTRFS_SUPER_INFO_SIZE];
-> +	int ret;
-> +	int fd;
+> +		/*
+> +		 * Skip seed device by cheking device's fsid (require root).
+> +		 * Ignore EACCES since if seed is not used this function works
+> +		 * correctly without root privilege.
+> +		 */
+> +		ret = dev_to_fsid((const char *)dev_info.path, fsid);
+> +		if (ret != -EACCES) {
+> +			if (ret)
+> +				goto out;
+> +			if (memcmp(fi_args.fsid, fsid, BTRFS_FSID_SIZE) != 0)
+> +				continue;
+> +		}
 > +
-> +	fd = open(dev, O_RDONLY);
-> +	if (fd < 0) {
-> +		ret = -errno;
-> +		return ret;
-> +	}
-> +
-> +	disk_super = (struct btrfs_super_block *)buf;
-> +	ret = btrfs_read_dev_super(fd, disk_super,
-> +				   BTRFS_SUPER_INFO_OFFSET, SBREAD_DEFAULT);
-> +	if (ret)
-> +		goto out;
-> +
-> +	memcpy(fsid, disk_super->fsid, BTRFS_FSID_SIZE);
-> +	ret = 0;
-> +
-> +out:
-> +	close(fd);
-> +	return ret;
-> +}
-> +
->   /*
->    *  This function loads the device_info structure and put them in an array
->    */
-> diff --git a/cmds-fi-usage.h b/cmds-fi-usage.h
-> index a399517..0e82951 100644
-> --- a/cmds-fi-usage.h
-> +++ b/cmds-fi-usage.h
-> @@ -50,5 +50,6 @@ void print_device_chunks(struct device_info *devinfo,
->   		struct chunk_info *chunks_info_ptr,
->   		int chunks_info_count, unsigned unit_mode);
->   void print_device_sizes(struct device_info *devinfo, unsigned unit_mode);
-> +int dev_to_fsid(const char *dev, __u8 *fsid);
->   
->   #endif
-> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> index c39f2d1..3dc86a2 100644
-> --- a/cmds-filesystem.c
-> +++ b/cmds-filesystem.c
-> @@ -431,33 +431,6 @@ out:
->   	return !found;
->   }
->   
-> -static int dev_to_fsid(const char *dev, __u8 *fsid)
-> -{
-> -	struct btrfs_super_block *disk_super;
-> -	char buf[BTRFS_SUPER_INFO_SIZE];
-> -	int ret;
-> -	int fd;
-> -
-> -	fd = open(dev, O_RDONLY);
-> -	if (fd < 0) {
-> -		ret = -errno;
-> -		return ret;
-> -	}
-> -
-> -	disk_super = (struct btrfs_super_block *)buf;
-> -	ret = btrfs_read_dev_super(fd, disk_super,
-> -				   BTRFS_SUPER_INFO_OFFSET, SBREAD_DEFAULT);
-> -	if (ret)
-> -		goto out;
-> -
-> -	memcpy(fsid, disk_super->fsid, BTRFS_FSID_SIZE);
-> -	ret = 0;
-> -
-> -out:
-> -	close(fd);
-> -	return ret;
-> -}
-> -
->   static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
->   {
->   	struct btrfs_fs_devices *cur_seed, *next_seed;
+>   		info[ndevs].devid = dev_info.devid;
+>   		if (!dev_info.path[0]) {
+>   			strcpy(info[ndevs].path, "missing");
 > 

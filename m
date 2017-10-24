@@ -1,102 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:34559 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:35517 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751674AbdJXIjz (ORCPT
+        with ESMTP id S1751712AbdJXIkK (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 24 Oct 2017 04:39:55 -0400
+        Tue, 24 Oct 2017 04:40:10 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
-Subject: [PATCH 3/6] btrfs: qgroup: Make qgroup_reserve and its callers to use separate reservation type
-Date: Tue, 24 Oct 2017 16:39:38 +0800
-Message-Id: <20171024083941.21428-4-wqu@suse.com>
+Subject: [PATCH 4/6] btrfs: qgroup: Fix wrong qgroup reservation inheritance for relationship update
+Date: Tue, 24 Oct 2017 16:39:39 +0800
+Message-Id: <20171024083941.21428-5-wqu@suse.com>
 In-Reply-To: <20171024083941.21428-1-wqu@suse.com>
 References: <20171024083941.21428-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since most caller of qgroup_reserve() is already defined by type,
-converting qgroup_reserve() is quite an easy work.
+When modifying qgroup relationship, for qgroup which only owns exclusive
+extents, we will go through quick update path.
+
+In quick update path, we will just adding/removing exclusive and reference
+number.
+
+However we did the opposite for qgroup reservation from the very
+beginning.
+
+In fact, we should also inherit the qgroup reservation space, just like
+exclusive and reference numbers.
+
+Fix by using the newly introduced
+qgroup_rsv_increase/decrease_by_qgroup() function call.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/qgroup.c | 20 +++++++++-----------
- 1 file changed, 9 insertions(+), 11 deletions(-)
+ fs/btrfs/qgroup.c | 39 ++++++++++++++++++---------------------
+ 1 file changed, 18 insertions(+), 21 deletions(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 04fd145516ad..7b89da9589c1 100644
+index 7b89da9589c1..ba6f60fd0e96 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2399,17 +2399,18 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- static bool qgroup_check_limits(const struct btrfs_qgroup *qg, u64 num_bytes)
- {
- 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
--	    qg->reserved + (s64)qg->rfer + num_bytes > qg->max_rfer)
-+	    qgroup_rsv_total(qg) + (s64)qg->rfer + num_bytes > qg->max_rfer)
- 		return false;
- 
- 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
--	    qg->reserved + (s64)qg->excl + num_bytes > qg->max_excl)
-+	    qgroup_rsv_total(qg) + (s64)qg->excl + num_bytes > qg->max_excl)
- 		return false;
- 
- 	return true;
+@@ -1069,21 +1069,24 @@ static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
+ #endif
+ 	qgroup->reserved = 0;
  }
- 
--static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
-+static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
-+			  enum btrfs_qgroup_rsv_type type)
++
+ /*
+- * The easy accounting, if we are adding/removing the only ref for an extent
+- * then this qgroup and all of the parent qgroups get their reference and
+- * exclusive counts adjusted.
++ * The easy accounting, we're updating qgroup relationship whose child qgroup
++ * only have exclusive extents.
++ * In this case, we only need to update the rfer/excl, and inherit rsv from
++ * child qgroup (@src)
+  *
+  * Caller should hold fs_info->qgroup_lock.
+  */
+ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 				    struct ulist *tmp, u64 ref_root,
+-				    u64 num_bytes, int sign)
++				    struct btrfs_qgroup *src, int sign)
  {
- 	struct btrfs_root *quota_root;
  	struct btrfs_qgroup *qgroup;
-@@ -2461,7 +2462,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
- 			 * Commit the tree and retry, since we may have
- 			 * deletions which would free up space.
- 			 */
--			if (!retried && qg->reserved > 0) {
-+			if (!retried && qgroup_rsv_total(qg) > 0) {
- 				struct btrfs_trans_handle *trans;
+ 	struct btrfs_qgroup_list *glist;
+ 	struct ulist_node *unode;
+ 	struct ulist_iterator uiter;
++	u64 num_bytes = src->excl;
+ 	int ret = 0;
  
- 				spin_unlock(&fs_info->qgroup_lock);
-@@ -2501,7 +2502,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
- 		qg = unode_aux_to_qgroup(unode);
- 
- 		trace_qgroup_update_reserve(fs_info, qg, num_bytes);
--		qg->reserved += num_bytes;
-+		qgroup_rsv_increase(qg, num_bytes, type);
- 	}
- 
- out:
-@@ -2548,10 +2549,7 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 		qg = unode_aux_to_qgroup(unode);
- 
- 		trace_qgroup_update_reserve(fs_info, qg, -(s64)num_bytes);
--		if (qg->reserved < num_bytes)
--			report_reserved_underflow(fs_info, qg, num_bytes);
+ 	qgroup = find_qgroup_rb(fs_info, ref_root);
+@@ -1096,13 +1099,12 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 	WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 	qgroup->excl += sign * num_bytes;
+ 	qgroup->excl_cmpr += sign * num_bytes;
+-	if (sign > 0) {
+-		trace_qgroup_update_reserve(fs_info, qgroup, -(s64)num_bytes);
+-		if (qgroup->reserved < num_bytes)
+-			report_reserved_underflow(fs_info, qgroup, num_bytes);
 -		else
--			qg->reserved -= num_bytes;
-+		qgroup_rsv_decrease(qg, num_bytes, type);
+-			qgroup->reserved -= num_bytes;
+-	}
++
++	/* *Inherit* qgroup rsv info from @src */
++	if (sign > 0)
++		qgroup_rsv_increase_by_qgroup(qgroup, src);
++	else
++		qgroup_rsv_decrease_by_qgroup(qgroup, src);
  
- 		list_for_each_entry(glist, &qg->groups, next_group) {
- 			ret = ulist_add(fs_info->qgroup_ulist,
-@@ -2939,7 +2937,7 @@ int btrfs_qgroup_reserve_data(struct inode *inode,
- 					to_reserve, QGROUP_RESERVE);
- 	if (ret < 0)
- 		goto cleanup;
--	ret = qgroup_reserve(root, to_reserve, true);
-+	ret = qgroup_reserve(root, to_reserve, true, BTRFS_QGROUP_RSV_DATA);
- 	if (ret < 0)
- 		goto cleanup;
+ 	qgroup_dirty(fs_info, qgroup);
  
-@@ -3093,7 +3091,7 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
+@@ -1122,15 +1124,10 @@ static int __qgroup_excl_accounting(struct btrfs_fs_info *fs_info,
+ 		qgroup->rfer_cmpr += sign * num_bytes;
+ 		WARN_ON(sign < 0 && qgroup->excl < num_bytes);
+ 		qgroup->excl += sign * num_bytes;
+-		if (sign > 0) {
+-			trace_qgroup_update_reserve(fs_info, qgroup,
+-						    -(s64)num_bytes);
+-			if (qgroup->reserved < num_bytes)
+-				report_reserved_underflow(fs_info, qgroup,
+-							  num_bytes);
+-			else
+-				qgroup->reserved -= num_bytes;
+-		}
++		if (sign > 0)
++			qgroup_rsv_increase_by_qgroup(qgroup, src);
++		else
++			qgroup_rsv_decrease_by_qgroup(qgroup, src);
+ 		qgroup->excl_cmpr += sign * num_bytes;
+ 		qgroup_dirty(fs_info, qgroup);
  
- 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
- 	trace_qgroup_meta_reserve(root, (s64)num_bytes);
--	ret = qgroup_reserve(root, num_bytes, enforce);
-+	ret = qgroup_reserve(root, num_bytes, enforce, BTRFS_QGROUP_RSV_META);
- 	if (ret < 0)
- 		return ret;
- 	atomic64_add(num_bytes, &root->qgroup_meta_rsv);
+@@ -1173,7 +1170,7 @@ static int quick_update_accounting(struct btrfs_fs_info *fs_info,
+ 	if (qgroup->excl == qgroup->rfer) {
+ 		ret = 0;
+ 		err = __qgroup_excl_accounting(fs_info, tmp, dst,
+-					       qgroup->excl, sign);
++					       qgroup, sign);
+ 		if (err < 0) {
+ 			ret = err;
+ 			goto out;
 -- 
 2.14.2
 

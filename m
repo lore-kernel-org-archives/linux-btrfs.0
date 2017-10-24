@@ -1,110 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:53103 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:34559 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751620AbdJXIjz (ORCPT
+        with ESMTP id S1751674AbdJXIjz (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 24 Oct 2017 04:39:55 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
-Subject: [PATCH 2/6] btrfs: qgroup: Introduce helpers to update and access new qgroup rsv
-Date: Tue, 24 Oct 2017 16:39:37 +0800
-Message-Id: <20171024083941.21428-3-wqu@suse.com>
+Subject: [PATCH 3/6] btrfs: qgroup: Make qgroup_reserve and its callers to use separate reservation type
+Date: Tue, 24 Oct 2017 16:39:38 +0800
+Message-Id: <20171024083941.21428-4-wqu@suse.com>
 In-Reply-To: <20171024083941.21428-1-wqu@suse.com>
 References: <20171024083941.21428-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce helpers to:
-
-1) Get total reserved space
-   For limit calculation
-
-2) Increase reserved space for given type
-2) Decrease reserved space for given type
+Since most caller of qgroup_reserve() is already defined by type,
+converting qgroup_reserve() is quite an easy work.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/qgroup.c | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 66 insertions(+)
+ fs/btrfs/qgroup.c | 20 +++++++++-----------
+ 1 file changed, 9 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index fe3adb996883..04fd145516ad 100644
+index 04fd145516ad..7b89da9589c1 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -47,6 +47,72 @@
-  *  - check all ioctl parameters
-  */
- 
-+/*
-+ * Helpers to access qgroup reservation
-+ *
-+ * Callers should ensure the lock context and type are valid
-+ */
-+
-+static u64 qgroup_rsv_total(const struct btrfs_qgroup *qgroup)
-+{
-+	u64 ret = 0;
-+	int i;
-+
-+	for (i = 0; i <= BTRFS_QGROUP_RSV_TYPES; i++)
-+		ret += qgroup->rsv.values[i];
-+
-+	return ret;
-+}
-+
-+static const char *qgroup_rsv_type_str(enum btrfs_qgroup_rsv_type type)
-+{
-+	if (type == BTRFS_QGROUP_RSV_DATA)
-+		return "data";
-+	if (type == BTRFS_QGROUP_RSV_META)
-+		return "meta";
-+	return NULL;
-+}
-+
-+static void qgroup_rsv_increase(struct btrfs_qgroup *qgroup, u64 num_bytes,
-+				enum btrfs_qgroup_rsv_type type)
-+{
-+	qgroup->rsv.values[type] += num_bytes;
-+}
-+
-+static void qgroup_rsv_decrease(struct btrfs_qgroup *qgroup, u64 num_bytes,
-+				enum btrfs_qgroup_rsv_type type)
-+{
-+	if (qgroup->rsv.values[type] >= num_bytes) {
-+		qgroup->rsv.values[type] -= num_bytes;
-+		return;
-+	}
-+#ifdef CONFIG_BTRFS_DEBUG
-+	WARN_RATELIMIT(1,
-+		"qgroup %llu %s reserved space underflow, have %llu to free %llu",
-+		qgroup->qgroupid, qgroup_rsv_type_str(type),
-+		qgroup->rsv.values[type], num_bytes);
-+#endif
-+	qgroup->rsv.values[type] = 0;
-+}
-+
-+static void qgroup_rsv_increase_by_qgroup(struct btrfs_qgroup *dest,
-+					  struct btrfs_qgroup *src)
-+{
-+	int i;
-+
-+	for (i = 0; i <= BTRFS_QGROUP_RSV_TYPES; i++)
-+		qgroup_rsv_increase(dest, src->rsv.values[i], i);
-+}
-+
-+static void qgroup_rsv_decrease_by_qgroup(struct btrfs_qgroup *dest,
-+					  struct btrfs_qgroup *src)
-+{
-+	int i;
-+
-+	for (i = 0; i <= BTRFS_QGROUP_RSV_TYPES; i++)
-+		qgroup_rsv_decrease(dest, src->rsv.values[i], i);
-+}
-+
- static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
- 					   int mod)
+@@ -2399,17 +2399,18 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ static bool qgroup_check_limits(const struct btrfs_qgroup *qg, u64 num_bytes)
  {
+ 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+-	    qg->reserved + (s64)qg->rfer + num_bytes > qg->max_rfer)
++	    qgroup_rsv_total(qg) + (s64)qg->rfer + num_bytes > qg->max_rfer)
+ 		return false;
+ 
+ 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
+-	    qg->reserved + (s64)qg->excl + num_bytes > qg->max_excl)
++	    qgroup_rsv_total(qg) + (s64)qg->excl + num_bytes > qg->max_excl)
+ 		return false;
+ 
+ 	return true;
+ }
+ 
+-static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
++static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
++			  enum btrfs_qgroup_rsv_type type)
+ {
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_qgroup *qgroup;
+@@ -2461,7 +2462,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
+ 			 * Commit the tree and retry, since we may have
+ 			 * deletions which would free up space.
+ 			 */
+-			if (!retried && qg->reserved > 0) {
++			if (!retried && qgroup_rsv_total(qg) > 0) {
+ 				struct btrfs_trans_handle *trans;
+ 
+ 				spin_unlock(&fs_info->qgroup_lock);
+@@ -2501,7 +2502,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
+ 		qg = unode_aux_to_qgroup(unode);
+ 
+ 		trace_qgroup_update_reserve(fs_info, qg, num_bytes);
+-		qg->reserved += num_bytes;
++		qgroup_rsv_increase(qg, num_bytes, type);
+ 	}
+ 
+ out:
+@@ -2548,10 +2549,7 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 		qg = unode_aux_to_qgroup(unode);
+ 
+ 		trace_qgroup_update_reserve(fs_info, qg, -(s64)num_bytes);
+-		if (qg->reserved < num_bytes)
+-			report_reserved_underflow(fs_info, qg, num_bytes);
+-		else
+-			qg->reserved -= num_bytes;
++		qgroup_rsv_decrease(qg, num_bytes, type);
+ 
+ 		list_for_each_entry(glist, &qg->groups, next_group) {
+ 			ret = ulist_add(fs_info->qgroup_ulist,
+@@ -2939,7 +2937,7 @@ int btrfs_qgroup_reserve_data(struct inode *inode,
+ 					to_reserve, QGROUP_RESERVE);
+ 	if (ret < 0)
+ 		goto cleanup;
+-	ret = qgroup_reserve(root, to_reserve, true);
++	ret = qgroup_reserve(root, to_reserve, true, BTRFS_QGROUP_RSV_DATA);
+ 	if (ret < 0)
+ 		goto cleanup;
+ 
+@@ -3093,7 +3091,7 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
+ 
+ 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
+ 	trace_qgroup_meta_reserve(root, (s64)num_bytes);
+-	ret = qgroup_reserve(root, num_bytes, enforce);
++	ret = qgroup_reserve(root, num_bytes, enforce, BTRFS_QGROUP_RSV_META);
+ 	if (ret < 0)
+ 		return ret;
+ 	atomic64_add(num_bytes, &root->qgroup_meta_rsv);
 -- 
 2.14.2
 

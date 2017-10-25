@@ -1,97 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:41142 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:38190 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752495AbdJaI25 (ORCPT
+        with ESMTP id S1751817AbdJYCzG (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 31 Oct 2017 04:28:57 -0400
+        Tue, 24 Oct 2017 22:55:06 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH v2] btrfs-progs: print-tree: Enehance uuid item print
-Date: Tue, 31 Oct 2017 16:28:50 +0800
-Message-Id: <20171031082850.19583-1-wqu@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 0/6] btrfs: qgroup: Separate qgroup reservation types
+Date: Wed, 25 Oct 2017 10:54:39 +0800
+Message-Id: <20171025025445.16617-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For key type BTRFS_UUID_KEY_SUBVOL or BTRFS_UUID_KEY_RECEIVED_SUBVOL the
-key objectid and key offset is just half of the UUID.
+This patchset will separate original qgroup->reserved into a new
+structure, btrfs_qgroup_rsv, which has different reservation for
+different types.
 
-However we just print the key as %llu, which is converted from little
-endian, not byte order for UUID, nor the traditional 36 bytes human
-readable uuid format.
+Currently it will only includes data and meta type.
 
-Although true engineer can easily handle it by convert it in their
-brain, but to make it easier for search, output the result UUID using
-the 36 chars format.
+The main advantage is:
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Inspired by UUID related work from Misono-san.
+1) Better underflow detection
+   Now it can detection which reservation type is causing the underflow.
+
+2) Easier to expend
+   All interface is updated to access reservation type, it will get
+   super easy to be expended, especially for later delalloc reservation.
+
+3) Better encapsulation
+   No longer need to manually trace underflow or add trace events, all
+   encapsulated into 2 functions.
+
+Despite of the qgroup reservation refactor, also fix a bug where qgroup
+relationship update modifies parent qgroup reservation wrongly.
+
+Although I tend to agree with Jeff's idea to remove support of
+multi-level qgroup, at least fix what I exposed during coding.
+
+Changelog:
 v2:
-  Use explicit btrfs_key_to_uuid() function to do the convert, and add
-  more comment why we should do that. Suggested by Nikolay.
----
- print-tree.c | 34 +++++++++++++++++++++++++++++++---
- 1 file changed, 31 insertions(+), 3 deletions(-)
+  Use _MAX naming, as _TYPES naming reusing the last type makes it quite
+  easier to screw up space allocation, since we need +1 to handle
+  _TYPES. Suggested by Nikolay, Edmund, Jeff and already experienced
+  such problem by myself.
 
-diff --git a/print-tree.c b/print-tree.c
-index 3c585e31f1fc..ab6f6c392519 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -803,14 +803,42 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
- 	}
- }
- 
--static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
--			    u32 item_size)
-+static void btrfs_key_to_uuid(struct btrfs_key *key, u8 *uuid)
- {
-+	/*
-+	 * UUID we use is in byte order, which means:
-+	 *          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-+	 * UUID:0x 12 34 56-78 90-ab cd-ef 12-34 56 78 90 ab cd ef
-+	 *
-+	 * And we store them as is in btrfs_*disk*_key:
-+	 *
-+	 *         Low bit        High bit|Low bit        High bit
-+	 * LE64:0x 12 34 56-78 90-ab cd-ef|12-34 56 78 90 ab cd ef
-+	 *             key.objectid       |     key.offset
-+	 *
-+	 * So here we just need to convert from native endian to LE to
-+	 * get the byte order UUID.
-+	 */
-+	put_unaligned_le64(key->objectid, uuid);
-+	put_unaligned_le64(key->offset, uuid + sizeof(u64));
-+}
-+
-+static void print_uuid_item(struct extent_buffer *l, int slot,
-+			    unsigned long offset, u32 item_size)
-+{
-+	struct btrfs_key key;
-+	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
-+	u8 uuid[BTRFS_UUID_SIZE];
-+
-+	btrfs_item_key_to_cpu(l, &key, slot);
-+	btrfs_key_to_uuid(&key, uuid);
-+	uuid_unparse(uuid, uuid_str);
- 	if (item_size & (sizeof(u64) - 1)) {
- 		printf("btrfs: uuid item with illegal size %lu!\n",
- 		       (unsigned long)item_size);
- 		return;
- 	}
-+	printf("\t\tuuid %s\n", uuid_str);
- 	while (item_size) {
- 		__le64 subvol_id;
- 
-@@ -1297,7 +1325,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *eb)
- 			break;
- 		case BTRFS_UUID_KEY_SUBVOL:
- 		case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
--			print_uuid_item(eb, btrfs_item_ptr_offset(eb, i),
-+			print_uuid_item(eb, i, btrfs_item_ptr_offset(eb, i),
- 					btrfs_item_size_nr(eb, i));
- 			break;
- 		case BTRFS_STRING_ITEM_KEY: {
+  Rename the qgroup_rsv_increase/decrease() to qgroup_rsv_add/release(),
+  to follow the block_rsv API, suggested by Nikolay, Jeff and Edmund.
+
+  Better description for the bug in __qgroup_excl_accounting(),
+  suggested by Nikolay.
+
+Qu Wenruo (6):
+  btrfs: qgroup: Skeleton to support separate qgroup reservation type
+  btrfs: qgroup: Introduce helpers to update and access new qgroup rsv
+  btrfs: qgroup: Make qgroup_reserve and its callers to use separate
+    reservation type
+  btrfs: qgroup: Fix wrong qgroup reservation update for relationship
+    modification
+  btrfs: qgroup: Update trace events to use new separate rsv types
+  btrfs: qgroup: Cleanup the remaining old reservation counters
+
+ fs/btrfs/qgroup.c            | 169 ++++++++++++++++++++++++++++++-------------
+ fs/btrfs/qgroup.h            |  28 ++++++-
+ include/trace/events/btrfs.h |  17 +++--
+ 3 files changed, 154 insertions(+), 60 deletions(-)
+
 -- 
-2.14.3
+2.14.2
 

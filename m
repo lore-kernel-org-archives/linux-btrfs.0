@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57156 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54302 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752009AbdJXIvc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 04:51:32 -0400
+        id S932378AbdJYKcq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 25 Oct 2017 06:32:46 -0400
 Subject: Re: [PATCH] fstests: btrfs/143: make test case more reliable
 To: Liu Bo <bo.li.liu@oracle.com>, fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org
 References: <20171023205733.14896-1-bo.li.liu@oracle.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <40f9e8d7-6736-a5f2-bba0-56703d5108ca@suse.com>
-Date: Tue, 24 Oct 2017 11:51:30 +0300
+Message-ID: <c4849a9b-abe2-1729-0154-e301bc5e51b3@suse.com>
+Date: Wed, 25 Oct 2017 13:32:43 +0300
 MIME-Version: 1.0
 In-Reply-To: <20171023205733.14896-1-bo.li.liu@oracle.com>
 Content-Type: text/plain; charset=utf-8
@@ -56,6 +56,10 @@ On 23.10.2017 23:57, Liu Bo wrote:
 > +while [[ -z ${result} ]]; do
 > +    # invalidate the page cache.
 > +    $XFS_IO_PROG -c "fadvise -d 0 128K" $SCRATCH_MNT/foobar
+
+I think an even better approach would be to just unmount and then mount
+it. That ensures the page cache is truncated.
+
 > +
 > +    start_fail
 > +    result=$(bash -c "
@@ -63,10 +67,6 @@ On 23.10.2017 23:57, Liu Bo wrote:
 > +                exec $XFS_IO_PROG -c \"pread 0 4K\" \"$SCRATCH_MNT/foobar\"
 > +        fi");
 > +    stop_fail
-
-Tested-by: Nikolay Borisov <nborisov@suse.com>
-
-
 >  done
 >  
 >  _scratch_unmount

@@ -1,93 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mtaextp1.scidom.de ([146.107.103.20]:42057 "EHLO
-        mtaextp1.scidom.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751354AbdJXQnv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Oct 2017 12:43:51 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by mtaextp1.scidom.de (Postfix) with ESMTP id CE45B1442C2
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:43:49 +0200 (CEST)
-Received: from mtaextp1.scidom.de ([127.0.0.1])
-        by localhost (mtaextp1.scidom.de [127.0.0.1]) (amavisd-new, port 10032)
-        with ESMTP id 6pWRJbh4p3d8 for <linux-btrfs@vger.kernel.org>;
-        Tue, 24 Oct 2017 18:43:48 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by mtaextp1.scidom.de (Postfix) with ESMTP id 239B3143B35
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:43:48 +0200 (CEST)
-Received: from mtaextp1.scidom.de ([127.0.0.1])
-        by localhost (mtaextp1.scidom.de [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id C_h5wmeajAWf for <linux-btrfs@vger.kernel.org>;
-        Tue, 24 Oct 2017 18:43:48 +0200 (CEST)
-Received: from mtaintp1.scidom.de (mtaintp1.scidom.de [146.107.8.104])
-        by mtaextp1.scidom.de (Postfix) with ESMTPS id ECA9614375E
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:43:47 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by mtaintp1.scidom.de (Postfix) with ESMTP id E3AA710048B
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:43:47 +0200 (CEST)
-Received: from mtaintp1.scidom.de ([127.0.0.1])
-        by localhost (mtaintp1.scidom.de [127.0.0.1]) (amavisd-new, port 10032)
-        with ESMTP id W4DkmaW8e74w for <linux-btrfs@vger.kernel.org>;
-        Tue, 24 Oct 2017 18:43:47 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by mtaintp1.scidom.de (Postfix) with ESMTP id 78F87100706
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:43:47 +0200 (CEST)
-Received: from mtaintp1.scidom.de ([127.0.0.1])
-        by localhost (mtaintp1.scidom.de [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id fLRslQx8UOqY for <linux-btrfs@vger.kernel.org>;
-        Tue, 24 Oct 2017 18:43:47 +0200 (CEST)
-Received: from mbxp1.scidom.de (mbxp1.scidom.de [146.107.8.101])
-        by mtaintp1.scidom.de (Postfix) with ESMTP id 5868B10048B
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:43:47 +0200 (CEST)
-From: "Lentes, Bernd" <bernd.lentes@helmholtz-muenchen.de>
-To: "Btrfs ML" <linux-btrfs@vger.kernel.org>
-References: <1844960059.7648040.1508435017395.JavaMail.zimbra@helmholtz-muenchen.de> <CAJCQCtQkp2cLi=8NSHLe6WXwgqBdydAgeCO5NF=g33g8jv7qZg@mail.gmail.com> <77b2d2c6-730e-62a5-93d1-4e40b51bc131@gmail.com> <00a601d349c8$8bde60d0$a39b2270$@helmholtz-muenchen.de> <00c501d349d2$df72aa30$9e57fe90$@helmholtz-muenchen.de> <pan$be6d8$a8cd8915$6095c5b3$10773679@cox.net> <32022214.8113126.1508586366285.JavaMail.zimbra@helmholtz-muenchen.de> <20171021180752.iqkspyi2whnm4vui@angband.pl> <5b68b633-6069-067d-5b9b-81074807ab06@gmail.com> <006b01d34ccb$ee56bbd0$cb043370$@helmholtz-muenchen.de> <a4c7ccd2-c9ab-8a20-4156-f0f756aced81@gmail.com>
-In-Reply-To: <a4c7ccd2-c9ab-8a20-4156-f0f756aced81@gmail.com>
-Subject: RE: SLES 11 SP4: can't mount btrfs
-Date: Tue, 24 Oct 2017 18:43:46 +0200 (CEST)
-Message-ID: <001001d34ce7$42c576f0$c85064d0$@helmholtz-muenchen.de>
+Received: from mout.perfora.net ([74.208.4.197]:52898 "EHLO mout.perfora.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751846AbdJYB6M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Oct 2017 21:58:12 -0400
+Received: from mail-yw0-f179.google.com ([209.85.161.179]) by
+ mrelay.perfora.net (mreueus001 [74.208.5.2]) with ESMTPSA (Nemesis) id
+ 0MKJQu-1e5WBX3BWo-001p1z for <linux-btrfs@vger.kernel.org>; Wed, 25 Oct 2017
+ 03:53:09 +0200
+Received: by mail-yw0-f179.google.com with SMTP id j4so16760993ywb.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Oct 2017 18:53:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain;
-        charset="utf-8"
+In-Reply-To: <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
+References: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
+ <CAD8FQQ3kBfy8kLFzSm-OVbsYsQ7-LzH0faD09__4S5_q0bM7pA@mail.gmail.com>
+ <CAKuJGC-aRt_NKboYa9ZK6ApWDJ_knM-UazPxEUq7sHiNXEqA6w@mail.gmail.com> <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
+From: Zak Kohler <y2k@y2kbugger.com>
+Date: Tue, 24 Oct 2017 21:52:38 -0400
+Message-ID: <CAD8FQQ3boTj97yu-F8CiFBvR-EfD+1chcSo=VzyAxwO7GpomEg@mail.gmail.com>
+Subject: Re: btrfs send yields "ERROR: send ioctl failed with -5: Input/output error"
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I apologize for the bad line wrapping on the last post...will be
+setting up mutt soon.
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org 
-> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Austin S. 
-> Hemmelgarn
-> Sent: Tuesday, October 24, 2017 4:05 PM
-> To: Lentes, Bernd <bernd.lentes@helmholtz-muenchen.de>; Btrfs ML 
-> <linux-btrfs@vger.kernel.org>
-> Subject: Re: SLES 11 SP4: can't mount btrfs
+This is the final result for the offline scrub:
+Doing offline scrub [O] [681/683]
+Scrub result:
+Tree bytes scrubbed: 5234491392
+Tree extents scrubbed: 638975
+Data bytes scrubbed: 4353723572224
+Data extents scrubbed: 374300
+Data bytes without csum: 533200896
+Read error: 0
+Verify error: 0
+Csum error: 175
+
+The offline scrub apparently corrected some metadata extents while
+scanning /dev/sdn
+
+
+I also ran the online scrub directly on the /dev/sdn, "0 errors":
+
+$ btrfs scrub status /dev/sdn
+scrub status for 88406942-e3e1-42c6-ad71-e23bb315caa7
+        scrub started at Tue Oct 24 06:55:12 2017 and finished after 01:52:44
+        total bytes scrubbed: 677.35GiB with 0 errors
+
+The csum mismatches are still missed by the online scrub when choosing
+a single <device>. Now I am doing offline scrub on the other devices
+to see if they are clean.
+
+$ lsblk -o +SERIAL
+NAME      MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINT SERIAL
+sdh         8:112  0  1.8T  0 disk             WD-WMAZA370XXXX
+sdi         8:128  0  1.8T  0 disk             WD-WCAZA569XXXX
+sdn         8:208  0  1.8T  0 disk             WD-WCAZA580XXXX
+
+$ btrfs scrub start --offline --progress /dev/sdh
+ERROR: data at bytenr 5365456896 ...
+ERROR: extent 5341712384 ...
+...
+
+One thing to note is that a /dev/sdh is also having csum errors
+detected despite it having never been mentioned dmesg. I understand
+that you may have the ability to run two offline checks at once but
+the error message I get is slightly misleading.
+
+$ btrfs scrub start --offline --progress /dev/sdi
+ERROR: cannot open device '/dev/sdn': Device or resource busy
+ERROR: cannot open file system
+
+I get an error about sdn when the device I am trying to scan is sdi,
+and the device that is currently being scanned is sdh.
+
+On Tue, Oct 24, 2017 at 2:00 AM, Zak Kohler <y2k@y2kbugger.com> wrote:
+> Yes, it is finding much more than just one error.
 >
-> A short-term alternative, if you've got a full backup of what SLES
-> mounts as /, is to run a regular install, boot the system, and then
-> extract the backup on top of /.  It's not perfect, but it should work
-> well enough.
-
-That's what I'm currently trying. I will keep you informed.
-
-> As mentioned, I'm working on a script to handle this for tools like
-> Amanda and Bareos.  I plan to send a message out on the list when that's
-> sufficiently working that I think it's safely usable, I can make sure
-> you're on CC for that message as well if you like.  I hoped to have
-> something later this week, but things are busier than expected at work
-> this week, so it might be a while.
-
-Please put me on cc. That would be great. Thanks.
-
-
-Bernd
- 
-
-Helmholtz Zentrum Muenchen
-Deutsches Forschungszentrum fuer Gesundheit und Umwelt (GmbH)
-Ingolstaedter Landstr. 1
-85764 Neuherberg
-www.helmholtz-muenchen.de
-Aufsichtsratsvorsitzende: MinDir'in Baerbel Brumme-Bothe
-Geschaeftsfuehrer: Prof. Dr. Guenther Wess, Heinrich Bassler, Dr. Alfons Enhsen
-Registergericht: Amtsgericht Muenchen HRB 6466
-USt-IdNr: DE 129521671
-
+> From dmesg
+> [89520.441354] BTRFS warning (device sdn): csum failed ino 4708 off
+> 27529216 csum 2615801759 expected csum 874979996
+>
+> $ sudo btrfs scrub start --offline --progress /dev/sdn
+> ERROR: data at bytenr 68431499264 mirror 1 csum mismatch, have
+> 0x5aa0d40f expect 0xd4a15873
+> ERROR: extent 68431474688 len 14467072 CORRUPTED, all mirror(s)
+> corrupted, can't be repaired
+> ERROR: data at bytenr 83646357504 mirror 1 csum mismatch, have
+> 0xfc0baabe expect 0x7f9cb681
+> ERROR: extent 83519741952 len 134217728 CORRUPTED, all mirror(s)
+> corrupted, can't be repaired
+> ERROR: data at bytenr 121936633856 mirror 1 csum mismatch, have
+> 0x507016a5 expect 0x50609afe
+> ERROR: extent 121858334720 len 134217728 CORRUPTED, all mirror(s)
+> corrupted, can't be repaired
+> ERROR: data at bytenr 144872591360 mirror 1 csum mismatch, have
+> 0x33964d73 expect 0xf9937032
+> ERROR: extent 144822386688 len 61231104 CORRUPTED, all mirror(s)
+> corrupted, can't be repaired
+> ERROR: data at bytenr 167961075712 mirror 1 csum mismatch, have
+> 0xf43bd0e3 expect 0x5be589bb
+> ERROR: extent 167950999552 len 27537408 CORRUPTED, all mirror(s)
+> corrupted, can't be repaired
+> ERROR: data at bytenr 175643619328 mirror 1 csum mismatch, have
+> 0x1e168ca1 expect 0xd413b1e0
+> ERROR: data at bytenr 175643754496 mirror 1 csum mismatch, have
+> 0x6cfdc8ae expect 0xa6f8f5ef
+> ERROR: extent 175640539136 len 6381568 CORRUPTED, all mirror(s)
+> corrupted, can't be repaired
+> ERROR: data at bytenr 183316750336 mirror 1 csum mismatch, have
+> 0x145bdf76 expect 0x7390565e
+> .....
+> and the list goes on.
+>
+>
+> Questions:
+> 1. Using "find /mnt -inum 4708" I can link the dmesg to a specific
+> file. Is there a
+> way link the the --offline ERRORs above to the inode?
+>
+> 2. How could do "btrfs device stats /mnt" and normal full scrub fail
+> to detect the csum errors?
+>
+> 3. Do these errors appear to be hardware failure (despite pristine
+> SMART), user error on
+> volume creation/mounting, or an actual btrfs issue? I feel that the
+> need for question #1
+> indicates a problem with btrfs regardless of whether there is a real
+> hardware failure or not.
+>
+>
+> Next I will try an online scrub of only the sdn device, as before I
+> was running the full filesystem scrub.
+>
+> On Tue, Oct 24, 2017 at 12:52 AM, Lakshmipathi.G
+> <lakshmipathi.g@gmail.com> wrote:
+>>> Does anyone know why scrub did not catch these errors that show up in dmesg?
+>>
+>> Can you try offline scrub from this repo
+>> https://github.com/gujx2017/btrfs-progs/tree/offline_scrub and see
+>> whether it
+>> detects the issue?  "btrfs scrub start --offline <dev>"
+>>
+>>
+>> ----
+>> Cheers,
+>> Lakshmipathi.G
+>> http://www.giis.co.in http://www.webminal.org

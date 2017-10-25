@@ -1,33 +1,441 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60868 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.99]:36052 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752336AbdJ3O7R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 10:59:17 -0400
-Date: Mon, 30 Oct 2017 15:57:26 +0100
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: add support for fallocate's zero range
- operation
-Message-ID: <20171030145726.GX3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171025125344.2111-1-fdmanana@kernel.org>
- <20171025145908.7311-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171025145908.7311-1-fdmanana@kernel.org>
+        id S1752194AbdJ0L1B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Oct 2017 07:27:01 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8B9D221871
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 11:27:00 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: add support for fallocate's zero range operation
+Date: Wed, 25 Oct 2017 13:53:44 +0100
+Message-Id: <20171025125344.2111-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 25, 2017 at 03:59:08PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> This implements support the zero range operation of fallocate. For now
-> at least it's as simple as possible while reusing most of the existing
-> fallocate and hole punching infrastructure.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
+From: Filipe Manana <fdmanana@suse.com>
 
-I'll add this to for-next so we can more testing coverage, review is
-open.
+This implements support the zero range operation of fallocate. For now
+at least it's as simple as possible while reusing most of the existing
+fallocate and hole punching infrastructure.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 333 ++++++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 290 insertions(+), 43 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index aafcc785f840..8cf7172f1b63 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2448,7 +2448,48 @@ static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
+ 	return ret;
+ }
+ 
+-static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
++static int btrfs_punch_hole_lock_range(struct inode *inode,
++				       const u64 lockstart,
++				       const u64 lockend,
++				       struct extent_state **cached_state)
++{
++	while (1) {
++		struct btrfs_ordered_extent *ordered;
++		int ret;
++
++		truncate_pagecache_range(inode, lockstart, lockend);
++
++		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
++				 cached_state);
++		ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
++
++		/*
++		 * We need to make sure we have no ordered extents in this range
++		 * and nobody raced in and read a page in this range, if we did
++		 * we need to try again.
++		 */
++		if ((!ordered ||
++		    (ordered->file_offset + ordered->len <= lockstart ||
++		     ordered->file_offset > lockend)) &&
++		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
++			if (ordered)
++				btrfs_put_ordered_extent(ordered);
++			break;
++		}
++		if (ordered)
++			btrfs_put_ordered_extent(ordered);
++		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
++				     lockend, cached_state, GFP_NOFS);
++		ret = btrfs_wait_ordered_range(inode, lockstart,
++					       lockend - lockstart + 1);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
++static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len,
++			    bool lock_inode)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -2477,7 +2518,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	if (ret)
+ 		return ret;
+ 
+-	inode_lock(inode);
++	if (lock_inode)
++		inode_lock(inode);
+ 	ino_size = round_up(inode->i_size, fs_info->sectorsize);
+ 	ret = find_first_non_hole(inode, &offset, &len);
+ 	if (ret < 0)
+@@ -2516,7 +2558,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 		truncated_block = true;
+ 		ret = btrfs_truncate_block(inode, offset, 0, 0);
+ 		if (ret) {
+-			inode_unlock(inode);
++			if (lock_inode)
++				inode_unlock(inode);
+ 			return ret;
+ 		}
+ 	}
+@@ -2564,38 +2607,11 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 		goto out_only_mutex;
+ 	}
+ 
+-	while (1) {
+-		struct btrfs_ordered_extent *ordered;
+-
+-		truncate_pagecache_range(inode, lockstart, lockend);
+-
+-		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+-				 &cached_state);
+-		ordered = btrfs_lookup_first_ordered_extent(inode, lockend);
+-
+-		/*
+-		 * We need to make sure we have no ordered extents in this range
+-		 * and nobody raced in and read a page in this range, if we did
+-		 * we need to try again.
+-		 */
+-		if ((!ordered ||
+-		    (ordered->file_offset + ordered->len <= lockstart ||
+-		     ordered->file_offset > lockend)) &&
+-		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
+-			if (ordered)
+-				btrfs_put_ordered_extent(ordered);
+-			break;
+-		}
+-		if (ordered)
+-			btrfs_put_ordered_extent(ordered);
+-		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
+-				     lockend, &cached_state, GFP_NOFS);
+-		ret = btrfs_wait_ordered_range(inode, lockstart,
+-					       lockend - lockstart + 1);
+-		if (ret) {
+-			inode_unlock(inode);
+-			return ret;
+-		}
++	ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
++					  &cached_state);
++	if (ret) {
++		inode_unlock(inode);
++		return ret;
+ 	}
+ 
+ 	path = btrfs_alloc_path();
+@@ -2758,7 +2774,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 			ret = btrfs_end_transaction(trans);
+ 		}
+ 	}
+-	inode_unlock(inode);
++	if (lock_inode)
++		inode_unlock(inode);
+ 	if (ret && !err)
+ 		err = ret;
+ 	return err;
+@@ -2804,6 +2821,227 @@ static int add_falloc_range(struct list_head *head, u64 start, u64 len)
+ 	return 0;
+ }
+ 
++static int btrfs_zero_range_update_isize(struct inode *inode,
++					 const loff_t offset,
++					 const loff_t len,
++					 const int mode)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_trans_handle *trans;
++	const u64 end = offset + len;
++	int ret;
++
++	if (mode & FALLOC_FL_KEEP_SIZE || end <= i_size_read(inode))
++		return 0;
++
++	i_size_write(inode, end);
++	btrfs_ordered_update_i_size(inode, end, NULL);
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++	} else {
++		int err;
++
++		ret = btrfs_update_inode(trans, root, inode);
++		err = btrfs_end_transaction(trans);
++		ret = ret ? ret : err;
++	}
++	return ret;
++}
++
++static int btrfs_zero_range_check_range_boundary(struct inode *inode,
++						 u64 offset)
++{
++	const u64 sectorsize = btrfs_inode_sectorsize(inode);
++	struct extent_map *em = NULL;
++	int ret = 0;
++
++	offset = round_down(offset, sectorsize);
++	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, offset, sectorsize, 0);
++	if (IS_ERR(em))
++		return PTR_ERR(em);
++
++	if (em->block_start == EXTENT_MAP_HOLE)
++		ret = 1;
++
++	free_extent_map(em);
++	return ret;
++}
++
++static int btrfs_zero_range(struct inode *inode,
++			    loff_t offset,
++			    loff_t len,
++			    const int mode)
++{
++	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct extent_map *em;
++	struct extent_changeset *data_reserved = NULL;
++	int ret;
++	u64 alloc_hint = 0;
++	const u64 sectorsize = btrfs_inode_sectorsize(inode);
++	u64 alloc_start = round_down(offset, sectorsize);
++	u64 alloc_end = round_up(offset + len, sectorsize);
++	u64 bytes_to_reserve = 0;
++	bool space_reserved = false;
++	bool punch_hole = false;
++
++	inode_dio_wait(inode);
++
++	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
++			      alloc_start, alloc_end - alloc_start, 0);
++	if (IS_ERR(em)) {
++		ret = PTR_ERR(em);
++		goto out;
++	}
++
++	/*
++	 * Avoid hole punching and extent allocation for some cases. More cases
++	 * could be considered, but these are unlikely common and we keep things
++	 * as simple as possible for now. Also, intentionally, if the target
++	 * range contains one or more prealloc extents together with regular
++	 * extents and holes, we drop all the existing extents and allocate a
++	 * new prealloc extent, so that we get a larger contiguous disk extent.
++	 */
++	if (em->start <= alloc_start &&
++	    test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
++		const u64 em_end = em->start + em->len;
++
++		if (em_end >= offset + len) {
++			/*
++			 * The whole range is already a prealloc extent,
++			 * do nothing except updating the inode's i_size if
++			 * needed.
++			 */
++			free_extent_map(em);
++			ret = btrfs_zero_range_update_isize(inode, offset,
++							    len, mode);
++			goto out;
++		}
++		/*
++		 * Part of the range is already a prealloc extent, so operate
++		 * only on the remaining part of the range.
++		 */
++		alloc_start = em_end;
++		ASSERT(IS_ALIGNED(alloc_start, sectorsize));
++		len = offset + len - alloc_start;
++		offset = alloc_start;
++		alloc_hint = em->block_start + em->len;
++	}
++	free_extent_map(em);
++
++	if (BTRFS_BYTES_TO_BLKS(fs_info, offset) ==
++	    BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1)) {
++		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
++				      alloc_start, sectorsize, 0);
++		if (IS_ERR(em)) {
++			ret = PTR_ERR(em);
++			goto out;
++		}
++
++		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
++			free_extent_map(em);
++			ret = btrfs_zero_range_update_isize(inode, offset,
++							    len, mode);
++			goto out;
++		}
++		if (len < sectorsize && em->block_start != EXTENT_MAP_HOLE)
++			punch_hole = true;
++		free_extent_map(em);
++		if (punch_hole)
++			goto punch_hole;
++		alloc_start = round_down(offset, sectorsize);
++		alloc_end = alloc_start + sectorsize;
++		goto reserve_space;
++	}
++
++	alloc_start = round_up(offset, sectorsize);
++	alloc_end = round_down(offset + len, sectorsize);
++
++	/*
++	 * For unaligned ranges, check the pages at the boundaries, they might
++	 * map to an extent, in which case we need to partially zero them, or
++	 * they might map to a hole, in which case we need our allocation range
++	 * to cover them.
++	 */
++	if (!IS_ALIGNED(offset, sectorsize)) {
++		ret = btrfs_zero_range_check_range_boundary(inode, offset);
++		if (ret < 0)
++			goto out;
++		if (ret) {
++			alloc_start = round_down(offset, sectorsize);
++			ret = 0;
++		} else {
++			ret = btrfs_truncate_block(inode, offset, 0, 0);
++			if (ret)
++				goto out;
++		}
++	}
++
++	if (!IS_ALIGNED(offset + len, sectorsize)) {
++		ret = btrfs_zero_range_check_range_boundary(inode,
++							    offset + len);
++		if (ret < 0)
++			goto out;
++		if (ret) {
++			alloc_end = round_up(offset + len, sectorsize);
++			ret = 0;
++		} else {
++			ret = btrfs_truncate_block(inode, offset + len, 0, 1);
++			if (ret)
++				goto out;
++		}
++	}
++
++reserve_space:
++	if (alloc_start < alloc_end)
++		bytes_to_reserve += alloc_end - alloc_start;
++
++	if (!punch_hole && bytes_to_reserve > 0) {
++		ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
++						      bytes_to_reserve);
++		if (ret < 0)
++			goto out;
++		space_reserved = true;
++		ret = btrfs_qgroup_reserve_data(inode, &data_reserved,
++						alloc_start, bytes_to_reserve);
++		if (ret)
++			goto out;
++	}
++
++punch_hole:
++	if (punch_hole) {
++		ret = btrfs_punch_hole(inode, offset, len, false);
++		if (ret)
++			goto out;
++		ret = btrfs_zero_range_update_isize(inode, offset, len, mode);
++	} else {
++		struct extent_state *cached_state = NULL;
++		const u64 lockstart = alloc_start;
++		const u64 lockend = alloc_end - 1;
++
++		ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
++						  &cached_state);
++		if (ret)
++			goto out;
++		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
++						alloc_end - alloc_start,
++						i_blocksize(inode),
++						offset + len, &alloc_hint);
++		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
++				     lockend, &cached_state, GFP_KERNEL);
++		/* btrfs_prealloc_file_range releases reserved space on error */
++		if (ret)
++			space_reserved = false;
++	}
++ out:
++	if (ret && space_reserved)
++		btrfs_free_reserved_data_space(inode, data_reserved,
++					       alloc_start, bytes_to_reserve);
++	extent_changeset_free(data_reserved);
++
++	return ret;
++}
++
+ static long btrfs_fallocate(struct file *file, int mode,
+ 			    loff_t offset, loff_t len)
+ {
+@@ -2829,21 +3067,24 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	cur_offset = alloc_start;
+ 
+ 	/* Make sure we aren't being give some crap mode */
+-	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE))
++	if (mode & ~(FALLOC_FL_KEEP_SIZE | FALLOC_FL_PUNCH_HOLE |
++		     FALLOC_FL_ZERO_RANGE))
+ 		return -EOPNOTSUPP;
+ 
+ 	if (mode & FALLOC_FL_PUNCH_HOLE)
+-		return btrfs_punch_hole(inode, offset, len);
++		return btrfs_punch_hole(inode, offset, len, true);
+ 
+ 	/*
+ 	 * Only trigger disk allocation, don't trigger qgroup reserve
+ 	 *
+ 	 * For qgroup space, it will be checked later.
+ 	 */
+-	ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
+-			alloc_end - alloc_start);
+-	if (ret < 0)
+-		return ret;
++	if (!(mode & FALLOC_FL_ZERO_RANGE)) {
++		ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
++						      alloc_end - alloc_start);
++		if (ret < 0)
++			return ret;
++	}
+ 
+ 	inode_lock(inode);
+ 
+@@ -2885,6 +3126,12 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	if (ret)
+ 		goto out;
+ 
++	if (mode & FALLOC_FL_ZERO_RANGE) {
++		ret = btrfs_zero_range(inode, offset, len, mode);
++		inode_unlock(inode);
++		return ret;
++	}
++
+ 	locked_end = alloc_end - 1;
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+@@ -3010,7 +3257,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ out:
+ 	inode_unlock(inode);
+ 	/* Let go of our reservation. */
+-	if (ret != 0)
++	if (ret != 0 && !(mode & FALLOC_FL_ZERO_RANGE))
+ 		btrfs_free_reserved_data_space(inode, data_reserved,
+ 				alloc_start, alloc_end - cur_offset);
+ 	extent_changeset_free(data_reserved);
+-- 
+2.11.0
+

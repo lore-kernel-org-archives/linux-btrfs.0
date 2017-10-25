@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:36052 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:46854 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752194AbdJ0L1B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 07:27:01 -0400
+        id S1752387AbdJ0NcZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Oct 2017 09:32:25 -0400
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 8B9D221871
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 11:27:00 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id E1F6B218AC
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 13:32:23 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: add support for fallocate's zero range operation
-Date: Wed, 25 Oct 2017 13:53:44 +0100
-Message-Id: <20171025125344.2111-1-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: add support for fallocate's zero range operation
+Date: Wed, 25 Oct 2017 15:59:08 +0100
+Message-Id: <20171025145908.7311-1-fdmanana@kernel.org>
+In-Reply-To: <20171025125344.2111-1-fdmanana@kernel.org>
+References: <20171025125344.2111-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -24,11 +26,14 @@ fallocate and hole punching infrastructure.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 333 ++++++++++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 290 insertions(+), 43 deletions(-)
+
+V2: Removed double inode unlock on error path from failure to lock range.
+
+ fs/btrfs/file.c | 332 +++++++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 290 insertions(+), 42 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index aafcc785f840..8cf7172f1b63 100644
+index aafcc785f840..e0d15c0d1641 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
 @@ -2448,7 +2448,48 @@ static int find_first_non_hole(struct inode *inode, u64 *start, u64 *len)
@@ -101,7 +106,7 @@ index aafcc785f840..8cf7172f1b63 100644
  			return ret;
  		}
  	}
-@@ -2564,38 +2607,11 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+@@ -2564,38 +2607,12 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
  		goto out_only_mutex;
  	}
  
@@ -134,18 +139,18 @@ index aafcc785f840..8cf7172f1b63 100644
 -		ret = btrfs_wait_ordered_range(inode, lockstart,
 -					       lockend - lockstart + 1);
 -		if (ret) {
--			inode_unlock(inode);
--			return ret;
--		}
 +	ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
 +					  &cached_state);
 +	if (ret) {
-+		inode_unlock(inode);
++		if (lock_inode)
+ 			inode_unlock(inode);
+-			return ret;
+-		}
 +		return ret;
  	}
  
  	path = btrfs_alloc_path();
-@@ -2758,7 +2774,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+@@ -2758,7 +2775,8 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
  			ret = btrfs_end_transaction(trans);
  		}
  	}
@@ -155,7 +160,7 @@ index aafcc785f840..8cf7172f1b63 100644
  	if (ret && !err)
  		err = ret;
  	return err;
-@@ -2804,6 +2821,227 @@ static int add_falloc_range(struct list_head *head, u64 start, u64 len)
+@@ -2804,6 +2822,227 @@ static int add_falloc_range(struct list_head *head, u64 start, u64 len)
  	return 0;
  }
  
@@ -383,7 +388,7 @@ index aafcc785f840..8cf7172f1b63 100644
  static long btrfs_fallocate(struct file *file, int mode,
  			    loff_t offset, loff_t len)
  {
-@@ -2829,21 +3067,24 @@ static long btrfs_fallocate(struct file *file, int mode,
+@@ -2829,21 +3068,24 @@ static long btrfs_fallocate(struct file *file, int mode,
  	cur_offset = alloc_start;
  
  	/* Make sure we aren't being give some crap mode */
@@ -414,7 +419,7 @@ index aafcc785f840..8cf7172f1b63 100644
  
  	inode_lock(inode);
  
-@@ -2885,6 +3126,12 @@ static long btrfs_fallocate(struct file *file, int mode,
+@@ -2885,6 +3127,12 @@ static long btrfs_fallocate(struct file *file, int mode,
  	if (ret)
  		goto out;
  
@@ -427,7 +432,7 @@ index aafcc785f840..8cf7172f1b63 100644
  	locked_end = alloc_end - 1;
  	while (1) {
  		struct btrfs_ordered_extent *ordered;
-@@ -3010,7 +3257,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+@@ -3010,7 +3258,7 @@ static long btrfs_fallocate(struct file *file, int mode,
  out:
  	inode_unlock(inode);
  	/* Let go of our reservation. */

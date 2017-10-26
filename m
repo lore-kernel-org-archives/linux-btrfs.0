@@ -1,42 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:48202 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934677AbdJQJNf (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 17 Oct 2017 05:13:35 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2 6/6] btrfs-progs: rescue: Fix zero-log mounted branch
-Date: Tue, 17 Oct 2017 17:13:12 +0800
-Message-Id: <20171017091312.31045-7-wqu@suse.com>
-In-Reply-To: <20171017091312.31045-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:37178 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932343AbdJZSPk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 26 Oct 2017 14:15:40 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6214DACAB
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Oct 2017 18:15:39 +0000 (UTC)
+Date: Thu, 26 Oct 2017 20:13:51 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH v2 6/6] btrfs-progs: rescue: Fix zero-log mounted branch
+Message-ID: <20171026181351.GF3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20171017091312.31045-1-wqu@suse.com>
+ <20171017091312.31045-7-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171017091312.31045-7-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seems to be a typo that, in (ret > 0) branch of check_mounted(),
-zero-log set the return value but doesn't return.
+On Tue, Oct 17, 2017 at 05:13:12PM +0800, Qu Wenruo wrote:
+> Seems to be a typo that, in (ret > 0) branch of check_mounted(),
+> zero-log set the return value but doesn't return.
+> 
+> Fix it by adding back the missing return.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Fix it by adding back the missing return.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- cmds-rescue.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/cmds-rescue.c b/cmds-rescue.c
-index 5b51952cdc10..c40088ad374e 100644
---- a/cmds-rescue.c
-+++ b/cmds-rescue.c
-@@ -178,6 +178,7 @@ static int cmd_rescue_zero_log(int argc, char **argv)
- 	} else if (ret) {
- 		error("%s is currently mounted", devname);
- 		ret = -EBUSY;
-+		goto out;
- 	}
- 
- 	root = open_ctree(devname, 0, OPEN_CTREE_WRITES | OPEN_CTREE_PARTIAL);
--- 
-2.14.2
-
+Applied, thanks.

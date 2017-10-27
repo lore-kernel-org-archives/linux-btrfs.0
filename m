@@ -1,27 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35876 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42654 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755861AbdJQNFY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 Oct 2017 09:05:24 -0400
+        id S1750882AbdJ0QSb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Oct 2017 12:18:31 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 76CEFAB02
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Oct 2017 13:05:22 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id C3964ACAB
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 16:18:29 +0000 (UTC)
+Date: Fri, 27 Oct 2017 18:16:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
 Subject: Re: [PATCH v2 0/6] Btrfs-progs: rescue: To fix device related
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
+Message-ID: <20171027161641.GL3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20171017091312.31045-1-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <6a9d4d36-df2e-008f-281f-0eb08fb1e1de@suse.com>
-Date: Tue, 17 Oct 2017 16:05:21 +0300
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20171017091312.31045-1-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 17.10.2017 12:13, Qu Wenruo wrote:
+On Tue, Oct 17, 2017 at 05:13:06PM +0800, Qu Wenruo wrote:
 > The patchset can be fetched from github:
 > https://github.com/adam900710/btrfs-progs/tree/check_unaligned_dev
 > 
@@ -60,11 +59,6 @@ On 17.10.2017 12:13, Qu Wenruo wrote:
 >   Fix a bug when coding in cmds-rescue.c.
 >   Split the first patch to make review easier.
 > 
-
-For the whole series:
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
 > Qu Wenruo (6):
 >   btrfs-progs: Introduce function to fix unaligned device size
 >   btrfs-progs: Introduce function to fix super block total bytes
@@ -73,13 +67,17 @@ Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 >     and super size
 >   btrfs-progs: test/fsck: Add test case image for --fix-dev-size
 >   btrfs-progs: rescue: Fix zero-log mounted branch
-> 
+
+Applied, thanks.
+
 >  Documentation/btrfs-rescue.asciidoc                |  29 ++++
 >  cmds-check.c                                       |  76 +++++++++
 >  cmds-rescue.c                                      |  49 ++++++
 >  .../dev_and_super_mismatch_unaligned.raw.xz        | Bin 0 -> 21536 bytes
 >  volumes.c                                          | 178 +++++++++++++++++++++
 >  volumes.h                                          |   4 +
->  6 files changed, 336 insertions(+)
->  create mode 100644 tests/fsck-tests/027-unaligned-super-dev-sizes/dev_and_super_mismatch_unaligned.raw.xz
-> 
+
+The repair functions do not belong to volumes.c, but we need to move and
+split cmds-check.c first so I'm going to apply it as-is.
+
+I've also extended the test to exercise fix-device-size.

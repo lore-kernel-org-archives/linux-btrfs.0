@@ -1,52 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ble59-2-81-56-123-40.fbx.proxad.net ([81.56.123.40]:49776 "EHLO
-        jmuchemb.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752842AbdJ0Ws6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 18:48:58 -0400
-Received: from [10.236.3.1] (tecra [10.236.3.1])
-        by jmuchemb.eu (Postfix) with ESMTP id E3E7C142B25
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Oct 2017 00:40:10 +0200 (CEST)
-From: Julien Muchembled <jm@jmuchemb.eu>
-Subject: raid1: can't readd removed dev while the fs is mounted
-To: linux-btrfs@vger.kernel.org
-Message-ID: <1e230313-112b-c685-f02b-e99cdcb287a8@jmuchemb.eu>
-Date: Sat, 28 Oct 2017 00:40:10 +0200
+Received: from mout.gmx.net ([212.227.15.18]:64542 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751025AbdJ0X5q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 27 Oct 2017 19:57:46 -0400
+Subject: Re: [PATCH 0/8] mkfs: Quota support
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171027072936.4697-1-wqu@suse.com>
+ <20171027173709.GO3521@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <a358fe47-920d-25e8-3d4d-7c1fb7b7c8c3@gmx.com>
+Date: Sat, 28 Oct 2017 07:57:31 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20171027173709.GO3521@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="8C5WQD8Spt84ipTdttPVglw0Jexw6QQrQ"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--8C5WQD8Spt84ipTdttPVglw0Jexw6QQrQ
+Content-Type: multipart/mixed; boundary="OK8C0dIMK48LlOLQHpgX7Xd21IC0O3iAe";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <a358fe47-920d-25e8-3d4d-7c1fb7b7c8c3@gmx.com>
+Subject: Re: [PATCH 0/8] mkfs: Quota support
+References: <20171027072936.4697-1-wqu@suse.com>
+ <20171027173709.GO3521@twin.jikos.cz>
+In-Reply-To: <20171027173709.GO3521@twin.jikos.cz>
 
-I have 2 disks in RAID1, each one having 2 partitions:
-- 1 for / (BtrFS)
-- 1 for /home (MD/XFS)
+--OK8C0dIMK48LlOLQHpgX7Xd21IC0O3iAe
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-For some reasons, 1 disk was removed and readded. I had no issue at readding it to the MD array, but for BtrFS, I had to reboot.
 
-Then, I tried to investigate more using qemu with systemrescuecd (kernel 4.9.30 and btrfs-progs v4.9.1). From:
 
-  /sys/devices/pci0000:00/0000:00:01.1/ata1/host0
+On 2017=E5=B9=B410=E6=9C=8828=E6=97=A5 01:37, David Sterba wrote:
+> On Fri, Oct 27, 2017 at 03:29:28PM +0800, Qu Wenruo wrote:
+>> This patchset adds quota support, which means the result fs will have
+>> quota enabled by default, and its accounting is already consistent, no=
 
-I use:
+>> manually rescan or quota enable is needed.
+>=20
+> Great, thanks for working on that. I'm going to merge the preparatory
+> patches next. I'm not sure about the command line option, we might want=
 
-  # echo 1 > target0:0:1/0:0:1:0/delete
+> to design it in a similar way as -O/--features. As this is a runtime
+> feature (unlike the on-disk format features), a new option will be
+> needed, backed by some research what other mkfs.* tools use.
 
-to remove sdb and after some changes in the mount point:
+OK, I'll reconsider the command line interface.
 
-  # echo '- - -' > scsi_host/host0/scan
+Although I'm not pretty sure if other fs will has such design.
 
-to readd it.
+>=20
+> The uuid_tree would at least use the btrfs_create_tree, but I don't
+> think we'd need to create it only on request, so quotas will be the onl=
+y
+> option.
+>=20
+>> 2) Fill quota root with basic skeleton
+>>    Only 3 items are really needed
+>>    a) global quota status item
+>>    b) quota info for 0/5 qgroup
+>>    c) quota limit for 0/5 qgroup
+>>
+>>    The content doesn't matter at all.
+>=20
+> How would --rootdir and quotas behave in that case? A related question
+> is what will be the semantics of rootdir+quotas+subvolume created at
+> mkfs time.
 
-Then I executed
+Already considered! (Although not in test case)
 
-  # btrfs scrub start -B -d /mnt/tmp 
+For current behavior, rootdir works fine, as we only use one subvolume
+(fs tree) and rescan is placed just after we filled fs tree.
 
-to fix things but I only get uncorrectable errors and the dmesg is full of 'i/o error' lines
+So, as you could try your self, it's completely fine.
 
-Maybe some command is required so that BtrFS accept to reuse the device. I tried:
+And the infrastructure I used in the helpers can easily handle the case
+where extra subvolume qgroups are used.
+Just pass insert_qgroup_items() with new qgroupid, then rescan will
+handle them all.
 
-  # btrfs replace start -B -f 2 /dev/sdb /mnt/tmp
-  ERROR: ioctl(DEV_REPLACE_STATUS) failed on "/mnt/tmp": Inappropriate ioctl for device
+Thanks,
+Qu
 
-Julien
+>=20
+> We can certainly start with only quotas on the empty filesystem, but I'=
+m
+> sure somebody will ask for the wild combination at some point.> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--OK8C0dIMK48LlOLQHpgX7Xd21IC0O3iAe--
+
+--8C5WQD8Spt84ipTdttPVglw0Jexw6QQrQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnzx+sXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjn3Qf+KmdDjlWnAOT7aN69bL4KVQJr
+YWA1GgTxLxIinhxQ3rLMnFheeJRXrRI749nqCBJ/cya/Ra+f3eQAybDrJadNTS6n
+2tNRFg5FJPpUUT7Szo8/jXoPPhInNvbWdUuPwQdrbb2Et6gHLG1AwEgb463ViLOZ
+TNB6e4bsFJ4JycMHxOoh2+Bd9Q6uaElDwJ6ziqQGwovBdGmw9XccVb2kQ8cjX46/
+G4CFud1DnanQ8U2p6J4yKF1BfT7noYUYfd4D1a3nJ5OpgLfCfauo4tQkN8dAcwtK
++N+XatE2EjFeOs3rIYFvbNd6xyrji3CFZv5Xe3GIvaSzmhaNSJxKNyypDg2PMQ==
+=lXGJ
+-----END PGP SIGNATURE-----
+
+--8C5WQD8Spt84ipTdttPVglw0Jexw6QQrQ--

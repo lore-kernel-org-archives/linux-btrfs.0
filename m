@@ -1,176 +1,280 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:44889 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932384AbdJ0UK4 (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:39278 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752131AbdJ0VUR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 16:10:56 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Data and metadata extent allocators [1/2]: Recap: The data story
-Date: Fri, 27 Oct 2017 22:10:54 +0200
-Message-ID: <1833040.vtX8kJ14V9@merkaba>
-In-Reply-To: <14632e5d-74b9-e52f-6578-56139c42369c@mendix.com>
+        Fri, 27 Oct 2017 17:20:17 -0400
+Received: from [IPv6:2001:980:4a41:fb::12] (unknown [IPv6:2001:980:4a41:fb::12])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by syrinx.knorrie.org (Postfix) with ESMTPSA id 5EC2258696CD
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 23:20:16 +0200 (CEST)
+Subject: Data and metadata extent allocators [2/2]: metadata!
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <14632e5d-74b9-e52f-6578-56139c42369c@mendix.com>
+Message-ID: <b94ce11f-18d3-3d99-ebfa-7dddd9f13d66@mendix.com>
+Date: Fri, 27 Oct 2017 23:20:16 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <14632e5d-74b9-e52f-6578-56139c42369c@mendix.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Hans,
+Ok, it's time to start looking at the other half of the story... The
+behavior of the metadata extent allocator.
 
-Hans van Kranenburg - 27.10.17, 20:17:
-> This is a followup to my previous threads named "About free space
-> fragmentation, metadata write amplification and (no)ssd" [0] and
-> "Experiences with metadata balance/convert" [1], exploring how good or
-> bad btrfs can handle filesystems that are larger than your average
-> desktop computer and/or which see a pattern of writing and deleting huge
-> amounts of files of wildly varying sizes all the time.
-[…]
-> Q: How do I fight this and prevent getting into a situation where all
-> raw space is allocated, risking a filesystem crash?
-> A: Use btrfs balance to fight the symptoms. It reads data and writes it
-> out again without the free space fragments.
+    Interesting questions here are:
 
-What do you mean by a filesystem crash? Since kernel 4.5 or 4.6 I don´t see any 
-BTRFS related filesystem hangs anymore on the /home BTRFS Dual SSD RAID 1 on my 
-Laptop, which one or two copies of Akonadi, Baloo and other desktop related 
-stuff write *heavily to* and which has all free space allocated into cunks 
-since a pretty long time:
+Q: If I point btrfs balance at 1GiB of data, why does it need to write
+40GiB to disk while only relocating this 1GiB amount? What's the other
+39GiB of "ghost" data?
 
-merkaba:~> btrfs fi usage -T /home
-Overall:
-    Device size:                 340.00GiB
-    Device allocated:            340.00GiB
-    Device unallocated:            2.00MiB
-    Device missing:                  0.00B
-    Used:                        290.32GiB
-    Free (estimated):             23.09GiB      (min: 23.09GiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
+Q: If I'm running nightly backups, fetching changes from external
+filesystems (rsync, not send/receive), why do I see an average amount of
+writes of ~60MiB/s to disk while the incoming data stream is capped on
+~16MiB/s?
 
-                          Data      Metadata System              
-Id Path                   RAID1     RAID1    RAID1    Unallocated
--- ---------------------- --------- -------- -------- -----------
- 1 /dev/mapper/msata-home 163.94GiB  6.03GiB 32.00MiB     1.00MiB
- 2 /dev/mapper/sata-home  163.94GiB  6.03GiB 32.00MiB     1.00MiB
--- ---------------------- --------- -------- -------- -----------
-   Total                  163.94GiB  6.03GiB 32.00MiB     2.00MiB
-   Used                   140.85GiB  4.31GiB 48.00KiB
+Q: If I'm doing expiries (mass removal of subvolumes), why does my
+filesystem write ~80MiB/s to disk for hours and hours and hours?
 
-I didn´t do a balance on this filesystem since a long time (kernel 4.6).
+    tl;dr version:
 
-Granted my filesystem is smaller than the typical backup BTRFS. I do have two 3 
-TB and one 1,5 TB SATA disks I backup to and another 2 TB BTRFS on a backup 
-server that I use for borgbackup (and that doesn´t yet do any snapshots and 
-may be better of running as XFS as it doesn´t really need snapshots as 
-borgbackup takes care of that. A BTRFS snapshot would only come handy to be 
-able to go back to a previous borgbackup repo in case it for whatever reason 
-gets corrupted or damaged / deleted by an attacker who only access to non 
-privileged user). – However all of these filesystems have plenty of free space 
-currently and are not accessed daily.
+* Excessive rumination in large extent tree
+* I want an invalid combination of data / metadata extent allocators to
+minimize extent tree writes
+* I get the invalid combination thanks to a bug
+* Profit
+* I want to be able to do the same in a newer kernel
 
-> Q: Why would it crash the file system when all raw space is allocated?
-> Won't it start trying harder to reuse the free space inside?
-> A: Yes, it will, for data. The big problem here is that allocation of a
-> new metadata chunk when needed is not possible any more.
+    Long version:
 
-And there it hangs or really crashes?
+    July 2017 was the last time when I have been doing tests on a cloned
+(on a lower layer, yay NetApp) btrfs filesystem with about 40TiB of
+files and 90k subvolumes (with related data in groups of between 20 and
+30 subvolumes each).
 
-[…]
+What I did was running a linux kernel with some modifications (yes, I
+found out about the tracepoints a bit later) to count the amount of
+metadata block cow operations that are done, per tree. By reading the
+counters and graphing that data, it became very clear what happened when
+writing that 39GiB of ghost data that I just talked about...
 
-> Q: Why do the pictures of my data block groups look like someone fired a
-> shotgun at it. [3], [4]?
-> A: Because the data extent allocator that is active when using the 'ssd'
-> mount option both tends to ignore smaller free space fragments all the
-> time, and also behaves in a way that causes more of them to appear. [5]
-> 
-> Q: Wait, why is there "ssd" in my mount options? Why does btrfs think my
-> iSCSI attached lun is an SSD?
-> A: Because it makes wrong assumptions based on the rotational attribute,
-> which we can also see in sysfs.
-> 
-> Q: Why does this ssd mode ignore free space?
-> A: Because it makes assumptions about the mapping of the addresses of
-> the block device we see in linux and the storage in actual flash chips
-> inside the ssd. Based on that information it decides where to write or
-> where not to write any more.
-> 
-> Q: Does this make sense in 2017?
-> A: No. The interesting relevant optimization when writing to an ssd
-> would be to write all data together that will be deleted or overwritten
-> together at the same time in the future. Since btrfs does not come with
-> a time machine included, it can't do this. So, remove this behaviour
-> instead. [6]
-> 
-> Q: What will happen when I use kernel 4.14 with the previously mentioned
-> change, or if I change to the nossd mount option explicitely already?
-> A: Relatively small free space fragments in existing chunks will
-> actually be reused for new writes that fit, working from the beginning
-> of the virtual address space upwards. It's like tetris, trying to
-> completely fill up the lowest lines first. See the big difference in
-> behavior when changing extent allocator happening at 16 seconds into
-> this timelapse movie: [7] (virtual address space)
+It's metadata, and it's the extent tree. Thousands of cow operations on
+the extent tree per second, filling all write IO bandwidth (just 1Gb/s
+iSCSI in this case, writing 80-100MiB/s) while the other trees are
+relatively dead silent in comparison.
 
-I see a difference in behavior but I do not yet fully understand what I am 
-looking at.
- 
-> Q: But what if all my chunks have badly fragmented free space right now?
-> A: If your situation allows for it, the simplest way is running a full
-> balance of the data, as some sort of big reset button. If you only want
-> to clean up chunks with excessive free space fragmentation, then you can
-> use the helper I used to identify them, which is
-> show_free_space_fragmentation.py in [8]. Just feed the chunks to balance
-> starting with the one with the highest score. The script requires the
-> free space tree to be used, which is a good idea anyway.
+Q: Why does my extent tree cause so many writes to disk?
+A: Because the extent tree is tracking the space used to store itself.
 
-Okay, when I understand this correctly I don´t need to use "nossd" with kernel 
-4.14, but it would be good to do a full "btrfs filesystem balance" run on all 
-the SSD BTRFS filesystems or all other ones with rotational=0.
+(Disclaimer: identifying these symptoms is not some kind of new amazing
+discovery, it should be a well known thing for btrfs developers, but I'm
+writing for the users like me who are looking at their running
+filesystems, wondering what the hell the thing is are doing all the
+time. Also, it's good to see at what size and complexity the practical
+scalability limitations of this filesystem are seriously starting to get
+in the way.)
 
-What would be the benefit of that? Would the filesystem run faster again? My 
-subjective impression is that performance got worse over time. *However* all 
-my previous full balance attempts made the performance even more worse. So… is 
-a full balance safe to the filesystem performance meanwhile?
+Let's see what would happen (also a bit simplified, it's about the
+general idea) in a worst case scenario, where every update of a metadata
+item would cause cow of a metadata block:
 
-I still have the issue that fstrim on /home only works with patch from Lutz 
-Euler from 2014, which is still not in mainline BTRFS. Maybe it would be a 
-good idea to recreate /home in order to get rid of that special "anomaly" of 
-the BTRFS that fstrim don´t work without this patch.
+  1. Write to a filesystem tree happens
+  2. Filesystem metadata block gets cowed
+  3. Write to the extent tree happens to add new fs tree block
+  4. Extent tree block gets cowed for the write
+  5. Write to the extent tree happens to track the new blocks location
+  6. Extent tree block gets cowed for the write
+  7. Write to the extent tree happens to track the new blocks location
+  8. Extent tree block gets cowed for the write
+  9. Write to the extent tree happens to track the new blocks location
+  10. Extent tree block gets cowed for the write
+  11. Write to the extent tree happens to track the new blocks location
+  12. Extent tree block gets cowed for the write
+  13. Write to the extent tree happens to track the new blocks location
+  14. Extent tree block gets cowed for the write
+  15. Write to the extent tree happens to track the new blocks location
+  16. Extent tree block gets cowed for the write
+  17. Write to the extent tree happens to track the new blocks location
+  18. Extent tree block gets cowed for the write
+  19. Write to the extent tree happens to track the new blocks location
+  20. Extent tree block gets cowed for the write
+  21. Write to the extent tree happens to track the new blocks location
+  [...]
 
-Maybe a least a part of this should go into BTRFS kernel wiki as it would be 
-more easy to find there for users.
+Yep, it's like a dog running in circles chasing its own tail.
 
-I wonder about a "upgrade notes for users" / "BTRFS maintenance" page that 
-gives recommendations in case some step is recommended after a major kernel 
-update and general recommendations for maintenance. Ideally most of this would 
-be integrated into BTRFS or a userspace daemon for it and be handled 
-transparently and automatically. Yet a full balance is an expensive operation 
-time-wise and probably should not be started without user consent.
+(Side note: The "Snowball effect of wandering trees" still has to be
+added on top of this, since cowing a metadata block also needs cow
+operations of every block in the path up towards the top of the tree.
+But, I'm ignoring that part now, since it's not causing the biggest
+problems in my case.)
 
-I do wonder about the ton of tools here and there and I would love some btrfsd 
-or… maybe even more generic fsd filesystem maintenance daemon which would do 
-regular scrubs and whatever else makes sense. It could use some configuration 
-in the root directory of a filesystem and work for BTRFS and other filesystem 
-that do have beneficial online / background upgraded like XFS which also has 
-online scrubbing by now (at least for metadata).
+When would this ever stop? Well...
+1. A metadata block gets cowed only once during a transaction. The
+reason of the cow is to get a new block on disk later on a different
+location while the previous one is also still on disk. All changes that
+happen inside the memory during the transaction never reach the disk
+individually, so there's no need to keep more copies in memory other
+than the final one which will go to disk at the end of the transaction.
+2. A single metadata block holds a whole bunch of metadata items, part
+of a larger range. So, together with 1, if the changes happen near to
+each other, they are all going into the same metadata block, and there
+are less blocks to cow.
 
-> [0] https://www.spinics.net/lists/linux-btrfs/msg64446.html
-> [1] https://www.spinics.net/lists/linux-btrfs/msg64771.html
-> [2] https://github.com/knorrie/btrfs-heatmap/
-> [3]
-> https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-10-27-shotgunblast.png
-> [4]
-> https://syrinx.knorrie.org/~knorrie/btrfs/keep/2016-12-18-heatmap-scripting/
-> fsid_ed10a358-c846-4e76-a071-3821d423a99d_startat_320029589504_at_1482095269
-> .png [5] https://www.spinics.net/lists/linux-btrfs/msg64418.html
-> [6]
-> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?i
-> d=583b723151794e2ff1691f1510b4e43710293875 [7]
-> https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-ssd-to-nossd.mp4 [8]
-> https://github.com/knorrie/python-btrfs/tree/develop/examples
+So, in reality, the recursive cowing in the extent tree (I'd like to
+call it "rumination"...) will stop after a few extra chews.
 
-Thanks,
+As for point 2... If we try to keep all new writes of extent tree
+metadata as close together as possible, we minimize the explosion of
+rumination that's happening.
+
+    Extent allocators...
+
+As mentioned in the commit to change the data extent allocator behaviour
+for 'ssd' mode [0]: "Recommendations for future development are to
+reconsider the current oversimplified nossd / ssd distinction [...] and
+provide experienced users with a more flexible way to choose allocator
+behaviour for data and metadata"
+
+Currently, the nossd / ssd / ssd_spread mount options are the only knobs
+we can turn to change extent allocator choice in btrfs as a side effect.
+When doing so, the behavior for data as well as metadata gets changed.
+
+Here's the situation since 4.14:
+
+        nossd         ssd           ssd_spread
+------------------------------------------------
+data    tetris        tetris        contiguous
+meta    cluster(64k)  cluster(2M)   contiguous
+
+Before 4.14, data+ssd is also cluster(2M)
+
+* tetris means: just fill all space up with writes that fit, from the
+beginning of the filesystem to the end.
+* cluster(X) means: use the cluster system (of which the code still
+mostly looks like black magic to me) and when doing writes, first
+collect at least X amount of space together in free space extents that
+are near each other, thus "clustering" writes together.
+* contiguous means: when doing X writes, just put them into X free
+space, and don't fragment the write over multiple locations.
+
+    When switching from the ssd (which was automatically chosen for me
+because btrfs thinks an iSCSI lun is an ssd) to nossd because of the
+effect on data placement, the immediate new problem which surfaced was
+that subvolume removals would take forever, while the filesystem was
+just writing, writing and writing metadata to disk full speed all the
+time. Expiries would not be finished before the next nightly backups, so
+that situation was not acceptable.
+
+When changing back to -o ssd, the situation would immediately improve
+again. See [1] for an example... The simple reason for this was not that
+there was more actual work to be done, it was that metadata writes would
+end up in more different locations because of the smaller cluster size
+parameter, and thus caused much longer ongoing rumination.
+
+The pragmatic solution so far for this was to remount -o nossd, then do
+the nightly backups, then remount -o ssd, then do the expiries etc... Yay...
+
+    Flash forward to the beginning of October 2017 when I was
+thinking... "what would happen when I was able to run data with the
+tetris allocator and metadata with the contiguous allocator? That would
+probably be better for my metadata..."
+
+Thanks to a bug, solved in [2], it's actually possible to run exactly
+this combination, just by mounting with -o ssd_spread,nossd. The nossd
+option resets the ssd flag again, that was just before set by
+ssd_spread, but it doesn't unset ssd_spread. Combine this result with
+the exact checks that are done for flags in the code paths and voila.
+So, in my 4.9 kernel I can still do this.
+
+When, after testing the change was applied on the production system, the
+immediate effect on the behavior was amazing. *poof* Bye bye metadata
+writes.
+
+During nightly backups, we now write around 25MiB/s for 16MiB/s incoming
+data and all metadata administration that needs to happen. (small
+changes are happening all over the place). With DUP metadata this means
+overhead of about (25-16)/2 = 4.5MiB/s
+
+For expiries... Removing an avg of 3000 subvolumes would take between 4
+and 8 hours, writing 80-100MiB/s to disk all the time (~3500 iops). Now
+with the contiguous allocator, it's 1 hour with ~30MiB/s writes (~750
+iops), and the progress is suddenly limited by random write behaviour
+while walking the trees to do the subvolume removals...
+
+Roughly speaking this means writing 16 times less metadata to disk to do
+the same thing. (!!)
+
+Using btrfs balance for a filled 1GiB chunk with, say, 2000 data extents
+changed from 10 minutes of looking at 80MiB/s metadata writes to doing
+the same in just under a minute.
+
+The obvious downside of using the 'contiguous' allocator is that the
+exact same effect as we just prevented for data will again happen
+here... When metadata gets cowed, the old 16kiB blocks are turned into
+free space after the transaction finished. The effect is that the usage
+of all exiting metadata chunks slowly decreases, while the free space is
+not reused because it's happening all over the place. [3] is an example
+of a metadata block 83% filled up two weeks after the switch. Allocated
+space for metadata was exploding with about 5 to 10GiB extra per day.
+
+So, the tradeoff for getting 16x less metadata writes in this case is
+sacrificing more raw disk space to metadata. Right now, after a while,
+the excessive new allocations have stopped since the gaps which have
+dropped in existing chunks are becoming interestingly sized enough to be
+chosen for new bulk writes.
+
+It's like a child which never cleans up the toys he plays with, but just
+throws them onto a big pile in the hallway instead of choosing an empty
+spot in the closet to put every item back. At some point, enough
+different toys are used to end up with a mostly empty closet, after
+which we can simply take the whole pile of toys from the hallway and put
+it inside again. :D
+
+    So, to be continued... I'll try to produce a proposal with some
+patches to introduce a different way to (individually) choose data and
+metadata extent allocator, decoupling it from the current ssd related
+options, since the whole concept of ssd doesn't have anything to do with
+everything written above. Different combinations of allocators can be
+better in different situations. Bundling writes together and doing 16x
+less of them instead of doing random writes all over the place is e.g.
+also something that a user of a large btrfs filesystem made from slower
+rotating drives might prefer?
+
+P.S. metadata on the big production filesystem is still DUP, since I
+can't change that easily [4]. This also causes all metadata writes to
+end up in the iSCSI write pipeline twice... Getting this fixed would
+reduce the writes by another 50%.
+
+[0]
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=583b723151794e2ff1691f1510b4e43710293875
+[1]
+https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-06-04-expire_ssd_nossd.png
+[2] https://www.spinics.net/lists/linux-btrfs/msg64203.html
+[3]
+https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-10-27-metadata-ssd_spread.png
+[4] https://www.spinics.net/lists/linux-btrfs/msg64771.html
+
+---- >8 ----
+
+Fun thing is, I'm not seeing any problem with cpu usage. It's perfectly
+possible to have tens of thousands of subvolumes in a btrfs filesystem
+without cpu usage problems. The real cpu trouble starts when there's
+data with too many reflinks. For example, when doing deduplication, you
+win some space, but if you're too greedy and dedupe the wrong things,
+you have to pay the price of added metadata complexity and cpu usage.
+
+With only groups of 20-30 subvolumes that reference each others data
+(the 14 daily, 10 extra weekly and 9 extra monthly snapshots) there are
+no cpu usage problems.
+
+Actually... when having 40TiB of gazillions of files of all sizes, it's
+much better to have a large amount of subvolumes instead of a small
+amount, since it keeps the sizes of the subvolume fs trees down. Also,
+sacrificing some space to actively prevent more file fragmentation and
+reflinks by e.g. using rsync --whole-file helps.
+
 -- 
-Martin
+Hans van Kranenburg

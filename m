@@ -1,82 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36197 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752031AbdJ0Ol5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 10:41:57 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9REfuLP024481
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 14:41:56 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id v9REft08021249
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 14:41:56 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id v9REftmZ015061
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 14:41:55 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:54298 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751076AbdJ0H3n (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 27 Oct 2017 03:29:43 -0400
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs-progs: reserve < 0 return value for errnos
-Date: Fri, 27 Oct 2017 22:41:18 +0800
-Message-Id: <20171027144118.23449-1-anand.jain@oracle.com>
-In-Reply-To: <20171027073133.24874-1-anand.jain@oracle.com>
-References: <20171027073133.24874-1-anand.jain@oracle.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/8] btrfs-progs: qgroup-verify: Also repair qgroup status version
+Date: Fri, 27 Oct 2017 15:29:29 +0800
+Message-Id: <20171027072936.4697-2-wqu@suse.com>
+In-Reply-To: <20171027072936.4697-1-wqu@suse.com>
+References: <20171027072936.4697-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_read_dev_super() returns -1 / -EPERM upon not finding a suitable SB,
-change that to return -ENOENT instead, which is much closer to the actual
-possible errors.
+Current kernel only supports qgroup version 1.
+Make qgroup-verify to follow this standard.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-v2: use -ENOENT instead of 1.
+ ctree.h         | 1 +
+ qgroup-verify.c | 2 ++
+ 2 files changed, 3 insertions(+)
 
- disk-io.c | 2 +-
- utils.c   | 2 +-
- volumes.c | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/disk-io.c b/disk-io.c
-index f5edc4796619..dcaaea898a3f 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1491,7 +1491,7 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
- 		}
- 	}
+diff --git a/ctree.h b/ctree.h
+index 22806599a744..506b76766579 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1011,6 +1011,7 @@ struct btrfs_qgroup_status_item {
+ 	__le64 rescan;		/* progress during scanning */
+ } __attribute__ ((__packed__));
  
--	return transid > 0 ? 0 : -1;
-+	return transid > 0 ? 0 : -ENOENT;
- }
++#define BTRFS_QGROUP_STATUS_VERSION		1
+ struct btrfs_block_group_item {
+ 	__le64 used;
+ 	__le64 chunk_objectid;
+diff --git a/qgroup-verify.c b/qgroup-verify.c
+index 571b4d4f7171..58c735788977 100644
+--- a/qgroup-verify.c
++++ b/qgroup-verify.c
+@@ -1563,6 +1563,8 @@ static int repair_qgroup_status(struct btrfs_fs_info *info)
+ 	btrfs_set_qgroup_status_rescan(path.nodes[0], status_item, 0);
+ 	btrfs_set_qgroup_status_generation(path.nodes[0], status_item,
+ 					   trans->transid);
++	btrfs_set_qgroup_status_version(path.nodes[0], status_item,
++					BTRFS_QGROUP_STATUS_VERSION);
  
- static int write_dev_supers(struct btrfs_fs_info *fs_info,
-diff --git a/utils.c b/utils.c
-index 524f463d3140..7574cda8151c 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1678,7 +1678,7 @@ int get_fs_info(const char *path, struct btrfs_ioctl_fs_info_args *fi_args,
- 		disk_super = (struct btrfs_super_block *)buf;
- 		ret = btrfs_read_dev_super(fd, disk_super,
- 					   BTRFS_SUPER_INFO_OFFSET, 0);
--		if (ret < 0) {
-+		if (ret) {
- 			ret = -EIO;
- 			goto out;
- 		}
-diff --git a/volumes.c b/volumes.c
-index 2209e5a9100b..87008bfdd586 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -268,7 +268,7 @@ int btrfs_scan_one_device(int fd, const char *path,
+ 	btrfs_mark_buffer_dirty(path.nodes[0]);
  
- 	disk_super = (struct btrfs_super_block *)buf;
- 	ret = btrfs_read_dev_super(fd, disk_super, super_offset, sbflags);
--	if (ret < 0)
-+	if (ret)
- 		return -EIO;
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)
 -- 
-2.13.1
+2.14.3
 

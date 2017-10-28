@@ -1,68 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:51215 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750851AbdJ1BJt (ORCPT
+Received: from out4-smtp.messagingengine.com ([66.111.4.28]:59433 "EHLO
+        out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750788AbdJ1HDQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 21:09:49 -0400
-Received: by mail-io0-f194.google.com with SMTP id b186so16242143iof.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Oct 2017 18:09:49 -0700 (PDT)
+        Sat, 28 Oct 2017 03:03:16 -0400
+Message-Id: <1509174195.600847.1153723936.0D8751F2@webmail.messagingengine.com>
+From: Kai Hendry <hendry@iki.fi>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <1e230313-112b-c685-f02b-e99cdcb287a8@jmuchemb.eu>
-References: <1e230313-112b-c685-f02b-e99cdcb287a8@jmuchemb.eu>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Sat, 28 Oct 2017 04:09:08 +0300
-Message-ID: <CAGqmi75CA5s0v5p8M-aXKFspVLs81Gc4iJ7fkTR9mwpWnAMHyg@mail.gmail.com>
-Subject: Re: raid1: can't readd removed dev while the fs is mounted
-To: Julien Muchembled <jm@jmuchemb.eu>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+References: <1507456690.745489.1131538472.25270157@webmail.messagingengine.com>
+ <CAJCQCtRnbz5WGqZEO3b8a+3B2gDbG_zioqWEVoJz_dD0SB=6Ww@mail.gmail.com>
+ <0a3e71f7-1a8e-9a4f-7470-4c5cc2fb11a0@gmail.com>
+ <1507858974.1236555.1137202920.267B449B@webmail.messagingengine.com>
+Date: Sat, 28 Oct 2017 15:03:15 +0800
+In-Reply-To: <1507858974.1236555.1137202920.267B449B@webmail.messagingengine.com>
+Subject: Re: USB upgrade fun
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-10-28 1:40 GMT+03:00 Julien Muchembled <jm@jmuchemb.eu>:
-> Hello,
->
-> I have 2 disks in RAID1, each one having 2 partitions:
-> - 1 for / (BtrFS)
-> - 1 for /home (MD/XFS)
->
-> For some reasons, 1 disk was removed and readded. I had no issue at readding it to the MD array, but for BtrFS, I had to reboot.
->
-> Then, I tried to investigate more using qemu with systemrescuecd (kernel 4.9.30 and btrfs-progs v4.9.1). From:
->
->   /sys/devices/pci0000:00/0000:00:01.1/ata1/host0
->
-> I use:
->
->   # echo 1 > target0:0:1/0:0:1:0/delete
->
-> to remove sdb and after some changes in the mount point:
->
->   # echo '- - -' > scsi_host/host0/scan
->
-> to readd it.
->
-> Then I executed
->
->   # btrfs scrub start -B -d /mnt/tmp
->
-> to fix things but I only get uncorrectable errors and the dmesg is full of 'i/o error' lines
->
-> Maybe some command is required so that BtrFS accept to reuse the device. I tried:
->
->   # btrfs replace start -B -f 2 /dev/sdb /mnt/tmp
->   ERROR: ioctl(DEV_REPLACE_STATUS) failed on "/mnt/tmp": Inappropriate ioctl for device
->
-> Julien
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Fri, 13 Oct 2017, at 09:42 AM, Kai Hendry wrote:
+> It probably is... since when I remove my new 4TB USB disk from the
+> front, I am at least able to mount my two 2x2TB in degraded mode and see
+> my data!
 
-AFAIK, no, for now btrfs just can't reuse device - no way
-At least for mounted FS.
-AFAIK, btrfs have patches for dynamic device states, but patches not merged
+Just a follow up. I have not been of late been able to mount my data,
+even in degraded mode.
 
--- 
-Have a nice day,
-Timofey.
+However someone on #btrfs suggested I try an older Linux kernel & I also
+found https://www.spinics.net/lists/linux-btrfs/msg69905.html to
+reaffirm my suspicions.
+
+Low and behold I can mount with an older kernel
+(linux-4.4.3-1-x86_64.pkg.tar.xz) !! But if I reboot into 4.13.9-1-ARCH,
+no worky:
+
+[  489.139903] BTRFS warning (device sdb1): devid 3 uuid
+e5f03f81-35e7-4a29-9608-bd78864cc0ad is missing
+[  489.524334] BTRFS info (device sdb1): bdev (null) errs: wr 0, rd 1,
+flush 0, corrupt 0, gen 0
+[  489.524367] BTRFS info (device sdb1): bdev /dev/sdb1 errs: wr 13361,
+rd 31990017, flush 155, corrupt 0, gen 0
+[  502.934069] BTRFS warning (device sdb1): missing devices (1) exceeds
+the limit (0), writeable mount is not allowed
+[  502.980748] BTRFS error (device sdb1): open_ctree failed
+
+
+Does anyone know how I can track the progress of "--fix-dev-size"? It
+doesn't seem part of btrfs-progs 4.13-1...

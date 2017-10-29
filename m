@@ -1,14 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:33234 "EHLO
+Received: from syrinx.knorrie.org ([82.94.188.77]:33838 "EHLO
         syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751979AbdJKMDJ (ORCPT
+        with ESMTP id S1751221AbdJ2NyI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Oct 2017 08:03:09 -0400
+        Sun, 29 Oct 2017 09:54:08 -0400
 Subject: Re: [PATCH] btrfs: fix max chunk size on dup
 To: Naohiro Aota <nao.aota@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <150666965116.9802.15216393306253897797.stgit@naota.dhcp.fujisawa.hgst.com>
  <20171010113119.GJ3521@suse.cz>
  <11a2b79c-4eda-ff80-0ad4-53065919be01@mendix.com>
@@ -16,13 +14,19 @@ References: <150666965116.9802.15216393306253897797.stgit@naota.dhcp.fujisawa.hg
  <51516c1c-6e76-6736-3606-d5bd7aa4f61f@mendix.com>
  <CAEe67=-Aqe1kTCjqKtEEVKJ1+LgWZML5JUhrLN7618vy-D1sWg@mail.gmail.com>
 From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <3258e515-a231-1fa8-22ff-923e56042461@mendix.com>
-Date: Wed, 11 Oct 2017 14:03:06 +0200
+Message-ID: <7e3c7acd-6686-a97d-6137-5183332a0ae4@mendix.com>
+Date: Sun, 29 Oct 2017 14:54:04 +0100
 MIME-Version: 1.0
 In-Reply-To: <CAEe67=-Aqe1kTCjqKtEEVKJ1+LgWZML5JUhrLN7618vy-D1sWg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Hi Naohiro,
+
+Are you still planning to work on this?
+
+Hans
 
 On 10/11/2017 11:58 AM, Naohiro Aota wrote:
 > Hi,
@@ -75,16 +79,8 @@ On 10/11/2017 11:58 AM, Naohiro Aota wrote:
 > 
 > Thank you for explaining in detail :) Yes, the allocator was already
 > broken by using the data_stripes.
-
-Well, technically, data_stripes is right (I first was confused about it
-yesterday). But it's something specific for parity raid.
-
 > (and it will also "break" existing file systems, in terms of making a
 > DUP|META block group smaller)
-
-Yes, and on a fs larger than 50GiB I indeed see 512MB DUP metadata
-chunks, instead of 1GiB like the code says.
-
 > I believe this patch fix the things.
 > 
 >>>> At the beginning it says:
@@ -130,13 +126,6 @@ chunks, instead of 1GiB like the code says.
 > 
 > This catch the point. Notice stripe_size is divided by dev_stripes
 > after the lines in the patch.
-
-Yes,
-
-stripe_size = div_u64(stripe_size, dev_stripes);
-
-Anyone who reads this should think.. "So, ok, what IS a stripe then". O_o
-
 > It means that at this region (from "stripe_size =
 > devices_info[ndevs-1].max_avail;" to "stripe_size =
 > div_u64(stripe_size, dev_stripes);"),
@@ -162,51 +151,10 @@ Anyone who reads this should think.. "So, ok, what IS a stripe then". O_o
 > 
 > Now, I think taking the 2nd solution would make the code more clear,
 > because it eliminate two different meanings of "stripe_size"
-
-Yes, it's quite important that the meaning of things is consistent.
-
-item 81 key (FIRST_CHUNK_TREE CHUNK_ITEM 723261587456) itemoff 9627
-itemsize 112
-    chunk length 536870912 owner 2 stripe_len 65536
-    type METADATA|DUP num_stripes 2
-        stripe 0 devid 1 offset 641061617664
-        dev uuid: edae9198-4ea9-4553-9992-af8e27aa6578
-        stripe 1 devid 1 offset 641598488576
-        dev uuid: edae9198-4ea9-4553-9992-af8e27aa6578
-
-Stripes are the separate parts of physical disk space that are combined
-into the logical address space.
-
-So in the above example for DUP, The chunk is 512MiB, and both of the
-stripes are also 512MiB.
-
-Everywhere there's stripe in the code it should be, or should be working
-towards that 512MiB value (e.g. only going down because the disk is
-almost full). Right now it's not during part of the function, which
-causes everything in between to act weird.
-
+> 
 > Again, keep in mind that "dev_stripes = 1" on all BG types but DUP.
 > So, multiply/divide with "dev_stripes" won't affect any BG but DUP BG
 > (at least on current RAID feature set).
-
-Yep. That's probably why the problem was not spotted yet.
-
-
-Also: there is an additional question... Since the actual behaviour has
-been creating 128MiB and 512MiB metadata chunks for years now, "fixing"
-this bug would mean that the behaviour suddenly changes.
-
-Since 1 GiB for a single metadata chunk is IMHO really too big (could
-start a separate discussion why), I would propose to keep the actual
-behavior consistent and change the default in the code from 256MiB and
-1GiB to 128MiB and 512MiB.
-
-What we *do* know then, is that we are not introducing regressions or
-new problems for users.
-
-Or, is there a special reason why you would want to have bigger ones,
-causing you to find the bug?
-
 > 
 >>
 >>>>
@@ -272,19 +220,17 @@ causing you to find the bug?
 > I agree. The code is too complicated for current RAID feature set,
 > though it may support future
 > expansion naturally.
+> 
+>>>>
+>>>
+>>>
+>> --
+>> Hans van Kranenburg
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Well, I think the original idea was to have one algorithm which works
-with the parameters in the list of btrfs_raid_attr, so you could just
-add a new type by only adding new parameters.
-
-The addition of RAID56 (or, the way in which it was done) already
-shattered that dream, since it adds special cases in specific places for
-itself.
-
-Or, the struct should include a field with .parity_stripes (1 for raid5,
-2 for raid6, 0 for others) and that should be used instead of the if
-raid5 () and if raid6 () etc... But, in that case, there's no code which
-magically knows what to do when you set parity_stripes = 3.. Aaaargh!
 
 -- 
 Hans van Kranenburg

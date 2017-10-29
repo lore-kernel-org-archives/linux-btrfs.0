@@ -1,130 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f44.google.com ([74.125.83.44]:46772 "EHLO
-        mail-pg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753389AbdJ3Wd5 (ORCPT
+Received: from shadbolt.e.decadent.org.uk ([88.96.1.126]:46476 "EHLO
+        shadbolt.e.decadent.org.uk" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751366AbdJ2RPY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 18:33:57 -0400
-From: Justin Maggard <jmaggard10@gmail.com>
-To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH] btrfs: test for qgroup reservation leaks with prealloc
-Date: Mon, 30 Oct 2017 15:33:48 -0700
-Message-Id: <20171030223348.22018-1-jmaggard@netgear.com>
+        Sun, 29 Oct 2017 13:15:24 -0400
+Message-ID: <1509297309.2721.73.camel@decadent.org.uk>
+Subject: [stable] btrfs name length fixes
+From: Ben Hutchings <ben@decadent.org.uk>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, stable <stable@vger.kernel.org>
+Date: Sun, 29 Oct 2017 17:15:09 +0000
+Content-Type: multipart/signed; micalg="pgp-sha512";
+        protocol="application/pgp-signature"; boundary="=-GaITHfYr6cBbH4tjqGI+"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test case writes into pre-allocated space, then tries to fallocate
-some more within the defined quota limit. Currently (4.14-rc7) this fails
-with EDQUOT due to quota reservation leakage when writing into pre-
-allocated space.
 
-A possible fix has been sent to the ML as "btrfs: Fix quota reservation
-leak on preallocated files"
+--=-GaITHfYr6cBbH4tjqGI+
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Justin Maggard <jmaggard@netgear.com>
----
- tests/btrfs/153     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/153.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 75 insertions(+)
- create mode 100755 tests/btrfs/153
- create mode 100644 tests/btrfs/153.out
+You recently made a number of fixes to validation and use of name
+lengths in btrfs:
 
-diff --git a/tests/btrfs/153 b/tests/btrfs/153
-new file mode 100755
-index 0000000..95a8095
---- /dev/null
-+++ b/tests/btrfs/153
-@@ -0,0 +1,72 @@
-+#! /bin/bash
-+# FS QA Test 153
-+#
-+# Test for leaking quota reservations on preallocated files.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (c) 2017 NETGEAR, Inc.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_btrfs_qgroup_report
-+_require_xfs_io_command "falloc"
-+
-+_scratch_mkfs >/dev/null
-+_scratch_mount
-+
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
-+_run_btrfs_util_prog qgroup limit 100M 0/5 $SCRATCH_MNT
-+
-+testfile1=$SCRATCH_MNT/testfile1
-+testfile2=$SCRATCH_MNT/testfile2
-+$XFS_IO_PROG -fc "falloc 0 80M" $testfile1
-+$XFS_IO_PROG -fc "pwrite 0 80M" $testfile1 > /dev/null
-+$XFS_IO_PROG -fc "falloc 0 19M" $testfile2
-+$XFS_IO_PROG -fc "pwrite 0 19M" $testfile2 > /dev/null
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/153.out b/tests/btrfs/153.out
-new file mode 100644
-index 0000000..cd9fe8a
---- /dev/null
-+++ b/tests/btrfs/153.out
-@@ -0,0 +1,2 @@
-+QA output created by 153
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index fb94461..15c2ecb 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -155,3 +155,4 @@
- 150 auto quick dangerous
- 151 auto quick
- 152 auto quick metadata qgroup send
-+153 auto quick qgroup
--- 
-2.1.4
+286b92f43c0d btrfs: tree-log.c: Wrong printk information about namelen
+19c6dcbfa746 btrfs: Introduce btrfs_is_name_len_valid to avoid reading beyo=
+nd boundary
+e79a33270d05 btrfs: Check name_len with boundary in verify dir_item
+26a836cec2ea btrfs: Check name_len on add_inode_ref call path
+8ee8c2d62d5f btrfs: Verify dir_item in replay_xattr_deletes
+3c1d41844896 btrfs: Check name_len in btrfs_check_ref_name_override
+59b0a7f2c7c1 btrfs: Check name_len before read in iterate_dir_item
+488d7c456653 btrfs: Check name_len before reading btrfs_get_name
+64c7b01446f4 btrfs: Check name_len before in btrfs_del_root_ref
+fbc326159a01 btrfs: Verify dir_item in iterate_object_props
 
+The bugs these are fixing probably should also be fixed on the affected
+stable branches.  Do you agree?  Can you provide any guidance about how
+far back these fixes would be needed?
+
+Ben.
+
+--=20
+Ben Hutchings
+I'm not a reverse psychological virus.  Please don't copy me into your
+sig.
+
+
+--=-GaITHfYr6cBbH4tjqGI+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEErCspvTSmr92z9o8157/I7JWGEQkFAln2DJ0ACgkQ57/I7JWG
+EQmk0g/9HT99n7FrRWFaHmvEbf0Bmnq6ns2n68cx94JfYXJBNAAIig3FS151X/pV
+ULwdaPCU1ii3Y1m9rrJXmTwisrf6v6M2xTPzXou4yIgxuuUgJ0J33NqTmd7lNwRh
+goHGaBkyel4dgDKj8s0uPBgvYhDqq7ELQ7EMFPXXw8mX5Nz4n+Mq9MnjPpu2/cTY
+Hw/qKai9dhvnmf4ZKEqW22SfFGF7Xke1g7JLG66EK+N0Awm67iv9deNsjp94vbjW
+UOuCIDyqOJgAW+uRZ/eSSwoGJNWJmVo8mOZBA3sqJUr2h3S0jE9+za5KT8dojCnT
+DOswkYY+UTqXNkXGQHzLsh1lStkFxO/YGbqop2JWOtO6FzhWNWz2BKuX0ciHjKm9
++wmQLqo8mGcYaOA/3Zkfm1DSMG4PL8X+5QtPgRRpKcjlhLt88Z3xUfykFhg1ydCq
+LtRejn/HbS/iaC4Klozqd5AkctFVIC4TwSE73hzd3UETb13JEazPd2yVrmWa2UE5
+xrVLQB4f4ehw+2OeEHa0kMfR0jvoz/4G4fd9WXEMWq2OqcagwnJhkF1Z4mQWi6WO
+faRp2Veu0d+zHiQqyRWj8AFx3gZJ2S4k0qmy5a/rigPmXwKXy5tvhsy5PojlqFzc
+29hDGxqsHCk/TkocMAmc0DaDFs+2EI3XWkGWE4fi17JAFTxbzqc=
+=S6yo
+-----END PGP SIGNATURE-----
+
+--=-GaITHfYr6cBbH4tjqGI+--

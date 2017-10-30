@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:50193 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:56825 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751167AbdJ0X7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Oct 2017 19:59:37 -0400
+        id S1751838AbdJ3AxV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 29 Oct 2017 20:53:21 -0400
 Subject: Re: [PATCH v3 2/2] btrfs-progs: test/mkfs: Test if the minimal device
  size is valid
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20171027005324.17950-1-wqu@suse.com>
  <20171027005324.17950-2-wqu@suse.com> <20171027165924.GN3521@twin.jikos.cz>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <40efeff0-a317-b7a6-cb24-78c62e6c8438@gmx.com>
-Date: Sat, 28 Oct 2017 07:59:23 +0800
+Message-ID: <8fb8d6d8-5a52-05b6-0b69-57cd487da730@gmx.com>
+Date: Mon, 30 Oct 2017 08:53:07 +0800
 MIME-Version: 1.0
 In-Reply-To: <20171027165924.GN3521@twin.jikos.cz>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="PpffDvUKpWf96sBltgWKS1ntPEG1XW8cv"
+ boundary="uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---PpffDvUKpWf96sBltgWKS1ntPEG1XW8cv
-Content-Type: multipart/mixed; boundary="9kKeAArshhlwIpnfOFqTRPpi0VEcUtqgU";
+--uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe
+Content-Type: multipart/mixed; boundary="dupo6XpjRSVWTvQSrjbpLJXkMTnt4ONuI";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <40efeff0-a317-b7a6-cb24-78c62e6c8438@gmx.com>
+Message-ID: <8fb8d6d8-5a52-05b6-0b69-57cd487da730@gmx.com>
 Subject: Re: [PATCH v3 2/2] btrfs-progs: test/mkfs: Test if the minimal device
  size is valid
 References: <20171027005324.17950-1-wqu@suse.com>
  <20171027005324.17950-2-wqu@suse.com> <20171027165924.GN3521@twin.jikos.cz>
 In-Reply-To: <20171027165924.GN3521@twin.jikos.cz>
 
---9kKeAArshhlwIpnfOFqTRPpi0VEcUtqgU
+--dupo6XpjRSVWTvQSrjbpLJXkMTnt4ONuI
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -93,82 +93,20 @@ ts/010-small-image/test.sh
 >=20
 > I don't seem to get this test to work, it fails with this in the log:
 
-Strange, it passed without problem on my box.
+Forgot to mention, the test case is for minimal-device-size fix patchset:=
 
-=3D=3D=3D Entering /home/adam/btrfs/btrfs-progs/tests/mkfs-tests/010-smal=
-l-image
-$TEST_DEV not given, use /home/adam/btrfs/btrfs-progs/test/test.img as
-fallback
-############### /home/adam/btrfs/btrfs-progs/mkfs.btrfs -f -n 4k -m
-single -d single /home/adam/btrfs/btrfs-progs/tests/test.img
-btrfs-progs v4.13.2
-See http://btrfs.wiki.kernel.org for more information.
-
-failed (expected): /home/adam/btrfs/btrfs-progs/mkfs.btrfs -f -n 4k -m
-single -d single /home/adam/btrfs/btrfs-progs/tests/test.img
-############### /home/adam/btrfs/btrfs-progs/mkfs.btrfs -f -n 4k -m
-single -d single /home/adam/btrfs/btrfs-progs/tests/test.img
-btrfs-progs v4.13.2
-See http://btrfs.wiki.kernel.org for more information.
-
-Label:              (null)
-UUID:               04213076-9678-420b-b748-5e5b6394e025
-Node size:          4096
-Sector size:        4096
-Filesystem size:    44.00MiB
-Block group profiles:
-  Data:             single            4.38MiB
-  Metadata:         single            4.38MiB
-  System:           single            4.00MiB
-SSD detected:       no
-Incompat features:  extref, skinny-metadata
-Number of devices:  1
-Devices:
-   ID        SIZE  PATH
-    1    44.00MiB  /home/adam/btrfs/btrfs-progs/tests/test.img
-
-############### root_helper mount
-/home/adam/btrfs/btrfs-progs/tests/test.img
-/home/adam/btrfs/btrfs-progs/tests/mnt
-############### root_helper umount /home/adam/btrfs/btrfs-progs/tests/mnt=
-
-############### /home/adam/btrfs/btrfs-progs/mkfs.btrfs -f -n 4k -m
-single -d dup /home/adam/btrfs/btrfs-progs/tests/test.img
-btrfs-progs v4.13.2
-See http://btrfs.wiki.kernel.org for more information.
-
-failed (expected): /home/adam/btrfs/btrfs-progs/mkfs.btrfs -f -n 4k -m
-single -d dup /home/adam/btrfs/btrfs-progs/tests/test.img
-############### /home/adam/btrfs/btrfs-progs/mkfs.btrfs -f -n 4k -m
-single -d dup /home/adam/btrfs/btrfs-progs/tests/test.img
-btrfs-progs v4.13.2
-See http://btrfs.wiki.kernel.org for more information.
-
-Label:              (null)
-UUID:               f7c3a0db-abf1-4061-99f0-1028ac713ed6
-Node size:          4096
-Sector size:        4096
-Filesystem size:    164.00MiB
-Block group profiles:
-  Data:             DUP              64.00MiB
-  Metadata:         single            8.00MiB
-  System:           single            4.00MiB
-SSD detected:       no
-Incompat features:  extref, skinny-metadata
-Number of devices:  1
-Devices:
-   ID        SIZE  PATH
-    1   164.00MiB  /home/adam/btrfs/btrfs-progs/tests/test.img
-
-############### root_helper mount
-/home/adam/btrfs/btrfs-progs/tests/test.img
-/home/adam/btrfs/btrfs-progs/tests/mnt
-############### root_helper umount /home/adam/btrfs/btrfs-progs/tests/mnt=
+Enhance minimal device size calculation to fix mkfs failure on small file=
 
 
+Considering I sent too many patchset recently and most of them have
+dependency, should I resend a big patchset to address the dependency?
 
-Maybe it's related to the preparation patch for that?
-Like the prepare_test_dev() function modification?
+IIRC the dependency should be:
+rootdir rework -> rootdir refactor -> minimal device size fix (including
+test cases)
+
+And later mkfs qgroup support also depends on rootdir rework (just
+conflicts, not code dependency)
 
 Thanks,
 Qu
@@ -237,23 +175,23 @@ in
 >=20
 
 
---9kKeAArshhlwIpnfOFqTRPpi0VEcUtqgU--
+--dupo6XpjRSVWTvQSrjbpLJXkMTnt4ONuI--
 
---PpffDvUKpWf96sBltgWKS1ntPEG1XW8cv
+--uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlnzyFsXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qi2TQgAgTsqWlKjrcmxfEKjF0w/0eIC
-IE5X9kyad5RgURQl3pF1je9kC6FoB0CPMZO10bn6v7B/PMRyNOO7SgJRwoBQVMJa
-HxOvP3SVcUFQkyW4pr8uHsRpJWgEX7xzCLsr1kJ6lE6KqE+KECJLIiwDG5oeeNCD
-Fe+FQhTxTXYONb5QflbuD7pKkfNeFs/WV8lNAUxWjuLcW5hDY6cVWuGI9tYxBJKr
-o+0pZrlq+8wr9LZXbhTjbJcbY+azXKAcXdini8TbhoquCb1aA6dxdUbJkfdiTlJH
-hq3QRy2zHF/2T0DU6L1L5K3tMkEEIB/AQalMzH+YX50u3s75e42mI0wBJNJqXA==
-=Krgb
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln2d/MXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qilUgf/Z6SamTCr0TJHRLsEeIb8PUqm
+1d+LGUcWaeNQExcixfNr9mrKxFS5G2zUUDlbAXlnvy6mhMCbrlgKZNqQDOl0+6xG
+kwIgjFSM459BGEjE7BqsVQ8H0L7bZQcXbFcUMpSAQeUIx0Vu4/GO/hk72WUoZeG4
+SJpyenOYUQ7XEGroDpe1qMlXFE71Nf9eN1uH9DiDiIJDPShctQuHcpYJkZjsP5T4
+FSk44Tooz3prEePhsw96Hv4hsZA8uC5IZCESjhQBYVCCYm868qeXtyHjg37pDbNm
+170AQN9pbuvWmybwrprLemTPmnWyEWm7H7OIl9Ve2MEI/tsA93qKGc4qQiIMRw==
+=6ZD2
 -----END PGP SIGNATURE-----
 
---PpffDvUKpWf96sBltgWKS1ntPEG1XW8cv--
+--uniqL48VqBTcpRMVpOsmfgSBa6PFXUoCe--

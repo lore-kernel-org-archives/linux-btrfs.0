@@ -1,58 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:53755 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751610AbdJaGIh (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 31 Oct 2017 02:08:37 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs: Don't generate UUID for non-fs tree
-Date: Tue, 31 Oct 2017 14:08:16 +0800
-Message-Id: <20171031060816.683-1-wqu@suse.com>
+Received: from mail-pg0-f44.google.com ([74.125.83.44]:46772 "EHLO
+        mail-pg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753389AbdJ3Wd5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Oct 2017 18:33:57 -0400
+From: Justin Maggard <jmaggard10@gmail.com>
+To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Cc: Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH] btrfs: test for qgroup reservation leaks with prealloc
+Date: Mon, 30 Oct 2017 15:33:48 -0700
+Message-Id: <20171030223348.22018-1-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_create_tree() will unconditionally generate UUID for any root.
-So for quota tree and data reloc tree created by kernel, they will have
-unique UUIDs.
+This test case writes into pre-allocated space, then tries to fallocate
+some more within the defined quota limit. Currently (4.14-rc7) this fails
+with EDQUOT due to quota reservation leakage when writing into pre-
+allocated space.
 
-However UUID in root item is only referred by UUID tree, which only
-records UUID for fs trees.
-This makes unique UUIDs for quota/data reloc tree meaningless.
+A possible fix has been sent to the ML as "btrfs: Fix quota reservation
+leak on preallocated files"
 
-Leave the UUID as zero for non-fs tree, making btrfs-debug-tree output
-less confusing.
-
-Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
 ---
- fs/btrfs/disk-io.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ tests/btrfs/153     | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/153.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 75 insertions(+)
+ create mode 100755 tests/btrfs/153
+ create mode 100644 tests/btrfs/153.out
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index dfdab849037b..d85e04a675fe 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1403,7 +1403,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root;
- 	struct btrfs_key key;
- 	int ret = 0;
--	uuid_le uuid;
-+	uuid_le uuid = { 0 };
- 
- 	root = btrfs_alloc_root(fs_info, GFP_KERNEL);
- 	if (!root)
-@@ -1444,7 +1444,8 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 	btrfs_set_root_used(&root->root_item, leaf->len);
- 	btrfs_set_root_last_snapshot(&root->root_item, 0);
- 	btrfs_set_root_dirid(&root->root_item, 0);
--	uuid_le_gen(&uuid);
-+	if (is_fstree(objectid))
-+		uuid_le_gen(&uuid);
- 	memcpy(root->root_item.uuid, uuid.b, BTRFS_UUID_SIZE);
- 	root->root_item.drop_level = 0;
- 
+diff --git a/tests/btrfs/153 b/tests/btrfs/153
+new file mode 100755
+index 0000000..95a8095
+--- /dev/null
++++ b/tests/btrfs/153
+@@ -0,0 +1,72 @@
++#! /bin/bash
++# FS QA Test 153
++#
++# Test for leaking quota reservations on preallocated files.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (c) 2017 NETGEAR, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_btrfs_qgroup_report
++_require_xfs_io_command "falloc"
++
++_scratch_mkfs >/dev/null
++_scratch_mount
++
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++_run_btrfs_util_prog qgroup limit 100M 0/5 $SCRATCH_MNT
++
++testfile1=$SCRATCH_MNT/testfile1
++testfile2=$SCRATCH_MNT/testfile2
++$XFS_IO_PROG -fc "falloc 0 80M" $testfile1
++$XFS_IO_PROG -fc "pwrite 0 80M" $testfile1 > /dev/null
++$XFS_IO_PROG -fc "falloc 0 19M" $testfile2
++$XFS_IO_PROG -fc "pwrite 0 19M" $testfile2 > /dev/null
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/153.out b/tests/btrfs/153.out
+new file mode 100644
+index 0000000..cd9fe8a
+--- /dev/null
++++ b/tests/btrfs/153.out
+@@ -0,0 +1,2 @@
++QA output created by 153
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index fb94461..15c2ecb 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -155,3 +155,4 @@
+ 150 auto quick dangerous
+ 151 auto quick
+ 152 auto quick metadata qgroup send
++153 auto quick qgroup
 -- 
-2.14.3
+2.1.4
 

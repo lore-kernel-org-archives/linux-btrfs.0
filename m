@@ -1,97 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:53412 "EHLO
-        mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751952AbdJ3SwE (ORCPT
+Received: from mail-oi0-f51.google.com ([209.85.218.51]:54037 "EHLO
+        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933209AbdJ3Vhp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 14:52:04 -0400
-Received: by mail-oi0-f54.google.com with SMTP id h6so23757637oia.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Oct 2017 11:52:03 -0700 (PDT)
+        Mon, 30 Oct 2017 17:37:45 -0400
+Received: by mail-oi0-f51.google.com with SMTP id h6so24509648oia.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Oct 2017 14:37:45 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAD8FQQ1t63ubt=e2MZ+=VJTJ1uMi5NgnfZXzc72eMyWT76E4nw@mail.gmail.com>
-References: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
- <CAD8FQQ3kBfy8kLFzSm-OVbsYsQ7-LzH0faD09__4S5_q0bM7pA@mail.gmail.com>
- <CAKuJGC-aRt_NKboYa9ZK6ApWDJ_knM-UazPxEUq7sHiNXEqA6w@mail.gmail.com>
- <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
- <CAD8FQQ3boTj97yu-F8CiFBvR-EfD+1chcSo=VzyAxwO7GpomEg@mail.gmail.com>
- <CAKuJGC8omM8TMg7DqncuoM6e0jdUOdiwNLU6q29z__U=2NQHvg@mail.gmail.com>
- <1484297967.48018.1508985286675@email.1and1.com> <CAJCQCtS9he3cpqKgnFQjM2GPA1atvgfmi2ZhrjGZg8Yq1h91BQ@mail.gmail.com>
- <CAD8FQQ1t63ubt=e2MZ+=VJTJ1uMi5NgnfZXzc72eMyWT76E4nw@mail.gmail.com>
+In-Reply-To: <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+ <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+ <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
+ <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 30 Oct 2017 19:52:02 +0100
-Message-ID: <CAJCQCtRNhOH7ex6-FFiNmp0nyy+S3cneukm8yy44GZCuMeVsWQ@mail.gmail.com>
-Subject: Re: btrfs send yields "ERROR: send ioctl failed with -5: Input/output error"
-To: Zak Kohler <y2k@y2kbugger.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
+Date: Mon, 30 Oct 2017 22:37:43 +0100
+Message-ID: <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+Subject: Re: Problem with file system
+To: Dave <davestechshop@gmail.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
+        Fred Van Andel <vanandel@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 30, 2017 at 2:57 AM, Zak Kohler <y2k@y2kbugger.com> wrote:
-
-> $ sudo btrfs scrub start --offline --progress /dev/disk/by-id/WD-XX1
-> Scrub result:
-> Tree bytes scrubbed: 5234425856
-> Tree extents scrubbed: 638968
-> Data bytes scrubbed: 4353723670528
-> Data extents scrubbed: 374300
-> Data bytes without csum: 533200896
-> Read error: 0
-> Verify error: 0
-> Csum error: 150
+On Mon, Oct 30, 2017 at 4:31 AM, Dave <davestechshop@gmail.com> wrote:
+> This is a very helpful thread. I want to share an interesting related story.
 >
-> $ sudo btrfs scrub start --offline --progress /dev/disk/by-id/WD-XX2
-> Scrub result:
-> Tree bytes scrubbed: 5234425856
-> Tree extents scrubbed: 638967
-> Data bytes scrubbed: 4353723314176
-> Data extents scrubbed: 374300
-> Data bytes without csum: 533200896
-> Read error: 0
-> Verify error: 0
-> Csum error: 238
+> We have a machine with 4 btrfs volumes and 4 Snapper configs. I
+> recently discovered that Snapper timeline cleanup been turned off for
+> 3 of those volumes. In the Snapper configs I found this setting:
 >
-> $ sudo btrfs scrub start --offline --progress /dev/disk/by-id/WD-XX3
-> Scrub result:
-> Tree bytes scrubbed: 5234491392
-> Tree extents scrubbed: 638975
-> Data bytes scrubbed: 4353723572224
-> Data extents scrubbed: 374300
-> Data bytes without csum: 533200896
-> Read error: 0
-> Verify error: 0
-> Csum error: 175 #first run
-> Csum error: 112 #second run...
-> Csum error: 285 #third run...
+> TIMELINE_CLEANUP="no"
 >
-> But I ran the /dev/disk/by-id/WD-XX3 device three times and you can
-> see the result...
+> Normally that would be set to "yes". So I corrected the issue and set
+> it to "yes" for the 3 volumes where it had not been set correctly.
+>
+> I suppose it was turned off temporarily and then somebody forgot to
+> turn it back on.
+>
+> What I did not know, and what I did not realize was a critical piece
+> of information, was how long timeline cleanup had been turned off and
+> how many snapshots had accumulated on each volume in that time.
+>
+> I naively re-enabled Snapper timeline cleanup. The instant I started
+> the  snapper-cleanup.service  the system was hosed. The ssh session
+> became unresponsive, no other ssh sessions could be established and it
+> was impossible to log into the system at the console.
+>
+> My subsequent investigation showed that the root filesystem volume
+> accumulated more than 3000 btrfs snapshots. The two other affected
+> volumes also had very large numbers of snapshots.
+>
+> Deleting a single snapshot in that situation would likely require
+> hours. (I set up a test, but I ran out of patience before I was able
+> to delete even a single snapshot.) My guess is that if we had been
+> patient enough to wait for all the snapshots to be deleted, the
+> process would have finished in some number of months (or maybe a
+> year).
+>
+> We did not know most of this at the time, so we did what we usually do
+> when a system becomes totally unresponsive -- we did a hard reset. Of
+> course, we could never get the system to boot up again.
+>
+> Since we had backups, the easiest option became to replace that system
+> -- not unlike what the OP decided to do. In our case, the hardware was
+> not old, so we simply reformatted the drives and reinstalled Linux.
+>
+> That's a drastic consequence of changing TIMELINE_CLEANUP="no" to
+> TIMELINE_CLEANUP="yes" in the snapper config.
 
 
-I expect these commands are the same, and involve all three drives in
-the offline scrub each time. So you have five different results, but
-all five involve csum errors. So the errors have a certain transience
-to them, hence inconsistent results.
+Without a complete autopsy on the file system, it's unclear whether it
+was fixable with available tools, and why it wouldn't mount normally,
+or if necessary do its own autorecovery with one of the available
+backup roots.
 
-But the online scrub consistently reports zero errors. That to me
-sounds like a bug in the offline scrub code. Maybe it's confused, and
-reports data without csums (nodatacow) as csum errors? That does not
-explain the inconsistency though.
+But off hand it sounds like hardware was sabotaging the expected write
+ordering. How to test a given hardware setup for that, I think, is
+really overdue. It affects literally every file system, and Linux
+storage technology.
 
-And then you're getting an consistent failure, but at an inconsistent
-location, with Btrfs send, ostensibly due to IO error, which sounds
-like it's hitting a bad csum check.
+It kinda sounds like to me something other than supers is being
+overwritten too soon, and that's why it's possible for none of the
+backup roots to find a valid root tree, because all four possible root
+trees either haven't actually been written yet (still) or they've been
+overwritten, even though the super is updated. But again, it's
+speculation, we don't actually know why your system was no longer
+mountable.
 
-It is entirely possible to get transient errors like this somewhere in
-a storage stack that's otherwise not reported by the error detection
-code in that layer. The thing I really don't understand is how you're
-getting zero errors with conventional online scrub, every time.
 
-On my tiny 23G installation I'm traveling with, I get the same results
-with all three scrub methods on an NVMe drive. Zero errors. The
-slighly larger spinning rust drives are not with me so I can't check
-them for a while.
+
+>
+> It's all part of the process of gaining critical experience with
+> BTRFS. Whether or not BTRFS is ready for production use is (it seems
+> to me) mostly a question of how knowledgeable and experienced are the
+> people administering it.
+
+"Btrfs is a copy on write filesystem for Linux aimed at implementing advanced
+features while focusing on fault tolerance, repair and easy administration."
+
+That is the current descriptive text at
+Documentation/filesystems/btrfs.txt for some time now.
+
+
+> In the various online discussions on this topic, all the focus is on
+> whether or not BTRFS itself is production-ready. At the current
+> maturity level of BTRFS, I think that's the wrong focus. The right
+> focus is on how production-ready is the admin person or team (with
+> respect to their BTRFS knowledge and experience). When a filesystem
+> has been around for decades, most of the critical admin issues become
+> fairly common knowledge, fairly widely known and easy to find. When a
+> filesystem is newer, far fewer people understand the gotchas. Also, in
+> older or widely used filesystems, when someone hits a gotcha, the
+> response isn't "that filesystem is not ready for production". Instead
+> the response is, "you should have known not to do that."
+
+
+
+That is not a general purpose file system. It's a file system for
+admins who understand where the bodies are buried.
+
 
 
 

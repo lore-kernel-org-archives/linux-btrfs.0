@@ -1,93 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:58334 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751067AbdJ3EKa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 00:10:30 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1e91Ot-00043A-OZ
-        for linux-btrfs@vger.kernel.org; Mon, 30 Oct 2017 05:10:11 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs send yields "ERROR: send ioctl failed with -5: Input/output
- error"
-Date: Mon, 30 Oct 2017 04:09:58 +0000 (UTC)
-Message-ID: <pan$7f6a7$60d76ea4$36d8c4cb$1d03823c@cox.net>
-References: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
-        <CAD8FQQ3kBfy8kLFzSm-OVbsYsQ7-LzH0faD09__4S5_q0bM7pA@mail.gmail.com>
-        <CAKuJGC-aRt_NKboYa9ZK6ApWDJ_knM-UazPxEUq7sHiNXEqA6w@mail.gmail.com>
-        <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
-        <CAD8FQQ3boTj97yu-F8CiFBvR-EfD+1chcSo=VzyAxwO7GpomEg@mail.gmail.com>
-        <CAKuJGC8omM8TMg7DqncuoM6e0jdUOdiwNLU6q29z__U=2NQHvg@mail.gmail.com>
-        <1484297967.48018.1508985286675@email.1and1.com>
-        <CAJCQCtS9he3cpqKgnFQjM2GPA1atvgfmi2ZhrjGZg8Yq1h91BQ@mail.gmail.com>
-        <CAD8FQQ1t63ubt=e2MZ+=VJTJ1uMi5NgnfZXzc72eMyWT76E4nw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from victor.provo.novell.com ([137.65.250.26]:55450 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751917AbdJ3IUj (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Mon, 30 Oct 2017 04:20:39 -0400
+Subject: Re: [PATCH] btrfs-progs: ins: fix arg order in print_inode_item()
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <91513913-9626-da65-5830-b372895f1325@jp.fujitsu.com>
+From: Qu Wenruo <wqu@suse.com>
+Message-ID: <6ee6b71f-a3a2-380e-8b6c-cb7fd4212186@suse.com>
+Date: Mon, 30 Oct 2017 16:20:20 +0800
+MIME-Version: 1.0
+In-Reply-To: <91513913-9626-da65-5830-b372895f1325@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="jiv4edvbowg9D2xRVUb7iOQOt0amHSFr1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zak Kohler posted on Sun, 29 Oct 2017 21:57:00 -0400 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--jiv4edvbowg9D2xRVUb7iOQOt0amHSFr1
+Content-Type: multipart/mixed; boundary="Tpou5aaRhcV6HagbHGOnmHbWS8oUCf0ca";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <6ee6b71f-a3a2-380e-8b6c-cb7fd4212186@suse.com>
+Subject: Re: [PATCH] btrfs-progs: ins: fix arg order in print_inode_item()
+References: <91513913-9626-da65-5830-b372895f1325@jp.fujitsu.com>
+In-Reply-To: <91513913-9626-da65-5830-b372895f1325@jp.fujitsu.com>
 
-> So I ran memtest86+ 5.01 for >4 days:
-> Pass: 39 Errors: 0
+--Tpou5aaRhcV6HagbHGOnmHbWS8oUCf0ca
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Be aware that memtest86+ will detect some types of errors but not others.
 
-In particular, some years ago I had some memory (DDR1/3-digit-Opteron 
-era), actually registered as required by Opterons and ECC, that passed 
-that sort of memory test because what the test /tests/ is memory cell 
-retention (if you put a value in does it verify on read-back?), that was 
-none-the-less bad memory in that at its rated speed it was unreliable at 
-memory /transfers/.
 
-Eventually that mobo got a BIOS update that could adjust memory clocking, 
-and I downclocked it a notch (from its rated pc3200 to 3000, IIRC).  At 
-the lower clock it was rock stable, even with reduced wait-states to make 
-up a bit of the performance I was losing to the lower clock.  But I had 
-to get a BIOS that could do it, first, and as I said, in the mean time 
-memtest86, etc, reported it was fine, because it was testing stable-
-state, not stress-testing memory transfers at full rated bandwidth.
+On 2017=E5=B9=B410=E6=9C=8830=E6=97=A5 16:10, Misono, Tomohiro wrote:
+> In the print_inode_item(), the argument order of sequence and flags are=
 
-Eventually I did a memory upgrade, and the new memory worked fine at full 
-rated speed.
+> reversed:
+>=20
+> printf("... sequence %llu flags 0x%llx(%s)\n",
+> 				...=20
+> 	       (unsigned long long)btrfs_inode_flags(eb,ii),
+>  	       (unsigned long long)btrfs_inode_sequence(eb, ii),
+> 				...)
+>=20
+> So, just fix it.
+>=20
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
-As for actual symptoms, that was well before I switched to btrfs 
-(actually probably about time btrfs development started, I'd guess), but 
-the most frequent early symptoms were untar/bunzip2 checksum failures, 
-with some system crashes during builds (gentoo so I do a lot of 
-untarballing of sources and builds).  Later, when the kernel got support 
-for the amd/opteron system-check error detection hardware, that would 
-sometimes, but not always, trigger as well, but the most frequent symptom 
-really was checksum verification failures untarring tbz2s.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-Of course if btrfs had been around for me to try to run back then I 
-expect I'd have been triggering enough checksum failures that I'd have 
-given up on running it.  But FWIW, tho the reiserfs I was running wasn't 
-checksummed, it didn't ever seem to significantly corrupt, with this or 
-other hardware problems I had.  
+Thanks,
+Qu
 
-That's what really amazed me about reiserfs, that it remained stable thru 
-not only that hardware problem but various others I've had over the years 
-that would have killed or made unworkable other filesystems.  Once it got 
-ordered journaling (as opposed to the original writeback journaling that 
-gave it the bad rep... and later poked holes in ext3 reliability when 
-they tried it there for a few kernel versions too) and switched to 
-ordered by default, it really /was/ remarkably stable, even in the face 
-of hardware issues that would take down many filesystems.
+> ---
+>  print-tree.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/print-tree.c b/print-tree.c
+> index 3c585e3..8abd760 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -896,8 +896,8 @@ static void print_inode_item(struct extent_buffer *=
+eb,
+>  	       btrfs_inode_uid(eb, ii),
+>  	       btrfs_inode_gid(eb, ii),
+>  	       (unsigned long long)btrfs_inode_rdev(eb,ii),
+> -	       (unsigned long long)btrfs_inode_flags(eb,ii),
+>  	       (unsigned long long)btrfs_inode_sequence(eb, ii),
+> +	       (unsigned long long)btrfs_inode_flags(eb,ii),
+>  	       flags_str);
+>  	print_timespec(eb, btrfs_inode_atime(ii), "\t\tatime ", "\n");
+>  	print_timespec(eb, btrfs_inode_ctime(ii), "\t\tctime ", "\n");
+>=20
 
-Of course one of the things that attracted me to btrfs years later was 
-that it was the same Chris Mason that helped reiserfs get that ordered 
-journaling back when he was working for SuSE and they were using reiserfs 
-by default, that began btrfs.
 
-Tho btrfs is far more complex, and isn't yet as stable as reiserfs ended 
-up being for me.  And on bad hardware it may never be, even if eventually 
-it's simply due to checksum failures making it effectively unusable.
+--Tpou5aaRhcV6HagbHGOnmHbWS8oUCf0ca--
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+--jiv4edvbowg9D2xRVUb7iOQOt0amHSFr1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+
+iQFBBAEBCAArFiEELd9y5aWlW6idqkLhwj2R86El/qgFAln24MQNHHdxdUBzdXNl
+LmNvbQAKCRDCPZHzoSX+qHEPB/42wpduY00MlgJjMprZqIO+vx82mvNe1a0ut5iF
+ornLPb2XJo7DI5tpJ74Z4T19p3lTdz019USKg2A8tv0AbJ7cASrX8gVPCSfeNTT6
+ODURGJPrBrMlblR7XVBy7bcq8lPnDBvSedt2LlBrqe5TXQrStasLw88xB/kTBoFz
+inP9EzlZVkWLj7SoEFAJQOw5iGL0davztRXEnio3npvLA0pHlUw6ZwKgM35O3OIV
+TQLXg1An8jd8QRqg0VTgXZ137tmNbQqFzj0uHBu+JNFXoSe31PxC/0/N649r70mL
+jHzLpL13V4/RonW8UdC3BinN7et/DT5nlHTVOemjNjLsDDrJ
+=ApOS
+-----END PGP SIGNATURE-----
+
+--jiv4edvbowg9D2xRVUb7iOQOt0amHSFr1--

@@ -1,120 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:48318 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751269AbdJ3NVT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 09:21:19 -0400
-Received: by mail-qt0-f195.google.com with SMTP id f8so16278875qta.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Oct 2017 06:21:19 -0700 (PDT)
-Message-ID: <1509369676.5412.20.camel@redhat.com>
-Subject: Re: [RFC PATCH v1 00/30] fs: inode->i_version rework and
- optimization
-From: Jeff Layton <jlayton@redhat.com>
-To: "J. Bruce Fields" <bfields@fieldses.org>, NeilBrown <neil@brown.name>
-Cc: Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@infradead.org>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Date: Mon, 30 Oct 2017 09:21:16 -0400
-In-Reply-To: <20170512162115.GH7704@fieldses.org>
-References: <20170330064724.GA21542@quack2.suse.cz>
-         <1490872308.2694.1.camel@redhat.com> <20170330161231.GA9824@fieldses.org>
-         <1490898932.2667.1.camel@redhat.com> <20170404183138.GC14303@fieldses.org>
-         <878tnfiq7v.fsf@notabene.neil.brown.name>
-         <20170405080551.GC8899@quack2.suse.cz>
-         <20170405181409.GC28681@fieldses.org> <20170511185942.GD25434@fieldses.org>
-         <87r2zvkp9c.fsf@notabene.neil.brown.name>
-         <20170512162115.GH7704@fieldses.org>
+Received: from mout.perfora.net ([74.208.4.194]:54548 "EHLO mout.perfora.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751886AbdJ3OhD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Oct 2017 10:37:03 -0400
+Received: from mail-yw0-f170.google.com ([209.85.161.170]) by
+ mrelay.perfora.net (mreueus001 [74.208.5.2]) with ESMTPSA (Nemesis) id
+ 0MaLU6-1dtqBq2J0C-00K3Gw for <linux-btrfs@vger.kernel.org>; Mon, 30 Oct 2017
+ 15:37:02 +0100
+Received: by mail-yw0-f170.google.com with SMTP id k11so11737957ywh.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Oct 2017 07:37:02 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <pan$7f6a7$60d76ea4$36d8c4cb$1d03823c@cox.net>
+References: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
+ <CAD8FQQ3kBfy8kLFzSm-OVbsYsQ7-LzH0faD09__4S5_q0bM7pA@mail.gmail.com>
+ <CAKuJGC-aRt_NKboYa9ZK6ApWDJ_knM-UazPxEUq7sHiNXEqA6w@mail.gmail.com>
+ <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
+ <CAD8FQQ3boTj97yu-F8CiFBvR-EfD+1chcSo=VzyAxwO7GpomEg@mail.gmail.com>
+ <CAKuJGC8omM8TMg7DqncuoM6e0jdUOdiwNLU6q29z__U=2NQHvg@mail.gmail.com>
+ <1484297967.48018.1508985286675@email.1and1.com> <CAJCQCtS9he3cpqKgnFQjM2GPA1atvgfmi2ZhrjGZg8Yq1h91BQ@mail.gmail.com>
+ <CAD8FQQ1t63ubt=e2MZ+=VJTJ1uMi5NgnfZXzc72eMyWT76E4nw@mail.gmail.com> <pan$7f6a7$60d76ea4$36d8c4cb$1d03823c@cox.net>
+From: Zak Kohler <y2k@y2kbugger.com>
+Date: Mon, 30 Oct 2017 10:36:31 -0400
+Message-ID: <CAD8FQQ1RQh4sHz+V_M_85+rWm-526hfRqXyyCqJT0Gjb7kZfkw@mail.gmail.com>
+Subject: Re: btrfs send yields "ERROR: send ioctl failed with -5: Input/output error"
+To: btrfs <linux-btrfs@vger.kernel.org>
+Cc: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2017-05-12 at 12:21 -0400, J. Bruce Fields wrote:
-> On Fri, May 12, 2017 at 08:22:23AM +1000, NeilBrown wrote:
-> > On Thu, May 11 2017, J. Bruce Fields wrote:
-> > > +static inline u64 nfsd4_change_attribute(struct inode *inode)
-> > > +{
-> > > +	u64 chattr;
-> > > +
-> > > +	chattr = inode->i_ctime.tv_sec << 30;
-> > > +	chattr += inode->i_ctime.tv_nsec;
-> > > +	chattr += inode->i_version;
-> > > +	return chattr;
-> > 
-> > So if I chmod a file, all clients will need to flush the content from their cache?
-> > Maybe they already do?  Maybe it is a boring corner case?
-> 
-> Yeah, that's the assumption, maybe it's wrong.  I can't recall
-> complaints about anyone bitten by that case.
-> 
+Lakshmipathi.G posted on Mon, Oct 30, 2017 at 12:07 AM as excerpted:
 
-I'm pretty sure that's required by the RFC. The change attribute changes
-with both data and metadata changes, and there is no way to tell what
-sort of change it was. You have to dump everything out of the cache when
-it changes.
+> Can you share these steps as simple bash script? Currently I'm running
+> few tests, I can check your script and share the results.
 
-> > >  /*
-> > >   * Fill in the pre_op attr for the wcc data
-> > >   */
-> > > @@ -253,7 +263,7 @@ fill_pre_wcc(struct svc_fh *fhp)
-> > >  		fhp->fh_pre_mtime = inode->i_mtime;
-> > >  		fhp->fh_pre_ctime = inode->i_ctime;
-> > >  		fhp->fh_pre_size  = inode->i_size;
-> > > -		fhp->fh_pre_change = inode->i_version;
-> > > +		fhp->fh_pre_change = nfsd4_change_attribute(inode);
-> > >  		fhp->fh_pre_saved = true;
-> > >  	}
-> > >  }
-> > > --- a/fs/nfsd/nfs3xdr.c
-> > > +++ b/fs/nfsd/nfs3xdr.c
-> > > @@ -260,7 +260,7 @@ void fill_post_wcc(struct svc_fh *fhp)
-> > >  		printk("nfsd: inode locked twice during operation.\n");
-> > >  
-> > >  	err = fh_getattr(fhp, &fhp->fh_post_attr);
-> > > -	fhp->fh_post_change = d_inode(fhp->fh_dentry)->i_version;
-> > > +	fhp->fh_post_change = nfsd4_change_attribute(d_inode(fhp->fh_dentry));
-> > >  	if (err) {
-> > >  		fhp->fh_post_saved = false;
-> > >  		/* Grab the ctime anyway - set_change_info might use it */
-> > > diff --git a/fs/nfsd/nfs4xdr.c b/fs/nfsd/nfs4xdr.c
-> > > index 26780d53a6f9..a09532d4a383 100644
-> > > --- a/fs/nfsd/nfs4xdr.c
-> > > +++ b/fs/nfsd/nfs4xdr.c
-> > > @@ -1973,7 +1973,7 @@ static __be32 *encode_change(__be32 *p, struct kstat *stat, struct inode *inode,
-> > >  		*p++ = cpu_to_be32(convert_to_wallclock(exp->cd->flush_time));
-> > >  		*p++ = 0;
-> > >  	} else if (IS_I_VERSION(inode)) {
-> > > -		p = xdr_encode_hyper(p, inode->i_version);
-> > > +		p = xdr_encode_hyper(p, nfsd4_change_attribute(inode));
-> > >  	} else {
-> > >  		*p++ = cpu_to_be32(stat->ctime.tv_sec);
-> > >  		*p++ = cpu_to_be32(stat->ctime.tv_nsec);
-> > 
-> > It is *really* confusing to find that fh_post_change is only set in nfs3
-> > code, and only used in nfs4 code.
-> 
-> Yup.
-> 
-> > It is probably time to get a 'version' field in 'struct kstat'.
-> 
-> The pre/post_wcc code doesn't seem to be doing an explicit stat, I
-> wonder if that matters?
-> 
+sure, but it is pretty trivial:
 
-Probably not for now. We only use this for namespace altering operations
-anyway (create, link, unlink, and rename).
+device1=/dev/disk/by-id/XX1
+device2=/dev/disk/by-id/XX2
+device3=/dev/disk/by-id/XX3
 
-The post code does do a fh_getattr. It's only the pre-op i_version that
-comes out of the cache. Only btrfs, xfs, and ext4 have a real i_version
-counter today, and they just scrape that info out of the in-core inode.
-So while not completely atomic, you should see a difference in the
-change_info4 during any of those operations.
+mkfs.btrfs -L OfflineJ $device1 $device2 $device3
+mount -t btrfs $device1 /mnt
+btrfs subvolume create /mnt/dataroot
+mkdir -p /media/OfflineJ
 
-FWIW, userland cephfs now supports a cluster-coherent change attribute,
-though the kernel client still needs some work before we can implement
-it there. Eventually we'll add that, and at that point we might need to
-have nfsd do a getattr in the pre part as well.
+umount /mnt
+mount -o subvol=/dataroot $device1 /media/OfflineJ
 
--- 
-Jeff Layton <jlayton@redhat.com>
+> > The only thing I could think of is that the btrfs version that I used to mkfs
+> > was not up to date. Is there a way to determine which version was used to
+> > create the filesystem?
+> >
+> If I'm not wrong, i don't think we can get mkfs version from existing file
+> system layout. what was your kernel version?
+
+Not quite sure.
+Oldest: archlinux linux-lts as of 2017.06.08
+Most likely: archlinux linux-lts as of 2017.10.18
+
+It may be possible that I updated and created the fs without
+rebooting or reloading the kernel modules. But normally in that case
+any interaction, even mounting, just fails loudly.
+
+
+Duncan posted on Mon, Oct 30, 2017 at 12:09 AM as excerpted:
+
+> and I downclocked it a notch (from its rated pc3200 to 3000, IIRC).  At
+
+Hmm, I did have a mild overclock on this system when I used it as a desktop
+but I thought I reverted it when I made it into a server. I'll double
+check this.
+
+> sometimes, but not always, trigger as well, but the most frequent symptom
+> really was checksum verification failures untarring tbz2s.
+
+I'll have to try and recreate this using my EXT4 system disk.
+
+
+Zak Kohler posted on Sun, Oct 29, 2017 at 9:57 PM as excerpted:
+
+> I'm running '$ sudo btrfs scrub start --offline --progress
+> /dev/disk/by-id/WD-XX3' one more time to just to make sure that I
+> wasn't reading something wrong.
+
+Well even stranger news on the fourth run:
+
+$ sudo btrfs scrub start --offline --progress /dev/disk/by-id/WD-XX3
+Csum error: 175 # first run
+Csum error: 112 # second run...
+Csum error: 285 # third run...
+Csum error: 0 # fourth run
+
+Also can anyone confirm that the above --offline command checks the whole
+filesystem regardless which device is specified on the cli?
+
+> Only other think I can think to try is transferring those drives to
+> another system.
+
+I still need to try this also.

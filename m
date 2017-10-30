@@ -1,38 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:50832 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754307AbdJPRe4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Oct 2017 13:34:56 -0400
-Date: Mon, 16 Oct 2017 10:34:49 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add write_flags for compression bio
-Message-ID: <20171016173449.GD19440@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Received: from mx2.suse.de ([195.135.220.15]:49155 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751374AbdJ3NfT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 30 Oct 2017 09:35:19 -0400
+Date: Mon, 30 Oct 2017 14:33:28 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: add write_flags for compression bio
+Message-ID: <20171030133328.GU3521@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20171013211035.26765-1-bo.li.liu@oracle.com>
- <20171016133310.GI3521@twin.jikos.cz>
+ <20171024051816.8269-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171016133310.GI3521@twin.jikos.cz>
+In-Reply-To: <20171024051816.8269-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 16, 2017 at 03:33:10PM +0200, David Sterba wrote:
-> On Fri, Oct 13, 2017 at 03:10:35PM -0600, Liu Bo wrote:
-> > Compression code path has only flaged bios with REQ_OP_WRITE no matter
-> > where the bios come from.  This breaks the rule that sync writes and
-> > writeback writes need to be differentiated from each other.
+On Mon, Oct 23, 2017 at 11:18:16PM -0600, Liu Bo wrote:
+> Compression code path has only flaged bios with REQ_OP_WRITE no matter
+> where the bios come from, but it could be a sync write if fsync starts
+> this writeback or a normal writeback write if wb kthread starts a
+> periodic writeback.
 > 
-> What are the implications of the change?
+> It breaks the rule that sync writes and writeback writes need to be
+> differentiated from each other, because from the POV of block layer,
+> all bios need to be recognized by these flags in order to do some
+> management, e.g. throttlling.
+> 
+> This passes writeback_control to compression write path so that it can
+> send bios with proper flags to block layer.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-All writes need to have the correct bio flag so that block layer can
-recognize them to do throttle or other stuff.  Compression writes are
-no exception, but currently we don't attach the correct bio flag to
-either compressed writeback writes or compressed sync writes.
-
-Does it make sense?
-
-Thanks,
-
--liubo
+Reviewed-by: David Sterba <dsterba@suse.com>

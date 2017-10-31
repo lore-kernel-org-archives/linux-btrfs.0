@@ -1,61 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:54932 "EHLO
-        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752357AbdJaL3C (ORCPT
+Received: from mta02.helmholtz-muenchen.de ([146.107.4.101]:34906 "EHLO
+        mta02.helmholtz-muenchen.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751269AbdJaNFX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 07:29:02 -0400
-Received: by mail-io0-f179.google.com with SMTP id e89so34216741ioi.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 04:29:02 -0700 (PDT)
-Subject: Re: Problem with file system
-To: Marat Khalili <mkh@rqc.ru>, Chris Murphy <lists@colorremedies.com>,
-        Dave <davestechshop@gmail.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
-        Fred Van Andel <vanandel@gmail.com>
-References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
- <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
- <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
- <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com>
- <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
- <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
- <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
- <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <b32358ec-781e-aff6-439b-3fc6fe02a25c@gmail.com>
-Date: Tue, 31 Oct 2017 07:28:58 -0400
+        Tue, 31 Oct 2017 09:05:23 -0400
+Received: from mtaextp1.scidom.de (mtaextp1.scidom.de [146.107.3.105])
+        (using TLSv1 with cipher ADH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mta02.helmholtz-muenchen.de (Postfix) with ESMTP id 15AC73190C1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:26:35 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaextp1.scidom.de (Postfix) with ESMTP id C3BB9144CB2
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:40:40 +0100 (CET)
+Received: from mtaextp1.scidom.de ([127.0.0.1])
+        by localhost (mtaextp1.scidom.de [127.0.0.1]) (amavisd-new, port 10032)
+        with ESMTP id iwJbpfbZsn-2 for <linux-btrfs@vger.kernel.org>;
+        Tue, 31 Oct 2017 13:40:38 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaextp1.scidom.de (Postfix) with ESMTP id B0D3C144C99
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:40:38 +0100 (CET)
+Received: from mtaextp1.scidom.de ([127.0.0.1])
+        by localhost (mtaextp1.scidom.de [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id 7akqBkeXhCYz for <linux-btrfs@vger.kernel.org>;
+        Tue, 31 Oct 2017 13:40:38 +0100 (CET)
+Received: from mtaintp1.scidom.de (mtaintp1.scidom.de [146.107.8.104])
+        by mtaextp1.scidom.de (Postfix) with ESMTPS id 7C86814494A
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:40:38 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaintp1.scidom.de (Postfix) with ESMTP id 6FDF410009B
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:40:38 +0100 (CET)
+Received: from mtaintp1.scidom.de ([127.0.0.1])
+        by localhost (mtaintp1.scidom.de [127.0.0.1]) (amavisd-new, port 10032)
+        with ESMTP id jHVbNRQ-YAJu for <linux-btrfs@vger.kernel.org>;
+        Tue, 31 Oct 2017 13:40:37 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+        by mtaintp1.scidom.de (Postfix) with ESMTP id BD88B100489
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:40:37 +0100 (CET)
+Received: from mtaintp1.scidom.de ([127.0.0.1])
+        by localhost (mtaintp1.scidom.de [127.0.0.1]) (amavisd-new, port 10026)
+        with ESMTP id 3unx-C3m3Nnb for <linux-btrfs@vger.kernel.org>;
+        Tue, 31 Oct 2017 13:40:37 +0100 (CET)
+Received: from mbxp1.scidom.de (mbxp1.scidom.de [146.107.8.101])
+        by mtaintp1.scidom.de (Postfix) with ESMTP id A1D2810009B
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:40:37 +0100 (CET)
+Date: Tue, 31 Oct 2017 13:40:37 +0100 (CET)
+From: "Lentes, Bernd" <bernd.lentes@helmholtz-muenchen.de>
+To: Btrfs ML <linux-btrfs@vger.kernel.org>
+Message-ID: <973325765.400970.1509453637439.JavaMail.zimbra@helmholtz-muenchen.de>
+In-Reply-To: <cc9e6302-125b-b120-cc45-35a2e12a3d6a@gmail.com>
+References: <cc9e6302-125b-b120-cc45-35a2e12a3d6a@gmail.com>
+Subject: Re: btrfs-subv-backup v0.1b
 MIME-Version: 1.0
-In-Reply-To: <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-31 01:57, Marat Khalili wrote:
-> On 31/10/17 00:37, Chris Murphy wrote:
->> But off hand it sounds like hardware was sabotaging the expected write
->> ordering. How to test a given hardware setup for that, I think, is
->> really overdue. It affects literally every file system, and Linux
->> storage technology.
->>
->> It kinda sounds like to me something other than supers is being
->> overwritten too soon, and that's why it's possible for none of the
->> backup roots to find a valid root tree, because all four possible root
->> trees either haven't actually been written yet (still) or they've been
->> overwritten, even though the super is updated. But again, it's
->> speculation, we don't actually know why your system was no longer
->> mountable.
-> Just a detached view: I know hardware should respect ordering/barriers 
-> and such, but how hard is it really to avoid overwriting at least one 
-> complete metadata tree for half an hour (even better, yet another one 
-> for a day)? Just metadata, not data extents.
-If you're running on an SSD (or thinly provisioned storage, or something 
-else which supports discards) and have the 'discard' mount option 
-enabled, then there is no backup metadata tree (this issue was mentioned 
-on the list a while ago, but nobody ever replied), because it's already 
-been discarded.  This is ideally something which should be addressed (we 
-need some sort of discard queue for handling in-line discards), but it's 
-not easy to address.
 
-Otherwise, it becomes a question of space usage on the filesystem, and 
-this is just another reason to keep some extra slack space on the FS 
-(though that doesn't help _much_, it does help).  This, in theory, could 
-be addressed, but it probably can't be applied across mounts of a 
-filesystem without an on-disk format change.
+
+----- Am 26. Okt 2017 um 15:32 schrieb Austin S. Hemmelgarn ahferroin7@gmail.com:
+
+> As previously mentioned on the list, I've written up a script to back up
+> BTRFS subvolume structures in regular file-based backups.  As of right
+> now, it's still a bit rough around the edges, but it's cleaned up enough
+> that I consider it of at least beta quality, and therefore fit for more
+> general testing (and possibly usage).   Aside from the issues and
+> limitations listed below in the README, error checking is still somewhat
+> lacking, and I plan to remedy that in the near future.
+> 
+> The script itself can be found here:
+> https://github.com/Ferroin/btrfs-subv-backup
+> 
+> Here's the official README, as that already covers pretty much
+> everything else I would put in this e-mail:
+> 
+> # btrfs-subv-backup v0.1b
+> btrfs-subv-backup is a tool for recording the layout of subvolumes on
+> a mounted BTRFS filesystem in a way that can be stored in a regular
+> file-based backup (for example, using tar).  It originated out of a lack
+> of such existing tools, and is intended to be as portable as reasonably
+> possible.  As a result, it depends on nothing beyond a working
+> installation of Python version 3.4 or higher.
+> 
+> btrfs-subv-backup is licensed under a BSD-style license, check the
+> LICENSE file or the docstring for more information.
+> 
+> ### Usage
+> Usage is extremely simple.  To generate a backup of a given mount
+> point, run:
+> 
+> `btrfs-subv-backup.py /path`
+> 
+> This will create a file called `.btrfs-subv-backup.json` in the root of
+> the mount point, make sure that gets included in any backups you run of
+> the mount point.
+> 
+> To restore the subvolumes in a filesystem after you've extracted a backup
+> of the mount point, run:
+> 
+> `btrfs-subv-backup.py --restore /path`
+> 
+> This will recreate the subvolume structure.
+> 
+> If you need to manually recreate the subvolumes, you can find a list
+> of them in the aforementioned JSON file under the 'subvolumes' key (the
+> other keys store info about the filesystem itself to make it easier to
+> figure out what it was).
+> 
+> ### Limitations and Known Issues
+> * We don't store information about reflinks.  This means in particular
+> that snapshot relationships __ARE NOT__ saved.  There is currently no
+> way to store this data reliably short of a block-level backup, which
+> has it's own special issues.
+> * Subvolumes with spaces in their name are not supported.
+> * There is currently no indication of progress.
+> * The restoration process may take a long time, and may use a very large
+> amount of disk space.  Ideally this should be fixed, but I'm not sure
+> of any way to do so while keeping things on-line.
+> * The current restoration process is all-or-nothing, things are not
+> correctly handled if some of the subvolumes have already been restored
+> (although btrfs-subv-backup will clean up the temporary subvolumes it
+> creates during the restore if the restore fails).  This should be pretty
+> easy to fix, I just haven't gotten around to it yet.
+> * btrfs-subv-backup won't cross actual mount points, which means it
+> won't recurse into explicitly mounted subvolumes.  This makes usage a
+> bit more complicated on some distributions (such as SLES and OpenSUSE),
+> but greatly simplifies the code.
+
+Hi Austin,
+
+thanks for your effort. What are the minimum prerequesties for kernel and btrfsprogs for that script ?
+Do you think it will run on my old SLES 11 SP4 ?
+
+ha-idg-1:~ # rpm -qa|grep -i btrfs
+btrfsprogs-3.18.2-0.40.48
+btrfsmaintenance-0.1-3.1
+libbtrfs0-3.18.2-0.40.48
+
+ha-idg-1:~ # uname -a
+Linux ha-idg-1 3.0.101-100-default #1 SMP Tue Apr 18 22:46:01 UTC 2017 (ce95309) x86_64 x86_64 x86_64 GNU/Linux
+
+Bernd
+ 
+
+Helmholtz Zentrum Muenchen
+Deutsches Forschungszentrum fuer Gesundheit und Umwelt (GmbH)
+Ingolstaedter Landstr. 1
+85764 Neuherberg
+www.helmholtz-muenchen.de
+Aufsichtsratsvorsitzende: MinDir'in Baerbel Brumme-Bothe
+Geschaeftsfuehrer: Prof. Dr. Guenther Wess, Heinrich Bassler, Dr. Alfons Enhsen
+Registergericht: Amtsgericht Muenchen HRB 6466
+USt-IdNr: DE 129521671
+

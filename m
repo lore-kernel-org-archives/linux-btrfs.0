@@ -1,88 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:58762 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751848AbdJaB7S (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:27022 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752919AbdJaCLp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 21:59:18 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1e9LpV-0001hM-Oi
-        for linux-btrfs@vger.kernel.org; Tue, 31 Oct 2017 02:59:01 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Problem with file system
-Date: Tue, 31 Oct 2017 01:58:48 +0000 (UTC)
-Message-ID: <pan$ee545$db8b9e33$aca1e421$80413db9@cox.net>
-References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
-        <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
-        <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
-        <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com>
-        <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
-        <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Mon, 30 Oct 2017 22:11:45 -0400
+Subject: Re: [PATCH v2 1/2] btrfs: match btrfs_device->mode same as it used
+ for open
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20171020103325.9595-1-anand.jain@oracle.com>
+ <20171020140715.3110-1-anand.jain@oracle.com>
+ <20171030143938.GW3521@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <0ae0edc8-2557-b3ba-9157-b5ecdf37d31c@oracle.com>
+Date: Tue, 31 Oct 2017 10:11:45 +0800
+MIME-Version: 1.0
+In-Reply-To: <20171030143938.GW3521@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave posted on Sun, 29 Oct 2017 23:31:57 -0400 as excerpted:
 
-> It's all part of the process of gaining critical experience with BTRFS.
-> Whether or not BTRFS is ready for production use is (it seems to me)
-> mostly a question of how knowledgeable and experienced are the people
-> administering it.
+
+On 10/30/2017 10:39 PM, David Sterba wrote:
+> On Fri, Oct 20, 2017 at 10:07:15PM +0800, Anand Jain wrote:
+>> We aren't setting the FMODE_WRITE when initializing btrfs_device
+>> structure and when calling blkdev_put, however we are setting it
+>> only when calling blkdev_get_by_path().
 > 
-> In the various online discussions on this topic, all the focus is on
-> whether or not BTRFS itself is production-ready. At the current maturity
-> level of BTRFS, I think that's the wrong focus. The right focus is on
-> how production-ready is the admin person or team (with respect to their
-> BTRFS knowledge and experience). When a filesystem has been around for
-> decades, most of the critical admin issues become fairly common
-> knowledge, fairly widely known and easy to find. When a filesystem is
-> newer, far fewer people understand the gotchas. Also, in older or widely
-> used filesystems, when someone hits a gotcha, the response isn't "that
-> filesystem is not ready for production". Instead the response is, "you
-> should have known not to do that."
+> But this still does not say why this is a problem worth fixing. Nikolay
+> asked for it, and I would do the same, but why do we even have to ask
+> for that?
 
-That's a view I hadn't seen before, but it seems reasonable and I like it.
+  Here its just a cleanup of miss match of open mode and close modes.
+  And there isn't any problem that I noticed.
 
-Indeed, there were/are a few reasonably widely known caveats with both 
-ext3 and reiserfs, for instance, and certainly some that apply to fat/
-vfat/fat32, the three filesystems other than btrfs I know most about, and 
-if anything they're past their prime, /not/ "still maturing", as btrfs is 
-typically described.  For example, setting either of the two to writeback 
-journaling and then losing data results in something akin to "you should 
-have known not to do that unless you were prepared for the risk, as it's 
-definitely a well known one."
+Thanks, Anand
 
-Which of course was about my own reaction when Linus and the other powers 
-that be decided to set ext3 to writeback journaling by default for a few 
-kernel cycles.  Having lived thru that on reiserfs, I /knew/ where /that/ 
-was headed, and sure enough...
 
-Similarly, ext3's performance problems with fsync, because it effectively 
-forces a full filesystem sync not just a file sync, are well known, as 
-are the risks of storing a reiserfs in a loopback file on reiserfs and 
-then trying to run a tree restore on the host, since it's known to mix up 
-the two filesystems in that case.
-
-It's thus a reasonable viewpoint to consider some of the btrfs quirks to 
-be in the same category.  Of course btrfs being the first COW-based-fs 
-most will have had experience with, and the first filesystem most will 
-have experienced that handles raid, snapshotting, etc, it's definitely 
-rather different and more complex than the filesystems most people are 
-familiar with, and thus can only be expected to have rather different and 
-more complex caveats than the filesystems most are familiar with, as well.
-
-OTOH, there's definitely some known low-hanging-fruit in terms of ease of 
-use, remaining to be implemented, tho I'd argue that we've reached the 
-point where general stability is such that it has allowed the focus to 
-gradually tilt toward implementing some of this, over the last year or 
-so, and we're beginning to see the loose ends tied up in the 
-documentation, for instance.  I'd say we are getting close, and your 
-viewpoint is a definite argument in support of that.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+> https://www.kernel.org/doc/html/latest/process/submitting-patches.html#describe-your-changes
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,176 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:55161 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751565AbdJaKgW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 06:36:22 -0400
-Subject: Re: [RFC PATCH 0/3] btrfs-progs: Add support for running the tools
- from
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <87a801c8-f50b-d260-cd36-76d75648b52c@gmx.com>
-Date: Tue, 31 Oct 2017 18:36:10 +0800
+Received: from mail-io0-f179.google.com ([209.85.223.179]:54932 "EHLO
+        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752357AbdJaL3C (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 07:29:02 -0400
+Received: by mail-io0-f179.google.com with SMTP id e89so34216741ioi.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 04:29:02 -0700 (PDT)
+Subject: Re: Problem with file system
+To: Marat Khalili <mkh@rqc.ru>, Chris Murphy <lists@colorremedies.com>,
+        Dave <davestechshop@gmail.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
+        Fred Van Andel <vanandel@gmail.com>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+ <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
+ <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+ <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com>
+ <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
+ <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
+ <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+ <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <b32358ec-781e-aff6-439b-3fc6fe02a25c@gmail.com>
+Date: Tue, 31 Oct 2017 07:28:58 -0400
 MIME-Version: 1.0
-In-Reply-To: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="BVIuvlGKgLC2jRSvGtTwOwSI5Bnvt3O8s"
+In-Reply-To: <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---BVIuvlGKgLC2jRSvGtTwOwSI5Bnvt3O8s
-Content-Type: multipart/mixed; boundary="J6i4ew1g7XNM8i0XB3brWtHLfCIoVRd4U";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Message-ID: <87a801c8-f50b-d260-cd36-76d75648b52c@gmx.com>
-Subject: Re: [RFC PATCH 0/3] btrfs-progs: Add support for running the tools
- from
-References: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
+On 2017-10-31 01:57, Marat Khalili wrote:
+> On 31/10/17 00:37, Chris Murphy wrote:
+>> But off hand it sounds like hardware was sabotaging the expected write
+>> ordering. How to test a given hardware setup for that, I think, is
+>> really overdue. It affects literally every file system, and Linux
+>> storage technology.
+>>
+>> It kinda sounds like to me something other than supers is being
+>> overwritten too soon, and that's why it's possible for none of the
+>> backup roots to find a valid root tree, because all four possible root
+>> trees either haven't actually been written yet (still) or they've been
+>> overwritten, even though the super is updated. But again, it's
+>> speculation, we don't actually know why your system was no longer
+>> mountable.
+> Just a detached view: I know hardware should respect ordering/barriers 
+> and such, but how hard is it really to avoid overwriting at least one 
+> complete metadata tree for half an hour (even better, yet another one 
+> for a day)? Just metadata, not data extents.
+If you're running on an SSD (or thinly provisioned storage, or something 
+else which supports discards) and have the 'discard' mount option 
+enabled, then there is no backup metadata tree (this issue was mentioned 
+on the list a while ago, but nobody ever replied), because it's already 
+been discarded.  This is ideally something which should be addressed (we 
+need some sort of discard queue for handling in-line discards), but it's 
+not easy to address.
 
---J6i4ew1g7XNM8i0XB3brWtHLfCIoVRd4U
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2017=E5=B9=B410=E6=9C=8831=E6=97=A5 16:43, Gu Jinxiang wrote:
-> Add support for running the tools from a given path
-> (for example,/usr/bin) by setting $EXEC while running tests.
->=20
-> Achieved:
-> Specify the location of binary and run test like this:
-> $ make EXEC=3D/usr/bin/ test
-
-Any special reason to test system installed btrfs?
-
-Even for system QA case, I think self test should be run at packaging
-time other than doing it after packaging.
-
-Thanks,
-Qu
->=20
-> Not Achieved:
-> Can not run make in tests/ directory.
-> Because test-misc depends on fssum which relies on header files in
-> btrfs-progs.
-> And test-misc and test-fsck depend on btrfs-corrupt-block which is
-> not installed after installation of btrfs-progs.
->=20
-> I am wondering that it is necessary or not to modify those tests to
-> run outside of btrfs-progs.
->=20
-> Gu Jinxiang (3):
->   btrfs-progs: Add EXEC parameter in Makefile
->   btrfs-progs: Set EXEC to TOP when it not be defined
->   btrfs-progs: Add support for running tools with given path(EXEC)
->=20
->  Makefile                                           | 32 +++++++++++-
->  tests/README.md                                    | 10 ++++
->  tests/cli-tests.sh                                 |  2 +
->  tests/cli-tests/001-btrfs/test.sh                  | 20 ++++----
->  .../cli-tests/002-balance-full-no-filters/test.sh  | 10 ++--
->  tests/cli-tests/003-fi-resize-args/test.sh         | 30 +++++------
->  .../cli-tests/004-send-parent-multi-subvol/test.sh | 12 ++---
->  tests/cli-tests/005-qgroup-show/test.sh            | 14 ++---
->  tests/cli-tests/006-qgroup-show-sync/test.sh       | 14 ++---
->  tests/cli-tests/007-check-force/test.sh            | 14 ++---
->  .../008-subvolume-get-set-default/test.sh          | 20 ++++----
->  tests/common                                       | 18 ++++---
->  tests/common.convert                               |  8 +--
->  tests/convert-tests.sh                             |  2 +
->  .../004-ext2-backup-superblock-ranges/test.sh      | 10 ++--
->  .../convert-tests/005-delete-all-rollback/test.sh  |  2 +-
->  .../007-unsupported-block-sizes/test.sh            |  2 +-
->  .../011-reiserfs-delete-all-rollback/test.sh       |  2 +-
->  tests/fsck-tests.sh                                |  2 +
->  tests/fsck-tests/012-leaf-corruption/test.sh       |  2 +-
->  tests/fsck-tests/013-extent-tree-rebuild/test.sh   | 12 ++---
->  tests/fsck-tests/018-leaf-crossing-stripes/test.sh |  2 +-
->  tests/fsck-tests/020-extent-ref-cases/test.sh      |  2 +-
->  .../021-partially-dropped-snapshot-case/test.sh    |  2 +-
->  tests/fsck-tests/022-qgroup-rescan-halfway/test.sh |  2 +-
->  tests/fsck-tests/023-qgroup-stack-overflow/test.sh |  2 +-
->  tests/fsck-tests/024-clear-space-cache/test.sh     | 10 ++--
->  tests/fsck-tests/025-file-extents/test.sh          | 14 ++---
->  tests/fsck-tests/026-bad-dir-item-name/test.sh     |  2 +-
->  .../028-unaligned-super-dev-sizes/test.sh          |  6 +--
->  tests/fuzz-tests.sh                                |  2 +
->  .../fuzz-tests/001-simple-check-unmounted/test.sh  |  2 +-
->  tests/fuzz-tests/002-simple-image/test.sh          |  2 +-
->  tests/fuzz-tests/003-multi-check-unmounted/test.sh | 12 ++---
->  tests/fuzz-tests/004-simple-dump-tree/test.sh      |  2 +-
->  tests/fuzz-tests/005-simple-dump-super/test.sh     |  4 +-
->  tests/fuzz-tests/006-simple-tree-stats/test.sh     |  2 +-
->  tests/fuzz-tests/007-simple-super-recover/test.sh  |  2 +-
->  tests/fuzz-tests/008-simple-chunk-recover/test.sh  |  2 +-
->  tests/fuzz-tests/009-simple-zero-log/test.sh       |  2 +-
->  tests/misc-tests.sh                                |  2 +
->  tests/misc-tests/001-btrfstune-features/test.sh    | 10 ++--
->  tests/misc-tests/002-uuid-rewrite/test.sh          | 20 ++++----
->  tests/misc-tests/003-zero-log/test.sh              | 16 +++---
->  tests/misc-tests/004-shrink-fs/test.sh             | 14 ++---
->  .../005-convert-progress-thread-crash/test.sh      |  2 +-
->  .../misc-tests/006-image-on-missing-device/test.sh | 10 ++--
->  tests/misc-tests/007-subvolume-sync/test.sh        | 18 +++----
->  tests/misc-tests/008-leaf-crossing-stripes/test.sh |  4 +-
->  .../009-subvolume-sync-must-wait/test.sh           | 22 ++++----
->  .../010-convert-delete-ext2-subvol/test.sh         | 10 ++--
->  tests/misc-tests/011-delete-missing-device/test.sh | 18 +++----
->  tests/misc-tests/012-find-root-no-result/test.sh   |  4 +-
->  tests/misc-tests/013-subvolume-sync-crash/test.sh  | 20 ++++----
->  tests/misc-tests/014-filesystem-label/test.sh      | 22 ++++----
->  tests/misc-tests/015-dump-super-garbage/test.sh    | 18 +++----
->  tests/misc-tests/016-send-clone-src/test.sh        | 12 ++---
->  .../017-recv-stream-malformatted/test.sh           |  8 +--
->  tests/misc-tests/018-recv-end-of-stream/test.sh    | 60 +++++++++++---=
---------
->  .../019-receive-clones-on-munted-subvol/test.sh    | 38 +++++++-------=
-
->  .../020-fix-superblock-corruption/test.sh          |  8 +--
->  tests/misc-tests/021-image-multi-devices/test.sh   |  6 +--
->  .../022-filesystem-du-on-empty-subvol/test.sh      | 12 ++---
->  .../023-device-usage-with-missing-device/test.sh   | 10 ++--
->  .../misc-tests/024-inspect-internal-rootid/test.sh | 24 ++++-----
->  tests/misc-tests/025-zstd-compression/test.sh      |  6 +--
->  .../026-image-non-printable-chars/test.sh          |  8 +--
->  .../027-subvol-list-deleted-toplevel/test.sh       |  6 +--
->  tests/mkfs-tests.sh                                |  2 +
->  tests/mkfs-tests/001-basic-profiles/test.sh        | 12 ++---
->  .../002-no-force-mixed-on-small-volume/test.sh     |  2 +-
->  .../003-mixed-with-wrong-nodesize/test.sh          |  2 +-
->  tests/mkfs-tests/004-rootdir-keeps-size/test.sh    |  2 +-
->  .../005-long-device-name-for-ssd/test.sh           |  4 +-
->  tests/mkfs-tests/006-partitioned-loopdev/test.sh   |  4 +-
->  .../mkfs-tests/007-mix-nodesize-sectorsize/test.sh |  6 +--
->  .../008-secorsize-nodesize-combination/test.sh     |  4 +-
->  .../009-special-files-for-rootdir/test.sh          |  4 +-
->  78 files changed, 410 insertions(+), 352 deletions(-)
->=20
-
-
---J6i4ew1g7XNM8i0XB3brWtHLfCIoVRd4U--
-
---BVIuvlGKgLC2jRSvGtTwOwSI5Bnvt3O8s
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln4UhoXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiJmAf9GpV9LQx3y3zPOeakxomamkhn
-GrwfdL8CATVvL6G4571jiJGn0PykkheeDufOtLTs4FAmvdmcIfdCnG/muaz88cH6
-wKMCcT89F37Li/7mZYd8P9Jo8/+mWf+7T7F/N5v4BzED79rw7J/XWtmajmACmHOa
-xztHEZ1CpYU2CPzukKVRrMP6jieGfPKmMbIOwr2n256YD6psgbC9DpE4x3MV0j1d
-5P4s+UjNOqccL7U2uPO4RBEdo6Ub12fgtm20JyZSR8x0cIOXWCqHRGT/Lscj8yLK
-RU7zsxIEzClLvIlp7GKnAaFtFHxM0zcqEtsf+5WXtcmhRYZmIhS31aeVSSR5iQ==
-=L7sh
------END PGP SIGNATURE-----
-
---BVIuvlGKgLC2jRSvGtTwOwSI5Bnvt3O8s--
+Otherwise, it becomes a question of space usage on the filesystem, and 
+this is just another reason to keep some extra slack space on the FS 
+(though that doesn't help _much_, it does help).  This, in theory, could 
+be addressed, but it probably can't be applied across mounts of a 
+filesystem without an on-disk format change.

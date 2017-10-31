@@ -1,48 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp121.ord1c.emailsrvr.com ([108.166.43.121]:37479 "EHLO
-        smtp121.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751971AbdJaF5o (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:39364 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751600AbdJaIoB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 01:57:44 -0400
-Subject: Re: Problem with file system
-To: Chris Murphy <lists@colorremedies.com>, Dave <davestechshop@gmail.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
-        Fred Van Andel <vanandel@gmail.com>
-References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
- <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
- <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
- <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com>
- <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
- <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
- <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru>
-Date: Tue, 31 Oct 2017 08:57:42 +0300
+        Tue, 31 Oct 2017 04:44:01 -0400
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [RFC PATCH 0/3] btrfs-progs: Add support for running the tools from
+Date: Tue, 31 Oct 2017 16:43:33 +0800
+Message-ID: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 31/10/17 00:37, Chris Murphy wrote:
-> But off hand it sounds like hardware was sabotaging the expected write
-> ordering. How to test a given hardware setup for that, I think, is
-> really overdue. It affects literally every file system, and Linux
-> storage technology.
->
-> It kinda sounds like to me something other than supers is being
-> overwritten too soon, and that's why it's possible for none of the
-> backup roots to find a valid root tree, because all four possible root
-> trees either haven't actually been written yet (still) or they've been
-> overwritten, even though the super is updated. But again, it's
-> speculation, we don't actually know why your system was no longer
-> mountable.
-Just a detached view: I know hardware should respect ordering/barriers 
-and such, but how hard is it really to avoid overwriting at least one 
-complete metadata tree for half an hour (even better, yet another one 
-for a day)? Just metadata, not data extents.
+Add support for running the tools from a given path
+(for example,/usr/bin) by setting $EXEC while running tests.
 
---
+Achieved:
+Specify the location of binary and run test like this:
+$ make EXEC=/usr/bin/ test
 
-With Best Regards,
-Marat Khalili
+Not Achieved:
+Can not run make in tests/ directory.
+Because test-misc depends on fssum which relies on header files in
+btrfs-progs.
+And test-misc and test-fsck depend on btrfs-corrupt-block which is
+not installed after installation of btrfs-progs.
+
+I am wondering that it is necessary or not to modify those tests to
+run outside of btrfs-progs.
+
+Gu Jinxiang (3):
+  btrfs-progs: Add EXEC parameter in Makefile
+  btrfs-progs: Set EXEC to TOP when it not be defined
+  btrfs-progs: Add support for running tools with given path(EXEC)
+
+ Makefile                                           | 32 +++++++++++-
+ tests/README.md                                    | 10 ++++
+ tests/cli-tests.sh                                 |  2 +
+ tests/cli-tests/001-btrfs/test.sh                  | 20 ++++----
+ .../cli-tests/002-balance-full-no-filters/test.sh  | 10 ++--
+ tests/cli-tests/003-fi-resize-args/test.sh         | 30 +++++------
+ .../cli-tests/004-send-parent-multi-subvol/test.sh | 12 ++---
+ tests/cli-tests/005-qgroup-show/test.sh            | 14 ++---
+ tests/cli-tests/006-qgroup-show-sync/test.sh       | 14 ++---
+ tests/cli-tests/007-check-force/test.sh            | 14 ++---
+ .../008-subvolume-get-set-default/test.sh          | 20 ++++----
+ tests/common                                       | 18 ++++---
+ tests/common.convert                               |  8 +--
+ tests/convert-tests.sh                             |  2 +
+ .../004-ext2-backup-superblock-ranges/test.sh      | 10 ++--
+ .../convert-tests/005-delete-all-rollback/test.sh  |  2 +-
+ .../007-unsupported-block-sizes/test.sh            |  2 +-
+ .../011-reiserfs-delete-all-rollback/test.sh       |  2 +-
+ tests/fsck-tests.sh                                |  2 +
+ tests/fsck-tests/012-leaf-corruption/test.sh       |  2 +-
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh   | 12 ++---
+ tests/fsck-tests/018-leaf-crossing-stripes/test.sh |  2 +-
+ tests/fsck-tests/020-extent-ref-cases/test.sh      |  2 +-
+ .../021-partially-dropped-snapshot-case/test.sh    |  2 +-
+ tests/fsck-tests/022-qgroup-rescan-halfway/test.sh |  2 +-
+ tests/fsck-tests/023-qgroup-stack-overflow/test.sh |  2 +-
+ tests/fsck-tests/024-clear-space-cache/test.sh     | 10 ++--
+ tests/fsck-tests/025-file-extents/test.sh          | 14 ++---
+ tests/fsck-tests/026-bad-dir-item-name/test.sh     |  2 +-
+ .../028-unaligned-super-dev-sizes/test.sh          |  6 +--
+ tests/fuzz-tests.sh                                |  2 +
+ .../fuzz-tests/001-simple-check-unmounted/test.sh  |  2 +-
+ tests/fuzz-tests/002-simple-image/test.sh          |  2 +-
+ tests/fuzz-tests/003-multi-check-unmounted/test.sh | 12 ++---
+ tests/fuzz-tests/004-simple-dump-tree/test.sh      |  2 +-
+ tests/fuzz-tests/005-simple-dump-super/test.sh     |  4 +-
+ tests/fuzz-tests/006-simple-tree-stats/test.sh     |  2 +-
+ tests/fuzz-tests/007-simple-super-recover/test.sh  |  2 +-
+ tests/fuzz-tests/008-simple-chunk-recover/test.sh  |  2 +-
+ tests/fuzz-tests/009-simple-zero-log/test.sh       |  2 +-
+ tests/misc-tests.sh                                |  2 +
+ tests/misc-tests/001-btrfstune-features/test.sh    | 10 ++--
+ tests/misc-tests/002-uuid-rewrite/test.sh          | 20 ++++----
+ tests/misc-tests/003-zero-log/test.sh              | 16 +++---
+ tests/misc-tests/004-shrink-fs/test.sh             | 14 ++---
+ .../005-convert-progress-thread-crash/test.sh      |  2 +-
+ .../misc-tests/006-image-on-missing-device/test.sh | 10 ++--
+ tests/misc-tests/007-subvolume-sync/test.sh        | 18 +++----
+ tests/misc-tests/008-leaf-crossing-stripes/test.sh |  4 +-
+ .../009-subvolume-sync-must-wait/test.sh           | 22 ++++----
+ .../010-convert-delete-ext2-subvol/test.sh         | 10 ++--
+ tests/misc-tests/011-delete-missing-device/test.sh | 18 +++----
+ tests/misc-tests/012-find-root-no-result/test.sh   |  4 +-
+ tests/misc-tests/013-subvolume-sync-crash/test.sh  | 20 ++++----
+ tests/misc-tests/014-filesystem-label/test.sh      | 22 ++++----
+ tests/misc-tests/015-dump-super-garbage/test.sh    | 18 +++----
+ tests/misc-tests/016-send-clone-src/test.sh        | 12 ++---
+ .../017-recv-stream-malformatted/test.sh           |  8 +--
+ tests/misc-tests/018-recv-end-of-stream/test.sh    | 60 +++++++++++-----------
+ .../019-receive-clones-on-munted-subvol/test.sh    | 38 +++++++-------
+ .../020-fix-superblock-corruption/test.sh          |  8 +--
+ tests/misc-tests/021-image-multi-devices/test.sh   |  6 +--
+ .../022-filesystem-du-on-empty-subvol/test.sh      | 12 ++---
+ .../023-device-usage-with-missing-device/test.sh   | 10 ++--
+ .../misc-tests/024-inspect-internal-rootid/test.sh | 24 ++++-----
+ tests/misc-tests/025-zstd-compression/test.sh      |  6 +--
+ .../026-image-non-printable-chars/test.sh          |  8 +--
+ .../027-subvol-list-deleted-toplevel/test.sh       |  6 +--
+ tests/mkfs-tests.sh                                |  2 +
+ tests/mkfs-tests/001-basic-profiles/test.sh        | 12 ++---
+ .../002-no-force-mixed-on-small-volume/test.sh     |  2 +-
+ .../003-mixed-with-wrong-nodesize/test.sh          |  2 +-
+ tests/mkfs-tests/004-rootdir-keeps-size/test.sh    |  2 +-
+ .../005-long-device-name-for-ssd/test.sh           |  4 +-
+ tests/mkfs-tests/006-partitioned-loopdev/test.sh   |  4 +-
+ .../mkfs-tests/007-mix-nodesize-sectorsize/test.sh |  6 +--
+ .../008-secorsize-nodesize-combination/test.sh     |  4 +-
+ .../009-special-files-for-rootdir/test.sh          |  4 +-
+ 78 files changed, 410 insertions(+), 352 deletions(-)
+
+-- 
+2.13.6
+
+
+

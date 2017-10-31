@@ -1,95 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga14.intel.com ([192.55.52.115]:48001 "EHLO mga14.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752092AbdJTKZm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Oct 2017 06:25:42 -0400
-From: "Reshetova, Elena" <elena.reshetova@intel.com>
-To: Johannes Thumshirn <jthumshirn@suse.de>
-CC: "axboe@kernel.dk" <axboe@kernel.dk>,
-        "james.bottomley@hansenpartnership.com"
-        <james.bottomley@hansenpartnership.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
-        "linux-scsi@vger.kernel.org" <linux-scsi@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "peterz@infradead.org" <peterz@infradead.org>,
-        "gregkh@linuxfoundation.org" <gregkh@linuxfoundation.org>,
-        "fujita.tomonori@lab.ntt.co.jp" <fujita.tomonori@lab.ntt.co.jp>,
-        "mingo@redhat.com" <mingo@redhat.com>, "clm@fb.com" <clm@fb.com>,
-        "jbacik@fb.com" <jbacik@fb.com>, "dsterba@suse.com" <dsterba@suse.com>,
-        "keescook@chromium.org" <keescook@chromium.org>
-Subject: RE: [PATCH 0/6] v4 block refcount conversion patches
-Date: Fri, 20 Oct 2017 10:25:37 +0000
-Message-ID: <2236FBA76BA1254E88B949DDB74E612B802B37B3@IRSMSX102.ger.corp.intel.com>
-References: <1508487362-26663-1-git-send-email-elena.reshetova@intel.com>
- <mqdr2typ5uw.fsf@linux-x5ow.site>
-In-Reply-To: <mqdr2typ5uw.fsf@linux-x5ow.site>
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
+Received: from victor.provo.novell.com ([137.65.250.26]:53755 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751610AbdJaGIh (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 31 Oct 2017 02:08:37 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: Don't generate UUID for non-fs tree
+Date: Tue, 31 Oct 2017 14:08:16 +0800
+Message-Id: <20171031060816.683-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs_create_tree() will unconditionally generate UUID for any root.
+So for quota tree and data reloc tree created by kernel, they will have
+unique UUIDs.
 
-> Elena Reshetova <elena.reshetova@intel.com> writes:
-> > Elena Reshetova (6):
-> >   block: convert bio.__bi_cnt from atomic_t to refcount_t
-> >   block: convert blk_queue_tag.refcnt from atomic_t to refcount_t
-> >   block: convert blkcg_gq.refcnt from atomic_t to refcount_t
-> >   block: convert io_context.active_ref from atomic_t to refcount_t
-> >   block: convert bsg_device.ref_count from atomic_t to refcount_t
-> >   drivers, block: convert xen_blkif.refcnt from atomic_t to refcount_t
-> 
-> Hi Elena,
-> 
-> While the bsg ref_count is cheap, do you have any numbers how the other
-> conversions compare in performance (throughput and latency) vs atomics?
-Hi Johannes,
+However UUID in root item is only referred by UUID tree, which only
+records UUID for fs trees.
+This makes unique UUIDs for quota/data reloc tree meaningless.
 
-The performance would depend on which "breed" of refcount_t is used underneath. 
-We currently have 3 versions:
+Leave the UUID as zero for non-fs tree, making btrfs-debug-tree output
+less confusing.
 
-- refcount_t defaults to atomic_t (no CONFIG_REFCOUNT_FULL enabled, no arch. support)
-  Impact is zero in this case since it is just atomic functions are used. 
-- refcount_t uses arch. specific implementation (arch. enables ARCH_HAS_REFCOUNT)
- Impact depends on arch. implementation. Currently only x86 provides one. 
-- refcount_t uses "full" arch. independent implementation.
+Reported-by: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-Here are cycle numbers for comparing these 3 (https://lwn.net/Articles/728626/):
-Just copy pasting for convenience:
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index dfdab849037b..d85e04a675fe 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1403,7 +1403,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
+ 	int ret = 0;
+-	uuid_le uuid;
++	uuid_le uuid = { 0 };
+ 
+ 	root = btrfs_alloc_root(fs_info, GFP_KERNEL);
+ 	if (!root)
+@@ -1444,7 +1444,8 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	btrfs_set_root_used(&root->root_item, leaf->len);
+ 	btrfs_set_root_last_snapshot(&root->root_item, 0);
+ 	btrfs_set_root_dirid(&root->root_item, 0);
+-	uuid_le_gen(&uuid);
++	if (is_fstree(objectid))
++		uuid_le_gen(&uuid);
+ 	memcpy(root->root_item.uuid, uuid.b, BTRFS_UUID_SIZE);
+ 	root->root_item.drop_level = 0;
+ 
+-- 
+2.14.3
 
-">These are the cycle counts comparing a loop of refcount_inc() from 1
->to INT_MAX and back down to 0 (via refcount_dec_and_test()), between
->unprotected refcount_t (atomic_t), fully protected REFCOUNT_FULL
->(refcount_t-full), and this overflow-protected refcount (refcount_t-fast):
-
->2147483646 refcount_inc()s and 2147483647 refcount_dec_and_test()s:
-			cycles	protections
->atomic_t	   82249267387	none
->refcount_t-fast    82211446892	overflow, untested dec-to-zero
->refcount_t-full   144814735193	overflow, untested dec-to-zero, inc-from-zero"
-
-So, the middle option (called here refcount_t-fast) with arch. specific
-implementation gives a negligible impact. The "full" one is more pricey, but it is
-disabled by default anyway, so only people who want strict security enable it.  
-
-Are these numbers convincing enough that we don't have to measure
-the block devices? :)
-
-Best Regards,
-Elena.
-
-
-> 
-> It should be quite easy to measure against a null_blk device.
-> 
-> Thanks a lot,
->        Johannes
-> 
-> --
-> Johannes Thumshirn                                          Storage
-> jthumshirn@suse.de                                +49 911 74053 689
-> SUSE LINUX GmbH, Maxfeldstr. 5, 90409 NÃ¼rnberg
-> GF: Felix ImendÃ¶rffer, Jane Smithard, Graham Norton
-> HRB 21284 (AG NÃ¼rnberg)
-> Key fingerprint = EC38 9CAB C2C4 F25D 8600 D0D0 0393 969D 2D76 0850
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

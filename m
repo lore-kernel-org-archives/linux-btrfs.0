@@ -1,98 +1,414 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:34459 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751729AbdJTB7R (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 19 Oct 2017 21:59:17 -0400
-From: Qu Wenruo <wqu@suse.com>
+Received: from mail.kernel.org ([198.145.29.99]:39298 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932557AbdJaS4P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 14:56:15 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 760BE21911
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 18:56:14 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 0/7] btrfs-progs: mkfs: Reword --rootdir
-Date: Fri, 20 Oct 2017 09:59:00 +0800
-Message-Id: <20171020015907.25430-1-wqu@suse.com>
+Subject: [PATCH 2/2] Btrfs: fix reported number of inode blocks after buffered append writes
+Date: Tue, 31 Oct 2017 18:56:12 +0000
+Message-Id: <20171031185612.30800-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/mkfs_rootdir_rework
+From: Filipe Manana <fdmanana@suse.com>
 
-And fetching from github is preferred method to test, as this patchset
-has 2 prerequisite:
+The patch from commit 7e3b975a0f92 ("Btrfs: fix reported number of inode
+blocks") introduced a regression where if we do a buffered write starting
+at position equal to or greater than the file's size and then stat(2) the
+file before writeback is triggered, the number of used blocks does not
+change (unless there's a prealloc/unwritten extent). Example:
 
-1) Minimal device size patchset
-   The image size estimate algorithm heavily relies on the minimal
-   device size calculation
+  $ xfs_io -f -c "pwrite -S 0xab 0 64K" foobar
+  $ du -h foobar
+  0	foobar
+  $ sync
+  $ du -h foobar
+  64K	foobar
 
-2) Rootdir refactor
-   To make life a little easier.
+The first version of that patch didn't had this regression and the second
+version, which was the one committed, was made only to address some
+performance regression detected by the intel test robots using fs_mark.
 
-Both the prerequisite has no further modification in this patchset, just the
-version submitted to mail list, and rebased to v4.13.3 without any
-conflict.
+This fixes the regression by setting the new delaloc bit in the range, and
+doing it at btrfs_dirty_pages() while setting the regular dealloc bit as
+well, so that this way we set both bits at once avoiding navigation of the
+inode's io tree twice. Doing it at btrfs_dirty_pages() is also the most
+meaninful place, as we should set the new dellaloc bit when if we set the
+delalloc bit, which happens only if we copied bytes into the pages at
+__btrfs_buffered_write().
 
-Rework 'mkfs.btrfs --rootdir' by:
+This was making some of LTP's du tests fail, which can be quickly run
+using a command line like the following:
 
-1) Not using custom chunk allocator
-   Use btrfs_alloc_chunk() only.
-   Although currently chunk allocator in btrfs-progs is not small device
-   friendly, which will try to allocate large chunk.
-   This can be addressed by image size estimate algorithm, so it won't
-   cause too much problem.
-   (But still, it follow the minimal device size from normal mkfs, which
-    is over 100M for default profile)
+  $ ./runltp -q -p -l /ltp.log -f commands -s du -d /mnt
 
-2) New image size estimate algorithm
-   Use over-reserve-for-metadata method, which should ensure we can write
-   all content into the image.
-   And rely later shrink the shrink the fs size to minimal.
+Fixes: 7e3b975a0f92 ("Btrfs: fix reported number of inode blocks")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.h                 |   1 +
+ fs/btrfs/extent_io.h             |   5 +-
+ fs/btrfs/file.c                  | 123 +++++++++++++++++++++------------------
+ fs/btrfs/inode.c                 |   9 +--
+ fs/btrfs/relocation.c            |   3 +-
+ fs/btrfs/tests/extent-io-tests.c |   6 +-
+ fs/btrfs/tests/inode-tests.c     |  12 ++--
+ 7 files changed, 86 insertions(+), 73 deletions(-)
 
-   Although the method itself is based on over-reserve, but in fact it's
-   quite space efficient in most case.
-   For empty file case, we will use the allocated data/meta space
-   allocated in normal mkfs, so no shrink really needed.
-
-   For large file and small metadata case, the size difference between
-   shrunk and unshrunk image is less than 1%.
-
-   Although due to the nature we over-reserve for metadata, for
-   extremely unbalanced data/meta case, like tons of empty files, we
-   really need to rely shrink functionality.
-
-   And the algorithm itself only needs minimal amount of data.
-   It only uses number of inodes and file size of each regular inode.
-
-3) Shrinking the fs by device extent
-   As implemented in almost all version of rework which includes
-   shrinking, tried and true, and easier to implement.
-   And shrinking is completely independent now, can be easily modified
-   to shrink multi-device btrfs.
-
-4) Separate shrink functionality to '--shrink' option
-   This causes less confusion.
-   And due to my poor English, I only added basic explanation to the
-   mkfs doc. Although I think this is enough since each functionality
-   is easier to understand.
-
-5) Not wasting IO to wipe the whole image
-   Only to wipe the first 1M and create sparse file.
-
-Qu Wenruo (7):
-  btrfs-progs: mkfs: Don't use custom chunk allocator for rootdir
-  btrfs-progs: mkfs/rootdir: Use over-reserve method to make size
-    estimate easier
-  btrfs-progs: mkfs: Only zero out the first 1M for rootdir
-  btrfs-progs: mkfs/rootdir: Introduce function to get end position of
-    last device extent
-  btrfs-progs: mkfs/rootdir: Shrink fs for rootdir option
-  btrfs-progs: mkfs: Update allocation info before verbose output
-  btrfs-progs: mkfs: Separate shrink from rootdir
-
- Documentation/mkfs.btrfs.asciidoc |  11 ++
- mkfs/main.c                       | 260 ++++++++++++++++-----------------
- mkfs/rootdir.c                    | 292 +++++++++++++++++++++++++++++++++-----
- mkfs/rootdir.h                    |   6 +-
- 4 files changed, 400 insertions(+), 169 deletions(-)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8fc690384c58..51f1f3e31608 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3174,6 +3174,7 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput);
+ int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+ 			       int nr);
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
++			      unsigned int extra_bits,
+ 			      struct extent_state **cached_state, int dedupe);
+ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *new_root,
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index faffa28ba707..580a6c1c296c 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -365,10 +365,11 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		       struct extent_state **cached_state);
+ 
+ static inline int set_extent_delalloc(struct extent_io_tree *tree, u64 start,
+-		u64 end, struct extent_state **cached_state)
++				      u64 end, unsigned int extra_bits,
++				      struct extent_state **cached_state)
+ {
+ 	return set_extent_bit(tree, start, end,
+-			      EXTENT_DELALLOC | EXTENT_UPTODATE,
++			      EXTENT_DELALLOC | EXTENT_UPTODATE | extra_bits,
+ 			      NULL, cached_state, GFP_NOFS);
+ }
+ 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index aaab1838cece..bcac827d65f0 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -477,6 +477,47 @@ static void btrfs_drop_pages(struct page **pages, size_t num_pages)
+ 	}
+ }
+ 
++static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
++					 const u64 start,
++					 const u64 len,
++					 struct extent_state **cached_state)
++{
++	u64 search_start = start;
++	const u64 end = start + len - 1;
++
++	while (search_start < end) {
++		const u64 search_len = end - search_start + 1;
++		struct extent_map *em;
++		u64 em_len;
++		int ret = 0;
++
++		em = btrfs_get_extent(inode, NULL, 0, search_start,
++				      search_len, 0);
++		if (IS_ERR(em))
++			return PTR_ERR(em);
++
++		if (em->block_start != EXTENT_MAP_HOLE)
++			goto next;
++
++		em_len = em->len;
++		if (em->start < search_start)
++			em_len -= search_start - em->start;
++		if (em_len > search_len)
++			em_len = search_len;
++
++		ret = set_extent_bit(&inode->io_tree, search_start,
++				     search_start + em_len - 1,
++				     EXTENT_DELALLOC_NEW,
++				     NULL, cached_state, GFP_NOFS);
++next:
++		search_start = extent_map_end(em);
++		free_extent_map(em);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
+ /*
+  * after copy_from_user, pages need to be dirtied and we need to make
+  * sure holes are created between the current EOF and the start of
+@@ -497,14 +538,34 @@ int btrfs_dirty_pages(struct inode *inode, struct page **pages,
+ 	u64 end_of_last_block;
+ 	u64 end_pos = pos + write_bytes;
+ 	loff_t isize = i_size_read(inode);
++	unsigned int extra_bits = 0;
+ 
+ 	start_pos = pos & ~((u64) fs_info->sectorsize - 1);
+ 	num_bytes = round_up(write_bytes + pos - start_pos,
+ 			     fs_info->sectorsize);
+ 
+ 	end_of_last_block = start_pos + num_bytes - 1;
++
++	if (!btrfs_is_free_space_inode(BTRFS_I(inode))) {
++		if (start_pos >= isize &&
++		    !(BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC)) {
++			/*
++			 * There can't be any extents following eof in this case
++			 * so just set the delalloc new bit for the range
++			 * directly.
++			 */
++			extra_bits |= EXTENT_DELALLOC_NEW;
++		} else {
++			err = btrfs_find_new_delalloc_bytes(BTRFS_I(inode),
++							    start_pos,
++							    num_bytes, cached);
++			if (err)
++				return err;
++		}
++	}
++
+ 	err = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
+-					cached, 0);
++					extra_bits, cached, 0);
+ 	if (err)
+ 		return err;
+ 
+@@ -1404,47 +1465,6 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 
+ }
+ 
+-static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
+-					 const u64 start,
+-					 const u64 len,
+-					 struct extent_state **cached_state)
+-{
+-	u64 search_start = start;
+-	const u64 end = start + len - 1;
+-
+-	while (search_start < end) {
+-		const u64 search_len = end - search_start + 1;
+-		struct extent_map *em;
+-		u64 em_len;
+-		int ret = 0;
+-
+-		em = btrfs_get_extent(inode, NULL, 0, search_start,
+-				      search_len, 0);
+-		if (IS_ERR(em))
+-			return PTR_ERR(em);
+-
+-		if (em->block_start != EXTENT_MAP_HOLE)
+-			goto next;
+-
+-		em_len = em->len;
+-		if (em->start < search_start)
+-			em_len -= search_start - em->start;
+-		if (em_len > search_len)
+-			em_len = search_len;
+-
+-		ret = set_extent_bit(&inode->io_tree, search_start,
+-				     search_start + em_len - 1,
+-				     EXTENT_DELALLOC_NEW,
+-				     NULL, cached_state, GFP_NOFS);
+-next:
+-		search_start = extent_map_end(em);
+-		free_extent_map(em);
+-		if (ret)
+-			return ret;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * This function locks the extent and properly waits for data=ordered extents
+  * to finish before allowing the pages to be modified if need.
+@@ -1473,10 +1493,8 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
+ 		+ round_up(pos + write_bytes - start_pos,
+ 			   fs_info->sectorsize) - 1;
+ 
+-	if (start_pos < inode->vfs_inode.i_size ||
+-	    (inode->flags & BTRFS_INODE_PREALLOC)) {
++	if (start_pos < inode->vfs_inode.i_size) {
+ 		struct btrfs_ordered_extent *ordered;
+-		unsigned int clear_bits;
+ 
+ 		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
+ 				cached_state);
+@@ -1498,19 +1516,10 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page **pages,
+ 		}
+ 		if (ordered)
+ 			btrfs_put_ordered_extent(ordered);
+-		ret = btrfs_find_new_delalloc_bytes(inode, start_pos,
+-						    last_pos - start_pos + 1,
+-						    cached_state);
+-		clear_bits = EXTENT_DIRTY | EXTENT_DELALLOC |
+-			EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG;
+-		if (ret)
+-			clear_bits |= EXTENT_DELALLOC_NEW | EXTENT_LOCKED;
+ 		clear_extent_bit(&inode->io_tree, start_pos,
+-				 last_pos, clear_bits,
+-				 (clear_bits & EXTENT_LOCKED) ? 1 : 0,
+-				 0, cached_state, GFP_NOFS);
+-		if (ret)
+-			return ret;
++				 last_pos, EXTENT_DIRTY | EXTENT_DELALLOC |
++				 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
++				 0, 0, cached_state, GFP_NOFS);
+ 		*lockstart = start_pos;
+ 		*lockend = last_pos;
+ 		ret = 1;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d94e3f68b9b1..185cdc904856 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2036,11 +2036,12 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+ }
+ 
+ int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
++			      unsigned int extra_bits,
+ 			      struct extent_state **cached_state, int dedupe)
+ {
+ 	WARN_ON((end & (PAGE_SIZE - 1)) == 0);
+ 	return set_extent_delalloc(&BTRFS_I(inode)->io_tree, start, end,
+-				   cached_state);
++				   extra_bits, cached_state);
+ }
+ 
+ /* see btrfs_writepage_start_hook for details on why this is required */
+@@ -2101,7 +2102,7 @@ static void btrfs_writepage_fixup_worker(struct btrfs_work *work)
+ 		goto out;
+ 	 }
+ 
+-	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state,
++	btrfs_set_extent_delalloc(inode, page_start, page_end, 0, &cached_state,
+ 				  0);
+ 	ClearPageChecked(page);
+ 	set_page_dirty(page);
+@@ -4853,7 +4854,7 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
+ 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
+ 			  0, 0, &cached_state, GFP_NOFS);
+ 
+-	ret = btrfs_set_extent_delalloc(inode, block_start, block_end,
++	ret = btrfs_set_extent_delalloc(inode, block_start, block_end, 0,
+ 					&cached_state, 0);
+ 	if (ret) {
+ 		unlock_extent_cached(io_tree, block_start, block_end,
+@@ -9252,7 +9253,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
+ 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
+ 			  0, 0, &cached_state, GFP_NOFS);
+ 
+-	ret = btrfs_set_extent_delalloc(inode, page_start, end,
++	ret = btrfs_set_extent_delalloc(inode, page_start, end, 0,
+ 					&cached_state, 0);
+ 	if (ret) {
+ 		unlock_extent_cached(io_tree, page_start, page_end,
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 9841faef08ea..6432817906c7 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3266,7 +3266,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 			nr++;
+ 		}
+ 
+-		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL, 0);
++		btrfs_set_extent_delalloc(inode, page_start, page_end, 0, NULL,
++					  0);
+ 		set_page_dirty(page);
+ 
+ 		unlock_extent(&BTRFS_I(inode)->io_tree,
+diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
+index d06b1c931d05..2e7f64a3b22b 100644
+--- a/fs/btrfs/tests/extent-io-tests.c
++++ b/fs/btrfs/tests/extent-io-tests.c
+@@ -114,7 +114,7 @@ static int test_find_delalloc(u32 sectorsize)
+ 	 * |--- delalloc ---|
+ 	 * |---  search  ---|
+ 	 */
+-	set_extent_delalloc(&tmp, 0, sectorsize - 1, NULL);
++	set_extent_delalloc(&tmp, 0, sectorsize - 1, 0, NULL);
+ 	start = 0;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -145,7 +145,7 @@ static int test_find_delalloc(u32 sectorsize)
+ 		test_msg("Couldn't find the locked page\n");
+ 		goto out_bits;
+ 	}
+-	set_extent_delalloc(&tmp, sectorsize, max_bytes - 1, NULL);
++	set_extent_delalloc(&tmp, sectorsize, max_bytes - 1, 0, NULL);
+ 	start = test_start;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+@@ -200,7 +200,7 @@ static int test_find_delalloc(u32 sectorsize)
+ 	 *
+ 	 * We are re-using our test_start from above since it works out well.
+ 	 */
+-	set_extent_delalloc(&tmp, max_bytes, total_dirty - 1, NULL);
++	set_extent_delalloc(&tmp, max_bytes, total_dirty - 1, 0, NULL);
+ 	start = test_start;
+ 	end = 0;
+ 	found = find_lock_delalloc_range(inode, &tmp, locked_page, &start,
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index 8c91d03cc82d..5c329321c936 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -969,7 +969,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 
+ 	/* [BTRFS_MAX_EXTENT_SIZE] */
+ 	BTRFS_I(inode)->outstanding_extents++;
+-	ret = btrfs_set_extent_delalloc(inode, 0, BTRFS_MAX_EXTENT_SIZE - 1,
++	ret = btrfs_set_extent_delalloc(inode, 0, BTRFS_MAX_EXTENT_SIZE - 1, 0,
+ 					NULL, 0);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+@@ -986,7 +986,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE,
+ 					BTRFS_MAX_EXTENT_SIZE + sectorsize - 1,
+-					NULL, 0);
++					0, NULL, 0);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1021,7 +1021,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	ret = btrfs_set_extent_delalloc(inode, BTRFS_MAX_EXTENT_SIZE >> 1,
+ 					(BTRFS_MAX_EXTENT_SIZE >> 1)
+ 					+ sectorsize - 1,
+-					NULL, 0);
++					0, NULL, 0);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1044,7 +1044,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	ret = btrfs_set_extent_delalloc(inode,
+ 			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize,
+ 			(BTRFS_MAX_EXTENT_SIZE << 1) + 3 * sectorsize - 1,
+-			NULL, 0);
++			0, NULL, 0);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1062,7 +1062,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode,
+ 			BTRFS_MAX_EXTENT_SIZE + sectorsize,
+-			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL, 0);
++			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, 0, NULL, 0);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
+@@ -1099,7 +1099,7 @@ static int test_extent_accounting(u32 sectorsize, u32 nodesize)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 	ret = btrfs_set_extent_delalloc(inode,
+ 			BTRFS_MAX_EXTENT_SIZE + sectorsize,
+-			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, NULL, 0);
++			BTRFS_MAX_EXTENT_SIZE + 2 * sectorsize - 1, 0, NULL, 0);
+ 	if (ret) {
+ 		test_msg("btrfs_set_extent_delalloc returned %d\n", ret);
+ 		goto out;
 -- 
-2.14.2
+2.11.0
 

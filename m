@@ -1,62 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:27191 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751310AbdJ3Bve (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Oct 2017 21:51:34 -0400
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Subject: Re: [stable] btrfs name length fixes
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Ben Hutchings <ben@decadent.org.uk>
-CC: <linux-btrfs@vger.kernel.org>, stable <stable@vger.kernel.org>
-References: <1509297309.2721.73.camel@decadent.org.uk>
- <bce85efc-21e6-e5b6-e26a-0bde01f19be7@gmx.com>
-Message-ID: <f120a6f9-6c38-4719-efdc-2199a2ba4578@cn.fujitsu.com>
-Date: Mon, 30 Oct 2017 09:55:03 +0800
+Received: from mx2.suse.de ([195.135.220.15]:50503 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751050AbdJaOST (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 10:18:19 -0400
+Subject: Re: [PATCH] btrfs: cleanup btrfs_async_submit_limit to return the
+ final limit value
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171031125946.26844-1-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <134be249-616f-1865-585b-7b66427320c1@suse.com>
+Date: Tue, 31 Oct 2017 16:18:17 +0200
 MIME-Version: 1.0
-In-Reply-To: <bce85efc-21e6-e5b6-e26a-0bde01f19be7@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20171031125946.26844-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry for the late reply.
-
-On 10/30/2017 07:59 AM, Qu Wenruo wrote:
-> 
-> 
-> On 2017年10月30日 01:15, Ben Hutchings wrote:
->> You recently made a number of fixes to validation and use of name
->> lengths in btrfs:
->>
->> 286b92f43c0d btrfs: tree-log.c: Wrong printk information about namelen
->> 19c6dcbfa746 btrfs: Introduce btrfs_is_name_len_valid to avoid reading beyond boundary
->> e79a33270d05 btrfs: Check name_len with boundary in verify dir_item
->> 26a836cec2ea btrfs: Check name_len on add_inode_ref call path
->> 8ee8c2d62d5f btrfs: Verify dir_item in replay_xattr_deletes
->> 3c1d41844896 btrfs: Check name_len in btrfs_check_ref_name_override
->> 59b0a7f2c7c1 btrfs: Check name_len before read in iterate_dir_item
->> 488d7c456653 btrfs: Check name_len before reading btrfs_get_name
->> 64c7b01446f4 btrfs: Check name_len before in btrfs_del_root_ref
->> fbc326159a01 btrfs: Verify dir_item in iterate_object_props
->>
->> The bugs these are fixing probably should also be fixed on the affected
->> stable branches.  Do you agree?  Can you provide any guidance about how
->> far back these fixes would be needed?
-> 
-> These fixes will soon be replace by centralized tree-checker facilities.
-> 
-
-As Qu said, tree-checker facilities will verify name_len too and I think
-it is indeed more proper than my patchset.
-
-Thanks,
-Su
-
-> Thanks,
-> Qu
-> 
->>
->> Ben.
->>
-> 
 
 
+On 31.10.2017 14:59, Anand Jain wrote:
+> btrfs_async_submit_limit() would return the q depth to be 256, however
+> when we are using it we are making it 2/3 times of it. So instead let
+> the function return the final computed value.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+Could you put a bit info about what exactly is this limit controlling in
+the changelog.
+
+> ---
+>  fs/btrfs/disk-io.c | 6 ++++--
+>  fs/btrfs/volumes.c | 1 -
+>  2 files changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index dfdab849037b..e58bbc2a68a5 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -861,7 +861,10 @@ unsigned long btrfs_async_submit_limit(struct btrfs_fs_info *info)
+>  	unsigned long limit = min_t(unsigned long,
+>  				    info->thread_pool_size,
+>  				    info->fs_devices->open_devices);
+> -	return 256 * limit;
+> +	/*
+> +	 * As of now limit is computed as 2/3 * 256.
+> +	 */
+
+Drop the "As of now" part, since it doesn't bring any value.
+
+> +	return 170 * limit;
+>  }
+>  
+>  static void run_one_async_start(struct btrfs_work *work)
+> @@ -887,7 +890,6 @@ static void run_one_async_done(struct btrfs_work *work)
+>  	fs_info = async->fs_info;
+>  
+>  	limit = btrfs_async_submit_limit(fs_info);
+> -	limit = limit * 2 / 3;
+>  
+>  	/*
+>  	 * atomic_dec_return implies a barrier for waitqueue_active
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d1d8aa226bff..8044790c5de6 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -382,7 +382,6 @@ static noinline void run_scheduled_bios(struct btrfs_device *device)
+>  
+>  	bdi = device->bdev->bd_bdi;
+>  	limit = btrfs_async_submit_limit(fs_info);
+> -	limit = limit * 2 / 3;
+>  
+>  loop:
+>  	spin_lock(&device->io_lock);
+> 

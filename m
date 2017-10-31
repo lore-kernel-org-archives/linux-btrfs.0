@@ -1,53 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f46.google.com ([74.125.83.46]:52267 "EHLO
-        mail-pg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932920AbdJ3W3Z (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Oct 2017 18:29:25 -0400
-Received: by mail-pg0-f46.google.com with SMTP id a192so12877621pge.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Oct 2017 15:29:25 -0700 (PDT)
-From: Justin Maggard <jmaggard10@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH] btrfs: Fix quota reservation leak on preallocated files
-Date: Mon, 30 Oct 2017 15:29:10 -0700
-Message-Id: <20171030222910.21722-1-jmaggard@netgear.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:40388 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753240AbdJaF6W (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 31 Oct 2017 01:58:22 -0400
+Subject: Re: [PATCH] btrfs-progs: ins: print c/o/s/r time of ROOT_ITEM
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <8bccc1fc-c8bb-9999-dbb7-94185ba5d7e8@jp.fujitsu.com>
+From: Qu Wenruo <wqu@suse.com>
+Message-ID: <d5c0fff9-4373-5405-dc09-be33df7f62f2@suse.com>
+Date: Tue, 31 Oct 2017 13:58:04 +0800
+MIME-Version: 1.0
+In-Reply-To: <8bccc1fc-c8bb-9999-dbb7-94185ba5d7e8@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="uiPFqHNmwuPXFOatXNlnRUgv4nHLlsGIO"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit c6887cd11149 (Btrfs: don't do nocow check unless we have to)
-changed the behavior of __btrfs_buffered_write() so that it first tries
-to get a data space reservation, and then skips the relatively expensive
-nocow check if the reservation succeeded.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--uiPFqHNmwuPXFOatXNlnRUgv4nHLlsGIO
+Content-Type: multipart/mixed; boundary="JaKt7Ohb8qkX9J7mwMG0pq8qAIUN4Mg1I";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <d5c0fff9-4373-5405-dc09-be33df7f62f2@suse.com>
+Subject: Re: [PATCH] btrfs-progs: ins: print c/o/s/r time of ROOT_ITEM
+References: <8bccc1fc-c8bb-9999-dbb7-94185ba5d7e8@jp.fujitsu.com>
+In-Reply-To: <8bccc1fc-c8bb-9999-dbb7-94185ba5d7e8@jp.fujitsu.com>
 
-If we have quotas enabled, the data space reservation also includes a
-quota reservation.  But in the rewrite case, the space has already been
-accounted for in qgroups.  So btrfs_check_data_free_space() increases the
-quota reservation, but it never gets decreased when the data actually
-gets written and overwrites the pre-existing data.  So we're left with
-both the qgroup and qgroup reservation accounting for the same space.
+--JaKt7Ohb8qkX9J7mwMG0pq8qAIUN4Mg1I
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-This commit adds the missing btrfs_qgroup_free_data() call in the case of
-BTRFS_ORDERED_PREALLOC extents.
 
-Signed-off-by: Justin Maggard <jmaggard@netgear.com>
----
- fs/btrfs/inode.c | 2 ++
- 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d94e3f68b9b1..d7881ccf5310 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3006,6 +3006,8 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 		compress_type = ordered_extent->compress_type;
- 	if (test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
- 		BUG_ON(compress_type);
-+		btrfs_qgroup_free_data(inode, NULL, ordered_extent->file_offset,
-+				       ordered_extent->len);
- 		ret = btrfs_mark_extent_written(trans, BTRFS_I(inode),
- 						ordered_extent->file_offset,
- 						ordered_extent->file_offset +
--- 
-2.14.2
+On 2017=E5=B9=B410=E6=9C=8831=E6=97=A5 13:40, Misono, Tomohiro wrote:
+> Currently c/o/s/r time of ROOT_ITEM is not printed in print_root_item()=
+=2E
+> Fix this and print them if the values are not zero. print_timespec()
+> is moved forward to reuse.
+>=20
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  ctree.h      | 32 ++++++++++++++++++++++++++++++++
+>  print-tree.c | 52 ++++++++++++++++++++++++++++++++--------------------=
+
+>  2 files changed, 64 insertions(+), 20 deletions(-)
+>=20
+> diff --git a/ctree.h b/ctree.h
+> index 2280659..54a85fd 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -2072,6 +2072,38 @@ BTRFS_SETGET_STACK_FUNCS(root_stransid, struct b=
+trfs_root_item,
+>  BTRFS_SETGET_STACK_FUNCS(root_rtransid, struct btrfs_root_item,
+>  			 rtransid, 64);
+> =20
+> +static inline struct btrfs_timespec *
+> +btrfs_root_ctime(struct btrfs_root_item *root_item)
+> +{
+> +	unsigned long ptr =3D (unsigned long)root_item;
+> +	ptr +=3D offsetof(struct btrfs_root_item, ctime);
+> +	return (struct btrfs_timespec *)ptr;
+> +}
+> +
+> +static inline struct btrfs_timespec *
+> +btrfs_root_otime(struct btrfs_root_item *root_item)
+> +{
+> +	unsigned long ptr =3D (unsigned long)root_item;
+> +	ptr +=3D offsetof(struct btrfs_root_item, otime);
+> +	return (struct btrfs_timespec *)ptr;
+> +}
+> +
+> +static inline struct btrfs_timespec *
+> +btrfs_root_stime(struct btrfs_root_item *root_item)
+> +{
+> +	unsigned long ptr =3D (unsigned long)root_item;
+> +	ptr +=3D offsetof(struct btrfs_root_item, stime);
+> +	return (struct btrfs_timespec *)ptr;
+> +}
+> +
+> +static inline struct btrfs_timespec *
+> +btrfs_root_rtime(struct btrfs_root_item *root_item)
+> +{
+> +	unsigned long ptr =3D (unsigned long)root_item;
+> +	ptr +=3D offsetof(struct btrfs_root_item, rtime);
+> +	return (struct btrfs_timespec *)ptr;
+> +}
+> +
+>  /* struct btrfs_root_backup */
+>  BTRFS_SETGET_STACK_FUNCS(backup_tree_root, struct btrfs_root_backup,
+>  		   tree_root, 64);
+> diff --git a/print-tree.c b/print-tree.c
+> index 9d1b862..62f3163 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -551,6 +551,26 @@ static void root_flags_to_str(u64 flags, char *ret=
+)
+>  		strcat(ret, "none");
+>  }
+> =20
+> +static void print_timespec(struct extent_buffer *eb,
+> +		struct btrfs_timespec *timespec, const char *prefix,
+> +		const char *suffix)
+> +{
+> +	struct tm tm;
+> +	u64 tmp_u64;
+> +	u32 tmp_u32;
+> +	time_t tmp_time;
+> +	char timestamp[256];
+> +
+> +	tmp_u64 =3D btrfs_timespec_sec(eb, timespec);
+> +	tmp_u32 =3D btrfs_timespec_nsec(eb, timespec);
+> +	tmp_time =3D tmp_u64;
+> +	localtime_r(&tmp_time, &tm);
+> +	strftime(timestamp, sizeof(timestamp),
+> +			"%Y-%m-%d %H:%M:%S", &tm);
+> +	printf("%s%llu.%u (%s)%s", prefix, (unsigned long long)tmp_u64, tmp_u=
+32,
+> +			timestamp, suffix);
+> +}
+> +
+>  static void print_root_item(struct extent_buffer *leaf, int slot)
+>  {
+>  	struct btrfs_root_item *ri;
+> @@ -600,6 +620,18 @@ static void print_root_item(struct extent_buffer *=
+leaf, int slot)
+>  				btrfs_root_stransid(&root_item),
+>  				btrfs_root_rtransid(&root_item));
+>  		}
+> +		if (btrfs_timespec_sec(leaf, btrfs_root_ctime(ri)))
+> +			print_timespec(leaf, btrfs_root_ctime(ri),
+> +					"\t\tctime ", "\n");
+> +		if (btrfs_timespec_sec(leaf, btrfs_root_otime(ri)))
+> +			print_timespec(leaf, btrfs_root_otime(ri),
+> +					"\t\totime ", "\n");
+> +		if (btrfs_timespec_sec(leaf, btrfs_root_stime(ri)))
+> +			print_timespec(leaf, btrfs_root_stime(ri),
+> +					"\t\tstime ", "\n");
+> +		if (btrfs_timespec_sec(leaf, btrfs_root_rtime(ri)))
+> +			print_timespec(leaf, btrfs_root_rtime(ri),
+> +					"\t\trtime ", "\n");
+>  	}
+> =20
+>  	btrfs_disk_key_to_cpu(&drop_key, &root_item.drop_progress);
+> @@ -858,26 +890,6 @@ static void inode_flags_to_str(u64 flags, char *re=
+t)
+>  		strcat(ret, "none");
+>  }
+> =20
+> -static void print_timespec(struct extent_buffer *eb,
+> -		struct btrfs_timespec *timespec, const char *prefix,
+> -		const char *suffix)
+> -{
+> -	struct tm tm;
+> -	u64 tmp_u64;
+> -	u32 tmp_u32;
+> -	time_t tmp_time;
+> -	char timestamp[256];
+> -
+> -	tmp_u64 =3D btrfs_timespec_sec(eb, timespec);
+> -	tmp_u32 =3D btrfs_timespec_nsec(eb, timespec);
+> -	tmp_time =3D tmp_u64;
+> -	localtime_r(&tmp_time, &tm);
+> -	strftime(timestamp, sizeof(timestamp),
+> -			"%Y-%m-%d %H:%M:%S", &tm);
+> -	printf("%s%llu.%u (%s)%s", prefix, (unsigned long long)tmp_u64, tmp_u=
+32,
+> -			timestamp, suffix);
+> -}
+> -
+>  static void print_inode_item(struct extent_buffer *eb,
+>  		struct btrfs_inode_item *ii)
+>  {
+>=20
+
+
+--JaKt7Ohb8qkX9J7mwMG0pq8qAIUN4Mg1I--
+
+--uiPFqHNmwuPXFOatXNlnRUgv4nHLlsGIO
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFBBAEBCAArFiEELd9y5aWlW6idqkLhwj2R86El/qgFAln4EO0NHHdxdUBzdXNl
+LmNvbQAKCRDCPZHzoSX+qFnZB/oCyvcTCCO2zn4iUjwcYW5qTc0/1lxw078aEZ6j
+1mG5oWfn/mxWFTp4ifrvM+lYKV5HGYrpsK7wb3hMKStzc2FyXjSuVfo5iXlwZL+O
+NpuaTpI7M7bEeXCNzEXMi4D8Lz/g8KsaK7bkDOc2wZuFQwWvGUGMwoCDjnkH4OKc
+rbeJ6gYRtRs2iPBatNx9+0kBAWaK5A9/fp1xB01MgcWEIqzAQILWDrPkeJEvvu4Z
+ldkb213WCZSJzRE+5+nu7Bu5QD6Jg87HhoXpnhSaoc3TFhQuZmo4mq39jAhPVprd
+d1qXY7EdVa7TTT6s32wNO5NKzS/yiUbQJ5QrAsUtV5ZMfsse
+=C13U
+-----END PGP SIGNATURE-----
+
+--uiPFqHNmwuPXFOatXNlnRUgv4nHLlsGIO--

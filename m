@@ -1,50 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:21414 "EHLO
-        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752879AbdJaFjI (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:39364 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752514AbdJaIoG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 01:39:08 -0400
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id AACE4AC00C9
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 14:39:05 +0900 (JST)
-Received: from G01JPEXCHYT15.g01.fujitsu.local (G01JPEXCHYT15.g01.fujitsu.local [10.128.194.54])
-        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 0367546E73A
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 14:39:05 +0900 (JST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: ins: print uuid only if it exists
-Message-ID: <7979b9a1-37d6-9eec-79a7-1730b8338b7f@jp.fujitsu.com>
-Date: Tue, 31 Oct 2017 14:39:01 +0900
+        Tue, 31 Oct 2017 04:44:06 -0400
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [RFC PATCH 1/3] btrfs-progs: Add EXEC parameter in Makefile
+Date: Tue, 31 Oct 2017 16:43:34 +0800
+Message-ID: <1509439416-51824-2-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
+References: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-UUID of ROOT_ITEM is empty if it is not subvolume (and not created by
-kernel). So, just skip it if it is empty just like parent/received UUID.
+When EXEC parameter is set, do not build this tool.
+run the test tool with a given path.(/usr/bin, /usr/local/bin)
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- print-tree.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ Makefile        | 32 +++++++++++++++++++++++++++++++-
+ tests/README.md | 10 ++++++++++
+ 2 files changed, 41 insertions(+), 1 deletion(-)
 
-diff --git a/print-tree.c b/print-tree.c
-index 8abd760..9d1b862 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -581,8 +581,10 @@ static void print_root_item(struct extent_buffer *leaf, int slot)
- 		flags_str);
+diff --git a/Makefile b/Makefile
+index 30a0ee22..8ca5e63f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -26,6 +26,7 @@
+ #   EXTRA_LDFLAGS  additional linker flags
+ #
+ # Testing-specific options (see also tests/README.md):
++#   EXEC=path      run test(s) use exec file in given path
+ #   TEST=GLOB      run test(s) from directories matching GLOB
+ #   TEST_LOG=tty   print name of a command run via the execution helpers
+ #   TEST_LOG=dump  dump testing log file when a test fails
+@@ -295,11 +296,38 @@ $(BUILDDIRS):
+ 	@echo "Making all in $(patsubst build-%,%,$@)"
+ 	$(Q)$(MAKE) $(MAKEOPTS) -C $(patsubst build-%,%,$@)
  
- 	if (root_item.generation == root_item.generation_v2) {
--		uuid_unparse(root_item.uuid, uuid_str);
--		printf("\t\tuuid %s\n", uuid_str);
-+		if (!empty_uuid(root_item.uuid)) {
-+			uuid_unparse(root_item.uuid, uuid_str);
-+			printf("\t\tuuid %s\n", uuid_str);
-+		}
- 		if (!empty_uuid(root_item.parent_uuid)) {
- 			uuid_unparse(root_item.parent_uuid, uuid_str);
- 			printf("\t\tparent_uuid %s\n", uuid_str);
++ifneq ("$(EXEC)","")
++test-convert:
++	@echo "    [TEST]   convert-tests.sh"
++	$(Q)bash tests/convert-tests.sh
++
++# btrfs-corrupt-block is a internal tool of btrfs-progs.
++test-fsck: btrfs-corrupt-block
++	@echo "    [TEST]   fsck-tests.sh"
++	$(Q)bash tests/fsck-tests.sh
++
++# btrfs-corrupt-block is a internal tool of btrfs-progs.
++# fssum is a internal tool for tests.
++test-misc: btrfs-corrupt-block fssum
++	@echo "    [TEST]   misc-tests.sh"
++	$(Q)bash tests/misc-tests.sh
++
++test-mkfs:
++	@echo "    [TEST]   mkfs-tests.sh"
++	$(Q)bash tests/mkfs-tests.sh
++
++test-fuzz:
++	@echo "    [TEST]   fuzz-tests.sh"
++	$(Q)bash tests/fuzz-tests.sh
++
++test-cli:
++	@echo "    [TEST]   cli-tests.sh"
++	$(Q)bash tests/cli-tests.sh
++else
+ test-convert: btrfs btrfs-convert
+ 	@echo "    [TEST]   convert-tests.sh"
+ 	$(Q)bash tests/convert-tests.sh
+ 
+-test-check: test-fsck
+ test-fsck: btrfs btrfs-image btrfs-corrupt-block mkfs.btrfs btrfstune
+ 	@echo "    [TEST]   fsck-tests.sh"
+ 	$(Q)bash tests/fsck-tests.sh
+@@ -320,7 +348,9 @@ test-fuzz: btrfs
+ test-cli: btrfs
+ 	@echo "    [TEST]   cli-tests.sh"
+ 	$(Q)bash tests/cli-tests.sh
++endif
+ 
++test-check: test-fsck
+ test-clean:
+ 	@echo "Cleaning tests"
+ 	$(Q)bash tests/clean-tests.sh
+diff --git a/tests/README.md b/tests/README.md
+index 04d2ce2a..35383346 100644
+--- a/tests/README.md
++++ b/tests/README.md
+@@ -28,6 +28,16 @@ $ ./misc-tests.sh
+ The verbose output of the tests is logged into a file named after the test
+ category, eg. `fsck-tests-results.txt`.
+ 
++## Specify binary
++
++Use binary in the given path to run test.
++
++```shell
++$ make EXEC=/usr/bin/ test
++```
++
++will run tests use binary in /usr/bin.
++
+ ## Selective testing
+ 
+ The tests are prefixed by a number for ordering and uniqueness. To run a
 -- 
-2.9.5
+2.13.6
+
+
 

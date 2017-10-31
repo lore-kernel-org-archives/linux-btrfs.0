@@ -1,75 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52876 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52845 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932501AbdJaRqq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 13:46:46 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8D0C6ABF4
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:46:45 +0000 (UTC)
+        id S932373AbdJaRqd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 13:46:33 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 16AF2ABF4
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:46:32 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 11/11] btrfs: use non-RCU list traversal in write_all_supers callees
-Date: Tue, 31 Oct 2017 18:44:56 +0100
-Message-Id: <8430e9c00d58748f1cb574b686396c8349ac7311.1509471604.git.dsterba@suse.com>
+Subject: [PATCH 05/11] btrfs: simplify exit paths in btrfs_init_new_device
+Date: Tue, 31 Oct 2017 18:44:42 +0100
+Message-Id: <01ee88e7c85d15d62a8bf1bf94300226238bcb79.1509471604.git.dsterba@suse.com>
 In-Reply-To: <cover.1509471604.git.dsterba@suse.com>
 References: <cover.1509471604.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We take the fs_devices::device_list_mutex mutex in write_all_supers
-which will prevent any add/del changes to the device list. Therefore we
-don't need to use the RCU variant list_for_each_entry_rcu in any of the
-called functions.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/volumes.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index efce9a2fa9be..042cf46e4cd0 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3396,9 +3396,10 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 	int errors_wait = 0;
- 	blk_status_t ret;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f206e83d4f52..75aed8ec64bd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2344,17 +2344,15 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
  
-+	WARN_ON(!mutex_is_locked(&info->fs_devices->device_list_mutex));
- 	/* send down all the barriers */
- 	head = &info->fs_devices->devices;
--	list_for_each_entry_rcu(dev, head, dev_list) {
-+	list_for_each_entry(dev, head, dev_list) {
- 		if (dev->missing)
- 			continue;
- 		if (!dev->bdev)
-@@ -3411,7 +3412,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+ 	name = rcu_string_strdup(device_path, GFP_KERNEL);
+ 	if (!name) {
+-		free_device(device);
+ 		ret = -ENOMEM;
+-		goto error;
++		goto error_free_device;
+ 	}
+ 	rcu_assign_pointer(device->name, name);
+ 
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (IS_ERR(trans)) {
+-		free_device(device);
+ 		ret = PTR_ERR(trans);
+-		goto error;
++		goto error_free_device;
  	}
  
- 	/* wait for all the barriers */
--	list_for_each_entry_rcu(dev, head, dev_list) {
-+	list_for_each_entry(dev, head, dev_list) {
- 		if (dev->missing)
- 			continue;
- 		if (!dev->bdev) {
-@@ -3510,7 +3511,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 		}
- 	}
- 
--	list_for_each_entry_rcu(dev, head, dev_list) {
-+	list_for_each_entry(dev, head, dev_list) {
- 		if (!dev->bdev) {
- 			total_errors++;
- 			continue;
-@@ -3551,7 +3552,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 	}
- 
- 	total_errors = 0;
--	list_for_each_entry_rcu(dev, head, dev_list) {
-+	list_for_each_entry(dev, head, dev_list) {
- 		if (!dev->bdev)
- 			continue;
- 		if (!dev->in_fs_metadata || !dev->writeable)
+ 	q = bdev_get_queue(bdev);
+@@ -2494,6 +2492,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 		sb->s_flags |= MS_RDONLY;
+ 	if (trans)
+ 		btrfs_end_transaction(trans);
++error_free_device:
+ 	free_device(device);
+ error:
+ 	blkdev_put(bdev, FMODE_EXCL);
 -- 
 2.14.0
 

@@ -1,58 +1,233 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f173.google.com ([209.85.223.173]:53407 "EHLO
-        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751366AbdJaUAH (ORCPT
+Received: from mail-wr0-f179.google.com ([209.85.128.179]:56213 "EHLO
+        mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752014AbdJaUG3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 16:00:07 -0400
-Received: by mail-io0-f173.google.com with SMTP id 189so1401885iow.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:00:07 -0700 (PDT)
-Subject: Re: btrfs-subv-backup v0.1b
-To: "Lentes, Bernd" <bernd.lentes@helmholtz-muenchen.de>
-Cc: Btrfs ML <linux-btrfs@vger.kernel.org>
-References: <cc9e6302-125b-b120-cc45-35a2e12a3d6a@gmail.com>
- <973325765.400970.1509453637439.JavaMail.zimbra@helmholtz-muenchen.de>
- <a9accdcd-9f0a-86a2-64a9-faaf19d882cd@gmail.com>
- <551550025.428652.1509468869372.JavaMail.zimbra@helmholtz-muenchen.de>
- <56f78e50-bfc1-66cc-141e-41cfa446f855@gmail.com>
- <2032233997.441324.1509479675722.JavaMail.zimbra@helmholtz-muenchen.de>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <b248c184-c7c9-f352-15d1-98b8830a347d@gmail.com>
-Date: Tue, 31 Oct 2017 16:00:03 -0400
-MIME-Version: 1.0
-In-Reply-To: <2032233997.441324.1509479675722.JavaMail.zimbra@helmholtz-muenchen.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Tue, 31 Oct 2017 16:06:29 -0400
+Received: by mail-wr0-f179.google.com with SMTP id l8so128184wre.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:06:28 -0700 (PDT)
+Message-ID: <1509480384.1662.84.camel@gmail.com>
+Subject: Re: Several questions regarding btrfs
+From: ST <smntov@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 31 Oct 2017 22:06:24 +0200
+In-Reply-To: <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
+References: <1509467017.1662.37.camel@gmail.com>
+         <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-31 15:54, Lentes, Bernd wrote:
-> ----- On Oct 31, 2017, at 6:00 PM, Austin S. Hemmelgarn ahferroin7@gmail.com wrote:
-> 
->> Assuming you're careful about how you install it (that is, put it in a
->> custom prefix that isn't in $PATH), you could always build a local
->> version of Python.  Once you've got that, it's pretty trivial to change
->> the #! line at the beginning of the script to point to the appropriate
->> location.
->>
->> For what it's worth, it shouldn't be _too_ hard to get the script
->> working with Python 2.7.  The only big syntax difference that's liable
->> to be an issue is the except clauses.  I'll take a look at this and see
->> if I can't get it working for both 3.X and 2.7.
-> 
-> Austin,
-> 
-> do i understand correctly what i've read on github, that your script is worthless for SLES because they mount the subvolumes ?
-> "this of course does not work if you explicitly mount subvolumes, but the only distro I know of that does that is SUSE, and they do their own thing anyway."
-It's not quite worthless, it just needs a bit more effort, although 
-that's not _just_ because of the subvolumes being explicitly mounted. 
-There's also the fact that SUSE has an odd mix of subvolumes outside of 
-the subvolume that gets mounted as root, and ones inside, which makes 
-handling a SUSE root filesystem extremely complicated (though this is 
-only the case if you installed with snapshot support enabled).
+Thank you very much for such an informative response!
 
-In short, to use this reliably for the root filesystem for OpenSUSE and 
-SLES, you need to mount the top level of the root filesystem somewhere, 
-and then run the script on that (and that tree is what you should be 
-backing up in an ideal situation as well).
 
-I'll look at getting the README updated to be more clear about that and 
-give more specific directions tomorrow.
+On Tue, 2017-10-31 at 13:45 -0400, Austin S. Hemmelgarn wrote:
+> On 2017-10-31 12:23, ST wrote:
+> > Hello,
+> > 
+> > I've recently learned about btrfs and consider to utilize for my needs.
+> > I have several questions in this regard:
+> > 
+> > I manage a dedicated server remotely and have some sort of script that
+> > installs an OS from several images. There I can define partitions and
+> > their FSs.
+> > 
+> > 1. By default the script provides a small separate partition for /boot
+> > with ext3. Does it have any advantages or can I simply have /boot
+> > within / all on btrfs? (Note: the OS is Debian9)
+> It depends on the boot loader.  I think Debian 9's version of GRUB has 
+> no issue with BTRFS, but see the response below to your question on 
+> subvolumes for the one caveat.
+> > 
+> > 2. as for the / I get ca. following written to /etc/fstab:
+> > UUID=blah_blah /dev/sda3 / btrfs ...
+> > So top-level volume is populated after initial installation with the
+> > main filesystem dir-structure (/bin /usr /home, etc..). As per btrfs
+> > wiki I would like top-level volume to have only subvolumes (at least,
+> > the one mounted as /) and snapshots. I can make a snapshot of the
+> > top-level volume with / structure, but how can get rid of all the
+> > directories within top-lvl volume and keep only the subvolume
+> > containing / (and later snapshots), unmount it and then mount the
+> > snapshot that I took? rm -rf / - is not a good idea...
+> There are three approaches to doing this, from a live environment, from 
+> single user mode running with init=/bin/bash, or from systemd emergency 
+> mode.  Doing it from a live environment is much safer overall, even if 
+> it does take a bit longer.  I'm listing the last two methods here only 
+> for completeness, and I very much suggest that you use the first (do it 
+> from a live environment).
+>
+> Regardless of which method you use, if you don't have a separate boot 
+> partition, you will have to create a symlink called /boot outside the 
+> subvolume, pointing at the boot directory inside the subvolume, or 
+> change the boot loader to look at the new location for /boot.
+> 
+>  From a live environment, it's pretty simple overall, though it's much 
+> easier if your live environment matches your distribution:
+> 1. Create the snapshot of the root, naming it what you want the 
+> subvolume to be called (I usually just call it root, SUSE and Ubuntu 
+> call it @, others may have different conventions).
+> 2. Delete everything except the snapshot you just created.  The safest 
+> way to do this is to explicitly list each individual top-level directory 
+> to delete.
+> 3. Use `btrfs subvolume list` to figure out the subvolume ID for the 
+> subvolume you just created, and then set that as the default subvolume 
+> with `btrfs subvolume set-default /path SUBVOLID`.
+
+Do I need to chroot into old_root before doing set-default? Otherwise it
+will attempt to set in the live environment, will it not?
+
+Also another questions in this regard - I tried to "set-default" and
+then reboot and it worked nice - I landed indeed in the snapshot, not
+top-level volume. However /etc/fstab didn't change and actually showed
+that top-level volume should have been mounted instead. It seems that
+"set-default" has higher precedence than fstab...
+1. is it true?
+2. how do they actually interact?
+3. such a discrepancy disturbs me, so how should I tune fstab to reflect
+the change? Or maybe I should not?
+
+
+>   Once you do this, 
+> you will need to specify subvolid=5 in the mount options to get the real 
+> top-level subvolume.
+> 4. Reboot.
+> 
+> For single user mode (check further down for what to do with systemd, 
+> also note that this may brick your system if you get it wrong):
+> 1. When booting up the system, stop the bootloader and add 
+> 'init=/bin/bash' to the kernel command line before booting.
+> 2. When you get a shell prompt, create the snapshot, just like above.
+> 3. Run the following:
+> 'cd /path ; mkdir old_root ; pivot_root . old_root ; chroot . /bin/bash'
+> 3. You're now running inside the new subvolume, and the old root 
+> filesystem is mounted at /old_root.  From here, just follow steps 2 to 4 
+> from the live environment method.
+> 
+> For doing it from emergency mode, things are a bit more complicated:
+> 1. Create the snapshot of the root, just like above.
+> 2. Make sure the only services running are udev and systemd-journald.
+> 3. Run `systemctl switch-root` with the path to the subvolume you just 
+> created.
+> 4. You're now running inside the new root, systemd _may_ try to go all 
+> the way to a full boot now.
+> 5. Mount the root filesystem somewhere, and follow steps 2 through 4 of 
+> the live environment method.
+> > 
+> > 3. in my current ext4-based setup I have two servers while one syncs
+> > files of certain dir to the other using lsyncd (which launches rsync on
+> > inotify events). As far as I have understood it is more efficient to use
+> > btrfs send/receive (over ssh) than rsync (over ssh) to sync two boxes.
+> > Do you think it would be possible to make lsyncd to use btrfs for
+> > syncing instead of rsync? I.e. can btrfs work with inotify events? Did
+> > somebody try it already?
+> BTRFS send/receive needs a read-only snapshot to send from.  This means 
+> that triggering it on inotify events is liable to cause performance 
+> issues and possibly lose changes
+
+Actually triggering doesn't happen on each and every inotify event.
+lsyncd has an option to define a time interval within which all inotify
+events are accumulated and only then rsync is launched. It could be 5-10
+seconds or more. Which is quasi real time sync. Do you  still hold that
+it will not work with BTRFS send/receive (i.e. keeping previous snapshot
+around and creating a new one)?
+
+>  (contrary to popular belief, snapshot 
+> creation is neither atomic nor free).  It also means that if you want to 
+> match rsync performance in terms of network usage, you're going to have 
+> to keep the previous snapshot around so you can do an incremental send 
+> (which is also less efficient than rsync's file comparison, unless rsync 
+> is checksumming files).
+
+Indeed? From what I've read so far I got an impression that rsync is
+slower... but I might be wrong... Is this by design so, or can BTRFS
+beat rsync in future (even without checksumming)?
+
+
+> 
+> Because of this, it would be pretty complicated right now to get lsyncd 
+> reliable integration.
+> 
+> > Otherwise I can sync using btrfs send/receive from within cron every
+> > 10-15 minutes, but it seems less elegant.When it comes to stuff like this, it's usually best to go for the 
+> simplest solution that meets your requirements.  Unless you need 
+> real-time synchronization, inotify is overkill,
+
+I actually got inotify-based lsyncd working and I like it... however
+real-time syncing is not a must, and several years everything worked
+well with a simple rsync within a cron every 15 minutes. Could you
+please elaborate on the disadvantages of lsyncd, so maybe I should
+switch back? For example, in which of two cases the life of the hard
+drive is negatively impacted? On one side the data doesn't change too
+often, so 98% of rsync's from cron are wasted, on the other triggering a
+rsync on inotify might be too intensive task for a hard drive? What do
+you think? What other considerations could be?
+
+
+>  and unless you need to 
+> copy reflinks (you probably don't, as almost nothing uses them yet, and 
+> absolutely nothing I know of depends on them) send/receive is overkill.
+
+I saw in a post that rsync would create a separate copy of a cloned file
+(consuming double space and maybe traffic?)
+
+> As a pretty simple example, we've got a couple of systems that have 
+> near-line active backups set up.  The data is stored on BTRFS, but we 
+> just use a handful of parallel rsync invocations every 15 minutes to 
+> keep the backup system in sync (because of what we do, we can afford to 
+> lose 15 minutes of data).  It's not 'elegant', but it's immediately 
+> obvious to any seasoned sysadmin what it's doing, and it gets the job 
+> done easily syncing the data in question in at most a few minutes.  Back 
+> when I switched to using BTRFS, I considered using send/receive, but 
+> even using incremental send/receive still performed worse than rsync.
+> > 
+> > 4. In a case when compression is used - what quota is based on - (a)
+> > amount of GBs the data actually consumes on the hard drive while in
+> > compressed state or (b) amount of GBs the data naturally is in
+> > uncompressed form. I need to set quotas as in (b). Is it possible? If
+> > not - should I file a feature request?
+> I can't directly answer this as I don't know myself (I don't use 
+> quotas), but have two comments I would suggest you consider:
+> 
+> 1. qgroups (the BTRFS quota implementation) cause scaling and 
+> performance issues.  Unless you absolutely need quotas (unless you're a 
+> hosting company, or are dealing with users who don't listen and don't 
+> pay attention to disk usage, you usually do not need quotas), you're 
+> almost certainly better off disabling them for now, especially for a 
+> production system.
+
+Ok. I'll use more standard approaches. Which of following commands will
+work with BTRFS:
+
+https://debian-handbook.info/browse/stable/sect.quotas.html
+
+
+> 
+> 2. Compression and quotas cause issues regardless of how they interact. 
+> In case (a), the user has no way of knowing if a given file will fit 
+> under their quota until they try to create it.  In case (b), actual disk 
+> usage (as reported by du) will not match up with what the quota says the 
+> user is using, which makes it harder for them to figure out what to 
+> delete to free up space.  It's debatable which is a less objectionable 
+> situation for users, though most people I know tend to think in a way 
+> that the issue with (a) doesn't matter, but the issue with (b) does.
+
+I think both (a) and (b) should be possible and it should be up to
+sysadmin to choose what he prefers. The concerns of the (b) scenario
+probably could be dealt with some sort of --real-size to the du command,
+while by default it could have behavior (which might be emphasized with
+--compressed-size).
+
+Two more question came to my mind: as I've mentioned above - I have two
+boxes one syncs to another. No RAID involved. I want to scrub (or scan -
+don't know yet, what is the difference...) the whole filesystem once in
+a month to look for bitrot. Questions:
+
+1. is it a stable setup for production? Let's say I'll sync with rsync -
+either in cron or in lsyncd?
+2. should any data corruption be discovered - is there any way to heal
+it using the copy from the other box over SSH?
+
+Thank you!
+

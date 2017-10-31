@@ -1,88 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:51026 "EHLO
-        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751324AbdJaTH5 (ORCPT
+Received: from mta02.helmholtz-muenchen.de ([146.107.4.101]:39775 "EHLO
+        mta02.helmholtz-muenchen.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1753784AbdJaTyk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 15:07:57 -0400
-Received: by mail-io0-f170.google.com with SMTP id 97so1102857iok.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 12:07:56 -0700 (PDT)
-Subject: Re: Several questions regarding btrfs
-To: Andrei Borzenkov <arvidjaar@gmail.com>, ST <smntov@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <1509467017.1662.37.camel@gmail.com>
- <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
- <5f581022-a570-30a8-3e1c-509af88b2a9d@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <71765ea7-8e89-7443-d3c3-f353965b64ec@gmail.com>
-Date: Tue, 31 Oct 2017 15:07:53 -0400
+        Tue, 31 Oct 2017 15:54:40 -0400
+Date: Tue, 31 Oct 2017 20:54:35 +0100 (CET)
+From: "Lentes, Bernd" <bernd.lentes@helmholtz-muenchen.de>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Btrfs ML <linux-btrfs@vger.kernel.org>
+Message-ID: <2032233997.441324.1509479675722.JavaMail.zimbra@helmholtz-muenchen.de>
+In-Reply-To: <56f78e50-bfc1-66cc-141e-41cfa446f855@gmail.com>
+References: <cc9e6302-125b-b120-cc45-35a2e12a3d6a@gmail.com> <973325765.400970.1509453637439.JavaMail.zimbra@helmholtz-muenchen.de> <a9accdcd-9f0a-86a2-64a9-faaf19d882cd@gmail.com> <551550025.428652.1509468869372.JavaMail.zimbra@helmholtz-muenchen.de> <56f78e50-bfc1-66cc-141e-41cfa446f855@gmail.com>
+Subject: Re: btrfs-subv-backup v0.1b
 MIME-Version: 1.0
-In-Reply-To: <5f581022-a570-30a8-3e1c-509af88b2a9d@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-31 14:51, Andrei Borzenkov wrote:
-> 31.10.2017 20:45, Austin S. Hemmelgarn пишет:
->> On 2017-10-31 12:23, ST wrote:
->>> Hello,
->>>
->>> I've recently learned about btrfs and consider to utilize for my needs.
->>> I have several questions in this regard:
->>>
->>> I manage a dedicated server remotely and have some sort of script that
->>> installs an OS from several images. There I can define partitions and
->>> their FSs.
->>>
->>> 1. By default the script provides a small separate partition for /boot
->>> with ext3. Does it have any advantages or can I simply have /boot
->>> within / all on btrfs? (Note: the OS is Debian9)
->> It depends on the boot loader.  I think Debian 9's version of GRUB has
->> no issue with BTRFS, but see the response below to your question on
->> subvolumes for the one caveat.
->>>
->>> 2. as for the / I get ca. following written to /etc/fstab:
->>> UUID=blah_blah /dev/sda3 / btrfs ...
->>> So top-level volume is populated after initial installation with the
->>> main filesystem dir-structure (/bin /usr /home, etc..). As per btrfs
->>> wiki I would like top-level volume to have only subvolumes (at least,
->>> the one mounted as /) and snapshots. I can make a snapshot of the
->>> top-level volume with / structure, but how can get rid of all the
->>> directories within top-lvl volume and keep only the subvolume
->>> containing / (and later snapshots), unmount it and then mount the
->>> snapshot that I took? rm -rf / - is not a good idea...
->> There are three approaches to doing this, from a live environment, from
->> single user mode running with init=/bin/bash, or from systemd emergency
->> mode.  Doing it from a live environment is much safer overall, even if
->> it does take a bit longer.  I'm listing the last two methods here only
->> for completeness, and I very much suggest that you use the first (do it
->> from a live environment).
->>
->> Regardless of which method you use, if you don't have a separate boot
->> partition, you will have to create a symlink called /boot outside the
->> subvolume, pointing at the boot directory inside the subvolume, or
->> change the boot loader to look at the new location for /boot.
->>
->>  From a live environment, it's pretty simple overall, though it's much
->> easier if your live environment matches your distribution:
->> 1. Create the snapshot of the root, naming it what you want the
->> subvolume to be called (I usually just call it root, SUSE and Ubuntu
->> call it @, others may have different conventions).
->> 2. Delete everything except the snapshot you just created.  The safest
->> way to do this is to explicitly list each individual top-level directory
->> to delete.
->> 3. Use `btrfs subvolume list` to figure out the subvolume ID for the
->> subvolume you just created, and then set that as the default subvolume
->> with `btrfs subvolume set-default /path SUBVOLID`.  Once you do this,
->> you will need to specify subvolid=5 in the mount options to get the real
->> top-level subvolume.
+----- On Oct 31, 2017, at 6:00 PM, Austin S. Hemmelgarn ahferroin7@gmail.com wrote:
+
+> Assuming you're careful about how you install it (that is, put it in a
+> custom prefix that isn't in $PATH), you could always build a local
+> version of Python.  Once you've got that, it's pretty trivial to change
+> the #! line at the beginning of the script to point to the appropriate
+> location.
 > 
-> Note that current grub2 works with absolute paths (relative to
-> filesystem root). It means that if a) /boot/grub is on btrfs and b) it
-> is part of snapshot that becomes new root, $prefix (that points to
-> /boot/grub) in the first-stage grub2 image will be wrong. So to be on
-> safe side you would want to reinstall grub2 after this change.
-> 
-Generally yes, though you can also make a symlink pointing to the boot 
-directory under the new subvolume (snapshot), and things should work 
-correctly as far as I know (this works on Gentoo, not sure about other 
-distros though).
+> For what it's worth, it shouldn't be _too_ hard to get the script
+> working with Python 2.7.  The only big syntax difference that's liable
+> to be an issue is the except clauses.  I'll take a look at this and see
+> if I can't get it working for both 3.X and 2.7.
+
+Austin,
+
+do i understand correctly what i've read on github, that your script is worthless for SLES because they mount the subvolumes ?
+"this of course does not work if you explicitly mount subvolumes, but the only distro I know of that does that is SUSE, and they do their own thing anyway."
+
+Bernd
+ 
+
+Helmholtz Zentrum Muenchen
+Deutsches Forschungszentrum fuer Gesundheit und Umwelt (GmbH)
+Ingolstaedter Landstr. 1
+85764 Neuherberg
+www.helmholtz-muenchen.de
+Aufsichtsratsvorsitzende: MinDir'in Baerbel Brumme-Bothe
+Geschaeftsfuehrer: Prof. Dr. Guenther Wess, Heinrich Bassler, Dr. Alfons Enhsen
+Registergericht: Amtsgericht Muenchen HRB 6466
+USt-IdNr: DE 129521671
+

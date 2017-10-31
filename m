@@ -1,32 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49525 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.99]:39272 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753567AbdJPPRZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 Oct 2017 11:17:25 -0400
-Date: Mon, 16 Oct 2017 17:15:38 +0200
-From: David Sterba <dsterba@suse.cz>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, anand.jain@oracle.com
-Subject: Re: [PATCH v3 0/4] btrfs: cleanup mount path
-Message-ID: <20171016151538.GV3521@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <4786f7cc-adc7-1b99-5abf-d068acee56c2@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4786f7cc-adc7-1b99-5abf-d068acee56c2@jp.fujitsu.com>
+        id S932578AbdJaSzp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 14:55:45 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 58E3021911
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 18:55:44 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: use cached state when dirtying pages during buffered write
+Date: Tue, 31 Oct 2017 18:55:40 +0000
+Message-Id: <20171031185540.30649-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 25, 2017 at 04:26:30PM +0900, Misono, Tomohiro wrote:
-> Summary:
-> Cleanup mount path by avoiding calling btrfs_mount() twice.
-> No functional change. See below for longer explanation.
-> 
-> Changelog:
-> v3:
->   Reorganized patches again into four and added comments to the source.
->   Each patch can be applied and compiled while maintaining functionality.
->   The first one is the preparation and the second one is the main part.
->   The last two are small cleanups.
+From: Filipe Manana <fdmanana@suse.com>
 
-I'm conditionally adding this series to for-next for testing.
+During a buffered IO write, we can have an extent state that we got when
+we locked the range (if the range starts at an offset lower than eof), so
+always pass it to btrfs_dirty_pages() so that setting the delalloc bit
+in the range does not need to do a full search in the inode's io tree,
+saving time and reducing the amount of time we hold the io tree's lock.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e0d15c0d1641..aaab1838cece 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1755,7 +1755,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 
+ 		if (copied > 0)
+ 			ret = btrfs_dirty_pages(inode, pages, dirty_pages,
+-						pos, copied, NULL);
++						pos, copied, &cached_state);
+ 		if (need_unlock)
+ 			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 					     lockstart, lockend, &cached_state,
+-- 
+2.11.0
+

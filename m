@@ -1,28 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:51341 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753311AbdJaFop (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 01:44:45 -0400
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 2AAC6AC00AD
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 14:44:41 +0900 (JST)
+Received: from mx2.suse.de ([195.135.220.15]:53973 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752823AbdJaHPt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 03:15:49 -0400
 Subject: Re: [PATCH] btrfs-progs: print-tree: Enehance uuid item print
-To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
 References: <20171031040341.18840-1-wqu@suse.com>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <33d7b245-5a6b-6afc-938d-08d21c6776a2@jp.fujitsu.com>
-Date: Tue, 31 Oct 2017 14:44:35 +0900
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <dcdc0d78-77f9-0e5d-f14a-35d1cb954529@suse.com>
+Date: Tue, 31 Oct 2017 09:15:47 +0200
 MIME-Version: 1.0
 In-Reply-To: <20171031040341.18840-1-wqu@suse.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 2017/10/31 13:03, Qu Wenruo wrote:
+On 31.10.2017 06:03, Qu Wenruo wrote:
 > For key type BTRFS_UUID_KEY_SUBVOL or BTRFS_UUID_KEY_RECEIVED_SUBVOL the
 > key objectid and key offset are just half of the UUID.
 > 
@@ -62,6 +58,14 @@ On 2017/10/31 13:03, Qu Wenruo wrote:
 > +	btrfs_item_key_to_cpu(l, &key, slot);
 > +	put_unaligned_le64(key.objectid, uuid);
 > +	put_unaligned_le64(key.offset, uuid + sizeof(u64));
+
+I don't think this will work on a BE system. Because
+btrfs_item_key_to_cpu take the LE representation on-disk and turns it
+into a cpu representation which might very well be BE. And then you
+essentially reverse it by using put_unaligned_le64 for x86 it works fine
+due to it being a LE system.
+
+
 > +	uuid_unparse(uuid, uuid_str);
 > +
 >  	if (item_size & (sizeof(u64) - 1)) {
@@ -83,6 +87,3 @@ On 2017/10/31 13:03, Qu Wenruo wrote:
 >  			break;
 >  		case BTRFS_STRING_ITEM_KEY: {
 > 
-
-Reviewed-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
-

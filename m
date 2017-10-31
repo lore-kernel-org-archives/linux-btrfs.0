@@ -1,233 +1,243 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f179.google.com ([209.85.128.179]:56213 "EHLO
-        mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752014AbdJaUG3 (ORCPT
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:52956 "EHLO
+        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751431AbdJaVsR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 16:06:29 -0400
-Received: by mail-wr0-f179.google.com with SMTP id l8so128184wre.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 13:06:28 -0700 (PDT)
-Message-ID: <1509480384.1662.84.camel@gmail.com>
-Subject: Re: Several questions regarding btrfs
-From: ST <smntov@gmail.com>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 31 Oct 2017 22:06:24 +0200
-In-Reply-To: <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
-References: <1509467017.1662.37.camel@gmail.com>
-         <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
+        Tue, 31 Oct 2017 17:48:17 -0400
+Received: by mail-wm0-f46.google.com with SMTP id t139so1607006wmt.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 14:48:17 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
+ <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
+ <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+ <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
+ <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
+ <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
+ <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com> <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
+From: Dave <davestechshop@gmail.com>
+Date: Tue, 31 Oct 2017 17:47:54 -0400
+Message-ID: <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
+Subject: Re: defragmenting best practice?
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you very much for such an informative response!
+I'm following up on all the suggestions regarding Firefox performance
+on BTRFS. I have time to make these changes now, but I am having
+trouble figuring out what to do. The constraints are:
 
+1. BTRFS snapshots have proven to be too useful (and too important to
+our overall IT approach) to forego.
+2. We do not see any practical alternative (for us) to the incremental
+backup strategy
+(https://btrfs.wiki.kernel.org/index.php/Incremental_Backup)
+3. We have large amounts of storage space (and can add more), but not
+enough to break all reflinks on all snapshots.
+4. We can transfer snapshots to backup storage (and thereby retain
+minimal snapshots on the live volume)
+3. Our team is standardized on Firefox. (Switching to Chromium is not
+an option for us.)
+5. Firefox profile sync has not worked well for us in the past, so we
+don't use it.
+6. Our machines generally have plenty of RAM so we could put the
+Firefox cache (and maybe profile) into RAM using a technique such as
+https://wiki.archlinux.org/index.php/Firefox/Profile_on_RAM. However,
+profile persistence is important.
 
-On Tue, 2017-10-31 at 13:45 -0400, Austin S. Hemmelgarn wrote:
-> On 2017-10-31 12:23, ST wrote:
-> > Hello,
-> > 
-> > I've recently learned about btrfs and consider to utilize for my needs.
-> > I have several questions in this regard:
-> > 
-> > I manage a dedicated server remotely and have some sort of script that
-> > installs an OS from several images. There I can define partitions and
-> > their FSs.
-> > 
-> > 1. By default the script provides a small separate partition for /boot
-> > with ext3. Does it have any advantages or can I simply have /boot
-> > within / all on btrfs? (Note: the OS is Debian9)
-> It depends on the boot loader.  I think Debian 9's version of GRUB has 
-> no issue with BTRFS, but see the response below to your question on 
-> subvolumes for the one caveat.
-> > 
-> > 2. as for the / I get ca. following written to /etc/fstab:
-> > UUID=blah_blah /dev/sda3 / btrfs ...
-> > So top-level volume is populated after initial installation with the
-> > main filesystem dir-structure (/bin /usr /home, etc..). As per btrfs
-> > wiki I would like top-level volume to have only subvolumes (at least,
-> > the one mounted as /) and snapshots. I can make a snapshot of the
-> > top-level volume with / structure, but how can get rid of all the
-> > directories within top-lvl volume and keep only the subvolume
-> > containing / (and later snapshots), unmount it and then mount the
-> > snapshot that I took? rm -rf / - is not a good idea...
-> There are three approaches to doing this, from a live environment, from 
-> single user mode running with init=/bin/bash, or from systemd emergency 
-> mode.  Doing it from a live environment is much safer overall, even if 
-> it does take a bit longer.  I'm listing the last two methods here only 
-> for completeness, and I very much suggest that you use the first (do it 
-> from a live environment).
+The most common recommendations were to switch to Chromium, defragment
+and don't use snapshots. As the constraints above illustrate, we
+cannot do those things.
+
+The tentative solution I have come up with is:
+
+1. Continue using snapshots, but retain the minimal number possible on
+the live volume. Move historical snapshots to a backup device using
+btrfs send-receive.
+(https://btrfs.wiki.kernel.org/index.php/Incremental_Backup)
+
+2. Put $HOME/.cache on a separate BTRFS subvolume that is mounted
+nocow -- it will NOT be snapshotted
+
+3. Put most of $HOME on a "home" volume but separate all user
+documents to another volume (i.e., "documents").
+
+3.a. The "home" volume will retain only the one most recent snapshot
+on that live volume. (More backup history will be retained on a backup
+volume. ) This home volume can be defragmented. With one snapshot,
+that will double our space usage, which is acceptable.
+
+3.b. The documents volume will be snapshotted hourly and 36 hourly
+snapshots plus daily, weekly and monthly snapshots retained. Therefore
+it will NOT be defragmented, as that would not be practical or
+space-wise possible.
+
+3.c. The root volume (operating system, etc.) will follow a strategy
+similar to home, but will also retain pre- and post- update snapshots.
+
+4. Put the Firefox cache in RAM
+
+5. If needed, consider putting the Firefox profile in RAM
+
+6. Make sure Firefox is running in multi-process mode. (Duncan's
+instructions, while greatly appreciated and very useful, left me
+slightly confused about pulseaudio's compatibility with multi-process
+mode.)
+
+7. Check various Firefox performance tweaks such as these:
+https://wiki.archlinux.org/index.php/Firefox/Tweaks
+
+Can anyone guess whether this will be sufficient to solve our severe
+performance problems? Do these steps make sense? Will any of these
+steps lead to new problems? Should I proceed to give them a try? Or
+can anyone suggest a better set of steps to test?
+
+Notes:
+
+In regard to snapshots, we must retain about 36 hourly snapshots of
+user documents, for example. We have to have pre- and post- package
+upgrade snapshots from at least the most recent operating system &
+application package update. And we have to retain several daily,
+weekly and monthly snapshots of system directories and some other
+locations.) Most of these snapshots can be retained on backup storage
+devices.
+
+Regarding Firefox profile sync, it does not have an intelligent method
+for resolving conflicts, for example. We found too many unexpected
+changes when using sync, so we do not use it.
+
+On Thu, Sep 21, 2017 at 7:09 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Dave posted on Wed, 20 Sep 2017 02:38:13 -0400 as excerpted:
 >
-> Regardless of which method you use, if you don't have a separate boot 
-> partition, you will have to create a symlink called /boot outside the 
-> subvolume, pointing at the boot directory inside the subvolume, or 
-> change the boot loader to look at the new location for /boot.
-> 
->  From a live environment, it's pretty simple overall, though it's much 
-> easier if your live environment matches your distribution:
-> 1. Create the snapshot of the root, naming it what you want the 
-> subvolume to be called (I usually just call it root, SUSE and Ubuntu 
-> call it @, others may have different conventions).
-> 2. Delete everything except the snapshot you just created.  The safest 
-> way to do this is to explicitly list each individual top-level directory 
-> to delete.
-> 3. Use `btrfs subvolume list` to figure out the subvolume ID for the 
-> subvolume you just created, and then set that as the default subvolume 
-> with `btrfs subvolume set-default /path SUBVOLID`.
-
-Do I need to chroot into old_root before doing set-default? Otherwise it
-will attempt to set in the live environment, will it not?
-
-Also another questions in this regard - I tried to "set-default" and
-then reboot and it worked nice - I landed indeed in the snapshot, not
-top-level volume. However /etc/fstab didn't change and actually showed
-that top-level volume should have been mounted instead. It seems that
-"set-default" has higher precedence than fstab...
-1. is it true?
-2. how do they actually interact?
-3. such a discrepancy disturbs me, so how should I tune fstab to reflect
-the change? Or maybe I should not?
-
-
->   Once you do this, 
-> you will need to specify subvolid=5 in the mount options to get the real 
-> top-level subvolume.
-> 4. Reboot.
-> 
-> For single user mode (check further down for what to do with systemd, 
-> also note that this may brick your system if you get it wrong):
-> 1. When booting up the system, stop the bootloader and add 
-> 'init=/bin/bash' to the kernel command line before booting.
-> 2. When you get a shell prompt, create the snapshot, just like above.
-> 3. Run the following:
-> 'cd /path ; mkdir old_root ; pivot_root . old_root ; chroot . /bin/bash'
-> 3. You're now running inside the new subvolume, and the old root 
-> filesystem is mounted at /old_root.  From here, just follow steps 2 to 4 
-> from the live environment method.
-> 
-> For doing it from emergency mode, things are a bit more complicated:
-> 1. Create the snapshot of the root, just like above.
-> 2. Make sure the only services running are udev and systemd-journald.
-> 3. Run `systemctl switch-root` with the path to the subvolume you just 
-> created.
-> 4. You're now running inside the new root, systemd _may_ try to go all 
-> the way to a full boot now.
-> 5. Mount the root filesystem somewhere, and follow steps 2 through 4 of 
-> the live environment method.
-> > 
-> > 3. in my current ext4-based setup I have two servers while one syncs
-> > files of certain dir to the other using lsyncd (which launches rsync on
-> > inotify events). As far as I have understood it is more efficient to use
-> > btrfs send/receive (over ssh) than rsync (over ssh) to sync two boxes.
-> > Do you think it would be possible to make lsyncd to use btrfs for
-> > syncing instead of rsync? I.e. can btrfs work with inotify events? Did
-> > somebody try it already?
-> BTRFS send/receive needs a read-only snapshot to send from.  This means 
-> that triggering it on inotify events is liable to cause performance 
-> issues and possibly lose changes
-
-Actually triggering doesn't happen on each and every inotify event.
-lsyncd has an option to define a time interval within which all inotify
-events are accumulated and only then rsync is launched. It could be 5-10
-seconds or more. Which is quasi real time sync. Do you  still hold that
-it will not work with BTRFS send/receive (i.e. keeping previous snapshot
-around and creating a new one)?
-
->  (contrary to popular belief, snapshot 
-> creation is neither atomic nor free).  It also means that if you want to 
-> match rsync performance in terms of network usage, you're going to have 
-> to keep the previous snapshot around so you can do an incremental send 
-> (which is also less efficient than rsync's file comparison, unless rsync 
-> is checksumming files).
-
-Indeed? From what I've read so far I got an impression that rsync is
-slower... but I might be wrong... Is this by design so, or can BTRFS
-beat rsync in future (even without checksumming)?
-
-
-> 
-> Because of this, it would be pretty complicated right now to get lsyncd 
-> reliable integration.
-> 
-> > Otherwise I can sync using btrfs send/receive from within cron every
-> > 10-15 minutes, but it seems less elegant.When it comes to stuff like this, it's usually best to go for the 
-> simplest solution that meets your requirements.  Unless you need 
-> real-time synchronization, inotify is overkill,
-
-I actually got inotify-based lsyncd working and I like it... however
-real-time syncing is not a must, and several years everything worked
-well with a simple rsync within a cron every 15 minutes. Could you
-please elaborate on the disadvantages of lsyncd, so maybe I should
-switch back? For example, in which of two cases the life of the hard
-drive is negatively impacted? On one side the data doesn't change too
-often, so 98% of rsync's from cron are wasted, on the other triggering a
-rsync on inotify might be too intensive task for a hard drive? What do
-you think? What other considerations could be?
-
-
->  and unless you need to 
-> copy reflinks (you probably don't, as almost nothing uses them yet, and 
-> absolutely nothing I know of depends on them) send/receive is overkill.
-
-I saw in a post that rsync would create a separate copy of a cloned file
-(consuming double space and maybe traffic?)
-
-> As a pretty simple example, we've got a couple of systems that have 
-> near-line active backups set up.  The data is stored on BTRFS, but we 
-> just use a handful of parallel rsync invocations every 15 minutes to 
-> keep the backup system in sync (because of what we do, we can afford to 
-> lose 15 minutes of data).  It's not 'elegant', but it's immediately 
-> obvious to any seasoned sysadmin what it's doing, and it gets the job 
-> done easily syncing the data in question in at most a few minutes.  Back 
-> when I switched to using BTRFS, I considered using send/receive, but 
-> even using incremental send/receive still performed worse than rsync.
-> > 
-> > 4. In a case when compression is used - what quota is based on - (a)
-> > amount of GBs the data actually consumes on the hard drive while in
-> > compressed state or (b) amount of GBs the data naturally is in
-> > uncompressed form. I need to set quotas as in (b). Is it possible? If
-> > not - should I file a feature request?
-> I can't directly answer this as I don't know myself (I don't use 
-> quotas), but have two comments I would suggest you consider:
-> 
-> 1. qgroups (the BTRFS quota implementation) cause scaling and 
-> performance issues.  Unless you absolutely need quotas (unless you're a 
-> hosting company, or are dealing with users who don't listen and don't 
-> pay attention to disk usage, you usually do not need quotas), you're 
-> almost certainly better off disabling them for now, especially for a 
-> production system.
-
-Ok. I'll use more standard approaches. Which of following commands will
-work with BTRFS:
-
-https://debian-handbook.info/browse/stable/sect.quotas.html
-
-
-> 
-> 2. Compression and quotas cause issues regardless of how they interact. 
-> In case (a), the user has no way of knowing if a given file will fit 
-> under their quota until they try to create it.  In case (b), actual disk 
-> usage (as reported by du) will not match up with what the quota says the 
-> user is using, which makes it harder for them to figure out what to 
-> delete to free up space.  It's debatable which is a less objectionable 
-> situation for users, though most people I know tend to think in a way 
-> that the issue with (a) doesn't matter, but the issue with (b) does.
-
-I think both (a) and (b) should be possible and it should be up to
-sysadmin to choose what he prefers. The concerns of the (b) scenario
-probably could be dealt with some sort of --real-size to the du command,
-while by default it could have behavior (which might be emphasized with
---compressed-size).
-
-Two more question came to my mind: as I've mentioned above - I have two
-boxes one syncs to another. No RAID involved. I want to scrub (or scan -
-don't know yet, what is the difference...) the whole filesystem once in
-a month to look for bitrot. Questions:
-
-1. is it a stable setup for production? Let's say I'll sync with rsync -
-either in cron or in lsyncd?
-2. should any data corruption be discovered - is there any way to heal
-it using the copy from the other box over SSH?
-
-Thank you!
-
+>> Here's my scenario. Some months ago I built an over-the-top powerful
+>> desktop computer / workstation and I was looking forward to really
+>> fantastic performance improvements over my 6 year old Ubuntu machine. I
+>> installed Arch Linux on BTRFS on the new computer (on an SSD). To my
+>> shock, it was no faster than my old machine. I focused a lot on Firefox
+>> performance because I use Firefox a lot and that was one of the
+>> applications in which I was most looking forward to better performance.
+>>
+>> I tried everything I could think of and everything recommended to me in
+>> various forums (except switching to Windows) and the performance
+>> remained very disappointing.
+>>
+>> Then today I read the following:
+>>
+>>     Gotchas - btrfs Wiki https://btrfs.wiki.kernel.org/index.php/Gotchas
+>>
+>>     Fragmentation: Files with a lot of random writes can become
+>> heavily fragmented (10000+ extents) causing excessive multi-second
+>> spikes of CPU load on systems with an SSD or large amount a RAM. On
+>> desktops this primarily affects application databases (including
+>> Firefox). Workarounds include manually defragmenting your home directory
+>> using btrfs fi defragment. Auto-defragment (mount option autodefrag)
+>> should solve this problem.
+>>
+>> Upon reading that I am wondering if fragmentation in the Firefox profile
+>> is part of my issue. That's one thing I never tested previously. (BTW,
+>> this system has 256 GB of RAM and 20 cores.)
+>>
+>> Furthermore, on the same BTRFS Wiki page, it mentions the performance
+>> penalties of many snapshots. I am keeping 30 to 50 snapshots of the
+>> volume that contains the Firefox profile.
+>>
+>> Would these two things be enough to turn top-of-the-line hardware into a
+>> mediocre-preforming desktop system? (The system performs fine on
+>> benchmarks -- it's real life usage, particularly with Firefox where it
+>> is disappointing.)
+>>
+>> After reading the info here, I am wondering if I should make a new
+>> subvolume just for my Firefox profile(s) and not use COW and/or not keep
+>> snapshots on it and mount it with the autodefrag option.
+>>
+>> As part of this strategy, I could send snapshots to another disk using
+>> btrfs send-receive. That way I would have the benefits of snapshots
+>> (which are important to me), but by not keeping any snapshots on the
+>> live subvolume I could avoid the performance problems.
+>>
+>> What would you guys do in this situation?
+>
+> [FWIW this is my second try at a reply, my first being way too detailed
+> and going off into the weeds somewhere, so I killed it.]
+>
+> That's an interesting scenario indeed, and perhaps I can help, since my
+> config isn't near as high end as yours, but I run firefox on btrfs on
+> ssds, and have no performance complaints.  The difference is very likely
+> due to one or more of the following (FWIW I'd suggest a 4-3-1-2 order,
+> tho only 1 and 2 are really btrfs related):
+>
+> 1) I make sure I consistently mount with autodefrag, from the first mount
+> after the filesystem is created in ordered to first populate it, on.  The
+> filesystem never gets fragmented, forcing writes to highly fragmented
+> free space, in the first place.  (With the past and current effect of the
+> ssd mount option under discussion to change, it's possible I'll get more
+> fragmentation in the future after ssd doesn't try so hard to find
+> reasonably large free-space chunks to write into, but it has been fine so
+> far.)
+>
+> 2) Subvolumes and snapshots seemed to me more trouble than they were
+> worth, particularly since it's the same filesystem anyway, and if it's
+> damaged, it'll take all the subvolumes and snapshots with it.  So I don't
+> use them, preferring instead to use real partitioning and more smaller
+> fully separate filesystems, some of which aren't mounted by default (and
+> root mounted read-only by default), so there's little chance they'll be
+> damaged in a crash or filesystem bug damage scenario.  And if there /is/
+> any damage, it's much more limited in scope since all my data eggs aren't
+> in the same basket, so maintenance such as btrfs check and scrub take far
+> less time (and check far less memory) than they would were it one big
+> pool with snapshots.  And if recovery fails too, the backups are likewise
+> small filesystems the same size as the working copies, so copying the
+> data back over takes far less time as well (not to mention making the
+> backups takes less time in the first place, so it's easier to regularly
+> update them).
+>
+> 3) Austin mentioned the firefox cache.  I honestly wouldn't know on it,
+> since I have firefox configured to use a tmpfs for its cache, so it
+> operates at memory speed and gets cleared along with its memory at every
+> reboot or tmpfs umount.  My inet speed is fast enough I don't really need
+> cache anyway, but it's nice to have it, operating at memory speed, within
+> a single boot session... and to have it cleared on reboot.
+>
+>
+> 4) This one was the biggest one for me for awhile.
+>
+> Is firefox running in multi-process mode?  If you don't know, got to
+> about:support, and look in the Application Basics section, at the
+> Multiprocess Windows entry and the Web Content Processes entry.  When you
+> have multiple windows open it should show something like 2/2 (for two
+> windows open, tho you won't get 20/20 for 20 windows open) for windows,
+> and n/7 (tho I believe the default is 4 instead of 7, I've upped mine)
+> for content processes, with n going up toward 7 (or 4) if you have
+> multiple tabs/windows open playing video or the like.
+>
+> If you're stuck at a single process that'll be a *BIG* drag on
+> performance, particularly when playing youtube full-screen or the like.
+> There are various reasons you might get stuck at a single process,
+> including extensions that aren't compatible with "electrolysis" (aka e10s,
+> this being the mozilla code name for multi-process firefox), and the one
+> that was my problem after I ensured all my extensions were e10s
+> compatible -- I was trying to run the upstream firefox binary, which is
+> now pulseaudio-only (no more direct alsa support), with apulse as a
+> pulseaudio substitute, and apulse is apparently single-process-only
+> (forcing multi-process would crash the tabs as soon as I tried navigating
+> away from about:whatever to anything remote).
+>
+> Once I figured that out I switched back to using the gentoo firefox ebuild
+> and enabling the alsa USE flag instead of pulseaudio there.  That got
+> multiprocess working, and it was was *MUCH* more responsive, as I figured
+> it should be! =:^)
+>
+> If you find you're stuck at single process (remember, check with at least
+> two windows open) and need help with it, yell.  Because it'll make a
+> *HUGE* difference.
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

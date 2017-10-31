@@ -1,52 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52864 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52869 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932447AbdJaRqk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 13:46:40 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CF268ABF4
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:46:38 +0000 (UTC)
+        id S932447AbdJaRqm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 13:46:42 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 17F70ABF4
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:46:41 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 08/11] btrfs: simplify btrfs_close_bdev
-Date: Tue, 31 Oct 2017 18:44:49 +0100
-Message-Id: <be1fa06b87548f0ad1888990a76ea2fb429ac798.1509471604.git.dsterba@suse.com>
+Subject: [PATCH 09/11] btrfs: switch to RCU for device traversal in btrfs_ioctl_dev_info
+Date: Tue, 31 Oct 2017 18:44:51 +0100
+Message-Id: <7beca6a0dc9c7406423690bde6b659235e695bde.1509471604.git.dsterba@suse.com>
 In-Reply-To: <cover.1509471604.git.dsterba@suse.com>
 References: <cover.1509471604.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Split the conditions a bit.
+We don't need to use the mutex as we do not modify the devices nor the
+list itself and just read some information:
+
+does not change during device lifetime:
+- devid
+- uuid
+- name (ie. the path)
+
+may change in parallel to the ioctl call, but can lead only to reporting
+inacurracy:
+- bytes_used
+- total_bytes
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6e45751ed957..3af2a7fd2d05 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -905,13 +905,15 @@ static void free_device_rcu(struct rcu_head *head)
- 
- static void btrfs_close_bdev(struct btrfs_device *device)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fd172a93d11a..f0a3308a72c5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2779,7 +2779,6 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
  {
--	if (device->bdev && device->writeable) {
-+	if (!device->bdev)
-+		return;
-+
-+	if (device->writeable) {
- 		sync_blockdev(device->bdev);
- 		invalidate_bdev(device->bdev);
+ 	struct btrfs_ioctl_dev_info_args *di_args;
+ 	struct btrfs_device *dev;
+-	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	int ret = 0;
+ 	char *s_uuid = NULL;
+ 
+@@ -2790,7 +2789,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
+ 	if (!btrfs_is_empty_uuid(di_args->uuid))
+ 		s_uuid = di_args->uuid;
+ 
+-	mutex_lock(&fs_devices->device_list_mutex);
++	rcu_read_lock();
+ 	dev = btrfs_find_device(fs_info, di_args->devid, s_uuid, NULL);
+ 
+ 	if (!dev) {
+@@ -2805,17 +2804,15 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
+ 	if (dev->name) {
+ 		struct rcu_string *name;
+ 
+-		rcu_read_lock();
+ 		name = rcu_dereference(dev->name);
+ 		strncpy(di_args->path, name->str, sizeof(di_args->path));
+-		rcu_read_unlock();
+ 		di_args->path[sizeof(di_args->path) - 1] = 0;
+ 	} else {
+ 		di_args->path[0] = '\0';
  	}
  
--	if (device->bdev)
--		blkdev_put(device->bdev, device->mode);
-+	blkdev_put(device->bdev, device->mode);
- }
+ out:
+-	mutex_unlock(&fs_devices->device_list_mutex);
++	rcu_read_unlock();
+ 	if (ret == 0 && copy_to_user(arg, di_args, sizeof(*di_args)))
+ 		ret = -EFAULT;
  
- static void btrfs_prepare_close_one_device(struct btrfs_device *device)
 -- 
 2.14.0
 

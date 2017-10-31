@@ -1,170 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48309 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755836AbdJJSzF (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:18876 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751399AbdJaJXN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Oct 2017 14:55:05 -0400
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id v9AIt5Qo016415
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2017 18:55:05 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id v9AIt4vV031354
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2017 18:55:04 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id v9AIt4tf014493
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Oct 2017 18:55:04 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: avoid losing data raid profile when deleting a device
-Date: Tue, 10 Oct 2017 11:53:05 -0600
-Message-Id: <20171010175305.31633-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171009180128.23610-1-bo.li.liu@oracle.com>
-References: <20171009180128.23610-1-bo.li.liu@oracle.com>
+        Tue, 31 Oct 2017 05:23:13 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 0414C47F13A4
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:23:09 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs-progs: Remove unused parameter trans
+Date: Tue, 31 Oct 2017 17:23:03 +0800
+Message-ID: <1509441784-52316-1-git-send-email-gujx@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've avoided data losing raid profile when doing balance, but it
-turns out that deleting a device could also result in the same
-problem.
+Some parameter of trans is not used indeed.
+Let's remove them.
 
-This fixes the problem by creating an empty data chunk before
-relocating the data chunk.
-
-Metadata/System chunk are supposed to have non-zero bytes all the time
-so their raid profile is persistent.
-
-Reported-by: James Alandt <James.Alandt@wdc.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
+ cmds-check.c  |  9 ++++-----
+ ctree.h       |  3 +--
+ extent-tree.c | 18 ++++++++----------
+ 3 files changed, 13 insertions(+), 17 deletions(-)
 
-v2: - return the correct error.
-    - move helper ahead of __btrfs_balance().
-
- fs/btrfs/volumes.c | 84 ++++++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 65 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4a72c45..a74396d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3018,6 +3018,48 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
- 	return ret;
+diff --git a/cmds-check.c b/cmds-check.c
+index a6198bad..a7a36ee9 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -2626,8 +2626,7 @@ static int repair_tree_block_ref(struct btrfs_trans_handle *trans,
+ 		}
+ 		btrfs_mark_buffer_dirty(eb);
+ 		printf("Added an extent item [%llu %u]\n", bytenr, node_size);
+-		btrfs_update_block_group(trans, extent_root, bytenr, node_size,
+-					 1, 0);
++		btrfs_update_block_group(extent_root, bytenr, node_size, 1, 0);
+ 
+ 		nrefs->refs[level] = 0;
+ 		nrefs->full_backref[level] =
+@@ -9656,7 +9655,7 @@ static int delete_extent_records(struct btrfs_trans_handle *trans,
+ 			u64 bytes = (found_key.type == BTRFS_EXTENT_ITEM_KEY) ?
+ 				found_key.offset : root->fs_info->nodesize;
+ 
+-			ret = btrfs_update_block_group(trans, root, bytenr,
++			ret = btrfs_update_block_group(root, bytenr,
+ 						       bytes, 0, 0);
+ 			if (ret)
+ 				break;
+@@ -9735,7 +9734,7 @@ static int record_extent(struct btrfs_trans_handle *trans,
+ 		}
+ 
+ 		btrfs_mark_buffer_dirty(leaf);
+-		ret = btrfs_update_block_group(trans, extent_root, rec->start,
++		ret = btrfs_update_block_group(extent_root, rec->start,
+ 					       rec->max_size, 1, 0);
+ 		if (ret)
+ 			goto fail;
+@@ -11944,7 +11943,7 @@ static int repair_extent_data_item(struct btrfs_trans_handle *trans,
+ 		btrfs_set_extent_flags(eb, ei, BTRFS_EXTENT_FLAG_DATA);
+ 
+ 		btrfs_mark_buffer_dirty(eb);
+-		ret = btrfs_update_block_group(trans, extent_root, disk_bytenr,
++		ret = btrfs_update_block_group(extent_root, disk_bytenr,
+ 					       num_bytes, 1, 0);
+ 		btrfs_release_path(&path);
+ 	}
+diff --git a/ctree.h b/ctree.h
+index b92df1c1..a8f0ec5e 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2504,8 +2504,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 			   u64 size);
+ int btrfs_make_block_groups(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info);
+-int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root, u64 bytenr, u64 num,
++int btrfs_update_block_group(struct btrfs_root *root, u64 bytenr, u64 num,
+ 			     int alloc, int mark_free);
+ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root, u64 objectid,
+diff --git a/extent-tree.c b/extent-tree.c
+index 055582c3..edf659d5 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -1921,8 +1921,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 	return 0;
  }
  
-+/*
-+ * return 1 : allocate a data chunk successfully,
-+ * return <0: errors during allocating a data chunk,
-+ * return 0 : no need to allocate a data chunk.
-+ */
-+static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
-+				      u64 chunk_offset)
-+{
-+	struct btrfs_block_group_cache *cache;
-+	u64 bytes_used;
-+	u64 chunk_type;
-+
-+	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
-+	ASSERT(cache);
-+	chunk_type = cache->flags;
-+	btrfs_put_block_group(cache);
-+
-+	if (chunk_type & BTRFS_BLOCK_GROUP_DATA) {
-+		spin_lock(&fs_info->data_sinfo->lock);
-+		bytes_used = fs_info->data_sinfo->bytes_used;
-+		spin_unlock(&fs_info->data_sinfo->lock);
-+
-+		if (!bytes_used) {
-+			struct btrfs_trans_handle *trans;
-+			int ret;
-+
-+			trans =	btrfs_join_transaction(fs_info->tree_root);
-+			if (IS_ERR(trans))
-+				return PTR_ERR(trans);
-+
-+			ret = btrfs_force_chunk_alloc(trans, fs_info,
-+						      BTRFS_BLOCK_GROUP_DATA);
-+			btrfs_end_transaction(trans);
-+			if (ret < 0)
-+				return ret;
-+
-+			return 1;
-+		}
-+	}
-+	return 0;
-+}
-+
- static int insert_balance_item(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_balance_control *bctl)
+-static int update_block_group(struct btrfs_trans_handle *trans,
+-			      struct btrfs_root *root,
++static int update_block_group(struct btrfs_root *root,
+ 			      u64 bytenr, u64 num_bytes, int alloc,
+ 			      int mark_free)
  {
-@@ -3476,7 +3518,6 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	u32 count_meta = 0;
- 	u32 count_sys = 0;
- 	int chunk_reserved = 0;
--	u64 bytes_used = 0;
- 
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
-@@ -3635,28 +3676,21 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 			goto loop;
+@@ -2387,7 +2386,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
+ 			BUG_ON(ret);
  		}
  
--		ASSERT(fs_info->data_sinfo);
--		spin_lock(&fs_info->data_sinfo->lock);
--		bytes_used = fs_info->data_sinfo->bytes_used;
--		spin_unlock(&fs_info->data_sinfo->lock);
--
--		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) &&
--		    !chunk_reserved && !bytes_used) {
--			trans = btrfs_start_transaction(chunk_root, 0);
--			if (IS_ERR(trans)) {
--				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
--				ret = PTR_ERR(trans);
--				goto error;
--			}
--
--			ret = btrfs_force_chunk_alloc(trans, fs_info,
--						      BTRFS_BLOCK_GROUP_DATA);
--			btrfs_end_transaction(trans);
-+		if (!chunk_reserved) {
-+			/*
-+			 * We may be relocating the only data chunk we have,
-+			 * which could potentially end up with losing data's
-+			 * raid profile, so lets allocate an empty one in
-+			 * advance.
-+			 */
-+			ret = btrfs_may_alloc_data_chunk(fs_info,
-+							 found_key.offset);
- 			if (ret < 0) {
- 				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 				goto error;
-+			} else if (ret == 1) {
-+				chunk_reserved = 1;
- 			}
--			chunk_reserved = 1;
- 		}
+-		update_block_group(trans, root, bytenr, num_bytes, 0, mark_free);
++		update_block_group(root, bytenr, num_bytes, 0, mark_free);
+ 	}
+ fail:
+ 	btrfs_free_path(path);
+@@ -2747,7 +2746,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_free_path(path);
  
- 		ret = btrfs_relocate_chunk(fs_info, found_key.offset);
-@@ -4419,6 +4453,18 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		chunk_offset = btrfs_dev_extent_chunk_offset(l, dev_extent);
- 		btrfs_release_path(path);
+-	ret = update_block_group(trans, root, ins->objectid, fs_info->nodesize,
++	ret = update_block_group(root, ins->objectid, fs_info->nodesize,
+ 				 1, 0);
+ 	return ret;
+ }
+@@ -3474,12 +3473,11 @@ int btrfs_make_block_groups(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
  
-+		/*
-+		 * We may be relocating the only data chunk we have,
-+		 * which could potentially end up with losing data's
-+		 * raid profile, so lets allocate an empty one in
-+		 * advance.
-+		 */
-+		ret = btrfs_may_alloc_data_chunk(fs_info, chunk_offset);
-+		if (ret < 0) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			goto done;
-+		}
-+
- 		ret = btrfs_relocate_chunk(fs_info, chunk_offset);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 		if (ret && ret != -ENOSPC)
+-int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root,
++int btrfs_update_block_group(struct btrfs_root *root,
+ 			     u64 bytenr, u64 num_bytes, int alloc,
+ 			     int mark_free)
+ {
+-	return update_block_group(trans, root, bytenr, num_bytes,
++	return update_block_group(root, bytenr, num_bytes,
+ 				  alloc, mark_free);
+ }
+ 
+@@ -3898,12 +3896,12 @@ int btrfs_fix_block_accounting(struct btrfs_trans_handle *trans,
+ 		btrfs_item_key_to_cpu(leaf, &key, slot);
+ 		if (key.type == BTRFS_EXTENT_ITEM_KEY) {
+ 			bytes_used += key.offset;
+-			ret = btrfs_update_block_group(trans, root,
++			ret = btrfs_update_block_group(root,
+ 				  key.objectid, key.offset, 1, 0);
+ 			BUG_ON(ret);
+ 		} else if (key.type == BTRFS_METADATA_ITEM_KEY) {
+ 			bytes_used += fs_info->nodesize;
+-			ret = btrfs_update_block_group(trans, root,
++			ret = btrfs_update_block_group(root,
+ 				  key.objectid, fs_info->nodesize, 1, 0);
+ 			if (ret)
+ 				goto out;
+@@ -4058,7 +4056,7 @@ static int __btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+ 					       BTRFS_EXTENT_FLAG_DATA);
+ 			btrfs_mark_buffer_dirty(leaf);
+ 
+-			ret = btrfs_update_block_group(trans, root, disk_bytenr,
++			ret = btrfs_update_block_group(root, disk_bytenr,
+ 						       num_bytes, 1, 0);
+ 			if (ret)
+ 				goto fail;
 -- 
-2.9.4
+2.13.6
+
+
 

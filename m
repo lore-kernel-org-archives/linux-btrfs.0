@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:43092 "EHLO
-        mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751295AbdJaQXm (ORCPT
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:53982 "EHLO
+        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932344AbdJaQ3L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 12:23:42 -0400
-Received: by mail-wm0-f45.google.com with SMTP id m72so14807656wmc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 09:23:42 -0700 (PDT)
+        Tue, 31 Oct 2017 12:29:11 -0400
+Received: by mail-wm0-f43.google.com with SMTP id r196so24499195wmf.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 09:29:11 -0700 (PDT)
 Received: from debox (bzq-109-64-142-30.red.bezeqint.net. [109.64.142.30])
-        by smtp.gmail.com with ESMTPSA id s6sm1675211edd.23.2017.10.31.09.23.39
+        by smtp.gmail.com with ESMTPSA id g49sm1646865edg.71.2017.10.31.09.29.08
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 31 Oct 2017 09:23:39 -0700 (PDT)
-Message-ID: <1509467017.1662.37.camel@gmail.com>
+        Tue, 31 Oct 2017 09:29:09 -0700 (PDT)
+Message-ID: <1509467347.1662.40.camel@gmail.com>
 Subject: Several questions regarding btrfs
 From: ST <smntov@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Date: Tue, 31 Oct 2017 18:23:37 +0200
+Date: Tue, 31 Oct 2017 18:29:07 +0200
 Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -62,4 +62,5 @@ uncompressed form. I need to set quotas as in (b). Is it possible? If
 not - should I file a feature request?
 
 Thank you in advance!
+
 

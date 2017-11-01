@@ -1,88 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:48100 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750928AbdJaXHJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 19:07:09 -0400
-Received: from 82-132-215-175.dab.02.net ([82.132.215.175]:9867 helo=ty.sabi.co.UK)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1e9fch-00077P-N4
-        for linux-btrfs@vger.kernel.org; Tue, 31 Oct 2017 23:07:07 +0000
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1e9fcI-0005OK-J7
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 23:06:42 +0000
+Received: from syrinx.knorrie.org ([82.94.188.77]:51272 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750764AbdKAAca (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 31 Oct 2017 20:32:30 -0400
+Subject: Re: Data and metadata extent allocators [1/2]: Recap: The data story
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <14632e5d-74b9-e52f-6578-56139c42369c@mendix.com>
+ <6296fd2d-87a3-7f59-2b4b-48e3e40d3593@gmx.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <61c7cd9c-3d35-d292-fc35-cf0fb714f731@mendix.com>
+Date: Wed, 1 Nov 2017 01:32:25 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <23033.512.820691.680916@tree.ty.sabi.co.uk>
-Date: Tue, 31 Oct 2017 23:06:40 +0000
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: defragmenting best practice?
-In-Reply-To: <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de>
-        <20170912162843.GA32233@rus.uni-stuttgart.de>
-        <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
-        <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
-        <20170914172434.39eae89d@jupiter.sol.kaishome.de>
-        <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
-        <59BBB15E.8010002@sarach.com.pl>
-        <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
-        <59BBDFA6.4020500@sarach.com.pl>
-        <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
-        <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
-        <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
-        <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
-        <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+In-Reply-To: <6296fd2d-87a3-7f59-2b4b-48e3e40d3593@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I'm following up on all the suggestions regarding Firefox performance
-> on BTRFS. [ ... ]
+On 10/28/2017 02:12 AM, Qu Wenruo wrote:
+> 
+> On 2017年10月28日 02:17, Hans van Kranenburg wrote:
+>> Hi,
+>>
+>> This is a followup to my previous threads named "About free space
+>> fragmentation, metadata write amplification and (no)ssd" [0] and
+>> "Experiences with metadata balance/convert" [1], exploring how good or
+>> bad btrfs can handle filesystems that are larger than your average
+>> desktop computer and/or which see a pattern of writing and deleting huge
+>> amounts of files of wildly varying sizes all the time.
+>>
+>> This message is a summary of the earlier posts. So, for whoever followed
+>> the story, only boring old news here. In the next message as a reply on
+>> this one, I'll add some thoughts about new adventures with metadata
+>> during the last weeks.
+>>
+>> My use case is using btrfs as filesystem for backup servers, which work
+>> with collections of subvolumes/snapshots with related data, and add new
+>> data and expire old snapshots daily.
+>>
+>> Until now, the following questions were already answered:
+>>
+>> Q: Why does the allocated but unused space for data keep growing all the
+>> time?
+>> A: Because btrfs keeps allocating new raw space for data use, while
+>> there's more and more unused space inside already which isn't reused for
+>> new data.
+> 
+> In fact, btrfs data allocator can split its data allocation request, and
+> make them fit into smaller blocks.
+> 
+> For example, for highly fragmented data space (and of course, no
+> unallocated space for new chunk), btrfs will use small space in existing
+> chunks.
 
-I haven't read that yet, so maybe I am missing something, but I
-use Firefox with Btrfs all the time and I haven't got issues.
+Yes, it will.
 
-[ ... ]
-> 1. BTRFS snapshots have proven to be too useful (and too important to
->    our overall IT approach) to forego.
-[ ... ]
-> 3. We have large amounts of storage space (and can add more), but not
->    enough to break all reflinks on all snapshots.
+> Just as fstests, generic/416.
+> 
+> But I think it should be done in a more aggressive manner to reduce
+> chunk allocation.
+> 
+> And balance under certain case can be very slow due to the amount of
+> snapshots/reflinks, so personally I don't really like the idea of
+> balance itself.
+> 
+> If it can be avoid by extent allocator, we should do it from the very
+> beginning.
 
-Firefox profiles get fragmented only in the databases containes
-in them, and they are tiny, as in dozens of MB. That's usually
-irrelevant.
+Well, the most urgent problem in the end is not how the distribution of
+data over the data chunks is organized.
 
-Also nothing forces you to defragment a whole filesystem, you
-can just defragment individual files or directories by using
-'find' with it.
+It's about this:
 
-My top "$HOME" fragmented files are the aKregator RSS feed
-databases, usually a few hundred fragments each, and the
-'.sqlite' files for Firefox. Occasionally like just now I do
-this:
+>> Q: Why would it crash the file system when all raw space is allocated?
+>> Won't it start trying harder to reuse the free space inside?
+>> A: Yes, it will, for data. The big problem here is that allocation of a
+>> new metadata chunk when needed is not possible any more.
 
-  tree$  sudo filefrag .firefox/default/*.sqlite | sort -t: -k 2n | tail -4
-  .firefox/default/cleanup.sqlite: 43 extents found
-  .firefox/default/content-prefs.sqlite: 67 extents found
-  .firefox/default/formhistory.sqlite: 87 extents found
-  .firefox/default/places.sqlite: 3879 extents found
+The real problem is that the separate allocation of raw space for data
+and metadata might lead to a situation where you can't write any
+metadata any more (because it wants to allocate a new chunk) while you
+have a lot of data space available.
 
-  tree$  sudo btrfs fi defrag .firefox/default/*.sqlite
+And to be honest, for the end user this is a very similar experience to
+getting an out of space on ext4 while there's a lot of data space
+available which makes you find out about the concept of inodes (which
+you run out of) and df -i etc... (The difference is that on btrfs, in
+most cases you can actually solve it in place. :D) We have no limits on
+inodes, but we have a limit on space to store tree blocks... Unallocated
+raw space available.
 
-  tree$  sudo filefrag .firefox/default/*.sqlite | sort -t: -k 2n | tail -4
-  .firefox/default/webappsstore.sqlite: 1 extent found
-  .firefox/default/favicons.sqlite: 2 extents found
-  .firefox/default/kinto.sqlite: 2 extents found
-  .firefox/default/places.sqlite: 44 extents found
+So if we can work around this and prevent it, it will mostly solve the
+rest automatically. In theory a filesystem always keeps working as long
+as you make sure you have about a GiB unallocated all the time so that
+either the next data or metadata chunk can grab it.
 
-> 2. Put $HOME/.cache on a separate BTRFS subvolume that is mounted
-> nocow -- it will NOT be snapshotted
+I actually right now remember seeing something in the kernel code a
+while ago that should make it try harder to push data in existing
+allocated space instead of allocating a new data chunk if the
+unallocated part was < 3% of total device size. Something like that
+might help, only for some reason if the code is still in there it
+doesn't actually work it seems.
 
-The cache can be simply deleted, and usually files in it are not
-updated in place, so don't get fragmented, so no worry.
+Having the tetris allocator for data by default helps the situation
+(preventing from running with fully allocated space too soon) from
+occurring with certain workloads, e.g. by not showing the insane
+behaviour like [0].
 
-Also, you can declare the '.firefox/default/' directory to be
-NOCOW, and that "just works". I haven't even bothered with that.
+But, I can also still fill my disk with files and then remove half of
+them in a way that leaves me with fully allocated raw space and all
+chunks 50% filled. And what is the supposed behaviour if I start to
+refill the empty space by metadata-hungry small files with long names again?
+
+[0]
+https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-01-19-noautodefrag-ichiban.mp4
+
+-- 
+Hans van Kranenburg

@@ -1,86 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:51929 "EHLO
-        mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755025AbdKAU2A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 16:28:00 -0400
-Received: by mail-wm0-f48.google.com with SMTP id b9so7186778wmh.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Nov 2017 13:28:00 -0700 (PDT)
+Received: from mail-oi0-f67.google.com ([209.85.218.67]:47210 "EHLO
+        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933464AbdKAXJH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 19:09:07 -0400
 MIME-Version: 1.0
-In-Reply-To: <ca0bc340-25eb-bf80-82a1-fbb0e7ca1a44@rqc.ru>
-References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
- <f17a1de9-8340-dae3-3b29-0e04440ca2a3@rqc.ru> <CAH=dxU7APYANHn3PjqepY9dr9F3RRhzE1OSgtar9tN-74haS9g@mail.gmail.com>
- <ca0bc340-25eb-bf80-82a1-fbb0e7ca1a44@rqc.ru>
-From: Dave <davestechshop@gmail.com>
-Date: Wed, 1 Nov 2017 16:27:38 -0400
-Message-ID: <CAH=dxU6fJ1uJgY9ECFH8YpQkXQxc-qqDsuQZ=jd75HOE0nd2gA@mail.gmail.com>
-Subject: Re: Need help with incremental backup strategy (snapshots,
- defragmentingt & performance)
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Marat Khalili <mkh@rqc.ru>
+In-Reply-To: <CALaQ_hr1x32YyzBduFVhzpW=E_4=k5TiNLvtz9FP3NPJfCe6jg@mail.gmail.com>
+References: <CALaQ_hr1x32YyzBduFVhzpW=E_4=k5TiNLvtz9FP3NPJfCe6jg@mail.gmail.com>
+From: Nathan Royce <nroycea+kernel@gmail.com>
+Date: Wed, 1 Nov 2017 18:09:06 -0500
+Message-ID: <CALaQ_hrtvej-81hDVZriPg_WGsiqKPje1vQ_RpuEEwmtQ1hrAg@mail.gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/ctree.c:3182 - occurred during heavy NFS transfer
+To: Nathan Royce <nroycea+kernel@gmail.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 1, 2017 at 4:34 AM, Marat Khalili <mkh@rqc.ru> wrote:
+I'm guessing this is related.
+I noticed my tv wasn't recording to my drive and when I tried to touch
+a file on the drive, my console become unresponsive.
+Trying to reboot took like 5 minutes to even stop the processes and in
+the end couldn't unmount the drive and I had to cut the power to
+finally get it to boot.
 
->> We do experience severe performance problems now, especially with
->> Firefox. Part of my experiment is to reduce the number of snapshots on
->> the live volumes, hence this question.
->
-> Just for statistics, how many snapshots do you have and how often do you
-> take them? It's on SSD, right?
-
-I don't think the severe performance problems stem solely from the
-number of snapshots. I think it is also related to Firefox stuff
-(cache fragmentation, lack of multi-processor mode maybe, etc.) I
-still have to investigate the Firefox issues, but I'm starting at the
-foundation by trying to get a basic BTRFS setup that will support
-better desktop application performance first.
-
-The poor performance has existed from the beginning of using BTRFS +
-KDE + Firefox (almost 2 years ago), at a point when very few snapshots
-had yet been created. A comparison system running similar hardware as
-well as KDE + Firefox (and LVM + EXT4) did not have the performance
-problems. The difference has been consistent and significant. For a
-while I thought the difference was due to the hardware, as one system
-used the z170 chipset and the other used the X99 chipset (but were
-otherwise equivalent). So I repeated the testing on identical hardware
-and the stark performance difference remained. When I realized that, I
-began focusing on BTRFS, as it is the only consistent difference I can
-recognize.
-
-Sometimes I have used Snapper settings like this:
-
-TIMELINE_MIN_AGE="1800"
-TIMELINE_LIMIT_HOURLY="36"
-TIMELINE_LIMIT_DAILY="30"
-TIMELINE_LIMIT_MONTHLY="12"
-TIMELINE_LIMIT_YEARLY="10"
-
-However, I also have some computers set like this:
-
-TIMELINE_MIN_AGE="1800"
-TIMELINE_LIMIT_HOURLY="10"
-TIMELINE_LIMIT_DAILY="10"
-TIMELINE_LIMIT_WEEKLY="0"
-TIMELINE_LIMIT_MONTHLY="0"
-TIMELINE_LIMIT_YEARLY="0"
-
-> BTW beware of deleting too many snapshots at once with any tool. Delete few
-> and let filesystem stabilize before proceeding.
-
-OK, thanks for the tip.
-
-> For deduplication tool to be useful you ought to have some duplicate data on
-> your live volume. Do you have any (e.g. many LXC containers with the same
-> distribution)?
-
-No, no containers and no duplication to that large extent.
-
-> P.S. I still think you need some off-system backup solution too, either
-> rsync+snapshot-based over ssh or e.g. Burp (shameless advertising:
-> http://burp.grke.org/ ).
-
-I agree, but that's beyond the scope of the current problem I'm trying
-to solve.  However, I'll check out Burp once I have a base
-configuration that is working satisfactorily.
+Nov 01 17:41:42 dd kernel: ------------[ cut here ]------------
+Nov 01 17:41:42 dd kernel: WARNING: CPU: 0 PID: 227 at
+fs/btrfs/file.c:547 btrfs_drop_extent_cache+0x4b4/0x4e8 [btrfs]
+Nov 01 17:41:42 dd kernel: Modules linked in: arc4 tda18271 au8522_dig
+au8522_common ath9k_htc ath9k_common au0828 btusb v4l2_common ath9k_hw
+btintel videobuf2_vmalloc btbcm videobuf2_memops tveeprom bluetooth
+ath dvb_core videobuf2_v4l2 videodev mac80211 ecdh_generic vi
+Nov 01 17:41:42 dd kernel: CPU: 0 PID: 227 Comm: mount Not tainted
+4.13.0-dirty #2
+Nov 01 17:41:42 dd kernel: Hardware name: SAMSUNG EXYNOS (Flattened Device Tree)
+Nov 01 17:41:42 dd kernel: [<c010f1ec>] (unwind_backtrace) from
+[<c010b7ec>] (show_stack+0x10/0x14)
+Nov 01 17:41:42 dd kernel: [<c010b7ec>] (show_stack) from [<c070eabc>]
+(dump_stack+0x88/0x9c)
+Nov 01 17:41:42 dd kernel: [<c070eabc>] (dump_stack) from [<c011c934>]
+(__warn+0xe8/0x100)
+Nov 01 17:41:42 dd kernel: [<c011c934>] (__warn) from [<c011ca44>]
+(warn_slowpath_null+0x20/0x28)
+Nov 01 17:41:42 dd kernel: [<c011ca44>] (warn_slowpath_null) from
+[<bf198fa8>] (btrfs_drop_extent_cache+0x4b4/0x4e8 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf198fa8>] (btrfs_drop_extent_cache
+[btrfs]) from [<bf199a64>] (__btrfs_drop_extents+0x618/0x1000 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf199a64>] (__btrfs_drop_extents [btrfs])
+from [<bf19b944>] (btrfs_drop_extents+0x60/0x80 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf19b944>] (btrfs_drop_extents [btrfs])
+from [<bf1cc010>] (replay_one_extent+0x718/0x818 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf1cc010>] (replay_one_extent [btrfs])
+from [<bf1cc95c>] (replay_one_buffer+0x248/0x780 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf1cc95c>] (replay_one_buffer [btrfs])
+from [<bf1c7420>] (walk_down_log_tree+0x144/0x38c [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf1c7420>] (walk_down_log_tree [btrfs])
+from [<bf1c7738>] (walk_log_tree+0xd0/0x1e8 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf1c7738>] (walk_log_tree [btrfs]) from
+[<bf1d0aa8>] (btrfs_recover_log_trees+0x21c/0x49c [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf1d0aa8>] (btrfs_recover_log_trees
+[btrfs]) from [<bf17e3dc>] (open_ctree+0x232c/0x2400 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf17e3dc>] (open_ctree [btrfs]) from
+[<bf1504e0>] (btrfs_mount+0xecc/0xfa8 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf1504e0>] (btrfs_mount [btrfs]) from
+[<c0220510>] (mount_fs+0x2c/0x164)
+Nov 01 17:41:42 dd kernel: [<c0220510>] (mount_fs) from [<c023e1f8>]
+(vfs_kern_mount.part.3+0x48/0xe0)
+Nov 01 17:41:42 dd kernel: [<c023e1f8>] (vfs_kern_mount.part.3) from
+[<bf14f964>] (btrfs_mount+0x350/0xfa8 [btrfs])
+Nov 01 17:41:42 dd kernel: [<bf14f964>] (btrfs_mount [btrfs]) from
+[<c0220510>] (mount_fs+0x2c/0x164)
+Nov 01 17:41:42 dd kernel: [<c0220510>] (mount_fs) from [<c023e1f8>]
+(vfs_kern_mount.part.3+0x48/0xe0)
+Nov 01 17:41:42 dd kernel: [<c023e1f8>] (vfs_kern_mount.part.3) from
+[<c02404e4>] (do_mount+0x1a8/0xc44)
+Nov 01 17:41:42 dd kernel: [<c02404e4>] (do_mount) from [<c02412c8>]
+(SyS_mount+0x54/0xc0)
+Nov 01 17:41:42 dd kernel: [<c02412c8>] (SyS_mount) from [<c0107cfc>]
+(__sys_trace_return+0x0/0x10)
+Nov 01 17:41:42 dd kernel: ---[ end trace 35a26e49cc780cf9 ]---

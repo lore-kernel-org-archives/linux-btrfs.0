@@ -1,81 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp113.ord1c.emailsrvr.com ([108.166.43.113]:52258 "EHLO
-        smtp113.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751721AbdKAIeJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Nov 2017 04:34:09 -0400
-Subject: Re: Need help with incremental backup strategy (snapshots,
- defragmentingt & performance)
-To: Dave <davestechshop@gmail.com>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
- <f17a1de9-8340-dae3-3b29-0e04440ca2a3@rqc.ru>
- <CAH=dxU7APYANHn3PjqepY9dr9F3RRhzE1OSgtar9tN-74haS9g@mail.gmail.com>
-From: Marat Khalili <mkh@rqc.ru>
-Message-ID: <ca0bc340-25eb-bf80-82a1-fbb0e7ca1a44@rqc.ru>
-Date: Wed, 1 Nov 2017 11:34:08 +0300
+Received: from mail-yw0-f177.google.com ([209.85.161.177]:50566 "EHLO
+        mail-yw0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750729AbdKAKWl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 06:22:41 -0400
+Received: by mail-yw0-f177.google.com with SMTP id i198so1419906ywe.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Nov 2017 03:22:41 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAH=dxU7APYANHn3PjqepY9dr9F3RRhzE1OSgtar9tN-74haS9g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Lars Noschinski <noschinl@gmail.com>
+Date: Wed, 1 Nov 2017 11:22:40 +0100
+Message-ID: <CAM4geavt2usykGhGdUznBY_gY9tLWerEjDZWWYzqZJF825Se1Q@mail.gmail.com>
+Subject: Machine died with OOM after (re)moving lots of data and snapshot
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/11/17 09:51, Dave wrote:
->> As already said by Romain Mamedov, rsync is viable alternative to
->> send-receive with much less hassle. According to some reports it can even be
->> faster.
-> Thanks for confirming. I must have missed those reports. I had never
-> considered this idea until now -- but I like it.
->
-> Are there any blogs or wikis where people have done something similar
-> to what we are discussing here?
-I don't know any. Probably someone needs to write it.
+Hi everyone,
 
->>> We will delete most snapshots on the live volume, but retain many (or
->>> all) snapshots on the backup block device. Is that a good strategy,
->>> given my goals?
->> Depending on the way you use it, retaining even a dozen snapshots on a live
->> volume might hurt performance (for high-performance databases) or be
->> completely transparent (for user folders). You may want to experiment with
->> this number.
-> We do experience severe performance problems now, especially with
-> Firefox. Part of my experiment is to reduce the number of snapshots on
-> the live volumes, hence this question.
-Just for statistics, how many snapshots do you have and how often do you 
-take them? It's on SSD, right?
+I have a machine which had an almost full 4TB btrfs partition on a
+SATA harddisk. I added another 4TB harddisk, put a btrfs partition on
+it and moved 1TB of data to the new partition.
 
-> Thanks. I hope you do find time to publish it. (And what do you mean
-> by portable?) For now, Snapper has a cleanup algorithm that we can
-> use. At least one of the tools listed here has a thinout algorithm
-> too: https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
-It is currently a small part of yet another home-grown backup tool which 
-is itself fairly big and tuned to particular environment. I thought many 
-times that it would be very nice to have thinning tool separately and 
-with no unnecessary dependencies, but...
+After that, I moved another part of the data (probably around 500GB)
+to the new partition and deleted all the snapshots taken during the
+last year -- probably around 300.
 
-BTW beware of deleting too many snapshots at once with any tool. Delete 
-few and let filesystem stabilize before proceeding.
+The machine was slow during this (which did not surprise me due to
+heavy disk I/O). I left the machine working for the rest of the day
+and found it totally dead the next morning (no ping, not even the VGA
+console coming up after pressing a key).
 
->>> Should I consider a dedup tool like one of these?
->> Certainly NOT for snapshot-based backups: it is already deduplicated almost
->> as much as possible, dedup tools can only make it *less* deduplicated.
-> The question is whether to use a dedup tool on the live volume which
-> has a few snapshots. Even with the new strategy (based on rsync), the
-> live volume may sometimes have two snapshots (pre- and post- pacman
-> upgrades).
-For deduplication tool to be useful you ought to have some duplicate 
-data on your live volume. Do you have any (e.g. many LXC containers with 
-the same distribution)?
 
-> Also still wondering about these options: no-holes, skinny metadata,
-> or extended inode refs?
-I don't know anything about any of these, sorry.
+After a restart, I found the following messages in the kernel log. For
+a few minutes, there where a few messages like:
 
-P.S. I still think you need some off-system backup solution too, either 
-rsync+snapshot-based over ssh or e.g. Burp (shameless advertising: 
-http://burp.grke.org/ ).
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.623818] INFO: task
+rm:4456 blocked for more than 120 seconds.
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.623952]       Not
+tainted 4.9.0-4-amd64 #1 Debian 4.9.51-1
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624058] "echo 0 >
+/proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624200] rm
+D    0  4456   4453 0x00000000
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624209]
+ffff94060f2ee800 0000000000000000 ffff94060e8ed080 ffff94061fc98240
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624216]
+ffff9406102d3140 ffffb807818bfd90 ffffffff82c038e3 000000020b0f4000
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624222]
+00ffffffc03c17ee ffff94061fc98240 ffff940611e36288 ffff94060e8ed080
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624228] Call Trace:
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624242]
+[<ffffffff82c038e3>] ? __schedule+0x233/0x6d0
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624248]
+[<ffffffff82c03db2>] ? schedule+0x32/0x80
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624315]
+[<ffffffffc03d40f1>] ? wait_current_trans.isra.20+0xc1/0x110 [btrfs]
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624323]
+[<ffffffff826b8e80>] ? prepare_to_wait_event+0xf0/0xf0
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624374]
+[<ffffffffc03d675b>] ? start_transaction+0x25b/0x480 [btrfs]
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624425]
+[<ffffffffc03e2f2f>] ? btrfs_evict_inode+0x45f/0x5d0 [btrfs]
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624432]
+[<ffffffff8281f806>] ? evict+0xb6/0x180
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624439]
+[<ffffffff82813778>] ? do_unlinkat+0x148/0x330
+Oct 31 15:48:44 wuerfelzucker kernel: [107426.624447]
+[<ffffffff82c085bb>] ? system_call_fast_compare_end+0xc/0x9b
 
---
+9h later, the OOM killer kicked in and kept killing processes for
+another 30 minutes, before the logs end. The full log file is found at
 
-With Best Regards,
-Marat Khalili
+https://bugzilla.kernel.org/attachment.cgi?id=260455
+
+The last few invocations of the OOM killer where by a process kalled
+"btrfs-transacti".
+
+As far as I can tell from the logs, moving the data was finished by
+then (at least, I don't see an instance of "mv" in the process list
+from the OOM killer). Otherwise, the machine was idle.
+
+If you need any more data for investigating this problem, I might be
+able to provide that; I haven't touched the affected disks yet.
+
+The machine is a HP Microserver N54L with 10GB of ECC ram running a
+current Debian stretch:
+* kernel: Linux version 4.9.0-4-amd64 (debian-kernel@lists.debian.org)
+(gcc version 6.3.0 20170516 (Debian 6.3.0-18) ) #1 SMP Debian 4.9.51-1
+(2017-09-28)
+* btrfs-tools: 4.7.3-1
+
+I also reported this as #197627 in the kernel bugzilla.
+
+Best regards, Lars Noschinski

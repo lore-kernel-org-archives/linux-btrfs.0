@@ -1,119 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:52125 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750716AbdKAHSu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Nov 2017 03:18:50 -0400
-Subject: Re: [PATCH 0/8] mkfs: Quota support
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20171027072936.4697-1-wqu@suse.com>
- <20171027173709.GO3521@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <b05858ae-082f-3ef4-79dd-91b73715779f@gmx.com>
-Date: Wed, 1 Nov 2017 15:18:34 +0800
+Received: from fenrir.routify.me ([155.94.238.126]:44952 "EHLO
+        fenrir.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751590AbdKAHwy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 03:52:54 -0400
+Date: Wed, 1 Nov 2017 00:43:38 -0700
+From: Sean Greenslade <sean@seangreenslade.com>
+To: Dave <davestechshop@gmail.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: defragmenting best practice?
+Message-ID: <20171101074338.GA32211@coach>
+References: <20170914172434.39eae89d@jupiter.sol.kaishome.de>
+ <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+ <59BBB15E.8010002@sarach.com.pl>
+ <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
+ <59BBDFA6.4020500@sarach.com.pl>
+ <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
+ <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
+ <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
+ <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
+ <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20171027173709.GO3521@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP
-Content-Type: multipart/mixed; boundary="GuvUhxLkJO87TdeOSjh4N0KW9i2wsA7M6";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <b05858ae-082f-3ef4-79dd-91b73715779f@gmx.com>
-Subject: Re: [PATCH 0/8] mkfs: Quota support
-References: <20171027072936.4697-1-wqu@suse.com>
- <20171027173709.GO3521@twin.jikos.cz>
-In-Reply-To: <20171027173709.GO3521@twin.jikos.cz>
+On Tue, Oct 31, 2017 at 05:47:54PM -0400, Dave wrote:
+> I'm following up on all the suggestions regarding Firefox performance
+> on BTRFS. 
+>
+> <SNIP>
+>
+> 5. Firefox profile sync has not worked well for us in the past, so we
+> don't use it.
+> 6. Our machines generally have plenty of RAM so we could put the
+> Firefox cache (and maybe profile) into RAM using a technique such as
+> https://wiki.archlinux.org/index.php/Firefox/Profile_on_RAM. However,
+> profile persistence is important.
 
---GuvUhxLkJO87TdeOSjh4N0KW9i2wsA7M6
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> 4. Put the Firefox cache in RAM
+> 
+> 5. If needed, consider putting the Firefox profile in RAM
 
+Have you looked into profile-sync-daemon?
 
+https://wiki.archlinux.org/index.php/profile-sync-daemon
 
-On 2017=E5=B9=B410=E6=9C=8828=E6=97=A5 01:37, David Sterba wrote:
-> On Fri, Oct 27, 2017 at 03:29:28PM +0800, Qu Wenruo wrote:
->> This patchset adds quota support, which means the result fs will have
->> quota enabled by default, and its accounting is already consistent, no=
+It basically does the "keep the profile in RAM but also sync it to HDD"
+for you. I've used it for years, it works quite well.
 
->> manually rescan or quota enable is needed.
->=20
-> Great, thanks for working on that. I'm going to merge the preparatory
-> patches next. I'm not sure about the command line option, we might want=
+--Sean
 
-> to design it in a similar way as -O/--features. As this is a runtime
-> feature (unlike the on-disk format features), a new option will be
-> needed, backed by some research what other mkfs.* tools use.
-
-Well, checked xfs and ext4, they mostly co-operate with mount options
-and mkfs options to handle optional feature like their quota.
-
-
-But considering they have multiple options for journal/extra setting, it
-won't be reasonable for mkfs.btrfs to have something like
-"--runtime-features|-R"
-
-If you're OK with that option name, I can use it to implement "-R quota".=
-
-
->=20
-> The uuid_tree would at least use the btrfs_create_tree, but I don't
-> think we'd need to create it only on request, so quotas will be the onl=
-y
-> option.
->=20
->> 2) Fill quota root with basic skeleton
->>    Only 3 items are really needed
->>    a) global quota status item
->>    b) quota info for 0/5 qgroup
->>    c) quota limit for 0/5 qgroup
->>
->>    The content doesn't matter at all.
->=20
-> How would --rootdir and quotas behave in that case? A related question
-> is what will be the semantics of rootdir+quotas+subvolume created at
-> mkfs time.
->=20
-> We can certainly start with only quotas on the empty filesystem, but I'=
-m
-> sure somebody will ask for the wild combination at some point.
-
-I'll add test case for quota with --rootdir in next update.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---GuvUhxLkJO87TdeOSjh4N0KW9i2wsA7M6--
-
---cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln5dUoXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjppAf/bh/HcQQ/c2ESCr1W/e0u7Zuu
-CGl7CDPQ2oyuhTdE7rAKrdIVp+oNL0P2ttnfXyZChRyXmXMCtjayM9YedsCh/kZC
-q7lDSRYMreadB9lzXvG0qUE5VYA07aNZrz2RMEWcjQkAqJZGPRFEXZf+iyKKBXDA
-1f5U88inIB+6FIFKHxHfwooe/n1Df4IA2qfRyyuNmWFFNnUKnoZUM0szsseJvV/W
-Nt6MuA9g/LctsH2WhpoUr5ZdS9NgHRZ+dVsAejHa9WhIZSJK+G6XMrXFA0CwJtTQ
-GTmwq62SwRVzpMYUZ/NZNyenxY/0Z+HQBPNUyCnhztQtLbifu/9DXO+rOS3rTg==
-=Jjmr
------END PGP SIGNATURE-----
-
---cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP--

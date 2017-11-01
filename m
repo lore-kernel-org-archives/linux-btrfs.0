@@ -1,175 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:49949 "EHLO
-        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751286AbdKAAhu (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:19023 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754054AbdKABms (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 20:37:50 -0400
-Received: by mail-wm0-f41.google.com with SMTP id b189so1970886wmd.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:37:49 -0700 (PDT)
+        Tue, 31 Oct 2017 21:42:48 -0400
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: "dsterba@suse.cz" <dsterba@suse.cz>
+Subject: RE: [RFC PATCH 0/3] btrfs-progs: Add support for running the tools
+ from
+Date: Wed, 1 Nov 2017 01:42:42 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D01479E87A3@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
+ <87a801c8-f50b-d260-cd36-76d75648b52c@gmx.com>
+In-Reply-To: <87a801c8-f50b-d260-cd36-76d75648b52c@gmx.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <23033.512.820691.680916@tree.ty.sabi.co.uk>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
- <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
- <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
- <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
- <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
- <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
- <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net> <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
- <23033.512.820691.680916@tree.ty.sabi.co.uk>
-From: Dave <davestechshop@gmail.com>
-Date: Tue, 31 Oct 2017 20:37:27 -0400
-Message-ID: <CAH=dxU7aNg+VTeQFk-9Tk4yzPemsgL1E0iqSFXFQOxM8=ATDFQ@mail.gmail.com>
-Subject: Re: defragmenting best practice?
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Peter Grandi <pg@btrfs.list.sabi.co.uk>
-Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 31, 2017 at 7:06 PM, Peter Grandi <pg@btrfs.list.sabi.co.uk> wrote:
->
-> Also nothing forces you to defragment a whole filesystem, you
-> can just defragment individual files or directories by using
-> 'find' with it.
 
-Thanks for that info. When defragmenting individual files on a BTRFS
-filesystem with COW, I assume reflinks between that file and all
-snapshots are broken. So if there are 30 snapshots on that volume,
-that one file will suddenly take up 30 times more space... Is that
-correct? Or are the reflinks only broken between the live file and the
-latest snapshot? Or is it something between, based on how many times
-the file has changed?
 
->
-> My top "$HOME" fragmented files are the aKregator RSS feed
-> databases, usually a few hundred fragments each, and the
-> '.sqlite' files for Firefox. Occasionally like just now I do
-> this:
->
->   tree$  sudo filefrag .firefox/default/*.sqlite | sort -t: -k 2n | tail -4
->   .firefox/default/cleanup.sqlite: 43 extents found
->   .firefox/default/content-prefs.sqlite: 67 extents found
->   .firefox/default/formhistory.sqlite: 87 extents found
->   .firefox/default/places.sqlite: 3879 extents found
->
->   tree$  sudo btrfs fi defrag .firefox/default/*.sqlite
->
->   tree$  sudo filefrag .firefox/default/*.sqlite | sort -t: -k 2n | tail -4
->   .firefox/default/webappsstore.sqlite: 1 extent found
->   .firefox/default/favicons.sqlite: 2 extents found
->   .firefox/default/kinto.sqlite: 2 extents found
->   .firefox/default/places.sqlite: 44 extents found
+> -----Original Message-----
+> From: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com]
+> Sent: Tuesday, October 31, 2017 6:36 PM
+> To: Gu, Jinxiang/È°æ ÈáëÈ¶ô <gujx@cn.fujitsu.com>; linux-btrfs@vger.kernel.org
+> Cc: dsterba@suse.cz
+> Subject: Re: [RFC PATCH 0/3] btrfs-progs: Add support for running the tools from
+> 
+> 
+> 
+> On 2017Âπ¥10Êúà31Êó• 16:43, Gu Jinxiang wrote:
+> > Add support for running the tools from a given path (for
+> > example,/usr/bin) by setting $EXEC while running tests.
+> >
+> > Achieved:
+> > Specify the location of binary and run test like this:
+> > $ make EXEC=/usr/bin/ test
+> 
+> Any special reason to test system installed btrfs?
+> 
+> Even for system QA case, I think self test should be run at packaging time other than doing it after packaging.
 
-That's a very helpful example.
+Just implement the project list below in github.
+.................
+Add support for running the tools from a given path (git, /usr/bin, /usr/local/bin), so the testsuite can be run independently.
+.................
 
-Can you also give an example of using find, as you suggested above?
-I'm generally familiar with using find to execute specific commands,
-but an example is appreciated in this case.
+> 
+> Thanks,
+> Qu
+> >
+> > Not Achieved:
+> > Can not run make in tests/ directory.
+> > Because test-misc depends on fssum which relies on header files in
+> > btrfs-progs.
+> > And test-misc and test-fsck depend on btrfs-corrupt-block which is not
+> > installed after installation of btrfs-progs.
+> >
+> > I am wondering that it is necessary or not to modify those tests to
+> > run outside of btrfs-progs.
+> >
+> > Gu Jinxiang (3):
+> >   btrfs-progs: Add EXEC parameter in Makefile
+> >   btrfs-progs: Set EXEC to TOP when it not be defined
+> >   btrfs-progs: Add support for running tools with given path(EXEC)
+> >
+> >  Makefile                                           | 32 +++++++++++-
+> >  tests/README.md                                    | 10 ++++
+> >  tests/cli-tests.sh                                 |  2 +
+> >  tests/cli-tests/001-btrfs/test.sh                  | 20 ++++----
+> >  .../cli-tests/002-balance-full-no-filters/test.sh  | 10 ++--
+> >  tests/cli-tests/003-fi-resize-args/test.sh         | 30 +++++------
+> >  .../cli-tests/004-send-parent-multi-subvol/test.sh | 12 ++---
+> >  tests/cli-tests/005-qgroup-show/test.sh            | 14 ++---
+> >  tests/cli-tests/006-qgroup-show-sync/test.sh       | 14 ++---
+> >  tests/cli-tests/007-check-force/test.sh            | 14 ++---
+> >  .../008-subvolume-get-set-default/test.sh          | 20 ++++----
+> >  tests/common                                       | 18 ++++---
+> >  tests/common.convert                               |  8 +--
+> >  tests/convert-tests.sh                             |  2 +
+> >  .../004-ext2-backup-superblock-ranges/test.sh      | 10 ++--
+> >  .../convert-tests/005-delete-all-rollback/test.sh  |  2 +-
+> >  .../007-unsupported-block-sizes/test.sh            |  2 +-
+> >  .../011-reiserfs-delete-all-rollback/test.sh       |  2 +-
+> >  tests/fsck-tests.sh                                |  2 +
+> >  tests/fsck-tests/012-leaf-corruption/test.sh       |  2 +-
+> >  tests/fsck-tests/013-extent-tree-rebuild/test.sh   | 12 ++---
+> >  tests/fsck-tests/018-leaf-crossing-stripes/test.sh |  2 +-
+> >  tests/fsck-tests/020-extent-ref-cases/test.sh      |  2 +-
+> >  .../021-partially-dropped-snapshot-case/test.sh    |  2 +-
+> >  tests/fsck-tests/022-qgroup-rescan-halfway/test.sh |  2 +-
+> > tests/fsck-tests/023-qgroup-stack-overflow/test.sh |  2 +-
+> >  tests/fsck-tests/024-clear-space-cache/test.sh     | 10 ++--
+> >  tests/fsck-tests/025-file-extents/test.sh          | 14 ++---
+> >  tests/fsck-tests/026-bad-dir-item-name/test.sh     |  2 +-
+> >  .../028-unaligned-super-dev-sizes/test.sh          |  6 +--
+> >  tests/fuzz-tests.sh                                |  2 +
+> >  .../fuzz-tests/001-simple-check-unmounted/test.sh  |  2 +-
+> >  tests/fuzz-tests/002-simple-image/test.sh          |  2 +-
+> >  tests/fuzz-tests/003-multi-check-unmounted/test.sh | 12 ++---
+> >  tests/fuzz-tests/004-simple-dump-tree/test.sh      |  2 +-
+> >  tests/fuzz-tests/005-simple-dump-super/test.sh     |  4 +-
+> >  tests/fuzz-tests/006-simple-tree-stats/test.sh     |  2 +-
+> >  tests/fuzz-tests/007-simple-super-recover/test.sh  |  2 +-
+> > tests/fuzz-tests/008-simple-chunk-recover/test.sh  |  2 +-
+> >  tests/fuzz-tests/009-simple-zero-log/test.sh       |  2 +-
+> >  tests/misc-tests.sh                                |  2 +
+> >  tests/misc-tests/001-btrfstune-features/test.sh    | 10 ++--
+> >  tests/misc-tests/002-uuid-rewrite/test.sh          | 20 ++++----
+> >  tests/misc-tests/003-zero-log/test.sh              | 16 +++---
+> >  tests/misc-tests/004-shrink-fs/test.sh             | 14 ++---
+> >  .../005-convert-progress-thread-crash/test.sh      |  2 +-
+> >  .../misc-tests/006-image-on-missing-device/test.sh | 10 ++--
+> >  tests/misc-tests/007-subvolume-sync/test.sh        | 18 +++----
+> >  tests/misc-tests/008-leaf-crossing-stripes/test.sh |  4 +-
+> >  .../009-subvolume-sync-must-wait/test.sh           | 22 ++++----
+> >  .../010-convert-delete-ext2-subvol/test.sh         | 10 ++--
+> >  tests/misc-tests/011-delete-missing-device/test.sh | 18 +++----
+> >  tests/misc-tests/012-find-root-no-result/test.sh   |  4 +-
+> >  tests/misc-tests/013-subvolume-sync-crash/test.sh  | 20 ++++----
+> >  tests/misc-tests/014-filesystem-label/test.sh      | 22 ++++----
+> >  tests/misc-tests/015-dump-super-garbage/test.sh    | 18 +++----
+> >  tests/misc-tests/016-send-clone-src/test.sh        | 12 ++---
+> >  .../017-recv-stream-malformatted/test.sh           |  8 +--
+> >  tests/misc-tests/018-recv-end-of-stream/test.sh    | 60 +++++++++++-----------
+> >  .../019-receive-clones-on-munted-subvol/test.sh    | 38 +++++++-------
+> >  .../020-fix-superblock-corruption/test.sh          |  8 +--
+> >  tests/misc-tests/021-image-multi-devices/test.sh   |  6 +--
+> >  .../022-filesystem-du-on-empty-subvol/test.sh      | 12 ++---
+> >  .../023-device-usage-with-missing-device/test.sh   | 10 ++--
+> >  .../misc-tests/024-inspect-internal-rootid/test.sh | 24 ++++-----
+> >  tests/misc-tests/025-zstd-compression/test.sh      |  6 +--
+> >  .../026-image-non-printable-chars/test.sh          |  8 +--
+> >  .../027-subvol-list-deleted-toplevel/test.sh       |  6 +--
+> >  tests/mkfs-tests.sh                                |  2 +
+> >  tests/mkfs-tests/001-basic-profiles/test.sh        | 12 ++---
+> >  .../002-no-force-mixed-on-small-volume/test.sh     |  2 +-
+> >  .../003-mixed-with-wrong-nodesize/test.sh          |  2 +-
+> >  tests/mkfs-tests/004-rootdir-keeps-size/test.sh    |  2 +-
+> >  .../005-long-device-name-for-ssd/test.sh           |  4 +-
+> >  tests/mkfs-tests/006-partitioned-loopdev/test.sh   |  4 +-
+> >  .../mkfs-tests/007-mix-nodesize-sectorsize/test.sh |  6 +--
+> >  .../008-secorsize-nodesize-combination/test.sh     |  4 +-
+> >  .../009-special-files-for-rootdir/test.sh          |  4 +-
+> >  78 files changed, 410 insertions(+), 352 deletions(-)
+> >
 
-> > 2. Put $HOME/.cache on a separate BTRFS subvolume that is mounted nocow -- it will NOT be snapshotted
 
-> Also, you can declare the '.firefox/default/' directory to be NOCOW, and that "just works".
 
-The cache is in a separate location from the profiles, as I'm sure you
-know.  The reason I suggested a separate BTRFS subvolume for
-$HOME/.cache is that this will prevent the cache files for all
-applications (for that user) from being included in the snapshots. We
-take frequent snapshots and (afaik) it makes no sense to include cache
-in backups or snapshots. The easiest way I know to exclude cache from
-BTRFS snapshots is to put it on a separate subvolume. I assumed this
-would make several things related to snapshots more efficient too.
-
-As far as the Firefox profile being declared NOCOW, as soon as we take
-the first snapshot, I understand that it will become COW again. So I
-don't see any point in making it NOCOW.
-
-Thanks for your reply. I appreciate any other feedback or suggestions.
-
-Background: I'm not sure why our Firefox performance is so terrible
-but here's my original post from Sept 20. (I could repost the earlier
-replies too if needed.) I've been waiting to have a window of
-opportunity to try to fix our Firefox performance again, and now I
-have that chance.
-
->On Thu 2017-08-31 (09:05), Ulli Horlacher wrote:
->> When I do a
->> btrfs filesystem defragment -r /directory
->> does it defragment really all files in this directory tree, even if it
->> contains subvolumes?
->> The man page does not mention subvolumes on this topic.
->
->No answer so far :-(
->
->But I found another problem in the man-page:
->
->  Defragmenting with Linux kernel versions < 3.9 or >= 3.14-rc2 as well as
->  with Linux stable kernel versions >= 3.10.31, >= 3.12.12 or >= 3.13.4
->  will break up the ref-links of COW data (for example files copied with
->  cp --reflink, snapshots or de-duplicated data). This may cause
->  considerable increase of space usage depending on the broken up
->  ref-links.
->
->I am running Ubuntu 16.04 with Linux kernel 4.10 and I have several
->snapshots.
->Therefore, I better should avoid calling "btrfs filesystem defragment -r"?
->
->What is the defragmenting best practice?
->Avoid it completly?
-
-My question is the same as the OP in this thread, so I came here to
-read the answers before asking.
-
-Based on the answers here, it sounds like I should not run defrag at
-all. However, I have a performance problem I need to solve, so if I
-don't defrag, I need to do something else.
-
-Here's my scenario. Some months ago I built an over-the-top powerful
-desktop computer / workstation and I was looking forward to really
-fantastic performance improvements over my 6 year old Ubuntu machine.
-I installed Arch Linux on BTRFS on the new computer (on an SSD). To my
-shock, it was no faster than my old machine. I focused a lot on
-Firefox performance because I use Firefox a lot and that was one of
-the applications in which I was most looking forward to better
-performance.
-
-I tried everything I could think of and everything recommended to me
-in various forums (except switching to Windows) and the performance
-remained very disappointing.
-
-Then today I read the following:
-
-    Gotchas - btrfs Wiki
-    https://btrfs.wiki.kernel.org/index.php/Gotchas
-
-    Fragmentation: Files with a lot of random writes can become
-heavily fragmented (10000+ extents) causing excessive multi-second
-spikes of CPU load on systems with an SSD or large amount a RAM. On
-desktops this primarily affects application databases (including
-Firefox). Workarounds include manually defragmenting your home
-directory using btrfs fi defragment. Auto-defragment (mount option
-autodefrag) should solve this problem.
-
-Upon reading that I am wondering if fragmentation in the Firefox
-profile is part of my issue. That's one thing I never tested
-previously. (BTW, this system has 256 GB of RAM and 20 cores.)
-
-Furthermore, on the same BTRFS Wiki page, it mentions the performance
-penalties of many snapshots. I am keeping 30 to 50 snapshots of the
-volume that contains the Firefox profile.
-
-Would these two things be enough to turn top-of-the-line hardware into
-a mediocre-preforming desktop system? (The system performs fine on
-benchmarks -- it's real life usage, particularly with Firefox where it
-is disappointing.)
-
-After reading the info here, I am wondering if I should make a new
-subvolume just for my Firefox profile(s) and not use COW and/or not
-keep snapshots on it and mount it with the autodefrag option.
-
-As part of this strategy, I could send snapshots to another disk using
-btrfs send-receive. That way I would have the benefits of snapshots
-(which are important to me), but by not keeping any snapshots on the
-live subvolume I could avoid the performance problems.
-
-What would you guys do in this situation?
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

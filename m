@@ -1,130 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f48.google.com ([74.125.82.48]:53732 "EHLO
-        mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750925AbdKAGwU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 02:52:20 -0400
-Received: by mail-wm0-f48.google.com with SMTP id r196so2987603wmf.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 23:52:20 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.18]:52125 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750716AbdKAHSu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Nov 2017 03:18:50 -0400
+Subject: Re: [PATCH 0/8] mkfs: Quota support
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171027072936.4697-1-wqu@suse.com>
+ <20171027173709.GO3521@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <b05858ae-082f-3ef4-79dd-91b73715779f@gmx.com>
+Date: Wed, 1 Nov 2017 15:18:34 +0800
 MIME-Version: 1.0
-In-Reply-To: <f17a1de9-8340-dae3-3b29-0e04440ca2a3@rqc.ru>
-References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
- <f17a1de9-8340-dae3-3b29-0e04440ca2a3@rqc.ru>
-From: Dave <davestechshop@gmail.com>
-Date: Wed, 1 Nov 2017 02:51:58 -0400
-Message-ID: <CAH=dxU7APYANHn3PjqepY9dr9F3RRhzE1OSgtar9tN-74haS9g@mail.gmail.com>
-Subject: Re: Need help with incremental backup strategy (snapshots,
- defragmentingt & performance)
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Marat Khalili <mkh@rqc.ru>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20171027173709.GO3521@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 1, 2017 at 2:19 AM, Marat Khalili <mkh@rqc.ru> wrote:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP
+Content-Type: multipart/mixed; boundary="GuvUhxLkJO87TdeOSjh4N0KW9i2wsA7M6";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <b05858ae-082f-3ef4-79dd-91b73715779f@gmx.com>
+Subject: Re: [PATCH 0/8] mkfs: Quota support
+References: <20171027072936.4697-1-wqu@suse.com>
+ <20171027173709.GO3521@twin.jikos.cz>
+In-Reply-To: <20171027173709.GO3521@twin.jikos.cz>
 
-> You seem to have two tasks: (1) same-volume snapshots (I would not call them
-> backups) and (2) updating some backup volume (preferably on a different
-> box). By solving them separately you can avoid some complexity...
+--GuvUhxLkJO87TdeOSjh4N0KW9i2wsA7M6
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Yes, it appears that is a very good strategy -- solve the concerns
-separately. Make the live volume performant and the backup volume
-historical.
 
->
->> To reconcile those conflicting goals, the only idea I have come up
->> with so far is to use btrfs send-receive to perform incremental
->> backups
->
-> As already said by Romain Mamedov, rsync is viable alternative to
-> send-receive with much less hassle. According to some reports it can even be
-> faster.
 
-Thanks for confirming. I must have missed those reports. I had never
-considered this idea until now -- but I like it.
+On 2017=E5=B9=B410=E6=9C=8828=E6=97=A5 01:37, David Sterba wrote:
+> On Fri, Oct 27, 2017 at 03:29:28PM +0800, Qu Wenruo wrote:
+>> This patchset adds quota support, which means the result fs will have
+>> quota enabled by default, and its accounting is already consistent, no=
 
-Are there any blogs or wikis where people have done something similar
-to what we are discussing here?
+>> manually rescan or quota enable is needed.
+>=20
+> Great, thanks for working on that. I'm going to merge the preparatory
+> patches next. I'm not sure about the command line option, we might want=
 
->
->> Given the hourly snapshots, incremental backups are the only practical
->> option. They take mere moments. Full backups could take an hour or
->> more, which won't work with hourly backups.
->
-> I don't see much sense in re-doing full backups to the same physical device.
-> If you care about backup integrity, it is probably more important to invest
-> in backups verification. (OTOH, while you didn't reveal data size, if full
-> backup takes just an hour on your system then why not?)
+> to design it in a similar way as -O/--features. As this is a runtime
+> feature (unlike the on-disk format features), a new option will be
+> needed, backed by some research what other mkfs.* tools use.
 
-I was saying that a full backup could take an hour or more. That means
-full backups are not compatible with an hourly backup schedule. And it
-is certainly not a potential solution to making the system perform
-better because the system will be spending all its time running
-backups -- it would be never ending. With hourly backups, they should
-complete in just a few moments, which is the case with incremental
-backups. (It sounds like this will be the case with rsync as well.)
->
->> We will delete most snapshots on the live volume, but retain many (or
->> all) snapshots on the backup block device. Is that a good strategy,
->> given my goals?
->
-> Depending on the way you use it, retaining even a dozen snapshots on a live
-> volume might hurt performance (for high-performance databases) or be
-> completely transparent (for user folders). You may want to experiment with
-> this number.
+Well, checked xfs and ext4, they mostly co-operate with mount options
+and mkfs options to handle optional feature like their quota.
 
-We do experience severe performance problems now, especially with
-Firefox. Part of my experiment is to reduce the number of snapshots on
-the live volumes, hence this question.
 
->
-> In any case I'd not recommend retaining ALL snapshots on backup device, even
-> if you have infinite space. Such filesystem would be as dangerous as the
-> demon core, only good for adding more snapshots (not even deleting them),
-> and any little mistake will blow everything up. Keep a few dozen, hundred at
-> most.
+But considering they have multiple options for journal/extra setting, it
+won't be reasonable for mkfs.btrfs to have something like
+"--runtime-features|-R"
 
-The intention -- if we were to keep all snapshots on a backup device
--- would be to never ever try to delete them. However, with the
-suggestion to separate the concerns and use rsync, we could also
-easily run the Snapper timeline cleanup on the backup volume, thereby
-limiting the retained snapshots to some reasonable number.
+If you're OK with that option name, I can use it to implement "-R quota".=
 
-> Unlike other backup systems, you can fairly easily remove snapshots in the
-> middle of sequence, use this opportunity. My thinout rule is: remove
-> snapshot if resulting gap will be less than some fraction (e.g. 1/4) of its
-> age. One day I'll publish portable solution on github.
 
-Thanks. I hope you do find time to publish it. (And what do you mean
-by portable?) For now, Snapper has a cleanup algorithm that we can
-use. At least one of the tools listed here has a thinout algorithm
-too: https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
-
->> Given this minimal retention of snapshots on the live volume, should I
->> defrag it (assuming there is at least 50% free space available on the
->> device)? (BTW, is defrag OK on an NVMe drive? or an SSD?)
+>=20
+> The uuid_tree would at least use the btrfs_create_tree, but I don't
+> think we'd need to create it only on request, so quotas will be the onl=
+y
+> option.
+>=20
+>> 2) Fill quota root with basic skeleton
+>>    Only 3 items are really needed
+>>    a) global quota status item
+>>    b) quota info for 0/5 qgroup
+>>    c) quota limit for 0/5 qgroup
 >>
->> In the above procedure, would I perform that defrag before or after
->> taking the snapshot? Or should I use autodefrag?
->
-> I ended up using autodefrag, didn't try manual defragmentation. I don't use
-> SSDs as backup volumes.
+>>    The content doesn't matter at all.
+>=20
+> How would --rootdir and quotas behave in that case? A related question
+> is what will be the semantics of rootdir+quotas+subvolume created at
+> mkfs time.
+>=20
+> We can certainly start with only quotas on the empty filesystem, but I'=
+m
+> sure somebody will ask for the wild combination at some point.
 
-I don't use SSD's as backup volumes either. I was asking about the live volume.
->
->> Should I consider a dedup tool like one of these?
->
-> Certainly NOT for snapshot-based backups: it is already deduplicated almost
-> as much as possible, dedup tools can only make it *less* deduplicated.
+I'll add test case for quota with --rootdir in next update.
 
-The question is whether to use a dedup tool on the live volume which
-has a few snapshots. Even with the new strategy (based on rsync), the
-live volume may sometimes have two snapshots (pre- and post- pacman
-upgrades).
+Thanks,
+Qu
 
-I still wish to know, in that case, about using both a dedup tool and
-defragmenting the btrfs filesystem.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
-Also still wondering about these options: no-holes, skinny metadata,
-or extended inode refs?
 
-This is a very helpful discussion. Thank you.
+--GuvUhxLkJO87TdeOSjh4N0KW9i2wsA7M6--
+
+--cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln5dUoXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjppAf/bh/HcQQ/c2ESCr1W/e0u7Zuu
+CGl7CDPQ2oyuhTdE7rAKrdIVp+oNL0P2ttnfXyZChRyXmXMCtjayM9YedsCh/kZC
+q7lDSRYMreadB9lzXvG0qUE5VYA07aNZrz2RMEWcjQkAqJZGPRFEXZf+iyKKBXDA
+1f5U88inIB+6FIFKHxHfwooe/n1Df4IA2qfRyyuNmWFFNnUKnoZUM0szsseJvV/W
+Nt6MuA9g/LctsH2WhpoUr5ZdS9NgHRZ+dVsAejHa9WhIZSJK+G6XMrXFA0CwJtTQ
+GTmwq62SwRVzpMYUZ/NZNyenxY/0Z+HQBPNUyCnhztQtLbifu/9DXO+rOS3rTg==
+=Jjmr
+-----END PGP SIGNATURE-----
+
+--cvF92MAqcEeLdwPBT6NJ9ihtNbNJ548rP--

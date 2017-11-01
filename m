@@ -1,171 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55555 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1754516AbdKANbh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 09:31:37 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1e9t75-0006zL-O2
-        for linux-btrfs@vger.kernel.org; Wed, 01 Nov 2017 14:31:23 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: defragmenting best practice?
-Date: Wed, 1 Nov 2017 13:31:06 +0000 (UTC)
-Message-ID: <pan$a12aa$cc98be99$a32e15b5$d57e6497@cox.net>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de>
-        <20170912162843.GA32233@rus.uni-stuttgart.de>
-        <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
-        <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
-        <20170914172434.39eae89d@jupiter.sol.kaishome.de>
-        <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
-        <59BBB15E.8010002@sarach.com.pl>
-        <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
-        <59BBDFA6.4020500@sarach.com.pl>
-        <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
-        <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
-        <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
-        <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
-        <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
+Received: from mail-wm0-f48.google.com ([74.125.82.48]:55886 "EHLO
+        mail-wm0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751682AbdKAOF6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 10:05:58 -0400
+Received: by mail-wm0-f48.google.com with SMTP id y83so5124782wmc.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Nov 2017 07:05:57 -0700 (PDT)
+Message-ID: <1509545153.1662.105.camel@gmail.com>
+Subject: Re: Several questions regarding btrfs
+From: ST <smntov@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Wed, 01 Nov 2017 16:05:53 +0200
+In-Reply-To: <ea097624-d485-9423-387f-3c9427508883@gmail.com>
+References: <1509467017.1662.37.camel@gmail.com>
+         <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
+         <1509480384.1662.84.camel@gmail.com>
+         <ea097624-d485-9423-387f-3c9427508883@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave posted on Tue, 31 Oct 2017 17:47:54 -0400 as excerpted:
 
-> 6. Make sure Firefox is running in multi-process mode. (Duncan's
-> instructions, while greatly appreciated and very useful, left me
-> slightly confused about pulseaudio's compatibility with multi-process
-> mode.)
+> >>> 3. in my current ext4-based setup I have two servers while one syncs
+> >>> files of certain dir to the other using lsyncd (which launches rsync on
+> >>> inotify events). As far as I have understood it is more efficient to use
+> >>> btrfs send/receive (over ssh) than rsync (over ssh) to sync two boxes.
+> >>> Do you think it would be possible to make lsyncd to use btrfs for
+> >>> syncing instead of rsync? I.e. can btrfs work with inotify events? Did
+> >>> somebody try it already?
+> >> BTRFS send/receive needs a read-only snapshot to send from.  This means
+> >> that triggering it on inotify events is liable to cause performance
+> >> issues and possibly lose changes
+> > 
+> > Actually triggering doesn't happen on each and every inotify event.
+> > lsyncd has an option to define a time interval within which all inotify
+> > events are accumulated and only then rsync is launched. It could be 5-10
+> > seconds or more. Which is quasi real time sync. Do you  still hold that
+> > it will not work with BTRFS send/receive (i.e. keeping previous snapshot
+> > around and creating a new one)?
+> Okay, I actually didn't know that.  Depending on how lsyncd invokes 
+> rsync though (does it call out rsync with the exact paths or just on the 
+> whole directory?), it may still be less efficient to use BTRFS send/receive.
 
-Just to clarify:
+I assume on the whole directory, but I'm not sure...
 
-There's no problem with native pulseaudio and firefox multi-process 
-mode.  As that's what most people will be using, and what firefox 
-upstream ships for, chances are very high that you're just fine there, 
-tho there's some small chance you have some other problem.
+> >>> 4. In a case when compression is used - what quota is based on - (a)
+> >>> amount of GBs the data actually consumes on the hard drive while in
+> >>> compressed state or (b) amount of GBs the data naturally is in
+> >>> uncompressed form. I need to set quotas as in (b). Is it possible? If
+> >>> not - should I file a feature request?
+> >> I can't directly answer this as I don't know myself (I don't use
+> >> quotas), but have two comments I would suggest you consider:
+> >>
+> >> 1. qgroups (the BTRFS quota implementation) cause scaling and
+> >> performance issues.  Unless you absolutely need quotas (unless you're a
+> >> hosting company, or are dealing with users who don't listen and don't
+> >> pay attention to disk usage, you usually do not need quotas), you're
+> >> almost certainly better off disabling them for now, especially for a
+> >> production system.
+> > 
+> > Ok. I'll use more standard approaches. Which of following commands will
+> > work with BTRFS:
+> > 
+> > https://debian-handbook.info/browse/stable/sect.quotas.html
+> None, qgroups are the only option right now with BTRFS, and it's pretty 
+> likely to stay that way since the internals of the filesystem don't fit 
+> well within the semantics of the regular VFS quota API.  However, 
+> provided you're not using huge numbers of reflinks and subvolumes, you 
+> should be fine using qgroups.
 
-My specific problem was that I do *NOT* have pulseaudio installed here, 
-as I've never found I needed it and it adds more complication to my 
-configuration than the limited benefit I'd get out of it justifies.  
-Straight alsa has been fine for me.
+I want to have 7 daily (or 7+4) read-only snapshots per user, for ca.
+100 users. I don't expect users to invoke cp --reflink or take
+snapshots.
 
-(Explanatory note: Being on gentoo/~amd64, aka testing, I do a lot more 
-updating than stable users, and because it's gentoo, all those updates 
-are build from sources, so every single extra package I have installed 
-has a very real cost in terms of repeated update builds over time.  Put a 
-bit differently, building and updating from sources tends to rather 
-strongly encourage the best security practice of only installing what you 
-actually need, because you have to rebuild it at every update.  And I 
-don't need pulseaudio enough to be worth the cost to keep it updated, so 
-I don't have it installed.  It really is that simple.  Binary-based 
-distro users have rather trivial update costs in comparison, so having a 
-few extra packages installed that they don't actually use, isn't such a 
-big deal for them.  Which is of course fortunate, since dependencies are 
-often determined at build-time, and binary-based distros tend to enable 
-relatively more of them because /someone/ uses them, even if it's a 
-minority, so they tend to carry around more dependencies than the normal 
-user will need, simply to support the few that do.  And because the cost 
-is relatively lower, users, except for the ones that pay enough attention 
-to the security aspect of the wider attack surface, don't generally care 
-as much as they would if they were forced to build and update all of them 
-from sources!)
+> 
+> However, it's important to know that if your users have shell access, 
+> they can bypass qgroups.  Normal users can create subvolumes, and new 
+> subvolumes aren't added to an existing qgroup by default (and unless I'm 
+> mistaken, aren't constrained by the qgroup set on the parent subvolume), 
+> so simple shell access is enough to bypass quotas.
 
-So when firefox upstream dropped support for alsa and began requiring 
-pulseaudio for users that actually wanted their browser to play sound, I 
-had two choices.  I could try to find a workaround that would fake firefox 
-into believing that I had pulseaudio, or I could switch back to building 
-firefox from sources instead of simply installing the upstream provided 
-binaries, since gentoo's firefox build scripts still have the alsa 
-support option that upstream firefox refused to support or ship any 
-longer.
-
-As with most people and their browsers, firefox is the most security-
-exposed app I run, and it sometimes takes gentoo a few days after an 
-upstream firefox release to get a working build out, during which users 
-waiting on gentoo's package build are exposed to already widely known and 
-patched by upstream security issues.  That was more risk than I wanted to 
-take, thus my choice of switching to the upstream firefox binaries in the 
-first place, since they were available, indeed, autoupdated, on release 
-day.  Additionally, a firefox build takes awhile, much longer than most 
-other packages, and now requires rust, itself an expensive to build 
-package (tho fortunately it doesn't upgrade on the fast cycle that firefox 
-does).
-
-So I wasn't particularly happy about being forced back to waiting for 
-gentoo to get around to updating its firefox builds several days after 
-upstream, and then taking the time to build them myself, making it 
-worthwhile to look for a workaround.
-
-And as it happens, there's a /sort/ of workaround called apulse, a much 
-simpler and smaller package than pulseaudio itself, that's basically just 
-a pulseaudio API wrapper around alsa.
-
-And when I first installed apulse and tested firefox with it, sure 
-enough, I got firefox sound back! =:^)  I thought I had my workaround and 
-that it was a satisfactory solution.
-
-Unfortunately, apulse appears not to be multi-process-safe, and as firefox 
-went more and more multi-process in the announcements, etc, at first I 
-couldn't figure out what was keeping firefox single-process for me.
-
-After some research on the web, I found the settings to /force/ firefox-
-multi-process, and tried them.  But firefox would then only work in local 
-mode (about: pages, basically).  Every time I tried to actually go to a 
-normal URL, the multi-process tabs would crash before it rendered a 
-thing!  The original firefox UI shell was still running, but with an 
-error message indicating the tab crash instead of the page I wanted.
-
-After some troubleshooting I figured out it was apulse.  If I moved the 
-apulse library out of the way so firefox couldn't find it, I could browse 
-the web in multiprocess mode just fine... except I was of course missing 
-audio again. =:^(
-
-So apulse wasn't the workaround for upstream firefox now requiring 
-pulseaudio that I thought it was, since apulse wouldn't work with multi-
-process, and I had to switch back to gentoo's firefox build from sources 
-in ordered to get the alsa support that upstream had dropped, after all.
+I never did it before, but shouldn't it be possible to just whitelist
+commands users are allowed to use in the SSH config (and so block
+creation of subvolumes/cp --reflink)? I actually would have restricted
+users to sftp if I knew how to let them change their passwords once they
+wish to. As far as I know it is not possible with OpenSSH...
 
 
-Thus, it wasn't pulseaudio that was the problem with multiprocess, but 
-the fact that firefox had dropped alsa and was forcing pulseaudio on 
-Linux if you wanted audio at all, and the fact that the apulse workaround 
-I thought I had, didn't work with multiprocess.  So it was apulse that 
-was the problem, and pulseaudio was only involved because firefox 
-dropping direct alsa support and forcing pulseaudio was what had me 
-installing apulse as an attempted workaround.
+> >>
+> >> 2. Compression and quotas cause issues regardless of how they interact.
+> >> In case (a), the user has no way of knowing if a given file will fit
+> >> under their quota until they try to create it.  In case (b), actual disk
+> >> usage (as reported by du) will not match up with what the quota says the
+> >> user is using, which makes it harder for them to figure out what to
+> >> delete to free up space.  It's debatable which is a less objectionable
+> >> situation for users, though most people I know tend to think in a way
+> >> that the issue with (a) doesn't matter, but the issue with (b) does.
+> > 
+> > I think both (a) and (b) should be possible and it should be up to
+> > sysadmin to choose what he prefers. The concerns of the (b) scenario
+> > probably could be dealt with some sort of --real-size to the du command,
+> > while by default it could have behavior (which might be emphasized with
+> > --compressed-size).
+> Reporting anything but the compressed size by default in du would mean 
+> it doesn't behave as existing software expect it to.  It's supposed to 
+> report actual disk usage (in contrast to the sum of file sizes), which 
+> means for example that a 1G sparse file with only 64k of data is 
+> supposed to be reported as being 64k by du.
 
+Yes, it shouldn't be default behavior, but an optional one...
 
-Meanwhile, my intent with the original mention wasn't that apulse was 
-likely your problem, that's relatively unlikely, but that you might have 
-some /other/ problem, say a not electrolysis-enabled (aka e10s, e, ten-
-letters, s) extension.
-
-Back when I posted that, a not e10s-enabled extension was actually quite 
-likely, as e10s was still rather new.  It's probably somewhat less so 
-now, and firefox is of course on to the next big change, dropping the old 
-"legacy chrome" extension support, in favor of the newer and generally 
-Chromium-compatible WebExtensions/WE API, with firefox 57, to be released 
-mid-month (Nov 14).
-
-But assuming you're still seeing firefox performance issues, I'm still 
-guessing that it's likely to be /something/ forcing single-process, as I 
-/know/ how much of a difference that can make from experience.
-
-So I'd definitely check it, and if you're not getting multi-process, the 
-firefox about:support page should show it in the application basics 
-section, multiprocess windows, and if that's working, web content 
-processes, entries.  With luck it'll tell you why it's disabled if it is, 
-saying something about incompatible extensions or the like, tho I had to 
-do a bit more troubleshooting to find the problem with apulse.
-
-If with multiple firefox windows open you're seeing 2/2 (or higher) in 
-the multiprocess windows entry, and n/4 (the default, here I forced a 
-higher 7) in the web content processes entry, then you're good to go in 
-this regard, and the problem must be elsewhere.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> > Two more question came to my mind: as I've mentioned above - I have two
+> > boxes one syncs to another. No RAID involved. I want to scrub (or scan -
+> > don't know yet, what is the difference...) the whole filesystem once in
+> > a month to look for bitrot. Questions:
+> > 
+> > 1. is it a stable setup for production? Let's say I'll sync with rsync -
+> > either in cron or in lsyncd?
+> Reasonably, though depending on how much data and other environmental 
+> constraints, you may want to scrub a bit more frequently.
+> > 2. should any data corruption be discovered - is there any way to heal
+> > it using the copy from the other box over SSH?
+> Provided you know which file is affected, yes, you can fix it by just 
+> copying the file back from the other system.
+Ok, but there is no automatic fixing in such a case, right?
 

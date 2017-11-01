@@ -1,82 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f67.google.com ([209.85.218.67]:47210 "EHLO
-        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933464AbdKAXJH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 19:09:07 -0400
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:46938 "EHLO
+        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932964AbdKAXg7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 19:36:59 -0400
+Received: by mail-wm0-f43.google.com with SMTP id m72so7604198wmc.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Nov 2017 16:36:58 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CALaQ_hr1x32YyzBduFVhzpW=E_4=k5TiNLvtz9FP3NPJfCe6jg@mail.gmail.com>
-References: <CALaQ_hr1x32YyzBduFVhzpW=E_4=k5TiNLvtz9FP3NPJfCe6jg@mail.gmail.com>
-From: Nathan Royce <nroycea+kernel@gmail.com>
-Date: Wed, 1 Nov 2017 18:09:06 -0500
-Message-ID: <CALaQ_hrtvej-81hDVZriPg_WGsiqKPje1vQ_RpuEEwmtQ1hrAg@mail.gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/ctree.c:3182 - occurred during heavy NFS transfer
-To: Nathan Royce <nroycea+kernel@gmail.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+In-Reply-To: <pan$a12aa$cc98be99$a32e15b5$d57e6497@cox.net>
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
+ <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
+ <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+ <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
+ <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
+ <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
+ <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
+ <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net> <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
+ <pan$a12aa$cc98be99$a32e15b5$d57e6497@cox.net>
+From: Dave <davestechshop@gmail.com>
+Date: Wed, 1 Nov 2017 19:36:37 -0400
+Message-ID: <CAH=dxU6sdOSx0xYFhguQO2KiNs78Crh_qoDWn-5D1HtohSVdTQ@mail.gmail.com>
+Subject: Re: defragmenting best practice?
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm guessing this is related.
-I noticed my tv wasn't recording to my drive and when I tried to touch
-a file on the drive, my console become unresponsive.
-Trying to reboot took like 5 minutes to even stop the processes and in
-the end couldn't unmount the drive and I had to cut the power to
-finally get it to boot.
+On Wed, Nov 1, 2017 at 9:31 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Dave posted on Tue, 31 Oct 2017 17:47:54 -0400 as excerpted:
+>
+>> 6. Make sure Firefox is running in multi-process mode. (Duncan's
+>> instructions, while greatly appreciated and very useful, left me
+>> slightly confused about pulseaudio's compatibility with multi-process
+>> mode.)
+>
+> Just to clarify:
+>
+> There's no problem with native pulseaudio and firefox multi-process
+> mode.
 
-Nov 01 17:41:42 dd kernel: ------------[ cut here ]------------
-Nov 01 17:41:42 dd kernel: WARNING: CPU: 0 PID: 227 at
-fs/btrfs/file.c:547 btrfs_drop_extent_cache+0x4b4/0x4e8 [btrfs]
-Nov 01 17:41:42 dd kernel: Modules linked in: arc4 tda18271 au8522_dig
-au8522_common ath9k_htc ath9k_common au0828 btusb v4l2_common ath9k_hw
-btintel videobuf2_vmalloc btbcm videobuf2_memops tveeprom bluetooth
-ath dvb_core videobuf2_v4l2 videodev mac80211 ecdh_generic vi
-Nov 01 17:41:42 dd kernel: CPU: 0 PID: 227 Comm: mount Not tainted
-4.13.0-dirty #2
-Nov 01 17:41:42 dd kernel: Hardware name: SAMSUNG EXYNOS (Flattened Device Tree)
-Nov 01 17:41:42 dd kernel: [<c010f1ec>] (unwind_backtrace) from
-[<c010b7ec>] (show_stack+0x10/0x14)
-Nov 01 17:41:42 dd kernel: [<c010b7ec>] (show_stack) from [<c070eabc>]
-(dump_stack+0x88/0x9c)
-Nov 01 17:41:42 dd kernel: [<c070eabc>] (dump_stack) from [<c011c934>]
-(__warn+0xe8/0x100)
-Nov 01 17:41:42 dd kernel: [<c011c934>] (__warn) from [<c011ca44>]
-(warn_slowpath_null+0x20/0x28)
-Nov 01 17:41:42 dd kernel: [<c011ca44>] (warn_slowpath_null) from
-[<bf198fa8>] (btrfs_drop_extent_cache+0x4b4/0x4e8 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf198fa8>] (btrfs_drop_extent_cache
-[btrfs]) from [<bf199a64>] (__btrfs_drop_extents+0x618/0x1000 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf199a64>] (__btrfs_drop_extents [btrfs])
-from [<bf19b944>] (btrfs_drop_extents+0x60/0x80 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf19b944>] (btrfs_drop_extents [btrfs])
-from [<bf1cc010>] (replay_one_extent+0x718/0x818 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf1cc010>] (replay_one_extent [btrfs])
-from [<bf1cc95c>] (replay_one_buffer+0x248/0x780 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf1cc95c>] (replay_one_buffer [btrfs])
-from [<bf1c7420>] (walk_down_log_tree+0x144/0x38c [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf1c7420>] (walk_down_log_tree [btrfs])
-from [<bf1c7738>] (walk_log_tree+0xd0/0x1e8 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf1c7738>] (walk_log_tree [btrfs]) from
-[<bf1d0aa8>] (btrfs_recover_log_trees+0x21c/0x49c [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf1d0aa8>] (btrfs_recover_log_trees
-[btrfs]) from [<bf17e3dc>] (open_ctree+0x232c/0x2400 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf17e3dc>] (open_ctree [btrfs]) from
-[<bf1504e0>] (btrfs_mount+0xecc/0xfa8 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf1504e0>] (btrfs_mount [btrfs]) from
-[<c0220510>] (mount_fs+0x2c/0x164)
-Nov 01 17:41:42 dd kernel: [<c0220510>] (mount_fs) from [<c023e1f8>]
-(vfs_kern_mount.part.3+0x48/0xe0)
-Nov 01 17:41:42 dd kernel: [<c023e1f8>] (vfs_kern_mount.part.3) from
-[<bf14f964>] (btrfs_mount+0x350/0xfa8 [btrfs])
-Nov 01 17:41:42 dd kernel: [<bf14f964>] (btrfs_mount [btrfs]) from
-[<c0220510>] (mount_fs+0x2c/0x164)
-Nov 01 17:41:42 dd kernel: [<c0220510>] (mount_fs) from [<c023e1f8>]
-(vfs_kern_mount.part.3+0x48/0xe0)
-Nov 01 17:41:42 dd kernel: [<c023e1f8>] (vfs_kern_mount.part.3) from
-[<c02404e4>] (do_mount+0x1a8/0xc44)
-Nov 01 17:41:42 dd kernel: [<c02404e4>] (do_mount) from [<c02412c8>]
-(SyS_mount+0x54/0xc0)
-Nov 01 17:41:42 dd kernel: [<c02412c8>] (SyS_mount) from [<c0107cfc>]
-(__sys_trace_return+0x0/0x10)
-Nov 01 17:41:42 dd kernel: ---[ end trace 35a26e49cc780cf9 ]---
+Thank you for clarifying. And I appreciate your detailed explanation.
+
+> Back when I posted that, a not e10s-enabled extension was actually quite
+> likely, as e10s was still rather new.  It's probably somewhat less so
+> now, and firefox is of course on to the next big change, dropping the old
+> "legacy chrome" extension support, in favor of the newer and generally
+> Chromium-compatible WebExtensions/WE API, with firefox 57, to be released
+> mid-month (Nov 14).
+
+I am now running Firefox 57 beta and I'll be doing my testing with
+that using only WebExtensions.

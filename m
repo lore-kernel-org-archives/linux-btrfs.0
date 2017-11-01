@@ -1,71 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:35200 "EHLO
-        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753855AbdKAMNV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 08:13:21 -0400
-Subject: Re: Reasonable amount of snapshots
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, ST <smntov@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <1509534294.1662.91.camel@gmail.com>
- <fb1522f7-ffbe-cc5c-8a1d-bb3812b2e0f0@gmx.com>
- <1509535904.1662.93.camel@gmail.com>
- <22d4b909-124f-3f01-d99a-18e9596fc76e@gmx.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <231dbedf-4467-072a-8b31-bb6942211bc6@mendix.com>
-Date: Wed, 1 Nov 2017 13:13:17 +0100
-MIME-Version: 1.0
-In-Reply-To: <22d4b909-124f-3f01-d99a-18e9596fc76e@gmx.com>
-Content-Type: text/plain; charset=utf-8
+Received: from [195.159.176.226] ([195.159.176.226]:44053 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932679AbdKAMP1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 08:15:27 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1e9rvO-0003SC-3J
+        for linux-btrfs@vger.kernel.org; Wed, 01 Nov 2017 13:15:14 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Several questions regarding btrfs
+Date: Wed, 1 Nov 2017 12:15:02 +0000 (UTC)
+Message-ID: <pan$8b220$9c430bf3$f61d549b$3a5859fa@cox.net>
+References: <1509467017.1662.37.camel@gmail.com>
+        <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
+        <1509480384.1662.84.camel@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/01/2017 01:07 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2017年11月01日 19:31, ST wrote:
->> On Wed, 2017-11-01 at 19:17 +0800, Qu Wenruo wrote:
->>>
->>> On 2017年11月01日 19:04, ST wrote:
->>>> Hello,
->>>>
->>>> I read in different places that one should keep amount of snapshots low
->>>> - around 15-20. My question - is this limitation on total number of
->>>> snapshots on the system or only on related (parent<->child) chain of
->>>> snapshots?
->>>
->>> Independent subvolume doesn't count, and it's filesystem based.
->>>
->>> So only snapshots (with source exists, and still shares a lot of trees
->>> with source) counts.
->>>
->>> And if you have multiple btrfs fses, then the count should be based on
->>> each fs.
->>>
->>>> What I want to do is the following: create (and then rotate) last 7
->>>> daily snapshots (and maybe 4 weekly) for each user in his /home dir.
->>>> For
->>>> around 100 users. So if limitation is only on related snapshots then I'm
->>>> OK since only each 7 (or maybe 7+4) of them are related which is well
->>>> under the 15-20 limit. However in total there could be 700 snapshots. So
->>>> what is true?
->>>
->>> You're OK since independent subvolumes won't cause too much stress for
->>> backref walk.
->>>
->>> The only thing you may need to consider is to limit the ability to
->>> reflink data between subvolumes.
->>> Like cp --reflink or even offline dedupe.
->>
->> Thank you very much! How can I limit this ability? (I'm on Debian9)
->>
->> All the best!
-> 
-> No way to limit, unfortunately.
+ST posted on Tue, 31 Oct 2017 22:06:24 +0200 as excerpted:
 
-Well, it can obviously be "limited" by just not using cp --reflink all
-over the place and by not running dedupe on everything. The filesystem
-won't just start doing that by its own. ;]
+> Also another questions in this regard - I tried to "set-default" and
+> then reboot and it worked nice - I landed indeed in the snapshot, not
+> top-level volume. However /etc/fstab didn't change and actually showed
+> that top-level volume should have been mounted instead. It seems that
+> "set-default" has higher precedence than fstab...
+> 1. is it true?
+> 2. how do they actually interact?
+> 3. such a discrepancy disturbs me, so how should I tune fstab to reflect
+> the change? Or maybe I should not?
 
+For most distros, for root, the /etc/fstab entry is a dummy of sorts.  
+The kernel must have the information for root before it can read
+/etc/fstab, and it's usually either fed to the kernel on the kernel 
+commandline (via root=, rootfstype= and rootflags=) or configured in the 
+initr*, tho those may be indirectly sourced from /etc/fstab via scripts 
+that set them up, and there's a kernel default that applies without a 
+configured commandline, that distros may setup for their own defaults.
+
+The /etc/fstab entry may be used when remounting root writable, as it's 
+normally mounted read-only first and only remounted writable later, but 
+some distros may either do that without reading the fstab entry as well, 
+or be configured to leave root mounted read-only (as I've configured my 
+system here, on gentoo).
+
+
+So presumably whatever's actually being used by your kernel to find the 
+root to mount, the commandline, the initr*, or the configured kernel 
+defaults, doesn't have a specific subvolume option and (for btrfs), is 
+simply depending on the btrfs default subvolume being pointed at the 
+right subvolume.  As such, configuring btrfs to point at a different 
+subvolume "just works", since it's just using the filesystem default 
+subvolume in the first place.
+
+Which should work fine as long as whatever configured default subvolume 
+ends up having a valid root configuration.  I'd thus be most worried 
+about testing that you can point it at whatever you are using as a backup 
+and/or emergency boot and maintenance image, and successfully boot from 
+that, should the default subvolume get screwed up and become unbootable 
+for whatever reason.  Of course that'll require being able to either know 
+where the kernel is getting its root information in ordered to change it, 
+or at minimum, being able to successfully override it with a higher 
+priority config, when necessary.
 
 -- 
-Hans van Kranenburg
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

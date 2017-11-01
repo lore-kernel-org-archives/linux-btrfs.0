@@ -1,120 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:51272 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750764AbdKAAca (ORCPT
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:49949 "EHLO
+        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751286AbdKAAhu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Oct 2017 20:32:30 -0400
-Subject: Re: Data and metadata extent allocators [1/2]: Recap: The data story
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <14632e5d-74b9-e52f-6578-56139c42369c@mendix.com>
- <6296fd2d-87a3-7f59-2b4b-48e3e40d3593@gmx.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <61c7cd9c-3d35-d292-fc35-cf0fb714f731@mendix.com>
-Date: Wed, 1 Nov 2017 01:32:25 +0100
+        Tue, 31 Oct 2017 20:37:50 -0400
+Received: by mail-wm0-f41.google.com with SMTP id b189so1970886wmd.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Oct 2017 17:37:49 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <6296fd2d-87a3-7f59-2b4b-48e3e40d3593@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <23033.512.820691.680916@tree.ty.sabi.co.uk>
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
+ <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
+ <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
+ <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
+ <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
+ <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
+ <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
+ <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net> <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
+ <23033.512.820691.680916@tree.ty.sabi.co.uk>
+From: Dave <davestechshop@gmail.com>
+Date: Tue, 31 Oct 2017 20:37:27 -0400
+Message-ID: <CAH=dxU7aNg+VTeQFk-9Tk4yzPemsgL1E0iqSFXFQOxM8=ATDFQ@mail.gmail.com>
+Subject: Re: defragmenting best practice?
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Cc: Peter Grandi <pg@btrfs.list.sabi.co.uk>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/28/2017 02:12 AM, Qu Wenruo wrote:
-> 
-> On 2017年10月28日 02:17, Hans van Kranenburg wrote:
->> Hi,
->>
->> This is a followup to my previous threads named "About free space
->> fragmentation, metadata write amplification and (no)ssd" [0] and
->> "Experiences with metadata balance/convert" [1], exploring how good or
->> bad btrfs can handle filesystems that are larger than your average
->> desktop computer and/or which see a pattern of writing and deleting huge
->> amounts of files of wildly varying sizes all the time.
->>
->> This message is a summary of the earlier posts. So, for whoever followed
->> the story, only boring old news here. In the next message as a reply on
->> this one, I'll add some thoughts about new adventures with metadata
->> during the last weeks.
->>
->> My use case is using btrfs as filesystem for backup servers, which work
->> with collections of subvolumes/snapshots with related data, and add new
->> data and expire old snapshots daily.
->>
->> Until now, the following questions were already answered:
->>
->> Q: Why does the allocated but unused space for data keep growing all the
->> time?
->> A: Because btrfs keeps allocating new raw space for data use, while
->> there's more and more unused space inside already which isn't reused for
->> new data.
-> 
-> In fact, btrfs data allocator can split its data allocation request, and
-> make them fit into smaller blocks.
-> 
-> For example, for highly fragmented data space (and of course, no
-> unallocated space for new chunk), btrfs will use small space in existing
-> chunks.
+On Tue, Oct 31, 2017 at 7:06 PM, Peter Grandi <pg@btrfs.list.sabi.co.uk> wrote:
+>
+> Also nothing forces you to defragment a whole filesystem, you
+> can just defragment individual files or directories by using
+> 'find' with it.
 
-Yes, it will.
+Thanks for that info. When defragmenting individual files on a BTRFS
+filesystem with COW, I assume reflinks between that file and all
+snapshots are broken. So if there are 30 snapshots on that volume,
+that one file will suddenly take up 30 times more space... Is that
+correct? Or are the reflinks only broken between the live file and the
+latest snapshot? Or is it something between, based on how many times
+the file has changed?
 
-> Just as fstests, generic/416.
-> 
-> But I think it should be done in a more aggressive manner to reduce
-> chunk allocation.
-> 
-> And balance under certain case can be very slow due to the amount of
-> snapshots/reflinks, so personally I don't really like the idea of
-> balance itself.
-> 
-> If it can be avoid by extent allocator, we should do it from the very
-> beginning.
+>
+> My top "$HOME" fragmented files are the aKregator RSS feed
+> databases, usually a few hundred fragments each, and the
+> '.sqlite' files for Firefox. Occasionally like just now I do
+> this:
+>
+>   tree$  sudo filefrag .firefox/default/*.sqlite | sort -t: -k 2n | tail -4
+>   .firefox/default/cleanup.sqlite: 43 extents found
+>   .firefox/default/content-prefs.sqlite: 67 extents found
+>   .firefox/default/formhistory.sqlite: 87 extents found
+>   .firefox/default/places.sqlite: 3879 extents found
+>
+>   tree$  sudo btrfs fi defrag .firefox/default/*.sqlite
+>
+>   tree$  sudo filefrag .firefox/default/*.sqlite | sort -t: -k 2n | tail -4
+>   .firefox/default/webappsstore.sqlite: 1 extent found
+>   .firefox/default/favicons.sqlite: 2 extents found
+>   .firefox/default/kinto.sqlite: 2 extents found
+>   .firefox/default/places.sqlite: 44 extents found
 
-Well, the most urgent problem in the end is not how the distribution of
-data over the data chunks is organized.
+That's a very helpful example.
 
-It's about this:
+Can you also give an example of using find, as you suggested above?
+I'm generally familiar with using find to execute specific commands,
+but an example is appreciated in this case.
 
->> Q: Why would it crash the file system when all raw space is allocated?
->> Won't it start trying harder to reuse the free space inside?
->> A: Yes, it will, for data. The big problem here is that allocation of a
->> new metadata chunk when needed is not possible any more.
+> > 2. Put $HOME/.cache on a separate BTRFS subvolume that is mounted nocow -- it will NOT be snapshotted
 
-The real problem is that the separate allocation of raw space for data
-and metadata might lead to a situation where you can't write any
-metadata any more (because it wants to allocate a new chunk) while you
-have a lot of data space available.
+> Also, you can declare the '.firefox/default/' directory to be NOCOW, and that "just works".
 
-And to be honest, for the end user this is a very similar experience to
-getting an out of space on ext4 while there's a lot of data space
-available which makes you find out about the concept of inodes (which
-you run out of) and df -i etc... (The difference is that on btrfs, in
-most cases you can actually solve it in place. :D) We have no limits on
-inodes, but we have a limit on space to store tree blocks... Unallocated
-raw space available.
+The cache is in a separate location from the profiles, as I'm sure you
+know.  The reason I suggested a separate BTRFS subvolume for
+$HOME/.cache is that this will prevent the cache files for all
+applications (for that user) from being included in the snapshots. We
+take frequent snapshots and (afaik) it makes no sense to include cache
+in backups or snapshots. The easiest way I know to exclude cache from
+BTRFS snapshots is to put it on a separate subvolume. I assumed this
+would make several things related to snapshots more efficient too.
 
-So if we can work around this and prevent it, it will mostly solve the
-rest automatically. In theory a filesystem always keeps working as long
-as you make sure you have about a GiB unallocated all the time so that
-either the next data or metadata chunk can grab it.
+As far as the Firefox profile being declared NOCOW, as soon as we take
+the first snapshot, I understand that it will become COW again. So I
+don't see any point in making it NOCOW.
 
-I actually right now remember seeing something in the kernel code a
-while ago that should make it try harder to push data in existing
-allocated space instead of allocating a new data chunk if the
-unallocated part was < 3% of total device size. Something like that
-might help, only for some reason if the code is still in there it
-doesn't actually work it seems.
+Thanks for your reply. I appreciate any other feedback or suggestions.
 
-Having the tetris allocator for data by default helps the situation
-(preventing from running with fully allocated space too soon) from
-occurring with certain workloads, e.g. by not showing the insane
-behaviour like [0].
+Background: I'm not sure why our Firefox performance is so terrible
+but here's my original post from Sept 20. (I could repost the earlier
+replies too if needed.) I've been waiting to have a window of
+opportunity to try to fix our Firefox performance again, and now I
+have that chance.
 
-But, I can also still fill my disk with files and then remove half of
-them in a way that leaves me with fully allocated raw space and all
-chunks 50% filled. And what is the supposed behaviour if I start to
-refill the empty space by metadata-hungry small files with long names again?
+>On Thu 2017-08-31 (09:05), Ulli Horlacher wrote:
+>> When I do a
+>> btrfs filesystem defragment -r /directory
+>> does it defragment really all files in this directory tree, even if it
+>> contains subvolumes?
+>> The man page does not mention subvolumes on this topic.
+>
+>No answer so far :-(
+>
+>But I found another problem in the man-page:
+>
+>  Defragmenting with Linux kernel versions < 3.9 or >= 3.14-rc2 as well as
+>  with Linux stable kernel versions >= 3.10.31, >= 3.12.12 or >= 3.13.4
+>  will break up the ref-links of COW data (for example files copied with
+>  cp --reflink, snapshots or de-duplicated data). This may cause
+>  considerable increase of space usage depending on the broken up
+>  ref-links.
+>
+>I am running Ubuntu 16.04 with Linux kernel 4.10 and I have several
+>snapshots.
+>Therefore, I better should avoid calling "btrfs filesystem defragment -r"?
+>
+>What is the defragmenting best practice?
+>Avoid it completly?
 
-[0]
-https://syrinx.knorrie.org/~knorrie/btrfs/keep/2017-01-19-noautodefrag-ichiban.mp4
+My question is the same as the OP in this thread, so I came here to
+read the answers before asking.
 
--- 
-Hans van Kranenburg
+Based on the answers here, it sounds like I should not run defrag at
+all. However, I have a performance problem I need to solve, so if I
+don't defrag, I need to do something else.
+
+Here's my scenario. Some months ago I built an over-the-top powerful
+desktop computer / workstation and I was looking forward to really
+fantastic performance improvements over my 6 year old Ubuntu machine.
+I installed Arch Linux on BTRFS on the new computer (on an SSD). To my
+shock, it was no faster than my old machine. I focused a lot on
+Firefox performance because I use Firefox a lot and that was one of
+the applications in which I was most looking forward to better
+performance.
+
+I tried everything I could think of and everything recommended to me
+in various forums (except switching to Windows) and the performance
+remained very disappointing.
+
+Then today I read the following:
+
+    Gotchas - btrfs Wiki
+    https://btrfs.wiki.kernel.org/index.php/Gotchas
+
+    Fragmentation: Files with a lot of random writes can become
+heavily fragmented (10000+ extents) causing excessive multi-second
+spikes of CPU load on systems with an SSD or large amount a RAM. On
+desktops this primarily affects application databases (including
+Firefox). Workarounds include manually defragmenting your home
+directory using btrfs fi defragment. Auto-defragment (mount option
+autodefrag) should solve this problem.
+
+Upon reading that I am wondering if fragmentation in the Firefox
+profile is part of my issue. That's one thing I never tested
+previously. (BTW, this system has 256 GB of RAM and 20 cores.)
+
+Furthermore, on the same BTRFS Wiki page, it mentions the performance
+penalties of many snapshots. I am keeping 30 to 50 snapshots of the
+volume that contains the Firefox profile.
+
+Would these two things be enough to turn top-of-the-line hardware into
+a mediocre-preforming desktop system? (The system performs fine on
+benchmarks -- it's real life usage, particularly with Firefox where it
+is disappointing.)
+
+After reading the info here, I am wondering if I should make a new
+subvolume just for my Firefox profile(s) and not use COW and/or not
+keep snapshots on it and mount it with the autodefrag option.
+
+As part of this strategy, I could send snapshots to another disk using
+btrfs send-receive. That way I would have the benefits of snapshots
+(which are important to me), but by not keeping any snapshots on the
+live subvolume I could avoid the performance problems.
+
+What would you guys do in this situation?

@@ -1,31 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50070 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50556 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751898AbdKBMwM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Nov 2017 08:52:12 -0400
+        id S1754988AbdKBM4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 08:56:04 -0400
 Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
  item
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
 References: <20171101121450.6297-1-wqu@suse.com>
- <a6d2aaf5-d1fb-d963-dd02-84e6ffa07954@suse.com>
- <dd9afa2c-cc6b-3f1a-d5f4-88e53908d444@gmx.com>
+ <f6ec5a67-95e0-0950-3efa-c9c77ded3b2c@suse.com>
+ <b62fa3aa-8b09-dd34-0ef6-97d8229bd535@gmx.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <40b9f60b-e71b-0893-29e7-750f9d714831@suse.com>
-Date: Thu, 2 Nov 2017 14:52:10 +0200
+Message-ID: <0a79c9cd-ba67-293a-2981-3182775eda90@suse.com>
+Date: Thu, 2 Nov 2017 14:56:01 +0200
 MIME-Version: 1.0
-In-Reply-To: <dd9afa2c-cc6b-3f1a-d5f4-88e53908d444@gmx.com>
+In-Reply-To: <b62fa3aa-8b09-dd34-0ef6-97d8229bd535@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On  2.11.2017 14:37, Qu Wenruo wrote:
+On  2.11.2017 14:48, Qu Wenruo wrote:
 > 
 > 
-> On 2017年11月02日 20:06, Nikolay Borisov wrote:
+> On 2017年11月02日 20:12, Nikolay Borisov wrote:
 >>
 >>
 >> On  1.11.2017 14:14, Qu Wenruo wrote:
@@ -53,7 +53,8 @@ On  2.11.2017 14:37, Qu Wenruo wrote:
 >>>
 >>> This checker is especially useful to avoid possible access beyond
 >>> boundary for fuzzed image.
->>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >>> ---
 >>>  fs/btrfs/tree-checker.c | 123 ++++++++++++++++++++++++++++++++++++++++++++++++
 >>>  1 file changed, 123 insertions(+)
@@ -93,49 +94,6 @@ On  2.11.2017 14:37, Qu Wenruo wrote:
 >>> +	 * accessors expects offset starts from leaf header.
 >>> +	 * Sowe need to adds LEAF_DATA_OFFSET here
 >>> +	 */
->>
->> The comment is confusing (but so are the internals of accessing an
->> extent buffer and all the offset magic happening behind the scenes).
-> 
-> The sentence inside the brackets is the point. :)
-> 
->>
->> You are essentially opencoding btrfs_item_ptr_offset but instead of
->> pointing at the first entry in the data portion, you really point to
->> 'cur' entry and in order to make it "accessor friendly" you do the +
->> BTRFS_LEAF_DATA_OFFSET. I'd say just put something like :
->>
->> "This is the same as btrfs_item_ptr_offset but starting at item data
->> pointed by header_offset". In fact I'd suggest renaming header_offset to
->> data_offset
-> 
-> Only if we can ensure all offsets passed in are starting after header,
-> then I'm OK to rename it to "data_offset"
-
-That's one of the things which confused me. Which header:
-
-1. There is the btrfs_leaf which is at the beginning of the of the leaf
-item and in order to access a pointer inside the leaf extent_buffer via
-the helpers you really want the offset which skips this header and
-points to the data item hence your + BTRFS_LEAF_DATA_OFFSET code
-
-2. (The one which I assume you meant) There is the actual struct in the
-data portion of the item, which acts as a header for the variable length
-data (either name or name + data).
-
-Since this function is only ever called from check_variable_length_item
-and it guarantees that the passed value always points inside the data
-portion I believe this is fine, no ?
-
-
-> 
-> The "header_offset" here is to info any caller that one should pass
-> "normal" offset here, to avoid possible LEAF_DATA_OFFSET hassle.
-> 
-> Thanks,
-> Qu
-> 
->>
 >>> +	unsigned long leaf_offset = header_offset + BTRFS_LEAF_DATA_OFFSET;
 >>> +
 >>> +	switch (type) {
@@ -178,15 +136,54 @@ portion I believe this is fine, no ?
 >>> +				      struct extent_buffer *leaf,
 >>> +				      struct btrfs_key *key, int slot)
 >>> +{
+>>
+>> One more thing - you are only validating the boundaries of such variable
+>> length items, so make this specific. I.e rename the function to
+>> something like:
+> 
+> If you follow the naming schema in tree-checker, you'll find that we (at
+> least myself) is naming these function always using "check_" prefix, so
+> "validate_" prefix seems less consistent.
+> 
+> Further more, the naming has its level"
+> leaf (all items boundary already checked)
+> |- leaf_item (hub wrapper)
+>    |- csum_item
+>    |- extent_data_item
+> 
+> So here check_<something>_item follows the original level according to
+> the naming schema.
+> 
+> Further more, although we're checking boundary, the truth is, we are
+> check the name_len/data_len *members*, so the check_<something>_item
+> still makes sence.
+> 
+> If really want to change the name, I prefer some naming can show that
+> we're checking several items which share the same variable length property.
+> 
+> So at least, none of the alternative seems to fit the schema.
+
+The reason why I wanted this function renamed is that we have this
+function which performs only some checks and then we have the
+verify_dir_item which performs different checks for the same item. So
+why can't those function be turned into one ? I'm not too hung up on the
+actual naming!
+
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> validate_variable_boundaries
+>> check_variable_length_item_boundary
+>> check_item_boundaries
+>>
 >>> +	u8 type = key->type;
 >>> +	u32 item_start = btrfs_item_offset_nr(leaf, slot);
 >>> +	u32 item_end = btrfs_item_end_nr(leaf, slot);
 >>> +	u32 header_size = get_header_size(type);
 >>> +	u32 total_size;
 >>> +	u32 cur = item_start;
->>
->> nit: Rename cur to cur_offset to make it clear this is an offset.
->>
 >>> +
 >>> +	while (cur < item_end) {
 >>> +		u32 namelen;

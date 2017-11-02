@@ -1,79 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:43440 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S934407AbdKBVQ0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 17:16:26 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eAMqS-0004TW-TG
-        for linux-btrfs@vger.kernel.org; Thu, 02 Nov 2017 22:16:12 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: defragmenting best practice?
-Date: Thu, 2 Nov 2017 22:16:10 +0100
-Message-ID: <20171102221610.006c1e9c@jupiter.sol.kaishome.de>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de>
-        <20170912162843.GA32233@rus.uni-stuttgart.de>
-        <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
-        <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
-        <20170914172434.39eae89d@jupiter.sol.kaishome.de>
-        <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
-        <59BBB15E.8010002@sarach.com.pl>
-        <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
-        <59BBDFA6.4020500@sarach.com.pl>
-        <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
-        <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
-        <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
-        <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
-        <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
-        <23033.512.820691.680916@tree.ty.sabi.co.uk>
-        <CAH=dxU7aNg+VTeQFk-9Tk4yzPemsgL1E0iqSFXFQOxM8=ATDFQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from smtp.domeneshop.no ([194.63.252.55]:42971 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752488AbdKBWGo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 18:06:44 -0400
+Reply-To: waxhead@dirtcellar.net
+Subject: =?UTF-8?Q?Re:_Parity-based_redundancy_=28RAID5/6/triple_parity_and_?=
+ =?UTF-8?Q?beyond=29_on_BTRFS_and_MDADM_=28Dec_2014=29_=e2=80=93_Ronny_Egner?=
+ =?UTF-8?Q?s_Blog?=
+To: Dave <davestechshop@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <CAH=dxU4vj_+_K9dE3hqMf42oC9wEJKXTPRDr6QyOjrQfEXmXXA@mail.gmail.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <7178555e-5f84-4e8a-243e-f1108d06136e@dirtcellar.net>
+Date: Thu, 2 Nov 2017 23:06:41 +0100
+MIME-Version: 1.0
+In-Reply-To: <CAH=dxU4vj_+_K9dE3hqMf42oC9wEJKXTPRDr6QyOjrQfEXmXXA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 31 Oct 2017 20:37:27 -0400
-schrieb Dave <davestechshop@gmail.com>:
+Dave wrote:
+> Has this been discussed here? Has anything changed since it was written?
+>
+I have (more or less) been following the mailing list since this feature 
+was suggested. I have been drooling over it since, but not much have 
+happened.
 
-> > Also, you can declare the '.firefox/default/' directory to be
-> > NOCOW, and that "just works".  
-> 
-> The cache is in a separate location from the profiles, as I'm sure you
-> know.  The reason I suggested a separate BTRFS subvolume for
-> $HOME/.cache is that this will prevent the cache files for all
-> applications (for that user) from being included in the snapshots. We
-> take frequent snapshots and (afaik) it makes no sense to include cache
-> in backups or snapshots. The easiest way I know to exclude cache from
-> BTRFS snapshots is to put it on a separate subvolume. I assumed this
-> would make several things related to snapshots more efficient too.
-> 
-> As far as the Firefox profile being declared NOCOW, as soon as we take
-> the first snapshot, I understand that it will become COW again. So I
-> don't see any point in making it NOCOW.
+> Parity-based redundancy (RAID5/6/triple parity and beyond) on BTRFS
+> and MDADM (Dec 2014) – Ronny Egners Blog
+> http://blog.ronnyegner-consulting.de/2014/12/10/parity-based-redundancy-raid56triple-parity-and-beyond-on-btrfs-and-mdadm-dec-2014/comment-page-1/
+>
+> TL;DR: There are patches to extend the linux kernel to support up to 6
+> parity disks but BTRFS does not want them because it does not fit
+> their “business case” and MDADM would want them but somebody needs to
+> develop patches for the MDADM component. The kernel raid
+> implementation is ready and usable. If someone volunteers to do this
+> kind of work I would support with equipment and myself as a test
+> resource.
+> --
+I am just a list "stalker" and no BTRFS developer, but as others have 
+indirectly said already. It is not so much that BTRFS don't want the 
+patches as it is that BTRFS do not want to / can't focus on this right 
+now due to other priorities.
 
-Ah well, not really. The files and directories will still be nocow -
-however, the next write to any such file after a snapshot will make a
-cow operation. So you still see the fragmentation effect but to a much
-lesser extent. But the files itself will remain in nocow format.
+There was some updates to raid5/6 in kernel 4.12 that should fix (or at 
+least improve) scrub/auto-repair. The write hole does still exist.
 
-You may want to try btrfs autodefrag mount option and see if it
-improves things (tho, the effect may take days or weeks to apply if you
-didn't enable it right from the creation of the filesystem).
+That being said there might be configurations where btrfs raid5/6 might 
+be of some use. I think I read somewhere that you can set data to 
+raid5/6 and METADATA to raid1 or 10 and you would risk loosing some data 
+(but not the filesystem) in the event of a system crash / power failure.
 
-Also, autodefrag will probably unshare reflinks on your snapshots. You
-may be able to use bees[1] to work against this effect. Its interaction
-with autodefrag is not well tested but it works fine for me. Also, bees
-is able to reduce some of the fragmentation during deduplication
-because it will rewrite extents back into bigger chunks (but only for
-duplicated data).
+This sounds tempting since it in theory would not make btrfs raid 5/6 
+significantly less reliable than other RAID's which will corrupt your 
+data if the disk happens to spits out bad bits without complaining (one 
+possible exception that might catch this is md raid6 which I use). That 
+being said there is no way I would personally use btrfs raid 5/6 even 
+with metadata raid1/10 yet without proper tested backups at standby at 
+this point.
 
-[1]: https://github.com/Zygo/bees
+Anyway - I would worry more about getting raid5/6 to work properly 
+before even thinking about multi-parity at all :)
 
-
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

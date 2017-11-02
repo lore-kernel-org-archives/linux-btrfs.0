@@ -1,68 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:47877 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750786AbdKBFZr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 01:25:47 -0400
-Subject: Re: [PATCH 0/5] btrfs-progs: resolve property and enhance defragment
-To: Wang Shilong <wangshilong1991@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20171102032320.12537-1-suy.fnst@cn.fujitsu.com>
- <ea3e10a2-fdbe-db5f-378b-3767ba85bd5f@cn.fujitsu.com>
- <6F415D55-08C6-4517-9DF9-457B3679E7C4@gmail.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <815506d3-54b3-72f3-caa5-bd271cba803e@cn.fujitsu.com>
-Date: Thu, 2 Nov 2017 13:29:13 +0800
+Received: from mout.gmx.net ([212.227.15.19]:49456 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751109AbdKBFoY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 01:44:24 -0400
+Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457!
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+References: <CAKuJGC8M3NFbZ5Ky0gsuwz3oioCayPWK+JcxtC+BZ9=DuG4TXw@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <92334609-a0a2-6cb4-5127-0c3767917ad2@gmx.com>
+Date: Thu, 2 Nov 2017 13:44:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <6F415D55-08C6-4517-9DF9-457B3679E7C4@gmail.com>
-Content-Type: text/plain; charset="gbk"; format=flowed
+In-Reply-To: <CAKuJGC8M3NFbZ5Ky0gsuwz3oioCayPWK+JcxtC+BZ9=DuG4TXw@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="3MK8PSHixQ3kKBAlWxWIrj66eqOAQBjFP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--3MK8PSHixQ3kKBAlWxWIrj66eqOAQBjFP
+Content-Type: multipart/mixed; boundary="rBS10qgcJpQexoHLeVKsSE1BdwuCM4id0";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
+ btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <92334609-a0a2-6cb4-5127-0c3767917ad2@gmx.com>
+Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457!
+References: <CAKuJGC8M3NFbZ5Ky0gsuwz3oioCayPWK+JcxtC+BZ9=DuG4TXw@mail.gmail.com>
+In-Reply-To: <CAKuJGC8M3NFbZ5Ky0gsuwz3oioCayPWK+JcxtC+BZ9=DuG4TXw@mail.gmail.com>
+
+--rBS10qgcJpQexoHLeVKsSE1BdwuCM4id0
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 11/02/2017 12:13 PM, Wang Shilong wrote:
-> 
-> 在 2017年11月2日，上午11:44，Su Yue <suy.fnst@cn.fujitsu.com> 写道：
-> 
-> Sorry, the patchset does not work as expected.
-> Please ignore it.
-> 
-> On 11/02/2017 11:23 AM, Su Yue wrote:
->> The patchset adds an option '--compress-force' to work with
->> 'btrfs fi defrag -c'. Then no-compression files will be set with
->> compression property specified by '-c' (zlib default).
->> patch[1-4] divide property handler to setter, getter, and printer.
->> Then patch[5] could enhance defragment easier.
->> Su Yue (5):
->>    btrfs-progs: property: divide prop_handler_t into
->>      setter,getter,printer
->>    btrfs-progs: property: set/get/print ro property
->>    btrfs-progs: property: set/get/print label property
->>    btrfs-progs: property: set/get/print compression property
->>    btrfs-progs: fi defrag: extend -c to drop nocompress flag on files
->>   cmds-filesystem.c |  94 +++++++++++++++++++++++--
->>   cmds-property.c   |   7 +-
->>   props.c           | 207 +++++++++++++++++++++++++++++++++++++++++++++---------
->>   props.h           |  19 +++--
->>   4 files changed, 283 insertions(+), 44 deletions(-)
-> 
-> FYI, i think it better to add some tests to btrfs-progs if new interface
-> or function like this is added.
-> 
-Thank you. I will add  a test in next version.
+
+On 2017=E5=B9=B411=E6=9C=8802=E6=97=A5 13:19, Lakshmipathi.G wrote:
+> Hi.
+>=20
+> I'm constantly hitting this bug while running btrfs-progs:fsck-test:012=
+ .
+> Screencast: https://asciinema.org/a/wQxZjCeVvX2kVqKjVBGyR0klq
+>=20
+> Logged more details: https://bugzilla.kernel.org/show_bug.cgi?id=3D1975=
+87
+> Anyone else got this issue or something wrong with my test environment?=
+
+
+Failed to reproduce it with btrfs-progs v4.13.3.
+Kernel is v4.14-rc7.
+
+According to your output, it shows that tree-checker caught the
+irregular file extent for free space cache, just as expected.
+
+The strange part is, the file extent for free space cache is created by
+kernel, as the ASSERT() is triggering from write time verification.
+And kernel strangely put some data into the uninitialized file extent,
+trigger the problem.
+
+I'll try to reproduce it with FS_CHECK_INTEGRITY enabled.
 
 Thanks,
-Su
-> Thanks,
-> Shilong
-> 
-> 
+Qu
+
+
+>=20
+> ----
+> Cheers,
+> Lakshmipathi.G
+> http://www.giis.co.in http://www.webminal.org
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
+>=20
 
 
+--rBS10qgcJpQexoHLeVKsSE1BdwuCM4id0--
+
+--3MK8PSHixQ3kKBAlWxWIrj66eqOAQBjFP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln6sLIXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgqPQgAikuBH8cnv3adx9SerDitMvIn
+Lrnq1oMWOeIMnW7rsgpd/2dDy9eG9tx/5N6CEn42jJhv6riYpSTyqLUfniNVegtl
+qe8AzcXdvFMjOWA66WxTxEWXpDJQOvoCLWgbIuca/7QgB5ZneijVI9CtZ7g+BgzY
+ZRREdjpylWDs/GP0c8hxDdyvF61lN9E4I90eDAk69KRbibE95bghx6FJkxbiICug
+sDaaplgYZb4oX6G1vhtydvp5YTb8l1IH9bZFZiuDicQcCZTWIntO7KfsGmsBOYuJ
+bTkClv/QnY1xtZJCsmp68+6zOpKagZ9wOxTVnjjx/vtRIRvvKYNj/l5eiuZ+HQ==
+=Ykfh
+-----END PGP SIGNATURE-----
+
+--3MK8PSHixQ3kKBAlWxWIrj66eqOAQBjFP--

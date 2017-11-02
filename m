@@ -1,43 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f174.google.com ([209.85.128.174]:33243 "EHLO
-        mail-wr0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751609AbdKTQub (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 11:50:31 -0500
-Received: by mail-wr0-f174.google.com with SMTP id 4so8677462wrt.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Nov 2017 08:50:31 -0800 (PST)
-Received: from debox (bzq-79-176-67-119.red.bezeqint.net. [79.176.67.119])
-        by smtp.gmail.com with ESMTPSA id m189sm5469297wmb.38.2017.11.20.08.50.29
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 20 Nov 2017 08:50:29 -0800 (PST)
-Message-ID: <1511196626.1657.29.camel@gmail.com>
-Subject: test btrfs scrubbing/get system's total capacity
-From: ST <smntov@gmail.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:37955 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752349AbdKBB4k (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 21:56:40 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA21udKh013775
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 01:56:39 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA21uc9L025332
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 01:56:39 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vA21ucME030033
+        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 01:56:38 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Date: Mon, 20 Nov 2017 18:50:26 +0200
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Subject: [PATCH 1/4] Btrfs: introduce device flags
+Date: Wed,  1 Nov 2017 18:54:02 -0600
+Message-Id: <20171102005405.20420-2-bo.li.liu@oracle.com>
+In-Reply-To: <20171102005405.20420-1-bo.li.liu@oracle.com>
+References: <20171102005405.20420-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Here we have defined two flags,
+- Fautly
+- In_sync
 
-1. is there a tool that I can use to test btrfs scrubbing? Namely I need
-to "damage" a file, i.e. change it without changing its meta
-information, so I can see how scrubbing performs... Is there something
-like this?
+Currently only In_sync is in use, it only matters when device serves
+as part of a raid profile.  The flag In_sync is decided when mounting
+a btrfs and opening a device, by default every device is set with
+In_sync, but would not be set if its generation was out of date.
 
+If the device doesn't get resync and to avoid overriding its
+generation during writing superblock, if the !In_sync device is still
+writeable, its last valid generation will be recorded in
+superblock.dev_item.generation instead of superblock.generation, such
+that the last valid generation can be retained through several reboot,
+btrfs is able to detect the out-of-sync device.
 
-2. I want to use Ansible to set btrfs quota on a /home subvolume as say
-0.8*TotalCapacityOfRoot and then assign to it individual users'
-subvolumes with certain (smaller) quatos.
-2.1 Is it OK to rely on ansible_facts? Does it has correct information
-about btrfs-based "/" total capacity?
-2.2 If not, is there a raw command to get TotalCapacityOfRoot in -TB so
-I can set it? Is there something like btrfs filesystem usage / -t
---device_size? to get only the total Device Size information?
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/disk-io.c | 21 ++++++++++++++++++++-
+ fs/btrfs/volumes.c | 47 ++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.h |  8 ++++++++
+ 3 files changed, 72 insertions(+), 4 deletions(-)
 
-Thank you!
-ST
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 487bbe4..a080d58 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3640,6 +3640,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 	int do_barriers;
+ 	int max_errors;
+ 	int total_errors = 0;
++	u64 generation;
+ 	u64 flags;
+ 
+ 	do_barriers = !btrfs_test_opt(fs_info, NOBARRIER);
+@@ -3671,7 +3672,25 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+ 		if (!dev->in_fs_metadata || !dev->writeable)
+ 			continue;
+ 
+-		btrfs_set_stack_device_generation(dev_item, 0);
++		/*
++		 * if dev is not in_sync, record the last valid
++		 * generation.
++		 *
++		 * This is used to detect !In_sync device after
++		 * reboot, now we check a device's In_sync status by
++		 * comparing its superblock->dev_item->generation with
++		 * the latest one.
++		 *
++		 * We don't compare superblock->generation because
++		 * after reboot and a successfuly superblock writing,
++		 * generation in superblock will be updated.
++		 */
++		if (!test_bit(In_sync, &dev->flags))
++			generation = dev->generation;
++		else
++			generation = 0;
++		btrfs_set_stack_device_generation(dev_item, generation);
++
+ 		btrfs_set_stack_device_type(dev_item, dev->type);
+ 		btrfs_set_stack_device_id(dev_item, dev->devid);
+ 		btrfs_set_stack_device_total_bytes(dev_item,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0e8f16c..7b29b1a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -250,6 +250,7 @@ static struct btrfs_device *__alloc_device(void)
+ 	btrfs_device_data_ordered_init(dev);
+ 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+ 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
++	ASSERT(dev->flags == 0);
+ 
+ 	return dev;
+ }
+@@ -1003,10 +1004,32 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 			   BTRFS_UUID_SIZE))
+ 			goto error_brelse;
+ 
+-		device->generation = btrfs_super_generation(disk_super);
+-		if (!latest_dev ||
+-		    device->generation > latest_dev->generation)
++		if (btrfs_stack_device_generation(&disk_super->dev_item) == 0)
++			device->generation = btrfs_super_generation(disk_super);
++		else
++			device->generation =
++				btrfs_stack_device_generation(&disk_super->dev_item);
++
++		/* no lock is required during the initial stage. */
++		if (!latest_dev) {
++			set_bit(In_sync, &device->flags);
+ 			latest_dev = device;
++		} else {
++			if (device->generation > latest_dev->generation) {
++				set_bit(In_sync, &device->flags);
++				clear_bit(In_sync, &latest_dev->flags);
++				latest_dev = device;
++			} else if (device->generation == latest_dev->generation) {
++				set_bit(In_sync, &device->flags);
++			}
++			/*
++			 * if (device->generation < latest_dev->generation)
++			 *	# don't set In_sync
++			 */
++		}
++
++		if (!test_bit(In_sync, &device->flags))
++			pr_info("dev %s gen %llu is not In_sync\n", device->name->str, device->generation);
+ 
+ 		if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
+ 			device->writeable = 0;
+@@ -2379,6 +2402,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	q = bdev_get_queue(bdev);
+ 	if (blk_queue_discard(q))
+ 		device->can_discard = 1;
++	set_bit(In_sync, &device->flags);
+ 	device->writeable = 1;
+ 	device->generation = trans->transid;
+ 	device->io_width = fs_info->sectorsize;
+@@ -2599,6 +2623,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+ 	device->dev_stats_valid = 1;
+ 	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
+ 	device->fs_devices = fs_info->fs_devices;
++	set_bit(In_sync, &device->flags);
+ 	list_add(&device->dev_list, &fs_info->fs_devices->devices);
+ 	fs_info->fs_devices->num_devices++;
+ 	fs_info->fs_devices->open_devices++;
+@@ -6450,6 +6475,14 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+ 			btrfs_report_missing_device(fs_info, devid, uuid);
+ 			return -EIO;
+ 		}
++		if (map->stripes[i].dev &&
++		    !test_bit(In_sync, &map->stripes[i].dev->flags) &&
++		    !btrfs_test_opt(fs_info, DEGRADED)) {
++			btrfs_warn(fs_info, "devid %llu uuid %pU is Not in_sync, but we're not under degraded mode",
++				   devid, uuid);
++			free_extent_map(em);
++			return -EIO;
++		}
+ 		if (!map->stripes[i].dev) {
+ 			map->stripes[i].dev =
+ 				add_missing_dev(fs_info->fs_devices, devid,
+@@ -6592,6 +6625,14 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+ 				return -EIO;
+ 		}
+ 
++		if (!test_bit(In_sync, &device->flags) &&
++		    !btrfs_test_opt(fs_info, DEGRADED)) {
++			btrfs_warn(fs_info,
++				   "devid %llu uuid %pU is Not in_sync, but we're not under degraded mode",
++				   devid, dev_uuid);
++			return -EIO;
++		}
++
+ 		if(!device->bdev && !device->missing) {
+ 			/*
+ 			 * this happens when a device that was properly setup
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6108fdf..65b928c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -69,6 +69,9 @@ struct btrfs_device {
+ 	/* the mode sent to blkdev_get */
+ 	fmode_t mode;
+ 
++	/* bit set of 'enum flag_bits' bit  */
++	unsigned long flags;
++
+ 	int writeable;
+ 	int in_fs_metadata;
+ 	int missing;
+@@ -261,6 +264,11 @@ struct btrfs_fs_devices {
+ 	struct completion kobj_unregister;
+ };
+ 
++enum flag_bits {
++	Faulty,		/* device is known to have a fault */
++	In_sync,	/* device is in_sync with rest of array */
++};
++
+ #define BTRFS_BIO_INLINE_CSUM_SIZE	64
+ 
+ /*
+-- 
+2.9.4
 

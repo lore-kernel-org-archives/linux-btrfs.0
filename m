@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44142 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45084 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750799AbdKBMGZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Nov 2017 08:06:25 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D0008AC67
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2017 12:06:23 +0000 (UTC)
+        id S1751324AbdKBMNB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 08:13:01 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 44705AC67
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2017 12:13:00 +0000 (UTC)
 Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
  item
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
 References: <20171101121450.6297-1-wqu@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a6d2aaf5-d1fb-d963-dd02-84e6ffa07954@suse.com>
-Date: Thu, 2 Nov 2017 14:06:22 +0200
+Message-ID: <f6ec5a67-95e0-0950-3efa-c9c77ded3b2c@suse.com>
+Date: Thu, 2 Nov 2017 14:12:59 +0200
 MIME-Version: 1.0
 In-Reply-To: <20171101121450.6297-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
@@ -47,7 +47,8 @@ On  1.11.2017 14:14, Qu Wenruo wrote:
 > 
 > This checker is especially useful to avoid possible access beyond
 > boundary for fuzzed image.
-> > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
 >  fs/btrfs/tree-checker.c | 123 ++++++++++++++++++++++++++++++++++++++++++++++++
 >  1 file changed, 123 insertions(+)
@@ -87,19 +88,6 @@ On  1.11.2017 14:14, Qu Wenruo wrote:
 > +	 * accessors expects offset starts from leaf header.
 > +	 * Sowe need to adds LEAF_DATA_OFFSET here
 > +	 */
-
-The comment is confusing (but so are the internals of accessing an
-extent buffer and all the offset magic happening behind the scenes).
-
-You are essentially opencoding btrfs_item_ptr_offset but instead of
-pointing at the first entry in the data portion, you really point to
-'cur' entry and in order to make it "accessor friendly" you do the +
-BTRFS_LEAF_DATA_OFFSET. I'd say just put something like :
-
-"This is the same as btrfs_item_ptr_offset but starting at item data
-pointed by header_offset". In fact I'd suggest renaming header_offset to
-data_offset
-
 > +	unsigned long leaf_offset = header_offset + BTRFS_LEAF_DATA_OFFSET;
 > +
 > +	switch (type) {
@@ -142,15 +130,21 @@ data_offset
 > +				      struct extent_buffer *leaf,
 > +				      struct btrfs_key *key, int slot)
 > +{
+
+One more thing - you are only validating the boundaries of such variable
+length items, so make this specific. I.e rename the function to
+something like:
+
+validate_variable_boundaries
+check_variable_length_item_boundary
+check_item_boundaries
+
 > +	u8 type = key->type;
 > +	u32 item_start = btrfs_item_offset_nr(leaf, slot);
 > +	u32 item_end = btrfs_item_end_nr(leaf, slot);
 > +	u32 header_size = get_header_size(type);
 > +	u32 total_size;
 > +	u32 cur = item_start;
-
-nit: Rename cur to cur_offset to make it clear this is an offset.
-
 > +
 > +	while (cur < item_end) {
 > +		u32 namelen;

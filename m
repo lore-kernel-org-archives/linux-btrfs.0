@@ -1,49 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:57344 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:57821 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751931AbdKBMhl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Nov 2017 08:37:41 -0400
+        id S1751370AbdKBMtL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 08:49:11 -0400
 Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
  item
 To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
 References: <20171101121450.6297-1-wqu@suse.com>
- <a6d2aaf5-d1fb-d963-dd02-84e6ffa07954@suse.com>
+ <f6ec5a67-95e0-0950-3efa-c9c77ded3b2c@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <dd9afa2c-cc6b-3f1a-d5f4-88e53908d444@gmx.com>
-Date: Thu, 2 Nov 2017 20:37:09 +0800
+Message-ID: <b62fa3aa-8b09-dd34-0ef6-97d8229bd535@gmx.com>
+Date: Thu, 2 Nov 2017 20:48:31 +0800
 MIME-Version: 1.0
-In-Reply-To: <a6d2aaf5-d1fb-d963-dd02-84e6ffa07954@suse.com>
+In-Reply-To: <f6ec5a67-95e0-0950-3efa-c9c77ded3b2c@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="tRv2og8xScVLlEvMVbQDHVWSClT1HD278"
+ boundary="RG5aXHohHXnK7HrXA0fLNeU57UQMDgd13"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tRv2og8xScVLlEvMVbQDHVWSClT1HD278
-Content-Type: multipart/mixed; boundary="rkfGCxgcqlfDkNfk6ApmfJt1kkeBCSxHE";
+--RG5aXHohHXnK7HrXA0fLNeU57UQMDgd13
+Content-Type: multipart/mixed; boundary="90MUi3AMfhiAluRhQO8GpGsG1K4xcGcgs";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
  linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Message-ID: <dd9afa2c-cc6b-3f1a-d5f4-88e53908d444@gmx.com>
+Message-ID: <b62fa3aa-8b09-dd34-0ef6-97d8229bd535@gmx.com>
 Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
  item
 References: <20171101121450.6297-1-wqu@suse.com>
- <a6d2aaf5-d1fb-d963-dd02-84e6ffa07954@suse.com>
-In-Reply-To: <a6d2aaf5-d1fb-d963-dd02-84e6ffa07954@suse.com>
+ <f6ec5a67-95e0-0950-3efa-c9c77ded3b2c@suse.com>
+In-Reply-To: <f6ec5a67-95e0-0950-3efa-c9c77ded3b2c@suse.com>
 
---rkfGCxgcqlfDkNfk6ApmfJt1kkeBCSxHE
+--90MUi3AMfhiAluRhQO8GpGsG1K4xcGcgs
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B411=E6=9C=8802=E6=97=A5 20:06, Nikolay Borisov wrote:
+On 2017=E5=B9=B411=E6=9C=8802=E6=97=A5 20:12, Nikolay Borisov wrote:
 >=20
 >=20
 > On  1.11.2017 14:14, Qu Wenruo wrote:
@@ -73,7 +73,8 @@ as
 >>
 >> This checker is especially useful to avoid possible access beyond
 >> boundary for fuzzed image.
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >> ---
 >>  fs/btrfs/tree-checker.c | 123 +++++++++++++++++++++++++++++++++++++++=
 +++++++++
@@ -115,33 +116,6 @@ ot, struct extent_buffer *leaf,
 >> +	 * accessors expects offset starts from leaf header.
 >> +	 * Sowe need to adds LEAF_DATA_OFFSET here
 >> +	 */
->=20
-> The comment is confusing (but so are the internals of accessing an
-> extent buffer and all the offset magic happening behind the scenes).
-
-The sentence inside the brackets is the point. :)
-
->=20
-> You are essentially opencoding btrfs_item_ptr_offset but instead of
-> pointing at the first entry in the data portion, you really point to
-> 'cur' entry and in order to make it "accessor friendly" you do the +
-> BTRFS_LEAF_DATA_OFFSET. I'd say just put something like :
->=20
-> "This is the same as btrfs_item_ptr_offset but starting at item data
-> pointed by header_offset". In fact I'd suggest renaming header_offset t=
-o
-> data_offset
-
-Only if we can ensure all offsets passed in are starting after header,
-then I'm OK to rename it to "data_offset"
-
-The "header_offset" here is to info any caller that one should pass
-"normal" offset here, to avoid possible LEAF_DATA_OFFSET hassle.
-
-Thanks,
-Qu
-
->=20
 >> +	unsigned long leaf_offset =3D header_offset + BTRFS_LEAF_DATA_OFFSET=
 ;
 >> +
@@ -187,15 +161,49 @@ data.
 >> +				      struct extent_buffer *leaf,
 >> +				      struct btrfs_key *key, int slot)
 >> +{
+>=20
+> One more thing - you are only validating the boundaries of such variabl=
+e
+> length items, so make this specific. I.e rename the function to
+> something like:
+
+If you follow the naming schema in tree-checker, you'll find that we (at
+least myself) is naming these function always using "check_" prefix, so
+"validate_" prefix seems less consistent.
+
+Further more, the naming has its level"
+leaf (all items boundary already checked)
+|- leaf_item (hub wrapper)
+   |- csum_item
+   |- extent_data_item
+
+So here check_<something>_item follows the original level according to
+the naming schema.
+
+Further more, although we're checking boundary, the truth is, we are
+check the name_len/data_len *members*, so the check_<something>_item
+still makes sence.
+
+If really want to change the name, I prefer some naming can show that
+we're checking several items which share the same variable length propert=
+y.
+
+So at least, none of the alternative seems to fit the schema.
+
+Thanks,
+Qu
+
+>=20
+> validate_variable_boundaries
+> check_variable_length_item_boundary
+> check_item_boundaries
+>=20
 >> +	u8 type =3D key->type;
 >> +	u32 item_start =3D btrfs_item_offset_nr(leaf, slot);
 >> +	u32 item_end =3D btrfs_item_end_nr(leaf, slot);
 >> +	u32 header_size =3D get_header_size(type);
 >> +	u32 total_size;
 >> +	u32 cur =3D item_start;
->=20
-> nit: Rename cur to cur_offset to make it clear this is an offset.
->=20
 >> +
 >> +	while (cur < item_end) {
 >> +		u32 namelen;
@@ -265,23 +273,23 @@ in
 >=20
 
 
---rkfGCxgcqlfDkNfk6ApmfJt1kkeBCSxHE--
+--90MUi3AMfhiAluRhQO8GpGsG1K4xcGcgs--
 
---tRv2og8xScVLlEvMVbQDHVWSClT1HD278
+--RG5aXHohHXnK7HrXA0fLNeU57UQMDgd13
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln7EXUXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjgxQf/SvQ3btr04yRA1gI62105+4NE
-IB6B3PtZgzh1KBet2EZydcRYU7q1SCoht6oCzECNZqp3uDJdPMIWh3DgZLsISwEG
-hRsF34caEVVDayUi43FpebApCk28LLvMnk/m/4vuvHlKm4DNp93q8bb98y4xUG9R
-78WqNGHB65aueDqQ68U4tR29Iu9oH+OmB882lUPNWWKSXfHRFPe6I7jl3ElzMQBm
-kh1JaysRGQDMT8PhkhLTbBBjWQv+Zh6dTWH9SycBz+SysomfqpsldkfJ665ald7z
-1+p7CD6AHz6p3FHE/MUgD+QQyv6VAAry4C1riI60rszcmY5xh3KSJ5sw6RpRMA==
-=NnAO
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln7FB8XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qj1VwgAgFEfNqZ9Yozj6qIW7yEUhlF+
+gkyUM83ozjfLWc2NCH66TiCdKuL7EOayIhjbqBntyy86kJCZFTtiAnY3nK3OBGLQ
+bvC7rHc68H/IbXPdavHTwTZiqTGoPYX4a1lO6Zq76BYzWTh6Gz1hvO6MQzVHBTCf
+EmfAidBgwyxSUGWWdqWN5i7PXD9fz88uymw3pIENLr2KB6sYnEwU5/OGaTTwkyfP
+6l7ea2nWhTV6cbFg/jrN8iCGxEU5kRK0C6kYStz93UsDJjepawZKReHVLvufdrwl
+Hko09tsEoq7IWeU344MJTBljTkDq0MoyBfLZnzRn5mpgMlsrK1DxrcEAp+eXQw==
+=WIoi
 -----END PGP SIGNATURE-----
 
---tRv2og8xScVLlEvMVbQDHVWSClT1HD278--
+--RG5aXHohHXnK7HrXA0fLNeU57UQMDgd13--

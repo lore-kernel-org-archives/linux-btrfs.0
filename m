@@ -1,114 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:33308 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750836AbdKBGLQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 02:11:16 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA26BF5m026863
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 06:11:15 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vA26BFlG022428
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 06:11:15 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vA26BE19011602
-        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 06:11:15 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/2] btrfs: match btrfs_device->mode same as it used for open
-Date: Thu,  2 Nov 2017 14:11:17 +0800
-Message-Id: <20171102061117.7430-1-anand.jain@oracle.com>
-In-Reply-To: <20171020103325.9595-1-anand.jain@oracle.com>
-References: <20171020103325.9595-1-anand.jain@oracle.com>
+Received: from mout.gmx.net ([212.227.15.19]:59353 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750917AbdKBGUa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 02:20:30 -0400
+Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457!
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+References: <CAKuJGC8M3NFbZ5Ky0gsuwz3oioCayPWK+JcxtC+BZ9=DuG4TXw@mail.gmail.com>
+ <92334609-a0a2-6cb4-5127-0c3767917ad2@gmx.com>
+ <CAKuJGC_pagdiUy-csrK4G1KL01iib+CVdtW5wwd8dsiWTjrysQ@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <0bc63e4d-1176-9534-01ac-5cf6292bccdd@gmx.com>
+Date: Thu, 2 Nov 2017 14:20:22 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAKuJGC_pagdiUy-csrK4G1KL01iib+CVdtW5wwd8dsiWTjrysQ@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="IcWJ4DHMQ2jw2VvoqIXSpe5kTE3pAeedE"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch maintains consistency of mode in device get and put. And is just
-a cleanup patch. There isn't any problem that was noticed, so no functional
-changes.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--IcWJ4DHMQ2jw2VvoqIXSpe5kTE3pAeedE
+Content-Type: multipart/mixed; boundary="wrVWjnnoPEoGh5A0fvs9E7UdfFrHKAQGT";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <0bc63e4d-1176-9534-01ac-5cf6292bccdd@gmx.com>
+Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457!
+References: <CAKuJGC8M3NFbZ5Ky0gsuwz3oioCayPWK+JcxtC+BZ9=DuG4TXw@mail.gmail.com>
+ <92334609-a0a2-6cb4-5127-0c3767917ad2@gmx.com>
+ <CAKuJGC_pagdiUy-csrK4G1KL01iib+CVdtW5wwd8dsiWTjrysQ@mail.gmail.com>
+In-Reply-To: <CAKuJGC_pagdiUy-csrK4G1KL01iib+CVdtW5wwd8dsiWTjrysQ@mail.gmail.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: commit update
-v3: commit update
+--wrVWjnnoPEoGh5A0fvs9E7UdfFrHKAQGT
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
- fs/btrfs/volumes.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b39737568c22..765c2bd2d8d9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2323,12 +2323,12 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	u64 tmp;
- 	int seeding_dev = 0;
- 	int ret = 0;
-+	fmode_t flag = FMODE_WRITE | FMODE_EXCL;
- 
- 	if (sb_rdonly(sb) && !fs_info->fs_devices->seeding)
- 		return -EROFS;
- 
--	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
--				  fs_info->bdev_holder);
-+	bdev = blkdev_get_by_path(device_path, flag, fs_info->bdev_holder);
- 	if (IS_ERR(bdev))
- 		return PTR_ERR(bdev);
- 
-@@ -2392,7 +2392,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	device->bdev = bdev;
- 	device->in_fs_metadata = 1;
- 	device->is_tgtdev_for_dev_replace = 0;
--	device->mode = FMODE_EXCL;
-+	device->mode = flag;
- 	device->dev_stats_valid = 1;
- 	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
- 
-@@ -2506,7 +2506,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
- 	kfree(device);
- error:
--	blkdev_put(bdev, FMODE_EXCL);
-+	blkdev_put(bdev, flag);
- 	if (seeding_dev) {
- 		mutex_unlock(&uuid_mutex);
- 		up_write(&sb->s_umount);
-@@ -2526,6 +2526,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	struct rcu_string *name;
- 	u64 devid = BTRFS_DEV_REPLACE_DEVID;
- 	int ret = 0;
-+	fmode_t flags = FMODE_WRITE | FMODE_EXCL;
- 
- 	*device_out = NULL;
- 	if (fs_info->fs_devices->seeding) {
-@@ -2533,8 +2534,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 		return -EINVAL;
- 	}
- 
--	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
--				  fs_info->bdev_holder);
-+	bdev = blkdev_get_by_path(device_path, flags, fs_info->bdev_holder);
- 	if (IS_ERR(bdev)) {
- 		btrfs_err(fs_info, "target device %s is invalid!", device_path);
- 		return PTR_ERR(bdev);
-@@ -2595,7 +2595,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	device->bdev = bdev;
- 	device->in_fs_metadata = 1;
- 	device->is_tgtdev_for_dev_replace = 1;
--	device->mode = FMODE_EXCL;
-+	device->mode = flags;
- 	device->dev_stats_valid = 1;
- 	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
- 	device->fs_devices = fs_info->fs_devices;
-@@ -2608,7 +2608,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	return ret;
- 
- error:
--	blkdev_put(bdev, FMODE_EXCL);
-+	blkdev_put(bdev, flags);
- 	return ret;
- }
- 
--- 
-2.13.1
 
+On 2017=E5=B9=B411=E6=9C=8802=E6=97=A5 13:50, Lakshmipathi.G wrote:
+>>
+>> I'll try to reproduce it with FS_CHECK_INTEGRITY enabled.
+>>
+>=20
+> Okay thanks for the details.  Here's the kernel config file which hits
+> this issue:
+> https://github.com/Lakshmipathi/btrfsqa/blob/master/setup/config/kernel=
+=2Econfig#L3906
+
+Although I didn't reproduced your problem, I found fstests can easily
+trigger the same problem.
+
+The problem turns out to be that setup_items_for_insert() will call
+btrfs_mark_buffer_dirty(), however that's not done at correct timing.
+
+If FS_CHECK_INTEGRITY is enabled, every time we call
+btrfs_mark_buffer_dirty(), we must ensure have setup the leaf correctly.
+
+However for setup_items_for_insert(), it doesn't really insert the data
+but only keys, leaving item data uninitialized, and triggering the bug.
+(That's to say, we should not do leaf validation check at
+btrfs_mark_buffer_dirty() time).
+
+I'll try to move it to leaf write time to fix the problem.
+
+For now, please disable FS_CHECK_INTEGRITY.
+
+Thanks,
+Qu
+
+>=20
+> thanks!
+> ----
+> Cheers,
+> Lakshmipathi.G
+> http://www.giis.co.in http://www.webminal.org
+>=20
+
+
+--wrVWjnnoPEoGh5A0fvs9E7UdfFrHKAQGT--
+
+--IcWJ4DHMQ2jw2VvoqIXSpe5kTE3pAeedE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAln6uSYXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgGzQf9Hmiaj7QS9xnZxyGoFyL4XwmQ
+sv72k+VI+LbpI9L38w5XhLciSyAnyea5VpL9wBmNxhdaKd7rUKDroUgunENNsW4O
+vmS2h8lk6gXnGBtZruhc7lPOVl0ACdGvMULxm1Dy82EL0J2Itj3/kpe4hqgkCrXE
+dLwjL1sx+w9wY7759Vs3fQiFDoCINdwJ7ZPyzxJuKx26h+J8QRO8sh/Rd/wKOloR
+HWD3VVJqEBUA8RejBNkuyg+xN+i6bycf6eoqm6+sjAjucEpTC9Ed66FYXKiBSe/Z
+kteUfmQa7vMfwTZX572SCSpKVhcmjYNw0Hk6OW30v4DLRIKXL/PAdCu3q7QWAQ==
+=CDoE
+-----END PGP SIGNATURE-----
+
+--IcWJ4DHMQ2jw2VvoqIXSpe5kTE3pAeedE--

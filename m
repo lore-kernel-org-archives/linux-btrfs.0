@@ -1,71 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f169.google.com ([209.85.220.169]:46042 "EHLO
-        mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752377AbdKBH3l (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 03:29:41 -0400
-Received: by mail-qk0-f169.google.com with SMTP id f199so5481784qke.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 00:29:40 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:35540 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750883AbdKBIrP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 04:47:15 -0400
+Subject: Re: [PATCH v3 1/2] btrfs: match btrfs_device->mode same as it used
+ for open
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171020103325.9595-1-anand.jain@oracle.com>
+ <20171102061117.7430-1-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <b801c55a-13ad-eb87-7fb1-b816df64eb80@suse.com>
+Date: Thu, 2 Nov 2017 10:47:13 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAH=dxU4vj_+_K9dE3hqMf42oC9wEJKXTPRDr6QyOjrQfEXmXXA@mail.gmail.com>
-References: <CAH=dxU4vj_+_K9dE3hqMf42oC9wEJKXTPRDr6QyOjrQfEXmXXA@mail.gmail.com>
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-Date: Thu, 2 Nov 2017 17:29:39 +1000
-Message-ID: <CAN05THRy7tnmY__obtgjkT76kKcR-_YWHcfDgdwLDf1A2qY0+w@mail.gmail.com>
-Subject: =?UTF-8?Q?Re=3A_Parity=2Dbased_redundancy_=28RAID5=2F6=2Ftriple_parity_a?=
-        =?UTF-8?Q?nd_beyond=29_on_BTRFS_and_MDADM_=28Dec_2014=29_=E2=80=93_Ronny_Egners_Bl?=
-        =?UTF-8?Q?og?=
-To: Dave <davestechshop@gmail.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20171102061117.7430-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think it is just a matter of lack of resources.
-The very few paid resources to work on btrfs probably does not have
-priority to work on parity raid.
-(And honestly, parity raid is probably much better implemented below
-the filesystem in any case, i.e. in say the md driver or the array
-itself).
-
-Also, until at least about a year ago, RAID56 was known to be
-completely broken in btrfs and would destroy all your data.
-Not a question of when, but if.
-
-So, considering the state of parity raid in btrfs it is understandable
-if the few resources available would not work on Andrea's 6 parity
-raid code.
-I don't follow the parity raid code in btrfs closely, it might be
-fixed by now or it might still be pathologically broken. I don't know.
-I assume it is still deadly to use btrfs raid5/6.
 
 
-That said, that the MDADM folks did not pick up on Andrea's work is a tragedy.
-While it is really just Reed-Solomon coding, his breakthrough was that
-he found a 6 parity Reed-Solomon encoding  where the first two
-parities
-were identical to the RAID5/6 parities.
-I.e. you could add a third parity to a normal RAID6 and thus create a
-3-parity system without having to recompute the first and second
-parity.
+On  2.11.2017 08:11, Anand Jain wrote:
+> This patch maintains consistency of mode in device get and put. And is just
+> a cleanup patch. There isn't any problem that was noticed, so no functional
+> changes.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
 
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-
-
-On Thu, Nov 2, 2017 at 12:45 PM, Dave <davestechshop@gmail.com> wrote:
-> Has this been discussed here? Has anything changed since it was written?
->
-> Parity-based redundancy (RAID5/6/triple parity and beyond) on BTRFS
-> and MDADM (Dec 2014) – Ronny Egners Blog
-> http://blog.ronnyegner-consulting.de/2014/12/10/parity-based-redundancy-raid56triple-parity-and-beyond-on-btrfs-and-mdadm-dec-2014/comment-page-1/
->
-> TL;DR: There are patches to extend the linux kernel to support up to 6
-> parity disks but BTRFS does not want them because it does not fit
-> their “business case” and MDADM would want them but somebody needs to
-> develop patches for the MDADM component. The kernel raid
-> implementation is ready and usable. If someone volunteers to do this
-> kind of work I would support with equipment and myself as a test
-> resource.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> v2: commit update
+> v3: commit update
+> 
+>  fs/btrfs/volumes.c | 16 ++++++++--------
+>  1 file changed, 8 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index b39737568c22..765c2bd2d8d9 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2323,12 +2323,12 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	u64 tmp;
+>  	int seeding_dev = 0;
+>  	int ret = 0;
+> +	fmode_t flag = FMODE_WRITE | FMODE_EXCL;
+>  
+>  	if (sb_rdonly(sb) && !fs_info->fs_devices->seeding)
+>  		return -EROFS;
+>  
+> -	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
+> -				  fs_info->bdev_holder);
+> +	bdev = blkdev_get_by_path(device_path, flag, fs_info->bdev_holder);
+>  	if (IS_ERR(bdev))
+>  		return PTR_ERR(bdev);
+>  
+> @@ -2392,7 +2392,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	device->bdev = bdev;
+>  	device->in_fs_metadata = 1;
+>  	device->is_tgtdev_for_dev_replace = 0;
+> -	device->mode = FMODE_EXCL;
+> +	device->mode = flag;
+>  	device->dev_stats_valid = 1;
+>  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
+>  
+> @@ -2506,7 +2506,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
+>  	kfree(device);
+>  error:
+> -	blkdev_put(bdev, FMODE_EXCL);
+> +	blkdev_put(bdev, flag);
+>  	if (seeding_dev) {
+>  		mutex_unlock(&uuid_mutex);
+>  		up_write(&sb->s_umount);
+> @@ -2526,6 +2526,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  	struct rcu_string *name;
+>  	u64 devid = BTRFS_DEV_REPLACE_DEVID;
+>  	int ret = 0;
+> +	fmode_t flags = FMODE_WRITE | FMODE_EXCL;
+>  
+>  	*device_out = NULL;
+>  	if (fs_info->fs_devices->seeding) {
+> @@ -2533,8 +2534,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  		return -EINVAL;
+>  	}
+>  
+> -	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
+> -				  fs_info->bdev_holder);
+> +	bdev = blkdev_get_by_path(device_path, flags, fs_info->bdev_holder);
+>  	if (IS_ERR(bdev)) {
+>  		btrfs_err(fs_info, "target device %s is invalid!", device_path);
+>  		return PTR_ERR(bdev);
+> @@ -2595,7 +2595,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  	device->bdev = bdev;
+>  	device->in_fs_metadata = 1;
+>  	device->is_tgtdev_for_dev_replace = 1;
+> -	device->mode = FMODE_EXCL;
+> +	device->mode = flags;
+>  	device->dev_stats_valid = 1;
+>  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
+>  	device->fs_devices = fs_info->fs_devices;
+> @@ -2608,7 +2608,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  	return ret;
+>  
+>  error:
+> -	blkdev_put(bdev, FMODE_EXCL);
+> +	blkdev_put(bdev, flags);
+>  	return ret;
+>  }
+>  
+> 

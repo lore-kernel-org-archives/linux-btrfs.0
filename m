@@ -1,158 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:54557 "EHLO
-        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933175AbdKBLRY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 07:17:24 -0400
-Received: by mail-io0-f179.google.com with SMTP id e89so13064212ioi.11
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 04:17:23 -0700 (PDT)
-Subject: Re: defragmenting best practice?
-To: Dave <davestechshop@gmail.com>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Peter Grandi <pg@btfs.list.sabi.co.uk>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
- <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
- <20170914172434.39eae89d@jupiter.sol.kaishome.de>
- <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
- <59BBB15E.8010002@sarach.com.pl>
- <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
- <59BBDFA6.4020500@sarach.com.pl>
- <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
- <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
- <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
- <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net>
- <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
- <23033.512.820691.680916@tree.ty.sabi.co.uk>
- <CAH=dxU7aNg+VTeQFk-9Tk4yzPemsgL1E0iqSFXFQOxM8=ATDFQ@mail.gmail.com>
- <23034.2305.527872.772343@tree.ty.sabi.co.uk>
- <CAH=dxU6bhi=xwugt+nynU5BSnvBzZ5L=C5nxPt39v14YwhcNCA@mail.gmail.com>
+Received: from mail-io0-f173.google.com ([209.85.223.173]:47216 "EHLO
+        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933349AbdKBLVw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 07:21:52 -0400
+Received: by mail-io0-f173.google.com with SMTP id h70so13118159ioi.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 04:21:52 -0700 (PDT)
+Subject: =?UTF-8?Q?Re:_Parity-based_redundancy_=28RAID5/6/triple_parity_and_?=
+ =?UTF-8?Q?beyond=29_on_BTRFS_and_MDADM_=28Dec_2014=29_=e2=80=93_Ronny_Egner?=
+ =?UTF-8?Q?s_Blog?=
+To: ronnie sahlberg <ronniesahlberg@gmail.com>, Dave <davestechshop@gmail.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <CAH=dxU4vj_+_K9dE3hqMf42oC9wEJKXTPRDr6QyOjrQfEXmXXA@mail.gmail.com>
+ <CAN05THRy7tnmY__obtgjkT76kKcR-_YWHcfDgdwLDf1A2qY0+w@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <11db29b3-e421-2b0b-68d5-fb6c233d0767@gmail.com>
-Date: Thu, 2 Nov 2017 07:17:19 -0400
+Message-ID: <2560b19a-3a1d-6ea5-fd83-f5b154200b50@gmail.com>
+Date: Thu, 2 Nov 2017 07:21:47 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAH=dxU6bhi=xwugt+nynU5BSnvBzZ5L=C5nxPt39v14YwhcNCA@mail.gmail.com>
+In-Reply-To: <CAN05THRy7tnmY__obtgjkT76kKcR-_YWHcfDgdwLDf1A2qY0+w@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-11-01 20:09, Dave wrote:
-> On Wed, Nov 1, 2017 at 1:48 PM, Peter Grandi <pg@btfs.list.sabi.co.uk> wrote:
->>> When defragmenting individual files on a BTRFS filesystem with
->>> COW, I assume reflinks between that file and all snapshots are
->>> broken. So if there are 30 snapshots on that volume, that one
->>> file will suddenly take up 30 times more space... [ ... ]
+On 2017-11-02 03:29, ronnie sahlberg wrote:
+> I think it is just a matter of lack of resources.
+> The very few paid resources to work on btrfs probably does not have
+> priority to work on parity raid.
+> (And honestly, parity raid is probably much better implemented below
+> the filesystem in any case, i.e. in say the md driver or the array
+> itself).
+More specifically, they likely don't have incentive to work on higher 
+order parity raid.  The common case for most of the paid developers 
+companies is running large scale storage using BTRFS as a back-end.  In 
+such a situation, it makes more sense to use smaller BTRFS volumes in 
+raid5 or raid6 mode (or even raid1 or raid10), and handle striping at 
+the cluster level instead of the node level.
+> 
+> Also, until at least about a year ago, RAID56 was known to be
+> completely broken in btrfs and would destroy all your data.
+> Not a question of when, but if.
+> 
+> So, considering the state of parity raid in btrfs it is understandable
+> if the few resources available would not work on Andrea's 6 parity
+> raid code.
+> I don't follow the parity raid code in btrfs closely, it might be
+> fixed by now or it might still be pathologically broken. I don't know.
+> I assume it is still deadly to use btrfs raid5/6.
+AFAIK, it's better than it was, but it's still broken.>
+> That said, that the MDADM folks did not pick up on Andrea's work is a tragedy.
+> While it is really just Reed-Solomon coding, his breakthrough was that
+> he found a 6 parity Reed-Solomon encoding  where the first two
+> parities
+> were identical to the RAID5/6 parities.
+> I.e. you could add a third parity to a normal RAID6 and thus create a
+> 3-parity system without having to recompute the first and second
+> parity.
+> 
+> 
+> 
+> 
+> On Thu, Nov 2, 2017 at 12:45 PM, Dave <davestechshop@gmail.com> wrote:
+>> Has this been discussed here? Has anything changed since it was written?
 >>
->> Defragmentation works by effectively making a copy of the file
->> contents (simplistic view), so the end result is one copy with
->> 29 reflinked contents, and one copy with defragmented contents.
-> 
-> The clarification is much appreciated.
-> 
->>> Can you also give an example of using find, as you suggested
->>> above? [ ... ]
+>> Parity-based redundancy (RAID5/6/triple parity and beyond) on BTRFS
+>> and MDADM (Dec 2014) – Ronny Egners Blog
+>> http://blog.ronnyegner-consulting.de/2014/12/10/parity-based-redundancy-raid56triple-parity-and-beyond-on-btrfs-and-mdadm-dec-2014/comment-page-1/
 >>
->> Well, one way is to use 'find' as a filtering replacement for
->> 'defrag' option '-r', as in for example:
->>
->>    find "$HOME" -xdev '(' -name '*.sqlite' -o -name '*.mk4' ')' \
->>      -type f  -print0 | xargs -0 btrfs fi defrag
->>
->> Another one is to find the most fragmented files first or all
->> files of at least 1M with with at least say 100 fragments as in:
->>
->>    find "$HOME" -xdev -type f -size +1M -print0 | xargs -0 filefrag \
->>      | perl -n -e 'print "$1\0" if (m/(.*): ([0-9]+) extents/ && $1 > 100)' \
->>      | xargs -0 btrfs fi defrag
->>
->> But there are many 'find' web pages and that is not quite a
->> Btrfs related topic.
+>> TL;DR: There are patches to extend the linux kernel to support up to 6
+>> parity disks but BTRFS does not want them because it does not fit
+>> their “business case” and MDADM would want them but somebody needs to
+>> develop patches for the MDADM component. The kernel raid
+>> implementation is ready and usable. If someone volunteers to do this
+>> kind of work I would support with equipment and myself as a test
+>> resource.
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> Your examples were perfect. I have experience using find in similar
-> ways. I can take it from there. :-)
-> 
->>> Background: I'm not sure why our Firefox performance is so terrible
->>
->> As I always say, "performance" is not the same as "speed", and
->> probably your Firefox "performance" is sort of OKish even if the
->> "speed" is terrile, and neither is likely related to the profile
->> or the cache being on Btrfs.
-> 
-> Here's what happened. Two years ago I installed Kubuntu (with Firefox)
-> on two desktop computers. One machine performed fine. Like you said,
-> "sort of OKish" and that's what we expect with the current state of
-> Linux. The other machine was substantially worse. We ran side-by-side
-> real-world tests on these two machines for months.
-> 
-> Initially I did a lot of testing, troubleshooting and reconfiguration
-> trying to get the second machine to perform as well as the first. I
-> never had success. At first I thought it was related to the GPU (or
-> driver). Then I thought it was because the first machine used the z170
-> chipset and the second was X99 based. But that wasn't it. I have never
-> solved the problem and I have been coming back to it periodically
-> these last two years. In that time I have tried different distros from
-> opensuse to Arch, and a lot of different hardware.
-> 
-> Furthermore, my new machines have the same performance problem. The
-> most interesting example is a high end machine with 256 GB of RAM. It
-> showed substantially worse desktop application performance than any
-> other computer here. All are running the exact same version of Firefox
-> with the exact same add-ons. (The installations are carbon copies of
-> each other.)
-> 
-> What originally caught my attention was earlier information in this thread:
-> 
-> Am Wed, 20 Sep 2017 07:46:52 -0400
-> schrieb "Austin S. Hemmelgarn" <ahferroin7@gmail.com>:
-> 
->>>       Fragmentation: Files with a lot of random writes can become
->>> heavily fragmented (10000+ extents) causing excessive multi-second
->>> spikes of CPU load on systems with an SSD or large amount a RAM. On
->>> desktops this primarily affects application databases (including
->>> Firefox). Workarounds include manually defragmenting your home
->>> directory using btrfs fi defragment. Auto-defragment (mount option
->>> autodefrag) should solve this problem.
->>>
->>> Upon reading that I am wondering if fragmentation in the Firefox
->>> profile is part of my issue. That's one thing I never tested
->>> previously. (BTW, this system has 256 GB of RAM and 20 cores.)
->> Almost certainly.  Most modern web browsers are brain-dead and insist
->> on using SQLite databases (or traditional DB files) for everything,
->> including the cache, and the usage for the cache in particular kills
->> performance when fragmentation is an issue.
-> 
-> It turns out the the first machine (which performed well enough) was
-> the last one which was installed using LVM + EXT4. The second machine
-> (the one with the original performance problem) and all subsequent
-> machines have used BTRFS.
-> 
-> And the worst performing machine was the one with the most RAM and a
-> fast NVMe drive and top of the line hardware.
-Somewhat nonsensically, I'll bet that NVMe is a contributing factor in 
-this particular case.  NVMe has particularly bad performance with the 
-old block IO schedulers (though it is NVMe, so it should still be better 
-than a SATA or SAS SSD), and the new blk-mq framework just got 
-scheduling support in 4.12, and only got reasonably good scheduling 
-options in 4.13.  I doubt it's the entirety of the issue, but it's 
-probably part of it.
-> 
-> While Firefox and Linux in general have their performance "issues",
-> that's not relevant here. I'm comparing the same distros, same Firefox
-> versions, same Firefox add-ons, etc. I eventually tested many hardware
-> configurations: different CPU's, motherboards, GPU's, SSD's, RAM, etc.
-> The only remaining difference I can find is that the computer with
-> acceptable performance uses LVM + EXT4 while all the others use BTRFS.
-> 
-> With all the great feedback I have gotten here, I'm now ready to
-> retest this after implementing all the BTRFS-related suggestions I
-> have received. Maybe that will solve the problem or maybe this mystery
-> will continue...
-Hmm, if you're only using SSD's, that may partially explain things.  I 
-don't remember if it was mentioned earlier in this thread, but you might 
-try adding 'nossd' to the mount options.  The 'ssd' mount option (which 
-gets set automatically if the device reports as non-rotational) impacts 
-how the block allocator works, and that can have a pretty insane impact 
-on performance.  Additionally, independently from that, try toggling the 
-'discard' mount option.  If you have it enabled, disable it, if you have 
-it disabled, enable it.  Inline discards can be very expensive on some 
-hardware, especially older SSD's, and discards happen pretty frequently 
-in a COW filesystem.
+

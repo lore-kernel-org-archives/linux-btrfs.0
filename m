@@ -1,49 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f65.google.com ([74.125.82.65]:48112 "EHLO
-        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751578AbdKBQ3C (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 12:29:02 -0400
-Received: by mail-wm0-f65.google.com with SMTP id r196so136038wmf.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 09:29:02 -0700 (PDT)
-Message-ID: <1509640139.1662.147.camel@gmail.com>
-Subject: Re: Several questions regarding btrfs
-From: ST <smntov@gmail.com>
-To: Marat Khalili <mkh@rqc.ru>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
-Date: Thu, 02 Nov 2017 18:28:59 +0200
-In-Reply-To: <E7316F3D-708C-4D5E-AB4B-F54B0B8471C1@rqc.ru>
-References: <1509467017.1662.37.camel@gmail.com>
-         <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
-         <1509480384.1662.84.camel@gmail.com>
-         <ea097624-d485-9423-387f-3c9427508883@gmail.com>
-         <1509545153.1662.105.camel@gmail.com>
-         <7e8d6430-01e0-ba8e-5822-510ba1daef9f@gmail.com>
-         <1509613781.1662.115.camel@gmail.com>
-         <173c1ba3-1a05-1a27-7bee-22141200cbf8@gmail.com>
-         <1509638366.1662.142.camel@gmail.com>
-         <E7316F3D-708C-4D5E-AB4B-F54B0B8471C1@rqc.ru>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:35210 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932383AbdKBQ4d (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 12:56:33 -0400
+Subject: Re: Multiple btrfs-cleaner threads per volume
+To: Martin Raiber <martin@urbackup.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <0102015f7d418aa6-af3c2ae7-27b0-47d0-a4bb-173f55304bb9-000000@eu-west-1.amazonses.com>
+ <75dfd17b-3f3a-dc22-e069-d68faa33eb8e@mendix.com>
+ <0102015f7d576dad-688908ab-87d9-4715-9626-fb37cfff32e8-000000@eu-west-1.amazonses.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <9f93fa6f-c5af-3513-3e15-e966bd128b34@mendix.com>
+Date: Thu, 2 Nov 2017 17:56:30 +0100
+MIME-Version: 1.0
+In-Reply-To: <0102015f7d576dad-688908ab-87d9-4715-9626-fb37cfff32e8-000000@eu-west-1.amazonses.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2017-11-02 at 19:16 +0300, Marat Khalili wrote:
-> > Could somebody among developers please elaborate on this issue - is
-> checking quota going always to be done by root? If so - btrfs might be
-> a no-go for our use case...
-> 
-> Not a developer, but sysadmin here: what prevents you from either
-> creating suid executable for this or configuring sudoers to let users
-> call specific commands they need?
+On 11/02/2017 04:26 PM, Martin Raiber wrote:
+> On 02.11.2017 16:10 Hans van Kranenburg wrote:
+>> On 11/02/2017 04:02 PM, Martin Raiber wrote:
+>>> snapshot cleanup is a little slow in my case (50TB volume). Would it
+>>> help to have multiple btrfs-cleaner threads? The block layer underneath
+>>> would have higher throughput with more simultaneous read/write requests.
+>> Just curious:
+>> * How many subvolumes/snapshots are you removing, and what's the
+>> complexity level (like, how many other subvolumes/snapshots reference
+>> the same data extents?)
+>> * Do you see a lot of cpu usage, or mainly a lot of disk I/O? If it's
+>> disk IO, is it mainly random read IO, or is it a lot of write traffic?
+>> * What mount options are you running with (from /proc/mounts)?
 
-1. If designers have decided to limit access to that info only to root -
-they must have their reasons to do so, and letting everybody do that is
-probably contrary to those reasons.
+Can you paste the output from /proc/mounts for your filesystem? The
+reason I'm asking is that the nossd/ssd/ssd_spread related mount options
+can have a huge impact on subvolume removal performance for very large
+filesystems, like your 50TB one.
 
-2. I want to limit access to sftp, so there will be no custom commands
-to execute...
+> It is a single block device, so not a multi-device btrfs, so
+> optimizations in that area wouldn't help. It is a UrBackup system with
+> about 200 snapshots per client. 20009 snapshots total. UrBackup reflinks
+> files between them, but btrfs-cleaner doesn't use much CPU (so it
+> doesn't seem like the backref walking is the problem). btrfs-cleaner is
+> probably limited mainly by random read/write IO.
 
-3. sftp clients (especially those for windows) can determine quota - and
-they do it probably in some standard way - which doesn't seem to be
-compatible with btrfs...
+Do you have some graphs, or iostat output? The question is what the
+biggest part of the IO consists of. Is it on 100% random read IO and not
+many writes, or is it 100% utilized because of many MiB/s of writes?
 
+> The device has a cache,
+> so parallel accesses would help, as some of them may hit the cache.
+> Looking at the code it seems easy enough to do. Question is if there are
+> any obvious reasons why this wouldn't work (like some lock etc.).
+
+-- 
+Hans van Kranenburg

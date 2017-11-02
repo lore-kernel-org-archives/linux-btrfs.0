@@ -1,61 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f53.google.com ([74.125.82.53]:46432 "EHLO
-        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933083AbdKBBjm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 21:39:42 -0400
-Received: by mail-wm0-f53.google.com with SMTP id m72so7903472wmc.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Nov 2017 18:39:42 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <9e274506-9780-bb74-8ba0-e5fa6c9663c3@gmail.com>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
- <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
- <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
- <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
- <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
- <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
- <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net> <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
- <23033.512.820691.680916@tree.ty.sabi.co.uk> <CAH=dxU7aNg+VTeQFk-9Tk4yzPemsgL1E0iqSFXFQOxM8=ATDFQ@mail.gmail.com>
- <9e274506-9780-bb74-8ba0-e5fa6c9663c3@gmail.com>
-From: Dave <davestechshop@gmail.com>
-Date: Wed, 1 Nov 2017 21:39:20 -0400
-Message-ID: <CAH=dxU5Xx4naY9VR5ri92afHXm9-04DLvOG=E5QLRtKn7Q5s5w@mail.gmail.com>
-Subject: Re: defragmenting best practice?
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Peter Grandi <pg@btrfs.list.sabi.co.uk>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+Received: from userp1040.oracle.com ([156.151.31.81]:37953 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751988AbdKBB4j (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 21:56:39 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA21uc4B013766
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 01:56:39 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA21ucsn023782
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 01:56:38 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vA21ucQZ016819
+        for <linux-btrfs@vger.kernel.org>; Thu, 2 Nov 2017 01:56:38 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] Fix raid6 reconstruction bug
+Date: Wed,  1 Nov 2017 18:54:01 -0600
+Message-Id: <20171102005405.20420-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 1, 2017 at 8:21 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
+This is an attempt to fix a raid6 bug, that is, if two disks got
+hotplugged at run time, reconstruction process is not able to rebuild
+correct data to use even if raid6 can theoretically tolerate two disk
+failure.
 
->> The cache is in a separate location from the profiles, as I'm sure you
->> know.  The reason I suggested a separate BTRFS subvolume for
->> $HOME/.cache is that this will prevent the cache files for all
->> applications (for that user) from being included in the snapshots. We
->> take frequent snapshots and (afaik) it makes no sense to include cache
->> in backups or snapshots. The easiest way I know to exclude cache from
->> BTRFS snapshots is to put it on a separate subvolume. I assumed this
->> would make several things related to snapshots more efficient too.
->
-> Yes, it will, and it will save space long-term as well since $HOME/.cache is
-> usually the most frequently modified location in $HOME. In addition to not
-> including this in the snapshots, it may also improve performance.  Each
-> subvolume is it's own tree, with it's own locking, which means that you can
-> generally improve parallel access performance by splitting the workload
-> across multiple subvolumes.  Whether it will actually provide any real
-> benefit in that respect is heavily dependent on the exact workload however,
-> but it won't hurt performance.
+Patch 1 is a preparation patch, which introduces the necessary flags
+and flag handling.
 
-I'm going to make this change now. What would be a good way to
-implement this so that the change applies to the $HOME/.cache of each
-user?
+More details about the above bug can be found in Patch 2.
 
-The simple way would be to create a new subvolume for each existing
-user and mount it at $HOME/.cache in /etc/fstab, hard coding that
-mount location for each user. I don't mind doing that as there are
-only 4 users to consider. One minor concern is that it adds an
-unexpected step to the process of creating a new user. Is there a
-better way?
+Patch 3 applies flags to raid1/10 profile.
+
+Patch 4 fixes btrfs to show flags for each device correctly.
+
+A test case[1] for fstests has been sent out.
+
+[1]: fstests: btrfs: add test case for raid6 reconstruction bug
+https://patchwork.kernel.org/patch/10037769/
+
+Liu Bo (4):
+  Btrfs: introduce device flags
+  Btrfs: fix data corruption in raid6
+  Btrfs: make raid1 and raid10 be aware of device flag In_sync
+  Btrfs: change how we set In_sync
+
+ fs/btrfs/disk-io.c | 21 ++++++++++++++++-
+ fs/btrfs/raid56.c  |  3 ++-
+ fs/btrfs/volumes.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/volumes.h |  8 +++++++
+ 4 files changed, 88 insertions(+), 12 deletions(-)
+
+-- 
+2.9.4
+

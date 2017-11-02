@@ -1,21 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44957 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56973 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752632AbdKBJtS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Nov 2017 05:49:18 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D5970ABD9
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2017 09:49:16 +0000 (UTC)
-Subject: Re: [PATCH 11/11] btrfs: use non-RCU list traversal in
- write_all_supers callees
+        id S1752780AbdKBK3T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 2 Nov 2017 06:29:19 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C3D13AB9A
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2017 10:29:17 +0000 (UTC)
+Subject: Re: [PATCH 06/11] btrfs: document device locking
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1509471604.git.dsterba@suse.com>
- <8430e9c00d58748f1cb574b686396c8349ac7311.1509471604.git.dsterba@suse.com>
+ <5f3dc05b0b44803e9d20498970f259ead2bfe7de.1509471604.git.dsterba@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <f5d61e0d-b9b1-a34f-c3d2-3ba27ab4c448@suse.com>
-Date: Thu, 2 Nov 2017 11:49:15 +0200
+Message-ID: <eb745210-9d49-1d74-5715-9fc29f6cb3c1@suse.com>
+Date: Thu, 2 Nov 2017 12:29:17 +0200
 MIME-Version: 1.0
-In-Reply-To: <8430e9c00d58748f1cb574b686396c8349ac7311.1509471604.git.dsterba@suse.com>
+In-Reply-To: <5f3dc05b0b44803e9d20498970f259ead2bfe7de.1509471604.git.dsterba@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -23,62 +22,107 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 31.10.2017 19:44, David Sterba wrote:
-> We take the fs_devices::device_list_mutex mutex in write_all_supers
-> which will prevent any add/del changes to the device list. Therefore we
-> don't need to use the RCU variant list_for_each_entry_rcu in any of the
-> called functions.
+> Overview of the main locks protecting various device-related structures.
 > 
 > Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  fs/btrfs/disk-io.c | 9 +++++----
->  1 file changed, 5 insertions(+), 4 deletions(-)
+>  fs/btrfs/volumes.c | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 66 insertions(+)
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index efce9a2fa9be..042cf46e4cd0 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3396,9 +3396,10 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  	int errors_wait = 0;
->  	blk_status_t ret;
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 75aed8ec64bd..098affc58361 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -145,6 +145,72 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>  			     struct btrfs_bio **bbio_ret,
+>  			     int mirror_num, int need_raid_map);
 >  
-> +	WARN_ON(!mutex_is_locked(&info->fs_devices->device_list_mutex));
+> +/*
+> + * Device locking
+> + * ==============
+> + *
+> + * There are several mutexes that protect manipulation of devices and low-level
+> + * structures like chunks but not block groups, extents or files
 
-Don't we want lockdep_assert_held ? I'm assuming enough testing with
-lockdep on is performed so it will be caught in time if this invariant
-is broken.
+This sentence suggests you are describing the various mutexes but it
+seems you are also describing data structure below i.e.
+global::fs_devs/btrfs_device::name
 
->  	/* send down all the barriers */
->  	head = &info->fs_devices->devices;
-> -	list_for_each_entry_rcu(dev, head, dev_list) {
-> +	list_for_each_entry(dev, head, dev_list) {
->  		if (dev->missing)
->  			continue;
->  		if (!dev->bdev)
-> @@ -3411,7 +3412,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
->  	}
->  
->  	/* wait for all the barriers */
-> -	list_for_each_entry_rcu(dev, head, dev_list) {
-> +	list_for_each_entry(dev, head, dev_list) {
->  		if (dev->missing)
->  			continue;
->  		if (!dev->bdev) {
-> @@ -3510,7 +3511,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
->  		}
->  	}
->  
-> -	list_for_each_entry_rcu(dev, head, dev_list) {
-> +	list_for_each_entry(dev, head, dev_list) {
->  		if (!dev->bdev) {
->  			total_errors++;
->  			continue;
-> @@ -3551,7 +3552,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
->  	}
->  
->  	total_errors = 0;
-> -	list_for_each_entry_rcu(dev, head, dev_list) {
-> +	list_for_each_entry(dev, head, dev_list) {
->  		if (!dev->bdev)
->  			continue;
->  		if (!dev->in_fs_metadata || !dev->writeable)
+> + *
+> + * - uuid_mutex (global lock)
+> + *
+> + *   protects the fs_uuids list that tracks all per-fs fs_devices, resulting
+> + *   from the SCAN_DEV ioctl registration or from mount either implicitly
+> + *   (the first device) or requested by the device= mount option
+> + *
+> + *   the mutex can be very coarse and can cover long-running operations
+> + *
+> + *   protects: updates to fs_devices counters like missing devices, rw devices,
+> + *   seeding, structure cloning, openning/closing devices at mount/umount time
+
+Perhaps move the uuid_mutex description after btrfs_device::name. That
+way mutexes are grouped together and data structures are grouped as well.
+
+> + *
+> + *   global::fs_devs - add, remove, updates to the global list
+
+You seem to be describing a data structure here rather than a mutex
+
+> + *
+> + *   does not protect: manipulation of the fs_devices::devices list!
+
+but this sentence is written as if you've just described a mutex. The
+end result is that it's not clear what mutex you are referring to here.
+
+> + *
+> + *   btrfs_device::name - renames (write side), read is RCU
+
+It's not clear how the write side is protected.
+
+> + *
+> + * - fs_devices::device_list_mutex (per-fs, with RCU)
+> + *
+> + *   protects updates to fs_devices::devices, ie. adding and deleting
+> + *
+> + *   simple list traversal with read-only actions can be done with RCU
+> + *   protection
+> + *
+> + *   may be used to exclude some operations from running concurrently without
+> + *   any modifications to the list (see write_all_supers)
+> + *
+> + * - volume_mutex
+> + *
+> + *   coarse lock owned by a mounted filesystem; used to exclude some operations
+> + *   that cannot run in parallel and affect the higher-level properties of the
+> + *   filesystem like: device add/deleting/resize/replace, or balance
+> + *
+> + * - balance_mutex
+> + *
+> + *   protects balance structures (status, state) and context accessed from
+> + *   several places (internally, ioctl)
+> + *
+> + * - chunk_mutex
+> + *
+> + *   protects chunks, adding or removing during allocation, trim or when
+> + *   a new device is added/removed
+> + *
+> + * - cleaner_mutex
+> + *
+> + *   a big lock that is held by the cleaner thread and prevents running
+> + *   subvolume cleaning together with relocation or delayed iputs
+> + *
+> + *
+> + * Lock nesting
+> + * ------------
+> + *
+> + * uuid_mutex
+> + *   volume_mutex
+> + *     device_list_mutex
+> + *       chunk_mutex
+> + *     balance_mutex
+> + *
+> + */
+>  DEFINE_MUTEX(uuid_mutex);
+>  static LIST_HEAD(fs_uuids);
+>  struct list_head *btrfs_get_fs_uuids(void)
 > 

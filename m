@@ -1,128 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56973 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752780AbdKBK3T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Nov 2017 06:29:19 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C3D13AB9A
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2017 10:29:17 +0000 (UTC)
-Subject: Re: [PATCH 06/11] btrfs: document device locking
+Received: from userp1040.oracle.com ([156.151.31.81]:46588 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752780AbdKBKkv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 06:40:51 -0400
+Subject: Re: [PATCH 01/11] btrfs: add missing device::flush_bio puts
 To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1509471604.git.dsterba@suse.com>
- <5f3dc05b0b44803e9d20498970f259ead2bfe7de.1509471604.git.dsterba@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <eb745210-9d49-1d74-5715-9fc29f6cb3c1@suse.com>
-Date: Thu, 2 Nov 2017 12:29:17 +0200
+ <0c6045183bbefe81b5e37cf0c84e31c5193ba191.1509471604.git.dsterba@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <2b2592d4-8c59-6398-206e-478240e50fc4@oracle.com>
+Date: Thu, 2 Nov 2017 18:40:53 +0800
 MIME-Version: 1.0
-In-Reply-To: <5f3dc05b0b44803e9d20498970f259ead2bfe7de.1509471604.git.dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <0c6045183bbefe81b5e37cf0c84e31c5193ba191.1509471604.git.dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 31.10.2017 19:44, David Sterba wrote:
-> Overview of the main locks protecting various device-related structures.
+On 11/01/2017 01:44 AM, David Sterba wrote:
+> This fixes potential bio leaks, in several error paths. Unfortunatelly
+> the device structure freeing is opencoded in many places and I missed
+> them when introducing the flush_bio.
 > 
+> Most of the time, devices get freed through call_rcu(..., free_device),
+> so it at least it's not that easy to hit the leak, but it's still
+> possible through the path that frees stale devices.
+> 
+> Fixes: e0ae99941423 ("btrfs: preallocate device flush bio")
 > Signed-off-by: David Sterba <dsterba@suse.com>
+
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
+
+Thanks, Anand
+
 > ---
->  fs/btrfs/volumes.c | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 66 insertions(+)
+>   fs/btrfs/volumes.c | 10 ++++++++++
+>   1 file changed, 10 insertions(+)
 > 
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 75aed8ec64bd..098affc58361 100644
+> index ea8b20839ac0..08fb4b5609b7 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -145,6 +145,72 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
->  			     struct btrfs_bio **bbio_ret,
->  			     int mirror_num, int need_raid_map);
->  
-> +/*
-> + * Device locking
-> + * ==============
-> + *
-> + * There are several mutexes that protect manipulation of devices and low-level
-> + * structures like chunks but not block groups, extents or files
-
-This sentence suggests you are describing the various mutexes but it
-seems you are also describing data structure below i.e.
-global::fs_devs/btrfs_device::name
-
-> + *
-> + * - uuid_mutex (global lock)
-> + *
-> + *   protects the fs_uuids list that tracks all per-fs fs_devices, resulting
-> + *   from the SCAN_DEV ioctl registration or from mount either implicitly
-> + *   (the first device) or requested by the device= mount option
-> + *
-> + *   the mutex can be very coarse and can cover long-running operations
-> + *
-> + *   protects: updates to fs_devices counters like missing devices, rw devices,
-> + *   seeding, structure cloning, openning/closing devices at mount/umount time
-
-Perhaps move the uuid_mutex description after btrfs_device::name. That
-way mutexes are grouped together and data structures are grouped as well.
-
-> + *
-> + *   global::fs_devs - add, remove, updates to the global list
-
-You seem to be describing a data structure here rather than a mutex
-
-> + *
-> + *   does not protect: manipulation of the fs_devices::devices list!
-
-but this sentence is written as if you've just described a mutex. The
-end result is that it's not clear what mutex you are referring to here.
-
-> + *
-> + *   btrfs_device::name - renames (write side), read is RCU
-
-It's not clear how the write side is protected.
-
-> + *
-> + * - fs_devices::device_list_mutex (per-fs, with RCU)
-> + *
-> + *   protects updates to fs_devices::devices, ie. adding and deleting
-> + *
-> + *   simple list traversal with read-only actions can be done with RCU
-> + *   protection
-> + *
-> + *   may be used to exclude some operations from running concurrently without
-> + *   any modifications to the list (see write_all_supers)
-> + *
-> + * - volume_mutex
-> + *
-> + *   coarse lock owned by a mounted filesystem; used to exclude some operations
-> + *   that cannot run in parallel and affect the higher-level properties of the
-> + *   filesystem like: device add/deleting/resize/replace, or balance
-> + *
-> + * - balance_mutex
-> + *
-> + *   protects balance structures (status, state) and context accessed from
-> + *   several places (internally, ioctl)
-> + *
-> + * - chunk_mutex
-> + *
-> + *   protects chunks, adding or removing during allocation, trim or when
-> + *   a new device is added/removed
-> + *
-> + * - cleaner_mutex
-> + *
-> + *   a big lock that is held by the cleaner thread and prevents running
-> + *   subvolume cleaning together with relocation or delayed iputs
-> + *
-> + *
-> + * Lock nesting
-> + * ------------
-> + *
-> + * uuid_mutex
-> + *   volume_mutex
-> + *     device_list_mutex
-> + *       chunk_mutex
-> + *     balance_mutex
-> + *
-> + */
->  DEFINE_MUTEX(uuid_mutex);
->  static LIST_HEAD(fs_uuids);
->  struct list_head *btrfs_get_fs_uuids(void)
+> @@ -189,6 +189,7 @@ static void free_fs_devices(struct btrfs_fs_devices *fs_devices)
+>   				    struct btrfs_device, dev_list);
+>   		list_del(&device->dev_list);
+>   		rcu_string_free(device->name);
+> +		bio_put(device->flush_bio);
+>   		kfree(device);
+>   	}
+>   	kfree(fs_devices);
+> @@ -578,6 +579,7 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+>   				fs_devs->num_devices--;
+>   				list_del(&dev->dev_list);
+>   				rcu_string_free(dev->name);
+> +				bio_put(dev->flush_bio);
+>   				kfree(dev);
+>   			}
+>   			break;
+> @@ -630,6 +632,7 @@ static noinline int device_list_add(const char *path,
+>   
+>   		name = rcu_string_strdup(path, GFP_NOFS);
+>   		if (!name) {
+> +			bio_put(device->flush_bio);
+>   			kfree(device);
+>   			return -ENOMEM;
+>   		}
+> @@ -742,6 +745,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+>   			name = rcu_string_strdup(orig_dev->name->str,
+>   					GFP_KERNEL);
+>   			if (!name) {
+> +				bio_put(device->flush_bio);
+>   				kfree(device);
+>   				goto error;
+>   			}
+> @@ -807,6 +811,7 @@ void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step)
+>   		list_del_init(&device->dev_list);
+>   		fs_devices->num_devices--;
+>   		rcu_string_free(device->name);
+> +		bio_put(device->flush_bio);
+>   		kfree(device);
+>   	}
+>   
+> @@ -2337,6 +2342,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>   
+>   	name = rcu_string_strdup(device_path, GFP_KERNEL);
+>   	if (!name) {
+> +		bio_put(device->flush_bio);
+>   		kfree(device);
+>   		ret = -ENOMEM;
+>   		goto error;
+> @@ -2346,6 +2352,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>   	trans = btrfs_start_transaction(root, 0);
+>   	if (IS_ERR(trans)) {
+>   		rcu_string_free(device->name);
+> +		bio_put(device->flush_bio);
+>   		kfree(device);
+>   		ret = PTR_ERR(trans);
+>   		goto error;
+> @@ -2489,6 +2496,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>   	if (trans)
+>   		btrfs_end_transaction(trans);
+>   	rcu_string_free(device->name);
+> +	bio_put(device->flush_bio);
+>   	kfree(device);
+>   error:
+>   	blkdev_put(bdev, FMODE_EXCL);
+> @@ -2555,6 +2563,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>   
+>   	name = rcu_string_strdup(device_path, GFP_KERNEL);
+>   	if (!name) {
+> +		bio_put(device->flush_bio);
+>   		kfree(device);
+>   		ret = -ENOMEM;
+>   		goto error;
+> @@ -6271,6 +6280,7 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
+>   
+>   		ret = find_next_devid(fs_info, &tmp);
+>   		if (ret) {
+> +			bio_put(dev->flush_bio);
+>   			kfree(dev);
+>   			return ERR_PTR(ret);
+>   		}
 > 

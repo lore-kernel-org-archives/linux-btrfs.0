@@ -1,111 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35540 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750883AbdKBIrP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 2 Nov 2017 04:47:15 -0400
-Subject: Re: [PATCH v3 1/2] btrfs: match btrfs_device->mode same as it used
- for open
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171020103325.9595-1-anand.jain@oracle.com>
- <20171102061117.7430-1-anand.jain@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <b801c55a-13ad-eb87-7fb1-b816df64eb80@suse.com>
-Date: Thu, 2 Nov 2017 10:47:13 +0200
-MIME-Version: 1.0
-In-Reply-To: <20171102061117.7430-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Received: from mail-wm0-f54.google.com ([74.125.82.54]:47513 "EHLO
+        mail-wm0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754859AbdKBJJp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 05:09:45 -0400
+Received: by mail-wm0-f54.google.com with SMTP id r196so9455462wmf.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 02:09:45 -0700 (PDT)
+Message-ID: <1509613781.1662.115.camel@gmail.com>
+Subject: Re: Several questions regarding btrfs
+From: ST <smntov@gmail.com>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Thu, 02 Nov 2017 11:09:41 +0200
+In-Reply-To: <7e8d6430-01e0-ba8e-5822-510ba1daef9f@gmail.com>
+References: <1509467017.1662.37.camel@gmail.com>
+         <edd9dfa6-a73d-54d6-d9d6-48bd5fd7f724@gmail.com>
+         <1509480384.1662.84.camel@gmail.com>
+         <ea097624-d485-9423-387f-3c9427508883@gmail.com>
+         <1509545153.1662.105.camel@gmail.com>
+         <7e8d6430-01e0-ba8e-5822-510ba1daef9f@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On  2.11.2017 08:11, Anand Jain wrote:
-> This patch maintains consistency of mode in device get and put. And is just
-> a cleanup patch. There isn't any problem that was noticed, so no functional
-> changes.
+> >>>
+> >>> Ok. I'll use more standard approaches. Which of following commands will
+> >>> work with BTRFS:
+> >>>
+> >>> https://debian-handbook.info/browse/stable/sect.quotas.html
+> >> None, qgroups are the only option right now with BTRFS, and it's pretty
+> >> likely to stay that way since the internals of the filesystem don't fit
+> >> well within the semantics of the regular VFS quota API.  However,
+> >> provided you're not using huge numbers of reflinks and subvolumes, you
+> >> should be fine using qgroups.
+> > 
+> > I want to have 7 daily (or 7+4) read-only snapshots per user, for ca.
+> > 100 users. I don't expect users to invoke cp --reflink or take
+> > snapshots.
+> Based on what you say below about user access, you should be absolutely 
+> fine then.
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
+> There's one other caveat though, only root can use the qgroup ioctls, 
+> which means that only root can check quotas.
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Only root can check quotas?! That is really strange. How users are
+supposed to know they are about to be out of space?... Is this by design
+so and will remain like that or it's just because this feature was not
+finished yet?
 
-> v2: commit update
-> v3: commit update
-> 
->  fs/btrfs/volumes.c | 16 ++++++++--------
->  1 file changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index b39737568c22..765c2bd2d8d9 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2323,12 +2323,12 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->  	u64 tmp;
->  	int seeding_dev = 0;
->  	int ret = 0;
-> +	fmode_t flag = FMODE_WRITE | FMODE_EXCL;
->  
->  	if (sb_rdonly(sb) && !fs_info->fs_devices->seeding)
->  		return -EROFS;
->  
-> -	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
-> -				  fs_info->bdev_holder);
-> +	bdev = blkdev_get_by_path(device_path, flag, fs_info->bdev_holder);
->  	if (IS_ERR(bdev))
->  		return PTR_ERR(bdev);
->  
-> @@ -2392,7 +2392,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->  	device->bdev = bdev;
->  	device->in_fs_metadata = 1;
->  	device->is_tgtdev_for_dev_replace = 0;
-> -	device->mode = FMODE_EXCL;
-> +	device->mode = flag;
->  	device->dev_stats_valid = 1;
->  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
->  
-> @@ -2506,7 +2506,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->  	btrfs_sysfs_rm_device_link(fs_info->fs_devices, device);
->  	kfree(device);
->  error:
-> -	blkdev_put(bdev, FMODE_EXCL);
-> +	blkdev_put(bdev, flag);
->  	if (seeding_dev) {
->  		mutex_unlock(&uuid_mutex);
->  		up_write(&sb->s_umount);
-> @@ -2526,6 +2526,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  	struct rcu_string *name;
->  	u64 devid = BTRFS_DEV_REPLACE_DEVID;
->  	int ret = 0;
-> +	fmode_t flags = FMODE_WRITE | FMODE_EXCL;
->  
->  	*device_out = NULL;
->  	if (fs_info->fs_devices->seeding) {
-> @@ -2533,8 +2534,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  		return -EINVAL;
->  	}
->  
-> -	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
-> -				  fs_info->bdev_holder);
-> +	bdev = blkdev_get_by_path(device_path, flags, fs_info->bdev_holder);
->  	if (IS_ERR(bdev)) {
->  		btrfs_err(fs_info, "target device %s is invalid!", device_path);
->  		return PTR_ERR(bdev);
-> @@ -2595,7 +2595,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  	device->bdev = bdev;
->  	device->in_fs_metadata = 1;
->  	device->is_tgtdev_for_dev_replace = 1;
-> -	device->mode = FMODE_EXCL;
-> +	device->mode = flags;
->  	device->dev_stats_valid = 1;
->  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
->  	device->fs_devices = fs_info->fs_devices;
-> @@ -2608,7 +2608,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  	return ret;
->  
->  error:
-> -	blkdev_put(bdev, FMODE_EXCL);
-> +	blkdev_put(bdev, flags);
->  	return ret;
->  }
->  
-> 

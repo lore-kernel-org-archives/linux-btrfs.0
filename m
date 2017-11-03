@@ -1,35 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53421 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933975AbdKGVRY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Nov 2017 16:17:24 -0500
-Date: Tue, 7 Nov 2017 22:15:31 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, josef@toxicpanda.com
-Subject: Re: [PATCH] btrfs: Reduce scope of delayed_rsv->lock in
- may_commit_trans
-Message-ID: <20171107211531.GH27557@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1510046574-15541-1-git-send-email-nborisov@suse.com>
- <20171107201804.GD27557@twin.jikos.cz>
- <c38c64d8-4b6b-4bd1-52a5-df9ee7b7cdd6@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:46305 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1755795AbdKCI24 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Nov 2017 04:28:56 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id 5FDA648089D1
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Nov 2017 16:28:48 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH RESEND 0/4] fix alert and add testcase lowmem check
+Date: Fri, 3 Nov 2017 16:28:02 +0800
+Message-ID: <20171103082806.22448-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <c38c64d8-4b6b-4bd1-52a5-df9ee7b7cdd6@suse.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 07, 2017 at 10:42:26PM +0200, Nikolay Borisov wrote:
-> 
-> 
-> On  7.11.2017 22:18, David Sterba wrote:
-> > On Tue, Nov 07, 2017 at 11:22:54AM +0200, Nikolay Borisov wrote:
-> >> After commit ('btrfs: change how we decide to commit transactions during
-> > 
-> > 996478ca9c460886ac1
-> 
-> That commit is still not pulled by linus so is this id stable?
+Patch 1 add a test case for commit 4c75ae7a4e20 ("btrfs-progs: test: Add
+test image for lowmem mode file extent interrupt")
+Patch 2 output more detailed information about file extent interrupt
+Patch 3 fix a false alert for lowmem check
+Patch 4 add a test case for Patch 3
 
-Oh right, it's in the pending pull request branch. I don't expect any
-changes so the id should be stable, but will keep it in mind anyway.
+Lu Fengqi (4):
+  btrfs-progs: test: Add test image for lowmem mode file extent
+    interrupt
+  btrfs-progs: lowmem check: Output more detailed information about file
+    extent interrupt
+  btrfs-progs: lowmem check: Fix false alert about referencer count
+    mismatch
+  btrfs-progs: test: Add test image for lowmem mode referencer count
+    mismatch false alert
+
+ cmds-check.c                                             |   8 +++++---
+ .../020-extent-ref-cases/inline_regular_coexist.img      | Bin 0 -> 4096 bytes
+ .../ref_count_mismatch_false_alert.img                   | Bin 0 -> 4096 bytes
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+ create mode 100644 tests/fsck-tests/020-extent-ref-cases/inline_regular_coexist.img
+ create mode 100644 tests/fsck-tests/020-extent-ref-cases/ref_count_mismatch_false_alert.img
+
+-- 
+2.15.0
+
+
+

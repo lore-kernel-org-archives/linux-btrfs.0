@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f41.google.com ([74.125.82.41]:53928 "EHLO
-        mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751507AbdKCCrx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 22:47:53 -0400
-Received: by mail-wm0-f41.google.com with SMTP id r196so2429184wmf.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 19:47:52 -0700 (PDT)
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:56994 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934725AbdKCC76 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Nov 2017 22:59:58 -0400
+Received: by mail-wm0-f51.google.com with SMTP id z3so2410645wme.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Nov 2017 19:59:57 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20171102221610.006c1e9c@jupiter.sol.kaishome.de>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
+In-Reply-To: <f621ce21-5984-2d68-4fb5-8f45e13cb760@gmail.com>
+References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170914133824.5cf9b59c@jupiter.sol.kaishome.de>
+ <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
  <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
  <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
  <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
@@ -16,50 +16,53 @@ References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233
  <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
  <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net> <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
  <23033.512.820691.680916@tree.ty.sabi.co.uk> <CAH=dxU7aNg+VTeQFk-9Tk4yzPemsgL1E0iqSFXFQOxM8=ATDFQ@mail.gmail.com>
- <20171102221610.006c1e9c@jupiter.sol.kaishome.de>
+ <9e274506-9780-bb74-8ba0-e5fa6c9663c3@gmail.com> <CAH=dxU5Xx4naY9VR5ri92afHXm9-04DLvOG=E5QLRtKn7Q5s5w@mail.gmail.com>
+ <f621ce21-5984-2d68-4fb5-8f45e13cb760@gmail.com>
 From: Dave <davestechshop@gmail.com>
-Date: Thu, 2 Nov 2017 22:47:31 -0400
-Message-ID: <CAH=dxU636fRCN8-gm2fL6TBiT+-h0b8KZtzip9qQuSN5Dd13PQ@mail.gmail.com>
+Date: Thu, 2 Nov 2017 22:59:36 -0400
+Message-ID: <CAH=dxU5_CA3ZqKdTQ5SCDEWwcktOLpjWv20Q5CxhPz3DTZCjig@mail.gmail.com>
 Subject: Re: defragmenting best practice?
 To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Kai Krakow <hurikhan77@gmail.com>
+Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 2, 2017 at 5:16 PM, Kai Krakow <hurikhan77@gmail.com> wrote:
-
+On Thu, Nov 2, 2017 at 7:07 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2017-11-01 21:39, Dave wrote:
+>> I'm going to make this change now. What would be a good way to
+>> implement this so that the change applies to the $HOME/.cache of each
+>> user?
+>>
+>> The simple way would be to create a new subvolume for each existing
+>> user and mount it at $HOME/.cache in /etc/fstab, hard coding that
+>> mount location for each user. I don't mind doing that as there are
+>> only 4 users to consider. One minor concern is that it adds an
+>> unexpected step to the process of creating a new user. Is there a
+>> better way?
+>>
+> The easiest option is to just make sure nobody is logged in and run the
+> following shell script fragment:
 >
-> You may want to try btrfs autodefrag mount option and see if it
-> improves things (tho, the effect may take days or weeks to apply if you
-> didn't enable it right from the creation of the filesystem).
+>     for dir in /home/* ; do
+>         rm -rf $dir/.cache
+>         btrfs subvolume create $dir/.cache
+>     done
 >
-> Also, autodefrag will probably unshare reflinks on your snapshots. You
-> may be able to use bees[1] to work against this effect. Its interaction
-> with autodefrag is not well tested but it works fine for me. Also, bees
-> is able to reduce some of the fragmentation during deduplication
-> because it will rewrite extents back into bigger chunks (but only for
-> duplicated data).
+> And then add something to the user creation scripts to create that
+> subvolume.  This approach won't pollute /etc/fstab, will still exclude the
+> directory from snapshots, and doesn't require any hugely creative work to
+> integrate with user creation and deletion.
 >
-> [1]: https://github.com/Zygo/bees
+> In general, the contents of the .cache directory are just that, cached data.
+> Provided nobody is actively accessing it, it's perfectly safe to just nuke
+> the entire directory...
 
-I will look into bees. And yes, I plan to try autodefrag. (I already
-have it enabled now.) However, I need to understand something about
-how btrfs send-receive works in regard to reflinks and fragmentation.
-
-Say I have 2 snapshots on my live volume. The earlier one of them has
-already been sent to another block device by btrfs send-receive (full
-backup). Now defrag runs on the live volume and breaks some percentage
-of the reflinks. At this point I do an incremental btrfs send-receive
-using "-p" (or "-c") with the diff going to the same other block
-device where the prior snapshot was already sent.
-
-Will reflinks be "made whole" (restored) on the receiving block
-device? Or is the state of the source volume replicated so closely
-that reflink status is the same on the target?
-
-Also, is fragmentation reduced on the receiving block device?
-
-My expectation is that fragmentation would be reduced and duplication
-would be reduced too. In other words, does send-receive result in
-defragmentation and deduplication too?
+I like this suggestion. Thank you. I had intended to mount the .cache
+subvolumes with the NODATACOW option. However, with this approach, I
+won't be explicitly mounting the .cache subvolumes. Is it possible to
+use "chattr +C $dir/.cache" in that loop even though it is a
+subvolume? And, is setting the .cache directory to NODATACOW the right
+choice given this scenario? From earlier comments, I believe it is,
+but I want to be sure I understood correctly.

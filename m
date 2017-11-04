@@ -1,124 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f181.google.com ([74.125.82.181]:55753 "EHLO
-        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752565AbdKDROf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 13:14:35 -0400
-Received: by mail-ot0-f181.google.com with SMTP id u41so5183420otf.12
-        for <linux-btrfs@vger.kernel.org>; Sat, 04 Nov 2017 10:14:35 -0700 (PDT)
+Received: from mail-ot0-f172.google.com ([74.125.82.172]:54309 "EHLO
+        mail-ot0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932273AbdKDRZ0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 13:25:26 -0400
+Received: by mail-ot0-f172.google.com with SMTP id 96so5200244otw.11
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Nov 2017 10:25:25 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20171104044634.thg7mnchm4hvzdic@angband.pl>
+In-Reply-To: <CAH=dxU4MOWGZ0JSZ-ZV004p5EnH_aOnZ7XEo2rSOmbXJZJmwBA@mail.gmail.com>
 References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
  <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
  <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
  <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
- <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
- <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru> <b32358ec-781e-aff6-439b-3fc6fe02a25c@gmail.com>
- <CAJCQCtTT7_pfx5yn--We-kq0XWd38H_Lw1Prbmo5ytkTZWapYQ@mail.gmail.com> <20171104044634.thg7mnchm4hvzdic@angband.pl>
+ <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com> <CAH=dxU4MOWGZ0JSZ-ZV004p5EnH_aOnZ7XEo2rSOmbXJZJmwBA@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 4 Nov 2017 11:14:33 -0600
-Message-ID: <CAJCQCtReVi8k+OoitBBUZm_T+mj9dkV6GCVs7JMSG1myR78AGw@mail.gmail.com>
+Date: Sat, 4 Nov 2017 11:25:24 -0600
+Message-ID: <CAJCQCtTOefBfRpfb0h1H6SQxzGd9j-7ZSM07iA37xhy3+Lm=fw@mail.gmail.com>
 Subject: Re: Problem with file system
-To: Adam Borowski <kilobyte@angband.pl>
+To: Dave <davestechshop@gmail.com>
 Cc: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Marat Khalili <mkh@rqc.ru>, Dave <davestechshop@gmail.com>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
-        Fred Van Andel <vanandel@gmail.com>
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 3, 2017 at 10:46 PM, Adam Borowski <kilobyte@angband.pl> wrote:
-> On Fri, Nov 03, 2017 at 04:03:44PM -0600, Chris Murphy wrote:
->> On Tue, Oct 31, 2017 at 5:28 AM, Austin S. Hemmelgarn
->> <ahferroin7@gmail.com> wrote:
+On Sat, Nov 4, 2017 at 1:26 AM, Dave <davestechshop@gmail.com> wrote:
+> On Mon, Oct 30, 2017 at 5:37 PM, Chris Murphy <lists@colorremedies.com> wrote:
 >>
->> > If you're running on an SSD (or thinly provisioned storage, or something
->> > else which supports discards) and have the 'discard' mount option enabled,
->> > then there is no backup metadata tree (this issue was mentioned on the list
->> > a while ago, but nobody ever replied),
->>
->>
->> This is a really good point. I've been running discard mount option
->> for some time now without problems, in a laptop with Samsung
->> Electronics Co Ltd NVMe SSD Controller SM951/PM951.
->>
->> However, just trying btrfs-debug-tree -b on a specific block address
->> for any of the backup root trees listed in the super, only the current
->> one returns a valid result.  All others fail with checksum errors. And
->> even the good one fails with checksum errors within seconds as a new
->> tree is created, the super updated, and Btrfs considers the old root
->> tree disposable and subject to discard.
->>
->> So absolutely if I were to have a problem, probably no rollback for
->> me. This seems to totally obviate a fundamental part of Btrfs design.
+>> That is not a general purpose file system. It's a file system for admins who understand where the bodies are buried.
 >
-> How is this an issue?  Discard is issued only once we're positive there's no
-> reference to the freed blocks anywhere.  At that point, they're also open
-> for reuse, thus they can be arbitrarily scribbled upon.
-
-If it's not an issue, then no one should ever need those backup slots
-in the super and we should just remove them.
-
-But in fact, we know people end up situations where they're needed for
-either automatic recovery at mount time or explicitly calling
---usebackuproot. And in some cases we're seeing users using discard
-who have a borked root tree, and none of the backup roots are present
-so they're fucked. Their file system is fucked.
-
-Now again, maybe this means the hardware is misbehaving, and honored
-the discard out of order, and did that and wrote the new supers before
-it had completely committed all the metadata? I have no idea, but the
-evidence is present in the list that some people run into this and
-when they do the file system is beyond repair even t hough it can
-usually be scraped with btrfs restore.
-
-
-> Unless your hardware is seriously broken (such as lying about barriers,
-> which is nearly-guaranteed data loss on btrfs anyway), there's no way the
-> filesystem will ever reference such blocks.  The corpses of old trees that
-> are left lying around with no discard can at most be used for manual
-> forensics, but whether a given block will have been overwritten or not is
-> a matter of pure luck.
-
-File systems that overwrite, are hinting the intent in the journal
-what's about to happen. So if there's a partial overwrite of metadata,
-it's fine. The journal can help recover. But Btrfs without a journal,
-has a major piece of information required to bootstrap the file system
-at mount time, that's damaged, and then every backup has been
-discarded. So it actually makes Btrfs more fragile than other file
-systems in the same situation.
-
-
-
+> I'm not sure I understand your comment...
 >
-> For rollbacks, there are snapshots.  Once a transaction has been fully
-> committed, the old version is considered gone.
+> Are you saying BTRFS is not a general purpose file system?
 
-Yeah well snapshots do not cause root trees to stick around.
+I'm suggesting that any file system that burdens the user with more
+knowledge to stay out of trouble than the widely considered general
+purpose file systems of the day, is not a general purpose file system.
+
+And yes, I'm suggesting that Btrfs is at risk of being neither general
+purpose, and not meeting its design goals as stated in Btrfs
+documentation. It is not easy to admin *when things go wrong*. It's
+great before then. It's a butt ton easier to resize, replace devices,
+take snapshots, and so on. But when it comes to fixing it when it goes
+wrong? It is a goddamn Choose Your Own Adventure book. It's way, way
+more complicated than any other file system I'm aware of.
 
 
->
->>  because it's already been discarded.
->> > This is ideally something which should be addressed (we need some sort of
->> > discard queue for handling in-line discards), but it's not easy to address.
->>
->> Discard data extents, don't discard metadata extents? Or put them on a
->> substantial delay.
->
-> Why would you special-case metadata?  Metadata that points to overwritten or
-> discarded blocks is of no use either.
+> If btrfs isn't able to serve as a general purpose file system for
+> Linux going forward, which file system(s) would you suggest can fill
+> that role? (I can't think of any that are clearly all-around better
+> than btrfs now, or that will be in the next few years.)
 
-I would rather lose 30 seconds, 1 minute, or even 2 minutes of writes,
-than lose an entire file system. That's why.
+ext4 and XFS are clearly the file systems to beat. They almost always
+recover from crashes with just a normal journal replay at mount time,
+file system repair is not often needed. When it is needed, it usually
+works, and there is just the one option to repair and go with it.
+Btrfs has piles of repair options, mount time options, btrfs check has
+options, btrfs rescue has options, it's a bit nutty honestly. And
+there's zero guidance in the available docs what order to try things
+in, not least of which some of these repair tools are still considered
+dangerous at least in the man page text, and the order depends on the
+failure. The user is burdened with way too much.
 
-Anyway right now I consider discard mount option fundamentally broken
-on Btrfs for SSDs. I haven't tested this on LVM thinp, maybe it's
-broken there too.
+Even as much as I know about Btrfs having used it since 2008 and my
+list activity, I routinely have WTF moments when people post problems,
+what order to try to get things going again. Easy to admin? Yeah for
+the most part. But stability is still a problem, and it's coming up on
+a 10 year anniversary soon.
 
-Even fstrim leaves a tiny window open for a few minutes every time it
-gets called, where if the root tree is corrupted for any reason,
-you're fucked because all the backup roots are already gone.
+If I were equally familiar with ZFS on Linux as I am with Btrfs, I'd
+use ZoL hands down. But I'm not, I'm much more familiar with Btrfs and
+where the bodies are buried, so I continue to use Btrfs.
+
+
 
 -- 
 Chris Murphy

@@ -1,58 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59968 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.99]:47288 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754905AbdKOP3c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 10:29:32 -0500
-Date: Wed, 15 Nov 2017 16:27:38 +0100
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/2] Btrfs: fix reported number of inode blocks after
- buffered append writes
-Message-ID: <20171115152738.GO28899@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171104041956.9674-1-fdmanana@kernel.org>
- <20171104042007.9724-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171104042007.9724-1-fdmanana@kernel.org>
+        id S932671AbdKGONG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Nov 2017 09:13:06 -0500
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8BA29218B4
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Nov 2017 14:13:05 +0000 (UTC)
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/2] Btrfs: move definition of the function btrfs_find_new_delalloc_bytes
+Date: Sat,  4 Nov 2017 04:19:56 +0000
+Message-Id: <20171104041956.9674-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 04, 2017 at 04:20:07AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> The patch from commit a7e3b975a0f9 ("Btrfs: fix reported number of inode
-> blocks") introduced a regression where if we do a buffered write starting
-> at position equal to or greater than the file's size and then stat(2) the
-> file before writeback is triggered, the number of used blocks does not
-> change (unless there's a prealloc/unwritten extent). Example:
-> 
->   $ xfs_io -f -c "pwrite -S 0xab 0 64K" foobar
->   $ du -h foobar
->   0	foobar
->   $ sync
->   $ du -h foobar
->   64K	foobar
-> 
-> The first version of that patch didn't had this regression and the second
-> version, which was the one committed, was made only to address some
-> performance regression detected by the intel test robots using fs_mark.
-> 
-> This fixes the regression by setting the new delaloc bit in the range, and
-> doing it at btrfs_dirty_pages() while setting the regular dealloc bit as
-> well, so that this way we set both bits at once avoiding navigation of the
-> inode's io tree twice. Doing it at btrfs_dirty_pages() is also the most
-> meaninful place, as we should set the new dellaloc bit when if we set the
-> delalloc bit, which happens only if we copied bytes into the pages at
-> __btrfs_buffered_write().
-> 
-> This was making some of LTP's du tests fail, which can be quickly run
-> using a command line like the following:
-> 
->   $ ./runltp -q -p -l /ltp.log -f commands -s du -d /mnt
-> 
-> Fixes: a7e3b975a0f9 ("Btrfs: fix reported number of inode blocks")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-FYI, I'm going to add the two patches to a 4.15 queue.
+Move the definition of the function btrfs_find_new_delalloc_bytes() closer
+to the function btrfs_dirty_pages(), because in a future commit it will be
+used exclusively by btrfs_dirty_pages(). This just moves the function's
+definition, with no functional changes at all.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: It's actually the first version of the patch, since the patch
+    following this one is a v2 (its v1 splitted into two patches).
+
+ fs/btrfs/file.c | 83 +++++++++++++++++++++++++++++----------------------------
+ 1 file changed, 42 insertions(+), 41 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 74127d6167d2..14b7056dd241 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -477,6 +477,48 @@ static void btrfs_drop_pages(struct page **pages, size_t num_pages)
+ 	}
+ }
+ 
++
++static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
++					 const u64 start,
++					 const u64 len,
++					 struct extent_state **cached_state)
++{
++	u64 search_start = start;
++	const u64 end = start + len - 1;
++
++	while (search_start < end) {
++		const u64 search_len = end - search_start + 1;
++		struct extent_map *em;
++		u64 em_len;
++		int ret = 0;
++
++		em = btrfs_get_extent(inode, NULL, 0, search_start,
++				      search_len, 0);
++		if (IS_ERR(em))
++			return PTR_ERR(em);
++
++		if (em->block_start != EXTENT_MAP_HOLE)
++			goto next;
++
++		em_len = em->len;
++		if (em->start < search_start)
++			em_len -= search_start - em->start;
++		if (em_len > search_len)
++			em_len = search_len;
++
++		ret = set_extent_bit(&inode->io_tree, search_start,
++				     search_start + em_len - 1,
++				     EXTENT_DELALLOC_NEW,
++				     NULL, cached_state, GFP_NOFS);
++next:
++		search_start = extent_map_end(em);
++		free_extent_map(em);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
+ /*
+  * after copy_from_user, pages need to be dirtied and we need to make
+  * sure holes are created between the current EOF and the start of
+@@ -1404,47 +1446,6 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 
+ }
+ 
+-static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
+-					 const u64 start,
+-					 const u64 len,
+-					 struct extent_state **cached_state)
+-{
+-	u64 search_start = start;
+-	const u64 end = start + len - 1;
+-
+-	while (search_start < end) {
+-		const u64 search_len = end - search_start + 1;
+-		struct extent_map *em;
+-		u64 em_len;
+-		int ret = 0;
+-
+-		em = btrfs_get_extent(inode, NULL, 0, search_start,
+-				      search_len, 0);
+-		if (IS_ERR(em))
+-			return PTR_ERR(em);
+-
+-		if (em->block_start != EXTENT_MAP_HOLE)
+-			goto next;
+-
+-		em_len = em->len;
+-		if (em->start < search_start)
+-			em_len -= search_start - em->start;
+-		if (em_len > search_len)
+-			em_len = search_len;
+-
+-		ret = set_extent_bit(&inode->io_tree, search_start,
+-				     search_start + em_len - 1,
+-				     EXTENT_DELALLOC_NEW,
+-				     NULL, cached_state, GFP_NOFS);
+-next:
+-		search_start = extent_map_end(em);
+-		free_extent_map(em);
+-		if (ret)
+-			return ret;
+-	}
+-	return 0;
+-}
+-
+ /*
+  * This function locks the extent and properly waits for data=ordered extents
+  * to finish before allowing the pages to be modified if need.
+-- 
+2.11.0
+

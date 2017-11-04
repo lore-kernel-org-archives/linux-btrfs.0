@@ -1,89 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f47.google.com ([209.85.213.47]:47577 "EHLO
-        mail-vk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752197AbdKDKLF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 06:11:05 -0400
-Received: by mail-vk0-f47.google.com with SMTP id j2so3185963vki.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 04 Nov 2017 03:11:05 -0700 (PDT)
+Received: from smtp73.iad3a.emailsrvr.com ([173.203.187.73]:51790 "EHLO
+        smtp73.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752362AbdKDMAn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 4 Nov 2017 08:00:43 -0400
+Date: Sat, 04 Nov 2017 15:00:33 +0300
+In-Reply-To: <20171104044634.thg7mnchm4hvzdic@angband.pl>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com> <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru> <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com> <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com> <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com> <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru> <b32358ec-781e-aff6-439b-3fc6fe02a25c@gmail.com> <CAJCQCtTT7_pfx5yn--We-kq0XWd38H_Lw1Prbmo5ytkTZWapYQ@mail.gmail.com> <20171104044634.thg7mnchm4hvzdic@angband.pl>
 MIME-Version: 1.0
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Sat, 4 Nov 2017 15:40:23 +0530
-Message-ID: <CAKuJGC_g04HuRFBBmaQ70gJLnEreVCNG5-idvSeTxrS1vH4UVQ@mail.gmail.com>
-Subject: xfstests:btrfs/025, 026 fails
-To: btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain;
+ charset=utf-8
+Subject: Re: Problem with file system
+To: Adam Borowski <kilobyte@angband.pl>,
+        Chris Murphy <lists@colorremedies.com>
+CC: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Dave <davestechshop@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
+        Fred Van Andel <vanandel@gmail.com>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <8C6E9A02-E1C2-4BD3-92CC-D4F8B0D3E14B@rqc.ru>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi .
+>How is this an issue?  Discard is issued only once we're positive 
+>there's no 
+>reference to the freed blocks anywhere.  At that point, they're also 
+>open 
+>for reuse, thus they can be arbitrarily scribbled upon.
 
-While running xfstests with 4.14.0-rc7 the test hangs on btrfs/026
-(after running 025) and produces below trace:
+Point was, how about keeping this reference for some time period?
 
-[ 2134.147940] run fstests btrfs/026 at 2017-11-04 09:46:19
-[ 2134.388024] BTRFS: device fsid d3de0b02-8b7e-422a-8165-c074f834e909
-devid 1 transid 5 /dev/xvdc
-[ 2134.405001] general protection fault: 0000 [#1] SMP
-[ 2134.408660] Modules linked in: cirrus drm_kms_helper ttm drm ppdev
-intel_rapl sb_edac parport_pc crct10dif_pclmul parport crc32_pclmul
-crc32c_intel ghash_clmulni_intel xen_netfront intel_rapl_perf
-i2c_piix4 xen_blkfront serio_raw ata_generic pata_acpi
-[ 2134.420112] CPU: 1 PID: 8478 Comm: mount Not tainted 4.14.0-rc7 #1
-[ 2134.423711] Hardware name: Xen HVM domU, BIOS 4.2.amazon 08/24/2006
-[ 2134.427557] task: ffff8ec43c672600 task.stack: ffffa90fc886c000
-[ 2134.431351] RIP: 0010:btrfs_compress_str2level+0x18/0x4e
-[ 2134.434764] RSP: 0018:ffffa90fc886fa10 EFLAGS: 00010202
-[ 2134.438128] RAX: 0000000000000001 RBX: ffff8ec434c80000 RCX: 0000000000000004
-[ 2134.442160] RDX: 5485389ff3298000 RSI: 5485389ff3298000 RDI: ffffffff94cdb929
-[ 2134.446266] RBP: ffffa90fc886fac0 R08: 0000000000000000 R09: 5485389ff3298000
-[ 2134.450252] R10: 000000000000002c R11: ffffffff94a917c0 R12: ffffffff94d1ec8a
-[ 2134.454875] R13: ffff8ec434d1c720 R14: 0000000000000000 R15: 0000000000000000
-[ 2134.459141] FS:  00007f9e870c8480(0000) GS:ffff8ec43fe40000(0000)
-knlGS:0000000000000000
-[ 2134.464051] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[ 2134.467519] CR2: 00007f5ae9499710 CR3: 00000004343e4002 CR4: 00000000001606e0
-[ 2134.471549] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[ 2134.475601] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-[ 2134.480049] Call Trace:
-[ 2134.482285]  ? btrfs_parse_options+0x9fd/0x1020
-[ 2134.485502]  open_ctree+0x1244/0x24df
-[ 2134.488245]  ? open_ctree+0x1244/0x24df
-[ 2134.490954]  btrfs_mount+0xe16/0xefc
-[ 2134.493481]  ? find_next_bit+0xb/0x10
-[ 2134.496095]  ? cpumask_next+0x1b/0x20
-[ 2134.498643]  mount_fs+0x32/0x150
-[ 2134.501001]  ? __alloc_percpu+0x15/0x20
-[ 2134.504016]  vfs_kern_mount.part.22+0x5d/0x120
-[ 2134.507094]  vfs_kern_mount+0x13/0x20
-[ 2134.509737]  btrfs_mount+0x1a8/0xefc
-[ 2134.512338]  ? find_next_bit+0xb/0x10
-[ 2134.514963]  mount_fs+0x32/0x150
-[ 2134.517289]  ? __alloc_percpu+0x15/0x20
-[ 2134.519917]  vfs_kern_mount.part.22+0x5d/0x120
-[ 2134.522754]  do_mount+0x5c7/0xca0
-[ 2134.525101]  ? kmem_cache_alloc_trace+0x165/0x1d0
-[ 2134.528554]  ? copy_mount_options+0x2c/0x220
-[ 2134.531459]  SyS_mount+0x98/0xe0
-[ 2134.533880]  entry_SYSCALL_64_fastpath+0x1a/0xa5
-[ 2134.536942] RIP: 0033:0x7f9e8611c28a
-[ 2134.539496] RSP: 002b:00007fff6cddbf68 EFLAGS: 00000246 ORIG_RAX:
-00000000000000a5
-[ 2134.543632] RAX: ffffffffffffffda RBX: 00007f9e86c9c7ef RCX: 00007f9e8611c28a
-[ 2134.547646] RDX: 00005562a4af82f0 RSI: 00005562a4af83b0 RDI: 00005562a4af8390
-[ 2134.552254] RBP: 00007f9e86eae184 R08: 00005562a4af8310 R09: 00007fff6cddae68
-[ 2134.556487] R10: 00000000c0ed0000 R11: 0000000000000246 R12: 00005562a4af8140
-[ 2134.560647] R13: 00007fff6cddc288 R14: 00005562a359f4a0 R15: 00000000ffffffff
-[ 2134.564622] Code: ad 31 db eb a9 0f 1f 40 00 66 2e 0f 1f 84 00 00
-00 00 00 0f 1f 44 00 00 55 48 89 fa b9 04 00 00 00 48 89 d6 48 c7 c7
-29 b9 cd 94 <f3> a6 48 89 e5 40 0f 97 c6 0f 92 c1 31 c0 40 38 ce 75 06
-80 7a
-[ 2134.574756] RIP: btrfs_compress_str2level+0x18/0x4e RSP: ffffa90fc886fa10
-[ 2134.578890] ---[ end trace 47a5851d0ed3c8fd ]---
+>Unless your hardware is seriously broken (such as lying about barriers, 
+>which is nearly-guaranteed data loss on btrfs anyway), there's no way 
+>the 
+>filesystem will ever reference such blocks.
 
+Buggy hardware happen. So do buggy filesystems ;) Besides, most filesystems let user recover most data after losing just one sector, would be pity if BTRFS with all its COW coolness didn't. 
 
-https://bugzilla.kernel.org/show_bug.cgi?id=197771
+>Why would you special-case metadata?  Metadata that points to 
+>overwritten or 
+>discarded blocks is of no use either.
 
-----
-Cheers,
-Lakshmipathi.G
-http://www.giis.co.in http://www.webminal.org
+It takes significant time to overwrite noticeable portion of data on disk, but loss of metadata makes it gone in a moment. Moreover, user is usually prepared to lose some recently changed data in crash, but not the one that it didn't even touch.
+-- 
+
+With Best Regards,
+Marat Khalili

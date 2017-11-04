@@ -1,82 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:54228 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751037AbdKDHFx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 03:05:53 -0400
-Date: Sat, 4 Nov 2017 08:05:50 +0100
-From: Adam Borowski <kilobyte@angband.pl>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: updatedb does not index /home when /home is Btrfs
-Message-ID: <20171104070550.lr5osyfz74axw5nl@angband.pl>
-References: <CAJCQCtSf1mX0kWCRjfSTwZKwZC6mMN7Vdio0LJdCCY96ifte4g@mail.gmail.com>
- <20171104044916.4mpgaails24rqddz@angband.pl>
- <65c3c537-1e30-87ae-140a-b59bdd79a4dc@gmail.com>
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:52418 "EHLO
+        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751266AbdKDH0i (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 03:26:38 -0400
+Received: by mail-wm0-f46.google.com with SMTP id t139so5337454wmt.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Nov 2017 00:26:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <65c3c537-1e30-87ae-140a-b59bdd79a4dc@gmail.com>
+In-Reply-To: <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+ <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+ <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
+ <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com> <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+From: Dave <davestechshop@gmail.com>
+Date: Sat, 4 Nov 2017 03:26:16 -0400
+Message-ID: <CAH=dxU4MOWGZ0JSZ-ZV004p5EnH_aOnZ7XEo2rSOmbXJZJmwBA@mail.gmail.com>
+Subject: Re: Problem with file system
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 04, 2017 at 09:26:36AM +0300, Andrei Borzenkov wrote:
-> 04.11.2017 07:49, Adam Borowski пишет:
-> > On Fri, Nov 03, 2017 at 06:15:53PM -0600, Chris Murphy wrote:
-> >> Ancient bug, still seems to be a bug.
-> >> https://bugzilla.redhat.com/show_bug.cgi?id=906591
-> >>
-> >> The issue is that updatedb by default will not index bind mounts, but
-> >> by default on Fedora and probably other distros, put /home on a
-> >> subvolume and then mount that subvolume which is in effect a bind
-> >> mount.
-> >>
-> >> There's a lot of early discussion in 2013 about it, but then it's
-> >> dropped off the radar as nobody has any ideas how to fix this in
-> >> mlocate.
-> > 
-> > I don't see how this would be a bug in btrfs.  The same happens if you
-> > bind-mount /home (or individual homes), which is a valid and non-rare setup.
-> 
-> It is the problem *on* btrfs because - as opposed to normal bind mount -
-> those mount points do *not* refer to the same content.
+On Mon, Oct 30, 2017 at 5:37 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> That is not a general purpose file system. It's a file system for admins who understand where the bodies are buried.
 
-Neither do they refer to in a "normal" bind mount.
+I'm not sure I understand your comment...
 
-> As was commented in mentioned bug report:
-> 
-> mount -o subvol=root /dev/sdb1 /root
-> mount -o subvol=foo /dev/sdb1 /root/foo
-> mount -o subvol bar /dev/sdb1 /bar/bar
-> 
-> Both /root/foo and /root/bar, will be skipped even though they are not
-> accessible via any other path (on mounted filesystem)
+Are you saying BTRFS is not a general purpose file system?
 
-losetup -D
-truncate -s 4G junk
-losetup -f junk
-mkfs.ext4 /dev/loop0
-mkdir -p foo bar
-mount /dev/loop0 foo
-mkdir foo/bar
-touch foo/fileA foo/bar/fileB
-mount --bind foo/bar bar
-umount foo
+If btrfs isn't able to serve as a general purpose file system for
+Linux going forward, which file system(s) would you suggest can fill
+that role? (I can't think of any that are clearly all-around better
+than btrfs now, or that will be in the next few years.)
 
-> It is a problem *of* btrfs because it does not offer any easy way to
-> distinguish between subvolume mount and bind mount. If you are aware of
-> one, please comment on mentioned bug report.
-
-Well, subvolume mounts are indistinguishable from bind mounts because they
-_are_ bind mounts.  You merely don't need to mount the "master" first.
-
-The only way such a "master" mount is special is that, on most filesystems,
-its root was accessible at least at some point (but it might no longer be,
-thanks to chroot, pivot_root, etc).
-
-
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ Laws we want back: Poland, Dz.U. 1921 nr.30 poz.177 (also Dz.U. 
-⣾⠁⢰⠒⠀⣿⡁ 1920 nr.11 poz.61): Art.2: An official, guilty of accepting a gift
-⢿⡄⠘⠷⠚⠋⠀ or another material benefit, or a promise thereof, [in matters
-⠈⠳⣄⠀⠀⠀⠀ relevant to duties], shall be punished by death by shooting.
+Or maybe you meant something else?

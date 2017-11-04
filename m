@@ -1,102 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:23882 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1756700AbdKDO3E (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 10:29:04 -0400
-Date: Sat, 4 Nov 2017 22:28:06 +0800
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: Qu Wenruo <wqu@suse.com>
-CC: <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>
-Subject: Re: [PATCH 0/8] mkfs: Quota support
-Message-ID: <20171104142805.GC513@fnst.localdomain>
-References: <20171027072936.4697-1-wqu@suse.com>
+Received: from mail-ot0-f181.google.com ([74.125.82.181]:55753 "EHLO
+        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752565AbdKDROf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 4 Nov 2017 13:14:35 -0400
+Received: by mail-ot0-f181.google.com with SMTP id u41so5183420otf.12
+        for <linux-btrfs@vger.kernel.org>; Sat, 04 Nov 2017 10:14:35 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20171027072936.4697-1-wqu@suse.com>
+In-Reply-To: <20171104044634.thg7mnchm4hvzdic@angband.pl>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+ <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+ <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
+ <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
+ <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+ <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru> <b32358ec-781e-aff6-439b-3fc6fe02a25c@gmail.com>
+ <CAJCQCtTT7_pfx5yn--We-kq0XWd38H_Lw1Prbmo5ytkTZWapYQ@mail.gmail.com> <20171104044634.thg7mnchm4hvzdic@angband.pl>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 4 Nov 2017 11:14:33 -0600
+Message-ID: <CAJCQCtReVi8k+OoitBBUZm_T+mj9dkV6GCVs7JMSG1myR78AGw@mail.gmail.com>
+Subject: Re: Problem with file system
+To: Adam Borowski <kilobyte@angband.pl>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Marat Khalili <mkh@rqc.ru>, Dave <davestechshop@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
+        Fred Van Andel <vanandel@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 27, 2017 at 03:29:28PM +0800, Qu Wenruo wrote:
->This patchset adds quota support, which means the result fs will have
->quota enabled by default, and its accounting is already consistent, no
->manually rescan or quota enable is needed.
+On Fri, Nov 3, 2017 at 10:46 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+> On Fri, Nov 03, 2017 at 04:03:44PM -0600, Chris Murphy wrote:
+>> On Tue, Oct 31, 2017 at 5:28 AM, Austin S. Hemmelgarn
+>> <ahferroin7@gmail.com> wrote:
+>>
+>> > If you're running on an SSD (or thinly provisioned storage, or something
+>> > else which supports discards) and have the 'discard' mount option enabled,
+>> > then there is no backup metadata tree (this issue was mentioned on the list
+>> > a while ago, but nobody ever replied),
+>>
+>>
+>> This is a really good point. I've been running discard mount option
+>> for some time now without problems, in a laptop with Samsung
+>> Electronics Co Ltd NVMe SSD Controller SM951/PM951.
+>>
+>> However, just trying btrfs-debug-tree -b on a specific block address
+>> for any of the backup root trees listed in the super, only the current
+>> one returns a valid result.  All others fail with checksum errors. And
+>> even the good one fails with checksum errors within seconds as a new
+>> tree is created, the super updated, and Btrfs considers the old root
+>> tree disposable and subject to discard.
+>>
+>> So absolutely if I were to have a problem, probably no rollback for
+>> me. This seems to totally obviate a fundamental part of Btrfs design.
 >
->The overall design of such support is:
->1) Create needed tree
->   Both btrfs_root and real root item and tree root leaf.
->   For this, a new infrastructure, btrfs_create_tree(), is added for
->   this.
->
->2) Fill quota root with basic skeleton
->   Only 3 items are really needed
->   a) global quota status item
->   b) quota info for 0/5 qgroup
->   c) quota limit for 0/5 qgroup
->
->   The content doesn't matter at all.
->
->3) Repair qgroups using infrastructure from qgroup-verify
->   In fact, qgroup repair is just offline rescan.
->   Although the original qgroup-verify infrastructure is mostly noisy,
->   modify it a little to make it silent to function as offline quota
->   rescan.
->
->And such support is mainly designed for developers and QA guys.
->
->As to enable quota, we must normally mount the fs, enable quota (and
->rescan if needed).
->This ioctl based procedure is not common, and fstests doesn't provide
->such support.
->
->There are several attempts to make fstests to support it, but due to
->different reasons, all these attempts failed.
->
->To make it easier to test all existing test cases with btrfs quota
->enabled, the current best method is to support quota at mkfs time, and
->here comes the patchset.
->
+> How is this an issue?  Discard is issued only once we're positive there's no
+> reference to the freed blocks anywhere.  At that point, they're also open
+> for reuse, thus they can be arbitrarily scribbled upon.
 
-In addition to some trivial problems mentioned earlier, all series of
-patches look good to me.
+If it's not an issue, then no one should ever need those backup slots
+in the super and we should just remove them.
 
-Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+But in fact, we know people end up situations where they're needed for
+either automatic recovery at mount time or explicitly calling
+--usebackuproot. And in some cases we're seeing users using discard
+who have a borked root tree, and none of the backup roots are present
+so they're fucked. Their file system is fucked.
+
+Now again, maybe this means the hardware is misbehaving, and honored
+the discard out of order, and did that and wrote the new supers before
+it had completely committed all the metadata? I have no idea, but the
+evidence is present in the list that some people run into this and
+when they do the file system is beyond repair even t hough it can
+usually be scraped with btrfs restore.
+
+
+> Unless your hardware is seriously broken (such as lying about barriers,
+> which is nearly-guaranteed data loss on btrfs anyway), there's no way the
+> filesystem will ever reference such blocks.  The corpses of old trees that
+> are left lying around with no discard can at most be used for manual
+> forensics, but whether a given block will have been overwritten or not is
+> a matter of pure luck.
+
+File systems that overwrite, are hinting the intent in the journal
+what's about to happen. So if there's a partial overwrite of metadata,
+it's fine. The journal can help recover. But Btrfs without a journal,
+has a major piece of information required to bootstrap the file system
+at mount time, that's damaged, and then every backup has been
+discarded. So it actually makes Btrfs more fragile than other file
+systems in the same situation.
+
+
+
+>
+> For rollbacks, there are snapshots.  Once a transaction has been fully
+> committed, the old version is considered gone.
+
+Yeah well snapshots do not cause root trees to stick around.
+
+
+>
+>>  because it's already been discarded.
+>> > This is ideally something which should be addressed (we need some sort of
+>> > discard queue for handling in-line discards), but it's not easy to address.
+>>
+>> Discard data extents, don't discard metadata extents? Or put them on a
+>> substantial delay.
+>
+> Why would you special-case metadata?  Metadata that points to overwritten or
+> discarded blocks is of no use either.
+
+I would rather lose 30 seconds, 1 minute, or even 2 minutes of writes,
+than lose an entire file system. That's why.
+
+Anyway right now I consider discard mount option fundamentally broken
+on Btrfs for SSDs. I haven't tested this on LVM thinp, maybe it's
+broken there too.
+
+Even fstrim leaves a tiny window open for a few minutes every time it
+gets called, where if the root tree is corrupted for any reason,
+you're fucked because all the backup roots are already gone.
 
 -- 
-Thanks,
-Lu
-
->Qu Wenruo (8):
->  btrfs-progs: qgroup-verify: Also repair qgroup status version
->  btrfs-progs: qgroup-verify: Use fs_info->readonly to check if we
->    should repair qgroups
->  btrfs-progs: qgroup-verify: Move qgroup classification out of
->    report_qgroups
->  btrfs-progs: qgroup-verify: Allow repair_qgroups function to do silent
->    repair
->  btrfs-progs: ctree: Introduce function to create an empty tree
->  btrfs-progs: mkfs: Introduce function to insert qgroup info and limit
->    items
->  btrfs-progs: mkfs: Introduce option to enable quota at mkfs time
->  btrfs-progs: test/mkfs: Add test case for --enable-quota option
->
-> Documentation/mkfs.btrfs.asciidoc           |   3 +
-> cmds-check.c                                |   2 +-
-> ctree.c                                     | 109 ++++++++++++++++++++++
-> ctree.h                                     |   3 +
-> mkfs/main.c                                 | 136 +++++++++++++++++++++++++++-
-> qgroup-verify.c                             |  51 ++++++++---
-> qgroup-verify.h                             |   2 +-
-> tests/mkfs-tests/001-basic-profiles/test.sh |  10 ++
-> 8 files changed, 302 insertions(+), 14 deletions(-)
->
->-- 
->2.14.3
->
->--
->To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->the body of a message to majordomo@vger.kernel.org
->More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
-
+Chris Murphy

@@ -1,65 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50291 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753106AbdK2NsV (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 29 Nov 2017 08:48:21 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 2/2] btrfs-progs: tests/convert: Introduce test case to ensure btrfs-convert won't rollback the filesystem after balance
-Date: Wed, 29 Nov 2017 21:48:06 +0800
-Message-Id: <20171129134806.32324-2-wqu@suse.com>
-In-Reply-To: <20171129134806.32324-1-wqu@suse.com>
-References: <20171129134806.32324-1-wqu@suse.com>
+Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:54007 "EHLO
+        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751388AbdKDTOE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 4 Nov 2017 15:14:04 -0400
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Subject: btrfs-progs: check --repair crashes with BUG ON
+Message-ID: <e0476253-d0e6-8b0d-df01-28c2f7fcbe77@profihost.ag>
+Date: Sat, 4 Nov 2017 20:08:37 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../015-not-to-rollback-after-balance/test.sh      | 33 ++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
- create mode 100755 tests/convert-tests/015-not-to-rollback-after-balance/test.sh
+Hello,
 
-diff --git a/tests/convert-tests/015-not-to-rollback-after-balance/test.sh b/tests/convert-tests/015-not-to-rollback-after-balance/test.sh
-new file mode 100755
-index 000000000000..0d523d2250db
---- /dev/null
-+++ b/tests/convert-tests/015-not-to-rollback-after-balance/test.sh
-@@ -0,0 +1,33 @@
-+#!/bin/bash
-+# Check if btrfs-convert refuse to rollback the filesystem, and leave
-+# the btrfs and the convert image untouched
-+
-+source "$TOP/tests/common"
-+source "$TOP/tests/common.convert"
-+
-+setup_root_helper
-+prepare_test_dev
-+check_prereq btrfs-convert
-+check_global_prereq mke2fs
-+
-+# convert_test_prep_fs() will create large enough file inside the
-+# test device, that's good enough for us to test rollback failure.
-+convert_test_prep_fs ext4 mke2fs -t ext4 -b 4096
-+run_check_umount_test_dev
-+convert_test_do_convert "" 4096
-+
-+run_check_mount_test_dev
-+
-+# Now the fs is converted, balance the fs so later rollback should fail
-+run_check $SUDO_HELPER "$TOP/btrfs" balance start --full-balance $TEST_MNT
-+run_check_umount_test_dev
-+
-+# rollback should fail
-+run_mustfail "rollback fs after balance" "$TOP/btrfs-convert" -r $TEST_DEV
-+
-+# Ensure the fs and convert image can pass the check
-+run_check "$TOP/btrfs" check $TEST_DEV
-+
-+run_check_mount_test_dev
-+run_check $SUDO_HELPER e2fsck -fn $TEST_MNT/ext2_saved/image
-+run_check_umount_test_dev
--- 
-2.15.0
+after a power failure i have a btrfs volume which isn't mountable.
 
+dmesg shows:
+parent transid verify failed on 181846016 wanted 143404 found 143399
+
+If i run:
+btrfs check --repair /dev/mapper/crypt_md1
+
+The output is:
+parent transid verify failed on 181846016 wanted 143404 found 143399
+parent transid verify failed on 181846016 wanted 143404 found 143399
+Ignoring transid failure
+Clearing log on /dev/mapper/crypt_md0, previous log_root 1520200695808,
+level 0
+parent transid verify failed on 308183040 wanted 143404 found 143399
+parent transid verify failed on 308183040 wanted 143404 found 143399
+Ignoring transid failure
+parent transid verify failed on 338870272 wanted 143404 found 143399
+parent transid verify failed on 338870272 wanted 143404 found 143399
+Ignoring transid failure
+parent transid verify failed on 12778157178880 wanted 143404 found 143399
+parent transid verify failed on 12778157178880 wanted 143404 found 143399
+Ignoring transid failure
+leaf parent key incorrect 38699008
+btrfs unable to find ref byte nr 12778147823616 parent 0 root 2  owner 0
+offset 0
+parent transid verify failed on 308183040 wanted 143404 found 143399
+Ignoring transid failure
+leaf parent key incorrect 91766784
+extent-tree.c:2725: alloc_reserved_tree_block: BUG_ON `ret` triggered,
+value -1
+./btrfs[0x415cb3]
+./btrfs[0x416ee5]
+./btrfs[0x417104]
+./btrfs[0x418cea]
+./btrfs[0x418f06]
+./btrfs(btrfs_alloc_free_block+0x1e4)[0x41b8d0]
+./btrfs(__btrfs_cow_block+0xd3)[0x40c5f9]
+./btrfs(btrfs_cow_block+0x110)[0x40d03b]
+./btrfs(commit_tree_roots+0x53)[0x439baa]
+./btrfs(btrfs_commit_transaction+0xf9)[0x439f75]
+./btrfs[0x467212]
+./btrfs(handle_command_group+0x5d)[0x40b360]
+./btrfs(cmd_rescue+0x15)[0x46749f]
+./btrfs(main+0x163)[0x40b5e9]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7fc63f25db45]
+./btrfs[0x40b0b9]
+Aborted
+
+This is btrfs-progs branch: devel - same happens with master or v4.13.3.
+
+Stefan

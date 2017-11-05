@@ -1,42 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f182.google.com ([209.85.217.182]:48741 "EHLO
-        mail-ua0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752585AbdKEIa7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Nov 2017 03:30:59 -0500
-Received: by mail-ua0-f182.google.com with SMTP id z4so4549588uaz.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Nov 2017 01:30:59 -0700 (PDT)
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:53255 "EHLO
+        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751487AbdKEOCS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Nov 2017 09:02:18 -0500
+Received: by mail-oi0-f44.google.com with SMTP id h6so5217901oia.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Nov 2017 06:02:17 -0800 (PST)
 MIME-Version: 1.0
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Sun, 5 Nov 2017 14:00:18 +0530
-Message-ID: <CAKuJGC98ttkAcmc2yW_K5ROX8jXfrmoe5Q9tTomPMiiK_2UWNA@mail.gmail.com>
-Subject: btrfs-progs:fuzz-tests/003-multi-check-unmounted broken?
-To: btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <pan$94157$844c1b67$c8d5af52$b34db269@cox.net>
+References: <CAJCQCtSf1mX0kWCRjfSTwZKwZC6mMN7Vdio0LJdCCY96ifte4g@mail.gmail.com>
+ <pan$94157$844c1b67$c8d5af52$b34db269@cox.net>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 5 Nov 2017 07:02:16 -0700
+Message-ID: <CAJCQCtQdz0zEesU0SuHCs5-bhqohqT7zEnh7krY-aiVgHGfSKw@mail.gmail.com>
+Subject: Re: Fixed subject: updatedb does not index separately mounted btrfs subvolumes
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+On Sun, Nov 5, 2017 at 1:47 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Chris Murphy posted on Fri, 03 Nov 2017 18:15:53 -0600 as excerpted:
+>
+>> Ancient bug, still seems to be a bug.
+>> https://bugzilla.redhat.com/show_bug.cgi?id=906591
+>>
+>> The issue is that updatedb by default will not index bind mounts, but by
+>> default on Fedora and probably other distros, put /home on a subvolume
+>> and then mount that subvolume which is in effect a bind mount.
+>
+> <gripe-mode: inaccurate subject lines>
+>
+> So the issue isn't /home being btrfs (as you said in the subject), but
+> rather, it's /home being an explicitly mounted subvolume, since btrfs
+> uses bind-mounts internally for subvolume mounts.
+>
+> Makes a difference for folks like me who have /home on a fully separate
+> btrfs.  You had me wondering for a moment, tho as it happens I don't use
+> updatedb either, but I was still wondering what weird bug and how it
+> might otherwise affect me.  An accurate subject line would have helped...
 
-Seems like fuzz-test/003 is broken for quite sometime now (it works on
-v4.7.3 but not after that).
-Can anyone else able to run this test successfully? If this test is
-not required anymore, shall
-we remove it from fuzz-tests?
 
-TEST=003\* tests/fuzz-tests.sh
-[TEST/fuzz]   003-multi-check-unmounted
-btrfs-progs/tests/common: line 170:  1439 Aborted
-(core dumped) $INSTRUMENT "$@" >> "$RESULTS" 2>&1
-mayfail: returned code 134 (SIGABRT), not ignored
-test failed for case 003-multi-check-unmounted
+It is accurate, it's an exactly copied title from the bug report. That
+the bug report's title is confusing is sorta beside the point, I
+certainly can't do anything about that.
 
-Tried applying these two patches
-https://patchwork.kernel.org/patch/9939881/ still script doesn't
-succeed.
-
-thanks.
-
-----
-Cheers,
-Lakshmipathi.G
-http://www.giis.co.in http://www.webminal.org
+-- 
+Chris Murphy

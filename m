@@ -1,91 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58068 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758254AbdKOPM7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 10:12:59 -0500
-Date: Wed, 15 Nov 2017 16:11:03 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, lakshmipathi.g@gmail.com
-Subject: Re: [PATCH 1/2] btrfs: Fix wild memory access in compression level
- parser
-Message-ID: <20171115151103.GN28899@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171106024319.32584-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171106024319.32584-1-wqu@suse.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:39829 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750778AbdKFCnd (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Sun, 5 Nov 2017 21:43:33 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, lakshmipathi.g@gmail.com
+Subject: [PATCH 1/2] btrfs: Fix wild memory access in compression level parser
+Date: Mon,  6 Nov 2017 10:43:18 +0800
+Message-Id: <20171106024319.32584-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 06, 2017 at 10:43:18AM +0800, Qu Wenruo wrote:
-> [BUG]
-> Kernel panic when mounting with "-o compress" mount option.
-> KASAN will report like:
-> ------
-> ==================================================================
-> BUG: KASAN: wild-memory-access in strncmp+0x31/0xc0
-> Read of size 1 at addr d86735fce994f800 by task mount/662
-> ...
-> Call Trace:
->  dump_stack+0xe3/0x175
->  kasan_report+0x163/0x370
->  __asan_load1+0x47/0x50
->  strncmp+0x31/0xc0
->  btrfs_compress_str2level+0x20/0x70 [btrfs]
->  btrfs_parse_options+0xff4/0x1870 [btrfs]
->  open_ctree+0x2679/0x49f0 [btrfs]
->  btrfs_mount+0x1b7f/0x1d30 [btrfs]
->  mount_fs+0x49/0x190
->  vfs_kern_mount.part.29+0xba/0x280
->  vfs_kern_mount+0x13/0x20
->  btrfs_mount+0x31e/0x1d30 [btrfs]
->  mount_fs+0x49/0x190
->  vfs_kern_mount.part.29+0xba/0x280
->  do_mount+0xaad/0x1a00
->  SyS_mount+0x98/0xe0
->  entry_SYSCALL_64_fastpath+0x1f/0xbe
-> ------
-> 
-> [Cause]
-> For 'compress' and 'compress_force' options, its token doesn't expect
-> any parameter so its args[0] contains uninitialized data.
-> Accessing args[0] will cause above wild memory access.
-> 
-> [Fix]
-> For Opt_compress and Opt_compress_force, set compression level to
-> Z_DEFAULT_COMPRESSION manually.
-> 
-> NOTE: Don't set zlib compression level to 0 by default, which means no
-> compression.
+[BUG]
+Kernel panic when mounting with "-o compress" mount option.
+KASAN will report like:
+------
+==================================================================
+BUG: KASAN: wild-memory-access in strncmp+0x31/0xc0
+Read of size 1 at addr d86735fce994f800 by task mount/662
+...
+Call Trace:
+ dump_stack+0xe3/0x175
+ kasan_report+0x163/0x370
+ __asan_load1+0x47/0x50
+ strncmp+0x31/0xc0
+ btrfs_compress_str2level+0x20/0x70 [btrfs]
+ btrfs_parse_options+0xff4/0x1870 [btrfs]
+ open_ctree+0x2679/0x49f0 [btrfs]
+ btrfs_mount+0x1b7f/0x1d30 [btrfs]
+ mount_fs+0x49/0x190
+ vfs_kern_mount.part.29+0xba/0x280
+ vfs_kern_mount+0x13/0x20
+ btrfs_mount+0x31e/0x1d30 [btrfs]
+ mount_fs+0x49/0x190
+ vfs_kern_mount.part.29+0xba/0x280
+ do_mount+0xaad/0x1a00
+ SyS_mount+0x98/0xe0
+ entry_SYSCALL_64_fastpath+0x1f/0xbe
+------
 
-But we never set the level to 0 at the point the compression actually
-happens. See zlib.c:zlib_set_level, if level is 0 then the level
-passed to zlib is 3. Z_DEFAULT_COMPRESSION is upstream zlib level 6,
-which is slower, we need zlib to stay in the real-time numbers.
+[Cause]
+For 'compress' and 'compress_force' options, its token doesn't expect
+any parameter so its args[0] contains uninitialized data.
+Accessing args[0] will cause above wild memory access.
 
-> @@ -507,8 +508,19 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
->  			    token == Opt_compress_force ||
->  			    strncmp(args[0].from, "zlib", 4) == 0) {
->  				compress_type = "zlib";
-> +
->  				info->compress_type = BTRFS_COMPRESS_ZLIB;
-> -				info->compress_level =
-> +				/*
-> +				 * args[0] contains uninitialized data since
-> +				 * for these tokens we don't expect any
-> +				 * parameter.
-> +				 */
-> +				if (token == Opt_compress ||
-> +				    token == Opt_compress_force)
-> +					info->compress_level =
-> +						Z_DEFAULT_COMPRESSION;
-> +				else
-> +					info->compress_level =
->  					btrfs_compress_str2level(args[0].from);
+[Fix]
+For Opt_compress and Opt_compress_force, set compression level to
+Z_DEFAULT_COMPRESSION manually.
 
-At least this will not screw up the levels, anything that's not
-recognized will become the default.
+NOTE: Don't set zlib compression level to 0 by default, which means no
+compression.
 
->  				btrfs_set_opt(info->mount_opt, COMPRESS);
->  				btrfs_clear_opt(info->mount_opt, NODATACOW);
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/super.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 65af029559b5..14258671da84 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -42,6 +42,7 @@
+ #include <linux/cleancache.h>
+ #include <linux/ratelimit.h>
+ #include <linux/btrfs.h>
++#include <linux/zlib.h>
+ #include "delayed-inode.h"
+ #include "ctree.h"
+ #include "disk-io.h"
+@@ -507,8 +508,19 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			    token == Opt_compress_force ||
+ 			    strncmp(args[0].from, "zlib", 4) == 0) {
+ 				compress_type = "zlib";
++
+ 				info->compress_type = BTRFS_COMPRESS_ZLIB;
+-				info->compress_level =
++				/*
++				 * args[0] contains uninitialized data since
++				 * for these tokens we don't expect any
++				 * parameter.
++				 */
++				if (token == Opt_compress ||
++				    token == Opt_compress_force)
++					info->compress_level =
++						Z_DEFAULT_COMPRESSION;
++				else
++					info->compress_level =
+ 					btrfs_compress_str2level(args[0].from);
+ 				btrfs_set_opt(info->mount_opt, COMPRESS);
+ 				btrfs_clear_opt(info->mount_opt, NODATACOW);
+-- 
+2.14.3
+

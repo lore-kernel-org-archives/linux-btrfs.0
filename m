@@ -1,130 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54234 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51532 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933225AbdKFTc5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 14:32:57 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 24789ABFC
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2017 19:32:56 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 10/10] btrfs: sink get_extent parameter to read_extent_buffer_pages
-Date: Mon,  6 Nov 2017 20:31:05 +0100
-Message-Id: <be2018bb4720e0e5df1f6ab3a62d088208904950.1509996091.git.dsterba@suse.com>
-In-Reply-To: <cover.1509996091.git.dsterba@suse.com>
-References: <cover.1509996091.git.dsterba@suse.com>
+        id S932327AbdKFStn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Nov 2017 13:49:43 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 470E1ACAB
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2017 18:49:42 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: switch uuid tree semaphore to mutex
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171106182402.11500-1-dsterba@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <c1a71f80-140f-a3f6-6703-98f119558990@suse.com>
+Date: Mon, 6 Nov 2017 20:49:41 +0200
+MIME-Version: 1.0
+In-Reply-To: <20171106182402.11500-1-dsterba@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-All callers pass btree_get_extent, which needs to be exported.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/disk-io.c   | 8 ++++----
- fs/btrfs/disk-io.h   | 3 +++
- fs/btrfs/extent_io.c | 6 +++---
- fs/btrfs/extent_io.h | 2 +-
- 4 files changed, 11 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5713c50959e0..149be7c5d237 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -220,7 +220,7 @@ void btrfs_set_buffer_lockdep_class(u64 objectid, struct extent_buffer *eb,
-  * extents on the btree inode are pretty simple, there's one extent
-  * that covers the entire device
-  */
--static struct extent_map *btree_get_extent(struct btrfs_inode *inode,
-+struct extent_map *btree_get_extent(struct btrfs_inode *inode,
- 		struct page *page, size_t pg_offset, u64 start, u64 len,
- 		int create)
- {
-@@ -455,7 +455,7 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
- 	io_tree = &BTRFS_I(fs_info->btree_inode)->io_tree;
- 	while (1) {
- 		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
--					       btree_get_extent, mirror_num);
-+					       mirror_num);
- 		if (!ret) {
- 			if (!verify_parent_transid(io_tree, eb,
- 						   parent_transid, 0))
-@@ -1012,7 +1012,7 @@ void readahead_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr)
- 	if (IS_ERR(buf))
- 		return;
- 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
--				 buf, WAIT_NONE, btree_get_extent, 0);
-+				 buf, WAIT_NONE, 0);
- 	free_extent_buffer(buf);
- }
- 
-@@ -1031,7 +1031,7 @@ int reada_tree_block_flagged(struct btrfs_fs_info *fs_info, u64 bytenr,
- 	set_bit(EXTENT_BUFFER_READAHEAD, &buf->bflags);
- 
- 	ret = read_extent_buffer_pages(io_tree, buf, WAIT_PAGE_LOCK,
--				       btree_get_extent, mirror_num);
-+				       mirror_num);
- 	if (ret) {
- 		free_extent_buffer(buf);
- 		return ret;
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 7f7c35d6347a..301151a50ac1 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -149,6 +149,9 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 				     u64 objectid);
- int btree_lock_page_hook(struct page *page, void *data,
- 				void (*flush_fn)(void *));
-+struct extent_map *btree_get_extent(struct btrfs_inode *inode,
-+		struct page *page, size_t pg_offset, u64 start, u64 len,
-+		int create);
- int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
- int __init btrfs_end_io_wq_init(void);
- void btrfs_end_io_wq_exit(void);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 72620cf41423..2f6a977442c3 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -20,6 +20,7 @@
- #include "locking.h"
- #include "rcu-string.h"
- #include "backref.h"
-+#include "disk-io.h"
- 
- static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
-@@ -5258,8 +5259,7 @@ int extent_buffer_uptodate(struct extent_buffer *eb)
- }
- 
- int read_extent_buffer_pages(struct extent_io_tree *tree,
--			     struct extent_buffer *eb, int wait,
--			     get_extent_t *get_extent, int mirror_num)
-+			     struct extent_buffer *eb, int wait, int mirror_num)
- {
- 	unsigned long i;
- 	struct page *page;
-@@ -5319,7 +5319,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 
- 			ClearPageError(page);
- 			err = __extent_read_full_page(tree, page,
--						      get_extent, &bio,
-+						      btree_get_extent, &bio,
- 						      mirror_num, &bio_flags,
- 						      REQ_META);
- 			if (err) {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 5295deb8a153..40291e27782c 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -431,7 +431,7 @@ void free_extent_buffer_stale(struct extent_buffer *eb);
- #define WAIT_PAGE_LOCK	2
- int read_extent_buffer_pages(struct extent_io_tree *tree,
- 			     struct extent_buffer *eb, int wait,
--			     get_extent_t *get_extent, int mirror_num);
-+			     int mirror_num);
- void wait_on_extent_buffer_writeback(struct extent_buffer *eb);
- 
- static inline unsigned long num_extent_pages(u64 start, u64 len)
--- 
-2.14.3
+On  6.11.2017 20:24, David Sterba wrote:
+> The uuid_tree_rescan_sem is used as a mutex (initialized with value 1
+> and with at most one active user), no reason to obscure that as a
+> semaphore.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/ctree.h   |  6 +++++-
+>  fs/btrfs/disk-io.c |  6 +++---
+>  fs/btrfs/super.c   |  4 ++--
+>  fs/btrfs/volumes.c | 12 ++++++------
+>  4 files changed, 16 insertions(+), 12 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index cab2f3607040..a643ff0fa0f0 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1073,7 +1073,11 @@ struct btrfs_fs_info {
+>  	struct percpu_counter bio_counter;
+>  	wait_queue_head_t replace_wait;
+>  
+> -	struct semaphore uuid_tree_rescan_sem;
+> +	/*
+> +	 * Protect updating of uuid_tree, can be used to wait for the task
+> +	 * completion
+> +	 */
+> +	struct mutex uuid_tree_mutex;
+>  
+>  	/* Used to reclaim the metadata space in the background. */
+>  	struct work_struct async_reclaim_work;
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 53c9145a56e9..8330226234f2 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2542,10 +2542,10 @@ int open_ctree(struct super_block *sb,
+>  	mutex_init(&fs_info->cleaner_mutex);
+>  	mutex_init(&fs_info->volume_mutex);
+>  	mutex_init(&fs_info->ro_block_group_mutex);
+> +	mutex_init(&fs_info->uuid_tree_mutex);
+>  	init_rwsem(&fs_info->commit_root_sem);
+>  	init_rwsem(&fs_info->cleanup_work_sem);
+>  	init_rwsem(&fs_info->subvol_sem);
+> -	sema_init(&fs_info->uuid_tree_rescan_sem, 1);
+>  
+>  	btrfs_init_dev_replace_locks(fs_info);
+>  	btrfs_init_qgroup(fs_info);
+> @@ -3696,9 +3696,9 @@ void close_ctree(struct btrfs_fs_info *fs_info)
+>  	btrfs_qgroup_wait_for_completion(fs_info, false);
+>  
+>  	/* wait for the uuid_scan task to finish */
+> -	down(&fs_info->uuid_tree_rescan_sem);
+> +	mutex_lock(&fs_info->uuid_tree_mutex);
+>  	/* avoid complains from lockdep et al., set sem back to initial state */
+> -	up(&fs_info->uuid_tree_rescan_sem);
+> +	mutex_unlock(&fs_info->uuid_tree_mutex);
+>  
+>  	/* pause restriper - we want to resume on mount */
+>  	btrfs_pause_balance(fs_info);
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 713f899bae81..5d0686c18bad 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1777,9 +1777,9 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>  		cancel_work_sync(&fs_info->async_reclaim_work);
+>  
+>  		/* wait for the uuid_scan task to finish */
+> -		down(&fs_info->uuid_tree_rescan_sem);
+> +		mutex_lock(&fs_info->uuid_tree_mutex);
+>  		/* avoid complains from lockdep et al. */
+> -		up(&fs_info->uuid_tree_rescan_sem);
+> +		mutex_unlock(&fs_info->uuid_tree_mutex);
+>  
+>  		sb->s_flags |= MS_RDONLY;
+>  
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 1b43f762906f..b2949232ba52 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4202,7 +4202,7 @@ static int btrfs_uuid_scan_kthread(void *data)
+>  		btrfs_warn(fs_info, "btrfs_uuid_scan_kthread failed %d", ret);
+>  	else
+>  		set_bit(BTRFS_FS_UPDATE_UUID_TREE_GEN, &fs_info->flags);
+> -	up(&fs_info->uuid_tree_rescan_sem);
+> +	mutex_unlock(&fs_info->uuid_tree_mutex);
+>  	return 0;
+>  }
+>  
+> @@ -4264,7 +4264,7 @@ static int btrfs_uuid_rescan_kthread(void *data)
+>  	ret = btrfs_uuid_tree_iterate(fs_info, btrfs_check_uuid_tree_entry);
+>  	if (ret < 0) {
+>  		btrfs_warn(fs_info, "iterating uuid_tree failed %d", ret);
+> -		up(&fs_info->uuid_tree_rescan_sem);
+> +		mutex_unlock(&fs_info->uuid_tree_mutex);
+>  		return ret;
+>  	}
+>  	return btrfs_uuid_scan_kthread(data);
+> @@ -4301,12 +4301,12 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
+>  	if (ret)
+>  		return ret;
+>  
+> -	down(&fs_info->uuid_tree_rescan_sem);
+> +	mutex_lock(&fs_info->uuid_tree_mutex);
+>  	task = kthread_run(btrfs_uuid_scan_kthread, fs_info, "btrfs-uuid");
+>  	if (IS_ERR(task)) {
+>  		/* fs_info->update_uuid_tree_gen remains 0 in all error case */
+>  		btrfs_warn(fs_info, "failed to start uuid_scan task");
+> -		up(&fs_info->uuid_tree_rescan_sem);
+> +		mutex_unlock(&fs_info->uuid_tree_mutex);
+>  		return PTR_ERR(task);
+>  	}
+>  
+> @@ -4317,12 +4317,12 @@ int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info)
+>  {
+>  	struct task_struct *task;
+>  
+> -	down(&fs_info->uuid_tree_rescan_sem);
+> +	mutex_lock(&fs_info->uuid_tree_mutex);
+>  	task = kthread_run(btrfs_uuid_rescan_kthread, fs_info, "btrfs-uuid");
+>  	if (IS_ERR(task)) {
+>  		/* fs_info->update_uuid_tree_gen remains 0 in all error case */
+>  		btrfs_warn(fs_info, "failed to start uuid_rescan task");
+> -		up(&fs_info->uuid_tree_rescan_sem);
+> +		mutex_unlock(&fs_info->uuid_tree_mutex);
+>  		return PTR_ERR(task);
+>  	}
+>  
+> 

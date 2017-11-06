@@ -1,220 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:42599 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752397AbdKBDUF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Nov 2017 23:20:05 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 3879347F13A7
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Nov 2017 11:19:59 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 5/5] btrfs-progs: fi defrag: extend -c to drop nocompress flag on files
-Date: Thu, 2 Nov 2017 11:23:20 +0800
-Message-ID: <20171102032320.12537-6-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20171102032320.12537-1-suy.fnst@cn.fujitsu.com>
-References: <20171102032320.12537-1-suy.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:39001 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752819AbdKFQmS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Nov 2017 11:42:18 -0500
+Date: Mon, 6 Nov 2017 17:40:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/4] Btrfs: introduce device flags
+Message-ID: <20171106164025.GO28789@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171102005405.20420-1-bo.li.liu@oracle.com>
+ <20171102005405.20420-2-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171102005405.20420-2-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now, files which don't have compession property won't be defraged with
-compression.
+On Wed, Nov 01, 2017 at 06:54:02PM -0600, Liu Bo wrote:
+> Here we have defined two flags,
+> - Fautly
+> - In_sync
+> 
+> Currently only In_sync is in use, it only matters when device serves
+> as part of a raid profile.  The flag In_sync is decided when mounting
+> a btrfs and opening a device, by default every device is set with
+> In_sync, but would not be set if its generation was out of date.
+> 
+> If the device doesn't get resync and to avoid overriding its
+> generation during writing superblock, if the !In_sync device is still
+> writeable, its last valid generation will be recorded in
+> superblock.dev_item.generation instead of superblock.generation, such
+> that the last valid generation can be retained through several reboot,
+> btrfs is able to detect the out-of-sync device.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/disk-io.c | 21 ++++++++++++++++++++-
+>  fs/btrfs/volumes.c | 47 ++++++++++++++++++++++++++++++++++++++++++++---
+>  fs/btrfs/volumes.h |  8 ++++++++
+>  3 files changed, 72 insertions(+), 4 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 487bbe4..a080d58 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3640,6 +3640,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+>  	int do_barriers;
+>  	int max_errors;
+>  	int total_errors = 0;
+> +	u64 generation;
+>  	u64 flags;
+>  
+>  	do_barriers = !btrfs_test_opt(fs_info, NOBARRIER);
+> @@ -3671,7 +3672,25 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
+>  		if (!dev->in_fs_metadata || !dev->writeable)
+>  			continue;
+>  
+> -		btrfs_set_stack_device_generation(dev_item, 0);
+> +		/*
+> +		 * if dev is not in_sync, record the last valid
+> +		 * generation.
+> +		 *
+> +		 * This is used to detect !In_sync device after
+> +		 * reboot, now we check a device's In_sync status by
+> +		 * comparing its superblock->dev_item->generation with
+> +		 * the latest one.
+> +		 *
+> +		 * We don't compare superblock->generation because
+> +		 * after reboot and a successfuly superblock writing,
+> +		 * generation in superblock will be updated.
+> +		 */
 
-So add an option '--compress-force' to extend -c to drop nocompress flag
-on files.
+Please format the comments to 80 columns, and use first capital letter
+if it's a stentence.
 
-If the option is enable and a file doesn't have compression property:
-First add a compression property which is specified by option '-c'
-(default as zlib). Then do defrag.
+> +		if (!test_bit(In_sync, &dev->flags))
+> +			generation = dev->generation;
+> +		else
+> +			generation = 0;
+> +		btrfs_set_stack_device_generation(dev_item, generation);
 
-Suggested-by: David Sterba <dsterba@suse.com>
-Suggested-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- cmds-filesystem.c | 94 +++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 88 insertions(+), 6 deletions(-)
+Can generation == 0 possibly confuse older kernels that will not have
+this patch?
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 7728430f16a1..4bbbc86a3b3b 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -37,6 +37,7 @@
- #include "list_sort.h"
- #include "disk-io.h"
- #include "help.h"
-+#include "props.h"
- 
- /*
-  * for btrfs fi show, we maintain a hash of fsids we've already printed.
-@@ -855,6 +856,20 @@ static int parse_compress_type(char *s)
- 	};
- }
- 
-+static const char *compress_type_extract(int type)
-+{
-+	switch (type) {
-+	case BTRFS_COMPRESS_ZLIB:
-+		return "zlib";
-+	case BTRFS_COMPRESS_LZO:
-+		return "lzo";
-+	case BTRFS_COMPRESS_ZSTD:
-+		return "zstd";
-+	}
-+
-+	return NULL;
-+}
-+
- static const char * const cmd_filesystem_defrag_usage[] = {
- 	"btrfs filesystem defragment [options] <file>|<dir> [<file>|<dir>...]",
- 	"Defragment a file or a directory",
-@@ -867,6 +882,8 @@ static const char * const cmd_filesystem_defrag_usage[] = {
- 	"-l len              defragment only up to len bytes",
- 	"-t size             target extent size hint (default: 32M)",
- 	"",
-+	"--compress-force    drop nocompress flag on files, only work with option -c",
-+	"",
- 	"Warning: most Linux kernels will break up the ref-links of COW data",
- 	"(e.g., files copied with 'cp --reflink', snapshots) which may cause",
- 	"considerable increase of space usage. See btrfs-filesystem(8) for",
-@@ -877,8 +894,49 @@ static const char * const cmd_filesystem_defrag_usage[] = {
- static struct btrfs_ioctl_defrag_range_args defrag_global_range;
- static int defrag_global_verbose;
- static int defrag_global_errors;
-+static int defrag_global_compress_force;
-+static int drop_nocompress_property(const char *fpath)
-+{
-+	const char *name = "compression";
-+	const char *compress_type;
-+	int type = prop_object_inode;
-+	int ret = 0;
-+	const struct prop_handler *prop;
-+
-+	for (prop = prop_handlers; prop->name; prop++) {
-+		if (!strcmp(prop->name, name))
-+			break;
-+	}
-+	if (!prop->name) {
-+		error("can't find handler of compression property");
-+		ret = -1;
-+		goto out;
-+	}
-+
-+	ret = prop->getter(type, fpath, name, NULL);
-+	if (ret) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	compress_type = compress_type_extract(
-+		defrag_global_range.compress_type);
-+	if (!compress_type) {
-+		error("unknown compression type %d",
-+		      defrag_global_range.compress_type);
-+		ret = -1;
-+		goto out;
-+	}
-+	ret = prop->setter(type, fpath, name, compress_type);
-+out:
-+	if (ret)
-+		error("failed to drop nocompress property on file %s", fpath);
-+
-+	return ret;
-+}
-+
- static int defrag_callback(const char *fpath, const struct stat *sb,
--		int typeflag, struct FTW *ftwbuf)
-+			   int typeflag, struct FTW *ftwbuf)
- {
- 	int ret = 0;
- 	int err = 0;
-@@ -887,6 +945,11 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
- 	if ((typeflag == FTW_F) && S_ISREG(sb->st_mode)) {
- 		if (defrag_global_verbose)
- 			printf("%s\n", fpath);
-+		if (defrag_global_compress_force) {
-+			ret = drop_nocompress_property(fpath);
-+			if (ret)
-+				goto error;
-+		}
- 		fd = open(fpath, O_RDWR);
- 		if (fd < 0) {
- 			err = errno;
-@@ -926,6 +989,12 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 	int compress_type = BTRFS_COMPRESS_NONE;
- 	DIR *dirstream;
- 
-+	enum { GETOPT_VAL_COMPRESS_FORCE = 257};
-+	static const struct option long_options[] = {
-+		{ "compress-force", no_argument, NULL,
-+		  GETOPT_VAL_COMPRESS_FORCE},
-+		{ NULL, 0, NULL, 0}
-+	};
- 	/*
- 	 * Kernel has a different default (256K) that is supposed to be safe,
- 	 * but it does not defragment very well. The 32M will likely lead to
-@@ -937,8 +1006,10 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 	defrag_global_errors = 0;
- 	defrag_global_verbose = 0;
- 	defrag_global_errors = 0;
-+	defrag_global_compress_force = 0;
- 	while(1) {
--		int c = getopt(argc, argv, "vrc::fs:l:t:");
-+		int c = getopt_long(argc, argv, "vrc::fs:l:t:", long_options,
-+				    NULL);
- 		if (c < 0)
- 			break;
- 
-@@ -972,6 +1043,9 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 		case 'r':
- 			recursive = 1;
- 			break;
-+		case GETOPT_VAL_COMPRESS_FORCE:
-+			defrag_global_compress_force = 1;
-+			break;
- 		default:
- 			usage(cmd_filesystem_defrag_usage);
- 		}
-@@ -987,6 +1061,8 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 	if (compress_type) {
- 		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_COMPRESS;
- 		defrag_global_range.compress_type = compress_type;
-+	} else if (defrag_global_compress_force) {
-+		warning("Option --compress-force only works for -c");
- 	}
- 	if (flush)
- 		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
-@@ -1049,7 +1125,7 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 		}
- 		if (recursive && S_ISDIR(st.st_mode)) {
- 			ret = nftw(argv[i], defrag_callback, 10,
--						FTW_MOUNT | FTW_PHYS);
-+				   FTW_MOUNT | FTW_PHYS);
- 			if (ret == ENOTTY)
- 				exit(1);
- 			/* errors are handled in the callback */
-@@ -1057,9 +1133,15 @@ static int cmd_filesystem_defrag(int argc, char **argv)
- 		} else {
- 			if (defrag_global_verbose)
- 				printf("%s\n", argv[i]);
--			ret = ioctl(fd, BTRFS_IOC_DEFRAG_RANGE,
--					&defrag_global_range);
--			defrag_err = errno;
-+			if (defrag_global_compress_force)
-+				ret = drop_nocompress_property(argv[i]);
-+			if (ret) {
-+				defrag_err = -ret;
-+			} else {
-+				ret = ioctl(fd, BTRFS_IOC_DEFRAG_RANGE,
-+					    &defrag_global_range);
-+				defrag_err = errno;
-+			}
- 		}
- 		close_file_or_dir(fd, dirstream);
- 		if (ret && defrag_err == ENOTTY) {
--- 
-2.15.0
+> +
+>  		btrfs_set_stack_device_type(dev_item, dev->type);
+>  		btrfs_set_stack_device_id(dev_item, dev->devid);
+>  		btrfs_set_stack_device_total_bytes(dev_item,
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 0e8f16c..7b29b1a 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -250,6 +250,7 @@ static struct btrfs_device *__alloc_device(void)
+>  	btrfs_device_data_ordered_init(dev);
+>  	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+>  	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+> +	ASSERT(dev->flags == 0);
 
+I think you can drop this,  the whole structure is zeroed a few lines
+above.
 
+>  
+>  	return dev;
+>  }
+> @@ -1003,10 +1004,32 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>  			   BTRFS_UUID_SIZE))
+>  			goto error_brelse;
+>  
+> -		device->generation = btrfs_super_generation(disk_super);
+> -		if (!latest_dev ||
+> -		    device->generation > latest_dev->generation)
+> +		if (btrfs_stack_device_generation(&disk_super->dev_item) == 0)
+> +			device->generation = btrfs_super_generation(disk_super);
+> +		else
+> +			device->generation =
+> +				btrfs_stack_device_generation(&disk_super->dev_item);
+> +
+> +		/* no lock is required during the initial stage. */
+> +		if (!latest_dev) {
+> +			set_bit(In_sync, &device->flags);
+>  			latest_dev = device;
+> +		} else {
+> +			if (device->generation > latest_dev->generation) {
+> +				set_bit(In_sync, &device->flags);
+> +				clear_bit(In_sync, &latest_dev->flags);
+> +				latest_dev = device;
+> +			} else if (device->generation == latest_dev->generation) {
+> +				set_bit(In_sync, &device->flags);
+> +			}
+> +			/*
+> +			 * if (device->generation < latest_dev->generation)
+> +			 *	# don't set In_sync
+> +			 */
+> +		}
+> +
+> +		if (!test_bit(In_sync, &device->flags))
+> +			pr_info("dev %s gen %llu is not In_sync\n", device->name->str, device->generation);
+>  
+>  		if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
+>  			device->writeable = 0;
+> @@ -2379,6 +2402,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>  	q = bdev_get_queue(bdev);
+>  	if (blk_queue_discard(q))
+>  		device->can_discard = 1;
+> +	set_bit(In_sync, &device->flags);
+>  	device->writeable = 1;
+>  	device->generation = trans->transid;
+>  	device->io_width = fs_info->sectorsize;
+> @@ -2599,6 +2623,7 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  	device->dev_stats_valid = 1;
+>  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
+>  	device->fs_devices = fs_info->fs_devices;
+> +	set_bit(In_sync, &device->flags);
+>  	list_add(&device->dev_list, &fs_info->fs_devices->devices);
+>  	fs_info->fs_devices->num_devices++;
+>  	fs_info->fs_devices->open_devices++;
+> @@ -6450,6 +6475,14 @@ static int read_one_chunk(struct btrfs_fs_info *fs_info, struct btrfs_key *key,
+>  			btrfs_report_missing_device(fs_info, devid, uuid);
+>  			return -EIO;
+>  		}
+> +		if (map->stripes[i].dev &&
+> +		    !test_bit(In_sync, &map->stripes[i].dev->flags) &&
+> +		    !btrfs_test_opt(fs_info, DEGRADED)) {
+> +			btrfs_warn(fs_info, "devid %llu uuid %pU is Not in_sync, but we're not under degraded mode",
 
+Please move the string to the next line and un-indent until it fits 80
+columns line.
+
+> +				   devid, uuid);
+> +			free_extent_map(em);
+> +			return -EIO;
+> +		}
+>  		if (!map->stripes[i].dev) {
+>  			map->stripes[i].dev =
+>  				add_missing_dev(fs_info->fs_devices, devid,
+> @@ -6592,6 +6625,14 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
+>  				return -EIO;
+>  		}
+>  
+> +		if (!test_bit(In_sync, &device->flags) &&
+> +		    !btrfs_test_opt(fs_info, DEGRADED)) {
+> +			btrfs_warn(fs_info,
+> +				   "devid %llu uuid %pU is Not in_sync, but we're not under degraded mode",
+> +				   devid, dev_uuid);
+> +			return -EIO;
+> +		}
+> +
+>  		if(!device->bdev && !device->missing) {
+>  			/*
+>  			 * this happens when a device that was properly setup
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 6108fdf..65b928c 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -69,6 +69,9 @@ struct btrfs_device {
+>  	/* the mode sent to blkdev_get */
+>  	fmode_t mode;
+>  
+> +	/* bit set of 'enum flag_bits' bit  */
+> +	unsigned long flags;
+> +
+>  	int writeable;
+>  	int in_fs_metadata;
+>  	int missing;
+
+It would be good if you first make a generic member 'flags', and convert
+writeable/in_fs_metadata/missing/... to that and add the sync flags
+later.
+
+> @@ -261,6 +264,11 @@ struct btrfs_fs_devices {
+>  	struct completion kobj_unregister;
+>  };
+>  
+> +enum flag_bits {
+
+This name is too generic.
+
+> +	Faulty,		/* device is known to have a fault */
+> +	In_sync,	/* device is in_sync with rest of array */
+
+Enums usually are all caps, and with some prefix.
+
+> +};

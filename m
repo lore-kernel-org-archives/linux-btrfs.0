@@ -1,25 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41086 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754484AbdKFREG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 12:04:06 -0500
-Date: Mon, 6 Nov 2017 18:02:14 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/7] btrfs: btrfs_rm_device() does not need uuid_mutex
-Message-ID: <20171106170214.GS28789@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:50585 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754455AbdKFXpA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 18:45:00 -0500
+Subject: Re: [PATCH 3/7] btrfs: use i_size_read() instead of open code
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20171106083618.7617-1-anand.jain@oracle.com>
- <20171106083618.7617-6-anand.jain@oracle.com>
+ <20171106083618.7617-4-anand.jain@oracle.com>
+ <20171106165215.GQ28789@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <d16fbeb8-bfb7-58da-4ae0-6dde21a74762@oracle.com>
+Date: Tue, 7 Nov 2017 07:44:59 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171106083618.7617-6-anand.jain@oracle.com>
+In-Reply-To: <20171106165215.GQ28789@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 06, 2017 at 04:36:16PM +0800, Anand Jain wrote:
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-No changelog at all? Sorry but I'm tired of asking you for explanations
-each time. Removing a mutex is far from a trivial change.
+
+On 11/07/2017 12:52 AM, David Sterba wrote:
+> On Mon, Nov 06, 2017 at 04:36:14PM +0800, Anand Jain wrote:
+>> As i_size_read() takes care of 32bit smp or preempt cases as well.
+> 
+> Can bdev->bd_inode->i_size change so that we need to use the
+> i_size_read()? My answer is 'no'.
+
+  Hm. Right I was looking at it only from the theoretical point of view.
+
+  And I presume you mean to say disk resize at the block layer is not
+  really a practically achievable concern.
+
+Thanks, Anand

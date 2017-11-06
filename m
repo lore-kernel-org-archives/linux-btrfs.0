@@ -1,86 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:43889 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933669AbdKGInZ (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 7 Nov 2017 03:43:25 -0500
-From: Qu Wenruo <wqu@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:17674 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750918AbdKFIgP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 03:36:15 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA68aEpX001886
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Nov 2017 08:36:14 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA68aD2f030946
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Nov 2017 08:36:14 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vA68aDj7005200
+        for <linux-btrfs@vger.kernel.org>; Mon, 6 Nov 2017 08:36:13 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2 12/12] btrfs-progs: test/mkfs: Add test case for --rootdir and -R quota
-Date: Tue,  7 Nov 2017 16:42:59 +0800
-Message-Id: <20171107084259.22367-16-wqu@suse.com>
-In-Reply-To: <20171107084259.22367-1-wqu@suse.com>
-References: <20171107084259.22367-1-wqu@suse.com>
+Subject: [PATCH 1/7] btrfs: optimize use of volume_mutex in btrfs_ioctl_resize()
+Date: Mon,  6 Nov 2017 16:36:12 +0800
+Message-Id: <20171106083618.7617-2-anand.jain@oracle.com>
+In-Reply-To: <20171106083618.7617-1-anand.jain@oracle.com>
+References: <20171106083618.7617-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nothing interesting, since such combination can be handled easily by
-qgroup-verify.
+We can push volume_mutex lock further down after the memory operation.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- tests/mkfs-tests/010-rootdir-and-quota/test.sh | 51 ++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
- create mode 100755 tests/mkfs-tests/010-rootdir-and-quota/test.sh
+ fs/btrfs/ioctl.c | 23 ++++++++++++-----------
+ 1 file changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/tests/mkfs-tests/010-rootdir-and-quota/test.sh b/tests/mkfs-tests/010-rootdir-and-quota/test.sh
-new file mode 100755
-index 000000000000..3dae1e8a2068
---- /dev/null
-+++ b/tests/mkfs-tests/010-rootdir-and-quota/test.sh
-@@ -0,0 +1,51 @@
-+#!/bin/bash
-+# Check if runtime feature quota can handle rootdir
-+#
-+
-+source "$TOP/tests/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+setup_root_helper		# For mknod
-+prepare_test_dev 1G		# make it large since we will fill the fs
-+
-+# mknod can create FIFO/CHAR/BLOCK file but not SOCK.
-+# No neat tool to create socket file, unless using python or similar.
-+# So no SOCK is tested here
-+check_global_prereq mknod
-+check_global_prereq dd
-+
-+tmp=$(mktemp -d --tmpdir btrfs-progs-mkfs.rootdirXXXXXXX)
-+
-+run_check mkdir "$tmp/dir"
-+run_check mkdir -p "$tmp/dir/in/dir"
-+
-+# More dir, there is no good way to pump metadata since we have no trigger
-+# to enable/disable inline extent data, so here create enough dirs to bump
-+# metadata
-+run_check mkdir "$tmp/a_lot_of_dirs"
-+for i in $(seq -w 0 8192); do
-+	run_check mkdir "$tmp/a_lot_of_dirs/dir_$i"
-+done
-+
-+# Then some data
-+run_check dd if=/dev/zero bs=1M count=1 of="$tmp/1M"
-+run_check dd if=/dev/zero bs=2M count=1 of="$tmp/2M"
-+run_check dd if=/dev/zero bs=4M count=1 of="$tmp/4M"
-+run_check dd if=/dev/zero bs=8M count=1 of="$tmp/8M"
-+
-+run_check dd if=/dev/zero bs=1K count=1 of="$tmp/1K"
-+run_check dd if=/dev/zero bs=2K count=1 of="$tmp/2K"
-+run_check dd if=/dev/zero bs=4K count=1 of="$tmp/4K"
-+run_check dd if=/dev/zero bs=8K count=1 of="$tmp/8K"
-+
-+run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -r "$tmp" -R quota "$TEST_DEV"
-+
-+rm -rf -- "$tmp"
-+
-+# Normal check already includes quota check
-+run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
-+
-+# Just in case
-+run_check $SUDO_HELPER "$TOP/btrfs" check --qgroup-report "$TEST_DEV"
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 09c95f1b07dc..2eb220213d63 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1470,7 +1470,6 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		return BTRFS_ERROR_DEV_EXCL_RUN_IN_PROGRESS;
+ 	}
+ 
+-	mutex_lock(&fs_info->volume_mutex);
+ 	vol_args = memdup_user(arg, sizeof(*vol_args));
+ 	if (IS_ERR(vol_args)) {
+ 		ret = PTR_ERR(vol_args);
+@@ -1495,12 +1494,13 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		btrfs_info(fs_info, "resizing devid %llu", devid);
+ 	}
+ 
++	mutex_lock(&fs_info->volume_mutex);
+ 	device = btrfs_find_device(fs_info, devid, NULL, NULL);
+ 	if (!device) {
+ 		btrfs_info(fs_info, "resizer unable to find device %llu",
+ 			   devid);
+ 		ret = -ENODEV;
+-		goto out_free;
++		goto out_mutex;
+ 	}
+ 
+ 	if (!device->writeable) {
+@@ -1508,7 +1508,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 			   "resizer unable to apply on readonly device %llu",
+ 		       devid);
+ 		ret = -EPERM;
+-		goto out_free;
++		goto out_mutex;
+ 	}
+ 
+ 	if (!strcmp(sizestr, "max"))
+@@ -1524,13 +1524,13 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		new_size = memparse(sizestr, &retptr);
+ 		if (*retptr != '\0' || new_size == 0) {
+ 			ret = -EINVAL;
+-			goto out_free;
++			goto out_mutex;
+ 		}
+ 	}
+ 
+ 	if (device->is_tgtdev_for_dev_replace) {
+ 		ret = -EPERM;
+-		goto out_free;
++		goto out_mutex;
+ 	}
+ 
+ 	old_size = btrfs_device_get_total_bytes(device);
+@@ -1538,24 +1538,24 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 	if (mod < 0) {
+ 		if (new_size > old_size) {
+ 			ret = -EINVAL;
+-			goto out_free;
++			goto out_mutex;
+ 		}
+ 		new_size = old_size - new_size;
+ 	} else if (mod > 0) {
+ 		if (new_size > ULLONG_MAX - old_size) {
+ 			ret = -ERANGE;
+-			goto out_free;
++			goto out_mutex;
+ 		}
+ 		new_size = old_size + new_size;
+ 	}
+ 
+ 	if (new_size < SZ_256M) {
+ 		ret = -EINVAL;
+-		goto out_free;
++		goto out_mutex;
+ 	}
+ 	if (new_size > device->bdev->bd_inode->i_size) {
+ 		ret = -EFBIG;
+-		goto out_free;
++		goto out_mutex;
+ 	}
+ 
+ 	new_size = round_down(new_size, fs_info->sectorsize);
+@@ -1567,7 +1567,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		trans = btrfs_start_transaction(root, 0);
+ 		if (IS_ERR(trans)) {
+ 			ret = PTR_ERR(trans);
+-			goto out_free;
++			goto out_mutex;
+ 		}
+ 		ret = btrfs_grow_device(trans, device, new_size);
+ 		btrfs_commit_transaction(trans);
+@@ -1575,10 +1575,11 @@ static noinline int btrfs_ioctl_resize(struct file *file,
+ 		ret = btrfs_shrink_device(device, new_size);
+ 	} /* equal, nothing need to do */
+ 
++out_mutex:
++	mutex_unlock(&fs_info->volume_mutex);
+ out_free:
+ 	kfree(vol_args);
+ out:
+-	mutex_unlock(&fs_info->volume_mutex);
+ 	clear_bit(BTRFS_FS_EXCL_OP, &fs_info->flags);
+ 	mnt_drop_write_file(file);
+ 	return ret;
 -- 
-2.15.0
+2.13.1
 

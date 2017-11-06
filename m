@@ -1,251 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:50126 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:35625 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753239AbdKXLbM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Nov 2017 06:31:12 -0500
-Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A9C9121996
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Nov 2017 11:31:11 +0000 (UTC)
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: incremental send, fix wrong unlink path after renaming file
-Date: Fri, 17 Nov 2017 14:48:30 +0000
-Message-Id: <20171117144830.17839-1-fdmanana@kernel.org>
+        id S1753107AbdKFQDr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Nov 2017 11:03:47 -0500
+Date: Mon, 6 Nov 2017 17:01:55 +0100
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Btrfs: fix reported number of inode blocks after
+ buffered append writes
+Message-ID: <20171106160155.GN28789@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171031185612.30800-1-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171031185612.30800-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Oct 31, 2017 at 06:56:12PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> The patch from commit 7e3b975a0f92 ("Btrfs: fix reported number of inode
 
-Under some circumstances, an incremental send operation can issue wrong
-paths for unlink commands related to files that have multiple hard links
-and some (or all) of those links were renamed between the parent and send
-snapshots. Consider the following example:
+The commit id should be a7e3b975a0f9, looks like a typo, missing 'a' at
+the beginning.
 
-Parent snapshot
+> blocks") introduced a regression where if we do a buffered write starting
+> at position equal to or greater than the file's size and then stat(2) the
+> file before writeback is triggered, the number of used blocks does not
+> change (unless there's a prealloc/unwritten extent). Example:
+> 
+>   $ xfs_io -f -c "pwrite -S 0xab 0 64K" foobar
+>   $ du -h foobar
+>   0	foobar
+>   $ sync
+>   $ du -h foobar
+>   64K	foobar
+> 
+> The first version of that patch didn't had this regression and the second
+> version, which was the one committed, was made only to address some
+> performance regression detected by the intel test robots using fs_mark.
+> 
+> This fixes the regression by setting the new delaloc bit in the range, and
+> doing it at btrfs_dirty_pages() while setting the regular dealloc bit as
+> well, so that this way we set both bits at once avoiding navigation of the
+> inode's io tree twice. Doing it at btrfs_dirty_pages() is also the most
+> meaninful place, as we should set the new dellaloc bit when if we set the
+> delalloc bit, which happens only if we copied bytes into the pages at
+> __btrfs_buffered_write().
+> 
+> This was making some of LTP's du tests fail, which can be quickly run
+> using a command line like the following:
+> 
+>   $ ./runltp -q -p -l /ltp.log -f commands -s du -d /mnt
+> 
+> Fixes: 7e3b975a0f92 ("Btrfs: fix reported number of inode blocks")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/ctree.h                 |   1 +
+>  fs/btrfs/extent_io.h             |   5 +-
+>  fs/btrfs/file.c                  | 123 +++++++++++++++++++++------------------
+>  fs/btrfs/inode.c                 |   9 +--
+>  fs/btrfs/relocation.c            |   3 +-
+>  fs/btrfs/tests/extent-io-tests.c |   6 +-
+>  fs/btrfs/tests/inode-tests.c     |  12 ++--
+>  7 files changed, 86 insertions(+), 73 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 8fc690384c58..51f1f3e31608 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3174,6 +3174,7 @@ int btrfs_start_delalloc_inodes(struct btrfs_root *root, int delay_iput);
+>  int btrfs_start_delalloc_roots(struct btrfs_fs_info *fs_info, int delay_iput,
+>  			       int nr);
+>  int btrfs_set_extent_delalloc(struct inode *inode, u64 start, u64 end,
+> +			      unsigned int extra_bits,
+>  			      struct extent_state **cached_state, int dedupe);
+>  int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+>  			     struct btrfs_root *new_root,
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index faffa28ba707..580a6c1c296c 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -365,10 +365,11 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+>  		       struct extent_state **cached_state);
+>  
+>  static inline int set_extent_delalloc(struct extent_io_tree *tree, u64 start,
+> -		u64 end, struct extent_state **cached_state)
+> +				      u64 end, unsigned int extra_bits,
+> +				      struct extent_state **cached_state)
+>  {
+>  	return set_extent_bit(tree, start, end,
+> -			      EXTENT_DELALLOC | EXTENT_UPTODATE,
+> +			      EXTENT_DELALLOC | EXTENT_UPTODATE | extra_bits,
+>  			      NULL, cached_state, GFP_NOFS);
+>  }
+>  
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index aaab1838cece..bcac827d65f0 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -477,6 +477,47 @@ static void btrfs_drop_pages(struct page **pages, size_t num_pages)
+>  	}
+>  }
+>  
+> +static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
+> +					 const u64 start,
+> +					 const u64 len,
+> +					 struct extent_state **cached_state)
+> +{
+...
+> +}
 
- .                                                      (ino 256)
- |---- a/                                               (ino 257)
- |     |---- b/                                         (ino 259)
- |     |     |---- c/                                   (ino 260)
- |     |     |---- f2                                   (ino 261)
- |     |
- |     |---- f2l1                                       (ino 261)
- |
- |---- d/                                               (ino 262)
-       |---- f1l1_2                                     (ino 258)
-       |---- f2l2                                       (ino 261)
-       |---- f1_2                                       (ino 258)
-
-Send snapshot
-
- .                                                      (ino 256)
- |---- a/                                               (ino 257)
- |     |---- f2l1/                                      (ino 263)
- |             |---- b2/                                (ino 259)
- |                   |---- c/                           (ino 260)
- |                   |     |---- d3                     (ino 262)
- |                   |           |---- f1l1_2           (ino 258)
- |                   |           |---- f2l2_2           (ino 261)
- |                   |           |---- f1_2             (ino 258)
- |                   |
- |                   |---- f2                           (ino 261)
- |                   |---- f1l2                         (ino 258)
- |
- |---- d                                                (ino 261)
-
-When computing the incremental send stream the following steps happen:
-
-1) When processing inode 261, a rename operation is issued that renames
-   inode 262, which currently as a path of "d", to an orphan name of
-   "o262-7-0". This is done because in the send snapshot, inode 261 has
-   of its hard links with a path of "d" as well.
-
-2) Two link operations are issued that create the new hard links for
-   inode 261, whose names are "d" and "f2l2_2", at paths "/" and
-   "o262-7-0/" respectively.
-
-3) Still while processing inode 261, unlink operations are issued to
-   remove the old hard links of inode 261, with names "f2l1" and "f2l2",
-   at paths "a/" and "d/". However path "d/" does not correspond anymore
-   to the directory inode 262 but corresponds instead to a hard link of
-   inode 261 (link command issued in the previous step). This makes the
-   receiver fail with a ENOTDIR error when attempting the unlink
-   operation.
-
-The problem happens because before sending the unlink operation, we failed
-to detect that inode 262 was one of ancestors for inode 261 in the parent
-snapshot, and therefore we didn't recompute the path for inode 262 before
-issuing the unlink operation for the link named "f2l2" of inode 262. The
-detection failed because the function "is_ancestor()" only follows the
-first hard link it finds for an inode instead of all of its hard links
-(as it was originally created for being used with directories only, for
-which only one hard link exists). So fix this by making "is_ancestor()"
-follow all hard links of the input inode.
-
-A test case for fstests follows soon.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 124 ++++++++++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 106 insertions(+), 18 deletions(-)
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 8fd195cfe81b..2c35717a3470 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -3527,7 +3527,40 @@ static int wait_for_dest_dir_move(struct send_ctx *sctx,
- }
- 
- /*
-- * Check if ino ino1 is an ancestor of inode ino2 in the given root.
-+ * Check if inode ino2, or any of its ancestors, is inode ino1.
-+ * Return 1 if true, 0 if false and < 0 on error.
-+ */
-+static int check_ino_in_path(struct btrfs_root *root,
-+			     const u64 ino1,
-+			     const u64 ino1_gen,
-+			     const u64 ino2,
-+			     const u64 ino2_gen,
-+			     struct fs_path *fs_path)
-+{
-+	u64 ino = ino2;
-+
-+	if (ino1 == ino2)
-+		return ino1_gen == ino2_gen;
-+
-+	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
-+		u64 parent;
-+		u64 parent_gen;
-+		int ret;
-+
-+		fs_path_reset(fs_path);
-+		ret = get_first_ref(root, ino, &parent, &parent_gen, fs_path);
-+		if (ret < 0)
-+			return ret;
-+		if (parent == ino1)
-+			return parent_gen == ino1_gen;
-+		ino = parent;
-+	}
-+	return 0;
-+}
-+
-+/*
-+ * Check if ino ino1 is an ancestor of inode ino2 in the given root for any
-+ * possible path (in case ino2 is not a directory and has multiple hard links).
-  * Return 1 if true, 0 if false and < 0 on error.
-  */
- static int is_ancestor(struct btrfs_root *root,
-@@ -3536,36 +3569,91 @@ static int is_ancestor(struct btrfs_root *root,
- 		       const u64 ino2,
- 		       struct fs_path *fs_path)
- {
--	u64 ino = ino2;
--	bool free_path = false;
-+	bool free_fs_path = false;
- 	int ret = 0;
-+	struct btrfs_path *path = NULL;
-+	struct btrfs_key key;
- 
- 	if (!fs_path) {
- 		fs_path = fs_path_alloc();
- 		if (!fs_path)
- 			return -ENOMEM;
--		free_path = true;
-+		free_fs_path = true;
- 	}
- 
--	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
--		u64 parent;
--		u64 parent_gen;
-+	path = alloc_path_for_send();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
- 
--		fs_path_reset(fs_path);
--		ret = get_first_ref(root, ino, &parent, &parent_gen, fs_path);
--		if (ret < 0) {
--			if (ret == -ENOENT && ino == ino2)
--				ret = 0;
--			goto out;
-+	key.objectid = ino2;
-+	key.type = BTRFS_INODE_REF_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+
-+	while (true) {
-+		struct extent_buffer *leaf = path->nodes[0];
-+		int slot = path->slots[0];
-+		u32 cur_offset = 0;
-+		u32 item_size;
-+
-+		if (slot >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				goto out;
-+			if (ret > 0)
-+				break;
-+			continue;
- 		}
--		if (parent == ino1) {
--			ret = parent_gen == ino1_gen ? 1 : 0;
--			goto out;
-+
-+		btrfs_item_key_to_cpu(leaf, &key, slot);
-+		if (key.objectid != ino2)
-+			break;
-+		if (key.type != BTRFS_INODE_REF_KEY &&
-+		    key.type != BTRFS_INODE_EXTREF_KEY)
-+			break;
-+
-+		item_size = btrfs_item_size_nr(leaf, slot);
-+		while (cur_offset < item_size) {
-+			u64 parent;
-+			u64 parent_gen;
-+
-+			if (key.type == BTRFS_INODE_EXTREF_KEY) {
-+				unsigned long ptr;
-+				struct btrfs_inode_extref *extref;
-+
-+				ptr = btrfs_item_ptr_offset(leaf, slot);
-+				extref = (struct btrfs_inode_extref *)
-+					(ptr + cur_offset);
-+				parent = btrfs_inode_extref_parent(leaf,
-+								   extref);
-+				cur_offset += sizeof(*extref);
-+				cur_offset += btrfs_inode_extref_name_len(leaf,
-+								  extref);
-+			} else {
-+				parent = key.offset;
-+				cur_offset = item_size;
-+			}
-+
-+			ret = get_inode_info(root, parent, NULL, &parent_gen,
-+					     NULL, NULL, NULL, NULL);
-+			if (ret < 0)
-+				goto out;
-+			ret = check_ino_in_path(root, ino1, ino1_gen,
-+						parent, parent_gen, fs_path);
-+			if (ret)
-+				goto out;
- 		}
--		ino = parent;
-+		path->slots[0]++;
- 	}
-+	ret = 0;
-  out:
--	if (free_path)
-+	btrfs_free_path(path);
-+	if (free_fs_path)
- 		fs_path_free(fs_path);
- 	return ret;
- }
--- 
-2.11.0
-
+Can you please separate moving of btrfs_find_new_delalloc_bytes to
+another patch?

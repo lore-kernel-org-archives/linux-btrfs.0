@@ -1,46 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f176.google.com ([74.125.82.176]:50016 "EHLO
-        mail-ot0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753107AbdKFUEt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 15:04:49 -0500
-Received: by mail-ot0-f176.google.com with SMTP id c47so10094680otj.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 12:04:49 -0800 (PST)
+Received: from mail-ot0-f181.google.com ([74.125.82.181]:45575 "EHLO
+        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753924AbdKFURu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 15:17:50 -0500
+Received: by mail-ot0-f181.google.com with SMTP id q99so10140116ota.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 12:17:49 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS9he3cpqKgnFQjM2GPA1atvgfmi2ZhrjGZg8Yq1h91BQ@mail.gmail.com>
-References: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
- <CAD8FQQ3kBfy8kLFzSm-OVbsYsQ7-LzH0faD09__4S5_q0bM7pA@mail.gmail.com>
- <CAKuJGC-aRt_NKboYa9ZK6ApWDJ_knM-UazPxEUq7sHiNXEqA6w@mail.gmail.com>
- <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
- <CAD8FQQ3boTj97yu-F8CiFBvR-EfD+1chcSo=VzyAxwO7GpomEg@mail.gmail.com>
- <CAKuJGC8omM8TMg7DqncuoM6e0jdUOdiwNLU6q29z__U=2NQHvg@mail.gmail.com>
- <1484297967.48018.1508985286675@email.1and1.com> <CAJCQCtS9he3cpqKgnFQjM2GPA1atvgfmi2ZhrjGZg8Yq1h91BQ@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 6 Nov 2017 13:04:48 -0700
-Message-ID: <CAJCQCtSR3aSe5OfEW3A2vxvv8j71pqTu-mOeYSvjaKhGogT=Jg@mail.gmail.com>
-Subject: Re: btrfs send yields "ERROR: send ioctl failed with -5: Input/output error"
-To: Chris Murphy <lists@colorremedies.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Zak Kohler <y2k@y2kbugger.com>,
-        "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
+Date: Mon, 6 Nov 2017 13:17:48 -0700
+Message-ID: <CAJCQCtTsfNgSBDdnq0uFd1ZRRY0AWbv=rx5X1UUGp1i9hK-4hw@mail.gmail.com>
+Subject: feedback on three different scrub methods
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 29, 2017 at 1:05 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Thu, Oct 26, 2017 at 4:34 AM, Zak Kohler <y2k@y2kbugger.com> wrote:
->
->> I will gladly repeat this process, but I am very concerned why this
->> corruption happened in the first place.
->
-> Right. So everyone who can, needs to run the three scrubs on all
-> available Btrfs volumes/devices and see if they get any discrepancies.
+I just did scrubs on five different volumes using all three scrub
+methods. There were no errors found, so the test leaves uncertain what
+the error handling differences are between the three scrubs. But at
+the least with no errors, there are also no disagreements between the
+three methods.
 
-I've just done this test with five Btrfs volumes of various ages, and
-a total of a few TB. There were no errors, and no discrepancies
-between the three scrubs. What is needed for more thorough testing is
-corrupt metadata and data (unrelated), and see how the three scrubs
-report those corruptions. More information in the new thread "feedback
-on three different scrub methods"
+1. Speed. Both normal online scrub and the btrfsck --check-data-csum
+methods, I get ~275MB/s transfers per iotop. Whereas with --offline
+scrub I'm seeing 60%-67% of that, or ~170MB/s transfers. That's
+substantially slower. If it were using less CPU or the system more
+responsive, it might be worth that trade off in time. But the CPU %
+and system responsiveness for other tasks seemed the same, it just
+took longer.
+
+2. Each method reports different statistics in different formats. And
+that's fine except I can't make heads or tails out of the information
+presented, making it basically useless at least to this user.
+
+[chris@f26s ~]$ sudo /srv/scratch/gitsworking/btrfs-progs/btrfs check
+--check-data-csum /dev/mapper/sdd
+Checking filesystem on /dev/mapper/sdd
+UUID: f5adc913-bbea-4340-8b5f-3411e2cda642
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 601877024768 bytes used, no error found
+total csum bytes: 586444884
+total tree bytes: 1208827904
+total fs tree bytes: 510672896
+total extent tree bytes: 53755904
+btree space waste bytes: 142065358
+file data blocks allocated: 2213492944896
+ referenced 1977848909824
+
+
+[chris@f26s ~]$ sudo btrfs-progs/btrfs scrub start --offline
+/dev/mapper/sdd
+[sudo] password for chris:
+Scrub result:
+Tree bytes scrubbed: 2417655808
+Tree extents scrubbed: 295124
+Data bytes scrubbed: 2398080548864
+Data extents scrubbed: 751158
+Data bytes without csum: 297271296
+Read error: 0
+Verify error: 0
+Csum error: 0
+
+I'm not finding any way these add up. Seems like --offline's tree
+bytes scrubbed + data bytes scrubbed should add up to
+--check-data-csum's found bytes - waste bytes? But no, I have no idea
+what I'm looking at or how it's useful to the user, but OK.
+
+
+I used kernel 4.13.10 and btrfs-progs 4.13.3 for the usual 'btrfs
+scrub start' and the less common 'btrfs check ----check-data-csum'
+methods; and Qu's v4.11.1-89-gf939adf2 with offline_scrub checked out.
+
+
 
 
 -- 

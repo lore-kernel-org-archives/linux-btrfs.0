@@ -1,83 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f181.google.com ([74.125.82.181]:45575 "EHLO
-        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753924AbdKFURu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 15:17:50 -0500
-Received: by mail-ot0-f181.google.com with SMTP id q99so10140116ota.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 12:17:49 -0800 (PST)
+Received: from smtp.domeneshop.no ([194.63.252.55]:36165 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752651AbdKFVsv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 16:48:51 -0500
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: Several questions regarding btrfs
+To: ST <smntov@gmail.com>, linux-btrfs@vger.kernel.org
+References: <1509467347.1662.40.camel@gmail.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <d553c066-75b4-88d4-1c4f-e1362ce3d97a@dirtcellar.net>
+Date: Mon, 6 Nov 2017 22:48:48 +0100
 MIME-Version: 1.0
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 6 Nov 2017 13:17:48 -0700
-Message-ID: <CAJCQCtTsfNgSBDdnq0uFd1ZRRY0AWbv=rx5X1UUGp1i9hK-4hw@mail.gmail.com>
-Subject: feedback on three different scrub methods
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <1509467347.1662.40.camel@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just did scrubs on five different volumes using all three scrub
-methods. There were no errors found, so the test leaves uncertain what
-the error handling differences are between the three scrubs. But at
-the least with no errors, there are also no disagreements between the
-three methods.
+ST wrote:
+> Hello,
+>
+> I've recently learned about btrfs and consider to utilize for my needs.
+> I have several questions in this regard:
+>
+> I manage a dedicated server remotely and have some sort of script that
+> installs an OS from several images. There I can define partitions and
+> their FSs.
+>
+> 1. By default the script provides a small separate partition for /boot
+> with ext3. Does it have any advantages or can I simply have /boot
+> within / all on btrfs? (Note: the OS is Debian9)
+>
+I am on Debian as well and run /boot on multiple systems without any 
+issues. Remember to run grub-install on all your disks and update-grub 
+if you run it in a redundant setup. That way you can loose a disk and 
+still be happy about it.
+If you run a redundant setup like raid1 / raid10 make sure you have 
+sufficient disks to avoid that the filesystem enters read-only mode. See 
+the status page for details.
 
-1. Speed. Both normal online scrub and the btrfsck --check-data-csum
-methods, I get ~275MB/s transfers per iotop. Whereas with --offline
-scrub I'm seeing 60%-67% of that, or ~170MB/s transfers. That's
-substantially slower. If it were using less CPU or the system more
-responsive, it might be worth that trade off in time. But the CPU %
-and system responsiveness for other tasks seemed the same, it just
-took longer.
+> 2. as for the / I get ca. following written to /etc/fstab:
+> UUID=blah_blah /dev/sda3 / btrfs ...
+> So top-level volume is populated after initial installation with the
+> main filesystem dir-structure (/bin /usr /home, etc..). As per btrfs
+> wiki I would like top-level volume to have only subvolumes (at least,
+> the one mounted as /) and snapshots. I can make a snapshot of the
+> top-level volume with / structure, but how can get rid of all the
+> directories within top-lvl volume and keep only the subvolume
+> containing / (and later snapshots), unmount it and then mount the
+> snapshot that I took? rm -rf / - is not a good idea...
+>
+There are some tutorials floating around the web for this stuff. Just be 
+careful, after a system update you might run into boot issues.
+(I suggest you try playing with this in a VM first to see what happens)
 
-2. Each method reports different statistics in different formats. And
-that's fine except I can't make heads or tails out of the information
-presented, making it basically useless at least to this user.
+> 3. in my current ext4-based setup I have two servers while one syncs
+> files of certain dir to the other using lsyncd (which launches rsync on
+> inotify events). As far as I have understood it is more efficient to use
+> btrfs send/receive (over ssh) than rsync (over ssh) to sync two boxes.
+> Do you think it would be possible to make lsyncd to use btrfs for
+> syncing instead of rsync? I.e. can btrfs work with inotify events? Did
+> somebody try it already?
+> Otherwise I can sync using btrfs send/receive from within cron every
+> 10-15 minutes, but it seems less elegant.
+Have no idea, but since Debian uses systemd you might be able to cook up 
+something with systemd.path 
+(https://www.freedesktop.org/software/systemd/man/systemd.path.html
 
-[chris@f26s ~]$ sudo /srv/scratch/gitsworking/btrfs-progs/btrfs check
---check-data-csum /dev/mapper/sdd
-Checking filesystem on /dev/mapper/sdd
-UUID: f5adc913-bbea-4340-8b5f-3411e2cda642
-checking extents
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-found 601877024768 bytes used, no error found
-total csum bytes: 586444884
-total tree bytes: 1208827904
-total fs tree bytes: 510672896
-total extent tree bytes: 53755904
-btree space waste bytes: 142065358
-file data blocks allocated: 2213492944896
- referenced 1977848909824
+>
+> 4. In a case when compression is used - what quota is based on - (a)
+> amount of GBs the data actually consumes on the hard drive while in
+> compressed state or (b) amount of GBs the data naturally is in
+> uncompressed form. I need to set quotas as in (b). Is it possible? If
+> not - should I file a feature request?
+>
+No, you should not file a feature request it seems.
+Look what me and Google found for you :)
+https://btrfs.wiki.kernel.org/index.php/Quota_support
+(hint: read the "using limits" section)
 
-
-[chris@f26s ~]$ sudo btrfs-progs/btrfs scrub start --offline
-/dev/mapper/sdd
-[sudo] password for chris:
-Scrub result:
-Tree bytes scrubbed: 2417655808
-Tree extents scrubbed: 295124
-Data bytes scrubbed: 2398080548864
-Data extents scrubbed: 751158
-Data bytes without csum: 297271296
-Read error: 0
-Verify error: 0
-Csum error: 0
-
-I'm not finding any way these add up. Seems like --offline's tree
-bytes scrubbed + data bytes scrubbed should add up to
---check-data-csum's found bytes - waste bytes? But no, I have no idea
-what I'm looking at or how it's useful to the user, but OK.
-
-
-I used kernel 4.13.10 and btrfs-progs 4.13.3 for the usual 'btrfs
-scrub start' and the less common 'btrfs check ----check-data-csum'
-methods; and Qu's v4.11.1-89-gf939adf2 with offline_scrub checked out.
-
-
-
-
--- 
-Chris Murphy
+> Thank you in advance!
+No worries, good luck!
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

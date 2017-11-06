@@ -1,250 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from srv1.gsx.de ([82.165.143.151]:48386 "EHLO srv1.gsx.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751246AbdKFJfo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 04:35:44 -0500
-Received: from srv1.gsx.de (localhost.localdomain [127.0.0.1])
-        by srv1.gsx.de (Postfix) with ESMTP id 92F2720194
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2017 10:35:42 +0100 (CET)
-From: "Benedikt Schindler" <benedikt.schindler@owayo.com>
-To: <linux-btrfs@vger.kernel.org>
-References: 
-In-Reply-To: 
-Subject: unable to handle kernel NULL pointer dereference
-Date: Mon, 6 Nov 2017 10:37:12 +0100
-Message-ID: <001f01d356e2$d2b91960$782b4c20$@owayo.com>
+Received: from mail-it0-f54.google.com ([209.85.214.54]:56063 "EHLO
+        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752923AbdKFN3E (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 08:29:04 -0500
+Received: by mail-it0-f54.google.com with SMTP id l196so5032326itl.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 05:29:04 -0800 (PST)
+Subject: Re: Problem with file system
+To: Chris Murphy <lists@colorremedies.com>,
+        Adam Borowski <kilobyte@angband.pl>
+Cc: Marat Khalili <mkh@rqc.ru>, Dave <davestechshop@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>,
+        Fred Van Andel <vanandel@gmail.com>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+ <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com>
+ <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+ <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com>
+ <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
+ <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
+ <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+ <10fb0b92-bc93-a217-0608-5284ac1a05cd@rqc.ru>
+ <b32358ec-781e-aff6-439b-3fc6fe02a25c@gmail.com>
+ <CAJCQCtTT7_pfx5yn--We-kq0XWd38H_Lw1Prbmo5ytkTZWapYQ@mail.gmail.com>
+ <20171104044634.thg7mnchm4hvzdic@angband.pl>
+ <CAJCQCtReVi8k+OoitBBUZm_T+mj9dkV6GCVs7JMSG1myR78AGw@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6833d956-05c6-ee7b-ba80-b0a29c2772c6@gmail.com>
+Date: Mon, 6 Nov 2017 08:29:00 -0500
 MIME-Version: 1.0
-Content-Type: multipart/mixed;
-        boundary="----=_NextPart_000_0020_01D356EB.347D8160"
+In-Reply-To: <CAJCQCtReVi8k+OoitBBUZm_T+mj9dkV6GCVs7JMSG1myR78AGw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multipart message in MIME format.
+On 2017-11-04 13:14, Chris Murphy wrote:
+> On Fri, Nov 3, 2017 at 10:46 PM, Adam Borowski <kilobyte@angband.pl> wrote:
+>> On Fri, Nov 03, 2017 at 04:03:44PM -0600, Chris Murphy wrote:
+>>> On Tue, Oct 31, 2017 at 5:28 AM, Austin S. Hemmelgarn
+>>> <ahferroin7@gmail.com> wrote:
+>>>
+>>>> If you're running on an SSD (or thinly provisioned storage, or something
+>>>> else which supports discards) and have the 'discard' mount option enabled,
+>>>> then there is no backup metadata tree (this issue was mentioned on the list
+>>>> a while ago, but nobody ever replied),
+>>>
+>>>
+>>> This is a really good point. I've been running discard mount option
+>>> for some time now without problems, in a laptop with Samsung
+>>> Electronics Co Ltd NVMe SSD Controller SM951/PM951.
+>>>
+>>> However, just trying btrfs-debug-tree -b on a specific block address
+>>> for any of the backup root trees listed in the super, only the current
+>>> one returns a valid result.  All others fail with checksum errors. And
+>>> even the good one fails with checksum errors within seconds as a new
+>>> tree is created, the super updated, and Btrfs considers the old root
+>>> tree disposable and subject to discard.
+>>>
+>>> So absolutely if I were to have a problem, probably no rollback for
+>>> me. This seems to totally obviate a fundamental part of Btrfs design.
+>>
+>> How is this an issue?  Discard is issued only once we're positive there's no
+>> reference to the freed blocks anywhere.  At that point, they're also open
+>> for reuse, thus they can be arbitrarily scribbled upon.
+> 
+> If it's not an issue, then no one should ever need those backup slots
+> in the super and we should just remove them.
+> 
+> But in fact, we know people end up situations where they're needed for
+> either automatic recovery at mount time or explicitly calling
+> --usebackuproot. And in some cases we're seeing users using discard
+> who have a borked root tree, and none of the backup roots are present
+> so they're fucked. Their file system is fucked.
+> 
+> Now again, maybe this means the hardware is misbehaving, and honored
+> the discard out of order, and did that and wrote the new supers before
+> it had completely committed all the metadata? I have no idea, but the
+> evidence is present in the list that some people run into this and
+> when they do the file system is beyond repair even though it can
+> usually be scraped with btrfs restore.
+With ATA devices (including SATA), except on newer SSD's, TRIM commands 
+can't be queued, so by definition they can't become unordered (the 
+kernel ends up having to flush the device queue prior to the discard and 
+then flush the write cache, so it's functionally equivalent to a write 
+barrier, just more expensive, which is why inline discard performance 
+sucks in most cases).  I'm not sure about SCSI (I'm pretty sure UNMAP 
+can be queued and is handled just like any other write in terms of 
+ordering), MMC/SD (Though I'm also not sure if the block layer and the 
+MMC driver properly handle discard BIO's on MMC devices), or NVMe (which 
+I think handles things similarly to SCSI).
+> 
+> 
+>> Unless your hardware is seriously broken (such as lying about barriers,
+>> which is nearly-guaranteed data loss on btrfs anyway), there's no way the
+>> filesystem will ever reference such blocks.  The corpses of old trees that
+>> are left lying around with no discard can at most be used for manual
+>> forensics, but whether a given block will have been overwritten or not is
+>> a matter of pure luck.
+> 
+> File systems that overwrite, are hinting the intent in the journal
+> what's about to happen. So if there's a partial overwrite of metadata,
+> it's fine. The journal can help recover. But Btrfs without a journal,
+> has a major piece of information required to bootstrap the file system
+> at mount time, that's damaged, and then every backup has been
+> discarded. So it actually makes Btrfs more fragile than other file
+> systems in the same situation.
+Indeed.
 
-------=_NextPart_000_0020_01D356EB.347D8160
-Content-Type: text/plain;
-	charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-
-Hello,
-
-i updated our server from kernel 4.7.4 to 4.13.11 .
-We have two connected btrfs devcies:
-a) a connected hardware raid5 in the machine (/dev/sdb1)=20
-b) a IBM Storewize v3700 connected via iSCSI
-(/dev/mapper/36005076300808b95c800000000000003-part1)
-
-After restarting the server, the samba services run instable. And in =
-dmesg
-Oops messages showed up. (See attachment)
-So I downgraded to 4.7.4 again, and the system is running stable again.=20
-
-If you can tell me what you need for a good bug report please tell me . =
-I
-also could give you a better / complete dmesg output.=20
-But I used the wrong parameters and the dmesg log was cleared.=20
-
-The server is under full use on weekdays. So i could only do tests and =
-new
-dmesg etc. on weekends. =A0
-
-Please let me know if some one has a hint what could be the problem, or =
-what
-you need for a full bug report.=20
-
-Best regards=20
-Benedikt
-
-
-
-Server data:
-
-btrfs-progs v4.5.3+20160729
-
-Label: 'Data'=A0 uuid: 528c479a-7209-4f64-b862-482475d03a17
-=A0=A0=A0=A0=A0=A0=A0 Total devices 1 FS bytes used 2.07TiB
-=A0=A0=A0=A0=A0=A0=A0 devid=A0=A0=A0 1 size 10.00TiB used 9.56TiB path =
-/dev/sdb1
-
-Label: 'AuwiOrdner'=A0 uuid: 163cceda-5765-483c-9a48-c183acedac5d
-=A0=A0=A0=A0=A0=A0=A0 Total devices 1 FS bytes used 10.26TiB
-=A0=A0=A0=A0=A0=A0=A0 devid=A0=A0=A0 1 size 14.00TiB used 10.37TiB path
-/dev/mapper/36005076300808b95c800000000000003-part1
-
-/dev/sdb1:
-Data, single: total=3D9.35TiB, used=3D2.06TiB
-System, DUP: total=3D8.00MiB, used=3D1.14MiB
-System, single: total=3D4.00MiB, used=3D0.00B
-Metadata, DUP: total=3D107.88GiB, used=3D7.51GiB
-Metadata, single: total=3D8.00MiB, used=3D0.00B
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
-
-/dev/mapper/36005076300808b95c800000000000003-part1:
-Data, single: total=3D10.23TiB, used=3D10.22TiB
-System, DUP: total=3D8.00MiB, used=3D1.11MiB
-System, single: total=3D4.00MiB, used=3D0.00B
-Metadata, DUP: total=3D75.00GiB, used=3D42.57GiB
-Metadata, single: total=3D8.00MiB, used=3D0.00B
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
-
-
-
-
-
-
-------=_NextPart_000_0020_01D356EB.347D8160
-Content-Type: text/plain;
-	name="Kernel Oops BTRFS.txt"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: attachment;
-	filename="Kernel Oops BTRFS.txt"
-
-BUG: unable to handle kernel NULL pointer dereference at =
-0000000000000124
-IP: btrfs_root_node+0x7/0x50
-PGD 0
-P4D 0
-
-Oops: 0000 [#81] SMP
-Modules linked in: dm_service_time iscsi_tcp libiscsi_tcp libiscsi =
-scsi_transpor                                                            =
-                            t_iscsi af_packet 8021q garp stp llc bonding =
-iscsi_ibft iscsi_boot_sysfs coretem                                      =
-                                                  p crc32c_intel =
-ghash_clmulni_intel pcbc aesni_intel aes_x86_64 crypto_simd crypt        =
-                                                                         =
-       d iTCO_wdt iTCO_vendor_support glue_helper lpc_ich e1000e =
-mfd_core ptp osst pps_                                                   =
-                                     core i2c_i801 ioatdma i7core_edac =
-ipmi_si dca ipmi_devintf button acpi_cpufreq i                           =
-                                                             =
-pmi_msghandler serio_raw pm80xx libsas dm_multipath dm_mod dax =
-scsi_dh_rdac scsi                                                        =
-                                _dh_emc scsi_dh_alua autofs4
-CPU: 2 PID: 24528 Comm: smbd Tainted: G      D         4.13.11-gsx #1
-Hardware name: Lenovo 10461AG/Tyan Tank GT20-B7002LNV, BIOS 'V2.7  =
-04.07.2011 '                                                             =
-                            04/07/2011
-task: ffff88062433e180 task.stack: ffffc9000a1b4000
-RIP: 0010:btrfs_root_node+0x7/0x50
-RSP: 0018:ffffc9000a1b7830 EFLAGS: 00010246
-RAX: 0000000000000000 RBX: ffff880c24d6b800 RCX: ffff8804e58f1bd0
-RDX: 0000000000000100 RSI: ffff880c24d6b800 RDI: ffff880c24d6b800
-RBP: ffff880c24d6b800 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: ffff880000000000
-R13: ffff880c24d6b800 R14: 6db6db6db6db6db7 R15: 0000160000000000
-FS:  00007f52d6362840(0000) GS:ffff88063fc80000(0000) =
-knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000000124 CR3: 000000047e7d3000 CR4: 00000000000006e0
-Call Trace:
- ? btrfs_read_lock_root_node+0x1f/0x40
- ? btrfs_search_slot+0x56b/0xa10
- ? submit_extent_page.isra.53+0x13f/0x210
- ? btrfs_lookup_ordered_extent+0x4d/0xb0
- ? btrfs_lookup_csum+0x3d/0x130
- ? __btrfs_lookup_bio_sums+0x2f3/0x6a0
- ? btrfs_submit_bio_hook+0xb3/0x180
- ? submit_one_bio+0x56/0x80
- ? extent_readpages+0x122/0x1c0
- ? btrfs_endio_direct_read+0xe0/0xe0
- ? inet6_csk_route_socket+0x100/0x1c0
- ? __alloc_pages_nodemask+0xd0/0x180
- ? __do_page_cache_readahead+0x169/0x220
- ? ondemand_readahead+0x165/0x290
- ? pagecache_get_page+0x21/0x220
- ? generic_file_read_iter+0x70a/0x980
- ? walk_component+0x33/0x230
- ? generic_file_splice_read+0xaa/0x120
- ? splice_direct_to_actor+0xd5/0x1d0
- ? generic_pipe_buf_nosteal+0x10/0x10
- ? do_splice_direct+0x74/0xa0
- ? do_sendfile+0x195/0x370
- ? SyS_sendfile64+0x43/0x90
- ? do_syscall_64+0x56/0x130
- ? entry_SYSCALL64_slow_path+0x25/0x25
-Code: 00 00 00 00 48 85 ff 53 48 89 fb 74 15 e8 62 ff ff ff 48 89 de 48 =
-8b 3d 58                                                                 =
-                        82 c3 00 5b e9 02 31 f2 ff 5b c3 53 48 89 fb 48 =
-8b 13 <8b> 42 24 85 c0 74 18 8d                                          =
-                                               48 01 48 8d 72 24 f0 0f =
-b1 4a 24 0f 94
-RIP: btrfs_root_node+0x7/0x50 RSP: ffffc9000a1b7830
-CR2: 0000000000000124
----[ end trace 4ada6453733af411 ]---
-BUG: unable to handle kernel NULL pointer dereference at =
-0000000000000124
-IP: btrfs_root_node+0x7/0x50
-PGD 0
-P4D 0
-
-Oops: 0000 [#82] SMP
-Modules linked in: dm_service_time iscsi_tcp libiscsi_tcp libiscsi =
-scsi_transpor                                                            =
-                            t_iscsi af_packet 8021q garp stp llc bonding =
-iscsi_ibft iscsi_boot_sysfs coretem                                      =
-                                                  p crc32c_intel =
-ghash_clmulni_intel pcbc aesni_intel aes_x86_64 crypto_simd crypt        =
-                                                                         =
-       d iTCO_wdt iTCO_vendor_support glue_helper lpc_ich e1000e =
-mfd_core ptp osst pps_                                                   =
-                                     core i2c_i801 ioatdma i7core_edac =
-ipmi_si dca ipmi_devintf button acpi_cpufreq i                           =
-                                                             =
-pmi_msghandler serio_raw pm80xx libsas dm_multipath dm_mod dax =
-scsi_dh_rdac scsi                                                        =
-                                _dh_emc scsi_dh_alua autofs4
-CPU: 2 PID: 24533 Comm: smbd Tainted: G      D         4.13.11-gsx #1
-Hardware name: Lenovo 10461AG/Tyan Tank GT20-B7002LNV, BIOS 'V2.7  =
-04.07.2011 '                                                             =
-                            04/07/2011
-task: ffff88047a4cadc0 task.stack: ffffc9000a1dc000
-RIP: 0010:btrfs_root_node+0x7/0x50
-RSP: 0018:ffffc9000a1df830 EFLAGS: 00010246
-RAX: 0000000000000000 RBX: ffff880c24d6b800 RCX: ffff8804e58f1700
-RDX: 0000000000000100 RSI: ffff880c24d6b800 RDI: ffff880c24d6b800
-RBP: ffff880c24d6b800 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: ffff880000000000
-R13: ffff880c24d6b800 R14: 6db6db6db6db6db7 R15: 0000160000000000
-FS:  00007f52d6362840(0000) GS:ffff88063fc80000(0000) =
-knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000000000000124 CR3: 000000047755f000 CR4: 00000000000006e0
-Call Trace:
- ? btrfs_read_lock_root_node+0x1f/0x40
- ? btrfs_search_slot+0x56b/0xa10
- ? submit_extent_page.isra.53+0x13f/0x210
- ? btrfs_lookup_ordered_extent+0x4d/0xb0
- ? btrfs_lookup_csum+0x3d/0x130
- ? __btrfs_lookup_bio_sums+0x2f3/0x6a0
- ? btrfs_submit_bio_hook+0xb3/0x180
- ? submit_one_bio+0x56/0x80
- ? extent_readpages+0x122/0x1c0
- ? btrfs_endio_direct_read+0xe0/0xe0
- ? __sk_dst_check+0x30/0x80
- ? __alloc_pages_nodemask+0xd0/0x180
- ? __do_page_cache_readahead+0x169/0x220
- ? ondemand_readahead+0x165/0x290
- ? pagecache_get_page+0x21/0x220
- ? generic_file_read_iter+0x70a/0x980
- ? walk_component+0x33/0x230
- ? generic_file_splice_read+0xaa/0x120
- ? splice_direct_to_actor+0xd5/0x1d0
- ? generic_pipe_buf_nosteal+0x10/0x10
- ? do_splice_direct+0x74/0xa0
- ? do_sendfile+0x195/0x370
- ? SyS_sendfile64+0x43/0x90
- ? do_syscall_64+0x56/0x130
- ? entry_SYSCALL64_slow_path+0x25/0x25
-Code: 00 00 00 00 48 85 ff 53 48 89 fb 74 15 e8 62 ff ff ff 48 89 de 48 =
-8b 3d 58                                                                 =
-                        82 c3 00 5b e9 02 31 f2 ff 5b c3 53 48 89 fb 48 =
-8b 13 <8b> 42 24 85 c0 74 18 8d                                          =
-                                               48 01 48 8d 72 24 f0 0f =
-b1 4a 24 0f 94
-RIP: btrfs_root_node+0x7/0x50 RSP: ffffc9000a1df830
-CR2: 0000000000000124
----[ end trace 4ada6453733af412 ]---
-
-------=_NextPart_000_0020_01D356EB.347D8160--
-
+Unless I'm seriously misunderstanding the code, there's a pretty high 
+chance that any given old metadata block will get overwritten reasonably 
+soon on an active filesystem.  I'm not 100% certain about this, but I'm 
+pretty sure that BTRFS will avoid allocating new chunks to write into 
+just to preserve old copies of metadata, which in turn means that it 
+will overwrite things pretty fast if the metadata chunks are mostly full.>
+>>
+>> For rollbacks, there are snapshots.  Once a transaction has been fully
+>> committed, the old version is considered gone.
+> 
+> Yeah well snapshots do not cause root trees to stick around.
+> 
+> 
+>>
+>>>   because it's already been discarded.
+>>>> This is ideally something which should be addressed (we need some sort of
+>>>> discard queue for handling in-line discards), but it's not easy to address.
+>>>
+>>> Discard data extents, don't discard metadata extents? Or put them on a
+>>> substantial delay.
+>>
+>> Why would you special-case metadata?  Metadata that points to overwritten or
+>> discarded blocks is of no use either.
+> 
+> I would rather lose 30 seconds, 1 minute, or even 2 minutes of writes,
+> than lose an entire file system. That's why.
+And outside of very specific use cases, this is something you'll hear 
+from almost any sysadmin.
+> 
+> Anyway right now I consider discard mount option fundamentally broken
+> on Btrfs for SSDs. I haven't tested this on LVM thinp, maybe it's
+> broken there too.
+For LVM thinp, discard there deallocates the blocks, and unallocated 
+regions read back as zeroes, just like in a sparse file (in fact, if you 
+just think of LVM thinp as a sparse file with reflinking for snapshots, 
+you get remarkably close to how it's actually implemented from a 
+semantic perspective), so it is broken there.  In fact, it's guaranteed 
+broken on any block device that has the discard_zeroes_data flag set, 
+and theoretically broken on many things that don't have that flag 
+(although block devices that don't have that flag are inherently broken 
+from a security perspective anyway, but that's orthogonal to this 
+discussion).
+> 
+> Even fstrim leaves a tiny window open for a few minutes every time it
+> gets called, where if the root tree is corrupted for any reason,
+> you're fucked because all the backup roots are already gone.
+For this particular case, I'm pretty sure you can minimize this window 
+by calling `btrfs filesystem sync` on the filesystem after calling 
+fstrim.  It likely won't eliminate the window, but should significantly 
+shorten it.

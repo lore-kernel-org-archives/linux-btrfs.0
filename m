@@ -1,48 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43105 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54123 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932356AbdKGUPC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Nov 2017 15:15:02 -0500
+        id S932304AbdKFTcg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Nov 2017 14:32:36 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6941EABF4
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Nov 2017 20:15:01 +0000 (UTC)
-Date: Tue, 7 Nov 2017 21:13:03 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/10] Cleanup unnecessary get_extent parameters
-Message-ID: <20171107201302.GC27557@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        by mx2.suse.de (Postfix) with ESMTP id B7265ABED
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2017 19:32:35 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 01/10] btrfs: sink get_extent parameter to extent_writepages
+Date: Mon,  6 Nov 2017 20:30:44 +0100
+Message-Id: <4d802107d5a9bbe7b1f0c3f532b48783626fd0c4.1509996091.git.dsterba@suse.com>
+In-Reply-To: <cover.1509996091.git.dsterba@suse.com>
 References: <cover.1509996091.git.dsterba@suse.com>
- <831c9c09-c974-eb38-0e26-fa9a6e8309ee@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <831c9c09-c974-eb38-0e26-fa9a6e8309ee@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 06, 2017 at 11:26:54PM +0200, Nikolay Borisov wrote:
-> 
-> 
-> On  6.11.2017 21:30, David Sterba wrote:
-> > There are several functions that take a generic get_extent parameter, but not
-> > all of them use it to distinguish between btree_get_exnent (for metadata) and
-> > btrfs_get_extent (for data). This is namely extent_read_full_page and
-> > __do_readpage.
-> 
-> I wonder whether we can do some similar collpasing withe some of the
-> hooks we have i.e. readpage_end_io_hook (resp.
-> btrfs_readpage_end_io_hook and btree_readpage_end_io_hook). All those
-> callbacks don't necessarily help readability...
+There's only one caller.
 
-Some of the callbacks passed as parameters can be possibly pushed down
-the callstack, the only difference is btree_inode vs file extents.
-Instead of the uppper caller switch, the right function can be called
-based on the inode number (btree_inode has 1).
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/extent_io.c | 3 +--
+ fs/btrfs/extent_io.h | 1 -
+ fs/btrfs/inode.c     | 2 +-
+ 3 files changed, 2 insertions(+), 4 deletions(-)
 
-Josef has some ideas/patches to get rid of the btree_inode completely so
-cleaning up the callback might not be worth. There's still some
-potential to reduce the arguments to the various callbacks, I have
-patches for that. This is a relatively easy and safe so I would still
-send them, as the btree_inode removal will be probably intrusive and the
-ETA for such changes is unpredictable.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index ea412243c68d..12305542ed2b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4131,14 +4131,13 @@ int extent_write_locked_range(struct extent_io_tree *tree, struct inode *inode,
+ 
+ int extent_writepages(struct extent_io_tree *tree,
+ 		      struct address_space *mapping,
+-		      get_extent_t *get_extent,
+ 		      struct writeback_control *wbc)
+ {
+ 	int ret = 0;
+ 	struct extent_page_data epd = {
+ 		.bio = NULL,
+ 		.tree = tree,
+-		.get_extent = get_extent,
++		.get_extent = btrfs_get_extent,
+ 		.extent_locked = 0,
+ 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
+ 	};
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index d8b27af7101e..7e1b730045c5 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -407,7 +407,6 @@ int extent_write_locked_range(struct extent_io_tree *tree, struct inode *inode,
+ 			      int mode);
+ int extent_writepages(struct extent_io_tree *tree,
+ 		      struct address_space *mapping,
+-		      get_extent_t *get_extent,
+ 		      struct writeback_control *wbc);
+ int btree_write_cache_pages(struct address_space *mapping,
+ 			    struct writeback_control *wbc);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 88cd15fc34d4..d626f209b22f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8884,7 +8884,7 @@ static int btrfs_writepages(struct address_space *mapping,
+ 	struct extent_io_tree *tree;
+ 
+ 	tree = &BTRFS_I(mapping->host)->io_tree;
+-	return extent_writepages(tree, mapping, btrfs_get_extent, wbc);
++	return extent_writepages(tree, mapping, wbc);
+ }
+ 
+ static int
+-- 
+2.14.3
+

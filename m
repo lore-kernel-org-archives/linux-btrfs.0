@@ -1,102 +1,217 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:41136 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750817AbdKFA1S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 5 Nov 2017 19:27:18 -0500
-Received: from ty.sabi.co.uk ([95.172.230.208]:56400)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1eBVFy-0006pz-PC
-        for linux-btrfs@vger.kernel.org; Mon, 06 Nov 2017 00:27:14 +0000
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1eBVFs-0007ym-Er
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 00:27:08 +0000
+Received: from mail-ua0-f193.google.com ([209.85.217.193]:44651 "EHLO
+        mail-ua0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750953AbdKFFR7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 00:17:59 -0500
+Received: by mail-ua0-f193.google.com with SMTP id f46so5624405uae.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 05 Nov 2017 21:17:59 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Message-ID: <23039.44123.933173.628778@tree.ty.sabi.co.uk>
-Date: Mon, 6 Nov 2017 00:27:07 +0000
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Fixed subject: updatedb does not index separately mounted btrfs subvolumes
-In-Reply-To: <pan$94157$844c1b67$c8d5af52$b34db269@cox.net>
-References: <CAJCQCtSf1mX0kWCRjfSTwZKwZC6mMN7Vdio0LJdCCY96ifte4g@mail.gmail.com>
-        <pan$94157$844c1b67$c8d5af52$b34db269@cox.net>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Mon, 6 Nov 2017 10:47:17 +0530
+Message-ID: <CAKuJGC-nnOmK-OnomfMD6BAzYgKM8JogdcBZRkyWq6zXQApURw@mail.gmail.com>
+Subject: kernel BUG at fs/btrfs/ctree.h:3457
+To: btrfs <linux-btrfs@vger.kernel.org>, wqu@suse.com,
+        David Sterba <dsterba@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> The issue is that updatedb by default will not index bind
->> mounts, but by default on Fedora and probably other distros,
->> put /home on a subvolume and then mount that subvolume which
->> is in effect a bind mount.
+Hi.
 
-> <gripe-mode: inaccurate subject lines>
+While running  xfstests/065 with 4.14.0-rc7 and latest btrfs-progs
+from devel branch, it crashes the system after dumping below log:
+(Note: For btrfs-devel, I'm still using SANITY_TESTS=y and
+FS_INTEGRITY=y and applied patch
+https://patchwork.kernel.org/patch/10038011/)
 
-> So the issue isn't /home being btrfs (as you said in the
-> subject), but rather, it's /home being an explicitly mounted
-> subvolume, since btrfs uses bind-mounts internally for
-> subvolume mounts.
 
-That to me seems like rather improper terminology and notes, and
-I would consider these to be more appropriate:
+Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): disk space caching is enabled
+Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): has skinny extents
+Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): flagging fs with big metadata feature
+Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): enabling ssd optimizations
+Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): creating UUID tree
+Nov 06 05:08:10 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): dev_replace from /dev/xvdd (devid 2) to
+/dev/xvdg started
+Nov 06 05:08:12 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): dev_replace from /dev/xvdd (devid 2) to
+/dev/xvdg finished
+Nov 06 05:08:16 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS: device fsid 3ebc32b5-ba0a-405b-8acf-4785b0a4b81a devid 1
+transid 5 /dev/xvdc
+Nov 06 05:08:16 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS: device fsid 3ebc32b5-ba0a-405b-8acf-4785b0a4b81a devid 2
+transid 5 /dev/xvdd
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS: device fsid 3ebc32b5-ba0a-405b-8acf-4785b0a4b81a devid 3
+transid 5 /dev/xvde
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS: device fsid 3ebc32b5-ba0a-405b-8acf-4785b0a4b81a devid 4
+transid 5 /dev/xvdf
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): disk space caching is enabled
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): has skinny extents
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): flagging fs with big metadata feature
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): enabling ssd optimizations
+Nov 06 05:08:17 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): creating UUID tree
+Nov 06 05:08:18 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): dev_replace from /dev/xvdd (devid 2) to
+/dev/xvdg started
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS critical (device xvdf): corrupt leaf: root=9 block=4400742400
+slot=0, invalid nritems, have 0 should not be 0 for non-root leaf
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+BTRFS info (device xvdf): leaf 4400742400 total ptrs 0 free space
+16283
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+assertion failed: 0, file: fs/btrfs/disk-io.c, line: 540
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+------------[ cut here ]------------
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+kernel BUG at fs/btrfs/ctree.h:3457!
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+invalid opcode: 0000 [#1] SMP
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+Modules linked in: cirrus drm_kms_helper ttm drm intel_rapl sb_edac
+ppdev crct10dif_pclmul crc32_pclmul crc32c_intel xen_netfront
+ghash_clmulni_intel intel_rapl_perf parport_pc parport i2c_piix4
+xen_blkfront serio_raw ata_generic pata_acpi
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+CPU: 1 PID: 13413 Comm: fsstress Not tainted 4.14.0-rc7 #1
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+Hardware name: Xen HVM domU, BIOS 4.2.amazon 12/12/2016
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+task: ffff9d2331a48000 task.stack: ffffbc0f43fd4000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RIP: 0010:assfail.constprop.49+0x1c/0x22
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RSP: 0018:ffffbc0f43fd79c0 EFLAGS: 00010282
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RAX: 0000000000000038 RBX: ffff9d2335078000 RCX: 0000000000000000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RDX: 0000000000000000 RSI: ffff9d233fe4e0b8 RDI: ffff9d233fe4e0b8
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RBP: ffffbc0f43fd79c0 R08: 00000000000003f5 R09: 0000000000000000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+R10: ffffbc0f43fd7938 R11: 0000000000000000 R12: 0000000000000000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+R13: ffff9d23316f1bc0 R14: ffff9d2335813400 R15: ffff9d2335bd0000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+FS:  00007f75051fde80(0000) GS:ffff9d233fe40000(0000)
+knlGS:0000000000000000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+CR2: 00007f750509b000 CR3: 000000043bc7b006 CR4: 00000000001606e0
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel: Call Trace:
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btree_csum_one_bio+0x14b/0x180
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btree_submit_bio_hook+0x43/0xc0
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+submit_one_bio+0x5e/0x90
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+flush_epd_write_bio.isra.41+0x21/0x40
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+flush_write_bio+0xe/0x10
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btree_write_cache_pages+0x2e8/0x420
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btree_writepages+0x5d/0x70
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+do_writepages+0x48/0xe0
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:  ?
+_cond_resched+0x22/0x40
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:  ?
+merge_state.part.46+0x44/0x130
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+__filemap_fdatawrite_range+0xc1/0x100
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:  ?
+__filemap_fdatawrite_range+0xc1/0x100
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:  ?
+free_extent_state+0x98/0x100
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+filemap_fdatawrite_range+0x13/0x20
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btrfs_write_marked_extents+0x68/0x140
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btrfs_write_and_wait_marked_extents.constprop.21+0x4f/0x90
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btrfs_commit_transaction+0x6ad/0x950
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:  ?
+btrfs_commit_transaction+0x6ad/0x950
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:  ?
+finish_wait+0x80/0x80
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+btrfs_sync_file+0x328/0x400
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+vfs_fsync_range+0x49/0xa0
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+do_fsync+0x3d/0x70
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+SyS_fsync+0x10/0x20
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+entry_SYSCALL_64_fastpath+0x1a/0xa5
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RIP: 0033:0x7f75049cf720
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RSP: 002b:00007fff253c0158 EFLAGS: 00000246 ORIG_RAX: 000000000000004a
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RAX: ffffffffffffffda RBX: 0000000000000037 RCX: 00007f75049cf720
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RDX: 00007fff253c00c0 RSI: 00007fff253c00c0 RDI: 0000000000000003
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RBP: 0000000000007338 R08: 0000000001cd0160 R09: 00007fff253c016c
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+R10: 0000000000000006 R11: 0000000000000246 R12: 0000000000000003
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+R13: 00000000000e04b9 R14: 0000000001cd0c00 R15: 0000000000000000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+Code: 40 70 31 d2 48 89 86 88 00 00 00 89 d0 5d c3 55 89 f1 48 c7 c2
+db f7 cd bc 48 89 fe 48 c7 c7 a0 cd cd bc 48 89 e5 e8 e7 18 d5 ff <0f>
+0b 90 90 90 90 0f 1f 44 00 00 48 8b 46 20 a8 02 0f 84 a3 00
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RIP: assfail.constprop.49+0x1c/0x22 RSP: ffffbc0f43fd79c0
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+---[ end trace f9e6a562c32ec923 ]---
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+------------[ cut here ]------------
+1Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+WARNING: CPU: 1 PID: 13413 at kernel/exit.c:771 do_exit+0x51/0xb40
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+Modules linked in: cirrus drm_kms_helper ttm drm intel_rapl sb_edac
+ppdev crct10dif_pclmul crc32_pclmul crc32c_intel xen_netfront
+ghash_clmulni_intel intel_rapl_perf parport_pc parport i2c_piix4
+xen_blkfront serio_raw ata_generic pata_acpi
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+CPU: 1 PID: 13413 Comm: fsstress Tainted: G      D         4.14.0-rc7
+#1
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+Hardware name: Xen HVM domU, BIOS 4.2.amazon 12/12/2016
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+task: ffff9d2331a48000 task.stack: ffffbc0f43fd4000
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RIP: 0010:do_exit+0x51/0xb40
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RSP: 0018:ffffbc0f43fd7ed8 EFLAGS: 00010206
+Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
+RAX: ffffbc0f43fd7d40 RBX: ffff9d2331a48000 RCX: ffffbc0f43fd7d50
 
-* There are entities known as "root directories", and their main
-  property is that all inodes reachable from one in the same
-  filesystem have the same "device id".
-* Each "filesystem" has at least one, and a Btrfs "volume" has
-  one for every "subvolume", including the "top subvolume".
-* A "root directory" can be "mounted" on a "mount point"
-  directory of another "filesystem", which allows navigating
-  from one filesystem to another.
-* A "mounted" root directory can be identified by the device id
-  of '.' being different from that of '..'.
-* In Linux a "root directory" can be "mounted" onto several
-  "mount point" directories at the same time.
-* In Linux a "bind" operation is not a "mount" operation, it is
-  in effect a kind of temporary "hard link", one that makes a
-  directory aliased to a "bind point" directory.
 
-Looking at this:
-
-  tree#  tail -3 /proc/mounts                                                                                                                                            
-  /dev/mapper/sda7 /fs/sda7 btrfs rw,nodiratime,relatime,nossd,nospace_cache,user_subvol_rm_allowed,subvolid=5,subvol=/ 0 0
-  /dev/mapper/sda7 /fs/sda7/bind btrfs rw,nodiratime,relatime,nossd,nospace_cache,user_subvol_rm_allowed,subvolid=431,subvol=/= 0 0
-  /dev/mapper/sda7 /fs/sda7/bind-tmp btrfs rw,nodiratime,relatime,nossd,nospace_cache,user_subvol_rm_allowed,subvolid=431,subvol=/=/tmp 0 0
-
-  tree#  stat --format "%3D %6i %N" {,/fs,/fs/sda7}/{.,..} /fs/sda7/{=,=/subvol,=/subvol/dir,=/tmp,bind,bind-tmp}/{.,..} 
-  806      2 ‘/.’
-  806      2 ‘/..’
-   23  36176 ‘/fs/.’
-  806      2 ‘/fs/..’
-   26    256 ‘/fs/sda7/.’
-   23  36176 ‘/fs/sda7/..’
-   27    256 ‘/fs/sda7/=/.’
-   26    256 ‘/fs/sda7/=/..’
-   2b    256 ‘/fs/sda7/=/subvol/.’
-   27    256 ‘/fs/sda7/=/subvol/..’
-   2b    258 ‘/fs/sda7/=/subvol/dir/.’
-   2b    256 ‘/fs/sda7/=/subvol/dir/..’
-   27 344618 ‘/fs/sda7/=/tmp/.’
-   27    256 ‘/fs/sda7/=/tmp/..’
-   27    256 ‘/fs/sda7/bind/.’
-   26    256 ‘/fs/sda7/bind/..’
-   27 344618 ‘/fs/sda7/bind-tmp/.’
-   26    256 ‘/fs/sda7/bind-tmp/..’
-
-It shows that subvolume root directories are "mount points" and
-not "bind points" (note that ‘/fs/sda7/=/subvol’ is not
-explicitly mounted, yet its '.' and '..' have different device
-ids), and that "bind points" appear as if they were ordinary
-directories (an unwise decision I suspect).
-
-Many tools for UNIX-like systems don't cross "mount point"
-directories (or follow symbolic links), by default or with an
-option, but will cross "bind point" directories as they look
-like ordinary directories.
-
-For 'mlocate' the "bind point" directories are a special case,
-handled by looking up every directory examined in the list of
-"bind point" directories, as per line 381 here:
-
-https://pagure.io/mlocate/blob/master/f/src/bind-mount.c#_381
+----
+Cheers,
+Lakshmipathi.G
+http://www.giis.co.in http://www.webminal.org

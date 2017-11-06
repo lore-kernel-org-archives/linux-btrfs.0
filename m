@@ -1,43 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f177.google.com ([209.85.217.177]:57039 "EHLO
-        mail-ua0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750728AbdKFFZy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 00:25:54 -0500
-Received: by mail-ua0-f177.google.com with SMTP id n22so5613448uaj.13
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Nov 2017 21:25:53 -0800 (PST)
+Received: from victor.provo.novell.com ([137.65.250.26]:36504 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750715AbdKFF3G (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Mon, 6 Nov 2017 00:29:06 -0500
+Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
+References: <CAKuJGC-nnOmK-OnomfMD6BAzYgKM8JogdcBZRkyWq6zXQApURw@mail.gmail.com>
+From: Qu Wenruo <wqu@suse.com>
+Message-ID: <b62d214b-395f-251e-c1d7-904b13e7135d@suse.com>
+Date: Mon, 6 Nov 2017 13:28:39 +0800
 MIME-Version: 1.0
 In-Reply-To: <CAKuJGC-nnOmK-OnomfMD6BAzYgKM8JogdcBZRkyWq6zXQApURw@mail.gmail.com>
-References: <CAKuJGC-nnOmK-OnomfMD6BAzYgKM8JogdcBZRkyWq6zXQApURw@mail.gmail.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Mon, 6 Nov 2017 10:55:12 +0530
-Message-ID: <CAKuJGC9ZXXhiVEYsZe8G1eO5qs5k8oRQq3rVgnv0_DBnDqw87Q@mail.gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457
-To: btrfs <linux-btrfs@vger.kernel.org>, wqu@suse.com,
-        David Sterba <dsterba@suse.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="MJ2H8qPnd4KcQhx4FLiNGGocjjESMD2eL"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seems like output is messed by my email client: Here is formatted one:
-https://bugzilla.kernel.org/show_bug.cgi?id=197587#c6
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--MJ2H8qPnd4KcQhx4FLiNGGocjjESMD2eL
+Content-Type: multipart/mixed; boundary="WJf91hUU11MqLXgnWwJnlTdOsELhajTad";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.com>
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
+ btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
+Message-ID: <b62d214b-395f-251e-c1d7-904b13e7135d@suse.com>
+Subject: Re: kernel BUG at fs/btrfs/ctree.h:3457
+References: <CAKuJGC-nnOmK-OnomfMD6BAzYgKM8JogdcBZRkyWq6zXQApURw@mail.gmail.com>
+In-Reply-To: <CAKuJGC-nnOmK-OnomfMD6BAzYgKM8JogdcBZRkyWq6zXQApURw@mail.gmail.com>
 
-----
-Cheers,
-Lakshmipathi.G
-http://www.giis.co.in http://www.webminal.org
+--WJf91hUU11MqLXgnWwJnlTdOsELhajTad
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On Mon, Nov 6, 2017 at 10:47 AM, Lakshmipathi.G
-<lakshmipathi.g@gmail.com> wrote:
+
+On 2017=E5=B9=B411=E6=9C=8806=E6=97=A5 13:17, Lakshmipathi.G wrote:
 > Hi.
->
+>=20
 > While running  xfstests/065 with 4.14.0-rc7 and latest btrfs-progs
 > from devel branch, it crashes the system after dumping below log:
-> (Note: For btrfs-devel, I'm still using SANITY_TESTS=y and
-> FS_INTEGRITY=y and applied patch
+> (Note: For btrfs-devel, I'm still using SANITY_TESTS=3Dy and
+> FS_INTEGRITY=3Dy and applied patch
 > https://patchwork.kernel.org/patch/10038011/)
->
->
+
+Please skip that patch, as the check timing has its problem.
+
+I'll change the patch to follow original check timing for
+btrfs_mark_buffer_dirty().
+
+Thanks,
+Qu
+
+>=20
+>=20
 > Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
 > BTRFS info (device xvdf): disk space caching is enabled
 > Nov 06 05:08:09 ip-172-31-32-145.us-west-2.compute.internal kernel:
@@ -80,8 +99,9 @@ On Mon, Nov 6, 2017 at 10:47 AM, Lakshmipathi.G
 > BTRFS info (device xvdf): dev_replace from /dev/xvdd (devid 2) to
 > /dev/xvdg started
 > Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
-> BTRFS critical (device xvdf): corrupt leaf: root=9 block=4400742400
-> slot=0, invalid nritems, have 0 should not be 0 for non-root leaf
+> BTRFS critical (device xvdf): corrupt leaf: root=3D9 block=3D4400742400=
+
+> slot=3D0, invalid nritems, have 0 should not be 0 for non-root leaf
 > Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
 > BTRFS info (device xvdf): leaf 4400742400 total ptrs 0 free space
 > 16283
@@ -129,7 +149,8 @@ On Mon, Nov 6, 2017 at 10:47 AM, Lakshmipathi.G
 > DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
 > Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
 > DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-> Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel: Call Trace:
+> Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel: Cal=
+l Trace:
 > Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
 > btree_csum_one_bio+0x14b/0x180
 > Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
@@ -222,9 +243,32 @@ On Mon, Nov 6, 2017 at 10:47 AM, Lakshmipathi.G
 > RSP: 0018:ffffbc0f43fd7ed8 EFLAGS: 00010206
 > Nov 06 05:08:23 ip-172-31-32-145.us-west-2.compute.internal kernel:
 > RAX: ffffbc0f43fd7d40 RBX: ffff9d2331a48000 RCX: ffffbc0f43fd7d50
->
->
+>=20
+>=20
 > ----
 > Cheers,
 > Lakshmipathi.G
 > http://www.giis.co.in http://www.webminal.org
+>=20
+
+
+--WJf91hUU11MqLXgnWwJnlTdOsELhajTad--
+
+--MJ2H8qPnd4KcQhx4FLiNGGocjjESMD2eL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFBBAEBCAArFiEELd9y5aWlW6idqkLhwj2R86El/qgFAln/8wcNHHdxdUBzdXNl
+LmNvbQAKCRDCPZHzoSX+qCuwB/9BMvZNsuNHD7ONBwHW85+VZzW8VQTD9lnzzTWw
+nbRZt++1gDL6GOuFykv0irY3SliZkp8xAnwKpBtgZ3dEOrYn2/xO49o4q2esnbJ2
+b59tLQBaddo40jUD+0l73NhpKl95fcgQwMNtuJ1ixjqQfW5SLPYUkqO9g9NgMiGV
+eMbBEu2c1EE/A9/XfBVM9NHgSEQ/DtN1XzhzkGgxM9DC/0SdJ8FHVFm4cmN5RrWq
+tlitPQUoYsTY4qnd0tQGNBSe4z04VIt2lVKazxLkG3SK+QCTmSbHSCuBsr8+l14K
+qMUM7+xjN5HjlVIYORZISQsC/ExTTF8Yg4HBwmkxHHHJ3pAs
+=gTUM
+-----END PGP SIGNATURE-----
+
+--MJ2H8qPnd4KcQhx4FLiNGGocjjESMD2eL--

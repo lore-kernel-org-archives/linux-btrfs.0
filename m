@@ -1,66 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:40302 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752431AbdK3RfQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 12:35:16 -0500
-Subject: Re: [PATCHSET v2] cgroup, writeback, btrfs: make sure btrfs issues
- metadata IOs from the root cgroup
-To: <dsterba@suse.cz>, Tejun Heo <tj@kernel.org>, Jan Kara <jack@suse.cz>,
-        <axboe@kernel.dk>, <jbacik@fb.com>, <kernel-team@fb.com>,
-        <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <20171010155441.753966-1-tj@kernel.org>
- <20171129165608.GA26740@quack2.suse.cz>
- <20171129170330.GV983427@devbig577.frc2.facebook.com>
- <20171129170501.GW983427@devbig577.frc2.facebook.com>
- <fff25924-f632-8a6c-9e48-765971b09cca@fb.com>
- <20171130172316.GM3553@twin.jikos.cz>
-From: Chris Mason <clm@fb.com>
-Message-ID: <7c52fcce-dd00-72c4-836b-3146fe13868a@fb.com>
-Date: Thu, 30 Nov 2017 12:34:58 -0500
-MIME-Version: 1.0
-In-Reply-To: <20171130172316.GM3553@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mx2.suse.de ([195.135.220.15]:49842 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753387AbdKFSYy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Nov 2017 13:24:54 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id E5D10AC9D
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2017 18:24:52 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: switch to on-stack csum buffer in csum_tree_block
+Date: Mon,  6 Nov 2017 19:23:00 +0100
+Message-Id: <20171106182300.11366-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The maximum size of a checksum buffer is known, BTRFS_CSUM_SIZE, and we
+don't have to allocate it dynamically. This code path is not used at all
+as we have only the crc32c and use an on-stack buffer already.
 
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/disk-io.c | 16 +++-------------
+ 1 file changed, 3 insertions(+), 13 deletions(-)
 
-On 11/30/2017 12:23 PM, David Sterba wrote:
-> On Wed, Nov 29, 2017 at 01:38:26PM -0500, Chris Mason wrote:
->> On 11/29/2017 12:05 PM, Tejun Heo wrote:
->>> On Wed, Nov 29, 2017 at 09:03:30AM -0800, Tejun Heo wrote:
->>>> Hello,
->>>>
->>>> On Wed, Nov 29, 2017 at 05:56:08PM +0100, Jan Kara wrote:
->>>>> What has happened with this patch set?
->>>>
->>>> No idea.  cc'ing Chris directly.  Chris, if the patchset looks good,
->>>> can you please route them through the btrfs tree?
->>>
->>> lol looking at the patchset again, I'm not sure that's obviously the
->>> right tree.  It can either be cgroup, block or btrfs.  If no one
->>> objects, I'll just route them through cgroup.
->>
->> We'll have to coordinate a bit during the next merge window but I don't
->> have a problem with these going in through cgroup.  Dave does this sound
->> good to you?
-> 
-> There are only minor changes to btrfs code so cgroup tree would be
-> better.
-> 
->> I'd like to include my patch to do all crcs inline (instead of handing
->> off to helper threads) when io controls are in place.  By the merge
->> window we should have some good data on how much it's all helping.
-> 
-> Are there any problems in sight if the inline crc and cgroup chnanges go
-> separately? I assume there's a runtime dependency, not a code
-> dependency, so it could be sorted by the right merge order.
-> 
-
-The feature is just more useful with the inline crcs.  Without them we 
-end up with kworkers doing both high and low prio submissions and it all 
-boils down to the speed of the lowest priority.
-
--chris
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5713c50959e0..53c9145a56e9 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -285,7 +285,7 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+ 			   int verify)
+ {
+ 	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+-	char *result = NULL;
++	char result[BTRFS_CSUM_SIZE];
+ 	unsigned long len;
+ 	unsigned long cur_len;
+ 	unsigned long offset = BTRFS_CSUM_SIZE;
+@@ -294,7 +294,6 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+ 	unsigned long map_len;
+ 	int err;
+ 	u32 crc = ~(u32)0;
+-	unsigned long inline_result;
+ 
+ 	len = buf->len - offset;
+ 	while (len > 0) {
+@@ -308,13 +307,7 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+ 		len -= cur_len;
+ 		offset += cur_len;
+ 	}
+-	if (csum_size > sizeof(inline_result)) {
+-		result = kzalloc(csum_size, GFP_NOFS);
+-		if (!result)
+-			return -ENOMEM;
+-	} else {
+-		result = (char *)&inline_result;
+-	}
++	memset(result, 0, BTRFS_CSUM_SIZE);
+ 
+ 	btrfs_csum_final(crc, result);
+ 
+@@ -329,15 +322,12 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+ 				"%s checksum verify failed on %llu wanted %X found %X level %d",
+ 				fs_info->sb->s_id, buf->start,
+ 				val, found, btrfs_header_level(buf));
+-			if (result != (char *)&inline_result)
+-				kfree(result);
+ 			return -EUCLEAN;
+ 		}
+ 	} else {
+ 		write_extent_buffer(buf, result, 0, csum_size);
+ 	}
+-	if (result != (char *)&inline_result)
+-		kfree(result);
++
+ 	return 0;
+ }
+ 
+-- 
+2.14.3
 

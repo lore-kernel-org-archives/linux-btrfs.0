@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33114 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33796 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752632AbdKFPgZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 10:36:25 -0500
-Date: Mon, 6 Nov 2017 16:34:32 +0100
+        id S1753819AbdKFPkX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 6 Nov 2017 10:40:23 -0500
+Date: Mon, 6 Nov 2017 16:38:31 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] btrfs: cleanup btrfs_async_submit_limit to return the
  final limit value
-Message-ID: <20171106153432.GK28789@twin.jikos.cz>
+Message-ID: <20171106153831.GL28789@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20171031125946.26844-1-anand.jain@oracle.com>
  <20171102060353.7103-1-anand.jain@oracle.com>
@@ -51,25 +51,9 @@ On Thu, Nov 02, 2017 at 02:03:53PM +0800, Anand Jain wrote:
 > 2. Consider RAID1 devices at different speed (SSD and iscsi LUN) not too sure
 > if this approach would lead to the FS layer IO performance  throttle at the
 > speed of the lowest ? wonder how to reliably test it.
-> 
->  fs/btrfs/disk-io.c | 6 ++++--
->  fs/btrfs/volumes.c | 1 -
->  2 files changed, 4 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index dfdab849037b..12702e292007 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -861,7 +861,10 @@ unsigned long btrfs_async_submit_limit(struct btrfs_fs_info *info)
->  	unsigned long limit = min_t(unsigned long,
->  				    info->thread_pool_size,
->  				    info->fs_devices->open_devices);
-> -	return 256 * limit;
-> +	/*
-> +	 * limit:170 is computed as 2/3 * 256.
-> +	 */
-> +	return 170 * limit;
 
-Please keep it opencoded, the constant will be calculated by compiler
-but for code clarity it's better to be written as 2 / 3 and it's
-self-documenting, so you can drop the comment.
+The referenced commits are from 2008, there have been many changes in
+the queue flushing etc, so we might need to revisit the current
+behaviour completely. Using the congestion API is desired, but we also
+need to keep the IO behaviour (or make it better of course). In such
+case I'd suggest small steps so we can possibly catch the regressions.

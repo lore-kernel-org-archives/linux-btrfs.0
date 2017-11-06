@@ -1,64 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:34934 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751465AbdKFIgT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 03:36:19 -0500
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA68aIg8014373
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Nov 2017 08:36:18 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vA68aIcN023377
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Nov 2017 08:36:18 GMT
-Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vA68aHoh014654
-        for <linux-btrfs@vger.kernel.org>; Mon, 6 Nov 2017 08:36:18 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:60508 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750817AbdKFCnd (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Sun, 5 Nov 2017 21:43:33 -0500
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/7] btrfs: btrfs_rm_device() does not need uuid_mutex
-Date: Mon,  6 Nov 2017 16:36:16 +0800
-Message-Id: <20171106083618.7617-6-anand.jain@oracle.com>
-In-Reply-To: <20171106083618.7617-1-anand.jain@oracle.com>
-References: <20171106083618.7617-1-anand.jain@oracle.com>
+Cc: dsterba@suse.cz, lakshmipathi.g@gmail.com
+Subject: [PATCH 2/2] btrfs: compression: Return correct default zlib compression level
+Date: Mon,  6 Nov 2017 10:43:19 +0800
+Message-Id: <20171106024319.32584-2-wqu@suse.com>
+In-Reply-To: <20171106024319.32584-1-wqu@suse.com>
+References: <20171106024319.32584-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 4 ----
- 1 file changed, 4 deletions(-)
+0 means no compression at all for zlib.
+Z_DEFAULT_COMPRESSION is the correct value, which is -1 and will be
+converted to 6 at runtime.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2329f429ce40..3d5ed4518f20 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1914,7 +1914,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	int ret = 0;
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/compression.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index b35ce16b3df3..29a41e6c9e28 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -35,6 +35,7 @@
+ #include <linux/sched/mm.h>
+ #include <linux/sort.h>
+ #include <linux/log2.h>
++#include <linux/zlib.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "transaction.h"
+@@ -1528,5 +1529,9 @@ unsigned int btrfs_compress_str2level(const char *str)
+ 	if (str[4] == ':' && '1' <= str[5] && str[5] <= '9' && str[6] == 0)
+ 		return str[5] - '0';
  
- 	mutex_lock(&fs_info->volume_mutex);
--	mutex_lock(&uuid_mutex);
- 
- 	num_devices = fs_info->fs_devices->num_devices;
- 	btrfs_dev_replace_lock(&fs_info->dev_replace, 0);
-@@ -1950,9 +1949,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 		mutex_unlock(&fs_info->chunk_mutex);
- 	}
- 
--	mutex_unlock(&uuid_mutex);
- 	ret = btrfs_shrink_device(device, 0);
--	mutex_lock(&uuid_mutex);
- 	if (ret)
- 		goto error_undo;
- 
-@@ -2027,7 +2024,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	}
- 
- out:
--	mutex_unlock(&uuid_mutex);
- 	mutex_unlock(&fs_info->volume_mutex);
- 	return ret;
- 
+-	return 0;
++	/*
++	 * NOTE: Default compression level is not 0!!
++	 * 0 means no compression at all
++	 */
++	return Z_DEFAULT_COMPRESSION;
+ }
 -- 
-2.13.1
+2.14.3
 

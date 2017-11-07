@@ -1,75 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38390 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933382AbdKGJaJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Nov 2017 04:30:09 -0500
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA79U7UW005553
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 09:30:08 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vA79U763020858
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 09:30:07 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vA79U7s3030741
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 09:30:07 GMT
-From: Anand Jain <anand.jain@oracle.com>
-Subject: Re: [PATCH 1/4] Btrfs: introduce device flags
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171102005405.20420-1-bo.li.liu@oracle.com>
- <20171102005405.20420-2-bo.li.liu@oracle.com>
-Message-ID: <e03b68bf-c120-715c-191e-2c07819a949f@oracle.com>
-Date: Tue, 7 Nov 2017 17:30:16 +0800
+Received: from mail-io0-f182.google.com ([209.85.223.182]:44299 "EHLO
+        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751994AbdKGMaz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Nov 2017 07:30:55 -0500
+Received: by mail-io0-f182.google.com with SMTP id m16so1940035iod.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Nov 2017 04:30:54 -0800 (PST)
+Subject: Re: Should cp default to reflink?
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtSY+nso=URaU+2-qN2EWrxA7m1djcWhUAJTmjxW0yGa8Q@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <d16b6352-976a-7b10-604c-5800bd575c27@gmail.com>
+Date: Tue, 7 Nov 2017 07:30:49 -0500
 MIME-Version: 1.0
-In-Reply-To: <20171102005405.20420-2-bo.li.liu@oracle.com>
+In-Reply-To: <CAJCQCtSY+nso=URaU+2-qN2EWrxA7m1djcWhUAJTmjxW0yGa8Q@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 11/02/2017 08:54 AM, Liu Bo wrote:
-> Here we have defined two flags,
-> - Fautly
-> - In_sync
+On 2017-11-06 17:37, Chris Murphy wrote:
+> I'm doing copies from one subvolume to another, through a mounted top
+> level (id5) at /mnt/int.
 > 
-> Currently only In_sync is in use, it only matters when device serves
-> as part of a raid profile.  The flag In_sync is decided when mounting
-> a btrfs and opening a device, by default every device is set with
-> In_sync, but would not be set if its generation was out of date.
+> This copies the whole file conventionally (no shared extents)
+> $ sudo cp /mnt/int/home/chris/Downloads/Fedora-Server-dvd-x86_64-27-1.6.iso
+> /mnt/int/root00/var/lib/libvirt/images/
 > 
-> If the device doesn't get resync and to avoid overriding its
-> generation during writing superblock, if the !In_sync device is still
-> writeable, its last valid generation will be recorded in
-> superblock.dev_item.generation instead of superblock.generation, such
-> that the last valid generation can be retained through several reboot,
-> btrfs is able to detect the out-of-sync device.
+> This is a reflink copy
+> $ sudo cp --reflink
+> /mnt/int/home/chris/Downloads/Fedora-Server-dvd-x86_64-27-1.6.iso
+> /mnt/int/root00/var/lib/libvirt/images/
+> 
+> This is also a refink copy, with the original removed.
+> $ sudo mv /mnt/int/home/chris/Downloads/Fedora-Server-dvd-x86_64-27-1.6.iso
+> /mnt/int/root00/var/lib/libvirt/images/
+> 
+> Seems to me any request to duplicate should be optimized by default
+> with an auto reflink when possible, and require an explicit option to
+> inhibit.
+I would argue that it probably should, with the caveat that it 
+absolutely should be well documented.  I've been using an alias to 
+achieve this for months now on most of my systems with no issues, so I 
+can say with some confidence that it works.  Ideally, I'd love to see a 
+similar patch for busybox, but that's not really essential for this 
+(though having a quick easy way to call the clone ioctl in btrfs-progs 
+itself would be nice as a alternative).
 
-  Based on the bug you are trying to address in patch 2/4.
-  - I still don't get the point the need for explicit flag
-  In_Sync for the whole disk and not just depend on stripe
-  for which anyway crc will fail ?
-  - Here whole disk isn't the problem. Only the stripe which
-  were missed on the missing disk is the problem.
-
-> @@ -6592,6 +6625,14 @@ static int read_one_dev(struct btrfs_fs_info *fs_info,
->   				return -EIO;
->   		}
->   
-> +		if (!test_bit(In_sync, &device->flags) &&
-> +		    !btrfs_test_opt(fs_info, DEGRADED)) {
-> +			btrfs_warn(fs_info,
-> +				   "devid %llu uuid %pU is Not in_sync, but we're not under degraded mode",
-> +				   devid, dev_uuid);
-> +			return -EIO;
-> +		}
-> +
-
-  degrade option is for the missing device and if user still want to
-  continue, here its about device with not_In_Sync flag, degrade option
-  check is not required.
-
-  Similarly the test case should be updated as well.
-
-Thanks, Anand
+There may however be some wailing and gnashing of teeth from those who 
+have convinced themselves that a completely independent copy of a file 
+on the same filesystem constitutes a backup and that they need such backups.

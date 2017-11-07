@@ -1,50 +1,220 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48765 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49859 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752567AbdKGJXA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Nov 2017 04:23:00 -0500
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, josef@toxicpanda.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Reduce scope of delayed_rsv->lock in may_commit_trans
-Date: Tue,  7 Nov 2017 11:22:54 +0200
-Message-Id: <1510046574-15541-1-git-send-email-nborisov@suse.com>
+        id S932298AbdKGUwR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Nov 2017 15:52:17 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 49C3AAEFF
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Nov 2017 20:52:16 +0000 (UTC)
+Date: Tue, 7 Nov 2017 21:50:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
+ item
+Message-ID: <20171107205024.GE27557@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171101122213.7122-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171101122213.7122-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-After commit ('btrfs: change how we decide to commit transactions during
-flushing') there is no need to hold the delayed_rsv during the
-percpu_counter_compare call since we get the byte's snapshot earlier. So hold
-the lock only while reading delayed_rsv
+On Wed, Nov 01, 2017 at 08:22:12PM +0800, Qu Wenruo wrote:
+> For the following types, we have items with variable length:
+> (With BTRFS_ prefix and _KEY suffix snipped)
+> 
+> DIR_ITEM
+> DIR_INDEX
+> XATTR_ITEM
+> INODE_REF
+> INODE_EXTREF
+> ROOT_REF
+> ROOT_BACKREF
+> 
+> They all use @name_len to indicate their name length, and XATTR_ITEM has
+> extra @data_len to indicate it data length.
+> 
+> Despite their variable length, it's also possible to have several such
+> structure inside one item.
+> 
+> This patch will add checker to ensure:
+> 
+> 1) No structure header and its data cross item boundary
+> 2) Except XATTR_ITEM, no structure should have non-zero @data_len
+> 
+> This checker is especially useful to avoid possible access beyond
+> boundary for fuzzed image.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/tree-checker.c | 123 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 123 insertions(+)
+> 
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 114fc5f0ecc5..f26e86fcbd74 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -222,6 +222,120 @@ static int check_csum_item(struct btrfs_root *root, struct extent_buffer *leaf,
+>  	return 0;
+>  }
+>  
+> +static u32 get_header_size(u8 type)
+> +{
+> +	switch (type) {
+> +	case BTRFS_DIR_ITEM_KEY:
+> +	case BTRFS_DIR_INDEX_KEY:
+> +	case BTRFS_XATTR_ITEM_KEY:
+> +		return sizeof(struct btrfs_dir_item);
+> +	case BTRFS_INODE_REF_KEY:
+> +		return sizeof(struct btrfs_inode_ref);
+> +	case BTRFS_INODE_EXTREF_KEY:
+> +		return sizeof(struct btrfs_inode_extref);
+> +	case BTRFS_ROOT_REF_KEY:
+> +	case BTRFS_ROOT_BACKREF_KEY:
+> +		return sizeof(struct btrfs_root_ref);
+> +	}
+> +	WARN_ON(1);
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
+The helper name suggests is generic so this warning is there to catch
+new use, possibly without the matching validation function? If it is so,
+I'd rather use ASSERT. If you really want a warning, then please replace
+it with a message. The stacktrace from WARN_ON would not be very useful
+because we know exactly how we get here, the callchaning starts in the
+endio handlers.
 
-This is based on David's misc-4.15 branch 
+> +	return 0;
+> +}
+> +
+> +static u16 get_header_namelen(struct extent_buffer *leaf, u8 type,
+> +			      u32 header_offset)
+> +{
+> +	/*
+> +	 * @header_offset is offset starts after leaf header, while the
+> +	 * accessors expects offset starts from leaf header.
+> +	 * Sowe need to adds LEAF_DATA_OFFSET here
+> +	 */
 
- fs/btrfs/extent-tree.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Can you please rephrase the text? (and fix the typos)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 673ac4e01dd0..11b7d613140b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4952,12 +4952,12 @@ static int may_commit_transaction(struct btrfs_fs_info *fs_info,
- 		bytes = 0;
- 	else
- 		bytes -= delayed_rsv->size;
-+	spin_unlock(&delayed_rsv->lock);
-+
- 	if (percpu_counter_compare(&space_info->total_bytes_pinned,
- 				   bytes) < 0) {
--		spin_unlock(&delayed_rsv->lock);
- 		return -ENOSPC;
- 	}
--	spin_unlock(&delayed_rsv->lock);
- 
- commit:
- 	trans = btrfs_join_transaction(fs_info->extent_root);
--- 
-2.7.4
+> +	unsigned long leaf_offset = header_offset + BTRFS_LEAF_DATA_OFFSET;
+> +
+> +	switch (type) {
+> +	case BTRFS_DIR_ITEM_KEY:
+> +	case BTRFS_DIR_INDEX_KEY:
+> +	case BTRFS_XATTR_ITEM_KEY:
+> +		return btrfs_dir_name_len(leaf, (void *)leaf_offset);
+> +	case BTRFS_INODE_REF_KEY:
+> +		return btrfs_inode_ref_name_len(leaf, (void *)leaf_offset);
+> +	case BTRFS_INODE_EXTREF_KEY:
+> +		return btrfs_inode_extref_name_len(leaf, (void *)leaf_offset);
+> +	case BTRFS_ROOT_REF_KEY:
+> +	case BTRFS_ROOT_BACKREF_KEY:
+> +		return btrfs_root_ref_name_len(leaf, (void *)leaf_offset);
+> +	}
+> +	WARN_ON(1);
 
+Similar comment as to the warning above, a message would be more
+helpful to say which type is unexpected.
+
+> +	return 0;
+> +}
+> +
+> +static u16 get_header_datalen(struct extent_buffer *leaf, u8 type,
+> +			      unsigned long header_offset)
+> +{
+> +	/* Same as get_header_namelen */
+> +	unsigned long leaf_offset = header_offset + BTRFS_LEAF_DATA_OFFSET;
+> +
+> +	switch (type) {
+> +	case BTRFS_DIR_ITEM_KEY:
+> +	case BTRFS_DIR_INDEX_KEY:
+> +	case BTRFS_XATTR_ITEM_KEY:
+> +		return btrfs_dir_data_len(leaf, (void *)leaf_offset);
+> +	}
+> +	return 0;
+> +}
+> +
+> +/*
+> + * For items with variable length, normally with namelen and tailing data.
+> + * Like INODE_REF or XATTR
+> + */
+> +static int check_variable_length_item(struct btrfs_root *root,
+> +				      struct extent_buffer *leaf,
+> +				      struct btrfs_key *key, int slot)
+> +{
+> +	u8 type = key->type;
+> +	u32 item_start = btrfs_item_offset_nr(leaf, slot);
+> +	u32 item_end = btrfs_item_end_nr(leaf, slot);
+> +	u32 header_size = get_header_size(type);
+> +	u32 total_size;
+> +	u32 cur = item_start;
+> +
+> +	while (cur < item_end) {
+> +		u32 namelen;
+> +		u32 datalen;
+> +
+> +		/* header itself should not cross item boundary */
+> +		if (cur + header_size > item_end) {
+> +			generic_err(root, leaf, slot,
+> +				"structure header crosses item boundary, have %u expect (%u, %u]",
+
+Un-indent please. I'm slightly confused by the "(%u, %u]" notation, this
+reads as an open interval from the left but I don't understand it in
+this context.
+
+> +				cur + header_size, cur, item_end);
+> +			return -EUCLEAN;
+> +		}
+> +
+> +		namelen = get_header_namelen(leaf, type, cur);
+> +		datalen = get_header_datalen(leaf, type, cur);
+> +
+> +		/* Only XATTR can own data */
+> +		if (type != BTRFS_XATTR_ITEM_KEY && datalen) {
+> +			generic_err(root, leaf, slot,
+> +				"item has invalid data len, have %u expect 0",
+> +				datalen);
+> +			return -EUCLEAN;
+> +		}
+> +
+> +		total_size = header_size + namelen + datalen;
+> +
+> +		/* header and name/data should not cross item boundary */
+> +		if (cur + total_size > item_end) {
+> +			generic_err(root, leaf, slot,
+> +				"structure data crosses item boundary, have %u expect (%u, %u]",
+
+Same.
+
+> +				cur + total_size, cur + header_size, item_end);
+> +			return -EUCLEAN;
+> +		}
+> +
+> +		cur += total_size;
+> +	}
+> +	return 0;
+> +}
+> +
+>  /*
+>   * Common point to switch the item-specific validation.
+>   */
+> @@ -238,6 +352,15 @@ static int check_leaf_item(struct btrfs_root *root,
+>  	case BTRFS_EXTENT_CSUM_KEY:
+>  		ret = check_csum_item(root, leaf, key, slot);
+>  		break;
+> +	case BTRFS_DIR_ITEM_KEY:
+> +	case BTRFS_XATTR_ITEM_KEY:
+> +	case BTRFS_DIR_INDEX_KEY:
+> +	case BTRFS_INODE_REF_KEY:
+> +	case BTRFS_INODE_EXTREF_KEY:
+> +	case BTRFS_ROOT_REF_KEY:
+> +	case BTRFS_ROOT_BACKREF_KEY:
+> +		ret = check_variable_length_item(root, leaf, key, slot);
+> +		break;
+>  	}
+>  	return ret;
+>  }
+
+Otherwise ok.

@@ -1,46 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:48589 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:35393 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756639AbdKGInJ (ORCPT
+        with ESMTP id S1756641AbdKGInK (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 7 Nov 2017 03:43:09 -0500
+        Tue, 7 Nov 2017 03:43:10 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 02/12] btrfs-progs: qgroup-verify: Use fs_info->readonly to check if we should repair qgroups
-Date: Tue,  7 Nov 2017 16:42:47 +0800
-Message-Id: <20171107084259.22367-4-wqu@suse.com>
+Subject: [PATCH 2/3] btrfs-progs: test/mkfs: Add test case for -R quota option
+Date: Tue,  7 Nov 2017 16:42:48 +0800
+Message-Id: <20171107084259.22367-5-wqu@suse.com>
 In-Reply-To: <20171107084259.22367-1-wqu@suse.com>
 References: <20171107084259.22367-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In fact qgroup-verify is just kind of offline qgroup rescan, and later
-mkfs qgroup support will reuse it.
+Only test if btrfs check (which will check qgroup by default) and kernel
+mount success.
 
-So qgroup-verify doesn't really need to rely the global variable @repair
-to check if it should repair qgroups.
-
-Instead check fs_info->readonly to do the repair.
+Comprehensive qgroup test cases still belongs to fstests.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- qgroup-verify.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ tests/mkfs-tests/001-basic-profiles/test.sh | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 58c735788977..f509cdb9317a 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -1582,7 +1582,7 @@ int repair_qgroups(struct btrfs_fs_info *info, int *repaired)
+diff --git a/tests/mkfs-tests/001-basic-profiles/test.sh b/tests/mkfs-tests/001-basic-profiles/test.sh
+index 854ee0072170..a40166cc5f1e 100755
+--- a/tests/mkfs-tests/001-basic-profiles/test.sh
++++ b/tests/mkfs-tests/001-basic-profiles/test.sh
+@@ -48,6 +48,16 @@ test_mkfs_single  -d  dup     -m  single
+ test_mkfs_single  -d  dup     -m  dup
+ test_mkfs_single  -d  dup     -m  dup     --mixed
  
- 	*repaired = 0;
- 
--	if (!repair)
-+	if (info->readonly)
- 		return 0;
- 
- 	list_for_each_entry_safe(count, tmpcount, &bad_qgroups, bad_list) {
++test_mkfs_single -R quota
++test_mkfs_single -R quota -d  single  -m  single
++test_mkfs_single -R quota -d  single  -m  single  --mixed
++test_mkfs_single -R quota -d  single  -m  dup
++test_mkfs_single -R quota -d  dup     -m  single
++test_mkfs_single -R quota -d  dup     -m  dup
++test_mkfs_single -R quota -d  dup     -m  dup     --mixed
++
++# Profile doesn't really affect quota, skip them to save some time
++
+ test_mkfs_multi
+ test_mkfs_multi   -d  single  -m  single
+ test_mkfs_multi   -d  single  -m  single  --mixed
 -- 
 2.15.0
 

@@ -1,189 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:56460 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932972AbdKAMPC (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 1 Nov 2017 08:15:02 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length item
-Date: Wed,  1 Nov 2017 20:14:49 +0800
-Message-Id: <20171101121450.6297-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:53051 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751948AbdKGVOp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Nov 2017 16:14:45 -0500
+Date: Tue, 7 Nov 2017 22:12:52 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, lakshmipathi.g@gmail.com,
+        Filipe Manana <fdmanana@gmail.com>
+Subject: Re: [PATCH] btrfs: tree-checker: Fix false panic for sanity test
+Message-ID: <20171107211252.GG27557@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171106054717.18952-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171106054717.18952-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For the following types, we have items with variable length:
-(With BTRFS_ prefix and _KEY suffix snipped)
+On Mon, Nov 06, 2017 at 01:47:17PM +0800, Qu Wenruo wrote:
+> [BUG]
+> If we run btrfs with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y, it will
+> instantly cause kernel panic like:
 
-DIR_ITEM
-DIR_INDEX
-XATTR_ITEM
-INODE_REF
-INODE_EXTREF
-ROOT_REF
-ROOT_BACKREF
+Which patch causes that? The selftests used to catch various errors when
+the original dir_item verification patches were merged. Plus some
+fstests were failing. I burned a lot of time on that and don't want to
+repeat that, so I expect that all tree-checker patches pass self-test
+(incrementally, not just the whole series) and all relevant fstests.
 
-They all use @name_len to indicate their name length, and XATTR_ITEM has
-extra @data_len to indicate it data length.
+> 
+> ------
+> ...
+> assertion failed: 0, file: fs/btrfs/disk-io.c, line: 3853
+> ...
+> Call Trace:
+>  btrfs_mark_buffer_dirty+0x187/0x1f0 [btrfs]
+>  setup_items_for_insert+0x385/0x650 [btrfs]
+>  __btrfs_drop_extents+0x129a/0x1870 [btrfs]
+> ...
+> -----
+> 
+> [Cause]
+> Btrfs will call btrfs_check_leaf() in btrfs_mark_buffer_dirty() to check
+> if the leaf is valid with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y.
+> 
+> However quite some btrfs_mark_buffer_dirty() callers(*) don't really
+> initialize its item data but only initialize its item pointers, leaving
+> item data uninitialized.
+> 
+> This makes tree-checker catch uninitialized data as error, causing
+> such panic.
+> 
+> *: These callers include but not limited to
+> setup_items_for_insert()
+> btrfs_split_item()
+> btrfs_expand_item()
+> 
+> [Fix]
+> Add a new parameter @check_item_data to btrfs_check_leaf().
+> With @check_item_data set to false, item data check will be skipped and
+> fallback to old btrfs_check_leaf() behavior.
 
-Despite their variable length, it's also possible to have several such
-structure inside one item.
+So this looks like a patch ordering problem. The weaker version of
+btrfs_check_leaf needs to come first and then the improved checks that
+cause the crashes.
 
-This patch will add checker to ensure:
+> So we can still get early warning if we screw up item pointers, and
+> avoid false panic.
+> 
+> Cc: Filipe Manana <fdmanana@gmail.com>
+> Reported-by: Lakshmipathi.G <lakshmipathi.g@gmail.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/disk-io.c      |  5 +++--
+>  fs/btrfs/tree-checker.c | 16 +++++++++++-----
+>  fs/btrfs/tree-checker.h |  3 ++-
+>  3 files changed, 16 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index efce9a2fa9be..c65b63d6df27 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -610,7 +610,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+>  	 * that we don't try and read the other copies of this block, just
+>  	 * return -EIO.
+>  	 */
+> -	if (found_level == 0 && btrfs_check_leaf(root, eb)) {
+> +	if (found_level == 0 && btrfs_check_leaf(root, eb, true)) {
+>  		set_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>  		ret = -EIO;
+>  	}
+> @@ -3848,7 +3848,8 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+>  					 buf->len,
+>  					 fs_info->dirty_metadata_batch);
+>  #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+> -	if (btrfs_header_level(buf) == 0 && btrfs_check_leaf(root, buf)) {
+> +	if (btrfs_header_level(buf) == 0 &&
+> +	    btrfs_check_leaf(root, buf, false)) {
+>  		btrfs_print_leaf(buf);
+>  		ASSERT(0);
+>  	}
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index 114fc5f0ecc5..a4c2517fa2a1 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -242,7 +242,8 @@ static int check_leaf_item(struct btrfs_root *root,
+>  	return ret;
+>  }
+>  
+> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
+> +int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf,
+> +		     bool check_item_data)
 
-1) No structure header and its data cross item boundary
-2) Except XATTR_ITEM, no structure should have non-zero @data_len
+The bool arguments are usally not very descriptive, I suggest to add
 
-This checker is especially useful to avoid possible access beyond
-boundary for fuzzed image.
+static inline int btrfs_check_leaf_relaxed(struct btrfs_root *root, struct extent_buffer *leaf)
+{
+	return btrfs_check_leaf_root, leaf, false);
+}
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/tree-checker.c | 123 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 123 insertions(+)
-
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 114fc5f0ecc5..f26e86fcbd74 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -222,6 +222,120 @@ static int check_csum_item(struct btrfs_root *root, struct extent_buffer *leaf,
- 	return 0;
- }
- 
-+static u32 get_header_size(u8 type)
-+{
-+	switch (type) {
-+	case BTRFS_DIR_ITEM_KEY:
-+	case BTRFS_DIR_INDEX_KEY:
-+	case BTRFS_XATTR_ITEM_KEY:
-+		return sizeof(struct btrfs_dir_item);
-+	case BTRFS_INODE_REF_KEY:
-+		return sizeof(struct btrfs_inode_ref);
-+	case BTRFS_INODE_EXTREF_KEY:
-+		return sizeof(struct btrfs_inode_extref);
-+	case BTRFS_ROOT_REF_KEY:
-+	case BTRFS_ROOT_BACKREF_KEY:
-+		return sizeof(struct btrfs_root_ref);
-+	}
-+	WARN_ON(1);
-+	return 0;
-+}
-+
-+static u16 get_header_namelen(struct extent_buffer *leaf, u8 type,
-+			      u32 header_offset)
-+{
-+	/*
-+	 * @header_offset is offset starts after leaf header, while the
-+	 * accessors expects offset starts from leaf header.
-+	 * Sowe need to adds LEAF_DATA_OFFSET here
-+	 */
-+	unsigned long leaf_offset = header_offset + BTRFS_LEAF_DATA_OFFSET;
-+
-+	switch (type) {
-+	case BTRFS_DIR_ITEM_KEY:
-+	case BTRFS_DIR_INDEX_KEY:
-+	case BTRFS_XATTR_ITEM_KEY:
-+		return btrfs_dir_name_len(leaf, (void *)leaf_offset);
-+	case BTRFS_INODE_REF_KEY:
-+		return btrfs_inode_ref_name_len(leaf, (void *)leaf_offset);
-+	case BTRFS_INODE_EXTREF_KEY:
-+		return btrfs_inode_extref_name_len(leaf, (void *)leaf_offset);
-+	case BTRFS_ROOT_REF_KEY:
-+	case BTRFS_ROOT_BACKREF_KEY:
-+		return btrfs_root_ref_name_len(leaf, (void *)leaf_offset);
-+	}
-+	WARN_ON(1);
-+	return 0;
-+}
-+
-+static u16 get_header_datalen(struct extent_buffer *leaf, u8 type,
-+			      unsigned long header_offset)
-+{
-+	/* Same as get_header_namelen */
-+	unsigned long leaf_offset = header_offset + BTRFS_LEAF_DATA_OFFSET;
-+
-+	switch (type) {
-+	case BTRFS_DIR_ITEM_KEY:
-+	case BTRFS_DIR_INDEX_KEY:
-+	case BTRFS_XATTR_ITEM_KEY:
-+		return btrfs_dir_data_len(leaf, (void *)leaf_offset);
-+	}
-+	return 0;
-+}
-+
-+/*
-+ * For items with variable length, normally with namelen and tailing data.
-+ * Like INODE_REF or XATTR
-+ */
-+static int check_variable_length_item(struct btrfs_root *root,
-+				      struct extent_buffer *leaf,
-+				      struct btrfs_key *key, int slot)
-+{
-+	u8 type = key->type;
-+	u32 item_start = btrfs_item_offset_nr(leaf, slot);
-+	u32 item_end = btrfs_item_end_nr(leaf, slot);
-+	u32 header_size = get_header_size(type);
-+	u32 total_size;
-+	u32 cur = item_start;
-+
-+	while (cur < item_end) {
-+		u32 namelen;
-+		u32 datalen;
-+
-+		/* header itself should not cross item boundary */
-+		if (cur + header_size > item_end) {
-+			generic_err(root, leaf, slot,
-+				"structure header crosses item boundary, have %u expect (%u, %u]",
-+				cur + header_size, cur, item_end);
-+			return -EUCLEAN;
-+		}
-+
-+		namelen = get_header_namelen(leaf, type, cur);
-+		datalen = get_header_datalen(leaf, type, cur);
-+
-+		/* Only XATTR can own data */
-+		if (type != BTRFS_XATTR_ITEM_KEY && datalen) {
-+			generic_err(root, leaf, slot,
-+				"item has invalid data len, have %u expect 0",
-+				datalen);
-+			return -EUCLEAN;
-+		}
-+
-+		total_size = header_size + namelen + datalen;
-+
-+		/* header and name/data should not cross item boundary */
-+		if (cur + total_size > item_end) {
-+			generic_err(root, leaf, slot,
-+				"structure data crosses item boundary, have %u expect (%u, %u]",
-+				cur + total_size, cur + header_size, item_end);
-+			return -EUCLEAN;
-+		}
-+
-+		cur += total_size;
-+	}
-+	return 0;
-+}
-+
- /*
-  * Common point to switch the item-specific validation.
-  */
-@@ -238,6 +352,15 @@ static int check_leaf_item(struct btrfs_root *root,
- 	case BTRFS_EXTENT_CSUM_KEY:
- 		ret = check_csum_item(root, leaf, key, slot);
- 		break;
-+	case BTRFS_DIR_ITEM_KEY:
-+	case BTRFS_XATTR_ITEM_KEY:
-+	case BTRFS_DIR_INDEX_KEY:
-+	case BTRFS_INODE_REF_KEY:
-+	case BTRFS_INODE_EXTREF_KEY:
-+	case BTRFS_ROOT_REF_KEY:
-+	case BTRFS_ROOT_BACKREF_KEY:
-+		ret = check_variable_length_item(root, leaf, key, slot);
-+		break;
- 	}
- 	return ret;
- }
--- 
-2.14.3
-
+to tree-check.h and use where appropriate.

@@ -1,156 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:56695 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932677AbdKGAyM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 19:54:12 -0500
-Subject: Re: feedback on three different scrub methods
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtTsfNgSBDdnq0uFd1ZRRY0AWbv=rx5X1UUGp1i9hK-4hw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f5558865-088d-66c7-e168-e99da9f7532d@gmx.com>
-Date: Tue, 7 Nov 2017 08:54:05 +0800
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTsfNgSBDdnq0uFd1ZRRY0AWbv=rx5X1UUGp1i9hK-4hw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="UNIW6Ctep6PnuBSBtP7gFBb0BSukMi7j1"
+Received: from aserp1040.oracle.com ([141.146.126.69]:50927 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753198AbdKGCRs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Nov 2017 21:17:48 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA72Hl8J018694
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 02:17:48 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA72HlaN017052
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 02:17:47 GMT
+Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vA72Hl7q017818
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 02:17:47 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] btrfs: cleanup btrfs_async_submit_limit to return the final limit value
+Date: Tue,  7 Nov 2017 10:17:49 +0800
+Message-Id: <20171107021749.15788-1-anand.jain@oracle.com>
+In-Reply-To: <20171031125946.26844-1-anand.jain@oracle.com>
+References: <20171031125946.26844-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---UNIW6Ctep6PnuBSBtP7gFBb0BSukMi7j1
-Content-Type: multipart/mixed; boundary="doVrhpFhl4fgoUvF0PBiElRjVfGW3qMkU";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <f5558865-088d-66c7-e168-e99da9f7532d@gmx.com>
-Subject: Re: feedback on three different scrub methods
-References: <CAJCQCtTsfNgSBDdnq0uFd1ZRRY0AWbv=rx5X1UUGp1i9hK-4hw@mail.gmail.com>
-In-Reply-To: <CAJCQCtTsfNgSBDdnq0uFd1ZRRY0AWbv=rx5X1UUGp1i9hK-4hw@mail.gmail.com>
+We feedback IO progress when it falls below the 2/3 times of the limit
+obtained from btrfs_async_submit_limit() so to creates a wait for the
+write process and make uncontested progress during the async submission.
 
---doVrhpFhl4fgoUvF0PBiElRjVfGW3qMkU
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+In general device/transport q depth is 256 and, btrfs_async_submit_limit()
+returns 256 times per device which originally was introduced by [1]. But
+256 at the device level is for all types of IOs (R/W sync/async) and so
+may be it was possible that entire of 256 could have occupied by async
+writes and, so later patch [2] took only 2/3 times of 256 which seemed to
+work well.
 
+ [1]
+ cb03c743c648
+ Btrfs: Change the congestion functions to meter the number of async submits as well
 
+ [2]
+ 4854ddd0ed0a
+ Btrfs: Wait for kernel threads to make progress during async submission
 
-On 2017=E5=B9=B411=E6=9C=8807=E6=97=A5 04:17, Chris Murphy wrote:
-> I just did scrubs on five different volumes using all three scrub
-> methods. There were no errors found, so the test leaves uncertain what
-> the error handling differences are between the three scrubs. But at
-> the least with no errors, there are also no disagreements between the
-> three methods.
->=20
-> 1. Speed. Both normal online scrub and the btrfsck --check-data-csum
-> methods, I get ~275MB/s transfers per iotop. Whereas with --offline
-> scrub I'm seeing 60%-67% of that, or ~170MB/s transfers. That's
-> substantially slower. If it were using less CPU or the system more
-> responsive, it might be worth that trade off in time. But the CPU %
-> and system responsiveness for other tasks seemed the same, it just
-> took longer.
+This patch is a cleanup patch, no functional changes. And now as we are taking
+only 2/3 of limit (256), so btrfs_async_submit_limit() will return 256 * 2/3.
 
-First, --check-data-csum will only check the first copy if it's good.
-So --check-data-csum is doing a little cheating here.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: add more change log.
+v3: don't compute 256 * 2/3. I didn't know compiler will do it anyway,
+    thats nice. So keeping that open coded. And comment removed.
 
-Further more, IIRC current offline scrub branch doesn't have the extent
-cache enabled, and since it's completely relying on extent tree, quite a
-lot of time is spent on doing similar tree search and causing extra
-random IO.
+ fs/btrfs/disk-io.c | 4 ++--
+ fs/btrfs/volumes.c | 1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
-I can be totally wrong, but if offline scrub rebased to latest
-btrfs-progs (v4.13.3), it may have some small improvement.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index dfdab849037b..6e27259e965b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -861,7 +861,8 @@ unsigned long btrfs_async_submit_limit(struct btrfs_fs_info *info)
+ 	unsigned long limit = min_t(unsigned long,
+ 				    info->thread_pool_size,
+ 				    info->fs_devices->open_devices);
+-	return 256 * limit;
++
++	return (256 * 2/3) * limit;
+ }
+ 
+ static void run_one_async_start(struct btrfs_work *work)
+@@ -887,7 +888,6 @@ static void run_one_async_done(struct btrfs_work *work)
+ 	fs_info = async->fs_info;
+ 
+ 	limit = btrfs_async_submit_limit(fs_info);
+-	limit = limit * 2 / 3;
+ 
+ 	/*
+ 	 * atomic_dec_return implies a barrier for waitqueue_active
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b39737568c22..61cefa37b56a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -376,7 +376,6 @@ static noinline void run_scheduled_bios(struct btrfs_device *device)
+ 
+ 	bdi = device->bdev->bd_bdi;
+ 	limit = btrfs_async_submit_limit(fs_info);
+-	limit = limit * 2 / 3;
+ 
+ loop:
+ 	spin_lock(&device->io_lock);
+-- 
+2.13.1
 
->=20
-> 2. Each method reports different statistics in different formats. And
-> that's fine except I can't make heads or tails out of the information
-> presented, making it basically useless at least to this user.
-
-Offline scrub in fact can reuse the whole kernel scrub ioctl structure.
-So it can completely report the same content as kernel.
-
-However the problem is, for offline scrub, my primary goal is to report
-error as detail as possible, to verify kernel scrub.
-
-So it has different output, but it can be improved.
-
->=20
-> [chris@f26s ~]$ sudo /srv/scratch/gitsworking/btrfs-progs/btrfs check
-> --check-data-csum /dev/mapper/sdd
-> Checking filesystem on /dev/mapper/sdd
-> UUID: f5adc913-bbea-4340-8b5f-3411e2cda642
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 601877024768 bytes used, no error found
-> total csum bytes: 586444884
-> total tree bytes: 1208827904
-> total fs tree bytes: 510672896
-> total extent tree bytes: 53755904
-> btree space waste bytes: 142065358
-> file data blocks allocated: 2213492944896
->  referenced 1977848909824
->=20
->=20
-> [chris@f26s ~]$ sudo btrfs-progs/btrfs scrub start --offline
-> /dev/mapper/sdd
-> [sudo] password for chris:
-> Scrub result:
-> Tree bytes scrubbed: 2417655808
-> Tree extents scrubbed: 295124
-> Data bytes scrubbed: 2398080548864
-> Data extents scrubbed: 751158
-> Data bytes without csum: 297271296
-> Read error: 0
-> Verify error: 0
-> Csum error: 0
->=20
-> I'm not finding any way these add up. Seems like --offline's tree
-> bytes scrubbed + data bytes scrubbed should add up to
-> --check-data-csum's found bytes - waste bytes? But no, I have no idea
-> what I'm looking at or how it's useful to the user, but OK.
-
-Offline scrub counts all copies for both data and metadata.
-So it will be more than btrfs check output.
-
-But to be honest, I didn't review btrfs check numbers, so it may have
-something wrong.
-
-Thanks for the feedback,
-Qu
-
->=20
->=20
-> I used kernel 4.13.10 and btrfs-progs 4.13.3 for the usual 'btrfs
-> scrub start' and the less common 'btrfs check ----check-data-csum'
-> methods; and Qu's v4.11.1-89-gf939adf2 with offline_scrub checked out.
->=20
->=20
->=20
->=20
-
-
---doVrhpFhl4fgoUvF0PBiElRjVfGW3qMkU--
-
---UNIW6Ctep6PnuBSBtP7gFBb0BSukMi7j1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloBBC0XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjIBwf/akYEjUaLrMfIhAOpS3Ir+KOu
-Fqn08ZwjySXX3/Uoh3CsD60EIwZfZbaaHsiQTqwlnuB6RZcz93wCjQNkISjPFSt0
-pRQU2quN9wufx0c2TOaE849pIHZ3wMg1z2vHBuG580Sj3GcOK0dfKL5bINUMfslH
-FJoglxNmu9FBFTnULk8mesykLwdgB7PLKlcJvbKO4g9V4KapbIYpY+zBKh12UZ3L
-8tqHzouIO1huk5cZ+riQ2wwS65zgKcdQLQ25UvijqfMncJ/qoJL7C194dYj0penl
-Va6uZCanPM+4P2KcEb3HrWsSDpIjuZHBcfm0RGuF6h1JtYW5NiA+6epkpWC7mQ==
-=7pbb
------END PGP SIGNATURE-----
-
---UNIW6Ctep6PnuBSBtP7gFBb0BSukMi7j1--

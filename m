@@ -1,89 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f51.google.com ([74.125.82.51]:54090 "EHLO
-        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755073AbdKGHCP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Nov 2017 02:02:15 -0500
-Received: by mail-wm0-f51.google.com with SMTP id r196so1512146wmf.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 23:02:14 -0800 (PST)
+Received: from aserp1040.oracle.com ([141.146.126.69]:48110 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752119AbdKGIcs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Nov 2017 03:32:48 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA78WkSw009626
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 08:32:47 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA78WkQ6023123
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 08:32:46 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vA78WkFt020712
+        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 08:32:46 GMT
+Subject: Re: [PATCH 2/4] Btrfs: fix data corruption in raid6
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171102005405.20420-1-bo.li.liu@oracle.com>
+ <20171102005405.20420-3-bo.li.liu@oracle.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <133f72d7-4254-ccd4-76e5-1078f0b8a079@oracle.com>
+Date: Tue, 7 Nov 2017 16:32:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTOefBfRpfb0h1H6SQxzGd9j-7ZSM07iA37xhy3+Lm=fw@mail.gmail.com>
-References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
- <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
- <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
- <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
- <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
- <CAH=dxU4MOWGZ0JSZ-ZV004p5EnH_aOnZ7XEo2rSOmbXJZJmwBA@mail.gmail.com> <CAJCQCtTOefBfRpfb0h1H6SQxzGd9j-7ZSM07iA37xhy3+Lm=fw@mail.gmail.com>
-From: Dave <davestechshop@gmail.com>
-Date: Tue, 7 Nov 2017 02:01:53 -0500
-Message-ID: <CAH=dxU61J94HCnr+UUokBsxqNMjKQBdz8xE2WNbWAHOtKP4w0w@mail.gmail.com>
-Subject: Re: Problem with file system
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Cc: Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20171102005405.20420-3-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 4, 2017 at 1:25 PM, Chris Murphy <lists@colorremedies.com> wrote:
+
+
+On 11/02/2017 08:54 AM, Liu Bo wrote:
+> With raid6 profile, btrfs can end up with data corruption by the
+> following steps.
+> 
+> Say we have a 5 disks that are set up with raid6 profile,
+> 
+> 1) mount this btrfs
+> 2) one disk gets pulled out
+> 3) write something to btrfs and sync
+> 4) another disk gets pulled out
+> 5) write something to btrfs and sync
+> 6) umount this btrfs
+> 7) bring the two disk back
+> 8) reboot
+> 9) mount this btrfs
+> 
+> Chances are mount will fail (even with -odegraded) because of failure
+> on reading metadata blocks, IOW, our raid6 setup is not able to
+> protect two disk failures in some cases.
+> 
+> So it turns out that there is a bug in raid6's recover code, that is,
+> 
+> if we have one of stripes in the raid6 layout as shown here,
+> 
+> | D1(*)  | D2(*)  | D3 | D4 | D5    |
+> -------------------------------------
+> | data1  | data2  | P  | Q  | data0 |
+
+
+> D1 and D2 are the two disks which got pulled out and brought back.
+> When mount reads data1 and finds out that data1 doesn't match its crc,
+> btrfs goes to recover data1 from other stripes, what it'll be doing is
+> 
+> 1) read data2, parity P, parity Q and data0
 >
-> On Sat, Nov 4, 2017 at 1:26 AM, Dave <davestechshop@gmail.com> wrote:
-> > On Mon, Oct 30, 2017 at 5:37 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> >>
-> >> That is not a general purpose file system. It's a file system for admins who understand where the bodies are buried.
-> >
-> > I'm not sure I understand your comment...
-> >
-> > Are you saying BTRFS is not a general purpose file system?
->
-> I'm suggesting that any file system that burdens the user with more
-> knowledge to stay out of trouble than the widely considered general
-> purpose file systems of the day, is not a general purpose file system.
->
-> And yes, I'm suggesting that Btrfs is at risk of being neither general
-> purpose, and not meeting its design goals as stated in Btrfs
-> documentation. It is not easy to admin *when things go wrong*. It's
-> great before then. It's a butt ton easier to resize, replace devices,
-> take snapshots, and so on. But when it comes to fixing it when it goes
-> wrong? It is a goddamn Choose Your Own Adventure book. It's way, way
-> more complicated than any other file system I'm aware of.
+> 2) as we have a valid parity P and two data stripes, it goes to
+>     recover in raid5 style.
 
-It sounds like a large part of that could be addressed with better
-documentation. I know that documentation such as what you are
-suggesting would be really valuable to me!
 
-> > If btrfs isn't able to serve as a general purpose file system for
-> > Linux going forward, which file system(s) would you suggest can fill
-> > that role? (I can't think of any that are clearly all-around better
-> > than btrfs now, or that will be in the next few years.)
->
-> ext4 and XFS are clearly the file systems to beat. They almost always
-> recover from crashes with just a normal journal replay at mount time,
-> file system repair is not often needed. When it is needed, it usually
-> works, and there is just the one option to repair and go with it.
-> Btrfs has piles of repair options, mount time options, btrfs check has
-> options, btrfs rescue has options, it's a bit nutty honestly. And
-> there's zero guidance in the available docs what order to try things
-> in, not least of which some of these repair tools are still considered
-> dangerous at least in the man page text, and the order depends on the
-> failure. The user is burdened with way too much.
+> (However, since disk D2 was pulled out and data2 on D2 could be stale,
 
-Neither one of those file systems offers snapshots. (And when I
-compared LVM snapshots vs BTRFS snapshots, I got the impression BTRFS
-is the clear winner.)
+  data2 should end up crc error, if not then raid5 recover is as
+  expected OR this example is confusing to explain the context of
+  two data stipe missing.
 
-Snapshots and volumes have a lot of value to me and I would not enjoy
-going back to a file system without those features.
+Thanks, Anand
 
-> Even as much as I know about Btrfs having used it since 2008 and my
-> list activity, I routinely have WTF moments when people post problems,
-> what order to try to get things going again. Easy to admin? Yeah for
-> the most part. But stability is still a problem, and it's coming up on
-> a 10 year anniversary soon.
->
-> If I were equally familiar with ZFS on Linux as I am with Btrfs, I'd
-> use ZoL hands down.
 
-Might it be the case that if you were equally familiar with ZFS, you
-would become aware of more of its pitfalls? And that greater knowledge
-could always lead to a different decision (such as favoring BTRFS)..
-In my experience the grass is always greener when I am less familiar
-with the field.
+> we still get the wrong data1 from this reconstruction.)
+> 
+> 3) btrfs continues to try to reconstruct data1 from parity Q, data2
+>     and data0, we still get the wrong one for the same reason.
+> 
+> The fix here is to take advantage of the device flag, ie. 'In_sync',
+> all data on a device might be stale if 'In_sync' has not been set.
+ >
+> With this, we can build the correct data2 from parity P, Q and data1.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>   fs/btrfs/raid56.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index 67262f8..3c0ce61 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -1076,7 +1076,8 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
+>   	disk_start = stripe->physical + (page_index << PAGE_SHIFT);
+>   
+>   	/* if the device is missing, just fail this stripe */
+> -	if (!stripe->dev->bdev)
+> +	if (!stripe->dev->bdev ||
+> +	    !test_bit(In_sync, &stripe->dev->flags))
+>   		return fail_rbio_index(rbio, stripe_nr);
+>   
+>   	/* see if we can add this page onto our existing bio */
+> 

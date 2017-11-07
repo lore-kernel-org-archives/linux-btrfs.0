@@ -1,130 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59465 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:37638 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933655AbdKGInY (ORCPT
+        with ESMTP id S933656AbdKGInY (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 7 Nov 2017 03:43:24 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 04/12] btrfs-progs: qgroup-verify: Allow repair_qgroups function to do silent repair
-Date: Tue,  7 Nov 2017 16:42:51 +0800
-Message-Id: <20171107084259.22367-8-wqu@suse.com>
+Subject: [PATCH v2 05/12] btrfs-progs: ctree: Introduce function to create an empty tree
+Date: Tue,  7 Nov 2017 16:42:52 +0800
+Message-Id: <20171107084259.22367-9-wqu@suse.com>
 In-Reply-To: <20171107084259.22367-1-wqu@suse.com>
 References: <20171107084259.22367-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Allow repair_qgroups() to do silent repair, so it can acts as offline
-qgroup rescan.
+Introduce a new function, btrfs_create_tree(), to create an empty tree.
 
-This provides the basis for later mkfs quota support.
+Currently, there is only one caller to create new tree, namely
+data reloc tree in mkfs.
+However it's copying fs tree to create a new root.
+
+This copy fs tree method is not a good idea if we only need an empty
+tree.
+
+So here introduce a new function, btrfs_create_tree() to create new
+tree.
+Which will handle the following things:
+1) New tree root leaf
+   Using generic tree allocation
+
+2) New root item in tree root
+
+3) Modify special tree root pointers in fs_info
+   Only quota_root is supported yet, but can be expended easily
+
+This patch provides the basis to implement quota support in mkfs.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds-check.c    |  2 +-
- qgroup-verify.c | 19 +++++++++++--------
- qgroup-verify.h |  2 +-
- 3 files changed, 13 insertions(+), 10 deletions(-)
+ ctree.c | 109 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ctree.h |   2 ++
+ 2 files changed, 111 insertions(+)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 5c822b848608..955049b95f3c 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -13360,7 +13360,7 @@ int cmd_check(int argc, char **argv)
- 			goto out;
- 		}
- 		report_qgroups(0);
--		ret = repair_qgroups(info, &qgroups_repaired);
-+		ret = repair_qgroups(info, &qgroups_repaired, false);
- 		err |= !!ret;
- 		if (err) {
- 			error("failed to repair quota groups");
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 67bd8b96ddd3..bb77eac139aa 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -1498,7 +1498,7 @@ out:
+diff --git a/ctree.c b/ctree.c
+index 4fc33b14000a..c707be58c413 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -22,6 +22,7 @@
+ #include "repair.h"
+ #include "internal.h"
+ #include "sizes.h"
++#include "utils.h"
+ 
+ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_path *path, int level);
+@@ -136,6 +137,114 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 	return 0;
  }
  
- static int repair_qgroup_info(struct btrfs_fs_info *info,
--			      struct qgroup_count *count)
-+			      struct qgroup_count *count, bool silent)
- {
- 	int ret;
- 	struct btrfs_root *root = info->quota_root;
-@@ -1507,8 +1507,10 @@ static int repair_qgroup_info(struct btrfs_fs_info *info,
- 	struct btrfs_qgroup_info_item *info_item;
- 	struct btrfs_key key;
- 
--	printf("Repair qgroup %llu/%llu\n", btrfs_qgroup_level(count->qgroupid),
--	       btrfs_qgroup_subvid(count->qgroupid));
-+	if (!silent)
-+		printf("Repair qgroup %llu/%llu\n",
-+			btrfs_qgroup_level(count->qgroupid),
-+			btrfs_qgroup_subvid(count->qgroupid));
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	if (IS_ERR(trans))
-@@ -1553,7 +1555,7 @@ out:
- 	return ret;
- }
- 
--static int repair_qgroup_status(struct btrfs_fs_info *info)
-+static int repair_qgroup_status(struct btrfs_fs_info *info, bool silent)
- {
- 	int ret;
- 	struct btrfs_root *root = info->quota_root;
-@@ -1562,7 +1564,8 @@ static int repair_qgroup_status(struct btrfs_fs_info *info)
- 	struct btrfs_key key;
- 	struct btrfs_qgroup_status_item *status_item;
- 
--	printf("Repair qgroup status item\n");
-+	if (!silent)
-+		printf("Repair qgroup status item\n");
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	if (IS_ERR(trans))
-@@ -1599,7 +1602,7 @@ out:
- 	return ret;
- }
- 
--int repair_qgroups(struct btrfs_fs_info *info, int *repaired)
-+int repair_qgroups(struct btrfs_fs_info *info, int *repaired, bool silent)
- {
- 	int ret = 0;
- 	struct qgroup_count *count, *tmpcount;
-@@ -1610,7 +1613,7 @@ int repair_qgroups(struct btrfs_fs_info *info, int *repaired)
- 		return 0;
- 
- 	list_for_each_entry_safe(count, tmpcount, &bad_qgroups, bad_list) {
--		ret = repair_qgroup_info(info, count);
-+		ret = repair_qgroup_info(info, count, silent);
- 		if (ret) {
- 			goto out;
- 		}
-@@ -1626,7 +1629,7 @@ int repair_qgroups(struct btrfs_fs_info *info, int *repaired)
- 	 * mount.
- 	 */
- 	if (*repaired || counts.qgroup_inconsist || counts.rescan_running) {
--		ret = repair_qgroup_status(info);
-+		ret = repair_qgroup_status(info, silent);
- 		if (ret)
- 			goto out;
- 
-diff --git a/qgroup-verify.h b/qgroup-verify.h
-index d7d83a46ed5a..7e5697024f31 100644
---- a/qgroup-verify.h
-+++ b/qgroup-verify.h
-@@ -24,7 +24,7 @@
- 
- int qgroup_verify_all(struct btrfs_fs_info *info);
- void report_qgroups(int all);
--int repair_qgroups(struct btrfs_fs_info *info, int *repaired);
-+int repair_qgroups(struct btrfs_fs_info *info, int *repaired, bool silent);
- 
- int print_extent_state(struct btrfs_fs_info *info, u64 subvol);
- 
++/*
++ * Create a new tree root, with root objectid set to @objectid.
++ *
++ * NOTE: Doesn't support tree with non-zero offset, like tree reloc tree.
++ */
++int btrfs_create_root(struct btrfs_trans_handle *trans,
++		      struct btrfs_fs_info *fs_info, u64 objectid)
++{
++	struct extent_buffer *node;
++	struct btrfs_root *new_root;
++	struct btrfs_disk_key disk_key;
++	struct btrfs_key location;
++	struct btrfs_root_item root_item = { 0 };
++	int ret;
++
++	new_root = malloc(sizeof(*new_root));
++	if (!new_root)
++		return -ENOMEM;
++
++	btrfs_setup_root(new_root, fs_info, objectid);
++	if (!is_fstree(objectid))
++		new_root->track_dirty = 1;
++	add_root_to_dirty_list(new_root);
++
++	new_root->objectid = objectid;
++	new_root->root_key.objectid = objectid;
++	new_root->root_key.type = BTRFS_ROOT_ITEM_KEY;
++	new_root->root_key.offset = 0;
++
++	node = btrfs_alloc_free_block(trans, new_root, fs_info->nodesize,
++				      objectid, &disk_key, 0, 0, 0);
++	if (IS_ERR(node)) {
++		ret = PTR_ERR(node);
++		error("failed to create root node for tree %llu: %d (%s)",
++		      objectid, ret, strerror(-ret));
++		return ret;
++	}
++	new_root->node = node;
++
++	btrfs_set_header_generation(node, trans->transid);
++	btrfs_set_header_backref_rev(node, BTRFS_MIXED_BACKREF_REV);
++	btrfs_clear_header_flag(node, BTRFS_HEADER_FLAG_RELOC |
++				      BTRFS_HEADER_FLAG_WRITTEN);
++	btrfs_set_header_owner(node, objectid);
++	btrfs_set_header_nritems(node, 0);
++	btrfs_set_header_level(node, 0);
++	write_extent_buffer(node, fs_info->fsid, btrfs_header_fsid(),
++			    BTRFS_FSID_SIZE);
++	ret = btrfs_inc_ref(trans, new_root, node, 0);
++	if (ret < 0)
++		goto free;
++
++	/*
++	 * Special tree roots may need to modify pointers in @fs_info
++	 * Only quota is supported yet.
++	 */
++	switch (objectid) {
++	case BTRFS_QUOTA_TREE_OBJECTID:
++		if (fs_info->quota_root) {
++			error("quota root already exists");
++			ret = -EEXIST;
++			goto free;
++		}
++		fs_info->quota_root = new_root;
++		fs_info->quota_enabled = 1;
++		break;
++	/*
++	 * Essential trees can't be created by this function, yet.
++	 * As we expect such skeleton exists, or a lot of functions like
++	 * btrfs_alloc_free_block() doesn't work at all
++	 */
++	case BTRFS_ROOT_TREE_OBJECTID:
++	case BTRFS_EXTENT_TREE_OBJECTID:
++	case BTRFS_CHUNK_TREE_OBJECTID:
++	case BTRFS_FS_TREE_OBJECTID:
++		ret = -EEXIST;
++		goto free;
++	default:
++		/* Subvolume trees don't need special handles */
++		if (is_fstree(objectid))
++			break;
++		/* Other special trees are not supported yet */
++		ret = -ENOTTY;
++		goto free;
++	}
++	btrfs_mark_buffer_dirty(node);
++	btrfs_set_root_bytenr(&root_item, btrfs_header_bytenr(node));
++	btrfs_set_root_level(&root_item, 0);
++	btrfs_set_root_generation(&root_item, trans->transid);
++	btrfs_set_root_dirid(&root_item, 0);
++	btrfs_set_root_refs(&root_item, 1);
++	btrfs_set_root_used(&root_item, fs_info->nodesize);
++	location.objectid = objectid;
++	location.type = BTRFS_ROOT_ITEM_KEY;
++	location.offset = 0;
++
++	ret = btrfs_insert_root(trans, fs_info->tree_root, &location,
++				&root_item);
++	if (ret < 0)
++		goto free;
++	return ret;
++
++free:
++	free_extent_buffer(node);
++	free(new_root);
++	return ret;
++}
++
+ /*
+  * check if the tree block can be shared by multiple trees
+  */
+diff --git a/ctree.h b/ctree.h
+index 506b76766579..ac8ce70a55e7 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2558,6 +2558,8 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_root *root,
+ 		      struct extent_buffer *buf,
+ 		      struct extent_buffer **cow_ret, u64 new_root_objectid);
++int btrfs_create_root(struct btrfs_trans_handle *trans,
++		      struct btrfs_fs_info *fs_info, u64 objectid);
+ int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
+ 		u32 data_size);
+ int btrfs_truncate_item(struct btrfs_root *root, struct btrfs_path *path,
 -- 
 2.15.0
 

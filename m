@@ -1,109 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:48110 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752119AbdKGIcs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Nov 2017 03:32:48 -0500
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA78WkSw009626
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 08:32:47 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA78WkQ6023123
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 08:32:46 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vA78WkFt020712
-        for <linux-btrfs@vger.kernel.org>; Tue, 7 Nov 2017 08:32:46 GMT
-Subject: Re: [PATCH 2/4] Btrfs: fix data corruption in raid6
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171102005405.20420-1-bo.li.liu@oracle.com>
- <20171102005405.20420-3-bo.li.liu@oracle.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <133f72d7-4254-ccd4-76e5-1078f0b8a079@oracle.com>
-Date: Tue, 7 Nov 2017 16:32:55 +0800
-MIME-Version: 1.0
-In-Reply-To: <20171102005405.20420-3-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from victor.provo.novell.com ([137.65.250.26]:49003 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754420AbdKGInJ (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 7 Nov 2017 03:43:09 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 00/12] mkfs: Quota support through -R|--runtime quota
+Date: Tue,  7 Nov 2017 16:42:44 +0800
+Message-Id: <20171107084259.22367-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/mkfs_qgroup
+
+This patchset adds quota support, which means the result fs will have
+quota enabled by default, and its accounting is already consistent, no
+manually rescan or quota enable is needed.
+
+The overall design of such support is:
+1) Create needed tree
+   Both btrfs_root and real root item and tree root leaf.
+   For this, a new infrastructure, btrfs_create_tree(), is added for
+   this.
+
+2) Fill quota root with basic skeleton
+   Only 3 items are really needed
+   a) global quota status item
+   b) quota info for specified qgroup
+   c) quota limit for specified qgroup
+
+   Currently only 0/5 qgroup is passed.
+   If we're going to support extra subvolume at mkfs time, just pass the
+   subvolume id into insert_qgroup_items().
+
+   The content doesn't matter at all.
+
+3) Repair qgroups using infrastructure from qgroup-verify
+   In fact, qgroup repair is just offline rescan.
+   Although the original qgroup-verify infrastructure is mostly noisy,
+   modify it a little to make it silent to function as offline quota
+   rescan.
+
+And such support is mainly designed for developers and QA guys.
+
+As to enable quota, before we must normally mount the fs, enable quota
+(and rescan if needed).
+This ioctl based procedure is not common, and fstests doesn't provide
+such support.
+
+There are several attempts to make fstests to support it, but due to
+different reasons, all these attempts failed.
+
+To make it easier to test all existing test cases with btrfs quota
+enabled, the current best method is to support quota at mkfs time, and
+here comes the patchset.
 
 
-On 11/02/2017 08:54 AM, Liu Bo wrote:
-> With raid6 profile, btrfs can end up with data corruption by the
-> following steps.
-> 
-> Say we have a 5 disks that are set up with raid6 profile,
-> 
-> 1) mount this btrfs
-> 2) one disk gets pulled out
-> 3) write something to btrfs and sync
-> 4) another disk gets pulled out
-> 5) write something to btrfs and sync
-> 6) umount this btrfs
-> 7) bring the two disk back
-> 8) reboot
-> 9) mount this btrfs
-> 
-> Chances are mount will fail (even with -odegraded) because of failure
-> on reading metadata blocks, IOW, our raid6 setup is not able to
-> protect two disk failures in some cases.
-> 
-> So it turns out that there is a bug in raid6's recover code, that is,
-> 
-> if we have one of stripes in the raid6 layout as shown here,
-> 
-> | D1(*)  | D2(*)  | D3 | D4 | D5    |
-> -------------------------------------
-> | data1  | data2  | P  | Q  | data0 |
+BTW with -R|--runtime-features, we have several possible target to add.
+Not limited to such ioctl based operation, but also mount option based
+ones.
+Like space-cache-tree (space_cache=v2).
 
 
-> D1 and D2 are the two disks which got pulled out and brought back.
-> When mount reads data1 and finds out that data1 doesn't match its crc,
-> btrfs goes to recover data1 from other stripes, what it'll be doing is
-> 
-> 1) read data2, parity P, parity Q and data0
->
-> 2) as we have a valid parity P and two data stripes, it goes to
->     recover in raid5 style.
+Qu Wenruo (12):
+  btrfs-progs: qgroup-verify: Also repair qgroup status version
+  btrfs-progs: qgroup-verify: Use fs_info->readonly to check if we
+    should repair qgroups
+  btrfs-progs: qgroup-verify: Move qgroup classification out of
+    report_qgroups
+  btrfs-progs: qgroup-verify: Allow repair_qgroups function to do silent
+    repair
+  btrfs-progs: ctree: Introduce function to create an empty tree
+  btrfs-progs: mkfs: Introduce function to insert qgroup info and limit
+    items
 
+  ^^^ Above patches are not modified at all ^^^
+  vvv Modification starts below vvv
 
-> (However, since disk D2 was pulled out and data2 on D2 could be stale,
+  btrfs-progs: mkfs: Introduce function to setup quota root and rescan
+  btrfs-progs: fsfeatures: Introduce a new set of features,
+    runtime_features
+  btrfs-progs: mkfs: Introduce --runtime-features option
+  btrfs-progs: mkfs: Introduce quota runtime feature
+  btrfs-progs: test/mkfs: Add test case for -R quota option
+  btrfs-progs: test/mkfs: Add test case for --rootdir and -R quota
 
-  data2 should end up crc error, if not then raid5 recover is as
-  expected OR this example is confusing to explain the context of
-  two data stipe missing.
+ Documentation/mkfs.btrfs.asciidoc              |  23 +++
+ cmds-check.c                                   |   2 +-
+ convert/main.c                                 |   4 +-
+ ctree.c                                        | 109 ++++++++++++++
+ ctree.h                                        |   3 +
+ fsfeatures.c                                   | 131 ++++++++++++++---
+ fsfeatures.h                                   |  10 +-
+ mkfs/main.c                                    | 194 ++++++++++++++++++++++---
+ qgroup-verify.c                                |  51 +++++--
+ qgroup-verify.h                                |   2 +-
+ tests/mkfs-tests/001-basic-profiles/test.sh    |  10 ++
+ tests/mkfs-tests/010-rootdir-and-quota/test.sh |  51 +++++++
+ 12 files changed, 529 insertions(+), 61 deletions(-)
+ create mode 100755 tests/mkfs-tests/010-rootdir-and-quota/test.sh
 
-Thanks, Anand
+-- 
+2.15.0
 
-
-> we still get the wrong data1 from this reconstruction.)
-> 
-> 3) btrfs continues to try to reconstruct data1 from parity Q, data2
->     and data0, we still get the wrong one for the same reason.
-> 
-> The fix here is to take advantage of the device flag, ie. 'In_sync',
-> all data on a device might be stale if 'In_sync' has not been set.
- >
-> With this, we can build the correct data2 from parity P, Q and data1.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->   fs/btrfs/raid56.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index 67262f8..3c0ce61 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -1076,7 +1076,8 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
->   	disk_start = stripe->physical + (page_index << PAGE_SHIFT);
->   
->   	/* if the device is missing, just fail this stripe */
-> -	if (!stripe->dev->bdev)
-> +	if (!stripe->dev->bdev ||
-> +	    !test_bit(In_sync, &stripe->dev->flags))
->   		return fail_rbio_index(rbio, stripe_nr);
->   
->   	/* see if we can add this page onto our existing bio */
-> 

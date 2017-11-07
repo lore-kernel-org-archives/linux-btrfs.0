@@ -1,145 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([46.4.129.203]:55694 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752580AbdKGFNz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Nov 2017 00:13:55 -0500
-Received: from mail.virtall.com (localhost [127.0.0.1])
-        by mail.virtall.com (Postfix) with ESMTP id 14721104CEB7
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Nov 2017 05:13:50 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
-        by mail.virtall.com (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Nov 2017 05:13:50 +0000 (UTC)
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:54090 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755073AbdKGHCP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Nov 2017 02:02:15 -0500
+Received: by mail-wm0-f51.google.com with SMTP id r196so1512146wmf.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Nov 2017 23:02:14 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Tue, 07 Nov 2017 14:13:49 +0900
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: how to run balance successfully (No space left on device)?
-In-Reply-To: <c6c0eb84c550f44ffe443d625c198a39@wpkg.org>
-References: <5ff267d206ae631e9d259eacacdf7924@wpkg.org>
- <19a1770cf67e63a84c3baeeb44af9e9a@wpkg.org>
- <c6c0eb84c550f44ffe443d625c198a39@wpkg.org>
-Message-ID: <64e4c4c4341f5880349a02cf57eb3ff7@wpkg.org>
+In-Reply-To: <CAJCQCtTOefBfRpfb0h1H6SQxzGd9j-7ZSM07iA37xhy3+Lm=fw@mail.gmail.com>
+References: <CAJyZh6S4f=6W+oA6DT1zu2FRuCgO7w8TfRzC96rPWNzUszvRmg@mail.gmail.com>
+ <9871a669-141b-ac64-9da6-9050bcad7640@cn.fujitsu.com> <f6428a81-6fc8-1a73-0151-d13dd550c277@rqc.ru>
+ <bb12a331-1fec-448a-cbf8-881b434766e7@cn.fujitsu.com> <CAJyZh6RxKuMukM-vCd=_u_8y38MJO_oUG1nYFpaxBroeK8xpAQ@mail.gmail.com>
+ <CAH=dxU4OV6tQ0hCy_0Ug7eqkOM7HTUWTKjAr4qg+uO2gVxk2Jw@mail.gmail.com>
+ <CAJCQCtS9BPZn-hnS+wP7Eu3oHQP_tS8EEM4j4FQDwRmzcFH+_A@mail.gmail.com>
+ <CAH=dxU4MOWGZ0JSZ-ZV004p5EnH_aOnZ7XEo2rSOmbXJZJmwBA@mail.gmail.com> <CAJCQCtTOefBfRpfb0h1H6SQxzGd9j-7ZSM07iA37xhy3+Lm=fw@mail.gmail.com>
+From: Dave <davestechshop@gmail.com>
+Date: Tue, 7 Nov 2017 02:01:53 -0500
+Message-ID: <CAH=dxU61J94HCnr+UUokBsxqNMjKQBdz8xE2WNbWAHOtKP4w0w@mail.gmail.com>
+Subject: Re: Problem with file system
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Cc: Chris Murphy <lists@colorremedies.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-10-31 23:18, Tomasz Chmielewski wrote:
-> On 2017-09-18 17:20, Tomasz Chmielewski wrote:
->>>> # df -h /var/lib/lxd
->>>> 
->>>> FWIW, standard (aka util-linux) df is effectively useless in a 
->>>> situation
->>>> such as this, as it really doesn't give you the information you need 
->>>> (it
->>>> can say you have lots of space available, but if btrfs has all of it
->>>> allocated into chunks, even if the chunks have space in them still, 
->>>> there
->>>> can be problems).
->> 
->> I see here on RAID-1, "df -h" it shows pretty much the same amount of
->> free space as "btrfs fi show":
->> 
->> - "df -h" shows 105G free
->> - "btrfs fi show" says: Free (estimated):            104.28GiB
->> (min: 104.28GiB)
->> 
->> 
->> 
->>> But chances are pretty good that one you get that patch integrated,
->>> whether by integrating it yourself to what you have currently, or by
->>> trying 4.14-rc1 or waiting until it hits release or stable, that bug 
->>> will
->>> have been squashed! =:^)
->> 
->> OK, will wait for 4.14.
-> 
-> So I've tried to run balance with 4.14-rc6.
+On Sat, Nov 4, 2017 at 1:25 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+> On Sat, Nov 4, 2017 at 1:26 AM, Dave <davestechshop@gmail.com> wrote:
+> > On Mon, Oct 30, 2017 at 5:37 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> >>
+> >> That is not a general purpose file system. It's a file system for admins who understand where the bodies are buried.
+> >
+> > I'm not sure I understand your comment...
+> >
+> > Are you saying BTRFS is not a general purpose file system?
+>
+> I'm suggesting that any file system that burdens the user with more
+> knowledge to stay out of trouble than the widely considered general
+> purpose file systems of the day, is not a general purpose file system.
+>
+> And yes, I'm suggesting that Btrfs is at risk of being neither general
+> purpose, and not meeting its design goals as stated in Btrfs
+> documentation. It is not easy to admin *when things go wrong*. It's
+> great before then. It's a butt ton easier to resize, replace devices,
+> take snapshots, and so on. But when it comes to fixing it when it goes
+> wrong? It is a goddamn Choose Your Own Adventure book. It's way, way
+> more complicated than any other file system I'm aware of.
 
-I've also tried with 4.14-rc7 on a server which was failing with "no 
-space left" - unfortunately, it's still failing:
+It sounds like a large part of that could be addressed with better
+documentation. I know that documentation such as what you are
+suggesting would be really valuable to me!
 
+> > If btrfs isn't able to serve as a general purpose file system for
+> > Linux going forward, which file system(s) would you suggest can fill
+> > that role? (I can't think of any that are clearly all-around better
+> > than btrfs now, or that will be in the next few years.)
+>
+> ext4 and XFS are clearly the file systems to beat. They almost always
+> recover from crashes with just a normal journal replay at mount time,
+> file system repair is not often needed. When it is needed, it usually
+> works, and there is just the one option to repair and go with it.
+> Btrfs has piles of repair options, mount time options, btrfs check has
+> options, btrfs rescue has options, it's a bit nutty honestly. And
+> there's zero guidance in the available docs what order to try things
+> in, not least of which some of these repair tools are still considered
+> dangerous at least in the man page text, and the order depends on the
+> failure. The user is burdened with way too much.
 
-# time btrfs balance start /srv
-WARNING:
+Neither one of those file systems offers snapshots. (And when I
+compared LVM snapshots vs BTRFS snapshots, I got the impression BTRFS
+is the clear winner.)
 
-         Full balance without filters requested. This operation is very
-         intense and takes potentially very long. It is recommended to
-         use the balance filters to narrow down the scope of balance.
-         Use 'btrfs balance start --full-balance' option to skip this
-         warning. The operation will start in 10 seconds.
-         Use Ctrl-C to stop it.
-10 9 8 7 6 5 4 3 2 1
-Starting balance without any filters.
-ERROR: error during balancing '/srv': No space left on device
-There may be more info in syslog - try dmesg | tail
+Snapshots and volumes have a lot of value to me and I would not enjoy
+going back to a file system without those features.
 
-real    8731m13.424s
-user    0m0.000s
-sys     560m36.363s
+> Even as much as I know about Btrfs having used it since 2008 and my
+> list activity, I routinely have WTF moments when people post problems,
+> what order to try to get things going again. Easy to admin? Yeah for
+> the most part. But stability is still a problem, and it's coming up on
+> a 10 year anniversary soon.
+>
+> If I were equally familiar with ZFS on Linux as I am with Btrfs, I'd
+> use ZoL hands down.
 
-
-
-# dmesg -c
-(...)
-[546228.496902] BTRFS info (device sda4): relocating block group 
-297455845376 flags data|raid1
-[546251.393541] BTRFS info (device sda4): found 107799 extents
-[546512.346360] BTRFS info (device sda4): found 107799 extents
-[546529.407077] BTRFS info (device sda4): relocating block group 
-296382103552 flags metadata|raid1
-[546692.465746] BTRFS info (device sda4): found 35202 extents
-[546733.294172] BTRFS info (device sda4): found 2586 extents
-[546738.487556] BTRFS info (device sda4): relocating block group 
-295308361728 flags data|raid1
-[546770.474409] BTRFS info (device sda4): found 140906 extents
-[547037.744023] BTRFS info (device sda4): found 140906 extents
-[547065.840993] BTRFS info (device sda4): 117 enospc errors during 
-balance
-
-
-# btrfs fi df /srv
-Data, RAID1: total=2.46TiB, used=2.35TiB
-System, RAID1: total=32.00MiB, used=416.00KiB
-Metadata, RAID1: total=19.00GiB, used=12.92GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-# btrfs fi show /srv
-Label: 'btrfs'  uuid: 105b2e0c-8af2-45ee-b4c8-14ff0a3ca899
-         Total devices 2 FS bytes used 2.36TiB
-         devid    1 size 2.63TiB used 2.48TiB path /dev/sda4
-         devid    2 size 2.63TiB used 2.48TiB path /dev/sdb4
-
-
-# btrfs fi usage /srv
-Overall:
-     Device size:                   5.25TiB
-     Device allocated:              4.96TiB
-     Device unallocated:          302.00GiB
-     Device missing:                  0.00B
-     Used:                          4.72TiB
-     Free (estimated):            268.66GiB      (min: 268.66GiB)
-     Data ratio:                       2.00
-     Metadata ratio:                   2.00
-     Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,RAID1: Size:2.46TiB, Used:2.35TiB
-    /dev/sda4       2.46TiB
-    /dev/sdb4       2.46TiB
-
-Metadata,RAID1: Size:19.00GiB, Used:12.92GiB
-    /dev/sda4      19.00GiB
-    /dev/sdb4      19.00GiB
-
-System,RAID1: Size:32.00MiB, Used:416.00KiB
-    /dev/sda4      32.00MiB
-    /dev/sdb4      32.00MiB
-
-Unallocated:
-    /dev/sda4     151.00GiB
-    /dev/sdb4     151.00GiB
-
-
-Tomasz Chmielewski
-https://lxadm.com
+Might it be the case that if you were equally familiar with ZFS, you
+would become aware of more of its pitfalls? And that greater knowledge
+could always lead to a different decision (such as favoring BTRFS)..
+In my experience the grass is always greener when I am less familiar
+with the field.

@@ -1,30 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36910 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932443AbdKOQR1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 11:17:27 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C1CE8AC88
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Nov 2017 16:17:26 +0000 (UTC)
-Date: Wed, 15 Nov 2017 17:15:33 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v2 3/3] btrfs: Cleanup existing name_len checks
-Message-ID: <20171115161533.GS28899@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171108005426.17903-1-wqu@suse.com>
- <20171108005426.17903-4-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171108005426.17903-4-wqu@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:55226 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1759011AbdKHAyj (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 7 Nov 2017 19:54:39 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 0/3] tree-checker bug fix and enhancement.
+Date: Wed,  8 Nov 2017 08:54:23 +0800
+Message-Id: <20171108005426.17903-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 08, 2017 at 08:54:26AM +0800, Qu Wenruo wrote:
-> Since tree-checker has verified leaf when reading from disk, we don't
-> need the existing verify_dir_item() or btrfs_is_name_len_valid().
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+This patchset fix a false panic introduced by tree-checker,
+and then introduce dir_item checker, along with cleanups to remove
+existing checkers sparsed in dir-item.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+The 1st patch is a fix to address kernel panic with sanity test in btrfs.
+The cause is there are several callers which call
+btrfs_mark_buffer_dirty() while its data is not initialized.
+(The same patch is resent along with the rest of the patchset)
+
+Considering the number of callers and how many times btrfs_mark_buffer_dirty()
+is called, the 1st patch will skip item data check, so check in
+btrfs_mark_buffer_dirty() will keep the old behavior.
+(Only item and item pointer overlap check is newly introduced in this case)
+
+The 2nd patch introduce comprehensive check for dir item, which is used
+for 3 key types: DIR_ITEM, DIR_INDEX and XATTR.
+(Unlike previous attempts to check all items with variable length)
+
+Except existing checks, new checks are:
+1) Enhanced dir type check
+   Now only XATTR key can have FT_ATTR dir item.
+
+2) name hash for DIR_ITEM/XATTR_ITEM
+   Original introduced in btrfs-progs for a corrupted (non-fuzzed)
+   image.
+
+The last patch will cleanup the related existing code, mostly related to
+verify_dir_item() and btrfs_is_name_len_valid().
+
+Unlike btrfs_check_leaf() called in btrfs_mark_buffer_dirty(), all the
+verification calls are in read path, so we won't lost any early warning
+since they didn't exist from the beginning.
+
+Changelog:
+v2:
+  Rename btrfs_check_leaf() to btrfs_check_leaf_full() and
+  btrfs_check_leaf_relaxed() to better show their difference. Suggested
+  by David.
+
+  Unintend message in 2nd patch.
+
+Qu Wenruo (3):
+  btrfs: tree-checker: Fix false panic for sanity test
+  btrfs: tree-checker: Add checker for dir item
+  btrfs: Cleanup existing name_len checks
+
+ fs/btrfs/ctree.h        |   5 --
+ fs/btrfs/dir-item.c     | 108 -------------------------------
+ fs/btrfs/disk-io.c      |  10 ++-
+ fs/btrfs/export.c       |   5 --
+ fs/btrfs/inode.c        |   4 --
+ fs/btrfs/props.c        |   7 --
+ fs/btrfs/root-tree.c    |   7 --
+ fs/btrfs/send.c         |   6 --
+ fs/btrfs/tree-checker.c | 168 ++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/tree-checker.h |  14 +++-
+ fs/btrfs/tree-log.c     |  47 +++-----------
+ fs/btrfs/xattr.c        |   6 --
+ 12 files changed, 193 insertions(+), 194 deletions(-)
+
+-- 
+2.15.0
+

@@ -1,19 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48410 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48919 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750905AbdKHHzi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Nov 2017 02:55:38 -0500
-Subject: Re: [PATCH v2 1/3] btrfs: tree-checker: Fix false panic for sanity
- test
+        id S1751106AbdKHH7l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Nov 2017 02:59:41 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id B3CB3AAC3
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Nov 2017 07:59:39 +0000 (UTC)
+Subject: Re: [PATCH v2 2/3] btrfs: tree-checker: Add checker for dir item
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>
+Cc: dsterba@suse.cz
 References: <20171108005426.17903-1-wqu@suse.com>
- <20171108005426.17903-2-wqu@suse.com>
+ <20171108005426.17903-3-wqu@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <fabe0bca-372b-699d-c418-42c55c04c539@suse.com>
-Date: Wed, 8 Nov 2017 09:55:36 +0200
+Message-ID: <2ec9cf70-768f-8a77-52fe-1bf06f756f6a@suse.com>
+Date: Wed, 8 Nov 2017 09:59:39 +0200
 MIME-Version: 1.0
-In-Reply-To: <20171108005426.17903-2-wqu@suse.com>
+In-Reply-To: <20171108005426.17903-3-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,166 +23,39 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On  8.11.2017 02:54, Qu Wenruo wrote:
-> [BUG]
-> If we run btrfs with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y, it will
-> instantly cause kernel panic like:
+> Add checker for dir item, for key types DIR_ITEM, DIR_INDEX and
+> XATTR_ITEM.
 > 
-> ------
-> ...
-> assertion failed: 0, file: fs/btrfs/disk-io.c, line: 3853
-> ...
-> Call Trace:
->  btrfs_mark_buffer_dirty+0x187/0x1f0 [btrfs]
->  setup_items_for_insert+0x385/0x650 [btrfs]
->  __btrfs_drop_extents+0x129a/0x1870 [btrfs]
-> ...
-> -----
+> This checker does comprehensive check for:
+> 1) dir_item header and its data size
+>    Against item boundary and maximum name/xattr length.
+>    This part is mostly the same as old verify_dir_item().
 > 
-> [Cause]
-> Btrfs will call btrfs_check_leaf() in btrfs_mark_buffer_dirty() to check
-> if the leaf is valid with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y.
+> 2) dir_type
+>    Against maximum file types, and against key type.
+>    Since XATTR key should only have FT_XATTR dir item, and normal dir
+>    item type should not have XATTR key.
 > 
-> However quite some btrfs_mark_buffer_dirty() callers(*) don't really
-> initialize its item data but only initialize its item pointers, leaving
-> item data uninitialized.
+>    The check between key->type and dir_type is newly introduced by this
+>    patch.
 > 
-> This makes tree-checker catch uninitialized data as error, causing
-> such panic.
+> 3) name hash
+>    For XATTR and DIR_ITEM key, key->offset is name hash (crc32).
+>    Check the hash of name against key to ensure it's correct.
 > 
-> *: These callers include but not limited to
-> setup_items_for_insert()
-> btrfs_split_item()
-> btrfs_expand_item()
+>    The name hash check is only found in btrfs-progs before this patch.
 > 
-> [Fix]
-> Add a new parameter @check_item_data to btrfs_check_leaf().
-> With @check_item_data set to false, item data check will be skipped and
-> fallback to old btrfs_check_leaf() behavior.
-> 
-> So we can still get early warning if we screw up item pointers, and
-> avoid false panic.
-> 
-> Cc: Filipe Manana <fdmanana@gmail.com>
-> Reported-by: Lakshmipathi.G <lakshmipathi.g@gmail.com>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/disk-io.c      | 10 ++++++++--
->  fs/btrfs/tree-checker.c | 27 ++++++++++++++++++++++-----
->  fs/btrfs/tree-checker.h | 14 +++++++++++++-
->  3 files changed, 43 insertions(+), 8 deletions(-)
+>  fs/btrfs/tree-checker.c | 141 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 141 insertions(+)
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index efce9a2fa9be..10a2a579cc7f 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -610,7 +610,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	 * that we don't try and read the other copies of this block, just
->  	 * return -EIO.
->  	 */
-> -	if (found_level == 0 && btrfs_check_leaf(root, eb)) {
-> +	if (found_level == 0 && btrfs_check_leaf_full(root, eb)) {
->  		set_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
->  		ret = -EIO;
->  	}
-> @@ -3848,7 +3848,13 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
->  					 buf->len,
->  					 fs_info->dirty_metadata_batch);
->  #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
-> -	if (btrfs_header_level(buf) == 0 && btrfs_check_leaf(root, buf)) {
-> +	/*
-> +	 * Since btrfs_mark_buffer_dirty() can be called with item pointer set
-> +	 * but item data not updated.
-> +	 * So here we should only check item pointers, not item data.
-> +	 */
-> +	if (btrfs_header_level(buf) == 0 &&
-> +	    btrfs_check_leaf_relaxed(root, buf)) {
->  		btrfs_print_leaf(buf);
->  		ASSERT(0);
->  	}
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index 114fc5f0ecc5..ce4ed6ec8f39 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -242,7 +242,8 @@ static int check_leaf_item(struct btrfs_root *root,
->  	return ret;
->  }
->  
-> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
-> +static int check_leaf(struct btrfs_root *root, struct extent_buffer *leaf,
-> +		      bool check_item_data)
->  {
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	/* No valid key type is 0, so all key should be larger than this key */
-> @@ -361,10 +362,15 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
->  			return -EUCLEAN;
->  		}
->  
-> -		/* Check if the item size and content meet other criteria */
-> -		ret = check_leaf_item(root, leaf, &key, slot);
-> -		if (ret < 0)
-> -			return ret;
-> +		if (check_item_data) {
-> +			/*
-> +			 * Check if the item size and content meet other
-> +			 * criteria
-> +			 */
-> +			ret = check_leaf_item(root, leaf, &key, slot);
-> +			if (ret < 0)
-> +				return ret;
-> +		}
->  
->  		prev_key.objectid = key.objectid;
->  		prev_key.type = key.type;
-> @@ -374,6 +380,17 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
->  	return 0;
->  }
->  
-> +int btrfs_check_leaf_full(struct btrfs_root *root, struct extent_buffer *leaf)
-> +{
-> +	return check_leaf(root, leaf, true);
-> +}
-> +
-> +int btrfs_check_leaf_relaxed(struct btrfs_root *root,
-> +			     struct extent_buffer *leaf)
-> +{
-> +	return check_leaf(root, leaf, false);
-> +}
 
-Presumably the compiler will figure it out but such trivial function are
-usually defined straight into the header file so that the compiler
-inlines them. Can you check if you have separate objects for
-btrfs_check_leaf_relaxed  with the way you've written the patch or
-whether all instances have been inlined? If they are not, then move
-those function definition into tree-checker.h and make them 'static
-inline' as per the style of the whole kernel
 
-> +
->  int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node)
->  {
->  	unsigned long nr = btrfs_header_nritems(node);
-> diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-> index 96c486e95d70..3d53e8d6fda0 100644
-> --- a/fs/btrfs/tree-checker.h
-> +++ b/fs/btrfs/tree-checker.h
-> @@ -20,7 +20,19 @@
->  #include "ctree.h"
->  #include "extent_io.h"
->  
-> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf);
-> +/*
-> + * Comprehensive leaf checker.
-> + * Will check not only the item pointers, but also every possible member
-> + * in item data.
-> + */
-> +int btrfs_check_leaf_full(struct btrfs_root *root, struct extent_buffer *leaf);
-> +
-> +/*
-> + * Less strict leaf checker.
-> + * Will only check item pointers, not reading item data.
-> + */
-> +int btrfs_check_leaf_relaxed(struct btrfs_root *root,
-> +			     struct extent_buffer *leaf);
->  int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node);
->  
->  #endif
-> 
+I'm gonna 'hijack' this patch to discuss something  - we do return the
+correct EUCLEAN status from the leaf checker, however the only place
+where it's called is in btree_readpage_end_io_hook and if the check
+fails we only return -EIO. I wonder whether want to propagate the
+EUCLEAN from there, any thoughts?
+
+

@@ -1,257 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:51133 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:52119 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750704AbdKHIDt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Nov 2017 03:03:49 -0500
-Subject: Re: [PATCH v2 1/3] btrfs: tree-checker: Fix false panic for sanity
- test
+        id S1750727AbdKHISY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 8 Nov 2017 03:18:24 -0500
+Subject: Re: [PATCH v2 2/3] btrfs: tree-checker: Add checker for dir item
 To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>
+Cc: dsterba@suse.cz
 References: <20171108005426.17903-1-wqu@suse.com>
- <20171108005426.17903-2-wqu@suse.com>
- <fabe0bca-372b-699d-c418-42c55c04c539@suse.com>
+ <20171108005426.17903-3-wqu@suse.com>
+ <2ec9cf70-768f-8a77-52fe-1bf06f756f6a@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <8bf83e81-290d-7568-2d95-6fc7d1f209d2@gmx.com>
-Date: Wed, 8 Nov 2017 16:03:35 +0800
+Message-ID: <2e930aec-dd1a-60e2-88fc-766014b63cf3@gmx.com>
+Date: Wed, 8 Nov 2017 16:17:39 +0800
 MIME-Version: 1.0
-In-Reply-To: <fabe0bca-372b-699d-c418-42c55c04c539@suse.com>
+In-Reply-To: <2ec9cf70-768f-8a77-52fe-1bf06f756f6a@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="3iHHt7t3VNR10KfDDWxvIpSTFxpwhDHNW"
+ boundary="mKqo7Jb5M7tn9uhcSN2cSTolx3rux9H0r"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---3iHHt7t3VNR10KfDDWxvIpSTFxpwhDHNW
-Content-Type: multipart/mixed; boundary="QSNlKOh7jVlUk0GrrxxNhhAVoIQ1INCOP";
+--mKqo7Jb5M7tn9uhcSN2cSTolx3rux9H0r
+Content-Type: multipart/mixed; boundary="cF2Vauue1LjQXrjgED9rDjoMgUlMnLFx6";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
  linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>
-Message-ID: <8bf83e81-290d-7568-2d95-6fc7d1f209d2@gmx.com>
-Subject: Re: [PATCH v2 1/3] btrfs: tree-checker: Fix false panic for sanity
- test
+Cc: dsterba@suse.cz
+Message-ID: <2e930aec-dd1a-60e2-88fc-766014b63cf3@gmx.com>
+Subject: Re: [PATCH v2 2/3] btrfs: tree-checker: Add checker for dir item
 References: <20171108005426.17903-1-wqu@suse.com>
- <20171108005426.17903-2-wqu@suse.com>
- <fabe0bca-372b-699d-c418-42c55c04c539@suse.com>
-In-Reply-To: <fabe0bca-372b-699d-c418-42c55c04c539@suse.com>
+ <20171108005426.17903-3-wqu@suse.com>
+ <2ec9cf70-768f-8a77-52fe-1bf06f756f6a@suse.com>
+In-Reply-To: <2ec9cf70-768f-8a77-52fe-1bf06f756f6a@suse.com>
 
---QSNlKOh7jVlUk0GrrxxNhhAVoIQ1INCOP
+--cF2Vauue1LjQXrjgED9rDjoMgUlMnLFx6
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B411=E6=9C=8808=E6=97=A5 15:55, Nikolay Borisov wrote:
+On 2017=E5=B9=B411=E6=9C=8808=E6=97=A5 15:59, Nikolay Borisov wrote:
 >=20
 >=20
 > On  8.11.2017 02:54, Qu Wenruo wrote:
->> [BUG]
->> If we run btrfs with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=3Dy, it will
->> instantly cause kernel panic like:
+>> Add checker for dir item, for key types DIR_ITEM, DIR_INDEX and
+>> XATTR_ITEM.
 >>
->> ------
->> ...
->> assertion failed: 0, file: fs/btrfs/disk-io.c, line: 3853
->> ...
->> Call Trace:
->>  btrfs_mark_buffer_dirty+0x187/0x1f0 [btrfs]
->>  setup_items_for_insert+0x385/0x650 [btrfs]
->>  __btrfs_drop_extents+0x129a/0x1870 [btrfs]
->> ...
->> -----
+>> This checker does comprehensive check for:
+>> 1) dir_item header and its data size
+>>    Against item boundary and maximum name/xattr length.
+>>    This part is mostly the same as old verify_dir_item().
 >>
->> [Cause]
->> Btrfs will call btrfs_check_leaf() in btrfs_mark_buffer_dirty() to che=
-ck
->> if the leaf is valid with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=3Dy.
+>> 2) dir_type
+>>    Against maximum file types, and against key type.
+>>    Since XATTR key should only have FT_XATTR dir item, and normal dir
+>>    item type should not have XATTR key.
 >>
->> However quite some btrfs_mark_buffer_dirty() callers(*) don't really
->> initialize its item data but only initialize its item pointers, leavin=
-g
->> item data uninitialized.
+>>    The check between key->type and dir_type is newly introduced by thi=
+s
+>>    patch.
 >>
->> This makes tree-checker catch uninitialized data as error, causing
->> such panic.
+>> 3) name hash
+>>    For XATTR and DIR_ITEM key, key->offset is name hash (crc32).
+>>    Check the hash of name against key to ensure it's correct.
 >>
->> *: These callers include but not limited to
->> setup_items_for_insert()
->> btrfs_split_item()
->> btrfs_expand_item()
+>>    The name hash check is only found in btrfs-progs before this patch.=
+
 >>
->> [Fix]
->> Add a new parameter @check_item_data to btrfs_check_leaf().
->> With @check_item_data set to false, item data check will be skipped an=
-d
->> fallback to old btrfs_check_leaf() behavior.
->>
->> So we can still get early warning if we screw up item pointers, and
->> avoid false panic.
->>
->> Cc: Filipe Manana <fdmanana@gmail.com>
->> Reported-by: Lakshmipathi.G <lakshmipathi.g@gmail.com>
 >> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >> ---
->>  fs/btrfs/disk-io.c      | 10 ++++++++--
->>  fs/btrfs/tree-checker.c | 27 ++++++++++++++++++++++-----
->>  fs/btrfs/tree-checker.h | 14 +++++++++++++-
->>  3 files changed, 43 insertions(+), 8 deletions(-)
+>>  fs/btrfs/tree-checker.c | 141 +++++++++++++++++++++++++++++++++++++++=
++++++++++
+>>  1 file changed, 141 insertions(+)
 >>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index efce9a2fa9be..10a2a579cc7f 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -610,7 +610,7 @@ static int btree_readpage_end_io_hook(struct btrfs=
-_io_bio *io_bio,
->>  	 * that we don't try and read the other copies of this block, just
->>  	 * return -EIO.
->>  	 */
->> -	if (found_level =3D=3D 0 && btrfs_check_leaf(root, eb)) {
->> +	if (found_level =3D=3D 0 && btrfs_check_leaf_full(root, eb)) {
->>  		set_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
->>  		ret =3D -EIO;
->>  	}
->> @@ -3848,7 +3848,13 @@ void btrfs_mark_buffer_dirty(struct extent_buff=
-er *buf)
->>  					 buf->len,
->>  					 fs_info->dirty_metadata_batch);
->>  #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
->> -	if (btrfs_header_level(buf) =3D=3D 0 && btrfs_check_leaf(root, buf))=
- {
->> +	/*
->> +	 * Since btrfs_mark_buffer_dirty() can be called with item pointer s=
-et
->> +	 * but item data not updated.
->> +	 * So here we should only check item pointers, not item data.
->> +	 */
->> +	if (btrfs_header_level(buf) =3D=3D 0 &&
->> +	    btrfs_check_leaf_relaxed(root, buf)) {
->>  		btrfs_print_leaf(buf);
->>  		ASSERT(0);
->>  	}
->> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
->> index 114fc5f0ecc5..ce4ed6ec8f39 100644
->> --- a/fs/btrfs/tree-checker.c
->> +++ b/fs/btrfs/tree-checker.c
->> @@ -242,7 +242,8 @@ static int check_leaf_item(struct btrfs_root *root=
-,
->>  	return ret;
->>  }
->> =20
->> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *l=
-eaf)
->> +static int check_leaf(struct btrfs_root *root, struct extent_buffer *=
-leaf,
->> +		      bool check_item_data)
->>  {
->>  	struct btrfs_fs_info *fs_info =3D root->fs_info;
->>  	/* No valid key type is 0, so all key should be larger than this key=
- */
->> @@ -361,10 +362,15 @@ int btrfs_check_leaf(struct btrfs_root *root, st=
-ruct extent_buffer *leaf)
->>  			return -EUCLEAN;
->>  		}
->> =20
->> -		/* Check if the item size and content meet other criteria */
->> -		ret =3D check_leaf_item(root, leaf, &key, slot);
->> -		if (ret < 0)
->> -			return ret;
->> +		if (check_item_data) {
->> +			/*
->> +			 * Check if the item size and content meet other
->> +			 * criteria
->> +			 */
->> +			ret =3D check_leaf_item(root, leaf, &key, slot);
->> +			if (ret < 0)
->> +				return ret;
->> +		}
->> =20
->>  		prev_key.objectid =3D key.objectid;
->>  		prev_key.type =3D key.type;
->> @@ -374,6 +380,17 @@ int btrfs_check_leaf(struct btrfs_root *root, str=
-uct extent_buffer *leaf)
->>  	return 0;
->>  }
->> =20
->> +int btrfs_check_leaf_full(struct btrfs_root *root, struct extent_buff=
-er *leaf)
->> +{
->> +	return check_leaf(root, leaf, true);
->> +}
->> +
->> +int btrfs_check_leaf_relaxed(struct btrfs_root *root,
->> +			     struct extent_buffer *leaf)
->> +{
->> +	return check_leaf(root, leaf, false);
->> +}
 >=20
-> Presumably the compiler will figure it out but such trivial function ar=
-e
-> usually defined straight into the header file so that the compiler
-> inlines them.
+>=20
+> I'm gonna 'hijack' this patch to discuss something  - we do return the
+> correct EUCLEAN status from the leaf checker, however the only place
+> where it's called is in btree_readpage_end_io_hook and if the check
+> fails we only return -EIO. I wonder whether want to propagate the
+> EUCLEAN from there, any thoughts?
 
-In that case, the function check_leaf() must be exported, so that we can
-inline it in header.
+In this particular case, I think returning -EUCLEAN is *marginally* bette=
+r.
+Much more detailed info from block layer/csum verifier/tree-checker
+makes more sense than just a single return value.
 
-But exporting check_leaf() increases the possibility for caller to use
-it incorrectly, so I prefer no to export any internal used function.
+Returning any error to make the reading fail, and cause a graceful error
+is good enough.
+The returning values between EUCLEAN and EIO makes difference, but less
+meaningful than specific output from tree-checker.
 
+On the other hand, if in case where return value is the only meaningful
+output to user-space (that's to say no much meaningful extra info like
+kernel message), then return value makes sense.
 
-And compiler may or may not inline check_leaf() into
-btrfs_check_leaf_relaxed() function, but it doesn't matter.
+But even in that case, the return value can't give much detailed info.
+Here are several common errno:
+EIO
+ENOSPC
+EUCLEAN
+ENOMEM
+ENOENT
 
-If optimization can be done by compiler, then let compiler to do it.
+We can only express at most less than 10 error types.
+There are tons of places where thing can go wrong.
 
-What we should do is to ensure the abstraction/interface design is good
-enough, other than doing possible "over-optimization".
+What we can do is just to try our best to classify these errors, and
+hopes it makes sense for end user.
+While more meaningful error/warning message will make both developer and
+end user happier.
 
 Thanks,
 Qu
 
-> Can you check if you have separate objects for
-> btrfs_check_leaf_relaxed  with the way you've written the patch or
-> whether all instances have been inlined? If they are not, then move
-> those function definition into tree-checker.h and make them 'static
-> inline' as per the style of the whole kernel
 >=20
->> +
->>  int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *n=
-ode)
->>  {
->>  	unsigned long nr =3D btrfs_header_nritems(node);
->> diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
->> index 96c486e95d70..3d53e8d6fda0 100644
->> --- a/fs/btrfs/tree-checker.h
->> +++ b/fs/btrfs/tree-checker.h
->> @@ -20,7 +20,19 @@
->>  #include "ctree.h"
->>  #include "extent_io.h"
->> =20
->> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *l=
-eaf);
->> +/*
->> + * Comprehensive leaf checker.
->> + * Will check not only the item pointers, but also every possible mem=
-ber
->> + * in item data.
->> + */
->> +int btrfs_check_leaf_full(struct btrfs_root *root, struct extent_buff=
-er *leaf);
->> +
->> +/*
->> + * Less strict leaf checker.
->> + * Will only check item pointers, not reading item data.
->> + */
->> +int btrfs_check_leaf_relaxed(struct btrfs_root *root,
->> +			     struct extent_buffer *leaf);
->>  int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *n=
-ode);
->> =20
->>  #endif
->>
+>=20
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in
@@ -260,23 +128,23 @@ in
 >=20
 
 
---QSNlKOh7jVlUk0GrrxxNhhAVoIQ1INCOP--
+--cF2Vauue1LjQXrjgED9rDjoMgUlMnLFx6--
 
---3iHHt7t3VNR10KfDDWxvIpSTFxpwhDHNW
+--mKqo7Jb5M7tn9uhcSN2cSTolx3rux9H0r
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloCulcXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhJwQf/U6fWRLoWh0tmqxl05vi4+MdV
-GO8UlFDPgap8ZizelhK4GQRVPjSRxw4npylK/roYkjLkHlWlkJ8hnpW0W/me22IN
-XH0LjYBiXOdhGf9yUpkD3LlL57bjSk4vySxdjt8HnAf46Lzd1OL8b+1WoSu/BnvQ
-qTQtEK63ftFh2J58bpHJHHXjsHxDVupeLf/6KQt5Lx5nqcjL4CbOXTTAN8veilI8
-3kwi3xWGtF9fnl0YqovRDbG4rlw0GxoqYr6X2WfNr0s1BZ3HdPjehQc8zm6WqrqB
-VrOra7cafPkQrgciWCKvPXCb/7WMivs9ljyMIwq0EMXcAAMklSB0O44EYLcbew==
-=2P1u
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloCvaMXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjX8AgAqIH35k2qqBE3KEEwQqq91oEt
+cyQtOExKoOqeeG2fFIi8PxhO2Y1MjEbutEZRUDz1L0zcb6v1Lzc8Z0xgg6dQ5Ulf
+rZG0hZa6jY34VEeBN/KeSRWnIFBmdP9cqRt2jxC3W8YYx6R9VMQ408gxcNUTm4pG
+uXOjd66pxQYfFYiDCG2LKL/vr6ZOyzQmn1ExdJKHHTSEI1Vay19arf74WMJ5XT1n
+xH7YIpOQccOqNK6Ij99w+OmYISsX1gWmYUu1TINsmnRsgdjupcTXZycPkIaGa7UC
+7x2M5kChcMbrzBkBergEzMVFv0BKBHRMDCCAqyG3e0uYv3z2kbNbbW4Ssxysug==
+=4cD9
 -----END PGP SIGNATURE-----
 
---3iHHt7t3VNR10KfDDWxvIpSTFxpwhDHNW--
+--mKqo7Jb5M7tn9uhcSN2cSTolx3rux9H0r--

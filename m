@@ -1,42 +1,287 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50871 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:64349 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932298AbdKGU54 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Nov 2017 15:57:56 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 919A2AF00
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Nov 2017 20:57:55 +0000 (UTC)
-Date: Tue, 7 Nov 2017 21:56:04 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 2/2] btrfs: Cleanup existing name_len checks
-Message-ID: <20171107205604.GF27557@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        id S1751140AbdKHANc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 7 Nov 2017 19:13:32 -0500
+Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
+ item
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20171101122213.7122-1-wqu@suse.com>
- <20171101122213.7122-2-wqu@suse.com>
+ <20171107205024.GE27557@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <8544a611-6111-05aa-89e7-85017c565cdd@gmx.com>
+Date: Wed, 8 Nov 2017 08:13:19 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171101122213.7122-2-wqu@suse.com>
+In-Reply-To: <20171107205024.GE27557@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="3gBXeuQmP40g4ntv9o3t0dRJKx5Rn7JO7"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 01, 2017 at 08:22:13PM +0800, Qu Wenruo wrote:
-> Since tree-checker has verified leaf when reading from disk, we don't
-> need the existing checker.
-> 
-> This cleanup reverts the following commits:
-> fbc326159a01 ("btrfs: Verify dir_item in iterate_object_props")
-> 64c7b01446f4 ("btrfs: Check name_len before in btrfs_del_root_ref")
-> 488d7c456653 ("btrfs: Check name_len before reading btrfs_get_name")
-> 59b0a7f2c7c1 ("btrfs: Check name_len before read in iterate_dir_item")
-> 3c1d41844896 ("btrfs: Check name_len in btrfs_check_ref_name_override")
-> 8ee8c2d62d5f ("btrfs: Verify dir_item in replay_xattr_deletes")
-> 26a836cec2ea ("btrfs: Check name_len on add_inode_ref call path")
-> e79a33270d05 ("btrfs: Check name_len with boundary in verify dir_item")
-> 19c6dcbfa746 ("btrfs: Introduce btrfs_is_name_len_valid to avoid reading beyond boundary")
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--3gBXeuQmP40g4ntv9o3t0dRJKx5Rn7JO7
+Content-Type: multipart/mixed; boundary="Pihtrv7lXWplgS8kaNf161l5C7XEsuiKq";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <8544a611-6111-05aa-89e7-85017c565cdd@gmx.com>
+Subject: Re: [PATCH 1/2] btrfs: tree-checker: Add checker for variable length
+ item
+References: <20171101122213.7122-1-wqu@suse.com>
+ <20171107205024.GE27557@twin.jikos.cz>
+In-Reply-To: <20171107205024.GE27557@twin.jikos.cz>
 
-Oh well, there it goes, but I like the centralized tree checker more,
-so this is a small cost.
+--Pihtrv7lXWplgS8kaNf161l5C7XEsuiKq
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+
+
+On 2017=E5=B9=B411=E6=9C=8808=E6=97=A5 04:50, David Sterba wrote:
+> On Wed, Nov 01, 2017 at 08:22:12PM +0800, Qu Wenruo wrote:
+>> For the following types, we have items with variable length:
+>> (With BTRFS_ prefix and _KEY suffix snipped)
+>>
+>> DIR_ITEM
+>> DIR_INDEX
+>> XATTR_ITEM
+>> INODE_REF
+>> INODE_EXTREF
+>> ROOT_REF
+>> ROOT_BACKREF
+>>
+>> They all use @name_len to indicate their name length, and XATTR_ITEM h=
+as
+>> extra @data_len to indicate it data length.
+>>
+>> Despite their variable length, it's also possible to have several such=
+
+>> structure inside one item.
+>>
+>> This patch will add checker to ensure:
+>>
+>> 1) No structure header and its data cross item boundary
+>> 2) Except XATTR_ITEM, no structure should have non-zero @data_len
+>>
+>> This checker is especially useful to avoid possible access beyond
+>> boundary for fuzzed image.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/btrfs/tree-checker.c | 123 +++++++++++++++++++++++++++++++++++++++=
++++++++++
+>>  1 file changed, 123 insertions(+)
+>>
+>> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+>> index 114fc5f0ecc5..f26e86fcbd74 100644
+>> --- a/fs/btrfs/tree-checker.c
+>> +++ b/fs/btrfs/tree-checker.c
+>> @@ -222,6 +222,120 @@ static int check_csum_item(struct btrfs_root *ro=
+ot, struct extent_buffer *leaf,
+>>  	return 0;
+>>  }
+>> =20
+>> +static u32 get_header_size(u8 type)
+>> +{
+>> +	switch (type) {
+>> +	case BTRFS_DIR_ITEM_KEY:
+>> +	case BTRFS_DIR_INDEX_KEY:
+>> +	case BTRFS_XATTR_ITEM_KEY:
+>> +		return sizeof(struct btrfs_dir_item);
+>> +	case BTRFS_INODE_REF_KEY:
+>> +		return sizeof(struct btrfs_inode_ref);
+>> +	case BTRFS_INODE_EXTREF_KEY:
+>> +		return sizeof(struct btrfs_inode_extref);
+>> +	case BTRFS_ROOT_REF_KEY:
+>> +	case BTRFS_ROOT_BACKREF_KEY:
+>> +		return sizeof(struct btrfs_root_ref);
+>> +	}
+>> +	WARN_ON(1);
+>=20
+> The helper name suggests is generic so this warning is there to catch
+> new use, possibly without the matching validation function? If it is so=
+,
+> I'd rather use ASSERT. If you really want a warning, then please replac=
+e
+> it with a message. The stacktrace from WARN_ON would not be very useful=
+
+> because we know exactly how we get here, the callchaning starts in the
+> endio handlers.
+
+Please ignore this patch, as there is v2 patch which doesn't use such
+centralized check.
+
+Thanks,
+Qu
+
+>=20
+>> +	return 0;
+>> +}
+>> +
+>> +static u16 get_header_namelen(struct extent_buffer *leaf, u8 type,
+>> +			      u32 header_offset)
+>> +{
+>> +	/*
+>> +	 * @header_offset is offset starts after leaf header, while the
+>> +	 * accessors expects offset starts from leaf header.
+>> +	 * Sowe need to adds LEAF_DATA_OFFSET here
+>> +	 */
+>=20
+> Can you please rephrase the text? (and fix the typos)
+>=20
+>> +	unsigned long leaf_offset =3D header_offset + BTRFS_LEAF_DATA_OFFSET=
+;
+>> +
+>> +	switch (type) {
+>> +	case BTRFS_DIR_ITEM_KEY:
+>> +	case BTRFS_DIR_INDEX_KEY:
+>> +	case BTRFS_XATTR_ITEM_KEY:
+>> +		return btrfs_dir_name_len(leaf, (void *)leaf_offset);
+>> +	case BTRFS_INODE_REF_KEY:
+>> +		return btrfs_inode_ref_name_len(leaf, (void *)leaf_offset);
+>> +	case BTRFS_INODE_EXTREF_KEY:
+>> +		return btrfs_inode_extref_name_len(leaf, (void *)leaf_offset);
+>> +	case BTRFS_ROOT_REF_KEY:
+>> +	case BTRFS_ROOT_BACKREF_KEY:
+>> +		return btrfs_root_ref_name_len(leaf, (void *)leaf_offset);
+>> +	}
+>> +	WARN_ON(1);
+>=20
+> Similar comment as to the warning above, a message would be more
+> helpful to say which type is unexpected.
+>=20
+>> +	return 0;
+>> +}
+>> +
+>> +static u16 get_header_datalen(struct extent_buffer *leaf, u8 type,
+>> +			      unsigned long header_offset)
+>> +{
+>> +	/* Same as get_header_namelen */
+>> +	unsigned long leaf_offset =3D header_offset + BTRFS_LEAF_DATA_OFFSET=
+;
+>> +
+>> +	switch (type) {
+>> +	case BTRFS_DIR_ITEM_KEY:
+>> +	case BTRFS_DIR_INDEX_KEY:
+>> +	case BTRFS_XATTR_ITEM_KEY:
+>> +		return btrfs_dir_data_len(leaf, (void *)leaf_offset);
+>> +	}
+>> +	return 0;
+>> +}
+>> +
+>> +/*
+>> + * For items with variable length, normally with namelen and tailing =
+data.
+>> + * Like INODE_REF or XATTR
+>> + */
+>> +static int check_variable_length_item(struct btrfs_root *root,
+>> +				      struct extent_buffer *leaf,
+>> +				      struct btrfs_key *key, int slot)
+>> +{
+>> +	u8 type =3D key->type;
+>> +	u32 item_start =3D btrfs_item_offset_nr(leaf, slot);
+>> +	u32 item_end =3D btrfs_item_end_nr(leaf, slot);
+>> +	u32 header_size =3D get_header_size(type);
+>> +	u32 total_size;
+>> +	u32 cur =3D item_start;
+>> +
+>> +	while (cur < item_end) {
+>> +		u32 namelen;
+>> +		u32 datalen;
+>> +
+>> +		/* header itself should not cross item boundary */
+>> +		if (cur + header_size > item_end) {
+>> +			generic_err(root, leaf, slot,
+>> +				"structure header crosses item boundary, have %u expect (%u, %u]"=
+,
+>=20
+> Un-indent please. I'm slightly confused by the "(%u, %u]" notation, thi=
+s
+> reads as an open interval from the left but I don't understand it in
+> this context.
+>=20
+>> +				cur + header_size, cur, item_end);
+>> +			return -EUCLEAN;
+>> +		}
+>> +
+>> +		namelen =3D get_header_namelen(leaf, type, cur);
+>> +		datalen =3D get_header_datalen(leaf, type, cur);
+>> +
+>> +		/* Only XATTR can own data */
+>> +		if (type !=3D BTRFS_XATTR_ITEM_KEY && datalen) {
+>> +			generic_err(root, leaf, slot,
+>> +				"item has invalid data len, have %u expect 0",
+>> +				datalen);
+>> +			return -EUCLEAN;
+>> +		}
+>> +
+>> +		total_size =3D header_size + namelen + datalen;
+>> +
+>> +		/* header and name/data should not cross item boundary */
+>> +		if (cur + total_size > item_end) {
+>> +			generic_err(root, leaf, slot,
+>> +				"structure data crosses item boundary, have %u expect (%u, %u]",
+>=20
+> Same.
+>=20
+>> +				cur + total_size, cur + header_size, item_end);
+>> +			return -EUCLEAN;
+>> +		}
+>> +
+>> +		cur +=3D total_size;
+>> +	}
+>> +	return 0;
+>> +}
+>> +
+>>  /*
+>>   * Common point to switch the item-specific validation.
+>>   */
+>> @@ -238,6 +352,15 @@ static int check_leaf_item(struct btrfs_root *roo=
+t,
+>>  	case BTRFS_EXTENT_CSUM_KEY:
+>>  		ret =3D check_csum_item(root, leaf, key, slot);
+>>  		break;
+>> +	case BTRFS_DIR_ITEM_KEY:
+>> +	case BTRFS_XATTR_ITEM_KEY:
+>> +	case BTRFS_DIR_INDEX_KEY:
+>> +	case BTRFS_INODE_REF_KEY:
+>> +	case BTRFS_INODE_EXTREF_KEY:
+>> +	case BTRFS_ROOT_REF_KEY:
+>> +	case BTRFS_ROOT_BACKREF_KEY:
+>> +		ret =3D check_variable_length_item(root, leaf, key, slot);
+>> +		break;
+>>  	}
+>>  	return ret;
+>>  }
+>=20
+> Otherwise ok.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--Pihtrv7lXWplgS8kaNf161l5C7XEsuiKq--
+
+--3gBXeuQmP40g4ntv9o3t0dRJKx5Rn7JO7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloCTCAXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjx4QgAsQ/uuUSYy+5UFhwQxtyilWKS
+2VadPMMTQoyLnVkoCl7lPKslagY8WL4Evl3kxG+BBIB6qKhzmMZuzACxj6FBDHxV
+v1QdbGy6PoxhqTKDZzYHqK5AM2YaRWENaipwXYFHtJT0uhXoIOwUhz4cvpFV575L
+qhBmUUVlRGUuvZh7R0NLZLNGZhehWuTlDptzwcUDGIBG15AdjxM8pFP216/X80Qd
+lqqRvJBC3YZfo18nCHlGbAsW+kR0+wm+bDbmzvf6dKA+aU2h9HTvnUdwIVR9Z4Hp
+rtUzbxy09JUv3Spr2DTSPbPC9LDz3c51zP177DX4VsIE8K3iDxX+Zw+v0MDyzQ==
+=os2e
+-----END PGP SIGNATURE-----
+
+--3gBXeuQmP40g4ntv9o3t0dRJKx5Rn7JO7--

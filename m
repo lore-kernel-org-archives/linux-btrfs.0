@@ -1,38 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53577 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56384 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751020AbdKIQ1d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Nov 2017 11:27:33 -0500
-Date: Thu, 9 Nov 2017 17:25:41 +0100
+        id S1752943AbdKIQxl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Nov 2017 11:53:41 -0500
+Date: Thu, 9 Nov 2017 17:51:48 +0100
 From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.cz>
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RESEND 0/4] fix alert and add testcase lowmem check
-Message-ID: <20171109162540.GN27557@twin.jikos.cz>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 3/3] btrfs-progs: qgroup: cleanup __qgroup_search, no
+ functional change
+Message-ID: <20171109165148.GO27557@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20171103082806.22448-1-lufq.fnst@cn.fujitsu.com>
- <20171109162304.GM27557@twin.jikos.cz>
+References: <20171031091345.9325-1-lufq.fnst@cn.fujitsu.com>
+ <20171031091345.9325-4-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171109162304.GM27557@twin.jikos.cz>
+In-Reply-To: <20171031091345.9325-4-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 09, 2017 at 05:23:04PM +0100, David Sterba wrote:
-> On Fri, Nov 03, 2017 at 04:28:02PM +0800, Lu Fengqi wrote:
-> > Patch 1 add a test case for commit 4c75ae7a4e20 ("btrfs-progs: test: Add
-> > test image for lowmem mode file extent interrupt")
-> > Patch 2 output more detailed information about file extent interrupt
-> > Patch 3 fix a false alert for lowmem check
-> > Patch 4 add a test case for Patch 3
-> > 
-> > Lu Fengqi (4):
-> >   btrfs-progs: test: Add test image for lowmem mode file extent
-> >     interrupt
-> 
-> I don't understand what 'interrupt' means in this context, it's been
-> introduced in d88da10ddd4296cf2dd9 and I did not notice it at the time.
-> The error message is unclear.
+On Tue, Oct 31, 2017 at 05:13:45PM +0800, Lu Fengqi wrote:
+> 1. Use goto instead of while (1) to reduce the level of indentation
 
-As this is only a minor issue, please send it as a followup patch,
-patches 1-4 have been merged. Thanks.
+I'd rather avoid this goto pattern in new code, using while is ok. If
+the indentation depth becomes problem, then the inner code should be
+moved to a helper.
+
+> 2. Replace the if statement with the switch statement
+
+This is good.
+
+> 3. move the BTRFS_IOC_TREE_SEARCH ioctl error handler to __qgroup_search
+
+This one as well, but please make them into separate patches, the code
+is being moved and changed at the same time. This makes the review
+harder.

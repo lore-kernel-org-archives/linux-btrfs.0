@@ -1,31 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40260 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755419AbdKORDx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 12:03:53 -0500
-Date: Wed, 15 Nov 2017 18:01:58 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] btrfs: let variable required be declared inside the
- loop
-Message-ID: <20171115170158.GV28899@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from aserp1040.oracle.com ([141.146.126.69]:36705 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750777AbdKIPp1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Nov 2017 10:45:27 -0500
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA9FjQ3g028531
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 9 Nov 2017 15:45:27 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vA9FjQBN000982
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 9 Nov 2017 15:45:26 GMT
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vA9FjQAs011485
+        for <linux-btrfs@vger.kernel.org>; Thu, 9 Nov 2017 15:45:26 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/4] btrfs: set fs_devices->seed directly
+Date: Thu,  9 Nov 2017 23:45:23 +0800
+Message-Id: <20171109154526.23181-2-anand.jain@oracle.com>
+In-Reply-To: <20171109154526.23181-1-anand.jain@oracle.com>
 References: <20171109154526.23181-1-anand.jain@oracle.com>
- <20171109154526.23181-3-anand.jain@oracle.com>
- <a387f7e4-19cb-26be-f9c5-4cd2458cf555@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a387f7e4-19cb-26be-f9c5-4cd2458cf555@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 09, 2017 at 05:53:58PM +0200, Nikolay Borisov wrote:
-> On  9.11.2017 17:45, Anand Jain wrote:
-> > A preparation patch to create the actual device open in a new function.
-> Just say you are reducing the visibility of some variables to the loop.
+This is in preparation to move a section of code in __btrfs_open_devices()
+into a new function so that it can be reused. As we set seeding if any of
+the device is having SB flag BTRFS_SUPER_FLAG_SEEDING, so do it in the
+device list loop itself. No functional changes.
 
-This patch is IMHO too fine-grained and can be folded with the last one.
-A preparatory change like this would make sense if there are some
-non-obvious consequences, but here it's just moving the declaration
-block to a new function, that was easy to review.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/volumes.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b39737568c22..ab2f349ee293 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -978,7 +978,6 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 	struct buffer_head *bh;
+ 	struct btrfs_super_block *disk_super;
+ 	u64 devid;
+-	int seeding = 1;
+ 	int ret = 0;
+ 
+ 	flags |= FMODE_EXCL;
+@@ -1010,9 +1009,9 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 
+ 		if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
+ 			device->writeable = 0;
++			fs_devices->seeding = 1;
+ 		} else {
+ 			device->writeable = !bdev_read_only(bdev);
+-			seeding = 0;
+ 		}
+ 
+ 		q = bdev_get_queue(bdev);
+@@ -1044,7 +1043,6 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-	fs_devices->seeding = seeding;
+ 	fs_devices->opened = 1;
+ 	fs_devices->latest_bdev = latest_dev->bdev;
+ 	fs_devices->total_rw_bytes = 0;
+-- 
+2.13.1
+

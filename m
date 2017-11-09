@@ -1,48 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36672 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750777AbdKIPpY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Nov 2017 10:45:24 -0500
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vA9FjNYV028470
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 9 Nov 2017 15:45:24 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vA9FjNon009446
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 9 Nov 2017 15:45:23 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vA9FjNUh030733
-        for <linux-btrfs@vger.kernel.org>; Thu, 9 Nov 2017 15:45:23 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] factor __btrfs_open_devices()
-Date: Thu,  9 Nov 2017 23:45:22 +0800
-Message-Id: <20171109154526.23181-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:50085 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752902AbdKIPyA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Nov 2017 10:54:00 -0500
+Subject: Re: [PATCH 2/4] btrfs: let variable required be declared inside the
+ loop
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171109154526.23181-1-anand.jain@oracle.com>
+ <20171109154526.23181-3-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <a387f7e4-19cb-26be-f9c5-4cd2458cf555@suse.com>
+Date: Thu, 9 Nov 2017 17:53:58 +0200
+MIME-Version: 1.0
+In-Reply-To: <20171109154526.23181-3-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is in preparation to help bring the missing device back to the
-alloc list dynamically. As of now if we run 'btrfs dev scan </dev/missing>'
-on a mounted FS, nothing happens, there is no code which handles this
-condition. So the idea is to fix it by running through the device open
-process for the reappeared missing device.
 
-So this patch separates device open steps into a separate function so that
-it can be called for a device, instead of for all the devices in the
-dev_list. As this function is in the critical mount section, and to show
-the src code changes as clearly as possible, I have created 4 no-functional
-changes patches, which can be merged together if needed.
 
-Anand Jain (4):
-  btrfs: set fs_devices->seed directly
-  btrfs: let variable required be declared inside the loop
-  btrfs: move check for device generation to the last
-  btrfs: factor __btrfs_open_devices() to create btrfs_open_one_device()
+On  9.11.2017 17:45, Anand Jain wrote:
+> A preparation patch to create the actual device open in a new function.
+> 
 
- fs/btrfs/volumes.c | 125 +++++++++++++++++++++++++++++------------------------
- 1 file changed, 69 insertions(+), 56 deletions(-)
+Just say you are reducing the visibility of some variables to the loop.
 
--- 
-2.13.1
-
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 11 ++++++-----
+>  1 file changed, 6 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index ab2f349ee293..ea6e542cb09d 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -970,19 +970,20 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+>  static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>  				fmode_t flags, void *holder)
+>  {
+> -	struct request_queue *q;
+> -	struct block_device *bdev;
+>  	struct list_head *head = &fs_devices->devices;
+>  	struct btrfs_device *device;
+>  	struct btrfs_device *latest_dev = NULL;
+> -	struct buffer_head *bh;
+> -	struct btrfs_super_block *disk_super;
+> -	u64 devid;
+>  	int ret = 0;
+>  
+>  	flags |= FMODE_EXCL;
+>  
+>  	list_for_each_entry(device, head, dev_list) {
+> +		struct request_queue *q;
+> +		struct block_device *bdev;
+> +		struct buffer_head *bh;
+> +		struct btrfs_super_block *disk_super;
+> +		u64 devid;
+> +
+>  		if (device->bdev)
+>  			continue;
+>  		if (!device->name)
+> 

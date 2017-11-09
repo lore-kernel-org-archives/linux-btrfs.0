@@ -1,37 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56384 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56716 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752943AbdKIQxl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Nov 2017 11:53:41 -0500
-Date: Thu, 9 Nov 2017 17:51:48 +0100
+        id S1753943AbdKIQ5R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Nov 2017 11:57:17 -0500
+Date: Thu, 9 Nov 2017 17:55:23 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 3/3] btrfs-progs: qgroup: cleanup __qgroup_search, no
- functional change
-Message-ID: <20171109165148.GO27557@twin.jikos.cz>
+Subject: Re: [PATCH 0/3] add_qgroup/update_qgroup/__qgroup_search cleanup
+Message-ID: <20171109165523.GP27557@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20171031091345.9325-1-lufq.fnst@cn.fujitsu.com>
- <20171031091345.9325-4-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171031091345.9325-4-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20171031091345.9325-1-lufq.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 31, 2017 at 05:13:45PM +0800, Lu Fengqi wrote:
-> 1. Use goto instead of while (1) to reduce the level of indentation
+On Tue, Oct 31, 2017 at 05:13:42PM +0800, Lu Fengqi wrote:
+> Patch 1 just remove the redundant function add_qgroup.
+> Patch 2 separate QGROUP_INFO/QGROUP_LIMIT/QGROUP_RELATION process from
+> the update_qgroup.
+> Patch 3 mainly the coding style adjustment.
 
-I'd rather avoid this goto pattern in new code, using while is ok. If
-the indentation depth becomes problem, then the inner code should be
-moved to a helper.
+This per-patch description is fine, and not always necessary if the
+patch subjects and changelogs are sufficient. The cover letter could be
+some overview what are the patches addressing.
 
-> 2. Replace the if statement with the switch statement
+> 
+> Lu Fengqi (3):
+>   btrfs-progs: qgroup: cleanup the redundant function add_qgroup
+>   btrfs-progs: qgroup: split update_qgroup to reduce arguments
 
-This is good.
+1 and 2 applied, the cleanups look very good, thanks.
 
-> 3. move the BTRFS_IOC_TREE_SEARCH ioctl error handler to __qgroup_search
+>   btrfs-progs: qgroup: cleanup __qgroup_search, no functional change
 
-This one as well, but please make them into separate patches, the code
-is being moved and changed at the same time. This makes the review
-harder.
+Not applied, please see the comments.

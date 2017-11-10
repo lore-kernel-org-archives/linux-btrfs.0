@@ -1,335 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:62032 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752713AbdKJKQB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Nov 2017 05:16:01 -0500
-Subject: Re: [PATCH 2/4] Btrfs: fix data corruption in raid6
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: bo.li.liu@oracle.com, Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <20171102005405.20420-1-bo.li.liu@oracle.com>
- <20171102005405.20420-3-bo.li.liu@oracle.com>
- <133f72d7-4254-ccd4-76e5-1078f0b8a079@oracle.com>
- <20171108195315.GB14443@dhcp-10-11-181-32.int.fusionio.com>
- <ca33de53-1894-09d9-240d-d0f128a5fc83@oracle.com>
- <20171110001244.GA1494@dhcp-guadalajara-v701-172-21-36-39.mx.voip.oraclecorp.com>
- <a4b625d9-cf3d-f8b9-4153-9115be7b764a@gmx.com>
-Message-ID: <a801c713-0913-a998-8ef0-d39991408e1b@gmx.com>
-Date: Fri, 10 Nov 2017 18:15:50 +0800
+Received: from mail-vk0-f68.google.com ([209.85.213.68]:54768 "EHLO
+        mail-vk0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752592AbdKJOLo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 10 Nov 2017 09:11:44 -0500
+Received: by mail-vk0-f68.google.com with SMTP id b18so3851794vkd.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Nov 2017 06:11:44 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <a4b625d9-cf3d-f8b9-4153-9115be7b764a@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="JjlgblVaV8pjo7WoMI2O3WW5rkH2TR91E"
+In-Reply-To: <1504662179-21877-2-git-send-email-gujx@cn.fujitsu.com>
+References: <1504662179-21877-1-git-send-email-gujx@cn.fujitsu.com> <1504662179-21877-2-git-send-email-gujx@cn.fujitsu.com>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Fri, 10 Nov 2017 19:41:03 +0530
+Message-ID: <CAKuJGC-sTE+tvc28ie-CB5rwKK=H8SvFQNz95HgGB9A+ggb_uQ@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs-progs: Replace some BUG_ON by return
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---JjlgblVaV8pjo7WoMI2O3WW5rkH2TR91E
-Content-Type: multipart/mixed; boundary="BSsgi4UdEU9HiNChNiSw9RNXsEVahvUr0";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: bo.li.liu@oracle.com, Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <a801c713-0913-a998-8ef0-d39991408e1b@gmx.com>
-Subject: Re: [PATCH 2/4] Btrfs: fix data corruption in raid6
-References: <20171102005405.20420-1-bo.li.liu@oracle.com>
- <20171102005405.20420-3-bo.li.liu@oracle.com>
- <133f72d7-4254-ccd4-76e5-1078f0b8a079@oracle.com>
- <20171108195315.GB14443@dhcp-10-11-181-32.int.fusionio.com>
- <ca33de53-1894-09d9-240d-d0f128a5fc83@oracle.com>
- <20171110001244.GA1494@dhcp-guadalajara-v701-172-21-36-39.mx.voip.oraclecorp.com>
- <a4b625d9-cf3d-f8b9-4153-9115be7b764a@gmx.com>
-In-Reply-To: <a4b625d9-cf3d-f8b9-4153-9115be7b764a@gmx.com>
+Hi Gu,
 
---BSsgi4UdEU9HiNChNiSw9RNXsEVahvUr0
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I applied these two patches:
 
+https://patchwork.kernel.org/patch/9939879/
+https://patchwork.kernel.org/patch/9939881/
 
+Still the test "sudo make TEST=003\* test-fuzz" is failing like:
 
-On 2017=E5=B9=B411=E6=9C=8810=E6=97=A5 08:54, Qu Wenruo wrote:
->=20
->=20
-> On 2017=E5=B9=B411=E6=9C=8810=E6=97=A5 08:12, Liu Bo wrote:
->> On Thu, Nov 09, 2017 at 05:29:25PM +0800, Anand Jain wrote:
->>>
->>>
->>> On 11/09/2017 03:53 AM, Liu Bo wrote:
->>>> On Tue, Nov 07, 2017 at 04:32:55PM +0800, Anand Jain wrote:
->>>>>
->>>>>
->>>>> On 11/02/2017 08:54 AM, Liu Bo wrote:
->>>>>> With raid6 profile, btrfs can end up with data corruption by the
->>>>>> following steps.
->>>>>>
->>>>>> Say we have a 5 disks that are set up with raid6 profile,
->>>>>>
->>>>>> 1) mount this btrfs
->>>>>> 2) one disk gets pulled out
->>>>>> 3) write something to btrfs and sync
->>>>>> 4) another disk gets pulled out
->>>>>> 5) write something to btrfs and sync
->>>>>> 6) umount this btrfs
->>>>>> 7) bring the two disk back
->>>>>> 8) reboot
->>>>>> 9) mount this btrfs
->>>>>>
->>>>>> Chances are mount will fail (even with -odegraded) because of fail=
-ure
->>>>>> on reading metadata blocks, IOW, our raid6 setup is not able to
->>>>>> protect two disk failures in some cases.
->>>>>>
->>>>>> So it turns out that there is a bug in raid6's recover code, that =
-is,
->>>>>>
->>>>>> if we have one of stripes in the raid6 layout as shown here,
->>>>>>
->>>>>> | D1(*)  | D2(*)  | D3 | D4 | D5    |
->>>>>> -------------------------------------
->>>>>> | data1  | data2  | P  | Q  | data0 |
->>>>>
->>>>>
->>>>>> D1 and D2 are the two disks which got pulled out and brought back.=
+ btrfs-progs/btrfs check --check-data-csum
+btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
+checking extents
+cmds-check.c:5660: check_owner_ref: BUG_ON `rec->is_root` triggered, value 1
+ btrfs-progs/btrfs[0x44dce4]
+ btrfs-progs/btrfs[0x45b396]
+ btrfs-progs/btrfs[0x45c2f0]
+ btrfs-progs/btrfs[0x45ce92]
+ btrfs-progs/btrfs(cmd_check+0x17ee)[0x460ee7]
+ btrfs-progs/btrfs(main+0x15d)[0x40b523]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7faf98a4d830]
+ btrfs-progs/btrfs(_start+0x29)[0x40aff9]
+Checking filesystem on
+btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
+UUID: 52975385-d05a-482b-8fb8-613a86a66042
+failed (ignored, ret=134):  btrfs-progs/btrfs check --check-data-csum
+btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
+mayfail: returned code 134 (SIGABRT), not ignored
+test failed for case 003-multi-check-unmounted
 
->>>>>> When mount reads data1 and finds out that data1 doesn't match its =
-crc,
->>>>>> btrfs goes to recover data1 from other stripes, what it'll be doin=
-g is
->>>>>>
->>>>>> 1) read data2, parity P, parity Q and data0
->>>>>>
->>>>>> 2) as we have a valid parity P and two data stripes, it goes to
->>>>>>    recover in raid5 style.
->>>>>
->>>>>
->>>>>> (However, since disk D2 was pulled out and data2 on D2 could be st=
-ale,
->>>>>
->>>>>  data2 should end up crc error, if not then raid5 recover is as
->>>>>  expected OR this example is confusing to explain the context of
->>>>>  two data stipe missing.
->>>>
->>>> The assumption you have is not true,
->>>
->>>> when doing reconstruction, we
->>>> don't verify checksum for each data stripe that is read from disk.
->>>
->>>  Why ? what if data0 (which has InSync flag) was wrong ?
->>>
->>
->> (Wrinting these took me the whole afternoon, hopefully it makes
->> sense...)
->>
->> Checksum verification happens much later, in readpage's end io, and if=
+Did I miss some other patch? thanks.
 
->> data0 is wrong, then the rebuilt data couldn't match its checksum.
->>
->> As Qu Wenruo also has the same question, here is my input about why
->> checksum is not done,
->>
->> a) We may have mutliple different raid profiles within one btrfs, and
->>    checksum tree also resides somewhere on the disks, for
->>    raid1(default) and raid5, two disk failures may end up with data
->>    loss, it applies to raid6 as well because of the bug this patch is
->>    addressing.
->=20
-> However, raid56 is more complex than other profiles, so it even has its=
-
-> own raid56.[ch].
-> Although currently it's mostly for the complex RMW cycle, I think it ca=
-n
-> also be enhanced to do csum verification at repair time.
-
-BTW, repair can even be done without verifying csum of data2/data0.
-
-Just try all repair combination, until the repair result matches
-checksum, or no combination can result a good repair.
-
-I know this sounds stupid, but at least this means it's possible.
-
-The main point here is, we should at least ensure repair result matches
-checksum.
-
-This also reminds me that, checksum verification should be handled at
-lower level, other than doing it at endio time.
-
-(Not related to this topic, but I also want to implement optional csum
-check hook in bio, so for case like dm-integrity on dm-raid1 can
-recognize bad and good copy, and even let btrfs to reuse device mapper
-to do chunk map, but that's another story)
-
-Thanks,
-Qu
-
->=20
->>
->> b) If this is a metadata stripe, then it's likely that the stale
->>    content still matches with its checksum as metadata blocks store
->>    their checksum in the header part, thus checksum verification can
->>    not be trusted.
->=20
-> Metadata can be handled later, it's much more complex since (by default=
-)
-> metadata crosses several pages, which makes it impossible to verify
-> until we rebuild all related pages.
->=20
-> BTW, if metadata (tree block) has stale content, it will not match the =
-csum.
-> Tree block csum is for the whole tree block, so any stale data in the
-> whole tree block will cause mismatched csum.
-> It's hard to do just because we can't verify if the rebuilt/original
-> tree block is good until we rebuild/read the whole tree block.
->=20
->>
->> c) If this is a data stripe, then chances are they're belonging to
->>    nocow/nodatasum inodes such that no checksum could be verified.  In=
-
->>    case that checksum is available, yes, finally we can verify
->>    checksum, but keep in mind, the whole data stripe may consist of
->>    several pieces of data which are from different inodes, some may
->>    nodatacow/nodatasum, some may not.
->=20
-> Ignore such case too.
->=20
->>
->> Given all the troubles it could lead to, I'd like to avoid it.
->=20
-> For hard parts, I think keeping them untouched until good solution is
-> found is completely acceptable.
->=20
-> No need to do it all-in-one, step by step should be the correct way.
->=20
->>
->> As a raid6 system, 2 disks failures can always be tolerated by
->> rebuilding data from other good copies.
->>
->> Now that we have known two things, i.e.
->> a) data1 fails its checksum verification and
->> b) data2 from a out-of-sync disk might be stale,
->> it's straightforward to rebuild data1 from other good copies.
->=20
-> But the out-of-sync flag is too generic to determine if we can trust th=
-e
-> copy.
-> Csum here is a much better indicator, which can provide page level (for=
-
-> data) indicator other than device level.
->=20
-> For case 3 devices out-of-sync, we just treat it as 3 missing devices?
->=20
-> Thanks,
-> Qu
->>
->>
->>>  I am wary about the In_sync approach. IMO we are loosing the
->>>  advantage of FS being merged with volume manager - which is to
->>>  know exactly which active stripes were lost for quicker reconstruct.=
-
->>>
->>
->> Thanks for pointing this out, I'd say filesystem still has some
->> advantages over a vanilla volume manager while resync-ing out-of-sync
->> disks.
->>
->>>  Lets say RAID6 is 50% full and disk1 is pulled out, and at 75%
->>>  full disk2 is pulled out and reaches 90% full.
->>>
->>>  So now when all the disks are back, two disks will not have
->>>  In_sync flag? hope I understood this correctly.
->>>
->>>  Now.
->>>  15% of the data have lost two stripes.
->>>  25% of the data have lost one stripe.
->>>  50% of the data did not loose any stripe at all.
->>>
->>>  Now for read and reconstruct..
->>>  50% of the data does not need any reconstruction.
->>
->> A 'Yes' for this, actually I should have avoided reading from
->> out-of-sync disks, but I forgot to do so. So as a side effect, if the
->> data read out from a out-of-sync disk matches its checksum, then it's
->> proven to be OK.
->>
->>>  25% of the data needs RAID5 style reconstruction as they have lost o=
-nly one
->>> stripe.
->>>  15% of the data needs RAID6 reconstruction since they have lost two
->>> stripes.
->>>
->>
->> It depends, the stripes on the out-of-sync disks could be
->> a) all data stripes(as the example in this patch)
->> b) one data stripe and one stripe P
->> c) one data stripe and one stripe Q
->>
->> with In_sync flag,
->> for a) raid6 reconstruction,
->> for b) raid6 reconstruction,
->> for c) raid5 reconstruction.
->>
->>>  Does InSync design here help to work like this ?
->>>
->>>  Now for RAID1, lets say disk1 lost first 10% of the stripes and
->>>  disk2 lost the last 10% of the stripes and these stripes are mutuall=
-y
->>>  exclusive. That means there is no single stripe which has lost
->>>  completely.
->>>
->>
->> True, probably we can drop patch 3 to let read happen on out-of-sync
->> disks and go the existing repair routine.
->>
->>>  There is no code yet where I can see when the In_sync will be reset,=
-
->>>  which is fine for this eg. Assume no reconstruction is done. But now=
-
->>>  when both the disks are being mounted and as the In_sync will be bas=
-ed
->>>  on dev_item.generation, one of it will get In_sync to me it looks li=
-ke
->>>  there will be 10% of stripes which will fail even though its not
->>>  practically true in this example.
->>>
->>
->> Not sure if I understand this paragraph, are you talking about raid1
->> or raid6?
->>
->> Regarding to when to reset In_sync, my naive idea is to utilize scrub
->> to verify checksum on all content that filesystem knows and do the
->> repair work, If it turns out that everything looks good, then we know
->> the disk is already resync, it's a good time to set In_sync.
->>
->> Thanks,
->>
->> -liubo
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
- in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->=20
+----
+Cheers,
+Lakshmipathi.G
+http://www.giis.co.in http://www.webminal.org
 
 
---BSsgi4UdEU9HiNChNiSw9RNXsEVahvUr0--
-
---JjlgblVaV8pjo7WoMI2O3WW5rkH2TR91E
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloFfFcXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiEOwf6AjSGsC0gAkfFJYrpvzzNq87h
-VEWPYcH1Cs5xiAgqj1V7SdB/oAn/KzHuQrp6gBc+vKwTau2ef3Vvaz9A4fDUvx9Z
-PHG/V5OD6hUNGSeYWzxYbP5AVzVWlHejtK5N3L9GkS8H+F55aSI+p+Rq+xeT/LRN
-VqghAXEbjkAEL3UFWcNcuBrCHqUQF23S2SUSofCpAsW5tBkI06THKZpeC01sDmzP
-Ix5l49DZGLMamHIaDjfxvQadQtWHijVSvgEF/YWNk4W0rVdJM6hI8972Pmz1zee6
-fcnnfcfW3/e4bdryfUBmV8HZ4cBzZa4g2z3gRYFPMqVDLYVNnsZ1wMOCR6uw9Q==
-=k/fl
------END PGP SIGNATURE-----
-
---JjlgblVaV8pjo7WoMI2O3WW5rkH2TR91E--
+On Wed, Sep 6, 2017 at 7:12 AM, Gu Jinxiang <gujx@cn.fujitsu.com> wrote:
+> The following test failed becasuse there is no data/metadata/system block_group.
+> Use return ret to replace BUG_ON(ret) to avoid system crash, because there is
+> enough message for user to understand what happened.
+>
+> $sudo TEST=003\* make test-fuzz
+> Unable to find block group for 0
+> Unable to find block group for 0
+> Unable to find block group for 0
+> extent-tree.c:2693: btrfs_reserve_extent: BUG_ON `ret` triggered, value -28
+> /home/fnst/btrfs/btrfs-progs/btrfs[0x419966]
+> /home/fnst/btrfs/btrfs-progs/btrfs(btrfs_reserve_extent+0xb16)[0x41f500]
+> /home/fnst/btrfs/btrfs-progs/btrfs(btrfs_alloc_free_block+0x55)[0x41f59b]
+> /home/fnst/btrfs/btrfs-progs/btrfs[0x46a6ce]
+> /home/fnst/btrfs/btrfs-progs/btrfs(cmd_check+0x1012)[0x47c885]
+> /home/fnst/btrfs/btrfs-progs/btrfs(main+0x127)[0x40b055]
+> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x2aae83e89f45]
+> /home/fnst/btrfs/btrfs-progs/btrfs[0x40a939]
+> Creating a new CRC tree
+> Checking filesystem on /home/fnst/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
+> UUID: 5cb33553-6f6d-4ce8-83fd-20af5a2f8181
+> Reinitialize checksum tree
+> failed (ignored, ret=134): /home/fnst/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/fnst/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
+> mayfail: returned code 134 (SIGABRT), not ignored
+> test failed for case 003-multi-check-unmounted
+>
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> ---
+>  extent-tree.c | 16 ++++++++++------
+>  transaction.c |  8 ++++++--
+>  2 files changed, 16 insertions(+), 8 deletions(-)
+>
+> diff --git a/extent-tree.c b/extent-tree.c
+> index eed56886..14838a5d 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -2678,11 +2678,13 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+>                         ret = do_chunk_alloc(trans, info,
+>                                              num_bytes,
+>                                              BTRFS_BLOCK_GROUP_METADATA);
+> -                       BUG_ON(ret);
+> +                       if (ret)
+> +                               goto out;
+>                 }
+>                 ret = do_chunk_alloc(trans, info,
+>                                      num_bytes + SZ_2M, data);
+> -               BUG_ON(ret);
+> +               if (ret)
+> +                       goto out;
+>         }
+>
+>         WARN_ON(num_bytes < info->sectorsize);
+> @@ -2690,9 +2692,11 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+>                                search_start, search_end, hint_byte, ins,
+>                                trans->alloc_exclude_start,
+>                                trans->alloc_exclude_nr, data);
+> -       BUG_ON(ret);
+> +       if (ret)
+> +               goto out;
+>         clear_extent_dirty(&info->free_space_cache,
+>                            ins->objectid, ins->objectid + ins->offset - 1);
+> +out:
+>         return ret;
+>  }
+>
+> @@ -2761,7 +2765,8 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
+>         int ret;
+>         ret = btrfs_reserve_extent(trans, root, num_bytes, empty_size,
+>                                    hint_byte, search_end, ins, 0);
+> -       BUG_ON(ret);
+> +       if (ret)
+> +               goto out;
+>
+>         if (root_objectid == BTRFS_EXTENT_TREE_OBJECTID) {
+>                 struct pending_extent_op *extent_op;
+> @@ -2792,6 +2797,7 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
+>                 finish_current_insert(trans, root->fs_info->extent_root);
+>                 del_pending_extents(trans, root->fs_info->extent_root);
+>         }
+> +out:
+>         return ret;
+>  }
+>
+> @@ -2813,7 +2819,6 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+>                                trans->transid, 0, key, level,
+>                                empty_size, hint, (u64)-1, &ins);
+>         if (ret) {
+> -               BUG_ON(ret > 0);
+>                 return ERR_PTR(ret);
+>         }
+>
+> @@ -2821,7 +2826,6 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+>         if (!buf) {
+>                 btrfs_free_extent(trans, root, ins.objectid, ins.offset,
+>                                   0, root->root_key.objectid, level, 0);
+> -               BUG_ON(1);
+>                 return ERR_PTR(-ENOMEM);
+>         }
+>         btrfs_set_buffer_uptodate(buf);
+> diff --git a/transaction.c b/transaction.c
+> index ad705728..33225002 100644
+> --- a/transaction.c
+> +++ b/transaction.c
+> @@ -165,9 +165,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>         BUG_ON(ret);
+>  commit_tree:
+>         ret = commit_tree_roots(trans, fs_info);
+> -       BUG_ON(ret);
+> +       if (ret)
+> +               goto error;
+>         ret = __commit_transaction(trans, root);
+> -       BUG_ON(ret);
+> +       if (ret)
+> +               goto error;
+>         write_ctree_super(trans, fs_info);
+>         btrfs_finish_extent_commit(trans, fs_info->extent_root,
+>                                    &fs_info->pinned_extents);
+> @@ -177,6 +179,8 @@ commit_tree:
+>         fs_info->running_transaction = NULL;
+>         fs_info->last_trans_committed = transid;
+>         return 0;
+> +error:
+> +       return ret;
+>  }
+>
+>  void btrfs_abort_transaction(struct btrfs_trans_handle *trans, int error)
+> --
+> 2.13.5
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

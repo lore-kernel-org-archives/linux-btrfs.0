@@ -1,193 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f68.google.com ([209.85.213.68]:54768 "EHLO
-        mail-vk0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752592AbdKJOLo (ORCPT
+Received: from mail-oi0-f45.google.com ([209.85.218.45]:53572 "EHLO
+        mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750753AbdKJVwA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 10 Nov 2017 09:11:44 -0500
-Received: by mail-vk0-f68.google.com with SMTP id b18so3851794vkd.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 10 Nov 2017 06:11:44 -0800 (PST)
+        Fri, 10 Nov 2017 16:52:00 -0500
+Received: by mail-oi0-f45.google.com with SMTP id h6so7751101oia.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 10 Nov 2017 13:52:00 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1504662179-21877-2-git-send-email-gujx@cn.fujitsu.com>
-References: <1504662179-21877-1-git-send-email-gujx@cn.fujitsu.com> <1504662179-21877-2-git-send-email-gujx@cn.fujitsu.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Fri, 10 Nov 2017 19:41:03 +0530
-Message-ID: <CAKuJGC-sTE+tvc28ie-CB5rwKK=H8SvFQNz95HgGB9A+ggb_uQ@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs-progs: Replace some BUG_ON by return
-To: Gu Jinxiang <gujx@cn.fujitsu.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <011ae8c4281f0f8799d48189f540a302@wpkg.org>
+References: <5ff267d206ae631e9d259eacacdf7924@wpkg.org> <19a1770cf67e63a84c3baeeb44af9e9a@wpkg.org>
+ <c6c0eb84c550f44ffe443d625c198a39@wpkg.org> <64e4c4c4341f5880349a02cf57eb3ff7@wpkg.org>
+ <CAJtFHUQ34uyt-iAQKuQ-WqXMrCqxsPeqFc5LvYmZHrz+Rxs66A@mail.gmail.com> <011ae8c4281f0f8799d48189f540a302@wpkg.org>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 10 Nov 2017 14:51:58 -0700
+Message-ID: <CAJCQCtS3kR0xeKCpMdk9mivJ+8JyToPVoKMmUUX2sp2-L1PpfA@mail.gmail.com>
+Subject: Re: how to run balance successfully (No space left on device)?
+To: Tomasz Chmielewski <mangoo@wpkg.org>
+Cc: E V <eliventer@gmail.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Gu,
-
-I applied these two patches:
-
-https://patchwork.kernel.org/patch/9939879/
-https://patchwork.kernel.org/patch/9939881/
-
-Still the test "sudo make TEST=003\* test-fuzz" is failing like:
-
- btrfs-progs/btrfs check --check-data-csum
-btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
-checking extents
-cmds-check.c:5660: check_owner_ref: BUG_ON `rec->is_root` triggered, value 1
- btrfs-progs/btrfs[0x44dce4]
- btrfs-progs/btrfs[0x45b396]
- btrfs-progs/btrfs[0x45c2f0]
- btrfs-progs/btrfs[0x45ce92]
- btrfs-progs/btrfs(cmd_check+0x17ee)[0x460ee7]
- btrfs-progs/btrfs(main+0x15d)[0x40b523]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf0)[0x7faf98a4d830]
- btrfs-progs/btrfs(_start+0x29)[0x40aff9]
-Checking filesystem on
-btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
-UUID: 52975385-d05a-482b-8fb8-613a86a66042
-failed (ignored, ret=134):  btrfs-progs/btrfs check --check-data-csum
-btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
-mayfail: returned code 134 (SIGABRT), not ignored
-test failed for case 003-multi-check-unmounted
-
-Did I miss some other patch? thanks.
-
-----
-Cheers,
-Lakshmipathi.G
-http://www.giis.co.in http://www.webminal.org
+On Fri, Nov 10, 2017 at 12:42 AM, Tomasz Chmielewski <mangoo@wpkg.org> wrote:
+> On 2017-11-07 23:49, E V wrote:
+>
+>> Hmm, I used to see these phantom no space issues quite a bit on older
+>> 4.x kernels, and haven't seen them since switching to space_cache=v2.
+>> So it could be space cache corruption. You might try either clearing
+>> you space cache, or mounting with nospace_cache, or try converting to
+>> space_cache=v2 after reading up on it's caveats.
+>
+>
+> We have space_cache=v2.
 
 
-On Wed, Sep 6, 2017 at 7:12 AM, Gu Jinxiang <gujx@cn.fujitsu.com> wrote:
-> The following test failed becasuse there is no data/metadata/system block_group.
-> Use return ret to replace BUG_ON(ret) to avoid system crash, because there is
-> enough message for user to understand what happened.
+I have no idea if it's related or not, as this isn't a default mount
+option and is still under testing.
+
+
+
 >
-> $sudo TEST=003\* make test-fuzz
-> Unable to find block group for 0
-> Unable to find block group for 0
-> Unable to find block group for 0
-> extent-tree.c:2693: btrfs_reserve_extent: BUG_ON `ret` triggered, value -28
-> /home/fnst/btrfs/btrfs-progs/btrfs[0x419966]
-> /home/fnst/btrfs/btrfs-progs/btrfs(btrfs_reserve_extent+0xb16)[0x41f500]
-> /home/fnst/btrfs/btrfs-progs/btrfs(btrfs_alloc_free_block+0x55)[0x41f59b]
-> /home/fnst/btrfs/btrfs-progs/btrfs[0x46a6ce]
-> /home/fnst/btrfs/btrfs-progs/btrfs(cmd_check+0x1012)[0x47c885]
-> /home/fnst/btrfs/btrfs-progs/btrfs(main+0x127)[0x40b055]
-> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x2aae83e89f45]
-> /home/fnst/btrfs/btrfs-progs/btrfs[0x40a939]
-> Creating a new CRC tree
-> Checking filesystem on /home/fnst/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
-> UUID: 5cb33553-6f6d-4ce8-83fd-20af5a2f8181
-> Reinitialize checksum tree
-> failed (ignored, ret=134): /home/fnst/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/fnst/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-155621-bad-block-group-offset.raw.restored
-> mayfail: returned code 134 (SIGABRT), not ignored
-> test failed for case 003-multi-check-unmounted
->
-> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> ---
->  extent-tree.c | 16 ++++++++++------
->  transaction.c |  8 ++++++--
->  2 files changed, 16 insertions(+), 8 deletions(-)
->
-> diff --git a/extent-tree.c b/extent-tree.c
-> index eed56886..14838a5d 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -2678,11 +2678,13 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
->                         ret = do_chunk_alloc(trans, info,
->                                              num_bytes,
->                                              BTRFS_BLOCK_GROUP_METADATA);
-> -                       BUG_ON(ret);
-> +                       if (ret)
-> +                               goto out;
->                 }
->                 ret = do_chunk_alloc(trans, info,
->                                      num_bytes + SZ_2M, data);
-> -               BUG_ON(ret);
-> +               if (ret)
-> +                       goto out;
->         }
->
->         WARN_ON(num_bytes < info->sectorsize);
-> @@ -2690,9 +2692,11 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
->                                search_start, search_end, hint_byte, ins,
->                                trans->alloc_exclude_start,
->                                trans->alloc_exclude_nr, data);
-> -       BUG_ON(ret);
-> +       if (ret)
-> +               goto out;
->         clear_extent_dirty(&info->free_space_cache,
->                            ins->objectid, ins->objectid + ins->offset - 1);
-> +out:
->         return ret;
->  }
->
-> @@ -2761,7 +2765,8 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
->         int ret;
->         ret = btrfs_reserve_extent(trans, root, num_bytes, empty_size,
->                                    hint_byte, search_end, ins, 0);
-> -       BUG_ON(ret);
-> +       if (ret)
-> +               goto out;
->
->         if (root_objectid == BTRFS_EXTENT_TREE_OBJECTID) {
->                 struct pending_extent_op *extent_op;
-> @@ -2792,6 +2797,7 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
->                 finish_current_insert(trans, root->fs_info->extent_root);
->                 del_pending_extents(trans, root->fs_info->extent_root);
->         }
-> +out:
->         return ret;
->  }
->
-> @@ -2813,7 +2819,6 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
->                                trans->transid, 0, key, level,
->                                empty_size, hint, (u64)-1, &ins);
->         if (ret) {
-> -               BUG_ON(ret > 0);
->                 return ERR_PTR(ret);
->         }
->
-> @@ -2821,7 +2826,6 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
->         if (!buf) {
->                 btrfs_free_extent(trans, root, ins.objectid, ins.offset,
->                                   0, root->root_key.objectid, level, 0);
-> -               BUG_ON(1);
->                 return ERR_PTR(-ENOMEM);
->         }
->         btrfs_set_buffer_uptodate(buf);
-> diff --git a/transaction.c b/transaction.c
-> index ad705728..33225002 100644
-> --- a/transaction.c
-> +++ b/transaction.c
-> @@ -165,9 +165,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->         BUG_ON(ret);
->  commit_tree:
->         ret = commit_tree_roots(trans, fs_info);
-> -       BUG_ON(ret);
-> +       if (ret)
-> +               goto error;
->         ret = __commit_transaction(trans, root);
-> -       BUG_ON(ret);
-> +       if (ret)
-> +               goto error;
->         write_ctree_super(trans, fs_info);
->         btrfs_finish_extent_commit(trans, fs_info->extent_root,
->                                    &fs_info->pinned_extents);
-> @@ -177,6 +179,8 @@ commit_tree:
->         fs_info->running_transaction = NULL;
->         fs_info->last_trans_committed = transid;
->         return 0;
-> +error:
-> +       return ret;
->  }
->
->  void btrfs_abort_transaction(struct btrfs_trans_handle *trans, int error)
-> --
-> 2.13.5
+> Unfortunately yet one more system running 4.14-rc8 with "No space left"
+> during balance:
 >
 >
+> [68443.535664] BTRFS info (device sdb3): relocating block group 591771009024
+> flags data|raid1
+> [68463.203330] BTRFS info (device sdb3): found 8578 extents
+> [68492.238676] BTRFS info (device sdb3): found 8559 extents
+> [68500.751792] BTRFS info (device sdb3): 1 enospc errors during balance
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+> # btrfs balance start /var/lib/lxd
+> WARNING:
+>
+>         Full balance without filters requested. This operation is very
+>         intense and takes potentially very long. It is recommended to
+>         use the balance filters to narrow down the balanced data.
+>         Use 'btrfs balance start --full-balance' option to skip this
+>         warning. The operation will start in 10 seconds.
+>         Use Ctrl-C to stop it.
+> 10 9 8 7 6 5 4 3 2 1
+> Starting balance without any filters.
+> ERROR: error during balancing '/var/lib/lxd': No space left on device
+> There may be more info in syslog - try dmesg | tail
+
+
+OK I wonder if this is a bug in user space tool's error handling?
+Because what you have in kernel messages is BTRFS info. It is not a
+warning or an error. I interpret this as enospc error happened but it
+recovered, so it was not an unhandled error condition, and definitely
+non-fatal. But the user space tool is reporting a bogus "No space left
+on device". It's plainly bogus because you have a lot of space on the
+device, including unallocated space. So the user space tool needs to
+either ignore this type of informational enospc or it needs a
+different message to make it clear this is not a fatal error and was
+properly handled.
+
+Do you get any additional information when using enospc_debug mount
+option and reproduce this problem?
+
+
+> Unallocated:
+>    /dev/sda3     112.00GiB
+>    /dev/sdb3     112.00GiB
+
+Metric shittons of space. The error is certainly bogus.
+
+
+
+> Combined with evidence that "No space left on device" during balance can
+> lead to various file corruption (we've witnessed it with MySQL), I'd day
+> btrfs balance is a dangerous operation and decision to use it should be
+> considered very thoroughly.
+
+I've never heard of this. Balance is COW at the chunk level. The old
+chunk is not dereferenced until it's written in the new location
+correctly. Corruption during balance shouldn't be possible so if you
+have a reproducer, the devs need to know about it.
+
+
+
+
+
+-- 
+Chris Murphy

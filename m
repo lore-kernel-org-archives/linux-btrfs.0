@@ -1,47 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f172.google.com ([74.125.82.172]:47940 "EHLO
-        mail-ot0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751757AbdKKTLu (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:59598 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751995AbdKKUME (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Nov 2017 14:11:50 -0500
-Received: by mail-ot0-f172.google.com with SMTP id s4so1532496ote.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 11 Nov 2017 11:11:50 -0800 (PST)
+        Sat, 11 Nov 2017 15:12:04 -0500
+Subject: Re: discard on SSDs quickly causes backup trees to vanish
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Chris Murphy <chris@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: David Sterba <dsterba@suse.cz>, Austin S Hemmelgarn <ahferroin7@gmail.com>
+References: <CAJCQCtSP8r3q+j2dmOANnvGzuVwgx8asHhMROOxOjjX_fgZGcw@mail.gmail.com>
+ <2f9573d7-c3d7-7e59-0754-b12e98b9c5ab@mendix.com>
+ <db513a96-e6d3-84bc-ab39-ce0589258bdf@gmx.com>
+ <bec1b500-078b-4ee7-6521-f0878c39f2e9@mendix.com>
+ <d8bb0868-e969-c83c-0615-838cbc52232f@gmx.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <14623c86-e452-953f-70cd-603a49de4b63@mendix.com>
+Date: Sat, 11 Nov 2017 21:12:01 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAD8FQQ3XSsLt4XYdeMg7r3oX9WUerW27f8RMuKurjL4cpY8=1g@mail.gmail.com>
-References: <CAD8FQQ0tO3AZDDh89hczwZ1pL70uom5EBY2fbZWm_LDJAQE2UQ@mail.gmail.com>
- <CAD8FQQ3kBfy8kLFzSm-OVbsYsQ7-LzH0faD09__4S5_q0bM7pA@mail.gmail.com>
- <CAKuJGC-aRt_NKboYa9ZK6ApWDJ_knM-UazPxEUq7sHiNXEqA6w@mail.gmail.com>
- <CAD8FQQ20m3sgLKc_utf2xb-J6bhf1W58mAkEFc2jyJy7-bH3+w@mail.gmail.com>
- <CAD8FQQ3boTj97yu-F8CiFBvR-EfD+1chcSo=VzyAxwO7GpomEg@mail.gmail.com>
- <CAKuJGC8omM8TMg7DqncuoM6e0jdUOdiwNLU6q29z__U=2NQHvg@mail.gmail.com>
- <1484297967.48018.1508985286675@email.1and1.com> <CAJCQCtS9he3cpqKgnFQjM2GPA1atvgfmi2ZhrjGZg8Yq1h91BQ@mail.gmail.com>
- <CAJCQCtSR3aSe5OfEW3A2vxvv8j71pqTu-mOeYSvjaKhGogT=Jg@mail.gmail.com> <CAD8FQQ3XSsLt4XYdeMg7r3oX9WUerW27f8RMuKurjL4cpY8=1g@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 11 Nov 2017 12:11:49 -0700
-Message-ID: <CAJCQCtT+ZTi1BMchk5orGaraO2079SbSJterVMgVjO+fiYC1=Q@mail.gmail.com>
-Subject: Re: btrfs send yields "ERROR: send ioctl failed with -5: Input/output error"
-To: Zak Kohler <y2k@y2kbugger.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <d8bb0868-e969-c83c-0615-838cbc52232f@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 11, 2017 at 11:27 AM, Zak Kohler <y2k@y2kbugger.com> wrote:
-> It seems that since the errors were due to a very slight instability in
-> computer due to overclock, the online and offline scrub's causing different
-> stresses or paths. Could it be that one is telling the drives to use some
-> level of caching where the offline is explicitly tells it not to(or one of
-> many similar scenarios)? There must be some line to draw about supporting
-> faulty Hardware but I think having all forms of scrubbing in agreement must
-> be within scope.
+Hi,
 
-I think once you're in some non-deterministic state, all bets are off.
-But I don't know anything about what physical parts of a CPU could
-cause more or less error, or more or less determinism, based on code
-differences.
+On 11/11/2017 04:48 AM, Qu Wenruo wrote:
+> 
+> On 2017年11月11日 11:13, Hans van Kranenburg wrote:
+>> On 11/11/2017 03:30 AM, Qu Wenruo wrote:
+>>>
+>>
+>>> One more chance to recover is never a bad idea.
+>>
+>> It is a bad idea. The *only* case you can recover from is when you
+>> freeze the filesystem *directly* after writing the superblock. Only in
+>> that case you have both a consistent last committed and previous
+>> transaction on disk.
+> 
+> You're talking about the ideal case.
+> 
+> The truth is, we're living in a real world where every software has
+> bugs. And that's why sometimes we get transid error.
+> 
+> So keeps the backup root still makes sense.
+> 
+> And further more, different trees have different update frequency.
+> For root and extent tree, they get updated every transaction, while for
+> chunk tree it's seldom updated.
+> 
+> And backup roots are updated per transaction, which means we may have a
+> high chance to recover at least chunk root and to know the chunk map and
+> possible to grab some data.
 
+    That's entirely right yes. But "possible to grab some data" is a
+whole different thing than "getting the filesystem back into a fully
+functional consistent state..."
+
+    So it's about expectation management for end users. If the user
+thinks "Ha! A backup! That's nice of btrfs, it keeps them so I can go
+back!.", then the user will get disappointed when the backups are unusable.
+
+The design of btrfs is that all metadata tree blocks and data extent
+space that is not used by the last completed transaction are freed to be
+reused, as soon as possible. For cow-only roots (e.g. root tree, extent
+tree) this is already done immediately in the transaction code after
+writing the super block (btrfs_finish_extent_commit, discard is also
+immediately triggered), and for reference counted roots (subvolume
+roots) the cleaner will asap do it.
+
+So, the design gives zero guarantee that following a backup root will
+work. But, it's better than nothing when trying to scrape some data off
+of the borken filesystem.
+
+    Maybe it's enough to change man 5 btrfs with the mount options with
+a warning for the usebackuproot option to let the user know that doing
+this might result in a mountable filesystem, but that even in case it
+does, the result should only be used to get as much data as possible off
+of it before doing mkfs again. Or, if it succeeds, and if also umounting
+again and running a full btrfsck and scrub to check all metadata and
+data succeeds, the user might be pretty confident that nothing
+referenced by the previous backuproot was already overwritten with new
+data, in which case the filesystem can be continued to be used.
+
+But it puts usebackuproot very much in the same department where tools
+like btrfs-restore live.
+
+>> If you do new writes and then again are able to mount with -o
+>> usebackuproot and if any of the
+>> transaction-before-the-last-committed-transaction blocks are overwritten
+>> you're in a field of land mines and time bombs. Being able to mount
+>> gives a false sense of recovery to the user in that case, because either
+>> you're gonna crash into transid problems for metadata, or there are
+>> files in the filesystem in which different data shows up than should,
+>> potentially allowing users to see data from other users etc... It's just
+>> dangerous.
+>>
+>>> As you can see, if metadata CoW is completely implemented as designed,
+>>> there will be no report of transid mismatch at all.
+>>> And btrfs should be bullet proof from the very beginning, but none of
+>>> these is true.
+>>
+>> It is, it's not a bug. This is about the backup roots thingie, not about
+>> the data from the last transaction.
+> 
+> Check the original post.
+> It only gives the magic number, it's not saying if it's from backup root.
+> 
+> If it's dumped from running fs (it's completely possible) then it's the
+> problem I described.
+> 
+> Anyway, no matter what you think if it's a bug or not, I'll enhance tree
+> allocator to do extra check if the result overwrites the commit root.
+> 
+> And I strongly suspect transid related problems reported from mail list
+> has something to do with it.
 
 -- 
-Chris Murphy
+Hans van Kranenburg

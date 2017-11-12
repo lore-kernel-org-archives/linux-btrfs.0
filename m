@@ -1,217 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:54794 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752199AbdKLA3L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 11 Nov 2017 19:29:11 -0500
-Subject: Re: discard on SSDs quickly causes backup trees to vanish
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Chris Murphy <chris@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc: David Sterba <dsterba@suse.cz>, Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAJCQCtSP8r3q+j2dmOANnvGzuVwgx8asHhMROOxOjjX_fgZGcw@mail.gmail.com>
- <2f9573d7-c3d7-7e59-0754-b12e98b9c5ab@mendix.com>
- <db513a96-e6d3-84bc-ab39-ce0589258bdf@gmx.com>
- <bec1b500-078b-4ee7-6521-f0878c39f2e9@mendix.com>
- <d8bb0868-e969-c83c-0615-838cbc52232f@gmx.com>
- <14623c86-e452-953f-70cd-603a49de4b63@mendix.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6c8f20dd-e2b8-3d7c-697a-73d4444ad56b@gmx.com>
-Date: Sun, 12 Nov 2017 08:28:57 +0800
+Received: from frost.carfax.org.uk ([85.119.82.111]:58984 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752208AbdKLAmb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 11 Nov 2017 19:42:31 -0500
+Date: Sun, 12 Nov 2017 00:42:30 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-image hash collision option, super slow
+Message-ID: <20171112004230.GJ27985@carfax.org.uk>
+References: <CAJCQCtTJXpoSExk7aVKCZKk5YCpV6V31zUpLgQSxa+k4V8+x+w@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <14623c86-e452-953f-70cd-603a49de4b63@mendix.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="qcEm75XHRcbQKGUEHQ2FO5PEimwjTppic"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="ZG+WKzXzVby2T9Ro"
+In-Reply-To: <CAJCQCtTJXpoSExk7aVKCZKk5YCpV6V31zUpLgQSxa+k4V8+x+w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---qcEm75XHRcbQKGUEHQ2FO5PEimwjTppic
-Content-Type: multipart/mixed; boundary="uM4cXLP33x5Cl6IaqNW0OjBNjLKMVKPje";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
- Chris Murphy <chris@colorremedies.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc: David Sterba <dsterba@suse.cz>, Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <6c8f20dd-e2b8-3d7c-697a-73d4444ad56b@gmx.com>
-Subject: Re: discard on SSDs quickly causes backup trees to vanish
-References: <CAJCQCtSP8r3q+j2dmOANnvGzuVwgx8asHhMROOxOjjX_fgZGcw@mail.gmail.com>
- <2f9573d7-c3d7-7e59-0754-b12e98b9c5ab@mendix.com>
- <db513a96-e6d3-84bc-ab39-ce0589258bdf@gmx.com>
- <bec1b500-078b-4ee7-6521-f0878c39f2e9@mendix.com>
- <d8bb0868-e969-c83c-0615-838cbc52232f@gmx.com>
- <14623c86-e452-953f-70cd-603a49de4b63@mendix.com>
-In-Reply-To: <14623c86-e452-953f-70cd-603a49de4b63@mendix.com>
 
---uM4cXLP33x5Cl6IaqNW0OjBNjLKMVKPje
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+--ZG+WKzXzVby2T9Ro
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Sat, Nov 11, 2017 at 05:18:33PM -0700, Chris Murphy wrote:
+> OK this might be in the stupid questions category, but I'm not
+> understanding the purpose of computing hash collisions with -ss. Or
+> more correctly, why it's taking so much longer than -s.
+> 
+> It seems like what we'd want is every filename to have the same hash,
+> but for the file to go through a PBKDF so the hashes we get aren't
+> (easily) brute forced. So I totally understand that -ss should take
+> much longer than -s, but this is at least two orders magnitude longer
+> (so far). That's why I'm confused.
+> 
+> -s option on this file system took 5 minutes, start to finish.
+> -ss option is at 8 hours and counting.
+> 
+> The other part I'm not groking is that some filenames fail with:
+> 
+> WARNING: cannot find a hash collision for 'Tool', generating garbage,
+> it won't match indexes
+> 
+> So? That seems like an undesirable outcome. And if it were just being
+> pushed through a PBKDF function, it wouldn't fail. Every
+> file/directory "Tool" would get the same hash on *this* run of
+> btrs-image. If I run it again, or someone else runs it, they'd get
+> some other hash (same hashes for each instance of "Tool" on their
+> filesystem).
 
+   In the FS tree, you can go from the inode of the file to its name
+(where the inode is in the index, and the name is stored in the
+corresponding data item). Alternatively, you can go from the filename
+to the inode. In the latter case, since the keys are a structured 17
+byte object, you obviously can't fit the whole filename into the key,
+so the filename is hashed (using, IIRC, CRC32), and it's the hash that
+appears in the key of the index.
 
-On 2017=E5=B9=B411=E6=9C=8812=E6=97=A5 04:12, Hans van Kranenburg wrote:
-> Hi,
->=20
-> On 11/11/2017 04:48 AM, Qu Wenruo wrote:
->>
->> On 2017=E5=B9=B411=E6=9C=8811=E6=97=A5 11:13, Hans van Kranenburg wrot=
-e:
->>> On 11/11/2017 03:30 AM, Qu Wenruo wrote:
->>>>
->>>
->>>> One more chance to recover is never a bad idea.
->>>
->>> It is a bad idea. The *only* case you can recover from is when you
->>> freeze the filesystem *directly* after writing the superblock. Only i=
-n
->>> that case you have both a consistent last committed and previous
->>> transaction on disk.
->>
->> You're talking about the ideal case.
->>
->> The truth is, we're living in a real world where every software has
->> bugs. And that's why sometimes we get transid error.
->>
->> So keeps the backup root still makes sense.
->>
->> And further more, different trees have different update frequency.
->> For root and extent tree, they get updated every transaction, while fo=
-r
->> chunk tree it's seldom updated.
->>
->> And backup roots are updated per transaction, which means we may have =
-a
->> high chance to recover at least chunk root and to know the chunk map a=
-nd
->> possible to grab some data.
->=20
->     That's entirely right yes. But "possible to grab some data" is a
-> whole different thing than "getting the filesystem back into a fully
-> functional consistent state..."
->=20
->     So it's about expectation management for end users. If the user
-> thinks "Ha! A backup! That's nice of btrfs, it keeps them so I can go
-> back!.", then the user will get disappointed when the backups are unusa=
-ble.
+   When an image is made without the -s options, the whole metadata is
+stored, including all the filenames in the data items. For some
+people, that's a security risk, and they don't want their filenames
+leaking out, so -s exists to put junk in the filename records.
+However, it doesn't change the hashes in the index to correspond with
+the modified filenames, because that would at minimum require the
+whole tree to be rebuilt (because all the items would have different
+hashes, and hence different ordering in the index). This is a bad
+thing for debugging, because you're not getting the details of the
+tree as it was in the broken filesystem. So, in this case, the image
+is actually broken, because the filenames don't match the hashes.
 
-Without discard, user should be able to rollback to previous transaction
-(backup_root[0])
+   Most of the time, that's absolutely fine, because the thing being
+debugged is somewhere else, and it doesn't matter that "ls" on the
+restored FS won't work right.
 
-The last transaction committed with commit_root and root->node switched,
-and as I stated in previous mail, until this swtich, commit_root must be
-fully available.
+   However, in some (possibly hypothetical) cases, it _does_ matter,
+and you do need the hashes to match the filenames. This is where -ss
+comes in. We can't generate random filenames and then take the hashes
+of those, because of the undesirability of rewriting the whole FS tree
+to reindex it with the changed hashes. So, what -ss tries to do is
+stick with the original hashes and find arbitrary filenames which
+match them. It's (I think) CRC32, so it shouldn't be too hard, but
+it's still non-trivial amounts of work to reverse engineer a
+human-readable ASCII filename which hashes to a given value.
+Particularly if, as was the case when Josef wrote it, a simple
+brute-force algorithm was used.
 
-And after the last transaction there is no modification (since the last
-trans is for unmount), so backuproot[0] should be fully accessible.
+   It could definitely be improved -- I believe there are some good
+(but non-trivial) algorithms for finding preimages for CRC32 checksums
+out there. It's just that btrfs-image doesn't use them. However, it's
+not an option that's needed very often, so it's probably not worth
+putting in the effort to fix it up. (I definitely remember Josef
+commenting on IRC when he wrote -s and -ss that it could almost
+certainly be done more efficiently, but he had bigger fish to fry at
+the time, like fixing the broken FS he was working on)
 
-Discard can break it unless we have method to trace tree block space
-usage for at least 2 transactions.
+   As to the thing where it's not finding a pre-image at all -- I'm
+guessing here, but it's possible that this is a case where two of the
+orginal filenames hashed to the same value. If that happens, one of
+the hashes is incremented by a small integer in a predictable way
+before storage. So it may be that the resulting value isn't mappable
+to an ASCII pre-image, or that the search just gives up before finding
+one.
 
->=20
-> The design of btrfs is that all metadata tree blocks and data extent
-> space that is not used by the last completed transaction are freed to b=
-e
-> reused, as soon as possible. For cow-only roots (e.g. root tree, extent=
+   Hugo.
 
-> tree) this is already done immediately in the transaction code after
-> writing the super block (btrfs_finish_extent_commit, discard is also
-> immediately triggered), and for reference counted roots (subvolume
-> roots) the cleaner will asap do it.
->=20
-> So, the design gives zero guarantee that following a backup root will
-> work. But, it's better than nothing when trying to scrape some data off=
+-- 
+Hugo Mills             | Yes, this is an example of something that becomes
+hugo@... carfax.org.uk | less explosive as a one-to-one cocrystal with TNT.
+http://carfax.org.uk/  | (Hexanitrohexaazaisowurtzitane)
+PGP: E2AB1DE4          |                                            Derek Lowe
 
-> of the borken filesystem.
-
-Again, only for discard.
-
->=20
->     Maybe it's enough to change man 5 btrfs with the mount options with=
-
-> a warning for the usebackuproot option to let the user know that doing
-> this might result in a mountable filesystem, but that even in case it
-> does, the result should only be used to get as much data as possible of=
-f
-> of it before doing mkfs again. Or, if it succeeds, and if also umountin=
-g
-> again and running a full btrfsck and scrub to check all metadata and
-> data succeeds, the user might be pretty confident that nothing
-> referenced by the previous backuproot was already overwritten with new
-> data, in which case the filesystem can be continued to be used.
->=20
-> But it puts usebackuproot very much in the same department where tools
-> like btrfs-restore live.
-
-Isn't it the original design?
-No one sane would use it for daily usage and it's original called
-"recovery", I don't see any problem here.
-
-Thanks,
-Qu
-
->=20
->>> If you do new writes and then again are able to mount with -o
->>> usebackuproot and if any of the
->>> transaction-before-the-last-committed-transaction blocks are overwrit=
-ten
->>> you're in a field of land mines and time bombs. Being able to mount
->>> gives a false sense of recovery to the user in that case, because eit=
-her
->>> you're gonna crash into transid problems for metadata, or there are
->>> files in the filesystem in which different data shows up than should,=
-
->>> potentially allowing users to see data from other users etc... It's j=
-ust
->>> dangerous.
->>>
->>>> As you can see, if metadata CoW is completely implemented as designe=
-d,
->>>> there will be no report of transid mismatch at all.
->>>> And btrfs should be bullet proof from the very beginning, but none o=
-f
->>>> these is true.
->>>
->>> It is, it's not a bug. This is about the backup roots thingie, not ab=
-out
->>> the data from the last transaction.
->>
->> Check the original post.
->> It only gives the magic number, it's not saying if it's from backup ro=
-ot.
->>
->> If it's dumped from running fs (it's completely possible) then it's th=
-e
->> problem I described.
->>
->> Anyway, no matter what you think if it's a bug or not, I'll enhance tr=
-ee
->> allocator to do extra check if the result overwrites the commit root.
->>
->> And I strongly suspect transid related problems reported from mail lis=
-t
->> has something to do with it.
->=20
-
-
---uM4cXLP33x5Cl6IaqNW0OjBNjLKMVKPje--
-
---qcEm75XHRcbQKGUEHQ2FO5PEimwjTppic
+--ZG+WKzXzVby2T9Ro
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloHlcoXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhfvAf7BgIAXF4FvGnWrGwZ5SOe29ZP
-aZbfd9MLmEsyX4DEG673Hsg09nX5aN6r6qEMupGTXStdOpDpQfTbxwF6fWikxi+2
-ZMRUy0ypnpGQ0ApXL341OkrnSXciVTckltN68dqqAtivunjz7HCpRL2Zzv+M+i/E
-Owg/iRjmqCapm7+AMcBvABx3kbjB4pgy3fw9w6YEUkOG3Sc42ExavFTb3ibBu2mR
-D1eVgJ9X2d86nN4I7GPeySJBDA0pC1OKAP+o93jWXdBQhmdSJy2pAUB4wG8YDyNa
-31h5BPk5errLZbjmPYsAk3h0U9qTylpE5ZMcFBzIq+1hHQXp+sV+xZPV3aSBtg==
-=wYHc
+iQIcBAEBAgAGBQJaB5j1AAoJEFheFHXiqx3kkikP/2aPsSimfPDpz34XFj22rRyl
+mssrlr5Lhfnt5SxYlnFC6SliihBi9dWFCAut6MoQWSNGJFuLEHLdnBT6LxgvPigI
+1WJJ9eBnrXhOvl/r49Rw4ulwz8QTPKP+npPG9voDywi49v2n9XoAEcx+B/SjuuUF
+yRuGNzVu5Jklu+0wLn2kJF3GnVWmYN5UNa41bwH7QMaYm8uRk0OJTj3cSJYY7C01
+nX3rJDSToyE4Y8fHMjsIeweuKnu5Wk6PTgsJ7LILtAkp3J7E+bjdIPXP06C2hyz2
+8U74FToa4gJvC8oa6bD2nVt19jngAmOu/tCYhOpiBZdGdl458EK75vKwyo8qM1wz
+xCetXcAdw0CWdnyXUnlpr2UQrzR1+4Zrq25bVvq2kxSDEVXsqWkUf+sFKBdAQ4SW
+++o4uRbShqx+5CJYRrihKVtnAZH4SglJwS/d+aAsg0xo2BSurH+QPA+HBIPZOPHk
+QXTw97ITS1j6YmJAILLJj6RCQoXpjvPJ2A0/MHq5+s4oSKWiU6PPytqKCHKge2sj
+ZfEQ+gcWljHT8oEywaXVI0jDpYJ5VvwFcNsuQZhOCWDrIawr1FS+LanJCnfE4xeP
+Ri1rwf9aqNULgKyOi02CT2U5BPDUfDhF+ibUuTDh5Wfn8WYskKtmrTXEunpX26xv
+3zzWa52lA2EOLG85XTZp
+=4/1y
 -----END PGP SIGNATURE-----
 
---qcEm75XHRcbQKGUEHQ2FO5PEimwjTppic--
+--ZG+WKzXzVby2T9Ro--

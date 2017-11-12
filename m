@@ -1,48 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zlom.siedziba.pl ([83.144.122.22]:33124 "EHLO zlom.siedziba.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750866AbdKLOLR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 12 Nov 2017 09:11:17 -0500
-Subject: Re: btrfs-image hash collision option, super slow
-To: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtTJXpoSExk7aVKCZKk5YCpV6V31zUpLgQSxa+k4V8+x+w@mail.gmail.com>
- <20171112004230.GJ27985@carfax.org.uk>
- <CAJCQCtR5oqOT2JdO_-gSgVCnBpYz_53eBOeF32G6+ZfX6RK7Kw@mail.gmail.com>
-From: =?UTF-8?Q?Piotr_Paw=c5=82ow?= <pp@siedziba.pl>
-Message-ID: <4bc2caf5-6f4c-4012-2bab-4daaa766d202@siedziba.pl>
-Date: Sun, 12 Nov 2017 15:05:44 +0100
+Received: from syrinx.knorrie.org ([82.94.188.77]:54352 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751389AbdKLRLZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 12 Nov 2017 12:11:25 -0500
+Subject: Re: [PATCH v4] btrfs: Remove received_uuid during received snapshot
+ ro->rw switch
+To: Nikolay Borisov <nborisov@suse.com>, dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <20171004150039.GE3521@twin.jikos.cz>
+ <1507191773-23039-1-git-send-email-nborisov@suse.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <56af8081-3ecb-7a70-0e9a-b05220c608b3@mendix.com>
+Date: Sun, 12 Nov 2017 18:11:22 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR5oqOT2JdO_-gSgVCnBpYz_53eBOeF32G6+ZfX6RK7Kw@mail.gmail.com>
+In-Reply-To: <1507191773-23039-1-git-send-email-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 10/05/2017 10:22 AM, Nikolay Borisov wrote:
+> Currently when a read-only snapshot is received and subsequently its ro property
+> is set to false i.e. switched to rw-mode the received_uuid of that subvol remains
+> intact. However, once the received volume is switched to RW mode we cannot
+> guaranteee that it contains the same data, so it makes sense to remove the
+> received uuid. The presence of the received_uuid can also cause problems when
+> the volume is being send.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> Suggested-by: David Sterba <dsterba@suse.cz>
+> ---
+> 
+> v4: 
+>  * Put the uuid tree removal code after the lightweight 'send in progress' 
+>  check and don't move btrfs_start_transaction as suggested by David
+>  
+> v3:
+>  * Rework the patch considering latest feedback from David Sterba i.e. 
+>   explicitly use btrfs_end_transaction 
+> 
+>  fs/btrfs/ioctl.c | 20 ++++++++++++++++++++
+>  1 file changed, 20 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index ee4ee7cbba72..9328c091854b 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1775,6 +1775,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>  	struct btrfs_trans_handle *trans;
+>  	u64 root_flags;
+>  	u64 flags;
+> +	bool clear_received_uuid = false;
+>  	int ret = 0;
+>  
+>  	if (!inode_owner_or_capable(inode))
+> @@ -1824,6 +1825,7 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>  			btrfs_set_root_flags(&root->root_item,
+>  				     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
+>  			spin_unlock(&root->root_item_lock);
+> +			clear_received_uuid = true;
+>  		} else {
+>  			spin_unlock(&root->root_item_lock);
+>  			btrfs_warn(fs_info,
+> @@ -1840,6 +1842,24 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>  		goto out_reset;
+>  	}
+>  
+> +	if (clear_received_uuid) {
+> +	        if (!btrfs_is_empty_uuid(root->root_item.received_uuid)) {
+> +	                ret = btrfs_uuid_tree_rem(trans, fs_info,
+> +	                                root->root_item.received_uuid,
+> +	                                BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+> +	                                root->root_key.objectid);
+> +
+> +	                if (ret && ret != -ENOENT) {
+> +	                        btrfs_abort_transaction(trans, ret);
+> +	                        btrfs_end_transaction(trans);
+> +	                        goto out_reset;
+> +	                }
+> +
+> +	                memset(root->root_item.received_uuid, 0,
+> +	                                BTRFS_UUID_SIZE);
 
->>    It could definitely be improved -- I believe there are some good
->> (but non-trivial) algorithms for finding preimages for CRC32 checksums
->> out there. It's just that btrfs-image doesn't use them.
+Shouldn't we also wipe the other related fields here, like stime, rtime,
+stransid, rtransid?
 
-I implemented a faster method using a reverse CRC32 table, which is in btrfs-progs since release 4.13.1.
+> +	        }
+> +	}
+> +
+>  	ret = btrfs_update_root(trans, fs_info->tree_root,
+>  				&root->root_key, &root->root_item);
+>  	if (ret < 0) {
+> 
 
-On my 20GB root fs SSD:
 
-# echo 3 >/proc/sys/vm/drop_caches && time btrfs-image -s /dev/mapper/pp-root /dev/null >/dev/null 2>&1
-
-real    0m22,023s
-user    0m14,812s
-sys    0m2,508s
-# echo 3 >/proc/sys/vm/drop_caches && time btrfs-image -ss /dev/mapper/pp-root /dev/null >/dev/null 2>&1
-
-real    0m31,977s
-user    0m17,984s
-sys    0m2,632s
-
-Slower, but not 2 orders of magnitude slower :)
-
-> The other part I'm not groking is that some filenames fail with:
->
-> WARNING: cannot find a hash collision for 'Tool', generating garbage,
-> it won't match indexes
-
-Unfortunately there are no CRC32 collisions for any file name having 4 or less characters when you have to keep the same file name length, and there may be no collisions for longer file names when you limit the result to ASCII only.
+-- 
+Hans van Kranenburg

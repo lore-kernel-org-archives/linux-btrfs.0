@@ -1,103 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54636 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751726AbdKTRga (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 12:36:30 -0500
-Date: Mon, 20 Nov 2017 18:34:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix list_add corruption and soft lockups in fsync
-Message-ID: <20171120173434.GD3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171113175724.7302-1-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171113175724.7302-1-bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:26199 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754352AbdKMS7n (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Nov 2017 13:59:43 -0500
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vADIxgUl012594
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Nov 2017 18:59:42 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vADIxgFu014531
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Nov 2017 18:59:42 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vADIxft5008222
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Nov 2017 18:59:42 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix list_add corruption and soft lockups in fsync
+Date: Mon, 13 Nov 2017 10:57:24 -0700
+Message-Id: <20171113175724.7302-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 13, 2017 at 10:57:24AM -0700, Liu Bo wrote:
-> Xfstests btrfs/146 revealed this corruption,
-> 
-> [   58.138831] Buffer I/O error on dev dm-0, logical block 2621424, async page read
-> [   58.151233] BTRFS error (device sdf): bdev /dev/mapper/error-test errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-> [   58.152403] list_add corruption. prev->next should be next (ffff88005e6775d8), but was ffffc9000189be88. (prev=ffffc9000189be88).
-> [   58.153518] ------------[ cut here ]------------
-> [   58.153892] WARNING: CPU: 1 PID: 1287 at lib/list_debug.c:31 __list_add_valid+0x169/0x1f0
-> ...
-> [   58.157379] RIP: 0010:__list_add_valid+0x169/0x1f0
-> ...
-> [   58.161956] Call Trace:
-> [   58.162264]  btrfs_log_inode_parent+0x5bd/0xfb0 [btrfs]
-> [   58.163583]  btrfs_log_dentry_safe+0x60/0x80 [btrfs]
-> [   58.164003]  btrfs_sync_file+0x4c2/0x6f0 [btrfs]
-> [   58.164393]  vfs_fsync_range+0x5f/0xd0
-> [   58.164898]  do_fsync+0x5a/0x90
-> [   58.165170]  SyS_fsync+0x10/0x20
-> [   58.165395]  entry_SYSCALL_64_fastpath+0x1f/0xbe
-> ...
-> 
-> It turns out that we could record btrfs_log_ctx:io_err in
-> log_one_extents when IO fails, but make log_one_extents() return '0'
-> instead of -EIO, so the IO error is not acknowledged by the callers,
-> i.e.  btrfs_log_inode_parent(), which would remove btrfs_log_ctx:list
-> from list head 'root->log_ctxs'.  Since btrfs_log_ctx is allocated
-> from stack memory, it'd get freed with a object alive on the
-> list. then a future list_add will throw the above warning.
-> 
-> This returns the correct error in the above case.
-> 
-> Jeff also reported this while testing against his fsync error
-> patch set[1].
-> 
-> [1]: https://www.spinics.net/lists/linux-btrfs/msg65308.html
-> "btrfs list corruption and soft lockups while testing writeback error handling"
-> 
+Xfstests btrfs/146 revealed this corruption,
 
-Fixes: 8407f553268a4611f254 ("Btrfs: fix data corruption after fast fsync and writeback error")
+[   58.138831] Buffer I/O error on dev dm-0, logical block 2621424, async page read
+[   58.151233] BTRFS error (device sdf): bdev /dev/mapper/error-test errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
+[   58.152403] list_add corruption. prev->next should be next (ffff88005e6775d8), but was ffffc9000189be88. (prev=ffffc9000189be88).
+[   58.153518] ------------[ cut here ]------------
+[   58.153892] WARNING: CPU: 1 PID: 1287 at lib/list_debug.c:31 __list_add_valid+0x169/0x1f0
+...
+[   58.157379] RIP: 0010:__list_add_valid+0x169/0x1f0
+...
+[   58.161956] Call Trace:
+[   58.162264]  btrfs_log_inode_parent+0x5bd/0xfb0 [btrfs]
+[   58.163583]  btrfs_log_dentry_safe+0x60/0x80 [btrfs]
+[   58.164003]  btrfs_sync_file+0x4c2/0x6f0 [btrfs]
+[   58.164393]  vfs_fsync_range+0x5f/0xd0
+[   58.164898]  do_fsync+0x5a/0x90
+[   58.165170]  SyS_fsync+0x10/0x20
+[   58.165395]  entry_SYSCALL_64_fastpath+0x1f/0xbe
+...
 
-you can also add the commit author to CC.
+It turns out that we could record btrfs_log_ctx:io_err in
+log_one_extents when IO fails, but make log_one_extents() return '0'
+instead of -EIO, so the IO error is not acknowledged by the callers,
+i.e.  btrfs_log_inode_parent(), which would remove btrfs_log_ctx:list
+from list head 'root->log_ctxs'.  Since btrfs_log_ctx is allocated
+from stack memory, it'd get freed with a object alive on the
+list. then a future list_add will throw the above warning.
 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/file.c     | 1 +
->  fs/btrfs/tree-log.c | 2 +-
->  2 files changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 063180b..db70eaa 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -2241,6 +2241,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
->  	if (ctx.io_err) {
->  		btrfs_end_transaction(trans);
->  		ret = ctx.io_err;
-> +		ASSERT(list_empty(&ctx.list));
+This returns the correct error in the above case.
 
-Please move that to the label 'out', so all exit paths can catch the
-problem.
+Jeff also reported this while testing against his fsync error
+patch set[1].
 
->  		goto out;
->  	}
->  
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index c800d06..d300284 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -4100,7 +4100,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
->  
->  	if (ordered_io_err) {
->  		ctx->io_err = -EIO;
-> -		return 0;
-> +		return ctx->io_err;
->  	}
->  
->  	btrfs_init_map_token(&token);
-> -- 
-> 2.9.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[1]: https://www.spinics.net/lists/linux-btrfs/msg65308.html
+"btrfs list corruption and soft lockups while testing writeback error handling"
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/file.c     | 1 +
+ fs/btrfs/tree-log.c | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 063180b..db70eaa 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2241,6 +2241,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	if (ctx.io_err) {
+ 		btrfs_end_transaction(trans);
+ 		ret = ctx.io_err;
++		ASSERT(list_empty(&ctx.list));
+ 		goto out;
+ 	}
+ 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c800d06..d300284 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4100,7 +4100,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+ 
+ 	if (ordered_io_err) {
+ 		ctx->io_err = -EIO;
+-		return 0;
++		return ctx->io_err;
+ 	}
+ 
+ 	btrfs_init_map_token(&token);
+-- 
+2.9.4
+

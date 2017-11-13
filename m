@@ -1,56 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:53659 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751753AbdKTQSa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 11:18:30 -0500
-Date: Mon, 20 Nov 2017 08:18:29 -0800
-From: Matthew Wilcox <willy@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: xfs <linux-xfs@vger.kernel.org>, Ilya Dryomov <idryomov@gmail.com>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Dave Chinner <david@fromorbit.com>, Brian Foster <bfoster@redhat.com>,
-        holger@applied-asynchrony.com, linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2] iomap: report collisions between directio and
- buffered writes to userspace
-Message-ID: <20171120161829.GA25991@bombadil.infradead.org>
-References: <20171117193925.GM5119@magnolia>
+Received: from mx2.suse.de ([195.135.220.15]:39088 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753664AbdKMRCK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Nov 2017 12:02:10 -0500
+Date: Mon, 13 Nov 2017 18:00:15 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: set plug for fsync
+Message-ID: <20171113170015.GA28899@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171110001616.7875-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171117193925.GM5119@magnolia>
+In-Reply-To: <20171110001616.7875-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 17, 2017 at 11:39:25AM -0800, Darrick J. Wong wrote:
-> If two programs simultaneously try to write to the same part of a file
-> via direct IO and buffered IO, there's a chance that the post-diowrite
-> pagecache invalidation will fail on the dirty page.  When this happens,
-> the dio write succeeded, which means that the page cache is no longer
-> coherent with the disk!
+On Thu, Nov 09, 2017 at 05:16:16PM -0700, Liu Bo wrote:
+> Setting plug can merge adjacent IOs before dispatching IOs to the disk
+> driver.
+> 
+> Without plug, it'd not be a problem for single disk usecases, but for
+> multiple disks using raid profile, a large IO can be split to several
+> IOs of stripe length, and plug can be helpful to bring them together
+> for each disk so that we can save several disk access.
+> 
+> Moreover, fsync issues synchronous writes, so plug can really take
+> effect.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/file.c | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index e43da6c..063180b 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2018,10 +2018,13 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
+>  static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
+>  {
+>  	int ret;
+> +	struct blk_plug plug;
+>  
+> +	blk_start_plug(&plug);
 
-This seems like a good opportunity to talk about what I've been working
-on for solving this problem.  The XArray is going to introduce a set
-of entries which can be stored to locations in the page cache that I'm
-calling 'wait entries'.
+Can you please add a comment here? Essentially repeating the commit
+message. The plug/unplug calls are never obvious so the expectations
+could be documented.
 
-When starting direct IO, the page cache will insert a wait entry in each
-of the indices covered by the I/O (and do the usual invalidation dance).
-At the end of direct IO, it will remove the wait entry and wake up any
-threads waiting on those entries.
-
-During lookup, any thread which encounters a wait entry (pagefaults,
-buffered reads, buffered writes) will sleep on the indicated wait queue.
-
-I don't know what a direct IO thread should do when encountering a wait
-entry.  Fail the I/O?  Sleep like any other lookup would?  Go ahead and
-issue the I/O anyway?  (uhm, I see a lot of problems with implementing
-that third option.)
-
-I'm currently planning on using 256 'wait entries', one for each
-PAGE_WAIT_TABLE_SIZE, and sharing those wait queue heads.  Maybe that's
-overengineering the solution.
-
-Anyway, I need to get the basics of the XArray finished off before I do
-this, but it'd be great if somebody pointed out why this doesn't work
-before I implement it.
+>  	atomic_inc(&BTRFS_I(inode)->sync_writers);
+>  	ret = btrfs_fdatawrite_range(inode, start, end);
+>  	atomic_dec(&BTRFS_I(inode)->sync_writers);
+> +	blk_finish_plug(&plug);
+>  
+>  	return ret;
+>  }
+> -- 
+> 2.9.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

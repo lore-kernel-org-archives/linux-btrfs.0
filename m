@@ -1,188 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:27917 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757938AbdKPAaZ (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:19224 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750957AbdKMFeP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 19:30:25 -0500
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAG0UO3f011063
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:30:25 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAG0UO0Z030579
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:30:24 GMT
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAG0UOcb012681
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:30:24 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] Btrfs: avoid losing data raid profile when deleting a device
-Date: Wed, 15 Nov 2017 16:28:11 -0700
-Message-Id: <20171115232811.9756-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171010175305.31633-1-bo.li.liu@oracle.com>
-References: <20171010175305.31633-1-bo.li.liu@oracle.com>
+        Mon, 13 Nov 2017 00:34:15 -0500
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH 1/2] btrfs-progs: qgroup: move btrfs_show_qgroups's error handler to __qgroup_search
+Date: Mon, 13 Nov 2017 13:33:15 +0800
+Message-ID: <20171113053316.14573-1-lufq.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've avoided data losing raid profile when doing balance, but it
-turns out that deleting a device could also result in the same
-problem.
+We have to process the return value of BTRFS_IOC_TREE_SEARCH ioctl in
+advance, so that we can distinguish between the two case where quota
+is not enabled (ioctl return -ENOENT) and either parent qgroup or child
+qgroup does not exist (update_qgroup_relation return -ENOENT). Besides
+this, any error in this routine has been reported, so we don't need to
+report again in cmd_qgroup_show.
 
-Say we have 3 disks, and they're created with '-d raid1' profile.
-
-- We have chunk P (the only data chunk on the empty btrfs).
-
-- Suppose that chunk P's two raid1 copies reside in disk A and disk B.
-
-- Now, 'btrfs device remove disk B'
-         btrfs_rm_device()
-	   -> btrfs_shrink_device()
-	      -> btrfs_relocate_chunk() #relocate any chunk on disk B
-	      	 			 to other places.
-
-- Chunk P will be removed and a new chunk will be created to hold
-  those data, but as chunk P is the only one holding raid1 profile,
-  after it goes away, the new chunk will be created as single profile
-  which is our default profile.
-
-This fixes the problem by creating an empty data chunk before
-relocating the data chunk.
-
-Metadata/System chunk are supposed to have non-zero bytes all the time
-so their raid profile is preserved.
-
-Reported-by: James Alandt <James.Alandt@wdc.com>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
-v3: More details about how losing data profile happens.
+ cmds-qgroup.c |  4 ----
+ qgroup.c      | 14 ++++++++++++--
+ 2 files changed, 12 insertions(+), 6 deletions(-)
 
-v2: - return the correct error.
-    - move helper ahead of __btrfs_balance().
-
- fs/btrfs/volumes.c | 84 ++++++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 65 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4a72c45..a74396d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3018,6 +3018,48 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
- 	return ret;
- }
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 38382ea9..d07bb0c0 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -399,10 +399,6 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 					qgroupid);
+ 	}
+ 	ret = btrfs_show_qgroups(fd, filter_set, comparer_set);
+-	if (ret == -ENOENT)
+-		error("can't list qgroups: quotas not enabled");
+-	else if (ret < 0)
+-		error("can't list qgroups: %s", strerror(-ret));
+ 	close_file_or_dir(fd, dirstream);
  
-+/*
-+ * return 1 : allocate a data chunk successfully,
-+ * return <0: errors during allocating a data chunk,
-+ * return 0 : no need to allocate a data chunk.
-+ */
-+static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
-+				      u64 chunk_offset)
-+{
-+	struct btrfs_block_group_cache *cache;
-+	u64 bytes_used;
-+	u64 chunk_type;
-+
-+	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
-+	ASSERT(cache);
-+	chunk_type = cache->flags;
-+	btrfs_put_block_group(cache);
-+
-+	if (chunk_type & BTRFS_BLOCK_GROUP_DATA) {
-+		spin_lock(&fs_info->data_sinfo->lock);
-+		bytes_used = fs_info->data_sinfo->bytes_used;
-+		spin_unlock(&fs_info->data_sinfo->lock);
-+
-+		if (!bytes_used) {
-+			struct btrfs_trans_handle *trans;
-+			int ret;
-+
-+			trans =	btrfs_join_transaction(fs_info->tree_root);
-+			if (IS_ERR(trans))
-+				return PTR_ERR(trans);
-+
-+			ret = btrfs_force_chunk_alloc(trans, fs_info,
-+						      BTRFS_BLOCK_GROUP_DATA);
-+			btrfs_end_transaction(trans);
-+			if (ret < 0)
-+				return ret;
-+
-+			return 1;
-+		}
-+	}
-+	return 0;
-+}
-+
- static int insert_balance_item(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_balance_control *bctl)
- {
-@@ -3476,7 +3518,6 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	u32 count_meta = 0;
- 	u32 count_sys = 0;
- 	int chunk_reserved = 0;
--	u64 bytes_used = 0;
+ out:
+diff --git a/qgroup.c b/qgroup.c
+index 156825fd..23463d8a 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -1065,8 +1065,18 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
  
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
-@@ -3635,28 +3676,21 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 			goto loop;
- 		}
- 
--		ASSERT(fs_info->data_sinfo);
--		spin_lock(&fs_info->data_sinfo->lock);
--		bytes_used = fs_info->data_sinfo->bytes_used;
--		spin_unlock(&fs_info->data_sinfo->lock);
--
--		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) &&
--		    !chunk_reserved && !bytes_used) {
--			trans = btrfs_start_transaction(chunk_root, 0);
--			if (IS_ERR(trans)) {
--				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
--				ret = PTR_ERR(trans);
--				goto error;
--			}
--
--			ret = btrfs_force_chunk_alloc(trans, fs_info,
--						      BTRFS_BLOCK_GROUP_DATA);
--			btrfs_end_transaction(trans);
-+		if (!chunk_reserved) {
-+			/*
-+			 * We may be relocating the only data chunk we have,
-+			 * which could potentially end up with losing data's
-+			 * raid profile, so lets allocate an empty one in
-+			 * advance.
-+			 */
-+			ret = btrfs_may_alloc_data_chunk(fs_info,
-+							 found_key.offset);
- 			if (ret < 0) {
- 				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 				goto error;
-+			} else if (ret == 1) {
-+				chunk_reserved = 1;
- 			}
--			chunk_reserved = 1;
- 		}
- 
- 		ret = btrfs_relocate_chunk(fs_info, found_key.offset);
-@@ -4419,6 +4453,18 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		chunk_offset = btrfs_dev_extent_chunk_offset(l, dev_extent);
- 		btrfs_release_path(path);
- 
-+		/*
-+		 * We may be relocating the only data chunk we have,
-+		 * which could potentially end up with losing data's
-+		 * raid profile, so lets allocate an empty one in
-+		 * advance.
-+		 */
-+		ret = btrfs_may_alloc_data_chunk(fs_info, chunk_offset);
+ 	while (1) {
+ 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+-		if (ret < 0)
+-			return -errno;
 +		if (ret < 0) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			goto done;
-+		}
++			if (errno == ENOENT) {
++				error("can't list qgroups: quotas not enabled");
++				ret = -ENOTTY;
++			} else {
++				error("can't list qgroups: %s",
++				       strerror(errno));
++				ret = -errno;
++			}
 +
- 		ret = btrfs_relocate_chunk(fs_info, chunk_offset);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 		if (ret && ret != -ENOSPC)
++			break;
++		}
+ 
+ 		/* the ioctl returns the number of item it found in nr_items */
+ 		if (sk->nr_items == 0)
 -- 
-2.9.4
+2.15.0
+
+
 

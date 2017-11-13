@@ -1,74 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:53370 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50812 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751653AbdKMHfQ (ORCPT
+        with ESMTP id S1751736AbdKMHfQ (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Mon, 13 Nov 2017 02:35:16 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, chris@colorremedies.com
-Subject: [PATCH 1/4] btrfs-progs: backref: Allow backref walk to handle direct parent ref
-Date: Mon, 13 Nov 2017 15:34:50 +0800
-Message-Id: <20171113073453.29198-2-wqu@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: lowmem check: Fix function call stack overflow caused by wrong tree reloc tree detection
+Date: Mon, 13 Nov 2017 15:34:51 +0800
+Message-Id: <20171113073453.29198-3-wqu@suse.com>
 In-Reply-To: <20171113073453.29198-1-wqu@suse.com>
 References: <20171113073453.29198-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-Btrfs lowmem mode fails with the following ASSERT() on certain valid
-image.
-------
-backref.c:466: __add_missing_keys: Assertion `ref->root_id` failed, value 0
-------
+For tree reloc tree root, its backref points to it self.
+So for such case, we should finish the lookup.
 
-[REASON]
-Lowmem mode uses btrfs_find_all_roots() when walking down fs trees.
+Previous end condition is to ensure it's tree reloc tree *and* needs its
+root bytenr to match the bytenr passed in.
 
-However if a tree block with only shared parent backref like below,
-backref code from btrfs-progs doesn't handle it correct.
-------
-        item 72 key (604653731840 METADATA_ITEM 0) itemoff 13379 itemsize 60
-                refs 4 gen 7198 flags TREE_BLOCK|FULL_BACKREF
-                tree block skinny level 0
-                shared block backref parent 604498477056
-                shared block backref parent 604498460672
-                shared block backref parent 604498444288
-                shared block backref parent 604498411520
-------
+However the @root passed in can be other tree, e.g. other tree reloc
+tree which shares the node/leaf.
+This makes any check based on @root passed in invalid.
 
-Such shared block ref is *direct* ref, which means we don't need to
-solve its key, nor its rootid.
+The patch removes the unreliable root objectid detection, and only use
+root->bytenr check.
+For the possibility of invalid self-pointing backref, extent tree
+checker should have already handled it, so we don't need to bother in
+fs tree checker.
 
-As the objective of backref walk is to find all direct parents until it
-reaches tree root.
-So for such direct ref, it should be pended to pref_stat->pending, other
-than pending it to pref_stat->pending_missing_key.
-
-[FIX]
-For direct ref, pending it to pref_state->pending directly to solve the
-problem.
-
-Reported-by: Chris Murphy <chris@colorremedies.com>
+Fixes: 54c8f9152fd9 ("btrfs-progs: check: Fix lowmem mode stack overflow caused by fsck/023")
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- backref.c | 3 +++
- 1 file changed, 3 insertions(+)
+ cmds-check.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/backref.c b/backref.c
-index 8615f6b8677a..27309e07a1e9 100644
---- a/backref.c
-+++ b/backref.c
-@@ -206,6 +206,9 @@ static int __add_prelim_ref(struct pref_state *prefstate, u64 root_id,
- 	if (key) {
- 		ref->key_for_search = *key;
- 		head = &prefstate->pending;
-+	} else if (parent) {
-+		memset(&ref->key_for_search, 0, sizeof(ref->key_for_search));
-+		head = &prefstate->pending;
- 	} else {
- 		memset(&ref->key_for_search, 0, sizeof(ref->key_for_search));
- 		head = &prefstate->pending_missing_keys;
+diff --git a/cmds-check.c b/cmds-check.c
+index b9943a0d3a0f..36e4a91b7e17 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -10251,15 +10251,10 @@ static int check_tree_block_ref(struct btrfs_root *root,
+ 	u32 nodesize = root->fs_info->nodesize;
+ 	u32 item_size;
+ 	u64 offset;
+-	int tree_reloc_root = 0;
+ 	int found_ref = 0;
+ 	int err = 0;
+ 	int ret;
+ 
+-	if (root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID &&
+-	    btrfs_header_bytenr(root->node) == bytenr)
+-		tree_reloc_root = 1;
+-
+ 	btrfs_init_path(&path);
+ 	key.objectid = bytenr;
+ 	if (btrfs_fs_incompat(root->fs_info, SKINNY_METADATA))
+@@ -10350,8 +10345,12 @@ static int check_tree_block_ref(struct btrfs_root *root,
+ 			/*
+ 			 * Backref of tree reloc root points to itself, no need
+ 			 * to check backref any more.
++			 *
++			 * This may be an error of loop backref, but extent tree
++			 * checker should have already handled it.
++			 * Here we only need to avoid infinite iteration.
+ 			 */
+-			if (tree_reloc_root)
++			if (offset == bytenr)
+ 				found_ref = 1;
+ 			else
+ 			/* Check if the backref points to valid referencer */
 -- 
 2.15.0
 

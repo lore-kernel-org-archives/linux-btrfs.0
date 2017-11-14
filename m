@@ -1,36 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:49614 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:54188 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751597AbdKMJEs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Nov 2017 04:04:48 -0500
+        id S1751076AbdKNH6q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Nov 2017 02:58:46 -0500
 Subject: Re: [PATCH 0/4] Lowmem mode btrfs fixes exposed by complex tree
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, chris@colorremedies.com
 References: <20171113073453.29198-1-wqu@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <99b3e9fe-2a91-f6e7-1bd6-d1f1063fef0a@gmx.com>
-Date: Mon, 13 Nov 2017 17:04:31 +0800
+Message-ID: <ede186d7-2248-8f4d-e446-4a0f07d7b8f8@gmx.com>
+Date: Tue, 14 Nov 2017 15:57:56 +0800
 MIME-Version: 1.0
 In-Reply-To: <20171113073453.29198-1-wqu@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="mBWMErANIE1VkMHQkUImkFguFuUn9gnQJ"
+ boundary="KfAhnqbf34W7N24VDRQ4GKC0Q9wMBHuxh"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---mBWMErANIE1VkMHQkUImkFguFuUn9gnQJ
-Content-Type: multipart/mixed; boundary="T2BIUlvRVGcL28vM9nPcQe472Tt5xtJ4i";
+--KfAhnqbf34W7N24VDRQ4GKC0Q9wMBHuxh
+Content-Type: multipart/mixed; boundary="tNkbJiGSfXvk5HF8VSMQQwNklG9C1fn8a";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, chris@colorremedies.com
-Message-ID: <99b3e9fe-2a91-f6e7-1bd6-d1f1063fef0a@gmx.com>
+Message-ID: <ede186d7-2248-8f4d-e446-4a0f07d7b8f8@gmx.com>
 Subject: Re: [PATCH 0/4] Lowmem mode btrfs fixes exposed by complex tree
 References: <20171113073453.29198-1-wqu@suse.com>
 In-Reply-To: <20171113073453.29198-1-wqu@suse.com>
 
---T2BIUlvRVGcL28vM9nPcQe472Tt5xtJ4i
+--tNkbJiGSfXvk5HF8VSMQQwNklG9C1fn8a
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -42,6 +42,15 @@ On 2017=E5=B9=B411=E6=9C=8813=E6=97=A5 15:34, Qu Wenruo wrote:
 e
 > fetched from github:
 > https://github.com/adam900710/btrfs-progs/tree/lowmem_fix
+
+Branch updated with new fixes for "referencer count mismatch".
+Thanks Chris Murphy for his image.
+
+If nothing goes wrong, the branch should fix all the problem Chris
+Murphy found.
+
+Thanks,
+Qu
 >=20
 > Despite the backref lost false alerts reported by Chris Murphy, there
 > are still some other bugs to be fixed.
@@ -65,20 +74,6 @@ e
 >     block ref only backref
 >   btrfs-progs: fsck-test: Add new image with shared block ref only
 >     metadata backref
-
-The last patch is a little big.
-
-Even the image is dumped by -c9, it still takes near 300KiB.
-
-Anyway, it's a binary patch, submitting to mail list doesn't help much
-to review.
-
-If any one want to test or just to see the last image, please fetch it
-from github.
-
-Thanks,
-Qu
-
 >=20
 >  backref.c                                          |   3 ++
 >  cmds-check.c                                       |  35 +++++++++++++=
@@ -91,23 +86,23 @@ ref_only.img
 >=20
 
 
---T2BIUlvRVGcL28vM9nPcQe472Tt5xtJ4i--
+--tNkbJiGSfXvk5HF8VSMQQwNklG9C1fn8a--
 
---mBWMErANIE1VkMHQkUImkFguFuUn9gnQJ
+--KfAhnqbf34W7N24VDRQ4GKC0Q9wMBHuxh
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloJYB8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjWYQf9GCKhHw0LDZ1WO/g236CMmgyA
-QwZ14VpshXivB4QAVoS6INI39MXeljkaW/VglnjHDr2qrUeXWAGhaP26uSI7nw3P
-fNTBIg/4/fxIop72rN3vM2CUn2ASf/EJC5qgcdPAlkPgU4TCnXxHxSRwsOiCEGvi
-VU0IVXmoRIamW+YYDJDjY2InSTmy8Fl61fS98JJkhCmOWjXD8jMrwQ50PGUhLBbh
-33mXLRgUVqlmcs7Iaj+lDPjIk/zJC3n70yFevN5HhDV+4xGzyT+puxw7YIGpk58M
-50LtUFadi1p2djbeXfXaAHmz3CrWAMIDoTwdym3nakA0n/sjVbIXL33BhNf7aQ==
-=oNDB
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloKogQXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg0CwgAlze33kvumgrTsMK+DNXgau8q
+WASzO/qDYxphldmlYe/0gZ/nC7xeqYXNXkFWVS8xoJifyIR3Su+Izzzs0ZVw/EiM
+Nlqj3CPWzXj/w5c+aa+pQLJ4Rdne5Gx+iSA3BF4j+gchCuvv/u6IBmwp6mIC34g0
+5APfXhnpdibxu7M9ZlYP/cxVxIzNBgkCpfYYQYqpqmeuP0VmXq7dLQ716FK0AMNF
+3i+NZu5Z3XoS5I+N1akKMHTVRW4FjM2Sn3eP5bAbF8lOrQAJ9llJBHju2JToyAzB
+yk1tFqVTM0wW4Fm+SyKXVorKsKLbbxSrudraxOGPMULIK0bI7Pv7SbqwySeqWA==
+=QzBB
 -----END PGP SIGNATURE-----
 
---mBWMErANIE1VkMHQkUImkFguFuUn9gnQJ--
+--KfAhnqbf34W7N24VDRQ4GKC0Q9wMBHuxh--

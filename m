@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:54070 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756834AbdKNV5C (ORCPT
+Received: from mail-qt0-f176.google.com ([209.85.216.176]:43975 "EHLO
+        mail-qt0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757217AbdKNV5H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Nov 2017 16:57:02 -0500
-Received: by mail-qt0-f194.google.com with SMTP id n61so29678620qte.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Nov 2017 13:57:01 -0800 (PST)
+        Tue, 14 Nov 2017 16:57:07 -0500
+Received: by mail-qt0-f176.google.com with SMTP id r58so5770745qtc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Nov 2017 13:57:07 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
         jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 03/10] lib: add a batch size to fprop_global
-Date: Tue, 14 Nov 2017 16:56:49 -0500
-Message-Id: <1510696616-8489-3-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH 07/10] writeback: introduce super_operations->write_metadata
+Date: Tue, 14 Nov 2017 16:56:53 -0500
+Message-Id: <1510696616-8489-7-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1510696616-8489-1-git-send-email-josef@toxicpanda.com>
 References: <1510696616-8489-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,92 +21,214 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-The flexible proportion stuff has been used to track how many pages we
-are writing out over a period of time, so counts everything in single
-increments.  If we wanted to use another base value we need to be able
-to adjust the batch size to fit our the units we'll be using for the
-proportions.
+Now that we have metadata counters in the VM, we need to provide a way to kick
+writeback on dirty metadata.  Introduce super_operations->write_metadata.  This
+allows file systems to deal with writing back any dirty metadata we need based
+on the writeback needs of the system.  Since there is no inode to key off of we
+need a list in the bdi for dirty super blocks to be added.  From there we can
+find any dirty sb's on the bdi we are currently doing writeback on and call into
+their ->write_metadata callback.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
+Reviewed-by: Tejun Heo <tj@kernel.org>
 ---
- include/linux/flex_proportions.h |  4 +++-
- lib/flex_proportions.c           | 11 +++++------
- 2 files changed, 8 insertions(+), 7 deletions(-)
+ fs/fs-writeback.c                | 72 ++++++++++++++++++++++++++++++++++++----
+ fs/super.c                       |  6 ++++
+ include/linux/backing-dev-defs.h |  2 ++
+ include/linux/fs.h               |  4 +++
+ mm/backing-dev.c                 |  2 ++
+ 5 files changed, 80 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/flex_proportions.h b/include/linux/flex_proportions.h
-index 0d348e011a6e..853f4305d1b2 100644
---- a/include/linux/flex_proportions.h
-+++ b/include/linux/flex_proportions.h
-@@ -20,7 +20,7 @@
-  */
- #define FPROP_FRAC_SHIFT 10
- #define FPROP_FRAC_BASE (1UL << FPROP_FRAC_SHIFT)
--
-+#define FPROP_BATCH_SIZE (8*(1+ilog2(nr_cpu_ids)))
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index 987448ed7698..fba703dff678 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -1479,6 +1479,31 @@ static long writeback_chunk_size(struct bdi_writeback *wb,
+ 	return pages;
+ }
+ 
++static long writeback_sb_metadata(struct super_block *sb,
++				  struct bdi_writeback *wb,
++				  struct wb_writeback_work *work)
++{
++	struct writeback_control wbc = {
++		.sync_mode		= work->sync_mode,
++		.tagged_writepages	= work->tagged_writepages,
++		.for_kupdate		= work->for_kupdate,
++		.for_background		= work->for_background,
++		.for_sync		= work->for_sync,
++		.range_cyclic		= work->range_cyclic,
++		.range_start		= 0,
++		.range_end		= LLONG_MAX,
++	};
++	long write_chunk;
++
++	write_chunk = writeback_chunk_size(wb, work);
++	wbc.nr_to_write = write_chunk;
++	sb->s_op->write_metadata(sb, &wbc);
++	work->nr_pages -= write_chunk - wbc.nr_to_write;
++
++	return write_chunk - wbc.nr_to_write;
++}
++
++
  /*
-  * ---- Global proportion definitions ----
-  */
-@@ -31,6 +31,8 @@ struct fprop_global {
- 	unsigned int period;
- 	/* Synchronization with period transitions */
- 	seqcount_t sequence;
-+	/* batch size */
-+	s32 batch_size;
+  * Write a portion of b_io inodes which belong to @sb.
+  *
+@@ -1505,6 +1530,7 @@ static long writeback_sb_inodes(struct super_block *sb,
+ 	unsigned long start_time = jiffies;
+ 	long write_chunk;
+ 	long wrote = 0;  /* count both pages and inodes */
++	bool done = false;
+ 
+ 	while (!list_empty(&wb->b_io)) {
+ 		struct inode *inode = wb_inode(wb->b_io.prev);
+@@ -1621,12 +1647,18 @@ static long writeback_sb_inodes(struct super_block *sb,
+ 		 * background threshold and other termination conditions.
+ 		 */
+ 		if (wrote) {
+-			if (time_is_before_jiffies(start_time + HZ / 10UL))
+-				break;
+-			if (work->nr_pages <= 0)
++			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
++			    work->nr_pages <= 0) {
++				done = true;
+ 				break;
++			}
+ 		}
+ 	}
++	if (!done && sb->s_op->write_metadata) {
++		spin_unlock(&wb->list_lock);
++		wrote += writeback_sb_metadata(sb, wb, work);
++		spin_lock(&wb->list_lock);
++	}
+ 	return wrote;
+ }
+ 
+@@ -1635,6 +1667,7 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
+ {
+ 	unsigned long start_time = jiffies;
+ 	long wrote = 0;
++	bool done = false;
+ 
+ 	while (!list_empty(&wb->b_io)) {
+ 		struct inode *inode = wb_inode(wb->b_io.prev);
+@@ -1654,12 +1687,39 @@ static long __writeback_inodes_wb(struct bdi_writeback *wb,
+ 
+ 		/* refer to the same tests at the end of writeback_sb_inodes */
+ 		if (wrote) {
+-			if (time_is_before_jiffies(start_time + HZ / 10UL))
+-				break;
+-			if (work->nr_pages <= 0)
++			if (time_is_before_jiffies(start_time + HZ / 10UL) ||
++			    work->nr_pages <= 0) {
++				done = true;
+ 				break;
++			}
+ 		}
+ 	}
++
++	if (!done && wb_stat(wb, WB_METADATA_DIRTY_BYTES)) {
++		LIST_HEAD(list);
++
++		spin_unlock(&wb->list_lock);
++		spin_lock(&wb->bdi->sb_list_lock);
++		list_splice_init(&wb->bdi->dirty_sb_list, &list);
++		while (!list_empty(&list)) {
++			struct super_block *sb;
++
++			sb = list_first_entry(&list, struct super_block,
++					      s_bdi_dirty_list);
++			list_move_tail(&sb->s_bdi_dirty_list,
++				       &wb->bdi->dirty_sb_list);
++			if (!sb->s_op->write_metadata)
++				continue;
++			if (!trylock_super(sb))
++				continue;
++			spin_unlock(&wb->bdi->sb_list_lock);
++			wrote += writeback_sb_metadata(sb, wb, work);
++			spin_lock(&wb->bdi->sb_list_lock);
++			up_read(&sb->s_umount);
++		}
++		spin_unlock(&wb->bdi->sb_list_lock);
++		spin_lock(&wb->list_lock);
++	}
+ 	/* Leave any unwritten inodes on b_io */
+ 	return wrote;
+ }
+diff --git a/fs/super.c b/fs/super.c
+index 166c4ee0d0ed..2290bef486a3 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -214,6 +214,7 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
+ 	spin_lock_init(&s->s_inode_list_lock);
+ 	INIT_LIST_HEAD(&s->s_inodes_wb);
+ 	spin_lock_init(&s->s_inode_wblist_lock);
++	INIT_LIST_HEAD(&s->s_bdi_dirty_list);
+ 
+ 	if (list_lru_init_memcg(&s->s_dentry_lru))
+ 		goto fail;
+@@ -446,6 +447,11 @@ void generic_shutdown_super(struct super_block *sb)
+ 	spin_unlock(&sb_lock);
+ 	up_write(&sb->s_umount);
+ 	if (sb->s_bdi != &noop_backing_dev_info) {
++		if (!list_empty(&sb->s_bdi_dirty_list)) {
++			spin_lock(&sb->s_bdi->sb_list_lock);
++			list_del_init(&sb->s_bdi_dirty_list);
++			spin_unlock(&sb->s_bdi->sb_list_lock);
++		}
+ 		bdi_put(sb->s_bdi);
+ 		sb->s_bdi = &noop_backing_dev_info;
+ 	}
+diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
+index 78c65e2910dc..a961f9a51a38 100644
+--- a/include/linux/backing-dev-defs.h
++++ b/include/linux/backing-dev-defs.h
+@@ -176,6 +176,8 @@ struct backing_dev_info {
+ 
+ 	struct timer_list laptop_mode_wb_timer;
+ 
++	spinlock_t sb_list_lock;
++	struct list_head dirty_sb_list;
+ #ifdef CONFIG_DEBUG_FS
+ 	struct dentry *debug_dir;
+ 	struct dentry *debug_stats;
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 339e73742e73..298a28eaed2b 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1440,6 +1440,8 @@ struct super_block {
+ 
+ 	spinlock_t		s_inode_wblist_lock;
+ 	struct list_head	s_inodes_wb;	/* writeback inodes */
++
++	struct list_head        s_bdi_dirty_list;
+ } __randomize_layout;
+ 
+ /* Helper functions so that in most cases filesystems will
+@@ -1830,6 +1832,8 @@ struct super_operations {
+ 				  struct shrink_control *);
+ 	long (*free_cached_objects)(struct super_block *,
+ 				    struct shrink_control *);
++	void (*write_metadata)(struct super_block *sb,
++			       struct writeback_control *wbc);
  };
  
- int fprop_global_init(struct fprop_global *p, gfp_t gfp);
-diff --git a/lib/flex_proportions.c b/lib/flex_proportions.c
-index 2cc1f94e03a1..5552523b663a 100644
---- a/lib/flex_proportions.c
-+++ b/lib/flex_proportions.c
-@@ -44,6 +44,7 @@ int fprop_global_init(struct fprop_global *p, gfp_t gfp)
- 	if (err)
- 		return err;
- 	seqcount_init(&p->sequence);
-+	p->batch_size = FPROP_BATCH_SIZE;
- 	return 0;
- }
- 
-@@ -166,8 +167,6 @@ void fprop_fraction_single(struct fprop_global *p,
  /*
-  * ---- PERCPU ----
-  */
--#define PROP_BATCH (8*(1+ilog2(nr_cpu_ids)))
--
- int fprop_local_init_percpu(struct fprop_local_percpu *pl, gfp_t gfp)
- {
- 	int err;
-@@ -204,11 +203,11 @@ static void fprop_reflect_period_percpu(struct fprop_global *p,
- 	if (period - pl->period < BITS_PER_LONG) {
- 		s64 val = percpu_counter_read(&pl->events);
+diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+index 8961ac364f06..1de7c49c5839 100644
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -839,6 +839,8 @@ static int bdi_init(struct backing_dev_info *bdi)
+ 	bdi->max_prop_frac = FPROP_FRAC_BASE * PAGE_SIZE;
+ 	INIT_LIST_HEAD(&bdi->bdi_list);
+ 	INIT_LIST_HEAD(&bdi->wb_list);
++	INIT_LIST_HEAD(&bdi->dirty_sb_list);
++	spin_lock_init(&bdi->sb_list_lock);
+ 	init_waitqueue_head(&bdi->wb_waitq);
  
--		if (val < (nr_cpu_ids * PROP_BATCH))
-+		if (val < (nr_cpu_ids * p->batch_size))
- 			val = percpu_counter_sum(&pl->events);
- 
- 		percpu_counter_add_batch(&pl->events,
--			-val + (val >> (period-pl->period)), PROP_BATCH);
-+			-val + (val >> (period-pl->period)), p->batch_size);
- 	} else
- 		percpu_counter_set(&pl->events, 0);
- 	pl->period = period;
-@@ -219,7 +218,7 @@ static void fprop_reflect_period_percpu(struct fprop_global *p,
- void __fprop_inc_percpu(struct fprop_global *p, struct fprop_local_percpu *pl)
- {
- 	fprop_reflect_period_percpu(p, pl);
--	percpu_counter_add_batch(&pl->events, 1, PROP_BATCH);
-+	percpu_counter_add_batch(&pl->events, 1, p->batch_size);
- 	percpu_counter_add(&p->events, 1);
- }
- 
-@@ -267,6 +266,6 @@ void __fprop_inc_percpu_max(struct fprop_global *p,
- 			return;
- 	} else
- 		fprop_reflect_period_percpu(p, pl);
--	percpu_counter_add_batch(&pl->events, 1, PROP_BATCH);
-+	percpu_counter_add_batch(&pl->events, 1, p->batch_size);
- 	percpu_counter_add(&p->events, 1);
- }
+ 	ret = cgwb_bdi_init(bdi);
 -- 
 2.7.5
 

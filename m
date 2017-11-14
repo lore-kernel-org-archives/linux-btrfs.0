@@ -1,116 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:51784 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750734AbdKNFjK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Nov 2017 00:39:10 -0500
-Subject: Re: btrfs check fails with: btrfs_alloc_chunk: BUG_ON `ret`
- triggered, value -28
-To: Chris Murphy <lists@colorremedies.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        Filipe Manana <fdmanana@gmail.com>
-Cc: Ben Hooper <ben@ayrton.com.au>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <SY3PR01MB1465C3E1A99997C75685BE0FF9280@SY3PR01MB1465.ausprd01.prod.outlook.com>
- <CAJCQCtTKNL9bjpeZFKU0r99R0kkMB4NQ_UE16CYX=9dDyWaXWA@mail.gmail.com>
- <CAJCQCtQ3_pxXbt=t+L8zuHCzUmfBrLnSOSDS1aUB9mjbR5z+Pw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <72dbdb0e-df11-7a04-dc21-3969f4a58f69@gmx.com>
-Date: Tue, 14 Nov 2017 13:38:52 +0800
+Received: from smtp73.ord1c.emailsrvr.com ([108.166.43.73]:52857 "EHLO
+        smtp73.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751626AbdKNHOz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Nov 2017 02:14:55 -0500
+Received: from smtp18.relay.ord1c.emailsrvr.com (localhost [127.0.0.1])
+        by smtp18.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id 613C5E02D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Nov 2017 02:14:55 -0500 (EST)
+Received: from smtp73.ord1d.emailsrvr.com (relay.ord1c.rsapps.net [172.28.255.120])
+        by smtp18.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTPS id 5C9BFE0152
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Nov 2017 02:14:55 -0500 (EST)
+Subject: Re: Need help with incremental backup strategy (snapshots,
+ defragmentingt & performance)
+To: Dave <davestechshop@gmail.com>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
+ <20171101101510.218eeead@natsu>
+ <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
+From: Marat Khalili <mkh@rqc.ru>
+Message-ID: <ebfc86ae-8398-4ecf-d3c9-a0f3e997e9d9@rqc.ru>
+Date: Tue, 14 Nov 2017 10:14:55 +0300
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ3_pxXbt=t+L8zuHCzUmfBrLnSOSDS1aUB9mjbR5z+Pw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="BXimRDFTJBTEwTTif1mbRm3JSIhdsoIg2"
+In-Reply-To: <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---BXimRDFTJBTEwTTif1mbRm3JSIhdsoIg2
-Content-Type: multipart/mixed; boundary="bdd7QTg6cuQM8pqCreDHRnRilqDFC8CfU";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>,
- Omar Sandoval <osandov@osandov.com>, Filipe Manana <fdmanana@gmail.com>
-Cc: Ben Hooper <ben@ayrton.com.au>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <72dbdb0e-df11-7a04-dc21-3969f4a58f69@gmx.com>
-Subject: Re: btrfs check fails with: btrfs_alloc_chunk: BUG_ON `ret`
- triggered, value -28
-References: <SY3PR01MB1465C3E1A99997C75685BE0FF9280@SY3PR01MB1465.ausprd01.prod.outlook.com>
- <CAJCQCtTKNL9bjpeZFKU0r99R0kkMB4NQ_UE16CYX=9dDyWaXWA@mail.gmail.com>
- <CAJCQCtQ3_pxXbt=t+L8zuHCzUmfBrLnSOSDS1aUB9mjbR5z+Pw@mail.gmail.com>
-In-Reply-To: <CAJCQCtQ3_pxXbt=t+L8zuHCzUmfBrLnSOSDS1aUB9mjbR5z+Pw@mail.gmail.com>
+On 14/11/17 06:39, Dave wrote:
+> My rsync command currently looks like this:
+>
+> rsync -axAHv --inplace --delete-delay --exclude-from="/some/file"
+> "$source_snapshop/" "$backup_location"
+As I learned from Kai Krakow in this maillist, you should also add 
+--no-whole-file if both sides are local. Otherwise target space usage 
+can be much worse (but fragmentation much better).
 
---bdd7QTg6cuQM8pqCreDHRnRilqDFC8CfU
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I wonder what is your justification for --delete-delay, I just use --delete.
 
+Here's what I use: --verbose --archive --hard-links --acls --xattrs 
+--numeric-ids --inplace --delete --delete-excluded --stats. Since in my 
+case source is always remote, there's no --no-whole-file, but there's 
+--numeric-ids.
 
+> In particular, I want to know if I should or should not be using these options:
+>
+>          -H, --hard-links            preserve hard links
+>          -A, --acls                  preserve ACLs (implies -p)
+>          -X, --xattrs                preserve extended attributes
+>          -x, --one-file-system       don't cross filesystem boundaries
+I don't know any semantic use of hard links in modern systems. There're 
+ACLs on some files in /var/log/journal on systems with systemd. Synology 
+actively uses ACL, but it's implementation is sadly incompatible with 
+rsync. There can always be some ACLs or xattrs set by sysadmin manually. 
+End result, I always specify first three options where possible just in 
+case (even though man page says that --hard-links may affect performance).
 
-On 2017=E5=B9=B411=E6=9C=8814=E6=97=A5 11:50, Chris Murphy wrote:
-> On Mon, Nov 13, 2017 at 8:45 PM, Chris Murphy <lists@colorremedies.com>=
- wrote:
->> On Mon, Nov 13, 2017 at 8:08 PM, Ben Hooper <ben@ayrton.com.au> wrote:=
+> I had to use the "x" option to prevent rsync from deleting files in
+> snapshots in the backup location (as the source location does not
+> retain any snapshots). Is there a better way?
+Don't keep snapshots under rsync target, place them under ../snapshots 
+(if snapper supports this):
 
->>
->>> [28205.454029] Code: 79 ff ff ff 49 8b 7c 24 60 89 da 48 c7 c6 68 c7 =
-be a0 31 c0 e8 12 4e fe ff eb 9b 89 de 48 c7 c7 38 c7 be a0 31 c0 e8 53 1=
-1 5a e0 <0f> ff eb 87 66 90 66 2e 0f 1f 84 00 00 00 00 00 66 66 66 66 90
->>> [28205.456407] ---[ end trace 77358f42ce65a0d0 ]---
->>> [28205.457579] BTRFS: error (device sdl) in btrfs_create_pending_bloc=
-k_groups:10254: errno=3D-27 unknown
->>> [28206.172366] BTRFS: error (device sdl) in btrfs_create_pending_bloc=
-k_groups:10254: errno=3D-27 unknown
->>> [28206.178599] BTRFS warning (device sdl): Skipping commit of aborted=
- transaction.
->>> [28206.179840] BTRFS: error (device sdl) in cleanup_transaction:1873:=
- errno=3D-5 IO failure
->>> [28206.256720] BTRFS error (device sdl): pending csums is 1368064
->>
->> The mysterious -27. But then also IO failure. Are there any other
->> storage related kernel messages in the ~2 to 5 minutes prior to this
->> trace? I'm wondering if there's something misbehaving: cable,
->> controller, drive, other.
->>
->=20
-> Found a similar trace from July 2015 that Omar ran into and Filipe
-> thought he was close to tracking it down. It was also a pretty big
-> file system. Maybe they have an idea here. But btrfs check blowing up
-> isn't good in any case.
+> # find . -maxdepth 2
+> .
+> ./snapshots
+> ./snapshots/2017-11-08T13:18:20+00:00
+> ./snapshots/2017-11-08T15:10:03+00:00
+> ./snapshots/2017-11-08T23:28:44+00:00
+> ./snapshots/2017-11-09T23:41:30+00:00
+> ./snapshots/2017-11-10T22:44:36+00:00
+> ./snapshots/2017-11-11T21:48:19+00:00
+> ./snapshots/2017-11-12T21:27:41+00:00
+> ./snapshots/2017-11-13T23:29:49+00:00
+> ./rsync
+Or, specify them in --exclude and avoid using --delete-excluded. Or keep 
+using -x if it works, why not?
 
-The BUG_ON in btrfs check is pretty obvious, btrfs check --repair runs
-out of space.
+--
 
-Of course, you won't hit it if using default btrfs check which is readonl=
-y.
-
-IIRC I have submitted patch to make it end more gracefully.
-
-Thanks,
-Qu
->=20
->=20
->=20
-
-
---bdd7QTg6cuQM8pqCreDHRnRilqDFC8CfU--
-
---BXimRDFTJBTEwTTif1mbRm3JSIhdsoIg2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloKgWwXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjuCwf/awgyertihd1zKdxmPawfPC9z
-3UPXLoo0q+URDYpGpZc88XUeSnwpnWp75OiOHS8hLZc4AwaZuvs9Ns7V9LeKzf5a
-kkEsuaIX4CFIlZO19XB9wQrdZ1pyeXXT2RUgGoaz+sUIzPW8iVytoaMuvMCvOedv
-RFeBObfOqNT9RkyyzqLFKdUsaGQ8tlAtu+z1f3QKXf+o9xmP8Dmi5/7K9TEinOhN
-mNYCEJ5TX4mUeefSIym67s0MOQGoH1hmzlAWSmdhg/jIE8iqAHh9iBiH4B4dQjwI
-0TR1yhSmDVQFa35v4r3zrDTTZEGuRBW2NCK4OZoiacuegJ3yjva/JpKItUtoIw==
-=Ah+V
------END PGP SIGNATURE-----
-
---BXimRDFTJBTEwTTif1mbRm3JSIhdsoIg2--
+With Best Regards,
+Marat Khalili

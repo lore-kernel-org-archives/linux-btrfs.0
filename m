@@ -1,48 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.121.75.85]:50816 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753507AbdKNMs6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Nov 2017 07:48:58 -0500
-Date: Tue, 14 Nov 2017 17:48:56 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Klaus Agnoletti <klaus@agnoletti.dk>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: A partially failing disk in raid0 needs replacement
-Message-ID: <20171114174856.12ae346f@natsu>
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:51306 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753776AbdKNMyy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Nov 2017 07:54:54 -0500
+Received: by mail-wm0-f51.google.com with SMTP id b189so14887092wmd.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Nov 2017 04:54:54 -0800 (PST)
+MIME-Version: 1.0
 In-Reply-To: <CAFTHvW9OmWApkzJ=s51Saq=cwv24hBqe0bzhR55Yv2+fAANH-Q@mail.gmail.com>
 References: <CAFTHvW9OmWApkzJ=s51Saq=cwv24hBqe0bzhR55Yv2+fAANH-Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+Date: Tue, 14 Nov 2017 13:54:32 +0100
+Message-ID: <CAA7pwKNKisMoZgBZN_7zOr7oG6MJQCcXtpQ5kOxB_moEhw+ZJQ@mail.gmail.com>
+Subject: Re: A partially failing disk in raid0 needs replacement
+To: Klaus Agnoletti <klaus@agnoletti.dk>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 14 Nov 2017 10:36:22 +0200
-Klaus Agnoletti <klaus@agnoletti.dk> wrote:
+On 14 November 2017 at 09:36, Klaus Agnoletti <klaus@agnoletti.dk> wrote:
+>
+> How do you guys think I should go about this?
 
-> Obviously, I want /dev/sdd emptied and deleted from the raid.
+I'd clone the disk with GNU ddrescue.
 
-  * Unmount the RAID0 FS
-
-  * copy the bad drive using `dd_rescue`[1] into a file on the 6TB drive
-    (noting how much of it is actually unreadable -- chances are it's mostly
-    intact)
-
-  * physically remove the bad drive (have a powerdown or reboot for this to be
-    sure Btrfs didn't remember it somewhere)
-
-  * set up a loop device from the dd_rescue'd 2TB file
-
-  * run `btrfs device scan`
-
-  * mount the RAID0 filesystem
-
-  * run the delete command on the loop device, it will not encounter I/O
-    errors anymore.
-
-
-[1] Note that "ddrescue" and "dd_rescue" are two different programs for the
-same purpose, one may work better than the other. I don't remember which. :)
-
--- 
-With respect,
-Roman
+https://www.gnu.org/software/ddrescue/

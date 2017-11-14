@@ -1,38 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39070 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39314 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752567AbdKNSvK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Nov 2017 13:51:10 -0500
-Date: Tue, 14 Nov 2017 19:49:16 +0100
+        id S1754885AbdKNSz0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 14 Nov 2017 13:55:26 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 035C2AB02
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Nov 2017 18:55:25 +0000 (UTC)
+Date: Tue, 14 Nov 2017 19:53:31 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Martin Steigerwald <martin@lichtvoll.de>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: Re: Read before you deploy btrfs + zstd
-Message-ID: <20171114184915.GI28899@twin.jikos.cz>
+Message-ID: <20171114185331.GJ28899@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20171113225046.GD28899@suse.cz>
- <3013353.6rxLtS64S0@merkaba>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3013353.6rxLtS64S0@merkaba>
+In-Reply-To: <20171113225046.GD28899@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 14, 2017 at 08:34:37AM +0100, Martin Steigerwald wrote:
-> Hello David.
-> 
-> David Sterba - 13.11.17, 23:50:
-> > while 4.14 is still fresh, let me address some concerns I've seen on linux
-> > forums already.
-> > 
-> > The newly added ZSTD support is a feature that has broader impact than
-> > just the runtime compression. The btrfs-progs understand filesystem with
-> > ZSTD since 4.13. The remaining key part is the bootloader.
-> > 
-> > Up to now, there are no bootloaders supporting ZSTD. This could lead to an
-> > unmountable filesystem if the critical files under /boot get accidentally
-> > or intentionally compressed by ZSTD.
-> 
-> But otherwise ZSTD is safe to use? Are you aware of any other issues?
+On Mon, Nov 13, 2017 at 11:50:46PM +0100, David Sterba wrote:
+> Up to now, there are no bootloaders supporting ZSTD.
 
-No issues from my own testing or reported by other users.
+I've tried to implement the support to GRUB, still incomplete and hacky
+but most of the code is there.  The ZSTD implementation is copied from
+kernel. The allocators need to be properly set up, as it needs to use
+grub_malloc/grub_free for the workspace thats called from some ZSTD_*
+functions.
+
+https://github.com/kdave/grub/tree/btrfs-zstd

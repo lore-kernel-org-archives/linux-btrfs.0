@@ -1,288 +1,231 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31573 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:33748 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755502AbdKOKN0 (ORCPT
+        with ESMTP id S1752424AbdKOKSA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 05:13:26 -0500
-Subject: Re: [PATCH v2] btrfs/154: test for device dynamic rescan
-To: Eryu Guan <eguan@redhat.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-References: <20171113022541.7413-1-anand.jain@oracle.com>
- <20171115030515.19922-1-anand.jain@oracle.com>
- <20171115064745.GL17339@eguan.usersys.redhat.com>
+        Wed, 15 Nov 2017 05:18:00 -0500
+Subject: Re: [PATCH] btrfs: handle dynamically reappearing missing device
+To: kbuild test robot <lkp@intel.com>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
+References: <20171112105650.3248-1-anand.jain@oracle.com>
+ <201711151544.db5uf33W%fengguang.wu@intel.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <1979284e-099f-47e8-e1fc-98bf4576cd93@oracle.com>
-Date: Wed, 15 Nov 2017 18:13:33 +0800
+Message-ID: <efe58777-792d-cd3c-d406-cd84c58909b2@oracle.com>
+Date: Wed, 15 Nov 2017 18:18:09 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171115064745.GL17339@eguan.usersys.redhat.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <201711151544.db5uf33W%fengguang.wu@intel.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 11/15/2017 02:47 PM, Eryu Guan wrote:
-> On Wed, Nov 15, 2017 at 11:05:15AM +0800, Anand Jain wrote:
->> Make sure missing device is included in the alloc list when it is
->> scanned on a mounted FS.
->>
->> This test case needs btrfs kernel patch which is in the ML
->>    [PATCH] btrfs: handle dynamically reappearing missing device
->> Without the kernel patch, the test will run, but reports as
->> failed, as the device scanned won't appear in the alloc_list.
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->> v2: Fixed review comments.
->>   tests/btrfs/154     | 186 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   tests/btrfs/154.out |  10 +++
->>   tests/btrfs/group   |   1 +
->>   3 files changed, 197 insertions(+)
->>   create mode 100755 tests/btrfs/154
->>   create mode 100644 tests/btrfs/154.out
->>
->> diff --git a/tests/btrfs/154 b/tests/btrfs/154
->> new file mode 100755
->> index 000000000000..73a185157389
->> --- /dev/null
->> +++ b/tests/btrfs/154
->> @@ -0,0 +1,186 @@
->> +#! /bin/bash
->> +# FS QA Test 154
->> +#
->> +# Test for reappearing missing device functionality.
->> +#   This test will fail without the btrfs kernel patch
->> +#   [PATCH] btrfs: handle dynamically reappearing missing device
->> +#
->> +#---------------------------------------------------------------------
->> +# Copyright (c) 2017 Oracle.  All Rights Reserved.
->> +# Author: Anand Jain <anand.jain@oracle.com>
->> +#
->> +# This program is free software; you can redistribute it and/or
->> +# modify it under the terms of the GNU General Public License as
->> +# published by the Free Software Foundation.
->> +#
->> +# This program is distributed in the hope that it would be useful,
->> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
->> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> +# GNU General Public License for more details.
->> +#
->> +# You should have received a copy of the GNU General Public License
->> +# along with this program; if not, write the Free Software Foundation,
->> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
->> +#---------------------------------------------------------------------
->> +#
->> +
->> +seq=`basename $0`
->> +seqres=$RESULT_DIR/$seq
->> +echo "QA output created by $seq"
->> +
->> +here=`pwd`
->> +tmp=/tmp/$$
->> +status=1	# failure is the default!
->> +trap "_cleanup; exit \$status" 0 1 2 3 15
->> +
->> +_cleanup()
->> +{
->> +	cd /
->> +	rm -f $tmp.*
->> +}
->> +
->> +# get standard environment, filters and checks
->> +. ./common/rc
->> +. ./common/filter
->> +. ./common/module
->> +
->> +# remove previous $seqres.full before test
->> +rm -f $seqres.full
->> +
->> +# real QA test starts here
->> +
->> +_supported_fs btrfs
->> +_supported_os Linux
->> +_require_scratch_dev_pool 2
->> +_require_loadable_fs_module "btrfs"
->> +
->> +_scratch_dev_pool_get 2
->> +
->> +DEV1=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
->> +DEV2=`echo $SCRATCH_DEV_POOL | awk '{print $2}'`
->> +
->> +echo DEV1=$DEV1 >> $seqres.full
->> +echo DEV2=$DEV2 >> $seqres.full
->> +
->> +# Balance won't be successful if filled too much
->> +DEV1_SZ=`blockdev --getsize64 $DEV1`
->> +DEV2_SZ=`blockdev --getsize64 $DEV2`
->> +
->> +# get min
->> +MAX_FS_SZ=`echo -e "$DEV1_SZ\n$DEV2_SZ" | sort | head -1`
->> +# Need disks with more than 2G
->> +if [ $MAX_FS_SZ -lt 2000000000 ]; then
->> +	_scratch_dev_pool_put
->> +	_notrun "Smallest dev size $MAX_FS_SZ, Need at least 2G"
->> +fi
->> +
->> +MAX_FS_SZ=100000000
->> +bs="1M"
->> +COUNT=$(($MAX_FS_SZ / 1000000))
->> +CHECKPOINT1=0
->> +CHECKPOINT2=0
->> +
->> +setup()
->> +{
->> +	echo >> $seqres.full
->> +	echo "MAX_FS_SZ=$MAX_FS_SZ COUNT=$COUNT" >> $seqres.full
->> +	echo "setup"
->> +	echo "-----setup-----" >> $seqres.full
->> +	_scratch_pool_mkfs "-mraid1 -draid1" >> $seqres.full 2>&1
->> +	_scratch_mount >> $seqres.full 2>&1
->> +	dd if=/dev/urandom of="$SCRATCH_MNT"/tf bs=$bs count=1 \
->> +					>>$seqres.full 2>&1
->> +	_run_btrfs_util_prog filesystem show -m ${SCRATCH_MNT}
->> +	_run_btrfs_util_prog filesystem df $SCRATCH_MNT
->> +	COUNT=$(( $COUNT - 1 ))
->> +	echo "unmount" >> $seqres.full
->> +	_scratch_unmount
->> +}
->> +
->> +degrade_mount_write()
->> +{
->> +	echo >> $seqres.full
->> +	echo "--degraded mount: max_fs_sz $max_fs_sz bytes--" >> $seqres.full
->> +	echo
->> +	echo "degraded mount"
->> +
->> +	echo "clean btrfs ko" >> $seqres.full
->> +	# un-scan the btrfs devices
->> +	_reload_fs_module "btrfs"
->> +	_mount -o degraded $DEV1 $SCRATCH_MNT >>$seqres.full 2>&1
->> +	cnt=$(( $COUNT/10 ))
->> +	dd if=/dev/urandom of="$SCRATCH_MNT"/tf1 bs=$bs count=$cnt \
->> +					>>$seqres.full 2>&1
->> +	COUNT=$(( $COUNT - $cnt ))
->> +	_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
->> +	_run_btrfs_util_prog filesystem df $SCRATCH_MNT
->> +	CHECKPOINT1=`md5sum $SCRATCH_MNT/tf1`
->> +	echo $SCRATCH_MNT/tf1:$CHECKPOINT1 >> $seqres.full
->> +}
->> +
->> +scan_missing_dev_and_write()
->> +{
->> +	echo >> $seqres.full
->> +	echo "--scan missing $DEV2--" >> $seqres.full
->> +	echo
->> +	echo "scan missing dev and write"
->> +
->> +	_run_btrfs_util_prog device scan $DEV2
->> +
->> +	echo >> $seqres.full
->> +
->> +	_run_btrfs_util_prog filesystem show -m ${SCRATCH_MNT}
->> +	_run_btrfs_util_prog filesystem df ${SCRATCH_MNT}
->> +
->> +	dd if=/dev/urandom of="$SCRATCH_MNT"/tf2 bs=$bs count=$COUNT \
->> +						>>$seqres.full 2>&1
->> +	CHECKPOINT2=`md5sum $SCRATCH_MNT/tf2`
->> +	echo $SCRATCH_MNT/tf2:$CHECKPOINT2 >> $seqres.full
->> +}
->> +
->> +balance_convert()
->> +{
->> +	echo >> $seqres.full
->> +	echo "----- run balance -----" >> $seqres.full
->> +	echo
->> +	echo "run balance"
->> +
->> +	_run_btrfs_util_prog balance start --full-balance -dconvert=raid1 \
->> +				-mconvert=raid1 ${SCRATCH_MNT}
->> +}
->> +
->> +verify()
->> +{
->> +	echo >> $seqres.full
->> +	echo "--mount reconstructed dev only and check md5sum--" >> $seqres.full
->> +	echo
->> +	echo "mount reconstructed dev only and check md5sum"
->> +	echo "unmount" >> $seqres.full
->> +
->> +	_scratch_unmount
->> +	_reload_fs_module "btrfs"
->> +	_mount -o degraded $DEV2 $SCRATCH_MNT >>$seqres.full 2>&1
->> +	verify_checkpoint1=`md5sum $SCRATCH_MNT/tf1`
->> +	verify_checkpoint2=`md5sum $SCRATCH_MNT/tf2`
->> +
->> +	if [ "$verify_checkpoint1" != "$CHECKPOINT1" ]; then
->> +		echo "checkpoint1 on reappeared disk does not match after balance"
->> +	fi
->> +
->> +	if [ "$verify_checkpoint2" != "$CHECKPOINT2" ]; then
->> +		echo "checkpoint2 on reappeared disk does not match after balance"
->> +	fi
->> +}
->> +
->> +setup
->> +degrade_mount_write
->> +scan_missing_dev_and_write
->> +balance_convert
->> +verify
->> +
->> +$UMOUNT_PROG $DEV2
->> +_scratch_dev_pool_put
->> +_test_mount
+On 11/15/2017 03:38 PM, kbuild test robot wrote:
+> Hi Anand,
 > 
-> This _test_mount is not needed either, and it breaks test now as
+> Thank you for the patch! Yet something to improve:
 > 
->     +mount: /dev/sdc1 is already mounted or /sdc1 busy
->     +       /dev/sdc1 is already mounted on /sdc1
+> [auto build test ERROR on btrfs/next]
+> [also build test ERROR on v4.14 next-20171114]
+> [if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
 > 
-> I'll fix it on commit.
+> url:    https://github.com/0day-ci/linux/commits/Anand-Jain/btrfs-handle-dynamically-reappearing-missing-device/20171115-143047
+> base:   https://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git next
+> config: sparc64-allyesconfig (attached as .config)
+> compiler: sparc64-linux-gnu-gcc (Debian 7.2.0-11) 7.2.0
+> reproduce:
+>          wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+>          chmod +x ~/bin/make.cross
+>          # save the attached .config to linux build tree
+>          make.cross ARCH=sparc64
+> 
+> All errors (new ones prefixed by >>):
+> 
+>     fs/btrfs/volumes.c: In function 'device_list_add':
+>>> fs/btrfs/volumes.c:732:10: error: implicit declaration of function 'btrfs_open_one_device'; did you mean 'btrfs_scan_one_device'? [-Werror=implicit-function-declaration]
+>         ret = btrfs_open_one_device(fs_devices, device, fmode,
+>               ^~~~~~~~~~~~~~~~~~~~~
+>               btrfs_scan_one_device
+>     cc1: some warnings being treated as errors
 
-  oops. I just verified _reload_fs_module() and missed to remove
-  _test_mount here. Thanks for fixing Eryu.
 
--Anand
+Its missing this patch set in the ML which was sent separately.
+  [PATCH 0/4] factor __btrfs_open_devices()
 
-> Thanks,
-> Eryu
+Thanks, Anand
+
+
+> vim +732 fs/btrfs/volumes.c
 > 
->> +
->> +status=0
->> +exit
->> diff --git a/tests/btrfs/154.out b/tests/btrfs/154.out
->> new file mode 100644
->> index 000000000000..4a4939d448aa
->> --- /dev/null
->> +++ b/tests/btrfs/154.out
->> @@ -0,0 +1,10 @@
->> +QA output created by 154
->> +setup
->> +
->> +degraded mount
->> +
->> +scan missing dev and write
->> +
->> +run balance
->> +
->> +mount reconstructed dev only and check md5sum
->> diff --git a/tests/btrfs/group b/tests/btrfs/group
->> index 15c2ecbf553c..c98cf823224e 100644
->> --- a/tests/btrfs/group
->> +++ b/tests/btrfs/group
->> @@ -156,3 +156,4 @@
->>   151 auto quick
->>   152 auto quick metadata qgroup send
->>   153 auto quick qgroup
->> +154 auto quick
->> -- 
->> 2.13.1
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe fstests" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>     610	
+>     611	/*
+>     612	 * Add new device to list of registered devices
+>     613	 *
+>     614	 * Returns:
+>     615	 * 1   - first time device is seen
+>     616	 * 0   - device already known
+>     617	 * < 0 - error
+>     618	 */
+>     619	static noinline int device_list_add(const char *path,
+>     620				   struct btrfs_super_block *disk_super,
+>     621				   u64 devid, struct btrfs_fs_devices **fs_devices_ret)
+>     622	{
+>     623		struct btrfs_device *device;
+>     624		struct btrfs_fs_devices *fs_devices;
+>     625		struct rcu_string *name;
+>     626		int ret = 0;
+>     627		u64 found_transid = btrfs_super_generation(disk_super);
+>     628	
+>     629		fs_devices = find_fsid(disk_super->fsid);
+>     630		if (!fs_devices) {
+>     631			fs_devices = alloc_fs_devices(disk_super->fsid);
+>     632			if (IS_ERR(fs_devices))
+>     633				return PTR_ERR(fs_devices);
+>     634	
+>     635			list_add(&fs_devices->list, &fs_uuids);
+>     636	
+>     637			device = NULL;
+>     638		} else {
+>     639			device = __find_device(&fs_devices->devices, devid,
+>     640					       disk_super->dev_item.uuid);
+>     641		}
+>     642	
+>     643		if (!device) {
+>     644			if (fs_devices->opened)
+>     645				return -EBUSY;
+>     646	
+>     647			device = btrfs_alloc_device(NULL, &devid,
+>     648						    disk_super->dev_item.uuid);
+>     649			if (IS_ERR(device)) {
+>     650				/* we can safely leave the fs_devices entry around */
+>     651				return PTR_ERR(device);
+>     652			}
+>     653	
+>     654			name = rcu_string_strdup(path, GFP_NOFS);
+>     655			if (!name) {
+>     656				kfree(device);
+>     657				return -ENOMEM;
+>     658			}
+>     659			rcu_assign_pointer(device->name, name);
+>     660	
+>     661			mutex_lock(&fs_devices->device_list_mutex);
+>     662			list_add_rcu(&device->dev_list, &fs_devices->devices);
+>     663			fs_devices->num_devices++;
+>     664			mutex_unlock(&fs_devices->device_list_mutex);
+>     665	
+>     666			ret = 1;
+>     667			device->fs_devices = fs_devices;
+>     668		} else if (!device->name || strcmp(device->name->str, path)) {
+>     669			/*
+>     670			 * When FS is already mounted.
+>     671			 * 1. If you are here and if the device->name is NULL that
+>     672			 *    means this device was missing at time of FS mount.
+>     673			 * 2. If you are here and if the device->name is different
+>     674			 *    from 'path' that means either
+>     675			 *      a. The same device disappeared and reappeared with
+>     676			 *         different name. or
+>     677			 *      b. The missing-disk-which-was-replaced, has
+>     678			 *         reappeared now.
+>     679			 *
+>     680			 * We must allow 1 and 2a above. But 2b would be a spurious
+>     681			 * and unintentional.
+>     682			 *
+>     683			 * Further in case of 1 and 2a above, the disk at 'path'
+>     684			 * would have missed some transaction when it was away and
+>     685			 * in case of 2a the stale bdev has to be updated as well.
+>     686			 * 2b must not be allowed at all time.
+>     687			 */
+>     688	
+>     689			/*
+>     690			 * For now, we do allow update to btrfs_fs_device through the
+>     691			 * btrfs dev scan cli after FS has been mounted.  We're still
+>     692			 * tracking a problem where systems fail mount by subvolume id
+>     693			 * when we reject replacement on a mounted FS.
+>     694			 */
+>     695			if (!fs_devices->opened && found_transid < device->generation) {
+>     696				/*
+>     697				 * That is if the FS is _not_ mounted and if you
+>     698				 * are here, that means there is more than one
+>     699				 * disk with same uuid and devid.We keep the one
+>     700				 * with larger generation number or the last-in if
+>     701				 * generation are equal.
+>     702				 */
+>     703				return -EEXIST;
+>     704			}
+>     705	
+>     706			name = rcu_string_strdup(path, GFP_NOFS);
+>     707			if (!name)
+>     708				return -ENOMEM;
+>     709			rcu_string_free(device->name);
+>     710			rcu_assign_pointer(device->name, name);
+>     711			if (device->missing) {
+>     712				int ret;
+>     713				struct btrfs_fs_info *fs_info = fs_devices->fs_info;
+>     714				fmode_t fmode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
+>     715	
+>     716				if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)
+>     717					fmode &= ~FMODE_WRITE;
+>     718	
+>     719				/*
+>     720				 * Missing can be set only when FS is mounted.
+>     721				 * So here its always fs_devices->opened > 0 and most
+>     722				 * of the struct device members are already updated by
+>     723				 * the mount process even if this device was missing, so
+>     724				 * now follow the normal open device procedure for this
+>     725				 * device. The scrub will take care of filling the
+>     726				 * missing stripes for raid56 and balance for raid1 and
+>     727				 * raid10.
+>     728				 */
+>     729				ASSERT(fs_devices->opened);
+>     730				mutex_lock(&fs_devices->device_list_mutex);
+>     731				mutex_lock(&fs_info->chunk_mutex);
+>   > 732				ret = btrfs_open_one_device(fs_devices, device, fmode,
+>     733								fs_info->bdev_holder);
+>     734				if (!ret) {
+>     735					fs_devices->missing_devices--;
+>     736					device->missing = 0;
+>     737					btrfs_clear_opt(fs_info->mount_opt, DEGRADED);
+>     738					btrfs_warn(fs_info,
+>     739						"BTRFS: device %s devid %llu uuid %pU joined\n",
+>     740						path, devid, device->uuid);
+>     741				}
+>     742	
+>     743				if (device->writeable &&
+>     744						!device->is_tgtdev_for_dev_replace) {
+>     745					fs_devices->total_rw_bytes += device->total_bytes;
+>     746					atomic64_add(device->total_bytes -
+>     747							device->bytes_used,
+>     748							&fs_info->free_chunk_space);
+>     749				}
+>     750				device->in_fs_metadata = 1;
+>     751				mutex_unlock(&fs_devices->fs_info->chunk_mutex);
+>     752				mutex_unlock(&fs_devices->device_list_mutex);
+>     753			}
+>     754		}
+>     755	
+>     756		/*
+>     757		 * Unmount does not free the btrfs_device struct but would zero
+>     758		 * generation along with most of the other members. So just update
+>     759		 * it back. We need it to pick the disk with largest generation
+>     760		 * (as above).
+>     761		 */
+>     762		if (!fs_devices->opened)
+>     763			device->generation = found_transid;
+>     764	
+>     765		/*
+>     766		 * if there is new btrfs on an already registered device,
+>     767		 * then remove the stale device entry.
+>     768		 */
+>     769		if (ret > 0)
+>     770			btrfs_free_stale_device(device);
+>     771	
+>     772		*fs_devices_ret = fs_devices;
+>     773	
+>     774		return ret;
+>     775	}
+>     776	
+> 
+> ---
+> 0-DAY kernel test infrastructure                Open Source Technology Center
+> https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
 > 

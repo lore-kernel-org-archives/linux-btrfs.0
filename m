@@ -1,45 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zimbra.karlsbakk.net ([82.211.30.250]:48642 "EHLO
-        zimbra.karlsbakk.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758173AbdKOOKT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 09:10:19 -0500
-Date: Wed, 15 Nov 2017 15:10:08 +0100 (CET)
-From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: waxhead@dirtcellar.net, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <916739346.627.1510755008650.JavaMail.zimbra@karlsbakk.net>
-In-Reply-To: <45d19817-ebf8-65ae-693f-2324ba637a67@gmail.com>
-References: <2093578773.146320.1510707691482.JavaMail.zimbra@karlsbakk.net> <08cbefb3-43eb-8d76-1dd6-191e2709bdc7@dirtcellar.net> <45d19817-ebf8-65ae-693f-2324ba637a67@gmail.com>
-Subject: Re: Tiered storage?
+Received: from mx2.suse.de ([195.135.220.15]:56200 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754013AbdKOOlA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Nov 2017 09:41:00 -0500
+Date: Wed, 15 Nov 2017 15:39:06 +0100
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Cc: terrelln@fb.com
+Subject: Re: Read before you deploy btrfs + zstd
+Message-ID: <20171115143906.GM28899@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171113225046.GD28899@suse.cz>
+ <20171114185331.GJ28899@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171114185331.GJ28899@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> As for dedupe there is (to my knowledge) nothing fully automatic yet.
->> You have to run a program to scan your filesystem but all the
->> deduplication is done in the kernel.
->> duperemove works apparently quite well when I tested it, but there may
->> be some performance implications.
-> Correct, there is nothing automatic (and there are pretty significant
-> arguments against doing automatic deduplication in most cases), but the
-> off-line options (via the EXTENT_SAME ioctl) are reasonably reliable.
-> Duperemove in particular does a good job, though it may take a long time
-> for large data sets.
+On Tue, Nov 14, 2017 at 07:53:31PM +0100, David Sterba wrote:
+> On Mon, Nov 13, 2017 at 11:50:46PM +0100, David Sterba wrote:
+> > Up to now, there are no bootloaders supporting ZSTD.
 > 
-> As far as performance, it's no worse than large numbers of snapshots.
-> The issues arise from using very large numbers of reflinks.
+> I've tried to implement the support to GRUB, still incomplete and hacky
+> but most of the code is there.  The ZSTD implementation is copied from
+> kernel. The allocators need to be properly set up, as it needs to use
+> grub_malloc/grub_free for the workspace thats called from some ZSTD_*
+> functions.
+> 
+> https://github.com/kdave/grub/tree/btrfs-zstd
 
-What is this "large" number of snapshots? Not that it's directly comparible, but I've worked with ZFS a while, and haven't seen those issues there.
+The branch is now in a state that can be tested. Turns out the memory
+requirements are too much for grub, so the boot fails with "not enough
+memory". The calculated value
 
-Vennlig hilsen
+ZSTD_BTRFS_MAX_INPUT: 131072
+ZSTD_DStreamWorkspaceBound with ZSTD_BTRFS_MAX_INPUT: 549424
 
-roy
---
-Roy Sigurd Karlsbakk
-(+47) 98013356
-http://blogg.karlsbakk.net/
-GPG Public key: http://karlsbakk.net/roysigurdkarlsbakk.pubkey.txt
---
-Hið góða skaltu í stein höggva, hið illa í snjó rita.
+This is not something I could fix easily, we'd probalby need a tuned
+version of ZSTD for grub constraints. Adding Nick to CC.

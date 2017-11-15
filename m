@@ -1,32 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35018 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753177AbdKFPwr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 10:52:47 -0500
-Date: Mon, 6 Nov 2017 16:50:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: use cached state when dirtying pages during
- buffered write
-Message-ID: <20171106155054.GM28789@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171031185540.30649-1-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171031185540.30649-1-fdmanana@kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:27917 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757938AbdKPAaZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Nov 2017 19:30:25 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAG0UO3f011063
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:30:25 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAG0UO0Z030579
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:30:24 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAG0UOcb012681
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:30:24 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] Btrfs: avoid losing data raid profile when deleting a device
+Date: Wed, 15 Nov 2017 16:28:11 -0700
+Message-Id: <20171115232811.9756-1-bo.li.liu@oracle.com>
+In-Reply-To: <20171010175305.31633-1-bo.li.liu@oracle.com>
+References: <20171010175305.31633-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 31, 2017 at 06:55:40PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> During a buffered IO write, we can have an extent state that we got when
-> we locked the range (if the range starts at an offset lower than eof), so
-> always pass it to btrfs_dirty_pages() so that setting the delalloc bit
-> in the range does not need to do a full search in the inode's io tree,
-> saving time and reducing the amount of time we hold the io tree's lock.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+We've avoided data losing raid profile when doing balance, but it
+turns out that deleting a device could also result in the same
+problem.
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Say we have 3 disks, and they're created with '-d raid1' profile.
+
+- We have chunk P (the only data chunk on the empty btrfs).
+
+- Suppose that chunk P's two raid1 copies reside in disk A and disk B.
+
+- Now, 'btrfs device remove disk B'
+         btrfs_rm_device()
+	   -> btrfs_shrink_device()
+	      -> btrfs_relocate_chunk() #relocate any chunk on disk B
+	      	 			 to other places.
+
+- Chunk P will be removed and a new chunk will be created to hold
+  those data, but as chunk P is the only one holding raid1 profile,
+  after it goes away, the new chunk will be created as single profile
+  which is our default profile.
+
+This fixes the problem by creating an empty data chunk before
+relocating the data chunk.
+
+Metadata/System chunk are supposed to have non-zero bytes all the time
+so their raid profile is preserved.
+
+Reported-by: James Alandt <James.Alandt@wdc.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+v3: More details about how losing data profile happens.
+
+v2: - return the correct error.
+    - move helper ahead of __btrfs_balance().
+
+ fs/btrfs/volumes.c | 84 ++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 65 insertions(+), 19 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4a72c45..a74396d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3018,6 +3018,48 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
+ 	return ret;
+ }
+ 
++/*
++ * return 1 : allocate a data chunk successfully,
++ * return <0: errors during allocating a data chunk,
++ * return 0 : no need to allocate a data chunk.
++ */
++static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
++				      u64 chunk_offset)
++{
++	struct btrfs_block_group_cache *cache;
++	u64 bytes_used;
++	u64 chunk_type;
++
++	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
++	ASSERT(cache);
++	chunk_type = cache->flags;
++	btrfs_put_block_group(cache);
++
++	if (chunk_type & BTRFS_BLOCK_GROUP_DATA) {
++		spin_lock(&fs_info->data_sinfo->lock);
++		bytes_used = fs_info->data_sinfo->bytes_used;
++		spin_unlock(&fs_info->data_sinfo->lock);
++
++		if (!bytes_used) {
++			struct btrfs_trans_handle *trans;
++			int ret;
++
++			trans =	btrfs_join_transaction(fs_info->tree_root);
++			if (IS_ERR(trans))
++				return PTR_ERR(trans);
++
++			ret = btrfs_force_chunk_alloc(trans, fs_info,
++						      BTRFS_BLOCK_GROUP_DATA);
++			btrfs_end_transaction(trans);
++			if (ret < 0)
++				return ret;
++
++			return 1;
++		}
++	}
++	return 0;
++}
++
+ static int insert_balance_item(struct btrfs_fs_info *fs_info,
+ 			       struct btrfs_balance_control *bctl)
+ {
+@@ -3476,7 +3518,6 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 	u32 count_meta = 0;
+ 	u32 count_sys = 0;
+ 	int chunk_reserved = 0;
+-	u64 bytes_used = 0;
+ 
+ 	/* step one make some room on all the devices */
+ 	devices = &fs_info->fs_devices->devices;
+@@ -3635,28 +3676,21 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 			goto loop;
+ 		}
+ 
+-		ASSERT(fs_info->data_sinfo);
+-		spin_lock(&fs_info->data_sinfo->lock);
+-		bytes_used = fs_info->data_sinfo->bytes_used;
+-		spin_unlock(&fs_info->data_sinfo->lock);
+-
+-		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) &&
+-		    !chunk_reserved && !bytes_used) {
+-			trans = btrfs_start_transaction(chunk_root, 0);
+-			if (IS_ERR(trans)) {
+-				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+-				ret = PTR_ERR(trans);
+-				goto error;
+-			}
+-
+-			ret = btrfs_force_chunk_alloc(trans, fs_info,
+-						      BTRFS_BLOCK_GROUP_DATA);
+-			btrfs_end_transaction(trans);
++		if (!chunk_reserved) {
++			/*
++			 * We may be relocating the only data chunk we have,
++			 * which could potentially end up with losing data's
++			 * raid profile, so lets allocate an empty one in
++			 * advance.
++			 */
++			ret = btrfs_may_alloc_data_chunk(fs_info,
++							 found_key.offset);
+ 			if (ret < 0) {
+ 				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 				goto error;
++			} else if (ret == 1) {
++				chunk_reserved = 1;
+ 			}
+-			chunk_reserved = 1;
+ 		}
+ 
+ 		ret = btrfs_relocate_chunk(fs_info, found_key.offset);
+@@ -4419,6 +4453,18 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 		chunk_offset = btrfs_dev_extent_chunk_offset(l, dev_extent);
+ 		btrfs_release_path(path);
+ 
++		/*
++		 * We may be relocating the only data chunk we have,
++		 * which could potentially end up with losing data's
++		 * raid profile, so lets allocate an empty one in
++		 * advance.
++		 */
++		ret = btrfs_may_alloc_data_chunk(fs_info, chunk_offset);
++		if (ret < 0) {
++			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
++			goto done;
++		}
++
+ 		ret = btrfs_relocate_chunk(fs_info, chunk_offset);
+ 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 		if (ret && ret != -ENOSPC)
+-- 
+2.9.4
+

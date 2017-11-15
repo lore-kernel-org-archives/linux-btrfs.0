@@ -1,66 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:37577 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:51621 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1759210AbdKOUYC (ORCPT
+        with ESMTP id S1756659AbdKOVcB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 15:24:02 -0500
+        Wed, 15 Nov 2017 16:32:01 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eF4Dv-0004aY-65
-        for linux-btrfs@vger.kernel.org; Wed, 15 Nov 2017 21:23:51 +0100
+        id 1eF5Hf-0004mw-KF
+        for linux-btrfs@vger.kernel.org; Wed, 15 Nov 2017 22:31:47 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Read before you deploy btrfs + zstd
-Date: Wed, 15 Nov 2017 20:23:44 +0000 (UTC)
-Message-ID: <pan$9fe69$3a062179$aad19d2f$63c49115@cox.net>
-References: <20171113225046.GD28899@suse.cz> <3013353.6rxLtS64S0@merkaba>
-        <d0442de1-b53a-3b16-8932-54c783dd8afe@gmail.com>
+Subject: Re: zstd compression
+Date: Wed, 15 Nov 2017 21:31:39 +0000 (UTC)
+Message-ID: <pan$c02ea$c0c093a$d0320b0d$d9d43196@cox.net>
+References: <CAK5rZE51onZEE_f2xg4nxPriU9YQq5AARDLs-BTZL2RaGSCTXA@mail.gmail.com>
+        <43412efa-ff56-9682-c8f7-a5966b87b10e@lukas-pirl.de>
+        <CAK5rZE7rLToV7t+6pZhTbN2+JQj=W67Y5mESNhpaF0ehZzObOA@mail.gmail.com>
+        <361d92ee-9aee-35e1-024d-45ec5b79902b@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Tue, 14 Nov 2017 07:38:03 -0500 as
+Austin S. Hemmelgarn posted on Wed, 15 Nov 2017 07:57:06 -0500 as
 excerpted:
 
-> On 2017-11-14 02:34, Martin Steigerwald wrote:
->> Hello David.
->> 
->> David Sterba - 13.11.17, 23:50:
->>> while 4.14 is still fresh, let me address some concerns I've seen on
->>> linux forums already.
->>>
->>> The newly added ZSTD support is a feature that has broader impact than
->>> just the runtime compression. The btrfs-progs understand filesystem
->>> with ZSTD since 4.13. The remaining key part is the bootloader.
->>>
->>> Up to now, there are no bootloaders supporting ZSTD. This could lead
->>> to an unmountable filesystem if the critical files under /boot get
->>> accidentally or intentionally compressed by ZSTD.
->> 
->> But otherwise ZSTD is safe to use? Are you aware of any other issues?
-> Aside from the obvious issue that recovery media like SystemRescueCD and
-> the GParted LIveCD haven't caught up yet, and thus won't be able to do
-> anything with the filesystem, my testing has not uncovered any issues,
-> though it is by no means rigorous.
+> The 'compress' and 'compress-force' mount options only impact newly
+> written data.  The compression used is stored with the metadata for the
+> extents themselves, so any existing data on the volume will be read just
+> fine with whatever compression method it was written with, while new
+> data will be written with the specified compression method.
+> 
+> If you want to convert existing files, you can use the '-c' option to
+> the defrag command to do so.
 
-Tho from my understanding and last I read, btrfs restore (I believe it 
-was) hadn't been updated to handle zstd yet, tho btrfs check and btrfs 
-filesystem defrag had been, and of course btrfs balance if the kernel 
-handles it since all balance does is call the kernel to do it.
+... Being aware of course that using defrag to recompress files like that 
+will break 100% of the existing reflinks, effectively (near) doubling 
+data usage if the files are snapshotted, since the snapshot will now 
+share 0% of its extents with the newly compressed files.
 
-So just confirming, does btrfs restore handle zstd from -progs 4.13?  
+(The actual effect shouldn't be quite that bad, as some files are likely 
+to be uncompressed due to not compressing well, and I'm not sure if 
+defrag -c rewrites them or not.  Further, if there's multiple snapshots 
+data usage should only double with respect to the latest one, the data 
+delta between it and previous snapshots won't be doubled as well.)
 
-Because once a filesystem goes unmountable, restore is what I've had best 
-luck with, so if it doesn't understand zstd, no zstd for me.  
-(Regardless, being the slightly cautious type I'll very likely wait a 
-couple kernel cycles before switching from lzo to zstd here, just to see 
-if any weird reports about it from the first-out testers hit the list in 
-the mean time.)
+While this makes sense if you think about it, it may not occur to some 
+people until they've actually tried it, and see their data usage go way 
+up instead of going down as they intuitively expected.  There have been 
+posts to the list...
 
-Meanwhile, it shouldn't need said but just in case, if you're using it, 
-be sure you have backups /not/ using zstd, for at least a couple kernel 
-cycles. =:^)
+Of course if the data isn't snapshotted this doesn't apply and defrag -c 
+to zstd should be fine. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

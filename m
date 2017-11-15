@@ -1,88 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:54622 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1756140AbdKOUJb (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:37577 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1759210AbdKOUYC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 15:09:31 -0500
-From: Nick Terrell <terrelln@fb.com>
-To: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Martin Steigerwald <martin@lichtvoll.de>,
-        Imran Geriskovan <imran.geriskovan@gmail.com>
+        Wed, 15 Nov 2017 15:24:02 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eF4Dv-0004aY-65
+        for linux-btrfs@vger.kernel.org; Wed, 15 Nov 2017 21:23:51 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Read before you deploy btrfs + zstd
-Date: Wed, 15 Nov 2017 20:09:15 +0000
-Message-ID: <E55ED8F2-8D16-4B58-9EC3-8DE41E7BE5A2@fb.com>
-References: <20171113225046.GD28899@suse.cz>
- <20171114185331.GJ28899@twin.jikos.cz> <20171115143906.GM28899@twin.jikos.cz>
-In-Reply-To: <20171115143906.GM28899@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
+Date: Wed, 15 Nov 2017 20:23:44 +0000 (UTC)
+Message-ID: <pan$9fe69$3a062179$aad19d2f$63c49115@cox.net>
+References: <20171113225046.GD28899@suse.cz> <3013353.6rxLtS64S0@merkaba>
+        <d0442de1-b53a-3b16-8932-54c783dd8afe@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/15/17, 6:41 AM, "David Sterba" <dsterba@suse.cz> wrote:
-> The branch is now in a state that can be tested. Turns out the memory
-> requirements are too much for grub, so the boot fails with "not enough
-> memory". The calculated value
->
-> ZSTD_BTRFS_MAX_INPUT: 131072
-> ZSTD_DStreamWorkspaceBound with ZSTD_BTRFS_MAX_INPUT: 549424
->
-> This is not something I could fix easily, we'd probalby need a tuned
-> version of ZSTD for grub constraints. Adding Nick to CC.
+Austin S. Hemmelgarn posted on Tue, 14 Nov 2017 07:38:03 -0500 as
+excerpted:
 
-If I understand the grub code correctly, we only need to read, and we have
-the entire input and output buffer in one segment. In that case you can use
-ZSTD_initDCtx(), and ZSTD_decompressDCtx(). ZSTD_DCtxWorkspaceBound() is
-only 155984. See decompress_single() in
-https://patchwork.kernel.org/patch/9997909/ for an example.
+> On 2017-11-14 02:34, Martin Steigerwald wrote:
+>> Hello David.
+>> 
+>> David Sterba - 13.11.17, 23:50:
+>>> while 4.14 is still fresh, let me address some concerns I've seen on
+>>> linux forums already.
+>>>
+>>> The newly added ZSTD support is a feature that has broader impact than
+>>> just the runtime compression. The btrfs-progs understand filesystem
+>>> with ZSTD since 4.13. The remaining key part is the bootloader.
+>>>
+>>> Up to now, there are no bootloaders supporting ZSTD. This could lead
+>>> to an unmountable filesystem if the critical files under /boot get
+>>> accidentally or intentionally compressed by ZSTD.
+>> 
+>> But otherwise ZSTD is safe to use? Are you aware of any other issues?
+> Aside from the obvious issue that recovery media like SystemRescueCD and
+> the GParted LIveCD haven't caught up yet, and thus won't be able to do
+> anything with the filesystem, my testing has not uncovered any issues,
+> though it is by no means rigorous.
 
-This (uncompiled and untested) code should work:
+Tho from my understanding and last I read, btrfs restore (I believe it 
+was) hadn't been updated to handle zstd yet, tho btrfs check and btrfs 
+filesystem defrag had been, and of course btrfs balance if the kernel 
+handles it since all balance does is call the kernel to do it.
 
-```
-static grub_ssize_t
-grub_btrfs_zstd_decompress(char *ibuf, grub_size_t isize, grub_off_t off,
-                           char *obuf, grub_size_t osize)
-{
-  grub_size_t ret = 0;
-  ZSTD_DCtx *ctx;
-  void *wmem;
-  grub_size_t wsize;
+So just confirming, does btrfs restore handle zstd from -progs 4.13?  
 
-  wsize = ZSTD_DCtxWorkspaceBound();
-  wmem = grub_malloc(wsize);
-  if (!wmem)
-    {
-       return -1;
-    }
-  ctx = ZSTD_initDCtx(wmem, wsize);
-  if (!ctx)
-    {
-       grub_free(wmem);
-       return -1;
-    }
+Because once a filesystem goes unmountable, restore is what I've had best 
+luck with, so if it doesn't understand zstd, no zstd for me.  
+(Regardless, being the slightly cautious type I'll very likely wait a 
+couple kernel cycles before switching from lzo to zstd here, just to see 
+if any weird reports about it from the first-out testers hit the list in 
+the mean time.)
 
-  /* This is only necessary if there is junk after the end of the zstd
-   * compressed data in the input buffer. Otherwise the return value
-   * should always be exactly isize. If you delete this, and it always works,
-   * then there isn't junk data at the end.
-   */
-  isize = ZSTD_findFrameCompressedSize(in_buf, in_len);
-  if (ZSTD_isError(isize))
-    {
-       grub_free(wmem);
-       return -1;
-    }
+Meanwhile, it shouldn't need said but just in case, if you're using it, 
+be sure you have backups /not/ using zstd, for at least a couple kernel 
+cycles. =:^)
 
-  ret = ZSTD_decompressDCtx(ctx, obuf, osize, ibuf, isize);
-  grub_free(wmem);
-  if (ZSTD_isError(ret))
-    {
-       return -1;
-    }
-  return ret;
-}
-```
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

@@ -1,52 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:60508 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750817AbdKFCnd (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Sun, 5 Nov 2017 21:43:33 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, lakshmipathi.g@gmail.com
-Subject: [PATCH 2/2] btrfs: compression: Return correct default zlib compression level
-Date: Mon,  6 Nov 2017 10:43:19 +0800
-Message-Id: <20171106024319.32584-2-wqu@suse.com>
-In-Reply-To: <20171106024319.32584-1-wqu@suse.com>
-References: <20171106024319.32584-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:59968 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754905AbdKOP3c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Nov 2017 10:29:32 -0500
+Date: Wed, 15 Nov 2017 16:27:38 +0100
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] Btrfs: fix reported number of inode blocks after
+ buffered append writes
+Message-ID: <20171115152738.GO28899@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171104041956.9674-1-fdmanana@kernel.org>
+ <20171104042007.9724-1-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171104042007.9724-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-0 means no compression at all for zlib.
-Z_DEFAULT_COMPRESSION is the correct value, which is -1 and will be
-converted to 6 at runtime.
+On Sat, Nov 04, 2017 at 04:20:07AM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> The patch from commit a7e3b975a0f9 ("Btrfs: fix reported number of inode
+> blocks") introduced a regression where if we do a buffered write starting
+> at position equal to or greater than the file's size and then stat(2) the
+> file before writeback is triggered, the number of used blocks does not
+> change (unless there's a prealloc/unwritten extent). Example:
+> 
+>   $ xfs_io -f -c "pwrite -S 0xab 0 64K" foobar
+>   $ du -h foobar
+>   0	foobar
+>   $ sync
+>   $ du -h foobar
+>   64K	foobar
+> 
+> The first version of that patch didn't had this regression and the second
+> version, which was the one committed, was made only to address some
+> performance regression detected by the intel test robots using fs_mark.
+> 
+> This fixes the regression by setting the new delaloc bit in the range, and
+> doing it at btrfs_dirty_pages() while setting the regular dealloc bit as
+> well, so that this way we set both bits at once avoiding navigation of the
+> inode's io tree twice. Doing it at btrfs_dirty_pages() is also the most
+> meaninful place, as we should set the new dellaloc bit when if we set the
+> delalloc bit, which happens only if we copied bytes into the pages at
+> __btrfs_buffered_write().
+> 
+> This was making some of LTP's du tests fail, which can be quickly run
+> using a command line like the following:
+> 
+>   $ ./runltp -q -p -l /ltp.log -f commands -s du -d /mnt
+> 
+> Fixes: a7e3b975a0f9 ("Btrfs: fix reported number of inode blocks")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/compression.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index b35ce16b3df3..29a41e6c9e28 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -35,6 +35,7 @@
- #include <linux/sched/mm.h>
- #include <linux/sort.h>
- #include <linux/log2.h>
-+#include <linux/zlib.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -1528,5 +1529,9 @@ unsigned int btrfs_compress_str2level(const char *str)
- 	if (str[4] == ':' && '1' <= str[5] && str[5] <= '9' && str[6] == 0)
- 		return str[5] - '0';
- 
--	return 0;
-+	/*
-+	 * NOTE: Default compression level is not 0!!
-+	 * 0 means no compression at all
-+	 */
-+	return Z_DEFAULT_COMPRESSION;
- }
--- 
-2.14.3
-
+FYI, I'm going to add the two patches to a 4.15 queue.

@@ -1,48 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51573 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932768AbdKONeM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 08:34:12 -0500
-Date: Wed, 15 Nov 2017 14:32:16 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [RFC PATCH 0/3] btrfs-progs: Add support for running the tools
- from
-Message-ID: <20171115133216.GL28899@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1509439416-51824-1-git-send-email-gujx@cn.fujitsu.com>
- <87a801c8-f50b-d260-cd36-76d75648b52c@gmx.com>
- <516DDBE5B1D92D42BCF7A2E37F045A5D01479E87A3@G08CNEXMBPEKD02.g08.fujitsu.local>
+Received: from zimbra.karlsbakk.net ([82.211.30.250]:48642 "EHLO
+        zimbra.karlsbakk.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1758173AbdKOOKT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Nov 2017 09:10:19 -0500
+Date: Wed, 15 Nov 2017 15:10:08 +0100 (CET)
+From: Roy Sigurd Karlsbakk <roy@karlsbakk.net>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: waxhead@dirtcellar.net, linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <916739346.627.1510755008650.JavaMail.zimbra@karlsbakk.net>
+In-Reply-To: <45d19817-ebf8-65ae-693f-2324ba637a67@gmail.com>
+References: <2093578773.146320.1510707691482.JavaMail.zimbra@karlsbakk.net> <08cbefb3-43eb-8d76-1dd6-191e2709bdc7@dirtcellar.net> <45d19817-ebf8-65ae-693f-2324ba637a67@gmail.com>
+Subject: Re: Tiered storage?
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D01479E87A3@G08CNEXMBPEKD02.g08.fujitsu.local>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 01, 2017 at 01:42:42AM +0000, Gu, Jinxiang wrote:
-> > On 2017年10月31日 16:43, Gu Jinxiang wrote:
-> > > Add support for running the tools from a given path (for
-> > > example,/usr/bin) by setting $EXEC while running tests.
-> > >
-> > > Achieved:
-> > > Specify the location of binary and run test like this:
-> > > $ make EXEC=/usr/bin/ test
-> > Any special reason to test system installed btrfs?
-> > Even for system QA case, I think self test should be run at packaging time other than doing it after packaging.
+>> As for dedupe there is (to my knowledge) nothing fully automatic yet.
+>> You have to run a program to scan your filesystem but all the
+>> deduplication is done in the kernel.
+>> duperemove works apparently quite well when I tested it, but there may
+>> be some performance implications.
+> Correct, there is nothing automatic (and there are pretty significant
+> arguments against doing automatic deduplication in most cases), but the
+> off-line options (via the EXTENT_SAME ioctl) are reasonably reliable.
+> Duperemove in particular does a good job, though it may take a long time
+> for large data sets.
+> 
+> As far as performance, it's no worse than large numbers of snapshots.
+> The issues arise from using very large numbers of reflinks.
 
-This is supposed to extend the testing possibilities. The packaging
-phase could run some tests, many tools run post-build tests, but we need
-to manage devices and require root in general. This is not always
-possible, besides that it requires to run from the sources directory.
+What is this "large" number of snapshots? Not that it's directly comparible, but I've worked with ZFS a while, and haven't seen those issues there.
 
-> Just implement the project list below in github.
-> .................
-> Add support for running the tools from a given path (git, /usr/bin, /usr/local/bin), so the testsuite can be run independently.
-> .................
+Vennlig hilsen
 
-The idea is to export the testsuite files to a separate tar, run from a
-script. In that case the system binaries will be preferred.
-
-I've promoted the project task to https://github.com/kdave/btrfs-progs/issues/77 .
+roy
+--
+Roy Sigurd Karlsbakk
+(+47) 98013356
+http://blogg.karlsbakk.net/
+GPG Public key: http://karlsbakk.net/roysigurdkarlsbakk.pubkey.txt
+--
+Hið góða skaltu í stein höggva, hið illa í snjó rita.

@@ -1,48 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:56539 "EHLO
-        mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757708AbdKOQWL (ORCPT
+Received: from mail-lf0-f45.google.com ([209.85.215.45]:47006 "EHLO
+        mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753230AbdKOSQ5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 11:22:11 -0500
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, terrelln@fb.com
-Subject: Re: Read before you deploy btrfs + zstd
-Date: Wed, 15 Nov 2017 17:22:09 +0100
-Message-ID: <1948454.KW55iiPqHI@merkaba>
-In-Reply-To: <20171115143906.GM28899@twin.jikos.cz>
-References: <20171113225046.GD28899@suse.cz> <20171114185331.GJ28899@twin.jikos.cz> <20171115143906.GM28899@twin.jikos.cz>
+        Wed, 15 Nov 2017 13:16:57 -0500
+Received: by mail-lf0-f45.google.com with SMTP id k66so15231804lfg.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Nov 2017 10:16:57 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1948454.KW55iiPqHI@merkaba>
+References: <20171113225046.GD28899@suse.cz> <20171114185331.GJ28899@twin.jikos.cz>
+ <20171115143906.GM28899@twin.jikos.cz> <1948454.KW55iiPqHI@merkaba>
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+Date: Wed, 15 Nov 2017 20:16:56 +0200
+Message-ID: <CAK5rZE6gC-7pmAJSrrHEfEXVFdZ51MOwAKugHpmihrm6LwEnFQ@mail.gmail.com>
+Subject: Re: Read before you deploy btrfs + zstd
+To: Martin Steigerwald <martin@lichtvoll.de>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, terrelln@fb.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba - 15.11.17, 15:39:
-> On Tue, Nov 14, 2017 at 07:53:31PM +0100, David Sterba wrote:
-> > On Mon, Nov 13, 2017 at 11:50:46PM +0100, David Sterba wrote:
-> > > Up to now, there are no bootloaders supporting ZSTD.
-> > 
-> > I've tried to implement the support to GRUB, still incomplete and hacky
-> > but most of the code is there.  The ZSTD implementation is copied from
-> > kernel. The allocators need to be properly set up, as it needs to use
-> > grub_malloc/grub_free for the workspace thats called from some ZSTD_*
-> > functions.
-> > 
-> > https://github.com/kdave/grub/tree/btrfs-zstd
-> 
-> The branch is now in a state that can be tested. Turns out the memory
-> requirements are too much for grub, so the boot fails with "not enough
-> memory". The calculated value
-> 
-> ZSTD_BTRFS_MAX_INPUT: 131072
-> ZSTD_DStreamWorkspaceBound with ZSTD_BTRFS_MAX_INPUT: 549424
-> 
-> This is not something I could fix easily, we'd probalby need a tuned
-> version of ZSTD for grub constraints. Adding Nick to CC.
+On 11/15/17, Martin Steigerwald <martin@lichtvoll.de> wrote:
+> Somehow I am happy that I still have a plain Ext4 for /boot. :)
 
-Somehow I am happy that I still have a plain Ext4 for /boot. :)
-
-Thanks for looking into Grub support anyway.
-
-Thanks,
--- 
-Martin
+You may use uncompressed btrfs for /boot.
+Both Syslinux (my choice) and Grub supports it.

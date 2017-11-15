@@ -1,33 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:44095 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752362AbdKOIv0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 03:51:26 -0500
-Received: by mail-lf0-f42.google.com with SMTP id s16so25074148lfs.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Nov 2017 00:51:26 -0800 (PST)
+Received: from vs2.lukas-pirl.de ([5.45.100.90]:39398 "EHLO pim.lukas-pirl.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756866AbdKOKKa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Nov 2017 05:10:30 -0500
+Subject: Re: zstd compression
+To: Imran Geriskovan <imran.geriskovan@gmail.com>
+References: <CAK5rZE51onZEE_f2xg4nxPriU9YQq5AARDLs-BTZL2RaGSCTXA@mail.gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Lukas Pirl <btrfs@lukas-pirl.de>
+Message-ID: <43412efa-ff56-9682-c8f7-a5966b87b10e@lukas-pirl.de>
+Date: Wed, 15 Nov 2017 11:09:00 +0100
 MIME-Version: 1.0
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-Date: Wed, 15 Nov 2017 10:51:24 +0200
-Message-ID: <CAK5rZE51onZEE_f2xg4nxPriU9YQq5AARDLs-BTZL2RaGSCTXA@mail.gmail.com>
-Subject: zstd compression
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAK5rZE51onZEE_f2xg4nxPriU9YQq5AARDLs-BTZL2RaGSCTXA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel 4.14 now includes btrfs zstd compression support.
+Hi Imran,
 
-My question:
-I currently have a fs mounted and used with "compress=lzo"
-option. What happens if I change it to "compress=zstd"?
+On 11/15/2017 09:51 AM, Imran Geriskovan wrote as excerpted:
+> Any further advices?
 
-My guess is that existing files will be read and uncompressed via lzo.
-And new files will be written with zstd compression. And
-everything will run smoothly.
+you might be interested in the thread "Read before you deploy btrfs +
+zstd"¹.
 
-Is this optimistic guess valid? What are possible pitfalls,
-if there are any? Any further advices?
+Cheers,
 
-Regards,
-Imran
+Lukas
+
+¹ https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg69871.html

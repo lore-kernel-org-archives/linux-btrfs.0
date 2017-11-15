@@ -1,57 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:51621 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:59171 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1756659AbdKOVcB (ORCPT
+        with ESMTP id S1750714AbdKOWJ0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 16:32:01 -0500
+        Wed, 15 Nov 2017 17:09:26 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eF5Hf-0004mw-KF
-        for linux-btrfs@vger.kernel.org; Wed, 15 Nov 2017 22:31:47 +0100
+        id 1eF5ro-00031j-9M
+        for linux-btrfs@vger.kernel.org; Wed, 15 Nov 2017 23:09:08 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: zstd compression
-Date: Wed, 15 Nov 2017 21:31:39 +0000 (UTC)
-Message-ID: <pan$c02ea$c0c093a$d0320b0d$d9d43196@cox.net>
-References: <CAK5rZE51onZEE_f2xg4nxPriU9YQq5AARDLs-BTZL2RaGSCTXA@mail.gmail.com>
-        <43412efa-ff56-9682-c8f7-a5966b87b10e@lukas-pirl.de>
-        <CAK5rZE7rLToV7t+6pZhTbN2+JQj=W67Y5mESNhpaF0ehZzObOA@mail.gmail.com>
-        <361d92ee-9aee-35e1-024d-45ec5b79902b@gmail.com>
+Subject: Re: Tiered storage?
+Date: Wed, 15 Nov 2017 22:09:01 +0000 (UTC)
+Message-ID: <pan$2f5e9$3d84bf7c$d36ba31d$63a716c0@cox.net>
+References: <2093578773.146320.1510707691482.JavaMail.zimbra@karlsbakk.net>
+        <08cbefb3-43eb-8d76-1dd6-191e2709bdc7@dirtcellar.net>
+        <45d19817-ebf8-65ae-693f-2324ba637a67@gmail.com>
+        <916739346.627.1510755008650.JavaMail.zimbra@karlsbakk.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Wed, 15 Nov 2017 07:57:06 -0500 as
+Roy Sigurd Karlsbakk posted on Wed, 15 Nov 2017 15:10:08 +0100 as
 excerpted:
 
-> The 'compress' and 'compress-force' mount options only impact newly
-> written data.  The compression used is stored with the metadata for the
-> extents themselves, so any existing data on the volume will be read just
-> fine with whatever compression method it was written with, while new
-> data will be written with the specified compression method.
+>>> As for dedupe there is (to my knowledge) nothing fully automatic yet.
+>>> You have to run a program to scan your filesystem but all the
+>>> deduplication is done in the kernel.
+>>> duperemove works apparently quite well when I tested it, but there may
+>>> be some performance implications.
+
+>> Correct, there is nothing automatic (and there are pretty significant
+>> arguments against doing automatic deduplication in most cases), but the
+>> off-line options (via the EXTENT_SAME ioctl) are reasonably reliable.
+>> Duperemove in particular does a good job, though it may take a long
+>> time for large data sets.
+>> 
+>> As far as performance, it's no worse than large numbers of snapshots.
+>> The issues arise from using very large numbers of reflinks.
 > 
-> If you want to convert existing files, you can use the '-c' option to
-> the defrag command to do so.
+> What is this "large" number of snapshots? Not that it's directly
+> comparible, but I've worked with ZFS a while, and haven't seen those
+> issues there.
 
-... Being aware of course that using defrag to recompress files like that 
-will break 100% of the existing reflinks, effectively (near) doubling 
-data usage if the files are snapshotted, since the snapshot will now 
-share 0% of its extents with the newly compressed files.
+Btrfs has scaling issues with reflinks, not so much in normal operation, 
+but when it comes to filesystem maintenance such as btrfs check and btrfs 
+balance.
 
-(The actual effect shouldn't be quite that bad, as some files are likely 
-to be uncompressed due to not compressing well, and I'm not sure if 
-defrag -c rewrites them or not.  Further, if there's multiple snapshots 
-data usage should only double with respect to the latest one, the data 
-delta between it and previous snapshots won't be doubled as well.)
+Numerically, low double-digits of reflinks per extent seems to be 
+reasonably fine, high double-digits to low triple-digits begins to run 
+into scaling issues, and high triple digits to over 1000... better be 
+prepared to wait awhile (can be days or weeks!) for that balance or check 
+to complete, and check requires LOTS more memory as well, particularly at 
+TB+ scale.
 
-While this makes sense if you think about it, it may not occur to some 
-people until they've actually tried it, and see their data usage go way 
-up instead of going down as they intuitively expected.  There have been 
-posts to the list...
+Of course snapshots are the common instance of reflinking, and each 
+snapshot is another reflink to each extent of the data in the subvolume 
+it covers, so limiting snapshots to 10-50 of each subvolume is 
+recommended, and limiting to under 250-ish is STRONGLY recommended.  
+(Total number of snapshots per filesystem, where there's many subvolumes 
+and snapshots per subvolume falls within the above limits, doesn't seem 
+to be a problem.)
 
-Of course if the data isn't snapshotted this doesn't apply and defrag -c 
-to zstd should be fine. =:^)
+Dedupe uses reflinking too, but the effects can be much more variable 
+depending on the use-case and how many actual reflinks are being created.
+
+A single extent with 1000 deduping reflinks, as might be common in a 
+commercial/hosting use-case, shouldn't be too bad, perhaps comparable to 
+a single snapshot, but obviously, do that with a bunch of extents (as a 
+hosting use-case might) and it quickly builds to the effect of 1000 
+snapshots of the same subvolume, which as mentioned above puts 
+maintenance-task time out of the realm of reasonable, for many.
+
+Tho of course in a commercial/hosting case maintenance may well not be 
+done as a simple swap-in of a fresh backup is more likely, so it may not 
+matter for that scenario.
+
+OTOH, a typical individual/personal use-case may dedup many files but 
+only single-digit times each, so the effect would be the same as a single-
+digit number of snapshots at worst.
+
+Meanwhile, while btrfs quotas are finally maturing in terms of actually 
+tracking the numbers correctly, their effect on scaling is pretty bad 
+too.  The recommendation is to keep btrfs quotas off unless you actually 
+need them.  If you do need quotas, temporarily disable them while doing 
+balances and device-removes (which do implicit balances), then quota-
+rescan after the balance is done, because precisely tracking quotas thru 
+a balance ends up repeatedly recalculating the numbers again and again 
+during the balance, and that just doesn't scale.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

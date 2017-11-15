@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f193.google.com ([209.85.192.193]:57288 "EHLO
-        mail-pf0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758457AbdKOV3n (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25608 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751240AbdKOXqn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 16:29:43 -0500
-Received: by mail-pf0-f193.google.com with SMTP id q4so9807240pfg.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Nov 2017 13:29:43 -0800 (PST)
-Date: Wed, 15 Nov 2017 13:29:40 -0800
-From: Omar Sandoval <osandov@osandov.com>
+        Wed, 15 Nov 2017 18:46:43 -0500
+Date: Wed, 15 Nov 2017 15:46:06 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         Josef Bacik <jbacik@fb.com>
 Subject: Re: [PATCH] btrfs: fix deadlock when writing out space cache
-Message-ID: <20171115212940.GA28352@vader>
+Message-ID: <20171115234606.GA23320@dhcp-whq-twvpn-1-vpnpool-10-159-153-242.vpn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
 References: <1510780852-8862-1-git-send-email-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -26,11 +25,14 @@ On Wed, Nov 15, 2017 at 04:20:52PM -0500, Josef Bacik wrote:
 > If we fail to prepare our pages for whatever reason (out of memory in
 > our case) we need to make sure to drop the block_group->data_rwsem,
 > otherwise hilarity ensues.
-> 
+>
+
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
+Thanks,
+
+-liubo
 > Signed-off-by: Josef Bacik <jbacik@fb.com>
-
-Reviewed-by: Omar Sandoval <osandov@fb.com>
-
 > ---
 >  fs/btrfs/free-space-cache.c | 6 +++++-
 >  1 file changed, 5 insertions(+), 1 deletion(-)

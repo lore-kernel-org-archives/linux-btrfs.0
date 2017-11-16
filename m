@@ -1,218 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f41.google.com ([209.85.214.41]:36137 "EHLO
-        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1760150AbdKPQru (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:50427 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934894AbdKPREy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 11:47:50 -0500
-Subject: Re: Ideas to reuse filesystem's checksum to enhance dm-raid1/10/5/6?
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Zdenek Kabelac <zkabelac@redhat.com>,
-        Nikolay Borisov <nborisov@suse.com>, linux-block@vger.kernel.org,
-        dm-devel@redhat.com, linux-fsdevel@vger.kernel.org
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <477d2d2b-3893-50c1-5946-076670a03f2d@gmx.com>
- <7ed134fc-1616-a1ab-6701-a917af0522da@suse.com>
- <5357fd4a-51b1-ebfb-27de-4d022d9749c0@gmx.com>
- <4df8d248-5def-9d29-89eb-7d9b977f089e@suse.com>
- <354402cd-587d-72d8-aaa1-87a1b5c9f03c@gmx.com>
- <6e0f8a37-c3f8-61f0-d51d-01b72c3c65b7@redhat.com>
- <189cda7b-e3ee-4379-c7f2-57efd759b78a@gmx.com>
- <9b81b628-d10b-b62e-74f7-86c8ba2f939b@redhat.com>
- <3ba90cc2-30bb-2867-94fa-895def5f2826@gmx.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <391774c5-81f8-cdda-3dbe-4d3d1c2fa3d7@gmail.com>
-Date: Thu, 16 Nov 2017 11:47:45 -0500
+        Thu, 16 Nov 2017 12:04:54 -0500
+Date: Thu, 16 Nov 2017 09:04:45 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <20171116170445.24n57phzltgiehj6@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <3ba90cc2-30bb-2867-94fa-895def5f2826@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Subject: kernel BUG at fs/btrfs/ctree.h:1802!
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-11-16 09:06, Qu Wenruo wrote:
-> 
-> 
-> On 2017年11月16日 20:33, Zdenek Kabelac wrote:
->> Dne 16.11.2017 v 11:04 Qu Wenruo napsal(a):
->>>
->>>
->>> On 2017年11月16日 17:43, Zdenek Kabelac wrote:
->>>> Dne 16.11.2017 v 09:08 Qu Wenruo napsal(a):
->>>>>
->>>>>
->>>>>>>>>>
->>>>>>>>> [What we have]
->>>>>>>>> The nearest infrastructure I found in kernel is
->>>>>>>>> bio_integrity_payload.
->>>>>>>>>
->>>>
->>>> Hi
->>>>
->>>> We already have  dm-integrity target upstream.
->>>> What's missing in this target ?
->>>
->>> If I didn't miss anything, the dm-integrity is designed to calculate and
->>> restore csum into its space to verify the integrity.
->>> The csum happens when bio reaches dm-integrity.
->>>
->>> However what I want is, fs generate bio with attached verification hook,
->>> and pass to lower layers to verify it.
->>>
->>> For example, if we use the following device mapper layout:
->>>
->>>           FS (can be any fs with metadata csum)
->>>                   |
->>>                dm-integrity
->>>                   |
->>>                dm-raid1
->>>                  / \
->>>            disk1     disk2
->>>
->>> If some data in disk1 get corrupted (the disk itself is still good), and
->>> when dm-raid1 tries to read the corrupted data, it may return the
->>> corrupted one, and then caught by dm-integrity, finally return -EIO to
->>> FS.
->>>
->>> But the truth is, we could at least try to read out data in disk2 if we
->>> know the csum for it.
->>> And use the checksum to verify if it's the correct data.
->>>
->>>
->>> So my idea will be:
->>>        FS (with metadata csum, or even data csum support)
->>>                   |  READ bio for metadata
->>>                   |  -With metadata verification hook
->>>               dm-raid1
->>>                  / \
->>>             disk1   disk2
->>>
->>> dm-raid1 handles the bio, reading out data from disk1.
->>> But the result can't pass verification hook.
->>> Then retry with disk2.
->>>
->>> If result from disk2 passes verification hook. That's good, returning
->>> the result from disk2 to upper layer (fs).
->>> And we can even submit WRITE bio to try to write the good result back to
->>> disk1.
->>>
->>> If result from disk2 doesn't pass verification hook, then we return -EIO
->>> to upper layer.
->>>
->>> That's what btrfs has already done for DUP/RAID1/10 (although RAID5/6
->>> will also try to rebuild data, but it still has some problem).
->>>
->>> I just want to make device-mapper raid able to handle such case too.
->>> Especially when most fs supports checksum for their metadata.
->>>
->>
->> Hi
->>
->> IMHO you are looking for too complicated solution.
-> 
-> This is at least less complicated than dm-integrity.
-> 
-> Just a new hook for READ bio. And it can start from easy part.
-> Like starting from dm-raid1 and other fs support.
-It's less complicated for end users (in theory, but cryptsetup devs are 
-working on that for dm-integrity), but significantly more complicated 
-for developers.
+My server now reboots every 20mn or so, with this.
+Sadly another BUG_ON() and it won't even tell me which filesystem
+it's on
 
-It also brings up the question of what happens when you want some other 
-layer between the filesystem and the MD/DM RAID layer (say, running 
-bcache or dm-cache on top of the RAID array).  In the case of 
-dm-integrity, that's not an issue because dm-integrity is entirely 
-self-contained, it doesn't depend on other layers beyond the standard 
-block interface.
+static inline u32 btrfs_extent_inline_ref_size(int type)
+{
+	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
+	    type == BTRFS_SHARED_BLOCK_REF_KEY)
+		return sizeof(struct btrfs_extent_inline_ref);
+	if (type == BTRFS_SHARED_DATA_REF_KEY)
+		return sizeof(struct btrfs_shared_data_ref) +
+		       sizeof(struct btrfs_extent_inline_ref);
+	if (type == BTRFS_EXTENT_DATA_REF_KEY)
+		return sizeof(struct btrfs_extent_data_ref) +
+		       offsetof(struct btrfs_extent_inline_ref, offset);
+	BUG();
+	return 0;
+}
 
-As I mentioned in my other reply on this thread, running with 
-dm-integrity _below_ the RAID layer instead of on top of it will provide 
-the same net effect, and in fact provide a stronger guarantee than what 
-you are proposing (because dm-integrity does real cryptographic 
-integrity verification, as opposed to just checking for bit-rot).
-> 
->>
->> If your checksum is calculated and checked at FS level there is no added
->> value when you spread this logic to other layers.
-> 
-> That's why I'm moving the checking part to lower level, to make more
-> value from the checksum.
-> 
->>
->> dm-integrity adds basic 'check-summing' to any filesystem without the
->> need to modify fs itself
-> 
-> Well, despite the fact that modern filesystem has already implemented
-> their metadata csum.
-> 
->   - the paid price is - if there is bug between
->> passing data from  'fs' to dm-integrity'  it cannot be captured.
->>
->> Advantage of having separated 'fs' and 'block' layer is in its
->> separation and simplicity at each level.
-> 
-> Totally agreed on this.
-> 
-> But the idea here should not bring that large impact (compared to big
-> things like ZFS/Btrfs).
-> 
-> 1) It only affect READ bio
-> 2) Every dm target can choose if to support or pass down the hook.
->     no mean to support it for RAID0 for example.
->     And for complex raid like RAID5/6 no need to support it from the very
->     beginning.
-> 3) Main part of the functionality is already implemented
->     The core complexity contains 2 parts:
->     a) checksum calculation and checking
->        Modern fs is already doing this, at least for metadata.
->     b) recovery
->        dm targets already have this implemented for supported raid
->        profile.
->     All these are already implemented, just moving them to different
->     timing is not bringing such big modification IIRC.
->>
->> If you want integrated solution - you are simply looking for btrfs where
->> multiple layers are integrated together.
-> 
-> If with such verification hook (along with something extra to handle
-> scrub), btrfs chunk mapping can be re-implemented with device-mapper:
-> 
-> In fact btrfs logical space is just a dm-linear device, and each chunk
-> can be implemented by its corresponding dm-* module like:
-> 
-> dm-linear:       | btrfs chunk 1 | btrfs chunk 2 | ... | btrfs chunk n |
-> and
-> btrfs chunk 1: metadata, using dm-raid1 on diskA and diskB
-> btrfs chunk 2: data, using dm-raid0 on disk A B C D
-> ...
-> btrfs chunk n: system, using dm-raid1 on disk A B
-> 
-> At least btrfs can take the advantage of the simplicity of separate layers.
-> 
-> And other filesystem can get a little higher chance to recover its
-> metadata if built on dm-raid.
-Again, just put dm-integrity below dm-raid.  The other filesystems 
-primarily have metadata checksums to catch data corruption, not repair 
-it, and I severely doubt that you will manage to convince developers to 
-add support in their filesystem (especially XFS) because:
-1. It's a layering violation (yes, I know BTRFS is too, but that's a bit 
-less of an issue because it's a completely self-contained layering 
-violation, while this isn't).
-2. There's no precedent in hardware (I challenge you to find a block 
-device that lets you respond to a read completing with 'Hey, this data 
-is bogus, give me the real data!').
-3. You can get the same net effect with a higher guarantee of security 
-using dm-integrity.
-> 
-> Thanks,
-> Qu
-> 
->>
->> You are also possibly missing feature of dm-interity - it's not just
->> giving you 'checksum' - it also makes you sure - device has proper
->> content - you can't just 'replace block' even with proper checksum for a
->> block somewhere in the middle of you device... and when joined with
->> crypto - it makes it way more secure...
->>
->> Regards
->>
->> Zdenek
-> 
 
+
+[ 1399.728735] ------------[ cut here ]------------
+[ 1399.744149] kernel BUG at fs/btrfs/ctree.h:1802!
+[ 1399.759400] invalid opcode: 0000 [#1] PREEMPT SMP
+[ 1399.774892] Modules linked in: veth ip6table_filter ip6_tables ebtable_nat ebtables ppdev lp xt_addrtype br_netfilter bridge stp llc tun autofs4 softdog binfmt_misc ftdi_sio nfsd auth_rpcgss nfs_acl nfs lockd grace fscache sunrpc ipt_REJECT nf_reject_ipv4 xt_conntrack xt_mark xt_nat xt_tcpudp nf_log_ipv4 nf_log_common xt_LOG iptable_mangle iptable_filter lm85 hwmon_vid pl2303 dm_snapshot dm_bufio iptable_nat ip_tables nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_conntrack_ftp ipt_MASQUERADE nf_nat_masquerade_ipv4 nf_nat nf_conntrack x_tables sg st snd_pcm_oss snd_mixer_oss bcache kvm_intel kvm irqbypass snd_hda_codec_realtek snd_hda_codec_generic snd_hda_intel snd_cmipci snd_hda_codec snd_mpu401_uart eeepc_wmi snd_opl3_lib snd_hda_core snd_rawmidi asus_wmi sparse_keymap snd_seq_device asix snd_hwdep
+[ 1399.997524]  rc_ati_x10 tpm_infineon snd_pcm rfkill snd_timer ati_remote usbnet tpm_tis usbserial libphy i915 rc_core hwmon tpm_tis_core snd wmi_bmof mei_me lpc_ich i2c_i801 soundcore battery pcspkr evdev input_leds tpm wmi parport_pc parport e1000e ptp pps_core fuse raid456 multipath mmc_block mmc_core lrw ablk_helper dm_crypt dm_mod async_raid6_recov async_pq async_xor async_memcpy async_tx crc32c_intel blowfish_x86_64 blowfish_common pcbc aesni_intel aes_x86_64 crypto_simd glue_helper cryptd xhci_pci ehci_pci mvsas ehci_hcd xhci_hcd libsas r8169 scsi_transport_sas mii usbcore sata_sil24 thermal fan [last unloaded: ftdi_sio]
+[ 1400.174918] CPU: 0 PID: 80 Comm: kworker/u16:1 Tainted: G     U  W       4.13.12-amd64-stkreg-sysrq-20171018 #2
+[ 1400.206640] Hardware name: System manufacturer System Product Name/P8H67-M PRO, BIOS 3904 04/27/2013
+[ 1400.235418] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper
+[ 1400.255104] task: ffff8a94fa750180 task.stack: ffffb632c3404000
+[ 1400.274346] RIP: 0010:btrfs_extent_inline_ref_size+0x29/0x39
+[ 1400.292749] RSP: 0018:ffffb632c3407b28 EFLAGS: 00210297
+[ 1400.309756] RAX: 000000000000001d RBX: ffff8a94f59f4a80 RCX: ffff8a9127287000
+[ 1400.332482] RDX: 0000000000002000 RSI: 0000000000002598 RDI: 0000000000000000
+[ 1400.355188] RBP: ffffb632c3407b28 R08: ffffb632c3407ae8 R09: ffffb632c3407af0
+[ 1400.377871] R10: 0000000000000000 R11: 0000000000002000 R12: 0000000000000000
+[ 1400.400537] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000002598
+[ 1400.423912] FS:  0000000000000000(0000) GS:ffff8a951e200000(0000) knlGS:0000000000000000
+[ 1400.449416] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 1400.467878] CR2: 000000000be9c3f8 CR3: 00000004b5c09000 CR4: 00000000001406f0
+[ 1400.490491] Call Trace:
+[ 1400.499066]  lookup_inline_extent_backref+0x2ff/0x411
+[ 1400.515452]  ? ___cache_free+0x200/0x25c
+[ 1400.528390]  __btrfs_free_extent+0xeb/0xa5d
+[ 1400.542077]  ? ___cache_free+0x1e8/0x25c
+[ 1400.554950]  __btrfs_run_delayed_refs+0xb6c/0xd52
+[ 1400.570208]  ? _raw_spin_unlock_irqrestore+0x14/0x24
+[ 1400.586191]  ? try_to_wake_up+0x251/0x277
+[ 1400.599288]  btrfs_run_delayed_refs+0x77/0x1a1
+[ 1400.613653]  delayed_ref_async_start+0x5e/0x9b
+[ 1400.628580]  btrfs_scrubparity_helper+0x111/0x271
+[ 1400.644271]  ? pwq_activate_delayed_work+0x4d/0x5b
+[ 1400.659614]  btrfs_extent_refs_helper+0xe/0x10
+[ 1400.673972]  process_one_work+0x179/0x2a5
+[ 1400.686951]  worker_thread+0x1b1/0x262
+[ 1400.699155]  ? rescuer_thread+0x273/0x273
+[ 1400.712069]  kthread+0xfb/0x100
+[ 1400.722354]  ? init_completion+0x24/0x24
+[ 1400.734949]  ret_from_fork+0x25/0x30
+[ 1400.746497] Code: 5d c3 55 81 ff b0 00 00 00 48 89 e5 74 1f 81 ff b6 00 00 00 74 17 81 ff b8 00 00 00 74 16 81 ff b2 00 00 00 b8 1d 00 00 00 74 0e <0f> 0b b8 09 00 00 00 eb 05 b8 0d 00 00 00 5d c3 55 48 89 f0 48
+[ 1400.804753] RIP: btrfs_extent_inline_ref_size+0x29/0x39 RSP: ffffb632c3407b28
+[ 1400.827109] ---[ end trace 70850509bfd007d7 ]---
+[ 1400.841833] Kernel panic - not syncing: Fatal exception
+[ 1400.858356] Kernel Offset: 0x17000000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff)
+
+
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

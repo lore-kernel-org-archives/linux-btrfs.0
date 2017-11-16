@@ -1,28 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:34681 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:42136 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1759341AbdKPQLE (ORCPT
+        with ESMTP id S1751137AbdKPQPS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 11:11:04 -0500
+        Thu, 16 Nov 2017 11:15:18 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eFMkg-0000o3-71
-        for linux-btrfs@vger.kernel.org; Thu, 16 Nov 2017 17:10:54 +0100
+        id 1eFMoi-0006gy-66
+        for linux-btrfs@vger.kernel.org; Thu, 16 Nov 2017 17:15:04 +0100
 To: linux-btrfs@vger.kernel.org
 From: Kai Krakow <hurikhan77@gmail.com>
 Subject: Re: Need help with incremental backup strategy (snapshots,
  defragmentingt & performance)
-Date: Thu, 16 Nov 2017 17:10:52 +0100
-Message-ID: <20171116171052.066f7cf6@jupiter.sol.kaishome.de>
+Date: Thu, 16 Nov 2017 17:13:30 +0100
+Message-ID: <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
 References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
-        <20171101101510.218eeead@natsu>
-        <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
-        <20171114135040.65a659c0@natsu>
-        <CAH=dxU7wjag+BPNdu__WidU1qNPeF7Sxgc8YthAVvxbrHx5VmA@mail.gmail.com>
+ <20171101101510.218eeead@natsu>
+ <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
+ <20171114135040.65a659c0@natsu>
+ <CAH=dxU7wjag+BPNdu__WidU1qNPeF7Sxgc8YthAVvxbrHx5VmA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Link 2 slipped away, adding it below...
 
 Am Tue, 14 Nov 2017 15:51:57 -0500
 schrieb Dave <davestechshop@gmail.com>:
@@ -152,7 +154,7 @@ blocks of reflinked and broken extents.
 
 
 [1]: https://github.com/Zygo/bees
-
+[2]: https://gist.github.com/kakra/5520370
 
 -- 
 Regards,

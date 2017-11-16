@@ -1,170 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34945 "EHLO mx2.suse.de"
+Received: from demfloro.ru ([188.166.0.225]:60444 "EHLO demfloro.ru"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932257AbdKPOLu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 09:11:50 -0500
-Subject: Re: [PATCH 2/2] btrfs: introduce feature to ignore a btrfs device
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171113054410.24872-1-anand.jain@oracle.com>
- <20171113054410.24872-3-anand.jain@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <83fdbfd2-8f02-e65b-3e75-f784f5ea33ab@suse.com>
-Date: Thu, 16 Nov 2017 16:11:47 +0200
+        id S933032AbdKPObS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Nov 2017 09:31:18 -0500
+Received: from [81.95.28.29] (helo=job)
+        by demfloro.ru with esmtpsa (TLSv1.2:ECDHE-RSA-AES256-GCM-SHA384:256)
+        (Exim 4.89)
+        (envelope-from <demfloro@demfloro.ru>)
+        id 1eFLCG-0000rI-8X
+        for linux-btrfs@vger.kernel.org; Thu, 16 Nov 2017 14:31:17 +0000
+Date: Thu, 16 Nov 2017 17:31:04 +0300
+From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Read before you deploy btrfs + zstd
+Message-ID: <20171116173104.08497aaa@job>
+In-Reply-To: <pan$9fe69$3a062179$aad19d2f$63c49115@cox.net>
+References: <20171113225046.GD28899@suse.cz>
+        <3013353.6rxLtS64S0@merkaba>
+        <d0442de1-b53a-3b16-8932-54c783dd8afe@gmail.com>
+        <pan$9fe69$3a062179$aad19d2f$63c49115@cox.net>
 MIME-Version: 1.0
-In-Reply-To: <20171113054410.24872-3-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, 15 Nov 2017 20:23:44 +0000 (UTC)
+Duncan <1i5t5.duncan@cox.net> wrote:
+> Tho from my understanding and last I read, btrfs restore (I believe
+> it was) hadn't been updated to handle zstd yet, tho btrfs check and
+> btrfs filesystem defrag had been, and of course btrfs balance if the
+> kernel handles it since all balance does is call the kernel to do it.
+> 
+> So just confirming, does btrfs restore handle zstd from -progs 4.13?  
+> 
+> Because once a filesystem goes unmountable, restore is what I've had
+> best luck with, so if it doesn't understand zstd, no zstd for me.  
+> (Regardless, being the slightly cautious type I'll very likely wait a 
+> couple kernel cycles before switching from lzo to zstd here, just to
+> see if any weird reports about it from the first-out testers hit the
+> list in the mean time.)
+> 
+> Meanwhile, it shouldn't need said but just in case, if you're using
+> it, be sure you have backups /not/ using zstd, for at least a couple
+> kernel cycles. =:^)
+> 
 
+Btrfs-progs 4.13 can be optionally built with libzstd, then btrfs
+restore can restore from zstd compressed file systems (I tested that
+right now with temporary fs using compress-force=zstd mount option).
 
-On 13.11.2017 07:44, Anand Jain wrote:
-> Support for a new command is being added here:
->  btrfs dev ignore <dev>
-> Which shall undo the effects of the command
->  btrfs dev scan <dev>
-> 
-> This cli/ioctl is needed as there is no way to continue to mount in
-> degraded mode if the device is already scanned, which is required to
-> recover from the split brain raid conditions.
-> 
-> This patch proposes to use ioctl #5 as it was empty.
-> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
-> If #5 is reserved for some other purpose, I think I should change this.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/super.c           |  4 +++
->  fs/btrfs/volumes.c         | 70 ++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/volumes.h         |  2 ++
->  include/uapi/linux/btrfs.h |  2 ++
->  4 files changed, 78 insertions(+)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index fa7bad8b22da..64f4beb1526d 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -2183,6 +2183,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
->  		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
->  					    &btrfs_fs_type, &fs_devices);
->  		break;
-> +	case BTRFS_IOC_IGNORE_DEV:
-> +		ret = btrfs_ignore_one_device(vol->name, FMODE_READ,
-> +					    &btrfs_fs_type, &fs_devices);
-> +		break;
->  	case BTRFS_IOC_DEVICES_READY:
->  		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
->  					    &btrfs_fs_type, &fs_devices);
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 8ead85dba6f5..1a06a17e111e 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1181,6 +1181,76 @@ int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
->  	return 0;
->  }
->  
-> +static int device_list_remove(struct btrfs_super_block *disk_super, u64 devid)
-> +{
-> +	int ret = 0;
-> +	struct btrfs_fs_devices *fs_devices;
-> +	struct btrfs_device *device;
-> +
-> +	fs_devices = find_fsid(disk_super->fsid);
-> +	if (!fs_devices)
-> +		return -ENOENT;
-> +
-> +	if (fs_devices->opened)
-> +		return -EPERM;
-> +
-> +	mutex_lock(&uuid_mutex);
-> +	mutex_lock(&fs_devices->device_list_mutex);
-> +	device = find_device(fs_devices, devid, disk_super->dev_item.uuid);
-> +	if (!device) {
-> +		ret = -ENOENT;
-> +		goto error;
-> +	}
-> +
-> +	delete_device_from_list(device);
-> +
-> +error:
-> +	mutex_unlock(&fs_devices->device_list_mutex);
-> +	mutex_unlock(&uuid_mutex);
-> +
-> +	return ret;
-> +}
-> +
-> +int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
-> +			  struct btrfs_fs_devices **fs_devices_ret)
-> +{
-> +	struct btrfs_super_block *disk_super;
-> +	struct block_device *bdev;
-> +	struct page *page;
-> +	int ret = -EINVAL;
-> +	u64 devid;
-> +	u64 bytenr;
-> +
-> +	bytenr = btrfs_sb_offset(0);
-> +	flags |= FMODE_EXCL;
-> +
-> +	bdev = blkdev_get_by_path(path, flags, holder);
-> +	if (IS_ERR(bdev)) {
-> +		ret = PTR_ERR(bdev);
-> +		goto error;
-> +	}
-> +
-> +	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
-> +		goto error_bdev_put;
-> +
-> +	devid = btrfs_stack_device_id(&disk_super->dev_item);
-> +
-> +	ret = device_list_remove(disk_super, devid);
-> +	if (ret)
-> +	pr_err("BTRFS: %pU: device %s uuid %pU devid %llu failed to unscan: %d",
-> +		disk_super->fsid, path, disk_super->dev_item.uuid, devid, ret);
-> +	else
-> +	pr_info("BTRFS: %pU: device %s uuid %pU devid %llu ran undo scan",
-> +		disk_super->fsid, path, disk_super->dev_item.uuid, devid);
-
-There is already btrfs_err and btrfs_info, use those. This will allow to
-uniquely identify the failing btrfs file system also the pr_* statements
-need to be indented after the if/else.
-
-> +
-> +	btrfs_release_disk_super(page);
-> +
-> +error_bdev_put:
-> +	blkdev_put(bdev, flags);
-> +error:
-> +	return ret;
-> +}
-> +
->  /*
->   * Look for a btrfs signature on a device. This may be called out of the mount path
->   * and we are not allowed to call set_blocksize during the scan. The superblock
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 6108fdfec67f..340e40acdab5 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -421,6 +421,8 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
->  		       fmode_t flags, void *holder);
->  int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
->  			  struct btrfs_fs_devices **fs_devices_ret);
-> +int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
-> +			  struct btrfs_fs_devices **fs_devices_ret);
->  int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
->  void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
->  void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index 378230c163d5..928485c31aa4 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -739,6 +739,8 @@ enum btrfs_err_code {
->  				   struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->  				   struct btrfs_ioctl_vol_args)
-> +#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-> +				   struct btrfs_ioctl_vol_args)
->  /* trans start and trans end are dangerous, and only for
->   * use by applications that know how to avoid the
->   * resulting deadlocks
-> 
+Btrfs-progs 4.14 will require libzstd by default during build.

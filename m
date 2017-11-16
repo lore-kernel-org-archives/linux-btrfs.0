@@ -1,70 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f67.google.com ([209.85.218.67]:33257 "EHLO
-        mail-oi0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965516AbdKPWcH (ORCPT
+Received: from mail02.iobjects.de ([188.40.134.68]:33026 "EHLO
+        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933840AbdKPWcf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 17:32:07 -0500
-Received: by mail-oi0-f67.google.com with SMTP id f135so435111oib.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 14:32:06 -0800 (PST)
+        Thu, 16 Nov 2017 17:32:35 -0500
+Subject: Re: 4.13.12: kernel BUG at fs/btrfs/ctree.h:1802!
+To: Marc MERLIN <marc@merlins.org>
+Cc: linux-btrfs@vger.kernel.org
+References: <20171116170445.24n57phzltgiehj6@merlins.org>
+ <20171116170742.vyhxckxrgjzwqyvf@merlins.org>
+ <70b25128-d724-4e8e-9835-4a092cf8d5a6@applied-asynchrony.com>
+ <20171116214551.vpp4eevs7b4bszjt@merlins.org>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
+Message-ID: <2b97e49b-74fd-77c1-a340-8254f8999bb1@applied-asynchrony.com>
+Date: Thu, 16 Nov 2017 23:32:33 +0100
 MIME-Version: 1.0
-In-Reply-To: <189cda7b-e3ee-4379-c7f2-57efd759b78a@gmx.com>
-References: <477d2d2b-3893-50c1-5946-076670a03f2d@gmx.com> <7ed134fc-1616-a1ab-6701-a917af0522da@suse.com>
- <5357fd4a-51b1-ebfb-27de-4d022d9749c0@gmx.com> <4df8d248-5def-9d29-89eb-7d9b977f089e@suse.com>
- <354402cd-587d-72d8-aaa1-87a1b5c9f03c@gmx.com> <6e0f8a37-c3f8-61f0-d51d-01b72c3c65b7@redhat.com>
- <189cda7b-e3ee-4379-c7f2-57efd759b78a@gmx.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 16 Nov 2017 15:32:05 -0700
-Message-ID: <CAJCQCtRUGEdu13RCKFb6uZQ3UCzoAByhu97FdwQoFPxvsOua0Q@mail.gmail.com>
-Subject: Re: Ideas to reuse filesystem's checksum to enhance dm-raid1/10/5/6?
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Zdenek Kabelac <zkabelac@redhat.com>, Nikolay Borisov <nborisov@suse.com>,
-        linux-block@vger.kernel.org, dm-devel@redhat.com,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20171116214551.vpp4eevs7b4bszjt@merlins.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 16, 2017 at 3:04 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+On 11/16/17 22:45, Marc MERLIN wrote:
+(snip)
+>> This BUG() was recently removed and seems to be caused by some kind
+>> of persistent corruption, which is seen as invalid inline extent.
+>> See [1], [2] for details. Maybe you can backport them?
+>> Alternatively just give 4.14 a whirl, it's great.
+>>
+>> -h
+>>
+>> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=167ce953ca55bdee20fe56c3c0fa51002435f745
+>> [2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=4335958de2a43c6790c7f6aa0682aa7189983fa4
+> 
+> First thanks a lot for the quick reply, it was super timely considering
+> my server was rebooting every 20mn :)
+> I've now been running 4.14 for a couple of hours, and things seem ok
+> btrfs-wise.
 
-> For example, if we use the following device mapper layout:
->
->         FS (can be any fs with metadata csum)
->                 |
->              dm-integrity
->                 |
->              dm-raid1
->                / \
->          disk1     disk2
+Don't pop the champagne just yet, I just read that apprently 4.14 broke
+bcache for some people [1]. Not sure how much that affects you, but it might
+well make things worse. Yeah, I know, wonderful.
 
+> So, just so that I understand:
+> 1) I do have some kind of FS problem/corruption (minor? major?)
 
-You would instead do dm-integrity per physical device, then make the
-two dm-integrity devices, members of md raid1 array. Now when
-integrity fails, basically it's UNC error to raid1 which then gets the
-copy from the other device.
+All I know is what's in those commits, I just remembered the description. ;)
+If I understand the patches correctly you're still supposed to get an
+"invalid extent inline ref type" message.
 
-But what you're getting at, that dm-integrity is more complicated, is
-true, in that it's at least partly COW based in order to get the
-atomic write guarantee needed to ensure data blocks and csums are
-always in sync, and reliable. But this also applies to the entire file
-system. The READ bio concept you're proposing leverages pretty much
-already existing code, has no write performance penalty or complexity
-at all, but does miss data for file systems that don't csum data
-blocks. It's good the file system can stay alive, but data is the much
-bigger target in terms of percent space on the physical media, and
-more likely to be corrupt or go missing due to media defect or
-whatever. It's still possible for silent data corruption to happen.
+> 2) it started crashing 4.9.36 and then 4.13 today, every 20mn, probably due to some background
+> cleaner process that kept starting and hitting the problem spot
 
+Sounds like.
 
+> 3) 4.14 does not crash anymore, but it doesn't even report any problem either. Does it mean
+> the error that crashed the old kernel is minor enough that the new kernel doesn't bother even
+> logging it?
 
+See above, you should still get a warning. OTOH it's hard to tell what is
+going on when you seem to have dm/dmcrypt/bcache lasagne going on..
 
-> I just want to make device-mapper raid able to handle such case too.
-> Especially when most fs supports checksum for their metadata.
+> 4) I just ran scrub on the filesystem and it ran fine.
 
-XFS by default does metadata csums. But ext4 doesn't use it for either
-metadata or the journal by default still, it is still optional. So for
-now it mainly benefits XFS.
+That's not too depressing. :)
 
+> I'm asusming that running btrfs check --force on a mounted filesystem
+> that is being used is not going to give useful results, unless I leave
+> the FS read only. Correct?
 
--- 
-Chris Murphy
+Think so, yes.
+
+> As for 4.14, the serial console code seems broken though, I can't get login or bash
+> to work anymore on them:
+> [ 2786.305004] INFO: task login:5636 blocked for more than 120 seconds.
+> [ 2786.324648]       Tainted: G     U  W       4.14.0-amd64-stkreg-sysrq-20171018 #1
+> [ 2786.347692] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [ 2786.371742] login           D    0  5636      1 0xa0020006
+
+I'm out. :/
+
+-h
+
+[1] https://marc.info/?t=151082126000001

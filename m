@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34020 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34241 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965008AbdKPN7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 08:59:31 -0500
-Subject: Re: [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get
- device list delete
+        id S935489AbdKPODQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Nov 2017 09:03:16 -0500
+Subject: Re: [PATCH 2/2] btrfs: introduce feature to ignore a btrfs device
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20171113054410.24872-1-anand.jain@oracle.com>
- <20171113054410.24872-2-anand.jain@oracle.com>
+ <20171113054410.24872-3-anand.jain@oracle.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <4a9afb0a-f6a5-d9b7-6846-f915d496d20c@suse.com>
-Date: Thu, 16 Nov 2017 15:59:29 +0200
+Message-ID: <489e7d64-aae1-0d5d-3af4-8d721b31fc43@suse.com>
+Date: Thu, 16 Nov 2017 16:03:14 +0200
 MIME-Version: 1.0
-In-Reply-To: <20171113054410.24872-2-anand.jain@oracle.com>
+In-Reply-To: <20171113054410.24872-3-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,62 +19,150 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 13.11.2017 07:44, Anand Jain wrote:
-> We need to delete a device from the dev_list, so refactor
-> btrfs_free_stale_device() for delete_device_from_list().
+> Support for a new command is being added here:
+>  btrfs dev ignore <dev>
+> Which shall undo the effects of the command
+>  btrfs dev scan <dev>
+> 
+> This cli/ioctl is needed as there is no way to continue to mount in
+> degraded mode if the device is already scanned, which is required to
+> recover from the split brain raid conditions.
+> 
+> This patch proposes to use ioctl #5 as it was empty.
+> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+> If #5 is reserved for some other purpose, I think I should change this.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  fs/btrfs/volumes.c | 27 +++++++++++++++++----------
->  1 file changed, 17 insertions(+), 10 deletions(-)
+>  fs/btrfs/super.c           |  4 +++
+>  fs/btrfs/volumes.c         | 70 ++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/volumes.h         |  2 ++
+>  include/uapi/linux/btrfs.h |  2 ++
+>  4 files changed, 78 insertions(+)
 > 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index fa7bad8b22da..64f4beb1526d 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2183,6 +2183,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>  		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>  					    &btrfs_fs_type, &fs_devices);
+>  		break;
+> +	case BTRFS_IOC_IGNORE_DEV:
+> +		ret = btrfs_ignore_one_device(vol->name, FMODE_READ,
+> +					    &btrfs_fs_type, &fs_devices);
+> +		break;
+>  	case BTRFS_IOC_DEVICES_READY:
+>  		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>  					    &btrfs_fs_type, &fs_devices);
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 8bac1cf17048..8ead85dba6f5 100644
+> index 8ead85dba6f5..1a06a17e111e 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -546,6 +546,22 @@ static void pending_bios_fn(struct btrfs_work *work)
->  	run_scheduled_bios(device);
+> @@ -1181,6 +1181,76 @@ int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>  	return 0;
 >  }
 >  
-> +void delete_device_from_list(struct btrfs_device *dev)
-
-In this patch and the other one this function is used only in volume.c
-so make static. Also if it relies on some particular lock being held why
-not add lockdep_assert_held(xxx) as a means of documenting that ?
-
+> +static int device_list_remove(struct btrfs_super_block *disk_super, u64 devid)
 > +{
-> +	struct btrfs_fs_devices *fs_devs;
-> +	fs_devs = dev->fs_devices;
+> +	int ret = 0;
+> +	struct btrfs_fs_devices *fs_devices;
+> +	struct btrfs_device *device;
 > +
-> +	if (fs_devs->num_devices == 1) {
-> +		btrfs_sysfs_remove_fsid(fs_devs);
-> +		list_del(&fs_devs->list);
-> +		free_fs_devices(fs_devs);
-> +	} else {
-> +		fs_devs->num_devices--;
-> +		list_del(&dev->dev_list);
-> +		rcu_string_free(dev->name);
-> +		kfree(dev);
+> +	fs_devices = find_fsid(disk_super->fsid);
+> +	if (!fs_devices)
+> +		return -ENOENT;
+> +
+> +	if (fs_devices->opened)
+> +		return -EPERM;
+
+Isn't -EBUSY more appropriate?
+
+> +
+> +	mutex_lock(&uuid_mutex);
+> +	mutex_lock(&fs_devices->device_list_mutex);
+> +	device = find_device(fs_devices, devid, disk_super->dev_item.uuid);
+> +	if (!device) {
+> +		ret = -ENOENT;
+> +		goto error;
 > +	}
+> +
+> +	delete_device_from_list(device);
+> +
+> +error:
+> +	mutex_unlock(&fs_devices->device_list_mutex);
+> +	mutex_unlock(&uuid_mutex);
+> +
+> +	return ret;
 > +}
->  
->  void btrfs_free_stale_device(struct btrfs_device *cur_dev)
->  {
-> @@ -586,16 +602,7 @@ void btrfs_free_stale_device(struct btrfs_device *cur_dev)
->  
->  		if (!del) {
->  			/* delete the stale device */
-> -			if (fs_devs->num_devices == 1) {
-> -				btrfs_sysfs_remove_fsid(fs_devs);
-> -				list_del(&fs_devs->list);
-> -				free_fs_devices(fs_devs);
-> -			} else {
-> -				fs_devs->num_devices--;
-> -				list_del(&dev->dev_list);
-> -				rcu_string_free(dev->name);
-> -				kfree(dev);
-> -			}
-> +			delete_device_from_list(dev);
->  			break;
->  		}
->  	}
+> +
+> +int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
+> +			  struct btrfs_fs_devices **fs_devices_ret)
+> +{
+> +	struct btrfs_super_block *disk_super;
+> +	struct block_device *bdev;
+> +	struct page *page;
+> +	int ret = -EINVAL;
+> +	u64 devid;
+> +	u64 bytenr;
+> +
+> +	bytenr = btrfs_sb_offset(0);
+> +	flags |= FMODE_EXCL;
+> +
+> +	bdev = blkdev_get_by_path(path, flags, holder);
+> +	if (IS_ERR(bdev)) {
+> +		ret = PTR_ERR(bdev);
+> +		goto error;
+> +	}
+> +
+> +	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
+> +		goto error_bdev_put;
+> +
+> +	devid = btrfs_stack_device_id(&disk_super->dev_item);
+> +
+> +	ret = device_list_remove(disk_super, devid);
+> +	if (ret)
+> +	pr_err("BTRFS: %pU: device %s uuid %pU devid %llu failed to unscan: %d",
+> +		disk_super->fsid, path, disk_super->dev_item.uuid, devid, ret);
+> +	else
+> +	pr_info("BTRFS: %pU: device %s uuid %pU devid %llu ran undo scan",
+> +		disk_super->fsid, path, disk_super->dev_item.uuid, devid);
+> +
+> +	btrfs_release_disk_super(page);
+> +
+> +error_bdev_put:
+> +	blkdev_put(bdev, flags);
+> +error:
+> +	return ret;
+> +}
+> +
+>  /*
+>   * Look for a btrfs signature on a device. This may be called out of the mount path
+>   * and we are not allowed to call set_blocksize during the scan. The superblock
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 6108fdfec67f..340e40acdab5 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -421,6 +421,8 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>  		       fmode_t flags, void *holder);
+>  int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>  			  struct btrfs_fs_devices **fs_devices_ret);
+> +int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
+> +			  struct btrfs_fs_devices **fs_devices_ret);
+>  int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+>  void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
+>  void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+> index 378230c163d5..928485c31aa4 100644
+> --- a/include/uapi/linux/btrfs.h
+> +++ b/include/uapi/linux/btrfs.h
+> @@ -739,6 +739,8 @@ enum btrfs_err_code {
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>  				   struct btrfs_ioctl_vol_args)
+> +#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+> +				   struct btrfs_ioctl_vol_args)
+>  /* trans start and trans end are dangerous, and only for
+>   * use by applications that know how to avoid the
+>   * resulting deadlocks
 > 

@@ -1,164 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:42136 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751137AbdKPQPS (ORCPT
+Received: from mail-it0-f50.google.com ([209.85.214.50]:37525 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933993AbdKPQcL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 11:15:18 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eFMoi-0006gy-66
-        for linux-btrfs@vger.kernel.org; Thu, 16 Nov 2017 17:15:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Need help with incremental backup strategy (snapshots,
- defragmentingt & performance)
-Date: Thu, 16 Nov 2017 17:13:30 +0100
-Message-ID: <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
-References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
- <20171101101510.218eeead@natsu>
- <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
- <20171114135040.65a659c0@natsu>
- <CAH=dxU7wjag+BPNdu__WidU1qNPeF7Sxgc8YthAVvxbrHx5VmA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+        Thu, 16 Nov 2017 11:32:11 -0500
+Received: by mail-it0-f50.google.com with SMTP id m191so685410itg.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 08:32:11 -0800 (PST)
+Subject: Re: zstd compression
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <CAK5rZE51onZEE_f2xg4nxPriU9YQq5AARDLs-BTZL2RaGSCTXA@mail.gmail.com>
+ <43412efa-ff56-9682-c8f7-a5966b87b10e@lukas-pirl.de>
+ <CAK5rZE7rLToV7t+6pZhTbN2+JQj=W67Y5mESNhpaF0ehZzObOA@mail.gmail.com>
+ <361d92ee-9aee-35e1-024d-45ec5b79902b@gmail.com>
+ <pan$c02ea$c0c093a$d0320b0d$d9d43196@cox.net>
+ <37eb6ee9-2f7e-de42-3f7c-32db11d7648a@gmail.com>
+ <pan$a1486$84968dd3$dcbd0f46$977f6603@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <6d10a13a-f4b4-3688-4445-8dd2f645c222@gmail.com>
+Date: Thu, 16 Nov 2017 11:32:06 -0500
+MIME-Version: 1.0
+In-Reply-To: <pan$a1486$84968dd3$dcbd0f46$977f6603@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Link 2 slipped away, adding it below...
-
-Am Tue, 14 Nov 2017 15:51:57 -0500
-schrieb Dave <davestechshop@gmail.com>:
-
-> On Tue, Nov 14, 2017 at 3:50 AM, Roman Mamedov <rm@romanrm.net> wrote:
-> >
-> > On Mon, 13 Nov 2017 22:39:44 -0500
-> > Dave <davestechshop@gmail.com> wrote:
-> >  
-> > > I have my live system on one block device and a backup snapshot
-> > > of it on another block device. I am keeping them in sync with
-> > > hourly rsync transfers.
-> > >
-> > > Here's how this system works in a little more detail:
-> > >
-> > > 1. I establish the baseline by sending a full snapshot to the
-> > > backup block device using btrfs send-receive.
-> > > 2. Next, on the backup device I immediately create a rw copy of
-> > > that baseline snapshot.
-> > > 3. I delete the source snapshot to keep the live filesystem free
-> > > of all snapshots (so it can be optimally defragmented, etc.)
-> > > 4. hourly, I take a snapshot of the live system, rsync all
-> > > changes to the backup block device, and then delete the source
-> > > snapshot. This hourly process takes less than a minute currently.
-> > > (My test system has only moderate usage.)
-> > > 5. hourly, following the above step, I use snapper to take a
-> > > snapshot of the backup subvolume to create/preserve a history of
-> > > changes. For example, I can find the version of a file 30 hours
-> > > prior.  
-> >
-> > Sounds a bit complex, I still don't get why you need all these
-> > snapshot creations and deletions, and even still using btrfs
-> > send-receive.  
+On 2017-11-16 08:43, Duncan wrote:
+> Austin S. Hemmelgarn posted on Thu, 16 Nov 2017 07:30:47 -0500 as
+> excerpted:
 > 
+>> On 2017-11-15 16:31, Duncan wrote:
+>>> Austin S. Hemmelgarn posted on Wed, 15 Nov 2017 07:57:06 -0500 as
+>>> excerpted:
+>>>
+>>>> The 'compress' and 'compress-force' mount options only impact newly
+>>>> written data.  The compression used is stored with the metadata for
+>>>> the extents themselves, so any existing data on the volume will be
+>>>> read just fine with whatever compression method it was written with,
+>>>> while new data will be written with the specified compression method.
+>>>>
+>>>> If you want to convert existing files, you can use the '-c' option to
+>>>> the defrag command to do so.
+>>>
+>>> ... Being aware of course that using defrag to recompress files like
+>>> that will break 100% of the existing reflinks, effectively (near)
+>>> doubling data usage if the files are snapshotted, since the snapshot
+>>> will now share 0% of its extents with the newly compressed files.
+>> Good point, I forgot to mention that.
+>>>
+>>> (The actual effect shouldn't be quite that bad, as some files are
+>>> likely to be uncompressed due to not compressing well, and I'm not sure
+>>> if defrag -c rewrites them or not.  Further, if there's multiple
+>>> snapshots data usage should only double with respect to the latest one,
+>>> the data delta between it and previous snapshots won't be doubled as
+>>> well.)
+>> I'm pretty sure defrag is equivalent to 'compress-force', not
+>> 'compress', but I may be wrong.
 > 
-> Hopefully, my comments below will explain my reasons.
+> But... compress-force doesn't actually force compression _all_ the time.
+> Rather, it forces btrfs to continue checking whether compression is worth
+> it for each "block"[1] of the file, instead of giving up if the first
+> quick try at the beginning says that block won't compress.
 > 
-> >
-> > Here is my scheme:
-> > ============================================================================
-> > /mnt/dst <- mounted backup storage volume
-> > /mnt/dst/backup  <- a subvolume
-> > /mnt/dst/backup/host1/ <- rsync destination for host1, regular
-> > directory /mnt/dst/backup/host2/ <- rsync destination for host2,
-> > regular directory /mnt/dst/backup/host3/ <- rsync destination for
-> > host3, regular directory etc.
-> >
-> > /mnt/dst/backup/host1/bin/
-> > /mnt/dst/backup/host1/etc/
-> > /mnt/dst/backup/host1/home/
-> > ...
-> > Self explanatory. All regular directories, not subvolumes.
-> >
-> > Snapshots:
-> > /mnt/dst/snaps/backup <- a regular directory
-> > /mnt/dst/snaps/backup/2017-11-14T12:00/ <- snapshot 1
-> > of /mnt/dst/backup /mnt/dst/snaps/backup/2017-11-14T13:00/ <-
-> > snapshot 2
-> > of /mnt/dst/backup /mnt/dst/snaps/backup/2017-11-14T14:00/ <-
-> > snapshot 3 of /mnt/dst/backup
-> >
-> > Accessing historic data:
-> > /mnt/dst/snaps/backup/2017-11-14T12:00/host1/bin/bash
-> > ...
-> > /bin/bash for host1 as of 2017-11-14 12:00 (time on the backup
-> > system).
-> > ============================================================================
-> >
-> > No need for btrfs send-receive, only plain rsync is used, directly
-> > from hostX:/ to /mnt/dst/backup/host1/;  
+> So what I'm saying is that if the snapshotted data is already compressed,
+> think (pre-)compressed tarballs or image files such as jpeg that are
+> unlikely to /easily/ compress further and might well actually be _bigger_
+> once the compression algorithm is run over them, defrag -c will likely
+> fail to compress them further even if it's the equivalent of compress-
+> force, and thus /should/ leave them as-is, not breaking the reflinks of
+> the snapshots and thus not doubling the data usage for that file, or more
+> exactly, that extent of that file.
 > 
+> Tho come to think of it, is defrag -c that smart, to actually leave the
+> data as-is if it doesn't compress further, or does it still rewrite it
+> even if it doesn't compress, thus breaking the reflink and doubling the
+> usage regardless?
+I'm not certain how compression factors in, but if you aren't 
+compressing the file, it will only get rewritten if it's fragmented 
+(which is shy defragmenting the system root directory is usually 
+insanely fast on most systems, stuff there is almost never fragmented).
 > 
-> I prefer to start with a BTRFS snapshot at the backup destination. I
-> think that's the most "accurate" starting point.
-
-No, you should finish with a snapshot. Use the rsync destination as a
-"dirty" scratch area, let rsync also delete files which are no longer
-in the source. After successfully running rsync, make a snapshot of
-that directory and make it RO, leave the scratch in place (even when
-rsync dies or becomes killed).
-
-I once made some scripts[2] following those rules, you may want to adapt
-them.
-
-
-> > No need to create or delete snapshots during the actual backup
-> > process;  
+> ---
+> [1] Block:  I'm not positive it's the usual 4K block in this case.  I
+> think I read that it's 16K, but I might be confused on that.  But
+> regardless the size, the point is, with compress-force btrfs won't give
+> up like simple compress will if the first "block" doesn't compress, it'll
+> keep trying.
 > 
-> Then you can't guarantee consistency of the backed up information.
-
-Take a temporary snapshot of the source, rsync to to the scratch
-destination, take a RO snapshot of that destination, remove the
-temporary snapshot.
-
-BTW: From user API perspective, btrfs snapshots do not guarantee
-perfect granular consistent backups. A user-level file transaction may
-still end up only partially in the snapshot. If you are running
-transaction sensitive applications, those usually do provide some means
-of preparing a freeze and a thaw of transactions.
-
-I think the user transactions API which could've been used for this
-will even be removed during the next kernel cycles. I remember
-reiserfs4 tried to deploy something similar. But there's no consistent
-layer in the VFS for subscribing applications to filesystem snapshots
-so they could prepare and notify the kernel when they are ready.
-
-
-> > A single common timeline is kept for all hosts to be backed up,
-> > snapshot count not multiplied by the number of hosts (in my case
-> > the backup location is multi-purpose, so I somewhat care about
-> > total number of snapshots there as well);
-> >
-> > Also, all of this works even with source hosts which do not use
-> > Btrfs.  
-> 
-> That's not a concern for me because I prefer to use BTRFS everywhere.
-
-At least I suggest looking into bees[1] to deduplicate the backup
-destination. Rsync is not very efficient to work with btrfs snapshots.
-It will break reflinks often and write inefficiently sized blocks, even
-with inplace option. Also, rsync won't efficiently catch files moved
-back and forth often. Bees will be able to fix up all these problems
-within a short amount of time (after initial scan) and also reduce
-fragmentation of reflinks broken across multiple historical snapshots.
-In the process it may also free up storage of no longer referenced
-blocks of reflinked and broken extents.
-
-
-[1]: https://github.com/Zygo/bees
-[2]: https://gist.github.com/kakra/5520370
-
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
+> Of course the new compression heuristic changes this a bit too, but the
+> same general idea holds, compress-force continues to try for the entire
+> file, compress will give up much faster.
+I'm not actually sure, I would think it checks 128k blocks of data (the 
+effective block size for compression), but if it doesn't it should be 
+checking at the filesystem block size (which means 16k on most recently 
+created filesystems).

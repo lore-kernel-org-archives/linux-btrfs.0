@@ -1,51 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:60498 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933322AbdKPRgj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 12:36:39 -0500
-Subject: Re: 4.13.12: kernel BUG at fs/btrfs/ctree.h:1802!
-To: Marc MERLIN <marc@merlins.org>, linux-btrfs@vger.kernel.org
-References: <20171116170445.24n57phzltgiehj6@merlins.org>
- <20171116170742.vyhxckxrgjzwqyvf@merlins.org>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <70b25128-d724-4e8e-9835-4a092cf8d5a6@applied-asynchrony.com>
-Date: Thu, 16 Nov 2017 18:27:44 +0100
+Received: from mx2.suse.de ([195.135.220.15]:58175 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932852AbdKPTIl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 16 Nov 2017 14:08:41 -0500
+Subject: Re: [PATCH] btrfs: handle dynamically reappearing missing device
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171112105650.3248-1-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <4130bd50-b1f3-2d8b-c762-be0b9dbb87bd@suse.com>
+Date: Thu, 16 Nov 2017 21:08:38 +0200
 MIME-Version: 1.0
-In-Reply-To: <20171116170742.vyhxckxrgjzwqyvf@merlins.org>
+In-Reply-To: <20171112105650.3248-1-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/16/17 18:07, Marc MERLIN wrote:
-> Sorry, was missing the kernel number in the subject, just fixed that.
+
+
+On 12.11.2017 12:56, Anand Jain wrote:
+> If the device is not present at the time of (-o degrade) mount
+> the mount context will create a dummy missing struct btrfs_device.
+> Later this device may reappear after the FS is mounted. So this
+> patch handles that case by going through the open_device steps
+> which this device missed and finally adds to the device alloc list.
 > 
-> On Thu, Nov 16, 2017 at 09:04:45AM -0800, Marc MERLIN wrote:
->> My server now reboots every 20mn or so, with this.
->> Sadly another BUG_ON() and it won't even tell me which filesystem
->> it's on
->>
->> static inline u32 btrfs_extent_inline_ref_size(int type)
->> {
->> 	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
->> 	    type == BTRFS_SHARED_BLOCK_REF_KEY)
->> 		return sizeof(struct btrfs_extent_inline_ref);
->> 	if (type == BTRFS_SHARED_DATA_REF_KEY)
->> 		return sizeof(struct btrfs_shared_data_ref) +
->> 		       sizeof(struct btrfs_extent_inline_ref);
->> 	if (type == BTRFS_EXTENT_DATA_REF_KEY)
->> 		return sizeof(struct btrfs_extent_data_ref) +
->> 		       offsetof(struct btrfs_extent_inline_ref, offset);
->> 	BUG();
->> 	return 0;
->> }
+> So now with this patch, to bring back the missing device user can run,
+> 
+>    btrfs dev scan <path-of-missing-device>
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> This patch needs:
+>  [PATCH 0/4]  factor __btrfs_open_devices()
+> 
+>  fs/btrfs/volumes.c | 43 +++++++++++++++++++++++++++++++++++++++++--
+>  1 file changed, 41 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d24e966ee29f..e7dd996831f2 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -769,8 +769,47 @@ static noinline int device_list_add(const char *path,
+>  		rcu_string_free(device->name);
+>  		rcu_assign_pointer(device->name, name);
+>  		if (device->missing) {
+> -			fs_devices->missing_devices--;
+> -			device->missing = 0;
+> +			int ret;
+> +			struct btrfs_fs_info *fs_info = fs_devices->fs_info;
+> +			fmode_t fmode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
+> +
+> +			if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)
+> +				fmode &= ~FMODE_WRITE;
+> +
+> +			/*
+> +			 * Missing can be set only when FS is mounted.
+> +			 * So here its always fs_devices->opened > 0 and most
+> +			 * of the struct device members are already updated by
+> +			 * the mount process even if this device was missing, so
+> +			 * now follow the normal open device procedure for this
+> +			 * device. The scrub will take care of filling the
+> +			 * missing stripes for raid56 and balance for raid1 and
+> +			 * raid10.
+> +			 */
+> +			ASSERT(fs_devices->opened);
+> +			mutex_lock(&fs_devices->device_list_mutex);
+> +			mutex_lock(&fs_info->chunk_mutex);
+> +			ret = btrfs_open_one_device(fs_devices, device, fmode,
+> +							fs_info->bdev_holder);
+> +			if (!ret) {
+> +				fs_devices->missing_devices--;
+> +				device->missing = 0;
+> +				btrfs_clear_opt(fs_info->mount_opt, DEGRADED);
+> +				btrfs_warn(fs_info,
+> +					"BTRFS: device %s devid %llu uuid %pU joined\n",
+> +					path, devid, device->uuid);
+> +			}
+> +
+> +			if (device->writeable &&
+> +					!device->is_tgtdev_for_dev_replace) {
+> +				fs_devices->total_rw_bytes += device->total_bytes;
+> +				atomic64_add(device->total_bytes -
+> +						device->bytes_used,
+> +						&fs_info->free_chunk_space);
+> +			}
+> +			device->in_fs_metadata = 1;
+> +			mutex_unlock(&fs_devices->fs_info->chunk_mutex);
+> +			mutex_unlock(&fs_devices->device_list_mutex);
 
-This BUG() was recently removed and seems to be caused by some kind
-of persistent corruption, which is seen as invalid inline extent.
-See [1], [2] for details. Maybe you can backport them?
-Alternatively just give 4.14 a whirl, it's great.
-
--h
-
-[1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=167ce953ca55bdee20fe56c3c0fa51002435f745
-[2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=4335958de2a43c6790c7f6aa0682aa7189983fa4
+nit: You did add the fs_info local var, so for consistency's sake use that
+>  		}
+>  	}
+>  
+> 

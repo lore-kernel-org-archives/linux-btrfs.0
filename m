@@ -1,125 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:49518 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:53477 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756684AbdKQFRc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 00:17:32 -0500
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
- -17
-To: Marc MERLIN <marc@merlins.org>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-References: <20171117022615.GO10969@merlins.org>
+        id S1756746AbdKQFi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Nov 2017 00:38:29 -0500
+Subject: Re: Btrfs restore error
+To: Jay <j4y0t15@gmail.com>, linux-btrfs@vger.kernel.org
+References: <2382a8cf-2137-9622-6074-a082bcbe2b94@gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
-Date: Fri, 17 Nov 2017 13:17:19 +0800
+Message-ID: <ad8010db-9e11-e205-d77a-d15a11b4da56@gmx.com>
+Date: Fri, 17 Nov 2017 13:38:08 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171117022615.GO10969@merlins.org>
+In-Reply-To: <2382a8cf-2137-9622-6074-a082bcbe2b94@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="VWG9apD9bsf10GtXsKmtnShciWg02C22g"
+ boundary="FWG9T4VOC30Q5QufkA73DOP0uBWiGKnNw"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VWG9apD9bsf10GtXsKmtnShciWg02C22g
-Content-Type: multipart/mixed; boundary="6dHJ3mh6A7MB0of5XrUsligWhb5Gej1v4";
+--FWG9T4VOC30Q5QufkA73DOP0uBWiGKnNw
+Content-Type: multipart/mixed; boundary="VAl4MlcVES879lpldlFxnVSNSbkWuFuJ0";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Marc MERLIN <marc@merlins.org>, Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Message-ID: <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
- -17
-References: <20171117022615.GO10969@merlins.org>
-In-Reply-To: <20171117022615.GO10969@merlins.org>
+To: Jay <j4y0t15@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <ad8010db-9e11-e205-d77a-d15a11b4da56@gmx.com>
+Subject: Re: Btrfs restore error
+References: <2382a8cf-2137-9622-6074-a082bcbe2b94@gmail.com>
+In-Reply-To: <2382a8cf-2137-9622-6074-a082bcbe2b94@gmail.com>
 
---6dHJ3mh6A7MB0of5XrUsligWhb5Gej1v4
+--VAl4MlcVES879lpldlFxnVSNSbkWuFuJ0
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 10:26, Marc MERLIN wrote:
-> Howdy,
+On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 11:56, Jay wrote:
+> Hello,
 >=20
-> Up to date git pull from btrfs-progs:
->=20
-> gargamel:~# btrfs check --repair /dev/mapper/raid0d1
-> enabling repair mode
-> Checking filesystem on /dev/mapper/raid0d1
-> UUID: 01334b81-c0db-4e80-92e4-cac4da867651
-> checking extents
-> corrupt extent record: key 203003699200 168 40960
-> corrupt extent record: key 203003764736 168 172032
-> ref mismatch on [203003699200 40960] extent item 0, found 1
-> Data backref 203003699200 root 258 owner 1933897829 offset 0 num_refs 0=
- not found in extent tree
-> Incorrect local backref count on 203003699200 root 258 owner 1933897829=
- offset 0 found 1 wanted 0 back 0x5596988c2130
-> backpointer mismatch on [203003699200 40960]
-> repair deleting extent record: key 203003699200 168 40960
-> adding new data backref on 203003699200 root 258 owner 1933897829 offse=
-t 0 found 1
-> Repaired extent references for 203003699200
-> Data backref 203003764736 root 258 owner 1932315368 offset 0 num_refs 0=
- not found in extent tree
-> Incorrect local backref count on 203003764736 root 258 owner 1932315368=
- offset 0 found 1 wanted 0 back 0x5596dde358f0
-> backpointer mismatch on [203003764736 172032]
-> repair deleting extent record: key 203003764736 168 172032
-> adding new data backref on 203003764736 root 258 owner 1932315368 offse=
-t 0 found 1
-> Repaired extent references for 203003764736
-> Fixed 0 roots.
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated=
+> I thought I should report something since there was little information
+> on this error. The situation is I have 2 external hard drives on
+> Xubuntu. One is not working and I need to move the data over to the
+> other.
 
-> checking fs roots
-> invalid location in dir item 0
-> Deleting bad dir index [1919785864,96,1958] root 258
-> Deleting bad dir index [1919785864,96,1957] root 258
-> repairing missing dir index item for inode 1919805647
-> cmds-check.c:2614: add_missing_dir_index: BUG_ON `ret` triggered, value=
- -17
+"btrfs replace" should be your first option, not "btrfs restore", unless
+it's totally damaged and you want to salvage as much as possible.
 
--EEXIST. Btrfs check --repair is trying to re-insert some key which
-exists already.
 
-Would you please provide the output of "btrfs-debug-tree -t 258 | grep
-1919805647" to help the debugging?
+> I used 'sudo btrfs restore -v /dev/sde1 /mnt/Old4TB' and
+> received 'Error mkdiring /mnt/Old4TB/Jayda TV:2'.
+
+No extra info like something restored succefully? Just 'Error mkdiring
+/mnt/Old4TB/Jayda TV:2'?
+
+At least it's ENOENT, checking mkdir(3p) should gives your the reason:
+---
+       ENOENT A  component  of the path prefix specified by path does
+not name
+              an existing directory or path is an empty string.
+
+---
+
+Did the dir "/mnt/Old4TB" exists in first place?
 
 Thanks,
 Qu
 
-> btrfs(+0x52207)[0x55966a6fa207]
-> btrfs(+0x5225a)[0x55966a6fa25a]
-> btrfs(+0x5cef3)[0x55966a704ef3]
-> btrfs(cmd_check+0x2e10)[0x55966a70ea35]
-> btrfs(main+0x85)[0x55966a6b9dc3]
-> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f794aadf2b1]=
-
-> btrfs(_start+0x2a)[0x55966a6b993a]
-> Aborted
+> I found one forum
+> post that said I needed to make the destination folder manually, then
+> restore. That did not work. looking at your code 2(%d) is a kernel
+> message? not sure what to make of it. I decided to enter a root
+> environment with 'sudo su' and the restore worked(the folder still
+> existed from previous troubleshoot step). The console is showing files
+> being restored. I tried a dry run first which did not show an error.
+> Just some feedback and reference.
 >=20
+> uname -a
+>=20
+> Linux emb 4.10.0-38-generic #42-16.04.1-Ubuntu SMP Tue Oct 10 16:21:20
+> UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+>=20
+> btrfs --version
+>=20
+> btrfs-progs v4.4
+>=20
+> Thank you,
+>=20
+> Jayotis
+> --=20
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
 
 
---6dHJ3mh6A7MB0of5XrUsligWhb5Gej1v4--
 
---VWG9apD9bsf10GtXsKmtnShciWg02C22g
+--VAl4MlcVES879lpldlFxnVSNSbkWuFuJ0--
+
+--FWG9T4VOC30Q5QufkA73DOP0uBWiGKnNw
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloOcN8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhRHwf+Jct2TT12FIKiExTilh2sIH66
-1+HoHDc0JozGuaBtcBCMaP1QkBRutEVOAErs4Q/VJN+CcJioLyawptIs/CmhEmVO
-XQ1JpLb9bqrLYGvWLr0LTSga1NMROOITrnXkkaNWxEX0WRIGzr0JyhuQ0rtQ24eH
-SMLAeq5yFGn60ufbcK/rfD1WnatrtMPoQxPppeDoslyO5fSIkjsrjuRz0vO2N73G
-uWPuZJoc6+biG3Lg/4lupaKVR1oQUeiyD0dDLgry9f+162kZXQXVmTyoUnpjzEOE
-ZcEuZ4njt4/xivvWvHLIUzzcRV352VaQys6SeYFEvUMFzaErPBAZR4hB19SqMg==
-=JEJy
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloOdcAXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg1zQf/abcCV3TGiVldX5egixoePIaT
+qRoLkC3CtB+7MgCTSXUgn1G8ZW/Z9gA8f9z1yjBu0EJAWuRlyZfCIy3aDFD/mI/W
+DCnFw+xG6vW/zFndc1YDPosbVc3YsxWhwdAZjf22oLgoXQecrYXa/Z59xdUjWiJL
+RSDaMVsZWthFfhF0DXcdgtReqljZpUlcIXf4cmzj4QH6pcfRPTs30+Lh92H/sMmu
+FCJboKxiQcvcdmgIZX0qp04niuvDcXSL8AyjEhbVazJyAMely9D05Ab1etuXy9AV
+Z9L9Zue6XDZbd5vUwqZX7he9DxHuyGd5Ql7Ba8Yf7MJZr8TWwJZYrVoNu/5yCQ==
+=GovS
 -----END PGP SIGNATURE-----
 
---VWG9apD9bsf10GtXsKmtnShciWg02C22g--
+--FWG9T4VOC30Q5QufkA73DOP0uBWiGKnNw--

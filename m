@@ -1,58 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f41.google.com ([209.85.215.41]:45779 "EHLO
-        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756363AbdKQDv5 (ORCPT
+Received: from mail-pf0-f179.google.com ([209.85.192.179]:36203 "EHLO
+        mail-pf0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932283AbdKQD42 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 22:51:57 -0500
-Received: by mail-lf0-f41.google.com with SMTP id e143so1183804lfg.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 19:51:56 -0800 (PST)
-Subject: Re: Need help with incremental backup strategy (snapshots,
- defragmentingt & performance)
-To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
- <20171101101510.218eeead@natsu>
- <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
- <20171114135040.65a659c0@natsu>
- <CAH=dxU7wjag+BPNdu__WidU1qNPeF7Sxgc8YthAVvxbrHx5VmA@mail.gmail.com>
- <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <d7f8d215-e845-79e6-12a9-29468287d7b9@gmail.com>
-Date: Fri, 17 Nov 2017 06:51:52 +0300
+        Thu, 16 Nov 2017 22:56:28 -0500
+Received: by mail-pf0-f179.google.com with SMTP id i15so981424pfa.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 19:56:27 -0800 (PST)
+Received: from [192.168.0.181] (d50-99-92-72.abhsia.telus.net. [50.99.92.72])
+        by smtp.gmail.com with ESMTPSA id n2sm3978885pgv.69.2017.11.16.19.56.26
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 16 Nov 2017 19:56:26 -0800 (PST)
+To: linux-btrfs@vger.kernel.org
+From: Jay <j4y0t15@gmail.com>
+Subject: Btrfs restore error
+Message-ID: <2382a8cf-2137-9622-6074-a082bcbe2b94@gmail.com>
+Date: Thu, 16 Nov 2017 20:56:25 -0700
 MIME-Version: 1.0
-In-Reply-To: <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-16.11.2017 19:13, Kai Krakow пишет:
-...
-> > BTW: From user API perspective, btrfs snapshots do not guarantee
-> perfect granular consistent backups.
+Hello,
 
-Is it documented somewhere? I was relying on crash-consistent
-write-order-preserving snapshots in NetApp for as long as I remember.
-And I was sure btrfs offers is as it is something obvious for
-redirect-on-write idea.
+I thought I should report something since there was little information
+on this error. The situation is I have 2 external hard drives on
+Xubuntu. One is not working and I need to move the data over to the
+other. I used 'sudo btrfs restore -v /dev/sde1 /mnt/Old4TB' and
+received 'Error mkdiring /mnt/Old4TB/Jayda TV:2'. I found one forum
+post that said I needed to make the destination folder manually, then
+restore. That did not work. looking at your code 2(%d) is a kernel
+message? not sure what to make of it. I decided to enter a root
+environment with 'sudo su' and the restore worked(the folder still
+existed from previous troubleshoot step). The console is showing files
+being restored. I tried a dry run first which did not show an error.
+Just some feedback and reference.
 
-> A user-level file transaction may
-> still end up only partially in the snapshot. If you are running
-> transaction sensitive applications, those usually do provide some means
-> of preparing a freeze and a thaw of transactions.
-> 
+uname -a
 
-Is snapshot creation synchronous to know when thaw?
+Linux emb 4.10.0-38-generic #42-16.04.1-Ubuntu SMP Tue Oct 10 16:21:20
+UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
 
-> I think the user transactions API which could've been used for this
-> will even be removed during the next kernel cycles. I remember
-> reiserfs4 tried to deploy something similar. But there's no consistent
-> layer in the VFS for subscribing applications to filesystem snapshots
-> so they could prepare and notify the kernel when they are ready.
-> 
+btrfs --version
 
-I do not see what VFS has to do with it. NetApp works by simply
-preserving previous consistency point instead of throwing it away. I.e.
-snapshot is always last committed image on stable storage. Would
-something like this be possible on btrfs level by duplicating current
-on-disk root (sorry if I use wrong term)?
+btrfs-progs v4.4
 
-...
+Thank you,
+
+Jayotis

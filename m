@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:41226 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754533AbdKQSAQ (ORCPT
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:35440 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754342AbdKQSAM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 13:00:16 -0500
-Received: by mail-qk0-f193.google.com with SMTP id f63so334384qke.8
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 10:00:16 -0800 (PST)
+        Fri, 17 Nov 2017 13:00:12 -0500
+Received: by mail-qt0-f193.google.com with SMTP id n32so7844047qtb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 10:00:12 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
         netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
         kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH 4/4] samples/bpf: add a test for bpf_override_return
-Date: Fri, 17 Nov 2017 13:00:07 -0500
-Message-Id: <1510941607-3997-5-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH 1/4] add infrastructure for tagging functions as error injectable
+Date: Fri, 17 Nov 2017 13:00:04 -0500
+Message-Id: <1510941607-3997-2-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1510941607-3997-1-git-send-email-josef@toxicpanda.com>
 References: <1510941607-3997-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,176 +21,346 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-This adds a basic test for bpf_override_return to verify it works.  We
-override the main function for mounting a btrfs fs so it'll return
--ENOMEM and then make sure that trying to mount a btrfs fs will fail.
+Using BPF we can override kprob'ed functions and return arbitrary
+values.  Obviously this can be a bit unsafe, so make this feature opt-in
+for functions.  Simply tag a function with KPROBE_ERROR_INJECT_SYMBOL in
+order to give BPF access to that function for error injection purposes.
 
-Acked-by: Alexei Starovoitov <ast@kernel.org>
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- samples/bpf/Makefile                      |  4 ++++
- samples/bpf/test_override_return.sh       | 15 +++++++++++++++
- samples/bpf/tracex7_kern.c                | 16 ++++++++++++++++
- samples/bpf/tracex7_user.c                | 28 ++++++++++++++++++++++++++++
- tools/include/uapi/linux/bpf.h            |  7 ++++++-
- tools/testing/selftests/bpf/bpf_helpers.h |  3 ++-
- 6 files changed, 71 insertions(+), 2 deletions(-)
- create mode 100755 samples/bpf/test_override_return.sh
- create mode 100644 samples/bpf/tracex7_kern.c
- create mode 100644 samples/bpf/tracex7_user.c
+ arch/x86/include/asm/asm.h        |   6 ++
+ include/asm-generic/kprobes.h     |   9 +++
+ include/asm-generic/vmlinux.lds.h |  10 +++
+ include/linux/kprobes.h           |   1 +
+ include/linux/module.h            |   5 ++
+ kernel/kprobes.c                  | 163 ++++++++++++++++++++++++++++++++++++++
+ kernel/module.c                   |   6 +-
+ 7 files changed, 199 insertions(+), 1 deletion(-)
 
-diff --git a/samples/bpf/Makefile b/samples/bpf/Makefile
-index ea2b9e6135f3..83d06bc1f710 100644
---- a/samples/bpf/Makefile
-+++ b/samples/bpf/Makefile
-@@ -14,6 +14,7 @@ hostprogs-y += tracex3
- hostprogs-y += tracex4
- hostprogs-y += tracex5
- hostprogs-y += tracex6
-+hostprogs-y += tracex7
- hostprogs-y += test_probe_write_user
- hostprogs-y += trace_output
- hostprogs-y += lathist
-@@ -58,6 +59,7 @@ tracex3-objs := bpf_load.o $(LIBBPF) tracex3_user.o
- tracex4-objs := bpf_load.o $(LIBBPF) tracex4_user.o
- tracex5-objs := bpf_load.o $(LIBBPF) tracex5_user.o
- tracex6-objs := bpf_load.o $(LIBBPF) tracex6_user.o
-+tracex7-objs := bpf_load.o $(LIBBPF) tracex7_user.o
- load_sock_ops-objs := bpf_load.o $(LIBBPF) load_sock_ops.o
- test_probe_write_user-objs := bpf_load.o $(LIBBPF) test_probe_write_user_user.o
- trace_output-objs := bpf_load.o $(LIBBPF) trace_output_user.o
-@@ -100,6 +102,7 @@ always += tracex3_kern.o
- always += tracex4_kern.o
- always += tracex5_kern.o
- always += tracex6_kern.o
-+always += tracex7_kern.o
- always += sock_flags_kern.o
- always += test_probe_write_user_kern.o
- always += trace_output_kern.o
-@@ -153,6 +156,7 @@ HOSTLOADLIBES_tracex3 += -lelf
- HOSTLOADLIBES_tracex4 += -lelf -lrt
- HOSTLOADLIBES_tracex5 += -lelf
- HOSTLOADLIBES_tracex6 += -lelf
-+HOSTLOADLIBES_tracex7 += -lelf
- HOSTLOADLIBES_test_cgrp2_sock2 += -lelf
- HOSTLOADLIBES_load_sock_ops += -lelf
- HOSTLOADLIBES_test_probe_write_user += -lelf
-diff --git a/samples/bpf/test_override_return.sh b/samples/bpf/test_override_return.sh
-new file mode 100755
-index 000000000000..e68b9ee6814b
---- /dev/null
-+++ b/samples/bpf/test_override_return.sh
-@@ -0,0 +1,15 @@
-+#!/bin/bash
+diff --git a/arch/x86/include/asm/asm.h b/arch/x86/include/asm/asm.h
+index b0dc91f4bedc..340f4cc43255 100644
+--- a/arch/x86/include/asm/asm.h
++++ b/arch/x86/include/asm/asm.h
+@@ -85,6 +85,12 @@
+ 	_ASM_PTR (entry);					\
+ 	.popsection
+ 
++# define _ASM_KPROBE_ERROR_INJECT(entry)			\
++	.pushsection "_kprobe_error_inject_list","aw" ;		\
++	_ASM_ALIGN ;						\
++	_ASM_PTR (entry);					\
++	.popseciton
 +
-+rm -f testfile.img
-+dd if=/dev/zero of=testfile.img bs=1M seek=1000 count=1
-+DEVICE=$(losetup --show -f testfile.img)
-+mkfs.btrfs -f $DEVICE
-+mkdir tmpmnt
-+./tracex7 $DEVICE
-+if [ $? -eq 0 ]
-+then
-+	echo "SUCCESS!"
-+else
-+	echo "FAILED!"
-+fi
-+losetup -d $DEVICE
-diff --git a/samples/bpf/tracex7_kern.c b/samples/bpf/tracex7_kern.c
-new file mode 100644
-index 000000000000..1ab308a43e0f
---- /dev/null
-+++ b/samples/bpf/tracex7_kern.c
-@@ -0,0 +1,16 @@
-+#include <uapi/linux/ptrace.h>
-+#include <uapi/linux/bpf.h>
-+#include <linux/version.h>
-+#include "bpf_helpers.h"
+ .macro ALIGN_DESTINATION
+ 	/* check for bad alignment of destination */
+ 	movl %edi,%ecx
+diff --git a/include/asm-generic/kprobes.h b/include/asm-generic/kprobes.h
+index 57af9f21d148..f96c4de5d7b0 100644
+--- a/include/asm-generic/kprobes.h
++++ b/include/asm-generic/kprobes.h
+@@ -22,4 +22,13 @@ static unsigned long __used					\
+ #endif
+ #endif /* defined(__KERNEL__) && !defined(__ASSEMBLY__) */
+ 
++#ifdef CONFIG_BPF_KPROBE_OVERRIDE
++#define BPF_ALLOW_ERROR_INJECTION(fname)				\
++static unsigned long __used						\
++	__attribute__((__section__("_kprobe_error_inject_list")))	\
++	_eil_addr_##fname = (unsigned long)fname;
++#else
++#define BPF_ALLOW_ERROR_INJECTION(fname)
++#endif
 +
-+SEC("kprobe/open_ctree")
-+int bpf_prog1(struct pt_regs *ctx)
+ #endif /* _ASM_GENERIC_KPROBES_H */
+diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
+index 8acfc1e099e1..85822804861e 100644
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -136,6 +136,15 @@
+ #define KPROBE_BLACKLIST()
+ #endif
+ 
++#ifdef CONFIG_BPF_KPROBE_OVERRIDE
++#define ERROR_INJECT_LIST()	. = ALIGN(8);						\
++				VMLINUX_SYMBOL(__start_kprobe_error_inject_list) = .;	\
++				KEEP(*(_kprobe_error_inject_list))			\
++				VMLINUX_SYMBOL(__stop_kprobe_error_inject_list) = .;
++#else
++#define ERROR_INJECT_LIST()
++#endif
++
+ #ifdef CONFIG_EVENT_TRACING
+ #define FTRACE_EVENTS()	. = ALIGN(8);					\
+ 			VMLINUX_SYMBOL(__start_ftrace_events) = .;	\
+@@ -560,6 +569,7 @@
+ 	FTRACE_EVENTS()							\
+ 	TRACE_SYSCALLS()						\
+ 	KPROBE_BLACKLIST()						\
++	ERROR_INJECT_LIST()						\
+ 	MEM_DISCARD(init.rodata)					\
+ 	CLK_OF_TABLES()							\
+ 	RESERVEDMEM_OF_TABLES()						\
+diff --git a/include/linux/kprobes.h b/include/linux/kprobes.h
+index bd2684700b74..4f501cb73aec 100644
+--- a/include/linux/kprobes.h
++++ b/include/linux/kprobes.h
+@@ -271,6 +271,7 @@ extern bool arch_kprobe_on_func_entry(unsigned long offset);
+ extern bool kprobe_on_func_entry(kprobe_opcode_t *addr, const char *sym, unsigned long offset);
+ 
+ extern bool within_kprobe_blacklist(unsigned long addr);
++extern bool within_kprobe_error_injection_list(unsigned long addr);
+ 
+ struct kprobe_insn_cache {
+ 	struct mutex mutex;
+diff --git a/include/linux/module.h b/include/linux/module.h
+index fe5aa3736707..7bb1a9b9a322 100644
+--- a/include/linux/module.h
++++ b/include/linux/module.h
+@@ -475,6 +475,11 @@ struct module {
+ 	ctor_fn_t *ctors;
+ 	unsigned int num_ctors;
+ #endif
++
++#ifdef CONFIG_BPF_KPROBE_OVERRIDE
++	unsigned int num_kprobe_ei_funcs;
++	unsigned long *kprobe_ei_funcs;
++#endif
+ } ____cacheline_aligned __randomize_layout;
+ #ifndef MODULE_ARCH_INIT
+ #define MODULE_ARCH_INIT {}
+diff --git a/kernel/kprobes.c b/kernel/kprobes.c
+index a1606a4224e1..7afadf07b34e 100644
+--- a/kernel/kprobes.c
++++ b/kernel/kprobes.c
+@@ -83,6 +83,16 @@ static raw_spinlock_t *kretprobe_table_lock_ptr(unsigned long hash)
+ 	return &(kretprobe_table_locks[hash].lock);
+ }
+ 
++/* List of symbols that can be overriden for error injection. */
++static LIST_HEAD(kprobe_error_injection_list);
++static DEFINE_MUTEX(kprobe_ei_mutex);
++struct kprobe_ei_entry {
++	struct list_head list;
++	unsigned long start_addr;
++	unsigned long end_addr;
++	void *priv;
++};
++
+ /* Blacklist -- list of struct kprobe_blacklist_entry */
+ static LIST_HEAD(kprobe_blacklist);
+ 
+@@ -1392,6 +1402,17 @@ bool within_kprobe_blacklist(unsigned long addr)
+ 	return false;
+ }
+ 
++bool within_kprobe_error_injection_list(unsigned long addr)
 +{
-+	unsigned long rc = -12;
++	struct kprobe_ei_entry *ent;
 +
-+	bpf_override_return(ctx, rc);
++	list_for_each_entry(ent, &kprobe_error_injection_list, list) {
++		if (addr >= ent->start_addr && addr < ent->end_addr)
++			return true;
++	}
++	return false;
++}
++
+ /*
+  * If we have a symbol_name argument, look it up and add the offset field
+  * to it. This way, we can specify a relative address to a symbol.
+@@ -2164,6 +2185,86 @@ static int __init populate_kprobe_blacklist(unsigned long *start,
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_BPF_KPROBE_OVERRIDE
++/* Markers of the _kprobe_error_inject_list section */
++extern unsigned long __start_kprobe_error_inject_list[];
++extern unsigned long __stop_kprobe_error_inject_list[];
++
++/*
++ * Lookup and populate the kprobe_error_injection_list.
++ *
++ * For safety reasons we only allow certain functions to be overriden with
++ * bpf_error_injection, so we need to populate the list of the symbols that have
++ * been marked as safe for overriding.
++ */
++static void populate_kprobe_error_injection_list(unsigned long *start,
++						 unsigned long *end,
++						 void *priv)
++{
++	unsigned long *iter;
++	struct kprobe_ei_entry *ent;
++	unsigned long entry, offset = 0, size = 0;
++
++	mutex_lock(&kprobe_ei_mutex);
++	for (iter = start; iter < end; iter++) {
++		entry = arch_deref_entry_point((void *)*iter);
++
++		if (!kernel_text_address(entry) ||
++		    !kallsyms_lookup_size_offset(entry, &size, &offset)) {
++			pr_err("Failed to find error inject entry at %p\n",
++				(void *)entry);
++			continue;
++		}
++
++		ent = kmalloc(sizeof(*ent), GFP_KERNEL);
++		if (!ent)
++			break;
++		ent->start_addr = entry;
++		ent->end_addr = entry + size;
++		ent->priv = priv;
++		INIT_LIST_HEAD(&ent->list);
++		list_add_tail(&ent->list, &kprobe_error_injection_list);
++	}
++	mutex_unlock(&kprobe_ei_mutex);
++}
++
++static void __init populate_kernel_kprobe_ei_list(void)
++{
++	populate_kprobe_error_injection_list(__start_kprobe_error_inject_list,
++					     __stop_kprobe_error_inject_list,
++					     NULL);
++}
++
++static void module_load_kprobe_ei_list(struct module *mod)
++{
++	if (!mod->num_kprobe_ei_funcs)
++		return;
++	populate_kprobe_error_injection_list(mod->kprobe_ei_funcs,
++					     mod->kprobe_ei_funcs +
++					     mod->num_kprobe_ei_funcs, mod);
++}
++
++static void module_unload_kprobe_ei_list(struct module *mod)
++{
++	struct kprobe_ei_entry *ent, *n;
++	if (!mod->num_kprobe_ei_funcs)
++		return;
++
++	mutex_lock(&kprobe_ei_mutex);
++	list_for_each_entry_safe(ent, n, &kprobe_error_injection_list, list) {
++		if (ent->priv == mod) {
++			list_del_init(&ent->list);
++			kfree(ent);
++		}
++	}
++	mutex_unlock(&kprobe_ei_mutex);
++}
++#else
++static inline void __init populate_kprobe_error_injection_list(void) {}
++static inline void module_load_kprobe_ei_list(struct module *m) {}
++static inline void module_unload_kprobe_ei_list(struct module *m) {}
++#endif
++
+ /* Module notifier call back, checking kprobes on the module */
+ static int kprobes_module_callback(struct notifier_block *nb,
+ 				   unsigned long val, void *data)
+@@ -2174,6 +2275,11 @@ static int kprobes_module_callback(struct notifier_block *nb,
+ 	unsigned int i;
+ 	int checkcore = (val == MODULE_STATE_GOING);
+ 
++	if (val == MODULE_STATE_COMING)
++		module_load_kprobe_ei_list(mod);
++	else if (val == MODULE_STATE_GOING)
++		module_unload_kprobe_ei_list(mod);
++
+ 	if (val != MODULE_STATE_GOING && val != MODULE_STATE_LIVE)
+ 		return NOTIFY_DONE;
+ 
+@@ -2236,6 +2342,8 @@ static int __init init_kprobes(void)
+ 		pr_err("Please take care of using kprobes.\n");
+ 	}
+ 
++	populate_kernel_kprobe_ei_list();
++
+ 	if (kretprobe_blacklist_size) {
+ 		/* lookup the function address from its name */
+ 		for (i = 0; kretprobe_blacklist[i].name != NULL; i++) {
+@@ -2403,6 +2511,56 @@ static const struct file_operations debugfs_kprobe_blacklist_ops = {
+ 	.release        = seq_release,
+ };
+ 
++/*
++ * kprobes/error_injection_list -- shows which functions can be overriden for
++ * error injection.
++ * */
++static void *kprobe_ei_seq_start(struct seq_file *m, loff_t *pos)
++{
++	mutex_lock(&kprobe_ei_mutex);
++	return seq_list_start(&kprobe_error_injection_list, *pos);
++}
++
++static void kprobe_ei_seq_stop(struct seq_file *m, void *v)
++{
++	mutex_unlock(&kprobe_ei_mutex);
++}
++
++static void *kprobe_ei_seq_next(struct seq_file *m, void *v, loff_t *pos)
++{
++	return seq_list_next(v, &kprobe_error_injection_list, pos);
++}
++
++static int kprobe_ei_seq_show(struct seq_file *m, void *v)
++{
++	char buffer[KSYM_SYMBOL_LEN];
++	struct kprobe_ei_entry *ent =
++		list_entry(v, struct kprobe_ei_entry, list);
++
++	sprint_symbol(buffer, ent->start_addr);
++	seq_printf(m, "%s\n", buffer);
 +	return 0;
 +}
 +
-+char _license[] SEC("license") = "GPL";
-+u32 _version SEC("version") = LINUX_VERSION_CODE;
-diff --git a/samples/bpf/tracex7_user.c b/samples/bpf/tracex7_user.c
-new file mode 100644
-index 000000000000..8a52ac492e8b
---- /dev/null
-+++ b/samples/bpf/tracex7_user.c
-@@ -0,0 +1,28 @@
-+#define _GNU_SOURCE
++static const struct seq_operations kprobe_ei_seq_ops = {
++	.start = kprobe_ei_seq_start,
++	.next  = kprobe_ei_seq_next,
++	.stop  = kprobe_ei_seq_stop,
++	.show  = kprobe_ei_seq_show,
++};
 +
-+#include <stdio.h>
-+#include <linux/bpf.h>
-+#include <unistd.h>
-+#include "libbpf.h"
-+#include "bpf_load.h"
-+
-+int main(int argc, char **argv)
++static int kprobe_ei_open(struct inode *inode, struct file *filp)
 +{
-+	FILE *f;
-+	char filename[256];
-+	char command[256];
-+	int ret;
-+
-+	snprintf(filename, sizeof(filename), "%s_kern.o", argv[0]);
-+
-+	if (load_bpf_file(filename)) {
-+		printf("%s", bpf_log_buf);
-+		return 1;
-+	}
-+
-+	snprintf(command, 256, "mount %s tmpmnt/", argv[1]);
-+	f = popen(command, "r");
-+	ret = pclose(f);
-+
-+	return ret ? 0 : 1;
++	return seq_open(filp, &kprobe_ei_seq_ops);
 +}
-diff --git a/tools/include/uapi/linux/bpf.h b/tools/include/uapi/linux/bpf.h
-index 4a4b6e78c977..3756dde69834 100644
---- a/tools/include/uapi/linux/bpf.h
-+++ b/tools/include/uapi/linux/bpf.h
-@@ -673,6 +673,10 @@ union bpf_attr {
-  *     @buf: buf to fill
-  *     @buf_size: size of the buf
-  *     Return : 0 on success or negative error code
-+ *
-+ * int bpf_override_return(pt_regs, rc)
-+ *	@pt_regs: pointer to struct pt_regs
-+ *	@rc: the return value to set
-  */
- #define __BPF_FUNC_MAPPER(FN)		\
- 	FN(unspec),			\
-@@ -732,7 +736,8 @@ union bpf_attr {
- 	FN(xdp_adjust_meta),		\
- 	FN(perf_event_read_value),	\
- 	FN(perf_prog_read_value),	\
--	FN(getsockopt),
-+	FN(getsockopt),			\
-+	FN(override_return),
++
++static const struct file_operations debugfs_kprobe_ei_ops = {
++	.open           = kprobe_ei_open,
++	.read           = seq_read,
++	.llseek         = seq_lseek,
++	.release        = seq_release,
++};
++
+ static void arm_all_kprobes(void)
+ {
+ 	struct hlist_head *head;
+@@ -2544,6 +2702,11 @@ static int __init debugfs_kprobe_init(void)
+ 	if (!file)
+ 		goto error;
  
- /* integer value in 'imm' field of BPF_CALL instruction selects which helper
-  * function eBPF program intends to call
-diff --git a/tools/testing/selftests/bpf/bpf_helpers.h b/tools/testing/selftests/bpf/bpf_helpers.h
-index abfa4c5c8527..086733298d5e 100644
---- a/tools/testing/selftests/bpf/bpf_helpers.h
-+++ b/tools/testing/selftests/bpf/bpf_helpers.h
-@@ -81,7 +81,8 @@ static int (*bpf_perf_event_read_value)(void *map, unsigned long long flags,
- static int (*bpf_perf_prog_read_value)(void *ctx, void *buf,
- 				       unsigned int buf_size) =
- 	(void *) BPF_FUNC_perf_prog_read_value;
++	file = debugfs_create_file("error_injection_list", 0444, dir, NULL,
++				  &debugfs_kprobe_ei_ops);
++	if (!file)
++		goto error;
++
+ 	return 0;
+ 
+ error:
+diff --git a/kernel/module.c b/kernel/module.c
+index de66ec825992..19d8d9455f2f 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -3110,7 +3110,11 @@ static int find_module_sections(struct module *mod, struct load_info *info)
+ 					     sizeof(*mod->ftrace_callsites),
+ 					     &mod->num_ftrace_callsites);
+ #endif
 -
-+static int (*bpf_override_return)(void *ctx, unsigned long rc) =
-+	(void *) BPF_FUNC_override_return;
++#ifdef CONFIG_BPF_KPROBE_OVERRIDE
++	mod->kprobe_ei_funcs = section_objs(info, "_kprobe_error_inject_list",
++					    sizeof(*mod->kprobe_ei_funcs),
++					    &mod->num_kprobe_ei_funcs);
++#endif
+ 	mod->extable = section_objs(info, "__ex_table",
+ 				    sizeof(*mod->extable), &mod->num_exentries);
  
- /* llvm builtin functions that eBPF C program may use to
-  * emit BPF_LD_ABS and BPF_LD_IND instructions
 -- 
 2.7.5
 

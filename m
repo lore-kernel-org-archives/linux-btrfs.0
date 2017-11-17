@@ -1,129 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45412 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:44407 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750888AbdKQTji (ORCPT
+        with ESMTP id S1423039AbdKQW4z (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 14:39:38 -0500
-Date: Fri, 17 Nov 2017 11:39:25 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: xfs <linux-xfs@vger.kernel.org>
-Cc: Ilya Dryomov <idryomov@gmail.com>,
+        Fri, 17 Nov 2017 17:56:55 -0500
+Date: Fri, 17 Nov 2017 14:56:41 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: xfs <linux-xfs@vger.kernel.org>, Ilya Dryomov <idryomov@gmail.com>,
         linux-fsdevel <linux-fsdevel@vger.kernel.org>,
         Dave Chinner <david@fromorbit.com>, Brian Foster <bfoster@redhat.com>,
         holger@applied-asynchrony.com, linux-ext4 <linux-ext4@vger.kernel.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2] iomap: report collisions between directio and buffered
- writes to userspace
-Message-ID: <20171117193925.GM5119@magnolia>
+Subject: Re: [PATCH v2] iomap: report collisions between directio and
+ buffered writes to userspace
+Message-ID: <20171117225640.GA11918@dhcp-10-11-180-142.int.fusionio.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20171117193925.GM5119@magnolia>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171117193925.GM5119@magnolia>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Darrick J. Wong <darrick.wong@oracle.com>
+On Fri, Nov 17, 2017 at 11:39:25AM -0800, Darrick J. Wong wrote:
+> From: Darrick J. Wong <darrick.wong@oracle.com>
+> 
+> If two programs simultaneously try to write to the same part of a file
+> via direct IO and buffered IO, there's a chance that the post-diowrite
+> pagecache invalidation will fail on the dirty page.  When this happens,
+> the dio write succeeded, which means that the page cache is no longer
+> coherent with the disk!
+> 
+> Programs are not supposed to mix IO types and this is a clear case of
+> data corruption, so store an EIO which will be reflected to userspace
+> during the next fsync.  Replace the WARN_ON with a ratelimited pr_crit
+> so that the developers have /some/ kind of breadcrumb to track down the
+> offending program(s) and file(s) involved.
+>
 
-If two programs simultaneously try to write to the same part of a file
-via direct IO and buffered IO, there's a chance that the post-diowrite
-pagecache invalidation will fail on the dirty page.  When this happens,
-the dio write succeeded, which means that the page cache is no longer
-coherent with the disk!
+Looks good to me, thanks for addressing the warning.
 
-Programs are not supposed to mix IO types and this is a clear case of
-data corruption, so store an EIO which will be reflected to userspace
-during the next fsync.  Replace the WARN_ON with a ratelimited pr_crit
-so that the developers have /some/ kind of breadcrumb to track down the
-offending program(s) and file(s) involved.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- fs/direct-io.c     |   24 +++++++++++++++++++++++-
- fs/iomap.c         |   12 ++++++++++--
- include/linux/fs.h |    1 +
- 3 files changed, 34 insertions(+), 3 deletions(-)
+Thanks,
 
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 98fe132..ef5d12a 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -219,6 +219,27 @@ static inline struct page *dio_get_page(struct dio *dio,
- 	return dio->pages[sdio->head];
- }
- 
-+/*
-+ * Warn about a page cache invalidation failure during a direct io write.
-+ */
-+void dio_warn_stale_pagecache(struct file *filp)
-+{
-+	static DEFINE_RATELIMIT_STATE(_rs, 30 * HZ, DEFAULT_RATELIMIT_BURST);
-+	char pathname[128];
-+	struct inode *inode = file_inode(filp);
-+	char *path;
-+
-+	errseq_set(&inode->i_mapping->wb_err, -EIO);
-+	if (__ratelimit(&_rs)) {
-+		path = file_path(filp, pathname, sizeof(pathname));
-+		if (IS_ERR(path))
-+			path = "(unknown)";
-+		pr_crit("Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!\n");
-+		pr_crit("File: %s PID: %d Comm: %.20s\n", path, current->pid,
-+			current->comm);
-+	}
-+}
-+
- /**
-  * dio_complete() - called when all DIO BIO I/O has been completed
-  * @offset: the byte offset in the file of the completed operation
-@@ -290,7 +311,8 @@ static ssize_t dio_complete(struct dio *dio, ssize_t ret, unsigned int flags)
- 		err = invalidate_inode_pages2_range(dio->inode->i_mapping,
- 					offset >> PAGE_SHIFT,
- 					(offset + ret - 1) >> PAGE_SHIFT);
--		WARN_ON_ONCE(err);
-+		if (err)
-+			dio_warn_stale_pagecache(dio->iocb->ki_filp);
- 	}
- 
- 	if (!(dio->flags & DIO_SKIP_DIO_COUNT))
-diff --git a/fs/iomap.c b/fs/iomap.c
-index 5011a96..028f329 100644
---- a/fs/iomap.c
-+++ b/fs/iomap.c
-@@ -753,7 +753,8 @@ static ssize_t iomap_dio_complete(struct iomap_dio *dio)
- 		err = invalidate_inode_pages2_range(inode->i_mapping,
- 				offset >> PAGE_SHIFT,
- 				(offset + dio->size - 1) >> PAGE_SHIFT);
--		WARN_ON_ONCE(err);
-+		if (err)
-+			dio_warn_stale_pagecache(iocb->ki_filp);
- 	}
- 
- 	inode_dio_end(file_inode(iocb->ki_filp));
-@@ -1012,9 +1013,16 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
- 	if (ret)
- 		goto out_free_dio;
- 
-+	/*
-+	 * Try to invalidate cache pages for the range we're direct
-+	 * writing.  If this invalidation fails, tough, the write will
-+	 * still work, but racing two incompatible write paths is a
-+	 * pretty crazy thing to do, so we don't support it 100%.
-+	 */
- 	ret = invalidate_inode_pages2_range(mapping,
- 			start >> PAGE_SHIFT, end >> PAGE_SHIFT);
--	WARN_ON_ONCE(ret);
-+	if (ret)
-+		dio_warn_stale_pagecache(iocb->ki_filp);
- 	ret = 0;
- 
- 	if (iov_iter_rw(iter) == WRITE && !is_sync_kiocb(iocb) &&
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 2690864..0e5f060 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2976,6 +2976,7 @@ enum {
- };
- 
- void dio_end_io(struct bio *bio);
-+void dio_warn_stale_pagecache(struct file *filp);
- 
- ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
- 			     struct block_device *bdev, struct iov_iter *iter,
+-liubo
+
+> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+> ---
+>  fs/direct-io.c     |   24 +++++++++++++++++++++++-
+>  fs/iomap.c         |   12 ++++++++++--
+>  include/linux/fs.h |    1 +
+>  3 files changed, 34 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/direct-io.c b/fs/direct-io.c
+> index 98fe132..ef5d12a 100644
+> --- a/fs/direct-io.c
+> +++ b/fs/direct-io.c
+> @@ -219,6 +219,27 @@ static inline struct page *dio_get_page(struct dio *dio,
+>  	return dio->pages[sdio->head];
+>  }
+>  
+> +/*
+> + * Warn about a page cache invalidation failure during a direct io write.
+> + */
+> +void dio_warn_stale_pagecache(struct file *filp)
+> +{
+> +	static DEFINE_RATELIMIT_STATE(_rs, 30 * HZ, DEFAULT_RATELIMIT_BURST);
+> +	char pathname[128];
+> +	struct inode *inode = file_inode(filp);
+> +	char *path;
+> +
+> +	errseq_set(&inode->i_mapping->wb_err, -EIO);
+> +	if (__ratelimit(&_rs)) {
+> +		path = file_path(filp, pathname, sizeof(pathname));
+> +		if (IS_ERR(path))
+> +			path = "(unknown)";
+> +		pr_crit("Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!\n");
+> +		pr_crit("File: %s PID: %d Comm: %.20s\n", path, current->pid,
+> +			current->comm);
+> +	}
+> +}
+> +
+>  /**
+>   * dio_complete() - called when all DIO BIO I/O has been completed
+>   * @offset: the byte offset in the file of the completed operation
+> @@ -290,7 +311,8 @@ static ssize_t dio_complete(struct dio *dio, ssize_t ret, unsigned int flags)
+>  		err = invalidate_inode_pages2_range(dio->inode->i_mapping,
+>  					offset >> PAGE_SHIFT,
+>  					(offset + ret - 1) >> PAGE_SHIFT);
+> -		WARN_ON_ONCE(err);
+> +		if (err)
+> +			dio_warn_stale_pagecache(dio->iocb->ki_filp);
+>  	}
+>  
+>  	if (!(dio->flags & DIO_SKIP_DIO_COUNT))
+> diff --git a/fs/iomap.c b/fs/iomap.c
+> index 5011a96..028f329 100644
+> --- a/fs/iomap.c
+> +++ b/fs/iomap.c
+> @@ -753,7 +753,8 @@ static ssize_t iomap_dio_complete(struct iomap_dio *dio)
+>  		err = invalidate_inode_pages2_range(inode->i_mapping,
+>  				offset >> PAGE_SHIFT,
+>  				(offset + dio->size - 1) >> PAGE_SHIFT);
+> -		WARN_ON_ONCE(err);
+> +		if (err)
+> +			dio_warn_stale_pagecache(iocb->ki_filp);
+>  	}
+>  
+>  	inode_dio_end(file_inode(iocb->ki_filp));
+> @@ -1012,9 +1013,16 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+>  	if (ret)
+>  		goto out_free_dio;
+>  
+> +	/*
+> +	 * Try to invalidate cache pages for the range we're direct
+> +	 * writing.  If this invalidation fails, tough, the write will
+> +	 * still work, but racing two incompatible write paths is a
+> +	 * pretty crazy thing to do, so we don't support it 100%.
+> +	 */
+>  	ret = invalidate_inode_pages2_range(mapping,
+>  			start >> PAGE_SHIFT, end >> PAGE_SHIFT);
+> -	WARN_ON_ONCE(ret);
+> +	if (ret)
+> +		dio_warn_stale_pagecache(iocb->ki_filp);
+>  	ret = 0;
+>  
+>  	if (iov_iter_rw(iter) == WRITE && !is_sync_kiocb(iocb) &&
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index 2690864..0e5f060 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -2976,6 +2976,7 @@ enum {
+>  };
+>  
+>  void dio_end_io(struct bio *bio);
+> +void dio_warn_stale_pagecache(struct file *filp);
+>  
+>  ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
+>  			     struct block_device *bdev, struct iov_iter *iter,
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,36 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f43.google.com ([209.85.218.43]:45491 "EHLO
-        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755116AbdKQBzj (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:60959 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755342AbdKQC0T (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 20:55:39 -0500
-Received: by mail-oi0-f43.google.com with SMTP id v123so681948oif.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 17:55:38 -0800 (PST)
+        Thu, 16 Nov 2017 21:26:19 -0500
+Date: Thu, 16 Nov 2017 18:26:15 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
+Subject: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value -17
+Message-ID: <20171117022615.GO10969@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRKWA-tOaS5K-JOvxj4OYD==-Vrap4MbHZTfwYxc_FEKQ@mail.gmail.com>
-References: <477d2d2b-3893-50c1-5946-076670a03f2d@gmx.com> <7ed134fc-1616-a1ab-6701-a917af0522da@suse.com>
- <5357fd4a-51b1-ebfb-27de-4d022d9749c0@gmx.com> <4df8d248-5def-9d29-89eb-7d9b977f089e@suse.com>
- <354402cd-587d-72d8-aaa1-87a1b5c9f03c@gmx.com> <6e0f8a37-c3f8-61f0-d51d-01b72c3c65b7@redhat.com>
- <189cda7b-e3ee-4379-c7f2-57efd759b78a@gmx.com> <CAJCQCtRUGEdu13RCKFb6uZQ3UCzoAByhu97FdwQoFPxvsOua0Q@mail.gmail.com>
- <4baeb223-85d3-4c0c-e6d3-d0b495c2d950@gmx.com> <CAJCQCtRKWA-tOaS5K-JOvxj4OYD==-Vrap4MbHZTfwYxc_FEKQ@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 16 Nov 2017 18:55:37 -0700
-Message-ID: <CAJCQCtTawScbtgWyrEWJ+crYdEkD78i9BPwRhs287iDOUHhSfg@mail.gmail.com>
-Subject: Re: Ideas to reuse filesystem's checksum to enhance dm-raid1/10/5/6?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Zdenek Kabelac <zkabelac@redhat.com>,
-        Nikolay Borisov <nborisov@suse.com>, linux-block@vger.kernel.org,
-        dm-devel@redhat.com, Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 16, 2017 at 6:54 PM, Chris Murphy <lists@colorremedies.com> wrote:
+Howdy,
 
-> The user doesn't have to setup dm-verity to get this.
+Up to date git pull from btrfs-progs:
 
-Or dm-integrity, rather.
+gargamel:~# btrfs check --repair /dev/mapper/raid0d1
+enabling repair mode
+Checking filesystem on /dev/mapper/raid0d1
+UUID: 01334b81-c0db-4e80-92e4-cac4da867651
+checking extents
+corrupt extent record: key 203003699200 168 40960
+corrupt extent record: key 203003764736 168 172032
+ref mismatch on [203003699200 40960] extent item 0, found 1
+Data backref 203003699200 root 258 owner 1933897829 offset 0 num_refs 0 not found in extent tree
+Incorrect local backref count on 203003699200 root 258 owner 1933897829 offset 0 found 1 wanted 0 back 0x5596988c2130
+backpointer mismatch on [203003699200 40960]
+repair deleting extent record: key 203003699200 168 40960
+adding new data backref on 203003699200 root 258 owner 1933897829 offset 0 found 1
+Repaired extent references for 203003699200
+Data backref 203003764736 root 258 owner 1932315368 offset 0 num_refs 0 not found in extent tree
+Incorrect local backref count on 203003764736 root 258 owner 1932315368 offset 0 found 1 wanted 0 back 0x5596dde358f0
+backpointer mismatch on [203003764736 172032]
+repair deleting extent record: key 203003764736 168 172032
+adding new data backref on 203003764736 root 258 owner 1932315368 offset 0 found 1
+Repaired extent references for 203003764736
+Fixed 0 roots.
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+invalid location in dir item 0
+Deleting bad dir index [1919785864,96,1958] root 258
+Deleting bad dir index [1919785864,96,1957] root 258
+repairing missing dir index item for inode 1919805647
+cmds-check.c:2614: add_missing_dir_index: BUG_ON `ret` triggered, value -17
+btrfs(+0x52207)[0x55966a6fa207]
+btrfs(+0x5225a)[0x55966a6fa25a]
+btrfs(+0x5cef3)[0x55966a704ef3]
+btrfs(cmd_check+0x2e10)[0x55966a70ea35]
+btrfs(main+0x85)[0x55966a6b9dc3]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f794aadf2b1]
+btrfs(_start+0x2a)[0x55966a6b993a]
+Aborted
 
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

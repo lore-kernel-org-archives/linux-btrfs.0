@@ -1,105 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx.mokrynskyi.com ([46.4.12.50]:54496 "EHLO mx.mokrynskyi.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751052AbdKQPsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 10:48:46 -0500
-Received: from localhost (localhost [127.0.0.1])
-        by mx.mokrynskyi.com (Postfix) with ESMTP id 83FD81332
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 15:41:47 +0000 (UTC)
-Received: from mx.mokrynskyi.com ([127.0.0.1])
-        by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id gMtr3hif9lAD for <linux-btrfs@vger.kernel.org>;
-        Fri, 17 Nov 2017 15:41:47 +0000 (UTC)
-Received: from [192.168.1.2] (bomann.znet.kiev.ua [176.122.88.128])
-        by mx.mokrynskyi.com (Postfix) with ESMTPSA id 223C61328
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 15:41:47 +0000 (UTC)
-To: linux-btrfs@vger.kernel.org
-From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
-Subject: Unrecoverable scrub errors
-Message-ID: <0d0062da-6310-7662-a7ec-edc6591b4542@mokrynskyi.com>
-Date: Fri, 17 Nov 2017 17:41:46 +0200
+Received: from magic.merlins.org ([209.81.13.136]:48428 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1757209AbdKQPuV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Nov 2017 10:50:21 -0500
+Date: Fri, 17 Nov 2017 07:50:09 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Message-ID: <20171117155009.po4wxaqlyqnzqpom@merlins.org>
+References: <20171117022615.GO10969@merlins.org>
+ <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
+ <20171117061707.geqtk3ydj2elv4o7@merlins.org>
+ <20171117073046.ehdlw5essf7lhw7k@merlins.org>
+ <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
+Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered,
+ value -17
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi folks,
+On Fri, Nov 17, 2017 at 04:12:07PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2017年11月17日 15:30, Marc MERLIN wrote:
+> > Here's the whole output:
+> > gargamel:~# btrfs-debug-tree -t 258 /dev/mapper/raid0d1 | grep 1919805647
+> 
+> Sorry, I missed "-C10" parameter for grep.
+ 
+                generation 2231977 transid 2237084 size 64 nbytes 0
+                block group 0 mode 40755 links 1 uid 33 gid 33 rdev 0
+                sequence 0 flags 0x1710(none)
+                atime 1510290002.516060162 (2017-11-09 21:00:02)
+                ctime 1510477350.88506455 (2017-11-12 01:02:30)
+                mtime 1510477350.88506455 (2017-11-12 01:02:30)
+                otime 1510290002.516060162 (2017-11-09 21:00:02)
+        item 26 key (1919785864 INODE_REF 1919785862) itemoff 14683 itemsize 12
+                index 2 namelen 2 name: 00
+        item 27 key (1919785864 DIR_ITEM 2591417872) itemoff 14637 itemsize 46
+                location key (1919805647 INODE_ITEM 0) type FILE
+                transid 2231988 data_len 0 name_len 16
+                name: 1955-capture.jpg
+        item 28 key (1919785864 DIR_ITEM 3406016191) itemoff 14591 itemsize 46
+                location key (1919805657 INODE_ITEM 0) type FILE
+                transid 2231988 data_len 0 name_len 16
+                name: 1956-capture.jpg
+        item 29 key (1919785864 DIR_INDEX 1957) itemoff 14575 itemsize 16
+                location key (7383370114097217536 UNKNOWN.211 15651972432879681580) type DIR_ITEM.0
+                transid 72057594045427176 data_len 0 name_len 0
+                name: 
+        item 30 key (1919805647 INODE_ITEM 0) itemoff 14415 itemsize 160
+                generation 2231988 transid 2231989 size 81701 nbytes 81920
+                block group 0 mode 100644 links 1 uid 33 gid 33 rdev 0
+                sequence 8 flags 0x14(NOCOMPRESS)
+                atime 1510290392.703320623 (2017-11-09 21:06:32)
+                ctime 1510290392.715320477 (2017-11-09 21:06:32)
+                mtime 1510290392.715320477 (2017-11-09 21:06:32)
+                otime 1510290392.703320623 (2017-11-09 21:06:32)
+        item 31 key (1919805647 INODE_REF 1919785864) itemoff 14389 itemsize 26
+                index 1957 namelen 16 name: 1955-capture.jpg
+        item 32 key (1919805647 EXTENT_DATA 0) itemoff 14336 itemsize 53
+                generation 2231989 type 1 (regular)
+                extent data disk byte 2381649588224 nr 81920
+                extent data offset 0 nr 81920 ram 81920
+                extent compression 0 (none)
+        item 33 key (1919805657 INODE_ITEM 0) itemoff 14176 itemsize 160
+                generation 2231988 transid 2231989 size 81856 nbytes 81920
+                block group 0 mode 100644 links 1 uid 33 gid 33 rdev 0
+                sequence 8 flags 0x14(NOCOMPRESS)
+                atime 1510290392.919317997 (2017-11-09 21:06:32)
+                ctime 1510290392.931317852 (2017-11-09 21:06:32)
 
-I'm a long-term btrfs user (permanently for my root partition and other stuff for ~3 years now, with compression, most of the way with RAID0 on various SSD, etc).
 
-In simple words my setup consists of root partition and backup partition. There are automated snapshots on root partition which are then copied to online backup partition (send/receive, handled by "Just backup btrfs") and occasionally to offline backup partition (handled by "Btrfs sync subvolumes").
+> Although what we could try is to avoid BUG_ON(), but I'm afraid the
+> problem is more severe than my expectation.
+ 
+How does it look now?
 
-I've recently found that my online backup partition has some unrecoverable errors as reported after running scrub:
+> Any idea how such corruption happened?
 
-> scrub status for 82cfcb0f-0b80-4764-bed6-f529f2030ac5
->         scrub started at Fri Nov 17 15:05:12 2017 and finished after 02:07:30
->         total bytes scrubbed: 915.16GiB with 12 errors
->         error details: csum=12
->         corrected errors: 0, uncorrectable errors: 12, unverified errors: 0
-dmesg (this is all related to mentioned errors):
+Sigh, I wish I knew.
 
-> [551049.038718] BTRFS warning (device dm-2): checksum error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238048: metadata leaf (level 0) in tree 985
-> [551049.038720] BTRFS warning (device dm-2): checksum error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238048: metadata leaf (level 0) in tree 985
-> [551049.038723] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-> [551049.039634] BTRFS warning (device dm-2): checksum error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238176: metadata leaf (level 0) in tree 985
-> [551049.039635] BTRFS warning (device dm-2): checksum error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238176: metadata leaf (level 0) in tree 985
-> [551049.039637] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-> [551049.413114] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551049.413473] BTRFS warning (device dm-2): checksum error at logical 470069477376 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238080: metadata leaf (level 0) in tree 985
-> [551049.413473] BTRFS warning (device dm-2): checksum error at logical 470069477376 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238080: metadata leaf (level 0) in tree 985
-> [551049.413475] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 3, gen 0
-> [551049.413685] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069477376 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551049.413910] BTRFS warning (device dm-2): checksum error at logical 470069493760 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238112: metadata leaf (level 0) in tree 985
-> [551049.413911] BTRFS warning (device dm-2): checksum error at logical 470069493760 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238112: metadata leaf (level 0) in tree 985
-> [551049.413912] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 4, gen 0
-> [551049.414121] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069493760 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551049.414354] BTRFS warning (device dm-2): checksum error at logical 470069510144 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238144: metadata leaf (level 0) in tree 985
-> [551049.414355] BTRFS warning (device dm-2): checksum error at logical 470069510144 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238144: metadata leaf (level 0) in tree 985
-> [551049.414356] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 5, gen 0
-> [551049.414567] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069510144 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551049.479023] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551049.479989] BTRFS warning (device dm-2): checksum error at logical 470069542912 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238208: metadata leaf (level 0) in tree 985
-> [551049.479993] BTRFS warning (device dm-2): checksum error at logical 470069542912 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238208: metadata leaf (level 0) in tree 985
-> [551049.479997] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 6, gen 0
-> [551049.523539] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069542912 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551051.672589] BTRFS warning (device dm-2): checksum error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286624: metadata leaf (level 0) in tree 985
-> [551051.672593] BTRFS warning (device dm-2): checksum error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286624: metadata leaf (level 0) in tree 985
-> [551051.672597] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 7, gen 0
-> [551051.820776] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551051.945310] BTRFS warning (device dm-2): checksum error at logical 470069477376 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286656: metadata leaf (level 0) in tree 985
-> [551051.945314] BTRFS warning (device dm-2): checksum error at logical 470069477376 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286656: metadata leaf (level 0) in tree 985
-> [551051.945318] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 8, gen 0
-> [551052.112245] BTRFS warning (device dm-2): checksum error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286752: metadata leaf (level 0) in tree 985
-> [551052.112247] BTRFS warning (device dm-2): checksum error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286752: metadata leaf (level 0) in tree 985
-> [551052.112248] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 9, gen 0
-> [551052.183671] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069477376 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551052.253278] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> [551052.260305] BTRFS warning (device dm-2): checksum error at logical 470069493760 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286688: metadata leaf (level 0) in tree 985
-> [551052.260307] BTRFS warning (device dm-2): checksum error at logical 470069493760 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 943286688: metadata leaf (level 0) in tree 985
-> [551052.260308] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 10, gen 0
-> [551052.300024] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069493760 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-This is an online backup partition and I have an offline backup partition with the same data, so not very concerned about loosing any data here, but would like to repair it.
+It feels like every btrfs filesystem I've had between my 3 systems has
+gotten inexplicably corrupted at least once.
+This one is not even using bcache, just dmcrypt underneath.
 
-Are there any better options before resorting to `btrfsck --repair`? Maybe I can find snapshot that contains file with wrong checksum and remove corresponding snapshot or something like that?
+It's my only one using btrfs raid (1):
+gargamel:~# btrfs fi show /dev/mapper/raid0d1 
+Label: 'btrfs_space'  uuid: 01334b81-c0db-4e80-92e4-cac4da867651
+        Total devices 2 FS bytes used 1.12TiB
+        devid    1 size 836.13GiB used 722.03GiB path /dev/mapper/raid0d1
+        devid    2 size 836.13GiB used 722.03GiB path /dev/mapper/raid0d2
 
-> nazar-pc@nazar-pc ~> sudo btrfs filesystem show /media/Backup
-> Label: 'Backup'  uuid: 82cfcb0f-0b80-4764-bed6-f529f2030ac5
->     Total devices 1 FS bytes used 896.20GiB
->     devid    1 size 1.00TiB used 920.09GiB path /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
->
-> nazar-pc@nazar-pc ~> sudo btrfs filesystem df /media/Backup
-> Data, single: total=879.01GiB, used=877.24GiB
-> System, DUP: total=40.00MiB, used=128.00KiB
-> Metadata, DUP: total=20.50GiB, used=18.96GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-> nazar-pc@nazar-pc ~> btrfs --version
-> btrfs-progs v4.13.3
->
-> nazar-pc@nazar-pc ~> uname -a
-> Linux nazar-pc 4.13.0-16-generic #19-Ubuntu SMP Wed Oct 11 18:35:14 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+Data, RAID0: total=1.38TiB, used=1.11TiB
+System, RAID1: total=32.00MiB, used=128.00KiB
+Metadata, RAID1: total=13.00GiB, used=8.54GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
+Now, I didn't get errors or warnings, or even scrub warnings on it, I just ran 
+btrfs check to see what would happen.
+
+Marc
 -- 
-Sincerely, Nazar Mokrynskyi
-github.com/nazar-pc
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

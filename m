@@ -1,135 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51250 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751238AbdKUUe4 (ORCPT
+Received: from mail-qk0-f169.google.com ([209.85.220.169]:43179 "EHLO
+        mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750955AbdKQSAK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 15:34:56 -0500
-Date: Tue, 21 Nov 2017 12:34:16 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: torvalds@linux-foundation.org
-Cc: Matthew Wilcox <willy@infradead.org>, Dave Chinner <david@fromorbit.com>,
-        xfs <linux-xfs@vger.kernel.org>, Ilya Dryomov <idryomov@gmail.com>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Brian Foster <bfoster@redhat.com>, holger@applied-asynchrony.com,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, bo.li.liu@oracle.com,
-        viro@ZenIV.linux.org.uk
-Subject: [PATCH v3] iomap: report collisions between directio and  buffered
- writes to userspace
-Message-ID: <20171121203416.GE2135@magnolia>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+        Fri, 17 Nov 2017 13:00:10 -0500
+Received: by mail-qk0-f169.google.com with SMTP id j202so333528qke.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 10:00:10 -0800 (PST)
+From: Josef Bacik <josef@toxicpanda.com>
+To: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
+        netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
+        kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4][v6] Add the ability to do BPF directed error injection
+Date: Fri, 17 Nov 2017 13:00:03 -0500
+Message-Id: <1510941607-3997-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Darrick J. Wong <darrick.wong@oracle.com>
+I've reworked this to be opt-in only as per Igno and Alexei.  Still needs to go
+through Dave because of the bpf bits, but I need tracing guys to weigh in and
+sign off on my approach please.
 
-If two programs simultaneously try to write to the same part of a file
-via direct IO and buffered IO, there's a chance that the post-diowrite
-pagecache invalidation will fail on the dirty page.  When this happens,
-the dio write succeeded, which means that the page cache is no longer
-coherent with the disk!
+v5->v6:
+- add BPF_ALLOW_ERROR_INJECTION() tagging for functions that will support this
+  feature.  This way only functions that opt-in will be allowed to be
+  overridden.
+- added a btrfs patch to allow error injection for open_ctree() so that the bpf
+  sample actually works.
 
-Programs are not supposed to mix IO types and this is a clear case of
-data corruption, so store an EIO which will be reflected to userspace
-during the next fsync.  Replace the WARN_ON with a ratelimited pr_crit
-so that the developers have /some/ kind of breadcrumb to track down the
-offending program(s) and file(s) involved.
+v4->v5:
+- disallow kprobe_override programs from being put in the prog map array so we
+  don't tail call into something we didn't check.  This allows us to make the
+  normal path still fast without a bunch of percpu operations.
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
----
-v3: increase ratelimit period to 30s
-v2: fix old and new dio paths
----
- fs/direct-io.c     |   24 +++++++++++++++++++++++-
- fs/iomap.c         |   12 ++++++++++--
- include/linux/fs.h |    1 +
- 3 files changed, 34 insertions(+), 3 deletions(-)
+v3->v4:
+- fix a build error found by kbuild test bot (I didn't wait long enough
+  apparently.)
+- Added a warning message as per Daniels suggestion.
 
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index 98fe132..ef5d12a 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -219,6 +219,27 @@ static inline struct page *dio_get_page(struct dio *dio,
- 	return dio->pages[sdio->head];
- }
- 
-+/*
-+ * Warn about a page cache invalidation failure during a direct io write.
-+ */
-+void dio_warn_stale_pagecache(struct file *filp)
-+{
-+	static DEFINE_RATELIMIT_STATE(_rs, 30 * HZ, DEFAULT_RATELIMIT_BURST);
-+	char pathname[128];
-+	struct inode *inode = file_inode(filp);
-+	char *path;
-+
-+	errseq_set(&inode->i_mapping->wb_err, -EIO);
-+	if (__ratelimit(&_rs)) {
-+		path = file_path(filp, pathname, sizeof(pathname));
-+		if (IS_ERR(path))
-+			path = "(unknown)";
-+		pr_crit("Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!\n");
-+		pr_crit("File: %s PID: %d Comm: %.20s\n", path, current->pid,
-+			current->comm);
-+	}
-+}
-+
- /**
-  * dio_complete() - called when all DIO BIO I/O has been completed
-  * @offset: the byte offset in the file of the completed operation
-@@ -290,7 +311,8 @@ static ssize_t dio_complete(struct dio *dio, ssize_t ret, unsigned int flags)
- 		err = invalidate_inode_pages2_range(dio->inode->i_mapping,
- 					offset >> PAGE_SHIFT,
- 					(offset + ret - 1) >> PAGE_SHIFT);
--		WARN_ON_ONCE(err);
-+		if (err)
-+			dio_warn_stale_pagecache(dio->iocb->ki_filp);
- 	}
- 
- 	if (!(dio->flags & DIO_SKIP_DIO_COUNT))
-diff --git a/fs/iomap.c b/fs/iomap.c
-index 5011a96..028f329 100644
---- a/fs/iomap.c
-+++ b/fs/iomap.c
-@@ -753,7 +753,8 @@ static ssize_t iomap_dio_complete(struct iomap_dio *dio)
- 		err = invalidate_inode_pages2_range(inode->i_mapping,
- 				offset >> PAGE_SHIFT,
- 				(offset + dio->size - 1) >> PAGE_SHIFT);
--		WARN_ON_ONCE(err);
-+		if (err)
-+			dio_warn_stale_pagecache(iocb->ki_filp);
- 	}
- 
- 	inode_dio_end(file_inode(iocb->ki_filp));
-@@ -1012,9 +1013,16 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
- 	if (ret)
- 		goto out_free_dio;
- 
-+	/*
-+	 * Try to invalidate cache pages for the range we're direct
-+	 * writing.  If this invalidation fails, tough, the write will
-+	 * still work, but racing two incompatible write paths is a
-+	 * pretty crazy thing to do, so we don't support it 100%.
-+	 */
- 	ret = invalidate_inode_pages2_range(mapping,
- 			start >> PAGE_SHIFT, end >> PAGE_SHIFT);
--	WARN_ON_ONCE(ret);
-+	if (ret)
-+		dio_warn_stale_pagecache(iocb->ki_filp);
- 	ret = 0;
- 
- 	if (iov_iter_rw(iter) == WRITE && !is_sync_kiocb(iocb) &&
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 2690864..0e5f060 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2976,6 +2976,7 @@ enum {
- };
- 
- void dio_end_io(struct bio *bio);
-+void dio_warn_stale_pagecache(struct file *filp);
- 
- ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
- 			     struct block_device *bdev, struct iov_iter *iter,
+v2->v3:
+- added a ->kprobe_override flag to bpf_prog.
+- added some sanity checks to disallow attaching bpf progs that have
+  ->kprobe_override set that aren't for ftrace kprobes.
+- added the trace_kprobe_ftrace helper to check if the trace_event_call is a
+  ftrace kprobe.
+- renamed bpf_kprobe_state to bpf_kprobe_override, fixed it so we only read this
+  value in the kprobe path, and thus only write to it if we're overriding or
+  clearing the override.
+
+v1->v2:
+- moved things around to make sure that bpf_override_return could really only be
+  used for an ftrace kprobe.
+- killed the special return values from trace_call_bpf.
+- renamed pc_modified to bpf_kprobe_state so bpf_override_return could tell if
+  it was being called from an ftrace kprobe context.
+- reworked the logic in kprobe_perf_func to take advantage of bpf_kprobe_state.
+- updated the test as per Alexei's review.
+
+- Original message -
+
+A lot of our error paths are not well tested because we have no good way of
+injecting errors generically.  Some subystems (block, memory) have ways to
+inject errors, but they are random so it's hard to get reproduceable results.
+
+With BPF we can add determinism to our error injection.  We can use kprobes and
+other things to verify we are injecting errors at the exact case we are trying
+to test.  This patch gives us the tool to actual do the error injection part.
+It is very simple, we just set the return value of the pt_regs we're given to
+whatever we provide, and then override the PC with a dummy function that simply
+returns.
+
+Right now this only works on x86, but it would be simple enough to expand to
+other architectures.  Thanks,
+
+Josef

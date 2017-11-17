@@ -1,138 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17903 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759925AbdKPX23 (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:58461 "EHLO
+        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753507AbdKQAM4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 18:28:29 -0500
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAGNSSva002198
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 23:28:29 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAGNSSsT026412
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 23:28:28 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vAGNSSEV024253
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 23:28:28 GMT
-Date: Thu, 16 Nov 2017 15:28:27 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Anand Jain <anand.jain@oracle.com>
+        Thu, 16 Nov 2017 19:12:56 -0500
+Date: Thu, 16 Nov 2017 16:12:56 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+        <holger@applied-asynchrony.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: handle dynamically reappearing missing device
-Message-ID: <20171116232826.GB23614@dhcp-whq-twvpn-1-vpnpool-10-159-142-193.vpn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <20171112105650.3248-1-anand.jain@oracle.com>
+Subject: Re: 4.13.12: kernel BUG at fs/btrfs/ctree.h:1802!
+Message-ID: <20171117001256.GN10969@merlins.org>
+References: <20171116170445.24n57phzltgiehj6@merlins.org> <20171116170742.vyhxckxrgjzwqyvf@merlins.org> <70b25128-d724-4e8e-9835-4a092cf8d5a6@applied-asynchrony.com> <20171116214551.vpp4eevs7b4bszjt@merlins.org> <2b97e49b-74fd-77c1-a340-8254f8999bb1@applied-asynchrony.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171112105650.3248-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <2b97e49b-74fd-77c1-a340-8254f8999bb1@applied-asynchrony.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 12, 2017 at 06:56:50PM +0800, Anand Jain wrote:
-> If the device is not present at the time of (-o degrade) mount
-> the mount context will create a dummy missing struct btrfs_device.
-> Later this device may reappear after the FS is mounted.
+On Thu, Nov 16, 2017 at 11:32:33PM +0100, Holger Hoffstätte wrote:
+> Don't pop the champagne just yet, I just read that apprently 4.14 broke
+> bcache for some people [1]. Not sure how much that affects you, but it might
+> well make things worse. Yeah, I know, wonderful.
 
-This commit log doesn't explain what would happen when the missing
-device re-appears.
+Oh my, that's actually pretty terrible.
+I've just reverted both my machines to 3.13, the last thing I need is more
+btrfs corruption.
 
-> So this
-> patch handles that case by going through the open_device steps
-> which this device missed and finally adds to the device alloc list.
+I'm also starting to question if I should just drop bcache. It does help
+access to a big and slow-ish array, but corruption and periodic btrfs
+full rebuilds is not something I can afford to do timewise :-/
+
+> > As for 4.14, the serial console code seems broken though, I can't get login or bash
+> > to work anymore on them:
+> > [ 2786.305004] INFO: task login:5636 blocked for more than 120 seconds.
+> > [ 2786.324648]       Tainted: G     U  W       4.14.0-amd64-stkreg-sysrq-20171018 #1
+> > [ 2786.347692] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> > [ 2786.371742] login           D    0  5636      1 0xa0020006
 > 
-> So now with this patch, to bring back the missing device user can run,
-> 
->    btrfs dev scan <path-of-missing-device>
+> I'm out. :/
 
-Most common distros already have some udev rules of btrfs to process a
-reappeared disk.
+Yeah, I didn't expect you to know, or this list even, just warning that 4.14
+is not "that great" yet (although that was before the "bcache will corrupt
+your stuff", which now makes it "terrible" :( ).
 
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> This patch needs:
->  [PATCH 0/4]  factor __btrfs_open_devices()
-> 
->  fs/btrfs/volumes.c | 43 +++++++++++++++++++++++++++++++++++++++++--
->  1 file changed, 41 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index d24e966ee29f..e7dd996831f2 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -769,8 +769,47 @@ static noinline int device_list_add(const char *path,
->  		rcu_string_free(device->name);
->  		rcu_assign_pointer(device->name, name);
->  		if (device->missing) {
-> -			fs_devices->missing_devices--;
-> -			device->missing = 0;
-> +			int ret;
-> +			struct btrfs_fs_info *fs_info = fs_devices->fs_info;
-> +			fmode_t fmode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
-> +
-> +			if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)
-> +				fmode &= ~FMODE_WRITE;
-> +
-> +			/*
-> +			 * Missing can be set only when FS is mounted.
-> +			 * So here its always fs_devices->opened > 0 and most
-> +			 * of the struct device members are already updated by
-> +			 * the mount process even if this device was missing, so
-> +			 * now follow the normal open device procedure for this
-> +			 * device. The scrub will take care of filling the
-> +			 * missing stripes for raid56 and balance for raid1 and
-> +			 * raid10.
-> +			 */
+On the plus side, I'm back to 4.13.12 and it hasn't crashed yet, so maybe
+4.14 fixed the issue I had (wishful thinking)
 
-
-The idea looks good to me.
-
-What if users skip balance/scrub given both could take a while?
-
-Then btrfs takes the disks back and reads content from it, and it's OK
-for raid1/10 as they may have a good copy, but in case of raid56, it
-might hit the reconstruction bug if two disks are missing and added
-back, which I tried to address recently.
-
-At least ->writable should not be set until balance/scrub completes
-the re-sync job.
-
-Thanks,
-
--liubo
-
-> +			ASSERT(fs_devices->opened);
-> +			mutex_lock(&fs_devices->device_list_mutex);
-> +			mutex_lock(&fs_info->chunk_mutex);
-> +			ret = btrfs_open_one_device(fs_devices, device, fmode,
-> +							fs_info->bdev_holder);
-> +			if (!ret) {
-> +				fs_devices->missing_devices--;
-> +				device->missing = 0;
-> +				btrfs_clear_opt(fs_info->mount_opt, DEGRADED);
-> +				btrfs_warn(fs_info,
-> +					"BTRFS: device %s devid %llu uuid %pU joined\n",
-> +					path, devid, device->uuid);
-> +			}
-> +
-> +			if (device->writeable &&
-> +					!device->is_tgtdev_for_dev_replace) {
-> +				fs_devices->total_rw_bytes += device->total_bytes;
-> +				atomic64_add(device->total_bytes -
-> +						device->bytes_used,
-> +						&fs_info->free_chunk_space);
-> +			}
-> +			device->in_fs_metadata = 1;
-> +			mutex_unlock(&fs_devices->fs_info->chunk_mutex);
-> +			mutex_unlock(&fs_devices->device_list_mutex);
->  		}
->  	}
->  
-> -- 
-> 2.13.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

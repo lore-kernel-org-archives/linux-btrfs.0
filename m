@@ -1,64 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:60959 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755342AbdKQC0T (ORCPT
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:45779 "EHLO
+        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756363AbdKQDv5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 21:26:19 -0500
-Date: Thu, 16 Nov 2017 18:26:15 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Subject: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value -17
-Message-ID: <20171117022615.GO10969@merlins.org>
+        Thu, 16 Nov 2017 22:51:57 -0500
+Received: by mail-lf0-f41.google.com with SMTP id e143so1183804lfg.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 19:51:56 -0800 (PST)
+Subject: Re: Need help with incremental backup strategy (snapshots,
+ defragmentingt & performance)
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
+ <20171101101510.218eeead@natsu>
+ <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
+ <20171114135040.65a659c0@natsu>
+ <CAH=dxU7wjag+BPNdu__WidU1qNPeF7Sxgc8YthAVvxbrHx5VmA@mail.gmail.com>
+ <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <d7f8d215-e845-79e6-12a9-29468287d7b9@gmail.com>
+Date: Fri, 17 Nov 2017 06:51:52 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Howdy,
+16.11.2017 19:13, Kai Krakow пишет:
+...
+> > BTW: From user API perspective, btrfs snapshots do not guarantee
+> perfect granular consistent backups.
 
-Up to date git pull from btrfs-progs:
+Is it documented somewhere? I was relying on crash-consistent
+write-order-preserving snapshots in NetApp for as long as I remember.
+And I was sure btrfs offers is as it is something obvious for
+redirect-on-write idea.
 
-gargamel:~# btrfs check --repair /dev/mapper/raid0d1
-enabling repair mode
-Checking filesystem on /dev/mapper/raid0d1
-UUID: 01334b81-c0db-4e80-92e4-cac4da867651
-checking extents
-corrupt extent record: key 203003699200 168 40960
-corrupt extent record: key 203003764736 168 172032
-ref mismatch on [203003699200 40960] extent item 0, found 1
-Data backref 203003699200 root 258 owner 1933897829 offset 0 num_refs 0 not found in extent tree
-Incorrect local backref count on 203003699200 root 258 owner 1933897829 offset 0 found 1 wanted 0 back 0x5596988c2130
-backpointer mismatch on [203003699200 40960]
-repair deleting extent record: key 203003699200 168 40960
-adding new data backref on 203003699200 root 258 owner 1933897829 offset 0 found 1
-Repaired extent references for 203003699200
-Data backref 203003764736 root 258 owner 1932315368 offset 0 num_refs 0 not found in extent tree
-Incorrect local backref count on 203003764736 root 258 owner 1932315368 offset 0 found 1 wanted 0 back 0x5596dde358f0
-backpointer mismatch on [203003764736 172032]
-repair deleting extent record: key 203003764736 168 172032
-adding new data backref on 203003764736 root 258 owner 1932315368 offset 0 found 1
-Repaired extent references for 203003764736
-Fixed 0 roots.
-checking free space cache
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-invalid location in dir item 0
-Deleting bad dir index [1919785864,96,1958] root 258
-Deleting bad dir index [1919785864,96,1957] root 258
-repairing missing dir index item for inode 1919805647
-cmds-check.c:2614: add_missing_dir_index: BUG_ON `ret` triggered, value -17
-btrfs(+0x52207)[0x55966a6fa207]
-btrfs(+0x5225a)[0x55966a6fa25a]
-btrfs(+0x5cef3)[0x55966a704ef3]
-btrfs(cmd_check+0x2e10)[0x55966a70ea35]
-btrfs(main+0x85)[0x55966a6b9dc3]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf1)[0x7f794aadf2b1]
-btrfs(_start+0x2a)[0x55966a6b993a]
-Aborted
+> A user-level file transaction may
+> still end up only partially in the snapshot. If you are running
+> transaction sensitive applications, those usually do provide some means
+> of preparing a freeze and a thaw of transactions.
+> 
 
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Is snapshot creation synchronous to know when thaw?
+
+> I think the user transactions API which could've been used for this
+> will even be removed during the next kernel cycles. I remember
+> reiserfs4 tried to deploy something similar. But there's no consistent
+> layer in the VFS for subscribing applications to filesystem snapshots
+> so they could prepare and notify the kernel when they are ready.
+> 
+
+I do not see what VFS has to do with it. NetApp works by simply
+preserving previous consistency point instead of throwing it away. I.e.
+snapshot is always last committed image on stable storage. Would
+something like this be possible on btrfs level by duplicating current
+on-disk root (sorry if I use wrong term)?
+
+...

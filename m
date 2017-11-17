@@ -1,46 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:35854 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756716AbdKQTDK (ORCPT
+Received: from mail-io0-f177.google.com ([209.85.223.177]:42006 "EHLO
+        mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S934774AbdKQTOM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 14:03:10 -0500
-Subject: Re: 4.13.12: kernel BUG at fs/btrfs/ctree.h:1802!
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-References: <20171116170445.24n57phzltgiehj6@merlins.org>
- <20171116170742.vyhxckxrgjzwqyvf@merlins.org>
- <70b25128-d724-4e8e-9835-4a092cf8d5a6@applied-asynchrony.com>
- <20171116214551.vpp4eevs7b4bszjt@merlins.org>
- <2b97e49b-74fd-77c1-a340-8254f8999bb1@applied-asynchrony.com>
- <20171117001256.GN10969@merlins.org> <20171117104148.04986eee@natsu>
- <20171117055315.7bmhthyqityiffwl@merlins.org>
- <20171117174826.fqks43rt4nyjxubj@merlins.org>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <baf31c30-cc64-c4aa-305e-04c6afff1fe0@applied-asynchrony.com>
-Date: Fri, 17 Nov 2017 20:03:07 +0100
-MIME-Version: 1.0
-In-Reply-To: <20171117174826.fqks43rt4nyjxubj@merlins.org>
-Content-Type: text/plain; charset=utf-8
+        Fri, 17 Nov 2017 14:14:12 -0500
+Received: by mail-io0-f177.google.com with SMTP id u42so9784153ioi.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 11:14:12 -0800 (PST)
+From: Andreas Dilger <adilger@dilger.ca>
+Message-Id: <74E5DB55-6E0F-4A00-BF94-0D2DEDC87C69@dilger.ca>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_78A525E9-FAA6-40ED-BCA3-317A88CA682F";
+ protocol="application/pgp-signature"; micalg=pgp-sha1
+Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
+Subject: Re: Ideas to reuse filesystem's checksum to enhance dm-raid1/10/5/6?
+Date: Thu, 16 Nov 2017 18:26:14 -0700
+In-Reply-To: <477d2d2b-3893-50c1-5946-076670a03f2d@gmx.com>
+Cc: linux-block@vger.kernel.org, dm-devel@redhat.com,
+        linux-fsdevel@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <477d2d2b-3893-50c1-5946-076670a03f2d@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/17/17 18:48, Marc MERLIN wrote:
-> On Thu, Nov 16, 2017 at 09:53:15PM -0800, Marc MERLIN wrote:
->>> I suggest that you try lvmcache instead. It's much more flexible than bcache,
->>> does pretty much the same job, and has much less of the "hacky" feel to it.
->>
->> I can read up on it, it's going to be a big pain to convert from one to
->> the other, but I can look at it for new filesystems.
-> 
-> I had a quick read. As expected, it's slower since it goes through all
-> the LVM overhead that I got rid of recently
-> https://github.com/stec-inc/EnhanceIO/wiki/PERFORMANCE-COMPARISON-AMONG-dm-cache,-bcache-and-EnhanceIO
-> 
-> Given the pain it would be for me to switch, I'm going to stick with
-> bcache and hope it improves.
 
-My understanding is that bcache until recently was more or less unmaintained,
-but got quite a few patches for 4.14 and now has a new maintainer as well.
-So things are looking up.
+--Apple-Mail=_78A525E9-FAA6-40ED-BCA3-317A88CA682F
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain;
+	charset=us-ascii
 
--h
+On Nov 15, 2017, at 7:18 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> 
+> [Background]
+> Recently I'm considering the possibility to use checksum from filesystem
+> to enhance device-mapper raid.
+> 
+> The idea behind it is quite simple, since most modern filesystems have
+> checksum for their metadata, and even some (btrfs) have checksum for data.
+> 
+> And for btrfs RAID1/10 (just ignore the RAID5/6 for now), at read time
+> it can use the checksum to determine which copy is correct so it can
+> return the correct data even one copy get corrupted.
+> 
+> [Objective]
+> The final objective is to allow device mapper to do the checksum
+> verification (and repair if possible).
+> 
+> If only for verification, it's not much different from current endio
+> hook method used by most of the fs.
+> However if we can move the repair part from filesystem (well, only btrfs
+> supports it yet), it would benefit all fs.
+
+I recall Darrick was looking into a mechanism to do this.  Rather than
+changing the whole block layer to take a callback to do a checksum, what
+we looked at was to allow the upper-layer read to specify a "retry count"
+to the lower-layer block device.  If the lower layer is able to retry the
+read then it will read a different device (or combination of devices for
+e.g. RAID-6) based on the retry count, until the upper layer gets a good
+read (based on checksum, or whatever).  If there are no more devices (or
+combinations) to try then a final error is returned.
+
+Darrick can probably point at the original thread/patch.
+
+Cheers, Andreas
+
+
+
+
+
+
+--Apple-Mail=_78A525E9-FAA6-40ED-BCA3-317A88CA682F
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iD8DBQFaDjq3pIg59Q01vtYRAmZhAJ9K06HBQQAnRGfZJJvb1TO4hTFfngCfTyg9
+E2mzVop1nAVtDDgFdWDGOy8=
+=z0v4
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_78A525E9-FAA6-40ED-BCA3-317A88CA682F--

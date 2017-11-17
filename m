@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34913 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34910 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1161101AbdKQRpT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 12:45:19 -0500
+        id S1161100AbdKQRpR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Nov 2017 12:45:17 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B5584ADF4
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 17:45:17 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id A5917ADF6
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 17:45:15 +0000 (UTC)
 From: Goldwyn Rodrigues <rgoldwyn@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: Goldwyn Rodrigues <rgoldwyn@suse.com>
 Subject: [RFC PATCH 7/8] fs: iomap->prepare_pages() to set directives specific for the page
-Date: Fri, 17 Nov 2017 11:44:54 -0600
-Message-Id: <20171117174456.13393-9-rgoldwyn@suse.de>
+Date: Fri, 17 Nov 2017 11:44:53 -0600
+Message-Id: <20171117174456.13393-8-rgoldwyn@suse.de>
 In-Reply-To: <20171117174456.13393-1-rgoldwyn@suse.de>
 References: <20171117174456.13393-1-rgoldwyn@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -29,28 +29,17 @@ for try_to_release_buffers(). Can we work around it?
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/file.c       | 12 ++++++++++--
+ fs/btrfs/file.c       |  8 ++++++++
  fs/dax.c              |  2 +-
  fs/internal.h         |  2 +-
  fs/iomap.c            | 23 ++++++++++++++---------
  include/linux/iomap.h |  3 +++
- 5 files changed, 29 insertions(+), 13 deletions(-)
+ 5 files changed, 27 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f5f34e199709..1c459c9001b2 100644
+index b34ec493fe4b..b5cc5c0a0cf5 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1261,8 +1261,8 @@ static int prepare_uptodate_page(struct inode *inode, u64 pos, struct page **pag
- 	if (!(pos & (PAGE_SIZE - 1)))
- 		goto out;
- 
--	page = find_or_create_page(inode->i_mapping, index,
--			btrfs_alloc_write_mask(inode->i_mapping) | __GFP_WRITE);
-+	page = grab_cache_page_write_begin(inode->i_mapping, index,
-+			AOP_FLAG_NOFS);
- 
- 	if (!PageUptodate(page)) {
- 		int ret = btrfs_readpage(NULL, page);
 @@ -1641,9 +1641,17 @@ int btrfs_file_iomap_end(struct inode *inode, loff_t pos, loff_t length,
  	return ret;
  }

@@ -1,225 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:65290 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1757279AbdKQIMT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 03:12:19 -0500
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
- -17
-To: Marc MERLIN <marc@merlins.org>
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-References: <20171117022615.GO10969@merlins.org>
- <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
- <20171117061707.geqtk3ydj2elv4o7@merlins.org>
- <20171117073046.ehdlw5essf7lhw7k@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
-Date: Fri, 17 Nov 2017 16:12:07 +0800
+Received: from userp1040.oracle.com ([156.151.31.81]:35835 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751060AbdKQLxP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Nov 2017 06:53:15 -0500
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAHBrDYx026003
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 11:53:14 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAHBrDwY011431
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 11:53:13 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vAHBrD91019764
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 11:53:13 GMT
+Subject: Re: [PATCH] btrfs: handle dynamically reappearing missing device
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org
+References: <20171112105650.3248-1-anand.jain@oracle.com>
+ <20171116232826.GB23614@dhcp-whq-twvpn-1-vpnpool-10-159-142-193.vpn.oracle.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <1c1f74f1-5531-dc22-70a8-8d93a0571c7f@oracle.com>
+Date: Fri, 17 Nov 2017 19:53:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171117073046.ehdlw5essf7lhw7k@merlins.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="wHo60SOcO5hVsPXdTnTr6if1F8HNCcR64"
+In-Reply-To: <20171116232826.GB23614@dhcp-whq-twvpn-1-vpnpool-10-159-142-193.vpn.oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---wHo60SOcO5hVsPXdTnTr6if1F8HNCcR64
-Content-Type: multipart/mixed; boundary="hDwPlslqvQOsBDSCNkhQ5An0fk4Eqe3nF";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Message-ID: <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
- -17
-References: <20171117022615.GO10969@merlins.org>
- <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
- <20171117061707.geqtk3ydj2elv4o7@merlins.org>
- <20171117073046.ehdlw5essf7lhw7k@merlins.org>
-In-Reply-To: <20171117073046.ehdlw5essf7lhw7k@merlins.org>
-
---hDwPlslqvQOsBDSCNkhQ5An0fk4Eqe3nF
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 11/17/2017 07:28 AM, Liu Bo wrote:
+> On Sun, Nov 12, 2017 at 06:56:50PM +0800, Anand Jain wrote:
+>> If the device is not present at the time of (-o degrade) mount
+>> the mount context will create a dummy missing struct btrfs_device.
+>> Later this device may reappear after the FS is mounted.
 
-On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 15:30, Marc MERLIN wrote:
-> Here's the whole output:
-> gargamel:~# btrfs-debug-tree -t 258 /dev/mapper/raid0d1 | grep 19198056=
-47
+> This commit log doesn't explain what would happen when the missing
+> device re-appears.
 
-Sorry, I missed "-C10" parameter for grep.
+  Hm. You mean in the current design without this patch.?
+  Just nothing it gives a false impression to the user by
+'btrfs dev ready' and 'btrfs fi show' that missing device
+  has been included. Will update change log.
 
->                 location key (1919805647 INODE_ITEM 0) type FILE
+>> So this
+>> patch handles that case by going through the open_device steps
 
-This should be the DIR_ITEM/DIR_INDEX pointing to that inode.
-
-Although there is only one hit, means we missed one DIR_ITEM/DIR_INDEX.
-Maybe it's btrfs-progs re-inserting the wrong DIR_INDEX/DIR_ITEM that
-leads to -EEXIST.
-
-This needs extra info from "-C10" to determine.
-
->         item 30 key (1919805647 INODE_ITEM 0) itemoff 14415 itemsize 16=
-0
->         item 31 key (1919805647 INODE_REF 1919785864) itemoff 14389 ite=
-msize 26
-
-Here we know the parent inode number is 1919785864.
-
->         item 32 key (1919805647 EXTENT_DATA 0) itemoff 14336 itemsize 5=
-3
-> parent transid verify failed on 1173964603392 wanted 2244945 found 2247=
-404
-> parent transid verify failed on 1173964603392 wanted 2244945 found 2247=
-404
-> parent transid verify failed on 1173964603392 wanted 2244945 found 2247=
-404
-> parent transid verify failed on 1173964603392 wanted 2244945 found 2247=
-404
-> Ignoring transid failure
-
-I think the transid failure is the root cause.
-
-Although what we could try is to avoid BUG_ON(), but I'm afraid the
-problem is more severe than my expectation.
-
-Any idea how such corruption happened?
-
-Thanks,
-Qu
-
-> parent transid verify failed on 1652248100864 wanted 2245186 found 2247=
-494
-> parent transid verify failed on 1652248100864 wanted 2245186 found 2247=
-494
-> parent transid verify failed on 1652248100864 wanted 2245186 found 2247=
-494
-> parent transid verify failed on 1652248100864 wanted 2245186 found 2247=
-494
-> Ignoring transid failure
-> parent transid verify failed on 1174605512704 wanted 2245171 found 2247=
-435
-> parent transid verify failed on 1174605512704 wanted 2245171 found 2247=
-435
-> parent transid verify failed on 1174605512704 wanted 2245171 found 2247=
-435
-> parent transid verify failed on 1174605512704 wanted 2245171 found 2247=
-435
-> Ignoring transid failure
-> WARNING: eb corrupted: item 130 eb level 0 next level 2, skipping the r=
-est
->=20
->=20
-> On Thu, Nov 16, 2017 at 10:17:07PM -0800, Marc MERLIN wrote:
->> On Fri, Nov 17, 2017 at 01:17:19PM +0800, Qu Wenruo wrote:
->>>
->>>
->>> On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 10:26, Marc MERLIN wrote:
->>>> Howdy,
->>>>
->>>> Up to date git pull from btrfs-progs:
->>>>
->>>> gargamel:~# btrfs check --repair /dev/mapper/raid0d1
->>>> enabling repair mode
->>>> Checking filesystem on /dev/mapper/raid0d1
->>>> UUID: 01334b81-c0db-4e80-92e4-cac4da867651
->>>> checking extents
->>>> corrupt extent record: key 203003699200 168 40960
->>>> corrupt extent record: key 203003764736 168 172032
->>>> ref mismatch on [203003699200 40960] extent item 0, found 1
->>>> Data backref 203003699200 root 258 owner 1933897829 offset 0 num_ref=
-s 0 not found in extent tree
->>>> Incorrect local backref count on 203003699200 root 258 owner 1933897=
-829 offset 0 found 1 wanted 0 back 0x5596988c2130
->>>> backpointer mismatch on [203003699200 40960]
->>>> repair deleting extent record: key 203003699200 168 40960
->>>> adding new data backref on 203003699200 root 258 owner 1933897829 of=
-fset 0 found 1
->>>> Repaired extent references for 203003699200
->>>> Data backref 203003764736 root 258 owner 1932315368 offset 0 num_ref=
-s 0 not found in extent tree
->>>> Incorrect local backref count on 203003764736 root 258 owner 1932315=
-368 offset 0 found 1 wanted 0 back 0x5596dde358f0
->>>> backpointer mismatch on [203003764736 172032]
->>>> repair deleting extent record: key 203003764736 168 172032
->>>> adding new data backref on 203003764736 root 258 owner 1932315368 of=
-fset 0 found 1
->>>> Repaired extent references for 203003764736
->>>> Fixed 0 roots.
->>>> checking free space cache
->>>> cache and super generation don't match, space cache will be invalida=
-ted
->>>> checking fs roots
->>>> invalid location in dir item 0
->>>> Deleting bad dir index [1919785864,96,1958] root 258
->>>> Deleting bad dir index [1919785864,96,1957] root 258
->>>> repairing missing dir index item for inode 1919805647
->>>> cmds-check.c:2614: add_missing_dir_index: BUG_ON `ret` triggered, va=
-lue -17
->>>
->>> -EEXIST. Btrfs check --repair is trying to re-insert some key which
->>> exists already.
->>>
->>> Would you please provide the output of "btrfs-debug-tree -t 258 | gre=
-p
->>> 1919805647" to help the debugging?
->> =20
->> Sure. It may run all night and I'm going to bed now, but the output I
->> got so far, is:
->> gargamel:~# btrfs-debug-tree -t 258 /dev/mapper/raid0d1 | grep 1919805=
-647
->>                 location key (1919805647 INODE_ITEM 0) type FILE
->>         item 30 key (1919805647 INODE_ITEM 0) itemoff 14415 itemsize 1=
-60
->>         item 31 key (1919805647 INODE_REF 1919785864) itemoff 14389 it=
-emsize 26
->>         item 32 key (1919805647 EXTENT_DATA 0) itemoff 14336 itemsize =
-53
->> (...)
+>> which this device missed and finally adds to the device alloc list.
 >>
->> I'll post tomorrow if I get more overnight
+>> So now with this patch, to bring back the missing device user can run,
 >>
->> Marc
->> --=20
->> "A mouse is a device used to point at the xterm you want to type in" -=
- A.S.R.
->> Microsoft is to operating systems ....
->>                                       .... what McDonalds is to gourme=
-t cooking
->> Home page: http://marc.merlins.org/                         | PGP 1024=
-R/763BE901
+>>     btrfs dev scan <path-of-missing-device>
+> 
+> Most common distros already have some udev rules of btrfs to process a
+> reappeared disk.
+
+  Right. Do you see anything that will break ?
+  Planning to add comments [1] in v2 for more clarity around this.
+
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>> This patch needs:
+>>   [PATCH 0/4]  factor __btrfs_open_devices()
+>>
+>>   fs/btrfs/volumes.c | 43 +++++++++++++++++++++++++++++++++++++++++--
+>>   1 file changed, 41 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index d24e966ee29f..e7dd996831f2 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -769,8 +769,47 @@ static noinline int device_list_add(const char *path,
+>>   		rcu_string_free(device->name);
+>>   		rcu_assign_pointer(device->name, name);
+>>   		if (device->missing) {
+>> -			fs_devices->missing_devices--;
+>> -			device->missing = 0;
+>> +			int ret;
+>> +			struct btrfs_fs_info *fs_info = fs_devices->fs_info;
+>> +			fmode_t fmode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
+>> +
+>> +			if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)
+>> +				fmode &= ~FMODE_WRITE;
+>> +
+>> +			/*
+>> +			 * Missing can be set only when FS is mounted.
+>> +			 * So here its always fs_devices->opened > 0 and most
+>> +			 * of the struct device members are already updated by
+>> +			 * the mount process even if this device was missing, so
+>> +			 * now follow the normal open device procedure for this
+>> +			 * device. The scrub will take care of filling the
+>> +			 * missing stripes for raid56 and balance for raid1 and
+>> +			 * raid10.
+>> +			 */
+> 
+> 
+> The idea looks good to me.
+> 
+> What if users skip balance/scrub given both could take a while?
+> 
+> Then btrfs takes the disks back and reads content from it, and it's OK
+> for raid1/10 as they may have a good copy, 
+
+  Yes, except for the split brain situation for which patches are
+  in the ML, review comments appreciated.
+
+> but in case of raid56, it
+> might hit the reconstruction bug if two disks are missing and added
+> back, which I tried to address recently.
+
+> At least ->writable should not be set until balance/scrub completes
+> the re-sync job.
+
+  Hm. Why ?
+
+> Thanks,
+> 
+> -liubo
+> 
+>> +			ASSERT(fs_devices->opened);
+>> +			mutex_lock(&fs_devices->device_list_mutex);
+>> +			mutex_lock(&fs_info->chunk_mutex);
+
+
+[1]
+			/*
+			 * By not failing for the
+			 * reason that btrfs_open_one_device() could
+			 * fail, it will keep the original behaviors as
+			 * it is for now. That's fix me for later.
+			 */
+>> +			ret = btrfs_open_one_device(fs_devices, device, fmode,
+>> +							fs_info->bdev_holder);
+>> +			if (!ret) {
+
+				/*
+				 * Making sure missing is set to 0
+				 * only when bdev != NULL is as expected
+				 * at most of the places in the code.
+				 * Further, what if user fixes the
+				 * dev and reruns dev scan, then again
+				 * we need to come here.
+				 */
+
+>> +				fs_devices->missing_devices--;
+>> +				device->missing = 0;
+>> +				btrfs_clear_opt(fs_info->mount_opt, DEGRADED);
+>> +				btrfs_warn(fs_info,
+>> +					"BTRFS: device %s devid %llu uuid %pU joined\n",
+>> +					path, devid, device->uuid);
+>> +			}
+
+  Also added check for missing as below in v2.
+
+--------------
+@@ -725,7 +725,9 @@ static noinline int device_list_add(const char *path,
+
+                 ret = 1;
+                 device->fs_devices = fs_devices;
+-       } else if (!device->name || strcmp(device->name->str, path)) {
++       } else if (!device->name ||
++                       strcmp(device->name->str, path) ||
++                       device->missing) {
+                 /*
+                  * When FS is already mounted.
+                  * 1. If you are here and if the device->name is NULL that
+------------
+
+Thanks, Anand
+
+>> +
+>> +			if (device->writeable &&
+>> +					!device->is_tgtdev_for_dev_replace) {
+>> +				fs_devices->total_rw_bytes += device->total_bytes;
+>> +				atomic64_add(device->total_bytes -
+>> +						device->bytes_used,
+>> +						&fs_info->free_chunk_space);
+>> +			}
+>> +			device->in_fs_metadata = 1;
+>> +			mutex_unlock(&fs_devices->fs_info->chunk_mutex);
+>> +			mutex_unlock(&fs_devices->device_list_mutex);
+>>   		}
+>>   	}
+>>   
+>> -- 
+>> 2.13.1
+>>
 >> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
- in
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 >> the body of a message to majordomo@vger.kernel.org
 >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->=20
-
-
---hDwPlslqvQOsBDSCNkhQ5An0fk4Eqe3nF--
-
---wHo60SOcO5hVsPXdTnTr6if1F8HNCcR64
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloOmdcXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qi+QQf/S9HWI4PuEUyN0QlBPPeOESgh
-3BvcuIGbmyoEORghW/DZzMQ47J31xCY57lbvPUfoLMkVB4ImfpJpJCiAo9jobQIT
-/3g9AwnhW6o0BeMmqmRXpNRZodJ8P8QpGf5GX9ibzAg2lzczpnrk+RRSi+I/h2wh
-ePYDJ2Me2b8E8UptJVA6orFMTT0/AlM4+sFaKkYfnROeRrpg/CV+3g2V16dGrc6R
-CGUpCt//TL/XeQbeslHE1USiTkOwzWprP+cmC+3Vqp19pPo8T8FVpvj0gqH22xv1
-rW/TjoE8Dosepq6hlo5GIAviUGGNuCUUmTn0p7oMO+fP+TAWYY7Ky3t+oeVUIQ==
-=GJQ0
------END PGP SIGNATURE-----
-
---wHo60SOcO5hVsPXdTnTr6if1F8HNCcR64--

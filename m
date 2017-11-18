@@ -1,79 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55162 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751226AbdKUPDS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 10:03:18 -0500
-Date: Tue, 21 Nov 2017 16:01:22 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        lists@colorremedies.com
-Subject: Re: [PATCH] btrfs: Enhance btrfs_trim_fs function to handle error
- better
-Message-ID: <20171121150122.GM3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171120055651.17892-1-wqu@suse.com>
- <20171120175106.GE3553@twin.jikos.cz>
- <6639f8f2-7842-65ad-bfbb-fa04439b58c2@gmx.com>
+Received: from mail-wm0-f67.google.com ([74.125.82.67]:41489 "EHLO
+        mail-wm0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1761354AbdKRMgJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 18 Nov 2017 07:36:09 -0500
+Subject: Re: [PATCH] btrfs: clear space cache inode generation always
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>, stable@vger.kernel.org
+References: <1510948246-32434-1-git-send-email-josef@toxicpanda.com>
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Message-ID: <f8599fd4-f124-2f7b-4b45-1d694433f7df@gmail.com>
+Date: Sat, 18 Nov 2017 14:36:01 +0200
 MIME-Version: 1.0
+In-Reply-To: <1510948246-32434-1-git-send-email-josef@toxicpanda.com>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <6639f8f2-7842-65ad-bfbb-fa04439b58c2@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 21, 2017 at 09:07:01AM +0800, Qu Wenruo wrote:
-> On 2017年11月21日 01:51, David Sterba wrote:
-> > On Mon, Nov 20, 2017 at 01:56:51PM +0800, Qu Wenruo wrote:
-> >> Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
-> >> error happens when trimming existing block groups, it will skip the
-> >> remaining blocks and continue to trim unallocated space for each device.
-> >>
-> >> And the return value will only reflect the final error from device
-> >> trimming.
-> >>
-> >> This patch will fix such behavior by:
-> >>
-> >> 1) Recording first error from block group or device trimming
-> >>    So return value will also reflect any error found when trimming.
-> >>    Make developer more aware of the problem.
-> >>
-> >> 2) Outputting btrfs warning message for each trimming failure
-> >>    Any error for block group or device trimming will cause btrfs warning
-> >>    kernel message.
-> > 
-> > I think this could become too noisy, trimming failures are soft errors
-> > IMO, so it should be enough to report all errors cumulatively
-> > per-device.
+
+
+On 17.11.2017 21:50, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
 > 
-> Although block group trimming errors are not that obvious to be reported
-> at per-device base.
-
-The idea is to give an early warning that some device is not all ok, but
-fstrim might be the wrong place to do such checks and reports anyway.
-
-> >> @@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
-> >>  	list_for_each_entry(device, devices, dev_alloc_list) {
-> >>  		ret = btrfs_trim_free_extents(device, range->minlen,
-> >>  					      &group_trimmed);
-> >> -		if (ret)
-> >> +		if (ret) {
-> >> +			btrfs_warn_rl(fs_info,
-> >> +		"failed to trim unallocated space for devid %llu ret %d",
-> >> +				      device->devid, ret);
-> > 
-> > So the idea is to print one message here, with devid, number of errors
-> > and how many bytes were skipped.
+> We discovered a box that had double allocations, and suspected the space
+> cache may be to blame.  While auditing the write out path I noticed that
+> if we've already setup the space cache we will just carry on.  This
+> means that any error we hit after cache_save_setup before we go to
+> actually write the cache out we won't reset the inode generation, so
+> whatever was already written will be considered correct, except it'll be
+> stale.  Fix this by _always_ resetting the generation on the block group
+> inode, this way we only ever have valid or invalid cache.
 > 
-> About number of errors, did you mean also accounting the errors found in
-> block group trimming?
-> In that case, it may not be related to all devices of a block group.
+> With this patch I was no longer able to reproduce cache corruption with
+> dm-log-writes and my bpf error injection tool.
 > 
-> So this doesn't look appropriate to account block group errors into
-> device error.
 
-Right, the more I think about that, the per-device reports make less
-sense.
 
-After another look to btrfs_trim_free_extents, there are some error
-cases that are not fatal and mostly related to interrupting the whole
-operation, so this needs to be reworked.
+
+Is it normal that no function checks the return value of cache_save_setup ?
+
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/extent-tree.c | 14 +++++++-------
+>  1 file changed, 7 insertions(+), 7 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index e2d7e86b51d1..67b26b209e23 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3526,13 +3526,6 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
+>  		goto again;
+>  	}
+>  
+> -	/* We've already setup this transaction, go ahead and exit */
+> -	if (block_group->cache_generation == trans->transid &&
+> -	    i_size_read(inode)) {
+> -		dcs = BTRFS_DC_SETUP;
+> -		goto out_put;
+> -	}
+> -
+>  	/*
+>  	 * We want to set the generation to 0, that way if anything goes wrong
+>  	 * from here on out we know not to trust this cache when we load up next
+> @@ -3556,6 +3549,13 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
+>  	}
+>  	WARN_ON(ret);
+>  
+> +	/* We've already setup this transaction, go ahead and exit */
+> +	if (block_group->cache_generation == trans->transid &&
+> +	    i_size_read(inode)) {
+> +		dcs = BTRFS_DC_SETUP;
+> +		goto out_put;
+> +	}
+> +
+>  	if (i_size_read(inode) > 0) {
+>  		ret = btrfs_check_trunc_cache_free_space(fs_info,
+>  					&fs_info->global_block_rsv);
+> 

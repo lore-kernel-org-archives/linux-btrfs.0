@@ -1,76 +1,190 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f46.google.com ([74.125.83.46]:45279 "EHLO
-        mail-pg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965498AbdKQTzH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 14:55:07 -0500
-To: linux-btrfs@vger.kernel.org, viro@zeniv.linux.org.uk,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>
-From: David Ahern <dsahern@gmail.com>
-Subject: WARN_ON in __writeback_inodes_sb_nr
-Message-ID: <6833930a-08d7-6fbc-0141-eb9cdfd6bb4d@gmail.com>
-Date: Fri, 17 Nov 2017 12:55:04 -0700
+Received: from mout.gmx.net ([212.227.17.22]:64103 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934035AbdKRAQx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Nov 2017 19:16:53 -0500
+Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
+ -17
+To: Marc MERLIN <marc@merlins.org>
+Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+References: <20171117022615.GO10969@merlins.org>
+ <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
+ <20171117061707.geqtk3ydj2elv4o7@merlins.org>
+ <20171117073046.ehdlw5essf7lhw7k@merlins.org>
+ <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
+ <20171117155009.po4wxaqlyqnzqpom@merlins.org>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <46fbd8c2-65f1-b281-7e17-2253f6dc3aa9@gmx.com>
+Date: Sat, 18 Nov 2017 08:16:32 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20171117155009.po4wxaqlyqnzqpom@merlins.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I see a backtrace booting 4.14+ on a mellanox switch. The trace is due
-to the WARN_ON in __writeback_inodes_sb_nr.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3
+Content-Type: multipart/mixed; boundary="09C1wWjSGkdAHC0QsMNugwrSKNlJLHP4P";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
+Message-ID: <46fbd8c2-65f1-b281-7e17-2253f6dc3aa9@gmx.com>
+Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
+ -17
+References: <20171117022615.GO10969@merlins.org>
+ <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
+ <20171117061707.geqtk3ydj2elv4o7@merlins.org>
+ <20171117073046.ehdlw5essf7lhw7k@merlins.org>
+ <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
+ <20171117155009.po4wxaqlyqnzqpom@merlins.org>
+In-Reply-To: <20171117155009.po4wxaqlyqnzqpom@merlins.org>
 
-[   40.958590] WARNING: CPU: 0 PID: 183 at
-/home/dsa/kernel-2.git/fs/fs-writeback.c:2339
-__writeback_inodes_sb_nr+0x8a/0x90
-[   40.958593] Modules linked in: ebtable_filter ebtables ip6table_raw
-ip6table_mangle ip6table_filter ip6_tables iTCO_wdt iTCO_vendor_support
-coretemp x86_pkg_temp_thermal kvm_intel kvm irqbypass lpc_ich mfd_core
-battery mei_me mei shpchp lm75 regmap_i2c pmbus pmbus_core i2c_dev
-i2c_mux k10temp mpls_iptunnel mpls_router ip_tunnel at24 tun
-br_netfilter bonding loop autofs4 dm_mod dax crc32c_intel i2c_i801
-i2c_core thermal mlxsw_spectrum psample parman bridge stp llc mlxsw_pci
-mlxsw_core mlxfw devlink e1000e hwmon
-[   40.958664] CPU: 0 PID: 183 Comm: btrfs-transacti Not tainted 4.14.0+ #38
-[   40.958666] Hardware name: Mellanox Technologies Ltd. Mellanox
-switch/Mellanox switch, BIOS 4.6.5 05/21/2015
-[   40.958669] task: ffff8803db266540 task.stack: ffffc90000344000
-[   40.958675] RIP: 0010:__writeback_inodes_sb_nr+0x8a/0x90
-[   40.958677] RSP: 0018:ffffc90000347dc8 EFLAGS: 00010246
-[   40.958681] RAX: 0000000000000000 RBX: ffff88040a641800 RCX:
-0000000000000000
-[   40.958683] RDX: 0000000000000002 RSI: 00000000000045a7 RDI:
-ffffc90000347e10
-[   40.958685] RBP: ffffc90000347e20 R08: 0000000000000003 R09:
-ffffc90000347dd0
-[   40.958687] R10: ffff8803db287000 R11: 0000000000000000 R12:
-ffffc90000347dcc
-[   40.958689] R13: ffff8804015e7a00 R14: ffff8803dade2bc8 R15:
-ffff880400a68000
-[   40.958692] FS:  0000000000000000(0000) GS:ffff88041dc00000(0000)
-knlGS:0000000000000000
-[   40.958695] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[   40.958697] CR2: 00005602d78aad50 CR3: 0000000001e09002 CR4:
-00000000001606f0
-[   40.958699] Call Trace:
-[   40.958710]  writeback_inodes_sb+0x27/0x30
-[   40.958719]  btrfs_commit_transaction+0x7b2/0x8e0
-[   40.958723]  ? start_transaction+0x9e/0x450
-[   40.958728]  transaction_kthread+0x177/0x1b0
-[   40.958735]  kthread+0x11d/0x150
-[   40.958740]  ? btrfs_cleanup_transaction+0x4f0/0x4f0
-[   40.958744]  ? kthread_associate_blkcg+0xb0/0xb0
-[   40.958751]  ret_from_fork+0x24/0x30
-[   40.958754] Code: 8b 42 70 48 85 c0 74 23 4c 89 ce 48 89 df 41 0f b6
-d3 e8 fa fc ff ff 4c 89 e6 48 89 df e8 8f de ff ff 48 83 c4 48 5b 41 5c
-5d c3 <0f> ff eb d9 66 90 0f 1f 44 00 00 55 31 c9 48 89 e5 e8 60 ff ff
-[   40.958826] ---[ end trace defabeb7afdfd414 ]---
+--09C1wWjSGkdAHC0QsMNugwrSKNlJLHP4P
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-Tree is DaveM's net-next, but it was recently merged with Linus' tree at:
 
-commit 6363b3f3ac5be096d08c8c504128befa0c033529
-Merge: 1b6115fbe3b3 6297fabd93f9
-Author: Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Wed Nov 15 15:12:28 2017 -0800
+On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 23:50, Marc MERLIN wrote:
+> On Fri, Nov 17, 2017 at 04:12:07PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 15:30, Marc MERLIN wrote:
+>>> Here's the whole output:
+>>> gargamel:~# btrfs-debug-tree -t 258 /dev/mapper/raid0d1 | grep 191980=
+5647
+>>
+>> Sorry, I missed "-C10" parameter for grep.
+> =20
+>                 generation 2231977 transid 2237084 size 64 nbytes 0
+>                 block group 0 mode 40755 links 1 uid 33 gid 33 rdev 0
+>                 sequence 0 flags 0x1710(none)
+>                 atime 1510290002.516060162 (2017-11-09 21:00:02)
+>                 ctime 1510477350.88506455 (2017-11-12 01:02:30)
+>                 mtime 1510477350.88506455 (2017-11-12 01:02:30)
+>                 otime 1510290002.516060162 (2017-11-09 21:00:02)
+>         item 26 key (1919785864 INODE_REF 1919785862) itemoff 14683 ite=
+msize 12
+>                 index 2 namelen 2 name: 00
+>         item 27 key (1919785864 DIR_ITEM 2591417872) itemoff 14637 item=
+size 46
+>                 location key (1919805647 INODE_ITEM 0) type FILE
+>                 transid 2231988 data_len 0 name_len 16
+>                 name: 1955-capture.jpg
 
-    Merge tag 'ipmi-for-4.15' of git://github.com/cminyard/linux-ipmi
+OK, this DIR_ITEM matches with INODE_REF.
+So btrfs-check should only need to insert DIR_INDEX for it.
 
+>         item 28 key (1919785864 DIR_ITEM 3406016191) itemoff 14591 item=
+size 46
+>                 location key (1919805657 INODE_ITEM 0) type FILE
+>                 transid 2231988 data_len 0 name_len 16
+>                 name: 1956-capture.jpg
+>         item 29 key (1919785864 DIR_INDEX 1957) itemoff 14575 itemsize =
+16
+>                 location key (7383370114097217536 UNKNOWN.211 156519724=
+32879681580) type DIR_ITEM.0
+>                 transid 72057594045427176 data_len 0 name_len 0
+>                 name:=20
+>         item 30 key (1919805647 INODE_ITEM 0) itemoff 14415 itemsize 16=
+0
+>                 generation 2231988 transid 2231989 size 81701 nbytes 81=
+920
+>                 block group 0 mode 100644 links 1 uid 33 gid 33 rdev 0
+>                 sequence 8 flags 0x14(NOCOMPRESS)
+>                 atime 1510290392.703320623 (2017-11-09 21:06:32)
+>                 ctime 1510290392.715320477 (2017-11-09 21:06:32)
+>                 mtime 1510290392.715320477 (2017-11-09 21:06:32)
+>                 otime 1510290392.703320623 (2017-11-09 21:06:32)
+>         item 31 key (1919805647 INODE_REF 1919785864) itemoff 14389 ite=
+msize 26
+>                 index 1957 namelen 16 name: 1955-capture.jpg
+>         item 32 key (1919805647 EXTENT_DATA 0) itemoff 14336 itemsize 5=
+3
+>                 generation 2231989 type 1 (regular)
+>                 extent data disk byte 2381649588224 nr 81920
+>                 extent data offset 0 nr 81920 ram 81920
+>                 extent compression 0 (none)
+>         item 33 key (1919805657 INODE_ITEM 0) itemoff 14176 itemsize 16=
+0
+>                 generation 2231988 transid 2231989 size 81856 nbytes 81=
+920
+>                 block group 0 mode 100644 links 1 uid 33 gid 33 rdev 0
+>                 sequence 8 flags 0x14(NOCOMPRESS)
+>                 atime 1510290392.919317997 (2017-11-09 21:06:32)
+>                 ctime 1510290392.931317852 (2017-11-09 21:06:32)
+
+No extra interesting things here.
+
+>=20
+>=20
+>> Although what we could try is to avoid BUG_ON(), but I'm afraid the
+>> problem is more severe than my expectation.
+> =20
+> How does it look now?
+
+At least we know what btrfs check should do.
+I could dig it a little deeper to see if we could fix it.
+(Or something strange happened again)
+
+Thanks
+Qu
+
+>=20
+>> Any idea how such corruption happened?
+>=20
+> Sigh, I wish I knew.
+>=20
+> It feels like every btrfs filesystem I've had between my 3 systems has
+> gotten inexplicably corrupted at least once.
+> This one is not even using bcache, just dmcrypt underneath.
+>=20
+> It's my only one using btrfs raid (1):
+> gargamel:~# btrfs fi show /dev/mapper/raid0d1=20
+> Label: 'btrfs_space'  uuid: 01334b81-c0db-4e80-92e4-cac4da867651
+>         Total devices 2 FS bytes used 1.12TiB
+>         devid    1 size 836.13GiB used 722.03GiB path /dev/mapper/raid0=
+d1
+>         devid    2 size 836.13GiB used 722.03GiB path /dev/mapper/raid0=
+d2
+>=20
+> Data, RAID0: total=3D38TiB, used=3D1.11TiB
+> System, RAID1: total2.00MiB, used=128.00KiB
+> Metadata, RAID1: total=13.00GiB, used=3D8.54GiB
+> GlobalReserve, single: totalQ2.00MiB, used=3D0.00B
+>=20
+> Now, I didn't get errors or warnings, or even scrub warnings on it, I j=
+ust ran=20
+> btrfs check to see what would happen.
+>=20
+> Marc
+>=20
+
+
+--09C1wWjSGkdAHC0QsMNugwrSKNlJLHP4P--
+
+--k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloPe+AXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgoAQf8C9/NF3F3sESIlcv60eL+CPBR
+cQA60KuE8ZW/lX1+zqGK04gTk0pHQS5rMACrqo6dek+dv/4szkgHG/HlQXgmPIDj
+tGgR+crVThpXsep4EfA/3MpuUMhzVcvCoBfYPyIHgYR1yyUqQ/QrKY4JGFcwFaTp
+XDyVQIBXUpQ6Rr4hM+iXY6843+VWTtsoY7wZjCXmZSayVhB8V7B7igC6lGAXTqN3
+fTJgrYgL+2cgYP+D2Xil14Mk13trk6cLdKtBG+Kt0fH7ArWXbtLu3hd4CtG0/EgF
+8d66xf2+qntw0clZ6D4J59CiCI053NYMPabC43f7sxZxW1RFIwinEnVD6xbijQ==
+=zRxw
+-----END PGP SIGNATURE-----
+
+--k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3--

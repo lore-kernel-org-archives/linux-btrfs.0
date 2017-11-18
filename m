@@ -1,58 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:46082 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161234AbdKRQeR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 Nov 2017 11:34:17 -0500
-Date: Sat, 18 Nov 2017 08:34:04 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Message-ID: <20171118163404.u434t6afi7ghns57@merlins.org>
-References: <20171117022615.GO10969@merlins.org>
- <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
- <20171117061707.geqtk3ydj2elv4o7@merlins.org>
- <20171117073046.ehdlw5essf7lhw7k@merlins.org>
- <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
- <20171117155009.po4wxaqlyqnzqpom@merlins.org>
- <46fbd8c2-65f1-b281-7e17-2253f6dc3aa9@gmx.com>
+Received: from mail-eopbgr40069.outbound.protection.outlook.com ([40.107.4.69]:46352
+        "EHLO EUR03-DB5-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1760764AbdKRTL5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 18 Nov 2017 14:11:57 -0500
+Subject: Re: 4.14 balance: kernel BUG at
+ /home/kernel/COD/linux/fs/btrfs/ctree.c:1856!
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <e01cb2f95b44b7648855a4fe5070fd10@wpkg.org>
+ <5000f429-8b4b-b4ea-5e38-89f7c91af6f3@mendix.com>
+ <20171118144037.0fa8ad4b@natsu>
+ <2cbd136b-4fa7-fcee-7472-0941efa97047@mendix.com>
+Message-ID: <60361a2c-e479-1aea-cfdc-5807d1fd962d@mendix.com>
+Date: Sat, 18 Nov 2017 20:11:48 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <46fbd8c2-65f1-b281-7e17-2253f6dc3aa9@gmx.com>
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered,
- value -17
+In-Reply-To: <2cbd136b-4fa7-fcee-7472-0941efa97047@mendix.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 18, 2017 at 08:16:32AM +0800, Qu Wenruo wrote:
-> >         item 27 key (1919785864 DIR_ITEM 2591417872) itemoff 14637 itemsize 46
-> >                 location key (1919805647 INODE_ITEM 0) type FILE
-> >                 transid 2231988 data_len 0 name_len 16
-> >                 name: 1955-capture.jpg
+On 11/18/2017 12:48 PM, Hans van Kranenburg wrote:
 > 
-> OK, this DIR_ITEM matches with INODE_REF.
-> So btrfs-check should only need to insert DIR_INDEX for it.
-> > 
-> >> Although what we could try is to avoid BUG_ON(), but I'm afraid the
-> >> problem is more severe than my expectation.
-> >  
-> > How does it look now?
+> So, who wants to help?
 > 
-> At least we know what btrfs check should do.
-> I could dig it a little deeper to see if we could fix it.
-> (Or something strange happened again)
+> 1. Find a test system that you can crash.
+> 2. Create a test filesystem with some data.
+> 3. Run with 4.14? (makes the most sense I think)
+> 4. Continuously feed the data to balance and send everything to /dev/null
+> 5. Collect stack traces and borken filesystem images.
 
-Thanks for having had a look, hopefully it helps improving btrfs check,
-thanks for getting the info and getting it turned into better code :)
+I moved it to a ramdisk:
 
-In the meantime this was an easy FS to just wipe and start over with, so
-I just did that.
+-# modprobe brd rd_nr=1 rd_size=4194304
+-# mkfs.btrfs -m single -d single /dev/ram0
+-# mount -o noatime /dev/ram0 /btrfs
+-# cd /btrfs
+-# btrfs sub create moo
+-# rsync -av /usr/ moo/
+-# btrfs sub snap -r moo/ moo-ro
 
-Marc
+Now remove part of the files, yolo style
+-# rm $(find moo -type f | shuf | head -n 5000)
+Put them back, so we have some differences for incremental send
+-# rsync -av /usr/ moo/
+-# btrfs sub snap -r moo/ moo-ro2
+
+Now again:
+
+-# while true; do btrfs balance start --full-balance /btrfs; done
+and
+-# while true; do btrfs send --no-data /btrfs/moo-ro/ | wc -c;
+   btrfs send --no-data -p /btrfs/moo-ro/ /btrfs/moo-ro4/ |wc -c;
+   date; done
+
+Now I got rid of the disk traffic, and kernel cpu time goes to >300%.
+
+The error seen before is easily triggered. It happens both on normal and
+on incremental send. It happens both when using --no-data and when not
+using that option. send aborts with "ERROR: send ioctl failed with -5:
+Input/output error", and dmesg shows:
+
+[...]
+[17094.578876] BTRFS error (device ram0): did not find backref in
+send_root. inode=28151, offset=0, disk_byte=8769369178112 found
+extent=8769369178112
+[17328.368458] BTRFS error (device ram0): did not find backref in
+send_root. inode=23264, offset=0, disk_byte=8902861979648 found
+extent=8902861979648
+[17352.779099] BTRFS error (device ram0): did not find backref in
+send_root. inode=17392, offset=0, disk_byte=8917230010368 found
+extent=8917230010368
+[18012.009357] BTRFS error (device ram0): did not find backref in
+send_root. inode=29245, offset=0, disk_byte=9295300538368 found
+extent=9295300538368
+[18193.218649] BTRFS error (device ram0): did not find backref in
+send_root. inode=16437, offset=0, disk_byte=9400309366784 found
+extent=9400309366784
+[18604.697898] BTRFS error (device ram0): did not find backref in
+send_root. inode=24508, offset=0, disk_byte=9635165790208 found
+extent=9635165790208
+[18621.053722] BTRFS error (device ram0): did not find backref in
+send_root. inode=10039, offset=0, disk_byte=9644150468608 found
+extent=9644150468608
+[19039.051399] BTRFS error (device ram0): did not find backref in
+send_root. inode=29411, offset=0, disk_byte=9883807432704 found
+extent=9883807432704
+[19373.297701] BTRFS error (device ram0): did not find backref in
+send_root. inode=7946, offset=0, disk_byte=10074868215808 found
+extent=10074868215808
+[19573.432255] BTRFS error (device ram0): did not find backref in
+send_root. inode=26743, offset=0, disk_byte=10190374899712 found
+extent=10190374899712
+[19682.305240] BTRFS error (device ram0): did not find backref in
+send_root. inode=24823, offset=0, disk_byte=10252750929920 found
+extent=10252750929920
+[20012.420346] BTRFS error (device ram0): did not find backref in
+send_root. inode=25763, offset=0, disk_byte=10441684029440 found
+extent=10441684029440
+[20430.100411] BTRFS error (device ram0): did not find backref in
+send_root. inode=14572, offset=0, disk_byte=10680836050944 found
+extent=10680836050944
+[21328.821766] BTRFS error (device ram0): did not find backref in
+send_root. inode=11756, offset=0, disk_byte=11195322470400 found
+extent=11195322470400
+[...]
+
+After a few hours I have a long list of those, but that's all so far. No
+other big explosions.
+
+So, if anyone has an idea of what to try next? Maybe it needs more than
+1 block group each for data and metadata? Maybe speeding it up (with a
+small amount of data and the ramdisk) does not increase the chance of
+triggering something, but just decreases it?
+
+Welcome to the world of trying to reproduce errors... :D
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Hans van Kranenburg

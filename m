@@ -1,104 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:54632 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S965254AbdKQWgr (ORCPT
+Received: from mail-ot0-f178.google.com ([74.125.82.178]:41889 "EHLO
+        mail-ot0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752852AbdKRDTN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 17:36:47 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eFpFW-0004bc-6T
-        for linux-btrfs@vger.kernel.org; Fri, 17 Nov 2017 23:36:38 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Need help with incremental backup strategy (snapshots,
- defragmentingt & performance)
-Date: Fri, 17 Nov 2017 23:36:37 +0100
-Message-ID: <20171117233637.6a3e1ae4@jupiter.sol.kaishome.de>
-References: <CAH=dxU5mGQ5ws11fFKC+X3F810MceMxNBwnCR=g=Rau9DLDRng@mail.gmail.com>
-        <20171101101510.218eeead@natsu>
-        <CAH=dxU56geiO7MuWSbPgpfBQ3vbkPYm6juQZzu3-1=-RzG+ZSQ@mail.gmail.com>
-        <20171114135040.65a659c0@natsu>
-        <CAH=dxU7wjag+BPNdu__WidU1qNPeF7Sxgc8YthAVvxbrHx5VmA@mail.gmail.com>
-        <20171116171330.7493c9c4@jupiter.sol.kaishome.de>
-        <d7f8d215-e845-79e6-12a9-29468287d7b9@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Fri, 17 Nov 2017 22:19:13 -0500
+Received: by mail-ot0-f178.google.com with SMTP id b54so3638272otd.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 19:19:12 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <0d0062da-6310-7662-a7ec-edc6591b4542@mokrynskyi.com>
+References: <0d0062da-6310-7662-a7ec-edc6591b4542@mokrynskyi.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Fri, 17 Nov 2017 20:19:11 -0700
+Message-ID: <CAJCQCtSBxDP7ZyCnQuZZLQXXURrKLT+1Ja61pD_uR0oGH0piDA@mail.gmail.com>
+Subject: Re: Unrecoverable scrub errors
+To: Nazar Mokrynskyi <nazar@mokrynskyi.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Fri, 17 Nov 2017 06:51:52 +0300
-schrieb Andrei Borzenkov <arvidjaar@gmail.com>:
+On Fri, Nov 17, 2017 at 8:41 AM, Nazar Mokrynskyi <nazar@mokrynskyi.com> wrote:
 
-> 16.11.2017 19:13, Kai Krakow пишет:
-> ...
-> > > BTW: From user API perspective, btrfs snapshots do not guarantee  
-> > perfect granular consistent backups.  
-> 
-> Is it documented somewhere? I was relying on crash-consistent
-> write-order-preserving snapshots in NetApp for as long as I remember.
-> And I was sure btrfs offers is as it is something obvious for
-> redirect-on-write idea.
-
-I think it has ordering guarantees, but it is not as atomic in time as
-one might think. That's the point. But devs may tell better.
+>> [551049.038718] BTRFS warning (device dm-2): checksum error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238048: metadata leaf (level 0) in tree 985
+>> [551049.038720] BTRFS warning (device dm-2): checksum error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238048: metadata leaf (level 0) in tree 985
+>> [551049.038723] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+>> [551049.039634] BTRFS warning (device dm-2): checksum error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238176: metadata leaf (level 0) in tree 985
+>> [551049.039635] BTRFS warning (device dm-2): checksum error at logical 470069526528 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1, sector 942238176: metadata leaf (level 0) in tree 985
+>> [551049.039637] BTRFS error (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+>> [551049.413114] BTRFS error (device dm-2): unable to fixup (regular) error at logical 470069460992 on dev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
 
 
-> > A user-level file transaction may
-> > still end up only partially in the snapshot. If you are running
-> > transaction sensitive applications, those usually do provide some
-> > means of preparing a freeze and a thaw of transactions.
-> >   
-> 
-> Is snapshot creation synchronous to know when thaw?
+These are metadata errors. Are there any other storage stack related
+errors in the previous 2-5 minutes, such as read errors (UNC) or SATA
+link reset messages?
 
-I think you could do "btrfs snap create", then "btrfs fs sync", and
-everything should be fine.
+> Are there any better options before resorting to `btrfsck --repair`?
+
+I wouldn't try it just yet. What do you get for btrfs check without
+repair? This will check the metadata and it should run into the same
+problem, but if it craps out then chances are --repair will too.
 
 
-> > I think the user transactions API which could've been used for this
-> > will even be removed during the next kernel cycles. I remember
-> > reiserfs4 tried to deploy something similar. But there's no
-> > consistent layer in the VFS for subscribing applications to
-> > filesystem snapshots so they could prepare and notify the kernel
-> > when they are ready. 
-> 
-> I do not see what VFS has to do with it. NetApp works by simply
-> preserving previous consistency point instead of throwing it away.
-> I.e. snapshot is always last committed image on stable storage. Would
-> something like this be possible on btrfs level by duplicating current
-> on-disk root (sorry if I use wrong term)?
+>Maybe I can find snapshot that contains file with wrong checksum and remove corresponding snapshot or something like that?
 
-I think btrfs gives the same consistency. But the moment you issue
-"btrfs snap create" may delay snapshot creation a little bit. So if
-your application relies on exact point in time snapshots, you need to
-ensure synchronizing your application to the filesystem. I think the
-same is true for NetApp.
+It's not a file. It's metadata leaf.
 
-I just wanted to point that out because it may not be obvious, given
-that btrfs snapshot creation is built right into the tool chain of
-filesystem itself, unlike e.g. NetApp or LVM, or other storage layers.
 
-Background: A good while back I was told that btrfs snapshots during
-ongoing IO may result in some of the later IO carried over to before
-the snapshot. Transactional ordering of IO operations is still
-guaranteed but it may overlap with snapshot creation. So you can still
-loose a transaction you didn't expect to loose at that point in time.
+>> nazar-pc@nazar-pc ~> sudo btrfs filesystem df /media/Backup
+>> Data, single: total=879.01GiB, used=877.24GiB
+>> System, DUP: total=40.00MiB, used=128.00KiB
+>> Metadata, DUP: total=20.50GiB, used=18.96GiB
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
 
-So I understood this as:
+Metadata is DUP, but both copies have corruption. Kinda strange. But I
+don't know how close the DUP copies are to each other, if possibly a
+big enough media defect can explain this.
 
-If you just want to ensure transactional integrity of your database,
-you are all fine with btrfs snapshots.
+What do you get for smartctl -l scterc /dev/ (whole physical device,
+not the dm device)
 
-But if you want to ensure that a just finished transaction makes it
-into the snapshot completely, you have to sync the processes.
-
-However, things may have changed since then.
+In the meantime, take the drive offline (umount it), and run smartctl
+-t long, and after that finishes, smartctl -x. Attach that as a plain
+text file, it should be small enough for the list to handle it, and
+avoids reformatting problems.
 
 
 -- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
-
+Chris Murphy

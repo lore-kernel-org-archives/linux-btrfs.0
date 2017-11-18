@@ -1,190 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:64103 "EHLO mout.gmx.net"
+Received: from mail.virtall.com ([46.4.129.203]:38098 "EHLO mail.virtall.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934035AbdKRAQx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 19:16:53 -0500
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
- -17
-To: Marc MERLIN <marc@merlins.org>
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-References: <20171117022615.GO10969@merlins.org>
- <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
- <20171117061707.geqtk3ydj2elv4o7@merlins.org>
- <20171117073046.ehdlw5essf7lhw7k@merlins.org>
- <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
- <20171117155009.po4wxaqlyqnzqpom@merlins.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <46fbd8c2-65f1-b281-7e17-2253f6dc3aa9@gmx.com>
-Date: Sat, 18 Nov 2017 08:16:32 +0800
+        id S1423640AbdKRAta (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 17 Nov 2017 19:49:30 -0500
+Received: from mail.virtall.com (localhost [127.0.0.1])
+        by mail.virtall.com (Postfix) with ESMTP id 2682011608F4
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Nov 2017 00:49:26 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
+        by mail.virtall.com (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Sat, 18 Nov 2017 00:49:26 +0000 (UTC)
 MIME-Version: 1.0
-In-Reply-To: <20171117155009.po4wxaqlyqnzqpom@merlins.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3"
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sat, 18 Nov 2017 09:49:25 +0900
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: 4.14 balance: kernel BUG at
+ /home/kernel/COD/linux/fs/btrfs/ctree.c:1856!
+Message-ID: <e01cb2f95b44b7648855a4fe5070fd10@wpkg.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3
-Content-Type: multipart/mixed; boundary="09C1wWjSGkdAHC0QsMNugwrSKNlJLHP4P";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Lu Fengqi <lufq.fnst@cn.fujitsu.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Message-ID: <46fbd8c2-65f1-b281-7e17-2253f6dc3aa9@gmx.com>
-Subject: Re: btrfs check: add_missing_dir_index: BUG_ON `ret` triggered, value
- -17
-References: <20171117022615.GO10969@merlins.org>
- <3e4de2ce-28c8-23c0-c25d-70659a378865@gmx.com>
- <20171117061707.geqtk3ydj2elv4o7@merlins.org>
- <20171117073046.ehdlw5essf7lhw7k@merlins.org>
- <aafe0b68-26ce-914b-c7cb-f4a775a9c1b9@gmx.com>
- <20171117155009.po4wxaqlyqnzqpom@merlins.org>
-In-Reply-To: <20171117155009.po4wxaqlyqnzqpom@merlins.org>
-
---09C1wWjSGkdAHC0QsMNugwrSKNlJLHP4P
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I'm getting the following BUG when running balance on one of my systems:
 
 
-
-On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 23:50, Marc MERLIN wrote:
-> On Fri, Nov 17, 2017 at 04:12:07PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2017=E5=B9=B411=E6=9C=8817=E6=97=A5 15:30, Marc MERLIN wrote:
->>> Here's the whole output:
->>> gargamel:~# btrfs-debug-tree -t 258 /dev/mapper/raid0d1 | grep 191980=
-5647
->>
->> Sorry, I missed "-C10" parameter for grep.
-> =20
->                 generation 2231977 transid 2237084 size 64 nbytes 0
->                 block group 0 mode 40755 links 1 uid 33 gid 33 rdev 0
->                 sequence 0 flags 0x1710(none)
->                 atime 1510290002.516060162 (2017-11-09 21:00:02)
->                 ctime 1510477350.88506455 (2017-11-12 01:02:30)
->                 mtime 1510477350.88506455 (2017-11-12 01:02:30)
->                 otime 1510290002.516060162 (2017-11-09 21:00:02)
->         item 26 key (1919785864 INODE_REF 1919785862) itemoff 14683 ite=
-msize 12
->                 index 2 namelen 2 name: 00
->         item 27 key (1919785864 DIR_ITEM 2591417872) itemoff 14637 item=
-size 46
->                 location key (1919805647 INODE_ITEM 0) type FILE
->                 transid 2231988 data_len 0 name_len 16
->                 name: 1955-capture.jpg
-
-OK, this DIR_ITEM matches with INODE_REF.
-So btrfs-check should only need to insert DIR_INDEX for it.
-
->         item 28 key (1919785864 DIR_ITEM 3406016191) itemoff 14591 item=
-size 46
->                 location key (1919805657 INODE_ITEM 0) type FILE
->                 transid 2231988 data_len 0 name_len 16
->                 name: 1956-capture.jpg
->         item 29 key (1919785864 DIR_INDEX 1957) itemoff 14575 itemsize =
-16
->                 location key (7383370114097217536 UNKNOWN.211 156519724=
-32879681580) type DIR_ITEM.0
->                 transid 72057594045427176 data_len 0 name_len 0
->                 name:=20
->         item 30 key (1919805647 INODE_ITEM 0) itemoff 14415 itemsize 16=
-0
->                 generation 2231988 transid 2231989 size 81701 nbytes 81=
-920
->                 block group 0 mode 100644 links 1 uid 33 gid 33 rdev 0
->                 sequence 8 flags 0x14(NOCOMPRESS)
->                 atime 1510290392.703320623 (2017-11-09 21:06:32)
->                 ctime 1510290392.715320477 (2017-11-09 21:06:32)
->                 mtime 1510290392.715320477 (2017-11-09 21:06:32)
->                 otime 1510290392.703320623 (2017-11-09 21:06:32)
->         item 31 key (1919805647 INODE_REF 1919785864) itemoff 14389 ite=
-msize 26
->                 index 1957 namelen 16 name: 1955-capture.jpg
->         item 32 key (1919805647 EXTENT_DATA 0) itemoff 14336 itemsize 5=
-3
->                 generation 2231989 type 1 (regular)
->                 extent data disk byte 2381649588224 nr 81920
->                 extent data offset 0 nr 81920 ram 81920
->                 extent compression 0 (none)
->         item 33 key (1919805657 INODE_ITEM 0) itemoff 14176 itemsize 16=
-0
->                 generation 2231988 transid 2231989 size 81856 nbytes 81=
-920
->                 block group 0 mode 100644 links 1 uid 33 gid 33 rdev 0
->                 sequence 8 flags 0x14(NOCOMPRESS)
->                 atime 1510290392.919317997 (2017-11-09 21:06:32)
->                 ctime 1510290392.931317852 (2017-11-09 21:06:32)
-
-No extra interesting things here.
-
->=20
->=20
->> Although what we could try is to avoid BUG_ON(), but I'm afraid the
->> problem is more severe than my expectation.
-> =20
-> How does it look now?
-
-At least we know what btrfs check should do.
-I could dig it a little deeper to see if we could fix it.
-(Or something strange happened again)
-
-Thanks
-Qu
-
->=20
->> Any idea how such corruption happened?
->=20
-> Sigh, I wish I knew.
->=20
-> It feels like every btrfs filesystem I've had between my 3 systems has
-> gotten inexplicably corrupted at least once.
-> This one is not even using bcache, just dmcrypt underneath.
->=20
-> It's my only one using btrfs raid (1):
-> gargamel:~# btrfs fi show /dev/mapper/raid0d1=20
-> Label: 'btrfs_space'  uuid: 01334b81-c0db-4e80-92e4-cac4da867651
->         Total devices 2 FS bytes used 1.12TiB
->         devid    1 size 836.13GiB used 722.03GiB path /dev/mapper/raid0=
-d1
->         devid    2 size 836.13GiB used 722.03GiB path /dev/mapper/raid0=
-d2
->=20
-> Data, RAID0: total=3D38TiB, used=3D1.11TiB
-> System, RAID1: total2.00MiB, used=128.00KiB
-> Metadata, RAID1: total=13.00GiB, used=3D8.54GiB
-> GlobalReserve, single: totalQ2.00MiB, used=3D0.00B
->=20
-> Now, I didn't get errors or warnings, or even scrub warnings on it, I j=
-ust ran=20
-> btrfs check to see what would happen.
->=20
-> Marc
->=20
+[ 3458.698704] BTRFS info (device sdb3): relocating block group 
+306045779968 flags data|raid1
+[ 3466.892933] BTRFS info (device sdb3): found 2405 extents
+[ 3495.408630] BTRFS info (device sdb3): found 2405 extents
+[ 3498.161144] ------------[ cut here ]------------
+[ 3498.161150] kernel BUG at 
+/home/kernel/COD/linux/fs/btrfs/ctree.c:1856!
+[ 3498.161264] invalid opcode: 0000 [#1] SMP
+[ 3498.161363] Modules linked in: nf_log_ipv6 nf_log_ipv4 nf_log_common 
+xt_LOG xt_multiport xt_conntrack xt_nat binfmt_misc veth ip6table_filter 
+xt_CHECKSUM iptable_mangle xt_tcpudp ip6t_MASQUERADE 
+nf_nat_masquerade_ipv6 ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6 
+nf_nat_ipv6 ip6_tables ipt_MASQUERADE nf_nat_masquerade_ipv4 xt_comment 
+iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat 
+nf_conntrack iptable_filter ip_tables x_tables bridge stp llc intel_rapl 
+x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass 
+crct10dif_pclmul crc32_pclmul ghash_clmulni_intel pcbc aesni_intel 
+aes_x86_64 crypto_simd glue_helper cryptd intel_cstate hci_uart 
+intel_rapl_perf btbcm input_leds serdev serio_raw btqca btintel 
+bluetooth intel_pch_thermal intel_lpss_acpi intel_lpss mac_hid acpi_pad
+[ 3498.162060]  ecdh_generic acpi_als kfifo_buf industrialio autofs4 
+btrfs zstd_compress raid10 raid456 async_raid6_recov async_memcpy 
+async_pq async_xor async_tx xor raid6_pq libcrc32c raid0 multipath 
+linear raid1 e1000e psmouse ptp ahci pps_core libahci wmi 
+pinctrl_sunrisepoint i2c_hid video pinctrl_intel hid
+[ 3498.162386] CPU: 7 PID: 29041 Comm: btrfs Not tainted 
+4.14.0-041400-generic #201711122031
+[ 3498.162545] Hardware name: FUJITSU  /D3401-H2, BIOS V5.0.0.12 R1.5.0 
+for D3401-H2x                     02/27/2017
+[ 3498.162723] task: ffff8d7858e82f00 task.stack: ffffb4ee47d5c000
+[ 3498.162890] RIP: 0010:read_node_slot+0xd7/0xe0 [btrfs]
+[ 3498.163027] RSP: 0018:ffffb4ee47d5fb88 EFLAGS: 00010246
+[ 3498.163156] RAX: ffff8d78c8bb7000 RBX: ffff8d8124abd380 RCX: 
+0000000000000001
+[ 3498.163290] RDX: 0000000000000048 RSI: ffff8d7ae1fef6f8 RDI: 
+ffff8d8124aa0000
+[ 3498.163422] RBP: ffffb4ee47d5fba8 R08: 0000000000000001 R09: 
+ffff8d8124abd384
+[ 3498.163555] R10: 0000000000000001 R11: 0000000000114000 R12: 
+0000000000000002
+[ 3498.163689] R13: ffffb4ee47d5fc66 R14: ffffb4ee47d5fc50 R15: 
+0000000000000000
+[ 3498.163825] FS:  00007fa4c9a998c0(0000) GS:ffff8d816e5c0000(0000) 
+knlGS:0000000000000000
+[ 3498.163990] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 3498.164120] CR2: 000056410155a028 CR3: 00000009c194c002 CR4: 
+00000000003606e0
+[ 3498.164255] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[ 3498.164390] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 
+0000000000000400
+[ 3498.164523] Call Trace:
+[ 3498.164694]  tree_advance+0x16e/0x1d0 [btrfs]
+[ 3498.164874]  btrfs_compare_trees+0x2da/0x6a0 [btrfs]
+[ 3498.165078]  ? process_extent+0x1580/0x1580 [btrfs]
+[ 3498.165264]  btrfs_ioctl_send+0xe94/0x1120 [btrfs]
+[ 3498.165450]  btrfs_ioctl+0x93c/0x1f00 [btrfs]
+[ 3498.165587]  ? enqueue_task_fair+0xa8/0x6c0
+[ 3498.165724]  do_vfs_ioctl+0xa5/0x600
+[ 3498.165854]  ? do_vfs_ioctl+0xa5/0x600
+[ 3498.165979]  ? _do_fork+0x144/0x3a0
+[ 3498.166103]  SyS_ioctl+0x79/0x90
+[ 3498.166234]  entry_SYSCALL_64_fastpath+0x1e/0xa9
+[ 3498.166368] RIP: 0033:0x7fa4c8b17f07
+[ 3498.166488] RSP: 002b:00007ffd33644e38 EFLAGS: 00000202 ORIG_RAX: 
+0000000000000010
+[ 3498.166653] RAX: ffffffffffffffda RBX: 00007fa4c8a1a700 RCX: 
+00007fa4c8b17f07
+[ 3498.166787] RDX: 00007ffd33644f30 RSI: 0000000040489426 RDI: 
+0000000000000004
+[ 3498.166921] RBP: 00007ffd33644dc0 R08: 0000000000000000 R09: 
+00007fa4c8a1a700
+[ 3498.167055] R10: 00007fa4c8a1a9d0 R11: 0000000000000202 R12: 
+0000000000000000
+[ 3498.167190] R13: 00007ffd33644dbf R14: 00007fa4c8a1a9c0 R15: 
+000000000129f020
+[ 3498.167326] Code: 48 c7 c3 fb ff ff ff e8 f8 5c 05 00 48 89 d8 5b 41 
+5c 41 5d 41 5e 5d c3 48 c7 c3 fe ff ff ff 48 89 d8 5b 41 5c 41 5d 41 5e 
+5d c3 <0f> 0b 0f 1f 80 00 00 00 00 0f 1f 44 00 00 55 48 89 e5 41 57 41
+[ 3498.167690] RIP: read_node_slot+0xd7/0xe0 [btrfs] RSP: 
+ffffb4ee47d5fb88
+[ 3498.167892] ---[ end trace 6a751a3020dd3086 ]---
+[ 3499.572729] BTRFS info (device sdb3): relocating block group 
+304972038144 flags data|raid1
+[ 3504.068432] BTRFS info (device sdb3): found 2037 extents
+[ 3538.281808] BTRFS info (device sdb3): found 2037 extents
 
 
---09C1wWjSGkdAHC0QsMNugwrSKNlJLHP4P--
 
---k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloPe+AXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgoAQf8C9/NF3F3sESIlcv60eL+CPBR
-cQA60KuE8ZW/lX1+zqGK04gTk0pHQS5rMACrqo6dek+dv/4szkgHG/HlQXgmPIDj
-tGgR+crVThpXsep4EfA/3MpuUMhzVcvCoBfYPyIHgYR1yyUqQ/QrKY4JGFcwFaTp
-XDyVQIBXUpQ6Rr4hM+iXY6843+VWTtsoY7wZjCXmZSayVhB8V7B7igC6lGAXTqN3
-fTJgrYgL+2cgYP+D2Xil14Mk13trk6cLdKtBG+Kt0fH7ArWXbtLu3hd4CtG0/EgF
-8d66xf2+qntw0clZ6D4J59CiCI053NYMPabC43f7sxZxW1RFIwinEnVD6xbijQ==
-=zRxw
------END PGP SIGNATURE-----
-
---k9AhJ9Ikcw1A2ocN7fvmj9OkNKdjxmMK3--
+Tomasz Chmielewski
+https://lxadm.com

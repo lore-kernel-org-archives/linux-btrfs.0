@@ -1,26 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32034 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:32060 "EHLO
         userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S937716AbdKRNuL (ORCPT
+        with ESMTP id S1753166AbdKRNuU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 Nov 2017 08:50:11 -0500
+        Sat, 18 Nov 2017 08:50:20 -0500
 Subject: Re: [PATCH 2/2] btrfs: introduce feature to ignore a btrfs device
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20171113054410.24872-1-anand.jain@oracle.com>
  <20171113054410.24872-3-anand.jain@oracle.com>
- <489e7d64-aae1-0d5d-3af4-8d721b31fc43@suse.com>
+ <83fdbfd2-8f02-e65b-3e75-f784f5ea33ab@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <c397a02f-5de7-da99-e263-14398578a661@oracle.com>
-Date: Sat, 18 Nov 2017 21:50:23 +0800
+Message-ID: <8d86dcc0-1338-22df-dec1-75a1a016c0ea@oracle.com>
+Date: Sat, 18 Nov 2017 21:50:34 +0800
 MIME-Version: 1.0
-In-Reply-To: <489e7d64-aae1-0d5d-3af4-8d721b31fc43@suse.com>
+In-Reply-To: <83fdbfd2-8f02-e65b-3e75-f784f5ea33ab@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 11/16/2017 10:03 PM, Nikolay Borisov wrote:
+On 11/16/2017 10:11 PM, Nikolay Borisov wrote:
 > 
 > 
 > On 13.11.2017 07:44, Anand Jain wrote:
@@ -80,14 +80,6 @@ On 11/16/2017 10:03 PM, Nikolay Borisov wrote:
 >> +
 >> +	if (fs_devices->opened)
 >> +		return -EPERM;
-> 
-> Isn't -EBUSY more appropriate?
-
-  Right added.
-
-Thanks, Anand
-
-> 
 >> +
 >> +	mutex_lock(&uuid_mutex);
 >> +	mutex_lock(&fs_devices->device_list_mutex);
@@ -137,6 +129,19 @@ Thanks, Anand
 >> +	else
 >> +	pr_info("BTRFS: %pU: device %s uuid %pU devid %llu ran undo scan",
 >> +		disk_super->fsid, path, disk_super->dev_item.uuid, devid);
+> 
+> There is already btrfs_err and btrfs_info, use those. This will allow to
+> uniquely identify the failing btrfs file system
+
+  We don't have fs_info in this context, btrfs_err/info can't be used.
+
+> also the pr_* statements
+> need to be indented after the if/else.
+
+  Will do.
+
+Thanks, Anand
+
 >> +
 >> +	btrfs_release_disk_super(page);
 >> +
@@ -176,3 +181,8 @@ Thanks, Anand
 >>    * use by applications that know how to avoid the
 >>    * resulting deadlocks
 >>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

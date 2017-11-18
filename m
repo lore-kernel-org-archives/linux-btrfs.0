@@ -1,51 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-31-i6.italiaonline.it ([213.209.14.31]:32966 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1163689AbdKROA0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 18 Nov 2017 09:00:26 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH v2] btrfs: handle dynamically reappearing missing device
-To: Anand Jain <anand.jain@oracle.com>
-References: <20171112105650.3248-1-anand.jain@oracle.com>
- <20171117123614.11822-1-anand.jain@oracle.com>
-From: Goffredo Baroncelli <kreijack@libero.it>
-Cc: linux-btrfs@vger.kernel.org, Liu Bo <bo.li.liu@oracle.com>
-Message-ID: <2e6fd096-43c6-c6c7-90ae-ac4672ac5797@libero.it>
-Date: Sat, 18 Nov 2017 14:52:14 +0100
-MIME-Version: 1.0
-In-Reply-To: <20171117123614.11822-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:28731 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1163700AbdKROD2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 18 Nov 2017 09:03:28 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/2] btrfs: add function to device list delete
+Date: Sat, 18 Nov 2017 22:03:36 +0800
+Message-Id: <20171118140337.13612-1-anand.jain@oracle.com>
+In-Reply-To: <20171113054410.24872-1-anand.jain@oracle.com>
+References: <20171113054410.24872-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/17/2017 01:36 PM, Anand Jain wrote:
-> If the device is not present at the time of (-o degrade) mount,
-> the mount context will create a dummy missing struct btrfs_device.
-> Later this device may reappear after the FS is mounted and
-> then device is included in the device list but it missed the
-> open_device part. So this patch handles that case by going
-> through the open_device steps which this device missed and finally
-> adds to the device alloc list.
+We need device delete from the dev_list so create a new function,
+instead of refactor of btrfs_free_stale_device() because,
+btrfs_free_stale_device() doesn't hold device_list_mutex which
+is actually needed here.
 
-What happens if the first devices got writes before the "last device" is joined ?
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v1: title of this patch
+  btrfs: refactor btrfs_free_stale_device() to get device list delete
+v2:
+ add new function instead of peal from
+ btrfs_free_stale_device() to delete a device from the device list,
+ since btrfs_free_stale_device() does not hold device_list_mutex,
+ may be it can be fixed later.
 
-Supposing to have a raid1 pair of devices: sda, sdb
 
-- sda is dissappeared (usb detached ?)
-- the filesystem is mounted as
-	mount -o degraded /dev/sdb
-- some writes happens on /dev/sdb
-- the user reattach /dev/sda
-- udev run "btrfs dev scan"
-- the system joins /dev/sda to the filesystem disks pool
+ /btrfs/volumes.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-Because the filesystem is a raid1, btrfs may read from /dev/sdb (updated data) or /dev/sda (old data), or worse read something from the former and something from the later (metadata from sda and data from sdb ) ???
-
-Am I missing something ?
-
-BR
-G.Baroncelli
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bddf75d5e6a0..68f1dd44385b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -546,6 +546,27 @@ static void pending_bios_fn(struct btrfs_work *work)
+ 	run_scheduled_bios(device);
+ }
+ 
++static void delete_device_from_list(struct btrfs_device *device)
++{
++	struct btrfs_fs_devices *fs_devices;
++	fs_devices = device->fs_devices;
++
++	lockdep_assert_held(&uuid_mutex);
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	fs_devices->num_devices--;
++	list_del(&device->dev_list);
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	rcu_string_free(device->name);
++	kfree(device);
++
++	if (fs_devices->num_devices == 0) {
++		btrfs_sysfs_remove_fsid(fs_devices);
++		list_del(&fs_devices->list);
++		free_fs_devices(fs_devices);
++	}
++}
+ 
+ void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+ {
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+2.15.0
+

@@ -1,25 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f43.google.com ([74.125.82.43]:45883 "EHLO
-        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751018AbdKSQVb (ORCPT
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:42825 "EHLO
+        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751004AbdKSTby (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Nov 2017 11:21:31 -0500
-Received: by mail-wm0-f43.google.com with SMTP id 9so14439445wme.4
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Nov 2017 08:21:30 -0800 (PST)
+        Sun, 19 Nov 2017 14:31:54 -0500
+Received: by mail-wm0-f53.google.com with SMTP id 5so13815397wmk.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Nov 2017 11:31:54 -0800 (PST)
 Received: from [192.168.2.191] (x4e370f23.dyn.telefonica.de. [78.55.15.35])
-        by smtp.googlemail.com with ESMTPSA id o55sm7247993edc.90.2017.11.19.08.21.28
+        by smtp.googlemail.com with ESMTPSA id s6sm6588202edc.2.2017.11.19.11.31.52
         for <linux-btrfs@vger.kernel.org>
         (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sun, 19 Nov 2017 08:21:28 -0800 (PST)
+        Sun, 19 Nov 2017 11:31:52 -0800 (PST)
 To: linux-btrfs@vger.kernel.org
 From: Steffen Sindzinski <stesind@gmail.com>
 Subject: uncorrectable errors in Raid 10
-Message-ID: <8aa2dcc5-b7f4-1dd4-9b55-b309bf2433d6@gmail.com>
-Date: Sun, 19 Nov 2017 17:21:27 +0100
+Message-ID: <a61eeda7-af07-e140-ccd9-d288931f07fb@gmail.com>
+Date: Sun, 19 Nov 2017 20:31:51 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
 
 Hello,
 
@@ -51,12 +52,12 @@ Linux bigbox 4.13.0-17-generic #20-Ubuntu SMP Mon Nov 6 10:04:08 UTC
 
 btrfs-progs v4.12
 
-Label: 'Videos'  uuid: 4fafd0d4-7dd9-4dcc-9a33-5f1ad9555358
-     Total devices 4 FS bytes used 1.44TiB
-     devid    3 size 1.82TiB used 785.56GiB path /dev/sdc2
-     devid    4 size 1.82TiB used 785.56GiB path /dev/sde2
-     devid    5 size 1.82TiB used 785.56GiB path /dev/sdd2
-     devid    6 size 1.36TiB used 785.56GiB path /dev/sdf1
+Label: 'Videos'  uuid: 4fafd0d4-7dd9-4dcc-9a33-5f1ad9555358
+     Total devices 4 FS bytes used 1.44TiB
+     devid    3 size 1.82TiB used 785.56GiB path /dev/sdc2
+     devid    4 size 1.82TiB used 785.56GiB path /dev/sde2
+     devid    5 size 1.82TiB used 785.56GiB path /dev/sdd2
+     devid    6 size 1.36TiB used 785.56GiB path /dev/sdf1
 
 Data, RAID10: total=1.51TiB, used=1.43TiB
 System, RAID10: total=128.00MiB, used=192.00KiB
@@ -64,42 +65,42 @@ Metadata, RAID10: total=21.00GiB, used=17.76GiB
 GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
-  % sudo btrfs scrub start -Bd /
+  % sudo btrfs scrub start -Bd /
 scrub device /dev/sdc2 (id 3) canceled
-     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
+     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
 01:58:27
-     total bytes scrubbed: 568.86GiB with 0 errors
+     total bytes scrubbed: 568.86GiB with 0 errors
 scrub device /dev/sde2 (id 4) canceled
-     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
+     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
 01:58:28
-     total bytes scrubbed: 702.88GiB with 1 errors
-     error details: verify=1
-     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+     total bytes scrubbed: 702.88GiB with 1 errors
+     error details: verify=1
+     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
 scrub device /dev/sdd2 (id 5) done
-     scrub started at Sun Nov 19 08:43:21 2017 and finished after 01:48:00
-     total bytes scrubbed: 737.74GiB with 1 errors
-     error details: verify=1
-     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+     scrub started at Sun Nov 19 08:43:21 2017 and finished after 01:48:00
+     total bytes scrubbed: 737.74GiB with 1 errors
+     error details: verify=1
+     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
 scrub device /dev/sdf1 (id 6) canceled
-     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
+     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
 01:58:28
-     total bytes scrubbed: 506.02GiB with 0 errors
+     total bytes scrubbed: 506.02GiB with 0 errors
 
 
 
 
-[    4.985712] BTRFS: device label Videos devid 6 transid 772463 /dev/sdf1
-[    4.985882] BTRFS: device label Videos devid 4 transid 772463 /dev/sde2
-[    4.986541] BTRFS: device label Videos devid 5 transid 772463 /dev/sdd2
-[    4.986713] BTRFS: device label Videos devid 3 transid 772463 /dev/sdc2
-[    5.007986] BTRFS info (device sdc2): disk space caching is enabled
-[    5.007988] BTRFS info (device sdc2): has skinny extents
-[    5.149910] BTRFS info (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
+[    4.985712] BTRFS: device label Videos devid 6 transid 772463 /dev/sdf1
+[    4.985882] BTRFS: device label Videos devid 4 transid 772463 /dev/sde2
+[    4.986541] BTRFS: device label Videos devid 5 transid 772463 /dev/sdd2
+[    4.986713] BTRFS: device label Videos devid 3 transid 772463 /dev/sdc2
+[    5.007986] BTRFS info (device sdc2): disk space caching is enabled
+[    5.007988] BTRFS info (device sdc2): has skinny extents
+[    5.149910] BTRFS info (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
 0, flush 0, corrupt 0, gen 3
-[    5.149916] BTRFS info (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
+[    5.149916] BTRFS info (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
 0, flush 0, corrupt 0, gen 3
-[   25.482987] BTRFS info (device sdc2): use lzo compression
-[   25.482990] BTRFS info (device sdc2): disk space caching is enabled
+[   25.482987] BTRFS info (device sdc2): use lzo compression
+[   25.482990] BTRFS info (device sdc2): disk space caching is enabled
 [57830.611730] BTRFS warning (device sdc2): checksum/header error at 
 logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
 (level 0) in tree 318
@@ -183,24 +184,24 @@ error at logical 17478699876352 on dev /dev/sde2
 
 
 steffen@bigbox ~ % sudo btrfs device stats /
-[/dev/sdc2].write_io_errs    0
-[/dev/sdc2].read_io_errs     0
-[/dev/sdc2].flush_io_errs    0
-[/dev/sdc2].corruption_errs  0
-[/dev/sdc2].generation_errs  0
-[/dev/sde2].write_io_errs    0
-[/dev/sde2].read_io_errs     0
-[/dev/sde2].flush_io_errs    0
-[/dev/sde2].corruption_errs  0
-[/dev/sde2].generation_errs  7
-[/dev/sdd2].write_io_errs    0
-[/dev/sdd2].read_io_errs     0
-[/dev/sdd2].flush_io_errs    0
-[/dev/sdd2].corruption_errs  0
-[/dev/sdd2].generation_errs  7
-[/dev/sdf1].write_io_errs    0
-[/dev/sdf1].read_io_errs     0
-[/dev/sdf1].flush_io_errs    0
-[/dev/sdf1].corruption_errs  0
-[/dev/sdf1].generation_errs  0
+[/dev/sdc2].write_io_errs    0
+[/dev/sdc2].read_io_errs     0
+[/dev/sdc2].flush_io_errs    0
+[/dev/sdc2].corruption_errs  0
+[/dev/sdc2].generation_errs  0
+[/dev/sde2].write_io_errs    0
+[/dev/sde2].read_io_errs     0
+[/dev/sde2].flush_io_errs    0
+[/dev/sde2].corruption_errs  0
+[/dev/sde2].generation_errs  7
+[/dev/sdd2].write_io_errs    0
+[/dev/sdd2].read_io_errs     0
+[/dev/sdd2].flush_io_errs    0
+[/dev/sdd2].corruption_errs  0
+[/dev/sdd2].generation_errs  7
+[/dev/sdf1].write_io_errs    0
+[/dev/sdf1].read_io_errs     0
+[/dev/sdf1].flush_io_errs    0
+[/dev/sdf1].corruption_errs  0
+[/dev/sdf1].generation_errs  0
 

@@ -1,148 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx.mokrynskyi.com ([46.4.12.50]:56398 "EHLO mx.mokrynskyi.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750888AbdKSLRi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Nov 2017 06:17:38 -0500
-Received: from localhost (localhost [127.0.0.1])
-        by mx.mokrynskyi.com (Postfix) with ESMTP id 85BA91379
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Nov 2017 11:17:37 +0000 (UTC)
-Received: from mx.mokrynskyi.com ([127.0.0.1])
-        by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id bmGe3peIz3na for <linux-btrfs@vger.kernel.org>;
-        Sun, 19 Nov 2017 11:17:37 +0000 (UTC)
-Subject: Re: Unrecoverable scrub errors
-From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <0d0062da-6310-7662-a7ec-edc6591b4542@mokrynskyi.com>
- <CAJCQCtSBxDP7ZyCnQuZZLQXXURrKLT+1Ja61pD_uR0oGH0piDA@mail.gmail.com>
- <20171118033335.2ha45mvia5edu6p6@angband.pl>
- <277c8155-8651-f593-0f3f-e36add09d943@mokrynskyi.com>
- <CAJCQCtTAvVKUmMdTaD=S-34anDghHWmQcjn76i+Q3wYc58+gTA@mail.gmail.com>
- <f73a2482-e82d-e658-02aa-a2e2988a0012@mokrynskyi.com>
- <CAJCQCtRKPekR+bEE0xaX02Wwz0E_N1wcUxJdc_D-C9By2qMvWw@mail.gmail.com>
- <e9428f4b-8eae-1df9-aa2e-3ac96703338a@mokrynskyi.com>
- <CAJCQCtSGXWqTPUfHB467P7rB6yg0oZPOuBCCNU0YE4yzrkejyg@mail.gmail.com>
- <8cdd4e42-8a5d-052a-b894-5cb4450a079f@mokrynskyi.com>
-Message-ID: <6db3931f-55d2-ffdd-9fcb-5572b842d824@mokrynskyi.com>
-Date: Sun, 19 Nov 2017 13:17:36 +0200
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:45883 "EHLO
+        mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751018AbdKSQVb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 19 Nov 2017 11:21:31 -0500
+Received: by mail-wm0-f43.google.com with SMTP id 9so14439445wme.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Nov 2017 08:21:30 -0800 (PST)
+Received: from [192.168.2.191] (x4e370f23.dyn.telefonica.de. [78.55.15.35])
+        by smtp.googlemail.com with ESMTPSA id o55sm7247993edc.90.2017.11.19.08.21.28
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 19 Nov 2017 08:21:28 -0800 (PST)
+To: linux-btrfs@vger.kernel.org
+From: Steffen Sindzinski <stesind@gmail.com>
+Subject: uncorrectable errors in Raid 10
+Message-ID: <8aa2dcc5-b7f4-1dd4-9b55-b309bf2433d6@gmail.com>
+Date: Sun, 19 Nov 2017 17:21:27 +0100
 MIME-Version: 1.0
-In-Reply-To: <8cdd4e42-8a5d-052a-b894-5cb4450a079f@mokrynskyi.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looks like it is not going to resolve nicely.
+Hello,
 
-After removing that problematic snapshot filesystem quickly becomes readonly like so:
+I have done a scrub on my Btrfs Raid 10 and have 2 uncorrectable errors. 
+In fact I cannot access 2 directories, even as root, permission is 
+denied and all directory attributes in ls -la are ????.
 
-> [23552.839055] BTRFS error (device dm-2): cleaner transaction attach returned -30
-> [23577.374390] BTRFS info (device dm-2): use lzo compression
-> [23577.374391] BTRFS info (device dm-2): disk space caching is enabled
-> [23577.374392] BTRFS info (device dm-2): has skinny extents
-> [23577.506214] BTRFS info (device dm-2): bdev /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1 errs: wr 0, rd 0, flush 0, corrupt 24, gen 0
-> [23795.026390] BTRFS error (device dm-2): bad tree block start 0 470069510144
-> [23795.148193] BTRFS error (device dm-2): bad tree block start 56 470069542912
-> [23795.148424] BTRFS warning (device dm-2): dm-2 checksum verify failed on 470069460992 wanted 54C49539 found FD171FBB level 0
-> [23795.148526] BTRFS error (device dm-2): bad tree block start 0 470069493760
-> [23795.150461] BTRFS error (device dm-2): bad tree block start 1459617832 470069477376
-> [23795.639781] BTRFS error (device dm-2): bad tree block start 0 470069510144
-> [23795.655487] BTRFS error (device dm-2): bad tree block start 0 470069510144
-> [23795.655496] BTRFS: error (device dm-2) in btrfs_drop_snapshot:9244: errno=-5 IO failure
-> [23795.655498] BTRFS info (device dm-2): forced readonly
-Check and repaid doesn't help either:
+Before I have run this filesystem as Raid 1 with 3 disks without any 
+problems for more than a year. Scrubbed regularily. A month ago I added 
+a fouth HDD and balanced to Raid10. I am not sure if I did a scub 
+afterwards, but I usualy do. Now it found that errors. Smart status of 
+HDDs is healthy. The 2 directories were read-only for some years and not 
+even read in the last month.
 
-> nazar-pc@nazar-pc ~> sudo btrfs check -p /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> Checking filesystem on /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> UUID: 82cfcb0f-0b80-4764-bed6-f529f2030ac5
-> Extent back ref already exists for 797694840832 parent 330760175616 root 0 owner 0 offset 0 num_refs 1
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> Ignoring transid failure
-> leaf parent key incorrect 470072098816
-> bad block 470072098816
->
-> ERROR: errors found in extent allocation tree or chunk allocation
-> There is no free space entry for 797694844928-797694808064
-> There is no free space entry for 797694844928-797819535360
-> cache appears valid but isn't 796745793536
-> There is no free space entry for 814739984384-814739988480
-> There is no free space entry for 814739984384-814999404544
-> cache appears valid but isn't 813925662720
-> block group 894456299520 has wrong amount of free space
-> failed to load free space cache for block group 894456299520
-> block group 922910457856 has wrong amount of free space
-> failed to load free space cache for block group 922910457856
->
-> ERROR: errors found in free space cache
-> found 963515335717 bytes used, error(s) found
-> total csum bytes: 921699896
-> total tree bytes: 20361920512
-> total fs tree bytes: 17621073920
-> total extent tree bytes: 1629323264
-> btree space waste bytes: 3812167723
-> file data blocks allocated: 21167059447808
->  referenced 2283091746816
->
-> nazar-pc@nazar-pc ~> sudo btrfs check --repair -p /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> enabling repair mode
-> Checking filesystem on /dev/mapper/luks-bd5dd3e7-ad80-405f-8dfd-752f2b870f93-part1
-> UUID: 82cfcb0f-0b80-4764-bed6-f529f2030ac5
-> Extent back ref already exists for 797694840832 parent 330760175616 root 0 owner 0 offset 0 num_refs 1
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> parent transid verify failed on 470072098816 wanted 1431 found 307965
-> Ignoring transid failure
-> leaf parent key incorrect 470072098816
-> bad block 470072098816
->
-> ERROR: errors found in extent allocation tree or chunk allocation
-> Fixed 0 roots.
-> There is no free space entry for 797694844928-797694808064
-> There is no free space entry for 797694844928-797819535360
-> cache appears valid but isn't 796745793536
-> There is no free space entry for 814739984384-814739988480
-> There is no free space entry for 814739984384-814999404544
-> cache appears valid but isn't 813925662720
-> block group 894456299520 has wrong amount of free space
-> failed to load free space cache for block group 894456299520
-> block group 922910457856 has wrong amount of free space
-> failed to load free space cache for block group 922910457856
->
-> ERROR: errors found in free space cache
-> found 963515335717 bytes used, error(s) found
-> total csum bytes: 921699896
-> total tree bytes: 20361920512
-> total fs tree bytes: 17621073920
-> total extent tree bytes: 1629323264
-> btree space waste bytes: 3812167723
-> file data blocks allocated: 21167059447808
->  referenced 2283091746816
-Anything else I can try before starting from scratch?
+What can I do now? Should I do a btrfs rescue? Which device, it is a 
+raid 10? Probably my files are OK, only the directories I cannot access. 
+How to recover the files?
 
-Sincerely, Nazar Mokrynskyi
-github.com/nazar-pc
+Thanks in advance!
 
-19.11.17 07:30, Nazar Mokrynskyi пише:
-> 19.11.17 07:23, Chris Murphy пише:
->> On Sat, Nov 18, 2017 at 10:13 PM, Nazar Mokrynskyi <nazar@mokrynskyi.com> wrote:
->>
->>> That was eventually useful:
->>>
->>> * found some familiar file names (mangled eCryptfs file names from times when I used it for home directory) and decided to search for it in old snapshots of home directory (about 1/3 of snapshots on that partition)
->>> * file name was present in snapshots back to July of 2015, but during search through snapshot from 2016-10-26_18:47:04 I've got I/O error reported by find command at one directory
->>> * tried to open directory in file manager - same error, fails to open
->>> * after removing this lets call it "broken" snapshot started new scrub, hopefully it'll finish fine
->>>
->>> If it is not actually related to recent memory issues I'd be positively surprised. Not sure what happened towards the end of October 2016 though, especially that backups were on different physical device back then.
->> Wrong csum computation during the transfer? Did you use btrfs send receive?
-> Yes, I've used send/receive to copy snapshots from primary SSD to backup HDD.
->
-> Not sure when wrong csum computation happened, since SSD contains only most recent snapshots and only HDD contains older snapshots. Even if error happened on SSD, those older snapshots are gone a long time ago and there is no way to check this.
->
-> Sincerely, Nazar Mokrynskyi
-> github.com/nazar-pc
->
+Steffen
+
+
+Here is my data:
+
+
+Linux bigbox 4.13.0-17-generic #20-Ubuntu SMP Mon Nov 6 10:04:08 UTC 
+2017 x86_64 x86_64 x86_64 GNU/Linux
+
+btrfs-progs v4.12
+
+Label: 'Videos'  uuid: 4fafd0d4-7dd9-4dcc-9a33-5f1ad9555358
+     Total devices 4 FS bytes used 1.44TiB
+     devid    3 size 1.82TiB used 785.56GiB path /dev/sdc2
+     devid    4 size 1.82TiB used 785.56GiB path /dev/sde2
+     devid    5 size 1.82TiB used 785.56GiB path /dev/sdd2
+     devid    6 size 1.36TiB used 785.56GiB path /dev/sdf1
+
+Data, RAID10: total=1.51TiB, used=1.43TiB
+System, RAID10: total=128.00MiB, used=192.00KiB
+Metadata, RAID10: total=21.00GiB, used=17.76GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+  % sudo btrfs scrub start -Bd /
+scrub device /dev/sdc2 (id 3) canceled
+     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
+01:58:27
+     total bytes scrubbed: 568.86GiB with 0 errors
+scrub device /dev/sde2 (id 4) canceled
+     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
+01:58:28
+     total bytes scrubbed: 702.88GiB with 1 errors
+     error details: verify=1
+     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+scrub device /dev/sdd2 (id 5) done
+     scrub started at Sun Nov 19 08:43:21 2017 and finished after 01:48:00
+     total bytes scrubbed: 737.74GiB with 1 errors
+     error details: verify=1
+     corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+scrub device /dev/sdf1 (id 6) canceled
+     scrub started at Sun Nov 19 08:43:21 2017 and was aborted after 
+01:58:28
+     total bytes scrubbed: 506.02GiB with 0 errors
+
+
+
+
+[    4.985712] BTRFS: device label Videos devid 6 transid 772463 /dev/sdf1
+[    4.985882] BTRFS: device label Videos devid 4 transid 772463 /dev/sde2
+[    4.986541] BTRFS: device label Videos devid 5 transid 772463 /dev/sdd2
+[    4.986713] BTRFS: device label Videos devid 3 transid 772463 /dev/sdc2
+[    5.007986] BTRFS info (device sdc2): disk space caching is enabled
+[    5.007988] BTRFS info (device sdc2): has skinny extents
+[    5.149910] BTRFS info (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 3
+[    5.149916] BTRFS info (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 3
+[   25.482987] BTRFS info (device sdc2): use lzo compression
+[   25.482990] BTRFS info (device sdc2): disk space caching is enabled
+[57830.611730] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[57830.611732] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[57830.611734] BTRFS error (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 4
+[57832.688689] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sdd2
+[57870.488081] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[57870.488083] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[57870.488085] BTRFS error (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 4
+[57870.500114] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sde2
+[88979.005712] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[88979.005718] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[88979.005720] BTRFS error (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 5
+[88979.036670] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sdd2
+[89026.609561] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[89026.609563] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[89026.609566] BTRFS error (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 5
+[89026.617423] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sde2
+[97765.699866] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[97765.699869] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[97765.699871] BTRFS error (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 6
+[97765.735887] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sdd2
+[97789.909036] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[97789.909039] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[97789.909041] BTRFS error (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 6
+[97789.918254] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sde2
+[104087.660640] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[104087.660643] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sdd2, sector 338986176: metadata leaf 
+(level 0) in tree 318
+[104087.660645] BTRFS error (device sdc2): bdev /dev/sdd2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 7
+[104087.696248] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sdd2
+[104126.980483] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[104126.980486] BTRFS warning (device sdc2): checksum/header error at 
+logical 17478699876352 on dev /dev/sde2, sector 348423360: metadata leaf 
+(level 0) in tree 318
+[104126.980488] BTRFS error (device sdc2): bdev /dev/sde2 errs: wr 0, rd 
+0, flush 0, corrupt 0, gen 7
+[104126.995705] BTRFS error (device sdc2): unable to fixup (regular) 
+error at logical 17478699876352 on dev /dev/sde2
+
+
+steffen@bigbox ~ % sudo btrfs device stats /
+[/dev/sdc2].write_io_errs    0
+[/dev/sdc2].read_io_errs     0
+[/dev/sdc2].flush_io_errs    0
+[/dev/sdc2].corruption_errs  0
+[/dev/sdc2].generation_errs  0
+[/dev/sde2].write_io_errs    0
+[/dev/sde2].read_io_errs     0
+[/dev/sde2].flush_io_errs    0
+[/dev/sde2].corruption_errs  0
+[/dev/sde2].generation_errs  7
+[/dev/sdd2].write_io_errs    0
+[/dev/sdd2].read_io_errs     0
+[/dev/sdd2].flush_io_errs    0
+[/dev/sdd2].corruption_errs  0
+[/dev/sdd2].generation_errs  7
+[/dev/sdf1].write_io_errs    0
+[/dev/sdf1].read_io_errs     0
+[/dev/sdf1].flush_io_errs    0
+[/dev/sdf1].corruption_errs  0
+[/dev/sdf1].generation_errs  0
+

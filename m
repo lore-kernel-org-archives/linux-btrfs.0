@@ -1,225 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31653 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750764AbdKTIUu (ORCPT
+Received: from mail-wr0-f174.google.com ([209.85.128.174]:33243 "EHLO
+        mail-wr0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751609AbdKTQub (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 03:20:50 -0500
-Subject: Re: [PATCH 2/2] btrfs: introduce feature to ignore a btrfs device
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20171113054410.24872-1-anand.jain@oracle.com>
- <20171113054410.24872-3-anand.jain@oracle.com>
- <83fdbfd2-8f02-e65b-3e75-f784f5ea33ab@suse.com>
- <8d86dcc0-1338-22df-dec1-75a1a016c0ea@oracle.com>
- <da390de0-9b32-25b8-fdb9-59f8ed39d616@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <b197a9a3-5189-7fba-919c-597a7a4f253c@oracle.com>
-Date: Mon, 20 Nov 2017 16:21:06 +0800
-MIME-Version: 1.0
-In-Reply-To: <da390de0-9b32-25b8-fdb9-59f8ed39d616@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+        Mon, 20 Nov 2017 11:50:31 -0500
+Received: by mail-wr0-f174.google.com with SMTP id 4so8677462wrt.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Nov 2017 08:50:31 -0800 (PST)
+Received: from debox (bzq-79-176-67-119.red.bezeqint.net. [79.176.67.119])
+        by smtp.gmail.com with ESMTPSA id m189sm5469297wmb.38.2017.11.20.08.50.29
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 20 Nov 2017 08:50:29 -0800 (PST)
+Message-ID: <1511196626.1657.29.camel@gmail.com>
+Subject: test btrfs scrubbing/get system's total capacity
+From: ST <smntov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 20 Nov 2017 18:50:26 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
+
+1. is there a tool that I can use to test btrfs scrubbing? Namely I need
+to "damage" a file, i.e. change it without changing its meta
+information, so I can see how scrubbing performs... Is there something
+like this?
 
 
-On 11/18/2017 10:28 PM, Nikolay Borisov wrote:
-> 
-> 
-> On 18.11.2017 15:50, Anand Jain wrote:
->>
->>
->> On 11/16/2017 10:11 PM, Nikolay Borisov wrote:
->>>
->>>
->>> On 13.11.2017 07:44, Anand Jain wrote:
->>>> Support for a new command is being added here:
->>>>    btrfs dev ignore <dev>
->>>> Which shall undo the effects of the command
->>>>    btrfs dev scan <dev>
->>>>
->>>> This cli/ioctl is needed as there is no way to continue to mount in
->>>> degraded mode if the device is already scanned, which is required to
->>>> recover from the split brain raid conditions.
->>>>
->>>> This patch proposes to use ioctl #5 as it was empty.
->>>>      IOW(BTRFS_IOCTL_MAGIC, 5, ..)
->>>> If #5 is reserved for some other purpose, I think I should change this.
->>>>
->>>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>>> ---
->>>>    fs/btrfs/super.c           |  4 +++
->>>>    fs/btrfs/volumes.c         | 70
->>>> ++++++++++++++++++++++++++++++++++++++++++++++
->>>>    fs/btrfs/volumes.h         |  2 ++
->>>>    include/uapi/linux/btrfs.h |  2 ++
->>>>    4 files changed, 78 insertions(+)
->>>>
->>>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->>>> index fa7bad8b22da..64f4beb1526d 100644
->>>> --- a/fs/btrfs/super.c
->>>> +++ b/fs/btrfs/super.c
->>>> @@ -2183,6 +2183,10 @@ static long btrfs_control_ioctl(struct file
->>>> *file, unsigned int cmd,
->>>>            ret = btrfs_scan_one_device(vol->name, FMODE_READ,
->>>>                            &btrfs_fs_type, &fs_devices);
->>>>            break;
->>>> +    case BTRFS_IOC_IGNORE_DEV:
->>>> +        ret = btrfs_ignore_one_device(vol->name, FMODE_READ,
->>>> +                        &btrfs_fs_type, &fs_devices);
->>>> +        break;
->>>>        case BTRFS_IOC_DEVICES_READY:
->>>>            ret = btrfs_scan_one_device(vol->name, FMODE_READ,
->>>>                            &btrfs_fs_type, &fs_devices);
->>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>> index 8ead85dba6f5..1a06a17e111e 100644
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -1181,6 +1181,76 @@ int btrfs_read_disk_super(struct block_device
->>>> *bdev, u64 bytenr,
->>>>        return 0;
->>>>    }
->>>>    +static int device_list_remove(struct btrfs_super_block
->>>> *disk_super, u64 devid)
->>>> +{
->>>> +    int ret = 0;
->>>> +    struct btrfs_fs_devices *fs_devices;
->>>> +    struct btrfs_device *device;
->>>> +
->>>> +    fs_devices = find_fsid(disk_super->fsid);
->>>> +    if (!fs_devices)
->>>> +        return -ENOENT;
->>>> +
->>>> +    if (fs_devices->opened)
->>>> +        return -EPERM;
->>>> +
->>>> +    mutex_lock(&uuid_mutex);
->>>> +    mutex_lock(&fs_devices->device_list_mutex);
->>>> +    device = find_device(fs_devices, devid, disk_super->dev_item.uuid);
->>>> +    if (!device) {
->>>> +        ret = -ENOENT;
->>>> +        goto error;
->>>> +    }
->>>> +
->>>> +    delete_device_from_list(device);
->>>> +
->>>> +error:
->>>> +    mutex_unlock(&fs_devices->device_list_mutex);
->>>> +    mutex_unlock(&uuid_mutex);
->>>> +
->>>> +    return ret;
->>>> +}
->>>> +
->>>> +int btrfs_ignore_one_device(const char *path, fmode_t flags, void
->>>> *holder,
->>>> +              struct btrfs_fs_devices **fs_devices_ret)
->>>> +{
->>>> +    struct btrfs_super_block *disk_super;
->>>> +    struct block_device *bdev;
->>>> +    struct page *page;
->>>> +    int ret = -EINVAL;
->>>> +    u64 devid;
->>>> +    u64 bytenr;
->>>> +
->>>> +    bytenr = btrfs_sb_offset(0);
->>>> +    flags |= FMODE_EXCL;
->>>> +
->>>> +    bdev = blkdev_get_by_path(path, flags, holder);
->>>> +    if (IS_ERR(bdev)) {
->>>> +        ret = PTR_ERR(bdev);
->>>> +        goto error;
->>>> +    }
->>>> +
->>>> +    if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
->>>> +        goto error_bdev_put;
->>>> +
->>>> +    devid = btrfs_stack_device_id(&disk_super->dev_item);
->>>> +
->>>> +    ret = device_list_remove(disk_super, devid);
->>>> +    if (ret)
->>>> +    pr_err("BTRFS: %pU: device %s uuid %pU devid %llu failed to
->>>> unscan: %d",
->>>> +        disk_super->fsid, path, disk_super->dev_item.uuid, devid, ret);
->>>> +    else
->>>> +    pr_info("BTRFS: %pU: device %s uuid %pU devid %llu ran undo scan",
->>>> +        disk_super->fsid, path, disk_super->dev_item.uuid, devid);
->>>
->>> There is already btrfs_err and btrfs_info, use those. This will allow to
->>> uniquely identify the failing btrfs file system
->>
->>   We don't have fs_info in this context, btrfs_err/info can't be used.
-> 
-> Yes, but we have struct file in btrfs_control_ioctl then can't we do :
-> 
-> struct btrfs_fs_info = btrfs_sb(file_inode(file)->i_sb)
+2. I want to use Ansible to set btrfs quota on a /home subvolume as say
+0.8*TotalCapacityOfRoot and then assign to it individual users'
+subvolumes with certain (smaller) quatos.
+2.1 Is it OK to rely on ansible_facts? Does it has correct information
+about btrfs-based "/" total capacity?
+2.2 If not, is there a raw command to get TotalCapacityOfRoot in -TB so
+I can set it? Is there something like btrfs filesystem usage / -t
+--device_size? to get only the total Device Size information?
 
-Nikolay, We are in the device scan context where btrfs_fs_info does
-not exist yet.
+Thank you!
+ST
 
-Thanks, Anand
-
-
-> 
->>
->>> also the pr_* statements
->>> need to be indented after the if/else.
->>
->>   Will do.
->>
->> Thanks, Anand
->>
->>>> +
->>>> +    btrfs_release_disk_super(page);
->>>> +
->>>> +error_bdev_put:
->>>> +    blkdev_put(bdev, flags);
->>>> +error:
->>>> +    return ret;
->>>> +}
->>>> +
->>>>    /*
->>>>     * Look for a btrfs signature on a device. This may be called out
->>>> of the mount path
->>>>     * and we are not allowed to call set_blocksize during the scan.
->>>> The superblock
->>>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
->>>> index 6108fdfec67f..340e40acdab5 100644
->>>> --- a/fs/btrfs/volumes.h
->>>> +++ b/fs/btrfs/volumes.h
->>>> @@ -421,6 +421,8 @@ int btrfs_open_devices(struct btrfs_fs_devices
->>>> *fs_devices,
->>>>                   fmode_t flags, void *holder);
->>>>    int btrfs_scan_one_device(const char *path, fmode_t flags, void
->>>> *holder,
->>>>                  struct btrfs_fs_devices **fs_devices_ret);
->>>> +int btrfs_ignore_one_device(const char *path, fmode_t flags, void
->>>> *holder,
->>>> +              struct btrfs_fs_devices **fs_devices_ret);
->>>>    int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
->>>>    void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices,
->>>> int step);
->>>>    void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
->>>> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
->>>> index 378230c163d5..928485c31aa4 100644
->>>> --- a/include/uapi/linux/btrfs.h
->>>> +++ b/include/uapi/linux/btrfs.h
->>>> @@ -739,6 +739,8 @@ enum btrfs_err_code {
->>>>                       struct btrfs_ioctl_vol_args)
->>>>    #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->>>>                       struct btrfs_ioctl_vol_args)
->>>> +#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
->>>> +                   struct btrfs_ioctl_vol_args)
->>>>    /* trans start and trans end are dangerous, and only for
->>>>     * use by applications that know how to avoid the
->>>>     * resulting deadlocks
->>>>
->>> -- 
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

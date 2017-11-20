@@ -1,73 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23680 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1758838AbdKPAMo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Nov 2017 19:12:44 -0500
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAG0Chc1030302
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:12:43 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vAG0ChQs009299
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:12:43 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAG0CgLd001036
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Nov 2017 00:12:42 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: set plug for fsync
-Date: Wed, 15 Nov 2017 16:10:28 -0700
-Message-Id: <20171115231028.474-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171110001616.7875-1-bo.li.liu@oracle.com>
-References: <20171110001616.7875-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:42104 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752386AbdKTUZA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Nov 2017 15:25:00 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 77C79AD98
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Nov 2017 20:24:59 +0000 (UTC)
+From: Edmund Nadolski <enadolski@suse.com>
+To: enadolski@suse.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs: btrfs_inode_log_parent should use defined inode_only values.
+Date: Mon, 20 Nov 2017 13:24:47 -0700
+Message-Id: <20171120202449.22947-2-enadolski@suse.com>
+In-Reply-To: <20171120202449.22947-1-enadolski@suse.com>
+References: <20171120202449.22947-1-enadolski@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Setting plug can merge adjacent IOs before dispatching IOs to the disk
-driver.
+Replace hardcoded numeric argument values for inode_only with the
+constants defined for that use.
 
-Without plug, it'd not be a problem for single disk usecases, but for
-multiple disks using raid profile, a large IO can be split to several
-IOs of stripe length, and plug can be helpful to bring them together
-for each disk so that we can save several disk access.
-
-Moreover, fsync issues synchronous writes, so plug can really take
-effect.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Edmund Nadolski <enadolski@suse.com>
 ---
-v2: Explain why setting plug makes sense.
+ fs/btrfs/tree-log.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
- fs/btrfs/file.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e43da6c..504e96d 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2018,10 +2018,20 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
- static int start_ordered_ops(struct inode *inode, loff_t start, loff_t end)
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1f79405..95cff91 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5403,11 +5403,10 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 				  struct dentry *parent,
+ 				  const loff_t start,
+ 				  const loff_t end,
+-				  int exists_only,
++				  int inode_only,
+ 				  struct btrfs_log_ctx *ctx)
  {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+-	int inode_only = exists_only ? LOG_INODE_EXISTS : LOG_INODE_ALL;
+ 	struct super_block *sb;
+ 	struct dentry *old_parent = NULL;
+ 	int ret = 0;
+@@ -5573,7 +5572,7 @@ int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
  	int ret;
-+	struct blk_plug plug;
  
-+	/*
-+	 * This is only called in fsync, which would do synchronous
-+	 * writes, so a plug can merge adjacent IOs as much as
-+	 * possible.  Esp. in case of multiple disks using raid
-+	 * profile, a large IO can be split to several segments of
-+	 * stripe length(64K).
-+	 */
-+	blk_start_plug(&plug);
- 	atomic_inc(&BTRFS_I(inode)->sync_writers);
- 	ret = btrfs_fdatawrite_range(inode, start, end);
- 	atomic_dec(&BTRFS_I(inode)->sync_writers);
-+	blk_finish_plug(&plug);
+ 	ret = btrfs_log_inode_parent(trans, root, BTRFS_I(d_inode(dentry)),
+-			parent, start, end, 0, ctx);
++			parent, start, end, LOG_INODE_ALL, ctx);
+ 	dput(parent);
  
  	return ret;
+@@ -5836,6 +5835,6 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	return btrfs_log_inode_parent(trans, root, inode, parent, 0,
+-				      LLONG_MAX, 1, NULL);
++				      LLONG_MAX, LOG_INODE_EXISTS, NULL);
  }
+ 
 -- 
-2.9.4
+2.10.2
 

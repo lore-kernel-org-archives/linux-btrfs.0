@@ -1,100 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f194.google.com ([74.125.82.194]:38279 "EHLO
-        mail-ot0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752932AbdKTV4s (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:49598 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752968AbdKTV6W (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 16:56:48 -0500
-Received: by mail-ot0-f194.google.com with SMTP id b49so8886183otj.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Nov 2017 13:56:48 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <94ecb41f-e825-97ce-999d-020a5abffccd@suse.com>
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <8af43ea0-d2a3-aa3e-0b68-fefe3b3d96ea@gmail.com> <CAJCQCtQ8t8uMRsWh0gcm=KU_2CpZnn9dx=Svf_1+6UWR4BEcpA@mail.gmail.com>
- <3114a78e-485a-daea-f8b1-48cc330f4209@suse.com> <bbab87ad-b84e-2bca-5d90-47a77abd295d@suse.com>
- <94ecb41f-e825-97ce-999d-020a5abffccd@suse.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 20 Nov 2017 14:56:46 -0700
-Message-ID: <CAJCQCtTJ54V11gOfUTta4z3y80kngGoNOn=KTKOXMb8rgFFdfg@mail.gmail.com>
-Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-To: Jeff Mahoney <jeffm@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Mon, 20 Nov 2017 16:58:22 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eGu4p-0004lH-Ch
+        for linux-btrfs@vger.kernel.org; Mon, 20 Nov 2017 22:58:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Issues while doing btrfs delete missing in raid6
+Date: Mon, 20 Nov 2017 21:57:47 +0000 (UTC)
+Message-ID: <pan$5ba16$591e9570$7efd0d56$66c0e056@cox.net>
+References: <20171120014344.7a5d8bd2@Vantage.cJ>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 20, 2017 at 1:40 PM, Jeff Mahoney <jeffm@suse.com> wrote:
-> On 11/20/17 3:01 PM, Jeff Mahoney wrote:
->> On 11/20/17 3:00 PM, Jeff Mahoney wrote:
->>> On 11/19/17 4:38 PM, Chris Murphy wrote:
->>>> On Sat, Nov 18, 2017 at 11:27 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->>>>> 19.11.2017 09:17, Chris Murphy пишет:
->>>>>> fstrim should trim free space, but it only trims unallocated. This is
->>>>>> with kernel 4.14.0 and the entire 4.13 series. I'm pretty sure it
->>>>>> behaved this way with 4.12 also.
->>>>>>
->>>>>
->>>>> Well, I was told it should also trim free space ...
->>>>>
->>>>> https://www.spinics.net/lists/linux-btrfs/msg61819.html
->>>>>
->>>>
->>>> It definitely isn't. If I do a partial balance, then fstrim, I get a
->>>> larger trimmed value, corresponding exactly to unallocated space.
->>>
->>>
->>> I've just tested with 4.14 and it definitely trims within block groups.
->>
->> Derp.  This should read 4.12.
->>
->>> I've attached my test script and the log of the run.  I'll build and
->>> test a 4.14 kernel and see if I can reproduce there.  It may well be
->>> that we're just misreporting the bytes trimmed.
->
-> I get the same results on v4.14.  I wrote up a little script to parse
-> the btrfs-debug-tree extent tree dump and the discards that are issued
-> after the final sync (when the tree is dumped) match.
->
-> The script output is also as expected:
-> /mnt2: 95.1 GiB (102082281472 bytes) trimmed
-> # remove every other 100MB file, totalling 1.5 GB
-> + sync
-> + killall blktrace
-> + wait
-> + echo 'after sync'
-> + sleep 1
-> + btrace -a discard /dev/loop0
-> + fstrim -v /mnt2
-> /mnt2: 96.6 GiB (103659962368 bytes) trimmed
->
-> One thing that may not be apparent is that the byte count is from the
-> device(s)'s perspective.  If you have a file system with duplicate
-> chunks or a redundant RAID mode, the numbers will reflect that.
+Jérôme Carretero posted on Mon, 20 Nov 2017 01:43:44 -0500 as excerpted:
 
-This is a single device volume, single profile for data and metadata bg's.
+> While doing a test (to evaluate drives), where I'm filling a bunch of
+> drives in RAID6, one of the disks failed in the process.
+> (System with v4.14 / ECC).
 
+FWIW, see raid56 status in the status page (table and below raid56 note).
 
->
-> The total byte count should be correct as well.  It's the total number
-> of bytes that we submit for discard and that were accepted by the block
-> layer.
+https://btrfs.wiki.kernel.org/index.php/Status
 
-Total byte count from fstrim matches unallocated space, it does not
-match reported free space. And when I do a filtered balance to reclaim
-free space into unallocated space, subsequent fstrim shows a different
-total value even though no files have been deleted. So it seems like
-it's really trimming unallocated space not free space, or the trimmed
-total wouldn't chance just because I've done a partial balance.
->
-> Do you have a test case that shows it being wrong and can you provide
-> the blktrace capture of the device(s) while the fstrim is running?
+Basically, after the fixes in 4.12, it mostly works as long as things 
+don't go too badly wrong, but due to the write hole and corner cases such 
+as the checksum repair failure you ran into, it's not something people on 
+this list can in good conscience recommend for general use, because it 
+simply lacks the reliability people tend to want raid56 for, at least in 
+combination with the file-integrity/checksumming features btrfs may be 
+chosen for.  The two together simply aren't as reliable as the separate 
+features might imply they should be, and there are known to be better 
+alternatives.
 
-I have a test machine exhibiting this problem and can run whatever you
-want on the machine, but it'll have to be rather verbose instructions.
-In the meantime I'm about to test Qu's patch.
+Unfortunately that's likely to remain the case for awhile due to the 
+complexity of a real fix, despite the 4.12 fixes to the worst of the 
+problems.
 
-
+One reasonably performant and reliable alternative, tho it's more 
+directly an alternative to btrfs raid10, where it's better performing due 
+to btrfs raid10 not yet being performance optimized, is btrfs raid1 on 
+top of two raid0s (mdraid0, for instance).
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

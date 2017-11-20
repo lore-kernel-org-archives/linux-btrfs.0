@@ -1,83 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:55392 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:56058 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751115AbdKUOgx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 09:36:53 -0500
-Subject: Re: [PATCH] btrfs: extent-tree: Use round up to replace align macro
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20171121055445.13972-1-wqu@suse.com>
- <20171121133652.GJ3553@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <838e4f7d-013f-d08f-9624-45400eb62551@gmx.com>
-Date: Tue, 21 Nov 2017 22:36:37 +0800
+        id S1751781AbdKTRxD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Nov 2017 12:53:03 -0500
+Date: Mon, 20 Nov 2017 18:51:06 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, lists@colorremedies.com
+Subject: Re: [PATCH] btrfs: Enhance btrfs_trim_fs function to handle error
+ better
+Message-ID: <20171120175106.GE3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171120055651.17892-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20171121133652.GJ3553@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="hq34I01lmTprie17Lu24c5opJvsLf4AhK"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171120055651.17892-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---hq34I01lmTprie17Lu24c5opJvsLf4AhK
-Content-Type: multipart/mixed; boundary="Sj7PVTLdiNdV9H4Mh5GpR6JRhheEqNnbd";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <838e4f7d-013f-d08f-9624-45400eb62551@gmx.com>
-Subject: Re: [PATCH] btrfs: extent-tree: Use round up to replace align macro
-References: <20171121055445.13972-1-wqu@suse.com>
- <20171121133652.GJ3553@twin.jikos.cz>
-In-Reply-To: <20171121133652.GJ3553@twin.jikos.cz>
+On Mon, Nov 20, 2017 at 01:56:51PM +0800, Qu Wenruo wrote:
+> Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
+> error happens when trimming existing block groups, it will skip the
+> remaining blocks and continue to trim unallocated space for each device.
+> 
+> And the return value will only reflect the final error from device
+> trimming.
+> 
+> This patch will fix such behavior by:
+> 
+> 1) Recording first error from block group or device trimming
+>    So return value will also reflect any error found when trimming.
+>    Make developer more aware of the problem.
+> 
+> 2) Outputting btrfs warning message for each trimming failure
+>    Any error for block group or device trimming will cause btrfs warning
+>    kernel message.
 
---Sj7PVTLdiNdV9H4Mh5GpR6JRhheEqNnbd
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I think this could become too noisy, trimming failures are soft errors
+IMO, so it should be enough to report all errors cumulatively
+per-device.
 
+> 3) Continuing trimming if we can
+>    If we failed to trim one block group or device, we could still try
+>    next block group or device.
 
+Right, best-effort.
 
-On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 21:36, David Sterba wrote:
-> On Tue, Nov 21, 2017 at 01:54:45PM +0800, Qu Wenruo wrote:
->> To save reader seconds before checking if it's rounding up or down.
->=20
-> Agreed, this is more clear. Please switch all instances of ALIGN to
-> round_up, there's not much point doing it file by file.
+> Such behavior can avoid confusion for case like failure to trim the
+> first block group and then only unallocated space is trimmed.
+> 
+> Reported-by: Chris Murphy <lists@colorremedies.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++--------------
+>  1 file changed, 43 insertions(+), 16 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 309a109069f1..46d65ffb3bd1 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -10948,6 +10948,16 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+>  	return ret;
+>  }
+>  
+> +/*
+> + * Trim the whole fs, by:
+> + * 1) Trimming free space in each block group
+> + * 2) Trimming unallocated space in each device
+> + *
+> + * Will try to continue trimming even if we failed to trim one block group or
+> + * device.
+> + * The return value will be the error return value of the first error.
+> + * Or 0 if nothing wrong happened.
+> + */
+>  int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+>  {
+>  	struct btrfs_block_group_cache *cache = NULL;
+> @@ -10958,6 +10968,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+>  	u64 end;
+>  	u64 trimmed = 0;
+>  	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+> +	int bg_ret = 0;
+> +	int dev_ret = 0;
+>  	int ret = 0;
+>  
+>  	/*
+> @@ -10968,7 +10980,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+>  	else
+>  		cache = btrfs_lookup_block_group(fs_info, range->start);
+>  
+> -	while (cache) {
+> +	for (; cache; cache = next_block_group(fs_info, cache)) {
+>  		if (cache->key.objectid >= (range->start + range->len)) {
+>  			btrfs_put_block_group(cache);
+>  			break;
+> @@ -10982,29 +10994,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+>  			if (!block_group_cache_done(cache)) {
+>  				ret = cache_block_group(cache, 0);
+>  				if (ret) {
+> -					btrfs_put_block_group(cache);
+> -					break;
+> +					btrfs_warn_rl(fs_info,
+> +		"failed to cache block group %llu ret %d",
 
-OK.
+If this is meant for a developer as you say in the changelog, then
+btrfs_debug is better.
 
-I just encountered this when digging space reservation related code.
+> +						   cache->key.objectid, ret);
+> +					if (!bg_ret)
+> +						bg_ret = ret;
+> +					continue;
+>  				}
+>  				ret = wait_block_group_cache_done(cache);
+>  				if (ret) {
+> -					btrfs_put_block_group(cache);
+> -					break;
+> +					btrfs_warn_rl(fs_info,
+> +		"failed to wait cache for block group %llu ret %d",
 
-Converting all won't be a problem.
+The message wording is confusing, if this is another message for
+developer, the function name can be printed.
 
-Thanks,
-Qu
+> +						   cache->key.objectid, ret);
+> +					if (!bg_ret)
+> +						bg_ret = ret;
+> +					continue;
+>  				}
+>  			}
+> -			ret = btrfs_trim_block_group(cache,
+> -						     &group_trimmed,
+> -						     start,
+> -						     end,
+> -						     range->minlen);
+> +			ret = btrfs_trim_block_group(cache, &group_trimmed,
+> +						start, end, range->minlen);
+>  
+>  			trimmed += group_trimmed;
+>  			if (ret) {
+> -				btrfs_put_block_group(cache);
+> -				break;
+> +				btrfs_warn_rl(fs_info,
+> +		"failed to trim block group %llu ret %d",
+> +					   cache->key.objectid, ret);
+> +				if (!bg_ret)
+> +					bg_ret = ret;
+> +				continue;
+>  			}
+>  		}
+> -
+> -		cache = next_block_group(fs_info, cache);
+>  	}
+>  
+>  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> @@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+>  	list_for_each_entry(device, devices, dev_alloc_list) {
+>  		ret = btrfs_trim_free_extents(device, range->minlen,
+>  					      &group_trimmed);
+> -		if (ret)
+> +		if (ret) {
+> +			btrfs_warn_rl(fs_info,
+> +		"failed to trim unallocated space for devid %llu ret %d",
+> +				      device->devid, ret);
 
+So the idea is to print one message here, with devid, number of errors
+and how many bytes were skipped.
+
+> +			if (!dev_ret)
+> +				dev_ret = ret;
+>  			break;
+> +		}
+>  
+>  		trimmed += group_trimmed;
+>  	}
+>  	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>  
+>  	range->len = trimmed;
+> -	return ret;
+> +	if (bg_ret)
+> +		return bg_ret;
+> +	return dev_ret;
+>  }
+>  
+>  /*
+> -- 
+> 2.15.0
+> 
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---Sj7PVTLdiNdV9H4Mh5GpR6JRhheEqNnbd--
-
---hq34I01lmTprie17Lu24c5opJvsLf4AhK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloUOfUXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhWvwgAgXoaC2133kplWS4wXxR9hex5
-4WZn22BFV9UzpUd4+3t5iRexlXggb4scUVwTLmc/8b5KuJU6iD79t3AIXLiPfCUA
-AEQnjWuinLPiAgblJWYhbG2nlALD+HpOvyoklA8Dsjk5NuBDMj0KcB8s5wa6QBpf
-HPhX3o/RE1llfWLd8T6xzqS0INUUjki2q4b0gQ8eT45r/0Y61FBuZ7m4Rte3eUxW
-ZBDT+sHPcgaPSRAiRtNxbZP+CjCAHnCiZcmEM04eHjC59yk0ufi3wBUB1RBp/xV8
-jtuKARhtKT4RYXLJMlk/jJSJS8anHhl8Oqpxi4fN7SdEDRZLD3QTXsQFIXxHsg==
-=hSJU
------END PGP SIGNATURE-----
-
---hq34I01lmTprie17Lu24c5opJvsLf4AhK--

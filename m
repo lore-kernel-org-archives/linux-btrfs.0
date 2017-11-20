@@ -1,72 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:39601 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757279AbdKQTus (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Nov 2017 14:50:48 -0500
-Received: by mail-qt0-f194.google.com with SMTP id p44so8212319qtj.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Nov 2017 11:50:48 -0800 (PST)
-From: Josef Bacik <josef@toxicpanda.com>
-To: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc: Josef Bacik <jbacik@fb.com>, stable@vger.kernel.org
-Subject: [PATCH] btrfs: clear space cache inode generation always
-Date: Fri, 17 Nov 2017 14:50:46 -0500
-Message-Id: <1510948246-32434-1-git-send-email-josef@toxicpanda.com>
+Received: from mx2.suse.de ([195.135.220.15]:54636 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751726AbdKTRga (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Nov 2017 12:36:30 -0500
+Date: Mon, 20 Nov 2017 18:34:34 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix list_add corruption and soft lockups in fsync
+Message-ID: <20171120173434.GD3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171113175724.7302-1-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171113175724.7302-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+On Mon, Nov 13, 2017 at 10:57:24AM -0700, Liu Bo wrote:
+> Xfstests btrfs/146 revealed this corruption,
+> 
+> [   58.138831] Buffer I/O error on dev dm-0, logical block 2621424, async page read
+> [   58.151233] BTRFS error (device sdf): bdev /dev/mapper/error-test errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
+> [   58.152403] list_add corruption. prev->next should be next (ffff88005e6775d8), but was ffffc9000189be88. (prev=ffffc9000189be88).
+> [   58.153518] ------------[ cut here ]------------
+> [   58.153892] WARNING: CPU: 1 PID: 1287 at lib/list_debug.c:31 __list_add_valid+0x169/0x1f0
+> ...
+> [   58.157379] RIP: 0010:__list_add_valid+0x169/0x1f0
+> ...
+> [   58.161956] Call Trace:
+> [   58.162264]  btrfs_log_inode_parent+0x5bd/0xfb0 [btrfs]
+> [   58.163583]  btrfs_log_dentry_safe+0x60/0x80 [btrfs]
+> [   58.164003]  btrfs_sync_file+0x4c2/0x6f0 [btrfs]
+> [   58.164393]  vfs_fsync_range+0x5f/0xd0
+> [   58.164898]  do_fsync+0x5a/0x90
+> [   58.165170]  SyS_fsync+0x10/0x20
+> [   58.165395]  entry_SYSCALL_64_fastpath+0x1f/0xbe
+> ...
+> 
+> It turns out that we could record btrfs_log_ctx:io_err in
+> log_one_extents when IO fails, but make log_one_extents() return '0'
+> instead of -EIO, so the IO error is not acknowledged by the callers,
+> i.e.  btrfs_log_inode_parent(), which would remove btrfs_log_ctx:list
+> from list head 'root->log_ctxs'.  Since btrfs_log_ctx is allocated
+> from stack memory, it'd get freed with a object alive on the
+> list. then a future list_add will throw the above warning.
+> 
+> This returns the correct error in the above case.
+> 
+> Jeff also reported this while testing against his fsync error
+> patch set[1].
+> 
+> [1]: https://www.spinics.net/lists/linux-btrfs/msg65308.html
+> "btrfs list corruption and soft lockups while testing writeback error handling"
+> 
 
-We discovered a box that had double allocations, and suspected the space
-cache may be to blame.  While auditing the write out path I noticed that
-if we've already setup the space cache we will just carry on.  This
-means that any error we hit after cache_save_setup before we go to
-actually write the cache out we won't reset the inode generation, so
-whatever was already written will be considered correct, except it'll be
-stale.  Fix this by _always_ resetting the generation on the block group
-inode, this way we only ever have valid or invalid cache.
+Fixes: 8407f553268a4611f254 ("Btrfs: fix data corruption after fast fsync and writeback error")
 
-With this patch I was no longer able to reproduce cache corruption with
-dm-log-writes and my bpf error injection tool.
+you can also add the commit author to CC.
 
-Cc: stable@vger.kernel.org
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/extent-tree.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/file.c     | 1 +
+>  fs/btrfs/tree-log.c | 2 +-
+>  2 files changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 063180b..db70eaa 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2241,6 +2241,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+>  	if (ctx.io_err) {
+>  		btrfs_end_transaction(trans);
+>  		ret = ctx.io_err;
+> +		ASSERT(list_empty(&ctx.list));
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e2d7e86b51d1..67b26b209e23 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3526,13 +3526,6 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
- 		goto again;
- 	}
- 
--	/* We've already setup this transaction, go ahead and exit */
--	if (block_group->cache_generation == trans->transid &&
--	    i_size_read(inode)) {
--		dcs = BTRFS_DC_SETUP;
--		goto out_put;
--	}
--
- 	/*
- 	 * We want to set the generation to 0, that way if anything goes wrong
- 	 * from here on out we know not to trust this cache when we load up next
-@@ -3556,6 +3549,13 @@ static int cache_save_setup(struct btrfs_block_group_cache *block_group,
- 	}
- 	WARN_ON(ret);
- 
-+	/* We've already setup this transaction, go ahead and exit */
-+	if (block_group->cache_generation == trans->transid &&
-+	    i_size_read(inode)) {
-+		dcs = BTRFS_DC_SETUP;
-+		goto out_put;
-+	}
-+
- 	if (i_size_read(inode) > 0) {
- 		ret = btrfs_check_trunc_cache_free_space(fs_info,
- 					&fs_info->global_block_rsv);
--- 
-2.7.5
+Please move that to the label 'out', so all exit paths can catch the
+problem.
 
+>  		goto out;
+>  	}
+>  
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index c800d06..d300284 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -4100,7 +4100,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
+>  
+>  	if (ordered_io_err) {
+>  		ctx->io_err = -EIO;
+> -		return 0;
+> +		return ctx->io_err;
+>  	}
+>  
+>  	btrfs_init_map_token(&token);
+> -- 
+> 2.9.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,157 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f178.google.com ([74.125.82.178]:33953 "EHLO
-        mail-ot0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751146AbdKTWXy (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:48799 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751158AbdKTW6Q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 17:23:54 -0500
-Received: by mail-ot0-f178.google.com with SMTP id o23so8955184otd.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Nov 2017 14:23:53 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com> <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
- <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 20 Nov 2017 15:23:52 -0700
-Message-ID: <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
-Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Mon, 20 Nov 2017 17:58:16 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eGv0t-0004uG-Ty
+        for linux-btrfs@vger.kernel.org; Mon, 20 Nov 2017 23:58:03 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: test btrfs scrubbing/get system's total capacity
+Date: Mon, 20 Nov 2017 22:57:55 +0000 (UTC)
+Message-ID: <pan$52793$c6a99c59$481f8d0c$e85aa3e9@cox.net>
+References: <1511196626.1657.29.camel@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 19, 2017 at 7:42 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2017年11月20日 10:24, Chris Murphy wrote:
->> On Sun, Nov 19, 2017 at 7:13 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>
->>>
->>> On 2017年11月19日 14:17, Chris Murphy wrote:
->>>> fstrim should trim free space, but it only trims unallocated. This is
->>>> with kernel 4.14.0 and the entire 4.13 series. I'm pretty sure it
->>>> behaved this way with 4.12 also.
->>>
->>> Tested with 4.14-rc7, can't reproduce it.
->>
->> $ sudo btrfs fi us /
->> Overall:
->>     Device size:          70.00GiB
->>     Device allocated:          31.03GiB
->>     Device unallocated:          38.97GiB
->>     Device missing:             0.00B
->>     Used:              22.12GiB
->>     Free (estimated):          47.62GiB    (min: 47.62GiB)
->> ...snip...
->>
->> $ sudo fstrim -v /
->> /: 39 GiB (41841328128 bytes) trimmed
->>
->> Then I run btrfs-debug -b / and find the least used block group, at 8% usage;
->>
->> block group offset   174202028032 len 1073741824 used   89206784
->> chunk_objectid 256 flags 1 usage 0.08
->>
->> And balance that block group:
->>
->> $ sudo btrfs balance start -dvrange=174202028032..174202028033 -dlimit=1 /
->> Done, had to relocate 1 out of 32 chunks
->>
->> And trim again:
->>
->> /: 39 GiB (41841328128 bytes) trimmed
->>
->>
->>> Any special mount options or setup?
->>> (BTW, I also tried space_cache=v2 and default v1, no obvious difference)
->>
->>
->> /dev/nvme0n1p8 on / type btrfs
->> (rw,relatime,seclabel,ssd,space_cache,subvolid=333,subvol=/root27)
->
-> Nothing special at all.
->
-> And unfortunately, no trace point inside btrfs_trim_block_group() at all.
->
-> But a quick glance shows me that, the loop to iterate existing block
-> groups to trim free space inside them has a return value overwrite bug.
->
-> So only unallocated space get trimmed.
->
-> Would you please try this diff to get the return value?
->
-> ------
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 309a109069f1..dbec05dc8810 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -10983,12 +10983,12 @@ int btrfs_trim_fs(struct btrfs_fs_info
-> *fs_info, struct fstrim_range *range)
->                                 ret = cache_block_group(cache, 0);
->                                 if (ret) {
->                                         btrfs_put_block_group(cache);
-> -                                       break;
-> +                                       goto out;
->                                 }
->                                 ret = wait_block_group_cache_done(cache);
->                                 if (ret) {
->                                         btrfs_put_block_group(cache);
-> -                                       break;
-> +                                       goto out;
->                                 }
->                         }
->                         ret = btrfs_trim_block_group(cache,
-> @@ -11000,7 +11000,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info,
-> struct fstrim_range *range)
->                         trimmed += group_trimmed;
->                         if (ret) {
->                                 btrfs_put_block_group(cache);
-> -                               break;
-> +                               goto out;
->                         }
->                 }
->
-> @@ -11019,6 +11019,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info,
-> struct fstrim_range *range)
->         }
->         mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->
-> +out:
->         range->len = trimmed;
->         return ret;
->  }
-> ------
+ST posted on Mon, 20 Nov 2017 18:50:26 +0200 as excerpted:
 
-This won't apply on tag v4.14 for some reason.
+> [...] to set btrfs quota on a /home subvolume as say
+> 0.8*TotalCapacityOfRoot and then assign to it individual users'
+> subvolumes with certain (smaller) quatos.
 
-[chris@f27s linux]$ git apply -v ~/qutrim1.patch
-Checking patch fs/btrfs/extent-tree.c...
-error: while searching for:
-                               ret = cache_block_group(cache, 0);
-                               if (ret) {
-                                       btrfs_put_block_group(cache);
-                                       break;
-                               }
-                               ret = wait_block_group_cache_done(cache);
-                               if (ret) {
-                                       btrfs_put_block_group(cache);
-                                       break;
-                               }
-                       }
-                       ret = btrfs_trim_block_group(cache,
+On the narrow subject of btrfs quotas...
 
-error: patch failed: fs/btrfs/extent-tree.c:10983
-error: fs/btrfs/extent-tree.c: patch does not apply
-[chris@f27s linux]$
+Just be sure you're aware of the effect of btrfs quotas on btrfs 
+maintenance command times, and are using a "newish" kernel, as...
+
+* For years quotas were so buggy that they simply weren't sanely reliable 
+(negative numbers, anyone?).  In general those bugs are fixed in newer 
+kernels, but there's still minor tweaks going in.  I'd for sure want at 
+/least/ 4.9-LTS series if I were relying on kernels (and I'm not 
+/entirely/ sure the appropriate patches have all made it there), and 
+would want to move to 4.14-LTS ASAP.  Or just use the current kernel 
+series and upgrade with it.
+
+IOW, don't even consider quotas pre-4.9.  They're too buggy to be worth 
+the hassle.
+
+* While the worst quota bugs now appear to be quashed and it's at least 
+usable (the numbers come out correct), quotas continue to have scaling 
+issues and likely will for some time to come.
+
+Generally these scaling issues don't affect generic filesystem (or quota) 
+operation, but they *do* affect various btrfs maintenance commands where 
+they compound already severe scaling interactions with snapshots and 
+reflinks in commands such as btrfs subvol delete, btrfs balance (and thus 
+btrfs device remove due to its implicit balance), and btrfs check, to the 
+point that the commands cannot complete in practical time (days to weeks, 
+even months, instead of hours).
+
+For commands such as btrfs balance, temporarily disabling quotas (renable 
+and rescan if necessary when done) speeds things up dramatically, but 
+that's not likely to be possible in many of the scenarios one would find 
+themselves wanting to run btrfs check in.
 
 
-If I do it manually (just adding the goto and build it, reboot, I
-still get the same result for fstrim and nothing in dmesg.
-
-
-
+If you're already aware of and prepared to work with those caveats, 
+great, but I've seen enough people complaining about slow balance, etc, 
+due to having quotas enabled (and being thrilled with the actually 
+workable speed once they turn them off) when they didn't really need 
+them, that I tend to cringe inside every time I see people saying they 
+plan on using them, without mentioning that they're aware of the issues 
+and find them an acceptable tradeoff for their use-case.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

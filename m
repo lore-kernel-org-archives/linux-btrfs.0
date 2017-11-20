@@ -1,191 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56058 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751781AbdKTRxD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 12:53:03 -0500
-Date: Mon, 20 Nov 2017 18:51:06 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, lists@colorremedies.com
-Subject: Re: [PATCH] btrfs: Enhance btrfs_trim_fs function to handle error
- better
-Message-ID: <20171120175106.GE3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171120055651.17892-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171120055651.17892-1-wqu@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:54452 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750790AbdKTF5M (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Mon, 20 Nov 2017 00:57:12 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, lists@colorremedies.com
+Subject: [PATCH] btrfs: Enhance btrfs_trim_fs function to handle error better
+Date: Mon, 20 Nov 2017 13:56:51 +0800
+Message-Id: <20171120055651.17892-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 20, 2017 at 01:56:51PM +0800, Qu Wenruo wrote:
-> Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
-> error happens when trimming existing block groups, it will skip the
-> remaining blocks and continue to trim unallocated space for each device.
-> 
-> And the return value will only reflect the final error from device
-> trimming.
-> 
-> This patch will fix such behavior by:
-> 
-> 1) Recording first error from block group or device trimming
->    So return value will also reflect any error found when trimming.
->    Make developer more aware of the problem.
-> 
-> 2) Outputting btrfs warning message for each trimming failure
->    Any error for block group or device trimming will cause btrfs warning
->    kernel message.
+Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
+error happens when trimming existing block groups, it will skip the
+remaining blocks and continue to trim unallocated space for each device.
 
-I think this could become too noisy, trimming failures are soft errors
-IMO, so it should be enough to report all errors cumulatively
-per-device.
+And the return value will only reflect the final error from device
+trimming.
 
-> 3) Continuing trimming if we can
->    If we failed to trim one block group or device, we could still try
->    next block group or device.
+This patch will fix such behavior by:
 
-Right, best-effort.
+1) Recording first error from block group or device trimming
+   So return value will also reflect any error found when trimming.
+   Make developer more aware of the problem.
 
-> Such behavior can avoid confusion for case like failure to trim the
-> first block group and then only unallocated space is trimmed.
-> 
-> Reported-by: Chris Murphy <lists@colorremedies.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++--------------
->  1 file changed, 43 insertions(+), 16 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 309a109069f1..46d65ffb3bd1 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -10948,6 +10948,16 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
->  	return ret;
->  }
->  
-> +/*
-> + * Trim the whole fs, by:
-> + * 1) Trimming free space in each block group
-> + * 2) Trimming unallocated space in each device
-> + *
-> + * Will try to continue trimming even if we failed to trim one block group or
-> + * device.
-> + * The return value will be the error return value of the first error.
-> + * Or 0 if nothing wrong happened.
-> + */
->  int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->  {
->  	struct btrfs_block_group_cache *cache = NULL;
-> @@ -10958,6 +10968,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->  	u64 end;
->  	u64 trimmed = 0;
->  	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
-> +	int bg_ret = 0;
-> +	int dev_ret = 0;
->  	int ret = 0;
->  
->  	/*
-> @@ -10968,7 +10980,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->  	else
->  		cache = btrfs_lookup_block_group(fs_info, range->start);
->  
-> -	while (cache) {
-> +	for (; cache; cache = next_block_group(fs_info, cache)) {
->  		if (cache->key.objectid >= (range->start + range->len)) {
->  			btrfs_put_block_group(cache);
->  			break;
-> @@ -10982,29 +10994,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->  			if (!block_group_cache_done(cache)) {
->  				ret = cache_block_group(cache, 0);
->  				if (ret) {
-> -					btrfs_put_block_group(cache);
-> -					break;
-> +					btrfs_warn_rl(fs_info,
-> +		"failed to cache block group %llu ret %d",
+2) Outputting btrfs warning message for each trimming failure
+   Any error for block group or device trimming will cause btrfs warning
+   kernel message.
 
-If this is meant for a developer as you say in the changelog, then
-btrfs_debug is better.
+3) Continuing trimming if we can
+   If we failed to trim one block group or device, we could still try
+   next block group or device.
 
-> +						   cache->key.objectid, ret);
-> +					if (!bg_ret)
-> +						bg_ret = ret;
-> +					continue;
->  				}
->  				ret = wait_block_group_cache_done(cache);
->  				if (ret) {
-> -					btrfs_put_block_group(cache);
-> -					break;
-> +					btrfs_warn_rl(fs_info,
-> +		"failed to wait cache for block group %llu ret %d",
+Such behavior can avoid confusion for case like failure to trim the
+first block group and then only unallocated space is trimmed.
 
-The message wording is confusing, if this is another message for
-developer, the function name can be printed.
+Reported-by: Chris Murphy <lists@colorremedies.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 43 insertions(+), 16 deletions(-)
 
-> +						   cache->key.objectid, ret);
-> +					if (!bg_ret)
-> +						bg_ret = ret;
-> +					continue;
->  				}
->  			}
-> -			ret = btrfs_trim_block_group(cache,
-> -						     &group_trimmed,
-> -						     start,
-> -						     end,
-> -						     range->minlen);
-> +			ret = btrfs_trim_block_group(cache, &group_trimmed,
-> +						start, end, range->minlen);
->  
->  			trimmed += group_trimmed;
->  			if (ret) {
-> -				btrfs_put_block_group(cache);
-> -				break;
-> +				btrfs_warn_rl(fs_info,
-> +		"failed to trim block group %llu ret %d",
-> +					   cache->key.objectid, ret);
-> +				if (!bg_ret)
-> +					bg_ret = ret;
-> +				continue;
->  			}
->  		}
-> -
-> -		cache = next_block_group(fs_info, cache);
->  	}
->  
->  	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-> @@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
->  	list_for_each_entry(device, devices, dev_alloc_list) {
->  		ret = btrfs_trim_free_extents(device, range->minlen,
->  					      &group_trimmed);
-> -		if (ret)
-> +		if (ret) {
-> +			btrfs_warn_rl(fs_info,
-> +		"failed to trim unallocated space for devid %llu ret %d",
-> +				      device->devid, ret);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 309a109069f1..46d65ffb3bd1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10948,6 +10948,16 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 	return ret;
+ }
+ 
++/*
++ * Trim the whole fs, by:
++ * 1) Trimming free space in each block group
++ * 2) Trimming unallocated space in each device
++ *
++ * Will try to continue trimming even if we failed to trim one block group or
++ * device.
++ * The return value will be the error return value of the first error.
++ * Or 0 if nothing wrong happened.
++ */
+ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ {
+ 	struct btrfs_block_group_cache *cache = NULL;
+@@ -10958,6 +10968,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	u64 end;
+ 	u64 trimmed = 0;
+ 	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
++	int bg_ret = 0;
++	int dev_ret = 0;
+ 	int ret = 0;
+ 
+ 	/*
+@@ -10968,7 +10980,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	else
+ 		cache = btrfs_lookup_block_group(fs_info, range->start);
+ 
+-	while (cache) {
++	for (; cache; cache = next_block_group(fs_info, cache)) {
+ 		if (cache->key.objectid >= (range->start + range->len)) {
+ 			btrfs_put_block_group(cache);
+ 			break;
+@@ -10982,29 +10994,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 			if (!block_group_cache_done(cache)) {
+ 				ret = cache_block_group(cache, 0);
+ 				if (ret) {
+-					btrfs_put_block_group(cache);
+-					break;
++					btrfs_warn_rl(fs_info,
++		"failed to cache block group %llu ret %d",
++						   cache->key.objectid, ret);
++					if (!bg_ret)
++						bg_ret = ret;
++					continue;
+ 				}
+ 				ret = wait_block_group_cache_done(cache);
+ 				if (ret) {
+-					btrfs_put_block_group(cache);
+-					break;
++					btrfs_warn_rl(fs_info,
++		"failed to wait cache for block group %llu ret %d",
++						   cache->key.objectid, ret);
++					if (!bg_ret)
++						bg_ret = ret;
++					continue;
+ 				}
+ 			}
+-			ret = btrfs_trim_block_group(cache,
+-						     &group_trimmed,
+-						     start,
+-						     end,
+-						     range->minlen);
++			ret = btrfs_trim_block_group(cache, &group_trimmed,
++						start, end, range->minlen);
+ 
+ 			trimmed += group_trimmed;
+ 			if (ret) {
+-				btrfs_put_block_group(cache);
+-				break;
++				btrfs_warn_rl(fs_info,
++		"failed to trim block group %llu ret %d",
++					   cache->key.objectid, ret);
++				if (!bg_ret)
++					bg_ret = ret;
++				continue;
+ 			}
+ 		}
+-
+-		cache = next_block_group(fs_info, cache);
+ 	}
+ 
+ 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+@@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	list_for_each_entry(device, devices, dev_alloc_list) {
+ 		ret = btrfs_trim_free_extents(device, range->minlen,
+ 					      &group_trimmed);
+-		if (ret)
++		if (ret) {
++			btrfs_warn_rl(fs_info,
++		"failed to trim unallocated space for devid %llu ret %d",
++				      device->devid, ret);
++			if (!dev_ret)
++				dev_ret = ret;
+ 			break;
++		}
+ 
+ 		trimmed += group_trimmed;
+ 	}
+ 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+ 
+ 	range->len = trimmed;
+-	return ret;
++	if (bg_ret)
++		return bg_ret;
++	return dev_ret;
+ }
+ 
+ /*
+-- 
+2.15.0
 
-So the idea is to print one message here, with devid, number of errors
-and how many bytes were skipped.
-
-> +			if (!dev_ret)
-> +				dev_ret = ret;
->  			break;
-> +		}
->  
->  		trimmed += group_trimmed;
->  	}
->  	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
->  
->  	range->len = trimmed;
-> -	return ret;
-> +	if (bg_ret)
-> +		return bg_ret;
-> +	return dev_ret;
->  }
->  
->  /*
-> -- 
-> 2.15.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,73 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f196.google.com ([74.125.82.196]:39867 "EHLO
-        mail-ot0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751087AbdKTCYk (ORCPT
+Received: from mail-ot0-f181.google.com ([74.125.82.181]:35257 "EHLO
+        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751087AbdKTCab (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Nov 2017 21:24:40 -0500
-Received: by mail-ot0-f196.google.com with SMTP id v15so6470850ote.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Nov 2017 18:24:40 -0800 (PST)
+        Sun, 19 Nov 2017 21:30:31 -0500
+Received: by mail-ot0-f181.google.com with SMTP id b17so6492876oth.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Nov 2017 18:30:31 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
+In-Reply-To: <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
 References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
+ <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com> <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 19 Nov 2017 19:24:38 -0700
-Message-ID: <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
+Date: Sun, 19 Nov 2017 19:30:30 -0700
+Message-ID: <CAJCQCtRXdOvP7p11ZS9J4G-M1hiZF25e644-T+hPToA2Y8VkrA@mail.gmail.com>
 Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 19, 2017 at 7:13 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+On Sun, Nov 19, 2017 at 7:24 PM, Chris Murphy <lists@colorremedies.com> wrote:
+
+
+> $ sudo fstrim -v /
+> /: 39 GiB (41841328128 bytes) trimmed
+
+> And trim again:
 >
->
-> On 2017年11月19日 14:17, Chris Murphy wrote:
->> fstrim should trim free space, but it only trims unallocated. This is
->> with kernel 4.14.0 and the entire 4.13 series. I'm pretty sure it
->> behaved this way with 4.12 also.
->
-> Tested with 4.14-rc7, can't reproduce it.
+> /: 39 GiB (41841328128 bytes) trimmed
 
-$ sudo btrfs fi us /
-Overall:
-    Device size:          70.00GiB
-    Device allocated:          31.03GiB
-    Device unallocated:          38.97GiB
-    Device missing:             0.00B
-    Used:              22.12GiB
-    Free (estimated):          47.62GiB    (min: 47.62GiB)
-...snip...
+Cute. The balance command claimed it balanced a chunk but it didn't.
+btrfs-debug -b says that same 8% chunk is present...
 
-$ sudo fstrim -v /
-/: 39 GiB (41841328128 bytes) trimmed
-
-Then I run btrfs-debug -b / and find the least used block group, at 8% usage;
-
-block group offset   174202028032 len 1073741824 used   89206784
+block group offset   175275769856 len 1073741824 used   89206784
 chunk_objectid 256 flags 1 usage 0.08
 
-And balance that block group:
+Fine. I'll do a -duage instead.
 
-$ sudo btrfs balance start -dvrange=174202028032..174202028033 -dlimit=1 /
-Done, had to relocate 1 out of 32 chunks
-
-And trim again:
-
-/: 39 GiB (41841328128 bytes) trimmed
-
-
-> Any special mount options or setup?
-> (BTW, I also tried space_cache=v2 and default v1, no obvious difference)
+$ sudo btrfs balance start -dusage=11 /
+Done, had to relocate 2 out of 32 chunks
+$ sudo fstrim -v /
+/: 40 GiB (42915069952 bytes) trimmed
+$ sudo btrfs balance start -dusage=21 /
+Done, had to relocate 2 out of 31 chunks
+$ sudo fstrim -v /
+/: 41 GiB (43988811776 bytes) trimmed
 
 
-/dev/nvme0n1p8 on / type btrfs
-(rw,relatime,seclabel,ssd,space_cache,subvolid=333,subvol=/root27)
+OK so a different bug is that it's claiming to balance two chunks but
+it's really only balancing one. That same 8% used block group was not
+rewritten, it's at the same address, so for whatever reason that tiny
+one is pinned.
 
-
-Would a strace of fstrim help?
 
 
 -- 

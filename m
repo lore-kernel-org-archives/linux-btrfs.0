@@ -1,154 +1,313 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f68.google.com ([209.85.218.68]:35593 "EHLO
-        mail-oi0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751962AbdKUEPa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 23:15:30 -0500
-Received: by mail-oi0-f68.google.com with SMTP id e142so7674771oih.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Nov 2017 20:15:30 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <21f8dcf9-bc3c-c356-502a-789545a6f683@suse.com>
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <8af43ea0-d2a3-aa3e-0b68-fefe3b3d96ea@gmail.com> <CAJCQCtQ8t8uMRsWh0gcm=KU_2CpZnn9dx=Svf_1+6UWR4BEcpA@mail.gmail.com>
- <3114a78e-485a-daea-f8b1-48cc330f4209@suse.com> <bbab87ad-b84e-2bca-5d90-47a77abd295d@suse.com>
- <94ecb41f-e825-97ce-999d-020a5abffccd@suse.com> <CAJCQCtQ4uJG-bSQnUOXjBYYqG6Hp6Tf_fHsaoHfKgZ17w6mo0Q@mail.gmail.com>
- <0085a34c-3cf9-bd4c-dd9d-34fb994737a7@suse.com> <CAJCQCtTDXfY=2=f+B-w81n7ZOPkLD5DXhwvrO7b4f3-g4RRURg@mail.gmail.com>
- <21f8dcf9-bc3c-c356-502a-789545a6f683@suse.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 20 Nov 2017 21:15:29 -0700
-Message-ID: <CAJCQCtTQ5RNxABwPigOydfFhviZ9H7+cg5-xkD59J3KZd-U7oA@mail.gmail.com>
+Received: from mout.gmx.net ([212.227.17.21]:61939 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752330AbdKUE3a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Nov 2017 23:29:30 -0500
 Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
+ <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
+ <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
+ <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
+ <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
+ <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com>
+ <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com>
+Date: Tue, 21 Nov 2017 12:29:24 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="f6EVdbUss6DtGAub2xRbTeKVfdheuJikr"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 20, 2017 at 9:13 PM, Jeff Mahoney <jeffm@suse.com> wrote:
-> On 11/20/17 11:04 PM, Chris Murphy wrote:
->> On Mon, Nov 20, 2017 at 6:46 PM, Jeff Mahoney <jeffm@suse.com> wrote:
->>> On 11/20/17 5:59 PM, Chris Murphy wrote:
->>>> On Mon, Nov 20, 2017 at 1:40 PM, Jeff Mahoney <jeffm@suse.com> wrote:
->>>>> On 11/20/17 3:01 PM, Jeff Mahoney wrote:
->>>>>> On 11/20/17 3:00 PM, Jeff Mahoney wrote:
->>>>>>> On 11/19/17 4:38 PM, Chris Murphy wrote:
->>>>>>>> On Sat, Nov 18, 2017 at 11:27 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->>>>>>>>> 19.11.2017 09:17, Chris Murphy пишет:
->>>>>>>>>> fstrim should trim free space, but it only trims unallocated. This is
->>>>>>>>>> with kernel 4.14.0 and the entire 4.13 series. I'm pretty sure it
->>>>>>>>>> behaved this way with 4.12 also.
->>>>>>>>>>
->>>>>>>>>
->>>>>>>>> Well, I was told it should also trim free space ...
->>>>>>>>>
->>>>>>>>> https://www.spinics.net/lists/linux-btrfs/msg61819.html
->>>>>>>>>
->>>>>>>>
->>>>>>>> It definitely isn't. If I do a partial balance, then fstrim, I get a
->>>>>>>> larger trimmed value, corresponding exactly to unallocated space.
->>>>>>>
->>>>>>>
->>>>>>> I've just tested with 4.14 and it definitely trims within block groups.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--f6EVdbUss6DtGAub2xRbTeKVfdheuJikr
+Content-Type: multipart/mixed; boundary="ctsPUEpHmehDqnip1pFBentc0hMeCQXJa";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com>
+Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
+References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
+ <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
+ <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
+ <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
+ <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
+ <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com>
+ <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
+In-Reply-To: <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
+
+--ctsPUEpHmehDqnip1pFBentc0hMeCQXJa
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 12:06, Chris Murphy wrote:
+> On Mon, Nov 20, 2017 at 6:16 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
+te:
+>>
+>>
+>> On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 06:23, Chris Murphy wrote:
+>>> On Sun, Nov 19, 2017 at 7:42 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> w=
+rote:
+>>>>
+>>>>
+>>>> On 2017=E5=B9=B411=E6=9C=8820=E6=97=A5 10:24, Chris Murphy wrote:
+>>>>> On Sun, Nov 19, 2017 at 7:13 PM, Qu Wenruo <quwenruo.btrfs@gmx.com>=
+ wrote:
 >>>>>>
->>>>>> Derp.  This should read 4.12.
 >>>>>>
->>>>>>> I've attached my test script and the log of the run.  I'll build and
->>>>>>> test a 4.14 kernel and see if I can reproduce there.  It may well be
->>>>>>> that we're just misreporting the bytes trimmed.
+>>>>>> On 2017=E5=B9=B411=E6=9C=8819=E6=97=A5 14:17, Chris Murphy wrote:
+>>>>>>> fstrim should trim free space, but it only trims unallocated. Thi=
+s is
+>>>>>>> with kernel 4.14.0 and the entire 4.13 series. I'm pretty sure it=
+
+>>>>>>> behaved this way with 4.12 also.
+>>>>>>
+>>>>>> Tested with 4.14-rc7, can't reproduce it.
 >>>>>
->>>>> I get the same results on v4.14.  I wrote up a little script to parse
->>>>> the btrfs-debug-tree extent tree dump and the discards that are issued
->>>>> after the final sync (when the tree is dumped) match.
+>>>>> $ sudo btrfs fi us /
+>>>>> Overall:
+>>>>>     Device size:          70.00GiB
+>>>>>     Device allocated:          31.03GiB
+>>>>>     Device unallocated:          38.97GiB
+>>>>>     Device missing:             0.00B
+>>>>>     Used:              22.12GiB
+>>>>>     Free (estimated):          47.62GiB    (min: 47.62GiB)
+>>>>> ...snip...
 >>>>>
->>>>> The script output is also as expected:
->>>>> /mnt2: 95.1 GiB (102082281472 bytes) trimmed
->>>>> # remove every other 100MB file, totalling 1.5 GB
->>>>> + sync
->>>>> + killall blktrace
->>>>> + wait
->>>>> + echo 'after sync'
->>>>> + sleep 1
->>>>> + btrace -a discard /dev/loop0
->>>>> + fstrim -v /mnt2
->>>>> /mnt2: 96.6 GiB (103659962368 bytes) trimmed
+>>>>> $ sudo fstrim -v /
+>>>>> /: 39 GiB (41841328128 bytes) trimmed
 >>>>>
->>>>> One thing that may not be apparent is that the byte count is from the
->>>>> device(s)'s perspective.  If you have a file system with duplicate
->>>>> chunks or a redundant RAID mode, the numbers will reflect that.
+>>>>> Then I run btrfs-debug -b / and find the least used block group, at=
+ 8% usage;
 >>>>>
->>>>> The total byte count should be correct as well.  It's the total number
->>>>> of bytes that we submit for discard and that were accepted by the block
->>>>> layer.
+>>>>> block group offset   174202028032 len 1073741824 used   89206784
+>>>>> chunk_objectid 256 flags 1 usage 0.08
 >>>>>
->>>>> Do you have a test case that shows it being wrong and can you provide
->>>>> the blktrace capture of the device(s) while the fstrim is running?
+>>>>> And balance that block group:
+>>>>>
+>>>>> $ sudo btrfs balance start -dvrange=3D174202028032..174202028033 -d=
+limit=3D1 /
+>>>>> Done, had to relocate 1 out of 32 chunks
+>>>>>
+>>>>> And trim again:
+>>>>>
+>>>>> /: 39 GiB (41841328128 bytes) trimmed
+>>>>>
+>>>>>
+>>>>>> Any special mount options or setup?
+>>>>>> (BTW, I also tried space_cache=3Dv2 and default v1, no obvious dif=
+ference)
+>>>>>
+>>>>>
+>>>>> /dev/nvme0n1p8 on / type btrfs
+>>>>> (rw,relatime,seclabel,ssd,space_cache,subvolid=3D333,subvol=3D/root=
+27)
 >>>>
+>>>> Nothing special at all.
 >>>>
->>>> Further,
+>>>> And unfortunately, no trace point inside btrfs_trim_block_group() at=
+ all.
 >>>>
->>>> # fstrim -v /
->>>> /: 38 GiB (40767586304 bytes) trimmed
+>>>> But a quick glance shows me that, the loop to iterate existing block=
+
+>>>> groups to trim free space inside them has a return value overwrite b=
+ug.
 >>>>
->>>> And then delete 10G worth of files, do not balance, and do nothing for
->>>> a minute before:
+>>>> So only unallocated space get trimmed.
 >>>>
->>>> # fstrim -v /
->>>> /: 38 GiB (40767586304 bytes) trimmed
+>>>> Would you please try this diff to get the return value?
 >>>>
->>>> It's the same value. Free space according to fi us is +10 larger than
->>>> before, and yet nothing additional is trimmed than before. So I don't
->>>> know what's going on but it's not working for me.
+>>>> ------
+>>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>>>> index 309a109069f1..dbec05dc8810 100644
+>>>> --- a/fs/btrfs/extent-tree.c
+>>>> +++ b/fs/btrfs/extent-tree.c
+>>>> @@ -10983,12 +10983,12 @@ int btrfs_trim_fs(struct btrfs_fs_info
+>>>> *fs_info, struct fstrim_range *range)
+>>>>                                 ret =3D cache_block_group(cache, 0);=
+
+>>>>                                 if (ret) {
+>>>>                                         btrfs_put_block_group(cache)=
+;
+>>>> -                                       break;
+>>>> +                                       goto out;
+>>>>                                 }
+>>>>                                 ret =3D wait_block_group_cache_done(=
+cache);
+>>>>                                 if (ret) {
+>>>>                                         btrfs_put_block_group(cache)=
+;
+>>>> -                                       break;
+>>>> +                                       goto out;
+>>>>                                 }
+>>>>                         }
+>>>>                         ret =3D btrfs_trim_block_group(cache,
+>>>> @@ -11000,7 +11000,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_i=
+nfo,
+>>>> struct fstrim_range *range)
+>>>>                         trimmed +=3D group_trimmed;
+>>>>                         if (ret) {
+>>>>                                 btrfs_put_block_group(cache);
+>>>> -                               break;
+>>>> +                               goto out;
+>>>>                         }
+>>>>                 }
+>>>>
+>>>> @@ -11019,6 +11019,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_i=
+nfo,
+>>>> struct fstrim_range *range)
+>>>>         }
+>>>>         mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+>>>>
+>>>> +out:
+>>>>         range->len =3D trimmed;
+>>>>         return ret;
+>>>>  }
+>>>> ------
 >>>
->>> What happens if you sync before doing the fstrim again?  The code is
->>> there to drop extents within block groups.  It works for me.  The big
->>> thing is that the space must be freed entirely before we can trim.
+>>> This won't apply on tag v4.14 for some reason.
+>>>
+>>> [chris@f27s linux]$ git apply -v ~/qutrim1.patch
+>>> Checking patch fs/btrfs/extent-tree.c...
+>>> error: while searching for:
+>>>                                ret =3D cache_block_group(cache, 0);
+>>>                                if (ret) {
+>>>                                        btrfs_put_block_group(cache);
+>>>                                        break;
+>>>                                }
+>>>                                ret =3D wait_block_group_cache_done(ca=
+che);
+>>>                                if (ret) {
+>>>                                        btrfs_put_block_group(cache);
+>>>                                        break;
+>>>                                }
+>>>                        }
+>>>                        ret =3D btrfs_trim_block_group(cache,
+>>>
+>>> error: patch failed: fs/btrfs/extent-tree.c:10983
+>>> error: fs/btrfs/extent-tree.c: patch does not apply
+>>> [chris@f27s linux]$
+>>>
+>>>
+>>> If I do it manually (just adding the goto and build it, reboot, I
+>>> still get the same result for fstrim and nothing in dmesg.
 >>
->> I've sync'd and I've also rebooted, it's the same.
->>
->> [root@f27h ~]# fstrim -v /
->> /: 38 GiB (40767586304 bytes) trimmed
->> [root@f27h ~]# btrfs fi us /
->> Overall:
->>     Device size:          70.00GiB
->>     Device allocated:          32.03GiB
->>     Device unallocated:          37.97GiB
->>     Device missing:             0.00B
->>     Used:              15.50GiB
->>     Free (estimated):          52.93GiB    (min: 52.93GiB)
->>     Data ratio:                  1.00
->>     Metadata ratio:              1.00
->>     Global reserve:          53.97MiB    (used: 192.00KiB)
->>
->> Data,single: Size:30.00GiB, Used:15.04GiB
->>    /dev/nvme0n1p8      30.00GiB
->>
->> Metadata,single: Size:2.00GiB, Used:473.34MiB
->>    /dev/nvme0n1p8       2.00GiB
->>
->> System,single: Size:32.00MiB, Used:16.00KiB
->>    /dev/nvme0n1p8      32.00MiB
->>
->> Unallocated:
->>    /dev/nvme0n1p8      37.97GiB
->> [root@f27h ~]#
->
-> What's the discard granularity on that device?
->
-> grep . /sys/block/nvme0n1/queue/discard_*
-> cat /sys/block/nvme0n1/discard*
+>> Sorry, that diff will not output extra info. Just to abort the process=
 
-#  grep . /sys/block/nvme0n1/queue/discard_*
-/sys/block/nvme0n1/queue/discard_granularity:512
-/sys/block/nvme0n1/queue/discard_max_bytes:2199023255040
-/sys/block/nvme0n1/queue/discard_max_hw_bytes:2199023255040
-/sys/block/nvme0n1/queue/discard_zeroes_data:0
-[root@f27h ~]# cat /sys/block/nvme0n1/discard*
-512
-[root@f27h ~]#
+>> and return true error code.
+>=20
+> OK? It didn't seem to do that either. I see no change.
+>=20
+>=20
+>>
+>> I have update the patch to output more verbose output.
+>> You could find it in patchwork:
+>> https://patchwork.kernel.org/patch/10065991/
+>=20
+> Patch applies on v4.14.0, and still nothing in dmesg, or in user space
+> when issuing fstrim.
+>=20
+> # fstrim -v /
+> /: 38 GiB (40767586304 bytes) trimmed
+> # dmesg | grep -i btrfs
+> [    2.745902] btrfs: loading out-of-tree module taints kernel.
+> [    2.749905] Btrfs loaded, crc32c=3Dcrc32c-intel
+> [    2.751072] BTRFS: device label fedora devid 1 transid 252048 /dev/n=
+vme0n1p8
+> [    4.295891] BTRFS info (device nvme0n1p8): disk space caching is ena=
+bled
+> [    4.295892] BTRFS info (device nvme0n1p8): has skinny extents
+> [    4.307326] BTRFS info (device nvme0n1p8): enabling ssd optimization=
+s
+> [    4.959467] BTRFS info (device nvme0n1p8): disk space caching is ena=
+bled
+> [root@f27h ~]#
+>=20
+>=20
+> Pretty sure the patch is applied because of the first message about
+> the out of tree module, which I do not get with Fedora kernels.
+
+So that's not something wrong happened to make you skip trimming one
+chunk, but something else just skipped the block group trimming.
+
+And I don't think DEBUG config is related to this.
+
+I doubt if it's the @fstrim_range passed in has something strange that
+prevent us from trimming block groups.
+
+Would you please try this diff based on the patch from patchwork?
+
+------
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f830aa91ac3d..a4bf29a4a860 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10972,6 +10972,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info,
+struct fstrim_range *range)
+        int dev_ret =3D 0;
+        int ret =3D 0;
+
++       btrfs_info(fs_info, "trimming btrfs, start=3D%llu len=3D%llu
+minlen=3D%llu",
++                  range->start, range->len, range->minlen);
+        /*
+         * try to trim all FS space, our block group may start from
+non-zero.
+         */
+@@ -10981,6 +10983,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info,
+struct fstrim_range *range)
+                cache =3D btrfs_lookup_block_group(fs_info, range->start)=
+;
+
+        for (; cache; cache =3D next_block_group(fs_info, cache)) {
++               btrfs_info(fs_info, "bg start=3D%llu len=3D%llu",
++                          cache->key.objectid, cache->key.offset);
+                if (cache->key.objectid >=3D (range->start + range->len))=
+ {
+                        btrfs_put_block_group(cache);
+                        break;
+@@ -11045,6 +11049,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info,
+struct fstrim_range *range)
+        mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+
+        range->len =3D trimmed;
++       btrfs_info(fs_info, "trimming done");
+        if (bg_ret)
+                return bg_ret;
+        return dev_ret;
+
+------
+
+Thanks,
+Qu
 
 
+--ctsPUEpHmehDqnip1pFBentc0hMeCQXJa--
 
--- 
-Chris Murphy
+--f6EVdbUss6DtGAub2xRbTeKVfdheuJikr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloTq6QXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qh/8Af/bRkPKdUYW87ItkCOQmDYznOA
+YBRbOBrWPyDuODh/l+dcwvf7LwcqjpwaqscaVe3uHLSa8E0zuhQz8710w3T2Fp3o
+p05hZE2HN+H04vd5b2eF6+gI3DYxGQopY4DfsV8ZXW+sNfO7bFfHDvkSECCD1YAC
+evugrsGyRWwfTkZnwXkXLCYwP/mpaQk5Nky9lsjMmnphiOzIOJtj3IO0rtJnnvmo
+MgdNP0yMaZMJBw+XyCX0ZeLafuMK3K9g0/fiJ9rOb3N89DY4OsNN/xxw1pY23tR+
+b6YBdBR26N2AkeCybKZfyETmknf4HfDAAIvZ/XlOvEL+AKbHz5GOS4Ohw3P6ZA==
+=xc5/
+-----END PGP SIGNATURE-----
+
+--f6EVdbUss6DtGAub2xRbTeKVfdheuJikr--

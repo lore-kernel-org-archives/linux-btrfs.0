@@ -1,61 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33763 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751115AbdKULqu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 06:46:50 -0500
-Subject: Re: [PATCH 1/3] btrfs-progs: check: report more specific info about
- invalid location
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20171121101524.2014-1-suy.fnst@cn.fujitsu.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <9fd908df-187d-67a1-266f-e885075d81e8@suse.com>
-Date: Tue, 21 Nov 2017 13:46:48 +0200
-MIME-Version: 1.0
-In-Reply-To: <20171121101524.2014-1-suy.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:44361 "EHLO
+        mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751782AbdKUMIz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 07:08:55 -0500
+Received: by mail-wm0-f53.google.com with SMTP id r68so2906082wmr.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Nov 2017 04:08:54 -0800 (PST)
+Received: from debox (bzq-109-65-163-184.red.bezeqint.net. [109.65.163.184])
+        by smtp.gmail.com with ESMTPSA id x185sm1142769wmx.12.2017.11.21.04.08.52
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 21 Nov 2017 04:08:52 -0800 (PST)
+Message-ID: <1511266131.1680.27.camel@gmail.com>
+Subject: quotas: failure on removing a file via SFTP/SSH
+From: ST <smntov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Tue, 21 Nov 2017 14:08:51 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
+
+I'm trying to use quotas for a simple chrooted sftp setup, limiting
+space for each user's subvolume (now for testing to 1M).
+
+I tried to hit the limit by uploading files and once it comes to the
+limit I face following problem: if I try to free space by removing a
+file via Linux sftp client (or Filezilla) - I get error:
+"Couldn't delete file: Failure"
+
+Sometimes, but not always, if I repeat it for 3-5 times it does removes
+the file at the end.
+If I login as root and try to remove the file via SSH I get the error:
+"rm: cannot remove 'example.txt': Disk quota exceeded"
+
+What is the problem? And how can I solve it?
+
+Thank you in advance!
 
 
-On 21.11.2017 12:15, Su Yue wrote:
-> Previously, it was so useless to print message like
-> "invalid location %d".
-> 
-> Let it print objectid and offset of dir_item.
-> Debug is easier now.
-> 
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->  cmds-check.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/cmds-check.c b/cmds-check.c
-> index a93ac2c88a38..5c15dfb60b9a 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -1635,8 +1635,8 @@ static int process_dir_item(struct extent_buffer *eb,
->  					  namebuf, len, filetype,
->  					  key->type, error);
->  		} else {
-> -			fprintf(stderr, "invalid location in dir item %u\n",
-> -				location.type);
-> +			fprintf(stderr, "invalid location in dir item[%llu %llu]\n",
-> +				key->objectid, key->offset);
-
-I think it will be good if in addition to the dir item's key you also
-print the invalid type value. I.e. this check is triggered if
-location.type is unrecognizable. So the error message could be something
-like :
-
-fprintf(stderr, "Unrecognised location.type (%u) in DIR_ITEM[%llu
-%llu]", key->objectid, key->offset);
-
-Let's not force the user to go and read the code to understand why this
-error happened.
-
-
->  			add_inode_backref(inode_cache, BTRFS_MULTIPLE_OBJECTIDS,
->  					  key->objectid, key->offset, namebuf,
->  					  len, filetype, key->type, error);
-> 

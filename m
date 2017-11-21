@@ -1,190 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34657 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965873AbdKPWbS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Nov 2017 17:31:18 -0500
-Date: Thu, 16 Nov 2017 14:30:38 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
-        Filipe Manana <fdmanana@gmail.com>
-Subject: Re: [PATCH v2 1/3] btrfs: tree-checker: Fix false panic for sanity
- test
-Message-ID: <20171116223037.GA23614@dhcp-whq-twvpn-1-vpnpool-10-159-142-193.vpn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
-References: <20171108005426.17903-1-wqu@suse.com>
- <20171108005426.17903-2-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.17.21]:55392 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751115AbdKUOgx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 09:36:53 -0500
+Subject: Re: [PATCH] btrfs: extent-tree: Use round up to replace align macro
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171121055445.13972-1-wqu@suse.com>
+ <20171121133652.GJ3553@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <838e4f7d-013f-d08f-9624-45400eb62551@gmx.com>
+Date: Tue, 21 Nov 2017 22:36:37 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171108005426.17903-2-wqu@suse.com>
+In-Reply-To: <20171121133652.GJ3553@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="hq34I01lmTprie17Lu24c5opJvsLf4AhK"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 08, 2017 at 08:54:24AM +0800, Qu Wenruo wrote:
-> [BUG]
-> If we run btrfs with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y, it will
-> instantly cause kernel panic like:
-> 
-> ------
-> ...
-> assertion failed: 0, file: fs/btrfs/disk-io.c, line: 3853
-> ...
-> Call Trace:
->  btrfs_mark_buffer_dirty+0x187/0x1f0 [btrfs]
->  setup_items_for_insert+0x385/0x650 [btrfs]
->  __btrfs_drop_extents+0x129a/0x1870 [btrfs]
-> ...
-> -----
-> 
-> [Cause]
-> Btrfs will call btrfs_check_leaf() in btrfs_mark_buffer_dirty() to check
-> if the leaf is valid with CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y.
-> 
-> However quite some btrfs_mark_buffer_dirty() callers(*) don't really
-> initialize its item data but only initialize its item pointers, leaving
-> item data uninitialized.
-> 
-> This makes tree-checker catch uninitialized data as error, causing
-> such panic.
-> 
-> *: These callers include but not limited to
-> setup_items_for_insert()
-> btrfs_split_item()
-> btrfs_expand_item()
-> 
-> [Fix]
-> Add a new parameter @check_item_data to btrfs_check_leaf().
-> With @check_item_data set to false, item data check will be skipped and
-> fallback to old btrfs_check_leaf() behavior.
-> 
-> So we can still get early warning if we screw up item pointers, and
-> avoid false panic.
-> 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--hq34I01lmTprie17Lu24c5opJvsLf4AhK
+Content-Type: multipart/mixed; boundary="Sj7PVTLdiNdV9H4Mh5GpR6JRhheEqNnbd";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <838e4f7d-013f-d08f-9624-45400eb62551@gmx.com>
+Subject: Re: [PATCH] btrfs: extent-tree: Use round up to replace align macro
+References: <20171121055445.13972-1-wqu@suse.com>
+ <20171121133652.GJ3553@twin.jikos.cz>
+In-Reply-To: <20171121133652.GJ3553@twin.jikos.cz>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+--Sj7PVTLdiNdV9H4Mh5GpR6JRhheEqNnbd
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 21:36, David Sterba wrote:
+> On Tue, Nov 21, 2017 at 01:54:45PM +0800, Qu Wenruo wrote:
+>> To save reader seconds before checking if it's rounding up or down.
+>=20
+> Agreed, this is more clear. Please switch all instances of ALIGN to
+> round_up, there's not much point doing it file by file.
+
+OK.
+
+I just encountered this when digging space reservation related code.
+
+Converting all won't be a problem.
 
 Thanks,
+Qu
 
--liubo
-> Cc: Filipe Manana <fdmanana@gmail.com>
-> Reported-by: Lakshmipathi.G <lakshmipathi.g@gmail.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/disk-io.c      | 10 ++++++++--
->  fs/btrfs/tree-checker.c | 27 ++++++++++++++++++++++-----
->  fs/btrfs/tree-checker.h | 14 +++++++++++++-
->  3 files changed, 43 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index efce9a2fa9be..10a2a579cc7f 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -610,7 +610,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
->  	 * that we don't try and read the other copies of this block, just
->  	 * return -EIO.
->  	 */
-> -	if (found_level == 0 && btrfs_check_leaf(root, eb)) {
-> +	if (found_level == 0 && btrfs_check_leaf_full(root, eb)) {
->  		set_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
->  		ret = -EIO;
->  	}
-> @@ -3848,7 +3848,13 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
->  					 buf->len,
->  					 fs_info->dirty_metadata_batch);
->  #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
-> -	if (btrfs_header_level(buf) == 0 && btrfs_check_leaf(root, buf)) {
-> +	/*
-> +	 * Since btrfs_mark_buffer_dirty() can be called with item pointer set
-> +	 * but item data not updated.
-> +	 * So here we should only check item pointers, not item data.
-> +	 */
-> +	if (btrfs_header_level(buf) == 0 &&
-> +	    btrfs_check_leaf_relaxed(root, buf)) {
->  		btrfs_print_leaf(buf);
->  		ASSERT(0);
->  	}
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index 114fc5f0ecc5..ce4ed6ec8f39 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -242,7 +242,8 @@ static int check_leaf_item(struct btrfs_root *root,
->  	return ret;
->  }
->  
-> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
-> +static int check_leaf(struct btrfs_root *root, struct extent_buffer *leaf,
-> +		      bool check_item_data)
->  {
->  	struct btrfs_fs_info *fs_info = root->fs_info;
->  	/* No valid key type is 0, so all key should be larger than this key */
-> @@ -361,10 +362,15 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
->  			return -EUCLEAN;
->  		}
->  
-> -		/* Check if the item size and content meet other criteria */
-> -		ret = check_leaf_item(root, leaf, &key, slot);
-> -		if (ret < 0)
-> -			return ret;
-> +		if (check_item_data) {
-> +			/*
-> +			 * Check if the item size and content meet other
-> +			 * criteria
-> +			 */
-> +			ret = check_leaf_item(root, leaf, &key, slot);
-> +			if (ret < 0)
-> +				return ret;
-> +		}
->  
->  		prev_key.objectid = key.objectid;
->  		prev_key.type = key.type;
-> @@ -374,6 +380,17 @@ int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf)
->  	return 0;
->  }
->  
-> +int btrfs_check_leaf_full(struct btrfs_root *root, struct extent_buffer *leaf)
-> +{
-> +	return check_leaf(root, leaf, true);
-> +}
-> +
-> +int btrfs_check_leaf_relaxed(struct btrfs_root *root,
-> +			     struct extent_buffer *leaf)
-> +{
-> +	return check_leaf(root, leaf, false);
-> +}
-> +
->  int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node)
->  {
->  	unsigned long nr = btrfs_header_nritems(node);
-> diff --git a/fs/btrfs/tree-checker.h b/fs/btrfs/tree-checker.h
-> index 96c486e95d70..3d53e8d6fda0 100644
-> --- a/fs/btrfs/tree-checker.h
-> +++ b/fs/btrfs/tree-checker.h
-> @@ -20,7 +20,19 @@
->  #include "ctree.h"
->  #include "extent_io.h"
->  
-> -int btrfs_check_leaf(struct btrfs_root *root, struct extent_buffer *leaf);
-> +/*
-> + * Comprehensive leaf checker.
-> + * Will check not only the item pointers, but also every possible member
-> + * in item data.
-> + */
-> +int btrfs_check_leaf_full(struct btrfs_root *root, struct extent_buffer *leaf);
-> +
-> +/*
-> + * Less strict leaf checker.
-> + * Will only check item pointers, not reading item data.
-> + */
-> +int btrfs_check_leaf_relaxed(struct btrfs_root *root,
-> +			     struct extent_buffer *leaf);
->  int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node);
->  
->  #endif
-> -- 
-> 2.15.0
-> 
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--Sj7PVTLdiNdV9H4Mh5GpR6JRhheEqNnbd--
+
+--hq34I01lmTprie17Lu24c5opJvsLf4AhK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloUOfUXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhWvwgAgXoaC2133kplWS4wXxR9hex5
+4WZn22BFV9UzpUd4+3t5iRexlXggb4scUVwTLmc/8b5KuJU6iD79t3AIXLiPfCUA
+AEQnjWuinLPiAgblJWYhbG2nlALD+HpOvyoklA8Dsjk5NuBDMj0KcB8s5wa6QBpf
+HPhX3o/RE1llfWLd8T6xzqS0INUUjki2q4b0gQ8eT45r/0Y61FBuZ7m4Rte3eUxW
+ZBDT+sHPcgaPSRAiRtNxbZP+CjCAHnCiZcmEM04eHjC59yk0ufi3wBUB1RBp/xV8
+jtuKARhtKT4RYXLJMlk/jJSJS8anHhl8Oqpxi4fN7SdEDRZLD3QTXsQFIXxHsg==
+=hSJU
+-----END PGP SIGNATURE-----
+
+--hq34I01lmTprie17Lu24c5opJvsLf4AhK--

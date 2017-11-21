@@ -1,110 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:32140 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751345AbdKUWjQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 17:39:16 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix list_add corruption and soft lockups in fsync
-Date: Tue, 21 Nov 2017 14:35:40 -0700
-Message-Id: <20171121213540.20656-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171113175724.7302-1-bo.li.liu@oracle.com>
-References: <20171113175724.7302-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:36038 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751229AbdKUVkk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 16:40:40 -0500
+Subject: Re: [PATCH] btrfs: handle errors while updating refcounts in
+ update_ref_for_cow
+To: jeffm@suse.com, linux-btrfs@vger.kernel.org
+References: <20171121185849.22602-1-jeffm@suse.com>
+Cc: stable@vger.kernel.org
+From: Edmund Nadolski <enadolski@suse.de>
+Message-ID: <e217db3d-ee82-699e-17bd-8922f489787f@suse.de>
+Date: Tue, 21 Nov 2017 14:40:36 -0700
+MIME-Version: 1.0
+In-Reply-To: <20171121185849.22602-1-jeffm@suse.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Xfstests btrfs/146 revealed this corruption,
 
-[   58.138831] Buffer I/O error on dev dm-0, logical block 2621424, async page read
-[   58.151233] BTRFS error (device sdf): bdev /dev/mapper/error-test errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-[   58.152403] list_add corruption. prev->next should be next (ffff88005e6775d8), but was ffffc9000189be88. (prev=ffffc9000189be88).
-[   58.153518] ------------[ cut here ]------------
-[   58.153892] WARNING: CPU: 1 PID: 1287 at lib/list_debug.c:31 __list_add_valid+0x169/0x1f0
-...
-[   58.157379] RIP: 0010:__list_add_valid+0x169/0x1f0
-...
-[   58.161956] Call Trace:
-[   58.162264]  btrfs_log_inode_parent+0x5bd/0xfb0 [btrfs]
-[   58.163583]  btrfs_log_dentry_safe+0x60/0x80 [btrfs]
-[   58.164003]  btrfs_sync_file+0x4c2/0x6f0 [btrfs]
-[   58.164393]  vfs_fsync_range+0x5f/0xd0
-[   58.164898]  do_fsync+0x5a/0x90
-[   58.165170]  SyS_fsync+0x10/0x20
-[   58.165395]  entry_SYSCALL_64_fastpath+0x1f/0xbe
-...
 
-It turns out that we could record btrfs_log_ctx:io_err in
-log_one_extents when IO fails, but make log_one_extents() return '0'
-instead of -EIO, so the IO error is not acknowledged by the callers,
-i.e.  btrfs_log_inode_parent(), which would remove btrfs_log_ctx:list
-from list head 'root->log_ctxs'.  Since btrfs_log_ctx is allocated
-from stack memory, it'd get freed with a object alive on the
-list. then a future list_add will throw the above warning.
+On 11/21/2017 11:58 AM, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> Since commit fb235dc06fa (btrfs: qgroup: Move half of the qgroup
+> accounting time out of commit trans) the assumption that
+> btrfs_add_delayed_{data,tree}_ref can only return 0 or -ENOMEM has
+> been false.  The qgroup operations call into btrfs_search_slot
+> and friends and can now return the full spectrum of error codes.
+> 
+> Fortunately, the fix here is easy since update_ref_for_cow failing
+> is already handled so we just need to bail early with the error
+> code.
+> 
+> Fixes: fb235dc06fa (btrfs: qgroup: Move half of the qgroup accounting ...)
+> Cc: <stable@vger.kernel.org> # v4.11+
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-This returns the correct error in the above case.
+Reviewed-by: Edmund Nadolski <enadolski@suse.com>
 
-Jeff also reported this while testing against his fsync error
-patch set[1].
-
-[1]: https://www.spinics.net/lists/linux-btrfs/msg65308.html
-"btrfs list corruption and soft lockups while testing writeback error handling"
-
-Fixes: 8407f553268a4611f254 ("Btrfs: fix data corruption after fast fsync and writeback error")
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2:
-- Initialize ctx at the very beginning of fsync so that we can check
-  if list is empty at out label
-
- fs/btrfs/file.c     | 5 +++--
- fs/btrfs/tree-log.c | 2 +-
- 2 files changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 504e96d..1e6956b 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2066,6 +2066,8 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	len = (u64)end - (u64)start + 1;
- 	trace_btrfs_sync_file(file, datasync);
- 
-+	btrfs_init_log_ctx(&ctx, inode);
-+
- 	/*
- 	 * We write the dirty pages in the range and wait until they complete
- 	 * out of the ->i_mutex. If so, we can flush the dirty pages by
-@@ -2212,8 +2214,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	}
- 	trans->sync = true;
- 
--	btrfs_init_log_ctx(&ctx, inode);
--
- 	ret = btrfs_log_dentry_safe(trans, root, dentry, start, end, &ctx);
- 	if (ret < 0) {
- 		/* Fallthrough and commit/free transaction. */
-@@ -2271,6 +2271,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		ret = btrfs_end_transaction(trans);
- 	}
- out:
-+	ASSERT(list_empty(&ctx.list));
- 	err = file_check_and_advance_wb_err(file);
- 	if (!ret)
- 		ret = err;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c800d06..d300284 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4100,7 +4100,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 
- 	if (ordered_io_err) {
- 		ctx->io_err = -EIO;
--		return 0;
-+		return ctx->io_err;
- 	}
- 
- 	btrfs_init_map_token(&token);
--- 
-2.9.4
-
+> ---
+>  fs/btrfs/ctree.c | 18 ++++++++++++------
+>  1 file changed, 12 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 531e0a8645b0..1e74cf826532 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1032,14 +1032,17 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+>  		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
+>  		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
+>  			ret = btrfs_inc_ref(trans, root, buf, 1);
+> -			BUG_ON(ret); /* -ENOMEM */
+> +			if (ret)
+> +				return ret;
+>  
+>  			if (root->root_key.objectid ==
+>  			    BTRFS_TREE_RELOC_OBJECTID) {
+>  				ret = btrfs_dec_ref(trans, root, buf, 0);
+> -				BUG_ON(ret); /* -ENOMEM */
+> +				if (ret)
+> +					return ret;
+>  				ret = btrfs_inc_ref(trans, root, cow, 1);
+> -				BUG_ON(ret); /* -ENOMEM */
+> +				if (ret)
+> +					return ret;
+>  			}
+>  			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
+>  		} else {
+> @@ -1049,7 +1052,8 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+>  				ret = btrfs_inc_ref(trans, root, cow, 1);
+>  			else
+>  				ret = btrfs_inc_ref(trans, root, cow, 0);
+> -			BUG_ON(ret); /* -ENOMEM */
+> +			if (ret)
+> +				return ret;
+>  		}
+>  		if (new_flags != 0) {
+>  			int level = btrfs_header_level(buf);
+> @@ -1068,9 +1072,11 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+>  				ret = btrfs_inc_ref(trans, root, cow, 1);
+>  			else
+>  				ret = btrfs_inc_ref(trans, root, cow, 0);
+> -			BUG_ON(ret); /* -ENOMEM */
+> +			if (ret)
+> +				return ret;
+>  			ret = btrfs_dec_ref(trans, root, buf, 1);
+> -			BUG_ON(ret); /* -ENOMEM */
+> +			if (ret)
+> +				return ret;
+>  		}
+>  		clean_tree_block(fs_info, buf);
+>  		*last_ref = 1;
+> 

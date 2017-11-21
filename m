@@ -1,115 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:52551 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:37350 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752053AbdKUBWi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Nov 2017 20:22:38 -0500
-Subject: Re: test btrfs scrubbing/get system's total capacity
-To: ST <smntov@gmail.com>, linux-btrfs@vger.kernel.org
-References: <1511196626.1657.29.camel@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6e5b5480-bce6-4e4e-98bf-b85264abe40a@gmx.com>
-Date: Tue, 21 Nov 2017 09:22:32 +0800
+        id S1751305AbdKUBqX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 20 Nov 2017 20:46:23 -0500
+Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
+ <8af43ea0-d2a3-aa3e-0b68-fefe3b3d96ea@gmail.com>
+ <CAJCQCtQ8t8uMRsWh0gcm=KU_2CpZnn9dx=Svf_1+6UWR4BEcpA@mail.gmail.com>
+ <3114a78e-485a-daea-f8b1-48cc330f4209@suse.com>
+ <bbab87ad-b84e-2bca-5d90-47a77abd295d@suse.com>
+ <94ecb41f-e825-97ce-999d-020a5abffccd@suse.com>
+ <CAJCQCtQ4uJG-bSQnUOXjBYYqG6Hp6Tf_fHsaoHfKgZ17w6mo0Q@mail.gmail.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <0085a34c-3cf9-bd4c-dd9d-34fb994737a7@suse.com>
+Date: Mon, 20 Nov 2017 20:46:19 -0500
 MIME-Version: 1.0
-In-Reply-To: <1511196626.1657.29.camel@gmail.com>
+In-Reply-To: <CAJCQCtQ4uJG-bSQnUOXjBYYqG6Hp6Tf_fHsaoHfKgZ17w6mo0Q@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="QaN3rpPA1hwKc8mbbt2nUBEWatE1e0vFK"
+ boundary="RJNktIdR0w7n8PsOSKPnoLEOkG0PU1Est"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---QaN3rpPA1hwKc8mbbt2nUBEWatE1e0vFK
-Content-Type: multipart/mixed; boundary="RqfgHLfw0d0oQ5AUKhD4ERmv4BdNvJ0iW";
+--RJNktIdR0w7n8PsOSKPnoLEOkG0PU1Est
+Content-Type: multipart/mixed; boundary="wiHjo2xXQcsskU2pNGUD56peXfWeeR9K1";
  protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: ST <smntov@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <6e5b5480-bce6-4e4e-98bf-b85264abe40a@gmx.com>
-Subject: Re: test btrfs scrubbing/get system's total capacity
-References: <1511196626.1657.29.camel@gmail.com>
-In-Reply-To: <1511196626.1657.29.camel@gmail.com>
+From: Jeff Mahoney <jeffm@suse.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <0085a34c-3cf9-bd4c-dd9d-34fb994737a7@suse.com>
+Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
+References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
+ <8af43ea0-d2a3-aa3e-0b68-fefe3b3d96ea@gmail.com>
+ <CAJCQCtQ8t8uMRsWh0gcm=KU_2CpZnn9dx=Svf_1+6UWR4BEcpA@mail.gmail.com>
+ <3114a78e-485a-daea-f8b1-48cc330f4209@suse.com>
+ <bbab87ad-b84e-2bca-5d90-47a77abd295d@suse.com>
+ <94ecb41f-e825-97ce-999d-020a5abffccd@suse.com>
+ <CAJCQCtQ4uJG-bSQnUOXjBYYqG6Hp6Tf_fHsaoHfKgZ17w6mo0Q@mail.gmail.com>
+In-Reply-To: <CAJCQCtQ4uJG-bSQnUOXjBYYqG6Hp6Tf_fHsaoHfKgZ17w6mo0Q@mail.gmail.com>
 
---RqfgHLfw0d0oQ5AUKhD4ERmv4BdNvJ0iW
+--wiHjo2xXQcsskU2pNGUD56peXfWeeR9K1
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
+On 11/20/17 5:59 PM, Chris Murphy wrote:
+> On Mon, Nov 20, 2017 at 1:40 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+>> On 11/20/17 3:01 PM, Jeff Mahoney wrote:
+>>> On 11/20/17 3:00 PM, Jeff Mahoney wrote:
+>>>> On 11/19/17 4:38 PM, Chris Murphy wrote:
+>>>>> On Sat, Nov 18, 2017 at 11:27 PM, Andrei Borzenkov <arvidjaar@gmail=
+=2Ecom> wrote:
+>>>>>> 19.11.2017 09:17, Chris Murphy =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
+>>>>>>> fstrim should trim free space, but it only trims unallocated. Thi=
+s is
+>>>>>>> with kernel 4.14.0 and the entire 4.13 series. I'm pretty sure it=
 
+>>>>>>> behaved this way with 4.12 also.
+>>>>>>>
+>>>>>>
+>>>>>> Well, I was told it should also trim free space ...
+>>>>>>
+>>>>>> https://www.spinics.net/lists/linux-btrfs/msg61819.html
+>>>>>>
+>>>>>
+>>>>> It definitely isn't. If I do a partial balance, then fstrim, I get =
+a
+>>>>> larger trimmed value, corresponding exactly to unallocated space.
+>>>>
+>>>>
+>>>> I've just tested with 4.14 and it definitely trims within block grou=
+ps.
+>>>
+>>> Derp.  This should read 4.12.
+>>>
+>>>> I've attached my test script and the log of the run.  I'll build and=
 
-On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 00:50, ST wrote:
-> Hello,
+>>>> test a 4.14 kernel and see if I can reproduce there.  It may well be=
+
+>>>> that we're just misreporting the bytes trimmed.
+>>
+>> I get the same results on v4.14.  I wrote up a little script to parse
+>> the btrfs-debug-tree extent tree dump and the discards that are issued=
+
+>> after the final sync (when the tree is dumped) match.
+>>
+>> The script output is also as expected:
+>> /mnt2: 95.1 GiB (102082281472 bytes) trimmed
+>> # remove every other 100MB file, totalling 1.5 GB
+>> + sync
+>> + killall blktrace
+>> + wait
+>> + echo 'after sync'
+>> + sleep 1
+>> + btrace -a discard /dev/loop0
+>> + fstrim -v /mnt2
+>> /mnt2: 96.6 GiB (103659962368 bytes) trimmed
+>>
+>> One thing that may not be apparent is that the byte count is from the
+>> device(s)'s perspective.  If you have a file system with duplicate
+>> chunks or a redundant RAID mode, the numbers will reflect that.
+>>
+>> The total byte count should be correct as well.  It's the total number=
+
+>> of bytes that we submit for discard and that were accepted by the bloc=
+k
+>> layer.
+>>
+>> Do you have a test case that shows it being wrong and can you provide
+>> the blktrace capture of the device(s) while the fstrim is running?
 >=20
-> 1. is there a tool that I can use to test btrfs scrubbing? Namely I nee=
-d
-> to "damage" a file, i.e. change it without changing its meta
-> information, so I can see how scrubbing performs... Is there something
-> like this?
-
-Btrfs-corrupt-block, which is not compiled by default.
-And not well documented.
-
 >=20
+> Further,
 >=20
-> 2. I want to use Ansible to set btrfs quota on a /home subvolume as say=
-
-> 0.8*TotalCapacityOfRoot and then assign to it individual users'
-> subvolumes with certain (smaller) quatos.
-
-Quota only works on subvolumes.
-Although you could do it using multi level qgroups.
-
-Using higher level qgroup, 1/0 for example, as a big pool and then
-assign real subvolume qgroup to that pool.
-
-However, current qgroup will bring big performance overhead, especially
-for balance and snapshot deletion.
-
-Although not sure what Ansible is and if it uses btrfs quota.
-
-
-> 2.1 Is it OK to rely on ansible_facts? Does it has correct information
-> about btrfs-based "/" total capacity?
-
-Not sure about ansible at all.
-
-> 2.2 If not, is there a raw command to get TotalCapacityOfRoot in -TB so=
-
-> I can set it? Is there something like btrfs filesystem usage / -t
-> --device_size? to get only the total Device Size information?\
-
-What is the meaning of TotalCapacityOfRoot? Device size? Fs size?
-
-Thanks,
-Qu
-
+> # fstrim -v /
+> /: 38 GiB (40767586304 bytes) trimmed
 >=20
-> Thank you!
-> ST
+> And then delete 10G worth of files, do not balance, and do nothing for
+> a minute before:
 >=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> # fstrim -v /
+> /: 38 GiB (40767586304 bytes) trimmed
 >=20
+> It's the same value. Free space according to fi us is +10 larger than
+> before, and yet nothing additional is trimmed than before. So I don't
+> know what's going on but it's not working for me.
+
+What happens if you sync before doing the fstrim again?  The code is
+there to drop extents within block groups.  It works for me.  The big
+thing is that the space must be freed entirely before we can trim.
+
+-Jeff
 
 
---RqfgHLfw0d0oQ5AUKhD4ERmv4BdNvJ0iW--
+--=20
+Jeff Mahoney
+SUSE Labs
 
---QaN3rpPA1hwKc8mbbt2nUBEWatE1e0vFK
+
+--wiHjo2xXQcsskU2pNGUD56peXfWeeR9K1--
+
+--RJNktIdR0w7n8PsOSKPnoLEOkG0PU1Est
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloTf9gXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qh6Rgf+OFfBar4+aPhIBOZvShX3Sbsg
-ilrLV/VcL/b+aY6KOgXdm7R75SuD0vi1q2snzyX6wQtj29XTaROMAZVl2bbkTAlK
-OVd68GzbD3uaFhX2TVRVd7P+FKC2dWBNB3bfjph67EQH40PM+dYa9/i4foBO0b8f
-tmI48p2xi/6mcjazyTXS7vJww3PBW3wQAPTY8mVc5sqZauNLDPcMKToCgZk1jXwY
-X0RnmF03OzJRbQNOhBlqsASN8Nzqk4lC2C8RDKfKwFs77nQYVzIqXdy0M7c0rI49
-3Xdq6A+j2bT6eJYOQOHa+ZAItDJXRcc+s/Uzz9cZbX0yUSb0w7a15LIqx+lFGA==
-=XMrR
+iQJDBAEBCAAtFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAloThWsPHGplZmZtQHN1
+c2UuY29tAAoJEB57S2MheeWyZ+gQAIIWE33gG/JHeVkhfnflV4Ln/fcAfZnoxN/n
+nWOu3FdB0faZIhyC2OzI/mpEDEej6Rxa03LYW4HQPv0T/ITS4i5fdqWK5GARgKXv
+Brdsnmt3oAhvZgYILwW+2/wL97moIsilzmDMgv2TZBXhbIZASSMf8eycotsKY1go
+rRik1oQXmajF+DjJzqaIH9t1KUduEzsV7XLjbIprgh9Xi5ETLN2ZkwJ1i4YZ5nd7
+NENIrMpHHCMAAlLxePO+fEmi+VsvnCk1kFGxCDnRojXV61HHS2oMgextRGC3r9Ma
+wlMY7kNghMKPTj8oT27xRKwZitV8Q/i1nZqu2OWgXagtOxwDuY0GIPqxZ09GtmD+
+HGPTDLnZsy0T9h84ndjZIsZkSJu9IGvuSJf+ueNWRa6hb0vcLJkqIfi6v0rUBHKB
+Nox44peggaqHn1MkRT8S+UnMckcVJuKDK0upKreRoezf+mFZACsAB90EGgmeUuv0
+vX7GJ9op2QXAM4u2Z8TpYpKiF5Tm6p4kWN0Itu9PDvihr+TNtGUECdZ3SKfxVm3L
+9fjsyhAfzS2mNmLNvwLE7UCuk1mNrUSqT80dZ5w6linqmpr0gF/qA4BsabiTVpaU
+g0v2k3dHy+QLJJVvnCwYLkfl1yHahzGm9c73VQkA1rTh27K0I0G9J1jDcpCVdYBO
+J8kkgKhN
+=+uc8
 -----END PGP SIGNATURE-----
 
---QaN3rpPA1hwKc8mbbt2nUBEWatE1e0vFK--
+--RJNktIdR0w7n8PsOSKPnoLEOkG0PU1Est--

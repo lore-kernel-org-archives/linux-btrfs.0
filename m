@@ -1,172 +1,292 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:51482 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:37330 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752904AbdKUGLF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 01:11:05 -0500
-Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
- <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
- <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
- <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
- <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com>
- <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
- <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com>
- <CAJCQCtS6tXcKRuwZiAfB8eUkENz6secVcvxYS=syCFp_VH_+Vw@mail.gmail.com>
- <56401bb3-39fb-66d9-f77b-30e164bd8973@gmx.com>
- <CAJCQCtQiTt78svzzdcV_Pm2iPK6RgYLXsvMda7H6aQeMf2w07g@mail.gmail.com>
- <4b7a0fae-ca96-7583-90d0-37cabc78849b@gmx.com>
- <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a95813ad-d87e-bd5a-a258-c3d241fa5181@gmx.com>
-Date: Tue, 21 Nov 2017 14:10:56 +0800
+        id S1751123AbdKUH7v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 02:59:51 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6F6A2AD57
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Nov 2017 07:59:50 +0000 (UTC)
+Subject: Re: [PATCH 2/3] btrfs: update some code documentation
+To: Edmund Nadolski <enadolski@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171120202449.22947-1-enadolski@suse.com>
+ <20171120202449.22947-3-enadolski@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <068ef359-4183-762c-c73e-faa0b9cfd6fa@suse.com>
+Date: Tue, 21 Nov 2017 09:59:48 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="shv0m8vgcTmFa3CPDbKunqAOdxMfq4pqH"
+In-Reply-To: <20171120202449.22947-3-enadolski@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---shv0m8vgcTmFa3CPDbKunqAOdxMfq4pqH
-Content-Type: multipart/mixed; boundary="LfMqd142vBBuq3QkB6WuXO1GxB2o3QusV";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <a95813ad-d87e-bd5a-a258-c3d241fa5181@gmx.com>
-Subject: Re: bug? fstrim only trims unallocated space, not unused in bg's
-References: <CAJCQCtRpWuPLsmGLmNcon45YzfewRFPHxjhCJY=mVZ_Od7jxxQ@mail.gmail.com>
- <d784d9a6-bc0e-e4c3-6633-043081ea800b@gmx.com>
- <CAJCQCtSZmRmeFUGPSiRLV4TCOjbD6uTqpoEqKD24Li8w1iO7qQ@mail.gmail.com>
- <0f6c7514-1cf2-1d88-1307-c43f7642b525@gmx.com>
- <CAJCQCtSH-w4Pt9kmGhuYZUX_FdktFEpV4WyKnxw5GaDKfVmdng@mail.gmail.com>
- <d8973b92-b320-5088-aae6-2b3835f1b2ca@gmx.com>
- <CAJCQCtSjBWMauccwremxQ+eCTTBXsz=VEXFy=ckABpKtC-9NTw@mail.gmail.com>
- <af39cb86-693c-2f3b-7831-60968d3b5c3d@gmx.com>
- <CAJCQCtS6tXcKRuwZiAfB8eUkENz6secVcvxYS=syCFp_VH_+Vw@mail.gmail.com>
- <56401bb3-39fb-66d9-f77b-30e164bd8973@gmx.com>
- <CAJCQCtQiTt78svzzdcV_Pm2iPK6RgYLXsvMda7H6aQeMf2w07g@mail.gmail.com>
- <4b7a0fae-ca96-7583-90d0-37cabc78849b@gmx.com>
- <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
-In-Reply-To: <CAJCQCtSezvyBGBQJRwQ+aeJH+8_8QsihkFD-iZaEVFeoL-00+Q@mail.gmail.com>
-
---LfMqd142vBBuq3QkB6WuXO1GxB2o3QusV
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 20.11.2017 22:24, Edmund Nadolski wrote:
+> Improve code documentation by adding/expanding comments in
+> several places.
+> 
+> Signed-off-by: Edmund Nadolski <enadolski@suse.com>
+> ---
+>  fs/btrfs/ctree.c                | 31 +++++++++++++++-------
+>  fs/btrfs/ctree.h                | 28 +++++++++++++++-----
+>  fs/btrfs/extent_map.h           | 58 ++++++++++++++++++++++++++++-------------
+>  fs/btrfs/file-item.c            |  3 +++
+>  fs/btrfs/inode.c                | 21 +++++++++++----
+>  include/uapi/linux/btrfs_tree.h |  1 +
+>  6 files changed, 104 insertions(+), 38 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 531e0a8..9331d02 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -2654,17 +2654,30 @@ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *path,
+>  }
+>  
+>  /*
+> - * look for key in the tree.  path is filled in with nodes along the way
+> - * if key is found, we return zero and you can find the item in the leaf
+> - * level of the path (level 0)
+> + * Search a btree for a specific key. Optionally update the btree for
+> + * item insertion or removal.
+>   *
+> - * If the key isn't found, the path points to the slot where it should
+> - * be inserted, and 1 is returned.  If there are other errors during the
+> - * search a negative error number is returned.
+> + *   @trans - Transaction handle (NULL for none, requires @cow == 0).
+> + *   @root - The btree to be searched.
+> + *   @key - key for search.
+> + *   @p - Points to a btrfs_path to be populated with btree node and index
+> + *      values encountered during traversal. (See also struct btrfs_path.)
+> + *   @ins_len - byte length of item as follows:
+> + *      >0: byte length of item for insertion.  Btree nodes/leaves are
+> + *          split as required.
+> + *      <0: byte length of item for deletion.  Btree nodes/leaves are
+> + *          merged as required.
+> + *       0: Do not modify the btree (search only).
+> + *   @cow - 0 to nocow, or !0 to cow for btree update.
+>   *
+> - * if ins_len > 0, nodes and leaves will be split as we walk down the
+> - * tree.  if ins_len < 0, nodes will be merged as we walk down the tree (if
+> - * possible)
+> + * Return values:
+> + *   0: @key was found and @p was updated to indicate the leaf and item
+> + *       slot where the item may be accessed.
+> + *   1: @key was not found and @p was updated to indicate the leaf and
+> + *       item slot where the item may be inserted.
+> + *  <0: an error occurred.
+> + *
+> + * Note, insertion/removal updates will re-balance the btree as needed.
+>   */
+>  int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  		      const struct btrfs_key *key, struct btrfs_path *p,
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 2154b5a..e980caa 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -318,20 +318,36 @@ struct btrfs_node {
+>  } __attribute__ ((__packed__));
+>  
+>  /*
+> - * btrfs_paths remember the path taken from the root down to the leaf.
+> - * level 0 is always the leaf, and nodes[1...BTRFS_MAX_LEVEL] will point
+> - * to any other levels that are present.
+> - *
+> - * The slots array records the index of the item or block pointer
+> - * used while walking the tree.
+> + * Used with btrfs_search_slot() to record a btree search path traversed from a
+> + * root down to a leaf.
+>   */
+>  enum { READA_NONE = 0, READA_BACK, READA_FORWARD };
+>  struct btrfs_path {
+> +	/*
+> +	 * The nodes[] and slots[] arrays are indexed according to btree
+> +	 * levels. Index 0 corresponds to the lowest (leaf) level. Increasing
+> +	 * indexes correspond to interior btree nodes at subsequently higher
+> +	 * levels.
+> +	 *
+> +	 * nodes[0] always points to a leaf. nodes[1] points to a btree node
+> +	 * which contains a block pointer referencing that leaf. For higher
+> +	 * indexes, node[n] points to a btree node which contains a block
+> +	 * pointer referencing node[n-1].
+> +	 */
+>  	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
+> +
+> +	/*
+> +	 * The slots[0] value identifies an item index in the leaf at nodes[0].
+> +	 * Each slots[n] value identifies a block pointer index in the
+> +	 * corresponding tree node at nodes[n].
+> +	 */
+>  	int slots[BTRFS_MAX_LEVEL];
+> +
+>  	/* if there is real range locking, this locks field will change */
+>  	u8 locks[BTRFS_MAX_LEVEL];
+> +
+>  	u8 reada;
+> +
+>  	/* keep some upper locks as we walk down */
+>  	u8 lowest_level;
+>  
+> diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+> index 64365bb..34ea85c3 100644
+> --- a/fs/btrfs/extent_map.h
+> +++ b/fs/btrfs/extent_map.h
+> @@ -5,35 +5,57 @@
+>  #include <linux/rbtree.h>
+>  #include <linux/refcount.h>
+>  
+> -#define EXTENT_MAP_LAST_BYTE ((u64)-4)
+> -#define EXTENT_MAP_HOLE ((u64)-3)
+> -#define EXTENT_MAP_INLINE ((u64)-2)
+> -#define EXTENT_MAP_DELALLOC ((u64)-1)
+> -
+> -/* bits for the flags field */
+> -#define EXTENT_FLAG_PINNED 0 /* this entry not yet on disk, don't free it */
+> -#define EXTENT_FLAG_COMPRESSED 1
+> -#define EXTENT_FLAG_VACANCY 2 /* no file extent item found */
+> -#define EXTENT_FLAG_PREALLOC 3 /* pre-allocated extent */
+> -#define EXTENT_FLAG_LOGGING 4 /* Logging this extent */
+> -#define EXTENT_FLAG_FILLING 5 /* Filling in a preallocated extent */
+> -#define EXTENT_FLAG_FS_MAPPING 6 /* filesystem extent mapping type */
+> +/*
+> + * Reserve some special-case values for the extent_map .start, .block_start,
+> + *: and .orig_start fields.
+     ^ extra :
+> + */
+> +#define EXTENT_MAP_LAST_BYTE	((u64)-4)	/* Lowest reserved value */
+> +#define EXTENT_MAP_HOLE		((u64)-3)	/* Unwritten extent */
+> +#define EXTENT_MAP_INLINE	((u64)-2)	/* Inlined file data */
+> +#define EXTENT_MAP_DELALLOC	((u64)-1)	/* Delayed block allocation */
 
-On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 13:58, Chris Murphy wrote:
-> On Mon, Nov 20, 2017 at 9:58 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->>
->>
->> On 2017=E5=B9=B411=E6=9C=8821=E6=97=A5 12:49, Chris Murphy wrote:
->>> On Mon, Nov 20, 2017 at 9:43 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> w=
-rote:
->>>>
->>>>
->>>>>
->>>>> Apply in addition to previous patch? Or apply to clean v4.14?
->>>>
->>>> On previous patch.
->>>
->>> Refuses to apply with or without previous patch.
->>>
->>> $ git apply -v ~/qufstrim3.patch
->>> Checking patch fs/btrfs/extent-tree.c...
->>> error: while searching for:
->>>        int dev_ret =3D 0;
->>>        int ret =3D 0;
->>>
->>>        /*
->>>         * try to trim all FS space, our block group may start from no=
-n-zero.
->>>         */
->>>
->>> error: patch failed: fs/btrfs/extent-tree.c:10972
->>> error: fs/btrfs/extent-tree.c: patch does not apply
->>>
->>
->> Please try this branch.
->>
->> It's just previous patch and diff merged together and applied on v4.14=
+These values are only set/checked on the .block_start parameter so you
+can possibly remove the .start/.orig_start from the above comment.
 
->> tag from torvalds.
->>
->> https://github.com/adam900710/linux/tree/tmp
->=20
-> # fstrim -v /
-> /: 38 GiB (40767586304 bytes) trimmed
-> # dmesg
->=20
-> ..snip...
-> [   46.408792] BTRFS info (device nvme0n1p8): trimming btrfs, start=3D0=
+>  
+> +/*
+> + * Bit flags for the extent_map .flags field.
+> + */
+> +#define EXTENT_FLAG_PINNED	0 /* entry not yet on disk, don't free it */
+> +#define EXTENT_FLAG_COMPRESSED	1
+> +#define EXTENT_FLAG_VACANCY	2 /* no file extent item found */
+> +#define EXTENT_FLAG_PREALLOC	3 /* pre-allocated extent */
+> +#define EXTENT_FLAG_LOGGING	4 /* Logging this extent */
+> +#define EXTENT_FLAG_FILLING	5 /* Filling in a preallocated extent */
+> +#define EXTENT_FLAG_FS_MAPPING	6 /* filesystem extent mapping type */
+> +
+> +/*
+> + * In-memory representation of a file extent (regular/prealloc/inline).
+> + */
 
-> len=3D75161927680 minlen=3D512
-> [   46.408800] BTRFS info (device nvme0n1p8): bg start=3D140882477056
-> len=3D1073741824
-> [   46.433867] BTRFS info (device nvme0n1p8): trimming done
+<rant>
+I just realise how badly named this struct is. Because we really have
+on-disk extents and in-memory extents (similar to XFS nomenclature) and
+the extent_map name doesn't really bring those 2 things together
+</rant>
 
-Great (for the output, not for the trimming failure).
-
-And the problem is very obvious now.
-140882477056 << First chunk start
-75161927680  << length of fstrim_range passed in
-
-Obviously, fstrim_range passed in is using the filesystem size it
-assumes to be.
-
-While we stupidly use the range in fstrim_range without considering the
-fact that, we're dealing with *btrfs logical address space*.
-Where our chunk can start from any bytenr (well, at least aligned with
-sectorsize).
-When I read the code I also think the range check has nothing wrong at al=
-l.
-
-So the truth here is, we should not ever try to check the range from
-fstrim_range.
-
-And the problem means that, a normal btrfs with some usage and after
-several full balance, fstrim will only trim the unallocated space for btr=
-fs.
-
-Now the fix should not be a hard to craft.
-
-Great thanks for all your help to locate the problem.
-
-Thanks,
-Qu
->=20
-> Attaching 'btrfs-debug -b /' to get an idea about the block groups pres=
-ent.
->=20
->=20
->=20
-
-
---LfMqd142vBBuq3QkB6WuXO1GxB2o3QusV--
-
---shv0m8vgcTmFa3CPDbKunqAOdxMfq4pqH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloTw3AXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qj7/Qf/RPQkAZ87/4843Vtf1qcrcAvT
-Idk85k3OTAMS24Tv3l6IecjkGj4UDroDyF0PDtMcsG6Ms3oMh5Bgm/c6JPQNQ48/
-XLAg5qmkSlu8n4QjQpiLuMDh8irrbcDJebYy496/KdWJUGsPrp3ZSC/eft5Dij6+
-KiLo06shy/8tJdN4fLzzWZ7JoaEBeWOiBEpZ2CfEv9wxMkQg5Ine7ibyU7PZaCL2
-ORtYXITsph15dFG5TDAucpXm3njFhdwBEqMF5DEoaS12TU7XNFBt6MUV0Obk3S89
-oMx2unytX0Ak7v5eN9Bxdc2J3a8177uk6Q1PENKAhfOxdgGkt2eps4fXhUerFA==
-=1BRX
------END PGP SIGNATURE-----
-
---shv0m8vgcTmFa3CPDbKunqAOdxMfq4pqH--
+>  struct extent_map {
+>  	struct rb_node rb_node;
+>  
+>  	/* all of these are in bytes */
+> -	u64 start;
+> -	u64 len;
+> +	u64 start;	/* logical byte offset in the file */
+> +	u64 len;	/* byte length of extent in the file */
+>  	u64 mod_start;
+>  	u64 mod_len;
+>  	u64 orig_start;
+>  	u64 orig_block_len;
+> +
+> +	/* max. bytes needed to hold the (uncompressed) extent in memory. */
+>  	u64 ram_bytes;
+> +
+> +	/*
+> +	 * For regular/prealloc, block_start is a logical address denoting the
+> +	 * start of the extent data, and block_len is the on-disk byte length
+> +	 * of the extent (which may be comressed). block_start may be
+> +	 * EXTENT_MAP_HOLE if the extent is unwritten.  For inline, block_start
+> +	 * is EXTENT_MAP_INLINE and block_len is (u64)-1.  See also
+> +	 * btrfs_extent_item_to_extent_map() and btrfs_get_extent().
+> +	 */
+>  	u64 block_start;
+>  	u64 block_len;
+> -	u64 generation;
+> -	unsigned long flags;
+> +
+> +	u64 generation;		/* transaction id */
+> +	unsigned long flags;	/* EXTENT_FLAG_* bit flags as above */
+> +
+>  	union {
+>  		struct block_device *bdev;
+>  
+> @@ -44,7 +66,7 @@ struct extent_map {
+>  		struct map_lookup *map_lookup;
+>  	};
+>  	refcount_t refs;
+> -	unsigned int compress_type;
+> +	unsigned int compress_type;	/* BTRFS_COMPRESS_* */
+>  	struct list_head list;
+>  };
+>  
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index fdcb410..5d63172 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -929,6 +929,9 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
+>  	goto out;
+>  }
+>  
+> +/*
+> + * Populate an extent_map from the btrfs_file_extent_item contents.
+> + */
+>  void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+>  				     const struct btrfs_path *path,
+>  				     struct btrfs_file_extent_item *fi,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 72c7b38..b6d5d94 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6916,17 +6916,28 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+>  }
+>  
+>  /*
+> - * a bit scary, this does extent mapping from logical file offset to the disk.
+> - * the ugly parts come from merging extents from the disk with the in-ram
+> + * btrfs_get_extent - find or create an extent_map for the (@start, @len) range.
+> + *
+> + *  @inode - inode containing the desired extent.
+> + *  @page - page for inlined extent (NULL if none)
+> + *  @page_offset - byte offset within @page
+> + *  @start - logical byte offset in the file.
+> + *  @len - byte length of the range.
+> + *  @create - for inlined extents: 0 to update @page with extent data from
+> + *            the item; 1 to bypass the update.
+> + *
+> + * A bit scary, this does extent mapping from logical file offset to the disk.
+> + * The ugly parts come from merging extents from the disk with the in-ram
+>   * representation.  This gets more complex because of the data=ordered code,
+>   * where the in-ram extents might be locked pending data=ordered completion.
+>   *
+>   * This also copies inline extents directly into the page.
+> + *
+> + * Returns the extent_map, or error code.
+>   */>  struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+> -		struct page *page,
+> -	    size_t pg_offset, u64 start, u64 len,
+> -		int create)
+> +				    struct page *page, size_t pg_offset,
+> +				    u64 start, u64 len, int create)
+>  {
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
+>  	int ret;
+> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+> index 6d6e5da..693636a 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -730,6 +730,7 @@ struct btrfs_balance_item {
+>  	__le64 unused[4];
+>  } __attribute__ ((__packed__));
+>  
+> +/* Values for .type field in btrfs_file_extent_item */
+>  #define BTRFS_FILE_EXTENT_INLINE 0
+>  #define BTRFS_FILE_EXTENT_REG 1
+>  #define BTRFS_FILE_EXTENT_PREALLOC 2
+> 

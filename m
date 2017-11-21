@@ -1,54 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46289 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751925AbdKUNto (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 08:49:44 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5FBC9AAC7
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Nov 2017 13:49:43 +0000 (UTC)
-Date: Tue, 21 Nov 2017 14:47:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.cz
-Subject: Re: [PATCH] btrfs: extent-tree: Use round up to replace align macro
-Message-ID: <20171121134748.GK3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171121055445.13972-1-wqu@suse.com>
- <78abe4d1-b83c-980a-4594-e1f25b52b81a@suse.com>
- <c864ff00-ec2a-603b-cc2c-b942d2373f7c@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <c864ff00-ec2a-603b-cc2c-b942d2373f7c@suse.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:49382 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750762AbdKUFzF (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 21 Nov 2017 00:55:05 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs: extent-tree: Use round up to replace align macro
+Date: Tue, 21 Nov 2017 13:54:45 +0800
+Message-Id: <20171121055445.13972-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 21, 2017 at 04:06:54PM +0800, Qu Wenruo wrote:
-> On 2017年11月21日 15:33, Nikolay Borisov wrote:
-> > On 21.11.2017 07:54, Qu Wenruo wrote:
-> >> @@ -2054,7 +2054,7 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
-> >>  {
-> >>  	int j, ret = 0;
-> >>  	u64 bytes_left, end;
-> >> -	u64 aligned_start = ALIGN(start, 1 << 9);
-> >> +	u64 aligned_start = round_up(start, 1 << 9);
-> > 
-> > nit: 1 << 9 == SZ_512 or essentially sector size however looking at the
-> > defines there is SECTOR_SIZE defined in ide.h which we do not include.
-> > Or just use 512 no need to obscure it behind a shift.
-> 
-> I also noticed that while I don't have any good idea which macro should
-> be used.
-> 
-> That SECTOR_SIZE defined in ide.h doesn't sound good to me.
+To save reader seconds before checking if it's rounding up or down.
 
-Heh, no we won't include ide.h just to get the macro definition.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/extent-tree.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-> And all other filesystems are using their own definition, without some
-> definition in fs/bio level.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 309a109069f1..8ab18e25cb91 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2054,7 +2054,7 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
+ {
+ 	int j, ret = 0;
+ 	u64 bytes_left, end;
+-	u64 aligned_start = ALIGN(start, 1 << 9);
++	u64 aligned_start = round_up(start, 1 << 9);
+ 
+ 	if (WARN_ON(start != aligned_start)) {
+ 		len -= aligned_start - start;
+@@ -4266,7 +4266,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
+ 	int have_pinned_space;
+ 
+ 	/* make sure bytes are sectorsize aligned */
+-	bytes = ALIGN(bytes, fs_info->sectorsize);
++	bytes = round_up(bytes, fs_info->sectorsize);
+ 
+ 	if (btrfs_is_free_space_inode(inode)) {
+ 		need_commit = 0;
+@@ -6080,7 +6080,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
+ 	if (delalloc_lock)
+ 		mutex_lock(&inode->delalloc_mutex);
+ 
+-	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
++	num_bytes = round_up(num_bytes, fs_info->sectorsize);
+ 
+ 	/* Add our new extents and calculate the new rsv size. */
+ 	spin_lock(&inode->lock);
+@@ -6135,7 +6135,7 @@ void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
+ 
+-	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
++	num_bytes = round_up(num_bytes, fs_info->sectorsize);
+ 	spin_lock(&inode->lock);
+ 	inode->csum_bytes -= num_bytes;
+ 	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+@@ -7818,7 +7818,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			goto loop;
+ 		}
+ checks:
+-		search_start = ALIGN(offset, fs_info->stripesize);
++		search_start = round_up(offset, fs_info->stripesize);
+ 
+ 		/* move on to the next group */
+ 		if (search_start + num_bytes >
+-- 
+2.15.0
 
-That would be useful, as the sectorsize == 512 is part of the bio ABI.
-
-I'd like to convert all the >> 9 shifts to *512 or /512, but this relies
-on the compiler to convert namely the division to shifts where we use
-u64.

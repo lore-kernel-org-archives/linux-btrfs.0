@@ -1,93 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59003 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751887AbdKMHfR (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Mon, 13 Nov 2017 02:35:17 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, chris@colorremedies.com
-Subject: [PATCH 3/4] btrfs-progs: lowmem check: Fix false alerts for image with shared block ref only backref
-Date: Mon, 13 Nov 2017 15:34:52 +0800
-Message-Id: <20171113073453.29198-4-wqu@suse.com>
-In-Reply-To: <20171113073453.29198-1-wqu@suse.com>
-References: <20171113073453.29198-1-wqu@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:51250 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751238AbdKUUe4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 15:34:56 -0500
+Date: Tue, 21 Nov 2017 12:34:16 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: torvalds@linux-foundation.org
+Cc: Matthew Wilcox <willy@infradead.org>, Dave Chinner <david@fromorbit.com>,
+        xfs <linux-xfs@vger.kernel.org>, Ilya Dryomov <idryomov@gmail.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Brian Foster <bfoster@redhat.com>, holger@applied-asynchrony.com,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, bo.li.liu@oracle.com,
+        viro@ZenIV.linux.org.uk
+Subject: [PATCH v3] iomap: report collisions between directio and  buffered
+ writes to userspace
+Message-ID: <20171121203416.GE2135@magnolia>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-For image with shared block ref only metadata item like:
-------
-        item 66 key (21573632 METADATA_ITEM 0) itemoff 3971 itemsize 24
-                refs 66 gen 9 flags TREE_BLOCK|FULL_BACKREF
-                tree block skinny level 0
-        item 0 key (21573632 SHARED_BLOCK_REF 21676032) itemoff 3995 itemsize 0
-                shared block backref
-        item 1 key (21573632 SHARED_BLOCK_REF 21921792) itemoff 3995 itemsize 0
-                shared block backref
-        item 2 key (21573632 SHARED_BLOCK_REF 21995520) itemoff 3995 itemsize 0
-                shared block backref
-        item 3 key (21573632 SHARED_BLOCK_REF 22077440) itemoff 3995 itemsize 0
-                shared block backref
-...
-------
+From: Darrick J. Wong <darrick.wong@oracle.com>
 
-Lowmem mode check will report false alerts like:
-------
-ERROR: extent[21573632 4096] backref lost (owner: 256, level: 0)
-------
+If two programs simultaneously try to write to the same part of a file
+via direct IO and buffered IO, there's a chance that the post-diowrite
+pagecache invalidation will fail on the dirty page.  When this happens,
+the dio write succeeded, which means that the page cache is no longer
+coherent with the disk!
 
-[CAUSE]
-In fact, the false alerts is not even from extent tree verfication,  but
-a fs tree helper which is designed to make sure there is some tree block
-referring to the fs tree block.
+Programs are not supposed to mix IO types and this is a clear case of
+data corruption, so store an EIO which will be reflected to userspace
+during the next fsync.  Replace the WARN_ON with a ratelimited pr_crit
+so that the developers have /some/ kind of breadcrumb to track down the
+offending program(s) and file(s) involved.
 
-The idea is to find inlined tree backref then keyed TREE_BLOCK_REF_KEY.
-However it missed SHARED_BLOCK_REF_KEY, and caused such false alert.
-
-[FIX]
-Add SHARED_BLOCK_REF_KEY to make the warning shut up.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- cmds-check.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+v3: increase ratelimit period to 30s
+v2: fix old and new dio paths
+---
+ fs/direct-io.c     |   24 +++++++++++++++++++++++-
+ fs/iomap.c         |   12 ++++++++++--
+ include/linux/fs.h |    1 +
+ 3 files changed, 34 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 36e4a91b7e17..4805e11b752b 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -10377,6 +10377,30 @@ static int check_tree_block_ref(struct btrfs_root *root,
- 		if (!ret)
- 			found_ref = 1;
- 	}
-+	/*
-+	 * Finally check SHARED BLOCK REF, any found will be good
-+	 * Here we're not doing comprehensive extent backref checking,
-+	 * only need to ensure there is some extent referring to this
-+	 * tree block.
-+	 */
-+	if (!found_ref) {
-+		btrfs_release_path(&path);
-+		key.objectid = bytenr;
-+		key.type = BTRFS_SHARED_BLOCK_REF_KEY;
-+		key.offset = (u64)-1;
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index 98fe132..ef5d12a 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -219,6 +219,27 @@ static inline struct page *dio_get_page(struct dio *dio,
+ 	return dio->pages[sdio->head];
+ }
+ 
++/*
++ * Warn about a page cache invalidation failure during a direct io write.
++ */
++void dio_warn_stale_pagecache(struct file *filp)
++{
++	static DEFINE_RATELIMIT_STATE(_rs, 30 * HZ, DEFAULT_RATELIMIT_BURST);
++	char pathname[128];
++	struct inode *inode = file_inode(filp);
++	char *path;
 +
-+		ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
-+		if (ret < 0) {
-+			err |= BACKREF_MISSING;
-+			goto out;
-+		}
-+		ret = btrfs_previous_extent_item(extent_root, &path, bytenr);
-+		if (ret) {
-+			err |= BACKREF_MISSING;
-+			goto out;
-+		}
-+		found_ref = 1;
++	errseq_set(&inode->i_mapping->wb_err, -EIO);
++	if (__ratelimit(&_rs)) {
++		path = file_path(filp, pathname, sizeof(pathname));
++		if (IS_ERR(path))
++			path = "(unknown)";
++		pr_crit("Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!\n");
++		pr_crit("File: %s PID: %d Comm: %.20s\n", path, current->pid,
++			current->comm);
 +	}
- 	if (!found_ref)
- 		err |= BACKREF_MISSING;
- out:
--- 
-2.15.0
-
++}
++
+ /**
+  * dio_complete() - called when all DIO BIO I/O has been completed
+  * @offset: the byte offset in the file of the completed operation
+@@ -290,7 +311,8 @@ static ssize_t dio_complete(struct dio *dio, ssize_t ret, unsigned int flags)
+ 		err = invalidate_inode_pages2_range(dio->inode->i_mapping,
+ 					offset >> PAGE_SHIFT,
+ 					(offset + ret - 1) >> PAGE_SHIFT);
+-		WARN_ON_ONCE(err);
++		if (err)
++			dio_warn_stale_pagecache(dio->iocb->ki_filp);
+ 	}
+ 
+ 	if (!(dio->flags & DIO_SKIP_DIO_COUNT))
+diff --git a/fs/iomap.c b/fs/iomap.c
+index 5011a96..028f329 100644
+--- a/fs/iomap.c
++++ b/fs/iomap.c
+@@ -753,7 +753,8 @@ static ssize_t iomap_dio_complete(struct iomap_dio *dio)
+ 		err = invalidate_inode_pages2_range(inode->i_mapping,
+ 				offset >> PAGE_SHIFT,
+ 				(offset + dio->size - 1) >> PAGE_SHIFT);
+-		WARN_ON_ONCE(err);
++		if (err)
++			dio_warn_stale_pagecache(iocb->ki_filp);
+ 	}
+ 
+ 	inode_dio_end(file_inode(iocb->ki_filp));
+@@ -1012,9 +1013,16 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 	if (ret)
+ 		goto out_free_dio;
+ 
++	/*
++	 * Try to invalidate cache pages for the range we're direct
++	 * writing.  If this invalidation fails, tough, the write will
++	 * still work, but racing two incompatible write paths is a
++	 * pretty crazy thing to do, so we don't support it 100%.
++	 */
+ 	ret = invalidate_inode_pages2_range(mapping,
+ 			start >> PAGE_SHIFT, end >> PAGE_SHIFT);
+-	WARN_ON_ONCE(ret);
++	if (ret)
++		dio_warn_stale_pagecache(iocb->ki_filp);
+ 	ret = 0;
+ 
+ 	if (iov_iter_rw(iter) == WRITE && !is_sync_kiocb(iocb) &&
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 2690864..0e5f060 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2976,6 +2976,7 @@ enum {
+ };
+ 
+ void dio_end_io(struct bio *bio);
++void dio_warn_stale_pagecache(struct file *filp);
+ 
+ ssize_t __blockdev_direct_IO(struct kiocb *iocb, struct inode *inode,
+ 			     struct block_device *bdev, struct iov_iter *iter,

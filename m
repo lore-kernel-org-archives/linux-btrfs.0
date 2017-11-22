@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f196.google.com ([209.85.220.196]:37375 "EHLO
-        mail-qk0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752096AbdKVVQM (ORCPT
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:38218 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752096AbdKVVQP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Nov 2017 16:16:12 -0500
-Received: by mail-qk0-f196.google.com with SMTP id 136so18577557qkd.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 13:16:12 -0800 (PST)
+        Wed, 22 Nov 2017 16:16:15 -0500
+Received: by mail-qt0-f194.google.com with SMTP id q13so14125889qtb.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 13:16:15 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
         jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v2 02/11] writeback: convert WB_WRITTEN/WB_DIRITED counters to bytes
-Date: Wed, 22 Nov 2017 16:15:57 -0500
-Message-Id: <1511385366-20329-3-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH v2 04/11] lib: add a __fprop_add_percpu_max
+Date: Wed, 22 Nov 2017 16:15:59 -0500
+Message-Id: <1511385366-20329-5-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
 References: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,179 +21,67 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-These are counters that constantly go up in order to do bandwidth calculations.
-It isn't important what the units are in, as long as they are consistent between
-the two of them, so convert them to count bytes written/dirtied, and allow the
-metadata accounting stuff to change the counters as well.
+This helper allows us to add an arbitrary amount to the fprop
+structures.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
-Acked-by: Tejun Heo <tj@kernel.org>
 ---
- fs/fuse/file.c                   |  4 ++--
- include/linux/backing-dev-defs.h |  4 ++--
- include/linux/backing-dev.h      |  2 +-
- mm/backing-dev.c                 |  9 +++++----
- mm/page-writeback.c              | 20 ++++++++++----------
- 5 files changed, 20 insertions(+), 19 deletions(-)
+ include/linux/flex_proportions.h | 11 +++++++++--
+ lib/flex_proportions.c           |  9 +++++----
+ 2 files changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/fs/fuse/file.c b/fs/fuse/file.c
-index cb7dff5c45d7..67e7c4fac28d 100644
---- a/fs/fuse/file.c
-+++ b/fs/fuse/file.c
-@@ -1471,7 +1471,7 @@ static void fuse_writepage_finish(struct fuse_conn *fc, struct fuse_req *req)
- 	for (i = 0; i < req->num_pages; i++) {
- 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
- 		dec_node_page_state(req->pages[i], NR_WRITEBACK_TEMP);
--		wb_writeout_inc(&bdi->wb);
-+		wb_writeout_add(&bdi->wb, PAGE_SIZE);
- 	}
- 	wake_up(&fi->page_waitq);
- }
-@@ -1776,7 +1776,7 @@ static bool fuse_writepage_in_flight(struct fuse_req *new_req,
- 
- 		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
- 		dec_node_page_state(page, NR_WRITEBACK_TEMP);
--		wb_writeout_inc(&bdi->wb);
-+		wb_writeout_add(&bdi->wb, PAGE_SIZE);
- 		fuse_writepage_free(fc, new_req);
- 		fuse_request_free(new_req);
- 		goto out;
-diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
-index 866c433e7d32..ded45ac2cec7 100644
---- a/include/linux/backing-dev-defs.h
-+++ b/include/linux/backing-dev-defs.h
-@@ -36,8 +36,8 @@ typedef int (congested_fn)(void *, int);
- enum wb_stat_item {
- 	WB_RECLAIMABLE,
- 	WB_WRITEBACK,
--	WB_DIRTIED,
--	WB_WRITTEN,
-+	WB_DIRTIED_BYTES,
-+	WB_WRITTEN_BYTES,
- 	NR_WB_STAT_ITEMS
- };
- 
-diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
-index 14e266d12620..39b8dc486ea7 100644
---- a/include/linux/backing-dev.h
-+++ b/include/linux/backing-dev.h
-@@ -89,7 +89,7 @@ static inline s64 wb_stat_sum(struct bdi_writeback *wb, enum wb_stat_item item)
- 	return percpu_counter_sum_positive(&wb->stat[item]);
- }
- 
--extern void wb_writeout_inc(struct bdi_writeback *wb);
-+extern void wb_writeout_add(struct bdi_writeback *wb, long bytes);
- 
- /*
-  * maximal error of a stat counter.
-diff --git a/mm/backing-dev.c b/mm/backing-dev.c
-index e19606bb41a0..62a332a91b38 100644
---- a/mm/backing-dev.c
-+++ b/mm/backing-dev.c
-@@ -68,14 +68,15 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
- 	wb_thresh = wb_calc_thresh(wb, dirty_thresh);
- 
- #define K(x) ((x) << (PAGE_SHIFT - 10))
-+#define BtoK(x) ((x) >> 10)
- 	seq_printf(m,
- 		   "BdiWriteback:       %10lu kB\n"
- 		   "BdiReclaimable:     %10lu kB\n"
- 		   "BdiDirtyThresh:     %10lu kB\n"
- 		   "DirtyThresh:        %10lu kB\n"
- 		   "BackgroundThresh:   %10lu kB\n"
--		   "BdiDirtied:         %10lu kB\n"
--		   "BdiWritten:         %10lu kB\n"
-+		   "BdiDirtiedBytes:    %10lu kB\n"
-+		   "BdiWrittenBytes:    %10lu kB\n"
- 		   "BdiWriteBandwidth:  %10lu kBps\n"
- 		   "b_dirty:            %10lu\n"
- 		   "b_io:               %10lu\n"
-@@ -88,8 +89,8 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
- 		   K(wb_thresh),
- 		   K(dirty_thresh),
- 		   K(background_thresh),
--		   (unsigned long) K(wb_stat(wb, WB_DIRTIED)),
--		   (unsigned long) K(wb_stat(wb, WB_WRITTEN)),
-+		   (unsigned long) BtoK(wb_stat(wb, WB_DIRTIED_BYTES)),
-+		   (unsigned long) BtoK(wb_stat(wb, WB_WRITTEN_BYTES)),
- 		   (unsigned long) K(wb->write_bandwidth),
- 		   nr_dirty,
- 		   nr_io,
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 1a47d4296750..e4563645749a 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -597,11 +597,11 @@ static void wb_domain_writeout_inc(struct wb_domain *dom,
-  * Increment @wb's writeout completion count and the global writeout
-  * completion count. Called from test_clear_page_writeback().
-  */
--static inline void __wb_writeout_inc(struct bdi_writeback *wb)
-+static inline void __wb_writeout_add(struct bdi_writeback *wb, long bytes)
- {
- 	struct wb_domain *cgdom;
- 
--	inc_wb_stat(wb, WB_WRITTEN);
-+	__add_wb_stat(wb, WB_WRITTEN_BYTES, bytes);
- 	wb_domain_writeout_inc(&global_wb_domain, &wb->completions,
- 			       wb->bdi->max_prop_frac);
- 
-@@ -611,15 +611,15 @@ static inline void __wb_writeout_inc(struct bdi_writeback *wb)
- 				       wb->bdi->max_prop_frac);
- }
- 
--void wb_writeout_inc(struct bdi_writeback *wb)
-+void wb_writeout_add(struct bdi_writeback *wb, long bytes)
- {
- 	unsigned long flags;
- 
- 	local_irq_save(flags);
--	__wb_writeout_inc(wb);
-+	__wb_writeout_add(wb, bytes);
+diff --git a/include/linux/flex_proportions.h b/include/linux/flex_proportions.h
+index 0d348e011a6e..9f88684bf0a0 100644
+--- a/include/linux/flex_proportions.h
++++ b/include/linux/flex_proportions.h
+@@ -83,8 +83,8 @@ struct fprop_local_percpu {
+ int fprop_local_init_percpu(struct fprop_local_percpu *pl, gfp_t gfp);
+ void fprop_local_destroy_percpu(struct fprop_local_percpu *pl);
+ void __fprop_inc_percpu(struct fprop_global *p, struct fprop_local_percpu *pl);
+-void __fprop_inc_percpu_max(struct fprop_global *p, struct fprop_local_percpu *pl,
+-			    int max_frac);
++void __fprop_add_percpu_max(struct fprop_global *p, struct fprop_local_percpu *pl,
++			    unsigned long nr, int max_frac);
+ void fprop_fraction_percpu(struct fprop_global *p,
+ 	struct fprop_local_percpu *pl, unsigned long *numerator,
+ 	unsigned long *denominator);
+@@ -99,4 +99,11 @@ void fprop_inc_percpu(struct fprop_global *p, struct fprop_local_percpu *pl)
  	local_irq_restore(flags);
  }
--EXPORT_SYMBOL_GPL(wb_writeout_inc);
-+EXPORT_SYMBOL_GPL(wb_writeout_add);
  
- /*
-  * On idle system, we can be called long after we scheduled because we use
-@@ -1362,8 +1362,8 @@ static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
- 	if (elapsed < BANDWIDTH_INTERVAL)
- 		return;
- 
--	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED]);
--	written = percpu_counter_read(&wb->stat[WB_WRITTEN]);
-+	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED_BYTES]) >> PAGE_SHIFT;
-+	written = percpu_counter_read(&wb->stat[WB_WRITTEN_BYTES]) >> PAGE_SHIFT;
- 
- 	/*
- 	 * Skip quiet periods when disk bandwidth is under-utilized.
-@@ -2435,7 +2435,7 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
- 		__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
- 		__inc_node_page_state(page, NR_DIRTIED);
- 		inc_wb_stat(wb, WB_RECLAIMABLE);
--		inc_wb_stat(wb, WB_DIRTIED);
-+		__add_wb_stat(wb, WB_DIRTIED_BYTES, PAGE_SIZE);
- 		task_io_account_write(PAGE_SIZE);
- 		current->nr_dirtied++;
- 		this_cpu_inc(bdp_ratelimits);
-@@ -2522,7 +2522,7 @@ void account_page_redirty(struct page *page)
- 		wb = unlocked_inode_to_wb_begin(inode, &locked);
- 		current->nr_dirtied--;
- 		dec_node_page_state(page, NR_DIRTIED);
--		dec_wb_stat(wb, WB_DIRTIED);
-+		__add_wb_stat(wb, WB_DIRTIED_BYTES, -(long)PAGE_SIZE);
- 		unlocked_inode_to_wb_end(inode, locked);
- 	}
++static inline
++void __fprop_inc_percpu_max(struct fprop_global *p,
++			    struct fprop_local_percpu *pl, int max_frac)
++{
++	__fprop_add_percpu_max(p, pl, 1, max_frac);
++}
++
+ #endif
+diff --git a/lib/flex_proportions.c b/lib/flex_proportions.c
+index b0343ae71f5e..fd95791a2c93 100644
+--- a/lib/flex_proportions.c
++++ b/lib/flex_proportions.c
+@@ -255,8 +255,9 @@ void fprop_fraction_percpu(struct fprop_global *p,
+  * Like __fprop_inc_percpu() except that event is counted only if the given
+  * type has fraction smaller than @max_frac/FPROP_FRAC_BASE
+  */
+-void __fprop_inc_percpu_max(struct fprop_global *p,
+-			    struct fprop_local_percpu *pl, int max_frac)
++void __fprop_add_percpu_max(struct fprop_global *p,
++			    struct fprop_local_percpu *pl, unsigned long nr,
++			    int max_frac)
+ {
+ 	if (unlikely(max_frac < FPROP_FRAC_BASE)) {
+ 		unsigned long numerator, denominator;
+@@ -267,6 +268,6 @@ void __fprop_inc_percpu_max(struct fprop_global *p,
+ 			return;
+ 	} else
+ 		fprop_reflect_period_percpu(p, pl);
+-	percpu_counter_add_batch(&pl->events, 1, PROP_BATCH);
+-	percpu_counter_add(&p->events, 1);
++	percpu_counter_add_batch(&pl->events, nr, PROP_BATCH);
++	percpu_counter_add(&p->events, nr);
  }
-@@ -2744,7 +2744,7 @@ int test_clear_page_writeback(struct page *page)
- 				struct bdi_writeback *wb = inode_to_wb(inode);
- 
- 				dec_wb_stat(wb, WB_WRITEBACK);
--				__wb_writeout_inc(wb);
-+				__wb_writeout_add(wb, PAGE_SIZE);
- 			}
- 		}
- 
 -- 
 2.7.5
 

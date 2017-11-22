@@ -1,250 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45899 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751307AbdKVOlN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Nov 2017 09:41:13 -0500
-Subject: Re: [PATCH 3/7] Btrfs: retry write for non-raid56
-To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+Received: from userp1040.oracle.com ([156.151.31.81]:49930 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751429AbdKVBiU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 20:38:20 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAM1cJeA023601
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:20 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cJ29022916
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:19 GMT
+Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAM1cJRp014774
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:19 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/7] Btrfs: keep a copy of bi_iter in btrfs_io_bio
+Date: Tue, 21 Nov 2017 17:35:52 -0700
+Message-Id: <20171122003558.28722-2-bo.li.liu@oracle.com>
+In-Reply-To: <20171122003558.28722-1-bo.li.liu@oracle.com>
 References: <20171122003558.28722-1-bo.li.liu@oracle.com>
- <20171122003558.28722-4-bo.li.liu@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <5523d8a5-1a91-50e6-fb88-01699fd59cff@suse.com>
-Date: Wed, 22 Nov 2017 16:41:10 +0200
-MIME-Version: 1.0
-In-Reply-To: <20171122003558.28722-4-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Before this, we only keep a copy of bi_iter for cloned bio so that we
+can iterate bvec in endio with bio_for_each_segment(), and we iterate
+normal bio with bio_for_each_segment_all().
 
+However, in the following patches, I'd add retry on write errors where
+I'd like to process both cloned bio and normal bio in the same way.
 
-On 22.11.2017 02:35, Liu Bo wrote:
-> If the underlying protocal doesn't support retry and there are some
-> transient errors happening somewhere in our IO stack, we'd like to
-> give an extra chance for IO.
-> 
-> In btrfs, read retry is handled in bio_readpage_error() with the retry
-> unit being page size , for write retry however, we're going to do it
-> in a different way, as a write may consist of several writes onto
-> different stripes, retry write needs to be done right after the IO on
-> each stripe completes and reaches to endio.
-> 
-> As write errors are really corner cases, performance impact is not
-> considered.
-> 
-> This adds code to retry write on errors _sector by sector_ in order to
-> find out which sector is really bad so that we can mark it somewhere.
-> And since endio is running in interrupt context, the real retry work
-> is scheduled in system_unbound_wq in order to get a normal context.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/volumes.c | 162 +++++++++++++++++++++++++++++++++++++++++++++--------
->  fs/btrfs/volumes.h |   3 +
->  2 files changed, 142 insertions(+), 23 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 853f9ce..c11db0b 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6023,34 +6023,150 @@ static void __btrfs_end_bio(struct bio *bio)
->  	}
->  }
->  
-> -static void btrfs_end_bio(struct bio *bio)
-> +static inline struct btrfs_device *get_device_from_bio(struct bio *bio)
->  {
->  	struct btrfs_bio *bbio = bio->bi_private;
-> -	int is_orig_bio = 0;
-> +	unsigned int stripe_index = btrfs_io_bio(bio)->stripe_index;
-> +
-> +	BUG_ON(stripe_index >= bbio->num_stripes);
-> +	return bbio->stripes[stripe_index].dev;
-> +}
-> +
-> +/*
-> + * return 1 if every sector retry returns successful.
-> + * return 0 if one or more sector retries fails.
-> + */
-> +int btrfs_narrow_write_error(struct bio *bio, struct btrfs_device *dev)
-> +{
-> +	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
-> +	u64 sectors_to_write;
-> +	u64 offset;
-> +	u64 orig;
-> +	u64 unit;
-> +	u64 block_sectors;
-> +	int ok = 1;
-> +	struct bio *wbio;
-> +
-> +	/* offset and unit are bytes aligned, not 512-bytes aligned. */
-> +	sectors_to_write = io_bio->iter.bi_size >> 9;
-> +	orig = io_bio->iter.bi_sector;
-> +	offset = 0;
-> +	block_sectors = bdev_logical_block_size(dev->bdev) >> 9;
-> +	unit = block_sectors;
-> +	ASSERT(unit == 1);
-> +
-> +	while (1) {
-> +		if (!sectors_to_write)
-> +			break;
-> +		/*
-> +		 * LIUBO: I don't think unit > sectors_to_write could
-> +		 * happen, sectors_to_write should be aligned to PAGE_SIZE
-> +		 * which is > unit.  Just in case.
-> +		 */
-> +		if (unit > sectors_to_write) {
-> +			WARN_ONCE(1, "unit %llu > sectors_to_write (%llu)\n", unit, sectors_to_write);
-> +			unit = sectors_to_write;
-> +		}
-> +
-> +		/* write @unit bytes at @offset */
-> +		/* this would never fail, check btrfs_bio_clone(). */
-> +		wbio = btrfs_bio_clone(bio);
-> +		wbio->bi_opf = REQ_OP_WRITE;
-> +		wbio->bi_iter = io_bio->iter;
-> +
-> +		bio_trim(wbio, offset, unit);
-> +		bio_copy_dev(wbio, bio);
-> +
-> +		/* submit in sync way */
-> +		/*
-> +		 * LIUBO: There is an issue, if this bio is quite
-> +		 * large, say 1M or 2M, and sector size is just 512,
-> +		 * then this may take a while.
-> +		 *
-> +		 * May need to schedule the job to workqueue.
-> +		 */
-> +		if (submit_bio_wait(wbio) < 0) {
-> +			ok = 0 && ok;
-> +			/*
-> +			 * This is not correct if badblocks is enabled
-> +			 * as we need to record every bad sector by
-> +			 * trying sectors one by one.
-> +			 */
-> +			break;
-> +		}
-> +
-> +		bio_put(wbio);
-> +		offset += unit;
-> +		sectors_to_write -= unit;
-> +		unit = block_sectors;
-> +	}
-> +	return ok;
-> +}
-> +
-> +void btrfs_record_bio_error(struct bio *bio, struct btrfs_device *dev)
-> +{
-> +	if (bio->bi_status == BLK_STS_IOERR ||
-> +	    bio->bi_status == BLK_STS_TARGET) {
-> +		if (dev->bdev) {
-> +			if (bio_data_dir(bio) == WRITE)
-> +				btrfs_dev_stat_inc(dev,
-> +						   BTRFS_DEV_STAT_WRITE_ERRS);
-> +			else
-> +				btrfs_dev_stat_inc(dev,
-> +						   BTRFS_DEV_STAT_READ_ERRS);
-> +			if (bio->bi_opf & REQ_PREFLUSH)
-> +				btrfs_dev_stat_inc(dev,
-> +						   BTRFS_DEV_STAT_FLUSH_ERRS);
-> +			btrfs_dev_stat_print_on_error(dev);
-> +		}
-> +	}
-> +}
-> +
-> +static void btrfs_handle_bio_error(struct work_struct *work)
-> +{
-> +	struct btrfs_io_bio *io_bio = container_of(work, struct btrfs_io_bio,
-> +						   work);
-> +	struct bio *bio = &io_bio->bio;
-> +	struct btrfs_device *dev = get_device_from_bio(bio);
-> +
-> +	ASSERT(bio_data_dir(bio) == WRITE);
-> +
-> +	if (!btrfs_narrow_write_error(bio, dev)) {
-> +		/* inc error counter if narrow (retry) fails */
-> +		struct btrfs_bio *bbio = bio->bi_private;
->  
-> -	if (bio->bi_status) {
->  		atomic_inc(&bbio->error);
-> -		if (bio->bi_status == BLK_STS_IOERR ||
-> -		    bio->bi_status == BLK_STS_TARGET) {
-> -			unsigned int stripe_index =
-> -				btrfs_io_bio(bio)->stripe_index;
-> -			struct btrfs_device *dev;
-> -
-> -			BUG_ON(stripe_index >= bbio->num_stripes);
-> -			dev = bbio->stripes[stripe_index].dev;
-> -			if (dev->bdev) {
-> -				if (bio_op(bio) == REQ_OP_WRITE)
-> -					btrfs_dev_stat_inc(dev,
-> -						BTRFS_DEV_STAT_WRITE_ERRS);
-> -				else
-> -					btrfs_dev_stat_inc(dev,
-> -						BTRFS_DEV_STAT_READ_ERRS);
-> -				if (bio->bi_opf & REQ_PREFLUSH)
-> -					btrfs_dev_stat_inc(dev,
-> -						BTRFS_DEV_STAT_FLUSH_ERRS);
-> -				btrfs_dev_stat_print_on_error(dev);
-> -			}
-> +		btrfs_record_bio_error(bio, dev);
-> +	}
-> +
-> +	__btrfs_end_bio(bio);
-> +}
-> +
-> +/* running in irq context */
-> +static void btrfs_reschedule_retry(struct bio *bio)
-> +{
-> +	INIT_WORK(&btrfs_io_bio(bio)->work, btrfs_handle_bio_error);
-> +	/* _temporarily_ use system_unbound_wq */
-> +	queue_work(system_unbound_wq, &btrfs_io_bio(bio)->work);
-> +}
-> +
-> +static void btrfs_end_bio(struct bio *bio)
-> +{
-> +	if (bio->bi_status) {
-> +		struct btrfs_bio *bbio = bio->bi_private;
-> +
-> +		if (bio_data_dir(bio) == WRITE) {
-> +			btrfs_reschedule_retry(bio);
-> +			return;
->  		}
-> +
-> +		atomic_inc(&bbio->error);
-> +
-> +		/* I don't think we can have REQ_PREFLUSH, but just in case. */
-> +		WARN_ON_ONCE(bio->bi_opf & REQ_PREFLUSH);
-> +
-> +		/* REQ_PREFLUSH */
-> +		btrfs_record_bio_error(bio, get_device_from_bio(bio));
->  	}
+This keeps a copy of bi_iter in btrfs_io_bio before we submit bio so
+that in endio we can iter the bio with bio_for_each_segment() only.
 
-This patch adds btrfs_end_bio but the same function is also added by the
-previous one. Perhaps some of the refactorings here should go into the
-previous patch which just juggles existing code and leave the new
-changes for this patch?
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/extent_io.c | 2 --
+ fs/btrfs/volumes.c   | 3 ++-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
->  
->  	__btrfs_end_bio(bio);
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 6108fdf..c1da27f 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -281,6 +281,7 @@ struct btrfs_io_bio {
->  	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
->  	u8 *csum_allocated;
->  	btrfs_io_bio_end_io_t *end_io;
-> +	struct work_struct work;
->  	struct bvec_iter iter;
->  	/*
->  	 * This member must come last, bio_alloc_bioset will allocate enough
-> @@ -544,5 +545,7 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
->  bool btrfs_check_rw_degradable(struct btrfs_fs_info *fs_info);
->  void btrfs_report_missing_device(struct btrfs_fs_info *fs_info, u64 devid,
->  				 u8 *uuid);
-> +int btrfs_narrow_write_error(struct bio *bio, struct btrfs_device *dev);
-> +void btrfs_record_bio_error(struct bio *bio, struct btrfs_device *dev);
->  
->  #endif
-> 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f64d05a..043b7df 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2689,7 +2689,6 @@ struct bio *btrfs_bio_clone(struct bio *bio)
+ 	new = bio_clone_fast(bio, GFP_NOFS, btrfs_bioset);
+ 	btrfs_bio = btrfs_io_bio(new);
+ 	btrfs_io_bio_init(btrfs_bio);
+-	btrfs_bio->iter = bio->bi_iter;
+ 	return new;
+ }
+ 
+@@ -2716,7 +2715,6 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
+ 	btrfs_io_bio_init(btrfs_bio);
+ 
+ 	bio_trim(bio, offset >> 9, size >> 9);
+-	btrfs_bio->iter = bio->bi_iter;
+ 	return bio;
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c70fd0f..4835136 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6113,9 +6113,10 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
+ 	struct btrfs_fs_info *fs_info = bbio->fs_info;
+ 
+ 	bio->bi_private = bbio;
+-	btrfs_io_bio(bio)->stripe_index = dev_nr;
+ 	bio->bi_end_io = btrfs_end_bio;
+ 	bio->bi_iter.bi_sector = physical >> 9;
++	btrfs_io_bio(bio)->stripe_index = dev_nr;
++	btrfs_io_bio(bio)->iter = bio->bi_iter;
+ #ifdef DEBUG
+ 	{
+ 		struct rcu_string *name;
+-- 
+2.9.4
+

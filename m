@@ -1,130 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:19224 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751534AbdKMFeQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Nov 2017 00:34:16 -0500
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v2 2/2] btrfs-progs: qgroup: cleanup __qgroup_search
-Date: Mon, 13 Nov 2017 13:33:16 +0800
-Message-ID: <20171113053316.14573-2-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20171113053316.14573-1-lufq.fnst@cn.fujitsu.com>
-References: <20171113053316.14573-1-lufq.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:52961 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751371AbdKVHG5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Nov 2017 02:06:57 -0500
+Subject: Re: [PATCH v2 1/3] btrfs-progs: check: report more specific info
+ about invalid location
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20171121101524.2014-1-suy.fnst@cn.fujitsu.com>
+ <20171122021716.5957-1-suy.fnst@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <2cb57ad1-2af7-5222-9d62-5fb78333ece3@suse.com>
+Date: Wed, 22 Nov 2017 09:06:55 +0200
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20171122021716.5957-1-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Replace the if statement with the switch statement, and return the
-appropriate value for the future use rather than directly exit.
-
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
----
-
-Changelog:
-v2:
-1. revoke incorrect goto pattern
-2. split the error handler movement to another patch
-
- qgroup.c | 48 ++++++++++++++++++++++++++----------------------
- 1 file changed, 26 insertions(+), 22 deletions(-)
-
-diff --git a/qgroup.c b/qgroup.c
-index 23463d8a..b5b893f4 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -1046,8 +1046,10 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
- 	struct btrfs_ioctl_search_header *sh;
- 	unsigned long off = 0;
- 	unsigned int i;
-+	struct btrfs_qgroup_status_item *si;
- 	struct btrfs_qgroup_info_item *info;
- 	struct btrfs_qgroup_limit_item *limit;
-+	u64 flags;
- 	u64 qgroupid;
- 	u64 qgroupid1;
- 
-@@ -1092,44 +1094,47 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
- 								  off);
- 			off += sizeof(*sh);
- 
--			if (btrfs_search_header_type(sh)
--			    == BTRFS_QGROUP_STATUS_KEY) {
--				struct btrfs_qgroup_status_item *si;
--				u64 flags;
--
-+			switch (btrfs_search_header_type(sh)) {
-+			case BTRFS_QGROUP_STATUS_KEY:
- 				si = (struct btrfs_qgroup_status_item *)
- 				     (args.buf + off);
- 				flags = btrfs_stack_qgroup_status_flags(si);
-+
- 				print_status_flag_warning(flags);
--			} else if (btrfs_search_header_type(sh)
--				   == BTRFS_QGROUP_INFO_KEY) {
-+				break;
-+			case BTRFS_QGROUP_INFO_KEY:
- 				qgroupid = btrfs_search_header_offset(sh);
- 				info = (struct btrfs_qgroup_info_item *)
- 				       (args.buf + off);
- 
--				update_qgroup_info(qgroup_lookup, qgroupid,
--						   info);
--			} else if (btrfs_search_header_type(sh)
--				   == BTRFS_QGROUP_LIMIT_KEY) {
-+				ret = update_qgroup_info(qgroup_lookup,
-+							 qgroupid, info);
-+				break;
-+			case BTRFS_QGROUP_LIMIT_KEY:
- 				qgroupid = btrfs_search_header_offset(sh);
- 				limit = (struct btrfs_qgroup_limit_item *)
- 					(args.buf + off);
- 
--				update_qgroup_limit(qgroup_lookup, qgroupid,
--						    limit);
--			} else if (btrfs_search_header_type(sh)
--				   == BTRFS_QGROUP_RELATION_KEY) {
-+				ret = update_qgroup_limit(qgroup_lookup,
-+							  qgroupid, limit);
-+				break;
-+			case BTRFS_QGROUP_RELATION_KEY:
- 				qgroupid = btrfs_search_header_offset(sh);
- 				qgroupid1 = btrfs_search_header_objectid(sh);
- 
- 				if (qgroupid < qgroupid1)
--					goto skip;
-+					break;
-+
-+				ret = update_qgroup_relation(qgroup_lookup,
-+							qgroupid, qgroupid1);
-+				break;
-+			default:
-+				return ret;
-+			}
-+
-+			if (ret)
-+				return ret;
- 
--				update_qgroup_relation(qgroup_lookup, qgroupid,
--						       qgroupid1);
--			} else
--				goto done;
--skip:
- 			off += btrfs_search_header_len(sh);
- 
- 			/*
-@@ -1151,7 +1156,6 @@ skip:
- 			break;
- 	}
- 
--done:
- 	return ret;
- }
- 
--- 
-2.15.0
 
 
+On 22.11.2017 04:17, Su Yue wrote:
+> Previously, it was so useless to print message like
+> "invalid location %d".
+> 
+> Let it print objectid and offset of dir_item too.
+> Debug is easier now.
+> 
+> Suggested-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+> changelog:
+> v2:
+> 	Print unknown location type.
+> ---
+>  cmds-check.c | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index a93ac2c88a38..416a7601bce1 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -1635,8 +1635,9 @@ static int process_dir_item(struct extent_buffer *eb,
+>  					  namebuf, len, filetype,
+>  					  key->type, error);
+>  		} else {
+> -			fprintf(stderr, "invalid location in dir item %u\n",
+> -				location.type);
+> +			fprintf(stderr,
+> +				"Unknown location type %d in DIR_ITEM[%llu %llu]\n",
+> +				location.type, key->objectid, key->offset);
+>  			add_inode_backref(inode_cache, BTRFS_MULTIPLE_OBJECTIDS,
+>  					  key->objectid, key->offset, namebuf,
+>  					  len, filetype, key->type, error);
+> 

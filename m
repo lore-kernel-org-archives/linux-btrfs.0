@@ -1,317 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39824 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:49798 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751676AbdKUWUx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 17:20:53 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id F2003AEEA
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Nov 2017 22:20:51 +0000 (UTC)
-Subject: Re: [PATCH 2/3] btrfs: update some code documentation
-To: Nikolay Borisov <nborisov@suse.com>, Edmund Nadolski <enadolski@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20171120202449.22947-1-enadolski@suse.com>
- <20171120202449.22947-3-enadolski@suse.com>
- <068ef359-4183-762c-c73e-faa0b9cfd6fa@suse.com>
-From: Edmund Nadolski <enadolski@suse.de>
-Message-ID: <02857890-30a5-1b8b-229d-74c86ddbae99@suse.de>
-Date: Tue, 21 Nov 2017 15:20:49 -0700
+        id S1751372AbdKVAjc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 21 Nov 2017 19:39:32 -0500
+Subject: Re: quotas: failure on removing a file via SFTP/SSH
+To: ST <smntov@gmail.com>, Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <1511266131.1680.27.camel@gmail.com>
+ <093ee7e4-91f1-7d23-1ef1-81230d07b405@gmx.com>
+ <1511270292.1680.35.camel@gmail.com>
+ <09f4e574-8cab-26fd-d7ea-64a0cee2b20b@gmx.com>
+ <1511278140.1680.41.camel@gmail.com>
+ <CAJCQCtRCPfcSNQseoRdB1pq+DkF7pr6nt4syyYy1VWXYwy2R6g@mail.gmail.com>
+ <1511298021.1675.14.camel@gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <28236dae-8190-9b74-521d-661942b52df4@gmx.com>
+Date: Wed, 22 Nov 2017 08:39:22 +0800
 MIME-Version: 1.0
-In-Reply-To: <068ef359-4183-762c-c73e-faa0b9cfd6fa@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1511298021.1675.14.camel@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="q9THoBQ42gluMstMls3xk7ANGSEMhRBhV"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--q9THoBQ42gluMstMls3xk7ANGSEMhRBhV
+Content-Type: multipart/mixed; boundary="Nqw1HtiK8Amof8sdmC1xahXffWiscDbjH";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: ST <smntov@gmail.com>, Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <28236dae-8190-9b74-521d-661942b52df4@gmx.com>
+Subject: Re: quotas: failure on removing a file via SFTP/SSH
+References: <1511266131.1680.27.camel@gmail.com>
+ <093ee7e4-91f1-7d23-1ef1-81230d07b405@gmx.com>
+ <1511270292.1680.35.camel@gmail.com>
+ <09f4e574-8cab-26fd-d7ea-64a0cee2b20b@gmx.com>
+ <1511278140.1680.41.camel@gmail.com>
+ <CAJCQCtRCPfcSNQseoRdB1pq+DkF7pr6nt4syyYy1VWXYwy2R6g@mail.gmail.com>
+ <1511298021.1675.14.camel@gmail.com>
+In-Reply-To: <1511298021.1675.14.camel@gmail.com>
+
+--Nqw1HtiK8Amof8sdmC1xahXffWiscDbjH
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 11/21/2017 12:59 AM, Nikolay Borisov wrote:
-> 
-> 
-> On 20.11.2017 22:24, Edmund Nadolski wrote:
->> Improve code documentation by adding/expanding comments in
->> several places.
+
+On 2017=E5=B9=B411=E6=9C=8822=E6=97=A5 05:00, ST wrote:
+> On Tue, 2017-11-21 at 11:33 -0700, Chris Murphy wrote:
+>> On Tue, Nov 21, 2017 at 8:29 AM, ST <smntov@gmail.com> wrote:
+>>>>>>> I'm trying to use quotas for a simple chrooted sftp setup, limiti=
+ng
+>>>>>>> space for each user's subvolume (now for testing to 1M).
+>>>>>>>
+>>>>>>> I tried to hit the limit by uploading files and once it comes to =
+the
+>>>>>>> limit I face following problem: if I try to free space by removin=
+g a
+>>>>>>> file via Linux sftp client (or Filezilla) - I get error:
+>>>>>>> "Couldn't delete file: Failure"
+>>>>>>>
+>>>>>>> Sometimes, but not always, if I repeat it for 3-5 times it does r=
+emoves
+>>>>>>> the file at the end.
+>>>>>>> If I login as root and try to remove the file via SSH I get the e=
+rror:
+>>>>>>> "rm: cannot remove 'example.txt': Disk quota exceeded"
+>>>>>>>
+>>>>>>> What is the problem? And how can I solve it?
+>>>>>>
+>>>>>> Kernel version first.
+>>>>>>
+>>>>>> If it's possible, please use latest kernel, at least newer than v4=
+=2E10,
+>>>>>> since we have a lot of qgroup reservation related fixes in newer k=
+ernel.
+>>>>>>
+>>>>>> Then, for small quota, due to the nature of btrfs metadata CoW and=
+
+>>>>>> relative large default node size (16K), it's quite easy to hit dis=
+k
+>>>>>> quota for metadata.
+>>>>>
+>>>>> Yes, but why I get the error specifically on REMOVING a file? Even =
+if I
+>>>>> hit disk quota - if I free up space - it should be possible, isn't =
+it?
+>>>>
+>>>> It's only true for fs modifying its metadata in-place (and use journ=
+al
+>>>> to protect it).
+>>>>
+>>>> For fs using metadata CoW, even freeing space needs extra space for =
+new
+>>>> metadata.
+>>>>
+>>>
+>>> Wait, it doesn't sound like a bug, but rather like a flaw in design.
+>>> This means - each time a user hits his quota limit he will get stuck
+>>> without being able to free space?!!
 >>
->> Signed-off-by: Edmund Nadolski <enadolski@suse.com>
->> ---
->>  fs/btrfs/ctree.c                | 31 +++++++++++++++-------
->>  fs/btrfs/ctree.h                | 28 +++++++++++++++-----
->>  fs/btrfs/extent_map.h           | 58 ++++++++++++++++++++++++++++-------------
->>  fs/btrfs/file-item.c            |  3 +++
->>  fs/btrfs/inode.c                | 21 +++++++++++----
->>  include/uapi/linux/btrfs_tree.h |  1 +
->>  6 files changed, 104 insertions(+), 38 deletions(-)
+>> It's a good question if quotas can make it possible for a user to get
+>> wedged into a situation that will require an admin to temporarily
+>> raise the quota in order to make file deletion possible.
+>=20
+> Why question? It's a fact. That's what I face right now.
+>=20
+>>  This is not a
+>> design flaw, all COW file systems *add* data when deleting. The
+>> challenge is how to teach the quota system to act like a hard limit
+>> for data writes that clearly bust the quota, versus a soft limit that
+>> tolerates some extra amount above the quota for the purpose of
+>> eventually deleting data. That's maybe non-trivial. It's not that it's=
+
+>> a design flaw. Metadata can contain inline data, so how exactly to you=
+
+>> tell what kinds of writes are permitted (deleting a file) and what
+>> kind of writes are not (append data to a file, or create new file)?
 >>
->> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
->> index 531e0a8..9331d02 100644
->> --- a/fs/btrfs/ctree.c
->> +++ b/fs/btrfs/ctree.c
->> @@ -2654,17 +2654,30 @@ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *path,
->>  }
->>  
->>  /*
->> - * look for key in the tree.  path is filled in with nodes along the way
->> - * if key is found, we return zero and you can find the item in the leaf
->> - * level of the path (level 0)
->> + * Search a btree for a specific key. Optionally update the btree for
->> + * item insertion or removal.
->>   *
->> - * If the key isn't found, the path points to the slot where it should
->> - * be inserted, and 1 is returned.  If there are other errors during the
->> - * search a negative error number is returned.
->> + *   @trans - Transaction handle (NULL for none, requires @cow == 0).
->> + *   @root - The btree to be searched.
->> + *   @key - key for search.
->> + *   @p - Points to a btrfs_path to be populated with btree node and index
->> + *      values encountered during traversal. (See also struct btrfs_path.)
->> + *   @ins_len - byte length of item as follows:
->> + *      >0: byte length of item for insertion.  Btree nodes/leaves are
->> + *          split as required.
->> + *      <0: byte length of item for deletion.  Btree nodes/leaves are
->> + *          merged as required.
->> + *       0: Do not modify the btree (search only).
->> + *   @cow - 0 to nocow, or !0 to cow for btree update.
->>   *
->> - * if ins_len > 0, nodes and leaves will be split as we walk down the
->> - * tree.  if ins_len < 0, nodes will be merged as we walk down the tree (if
->> - * possible)
->> + * Return values:
->> + *   0: @key was found and @p was updated to indicate the leaf and item
->> + *       slot where the item may be accessed.
->> + *   1: @key was not found and @p was updated to indicate the leaf and
->> + *       item slot where the item may be inserted.
->> + *  <0: an error occurred.
->> + *
->> + * Note, insertion/removal updates will re-balance the btree as needed.
->>   */
->>  int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
->>  		      const struct btrfs_key *key, struct btrfs_path *p,
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index 2154b5a..e980caa 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -318,20 +318,36 @@ struct btrfs_node {
->>  } __attribute__ ((__packed__));
->>  
->>  /*
->> - * btrfs_paths remember the path taken from the root down to the leaf.
->> - * level 0 is always the leaf, and nodes[1...BTRFS_MAX_LEVEL] will point
->> - * to any other levels that are present.
->> - *
->> - * The slots array records the index of the item or block pointer
->> - * used while walking the tree.
->> + * Used with btrfs_search_slot() to record a btree search path traversed from a
->> + * root down to a leaf.
->>   */
->>  enum { READA_NONE = 0, READA_BACK, READA_FORWARD };
->>  struct btrfs_path {
->> +	/*
->> +	 * The nodes[] and slots[] arrays are indexed according to btree
->> +	 * levels. Index 0 corresponds to the lowest (leaf) level. Increasing
->> +	 * indexes correspond to interior btree nodes at subsequently higher
->> +	 * levels.
->> +	 *
->> +	 * nodes[0] always points to a leaf. nodes[1] points to a btree node
->> +	 * which contains a block pointer referencing that leaf. For higher
->> +	 * indexes, node[n] points to a btree node which contains a block
->> +	 * pointer referencing node[n-1].
->> +	 */
->>  	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
->> +
->> +	/*
->> +	 * The slots[0] value identifies an item index in the leaf at nodes[0].
->> +	 * Each slots[n] value identifies a block pointer index in the
->> +	 * corresponding tree node at nodes[n].
->> +	 */
->>  	int slots[BTRFS_MAX_LEVEL];
->> +
->>  	/* if there is real range locking, this locks field will change */
->>  	u8 locks[BTRFS_MAX_LEVEL];
->> +
->>  	u8 reada;
->> +
->>  	/* keep some upper locks as we walk down */
->>  	u8 lowest_level;
->>  
->> diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
->> index 64365bb..34ea85c3 100644
->> --- a/fs/btrfs/extent_map.h
->> +++ b/fs/btrfs/extent_map.h
->> @@ -5,35 +5,57 @@
->>  #include <linux/rbtree.h>
->>  #include <linux/refcount.h>
->>  
->> -#define EXTENT_MAP_LAST_BYTE ((u64)-4)
->> -#define EXTENT_MAP_HOLE ((u64)-3)
->> -#define EXTENT_MAP_INLINE ((u64)-2)
->> -#define EXTENT_MAP_DELALLOC ((u64)-1)
->> -
->> -/* bits for the flags field */
->> -#define EXTENT_FLAG_PINNED 0 /* this entry not yet on disk, don't free it */
->> -#define EXTENT_FLAG_COMPRESSED 1
->> -#define EXTENT_FLAG_VACANCY 2 /* no file extent item found */
->> -#define EXTENT_FLAG_PREALLOC 3 /* pre-allocated extent */
->> -#define EXTENT_FLAG_LOGGING 4 /* Logging this extent */
->> -#define EXTENT_FLAG_FILLING 5 /* Filling in a preallocated extent */
->> -#define EXTENT_FLAG_FS_MAPPING 6 /* filesystem extent mapping type */
->> +/*
->> + * Reserve some special-case values for the extent_map .start, .block_start,
->> + *: and .orig_start fields.
->      ^ extra :
+>> But for sure the user space tools should prevent setting too low a
+>> quota limit. If the limit cannot be reasonably expected to work, it
+>> should be disallowed. So maybe the user space tools need to enforce a
+>> minimum quota, something like 100MiB, or whatever.
+>>
+>=20
+> Would you like to open an issue with your enhancement suggestions on th=
+e
+> bug tracker so this case doesn't get forgotten?
 
-Thanks, will fix.
+That's why I ask for the kernel version.
 
-
->> + */
->> +#define EXTENT_MAP_LAST_BYTE	((u64)-4)	/* Lowest reserved value */
->> +#define EXTENT_MAP_HOLE		((u64)-3)	/* Unwritten extent */
->> +#define EXTENT_MAP_INLINE	((u64)-2)	/* Inlined file data */
->> +#define EXTENT_MAP_DELALLOC	((u64)-1)	/* Delayed block allocation */
-> 
-> These values are only set/checked on the .block_start parameter so you
-> can possibly remove the .start/.orig_start from the above comment.
-
-Seems there still are a few tucked away:
-
-$ grep -n " = EXTENT_MAP_" *.[ch] | grep -v block_start
-file-item.c:996:		em->orig_start = EXTENT_MAP_HOLE;
-inode.c:6969:	em->start = EXTENT_MAP_HOLE;
-inode.c:6970:	em->orig_start = EXTENT_MAP_HOLE;
+IIRC in newer kernel, quota doesn't limit deletion anymore, preventing
+you from hitting such dilemma.
 
 Thanks,
-Ed
-
-
->>  
->> +/*
->> + * Bit flags for the extent_map .flags field.
->> + */
->> +#define EXTENT_FLAG_PINNED	0 /* entry not yet on disk, don't free it */
->> +#define EXTENT_FLAG_COMPRESSED	1
->> +#define EXTENT_FLAG_VACANCY	2 /* no file extent item found */
->> +#define EXTENT_FLAG_PREALLOC	3 /* pre-allocated extent */
->> +#define EXTENT_FLAG_LOGGING	4 /* Logging this extent */
->> +#define EXTENT_FLAG_FILLING	5 /* Filling in a preallocated extent */
->> +#define EXTENT_FLAG_FS_MAPPING	6 /* filesystem extent mapping type */
->> +
->> +/*
->> + * In-memory representation of a file extent (regular/prealloc/inline).
->> + */
-> 
-> <rant>
-> I just realise how badly named this struct is. Because we really have
-> on-disk extents and in-memory extents (similar to XFS nomenclature) and
-> the extent_map name doesn't really bring those 2 things together
-> </rant>
-> 
->>  struct extent_map {
->>  	struct rb_node rb_node;
->>  
->>  	/* all of these are in bytes */
->> -	u64 start;
->> -	u64 len;
->> +	u64 start;	/* logical byte offset in the file */
->> +	u64 len;	/* byte length of extent in the file */
->>  	u64 mod_start;
->>  	u64 mod_len;
->>  	u64 orig_start;
->>  	u64 orig_block_len;
->> +
->> +	/* max. bytes needed to hold the (uncompressed) extent in memory. */
->>  	u64 ram_bytes;
->> +
->> +	/*
->> +	 * For regular/prealloc, block_start is a logical address denoting the
->> +	 * start of the extent data, and block_len is the on-disk byte length
->> +	 * of the extent (which may be comressed). block_start may be
->> +	 * EXTENT_MAP_HOLE if the extent is unwritten.  For inline, block_start
->> +	 * is EXTENT_MAP_INLINE and block_len is (u64)-1.  See also
->> +	 * btrfs_extent_item_to_extent_map() and btrfs_get_extent().
->> +	 */
->>  	u64 block_start;
->>  	u64 block_len;
->> -	u64 generation;
->> -	unsigned long flags;
->> +
->> +	u64 generation;		/* transaction id */
->> +	unsigned long flags;	/* EXTENT_FLAG_* bit flags as above */
->> +
->>  	union {
->>  		struct block_device *bdev;
->>  
->> @@ -44,7 +66,7 @@ struct extent_map {
->>  		struct map_lookup *map_lookup;
->>  	};
->>  	refcount_t refs;
->> -	unsigned int compress_type;
->> +	unsigned int compress_type;	/* BTRFS_COMPRESS_* */
->>  	struct list_head list;
->>  };
->>  
->> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
->> index fdcb410..5d63172 100644
->> --- a/fs/btrfs/file-item.c
->> +++ b/fs/btrfs/file-item.c
->> @@ -929,6 +929,9 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
->>  	goto out;
->>  }
->>  
->> +/*
->> + * Populate an extent_map from the btrfs_file_extent_item contents.
->> + */
->>  void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
->>  				     const struct btrfs_path *path,
->>  				     struct btrfs_file_extent_item *fi,
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index 72c7b38..b6d5d94 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -6916,17 +6916,28 @@ static noinline int uncompress_inline(struct btrfs_path *path,
->>  }
->>  
->>  /*
->> - * a bit scary, this does extent mapping from logical file offset to the disk.
->> - * the ugly parts come from merging extents from the disk with the in-ram
->> + * btrfs_get_extent - find or create an extent_map for the (@start, @len) range.
->> + *
->> + *  @inode - inode containing the desired extent.
->> + *  @page - page for inlined extent (NULL if none)
->> + *  @page_offset - byte offset within @page
->> + *  @start - logical byte offset in the file.
->> + *  @len - byte length of the range.
->> + *  @create - for inlined extents: 0 to update @page with extent data from
->> + *            the item; 1 to bypass the update.
->> + *
->> + * A bit scary, this does extent mapping from logical file offset to the disk.
->> + * The ugly parts come from merging extents from the disk with the in-ram
->>   * representation.  This gets more complex because of the data=ordered code,
->>   * where the in-ram extents might be locked pending data=ordered completion.
->>   *
->>   * This also copies inline extents directly into the page.
->> + *
->> + * Returns the extent_map, or error code.
->>   */>  struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
->> -		struct page *page,
->> -	    size_t pg_offset, u64 start, u64 len,
->> -		int create)
->> +				    struct page *page, size_t pg_offset,
->> +				    u64 start, u64 len, int create)
->>  {
->>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->vfs_inode.i_sb);
->>  	int ret;
->> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
->> index 6d6e5da..693636a 100644
->> --- a/include/uapi/linux/btrfs_tree.h
->> +++ b/include/uapi/linux/btrfs_tree.h
->> @@ -730,6 +730,7 @@ struct btrfs_balance_item {
->>  	__le64 unused[4];
->>  } __attribute__ ((__packed__));
->>  
->> +/* Values for .type field in btrfs_file_extent_item */
->>  #define BTRFS_FILE_EXTENT_INLINE 0
->>  #define BTRFS_FILE_EXTENT_REG 1
->>  #define BTRFS_FILE_EXTENT_PREALLOC 2
->>
+Qu
+>=20
+> Thank you!
+>=20
+>=20
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>=20
+
+
+--Nqw1HtiK8Amof8sdmC1xahXffWiscDbjH--
+
+--q9THoBQ42gluMstMls3xk7ANGSEMhRBhV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloUxzoXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qipJAf6A/gGiIZgAjTkveLuW1Fdi3A8
+yDakJOnPjToxu+SXZVz5caAR65p8jZQ+aLgY9Th17t4Ctz/VnXxppk6WzwG18mfp
+/1E37icUCWxTKGYmfpWnfno0TtwvDCsP+bGnSpFYI/tLKgxuLn+k2UWLowdMy9C9
+8c5C5XOhEY5oS4e1hDB/GoYZoK3Rv+yWiAW4j64IjY0xcHnxI28///rj1h0WxZIn
+FzoomJsEtgqIF3THwhk314Fx0u59hPB2ZIpdyHaozy1+jAjkzVFk2OR7lVM+kWEZ
+eYGB+p4m/Xuuj7dOFGADMBsE9ey35TaagfpTB4jZHdHkx09vMdVxUNvtqeqUCQ==
+=35bm
+-----END PGP SIGNATURE-----
+
+--q9THoBQ42gluMstMls3xk7ANGSEMhRBhV--

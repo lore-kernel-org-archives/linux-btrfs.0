@@ -1,93 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:48160 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:52709 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751754AbdKVJER (ORCPT
+        with ESMTP id S1751909AbdKVJES (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 22 Nov 2017 04:04:17 -0500
+        Wed, 22 Nov 2017 04:04:18 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 08/11] btrfs-progs: lowmem check: Fix false alerts for image with shared block ref only backref
-Date: Wed, 22 Nov 2017 17:03:22 +0800
-Message-Id: <20171122090325.29458-9-wqu@suse.com>
+Subject: [PATCH 10/11] btrfs-progs: lowmem check: Fix false alerts of referencer count mismatch for snapshot
+Date: Wed, 22 Nov 2017 17:03:24 +0800
+Message-Id: <20171122090325.29458-11-wqu@suse.com>
 In-Reply-To: <20171122090325.29458-1-wqu@suse.com>
 References: <20171122090325.29458-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-For image with shared block ref only metadata item like:
+Btrfs lowmem check reports such false alerts:
 ------
-        item 66 key (21573632 METADATA_ITEM 0) itemoff 3971 itemsize 24
-                refs 66 gen 9 flags TREE_BLOCK|FULL_BACKREF
-                tree block skinny level 0
-        item 0 key (21573632 SHARED_BLOCK_REF 21676032) itemoff 3995 itemsize 0
-                shared block backref
-        item 1 key (21573632 SHARED_BLOCK_REF 21921792) itemoff 3995 itemsize 0
-                shared block backref
-        item 2 key (21573632 SHARED_BLOCK_REF 21995520) itemoff 3995 itemsize 0
-                shared block backref
-        item 3 key (21573632 SHARED_BLOCK_REF 22077440) itemoff 3995 itemsize 0
-                shared block backref
-...
+ERROR: extent[366498091008, 134217728] referencer count mismatch (root: 827, owner: 73782, offset: 134217728) wanted: 4, have: 26
+ERROR: extent[366498091008, 134217728] referencer count mismatch (root: 818, owner: 73782, offset: 134217728) wanted: 4, have: 26
+ERROR: extent[366498091008, 134217728] referencer count mismatch (root: 870, owner: 73782, offset: 134217728) wanted: 4, have: 26
 ------
 
-Lowmem mode check will report false alerts like:
+While in extent tree, the extent has:
 ------
-ERROR: extent[21573632 4096] backref lost (owner: 256, level: 0)
+        item 81 key (366498091008 EXTENT_ITEM 134217728) itemoff 9008 itemsize 169
+                refs 39 gen 224 flags DATA
+                extent data backref root 827 objectid 73782 offset 134217728 count 4
+                extent data backref root 818 objectid 73782 offset 134217728 count 4
+                extent data backref root 259 objectid 73482 offset 134217728 count 1
+                extent data backref root 644 objectid 73782 offset 134217728 count 26
+                extent data backref root 870 objectid 73782 offset 134217728 count 4
 ------
 
-[CAUSE]
-In fact, the false alerts is not even from extent tree verfication,  but
-a fs tree helper which is designed to make sure there is some tree block
-referring to the fs tree block.
+And in root 827, there is one leaf with 4 references to that extent
+which is owned by 827:
+------
+leaf 714964992 items 68 free space 10019 generation 641 owner 827
+leaf 714964992 flags 0x1(WRITTEN) backref revision 1
+......
+        item 64 key (73782 EXTENT_DATA 134217728) itemoff 11878 itemsize 53
+                generation 224 type 1 (regular)
+                extent data disk byte 366498091008 nr 134217728
+                extent data offset 0 nr 6410240 ram 134217728
+                extent compression 0 (none)
+        item 65 key (73782 EXTENT_DATA 140627968) itemoff 11825 itemsize 53
+                generation 224 type 1 (regular)
+                extent data disk byte 366498091008 nr 134217728
+                extent data offset 6410240 nr 5120000 ram 134217728
+                extent compression 0 (none)
+        item 66 key (73782 EXTENT_DATA 145747968) itemoff 11772 itemsize 53
+                generation 224 type 1 (regular)
+                extent data disk byte 366498091008 nr 134217728
+                extent data offset 11530240 nr 7675904 ram 134217728
+                extent compression 0 (none)
+        item 67 key (73782 EXTENT_DATA 153423872) itemoff 11719 itemsize 53
+                generation 224 type 1 (regular)
+                extent data disk byte 366498091008 nr 134217728
+                extent data offset 19206144 nr 6397952 ram 134217728
+                extent compression 0 (none)
+------
 
-The idea is to find inlined tree backref then keyed TREE_BLOCK_REF_KEY.
-However it missed SHARED_BLOCK_REF_KEY, and caused such false alert.
+And starts from next leaf, there are 22 references to the data extent:
+------
+leaf 894861312 items 208 free space 59 generation 261 owner 644
+leaf 894861312 flags 0x1(WRITTEN) backref revision 1
+        item 0 key (73782 EXTENT_DATA 159821824) itemoff 16230 itemsize 53
+                generation 224 type 1 (regular)
+                extent data disk byte 366498091008 nr 134217728
+                extent data offset 25604096 nr 8192 ram 134217728
+                extent compression 0 (none)
+        item 1 key (73782 EXTENT_DATA 159830016) itemoff 16177 itemsize 53
+                generation 224 type 1 (regular)
+                extent data disk byte 366498091008 nr 134217728
+                extent data offset 25612288 nr 7675904 ram 134217728
+                extent compression 0 (none)
+......
+------
 
-[FIX]
-Add SHARED_BLOCK_REF_KEY to make the warning shut up.
+However the next leaf is owned by other subvolume, normally owned by (part of)
+the snapshot source.
 
+Fix it by also checking the leaf's owner before increasing the reference
+counter.
+
+Reported-by: Chris Murphy <chris@colorremedies.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds-check.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ cmds-check.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 7eb08b6cb962..791fab6b3e6a 100644
+index 791fab6b3e6a..e746ee7b281d 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -11850,6 +11850,30 @@ static int check_tree_block_ref(struct btrfs_root *root,
- 		if (!ret)
- 			found_ref = 1;
- 	}
-+	/*
-+	 * Finally check SHARED BLOCK REF, any found will be good
-+	 * Here we're not doing comprehensive extent backref checking,
-+	 * only need to ensure there is some extent referring to this
-+	 * tree block.
-+	 */
-+	if (!found_ref) {
-+		btrfs_release_path(&path);
-+		key.objectid = bytenr;
-+		key.type = BTRFS_SHARED_BLOCK_REF_KEY;
-+		key.offset = (u64)-1;
-+
-+		ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
-+		if (ret < 0) {
-+			err |= BACKREF_MISSING;
-+			goto out;
-+		}
-+		ret = btrfs_previous_extent_item(extent_root, &path, bytenr);
-+		if (ret) {
-+			err |= BACKREF_MISSING;
-+			goto out;
-+		}
-+		found_ref = 1;
-+	}
- 	if (!found_ref)
- 		err |= BACKREF_MISSING;
- out:
+@@ -12518,11 +12518,17 @@ static int check_extent_data_backref(struct btrfs_fs_info *fs_info,
+ 		 * Except normal disk bytenr and disk num bytes, we still
+ 		 * need to do extra check on dbackref offset as
+ 		 * dbackref offset = file_offset - file_extent_offset
++		 *
++		 * Also, we must check the leaf owner.
++		 * In case of shared tree blocks (snapshots) we can inherit
++		 * leaves from source snapshot.
++		 * In that case, reference from source snapshot should not
++		 * count.
+ 		 */
+ 		if (btrfs_file_extent_disk_bytenr(leaf, fi) == bytenr &&
+ 		    btrfs_file_extent_disk_num_bytes(leaf, fi) == len &&
+ 		    (u64)(key.offset - btrfs_file_extent_offset(leaf, fi)) ==
+-		    offset)
++		    offset && btrfs_header_owner(leaf) == root_id)
+ 			found_count++;
+ 
+ next:
 -- 
 2.15.0
 

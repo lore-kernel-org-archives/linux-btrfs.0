@@ -1,49 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:17746 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751216AbdKVGxE (ORCPT
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:44972 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751303AbdKVTyN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Nov 2017 01:53:04 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 085E6482D01B
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 14:52:58 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: Allow to open filesystem with some broken tree roots
-Date: Wed, 22 Nov 2017 14:52:53 +0800
-Message-ID: <1511333573-10807-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+        Wed, 22 Nov 2017 14:54:13 -0500
+Received: by mail-wm0-f51.google.com with SMTP id r68so12745216wmr.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 11:54:13 -0800 (PST)
+Received: from debox (bzq-109-65-163-184.red.bezeqint.net. [109.65.163.184])
+        by smtp.gmail.com with ESMTPSA id e131sm2894905wmg.15.2017.11.22.11.54.11
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 22 Nov 2017 11:54:11 -0800 (PST)
+Message-ID: <1511380450.1675.94.camel@gmail.com>
+Subject: notification about corrupt files from "btrfs scrub" in cron
+From: ST <smntov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Wed, 22 Nov 2017 21:54:10 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Repair the miss modify in
-commit 8698a2b9ba89 ("btrfs-progs: Allow inspect dump-tree to show specified tree block even some tree roots are corrupted")
+Hello,
 
-Due to above modify, the decompressed file of
-tests/fuzz-tests/images/bko-172811.raw.xz can not be open by
-btrfs-debug-tree, because the csum tree's bytenr is not correct.
+I have following cron job to scrub entire root filesystem (total ca.
+7.2TB and 2.3TB of them used) once a week:
+/bin/btrfs scrub start -r / > /dev/null
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- cmds-inspect-dump-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Such scrubbing takes ca. 2 hours. How should I get notified that a
+corrupt file was discovered? Does this command return some error code
+back to cron so it can send an email as usual? Will cron wait 2 hours to
+get that code?
 
-diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
-index 4e72c08a..9ae4eb23 100644
---- a/cmds-inspect-dump-tree.c
-+++ b/cmds-inspect-dump-tree.c
-@@ -219,7 +219,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
- 	int uuid_tree_only = 0;
- 	int roots_only = 0;
- 	int root_backups = 0;
--	unsigned open_ctree_flags = OPEN_CTREE_FS_PARTIAL;
-+	unsigned open_ctree_flags = OPEN_CTREE_PARTIAL;
- 	u64 block_only = 0;
- 	struct btrfs_root *tree_root_scan;
- 	u64 tree_id = 0;
--- 
-2.14.3
+I tried that command once without "> /dev/null" but got no email
+notification about the results (eventhough the check was OK) - why?
 
-
+Thank you.
 

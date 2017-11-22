@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f194.google.com ([209.85.216.194]:42713 "EHLO
-        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752096AbdKVVQZ (ORCPT
+Received: from mail-qk0-f195.google.com ([209.85.220.195]:34626 "EHLO
+        mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751701AbdKVVQO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Nov 2017 16:16:25 -0500
-Received: by mail-qt0-f194.google.com with SMTP id j12so3862979qtc.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 13:16:25 -0800 (PST)
+        Wed, 22 Nov 2017 16:16:14 -0500
+Received: by mail-qk0-f195.google.com with SMTP id v137so18594274qkb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 13:16:13 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
         jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v2 11/11] btrfs: add NR_METADATA_BYTES accounting
-Date: Wed, 22 Nov 2017 16:16:06 -0500
-Message-Id: <1511385366-20329-12-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH v2 03/11] lib: make the fprop batch size a multiple of PAGE_SIZE
+Date: Wed, 22 Nov 2017 16:15:58 -0500
+Message-Id: <1511385366-20329-4-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
 References: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,36 +21,29 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-Now that we have these counters, account for the private pages we
-allocate in NR_METADATA_BYTES.
+We are converting the writeback counters to use bytes instead of pages,
+so we need to make the batch size for the percpu modifications align
+properly with the new units.  Since we used pages before, just multiply
+by PAGE_SIZE to get the equivalent bytes for the batch size.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent_io.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ lib/flex_proportions.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e11372455fb0..7536352f424d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4802,6 +4802,8 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb)
- 		ClearPagePrivate(page);
- 		set_page_private(page, 0);
+diff --git a/lib/flex_proportions.c b/lib/flex_proportions.c
+index 2cc1f94e03a1..b0343ae71f5e 100644
+--- a/lib/flex_proportions.c
++++ b/lib/flex_proportions.c
+@@ -166,7 +166,7 @@ void fprop_fraction_single(struct fprop_global *p,
+ /*
+  * ---- PERCPU ----
+  */
+-#define PROP_BATCH (8*(1+ilog2(nr_cpu_ids)))
++#define PROP_BATCH (8*PAGE_SIZE*(1+ilog2(nr_cpu_ids)))
  
-+		mod_node_page_state(page_pgdat(page), NR_METADATA_BYTES,
-+				    -(long)PAGE_SIZE);
- 		/* Once for the page private. */
- 		put_page(page);
- 
-@@ -5081,6 +5083,8 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 			goto free_eb;
- 		}
- 		attach_extent_buffer_page(eb, p);
-+		mod_node_page_state(page_pgdat(p), NR_METADATA_BYTES,
-+				    PAGE_SIZE);
- 		eb->pages[i] = p;
- 	}
- again:
+ int fprop_local_init_percpu(struct fprop_local_percpu *pl, gfp_t gfp)
+ {
 -- 
 2.7.5
 

@@ -1,82 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49930 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751429AbdKVBiU (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:44273 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751510AbdKVBiV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 20:38:20 -0500
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAM1cJeA023601
+        Tue, 21 Nov 2017 20:38:21 -0500
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAM1cKnp022099
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
         for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:20 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cJ29022916
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cJvc014923
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:19 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:20 GMT
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAM1cJRp014774
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cJ3o019802
         for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:19 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/7] Btrfs: keep a copy of bi_iter in btrfs_io_bio
-Date: Tue, 21 Nov 2017 17:35:52 -0700
-Message-Id: <20171122003558.28722-2-bo.li.liu@oracle.com>
+Subject: [PATCH 2/7] Btrfs: add helper __btrfs_end_bio
+Date: Tue, 21 Nov 2017 17:35:53 -0700
+Message-Id: <20171122003558.28722-3-bo.li.liu@oracle.com>
 In-Reply-To: <20171122003558.28722-1-bo.li.liu@oracle.com>
 References: <20171122003558.28722-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this, we only keep a copy of bi_iter for cloned bio so that we
-can iterate bvec in endio with bio_for_each_segment(), and we iterate
-normal bio with bio_for_each_segment_all().
+btrfs_end_bio() does two things, firstly it'd check and print errors
+from the underlying layers, secondly it'd check whether it's the last
+stripe for this IO (e.g. raid1 consists of two stripes for a single IO).
 
-However, in the following patches, I'd add retry on write errors where
-I'd like to process both cloned bio and normal bio in the same way.
+Since I'd like to do retry on write errors before failing write IO,
+the above two parts need to be split.
 
-This keeps a copy of bi_iter in btrfs_io_bio before we submit bio so
-that in endio we can iter the bio with bio_for_each_segment() only.
+This add a helper __btrfs_end_bio() to do the second part.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/extent_io.c | 2 --
- fs/btrfs/volumes.c   | 3 ++-
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/volumes.c | 60 +++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 34 insertions(+), 26 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f64d05a..043b7df 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2689,7 +2689,6 @@ struct bio *btrfs_bio_clone(struct bio *bio)
- 	new = bio_clone_fast(bio, GFP_NOFS, btrfs_bioset);
- 	btrfs_bio = btrfs_io_bio(new);
- 	btrfs_io_bio_init(btrfs_bio);
--	btrfs_bio->iter = bio->bi_iter;
- 	return new;
- }
- 
-@@ -2716,7 +2715,6 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
- 	btrfs_io_bio_init(btrfs_bio);
- 
- 	bio_trim(bio, offset >> 9, size >> 9);
--	btrfs_bio->iter = bio->bi_iter;
- 	return bio;
- }
- 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c70fd0f..4835136 100644
+index 4835136..853f9ce 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6113,9 +6113,10 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
- 	struct btrfs_fs_info *fs_info = bbio->fs_info;
+@@ -5987,36 +5987,11 @@ static inline void btrfs_end_bbio(struct btrfs_bio *bbio, struct bio *bio)
+ 	btrfs_put_bbio(bbio);
+ }
  
- 	bio->bi_private = bbio;
--	btrfs_io_bio(bio)->stripe_index = dev_nr;
- 	bio->bi_end_io = btrfs_end_bio;
- 	bio->bi_iter.bi_sector = physical >> 9;
-+	btrfs_io_bio(bio)->stripe_index = dev_nr;
-+	btrfs_io_bio(bio)->iter = bio->bi_iter;
- #ifdef DEBUG
- 	{
- 		struct rcu_string *name;
+-static void btrfs_end_bio(struct bio *bio)
++static void __btrfs_end_bio(struct bio *bio)
+ {
+ 	struct btrfs_bio *bbio = bio->bi_private;
+ 	int is_orig_bio = 0;
+ 
+-	if (bio->bi_status) {
+-		atomic_inc(&bbio->error);
+-		if (bio->bi_status == BLK_STS_IOERR ||
+-		    bio->bi_status == BLK_STS_TARGET) {
+-			unsigned int stripe_index =
+-				btrfs_io_bio(bio)->stripe_index;
+-			struct btrfs_device *dev;
+-
+-			BUG_ON(stripe_index >= bbio->num_stripes);
+-			dev = bbio->stripes[stripe_index].dev;
+-			if (dev->bdev) {
+-				if (bio_op(bio) == REQ_OP_WRITE)
+-					btrfs_dev_stat_inc(dev,
+-						BTRFS_DEV_STAT_WRITE_ERRS);
+-				else
+-					btrfs_dev_stat_inc(dev,
+-						BTRFS_DEV_STAT_READ_ERRS);
+-				if (bio->bi_opf & REQ_PREFLUSH)
+-					btrfs_dev_stat_inc(dev,
+-						BTRFS_DEV_STAT_FLUSH_ERRS);
+-				btrfs_dev_stat_print_on_error(dev);
+-			}
+-		}
+-	}
+-
+ 	if (bio == bbio->orig_bio)
+ 		is_orig_bio = 1;
+ 
+@@ -6048,6 +6023,39 @@ static void btrfs_end_bio(struct bio *bio)
+ 	}
+ }
+ 
++static void btrfs_end_bio(struct bio *bio)
++{
++	struct btrfs_bio *bbio = bio->bi_private;
++	int is_orig_bio = 0;
++
++	if (bio->bi_status) {
++		atomic_inc(&bbio->error);
++		if (bio->bi_status == BLK_STS_IOERR ||
++		    bio->bi_status == BLK_STS_TARGET) {
++			unsigned int stripe_index =
++				btrfs_io_bio(bio)->stripe_index;
++			struct btrfs_device *dev;
++
++			BUG_ON(stripe_index >= bbio->num_stripes);
++			dev = bbio->stripes[stripe_index].dev;
++			if (dev->bdev) {
++				if (bio_op(bio) == REQ_OP_WRITE)
++					btrfs_dev_stat_inc(dev,
++						BTRFS_DEV_STAT_WRITE_ERRS);
++				else
++					btrfs_dev_stat_inc(dev,
++						BTRFS_DEV_STAT_READ_ERRS);
++				if (bio->bi_opf & REQ_PREFLUSH)
++					btrfs_dev_stat_inc(dev,
++						BTRFS_DEV_STAT_FLUSH_ERRS);
++				btrfs_dev_stat_print_on_error(dev);
++			}
++		}
++	}
++
++	__btrfs_end_bio(bio);
++}
++
+ /*
+  * see run_scheduled_bios for a description of why bios are collected for
+  * async submit.
 -- 
 2.9.4
 

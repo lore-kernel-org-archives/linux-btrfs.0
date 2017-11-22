@@ -1,97 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:36675 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:42885 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750999AbdKUHWG (ORCPT
+        with ESMTP id S1751588AbdKVJDs (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 21 Nov 2017 02:22:06 -0500
+        Wed, 22 Nov 2017 04:03:48 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, lists@colorremedies.com
-Subject: [PATCH 2/2] btrfs: extent-tree: Ensure btrfs_trim_fs can trim the whole fs
-Date: Tue, 21 Nov 2017 15:21:45 +0800
-Message-Id: <20171121072145.24413-2-wqu@suse.com>
-In-Reply-To: <20171121072145.24413-1-wqu@suse.com>
-References: <20171121072145.24413-1-wqu@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 00/11] Lowmem mode btrfs fixes exposed by complex tree
+Date: Wed, 22 Nov 2017 17:03:14 +0800
+Message-Id: <20171122090325.29458-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-fstrim on some btrfs only trims the unallocated space, not trimming any
-space in existing block groups.
+The patchset can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/lowmem_fix
 
-[CAUSE]
-fstrim_range passed in by default fstrim will be:
+The patchset is mostly rebased to v4.14, since there is some conflicts
+with lowmem repair enhancement from Su Yue.
 
-range->start = 0
-range->len = fs_size (which equals with super->total_bytes)
-range->min_len = 512
+However the lowmem repair enhancement from Su Yue caused one regression,
+and the original lowmem code also has some problem handling tree reloc
+tree.
 
-However btrfs_trim_fs() following above parameter to search block groups
-to trim.
+The first 2 patches are newly introduced to address this.
+The rest are not touched at all (except the conflicts).
 
-While it's quite possible that all chunks start beyond
-super->total_bytes if the fs is balanced several times.
+As always, the 9th patch may not reach mail list due to its size.
+Please use github repo to fetch that file.
 
-In that case, btrfs will skip trimming block groups and only trim the
-unallocated space of each device.
+Qu Wenruo (11):
+  btrfs-progs: lowmem check: Fix regression which screws up extent
+    allocator
+  btrfs-progs: lowmem check: Fix NULL pointer access caused by large
+    tree reloc tree
+  btrfs-progs: lowmem check: Fix inlined data extent ref lookup
+  btrfs-progs: lowmem check: Fix false backref lost warning for keyed
+    extent data ref
+  btrfs-progs: fsck-test: Introduce test case for false data extent
+    backref lost
+  btrfs-progs: backref: Allow backref walk to handle direct parent ref
+  btrfs-progs: lowmem check: Fix function call stack overflow caused by
+    wrong tree reloc tree detection
+  btrfs-progs: lowmem check: Fix false alerts for image with shared
+    block ref only backref
+  btrfs-progs: fsck-test: Add new image with shared block ref only
+    metadata backref
+  btrfs-progs: lowmem check: Fix false alerts of referencer count
+    mismatch for snapshot
+  btrfs-progs: fsck-tests: Introduce test case with keyed data backref
+    with shared tree blocks
 
-[FIX]
-For common full fs trimming range passed in, extent its len to (u64)-1
-so we will iterate all block groups.
+ backref.c                                          |   3 +
+ cmds-check.c                                       |  79 +++++++++++++++------
+ .../020-extent-ref-cases/keyed_data_ref_only.img   | Bin 0 -> 4096 bytes
+ .../keyed_data_ref_with_shared_leaf.img            | Bin 0 -> 19456 bytes
+ .../shared_block_ref_only.raw.xz                   | Bin 0 -> 217204 bytes
+ 5 files changed, 61 insertions(+), 21 deletions(-)
+ create mode 100644 tests/fsck-tests/020-extent-ref-cases/keyed_data_ref_only.img
+ create mode 100644 tests/fsck-tests/020-extent-ref-cases/keyed_data_ref_with_shared_leaf.img
+ create mode 100644 tests/fsck-tests/020-extent-ref-cases/shared_block_ref_only.raw.xz
 
-And for custom fs trimming range, due to the fact that the range will
-always be truncated by range [0, super->total_bytes), making custom fs
-trimming range useless.
-
-Just return -ENOTTY for custom fs trimming range.
-
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent-tree.c | 29 ++++++++++++++++++++++++-----
- 1 file changed, 24 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3a252d7af158..22bbcc8c4f6c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -11024,12 +11024,31 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	int ret = 0;
- 
- 	/*
--	 * try to trim all FS space, our block group may start from non-zero.
-+	 * NOTE: Btrfs uses its own logical address space, where its first
-+	 * chunk can start anywhere if it wants.
-+	 * If we follow common start = 0 and len = fs_size from @range, we
-+	 * can end up without trimming any block groups, since it's highly
-+	 * possible all chunks start beyond that range.
-+	 *
-+	 * So if we want to trim the whole fs, extent the len to (u64)-1 to trim
-+	 * all block groups.
-+	 *
-+	 * Also, since @range will always be truncated to fs size, manually
-+	 * passing range to trim specified range doesn't make much sense.
-+	 * (No mean to trim any block group whose bytenr starts beyond
-+	 *  @total_bytes)
-+	 * So in that case, return -ENOTTY directly to prevent any custom trim
-+	 * request.
- 	 */
--	if (range->len == total_bytes)
--		cache = btrfs_lookup_first_block_group(fs_info, range->start);
--	else
--		cache = btrfs_lookup_block_group(fs_info, range->start);
-+	if (range->start == 0 && range->len == total_bytes) {
-+		range->len = (u64)-1;
-+	} else {
-+		btrfs_info(fs_info,
-+		"trimming custom range is not supported due to the limitation of fstrim_range");
-+		return -ENOTTY;
-+	}
-+
-+	cache = btrfs_lookup_first_block_group(fs_info, range->start);
- 
- 	for (; cache; cache = next_block_group(fs_info, cache)) {
- 		if (cache->key.objectid >= (range->start + range->len)) {
 -- 
 2.15.0
 

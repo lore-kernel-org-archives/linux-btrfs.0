@@ -1,145 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49889 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42340 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753350AbdKFSZ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 6 Nov 2017 13:25:56 -0500
+        id S1751286AbdKVTWW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 22 Nov 2017 14:22:22 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B98D1AC9D
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Nov 2017 18:25:54 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: switch uuid tree semaphore to mutex
-Date: Mon,  6 Nov 2017 19:24:02 +0100
-Message-Id: <20171106182402.11500-1-dsterba@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id EC098AAC5
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 19:22:20 +0000 (UTC)
+Date: Wed, 22 Nov 2017 20:20:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org, nborisov@suse.com
+Subject: Re: [PATCH] btrfs: switch uuid tree semaphore to mutex
+Message-ID: <20171122192025.GS3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171106182402.11500-1-dsterba@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171106182402.11500-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The uuid_tree_rescan_sem is used as a mutex (initialized with value 1
-and with at most one active user), no reason to obscure that as a
-semaphore.
+On Mon, Nov 06, 2017 at 07:24:02PM +0100, David Sterba wrote:
+> The uuid_tree_rescan_sem is used as a mutex (initialized with value 1
+> and with at most one active user), no reason to obscure that as a
+> semaphore.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.com>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h   |  6 +++++-
- fs/btrfs/disk-io.c |  6 +++---
- fs/btrfs/super.c   |  4 ++--
- fs/btrfs/volumes.c | 12 ++++++------
- 4 files changed, 16 insertions(+), 12 deletions(-)
+[  136.287143] ------------[ cut here ]------------
+[  136.291962] DEBUG_LOCKS_WARN_ON(depth <= 0)
+[  136.292033] WARNING: CPU: 0 PID: 1762 at kernel/locking/lockdep.c:3766 lock_release+0x253/0x3a0
+[  136.305245] Modules linked in: rpcsec_gss_krb5 auth_rpcgss nfsv4 dns_resolver nfs lockd grace sunrpc fscache af_packet br_netfilter bridge stp llc iscsi_ibft iscsi_boot_sysfs btrfs xor zstd_decompress zstd_c
+ompress xxhash zlib_deflate i2c_algo_bit raid6_pq drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops dm_mod ttm dax drm tg3 kvm_amd ptp pps_core tpm_infineon libphy kvm mptctl shpchp tpm_tis tpm_tis_c
+ore i2c_piix4 tpm acpi_cpufreq irqbypass k10temp pcspkr button ext4 mbcache jbd2 sr_mod cdrom ohci_pci ehci_pci ohci_hcd ehci_hcd mptsas scsi_transport_sas mptscsih serio_raw ata_generic mptbase sata_svw usbcor
+e pata_serverworks sg scsi_dh_rdac scsi_dh_emc scsi_dh_alua
+[  136.366011] CPU: 0 PID: 1762 Comm: btrfs-uuid Not tainted 4.14.0-1.ge195904-vanilla+ #91
+[  136.374300] Hardware name: empty empty/S3993, BIOS PAQEX0-3 02/24/2008
+[  136.380954] task: ffff895de4e45140 task.stack: ffffabc901ea8000
+[  136.387005] RIP: 0010:lock_release+0x253/0x3a0
+[  136.391574] RSP: 0018:ffffabc901eabc80 EFLAGS: 00010082
+[  136.396932] RAX: 000000000000001f RBX: ffff895de4e45140 RCX: ffff895de4e45140
+[  136.404189] RDX: ffff895de4e45140 RSI: 0000000000000001 RDI: ffffffff8b0edca0
+[  136.411473] RBP: ffff895dd4723470 R08: 0000000000000000 R09: 0000000000000000
+[  136.418725] R10: 0000000000000000 R11: 0000000000000001 R12: 0000000000000282
+[  136.425987] R13: ffffffffc103b852 R14: 0000000000000000 R15: 0000000000000000
+[  136.433259] FS:  0000000000000000(0000) GS:ffff895defc00000(0000) knlGS:0000000000000000
+[  136.441543] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  136.447408] CR2: 00007f0f708bf000 CR3: 000000022290f000 CR4: 00000000000006f0
+[  136.454682] Call Trace:
+[  136.457320]  ? btrfs_search_forward+0x168/0x320 [btrfs]
+[  136.462682]  __mutex_unlock_slowpath+0x3b/0x260
+[  136.467368]  btrfs_uuid_scan_kthread+0x242/0x350 [btrfs]
+[  136.472849]  kthread+0x13e/0x170
+[  136.476241]  ? get_chunk_map+0xc0/0xc0 [btrfs]
+[  136.480821]  ? kthread_stop+0x300/0x300
+[  136.484786]  ret_from_fork+0x24/0x30
+[  136.507678] ---[ end trace cd10910755287819 ]---
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index cab2f3607040..a643ff0fa0f0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1073,7 +1073,11 @@ struct btrfs_fs_info {
- 	struct percpu_counter bio_counter;
- 	wait_queue_head_t replace_wait;
- 
--	struct semaphore uuid_tree_rescan_sem;
-+	/*
-+	 * Protect updating of uuid_tree, can be used to wait for the task
-+	 * completion
-+	 */
-+	struct mutex uuid_tree_mutex;
- 
- 	/* Used to reclaim the metadata space in the background. */
- 	struct work_struct async_reclaim_work;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 53c9145a56e9..8330226234f2 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2542,10 +2542,10 @@ int open_ctree(struct super_block *sb,
- 	mutex_init(&fs_info->cleaner_mutex);
- 	mutex_init(&fs_info->volume_mutex);
- 	mutex_init(&fs_info->ro_block_group_mutex);
-+	mutex_init(&fs_info->uuid_tree_mutex);
- 	init_rwsem(&fs_info->commit_root_sem);
- 	init_rwsem(&fs_info->cleanup_work_sem);
- 	init_rwsem(&fs_info->subvol_sem);
--	sema_init(&fs_info->uuid_tree_rescan_sem, 1);
- 
- 	btrfs_init_dev_replace_locks(fs_info);
- 	btrfs_init_qgroup(fs_info);
-@@ -3696,9 +3696,9 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 	btrfs_qgroup_wait_for_completion(fs_info, false);
- 
- 	/* wait for the uuid_scan task to finish */
--	down(&fs_info->uuid_tree_rescan_sem);
-+	mutex_lock(&fs_info->uuid_tree_mutex);
- 	/* avoid complains from lockdep et al., set sem back to initial state */
--	up(&fs_info->uuid_tree_rescan_sem);
-+	mutex_unlock(&fs_info->uuid_tree_mutex);
- 
- 	/* pause restriper - we want to resume on mount */
- 	btrfs_pause_balance(fs_info);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 713f899bae81..5d0686c18bad 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1777,9 +1777,9 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		cancel_work_sync(&fs_info->async_reclaim_work);
- 
- 		/* wait for the uuid_scan task to finish */
--		down(&fs_info->uuid_tree_rescan_sem);
-+		mutex_lock(&fs_info->uuid_tree_mutex);
- 		/* avoid complains from lockdep et al. */
--		up(&fs_info->uuid_tree_rescan_sem);
-+		mutex_unlock(&fs_info->uuid_tree_mutex);
- 
- 		sb->s_flags |= MS_RDONLY;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1b43f762906f..b2949232ba52 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4202,7 +4202,7 @@ static int btrfs_uuid_scan_kthread(void *data)
- 		btrfs_warn(fs_info, "btrfs_uuid_scan_kthread failed %d", ret);
- 	else
- 		set_bit(BTRFS_FS_UPDATE_UUID_TREE_GEN, &fs_info->flags);
--	up(&fs_info->uuid_tree_rescan_sem);
-+	mutex_unlock(&fs_info->uuid_tree_mutex);
- 	return 0;
- }
- 
-@@ -4264,7 +4264,7 @@ static int btrfs_uuid_rescan_kthread(void *data)
- 	ret = btrfs_uuid_tree_iterate(fs_info, btrfs_check_uuid_tree_entry);
- 	if (ret < 0) {
- 		btrfs_warn(fs_info, "iterating uuid_tree failed %d", ret);
--		up(&fs_info->uuid_tree_rescan_sem);
-+		mutex_unlock(&fs_info->uuid_tree_mutex);
- 		return ret;
- 	}
- 	return btrfs_uuid_scan_kthread(data);
-@@ -4301,12 +4301,12 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
- 	if (ret)
- 		return ret;
- 
--	down(&fs_info->uuid_tree_rescan_sem);
-+	mutex_lock(&fs_info->uuid_tree_mutex);
- 	task = kthread_run(btrfs_uuid_scan_kthread, fs_info, "btrfs-uuid");
- 	if (IS_ERR(task)) {
- 		/* fs_info->update_uuid_tree_gen remains 0 in all error case */
- 		btrfs_warn(fs_info, "failed to start uuid_scan task");
--		up(&fs_info->uuid_tree_rescan_sem);
-+		mutex_unlock(&fs_info->uuid_tree_mutex);
- 		return PTR_ERR(task);
- 	}
- 
-@@ -4317,12 +4317,12 @@ int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info)
- {
- 	struct task_struct *task;
- 
--	down(&fs_info->uuid_tree_rescan_sem);
-+	mutex_lock(&fs_info->uuid_tree_mutex);
- 	task = kthread_run(btrfs_uuid_rescan_kthread, fs_info, "btrfs-uuid");
- 	if (IS_ERR(task)) {
- 		/* fs_info->update_uuid_tree_gen remains 0 in all error case */
- 		btrfs_warn(fs_info, "failed to start uuid_rescan task");
--		up(&fs_info->uuid_tree_rescan_sem);
-+		mutex_unlock(&fs_info->uuid_tree_mutex);
- 		return PTR_ERR(task);
- 	}
- 
--- 
-2.14.3
-
+this apparently relies on the semantics of a semaphore where up and down do not
+pair the same way as is required for a mutex. I'm going to drop this
+patch and eventually replace it with a clearer waiting logic.

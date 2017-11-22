@@ -1,118 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44280 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:44282 "EHLO
         aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751527AbdKVBiW (ORCPT
+        with ESMTP id S1751538AbdKVBiW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 21 Nov 2017 20:38:22 -0500
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAM1cLEG022109
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAM1cLZY022111
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
         for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:21 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cKLp014941
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cK4h022999
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:20 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:21 GMT
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cKmR019857
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAM1cK1I014777
         for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:20 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/7] Btrfs: retry write for raid56
-Date: Tue, 21 Nov 2017 17:35:57 -0700
-Message-Id: <20171122003558.28722-7-bo.li.liu@oracle.com>
+Subject: [PATCH 7/7] Btrfs: retry the whole bio on write error
+Date: Tue, 21 Nov 2017 17:35:58 -0700
+Message-Id: <20171122003558.28722-8-bo.li.liu@oracle.com>
 In-Reply-To: <20171122003558.28722-1-bo.li.liu@oracle.com>
 References: <20171122003558.28722-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Retry writes on raid56's final full stripe writes in order to get over
-some transient errors in our IO stack.
+Since we haven't included badblocks support in our retry path, instead
+of retry sector by sector only retry the whole bio to give it an extra
+chance.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/raid56.c | 42 ++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 40 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 72 ++++++++++--------------------------------------------
+ 1 file changed, 13 insertions(+), 59 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index aebc849..2e182f8 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -909,14 +909,49 @@ static void __raid_write_end_io(struct bio *bio)
- 	rbio_orig_end_io(rbio, err);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c11db0b..395b03c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6033,74 +6033,28 @@ static inline struct btrfs_device *get_device_from_bio(struct bio *bio)
  }
  
-+struct btrfs_device *get_raid_device_from_bio(struct bio *bio)
-+{
-+	struct btrfs_raid_bio *rbio = bio->bi_private;
-+	unsigned int stripe_index = btrfs_io_bio(bio)->stripe_index;
-+
-+	BUG_ON(stripe_index >= rbio->bbio->num_stripes);
-+	return rbio->bbio->stripes[stripe_index].dev;
-+}
-+
-+static void raid_handle_write_error(struct work_struct *work)
-+{
-+	struct btrfs_io_bio *io_bio;
-+	struct bio *bio;
-+	struct btrfs_device *dev;
-+
-+	io_bio = container_of(work, struct btrfs_io_bio, work);
-+	bio = &io_bio->bio;
-+	dev = get_raid_device_from_bio(bio);
-+
-+	if (!btrfs_narrow_write_error(bio, dev)) {
-+		fail_bio_stripe(bio);
-+		btrfs_record_bio_error(bio, dev);
-+	}
-+
-+	__raid_write_end_io(bio);
-+}
-+
-+static void raid_reschedule_bio(struct bio *bio)
-+{
-+	INIT_WORK(&btrfs_io_bio(bio)->work, raid_handle_write_error);
-+	queue_work(system_unbound_wq, &btrfs_io_bio(bio)->work);
-+}
-+
  /*
-  * end io function used by finish_rmw.  When we finally
-  * get here, we've written a full stripe
+- * return 1 if every sector retry returns successful.
+- * return 0 if one or more sector retries fails.
++ * Return 1 if retry returns successful.
++ * Return 0 otherwise.
   */
- static void raid_write_end_io(struct bio *bio)
+ int btrfs_narrow_write_error(struct bio *bio, struct btrfs_device *dev)
  {
--	if (bio->bi_status)
--		fail_bio_stripe(bio);
-+	if (bio->bi_status) {
-+		raid_reschedule_bio(bio);
-+		return;
-+	}
+ 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
+-	u64 sectors_to_write;
+-	u64 offset;
+-	u64 orig;
+-	u64 unit;
+-	u64 block_sectors;
+-	int ok = 1;
++	int ret = 1;
+ 	struct bio *wbio;
  
- 	__raid_write_end_io(bio);
+-	/* offset and unit are bytes aligned, not 512-bytes aligned. */
+-	sectors_to_write = io_bio->iter.bi_size >> 9;
+-	orig = io_bio->iter.bi_sector;
+-	offset = 0;
+-	block_sectors = bdev_logical_block_size(dev->bdev) >> 9;
+-	unit = block_sectors;
+-	ASSERT(unit == 1);
+-
+-	while (1) {
+-		if (!sectors_to_write)
+-			break;
+-		/*
+-		 * LIUBO: I don't think unit > sectors_to_write could
+-		 * happen, sectors_to_write should be aligned to PAGE_SIZE
+-		 * which is > unit.  Just in case.
+-		 */
+-		if (unit > sectors_to_write) {
+-			WARN_ONCE(1, "unit %llu > sectors_to_write (%llu)\n", unit, sectors_to_write);
+-			unit = sectors_to_write;
+-		}
+-
+-		/* write @unit bytes at @offset */
+-		/* this would never fail, check btrfs_bio_clone(). */
+-		wbio = btrfs_bio_clone(bio);
+-		wbio->bi_opf = REQ_OP_WRITE;
+-		wbio->bi_iter = io_bio->iter;
++	/* this would never fail, check btrfs_bio_clone(). */
++	wbio = btrfs_bio_clone(bio);
++	wbio->bi_opf = REQ_OP_WRITE;
++	wbio->bi_iter = io_bio->iter;
+ 
+-		bio_trim(wbio, offset, unit);
+-		bio_copy_dev(wbio, bio);
++	bio_copy_dev(wbio, bio);
+ 
+-		/* submit in sync way */
+-		/*
+-		 * LIUBO: There is an issue, if this bio is quite
+-		 * large, say 1M or 2M, and sector size is just 512,
+-		 * then this may take a while.
+-		 *
+-		 * May need to schedule the job to workqueue.
+-		 */
+-		if (submit_bio_wait(wbio) < 0) {
+-			ok = 0 && ok;
+-			/*
+-			 * This is not correct if badblocks is enabled
+-			 * as we need to record every bad sector by
+-			 * trying sectors one by one.
+-			 */
+-			break;
+-		}
++	/* submit in sync way */
++	if (submit_bio_wait(wbio) < 0)
++		ret = 0;
+ 
+-		bio_put(wbio);
+-		offset += unit;
+-		sectors_to_write -= unit;
+-		unit = block_sectors;
+-	}
+-	return ok;
++	bio_put(wbio);
++	return ret;
  }
-@@ -1108,6 +1143,7 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
- 	bio->bi_iter.bi_size = 0;
- 	bio_set_dev(bio, stripe->dev->bdev);
- 	bio->bi_iter.bi_sector = disk_start >> 9;
-+	btrfs_io_bio(bio)->stripe_index = stripe_nr;
  
- 	bio_add_page(bio, page, PAGE_SIZE, 0);
- 	bio_list_add(bio_list, bio);
-@@ -1324,6 +1360,7 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
- 		bio->bi_private = rbio;
- 		bio->bi_end_io = raid_write_end_io;
- 		bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
-+		btrfs_io_bio(bio)->iter = bio->bi_iter;
- 
- 		submit_bio(bio);
- 	}
-@@ -2452,6 +2489,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
- 		bio->bi_private = rbio;
- 		bio->bi_end_io = raid_write_end_io;
- 		bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
-+		btrfs_io_bio(bio)->iter = bio->bi_iter;
- 
- 		submit_bio(bio);
- 	}
+ void btrfs_record_bio_error(struct bio *bio, struct btrfs_device *dev)
 -- 
 2.9.4
 

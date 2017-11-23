@@ -1,146 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:55825 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753297AbdKWUrO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 15:47:14 -0500
-MIME-Version: 1.0
-Message-ID: <trinity-60cff444-b07e-45c4-9090-9b8bf257bc11-1511470033242@3c-app-mailcom-bs15>
-From: koller@caramail.com
+Received: from mail-eopbgr10061.outbound.protection.outlook.com ([40.107.1.61]:36416
+        "EHLO EUR02-HE1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753333AbdKWXui (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Nov 2017 18:50:38 -0500
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Subject: python-btrfs release v9
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Issue in recovering and using the mirror superblock
-Content-Type: text/plain; charset=UTF-8
-Date: Thu, 23 Nov 2017 21:47:13 +0100
-In-Reply-To: <trinity-e19a6c0e-4264-4d24-9fac-7e21d7f036d4-1511454672385@3c-app-mailcom-bs01>
-References: <trinity-e19a6c0e-4264-4d24-9fac-7e21d7f036d4-1511454672385@3c-app-mailcom-bs01>
+Message-ID: <3b270813-08c7-1f36-8da9-c01b19245c67@mendix.com>
+Date: Fri, 24 Nov 2017 00:50:31 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As an update to my previous email:
+I just tagged v9 of the python btrfs library.
 
-I attempted the visual inspection of the second superblock (located at 256 GB) inside the .dd image by using
+https://github.com/knorrie/python-btrfs
 
-tail -c +$((0x4000000000+1)) /run/media/user01/SamsungHD/sda2.dd |hexdump -C|less
+Q: What is python-btrfs?
+A: python-btrfs is a python3 implementation of the data structures for
+btrfs metadata, and an implementation of the kernel API (via ioctl
+calls) that btrfs provides to userland.
 
-and sure enough, it shows that the supeblock is right there, clearly marked by the header string “_BHRfS_”, no mistake about it. Of course, this is no guarantee that it may not be corrupt. But why should it be? This part of the disk was not touched by the overwriting which damaged the partition -- and there was never a physical damage to the disk. 
-Rather than assuming that there is some problem with this superblock it’s more reasonable to assume that there is some issue with the recovery tools I have used so far. 
+Q: Ok, whatever, dude, but what would I need that for?
+A: You probably won't need this.
 
-Here is the report of my attempts to use the second superblock by using the availble recovery tools:
+Q: I'm a btrfs developer, what is this?
+A: It provides quick hackable ways to inspect a running filesystem. You
+can look up things in the current kernel metadata memory, play around
+with ioctls, and quickly cobble up scripts for that.
 
-Both btrfsck and "btrfs rescue super-recover" produced the same error message.
+Here's the summary of changes:
 
+python-btrfs v9, Nov 23 2017
+  * IOCTLs: IOC_SET_RECEIVED_SUBVOL, IOC_LOGICAL_INO_V2
+  * Add crc32c checksum function for data, thanks Nikolay Borisov
+  * Recognize zstd compression type
+  * Add a tree object pretty printer to dump data for any tree item
+  * Examples added:
+    - Show default subvolume id
+    - Lookup a block checksum in the checksum tree
+    - Determine bad free space fragmentation score for block groups
+    - Set the received_uuid e.a. of a subvolume
+    - Dump an entire metadata tree using the pretty printer
+  * Fixes:
+    - crc32c: add implicit seed truncation to 32 bits value
+  * Small fixes and cosmetic changes
 
-When i ran:
+Note: the IOC_SET_RECEIVED_SUBVOL is added 'because we can'. It's not
+added because it's a very good to mess around with it except for
+educational purpose in a test environment.
 
-sudo btrfsck -s2 /run/media/user01/SamsungHD/sda2.dd
+As usual, detailed explanations of all changes are in the git commit
+messages.
 
-I got:
+Feedback from Nikolay Borisov pushed me to have a look at how the
+checksum storage is done.
 
-using SB copy 2, bytenr 274877906944
-checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-bytenr mismatch, want=20971520, have=709
-ERROR: cannot read chunk root
-ERROR: cannot open file system
+My favorite one for this release is the tree object pretty printer,
+which allows us to dump a single tree object displaying all its
+attributes, but also allows us to stream a search query into it to
+output a full dump of a metadata tree. See the examples/dump_tree.py
+about this!
 
-As reported in the previous email, when I used btrfs restore I got exactly the same error message.
+Tomorrow I'll update pypi and will prepare debian packages for unstable
+and stretch-backports.
 
-
-HOWEVER, with "btrfs rescue super-recover" I got a totally different response:
-
-Before Recovering:
-	[All good supers]:
-		device name = /run/media/user01/SamsungHD/sda2.dd
-		superblock bytenr = 67108864
-
-		device name = /run/media/user01/SamsungHD/sda2.dd
-		superblock bytenr = 274877906944
-
-	[All bad supers]:
-
-All supers are valid, no need to recover
-
-This message above ("All supers are valid, no need to recover") is also problematic, because in actuality the first mirror image at 64 MB is missing (I checked with hexdump, and it is not there at the expected location 0x4000000). 
-
-Anyway, for sure there is some inconsistency between the behavior of the tools -- and none of them is helpful! 
-
-I don’t know what to make of all this, but I am still left wondering what to do next. I have the second superblock, from which in theory I could restore my filesystem (or part of it), but I don’t know how to use it. I need some tools that work...
-
-Any ideas?
-
-Thanks
-
-
-
-
-
-
-
-
-> Sent: Thursday, November 23, 2017 at 6:31 PM
-> From: koller@caramail.com
-> To: linux-btrfs@vger.kernel.org
-> Subject: Issue in recovering and using the mirror superblock
->
-> Hi,
-> 
-> I am trying to recover from a mistake I made by overwriting the first GBs of my Btrfs /home partition with a non-Btrfs filesystem.
-> 
-> I have already made a .dd image of the partition, and I am using it to try and find the mirror superblock, in particular the one at 256 GB.
-> 
-> When I run the "btrfs restore" command I get an error message, maybe because the mirror superblock -- I am not sure about the reason.
-> 
-> Using the dummy run option, from the command line I do
-> 
-> btrfs restore -D -u 2 /run/media/user01/SamsungHD/sda2.dd /run/media/user01/ToshibaHD/RecoveredData
-> 
-> The message is get is:
-> 
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> bytenr mismatch, want=20971520, have=709
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
-> 
-> With the -u 1 option (instead of -u 2) I get:
-> 
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> bytenr mismatch, want=20971520, have=709
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> bytenr mismatch, want=20971520, have=709
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
-> 
-> I have reason to believe that the mirror superblock at 256 GB is intact (I am assuming that only the initial sectors of the partition were overwritten), so I do not understand why it is not being recovered. BTW, the size of the partition is above 300 GBs, so there is supposed to be a mirror superblock at 256 GB.
-> 
-> Can anyone help me?
-> 
-> --------
-> 
-> Here is the btrfs info:
-> 
-> uname -a
-> Linux adfa-workstation 4.9.63-1-MANJARO #1 SMP PREEMPT Sat Nov 18 14:12:41 UTC 2017 x86_64 GNU/Linux
-> 
-> btrfs --version
-> btrfs-progs v4.13
-> 
-> Thanks
-> 
-> Terry
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-- 
+Have fun,
+Hans van Kranenburg

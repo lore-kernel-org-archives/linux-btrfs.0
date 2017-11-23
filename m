@@ -1,39 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f170.google.com ([74.125.82.170]:44745 "EHLO
-        mail-ot0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750769AbdKWFZM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 00:25:12 -0500
-Received: by mail-ot0-f170.google.com with SMTP id d27so15415517ote.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 21:25:12 -0800 (PST)
+Received: from zougloub.eu ([69.70.16.42]:35626 "EHLO zougloub.eu"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751276AbdKWFsb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Nov 2017 00:48:31 -0500
+Date: Thu, 23 Nov 2017 00:49:41 -0500
+From: =?UTF-8?B?SsOpcsO0bWU=?= Carretero <cJ-ko@zougloub.eu>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: WARNING: CPU: 3 PID: 20953 at
+ /usr/src/linux/fs/btrfs/raid56.c:848 __free_raid_bio+0x8e/0xa0
+Message-ID: <20171123004941.3f50b418@Vantage.cJ>
+In-Reply-To: <20171122233534.GA8475@lim.localdomain>
+References: <20171120020007.01897b13@Vantage.cJ>
+        <20171122233534.GA8475@lim.localdomain>
 MIME-Version: 1.0
-In-Reply-To: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
-References: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 22 Nov 2017 22:25:11 -0700
-Message-ID: <CAJCQCtQpCJc1h8qnLv6M_aMf-0q_9saNwCrNwt1HML1jFLHq8g@mail.gmail.com>
-Subject: Re: btrfs restore corrupt file
-To: Jorge Bastos <jorge.mrbastos@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 22, 2017 at 12:18 PM, Jorge Bastos <jorge.mrbastos@gmail.com> wrote:
-> Hello,
->
-> While doing btrfs checksum testing I purposely corrupted a file and
-> got the expect I/O error when trying to copy it, I also tested btrfs
-> restore to see if I could recover a known corrupt file and it did copy
-> it but there was no checksum error or warning. I used btrfs restore -v
->
-> Is this expect behavior or should restore warn about checksum failures?
->
-> Kernel used was 4.13.13,  btrfs-progs v4.13.2
+Hi,
 
-I think it's expected. "The checks done by restore are less strict"
-from the man page. Although it'd be nice if -v option at least could
-flag such files as possibly being corrupt.
+On Wed, 22 Nov 2017 15:35:35 -0800
+Liu Bo <bo.li.liu@oracle.com> wrote:
+
+> On Mon, Nov 20, 2017 at 02:00:07AM -0500, Jérôme Carretero wrote:
+> > ------------[ cut here ]------------ [633254.461294] WARNING: CPU:
+> > 3 PID: 20953 at /usr/src/linux/fs/btrfs/raid56.c:848
+> > __free_raid_bio+0x8e/0xa0  
+> 
+> 
+> The vanilla 4.14.0 shows it is
+> WARN_ON(!bio_list_empty(&rbio->bio_list)); but we just emptied
+> rbio->bio_list two lines above, i.e. struct bio *cur =
+> bio_list_get(&rbio->bio_list);
+> 
+> Either we have some weird race, or the line number is misleading me.
+> 
+> Can you please check the code which warning fs/btrfs/raid56.c:848
+> points to?
+
+Same code as yours:
+        WARN_ON(!bio_list_empty(&rbio->bio_list));
+
+So yeah, at least git is not broken, now it could be a very weird
+compiler bug or a less-weird race indeed...
+
+
+Regards,
 
 -- 
-Chris Murphy
+Jérôme

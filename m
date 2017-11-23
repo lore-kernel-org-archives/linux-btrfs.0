@@ -1,63 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f50.google.com ([74.125.82.50]:40847 "EHLO
-        mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751799AbdKWLsD (ORCPT
+Received: from mail-wm0-f44.google.com ([74.125.82.44]:41003 "EHLO
+        mail-wm0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751736AbdKWMCe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 06:48:03 -0500
-Received: by mail-wm0-f50.google.com with SMTP id b189so15943173wmd.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Nov 2017 03:48:02 -0800 (PST)
-Message-ID: <1511437679.14360.14.camel@gmail.com>
-Subject: Re: notification about corrupt files from "btrfs scrub" in cron
-From: ST <smntov@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
+        Thu, 23 Nov 2017 07:02:34 -0500
+Received: by mail-wm0-f44.google.com with SMTP id b189so16343308wmd.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Nov 2017 04:02:33 -0800 (PST)
+Subject: Re: uncorrectable errors in Raid 10
+To: Chris Murphy <lists@colorremedies.com>, quwenruo.btrfs@gmx.com
+References: <a61eeda7-af07-e140-ccd9-d288931f07fb@gmail.com>
+ <CAJCQCtSLG5hXikEiBD4OF5G+EfKgyALaynqivBvCaWLpEYQjEw@mail.gmail.com>
+ <1c612777-77eb-1b83-101b-a9e0a53ee8be@gmail.com>
+ <CAJCQCtRwO5E_xN-7u22uBQ57sYpUf8qQ7O0Abz2m+K8e9+DgdA@mail.gmail.com>
+ <384b4a21-e74f-c52e-c6e2-f7930f187c94@gmail.com>
+ <CAJCQCtQKOVYtOmQeCR0GZ08Wew2TjtZzfoA_mDvsHwL5vt06XA@mail.gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Date: Thu, 23 Nov 2017 13:47:59 +0200
-In-Reply-To: <pan$f10dc$17d1769f$63e482de$53d19a75@cox.net>
-References: <1511380450.1675.94.camel@gmail.com>
-         <pan$f10dc$17d1769f$63e482de$53d19a75@cox.net>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+From: Steffen Sindzinski <stesind@gmail.com>
+Message-ID: <63eff0dd-050c-95e5-0bc8-6c151900261c@gmail.com>
+Date: Thu, 23 Nov 2017 13:02:31 +0100
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQKOVYtOmQeCR0GZ08Wew2TjtZzfoA_mDvsHwL5vt06XA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
-> > I have following cron job to scrub entire root filesystem (total ca.
-> > 7.2TB and 2.3TB of them used) once a week:
-> > /bin/btrfs scrub start -r / > /dev/null
-> > 
-> > Such scrubbing takes ca. 2 hours. How should I get notified that a
-> > corrupt file was discovered? Does this command return some error code
-> > back to cron so it can send an email as usual? Will cron wait 2 hours to
-> > get that code?
-> > 
-> > I tried that command once without "> /dev/null" but got no email
-> > notification about the results (eventhough the check was OK) - why?
+I updated to btrfs-progs v4.14-5-gf09e98a3. Unfortunately after 10h 
+Gnome desktop / Arch crashed with btrfs check --lowmem unfinished. I 
+will run it this night again.
+
+The result until crash was:
+
+Checking filesystem on /dev/sdd2
+UUID: 4fafd0d4-7dd9-4dcc-9a33-5f1ad9555358
+ERROR: extent[15923092037632, 73728] referencer count mismatch (root: 
+260, owner: 3631467, offset: 1019904) wanted: 4, have: 6
+ERROR: extent[16078964924416, 69632] referencer count mismatch (root: 
+260, owner: 4086589, offset: 4296704) wanted: 5, have: 7
+
+Steffen
+
+
+Am 22.11.2017 um 17:42 schrieb Chris Murphy:
+> On Wed, Nov 22, 2017 at 9:38 AM, Steffen Sindzinski <stesind@gmail.com> wrote:
+>> Hello,
+>>
+>> I did btrfs check --readonly on both disk without finding any error. To
+>> reconfirm I did a scrub again which still has found 2 uncorrectable errors.
 > 
-> See the btrfs-scrub manpage...
+> Try --mode=lowmem option with btrfs-progs 4.3.3 or better 4.14. This
+> is a new implementation of btrfs check and sometimes it comes up with
+> different results. It's strange that there's only this error found by
+> scrub and not by btrfs check which should be fully checking all
+> metadata for sanity, and in the process it would surely hit a bad
+> checksum.
 > 
-> Note that normally btrfs scrub start is asynchronous and should return 
-> effectively immediately, the only possible errors therefore being for 
-> example if the given path doesn't point to a btrfs or btrfs-device (which 
-> would return a status code of 1, scrub couldn't be performed), etc.
 > 
-> Status can be checked via btrfs scrub status, and/or, or you can use the 
-> btrfs scrub start's -B (don't background) switch, which will cause it to 
-> wait until the scrub is finished and print a summary report.  That should 
-> allow you to check for a status code of 3, scrub found uncorrectable 
-> errors, as well.
-
-Thank you for the response! Does it mean that if write:
-
-/bin/btrfs scrub start -r -B /
-
-cron will hang for 2 hours (is it problematic?) and then send me an
-email with the summary report (even if everything was OK), and if I
-write:
-
-/bin/btrfs scrub start -r -B / > /dev/null
-
-after 2 hours it will send an email, only if there was an error with
-whatever error code (1-3)?
-
-Thank you!
-

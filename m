@@ -1,48 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:54042 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:54123 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751845AbdKWJZz (ORCPT
+        with ESMTP id S1752202AbdKWJmP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 04:25:55 -0500
+        Thu, 23 Nov 2017 04:42:15 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eHnlP-0000HI-W4
-        for linux-btrfs@vger.kernel.org; Thu, 23 Nov 2017 10:25:43 +0100
+        id 1eHo19-0000Fq-LM
+        for linux-btrfs@vger.kernel.org; Thu, 23 Nov 2017 10:41:59 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs restore corrupt file
-Date: Thu, 23 Nov 2017 09:25:35 +0000 (UTC)
-Message-ID: <pan$c3b20$cd07d7e1$4b1a8f6a$c2ecab66@cox.net>
-References: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
+Subject: Re: notification about corrupt files from "btrfs scrub" in cron
+Date: Thu, 23 Nov 2017 09:41:50 +0000 (UTC)
+Message-ID: <pan$f10dc$17d1769f$63e482de$53d19a75@cox.net>
+References: <1511380450.1675.94.camel@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jorge Bastos posted on Wed, 22 Nov 2017 19:18:59 +0000 as excerpted:
+ST posted on Wed, 22 Nov 2017 21:54:10 +0200 as excerpted:
 
 > Hello,
 > 
-> While doing btrfs checksum testing I purposely corrupted a file and got
-> the expect I/O error when trying to copy it, I also tested btrfs restore
-> to see if I could recover a known corrupt file and it did copy it but
-> there was no checksum error or warning. I used btrfs restore -v
+> I have following cron job to scrub entire root filesystem (total ca.
+> 7.2TB and 2.3TB of them used) once a week:
+> /bin/btrfs scrub start -r / > /dev/null
 > 
-> Is this expect behavior or should restore warn about checksum failures?
+> Such scrubbing takes ca. 2 hours. How should I get notified that a
+> corrupt file was discovered? Does this command return some error code
+> back to cron so it can send an email as usual? Will cron wait 2 hours to
+> get that code?
 > 
-> Kernel used was 4.13.13,  btrfs-progs v4.13.2
+> I tried that command once without "> /dev/null" but got no email
+> notification about the results (eventhough the check was OK) - why?
 
-AFAIK it's expected.  The purpose of btrfs restore, after all, is to try 
-to get at least some files back from a filesystem that is generally 
-damaged and unable to mount, so acceptance of some possible damage to 
-restored files as a tradeoff for being able to restore them *at* *all* is 
-assumed.  It's not /supposed/ to be a substitute for having a proper 
-backup in the first place, only something to try in case there was no 
-backup and getting back a damaged file is better than getting back no 
-file, or in case there was a backup, but it wasn't current, in which case 
-the restored files can be verified against the backup, and those that 
-differ can be examined to see if the difference is due to legitimate 
-change, or corruption.
+See the btrfs-scrub manpage...
+
+Note that normally btrfs scrub start is asynchronous and should return 
+effectively immediately, the only possible errors therefore being for 
+example if the given path doesn't point to a btrfs or btrfs-device (which 
+would return a status code of 1, scrub couldn't be performed), etc.
+
+Status can be checked via btrfs scrub status, and/or, or you can use the 
+btrfs scrub start's -B (don't background) switch, which will cause it to 
+wait until the scrub is finished and print a summary report.  That should 
+allow you to check for a status code of 3, scrub found uncorrectable 
+errors, as well.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,41 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f43.google.com ([209.85.213.43]:34747 "EHLO
-        mail-vk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751967AbdKWDQx (ORCPT
+Received: from mail-ot0-f170.google.com ([74.125.82.170]:44745 "EHLO
+        mail-ot0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750769AbdKWFZM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Nov 2017 22:16:53 -0500
-Received: by mail-vk0-f43.google.com with SMTP id l201so10320043vkd.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 19:16:53 -0800 (PST)
+        Thu, 23 Nov 2017 00:25:12 -0500
+Received: by mail-ot0-f170.google.com with SMTP id d27so15415517ote.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 21:25:12 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
-References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
-From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Date: Thu, 23 Nov 2017 08:46:12 +0530
-Message-ID: <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
-Subject: Re: misc/021-image-multi-devices fails on latest btrfs-devel/misc-next
-To: btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
+References: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 22 Nov 2017 22:25:11 -0700
+Message-ID: <CAJCQCtQpCJc1h8qnLv6M_aMf-0q_9saNwCrNwt1HML1jFLHq8g@mail.gmail.com>
+Subject: Re: btrfs restore corrupt file
+To: Jorge Bastos <jorge.mrbastos@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quick update: It continues to fail:
-https://asciinema.org/a/8HAL3uZ4MG7eb5gXnlgq3jm7q
-----
-Cheers,
-Lakshmipathi.G
-http://www.giis.co.in http://www.webminal.org
-
-
-On Sat, Nov 18, 2017 at 12:59 PM, Lakshmipathi.G
-<lakshmipathi.g@gmail.com> wrote:
-> Hi.
+On Wed, Nov 22, 2017 at 12:18 PM, Jorge Bastos <jorge.mrbastos@gmail.com> wrote:
+> Hello,
 >
-> Few days back(Nov14th) this(misc/021-image-multi-devices) test script
-> used to pass and seems like its failing
-> now. may be due to recent commits? Logs,screen-casts available here:
-> https://lakshmipathi.github.io/btrfsqa/
+> While doing btrfs checksum testing I purposely corrupted a file and
+> got the expect I/O error when trying to copy it, I also tested btrfs
+> restore to see if I could recover a known corrupt file and it did copy
+> it but there was no checksum error or warning. I used btrfs restore -v
 >
-> ----
-> Cheers,
-> Lakshmipathi.G
-> http://www.giis.co.in http://www.webminal.org
+> Is this expect behavior or should restore warn about checksum failures?
+>
+> Kernel used was 4.13.13,  btrfs-progs v4.13.2
+
+I think it's expected. "The checks done by restore are less strict"
+from the man page. Although it'd be nice if -v option at least could
+flag such files as possibly being corrupt.
+
+-- 
+Chris Murphy

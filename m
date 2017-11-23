@@ -1,132 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:53301 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752436AbdKWMOX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 07:14:23 -0500
-Subject: Re: uncorrectable errors in Raid 10
-To: Steffen Sindzinski <stesind@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <a61eeda7-af07-e140-ccd9-d288931f07fb@gmail.com>
- <CAJCQCtSLG5hXikEiBD4OF5G+EfKgyALaynqivBvCaWLpEYQjEw@mail.gmail.com>
- <1c612777-77eb-1b83-101b-a9e0a53ee8be@gmail.com>
- <CAJCQCtRwO5E_xN-7u22uBQ57sYpUf8qQ7O0Abz2m+K8e9+DgdA@mail.gmail.com>
- <384b4a21-e74f-c52e-c6e2-f7930f187c94@gmail.com>
- <CAJCQCtQKOVYtOmQeCR0GZ08Wew2TjtZzfoA_mDvsHwL5vt06XA@mail.gmail.com>
- <63eff0dd-050c-95e5-0bc8-6c151900261c@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6f961563-f992-41c5-bb6f-2c7f66bbaa0c@gmx.com>
-Date: Thu, 23 Nov 2017 20:14:15 +0800
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:34575 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752812AbdKWM7H (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Nov 2017 07:59:07 -0500
+Received: by mail-oi0-f50.google.com with SMTP id a75so13116097oib.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Nov 2017 04:59:07 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <63eff0dd-050c-95e5-0bc8-6c151900261c@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="l0fqUxiED7Wt52wumULsWfRLb5sPLbKDp"
+In-Reply-To: <1511437679.14360.14.camel@gmail.com>
+References: <1511380450.1675.94.camel@gmail.com> <pan$f10dc$17d1769f$63e482de$53d19a75@cox.net>
+ <1511437679.14360.14.camel@gmail.com>
+From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+Date: Thu, 23 Nov 2017 12:59:06 +0000
+Message-ID: <CAMU1PDj+ovqRXOrcnRkr8rP4L+e=g9FXeTmaKBHQ-2o+r2+5vw@mail.gmail.com>
+Subject: Re: notification about corrupt files from "btrfs scrub" in cron
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---l0fqUxiED7Wt52wumULsWfRLb5sPLbKDp
-Content-Type: multipart/mixed; boundary="5EhDElnpu8ohOsJN8VBta8TOih30ho70s";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Steffen Sindzinski <stesind@gmail.com>,
- Chris Murphy <lists@colorremedies.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <6f961563-f992-41c5-bb6f-2c7f66bbaa0c@gmx.com>
-Subject: Re: uncorrectable errors in Raid 10
-References: <a61eeda7-af07-e140-ccd9-d288931f07fb@gmail.com>
- <CAJCQCtSLG5hXikEiBD4OF5G+EfKgyALaynqivBvCaWLpEYQjEw@mail.gmail.com>
- <1c612777-77eb-1b83-101b-a9e0a53ee8be@gmail.com>
- <CAJCQCtRwO5E_xN-7u22uBQ57sYpUf8qQ7O0Abz2m+K8e9+DgdA@mail.gmail.com>
- <384b4a21-e74f-c52e-c6e2-f7930f187c94@gmail.com>
- <CAJCQCtQKOVYtOmQeCR0GZ08Wew2TjtZzfoA_mDvsHwL5vt06XA@mail.gmail.com>
- <63eff0dd-050c-95e5-0bc8-6c151900261c@gmail.com>
-In-Reply-To: <63eff0dd-050c-95e5-0bc8-6c151900261c@gmail.com>
-
---5EhDElnpu8ohOsJN8VBta8TOih30ho70s
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2017=E5=B9=B411=E6=9C=8823=E6=97=A5 20:02, Steffen Sindzinski wrote:
-> Hi,
->=20
-> I updated to btrfs-progs v4.14-5-gf09e98a3. Unfortunately after 10h
-> Gnome desktop / Arch crashed with btrfs check --lowmem unfinished. I
-> will run it this night again.
-
-Any kernel backtrace about the crash?
-
-IIRC user space program like btrfs check should not trigger a kernel cras=
-h.
-
->=20
-> The result until crash was:
->=20
-> Checking filesystem on /dev/sdd2
-> UUID: 4fafd0d4-7dd9-4dcc-9a33-5f1ad9555358
-> ERROR: extent[15923092037632, 73728] referencer count mismatch (root:
-> 260, owner: 3631467, offset: 1019904) wanted: 4, have: 6
-> ERROR: extent[16078964924416, 69632] referencer count mismatch (root:
-> 260, owner: 4086589, offset: 4296704) wanted: 5, have: 7
-
-This is known bug, please use this branch instead.
-https://github.com/adam900710/btrfs-progs/tree/lowmem_fix
-
-Thanks,
-Qu
-
->=20
-> Steffen
->=20
->=20
-> Am 22.11.2017 um 17:42 schrieb Chris Murphy:
->> On Wed, Nov 22, 2017 at 9:38 AM, Steffen Sindzinski
->> <stesind@gmail.com> wrote:
->>> Hello,
->>>
->>> I did btrfs check --readonly on both disk without finding any error. =
-To
->>> reconfirm I did a scrub again which still has found 2 uncorrectable
->>> errors.
+On 23 November 2017 at 11:47, ST <smntov@gmail.com> wrote:
+>
+>> > I have following cron job to scrub entire root filesystem (total ca.
+>> > 7.2TB and 2.3TB of them used) once a week:
+>> > /bin/btrfs scrub start -r / > /dev/null
+>> >
+>> > Such scrubbing takes ca. 2 hours. How should I get notified that a
+>> > corrupt file was discovered? Does this command return some error code
+>> > back to cron so it can send an email as usual? Will cron wait 2 hours to
+>> > get that code?
+>> >
+>> > I tried that command once without "> /dev/null" but got no email
+>> > notification about the results (eventhough the check was OK) - why?
 >>
->> Try --mode=3Dlowmem option with btrfs-progs 4.3.3 or better 4.14. This=
-
->> is a new implementation of btrfs check and sometimes it comes up with
->> different results. It's strange that there's only this error found by
->> scrub and not by btrfs check which should be fully checking all
->> metadata for sanity, and in the process it would surely hit a bad
->> checksum.
+>> See the btrfs-scrub manpage...
 >>
+>> Note that normally btrfs scrub start is asynchronous and should return
+>> effectively immediately, the only possible errors therefore being for
+>> example if the given path doesn't point to a btrfs or btrfs-device (which
+>> would return a status code of 1, scrub couldn't be performed), etc.
 >>
-> --=20
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
+>> Status can be checked via btrfs scrub status, and/or, or you can use the
+>> btrfs scrub start's -B (don't background) switch, which will cause it to
+>> wait until the scrub is finished and print a summary report.  That should
+>> allow you to check for a status code of 3, scrub found uncorrectable
+>> errors, as well.
+>
+> Thank you for the response! Does it mean that if write:
+>
+> /bin/btrfs scrub start -r -B /
+>
+> cron will hang for 2 hours (is it problematic?) and then send me an
+> email with the summary report (even if everything was OK), and if I
+> write:
+>
+> /bin/btrfs scrub start -r -B / > /dev/null
+>
+> after 2 hours it will send an email, only if there was an error with
+> whatever error code (1-3)?
 
+Cron starts configured jobs at the scheduled time asynchronously.
+I.e. It doesn't block waiting for each command to finish.  Cron notices
+when the job finishes and any output produced, written to stdout and/or
+stderr, by the job is emailed to the user.  So no, a 2 hour job is not a
+problem for cron.
 
+With you redirecting btrfs scrub stdout to /dev/null only any stderr
+output will be captured by cron and emailed to you.
+(Unfortunately I don't know btrfs scrub well enough to know if it
+reports errors to stderr).
 
---5EhDElnpu8ohOsJN8VBta8TOih30ho70s--
-
---l0fqUxiED7Wt52wumULsWfRLb5sPLbKDp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloWu5cXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhZ7Af/ZLWaWqJ3ANliB5cWvl0Xm0Jt
-g5xTqpFwVUHCAXESVfNK8QNPQ3ypKCR7tc/cCMJaqsX33r85oDEmdWv2Rdrc2W59
-lwGmuBxIQLsk31Lr9rhIl3rcmbnn04KTjiydavNiUTLH+h4indGhB9NWifaoUgTS
-U/BAIxWx7Lqe6/EIYgLouXOwHSS/05l2CDmAzoKOOVnPDGXpm9pkFUPRPqRjRiqT
-Ruj4JY7Scz8bjoCqf8RbXe2jnqIrdpe7hXA/dFg2Zhcu1gg2LPsKVnKOSp2NXrxW
-nUjtQ+KGewmb09fJoGcXd4VAC52N/PJOGGBuYz2Oxy5aJddCTpD3EE/ZDNL08w==
-=MjnJ
------END PGP SIGNATURE-----
-
---l0fqUxiED7Wt52wumULsWfRLb5sPLbKDp--
+Mike

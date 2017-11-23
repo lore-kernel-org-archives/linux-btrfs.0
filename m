@@ -1,60 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f43.google.com ([209.85.218.43]:33442 "EHLO
-        mail-oi0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752774AbdKWJI5 (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:54042 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751845AbdKWJZz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 04:08:57 -0500
-Received: by mail-oi0-f43.google.com with SMTP id f135so12753521oib.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Nov 2017 01:08:57 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <4799dfcb-2a05-f1f5-8f08-285b5dec3488@gmx.com>
-References: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
- <CAJCQCtQpCJc1h8qnLv6M_aMf-0q_9saNwCrNwt1HML1jFLHq8g@mail.gmail.com> <4799dfcb-2a05-f1f5-8f08-285b5dec3488@gmx.com>
-From: Jorge Bastos <jorge.mrbastos@gmail.com>
-Date: Thu, 23 Nov 2017 09:08:56 +0000
-Message-ID: <CAHzMYBRQyrb+PDESNohKB5L=qBz369nFcHFwx0im4njTLJOL6g@mail.gmail.com>
+        Thu, 23 Nov 2017 04:25:55 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eHnlP-0000HI-W4
+        for linux-btrfs@vger.kernel.org; Thu, 23 Nov 2017 10:25:43 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs restore corrupt file
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Date: Thu, 23 Nov 2017 09:25:35 +0000 (UTC)
+Message-ID: <pan$c3b20$cd07d7e1$4b1a8f6a$c2ecab66@cox.net>
+References: <CAHzMYBQ7tsHFuHkJ5zjK6Wx0bD0XHp0TGti_uJNV5pz4ak7wJA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the replies.
+Jorge Bastos posted on Wed, 22 Nov 2017 19:18:59 +0000 as excerpted:
 
-Good to know it's working as expected, and I'm glad restore permits
-restoring a corrupt file since this may be desirable in some cases,
-but agree with Chris that it would be nice to get a warning if
-corruption is found or suspected.
+> Hello,
+> 
+> While doing btrfs checksum testing I purposely corrupted a file and got
+> the expect I/O error when trying to copy it, I also tested btrfs restore
+> to see if I could recover a known corrupt file and it did copy it but
+> there was no checksum error or warning. I used btrfs restore -v
+> 
+> Is this expect behavior or should restore warn about checksum failures?
+> 
+> Kernel used was 4.13.13,  btrfs-progs v4.13.2
 
-Jorge
+AFAIK it's expected.  The purpose of btrfs restore, after all, is to try 
+to get at least some files back from a filesystem that is generally 
+damaged and unable to mount, so acceptance of some possible damage to 
+restored files as a tradeoff for being able to restore them *at* *all* is 
+assumed.  It's not /supposed/ to be a substitute for having a proper 
+backup in the first place, only something to try in case there was no 
+backup and getting back a damaged file is better than getting back no 
+file, or in case there was a backup, but it wasn't current, in which case 
+the restored files can be verified against the backup, and those that 
+differ can be examined to see if the difference is due to legitimate 
+change, or corruption.
 
-On Thu, Nov 23, 2017 at 7:43 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2017年11月23日 13:25, Chris Murphy wrote:
->> On Wed, Nov 22, 2017 at 12:18 PM, Jorge Bastos <jorge.mrbastos@gmail.com> wrote:
->>> Hello,
->>>
->>> While doing btrfs checksum testing I purposely corrupted a file and
->>> got the expect I/O error when trying to copy it, I also tested btrfs
->>> restore to see if I could recover a known corrupt file and it did copy
->>> it but there was no checksum error or warning. I used btrfs restore -v
->>>
->>> Is this expect behavior or should restore warn about checksum failures?
->>>
->>> Kernel used was 4.13.13,  btrfs-progs v4.13.2
->>
->> I think it's expected. "The checks done by restore are less strict"
->> from the man page. Although it'd be nice if -v option at least could
->> flag such files as possibly being corrupt.
->>
-> I think people always consider "btrfs restore" as a tool to "restore" data.
->
-> The proper name of it should be "salvage" and moved under "btrfs
-> rescue", to reduce the confusion.
->
-> Thanks,
-> Qu
->
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

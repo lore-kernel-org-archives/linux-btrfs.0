@@ -1,445 +1,465 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:45099 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:35231 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752367AbdKXEKS (ORCPT
+        with ESMTP id S1752419AbdKXEKS (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Thu, 23 Nov 2017 23:10:18 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 2/3] btrfs: Cleanup open coded sector and bytes convert
-Date: Fri, 24 Nov 2017 12:10:07 +0800
-Message-Id: <20171124041008.32656-2-wqu@suse.com>
+Subject: [PATCH 3/3] btrfs: extent-tree: Use round up to replace align macro
+Date: Fri, 24 Nov 2017 12:10:08 +0800
+Message-Id: <20171124041008.32656-3-wqu@suse.com>
 In-Reply-To: <20171124041008.32656-1-wqu@suse.com>
 References: <20171124041008.32656-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+To save reader seconds before checking if it's rounding up or down.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/check-integrity.c |  2 +-
- fs/btrfs/compression.c     |  7 ++++---
- fs/btrfs/extent-tree.c     | 12 ++++++------
- fs/btrfs/extent_io.c       | 20 ++++++++++----------
- fs/btrfs/file-item.c       |  6 +++---
- fs/btrfs/inode.c           | 16 ++++++++--------
- fs/btrfs/raid56.c          |  8 ++++----
- fs/btrfs/scrub.c           | 18 +++++++++---------
- fs/btrfs/volumes.c         |  6 +++---
- 9 files changed, 48 insertions(+), 47 deletions(-)
+ fs/btrfs/extent-tree.c  | 10 +++++-----
+ fs/btrfs/extent_io.c    |  8 ++++----
+ fs/btrfs/file-item.c    |  4 ++--
+ fs/btrfs/file.c         |  6 +++---
+ fs/btrfs/inode-map.c    |  4 ++--
+ fs/btrfs/inode.c        | 38 +++++++++++++++++++-------------------
+ fs/btrfs/ioctl.c        | 12 ++++++------
+ fs/btrfs/ordered-data.c |  2 +-
+ fs/btrfs/send.c         | 12 ++++++------
+ fs/btrfs/tree-log.c     | 14 +++++++-------
+ 10 files changed, 55 insertions(+), 55 deletions(-)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 7d5a9b51f0d7..ade257389edc 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -1636,7 +1636,7 @@ static int btrfsic_read_block(struct btrfsic_state *state,
- 
- 		bio = btrfs_io_bio_alloc(num_pages - i);
- 		bio_set_dev(bio, block_ctx->dev->bdev);
--		bio->bi_iter.bi_sector = dev_bytenr >> 9;
-+		bio->bi_iter.bi_sector = to_sector(dev_bytenr);
- 		bio_set_op_attrs(bio, REQ_OP_READ, 0);
- 
- 		for (j = i; j < num_pages; j++) {
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 280384bf34f1..3a4e0376fc3c 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -136,7 +136,7 @@ static void end_compressed_bio_read(struct bio *bio)
- 
- 	inode = cb->inode;
- 	ret = check_compressed_csum(BTRFS_I(inode), cb,
--				    (u64)bio->bi_iter.bi_sector << 9);
-+				    to_bytes(bio->bi_iter.bi_sector));
- 	if (ret)
- 		goto csum_failed;
- 
-@@ -480,7 +480,8 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 
- 		if (!em || last_offset < em->start ||
- 		    (last_offset + PAGE_SIZE > extent_map_end(em)) ||
--		    (em->block_start >> 9) != cb->orig_bio->bi_iter.bi_sector) {
-+		    (to_sector(em->block_start)) !=
-+				cb->orig_bio->bi_iter.bi_sector) {
- 			free_extent_map(em);
- 			unlock_extent(tree, last_offset, end);
- 			unlock_page(page);
-@@ -545,7 +546,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	struct page *page;
- 	struct block_device *bdev;
- 	struct bio *comp_bio;
--	u64 cur_disk_byte = (u64)bio->bi_iter.bi_sector << 9;
-+	u64 cur_disk_byte = to_bytes(bio->bi_iter.bi_sector);
- 	u64 em_len;
- 	u64 em_start;
- 	struct extent_map *em;
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e2d7e86b51d1..84868f29a666 100644
+index 84868f29a666..66a4370c37f9 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2064,11 +2064,11 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
+@@ -2064,7 +2064,7 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
  {
  	int j, ret = 0;
  	u64 bytes_left, end;
--	u64 aligned_start = ALIGN(start, 1 << 9);
-+	u64 aligned_start = ALIGN(start, BI_SECTOR_SIZE);
+-	u64 aligned_start = ALIGN(start, BI_SECTOR_SIZE);
++	u64 aligned_start = round_up(start, BI_SECTOR_SIZE);
  
  	if (WARN_ON(start != aligned_start)) {
  		len -= aligned_start - start;
--		len = round_down(len, 1 << 9);
-+		len = round_down(len, BI_SECTOR_SIZE);
- 		start = aligned_start;
- 	}
+@@ -4290,7 +4290,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
+ 	int have_pinned_space;
  
-@@ -2106,8 +2106,8 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
+ 	/* make sure bytes are sectorsize aligned */
+-	bytes = ALIGN(bytes, fs_info->sectorsize);
++	bytes = round_up(bytes, fs_info->sectorsize);
+ 
+ 	if (btrfs_is_free_space_inode(inode)) {
+ 		need_commit = 0;
+@@ -6089,7 +6089,7 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
+ 	if (delalloc_lock)
+ 		mutex_lock(&inode->delalloc_mutex);
+ 
+-	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
++	num_bytes = round_up(num_bytes, fs_info->sectorsize);
+ 
+ 	spin_lock(&inode->lock);
+ 	nr_extents = count_max_extents(num_bytes);
+@@ -6219,7 +6219,7 @@ void btrfs_delalloc_release_metadata(struct btrfs_inode *inode, u64 num_bytes)
+ 	u64 to_free = 0;
+ 	unsigned dropped;
+ 
+-	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
++	num_bytes = round_up(num_bytes, fs_info->sectorsize);
+ 	spin_lock(&inode->lock);
+ 	dropped = drop_outstanding_extent(inode, num_bytes);
+ 
+@@ -7875,7 +7875,7 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
+ 			goto loop;
  		}
+ checks:
+-		search_start = ALIGN(offset, fs_info->stripesize);
++		search_start = round_up(offset, fs_info->stripesize);
  
- 		if (size) {
--			ret = blkdev_issue_discard(bdev, start >> 9, size >> 9,
--						   GFP_NOFS, 0);
-+			ret = blkdev_issue_discard(bdev, to_sector(start),
-+						to_sector(size), GFP_NOFS, 0);
- 			if (!ret)
- 				*discarded_bytes += size;
- 			else if (ret != -EOPNOTSUPP)
-@@ -2123,8 +2123,8 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
- 	}
- 
- 	if (bytes_left) {
--		ret = blkdev_issue_discard(bdev, start >> 9, bytes_left >> 9,
--					   GFP_NOFS, 0);
-+		ret = blkdev_issue_discard(bdev, to_sector(start),
-+					   to_sector(bytes_left), GFP_NOFS, 0);
- 		if (!ret)
- 			*discarded_bytes += bytes_left;
- 	}
+ 		/* move on to the next group */
+ 		if (search_start + num_bytes >
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7fa50e12f18e..5cf8be481a88 100644
+index 5cf8be481a88..209f011863f4 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2024,7 +2024,7 @@ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
- 		BUG_ON(mirror_num != bbio->mirror_num);
- 	}
+@@ -2965,7 +2965,7 @@ static int __do_readpage(struct extent_io_tree *tree,
  
--	sector = bbio->stripes[bbio->mirror_num - 1].physical >> 9;
-+	sector = to_sector(bbio->stripes[bbio->mirror_num - 1].physical);
- 	bio->bi_iter.bi_sector = sector;
- 	dev = bbio->stripes[bbio->mirror_num - 1].dev;
- 	btrfs_put_bbio(bbio);
-@@ -2334,7 +2334,7 @@ struct bio *btrfs_create_repair_bio(struct inode *inode, struct bio *failed_bio,
- 
- 	bio = btrfs_io_bio_alloc(1);
- 	bio->bi_end_io = endio_func;
--	bio->bi_iter.bi_sector = failrec->logical >> 9;
-+	bio->bi_iter.bi_sector = to_sector(failrec->logical);
- 	bio_set_dev(bio, fs_info->fs_devices->latest_bdev);
- 	bio->bi_iter.bi_size = 0;
- 	bio->bi_private = data;
-@@ -2676,7 +2676,7 @@ struct bio *btrfs_bio_alloc(struct block_device *bdev, u64 first_byte)
- 
- 	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_PAGES, btrfs_bioset);
- 	bio_set_dev(bio, bdev);
--	bio->bi_iter.bi_sector = first_byte >> 9;
-+	bio->bi_iter.bi_sector = to_sector(first_byte);
- 	btrfs_io_bio_init(btrfs_io_bio(bio));
- 	return bio;
- }
-@@ -2716,7 +2716,7 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
- 	btrfs_bio = btrfs_io_bio(bio);
- 	btrfs_io_bio_init(btrfs_bio);
- 
--	bio_trim(bio, offset >> 9, size >> 9);
-+	bio_trim(bio, to_sector(offset), to_sector(size));
- 	btrfs_bio->iter = bio->bi_iter;
- 	return bio;
- }
-@@ -2802,7 +2802,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
- 		}
- 	}
- 
--	bio = btrfs_bio_alloc(bdev, (u64)sector << 9);
-+	bio = btrfs_bio_alloc(bdev, to_bytes(sector));
- 	bio_add_page(bio, page, page_size, offset);
- 	bio->bi_end_io = end_io_func;
- 	bio->bi_private = tree;
-@@ -2968,9 +2968,9 @@ static int __do_readpage(struct extent_io_tree *tree,
- 		iosize = ALIGN(iosize, blocksize);
+ 		iosize = min(extent_map_end(em) - cur, end - cur + 1);
+ 		cur_end = min(extent_map_end(em) - 1, end);
+-		iosize = ALIGN(iosize, blocksize);
++		iosize = round_up(iosize, blocksize);
  		if (this_bio_flag & EXTENT_BIO_COMPRESSED) {
  			disk_io_size = em->block_len;
--			sector = em->block_start >> 9;
-+			sector = to_sector(em->block_start);
- 		} else {
--			sector = (em->block_start + extent_offset) >> 9;
-+			sector = to_sector(em->block_start + extent_offset);
- 			disk_io_size = iosize;
- 		}
- 		bdev = em->bdev;
-@@ -3389,7 +3389,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 			sector = to_sector(em->block_start);
+@@ -3388,7 +3388,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 		BUG_ON(em_end <= cur);
  		BUG_ON(end < cur);
  		iosize = min(em_end - cur, end - cur + 1);
- 		iosize = ALIGN(iosize, blocksize);
--		sector = (em->block_start + extent_offset) >> 9;
-+		sector = to_sector(em->block_start + extent_offset);
+-		iosize = ALIGN(iosize, blocksize);
++		iosize = round_up(iosize, blocksize);
+ 		sector = to_sector(em->block_start + extent_offset);
  		bdev = em->bdev;
  		block_start = em->block_start;
- 		compressed = test_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
-@@ -3749,8 +3749,8 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 		clear_page_dirty_for_io(p);
- 		set_page_writeback(p);
- 		ret = submit_extent_page(REQ_OP_WRITE | write_flags, tree, wbc,
--					 p, offset >> 9, PAGE_SIZE, 0, bdev,
--					 &epd->bio,
-+					 p, to_sector(offset), PAGE_SIZE, 0,
-+					 bdev, &epd->bio,
- 					 end_bio_extent_buffer_writepage,
- 					 0, epd->bio_flags, bio_flags, false);
- 		epd->bio_flags = bio_flags;
+@@ -4219,7 +4219,7 @@ int extent_invalidatepage(struct extent_io_tree *tree,
+ 	u64 end = start + PAGE_SIZE - 1;
+ 	size_t blocksize = page->mapping->host->i_sb->s_blocksize;
+ 
+-	start += ALIGN(offset, blocksize);
++	start += round_up(offset, blocksize);
+ 	if (start > end)
+ 		return 0;
+ 
+@@ -4336,7 +4336,7 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
+ 		len = last - offset;
+ 		if (len == 0)
+ 			break;
+-		len = ALIGN(len, sectorsize);
++		len = round_up(len, sectorsize);
+ 		em = get_extent(BTRFS_I(inode), NULL, 0, offset, len, 0);
+ 		if (IS_ERR_OR_NULL(em))
+ 			return em;
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index fdcb41002623..df17cdced256 100644
+index df17cdced256..7a75ada7a96a 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
-@@ -218,7 +218,7 @@ static blk_status_t __btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio
- 		path->skip_locking = 1;
+@@ -956,8 +956,8 @@ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+ 	} else if (type == BTRFS_FILE_EXTENT_INLINE) {
+ 		size_t size;
+ 		size = btrfs_file_extent_inline_len(leaf, slot, fi);
+-		extent_end = ALIGN(extent_start + size,
+-				   fs_info->sectorsize);
++		extent_end = round_up(extent_start + size,
++				      fs_info->sectorsize);
  	}
  
--	disk_bytenr = (u64)bio->bi_iter.bi_sector << 9;
-+	disk_bytenr = to_bytes(bio->bi_iter.bi_sector);
- 	if (dio)
- 		offset = logical_offset;
+ 	em->ram_bytes = btrfs_file_extent_ram_bytes(leaf, fi);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index aafcc785f840..d1b4ccab4094 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -937,8 +937,8 @@ int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 			    extent_type == BTRFS_FILE_EXTENT_INLINE) {
+ 				inode_sub_bytes(inode,
+ 						extent_end - key.offset);
+-				extent_end = ALIGN(extent_end,
+-						   fs_info->sectorsize);
++				extent_end = round_up(extent_end,
++						      fs_info->sectorsize);
+ 			} else if (update_refs && disk_bytenr > 0) {
+ 				ret = btrfs_free_extent(trans, fs_info,
+ 						disk_bytenr, num_bytes, 0,
+@@ -2929,7 +2929,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		}
+ 		last_byte = min(extent_map_end(em), alloc_end);
+ 		actual_end = min_t(u64, extent_map_end(em), offset + len);
+-		last_byte = ALIGN(last_byte, blocksize);
++		last_byte = round_up(last_byte, blocksize);
+ 		if (em->block_start == EXTENT_MAP_HOLE ||
+ 		    (cur_offset >= inode->i_size &&
+ 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index d02019747d00..9487e5c92cb2 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -313,7 +313,7 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+ 	 */
+ 	max_ino = info->bytes - 1;
  
-@@ -461,7 +461,7 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 	else
- 		offset = 0; /* shut up gcc */
+-	max_bitmaps = ALIGN(max_ino, INODES_PER_BITMAP) / INODES_PER_BITMAP;
++	max_bitmaps = round_up(max_ino, INODES_PER_BITMAP) / INODES_PER_BITMAP;
+ 	if (max_bitmaps <= ctl->total_bitmaps) {
+ 		ctl->extents_thresh = 0;
+ 		return;
+@@ -486,7 +486,7 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
  
--	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
-+	sums->bytenr = to_bytes(bio->bi_iter.bi_sector);
- 	index = 0;
- 
- 	bio_for_each_segment(bvec, bio, iter) {
-@@ -499,7 +499,7 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
- 				ordered = btrfs_lookup_ordered_extent(inode,
- 								offset);
- 				ASSERT(ordered); /* Logic error */
--				sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9)
-+				sums->bytenr = to_bytes(bio->bi_iter.bi_sector)
- 					+ total_bytes;
- 				index = 0;
+ 	spin_lock(&ctl->tree_lock);
+ 	prealloc = sizeof(struct btrfs_free_space) * ctl->free_extents;
+-	prealloc = ALIGN(prealloc, PAGE_SIZE);
++	prealloc = round_up(prealloc, PAGE_SIZE);
+ 	prealloc += ctl->total_bitmaps * PAGE_SIZE;
+ 	spin_unlock(&ctl->tree_lock);
  
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d94e3f68b9b1..3a8eb49e2c10 100644
+index 3a8eb49e2c10..0704b393ea63 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1890,7 +1890,7 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
- {
- 	struct inode *inode = page->mapping->host;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	u64 logical = (u64)bio->bi_iter.bi_sector << 9;
-+	u64 logical = to_bytes(bio->bi_iter.bi_sector);
- 	u64 length = 0;
- 	u64 map_length;
+@@ -287,7 +287,7 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 	u64 isize = i_size_read(inode);
+ 	u64 actual_end = min(end + 1, isize);
+ 	u64 inline_len = actual_end - start;
+-	u64 aligned_end = ALIGN(end, fs_info->sectorsize);
++	u64 aligned_end = round_up(end, fs_info->sectorsize);
+ 	u64 data_len = inline_len;
  	int ret;
-@@ -8601,8 +8601,8 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
+ 	struct btrfs_path *path;
+@@ -508,7 +508,7 @@ static noinline void compress_file_range(struct inode *inode,
  
- 	map_length = orig_bio->bi_iter.bi_size;
- 	submit_len = map_length;
--	ret = btrfs_map_block(fs_info, btrfs_op(orig_bio), start_sector << 9,
--			      &map_length, NULL, 0);
-+	ret = btrfs_map_block(fs_info, btrfs_op(orig_bio),
-+			      to_bytes(start_sector), &map_length, NULL, 0);
- 	if (ret)
- 		return -EIO;
+ 	total_compressed = min_t(unsigned long, total_compressed,
+ 			BTRFS_MAX_UNCOMPRESSED);
+-	num_bytes = ALIGN(end - start + 1, blocksize);
++	num_bytes = round_up(end - start + 1, blocksize);
+ 	num_bytes = max(blocksize,  num_bytes);
+ 	total_in = 0;
+ 	ret = 0;
+@@ -616,14 +616,14 @@ static noinline void compress_file_range(struct inode *inode,
+ 		 * up to a block size boundary so the allocator does sane
+ 		 * things
+ 		 */
+-		total_compressed = ALIGN(total_compressed, blocksize);
++		total_compressed = round_up(total_compressed, blocksize);
  
-@@ -8656,12 +8656,12 @@ static int btrfs_submit_direct_hook(struct btrfs_dio_private *dip)
+ 		/*
+ 		 * one last check to make sure the compression is really a
+ 		 * win, compare the page count read with the blocks on disk,
+ 		 * compression must free at least one sector size
+ 		 */
+-		total_in = ALIGN(total_in, PAGE_SIZE);
++		total_in = round_up(total_in, PAGE_SIZE);
+ 		if (total_compressed + blocksize <= total_in) {
+ 			num_bytes = total_in;
+ 			*num_added += 1;
+@@ -971,7 +971,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 		goto out_unlock;
+ 	}
+ 
+-	num_bytes = ALIGN(end - start + 1, blocksize);
++	num_bytes = round_up(end - start + 1, blocksize);
+ 	num_bytes = max(blocksize,  num_bytes);
+ 	disk_num_bytes = num_bytes;
+ 
+@@ -1423,8 +1423,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 			extent_end = found_key.offset +
+ 				btrfs_file_extent_inline_len(leaf,
+ 						     path->slots[0], fi);
+-			extent_end = ALIGN(extent_end,
+-					   fs_info->sectorsize);
++			extent_end = round_up(extent_end,
++					      fs_info->sectorsize);
+ 		} else {
+ 			BUG_ON(1);
  		}
+@@ -4388,7 +4388,7 @@ static int truncate_inline_extent(struct inode *inode,
  
- 		clone_offset += clone_len;
--		start_sector += clone_len >> 9;
-+		start_sector += to_sector(clone_len);
- 		file_offset += clone_len;
+ 	if (btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE) {
+ 		loff_t offset = new_size;
+-		loff_t page_end = ALIGN(offset, PAGE_SIZE);
++		loff_t page_end = round_up(offset, PAGE_SIZE);
  
- 		map_length = submit_len;
- 		ret = btrfs_map_block(fs_info, btrfs_op(orig_bio),
--				      start_sector << 9, &map_length, NULL, 0);
-+				to_bytes(start_sector), &map_length, NULL, 0);
- 		if (ret)
- 			goto out_err;
- 	} while (submit_len > 0);
-@@ -8707,7 +8707,7 @@ static void btrfs_submit_direct(struct bio *dio_bio, struct inode *inode,
- 	dip->inode = inode;
- 	dip->logical_offset = file_offset;
- 	dip->bytes = dio_bio->bi_iter.bi_size;
--	dip->disk_bytenr = (u64)dio_bio->bi_iter.bi_sector << 9;
-+	dip->disk_bytenr = to_bytes(dio_bio->bi_iter.bi_sector);
- 	bio->bi_private = dip;
- 	dip->orig_bio = bio;
- 	dip->dio_bio = dio_bio;
+ 		/*
+ 		 * Zero out the remaining of the last page of our inline extent,
+@@ -4477,8 +4477,8 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	 */
+ 	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
+ 	    root == fs_info->tree_root)
+-		btrfs_drop_extent_cache(BTRFS_I(inode), ALIGN(new_size,
+-					fs_info->sectorsize),
++		btrfs_drop_extent_cache(BTRFS_I(inode),
++					round_up(new_size, fs_info->sectorsize),
+ 					(u64)-1, 0);
+ 
+ 	/*
+@@ -4584,7 +4584,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 			if (!del_item) {
+ 				u64 orig_num_bytes =
+ 					btrfs_file_extent_num_bytes(leaf, fi);
+-				extent_num_bytes = ALIGN(new_size -
++				extent_num_bytes = round_up(new_size -
+ 						found_key.offset,
+ 						fs_info->sectorsize);
+ 				btrfs_set_file_extent_num_bytes(leaf, fi,
+@@ -4948,8 +4948,8 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 	struct extent_map *em = NULL;
+ 	struct extent_state *cached_state = NULL;
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+-	u64 hole_start = ALIGN(oldsize, fs_info->sectorsize);
+-	u64 block_end = ALIGN(size, fs_info->sectorsize);
++	u64 hole_start = round_up(oldsize, fs_info->sectorsize);
++	u64 block_end = round_up(size, fs_info->sectorsize);
+ 	u64 last_byte;
+ 	u64 cur_offset;
+ 	u64 hole_size;
+@@ -4992,7 +4992,7 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
+ 			break;
+ 		}
+ 		last_byte = min(extent_map_end(em), block_end);
+-		last_byte = ALIGN(last_byte, fs_info->sectorsize);
++		last_byte = round_up(last_byte, fs_info->sectorsize);
+ 		if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
+ 			struct extent_map *hole_em;
+ 			hole_size = last_byte - cur_offset;
+@@ -7070,8 +7070,8 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		size_t size;
+ 		size = btrfs_file_extent_inline_len(leaf, path->slots[0], item);
+-		extent_end = ALIGN(extent_start + size,
+-				   fs_info->sectorsize);
++		extent_end = round_up(extent_start + size,
++				      fs_info->sectorsize);
+ 
+ 		trace_btrfs_get_extent_show_fi_inline(inode, leaf, item,
+ 						      path->slots[0],
+@@ -7125,7 +7125,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 		copy_size = min_t(u64, PAGE_SIZE - pg_offset,
+ 				  size - extent_offset);
+ 		em->start = extent_start + extent_offset;
+-		em->len = ALIGN(copy_size, fs_info->sectorsize);
++		em->len = round_up(copy_size, fs_info->sectorsize);
+ 		em->orig_block_len = em->len;
+ 		em->orig_start = em->start;
+ 		ptr = btrfs_file_extent_inline_start(item) + extent_offset;
 @@ -9697,8 +9697,8 @@ static int btrfs_getattr(const struct path *path, struct kstat *stat,
  	spin_lock(&BTRFS_I(inode)->lock);
  	delalloc_bytes = BTRFS_I(inode)->new_delalloc_bytes;
  	spin_unlock(&BTRFS_I(inode)->lock);
--	stat->blocks = (ALIGN(inode_get_bytes(inode), blocksize) +
--			ALIGN(delalloc_bytes, blocksize)) >> 9;
-+	stat->blocks = to_sector(ALIGN(inode_get_bytes(inode), blocksize) +
-+				 ALIGN(delalloc_bytes, blocksize));
+-	stat->blocks = to_sector(ALIGN(inode_get_bytes(inode), blocksize) +
+-				 ALIGN(delalloc_bytes, blocksize));
++	stat->blocks = to_sector(round_up(inode_get_bytes(inode), blocksize) +
++				 round_up(delalloc_bytes, blocksize));
  	return 0;
  }
  
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 24a62224b24b..3dc2da63939b 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1081,7 +1081,7 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 6c7a49faf4e0..1fdfe328f018 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3088,7 +3088,7 @@ static int extent_same_check_offsets(struct inode *inode, u64 off, u64 *plen,
  
- 	/* see if we can add this page onto our existing bio */
- 	if (last) {
--		last_end = (u64)last->bi_iter.bi_sector << 9;
-+		last_end = to_bytes(last->bi_iter.bi_sector);
- 		last_end += last->bi_iter.bi_size;
+ 	/* if we extend to eof, continue to block boundary */
+ 	if (off + len == inode->i_size)
+-		*plen = len = ALIGN(inode->i_size, bs) - off;
++		*plen = len = round_up(inode->i_size, bs) - off;
  
- 		/*
-@@ -1102,7 +1102,7 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
- 	bio = btrfs_io_bio_alloc(bio_max_len >> PAGE_SHIFT ?: 1);
- 	bio->bi_iter.bi_size = 0;
- 	bio_set_dev(bio, stripe->dev->bdev);
--	bio->bi_iter.bi_sector = disk_start >> 9;
-+	bio->bi_iter.bi_sector = to_sector(disk_start);
- 
- 	bio_add_page(bio, page, PAGE_SIZE, 0);
- 	bio_list_add(bio_list, bio);
-@@ -1147,7 +1147,7 @@ static void index_rbio_pages(struct btrfs_raid_bio *rbio)
- 		struct bvec_iter iter;
- 		int i = 0;
- 
--		start = (u64)bio->bi_iter.bi_sector << 9;
-+		start = to_bytes(bio->bi_iter.bi_sector);
- 		stripe_offset = start - rbio->bbio->raid_map[0];
- 		page_index = stripe_offset >> PAGE_SHIFT;
- 
-@@ -2143,7 +2143,7 @@ int raid56_parity_recover(struct btrfs_fs_info *fs_info, struct bio *bio,
- 	if (rbio->faila == -1) {
- 		btrfs_warn(fs_info,
- 	"%s could not find the bad stripe in raid56 so that we cannot recover any more (bio has logical %llu len %llu, bbio has map_type %llu)",
--			   __func__, (u64)bio->bi_iter.bi_sector << 9,
-+			   __func__, to_bytes(bio->bi_iter.bi_sector),
- 			   (u64)bio->bi_iter.bi_size, bbio->map_type);
- 		if (generic_io)
- 			btrfs_put_bbio(bbio);
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index e3f6c49e5c4d..bcf031ebe303 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -845,7 +845,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
- 	if (!path)
- 		return;
- 
--	swarn.sector = (sblock->pagev[0]->physical) >> 9;
-+	swarn.sector = to_sector(sblock->pagev[0]->physical);
- 	swarn.logical = sblock->pagev[0]->logical;
- 	swarn.errstr = errstr;
- 	swarn.dev = NULL;
-@@ -1694,7 +1694,7 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
- 
- 	init_completion(&done.event);
- 	done.status = 0;
--	bio->bi_iter.bi_sector = page->logical >> 9;
-+	bio->bi_iter.bi_sector = to_sector(page->logical);
- 	bio->bi_private = &done;
- 	bio->bi_end_io = scrub_bio_wait_endio;
- 
-@@ -1747,7 +1747,7 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 				sblock->no_io_error_seen = 0;
- 			}
- 		} else {
--			bio->bi_iter.bi_sector = page->physical >> 9;
-+			bio->bi_iter.bi_sector = to_sector(page->physical);
- 			bio_set_op_attrs(bio, REQ_OP_READ, 0);
- 
- 			if (btrfsic_submit_bio_wait(bio)) {
-@@ -1827,7 +1827,7 @@ static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
- 
- 		bio = btrfs_io_bio_alloc(1);
- 		bio_set_dev(bio, page_bad->dev->bdev);
--		bio->bi_iter.bi_sector = page_bad->physical >> 9;
-+		bio->bi_iter.bi_sector = to_sector(page_bad->physical);
- 		bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
- 
- 		ret = bio_add_page(bio, page_good->page, PAGE_SIZE, 0);
-@@ -1922,7 +1922,7 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
- 		bio->bi_private = sbio;
- 		bio->bi_end_io = scrub_wr_bio_end_io;
- 		bio_set_dev(bio, sbio->dev->bdev);
--		bio->bi_iter.bi_sector = sbio->physical >> 9;
-+		bio->bi_iter.bi_sector = to_sector(sbio->physical);
- 		bio_set_op_attrs(bio, REQ_OP_WRITE, 0);
- 		sbio->status = 0;
- 	} else if (sbio->physical + sbio->page_count * PAGE_SIZE !=
-@@ -2322,7 +2322,7 @@ static int scrub_add_page_to_rd_bio(struct scrub_ctx *sctx,
- 		bio->bi_private = sbio;
- 		bio->bi_end_io = scrub_bio_end_io;
- 		bio_set_dev(bio, sbio->dev->bdev);
--		bio->bi_iter.bi_sector = sbio->physical >> 9;
-+		bio->bi_iter.bi_sector = to_sector(sbio->physical);
- 		bio_set_op_attrs(bio, REQ_OP_READ, 0);
- 		sbio->status = 0;
- 	} else if (sbio->physical + sbio->page_count * PAGE_SIZE !=
-@@ -2441,7 +2441,7 @@ static void scrub_missing_raid56_pages(struct scrub_block *sblock)
- 	}
- 
- 	bio = btrfs_io_bio_alloc(0);
--	bio->bi_iter.bi_sector = logical >> 9;
-+	bio->bi_iter.bi_sector = to_sector(logical);
- 	bio->bi_private = sblock;
- 	bio->bi_end_io = scrub_missing_raid56_end_io;
- 
-@@ -3022,7 +3022,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
- 		goto bbio_out;
- 
- 	bio = btrfs_io_bio_alloc(0);
--	bio->bi_iter.bi_sector = sparity->logic_start >> 9;
-+	bio->bi_iter.bi_sector = to_sector(sparity->logic_start);
- 	bio->bi_private = sparity;
- 	bio->bi_end_io = scrub_parity_bio_endio;
- 
-@@ -4623,7 +4623,7 @@ static int write_page_nocow(struct scrub_ctx *sctx,
- 	}
- 	bio = btrfs_io_bio_alloc(1);
- 	bio->bi_iter.bi_size = 0;
--	bio->bi_iter.bi_sector = physical_for_dev_replace >> 9;
-+	bio->bi_iter.bi_sector = to_sector(physical_for_dev_replace);
- 	bio_set_dev(bio, dev->bdev);
- 	bio->bi_opf = REQ_OP_WRITE | REQ_SYNC;
- 	ret = bio_add_page(bio, page, PAGE_SIZE, 0);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b39737568c22..b8eab8598ac1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6109,7 +6109,7 @@ static void submit_stripe_bio(struct btrfs_bio *bbio, struct bio *bio,
- 	bio->bi_private = bbio;
- 	btrfs_io_bio(bio)->stripe_index = dev_nr;
- 	bio->bi_end_io = btrfs_end_bio;
--	bio->bi_iter.bi_sector = physical >> 9;
-+	bio->bi_iter.bi_sector = to_sector(physical);
- #ifdef DEBUG
- 	{
- 		struct rcu_string *name;
-@@ -6143,7 +6143,7 @@ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
- 		WARN_ON(bio != bbio->orig_bio);
- 
- 		btrfs_io_bio(bio)->mirror_num = bbio->mirror_num;
--		bio->bi_iter.bi_sector = logical >> 9;
-+		bio->bi_iter.bi_sector = to_sector(logical);
- 		bio->bi_status = BLK_STS_IOERR;
- 		btrfs_end_bbio(bbio, bio);
- 	}
-@@ -6154,7 +6154,7 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 	/* Check that we are block aligned - btrfs_clone() requires this */
+ 	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs))
+@@ -3375,8 +3375,8 @@ static int clone_copy_inline_extent(struct inode *dst,
  {
- 	struct btrfs_device *dev;
- 	struct bio *first_bio = bio;
--	u64 logical = (u64)bio->bi_iter.bi_sector << 9;
-+	u64 logical = to_bytes(bio->bi_iter.bi_sector);
- 	u64 length = 0;
- 	u64 map_length;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(dst->i_sb);
+ 	struct btrfs_root *root = BTRFS_I(dst)->root;
+-	const u64 aligned_end = ALIGN(new_key->offset + datal,
+-				      fs_info->sectorsize);
++	const u64 aligned_end = round_up(new_key->offset + datal,
++					 fs_info->sectorsize);
  	int ret;
+ 	struct btrfs_key key;
+ 
+@@ -3768,8 +3768,8 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 			btrfs_mark_buffer_dirty(leaf);
+ 			btrfs_release_path(path);
+ 
+-			last_dest_end = ALIGN(new_key.offset + datal,
+-					      fs_info->sectorsize);
++			last_dest_end = round_up(new_key.offset + datal,
++						 fs_info->sectorsize);
+ 			ret = clone_finish_inode_update(trans, inode,
+ 							last_dest_end,
+ 							destoff, olen,
+@@ -3878,7 +3878,7 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
+ 		olen = len = src->i_size - off;
+ 	/* if we extend to eof, continue to block boundary */
+ 	if (off + len == src->i_size)
+-		len = ALIGN(src->i_size, bs) - off;
++		len = round_up(src->i_size, bs) - off;
+ 
+ 	if (len == 0) {
+ 		ret = 0;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index a3aca495e33e..f02fd8c008e3 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -978,7 +978,7 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				     ordered->file_offset +
+ 				     ordered->truncated_len);
+ 	} else {
+-		offset = ALIGN(offset, btrfs_inode_sectorsize(inode));
++		offset = round_up(offset, btrfs_inode_sectorsize(inode));
+ 	}
+ 	disk_i_size = BTRFS_I(inode)->disk_i_size;
+ 
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 8fd195cfe81b..4a8a13888c76 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5403,8 +5403,8 @@ static int get_last_extent(struct send_ctx *sctx, u64 offset)
+ 	if (type == BTRFS_FILE_EXTENT_INLINE) {
+ 		u64 size = btrfs_file_extent_inline_len(path->nodes[0],
+ 							path->slots[0], fi);
+-		extent_end = ALIGN(key.offset + size,
+-				   sctx->send_root->fs_info->sectorsize);
++		extent_end = round_up(key.offset + size,
++				      sctx->send_root->fs_info->sectorsize);
+ 	} else {
+ 		extent_end = key.offset +
+ 			btrfs_file_extent_num_bytes(path->nodes[0], fi);
+@@ -5467,8 +5467,8 @@ static int range_is_hole_in_parent(struct send_ctx *sctx,
+ 		    BTRFS_FILE_EXTENT_INLINE) {
+ 			u64 size = btrfs_file_extent_inline_len(leaf, slot, fi);
+ 
+-			extent_end = ALIGN(key.offset + size,
+-					   root->fs_info->sectorsize);
++			extent_end = round_up(key.offset + size,
++					      root->fs_info->sectorsize);
+ 		} else {
+ 			extent_end = key.offset +
+ 				btrfs_file_extent_num_bytes(leaf, fi);
+@@ -5513,8 +5513,8 @@ static int maybe_send_hole(struct send_ctx *sctx, struct btrfs_path *path,
+ 	if (type == BTRFS_FILE_EXTENT_INLINE) {
+ 		u64 size = btrfs_file_extent_inline_len(path->nodes[0],
+ 							path->slots[0], fi);
+-		extent_end = ALIGN(key->offset + size,
+-				   sctx->send_root->fs_info->sectorsize);
++		extent_end = round_up(key->offset + size,
++				      sctx->send_root->fs_info->sectorsize);
+ 	} else {
+ 		extent_end = key->offset +
+ 			btrfs_file_extent_num_bytes(path->nodes[0], fi);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c800d067fcbf..a0403f36ef44 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -613,8 +613,8 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		size = btrfs_file_extent_inline_len(eb, slot, item);
+ 		nbytes = btrfs_file_extent_ram_bytes(eb, item);
+-		extent_end = ALIGN(start + size,
+-				   fs_info->sectorsize);
++		extent_end = round_up(start + size,
++				      fs_info->sectorsize);
+ 	} else {
+ 		ret = 0;
+ 		goto out;
+@@ -3824,8 +3824,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 			len = btrfs_file_extent_inline_len(src,
+ 							   src_path->slots[0],
+ 							   extent);
+-			*last_extent = ALIGN(key.offset + len,
+-					     fs_info->sectorsize);
++			*last_extent = round_up(key.offset + len,
++						fs_info->sectorsize);
+ 		} else {
+ 			len = btrfs_file_extent_num_bytes(src, extent);
+ 			*last_extent = key.offset + len;
+@@ -3888,8 +3888,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 		if (btrfs_file_extent_type(src, extent) ==
+ 		    BTRFS_FILE_EXTENT_INLINE) {
+ 			len = btrfs_file_extent_inline_len(src, i, extent);
+-			extent_end = ALIGN(key.offset + len,
+-					   fs_info->sectorsize);
++			extent_end = round_up(key.offset + len,
++					      fs_info->sectorsize);
+ 		} else {
+ 			len = btrfs_file_extent_num_bytes(src, extent);
+ 			extent_end = key.offset + len;
+@@ -4476,7 +4476,7 @@ static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
+ 	if (hole_size == 0)
+ 		return 0;
+ 
+-	hole_size = ALIGN(hole_size, fs_info->sectorsize);
++	hole_size = round_up(hole_size, fs_info->sectorsize);
+ 	ret = btrfs_insert_file_extent(trans, log, ino, hole_start, 0, 0,
+ 				       hole_size, 0, hole_size, 0, 0, 0);
+ 	return ret;
 -- 
 2.15.0
 

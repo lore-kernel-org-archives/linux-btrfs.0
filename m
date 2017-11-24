@@ -1,171 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:63123 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752645AbdKXI3l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Nov 2017 03:29:41 -0500
-Subject: Re: misc/021-image-multi-devices fails on latest
- btrfs-devel/misc-next
-To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>
+Received: from mail-vk0-f51.google.com ([209.85.213.51]:40193 "EHLO
+        mail-vk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753121AbdKXKQR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Nov 2017 05:16:17 -0500
+Received: by mail-vk0-f51.google.com with SMTP id h21so9258116vke.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Nov 2017 02:16:17 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <19a5ec80-3860-20b8-cb12-fcb41b21dc00@gmx.com>
 References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
  <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
- <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com>
- <CAKuJGC-w2HuNXFeFhLN21BAPdtzG=8rWX4rFDU6WPkH1F5RSSQ@mail.gmail.com>
+ <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com> <CAKuJGC-w2HuNXFeFhLN21BAPdtzG=8rWX4rFDU6WPkH1F5RSSQ@mail.gmail.com>
  <CAKuJGC-hOTkWwKQasocRociw=jOritrLgBaG7_dD==A-jadTpQ@mail.gmail.com>
- <55e496fe-6a73-b759-ed8c-4f415ddacd1d@gmx.com>
- <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <19a5ec80-3860-20b8-cb12-fcb41b21dc00@gmx.com>
-Date: Fri, 24 Nov 2017 16:29:35 +0800
-MIME-Version: 1.0
-In-Reply-To: <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="CVRtHk3s6eDvGbnTtjDIPIexgGS9m09JG"
+ <55e496fe-6a73-b759-ed8c-4f415ddacd1d@gmx.com> <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
+ <19a5ec80-3860-20b8-cb12-fcb41b21dc00@gmx.com>
+From: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Date: Fri, 24 Nov 2017 15:45:36 +0530
+Message-ID: <CAKuJGC-NaE3J2tu+HEED5fkBs5C=kkkrJqb0QfkTtpdmEdSn9Q@mail.gmail.com>
+Subject: Re: misc/021-image-multi-devices fails on latest btrfs-devel/misc-next
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---CVRtHk3s6eDvGbnTtjDIPIexgGS9m09JG
-Content-Type: multipart/mixed; boundary="tWdAkk9ljuKgm3R7tbJrLV4rasKpIk7gE";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
-Cc: btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <19a5ec80-3860-20b8-cb12-fcb41b21dc00@gmx.com>
-Subject: Re: misc/021-image-multi-devices fails on latest
- btrfs-devel/misc-next
-References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
- <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
- <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com>
- <CAKuJGC-w2HuNXFeFhLN21BAPdtzG=8rWX4rFDU6WPkH1F5RSSQ@mail.gmail.com>
- <CAKuJGC-hOTkWwKQasocRociw=jOritrLgBaG7_dD==A-jadTpQ@mail.gmail.com>
- <55e496fe-6a73-b759-ed8c-4f415ddacd1d@gmx.com>
- <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
-In-Reply-To: <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
+>
+> No, it's not about btrfs-image itself, the flag is introduced long long
+> long way ago.
+>
+Okay.
 
---tWdAkk9ljuKgm3R7tbJrLV4rasKpIk7gE
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> It's about kernel change which doesn't allow image with such flag to be
+> mounted AFAIK.
 
+No luck yet! It works on 4.14.0
+-----
+-bash-4.4$ sudo make TEST=021\* test-misc
+    [TEST]   misc-tests.sh
+    [TEST/misc]   021-image-multi-devices
+-bash-4.4$ sudo dmesg
+[  162.635824] BTRFS: device fsid f0c92f1b-c1ba-4576-8a07-8ce4f7b5bacd
+devid 1 transid 5 /dev/loop0
+[  162.672952] BTRFS: device fsid f0c92f1b-c1ba-4576-8a07-8ce4f7b5bacd
+devid 2 transid 5 /dev/loop1
+[  162.692848] BTRFS info (device loop1): disk space caching is enabled
+[  162.695725] BTRFS info (device loop1): has skinny extents
+[  162.698003] BTRFS info (device loop1): flagging fs with big metadata feature
+[  162.701643] BTRFS info (device loop1): creating UUID tree
+[  163.792851] BTRFS warning (device loop0): unrecognized super flag:
+17179869184
+[  163.796350] BTRFS info (device loop0): disk space caching is enabled
+[  163.807644] BTRFS info (device loop0): has skinny extents
+[  163.811613] BTRFS info (device loop0): checking UUID tree
+[  163.841625] BTRFS error (device loop0): 1 errors while writing supers
+[  163.845457] BTRFS: error (device loop0) in write_all_supers:3709:
+errno=-5 IO failure (1 errors while writing supers)
+[  163.851520] BTRFS info (device loop0): forced readonly
+[  163.855184] BTRFS warning (device loop0): Skipping commit of
+aborted transaction.
+[  163.859121] BTRFS: error (device loop0) in
+cleanup_transaction:1873: errno=-5 IO failure
+[  163.862577] BTRFS info (device loop0): delayed_refs has NO entry
+[  163.865623] BTRFS error (device loop0): commit super ret -5
+[  163.868303] BTRFS error (device loop0): cleaner transaction attach
+returned -30
+-bash-4.4$ uname -a
+Linux ip-172-31-33-196.us-west-2.compute.internal 4.14.0 #1 SMP Fri
+Nov 24 09:48:11 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+-----
 
-
-On 2017=E5=B9=B411=E6=9C=8824=E6=97=A5 16:20, Lakshmipathi.G wrote:
-> Okay thanks for the details on btrfs-image. I was about to try with
-> previous version of
-> btrfs-image.
-
-No, it's not about btrfs-image itself, the flag is introduced long long
-long way ago.
-
-It's about kernel change which doesn't allow image with such flag to be
-mounted AFAIK.
-
-Thanks,
-Qu
-
->=20
-> I'll use v4.14 (https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.14=
-=2Etar.xz)
-> and check
-> again.
->=20
-> ----
-> Cheers,
-> Lakshmipathi.G
-> http://www.giis.co.in http://www.webminal.org
->=20
->=20
-> On Fri, Nov 24, 2017 at 1:36 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->>
->>
->> On 2017=E5=B9=B411=E6=9C=8824=E6=97=A5 15:47, Lakshmipathi.G wrote:
->>> Hi Qu,
->>>
->>> I'm using btrfs-progs devel branch. mount command is failing with mis=
-c/021.
->>> When I tried to manually mount it. dmesg shows  "unrecognized super
->>> flag: 17179869184"
->>> and interestingly "df -h" shows 16E as available!
->>
->> That flag is meta dump flag, any image recovered from btrfs-image shou=
-ld
->> have that flag.
->>
->> 16E may also related to that, but not a big problem as btrfs-image
->> result should only be used by developers, and all its data is wiped ou=
-t.
->> (Maybe one day we will not allow RW mount for such image)
->>
->>
->> The problem happens when you try to mount the image, there may be some=
-
->> new commits doing more restrict check for rw mount in devel branch.
->>
->> Would you please try v4.14 kernel?
->>
->> Thanks,
->> Qu
->>
->>>
->>> https://asciinema.org/a/4JGYg7YGQz1PHtdBRJ6AVw0fh
->>>
->>> Let me check further.
->>> ----
->>> Cheers,
->>> Lakshmipathi.G
->>> http://www.giis.co.in http://www.webminal.org
->>>
->>>
->>> On Fri, Nov 24, 2017 at 9:55 AM, Lakshmipathi.G
->>> <lakshmipathi.g@gmail.com> wrote:
->>>> Hi Qu,
->>>>
->>>> I'm using the same instance. Let me check again with and without the=
-
->>>> commits list on Nov-23
->>>> (https://github.com/kdave/btrfs-devel/commits/misc-next) and get bac=
-k
->>>> with results.
->>>>
->>>> ----
->>>> Cheers,
->>>> Lakshmipathi.G
->>>> http://www.giis.co.in http://www.webminal.org
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---tWdAkk9ljuKgm3R7tbJrLV4rasKpIk7gE--
-
---CVRtHk3s6eDvGbnTtjDIPIexgGS9m09JG
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloX2G8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qitVQgAhxgWw+hfTmmRZFKzsykRYxRC
-M4nOcsZjwH4PE77IDohjmGeFIggJNAiZFNg6/dBTayBgP7r1ONcM9RWbWSxhimRF
-0Lv9cTXgn1+z5q3ZIEgEGsjkFoxhYs4tCVX7GcON6mgL9NhMxBLiJa8rrh15LWoS
-x+x/821d0YQAq+BDEXDCEp3VUcFaXH/iqzH3h8obJQqM0MaxgWm9Jf8Z134HYwD6
-pqY7r8q+0/sYcwFCDs0RsVu7zzcSpP9RK6522nBslyERZcaaK1KDqg65Il0gAbUb
-mGaHt27D0wwtYGwbsgT9YK+DUE5NU/I8b+IHPWXxHZ3y/sbNSSz2+u222FP44Q==
-=V305
------END PGP SIGNATURE-----
-
---CVRtHk3s6eDvGbnTtjDIPIexgGS9m09JG--
+Cheers,
+Lakshmipathi.G
+http://www.giis.co.in http://www.webminal.org

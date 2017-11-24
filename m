@@ -1,78 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([46.4.129.203]:36804 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751181AbdKZQCz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 26 Nov 2017 11:02:55 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32752 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753100AbdKXKlg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Nov 2017 05:41:36 -0500
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <lakshmipathi.g@gmail.com>
+Subject: [PATCH 1/5] btrfs-progs: Add location check when process share_data_ref item
+Date: Fri, 24 Nov 2017 18:41:28 +0800
+Message-ID: <1511520092-37101-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Mon, 27 Nov 2017 01:02:53 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Martin Raiber <martin@urbackup.org>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: again "out of space" and remount read only, with 4.14
-In-Reply-To: <0102015ff8f9e46f-83a96bab-ee99-4ec2-b09f-7801b64fc2d5-000000@eu-west-1.amazonses.com>
-References: <dfdbf8227acb0f10ed14edb0a8638ce0@virtall.com>
- <0102015ff8f9e46f-83a96bab-ee99-4ec2-b09f-7801b64fc2d5-000000@eu-west-1.amazonses.com>
-Message-ID: <ddbe76a2ddcf5d7d7b18f3c7f09294bd@virtall.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-11-27 00:37, Martin Raiber wrote:
-> On 26.11.2017 08:46 Tomasz Chmielewski wrote:
->> Got this one on a 4.14-rc7 filesystem with some 400 GB left:
-> 
-> Hi,
-> 
-> I guess it is too late now, but I guess the "btrfs fi usage" output of
-> the file system (especially after it went ro) would be useful.
+The following test failed becasuse share_data_ref be added into
+extent_cache when deal with root tree node.
 
-It was more or less similar as it went ro:
+$sudo TEST=003\* make test-fuzz
+cmds-check.c:5660: check_owner_ref: BUG_ON `rec->is_root` triggered, value 1
+/home/adam/btrfs/btrfs-progs/btrfs[0x46a43b]
+/home/adam/btrfs/btrfs-progs/btrfs[0x46a529]
+/home/adam/btrfs/btrfs-progs/btrfs[0x479e55]
+/home/adam/btrfs/btrfs-progs/btrfs[0x47af81]
+/home/adam/btrfs/btrfs-progs/btrfs[0x47f69e]
+/home/adam/btrfs/btrfs-progs/btrfs[0x484680]
+/home/adam/btrfs/btrfs-progs/btrfs[0x484cb9]
+/home/adam/btrfs/btrfs-progs/btrfs[0x4884f9]
+/home/adam/btrfs/btrfs-progs/btrfs(cmd_check+0xb53)[0x48b7c3]
+/home/adam/btrfs/btrfs-progs/btrfs(main+0x127)[0x40b39d]
+/lib64/libc.so.6(__libc_start_main+0xea)[0x7f9ac76db03a]
+/home/adam/btrfs/btrfs-progs/btrfs(_start+0x2a)[0x40ac9a]
+failed (ignored, ret=134): /home/adam/btrfs/btrfs-progs/btrfs check --check-data-csum /home/adam/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-156731.raw.restored
+mayfail: returned code 134 (SIGABRT), not ignored
+test failed for case 003-multi-check-unmounted
 
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+ cmds-check.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-# btrfs fi df /srv
-Data, RAID1: total=2.21TiB, used=2.15TiB
-System, RAID1: total=32.00MiB, used=352.00KiB
-Metadata, RAID1: total=16.00GiB, used=13.09GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-# btrfs fi show /srv
-Label: 'btrfs'  uuid: 105b2e0c-8af2-45ee-b4c8-14ff0a3ca899
-         Total devices 2 FS bytes used 2.16TiB
-         devid    1 size 2.63TiB used 2.22TiB path /dev/sda4
-         devid    2 size 2.63TiB used 2.22TiB path /dev/sdb4
-
-
-# btrfs fi usage /srv
-Overall:
-     Device size:                   5.25TiB
-     Device allocated:              4.45TiB
-     Device unallocated:          823.97GiB
-     Device missing:                  0.00B
-     Used:                          4.33TiB
-     Free (estimated):            471.91GiB      (min: 471.91GiB)
-     Data ratio:                       2.00
-     Metadata ratio:                   2.00
-     Global reserve:              512.00MiB      (used: 0.00B)
-
-Data,RAID1: Size:2.21TiB, Used:2.15TiB
-    /dev/sda4       2.21TiB
-    /dev/sdb4       2.21TiB
-
-Metadata,RAID1: Size:16.00GiB, Used:13.09GiB
-    /dev/sda4      16.00GiB
-    /dev/sdb4      16.00GiB
-
-System,RAID1: Size:32.00MiB, Used:352.00KiB
-    /dev/sda4      32.00MiB
-    /dev/sdb4      32.00MiB
-
-Unallocated:
-    /dev/sda4     411.99GiB
-    /dev/sdb4     411.99GiB
+diff --git a/cmds-check.c b/cmds-check.c
+index 5c822b84..71b15de4 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -8018,6 +8018,14 @@ static int run_next_block(struct btrfs_root *root,
+ 			}
+ 			if (key.type == BTRFS_SHARED_DATA_REF_KEY) {
+ 				struct btrfs_shared_data_ref *ref;
++				if (root->root_key.objectid !=
++						BTRFS_EXTENT_TREE_OBJECTID) {
++					error(
++				"invaild location of share_data_ref [%d %d] root %d",
++						key.objectid, key.offset,
++						root->root_key.objectid);
++					continue;
++				}
+ 				ref = btrfs_item_ptr(buf, i,
+ 						struct btrfs_shared_data_ref);
+ 				add_data_backref(extent_cache,
+-- 
+2.14.3
 
 
 
-Tomasz Chmielewski
-https://lxadm.com

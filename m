@@ -1,70 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cloud1-vm154.de-nserver.de ([178.250.10.56]:54007 "EHLO
-        cloud1-vm154.de-nserver.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751388AbdKDTOE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 4 Nov 2017 15:14:04 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
-Subject: btrfs-progs: check --repair crashes with BUG ON
-Message-ID: <e0476253-d0e6-8b0d-df01-28c2f7fcbe77@profihost.ag>
-Date: Sat, 4 Nov 2017 20:08:37 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:56555 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752271AbdKXEKS (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Thu, 23 Nov 2017 23:10:18 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/3] btrfs: Introduce macros to handle bytes and sector conversion
+Date: Fri, 24 Nov 2017 12:10:06 +0800
+Message-Id: <20171124041008.32656-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Since block I/O is always done in unit of 512 bytes, add BI_SECTOR_SIZE
+and BI_SECTOR_SHIFT macros and to_sector() and to_bytes() for later
+use.
 
-after a power failure i have a btrfs volume which isn't mountable.
+Although the best position to define such things should be bvec.h, and
+to_sector() to_bytes() are also defined in device-mapper.h, there are
+a lot of code defining their own SECTOR_SIZE and to_bytes() in
+device-mapper is not using u64 (unsigned long long) but unsigned long,
+which doesn't fit btrfs usage.
 
-dmesg shows:
-parent transid verify failed on 181846016 wanted 143404 found 143399
+So define btrfs' own macros and inlined converters.
 
-If i run:
-btrfs check --repair /dev/mapper/crypt_md1
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ctree.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-The output is:
-parent transid verify failed on 181846016 wanted 143404 found 143399
-parent transid verify failed on 181846016 wanted 143404 found 143399
-Ignoring transid failure
-Clearing log on /dev/mapper/crypt_md0, previous log_root 1520200695808,
-level 0
-parent transid verify failed on 308183040 wanted 143404 found 143399
-parent transid verify failed on 308183040 wanted 143404 found 143399
-Ignoring transid failure
-parent transid verify failed on 338870272 wanted 143404 found 143399
-parent transid verify failed on 338870272 wanted 143404 found 143399
-Ignoring transid failure
-parent transid verify failed on 12778157178880 wanted 143404 found 143399
-parent transid verify failed on 12778157178880 wanted 143404 found 143399
-Ignoring transid failure
-leaf parent key incorrect 38699008
-btrfs unable to find ref byte nr 12778147823616 parent 0 root 2  owner 0
-offset 0
-parent transid verify failed on 308183040 wanted 143404 found 143399
-Ignoring transid failure
-leaf parent key incorrect 91766784
-extent-tree.c:2725: alloc_reserved_tree_block: BUG_ON `ret` triggered,
-value -1
-./btrfs[0x415cb3]
-./btrfs[0x416ee5]
-./btrfs[0x417104]
-./btrfs[0x418cea]
-./btrfs[0x418f06]
-./btrfs(btrfs_alloc_free_block+0x1e4)[0x41b8d0]
-./btrfs(__btrfs_cow_block+0xd3)[0x40c5f9]
-./btrfs(btrfs_cow_block+0x110)[0x40d03b]
-./btrfs(commit_tree_roots+0x53)[0x439baa]
-./btrfs(btrfs_commit_transaction+0xf9)[0x439f75]
-./btrfs[0x467212]
-./btrfs(handle_command_group+0x5d)[0x40b360]
-./btrfs(cmd_rescue+0x15)[0x46749f]
-./btrfs(main+0x163)[0x40b5e9]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7fc63f25db45]
-./btrfs[0x40b0b9]
-Aborted
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8fc690384c58..8f6f57167661 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3734,4 +3734,17 @@ static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
+ #endif
+ 	return 0;
+ }
++
++#define BI_SECTOR_SHIFT		(9)
++#define BI_SECTOR_SIZE		(1 << BI_SECTOR_SHIFT)
++
++static inline u64 to_bytes(sector_t n)
++{
++	return ((u64)n << BI_SECTOR_SHIFT);
++}
++
++static inline sector_t to_sector(u64 n)
++{
++	return (n >> BI_SECTOR_SHIFT);
++}
+ #endif
+-- 
+2.15.0
 
-This is btrfs-progs branch: devel - same happens with master or v4.13.3.
-
-Stefan

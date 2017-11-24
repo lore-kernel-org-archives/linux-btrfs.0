@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:32752 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:30742 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753241AbdKXKlh (ORCPT
+        with ESMTP id S1753192AbdKXKlh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 24 Nov 2017 05:41:37 -0500
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <lakshmipathi.g@gmail.com>
-Subject: [PATCH 2/5] btrfs-progs: Add logic to judge the level between parent and child
-Date: Fri, 24 Nov 2017 18:41:29 +0800
-Message-ID: <1511520092-37101-2-git-send-email-gujx@cn.fujitsu.com>
+Subject: [PATCH 3/5] btrfs-progs: return error to upper caller instead of BUG_ON
+Date: Fri, 24 Nov 2017 18:41:30 +0800
+Message-ID: <1511520092-37101-3-git-send-email-gujx@cn.fujitsu.com>
 In-Reply-To: <1511520092-37101-1-git-send-email-gujx@cn.fujitsu.com>
 References: <1511520092-37101-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,72 +17,60 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following test failed becasuse the level of child node is not
-correct. In repair mode, when update parent's ptr in
-btrfs_search_slot->btrfs_cow_block->__btrfs_cow_block,
-it use path[level+1] to get the parent, and not judge whether
-path[level+1] is NULL.
+Return error to upper caller instead of BUG_ON.
 
-$sudo TEST=003\* make test-fuzz
-failed (ignored, ret=139): /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-161821.raw.restored
-mayfail: returned code 139 (SEGFAULT), not ignored
+The following test failed when trying to repair fs root,
+because the bytenr of item below in fs tree is smaller than sectorsize.
+key (256 INODE_ITEM 0) block 3835 (0) gen 6052837899185946625
+It fails in function read_tree_block.
+
+Here comes the call stack:
+    at disk-io.c:324
+    at ctree.c:652
+    p=0x721ec0, ins_len=185, cow=1) at ctree.c:1173
+    path=0x721ec0, cpu_key=0x7fffffffdc90, data_size=0x7fffffffdbcc, nr=1) at ctree.c:2485
+    key=0x7fffffffdc90, data_size=160) at ctree.h:2603
+    cpu_key=0x7fffffffdc90, data=0x7fffffffdce0, data_size=160) at ctree.c:2584
+    inode_item=0x7fffffffdce0) at inode-item.c:155
+    at utils.c:397
+    at cmds-check.c:3925
+
+Here comes the error message:
+$ sudo TEST=003\* make test-fuzz
+cmds-check.c:3938: check_inode_recs: BUG_ON `ret` triggered, value -5
+/home/adam/btrfs/btrfs-progs/btrfs[0x46aba7]
+/home/adam/btrfs/btrfs-progs/btrfs[0x46ac95]
+/home/adam/btrfs/btrfs-progs/btrfs[0x4760ee]
+/home/adam/btrfs/btrfs-progs/btrfs[0x477d01]
+/home/adam/btrfs/btrfs-progs/btrfs[0x477ff1]
+/home/adam/btrfs/btrfs-progs/btrfs[0x47cd3f]
+/home/adam/btrfs/btrfs-progs/btrfs(cmd_check+0xd6b)[0x48fc86]
+/home/adam/btrfs/btrfs-progs/btrfs(main+0x127)[0x40b49d]
+/lib64/libc.so.6(__libc_start_main+0xea)[0x7fc7005a603a]
+/home/adam/btrfs/btrfs-progs/btrfs(_start+0x2a)[0x40ad9a]
+failed (ignored, ret=134): /home/adam/btrfs/btrfs-progs/btrfs check --init-csum-tree /home/adam/btrfs/btrfs-progs/tests/fuzz-tests/images/bko-172811.raw.restored
 
 Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- cmds-check.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
+ cmds-check.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 71b15de4..ac0375e5 100644
+index ac0375e5..49b0792b 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -2085,6 +2085,7 @@ static void reada_walk_down(struct btrfs_root *root,
-  *    in parent.
-  * 2. block in parent node should match the child node/leaf.
-  * 3. generation of parent node and child's header should be consistent.
-+ * 4. level of parent node should not smaller than the child node/leaf.
-  *
-  * Or the child node/leaf pointed by the key in parent is not valid.
-  *
-@@ -2125,6 +2126,17 @@ static int check_child_node(struct extent_buffer *parent, int slot,
- 			btrfs_header_generation(child),
- 			btrfs_node_ptr_generation(parent, slot));
- 	}
-+	/* If level of child is not correct, it will lead to
-+	 * Segmentation fault when repair parent.
-+	 * Because when update parent's ptr in
-+	 * btrfs_search_slot->btrfs_cow_block->__btrfs_cow_block,
-+	 * it use path[level+1] to get the parent
-+	 */
-+	if (btrfs_header_level(parent) <= btrfs_header_level(child)) {
-+		ret = -EFAULT;
-+		fprintf(stderr, "Wrong level of child node/leaf, wanted: %d, have: %d\n",
-+				btrfs_header_level(parent)-1, btrfs_header_level(child));
-+	}
- 	return ret;
- }
+@@ -3489,9 +3489,10 @@ static int check_inode_recs(struct btrfs_root *root,
+ 				(unsigned long long)root->objectid);
  
-@@ -4067,6 +4079,12 @@ static int check_fs_root(struct btrfs_root *root,
- 		wret = walk_down_tree(root, &path, wc, &level, &nrefs);
- 		if (wret < 0)
- 			ret = wret;
-+		/* When return value is -EFAULT, it indicate that level
-+		 * in path is incorrect. And it will lead to Segmentation fault
-+		 * in repair mod.
-+		 */
-+		if (wret == -EFAULT && repair)
-+			goto out;
- 		if (wret != 0)
- 			break;
+ 			ret = btrfs_make_root_dir(trans, root, root_dirid);
+-			BUG_ON(ret);
  
-@@ -4123,6 +4141,7 @@ skip_walking:
- 	if (!ret)
- 		ret = err;
+ 			btrfs_commit_transaction(trans, root);
++			if (ret)
++				return ret;
+ 			return -EAGAIN;
+ 		}
  
-+out:
- 	free_corrupt_blocks_tree(&corrupt_blocks);
- 	root->fs_info->corrupt_blocks = NULL;
- 	free_orphan_data_extents(&root->orphan_data_extents);
 -- 
 2.14.3
 

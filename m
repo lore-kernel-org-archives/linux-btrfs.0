@@ -1,83 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36200 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.18]:54120 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753239AbdKXL1u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Nov 2017 06:27:50 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 73A55AAC1
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Nov 2017 11:27:49 +0000 (UTC)
-Date: Fri, 24 Nov 2017 12:25:53 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] btrfs: Introduce macros to handle bytes and sector
- conversion
-Message-ID: <20171124112553.GV3553@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20171124041008.32656-1-wqu@suse.com>
- <1d7099e1-0c95-3085-de54-20cae5b5b304@suse.com>
+        id S1753438AbdKXLu0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Nov 2017 06:50:26 -0500
+Subject: Re: misc/021-image-multi-devices fails on latest
+ btrfs-devel/misc-next
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
+ <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
+ <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com>
+ <CAKuJGC-w2HuNXFeFhLN21BAPdtzG=8rWX4rFDU6WPkH1F5RSSQ@mail.gmail.com>
+ <CAKuJGC-hOTkWwKQasocRociw=jOritrLgBaG7_dD==A-jadTpQ@mail.gmail.com>
+ <55e496fe-6a73-b759-ed8c-4f415ddacd1d@gmx.com>
+ <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
+ <19a5ec80-3860-20b8-cb12-fcb41b21dc00@gmx.com>
+ <CAKuJGC-NaE3J2tu+HEED5fkBs5C=kkkrJqb0QfkTtpdmEdSn9Q@mail.gmail.com>
+ <ccdf8c94-3fae-8c04-7b4f-b5bb7546ed06@gmx.com>
+ <CAKuJGC930Nm4pNqA+xH5HRbx0pWBKR4KXnS32hP+NYSdvO7arA@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <9932efee-4784-60db-114f-a6ce3ed01b7c@gmx.com>
+Date: Fri, 24 Nov 2017 19:50:19 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1d7099e1-0c95-3085-de54-20cae5b5b304@suse.com>
+In-Reply-To: <CAKuJGC930Nm4pNqA+xH5HRbx0pWBKR4KXnS32hP+NYSdvO7arA@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="Jk5FPAlwtRmX3NouH2HcpTqSlviRMTkM4"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 24, 2017 at 08:53:09AM +0200, Nikolay Borisov wrote:
-> On 24.11.2017 06:10, Qu Wenruo wrote:
-> > Since block I/O is always done in unit of 512 bytes, add BI_SECTOR_SIZE
-> > and BI_SECTOR_SHIFT macros and to_sector() and to_bytes() for later
-> > use.
-> > 
-> > Although the best position to define such things should be bvec.h, and
-> > to_sector() to_bytes() are also defined in device-mapper.h, there are
-> > a lot of code defining their own SECTOR_SIZE and to_bytes() in
-> > device-mapper is not using u64 (unsigned long long) but unsigned long,
-> > which doesn't fit btrfs usage.
-> > 
-> > So define btrfs' own macros and inlined converters.
-> > 
-> > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > ---
-> >  fs/btrfs/ctree.h | 13 +++++++++++++
-> >  1 file changed, 13 insertions(+)
-> > 
-> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> > index 8fc690384c58..8f6f57167661 100644
-> > --- a/fs/btrfs/ctree.h
-> > +++ b/fs/btrfs/ctree.h
-> > @@ -3734,4 +3734,17 @@ static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
-> >  #endif
-> >  	return 0;
-> >  }
-> > +
-> > +#define BI_SECTOR_SHIFT		(9)
-> > +#define BI_SECTOR_SIZE		(1 << BI_SECTOR_SHIFT)
-> > +
-> > +static inline u64 to_bytes(sector_t n)
-> > +{
-> > +	return ((u64)n << BI_SECTOR_SHIFT);
-> > +}
-> > +
-> > +static inline sector_t to_sector(u64 n)
-> > +{
-> > +	return (n >> BI_SECTOR_SHIFT);
-> > +}
-> 
-> nit: I don't like the naming, I'd rather have something similar to what
-> xfs has for its conversion macros i.e:
-> 
-> XFS_FSS_TO_BB - filesystem sector to basic block (bb in this case is 512
-> bytes)
-> 
-> so why not - BTRFS_B_TO_BB or BTRFS_B_TO_S and BTRFS_S_TO_B. Or
-> something like that but just to_bytes and to_sector look a bit silly.
-> It's not a big paint point but more of a "let's get the good ideas from
-> other fsses"
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--Jk5FPAlwtRmX3NouH2HcpTqSlviRMTkM4
+Content-Type: multipart/mixed; boundary="Rcmda0pfrnmIuBvIBWFP68JUgRoHvvVG7";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <9932efee-4784-60db-114f-a6ce3ed01b7c@gmx.com>
+Subject: Re: misc/021-image-multi-devices fails on latest
+ btrfs-devel/misc-next
+References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
+ <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
+ <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com>
+ <CAKuJGC-w2HuNXFeFhLN21BAPdtzG=8rWX4rFDU6WPkH1F5RSSQ@mail.gmail.com>
+ <CAKuJGC-hOTkWwKQasocRociw=jOritrLgBaG7_dD==A-jadTpQ@mail.gmail.com>
+ <55e496fe-6a73-b759-ed8c-4f415ddacd1d@gmx.com>
+ <CAKuJGC-SRh=hrF6uo0vRuQd5=61CbPe-mSpuwMA1DcStihY=dg@mail.gmail.com>
+ <19a5ec80-3860-20b8-cb12-fcb41b21dc00@gmx.com>
+ <CAKuJGC-NaE3J2tu+HEED5fkBs5C=kkkrJqb0QfkTtpdmEdSn9Q@mail.gmail.com>
+ <ccdf8c94-3fae-8c04-7b4f-b5bb7546ed06@gmx.com>
+ <CAKuJGC930Nm4pNqA+xH5HRbx0pWBKR4KXnS32hP+NYSdvO7arA@mail.gmail.com>
+In-Reply-To: <CAKuJGC930Nm4pNqA+xH5HRbx0pWBKR4KXnS32hP+NYSdvO7arA@mail.gmail.com>
 
-I don't like the naming in the patch either, but I don't think we should
-copy the xfs naming. There are differences in the building objects,
-thers's nothing like a 'basic block' and thus BB in btrfs does not refer
-to anything we know. It's fine for xfs as this has been there since the
-beginning. The wordy_naming in btrfs is similar in that way and has been
-part of the format (names of the on-disk structures etc), so we're past
-the time to switch to something completely different.
+--Rcmda0pfrnmIuBvIBWFP68JUgRoHvvVG7
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2017=E5=B9=B411=E6=9C=8824=E6=97=A5 19:42, Lakshmipathi.G wrote:
+>>
+>> To make it clear, what kernel config and commit are you using when the=
+
+>> test fails?
+>>
+> When I use attached kernel config along with tar from misc-next branch
+> (wget https://github.com/kdave/btrfs-devel/archive/misc-next.zip) this
+> issue happens.
+
+BTW, David seems to update his branch more often in his git.kernel.org
+branch than github.
+
+So it's possible that the branch from github is out dated.
+
+>=20
+>> In my test, if I use the david/for-4.15 branch, it will fails to umoun=
+t
+>> the fs, due to the known bug if you enabled
+>> CONFIG_BTRFS_FS_CHECK_INTEGRITY (you reported it first).
+>> And for any upstream kernel version like v4.14-rc7 or v4.14, not probl=
+em
+>> at all.
+>>
+> Here's btrfs related config. I checked with 4.14.2 it worked fine there=
+ too.
+>=20
+> The issue happens with v4.14-rc7, can you check with above config
+> file and zip file(misc-next.zip)?
+>=20
+> $ cat kernel.config | grep "BTRFS"
+> CONFIG_BTRFS_FS=3Dy
+> CONFIG_BTRFS_FS_POSIX_ACL=3Dy
+> CONFIG_BTRFS_FS_CHECK_INTEGRITY=3Dn
+> CONFIG_BTRFS_FS_RUN_SANITY_TESTS=3Dn
+> CONFIG_BTRFS_DEBUG=3Dy
+> CONFIG_BTRFS_ASSERT=3Dy
+> CONFIG_BTRFS_FS_REF_VERIFY=3Dy
+
+For v4.14-rc7, even I enabled all the btrfs related configs, I still
+can't reproduce it.
+------
+$ zcat /proc/config.gz  | grep BTRFS
+CONFIG_BTRFS_FS=3Dm
+CONFIG_BTRFS_FS_POSIX_ACL=3Dy
+CONFIG_BTRFS_FS_CHECK_INTEGRITY=3Dy
+CONFIG_BTRFS_FS_RUN_SANITY_TESTS=3Dy
+CONFIG_BTRFS_DEBUG=3Dy
+CONFIG_BTRFS_ASSERT=3Dy
+------
+
+So there is something strange happened.
+
+Thanks,
+Qu
+
+>=20
+> thanks!
+>=20
+> ----
+> Cheers,
+> Lakshmipathi.G
+> http://www.giis.co.in http://www.webminal.org
+>=20
+
+
+--Rcmda0pfrnmIuBvIBWFP68JUgRoHvvVG7--
+
+--Jk5FPAlwtRmX3NouH2HcpTqSlviRMTkM4
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloYB3sXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiClQgAi4ATB6QsN3vx4i+3J0JTSos2
+z8ZEnhWWZ9Av+14RhMVCLmd92RKa6v4C/bWAgWbh9s4LV0swoPzBL6L5diGIsbiB
+IDY859L0bltLd5SIfcu5h7vIqaocZCJeoxNPUPzpV42wwv3Ax2OSZzdm0/aa8RZb
+hzxAYpd7xhTgzkItZADcN/VkWWaocjxzYTI8Mn6ngOvJUgxZwdXmAAjgA5AltN6E
+ebaNA8DaxDa1Tygw8artG0QQB0ZZfh2zIEFBaqBWzOwE6ybm4TclMUa/m/jKIb7z
+ZGjXvCkq9BAZz9AKrpgCHk37jMwigfZvAIB2KvFy7yBWF8XWWRkkb1iArdYBCA==
+=dVvb
+-----END PGP SIGNATURE-----
+
+--Jk5FPAlwtRmX3NouH2HcpTqSlviRMTkM4--

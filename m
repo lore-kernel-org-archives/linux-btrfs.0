@@ -1,153 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:49182 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:56979 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751274AbdKXBIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 20:08:10 -0500
-Subject: Re: Issue in recovering and using the mirror superblock
-To: koller@caramail.com, linux-btrfs@vger.kernel.org
-References: <trinity-e19a6c0e-4264-4d24-9fac-7e21d7f036d4-1511454672385@3c-app-mailcom-bs01>
+        id S1751378AbdKXBSY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 23 Nov 2017 20:18:24 -0500
+Subject: Re: misc/021-image-multi-devices fails on latest
+ btrfs-devel/misc-next
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
+ <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d5eca1f6-4f15-52d0-6bd7-56d90b7ded73@gmx.com>
-Date: Fri, 24 Nov 2017 09:08:05 +0800
+Message-ID: <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com>
+Date: Fri, 24 Nov 2017 09:18:19 +0800
 MIME-Version: 1.0
-In-Reply-To: <trinity-e19a6c0e-4264-4d24-9fac-7e21d7f036d4-1511454672385@3c-app-mailcom-bs01>
+In-Reply-To: <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="UCPAaOTx6qlhKAa65BPfh5KrfxUhuQD6t"
+ boundary="vKoVG6DcR7bfgxW8MVP77lbIHk1HPjEi8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---UCPAaOTx6qlhKAa65BPfh5KrfxUhuQD6t
-Content-Type: multipart/mixed; boundary="MUhDNFBPB3qSpl8sRPwOSre6NLA1v6Iws";
+--vKoVG6DcR7bfgxW8MVP77lbIHk1HPjEi8
+Content-Type: multipart/mixed; boundary="JJGbAX2qOGh6h4EMOMCVk9laEEohdpfgp";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: koller@caramail.com, linux-btrfs@vger.kernel.org
-Message-ID: <d5eca1f6-4f15-52d0-6bd7-56d90b7ded73@gmx.com>
-Subject: Re: Issue in recovering and using the mirror superblock
-References: <trinity-e19a6c0e-4264-4d24-9fac-7e21d7f036d4-1511454672385@3c-app-mailcom-bs01>
-In-Reply-To: <trinity-e19a6c0e-4264-4d24-9fac-7e21d7f036d4-1511454672385@3c-app-mailcom-bs01>
+To: "Lakshmipathi.G" <lakshmipathi.g@gmail.com>,
+ btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <54224bfa-153a-ad2d-0e84-41c43e752be2@gmx.com>
+Subject: Re: misc/021-image-multi-devices fails on latest
+ btrfs-devel/misc-next
+References: <CAKuJGC9bi3V5acV6CJEH8GYrdOZ4dA52D-4a7WEGPiVQHTsuxw@mail.gmail.com>
+ <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
+In-Reply-To: <CAKuJGC9PnKn0FdZZG9F_LTOc2tcS=a-mGTo8qmg5ubtHfBq8pg@mail.gmail.com>
 
---MUhDNFBPB3qSpl8sRPwOSre6NLA1v6Iws
+--JJGbAX2qOGh6h4EMOMCVk9laEEohdpfgp
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B411=E6=9C=8824=E6=97=A5 00:31, koller@caramail.com wrote:
-> Hi,
->=20
-> I am trying to recover from a mistake I made by overwriting the first G=
-Bs of my Btrfs /home partition with a non-Btrfs filesystem.
+On 2017=E5=B9=B411=E6=9C=8823=E6=97=A5 11:16, Lakshmipathi.G wrote:
+> Quick update: It continues to fail:
+> https://asciinema.org/a/8HAL3uZ4MG7eb5gXnlgq3jm7q
 
-Well, in most case, the chance of recovery is already very low.
+Still fails to reproduce it.
 
-The possibility mostly relies on your device extents layout.
-If all new data write is overwriting device extents belong to data, then
-you will have a high chance to recover.
+All success across my host and VMs.
 
-However this always depends on the fs you're using.
+And according to your misc-test-result, it seems that your testing
+system doesn't cleanup loop devices for 021 well.
 
-AFAIK, normal traditional fs, like ext*/xfs will build all their block
-groups/AGs at mkfs time, and they are not just writing data in the first
-several GB, but a lot of small write across the whole disk, which makes
-recovery even harder.
-
->=20
-> I have already made a .dd image of the partition, and I am using it to =
-try and find the mirror superblock, in particular the one at 256 GB.
->=20
-> When I run the "btrfs restore" command I get an error message, maybe be=
-cause the mirror superblock -- I am not sure about the reason.
->=20
-> Using the dummy run option, from the command line I do
->=20
-> btrfs restore -D -u 2 /run/media/user01/SamsungHD/sda2.dd /run/media/us=
-er01/ToshibaHD/RecoveredData
->=20
-> The message is get is:
->=20
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> bytenr mismatch, want=3D20971520, have=3D709
-
-Unfortunately, your chunk tree get corrupted, which is the most
-important tree for btrfs.
-It manages the mapping between btrfs logical address space to device offs=
-et.
-
-Without this tree, nothing can really be recovered.
-
-If you're really sure about the overwrite range, you could use
-btrfs-dump-super to verify your system chunk mapping (where chunk tree is=
-).
-
-I'd say it's in the overwrite range.
-
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
->=20
-> With the -u 1 option (instead of -u 2) I get:
->=20
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> bytenr mismatch, want=3D20971520, have=3D709
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> checksum verify failed on 20971520 found 33D5DCDD wanted 0000016C
-> checksum verify failed on 20971520 found 01FA5E60 wanted 0000000E
-> bytenr mismatch, want=3D20971520, have=3D709
-> ERROR: cannot read chunk root
-> Could not open root, trying backup super
->=20
-> I have reason to believe that the mirror superblock at 256 GB is intact=
- (I am assuming that only the initial sectors of the partition were overw=
-ritten), so I do not understand why it is not being recovered. BTW, the s=
-ize of the partition is above 300 GBs, so there is supposed to be a mirro=
-r superblock at 256 GB.
-
-Btrfs is complex, so complex that the bootstrap depends on several
-trees, not only superblock.
-
-To be more specific, btrfs bootstraps involves:
-
-superblock (system chunk array) -> system chunk mapping -> chunk tree ->
-metadata chunk mapping -> root tree -> fs tree.
-
-Any corruption (without valid copy) in the chain will cause the mount
-failure.
-And in your case, system chunk mapping is good (since it's in
-superblock) but your chunk tree is corrupted.
-
-So no chance here.
+I think that's the reason why you always get stuck at misc/021.
 
 Thanks,
 Qu
 
+> ----
+> Cheers,
+> Lakshmipathi.G
+> http://www.giis.co.in http://www.webminal.org
 >=20
-> Can anyone help me?
 >=20
-> --------
->=20
-> Here is the btrfs info:
->=20
-> uname -a
-> Linux adfa-workstation 4.9.63-1-MANJARO #1 SMP PREEMPT Sat Nov 18 14:12=
-:41 UTC 2017 x86_64 GNU/Linux
->=20
-> btrfs --version
-> btrfs-progs v4.13
->=20
-> Thanks
->=20
-> Terry
+> On Sat, Nov 18, 2017 at 12:59 PM, Lakshmipathi.G
+> <lakshmipathi.g@gmail.com> wrote:
+>> Hi.
+>>
+>> Few days back(Nov14th) this(misc/021-image-multi-devices) test script
+>> used to pass and seems like its failing
+>> now. may be due to recent commits? Logs,screen-casts available here:
+>> https://lakshmipathi.github.io/btrfsqa/
+>>
+>> ----
+>> Cheers,
+>> Lakshmipathi.G
+>> http://www.giis.co.in http://www.webminal.org
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in
@@ -156,23 +84,23 @@ in
 >=20
 
 
---MUhDNFBPB3qSpl8sRPwOSre6NLA1v6Iws--
+--JJGbAX2qOGh6h4EMOMCVk9laEEohdpfgp--
 
---UCPAaOTx6qlhKAa65BPfh5KrfxUhuQD6t
+--vKoVG6DcR7bfgxW8MVP77lbIHk1HPjEi8
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloXcPUXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjBOAf/VQv93tZrisDrAcB0bCjyzTzT
-v7qzQdLQMOcnxneNrrUnfHcOfBytvSl/xHoFuMOUig9Om8TDH6k/jZgnw4bBdD/m
-bYrVOD6jZYFdem3277XQ5oDHoFNEqe9y7bUvH4ZPDPhquOcxyggX4zDuq5NHYdxV
-SpRRtCr8BKujb9Lu5bFf+d6WIVYjFsv6WB/fwy+aBsTAe/duiPzjTlO4CODA5KRA
-FLVa/3bilVJD6JEkDa8OSIRFQaHZP+wlHijWJn60DYRnOLFJoFRfEaw2m1xpKb0V
-0+5iXOA1Qj5P7hqWHtyvYV/DEH1bVLKrlEYZLN5hCYnhuAK+7Oi3cQ1BYri4Jg==
-=Oa4W
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloXc1sXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qisDwgAo3uTXp45YDanJn8d1J1zL+sX
+EfII2jpLaUcIanGr8qGtc1vIM8l/HmHAYNJy3KMQE+lACiBFc/QncULfGuYLe61s
+D9Pljj1WJuMn/mPyq+FWS0AfLbb0f7/vhUufqWmyVhKsa9u+XSwcLABwAYxOnrTN
+8RX1bhCKEydA5KRh+wOPbEGWxCVWmcSNA4MUuBYBRDLGUfmxR0fBA8yGTsnmRBcG
+jztR08ytemmqqGakjks/5KJZGB4R8/WgY+9sYcbFtQS+GrG8+Zh/8sfubyvTopVN
+b83Iz25qeOIk6ckHgGXcKTbxhYcDC6GSVYKrUhiU4+Gir/tDjTNYD620D7V8fQ==
+=pBtk
 -----END PGP SIGNATURE-----
 
---UCPAaOTx6qlhKAa65BPfh5KrfxUhuQD6t--
+--vKoVG6DcR7bfgxW8MVP77lbIHk1HPjEi8--

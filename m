@@ -1,54 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49054 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752369AbdK1RmN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Nov 2017 12:42:13 -0500
-Date: Tue, 28 Nov 2017 18:40:14 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>
-Subject: Re: About 'key type for persistent [...] items'
-Message-ID: <20171128174014.GA3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <3576cefb-4554-b559-0b26-3679a1e94243@mendix.com>
- <7cf492f3-d70f-360a-495e-4a014ca8737d@gmx.com>
+Received: from mail1.trendhosting.net ([195.8.117.5]:40610 "EHLO
+        mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751505AbdK0IOw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Nov 2017 03:14:52 -0500
+Received: from localhost (localhost [127.0.0.1])
+        by mail1.trendhosting.net (Postfix) with ESMTP id 28B9D150B0
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Nov 2017 08:05:42 +0000 (GMT)
+Received: from mail1.trendhosting.net ([127.0.0.1])
+        by localhost (thp003.trendhosting.net [127.0.0.1]) (amavisd-new, port 10024)
+        with LMTP id TCdOKReKgMc1 for <linux-btrfs@vger.kernel.org>;
+        Mon, 27 Nov 2017 08:05:40 +0000 (GMT)
+From: Daniel Pocock <daniel@pocock.pro>
+Subject: FAQ / encryption / error handling?
+To: linux-btrfs@vger.kernel.org
+Message-ID: <fda951f3-0617-1ad9-8a23-0733628f0215@pocock.pro>
+Date: Mon, 27 Nov 2017 09:06:12 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <7cf492f3-d70f-360a-495e-4a014ca8737d@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 25, 2017 at 09:12:35AM +0800, Qu Wenruo wrote:
-> On 2017年11月25日 03:16, Hans van Kranenburg wrote:
-> > Last week, when implementing the automatic classifier to dynamically
-> > create tree item data objects by key type in python-btrfs, I ran into
-> > the following commits in btrfs-progs:
-> > 
-> >   commit 8609c8bad68528f668d9ce564b868aa4828107a0
-> >   btrfs-progs: print-tree: factor out temporary_item dump
-> > and
-> >   commit a4b65f00d53deb1b495728dd58253af44fcf70df
-> >   btrfs-progs: print-tree: factor out persistent_item dump
-> > 
-> > ...which are related to kernel...
-> > 
-> >   commit 50c2d5abe64c1726b48d292a2ab04f60e8238933
-> >   btrfs: introduce key type for persistent permanent items
-> > and
-> >   commit 0bbbccb17fea86818e1a058faf5903aefd20b31a
-> >   btrfs: introduce key type for persistent temporary items
-> > 
-> > Afaics the goal is to overload types because there can be only 256 in
-> > total.
-> 
-> Personally speaking, to overload types, we can easily make different
-> meanings of type based on tree owner.
 
-Key type tied to a tree would cause some ambiguity, while now we always
-know what's in the type item if we eg. read a random metadata block.
+Hi all,
 
-We're now at ~40 key types, scattered in the 256 range so further
-extensions are possible should we need a particular number due to the
-ordering.
+The FAQ has a couple of sections on encryption (general and dm-crypt)
+
+One thing that isn't explained there: if you create multiple encrypted
+volumes (e.g. using dm-crypt) and use Btrfs to combine them into RAID1,
+how does error recovery work when a read operation returns corrupted data?
+
+Without encryption, reading from one disk would give a checksum mismatch
+and Btrfs would read from the other disk to (hopefully) get a good copy
+of the data.
+
+With this encryption scenario, the failure would potentially be detected
+in the decryption layer code and instead of returning bad data to Btrfs,
+it would return some error code.  In that case, will Btrfs attempt to
+read from the other volume and allow the application to proceed as if
+nothing was wrong?
+
+Regards,
+
+Daniel
+

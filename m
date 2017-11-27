@@ -1,76 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48902 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42409 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753195AbdKWSru (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Nov 2017 13:47:50 -0500
-Date: Thu, 23 Nov 2017 19:45:49 +0100
+        id S1751830AbdK0RMu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 27 Nov 2017 12:12:50 -0500
+Date: Mon, 27 Nov 2017 18:10:51 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
         jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/11] Metadata specific accouting and dirty writeout
-Message-ID: <20171123184549.GT3553@twin.jikos.cz>
+        linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH v2 09/11] Btrfs: kill the btree_inode
+Message-ID: <20171127171051.GF3553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
+ <1511385366-20329-10-git-send-email-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
+In-Reply-To: <1511385366-20329-10-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 22, 2017 at 04:15:55PM -0500, Josef Bacik wrote:
-> These patches are to support having metadata accounting and dirty handling
-> in a generic way.  For dirty metadata ext4 and xfs currently are limited by
-> their journal size, which allows them to handle dirty metadata flushing in a
-> relatively easy way.  Btrfs does not have this limiting factor, we can have as
-> much dirty metadata on the system as we have memory, so we have a dummy inode
-> that all of our metadat pages are allocated from so we can call
-> balance_dirty_pages() on it and make sure we don't overwhelm the system with
-> dirty metadata pages.
-> 
-> The problem with this is it severely limits our ability to do things like
-> support sub-pagesize blocksizes.  Btrfs also supports metadata blocksizes > page
-> size, which makes keeping track of our metadata and it's pages particularly
-> tricky.  We have the inode mapping with our pages, and we have another radix
-> tree for our actual metadata buffers.  This double accounting leads to some fun
-> shenanigans around reclaim and evicting pages we know we are done using.
-> 
-> To solve this we would like to switch to a scheme like xfs has, where we simply
-> have our metadata structures tied into the slab shrinking code, and we just use
-> alloc_page() for our pages, or kmalloc() when we add sub-pagesize blocksizes.
-> In order to do this we need infrastructure in place to make sure we still don't
-> overwhelm the system with dirty metadata pages.
-> 
-> Enter these patches.  Because metadata is tracked on a non-pagesize amount we
-> need to convert a bunch of our existing counters to bytes.  From there I've
-> added various counters for metadata, to keep track of overall metadata bytes,
-> how many are dirty and how many are under writeback.  I've added a super
-> operation to handle the dirty writeback, which is going to be handled mostly
-> inside the fs since we will need a little more smarts around what we writeback.
+On Wed, Nov 22, 2017 at 04:16:04PM -0500, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
+> @@ -4802,8 +4885,8 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+>  	return new;
+>  }
+>  
+> -struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
+> -						  u64 start, unsigned long len)
+> +struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_eb_info *eb_info,
+> +						u64 start, unsigned long len)
 
-The text relevant for btrfs should also go to the btree_inode removal
-patch changelog. The cover letter gets lost but we still might need to
-refer to the overall logic that's going to be changed in that patch.
+The __alloc_dummy_extent_buffer takes the length parameter because it's
+used in tests that need to pass different values.
+I've removed nodesize from alloc_dummy_extent_buffer and the callchain
+because we know that it's always going to be fs_info->nodesize.
+Reintroducing it does not look like a good idea.
 
-And possibly more documentation should go to the code itself, there are
-some scattered comments in the tricky parts but the overall logic is not
-described and the key functions lack comments.
+>  {
+>  	struct extent_buffer *eb;
+>  	unsigned long num_pages;
 
-What's your merge plan? There are other subsystem changes needed, before
-the btree_inode removal can happen and can be tested within our for-next
-branches. The 4.15 target is out of reach, so I assume 4.16 for the
-dependencies and 4.17 for the btree_inode. We can of course test them
-earlier, but 4.16 does not seem realistic for the whole patchset.
+> @@ -160,13 +162,25 @@ struct extent_state {
+>  #endif
+>  };
+>  
+> +struct btrfs_eb_info {
+> +	struct btrfs_fs_info *fs_info;
+> +	struct extent_io_tree io_tree;
+> +	struct extent_io_tree io_failure_tree;
+> +
+> +	/* Extent buffer radix tree */
+> +	spinlock_t buffer_lock;
+> +	struct radix_tree_root buffer_radix;
+> +	struct list_lru lru_list;
+> +	pgoff_t writeback_index;
+> +};
+> +
+>  #define INLINE_EXTENT_BUFFER_PAGES 16
+>  #define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE)
+>  struct extent_buffer {
+>  	u64 start;
+>  	unsigned long len;
+>  	unsigned long bflags;
+> -	struct btrfs_fs_info *fs_info;
+> +	struct btrfs_eb_info *eb_info;
 
-> The last three patches are just there to show how we use the infrastructure in
-> the first 8 patches.  The actuall kill btree_inode patch is pretty big,
-> unfortunately ripping out all of the pagecache based handling and replacing it
-> with the new infrastructure has to be done whole-hog and can't be broken up
-> anymore than it already has been without making it un-bisectable.
+This single change increases the patch size just because all the
+callers need to be updated. I suggest to keep fs_info in extent_buffer,
+we're not going to lose much in terms of memory:
 
-I don't completely agree that it cannot be split. I went through it a
-few times, the patch is too big for review. It mixes the core part and
-cleanups that do not necessarily need to be in the patch. I'd like to
-see the core part minimized further, at the cost of leaving some dead
-code behind (like the old callbacks).
+currently there are 14 eb objects in a 4k slab page, with the additional
+fs_info it's still 14,
+
+280 * 14 = 3920, unused 176 bytes
+288 * 14 = 4032, unused 64 bytes
+
+>  	spinlock_t refs_lock;
+>  	atomic_t refs;
+>  	atomic_t io_pages;

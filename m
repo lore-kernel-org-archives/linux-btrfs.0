@@ -1,43 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www62.your-server.de ([213.133.104.62]:44231 "EHLO
-        www62.your-server.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753150AbdKXJqg (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:59951 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750841AbdK0DKK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Nov 2017 04:46:36 -0500
-Subject: Re: [PATCH v7 3/5] bpf: add a bpf_override_function helper
-To: Josef Bacik <josef@toxicpanda.com>, rostedt@goodmis.org, mingo@redhat.com,
-        davem@davemloft.net, netdev@vger.kernel.org,
-        linux-kernel@vger.kernel.org, ast@kernel.org, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-References: <1511385814-20863-1-git-send-email-josef@toxicpanda.com>
- <1511385814-20863-4-git-send-email-josef@toxicpanda.com>
-From: Daniel Borkmann <daniel@iogearbox.net>
-Message-ID: <9b416c77-33f8-dacc-82c3-811a265155ed@iogearbox.net>
-Date: Fri, 24 Nov 2017 10:46:28 +0100
+        Sun, 26 Nov 2017 22:10:10 -0500
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <quwenruo.btrfs@gmx.com>
+Subject: [PATCH 0/3] btrfs-progs: check: fix up bugs of lowmem mode
+Date: Mon, 27 Nov 2017 11:13:50 +0800
+Message-ID: <20171127031353.9338-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <1511385814-20863-4-git-send-email-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/22/2017 10:23 PM, Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
-> 
-> Error injection is sloppy and very ad-hoc.  BPF could fill this niche
-> perfectly with it's kprobe functionality.  We could make sure errors are
-> only triggered in specific call chains that we care about with very
-> specific situations.  Accomplish this with the bpf_override_funciton
-> helper.  This will modify the probe'd callers return value to the
-> specified value and set the PC to an override function that simply
-> returns, bypassing the originally probed function.  This gives us a nice
-> clean way to implement systematic error injection for all of our code
-> paths.
-> 
-> Acked-by: Alexei Starovoitov <ast@kernel.org>
-> Acked-by: Ingo Molnar <mingo@kernel.org>
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
+The patchset can be fetched from my github:
+https://github.com/Damenly/btrfs-progs/tree/lowmem
+which is based on Qu's branch on
+https://github.com/adam900710/btrfs-progs/tree/lowmem_fix
 
-Series looks good to me as well; BPF bits:
+The first two patches fix minor bugs:
+1) Extent buffer leaks while repairing data extent items in lowmem mode.
+2) Repair in lowmem mode always reports error about block group accounting.
 
-Acked-by: Daniel Borkmann <daniel@iogearbox.net>
+The third patch excludes extents of all treeblocks and extent items to
+avoid wrong extent overwrite. Then repair in lowmem mode should work
+again.
+
+Su Yue (3):
+  btrfs-progs: check: release path in repair_extent_data_item()
+  btrfs-progs: check: record returned errors after walk_down_tree_v2()
+  btrfs-progs: check: exclude extents of tree blocks and extent items
+
+ cmds-check.c | 126 +++++++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 114 insertions(+), 12 deletions(-)
+
+-- 
+2.15.0
+
+
+

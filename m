@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39813 "EHLO mx2.suse.de"
+Received: from azure.uno.uk.net ([95.172.254.11]:40550 "EHLO azure.uno.uk.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751857AbdK1WHz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Nov 2017 17:07:55 -0500
-Subject: Re: [PATCH 0/7] retry write on error
-To: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <20171122003558.28722-1-bo.li.liu@oracle.com>
- <20171128192236.GE3553@twin.jikos.cz>
-From: Edmund Nadolski <enadolski@suse.de>
-Message-ID: <bd35756b-0089-0e20-a70c-b66dd3292208@suse.de>
-Date: Tue, 28 Nov 2017 15:07:51 -0700
+        id S1753222AbdK1XmE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Nov 2017 18:42:04 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:41842)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89)
+        (envelope-from <postmaster@root.t00.sabi.co.uk>)
+        id 1eJpVq-0005z2-Pn
+        for linux-btrfs@vger.kernel.org; Tue, 28 Nov 2017 23:42:02 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1eJpVi-0007NZ-IV
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Nov 2017 23:41:54 +0000
 MIME-Version: 1.0
-In-Reply-To: <20171128192236.GE3553@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <23069.62530.53658.314350@tree.ty.sabi.co.uk>
+Date: Tue, 28 Nov 2017 23:41:54 +0000
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 0/7] retry write on error
+In-Reply-To: <bd35756b-0089-0e20-a70c-b66dd3292208@suse.de>
+References: <20171122003558.28722-1-bo.li.liu@oracle.com>
+        <20171128192236.GE3553@twin.jikos.cz>
+        <bd35756b-0089-0e20-a70c-b66dd3292208@suse.de>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+>>> If the underlying protocal doesn't support retry and there
+>>> are some transient errors happening somewhere in our IO
+>>> stack, we'd like to give an extra chance for IO.
 
+>> A limited number of retries may make sense, though I saw some
+>> long stalls after retries on bad disks.
 
-On 11/28/2017 12:22 PM, David Sterba wrote:
-> On Tue, Nov 21, 2017 at 05:35:51PM -0700, Liu Bo wrote:
->> If the underlying protocal doesn't support retry and there are some
->> transient errors happening somewhere in our IO stack, we'd like to
->> give an extra chance for IO.  Or sometimes you see btrfs reporting
->> 'wrr 1 flush 0 read 0 blabla' but the disk drive is 100% good, this
->> retry may help a bit.
-> 
-> A limited number of retries may make sense, though I saw some long
-> stalls after retries on bad disks. Tracking the retries would be a good
-> addition to the dev stats, ie. a soft error but still worth reporting.
+Indeed! One of the major issues in actual storage administration
+is to find ways to reliably disable most retries, or to shorten
+them, both at the block device level and the device level,
+because in almost all cases where storage reliability matters
+what is important is simply swapping out the failing device
+immediately and then examining and possible refreshing it
+offline.
 
-Seems preferable to avoid issuing retries when the underlying transport
-layer(s) has already done so, but I am not sure there is a way to know
-that at the fs level. Likewise for cases where a retry cannot succeed
-(transport failures? media errors?).  It can get tricky to know how long
-to delay between retries and when it is appropriate to stop retrying.
+To the point that many device manufacturers deliberately cripple
+in cheaper products retry shortening or disabling options to
+force long stalls, so that people who care about reliability
+more than price will buy the more expensive version that can
+disable or shorten retries.
 
-Ed
+> Seems preferable to avoid issuing retries when the underlying
+> transport layer(s) has already done so, but I am not sure
+> there is a way to know that at the fs level.
 
->> In btrfs, read retry is handled in bio_readpage_error() with the retry
->> unit being page size, for write retry however, we're going to do it in
->> a different way, as a write may consist of several writes onto
->> different stripes, retry write needs to be done right after the IO on
->> each stripe completes and arrives at endio.
->>
->> Patch 1-3 are the implementation of retry write on error for
->> non-raid56 profile.  Patch 4-6 are for raid56 profile.  Both raid56
->> and non-raid56 shares one retry function helper.
->>
->> Patch 3 does retry sector by sector, but since this patch set doesn't
->> included badblocks support, patch 7 changes it back to retry the whole
->> bio.  (I didn't fold patch 7 to patch 3 in the hope of just reverting
->> patch 7 once badblocks support is done, but I'm open to it.)
-> 
-> What does 'badblocks' refer to? I know about the badblocks utility that
-> find and reportts bad blocks, possibly ext2 understands that and avoids
-> allocating them. Btrfs does not have such support.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Inded, and to use an euphemism, a third layer of retries at the
+filesystem level are currently a thoroughly imbecilic idea :-),
+as whether retries are worth doing is not a filesystem dependent
+issue (but then plugging is done at the block io level when it
+is entirely device dependent whether it is worth doing, so there
+is famous precedent).
+
+There are excellent reasons why error recovery is in general not
+done at the filesystem level since around 20 years ago, which do
+not need repeating every time. However one of them is that where
+it makes sense device firmware does retries, and the block
+device layer does retries too, which is often a bad idea, and
+where it is not, the block io level should be do that, not the
+filesystem.
+
+A large part of the above discussion would not be needed if
+Linux kernel "developers" exposed a clear notion of hardware
+device and block device state machine and related semantics, or
+even knew that it were desirable, but that's an idea that is
+only 50 years old, so may not have yet reached popularity :-).

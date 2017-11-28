@@ -1,129 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46225 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43998 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753684AbdKVKWB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Nov 2017 05:22:01 -0500
-Date: Wed, 22 Nov 2017 11:21:59 +0100
-From: Jan Kara <jack@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
-        jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH 06/10] writeback: add counters for metadata usage
-Message-ID: <20171122102159.GC11233@quack2.suse.cz>
-References: <1510696616-8489-1-git-send-email-josef@toxicpanda.com>
- <1510696616-8489-6-git-send-email-josef@toxicpanda.com>
+        id S1753776AbdK1QUs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Nov 2017 11:20:48 -0500
+Date: Tue, 28 Nov 2017 17:18:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: incremental send, fix wrong unlink path after
+ renaming file
+Message-ID: <20171128161850.GY3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171117144830.17839-1-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1510696616-8489-6-git-send-email-josef@toxicpanda.com>
+In-Reply-To: <20171117144830.17839-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue 14-11-17 16:56:52, Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
+On Fri, Nov 17, 2017 at 02:48:30PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> Btrfs has no bounds except memory on the amount of dirty memory that we have in
-> use for metadata.  Historically we have used a special inode so we could take
-> advantage of the balance_dirty_pages throttling that comes with using pagecache.
-> However as we'd like to support different blocksizes it would be nice to not
-> have to rely on pagecache, but still get the balance_dirty_pages throttling
-> without having to do it ourselves.
+> Under some circumstances, an incremental send operation can issue wrong
+> paths for unlink commands related to files that have multiple hard links
+> and some (or all) of those links were renamed between the parent and send
+> snapshots. Consider the following example:
 > 
-> So introduce *METADATA_DIRTY_BYTES and *METADATA_WRITEBACK_BYTES.  These are
-> zone and bdi_writeback counters to keep track of how many bytes we have in
-> flight for METADATA.  We need to count in bytes as blocksizes could be
-> percentages of pagesize.  We simply convert the bytes to number of pages where
-> it is needed for the throttling.
+> Parent snapshot
 > 
-> Also introduce NR_METADATA_BYTES so we can keep track of the total amount of
-> pages used for metadata on the system.  This is also needed so things like dirty
-> throttling know that this is dirtyable memory as well and easily reclaimed.
+>  .                                                      (ino 256)
+>  |---- a/                                               (ino 257)
+>  |     |---- b/                                         (ino 259)
+>  |     |     |---- c/                                   (ino 260)
+>  |     |     |---- f2                                   (ino 261)
+>  |     |
+>  |     |---- f2l1                                       (ino 261)
+>  |
+>  |---- d/                                               (ino 262)
+>        |---- f1l1_2                                     (ino 258)
+>        |---- f2l2                                       (ino 261)
+>        |---- f1_2                                       (ino 258)
+> 
+> Send snapshot
+> 
+>  .                                                      (ino 256)
+>  |---- a/                                               (ino 257)
+>  |     |---- f2l1/                                      (ino 263)
+>  |             |---- b2/                                (ino 259)
+>  |                   |---- c/                           (ino 260)
+>  |                   |     |---- d3                     (ino 262)
+>  |                   |           |---- f1l1_2           (ino 258)
+>  |                   |           |---- f2l2_2           (ino 261)
+>  |                   |           |---- f1_2             (ino 258)
+>  |                   |
+>  |                   |---- f2                           (ino 261)
+>  |                   |---- f1l2                         (ino 258)
+>  |
+>  |---- d                                                (ino 261)
+> 
+> When computing the incremental send stream the following steps happen:
+> 
+> 1) When processing inode 261, a rename operation is issued that renames
+>    inode 262, which currently as a path of "d", to an orphan name of
+>    "o262-7-0". This is done because in the send snapshot, inode 261 has
+>    of its hard links with a path of "d" as well.
+> 
+> 2) Two link operations are issued that create the new hard links for
+>    inode 261, whose names are "d" and "f2l2_2", at paths "/" and
+>    "o262-7-0/" respectively.
+> 
+> 3) Still while processing inode 261, unlink operations are issued to
+>    remove the old hard links of inode 261, with names "f2l1" and "f2l2",
+>    at paths "a/" and "d/". However path "d/" does not correspond anymore
+>    to the directory inode 262 but corresponds instead to a hard link of
+>    inode 261 (link command issued in the previous step). This makes the
+>    receiver fail with a ENOTDIR error when attempting the unlink
+>    operation.
+> 
+> The problem happens because before sending the unlink operation, we failed
+> to detect that inode 262 was one of ancestors for inode 261 in the parent
+> snapshot, and therefore we didn't recompute the path for inode 262 before
+> issuing the unlink operation for the link named "f2l2" of inode 262. The
+> detection failed because the function "is_ancestor()" only follows the
+> first hard link it finds for an inode instead of all of its hard links
+> (as it was originally created for being used with directories only, for
+> which only one hard link exists). So fix this by making "is_ancestor()"
+> follow all hard links of the input inode.
+> 
+> A test case for fstests follows soon.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-NR_METADATA_BYTES never gets set in the patch set. Either remove this or
-implement it properly. Also for memory reclaim properties we already have
-NR_SLAB_RECLAIMABLE so you should make sure your metadata buffers are not
-double accounted.
-
-Another catch is that node and zone counters are kept in longs. So on
-32-bit archs you will overflow the counters if number of metadata (or dirty
-metadata) ever exceeds 2GB. That should be rare but still possible. Not
-sure what the right answer to this is... Account in 512-byte units?
-
-> @@ -1549,12 +1579,17 @@ static inline void wb_dirty_limits(struct dirty_throttle_control *dtc)
->  	 * deltas.
->  	 */
->  	if (dtc->wb_thresh < 2 * wb_stat_error(wb)) {
-> -		wb_reclaimable = wb_stat_sum(wb, WB_RECLAIMABLE);
-> -		dtc->wb_dirty = wb_reclaimable + wb_stat_sum(wb, WB_WRITEBACK);
-> +		wb_reclaimable = wb_stat_sum(wb, WB_RECLAIMABLE) +
-> +			(wb_stat_sum(wb, WB_METADATA_DIRTY_BYTES) >> PAGE_SHIFT);
-> +		wb_writeback = wb_stat_sum(wb, WB_WRITEBACK) +
-> +			(wb_stat_sum(wb, WB_METADATA_WRITEBACK_BYTES) >> PAGE_SHIFT);
->  	} else {
-> -		wb_reclaimable = wb_stat(wb, WB_RECLAIMABLE);
-> -		dtc->wb_dirty = wb_reclaimable + wb_stat(wb, WB_WRITEBACK);
-> +		wb_reclaimable = wb_stat(wb, WB_RECLAIMABLE) +
-> +			(wb_stat(wb, WB_METADATA_DIRTY_BYTES) >> PAGE_SHIFT);
-> +		wb_writeback = wb_stat(wb, WB_WRITEBACK) +
-> +			(wb_stat(wb, WB_METADATA_WRITEBACK_BYTES) >> PAGE_SHIFT);
->  	}
-> +	dtc->wb_dirty = wb_reclaimable + wb_writeback;
->  }
-
-Use BtoP here as well? You have it defined anyway...
-
-> diff --git a/mm/vmscan.c b/mm/vmscan.c
-> index 13d711dd8776..415b003e475c 100644
-> --- a/mm/vmscan.c
-> +++ b/mm/vmscan.c
-> @@ -225,7 +225,8 @@ unsigned long pgdat_reclaimable_pages(struct pglist_data *pgdat)
->  
->  	nr = node_page_state_snapshot(pgdat, NR_ACTIVE_FILE) +
->  	     node_page_state_snapshot(pgdat, NR_INACTIVE_FILE) +
-> -	     node_page_state_snapshot(pgdat, NR_ISOLATED_FILE);
-> +	     node_page_state_snapshot(pgdat, NR_ISOLATED_FILE) +
-> +	     (node_page_state_snapshot(pgdat, NR_METADATA_BYTES) >> PAGE_SHIFT);
->  
->  	if (get_nr_swap_pages() > 0)
->  		nr += node_page_state_snapshot(pgdat, NR_ACTIVE_ANON) +
-
-This function never gets called in current kernel. I'll send a patch to
-remove it.
-
-> @@ -3812,6 +3813,7 @@ static inline unsigned long node_unmapped_file_pages(struct pglist_data *pgdat)
->  static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
->  {
->  	unsigned long nr_pagecache_reclaimable;
-> +	unsigned long nr_metadata_reclaimable;
->  	unsigned long delta = 0;
->  
->  	/*
-> @@ -3833,7 +3835,20 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
->  	if (unlikely(delta > nr_pagecache_reclaimable))
->  		delta = nr_pagecache_reclaimable;
->  
-> -	return nr_pagecache_reclaimable - delta;
-> +	nr_metadata_reclaimable =
-> +		node_page_state(pgdat, NR_METADATA_BYTES) >> PAGE_SHIFT;
-> +	/*
-> +	 * We don't do writeout through the shrinkers so subtract any
-> +	 * dirty/writeback metadata bytes from the reclaimable count.
-> +	 */
-> +	if (nr_metadata_reclaimable) {
-> +		unsigned long unreclaimable =
-> +			node_page_state(pgdat, NR_METADATA_DIRTY_BYTES) +
-> +			node_page_state(pgdat, NR_METADATA_WRITEBACK_BYTES);
-> +		unreclaimable >>= PAGE_SHIFT;
-> +		nr_metadata_reclaimable -= unreclaimable;
-> +	}
-> +	return nr_metadata_reclaimable + nr_pagecache_reclaimable - delta;
->  }
-
-So I've checked both places that use this function and I think they are fine
-with the change. However it would still be good to get someone more
-knowledgeable of reclaim paths to have a look at this patch.
-
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+FYI, added to the rc2 pull.

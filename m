@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59499 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:56946 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750850AbdK1HIj (ORCPT
+        with ESMTP id S1751451AbdK1HUy (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 28 Nov 2017 02:08:39 -0500
+        Tue, 28 Nov 2017 02:20:54 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, stable@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
-Date: Tue, 28 Nov 2017 15:08:30 +0800
-Message-Id: <20171128070830.12756-2-wqu@suse.com>
-In-Reply-To: <20171128070830.12756-1-wqu@suse.com>
-References: <20171128070830.12756-1-wqu@suse.com>
+Subject: [PATCH v2.1 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
+Date: Tue, 28 Nov 2017 15:20:39 +0800
+Message-Id: <20171128072039.13973-1-wqu@suse.com>
+In-Reply-To: <20171128070830.12756-2-wqu@suse.com>
+References: <20171128070830.12756-2-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -47,10 +47,34 @@ changelog:
 v2:
   Locate the root cause in btrfs_ioctl_fitrim(), remove the truncation
   so we can still allow user to trim custom range.
+v2.1:
+  Include the missing change in btrfs_trim_fs() and update the commit
+  message to reflect this.
 ---
- fs/btrfs/ioctl.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |  9 +--------
+ fs/btrfs/ioctl.c       | 11 +++++++----
+ 2 files changed, 8 insertions(+), 12 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f830aa91ac3d..f74958e11008 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10972,14 +10972,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	int dev_ret = 0;
+ 	int ret = 0;
+ 
+-	/*
+-	 * try to trim all FS space, our block group may start from non-zero.
+-	 */
+-	if (range->len == total_bytes)
+-		cache = btrfs_lookup_first_block_group(fs_info, range->start);
+-	else
+-		cache = btrfs_lookup_block_group(fs_info, range->start);
+-
++	cache = btrfs_lookup_first_block_group(fs_info, range->start);
+ 	for (; cache; cache = next_block_group(fs_info, cache)) {
+ 		if (cache->key.objectid >= (range->start + range->len)) {
+ 			btrfs_put_block_group(cache);
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
 index fd172a93d11a..017fda31400d 100644
 --- a/fs/btrfs/ioctl.c

@@ -1,163 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:52205 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:59499 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750835AbdK1HIj (ORCPT
+        with ESMTP id S1750850AbdK1HIj (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 28 Nov 2017 02:08:39 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH RESEND 1/2] btrfs: Enhance btrfs_trim_fs function to handle error better
-Date: Tue, 28 Nov 2017 15:08:29 +0800
-Message-Id: <20171128070830.12756-1-wqu@suse.com>
+Cc: dsterba@suse.cz, stable@vger.kernel.org
+Subject: [PATCH v2 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
+Date: Tue, 28 Nov 2017 15:08:30 +0800
+Message-Id: <20171128070830.12756-2-wqu@suse.com>
+In-Reply-To: <20171128070830.12756-1-wqu@suse.com>
+References: <20171128070830.12756-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Function btrfs_trim_fs() doesn't handle errors in a consistent way, if
-error happens when trimming existing block groups, it will skip the
-remaining blocks and continue to trim unallocated space for each device.
+[BUG]
+fstrim on some btrfs only trims the unallocated space, not trimming any
+space in existing block groups.
 
-And the return value will only reflect the final error from device
-trimming.
+[CAUSE]
+Before fstrim_range passed to btrfs_trim_fs(), it get truncated to
+range [0, super->total_bytes).
+So later btrfs_trim_fs() will only be able to trim block groups in range
+[0, super->total_bytes).
 
-This patch will fix such behavior by:
+While for btrfs, any bytenr aligned to sector size is valid, since btrfs use
+its logical address space, there is nothing limiting the location where
+we put block groups.
 
-1) Recording first error from block group or device trimming
-   So return value will also reflect any error found when trimming.
-   Make developer more aware of the problem.
+For btrfs with routine balance, it's quite easy to relocate all
+block groups and bytenr of block groups will start beyond super->total_bytes.
 
-2) Outputting btrfs warning message for each trimming failure
-   Any error for block group or device trimming will cause btrfs warning
-   kernel message.
+In that case, btrfs will not trim existing block groups.
 
-3) Continuing trimming if we can
-   If we failed to trim one block group or device, we could still try
-   next block group or device.
-
-Such behavior can avoid confusion for case like failure to trim the
-first block group and then only unallocated space is trimmed.
+[FIX]
+Just remove the truncation in btrfs_ioctl_fitrim(), so btrfs_trim_fs()
+can get the unmodified range, which is normally set to [0, U64_MAX].
 
 Reported-by: Chris Murphy <lists@colorremedies.com>
+Fixes: f4c697e6406d ("btrfs: return EINVAL if start > total_bytes in fitrim ioctl")
+Cc: <stable@vger.kernel.org> # v4.0+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 43 insertions(+), 16 deletions(-)
+changelog:
+v2:
+  Locate the root cause in btrfs_ioctl_fitrim(), remove the truncation
+  so we can still allow user to trim custom range.
+---
+ fs/btrfs/ioctl.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 673ac4e01dd0..f830aa91ac3d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10948,6 +10948,16 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
- 	return ret;
- }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fd172a93d11a..017fda31400d 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -365,7 +365,6 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+ 	struct fstrim_range range;
+ 	u64 minlen = ULLONG_MAX;
+ 	u64 num_devices = 0;
+-	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+ 	int ret;
  
-+/*
-+ * Trim the whole fs, by:
-+ * 1) Trimming free space in each block group
-+ * 2) Trimming unallocated space in each device
-+ *
-+ * Will try to continue trimming even if we failed to trim one block group or
-+ * device.
-+ * The return value will be the error return value of the first error.
-+ * Or 0 if nothing wrong happened.
-+ */
- int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- {
- 	struct btrfs_block_group_cache *cache = NULL;
-@@ -10958,6 +10968,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	u64 end;
- 	u64 trimmed = 0;
- 	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
-+	int bg_ret = 0;
-+	int dev_ret = 0;
- 	int ret = 0;
+ 	if (!capable(CAP_SYS_ADMIN))
+@@ -389,11 +388,15 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+ 		return -EOPNOTSUPP;
+ 	if (copy_from_user(&range, arg, sizeof(range)))
+ 		return -EFAULT;
+-	if (range.start > total_bytes ||
+-	    range.len < fs_info->sb->s_blocksize)
++
++	/*
++	 * NOTE: Don't truncate the range using super->total_bytes.
++	 * Bytenr of btrfs block group is in btrfs logical address space,
++	 * which can be any sector size aligned bytenr in [0, U64_MAX].
++	 */
++	if (range.len < fs_info->sb->s_blocksize)
+ 		return -EINVAL;
  
- 	/*
-@@ -10968,7 +10980,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	else
- 		cache = btrfs_lookup_block_group(fs_info, range->start);
- 
--	while (cache) {
-+	for (; cache; cache = next_block_group(fs_info, cache)) {
- 		if (cache->key.objectid >= (range->start + range->len)) {
- 			btrfs_put_block_group(cache);
- 			break;
-@@ -10982,29 +10994,36 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 			if (!block_group_cache_done(cache)) {
- 				ret = cache_block_group(cache, 0);
- 				if (ret) {
--					btrfs_put_block_group(cache);
--					break;
-+					btrfs_warn_rl(fs_info,
-+		"failed to cache block group %llu ret %d",
-+						   cache->key.objectid, ret);
-+					if (!bg_ret)
-+						bg_ret = ret;
-+					continue;
- 				}
- 				ret = wait_block_group_cache_done(cache);
- 				if (ret) {
--					btrfs_put_block_group(cache);
--					break;
-+					btrfs_warn_rl(fs_info,
-+		"failed to wait cache for block group %llu ret %d",
-+						   cache->key.objectid, ret);
-+					if (!bg_ret)
-+						bg_ret = ret;
-+					continue;
- 				}
- 			}
--			ret = btrfs_trim_block_group(cache,
--						     &group_trimmed,
--						     start,
--						     end,
--						     range->minlen);
-+			ret = btrfs_trim_block_group(cache, &group_trimmed,
-+						start, end, range->minlen);
- 
- 			trimmed += group_trimmed;
- 			if (ret) {
--				btrfs_put_block_group(cache);
--				break;
-+				btrfs_warn_rl(fs_info,
-+		"failed to trim block group %llu ret %d",
-+					   cache->key.objectid, ret);
-+				if (!bg_ret)
-+					bg_ret = ret;
-+				continue;
- 			}
- 		}
--
--		cache = next_block_group(fs_info, cache);
- 	}
- 
- 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-@@ -11012,15 +11031,23 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	list_for_each_entry(device, devices, dev_alloc_list) {
- 		ret = btrfs_trim_free_extents(device, range->minlen,
- 					      &group_trimmed);
--		if (ret)
-+		if (ret) {
-+			btrfs_warn_rl(fs_info,
-+		"failed to trim unallocated space for devid %llu ret %d",
-+				      device->devid, ret);
-+			if (!dev_ret)
-+				dev_ret = ret;
- 			break;
-+		}
- 
- 		trimmed += group_trimmed;
- 	}
- 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
- 
- 	range->len = trimmed;
--	return ret;
-+	if (bg_ret)
-+		return bg_ret;
-+	return dev_ret;
- }
- 
- /*
+-	range.len = min(range.len, total_bytes - range.start);
+ 	range.minlen = max(range.minlen, minlen);
+ 	ret = btrfs_trim_fs(fs_info, &range);
+ 	if (ret < 0)
 -- 
 2.15.0
 

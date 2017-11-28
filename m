@@ -1,131 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44282 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751538AbdKVBiW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Nov 2017 20:38:22 -0500
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vAM1cLZY022111
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:21 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vAM1cK4h022999
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:21 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vAM1cK1I014777
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Nov 2017 01:38:20 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 7/7] Btrfs: retry the whole bio on write error
-Date: Tue, 21 Nov 2017 17:35:58 -0700
-Message-Id: <20171122003558.28722-8-bo.li.liu@oracle.com>
-In-Reply-To: <20171122003558.28722-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:55315 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752646AbdK1TYe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Nov 2017 14:24:34 -0500
+Date: Tue, 28 Nov 2017 20:22:36 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] retry write on error
+Message-ID: <20171128192236.GE3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20171122003558.28722-1-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171122003558.28722-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we haven't included badblocks support in our retry path, instead
-of retry sector by sector only retry the whole bio to give it an extra
-chance.
+On Tue, Nov 21, 2017 at 05:35:51PM -0700, Liu Bo wrote:
+> If the underlying protocal doesn't support retry and there are some
+> transient errors happening somewhere in our IO stack, we'd like to
+> give an extra chance for IO.  Or sometimes you see btrfs reporting
+> 'wrr 1 flush 0 read 0 blabla' but the disk drive is 100% good, this
+> retry may help a bit.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/volumes.c | 72 ++++++++++--------------------------------------------
- 1 file changed, 13 insertions(+), 59 deletions(-)
+A limited number of retries may make sense, though I saw some long
+stalls after retries on bad disks. Tracking the retries would be a good
+addition to the dev stats, ie. a soft error but still worth reporting.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c11db0b..395b03c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6033,74 +6033,28 @@ static inline struct btrfs_device *get_device_from_bio(struct bio *bio)
- }
- 
- /*
-- * return 1 if every sector retry returns successful.
-- * return 0 if one or more sector retries fails.
-+ * Return 1 if retry returns successful.
-+ * Return 0 otherwise.
-  */
- int btrfs_narrow_write_error(struct bio *bio, struct btrfs_device *dev)
- {
- 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
--	u64 sectors_to_write;
--	u64 offset;
--	u64 orig;
--	u64 unit;
--	u64 block_sectors;
--	int ok = 1;
-+	int ret = 1;
- 	struct bio *wbio;
- 
--	/* offset and unit are bytes aligned, not 512-bytes aligned. */
--	sectors_to_write = io_bio->iter.bi_size >> 9;
--	orig = io_bio->iter.bi_sector;
--	offset = 0;
--	block_sectors = bdev_logical_block_size(dev->bdev) >> 9;
--	unit = block_sectors;
--	ASSERT(unit == 1);
--
--	while (1) {
--		if (!sectors_to_write)
--			break;
--		/*
--		 * LIUBO: I don't think unit > sectors_to_write could
--		 * happen, sectors_to_write should be aligned to PAGE_SIZE
--		 * which is > unit.  Just in case.
--		 */
--		if (unit > sectors_to_write) {
--			WARN_ONCE(1, "unit %llu > sectors_to_write (%llu)\n", unit, sectors_to_write);
--			unit = sectors_to_write;
--		}
--
--		/* write @unit bytes at @offset */
--		/* this would never fail, check btrfs_bio_clone(). */
--		wbio = btrfs_bio_clone(bio);
--		wbio->bi_opf = REQ_OP_WRITE;
--		wbio->bi_iter = io_bio->iter;
-+	/* this would never fail, check btrfs_bio_clone(). */
-+	wbio = btrfs_bio_clone(bio);
-+	wbio->bi_opf = REQ_OP_WRITE;
-+	wbio->bi_iter = io_bio->iter;
- 
--		bio_trim(wbio, offset, unit);
--		bio_copy_dev(wbio, bio);
-+	bio_copy_dev(wbio, bio);
- 
--		/* submit in sync way */
--		/*
--		 * LIUBO: There is an issue, if this bio is quite
--		 * large, say 1M or 2M, and sector size is just 512,
--		 * then this may take a while.
--		 *
--		 * May need to schedule the job to workqueue.
--		 */
--		if (submit_bio_wait(wbio) < 0) {
--			ok = 0 && ok;
--			/*
--			 * This is not correct if badblocks is enabled
--			 * as we need to record every bad sector by
--			 * trying sectors one by one.
--			 */
--			break;
--		}
-+	/* submit in sync way */
-+	if (submit_bio_wait(wbio) < 0)
-+		ret = 0;
- 
--		bio_put(wbio);
--		offset += unit;
--		sectors_to_write -= unit;
--		unit = block_sectors;
--	}
--	return ok;
-+	bio_put(wbio);
-+	return ret;
- }
- 
- void btrfs_record_bio_error(struct bio *bio, struct btrfs_device *dev)
--- 
-2.9.4
+> In btrfs, read retry is handled in bio_readpage_error() with the retry
+> unit being page size, for write retry however, we're going to do it in
+> a different way, as a write may consist of several writes onto
+> different stripes, retry write needs to be done right after the IO on
+> each stripe completes and arrives at endio.
+> 
+> Patch 1-3 are the implementation of retry write on error for
+> non-raid56 profile.  Patch 4-6 are for raid56 profile.  Both raid56
+> and non-raid56 shares one retry function helper.
+> 
+> Patch 3 does retry sector by sector, but since this patch set doesn't
+> included badblocks support, patch 7 changes it back to retry the whole
+> bio.  (I didn't fold patch 7 to patch 3 in the hope of just reverting
+> patch 7 once badblocks support is done, but I'm open to it.)
 
+What does 'badblocks' refer to? I know about the badblocks utility that
+find and reportts bad blocks, possibly ext2 understands that and avoids
+allocating them. Btrfs does not have such support.

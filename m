@@ -1,75 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44823 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752470AbdK1Xvg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Nov 2017 18:51:36 -0500
-Date: Wed, 29 Nov 2017 00:49:37 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nick Terrell <terrelln@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Martin Steigerwald <martin@lichtvoll.de>,
-        Imran Geriskovan <imran.geriskovan@gmail.com>
-Subject: Re: Read before you deploy btrfs + zstd
-Message-ID: <20171128234937.GG3553@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20171113225046.GD28899@suse.cz>
- <20171114185331.GJ28899@twin.jikos.cz>
- <20171115143906.GM28899@twin.jikos.cz>
- <E55ED8F2-8D16-4B58-9EC3-8DE41E7BE5A2@fb.com>
- <20171121162239.GO3553@suse.cz>
- <5BB834FC-A54C-4448-8D86-1D2F22806096@fb.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:47781 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751846AbdK1Xyb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Nov 2017 18:54:31 -0500
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vASNsUSs017161
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Nov 2017 23:54:31 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vASNsTQK015703
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Nov 2017 23:54:30 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vASNsTO6024474
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Nov 2017 23:54:29 GMT
+Date: Tue, 28 Nov 2017 15:52:33 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: handle dynamically reappearing missing device
+Message-ID: <20171128225233.GA11789@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20171112105650.3248-1-anand.jain@oracle.com>
+ <20171116232826.GB23614@dhcp-whq-twvpn-1-vpnpool-10-159-142-193.vpn.oracle.com>
+ <1c1f74f1-5531-dc22-70a8-8d93a0571c7f@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5BB834FC-A54C-4448-8D86-1D2F22806096@fb.com>
+In-Reply-To: <1c1f74f1-5531-dc22-70a8-8d93a0571c7f@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 28, 2017 at 09:31:57PM +0000, Nick Terrell wrote:
+On Fri, Nov 17, 2017 at 07:53:29PM +0800, Anand Jain wrote:
 > 
-> > On Nov 21, 2017, at 8:22 AM, David Sterba <dsterba@suse.cz> wrote:
+> 
+> On 11/17/2017 07:28 AM, Liu Bo wrote:
+> > On Sun, Nov 12, 2017 at 06:56:50PM +0800, Anand Jain wrote:
+> > > If the device is not present at the time of (-o degrade) mount
+> > > the mount context will create a dummy missing struct btrfs_device.
+> > > Later this device may reappear after the FS is mounted.
+> 
+> > This commit log doesn't explain what would happen when the missing
+> > device re-appears.
+> 
+>  Hm. You mean in the current design without this patch.?
+>  Just nothing it gives a false impression to the user by
+> 'btrfs dev ready' and 'btrfs fi show' that missing device
+>  has been included. Will update change log.
+> 
+> > > So this
+> > > patch handles that case by going through the open_device steps
+> 
+> > > which this device missed and finally adds to the device alloc list.
+> > > 
+> > > So now with this patch, to bring back the missing device user can run,
+> > > 
+> > >     btrfs dev scan <path-of-missing-device>
 > > 
-> > On Wed, Nov 15, 2017 at 08:09:15PM +0000, Nick Terrell wrote:
-> >> On 11/15/17, 6:41 AM, "David Sterba" <dsterba@suse.cz> wrote:
-> >>> The branch is now in a state that can be tested. Turns out the memory
-> >>> requirements are too much for grub, so the boot fails with "not enough
-> >>> memory". The calculated value
-> >>> 
-> >>> ZSTD_BTRFS_MAX_INPUT: 131072
-> >>> ZSTD_DStreamWorkspaceBound with ZSTD_BTRFS_MAX_INPUT: 549424
-> >>> 
-> >>> This is not something I could fix easily, we'd probalby need a tuned
-> >>> version of ZSTD for grub constraints. Adding Nick to CC.
-> >> 
-> >> If I understand the grub code correctly, we only need to read, and we have
-> >> the entire input and output buffer in one segment. In that case you can use
-> >> ZSTD_initDCtx(), and ZSTD_decompressDCtx(). ZSTD_DCtxWorkspaceBound() is
-> >> only 155984. See decompress_single() in
-> >> https://patchwork.kernel.org/patch/9997909/ for an example.
+> > Most common distros already have some udev rules of btrfs to process a
+> > reappeared disk.
+> 
+>  Right. Do you see anything that will break ?
+>  Planning to add comments [1] in v2 for more clarity around this.
+> 
+> > > 
+> > > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> > > ---
+> > > This patch needs:
+> > >   [PATCH 0/4]  factor __btrfs_open_devices()
+> > > 
+> > >   fs/btrfs/volumes.c | 43 +++++++++++++++++++++++++++++++++++++++++--
+> > >   1 file changed, 41 insertions(+), 2 deletions(-)
+> > > 
+> > > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> > > index d24e966ee29f..e7dd996831f2 100644
+> > > --- a/fs/btrfs/volumes.c
+> > > +++ b/fs/btrfs/volumes.c
+> > > @@ -769,8 +769,47 @@ static noinline int device_list_add(const char *path,
+> > >   		rcu_string_free(device->name);
+> > >   		rcu_assign_pointer(device->name, name);
+> > >   		if (device->missing) {
+> > > -			fs_devices->missing_devices--;
+> > > -			device->missing = 0;
+> > > +			int ret;
+> > > +			struct btrfs_fs_info *fs_info = fs_devices->fs_info;
+> > > +			fmode_t fmode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
+> > > +
+> > > +			if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING)
+> > > +				fmode &= ~FMODE_WRITE;
+> > > +
+> > > +			/*
+> > > +			 * Missing can be set only when FS is mounted.
+> > > +			 * So here its always fs_devices->opened > 0 and most
+> > > +			 * of the struct device members are already updated by
+> > > +			 * the mount process even if this device was missing, so
+> > > +			 * now follow the normal open device procedure for this
+> > > +			 * device. The scrub will take care of filling the
+> > > +			 * missing stripes for raid56 and balance for raid1 and
+> > > +			 * raid10.
+> > > +			 */
 > > 
-> > Does not help, still ENOMEM.
+> > 
+> > The idea looks good to me.
+> > 
+> > What if users skip balance/scrub given both could take a while?
+> > 
+> > Then btrfs takes the disks back and reads content from it, and it's OK
+> > for raid1/10 as they may have a good copy,
 > 
-> It looks like XZ had the same issue, and they make the decompression
-> context a static object (grep for GRUB_EMBED_DECOMPRESSOR). We could
-> potentially do the same and statically allocate the workspace:
+>  Yes, except for the split brain situation for which patches are
+>  in the ML, review comments appreciated.
 > 
-> ```
-> /* Could also be size_t */
-> #define BTRFS_ZSTD_WORKSPACE_SIZE_U64 (155984 / sizeof(uint64_t))
-> static uint64_t workspace[BTRFS_ZSTD_WORKSPACE_SIZE_U64];
+> > but in case of raid56, it
+> > might hit the reconstruction bug if two disks are missing and added
+> > back, which I tried to address recently.
 > 
-> /* ... */
+> > At least ->writable should not be set until balance/scrub completes
+> > the re-sync job.
 > 
-> assert(sizeof(workspace) >= ZSTD_DCtxWorkspaceBound());
-> ```
+>  Hm. Why ?
+>
 
-Interesting, thanks for the tip, I'll try it next.
+(Sorry for the late reply.)
 
-I've meanwhile tried to tweak the numbers, the maximum block for zstd,
-that squeezed the DCtx somewhere under 48k, with block size 8k. Still
-enomem.
+On second thought, write is OK since parity will be calculated along
+writes.
 
-I've tried to add some debugging prints to see what numbers get actually
-passed to the allocator, but did not see anything printed.  I'm sure
-there is a more intelligent way to test the grub changes.  So far each
-test loop takes quite some time, as I build the rpm package, test it in
-a VM and have to recreate the environmet each time.
+Will check the v2.
+
+
+Thanks,
+
+-liubo

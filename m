@@ -1,82 +1,308 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www62.your-server.de ([213.133.104.62]:52790 "EHLO
-        www62.your-server.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752402AbdK1QWp (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:41823 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753248AbdK1Cek (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Nov 2017 11:22:45 -0500
-Subject: Re: [PATCH v7 0/4] Add the ability to do BPF directed error injection
-To: Josef Bacik <josef@toxicpanda.com>, rostedt@goodmis.org, mingo@redhat.com,
-        davem@davemloft.net, netdev@vger.kernel.org,
-        linux-kernel@vger.kernel.org, ast@kernel.org, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org
-References: <1511385814-20863-1-git-send-email-josef@toxicpanda.com>
-From: Daniel Borkmann <daniel@iogearbox.net>
-Message-ID: <b5c1fb0f-0107-e1db-8d86-47bd0bbe5fe1@iogearbox.net>
-Date: Tue, 28 Nov 2017 17:22:38 +0100
+        Mon, 27 Nov 2017 21:34:40 -0500
+Subject: Re: [PATCH 3/3] btrfs-progs: check: exclude extents of tree blocks
+ and extent items
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+References: <20171127031353.9338-1-suy.fnst@cn.fujitsu.com>
+ <20171127031353.9338-4-suy.fnst@cn.fujitsu.com>
+ <dffaee0f-6b98-b834-75b9-7d79a7ef3e08@gmx.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <27271d15-991b-d964-17f4-128c9d63e6b7@cn.fujitsu.com>
+Date: Tue, 28 Nov 2017 10:38:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <1511385814-20863-1-git-send-email-josef@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <dffaee0f-6b98-b834-75b9-7d79a7ef3e08@gmx.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/22/2017 10:23 PM, Josef Bacik wrote:
-> This is hopefully the final version, I've addressed the comment by Igno and
-> added his Acks.
-> 
-> v6->v7:
-> - moved the opt-in macro to bpf.h out of kprobes.h.
-> 
-> v5->v6:
-> - add BPF_ALLOW_ERROR_INJECTION() tagging for functions that will support this
->   feature.  This way only functions that opt-in will be allowed to be
->   overridden.
-> - added a btrfs patch to allow error injection for open_ctree() so that the bpf
->   sample actually works.
-> 
-> v4->v5:
-> - disallow kprobe_override programs from being put in the prog map array so we
->   don't tail call into something we didn't check.  This allows us to make the
->   normal path still fast without a bunch of percpu operations.
-> 
-> v3->v4:
-> - fix a build error found by kbuild test bot (I didn't wait long enough
->   apparently.)
-> - Added a warning message as per Daniels suggestion.
-> 
-> v2->v3:
-> - added a ->kprobe_override flag to bpf_prog.
-> - added some sanity checks to disallow attaching bpf progs that have
->   ->kprobe_override set that aren't for ftrace kprobes.
-> - added the trace_kprobe_ftrace helper to check if the trace_event_call is a
->   ftrace kprobe.
-> - renamed bpf_kprobe_state to bpf_kprobe_override, fixed it so we only read this
->   value in the kprobe path, and thus only write to it if we're overriding or
->   clearing the override.
-> 
-> v1->v2:
-> - moved things around to make sure that bpf_override_return could really only be
->   used for an ftrace kprobe.
-> - killed the special return values from trace_call_bpf.
-> - renamed pc_modified to bpf_kprobe_state so bpf_override_return could tell if
->   it was being called from an ftrace kprobe context.
-> - reworked the logic in kprobe_perf_func to take advantage of bpf_kprobe_state.
-> - updated the test as per Alexei's review.
-> 
-> - Original message -
-> 
-> A lot of our error paths are not well tested because we have no good way of
-> injecting errors generically.  Some subystems (block, memory) have ways to
-> inject errors, but they are random so it's hard to get reproduceable results.
-> 
-> With BPF we can add determinism to our error injection.  We can use kprobes and
-> other things to verify we are injecting errors at the exact case we are trying
-> to test.  This patch gives us the tool to actual do the error injection part.
-> It is very simple, we just set the return value of the pt_regs we're given to
-> whatever we provide, and then override the PC with a dummy function that simply
-> returns.
-> 
-> Right now this only works on x86, but it would be simple enough to expand to
-> other architectures.  Thanks,
+Thanks for review.
 
-Ok, given the remaining feedback from Ingo was addressed and therefore
-the series acked, I've applied it to bpf-next tree, thanks Josef.
+On 11/27/2017 06:37 PM, Qu Wenruo wrote:
+> 
+> 
+> On 2017年11月27日 11:13, Su Yue wrote:
+>> Commit d17d6663c99c ("btrfs-progs: lowmem check: Fix regression which
+>> screws up extent allocator") removes pin_metadata_blocks() from
+>> lowmem repair.
+>> So we have to find another way to exclude extents which should be
+>> occupied by tree blocks.
+> 
+> First thing first, any tree block which is referred by will not be freed.
+> 
+> Unless some special case, like extent tree initialization which clears
+> the whole extent tree so we can't check if one tree block should be
+> freed using extent tree, there is no need to explicitly pin existing
+> tree blocks.
+> 
+> Their creation/freeing is already handled well.
+> 
+If I understand the logic of extents correctly:
+
+The extents in free space cache are handled in the way like
+cache_block_group() in extent-tree.c.
+It traverses all extents items then marks all holes free in free space
+cache.
+
+Yes, in a normal situation, extents are already handled well.
+But original and lowmem check try to repair corrupted extent tree.
+
+Suppose a situation:
+1) Let an extent item of one tree block is corrupted or missed.
+2) The correct extent in free space cache will be marked as free.
+3) Next CoW may allocate the "used" extents from free space
+    and insert an extent item.
+4) Lowmem repair increases refs of the extent item and
+    causes a wrong extent item.
+OR
+3) Lowmem repair inserts the extent item firstly.
+4) CoW may allocate the "used" extents from free space.
+    BUG_ON failure of inserting the extent item.
+
+> Please explain the reason why you need to pin extents first.
+> 
+What I do in the patch is like origin mode's.
+Pining extents first ensures every extents(corrupted and uncorrupted)
+will not be rellocated.
+
+Thanks,
+Su
+
+> Thanks,
+> Qu
+> 
+>>
+>> Modify pin_down_tree_blocks() only for code reuse.
+>> So behavior of pin_metadata_blocks() which works with option
+>> 'init-extent-tree' is not influenced.
+>>
+>> Introduce exclude_blocks_and_extent_items() to mark extents of all tree
+>> blocks dirty in fs_info->excluded_extents. It also calls
+>> exclude_extent_items() to exclude extent_items in extent tree.
+>>
+>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>> ---
+>>   cmds-check.c | 122 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+>>   1 file changed, 112 insertions(+), 10 deletions(-)
+>>
+>> diff --git a/cmds-check.c b/cmds-check.c
+>> index c7b570bef9c3..f39285c5a3c2 100644
+>> --- a/cmds-check.c
+>> +++ b/cmds-check.c
+>> @@ -13351,6 +13351,7 @@ out:
+>>   	return err;
+>>   }
+>>   
+>> +static int exclude_blocks_and_extent_items(struct btrfs_fs_info *fs_info);
+>>   /*
+>>    * Low memory usage version check_chunks_and_extents.
+>>    */
+>> @@ -13363,12 +13364,22 @@ static int check_chunks_and_extents_v2(struct btrfs_fs_info *fs_info)
+>>   	struct btrfs_root *root1;
+>>   	struct btrfs_root *root;
+>>   	struct btrfs_root *cur_root;
+>> +	struct extent_io_tree excluded_extents;
+>>   	int err = 0;
+>>   	int ret;
+>>   
+>>   	root = fs_info->fs_root;
+>>   
+>>   	if (repair) {
+>> +		extent_io_tree_init(&excluded_extents);
+>> +		fs_info->excluded_extents = &excluded_extents;
+>> +		ret = exclude_blocks_and_extent_items(fs_info);
+>> +		if (ret) {
+>> +			error("failed to exclude tree blocks and extent items");
+>> +			return ret;
+>> +		}
+>> +		reset_cached_block_groups(fs_info);
+>> +
+>>   		trans = btrfs_start_transaction(fs_info->extent_root, 1);
+>>   		if (IS_ERR(trans)) {
+>>   			error("failed to start transaction before check");
+>> @@ -13437,6 +13448,8 @@ out:
+>>   			err |= ret;
+>>   		else
+>>   			err &= ~BG_ACCOUNTING_ERROR;
+>> +		extent_io_tree_cleanup(&excluded_extents);
+>> +		fs_info->excluded_extents = NULL;
+>>   	}
+>>   
+>>   	if (trans)
+>> @@ -13534,40 +13547,106 @@ init:
+>>   	return 0;
+>>   }
+>>   
+>> -static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
+>> -				struct extent_buffer *eb, int tree_root)
+>> +static int exclude_extent_items(struct btrfs_fs_info *fs_info,
+>> +				struct extent_io_tree *tree)
+>> +{
+>> +	struct btrfs_root *root = fs_info->extent_root;
+>> +	struct btrfs_key key;
+>> +	struct btrfs_path path;
+>> +	struct extent_buffer *eb;
+>> +	int slot;
+>> +	int ret;
+>> +	u64 start;
+>> +	u64 end;
+>> +
+>> +	ASSERT(tree);
+>> +	btrfs_init_path(&path);
+>> +	key.objectid = 0;
+>> +	key.type = 0;
+>> +	key.offset = 0;
+>> +
+>> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+>> +	if (ret < 0)
+>> +		goto out;
+>> +
+>> +	while (1) {
+>> +		eb = path.nodes[0];
+>> +		slot = path.slots[0];
+>> +		btrfs_item_key_to_cpu(eb, &key, slot);
+>> +		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
+>> +		    key.type != BTRFS_METADATA_ITEM_KEY)
+>> +			goto next;
+>> +		start = key.objectid;
+>> +		if (key.type == BTRFS_EXTENT_ITEM_KEY)
+>> +			end = start + key.offset;
+>> +		else
+>> +			end = start + fs_info->nodesize;
+>> +
+>> +		set_extent_dirty(tree, start, end - 1);
+>> +next:
+>> +		ret = btrfs_next_item(root, &path);
+>> +		if (ret > 0) {
+>> +			ret = 0;
+>> +			goto out;
+>> +		}
+>> +		if (ret < 0)
+>> +			goto out;
+>> +	}
+>> +out:
+>> +	if (ret)
+>> +		error("failed to exclude extent items");
+>> +	btrfs_release_path(&path);
+>> +	return ret;
+>> +}
+>> +
+>> +static int traverse_tree_blocks(struct btrfs_fs_info *fs_info,
+>> +				struct extent_buffer *eb, int tree_root,
+>> +				int pin)
+>>   {
+>>   	struct extent_buffer *tmp;
+>>   	struct btrfs_root_item *ri;
+>>   	struct btrfs_key key;
+>> +	struct extent_io_tree *tree;
+>>   	u64 bytenr;
+>>   	int level = btrfs_header_level(eb);
+>>   	int nritems;
+>>   	int ret;
+>>   	int i;
+>> +	u64 end = eb->start + eb->len;
+>>   
+>> +	if (pin)
+>> +		tree = &fs_info->pinned_extents;
+>> +	else
+>> +		tree = fs_info->excluded_extents;
+>>   	/*
+>> -	 * If we have pinned this block before, don't pin it again.
+>> +	 * If we have pinned/excluded this block before, don't do it again.
+>>   	 * This can not only avoid forever loop with broken filesystem
+>>   	 * but also give us some speedups.
+>>   	 */
+>> -	if (test_range_bit(&fs_info->pinned_extents, eb->start,
+>> -			   eb->start + eb->len - 1, EXTENT_DIRTY, 0))
+>> +	if (test_range_bit(tree, eb->start, end - 1, EXTENT_DIRTY, 0))
+>>   		return 0;
+>>   
+>> -	btrfs_pin_extent(fs_info, eb->start, eb->len);
+>> +	if (pin)
+>> +		btrfs_pin_extent(fs_info, eb->start, eb->len);
+>> +	else
+>> +		set_extent_dirty(tree, eb->start, end - 1);
+>>   
+>>   	nritems = btrfs_header_nritems(eb);
+>>   	for (i = 0; i < nritems; i++) {
+>>   		if (level == 0) {
+>> +			bool is_extent_root;
+>>   			btrfs_item_key_to_cpu(eb, &key, i);
+>>   			if (key.type != BTRFS_ROOT_ITEM_KEY)
+>>   				continue;
+>>   			/* Skip the extent root and reloc roots */
+>> -			if (key.objectid == BTRFS_EXTENT_TREE_OBJECTID ||
+>> -			    key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
+>> +			if (key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
+>>   			    key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID)
+>>   				continue;
+>> +			is_extent_root =
+>> +				key.objectid == BTRFS_EXTENT_TREE_OBJECTID;
+>> +			/* If pin, skip the extent root */
+>> +			if (pin && is_extent_root)
+>> +				continue;
+>>   			ri = btrfs_item_ptr(eb, i, struct btrfs_root_item);
+>>   			bytenr = btrfs_disk_root_bytenr(eb, ri);
+>>   
+>> @@ -13582,7 +13661,7 @@ static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
+>>   				fprintf(stderr, "Error reading root block\n");
+>>   				return -EIO;
+>>   			}
+>> -			ret = pin_down_tree_blocks(fs_info, tmp, 0);
+>> +			ret = traverse_tree_blocks(fs_info, tmp, 0, pin);
+>>   			free_extent_buffer(tmp);
+>>   			if (ret)
+>>   				return ret;
+>> @@ -13601,7 +13680,8 @@ static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
+>>   				fprintf(stderr, "Error reading tree block\n");
+>>   				return -EIO;
+>>   			}
+>> -			ret = pin_down_tree_blocks(fs_info, tmp, tree_root);
+>> +			ret = traverse_tree_blocks(fs_info, tmp, tree_root,
+>> +						   pin);
+>>   			free_extent_buffer(tmp);
+>>   			if (ret)
+>>   				return ret;
+>> @@ -13611,6 +13691,12 @@ static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
+>>   	return 0;
+>>   }
+>>   
+>> +static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
+>> +				struct extent_buffer *eb, int tree_root)
+>> +{
+>> +	return traverse_tree_blocks(fs_info, eb, tree_root, 1);
+>> +}
+>> +
+>>   static int pin_metadata_blocks(struct btrfs_fs_info *fs_info)
+>>   {
+>>   	int ret;
+>> @@ -13622,6 +13708,22 @@ static int pin_metadata_blocks(struct btrfs_fs_info *fs_info)
+>>   	return pin_down_tree_blocks(fs_info, fs_info->tree_root->node, 1);
+>>   }
+>>   
+>> +static int exclude_tree_blocks(struct btrfs_fs_info *fs_info,
+>> +				struct extent_buffer *eb, int tree_root)
+>> +{
+>> +	return traverse_tree_blocks(fs_info, fs_info->tree_root->node, 1, 0);
+>> +}
+>> +
+>> +static int exclude_blocks_and_extent_items(struct btrfs_fs_info *fs_info)
+>> +{
+>> +	int ret;
+>> +
+>> +	ret = exclude_extent_items(fs_info, fs_info->excluded_extents);
+>> +	if (ret)
+>> +		return ret;
+>> +	return exclude_tree_blocks(fs_info, fs_info->tree_root->node, 1);
+>> +}
+>> +
+>>   static int reset_block_groups(struct btrfs_fs_info *fs_info)
+>>   {
+>>   	struct btrfs_block_group_cache *cache;
+>>
+> 
+
+

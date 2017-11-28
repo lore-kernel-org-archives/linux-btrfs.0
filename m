@@ -1,65 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ms.lwn.net ([45.79.88.28]:50818 "EHLO ms.lwn.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751628AbdK1S6n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Nov 2017 13:58:43 -0500
-Date: Tue, 28 Nov 2017 11:58:41 -0700
-From: Jonathan Corbet <corbet@lwn.net>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
-        netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
-        kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org,
-        Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH v7 1/5] add infrastructure for tagging functions as
- error injectable
-Message-ID: <20171128115841.4958113d@lwn.net>
-In-Reply-To: <1511385814-20863-2-git-send-email-josef@toxicpanda.com>
-References: <1511385814-20863-1-git-send-email-josef@toxicpanda.com>
-        <1511385814-20863-2-git-send-email-josef@toxicpanda.com>
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:35390 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753146AbdK1SAc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Nov 2017 13:00:32 -0500
+Subject: Re: About 'key type for persistent [...] items'
+To: dsterba@suse.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <3576cefb-4554-b559-0b26-3679a1e94243@mendix.com>
+ <20171128173441.GZ3553@twin.jikos.cz>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <344ca10c-39eb-0adb-3926-9ba6bf5a7229@mendix.com>
+Date: Tue, 28 Nov 2017 19:00:28 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <20171128173441.GZ3553@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 22 Nov 2017 16:23:30 -0500
-Josef Bacik <josef@toxicpanda.com> wrote:
-
-> From: Josef Bacik <jbacik@fb.com>
+On 11/28/2017 06:34 PM, David Sterba wrote:
+> On Fri, Nov 24, 2017 at 08:16:05PM +0100, Hans van Kranenburg wrote:
+>> Last week, when implementing the automatic classifier to dynamically
+>> create tree item data objects by key type in python-btrfs, I ran into
+>> the following commits in btrfs-progs:
+>>
+>>   commit 8609c8bad68528f668d9ce564b868aa4828107a0
+>>   btrfs-progs: print-tree: factor out temporary_item dump
+>> and
+>>   commit a4b65f00d53deb1b495728dd58253af44fcf70df
+>>   btrfs-progs: print-tree: factor out persistent_item dump
+>>
+>> ...which are related to kernel...
+>>
+>>   commit 50c2d5abe64c1726b48d292a2ab04f60e8238933
+>>   btrfs: introduce key type for persistent permanent items
+>> and
+>>   commit 0bbbccb17fea86818e1a058faf5903aefd20b31a
+>>   btrfs: introduce key type for persistent temporary items
+>>
+>> Afaics the goal is to overload types because there can be only 256 in
+>> total. However, I'm missing the design decisions behind the
+>> implementation of it. It's not in the commit messages, and it hasn't
+>> been on the mailing list.
 > 
-> Using BPF we can override kprob'ed functions and return arbitrary
-> values.  Obviously this can be a bit unsafe, so make this feature opt-in
-> for functions.  Simply tag a function with KPROBE_ERROR_INJECT_SYMBOL in
-> order to give BPF access to that function for error injection purposes.
+> The reason is avoid wasting key types but still allow to store new types
+> of data to the btrees, if they were not part of the on-disk format.
 > 
-> Signed-off-by: Josef Bacik <jbacik@fb.com>
-> Acked-by: Ingo Molnar <mingo@kernel.org>
-> ---
->  arch/x86/include/asm/asm.h        |   6 ++
->  include/asm-generic/vmlinux.lds.h |  10 +++
->  include/linux/bpf.h               |  11 +++
->  include/linux/kprobes.h           |   1 +
->  include/linux/module.h            |   5 ++
->  kernel/kprobes.c                  | 163 ++++++++++++++++++++++++++++++++++++++
->  kernel/module.c                   |   6 +-
->  7 files changed, 201 insertions(+), 1 deletion(-)
+> I'm not sure if this has been discussed or mentioned under some patches
+> or maybe unrelated patches. I do remember that I discussed that with
+> Chris in private on IRC and have the logs, dated 2015-09-02.
 > 
-> diff --git a/arch/x86/include/asm/asm.h b/arch/x86/include/asm/asm.h
-> index b0dc91f4bedc..340f4cc43255 100644
-> --- a/arch/x86/include/asm/asm.h
-> +++ b/arch/x86/include/asm/asm.h
-> @@ -85,6 +85,12 @@
->  	_ASM_PTR (entry);					\
->  	.popsection
->  
-> +# define _ASM_KPROBE_ERROR_INJECT(entry)			\
-> +	.pushsection "_kprobe_error_inject_list","aw" ;		\
-> +	_ASM_ALIGN ;						\
-> +	_ASM_PTR (entry);					\
-> +	.popseciton
+> At that time the balance item and dev stats item were introduced, maybe
+> also the qgroup status item type. This had me alarmed enough to
+> reconsider how the keys are allocated.
+> 
+>> Before, there was an 1:1 mapping from key types to data structures. Now,
+>> with the new PERSISTENT_ITEM_KEY and TEMPORARY_ITEM_KEY, it seems items
+>> which use this type can be using any data structure they want, so it's
+>> some kind of YOLO_ITEM_KEY.
+> 
+> In some sense it is, so it's key+objectid to determine the structure.
+> 
+>> The print-tree code in progs 8609c8b and a4b65f0 seems incomplete. For
+>> example, for the PERSISTENT_ITEM_KEY, there's a switch (objectid) with
+>> case BTRFS_DEV_STATS_OBJECTID.
+>>
+>> However, BTRFS_DEV_STATS_OBJECTID is just the value 0. So, that means
+>> that if I want to have another tree where BTRFS_MOUTON_OBJECTID is also
+>> 0, and I'm storing a btrfs_kebab_item struct indexed at
+>> (BTRFS_MOUTON_OBJECTID, PERSISTENT_ITEM_KEY, 31337), then print_tree.c
+>> will try to parse the data by calling print_dev_stats?
+> 
+> As answered by Qu, you can't use 0 for BTRFS_MOUTON_OBJECTID in that
+> case.
 
-So this stuff is not my area of greatest expertise, but I do have to wonder
-how ".popseciton" can work ... ?
+(I'm just thinking out loud here, if you think I'm wasting your time
+just say.)
 
-Thanks,
+Yes, so the objectid numbers have to be "registered" / "reserved" in the
+documentation, and they have to be unique over all trees.
 
-jon
+Maybe the information I was looking for is... in what cases should or
+shouldn't this be used? Because that limits the possible usage quite a
+bit. Or is it only for very very specific things.
+
+E.g. if I wanted to (just a random idea) add per device statistics, and
+use this, I'd need to use the key also with objectid 1, 2, 3, etc... if
+I have multiple devices. That's already a no go if there's anyone in any
+other tree that is doing anything with any objectid in the range of
+valid device numbers.
+
+>> What's the idea behind that? Instead of having the key type field define
+>> the struct and meaning, we now suddenly need the tuple (tree, objectid,
+>> type), and we need all three to determine what's inside the item data?
+>> So, the code in print_tree.c would also need to know about the tree
+>> number and pass that into the different functions.
+> 
+> No, all key types, even the persistent/temporary are independent of the
+> tree type. So it's only type <-> structure mapping, besides
+> persistent/temporary types.
+
+Yeah, I wasn't explicit about that, I meant only for the
+persistent/temporary case yes.
+
+-- 
+Hans van Kranenburg

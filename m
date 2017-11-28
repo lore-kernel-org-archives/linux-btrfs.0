@@ -1,100 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59173 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752177AbdK2Tae (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Nov 2017 14:30:34 -0500
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 4.15-rc2
-Date: Wed, 29 Nov 2017 20:28:28 +0100
-Message-Id: <cover.1511980478.git.dsterba@suse.com>
+Received: from mail-qt0-f193.google.com ([209.85.216.193]:43570 "EHLO
+        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752970AbdK1UCo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Nov 2017 15:02:44 -0500
+Received: by mail-qt0-f193.google.com with SMTP id w10so1443773qtb.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Nov 2017 12:02:44 -0800 (PST)
+Date: Tue, 28 Nov 2017 15:02:42 -0500
+From: Josef Bacik <josef@toxicpanda.com>
+To: Jonathan Corbet <corbet@lwn.net>
+Cc: Josef Bacik <josef@toxicpanda.com>, rostedt@goodmis.org, mingo@redhat.com,
+        davem@davemloft.net, netdev@vger.kernel.org,
+        linux-kernel@vger.kernel.org, ast@kernel.org, kernel-team@fb.com,
+        daniel@iogearbox.net, linux-btrfs@vger.kernel.org,
+        Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH v7 1/5] add infrastructure for tagging functions as error
+ injectable
+Message-ID: <20171128200241.tr5d6a2obvxl6inb@destiny>
+References: <1511385814-20863-1-git-send-email-josef@toxicpanda.com>
+ <1511385814-20863-2-git-send-email-josef@toxicpanda.com>
+ <20171128115841.4958113d@lwn.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171128115841.4958113d@lwn.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Nov 28, 2017 at 11:58:41AM -0700, Jonathan Corbet wrote:
+> On Wed, 22 Nov 2017 16:23:30 -0500
+> Josef Bacik <josef@toxicpanda.com> wrote:
+> 
+> > From: Josef Bacik <jbacik@fb.com>
+> > 
+> > Using BPF we can override kprob'ed functions and return arbitrary
+> > values.  Obviously this can be a bit unsafe, so make this feature opt-in
+> > for functions.  Simply tag a function with KPROBE_ERROR_INJECT_SYMBOL in
+> > order to give BPF access to that function for error injection purposes.
+> > 
+> > Signed-off-by: Josef Bacik <jbacik@fb.com>
+> > Acked-by: Ingo Molnar <mingo@kernel.org>
+> > ---
+> >  arch/x86/include/asm/asm.h        |   6 ++
+> >  include/asm-generic/vmlinux.lds.h |  10 +++
+> >  include/linux/bpf.h               |  11 +++
+> >  include/linux/kprobes.h           |   1 +
+> >  include/linux/module.h            |   5 ++
+> >  kernel/kprobes.c                  | 163 ++++++++++++++++++++++++++++++++++++++
+> >  kernel/module.c                   |   6 +-
+> >  7 files changed, 201 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/arch/x86/include/asm/asm.h b/arch/x86/include/asm/asm.h
+> > index b0dc91f4bedc..340f4cc43255 100644
+> > --- a/arch/x86/include/asm/asm.h
+> > +++ b/arch/x86/include/asm/asm.h
+> > @@ -85,6 +85,12 @@
+> >  	_ASM_PTR (entry);					\
+> >  	.popsection
+> >  
+> > +# define _ASM_KPROBE_ERROR_INJECT(entry)			\
+> > +	.pushsection "_kprobe_error_inject_list","aw" ;		\
+> > +	_ASM_ALIGN ;						\
+> > +	_ASM_PTR (entry);					\
+> > +	.popseciton
+> 
+> So this stuff is not my area of greatest expertise, but I do have to wonder
+> how ".popseciton" can work ... ?
+> 
 
-we've collected some fixes in since the pre-merge window freeze. There's
-technically only one regression fix for 4.15, but the rest seems important and
-candidates for stable. No merge conflicts, please pull, thanks.
+Well fuck, do you want me to send a increment Daniel/Alexei or resend this patch
+fixed?  Thanks,
 
-- fix missing flush bio puts in error cases (is serious, but rarely happens)
-
-- fix reporting stat::st_blocks for buffered append writes
-
-- fix space cache invalidation
-
-- fix out of bound memory access when setting zlib level
-
-- fix potential memory corruption when fsync fails in the middle
-
-- fix crash in integrity checker
-
-- incremetnal send fix, path mixup for certain unlink/rename combination
-
-- pass flags to writeback so compressed writes can be throttled properly
-
-- error handling fixes
-
-With signed tag: for-4.15-rc2-tag
-
-----------------------------------------------------------------
-The following changes since commit d28e649a5c58b779b303c252c66ee84a0f2c3b32:
-
-  btrfs: Fix bug for misused dev_t when lookup in dev state hash table. (2017-11-01 20:45:36 +0100)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.15-rc2
-
-for you to fetch changes up to ea37d5998b50a72b9045ba60a132eeb20e1c4230:
-
-  Btrfs: incremental send, fix wrong unlink path after renaming file (2017-11-28 17:15:30 +0100)
-
-----------------------------------------------------------------
-David Sterba (2):
-      btrfs: add missing device::flush_bio puts
-      btrfs: dev_alloc_list is not protected by RCU, use normal list_del
-
-Filipe Manana (3):
-      Btrfs: move definition of the function btrfs_find_new_delalloc_bytes
-      Btrfs: fix reported number of inode blocks after buffered append writes
-      Btrfs: incremental send, fix wrong unlink path after renaming file
-
-Josef Bacik (2):
-      btrfs: clear space cache inode generation always
-      btrfs: fix deadlock when writing out space cache
-
-Liu Bo (3):
-      Btrfs: add write_flags for compression bio
-      Btrfs: bail out gracefully rather than BUG_ON
-      Btrfs: fix list_add corruption and soft lockups in fsync
-
-Nikolay Borisov (1):
-      btrfs: Fix transaction abort during failure in btrfs_rm_dev_item
-
-Qu Wenruo (2):
-      btrfs: Fix wild memory access in compression level parser
-      btrfs: tree-checker: Fix false panic for sanity test
-
- fs/btrfs/compression.c           |   9 +--
- fs/btrfs/compression.h           |   5 +-
- fs/btrfs/ctree.h                 |   1 +
- fs/btrfs/disk-io.c               |  10 ++-
- fs/btrfs/extent-tree.c           |  14 ++---
- fs/btrfs/extent_io.c             |   2 +-
- fs/btrfs/extent_io.h             |   8 ++-
- fs/btrfs/file.c                  | 130 +++++++++++++++++++++------------------
- fs/btrfs/free-space-cache.c      |   3 +-
- fs/btrfs/inode.c                 |  34 +++++++---
- fs/btrfs/relocation.c            |   3 +-
- fs/btrfs/send.c                  | 124 +++++++++++++++++++++++++++++++------
- fs/btrfs/super.c                 |  13 +++-
- fs/btrfs/tests/extent-io-tests.c |   6 +-
- fs/btrfs/tests/inode-tests.c     |  12 ++--
- fs/btrfs/tree-checker.c          |  27 ++++++--
- fs/btrfs/tree-checker.h          |  14 ++++-
- fs/btrfs/tree-log.c              |   2 +-
- fs/btrfs/volumes.c               |  32 +++++++---
- 19 files changed, 314 insertions(+), 135 deletions(-)
+Josef

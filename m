@@ -1,81 +1,211 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42409 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47832 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751830AbdK0RMu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Nov 2017 12:12:50 -0500
-Date: Mon, 27 Nov 2017 18:10:51 +0100
-From: David Sterba <dsterba@suse.cz>
+        id S932328AbdK2RCM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Nov 2017 12:02:12 -0500
+Date: Wed, 29 Nov 2017 18:02:09 +0100
+From: Jan Kara <jack@suse.cz>
 To: Josef Bacik <josef@toxicpanda.com>
 Cc: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
         jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
         linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH v2 09/11] Btrfs: kill the btree_inode
-Message-ID: <20171127171051.GF3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Subject: Re: [PATCH v2 02/11] writeback: convert WB_WRITTEN/WB_DIRITED
+ counters to bytes
+Message-ID: <20171129170209.GB28256@quack2.suse.cz>
 References: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
- <1511385366-20329-10-git-send-email-josef@toxicpanda.com>
+ <1511385366-20329-3-git-send-email-josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1511385366-20329-10-git-send-email-josef@toxicpanda.com>
+In-Reply-To: <1511385366-20329-3-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 22, 2017 at 04:16:04PM -0500, Josef Bacik wrote:
+On Wed 22-11-17 16:15:57, Josef Bacik wrote:
 > From: Josef Bacik <jbacik@fb.com>
-> @@ -4802,8 +4885,8 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
->  	return new;
+> 
+> These are counters that constantly go up in order to do bandwidth calculations.
+> It isn't important what the units are in, as long as they are consistent between
+> the two of them, so convert them to count bytes written/dirtied, and allow the
+> metadata accounting stuff to change the counters as well.
+> 
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> Acked-by: Tejun Heo <tj@kernel.org>
+
+Looks good to me. You can add:
+
+Reviewed-by: Jan Kara <jack@suse.cz>
+
+								Honza
+
+> ---
+>  fs/fuse/file.c                   |  4 ++--
+>  include/linux/backing-dev-defs.h |  4 ++--
+>  include/linux/backing-dev.h      |  2 +-
+>  mm/backing-dev.c                 |  9 +++++----
+>  mm/page-writeback.c              | 20 ++++++++++----------
+>  5 files changed, 20 insertions(+), 19 deletions(-)
+> 
+> diff --git a/fs/fuse/file.c b/fs/fuse/file.c
+> index cb7dff5c45d7..67e7c4fac28d 100644
+> --- a/fs/fuse/file.c
+> +++ b/fs/fuse/file.c
+> @@ -1471,7 +1471,7 @@ static void fuse_writepage_finish(struct fuse_conn *fc, struct fuse_req *req)
+>  	for (i = 0; i < req->num_pages; i++) {
+>  		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
+>  		dec_node_page_state(req->pages[i], NR_WRITEBACK_TEMP);
+> -		wb_writeout_inc(&bdi->wb);
+> +		wb_writeout_add(&bdi->wb, PAGE_SIZE);
+>  	}
+>  	wake_up(&fi->page_waitq);
 >  }
+> @@ -1776,7 +1776,7 @@ static bool fuse_writepage_in_flight(struct fuse_req *new_req,
 >  
-> -struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-> -						  u64 start, unsigned long len)
-> +struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_eb_info *eb_info,
-> +						u64 start, unsigned long len)
-
-The __alloc_dummy_extent_buffer takes the length parameter because it's
-used in tests that need to pass different values.
-I've removed nodesize from alloc_dummy_extent_buffer and the callchain
-because we know that it's always going to be fs_info->nodesize.
-Reintroducing it does not look like a good idea.
-
->  {
->  	struct extent_buffer *eb;
->  	unsigned long num_pages;
-
-> @@ -160,13 +162,25 @@ struct extent_state {
->  #endif
+>  		dec_wb_stat(&bdi->wb, WB_WRITEBACK);
+>  		dec_node_page_state(page, NR_WRITEBACK_TEMP);
+> -		wb_writeout_inc(&bdi->wb);
+> +		wb_writeout_add(&bdi->wb, PAGE_SIZE);
+>  		fuse_writepage_free(fc, new_req);
+>  		fuse_request_free(new_req);
+>  		goto out;
+> diff --git a/include/linux/backing-dev-defs.h b/include/linux/backing-dev-defs.h
+> index 866c433e7d32..ded45ac2cec7 100644
+> --- a/include/linux/backing-dev-defs.h
+> +++ b/include/linux/backing-dev-defs.h
+> @@ -36,8 +36,8 @@ typedef int (congested_fn)(void *, int);
+>  enum wb_stat_item {
+>  	WB_RECLAIMABLE,
+>  	WB_WRITEBACK,
+> -	WB_DIRTIED,
+> -	WB_WRITTEN,
+> +	WB_DIRTIED_BYTES,
+> +	WB_WRITTEN_BYTES,
+>  	NR_WB_STAT_ITEMS
 >  };
 >  
-> +struct btrfs_eb_info {
-> +	struct btrfs_fs_info *fs_info;
-> +	struct extent_io_tree io_tree;
-> +	struct extent_io_tree io_failure_tree;
-> +
-> +	/* Extent buffer radix tree */
-> +	spinlock_t buffer_lock;
-> +	struct radix_tree_root buffer_radix;
-> +	struct list_lru lru_list;
-> +	pgoff_t writeback_index;
-> +};
-> +
->  #define INLINE_EXTENT_BUFFER_PAGES 16
->  #define MAX_INLINE_EXTENT_BUFFER_SIZE (INLINE_EXTENT_BUFFER_PAGES * PAGE_SIZE)
->  struct extent_buffer {
->  	u64 start;
->  	unsigned long len;
->  	unsigned long bflags;
-> -	struct btrfs_fs_info *fs_info;
-> +	struct btrfs_eb_info *eb_info;
-
-This single change increases the patch size just because all the
-callers need to be updated. I suggest to keep fs_info in extent_buffer,
-we're not going to lose much in terms of memory:
-
-currently there are 14 eb objects in a 4k slab page, with the additional
-fs_info it's still 14,
-
-280 * 14 = 3920, unused 176 bytes
-288 * 14 = 4032, unused 64 bytes
-
->  	spinlock_t refs_lock;
->  	atomic_t refs;
->  	atomic_t io_pages;
+> diff --git a/include/linux/backing-dev.h b/include/linux/backing-dev.h
+> index 14e266d12620..39b8dc486ea7 100644
+> --- a/include/linux/backing-dev.h
+> +++ b/include/linux/backing-dev.h
+> @@ -89,7 +89,7 @@ static inline s64 wb_stat_sum(struct bdi_writeback *wb, enum wb_stat_item item)
+>  	return percpu_counter_sum_positive(&wb->stat[item]);
+>  }
+>  
+> -extern void wb_writeout_inc(struct bdi_writeback *wb);
+> +extern void wb_writeout_add(struct bdi_writeback *wb, long bytes);
+>  
+>  /*
+>   * maximal error of a stat counter.
+> diff --git a/mm/backing-dev.c b/mm/backing-dev.c
+> index e19606bb41a0..62a332a91b38 100644
+> --- a/mm/backing-dev.c
+> +++ b/mm/backing-dev.c
+> @@ -68,14 +68,15 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+>  	wb_thresh = wb_calc_thresh(wb, dirty_thresh);
+>  
+>  #define K(x) ((x) << (PAGE_SHIFT - 10))
+> +#define BtoK(x) ((x) >> 10)
+>  	seq_printf(m,
+>  		   "BdiWriteback:       %10lu kB\n"
+>  		   "BdiReclaimable:     %10lu kB\n"
+>  		   "BdiDirtyThresh:     %10lu kB\n"
+>  		   "DirtyThresh:        %10lu kB\n"
+>  		   "BackgroundThresh:   %10lu kB\n"
+> -		   "BdiDirtied:         %10lu kB\n"
+> -		   "BdiWritten:         %10lu kB\n"
+> +		   "BdiDirtiedBytes:    %10lu kB\n"
+> +		   "BdiWrittenBytes:    %10lu kB\n"
+>  		   "BdiWriteBandwidth:  %10lu kBps\n"
+>  		   "b_dirty:            %10lu\n"
+>  		   "b_io:               %10lu\n"
+> @@ -88,8 +89,8 @@ static int bdi_debug_stats_show(struct seq_file *m, void *v)
+>  		   K(wb_thresh),
+>  		   K(dirty_thresh),
+>  		   K(background_thresh),
+> -		   (unsigned long) K(wb_stat(wb, WB_DIRTIED)),
+> -		   (unsigned long) K(wb_stat(wb, WB_WRITTEN)),
+> +		   (unsigned long) BtoK(wb_stat(wb, WB_DIRTIED_BYTES)),
+> +		   (unsigned long) BtoK(wb_stat(wb, WB_WRITTEN_BYTES)),
+>  		   (unsigned long) K(wb->write_bandwidth),
+>  		   nr_dirty,
+>  		   nr_io,
+> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+> index 1a47d4296750..e4563645749a 100644
+> --- a/mm/page-writeback.c
+> +++ b/mm/page-writeback.c
+> @@ -597,11 +597,11 @@ static void wb_domain_writeout_inc(struct wb_domain *dom,
+>   * Increment @wb's writeout completion count and the global writeout
+>   * completion count. Called from test_clear_page_writeback().
+>   */
+> -static inline void __wb_writeout_inc(struct bdi_writeback *wb)
+> +static inline void __wb_writeout_add(struct bdi_writeback *wb, long bytes)
+>  {
+>  	struct wb_domain *cgdom;
+>  
+> -	inc_wb_stat(wb, WB_WRITTEN);
+> +	__add_wb_stat(wb, WB_WRITTEN_BYTES, bytes);
+>  	wb_domain_writeout_inc(&global_wb_domain, &wb->completions,
+>  			       wb->bdi->max_prop_frac);
+>  
+> @@ -611,15 +611,15 @@ static inline void __wb_writeout_inc(struct bdi_writeback *wb)
+>  				       wb->bdi->max_prop_frac);
+>  }
+>  
+> -void wb_writeout_inc(struct bdi_writeback *wb)
+> +void wb_writeout_add(struct bdi_writeback *wb, long bytes)
+>  {
+>  	unsigned long flags;
+>  
+>  	local_irq_save(flags);
+> -	__wb_writeout_inc(wb);
+> +	__wb_writeout_add(wb, bytes);
+>  	local_irq_restore(flags);
+>  }
+> -EXPORT_SYMBOL_GPL(wb_writeout_inc);
+> +EXPORT_SYMBOL_GPL(wb_writeout_add);
+>  
+>  /*
+>   * On idle system, we can be called long after we scheduled because we use
+> @@ -1362,8 +1362,8 @@ static void __wb_update_bandwidth(struct dirty_throttle_control *gdtc,
+>  	if (elapsed < BANDWIDTH_INTERVAL)
+>  		return;
+>  
+> -	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED]);
+> -	written = percpu_counter_read(&wb->stat[WB_WRITTEN]);
+> +	dirtied = percpu_counter_read(&wb->stat[WB_DIRTIED_BYTES]) >> PAGE_SHIFT;
+> +	written = percpu_counter_read(&wb->stat[WB_WRITTEN_BYTES]) >> PAGE_SHIFT;
+>  
+>  	/*
+>  	 * Skip quiet periods when disk bandwidth is under-utilized.
+> @@ -2435,7 +2435,7 @@ void account_page_dirtied(struct page *page, struct address_space *mapping)
+>  		__inc_zone_page_state(page, NR_ZONE_WRITE_PENDING);
+>  		__inc_node_page_state(page, NR_DIRTIED);
+>  		inc_wb_stat(wb, WB_RECLAIMABLE);
+> -		inc_wb_stat(wb, WB_DIRTIED);
+> +		__add_wb_stat(wb, WB_DIRTIED_BYTES, PAGE_SIZE);
+>  		task_io_account_write(PAGE_SIZE);
+>  		current->nr_dirtied++;
+>  		this_cpu_inc(bdp_ratelimits);
+> @@ -2522,7 +2522,7 @@ void account_page_redirty(struct page *page)
+>  		wb = unlocked_inode_to_wb_begin(inode, &locked);
+>  		current->nr_dirtied--;
+>  		dec_node_page_state(page, NR_DIRTIED);
+> -		dec_wb_stat(wb, WB_DIRTIED);
+> +		__add_wb_stat(wb, WB_DIRTIED_BYTES, -(long)PAGE_SIZE);
+>  		unlocked_inode_to_wb_end(inode, locked);
+>  	}
+>  }
+> @@ -2744,7 +2744,7 @@ int test_clear_page_writeback(struct page *page)
+>  				struct bdi_writeback *wb = inode_to_wb(inode);
+>  
+>  				dec_wb_stat(wb, WB_WRITEBACK);
+> -				__wb_writeout_inc(wb);
+> +				__wb_writeout_add(wb, PAGE_SIZE);
+>  			}
+>  		}
+>  
+> -- 
+> 2.7.5
+> 
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

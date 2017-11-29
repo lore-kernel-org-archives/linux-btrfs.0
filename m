@@ -1,57 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56475 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752676AbdK3QLF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 11:11:05 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DCCC7AE7A
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Nov 2017 16:11:03 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:57370 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751785AbdK2JQS (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 29 Nov 2017 04:16:18 -0500
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/4] btrfs: show options: use helper to convert compression type string
-Date: Thu, 30 Nov 2017 17:09:06 +0100
-Message-Id: <77fb8b682747c5a6b286eedfec3de56758c651e3.1512058075.git.dsterba@suse.com>
-In-Reply-To: <cover.1512058075.git.dsterba@suse.com>
-References: <cover.1512058075.git.dsterba@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/9] Remaining part of mkfs --rootdir rework
+Date: Wed, 29 Nov 2017 17:15:55 +0800
+Message-Id: <20171129091604.2194-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use the helper, if the COMPRESS option is set, the result is always
-defined and not empty.
+Can be fetched from my github repo:
+https://github.com/adam900710/btrfs-progs/tree/mkfs_rootdir_rework
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/super.c | 9 ++-------
- 1 file changed, 2 insertions(+), 7 deletions(-)
+Based on the following commit head of David's devel branch:
+------
+ commit af322ba5aa1dd0b2a3422e1c4acd8082948efa7b (david/devel)
+ Author: Su Yue <suy.fnst@cn.fujitsu.com>
+ Date:   Tue Nov 28 17:14:48 2017 +0800
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 3d0813b17e9c..febe67a37f8a 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1243,7 +1243,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- {
- 	struct btrfs_fs_info *info = btrfs_sb(dentry->d_sb);
--	char *compress_type;
-+	const char *compress_type;
- 
- 	if (btrfs_test_opt(info, DEGRADED))
- 		seq_puts(seq, ",degraded");
-@@ -1259,12 +1259,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 					     num_online_cpus() + 2, 8))
- 		seq_printf(seq, ",thread_pool=%d", info->thread_pool_size);
- 	if (btrfs_test_opt(info, COMPRESS)) {
--		if (info->compress_type == BTRFS_COMPRESS_ZLIB)
--			compress_type = "zlib";
--		else if (info->compress_type == BTRFS_COMPRESS_LZO)
--			compress_type = "lzo";
--		else
--			compress_type = "zstd";
-+		compress_type = btrfs_compress_type2str(info->compress_type);
- 		if (btrfs_test_opt(info, FORCE_COMPRESS))
- 			seq_printf(seq, ",compress-force=%s", compress_type);
- 		else
+    btrfs-progs: fi defrag: clean up duplicate code if find errors
+    
+    In function cmd_filesystem_defrag(), lines of code for error handling
+    are duplicate and hard to expand in further.
+    
+    Create a jump label for errors.
+    
+    Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+    Signed-off-by: David Sterba <dsterba@suse.com>
+------
+
+Patch 1 is split from original patch.
+Patch 2~5 are the patches rebased. Only minor conflicts.
+
+Patch 6~7 are regression fix and its test case. Which prohibits
+mkfs.btrfs --rootdir from creating new file.
+
+Patch 8~9 are fix and test case for incorrect shrink behavior, which
+will shrink the fs even --shrink is not specified.
+
+Qu Wenruo (9):
+  btrfs-progs: mkfs: Cleanup temporary chunks before filling rootdir
+  btrfs-progs: mkfs: Don't use custom chunk allocator for rootdir
+  btrfs-progs: mkfs/rootdir: Use over-reserve method to make size
+    estimate easier
+  btrfs-progs: mkfs/rootdir: Shrink fs for rootdir option
+  btrfs-progs: mkfs: Separate shrink from rootdir
+  btrfs-progs: mkfs: Fix regression preventing --rootdir to create file
+  btrfs-progs: tests/mkfs: Introduce test case to check if mkfs rootdir
+    can create new file
+  btrfs-progs: mkfs: Use the whole file or block device to mkfs for
+    rootdir
+  btrfs-progs: tests/mkfs: Introduce test case to verify if mkfs.btrfs
+    rootdir shrink behaves correctly
+
+ Documentation/mkfs.btrfs.asciidoc                |  11 +
+ mkfs/main.c                                      | 231 ++++++++++-----------
+ mkfs/rootdir.c                                   | 249 +++++++++++++++++++----
+ mkfs/rootdir.h                                   |   7 +-
+ tests/mkfs-tests/011-rootdir-create-file/test.sh |  14 ++
+ tests/mkfs-tests/012-rootdir-no-shrink/test.sh   |  38 ++++
+ utils.c                                          |  17 +-
+ utils.h                                          |   2 +
+ 8 files changed, 402 insertions(+), 167 deletions(-)
+ create mode 100755 tests/mkfs-tests/011-rootdir-create-file/test.sh
+ create mode 100755 tests/mkfs-tests/012-rootdir-no-shrink/test.sh
+
 -- 
 2.15.0
 

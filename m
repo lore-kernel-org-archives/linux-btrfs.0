@@ -1,46 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga09.intel.com ([134.134.136.24]:6572 "EHLO mga09.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751032AbdK3EaP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Nov 2017 23:30:15 -0500
-Date: Thu, 30 Nov 2017 12:30:09 +0800
-From: Fengguang Wu <fengguang.wu@intel.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Nick Terrell <terrelln@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Jeff Mahoney <jeffm@suse.com>,
-        David Howells <dhowells@redhat.com>, Liu Bo <bo.li.liu@oracle.com>,
-        Petr Mladek <pmladek@suse.com>,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "lkp@01.org" <lkp@01.org>
-Subject: Re: [btrfs_mount] general protection fault: 0000 [#1] SMP
-Message-ID: <20171130043009.qoetvxeokkbqyvsx@wfg-t540p.sh.intel.com>
-References: <20171130022115.5gyvncjrnn2377ph@wfg-t540p.sh.intel.com>
- <3A84FF7B-0390-41EC-862D-5F83C2A656FA@fb.com>
- <CA+55aFzOgPOV+UZu6jCJMrbxOSBvn1UdxC5phAwC7n8n4asR5w@mail.gmail.com>
+Received: from mail-it0-f46.google.com ([209.85.214.46]:33307 "EHLO
+        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752914AbdK2Wb0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 29 Nov 2017 17:31:26 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-In-Reply-To: <CA+55aFzOgPOV+UZu6jCJMrbxOSBvn1UdxC5phAwC7n8n4asR5w@mail.gmail.com>
+In-Reply-To: <cover.1511980478.git.dsterba@suse.com>
+References: <cover.1511980478.git.dsterba@suse.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 29 Nov 2017 14:31:24 -0800
+Message-ID: <CA+55aFz8M-iy-wLCG9d0-+QCk_seLFWFfS9LJEpcmgqKK=9SFQ@mail.gmail.com>
+Subject: Re: [GIT PULL] Btrfs fixes for 4.15-rc2
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 29, 2017 at 06:44:43PM -0800, Linus Torvalds wrote:
->On Wed, Nov 29, 2017 at 6:38 PM, Nick Terrell <terrelln@fb.com> wrote:
->>
->> The stack trace looks like the bug fixed by
->>
->> Qu Wenruo:
->>     btrfs: Fix wild memory access in compression level parser [1]
->>
->> That fix looks to be included in the pull request for 4.15-rc2 [2].
+On Wed, Nov 29, 2017 at 11:28 AM, David Sterba <dsterba@suse.com> wrote:
 >
->Which got merged earlier today. So maybe instead of a bisection, just
->test the current git tree?
+> With signed tag: for-4.15-rc2-tag
+>
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.15-rc2
 
-Sure. The 1 hour tests finished on your latest merge and the error
-no long shows up there.
+Oh, please actually ask me to pull the signed tag (exact same
+pull-request, just point git request-pull at the tag), because now
+what happened was that first I just pulled that branch you mentioned,
+and only noticed that "With signed tag:" notice after I had already
+pulled and was filling in the merge message.
 
-Regards,
-Fengguang
+Anyway, I redid the pull with the proper signed tag, but it was just
+annoying extra work.
+
+And I wonder how many times I _hadn't_ noticed that, because I didn't
+have your key in my keyring either. Or maybe I caught it the first
+time.
+
+                    Linus

@@ -1,173 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:55493 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:36671 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753778AbdK2JQT (ORCPT
+        with ESMTP id S1753908AbdK2JQU (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 29 Nov 2017 04:16:19 -0500
+        Wed, 29 Nov 2017 04:16:20 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 4/9] btrfs-progs: mkfs/rootdir: Shrink fs for rootdir option
-Date: Wed, 29 Nov 2017 17:15:59 +0800
-Message-Id: <20171129091604.2194-5-wqu@suse.com>
+Subject: [PATCH 5/9] btrfs-progs: mkfs: Separate shrink from rootdir
+Date: Wed, 29 Nov 2017 17:16:00 +0800
+Message-Id: <20171129091604.2194-6-wqu@suse.com>
 In-Reply-To: <20171129091604.2194-1-wqu@suse.com>
 References: <20171129091604.2194-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use the new dev extent based shrink method for rootdir option.
+Make --shrink a separate option for --rootdir, and make it default to
+off.
+So this will cause less confusion.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- mkfs/main.c    |   5 +++
- mkfs/rootdir.c | 111 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- mkfs/rootdir.h |   1 +
- 3 files changed, 117 insertions(+)
+ Documentation/mkfs.btrfs.asciidoc | 11 +++++++++++
+ mkfs/main.c                       | 26 ++++++++++++++++++++------
+ mkfs/rootdir.c                    | 21 ++++++++++++++++++++-
+ mkfs/rootdir.h                    |  3 ++-
+ 4 files changed, 53 insertions(+), 8 deletions(-)
 
+diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
+index 62f5a5bebaee..ded798216a5b 100644
+--- a/Documentation/mkfs.btrfs.asciidoc
++++ b/Documentation/mkfs.btrfs.asciidoc
+@@ -106,6 +106,17 @@ Please see the mount option 'discard' for that in `btrfs`(5).
+ *-r|--rootdir <rootdir>*::
+ Populate the toplevel subvolume with files from 'rootdir'.  This does not
+ require root permissions and does not mount the filesystem.
+++
++NOTE: This option may enlarge the image or file to ensure it's large enough to
++contain the files from 'rootdir'.
++
++*--shrink*:
++Shrink the filesystem to its minimal size, only works with *-r|--rootdir*
++option.
+++
++NOTE: If the destination is regular file, this option will also reduce the
++file size. Or it will only reduce the filesystem available space.
++Extra space will not be usable unless resized using 'btrfs filesystem resize'.
+ 
+ *-O|--features <feature1>[,<feature2>...]*::
+ A list of filesystem features turned on at mkfs time. Not all features are
 diff --git a/mkfs/main.c b/mkfs/main.c
-index eb49182ebe81..eb3e5bb1f92e 100644
+index eb3e5bb1f92e..64cf03289188 100644
 --- a/mkfs/main.c
 +++ b/mkfs/main.c
-@@ -1256,6 +1256,11 @@ raid_groups:
+@@ -746,9 +746,11 @@ int main(int argc, char **argv)
+ 	char *subvol_name = NULL;
+ 	int subvol_name_set = 0;
+ 	char *source_dir = NULL;
+-	int source_dir_set = 0;
++	bool source_dir_set = false;
++	bool shrink_rootdir = false;
+ 	u64 source_dir_size = 0;
+ 	u64 min_dev_size;
++	u64 shrink_size;
+ 	int dev_cnt = 0;
+ 	int saved_optind;
+ 	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
+@@ -758,6 +760,7 @@ int main(int argc, char **argv)
+ 
+ 	while(1) {
+ 		int c;
++		enum { GETOPT_VAL_SHRINK = 257 };
+ 		static const struct option long_options[] = {
+ 			{ "alloc-start", required_argument, NULL, 'A'},
+ 			{ "byte-count", required_argument, NULL, 'b' },
+@@ -776,6 +779,7 @@ int main(int argc, char **argv)
+ 			{ "features", required_argument, NULL, 'O' },
+ 			{ "uuid", required_argument, NULL, 'U' },
+ 			{ "quiet", 0, NULL, 'q' },
++			{ "shrink", no_argument, NULL, GETOPT_VAL_SHRINK },
+ 			{ "help", no_argument, NULL, GETOPT_VAL_HELP },
+ 			{ NULL, 0, NULL, 0}
+ 		};
+@@ -847,7 +851,7 @@ int main(int argc, char **argv)
+ 				break;
+ 			case 'r':
+ 				source_dir = optarg;
+-				source_dir_set = 1;
++				source_dir_set = true;
+ 				break;
+ 			case 'U':
+ 				strncpy(fs_uuid, optarg,
+@@ -859,6 +863,9 @@ int main(int argc, char **argv)
+ 			case 'q':
+ 				verbose = 0;
+ 				break;
++			case GETOPT_VAL_SHRINK:
++				shrink_rootdir = true;
++				break;
+ 			case GETOPT_VAL_HELP:
+ 			default:
+ 				print_usage(c != GETOPT_VAL_HELP);
+@@ -886,6 +893,10 @@ int main(int argc, char **argv)
+ 		error("the option -r is limited to a single device");
+ 		goto error;
+ 	}
++	if (shrink_rootdir && !source_dir_set) {
++		error("the option --shrink can only be paired with -r");
++		goto error;
++	}
+ 
+ 	if (*fs_uuid) {
+ 		uuid_t dummy_uuid;
+@@ -1256,10 +1267,13 @@ raid_groups:
  				goto out;
  			}
  		}
-+		ret = btrfs_mkfs_shrink_fs(fs_info, NULL);
-+		if (ret < 0) {
-+			error("error while shrinking filesystem: %d", ret);
-+			goto out;
-+		}
+-		ret = btrfs_mkfs_shrink_fs(fs_info, NULL);
+-		if (ret < 0) {
+-			error("error while shrinking filesystem: %d", ret);
+-			goto out;
++		if (shrink_rootdir) {
++			ret = btrfs_mkfs_shrink_fs(fs_info, &shrink_size,
++						   shrink_rootdir);
++			if (ret < 0) {
++				error("error while shrinking filesystem: %d", ret);
++				goto out;
++			}
+ 		}
  	}
  
- 	if (verbose) {
 diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
-index f8cff44d06eb..271167fe0c02 100644
+index 271167fe0c02..b91900834316 100644
 --- a/mkfs/rootdir.c
 +++ b/mkfs/rootdir.c
-@@ -822,3 +822,114 @@ out:
- 
+@@ -899,11 +899,13 @@ err:
  	return ret;
  }
+ 
+-int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret)
++int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret,
++			 bool shrink_file_size)
+ {
+ 	u64 new_size;
+ 	struct btrfs_device *device;
+ 	struct list_head *cur;
++	struct stat64 file_stat;
+ 	int nr_devs = 0;
+ 	int ret;
+ 
+@@ -931,5 +933,22 @@ int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret)
+ 		return ret;
+ 	if (new_size_ret)
+ 		*new_size_ret = new_size;
 +
-+/*
-+ * Set device size to @new_size.
-+ *
-+ * Only used for --rootdir option.
-+ * We will need to reset the following values:
-+ * 1) dev item in chunk tree
-+ * 2) super->dev_item
-+ * 3) super->total_bytes
-+ */
-+static int set_device_size(struct btrfs_fs_info *fs_info,
-+			   struct btrfs_device *device, u64 new_size)
-+{
-+	struct btrfs_root *chunk_root = fs_info->chunk_root;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_dev_item *di;
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	int ret;
-+
-+	/*
-+	 * Update in-meory device->total_bytes, so that at trans commit time,
-+	 * it super->dev_item will also get updated
-+	 */
-+	device->total_bytes = new_size;
-+	btrfs_init_path(&path);
-+
-+	/* Update device item in chunk tree */
-+	trans = btrfs_start_transaction(chunk_root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("failed to start transaction: %d (%s)", ret,
-+			strerror(-ret));
-+		return ret;
++	if (shrink_file_size) {
++		ret = fstat64(device->fd, &file_stat);
++		if (ret < 0) {
++			error("failed to stat devid %llu: %s", device->devid,
++				strerror(errno));
++			return ret;
++		}
++		if (!S_ISREG(file_stat.st_mode))
++			return ret;
++		ret = ftruncate64(device->fd, new_size);
++		if (ret < 0) {
++			error("failed to truncate device file of devid %llu: %s",
++				device->devid, strerror(errno));
++			return ret;
++		}
 +	}
-+	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
-+	key.type = BTRFS_DEV_ITEM_KEY;
-+	key.offset = device->devid;
-+
-+	ret = btrfs_search_slot(trans, chunk_root, &key, &path, 0, 1);
-+	if (ret < 0)
-+		goto err;
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	di = btrfs_item_ptr(path.nodes[0], path.slots[0],
-+			    struct btrfs_dev_item);
-+	btrfs_set_device_total_bytes(path.nodes[0], di, new_size);
-+	btrfs_mark_buffer_dirty(path.nodes[0]);
-+
-+	/*
-+	 * Update super->total_bytes, since it's only used for --rootdir,
-+	 * there is only one device, just use the @new_size.
-+	 */
-+	btrfs_set_super_total_bytes(fs_info->super_copy, new_size);
-+
-+	/*
-+	 * Commit transaction to reflect the updated super->total_bytes and
-+	 * super->dev_item
-+	 */
-+	ret = btrfs_commit_transaction(trans, chunk_root);
-+	if (ret < 0)
-+		error("failed to commit current transaction: %d (%s)",
-+			ret, strerror(-ret));
-+	btrfs_release_path(&path);
-+	return ret;
-+
-+err:
-+	btrfs_release_path(&path);
-+	/*
-+	 * Commit trans here won't cause problem since the fs still has
-+	 * bad magic, and something wrong already happened, we don't
-+	 * care the return value anyway.
-+	 */
-+	btrfs_commit_transaction(trans, chunk_root);
-+	return ret;
-+}
-+
-+int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret)
-+{
-+	u64 new_size;
-+	struct btrfs_device *device;
-+	struct list_head *cur;
-+	int nr_devs = 0;
-+	int ret;
-+
-+	list_for_each(cur, &fs_info->fs_devices->devices)
-+		nr_devs++;
-+
-+	if (nr_devs > 1) {
-+		error("cannot shrink fs with more than 1 device");
-+		return -ENOTTY;
-+	}
-+
-+	ret = get_device_extent_end(fs_info, 1, &new_size);
-+	if (ret < 0) {
-+		error("failed to get minimal device size: %d (%s)",
-+			ret, strerror(-ret));
-+		return ret;
-+	}
-+
-+	BUG_ON(!IS_ALIGNED(new_size, fs_info->sectorsize));
-+
-+	device = list_entry(fs_info->fs_devices->devices.next,
-+			   struct btrfs_device, dev_list);
-+	ret = set_device_size(fs_info, device, new_size);
-+	if (ret < 0)
-+		return ret;
-+	if (new_size_ret)
-+		*new_size_ret = new_size;
-+	return ret;
-+}
+ 	return ret;
+ }
 diff --git a/mkfs/rootdir.h b/mkfs/rootdir.h
-index ada50ccb6ac4..91bebc507f02 100644
+index 91bebc507f02..7ab53c292c9d 100644
 --- a/mkfs/rootdir.h
 +++ b/mkfs/rootdir.h
-@@ -32,4 +32,5 @@ int btrfs_mkfs_fill_dir(const char *source_dir, struct btrfs_root *root,
+@@ -32,5 +32,6 @@ int btrfs_mkfs_fill_dir(const char *source_dir, struct btrfs_root *root,
  			bool verbose);
  u64 btrfs_mkfs_size_dir(const char *dir_name, u32 sectorsize, u64 min_dev_size,
  			u64 meta_profile, u64 data_profile);
-+int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret);
+-int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret);
++int btrfs_mkfs_shrink_fs(struct btrfs_fs_info *fs_info, u64 *new_size_ret,
++			 bool shrink_file_size);
  #endif
 -- 
 2.15.0

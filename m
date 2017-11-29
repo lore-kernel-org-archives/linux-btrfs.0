@@ -1,118 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:39604 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:47164 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753793AbdK3ApP (ORCPT
+        with ESMTP id S1753102AbdK2NsV (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 29 Nov 2017 19:45:15 -0500
+        Wed, 29 Nov 2017 08:48:21 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, stable@vger.kernel.org
-Subject: [PATCH v2.2 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
-Date: Thu, 30 Nov 2017 08:45:03 +0800
-Message-Id: <20171130004503.14912-1-wqu@suse.com>
-In-Reply-To: <20171128070830.12756-2-wqu@suse.com>
-References: <20171128070830.12756-2-wqu@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 1/2] btrfs-progs: convert: Fix a bug in rollback check which overwrite return value
+Date: Wed, 29 Nov 2017 21:48:05 +0800
+Message-Id: <20171129134806.32324-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-fstrim on some btrfs only trims the unallocated space, not trimming any
-space in existing block groups.
+Commit 1170ac307900 ("btrfs-progs: convert: Introduce function to check if
+convert image is able to be rolled back") reworked rollback check
+condition, by checking 1:1 mapping of each file extent.
 
-[CAUSE]
-Before fstrim_range passed to btrfs_trim_fs(), it get truncated to
-range [0, super->total_bytes).
-So later btrfs_trim_fs() will only be able to trim block groups in range
-[0, super->total_bytes).
+The idea itself has nothing wrong, but error handler is not implemented
+correctly, which over writes the return value and always try to rollback
+the fs even it fails to pass the check.
 
-While for btrfs, any bytenr aligned to sector size is valid, since btrfs use
-its logical address space, there is nothing limiting the location where
-we put block groups.
+Fix it by correctly return the error before rollback the fs.
 
-For btrfs with routine balance, it's quite easy to relocate all
-block groups and bytenr of block groups will start beyond super->total_bytes.
-
-In that case, btrfs will not trim existing block groups.
-
-[FIX]
-Just remove the truncation in btrfs_ioctl_fitrim(), so btrfs_trim_fs()
-can get the unmodified range, which is normally set to [0, U64_MAX].
-
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Fixes: f4c697e6406d ("btrfs: return EINVAL if start > total_bytes in fitrim ioctl")
-Cc: <stable@vger.kernel.org> # v4.0+
+Fixes: 1170ac307900 ("btrfs-progs: convert: Introduce function to check if convert image is able to be rolled back")
+Reported-by: Jeff Mahoney <jeffm@suse.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-changelog:
-v2:
-  Locate the root cause in btrfs_ioctl_fitrim(), remove the truncation
-  so we can still allow user to trim custom range.
-v2.1:
-  Include the missing change in btrfs_trim_fs() and update the commit
-  message to reflect this.
-v2.2:
-  Remove unused variable.
----
- fs/btrfs/extent-tree.c | 10 +---------
- fs/btrfs/ioctl.c       | 11 +++++++----
- 2 files changed, 8 insertions(+), 13 deletions(-)
+ convert/main.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f830aa91ac3d..b2a7532d6c07 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10967,19 +10967,11 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 	u64 start;
- 	u64 end;
- 	u64 trimmed = 0;
--	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	int bg_ret = 0;
- 	int dev_ret = 0;
- 	int ret = 0;
- 
--	/*
--	 * try to trim all FS space, our block group may start from non-zero.
--	 */
--	if (range->len == total_bytes)
--		cache = btrfs_lookup_first_block_group(fs_info, range->start);
--	else
--		cache = btrfs_lookup_block_group(fs_info, range->start);
--
-+	cache = btrfs_lookup_first_block_group(fs_info, range->start);
- 	for (; cache; cache = next_block_group(fs_info, cache)) {
- 		if (cache->key.objectid >= (range->start + range->len)) {
- 			btrfs_put_block_group(cache);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fd172a93d11a..017fda31400d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -365,7 +365,6 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 	struct fstrim_range range;
- 	u64 minlen = ULLONG_MAX;
- 	u64 num_devices = 0;
--	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
- 	int ret;
- 
- 	if (!capable(CAP_SYS_ADMIN))
-@@ -389,11 +388,15 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 		return -EOPNOTSUPP;
- 	if (copy_from_user(&range, arg, sizeof(range)))
- 		return -EFAULT;
--	if (range.start > total_bytes ||
--	    range.len < fs_info->sb->s_blocksize)
-+
-+	/*
-+	 * NOTE: Don't truncate the range using super->total_bytes.
-+	 * Bytenr of btrfs block group is in btrfs logical address space,
-+	 * which can be any sector size aligned bytenr in [0, U64_MAX].
-+	 */
-+	if (range.len < fs_info->sb->s_blocksize)
- 		return -EINVAL;
- 
--	range.len = min(range.len, total_bytes - range.start);
- 	range.minlen = max(range.minlen, minlen);
- 	ret = btrfs_trim_fs(fs_info, &range);
- 	if (ret < 0)
+diff --git a/convert/main.c b/convert/main.c
+index af2855316fee..89f9261172ca 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -1443,6 +1443,8 @@ next:
+ 		}
+ 	}
+ 	btrfs_release_path(&path);
++	if (ret)
++		return ret;
+ 	/*
+ 	 * For HOLES mode (without NO_HOLES), we must ensure file extents
+ 	 * cover the whole range of the image
 -- 
 2.15.0
 

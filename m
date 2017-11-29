@@ -1,83 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f47.google.com ([209.85.214.47]:46443 "EHLO
-        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751355AbdK2NYg (ORCPT
+Received: from mail-ua0-f181.google.com ([209.85.217.181]:41235 "EHLO
+        mail-ua0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750863AbdK2Ndh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Nov 2017 08:24:36 -0500
-Received: by mail-it0-f47.google.com with SMTP id t1so3938346ite.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2017 05:24:35 -0800 (PST)
-Subject: Re: Read before you deploy btrfs + zstd
-To: dsterba@suse.cz, Nick Terrell <terrelln@fb.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Martin Steigerwald <martin@lichtvoll.de>,
-        Imran Geriskovan <imran.geriskovan@gmail.com>
-References: <20171113225046.GD28899@suse.cz>
- <20171114185331.GJ28899@twin.jikos.cz> <20171115143906.GM28899@twin.jikos.cz>
- <E55ED8F2-8D16-4B58-9EC3-8DE41E7BE5A2@fb.com> <20171121162239.GO3553@suse.cz>
- <5BB834FC-A54C-4448-8D86-1D2F22806096@fb.com> <20171128234937.GG3553@suse.cz>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7736f752-5c07-fffd-652d-1aaa8a3193b0@gmail.com>
-Date: Wed, 29 Nov 2017 08:24:31 -0500
+        Wed, 29 Nov 2017 08:33:37 -0500
+Received: by mail-ua0-f181.google.com with SMTP id q13so3361390uaq.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2017 05:33:37 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20171128234937.GG3553@suse.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAFTHvW9OmWApkzJ=s51Saq=cwv24hBqe0bzhR55Yv2+fAANH-Q@mail.gmail.com>
+References: <CAFTHvW9OmWApkzJ=s51Saq=cwv24hBqe0bzhR55Yv2+fAANH-Q@mail.gmail.com>
+From: Klaus Agnoletti <klaus@agnoletti.dk>
+Date: Wed, 29 Nov 2017 14:33:16 +0100
+Message-ID: <CAFTHvW-WJgzC6theZ3Hrrc5Xf4eXFNQ8c=5Y+KmciAvK7bSexA@mail.gmail.com>
+Subject: Re: A partially failing disk in raid0 needs replacement
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-11-28 18:49, David Sterba wrote:
-> On Tue, Nov 28, 2017 at 09:31:57PM +0000, Nick Terrell wrote:
->>
->>> On Nov 21, 2017, at 8:22 AM, David Sterba <dsterba@suse.cz> wrote:
->>>
->>> On Wed, Nov 15, 2017 at 08:09:15PM +0000, Nick Terrell wrote:
->>>> On 11/15/17, 6:41 AM, "David Sterba" <dsterba@suse.cz> wrote:
->>>>> The branch is now in a state that can be tested. Turns out the memory
->>>>> requirements are too much for grub, so the boot fails with "not enough
->>>>> memory". The calculated value
->>>>>
->>>>> ZSTD_BTRFS_MAX_INPUT: 131072
->>>>> ZSTD_DStreamWorkspaceBound with ZSTD_BTRFS_MAX_INPUT: 549424
->>>>>
->>>>> This is not something I could fix easily, we'd probalby need a tuned
->>>>> version of ZSTD for grub constraints. Adding Nick to CC.
->>>>
->>>> If I understand the grub code correctly, we only need to read, and we have
->>>> the entire input and output buffer in one segment. In that case you can use
->>>> ZSTD_initDCtx(), and ZSTD_decompressDCtx(). ZSTD_DCtxWorkspaceBound() is
->>>> only 155984. See decompress_single() in
->>>> https://patchwork.kernel.org/patch/9997909/ for an example.
->>>
->>> Does not help, still ENOMEM.
->>
->> It looks like XZ had the same issue, and they make the decompression
->> context a static object (grep for GRUB_EMBED_DECOMPRESSOR). We could
->> potentially do the same and statically allocate the workspace:
->>
->> ```
->> /* Could also be size_t */
->> #define BTRFS_ZSTD_WORKSPACE_SIZE_U64 (155984 / sizeof(uint64_t))
->> static uint64_t workspace[BTRFS_ZSTD_WORKSPACE_SIZE_U64];
->>
->> /* ... */
->>
->> assert(sizeof(workspace) >= ZSTD_DCtxWorkspaceBound());
->> ```
-> 
-> Interesting, thanks for the tip, I'll try it next.
-> 
-> I've meanwhile tried to tweak the numbers, the maximum block for zstd,
-> that squeezed the DCtx somewhere under 48k, with block size 8k. Still
-> enomem.
-> 
-> I've tried to add some debugging prints to see what numbers get actually
-> passed to the allocator, but did not see anything printed.  I'm sure
-> there is a more intelligent way to test the grub changes.  So far each
-> test loop takes quite some time, as I build the rpm package, test it in
-> a VM and have to recreate the environmet each time.
-On the note of testing, have you tried writing up a module to just test 
-the decompressor?  If so, you could probably use the 'emu' platform to 
-save the need to handle the RPM package and the VM until you get the 
-decompressor working by itself, at which point the FUSE modules used to 
-test the GRUB filesystem modules may be of some use (or you might be 
-able to just use them directly).
+Hi list
 
+Can anyone give me any hints here? If not, my plan right now is to
+start updating the server to latest debian stable (it's currently
+running Jessie), to get access to a newer btrfs driver and tools,
+hoping that decreases the risk of something screwing up, and then run
+btrfs check --repair on the unmounted fs and wish for the best.
+
+Does that make sense?
+
+Thanks,
+
+/klaus
+
+On Tue, Nov 14, 2017 at 9:36 AM, Klaus Agnoletti <klaus@agnoletti.dk> wrote:
+> Hi list
+>
+> I used to have 3x2TB in a btrfs in raid0. A few weeks ago, one of the
+> 2TB disks started giving me I/O errors in dmesg like this:
+>
+> [388659.173819] ata5.00: exception Emask 0x0 SAct 0x7fffffff SErr 0x0 action 0x0
+> [388659.175589] ata5.00: irq_stat 0x40000008
+> [388659.177312] ata5.00: failed command: READ FPDMA QUEUED
+> [388659.179045] ata5.00: cmd 60/20:60:80:96:95/00:00:c4:00:00/40 tag
+> 12 ncq 1638
+>                  4 in
+>          res 51/40:1c:84:96:95/00:00:c4:00:00/40 Emask 0x409 (media error) <F>
+> [388659.182552] ata5.00: status: { DRDY ERR }
+> [388659.184303] ata5.00: error: { UNC }
+> [388659.188899] ata5.00: configured for UDMA/133
+> [388659.188956] sd 4:0:0:0: [sdd] Unhandled sense code
+> [388659.188960] sd 4:0:0:0: [sdd]
+> [388659.188962] Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+> [388659.188965] sd 4:0:0:0: [sdd]
+> [388659.188967] Sense Key : Medium Error [current] [descriptor]
+> [388659.188970] Descriptor sense data with sense descriptors (in hex):
+> [388659.188972]         72 03 11 04 00 00 00 0c 00 0a 80 00 00 00 00 00
+> [388659.188981]         c4 95 96 84
+> [388659.188985] sd 4:0:0:0: [sdd]
+> [388659.188988] Add. Sense: Unrecovered read error - auto reallocate failed
+> [388659.188991] sd 4:0:0:0: [sdd] CDB:
+> [388659.188992] Read(10): 28 00 c4 95 96 80 00 00 20 00
+> [388659.189000] end_request: I/O error, dev sdd, sector 3298137732
+> [388659.190740] BTRFS: bdev /dev/sdd errs: wr 0, rd 3120, flush 0,
+> corrupt 0, ge
+>                    n 0
+> [388659.192556] ata5: EH complete
+>
+> At the same time, I started getting mails from smartd:
+>
+> Device: /dev/sdd [SAT], 2 Currently unreadable (pending) sectors
+> Device info:
+> Hitachi HDS723020BLA642, S/N:MN1220F30MNHUD, WWN:5-000cca-369c8f00b,
+> FW:MN6OA580, 2.00 TB
+>
+> For details see host's SYSLOG.
+>
+> To fix it, it ended up with me adding a new 6TB disk and trying to
+> delete the failing 2TB disks.
+>
+> That didn't go so well; apparently, the delete command aborts when
+> ever it encounters I/O errors. So now my raid0 looks like this:
+>
+> klaus@box:~$ sudo btrfs fi show
+> [sudo] password for klaus:
+> Label: none  uuid: 5db5f82c-2571-4e62-a6da-50da0867888a
+>         Total devices 4 FS bytes used 5.14TiB
+>         devid    1 size 1.82TiB used 1.78TiB path /dev/sde
+>         devid    2 size 1.82TiB used 1.78TiB path /dev/sdf
+>         devid    3 size 0.00B used 1.49TiB path /dev/sdd
+>         devid    4 size 5.46TiB used 305.21GiB path /dev/sdb
+>
+> Btrfs v3.17
+>
+> Obviously, I want /dev/sdd emptied and deleted from the raid.
+>
+> So how do I do that?
+>
+> I thought of three possibilities myself. I am sure there are more,
+> given that I am in no way a btrfs expert:
+>
+> 1)Try to force a deletion of /dev/sdd where btrfs copies all intact
+> data to the other disks
+> 2) Somehow re-balances the raid so that sdd is emptied, and then deleted
+> 3) converting into a raid1, physically removing the failing disk,
+> simulating a hard error, starting the raid degraded, and converting it
+> back to raid0 again.
+>
+> How do you guys think I should go about this? Given that it's a raid0
+> for a reason, it's not the end of the world losing all data, but I'd
+> really prefer losing as little as possible, obviously.
+>
+> FYI, I tried doing some scrubbing and balancing. There's traces of
+> that in the syslog and dmesg I've attached. It's being used as
+> firewall too, so there's a lof of Shorewall block messages smapping
+> the log I'm afraid.
+>
+> Additional info:
+> klaus@box:~$ uname -a
+> Linux box 3.16.0-4-amd64 #1 SMP Debian 3.16.43-2+deb8u5 (2017-09-19)
+> x86_64 GNU/Linux
+> klaus@box:~$ sudo btrfs --version
+> Btrfs v3.17
+> klaus@box:~$ sudo btrfs fi df /mnt
+> Data, RAID0: total=5.34TiB, used=5.14TiB
+> System, RAID0: total=96.00MiB, used=384.00KiB
+> Metadata, RAID0: total=7.22GiB, used=5.82GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+> Thanks a lot for any help you guys can give me. Btrfs is so incredibly
+> cool, compared to md :-) I love it!
+>
+> --
+> Klaus Agnoletti
+
+
+
+-- 
+Klaus Agnoletti

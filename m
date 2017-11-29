@@ -1,97 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:28128 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751785AbdK2Tbc (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:45351 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752742AbdK2U2X (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Nov 2017 14:31:32 -0500
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vATJVUF0013596
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2017 19:31:31 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vATJVUWk003011
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2017 19:31:30 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vATJVUl8022143
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2017 19:31:30 GMT
-Date: Wed, 29 Nov 2017 11:26:43 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: submit a normal bio for the mirror read
-Message-ID: <20171129192643.GB22726@lim.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20171129071115.7399-1-anand.jain@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171129071115.7399-1-anand.jain@oracle.com>
+        Wed, 29 Nov 2017 15:28:23 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eK8xn-0001ut-78
+        for linux-btrfs@vger.kernel.org; Wed, 29 Nov 2017 21:28:11 +0100
+To: linux-btrfs@vger.kernel.org
+From: Holger =?iso-8859-1?q?Hoffst=E4tte?=
+        <holger@applied-asynchrony.com>
+Subject: Re: [PATCH v2.1 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole
+ fs
+Date: Wed, 29 Nov 2017 20:28:04 +0000 (UTC)
+Message-ID: <pan$88120$ebd66120$90fe7970$4dcb0a4f@applied-asynchrony.com>
+References: <20171128070830.12756-2-wqu@suse.com>
+        <20171128072039.13973-1-wqu@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: stable@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 29, 2017 at 03:11:14PM +0800, Anand Jain wrote:
-> When the fist mirror failed to read we submit bio again to read from the
-> 2nd mirror, however during this, we also set the flag REQ_FAILFAST_DEV
-> which indicates to the underlying block device driver not to perform the
-> default IO retry (sd, 5 counts), and thus command will be failed and
-> returned at the first failed attempt.
->
-> On the contrary, in fact, it should have been other way around that is,
-> as 2nd mirror being the last copy of the data, it should rather try
-> equally hard to make this read cmd successful and at the same time with
-> or without REQ_FAILFAST_DEV there is no performance benefits if the
-> command is successful in the first attempt itself.
+On Tue, 28 Nov 2017 15:20:39 +0800, Qu Wenruo wrote:
+
+> [BUG]
+> fstrim on some btrfs only trims the unallocated space, not trimming any
+> space in existing block groups.
 > 
-
-There are some misunderstanding in the above commit log.
-
-FAILFAST is only set for the validation phrase, i.e. retry read on the
-same failed mirror.  When it comes to the 2nd mirror,
-failed_bio->bi_vcnt becomes 1 so FAILFAST is not set any more.  IOW,
-FAILFAST is only set when narrowing read failures to each 4K block, so
-a quick retry is reasonable because anyway we have another mirror to
-read.  You may want to check the comments in btrfs_check_repairable().
-
-thanks,
-
--liubo
-
-> The only benefit which would be achieved with REQ_FAILFAST_DEV is that
-> when both the copies encounter failed read, then for the applications,
-> the EIO will be reported roughly 40% faster (since it saves 4 retries).
-> But when first mirror has failed whats more important will be to make
-> a successful read from the 2nd mirror.
+> [CAUSE]
+> Before fstrim_range passed to btrfs_trim_fs(), it get truncated to
+> range [0, super->total_bytes).
+> So later btrfs_trim_fs() will only be able to trim block groups in range
+> [0, super->total_bytes).
 > 
-> And for the DUP case where both the copies are on the same disk, this
-> makes to retry 5 times on 2 different LBA/sector but on the same disk,
-> which probably is not a good idea if your test case involves pulling
-> out the disk. But as of now we don't have a way to tell the block layer
-> how critical a read is, so that block layer can accommodate the retry
-> dynamically.
+> While for btrfs, any bytenr aligned to sector size is valid, since btrfs use
+> its logical address space, there is nothing limiting the location where
+> we put block groups.
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> For btrfs with routine balance, it's quite easy to relocate all
+> block groups and bytenr of block groups will start beyond super->total_bytes.
+> 
+> In that case, btrfs will not trim existing block groups.
+> 
+> [FIX]
+> Just remove the truncation in btrfs_ioctl_fitrim(), so btrfs_trim_fs()
+> can get the unmodified range, which is normally set to [0, U64_MAX].
+> 
+> Reported-by: Chris Murphy <lists@colorremedies.com>
+> Fixes: f4c697e6406d ("btrfs: return EINVAL if start > total_bytes in fitrim ioctl")
+> Cc: <stable@vger.kernel.org> # v4.0+
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/extent_io.c | 3 ---
->  1 file changed, 3 deletions(-)
+> changelog:
+> v2:
+>   Locate the root cause in btrfs_ioctl_fitrim(), remove the truncation
+>   so we can still allow user to trim custom range.
+> v2.1:
+>   Include the missing change in btrfs_trim_fs() and update the commit
+>   message to reflect this.
+> ---
+>  fs/btrfs/extent-tree.c |  9 +--------
+>  fs/btrfs/ioctl.c       | 11 +++++++----
+>  2 files changed, 8 insertions(+), 12 deletions(-)
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index d8eb457f2a70..29c03fb4d5af 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2388,9 +2388,6 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
->  		return -EIO;
->  	}
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index f830aa91ac3d..f74958e11008 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -10972,14 +10972,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+>  	int dev_ret = 0;
+>  	int ret = 0;
 >  
-> -	if (failed_bio->bi_vcnt > 1)
-> -		read_mode |= REQ_FAILFAST_DEV;
+> -	/*
+> -	 * try to trim all FS space, our block group may start from non-zero.
+> -	 */
+> -	if (range->len == total_bytes)
+> -		cache = btrfs_lookup_first_block_group(fs_info, range->start);
+> -	else
+> -		cache = btrfs_lookup_block_group(fs_info, range->start);
 > -
->  	phy_offset >>= inode->i_sb->s_blocksize_bits;
->  	bio = btrfs_create_repair_bio(inode, failed_bio, failrec, page,
->  				      start - page_offset(page),
-> -- 
-> 2.15.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> +	cache = btrfs_lookup_first_block_group(fs_info, range->start);
+>  	for (; cache; cache = next_block_group(fs_info, cache)) {
+>  		if (cache->key.objectid >= (range->start + range->len)) {
+>  			btrfs_put_block_group(cache);
+(..snip..)
+
+This first hunk should also remove total_bytes, otherwise we get an
+unused-variable warning:
+
+@@ -10972,19 +10972,11 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+	u64 start;
+	u64 end;
+	u64 trimmed = 0;
+-	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+	int bg_ret = 0;
+ 	int dev_ret = 0;
+ 	int ret = 0;
+..etc..
+ 
+cheers,
+Holger
+

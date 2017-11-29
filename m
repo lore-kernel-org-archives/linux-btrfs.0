@@ -1,221 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:46766 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752134AbdK2BuQ (ORCPT
+Received: from mail-it0-f47.google.com ([209.85.214.47]:46443 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751355AbdK2NYg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Nov 2017 20:50:16 -0500
-Subject: Re: [PATCH v2 3/3] btrfs-progs: fi defrag: extend -c to drop
- nocompress flag on files
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
- <20171128091450.21789-3-suy.fnst@cn.fujitsu.com>
- <20171128160659.GV3553@twin.jikos.cz>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <42224432-6a27-ea55-f6ee-660adb48e7f0@cn.fujitsu.com>
-Date: Wed, 29 Nov 2017 09:54:01 +0800
+        Wed, 29 Nov 2017 08:24:36 -0500
+Received: by mail-it0-f47.google.com with SMTP id t1so3938346ite.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Nov 2017 05:24:35 -0800 (PST)
+Subject: Re: Read before you deploy btrfs + zstd
+To: dsterba@suse.cz, Nick Terrell <terrelln@fb.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        Imran Geriskovan <imran.geriskovan@gmail.com>
+References: <20171113225046.GD28899@suse.cz>
+ <20171114185331.GJ28899@twin.jikos.cz> <20171115143906.GM28899@twin.jikos.cz>
+ <E55ED8F2-8D16-4B58-9EC3-8DE41E7BE5A2@fb.com> <20171121162239.GO3553@suse.cz>
+ <5BB834FC-A54C-4448-8D86-1D2F22806096@fb.com> <20171128234937.GG3553@suse.cz>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <7736f752-5c07-fffd-652d-1aaa8a3193b0@gmail.com>
+Date: Wed, 29 Nov 2017 08:24:31 -0500
 MIME-Version: 1.0
-In-Reply-To: <20171128160659.GV3553@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20171128234937.GG3553@suse.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 11/29/2017 12:07 AM, David Sterba wrote:
-> On Tue, Nov 28, 2017 at 05:14:50PM +0800, Su Yue wrote:
->> Now, files which have nocompress flag also will be defraged
->> with compression. However, nocompress flag is still existed
->> and have to be cleared manually.
+On 2017-11-28 18:49, David Sterba wrote:
+> On Tue, Nov 28, 2017 at 09:31:57PM +0000, Nick Terrell wrote:
 >>
->> So add an option '--clear-nocompress' to extend -c to drop
->> nocompress flag after defragement.
-> 
->> Suggested-by: David Sterba <dsterba@suse.com>
->> Suggested-by: Anand Jain <anand.jain@oracle.com>
-> 
-> Do you have the pointer to the discussion? The whole idea sounds
-> familiar and seeing my name here means I must have been involved, but I
-> have only vague memories.
-> 
-
-Here is the link:
-https://www.spinics.net/lists/linux-btrfs/msg67529.html
-
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->> Changelog:
->> v2:	Remove change about indentation of defrag_callback().
+>>> On Nov 21, 2017, at 8:22 AM, David Sterba <dsterba@suse.cz> wrote:
+>>>
+>>> On Wed, Nov 15, 2017 at 08:09:15PM +0000, Nick Terrell wrote:
+>>>> On 11/15/17, 6:41 AM, "David Sterba" <dsterba@suse.cz> wrote:
+>>>>> The branch is now in a state that can be tested. Turns out the memory
+>>>>> requirements are too much for grub, so the boot fails with "not enough
+>>>>> memory". The calculated value
+>>>>>
+>>>>> ZSTD_BTRFS_MAX_INPUT: 131072
+>>>>> ZSTD_DStreamWorkspaceBound with ZSTD_BTRFS_MAX_INPUT: 549424
+>>>>>
+>>>>> This is not something I could fix easily, we'd probalby need a tuned
+>>>>> version of ZSTD for grub constraints. Adding Nick to CC.
+>>>>
+>>>> If I understand the grub code correctly, we only need to read, and we have
+>>>> the entire input and output buffer in one segment. In that case you can use
+>>>> ZSTD_initDCtx(), and ZSTD_decompressDCtx(). ZSTD_DCtxWorkspaceBound() is
+>>>> only 155984. See decompress_single() in
+>>>> https://patchwork.kernel.org/patch/9997909/ for an example.
+>>>
+>>> Does not help, still ENOMEM.
 >>
->> ---
->>   cmds-filesystem.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
->>   1 file changed, 64 insertions(+), 1 deletion(-)
+>> It looks like XZ had the same issue, and they make the decompression
+>> context a static object (grep for GRUB_EMBED_DECOMPRESSOR). We could
+>> potentially do the same and statically allocate the workspace:
 >>
->> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
->> index 3931333f76c6..84242814798e 100644
->> --- a/cmds-filesystem.c
->> +++ b/cmds-filesystem.c
->> @@ -27,6 +27,7 @@
->>   #include <mntent.h>
->>   #include <linux/limits.h>
->>   #include <getopt.h>
->> +#include <linux/fs.h>
->>   
->>   #include "kerncompat.h"
->>   #include "ctree.h"
->> @@ -867,6 +868,8 @@ static const char * const cmd_filesystem_defrag_usage[] = {
->>   	"-l len              defragment only up to len bytes",
->>   	"-t size             target extent size hint (default: 32M)",
->>   	"",
->> +	"--compress-force    clear nocompress flag on files after defragment, only work with option -c",
-> 
-> This is probably --clear-nocompress .
-> 
-
-Oh... I forgot to change the usage info here.
-
-> The "force compress" semantics is up to kernel, so I think naming the
-> options 'clear-nocompress' is the right thing, as it's what it really
-> does.
-> 
->> +	"",
->>   	"Warning: most Linux kernels will break up the ref-links of COW data",
->>   	"(e.g., files copied with 'cp --reflink', snapshots) which may cause",
->>   	"considerable increase of space usage. See btrfs-filesystem(8) for",
->> @@ -874,9 +877,39 @@ static const char * const cmd_filesystem_defrag_usage[] = {
->>   	NULL
->>   };
->>   
->> +static int clear_nocompress_flag(int fd)
->> +{
->> +	unsigned int flags;
->> +	int ret = 0;
->> +
->> +	ret = ioctl(fd, FS_IOC_GETFLAGS, &flags);
->> +	if (ret < 0) {
->> +		ret = -errno;
->> +		error("failed to get flags: %s", strerror(-ret));
->> +		goto out;
->> +	}
->> +
->> +	if (!(flags & FS_NOCOMP_FL)) {
->> +		ret = 0;
->> +		goto out;
->> +	}
->> +	flags &= ~FS_NOCOMP_FL;
->> +	ret = ioctl(fd, FS_IOC_SETFLAGS, &flags);
-> 
-> This is inherently racy, but the inode flags do not change that often so
-> concurrent change is unlikely.
-> 
-
-I don't quite understand what you mean.
-Could you explain some details?
-
-Thanks,
-Su
->> +	if (ret < 0) {
->> +		ret = -errno;
->> +		error("failed to set flags: %s", strerror(-ret));
->> +		goto out;
->> +	}
->> +
->> +	ret = 0;
->> +out:
->> +	return ret;
->> +}
->> +
->>   static struct btrfs_ioctl_defrag_range_args defrag_global_range;
->>   static int defrag_global_verbose;
->>   static int defrag_global_errors;
->> +static int defrag_global_clear_nocompress;
->>   static int defrag_callback(const char *fpath, const struct stat *sb,
->>   		int typeflag, struct FTW *ftwbuf)
->>   {
->> @@ -904,6 +937,14 @@ static int defrag_callback(const char *fpath, const struct stat *sb,
->>   			err = errno;
->>   			goto error;
->>   		}
->> +
->> +		if (defrag_global_clear_nocompress) {
->> +			ret = clear_nocompress_flag(fd);
->> +			if (ret) {
->> +				err = -ret;
->> +				goto error;
->> +			}
->> +		}
->>   	}
->>   	return 0;
->>   
->> @@ -926,6 +967,12 @@ static int cmd_filesystem_defrag(int argc, char **argv)
->>   	int compress_type = BTRFS_COMPRESS_NONE;
->>   	DIR *dirstream;
->>   
->> +	enum { GETOPT_VAL_CLEAR_NOCOMPRESS = 257};
->> +	static const struct option long_options[] = {
->> +		{ "clear-nocompress", no_argument, NULL,
->> +		  GETOPT_VAL_CLEAR_NOCOMPRESS},
->> +		{ NULL, 0, NULL, 0}
->> +	};
->>   	/*
->>   	 * Kernel has a different default (256K) that is supposed to be safe,
->>   	 * but it does not defragment very well. The 32M will likely lead to
->> @@ -937,8 +984,10 @@ static int cmd_filesystem_defrag(int argc, char **argv)
->>   	defrag_global_errors = 0;
->>   	defrag_global_verbose = 0;
->>   	defrag_global_errors = 0;
->> +	defrag_global_clear_nocompress = 0;
->>   	while(1) {
->> -		int c = getopt(argc, argv, "vrc::fs:l:t:");
->> +		int c = getopt_long(argc, argv, "vrc::fs:l:t:", long_options,
->> +				    NULL);
->>   		if (c < 0)
->>   			break;
->>   
->> @@ -972,6 +1021,9 @@ static int cmd_filesystem_defrag(int argc, char **argv)
->>   		case 'r':
->>   			recursive = 1;
->>   			break;
->> +		case GETOPT_VAL_CLEAR_NOCOMPRESS:
->> +			defrag_global_clear_nocompress = 1;
->> +			break;
->>   		default:
->>   			usage(cmd_filesystem_defrag_usage);
->>   		}
->> @@ -987,6 +1039,8 @@ static int cmd_filesystem_defrag(int argc, char **argv)
->>   	if (compress_type) {
->>   		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_COMPRESS;
->>   		defrag_global_range.compress_type = compress_type;
->> +	} else if (defrag_global_clear_nocompress) {
->> +		warning("Option --clear-nocompress only works for -c");
->>   	}
->>   	if (flush)
->>   		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
->> @@ -1071,6 +1125,15 @@ static int cmd_filesystem_defrag(int argc, char **argv)
->>   				      strerror(defrag_err));
->>   				goto next;
->>   			}
->> +
->> +			if (defrag_global_clear_nocompress)
->> +				ret = clear_nocompress_flag(fd);
->> +			if (ret) {
->> +				error(
->> +				"failed to drop nocompress flag on %s: %s",
->> +				argv[i], strerror(-ret));
->> +				goto next;
->> +			}
->>   		}
->>   next:
->>   		if (ret)
->> -- 
->> 2.15.0
+>> ```
+>> /* Could also be size_t */
+>> #define BTRFS_ZSTD_WORKSPACE_SIZE_U64 (155984 / sizeof(uint64_t))
+>> static uint64_t workspace[BTRFS_ZSTD_WORKSPACE_SIZE_U64];
 >>
+>> /* ... */
 >>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> assert(sizeof(workspace) >= ZSTD_DCtxWorkspaceBound());
+>> ```
 > 
+> Interesting, thanks for the tip, I'll try it next.
 > 
-
+> I've meanwhile tried to tweak the numbers, the maximum block for zstd,
+> that squeezed the DCtx somewhere under 48k, with block size 8k. Still
+> enomem.
+> 
+> I've tried to add some debugging prints to see what numbers get actually
+> passed to the allocator, but did not see anything printed.  I'm sure
+> there is a more intelligent way to test the grub changes.  So far each
+> test loop takes quite some time, as I build the rpm package, test it in
+> a VM and have to recreate the environmet each time.
+On the note of testing, have you tried writing up a module to just test 
+the decompressor?  If so, you could probably use the 'emu' platform to 
+save the need to handle the RPM package and the VM until you get the 
+decompressor working by itself, at which point the FUSE modules used to 
+test the GRUB filesystem modules may be of some use (or you might be 
+able to just use them directly).
 

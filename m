@@ -1,107 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:55134 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:64702 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750783AbdK3ICe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 03:02:34 -0500
-Subject: Re: [PATCH 3/3] btrfs-progs: fi usage: cleanup unneccessary
- permission error check
+        id S1751031AbdK3INj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Nov 2017 03:13:39 -0500
+Subject: Re: [PATCH 2/3] btrfs-progs: fi usage: change to output more info
+ without root privilege
 To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <12571738-34cb-412c-a512-3b117d4726e9@jp.fujitsu.com>
- <9be13116-09f2-6f24-7e81-d215f5b215cc@jp.fujitsu.com>
+ <dbdf04aa-3969-8249-a507-d7d16f3d1e5d@jp.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <1fdabf5d-1f9a-5667-0132-c07938819f19@gmx.com>
-Date: Thu, 30 Nov 2017 16:02:25 +0800
+Message-ID: <a7c8374e-68b2-6cc3-b877-f988ec4a423b@gmx.com>
+Date: Thu, 30 Nov 2017 16:13:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <9be13116-09f2-6f24-7e81-d215f5b215cc@jp.fujitsu.com>
+In-Reply-To: <dbdf04aa-3969-8249-a507-d7d16f3d1e5d@jp.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="jEJvRfReB2QhR9uD23N67pRUgo184EQjA"
+ boundary="tF9Wr527a5xmhdnbG716G79CQ7iektOlE"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---jEJvRfReB2QhR9uD23N67pRUgo184EQjA
-Content-Type: multipart/mixed; boundary="66Q4pqPSAWwWETj4dF4tQeLtuIabHuV6j";
+--tF9Wr527a5xmhdnbG716G79CQ7iektOlE
+Content-Type: multipart/mixed; boundary="oKgHv8VdE6cIOkqghOtgKLkHtGuEJuUe7";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
  linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <1fdabf5d-1f9a-5667-0132-c07938819f19@gmx.com>
-Subject: Re: [PATCH 3/3] btrfs-progs: fi usage: cleanup unneccessary
- permission error check
+Message-ID: <a7c8374e-68b2-6cc3-b877-f988ec4a423b@gmx.com>
+Subject: Re: [PATCH 2/3] btrfs-progs: fi usage: change to output more info
+ without root privilege
 References: <12571738-34cb-412c-a512-3b117d4726e9@jp.fujitsu.com>
- <9be13116-09f2-6f24-7e81-d215f5b215cc@jp.fujitsu.com>
-In-Reply-To: <9be13116-09f2-6f24-7e81-d215f5b215cc@jp.fujitsu.com>
+ <dbdf04aa-3969-8249-a507-d7d16f3d1e5d@jp.fujitsu.com>
+In-Reply-To: <dbdf04aa-3969-8249-a507-d7d16f3d1e5d@jp.fujitsu.com>
 
---66Q4pqPSAWwWETj4dF4tQeLtuIabHuV6j
+--oKgHv8VdE6cIOkqghOtgKLkHtGuEJuUe7
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B411=E6=9C=8830=E6=97=A5 15:53, Misono, Tomohiro wrote:
-> Since BTRFS_IOC_FS_INFO does not require root privilege, there is no
-> need to check EPERM error.
+On 2017=E5=B9=B411=E6=9C=8830=E6=97=A5 15:52, Misono, Tomohiro wrote:
+> Although per device usage cannot be shown without root privilege,
+> per profile usage can be shown.
+>=20
+> To achieve this, we just basically need to remove the check of nullness=
+
+> of chunkinfo in print_filesystem_usage_by_chunk(), because other
+> functions except print_unused() properly handles chunkinfo by
+> chunkcount, which is 0 if chunkinfo is null.
+>=20
+> As a result, "fi usage" always includes the infomation of "fi df".
 >=20
 > Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+
+Looks good.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
+
 > ---
->  cmds-fi-usage.c | 7 -------
->  1 file changed, 7 deletions(-)
+>  cmds-fi-usage.c | 11 +++++------
+>  1 file changed, 5 insertions(+), 6 deletions(-)
 >=20
 > diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-> index 7bbc9896..b0721560 100644
+> index 299c2dae..7bbc9896 100644
 > --- a/cmds-fi-usage.c
 > +++ b/cmds-fi-usage.c
-> @@ -522,8 +522,6 @@ static int load_device_info(int fd, struct device_i=
-nfo **device_info_ptr,
-> =20
->  	ret =3D ioctl(fd, BTRFS_IOC_FS_INFO, &fi_args);
->  	if (ret < 0) {
-> -		if (errno =3D=3D EPERM)
-> -			return -errno;
->  		error("cannot get filesystem info: %s",
->  				strerror(errno));
->  		return 1;
-> @@ -597,11 +595,6 @@ int load_chunk_and_device_info(int fd, struct chun=
-k_info **chunkinfo,
+> @@ -885,9 +885,11 @@ static void _cmd_filesystem_usage_linear(unsigned =
+unit_mode,
+>  		printf("\n");
 >  	}
 > =20
->  	ret =3D load_device_info(fd, devinfo, devcount);
-> -	if (ret =3D=3D -EPERM) {
-> -		warning(
-> -		"cannot get filesystem info from ioctl(FS_INFO), run as root");
-> -		ret =3D 0;
-> -	}
-> =20
->  	return ret;
+> -	printf("Unallocated:\n");
+> -	print_unused(info_ptr, info_count, device_info_ptr, device_info_count=
+,
+> -			unit_mode | UNITS_NEGATIVE);
+> +	if (info_count) {
+> +		printf("Unallocated:\n");
+> +		print_unused(info_ptr, info_count, device_info_ptr,
+> +				device_info_count, unit_mode | UNITS_NEGATIVE);
+> +	}
 >  }
+> =20
+>  static int print_filesystem_usage_by_chunk(int fd,
+> @@ -898,9 +900,6 @@ static int print_filesystem_usage_by_chunk(int fd,
+>  	struct btrfs_ioctl_space_args *sargs;
+>  	int ret =3D 0;
+> =20
+> -	if (!chunkinfo)
+> -		return 0;
+> -
+>  	sargs =3D load_space_info(fd, path);
+>  	if (!sargs) {
+>  		ret =3D 1;
 >=20
 
 
---66Q4pqPSAWwWETj4dF4tQeLtuIabHuV6j--
+--oKgHv8VdE6cIOkqghOtgKLkHtGuEJuUe7--
 
---jEJvRfReB2QhR9uD23N67pRUgo184EQjA
+--tF9Wr527a5xmhdnbG716G79CQ7iektOlE
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlofuxEXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhrgQf7B2+6XOZZZSapYbLoEFbg4FMd
-KYrKS5BTYEeD8bCl1ixALjfWsL8peHxEFoqqRY6PUSuRbphuNDI6B+THCOaWh9Os
-g9gJ+vvr8jj49NlUroNbEMQIZN2wG9N8CwCNZSwuRq3E15maGmo0+PfafM194kim
-LxqN9phQPa5rmiwRS8yCUfwR+8wkE3mOaKP0PXnd+H4SrNUadun3Fb7dbnpBl39t
-8DcqnJfGnOY8XMgcOq4eekN6q2jsCGppk2r55zQzlBIE/tT7x5sxHO5ooa6SSZdS
-DsA3WW38e70+bD1wTxuSF+Qv++H+4QcQ33xDA/MbG9rSs6+PmduvM3qlte8Geg==
-=98ym
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlofvakXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgczAf+Kx0XHTOalpZ3jeqWg73KWw21
+00B/4DnX+FRFlPKEUbWQsvqNGD+McCvnQuKo+LM0yILV9CTLI7TpwCRGpSPLCMAF
+snrz3suGNqUeL8Jqrdwq8C/GUzbKvj+XJzdSNEjOYi0qUIan5Kk7+5H5I7b5cjwo
+v4oi2CGrtgARQPvKBKPNq4v540ZDgN0p22K8jb5JsIwTLH+/KtLlM/LMOdtcw3Fr
+NsneRn2IO8SL0ohsmSHJRAoz8Zg1xmRBAncYS4V2VHIp6WF7WQC6T+xEYoUblDOC
+lkqQyQWuLmNoUIPaX3FIRc3JjzNlCxLW/NK/OIhhQ8Uvd/Skk3dy3dKluimI+g==
+=bAKq
 -----END PGP SIGNATURE-----
 
---jEJvRfReB2QhR9uD23N67pRUgo184EQjA--
+--tF9Wr527a5xmhdnbG716G79CQ7iektOlE--

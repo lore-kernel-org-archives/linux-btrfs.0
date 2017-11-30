@@ -1,54 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38149 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39545 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751178AbdK3SBC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 13:01:02 -0500
-Date: Thu, 30 Nov 2017 18:59:03 +0100
+        id S1750984AbdK3S1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Nov 2017 13:27:32 -0500
+Date: Thu, 30 Nov 2017 19:25:33 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH][v2] btrfs: don't bug_on with enomem in __clear_state_bit
-Message-ID: <20171130175902.GO3553@twin.jikos.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, Gu Jinxiang <gujx@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org, lakshmipathi.g@gmail.com
+Subject: Re: [PATCH 1/5] btrfs-progs: Add location check when process
+ share_data_ref item
+Message-ID: <20171130182533.GQ3553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1510326820-17865-1-git-send-email-josef@toxicpanda.com>
+References: <1511520092-37101-1-git-send-email-gujx@cn.fujitsu.com>
+ <20171128190239.GC3553@twin.jikos.cz>
+ <552db79a-ccd1-3dcb-05fb-a5e2cc26f73f@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1510326820-17865-1-git-send-email-josef@toxicpanda.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <552db79a-ccd1-3dcb-05fb-a5e2cc26f73f@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 10, 2017 at 10:13:40AM -0500, Josef Bacik wrote:
-> From: Josef Bacik <jbacik@fb.com>
+On Thu, Nov 30, 2017 at 02:55:49PM +0800, Qu Wenruo wrote:
 > 
-> Since we're allocating under atomic we could every easily enomem, so if
-> that's the case and we can block then loop around and try to allocate
-> the prealloc not under a lock.
 > 
-> We also saw this happen during try_to_release_page in production, in
-> which case it's completely valid to return ENOMEM so we can tell
-> try_to_release_page that we can't release this page.
+> On 2017年11月29日 03:02, David Sterba wrote:
+> > On Fri, Nov 24, 2017 at 06:41:28PM +0800, Gu Jinxiang wrote:
+> >> The following test failed becasuse share_data_ref be added into
+> >> extent_cache when deal with root tree node.
+> > 
+> > The whole function run_next_block would need to be revisited with
+> > respect to error handling and sanity checks. Adding them only when a
+> > fuzzed image hits the particular code path is not IMHO the best
+> > approach.
+> 
+> As suggested before, backporting tree-checker from kernel may be a good
+> solution for all later possible fuzzed problem.
+> (And can make btrfs-progs become a good testbed for tree-checker related
+> patches before merging into kernel)
 
-Have you audited that all direct and indirect callers of
-__clear_extent_bit handle the errors? Because they do not. The only case
-that seem to understand ENOMEM failures of __clear_extent_bit is
-try_release_extent_state.
+Agreed, that would be great.
 
-Almost anything else that calls __clear_extent_bit, clear_extent_bit and
-other simple wrappers do not check the value and would happily continue.
+> For this particular case, planned key->type check against root should
+> handle it quite well.
 
-> @@ -673,7 +677,15 @@ static int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
->  
->  	if (state->start < start) {
->  		prealloc = alloc_extent_state_atomic(prealloc);
-> -		BUG_ON(!prealloc);
-> +		if (!prealloc) {
-> +			if (gfpflags_allow_blocking(mask)) {
-> +				need_prealloc = true;
-> +				spin_unlock(&tree->lock);
-> +				goto again;
-> +			}
-> +			err = -ENOMEM;
-
-The retry logic is good, but until ENOMEM is properly handled
-everywhere, the safest thing is to move the BUG_ON here.
+Good, so I'd rather take the tree-checker route.

@@ -1,178 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:63537 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:64418 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752355AbdK3GsR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 01:48:17 -0500
-Subject: Re: [PATCH v2 1/3] btrfs-progs: fi defrag: clean up duplicate code if
- find errors
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
+        id S1753082AbdK3GtX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Nov 2017 01:49:23 -0500
+Subject: Re: [PATCH v3 2/3] btrfs-progs: fi defrag: do not exit if defrag
+ range ioctl is unsupported
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <55a02117-a35c-3a5f-e8d7-23a0a1be0dfd@gmx.com>
-Date: Thu, 30 Nov 2017 14:47:59 +0800
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com
+References: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
+ <20171129021225.15509-1-suy.fnst@cn.fujitsu.com>
+ <357c50d7-d69b-8bfa-fda3-4449466707ba@gmx.com>
+Message-ID: <1b2de721-70c3-6a2c-e6aa-e6d6b025fbd6@gmx.com>
+Date: Thu, 30 Nov 2017 14:49:09 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <357c50d7-d69b-8bfa-fda3-4449466707ba@gmx.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="1nm8JUGhGoLD9QsPImlfhLko9iGXShimb"
+ boundary="3htuFnjwO9QqQCF5rFKSFiqhEIJbAKmOa"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---1nm8JUGhGoLD9QsPImlfhLko9iGXShimb
-Content-Type: multipart/mixed; boundary="B0Fh1X9J9OatA7Ebq40VbItpAr9u8JG3b";
+--3htuFnjwO9QqQCF5rFKSFiqhEIJbAKmOa
+Content-Type: multipart/mixed; boundary="UOoJEvRho80f00RmUkId631LimrgsokH9";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Message-ID: <55a02117-a35c-3a5f-e8d7-23a0a1be0dfd@gmx.com>
-Subject: Re: [PATCH v2 1/3] btrfs-progs: fi defrag: clean up duplicate code if
- find errors
+Cc: dsterba@suse.com
+Message-ID: <1b2de721-70c3-6a2c-e6aa-e6d6b025fbd6@gmx.com>
+Subject: Re: [PATCH v3 2/3] btrfs-progs: fi defrag: do not exit if defrag
+ range ioctl is unsupported
 References: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
+ <20171129021225.15509-1-suy.fnst@cn.fujitsu.com>
+ <357c50d7-d69b-8bfa-fda3-4449466707ba@gmx.com>
+In-Reply-To: <357c50d7-d69b-8bfa-fda3-4449466707ba@gmx.com>
 
---B0Fh1X9J9OatA7Ebq40VbItpAr9u8JG3b
+--UOoJEvRho80f00RmUkId631LimrgsokH9
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B411=E6=9C=8828=E6=97=A5 17:14, Su Yue wrote:
-> In function cmd_filesystem_defrag(), lines of code for error handling
-> are duplicate and hard to expand in further.
+On 2017=E5=B9=B411=E6=9C=8830=E6=97=A5 14:37, Qu Wenruo wrote:
 >=20
-> Create a jump label for errors.
 >=20
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
-> Changelog:
-> v2:	Record -errno to return value if open() and fstat() failed.
-> 	Move change "do no exit if defrag range ioctl is unsupported"
-> 	to another patch.
-> 	Suggested by David.
-> ---
->  cmds-filesystem.c | 44 ++++++++++++++++++++++++--------------------
->  1 file changed, 24 insertions(+), 20 deletions(-)
+> On 2017=E5=B9=B411=E6=9C=8829=E6=97=A5 10:12, Su Yue wrote:
+>> If ioctl of defrag range is unsupported, defrag will exit immediately.=
+
+>>
+>> Since caller can handle the error, let cmd_filesystem_defrag()
+>> close file, break the loop and return error instead of calling exit(1)=
+=2E
+>>
+>> Suggested-by: David Sterba <dsterba@suse.com>
+>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 >=20
-> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> index 7728430f16a1..17d399d58adf 100644
-> --- a/cmds-filesystem.c
-> +++ b/cmds-filesystem.c
-> @@ -1029,23 +1029,22 @@ static int cmd_filesystem_defrag(int argc, char=
- **argv)
->  		if (fd < 0) {
->  			error("cannot open %s: %s", argv[i],
->  					strerror(errno));
-> -			defrag_global_errors++;
-> -			close_file_or_dir(fd, dirstream);
-> -			continue;
-> +			ret =3D -errno;
-> +			goto next;
->  		}
-> -		if (fstat(fd, &st)) {
-> +
-> +		ret =3D fstat(fd, &st);
-> +		if (ret) {
->  			error("failed to stat %s: %s",
->  					argv[i], strerror(errno));
-> -			defrag_global_errors++;
-> -			close_file_or_dir(fd, dirstream);
-> -			continue;
-> +			ret =3D -errno;
-> +			goto next;
->  		}
->  		if (!(S_ISDIR(st.st_mode) || S_ISREG(st.st_mode))) {
->  			error("%s is not a directory or a regular file",
->  					argv[i]);
-> -			defrag_global_errors++;
-> -			close_file_or_dir(fd, dirstream);
-> -			continue;
-> +			ret =3D -EINVAL;
-> +			goto next;
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Thanks,
+> Qu
 
-Here, unlike the ftw callback, which ignore non-regular file, here we
-count them as error.
+Please ignore my tag.
 
-So if there is some especial file in dir (use "example_dir" as an
-example), then
-# btrfs fi defrag -r example_dir
-will return no error.
-
-While
-# btrfs fi defrag -r example_dir/*
-Will return error.
-
-IIRC such inconsistent behavior is a bigger problem, and reusing the
-defrag_callback() will not only makes the behavior consistent, but also
-simplify the loop.
+The best solution is mentioned in the 1st patch.
 
 Thanks,
 Qu
 
-
->  		}
->  		if (recursive && S_ISDIR(st.st_mode)) {
->  			ret =3D nftw(argv[i], defrag_callback, 10,
-> @@ -1060,20 +1059,25 @@ static int cmd_filesystem_defrag(int argc, char=
+>> ---
+>> Changelog:
+>> v2:	Separate the patch from commit 6e991b9161fa ("btrfs-progs: fi
+>> 	defrag: clean up duplicate code if find errors").
+>> v3:	Call close_file_or_dir() before breaking the loop.
+>> ---
+>>  cmds-filesystem.c | 6 ++++--
+>>  1 file changed, 4 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+>> index 17d399d58adf..232d4e88e0c0 100644
+>> --- a/cmds-filesystem.c
+>> +++ b/cmds-filesystem.c
+>> @@ -1049,8 +1049,10 @@ static int cmd_filesystem_defrag(int argc, char=
  **argv)
->  			ret =3D ioctl(fd, BTRFS_IOC_DEFRAG_RANGE,
->  					&defrag_global_range);
->  			defrag_err =3D errno;
-> -		}
-> -		close_file_or_dir(fd, dirstream);
-> -		if (ret && defrag_err =3D=3D ENOTTY) {
-> -			error(
-> +			if (ret && defrag_err =3D=3D ENOTTY) {
-> +				error(
->  "defrag range ioctl not supported in this kernel version, 2.6.33 and n=
-ewer is required");
-> -			defrag_global_errors++;
-> -			break;
-> +				defrag_global_errors++;
-> +				close_file_or_dir(fd, dirstream);
-> +				break;
-> +			}
-> +			if (ret) {
-> +				error("defrag failed on %s: %s", argv[i],
-> +				      strerror(defrag_err));
-> +				goto next;
-> +			}
->  		}
-> -		if (ret) {
-> -			error("defrag failed on %s: %s", argv[i],
-> -					strerror(defrag_err));
-> +next:
-> +		if (ret)
->  			defrag_global_errors++;
-> -		}
-> +		close_file_or_dir(fd, dirstream);
->  	}
-> +
->  	if (defrag_global_errors)
->  		fprintf(stderr, "total %d failures\n", defrag_global_errors);
-> =20
+>>  		if (recursive && S_ISDIR(st.st_mode)) {
+>>  			ret =3D nftw(argv[i], defrag_callback, 10,
+>>  						FTW_MOUNT | FTW_PHYS);
+>> -			if (ret =3D=3D ENOTTY)
+>> -				exit(1);
+>> +			if (ret =3D=3D ENOTTY) {
+>> +				close_file_or_dir(fd, dirstream);
+>> +				break;
+>> +			}
+>>  			/* errors are handled in the callback */
+>>  			ret =3D 0;
+>>  		} else {
+>>
 >=20
 
 
---B0Fh1X9J9OatA7Ebq40VbItpAr9u8JG3b--
+--UOoJEvRho80f00RmUkId631LimrgsokH9--
 
---1nm8JUGhGoLD9QsPImlfhLko9iGXShimb
+--3htuFnjwO9QqQCF5rFKSFiqhEIJbAKmOa
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlofqaAXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiz/wf/Ut6EZNpJpIchjtnbrEEbFJo/
-e2vneOKr/kvKB/0vxUXfnXrXD/ARKmswAGlWsvvTpNPrLOwl6aX1jw8LOWeokQqE
-h/iVac0csyQiuRdhQKzUeDyv7X0MXyk3l3LUtnjGsidLd2eY6u0cHe+3c7rxE+3X
-fMr4zrznO3Rfxu0stiBsDMNwJ1Fl4dFCD54QEaZEHaO39bXZ+zQJr5Pskk2BtPw6
-MBuzMn/bqwpj1CmHb8Hg36qtk9NAiEfMcunV2mvK+Xbwc60zaunld1EzzDs9BjPN
-OvKdWmAPzSF9cYfV7PAl2E2yz5aGI7O7n8v1AIIXFUNh79rGzZfJ1nu04Q9l6g==
-=cWzn
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlofqeUXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjqHgf8CCh7SY0lXqpq5sQPbrLh1mfl
+8cZpH0LuO7mEgqGAfLLTp1Enfar9/VSzTQs9g1yTGFCsUWbumhnID1pRuiB6Iv5m
+c/F9vHshAzlP5aawblEbxesIBxt6GtExF2+wpy8ETHGYeVRWSKZQAbibqOpwF+9P
+fPWUVKUxWyNkyY/483F8GWDvNUPD85D0esrmcaaJ4uzwYNLpRZeWMumPu9Lc53YO
+RKIERQU0/YrIZ9FjnplTad3pjUQyOiu3m4H37jgFLM+aRKr8gcZUYwzs2Cynhy8R
+sZAty3UAXKQqXlUSTEvXHFsssEoi7CIkY3L+nh+0j4Y+N1KWI6URcFrkUAJSIw==
+=hBDq
 -----END PGP SIGNATURE-----
 
---1nm8JUGhGoLD9QsPImlfhLko9iGXShimb--
+--3htuFnjwO9QqQCF5rFKSFiqhEIJbAKmOa--

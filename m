@@ -1,47 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39545 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39788 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750984AbdK3S1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 13:27:32 -0500
-Date: Thu, 30 Nov 2017 19:25:33 +0100
+        id S1750994AbdK3ScO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Nov 2017 13:32:14 -0500
+Date: Thu, 30 Nov 2017 19:30:16 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Gu Jinxiang <gujx@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, lakshmipathi.g@gmail.com
-Subject: Re: [PATCH 1/5] btrfs-progs: Add location check when process
- share_data_ref item
-Message-ID: <20171130182533.GQ3553@twin.jikos.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 3/3] btrfs-progs: fi defrag: extend -c to drop
+ nocompress flag on files
+Message-ID: <20171130183016.GR3553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1511520092-37101-1-git-send-email-gujx@cn.fujitsu.com>
- <20171128190239.GC3553@twin.jikos.cz>
- <552db79a-ccd1-3dcb-05fb-a5e2cc26f73f@gmx.com>
+References: <20171128091450.21789-1-suy.fnst@cn.fujitsu.com>
+ <20171128091450.21789-3-suy.fnst@cn.fujitsu.com>
+ <20171128160659.GV3553@twin.jikos.cz>
+ <42224432-6a27-ea55-f6ee-660adb48e7f0@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <552db79a-ccd1-3dcb-05fb-a5e2cc26f73f@gmx.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <42224432-6a27-ea55-f6ee-660adb48e7f0@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 30, 2017 at 02:55:49PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2017年11月29日 03:02, David Sterba wrote:
-> > On Fri, Nov 24, 2017 at 06:41:28PM +0800, Gu Jinxiang wrote:
-> >> The following test failed becasuse share_data_ref be added into
-> >> extent_cache when deal with root tree node.
+On Wed, Nov 29, 2017 at 09:54:01AM +0800, Su Yue wrote:
+> On 11/29/2017 12:07 AM, David Sterba wrote:
+> > On Tue, Nov 28, 2017 at 05:14:50PM +0800, Su Yue wrote:
+> >> Now, files which have nocompress flag also will be defraged
+> >> with compression. However, nocompress flag is still existed
+> >> and have to be cleared manually.
+> >>
+> >> So add an option '--clear-nocompress' to extend -c to drop
+> >> nocompress flag after defragement.
 > > 
-> > The whole function run_next_block would need to be revisited with
-> > respect to error handling and sanity checks. Adding them only when a
-> > fuzzed image hits the particular code path is not IMHO the best
-> > approach.
+> >> Suggested-by: David Sterba <dsterba@suse.com>
+> >> Suggested-by: Anand Jain <anand.jain@oracle.com>
+> > 
+> > Do you have the pointer to the discussion? The whole idea sounds
+> > familiar and seeing my name here means I must have been involved, but I
+> > have only vague memories.
+> > 
 > 
-> As suggested before, backporting tree-checker from kernel may be a good
-> solution for all later possible fuzzed problem.
-> (And can make btrfs-progs become a good testbed for tree-checker related
-> patches before merging into kernel)
+> Here is the link:
+> https://www.spinics.net/lists/linux-btrfs/msg67529.html
 
-Agreed, that would be great.
+Thanks.
 
-> For this particular case, planned key->type check against root should
-> handle it quite well.
+> >> +static int clear_nocompress_flag(int fd)
+> >> +{
+> >> +	unsigned int flags;
+> >> +	int ret = 0;
+> >> +
+> >> +	ret = ioctl(fd, FS_IOC_GETFLAGS, &flags);
+> >> +	if (ret < 0) {
+> >> +		ret = -errno;
+> >> +		error("failed to get flags: %s", strerror(-ret));
+> >> +		goto out;
+> >> +	}
+> >> +
+> >> +	if (!(flags & FS_NOCOMP_FL)) {
+> >> +		ret = 0;
+> >> +		goto out;
+> >> +	}
+> >> +	flags &= ~FS_NOCOMP_FL;
+> >> +	ret = ioctl(fd, FS_IOC_SETFLAGS, &flags);
+> > 
+> > This is inherently racy, but the inode flags do not change that often so
+> > concurrent change is unlikely.
+> > 
+> 
+> I don't quite understand what you mean.
+> Could you explain some details?
 
-Good, so I'd rather take the tree-checker route.
+If the inode flags change externally between the set and get calls, but
+there's not much we can do about it now.

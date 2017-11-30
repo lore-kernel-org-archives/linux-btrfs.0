@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:56946 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:39604 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751451AbdK1HUy (ORCPT
+        with ESMTP id S1753793AbdK3ApP (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 28 Nov 2017 02:20:54 -0500
+        Wed, 29 Nov 2017 19:45:15 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, stable@vger.kernel.org
-Subject: [PATCH v2.1 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
-Date: Tue, 28 Nov 2017 15:20:39 +0800
-Message-Id: <20171128072039.13973-1-wqu@suse.com>
+Subject: [PATCH v2.2 2/2] btrfs: Ensure btrfs_trim_fs can trim the whole fs
+Date: Thu, 30 Nov 2017 08:45:03 +0800
+Message-Id: <20171130004503.14912-1-wqu@suse.com>
 In-Reply-To: <20171128070830.12756-2-wqu@suse.com>
 References: <20171128070830.12756-2-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -50,16 +50,23 @@ v2:
 v2.1:
   Include the missing change in btrfs_trim_fs() and update the commit
   message to reflect this.
+v2.2:
+  Remove unused variable.
 ---
- fs/btrfs/extent-tree.c |  9 +--------
+ fs/btrfs/extent-tree.c | 10 +---------
  fs/btrfs/ioctl.c       | 11 +++++++----
- 2 files changed, 8 insertions(+), 12 deletions(-)
+ 2 files changed, 8 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f830aa91ac3d..f74958e11008 100644
+index f830aa91ac3d..b2a7532d6c07 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -10972,14 +10972,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+@@ -10967,19 +10967,11 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	u64 start;
+ 	u64 end;
+ 	u64 trimmed = 0;
+-	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
+ 	int bg_ret = 0;
  	int dev_ret = 0;
  	int ret = 0;
  

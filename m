@@ -1,59 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59228 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751937AbdLES7b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 13:59:31 -0500
-Date: Tue, 5 Dec 2017 19:57:31 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        Peter Grandi <pg@btrfs.list.sabi.co.UK>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/7] retry write on error
-Message-ID: <20171205185731.GT3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171122003558.28722-1-bo.li.liu@oracle.com>
- <20171128192236.GE3553@twin.jikos.cz>
- <bd35756b-0089-0e20-a70c-b66dd3292208@suse.de>
- <23069.62530.53658.314350@tree.ty.sabi.co.uk>
- <aaa69c5c-164a-5cba-452c-5a53d801c792@oracle.com>
- <20171129164708.GH3553@twin.jikos.cz>
- <20171130202253.GA8197@dhcp-whq-twvpn-1-vpnpool-10-159-155-222.vpn.oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171130202253.GA8197@dhcp-whq-twvpn-1-vpnpool-10-159-155-222.vpn.oracle.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:36573 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751007AbdLAB3A (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 30 Nov 2017 20:29:00 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vB11SxaS022833
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Dec 2017 01:28:59 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB11SwQF026438
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Dec 2017 01:28:59 GMT
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB11Sw7a006684
+        for <linux-btrfs@vger.kernel.org>; Fri, 1 Dec 2017 01:28:58 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: use struct completion in scrub_submit_raid56_bio_wait
+Date: Thu, 30 Nov 2017 17:26:39 -0700
+Message-Id: <20171201002639.32257-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 30, 2017 at 12:22:53PM -0800, Liu Bo wrote:
-> > >   I agree with Ed and Peter, similar opinion was posted here [1].
-> > >      https://www.spinics.net/lists/linux-btrfs/msg70240.html
-> > 
-> > All the points in this thread speak against retries on the filesystem
-> > level and I agree. Without an interface to query the block layer if the
-> > retries make sense, it's just guessing, likely to be wrong.
-> 
-> I do agree that filesystem doesn't need to retry at its own level, but
-> btrfs incorporates disk management which is actually a version of md
-> layer, adding retry for this layer can gain robustness for us.
-> 
-> It's true that scsi's sd layer has done SD_MAX_RETRIES(5) retries, but
-> can we really depend on other layers for all robustness?
+This changes to use struct completion directly and removes 'struct
+scrub_bio_ret' along with the code using it.
 
-I'm afraid that we have to. We don't really want to dive too much to the
-storage layer that's beneath the filesystem. If there was an interface
-like "blk_queue_retries_make_sense", then letting the upper layer could
-improve robustness, but otherwise I see it as false hopes an just
-wasting time retrying.
+This struct is used to get the return value from bio, but the caller
+can access bio to get the return value directly and is holding a
+reference on bio so that it won't go away underneath us.  So it can be
+removed safely.
 
-> In terms of raid56 scenario, typically filesystem doens't fail the
-> raid/disk, but btrfs does, doing retry _may_ save us a lot of time of
-> rebuilding raid.
-> 
-> Anyway, this is for a corner case, not for everyone, I think I need to
-> make it configurable so that at least we can provide some extra
-> robustness for people who super care about their data.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/scrub.c | 21 ++++-----------------
+ 1 file changed, 4 insertions(+), 17 deletions(-)
 
-This should be IMHO solved by redundancy. If the storage layer is not
-reliable it's not wise to continue using the underlying devices and rely
-on the retries.
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index e3f6c49..0cdf359 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1666,17 +1666,9 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 	return 0;
+ }
+ 
+-struct scrub_bio_ret {
+-	struct completion event;
+-	blk_status_t status;
+-};
+-
+ static void scrub_bio_wait_endio(struct bio *bio)
+ {
+-	struct scrub_bio_ret *ret = bio->bi_private;
+-
+-	ret->status = bio->bi_status;
+-	complete(&ret->event);
++	complete(bio->bi_private);
+ }
+ 
+ static inline int scrub_is_page_on_raid56(struct scrub_page *page)
+@@ -1689,11 +1681,9 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
+ 					struct bio *bio,
+ 					struct scrub_page *page)
+ {
+-	struct scrub_bio_ret done;
++	DECLARE_COMPLETION_ONSTACK(done);
+ 	int ret;
+ 
+-	init_completion(&done.event);
+-	done.status = 0;
+ 	bio->bi_iter.bi_sector = page->logical >> 9;
+ 	bio->bi_private = &done;
+ 	bio->bi_end_io = scrub_bio_wait_endio;
+@@ -1704,11 +1694,8 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
+ 	if (ret)
+ 		return ret;
+ 
+-	wait_for_completion_io(&done.event);
+-	if (done.status)
+-		return -EIO;
+-
+-	return 0;
++	wait_for_completion_io(&done);
++	return blk_status_to_errno(bio->bi_status);
+ }
+ 
+ /*
+-- 
+2.9.4
+

@@ -1,13 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:36216 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751369AbdLASE5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 13:04:57 -0500
-Received: by mail-io0-f169.google.com with SMTP id 81so12153748iof.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Dec 2017 10:04:57 -0800 (PST)
+Received: from syrinx.knorrie.org ([82.94.188.77]:45712 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751163AbdLASYJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 13:24:09 -0500
 Subject: Re: btrfs-transacti hammering the system
-To: Andrei Borzenkov <arvidjaar@gmail.com>,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
         Matt McKinnon <matt@techsquare.com>, linux-btrfs@vger.kernel.org
 References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
  <9703c200-28af-f26d-b3b2-6982fb289ac8@mendix.com>
@@ -15,42 +12,35 @@ References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
  <b52265f9-2703-7f25-b1b9-6e84bc7db62e@mendix.com>
  <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
  <5ecddad2-bb6a-2991-c8d0-be97a4541b0d@mendix.com>
- <09218217-6c17-80df-380a-6c20366c70f3@gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <dc6eb5d9-f514-3f49-7ab6-64ab1cf30462@gmail.com>
-Date: Fri, 1 Dec 2017 13:04:52 -0500
+ <17ead8e4-106e-f568-e996-ab472814a749@techsquare.com>
+ <62d9e40d-3a73-303e-51d5-1b146230fa0d@applied-asynchrony.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <b7294c64-280e-7415-6ae9-7673a37f7370@mendix.com>
+Date: Fri, 1 Dec 2017 19:24:07 +0100
 MIME-Version: 1.0
-In-Reply-To: <09218217-6c17-80df-380a-6c20366c70f3@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <62d9e40d-3a73-303e-51d5-1b146230fa0d@applied-asynchrony.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-12-01 12:13, Andrei Borzenkov wrote:
-> 01.12.2017 20:06, Hans van Kranenburg пишет:
->>
->> Additional tips (forgot to ask for your /proc/mounts before):
->> * Use the noatime mount option, so that only accessing files does not
->> lead to changes in metadata,
+On 12/01/2017 06:57 PM, Holger Hoffstätte wrote:
+> On 12/01/17 18:34, Matt McKinnon wrote:
+>> Thanks, I'll give space_cache=v2 a shot.
 > 
-> Is not 'lazytime" default today? It gives you correct atime + no extra
-> metadata update cause by update of atime only.
-Unless things have changed since the last time this came up, BTRFS does 
-not support the 'lazytime' mount option (but it doesn't complain about 
-it either).
+> Yes, very much recommended.
+> 
+>> My mount options are: rw,relatime,space_cache,autodefrag,subvolid=5,subvol=/
+> 
+> Turn autodefrag off and use noatime instead of relatime.
+> 
+> Your filesystem also seems very full,
 
-Also, lazytime is independent from noatime, and using both can have 
-benefits (lazytime will still have to write out the inode for every file 
-read on the system every 24 hours, but with noatime it only has to write 
-out the inode for files that have changed).
+We don't know. btrfs fi df only displays allocated space. And that being
+full is good, it means not too much free space fragments everywhere.
 
-On top of all that though, you generally shouldn't be trusting atime 
-because:
-1. Many people run with noatime (or patch their kernels to default to 
-noatime instead of relatime), so you can't be certain if the atime is 
-accurate at all.
-2. It has somewhat non-intuitive semantics when dealing with directories.
-3. Even without noatime thrown in, you only get 1 day resolution by 
-default (as per the operation of 'relatime').
-4. Essentially nothing uses it other than find (which only has one day 
-resolution as it's typically used) and older versions of mutt (which use 
-it because of lazy programming), which is why issue 1 and 3 are the case.
+> that's bad with every filesystem but
+> *especially* with btrfs because the allocator has to work really hard to find
+> free space for COWing. Really consider deleting stuff or adding more space.
+
+-- 
+Hans van Kranenburg

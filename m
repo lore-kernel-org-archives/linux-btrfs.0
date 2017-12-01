@@ -1,57 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aquinas.techsquare.com ([75.125.237.226]:38114 "EHLO
-        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751208AbdLATHt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 14:07:49 -0500
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        linux-btrfs@vger.kernel.org
-References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
- <9703c200-28af-f26d-b3b2-6982fb289ac8@mendix.com>
- <1d11e03c-7d02-3f66-8b97-4c1b857566fa@techsquare.com>
- <b52265f9-2703-7f25-b1b9-6e84bc7db62e@mendix.com>
- <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
- <5ecddad2-bb6a-2991-c8d0-be97a4541b0d@mendix.com>
- <17ead8e4-106e-f568-e996-ab472814a749@techsquare.com>
- <62d9e40d-3a73-303e-51d5-1b146230fa0d@applied-asynchrony.com>
- <b7294c64-280e-7415-6ae9-7673a37f7370@mendix.com>
-From: Matt McKinnon <matt@techsquare.com>
-Message-ID: <b2b86926-69b9-e44a-62c0-9e3233ed100f@techsquare.com>
-Date: Fri, 1 Dec 2017 14:07:43 -0500
-MIME-Version: 1.0
-In-Reply-To: <b7294c64-280e-7415-6ae9-7673a37f7370@mendix.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Subject: Re: btrfs-transacti hammering the system
+Received: from [195.159.176.226] ([195.159.176.226]:54049 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1750965AbdLAUhz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 15:37:55 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eKs49-0006Kl-S1
+        for linux-btrfs@vger.kernel.org; Fri, 01 Dec 2017 21:37:45 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs-progs - failed btrfs replace on RAID1 seems to have left
+ things in a wrong state
+Date: Fri, 1 Dec 2017 20:37:38 +0000 (UTC)
+Message-ID: <pan$10b1c$c01da1a$3a1f81da$cc066079@cox.net>
+References: <CAKYHq8+crFyGA7UjaTQehOY5BcKnFLXPVMQ=VZqbeV-XhU63Yw@mail.gmail.com>
+        <pan$5abb1$c7dbef76$8f3acd4$8912c489@cox.net>
+        <CAA7pwKOhxP=zLreSXoZfG5TzmiHhfAetVuqXxfz7a=KrkJXoQw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Right.  The file system is 48T, with 17T available, so we're not quite 
-pushing it yet.
+Patrik Lundquist posted on Fri, 01 Dec 2017 10:29:43 +0100 as excerpted:
 
-So far so good on the space_cache=v2 mount.  I'm surprised this isn't on 
-the gotcha page in the wiki; it may end up making a world of difference 
-to the users here
+> On 1 December 2017 at 08:18, Duncan <1i5t5.duncan@cox.net> wrote:
+>>
+>> When udev sees a device it triggers
+>> a btrfs device scan, which lets btrfs know which devices belong to which
+>> individual btrfs.  But once it associates a device with a particular
+>> btrfs, there's nothing to unassociate it -- the only way to do that on
+>> a running kernel is to successfully complete a btrfs device remove or
+>> replacement... and your replace didn't complete due to error.
+>>
+>> Of course the other way to do it is to reboot, fresh kernel, fresh
+>> btrfs state, and it learns again what devices go with which btrfs
+>> when the appearing devices trigger the udev rule that triggers a
+>> btrfs scan.
+> 
+> Or reload the btrfs module.
 
-Thanks again,
-Matt
+Thanks.  Yes.  With a monolithic kernel I tend to forget about that (and
+as I have a btrfs root it wouldn't be possible anyway), but indeed,
+unloading/reloading the btrfs kernel module clears the btrfs device state
+tracking as effectively as a reboot.  Good point! =:^)
 
-On 01/12/17 13:24, Hans van Kranenburg wrote:
-> On 12/01/2017 06:57 PM, Holger Hoffstätte wrote:
->> On 12/01/17 18:34, Matt McKinnon wrote:
->>> Thanks, I'll give space_cache=v2 a shot.
->>
->> Yes, very much recommended.
->>
->>> My mount options are: rw,relatime,space_cache,autodefrag,subvolid=5,subvol=/
->>
->> Turn autodefrag off and use noatime instead of relatime.
->>
->> Your filesystem also seems very full,
-> 
-> We don't know. btrfs fi df only displays allocated space. And that being
-> full is good, it means not too much free space fragments everywhere.
-> 
->> that's bad with every filesystem but
->> *especially* with btrfs because the allocator has to work really hard to find
->> free space for COWing. Really consider deleting stuff or adding more space.
-> 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

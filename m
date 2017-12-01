@@ -1,25 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:33742 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750921AbdLAV1d (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 16:27:33 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eKsqC-0007kI-Dw
-        for linux-btrfs@vger.kernel.org; Fri, 01 Dec 2017 22:27:24 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from frost.carfax.org.uk ([85.119.82.111]:59722 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750921AbdLAVgQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 16:36:16 -0500
+Date: Fri, 1 Dec 2017 21:36:14 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: exclusive subvolume space missing
-Date: Fri, 1 Dec 2017 21:27:14 +0000 (UTC)
-Message-ID: <pan$2b97f$a3dcbb0a$d48d1bdc$1d78ee0a@cox.net>
+Message-ID: <20171201213614.GE29898@carfax.org.uk>
 References: <20171201161555.GA11892@polanet.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="r7U+bLA8boMOj+mD"
+In-Reply-To: <20171201161555.GA11892@polanet.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Pala posted on Fri, 01 Dec 2017 17:15:55 +0100 as excerpted:
 
+--r7U+bLA8boMOj+mD
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Dec 01, 2017 at 05:15:55PM +0100, Tomasz Pala wrote:
 > Hello,
 > 
 > I got a problem with btrfs running out of space (not THE
@@ -46,51 +49,91 @@ Tomasz Pala posted on Fri, 01 Dec 2017 17:15:55 +0100 as excerpted:
 > /dev/sda2        64G   64G   88M 100% /
 > /dev/sda2        64G   64G   57M 100% /
 > /dev/sda2        64G   64G   25M 100% /
-
-Scary.
-
+> 
 > while my rough calculations show, that there should be at least 10 GB of
 > free space. After enabling quotas it is somehow confirmed:
-
-I don't use quotas so won't claim working knowledge or an explanation of
-that side of things, however...
 > 
-> btrfs-progs-4.12 running on Linux 4.9.46.
+> # btrfs qgroup sh --sort=excl / 
+> qgroupid         rfer         excl 
+> --------         ----         ---- 
+> 0/5          16.00KiB     16.00KiB 
+> [30 snapshots with about 100 MiB excl]
+> 0/333        24.53GiB    305.79MiB 
+> 0/298        13.44GiB    312.74MiB 
+> 0/327        23.79GiB    427.13MiB 
+> 0/331        23.93GiB    930.51MiB 
+> 0/260        12.25GiB      3.22GiB 
+> 0/312        19.70GiB      4.56GiB 
+> 0/388        28.75GiB      7.15GiB 
+> 0/291        30.60GiB      9.01GiB <- this is the running one
+> 
+> This is about 30 GB total excl (didn't find a switch to sum this up). I
+> know I can't just add 'excl' to get usage, so tried to pinpoint the
+> exact files that occupy space in 0/388 exclusively (this is the last
+> snapshots taken, all of the snapshots are created from the running fs).
 
-Until quite recently btrfs quotas were too buggy to recommend for use.
-While the known blocker-level bugs are now fixed, scaling and real-world
-performance are still an issue, and AFAIK, the fixes didn't make 4.9 and
-may not be backported as the feature was simply known to be broken beyond
-reliable usability at that point.
+   The thing I'd first go looking for here is some rogue process
+writing lots of data. I've had something like this happen to me
+before, a few times. First, I'd look for large files with "du -ms /* |
+sort -n", then work down into the tree until you find them.
 
-Based on comments in other threads here, I /think/ the critical quota
-fixes hit 4.10, but of course not being an LTS, 4.10 is long out of support.
-I'd suggest either turning off and forgetting about quotas since it doesn't
-appear you actually need them, or upgrading to at least 4.13 and keeping
-current, or the LTS 4.14 if you want to stay on the same kernel series for
-awhile.
+   If that doesn't show up anything unusually large, then lsof to look
+for open but deleted files (orphans) which are still being written to
+by some process.
 
-As for the scaling and performance issues, during normal/generic filesystem
-use things are generally fine; it's various btrfs maintenance commands such
-as balance, snapshot deletion, and btrfs check, that have the scaling
-issues, and they have /some/ scaling issues even without quotas, it's just
-that quotas makes the problem *much* worse.  One workaround for balance
-and snapshot deletion is to temporarily disable quotas while the job is
-running, then reenable (and rescan if necessary, as I don't use the feature
-here I'm not sure whether it is).  That can literally turn a job that was
-looking to take /weeks/ due to the scaling issue, into a job of hours.
-Unfortunately, the sorts of conditions that would trigger running a btrfs
-check don't lend themselves to the same sort of workaround, so not having
-quotas on at all is the only workaround there.
+   This is very likely _not_ to be a btrfs problem, but instead some
+runaway process writing lots of crap very fast. Log files are probably
+the most plausible location, but not the only one.
 
+> Now, the weird part for me is exclusive data count:
+> 
+> # btrfs sub sh ./snapshot-171125
+> [...]
+>         Subvolume ID:           388
+> # btrfs fi du -s ./snapshot-171125 
+>      Total   Exclusive  Set shared  Filename
+>   21.50GiB    63.35MiB    20.77GiB  snapshot-171125
+> 
+> 
+> How is that possible? This doesn't even remotely relate to 7.15 GiB
+> from qgroup.~The same amount differs in total: 28.75-21.50=7.25 GiB.
+> And the same happens with other snapshots, much more exclusive data
+> shown in qgroup than actually found in files. So if not files, where
+> is that space wasted? Metadata?
 
-As to your space being eaten problem, the output of btrfs filesystem usage
-(and perhaps btrfs device usage if it's a multi-device btrfs) could be
-really helpful here, much more so than quota reports if it's a btrfs
-issue, or to help eliminate btrfs as the problem if it's not.
+   Personally, I'd trust qgroups' output about as far as I could spit
+Belgium(*).
+
+   Hugo.
+
+(*) No offence indended to Belgium.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Hugo Mills             | I used to live in hope, but I got evicted.
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
+--r7U+bLA8boMOj+mD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJaIctOAAoJEFheFHXiqx3kgVsP/jQmxJHUQqTyZ5TZ0K+jlimh
+AHvExxsLUXJR2wMuhikyjzlcW+GOpSYdNn8u4Cm8j5iA1P4YtDx0KIaDs/FDSPe8
+keA8A9TJ5ArEGGXiXENWQe3jhYzqQF8X9CH/CNwAAOz4jrYHYZg1gPtM7c0ThE+7
+F1F6r3rkxEl8sP+QAOTmqatz2jD1qxvtH9v7O7L0sonjdM/V0l88z1m5aufc2AA9
+zOG9UegaAygCsQgScPmZ7XLPdOGVEkncQghLpVCrfQcqeyjwJuNFuOkZuqf5473R
+5SM8EtRHOCtI36RowZxWLlXjGuA6SgzYn3rNbuYR6YZsu0Ola1kEwNsaJd4uPscI
+7D+nqlAHU/QRz+mL4ONO6Ur2ch0907Hlw2CYA+bAkqxxV6KOqrF+f7bPcHjJtWiF
+HPE73mbarsM08kMXLP+Yx5HN957Z53ErRpQHYHFN9HSENimocL/xiTnI2bGYiaEc
+G2s218+J6XNardghOIGseTUt9Wh8T0Rzip0cAWvOUDCgPQM1Xxm9kJF55MASIB5M
+WO5HpLf/tbD0d5tNQ+i7tLBXKmqZ6V4f/2+R+GV+K/YQ2mcWea3RpSn43edkqTPj
+r71IwRQYuijWFjG3hiOZleHdjW/UubzmRZGgSf5K5u1OKA3nFnWd1kuKmzzGw26y
+Xn85wVIq/z15q+fEEo4F
+=YBtj
+-----END PGP SIGNATURE-----
+
+--r7U+bLA8boMOj+mD--

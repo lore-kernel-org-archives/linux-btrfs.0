@@ -1,68 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aquinas.techsquare.com ([75.125.237.226]:41194 "EHLO
-        techsquare.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751031AbdLAVvE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 16:51:04 -0500
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
- <9703c200-28af-f26d-b3b2-6982fb289ac8@mendix.com>
- <1d11e03c-7d02-3f66-8b97-4c1b857566fa@techsquare.com>
- <b52265f9-2703-7f25-b1b9-6e84bc7db62e@mendix.com>
- <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
- <5ecddad2-bb6a-2991-c8d0-be97a4541b0d@mendix.com>
- <pan$6609d$15863533$48f08c08$b3eb21f1@cox.net>
-From: Matt McKinnon <matt@techsquare.com>
-Message-ID: <113cba02-2557-d1e8-193f-fab4437f1199@techsquare.com>
-Date: Fri, 1 Dec 2017 16:50:59 -0500
+Received: from userp1040.oracle.com ([156.151.31.81]:48113 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751468AbdLAXXE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 18:23:04 -0500
+Subject: Re: [PATCH 5/5] btrfs: Greatly simplify btrfs_read_dev_super
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+ <1512119984-12708-6-git-send-email-nborisov@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
+Date: Sat, 2 Dec 2017 07:23:19 +0800
 MIME-Version: 1.0
-In-Reply-To: <pan$6609d$15863533$48f08c08$b3eb21f1@cox.net>
+In-Reply-To: <1512119984-12708-6-git-send-email-nborisov@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
-Subject: Re: btrfs-transacti hammering the system
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Well, it's at zero now...
-
-# btrfs fi df /export/
-Data, single: total=30.45TiB, used=30.25TiB
-System, DUP: total=32.00MiB, used=3.62MiB
-Metadata, DUP: total=66.50GiB, used=65.16GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
-On 01/12/17 16:47, Duncan wrote:
-> Hans van Kranenburg posted on Fri, 01 Dec 2017 18:06:23 +0100 as
-> excerpted:
+On 12/01/2017 05:19 PM, Nikolay Borisov wrote:
+> Currently this function executes the inner loop at most 1 due to the i = 0;
+> i < 1 condition. Furthermore, the btrfs_super_generation(super) > transid code
+> in the if condition is never executed due to latest always set to NULL hence the
+> first part of the condition always triggering. The gist of btrfs_read_dev_super
+> is really to read the first superblock.
 > 
->> On 12/01/2017 05:31 PM, Matt McKinnon wrote:
->>> Sorry, I missed your in-line reply:
->>>
->>>
->>>> 2) How big is this filesystem? What does your `btrfs fi df
->>>> /mountpoint` say?
->>>>
->>>
->>> # btrfs fi df /export/
->>> Data, single: total=30.45TiB, used=30.25TiB
->>> System, DUP: total=32.00MiB, used=3.62MiB
->>> Metadata, DUP: total=66.50GiB, used=65.08GiB
->>> GlobalReserve, single: total=512.00MiB, used=53.69MiB
->>
->> Multi-TiB filesystem, check. total/used ratio looks healthy.
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>   fs/btrfs/disk-io.c | 27 ++++-----------------------
+>   1 file changed, 4 insertions(+), 23 deletions(-)
 > 
-> Not so healthy, from here.  Data/metadata are healthy, yes,
-> but...
-> 
-> Any usage at all of global reserve is a red flag indicating that
-> something in the filesystem thinks, or thought when it resorted
-> to global reserve, that space is running out.
-> 
-> Global reserve usage doesn't really hint what the problem is,
-> but it's definitely a red flag that there /is/ a problem, and
-> it's easily overlooked, as it apparently was here.
-> 
-> It's likely indication of a bug, possibly one of the ones fixed
-> right around 4.12/4.13.  I'll let the devs and better experts take
-> it from there, but I'd certainly be worried until global reserve
-> drops to zero usage.
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 82c96607fc46..6d5f632fd1e7 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3170,37 +3170,18 @@ int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
+>   struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+>   {
+>   	struct buffer_head *bh;
+> -	struct buffer_head *latest = NULL;
+> -	struct btrfs_super_block *super;
+> -	int i;
+> -	u64 transid = 0;
+> -	int ret = -EINVAL;
+> +	int ret;
+>   
+>   	/* we would like to check all the supers, but that would make
+>   	 * a btrfs mount succeed after a mkfs from a different FS.
+>   	 * So, we need to add a special mount option to scan for
+>   	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+>   	 */
+
+  We need below loop to support the above comment at some point,
+  instead of removing I would prefer to fix as per above comments.
+
+Thanks, Anand
+
+
+> -	for (i = 0; i < 1; i++) {
+> -		ret = btrfs_read_dev_one_super(bdev, i, &bh);
+> -		if (ret)
+> -			continue;
+> -
+> -		super = (struct btrfs_super_block *)bh->b_data;
+> -
+> -		if (!latest || btrfs_super_generation(super) > transid) {
+> -			brelse(latest);
+> -			latest = bh;
+> -			transid = btrfs_super_generation(super);
+> -		} else {
+> -			brelse(bh);
+> -		}
+> -	}
+> -
+> -	if (!latest)
+> +	ret = btrfs_read_dev_one_super(bdev, 0, &bh);
+> +	if (ret)
+>   		return ERR_PTR(ret);
+>   
+> -	return latest;
+> +	return bh;
+>   }
+>   
+>   /*
 > 

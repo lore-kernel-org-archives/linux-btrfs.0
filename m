@@ -1,86 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:42138 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750975AbdLAQci (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Dec 2017 11:32:38 -0500
-Date: Fri, 1 Dec 2017 17:15:55 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: exclusive subvolume space missing
-Message-ID: <20171201161555.GA11892@polanet.pl>
+Received: from syrinx.knorrie.org ([82.94.188.77]:44260 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751157AbdLARGZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Dec 2017 12:06:25 -0500
+Subject: Re: btrfs-transacti hammering the system
+To: Matt McKinnon <matt@techsquare.com>, linux-btrfs@vger.kernel.org
+References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
+ <9703c200-28af-f26d-b3b2-6982fb289ac8@mendix.com>
+ <1d11e03c-7d02-3f66-8b97-4c1b857566fa@techsquare.com>
+ <b52265f9-2703-7f25-b1b9-6e84bc7db62e@mendix.com>
+ <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <5ecddad2-bb6a-2991-c8d0-be97a4541b0d@mendix.com>
+Date: Fri, 1 Dec 2017 18:06:23 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On 12/01/2017 05:31 PM, Matt McKinnon wrote:
+> Sorry, I missed your in-line reply:
+> 
+> 
+>> 1) The one right above, btrfs_write_out_cache, is the write-out of the
+>> free space cache v1. Do you see this for multiple seconds going on, and
+>> does it match the time when it's writing X MB/s to disk?
+>>
+> 
+> It seems to only last until the next watch update.
+> 
+> [<ffffffffaa0a8406>] io_schedule+0x16/0x40
+> [<ffffffffaa3b3cde>] get_request+0x23e/0x720
+> [<ffffffffaa3b6861>] blk_queue_bio+0xc1/0x3a0
+> [<ffffffffaa3b4a88>] generic_make_request+0xf8/0x2a0
+> [<ffffffffaa3b4ca5>] submit_bio+0x75/0x150
+> [<ffffffffc087fac5>] btrfs_map_bio+0xe5/0x2f0 [btrfs]
+> [<ffffffffc084834c>] btree_submit_bio_hook+0x8c/0xe0 [btrfs]
+> [<ffffffffc086f1e3>] submit_one_bio+0x63/0xa0 [btrfs]
+> [<ffffffffc086f39b>] flush_epd_write_bio+0x3b/0x50 [btrfs]
+> [<ffffffffc086f3be>] flush_write_bio+0xe/0x10 [btrfs]
+> [<ffffffffc08777a9>] btree_write_cache_pages+0x379/0x450 [btrfs]
+> [<ffffffffc08478ed>] btree_writepages+0x5d/0x70 [btrfs]
+> [<ffffffffaa1a326c>] do_writepages+0x1c/0x70
+> [<ffffffffaa196f2a>] __filemap_fdatawrite_range+0xaa/0xe0
+> [<ffffffffaa197023>] filemap_fdatawrite_range+0x13/0x20
+> [<ffffffffc084fba9>] btrfs_write_marked_extents+0xe9/0x110 [btrfs]
+> [<ffffffffc084fc4d>] btrfs_write_and_wait_transaction.isra.22+0x3d/0x80
+> [btrfs]
+> [<ffffffffc0851645>] btrfs_commit_transaction+0x665/0x900 [btrfs]
+> [<ffffffffc084baca>] transaction_kthread+0x18a/0x1c0 [btrfs]
+> [<ffffffffaa09b839>] kthread+0x109/0x140
+> [<ffffffffaa8459f5>] ret_from_fork+0x25/0x30
+> 
+> The last three lines will stick around for a while.  Is switching to
+> space cache v2 something that everyone should be doing?  Something that
+> would be a good test at least?
 
-I got a problem with btrfs running out of space (not THE
-Internet-wide, well known issues with interpretation).
+Yes. Read on.
 
-The problem is: something eats the space while not running anything that
-justifies this. There were 18 GB free space available, suddenly it
-dropped to 8 GB and then to 63 MB during one night. I recovered 1 GB
-with rebalance -dusage=5 -musage=5 (or sth about), but it is being eaten
-right now, just as I'm writing this e-mail:
+>> 2) How big is this filesystem? What does your `btrfs fi df
+>> /mountpoint` say?
+>>
+> 
+> # btrfs fi df /export/
+> Data, single: total=30.45TiB, used=30.25TiB
+> System, DUP: total=32.00MiB, used=3.62MiB
+> Metadata, DUP: total=66.50GiB, used=65.08GiB
+> GlobalReserve, single: total=512.00MiB, used=53.69MiB
 
-/dev/sda2        64G   63G  452M 100% /
-/dev/sda2        64G   63G  365M 100% /
-/dev/sda2        64G   63G  316M 100% /
-/dev/sda2        64G   63G  287M 100% /
-/dev/sda2        64G   63G  268M 100% /
-/dev/sda2        64G   63G  239M 100% /
-/dev/sda2        64G   63G  230M 100% /
-/dev/sda2        64G   63G  182M 100% /
-/dev/sda2        64G   63G  163M 100% /
-/dev/sda2        64G   64G  153M 100% /
-/dev/sda2        64G   64G  143M 100% /
-/dev/sda2        64G   64G   96M 100% /
-/dev/sda2        64G   64G   88M 100% /
-/dev/sda2        64G   64G   57M 100% /
-/dev/sda2        64G   64G   25M 100% /
+Multi-TiB filesystem, check. total/used ratio looks healthy.
 
-while my rough calculations show, that there should be at least 10 GB of
-free space. After enabling quotas it is somehow confirmed:
+>> 3) What kind of workload are you running? E.g. how can you describe it
+>> within a range from "big files which just sit there" to "small writes
+>> and deletes all over the place all the time"?
+> 
+> It's a pretty light workload most of the time.  It's a file system that
+> exports two NFS shares to a small lab group.  I believe it is more small
+> reads all over a large file (MRI imaging) rather than small writes.
 
-# btrfs qgroup sh --sort=excl / 
-qgroupid         rfer         excl 
---------         ----         ---- 
-0/5          16.00KiB     16.00KiB 
-[30 snapshots with about 100 MiB excl]
-0/333        24.53GiB    305.79MiB 
-0/298        13.44GiB    312.74MiB 
-0/327        23.79GiB    427.13MiB 
-0/331        23.93GiB    930.51MiB 
-0/260        12.25GiB      3.22GiB 
-0/312        19.70GiB      4.56GiB 
-0/388        28.75GiB      7.15GiB 
-0/291        30.60GiB      9.01GiB <- this is the running one
+Ok.
 
-This is about 30 GB total excl (didn't find a switch to sum this up). I
-know I can't just add 'excl' to get usage, so tried to pinpoint the
-exact files that occupy space in 0/388 exclusively (this is the last
-snapshots taken, all of the snapshots are created from the running fs).
+>> 4) What kernel version is this? `uname -a` output?
+> 
+> # uname -a
+> Linux machine_name 4.12.8-custom #1 SMP Tue Aug 22 10:15:01 EDT 2017
+> x86_64 x86_64 x86_64 GNU/Linux
+> 
 
+Yes, I'd recommend switching to space_cache v2, which stores the free
+space information in a tree instead of separate blobs, and does not
+block the transaction while writing out all info of all touched parts of
+the filesystem again.
 
-Now, the weird part for me is exclusive data count:
+Here's of course the famous presentation with all kinds of info why:
 
-# btrfs sub sh ./snapshot-171125
-[...]
-        Subvolume ID:           388
-# btrfs fi du -s ./snapshot-171125 
-     Total   Exclusive  Set shared  Filename
-  21.50GiB    63.35MiB    20.77GiB  snapshot-171125
+http://events.linuxfoundation.org/sites/events/files/slides/vault2016_0.pdf
 
+How:
 
-How is that possible? This doesn't even remotely relate to 7.15 GiB
-from qgroup.~The same amount differs in total: 28.75-21.50=7.25 GiB.
-And the same happens with other snapshots, much more exclusive data
-shown in qgroup than actually found in files. So if not files, where
-is that space wasted? Metadata?
+* umount the filesystem
+* btrfsck --clear-space-cache v1 /block/device
+* do a rw mount with the space_cache=v2 option added (only needed
+explicitly once)
 
-btrfs-progs-4.12 running on Linux 4.9.46.
+During that mount, it will generate the free space tree by reading the
+extent tree and writing the inverse of it. This will take some time,
+depending on how fast your storage can do random reads with a cold disk
+cache.
 
-best regards,
+For x86_64, using the free space cache v2 is fine since linux 4.5. Up to
+4.9, there was a bug for big-endian systems. So, with your kernel it's
+absolutely fine.
+
+Why isn't this the default yet? It's because btrfs-progs don't have
+support to update the free space tree when doing offline modifications
+(like check --repair or btrfstune, which you hopefully don't need often
+anyway). So, until that's fully added, you need to do an `btrfsck
+--clear-space-cache v2`, then do the offline r/w action and then
+generate the tree again on next mount.
+
+Additional tips (forgot to ask for your /proc/mounts before):
+* Use the noatime mount option, so that only accessing files does not
+lead to changes in metadata, which lead to writes, which lead to cowing
+and writes in a new place, which lead to updates of the free space
+administration etc...
+
 -- 
-Tomasz Pala <gotar@pld-linux.org>
+Hans van Kranenburg

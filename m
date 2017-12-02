@@ -1,51 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:47718 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751911AbdLBRSV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 2 Dec 2017 12:18:21 -0500
-Date: Sat, 2 Dec 2017 18:18:19 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: exclusive subvolume space missing
-Message-ID: <20171202171819.GA4629@polanet.pl>
-References: <20171201161555.GA11892@polanet.pl>
- <20171201213614.GE29898@carfax.org.uk>
- <20171202005338.GA20205@polanet.pl>
- <20171202162812.GA5324@polanet.pl>
+Received: from mail-lf0-f53.google.com ([209.85.215.53]:44487 "EHLO
+        mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751908AbdLBTmQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Dec 2017 14:42:16 -0500
+Received: by mail-lf0-f53.google.com with SMTP id x204so15083388lfa.11
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Dec 2017 11:42:15 -0800 (PST)
+Subject: Re: btrfs-transacti hammering the system
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Matt McKinnon <matt@techsquare.com>, linux-btrfs@vger.kernel.org
+References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
+ <9703c200-28af-f26d-b3b2-6982fb289ac8@mendix.com>
+ <1d11e03c-7d02-3f66-8b97-4c1b857566fa@techsquare.com>
+ <b52265f9-2703-7f25-b1b9-6e84bc7db62e@mendix.com>
+ <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
+ <5ecddad2-bb6a-2991-c8d0-be97a4541b0d@mendix.com>
+ <09218217-6c17-80df-380a-6c20366c70f3@gmail.com>
+ <dc6eb5d9-f514-3f49-7ab6-64ab1cf30462@gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <a51ebd49-99f4-c507-e21b-5b1a4a3dc4f5@gmail.com>
+Date: Sat, 2 Dec 2017 22:42:12 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <20171202162812.GA5324@polanet.pl>
+In-Reply-To: <dc6eb5d9-f514-3f49-7ab6-64ab1cf30462@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 02, 2017 at 17:28:12 +0100, Tomasz Pala wrote:
+01.12.2017 21:04, Austin S. Hemmelgarn пишет:
+> On 2017-12-01 12:13, Andrei Borzenkov wrote:
+>> 01.12.2017 20:06, Hans van Kranenburg пишет:
+>>>
+>>> Additional tips (forgot to ask for your /proc/mounts before):
+>>> * Use the noatime mount option, so that only accessing files does not
+>>> lead to changes in metadata,
+>>
+>> Is not 'lazytime" default today?
 
->> Suppose you start with a 100 MiB file (I'm adjusting the sizes down from
-> [...]
->> Now make various small changes to the file, say under 16 KiB each.  These
->> will each be COWed elsewhere as one might expect. by default 16 KiB at
->> a time I believe (might be 4 KiB, as it was back when the default leaf
-> 
-> I got ~500 small files (100-500 kB) updated partially in regular
-> intervals:
-> 
-> # du -Lc **/*.rrd | tail -n1
-> 105M    total
-> 
->> But here's the kicker.  Even without a snapshot locking that original 100
->> MiB extent in place, if even one of the original 16 KiB blocks isn't
->> rewritten, that entire 100 MiB extent will remain locked in place, as the
->> original 16 KiB blocks that have been changed and thus COWed elsewhere
->> aren't freed one at a time, the full 100 MiB extent only gets freed, all
->> at once, once no references to it remain, which means once that last
->> block of the extent gets rewritten.
+Sorry, it was relatime that is today's default, I mixed them up.
 
-OTOH - should this happen with nodatacow files? As I mentioned before,
-these files are chattred +C (however this was not their initial state
-due to https://bugzilla.kernel.org/show_bug.cgi?id=189671 ).
-Am I wrong thinking, that in such case they should occupy twice their
-size maximum? Or maybe there is some tool that could show me the real
-space wasted by file, including extents count etc?
+> It gives you correct atime + no extra
+>> metadata update cause by update of atime only.
+> Unless things have changed since the last time this came up, BTRFS does
+> not support the 'lazytime' mount option (but it doesn't complain about
+> it either).
+> 
 
--- 
-Tomasz Pala <gotar@pld-linux.org>
+Actually since v2.27 "lazytime" is interpreted by mount command itself
+and converted into MS_LAZYTIME flag, so should be available for each FS.
+
+bor@10:~> sudo mkfs -t ext4 /dev/sdb1
+mke2fs 1.43.7 (16-Oct-2017)
+...
+
+bor@10:~> sudo mount -t ext4 -o lazytime /dev/sdb1 /mnt
+bor@10:~> tail /proc/self/mountinfo
+...
+224 66 8:17 / /mnt rw,relatime shared:152 - ext4 /dev/sdb1
+rw,lazytime,data=ordered
+bor@10:~> sudo umount /dev/sdb1
+bor@10:~> sudo mkfs -t btrfs -f /dev/sdb1
+btrfs-progs v4.13.3
+...
+
+bor@10:~> sudo mount -t btrfs -o lazytime /dev/sdb1 /mnt
+bor@10:~> tail /proc/self/mountinfo
+...
+224 66 0:88 / /mnt rw,relatime shared:152 - btrfs /dev/sdb1
+rw,lazytime,space_cache,subvolid=5,subvol=/
+bor@10:~>
+
+
+> Also, lazytime is independent from noatime, and using both can have
+> benefits (lazytime will still have to write out the inode for every file
+> read on the system every 24 hours, but with noatime it only has to write
+> out the inode for files that have changed).
+> 
+
+OK, that's true.

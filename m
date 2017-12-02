@@ -1,177 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:52255 "EHLO mout.gmx.net"
+Received: from pepin.polanet.pl ([193.34.52.2]:55325 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751169AbdLBCRf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Dec 2017 21:17:35 -0500
+        id S1751119AbdLBCVz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Dec 2017 21:21:55 -0500
+Date: Sat, 2 Dec 2017 03:21:53 +0100
+From: Tomasz Pala <gotar@polanet.pl>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: exclusive subvolume space missing
-To: Tomasz Pala <gotar@polanet.pl>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Message-ID: <20171202022153.GA7727@polanet.pl>
 References: <20171201161555.GA11892@polanet.pl>
- <20171201213614.GE29898@carfax.org.uk> <20171202005338.GA20205@polanet.pl>
- <2a14e451-c3fb-1e58-41dd-e98aeb5d24ec@gmx.com>
- <20171202014357.GC20205@polanet.pl>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f8b623b6-4ca7-23e9-ac7d-ea9ea2d92620@gmx.com>
-Date: Sat, 2 Dec 2017 10:17:27 +0800
+ <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
+ <20171202012324.GB20205@polanet.pl>
+ <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20171202014357.GC20205@polanet.pl>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK"
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK
-Content-Type: multipart/mixed; boundary="jix9v5V2c5prM0jced7MPw1IjjDFmkCrC";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Tomasz Pala <gotar@polanet.pl>
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Message-ID: <f8b623b6-4ca7-23e9-ac7d-ea9ea2d92620@gmx.com>
-Subject: Re: exclusive subvolume space missing
-References: <20171201161555.GA11892@polanet.pl>
- <20171201213614.GE29898@carfax.org.uk> <20171202005338.GA20205@polanet.pl>
- <2a14e451-c3fb-1e58-41dd-e98aeb5d24ec@gmx.com>
- <20171202014357.GC20205@polanet.pl>
-In-Reply-To: <20171202014357.GC20205@polanet.pl>
+On Sat, Dec 02, 2017 at 09:47:19 +0800, Qu Wenruo wrote:
 
---jix9v5V2c5prM0jced7MPw1IjjDFmkCrC
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+>> Actually I should rephrase the problem:
+>> 
+>> "snapshot has taken 8 GB of space despite nothing has altered source subvolume"
+
+Actually, after:
+
+# btrfs balance start -v -dconvert=raid1 /
+ctrl-c on block group 35G/113G
+# btrfs balance start -v -dconvert=raid1,soft /
+# btrfs balance start -v -dusage=55 /
+Done, had to relocate 1 out of 56 chunks
+# btrfs balance start -v -musage=55 /
+Done, had to relocate 2 out of 55 chunks
+
+and waiting a few minutes after ...the 8 GB I've lost yesterday is back:
+
+#  btrfs fi sh /
+Label: none  uuid: 17a3de25-6e26-4b0b-9665-ac267f6f6c4a
+        Total devices 2 FS bytes used 44.10GiB
+        devid    1 size 64.00GiB used 54.00GiB path /dev/sda2
+        devid    2 size 64.00GiB used 54.00GiB path /dev/sdb2
+
+#  btrfs fi usage /
+Overall:
+    Device size:                 128.00GiB
+    Device allocated:            108.00GiB
+    Device unallocated:           20.00GiB
+    Device missing:                  0.00B
+    Used:                         88.19GiB
+    Free (estimated):             18.75GiB      (min: 18.75GiB)
+    Data ratio:                       2.00
+    Metadata ratio:                   2.00
+    Global reserve:              131.14MiB      (used: 0.00B)
+
+Data,RAID1: Size:51.97GiB, Used:43.22GiB
+   /dev/sda2      51.97GiB
+   /dev/sdb2      51.97GiB
+
+Metadata,RAID1: Size:2.00GiB, Used:895.69MiB
+   /dev/sda2       2.00GiB
+   /dev/sdb2       2.00GiB
+
+System,RAID1: Size:32.00MiB, Used:16.00KiB
+   /dev/sda2      32.00MiB
+   /dev/sdb2      32.00MiB
+
+Unallocated:
+   /dev/sda2      10.00GiB
+   /dev/sdb2      10.00GiB
+
+#  btrfs dev usage /
+/dev/sda2, ID: 1
+   Device size:            64.00GiB
+   Device slack:              0.00B
+   Data,RAID1:             51.97GiB
+   Metadata,RAID1:          2.00GiB
+   System,RAID1:           32.00MiB
+   Unallocated:            10.00GiB
+
+/dev/sdb2, ID: 2
+   Device size:            64.00GiB
+   Device slack:              0.00B
+   Data,RAID1:             51.97GiB
+   Metadata,RAID1:          2.00GiB
+   System,RAID1:           32.00MiB
+   Unallocated:            10.00GiB
+
+#  btrfs fi df /    
+Data, RAID1: total=51.97GiB, used=43.22GiB
+System, RAID1: total=32.00MiB, used=16.00KiB
+Metadata, RAID1: total=2.00GiB, used=895.69MiB
+GlobalReserve, single: total=131.14MiB, used=0.00B
+
+# df
+/dev/sda2        64G   45G   19G  71% /
+
+However the difference is on active root fs:
+
+-0/291        24.29GiB      9.77GiB
++0/291        15.99GiB     76.00MiB
+
+Still, 45G used, while there is (if I counted this correctly) 25G of data...
+
+> Then please provide correct qgroup numbers.
+> 
+> The correct number should be get by:
+> # btrfs quota enable <mnt>
+> # btrfs quota rescan -w <mnt>
+> # btrfs qgroup show -prce --sync <mnt>
+
+OK, just added the --sort=excl:
+
+qgroupid         rfer         excl     max_rfer     max_excl parent  child 
+--------         ----         ----     --------     -------- ------  ----- 
+0/5          16.00KiB     16.00KiB         none         none ---     ---  
+0/361        22.57GiB      7.00MiB         none         none ---     ---  
+0/358        22.54GiB      7.50MiB         none         none ---     ---  
+0/343        22.36GiB      7.84MiB         none         none ---     ---  
+0/345        22.49GiB      8.05MiB         none         none ---     ---  
+0/357        22.50GiB      9.27MiB         none         none ---     ---  
+0/360        22.57GiB     10.27MiB         none         none ---     ---  
+0/344        22.48GiB     11.09MiB         none         none ---     ---  
+0/359        22.55GiB     12.57MiB         none         none ---     ---  
+0/362        22.59GiB     22.96MiB         none         none ---     ---  
+0/302        12.87GiB     31.23MiB         none         none ---     ---  
+0/428        15.96GiB     38.68MiB         none         none ---     ---  
+0/294        11.09GiB     47.86MiB         none         none ---     ---  
+0/336        21.80GiB     49.59MiB         none         none ---     ---  
+0/300        12.56GiB     51.43MiB         none         none ---     ---  
+0/342        22.31GiB     52.93MiB         none         none ---     ---  
+0/333        21.71GiB     54.54MiB         none         none ---     ---  
+0/363        22.63GiB     58.83MiB         none         none ---     ---  
+0/370        23.27GiB     59.46MiB         none         none ---     ---  
+0/305        13.01GiB     61.47MiB         none         none ---     ---  
+0/331        21.61GiB     61.49MiB         none         none ---     ---  
+0/334        21.78GiB     62.95MiB         none         none ---     ---  
+0/306        13.04GiB     64.11MiB         none         none ---     ---  
+0/304        12.96GiB     64.90MiB         none         none ---     ---  
+0/303        12.94GiB     68.39MiB         none         none ---     ---  
+0/367        23.20GiB     68.52MiB         none         none ---     ---  
+0/366        23.22GiB     69.79MiB         none         none ---     ---  
+0/364        22.63GiB     72.03MiB         none         none ---     ---  
+0/285        10.78GiB     75.95MiB         none         none ---     ---  
+0/291        15.99GiB     76.24MiB         none         none ---     ---  <- this one (default rootfs) got fixed
+0/323        21.35GiB     95.85MiB         none         none ---     ---  
+0/369        23.26GiB     96.12MiB         none         none ---     ---  
+0/324        21.36GiB    104.46MiB         none         none ---     ---  
+0/327        21.36GiB    115.42MiB         none         none ---     ---  
+0/368        23.27GiB    118.25MiB         none         none ---     ---  
+0/295        11.20GiB    148.59MiB         none         none ---     ---  
+0/298        12.38GiB    283.41MiB         none         none ---     ---  
+0/260        12.25GiB      3.22GiB         none         none ---     ---  <- 170712, initial snapshot, OK
+0/312        17.54GiB      4.56GiB         none         none ---     ---  <- 170811, definitely less excl
+0/388        21.69GiB      7.16GiB         none         none ---     ---  <- this one has <100M exclusive
 
 
+So the one block of data was released, but there are probably two more
+stuck here. If the 4.5G and 7G were freed I would have 45-4.5-7=33G used,
+which would agree with the 25G of data I've counted manually.
 
-On 2017=E5=B9=B412=E6=9C=8802=E6=97=A5 09:43, Tomasz Pala wrote:
-> On Sat, Dec 02, 2017 at 09:05:50 +0800, Qu Wenruo wrote:
->=20
->>> qgroupid         rfer         excl=20
->>> --------         ----         ----=20
->>> 0/260        12.25GiB      3.22GiB	from 170712 - first snapshot
->>> 0/312        17.54GiB      4.56GiB	from 170811
->>> 0/366        25.59GiB      2.44GiB	from 171028
->>> 0/370        23.27GiB     59.46MiB 	from 111118 - prev snapshot
->>> 0/388        21.69GiB      7.16GiB	from 171125 - last snapshot
->>> 0/291        24.29GiB      9.77GiB	default subvolume
->>
->> You may need to manually sync the filesystem (trigger a transaction
->> commitment) to update qgroup accounting.
->=20
-> The data I've pasted were just calculated.
->=20
->>> # btrfs quota enable /
->>> # btrfs qgroup show /
->>> WARNING: quota disabled, qgroup data may be out of date
->>> [...]
->>> # btrfs quota enable /		- for the second time!
->>> # btrfs qgroup show /
->>> WARNING: qgroup data inconsistent, rescan recommended
->>
->> Please wait the rescan, or any number is not correct.
->=20
-> Here I was pointing that first "quota enable" resulted in "quota
-> disabled" warning until I've enabled it once again.
->=20
->> It's highly recommended to read btrfs-quota(8) and btrfs-qgroup(8) to
->> ensure you understand all the limitation.
->=20
-> I probably won't understand them all, but this is not an issue of my
-> concern as I don't use it. There is simply no other way I am aware that=
+Any ideas how to look inside these two snapshots?
 
-> could show me per-subvolume stats. Well, straightforward way, as the
-> hard way I'm using (btrfs send) confirms the problem.
+> Rescan and --sync are important to get the correct number.
+> (while rescan can take a long long time to finish)
 
-Unfortunately, send doesn't count everything.
+#  time btrfs quota rescan -w /
+quota rescan started
+btrfs quota rescan -w /  0.00s user 0.00s system 0% cpu 30.798 total
 
-The most common thing is, send doesn't count extent booking space.
-Try the following command:
+> And further more, please ensure that all deleted files are really deleted.
+> Btrfs delay file and subvolume deletion, so you may need to sync several
+> times or use "btrfs subv sync" to ensure deleted files are deleted.
 
-# fallocate -l 1G <tmp_file>
-# mkfs.btrfs -f <tmp_file>
-# mount <tmp_file> <mnt>
-# btrfs subv create <mnt>/subv1
-# xfs_io -f -c "pwrite 0 128M" -c "sync" <mnt>/subv1/file1
-# xfs_io -f "fpunch 0 127M" -c "sync" <mnt>/subv1/file1
-# btrfs subv snapshot -r <mnt>/subv1 <mnt>/snapshot
-# btrfs send <mnt>/snapshot
+Yes, I was aware about that. However I've never had to wait after rebalance...
 
-You will only get the 1M data, while it still takes 128M space on-disk.
-
-Btrfs extent book will only free the whole extent if and only if there
-is no inode referring *ANY* part of the extent.
-
-Even only 1M of a 128M file extent is used, it will still takes 128M
-space on-disk.
-
-And that's what send can't tell you.
-And that's also what qgroup can tell you.
-
-That's also why I need *CORRECT* qgroup numbers to further investigate
-the problem.
-
->=20
-> You could simply remove all the quota results I've posted and there wil=
-l
-> be the underlaying problem, that the 25 GB of data I got occupies 52 GB=
-=2E
-
-If you only want to know the answer why your "25G" data occupies 52G on
-disk, above is one of the possible explanations.
-
-(And I think I should put it into btrfs(5), although I highly doubt if
-user will really read them)
-
-You could try to defrag, but I'm not sure if defrag works well in multi
-subvolumes case.
-
-> At least one recent snapshot, that was taken after some minor (<100 MB)=
- changes
-> from the subvolume, that has undergo some minor changes since then,
-> occupied 8 GB during one night when the entire system was idling.
-
-The only possible method to fully isolate all the disturbing factors is
-to get rid of snapshot.
-
-Build the subvolume from scratch (even no cp --reflink from other
-subvolume), then test what's happening.
-
-Only in that case, you could trust vanilla du (if you don't do any reflin=
-k).
-Although you can always trust qgroups number, such subvolume built from
-scratch will makes exclusive number equals to reference, making
-debugging a little easier.
-
-Thanks,
-Qu
-
->=20
-> This was crosschecked on files metadata (mtimes compared) and 'du'
-> results.
->=20
->=20
-> As a last-resort I've rebalanced the disk (once again), this time with
-> -dconvert=3Draid1 (to get rid of the single residue).
->=20
-
-
---jix9v5V2c5prM0jced7MPw1IjjDFmkCrC--
-
---Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloiDTcXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg0agf+OkOw7Cjxllq2XwHDwUBJZ8uM
-0QpdIFnI42JJAxvD7lm8tvfnWFNYCst5ulwO0cnwxrY4PU/ferMheBhHqOHRpJjc
-rlPHTL9tdVmsxGYorakf5Qxn6Yt2rVx7EQB/Pj/IawsEqAZCDUwmB9BULq9eNAwU
-GOKZRJELSko6dP2reW+hCBoaCmWIBayyGnxb5wtW7mZ+2E+BXSG+wQdBHYb/YZfM
-vuapwQ8yUITgUMrfng1bojZ7qy/YuguM/ehlnp7qYp1pkjFpa82PMcWA7WH8F3NU
-vKGS6ukgNYW+uXYOw8skqQTbO7/uCwX2ssK3DBTDA1GCAHmqXmAxdabokzh5fA==
-=zncK
------END PGP SIGNATURE-----
-
---Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK--
+regards,
+-- 
+Tomasz Pala <gotar@pld-linux.org>

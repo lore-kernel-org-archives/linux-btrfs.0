@@ -1,173 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:51400 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:52255 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751920AbdLBBr0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Dec 2017 20:47:26 -0500
+        id S1751169AbdLBCRf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Dec 2017 21:17:35 -0500
 Subject: Re: exclusive subvolume space missing
 To: Tomasz Pala <gotar@polanet.pl>
-Cc: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 References: <20171201161555.GA11892@polanet.pl>
- <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
- <20171202012324.GB20205@polanet.pl>
+ <20171201213614.GE29898@carfax.org.uk> <20171202005338.GA20205@polanet.pl>
+ <2a14e451-c3fb-1e58-41dd-e98aeb5d24ec@gmx.com>
+ <20171202014357.GC20205@polanet.pl>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
-Date: Sat, 2 Dec 2017 09:47:19 +0800
+Message-ID: <f8b623b6-4ca7-23e9-ac7d-ea9ea2d92620@gmx.com>
+Date: Sat, 2 Dec 2017 10:17:27 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171202012324.GB20205@polanet.pl>
+In-Reply-To: <20171202014357.GC20205@polanet.pl>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="tivmXw60AIpbp9tbunhw4jMUHNRJSd7IJ"
+ boundary="Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tivmXw60AIpbp9tbunhw4jMUHNRJSd7IJ
-Content-Type: multipart/mixed; boundary="HRGGdK1VkUqko7MSg1nhhGLNg6aOFrTho";
+--Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK
+Content-Type: multipart/mixed; boundary="jix9v5V2c5prM0jced7MPw1IjjDFmkCrC";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Tomasz Pala <gotar@polanet.pl>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Message-ID: <f8b623b6-4ca7-23e9-ac7d-ea9ea2d92620@gmx.com>
 Subject: Re: exclusive subvolume space missing
 References: <20171201161555.GA11892@polanet.pl>
- <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
- <20171202012324.GB20205@polanet.pl>
-In-Reply-To: <20171202012324.GB20205@polanet.pl>
+ <20171201213614.GE29898@carfax.org.uk> <20171202005338.GA20205@polanet.pl>
+ <2a14e451-c3fb-1e58-41dd-e98aeb5d24ec@gmx.com>
+ <20171202014357.GC20205@polanet.pl>
+In-Reply-To: <20171202014357.GC20205@polanet.pl>
 
---HRGGdK1VkUqko7MSg1nhhGLNg6aOFrTho
+--jix9v5V2c5prM0jced7MPw1IjjDFmkCrC
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2017=E5=B9=B412=E6=9C=8802=E6=97=A5 09:23, Tomasz Pala wrote:
-> On Sat, Dec 02, 2017 at 08:27:56 +0800, Qu Wenruo wrote:
+On 2017=E5=B9=B412=E6=9C=8802=E6=97=A5 09:43, Tomasz Pala wrote:
+> On Sat, Dec 02, 2017 at 09:05:50 +0800, Qu Wenruo wrote:
 >=20
->> I assume there is program eating up the space.
->> Not btrfs itself.
+>>> qgroupid         rfer         excl=20
+>>> --------         ----         ----=20
+>>> 0/260        12.25GiB      3.22GiB	from 170712 - first snapshot
+>>> 0/312        17.54GiB      4.56GiB	from 170811
+>>> 0/366        25.59GiB      2.44GiB	from 171028
+>>> 0/370        23.27GiB     59.46MiB 	from 111118 - prev snapshot
+>>> 0/388        21.69GiB      7.16GiB	from 171125 - last snapshot
+>>> 0/291        24.29GiB      9.77GiB	default subvolume
+>>
+>> You may need to manually sync the filesystem (trigger a transaction
+>> commitment) to update qgroup accounting.
 >=20
-> Very doubtful. I've encountered ext3 "eating" problem once, that couldn=
-'t be
-> find by lsof on 3.4.75 kernel, but the space was returning after killin=
-g
-> Xorg. The system I'm having problem now is very recent, the space
-> doesn't return after reboot/emergency and doesn't sum up with files.
-
-Unlike vanilla df or "fi usage" or "fi df", btrfs quota only counts
-on-disk extents.
-
-That's to say, reserved space won't contribute to qgroup.
-Unless one is using anonymous file, which is opened but unlinked, so no
-one can access it except the owner.
-(Which I doubt that may be your case)
-
-Which should make quota the best tool to debug your problem.
-(As long as you follow the variant limitations of btrfs quota,
-especially you need to sync or use --sync option to show qgroup numbers)
-
+> The data I've pasted were just calculated.
 >=20
->>> Now, the weird part for me is exclusive data count:
->>>
->>> # btrfs sub sh ./snapshot-171125
+>>> # btrfs quota enable /
+>>> # btrfs qgroup show /
+>>> WARNING: quota disabled, qgroup data may be out of date
 >>> [...]
->>>         Subvolume ID:           388
->>> # btrfs fi du -s ./snapshot-171125=20
->>>      Total   Exclusive  Set shared  Filename
->>>   21.50GiB    63.35MiB    20.77GiB  snapshot-171125
+>>> # btrfs quota enable /		- for the second time!
+>>> # btrfs qgroup show /
+>>> WARNING: qgroup data inconsistent, rescan recommended
 >>
->> That's the difference between how sub show and quota works.
->>
->> For quota, it's per-root owner check.
+>> Please wait the rescan, or any number is not correct.
 >=20
-> Just to be clear: I've enabled quota _only_ to see subvolume usage on
-> spot. And exclusive data - the more detailed approach I've described in=
-
-> e-mail I've send a minute ago.
+> Here I was pointing that first "quota enable" resulted in "quota
+> disabled" warning until I've enabled it once again.
 >=20
->> Means even a file extent is shared between different inodes, if all
->> inodes are inside the same subvolume, it's counted as exclusive.
->> And if any of the file extent belongs to other subvolume, then it's
->> counted as shared.
+>> It's highly recommended to read btrfs-quota(8) and btrfs-qgroup(8) to
+>> ensure you understand all the limitation.
 >=20
-> Good to know, but this is almost UID0-only system. There are system
-> users (vendor provided) and 2 ssh accounts for su, but nobody uses this=
+> I probably won't understand them all, but this is not an issue of my
+> concern as I don't use it. There is simply no other way I am aware that=
 
-> machine for daily work. The quota values were the last tool I could fin=
-d
-> to debug.
+> could show me per-subvolume stats. Well, straightforward way, as the
+> hard way I'm using (btrfs send) confirms the problem.
+
+Unfortunately, send doesn't count everything.
+
+The most common thing is, send doesn't count extent booking space.
+Try the following command:
+
+# fallocate -l 1G <tmp_file>
+# mkfs.btrfs -f <tmp_file>
+# mount <tmp_file> <mnt>
+# btrfs subv create <mnt>/subv1
+# xfs_io -f -c "pwrite 0 128M" -c "sync" <mnt>/subv1/file1
+# xfs_io -f "fpunch 0 127M" -c "sync" <mnt>/subv1/file1
+# btrfs subv snapshot -r <mnt>/subv1 <mnt>/snapshot
+# btrfs send <mnt>/snapshot
+
+You will only get the 1M data, while it still takes 128M space on-disk.
+
+Btrfs extent book will only free the whole extent if and only if there
+is no inode referring *ANY* part of the extent.
+
+Even only 1M of a 128M file extent is used, it will still takes 128M
+space on-disk.
+
+And that's what send can't tell you.
+And that's also what qgroup can tell you.
+
+That's also why I need *CORRECT* qgroup numbers to further investigate
+the problem.
+
 >=20
->> For fi du, it's per-inode owner check. (The exact behavior is a little=
-
->> more complex, I'll skip such corner case to make it a little easier to=
-
->> understand).
->>
->> That's to say, if one file extent is shared by different inodes, then
->> it's counted as shared, no matter if these inodes belong to different =
-or
->> the same subvolume.
->>
->> That's to say, "fi du" has a looser condition for "shared" calculation=
-,
->> and that should explain why you have 20+G shared.
->=20
-> There shouldn't be many multi-inode extents inside single subvolume, as=
- this is mostly fresh
-> system, with no containers, no deduplication, snapshots are taken from
-> the same running system before or after some more important change is
-> done. By 'change' I mean altering text config files mostly (plus
-> etckeeper's git metadata), so the volume of difference is extremelly
-> low. Actually most of the difs between subvolumes come from updating
-> distro packages. There were not much reflink copies made on this
-> partition, only one kernel source compiled (.ccache files removed
-> today). So this partition is as clean, as it could be after almost
-> 5 months in use.
->=20
-> Actually I should rephrase the problem:
->=20
-> "snapshot has taken 8 GB of space despite nothing has altered source su=
-bvolume"
-
-Then please provide correct qgroup numbers.
-
-The correct number should be get by:
-# btrfs quota enable <mnt>
-# btrfs quota rescan -w <mnt>
-# btrfs qgroup show -prce --sync <mnt>
-
-Rescan and --sync are important to get the correct number.
-(while rescan can take a long long time to finish)
-
-And further more, please ensure that all deleted files are really deleted=
+> You could simply remove all the quota results I've posted and there wil=
+l
+> be the underlaying problem, that the 25 GB of data I got occupies 52 GB=
 =2E
-Btrfs delay file and subvolume deletion, so you may need to sync several
-times or use "btrfs subv sync" to ensure deleted files are deleted.
 
-(vanilla du won't tell you if such delayed file deletion is really done)
+If you only want to know the answer why your "25G" data occupies 52G on
+disk, above is one of the possible explanations.
+
+(And I think I should put it into btrfs(5), although I highly doubt if
+user will really read them)
+
+You could try to defrag, but I'm not sure if defrag works well in multi
+subvolumes case.
+
+> At least one recent snapshot, that was taken after some minor (<100 MB)=
+ changes
+> from the subvolume, that has undergo some minor changes since then,
+> occupied 8 GB during one night when the entire system was idling.
+
+The only possible method to fully isolate all the disturbing factors is
+to get rid of snapshot.
+
+Build the subvolume from scratch (even no cp --reflink from other
+subvolume), then test what's happening.
+
+Only in that case, you could trust vanilla du (if you don't do any reflin=
+k).
+Although you can always trust qgroups number, such subvolume built from
+scratch will makes exclusive number equals to reference, making
+debugging a little easier.
 
 Thanks,
 Qu
+
+>=20
+> This was crosschecked on files metadata (mtimes compared) and 'du'
+> results.
+>=20
+>=20
+> As a last-resort I've rebalanced the disk (once again), this time with
+> -dconvert=3Draid1 (to get rid of the single residue).
 >=20
 
 
---HRGGdK1VkUqko7MSg1nhhGLNg6aOFrTho--
+--jix9v5V2c5prM0jced7MPw1IjjDFmkCrC--
 
---tivmXw60AIpbp9tbunhw4jMUHNRJSd7IJ
+--Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloiBicXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjM7QgAmkOo4jDAF3keOE0vUgmJkMA1
-Zp303F1B5zh3+2RNfWVXVzMdU3XPbCYG9m6wvkRQMRvUTowmFW6cil8M+e6rwRGo
-LD5RbAuFQ1EvtEvIM/ewuWyxfmuiWB8AOGAsj0FRDPBmezPvOiU4jK7slPHBcrN6
-RN6klXjrvinUN9zNdUDbHbiBBIRs4HWIj6mNGn6TkemSezpHJejYfj/XNnsd1HTe
-vAcVCFbORefS0qNwv58vDx5462qX/9yElrwd3tmaPYiwhwjGWPmB1XV+P5APqR5O
-Q6pBCYc+88yjItgLaMEPEZgJJ5tFUdLRJ6u26nFLIJgennR4753MZg4lfStS4g==
-=CIxK
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloiDTcXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg0agf+OkOw7Cjxllq2XwHDwUBJZ8uM
+0QpdIFnI42JJAxvD7lm8tvfnWFNYCst5ulwO0cnwxrY4PU/ferMheBhHqOHRpJjc
+rlPHTL9tdVmsxGYorakf5Qxn6Yt2rVx7EQB/Pj/IawsEqAZCDUwmB9BULq9eNAwU
+GOKZRJELSko6dP2reW+hCBoaCmWIBayyGnxb5wtW7mZ+2E+BXSG+wQdBHYb/YZfM
+vuapwQ8yUITgUMrfng1bojZ7qy/YuguM/ehlnp7qYp1pkjFpa82PMcWA7WH8F3NU
+vKGS6ukgNYW+uXYOw8skqQTbO7/uCwX2ssK3DBTDA1GCAHmqXmAxdabokzh5fA==
+=zncK
 -----END PGP SIGNATURE-----
 
---tivmXw60AIpbp9tbunhw4jMUHNRJSd7IJ--
+--Tm5lAxVtg98csS6Mj87SgvUtTpFTkjIsK--

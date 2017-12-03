@@ -1,107 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55622 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750768AbdLCJnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Dec 2017 04:43:16 -0500
-Subject: Re: [PATCH 5/5] btrfs: Greatly simplify btrfs_read_dev_super
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
- <1512119984-12708-6-git-send-email-nborisov@suse.com>
- <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <f08faba1-2c79-bd80-34f5-f8f85e927464@suse.com>
-Date: Sun, 3 Dec 2017 11:43:13 +0200
+Received: from tartarus.angband.pl ([89.206.35.136]:51075 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750891AbdLCKru (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Dec 2017 05:47:50 -0500
+Date: Sun, 3 Dec 2017 11:47:42 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: exclusive subvolume space missing
+Message-ID: <20171203104630.2brvt2a3lkf5m3ag@angband.pl>
+References: <20171201161555.GA11892@polanet.pl>
+ <20171201213614.GE29898@carfax.org.uk>
+ <20171202005338.GA20205@polanet.pl>
+ <20171202162812.GA5324@polanet.pl>
+ <20171202171819.GA4629@polanet.pl>
+ <pan$4b81d$3ba1cf57$e9dd4e05$8cf6db12@cox.net>
 MIME-Version: 1.0
-In-Reply-To: <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <pan$4b81d$3ba1cf57$e9dd4e05$8cf6db12@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Dec 03, 2017 at 01:45:45AM +0000, Duncan wrote:
+> Tomasz Pala posted on Sat, 02 Dec 2017 18:18:19 +0100 as excerpted:
+> >> I got ~500 small files (100-500 kB) updated partially in regular
+> >> intervals:
+> >> 
+> >> # du -Lc **/*.rrd | tail -n1
+> >> 105M    total
+> 
+> FWIW, I've no idea what rrd files, or rrdcached (from the grandparent post)
+> are (other than that a quick google suggests that it's...
+> round-robin-database...
+
+Basically: preallocate a file, its size doesn't change since then.  Every a
+few minutes, write several bytes into the file, slowly advancing.
+
+This is indeed the worst possible case for btrfs, and nocow doesn't help the
+slightest as the database doesn't wrap around before a typical snapshot
+interval.
+
+> Meanwhile, /because/ nocow has these complexities along with others (nocow
+> automatically turns off data checksumming and compression for the files
+> too), and the fact that they nullify some of the big reasons people might
+> choose btrfs in the first place, I actually don't recommend setting
+> nocow in the first place -- if usage is such than a file needs nocow,
+> my thinking is that btrfs isn't a particularly good hosting choice for
+> that file in the first place, a more traditional rewrite-in-place
+> filesystem is likely to be a better fit.
+
+I'd say that the only good use for nocow is "I wish I have placed this file
+on a non-btrfs, but it'd be too much hassle to repartition".
+
+If you snapshot nocow at all, you get the worst of both worlds.
 
 
-On  2.12.2017 01:23, Anand Jain wrote:
-> 
-> 
-> On 12/01/2017 05:19 PM, Nikolay Borisov wrote:
->> Currently this function executes the inner loop at most 1 due to the i
->> = 0;
->> i < 1 condition. Furthermore, the btrfs_super_generation(super) >
->> transid code
->> in the if condition is never executed due to latest always set to NULL
->> hence the
->> first part of the condition always triggering. The gist of
->> btrfs_read_dev_super
->> is really to read the first superblock.
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>   fs/btrfs/disk-io.c | 27 ++++-----------------------
->>   1 file changed, 4 insertions(+), 23 deletions(-)
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 82c96607fc46..6d5f632fd1e7 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -3170,37 +3170,18 @@ int btrfs_read_dev_one_super(struct
->> block_device *bdev, int copy_num,
->>   struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
->>   {
->>       struct buffer_head *bh;
->> -    struct buffer_head *latest = NULL;
->> -    struct btrfs_super_block *super;
->> -    int i;
->> -    u64 transid = 0;
->> -    int ret = -EINVAL;
->> +    int ret;
->>         /* we would like to check all the supers, but that would make
->>        * a btrfs mount succeed after a mkfs from a different FS.
->>        * So, we need to add a special mount option to scan for
->>        * later supers, using BTRFS_SUPER_MIRROR_MAX instead
->>        */
-> 
->  We need below loop to support the above comment at some point,
-
-And when is that, since I don't see anyone working on it. Furthermore
-what is it that we are losing in terms of functionality by not
-supporting the comment? It seems this code was just slapt here without
-any vision how/when to implement it?
-
-Furthermore, you seem to be aware of what the comment is talking about,
-I have to admit I'm not. Is the idea that if another filesystem does
-mkfs and doesn't overwrite ALL superblock copies that btrfs writes (at
-64k, 64mb, 256gb and 1 PiB) then it's possible for this code to
-erroneously detect btrfs when in fact there is a different fs?
-
-I don't understand what problem *should* be solved here...
-
->  instead of removing I would prefer to fix as per above comments.
-> 
-> Thanks, Anand
-> 
-> 
->> -    for (i = 0; i < 1; i++) {
->> -        ret = btrfs_read_dev_one_super(bdev, i, &bh);
->> -        if (ret)
->> -            continue;
->> -
->> -        super = (struct btrfs_super_block *)bh->b_data;
->> -
->> -        if (!latest || btrfs_super_generation(super) > transid) {
->> -            brelse(latest);
->> -            latest = bh;
->> -            transid = btrfs_super_generation(super);
->> -        } else {
->> -            brelse(bh);
->> -        }
->> -    }
->> -
->> -    if (!latest)
->> +    ret = btrfs_read_dev_one_super(bdev, 0, &bh);
->> +    if (ret)
->>           return ERR_PTR(ret);
->>   -    return latest;
->> +    return bh;
->>   }
->>     /*
->>
-> 
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ Mozilla's Hippocritic Oath: "Keep trackers off your trail"
+⣾⠁⢰⠒⠀⣿⡁ blah blah evading "tracking technology" blah blah
+⢿⡄⠘⠷⠚⠋⠀ "https://click.e.mozilla.org/?qs=e7bb0dcf14b1013fca3820..."
+⠈⠳⣄⠀⠀⠀⠀ (same for all links)

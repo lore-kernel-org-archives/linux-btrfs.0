@@ -1,173 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:45857 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752294AbdLCBqE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Dec 2017 20:46:04 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eLJLs-0007b7-4g
-        for linux-btrfs@vger.kernel.org; Sun, 03 Dec 2017 02:45:52 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: exclusive subvolume space missing
-Date: Sun, 3 Dec 2017 01:45:45 +0000 (UTC)
-Message-ID: <pan$4b81d$3ba1cf57$e9dd4e05$8cf6db12@cox.net>
-References: <20171201161555.GA11892@polanet.pl>
-        <20171201213614.GE29898@carfax.org.uk> <20171202005338.GA20205@polanet.pl>
-        <20171202162812.GA5324@polanet.pl> <20171202171819.GA4629@polanet.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:55622 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750768AbdLCJnQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 3 Dec 2017 04:43:16 -0500
+Subject: Re: [PATCH 5/5] btrfs: Greatly simplify btrfs_read_dev_super
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+ <1512119984-12708-6-git-send-email-nborisov@suse.com>
+ <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <f08faba1-2c79-bd80-34f5-f8f85e927464@suse.com>
+Date: Sun, 3 Dec 2017 11:43:13 +0200
+MIME-Version: 1.0
+In-Reply-To: <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Tomasz Pala posted on Sat, 02 Dec 2017 18:18:19 +0100 as excerpted:
 
-> On Sat, Dec 02, 2017 at 17:28:12 +0100, Tomasz Pala wrote:
+
+On  2.12.2017 01:23, Anand Jain wrote:
 > 
->>> Suppose you start with a 100 MiB file (I'm adjusting the sizes down from
->> [...]
->>> Now make various small changes to the file, say under 16 KiB each.  These
->>> will each be COWed elsewhere as one might expect. by default 16 KiB at
->>> a time I believe (might be 4 KiB, as it was back when the default leaf
->> 
->> I got ~500 small files (100-500 kB) updated partially in regular
->> intervals:
->> 
->> # du -Lc **/*.rrd | tail -n1
->> 105M    total
-
-FWIW, I've no idea what rrd files, or rrdcached (from the grandparent post)
-are (other than that a quick google suggests that it's...
-round-robin-database... and the database bit alone sounds bad in this context
-as database-file rewrites are known to be a worst-case for cow-based
-filesystems), but it sounds like you suspect that they have this
-rewrite-most pattern that could explain your problem...
-
->>> But here's the kicker.  Even without a snapshot locking that original 100
->>> MiB extent in place, if even one of the original 16 KiB blocks isn't
->>> rewritten, that entire 100 MiB extent will remain locked in place, as the
->>> original 16 KiB blocks that have been changed and thus COWed elsewhere
->>> aren't freed one at a time, the full 100 MiB extent only gets freed, all
->>> at once, once no references to it remain, which means once that last
->>> block of the extent gets rewritten.
 > 
-> OTOH - should this happen with nodatacow files? As I mentioned before,
-> these files are chattred +C (however this was not their initial state
-> due to https://bugzilla.kernel.org/show_bug.cgi?id=189671 ).
-> Am I wrong thinking, that in such case they should occupy twice their
-> size maximum? Or maybe there is some tool that could show me the real
-> space wasted by file, including extents count etc?
+> On 12/01/2017 05:19 PM, Nikolay Borisov wrote:
+>> Currently this function executes the inner loop at most 1 due to the i
+>> = 0;
+>> i < 1 condition. Furthermore, the btrfs_super_generation(super) >
+>> transid code
+>> in the if condition is never executed due to latest always set to NULL
+>> hence the
+>> first part of the condition always triggering. The gist of
+>> btrfs_read_dev_super
+>> is really to read the first superblock.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>>   fs/btrfs/disk-io.c | 27 ++++-----------------------
+>>   1 file changed, 4 insertions(+), 23 deletions(-)
+>>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 82c96607fc46..6d5f632fd1e7 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -3170,37 +3170,18 @@ int btrfs_read_dev_one_super(struct
+>> block_device *bdev, int copy_num,
+>>   struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
+>>   {
+>>       struct buffer_head *bh;
+>> -    struct buffer_head *latest = NULL;
+>> -    struct btrfs_super_block *super;
+>> -    int i;
+>> -    u64 transid = 0;
+>> -    int ret = -EINVAL;
+>> +    int ret;
+>>         /* we would like to check all the supers, but that would make
+>>        * a btrfs mount succeed after a mkfs from a different FS.
+>>        * So, we need to add a special mount option to scan for
+>>        * later supers, using BTRFS_SUPER_MIRROR_MAX instead
+>>        */
+> 
+>  We need below loop to support the above comment at some point,
 
-Nodatacow... isn't as simple as the name might suggest.
+And when is that, since I don't see anyone working on it. Furthermore
+what is it that we are losing in terms of functionality by not
+supporting the comment? It seems this code was just slapt here without
+any vision how/when to implement it?
 
-For one thing, snapshots depend on COW and lock the extents they reference
-in-place, so while a file might be set nocow and that setting is retained,
-the first write to a block after a snapshot *MUST* cow that block... because
-the snapshot has the existing version referenced and it can't change without
-changing the snapshot as well, and that would of course defeat the purpose
-of snapshots.
+Furthermore, you seem to be aware of what the comment is talking about,
+I have to admit I'm not. Is the idea that if another filesystem does
+mkfs and doesn't overwrite ALL superblock copies that btrfs writes (at
+64k, 64mb, 256gb and 1 PiB) then it's possible for this code to
+erroneously detect btrfs when in fact there is a different fs?
 
-Tho the attribute is retained and further writes to the same already cowed
-block won't cow it again.
+I don't understand what problem *should* be solved here...
 
-FWIW, on this list that behavior is often referred to as cow1, cow only the
-first time that a block is written after a snapshot locks the previous
-version in place.
-
-The effect of cow1 depends on the frequency and extent of block rewrites vs.
-the frequency of snapshots of the subvolume they're on.  As should be
-obvious if you think about it, once you've done the cow1, further rewrites
-to the same block before further snapshots won't cow further, so if only
-a few blocks are repeatedly rewritten multiple times between snapshots, the
-effect should be relatively small.  Similarly if snapshots happen far more
-frequently than block rewrites, since in that case most of the snapshots
-won't have anything changed (for that file anyway) since the last one.
-
-However, if most of the file gets rewritten between snapshots and the
-snapshot frequency is often enough to be a major factor, the effect can be
-practically as bad as if the file weren't nocow in the first place.
-
-If I knew a bit more about rrd's rewrite pattern... and your snapshot
-pattern...
-
-
-Second, as you alluded, for btrfs files must be set nocow before anything
-is written to them.  Quoting the chattr (1) manpage:  "If it is set on a
-file which already has data blocks, it is undefined when the blocks
-assigned to the file will be fully stable."
-
-Not being a dev I don't read the code to know what that means in practice,
-but it could well be effectively cow1, which would yield the maximum 2X
-size you assumed.
-
-But I think it's best to take "undefined" at its meaning, and assume
-worst-case "no effect at all", for size calculation purposes, unless you
-really /did/ set it at file creation, before the file had content.
-
-And the easiest way to do /that/, and something that might be worthwhile
-doing anyway if you think unreclaimed still referenced extents are your
-problem, is to set the nocow flag on the /directory/, then copy the
-files into it, taking care to actually create them new, that is, use
---reflink=never or copy the files to a different filesystem, perhaps
-tmpfs, and back, so they /have/ to be created new.  Of course with the
-rewriter (rrdcached, apparently) shut down for the process.
-
-Then, once the files are safely back in place and the filesystem synced
-so the data is actually on disk, you can delete the old copies (which
-will continue to serve as backups until then), and sync the filesystem
-again.
-
-While snapshots will of course continue to keep extents they reference
-locked, for unsnapshotted files at least, this process should clear up
-any still referenced but partially unused extents for those files, thus
-clearing up the problem if this is it.  After deleting the original
-copies to free the space and syncing, you can check to see.
-
-
-Meanwhile, /because/ nocow has these complexities along with others (nocow
-automatically turns off data checksumming and compression for the files
-too), and the fact that they nullify some of the big reasons people might
-choose btrfs in the first place, I actually don't recommend setting
-nocow in the first place -- if usage is such than a file needs nocow,
-my thinking is that btrfs isn't a particularly good hosting choice for
-that file in the first place, a more traditional rewrite-in-place
-filesystem is likely to be a better fit.
-
-OTOH, it's also quite possible that people chose btrfs at least partly
-for other reasons, say the "storage pool" qualities, and would rather
-just shove everything on a single btrfs "pool" and not have to worry
-about it, however much that sets off my own "all eggs in one basket"
-risk alert alarms. [shrug]  For them, having to separate all their
-nocow stuff into a different non-btrfs filesystem would defeat their
-purpose, and they'd rather just deal with all the complexities of
-nocow.
-
-For this sort of usage, we actually have reports that first setting up
-the nocow dirs and ensuring that files inherit the nocow at creating,
-so they /are/ actually nocow, then setting up snapshotting at a sane
-schedule, /and/ setting up a periodic (perhaps weekly or monthly)
-defrag of their nocow files to eliminate the fragmentation caused
-by the snapshot-triggered cow1, actually works reasonably well.
-
-Of course if snapshots are being kept effectively "forever", that'll
-make space usage even /worse/, because defrag breaks reflinks and
-unshares the data, but arguably, that's doing it wrong, because
-snapshots are /not/ backups, and what might be temporarily snapshotted
-should eventually be real-backed-up, allowing one to delete those
-snapshots, thus freeing the space they took.  Of course if you're
-using btrfs send/receive to do those backups, keeping around
-selected "parent" snapshots to reference with send is useful,
-but choosing a new "send parent" at least every quarter, say, and
-deleting the old ones, does at least put a reasonable limit on
-the time such snapshots need to be kept on the operational filesystem.
-
-And since more than double-digits snapshots of the same subvolume creates
-scaling issues for btrfs balance, snapshot deletion, etc, a regular
-snapshot thinning schedule combined with a cap on the age of the oldest
-one nicely helps there as well. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+>  instead of removing I would prefer to fix as per above comments.
+> 
+> Thanks, Anand
+> 
+> 
+>> -    for (i = 0; i < 1; i++) {
+>> -        ret = btrfs_read_dev_one_super(bdev, i, &bh);
+>> -        if (ret)
+>> -            continue;
+>> -
+>> -        super = (struct btrfs_super_block *)bh->b_data;
+>> -
+>> -        if (!latest || btrfs_super_generation(super) > transid) {
+>> -            brelse(latest);
+>> -            latest = bh;
+>> -            transid = btrfs_super_generation(super);
+>> -        } else {
+>> -            brelse(bh);
+>> -        }
+>> -    }
+>> -
+>> -    if (!latest)
+>> +    ret = btrfs_read_dev_one_super(bdev, 0, &bh);
+>> +    if (ret)
+>>           return ERR_PTR(ret);
+>>   -    return latest;
+>> +    return bh;
+>>   }
+>>     /*
+>>
+> 

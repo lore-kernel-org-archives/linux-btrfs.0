@@ -1,63 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:51075 "EHLO
-        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750891AbdLCKru (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Dec 2017 05:47:50 -0500
-Date: Sun, 3 Dec 2017 11:47:42 +0100
-From: Adam Borowski <kilobyte@angband.pl>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: exclusive subvolume space missing
-Message-ID: <20171203104630.2brvt2a3lkf5m3ag@angband.pl>
-References: <20171201161555.GA11892@polanet.pl>
- <20171201213614.GE29898@carfax.org.uk>
- <20171202005338.GA20205@polanet.pl>
- <20171202162812.GA5324@polanet.pl>
- <20171202171819.GA4629@polanet.pl>
- <pan$4b81d$3ba1cf57$e9dd4e05$8cf6db12@cox.net>
+Received: from a4-1.smtp-out.eu-west-1.amazonses.com ([54.240.4.1]:47690 "EHLO
+        a4-1.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752433AbdLCPjM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 3 Dec 2017 10:39:12 -0500
+Subject: Re: again "out of space" and remount read only, with 4.14
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <dfdbf8227acb0f10ed14edb0a8638ce0@virtall.com>
+ <0102015ff8f9e46f-83a96bab-ee99-4ec2-b09f-7801b64fc2d5-000000@eu-west-1.amazonses.com>
+ <ddbe76a2ddcf5d7d7b18f3c7f09294bd@virtall.com>
+From: Martin Raiber <martin@urbackup.org>
+Message-ID: <010201601d07f939-cc695404-9e62-4a08-91a7-bad00c0827e7-000000@eu-west-1.amazonses.com>
+Date: Sun, 3 Dec 2017 15:39:10 +0000
 MIME-Version: 1.0
+In-Reply-To: <ddbe76a2ddcf5d7d7b18f3c7f09294bd@virtall.com>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <pan$4b81d$3ba1cf57$e9dd4e05$8cf6db12@cox.net>
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 03, 2017 at 01:45:45AM +0000, Duncan wrote:
-> Tomasz Pala posted on Sat, 02 Dec 2017 18:18:19 +0100 as excerpted:
-> >> I got ~500 small files (100-500 kB) updated partially in regular
-> >> intervals:
-> >> 
-> >> # du -Lc **/*.rrd | tail -n1
-> >> 105M    total
-> 
-> FWIW, I've no idea what rrd files, or rrdcached (from the grandparent post)
-> are (other than that a quick google suggests that it's...
-> round-robin-database...
+Am 26.11.2017 um 17:02 schrieb Tomasz Chmielewski:
+> On 2017-11-27 00:37, Martin Raiber wrote:
+>> On 26.11.2017 08:46 Tomasz Chmielewski wrote:
+>>> Got this one on a 4.14-rc7 filesystem with some 400 GB left:
+>> I guess it is too late now, but I guess the "btrfs fi usage" output of
+>> the file system (especially after it went ro) would be useful.
+> It was more or less similar as it went ro:
+>
+> # btrfs fi usage /srv
+> Overall:
+>     Device size:                   5.25TiB
+>     Device allocated:              4.45TiB
+>     Device unallocated:          823.97GiB
+>     Device missing:                  0.00B
+>     Used:                          4.33TiB
+>     Free (estimated):            471.91GiB      (min: 471.91GiB)
+>     Data ratio:                       2.00
+>     Metadata ratio:                   2.00
+>     Global reserve:              512.00MiB      (used: 0.00B)
+>
+> Unallocated:
+>    /dev/sda4     411.99GiB
+>    /dev/sdb4     411.99GiB
 
-Basically: preallocate a file, its size doesn't change since then.  Every a
-few minutes, write several bytes into the file, slowly advancing.
+I wanted to check if is the same issue I have, e.g. with 4.14.1
+space_cache=v2:
 
-This is indeed the worst possible case for btrfs, and nocow doesn't help the
-slightest as the database doesn't wrap around before a typical snapshot
-interval.
+[153245.341823] BTRFS: error (device loop0) in
+btrfs_run_delayed_refs:3089: errno=-28 No space left
+[153245.341845] BTRFS: error (device loop0) in btrfs_drop_snapshot:9317:
+errno=-28 No space left
+[153245.341848] BTRFS info (device loop0): forced readonly
+[153245.341972] BTRFS warning (device loop0): Skipping commit of aborted
+transaction.
+[153245.341975] BTRFS: error (device loop0) in cleanup_transaction:1873:
+errno=-28 No space left
+# btrfs fi usage /media/backup
+Overall:
+    Device size:                  49.60TiB
+    Device allocated:             38.10TiB
+    Device unallocated:           11.50TiB
+    Device missing:                  0.00B
+    Used:                         36.98TiB
+    Free (estimated):             12.59TiB      (min: 12.59TiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:                2.00GiB      (used: 1.99GiB)
 
-> Meanwhile, /because/ nocow has these complexities along with others (nocow
-> automatically turns off data checksumming and compression for the files
-> too), and the fact that they nullify some of the big reasons people might
-> choose btrfs in the first place, I actually don't recommend setting
-> nocow in the first place -- if usage is such than a file needs nocow,
-> my thinking is that btrfs isn't a particularly good hosting choice for
-> that file in the first place, a more traditional rewrite-in-place
-> filesystem is likely to be a better fit.
+Data,single: Size:37.70TiB, Used:36.61TiB
+   /dev/loop0     37.70TiB
 
-I'd say that the only good use for nocow is "I wish I have placed this file
-on a non-btrfs, but it'd be too much hassle to repartition".
+Metadata,single: Size:411.01GiB, Used:380.98GiB
+   /dev/loop0    411.01GiB
 
-If you snapshot nocow at all, you get the worst of both worlds.
+System,single: Size:36.00MiB, Used:4.00MiB
+   /dev/loop0     36.00MiB
+
+Unallocated:
+   /dev/loop0     11.50TiB
+
+Note the global reserve being at maximum. I already increased that in
+the code to 2G and that seems to make this issue appear more rarely.
+
+Regards,
+Martin Raiber
 
 
-Meow!
--- 
-⢀⣴⠾⠻⢶⣦⠀ Mozilla's Hippocritic Oath: "Keep trackers off your trail"
-⣾⠁⢰⠒⠀⣿⡁ blah blah evading "tracking technology" blah blah
-⢿⡄⠘⠷⠚⠋⠀ "https://click.e.mozilla.org/?qs=e7bb0dcf14b1013fca3820..."
-⠈⠳⣄⠀⠀⠀⠀ (same for all links)

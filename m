@@ -1,85 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f170.google.com ([209.85.216.170]:37167 "EHLO
-        mail-qt0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752079AbdLFQMV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 11:12:21 -0500
-Received: by mail-qt0-f170.google.com with SMTP id f2so10121836qtj.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Dec 2017 08:12:20 -0800 (PST)
-From: Josef Bacik <josef@toxicpanda.com>
-To: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
-        netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
-        kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 0/5] Add the ability to do BPF directed error injection
-Date: Wed,  6 Dec 2017 11:12:12 -0500
-Message-Id: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
+Received: from mx2.suse.de ([195.135.220.15]:35722 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752628AbdLDNrV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Dec 2017 08:47:21 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3A008AAA3
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2017 13:47:20 +0000 (UTC)
+Date: Mon, 4 Dec 2017 14:45:21 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5] btrfs: Remove dead code
+Message-ID: <20171204134521.GV3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+ <1512119984-12708-2-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1512119984-12708-2-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jon noticed that I had a typo in my _ASM_KPROBE_ERROR_INJECT macro.  I went to
-figure out why the compiler didn't catch it and it's because it was not used
-anywhere.  I had copied it from the trace blacklist code without understanding
-where it was used as cscope didn't find the original macro I was looking for, so
-I assumed it was some voodoo and left it in place.  Turns out cscope failed me
-and I didn't need the macro at all, the trace blacklist thing I was looking at
-was for marking assembly functions as blacklisted and I have no intention of
-marking assembly functions as error injectable at the moment.
+On Fri, Dec 01, 2017 at 11:19:40AM +0200, Nikolay Borisov wrote:
+> trans was statically assigned to NULL and this never changed over the course of
+> btrfs_get_extent. So remove any code which checks whether trans != NULL and
+> just hardcode the fact trans is always NULL. This fixes CID#112806
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-v7->v8:
-- removed the _ASM_KPROBE_ERROR_INJECT since it was not needed.
-
-v6->v7:
-- moved the opt-in macro to bpf.h out of kprobes.h.
-
-v5->v6:
-- add BPF_ALLOW_ERROR_INJECTION() tagging for functions that will support this
-  feature.  This way only functions that opt-in will be allowed to be
-  overridden.
-- added a btrfs patch to allow error injection for open_ctree() so that the bpf
-  sample actually works.
-
-v4->v5:
-- disallow kprobe_override programs from being put in the prog map array so we
-  don't tail call into something we didn't check.  This allows us to make the
-  normal path still fast without a bunch of percpu operations.
-
-v3->v4:
-- fix a build error found by kbuild test bot (I didn't wait long enough
-  apparently.)
-- Added a warning message as per Daniels suggestion.
-
-v2->v3:
-- added a ->kprobe_override flag to bpf_prog.
-- added some sanity checks to disallow attaching bpf progs that have
-  ->kprobe_override set that aren't for ftrace kprobes.
-- added the trace_kprobe_ftrace helper to check if the trace_event_call is a
-  ftrace kprobe.
-- renamed bpf_kprobe_state to bpf_kprobe_override, fixed it so we only read this
-  value in the kprobe path, and thus only write to it if we're overriding or
-  clearing the override.
-
-v1->v2:
-- moved things around to make sure that bpf_override_return could really only be
-  used for an ftrace kprobe.
-- killed the special return values from trace_call_bpf.
-- renamed pc_modified to bpf_kprobe_state so bpf_override_return could tell if
-  it was being called from an ftrace kprobe context.
-- reworked the logic in kprobe_perf_func to take advantage of bpf_kprobe_state.
-- updated the test as per Alexei's review.
-
-- Original message -
-
-A lot of our error paths are not well tested because we have no good way of
-injecting errors generically.  Some subystems (block, memory) have ways to
-inject errors, but they are random so it's hard to get reproduceable results.
-
-With BPF we can add determinism to our error injection.  We can use kprobes and
-other things to verify we are injecting errors at the exact case we are trying
-to test.  This patch gives us the tool to actual do the error injection part.
-It is very simple, we just set the return value of the pt_regs we're given to
-whatever we provide, and then override the PC with a dummy function that simply
-returns.
-
-Right now this only works on x86, but it would be simple enough to expand to
-other architectures.  Thanks,
-
-Josef
+Please find a better subject, at least mention the fuction name write
+something more specific about the dead code that's being removed.

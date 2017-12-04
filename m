@@ -1,39 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:20500 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753382AbdLDKVy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 05:21:54 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 009A448A1711
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2017 18:21:52 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Date: Mon, 4 Dec 2017 18:20:40 +0800
-Message-ID: <20171204102044.25702-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
-Subject: [PATCH 0/4] qgroup cleanup and add show path feature
+Received: from mail-wr0-f177.google.com ([209.85.128.177]:34821 "EHLO
+        mail-wr0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751383AbdLDMOb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 07:14:31 -0500
+Received: by mail-wr0-f177.google.com with SMTP id g53so17046117wra.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2017 04:14:30 -0800 (PST)
+Received: from debox (bzq-79-180-62-29.red.bezeqint.net. [79.180.62.29])
+        by smtp.gmail.com with ESMTPSA id r82sm3475772wme.31.2017.12.04.04.14.28
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 04 Dec 2017 04:14:29 -0800 (PST)
+Message-ID: <1512389667.1707.109.camel@gmail.com>
+Subject: command to get quota limit
+From: ST <smntov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Mon, 04 Dec 2017 14:14:27 +0200
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The first two patches are the rest of the qgroup cleanup, the two
-remaining patches add show path feature.
+Hello,
 
-Lu Fengqi (4):
-  btrfs-progs: qgroup: move btrfs_show_qgroups's error handler to
-    __qgroup_search
-  btrfs-progs: qgroup: cleanup __qgroup_search
-  btrfs-progs: qgroup: show subvol path when qgroup show
-  btrfs-progs: qgroup: allow show qgroup in order of subvol path
+what is the command to get btrfs quota limit on certain subvolume?
 
- Documentation/btrfs-qgroup.asciidoc |   2 +-
- cmds-qgroup.c                       |   6 +-
- qgroup.c                            | 193 ++++++++++++++++++++++++++++++------
- qgroup.h                            |   2 +
- 4 files changed, 167 insertions(+), 36 deletions(-)
-
--- 
-2.14.3
-
-
+Thank you!
 

@@ -1,41 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from azure.uno.uk.net ([95.172.254.11]:57170 "EHLO azure.uno.uk.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751500AbdLCVAq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 3 Dec 2017 16:00:46 -0500
-Received: from ty.sabi.co.uk ([95.172.230.208]:60100)
-        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
-        (Exim 4.89)
-        (envelope-from <postmaster@root.t00.sabi.co.uk>)
-        id 1eLbNU-0002jd-VX
-        for linux-btrfs@vger.kernel.org; Sun, 03 Dec 2017 21:00:45 +0000
-Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
-        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
-        id 1eLbN3-0002Q9-JL
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Dec 2017 21:00:17 +0000
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Message-ID: <23076.26079.459369.955773@tree.ty.sabi.co.uk>
-Date: Sun, 3 Dec 2017 21:00:15 +0000
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Received: from userp2120.oracle.com ([156.151.31.85]:33358 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753550AbdLDJOQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 04:14:16 -0500
 Subject: Re: [PATCH 0/7] retry write on error
-In-Reply-To: <20171130202253.GA8197@dhcp-whq-twvpn-1-vpnpool-10-159-155-222.vpn.oracle.com>
+To: bo.li.liu@oracle.com
 References: <20171122003558.28722-1-bo.li.liu@oracle.com>
-        <20171128192236.GE3553@twin.jikos.cz>
-        <bd35756b-0089-0e20-a70c-b66dd3292208@suse.de>
-        <23069.62530.53658.314350@tree.ty.sabi.co.uk>
-        <aaa69c5c-164a-5cba-452c-5a53d801c792@oracle.com>
-        <20171129164708.GH3553@twin.jikos.cz>
-        <20171130202253.GA8197@dhcp-whq-twvpn-1-vpnpool-10-159-155-222.vpn.oracle.com>
-From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
+ <20171128192236.GE3553@twin.jikos.cz>
+ <bd35756b-0089-0e20-a70c-b66dd3292208@suse.de>
+ <23069.62530.53658.314350@tree.ty.sabi.co.uk>
+ <aaa69c5c-164a-5cba-452c-5a53d801c792@oracle.com>
+ <20171129164708.GH3553@twin.jikos.cz>
+ <20171130202253.GA8197@dhcp-whq-twvpn-1-vpnpool-10-159-155-222.vpn.oracle.com>
+Cc: dsterba@suse.cz, Peter Grandi <pg@btrfs.list.sabi.co.UK>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <52cde20f-8221-65c2-4942-9d3e6cd1f6d2@oracle.com>
+Date: Mon, 4 Dec 2017 17:14:37 +0800
+MIME-Version: 1.0
+In-Reply-To: <20171130202253.GA8197@dhcp-whq-twvpn-1-vpnpool-10-159-155-222.vpn.oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> [ ... ] btrfs incorporates disk management which is actually a
-> version of md layer, [ ... ]
 
-As far as I know Btrfs has no disk management, and was wisely
-designed without any, just like MD: Btrfs volumes and MD sets
-can be composed from "block devices", not disks, and block
-devices are quite high level abstractions, as they closely mimic
-the semantics of a UNIX file, not a physical device.
+
+
+>>>>>>> If the underlying protocal doesn't support retry
+>>>>>>> and there
+>>>>>>> are some transient errors happening somewhere in our IO
+>>>>>>> stack, we'd like to give an extra chance for IO.
+
+
+> It's true that scsi's sd layer has done SD_MAX_RETRIES(5) retries, but
+> can we really depend on other layers for all robustness?
+
+
+  You are contradicting on your own problem statement as above.
+
+
+Thanks, Anand
+
+
+

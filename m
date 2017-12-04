@@ -1,100 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:60501 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752060AbdLDN6b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Dec 2017 08:58:31 -0500
-Subject: Re: command to get quota limit
-To: ST <smntov@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <1512389667.1707.109.camel@gmail.com>
- <d06860e1-f905-30ff-941a-92ed61355483@gmx.com>
- <1512395190.1707.113.camel@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <2411124a-7e2e-6dd3-d4e3-c8611237aefc@gmx.com>
-Date: Mon, 4 Dec 2017 21:58:24 +0800
-MIME-Version: 1.0
-In-Reply-To: <1512395190.1707.113.camel@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="To1KV1HAfavXVplXxAS65rhGa75oDqDqu"
+Received: from [195.159.176.226] ([195.159.176.226]:43080 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751980AbdLDOKi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 09:10:38 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eLrRw-0001gW-Ko
+        for linux-btrfs@vger.kernel.org; Mon, 04 Dec 2017 15:10:24 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs-transacti hammering the system
+Date: Mon, 4 Dec 2017 14:10:05 +0000 (UTC)
+Message-ID: <pan$72fcb$25444603$d7f3231e$e556c8d5@cox.net>
+References: <bb2cfbcb-31dd-715c-114f-59d574a2012b@techsquare.com>
+        <9703c200-28af-f26d-b3b2-6982fb289ac8@mendix.com>
+        <1d11e03c-7d02-3f66-8b97-4c1b857566fa@techsquare.com>
+        <b52265f9-2703-7f25-b1b9-6e84bc7db62e@mendix.com>
+        <c9e5ef0a-e60b-b892-272c-1594d47f0657@techsquare.com>
+        <5ecddad2-bb6a-2991-c8d0-be97a4541b0d@mendix.com>
+        <pan$6609d$15863533$48f08c08$b3eb21f1@cox.net>
+        <113cba02-2557-d1e8-193f-fab4437f1199@techsquare.com>
+        <96e81cad-1024-aa9e-c3fe-d884a710b130@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---To1KV1HAfavXVplXxAS65rhGa75oDqDqu
-Content-Type: multipart/mixed; boundary="k9j2LTRtub7tD8JA6Lj8vrPiLtQ5KrHjO";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: ST <smntov@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <2411124a-7e2e-6dd3-d4e3-c8611237aefc@gmx.com>
-Subject: Re: command to get quota limit
-References: <1512389667.1707.109.camel@gmail.com>
- <d06860e1-f905-30ff-941a-92ed61355483@gmx.com>
- <1512395190.1707.113.camel@gmail.com>
-In-Reply-To: <1512395190.1707.113.camel@gmail.com>
+Austin S. Hemmelgarn posted on Mon, 04 Dec 2017 07:18:11 -0500 as
+excerpted:
 
---k9j2LTRtub7tD8JA6Lj8vrPiLtQ5KrHjO
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> On 2017-12-01 16:50, Matt McKinnon wrote:
+>> Well, it's at zero now...
+>> 
+>> # btrfs fi df /export/
+>> Data, single: total=30.45TiB, used=30.25TiB
+>> System, DUP: total=32.00MiB, used=3.62MiB
+>> Metadata, DUP: total=66.50GiB, used=65.16GiB
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
 
+> GlobalReserve seems to be used temporarily for certain cases of metadata
+> COW regardless of how full the FS actually is, I'm betting that it just so
+> happened that such a case was in progress when you got the info
+> previously.  If you aren't seeing it regularly used, it's (probably) not
+> an issue.
+> 
+> Duncan is correct though when dealing with long-term usage.  If you see
+> GlobalReserve usage that persists for an extended period of time,
+> something is almost certainly wrong, especially if the FS isn't close to
+> being full.
 
+Thanks.  I wasn't aware global reserve was routinely temporarily used.
 
-On 2017=E5=B9=B412=E6=9C=8804=E6=97=A5 21:46, ST wrote:
->>> Hello,
->>>
->>> what is the command to get btrfs quota limit on certain subvolume?
->>
->> btrfs qgroup show -re
->>
->> The result is for all subvolumes, then just find the subvolume you nee=
-d.
->>
->=20
-> I need to use the quota number in a script... is there a more specific
-> command, otherwise I need to get the groupID first and then to parse th=
-e
-> output...
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-IIRC "btrfs qgroup show -re <mnt>" is specific enough.
-
-Just try it, and read btrfs-qgroup(8).
-
-As long as you're using it in a script, the you will need subvolume id
-anyway.
-
-Thanks,
-Qu
-
->=20
-> Thank you!
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---k9j2LTRtub7tD8JA6Lj8vrPiLtQ5KrHjO--
-
---To1KV1HAfavXVplXxAS65rhGa75oDqDqu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlolVIAXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjkNwf+OBChDuY85x+VUFK8fzkadmHC
-s79mrmWEZYDPYSzpMpEoOKSw40Tv/NF5NN/Bb2HphaZ8N1tz5Bg/6PJRrpeABn6g
-yHMrcxqTRINtQpAVIRmvpMYFBiO91EmxgVqmvb7AQTqPC20QoraAEO/8BfHTHYzL
-ZL/V7SCm/HBJz5cpgHkpJ1XBIHDzIxJTEqRsmhkcLzKYBspHYZDLXwR0+nyby+Wb
-3ZIGdg0t+F677pkk7icYKf03FgUY/LwbOYXfnulQVYIsJ5uiynWG6PRLT3JB1Adw
-tkadVK2XIZdg4zIbLxyq35A5lscvI8xwBA9oklqL5kh78JPIGVSxyQ9BEG+Yrw==
-=qiHN
------END PGP SIGNATURE-----
-
---To1KV1HAfavXVplXxAS65rhGa75oDqDqu--

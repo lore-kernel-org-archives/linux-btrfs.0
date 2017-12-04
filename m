@@ -1,142 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:40358 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752977AbdLDD6U (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Dec 2017 22:58:20 -0500
-Subject: Re: [PATCH 5/5] btrfs: Greatly simplify btrfs_read_dev_super
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
- <1512119984-12708-6-git-send-email-nborisov@suse.com>
- <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
- <f08faba1-2c79-bd80-34f5-f8f85e927464@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <2bada310-56e2-425f-9116-9748e4c20529@oracle.com>
-Date: Mon, 4 Dec 2017 09:33:21 +0800
+Received: from mail-ot0-f179.google.com ([74.125.82.179]:37904 "EHLO
+        mail-ot0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752830AbdLDE6J (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Dec 2017 23:58:09 -0500
+Received: by mail-ot0-f179.google.com with SMTP id p3so13699143oti.5
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Dec 2017 20:58:08 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <f08faba1-2c79-bd80-34f5-f8f85e927464@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20171202005338.GA20205@polanet.pl>
+References: <20171201161555.GA11892@polanet.pl> <20171201213614.GE29898@carfax.org.uk>
+ <20171202005338.GA20205@polanet.pl>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 3 Dec 2017 21:58:07 -0700
+Message-ID: <CAJCQCtQd9pbEDOtJmMqZUGaSRM+-2Vs2HnqgycHKDjFZGiK-sA@mail.gmail.com>
+Subject: Re: exclusive subvolume space missing
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Dec 1, 2017 at 5:53 PM, Tomasz Pala <gotar@polanet.pl> wrote:
+
+> #  btrfs fi usage /
+> Overall:
+>     Device size:                 128.00GiB
+>     Device allocated:            117.19GiB
+>     Device unallocated:           10.81GiB
+>     Device missing:                  0.00B
+>     Used:                        103.56GiB
+>     Free (estimated):             11.19GiB      (min: 11.14GiB)
+>     Data ratio:                       1.98
+>     Metadata ratio:                   2.00
+>     Global reserve:              146.08MiB      (used: 0.00B)
+>
+> Data,single: Size:1.19GiB, Used:1.18GiB
+>    /dev/sda2       1.07GiB
+>    /dev/sdb2     132.00MiB
+
+This is asking for trouble. Two devices have single copy data chunks,
+if those drives die, you lose that data. But the metadata referring to
+those files will survive and Btrfs will keep complaining about them at
+every scrub until they're all deleted - there is no command that makes
+this easy. You'd have to scrape scrub output, which includes paths to
+the missing files, and script something to delete them all.
+
+You should convert this with something like 'btrfs balance start
+-dconvert=raid1,soft <mountpoint>'
 
 
-On 12/03/2017 05:43 PM, Nikolay Borisov wrote:
-> 
-> 
-> On  2.12.2017 01:23, Anand Jain wrote:
->>
->>
->> On 12/01/2017 05:19 PM, Nikolay Borisov wrote:
->>> Currently this function executes the inner loop at most 1 due to the i
->>> = 0;
->>> i < 1 condition. Furthermore, the btrfs_super_generation(super) >
->>> transid code
->>> in the if condition is never executed due to latest always set to NULL
->>> hence the
->>> first part of the condition always triggering. The gist of
->>> btrfs_read_dev_super
->>> is really to read the first superblock.
->>>
->>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->>> ---
->>>    fs/btrfs/disk-io.c | 27 ++++-----------------------
->>>    1 file changed, 4 insertions(+), 23 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 82c96607fc46..6d5f632fd1e7 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -3170,37 +3170,18 @@ int btrfs_read_dev_one_super(struct
->>> block_device *bdev, int copy_num,
->>>    struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
->>>    {
->>>        struct buffer_head *bh;
->>> -    struct buffer_head *latest = NULL;
->>> -    struct btrfs_super_block *super;
->>> -    int i;
->>> -    u64 transid = 0;
->>> -    int ret = -EINVAL;
->>> +    int ret;
->>>          /* we would like to check all the supers, but that would make
->>>         * a btrfs mount succeed after a mkfs from a different FS.
->>>         * So, we need to add a special mount option to scan for
->>>         * later supers, using BTRFS_SUPER_MIRROR_MAX instead
->>>         */
->>
->>   We need below loop to support the above comment at some point,
-> 
-> And when is that, since I don't see anyone working on it. 
 
-> Furthermore
-> what is it that we are losing in terms of functionality by not
-> supporting the comment? 
-
-  As of now if the primary SB is corrupted we don't recover from it
-  automatically and external tools are broken.
-
->It seems this code was just slapt here without
-> any vision how/when to implement it?
-
-  I have in my todo list. I am ok if you want to fix it as needed.
-
-> Furthermore, you seem to be aware of what the comment is talking about,
-> I have to admit I'm not.
-
-> Is the idea that if another filesystem does
-> mkfs and doesn't overwrite ALL superblock copies that btrfs writes (at
-> 64k, 64mb, 256gb and 1 PiB) then it's possible for this code to
-> erroneously detect btrfs when in fact there is a different fs?
-
-  Right.
-
-  IMO the above comment is wrong as well for which it made the
-  for-loop to read only primary SB.
-
-  If we have a feature to maintain backup SB, then that feature
-  is only complete when we would automatically recover from the
-  backup SB.
-  If a user overwrites btrfs primary SB and still mounts btrfs
-  with -t btrfs options, then its use-end problem we should be
-  able to recover from backup SB. So IMO looping through other
-  SB is fine.
-
-Thanks, Anand
-
-> I don't understand what problem *should* be solved here...
-
->>   instead of removing I would prefer to fix as per above comments.
->>
->> Thanks, Anand
->>
->>
->>> -    for (i = 0; i < 1; i++) {
->>> -        ret = btrfs_read_dev_one_super(bdev, i, &bh);
->>> -        if (ret)
->>> -            continue;
->>> -
->>> -        super = (struct btrfs_super_block *)bh->b_data;
->>> -
->>> -        if (!latest || btrfs_super_generation(super) > transid) {
->>> -            brelse(latest);
->>> -            latest = bh;
->>> -            transid = btrfs_super_generation(super);
->>> -        } else {
->>> -            brelse(bh);
->>> -        }
->>> -    }
->>> -
->>> -    if (!latest)
->>> +    ret = btrfs_read_dev_one_super(bdev, 0, &bh);
->>> +    if (ret)
->>>            return ERR_PTR(ret);
->>>    -    return latest;
->>> +    return bh;
->>>    }
->>>      /*
->>>
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+-- 
+Chris Murphy

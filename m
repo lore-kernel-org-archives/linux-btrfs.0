@@ -1,80 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:45919 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753464AbdL1P2N (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Dec 2017 10:28:13 -0500
-Received: by mail-wr0-f193.google.com with SMTP id o15so7274206wrf.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Dec 2017 07:28:12 -0800 (PST)
-From: Timofey Titovets <nefelim4ag@gmail.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:58660 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751156AbdLDXnY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 18:43:24 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB4NgMlb021426
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 23:43:24 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2enc4r8qt7-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2017 23:43:23 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vB4NhNu5025704
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 23:43:23 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vB4NhMGu031376
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 23:43:22 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH] Btrfs: replace raid56 stripe bubble sort with insert sort
-Date: Thu, 28 Dec 2017 18:28:04 +0300
-Message-Id: <20171228152804.4645-1-nefelim4ag@gmail.com>
+Subject: [PATCH 0/3] Btrfs: loop retry on raid6 read failures
+Date: Mon,  4 Dec 2017 15:40:34 -0700
+Message-Id: <20171204224037.7556-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Insert sort are generaly perform better then bubble sort,
-by have less iterations on avarage.
-That version also try place element to right position
-instead of raw swap.
+Patch 1 is a simple cleanup.
+Patch 2 fixes a bug in raid56 rbio merging code.
+Patch 3 fixes a bug in raid6 reconstruction process which can end up
+read failure when it can rebuild up good data.
 
-I'm not sure how many stripes per bio raid56,
-btrfs try to store (and try to sort).
+Liu Bo (3):
+  Btrfs: remove redundant check in rbio_can_merge
+  Btrfs: do not merge rbios if their fail stripe index are not identical
+  Btrfs: make raid6 rebuild retry more
 
-So, that a bit shorter just in the name of a great justice.
+ fs/btrfs/raid56.c  | 33 +++++++++++++++++++++++++--------
+ fs/btrfs/volumes.c |  9 ++++++++-
+ 2 files changed, 33 insertions(+), 9 deletions(-)
 
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
----
- fs/btrfs/volumes.c | 29 ++++++++++++-----------------
- 1 file changed, 12 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 98bc2433a920..7195fc8c49b1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5317,29 +5317,24 @@ static inline int parity_smaller(u64 a, u64 b)
- 	return a > b;
- }
- 
--/* Bubble-sort the stripe set to put the parity/syndrome stripes last */
-+/* Insertion-sort the stripe set to put the parity/syndrome stripes last */
- static void sort_parity_stripes(struct btrfs_bio *bbio, int num_stripes)
- {
- 	struct btrfs_bio_stripe s;
--	int i;
-+	int i, j;
- 	u64 l;
--	int again = 1;
- 
--	while (again) {
--		again = 0;
--		for (i = 0; i < num_stripes - 1; i++) {
--			if (parity_smaller(bbio->raid_map[i],
--					   bbio->raid_map[i+1])) {
--				s = bbio->stripes[i];
--				l = bbio->raid_map[i];
--				bbio->stripes[i] = bbio->stripes[i+1];
--				bbio->raid_map[i] = bbio->raid_map[i+1];
--				bbio->stripes[i+1] = s;
--				bbio->raid_map[i+1] = l;
--
--				again = 1;
--			}
-+	for (i = 1; i < num_stripes; i++) {
-+		s = bbio->stripes[i];
-+		l = bbio->raid_map[i];
-+		for (j = i - 1; j >= 0; j--) {
-+			if (!parity_smaller(bbio->raid_map[j], l))
-+				break;
-+			bbio->stripes[j+1]  = bbio->stripes[j];
-+			bbio->raid_map[j+1] = bbio->raid_map[j];
- 		}
-+		bbio->stripes[j+1]  = s;
-+		bbio->raid_map[j+1] = l;
- 	}
- }
- 
 -- 
-2.15.1
+2.9.4
+

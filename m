@@ -1,63 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54641 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751643AbdLLTe0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Dec 2017 14:34:26 -0500
-Date: Tue, 12 Dec 2017 20:32:24 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Timofey Titovets <nefelim4ag@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: heuristic replace heap sort with radix sort
-Message-ID: <20171212193224.GX3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171205080208.24408-1-nefelim4ag@gmail.com>
+Received: from mail-it0-f68.google.com ([209.85.214.68]:39608 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752060AbdLDOY0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 09:24:26 -0500
+Received: by mail-it0-f68.google.com with SMTP id 68so6965213ite.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2017 06:24:26 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171205080208.24408-1-nefelim4ag@gmail.com>
+In-Reply-To: <20171023222948.10648-1-nefelim4ag@gmail.com>
+References: <20171023222948.10648-1-nefelim4ag@gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Mon, 4 Dec 2017 17:23:45 +0300
+Message-ID: <CAGqmi76U11jLP8H9cdfFXQHpOom7H=6nBBv347oikPXKjc=B5g@mail.gmail.com>
+Subject: Re: [PATCH v4] Btrfs: compress_file_range() change page dirty status once
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 05, 2017 at 11:02:08AM +0300, Timofey Titovets wrote:
-> Slowest part of heuristic for now is kernel heap sort()
-> It's can take up to 55% of runtime on sorting bucket items.
-> 
-> As sorting will always call on most data sets to get correctly
-> byte_core_set_size, the only way to speed up heuristic, is to
-> speed up sort on bucket.
-> 
-> Add a general radix_sort function.
-> Radix sort require 2 buffers, one full size of input array
-> and one for store counters (jump addresses).
-> 
-> That increase usage per heuristic workspace +1KiB
-> 8KiB + 1KiB -> 8KiB + 2KiB
-> 
-> That is LSD Radix, i use 4 bit as a base for calculating,
-> to make counters array acceptable small (16 elements * 8 byte).
-> 
-> That Radix sort implementation have several points to adjust,
-> I added him to make radix sort general usable in kernel,
-> like heap sort, if needed.
-> 
-> Performance tested in userspace copy of heuristic code,
-> throughput:
->     - average <-> random data: ~3500 MiB/s - heap  sort
->     - average <-> random data: ~6000 MiB/s - radix sort
-> 
-> Changes:
->   v1 -> v2:
->     - Tested on Big Endian
->     - Drop most of multiply operations
->     - Separately allocate sort buffer
-> 
-> Changes:
->   v2 -> v3:
->     - Fix uint -> u conversion
->     - Reduce stack size, by reduce vars sizes to u32,
->       restrict input array size to u32
->       Assume that kernel will never try sorting arrays > 2^32
->     - Drop max_cell arg (precheck - correctly find max value by it self)
+Gentle ping
 
-I had some a few more style fixes merging v2 so I updated the patch with
-v2/v3 manually. The arrays to sort will be typically small compared to
-2^32, so using int is safe.
+2017-10-24 1:29 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
+> We need to call extent_range_clear_dirty_for_io()
+> on compression range to prevent application from changing
+> page content, while pages compressing.
+>
+> extent_range_clear_dirty_for_io() run on each loop iteration,
+> "(end - start)" can be much (up to 1024 times) bigger
+> then compression range (BTRFS_MAX_UNCOMPRESSED).
+>
+> That produce extra calls to page managment code.
+>
+> Fix that behaviour by call extent_range_clear_dirty_for_io()
+> only once.
+>
+> v1 -> v2:
+>  - Make that more obviously and more safeprone
+>
+> v2 -> v3:
+>  - Rebased on:
+>    Btrfs: compress_file_range() remove dead variable num_bytes
+>  - Update change log
+>  - Add comments
+>
+> v3 -> v4:
+>  - Rebased on: kdave for-next
+>  - To avoid dirty bit clear/set behaviour change
+>    call clear_bit once, istead of per compression range
+>
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/inode.c | 6 ++++--
+>  1 file changed, 4 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index b93fe05a39c7..5816dd3cb6e6 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -536,8 +536,10 @@ static noinline void compress_file_range(struct inode *inode,
+>                  * If the compression fails for any reason, we set the pages
+>                  * dirty again later on.
+>                  */
+> -               extent_range_clear_dirty_for_io(inode, start, end);
+> -               redirty = 1;
+> +               if (!redirty) {
+> +                       extent_range_clear_dirty_for_io(inode, start, end);
+> +                       redirty = 1;
+> +               }
+>
+>                 /* Compression level is applied here and only here */
+>                 ret = btrfs_compress_pages(
+> --
+> 2.14.2
+
+
+
+-- 
+Have a nice day,
+Timofey.

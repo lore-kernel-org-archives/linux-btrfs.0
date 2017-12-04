@@ -1,123 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:48837 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753500AbdLDKWB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 05:22:01 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id CD8FB48AE759
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2017 18:21:57 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 4/4] btrfs-progs: qgroup: allow show qgroup in order of subvol path
-Date: Mon, 4 Dec 2017 18:20:44 +0800
-Message-ID: <20171204102044.25702-5-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20171204102044.25702-1-lufq.fnst@cn.fujitsu.com>
-References: <20171204102044.25702-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from userp2120.oracle.com ([156.151.31.85]:56528 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753591AbdLDIUn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 03:20:43 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB44geBH158027
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 04:42:41 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by userp2120.oracle.com with ESMTP id 2ekpeu9yk6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2017 04:42:41 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB44gexn021523
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 04:42:40 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB44ge6W020918
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 04:42:40 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix inconsistency during missing device rejoin
+Date: Mon,  4 Dec 2017 12:43:06 +0800
+Message-Id: <20171204044306.8083-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-You may want to sort qgroup with the subvol path, now you can use
---sort=path.
+When device is missing its not necessary that btrfs_device::name is null
+or the path is different when it reappears. Its possible that device can
+go missing after its been scanned where neither of
+btrfs_device::name == NULL OR btrfs_device::name != reappear_dev_path,
+is true. So just check for btrfs_device::dev_state.missing. Thanks.
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-Changelog:
-v2:
-rebase on the qgroup cleanup
+ fs/btrfs/volumes.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- Documentation/btrfs-qgroup.asciidoc |  2 +-
- cmds-qgroup.c                       |  2 +-
- qgroup.c                            | 22 +++++++++++++++++++++-
- qgroup.h                            |  1 +
- 4 files changed, 24 insertions(+), 3 deletions(-)
-
-diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
-index 3053f2e6..72a2004e 100644
---- a/Documentation/btrfs-qgroup.asciidoc
-+++ b/Documentation/btrfs-qgroup.asciidoc
-@@ -120,7 +120,7 @@ show sizes in TiB, or TB with --si.
- --sort=[\+/-]<attr>[,[+/-]<attr>]...::::
- list qgroups in order of <attr>.
- +
--<attr> can be one or more of qgroupid,rfer,excl,max_rfer,max_excl.
-+<attr> can be one or more of qgroupid,rfer,excl,max_rfer,max_excl,path.
- +
- Prefix \'+' means ascending order and \'-' means descending order of <attr>.
- If no prefix is given, use ascending order by default.
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index d07bb0c0..604a275e 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -284,7 +284,7 @@ static const char * const cmd_qgroup_show_usage[] = {
- 	"-f             list all qgroups which impact the given path",
- 	"               (excluding ancestral qgroups)",
- 	HELPINFO_UNITS_LONG,
--	"--sort=qgroupid,rfer,excl,max_rfer,max_excl",
-+	"--sort=qgroupid,rfer,excl,max_rfer,max_excl,path",
- 	"               list qgroups sorted by specified items",
- 	"               you can use '+' or '-' in front of each item.",
- 	"               (+:ascending, -:descending, ascending default)",
-diff --git a/qgroup.c b/qgroup.c
-index cfaed5ba..9b49d6fb 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -415,12 +415,31 @@ static int comp_entry_with_max_excl(struct btrfs_qgroup *entry1,
- 	return is_descending ? -ret : ret;
- }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index aa0c1d9ce1f5..2f76a125d181 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -715,7 +715,8 @@ static noinline int device_list_add(const char *path,
  
-+static int comp_entry_with_path(struct btrfs_qgroup *entry1,
-+				struct btrfs_qgroup *entry2,
-+				int is_descending)
-+{
-+	int ret;
-+
-+	if (!entry1->path && !entry2->path)
-+		ret = 0;
-+	else if (!entry1->path)
-+		ret = -1;
-+	else if (!entry2->path)
-+		ret = 1;
-+	else
-+		ret = strcmp(entry1->path, entry2->path);
-+
-+	return is_descending ? -ret : ret;
-+}
-+
- static btrfs_qgroup_comp_func all_comp_funcs[] = {
- 	[BTRFS_QGROUP_COMP_QGROUPID]	= comp_entry_with_qgroupid,
- 	[BTRFS_QGROUP_COMP_RFER]	= comp_entry_with_rfer,
- 	[BTRFS_QGROUP_COMP_EXCL]	= comp_entry_with_excl,
- 	[BTRFS_QGROUP_COMP_MAX_RFER]	= comp_entry_with_max_rfer,
--	[BTRFS_QGROUP_COMP_MAX_EXCL]	= comp_entry_with_max_excl
-+	[BTRFS_QGROUP_COMP_MAX_EXCL]	= comp_entry_with_max_excl,
-+	[BTRFS_QGROUP_COMP_PATH]	= comp_entry_with_path
- };
- 
- static char *all_sort_items[] = {
-@@ -429,6 +448,7 @@ static char *all_sort_items[] = {
- 	[BTRFS_QGROUP_COMP_EXCL]	= "excl",
- 	[BTRFS_QGROUP_COMP_MAX_RFER]	= "max_rfer",
- 	[BTRFS_QGROUP_COMP_MAX_EXCL]	= "max_excl",
-+	[BTRFS_QGROUP_COMP_PATH]	= "path",
- 	[BTRFS_QGROUP_COMP_MAX]		= NULL,
- };
- 
-diff --git a/qgroup.h b/qgroup.h
-index 2003f834..f714d2eb 100644
---- a/qgroup.h
-+++ b/qgroup.h
-@@ -69,6 +69,7 @@ enum btrfs_qgroup_comp_enum {
- 	BTRFS_QGROUP_COMP_EXCL,
- 	BTRFS_QGROUP_COMP_MAX_RFER,
- 	BTRFS_QGROUP_COMP_MAX_EXCL,
-+	BTRFS_QGROUP_COMP_PATH,
- 	BTRFS_QGROUP_COMP_MAX
- };
- 
+ 		ret = 1;
+ 		device->fs_devices = fs_devices;
+-	} else if (!device->name || strcmp(device->name->str, path)) {
++	} else if (!device->name || strcmp(device->name->str, path) ||
++			test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
+ 		/*
+ 		 * When FS is already mounted.
+ 		 * 1. If you are here and if the device->name is NULL that
 -- 
-2.14.3
-
-
+2.15.0
 

@@ -1,61 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:30968 "EHLO
-        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750761AbdK3XCu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Nov 2017 18:02:50 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Cc: lakshmipathi.g@gmail.com
-Subject: [PATCH RESEND] btrfs: ignore return from btrfs_open_one_device()
-Date: Fri,  1 Dec 2017 07:02:30 +0800
-Message-Id: <20171130230230.10185-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:36046 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752540AbdLDNwP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Dec 2017 08:52:15 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 86F17ADFC
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Dec 2017 13:52:14 +0000 (UTC)
+Date: Mon, 4 Dec 2017 14:50:16 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/5] btrfs: Remove dead code
+Message-ID: <20171204135016.GW3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+ <1512119984-12708-3-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1512119984-12708-3-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test case like btrfs-progs test-misc/012 can recreate the same fsid with
-different number of struct btrfs_fs_devices::total_devices. And the
-previous device which is in the kernel device list is stale now, but as
-we don't clean the kernel device list, and in the mount context, it really
-ends up reading the device to find its zeroed SB. And thus return the fail
-to mount.
+On Fri, Dec 01, 2017 at 11:19:41AM +0200, Nikolay Borisov wrote:
+> 'clear' is always set to 0 (BTRFS_FEATURE_COMPAT_SAFE_CLEAR,
+> BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR and BTRFS_FEATURE_INCOMPAT_SAFE_CLEAR are
+> all defined to 0). So remove the code that logically can never execute.
 
-The long term fix for this should be to create a new kernel device list,
-for the mount context.
+The point of the macros is to wrap all values that can mean
+"compatibility, safe to clear", similar to BTRFS_FEATURE_COMPAT_RO_SUPP
+etc. So when we have such feature, we'll modify the defines and the rest
+of the code will work.
 
-Though the patch
-  btrfs: factor __btrfs_open_devices() to create btrfs_open_one_device()
-did tried to skip the failed open, but it forgot to reset the ret value.
-Thus returning the error up the stack in the mount context.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Fixes:
-  btrfs: factor __btrfs_open_devices() to create btrfs_open_one_device()
----
-Hi David,
-
- My bad. The above patch introduced a regression. Can you kindly squash
- this patch to it.
-
-Thanks, Anand
-
- fs/btrfs/volumes.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b408a3f7229e..7da65625677f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1035,8 +1035,7 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 
- 	list_for_each_entry(device, head, dev_list) {
- 		/* Just open everything we can; ignore failures here */
--		ret = btrfs_open_one_device(fs_devices, device, flags, holder);
--		if (ret)
-+		if (btrfs_open_one_device(fs_devices, device, flags, holder))
- 			continue;
- 
- 		if (!latest_dev ||
--- 
-2.15.0
-
+But with your change the 'safe clear' would have to be patched again. The
+macros provide complete interface, though some of the bits are not used.
+A single line of unused code is IMHO not that significant that we have
+to remove it and silently break the implementation.

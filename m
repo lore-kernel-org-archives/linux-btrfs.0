@@ -1,65 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:33840 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752252AbdLGA0f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 19:26:35 -0500
-Date: Wed, 6 Dec 2017 16:26:24 -0800
+Received: from userp2120.oracle.com ([156.151.31.85]:58662 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751582AbdLDXnZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 18:43:25 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB4NgE0i021407
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 23:43:24 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2enc4r8qt8-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Dec 2017 23:43:24 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB4NhNwQ017175
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 23:43:23 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB4NhNTV015356
+        for <linux-btrfs@vger.kernel.org>; Mon, 4 Dec 2017 23:43:23 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] Btrfs: make raid6 rebuild retry more
-Message-ID: <20171207002624.GC30109@dhcp-whq-twvpn-1-vpnpool-10-159-141-111.vpn.oracle.com>
-Reply-To: bo.li.liu@oracle.com
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] Btrfs: remove redundant check in rbio_can_merge
+Date: Mon,  4 Dec 2017 15:40:35 -0700
+Message-Id: <20171204224037.7556-2-bo.li.liu@oracle.com>
+In-Reply-To: <20171204224037.7556-1-bo.li.liu@oracle.com>
 References: <20171204224037.7556-1-bo.li.liu@oracle.com>
- <20171204224037.7556-4-bo.li.liu@oracle.com>
- <1ab2da20-6294-67a4-2ef3-6a65afed0fc6@gmx.com>
- <20171205180925.GO3553@twin.jikos.cz>
- <20171205225501.GC18865@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <2958e696-4671-73a4-5940-2b9a89627150@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <2958e696-4671-73a4-5940-2b9a89627150@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 06, 2017 at 08:11:30AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2017年12月06日 06:55, Liu Bo wrote:
-> > On Tue, Dec 05, 2017 at 07:09:25PM +0100, David Sterba wrote:
-> >> On Tue, Dec 05, 2017 at 04:07:35PM +0800, Qu Wenruo wrote:
-> >>>> @@ -2166,11 +2166,21 @@ int raid56_parity_recover(struct btrfs_fs_info *fs_info, struct bio *bio,
-> >>>>  	}
-> >>>>  
-> >>>>  	/*
-> >>>> -	 * reconstruct from the q stripe if they are
-> >>>> -	 * asking for mirror 3
-> >>>> +	 * Loop retry:
-> >>>> +	 * for 'mirror == 2', reconstruct from all other stripes.
-> >>>
-> >>> What about using macro to makes the reassemble method more human readable?
-> >>
-> >> Yeah, that's definetelly needed and should be based on
-> >> BTRFS_MAX_MIRRORS, not just hardcoded to 3.
-> > 
-> > OK.
-> > 
-> > In case of raid5/6, BTRFS_MAX_MIRRORS is an abused name, it's more a
-> > raid1/10 concept, either BTRFS_RAID56_FULL_REBUILD or
-> > BTRFS_RAID56_FULL_CHK is better to me, which one do you guys like?
-> 
-> For mirror > 2 case, the mirror_num is no longer a single indicator, but
-> a ranged iterator for later rebuild retries.
-> 
-> Something like set_raid_fail_from_mirror_num() seems better to me.
+Given the above
+'
+if (last->operation != cur->operation)
+	return 0;
+',
+it's guaranteed that two operations are same.
 
-I feel like having the logic open-code'd plus necessary comments is
-probably better as we can see which stripe failb is.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/raid56.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-For those who are new to this raid6 retry logic are likely to feel
-confused by a helper function like set_raid_fail_from_mirror_num() and
-will go check the helper function about the retry logic.
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 24a6222..c4188fb 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -595,12 +595,10 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
+ 	 * bio list here, anyone else that wants to
+ 	 * change this stripe needs to do their own rmw.
+ 	 */
+-	if (last->operation == BTRFS_RBIO_PARITY_SCRUB ||
+-	    cur->operation == BTRFS_RBIO_PARITY_SCRUB)
++	if (last->operation == BTRFS_RBIO_PARITY_SCRUB)
+ 		return 0;
+ 
+-	if (last->operation == BTRFS_RBIO_REBUILD_MISSING ||
+-	    cur->operation == BTRFS_RBIO_REBUILD_MISSING)
++	if (last->operation == BTRFS_RBIO_REBUILD_MISSING)
+ 		return 0;
+ 
+ 	return 1;
+-- 
+2.9.4
 
-Thanks,
-
--liubo

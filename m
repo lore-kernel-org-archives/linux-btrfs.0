@@ -1,155 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44024 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751692AbdLTFTY (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 20 Dec 2017 00:19:24 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: misono.tomohiro@jp.fujitsu.com
-Subject: [PATCH v2] btrfs-progs: qgroup: Remove support for specifying inherit type
-Date: Wed, 20 Dec 2017 13:19:12 +0800
-Message-Id: <20171220051912.18147-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:32976 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753402AbdLDNGc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 4 Dec 2017 08:06:32 -0500
+Date: Mon, 4 Dec 2017 14:06:30 +0100
+From: Jan Kara <jack@suse.cz>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
+        jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH v2 06/11] writeback: add counters for metadata usage
+Message-ID: <20171204130630.GB17047@quack2.suse.cz>
+References: <1511385366-20329-1-git-send-email-josef@toxicpanda.com>
+ <1511385366-20329-7-git-send-email-josef@toxicpanda.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1511385366-20329-7-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since kernel is deprecating the support for specifying inherit type,
-remove the support in btrfs-progs too.
+On Wed 22-11-17 16:16:01, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
+> 
+> Btrfs has no bounds except memory on the amount of dirty memory that we have in
+> use for metadata.  Historically we have used a special inode so we could take
+> advantage of the balance_dirty_pages throttling that comes with using pagecache.
+> However as we'd like to support different blocksizes it would be nice to not
+> have to rely on pagecache, but still get the balance_dirty_pages throttling
+> without having to do it ourselves.
+> 
+> So introduce *METADATA_DIRTY_BYTES and *METADATA_WRITEBACK_BYTES.  These are
+> zone and bdi_writeback counters to keep track of how many bytes we have in
+> flight for METADATA.  We need to count in bytes as blocksizes could be
+> percentages of pagesize.  We simply convert the bytes to number of pages where
+> it is needed for the throttling.
+> 
+> Also introduce NR_METADATA_BYTES so we can keep track of the total amount of
+> pages used for metadata on the system.  This is also needed so things like dirty
+> throttling know that this is dirtyable memory as well and easily reclaimed.
 
-Thankfully, the options for qgroup inheritance is hidden and not
-documented, so user shouldn't be affected at all.
+I'll defer to mm guys for final decision but the fact is the memory for
+metadata is likely to be allocated from some slab cache and that actually
+goes against the 'easily reclaimed' statement. Granted these are going to
+be relatively large objects (1k at least I assume) so fragmentation issues
+are not as bad but still getting actual free pages out of slab cache isn't
+that easy... More on this below.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-changelog:
-v2:
-  Remove the "c:" option in getopt(), spotted by Misono.
----
- cmds-subvolume.c | 25 ++-----------------------
- qgroup.c         | 42 ------------------------------------------
- qgroup.h         |  3 ---
- 3 files changed, 2 insertions(+), 68 deletions(-)
+> diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+> index 356a814e7c8e..fd516a0f0bfe 100644
+> --- a/include/linux/mmzone.h
+> +++ b/include/linux/mmzone.h
+> @@ -179,6 +179,9 @@ enum node_stat_item {
+>  	NR_VMSCAN_IMMEDIATE,	/* Prioritise for reclaim when writeback ends */
+>  	NR_DIRTIED,		/* page dirtyings since bootup */
+>  	NR_WRITTEN,		/* page writings since bootup */
+> +	NR_METADATA_DIRTY_BYTES,	/* Metadata dirty bytes */
+> +	NR_METADATA_WRITEBACK_BYTES,	/* Metadata writeback bytes */
+> +	NR_METADATA_BYTES,	/* total metadata bytes in use. */
+>  	NR_VM_NODE_STAT_ITEMS
+>  };
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index dc626a6495e5..f8e34bc842b3 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -129,18 +129,11 @@ static int cmd_subvol_create(int argc, char **argv)
- 	DIR	*dirstream = NULL;
- 
- 	while (1) {
--		int c = getopt(argc, argv, "c:i:");
-+		int c = getopt(argc, argv, "i:");
- 		if (c < 0)
- 			break;
- 
- 		switch (c) {
--		case 'c':
--			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
--			if (res) {
--				retval = res;
--				goto out;
--			}
--			break;
- 		case 'i':
- 			res = qgroup_inherit_add_group(&inherit, optarg);
- 			if (res) {
-@@ -665,18 +658,11 @@ static int cmd_subvol_snapshot(int argc, char **argv)
- 
- 	memset(&args, 0, sizeof(args));
- 	while (1) {
--		int c = getopt(argc, argv, "c:i:r");
-+		int c = getopt(argc, argv, "i:r");
- 		if (c < 0)
- 			break;
- 
- 		switch (c) {
--		case 'c':
--			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
--			if (res) {
--				retval = res;
--				goto out;
--			}
--			break;
- 		case 'i':
- 			res = qgroup_inherit_add_group(&inherit, optarg);
- 			if (res) {
-@@ -687,13 +673,6 @@ static int cmd_subvol_snapshot(int argc, char **argv)
- 		case 'r':
- 			readonly = 1;
- 			break;
--		case 'x':
--			res = qgroup_inherit_add_copy(&inherit, optarg, 1);
--			if (res) {
--				retval = res;
--				goto out;
--			}
--			break;
- 		default:
- 			usage(cmd_subvol_snapshot_usage);
- 		}
-diff --git a/qgroup.c b/qgroup.c
-index 156825fd431d..e9158a260251 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -1310,45 +1310,3 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg)
- 
- 	return 0;
- }
--
--int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
--			    int type)
--{
--	int ret;
--	u64 qgroup_src;
--	u64 qgroup_dst;
--	char *p;
--	int pos = 0;
--
--	p = strchr(arg, ':');
--	if (!p) {
--bad:
--		error("invalid copy specification, missing separator :");
--		return -EINVAL;
--	}
--	*p = 0;
--	qgroup_src = parse_qgroupid(arg);
--	qgroup_dst = parse_qgroupid(p + 1);
--	*p = ':';
--
--	if (!qgroup_src || !qgroup_dst)
--		goto bad;
--
--	if (*inherit)
--		pos = (*inherit)->num_qgroups +
--		      (*inherit)->num_ref_copies * 2 * type;
--
--	ret = qgroup_inherit_realloc(inherit, 2, pos);
--	if (ret)
--		return ret;
--
--	(*inherit)->qgroups[pos++] = qgroup_src;
--	(*inherit)->qgroups[pos++] = qgroup_dst;
--
--	if (!type)
--		++(*inherit)->num_ref_copies;
--	else
--		++(*inherit)->num_excl_copies;
--
--	return 0;
--}
-diff --git a/qgroup.h b/qgroup.h
-index 875fbdf37f5f..3fc57123dc2d 100644
---- a/qgroup.h
-+++ b/qgroup.h
-@@ -92,7 +92,4 @@ int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set **comp_set,
- 				int is_descending);
- int qgroup_inherit_size(struct btrfs_qgroup_inherit *p);
- int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
--int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
--			    int type);
--
- #endif
+I think you didn't address my comment from last version of the series.
+
+1) Per-cpu node-stat batching will be basically useless for these counters
+as the batch size is <128. Maybe we don't care but it would deserve a
+comment.
+
+2) These counters are tracked in atomic_long_t type. That means max 2GB of
+metadata on 32-bit machines. I *guess* that should be OK since you would
+not be able to address that much of slab cache on such machine anyway but 
+still worth a comment I think.
+
+> diff --git a/mm/util.c b/mm/util.c
+> index 34e57fae959d..681d62631ee0 100644
+> --- a/mm/util.c
+> +++ b/mm/util.c
+> @@ -616,6 +616,7 @@ int __vm_enough_memory(struct mm_struct *mm, long pages, int cap_sys_admin)
+>  	if (sysctl_overcommit_memory == OVERCOMMIT_GUESS) {
+>  		free = global_zone_page_state(NR_FREE_PAGES);
+>  		free += global_node_page_state(NR_FILE_PAGES);
+> +		free += global_node_page_state(NR_METADATA_BYTES) >> PAGE_SHIFT;
+
+
+I'm not really sure this is OK. It depends on whether mm is really able to
+reclaim these pages easily enough... Summon mm people for help :)
+
+> diff --git a/mm/vmscan.c b/mm/vmscan.c
+> index 13d711dd8776..415b003e475c 100644
+> --- a/mm/vmscan.c
+> +++ b/mm/vmscan.c
+> @@ -225,7 +225,8 @@ unsigned long pgdat_reclaimable_pages(struct pglist_data *pgdat)
+>  
+>  	nr = node_page_state_snapshot(pgdat, NR_ACTIVE_FILE) +
+>  	     node_page_state_snapshot(pgdat, NR_INACTIVE_FILE) +
+> -	     node_page_state_snapshot(pgdat, NR_ISOLATED_FILE);
+> +	     node_page_state_snapshot(pgdat, NR_ISOLATED_FILE) +
+> +	     (node_page_state_snapshot(pgdat, NR_METADATA_BYTES) >> PAGE_SHIFT);
+>  
+>  	if (get_nr_swap_pages() > 0)
+>  		nr += node_page_state_snapshot(pgdat, NR_ACTIVE_ANON) +
+
+Just drop this hunk. The function is going away (and is currently unused).
+
+> @@ -3812,6 +3813,7 @@ static inline unsigned long node_unmapped_file_pages(struct pglist_data *pgdat)
+>  static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+>  {
+>  	unsigned long nr_pagecache_reclaimable;
+> +	unsigned long nr_metadata_reclaimable;
+>  	unsigned long delta = 0;
+>  
+>  	/*
+> @@ -3833,7 +3835,20 @@ static unsigned long node_pagecache_reclaimable(struct pglist_data *pgdat)
+>  	if (unlikely(delta > nr_pagecache_reclaimable))
+>  		delta = nr_pagecache_reclaimable;
+>  
+> -	return nr_pagecache_reclaimable - delta;
+> +	nr_metadata_reclaimable =
+> +		node_page_state(pgdat, NR_METADATA_BYTES) >> PAGE_SHIFT;
+> +	/*
+> +	 * We don't do writeout through the shrinkers so subtract any
+> +	 * dirty/writeback metadata bytes from the reclaimable count.
+> +	 */
+> +	if (nr_metadata_reclaimable) {
+> +		unsigned long unreclaimable =
+> +			node_page_state(pgdat, NR_METADATA_DIRTY_BYTES) +
+> +			node_page_state(pgdat, NR_METADATA_WRITEBACK_BYTES);
+> +		unreclaimable >>= PAGE_SHIFT;
+> +		nr_metadata_reclaimable -= unreclaimable;
+> +	}
+> +	return nr_metadata_reclaimable + nr_pagecache_reclaimable - delta;
+>  }
+
+Ditto as with __vm_enough_memory(). In particular I'm unsure whether the
+watermarks like min_unmapped_pages or min_slab_pages would still work as
+designed.
+
+								Honza
 -- 
-2.15.1
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

@@ -1,87 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:33211 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752312AbdLETJS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 14:09:18 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: [RFC] Improve subvolume usability for a normal user
-To: Graham Cobb <g.btrfs@cobb.uk.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
- <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
- <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
- <22115bdd-75f6-eea1-923c-73f54955ee7e@cobb.uk.net>
- <88e4e111-e9ca-15d5-f2f7-6b54091ea52b@libero.it>
- <9320c224-7f4d-eeaa-d60f-755825f7944d@cobb.uk.net>
-From: Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <5a0216a6-03fc-53b1-5126-e6e5184e6cca@libero.it>
-Date: Tue, 5 Dec 2017 20:09:15 +0100
+Received: from mx2.suse.de ([195.135.220.15]:60004 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750740AbdLETNL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 14:13:11 -0500
+Date: Tue, 5 Dec 2017 20:11:11 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4] btrfs-progs: add 'btrfs device ignore' cli
+Message-ID: <20171205191111.GV3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171205085258.4038-1-anand.jain@oracle.com>
+ <20171205085258.4038-3-anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <9320c224-7f4d-eeaa-d60f-755825f7944d@cobb.uk.net>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171205085258.4038-3-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/05/2017 07:46 PM, Graham Cobb wrote:
-> On 05/12/17 18:01, Goffredo Baroncelli wrote:
->> On 12/05/2017 04:42 PM, Graham Cobb wrote:
-[....]
->>>>> Then no impact to kernel, all complex work is done in user space.
->>>> Exactly how hard is it to just check ownership of the root inode of a
->>>> subvolume from the ioctl context?  You could just as easily push all the
->>>> checking out to the VFS layer by taking an open fd for the subvolume
->>>> root (and probably implicitly closing it) instead of taking a path, and
->>>> that would give you all the benefits of ACL's and whatever security
->>>> modules the local system is using.  
->>>
->>> +1 - stop inventing new access control rules for each different action!
->>
->> A subvolume is like a directory; In all filesystems you cannot remove an inode if you don't have write access to the parent directory. I assume that this is a POSIX requirement; and if so this should be true even for BTRFS.
->> This means that in order to remove a subvolume and you are not root, you should check all the contained directories. It is not sufficient to check one inode.
->>
->> In the past I create a patch [1][2] which extended the unlink (2) syscall to allow removing a subvolume if:
->> a) the user is root  or
->> b.1) if the subvolume is empty and
->> b.2) the user has the write capability to the parent directory
+On Tue, Dec 05, 2017 at 04:52:57PM +0800, Anand Jain wrote:
+> This patch adds
+>   btrfs device ignode <dev>
+> so that a device can be ignored/missed during mount if the device is
+> already been scanned. Basically, this command will undo the effect
+> of the command
+>   btrfs device scan <dev>
+
+As it logicall belongs to scan, I'd rather make it an option, like
+
+  $ btrfs scan --unregister
+
+or
+
+  $ btrfs scan --forget
+
+The meaning of 'ignore' in this context is not clear to me, we can
+ignore errors on the device.
+
+> This change is compatible with older kernel without the ioctl
+> BTRFS_IOC_IGNORE_DEV which is added here. At which it shall
+> report 'Inappropriate ioctl for device'. And will report
+> 'Operation not permitted' on mounted device.
 > 
-> That is also OK, as it follows a logical and consistent model without
-> introducing new rules, but it has two disadvantages with snapshots the
-> user creates and then wants to delete:
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> v1-4: No change.
 > 
-> i) they have to change the snapshot to readwrite to remove all the
-> contents -- how many users will know that that can even be done?
-
-I think that this is an orthogonal question.  However the user should use btrfs set....
-
-Anyway I am not against to use something more specific like "btrfs sub del...", where it could be possible to implement a more specific checks. I am only highlight that destroy a subvolume without looking to its content could break the POSIX rules
-
+>  cmds-device.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  ioctl.h       |  2 ++
+>  2 files changed, 56 insertions(+)
 > 
-> ii) if the snapshot contains a file the user cannot remove then the user
-> cannot remove the snapshot at all (even though they could create it).
-
-It is the same for the other filesystem: if in a filesystem tree, there is a directory which is not changeable by the user, the user cannot remove all the tree. Again, I am only highlighting that there is a possible break of POSIX rules.
-
+> diff --git a/cmds-device.c b/cmds-device.c
+> index f4cdb39f64ac..31b1945d3339 100644
+> --- a/cmds-device.c
+> +++ b/cmds-device.c
+> @@ -329,6 +329,59 @@ out:
+>  	return !!ret;
+>  }
+>  
+> +static const char * const cmd_device_ignore_usage[] = {
+> +	"btrfs device ignore [<device>]",
+> +	"Ignore a device in the btrfs kernel module.",
+> +	NULL
+> +};
+> +
+> +static int btrfs_ignore_one_device(char *path)
+> +{
+> +	struct btrfs_ioctl_vol_args args;
+> +	int fd;
+> +	int ret;
+> +
+> +	fd = open("/dev/btrfs-control", O_RDWR);
+> +	if (fd < 0)
+> +		return -errno;
+> +
+> +	memset(&args, 0, sizeof(args));
+> +	strncpy_null(args.name, path);
+> +	ret = ioctl(fd, BTRFS_IOC_IGNORE_DEV, &args);
+> +	if (ret)
+> +		ret = -errno;
+> +	close(fd);
+> +	return ret;
+> +}
+> +
+> +static int cmd_device_ignore(int argc, char **argv)
+> +{
+> +	int ret = 0;
+> +	char *path;
+> +
+> +	if (check_argc_max(argc - optind, 1))
+> +		usage(cmd_device_ignore_usage);
+> +
+> +	if (is_block_device(argv[1]) != 1) {
+> +		error("Not a block device: %s", argv[1]);
+> +		return -ENOENT;
+> +	}
+> +
+> +	path = canonicalize_path(argv[1]);
+> +	if (!path) {
+> +		error("Could not canonicalize path '%s': %s",
+> +					argv[1], strerror(errno));
+> +		return -ENOENT;
+> +	}
+> +
+> +	ret  = btrfs_ignore_one_device(path);
+> +	if (ret)
+> +		error("Can't ignore %s: %s", path, strerror(-ret));
+> +
+> +	free(path);
+> +	return ret;
+> +}
+> +
+>  static const char * const cmd_device_ready_usage[] = {
+>  	"btrfs device ready <device>",
+>  	"Check device to see if it has all of its devices in cache for mounting",
+> @@ -604,6 +657,7 @@ const struct cmd_group device_cmd_group = {
+>  			CMD_ALIAS },
+>  		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
+>  		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
+> +		{ "ignore", cmd_device_ignore, cmd_device_ignore_usage, NULL, 0 },
+>  		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
+>  		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
+>  		{ "usage", cmd_device_usage,
+> diff --git a/ioctl.h b/ioctl.h
+> index 709e996f401c..bef8508119aa 100644
+> --- a/ioctl.h
+> +++ b/ioctl.h
+> @@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>  				   struct btrfs_ioctl_vol_args)
+> +#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+> +				   struct btrfs_ioctl_vol_args)
+>  /* trans start and trans end are dangerous, and only for
+>   * use by applications that know how to avoid the
+>   * resulting deadlocks
+> -- 
+> 2.7.0
 > 
-> That is why I preferred Austin's first proposal. I suppose your proposal
-> could be extended:
-> 
-> a) the user is root  or
-> b.1) if the subvolume is empty and
-> b.2) the user has the write capability to the parent directory, or
-> c) the subvolume is readonly
-
-If a subvolume is marked read-only, the user has to change to RW via "btrfs property set...."
-
-> 
-> However it is done, I think it is important that all normal VFS access
-> rules (such as ACLs) are followed for the subvolume itself.
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -1,36 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:58593 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:54808 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752894AbdLEJKd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 04:10:33 -0500
-Subject: Re: [PATCH 3/7] btrfs-progs: Remove recover_get_good_super
+        id S1752711AbdLEJO4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 04:14:56 -0500
+Subject: Re: [PATCH 4/7] btrfs-progs: Use list_for_each_entry in
+ write_dev_all_supers
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <1512463189-24724-1-git-send-email-nborisov@suse.com>
- <1512463189-24724-4-git-send-email-nborisov@suse.com>
+ <1512463189-24724-5-git-send-email-nborisov@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <c57814ce-2b69-50d7-7fb8-63827a7019ef@gmx.com>
-Date: Tue, 5 Dec 2017 17:10:06 +0800
+Message-ID: <21bc180f-83ca-2be8-8c41-ea1e86dca0fe@gmx.com>
+Date: Tue, 5 Dec 2017 17:14:47 +0800
 MIME-Version: 1.0
-In-Reply-To: <1512463189-24724-4-git-send-email-nborisov@suse.com>
+In-Reply-To: <1512463189-24724-5-git-send-email-nborisov@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="MgXF0SFoIGuTP9mL3cItPASCq30SCDr6b"
+ boundary="kurRQhraRbm6qJ086XrARHuIpsWJpoTJe"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---MgXF0SFoIGuTP9mL3cItPASCq30SCDr6b
-Content-Type: multipart/mixed; boundary="VKrJh2L71nDWx4NKPhBw4euUxU5BS1cOT";
+--kurRQhraRbm6qJ086XrARHuIpsWJpoTJe
+Content-Type: multipart/mixed; boundary="2TvUvAA198XtIgHpGtsdXp0nPF1bIk9SW";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <c57814ce-2b69-50d7-7fb8-63827a7019ef@gmx.com>
-Subject: Re: [PATCH 3/7] btrfs-progs: Remove recover_get_good_super
+Message-ID: <21bc180f-83ca-2be8-8c41-ea1e86dca0fe@gmx.com>
+Subject: Re: [PATCH 4/7] btrfs-progs: Use list_for_each_entry in
+ write_dev_all_supers
 References: <1512463189-24724-1-git-send-email-nborisov@suse.com>
- <1512463189-24724-4-git-send-email-nborisov@suse.com>
-In-Reply-To: <1512463189-24724-4-git-send-email-nborisov@suse.com>
+ <1512463189-24724-5-git-send-email-nborisov@suse.com>
+In-Reply-To: <1512463189-24724-5-git-send-email-nborisov@suse.com>
 
---VKrJh2L71nDWx4NKPhBw4euUxU5BS1cOT
+--2TvUvAA198XtIgHpGtsdXp0nPF1bIk9SW
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -38,75 +40,68 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2017=E5=B9=B412=E6=9C=8805=E6=97=A5 16:39, Nikolay Borisov wrote:
-> Currently getting the good super really consists of just getting the fi=
-rst entry
-> on the linked list, since it's the one with the highest transid. So rem=
-ove
-> the function and just use list_first_entry directly.
+> No need to use extra variable and 2 macros when we can succintly use 1.=
+
 >=20
 > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Straightforward cleanup.
+
+Although I found several other places with the same problem.
+
+It would be better to address them all in one patch.
+(3 in volumes.c 1 in utils.c and 1 in cmds-filesystem.c)
 
 Thanks,
 Qu
-
 > ---
->  super-recover.c | 13 +++----------
->  1 file changed, 3 insertions(+), 10 deletions(-)
+>  disk-io.c | 4 +---
+>  1 file changed, 1 insertion(+), 3 deletions(-)
 >=20
-> diff --git a/super-recover.c b/super-recover.c
-> index 6a13d81b0b29..e12513100f17 100644
-> --- a/super-recover.c
-> +++ b/super-recover.c
-> @@ -177,15 +177,6 @@ static int read_fs_supers(struct btrfs_recover_sup=
-erblock *recover)
->  	return 0;
->  }
+> diff --git a/disk-io.c b/disk-io.c
+> index f5edc4796619..3d8785d5bb37 100644
+> --- a/disk-io.c
+> +++ b/disk-io.c
+> @@ -1556,7 +1556,6 @@ static int write_dev_supers(struct btrfs_fs_info =
+*fs_info,
 > =20
-> -static struct super_block_record *recover_get_good_super(
-> -				struct btrfs_recover_superblock *recover)
-> -{
-> -	struct super_block_record *record;
-> -	record =3D list_entry(recover->good_supers.next,
-> -				struct super_block_record, list);
-> -	return record;
-> -}
-> -
->  static void print_super_info(struct super_block_record *record)
+>  int write_all_supers(struct btrfs_fs_info *fs_info)
 >  {
->  	printf("\t\tdevice name =3D %s\n", record->device_name);
-> @@ -280,7 +271,9 @@ int btrfs_recover_superblocks(const char *dname,
->  			goto no_recover;
->  		}
->  	}
-> -	record =3D recover_get_good_super(&recover);
-> +	record =3D list_first_entry(&recover.good_supers,
-> +				  struct super_block_record, list);
-> +
->  	root =3D open_ctree(record->device_name, record->bytenr,
->  			  OPEN_CTREE_RECOVER_SUPER | OPEN_CTREE_WRITES);
->  	if (!root) {
+> -	struct list_head *cur;
+>  	struct list_head *head =3D &fs_info->fs_devices->devices;
+>  	struct btrfs_device *dev;
+>  	struct btrfs_super_block *sb;
+> @@ -1566,8 +1565,7 @@ int write_all_supers(struct btrfs_fs_info *fs_inf=
+o)
+> =20
+>  	sb =3D fs_info->super_copy;
+>  	dev_item =3D &sb->dev_item;
+> -	list_for_each(cur, head) {
+> -		dev =3D list_entry(cur, struct btrfs_device, dev_list);
+> +	list_for_each_entry(dev, head, dev_list) {
+>  		if (!dev->writeable)
+>  			continue;
+> =20
 >=20
 
 
---VKrJh2L71nDWx4NKPhBw4euUxU5BS1cOT--
+--2TvUvAA198XtIgHpGtsdXp0nPF1bIk9SW--
 
---MgXF0SFoIGuTP9mL3cItPASCq30SCDr6b
+--kurRQhraRbm6qJ086XrARHuIpsWJpoTJe
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomYm4XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiHGwf/QadMDHuQJTvbYu5SGnrxqQhi
-LV+qdAvbM6o1MI5ukPH5d69KXkLPl2N7Kb+Dm6ugnyfeATE6Re4462EC4EJgMvrM
-MYGp6kECGKJa4ZlXmlFOdbynLAAdFoqk599d5KkkBJDEn0DHbxmReCVHsT9MJCS4
-4u6YkGuGe5R0rGrMIkqpEoYShu3buYGxGI581rDV5orrTOARXaCf4Z40diHesrc+
-zcXugy/OWYzy/xJubt4HKRKl4roPh/hYFeb+RhGj3JrtFJv6vCDE9pnt0CGWKNms
-J1hO3TTXET6aE5xXsXrEbNbP7ZrElqdwOKIZ3xttYavj2ju/2Ozr9lMrl5VVqw==
-=258P
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomY4cXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjbPwf/eAcvD41WYIK3+9fR8GvCeBHW
+rhbdO0Efe7lCncOUmsbLh46cAjc5bPuaFcNrkfM7n/TUW4ebJ+cA8DIuTBC3Xy2A
+AFavYwU9WBV16ODfQ9QMhdmXhYPAfCPaUFDvUdAymcpoZuEwKmUvllG++FyVacXS
+Ch7En32Cme/mO+wx2bFc2kCd/ke8oWsrHtK4+B6Og0rRf40GodrOvmByjGUD8SyG
+AY39Qiw3eBgGO4EU4/cqm2mVV0oKm5KbdaVXzrLfEE3spkx5JQArKQqpGddfjwQ3
+Chl7I6omG9Meu4gakHsWgiICJl5ASw5NM3Zv/pBiW5qZ4o6UE9tSpF11cTdL6g==
+=svhW
 -----END PGP SIGNATURE-----
 
---MgXF0SFoIGuTP9mL3cItPASCq30SCDr6b--
+--kurRQhraRbm6qJ086XrARHuIpsWJpoTJe--

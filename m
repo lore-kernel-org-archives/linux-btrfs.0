@@ -1,129 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:42788 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752869AbdLEIwg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 03:52:36 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB58pqFs009145
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:35 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2enc2g1mup-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Dec 2017 08:52:35 +0000
+Received: from aserp1040.oracle.com ([141.146.126.69]:42432 "EHLO
+        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752886AbdLEIwh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 03:52:37 -0500
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vB58qa6a017686
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:36 GMT
 Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB58qYQC014909
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vB58qagS021055
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:34 GMT
+        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:36 GMT
 Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB58qY6R024499
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:34 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB58qa1s024537
+        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:36 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4] btrfs-progs: add 'btrfs device ignore' cli
-Date: Tue,  5 Dec 2017 16:52:57 +0800
-Message-Id: <20171205085258.4038-3-anand.jain@oracle.com>
+Subject: [PATCH v4 2/2] btrfs: introduce feature to ignore a btrfs device
+Date: Tue,  5 Dec 2017 16:52:58 +0800
+Message-Id: <20171205085258.4038-4-anand.jain@oracle.com>
 In-Reply-To: <20171205085258.4038-1-anand.jain@oracle.com>
 References: <20171205085258.4038-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds
-  btrfs device ignode <dev>
-so that a device can be ignored/missed during mount if the device is
-already been scanned. Basically, this command will undo the effect
-of the command
-  btrfs device scan <dev>
+Support for a new command is being added here:
+ btrfs dev ignore <dev>
+Which shall undo the effects of the command
+ btrfs dev scan <dev>
 
-This change is compatible with older kernel without the ioctl
-BTRFS_IOC_IGNORE_DEV which is added here. At which it shall
-report 'Inappropriate ioctl for device'. And will report
-'Operation not permitted' on mounted device.
+This cli/ioctl is needed as there is no way to continue to mount in
+degraded mode if the device is already scanned, which is required to
+recover from the split brain raid conditions.
+
+This patch proposes to use ioctl #5 as it was empty.
+	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+If #5 is reserved for some other purpose, I think I should change this.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v1-4: No change.
+v2: Use -EBUSY instead of -ENOENT
+    Since now delete_device_from_list() holds device_list_mutex
+    so dont hold device_list_mutex in its parent. Reword and indent
+    pr_err/info.
+v3: Send to correct ML
+v4: no change.
 
- cmds-device.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h       |  2 ++
- 2 files changed, 56 insertions(+)
+ fs/btrfs/super.c           |  4 +++
+ fs/btrfs/volumes.c         | 64 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h         |  2 ++
+ include/uapi/linux/btrfs.h |  2 ++
+ 4 files changed, 72 insertions(+)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index f4cdb39f64ac..31b1945d3339 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -329,6 +329,59 @@ out:
- 	return !!ret;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f443517fa2f8..fcc4a6ef4795 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2212,6 +2212,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+ 					    &btrfs_fs_type, &fs_devices);
+ 		break;
++	case BTRFS_IOC_IGNORE_DEV:
++		ret = btrfs_ignore_one_device(vol->name, FMODE_READ,
++					    &btrfs_fs_type, &fs_devices);
++		break;
+ 	case BTRFS_IOC_DEVICES_READY:
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+ 					    &btrfs_fs_type, &fs_devices);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5deda80316f0..2bae2ccd262d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1205,6 +1205,70 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+ 	return 0;
  }
  
-+static const char * const cmd_device_ignore_usage[] = {
-+	"btrfs device ignore [<device>]",
-+	"Ignore a device in the btrfs kernel module.",
-+	NULL
-+};
-+
-+static int btrfs_ignore_one_device(char *path)
-+{
-+	struct btrfs_ioctl_vol_args args;
-+	int fd;
-+	int ret;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	strncpy_null(args.name, path);
-+	ret = ioctl(fd, BTRFS_IOC_IGNORE_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+}
-+
-+static int cmd_device_ignore(int argc, char **argv)
++static int device_list_remove(struct btrfs_super_block *disk_super, u64 devid)
 +{
 +	int ret = 0;
-+	char *path;
++	struct btrfs_fs_devices *fs_devices;
++	struct btrfs_device *device;
 +
-+	if (check_argc_max(argc - optind, 1))
-+		usage(cmd_device_ignore_usage);
-+
-+	if (is_block_device(argv[1]) != 1) {
-+		error("Not a block device: %s", argv[1]);
++	fs_devices = find_fsid(disk_super->fsid);
++	if (!fs_devices)
 +		return -ENOENT;
-+	}
 +
-+	path = canonicalize_path(argv[1]);
-+	if (!path) {
-+		error("Could not canonicalize path '%s': %s",
-+					argv[1], strerror(errno));
-+		return -ENOENT;
-+	}
++	if (fs_devices->opened)
++		return -EBUSY;
 +
-+	ret  = btrfs_ignore_one_device(path);
-+	if (ret)
-+		error("Can't ignore %s: %s", path, strerror(-ret));
++	mutex_lock(&uuid_mutex);
 +
-+	free(path);
++	device = find_device(fs_devices, devid, disk_super->dev_item.uuid);
++	if (device)
++		delete_device_from_list(device);
++
++	mutex_unlock(&uuid_mutex);
++
 +	return ret;
 +}
 +
- static const char * const cmd_device_ready_usage[] = {
- 	"btrfs device ready <device>",
- 	"Check device to see if it has all of its devices in cache for mounting",
-@@ -604,6 +657,7 @@ const struct cmd_group device_cmd_group = {
- 			CMD_ALIAS },
- 		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
- 		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
-+		{ "ignore", cmd_device_ignore, cmd_device_ignore_usage, NULL, 0 },
- 		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
- 		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
- 		{ "usage", cmd_device_usage,
-diff --git a/ioctl.h b/ioctl.h
-index 709e996f401c..bef8508119aa 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
++int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
++			  struct btrfs_fs_devices **fs_devices_ret)
++{
++	struct btrfs_super_block *disk_super;
++	struct block_device *bdev;
++	struct page *page;
++	int ret = -EINVAL;
++	u64 devid;
++	u64 bytenr;
++
++	bytenr = btrfs_sb_offset(0);
++	flags |= FMODE_EXCL;
++
++	bdev = blkdev_get_by_path(path, flags, holder);
++	if (IS_ERR(bdev)) {
++		ret = PTR_ERR(bdev);
++		goto error;
++	}
++
++	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
++		goto error_bdev_put;
++
++	devid = btrfs_stack_device_id(&disk_super->dev_item);
++
++	ret = device_list_remove(disk_super, devid);
++	if (ret)
++		pr_err("BTRFS: %pU device %s devid %llu failed to ignore: %d\n",
++			disk_super->fsid, path, devid, ret);
++	else
++		pr_info("BTRFS: %pU device %s devid %llu ignored\n",
++			disk_super->fsid, path, devid);
++
++	btrfs_release_disk_super(page);
++
++error_bdev_put:
++	blkdev_put(bdev, flags);
++error:
++	return ret;
++}
++
+ /*
+  * Look for a btrfs signature on a device. This may be called out of the mount path
+  * and we are not allowed to call set_blocksize during the scan. The superblock
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 7acfd61611aa..08d3425bc880 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -423,6 +423,8 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 			  struct btrfs_fs_devices **fs_devices_ret);
++int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
++			  struct btrfs_fs_devices **fs_devices_ret);
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
+ void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index ce615b75e855..bb13bad41b30 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -744,6 +744,8 @@ enum btrfs_err_code {
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
  				   struct btrfs_ioctl_vol_args)

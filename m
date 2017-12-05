@@ -1,85 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:57509 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751177AbdLEVaR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 16:30:17 -0500
-Subject: Re: [PATCH v4 1/2] btrfs: add function to device list delete
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20171205085258.4038-1-anand.jain@oracle.com>
- <20171205085258.4038-2-anand.jain@oracle.com>
- <20171205190616.GU3553@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <fd040d83-f7c7-4069-81e7-697d6e757db2@oracle.com>
-Date: Wed, 6 Dec 2017 05:30:43 +0800
+Received: from smtp-33-i6.italiaonline.it ([213.209.14.33]:43178 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751746AbdLEWQS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 17:16:18 -0500
+Reply-To: kreijack@inwind.it
+Subject: Re: [RFC] Improve subvolume usability for a normal user
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Graham Cobb <g.btrfs@cobb.uk.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+ <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
+ <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
+ <22115bdd-75f6-eea1-923c-73f54955ee7e@cobb.uk.net>
+ <88e4e111-e9ca-15d5-f2f7-6b54091ea52b@libero.it>
+ <9320c224-7f4d-eeaa-d60f-755825f7944d@cobb.uk.net>
+ <5a0216a6-03fc-53b1-5126-e6e5184e6cca@libero.it>
+ <d80708a2-ae05-6758-47fc-971f92a72d1a@gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <9d96d5c3-44ca-751d-07b5-8f7675143dde@inwind.it>
+Date: Tue, 5 Dec 2017 23:08:05 +0100
 MIME-Version: 1.0
-In-Reply-To: <20171205190616.GU3553@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <d80708a2-ae05-6758-47fc-971f92a72d1a@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 12/06/2017 03:06 AM, David Sterba wrote:
-> On Tue, Dec 05, 2017 at 04:52:56PM +0800, Anand Jain wrote:
->> We need device delete from the dev_list so create a new function.
->> New instead of refactor of btrfs_free_stale_device() because,
->> btrfs_free_stale_device() doesn't hold device_list_mutex which
->> is actually needed here.
+On 12/05/2017 09:17 PM, Austin S. Hemmelgarn wrote:
+> On 2017-12-05 14:09, Goffredo Baroncelli wrote:
+>> On 12/05/2017 07:46 PM, Graham Cobb wrote:
+>>> On 05/12/17 18:01, Goffredo Baroncelli wrote:
+>>>> On 12/05/2017 04:42 PM, Graham Cobb wrote:
+>> [....]
+>>>>>>> Then no impact to kernel, all complex work is done in user space.
+>>>>>> Exactly how hard is it to just check ownership of the root inode of a
+>>>>>> subvolume from the ioctl context?  You could just as easily push all the
+>>>>>> checking out to the VFS layer by taking an open fd for the subvolume
+>>>>>> root (and probably implicitly closing it) instead of taking a path, and
+>>>>>> that would give you all the benefits of ACL's and whatever security
+>>>>>> modules the local system is using.
+>>>>>
+>>>>> +1 - stop inventing new access control rules for each different action!
+>>>>
+>>>> A subvolume is like a directory; In all filesystems you cannot remove an inode if you don't have write access to the parent directory. I assume that this is a POSIX requirement; and if so this should be true even for BTRFS.
+>>>> This means that in order to remove a subvolume and you are not root, you should check all the contained directories. It is not sufficient to check one inode.
+>>>>
+>>>> In the past I create a patch [1][2] which extended the unlink (2) syscall to allow removing a subvolume if:
+>>>> a) the user is root  or
+>>>> b.1) if the subvolume is empty and
+>>>> b.2) the user has the write capability to the parent directory
+>>>
+>>> That is also OK, as it follows a logical and consistent model without
+>>> introducing new rules, but it has two disadvantages with snapshots the
+>>> user creates and then wants to delete:
+>>>
+>>> i) they have to change the snapshot to readwrite to remove all the
+>>> contents -- how many users will know that that can even be done?
 >>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->> ---
->> v1: title of this patch
->>    btrfs: refactor btrfs_free_stale_device() to get device list delete
->> v2:
->>   delete_device_from_list() is not pealed from btrfs_free_stale_device()
->>   as this needs device_list_mutex. And its static now.
->> v3: Send to correct ML
->> v4: no change
+>> I think that this is an orthogonal question.  However the user should use btrfs set....
 >>
->>   fs/btrfs/volumes.c | 22 ++++++++++++++++++++++
->>   1 file changed, 22 insertions(+)
+>> Anyway I am not against to use something more specific like "btrfs sub del...", where it could be possible to implement a more specific checks. I am only highlight that destroy a subvolume without looking to its content could break the POSIX rules
+> No, it doesn't break POSIX rules, because you can't do it with POSIX defined interfaces (not counting ioctls, but ioctls are by definition system dependent).
+
+user$ mkdir -p dir1/dir2
+user$ touch dir1/dir2/file
+user$ sudo chown foo:foo dir1/dir2
+
+user$ rm -rf dir1/
+rm: cannot remove 'dir1/dir2/file1': Permission denied
+
+In a POSIX filesystem, you (as user) cannot remove file1.
+
+But if instead of dir1 you have a subvolume (called sub1), and the check of removing the subvolume is performed only on the root of subvolume, you could remove it.
+
+Is it a problem ? I think no, but I am not a security expert. But even if POSIX doesn't have the concept of subvolume, this is definitely a break of a POSIX rule.
+
+On the other side, if the user makes a snapshot of a subvolume containing a not owned and not empty directory, for the user it would be impossible to delete its snapshot (!).
+
+
 >>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 04164337ac69..5deda80316f0 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -531,6 +531,28 @@ static void pending_bios_fn(struct btrfs_work *work)
->>   	run_scheduled_bios(device);
->>   }
->>   
->> +static void delete_device_from_list(struct btrfs_device *device)
->> +{
->> +	struct btrfs_fs_devices *fs_devices;
->> +
->> +	fs_devices = device->fs_devices;
->> +
->> +	lockdep_assert_held(&uuid_mutex);
->> +
->> +	mutex_lock(&fs_devices->device_list_mutex);
->> +	fs_devices->num_devices--;
->> +	list_del(&device->dev_list);
->> +	mutex_unlock(&fs_devices->device_list_mutex);
->> +
->> +	rcu_string_free(device->name);
->> +	kfree(device);
-> 
-> Please use the new helper introduced in patch "btrfs: introduce
-> free_device helper" (currently in misc-next), you'd leak the flush bio
-> here.
+>>>
+>>> ii) if the snapshot contains a file the user cannot remove then the user
+>>> cannot remove the snapshot at all (even though they could create it).
+>>
+>> It is the same for the other filesystem: if in a filesystem tree, there is a directory which is not changeable by the user, the user cannot remove all the tree. Again, I am only highlighting that there is a possible break of POSIX rules.
+> POSIX says nothing about non-permissions related reasons for not being able to remove a directory. 
+Nobody has say the opposite
 
-   Ok. Will do.
+>  A subvolume is treated (too much in my opinion) like a mount point, regardless of whether or not it's explicitly mounted, and that seems to be most of why you can't remove it with unlink().
 
-Thanks, Anand
 
->> +
->> +	if (fs_devices->num_devices == 0) {
->> +		btrfs_sysfs_remove_fsid(fs_devices);
->> +		list_del(&fs_devices->list);
->> +		free_fs_devices(fs_devices);
->> +	}
->> +}
-> --
+
+>>
+>>>
+>>> That is why I preferred Austin's first proposal. I suppose your proposal
+>>> could be extended:
+>>>
+>>> a) the user is root  or
+>>> b.1) if the subvolume is empty and
+>>> b.2) the user has the write capability to the parent directory, or
+>>> c) the subvolume is readonly
+>>
+>> If a subvolume is marked read-only, the user has to change to RW via "btrfs property set...."
+> I actually do agree with this assessment to a certain extent, but the user has to be able to change the subvolume to be RW to begin with (and that _does_ need an in-kernel permissions check beyond just knowing whether you can access the subvolume).
+> -- 
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

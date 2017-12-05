@@ -1,168 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:50634 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751325AbdLELO4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 06:14:56 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id E7C0C486A761
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 19:14:51 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: use enum instead of constant value
-Date: Tue, 5 Dec 2017 19:01:07 +0800
-Message-ID: <1512471667-8555-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from smtp-36-i6.italiaonline.it ([213.209.14.36]:45167 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752430AbdLESCC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 13:02:02 -0500
+Reply-To: kreijack@inwind.it
+Subject: Re: [RFC] Improve subvolume usability for a normal user
+To: Graham Cobb <g.btrfs@cobb.uk.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+ <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
+ <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
+ <22115bdd-75f6-eea1-923c-73f54955ee7e@cobb.uk.net>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Message-ID: <88e4e111-e9ca-15d5-f2f7-6b54091ea52b@libero.it>
+Date: Tue, 5 Dec 2017 19:01:59 +0100
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <22115bdd-75f6-eea1-923c-73f54955ee7e@cobb.uk.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a enum for reada of btrfs_path to be consistent with kernel.
+On 12/05/2017 04:42 PM, Graham Cobb wrote:
+> On 05/12/17 12:41, Austin S. Hemmelgarn wrote:
+>> On 2017-12-05 03:43, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2017年12月05日 16:25, Misono, Tomohiro wrote:
+>>>> Hello all,
+>>>>
+>>>> I want to address some issues of subvolume usability for a normal user.
+>>>> i.e. a user can create subvolumes, but
+>>>>   - Cannot delete their own subvolume (by default)
+>>>>   - Cannot tell subvolumes from directories (in a straightforward way)
+>>>>   - Cannot check the quota limit when qgroup is enabled
+>>>>
+>>>> Here I show the initial thoughts and approaches to this problem.
+>>>> I want to check if this is a right approach or not before I start
+>>>> writing code.
+>>>>
+>>>> Comments are welcome.
+>>>> Tomohiro Misono
+>>>>
+>>>> ==========
+>>>> - Goal and current problem
+>>>> The goal of this RFC is to give a normal user more control to their
+>>>> own subvolumes.
+>>>> Currently the control to subvolumes for a normal user is restricted
+>>>> as below:
+>>>>
+>>>> +-------------+------+------+
+>>>> |   command   | root | user |
+>>>> +-------------+------+------+
+>>>> | sub create  | Y    | Y    |
+>>>> | sub snap    | Y    | Y    |
+>>>> | sub del     | Y    | N    |
+>>>> | sub list    | Y    | N    |
+>>>> | sub show    | Y    | N    |
+>>>> | qgroup show | Y    | N    |
+>>>> +-------------+------+------+
+>>>>
+>>>> In short, I want to change this as below in order to improve user's
+>>>> usability:
+>>>>
+>>>> +-------------+------+--------+
+>>>> |   command   | root | user   |
+>>>> +-------------+------+--------+
+>>>> | sub create  | Y    | Y      |
+>>>> | sub snap    | Y    | Y      |
+>>>> | sub del     | Y    | N -> Y |
+>>>> | sub list    | Y    | N -> Y |
+>>>> | sub show    | Y    | N -> Y |
+>>>> | qgroup show | Y    | N -> Y |
+>>>> +-------------+------+--------+
+>>>>
+>>>> In words,
+>>>> (1) allow deletion of subvolume if a user owns it, and
+>>>> (2) allow getting subvolume/quota info if a user has read access to it
+>>>>   (sub list/qgroup show just lists the subvolumes which are readable
+>>>> by the user)
+>>>>
+>>>> I think other commands not listed above (qgroup limit, send/receive
+>>>> etc.) should
+>>>> be done by root and not be allowed for a normal user.
+>>>>
+>>>>
+>>>> - Outside the scope of this RFC
+>>>> There is a qualitative problem to use qgroup for limiting user disk
+>>>> amount;
+>>>> quota limit can easily be averted by creating a subvolume. I think
+>>>> that forcing
+>>>> inheriting quota of parent subvolume is a solution, but I won't
+>>>> address nor
+>>>> discuss this here.
+>>>>
+>>>>
+>>>> - Proposal
+>>>>   (1) deletion of subvolume
+>>>>
+>>>>    I want to change the default behavior to allow a user to delete
+>>>> their own
+>>>>    subvolumes.
+>>>>       This is not the same behavior as when user_subvol_rm_alowed
+>>>> mount option is
+>>>>    specified; in that case a user can delete the subvolume to which
+>>>> they have
+>>>>    write+exec right.
+>>>>       Since snapshot creation is already restricted to the subvolume
+>>>> owner, it is
+>>>>    consistent that only the owner of the subvolume (or root) can
+>>>> delete it.
+>>>>       The implementation should be straightforward.
+>>>
+>>> Personally speaking, I prefer to do the complex owner check in user
+>>> daemon.
+>>>
+>>> And do the privilege in user daemon (call it btrfsd for example).
+>>>
+>>> So btrfs-progs will works in 2 modes, if root calls it, do as it used
+>>> to do.
+>>> If normal user calls it, proxy the request to btrfsd, and btrfsd does
+>>> the privilege checking and call ioctl (with root privilege).
+>>>
+>>> Then no impact to kernel, all complex work is done in user space.
+>> Exactly how hard is it to just check ownership of the root inode of a
+>> subvolume from the ioctl context?  You could just as easily push all the
+>> checking out to the VFS layer by taking an open fd for the subvolume
+>> root (and probably implicitly closing it) instead of taking a path, and
+>> that would give you all the benefits of ACL's and whatever security
+>> modules the local system is using.  
+> 
+> +1 - stop inventing new access control rules for each different action!
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- ctree.c           |  3 ++-
- ctree.h           |  2 +-
- extent-tree.c     | 12 ++++++------
- free-space-tree.c |  2 +-
- qgroup-verify.c   |  2 +-
- volumes.c         |  4 ++--
- 6 files changed, 13 insertions(+), 12 deletions(-)
+A subvolume is like a directory; In all filesystems you cannot remove an inode if you don't have write access to the parent directory. I assume that this is a POSIX requirement; and if so this should be true even for BTRFS.
+This means that in order to remove a subvolume and you are not root, you should check all the contained directories. It is not sufficient to check one inode.
 
-diff --git a/ctree.c b/ctree.c
-index 4fc33b1..e9ab725 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -1023,7 +1023,8 @@ void reada_for_search(struct btrfs_root *root, struct btrfs_path *path,
- 			nread += fs_info->nodesize;
- 		}
- 		nscan++;
--		if (path->reada < 2 && (nread > SZ_256K || nscan > 32))
-+		if (path->reada < READA_FORWARD &&
-+			(nread > SZ_256K || nscan > 32))
- 			break;
- 		if(nread > SZ_1M || nscan > 128)
- 			break;
-diff --git a/ctree.h b/ctree.h
-index ef422ea..a1b019e 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -564,7 +564,7 @@ struct btrfs_node {
-  * The slots array records the index of the item or block pointer
-  * used while walking the tree.
-  */
--
-+enum { READA_NONE = 0, READA_BACK, READA_FORWARD };
- struct btrfs_path {
- 	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
- 	int slots[BTRFS_MAX_LEVEL];
-diff --git a/extent-tree.c b/extent-tree.c
-index 055582c..e6d1df9 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -112,7 +112,7 @@ static int cache_block_group(struct btrfs_root *root,
- 	if (!path)
- 		return -ENOMEM;
- 
--	path->reada = 2;
-+	path->reada = READA_FORWARD;
- 	last = max_t(u64, block_group->key.objectid, BTRFS_SUPER_INFO_OFFSET);
- 	key.objectid = last;
- 	key.offset = 0;
-@@ -1392,7 +1392,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
- 
--	path->reada = 1;
-+	path->reada = READA_BACK;
- 
- 	ret = insert_inline_extent_backref(trans, root->fs_info->extent_root,
- 					   path, bytenr, num_bytes, parent,
-@@ -1413,7 +1413,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	btrfs_mark_buffer_dirty(leaf);
- 	btrfs_release_path(path);
- 
--	path->reada = 1;
-+	path->reada = READA_BACK;
- 
- 	/* now insert the actual backref */
- 	ret = insert_extent_backref(trans, root->fs_info->extent_root,
-@@ -1459,7 +1459,7 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--	path->reada = 1;
-+	path->reada = READA_BACK;
- 
- 	key.objectid = bytenr;
- 	key.offset = offset;
-@@ -1551,7 +1551,7 @@ int btrfs_set_block_flags(struct btrfs_trans_handle *trans,
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--	path->reada = 1;
-+	path->reada = READA_BACK;
- 
- 	key.objectid = bytenr;
- 	if (skinny_metadata) {
-@@ -2194,7 +2194,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
- 
--	path->reada = 1;
-+	path->reada = READA_BACK;
- 
- 	is_data = owner_objectid >= BTRFS_FIRST_FREE_OBJECTID;
- 	if (is_data)
-diff --git a/free-space-tree.c b/free-space-tree.c
-index 69a4eca..c068ead 100644
---- a/free-space-tree.c
-+++ b/free-space-tree.c
-@@ -332,7 +332,7 @@ int load_free_space_tree(struct btrfs_fs_info *fs_info,
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
--	path->reada = 1;
-+	path->reada = READA_BACK;
- 
- 	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
- 	if (IS_ERR(info)) {
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 571b4d4..4a6b853 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -1160,7 +1160,7 @@ static int scan_extents(struct btrfs_fs_info *info,
- 		fprintf(stderr, "ERROR: Couldn't search slot: %d\n", ret);
- 		goto out;
- 	}
--	path.reada = 1;
-+	path.reada = READA_BACK;
- 
- 	while (1) {
- 		leaf = path.nodes[0];
-diff --git a/volumes.c b/volumes.c
-index ce3a540..b8ceed3 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -354,7 +354,7 @@ static int find_free_dev_extent_start(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	path->reada = 2;
-+	path->reada = READA_FORWARD;
- 
- 	key.objectid = device->devid;
- 	key.offset = search_start;
-@@ -783,7 +783,7 @@ static int btrfs_device_avail_bytes(struct btrfs_trans_handle *trans,
- 	key.offset = root->fs_info->alloc_start;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 
--	path->reada = 2;
-+	path->reada = READA_FORWARD;
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
- 	if (ret < 0)
- 		goto error;
+In the past I create a patch [1][2] which extended the unlink (2) syscall to allow removing a subvolume if:
+a) the user is root  or
+b.1) if the subvolume is empty and
+b.2) the user has the write capability to the parent directory
+
+This will solve all the problems:
+a) removing a subvolume is like removing a directory; no different check is performed; no new (and strange) rule
+b) an ordinary user can remove a subvolume, like a directory
+c) is quite easy to implement
+
+Root still have another way (more efficient) to remove a subvolume: he can invoke the BTRFS_IOC_SNAP_DESTROY, which doesn't need to traverse all the tree.
+
+BR
+G.Baroncelli
+
+
+[1] https://www.spinics.net/lists/linux-btrfs/msg06499.html
+[2] https://patchwork.kernel.org/patch/260301/
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+
 -- 
-1.9.1
-
-
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

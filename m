@@ -1,126 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52358 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754002AbdLDQUL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Dec 2017 11:20:11 -0500
-Subject: Re: [PATCH 5/5] btrfs: Greatly simplify btrfs_read_dev_super
-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
- <1512119984-12708-6-git-send-email-nborisov@suse.com>
- <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
- <f08faba1-2c79-bd80-34f5-f8f85e927464@suse.com>
- <20171204141337.GX3553@twin.jikos.cz>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <897b7a95-1fd6-9647-f959-1d5f8f275685@suse.com>
-Date: Mon, 4 Dec 2017 18:20:09 +0200
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:10447 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751852AbdLECSq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Dec 2017 21:18:46 -0500
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id A32B1AC0098
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 11:18:42 +0900 (JST)
+Subject: Re: [PATCH] btrfs: fix inconsistency during missing device rejoin
+To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <20171204071939.22878-1-anand.jain@oracle.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <730b01da-a293-1309-e22c-ebfe996c0628@jp.fujitsu.com>
+Date: Tue, 5 Dec 2017 11:18:25 +0900
 MIME-Version: 1.0
-In-Reply-To: <20171204141337.GX3553@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20171204071939.22878-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On  4.12.2017 16:13, David Sterba wrote:
-> On Sun, Dec 03, 2017 at 11:43:13AM +0200, Nikolay Borisov wrote:
->> On  2.12.2017 01:23, Anand Jain wrote:
->>> On 12/01/2017 05:19 PM, Nikolay Borisov wrote:
->>>> Currently this function executes the inner loop at most 1 due to the i
->>>> = 0;
->>>> i < 1 condition. Furthermore, the btrfs_super_generation(super) >
->>>> transid code
->>>> in the if condition is never executed due to latest always set to NULL
->>>> hence the
->>>> first part of the condition always triggering. The gist of
->>>> btrfs_read_dev_super
->>>> is really to read the first superblock.
->>>>
->>>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->>>> ---
->>>>   fs/btrfs/disk-io.c | 27 ++++-----------------------
->>>>   1 file changed, 4 insertions(+), 23 deletions(-)
->>>>
->>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>>> index 82c96607fc46..6d5f632fd1e7 100644
->>>> --- a/fs/btrfs/disk-io.c
->>>> +++ b/fs/btrfs/disk-io.c
->>>> @@ -3170,37 +3170,18 @@ int btrfs_read_dev_one_super(struct
->>>> block_device *bdev, int copy_num,
->>>>   struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
->>>>   {
->>>>       struct buffer_head *bh;
->>>> -    struct buffer_head *latest = NULL;
->>>> -    struct btrfs_super_block *super;
->>>> -    int i;
->>>> -    u64 transid = 0;
->>>> -    int ret = -EINVAL;
->>>> +    int ret;
->>>>         /* we would like to check all the supers, but that would make
->>>>        * a btrfs mount succeed after a mkfs from a different FS.
->>>>        * So, we need to add a special mount option to scan for
->>>>        * later supers, using BTRFS_SUPER_MIRROR_MAX instead
->>>>        */
->>>
->>>  We need below loop to support the above comment at some point,
->>
->> And when is that, since I don't see anyone working on it. Furthermore
->> what is it that we are losing in terms of functionality by not
->> supporting the comment? It seems this code was just slapt here without
->> any vision how/when to implement it?
->>
->> Furthermore, you seem to be aware of what the comment is talking about,
->> I have to admit I'm not. Is the idea that if another filesystem does
->> mkfs and doesn't overwrite ALL superblock copies that btrfs writes (at
->> 64k, 64mb, 256gb and 1 PiB) then it's possible for this code to
->> erroneously detect btrfs when in fact there is a different fs?
->>
->> I don't understand what problem *should* be solved here...
+On 2017/12/04 16:19, Anand Jain wrote:
+> When device is missing its not necessary that btrfs_device::name is null
+> or the path is different when it reappears. Its possible that device can
+> go missing after its been scanned where neither of
+> btrfs_device::name == NULL OR btrfs_device::name != reappear_dev_path,
+> is true. So just check for btrfs_device::dev_state.missing. Thanks.
 > 
-> Without any further checks and validation, we cannot simply iterate over
-> all superblocks and try to mount anything that looks ok. Even if the
-> offsets exist on the block device.  The fsid should be at least checked,
-> but that's still not enough to ensure the 1st copy is what we want to
-> mount.
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/volumes.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 59a8785a2e9e..ac0c4eb5107f 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -715,7 +715,8 @@ static noinline int device_list_add(const char *path,
+>  
+>  		ret = 1;
+>  		device->fs_devices = fs_devices;
+> -	} else if (!device->name || strcmp(device->name->str, path)) {
+> +	} else if (!device->name || strcmp(device->name->str, path) ||
+> +			test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
+>  		/*
+>  		 * When FS is already mounted.
+>  		 * 1. If you are here and if the device->name is NULL that
+> 
 
-I'm more inclined to agree with Anand here, that if the users wants to
-mount with -t btrfs then the filesystem should assume it's correct to
-use any of the additional superblocks.  Otherwise we should explicitly
-state somewhere that the superblock copies are there only for the sake
-of the user-space tools, in which case this patch can go in, albeit with
-some rewording.
+I read the comments below this and wonder if BTRFS_DEV_STATE_MISSING is set 
+when device->name is null and therefore the first condition can be removed.
 
-> 
-> In that case it's up to the user to deal with the problem vs automating
-> all fallbacks in the kernel by default. We could enhance the recovery
-> options (usebackuproot) to look at the other superblocks.
-> 
-> An example scenario:
-> 
-> - mkfs, contains 2 superblocks (primary and 1st copy)
-> - shrink the filesystem, 1st copy contains stale version of the same
->   filesystem
-> - mount, primary is broken, use 1st backup copy -- now, this could
->   actually succeed if all metadata pointed by the 1st copy exist and are
->   consistent and we'd end up with an older version of the filesystem
->   metadata, and partially data
-> 
-> 
-> Another example, and this was probably meant by the comment:
-> 
-> - mkfs filesystem, contains primary and 1st (or more) superblock copy
-> - mkfs again, now contains fewer sb copies
-> - mount, similar situation as above, though the fsid will mismatch
->   (provided we're able to read the primary sb at all)
-> 
-> 
-> The commit introducing the comment is from 2008, nobody saw the need to
-> add the validation. And from the usability POV, the current behaviour
-> looks better because the user/admin has a chance to analyze the problem
-> first, run fsck before mounting from the sb copies and then use
-> 'btrfs-select-super' to overwrite the primary sb with the backup copy.
-> 
-> If there are clear guarantees and enough validation for the sb copy use,
-> then fine, otherwise we can apply this patch and extend the comment so
-> it's documented why we don't iterate.
-> 
+Thanks,
+Tomohiro
+

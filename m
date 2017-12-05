@@ -1,62 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33319 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33322 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752609AbdLEIjy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 03:39:54 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C58F2ACE6
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 08:39:53 +0000 (UTC)
+        id S1752672AbdLEIjz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 03:39:55 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1BCA8ACF0
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 08:39:54 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/7] btrfs-progs: Remove recover_get_good_super
-Date: Tue,  5 Dec 2017 10:39:45 +0200
-Message-Id: <1512463189-24724-4-git-send-email-nborisov@suse.com>
+Subject: [PATCH 4/7] btrfs-progs: Use list_for_each_entry in write_dev_all_supers
+Date: Tue,  5 Dec 2017 10:39:46 +0200
+Message-Id: <1512463189-24724-5-git-send-email-nborisov@suse.com>
 In-Reply-To: <1512463189-24724-1-git-send-email-nborisov@suse.com>
 References: <1512463189-24724-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently getting the good super really consists of just getting the first entry
-on the linked list, since it's the one with the highest transid. So remove
-the function and just use list_first_entry directly.
+No need to use extra variable and 2 macros when we can succintly use 1.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- super-recover.c | 13 +++----------
- 1 file changed, 3 insertions(+), 10 deletions(-)
+ disk-io.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/super-recover.c b/super-recover.c
-index 6a13d81b0b29..e12513100f17 100644
---- a/super-recover.c
-+++ b/super-recover.c
-@@ -177,15 +177,6 @@ static int read_fs_supers(struct btrfs_recover_superblock *recover)
- 	return 0;
- }
+diff --git a/disk-io.c b/disk-io.c
+index f5edc4796619..3d8785d5bb37 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1556,7 +1556,6 @@ static int write_dev_supers(struct btrfs_fs_info *fs_info,
  
--static struct super_block_record *recover_get_good_super(
--				struct btrfs_recover_superblock *recover)
--{
--	struct super_block_record *record;
--	record = list_entry(recover->good_supers.next,
--				struct super_block_record, list);
--	return record;
--}
--
- static void print_super_info(struct super_block_record *record)
+ int write_all_supers(struct btrfs_fs_info *fs_info)
  {
- 	printf("\t\tdevice name = %s\n", record->device_name);
-@@ -280,7 +271,9 @@ int btrfs_recover_superblocks(const char *dname,
- 			goto no_recover;
- 		}
- 	}
--	record = recover_get_good_super(&recover);
-+	record = list_first_entry(&recover.good_supers,
-+				  struct super_block_record, list);
-+
- 	root = open_ctree(record->device_name, record->bytenr,
- 			  OPEN_CTREE_RECOVER_SUPER | OPEN_CTREE_WRITES);
- 	if (!root) {
+-	struct list_head *cur;
+ 	struct list_head *head = &fs_info->fs_devices->devices;
+ 	struct btrfs_device *dev;
+ 	struct btrfs_super_block *sb;
+@@ -1566,8 +1565,7 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
+ 
+ 	sb = fs_info->super_copy;
+ 	dev_item = &sb->dev_item;
+-	list_for_each(cur, head) {
+-		dev = list_entry(cur, struct btrfs_device, dev_list);
++	list_for_each_entry(dev, head, dev_list) {
+ 		if (!dev->writeable)
+ 			continue;
+ 
 -- 
 2.7.4
 

@@ -1,105 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:56697 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:41974 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753116AbdLEJfz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 04:35:55 -0500
-Subject: Re: [PATCH 7/7] btrfs-progs: Fix super-recovery
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+        id S1753179AbdLEKEv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 05:04:51 -0500
+Subject: Re: [PATCH 6/7] btrfs-progs: Add test for super block recovery
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <1512463189-24724-1-git-send-email-nborisov@suse.com>
- <1512463189-24724-8-git-send-email-nborisov@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a7017b16-7f73-fe8c-310e-8bcfc4256c2c@gmx.com>
-Date: Tue, 5 Dec 2017 17:35:15 +0800
+ <1512463189-24724-7-git-send-email-nborisov@suse.com>
+ <ea75633b-10e7-28e0-ae47-5502901599de@gmx.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <2bff48d1-09fa-59ae-7f1f-f4a91b9bf143@suse.com>
+Date: Tue, 5 Dec 2017 12:04:49 +0200
 MIME-Version: 1.0
-In-Reply-To: <1512463189-24724-8-git-send-email-nborisov@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="g6ce3SdlIKaa78aERV0J81pWAlPovDUaB"
+In-Reply-To: <ea75633b-10e7-28e0-ae47-5502901599de@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---g6ce3SdlIKaa78aERV0J81pWAlPovDUaB
-Content-Type: multipart/mixed; boundary="d1Jsvfe234gLdLDUOQ1HSEN4nGB9pvocI";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <a7017b16-7f73-fe8c-310e-8bcfc4256c2c@gmx.com>
-Subject: Re: [PATCH 7/7] btrfs-progs: Fix super-recovery
-References: <1512463189-24724-1-git-send-email-nborisov@suse.com>
- <1512463189-24724-8-git-send-email-nborisov@suse.com>
-In-Reply-To: <1512463189-24724-8-git-send-email-nborisov@suse.com>
-
---d1Jsvfe234gLdLDUOQ1HSEN4nGB9pvocI
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On  5.12.2017 11:33, Qu Wenruo wrote:
+> 
+> 
+> On 2017年12月05日 16:39, Nikolay Borisov wrote:
+>> This functionality regressed some time ago and it was never caught. Seems no
+>> one complained of that, but to be sure add a regression test to prevent future 
+>> regressions.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> 
+> One nitpick for the patch sequence, normally we put fix before test
+> case, to avoid breaking bisect.
+> 
+>> ---
+>>  tests/fsck-tests/029-superblock-recovery/test.sh | 64 ++++++++++++++++++++++++
+>>  1 file changed, 64 insertions(+)
+>>  create mode 100755 tests/fsck-tests/029-superblock-recovery/test.sh
+>>
+>> diff --git a/tests/fsck-tests/029-superblock-recovery/test.sh b/tests/fsck-tests/029-superblock-recovery/test.sh
+>> new file mode 100755
+>> index 000000000000..beb78d6ccc22
+>> --- /dev/null
+>> +++ b/tests/fsck-tests/029-superblock-recovery/test.sh
+>> @@ -0,0 +1,64 @@
+>> +#!/bin/bash
+>> +# Test that any superblock is correctly detected
+>> +# and fixed by btrfs rescue
+>> +
+>> +source "$TOP/tests/common"
+>> +
+>> +check_prereq btrfs
+>> +check_prereq mkfs.btrfs
+>> +check_prereq btrfs-select-super
+>> +
+>> +setup_root_helper
+>> +
+>> +rm -f dev1
+>> +run_check truncate -s 260G dev1
+>> +loop=$(run_check_stdout $SUDO_HELPER losetup --find --show dev1)
+> 
+> We have function to do it already.
+> prepare_test_dev will use loopback device as fallback if $TEST_DEV is
+> not specified.
+> Tt can handle size well, and it also uses sparse file so no need to
+> worry about disk usage.
 
-On 2017=E5=B9=B412=E6=9C=8805=E6=97=A5 16:39, Nikolay Borisov wrote:
-> Commit 3296d058b7ce ("btrfs-progs: super-recover: Reuse
->  btrfs_read_dev_super function")
+Then the test suite is not very consistent, since I copied this loopback
+handling from some other test.
 
-Oh my fault.
+> 
+>> +
+>> +# Create the test file system.
+>> +run_check $SUDO_HELPER "$TOP"/mkfs.btrfs -f "$loop"
+>> +
+>> +function check_corruption {
+>> +	local sb_offset=$1
+>> +	local source_sb=$2
+>> +
+>> +
+>> +	# First we ensure we can mount it successfully
+>> +	run_check $SUDO_HELPER mount $loop "$TEST_MNT"
+>> +	run_check $SUDO_HELPER umount "$TEST_MNT"
+>> +
+>> +	# Now corrupt 1k of the superblock at sb_offset
+>> +	run_check $SUDO_HELPER dd bs=1K count=1 seek=$(($sb_offset + 1)) if=/dev/zero of="$loop"
+>> +
+>> +	#if corrupting one of the sb copies, copy it over the initial superblock
+>> +	if [ ! -z $source_sb ]; then
+>> +		local shift_val=$((16 << $source_sb * 12 ))
+>> +		run_check $SUDO_HELPER dd bs=1K count=4 seek=64 skip=$shift_val if="$loop" of="$loop"
+>> +	fi
+> 
+> Personally speaking, corrupt 64K (1st super) then corrupt the desired
+> copy could make the function easier.
+> Although we need to split the check part from this function, resulting
+> something like:
+> 
+> corrupt_super 64k
+> corrupt_super 64m
+> check_super_recover
+I'm reluctant to change this function any more.  It has comments on all
+logical steps and is self-contained and I'd rather keep it that way.
 
-> changed the logic when a superblock
-> is added to the bad block list to depend on -EIO. However currently
-> btrfs_read_dev_super doesn't return -EIO when the fist super block
-> is broken. Instead it returns -1. This causes the super-recovery
-> logic to miss the fact that the first super block is completely broken.=
+> 
+>> +
+>> +	run_mustfail "Mounted fs with corrupted superblock" \
+>> +		$SUDO_HELPER mount $loop "$TEST_MNT"
+>> +
+>> +	# Now run btrfs rescue which should fix the superblock. It uses 2
+>> +	# to signal success of recovery use mayfail to ignore that retval
+>> +	# but still log the output of the command
+>> +	run_mayfail $SUDO_HELPER "$TOP"/btrfs rescue super-recover -yv "$loop"
+>> +	if [ $? != 2 ]; then
+>> +		_fail "couldn't rescue super"
+>> +	fi
+> 
+> It's understandable to have return value other than 0 to distinguish
+> health fs from repairable fs.
+> But at least let's also put this into man page.
 
->=20
-> Fix this by considering any error code from btrfs_read_dev_super other
-> than -ENOENT to mean that the super block is corrupted. -ENOENT
-> means that the superblock copy is not part of the fs i.e. it's smaller
-> than the offset of the block. This can only occur for the 2nd copy at
-> 256gb mark.
->=20
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Yeah, tell me about it, super recovery actually has 5 return values:
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+7985fe64e0e2 ("Btrfs-progs: add super-recover to recover bad supers")
 
-Thanks,
-Qu
-> ---
->  super-recover.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/super-recover.c b/super-recover.c
-> index e12513100f17..880fd7712546 100644
-> --- a/super-recover.c
-> +++ b/super-recover.c
-> @@ -136,7 +136,7 @@ read_dev_supers(char *filename, struct btrfs_recove=
-r_superblock *recover)
->  			max_gen =3D btrfs_super_generation(sb);
->  			if (max_gen > recover->max_generation)
->  				recover->max_generation =3D max_gen;
-> -		} else if (ret =3D=3D -EIO){
-> +		} else if (ret !=3D -ENOENT){
->  			/*
->  			 * Skip superblock which doesn't exist, only adds
->  			 * really corrupted superblock
->=20
+    There will be five kinds of return values:
+
+    0: all supers are valid, no need to recover
+    1: usage or syntax error
+    2: recover all bad superblocks successfully
+    3: fail to recover bad superblocks
+    4: abort to recover bad superblocks
 
 
---d1Jsvfe234gLdLDUOQ1HSEN4nGB9pvocI--
-
---g6ce3SdlIKaa78aERV0J81pWAlPovDUaB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomaFMXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qh0nQf+OacCf/6TwhlPhUWqDrl8hFnW
-7m8Cx1oYzYKg2n4XnyDP7eRYRYm8RNIxnIIJqcZZhsFB3RKztln5dAZUPBWeDTl8
-BJEgiVTokPglNlaPPM3NbcNEGZMg8Ya0yJhLpnn3Ol40QmTYMh+DONhsWIH/YyVK
-f2FwCKpGMLajGXrN/L/IUdK//f6W7TVxaR5mVTo3HwK7o8g8qvKG0iL8md48x5jd
-6LtEAQKmsW6lwSNYiCEj0Kzjotdfa1fJWVe2FZrGANbt/ArYAnBwOXdpVkHcf+q4
-mqzCmscYG2XbfksbI3amNX3WiZxvEsw4qMvqdeSTlgt3GSNbzqCuzoDXX8V/VQ==
-=Ewwa
------END PGP SIGNATURE-----
-
---g6ce3SdlIKaa78aERV0J81pWAlPovDUaB--
+> 
+> Thanks,
+> Qu
+> 
+>> +
+>> +	run_check $SUDO_HELPER mount $loop "$TEST_MNT"
+>> +	run_check $SUDO_HELPER umount "$TEST_MNT"
+>> +}
+>> +
+>> +_log "Corrupting first superblock"
+>> +check_corruption 64
+>> +
+>> +_log "Corrupting second superblock"
+>> +check_corruption 65536 1
+>> +
+>> +_log "Corrupting third superblock"
+>> +check_corruption 268435456 2
+>> +
+>> +# Cleanup
+>> +run_check $SUDO_HELPER losetup -d "$loop"
+>> +rm -f dev1
+>>
+> 

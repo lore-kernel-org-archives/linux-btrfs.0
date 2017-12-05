@@ -1,88 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46748 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752592AbdLEP4f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 10:56:35 -0500
-Date: Tue, 5 Dec 2017 16:54:34 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nick Terrell <terrelln@fb.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Martin Steigerwald <martin@lichtvoll.de>,
-        Imran Geriskovan <imran.geriskovan@gmail.com>
-Subject: Re: Read before you deploy btrfs + zstd
-Message-ID: <20171205155433.GI3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171113225046.GD28899@suse.cz>
- <20171114185331.GJ28899@twin.jikos.cz>
- <20171115143906.GM28899@twin.jikos.cz>
- <E55ED8F2-8D16-4B58-9EC3-8DE41E7BE5A2@fb.com>
- <20171121162239.GO3553@suse.cz>
- <5BB834FC-A54C-4448-8D86-1D2F22806096@fb.com>
- <20171128234937.GG3553@suse.cz>
- <EF0643B4-092E-4D82-BA5B-9B02DFDEACA6@fb.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:50634 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751325AbdLELO4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 06:14:56 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id E7C0C486A761
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 19:14:51 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs-progs: use enum instead of constant value
+Date: Tue, 5 Dec 2017 19:01:07 +0800
+Message-ID: <1512471667-8555-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <EF0643B4-092E-4D82-BA5B-9B02DFDEACA6@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 29, 2017 at 12:44:32AM +0000, Nick Terrell wrote:
-> >> It looks like XZ had the same issue, and they make the decompression
-> >> context a static object (grep for GRUB_EMBED_DECOMPRESSOR). We could
-> >> potentially do the same and statically allocate the workspace:
-> >> 
-> >> ```
-> >> /* Could also be size_t */
-> >> #define BTRFS_ZSTD_WORKSPACE_SIZE_U64 (155984 / sizeof(uint64_t))
-> >> static uint64_t workspace[BTRFS_ZSTD_WORKSPACE_SIZE_U64];
-> >> 
-> >> /* ... */
-> >> 
-> >> assert(sizeof(workspace) >= ZSTD_DCtxWorkspaceBound());
-> >> ```
-> > 
-> > Interesting, thanks for the tip, I'll try it next.
+Add a enum for reada of btrfs_path to be consistent with kernel.
 
-And it worked.
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+ ctree.c           |  3 ++-
+ ctree.h           |  2 +-
+ extent-tree.c     | 12 ++++++------
+ free-space-tree.c |  2 +-
+ qgroup-verify.c   |  2 +-
+ volumes.c         |  4 ++--
+ 6 files changed, 13 insertions(+), 12 deletions(-)
 
-> > I've meanwhile tried to tweak the numbers, the maximum block for zstd,
-> > that squeezed the DCtx somewhere under 48k, with block size 8k. Still
-> > enomem.
-> 
-> Sadly the block size has to stay 128 KiB, since that is the block size that
-> is used for compression.
-> 
-> > I've tried to add some debugging prints to see what numbers get actually
-> > passed to the allocator, but did not see anything printed.  I'm sure
-> > there is a more intelligent way to test the grub changes.  So far each
-> > test loop takes quite some time, as I build the rpm package, test it in
-> > a VM and have to recreate the environmet each time.
-> 
-> Is the code in github.com/kdave/grub in the btrfs-zstd branch up to date?
-> btrfs.c:1230 looks like it will error for zstd compression, but not with
-> ENOMEM. btrfs.c:1272 [2] looks like a typo. Maybe the second is causing
-> the compressed block to be interpreted as uncompressed, and causes a
-> too-large allocation?
+diff --git a/ctree.c b/ctree.c
+index 4fc33b1..e9ab725 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -1023,7 +1023,8 @@ void reada_for_search(struct btrfs_root *root, struct btrfs_path *path,
+ 			nread += fs_info->nodesize;
+ 		}
+ 		nscan++;
+-		if (path->reada < 2 && (nread > SZ_256K || nscan > 32))
++		if (path->reada < READA_FORWARD &&
++			(nread > SZ_256K || nscan > 32))
+ 			break;
+ 		if(nread > SZ_1M || nscan > 128)
+ 			break;
+diff --git a/ctree.h b/ctree.h
+index ef422ea..a1b019e 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -564,7 +564,7 @@ struct btrfs_node {
+  * The slots array records the index of the item or block pointer
+  * used while walking the tree.
+  */
+-
++enum { READA_NONE = 0, READA_BACK, READA_FORWARD };
+ struct btrfs_path {
+ 	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
+ 	int slots[BTRFS_MAX_LEVEL];
+diff --git a/extent-tree.c b/extent-tree.c
+index 055582c..e6d1df9 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -112,7 +112,7 @@ static int cache_block_group(struct btrfs_root *root,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->reada = 2;
++	path->reada = READA_FORWARD;
+ 	last = max_t(u64, block_group->key.objectid, BTRFS_SUPER_INFO_OFFSET);
+ 	key.objectid = last;
+ 	key.offset = 0;
+@@ -1392,7 +1392,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	ret = insert_inline_extent_backref(trans, root->fs_info->extent_root,
+ 					   path, bytenr, num_bytes, parent,
+@@ -1413,7 +1413,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_release_path(path);
+ 
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	/* now insert the actual backref */
+ 	ret = insert_extent_backref(trans, root->fs_info->extent_root,
+@@ -1459,7 +1459,7 @@ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	key.objectid = bytenr;
+ 	key.offset = offset;
+@@ -1551,7 +1551,7 @@ int btrfs_set_block_flags(struct btrfs_trans_handle *trans,
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	key.objectid = bytenr;
+ 	if (skinny_metadata) {
+@@ -2194,7 +2194,7 @@ static int __free_extent(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	is_data = owner_objectid >= BTRFS_FIRST_FREE_OBJECTID;
+ 	if (is_data)
+diff --git a/free-space-tree.c b/free-space-tree.c
+index 69a4eca..c068ead 100644
+--- a/free-space-tree.c
++++ b/free-space-tree.c
+@@ -332,7 +332,7 @@ int load_free_space_tree(struct btrfs_fs_info *fs_info,
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
+ 	if (IS_ERR(info)) {
+diff --git a/qgroup-verify.c b/qgroup-verify.c
+index 571b4d4..4a6b853 100644
+--- a/qgroup-verify.c
++++ b/qgroup-verify.c
+@@ -1160,7 +1160,7 @@ static int scan_extents(struct btrfs_fs_info *info,
+ 		fprintf(stderr, "ERROR: Couldn't search slot: %d\n", ret);
+ 		goto out;
+ 	}
+-	path.reada = 1;
++	path.reada = READA_BACK;
+ 
+ 	while (1) {
+ 		leaf = path.nodes[0];
+diff --git a/volumes.c b/volumes.c
+index ce3a540..b8ceed3 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -354,7 +354,7 @@ static int find_free_dev_extent_start(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 
+-	path->reada = 2;
++	path->reada = READA_FORWARD;
+ 
+ 	key.objectid = device->devid;
+ 	key.offset = search_start;
+@@ -783,7 +783,7 @@ static int btrfs_device_avail_bytes(struct btrfs_trans_handle *trans,
+ 	key.offset = root->fs_info->alloc_start;
+ 	key.type = BTRFS_DEV_EXTENT_KEY;
+ 
+-	path->reada = 2;
++	path->reada = READA_FORWARD;
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
+ 	if (ret < 0)
+ 		goto error;
+-- 
+1.9.1
 
-I had a different branch with patches from openSUSE, so the diffs apply with
-minimal efforts to the package. The branch btrfs-zstd has been synced up. The
-ENOMEM error was not from the file decompression but from the zstdio.c module,
-that does something different, now disabled.
 
-I got a bit further, with a few debugging messages, this check fails:
 
- 957   total_size = grub_le_to_cpu32 (grub_get_unaligned32 (ibuf));
- 958   ibuf += sizeof (total_size);
- 959
- 960   if (isize < total_size) {
- 961     grub_error (GRUB_ERR_BAD_FS, "ASSERTION: isize < total_size: %ld < %ld",
- 962                     isize, total_size);
- 963     return -1;
- 964   }
-
-with: "isize < total_size: 61440 < -47205080"
-
-total_size is u32, but wrngly printed as signed long so it's negative, but
-would be wrong anyway. This looks like the compressed format is not read
-correctly.

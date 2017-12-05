@@ -1,173 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:42432 "EHLO
-        aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752886AbdLEIwh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 03:52:37 -0500
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id vB58qa6a017686
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:36 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vB58qagS021055
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:36 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB58qa1s024537
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:36 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 2/2] btrfs: introduce feature to ignore a btrfs device
-Date: Tue,  5 Dec 2017 16:52:58 +0800
-Message-Id: <20171205085258.4038-4-anand.jain@oracle.com>
-In-Reply-To: <20171205085258.4038-1-anand.jain@oracle.com>
-References: <20171205085258.4038-1-anand.jain@oracle.com>
+Received: from mail-io0-f193.google.com ([209.85.223.193]:43475 "EHLO
+        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751177AbdLEURR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 15:17:17 -0500
+Received: by mail-io0-f193.google.com with SMTP id s37so87808ioe.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Dec 2017 12:17:17 -0800 (PST)
+Subject: Re: [RFC] Improve subvolume usability for a normal user
+To: kreijack@inwind.it, Graham Cobb <g.btrfs@cobb.uk.net>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+ <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
+ <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
+ <22115bdd-75f6-eea1-923c-73f54955ee7e@cobb.uk.net>
+ <88e4e111-e9ca-15d5-f2f7-6b54091ea52b@libero.it>
+ <9320c224-7f4d-eeaa-d60f-755825f7944d@cobb.uk.net>
+ <5a0216a6-03fc-53b1-5126-e6e5184e6cca@libero.it>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <d80708a2-ae05-6758-47fc-971f92a72d1a@gmail.com>
+Date: Tue, 5 Dec 2017 15:17:12 -0500
+MIME-Version: 1.0
+In-Reply-To: <5a0216a6-03fc-53b1-5126-e6e5184e6cca@libero.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Support for a new command is being added here:
- btrfs dev ignore <dev>
-Which shall undo the effects of the command
- btrfs dev scan <dev>
-
-This cli/ioctl is needed as there is no way to continue to mount in
-degraded mode if the device is already scanned, which is required to
-recover from the split brain raid conditions.
-
-This patch proposes to use ioctl #5 as it was empty.
-	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
-If #5 is reserved for some other purpose, I think I should change this.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2: Use -EBUSY instead of -ENOENT
-    Since now delete_device_from_list() holds device_list_mutex
-    so dont hold device_list_mutex in its parent. Reword and indent
-    pr_err/info.
-v3: Send to correct ML
-v4: no change.
-
- fs/btrfs/super.c           |  4 +++
- fs/btrfs/volumes.c         | 64 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h         |  2 ++
- include/uapi/linux/btrfs.h |  2 ++
- 4 files changed, 72 insertions(+)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f443517fa2f8..fcc4a6ef4795 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2212,6 +2212,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
- 					    &btrfs_fs_type, &fs_devices);
- 		break;
-+	case BTRFS_IOC_IGNORE_DEV:
-+		ret = btrfs_ignore_one_device(vol->name, FMODE_READ,
-+					    &btrfs_fs_type, &fs_devices);
-+		break;
- 	case BTRFS_IOC_DEVICES_READY:
- 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
- 					    &btrfs_fs_type, &fs_devices);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5deda80316f0..2bae2ccd262d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1205,6 +1205,70 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
- 	return 0;
- }
- 
-+static int device_list_remove(struct btrfs_super_block *disk_super, u64 devid)
-+{
-+	int ret = 0;
-+	struct btrfs_fs_devices *fs_devices;
-+	struct btrfs_device *device;
-+
-+	fs_devices = find_fsid(disk_super->fsid);
-+	if (!fs_devices)
-+		return -ENOENT;
-+
-+	if (fs_devices->opened)
-+		return -EBUSY;
-+
-+	mutex_lock(&uuid_mutex);
-+
-+	device = find_device(fs_devices, devid, disk_super->dev_item.uuid);
-+	if (device)
-+		delete_device_from_list(device);
-+
-+	mutex_unlock(&uuid_mutex);
-+
-+	return ret;
-+}
-+
-+int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
-+			  struct btrfs_fs_devices **fs_devices_ret)
-+{
-+	struct btrfs_super_block *disk_super;
-+	struct block_device *bdev;
-+	struct page *page;
-+	int ret = -EINVAL;
-+	u64 devid;
-+	u64 bytenr;
-+
-+	bytenr = btrfs_sb_offset(0);
-+	flags |= FMODE_EXCL;
-+
-+	bdev = blkdev_get_by_path(path, flags, holder);
-+	if (IS_ERR(bdev)) {
-+		ret = PTR_ERR(bdev);
-+		goto error;
-+	}
-+
-+	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
-+		goto error_bdev_put;
-+
-+	devid = btrfs_stack_device_id(&disk_super->dev_item);
-+
-+	ret = device_list_remove(disk_super, devid);
-+	if (ret)
-+		pr_err("BTRFS: %pU device %s devid %llu failed to ignore: %d\n",
-+			disk_super->fsid, path, devid, ret);
-+	else
-+		pr_info("BTRFS: %pU device %s devid %llu ignored\n",
-+			disk_super->fsid, path, devid);
-+
-+	btrfs_release_disk_super(page);
-+
-+error_bdev_put:
-+	blkdev_put(bdev, flags);
-+error:
-+	return ret;
-+}
-+
- /*
-  * Look for a btrfs signature on a device. This may be called out of the mount path
-  * and we are not allowed to call set_blocksize during the scan. The superblock
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7acfd61611aa..08d3425bc880 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -423,6 +423,8 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
- int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 			  struct btrfs_fs_devices **fs_devices_ret);
-+int btrfs_ignore_one_device(const char *path, fmode_t flags, void *holder,
-+			  struct btrfs_fs_devices **fs_devices_ret);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
- void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index ce615b75e855..bb13bad41b30 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -744,6 +744,8 @@ enum btrfs_err_code {
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-+				   struct btrfs_ioctl_vol_args)
- /* trans start and trans end are dangerous, and only for
-  * use by applications that know how to avoid the
-  * resulting deadlocks
--- 
-2.7.0
-
+On 2017-12-05 14:09, Goffredo Baroncelli wrote:
+> On 12/05/2017 07:46 PM, Graham Cobb wrote:
+>> On 05/12/17 18:01, Goffredo Baroncelli wrote:
+>>> On 12/05/2017 04:42 PM, Graham Cobb wrote:
+> [....]
+>>>>>> Then no impact to kernel, all complex work is done in user space.
+>>>>> Exactly how hard is it to just check ownership of the root inode of a
+>>>>> subvolume from the ioctl context?  You could just as easily push all the
+>>>>> checking out to the VFS layer by taking an open fd for the subvolume
+>>>>> root (and probably implicitly closing it) instead of taking a path, and
+>>>>> that would give you all the benefits of ACL's and whatever security
+>>>>> modules the local system is using.
+>>>>
+>>>> +1 - stop inventing new access control rules for each different action!
+>>>
+>>> A subvolume is like a directory; In all filesystems you cannot remove an inode if you don't have write access to the parent directory. I assume that this is a POSIX requirement; and if so this should be true even for BTRFS.
+>>> This means that in order to remove a subvolume and you are not root, you should check all the contained directories. It is not sufficient to check one inode.
+>>>
+>>> In the past I create a patch [1][2] which extended the unlink (2) syscall to allow removing a subvolume if:
+>>> a) the user is root  or
+>>> b.1) if the subvolume is empty and
+>>> b.2) the user has the write capability to the parent directory
+>>
+>> That is also OK, as it follows a logical and consistent model without
+>> introducing new rules, but it has two disadvantages with snapshots the
+>> user creates and then wants to delete:
+>>
+>> i) they have to change the snapshot to readwrite to remove all the
+>> contents -- how many users will know that that can even be done?
+> 
+> I think that this is an orthogonal question.  However the user should use btrfs set....
+> 
+> Anyway I am not against to use something more specific like "btrfs sub del...", where it could be possible to implement a more specific checks. I am only highlight that destroy a subvolume without looking to its content could break the POSIX rules
+No, it doesn't break POSIX rules, because you can't do it with POSIX 
+defined interfaces (not counting ioctls, but ioctls are by definition 
+system dependent).
+> 
+>>
+>> ii) if the snapshot contains a file the user cannot remove then the user
+>> cannot remove the snapshot at all (even though they could create it).
+> 
+> It is the same for the other filesystem: if in a filesystem tree, there is a directory which is not changeable by the user, the user cannot remove all the tree. Again, I am only highlighting that there is a possible break of POSIX rules.
+POSIX says nothing about non-permissions related reasons for not being 
+able to remove a directory.   A subvolume is treated (too much in my 
+opinion) like a mount point, regardless of whether or not it's 
+explicitly mounted, and that seems to be most of why you can't remove it 
+with unlink().
+> 
+>>
+>> That is why I preferred Austin's first proposal. I suppose your proposal
+>> could be extended:
+>>
+>> a) the user is root  or
+>> b.1) if the subvolume is empty and
+>> b.2) the user has the write capability to the parent directory, or
+>> c) the subvolume is readonly
+> 
+> If a subvolume is marked read-only, the user has to change to RW via "btrfs property set...."
+I actually do agree with this assessment to a certain extent, but the 
+user has to be able to change the subvolume to be RW to begin with (and 
+that _does_ need an in-kernel permissions check beyond just knowing 
+whether you can access the subvolume).

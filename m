@@ -1,215 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:55347 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751570AbdLEIoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 03:44:00 -0500
-Subject: Re: [RFC] Improve subvolume usability for a normal user
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
-Date: Tue, 5 Dec 2017 16:43:49 +0800
-MIME-Version: 1.0
-In-Reply-To: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE"
+Received: from userp2130.oracle.com ([156.151.31.86]:45400 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752719AbdLEIwe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 03:52:34 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB58qM9N109034
+        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:33 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2130.oracle.com with ESMTP id 2ekpeynyq2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Dec 2017 08:52:32 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB58qWTn016520
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:32 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB58qWnB024491
+        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:32 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 0/2] Add cli and ioctl to ignore a scanned device
+Date: Tue,  5 Dec 2017 16:52:55 +0800
+Message-Id: <20171205085258.4038-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE
-Content-Type: multipart/mixed; boundary="b5CImfr6eTbRk7wijIltPuSOvhEMOx9uu";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
- linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
-Subject: Re: [RFC] Improve subvolume usability for a normal user
-References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
-In-Reply-To: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+Patch 1/2 is preparatory patch to get a function to delete a device
+  from the list.
+Patch 2/2 adds the ioctl and feature to delete a device from the
+device list.
 
---b5CImfr6eTbRk7wijIltPuSOvhEMOx9uu
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Also includes Patch 1/1 for the btrfs-progs support.
 
+v2:
+  Accepts review from Nikolay, details are in the specific patch.
+  Patch 1/2 is renamed from
+    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+  to
+    [PATCH 1/2] btrfs: add function to device list delete
+v3:
+  No change. Send to correct ML.
+v4:
+  No change. But as the ML thread may be confusing, so resend.
 
+Anand Jain (2):
+  btrfs: add function to device list delete
+  btrfs: introduce feature to ignore a btrfs device
 
-On 2017=E5=B9=B412=E6=9C=8805=E6=97=A5 16:25, Misono, Tomohiro wrote:
-> Hello all,
->=20
-> I want to address some issues of subvolume usability for a normal user.=
+ fs/btrfs/super.c           |  4 +++
+ fs/btrfs/volumes.c         | 86 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h         |  2 ++
+ include/uapi/linux/btrfs.h |  2 ++
+ 4 files changed, 94 insertions(+)
 
-> i.e. a user can create subvolumes, but
->  - Cannot delete their own subvolume (by default)
->  - Cannot tell subvolumes from directories (in a straightforward way)
->  - Cannot check the quota limit when qgroup is enabled
->=20
-> Here I show the initial thoughts and approaches to this problem.
-> I want to check if this is a right approach or not before I start writi=
-ng code.
->=20
-> Comments are welcome.
-> Tomohiro Misono
->=20
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
-> - Goal and current problem
-> The goal of this RFC is to give a normal user more control to their own=
- subvolumes.
-> Currently the control to subvolumes for a normal user is restricted as =
-below:=20
->=20
-> +-------------+------+------+
-> |   command   | root | user |
-> +-------------+------+------+
-> | sub create  | Y    | Y    |
-> | sub snap    | Y    | Y    |
-> | sub del     | Y    | N    |
-> | sub list    | Y    | N    |
-> | sub show    | Y    | N    |
-> | qgroup show | Y    | N    |
-> +-------------+------+------+
->=20
-> In short, I want to change this as below in order to improve user's usa=
-bility:
->=20
-> +-------------+------+--------+
-> |   command   | root | user   |
-> +-------------+------+--------+
-> | sub create  | Y    | Y      |
-> | sub snap    | Y    | Y      |
-> | sub del     | Y    | N -> Y |
-> | sub list    | Y    | N -> Y |
-> | sub show    | Y    | N -> Y |
-> | qgroup show | Y    | N -> Y |
-> +-------------+------+--------+
->=20
-> In words,
-> (1) allow deletion of subvolume if a user owns it, and=20
-> (2) allow getting subvolume/quota info if a user has read access to it
->  (sub list/qgroup show just lists the subvolumes which are readable by =
-the user)
->=20
-> I think other commands not listed above (qgroup limit, send/receive etc=
-=2E) should
-> be done by root and not be allowed for a normal user.
->=20
->=20
-> - Outside the scope of this RFC
-> There is a qualitative problem to use qgroup for limiting user disk amo=
-unt;
-> quota limit can easily be averted by creating a subvolume. I think that=
- forcing
-> inheriting quota of parent subvolume is a solution, but I won't address=
- nor
-> discuss this here.=20
->=20
->=20
-> - Proposal
->  (1) deletion of subvolume
->=20
->   I want to change the default behavior to allow a user to delete their=
- own
->   subvolumes.
->  =20
->   This is not the same behavior as when user_subvol_rm_alowed mount opt=
-ion is
->   specified; in that case a user can delete the subvolume to which they=
- have
->   write+exec right.
->  =20
->   Since snapshot creation is already restricted to the subvolume owner,=
- it is
->   consistent that only the owner of the subvolume (or root) can delete =
-it.
->  =20
->   The implementation should be straightforward.
+Anand Jain (1):
+  btrfs-progs: add 'btrfs device ignore' cli
 
-Personally speaking, I prefer to do the complex owner check in user daemo=
-n.
+ cmds-device.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h       |  2 ++
+ 2 files changed, 56 insertions(+)
 
-And do the privilege in user daemon (call it btrfsd for example).
+-- 
+2.7.0
 
-So btrfs-progs will works in 2 modes, if root calls it, do as it used to =
-do.
-If normal user calls it, proxy the request to btrfsd, and btrfsd does
-the privilege checking and call ioctl (with root privilege).
-
-Then no impact to kernel, all complex work is done in user space.
-
->=20
->  (2) getting subvolume/quota info
->=20
->   TREE_SEARCH ioctl is used to retrieve the subvolume/quota info by btr=
-fs-progs
->   (sub show/list, qgroup show etc.). This requires the root permission.=
-
->  =20
->   The easiest way to allow a user to get subvolume/quota info is just r=
-elaxing
->   the permission of TREE_SEARCH. However, since all the tree informatio=
-n (inc.
->   file name) will be exposed, this poses a sequrity risk and is not acc=
-eptable.
->  =20
->   So, I want to introduce 2 ioctls to get subvolume/quota info respecti=
-vely for
->   a normal user, which return only the info readable by the user:
->  =20
->    [subvolume info]
->     Mainly search ROOT tree for ROOT_ITEM/ROOT_BACKREF, but check its r=
-ead
->    right by searching FS/FILE tree and comparing it with caller's uid.
->  =20
->    [quota info]
->     Same as above, but mainly search QUOTA tree and only returns level =
-0 info.
->  =20
->   Also, in order to construct subvolume path, permission of INO_LOOKUP =
-ioctl
->   needs to be relaxed for the user who has read access to the subvolume=
-=2E
-
-Same method can apply to this either.
-
-Thanks,
-Qu
->=20
->=20
-> - Summary of Proposal
->  - Change the default behavior to allow a user to delete their own subv=
-olumes
->  - Add 2 new non-root ioctls to get subvolume/quota info for accessible=
- subvolumes
-> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---b5CImfr6eTbRk7wijIltPuSOvhEMOx9uu--
-
---5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomXEUXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgajgf/Y0B5b/l7xtdEH0qwK3FIKLSn
-7DllCqvMBpcGsOazhJKD5syNKbYWyWV3VzjZKKXNyHhuDVlHyULRSJlIIN2LTDHA
-UCMcQ1uPIU9dTkFcPjKqhwebS/gADPgb4IEwU58CNzsnU7gJT+WhYhTifYIACdPo
-2NbtY5VRuikG+7/7nKsWWaO7/Sp1h55j1XQdQNKwz+5K8ZhuQ64eIqwBzxpi5ZGw
-8tQE4msUiSyAoCZvrkFc6GR5l3cS/3Eu5tbKK8W08ep6t+6SHB+EhelL45p/wWML
-W/8boHj+IxHdld9u4gMJCjsIxcLcLfCRktK5tyoFoto/3DqZV+8D+Qs0Fmhwug==
-=hFI9
------END PGP SIGNATURE-----
-
---5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE--

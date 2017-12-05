@@ -1,144 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60004 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750740AbdLETNL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 14:13:11 -0500
-Date: Tue, 5 Dec 2017 20:11:11 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4] btrfs-progs: add 'btrfs device ignore' cli
-Message-ID: <20171205191111.GV3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171205085258.4038-1-anand.jain@oracle.com>
- <20171205085258.4038-3-anand.jain@oracle.com>
+Received: from mail-qt0-f181.google.com ([209.85.216.181]:37707 "EHLO
+        mail-qt0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751112AbdLETWe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 14:22:34 -0500
+Received: by mail-qt0-f181.google.com with SMTP id f2so3430951qtj.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Dec 2017 11:22:34 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171205085258.4038-3-anand.jain@oracle.com>
+From: Benjamin Beichler <hadrian2002@googlemail.com>
+Date: Tue, 5 Dec 2017 19:22:13 +0000
+Message-ID: <CABi++uJj6x=ZT1QbB7vu5Zh3_Mf6nsLNMAO9QXNLEBQN_ngoYA@mail.gmail.com>
+Subject: Chunk-Recovery fails with alignment error
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 05, 2017 at 04:52:57PM +0800, Anand Jain wrote:
-> This patch adds
->   btrfs device ignode <dev>
-> so that a device can be ignored/missed during mount if the device is
-> already been scanned. Basically, this command will undo the effect
-> of the command
->   btrfs device scan <dev>
+Hi,
 
-As it logicall belongs to scan, I'd rather make it an option, like
+I have a setup as following:  (1,7TB drive + 128GB SSD in Bcache) <==>
+luks device <==> btrfs FS
+I have been running Arch linux with newest stable kernel 4.14.
 
-  $ btrfs scan --unregister
+After a reboot last week my btrfs volume becomes unmountable, because
+of checksum errors in the chunk root.
 
-or
+These are the outputs of check:
+"btrfs check /dev/mapper/root
 
-  $ btrfs scan --forget
+checksum verify failed on 131072 found 1A98EC4A wanted B97166DB
+checksum verify failed on 131072 found 1A98EC4A wanted B97166DB
+bytenr mismatch, want=131072, have=9229526874648754029
+ERROR: cannot read chunk root
+ERROR: cannot open file system
+"
 
-The meaning of 'ignore' in this context is not clear to me, we can
-ignore errors on the device.
+Most other check/repair commands fail with the same error. The
+super-dump can be found here:
+https://gist.github.com/anonymous/33bd22696c37355c6cfd093f4c6bd226
 
-> This change is compatible with older kernel without the ioctl
-> BTRFS_IOC_IGNORE_DEV which is added here. At which it shall
-> report 'Inappropriate ioctl for device'. And will report
-> 'Operation not permitted' on mounted device.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v1-4: No change.
-> 
->  cmds-device.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  ioctl.h       |  2 ++
->  2 files changed, 56 insertions(+)
-> 
-> diff --git a/cmds-device.c b/cmds-device.c
-> index f4cdb39f64ac..31b1945d3339 100644
-> --- a/cmds-device.c
-> +++ b/cmds-device.c
-> @@ -329,6 +329,59 @@ out:
->  	return !!ret;
->  }
->  
-> +static const char * const cmd_device_ignore_usage[] = {
-> +	"btrfs device ignore [<device>]",
-> +	"Ignore a device in the btrfs kernel module.",
-> +	NULL
-> +};
-> +
-> +static int btrfs_ignore_one_device(char *path)
-> +{
-> +	struct btrfs_ioctl_vol_args args;
-> +	int fd;
-> +	int ret;
-> +
-> +	fd = open("/dev/btrfs-control", O_RDWR);
-> +	if (fd < 0)
-> +		return -errno;
-> +
-> +	memset(&args, 0, sizeof(args));
-> +	strncpy_null(args.name, path);
-> +	ret = ioctl(fd, BTRFS_IOC_IGNORE_DEV, &args);
-> +	if (ret)
-> +		ret = -errno;
-> +	close(fd);
-> +	return ret;
-> +}
-> +
-> +static int cmd_device_ignore(int argc, char **argv)
-> +{
-> +	int ret = 0;
-> +	char *path;
-> +
-> +	if (check_argc_max(argc - optind, 1))
-> +		usage(cmd_device_ignore_usage);
-> +
-> +	if (is_block_device(argv[1]) != 1) {
-> +		error("Not a block device: %s", argv[1]);
-> +		return -ENOENT;
-> +	}
-> +
-> +	path = canonicalize_path(argv[1]);
-> +	if (!path) {
-> +		error("Could not canonicalize path '%s': %s",
-> +					argv[1], strerror(errno));
-> +		return -ENOENT;
-> +	}
-> +
-> +	ret  = btrfs_ignore_one_device(path);
-> +	if (ret)
-> +		error("Can't ignore %s: %s", path, strerror(-ret));
-> +
-> +	free(path);
-> +	return ret;
-> +}
-> +
->  static const char * const cmd_device_ready_usage[] = {
->  	"btrfs device ready <device>",
->  	"Check device to see if it has all of its devices in cache for mounting",
-> @@ -604,6 +657,7 @@ const struct cmd_group device_cmd_group = {
->  			CMD_ALIAS },
->  		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
->  		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
-> +		{ "ignore", cmd_device_ignore, cmd_device_ignore_usage, NULL, 0 },
->  		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
->  		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
->  		{ "usage", cmd_device_usage,
-> diff --git a/ioctl.h b/ioctl.h
-> index 709e996f401c..bef8508119aa 100644
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
->  				   struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->  				   struct btrfs_ioctl_vol_args)
-> +#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-> +				   struct btrfs_ioctl_vol_args)
->  /* trans start and trans end are dangerous, and only for
->   * use by applications that know how to avoid the
->   * resulting deadlocks
-> -- 
-> 2.7.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ After my attempts in initramfs failed I used a recent arch-live disk
+to compile newest btrfs-tools and use recent kernel (4.9) to recover
+the chunk tree.
+
+Therefore I ran the chunk recover command on my drive.  It looks like
+the following here>
+https://gist.github.com/anonymous/5359c08734cf81ad3887b635536d9631
+
+for better debugging I already used gdb to inspect the following error:
+
+"ERROR: tree block bytenr 0 is not aligned to sectorsize 4096"
+
+but as the exception raise is far to late to inspect the problem.
+Since most of my chunks seems to be recoverable, I hope a tree rebuild
+is possible, but I don't know how.
+
+Do you have any suggestions?

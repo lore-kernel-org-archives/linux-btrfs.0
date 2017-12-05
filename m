@@ -1,136 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zaphod.cobb.me.uk ([213.138.97.131]:35982 "EHLO
-        zaphod.cobb.me.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752604AbdLEPwn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 10:52:43 -0500
-Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
-        by zaphod.cobb.me.uk (Postfix) with ESMTP id 0016E9BD21
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 15:42:49 +0000 (GMT)
-Received: from [192.168.0.211] (novatech.home.cobb.me.uk [192.168.0.211])
-        by black.home.cobb.me.uk (Postfix) with ESMTPS id C02645FC07
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 15:42:48 +0000 (GMT)
-Subject: Re: [RFC] Improve subvolume usability for a normal user
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
- <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
- <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
-From: Graham Cobb <g.btrfs@cobb.uk.net>
-Message-ID: <22115bdd-75f6-eea1-923c-73f54955ee7e@cobb.uk.net>
-Date: Tue, 5 Dec 2017 15:42:48 +0000
+Received: from mx2.suse.de ([195.135.220.15]:46748 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752592AbdLEP4f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 10:56:35 -0500
+Date: Tue, 5 Dec 2017 16:54:34 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nick Terrell <terrelln@fb.com>
+Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Martin Steigerwald <martin@lichtvoll.de>,
+        Imran Geriskovan <imran.geriskovan@gmail.com>
+Subject: Re: Read before you deploy btrfs + zstd
+Message-ID: <20171205155433.GI3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171113225046.GD28899@suse.cz>
+ <20171114185331.GJ28899@twin.jikos.cz>
+ <20171115143906.GM28899@twin.jikos.cz>
+ <E55ED8F2-8D16-4B58-9EC3-8DE41E7BE5A2@fb.com>
+ <20171121162239.GO3553@suse.cz>
+ <5BB834FC-A54C-4448-8D86-1D2F22806096@fb.com>
+ <20171128234937.GG3553@suse.cz>
+ <EF0643B4-092E-4D82-BA5B-9B02DFDEACA6@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <EF0643B4-092E-4D82-BA5B-9B02DFDEACA6@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/12/17 12:41, Austin S. Hemmelgarn wrote:
-> On 2017-12-05 03:43, Qu Wenruo wrote:
->>
->>
->> On 2017年12月05日 16:25, Misono, Tomohiro wrote:
->>> Hello all,
->>>
->>> I want to address some issues of subvolume usability for a normal user.
->>> i.e. a user can create subvolumes, but
->>>   - Cannot delete their own subvolume (by default)
->>>   - Cannot tell subvolumes from directories (in a straightforward way)
->>>   - Cannot check the quota limit when qgroup is enabled
->>>
->>> Here I show the initial thoughts and approaches to this problem.
->>> I want to check if this is a right approach or not before I start
->>> writing code.
->>>
->>> Comments are welcome.
->>> Tomohiro Misono
->>>
->>> ==========
->>> - Goal and current problem
->>> The goal of this RFC is to give a normal user more control to their
->>> own subvolumes.
->>> Currently the control to subvolumes for a normal user is restricted
->>> as below:
->>>
->>> +-------------+------+------+
->>> |   command   | root | user |
->>> +-------------+------+------+
->>> | sub create  | Y    | Y    |
->>> | sub snap    | Y    | Y    |
->>> | sub del     | Y    | N    |
->>> | sub list    | Y    | N    |
->>> | sub show    | Y    | N    |
->>> | qgroup show | Y    | N    |
->>> +-------------+------+------+
->>>
->>> In short, I want to change this as below in order to improve user's
->>> usability:
->>>
->>> +-------------+------+--------+
->>> |   command   | root | user   |
->>> +-------------+------+--------+
->>> | sub create  | Y    | Y      |
->>> | sub snap    | Y    | Y      |
->>> | sub del     | Y    | N -> Y |
->>> | sub list    | Y    | N -> Y |
->>> | sub show    | Y    | N -> Y |
->>> | qgroup show | Y    | N -> Y |
->>> +-------------+------+--------+
->>>
->>> In words,
->>> (1) allow deletion of subvolume if a user owns it, and
->>> (2) allow getting subvolume/quota info if a user has read access to it
->>>   (sub list/qgroup show just lists the subvolumes which are readable
->>> by the user)
->>>
->>> I think other commands not listed above (qgroup limit, send/receive
->>> etc.) should
->>> be done by root and not be allowed for a normal user.
->>>
->>>
->>> - Outside the scope of this RFC
->>> There is a qualitative problem to use qgroup for limiting user disk
->>> amount;
->>> quota limit can easily be averted by creating a subvolume. I think
->>> that forcing
->>> inheriting quota of parent subvolume is a solution, but I won't
->>> address nor
->>> discuss this here.
->>>
->>>
->>> - Proposal
->>>   (1) deletion of subvolume
->>>
->>>    I want to change the default behavior to allow a user to delete
->>> their own
->>>    subvolumes.
->>>       This is not the same behavior as when user_subvol_rm_alowed
->>> mount option is
->>>    specified; in that case a user can delete the subvolume to which
->>> they have
->>>    write+exec right.
->>>       Since snapshot creation is already restricted to the subvolume
->>> owner, it is
->>>    consistent that only the owner of the subvolume (or root) can
->>> delete it.
->>>       The implementation should be straightforward.
->>
->> Personally speaking, I prefer to do the complex owner check in user
->> daemon.
->>
->> And do the privilege in user daemon (call it btrfsd for example).
->>
->> So btrfs-progs will works in 2 modes, if root calls it, do as it used
->> to do.
->> If normal user calls it, proxy the request to btrfsd, and btrfsd does
->> the privilege checking and call ioctl (with root privilege).
->>
->> Then no impact to kernel, all complex work is done in user space.
-> Exactly how hard is it to just check ownership of the root inode of a
-> subvolume from the ioctl context?  You could just as easily push all the
-> checking out to the VFS layer by taking an open fd for the subvolume
-> root (and probably implicitly closing it) instead of taking a path, and
-> that would give you all the benefits of ACL's and whatever security
-> modules the local system is using.  
+On Wed, Nov 29, 2017 at 12:44:32AM +0000, Nick Terrell wrote:
+> >> It looks like XZ had the same issue, and they make the decompression
+> >> context a static object (grep for GRUB_EMBED_DECOMPRESSOR). We could
+> >> potentially do the same and statically allocate the workspace:
+> >> 
+> >> ```
+> >> /* Could also be size_t */
+> >> #define BTRFS_ZSTD_WORKSPACE_SIZE_U64 (155984 / sizeof(uint64_t))
+> >> static uint64_t workspace[BTRFS_ZSTD_WORKSPACE_SIZE_U64];
+> >> 
+> >> /* ... */
+> >> 
+> >> assert(sizeof(workspace) >= ZSTD_DCtxWorkspaceBound());
+> >> ```
+> > 
+> > Interesting, thanks for the tip, I'll try it next.
 
-+1 - stop inventing new access control rules for each different action!
+And it worked.
 
+> > I've meanwhile tried to tweak the numbers, the maximum block for zstd,
+> > that squeezed the DCtx somewhere under 48k, with block size 8k. Still
+> > enomem.
+> 
+> Sadly the block size has to stay 128 KiB, since that is the block size that
+> is used for compression.
+> 
+> > I've tried to add some debugging prints to see what numbers get actually
+> > passed to the allocator, but did not see anything printed.  I'm sure
+> > there is a more intelligent way to test the grub changes.  So far each
+> > test loop takes quite some time, as I build the rpm package, test it in
+> > a VM and have to recreate the environmet each time.
+> 
+> Is the code in github.com/kdave/grub in the btrfs-zstd branch up to date?
+> btrfs.c:1230 looks like it will error for zstd compression, but not with
+> ENOMEM. btrfs.c:1272 [2] looks like a typo. Maybe the second is causing
+> the compressed block to be interpreted as uncompressed, and causes a
+> too-large allocation?
 
+I had a different branch with patches from openSUSE, so the diffs apply with
+minimal efforts to the package. The branch btrfs-zstd has been synced up. The
+ENOMEM error was not from the file decompression but from the zstdio.c module,
+that does something different, now disabled.
+
+I got a bit further, with a few debugging messages, this check fails:
+
+ 957   total_size = grub_le_to_cpu32 (grub_get_unaligned32 (ibuf));
+ 958   ibuf += sizeof (total_size);
+ 959
+ 960   if (isize < total_size) {
+ 961     grub_error (GRUB_ERR_BAD_FS, "ASSERTION: isize < total_size: %ld < %ld",
+ 962                     isize, total_size);
+ 963     return -1;
+ 964   }
+
+with: "isize < total_size: 61440 < -47205080"
+
+total_size is u32, but wrngly printed as signed long so it's negative, but
+would be wrong anyway. This looks like the compressed format is not read
+correctly.

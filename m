@@ -1,36 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:57416 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:63071 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752548AbdLEIHw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 03:07:52 -0500
+        id S1752414AbdLEIIQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 03:08:16 -0500
 Subject: Re: [PATCH 3/3] Btrfs: make raid6 rebuild retry more
 To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20171204224037.7556-1-bo.li.liu@oracle.com>
  <20171204224037.7556-4-bo.li.liu@oracle.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <1ab2da20-6294-67a4-2ef3-6a65afed0fc6@gmx.com>
-Date: Tue, 5 Dec 2017 16:07:35 +0800
+Message-ID: <af1770f6-a1d8-90f0-b753-f4c4dcd0fb8f@gmx.com>
+Date: Tue, 5 Dec 2017 16:08:07 +0800
 MIME-Version: 1.0
 In-Reply-To: <20171204224037.7556-4-bo.li.liu@oracle.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="oDtO8TSiBfD8s4oaEc6rO9Afco5rbqfjD"
+ boundary="V3WpOPh9lT4cHiOq4X9eBu02chmjM51Qe"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---oDtO8TSiBfD8s4oaEc6rO9Afco5rbqfjD
-Content-Type: multipart/mixed; boundary="rwsjo1pAqlU183ECJxpbMxvSmRIINs6ps";
+--V3WpOPh9lT4cHiOq4X9eBu02chmjM51Qe
+Content-Type: multipart/mixed; boundary="vg6kOkMBCEwK6HMDcxRhhtmGimPqOPxwE";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Message-ID: <1ab2da20-6294-67a4-2ef3-6a65afed0fc6@gmx.com>
+Message-ID: <af1770f6-a1d8-90f0-b753-f4c4dcd0fb8f@gmx.com>
 Subject: Re: [PATCH 3/3] Btrfs: make raid6 rebuild retry more
 References: <20171204224037.7556-1-bo.li.liu@oracle.com>
  <20171204224037.7556-4-bo.li.liu@oracle.com>
 In-Reply-To: <20171204224037.7556-4-bo.li.liu@oracle.com>
 
---rwsjo1pAqlU183ECJxpbMxvSmRIINs6ps
+--vg6kOkMBCEwK6HMDcxRhhtmGimPqOPxwE
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -152,23 +152,23 @@ fo, u64 logical, u64 len)
 >=20
 
 
---rwsjo1pAqlU183ECJxpbMxvSmRIINs6ps--
+--vg6kOkMBCEwK6HMDcxRhhtmGimPqOPxwE--
 
---oDtO8TSiBfD8s4oaEc6rO9Afco5rbqfjD
+--V3WpOPh9lT4cHiOq4X9eBu02chmjM51Qe
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomU8cXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgMPwgArdGCqe+xQS5LlMKZJoCmFKAe
-/5WRkGUsC/4E3b6gOp3vjeEOEzmK4djWPY9zaTH4TJCSCqlnnS1nqMfctp/gp2vB
-3UKwqAA1YOypDRHcqZlQAujNRDUQarnpZBloHYCuxTPknnTYPBOOfOHaLnhZHMg/
-Qb2JuLE3I1gnYY3D/IOEnWxphFsYlHZIa3ANwKDADq9C314KgqF8OT4xzz++vb1O
-Tht3ZVLSIutQRjg3B8jJEsCMLlZrI0u27DdtsM0VLC8gbcYmWWoXEezL4S2UlQbX
-u2x/wjwQtOFispMOVIMki7T5nztTGSz6p9Wx7ZxpTpF6m73eyqHT2WiHJ9Cvkw==
-=H2Ay
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomU+gXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhY3wf/V6w5P5ehXzVnFnr3dpZG+CQF
+W7LkC8DeJA89fSV3VIC3DNitY9JF9U9Z0hoKUqn3XLHVnpVCzLz6mXO8UJKxlhSK
+tUGv+eCUOmsDYBdE2DcV2s7mFyFaG/oNsQcjyPbapBo5pt8UiZRCz2P8Fhlaebyf
+lvnlZNl4P8Ja8meocrlsAS7QFq99Hyr7n9CGx6spBcpwrtCwRQz7MZ6Kh5eJiJfO
+arDru5EOjmXbsOIZASV2bVME5i9zzfnKm+xzwL/bU1bc4te+32d6UakW42Qg836h
+I3O7cOvS0vgR6TCmbNGZsnAHlWvESmTmjsHfh2g23d22oautwjJIiBSp3wvw0w==
+=Lvq8
 -----END PGP SIGNATURE-----
 
---oDtO8TSiBfD8s4oaEc6rO9Afco5rbqfjD--
+--V3WpOPh9lT4cHiOq4X9eBu02chmjM51Qe--

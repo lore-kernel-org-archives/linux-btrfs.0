@@ -1,65 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:45400 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752719AbdLEIwe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 03:52:34 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB58qM9N109034
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:33 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2ekpeynyq2-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Dec 2017 08:52:32 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB58qWTn016520
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:32 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB58qWnB024491
-        for <linux-btrfs@vger.kernel.org>; Tue, 5 Dec 2017 08:52:32 GMT
+Received: from userp1040.oracle.com ([156.151.31.81]:30710 "EHLO
+        userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753043AbdLEIyN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 03:54:13 -0500
+Subject: Re: [PATCH] btrfs/124: add balance --full-balance option
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+References: <20171205082628.1676-1-anand.jain@oracle.com>
+ <0a70d47c-7bcc-a6ff-c79e-b988fd305818@gmx.com>
 From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 0/2] Add cli and ioctl to ignore a scanned device
-Date: Tue,  5 Dec 2017 16:52:55 +0800
-Message-Id: <20171205085258.4038-1-anand.jain@oracle.com>
+Message-ID: <098dfc82-e08f-4ba8-f06f-798994b4c187@oracle.com>
+Date: Tue, 5 Dec 2017 16:54:40 +0800
+MIME-Version: 1.0
+In-Reply-To: <0a70d47c-7bcc-a6ff-c79e-b988fd305818@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patch 1/2 is preparatory patch to get a function to delete a device
-  from the list.
-Patch 2/2 adds the ioctl and feature to delete a device from the
-device list.
 
-Also includes Patch 1/1 for the btrfs-progs support.
 
-v2:
-  Accepts review from Nikolay, details are in the specific patch.
-  Patch 1/2 is renamed from
-    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
-  to
-    [PATCH 1/2] btrfs: add function to device list delete
-v3:
-  No change. Send to correct ML.
-v4:
-  No change. But as the ML thread may be confusing, so resend.
+On 12/05/2017 04:30 PM, Qu Wenruo wrote:
+> 
+> 
+> On 2017年12月05日 16:26, Anand Jain wrote:
+>> btrfs balance needs --full-balance option since 4.6, so check the
+>> version and then use it.
+>>
+>> As this may be useful for other btrfs tests as well, so this patch
+>> adds _btrfs_full_balance_option() to the common/btrfs file.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   common/btrfs    | 13 +++++++++++++
+>>   tests/btrfs/124 |  3 ++-
+>>   2 files changed, 15 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/common/btrfs b/common/btrfs
+>> index c09206c6f292..8ca6486b26dc 100644
+>> --- a/common/btrfs
+>> +++ b/common/btrfs
+>> @@ -356,3 +356,16 @@ _btrfs_compression_algos()
+>>   		echo "${feature#/sys/fs/btrfs/features/compress_}"
+>>   	done
+>>   }
+>> +
+>> +#btrfs-progs adds required --full-balance option since v4.6 so check for
+>> +#that and then return the required option.
+>> +_btrfs_full_balance_option()
+>> +{
+>> +	ver=$($BTRFS_UTIL_PROG --version|awk '{print $2}'|cut -d"-" -f1 | cut -d"v" -f2)
+> 
+> I'm never a fan of version check.
+> Backporting or modified package version can easily screw this up.
+> 
+> Why not directly checking the help message of "btrfs balance start"?
 
-Anand Jain (2):
-  btrfs: add function to device list delete
-  btrfs: introduce feature to ignore a btrfs device
+  Agreed. Will do.
 
- fs/btrfs/super.c           |  4 +++
- fs/btrfs/volumes.c         | 86 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h         |  2 ++
- include/uapi/linux/btrfs.h |  2 ++
- 4 files changed, 94 insertions(+)
+Thanks, Anand
 
-Anand Jain (1):
-  btrfs-progs: add 'btrfs device ignore' cli
-
- cmds-device.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h       |  2 ++
- 2 files changed, 56 insertions(+)
-
--- 
-2.7.0
-
+> Thanks,
+> Qu
+> 
+>> +	tup1=$(echo $ver| cut -d"." -f1)
+>> +	tup2=$(echo $ver| cut -d"." -f2)
+>> +
+>> +	RET=""
+>> +	(("$tup1" > "4")) && RET="--full-balance"
+>> +	(("$tup1" == "4")) && (("tup2" >= "6")) && RET="--full-balance"
+>> +}
+>> diff --git a/tests/btrfs/124 b/tests/btrfs/124
+>> index a6486270a972..ec1d24b5ef42 100755
+>> --- a/tests/btrfs/124
+>> +++ b/tests/btrfs/124
+>> @@ -129,7 +129,8 @@ _run_btrfs_util_prog device scan
+>>   _scratch_mount >> $seqres.full 2>&1
+>>   _run_btrfs_util_prog filesystem show
+>>   echo >> $seqres.full
+>> -_run_btrfs_util_prog balance start ${SCRATCH_MNT}
+>> +_btrfs_full_balance_option
+>> +_run_btrfs_util_prog balance start $RET ${SCRATCH_MNT}
+>>   
+>>   checkpoint2=`md5sum $SCRATCH_MNT/tf2`
+>>   echo $checkpoint2 >> $seqres.full 2>&1
+>>
+> 

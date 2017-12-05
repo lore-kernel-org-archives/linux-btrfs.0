@@ -1,24 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41426 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53275 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751819AbdLAJTw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Dec 2017 04:19:52 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 31449AD30
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2017 09:19:51 +0000 (UTC)
+        id S1751852AbdLELx3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 06:53:29 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1DB20AE1A
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 11:53:28 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/5] btrfs: Remove dead code
-Date: Fri,  1 Dec 2017 11:19:40 +0200
-Message-Id: <1512119984-12708-2-git-send-email-nborisov@suse.com>
-In-Reply-To: <1512119984-12708-1-git-send-email-nborisov@suse.com>
-References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Remove dead code btrfs_get_extent
+Date: Tue,  5 Dec 2017 13:53:25 +0200
+Message-Id: <1512474805-30223-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20171204134521.GV3553@twin.jikos.cz>
+References: <20171204134521.GV3553@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-trans was statically assigned to NULL and this never changed over the course of
-btrfs_get_extent. So remove any code which checks whether trans != NULL and
+trans was statically assigned to NULL and this never changes over the course of
+btrfs_get_extent. This was added in commit a52d9a8033c4 ("Btrfs: Extent based
+page cache code.  This uses an rbtree of extents and tests instead of buffer
+heads.") and wasn't used even then, which indicates it was never intended to be
+merged. So remove any code which checks whether trans != NULL and
 just hardcode the fact trans is always NULL. This fixes CID#112806
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>

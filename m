@@ -1,25 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54470 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751416AbdLERhq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 12:37:46 -0500
-Date: Tue, 5 Dec 2017 18:35:46 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: use enum instead of constant value
-Message-ID: <20171205173546.GL3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1512470130-7240-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:49485 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752865AbdLEKtT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 05:49:19 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 8C1D2486A768
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Dec 2017 18:49:15 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: use enum instead of constant value
+Date: Tue, 5 Dec 2017 18:35:30 +0800
+Message-ID: <1512470130-7240-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1512470130-7240-1-git-send-email-gujx@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 05, 2017 at 06:35:30PM +0800, Gu Jinxiang wrote:
-> Use enum READA_BACK instead of value 1 to keep source robust.
+Use enum READA_BACK instead of value 1 to keep source robust.
 
-Are you sure that READA_BACK is the right one? It corresponds to the
-value 1, but the actual readahead direction semantics should be
-considered. It is not obvious and needs some explanation in the changelog.
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+ fs/btrfs/free-space-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index a5e34de..a105629 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -1071,7 +1071,7 @@ static int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	path2 = btrfs_alloc_path();
+ 	if (!path2) {
+@@ -1577,7 +1577,7 @@ int load_free_space_tree(struct btrfs_caching_control *caching_ctl)
+ 	 */
+ 	path->skip_locking = 1;
+ 	path->search_commit_root = 1;
+-	path->reada = 1;
++	path->reada = READA_BACK;
+ 
+ 	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
+ 	if (IS_ERR(info)) {
+-- 
+1.9.1
+
+
+

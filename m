@@ -1,104 +1,215 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:58200 "EHLO mx1.redhat.com"
+Received: from mout.gmx.net ([212.227.17.20]:55347 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751774AbdLEIkn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 03:40:43 -0500
-Date: Tue, 5 Dec 2017 16:40:41 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Anand Jain <anand.jain@oracle.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs/124: add balance --full-balance option
-Message-ID: <20171205084041.GL2749@eguan.usersys.redhat.com>
-References: <20171205082628.1676-1-anand.jain@oracle.com>
- <0a70d47c-7bcc-a6ff-c79e-b988fd305818@gmx.com>
+        id S1751570AbdLEIoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Dec 2017 03:44:00 -0500
+Subject: Re: [RFC] Improve subvolume usability for a normal user
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
+Date: Tue, 5 Dec 2017 16:43:49 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <0a70d47c-7bcc-a6ff-c79e-b988fd305818@gmx.com>
+In-Reply-To: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 05, 2017 at 04:30:33PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2017年12月05日 16:26, Anand Jain wrote:
-> > btrfs balance needs --full-balance option since 4.6, so check the
-> > version and then use it.
-> > 
-> > As this may be useful for other btrfs tests as well, so this patch
-> > adds _btrfs_full_balance_option() to the common/btrfs file.
-> > 
-> > Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> > ---
-> >  common/btrfs    | 13 +++++++++++++
-> >  tests/btrfs/124 |  3 ++-
-> >  2 files changed, 15 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/common/btrfs b/common/btrfs
-> > index c09206c6f292..8ca6486b26dc 100644
-> > --- a/common/btrfs
-> > +++ b/common/btrfs
-> > @@ -356,3 +356,16 @@ _btrfs_compression_algos()
-> >  		echo "${feature#/sys/fs/btrfs/features/compress_}"
-> >  	done
-> >  }
-> > +
-> > +#btrfs-progs adds required --full-balance option since v4.6 so check for
-> > +#that and then return the required option.
-> > +_btrfs_full_balance_option()
-> > +{
-> > +	ver=$($BTRFS_UTIL_PROG --version|awk '{print $2}'|cut -d"-" -f1 | cut -d"v" -f2)
-> 
-> I'm never a fan of version check.
-> Backporting or modified package version can easily screw this up.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE
+Content-Type: multipart/mixed; boundary="b5CImfr6eTbRk7wijIltPuSOvhEMOx9uu";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
+Subject: Re: [RFC] Improve subvolume usability for a normal user
+References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+In-Reply-To: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
 
-Agreed, avoid version checking if possible.
+--b5CImfr6eTbRk7wijIltPuSOvhEMOx9uu
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> Why not directly checking the help message of "btrfs balance start"?
-> 
-> Thanks,
-> Qu
-> 
-> > +	tup1=$(echo $ver| cut -d"." -f1)
-> > +	tup2=$(echo $ver| cut -d"." -f2)
 
-And please declare local variables as 'local'.
 
-> > +
-> > +	RET=""
-> > +	(("$tup1" > "4")) && RET="--full-balance"
-> > +	(("$tup1" == "4")) && (("tup2" >= "6")) && RET="--full-balance"
-> > +}
-> > diff --git a/tests/btrfs/124 b/tests/btrfs/124
-> > index a6486270a972..ec1d24b5ef42 100755
-> > --- a/tests/btrfs/124
-> > +++ b/tests/btrfs/124
-> > @@ -129,7 +129,8 @@ _run_btrfs_util_prog device scan
-> >  _scratch_mount >> $seqres.full 2>&1
-> >  _run_btrfs_util_prog filesystem show
-> >  echo >> $seqres.full
-> > -_run_btrfs_util_prog balance start ${SCRATCH_MNT}
-> > +_btrfs_full_balance_option
-> > +_run_btrfs_util_prog balance start $RET ${SCRATCH_MNT}
+On 2017=E5=B9=B412=E6=9C=8805=E6=97=A5 16:25, Misono, Tomohiro wrote:
+> Hello all,
+>=20
+> I want to address some issues of subvolume usability for a normal user.=
 
-This usage depends on the implicit global variable RET, which seems a
-bit hard to follow. How about let the new helper return the expected
-option string, and use that string in test, either assign it to a local
-var or use it in command line directly.
+> i.e. a user can create subvolumes, but
+>  - Cannot delete their own subvolume (by default)
+>  - Cannot tell subvolumes from directories (in a straightforward way)
+>  - Cannot check the quota limit when qgroup is enabled
+>=20
+> Here I show the initial thoughts and approaches to this problem.
+> I want to check if this is a right approach or not before I start writi=
+ng code.
+>=20
+> Comments are welcome.
+> Tomohiro Misono
+>=20
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> - Goal and current problem
+> The goal of this RFC is to give a normal user more control to their own=
+ subvolumes.
+> Currently the control to subvolumes for a normal user is restricted as =
+below:=20
+>=20
+> +-------------+------+------+
+> |   command   | root | user |
+> +-------------+------+------+
+> | sub create  | Y    | Y    |
+> | sub snap    | Y    | Y    |
+> | sub del     | Y    | N    |
+> | sub list    | Y    | N    |
+> | sub show    | Y    | N    |
+> | qgroup show | Y    | N    |
+> +-------------+------+------+
+>=20
+> In short, I want to change this as below in order to improve user's usa=
+bility:
+>=20
+> +-------------+------+--------+
+> |   command   | root | user   |
+> +-------------+------+--------+
+> | sub create  | Y    | Y      |
+> | sub snap    | Y    | Y      |
+> | sub del     | Y    | N -> Y |
+> | sub list    | Y    | N -> Y |
+> | sub show    | Y    | N -> Y |
+> | qgroup show | Y    | N -> Y |
+> +-------------+------+--------+
+>=20
+> In words,
+> (1) allow deletion of subvolume if a user owns it, and=20
+> (2) allow getting subvolume/quota info if a user has read access to it
+>  (sub list/qgroup show just lists the subvolumes which are readable by =
+the user)
+>=20
+> I think other commands not listed above (qgroup limit, send/receive etc=
+=2E) should
+> be done by root and not be allowed for a normal user.
+>=20
+>=20
+> - Outside the scope of this RFC
+> There is a qualitative problem to use qgroup for limiting user disk amo=
+unt;
+> quota limit can easily be averted by creating a subvolume. I think that=
+ forcing
+> inheriting quota of parent subvolume is a solution, but I won't address=
+ nor
+> discuss this here.=20
+>=20
+>=20
+> - Proposal
+>  (1) deletion of subvolume
+>=20
+>   I want to change the default behavior to allow a user to delete their=
+ own
+>   subvolumes.
+>  =20
+>   This is not the same behavior as when user_subvol_rm_alowed mount opt=
+ion is
+>   specified; in that case a user can delete the subvolume to which they=
+ have
+>   write+exec right.
+>  =20
+>   Since snapshot creation is already restricted to the subvolume owner,=
+ it is
+>   consistent that only the owner of the subvolume (or root) can delete =
+it.
+>  =20
+>   The implementation should be straightforward.
 
-Think about it more, perhaps we can introduce a new helper, e.g.
-_run_btrfs_balance, and hide all these details, just call balance with
---full-balance when possible?
+Personally speaking, I prefer to do the complex owner check in user daemo=
+n.
+
+And do the privilege in user daemon (call it btrfsd for example).
+
+So btrfs-progs will works in 2 modes, if root calls it, do as it used to =
+do.
+If normal user calls it, proxy the request to btrfsd, and btrfsd does
+the privilege checking and call ioctl (with root privilege).
+
+Then no impact to kernel, all complex work is done in user space.
+
+>=20
+>  (2) getting subvolume/quota info
+>=20
+>   TREE_SEARCH ioctl is used to retrieve the subvolume/quota info by btr=
+fs-progs
+>   (sub show/list, qgroup show etc.). This requires the root permission.=
+
+>  =20
+>   The easiest way to allow a user to get subvolume/quota info is just r=
+elaxing
+>   the permission of TREE_SEARCH. However, since all the tree informatio=
+n (inc.
+>   file name) will be exposed, this poses a sequrity risk and is not acc=
+eptable.
+>  =20
+>   So, I want to introduce 2 ioctls to get subvolume/quota info respecti=
+vely for
+>   a normal user, which return only the info readable by the user:
+>  =20
+>    [subvolume info]
+>     Mainly search ROOT tree for ROOT_ITEM/ROOT_BACKREF, but check its r=
+ead
+>    right by searching FS/FILE tree and comparing it with caller's uid.
+>  =20
+>    [quota info]
+>     Same as above, but mainly search QUOTA tree and only returns level =
+0 info.
+>  =20
+>   Also, in order to construct subvolume path, permission of INO_LOOKUP =
+ioctl
+>   needs to be relaxed for the user who has read access to the subvolume=
+=2E
+
+Same method can apply to this either.
 
 Thanks,
-Eryu
+Qu
+>=20
+>=20
+> - Summary of Proposal
+>  - Change the default behavior to allow a user to delete their own subv=
+olumes
+>  - Add 2 new non-root ioctls to get subvolume/quota info for accessible=
+ subvolumes
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
-> >  
-> >  checkpoint2=`md5sum $SCRATCH_MNT/tf2`
-> >  echo $checkpoint2 >> $seqres.full 2>&1
-> > 
-> 
 
+--b5CImfr6eTbRk7wijIltPuSOvhEMOx9uu--
 
+--5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlomXEUXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgajgf/Y0B5b/l7xtdEH0qwK3FIKLSn
+7DllCqvMBpcGsOazhJKD5syNKbYWyWV3VzjZKKXNyHhuDVlHyULRSJlIIN2LTDHA
+UCMcQ1uPIU9dTkFcPjKqhwebS/gADPgb4IEwU58CNzsnU7gJT+WhYhTifYIACdPo
+2NbtY5VRuikG+7/7nKsWWaO7/Sp1h55j1XQdQNKwz+5K8ZhuQ64eIqwBzxpi5ZGw
+8tQE4msUiSyAoCZvrkFc6GR5l3cS/3Eu5tbKK8W08ep6t+6SHB+EhelL45p/wWML
+W/8boHj+IxHdld9u4gMJCjsIxcLcLfCRktK5tyoFoto/3DqZV+8D+Qs0Fmhwug==
+=hFI9
+-----END PGP SIGNATURE-----
+
+--5lF6UtgHJw2bJaKVqbgoubTTvBFGpRUOE--

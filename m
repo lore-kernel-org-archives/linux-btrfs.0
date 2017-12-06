@@ -1,125 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga06-in.huawei.com ([45.249.212.32]:44639 "EHLO huawei.com"
-        rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753068AbdLFGz6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Dec 2017 01:55:58 -0500
-To: <linux-btrfs@vger.kernel.org>
-CC: <linux-kernel@vger.kernel.org>, <clm@fb.com>, <jbacik@fb.com>,
-        <dsterba@suse.com>, <linux-mm@kvack.org>, <miaoxie@huawei.com>,
-        <houtao1@huawei.com>, <zhaohongjiang@huawei.com>
-From: guoxuenan <guoxuenan@huawei.com>
-Subject: A kernel warning will be triggered,during copy a big file into zstd
- compressed btrfs filesystem
-Message-ID: <c8fc1d4d-4537-f12b-30a5-a4be01f587be@huawei.com>
-Date: Wed, 6 Dec 2017 14:54:19 +0800
+Received: from userp2120.oracle.com ([156.151.31.85]:35524 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753968AbdLFHZr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 02:25:47 -0500
+Subject: Re: [PATCH v4] btrfs-progs: add 'btrfs device ignore' cli
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20171205085258.4038-1-anand.jain@oracle.com>
+ <20171205085258.4038-3-anand.jain@oracle.com>
+ <20171205191111.GV3553@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <661535f0-ec40-b0f3-9bfa-052d581e3fb9@oracle.com>
+Date: Wed, 6 Dec 2017 15:26:14 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20171205191111.GV3553@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-
-I have found a kernel warning of btrfs ,during run my  shell script in 
-qemu qemu virtual machine.
-
-Linux mainline version Linux 4.15-rc2 (ae64f9bd)
 
 
-The script try to copy a big file(15G) into btrfs filesystem,when I 
-login virtual machine,then run the script,A kernel warning will be 
-triggered  within about ten file copies.
-=========================================================
-#!/bin/sh
-function btrfs_test()
-{
-	umount /mnt/vdb
-	mkfs.btrfs -f /dev/vdb
-	mount -o compress=$1 /dev/vdb /mnt/vdb
-	cp ../data.tar  /mnt/vdb
-	sleep 10
-	btrfs filesystem sync /mnt/vdb
-}
+On 12/06/2017 03:11 AM, David Sterba wrote:
+> On Tue, Dec 05, 2017 at 04:52:57PM +0800, Anand Jain wrote:
+>> This patch adds
+>>    btrfs device ignode <dev>
+>> so that a device can be ignored/missed during mount if the device is
+>> already been scanned. Basically, this command will undo the effect
+>> of the command
+>>    btrfs device scan <dev>
+> 
+> As it logicall belongs to scan, I'd rather make it an option, like
+> 
+>    $ btrfs scan --unregister
+> 
+> or
+> 
+>    $ btrfs scan --forget
+>
+> The meaning of 'ignore' in this context is not clear to me, we can
+> ignore errors on the device.
 
-function loop_test()
-{
+  Do you mean to say..
 
-	for k in $( seq 1 100 )
-	do
-		btrfs_test zstd
-	done
-}
-loop_test
-==========================================================
+      $btrfs dev scan --unregister
+   or
+      $btrfs dev scan --forget
 
-Kernl Warning content:
+  further, as there is a suggestion to have an option to purge all
+  unmounted devices, in view of adding further options, how
+  about..
 
-[  291.809047] ============================================
-[  291.809981] WARNING: possible recursive locking detected
-[  291.810913] 4.15.0-rc2-327.58.59.16.x86_64.debug+ #8 Not tainted
-[  291.811908] --------------------------------------------
-[  291.812792] khugepaged/65 is trying to acquire lock:
-[  291.813614]  (fs_reclaim){+.+.}, at: [<000000009263bd20>] 
-fs_reclaim_acquire+0x12/0x40
-[  291.814972]
-[  291.814972] but task is already holding lock:
-[  291.815912]  (fs_reclaim){+.+.}, at: [<000000009263bd20>] 
-fs_reclaim_acquire+0x12/0x40
-[  291.817263]
-[  291.817263] other info that might help us debug this:
-[  291.818355]  Possible unsafe locking scenario:
-[  291.818355]
-[  291.819348]        CPU0
-[  291.819743]        ----
-[  291.820121]   lock(fs_reclaim);
-[  291.820689]   lock(fs_reclaim);
-[  291.821223]
-[  291.821223]  *** DEADLOCK ***
-[  291.821223]
-[  291.822224]  May be due to missing lock nesting notation
-[  291.822224]
-[  291.823411] 1 lock held by khugepaged/65:
-[  291.824048]  #0:  (fs_reclaim){+.+.}, at: [<000000009263bd20>] 
-fs_reclaim_acquire+0x12/0x40
-[  291.825480]
-[  291.825480] stack backtrace:
-[  291.826155] CPU: 4 PID: 65 Comm: khugepaged Not tainted 
-4.15.0-rc2-327.58.59.16.x86_64.debug+ #8
-[  291.827696] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), 
-BIOS 1.9.3-1.fc25 04/01/2014
-[  291.829111] Call Trace:
-[  291.829560]  dump_stack+0x7c/0xbf
-[  291.830072]  __lock_acquire+0x8d6/0x1220
-[  291.830837]  lock_acquire+0xc9/0x220
-[  291.831425]  ? fs_reclaim_acquire+0x12/0x40
-[  291.832110]  ? alloc_extent_state+0x21/0x1c0
-[  291.832824]  fs_reclaim_acquire+0x35/0x40
-[  291.833476]  ? fs_reclaim_acquire+0x12/0x40
-[  291.834114]  kmem_cache_alloc+0x29/0x320
-[  291.834777]  alloc_extent_state+0x21/0x1c0
-[  291.835390]  __clear_extent_bit+0x2a5/0x3b0
-[  291.836079]  try_release_extent_mapping+0x17c/0x200
-[  291.836868]  __btrfs_releasepage+0x30/0x90
-[  291.837519]  shrink_page_list+0x80d/0xf20
-[  291.838158]  shrink_inactive_list+0x250/0x710
-[  291.838875]  ? rcu_read_lock_sched_held+0x9b/0xb0
-[  291.839666]  shrink_node_memcg+0x358/0x790
-[  291.840282]  ? mem_cgroup_iter+0x98/0x530
-[  291.840872]  shrink_node+0xe5/0x310
-[  291.841387]  do_try_to_free_pages+0xe8/0x390
-[  291.842013]  try_to_free_pages+0x146/0x3d0
-[  291.842620]  __alloc_pages_slowpath+0x3d1/0xce1
-[  291.843290]  __alloc_pages_nodemask+0x411/0x450
-[  291.843989]  khugepaged_alloc_page+0x39/0x80
-[  291.844626]  collapse_huge_page+0x78/0x9a0
-[  291.845381]  ? khugepaged_scan_mm_slot+0x932/0xfa0
-[  291.846113]  khugepaged_scan_mm_slot+0x953/0xfa0
-[  291.846838]  ? khugepaged+0x130/0x5a0
-[  291.847388]  khugepaged+0x2e0/0x5a0
-[  291.848019]  ? remove_wait_queue+0x60/0x60
-[  291.848678]  kthread+0x141/0x180
-[  291.849239]  ? khugepaged_scan_mm_slot+0xfa0/0xfa0
-[  291.849938]  ? kthread_stop+0x300/0x300
-[  291.850514]  ret_from_fork+0x24/0x30
+     $btrfs dev <sub-sub-cmd> [ <--all> | <dev-path> ]
 
+  all:       purge all unmounted devices
+  dev-path:  purge one given device
 
+  and name choices for <sub-sub-cmd>  are:
+     unscan
+     unregister
+     forget
+     purge
 
+  I am fine with any, will go by suggested.
+
+Thanks, Anand
+
+>> This change is compatible with older kernel without the ioctl
+>> BTRFS_IOC_IGNORE_DEV which is added here. At which it shall
+>> report 'Inappropriate ioctl for device'. And will report
+>> 'Operation not permitted' on mounted device.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>> v1-4: No change.
+>>
+>>   cmds-device.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   ioctl.h       |  2 ++
+>>   2 files changed, 56 insertions(+)
+>>
+>> diff --git a/cmds-device.c b/cmds-device.c
+>> index f4cdb39f64ac..31b1945d3339 100644
+>> --- a/cmds-device.c
+>> +++ b/cmds-device.c
+>> @@ -329,6 +329,59 @@ out:
+>>   	return !!ret;
+>>   }
+>>   
+>> +static const char * const cmd_device_ignore_usage[] = {
+>> +	"btrfs device ignore [<device>]",
+>> +	"Ignore a device in the btrfs kernel module.",
+>> +	NULL
+>> +};
+>> +
+>> +static int btrfs_ignore_one_device(char *path)
+>> +{
+>> +	struct btrfs_ioctl_vol_args args;
+>> +	int fd;
+>> +	int ret;
+>> +
+>> +	fd = open("/dev/btrfs-control", O_RDWR);
+>> +	if (fd < 0)
+>> +		return -errno;
+>> +
+>> +	memset(&args, 0, sizeof(args));
+>> +	strncpy_null(args.name, path);
+>> +	ret = ioctl(fd, BTRFS_IOC_IGNORE_DEV, &args);
+>> +	if (ret)
+>> +		ret = -errno;
+>> +	close(fd);
+>> +	return ret;
+>> +}
+>> +
+>> +static int cmd_device_ignore(int argc, char **argv)
+>> +{
+>> +	int ret = 0;
+>> +	char *path;
+>> +
+>> +	if (check_argc_max(argc - optind, 1))
+>> +		usage(cmd_device_ignore_usage);
+>> +
+>> +	if (is_block_device(argv[1]) != 1) {
+>> +		error("Not a block device: %s", argv[1]);
+>> +		return -ENOENT;
+>> +	}
+>> +
+>> +	path = canonicalize_path(argv[1]);
+>> +	if (!path) {
+>> +		error("Could not canonicalize path '%s': %s",
+>> +					argv[1], strerror(errno));
+>> +		return -ENOENT;
+>> +	}
+>> +
+>> +	ret  = btrfs_ignore_one_device(path);
+>> +	if (ret)
+>> +		error("Can't ignore %s: %s", path, strerror(-ret));
+>> +
+>> +	free(path);
+>> +	return ret;
+>> +}
+>> +
+>>   static const char * const cmd_device_ready_usage[] = {
+>>   	"btrfs device ready <device>",
+>>   	"Check device to see if it has all of its devices in cache for mounting",
+>> @@ -604,6 +657,7 @@ const struct cmd_group device_cmd_group = {
+>>   			CMD_ALIAS },
+>>   		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
+>>   		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
+>> +		{ "ignore", cmd_device_ignore, cmd_device_ignore_usage, NULL, 0 },
+>>   		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
+>>   		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
+>>   		{ "usage", cmd_device_usage,
+>> diff --git a/ioctl.h b/ioctl.h
+>> index 709e996f401c..bef8508119aa 100644
+>> --- a/ioctl.h
+>> +++ b/ioctl.h
+>> @@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
+>>   				   struct btrfs_ioctl_vol_args)
+>>   #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>>   				   struct btrfs_ioctl_vol_args)
+>> +#define BTRFS_IOC_IGNORE_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+>> +				   struct btrfs_ioctl_vol_args)
+>>   /* trans start and trans end are dangerous, and only for
+>>    * use by applications that know how to avoid the
+>>    * resulting deadlocks
+>> -- 
+>> 2.7.0
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

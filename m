@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:52550 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:34718 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753387AbdLFAmQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:16 -0500
+        with ESMTP id S1753373AbdLFAmP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:15 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 63/73] dax: Convert dax_insert_mapping_entry to XArray
-Date: Tue,  5 Dec 2017 16:41:49 -0800
-Message-Id: <20171206004159.3755-64-willy@infradead.org>
+Subject: [PATCH v4 55/73] f2fs: Convert to XArray
+Date: Tue,  5 Dec 2017 16:41:41 -0800
+Message-Id: <20171206004159.3755-56-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,60 +22,108 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
+This is a straightforward conversion.
+
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/dax.c | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+ fs/f2fs/data.c   |  3 +--
+ fs/f2fs/dir.c    |  5 +----
+ fs/f2fs/inline.c |  6 +-----
+ fs/f2fs/node.c   | 10 ++--------
+ 4 files changed, 5 insertions(+), 19 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 619aff70583f..de85ce87d333 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -498,9 +498,9 @@ static void *dax_insert_mapping_entry(struct address_space *mapping,
- 				      void *entry, sector_t sector,
- 				      unsigned long flags, bool dirty)
+diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
+index c8f6d9806896..1f3f192f152f 100644
+--- a/fs/f2fs/data.c
++++ b/fs/f2fs/data.c
+@@ -2175,8 +2175,7 @@ void f2fs_set_page_dirty_nobuffers(struct page *page)
+ 	xa_lock_irqsave(&mapping->pages, flags);
+ 	WARN_ON_ONCE(!PageUptodate(page));
+ 	account_page_dirtied(page, mapping);
+-	radix_tree_tag_set(&mapping->pages,
+-			page_index(page), PAGECACHE_TAG_DIRTY);
++	__xa_set_tag(&mapping->pages, page_index(page), PAGECACHE_TAG_DIRTY);
+ 	xa_unlock_irqrestore(&mapping->pages, flags);
+ 	unlock_page_memcg(page);
+ 
+diff --git a/fs/f2fs/dir.c b/fs/f2fs/dir.c
+index b5515ea6bb2f..296070016ec9 100644
+--- a/fs/f2fs/dir.c
++++ b/fs/f2fs/dir.c
+@@ -708,7 +708,6 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
+ 	unsigned int bit_pos;
+ 	int slots = GET_DENTRY_SLOTS(le16_to_cpu(dentry->name_len));
+ 	struct address_space *mapping = page_mapping(page);
+-	unsigned long flags;
+ 	int i;
+ 
+ 	f2fs_update_time(F2FS_I_SB(dir), REQ_TIME);
+@@ -739,10 +738,8 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
+ 
+ 	if (bit_pos == NR_DENTRY_IN_BLOCK &&
+ 			!truncate_hole(dir, page->index, page->index + 1)) {
+-		xa_lock_irqsave(&mapping->pages, flags);
+-		radix_tree_tag_clear(&mapping->pages, page_index(page),
++		xa_clear_tag(&mapping->pages, page_index(page),
+ 				     PAGECACHE_TAG_DIRTY);
+-		xa_unlock_irqrestore(&mapping->pages, flags);
+ 
+ 		clear_page_dirty_for_io(page);
+ 		ClearPagePrivate(page);
+diff --git a/fs/f2fs/inline.c b/fs/f2fs/inline.c
+index 7858b8e15f33..d3c3f84beca9 100644
+--- a/fs/f2fs/inline.c
++++ b/fs/f2fs/inline.c
+@@ -204,7 +204,6 @@ int f2fs_write_inline_data(struct inode *inode, struct page *page)
+ 	void *src_addr, *dst_addr;
+ 	struct dnode_of_data dn;
+ 	struct address_space *mapping = page_mapping(page);
+-	unsigned long flags;
+ 	int err;
+ 
+ 	set_new_dnode(&dn, inode, NULL, NULL, 0);
+@@ -226,10 +225,7 @@ int f2fs_write_inline_data(struct inode *inode, struct page *page)
+ 	kunmap_atomic(src_addr);
+ 	set_page_dirty(dn.inode_page);
+ 
+-	xa_lock_irqsave(&mapping->pages, flags);
+-	radix_tree_tag_clear(&mapping->pages, page_index(page),
+-			     PAGECACHE_TAG_DIRTY);
+-	xa_unlock_irqrestore(&mapping->pages, flags);
++	xa_clear_tag(&mapping->pages, page_index(page), PAGECACHE_TAG_DIRTY);
+ 
+ 	set_inode_flag(inode, FI_APPEND_WRITE);
+ 	set_inode_flag(inode, FI_DATA_EXIST);
+diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
+index 6b64a3009d55..0a6d5c2f996e 100644
+--- a/fs/f2fs/node.c
++++ b/fs/f2fs/node.c
+@@ -88,14 +88,10 @@ bool available_free_memory(struct f2fs_sb_info *sbi, int type)
+ static void clear_node_page_dirty(struct page *page)
  {
--	struct radix_tree_root *pages = &mapping->pages;
- 	void *new_entry;
- 	pgoff_t index = vmf->pgoff;
-+	XA_STATE(xas, &mapping->pages, index);
+ 	struct address_space *mapping = page->mapping;
+-	unsigned int long flags;
  
- 	if (dirty)
- 		__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
-@@ -516,7 +516,7 @@ static void *dax_insert_mapping_entry(struct address_space *mapping,
- 					PAGE_SIZE, 0);
- 	}
+ 	if (PageDirty(page)) {
+-		xa_lock_irqsave(&mapping->pages, flags);
+-		radix_tree_tag_clear(&mapping->pages,
+-				page_index(page),
++		xa_clear_tag(&mapping->pages, page_index(page),
+ 				PAGECACHE_TAG_DIRTY);
+-		xa_unlock_irqrestore(&mapping->pages, flags);
  
--	xa_lock_irq(&mapping->pages);
-+	xas_lock_irq(&xas);
- 	new_entry = dax_radix_locked_entry(sector, flags);
+ 		clear_page_dirty_for_io(page);
+ 		dec_page_count(F2FS_M_SB(mapping), F2FS_DIRTY_NODES);
+@@ -1142,9 +1138,7 @@ void ra_node_page(struct f2fs_sb_info *sbi, nid_t nid)
+ 		return;
+ 	f2fs_bug_on(sbi, check_nid_range(sbi, nid));
  
- 	if (dax_is_zero_entry(entry) || dax_is_empty_entry(entry)) {
-@@ -528,21 +528,15 @@ static void *dax_insert_mapping_entry(struct address_space *mapping,
- 		 * existing entry is a PMD, we will just leave the PMD in the
- 		 * tree and dirty it if necessary.
- 		 */
--		struct radix_tree_node *node;
--		void **slot;
--		void *ret;
--
--		ret = __radix_tree_lookup(pages, index, &node, &slot);
--		WARN_ON_ONCE(ret != entry);
--		__radix_tree_replace(pages, node, slot,
--				     new_entry, NULL);
-+		void *prev = xas_store(&xas, new_entry);
-+		WARN_ON_ONCE(prev != entry);
- 		entry = new_entry;
- 	}
- 
- 	if (dirty)
--		radix_tree_tag_set(pages, index, PAGECACHE_TAG_DIRTY);
-+		xas_set_tag(&xas, PAGECACHE_TAG_DIRTY);
- 
--	xa_unlock_irq(&mapping->pages);
-+	xas_unlock_irq(&xas);
- 	return entry;
- }
+-	rcu_read_lock();
+-	apage = radix_tree_lookup(&NODE_MAPPING(sbi)->pages, nid);
+-	rcu_read_unlock();
++	apage = xa_load(&NODE_MAPPING(sbi)->pages, nid);
+ 	if (apage)
+ 		return;
  
 -- 
 2.15.0

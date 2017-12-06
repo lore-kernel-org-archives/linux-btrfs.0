@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:34718 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:50577 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753373AbdLFAmP (ORCPT
+        with ESMTP id S1753380AbdLFAmP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:15 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 55/73] f2fs: Convert to XArray
-Date: Tue,  5 Dec 2017 16:41:41 -0800
-Message-Id: <20171206004159.3755-56-willy@infradead.org>
+Subject: [PATCH v4 56/73] lustre: Convert to XArray
+Date: Tue,  5 Dec 2017 16:41:42 -0800
+Message-Id: <20171206004159.3755-57-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,109 +22,85 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-This is a straightforward conversion.
-
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/f2fs/data.c   |  3 +--
- fs/f2fs/dir.c    |  5 +----
- fs/f2fs/inline.c |  6 +-----
- fs/f2fs/node.c   | 10 ++--------
- 4 files changed, 5 insertions(+), 19 deletions(-)
+ drivers/staging/lustre/lustre/llite/glimpse.c   | 12 +++++-------
+ drivers/staging/lustre/lustre/mdc/mdc_request.c | 16 ++++++++--------
+ 2 files changed, 13 insertions(+), 15 deletions(-)
 
-diff --git a/fs/f2fs/data.c b/fs/f2fs/data.c
-index c8f6d9806896..1f3f192f152f 100644
---- a/fs/f2fs/data.c
-+++ b/fs/f2fs/data.c
-@@ -2175,8 +2175,7 @@ void f2fs_set_page_dirty_nobuffers(struct page *page)
- 	xa_lock_irqsave(&mapping->pages, flags);
- 	WARN_ON_ONCE(!PageUptodate(page));
- 	account_page_dirtied(page, mapping);
--	radix_tree_tag_set(&mapping->pages,
--			page_index(page), PAGECACHE_TAG_DIRTY);
-+	__xa_set_tag(&mapping->pages, page_index(page), PAGECACHE_TAG_DIRTY);
- 	xa_unlock_irqrestore(&mapping->pages, flags);
- 	unlock_page_memcg(page);
+diff --git a/drivers/staging/lustre/lustre/llite/glimpse.c b/drivers/staging/lustre/lustre/llite/glimpse.c
+index 5f2843da911c..25232fdf5797 100644
+--- a/drivers/staging/lustre/lustre/llite/glimpse.c
++++ b/drivers/staging/lustre/lustre/llite/glimpse.c
+@@ -57,7 +57,7 @@ static const struct cl_lock_descr whole_file = {
+ };
  
-diff --git a/fs/f2fs/dir.c b/fs/f2fs/dir.c
-index b5515ea6bb2f..296070016ec9 100644
---- a/fs/f2fs/dir.c
-+++ b/fs/f2fs/dir.c
-@@ -708,7 +708,6 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
- 	unsigned int bit_pos;
- 	int slots = GET_DENTRY_SLOTS(le16_to_cpu(dentry->name_len));
- 	struct address_space *mapping = page_mapping(page);
--	unsigned long flags;
- 	int i;
- 
- 	f2fs_update_time(F2FS_I_SB(dir), REQ_TIME);
-@@ -739,10 +738,8 @@ void f2fs_delete_entry(struct f2fs_dir_entry *dentry, struct page *page,
- 
- 	if (bit_pos == NR_DENTRY_IN_BLOCK &&
- 			!truncate_hole(dir, page->index, page->index + 1)) {
--		xa_lock_irqsave(&mapping->pages, flags);
--		radix_tree_tag_clear(&mapping->pages, page_index(page),
-+		xa_clear_tag(&mapping->pages, page_index(page),
- 				     PAGECACHE_TAG_DIRTY);
--		xa_unlock_irqrestore(&mapping->pages, flags);
- 
- 		clear_page_dirty_for_io(page);
- 		ClearPagePrivate(page);
-diff --git a/fs/f2fs/inline.c b/fs/f2fs/inline.c
-index 7858b8e15f33..d3c3f84beca9 100644
---- a/fs/f2fs/inline.c
-+++ b/fs/f2fs/inline.c
-@@ -204,7 +204,6 @@ int f2fs_write_inline_data(struct inode *inode, struct page *page)
- 	void *src_addr, *dst_addr;
- 	struct dnode_of_data dn;
- 	struct address_space *mapping = page_mapping(page);
--	unsigned long flags;
- 	int err;
- 
- 	set_new_dnode(&dn, inode, NULL, NULL, 0);
-@@ -226,10 +225,7 @@ int f2fs_write_inline_data(struct inode *inode, struct page *page)
- 	kunmap_atomic(src_addr);
- 	set_page_dirty(dn.inode_page);
- 
--	xa_lock_irqsave(&mapping->pages, flags);
--	radix_tree_tag_clear(&mapping->pages, page_index(page),
--			     PAGECACHE_TAG_DIRTY);
--	xa_unlock_irqrestore(&mapping->pages, flags);
-+	xa_clear_tag(&mapping->pages, page_index(page), PAGECACHE_TAG_DIRTY);
- 
- 	set_inode_flag(inode, FI_APPEND_WRITE);
- 	set_inode_flag(inode, FI_DATA_EXIST);
-diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
-index 6b64a3009d55..0a6d5c2f996e 100644
---- a/fs/f2fs/node.c
-+++ b/fs/f2fs/node.c
-@@ -88,14 +88,10 @@ bool available_free_memory(struct f2fs_sb_info *sbi, int type)
- static void clear_node_page_dirty(struct page *page)
+ /*
+- * Check whether file has possible unwriten pages.
++ * Check whether file has possible unwritten pages.
+  *
+  * \retval 1    file is mmap-ed or has dirty pages
+  *	 0    otherwise
+@@ -66,16 +66,14 @@ blkcnt_t dirty_cnt(struct inode *inode)
  {
- 	struct address_space *mapping = page->mapping;
--	unsigned int long flags;
+ 	blkcnt_t cnt = 0;
+ 	struct vvp_object *vob = cl_inode2vvp(inode);
+-	void	      *results[1];
  
- 	if (PageDirty(page)) {
--		xa_lock_irqsave(&mapping->pages, flags);
--		radix_tree_tag_clear(&mapping->pages,
--				page_index(page),
-+		xa_clear_tag(&mapping->pages, page_index(page),
- 				PAGECACHE_TAG_DIRTY);
--		xa_unlock_irqrestore(&mapping->pages, flags);
+-	if (inode->i_mapping)
+-		cnt += radix_tree_gang_lookup_tag(&inode->i_mapping->pages,
+-						  results, 0, 1,
+-						  PAGECACHE_TAG_DIRTY);
++	if (inode->i_mapping && xa_tagged(&inode->i_mapping->pages,
++				PAGECACHE_TAG_DIRTY))
++		cnt = 1;
+ 	if (cnt == 0 && atomic_read(&vob->vob_mmap_cnt) > 0)
+ 		cnt = 1;
  
- 		clear_page_dirty_for_io(page);
- 		dec_page_count(F2FS_M_SB(mapping), F2FS_DIRTY_NODES);
-@@ -1142,9 +1138,7 @@ void ra_node_page(struct f2fs_sb_info *sbi, nid_t nid)
- 		return;
- 	f2fs_bug_on(sbi, check_nid_range(sbi, nid));
+-	return (cnt > 0) ? 1 : 0;
++	return cnt;
+ }
  
--	rcu_read_lock();
--	apage = radix_tree_lookup(&NODE_MAPPING(sbi)->pages, nid);
--	rcu_read_unlock();
-+	apage = xa_load(&NODE_MAPPING(sbi)->pages, nid);
- 	if (apage)
- 		return;
+ int cl_glimpse_lock(const struct lu_env *env, struct cl_io *io,
+diff --git a/drivers/staging/lustre/lustre/mdc/mdc_request.c b/drivers/staging/lustre/lustre/mdc/mdc_request.c
+index 2ec79a6b17da..ea23247e9e02 100644
+--- a/drivers/staging/lustre/lustre/mdc/mdc_request.c
++++ b/drivers/staging/lustre/lustre/mdc/mdc_request.c
+@@ -934,17 +934,18 @@ static struct page *mdc_page_locate(struct address_space *mapping, __u64 *hash,
+ 	 * hash _smaller_ than one we are looking for.
+ 	 */
+ 	unsigned long offset = hash_x_index(*hash, hash64);
++	XA_STATE(xas, &mapping->pages, offset);
+ 	struct page *page;
+-	int found;
  
+-	xa_lock_irq(&mapping->pages);
+-	found = radix_tree_gang_lookup(&mapping->pages,
+-				       (void **)&page, offset, 1);
+-	if (found > 0 && !xa_is_value(page)) {
++	xas_lock_irq(&xas);
++	page = xas_find(&xas, ULONG_MAX);
++	if (xa_is_value(page))
++		page = NULL;
++	if (page) {
+ 		struct lu_dirpage *dp;
+ 
+ 		get_page(page);
+-		xa_unlock_irq(&mapping->pages);
++		xas_unlock_irq(&xas);
+ 		/*
+ 		 * In contrast to find_lock_page() we are sure that directory
+ 		 * page cannot be truncated (while DLM lock is held) and,
+@@ -992,8 +993,7 @@ static struct page *mdc_page_locate(struct address_space *mapping, __u64 *hash,
+ 			page = ERR_PTR(-EIO);
+ 		}
+ 	} else {
+-		xa_unlock_irq(&mapping->pages);
+-		page = NULL;
++		xas_unlock_irq(&xas);
+ 	}
+ 	return page;
+ }
 -- 
 2.15.0
 

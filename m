@@ -1,41 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45461 "EHLO mx2.suse.de"
+Received: from mga06.intel.com ([134.134.136.31]:8582 "EHLO mga06.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754525AbdLGPKZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Dec 2017 10:10:25 -0500
-Date: Thu, 7 Dec 2017 16:08:24 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Arnd Bergmann <arnd@arndb.de>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        Qu Wenruo <wqu@suse.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
-        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: tree-checker: use %zu format string for size_t
-Message-ID: <20171207150824.GG3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171206141844.788362-1-arnd@arndb.de>
- <a05374d3-401f-bec3-03f4-45d4072d43f4@gmx.com>
+        id S1752034AbdLFX6b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Dec 2017 18:58:31 -0500
+Date: Wed, 6 Dec 2017 16:58:29 -0700
+From: Ross Zwisler <ross.zwisler@linux.intel.com>
+To: Matthew Wilcox <willy@infradead.org>
+Cc: Matthew Wilcox <mawilcox@microsoft.com>,
+        Ross Zwisler <ross.zwisler@linux.intel.com>,
+        Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v4 00/73] XArray version 4
+Message-ID: <20171206235829.GA28086@linux.intel.com>
+References: <20171206004159.3755-1-willy@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <a05374d3-401f-bec3-03f4-45d4072d43f4@gmx.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 07, 2017 at 08:32:04AM +0800, Qu Wenruo wrote:
+On Tue, Dec 05, 2017 at 04:40:46PM -0800, Matthew Wilcox wrote:
+> From: Matthew Wilcox <mawilcox@microsoft.com>
 > 
+> I looked through some notes and decided this was version 4 of the XArray.
+> Last posted two weeks ago, this version includes a *lot* of changes.
+> I'd like to thank Dave Chinner for his feedback, encouragement and
+> distracting ideas for improvement, which I'll get to once this is merged.
 > 
-> On 2017年12月06日 22:18, Arnd Bergmann wrote:
-> > The return value of sizeof() is of type size_t, so we must print it
-> > using the %z format modifier rather than %l to avoid this warning
-> > on some architectures:
-> > 
-> > fs/btrfs/tree-checker.c: In function 'check_dir_item':
-> > fs/btrfs/tree-checker.c:273:50: error: format '%lu' expects argument of type 'long unsigned int', but argument 5 has type 'u32' {aka 'unsigned int'} [-Werror=format=]
+> Highlights:
+>  - Over 2000 words of documentation in patch 8!  And lots more kernel-doc.
+>  - The page cache is now fully converted to the XArray.
+>  - Many more tests in the test-suite.
 > 
-> Any idea about which architecture will cause such warning?
-> On x86_64 I always fail to get such warning.
+> This patch set is not for applying.  0day is still reporting problems,
+> and I'd feel bad for eating someone's data.  These patches apply on top
+> of a set of prepatory patches which just aren't interesting.  If you
+> want to see the patches applied to a tree, I suggest pulling my git tree:
+> http://git.infradead.org/users/willy/linux-dax.git/shortlog/refs/heads/xarray-2017-12-04
+> I also left out the idr_preload removals.  They're still in the git tree,
+> but I'm not looking for feedback on them.
 
-The intel 0-day build bot compiles on various architectures and 32/64
-setups, I'm not sure if this warning has been reported, no such mail in
-my mboxes.
+Hey Matthew,
+
+Maybe I missed this from a previous version, but can you explain the
+motivation for replacing the radix tree with an xarray?  (I think this should
+probably still be part of the cover letter?)  Do we have a performance problem
+we need to solve?  A code complexity issue we need to solve?  Something else?
+
+- Ross

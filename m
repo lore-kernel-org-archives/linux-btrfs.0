@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:49595 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:50542 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753356AbdLFAmN (ORCPT
+        with ESMTP id S1753357AbdLFAmN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:13 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 47/73] shmem: Convert shmem_alloc_hugepage to XArray
-Date: Tue,  5 Dec 2017 16:41:33 -0800
-Message-Id: <20171206004159.3755-48-willy@infradead.org>
+Subject: [PATCH v4 45/73] shmem: Convert shmem_wait_for_pins to XArray
+Date: Tue,  5 Dec 2017 16:41:31 -0800
+Message-Id: <20171206004159.3755-46-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,45 +22,106 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-xa_find() is a slightly easier API to use than
-radix_tree_gang_lookup_slot() because it contains its own RCU locking.
+As with shmem_tag_pins(), hold the lock around the entire loop instead
+of acquiring & dropping it for each entry we're going to untag.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 13 +++----------
- 1 file changed, 3 insertions(+), 10 deletions(-)
+ mm/shmem.c | 59 ++++++++++++++++++++++++-----------------------------------
+ 1 file changed, 24 insertions(+), 35 deletions(-)
 
 diff --git a/mm/shmem.c b/mm/shmem.c
-index 54fbfc2c6c09..768d470a03da 100644
+index 2f41c7ceea18..e4a2eb1336be 100644
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -1413,23 +1413,16 @@ static struct page *shmem_alloc_hugepage(gfp_t gfp,
- 		struct shmem_inode_info *info, pgoff_t index)
+@@ -2636,9 +2636,7 @@ static void shmem_tag_pins(struct address_space *mapping)
+  */
+ static int shmem_wait_for_pins(struct address_space *mapping)
  {
- 	struct vm_area_struct pvma;
--	struct inode *inode = &info->vfs_inode;
--	struct address_space *mapping = inode->i_mapping;
--	pgoff_t idx, hindex;
--	void __rcu **results;
-+	struct address_space *mapping = info->vfs_inode.i_mapping;
-+	pgoff_t hindex;
+-	struct radix_tree_iter iter;
+-	void **slot;
+-	pgoff_t start;
++	XA_STATE(xas, &mapping->pages, 0);
  	struct page *page;
+ 	int error, scan;
  
- 	if (!IS_ENABLED(CONFIG_TRANSPARENT_HUGE_PAGECACHE))
- 		return NULL;
+@@ -2646,7 +2644,9 @@ static int shmem_wait_for_pins(struct address_space *mapping)
  
- 	hindex = round_down(index, HPAGE_PMD_NR);
--	rcu_read_lock();
--	if (radix_tree_gang_lookup_slot(&mapping->pages, &results, &idx,
--				hindex, 1) && idx < hindex + HPAGE_PMD_NR) {
+ 	error = 0;
+ 	for (scan = 0; scan <= LAST_SCAN; scan++) {
+-		if (!radix_tree_tagged(&mapping->pages, SHMEM_TAG_PINNED))
++		unsigned int tagged = 0;
++
++		if (!xas_tagged(&xas, SHMEM_TAG_PINNED))
+ 			break;
+ 
+ 		if (!scan)
+@@ -2654,45 +2654,34 @@ static int shmem_wait_for_pins(struct address_space *mapping)
+ 		else if (schedule_timeout_killable((HZ << scan) / 200))
+ 			scan = LAST_SCAN;
+ 
+-		start = 0;
+-		rcu_read_lock();
+-		radix_tree_for_each_tagged(slot, &mapping->pages, &iter,
+-					   start, SHMEM_TAG_PINNED) {
+-
+-			page = radix_tree_deref_slot(slot);
+-			if (radix_tree_exception(page)) {
+-				if (radix_tree_deref_retry(page)) {
+-					slot = radix_tree_iter_retry(&iter);
+-					continue;
+-				}
+-
+-				page = NULL;
+-			}
+-
+-			if (page &&
+-			    page_count(page) - page_mapcount(page) != 1) {
+-				if (scan < LAST_SCAN)
+-					goto continue_resched;
+-
++		xas_set(&xas, 0);
++		xas_lock_irq(&xas);
++		xas_for_each_tag(&xas, page, ULONG_MAX, SHMEM_TAG_PINNED) {
++			bool clear = true;
++			if (xa_is_value(page))
++				continue;
++			if (page_count(page) - page_mapcount(page) != 1) {
+ 				/*
+ 				 * On the last scan, we clean up all those tags
+ 				 * we inserted; but make a note that we still
+ 				 * found pages pinned.
+ 				 */
+-				error = -EBUSY;
++				if (scan == LAST_SCAN)
++					error = -EBUSY;
++				else
++					clear = false;
+ 			}
++			if (clear)
++				xas_clear_tag(&xas, SHMEM_TAG_PINNED);
++			if (++tagged % XA_CHECK_SCHED)
++				continue;
+ 
+-			xa_lock_irq(&mapping->pages);
+-			radix_tree_tag_clear(&mapping->pages,
+-					     iter.index, SHMEM_TAG_PINNED);
+-			xa_unlock_irq(&mapping->pages);
+-continue_resched:
+-			if (need_resched()) {
+-				slot = radix_tree_iter_resume(slot, &iter);
+-				cond_resched_rcu();
+-			}
++			xas_pause(&xas);
++			xas_unlock_irq(&xas);
++			cond_resched();
++			xas_lock_irq(&xas);
+ 		}
 -		rcu_read_unlock();
-+	if (xa_find(&mapping->pages, &hindex, hindex + HPAGE_PMD_NR - 1))
- 		return NULL;
--	}
--	rcu_read_unlock();
++		xas_unlock_irq(&xas);
+ 	}
  
- 	shmem_pseudo_vma_init(&pvma, info, hindex);
- 	page = alloc_pages_vma(gfp | __GFP_COMP | __GFP_NORETRY | __GFP_NOWARN,
+ 	return error;
 -- 
 2.15.0
 

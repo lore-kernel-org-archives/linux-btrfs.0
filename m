@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:50689 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:59365 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753323AbdLFAmL (ORCPT
+        with ESMTP id S1753325AbdLFAmL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:11 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 32/73] mm: Convert add_to_swap_cache to XArray
-Date: Tue,  5 Dec 2017 16:41:18 -0800
-Message-Id: <20171206004159.3755-33-willy@infradead.org>
+Subject: [PATCH v4 23/73] page cache: Add page_cache_range_empty function
+Date: Tue,  5 Dec 2017 16:41:09 -0800
+Message-Id: <20171206004159.3755-24-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,176 +22,166 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Combine __add_to_swap_cache and add_to_swap_cache into one function
-since there is no more need to preload.
+btrfs has its own custom function for determining whether the page cache
+has any pages in a particular range.  Move this functionality to the
+page cache, and call it from btrfs.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/swap_state.c | 93 ++++++++++++++++++---------------------------------------
- 1 file changed, 29 insertions(+), 64 deletions(-)
+ fs/btrfs/btrfs_inode.h  |  7 ++++-
+ fs/btrfs/inode.c        | 70 -------------------------------------------------
+ include/linux/pagemap.h |  2 ++
+ mm/filemap.c            | 26 ++++++++++++++++++
+ 4 files changed, 34 insertions(+), 71 deletions(-)
 
-diff --git a/mm/swap_state.c b/mm/swap_state.c
-index 3f95e8fc4cb2..117b5da9dc01 100644
---- a/mm/swap_state.c
-+++ b/mm/swap_state.c
-@@ -107,14 +107,15 @@ void show_swap_cache_info(void)
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 63f0ccc92a71..a48bd6e0a0bb 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -365,6 +365,11 @@ static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
+ 			logical_start, csum, csum_expected, mirror_num);
  }
  
- /*
-- * __add_to_swap_cache resembles add_to_page_cache_locked on swapper_space,
-+ * add_to_swap_cache resembles add_to_page_cache_locked on swapper_space,
-  * but sets SwapCache flag and private instead of mapping and index.
-  */
--int __add_to_swap_cache(struct page *page, swp_entry_t entry)
-+int add_to_swap_cache(struct page *page, swp_entry_t entry, gfp_t gfp)
- {
--	int error, i, nr = hpage_nr_pages(page);
--	struct address_space *address_space;
-+	struct address_space *address_space = swap_address_space(entry);
- 	pgoff_t idx = swp_offset(entry);
-+	XA_STATE(xas, &address_space->pages, idx);
-+	unsigned int i, nr = compound_order(page);
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
++static inline bool btrfs_page_exists_in_range(struct inode *inode,
++						loff_t start, loff_t end)
++{
++	return page_cache_range_empty(inode->i_mapping, start >> PAGE_SHIFT,
++							end >> PAGE_SHIFT);
++}
  
- 	VM_BUG_ON_PAGE(!PageLocked(page), page);
- 	VM_BUG_ON_PAGE(PageSwapCache(page), page);
-@@ -123,50 +124,30 @@ int __add_to_swap_cache(struct page *page, swp_entry_t entry)
- 	page_ref_add(page, nr);
- 	SetPageSwapCache(page);
+ #endif
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 72f763c56127..a2692bceaa98 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7539,76 +7539,6 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 	return ret;
+ }
  
--	address_space = swap_address_space(entry);
--	xa_lock_irq(&address_space->pages);
--	for (i = 0; i < nr; i++) {
--		set_page_private(page + i, entry.val + i);
--		error = radix_tree_insert(&address_space->pages,
--					  idx + i, page + i);
--		if (unlikely(error))
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
+-{
+-	struct radix_tree_root *root = &inode->i_mapping->pages;
+-	bool found = false;
+-	void **pagep = NULL;
+-	struct page *page = NULL;
+-	unsigned long start_idx;
+-	unsigned long end_idx;
+-
+-	start_idx = start >> PAGE_SHIFT;
+-
+-	/*
+-	 * end is the last byte in the last page.  end == start is legal
+-	 */
+-	end_idx = end >> PAGE_SHIFT;
+-
+-	rcu_read_lock();
+-
+-	/* Most of the code in this while loop is lifted from
+-	 * find_get_page.  It's been modified to begin searching from a
+-	 * page and return just the first page found in that range.  If the
+-	 * found idx is less than or equal to the end idx then we know that
+-	 * a page exists.  If no pages are found or if those pages are
+-	 * outside of the range then we're fine (yay!) */
+-	while (page == NULL &&
+-	       radix_tree_gang_lookup_slot(root, &pagep, NULL, start_idx, 1)) {
+-		page = radix_tree_deref_slot(pagep);
+-		if (unlikely(!page))
 -			break;
--	}
--	if (likely(!error)) {
-+	do {
-+		xas_lock_irq(&xas);
-+		xas_create_range(&xas, idx + nr - 1);
-+		if (xas_error(&xas))
-+			goto unlock;
-+		for (i = 0; i < nr; i++) {
-+			VM_BUG_ON_PAGE(xas.xa_index != idx + i, page);
-+			set_page_private(page + i, entry.val + i);
-+			xas_store(&xas, page + i);
-+			xas_next(&xas);
-+		}
- 		address_space->nrpages += nr;
- 		__mod_node_page_state(page_pgdat(page), NR_FILE_PAGES, nr);
- 		ADD_CACHE_INFO(add_total, nr);
--	} else {
--		/*
--		 * Only the context which have set SWAP_HAS_CACHE flag
--		 * would call add_to_swap_cache().
--		 * So add_to_swap_cache() doesn't returns -EEXIST.
--		 */
--		VM_BUG_ON(error == -EEXIST);
--		set_page_private(page + i, 0UL);
--		while (i--) {
--			radix_tree_delete(&address_space->pages, idx + i);
--			set_page_private(page + i, 0UL);
+-
+-		if (radix_tree_exception(page)) {
+-			if (radix_tree_deref_retry(page)) {
+-				page = NULL;
+-				continue;
+-			}
+-			/*
+-			 * Otherwise, shmem/tmpfs must be storing a swap entry
+-			 * here so return it without attempting to raise page
+-			 * count.
+-			 */
+-			page = NULL;
+-			break; /* TODO: Is this relevant for this use case? */
 -		}
--		ClearPageSwapCache(page);
--		page_ref_sub(page, nr);
+-
+-		if (!page_cache_get_speculative(page)) {
+-			page = NULL;
+-			continue;
+-		}
+-
+-		/*
+-		 * Has the page moved?
+-		 * This is part of the lockless pagecache protocol. See
+-		 * include/linux/pagemap.h for details.
+-		 */
+-		if (unlikely(page != *pagep)) {
+-			put_page(page);
+-			page = NULL;
+-		}
 -	}
--	xa_unlock_irq(&address_space->pages);
-+unlock:
-+		xas_unlock_irq(&xas);
-+	} while (xas_nomem(&xas, gfp));
- 
--	return error;
+-
+-	if (page) {
+-		if (page->index <= end_idx)
+-			found = true;
+-		put_page(page);
+-	}
+-
+-	rcu_read_unlock();
+-	return found;
 -}
 -
--
--int add_to_swap_cache(struct page *page, swp_entry_t entry, gfp_t gfp_mask)
--{
--	int error;
-+	if (!xas_error(&xas))
-+		return 0;
+ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
+ 			      struct extent_state **cached_state, int writing)
+ {
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 0db127c3ccac..34d4fa3ad1c5 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -245,6 +245,8 @@ pgoff_t page_cache_next_gap(struct address_space *mapping,
+ 			     pgoff_t index, unsigned long max_scan);
+ pgoff_t page_cache_prev_gap(struct address_space *mapping,
+ 			     pgoff_t index, unsigned long max_scan);
++bool page_cache_range_empty(struct address_space *mapping,
++				pgoff_t index, pgoff_t max);
  
--	error = radix_tree_maybe_preload_order(gfp_mask, compound_order(page));
--	if (!error) {
--		error = __add_to_swap_cache(page, entry);
--		radix_tree_preload_end();
--	}
--	return error;
-+	ClearPageSwapCache(page);
-+	page_ref_sub(page, nr);
-+	return xas_error(&xas);
+ #define FGP_ACCESSED		0x00000001
+ #define FGP_LOCK		0x00000002
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 650624f7b79d..51f88ffc5319 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1397,6 +1397,32 @@ pgoff_t page_cache_prev_gap(struct address_space *mapping,
  }
+ EXPORT_SYMBOL(page_cache_prev_gap);
  
- /*
-@@ -220,7 +201,7 @@ int add_to_swap(struct page *page)
- 		goto fail;
- 
- 	/*
--	 * Radix-tree node allocations from PF_MEMALLOC contexts could
-+	 * XArray node allocations from PF_MEMALLOC contexts could
- 	 * completely exhaust the page allocator. __GFP_NOMEMALLOC
- 	 * stops emergency reserves from being allocated.
- 	 *
-@@ -232,7 +213,6 @@ int add_to_swap(struct page *page)
- 	 */
- 	err = add_to_swap_cache(page, entry,
- 			__GFP_HIGH|__GFP_NOMEMALLOC|__GFP_NOWARN);
--	/* -ENOMEM radix-tree allocation failure */
- 	if (err)
- 		/*
- 		 * add_to_swap_cache() doesn't return -EEXIST, so we can safely
-@@ -400,19 +380,11 @@ struct page *__read_swap_cache_async(swp_entry_t entry, gfp_t gfp_mask,
- 				break;		/* Out of memory */
- 		}
- 
--		/*
--		 * call radix_tree_preload() while we can wait.
--		 */
--		err = radix_tree_maybe_preload(gfp_mask & GFP_KERNEL);
--		if (err)
--			break;
--
- 		/*
- 		 * Swap entry may have been freed since our caller observed it.
- 		 */
- 		err = swapcache_prepare(entry);
- 		if (err == -EEXIST) {
--			radix_tree_preload_end();
- 			/*
- 			 * We might race against get_swap_page() and stumble
- 			 * across a SWAP_HAS_CACHE swap_map entry whose page
-@@ -420,26 +392,19 @@ struct page *__read_swap_cache_async(swp_entry_t entry, gfp_t gfp_mask,
- 			 */
- 			cond_resched();
- 			continue;
--		}
--		if (err) {		/* swp entry is obsolete ? */
--			radix_tree_preload_end();
-+		} else if (err)		/* swp entry is obsolete ? */
- 			break;
--		}
- 
--		/* May fail (-ENOMEM) if radix-tree node allocation failed. */
-+		/* May fail (-ENOMEM) if XArray node allocation failed. */
- 		__SetPageLocked(new_page);
- 		__SetPageSwapBacked(new_page);
--		err = __add_to_swap_cache(new_page, entry);
-+		err = add_to_swap_cache(new_page, entry, gfp_mask & GFP_KERNEL);
- 		if (likely(!err)) {
--			radix_tree_preload_end();
--			/*
--			 * Initiate read into locked page and return.
--			 */
-+			/* Initiate read into locked page */
- 			lru_cache_add_anon(new_page);
- 			*new_page_allocated = true;
- 			return new_page;
- 		}
--		radix_tree_preload_end();
- 		__ClearPageLocked(new_page);
- 		/*
- 		 * add_to_swap_cache() doesn't return -EEXIST, so we can safely
++bool page_cache_range_empty(struct address_space *mapping, pgoff_t index,
++				pgoff_t max)
++{
++	struct page *page;
++	XA_STATE(xas, &mapping->pages, index);
++
++	rcu_read_lock();
++	do {
++		page = xas_find(&xas, max);
++		if (xas_retry(&xas, page))
++			continue;
++		/* Shadow entries don't count */
++		if (xa_is_value(page))
++			continue;
++		/*
++		 * We don't need to try to pin this page; we're about to
++		 * release the RCU lock anyway.  It is enough to know that
++		 * there was a page here recently.
++		 */
++	} while (0);
++	rcu_read_unlock();
++
++	return page != NULL;
++}
++EXPORT_SYMBOL_GPL(page_cache_range_empty);
++
+ /**
+  * find_get_entry - find and get a page cache entry
+  * @mapping: the address_space to search
 -- 
 2.15.0
 

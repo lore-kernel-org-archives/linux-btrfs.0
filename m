@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:40028 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:33794 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753410AbdLFAmR (ORCPT
+        with ESMTP id S1753405AbdLFAmR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:17 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 71/73] xfs: Convert xfs dquot to XArray
-Date: Tue,  5 Dec 2017 16:41:57 -0800
-Message-Id: <20171206004159.3755-72-willy@infradead.org>
+Subject: [PATCH v4 73/73] usb: Convert xhci-mem to XArray
+Date: Tue,  5 Dec 2017 16:41:59 -0800
+Message-Id: <20171206004159.3755-74-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,243 +22,181 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-This is a pretty straight-forward conversion.
+The XArray API is a slightly better fit for xhci_insert_segment_mapping()
+than the radix tree API was.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/xfs/xfs_dquot.c | 33 +++++++++++++++++----------------
- fs/xfs/xfs_qm.c    | 32 ++++++++++++++++----------------
- fs/xfs/xfs_qm.h    | 18 +++++++++---------
- 3 files changed, 42 insertions(+), 41 deletions(-)
+ drivers/usb/host/xhci-mem.c | 70 +++++++++++++++++++++------------------------
+ drivers/usb/host/xhci.h     |  6 ++--
+ 2 files changed, 35 insertions(+), 41 deletions(-)
 
-diff --git a/fs/xfs/xfs_dquot.c b/fs/xfs/xfs_dquot.c
-index e2a466df5dd1..a35fcc37770b 100644
---- a/fs/xfs/xfs_dquot.c
-+++ b/fs/xfs/xfs_dquot.c
-@@ -44,7 +44,7 @@
-  * Lock order:
-  *
-  * ip->i_lock
-- *   qi->qi_tree_lock
-+ *   qi->qi_xa_lock
-  *     dquot->q_qlock (xfs_dqlock() and friends)
-  *       dquot->q_flush (xfs_dqflock() and friends)
-  *       qi->qi_lru_lock
-@@ -752,8 +752,8 @@ xfs_qm_dqget(
- 	xfs_dquot_t	**O_dqpp) /* OUT : locked incore dquot */
- {
- 	struct xfs_quotainfo	*qi = mp->m_quotainfo;
--	struct radix_tree_root *tree = xfs_dquot_tree(qi, type);
--	struct xfs_dquot	*dqp;
-+	struct xarray		*xa = xfs_dquot_xa(qi, type);
-+	struct xfs_dquot	*dqp, *curr;
- 	int			error;
- 
- 	ASSERT(XFS_IS_QUOTA_RUNNING(mp));
-@@ -772,13 +772,14 @@ xfs_qm_dqget(
- 	}
- 
- restart:
--	mutex_lock(&qi->qi_tree_lock);
--	dqp = radix_tree_lookup(tree, id);
-+	mutex_lock(&qi->qi_xa_lock);
-+	dqp = xa_load(xa, id);
-+found:
- 	if (dqp) {
- 		xfs_dqlock(dqp);
- 		if (dqp->dq_flags & XFS_DQ_FREEING) {
- 			xfs_dqunlock(dqp);
--			mutex_unlock(&qi->qi_tree_lock);
-+			mutex_unlock(&qi->qi_xa_lock);
- 			trace_xfs_dqget_freeing(dqp);
- 			delay(1);
- 			goto restart;
-@@ -788,7 +789,7 @@ xfs_qm_dqget(
- 		if (flags & XFS_QMOPT_DQNEXT) {
- 			if (XFS_IS_DQUOT_UNINITIALIZED(dqp)) {
- 				xfs_dqunlock(dqp);
--				mutex_unlock(&qi->qi_tree_lock);
-+				mutex_unlock(&qi->qi_xa_lock);
- 				error = xfs_dq_get_next_id(mp, type, &id);
- 				if (error)
- 					return error;
-@@ -797,14 +798,14 @@ xfs_qm_dqget(
- 		}
- 
- 		dqp->q_nrefs++;
--		mutex_unlock(&qi->qi_tree_lock);
-+		mutex_unlock(&qi->qi_xa_lock);
- 
- 		trace_xfs_dqget_hit(dqp);
- 		XFS_STATS_INC(mp, xs_qm_dqcachehits);
- 		*O_dqpp = dqp;
- 		return 0;
- 	}
--	mutex_unlock(&qi->qi_tree_lock);
-+	mutex_unlock(&qi->qi_xa_lock);
- 	XFS_STATS_INC(mp, xs_qm_dqcachemisses);
- 
- 	/*
-@@ -854,20 +855,20 @@ xfs_qm_dqget(
- 		}
- 	}
- 
--	mutex_lock(&qi->qi_tree_lock);
--	error = radix_tree_insert(tree, id, dqp);
--	if (unlikely(error)) {
--		WARN_ON(error != -EEXIST);
-+	mutex_lock(&qi->qi_xa_lock);
-+	curr = xa_cmpxchg(xa, id, NULL, dqp, GFP_NOFS);
-+	if (unlikely(curr)) {
-+		WARN_ON(IS_ERR(curr));
- 
- 		/*
- 		 * Duplicate found. Just throw away the new dquot and start
- 		 * over.
- 		 */
--		mutex_unlock(&qi->qi_tree_lock);
- 		trace_xfs_dqget_dup(dqp);
- 		xfs_qm_dqdestroy(dqp);
- 		XFS_STATS_INC(mp, xs_qm_dquot_dups);
--		goto restart;
-+		dqp = curr;
-+		goto found;
- 	}
- 
- 	/*
-@@ -877,7 +878,7 @@ xfs_qm_dqget(
- 	dqp->q_nrefs = 1;
- 
- 	qi->qi_dquots++;
--	mutex_unlock(&qi->qi_tree_lock);
-+	mutex_unlock(&qi->qi_xa_lock);
- 
- 	/* If we are asked to find next active id, keep looking */
- 	if (flags & XFS_QMOPT_DQNEXT) {
-diff --git a/fs/xfs/xfs_qm.c b/fs/xfs/xfs_qm.c
-index 010a13a201aa..5a75836faf92 100644
---- a/fs/xfs/xfs_qm.c
-+++ b/fs/xfs/xfs_qm.c
-@@ -67,7 +67,7 @@ xfs_qm_dquot_walk(
- 	void			*data)
- {
- 	struct xfs_quotainfo	*qi = mp->m_quotainfo;
--	struct radix_tree_root	*tree = xfs_dquot_tree(qi, type);
-+	struct xarray		*xa = xfs_dquot_xa(qi, type);
- 	uint32_t		next_index;
- 	int			last_error = 0;
- 	int			skipped;
-@@ -83,11 +83,11 @@ xfs_qm_dquot_walk(
- 		int		error = 0;
- 		int		i;
- 
--		mutex_lock(&qi->qi_tree_lock);
--		nr_found = radix_tree_gang_lookup(tree, (void **)batch,
--					next_index, XFS_DQ_LOOKUP_BATCH);
-+		mutex_lock(&qi->qi_xa_lock);
-+		nr_found = xa_get_entries(xa, (void **)batch, next_index,
-+					ULONG_MAX, XFS_DQ_LOOKUP_BATCH);
- 		if (!nr_found) {
--			mutex_unlock(&qi->qi_tree_lock);
-+			mutex_unlock(&qi->qi_xa_lock);
- 			break;
- 		}
- 
-@@ -105,7 +105,7 @@ xfs_qm_dquot_walk(
- 				last_error = error;
- 		}
- 
--		mutex_unlock(&qi->qi_tree_lock);
-+		mutex_unlock(&qi->qi_xa_lock);
- 
- 		/* bail out if the filesystem is corrupted.  */
- 		if (last_error == -EFSCORRUPTED) {
-@@ -178,8 +178,8 @@ xfs_qm_dqpurge(
- 	xfs_dqfunlock(dqp);
- 	xfs_dqunlock(dqp);
- 
--	radix_tree_delete(xfs_dquot_tree(qi, dqp->q_core.d_flags),
--			  be32_to_cpu(dqp->q_core.d_id));
-+	xa_store(xfs_dquot_xa(qi, dqp->q_core.d_flags),
-+			  be32_to_cpu(dqp->q_core.d_id), NULL, GFP_NOWAIT);
- 	qi->qi_dquots--;
- 
- 	/*
-@@ -623,10 +623,10 @@ xfs_qm_init_quotainfo(
- 	if (error)
- 		goto out_free_lru;
- 
--	INIT_RADIX_TREE(&qinf->qi_uquota_tree, GFP_NOFS);
--	INIT_RADIX_TREE(&qinf->qi_gquota_tree, GFP_NOFS);
--	INIT_RADIX_TREE(&qinf->qi_pquota_tree, GFP_NOFS);
--	mutex_init(&qinf->qi_tree_lock);
-+	xa_init(&qinf->qi_uquota_xa);
-+	xa_init(&qinf->qi_gquota_xa);
-+	xa_init(&qinf->qi_pquota_xa);
-+	mutex_init(&qinf->qi_xa_lock);
- 
- 	/* mutex used to serialize quotaoffs */
- 	mutex_init(&qinf->qi_quotaofflock);
-@@ -1606,12 +1606,12 @@ xfs_qm_dqfree_one(
- 	struct xfs_mount	*mp = dqp->q_mount;
- 	struct xfs_quotainfo	*qi = mp->m_quotainfo;
- 
--	mutex_lock(&qi->qi_tree_lock);
--	radix_tree_delete(xfs_dquot_tree(qi, dqp->q_core.d_flags),
--			  be32_to_cpu(dqp->q_core.d_id));
-+	mutex_lock(&qi->qi_xa_lock);
-+	xa_store(xfs_dquot_xa(qi, dqp->q_core.d_flags),
-+			  be32_to_cpu(dqp->q_core.d_id), NULL, GFP_NOWAIT);
- 
- 	qi->qi_dquots--;
--	mutex_unlock(&qi->qi_tree_lock);
-+	mutex_unlock(&qi->qi_xa_lock);
- 
- 	xfs_qm_dqdestroy(dqp);
+diff --git a/drivers/usb/host/xhci-mem.c b/drivers/usb/host/xhci-mem.c
+index e1fba4688509..533d813bdc52 100644
+--- a/drivers/usb/host/xhci-mem.c
++++ b/drivers/usb/host/xhci-mem.c
+@@ -149,70 +149,64 @@ static void xhci_link_rings(struct xhci_hcd *xhci, struct xhci_ring *ring,
  }
-diff --git a/fs/xfs/xfs_qm.h b/fs/xfs/xfs_qm.h
-index 2975a822e9f0..946f929f7bfb 100644
---- a/fs/xfs/xfs_qm.h
-+++ b/fs/xfs/xfs_qm.h
-@@ -67,10 +67,10 @@ struct xfs_def_quota {
-  * The mount structure keeps a pointer to this.
-  */
- typedef struct xfs_quotainfo {
--	struct radix_tree_root qi_uquota_tree;
--	struct radix_tree_root qi_gquota_tree;
--	struct radix_tree_root qi_pquota_tree;
--	struct mutex qi_tree_lock;
-+	struct xarray	qi_uquota_xa;
-+	struct xarray	qi_gquota_xa;
-+	struct xarray	qi_pquota_xa;
-+	struct mutex	qi_xa_lock;
- 	struct xfs_inode	*qi_uquotaip;	/* user quota inode */
- 	struct xfs_inode	*qi_gquotaip;	/* group quota inode */
- 	struct xfs_inode	*qi_pquotaip;	/* project quota inode */
-@@ -91,18 +91,18 @@ typedef struct xfs_quotainfo {
- 	struct shrinker  qi_shrinker;
- } xfs_quotainfo_t;
  
--static inline struct radix_tree_root *
--xfs_dquot_tree(
-+static inline struct xarray *
-+xfs_dquot_xa(
- 	struct xfs_quotainfo	*qi,
- 	int			type)
+ /*
+- * We need a radix tree for mapping physical addresses of TRBs to which stream
+- * ID they belong to.  We need to do this because the host controller won't tell
++ * We need to map physical addresses of TRBs to the stream ID they belong to.
++ * We need to do this because the host controller won't tell
+  * us which stream ring the TRB came from.  We could store the stream ID in an
+  * event data TRB, but that doesn't help us for the cancellation case, since the
+  * endpoint may stop before it reaches that event data TRB.
+  *
+- * The radix tree maps the upper portion of the TRB DMA address to a ring
++ * The xarray maps the upper portion of the TRB DMA address to a ring
+  * segment that has the same upper portion of DMA addresses.  For example, say I
+  * have segments of size 1KB, that are always 1KB aligned.  A segment may
+  * start at 0x10c91000 and end at 0x10c913f0.  If I use the upper 10 bits, the
+- * key to the stream ID is 0x43244.  I can use the DMA address of the TRB to
+- * pass the radix tree a key to get the right stream ID:
++ * index of the stream ID is 0x43244.  I can use the DMA address of the TRB as
++ * the xarray index to get the right stream ID:
+  *
+  *	0x10c90fff >> 10 = 0x43243
+  *	0x10c912c0 >> 10 = 0x43244
+  *	0x10c91400 >> 10 = 0x43245
+  *
+  * Obviously, only those TRBs with DMA addresses that are within the segment
+- * will make the radix tree return the stream ID for that ring.
++ * will make the xarray return the stream ID for that ring.
+  *
+- * Caveats for the radix tree:
++ * Caveats for the xarray:
+  *
+- * The radix tree uses an unsigned long as a key pair.  On 32-bit systems, an
++ * The xarray uses an unsigned long for the index.  On 32-bit systems, an
+  * unsigned long will be 32-bits; on a 64-bit system an unsigned long will be
+  * 64-bits.  Since we only request 32-bit DMA addresses, we can use that as the
+- * key on 32-bit or 64-bit systems (it would also be fine if we asked for 64-bit
+- * PCI DMA addresses on a 64-bit system).  There might be a problem on 32-bit
+- * extended systems (where the DMA address can be bigger than 32-bits),
++ * index on 32-bit or 64-bit systems (it would also be fine if we asked for
++ * 64-bit PCI DMA addresses on a 64-bit system).  There might be a problem on
++ * 32-bit extended systems (where the DMA address can be bigger than 32-bits),
+  * if we allow the PCI dma mask to be bigger than 32-bits.  So don't do that.
+  */
+-static int xhci_insert_segment_mapping(struct radix_tree_root *trb_address_map,
++
++static unsigned long trb_index(dma_addr_t dma)
++{
++	return (unsigned long)(dma >> TRB_SEGMENT_SHIFT);
++}
++
++static int xhci_insert_segment_mapping(struct xarray *trb_address_map,
+ 		struct xhci_ring *ring,
+ 		struct xhci_segment *seg,
+-		gfp_t mem_flags)
++		gfp_t gfp)
  {
- 	switch (type) {
- 	case XFS_DQ_USER:
--		return &qi->qi_uquota_tree;
-+		return &qi->qi_uquota_xa;
- 	case XFS_DQ_GROUP:
--		return &qi->qi_gquota_tree;
-+		return &qi->qi_gquota_xa;
- 	case XFS_DQ_PROJ:
--		return &qi->qi_pquota_tree;
-+		return &qi->qi_pquota_xa;
- 	default:
- 		ASSERT(0);
- 	}
+-	unsigned long key;
+-	int ret;
+-
+-	key = (unsigned long)(seg->dma >> TRB_SEGMENT_SHIFT);
+ 	/* Skip any segments that were already added. */
+-	if (radix_tree_lookup(trb_address_map, key))
+-		return 0;
++	void *entry = xa_cmpxchg(trb_address_map, trb_index(seg->dma), NULL,
++								ring, gfp);
+ 
+-	ret = radix_tree_maybe_preload(mem_flags);
+-	if (ret)
+-		return ret;
+-	ret = radix_tree_insert(trb_address_map,
+-			key, ring);
+-	radix_tree_preload_end();
+-	return ret;
++	if (IS_ERR(entry))
++		return PTR_ERR(entry);
++	return 0;
+ }
+ 
+-static void xhci_remove_segment_mapping(struct radix_tree_root *trb_address_map,
++static void xhci_remove_segment_mapping(struct xarray *trb_address_map,
+ 		struct xhci_segment *seg)
+ {
+-	unsigned long key;
+-
+-	key = (unsigned long)(seg->dma >> TRB_SEGMENT_SHIFT);
+-	if (radix_tree_lookup(trb_address_map, key))
+-		radix_tree_delete(trb_address_map, key);
++	xa_erase(trb_address_map, trb_index(seg->dma));
+ }
+ 
+ static int xhci_update_stream_segment_mapping(
+-		struct radix_tree_root *trb_address_map,
++		struct xarray *trb_address_map,
+ 		struct xhci_ring *ring,
+ 		struct xhci_segment *first_seg,
+ 		struct xhci_segment *last_seg,
+@@ -574,8 +568,8 @@ struct xhci_ring *xhci_dma_to_transfer_ring(
+ 		u64 address)
+ {
+ 	if (ep->ep_state & EP_HAS_STREAMS)
+-		return radix_tree_lookup(&ep->stream_info->trb_address_map,
+-				address >> TRB_SEGMENT_SHIFT);
++		return xa_load(&ep->stream_info->trb_address_map,
++				trb_index(address));
+ 	return ep->ring;
+ }
+ 
+@@ -654,10 +648,10 @@ struct xhci_stream_info *xhci_alloc_stream_info(struct xhci_hcd *xhci,
+ 	if (!stream_info->free_streams_command)
+ 		goto cleanup_ctx;
+ 
+-	INIT_RADIX_TREE(&stream_info->trb_address_map, GFP_ATOMIC);
++	xa_init(&stream_info->trb_address_map);
+ 
+ 	/* Allocate rings for all the streams that the driver will use,
+-	 * and add their segment DMA addresses to the radix tree.
++	 * and add their segment DMA addresses to the map.
+ 	 * Stream 0 is reserved.
+ 	 */
+ 
+@@ -2362,7 +2356,7 @@ int xhci_mem_init(struct xhci_hcd *xhci, gfp_t flags)
+ 	 * Initialize the ring segment pool.  The ring must be a contiguous
+ 	 * structure comprised of TRBs.  The TRBs must be 16 byte aligned,
+ 	 * however, the command ring segment needs 64-byte aligned segments
+-	 * and our use of dma addresses in the trb_address_map radix tree needs
++	 * and our use of dma addresses in the trb_address_map xarray needs
+ 	 * TRB_SEGMENT_SIZE alignment, so we pick the greater alignment need.
+ 	 */
+ 	xhci->segment_pool = dma_pool_create("xHCI ring segments", dev,
+diff --git a/drivers/usb/host/xhci.h b/drivers/usb/host/xhci.h
+index 054ce74524af..e8208a3eee3c 100644
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -15,7 +15,7 @@
+ #include <linux/usb.h>
+ #include <linux/timer.h>
+ #include <linux/kernel.h>
+-#include <linux/radix-tree.h>
++#include <linux/xarray.h>
+ #include <linux/usb/hcd.h>
+ #include <linux/io-64-nonatomic-lo-hi.h>
+ 
+@@ -837,7 +837,7 @@ struct xhci_stream_info {
+ 	unsigned int			num_stream_ctxs;
+ 	dma_addr_t			ctx_array_dma;
+ 	/* For mapping physical TRB addresses to segments in stream rings */
+-	struct radix_tree_root		trb_address_map;
++	struct xarray			trb_address_map;
+ 	struct xhci_command		*free_streams_command;
+ };
+ 
+@@ -1584,7 +1584,7 @@ struct xhci_ring {
+ 	unsigned int		bounce_buf_len;
+ 	enum xhci_ring_type	type;
+ 	bool			last_td_was_short;
+-	struct radix_tree_root	*trb_address_map;
++	struct xarray		*trb_address_map;
+ };
+ 
+ struct xhci_erst_entry {
 -- 
 2.15.0
 

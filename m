@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:50737 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:60052 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753270AbdLFAmK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:10 -0500
+        with ESMTP id S1753391AbdLFAmR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:17 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 22/73] page cache: Convert hole search to XArray
-Date: Tue,  5 Dec 2017 16:41:08 -0800
-Message-Id: <20171206004159.3755-23-willy@infradead.org>
+Subject: [PATCH v4 59/73] dax: More XArray conversion
+Date: Tue,  5 Dec 2017 16:41:45 -0800
+Message-Id: <20171206004159.3755-60-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,212 +22,261 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-The page cache offers the ability to search for a miss in the previous or
-next N locations.  Rather than teach the XArray about the page cache's
-definition of a miss, use xas_prev() and xas_next() to search the page
-array.  This should be more efficient as it does not have to start the
-lookup from the top for each index.
+This time, we want to convert get_unlocked_mapping_entry() to use the
+XArray.  That has a ripple effect, causing us to change the waitqueues
+to hash on the address of the xarray rather than the address of the
+mapping (functionally equivalent), and create a lot of on-the-stack
+xa_state which are only used as a container for passing the xarray and
+the index down to deeper function calls.
+
+Also rename dax_wake_mapping_entry_waiter() to dax_wake_entry().
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/nfs/blocklayout/blocklayout.c |   2 +-
- include/linux/pagemap.h          |   4 +-
- mm/filemap.c                     | 110 ++++++++++++++++++---------------------
- mm/readahead.c                   |   4 +-
- 4 files changed, 55 insertions(+), 65 deletions(-)
+ fs/dax.c | 80 +++++++++++++++++++++++++++++-----------------------------------
+ 1 file changed, 36 insertions(+), 44 deletions(-)
 
-diff --git a/fs/nfs/blocklayout/blocklayout.c b/fs/nfs/blocklayout/blocklayout.c
-index 995d707537da..7bd643538cff 100644
---- a/fs/nfs/blocklayout/blocklayout.c
-+++ b/fs/nfs/blocklayout/blocklayout.c
-@@ -826,7 +826,7 @@ static u64 pnfs_num_cont_bytes(struct inode *inode, pgoff_t idx)
- 	end = DIV_ROUND_UP(i_size_read(inode), PAGE_SIZE);
- 	if (end != inode->i_mapping->nrpages) {
- 		rcu_read_lock();
--		end = page_cache_next_hole(mapping, idx + 1, ULONG_MAX);
-+		end = page_cache_next_gap(mapping, idx + 1, ULONG_MAX);
- 		rcu_read_unlock();
- 	}
- 
-diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
-index 80a6149152d4..0db127c3ccac 100644
---- a/include/linux/pagemap.h
-+++ b/include/linux/pagemap.h
-@@ -241,9 +241,9 @@ static inline gfp_t readahead_gfp_mask(struct address_space *x)
- 
- typedef int filler_t(void *, struct page *);
- 
--pgoff_t page_cache_next_hole(struct address_space *mapping,
-+pgoff_t page_cache_next_gap(struct address_space *mapping,
- 			     pgoff_t index, unsigned long max_scan);
--pgoff_t page_cache_prev_hole(struct address_space *mapping,
-+pgoff_t page_cache_prev_gap(struct address_space *mapping,
- 			     pgoff_t index, unsigned long max_scan);
- 
- #define FGP_ACCESSED		0x00000001
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 1d012dd3629e..650624f7b79d 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1326,86 +1326,76 @@ int __lock_page_or_retry(struct page *page, struct mm_struct *mm,
- }
- 
- /**
-- * page_cache_next_hole - find the next hole (not-present entry)
-- * @mapping: mapping
-- * @index: index
-- * @max_scan: maximum range to search
-- *
-- * Search the set [index, min(index+max_scan-1, MAX_INDEX)] for the
-- * lowest indexed hole.
-- *
-- * Returns: the index of the hole if found, otherwise returns an index
-- * outside of the set specified (in which case 'return - index >=
-- * max_scan' will be true). In rare cases of index wrap-around, 0 will
-- * be returned.
-- *
-- * page_cache_next_hole may be called under rcu_read_lock. However,
-- * like radix_tree_gang_lookup, this will not atomically search a
-- * snapshot of the tree at a single point in time. For example, if a
-- * hole is created at index 5, then subsequently a hole is created at
-- * index 10, page_cache_next_hole covering both indexes may return 10
-- * if called under rcu_read_lock.
-+ * page_cache_next_gap() - Find the next gap in the page cache.
-+ * @mapping: Mapping.
-+ * @index: Index.
-+ * @max_scan: Maximum range to search.
-+ *
-+ * Search the range [index, min(index + max_scan - 1, ULONG_MAX)] for the
-+ * gap with the lowest index.
-+ *
-+ * This function may be called under the rcu_read_lock.  However, this will
-+ * not atomically search a snapshot of the cache at a single point in time.
-+ * For example, if a gap is created at index 5, then subsequently a gap is
-+ * created at index 10, page_cache_next_gap covering both indices may
-+ * return 10 if called under the rcu_read_lock.
-+ *
-+ * Return: The index of the gap if found, otherwise an index outside the
-+ * range specified (in which case 'return - index >= max_scan' will be true).
-+ * In the rare case of index wrap-around, 0 will be returned.
+diff --git a/fs/dax.c b/fs/dax.c
+index d2007a17d257..ad984dece12e 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -120,7 +120,7 @@ static int dax_is_empty_entry(void *entry)
+  * DAX radix tree locking
   */
--pgoff_t page_cache_next_hole(struct address_space *mapping,
-+pgoff_t page_cache_next_gap(struct address_space *mapping,
- 			     pgoff_t index, unsigned long max_scan)
+ struct exceptional_entry_key {
+-	struct address_space *mapping;
++	struct xarray *xa;
+ 	pgoff_t entry_start;
+ };
+ 
+@@ -129,9 +129,10 @@ struct wait_exceptional_entry_queue {
+ 	struct exceptional_entry_key key;
+ };
+ 
+-static wait_queue_head_t *dax_entry_waitqueue(struct address_space *mapping,
+-		pgoff_t index, void *entry, struct exceptional_entry_key *key)
++static wait_queue_head_t *dax_entry_waitqueue(struct xa_state *xas,
++		void *entry, struct exceptional_entry_key *key)
  {
--	unsigned long i;
-+	XA_STATE(xas, &mapping->pages, index);
++	unsigned long index = xas->xa_index;
+ 	unsigned long hash;
  
--	for (i = 0; i < max_scan; i++) {
--		struct page *page;
--
--		page = radix_tree_lookup(&mapping->pages, index);
--		if (!page || xa_is_value(page))
-+	while (max_scan--) {
-+		void *entry = xas_next(&xas);
-+		if (!entry || xa_is_value(entry))
- 			break;
--		index++;
--		if (index == 0)
-+		if (xas.xa_index == 0)
- 			break;
- 	}
+ 	/*
+@@ -142,10 +143,10 @@ static wait_queue_head_t *dax_entry_waitqueue(struct address_space *mapping,
+ 	if (dax_is_pmd_entry(entry))
+ 		index &= ~PG_PMD_COLOUR;
  
--	return index;
-+	return xas.xa_index;
+-	key->mapping = mapping;
++	key->xa = xas->xa;
+ 	key->entry_start = index;
+ 
+-	hash = hash_long((unsigned long)mapping ^ index, DAX_WAIT_TABLE_BITS);
++	hash = hash_long((unsigned long)xas->xa ^ index, DAX_WAIT_TABLE_BITS);
+ 	return wait_table + hash;
  }
--EXPORT_SYMBOL(page_cache_next_hole);
-+EXPORT_SYMBOL(page_cache_next_gap);
  
- /**
-- * page_cache_prev_hole - find the prev hole (not-present entry)
-- * @mapping: mapping
-- * @index: index
-- * @max_scan: maximum range to search
-- *
-- * Search backwards in the range [max(index-max_scan+1, 0), index] for
-- * the first hole.
-- *
-- * Returns: the index of the hole if found, otherwise returns an index
-- * outside of the set specified (in which case 'index - return >=
-- * max_scan' will be true). In rare cases of wrap-around, ULONG_MAX
-- * will be returned.
-- *
-- * page_cache_prev_hole may be called under rcu_read_lock. However,
-- * like radix_tree_gang_lookup, this will not atomically search a
-- * snapshot of the tree at a single point in time. For example, if a
-- * hole is created at index 10, then subsequently a hole is created at
-- * index 5, page_cache_prev_hole covering both indexes may return 5 if
-- * called under rcu_read_lock.
-+ * page_cache_prev_gap() - Find the next gap in the page cache.
-+ * @mapping: Mapping.
-+ * @index: Index.
-+ * @max_scan: Maximum range to search.
-+ *
-+ * Search the range [max(index - max_scan + 1, 0), index] for the
-+ * gap with the highest index.
-+ *
-+ * This function may be called under the rcu_read_lock.  However, this will
-+ * not atomically search a snapshot of the cache at a single point in time.
-+ * For example, if a gap is created at index 10, then subsequently a gap is
-+ * created at index 5, page_cache_prev_gap() covering both indices may
-+ * return 5 if called under the rcu_read_lock.
-+ *
-+ * Return: The index of the gap if found, otherwise an index outside the
-+ * range specified (in which case 'index - return >= max_scan' will be true).
-+ * In the rare case of wrap-around, ULONG_MAX will be returned.
+@@ -156,26 +157,23 @@ static int wake_exceptional_entry_func(wait_queue_entry_t *wait, unsigned int mo
+ 	struct wait_exceptional_entry_queue *ewait =
+ 		container_of(wait, struct wait_exceptional_entry_queue, wait);
+ 
+-	if (key->mapping != ewait->key.mapping ||
++	if (key->xa != ewait->key.xa ||
+ 	    key->entry_start != ewait->key.entry_start)
+ 		return 0;
+ 	return autoremove_wake_function(wait, mode, sync, NULL);
+ }
+ 
+ /*
+- * We do not necessarily hold the mapping xa_lock when we call this
+- * function so it is possible that 'entry' is no longer a valid item in the
+- * radix tree.  This is okay because all we really need to do is to find the
+- * correct waitqueue where tasks might be waiting for that old 'entry' and
+- * wake them.
++ * @entry may no longer be the entry at the index in the array.  The
++ * important information it's conveying is whether the entry at this
++ * index *used* to be a PMD entry..
   */
--pgoff_t page_cache_prev_hole(struct address_space *mapping,
-+pgoff_t page_cache_prev_gap(struct address_space *mapping,
- 			     pgoff_t index, unsigned long max_scan)
+-static void dax_wake_mapping_entry_waiter(struct address_space *mapping,
+-		pgoff_t index, void *entry, bool wake_all)
++static void dax_wake_entry(struct xa_state *xas, void *entry, bool wake_all)
  {
--	unsigned long i;
--
--	for (i = 0; i < max_scan; i++) {
--		struct page *page;
-+	XA_STATE(xas, &mapping->pages, index);
+ 	struct exceptional_entry_key key;
+ 	wait_queue_head_t *wq;
  
--		page = radix_tree_lookup(&mapping->pages, index);
--		if (!page || xa_is_value(page))
-+	while (max_scan--) {
-+		void *entry = xas_prev(&xas);
-+		if (!entry || xa_is_value(entry))
- 			break;
--		index--;
--		if (index == ULONG_MAX)
-+		if (xas.xa_index == ULONG_MAX)
- 			break;
+-	wq = dax_entry_waitqueue(mapping, index, entry, &key);
++	wq = dax_entry_waitqueue(xas, entry, &key);
+ 
+ 	/*
+ 	 * Checking for locked entry and prepare_to_wait_exclusive() happens
+@@ -207,10 +205,9 @@ static inline void *lock_slot(struct xa_state *xas)
+  *
+  * The function must be called with mapping xa_lock held.
+  */
+-static void *get_unlocked_mapping_entry(struct address_space *mapping,
+-					pgoff_t index, void ***slotp)
++static void *get_unlocked_mapping_entry(struct xa_state *xas)
+ {
+-	void *entry, **slot;
++	void *entry;
+ 	struct wait_exceptional_entry_queue ewait;
+ 	wait_queue_head_t *wq;
+ 
+@@ -218,22 +215,19 @@ static void *get_unlocked_mapping_entry(struct address_space *mapping,
+ 	ewait.wait.func = wake_exceptional_entry_func;
+ 
+ 	for (;;) {
+-		entry = __radix_tree_lookup(&mapping->pages, index, NULL,
+-					  &slot);
+-		if (!entry ||
+-		    WARN_ON_ONCE(!xa_is_value(entry)) || !dax_locked(entry)) {
+-			if (slotp)
+-				*slotp = slot;
++		entry = xas_load(xas);
++		if (!entry || WARN_ON_ONCE(!xa_is_value(entry)) ||
++		    !dax_locked(entry))
+ 			return entry;
+-		}
+ 
+-		wq = dax_entry_waitqueue(mapping, index, entry, &ewait.key);
++		wq = dax_entry_waitqueue(xas, entry, &ewait.key);
+ 		prepare_to_wait_exclusive(wq, &ewait.wait,
+ 					  TASK_UNINTERRUPTIBLE);
+-		xa_unlock_irq(&mapping->pages);
++		xas_pause(xas);
++		xas_unlock_irq(xas);
+ 		schedule();
+ 		finish_wait(wq, &ewait.wait);
+-		xa_lock_irq(&mapping->pages);
++		xas_lock_irq(xas);
  	}
- 
--	return index;
-+	return xas.xa_index;
  }
--EXPORT_SYMBOL(page_cache_prev_hole);
-+EXPORT_SYMBOL(page_cache_prev_gap);
  
- /**
-  * find_get_entry - find and get a page cache entry
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 4851f002605f..f64b31b3a84a 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -329,7 +329,7 @@ static pgoff_t count_history_pages(struct address_space *mapping,
- 	pgoff_t head;
+@@ -253,7 +247,7 @@ static void dax_unlock_mapping_entry(struct address_space *mapping,
+ 	xas_store(&xas, entry);
+ 	/* Safe to not call xas_pause here -- we don't touch the array after */
+ 	xas_unlock_irq(&xas);
+-	dax_wake_mapping_entry_waiter(mapping, index, entry, false);
++	dax_wake_entry(&xas, entry, false);
+ }
  
- 	rcu_read_lock();
--	head = page_cache_prev_hole(mapping, offset - 1, max);
-+	head = page_cache_prev_gap(mapping, offset - 1, max);
- 	rcu_read_unlock();
+ static void put_locked_mapping_entry(struct address_space *mapping,
+@@ -266,14 +260,13 @@ static void put_locked_mapping_entry(struct address_space *mapping,
+  * Called when we are done with radix tree entry we looked up via
+  * get_unlocked_mapping_entry() and which we didn't lock in the end.
+  */
+-static void put_unlocked_mapping_entry(struct address_space *mapping,
+-				       pgoff_t index, void *entry)
++static void put_unlocked_mapping_entry(struct xa_state *xas, void *entry)
+ {
+ 	if (!entry)
+ 		return;
  
- 	return offset - 1 - head;
-@@ -417,7 +417,7 @@ ondemand_readahead(struct address_space *mapping,
- 		pgoff_t start;
+ 	/* We have to wake up next waiter for the radix tree entry lock */
+-	dax_wake_mapping_entry_waiter(mapping, index, entry, false);
++	dax_wake_entry(xas, entry, false);
+ }
  
- 		rcu_read_lock();
--		start = page_cache_next_hole(mapping, offset + 1, max_pages);
-+		start = page_cache_next_gap(mapping, offset + 1, max_pages);
- 		rcu_read_unlock();
+ /*
+@@ -310,7 +303,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
  
- 		if (!start || start - offset > max_pages)
+ restart:
+ 	xa_lock_irq(&mapping->pages);
+-	entry = get_unlocked_mapping_entry(mapping, index, &slot);
++	entry = get_unlocked_mapping_entry(&xas);
+ 
+ 	if (WARN_ON_ONCE(entry && !xa_is_value(entry))) {
+ 		entry = ERR_PTR(-EIO);
+@@ -320,8 +313,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
+ 	if (entry) {
+ 		if (size_flag & DAX_PMD) {
+ 			if (dax_is_pte_entry(entry)) {
+-				put_unlocked_mapping_entry(mapping, index,
+-						entry);
++				put_unlocked_mapping_entry(&xas, entry);
+ 				entry = ERR_PTR(-EEXIST);
+ 				goto out_unlock;
+ 			}
+@@ -384,8 +376,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
+ 		if (pmd_downgrade) {
+ 			radix_tree_delete(&mapping->pages, index);
+ 			mapping->nrexceptional--;
+-			dax_wake_mapping_entry_waiter(mapping, index, entry,
+-					true);
++			dax_wake_entry(&xas, entry, true);
+ 		}
+ 
+ 		entry = dax_radix_locked_entry(0, size_flag | DAX_EMPTY);
+@@ -419,12 +410,13 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
+ static int __dax_invalidate_mapping_entry(struct address_space *mapping,
+ 					  pgoff_t index, bool trunc)
+ {
++	XA_STATE(xas, &mapping->pages, index);
+ 	int ret = 0;
+ 	void *entry;
+ 	struct radix_tree_root *pages = &mapping->pages;
+ 
+ 	xa_lock_irq(&mapping->pages);
+-	entry = get_unlocked_mapping_entry(mapping, index, NULL);
++	entry = get_unlocked_mapping_entry(&xas);
+ 	if (!entry || WARN_ON_ONCE(!xa_is_value(entry)))
+ 		goto out;
+ 	if (!trunc &&
+@@ -435,7 +427,7 @@ static int __dax_invalidate_mapping_entry(struct address_space *mapping,
+ 	mapping->nrexceptional--;
+ 	ret = 1;
+ out:
+-	put_unlocked_mapping_entry(mapping, index, entry);
++	put_unlocked_mapping_entry(&xas, entry);
+ 	xa_unlock_irq(&mapping->pages);
+ 	return ret;
+ }
+@@ -643,7 +635,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ {
+ 	struct radix_tree_root *pages = &mapping->pages;
+ 	XA_STATE(xas, pages, index);
+-	void *entry2, **slot, *kaddr;
++	void *entry2, *kaddr;
+ 	long ret = 0, id;
+ 	sector_t sector;
+ 	pgoff_t pgoff;
+@@ -658,7 +650,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 		return -EIO;
+ 
+ 	xa_lock_irq(&mapping->pages);
+-	entry2 = get_unlocked_mapping_entry(mapping, index, &slot);
++	entry2 = get_unlocked_mapping_entry(&xas);
+ 	/* Entry got punched out / reallocated? */
+ 	if (!entry2 || WARN_ON_ONCE(!xa_is_value(entry2)))
+ 		goto put_unlocked;
+@@ -736,7 +728,7 @@ static int dax_writeback_one(struct block_device *bdev,
+ 	return ret;
+ 
+  put_unlocked:
+-	put_unlocked_mapping_entry(mapping, index, entry2);
++	put_unlocked_mapping_entry(&xas, entry2);
+ 	xa_unlock_irq(&mapping->pages);
+ 	return ret;
+ }
+@@ -1506,16 +1498,16 @@ static int dax_insert_pfn_mkwrite(struct vm_fault *vmf,
+ 	struct address_space *mapping = vmf->vma->vm_file->f_mapping;
+ 	pgoff_t index = vmf->pgoff;
+ 	XA_STATE(xas, &mapping->pages, index);
+-	void *entry, **slot;
++	void *entry;
+ 	int vmf_ret, error;
+ 
+ 	xa_lock_irq(&mapping->pages);
+-	entry = get_unlocked_mapping_entry(mapping, index, &slot);
++	entry = get_unlocked_mapping_entry(&xas);
+ 	/* Did we race with someone splitting entry or so? */
+ 	if (!entry ||
+ 	    (pe_size == PE_SIZE_PTE && !dax_is_pte_entry(entry)) ||
+ 	    (pe_size == PE_SIZE_PMD && !dax_is_pmd_entry(entry))) {
+-		put_unlocked_mapping_entry(mapping, index, entry);
++		put_unlocked_mapping_entry(&xas, entry);
+ 		xa_unlock_irq(&mapping->pages);
+ 		trace_dax_insert_pfn_mkwrite_no_entry(mapping->host, vmf,
+ 						      VM_FAULT_NOPAGE);
 -- 
 2.15.0
 

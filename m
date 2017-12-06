@@ -1,56 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41432 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60038 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751828AbdLAJTw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Dec 2017 04:19:52 -0500
+        id S1752259AbdLFQEF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 6 Dec 2017 11:04:05 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id BD196AD6D
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Dec 2017 09:19:51 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/5] btrfs: Fix possible off-by-one in  btrfs_search_path_in_tree
-Date: Fri,  1 Dec 2017 11:19:42 +0200
-Message-Id: <1512119984-12708-4-git-send-email-nborisov@suse.com>
-In-Reply-To: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id D6F21AEB0
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2017 16:04:03 +0000 (UTC)
+Date: Wed, 6 Dec 2017 17:02:05 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/5] btrfs: Remove redundant NULL check
+Message-ID: <20171206160205.GC3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+ <1512119984-12708-5-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1512119984-12708-5-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The name char array passed to btrfs_search_path_in_tree is of size
-BTRFS_INO_LOOKUP_PATH_MAX (4080). So the actual accessible char indexes
-are in the range of [0, 4079]. Currently the code uses the define but this
-represents an off-by-one.
+On Fri, Dec 01, 2017 at 11:19:43AM +0200, Nikolay Borisov wrote:
+> Before returning hole_em in btrfs_get_fiemap_extent we check if it's different
+> than null. However, by the time this null check is triggered we already know
+> hole_em is not null because it means it points to the em we found and it
+> has already been dereferenced.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ioctl.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+Well, ok The whole function could use some cleanups and reordering,
+it's hard to track all the variable changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/inode.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 92d140b06271..9e0473c883ce 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7300,9 +7300,8 @@ struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+>  			em->block_start = EXTENT_MAP_DELALLOC;
+>  			em->block_len = found;
+>  		}
+> -	} else if (hole_em) {
+> +	} else
+>  		return hole_em;
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index e8adebc8c1b0..fc148b7c4265 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2206,7 +2206,7 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
- 	if (!path)
- 		return -ENOMEM;
- 
--	ptr = &name[BTRFS_INO_LOOKUP_PATH_MAX];
-+	ptr = &name[BTRFS_INO_LOOKUP_PATH_MAX - 1];
- 
- 	key.objectid = tree_id;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
-@@ -2272,8 +2272,8 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
- static noinline int btrfs_ioctl_ino_lookup(struct file *file,
- 					   void __user *argp)
- {
--	 struct btrfs_ioctl_ino_lookup_args *args;
--	 struct inode *inode;
-+	struct btrfs_ioctl_ino_lookup_args *args;
-+	struct inode *inode;
- 	int ret = 0;
- 
- 	args = memdup_user(argp, sizeof(*args));
--- 
-2.7.4
+The { } should stay. I'll fix it.
 
+> -	}
+>  out:
+>  
+>  	free_extent_map(hole_em);
+> -- 
+> 2.7.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

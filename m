@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f195.google.com ([209.85.216.195]:43746 "EHLO
-        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752433AbdLFQMX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 11:12:23 -0500
-Received: by mail-qt0-f195.google.com with SMTP id w10so10088840qtb.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Dec 2017 08:12:22 -0800 (PST)
+Received: from mail-qt0-f196.google.com ([209.85.216.196]:45265 "EHLO
+        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752638AbdLFQM0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 11:12:26 -0500
+Received: by mail-qt0-f196.google.com with SMTP id g10so10062247qtj.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Dec 2017 08:12:26 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
         netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
         kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v8 1/5] add infrastructure for tagging functions as error injectable
-Date: Wed,  6 Dec 2017 11:12:13 -0500
-Message-Id: <1512576737-9417-2-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH v8 3/5] bpf: add a bpf_override_function helper
+Date: Wed,  6 Dec 2017 11:12:15 -0500
+Message-Id: <1512576737-9417-4-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
 References: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,331 +20,452 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-Using BPF we can override kprob'ed functions and return arbitrary
-values.  Obviously this can be a bit unsafe, so make this feature opt-in
-for functions.  Simply tag a function with KPROBE_ERROR_INJECT_SYMBOL in
-order to give BPF access to that function for error injection purposes.
+Error injection is sloppy and very ad-hoc.  BPF could fill this niche
+perfectly with it's kprobe functionality.  We could make sure errors are
+only triggered in specific call chains that we care about with very
+specific situations.  Accomplish this with the bpf_override_funciton
+helper.  This will modify the probe'd callers return value to the
+specified value and set the PC to an override function that simply
+returns, bypassing the originally probed function.  This gives us a nice
+clean way to implement systematic error injection for all of our code
+paths.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Acked-by: Alexei Starovoitov <ast@kernel.org>
 Acked-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- include/asm-generic/vmlinux.lds.h |  10 +++
- include/linux/bpf.h               |  11 +++
- include/linux/kprobes.h           |   1 +
- include/linux/module.h            |   5 ++
- kernel/kprobes.c                  | 163 ++++++++++++++++++++++++++++++++++++++
- kernel/module.c                   |   6 +-
- 6 files changed, 195 insertions(+), 1 deletion(-)
+ arch/Kconfig                     |  3 +++
+ arch/x86/Kconfig                 |  1 +
+ arch/x86/include/asm/kprobes.h   |  4 +++
+ arch/x86/include/asm/ptrace.h    |  5 ++++
+ arch/x86/kernel/kprobes/ftrace.c | 14 ++++++++++
+ include/linux/filter.h           |  3 ++-
+ include/linux/trace_events.h     |  1 +
+ include/uapi/linux/bpf.h         |  7 ++++-
+ kernel/bpf/core.c                |  3 +++
+ kernel/bpf/verifier.c            |  2 ++
+ kernel/events/core.c             |  7 +++++
+ kernel/trace/Kconfig             | 11 ++++++++
+ kernel/trace/bpf_trace.c         | 38 +++++++++++++++++++++++++++
+ kernel/trace/trace_kprobe.c      | 55 +++++++++++++++++++++++++++++++++++-----
+ kernel/trace/trace_probe.h       | 12 +++++++++
+ 15 files changed, 157 insertions(+), 9 deletions(-)
 
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index 8acfc1e099e1..85822804861e 100644
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
-@@ -136,6 +136,15 @@
- #define KPROBE_BLACKLIST()
- #endif
+diff --git a/arch/Kconfig b/arch/Kconfig
+index d789a89cb32c..4fb618082259 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -195,6 +195,9 @@ config HAVE_OPTPROBES
+ config HAVE_KPROBES_ON_FTRACE
+ 	bool
  
-+#ifdef CONFIG_BPF_KPROBE_OVERRIDE
-+#define ERROR_INJECT_LIST()	. = ALIGN(8);						\
-+				VMLINUX_SYMBOL(__start_kprobe_error_inject_list) = .;	\
-+				KEEP(*(_kprobe_error_inject_list))			\
-+				VMLINUX_SYMBOL(__stop_kprobe_error_inject_list) = .;
-+#else
-+#define ERROR_INJECT_LIST()
++config HAVE_KPROBE_OVERRIDE
++	bool
++
+ config HAVE_NMI
+ 	bool
+ 
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 971feac13506..5126d2750dd0 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -152,6 +152,7 @@ config X86
+ 	select HAVE_KERNEL_XZ
+ 	select HAVE_KPROBES
+ 	select HAVE_KPROBES_ON_FTRACE
++	select HAVE_KPROBE_OVERRIDE
+ 	select HAVE_KRETPROBES
+ 	select HAVE_KVM
+ 	select HAVE_LIVEPATCH			if X86_64
+diff --git a/arch/x86/include/asm/kprobes.h b/arch/x86/include/asm/kprobes.h
+index 6cf65437b5e5..c6c3b1f4306a 100644
+--- a/arch/x86/include/asm/kprobes.h
++++ b/arch/x86/include/asm/kprobes.h
+@@ -67,6 +67,10 @@ extern const int kretprobe_blacklist_size;
+ void arch_remove_kprobe(struct kprobe *p);
+ asmlinkage void kretprobe_trampoline(void);
+ 
++#ifdef CONFIG_KPROBES_ON_FTRACE
++extern void arch_ftrace_kprobe_override_function(struct pt_regs *regs);
 +#endif
 +
- #ifdef CONFIG_EVENT_TRACING
- #define FTRACE_EVENTS()	. = ALIGN(8);					\
- 			VMLINUX_SYMBOL(__start_ftrace_events) = .;	\
-@@ -560,6 +569,7 @@
- 	FTRACE_EVENTS()							\
- 	TRACE_SYSCALLS()						\
- 	KPROBE_BLACKLIST()						\
-+	ERROR_INJECT_LIST()						\
- 	MEM_DISCARD(init.rodata)					\
- 	CLK_OF_TABLES()							\
- 	RESERVEDMEM_OF_TABLES()						\
-diff --git a/include/linux/bpf.h b/include/linux/bpf.h
-index 520aeebe0d93..552a666a338b 100644
---- a/include/linux/bpf.h
-+++ b/include/linux/bpf.h
-@@ -530,4 +530,15 @@ extern const struct bpf_func_proto bpf_sock_map_update_proto;
- void bpf_user_rnd_init_once(void);
- u64 bpf_user_rnd_u32(u64 r1, u64 r2, u64 r3, u64 r4, u64 r5);
- 
-+#if defined(__KERNEL__) && !defined(__ASSEMBLY__)
-+#ifdef CONFIG_BPF_KPROBE_OVERRIDE
-+#define BPF_ALLOW_ERROR_INJECTION(fname)				\
-+static unsigned long __used						\
-+	__attribute__((__section__("_kprobe_error_inject_list")))	\
-+	_eil_addr_##fname = (unsigned long)fname;
-+#else
-+#define BPF_ALLOW_ERROR_INJECTION(fname)
-+#endif
-+#endif
-+
- #endif /* _LINUX_BPF_H */
-diff --git a/include/linux/kprobes.h b/include/linux/kprobes.h
-index bd2684700b74..4f501cb73aec 100644
---- a/include/linux/kprobes.h
-+++ b/include/linux/kprobes.h
-@@ -271,6 +271,7 @@ extern bool arch_kprobe_on_func_entry(unsigned long offset);
- extern bool kprobe_on_func_entry(kprobe_opcode_t *addr, const char *sym, unsigned long offset);
- 
- extern bool within_kprobe_blacklist(unsigned long addr);
-+extern bool within_kprobe_error_injection_list(unsigned long addr);
- 
- struct kprobe_insn_cache {
- 	struct mutex mutex;
-diff --git a/include/linux/module.h b/include/linux/module.h
-index fe5aa3736707..7bb1a9b9a322 100644
---- a/include/linux/module.h
-+++ b/include/linux/module.h
-@@ -475,6 +475,11 @@ struct module {
- 	ctor_fn_t *ctors;
- 	unsigned int num_ctors;
- #endif
-+
-+#ifdef CONFIG_BPF_KPROBE_OVERRIDE
-+	unsigned int num_kprobe_ei_funcs;
-+	unsigned long *kprobe_ei_funcs;
-+#endif
- } ____cacheline_aligned __randomize_layout;
- #ifndef MODULE_ARCH_INIT
- #define MODULE_ARCH_INIT {}
-diff --git a/kernel/kprobes.c b/kernel/kprobes.c
-index a1606a4224e1..bdd7dd724f6f 100644
---- a/kernel/kprobes.c
-+++ b/kernel/kprobes.c
-@@ -83,6 +83,16 @@ static raw_spinlock_t *kretprobe_table_lock_ptr(unsigned long hash)
- 	return &(kretprobe_table_locks[hash].lock);
+ /* Architecture specific copy of original instruction*/
+ struct arch_specific_insn {
+ 	/* copy of the original instruction */
+diff --git a/arch/x86/include/asm/ptrace.h b/arch/x86/include/asm/ptrace.h
+index 91c04c8e67fa..f04e71800c2f 100644
+--- a/arch/x86/include/asm/ptrace.h
++++ b/arch/x86/include/asm/ptrace.h
+@@ -108,6 +108,11 @@ static inline unsigned long regs_return_value(struct pt_regs *regs)
+ 	return regs->ax;
  }
  
-+/* List of symbols that can be overriden for error injection. */
-+static LIST_HEAD(kprobe_error_injection_list);
-+static DEFINE_MUTEX(kprobe_ei_mutex);
-+struct kprobe_ei_entry {
-+	struct list_head list;
-+	unsigned long start_addr;
-+	unsigned long end_addr;
-+	void *priv;
-+};
-+
- /* Blacklist -- list of struct kprobe_blacklist_entry */
- static LIST_HEAD(kprobe_blacklist);
- 
-@@ -1392,6 +1402,17 @@ bool within_kprobe_blacklist(unsigned long addr)
- 	return false;
- }
- 
-+bool within_kprobe_error_injection_list(unsigned long addr)
++static inline void regs_set_return_value(struct pt_regs *regs, unsigned long rc)
 +{
-+	struct kprobe_ei_entry *ent;
-+
-+	list_for_each_entry(ent, &kprobe_error_injection_list, list) {
-+		if (addr >= ent->start_addr && addr < ent->end_addr)
-+			return true;
-+	}
-+	return false;
++	regs->ax = rc;
 +}
 +
  /*
-  * If we have a symbol_name argument, look it up and add the offset field
-  * to it. This way, we can specify a relative address to a symbol.
-@@ -2164,6 +2185,86 @@ static int __init populate_kprobe_blacklist(unsigned long *start,
+  * user_mode(regs) determines whether a register set came from user
+  * mode.  On x86_32, this is true if V8086 mode was enabled OR if the
+diff --git a/arch/x86/kernel/kprobes/ftrace.c b/arch/x86/kernel/kprobes/ftrace.c
+index 041f7b6dfa0f..3c455bf490cb 100644
+--- a/arch/x86/kernel/kprobes/ftrace.c
++++ b/arch/x86/kernel/kprobes/ftrace.c
+@@ -97,3 +97,17 @@ int arch_prepare_kprobe_ftrace(struct kprobe *p)
+ 	p->ainsn.boostable = false;
  	return 0;
  }
- 
-+#ifdef CONFIG_BPF_KPROBE_OVERRIDE
-+/* Markers of the _kprobe_error_inject_list section */
-+extern unsigned long __start_kprobe_error_inject_list[];
-+extern unsigned long __stop_kprobe_error_inject_list[];
 +
-+/*
-+ * Lookup and populate the kprobe_error_injection_list.
++asmlinkage void override_func(void);
++asm(
++	".type override_func, @function\n"
++	"override_func:\n"
++	"	ret\n"
++	".size override_func, .-override_func\n"
++);
++
++void arch_ftrace_kprobe_override_function(struct pt_regs *regs)
++{
++	regs->ip = (unsigned long)&override_func;
++}
++NOKPROBE_SYMBOL(arch_ftrace_kprobe_override_function);
+diff --git a/include/linux/filter.h b/include/linux/filter.h
+index cdd78a7beaae..dfa44fd74bae 100644
+--- a/include/linux/filter.h
++++ b/include/linux/filter.h
+@@ -458,7 +458,8 @@ struct bpf_prog {
+ 				locked:1,	/* Program image locked? */
+ 				gpl_compatible:1, /* Is filter GPL compatible? */
+ 				cb_access:1,	/* Is control block accessed? */
+-				dst_needed:1;	/* Do we need dst entry? */
++				dst_needed:1,	/* Do we need dst entry? */
++				kprobe_override:1; /* Do we override a kprobe? */
+ 	kmemcheck_bitfield_end(meta);
+ 	enum bpf_prog_type	type;		/* Type of BPF program */
+ 	u32			len;		/* Number of filter blocks */
+diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
+index fc6aeca945db..be8bd5a8efaa 100644
+--- a/include/linux/trace_events.h
++++ b/include/linux/trace_events.h
+@@ -522,6 +522,7 @@ do {									\
+ struct perf_event;
+ 
+ DECLARE_PER_CPU(struct pt_regs, perf_trace_regs);
++DECLARE_PER_CPU(int, bpf_kprobe_override);
+ 
+ extern int  perf_trace_init(struct perf_event *event);
+ extern void perf_trace_destroy(struct perf_event *event);
+diff --git a/include/uapi/linux/bpf.h b/include/uapi/linux/bpf.h
+index 0b7b54d898bd..1ad5b87a42f6 100644
+--- a/include/uapi/linux/bpf.h
++++ b/include/uapi/linux/bpf.h
+@@ -673,6 +673,10 @@ union bpf_attr {
+  *     @buf: buf to fill
+  *     @buf_size: size of the buf
+  *     Return : 0 on success or negative error code
 + *
-+ * For safety reasons we only allow certain functions to be overriden with
-+ * bpf_error_injection, so we need to populate the list of the symbols that have
-+ * been marked as safe for overriding.
-+ */
-+static void populate_kprobe_error_injection_list(unsigned long *start,
-+						 unsigned long *end,
-+						 void *priv)
-+{
-+	unsigned long *iter;
-+	struct kprobe_ei_entry *ent;
-+	unsigned long entry, offset = 0, size = 0;
-+
-+	mutex_lock(&kprobe_ei_mutex);
-+	for (iter = start; iter < end; iter++) {
-+		entry = arch_deref_entry_point((void *)*iter);
-+
-+		if (!kernel_text_address(entry) ||
-+		    !kallsyms_lookup_size_offset(entry, &size, &offset)) {
-+			pr_err("Failed to find error inject entry at %p\n",
-+				(void *)entry);
-+			continue;
-+		}
-+
-+		ent = kmalloc(sizeof(*ent), GFP_KERNEL);
-+		if (!ent)
-+			break;
-+		ent->start_addr = entry;
-+		ent->end_addr = entry + size;
-+		ent->priv = priv;
-+		INIT_LIST_HEAD(&ent->list);
-+		list_add_tail(&ent->list, &kprobe_error_injection_list);
-+	}
-+	mutex_unlock(&kprobe_ei_mutex);
-+}
-+
-+static void __init populate_kernel_kprobe_ei_list(void)
-+{
-+	populate_kprobe_error_injection_list(__start_kprobe_error_inject_list,
-+					     __stop_kprobe_error_inject_list,
-+					     NULL);
-+}
-+
-+static void module_load_kprobe_ei_list(struct module *mod)
-+{
-+	if (!mod->num_kprobe_ei_funcs)
-+		return;
-+	populate_kprobe_error_injection_list(mod->kprobe_ei_funcs,
-+					     mod->kprobe_ei_funcs +
-+					     mod->num_kprobe_ei_funcs, mod);
-+}
-+
-+static void module_unload_kprobe_ei_list(struct module *mod)
-+{
-+	struct kprobe_ei_entry *ent, *n;
-+	if (!mod->num_kprobe_ei_funcs)
-+		return;
-+
-+	mutex_lock(&kprobe_ei_mutex);
-+	list_for_each_entry_safe(ent, n, &kprobe_error_injection_list, list) {
-+		if (ent->priv == mod) {
-+			list_del_init(&ent->list);
-+			kfree(ent);
-+		}
-+	}
-+	mutex_unlock(&kprobe_ei_mutex);
-+}
-+#else
-+static inline void __init populate_kernel_kprobe_ei_list(void) {}
-+static inline void module_load_kprobe_ei_list(struct module *m) {}
-+static inline void module_unload_kprobe_ei_list(struct module *m) {}
-+#endif
-+
- /* Module notifier call back, checking kprobes on the module */
- static int kprobes_module_callback(struct notifier_block *nb,
- 				   unsigned long val, void *data)
-@@ -2174,6 +2275,11 @@ static int kprobes_module_callback(struct notifier_block *nb,
- 	unsigned int i;
- 	int checkcore = (val == MODULE_STATE_GOING);
++ * int bpf_override_return(pt_regs, rc)
++ *	@pt_regs: pointer to struct pt_regs
++ *	@rc: the return value to set
+  */
+ #define __BPF_FUNC_MAPPER(FN)		\
+ 	FN(unspec),			\
+@@ -732,7 +736,8 @@ union bpf_attr {
+ 	FN(xdp_adjust_meta),		\
+ 	FN(perf_event_read_value),	\
+ 	FN(perf_prog_read_value),	\
+-	FN(getsockopt),
++	FN(getsockopt),			\
++	FN(override_return),
  
-+	if (val == MODULE_STATE_COMING)
-+		module_load_kprobe_ei_list(mod);
-+	else if (val == MODULE_STATE_GOING)
-+		module_unload_kprobe_ei_list(mod);
+ /* integer value in 'imm' field of BPF_CALL instruction selects which helper
+  * function eBPF program intends to call
+diff --git a/kernel/bpf/core.c b/kernel/bpf/core.c
+index 7fe448799d76..ee3888ed5e85 100644
+--- a/kernel/bpf/core.c
++++ b/kernel/bpf/core.c
+@@ -1326,6 +1326,9 @@ EVAL4(PROG_NAME_LIST, 416, 448, 480, 512)
+ bool bpf_prog_array_compatible(struct bpf_array *array,
+ 			       const struct bpf_prog *fp)
+ {
++	if (fp->kprobe_override)
++		return false;
 +
- 	if (val != MODULE_STATE_GOING && val != MODULE_STATE_LIVE)
- 		return NOTIFY_DONE;
- 
-@@ -2236,6 +2342,8 @@ static int __init init_kprobes(void)
- 		pr_err("Please take care of using kprobes.\n");
+ 	if (!array->owner_prog_type) {
+ 		/* There's no owner yet where we could check for
+ 		 * compatibility.
+diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
+index d906775e12c1..f8f7927a9152 100644
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -4189,6 +4189,8 @@ static int fixup_bpf_calls(struct bpf_verifier_env *env)
+ 			prog->dst_needed = 1;
+ 		if (insn->imm == BPF_FUNC_get_prandom_u32)
+ 			bpf_user_rnd_init_once();
++		if (insn->imm == BPF_FUNC_override_return)
++			prog->kprobe_override = 1;
+ 		if (insn->imm == BPF_FUNC_tail_call) {
+ 			/* If we tail call into other programs, we
+ 			 * cannot make any assumptions since they can
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index 9660ee65fbef..0d7fce52391d 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -8169,6 +8169,13 @@ static int perf_event_set_bpf_prog(struct perf_event *event, u32 prog_fd)
+ 		return -EINVAL;
  	}
  
-+	populate_kernel_kprobe_ei_list();
++	/* Kprobe override only works for kprobes, not uprobes. */
++	if (prog->kprobe_override &&
++	    !(event->tp_event->flags & TRACE_EVENT_FL_KPROBE)) {
++		bpf_prog_put(prog);
++		return -EINVAL;
++	}
 +
- 	if (kretprobe_blacklist_size) {
- 		/* lookup the function address from its name */
- 		for (i = 0; kretprobe_blacklist[i].name != NULL; i++) {
-@@ -2403,6 +2511,56 @@ static const struct file_operations debugfs_kprobe_blacklist_ops = {
- 	.release        = seq_release,
- };
+ 	if (is_tracepoint || is_syscall_tp) {
+ 		int off = trace_event_get_offsets(event->tp_event);
  
-+/*
-+ * kprobes/error_injection_list -- shows which functions can be overriden for
-+ * error injection.
-+ * */
-+static void *kprobe_ei_seq_start(struct seq_file *m, loff_t *pos)
+diff --git a/kernel/trace/Kconfig b/kernel/trace/Kconfig
+index 434c840e2d82..9dc0deeaad2b 100644
+--- a/kernel/trace/Kconfig
++++ b/kernel/trace/Kconfig
+@@ -518,6 +518,17 @@ config FUNCTION_PROFILER
+ 
+ 	  If in doubt, say N.
+ 
++config BPF_KPROBE_OVERRIDE
++	bool "Enable BPF programs to override a kprobed function"
++	depends on BPF_EVENTS
++	depends on KPROBES_ON_FTRACE
++	depends on HAVE_KPROBE_OVERRIDE
++	depends on DYNAMIC_FTRACE_WITH_REGS
++	default n
++	help
++	 Allows BPF to override the execution of a probed function and
++	 set a different return value.  This is used for error injection.
++
+ config FTRACE_MCOUNT_RECORD
+ 	def_bool y
+ 	depends on DYNAMIC_FTRACE
+diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
+index 136aa6bb0422..c6c1b3f9afd2 100644
+--- a/kernel/trace/bpf_trace.c
++++ b/kernel/trace/bpf_trace.c
+@@ -13,6 +13,10 @@
+ #include <linux/filter.h>
+ #include <linux/uaccess.h>
+ #include <linux/ctype.h>
++#include <linux/kprobes.h>
++#include <asm/kprobes.h>
++
++#include "trace_probe.h"
+ #include "trace.h"
+ 
+ u64 bpf_get_stackid(u64 r1, u64 r2, u64 r3, u64 r4, u64 r5);
+@@ -76,6 +80,29 @@ unsigned int trace_call_bpf(struct trace_event_call *call, void *ctx)
+ }
+ EXPORT_SYMBOL_GPL(trace_call_bpf);
+ 
++#ifdef CONFIG_BPF_KPROBE_OVERRIDE
++BPF_CALL_2(bpf_override_return, struct pt_regs *, regs, unsigned long, rc)
 +{
-+	mutex_lock(&kprobe_ei_mutex);
-+	return seq_list_start(&kprobe_error_injection_list, *pos);
++	__this_cpu_write(bpf_kprobe_override, 1);
++	regs_set_return_value(regs, rc);
++	arch_ftrace_kprobe_override_function(regs);
++	return 0;
++}
++#else
++BPF_CALL_2(bpf_override_return, struct pt_regs *, regs, unsigned long, rc)
++{
++	return -EINVAL;
++}
++#endif
++
++static const struct bpf_func_proto bpf_override_return_proto = {
++	.func		= bpf_override_return,
++	.gpl_only	= true,
++	.ret_type	= RET_INTEGER,
++	.arg1_type	= ARG_PTR_TO_CTX,
++	.arg2_type	= ARG_ANYTHING,
++};
++
+ BPF_CALL_3(bpf_probe_read, void *, dst, u32, size, const void *, unsafe_ptr)
+ {
+ 	int ret;
+@@ -551,6 +578,8 @@ static const struct bpf_func_proto *kprobe_prog_func_proto(enum bpf_func_id func
+ 		return &bpf_get_stackid_proto;
+ 	case BPF_FUNC_perf_event_read_value:
+ 		return &bpf_perf_event_read_value_proto;
++	case BPF_FUNC_override_return:
++		return &bpf_override_return_proto;
+ 	default:
+ 		return tracing_func_proto(func_id);
+ 	}
+@@ -766,6 +795,15 @@ int perf_event_attach_bpf_prog(struct perf_event *event,
+ 	struct bpf_prog_array *new_array;
+ 	int ret = -EEXIST;
+ 
++	/*
++	 * Kprobe override only works for ftrace based kprobes, and only if they
++	 * are on the opt-in list.
++	 */
++	if (prog->kprobe_override &&
++	    (!trace_kprobe_ftrace(event->tp_event) ||
++	     !trace_kprobe_error_injectable(event->tp_event)))
++		return -EINVAL;
++
+ 	mutex_lock(&bpf_event_mutex);
+ 
+ 	if (event->prog)
+diff --git a/kernel/trace/trace_kprobe.c b/kernel/trace/trace_kprobe.c
+index abf92e478cfb..ad3361790392 100644
+--- a/kernel/trace/trace_kprobe.c
++++ b/kernel/trace/trace_kprobe.c
+@@ -42,6 +42,7 @@ struct trace_kprobe {
+ 	(offsetof(struct trace_kprobe, tp.args) +	\
+ 	(sizeof(struct probe_arg) * (n)))
+ 
++DEFINE_PER_CPU(int, bpf_kprobe_override);
+ 
+ static nokprobe_inline bool trace_kprobe_is_return(struct trace_kprobe *tk)
+ {
+@@ -87,6 +88,27 @@ static nokprobe_inline unsigned long trace_kprobe_nhit(struct trace_kprobe *tk)
+ 	return nhit;
+ }
+ 
++int trace_kprobe_ftrace(struct trace_event_call *call)
++{
++	struct trace_kprobe *tk = (struct trace_kprobe *)call->data;
++	return kprobe_ftrace(&tk->rp.kp);
 +}
 +
-+static void kprobe_ei_seq_stop(struct seq_file *m, void *v)
++int trace_kprobe_error_injectable(struct trace_event_call *call)
 +{
-+	mutex_unlock(&kprobe_ei_mutex);
++	struct trace_kprobe *tk = (struct trace_kprobe *)call->data;
++	unsigned long addr;
++
++	if (tk->symbol) {
++		addr = (unsigned long)
++			kallsyms_lookup_name(trace_kprobe_symbol(tk));
++		addr += tk->rp.kp.offset;
++	} else {
++		addr = (unsigned long)tk->rp.kp.addr;
++	}
++	return within_kprobe_error_injection_list(addr);
 +}
 +
-+static void *kprobe_ei_seq_next(struct seq_file *m, void *v, loff_t *pos)
-+{
-+	return seq_list_next(v, &kprobe_error_injection_list, pos);
-+}
+ static int register_kprobe_event(struct trace_kprobe *tk);
+ static int unregister_kprobe_event(struct trace_kprobe *tk);
+ 
+@@ -1170,7 +1192,7 @@ static int kretprobe_event_define_fields(struct trace_event_call *event_call)
+ #ifdef CONFIG_PERF_EVENTS
+ 
+ /* Kprobe profile handler */
+-static void
++static int
+ kprobe_perf_func(struct trace_kprobe *tk, struct pt_regs *regs)
+ {
+ 	struct trace_event_call *call = &tk->tp.call;
+@@ -1179,12 +1201,29 @@ kprobe_perf_func(struct trace_kprobe *tk, struct pt_regs *regs)
+ 	int size, __size, dsize;
+ 	int rctx;
+ 
+-	if (bpf_prog_array_valid(call) && !trace_call_bpf(call, regs))
+-		return;
++	if (bpf_prog_array_valid(call)) {
++		int ret;
 +
-+static int kprobe_ei_seq_show(struct seq_file *m, void *v)
-+{
-+	char buffer[KSYM_SYMBOL_LEN];
-+	struct kprobe_ei_entry *ent =
-+		list_entry(v, struct kprobe_ei_entry, list);
++		ret = trace_call_bpf(call, regs);
 +
-+	sprint_symbol(buffer, ent->start_addr);
-+	seq_printf(m, "%s\n", buffer);
++		/*
++		 * We need to check and see if we modified the pc of the
++		 * pt_regs, and if so clear the kprobe and return 1 so that we
++		 * don't do the instruction skipping.  Also reset our state so
++		 * we are clean the next pass through.
++		 */
++		if (__this_cpu_read(bpf_kprobe_override)) {
++			__this_cpu_write(bpf_kprobe_override, 0);
++			reset_current_kprobe();
++			return 1;
++		}
++		if (!ret)
++			return 0;
++	}
+ 
+ 	head = this_cpu_ptr(call->perf_events);
+ 	if (hlist_empty(head))
+-		return;
++		return 0;
+ 
+ 	dsize = __get_data_size(&tk->tp, regs);
+ 	__size = sizeof(*entry) + tk->tp.size + dsize;
+@@ -1193,13 +1232,14 @@ kprobe_perf_func(struct trace_kprobe *tk, struct pt_regs *regs)
+ 
+ 	entry = perf_trace_buf_alloc(size, NULL, &rctx);
+ 	if (!entry)
+-		return;
++		return 0;
+ 
+ 	entry->ip = (unsigned long)tk->rp.kp.addr;
+ 	memset(&entry[1], 0, dsize);
+ 	store_trace_args(sizeof(*entry), &tk->tp, regs, (u8 *)&entry[1], dsize);
+ 	perf_trace_buf_submit(entry, size, rctx, call->event.type, 1, regs,
+ 			      head, NULL, NULL);
++	return 0;
+ }
+ NOKPROBE_SYMBOL(kprobe_perf_func);
+ 
+@@ -1275,6 +1315,7 @@ static int kprobe_register(struct trace_event_call *event,
+ static int kprobe_dispatcher(struct kprobe *kp, struct pt_regs *regs)
+ {
+ 	struct trace_kprobe *tk = container_of(kp, struct trace_kprobe, rp.kp);
++	int ret = 0;
+ 
+ 	raw_cpu_inc(*tk->nhit);
+ 
+@@ -1282,9 +1323,9 @@ static int kprobe_dispatcher(struct kprobe *kp, struct pt_regs *regs)
+ 		kprobe_trace_func(tk, regs);
+ #ifdef CONFIG_PERF_EVENTS
+ 	if (tk->tp.flags & TP_FLAG_PROFILE)
+-		kprobe_perf_func(tk, regs);
++		ret = kprobe_perf_func(tk, regs);
+ #endif
+-	return 0;	/* We don't tweek kernel, so just return 0 */
++	return ret;
+ }
+ NOKPROBE_SYMBOL(kprobe_dispatcher);
+ 
+diff --git a/kernel/trace/trace_probe.h b/kernel/trace/trace_probe.h
+index 903273c93e61..1140f8516242 100644
+--- a/kernel/trace/trace_probe.h
++++ b/kernel/trace/trace_probe.h
+@@ -253,6 +253,8 @@ struct symbol_cache;
+ unsigned long update_symbol_cache(struct symbol_cache *sc);
+ void free_symbol_cache(struct symbol_cache *sc);
+ struct symbol_cache *alloc_symbol_cache(const char *sym, long offset);
++int trace_kprobe_ftrace(struct trace_event_call *call);
++int trace_kprobe_error_injectable(struct trace_event_call *call);
+ #else
+ /* uprobes do not support symbol fetch methods */
+ #define fetch_symbol_u8			NULL
+@@ -278,6 +280,16 @@ alloc_symbol_cache(const char *sym, long offset)
+ {
+ 	return NULL;
+ }
++
++static inline int trace_kprobe_ftrace(struct trace_event_call *call)
++{
 +	return 0;
 +}
 +
-+static const struct seq_operations kprobe_ei_seq_ops = {
-+	.start = kprobe_ei_seq_start,
-+	.next  = kprobe_ei_seq_next,
-+	.stop  = kprobe_ei_seq_stop,
-+	.show  = kprobe_ei_seq_show,
-+};
-+
-+static int kprobe_ei_open(struct inode *inode, struct file *filp)
++static inline int trace_kprobe_error_injectable(struct trace_event_call *call)
 +{
-+	return seq_open(filp, &kprobe_ei_seq_ops);
++	return 0;
 +}
-+
-+static const struct file_operations debugfs_kprobe_ei_ops = {
-+	.open           = kprobe_ei_open,
-+	.read           = seq_read,
-+	.llseek         = seq_lseek,
-+	.release        = seq_release,
-+};
-+
- static void arm_all_kprobes(void)
- {
- 	struct hlist_head *head;
-@@ -2544,6 +2702,11 @@ static int __init debugfs_kprobe_init(void)
- 	if (!file)
- 		goto error;
+ #endif /* CONFIG_KPROBE_EVENTS */
  
-+	file = debugfs_create_file("error_injection_list", 0444, dir, NULL,
-+				  &debugfs_kprobe_ei_ops);
-+	if (!file)
-+		goto error;
-+
- 	return 0;
- 
- error:
-diff --git a/kernel/module.c b/kernel/module.c
-index de66ec825992..19d8d9455f2f 100644
---- a/kernel/module.c
-+++ b/kernel/module.c
-@@ -3110,7 +3110,11 @@ static int find_module_sections(struct module *mod, struct load_info *info)
- 					     sizeof(*mod->ftrace_callsites),
- 					     &mod->num_ftrace_callsites);
- #endif
--
-+#ifdef CONFIG_BPF_KPROBE_OVERRIDE
-+	mod->kprobe_ei_funcs = section_objs(info, "_kprobe_error_inject_list",
-+					    sizeof(*mod->kprobe_ei_funcs),
-+					    &mod->num_kprobe_ei_funcs);
-+#endif
- 	mod->extable = section_objs(info, "__ex_table",
- 				    sizeof(*mod->extable), &mod->num_exentries);
- 
+ struct probe_arg {
 -- 
 2.7.5
 

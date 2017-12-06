@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:60327 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:33964 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753382AbdLFAmP (ORCPT
+        with ESMTP id S1753367AbdLFAmP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:15 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 58/73] dax: Convert lock_slot to XArray
-Date: Tue,  5 Dec 2017 16:41:44 -0800
-Message-Id: <20171206004159.3755-59-willy@infradead.org>
+Subject: [PATCH v4 53/73] fs: Convert writeback to XArray
+Date: Tue,  5 Dec 2017 16:41:39 -0800
+Message-Id: <20171206004159.3755-54-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,107 +22,65 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
+A couple of short loops.
+
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/dax.c | 25 +++++++++++++------------
- 1 file changed, 13 insertions(+), 12 deletions(-)
+ fs/fs-writeback.c | 27 ++++++++++-----------------
+ 1 file changed, 10 insertions(+), 17 deletions(-)
 
-diff --git a/fs/dax.c b/fs/dax.c
-index 03bfa599f75c..d2007a17d257 100644
---- a/fs/dax.c
-+++ b/fs/dax.c
-@@ -188,15 +188,13 @@ static void dax_wake_mapping_entry_waiter(struct address_space *mapping,
- }
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index a3c2352507f6..18ad86ccba96 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -339,9 +339,9 @@ static void inode_switch_wbs_work_fn(struct work_struct *work)
+ 	struct address_space *mapping = inode->i_mapping;
+ 	struct bdi_writeback *old_wb = inode->i_wb;
+ 	struct bdi_writeback *new_wb = isw->new_wb;
+-	struct radix_tree_iter iter;
++	XA_STATE(xas, &mapping->pages, 0);
++	struct page *page;
+ 	bool switched = false;
+-	void **slot;
  
- /*
-- * Mark the given slot is locked. The function must be called with
-- * mapping xa_lock held
-+ * Mark the given slot as locked.  Must be called with xa_lock held.
-  */
--static inline void *lock_slot(struct address_space *mapping, void **slot)
-+static inline void *lock_slot(struct xa_state *xas)
- {
--	unsigned long v = xa_to_value(
--		radix_tree_deref_slot_protected(slot, &mapping->pages.xa_lock));
-+	unsigned long v = xa_to_value(xas_load(xas));
- 	void *entry = xa_mk_value(v | DAX_ENTRY_LOCK);
--	radix_tree_replace_slot(&mapping->pages, slot, entry);
-+	xas_store(xas, entry);
- 	return entry;
- }
- 
-@@ -247,7 +245,7 @@ static void dax_unlock_mapping_entry(struct address_space *mapping,
- 
- 	xas_lock_irq(&xas);
- 	entry = xas_load(&xas);
--	if (WARN_ON_ONCE(!entry || !xa_is_value(entry) || !dax_locked(entry))) {
-+	if (WARN_ON_ONCE(!xa_is_value(entry) || !dax_locked(entry))) {
- 		xas_unlock_irq(&xas);
- 		return;
- 	}
-@@ -306,6 +304,7 @@ static void put_unlocked_mapping_entry(struct address_space *mapping,
- static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- 		unsigned long size_flag)
- {
-+	XA_STATE(xas, &mapping->pages, index);
- 	bool pmd_downgrade = false; /* splitting 2MiB entry into 4k entries? */
- 	void *entry, **slot;
- 
-@@ -344,7 +343,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- 			 * Make sure 'entry' remains valid while we drop
- 			 * mapping xa_lock.
- 			 */
--			entry = lock_slot(mapping, slot);
-+			entry = lock_slot(&xas);
- 		}
- 
- 		xa_unlock_irq(&mapping->pages);
-@@ -411,7 +410,7 @@ static void *grab_mapping_entry(struct address_space *mapping, pgoff_t index,
- 		xa_unlock_irq(&mapping->pages);
- 		return entry;
- 	}
--	entry = lock_slot(mapping, slot);
-+	entry = lock_slot(&xas);
-  out_unlock:
- 	xa_unlock_irq(&mapping->pages);
- 	return entry;
-@@ -643,6 +642,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 		pgoff_t index, void *entry)
- {
- 	struct radix_tree_root *pages = &mapping->pages;
-+	XA_STATE(xas, pages, index);
- 	void *entry2, **slot, *kaddr;
- 	long ret = 0, id;
- 	sector_t sector;
-@@ -679,7 +679,7 @@ static int dax_writeback_one(struct block_device *bdev,
- 	if (!radix_tree_tag_get(pages, index, PAGECACHE_TAG_TOWRITE))
- 		goto put_unlocked;
- 	/* Lock the entry to serialize with page faults */
--	entry = lock_slot(mapping, slot);
-+	entry = lock_slot(&xas);
  	/*
- 	 * We can clear the tag now but we have to be careful so that concurrent
- 	 * dax_writeback_one() calls for the same index cannot finish before we
-@@ -1504,8 +1504,9 @@ static int dax_insert_pfn_mkwrite(struct vm_fault *vmf,
- 				  pfn_t pfn)
- {
- 	struct address_space *mapping = vmf->vma->vm_file->f_mapping;
--	void *entry, **slot;
- 	pgoff_t index = vmf->pgoff;
-+	XA_STATE(xas, &mapping->pages, index);
-+	void *entry, **slot;
- 	int vmf_ret, error;
- 
- 	xa_lock_irq(&mapping->pages);
-@@ -1521,7 +1522,7 @@ static int dax_insert_pfn_mkwrite(struct vm_fault *vmf,
- 		return VM_FAULT_NOPAGE;
+ 	 * By the time control reaches here, RCU grace period has passed
+@@ -373,27 +373,20 @@ static void inode_switch_wbs_work_fn(struct work_struct *work)
+ 	/*
+ 	 * Count and transfer stats.  Note that PAGECACHE_TAG_DIRTY points
+ 	 * to possibly dirty pages while PAGECACHE_TAG_WRITEBACK points to
+-	 * pages actually under underwriteback.
++	 * pages actually under writeback.
+ 	 */
+-	radix_tree_for_each_tagged(slot, &mapping->pages, &iter, 0,
+-				   PAGECACHE_TAG_DIRTY) {
+-		struct page *page = radix_tree_deref_slot_protected(slot,
+-						&mapping->pages.xa_lock);
+-		if (likely(page) && PageDirty(page)) {
++	xas_for_each_tag(&xas, page, ULONG_MAX, PAGECACHE_TAG_DIRTY) {
++		if (PageDirty(page)) {
+ 			dec_wb_stat(old_wb, WB_RECLAIMABLE);
+ 			inc_wb_stat(new_wb, WB_RECLAIMABLE);
+ 		}
  	}
- 	radix_tree_tag_set(&mapping->pages, index, PAGECACHE_TAG_DIRTY);
--	entry = lock_slot(mapping, slot);
-+	entry = lock_slot(&xas);
- 	xa_unlock_irq(&mapping->pages);
- 	switch (pe_size) {
- 	case PE_SIZE_PTE:
+ 
+-	radix_tree_for_each_tagged(slot, &mapping->pages, &iter, 0,
+-				   PAGECACHE_TAG_WRITEBACK) {
+-		struct page *page = radix_tree_deref_slot_protected(slot,
+-						&mapping->pages.xa_lock);
+-		if (likely(page)) {
+-			WARN_ON_ONCE(!PageWriteback(page));
+-			dec_wb_stat(old_wb, WB_WRITEBACK);
+-			inc_wb_stat(new_wb, WB_WRITEBACK);
+-		}
++	xas_set(&xas, 0);
++	xas_for_each_tag(&xas, page, ULONG_MAX, PAGECACHE_TAG_WRITEBACK) {
++		WARN_ON_ONCE(!PageWriteback(page));
++		dec_wb_stat(old_wb, WB_WRITEBACK);
++		inc_wb_stat(new_wb, WB_WRITEBACK);
+ 	}
+ 
+ 	wb_get(new_wb);
 -- 
 2.15.0
 

@@ -1,12 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:18565 "EHLO
-        ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1754345AbdLFDPB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 22:15:01 -0500
-Date: Wed, 6 Dec 2017 14:14:56 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Matthew Wilcox <willy@infradead.org>
+Received: from bombadil.infradead.org ([65.50.211.133]:53554 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750978AbdLFEpx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 23:45:53 -0500
+Date: Tue, 5 Dec 2017 20:45:49 -0800
+From: Matthew Wilcox <willy@infradead.org>
+To: Dave Chinner <david@fromorbit.com>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
         Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
@@ -15,137 +14,178 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH v4 72/73] xfs: Convert mru cache to XArray
-Message-ID: <20171206031456.GE4094@dastard>
+Message-ID: <20171206044549.GO26021@bombadil.infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
  <20171206004159.3755-73-willy@infradead.org>
  <20171206012901.GZ4094@dastard>
  <20171206020208.GK26021@bombadil.infradead.org>
+ <20171206031456.GE4094@dastard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171206020208.GK26021@bombadil.infradead.org>
+In-Reply-To: <20171206031456.GE4094@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 05, 2017 at 06:02:08PM -0800, Matthew Wilcox wrote:
-> On Wed, Dec 06, 2017 at 12:36:48PM +1100, Dave Chinner wrote:
-> > > -	if (radix_tree_preload(GFP_NOFS))
-> > > -		return -ENOMEM;
-> > > -
-> > >  	INIT_LIST_HEAD(&elem->list_node);
-> > >  	elem->key = key;
-> > >  
-> > > -	spin_lock(&mru->lock);
-> > > -	error = radix_tree_insert(&mru->store, key, elem);
-> > > -	radix_tree_preload_end();
-> > > -	if (!error)
-> > > -		_xfs_mru_cache_list_insert(mru, elem);
-> > > -	spin_unlock(&mru->lock);
-> > > +	do {
-> > > +		xas_lock(&xas);
-> > > +		xas_store(&xas, elem);
-> > > +		error = xas_error(&xas);
-> > > +		if (!error)
-> > > +			_xfs_mru_cache_list_insert(mru, elem);
-> > > +		xas_unlock(&xas);
-> > > +	} while (xas_nomem(&xas, GFP_NOFS));
+On Wed, Dec 06, 2017 at 02:14:56PM +1100, Dave Chinner wrote:
+> > The other conversions use the normal API instead of the advanced API, so
+> > all of this gets hidden away.  For example, the inode cache does this:
+> 
+> Ah, OK, that's not obvious from the code changes. :/
+
+Yeah, it's a lot easier to understand (I think!) if you build the
+docs in that tree and look at
+file:///home/willy/kernel/xarray-3/Documentation/output/core-api/xarray.html
+(mutatis mutandi).  I've tried to tell a nice story about how to put
+all the pieces together from the normal to the advanced API.
+
+> However, it's probably overkill for XFS. In all the cases, when we
+> insert there should be no entry in the tree - the
+> radix tree insert error handling code there was simply catching
+> "should never happen" cases and handling it without crashing.
+
+I thought it was probably overkill to be using xa_cmpxchg() in the
+pag_ici patch.  I didn't want to take away your error handling as part
+of the conversion, but I think a rational person implementing it today
+would just call xa_store() and not even worry about the return value
+except to check it for IS_ERR().
+
+That said, using xa_cmpxchg() in the dquot code looked like the right
+thing to do?  Since we'd dropped the qi mutex and the ILOCK, it looks
+entirely reasonable for another thread to come in and set up the dquot.
+But I'm obviously quite ignorant of the XFS internals, so maybe there's
+something else going on that makes this essentially a "can't happen".
+
+> Now that I've looked at this, I have to say that having a return
+> value of NULL meaning "success" is quite counter-intuitive. That's
+> going to fire my "that looks so wrong" detector every time I look at
+> the code and notice it's erroring out on a non-null return value
+> that isn't a PTR_ERR case....
+
+It's the same convention as cmpxchg().  I think it's triggering your
+"looks so wrong" detector because it's fundamentally not the natural
+thing to write.  I certainly don't cmpxchg() new entries into an array
+and check the result was NULL ;-)
+
+> Also, there's no need for irqsave/restore() locking contexts here as
+> we never access these caches from interrupt contexts. That's just
+> going to be extra overhead, especially on workloads that run 10^6
+> inodes inodes through the cache every second. That's a problem
+> caused by driving the locks into the XA structure and then needing
+> to support callers that require irq safety....
+
+I'm quite happy to have normal API variants that don't save/restore
+interrupts.  Just need to come up with good names ... I don't think
+xa_store_noirq() is a good name, but maybe you do?
+
+> > It's the design pattern I've always intended to use.  Naturally, the
+> > xfs radix trees weren't my initial target; it was the page cache, and
+> > the page cache does the same thing; uses the tree_lock to protect both
+> > the radix tree and several other fields in that same data structure.
 > > 
-> > Ok, so why does this have a retry loop on ENOMEM despite the
-> > existing code handling that error? And why put such a loop in this
-> > code and not any of the other XFS code that used
-> > radix_tree_preload() and is arguably much more important to avoid
-> > ENOMEM on insert (e.g. the inode cache)?
+> > I'm open to argument on this though ... particularly if you have a better
+> > design pattern in mind!
 > 
-> If we need more nodes in the tree, xas_store() will try to allocate them
-> with GFP_NOWAIT | __GFP_NOWARN.  If that fails, it signals it in xas_error().
-> xas_nomem() will notice that we're in an ENOMEM situation, and allocate
-> a node using your preferred GFP flags (NOIO in your case).  Then we retry,
-> guaranteeing forward progress. [1]
+> I don't mind structures having internal locking - I have a problem
+> with leaking them into contexts outside the structure they protect.
+> That way lies madness - you can't change the internal locking in
+> future because of external dependencies, and the moment you need
+> something different externally we've got to go back to an external
+> lock anyway.
 > 
-> The other conversions use the normal API instead of the advanced API, so
-> all of this gets hidden away.  For example, the inode cache does this:
+> This is demonstrated by the way you converted the XFS dquot tree -
+> you didn't replace the dquot tree lock with the internal xa_lock
+> because it's a mutex and we have to sleep holding it. IOWs, we've
+> added another layer of locking here, not simplified the code.
+
+I agree the dquot code is no simpler than it was, but it's also no more
+complicated from a locking analysis point of view; the xa_lock is just
+not providing you with any useful exclusion.
+
+At least, not today.  One of the future plans is to allow xa_nodes to
+be allocated from ZONE_MOVABLE.  In order to do that, we have to be
+able to tell which lock protects any given node.  With the XArray,
+we can find that out (xa_node->root->xa_lock); with the radix tree,
+we don't even know what kind of lock protects the tree.
+
+> What I really see here is that  we have inconsistent locking
+> patterns w.r.t. XA stores inside XFS - some have an external mutex
+> to cover a wider scope, some use xa_lock/xa_unlock to span multiple
+> operations, some directly access the internal xa lock via direct
+> spin_lock/unlock(...xa_lock) calls and non-locking XA call variants.
+> In some places you remove explicit rcu_read_lock() calls because the
+> internal xa_lock implies RCU, but in other places we still need them
+> because we have to protect the objects the tree points to, not just
+> the tree....
 > 
-> +       curr = xa_cmpxchg(&pag->pag_ici_xa, agino, NULL, ip, GFP_NOFS);
-> 
-> and xa_cmpxchg internally does:
-> 
->         do {
->                 xa_lock_irqsave(xa, flags);
->                 curr = xas_create(&xas);
->                 if (curr == old)
->                         xas_store(&xas, entry);
->                 xa_unlock_irqrestore(xa, flags);
->         } while (xas_nomem(&xas, gfp));
+> IOWs, there's no consistent pattern to the changes you've made to
+> the XFS code. The existing radix tree code has clear, consistent
+> locking, tagging and lookup patterns. In contrast, each conversion
+> to the XA code has resulted in a different solution for each radix
+> tree conversion. Yes, there's been a small reduction in the amoutn
+> of code in converting to the XA API, but it comes at the cost of
+> consistency and ease of understanding the code that uses the radix
+> tree API.
 
-Ah, OK, that's not obvious from the code changes. :/
+There are other costs to not having a lock.  The lockdep/RCU
+analysis done on the radix tree code is none.  Because we have
+no idea what lock might protect any individual radix tree, we use
+rcu_dereference_raw(), disabling lockdep's ability to protect us.
 
-However, it's probably overkill for XFS. In all the cases, when we
-insert there should be no entry in the tree - the
-radix tree insert error handling code there was simply catching
-"should never happen" cases and handling it without crashing.
+It's funny that you see the hodgepodge of different locking strategies
+in the XFS code base as being a problem with the XArray.  I see it as
+being a consequence of XFS's different needs.  No, the XArray can't
+solve all of your problems, but it hasn't made your locking more complex.
 
-Now that I've looked at this, I have to say that having a return
-value of NULL meaning "success" is quite counter-intuitive. That's
-going to fire my "that looks so wrong" detector every time I look at
-the code and notice it's erroring out on a non-null return value
-that isn't a PTR_ERR case....
+And I don't agree that the existing radix tree code has clear, consistent
+locking patterns.  For example, this use of RCU was unnecessary:
 
-Also, there's no need for irqsave/restore() locking contexts here as
-we never access these caches from interrupt contexts. That's just
-going to be extra overhead, especially on workloads that run 10^6
-inodes inodes through the cache every second. That's a problem
-caused by driving the locks into the XA structure and then needing
-to support callers that require irq safety....
+ xfs_queue_eofblocks(
+        struct xfs_mount *mp)
+ {
+-       rcu_read_lock();
+-       if (radix_tree_tagged(&mp->m_perag_tree, XFS_ICI_EOFBLOCKS_TAG))
++       if (xa_tagged(&mp->m_perag_xa, XFS_ICI_EOFBLOCKS_TAG))
+                queue_delayed_work(mp->m_eofblocks_workqueue,
+                                   &mp->m_eofblocks_work,
+                                   msecs_to_jiffies(xfs_eofb_secs * 1000));
+-       rcu_read_unlock();
+ }
 
-> > Also, I really don't like the pattern of using xa_lock()/xa_unlock()
-> > to protect access to an external structure. i.e. the mru->lock
-> > context is protecting multiple fields and operations in the MRU
-> > structure, not just the radix tree operations. Turning that around
-> > so that a larger XFS structure and algorithm is now protected by an
-> > opaque internal lock from generic storage structure the forms part
-> > of the larger structure seems like a bad design pattern to me...
-> 
-> It's the design pattern I've always intended to use.  Naturally, the
-> xfs radix trees weren't my initial target; it was the page cache, and
-> the page cache does the same thing; uses the tree_lock to protect both
-> the radix tree and several other fields in that same data structure.
-> 
-> I'm open to argument on this though ... particularly if you have a better
-> design pattern in mind!
+radix_tree_tagged never required the RCU lock (commit 7cf9c2c76c1a).
+I think you're just used to the radix tree pattern of "we provide no
+locking for you, come up with your own scheme".
 
-I don't mind structures having internal locking - I have a problem
-with leaking them into contexts outside the structure they protect.
-That way lies madness - you can't change the internal locking in
-future because of external dependencies, and the moment you need
-something different externally we've got to go back to an external
-lock anyway.
+What might make more sense for XFS is coming up with something
+intermediate between the full on xa_state-based API and the "we handle
+everything for you" normal API.  For example, how would you feel about
+xfs_mru_cache_insert() looking like this:
 
-This is demonstrated by the way you converted the XFS dquot tree -
-you didn't replace the dquot tree lock with the internal xa_lock
-because it's a mutex and we have to sleep holding it. IOWs, we've
-added another layer of locking here, not simplified the code.
+	xa_lock(&mru->store);
+	error = PTR_ERR_OR_ZERO(__xa_store(&mru->store, key, elem, GFP_NOFS));
+	if (!error)
+		_xfs_mru_cache_list_insert(mru, elem);
+	xa_unlock(&mru->store);
 
-What I really see here is that  we have inconsistent locking
-patterns w.r.t. XA stores inside XFS - some have an external mutex
-to cover a wider scope, some use xa_lock/xa_unlock to span multiple
-operations, some directly access the internal xa lock via direct
-spin_lock/unlock(...xa_lock) calls and non-locking XA call variants.
-In some places you remove explicit rcu_read_lock() calls because the
-internal xa_lock implies RCU, but in other places we still need them
-because we have to protect the objects the tree points to, not just
-the tree....
+	return error;
 
-IOWs, there's no consistent pattern to the changes you've made to
-the XFS code. The existing radix tree code has clear, consistent
-locking, tagging and lookup patterns. In contrast, each conversion
-to the XA code has resulted in a different solution for each radix
-tree conversion. Yes, there's been a small reduction in the amoutn
-of code in converting to the XA API, but it comes at the cost of
-consistency and ease of understanding the code that uses the radix
-tree API.
+xfs_mru_cache_lookup would look like:
 
-Cheers,
+	xa_lock(&mru->store);
+	elem = __xa_load(&mru->store, key);
+	...
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+There's no real need for the mru code to be using the full-on xa_state
+API.  For something like DAX or the page cache, there's a real advantage,
+but the mru code is, I think, a great example of a user who has somewhat
+more complex locking requirements, but doesn't use the array in a
+complex way.
+
+The dquot code is just going to have to live with the fact that there's
+additional locking going on that it doesn't need.  I'm open to getting
+rid of the irqsafety, but we can't give up the spinlock protection
+without giving up the RCU/lockdep analysis and the ability to move nodes.
+I don't suppose the dquot code can 
+
+
+Thanks for spending so much time on this and being so passionate about
+making this the best possible code it can be.

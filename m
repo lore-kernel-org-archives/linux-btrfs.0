@@ -1,55 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41710 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752075AbdLDOnH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 4 Dec 2017 09:43:07 -0500
-Date: Mon, 4 Dec 2017 15:41:07 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/4] btrfs: compression: add helper for type to string
- conversion
-Message-ID: <20171204144107.GZ3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1512058075.git.dsterba@suse.com>
- <a82165fb386d2abba1e7366689e3aefada14ed26.1512058075.git.dsterba@suse.com>
- <4fb8aaa3-e79c-e3f1-d834-3da44bde58f9@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4fb8aaa3-e79c-e3f1-d834-3da44bde58f9@oracle.com>
+Received: from aserp2120.oracle.com ([141.146.126.78]:49946 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754442AbdLFDjp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 22:39:45 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB63awuT025341
+        for <linux-btrfs@vger.kernel.org>; Wed, 6 Dec 2017 03:39:44 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2120.oracle.com with ESMTP id 2enc2g52j9-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Dec 2017 03:39:44 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB63dhh0032130
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 6 Dec 2017 03:39:44 GMT
+Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB63dhp1009309
+        for <linux-btrfs@vger.kernel.org>; Wed, 6 Dec 2017 03:39:43 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: put btrfs_ioctl_vol_args_v2 related defines together
+Date: Wed,  6 Dec 2017 11:40:10 +0800
+Message-Id: <20171206034010.29699-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 01, 2017 at 05:55:56AM +0800, Anand Jain wrote:
-> 
-> 
-> On 12/01/2017 12:09 AM, David Sterba wrote:
-> > There are several places opencoding this conversion, add a helper now
-> > that we have 3 compression algorithms.
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > ---
-> >   fs/btrfs/compression.c | 15 +++++++++++++++
-> >   fs/btrfs/compression.h |  2 ++
-> >   2 files changed, 17 insertions(+)
-> > 
-> > diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> > index 5982c8a71f02..a1a5958ff328 100644
-> > --- a/fs/btrfs/compression.c
-> > +++ b/fs/btrfs/compression.c
-> > @@ -45,6 +45,21 @@
-> >   #include "extent_io.h"
-> >   #include "extent_map.h"
-> >   
-> > +static const char* const btrfs_compress_types[] = { "", "lzo", "zlib", "zstd" };
-> 
-> This is wrong order.
-> 
-> compression.h:	BTRFS_COMPRESS_NONE  = 0,
-> compression.h:	BTRFS_COMPRESS_ZLIB  = 1,
-> compression.h:	BTRFS_COMPRESS_LZO   = 2,
-> compression.h:	BTRFS_COMPRESS_ZSTD  = 3,
-> compression.h:	BTRFS_COMPRESS_TYPES = 3,
+Just a code spatial rearrangement, no functional change.
 
-This was unintentionally left as an exercise for reviewers. Will fix,
-thanks.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ include/uapi/linux/btrfs.h | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index ce615b75e855..adf0b088d9a0 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -33,8 +33,12 @@ struct btrfs_ioctl_vol_args {
+ 	char name[BTRFS_PATH_NAME_MAX + 1];
+ };
+ 
+-#define BTRFS_DEVICE_PATH_NAME_MAX 1024
++#define BTRFS_DEVICE_PATH_NAME_MAX	1024
++#define BTRFS_SUBVOL_NAME_MAX 		4039
+ 
++#define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
++#define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
++#define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
+ #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
+ 
+ #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
+@@ -101,11 +105,7 @@ struct btrfs_ioctl_qgroup_limit_args {
+  * - BTRFS_IOC_SUBVOL_GETFLAGS
+  * - BTRFS_IOC_SUBVOL_SETFLAGS
+  */
+-#define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
+-#define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
+-#define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
+ 
+-#define BTRFS_SUBVOL_NAME_MAX 4039
+ struct btrfs_ioctl_vol_args_v2 {
+ 	__s64 fd;
+ 	__u64 transid;
+-- 
+2.15.0
+

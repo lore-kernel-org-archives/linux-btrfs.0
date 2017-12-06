@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:48847 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:36318 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753249AbdLFAmJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:09 -0500
+        with ESMTP id S1753364AbdLFAmO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:14 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 18/73] xarray: Add xas_create_range
-Date: Tue,  5 Dec 2017 16:41:04 -0800
-Message-Id: <20171206004159.3755-19-willy@infradead.org>
+Subject: [PATCH v4 15/73] xarray: Add xa_get_entries, xa_get_tagged and xa_get_maybe_tag
+Date: Tue,  5 Dec 2017 16:41:01 -0800
+Message-Id: <20171206004159.3755-16-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,60 +22,151 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-This hopefully temporary function is useful for users who have not yet
-been converted to multi-index entries.
+These functions allow a range of xarray entries to be extracted into a
+compact normal array.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- include/linux/xarray.h |  2 ++
- lib/xarray.c           | 22 ++++++++++++++++++++++
- 2 files changed, 24 insertions(+)
+ include/linux/xarray.h | 27 ++++++++++++++++
+ lib/xarray.c           | 88 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 115 insertions(+)
 
 diff --git a/include/linux/xarray.h b/include/linux/xarray.h
-index 416708ace115..afa3374f20bd 100644
+index 4e61ebd406f5..c3efcc3432f7 100644
 --- a/include/linux/xarray.h
 +++ b/include/linux/xarray.h
-@@ -594,6 +594,8 @@ void xas_init_tags(const struct xa_state *);
- bool xas_nomem(struct xa_state *, gfp_t);
- void xas_pause(struct xa_state *);
+@@ -135,6 +135,33 @@ void *xa_clear_tag(struct xarray *, unsigned long index, xa_tag_t);
  
-+void xas_create_range(struct xa_state *, unsigned long max);
+ void *xa_find(struct xarray *xa, unsigned long *index, unsigned long max);
+ void *xa_find_after(struct xarray *xa, unsigned long *index, unsigned long max);
++int xa_get_entries(struct xarray *, void **dst, unsigned long start,
++			unsigned long max, unsigned int n);
++int xa_get_tagged(struct xarray *, void **dst, unsigned long start,
++			unsigned long max, unsigned int n, xa_tag_t);
 +
++/**
++ * xa_get_maybe_tag() - Copy entries from the XArray into a normal array.
++ * @xa: The source XArray to copy from.
++ * @dst: The buffer to copy pointers into.
++ * @start: The first index in the XArray eligible to be copied from.
++ * @max: The last index in the XArray eligible to be copied from.
++ * @n: The maximum number of entries to copy.
++ * @tag: Tag number.
++ *
++ * If you specify %XA_NO_TAG as the tag number, this is the same as
++ * xa_get_entries().  Otherwise, it is the same as xa_get_tagged().
++ *
++ * Return: The number of entries copied.
++ */
++static inline int xa_get_maybe_tag(struct xarray *xa, void **dst,
++			unsigned long start, unsigned long max,
++			unsigned int n, xa_tag_t tag)
++{
++	if (tag == XA_NO_TAG)
++		return xa_get_entries(xa, dst, start, max, n);
++	return xa_get_tagged(xa, dst, start, max, n, tag);
++}
+ 
  /**
-  * xas_reload() - Refetch an entry from the xarray.
-  * @xas: XArray operation state.
+  * xa_for_each() - Iterate over a portion of an XArray.
 diff --git a/lib/xarray.c b/lib/xarray.c
-index 8c6e83d10554..cc88df7bd6df 100644
+index f9eaac2d85f9..251724f62b11 100644
 --- a/lib/xarray.c
 +++ b/lib/xarray.c
-@@ -570,6 +570,28 @@ void *xas_create(struct xa_state *xas)
+@@ -1253,6 +1253,94 @@ void *xa_find_after(struct xarray *xa, unsigned long *indexp, unsigned long max)
  }
- EXPORT_SYMBOL_GPL(xas_create);
+ EXPORT_SYMBOL(xa_find_after);
  
 +/**
-+ * xas_create_range() - Ensure that stores to this range will succeed
-+ * @xas: XArray operation state.
-+ * @max: The highest index to create a slot for.
++ * xa_get_entries() - Copy entries from the XArray into a normal array.
++ * @xa: The source XArray to copy from.
++ * @dst: The buffer to copy pointers into.
++ * @start: The first index in the XArray eligible to be copied from.
++ * @max: The last index in the XArray eligible to be copied from.
++ * @n: The maximum number of entries to copy.
 + *
-+ * Creates all of the slots in the range between the current position of
-+ * @xas and @max.  This is for the benefit of users who have not yet been
-+ * converted to multi-index entries.
++ * Copies up to @n non-NULL entries from the XArray.  The copied entries will
++ * have indices between @start and @max, inclusive.
 + *
-+ * The implementation is naive.
++ * This function uses the RCU lock to protect itself.  That means that the
++ * entries returned may not represent a snapshot of the XArray at a moment
++ * in time.  For example, if index 5 is stored to, then index 10 is stored to,
++ * calling xa_get_entries() may return the old contents of index 5 and the
++ * new contents of index 10.  Indices not modified while this function is
++ * running will not be skipped.
++ *
++ * If you need stronger guarantees, holding the xa_lock across calls to this
++ * function will prevent concurrent modification.
++ *
++ * Return: The number of entries copied.
 + */
-+void xas_create_range(struct xa_state *xas, unsigned long max)
++int xa_get_entries(struct xarray *xa, void **dst, unsigned long start,
++			unsigned long max, unsigned int n)
 +{
-+	XA_STATE(tmp, xas->xa, xas->xa_index);
++	XA_STATE(xas, xa, start);
++	void *entry;
++	unsigned int i = 0;
 +
-+	do {
-+		xas_create(&tmp);
-+		xas_set(&tmp, tmp.xa_index + XA_CHUNK_SIZE);
-+	} while (tmp.xa_index < max);
++	if (!n)
++		return 0;
++
++	rcu_read_lock();
++	xas_for_each(&xas, entry, max) {
++		if (xas_retry(&xas, entry))
++			continue;
++		dst[i++] = entry;
++		if (i == n)
++			break;
++	}
++	rcu_read_unlock();
++
++	return i;
 +}
-+EXPORT_SYMBOL_GPL(xas_create_range);
++EXPORT_SYMBOL(xa_get_entries);
 +
- static void store_siblings(struct xa_state *xas,
- 				void *entry, int *countp, int *valuesp)
++/**
++ * xa_get_tagged() - Copy tagged entries from the XArray into a normal array.
++ * @xa: The source XArray to copy from.
++ * @dst: The buffer to copy pointers into.
++ * @start: The first index in the XArray eligible to be copied from.
++ * @max: The last index in the XArray eligible to be copied from
++ * @n: The maximum number of entries to copy.
++ * @tag: Tag number.
++ *
++ * Copies up to @n non-NULL entries that have @tag set from the XArray.  The
++ * copied entries will have indices between @start and @max, inclusive.
++ *
++ * See the xa_get_entries() documentation for the consistency guarantees
++ * provided.
++ *
++ * Return: The number of entries copied.
++ */
++int xa_get_tagged(struct xarray *xa, void **dst, unsigned long start,
++			unsigned long max, unsigned int n, xa_tag_t tag)
++{
++	XA_STATE(xas, xa, start);
++	void *entry;
++	unsigned int i = 0;
++
++	if (!n)
++		return 0;
++
++	rcu_read_lock();
++	xas_for_each_tag(&xas, entry, max, tag) {
++		if (xas_retry(&xas, entry))
++			continue;
++		dst[i++] = entry;
++		if (i == n)
++			break;
++	}
++	rcu_read_unlock();
++
++	return i;
++}
++EXPORT_SYMBOL(xa_get_tagged);
++
+ #ifdef XA_DEBUG
+ void xa_dump_entry(void *entry, unsigned long index)
  {
 -- 
 2.15.0

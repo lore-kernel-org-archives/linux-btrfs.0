@@ -1,144 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:63531 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753536AbdLFAnI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 19:43:08 -0500
-Subject: Re: Chunk-Recovery fails with alignment error
-To: Benjamin Beichler <hadrian2002@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CABi++uJj6x=ZT1QbB7vu5Zh3_Mf6nsLNMAO9QXNLEBQN_ngoYA@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <211ded6e-5b02-0c33-b75e-b0ad6ff30ca4@gmx.com>
-Date: Wed, 6 Dec 2017 08:42:59 +0800
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:36551 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750978AbdLFExY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 23:53:24 -0500
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 2FD12AC0146
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Dec 2017 13:53:19 +0900 (JST)
+Subject: Re: [RFC] Improve subvolume usability for a normal user
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5fc9b66b-0bcd-c2a9-7e8e-b4d4ff828200@jp.fujitsu.com>
+ <3934c7d3-b601-bbba-5d16-5c3ef9bb527a@gmx.com>
+ <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <43b6e90c-6461-d722-fb8c-8ad5069841fd@jp.fujitsu.com>
+Date: Wed, 6 Dec 2017 13:52:14 +0900
 MIME-Version: 1.0
-In-Reply-To: <CABi++uJj6x=ZT1QbB7vu5Zh3_Mf6nsLNMAO9QXNLEBQN_ngoYA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="3QXWSLrtuAM3MlJN39Nu05Mj4eOwhllFa"
+In-Reply-To: <e5bf11ce-fef2-6786-752d-4711751d284d@gmail.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---3QXWSLrtuAM3MlJN39Nu05Mj4eOwhllFa
-Content-Type: multipart/mixed; boundary="cIU06Cvl4mJFGH9OpjrMUe6UxMhsBQ7sX";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Benjamin Beichler <hadrian2002@googlemail.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <211ded6e-5b02-0c33-b75e-b0ad6ff30ca4@gmx.com>
-Subject: Re: Chunk-Recovery fails with alignment error
-References: <CABi++uJj6x=ZT1QbB7vu5Zh3_Mf6nsLNMAO9QXNLEBQN_ngoYA@mail.gmail.com>
-In-Reply-To: <CABi++uJj6x=ZT1QbB7vu5Zh3_Mf6nsLNMAO9QXNLEBQN_ngoYA@mail.gmail.com>
+On 2017/12/05 21:41, Austin S. Hemmelgarn wrote:
+> On 2017-12-05 03:43, Qu Wenruo wrote:
+>>
+>>
+>> On 2017年12月05日 16:25, Misono, Tomohiro wrote:
+>>> Hello all,
+>>>
+>>> I want to address some issues of subvolume usability for a normal user.
+>>> i.e. a user can create subvolumes, but
+>>>   - Cannot delete their own subvolume (by default)
+>>>   - Cannot tell subvolumes from directories (in a straightforward way)
+>>>   - Cannot check the quota limit when qgroup is enabled
+>>>
+>>> Here I show the initial thoughts and approaches to this problem.
+>>> I want to check if this is a right approach or not before I start writing code.
+>>>
+>>> Comments are welcome.
+>>> Tomohiro Misono
+>>>
+>>> ==========
+>>> - Goal and current problem
+>>> The goal of this RFC is to give a normal user more control to their own subvolumes.
+>>> Currently the control to subvolumes for a normal user is restricted as below:
+>>>
+>>> +-------------+------+------+
+>>> |   command   | root | user |
+>>> +-------------+------+------+
+>>> | sub create  | Y    | Y    |
+>>> | sub snap    | Y    | Y    |
+>>> | sub del     | Y    | N    |
+>>> | sub list    | Y    | N    |
+>>> | sub show    | Y    | N    |
+>>> | qgroup show | Y    | N    |
+>>> +-------------+------+------+
+>>>
+>>> In short, I want to change this as below in order to improve user's usability:
+>>>
+>>> +-------------+------+--------+
+>>> |   command   | root | user   |
+>>> +-------------+------+--------+
+>>> | sub create  | Y    | Y      |
+>>> | sub snap    | Y    | Y      |
+>>> | sub del     | Y    | N -> Y |
+>>> | sub list    | Y    | N -> Y |
+>>> | sub show    | Y    | N -> Y |
+>>> | qgroup show | Y    | N -> Y |
+>>> +-------------+------+--------+
+>>>
+>>> In words,
+>>> (1) allow deletion of subvolume if a user owns it, and
+>>> (2) allow getting subvolume/quota info if a user has read access to it
+>>>   (sub list/qgroup show just lists the subvolumes which are readable by the user)
+>>>
+>>> I think other commands not listed above (qgroup limit, send/receive etc.) should
+>>> be done by root and not be allowed for a normal user.
+>>>
+>>>
+>>> - Outside the scope of this RFC
+>>> There is a qualitative problem to use qgroup for limiting user disk amount;
+>>> quota limit can easily be averted by creating a subvolume. I think that forcing
+>>> inheriting quota of parent subvolume is a solution, but I won't address nor
+>>> discuss this here.
+>>>
+>>>
+>>> - Proposal
+>>>   (1) deletion of subvolume
+>>>
+>>>    I want to change the default behavior to allow a user to delete their own
+>>>    subvolumes.
+>>>    
+>>>    This is not the same behavior as when user_subvol_rm_alowed mount option is
+>>>    specified; in that case a user can delete the subvolume to which they have
+>>>    write+exec right.
+>>>    
+>>>    Since snapshot creation is already restricted to the subvolume owner, it is
+>>>    consistent that only the owner of the subvolume (or root) can delete it.
+>>>    
+>>>    The implementation should be straightforward.
+>>
+>> Personally speaking, I prefer to do the complex owner check in user daemon.
+>>
+>> And do the privilege in user daemon (call it btrfsd for example).
+>>
+>> So btrfs-progs will works in 2 modes, if root calls it, do as it used to do.
+>> If normal user calls it, proxy the request to btrfsd, and btrfsd does
+>> the privilege checking and call ioctl (with root privilege).
+>>
+>> Then no impact to kernel, all complex work is done in user space.
+> Exactly how hard is it to just check ownership of the root inode of a 
+> subvolume from the ioctl context?  You could just as easily push all the 
+> checking out to the VFS layer by taking an open fd for the subvolume 
+> root (and probably implicitly closing it) instead of taking a path, and 
+> that would give you all the benefits of ACL's and whatever security 
+> modules the local system is using.  Alternatively, quit treating 
+> subvolumes specially for `unlink()`, and make them behave like regular 
+> directories (and thus avoid the one possible complication resulting from 
+> home directories being subvolumes but needing to be owned by the users).
 
---cIU06Cvl4mJFGH9OpjrMUe6UxMhsBQ7sX
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thanks to all for the comments.
+Let me explain my stance clearly:
 
+I'm for limiting the subvolume operation to btrfs-progs commands since a
+subvolume looks like a regular directory, but is different in many points.
+This is the reason I want to fix not only "sub delete" but also "sub show/list" etc.
 
+I think "sub delete" should be the counterpart of "sub create" and "sub snap". 
+Since "sub snap" can be used for the subvolume the user owns, "sub delete" 
+should be allowed to the suvolume the user owns too. Also, using these
+commands enables an instant creation/deletion of a  subvolume/snapshot, which
+is one of the features of btrfs.
 
-On 2017=E5=B9=B412=E6=9C=8806=E6=97=A5 03:22, Benjamin Beichler wrote:
-> Hi,
->=20
-> I have a setup as following:  (1,7TB drive + 128GB SSD in Bcache) <=3D=3D=
->
-> luks device <=3D=3D> btrfs FS
-> I have been running Arch linux with newest stable kernel 4.14.
->=20
-> After a reboot last week my btrfs volume becomes unmountable, because
-> of checksum errors in the chunk root.
->=20
-> These are the outputs of check:
-> "btrfs check /dev/mapper/root
->=20
-> checksum verify failed on 131072 found 1A98EC4A wanted B97166DB
-> checksum verify failed on 131072 found 1A98EC4A wanted B97166DB
-> bytenr mismatch, want=3D131072, have=3D9229526874648754029
-> ERROR: cannot read chunk root
-> ERROR: cannot open file system
-
-That's the most serious problem for btrfs.
-No chunk tree nothing can be recovered.
-
-> "
->=20
-> Most other check/repair commands fail with the same error. The
-> super-dump can be found here:
-> https://gist.github.com/anonymous/33bd22696c37355c6cfd093f4c6bd226
-
-Better with -fa option to show system chunk array and backup roots.
-
->=20
->  After my attempts in initramfs failed I used a recent arch-live disk
-> to compile newest btrfs-tools and use recent kernel (4.9) to recover
-> the chunk tree.
->=20
-> Therefore I ran the chunk recover command on my drive.  It looks like
-> the following here>
-> https://gist.github.com/anonymous/5359c08734cf81ad3887b635536d9631
->=20
-> for better debugging I already used gdb to inspect the following error:=
-
->=20
-> "ERROR: tree block bytenr 0 is not aligned to sectorsize 4096"
->=20
-> but as the exception raise is far to late to inspect the problem.
-> Since most of my chunks seems to be recoverable, I hope a tree rebuild
-> is possible, but I don't know how.
-
-This seems to be related to __rebuikld_device_items(), where
-btrfs_insert_item() return -EIO and triggered BUG_ON().
-
-Despite the heavy (and mostly overkilled) method, we can do a lighter
-version by checking every possible tree root in system chunk array.
-
-Which needs the -fa option of super-dump subcommand.
-
-
-The basic idea is:
-1) Check the back_roots of output
-   If backup_chunk_root of all backup roots are the same with chunk_root
-   (which is 131072 in your case), skip to step 3)
-
-2) Try all backup_chunk_root numbers with "btrfs check --chunk-root
-   <bytenr>"
-   If some number returns good result (no obvious problem reported),
-   then with --repair option, finish the repair.
-   If all fails, go step 3)
-
-3) Try all bytenr aligned to 16K in system chunk
-   Same "btrfs check --chunk-root <bytenr>" until one returns good
-   result. Then --repair.
-
-Thanks,
-Qu
->=20
-> Do you have any suggestions?
+Regards,
+Tomohiro
+> 
+> <rant>
+> This whole 'just make it a daemon' thing that's becoming the standard 
+> solution everywhere these days is crap in most cases (note that I'm not 
+> just singling out this proposal here).  Just because systemd does it 
+> doesn't make it a good idea, especially when it makes things like this 
+> far more opaque than they really need to be, which in turn makes it a 
+> pain in the arse to debug _anything_ to do with permissions beyond basic 
+> file access.
+> </rant>
+> 
+> In almost all cases, the desired check is to allow root, possibly admin 
+> users who have filesystem management permissions (usually exactly one 
+> group), and the owner.  That is trivial to implement with a single ACL 
+> entry and basic filesystem permissions without needing some special 
+> daemon to check them provided we route things through the VFS layer 
+> somehow.  In the rare cases that that's not what's wanted, then the 
+> system is almost certainly using an LSM, and the checks can be made ther>>
+>>>
+>>>   (2) getting subvolume/quota info
+>>>
+>>>    TREE_SEARCH ioctl is used to retrieve the subvolume/quota info by btrfs-progs
+>>>    (sub show/list, qgroup show etc.). This requires the root permission.
+>>>    
+>>>    The easiest way to allow a user to get subvolume/quota info is just relaxing
+>>>    the permission of TREE_SEARCH. However, since all the tree information (inc.
+>>>    file name) will be exposed, this poses a sequrity risk and is not acceptable.
+>>>    
+>>>    So, I want to introduce 2 ioctls to get subvolume/quota info respectively for
+>>>    a normal user, which return only the info readable by the user:
+>>>    
+>>>     [subvolume info]
+>>>      Mainly search ROOT tree for ROOT_ITEM/ROOT_BACKREF, but check its read
+>>>     right by searching FS/FILE tree and comparing it with caller's uid.
+>>>    
+>>>     [quota info]
+>>>      Same as above, but mainly search QUOTA tree and only returns level 0 info.
+>>>    
+>>>    Also, in order to construct subvolume path, permission of INO_LOOKUP ioctl
+>>>    needs to be relaxed for the user who has read access to the subvolume.
+>>
+>> Same method can apply to this either.
+>>
+>> Thanks,
+>> Qu
+>>>
+>>>
+>>> - Summary of Proposal
+>>>   - Change the default behavior to allow a user to delete their own subvolumes
+>>>   - Add 2 new non-root ioctls to get subvolume/quota info for accessible subvolumes
+> 
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+> 
 
-
---cIU06Cvl4mJFGH9OpjrMUe6UxMhsBQ7sX--
-
---3QXWSLrtuAM3MlJN39Nu05Mj4eOwhllFa
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlonPRMXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjL4Qf/Q2IxUA0+x1Uu1OUl/RIiLq6f
-6egVQzUXqIARNCRr+2OXSTjqfxXEOtj59KCs+EgXZG4m5AzKu9/MaUWeiUmZHLFj
-kMIRwewLcf3Oifr5a3k8ddSqoPF3hQtLwz/EXCMK84KXJUjRNZOJ1GqA/bn/acSX
-oiaz1Ly5hGSLkGl1AELbeKCJweqNWAGj2SKE4wIXqb/TtS5b5lwa6pL8IL45HRfs
-7NblIMzBlMC3vHkVTmfafeVdITbAfhqACU9F9I+4b7Y4VvHeJ/voBvWJPiPpRI9Z
-8bmcvEwPLgjaBIeuUXNLYuDH4nWSoq1jKkiN4TVIAxWy0gffegqfhKAg38yRkg==
-=Tnvm
------END PGP SIGNATURE-----
-
---3QXWSLrtuAM3MlJN39Nu05Mj4eOwhllFa--

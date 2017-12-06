@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:56903 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:46400 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753363AbdLFAmO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:14 -0500
+        with ESMTP id S1753340AbdLFAmN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:13 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 50/73] shmem: Comment fixups
-Date: Tue,  5 Dec 2017 16:41:36 -0800
-Message-Id: <20171206004159.3755-51-willy@infradead.org>
+Subject: [PATCH v4 37/73] mm: Convert huge_memory to XArray
+Date: Tue,  5 Dec 2017 16:41:23 -0800
+Message-Id: <20171206004159.3755-38-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,75 +22,73 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Remove the last mentions of radix tree from various comments.
+Quite a straightforward conversion.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ mm/huge_memory.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 01102e2e0ef3..090937922c1d 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -743,7 +743,7 @@ void shmem_unlock_mapping(struct address_space *mapping)
- }
- 
- /*
-- * Remove range of pages and swap entries from radix tree, and free them.
-+ * Remove range of pages and swap entries from page cache, and free them.
-  * If !unfalloc, truncate or punch hole; if unfalloc, undo failed fallocate.
-  */
- static void shmem_undo_range(struct inode *inode, loff_t lstart, loff_t lend,
-@@ -1118,10 +1118,10 @@ static int shmem_unuse_inode(struct shmem_inode_info *info,
- 		 * We needed to drop mutex to make that restrictive page
- 		 * allocation, but the inode might have been freed while we
- 		 * dropped it: although a racing shmem_evict_inode() cannot
--		 * complete without emptying the radix_tree, our page lock
-+		 * complete without emptying the page cache, our page lock
- 		 * on this swapcache page is not enough to prevent that -
- 		 * free_swap_and_cache() of our swap entry will only
--		 * trylock_page(), removing swap from radix_tree whatever.
-+		 * trylock_page(), removing swap from page cache whatever.
- 		 *
- 		 * We must not proceed to shmem_add_to_page_cache() if the
- 		 * inode has been freed, but of course we cannot rely on
-@@ -1187,7 +1187,7 @@ int shmem_unuse(swp_entry_t swap, struct page *page)
- 			false);
- 	if (error)
- 		goto out;
--	/* No radix_tree_preload: swap entry keeps a place for page in tree */
-+	/* No memory allocation: swap entry occupies the slot for the page */
- 	error = -EAGAIN;
- 
- 	mutex_lock(&shmem_swaplist_mutex);
-@@ -1862,7 +1862,7 @@ alloc_nohuge:		page = shmem_alloc_and_acct_page(gfp, inode,
- 		spin_unlock_irq(&info->lock);
- 		goto repeat;
+diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+index 28909c475ee5..5a41b00d86bd 100644
+--- a/mm/huge_memory.c
++++ b/mm/huge_memory.c
+@@ -2379,7 +2379,7 @@ static void __split_huge_page_tail(struct page *head, int tail,
+ 	if (PageAnon(head) && !PageSwapCache(head)) {
+ 		page_ref_inc(page_tail);
+ 	} else {
+-		/* Additional pin to radix tree */
++		/* Additional pin to page cache */
+ 		page_ref_add(page_tail, 2);
  	}
--	if (error == -EEXIST)	/* from above or from radix_tree_insert */
-+	if (error == -EEXIST)
- 		goto repeat;
- 	return error;
- }
-@@ -2474,7 +2474,7 @@ static ssize_t shmem_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
- }
  
- /*
-- * llseek SEEK_DATA or SEEK_HOLE through the radix_tree.
-+ * llseek SEEK_DATA or SEEK_HOLE through the page cache.
-  */
- static pgoff_t shmem_seek_hole_data(struct address_space *mapping,
- 				    pgoff_t index, pgoff_t end, int whence)
-@@ -2562,7 +2562,7 @@ static loff_t shmem_file_llseek(struct file *file, loff_t offset, int whence)
- }
+@@ -2450,13 +2450,13 @@ static void __split_huge_page(struct page *page, struct list_head *list,
+ 	ClearPageCompound(head);
+ 	/* See comment in __split_huge_page_tail() */
+ 	if (PageAnon(head)) {
+-		/* Additional pin to radix tree of swap cache */
++		/* Additional pin to swap cache */
+ 		if (PageSwapCache(head))
+ 			page_ref_add(head, 2);
+ 		else
+ 			page_ref_inc(head);
+ 	} else {
+-		/* Additional pin to radix tree */
++		/* Additional pin to page cache */
+ 		page_ref_add(head, 2);
+ 		xa_unlock(&head->mapping->pages);
+ 	}
+@@ -2568,7 +2568,7 @@ bool can_split_huge_page(struct page *page, int *pextra_pins)
+ {
+ 	int extra_pins;
  
- /*
-- * We need a tag: a new tag would expand every radix_tree_node by 8 bytes,
-+ * We need a tag: a new tag would expand every xa_node by 8 bytes,
-  * so reuse a tag which we firmly believe is never set or cleared on shmem.
-  */
- #define SHMEM_TAG_PINNED        PAGECACHE_TAG_TOWRITE
+-	/* Additional pins from radix tree */
++	/* Additional pins from page cache */
+ 	if (PageAnon(page))
+ 		extra_pins = PageSwapCache(page) ? HPAGE_PMD_NR : 0;
+ 	else
+@@ -2664,17 +2664,14 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
+ 	spin_lock_irqsave(zone_lru_lock(page_zone(head)), flags);
+ 
+ 	if (mapping) {
+-		void **pslot;
++		XA_STATE(xas, &mapping->pages, page_index(head));
+ 
+-		xa_lock(&mapping->pages);
+-		pslot = radix_tree_lookup_slot(&mapping->pages,
+-				page_index(head));
+ 		/*
+-		 * Check if the head page is present in radix tree.
++		 * Check if the head page is present in page cache.
+ 		 * We assume all tail are present too, if head is there.
+ 		 */
+-		if (radix_tree_deref_slot_protected(pslot,
+-					&mapping->pages.xa_lock) != head)
++		xa_lock(&mapping->pages);
++		if (xas_load(&xas) != head)
+ 			goto fail;
+ 	}
+ 
 -- 
 2.15.0
 

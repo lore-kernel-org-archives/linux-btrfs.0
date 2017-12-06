@@ -1,7 +1,7 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:39018 "EHLO
+Received: from bombadil.infradead.org ([65.50.211.133]:37062 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753397AbdLFAmR (ORCPT
+        with ESMTP id S1753409AbdLFAmR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 19:42:17 -0500
 From: Matthew Wilcox <willy@infradead.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>,
@@ -11,9 +11,9 @@ Cc: Matthew Wilcox <mawilcox@microsoft.com>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH v4 54/73] nilfs2: Convert to XArray
-Date: Tue,  5 Dec 2017 16:41:40 -0800
-Message-Id: <20171206004159.3755-55-willy@infradead.org>
+Subject: [PATCH v4 67/73] vmalloc: Convert to XArray
+Date: Tue,  5 Dec 2017 16:41:53 -0800
+Message-Id: <20171206004159.3755-68-willy@infradead.org>
 In-Reply-To: <20171206004159.3755-1-willy@infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
 To: unlisted-recipients:; (no To-header on input)
@@ -22,207 +22,117 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-I'm not 100% convinced that the rewrite of nilfs_copy_back_pages is
-correct, but it will at least have different bugs from the current
-version.
+The radix tree of vmap blocks is simpler to express as an XArray.
+Saves a couple of hundred bytes of text and eliminates a user of the
+radix tree preload API.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/nilfs2/btnode.c | 37 +++++++++++-----------------
- fs/nilfs2/page.c   | 72 +++++++++++++++++++++++++++++++-----------------------
- 2 files changed, 56 insertions(+), 53 deletions(-)
+ mm/vmalloc.c | 39 +++++++++++++--------------------------
+ 1 file changed, 13 insertions(+), 26 deletions(-)
 
-diff --git a/fs/nilfs2/btnode.c b/fs/nilfs2/btnode.c
-index 9e2a00207436..92cf58e244f9 100644
---- a/fs/nilfs2/btnode.c
-+++ b/fs/nilfs2/btnode.c
-@@ -177,42 +177,36 @@ int nilfs_btnode_prepare_change_key(struct address_space *btnc,
- 	ctxt->newbh = NULL;
+diff --git a/mm/vmalloc.c b/mm/vmalloc.c
+index 673942094328..3a46efc27525 100644
+--- a/mm/vmalloc.c
++++ b/mm/vmalloc.c
+@@ -23,7 +23,7 @@
+ #include <linux/list.h>
+ #include <linux/notifier.h>
+ #include <linux/rbtree.h>
+-#include <linux/radix-tree.h>
++#include <linux/xarray.h>
+ #include <linux/rcupdate.h>
+ #include <linux/pfn.h>
+ #include <linux/kmemleak.h>
+@@ -821,12 +821,11 @@ struct vmap_block {
+ static DEFINE_PER_CPU(struct vmap_block_queue, vmap_block_queue);
  
- 	if (inode->i_blkbits == PAGE_SHIFT) {
--		lock_page(obh->b_page);
--		/*
--		 * We cannot call radix_tree_preload for the kernels older
--		 * than 2.6.23, because it is not exported for modules.
--		 */
-+		void *entry;
-+		struct page *opage = obh->b_page;
-+		lock_page(opage);
- retry:
--		err = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
--		if (err)
--			goto failed_unlock;
- 		/* BUG_ON(oldkey != obh->b_page->index); */
--		if (unlikely(oldkey != obh->b_page->index))
--			NILFS_PAGE_BUG(obh->b_page,
-+		if (unlikely(oldkey != opage->index))
-+			NILFS_PAGE_BUG(opage,
- 				       "invalid oldkey %lld (newkey=%lld)",
- 				       (unsigned long long)oldkey,
- 				       (unsigned long long)newkey);
+ /*
+- * Radix tree of vmap blocks, indexed by address, to quickly find a vmap block
++ * XArray of vmap blocks, indexed by address, to quickly find a vmap block
+  * in the free path. Could get rid of this if we change the API to return a
+  * "cookie" from alloc, to be passed to free. But no big deal yet.
+  */
+-static DEFINE_SPINLOCK(vmap_block_tree_lock);
+-static RADIX_TREE(vmap_block_tree, GFP_ATOMIC);
++static DEFINE_XARRAY(vmap_block_tree);
  
--		xa_lock_irq(&btnc->pages);
--		err = radix_tree_insert(&btnc->pages, newkey, obh->b_page);
--		xa_unlock_irq(&btnc->pages);
-+		entry = xa_cmpxchg(&btnc->pages, newkey, NULL, opage, GFP_NOFS);
- 		/*
- 		 * Note: page->index will not change to newkey until
- 		 * nilfs_btnode_commit_change_key() will be called.
- 		 * To protect the page in intermediate state, the page lock
- 		 * is held.
- 		 */
--		radix_tree_preload_end();
--		if (!err)
-+		if (!entry)
- 			return 0;
--		else if (err != -EEXIST)
-+		if (IS_ERR(entry)) {
-+			err = PTR_ERR(entry);
- 			goto failed_unlock;
-+		}
+ /*
+  * We should probably have a fallback mechanism to allocate virtual memory
+@@ -865,8 +864,8 @@ static void *new_vmap_block(unsigned int order, gfp_t gfp_mask)
+ 	struct vmap_block *vb;
+ 	struct vmap_area *va;
+ 	unsigned long vb_idx;
+-	int node, err;
+-	void *vaddr;
++	int node;
++	void *ret, *vaddr;
  
- 		err = invalidate_inode_pages2_range(btnc, newkey, newkey);
- 		if (!err)
- 			goto retry;
- 		/* fallback to copy mode */
--		unlock_page(obh->b_page);
-+		unlock_page(opage);
+ 	node = numa_node_id();
+ 
+@@ -883,13 +882,6 @@ static void *new_vmap_block(unsigned int order, gfp_t gfp_mask)
+ 		return ERR_CAST(va);
  	}
  
- 	nbh = nilfs_btnode_create_block(btnc, newkey);
-@@ -252,9 +246,8 @@ void nilfs_btnode_commit_change_key(struct address_space *btnc,
- 		mark_buffer_dirty(obh);
+-	err = radix_tree_preload(gfp_mask);
+-	if (unlikely(err)) {
+-		kfree(vb);
+-		free_vmap_area(va);
+-		return ERR_PTR(err);
+-	}
+-
+ 	vaddr = vmap_block_vaddr(va->va_start, 0);
+ 	spin_lock_init(&vb->lock);
+ 	vb->va = va;
+@@ -902,11 +894,12 @@ static void *new_vmap_block(unsigned int order, gfp_t gfp_mask)
+ 	INIT_LIST_HEAD(&vb->free_list);
  
- 		xa_lock_irq(&btnc->pages);
--		radix_tree_delete(&btnc->pages, oldkey);
--		radix_tree_tag_set(&btnc->pages, newkey,
--				   PAGECACHE_TAG_DIRTY);
-+		__xa_erase(&btnc->pages, oldkey);
-+		__xa_set_tag(&btnc->pages, newkey, PAGECACHE_TAG_DIRTY);
- 		xa_unlock_irq(&btnc->pages);
+ 	vb_idx = addr_to_vb_idx(va->va_start);
+-	spin_lock(&vmap_block_tree_lock);
+-	err = radix_tree_insert(&vmap_block_tree, vb_idx, vb);
+-	spin_unlock(&vmap_block_tree_lock);
+-	BUG_ON(err);
+-	radix_tree_preload_end();
++	ret = xa_store(&vmap_block_tree, vb_idx, vb, gfp_mask);
++	if (IS_ERR(ret)) {
++		kfree(vb);
++		free_vmap_area(va);
++		return ret;
++	}
  
- 		opage->index = obh->b_blocknr = newkey;
-@@ -283,9 +276,7 @@ void nilfs_btnode_abort_change_key(struct address_space *btnc,
- 		return;
+ 	vbq = &get_cpu_var(vmap_block_queue);
+ 	spin_lock(&vbq->lock);
+@@ -923,9 +916,7 @@ static void free_vmap_block(struct vmap_block *vb)
+ 	unsigned long vb_idx;
  
- 	if (nbh == NULL) {	/* blocksize == pagesize */
--		xa_lock_irq(&btnc->pages);
--		radix_tree_delete(&btnc->pages, newkey);
--		xa_unlock_irq(&btnc->pages);
-+		xa_erase(&btnc->pages, newkey);
- 		unlock_page(ctxt->bh->b_page);
- 	} else
- 		brelse(nbh);
-diff --git a/fs/nilfs2/page.c b/fs/nilfs2/page.c
-index 1c6703efde9e..31d20f624971 100644
---- a/fs/nilfs2/page.c
-+++ b/fs/nilfs2/page.c
-@@ -304,10 +304,10 @@ int nilfs_copy_dirty_pages(struct address_space *dmap,
- void nilfs_copy_back_pages(struct address_space *dmap,
- 			   struct address_space *smap)
+ 	vb_idx = addr_to_vb_idx(vb->va->va_start);
+-	spin_lock(&vmap_block_tree_lock);
+-	tmp = radix_tree_delete(&vmap_block_tree, vb_idx);
+-	spin_unlock(&vmap_block_tree_lock);
++	tmp = xa_erase(&vmap_block_tree, vb_idx);
+ 	BUG_ON(tmp != vb);
+ 
+ 	free_vmap_area_noflush(vb->va);
+@@ -1031,7 +1022,6 @@ static void *vb_alloc(unsigned long size, gfp_t gfp_mask)
+ static void vb_free(const void *addr, unsigned long size)
  {
-+	XA_STATE(xas, &dmap->pages, 0);
- 	struct pagevec pvec;
- 	unsigned int i, n;
- 	pgoff_t index = 0;
--	int err;
+ 	unsigned long offset;
+-	unsigned long vb_idx;
+ 	unsigned int order;
+ 	struct vmap_block *vb;
  
- 	pagevec_init(&pvec);
- repeat:
-@@ -317,43 +317,56 @@ void nilfs_copy_back_pages(struct address_space *dmap,
+@@ -1045,10 +1035,7 @@ static void vb_free(const void *addr, unsigned long size)
+ 	offset = (unsigned long)addr & (VMAP_BLOCK_SIZE - 1);
+ 	offset >>= PAGE_SHIFT;
  
- 	for (i = 0; i < pagevec_count(&pvec); i++) {
- 		struct page *page = pvec.pages[i], *dpage;
--		pgoff_t offset = page->index;
-+		xas_set(&xas, page->index);
+-	vb_idx = addr_to_vb_idx((unsigned long)addr);
+-	rcu_read_lock();
+-	vb = radix_tree_lookup(&vmap_block_tree, vb_idx);
+-	rcu_read_unlock();
++	vb = xa_load(&vmap_block_tree, addr_to_vb_idx((unsigned long)addr));
+ 	BUG_ON(!vb);
  
- 		lock_page(page);
--		dpage = find_lock_page(dmap, offset);
-+		do {
-+			xas_lock_irq(&xas);
-+			dpage = xas_create(&xas);
-+			if (!xas_error(&xas))
-+				break;
-+			xas_unlock_irq(&xas);
-+			if (!xas_nomem(&xas, GFP_NOFS)) {
-+				unlock_page(page);
-+				/*
-+				 * Callers have a touching faith that this
-+				 * function cannot fail.  Just leak the page.
-+				 * Other pages may be salvagable if the
-+				 * xarray doesn't need to allocate memory
-+				 * to store them.
-+				 */
-+				WARN_ON(1);
-+				page->mapping = NULL;
-+				put_page(page);
-+				goto shadow_remove;
-+			}
-+		} while (1);
-+
- 		if (dpage) {
--			/* override existing page on the destination cache */
-+			get_page(dpage);
-+			xas_unlock_irq(&xas);
-+			lock_page(dpage);
-+			/* override existing page in the destination cache */
- 			WARN_ON(PageDirty(dpage));
- 			nilfs_copy_page(dpage, page, 0);
- 			unlock_page(dpage);
- 			put_page(dpage);
- 		} else {
--			struct page *page2;
--
--			/* move the page to the destination cache */
--			xa_lock_irq(&smap->pages);
--			page2 = radix_tree_delete(&smap->pages, offset);
--			WARN_ON(page2 != page);
--
--			smap->nrpages--;
--			xa_unlock_irq(&smap->pages);
--
--			xa_lock_irq(&dmap->pages);
--			err = radix_tree_insert(&dmap->pages, offset, page);
--			if (unlikely(err < 0)) {
--				WARN_ON(err == -EEXIST);
--				page->mapping = NULL;
--				put_page(page); /* for cache */
--			} else {
--				page->mapping = dmap;
--				dmap->nrpages++;
--				if (PageDirty(page))
--					radix_tree_tag_set(&dmap->pages,
--							   offset,
--							   PAGECACHE_TAG_DIRTY);
--			}
-+			xas_store(&xas, page);
-+			page->mapping = dmap;
-+			dmap->nrpages++;
-+			if (PageDirty(page))
-+				xas_set_tag(&xas, PAGECACHE_TAG_DIRTY);
- 			xa_unlock_irq(&dmap->pages);
- 		}
-+
-+shadow_remove:
-+		/* remove the page from the shadow cache */
-+		xa_lock_irq(&smap->pages);
-+		WARN_ON(__xa_erase(&smap->pages, xas.xa_index) != page);
-+		smap->nrpages--;
-+		xa_unlock_irq(&smap->pages);
-+
- 		unlock_page(page);
- 	}
- 	pagevec_release(&pvec);
-@@ -476,8 +489,7 @@ int __nilfs_clear_page_dirty(struct page *page)
- 	if (mapping) {
- 		xa_lock_irq(&mapping->pages);
- 		if (test_bit(PG_dirty, &page->flags)) {
--			radix_tree_tag_clear(&mapping->pages,
--					     page_index(page),
-+			__xa_clear_tag(&mapping->pages, page_index(page),
- 					     PAGECACHE_TAG_DIRTY);
- 			xa_unlock_irq(&mapping->pages);
- 			return clear_page_dirty_for_io(page);
+ 	vunmap_page_range((unsigned long)addr, (unsigned long)addr + size);
 -- 
 2.15.0
 

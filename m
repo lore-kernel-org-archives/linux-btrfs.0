@@ -1,471 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f196.google.com ([209.85.216.196]:45265 "EHLO
-        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752638AbdLFQM0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 11:12:26 -0500
-Received: by mail-qt0-f196.google.com with SMTP id g10so10062247qtj.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Dec 2017 08:12:26 -0800 (PST)
+Received: from mail-qt0-f170.google.com ([209.85.216.170]:37167 "EHLO
+        mail-qt0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752079AbdLFQMV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Dec 2017 11:12:21 -0500
+Received: by mail-qt0-f170.google.com with SMTP id f2so10121836qtj.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Dec 2017 08:12:20 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
         netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
         kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org
-Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v8 3/5] bpf: add a bpf_override_function helper
-Date: Wed,  6 Dec 2017 11:12:15 -0500
-Message-Id: <1512576737-9417-4-git-send-email-josef@toxicpanda.com>
-In-Reply-To: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
-References: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH v8 0/5] Add the ability to do BPF directed error injection
+Date: Wed,  6 Dec 2017 11:12:12 -0500
+Message-Id: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+Jon noticed that I had a typo in my _ASM_KPROBE_ERROR_INJECT macro.  I went to
+figure out why the compiler didn't catch it and it's because it was not used
+anywhere.  I had copied it from the trace blacklist code without understanding
+where it was used as cscope didn't find the original macro I was looking for, so
+I assumed it was some voodoo and left it in place.  Turns out cscope failed me
+and I didn't need the macro at all, the trace blacklist thing I was looking at
+was for marking assembly functions as blacklisted and I have no intention of
+marking assembly functions as error injectable at the moment.
 
-Error injection is sloppy and very ad-hoc.  BPF could fill this niche
-perfectly with it's kprobe functionality.  We could make sure errors are
-only triggered in specific call chains that we care about with very
-specific situations.  Accomplish this with the bpf_override_funciton
-helper.  This will modify the probe'd callers return value to the
-specified value and set the PC to an override function that simply
-returns, bypassing the originally probed function.  This gives us a nice
-clean way to implement systematic error injection for all of our code
-paths.
+v7->v8:
+- removed the _ASM_KPROBE_ERROR_INJECT since it was not needed.
 
-Acked-by: Alexei Starovoitov <ast@kernel.org>
-Acked-by: Ingo Molnar <mingo@kernel.org>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
- arch/Kconfig                     |  3 +++
- arch/x86/Kconfig                 |  1 +
- arch/x86/include/asm/kprobes.h   |  4 +++
- arch/x86/include/asm/ptrace.h    |  5 ++++
- arch/x86/kernel/kprobes/ftrace.c | 14 ++++++++++
- include/linux/filter.h           |  3 ++-
- include/linux/trace_events.h     |  1 +
- include/uapi/linux/bpf.h         |  7 ++++-
- kernel/bpf/core.c                |  3 +++
- kernel/bpf/verifier.c            |  2 ++
- kernel/events/core.c             |  7 +++++
- kernel/trace/Kconfig             | 11 ++++++++
- kernel/trace/bpf_trace.c         | 38 +++++++++++++++++++++++++++
- kernel/trace/trace_kprobe.c      | 55 +++++++++++++++++++++++++++++++++++-----
- kernel/trace/trace_probe.h       | 12 +++++++++
- 15 files changed, 157 insertions(+), 9 deletions(-)
+v6->v7:
+- moved the opt-in macro to bpf.h out of kprobes.h.
 
-diff --git a/arch/Kconfig b/arch/Kconfig
-index d789a89cb32c..4fb618082259 100644
---- a/arch/Kconfig
-+++ b/arch/Kconfig
-@@ -195,6 +195,9 @@ config HAVE_OPTPROBES
- config HAVE_KPROBES_ON_FTRACE
- 	bool
- 
-+config HAVE_KPROBE_OVERRIDE
-+	bool
-+
- config HAVE_NMI
- 	bool
- 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 971feac13506..5126d2750dd0 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -152,6 +152,7 @@ config X86
- 	select HAVE_KERNEL_XZ
- 	select HAVE_KPROBES
- 	select HAVE_KPROBES_ON_FTRACE
-+	select HAVE_KPROBE_OVERRIDE
- 	select HAVE_KRETPROBES
- 	select HAVE_KVM
- 	select HAVE_LIVEPATCH			if X86_64
-diff --git a/arch/x86/include/asm/kprobes.h b/arch/x86/include/asm/kprobes.h
-index 6cf65437b5e5..c6c3b1f4306a 100644
---- a/arch/x86/include/asm/kprobes.h
-+++ b/arch/x86/include/asm/kprobes.h
-@@ -67,6 +67,10 @@ extern const int kretprobe_blacklist_size;
- void arch_remove_kprobe(struct kprobe *p);
- asmlinkage void kretprobe_trampoline(void);
- 
-+#ifdef CONFIG_KPROBES_ON_FTRACE
-+extern void arch_ftrace_kprobe_override_function(struct pt_regs *regs);
-+#endif
-+
- /* Architecture specific copy of original instruction*/
- struct arch_specific_insn {
- 	/* copy of the original instruction */
-diff --git a/arch/x86/include/asm/ptrace.h b/arch/x86/include/asm/ptrace.h
-index 91c04c8e67fa..f04e71800c2f 100644
---- a/arch/x86/include/asm/ptrace.h
-+++ b/arch/x86/include/asm/ptrace.h
-@@ -108,6 +108,11 @@ static inline unsigned long regs_return_value(struct pt_regs *regs)
- 	return regs->ax;
- }
- 
-+static inline void regs_set_return_value(struct pt_regs *regs, unsigned long rc)
-+{
-+	regs->ax = rc;
-+}
-+
- /*
-  * user_mode(regs) determines whether a register set came from user
-  * mode.  On x86_32, this is true if V8086 mode was enabled OR if the
-diff --git a/arch/x86/kernel/kprobes/ftrace.c b/arch/x86/kernel/kprobes/ftrace.c
-index 041f7b6dfa0f..3c455bf490cb 100644
---- a/arch/x86/kernel/kprobes/ftrace.c
-+++ b/arch/x86/kernel/kprobes/ftrace.c
-@@ -97,3 +97,17 @@ int arch_prepare_kprobe_ftrace(struct kprobe *p)
- 	p->ainsn.boostable = false;
- 	return 0;
- }
-+
-+asmlinkage void override_func(void);
-+asm(
-+	".type override_func, @function\n"
-+	"override_func:\n"
-+	"	ret\n"
-+	".size override_func, .-override_func\n"
-+);
-+
-+void arch_ftrace_kprobe_override_function(struct pt_regs *regs)
-+{
-+	regs->ip = (unsigned long)&override_func;
-+}
-+NOKPROBE_SYMBOL(arch_ftrace_kprobe_override_function);
-diff --git a/include/linux/filter.h b/include/linux/filter.h
-index cdd78a7beaae..dfa44fd74bae 100644
---- a/include/linux/filter.h
-+++ b/include/linux/filter.h
-@@ -458,7 +458,8 @@ struct bpf_prog {
- 				locked:1,	/* Program image locked? */
- 				gpl_compatible:1, /* Is filter GPL compatible? */
- 				cb_access:1,	/* Is control block accessed? */
--				dst_needed:1;	/* Do we need dst entry? */
-+				dst_needed:1,	/* Do we need dst entry? */
-+				kprobe_override:1; /* Do we override a kprobe? */
- 	kmemcheck_bitfield_end(meta);
- 	enum bpf_prog_type	type;		/* Type of BPF program */
- 	u32			len;		/* Number of filter blocks */
-diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index fc6aeca945db..be8bd5a8efaa 100644
---- a/include/linux/trace_events.h
-+++ b/include/linux/trace_events.h
-@@ -522,6 +522,7 @@ do {									\
- struct perf_event;
- 
- DECLARE_PER_CPU(struct pt_regs, perf_trace_regs);
-+DECLARE_PER_CPU(int, bpf_kprobe_override);
- 
- extern int  perf_trace_init(struct perf_event *event);
- extern void perf_trace_destroy(struct perf_event *event);
-diff --git a/include/uapi/linux/bpf.h b/include/uapi/linux/bpf.h
-index 0b7b54d898bd..1ad5b87a42f6 100644
---- a/include/uapi/linux/bpf.h
-+++ b/include/uapi/linux/bpf.h
-@@ -673,6 +673,10 @@ union bpf_attr {
-  *     @buf: buf to fill
-  *     @buf_size: size of the buf
-  *     Return : 0 on success or negative error code
-+ *
-+ * int bpf_override_return(pt_regs, rc)
-+ *	@pt_regs: pointer to struct pt_regs
-+ *	@rc: the return value to set
-  */
- #define __BPF_FUNC_MAPPER(FN)		\
- 	FN(unspec),			\
-@@ -732,7 +736,8 @@ union bpf_attr {
- 	FN(xdp_adjust_meta),		\
- 	FN(perf_event_read_value),	\
- 	FN(perf_prog_read_value),	\
--	FN(getsockopt),
-+	FN(getsockopt),			\
-+	FN(override_return),
- 
- /* integer value in 'imm' field of BPF_CALL instruction selects which helper
-  * function eBPF program intends to call
-diff --git a/kernel/bpf/core.c b/kernel/bpf/core.c
-index 7fe448799d76..ee3888ed5e85 100644
---- a/kernel/bpf/core.c
-+++ b/kernel/bpf/core.c
-@@ -1326,6 +1326,9 @@ EVAL4(PROG_NAME_LIST, 416, 448, 480, 512)
- bool bpf_prog_array_compatible(struct bpf_array *array,
- 			       const struct bpf_prog *fp)
- {
-+	if (fp->kprobe_override)
-+		return false;
-+
- 	if (!array->owner_prog_type) {
- 		/* There's no owner yet where we could check for
- 		 * compatibility.
-diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
-index d906775e12c1..f8f7927a9152 100644
---- a/kernel/bpf/verifier.c
-+++ b/kernel/bpf/verifier.c
-@@ -4189,6 +4189,8 @@ static int fixup_bpf_calls(struct bpf_verifier_env *env)
- 			prog->dst_needed = 1;
- 		if (insn->imm == BPF_FUNC_get_prandom_u32)
- 			bpf_user_rnd_init_once();
-+		if (insn->imm == BPF_FUNC_override_return)
-+			prog->kprobe_override = 1;
- 		if (insn->imm == BPF_FUNC_tail_call) {
- 			/* If we tail call into other programs, we
- 			 * cannot make any assumptions since they can
-diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 9660ee65fbef..0d7fce52391d 100644
---- a/kernel/events/core.c
-+++ b/kernel/events/core.c
-@@ -8169,6 +8169,13 @@ static int perf_event_set_bpf_prog(struct perf_event *event, u32 prog_fd)
- 		return -EINVAL;
- 	}
- 
-+	/* Kprobe override only works for kprobes, not uprobes. */
-+	if (prog->kprobe_override &&
-+	    !(event->tp_event->flags & TRACE_EVENT_FL_KPROBE)) {
-+		bpf_prog_put(prog);
-+		return -EINVAL;
-+	}
-+
- 	if (is_tracepoint || is_syscall_tp) {
- 		int off = trace_event_get_offsets(event->tp_event);
- 
-diff --git a/kernel/trace/Kconfig b/kernel/trace/Kconfig
-index 434c840e2d82..9dc0deeaad2b 100644
---- a/kernel/trace/Kconfig
-+++ b/kernel/trace/Kconfig
-@@ -518,6 +518,17 @@ config FUNCTION_PROFILER
- 
- 	  If in doubt, say N.
- 
-+config BPF_KPROBE_OVERRIDE
-+	bool "Enable BPF programs to override a kprobed function"
-+	depends on BPF_EVENTS
-+	depends on KPROBES_ON_FTRACE
-+	depends on HAVE_KPROBE_OVERRIDE
-+	depends on DYNAMIC_FTRACE_WITH_REGS
-+	default n
-+	help
-+	 Allows BPF to override the execution of a probed function and
-+	 set a different return value.  This is used for error injection.
-+
- config FTRACE_MCOUNT_RECORD
- 	def_bool y
- 	depends on DYNAMIC_FTRACE
-diff --git a/kernel/trace/bpf_trace.c b/kernel/trace/bpf_trace.c
-index 136aa6bb0422..c6c1b3f9afd2 100644
---- a/kernel/trace/bpf_trace.c
-+++ b/kernel/trace/bpf_trace.c
-@@ -13,6 +13,10 @@
- #include <linux/filter.h>
- #include <linux/uaccess.h>
- #include <linux/ctype.h>
-+#include <linux/kprobes.h>
-+#include <asm/kprobes.h>
-+
-+#include "trace_probe.h"
- #include "trace.h"
- 
- u64 bpf_get_stackid(u64 r1, u64 r2, u64 r3, u64 r4, u64 r5);
-@@ -76,6 +80,29 @@ unsigned int trace_call_bpf(struct trace_event_call *call, void *ctx)
- }
- EXPORT_SYMBOL_GPL(trace_call_bpf);
- 
-+#ifdef CONFIG_BPF_KPROBE_OVERRIDE
-+BPF_CALL_2(bpf_override_return, struct pt_regs *, regs, unsigned long, rc)
-+{
-+	__this_cpu_write(bpf_kprobe_override, 1);
-+	regs_set_return_value(regs, rc);
-+	arch_ftrace_kprobe_override_function(regs);
-+	return 0;
-+}
-+#else
-+BPF_CALL_2(bpf_override_return, struct pt_regs *, regs, unsigned long, rc)
-+{
-+	return -EINVAL;
-+}
-+#endif
-+
-+static const struct bpf_func_proto bpf_override_return_proto = {
-+	.func		= bpf_override_return,
-+	.gpl_only	= true,
-+	.ret_type	= RET_INTEGER,
-+	.arg1_type	= ARG_PTR_TO_CTX,
-+	.arg2_type	= ARG_ANYTHING,
-+};
-+
- BPF_CALL_3(bpf_probe_read, void *, dst, u32, size, const void *, unsafe_ptr)
- {
- 	int ret;
-@@ -551,6 +578,8 @@ static const struct bpf_func_proto *kprobe_prog_func_proto(enum bpf_func_id func
- 		return &bpf_get_stackid_proto;
- 	case BPF_FUNC_perf_event_read_value:
- 		return &bpf_perf_event_read_value_proto;
-+	case BPF_FUNC_override_return:
-+		return &bpf_override_return_proto;
- 	default:
- 		return tracing_func_proto(func_id);
- 	}
-@@ -766,6 +795,15 @@ int perf_event_attach_bpf_prog(struct perf_event *event,
- 	struct bpf_prog_array *new_array;
- 	int ret = -EEXIST;
- 
-+	/*
-+	 * Kprobe override only works for ftrace based kprobes, and only if they
-+	 * are on the opt-in list.
-+	 */
-+	if (prog->kprobe_override &&
-+	    (!trace_kprobe_ftrace(event->tp_event) ||
-+	     !trace_kprobe_error_injectable(event->tp_event)))
-+		return -EINVAL;
-+
- 	mutex_lock(&bpf_event_mutex);
- 
- 	if (event->prog)
-diff --git a/kernel/trace/trace_kprobe.c b/kernel/trace/trace_kprobe.c
-index abf92e478cfb..ad3361790392 100644
---- a/kernel/trace/trace_kprobe.c
-+++ b/kernel/trace/trace_kprobe.c
-@@ -42,6 +42,7 @@ struct trace_kprobe {
- 	(offsetof(struct trace_kprobe, tp.args) +	\
- 	(sizeof(struct probe_arg) * (n)))
- 
-+DEFINE_PER_CPU(int, bpf_kprobe_override);
- 
- static nokprobe_inline bool trace_kprobe_is_return(struct trace_kprobe *tk)
- {
-@@ -87,6 +88,27 @@ static nokprobe_inline unsigned long trace_kprobe_nhit(struct trace_kprobe *tk)
- 	return nhit;
- }
- 
-+int trace_kprobe_ftrace(struct trace_event_call *call)
-+{
-+	struct trace_kprobe *tk = (struct trace_kprobe *)call->data;
-+	return kprobe_ftrace(&tk->rp.kp);
-+}
-+
-+int trace_kprobe_error_injectable(struct trace_event_call *call)
-+{
-+	struct trace_kprobe *tk = (struct trace_kprobe *)call->data;
-+	unsigned long addr;
-+
-+	if (tk->symbol) {
-+		addr = (unsigned long)
-+			kallsyms_lookup_name(trace_kprobe_symbol(tk));
-+		addr += tk->rp.kp.offset;
-+	} else {
-+		addr = (unsigned long)tk->rp.kp.addr;
-+	}
-+	return within_kprobe_error_injection_list(addr);
-+}
-+
- static int register_kprobe_event(struct trace_kprobe *tk);
- static int unregister_kprobe_event(struct trace_kprobe *tk);
- 
-@@ -1170,7 +1192,7 @@ static int kretprobe_event_define_fields(struct trace_event_call *event_call)
- #ifdef CONFIG_PERF_EVENTS
- 
- /* Kprobe profile handler */
--static void
-+static int
- kprobe_perf_func(struct trace_kprobe *tk, struct pt_regs *regs)
- {
- 	struct trace_event_call *call = &tk->tp.call;
-@@ -1179,12 +1201,29 @@ kprobe_perf_func(struct trace_kprobe *tk, struct pt_regs *regs)
- 	int size, __size, dsize;
- 	int rctx;
- 
--	if (bpf_prog_array_valid(call) && !trace_call_bpf(call, regs))
--		return;
-+	if (bpf_prog_array_valid(call)) {
-+		int ret;
-+
-+		ret = trace_call_bpf(call, regs);
-+
-+		/*
-+		 * We need to check and see if we modified the pc of the
-+		 * pt_regs, and if so clear the kprobe and return 1 so that we
-+		 * don't do the instruction skipping.  Also reset our state so
-+		 * we are clean the next pass through.
-+		 */
-+		if (__this_cpu_read(bpf_kprobe_override)) {
-+			__this_cpu_write(bpf_kprobe_override, 0);
-+			reset_current_kprobe();
-+			return 1;
-+		}
-+		if (!ret)
-+			return 0;
-+	}
- 
- 	head = this_cpu_ptr(call->perf_events);
- 	if (hlist_empty(head))
--		return;
-+		return 0;
- 
- 	dsize = __get_data_size(&tk->tp, regs);
- 	__size = sizeof(*entry) + tk->tp.size + dsize;
-@@ -1193,13 +1232,14 @@ kprobe_perf_func(struct trace_kprobe *tk, struct pt_regs *regs)
- 
- 	entry = perf_trace_buf_alloc(size, NULL, &rctx);
- 	if (!entry)
--		return;
-+		return 0;
- 
- 	entry->ip = (unsigned long)tk->rp.kp.addr;
- 	memset(&entry[1], 0, dsize);
- 	store_trace_args(sizeof(*entry), &tk->tp, regs, (u8 *)&entry[1], dsize);
- 	perf_trace_buf_submit(entry, size, rctx, call->event.type, 1, regs,
- 			      head, NULL, NULL);
-+	return 0;
- }
- NOKPROBE_SYMBOL(kprobe_perf_func);
- 
-@@ -1275,6 +1315,7 @@ static int kprobe_register(struct trace_event_call *event,
- static int kprobe_dispatcher(struct kprobe *kp, struct pt_regs *regs)
- {
- 	struct trace_kprobe *tk = container_of(kp, struct trace_kprobe, rp.kp);
-+	int ret = 0;
- 
- 	raw_cpu_inc(*tk->nhit);
- 
-@@ -1282,9 +1323,9 @@ static int kprobe_dispatcher(struct kprobe *kp, struct pt_regs *regs)
- 		kprobe_trace_func(tk, regs);
- #ifdef CONFIG_PERF_EVENTS
- 	if (tk->tp.flags & TP_FLAG_PROFILE)
--		kprobe_perf_func(tk, regs);
-+		ret = kprobe_perf_func(tk, regs);
- #endif
--	return 0;	/* We don't tweek kernel, so just return 0 */
-+	return ret;
- }
- NOKPROBE_SYMBOL(kprobe_dispatcher);
- 
-diff --git a/kernel/trace/trace_probe.h b/kernel/trace/trace_probe.h
-index 903273c93e61..1140f8516242 100644
---- a/kernel/trace/trace_probe.h
-+++ b/kernel/trace/trace_probe.h
-@@ -253,6 +253,8 @@ struct symbol_cache;
- unsigned long update_symbol_cache(struct symbol_cache *sc);
- void free_symbol_cache(struct symbol_cache *sc);
- struct symbol_cache *alloc_symbol_cache(const char *sym, long offset);
-+int trace_kprobe_ftrace(struct trace_event_call *call);
-+int trace_kprobe_error_injectable(struct trace_event_call *call);
- #else
- /* uprobes do not support symbol fetch methods */
- #define fetch_symbol_u8			NULL
-@@ -278,6 +280,16 @@ alloc_symbol_cache(const char *sym, long offset)
- {
- 	return NULL;
- }
-+
-+static inline int trace_kprobe_ftrace(struct trace_event_call *call)
-+{
-+	return 0;
-+}
-+
-+static inline int trace_kprobe_error_injectable(struct trace_event_call *call)
-+{
-+	return 0;
-+}
- #endif /* CONFIG_KPROBE_EVENTS */
- 
- struct probe_arg {
--- 
-2.7.5
+v5->v6:
+- add BPF_ALLOW_ERROR_INJECTION() tagging for functions that will support this
+  feature.  This way only functions that opt-in will be allowed to be
+  overridden.
+- added a btrfs patch to allow error injection for open_ctree() so that the bpf
+  sample actually works.
 
+v4->v5:
+- disallow kprobe_override programs from being put in the prog map array so we
+  don't tail call into something we didn't check.  This allows us to make the
+  normal path still fast without a bunch of percpu operations.
+
+v3->v4:
+- fix a build error found by kbuild test bot (I didn't wait long enough
+  apparently.)
+- Added a warning message as per Daniels suggestion.
+
+v2->v3:
+- added a ->kprobe_override flag to bpf_prog.
+- added some sanity checks to disallow attaching bpf progs that have
+  ->kprobe_override set that aren't for ftrace kprobes.
+- added the trace_kprobe_ftrace helper to check if the trace_event_call is a
+  ftrace kprobe.
+- renamed bpf_kprobe_state to bpf_kprobe_override, fixed it so we only read this
+  value in the kprobe path, and thus only write to it if we're overriding or
+  clearing the override.
+
+v1->v2:
+- moved things around to make sure that bpf_override_return could really only be
+  used for an ftrace kprobe.
+- killed the special return values from trace_call_bpf.
+- renamed pc_modified to bpf_kprobe_state so bpf_override_return could tell if
+  it was being called from an ftrace kprobe context.
+- reworked the logic in kprobe_perf_func to take advantage of bpf_kprobe_state.
+- updated the test as per Alexei's review.
+
+- Original message -
+
+A lot of our error paths are not well tested because we have no good way of
+injecting errors generically.  Some subystems (block, memory) have ways to
+inject errors, but they are random so it's hard to get reproduceable results.
+
+With BPF we can add determinism to our error injection.  We can use kprobes and
+other things to verify we are injecting errors at the exact case we are trying
+to test.  This patch gives us the tool to actual do the error injection part.
+It is very simple, we just set the return value of the pt_regs we're given to
+whatever we provide, and then override the PC with a dummy function that simply
+returns.
+
+Right now this only works on x86, but it would be simple enough to expand to
+other architectures.  Thanks,
+
+Josef

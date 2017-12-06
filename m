@@ -1,110 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-dm3nam03on0097.outbound.protection.outlook.com ([104.47.41.97]:29748
-        "EHLO NAM03-DM3-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1753818AbdLFBxo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 5 Dec 2017 20:53:44 -0500
-From: Matthew Wilcox <mawilcox@microsoft.com>
-To: Dave Chinner <david@fromorbit.com>, Matthew Wilcox <willy@infradead.org>
-CC: Ross Zwisler <ross.zwisler@linux.intel.com>, Jens Axboe <axboe@kernel.dk>,
-        Rehas Sachdeva <aquannie@gmail.com>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-f2fs-devel@lists.sourceforge.net"
-        <linux-f2fs-devel@lists.sourceforge.net>,
-        "linux-nilfs@vger.kernel.org" <linux-nilfs@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
-        "linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: RE: [PATCH v4 00/73] XArray version 4
-Date: Wed, 6 Dec 2017 01:53:41 +0000
-Message-ID: <MWHPR21MB0845A83B9E89E4A9499AEC2FCB320@MWHPR21MB0845.namprd21.prod.outlook.com>
+Received: from bombadil.infradead.org ([65.50.211.133]:35974 "EHLO
+        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753798AbdLFCCL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Dec 2017 21:02:11 -0500
+Date: Tue, 5 Dec 2017 18:02:08 -0800
+From: Matthew Wilcox <willy@infradead.org>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Matthew Wilcox <mawilcox@microsoft.com>,
+        Ross Zwisler <ross.zwisler@linux.intel.com>,
+        Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v4 72/73] xfs: Convert mru cache to XArray
+Message-ID: <20171206020208.GK26021@bombadil.infradead.org>
 References: <20171206004159.3755-1-willy@infradead.org>
- <20171206014536.GA4094@dastard> <20171206015108.GB4094@dastard>
-In-Reply-To: <20171206015108.GB4094@dastard>
-Content-Type: text/plain; charset="utf-8"
+ <20171206004159.3755-73-willy@infradead.org>
+ <20171206012901.GZ4094@dastard>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171206012901.GZ4094@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Huh, you've caught a couple of problems that 0day hasn't sent me yet.  Try turning on DAX or TRANSPARENT_HUGEPAGE.  Thanks!
+On Wed, Dec 06, 2017 at 12:36:48PM +1100, Dave Chinner wrote:
+> > -	if (radix_tree_preload(GFP_NOFS))
+> > -		return -ENOMEM;
+> > -
+> >  	INIT_LIST_HEAD(&elem->list_node);
+> >  	elem->key = key;
+> >  
+> > -	spin_lock(&mru->lock);
+> > -	error = radix_tree_insert(&mru->store, key, elem);
+> > -	radix_tree_preload_end();
+> > -	if (!error)
+> > -		_xfs_mru_cache_list_insert(mru, elem);
+> > -	spin_unlock(&mru->lock);
+> > +	do {
+> > +		xas_lock(&xas);
+> > +		xas_store(&xas, elem);
+> > +		error = xas_error(&xas);
+> > +		if (!error)
+> > +			_xfs_mru_cache_list_insert(mru, elem);
+> > +		xas_unlock(&xas);
+> > +	} while (xas_nomem(&xas, GFP_NOFS));
+> 
+> Ok, so why does this have a retry loop on ENOMEM despite the
+> existing code handling that error? And why put such a loop in this
+> code and not any of the other XFS code that used
+> radix_tree_preload() and is arguably much more important to avoid
+> ENOMEM on insert (e.g. the inode cache)?
 
-> -----Original Message-----
-> From: Dave Chinner [mailto:david@fromorbit.com]
-> Sent: Tuesday, December 5, 2017 8:51 PM
-> To: Matthew Wilcox <willy@infradead.org>
-> Cc: Matthew Wilcox <mawilcox@microsoft.com>; Ross Zwisler
-> <ross.zwisler@linux.intel.com>; Jens Axboe <axboe@kernel.dk>; Rehas
-> Sachdeva <aquannie@gmail.com>; linux-mm@kvack.org; linux-
-> fsdevel@vger.kernel.org; linux-f2fs-devel@lists.sourceforge.net; linux-
-> nilfs@vger.kernel.org; linux-btrfs@vger.kernel.org; linux-xfs@vger.kernel.org;
-> linux-usb@vger.kernel.org; linux-kernel@vger.kernel.org
-> Subject: Re: [PATCH v4 00/73] XArray version 4
-> 
-> On Wed, Dec 06, 2017 at 12:45:49PM +1100, Dave Chinner wrote:
-> > On Tue, Dec 05, 2017 at 04:40:46PM -0800, Matthew Wilcox wrote:
-> > > From: Matthew Wilcox <mawilcox@microsoft.com>
-> > >
-> > > I looked through some notes and decided this was version 4 of the XArray.
-> > > Last posted two weeks ago, this version includes a *lot* of changes.
-> > > I'd like to thank Dave Chinner for his feedback, encouragement and
-> > > distracting ideas for improvement, which I'll get to once this is merged.
-> >
-> > BTW, you need to fix the "To:" line on your patchbombs:
-> >
-> > > To: unlisted-recipients: ;, no To-header on input <@gmail-
-> pop.l.google.com>
-> >
-> > This bad email address getting quoted to the cc line makes some MTAs
-> > very unhappy.
-> >
-> > >
-> > > Highlights:
-> > >  - Over 2000 words of documentation in patch 8!  And lots more kernel-doc.
-> > >  - The page cache is now fully converted to the XArray.
-> > >  - Many more tests in the test-suite.
-> > >
-> > > This patch set is not for applying.  0day is still reporting problems,
-> > > and I'd feel bad for eating someone's data.  These patches apply on top
-> > > of a set of prepatory patches which just aren't interesting.  If you
-> > > want to see the patches applied to a tree, I suggest pulling my git tree:
-> > >
-> https://na01.safelinks.protection.outlook.com/?url=http%3A%2F%2Fgit.infrade
-> ad.org%2Fusers%2Fwilly%2Flinux-
-> dax.git%2Fshortlog%2Frefs%2Fheads%2Fxarray-2017-12-
-> 04&data=02%7C01%7Cmawilcox%40microsoft.com%7Ca3e721545f8b4b9dff1
-> 608d53c4bd42f%7C72f988bf86f141af91ab2d7cd011db47%7C1%7C0%7C6364
-> 81218740341312&sdata=IXNZXXLTf964OQ0eLDpJt2LCv%2BGGWFW%2FQd4Kc
-> KYu6zo%3D&reserved=0
-> > > I also left out the idr_preload removals.  They're still in the git tree,
-> > > but I'm not looking for feedback on them.
-> >
-> > I'll give this a quick burn this afternoon and see what catches fire...
-> 
-> Build warnings/errors:
-> 
-> .....
-> lib/radix-tree.c:700:13: warning: Â¿radix_tree_free_nodesÂ¿ defined but not used
-> [-Wunused-function]
->  static void radix_tree_free_nodes(struct radix_tree_node *node)
-> .....
-> lib/xarray.c: In function Â¿xas_maxÂ¿:
-> lib/xarray.c:291:16: warning: unused variable Â¿maskÂ¿
-> [-Wunused-variable]
->   unsigned long mask, max = xas->xa_index;
->                   ^~~~
-> ......
-> fs/dax.c: In function Â¿grab_mapping_entryÂ¿:
-> fs/dax.c:305:2: error: implicit declaration of function Â¿xas_set_orderÂ¿; did you
-> mean Â¿xas_set_errÂ¿?  [-Werror=implicit-function-declaration]
->   xas_set_order(&xas, index, size_flag ? PMD_ORDER : 0);
->     ^~~~~~~~~~~~~
-> scripts/Makefile.build:310: recipe for target 'fs/dax.o' failed
-> make[1]: *** [fs/dax.o] Error 1
-> 
-> -Dave.
-> --
-> Dave Chinner
-> david@fromorbit.com
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éÝ¶¥Šwÿº{.nÇ+‰·¥Š{±ý»k~ÏâžØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Þ—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨þ)ß£øm
+If we need more nodes in the tree, xas_store() will try to allocate them
+with GFP_NOWAIT | __GFP_NOWARN.  If that fails, it signals it in xas_error().
+xas_nomem() will notice that we're in an ENOMEM situation, and allocate
+a node using your preferred GFP flags (NOIO in your case).  Then we retry,
+guaranteeing forward progress. [1]
+
+The other conversions use the normal API instead of the advanced API, so
+all of this gets hidden away.  For example, the inode cache does this:
+
++       curr = xa_cmpxchg(&pag->pag_ici_xa, agino, NULL, ip, GFP_NOFS);
+
+and xa_cmpxchg internally does:
+
+        do {
+                xa_lock_irqsave(xa, flags);
+                curr = xas_create(&xas);
+                if (curr == old)
+                        xas_store(&xas, entry);
+                xa_unlock_irqrestore(xa, flags);
+        } while (xas_nomem(&xas, gfp));
+
+
+> Also, I really don't like the pattern of using xa_lock()/xa_unlock()
+> to protect access to an external structure. i.e. the mru->lock
+> context is protecting multiple fields and operations in the MRU
+> structure, not just the radix tree operations. Turning that around
+> so that a larger XFS structure and algorithm is now protected by an
+> opaque internal lock from generic storage structure the forms part
+> of the larger structure seems like a bad design pattern to me...
+
+It's the design pattern I've always intended to use.  Naturally, the
+xfs radix trees weren't my initial target; it was the page cache, and
+the page cache does the same thing; uses the tree_lock to protect both
+the radix tree and several other fields in that same data structure.
+
+I'm open to argument on this though ... particularly if you have a better
+design pattern in mind!
+
+[1] I actually have this documented!  It's in the xas_nomem() kernel-doc:
+
+ * If we need to add new nodes to the XArray, we try to allocate memory
+ * with GFP_NOWAIT while holding the lock, which will usually succeed.
+ * If it fails, @xas is flagged as needing memory to continue.  The caller
+ * should drop the lock and call xas_nomem().  If xas_nomem() succeeds,
+ * the caller should retry the operation.
+ *
+ * Forward progress is guaranteed as one node is allocated here and
+ * stored in the xa_state where it will be found by xas_alloc().  More
+ * nodes will likely be found in the slab allocator, but we do not tie
+ * them up here.
+ *
+ * Return: true if memory was needed, and was successfully allocated.
+

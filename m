@@ -1,33 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53498 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49604 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751554AbdLLTRU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Dec 2017 14:17:20 -0500
-Date: Tue, 12 Dec 2017 20:15:19 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: raid56: fix race between merge_bio and
- rbio_orig_end_io
-Message-ID: <20171212191519.GW3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171208230235.30636-1-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <20171208230235.30636-1-bo.li.liu@oracle.com>
+        id S1755940AbdLGPtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Dec 2017 10:49:01 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0B1B0AE11
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Dec 2017 15:49:00 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/4] Cleanups for extent_page_data
+Date: Thu,  7 Dec 2017 16:47:00 +0100
+Message-Id: <cover.1512661509.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 08, 2017 at 04:02:35PM -0700, Liu Bo wrote:
-> We're not allowed to take any new bios to rbio->bio_list in
-> rbio_orig_end_io(), otherwise we may get merged with more bios and
-> rbio->bio_list is not empty.
-> 
-> This should only happens in error-out cases, the normal path of
-> recover and full stripe write have already set RBIO_RMW_LOCKED_BIT to
-> disable merge before doing IO.
-> 
-> Reported-by: Jérôme Carretero <cJ-ko@zougloub.eu>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+David Sterba (4):
+  btrfs: merge two flush_write_bio helpers
+  btrfs: sink flush_fn to extent_write_cache_pages
+  btrfs: sink writepage parameter to extent_write_cache_pages
+  btrfs: unify extent_page_data type passed as void
 
-Added to next, thanks.
+ fs/btrfs/extent_io.c | 35 +++++++++++++----------------------
+ 1 file changed, 13 insertions(+), 22 deletions(-)
+
+-- 
+2.15.1
+

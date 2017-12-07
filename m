@@ -1,107 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:54894 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752150AbdLGAc4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 6 Dec 2017 19:32:56 -0500
-Subject: Re: [PATCH] btrfs: tree-checker: use %zu format string for size_t
-To: Arnd Bergmann <arnd@arndb.de>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Cc: Qu Wenruo <wqu@suse.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
-        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20171206141844.788362-1-arnd@arndb.de>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a05374d3-401f-bec3-03f4-45d4072d43f4@gmx.com>
-Date: Thu, 7 Dec 2017 08:32:04 +0800
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:45310 "EHLO
+        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750857AbdLGJGw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 04:06:52 -0500
 MIME-Version: 1.0
-In-Reply-To: <20171206141844.788362-1-arnd@arndb.de>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="WOVne66d7EDv24WRx0t0thDtAeGuHDWk6"
+In-Reply-To: <a05374d3-401f-bec3-03f4-45d4072d43f4@gmx.com>
+References: <20171206141844.788362-1-arnd@arndb.de> <a05374d3-401f-bec3-03f4-45d4072d43f4@gmx.com>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 7 Dec 2017 10:06:50 +0100
+Message-ID: <CAK8P3a1qOGCy70A6TkA9WAdxMDS-D9s8W5RAs=5+Fo3J58-soA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: tree-checker: use %zu format string for size_t
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Su Yue <suy.fnst@cn.fujitsu.com>, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---WOVne66d7EDv24WRx0t0thDtAeGuHDWk6
-Content-Type: multipart/mixed; boundary="xh4mvJ0Bkvg2ew2c3FiVpHwoqCN4d204b";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Arnd Bergmann <arnd@arndb.de>, Chris Mason <clm@fb.com>,
- Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Cc: Qu Wenruo <wqu@suse.com>, Su Yue <suy.fnst@cn.fujitsu.com>,
- Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Message-ID: <a05374d3-401f-bec3-03f4-45d4072d43f4@gmx.com>
-Subject: Re: [PATCH] btrfs: tree-checker: use %zu format string for size_t
-References: <20171206141844.788362-1-arnd@arndb.de>
-In-Reply-To: <20171206141844.788362-1-arnd@arndb.de>
+On Thu, Dec 7, 2017 at 1:32 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> On 2017年12月06日 22:18, Arnd Bergmann wrote:
+>> The return value of sizeof() is of type size_t, so we must print it
+>> using the %z format modifier rather than %l to avoid this warning
+>> on some architectures:
+>>
+>> fs/btrfs/tree-checker.c: In function 'check_dir_item':
+>> fs/btrfs/tree-checker.c:273:50: error: format '%lu' expects argument of type 'long unsigned int', but argument 5 has type 'u32' {aka 'unsigned int'} [-Werror=format=]
+>
+> Any idea about which architecture will cause such warning?
+> On x86_64 I always fail to get such warning.
 
---xh4mvJ0Bkvg2ew2c3FiVpHwoqCN4d204b
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+I think all 32-bit architectures:
 
+#ifndef __kernel_size_t
+#if __BITS_PER_LONG != 64
+typedef unsigned int    __kernel_size_t;
+typedef int             __kernel_ssize_t;
+typedef int             __kernel_ptrdiff_t;
+#else
+typedef __kernel_ulong_t __kernel_size_t;
+typedef __kernel_long_t __kernel_ssize_t;
+typedef __kernel_long_t __kernel_ptrdiff_t;
+#endif
+#endif
 
-
-On 2017=E5=B9=B412=E6=9C=8806=E6=97=A5 22:18, Arnd Bergmann wrote:
-> The return value of sizeof() is of type size_t, so we must print it
-> using the %z format modifier rather than %l to avoid this warning
-> on some architectures:
->=20
-> fs/btrfs/tree-checker.c: In function 'check_dir_item':
-> fs/btrfs/tree-checker.c:273:50: error: format '%lu' expects argument of=
- type 'long unsigned int', but argument 5 has type 'u32' {aka 'unsigned i=
-nt'} [-Werror=3Dformat=3D]
-
-Any idea about which architecture will cause such warning?
-On x86_64 I always fail to get such warning.
-
->=20
-> Fixes: 005887f2e3e0 ("btrfs: tree-checker: Add checker for dir item")
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  fs/btrfs/tree-checker.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index 66dac0a4b01f..7c55e3ba5a6c 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -270,7 +270,7 @@ static int check_dir_item(struct btrfs_root *root,
->  		/* header itself should not cross item boundary */
->  		if (cur + sizeof(*di) > item_size) {
->  			dir_item_err(root, leaf, slot,
-> -		"dir item header crosses item boundary, have %lu boundary %u",
-> +		"dir item header crosses item boundary, have %zu boundary %u",
->  				cur + sizeof(*di), item_size);
->  			return -EUCLEAN;
->  		}
->=20
-
-
---xh4mvJ0Bkvg2ew2c3FiVpHwoqCN4d204b--
-
---WOVne66d7EDv24WRx0t0thDtAeGuHDWk6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloojAQXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qi6Wwf/Yua2tI7Wky7GbeY+PxTWK2th
-TGAB51XihT39TQycGuKyQKp7dJx6LS8hFlX5uJHTnl2NcsewTfM/D3/VunTJLqcf
-gCn7D6kOwmTfrkPJB/nqzi2w/nwM5D9eAmWtmnrQtuSzkgOqXafDHK7Z2zKykdEC
-r6UZsr6n2FYXK4LgtwU3tw+lT5KbculPL0MMdaSF3cQ7hoUh+oY8YAYiiAHc9TaN
-2mYhnOn8UhtyuQu0+VWGLvfpGV/LtyaDlgg4FkWH8vQ2++AibFbHOThqqpkxZSme
-TvTJn32NyoQ2l25I2wEJqlBq5XgmTPTk3scVjLdypC8yvpKbdRYhmm4YoaoY+Q==
-=0fbR
------END PGP SIGNATURE-----
-
---WOVne66d7EDv24WRx0t0thDtAeGuHDWk6--
+      Arnd

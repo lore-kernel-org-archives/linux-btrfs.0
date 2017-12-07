@@ -1,128 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:50854 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753627AbdLGOjo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 09:39:44 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB7EdfmP175460
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:39:44 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2epd12qk6a-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Dec 2017 14:39:41 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB7Ea2xd021398
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:36:02 GMT
-Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB7Ea2tN006562
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:36:02 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 3/3] btrfs: add feature to deregister all unmounted devices
-Date: Thu,  7 Dec 2017 22:36:23 +0800
-Message-Id: <20171207143623.26710-4-anand.jain@oracle.com>
-In-Reply-To: <20171207143623.26710-1-anand.jain@oracle.com>
+Received: from mail-it0-f68.google.com ([209.85.214.68]:43174 "EHLO
+        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754104AbdLGOwu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 09:52:50 -0500
+Received: by mail-it0-f68.google.com with SMTP id u62so15340468ita.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Dec 2017 06:52:50 -0800 (PST)
+Subject: Re: [PATCH v5 0/3] Add cli and ioctl to deregister devices
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20171207143623.26710-1-anand.jain@oracle.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <2ff368d4-a38a-59c9-565a-8c55702217ae@gmail.com>
+Date: Thu, 7 Dec 2017 09:52:46 -0500
+MIME-Version: 1.0
+In-Reply-To: <20171207143623.26710-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds a feature to remove all registered/scanned devices,
-which are not mounted or it got staled by some means.
+On 2017-12-07 09:36, Anand Jain wrote:
+> Add ability to deregister a or all devices. I have named this sub cmd
+> as deregister, but I am open to your suggestions.
+Being a bit picky here, but from the perspective of a native speaker of 
+American English, I would say that 'deregister' sounds rather synthetic 
+and somewhat harsh and alien.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Suggested-by: David Sterba <dsterba@suse.cz>
----
-v2-4: Does not exist.
+Given that, as odd as it sounds, I think 'ignore' might be a more user 
+friendly name for the sub-command.  It accurately describes what the 
+command is doing (telling the kernel to ignore the device), and it's a 
+lot less alien sounding than 'deregister'.
 
- fs/btrfs/super.c           |  7 ++++++-
- fs/btrfs/volumes.c         | 23 +++++++++++++++++++++++
- fs/btrfs/volumes.h         |  1 +
- include/uapi/linux/btrfs.h |  6 +++++-
- 4 files changed, 35 insertions(+), 2 deletions(-)
+If you're set on having it be based on the word 'register', I would 
+suggest changing it to 'unregister', as I think that sounds more natural 
+than 'deregister'.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index ea6fe4742834..409804843b74 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2213,7 +2213,12 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 					    &btrfs_fs_type, &fs_devices);
- 		break;
- 	case BTRFS_IOC_PURGE_DEV:
--		ret = btrfs_purge_one_device(vol->name, FMODE_READ,
-+		if (vol->ioctl_flag & ~BTRFS_IOCTL_PURGE_ALL_DEVS)
-+			return -EOPNOTSUPP;
-+		if (vol->ioctl_flag & BTRFS_IOCTL_PURGE_ALL_DEVS)
-+			ret = btrfs_purge_devices();
-+		else
-+			ret = btrfs_purge_one_device(vol->name, FMODE_READ,
- 					    &btrfs_fs_type, &fs_devices);
- 		break;
- 	case BTRFS_IOC_DEVICES_READY:
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5adab70c7658..9fa2539a8493 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1336,6 +1336,29 @@ int btrfs_purge_one_device(const char *path, fmode_t flags, void *holder,
- 	return ret;
- }
- 
-+int btrfs_purge_devices(void)
-+{
-+	struct btrfs_fs_devices *fs_devices, *tmp;
-+
-+	mutex_lock(&uuid_mutex);
-+	list_for_each_entry_safe(fs_devices, tmp, &fs_uuids, list) {
-+		/*
-+		 * For now ignore stale device within a mounted FS.
-+		 */
-+		if (fs_devices->opened)
-+			continue;
-+
-+		pr_info("BTRFS: %pU num_devices %llu deregistered",
-+			fs_devices->fsid, fs_devices->num_devices);
-+		btrfs_sysfs_remove_fsid(fs_devices);
-+		list_del(&fs_devices->list);
-+		free_fs_devices(fs_devices);
-+	}
-+	mutex_unlock(&uuid_mutex);
-+
-+	return 0;
-+}
-+
- /*
-  * Look for a btrfs signature on a device. This may be called out of the mount path
-  * and we are not allowed to call set_blocksize during the scan. The superblock
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 8389d2815750..dec27ee4f67d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -424,6 +424,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 			  struct btrfs_fs_devices **fs_devices_ret);
- int btrfs_purge_one_device(const char *path, fmode_t flags, void *holder,
- 			  struct btrfs_fs_devices **fs_devices_ret);
-+int btrfs_purge_devices(void);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
- void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index de0f1144d945..eaf6ef04b300 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -28,8 +28,12 @@
- 
- /* this should be 4k */
- #define BTRFS_PATH_NAME_MAX 4087
-+#define BTRFS_IOCTL_PURGE_ALL_DEVS	(1ULL << 0)
- struct btrfs_ioctl_vol_args {
--	__s64 fd;
-+	union {
-+		__s64 fd;
-+		__u64 ioctl_flag;
-+	};
- 	char name[BTRFS_PATH_NAME_MAX + 1];
- };
- 
--- 
-2.7.0
+Additionally, if you do continue with 'deregister' or go with 
+'unregister' as the name though, I would suggest adding 'register' as a 
+synonym for the 'scan' sub-command to keep things reasonably symmetrical.
+> 
+> Further I am using /dev/btrfs-control and struct btrfs_ioctl_vol_args
+> for now, just similar to other ioctls in super.c including btrfs dev
+> scan, if rather it makes sense to use btrfs_ioctl_vol_args_v2 I shall.
+> Oepn to suggestions.
+> 
+> Kernel:
+> Patch 1/3 is preparatory patch, provides helper to delete a device.
+> Patch 2/3 adds ioctl to delete device from the device list.
+> Patch 3/3 provides default feature to delete all fs_devices in the list.
+> 
+> btrfs-progs:
+> Patch 1/2 introduce 'btrfs dev deregister <device>'
+> Patch 2/2 make the device optional and when not provided, deregisters all
+> unmounted devices.
+> 
+> v2:
+>    Accepted review from Nikolay, details are in the specific patch.
+>    Patch 1/2 is renamed from
+>      [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+>    to
+>      [PATCH 1/2] btrfs: add function to device list delete
+> v3:
+>    No change. Send to correct ML.
+> v4:
+>    No change. But as the ML thread may be confusing, so resend.
+> v5:
+>    Mainly adds feature to deregister all unmounted devices.
+>    Accepts review from David, for details ref change log.
+> 
+> Anand Jain (3):
+>    btrfs: add function to device list delete
+>    btrfs: introduce feature to deregister a btrfs device
+>    btrfs: add feature to deregister all unmounted devices
+> 
+>   fs/btrfs/super.c           |   9 ++++
+>   fs/btrfs/volumes.c         | 119 +++++++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/volumes.h         |   3 ++
+>   include/uapi/linux/btrfs.h |   9 +++-
+>   4 files changed, 138 insertions(+), 2 deletions(-)
+> 
+> Anand Jain (2):
+>    btrfs-progs: add 'btrfs device unregister' cli
+>    btrfs-progs: add feature to deregister all devices
+> 
+>   cmds-device.c | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   ioctl.h       |  8 +++++-
+>   2 files changed, 89 insertions(+), 1 deletion(-)
+> 
 

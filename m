@@ -1,97 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49610 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49622 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754387AbdLGPtD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Dec 2017 10:49:03 -0500
+        id S1755951AbdLGPtF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Dec 2017 10:49:05 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id F3FB5AE12
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Dec 2017 15:49:01 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 2F716AE1B
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Dec 2017 15:49:04 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/4] btrfs: merge two flush_write_bio helpers
-Date: Thu,  7 Dec 2017 16:47:03 +0100
-Message-Id: <35c579c8ffc850039be08da0b72e410cdc80016e.1512661509.git.dsterba@suse.com>
+Subject: [PATCH 2/4] btrfs: sink flush_fn to extent_write_cache_pages
+Date: Thu,  7 Dec 2017 16:47:05 +0100
+Message-Id: <be0d653c10a2f84b538f003a19eb33d33f68d78f.1512661509.git.dsterba@suse.com>
 In-Reply-To: <cover.1512661509.git.dsterba@suse.com>
 References: <cover.1512661509.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-flush_epd_write_bio is same as flush_write_bio, no point having two such
-functions. Merge them to flush_write_bio. The 'noinline' attribute is
-removed as it does not have any meaning.
+All callers pass the same value flush_write_bio.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ fs/btrfs/extent_io.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 16ae832bdb5d..fd1a2ff1e96d 100644
+index fd1a2ff1e96d..35f4869a90d5 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -138,7 +138,8 @@ static void add_extent_changeset(struct extent_state *state, unsigned bits,
- 	BUG_ON(ret < 0);
- }
- 
--static noinline void flush_write_bio(void *data);
-+static void flush_write_bio(void *data);
-+
- static inline struct btrfs_fs_info *
- tree_fs_info(struct extent_io_tree *tree)
+@@ -3906,8 +3906,7 @@ int btree_write_cache_pages(struct address_space *mapping,
+  */
+ static int extent_write_cache_pages(struct address_space *mapping,
+ 			     struct writeback_control *wbc,
+-			     writepage_t writepage, void *data,
+-			     void (*flush_fn)(void *))
++			     writepage_t writepage, void *data)
  {
-@@ -4039,8 +4040,10 @@ static int extent_write_cache_pages(struct address_space *mapping,
+ 	struct inode *inode = mapping->host;
+ 	int ret = 0;
+@@ -3971,7 +3970,7 @@ static int extent_write_cache_pages(struct address_space *mapping,
+ 			 * mapping
+ 			 */
+ 			if (!trylock_page(page)) {
+-				flush_fn(data);
++				flush_write_bio(data);
+ 				lock_page(page);
+ 			}
+ 
+@@ -3982,7 +3981,7 @@ static int extent_write_cache_pages(struct address_space *mapping,
+ 
+ 			if (wbc->sync_mode != WB_SYNC_NONE) {
+ 				if (PageWriteback(page))
+-					flush_fn(data);
++					flush_write_bio(data);
+ 				wait_on_page_writeback(page);
+ 			}
+ 
+@@ -4123,8 +4122,7 @@ int extent_writepages(struct extent_io_tree *tree,
+ 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
+ 	};
+ 
+-	ret = extent_write_cache_pages(mapping, wbc, __extent_writepage, &epd,
+-				       flush_write_bio);
++	ret = extent_write_cache_pages(mapping, wbc, __extent_writepage, &epd);
+ 	flush_write_bio(&epd);
  	return ret;
  }
- 
--static void flush_epd_write_bio(struct extent_page_data *epd)
-+static void flush_write_bio(void *data)
- {
-+	struct extent_page_data *epd = data;
-+
- 	if (epd->bio) {
- 		int ret;
- 
-@@ -4050,12 +4053,6 @@ static void flush_epd_write_bio(struct extent_page_data *epd)
- 	}
- }
- 
--static noinline void flush_write_bio(void *data)
--{
--	struct extent_page_data *epd = data;
--	flush_epd_write_bio(epd);
--}
--
- int extent_write_full_page(struct extent_io_tree *tree, struct page *page,
- 			  struct writeback_control *wbc)
- {
-@@ -4069,7 +4066,7 @@ int extent_write_full_page(struct extent_io_tree *tree, struct page *page,
- 
- 	ret = __extent_writepage(page, wbc, &epd);
- 
--	flush_epd_write_bio(&epd);
-+	flush_write_bio(&epd);
- 	return ret;
- }
- 
-@@ -4110,7 +4107,7 @@ int extent_write_locked_range(struct extent_io_tree *tree, struct inode *inode,
- 		start += PAGE_SIZE;
- 	}
- 
--	flush_epd_write_bio(&epd);
-+	flush_write_bio(&epd);
- 	return ret;
- }
- 
-@@ -4128,7 +4125,7 @@ int extent_writepages(struct extent_io_tree *tree,
- 
- 	ret = extent_write_cache_pages(mapping, wbc, __extent_writepage, &epd,
- 				       flush_write_bio);
--	flush_epd_write_bio(&epd);
-+	flush_write_bio(&epd);
- 	return ret;
- }
- 
 -- 
 2.15.1
 

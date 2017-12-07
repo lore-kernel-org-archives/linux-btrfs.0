@@ -1,63 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:42750 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754305AbdLGOwa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 09:52:30 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB7EpfeI188710
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:30 GMT
+Received: from userp2130.oracle.com ([156.151.31.86]:51303 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754322AbdLGOwc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 09:52:32 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB7EqOoD136209
+        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:31 GMT
 Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2120.oracle.com with ESMTP id 2epd12qpgx-1
+        by userp2130.oracle.com with ESMTP id 2eq4kn8w16-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Dec 2017 14:52:30 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB7EqTI5002715
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Dec 2017 14:52:31 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB7EqUjc002763
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:29 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:30 GMT
 Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vB7EqT9O018635
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:29 GMT
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vB7EqUJd028543
+        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:30 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 1/2] btrfs-progs: add cli to deregister a device
-Date: Thu,  7 Dec 2017 22:52:54 +0800
-Message-Id: <20171207145255.27686-1-anand.jain@oracle.com>
-In-Reply-To: <20171207143623.26710-1-anand.jain@oracle.com>
+Subject: [PATCH v5 2/2] btrfs-progs: add feature to deregister all devices
+Date: Thu,  7 Dec 2017 22:52:55 +0800
+Message-Id: <20171207145255.27686-2-anand.jain@oracle.com>
+In-Reply-To: <20171207145255.27686-1-anand.jain@oracle.com>
 References: <20171207143623.26710-1-anand.jain@oracle.com>
+ <20171207145255.27686-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds
-  btrfs device deregister <dev>
-so that an already registered device (through scan) can be deregistered.
-
-This change is compatible with older kernel without the ioctl
-BTRFS_IOC_PURGE_DEV it shall report 'Inappropriate ioctl for device'.
+This patch adds default no option to deregister all unmounted
+devices in the kernel at once. For example:
+  btrfs device deregister
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v1-4: No change.
-v5: make provision to add no option to delete all fsids
+v1-4: NA.
+v5: New patch in v5.
 
- cmds-device.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h       |  2 ++
- 2 files changed, 57 insertions(+)
+ cmds-device.c | 31 +++++++++++++++++++++++++++++--
+ ioctl.h       |  6 +++++-
+ 2 files changed, 34 insertions(+), 3 deletions(-)
 
 diff --git a/cmds-device.c b/cmds-device.c
-index f4cdb39f64ac..8244ff9802be 100644
+index 8244ff9802be..6b9c3616b641 100644
 --- a/cmds-device.c
 +++ b/cmds-device.c
-@@ -329,6 +329,60 @@ out:
- 	return !!ret;
- }
+@@ -331,10 +331,30 @@ out:
  
-+static const char * const cmd_device_deregister_usage[] = {
-+	"btrfs device deregister [<device>]",
-+	"Deregister device in btrfs kernel module.",
-+	NULL
-+};
-+
-+static int btrfs_deregister_one_device(char *path)
+ static const char * const cmd_device_deregister_usage[] = {
+ 	"btrfs device deregister [<device>]",
+-	"Deregister device in btrfs kernel module.",
++	"Deregister one or all scanned device(s) in the kernel.",
+ 	NULL
+ };
+ 
++static int btrfs_deregister_devices(void)
 +{
 +	struct btrfs_ioctl_vol_args args;
 +	int fd;
@@ -68,67 +65,54 @@ index f4cdb39f64ac..8244ff9802be 100644
 +		return -errno;
 +
 +	memset(&args, 0, sizeof(args));
-+	strncpy_null(args.name, path);
++	args.ioctl_flag = BTRFS_IOCTL_PURGE_ALL_DEVS;
 +	ret = ioctl(fd, BTRFS_IOC_DEREGISTER_DEV, &args);
 +	if (ret)
 +		ret = -errno;
 +	close(fd);
 +	return ret;
++
 +}
 +
-+static int cmd_device_deregister(int argc, char **argv)
-+{
-+	char *path;
-+	int ret = 0;
-+
-+	if (check_argc_exact(argc - optind, 1))
-+		usage(cmd_device_deregister_usage);
-+
-+	if (is_block_device(argv[1]) != 1) {
-+		error("Not a block device: %s", argv[1]);
-+		return -ENOENT;
+ static int btrfs_deregister_one_device(char *path)
+ {
+ 	struct btrfs_ioctl_vol_args args;
+@@ -359,9 +379,16 @@ static int cmd_device_deregister(int argc, char **argv)
+ 	char *path;
+ 	int ret = 0;
+ 
+-	if (check_argc_exact(argc - optind, 1))
++	if (check_argc_max(argc - optind, 1))
+ 		usage(cmd_device_deregister_usage);
+ 
++	if (argc == 1) {
++		ret = btrfs_deregister_devices();
++		if (ret)
++			error("Can't deregister: %s", strerror(-ret));
++		return ret;
 +	}
 +
-+	path = canonicalize_path(argv[1]);
-+	if (!path) {
-+		error("Could not canonicalize path '%s': %s",
-+					argv[1], strerror(errno));
-+		return -ENOENT;
-+	}
-+
-+	ret  = btrfs_deregister_one_device(path);
-+	if (ret)
-+		error("Can't deregister '%s': %s", path, strerror(-ret));
-+
-+	free(path);
-+
-+	return ret;
-+}
-+
- static const char * const cmd_device_ready_usage[] = {
- 	"btrfs device ready <device>",
- 	"Check device to see if it has all of its devices in cache for mounting",
-@@ -604,6 +658,7 @@ const struct cmd_group device_cmd_group = {
- 			CMD_ALIAS },
- 		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
- 		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
-+		{ "deregister", cmd_device_deregister, cmd_device_deregister_usage, NULL, 0 },
- 		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
- 		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
- 		{ "usage", cmd_device_usage,
+ 	if (is_block_device(argv[1]) != 1) {
+ 		error("Not a block device: %s", argv[1]);
+ 		return -ENOENT;
 diff --git a/ioctl.h b/ioctl.h
-index 709e996f401c..3cdb88eb5bb2 100644
+index 3cdb88eb5bb2..a36055b453e2 100644
 --- a/ioctl.h
 +++ b/ioctl.h
-@@ -721,6 +721,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
- 				   struct btrfs_ioctl_vol_args)
-+#define BTRFS_IOC_DEREGISTER_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
-+				   struct btrfs_ioctl_vol_args)
- /* trans start and trans end are dangerous, and only for
-  * use by applications that know how to avoid the
-  * resulting deadlocks
+@@ -41,8 +41,12 @@ extern "C" {
+ 
+ /* this should be 4k */
+ #define BTRFS_PATH_NAME_MAX 4087
++#define BTRFS_IOCTL_PURGE_ALL_DEVS	(1ULL << 0)
+ struct btrfs_ioctl_vol_args {
+-	__s64 fd;
++	union {
++		__s64 fd;
++		__u64 ioctl_flag;
++	};
+ 	char name[BTRFS_PATH_NAME_MAX + 1];
+ };
+ BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) == 4096);
 -- 
 2.7.0
 

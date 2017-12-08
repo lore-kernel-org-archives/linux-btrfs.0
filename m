@@ -1,39 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40179 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752248AbdLGTY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 7 Dec 2017 14:24:27 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9B059AE46
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Dec 2017 19:24:26 +0000 (UTC)
-Date: Thu, 7 Dec 2017 20:22:27 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 1/2] btrfs-progs: convert: Fix a bug in rollback check
- which overwrite return value
-Message-ID: <20171207192227.GI3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171129134806.32324-1-wqu@suse.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:39168 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752425AbdLHAvO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 19:51:14 -0500
+Subject: Re: [PATCH v5 0/3] Add cli and ioctl to deregister devices
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20171207143623.26710-1-anand.jain@oracle.com>
+ <2ff368d4-a38a-59c9-565a-8c55702217ae@gmail.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <2eb9cb20-e972-f642-d116-2d7dc4417fe8@oracle.com>
+Date: Fri, 8 Dec 2017 08:51:43 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171129134806.32324-1-wqu@suse.com>
+In-Reply-To: <2ff368d4-a38a-59c9-565a-8c55702217ae@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 29, 2017 at 09:48:05PM +0800, Qu Wenruo wrote:
-> Commit 1170ac307900 ("btrfs-progs: convert: Introduce function to check if
-> convert image is able to be rolled back") reworked rollback check
-> condition, by checking 1:1 mapping of each file extent.
-> 
-> The idea itself has nothing wrong, but error handler is not implemented
-> correctly, which over writes the return value and always try to rollback
-> the fs even it fails to pass the check.
-> 
-> Fix it by correctly return the error before rollback the fs.
-> 
-> Fixes: 1170ac307900 ("btrfs-progs: convert: Introduce function to check if convert image is able to be rolled back")
-> Reported-by: Jeff Mahoney <jeffm@suse.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-1-2 applied, thanks.
+
+On 12/07/2017 10:52 PM, Austin S. Hemmelgarn wrote:
+> On 2017-12-07 09:36, Anand Jain wrote:
+>> Add ability to deregister a or all devices. I have named this sub cmd
+>> as deregister, but I am open to your suggestions.
+> Being a bit picky here, but from the perspective of a native speaker of 
+> American English, I would say that 'deregister' sounds rather synthetic 
+> and somewhat harsh and alien.
+> 
+> Given that, as odd as it sounds, I think 'ignore' might be a more user 
+> friendly name for the sub-command.  It accurately describes what the 
+> command is doing (telling the kernel to ignore the device), and it's a 
+> lot less alien sounding than 'deregister'.
+> 
+> If you're set on having it be based on the word 'register', I would 
+> suggest changing it to 'unregister', as I think that sounds more natural 
+> than 'deregister'.
+> 
+> Additionally, if you do continue with 'deregister' or go with 
+> 'unregister' as the name though, I would suggest adding 'register' as a 
+> synonym for the 'scan' sub-command to keep things reasonably symmetrical.
+
+  A look up on unregister lead me to use deregister as more appropriate.
+  Anyway I won't bother much, I will be go be suggestions, and how
+  about unscan, since scan is already there. OR how about purge.
+
+Thanks, Anand.
+

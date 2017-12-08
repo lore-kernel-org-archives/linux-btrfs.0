@@ -1,125 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f68.google.com ([209.85.214.68]:35077 "EHLO
-        mail-it0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753182AbdLHNF0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 08:05:26 -0500
-Received: by mail-it0-f68.google.com with SMTP id f143so4620261itb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Dec 2017 05:05:26 -0800 (PST)
-Subject: Re: [PATCH RFC] btrfs: self heal from SB fail
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <20171208075705.23462-1-anand.jain@oracle.com>
- <ed75e747-4387-49a3-e62a-67e100dd4ea6@gmail.com>
- <fc69a05e-d0af-e9c6-1827-a9eb5ed742e0@gmx.com>
+Received: from mail-it0-f67.google.com ([209.85.214.67]:42629 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753385AbdLHNJn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 08:09:43 -0500
+Received: by mail-it0-f67.google.com with SMTP id p139so4737211itb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 08 Dec 2017 05:09:42 -0800 (PST)
+Received: from [191.9.212.201] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.gmail.com with ESMTPSA id l34sm3570585ioi.16.2017.12.08.05.09.40
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Fri, 08 Dec 2017 05:09:40 -0800 (PST)
+Subject: Re: [PATCH v5 0/3] Add cli and ioctl to deregister devices
+To: linux-btrfs@vger.kernel.org
+References: <20171207143623.26710-1-anand.jain@oracle.com>
+ <2ff368d4-a38a-59c9-565a-8c55702217ae@gmail.com>
+ <2eb9cb20-e972-f642-d116-2d7dc4417fe8@oracle.com>
+ <pan$e67bd$548c1a2e$2d7222f9$63f69c71@cox.net>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <f1ff6ee7-4f0a-2d47-3d85-7955bf7b0198@gmail.com>
-Date: Fri, 8 Dec 2017 08:05:22 -0500
+Message-ID: <66dbfd9a-08a4-0c1f-ce10-e085ed99e712@gmail.com>
+Date: Fri, 8 Dec 2017 08:09:39 -0500
 MIME-Version: 1.0
-In-Reply-To: <fc69a05e-d0af-e9c6-1827-a9eb5ed742e0@gmx.com>
+In-Reply-To: <pan$e67bd$548c1a2e$2d7222f9$63f69c71@cox.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-12-08 07:59, Qu Wenruo wrote:
+On 2017-12-07 21:17, Duncan wrote:
+> Anand Jain posted on Fri, 08 Dec 2017 08:51:43 +0800 as excerpted:
 > 
-> 
-> On 2017年12月08日 20:51, Austin S. Hemmelgarn wrote:
->> On 2017-12-08 02:57, Anand Jain wrote:
->>> -EXPERIMENTAL-
->>> As of now when primary SB fails we won't self heal and would fail mount,
->>> this is an experimental patch which thinks why not go and read backup
->>> copy.
->> I like the concept, and actually think this should be default behavior
->> on a filesystem that's already mounted (we fix other errors, why not
->> SB's), but I don't think it should be default behavior at mount time for
->> the reasons Qu has outlined (picking up old BTRFS SB's after
->> reformatting is bad).  However, I do think it's useful to be able to ask
->> for this behavior on mount, so that you don't need to fight with the
->> programs to get a filesystem to mount when the first SB is missing
->> (perhaps add a 'usebackupsb' option to mirror 'usebackuproot'?).
-> 
-> Yeah, I also like the idea of 'usebackupsuper'/'usebackupsuper=n' mount
-> option than do it automatically.
-I still think there should be an option to do automatic detection (it's 
-not particularly hard, and it's not likely to do the wrong thing in most 
-cases), but being able to explicitly specify a particular superblock for 
-a mount is definitely a step in the right direction.
-> 
-> Thanks,
-> Qu
-> 
+>> On 12/07/2017 10:52 PM, Austin S. Hemmelgarn wrote:
+>>> On 2017-12-07 09:36, Anand Jain wrote:
+>>>> Add ability to deregister a or all devices. I have named this sub cmd
+>>>> as deregister, but I am open to your suggestions.
+>>> Being a bit picky here, but from the perspective of a native speaker of
+>>> American English, I would say that 'deregister' sounds rather synthetic
+>>> and somewhat harsh and alien.
 >>>
->>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>> ---
->>>    fs/btrfs/disk-io.c |  8 +++++++-
->>>    fs/btrfs/volumes.c | 10 +++++++---
->>>    2 files changed, 14 insertions(+), 4 deletions(-)
+>>> Given that, as odd as it sounds, I think 'ignore' might be a more user
+>>> friendly name for the sub-command.  It accurately describes what the
+>>> command is doing (telling the kernel to ignore the device), and it's a
+>>> lot less alien sounding than 'deregister'.
 >>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 9b20c1f3563b..a791b8dfe8a8 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -3190,7 +3190,7 @@ struct buffer_head *btrfs_read_dev_super(struct
->>> block_device *bdev)
->>>         * So, we need to add a special mount option to scan for
->>>         * later supers, using BTRFS_SUPER_MIRROR_MAX instead
->>>         */
->>> -    for (i = 0; i < 1; i++) {
->>> +    for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
->>>            ret = btrfs_read_dev_one_super(bdev, i, &bh);
->>>            if (ret)
->>>                continue;
->>> @@ -4015,11 +4015,17 @@ static int btrfs_check_super_valid(struct
->>> btrfs_fs_info *fs_info)
->>>            ret = -EINVAL;
->>>        }
->>>    +#if 0
->>> +    /*
->>> +     * Need a way to check for any copy of SB, as its not a
->>> +     * strong check, just ignore this for now.
->>> +     */
->>>        if (btrfs_super_bytenr(sb) != BTRFS_SUPER_INFO_OFFSET) {
->>>            btrfs_err(fs_info, "super offset mismatch %llu != %u",
->>>                  btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
->>>            ret = -EINVAL;
->>>        }
->>> +#endif
->>>          /*
->>>         * Obvious sys_chunk_array corruptions, it must hold at least
->>> one key
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index 9fa2539a8493..f368db94d62b 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -1369,7 +1369,7 @@ int btrfs_scan_one_device(const char *path,
->>> fmode_t flags, void *holder,
->>>    {
->>>        struct btrfs_super_block *disk_super;
->>>        struct block_device *bdev;
->>> -    struct page *page;
->>> +    struct buffer_head *sb_bh;
->>>        int ret = -EINVAL;
->>>        u64 devid;
->>>        u64 transid;
->>> @@ -1392,8 +1392,12 @@ int btrfs_scan_one_device(const char *path,
->>> fmode_t flags, void *holder,
->>>            goto error;
->>>        }
->>>    -    if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
->>> +    sb_bh = btrfs_read_dev_super(bdev);
->>> +    if (IS_ERR(sb_bh)) {
->>> +        ret = PTR_ERR(sb_bh);
->>>            goto error_bdev_put;
->>> +    }
->>> +    disk_super = (struct btrfs_super_block *) sb_bh->b_data;
->>>          devid = btrfs_stack_device_id(&disk_super->dev_item);
->>>        transid = btrfs_super_generation(disk_super);
->>> @@ -1413,7 +1417,7 @@ int btrfs_scan_one_device(const char *path,
->>> fmode_t flags, void *holder,
->>>        if (!ret && fs_devices_ret)
->>>            (*fs_devices_ret)->total_devices = total_devices;
->>>    -    btrfs_release_disk_super(page);
->>> +    brelse(sb_bh);
->>>      error_bdev_put:
->>>        blkdev_put(bdev, flags);
+>>> If you're set on having it be based on the word 'register', I would
+>>> suggest changing it to 'unregister', as I think that sounds more
+>>> natural than 'deregister'.
 >>>
+>>> Additionally, if you do continue with 'deregister' or go with
+>>> 'unregister' as the name though, I would suggest adding 'register' as a
+>>> synonym for the 'scan' sub-command to keep things reasonably
+>>> symmetrical.
+>>
+>>    A look up on unregister lead me to use deregister as more appropriate.
+>>    Anyway I won't bother much, I will be go be suggestions, and how about
+>>    unscan, since scan is already there. OR how about purge.
+> 
+> This is a bikeshed I think I have a beautiful color suggestion for! =:^)
+> 
+> Seriously, the normal purpose of scanning is to record particular details
+> of what was seen during the scan, based on some desired scanning criteria.
+> 
+> So what do you call it when you need to "forget" the information you
+> scanned for?
+> 
+> What about simply "forget", btrfs device forget ?  That sounds the most
+> natural to me, certainly far more so than the apparently freshly created
+> word "unscan", tho that would certainly deliver the meaning.
+I actually like forget even better than ignore, it's more descriptive 
+and a bit more obvious.  'purge' might make sense if you're always 
+dumping the entire list, but sounds very absolute and dangerous (and 
+almost universally has a very negative connotation).
+> 
+> And FWIW, "deregister", just.. no.  (I too would vote unregister if we're
+> sticking with the register root-word, but I have a feeling that may be a
+> regional/en-US preference and some other English regional variants may
+> find deregister is the less terrible to their ear.  That may explain
+> whatever commentary under unregister led you to go with deregister.)
+> "Deregister" sounds like something a computer programmer might say to
+> describe the process, but I can't imagine a "normal" person using the
+> word, except possibly in the context of removing someone from the voter
+> rolls (where one "registers" to vote, so "deregister" could be a a
+> reasonably natural term for reversing that) or the like.
+Actually, in that case it's usually 'unregister' as well, at least in 
+American English.  'deregister' is indeed largely a programming term, 
+but even then it's not unusual for people to just use 'unregister' (the 
+distinction that I usually use myself is that 'unregister' refers to a 
+voluntary process initiated by the entity that initially registered 
+whatever it was (which is the common case, and technically what this 
+is), whereas 'deregister' is usually an involuntary process triggered by 
+a third party (which is rare outside of things like forced kernel module 
+removal or crashes)).  It's probably worth noting that both uses are 
+uncommon enough that the standard American English dictionaries in 
+Thunderbird and aspell lack both words (though Thunderbird does have 
+'unregistered').
+
+As far as regional variance, I've checked with a couple of friends from 
+Australia, Canada, Denmark, and the UK, and all of them also felt that 
+'deregister' sounded less natural than 'unregister'.  The reality is 
+that pretty much regardless of the particular regional dialect, usage 
+patterns for a given negation prefix tend to be reasonably consistent, 
+namely:
+* de- is usually used in technical verbs and not much else (desensitize, 
+desaturate, deauthorize, delineate, etc)
+* un- is usually used in generic terms, including verbs, adverbs, and 
+adjectives, and is often the most common choice for creating 'new' words 
+by negating an existing verb, adverb, or adjective (unknown, unsightly, 
+unfriendly, etc)
+* anti- is used exclusively for negating nouns, traditionally for 
+concepts, but more recently for any noun (antithesis, antimatter, 
+antidisestablishmentarianism, etc)
+* dis- is used for a handful of very specific cases usually referring to 
+behavior or personality, and sometimes culture (dishonest, disingenuous, 
+etc)
+* non- is used almost exclusively for adjectives and adverbs, but is 
+less frequent than un- (nonsensical, nonplussed, etc)
+* il- rarely used, typically only used for negating something describing 
+the state of an action, and almost exclusively with words that begin 
+with 'l', sometimes extended to ill to add a negative connotation to an 
+existing word (illogical, illegal, etc).

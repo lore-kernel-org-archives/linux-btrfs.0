@@ -1,52 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www62.your-server.de ([213.133.104.62]:52698 "EHLO
-        www62.your-server.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753112AbdLHXZY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 18:25:24 -0500
-Subject: Re: [PATCH v8 0/5] Add the ability to do BPF directed error injection
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
-        netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
-        kernel-team@fb.com, linux-btrfs@vger.kernel.org
-References: <1512576737-9417-1-git-send-email-josef@toxicpanda.com>
- <439bccca-53e8-408e-972c-7f1b25ba0da6@iogearbox.net>
- <20171208202424.cxvsbf3v2huiolqn@destiny>
-From: Daniel Borkmann <daniel@iogearbox.net>
-Message-ID: <86804f71-09e9-a3ee-a585-d4e692913616@iogearbox.net>
-Date: Sat, 9 Dec 2017 00:25:16 +0100
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:28894 "EHLO
+        ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1752312AbdLHAQ2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 7 Dec 2017 19:16:28 -0500
+Date: Fri, 8 Dec 2017 11:14:01 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Matthew Wilcox <willy@infradead.org>
+Cc: "Theodore Ts'o" <tytso@mit.edu>, Matthew Wilcox <mawilcox@microsoft.com>,
+        Ross Zwisler <ross.zwisler@linux.intel.com>,
+        Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org,
+        mingo@kernel.org, byungchul.park@lge.com
+Subject: Re: Lockdep is less useful than it was
+Message-ID: <20171208001401.GM4094@dastard>
+References: <20171206004159.3755-1-willy@infradead.org>
+ <20171206004159.3755-73-willy@infradead.org>
+ <20171206012901.GZ4094@dastard>
+ <20171206020208.GK26021@bombadil.infradead.org>
+ <20171206031456.GE4094@dastard>
+ <20171206044549.GO26021@bombadil.infradead.org>
+ <20171206084404.GF4094@dastard>
+ <20171206140648.GB32044@bombadil.infradead.org>
+ <20171207160634.il3vt5d6a4v5qesi@thunk.org>
+ <20171207223803.GC26792@bombadil.infradead.org>
 MIME-Version: 1.0
-In-Reply-To: <20171208202424.cxvsbf3v2huiolqn@destiny>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171207223803.GC26792@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/08/2017 09:24 PM, Josef Bacik wrote:
-> On Fri, Dec 08, 2017 at 04:35:44PM +0100, Daniel Borkmann wrote:
->> On 12/06/2017 05:12 PM, Josef Bacik wrote:
->>> Jon noticed that I had a typo in my _ASM_KPROBE_ERROR_INJECT macro.  I went to
->>> figure out why the compiler didn't catch it and it's because it was not used
->>> anywhere.  I had copied it from the trace blacklist code without understanding
->>> where it was used as cscope didn't find the original macro I was looking for, so
->>> I assumed it was some voodoo and left it in place.  Turns out cscope failed me
->>> and I didn't need the macro at all, the trace blacklist thing I was looking at
->>> was for marking assembly functions as blacklisted and I have no intention of
->>> marking assembly functions as error injectable at the moment.
->>>
->>> v7->v8:
->>> - removed the _ASM_KPROBE_ERROR_INJECT since it was not needed.
->>
->> The series doesn't apply cleanly to the bpf-next tree, so one last respin with
->> a rebase would unfortunately still be required, thanks!
+On Thu, Dec 07, 2017 at 02:38:03PM -0800, Matthew Wilcox wrote:
+> On Thu, Dec 07, 2017 at 11:06:34AM -0500, Theodore Ts'o wrote:
+> > The problem is that if it has too many false positives --- and it's
+> > gotten *way* worse with the completion callback "feature", people will
+> > just stop using Lockdep as being too annyoing and a waste of developer
+> > time when trying to figure what is a legitimate locking bug versus
+> > lockdep getting confused.
+> > 
+> > <Rant>I can't even disable the new Lockdep feature which is throwing
+> > lots of new false positives --- it's just all or nothing.</Rant>
 > 
-> I've rebased and let it sit in my git tree to make sure kbuild test bot didn't
-> blow up, can you pull from
+> You *can* ... but it's way more hacking Kconfig than you ought to have
+> to do (which is a separate rant ...)
 > 
-> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git bpf-override-return
+> You need to get LOCKDEP_CROSSRELEASE off.  I'd revert patches
+> e26f34a407aec9c65bce2bc0c838fabe4f051fc6 and
+> b483cf3bc249d7af706390efa63d6671e80d1c09
 > 
-> or do you want me to repost the whole series?  Thanks,
+> I think it was a mistake to force these on for everybody; they have a
+> much higher false-positive rate than the rest of lockdep, so as you say
+> forcing them on leads to fewer people using *any* of lockdep.
+> 
+> The bug you're hitting isn't Byungchul's fault; it's an annotation
+> problem.  The same kind of annotation problem that we used to have with
+> dozens of other places in the kernel which are now fixed.
 
-Yeah, the patches would need to end up on netdev, so once kbuild bot went
-through fine after your rebase, please send the series.
+That's one of the fundamental problem with lockdep - it throws the
+difficulty of solving all these new false positives onto the
+developers who know nothing about lockdep and don't follow it's
+development. And until they do solve them - especially in critical
+subsystems that everyone uses like the storage stack - lockdep is
+essentially worthless.
 
-Thanks,
-Daniel
+> If you didn't
+> have to hack Kconfig to get rid of this problem, you'd be happier, right?
+
+I'd be much happier if it wasn't turned on by default in the first
+place.  We gave plenty of warnings that there were still unsolved
+false positive problems with the new checks in the storage stack.
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,31 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:39842 "EHLO
+Received: from userp2120.oracle.com ([156.151.31.85]:47428 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752212AbdLHKc6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 05:32:58 -0500
+        with ESMTP id S1752481AbdLHKjX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 05:39:23 -0500
 Subject: Re: [PATCH RFC] btrfs: self heal from SB fail
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
 References: <20171208075705.23462-1-anand.jain@oracle.com>
- <d39224a3-5431-90a7-d2f3-e4536b4842a4@suse.com>
+ <ee4df708-3197-7d37-8c6a-65f07cc760b5@gmx.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <d681bb3c-f22f-a7f4-ff82-3208327f4590@oracle.com>
-Date: Fri, 8 Dec 2017 18:33:23 +0800
+Message-ID: <9228f06c-e22e-5ee5-fb73-382f67589463@oracle.com>
+Date: Fri, 8 Dec 2017 18:39:46 +0800
 MIME-Version: 1.0
-In-Reply-To: <d39224a3-5431-90a7-d2f3-e4536b4842a4@suse.com>
+In-Reply-To: <ee4df708-3197-7d37-8c6a-65f07cc760b5@gmx.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 12/08/2017 04:40 PM, Nikolay Borisov wrote:
+On 12/08/2017 04:17 PM, Qu Wenruo wrote:
 > 
 > 
-> On  8.12.2017 09:57, Anand Jain wrote:
+> On 2017年12月08日 15:57, Anand Jain wrote:
 >> -EXPERIMENTAL-
 >> As of now when primary SB fails we won't self heal and would fail mount,
 >> this is an experimental patch which thinks why not go and read backup
 >> copy.
+> 
+> Just curious about in which real world case that backup super block can
+> help.
+> At least from what I see in mail list, only few cases where backup super
+> helps.
+
+  Theoretical design helps. I ended up in this situation though. And
+  ext4 has -o sb flag to manage this part. When we can expect EIO on
+  any part of the disk block why not on the LBA which contains primary
+  SB. And should we fail the mount for that reason ? No.
+
+> Despite that self super heal seems good, although I agree with David, we
+> need a weaker but necessary check (magic and fsid from primary super?)
+> to ensure it's a valid btrfs before we use the backup supers.
+
+  Of course, we already have btrfs_check_super_valid() to verify the SB,
+  I don't understand why - how do we verify the SB should be the point of
+  concern here, at all.
+
+Thanks, Anand
+
+> Thanks,
+> Qu
+> 
+> 
 >>
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
@@ -83,29 +108,6 @@ On 12/08/2017 04:40 PM, Nikolay Borisov wrote:
 >>   
 >> -	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
 >> +	sb_bh = btrfs_read_dev_super(bdev);
-> 
-> This patch prompts another question: why do we have a page-based and a
-> bufferhead-based interface to reading the super block?
-
-  Right. we need to know that. Sorry I just saw this.
-
-  I have a very old patch to converge them and clean this up, but haven't
-  sent it because there are some missing information on why it ended up
-  like that in the first place.
-
-Thanks, Anand
-
-
-> I did prototype
-> switching the bufferheads to page based but the resulting code wasn't
-> any cleaner. I believe there is also open the question what happens when
-> btrfs is run on a 64k page machine. I.e. we are going to read a single
-> page and the sb is going to be in the first 4k but what about the rest
-> 60, they could potentially contain other metadata. The page will have to
-> be freed asap so as not to peg the neighboring metadata?
-
-
-> 
 >> +	if (IS_ERR(sb_bh)) {
 >> +		ret = PTR_ERR(sb_bh);
 >>   		goto error_bdev_put;
@@ -124,8 +126,4 @@ Thanks, Anand
 >>   error_bdev_put:
 >>   	blkdev_put(bdev, flags);
 >>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 

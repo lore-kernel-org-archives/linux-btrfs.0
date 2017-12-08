@@ -1,11 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from LGEAMRELO12.lge.com ([156.147.23.52]:48598 "EHLO
-        lgeamrelo12.lge.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752974AbdLHJ1t (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 04:27:49 -0500
-Subject: Re: [PATCH v4 72/73] xfs: Convert mru cache to XArray
-To: Dave Chinner <david@fromorbit.com>
-Cc: "Theodore Ts'o" <tytso@mit.edu>, Matthew Wilcox <willy@infradead.org>,
+Received: from imap.thunk.org ([74.207.234.97]:52510 "EHLO imap.thunk.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753954AbdLHP1h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 8 Dec 2017 10:27:37 -0500
+Date: Fri, 8 Dec 2017 10:27:17 -0500
+From: "Theodore Ts'o" <tytso@mit.edu>
+To: Matthew Wilcox <willy@infradead.org>
+Cc: Dave Chinner <david@fromorbit.com>,
         Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
         Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
@@ -13,182 +14,67 @@ Cc: "Theodore Ts'o" <tytso@mit.edu>, Matthew Wilcox <willy@infradead.org>,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org,
-        kernel-team@lge.com
-References: <20171206004159.3755-73-willy@infradead.org>
+        mingo@kernel.org, byungchul.park@lge.com
+Subject: Re: Lockdep is less useful than it was
+Message-ID: <20171208152717.fx5w66wvyrfx6vrz@thunk.org>
+References: <20171206004159.3755-1-willy@infradead.org>
+ <20171206004159.3755-73-willy@infradead.org>
  <20171206012901.GZ4094@dastard>
  <20171206020208.GK26021@bombadil.infradead.org>
  <20171206031456.GE4094@dastard>
  <20171206044549.GO26021@bombadil.infradead.org>
  <20171206084404.GF4094@dastard>
  <20171206140648.GB32044@bombadil.infradead.org>
- <20171207160634.il3vt5d6a4v5qesi@thunk.org> <20171207222216.GH4094@dastard>
- <20171208044552.GA32473@X58A-UD3R> <20171208072500.GO5858@dastard>
-From: Byungchul Park <byungchul.park@lge.com>
-Message-ID: <fd7130d7-9066-524e-1053-a61eeb27cb36@lge.com>
-Date: Fri, 8 Dec 2017 18:27:45 +0900
+ <20171207160634.il3vt5d6a4v5qesi@thunk.org>
+ <20171207223803.GC26792@bombadil.infradead.org>
 MIME-Version: 1.0
-In-Reply-To: <20171208072500.GO5858@dastard>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171207223803.GC26792@bombadil.infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/8/2017 4:25 PM, Dave Chinner wrote:
-> On Fri, Dec 08, 2017 at 01:45:52PM +0900, Byungchul Park wrote:
->> On Fri, Dec 08, 2017 at 09:22:16AM +1100, Dave Chinner wrote:
->>> On Thu, Dec 07, 2017 at 11:06:34AM -0500, Theodore Ts'o wrote:
->>>> On Wed, Dec 06, 2017 at 06:06:48AM -0800, Matthew Wilcox wrote:
->>>>>> Unfortunately for you, I don't find arguments along the lines of
->>>>>> "lockdep will save us" at all convincing.  lockdep already throws
->>>>>> too many false positives to be useful as a tool that reliably and
->>>>>> accurately points out rare, exciting, complex, intricate locking
->>>>>> problems.
->>>>>
->>>>> But it does reliably and accurately point out "dude, you forgot to take
->>>>> the lock".  It's caught a number of real problems in my own testing that
->>>>> you never got to see.
->>>>
->>>> The problem is that if it has too many false positives --- and it's
->>>> gotten *way* worse with the completion callback "feature", people will
->>>> just stop using Lockdep as being too annyoing and a waste of developer
->>>> time when trying to figure what is a legitimate locking bug versus
->>>> lockdep getting confused.
->>>>
->>>> <Rant>I can't even disable the new Lockdep feature which is throwing
->>>> lots of new false positives --- it's just all or nothing.</Rant>
->>>>
->>>> Dave has just said he's already stopped using Lockdep, as a result.
->>>
->>> This is compeltely OT, but FYI I stopped using lockdep a long time
->>> ago.  We've spend orders of magnitude more time and effort to shut
->>> up lockdep false positives in the XFS code than we ever have on
->>> locking problems that lockdep has uncovered. And still lockdep
->>> throws too many false positives on XFS workloads to be useful to me.
->>>
->>> But it's more than that: I understand just how much lockdep *doesn't
->>> check* and that means *I know I can't rely on lockdep* for potential
->>> deadlock detection. e.g.  it doesn't cover semaphores, which means
->>
->> Hello,
->>
->> I'm careful in saying the following since you seem to feel not good at
->> crossrelease and even lockdep. Now that cross-release has been
->> introduced, semaphores can be covered as you might know. Actually, all
->> general waiters can.
+On Thu, Dec 07, 2017 at 02:38:03PM -0800, Matthew Wilcox wrote:
+> I think it was a mistake to force these on for everybody; they have a
+> much higher false-positive rate than the rest of lockdep, so as you say
+> forcing them on leads to fewer people using *any* of lockdep.
 > 
-> And all it will do is create a whole bunch more work for us XFS guys
-> to shut up all the the false positive crap that falls out from it
-> because the locking model we have is far more complex than any of
-> the lockdep developers thought was necessary to support, just like
-> happened with the XFS inode annotations all those years ago.
-> 
-> e.g. nobody has ever bothered to ask us what is needed to describe
-> XFS's semaphore locking model.  If you did that, you'd know that we
-> nest *thousands* of locked semaphores in compeltely random lock
-> order during metadata buffer writeback. And that this lock order
-> does not reflect the actual locking order rules we have for locking
-> buffers during transactions.
-> 
-> Oh, and you'd also know that a semaphore's lock order and context
-> can change multiple times during the life time of the buffer.  Say
-> we free a block and the reallocate it as something else before it is
-> reclaimed - that buffer now might have a different lock order. Or
-> maybe we promote a buffer to be a root btree block as a result of a
-> join - it's now the first buffer in a lock run, rather than a child.
-> Or we split a tree, and the root is now a node and so no longer is
-> the first buffer in a lock run. Or that we walk sideways along the
-> leaf nodes siblings during searches.  IOWs, there is no well defined
-> static lock ordering at all for buffers - and therefore semaphores -
-> in XFS at all.
-> 
-> And knowing that, you wouldn't simply mention that lockdep can
-> support semaphores now as though that is necessary to "make it work"
-> for XFS.  It's going to be much simpler for us to just turn off
-> lockdep and ignore whatever crap it sends our way than it is to
-> spend unplanned weeks of our time to try to make lockdep sorta work
-> again. Sure, we might get there in the end, but it's likely to take
-> months, if not years like it did with the XFS inode annotations.....
-> 
->>> it has zero coverage of the entire XFS metadata buffer subsystem and
->>> the complex locking orders we have for metadata updates.
->>>
->>> Put simply: lockdep doesn't provide me with any benefit, so I don't
->>> use it...
->>
->> Sad..
-> 
-> I don't think you understand. I'll try to explain.
-> 
-> The lockdep infrastructure by itself doesn't make lockdep a useful
-> tool - it mostly generates false positives because it has no
-> concept of locking models that don't match it's internal tracking
-> assumptions and/or limitations.
-> 
-> That means if we can't suppress the false positives, then lockdep is
-> going to be too noisy to find real problems.  It's taken the XFS
-> developers months of work over the past 7-8 years to suppress all
-> the *common* false positives that lockdep throws on XFS. And despite
-> all that work, there's still too many false positives occuring
-> because we can't easily suppress them with annotations. IOWs, the
-> signal to noise ratio is still too low for lockdep to find real
-> problems.
-> 
-> That's why lockdep isn't useful to me - the noise floor is too high,
-> and the effort to lower the noise floor further is too great.
-> 
-> This is important, because cross-release just raised the noise floor
-> by a large margin and so now we have to spend the time to reduce it
-> again back to where it was before cross-release was added.  IOWs,
-> adding new detection features to lockdep actually makes lockdep less
-> useful for a significant period of time. That length of time is
-> dependent on the rate at which subsystem developers can suppress the
-> false positives and lower the noise floor back down to an acceptible
-> level. And there is always the possibility that we can't get the
-> noise floor low enough for lockdep to be a reliable, useful tool for
-> some subsystems....
-> 
-> That's what I don't think you understand - that the most important
-> part of lockdep is /not the core infrastructure/ you work on. The
-> most important part of lockdep is the annotations that suppress the
-> noise floor and allow the real problems to stand out.
+> The bug you're hitting isn't Byungchul's fault; it's an annotation
+> problem.  The same kind of annotation problem that we used to have with
+> dozens of other places in the kernel which are now fixed.
 
-I'm sorry to hear that.. If I were you, I would also get
-annoyed. And.. thanks for explanation.
+The question is whose responsibility is it to annotate the code?  On
+another thread it was suggested it was ext4's responsibility to add
+annotations to avoid the false positives --- never the mind the fact
+that every single file system is going to have add annotations.
 
-But, I think assigning lock classes properly and checking
-relationship of the classes to detect deadlocks is reasonable.
+Also note that the documentation for how to add annotations is
+***horrible***.  It's mostly, "try to figure out how other people
+added magic cargo cult code which is not well defined (look at the
+definitions of lockdep_set_class, lockdep_set_class_and_name,
+lockdep_set_class_and_subclass, and lockdep_set_subclass, and weep) in
+other subsystems and hope and pray it works for you."
 
-In my opinion about the common lockdep stuff, there are 2
-problems on it.
+And the explanation when there are failures, either false positives,
+or not, are completely opaque.  For example:
 
-1) Firstly, it's hard to assign lock classes *properly*. By
-default, it relies on the caller site of lockdep_init_map(),
-but we need to assign another class manually, where ordering
-rules are complicated so cannot rely on the caller site. That
-*only* can be done by experts of the subsystem.
+[   16.190198] ext4lazyinit/648 is trying to acquire lock:
+[   16.191201]  ((gendisk_completion)1 << part_shift(NUMA_NO_NODE)){+.+.}, at: [<8a1ebe9d>] wait_for_completion_io+0x12/0x20
 
-I think if they want to get benifit from lockdep, they have no
-choice but to assign classes manually with the domain knowledge,
-or use *lockdep_set_novalidate_class()* to invalidate locks
-making the developers annoyed and not want to use the checking
-for them.
+Just try to tell me that:
 
-It's a problem of choice between (1) getting benifit from
-lockdep by doing something with the domain knowledge, and (2)
-giving up the benifit by invalidating locks making them panic.
+	((gendisk_completion)1 << part_shift(NUMA_NO_NODE)){+.+.}
 
-2) Secondly, I've seen several places where lock_acquire()s
-are a little bit wrongly used more than we need. That would add
-additional detection capability and make lockdep strong but
-increase the possibility to give us more false positives.
+is human comprehensible with a straight face.  And since the messages
+don't even include the subclass/class/name key annotations, as lockdep
+tries to handle things that are more and more complex, I'd argue it
+has already crossed the boundary where unless you are a lockdep
+developer, good luck trying to understand what is going on or how to
+add annotations.
 
-If you don't want to work on the additional annotations at the
-moment, then I think you can choose an option whatever you
-want, and consider locks again you've invalidated, when it
-becomes necessary to detect deadlocks involving those locks by
-validating those locks back and adding necessary annotations.
+So if you are adding complexity to the kernel with the argument,
+"lockdep will save us", I'm with Dave --- it's just not a believable
+argument.
 
-Am I missing something?
+Cheers,
 
--- 
-Thanks,
-Byungchul
+						- Ted

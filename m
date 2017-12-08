@@ -1,76 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42843 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753907AbdLHO1r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Dec 2017 09:27:47 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 01E94AD11
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Dec 2017 14:27:46 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:52929 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751827AbdLIAMn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 19:12:43 -0500
+Date: Fri, 8 Dec 2017 16:05:39 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Rename bin_search -> btrfs_bin_search
-Date: Fri,  8 Dec 2017 16:27:43 +0200
-Message-Id: <1512743263-18791-1-git-send-email-nborisov@suse.com>
+Cc: =?iso-8859-1?B?Suly9G1l?= Carretero <cJ-ko@zougloub.eu>
+Subject: Re: [PATCH] Btrfs: raid56: fix race between merge_bio and
+ rbio_orig_end_io
+Message-ID: <20171208230539.GA30998@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20171208230235.30636-1-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <20171208230235.30636-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently there are 2 function doing binary search on btrfs nodes:
-bin_search and btrfs_bin_search. The latter being a simple wrapper for
-the former. So eliminate the wrapper and just rename bin_search to
-btrfs_bin_search. No functional changes
+(Add Jérôme Carretero.)
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.c | 14 ++++----------
- 1 file changed, 4 insertions(+), 10 deletions(-)
+Thanks,
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 1e74cf826532..880f4f693263 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1807,8 +1807,8 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
-  * simple bin_search frontend that does the right thing for
-  * leaves vs nodes
-  */
--static int bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
--		      int level, int *slot)
-+int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
-+		     int level, int *slot)
- {
- 	if (level == 0)
- 		return generic_bin_search(eb,
-@@ -1824,12 +1824,6 @@ static int bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
- 					  slot);
- }
- 
--int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
--		     int level, int *slot)
--{
--	return bin_search(eb, key, level, slot);
--}
--
- static void root_add_used(struct btrfs_root *root, u32 size)
- {
- 	spin_lock(&root->accounting_lock);
-@@ -2614,7 +2608,7 @@ static int key_search(struct extent_buffer *b, const struct btrfs_key *key,
- 		      int level, int *prev_cmp, int *slot)
- {
- 	if (*prev_cmp != 0) {
--		*prev_cmp = bin_search(b, key, level, slot);
-+		*prev_cmp = btrfs_bin_search(b, key, level, slot);
- 		return *prev_cmp;
- 	}
- 
-@@ -5175,7 +5169,7 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
- 	while (1) {
- 		nritems = btrfs_header_nritems(cur);
- 		level = btrfs_header_level(cur);
--		sret = bin_search(cur, min_key, level, &slot);
-+		sret = btrfs_bin_search(cur, min_key, level, &slot);
- 
- 		/* at the lowest level, we're done, setup the path and exit */
- 		if (level == path->lowest_level) {
--- 
-2.7.4
+-liubo
 
+On Fri, Dec 08, 2017 at 04:02:35PM -0700, Liu Bo wrote:
+> We're not allowed to take any new bios to rbio->bio_list in
+> rbio_orig_end_io(), otherwise we may get merged with more bios and
+> rbio->bio_list is not empty.
+> 
+> This should only happens in error-out cases, the normal path of
+> recover and full stripe write have already set RBIO_RMW_LOCKED_BIT to
+> disable merge before doing IO.
+> 
+> Reported-by: Jérôme Carretero <cJ-ko@zougloub.eu>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/raid56.c | 13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index 5aa9d22..127c782 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -859,12 +859,23 @@ static void free_raid_bio(struct btrfs_raid_bio *rbio)
+>   */
+>  static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t err)
+>  {
+> -	struct bio *cur = bio_list_get(&rbio->bio_list);
+> +	struct bio *cur;
+>  	struct bio *next;
+>  
+> +	/*
+> +	 * We're not allowed to take any new bios to rbio->bio_list
+> +	 * from now on, otherwise we may get merged with more bios and
+> +	 * rbio->bio_list is not empty.
+> +	 */
+> +	spin_lock(&rbio->bio_list_lock);
+> +	set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+> +	spin_unlock(&rbio->bio_list_lock);
+> +
+>  	if (rbio->generic_bio_cnt)
+>  		btrfs_bio_counter_sub(rbio->fs_info, rbio->generic_bio_cnt);
+>  
+> +	cur = bio_list_get(&rbio->bio_list);
+> +
+>  	free_raid_bio(rbio);
+>  
+>  	while (cur) {
+> -- 
+> 2.9.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,108 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:48914 "EHLO
+Received: from aserp2130.oracle.com ([141.146.126.79]:58503 "EHLO
         aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751021AbdLHH4m (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 02:56:42 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB87ufYn018128
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Dec 2017 07:56:41 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2130.oracle.com with ESMTP id 2eqp6e04ca-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 08 Dec 2017 07:56:41 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vB87ueHU009006
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Dec 2017 07:56:40 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vB87ueQr022499
-        for <linux-btrfs@vger.kernel.org>; Fri, 8 Dec 2017 07:56:40 GMT
+        with ESMTP id S1752793AbdLHIN2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 03:13:28 -0500
+Subject: Re: [PATCH 5/5] btrfs: Greatly simplify btrfs_read_dev_super
 From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: self heal from SB fail
-Date: Fri,  8 Dec 2017 15:57:05 +0800
-Message-Id: <20171208075705.23462-1-anand.jain@oracle.com>
+To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <1512119984-12708-1-git-send-email-nborisov@suse.com>
+ <1512119984-12708-6-git-send-email-nborisov@suse.com>
+ <96aafd8d-a1e8-2846-0aa3-59b3ff97edb7@oracle.com>
+ <f08faba1-2c79-bd80-34f5-f8f85e927464@suse.com>
+ <20171204141337.GX3553@twin.jikos.cz>
+ <897b7a95-1fd6-9647-f959-1d5f8f275685@suse.com>
+ <20171206162448.GD3553@twin.jikos.cz>
+ <24281483-900c-ab1b-c407-5fa6983f5311@oracle.com>
+Message-ID: <acf7906d-3284-eaf2-a954-3acb8017dbbf@oracle.com>
+Date: Fri, 8 Dec 2017 16:13:49 +0800
+MIME-Version: 1.0
+In-Reply-To: <24281483-900c-ab1b-c407-5fa6983f5311@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
--EXPERIMENTAL-
-As of now when primary SB fails we won't self heal and would fail mount,
-this is an experimental patch which thinks why not go and read backup
-copy.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/disk-io.c |  8 +++++++-
- fs/btrfs/volumes.c | 10 +++++++---
- 2 files changed, 14 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9b20c1f3563b..a791b8dfe8a8 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3190,7 +3190,7 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
- 	 * So, we need to add a special mount option to scan for
- 	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
- 	 */
--	for (i = 0; i < 1; i++) {
-+	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		ret = btrfs_read_dev_one_super(bdev, i, &bh);
- 		if (ret)
- 			continue;
-@@ -4015,11 +4015,17 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
- 		ret = -EINVAL;
- 	}
- 
-+#if 0
-+	/*
-+	 * Need a way to check for any copy of SB, as its not a
-+	 * strong check, just ignore this for now.
-+	 */
- 	if (btrfs_super_bytenr(sb) != BTRFS_SUPER_INFO_OFFSET) {
- 		btrfs_err(fs_info, "super offset mismatch %llu != %u",
- 			  btrfs_super_bytenr(sb), BTRFS_SUPER_INFO_OFFSET);
- 		ret = -EINVAL;
- 	}
-+#endif
- 
- 	/*
- 	 * Obvious sys_chunk_array corruptions, it must hold at least one key
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9fa2539a8493..f368db94d62b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1369,7 +1369,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- {
- 	struct btrfs_super_block *disk_super;
- 	struct block_device *bdev;
--	struct page *page;
-+	struct buffer_head *sb_bh;
- 	int ret = -EINVAL;
- 	u64 devid;
- 	u64 transid;
-@@ -1392,8 +1392,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 		goto error;
- 	}
- 
--	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super))
-+	sb_bh = btrfs_read_dev_super(bdev);
-+	if (IS_ERR(sb_bh)) {
-+		ret = PTR_ERR(sb_bh);
- 		goto error_bdev_put;
-+	}
-+	disk_super = (struct btrfs_super_block *) sb_bh->b_data;
- 
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	transid = btrfs_super_generation(disk_super);
-@@ -1413,7 +1417,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	if (!ret && fs_devices_ret)
- 		(*fs_devices_ret)->total_devices = total_devices;
- 
--	btrfs_release_disk_super(page);
-+	brelse(sb_bh);
- 
- error_bdev_put:
- 	blkdev_put(bdev, flags);
--- 
-2.7.0
+On 12/07/2017 11:07 PM, Anand Jain wrote:
+> 
+> 
+> On 12/07/2017 12:24 AM, David Sterba wrote:
+>> On Mon, Dec 04, 2017 at 06:20:09PM +0200, Nikolay Borisov wrote:
+>>>>> I don't understand what problem *should* be solved here...
+>>>>
+>>>> Without any further checks and validation, we cannot simply iterate 
+>>>> over
+>>>> all superblocks and try to mount anything that looks ok. Even if the
+>>>> offsets exist on the block device.  The fsid should be at least 
+>>>> checked,
+>>>> but that's still not enough to ensure the 1st copy is what we want to
+>>>> mount.
+>>>
+>>> I'm more inclined to agree with Anand here, that if the users wants to
+>>> mount with -t btrfs then the filesystem should assume it's correct to
+>>> use any of the additional superblocks.
+>>
+>> If and only if the additional superblocks are valid. And if we can't
+>> read the primary superblock, we don't have enough information to
+>> establish the validation.  EIO?  We don't have anything.  CRC mismatch?
+>> Can't trust the whole data.  We need FSID and total_size at least. Other
+>> actions are limited from inside kernel.
 
+  ext4 has mount option -o sb=<copy_num> to specify the copy num to use.
+
+  Not sure if I have dug enough but as of now I don't find any pitfall.
+  Only funny thing is you can mount a device even after wipefs -a and
+  recover its primary SB, to which my view is that the problem is at
+  the wipefs -a end, not able to wipe all SB copies.
+
+  I sent out an experimental RFC patch here:
+    [PATCH RFC] btrfs: self heal from SB fail
+
+  Pls try out, any problem that you could think off by this approach.
+
+Thanks, Anand

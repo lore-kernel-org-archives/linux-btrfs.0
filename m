@@ -1,83 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:58607 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752610AbdLHXBe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Dec 2017 18:01:34 -0500
-Date: Fri, 8 Dec 2017 15:01:31 -0800
-From: Matthew Wilcox <willy@infradead.org>
-To: Dave Chinner <david@fromorbit.com>
-Cc: Matthew Wilcox <mawilcox@microsoft.com>,
+Received: from smtprelay0225.hostedemail.com ([216.40.44.225]:45213 "EHLO
+        smtprelay.hostedemail.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S1751059AbdLIRIw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Dec 2017 12:08:52 -0500
+Message-ID: <1512838818.26342.7.camel@perches.com>
+Subject: Re: [PATCH v4 72/73] xfs: Convert mru cache to XArray
+From: Joe Perches <joe@perches.com>
+To: Dave Chinner <david@fromorbit.com>, Alan Stern <stern@rowland.harvard.edu>
+Cc: Byungchul Park <byungchul.park@lge.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Matthew Wilcox <willy@infradead.org>,
+        Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
         Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
         linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v4 72/73] xfs: Convert mru cache to XArray
-Message-ID: <20171208230131.GC32293@bombadil.infradead.org>
-References: <20171206004159.3755-1-willy@infradead.org>
- <20171206004159.3755-73-willy@infradead.org>
- <20171206012901.GZ4094@dastard>
- <20171206020208.GK26021@bombadil.infradead.org>
- <20171206031456.GE4094@dastard>
- <20171206044549.GO26021@bombadil.infradead.org>
- <20171206084404.GF4094@dastard>
- <20171206140648.GB32044@bombadil.infradead.org>
- <20171207003843.GG4094@dastard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171207003843.GG4094@dastard>
+        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org,
+        kernel-team@lge.com
+Date: Sat, 09 Dec 2017 09:00:18 -0800
+In-Reply-To: <20171208223654.GP5858@dastard>
+References: <fd7130d7-9066-524e-1053-a61eeb27cb36@lge.com>
+         <Pine.LNX.4.44L0.1712081228430.1371-100000@iolanthe.rowland.org>
+         <20171208223654.GP5858@dastard>
+Content-Type: text/plain; charset="ISO-8859-1"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 07, 2017 at 11:38:43AM +1100, Dave Chinner wrote:
-> > > cmpxchg is for replacing a known object in a store - it's not really
-> > > intended for doing initial inserts after a lookup tells us there is
-> > > nothing in the store.  The radix tree "insert only if empty" makes
-> > > sense here, because it naturally takes care of lookup/insert races
-> > > via the -EEXIST mechanism.
-> > > 
-> > > I think that providing xa_store_excl() (which would return -EEXIST
-> > > if the entry is not empty) would be a better interface here, because
-> > > it matches the semantics of lookup cache population used all over
-> > > the kernel....
-> > 
-> > I'm not thrilled with xa_store_excl(), but I need to think about that
-> > a bit more.
-> 
-> Not fussed about the name - I just think we need a function that
-> matches the insert semantics of the code....
+On Sat, 2017-12-09 at 09:36 +1100, Dave Chinner wrote:
+> 	1. Using lockdep_set_novalidate_class() for anything other
+> 	than device->mutex will throw checkpatch warnings. Nice. (*)
+[]
+> (*) checkpatch.pl is considered mostly harmful round here, too,
+> but that's another rant....
 
-I think I have something that works better for you than returning -EEXIST
-(because you don't actually want -EEXIST, you want -EAGAIN):
+How so?
 
-        /* insert the new inode */
--       spin_lock(&pag->pag_ici_lock);
--       error = radix_tree_insert(&pag->pag_ici_root, agino, ip);
--       if (unlikely(error)) {
--               WARN_ON(error != -EEXIST);
--               XFS_STATS_INC(mp, xs_ig_dup);
--               error = -EAGAIN;
--               goto out_preload_end;
--       }
--       spin_unlock(&pag->pag_ici_lock);
--       radix_tree_preload_end();
-+       curr = xa_cmpxchg(&pag->pag_ici_xa, agino, NULL, ip, GFP_NOFS);
-+       error = __xa_race(curr, -EAGAIN);
-+       if (error)
-+               goto out_unlock;
+> (**) the frequent occurrence of "core code/devs aren't held to the
+> same rules/standard as everyone else" is another rant I have stored
+> up for a rainy day.
 
-...
+Yeah.  I wouldn't mind reading that one...
 
--out_preload_end:
--       spin_unlock(&pag->pag_ici_lock);
--       radix_tree_preload_end();
-+out_unlock:
-+       if (error == -EAGAIN)
-+               XFS_STATS_INC(mp, xs_ig_dup);
-
-I've changed the behaviour slightly in that returning an -ENOMEM used to
-hit a WARN_ON, and I don't think that's the right response -- GFP_NOFS
-returning -ENOMEM probably gets you a nice warning already from the
-mm code.
+Rainy season is starting right about now here too.
 

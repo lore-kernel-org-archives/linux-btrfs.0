@@ -1,41 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([65.50.211.133]:47336 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750862AbdLGWkB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 17:40:01 -0500
-Date: Thu, 7 Dec 2017 14:39:56 -0800
-From: Matthew Wilcox <willy@infradead.org>
-To: "Theodore Ts'o" <tytso@mit.edu>, Dave Chinner <david@fromorbit.com>,
-        Matthew Wilcox <mawilcox@microsoft.com>,
-        Ross Zwisler <ross.zwisler@linux.intel.com>,
-        Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
-        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: mingo@kernel.org, byungchul.park@lge.com
-Subject: Re: Lockdep is less useful than it was
-Message-ID: <20171207223956.GD26792@bombadil.infradead.org>
-References: <20171206004159.3755-1-willy@infradead.org>
- <20171206004159.3755-73-willy@infradead.org>
- <20171206012901.GZ4094@dastard>
- <20171206020208.GK26021@bombadil.infradead.org>
- <20171206031456.GE4094@dastard>
- <20171206044549.GO26021@bombadil.infradead.org>
- <20171206084404.GF4094@dastard>
- <20171206140648.GB32044@bombadil.infradead.org>
- <20171207160634.il3vt5d6a4v5qesi@thunk.org>
- <20171207223803.GC26792@bombadil.infradead.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171207223803.GC26792@bombadil.infradead.org>
+Received: from mx2.suse.de ([195.135.220.15]:59995 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750954AbdLISAf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 9 Dec 2017 13:00:35 -0500
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 4.15-rc3
+Date: Sat,  9 Dec 2017 18:58:30 +0100
+Message-Id: <cover.1512840351.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 07, 2017 at 02:38:03PM -0800, Matthew Wilcox wrote:
-> You need to get LOCKDEP_CROSSRELEASE off.  I'd revert patches
-> e26f34a407aec9c65bce2bc0c838fabe4f051fc6 and
-> b483cf3bc249d7af706390efa63d6671e80d1c09
+Hi,
 
-Oops.  I meant to revert 2dcd5adfb7401b762ddbe4b86dcacc2f3de6b97b.
-Or you could cherry-pick b483cf3bc249d7af706390efa63d6671e80d1c09.
+this update contains a few fixes (error handling, quota leak, FUA vs
+nobarrier mount option).  There's one one worth mentioning separately -
+an off-by-one fix that leads to overwriting first byte of an adjacent
+page with 0, out of bounds of the memory allocated by an ioctl.  This is
+under a privileged part of the ioctl, can be triggerd in some subvolume
+layouts.
+
+After the last tags and branches mess [1], let me note that the pull url
+is pointed to the signed tag. There are no merge conflics. Please pull,
+thanks.
+
+[1] https://lkml.org/lkml/2017/11/29/952
+
+
+The following changes since commit ea37d5998b50a72b9045ba60a132eeb20e1c4230:
+
+  Btrfs: incremental send, fix wrong unlink path after renaming file (2017-11-28 17:15:30 +0100)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.15-rc3-tag
+
+for you to fetch changes up to c8bcbfbd239ed60a6562964b58034ac8a25f4c31:
+
+  btrfs: Fix possible off-by-one in btrfs_search_path_in_tree (2017-12-07 00:35:15 +0100)
+
+----------------------------------------------------------------
+Jeff Mahoney (2):
+      btrfs: handle errors while updating refcounts in update_ref_for_cow
+      btrfs: fix missing error return in btrfs_drop_snapshot
+
+Justin Maggard (1):
+      btrfs: Fix quota reservation leak on preallocated files
+
+Nikolay Borisov (1):
+      btrfs: Fix possible off-by-one in btrfs_search_path_in_tree
+
+Omar Sandoval (1):
+      Btrfs: disable FUA if mounted with nobarrier
+
+ fs/btrfs/ctree.c       | 18 ++++++++++++------
+ fs/btrfs/disk-io.c     | 12 +++++-------
+ fs/btrfs/extent-tree.c |  1 +
+ fs/btrfs/inode.c       |  2 ++
+ fs/btrfs/ioctl.c       |  2 +-
+ 5 files changed, 21 insertions(+), 14 deletions(-)

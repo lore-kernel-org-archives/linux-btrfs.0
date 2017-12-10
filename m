@@ -1,73 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f182.google.com ([209.85.220.182]:36580 "EHLO
-        mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751726AbdLJPSy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Dec 2017 10:18:54 -0500
-Received: by mail-qk0-f182.google.com with SMTP id t187so4263233qkh.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Dec 2017 07:18:53 -0800 (PST)
+Received: from pepin.polanet.pl ([193.34.52.2]:54370 "EHLO pepin.polanet.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751792AbdLJPiG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Dec 2017 10:38:06 -0500
+Date: Sun, 10 Dec 2017 16:38:05 +0100
+From: Tomasz Pala <gotar@polanet.pl>
+To: constantine <costas.magnuse@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: ERROR: failed to repair root items: Input/output error
+Message-ID: <20171210153804.GA32313@polanet.pl>
+References: <CANcfdL3LFXYFcr-qJDNhEvCttc3yEKKWY53aun0eC_gF0CXrrw@mail.gmail.com>
 MIME-Version: 1.0
-From: constantine <costas.magnuse@gmail.com>
-Date: Sun, 10 Dec 2017 15:18:32 +0000
-Message-ID: <CANcfdL3LFXYFcr-qJDNhEvCttc3yEKKWY53aun0eC_gF0CXrrw@mail.gmail.com>
-Subject: ERROR: failed to repair root items: Input/output error
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <CANcfdL3LFXYFcr-qJDNhEvCttc3yEKKWY53aun0eC_gF0CXrrw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a laptop root hard drive (Samsung SSD 850 EVO 1TB), which is
-within warranty.
-I can't mount it read-write ("no rw mounting  after error").
-The data are not really critical (I will overcome the shock of losing
-them within a couple of days).
+On Sun, Dec 10, 2017 at 15:18:32 +0000, constantine wrote:
 
+> I have a laptop root hard drive (Samsung SSD 850 EVO 1TB), which is
+> within warranty.
+> I can't mount it read-write ("no rw mounting  after error").
 
-Btrfs check --repair throws an error:
+There is a data-corruption issue with this controller!
+The same as 840 EVO - just google this.
 
-sudo btrfs check --repair /dev/sdb1
-enabling repair mode
-Checking filesystem on /dev/sdb1
-UUID: a955bc5f-e5f0-42ce-bd5a-de5eb8d5d3aa
-checking extents
-ERROR: add_tree_backref failed (non-leaf block): File exists
-parent transid verify failed on 103009185792 wanted 5026 found 345954
-parent transid verify failed on 103009185792 wanted 5026 found 345954
-Ignoring transid failure
-leaf parent key incorrect 103009185792
-bad block 103009185792
-ERROR: errors found in extent allocation tree or chunk allocation
-checksum verify failed on 103009173504 found 25334496 wanted 00003500
-checksum verify failed on 103009173504 found 25334496 wanted 00003500
-bytenr mismatch, want=103009173504, have=889192478
-ERROR: failed to repair root items: Input/output error
+In short: either use recent kernel (AFAIR 4.0.5+ for 840 EVO and some
+newer for entire 8* Samsung SSD family blacklisting) or disable NCQ.
 
-What do these errors mean?
-What should I do to fix the filesystem and be able to mount it read-write?
+Using queued TRIM on this drive leads to data loss! Firmware zeroes fist
+512 bytes of a block, sorry.
 
+If you only had smaller drive, as 850s up to 512 GB have different
+controller...
 
-Thank you,
+> checksum verify failed on 103009173504 found 25334496 wanted 00003500
+> bytenr mismatch, want=103009173504, have=889192478
+> ERROR: failed to repair root items: Input/output error
+> 
+> What do these errors mean?
+> What should I do to fix the filesystem and be able to mount it read-write?
 
-Konstantinos Tsardounis
+You probably can't fix this - there is data missing on bare metal, so you should
+recover using backups. If you don't have one, you need to perform manual
+data recovery procedures (like photorec) with little chances to restore
+complete files due to the nature of data loss (beginning of blocks).
 
-
-PS:
-I login with an Ubuntu LiveCD now which returns:
-
-uname -a
-Linux ubuntu 4.13.0-16-generic #19-Ubuntu SMP Wed Oct 11 18:35:14 UTC
-2017 x86_64 x86_64 x86_64 GNU/Linux
-btrfs --version
-btrfs-progs v4.12
-btrfs fi show
-Label: 'arch'  uuid: a955bc5f-e5f0-42ce-bd5a-de5eb8d5d3aa
-    Total devices 1 FS bytes used 876.26GiB
-    devid    1 size 931.01GiB used 931.01GiB path /dev/sdb1
-btrfs fi df sdb1
-Data, single: total=926.25GiB, used=872.65GiB
-System, single: total=4.00MiB, used=128.00KiB
-Metadata, single: total=4.76GiB, used=3.60GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-and the dmesg.log is on:
-https://gist.github.com/anonymous/16344244259bb2989701f3ec43e26f39
+-- 
+Tomasz Pala <gotar@pld-linux.org>

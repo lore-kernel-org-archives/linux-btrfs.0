@@ -1,100 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:48964 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751452AbdLJL1k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Dec 2017 06:27:40 -0500
-Date: Sun, 10 Dec 2017 12:27:39 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: exclusive subvolume space missing
-Message-ID: <20171210112738.GA24090@polanet.pl>
-References: <20171201161555.GA11892@polanet.pl>
- <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
- <20171202012324.GB20205@polanet.pl>
- <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
- <20171202022153.GA7727@polanet.pl>
- <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
- <20171202093301.GA28256@polanet.pl>
- <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
+Received: from mail-qk0-f182.google.com ([209.85.220.182]:36580 "EHLO
+        mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751726AbdLJPSy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Dec 2017 10:18:54 -0500
+Received: by mail-qk0-f182.google.com with SMTP id t187so4263233qkh.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Dec 2017 07:18:53 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
+From: constantine <costas.magnuse@gmail.com>
+Date: Sun, 10 Dec 2017 15:18:32 +0000
+Message-ID: <CANcfdL3LFXYFcr-qJDNhEvCttc3yEKKWY53aun0eC_gF0CXrrw@mail.gmail.com>
+Subject: ERROR: failed to repair root items: Input/output error
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 04, 2017 at 08:34:28 +0800, Qu Wenruo wrote:
-
->> 1. is there any switch resulting in 'defrag only exclusive data'?
-> 
-> IIRC, no.
-
-I have found a directory - pam_abl databases, which occupy 10 MB (yes,
-TEN MEGAbytes) and released ...8.7 GB (almost NINE GIGAbytes) after
-defrag. After defragging files were not snapshotted again and I've lost
-3.6 GB again, so I got this fully reproducible.
-There are 7 files, one of which is 99% of the space (10 MB). None of
-them has nocow set, so they're riding all-btrfs.
-
-I could debug something before I'll clean this up, is there anything you
-want to me to check/know about the files?
-
-The fragmentation impact is HUGE here, 1000-ratio is almost a DoS
-condition which could be triggered by malicious user during a few hours
-or faster - I've lost 3.6 GB during the night with reasonably small
-amount of writes, I guess it might be possible to trash entire
-filesystem within 10 minutes if doing this on purpose.
-
->> 3. I guess there aren't, so how could I accomplish my target, i.e.
->>    reclaiming space that was lost due to fragmentation, without breaking
->>    spanshoted CoW where it would be not only pointless, but actually harmful?
-> 
-> What about using old kernel, like v4.13?
-
-Unfortunately (I guess you had 3.13 on mind), I need the new ones and
-will be pushing towards 4.14.
-
->> 4. How can I prevent this from happening again? All the files, that are
->>    written constantly (stats collector here, PostgreSQL database and
->>    logs on other machines), are marked with nocow (+C); maybe some new
->>    attribute to mark file as autodefrag? +t?
-> 
-> Unfortunately, nocow only works if there is no other subvolume/inode
-> referring to it.
-
-This shouldn't be my case anymore after defrag (==breaking links).
-I guess no easy way to check refcounts of the blocks?
-
-> But in my understanding, btrfs is not suitable for such conflicting
-> situation, where you want to have snapshots of frequent partial updates.
-> 
-> IIRC, btrfs is better for use case where either update is less frequent,
-> or update is replacing the whole file, not just part of it.
-> 
-> So btrfs is good for root filesystem like /etc /usr (and /bin /lib which
-> is pointing to /usr/bin and /usr/lib) , but not for /var or /run.
-
-That is something coherent with my conclusions after 2 years on btrfs,
-however I didn't expect a single file to eat 1000 times more space than it
-should...
+I have a laptop root hard drive (Samsung SSD 850 EVO 1TB), which is
+within warranty.
+I can't mount it read-write ("no rw mounting  after error").
+The data are not really critical (I will overcome the shock of losing
+them within a couple of days).
 
 
-I wonder how many other filesystems were trashed like this - I'm short
-of ~10 GB on other system, many other users might be affected by that
-(telling the Internet stories about btrfs running out of space).
+Btrfs check --repair throws an error:
 
-It is not a problem that I need to defrag a file, the problem is I don't know:
-1. whether I need to defrag,
-2. *what* should I defrag
-nor have a tool that would defrag smart - only the exclusive data or, in
-general, the block that are worth defragging if space released from
-extents is greater than space lost on inter-snapshot duplication.
+sudo btrfs check --repair /dev/sdb1
+enabling repair mode
+Checking filesystem on /dev/sdb1
+UUID: a955bc5f-e5f0-42ce-bd5a-de5eb8d5d3aa
+checking extents
+ERROR: add_tree_backref failed (non-leaf block): File exists
+parent transid verify failed on 103009185792 wanted 5026 found 345954
+parent transid verify failed on 103009185792 wanted 5026 found 345954
+Ignoring transid failure
+leaf parent key incorrect 103009185792
+bad block 103009185792
+ERROR: errors found in extent allocation tree or chunk allocation
+checksum verify failed on 103009173504 found 25334496 wanted 00003500
+checksum verify failed on 103009173504 found 25334496 wanted 00003500
+bytenr mismatch, want=103009173504, have=889192478
+ERROR: failed to repair root items: Input/output error
 
-I can't just defrag entire filesystem since it breaks links with snapshots.
-This change was a real deal-breaker here...
+What do these errors mean?
+What should I do to fix the filesystem and be able to mount it read-write?
 
-Any way to fed the deduplication code with snapshots maybe? There are
-directories and files in the same layout, this could be fast-tracked to
-check and deduplicate.
 
--- 
-Tomasz Pala <gotar@pld-linux.org>
+Thank you,
+
+Konstantinos Tsardounis
+
+
+PS:
+I login with an Ubuntu LiveCD now which returns:
+
+uname -a
+Linux ubuntu 4.13.0-16-generic #19-Ubuntu SMP Wed Oct 11 18:35:14 UTC
+2017 x86_64 x86_64 x86_64 GNU/Linux
+btrfs --version
+btrfs-progs v4.12
+btrfs fi show
+Label: 'arch'  uuid: a955bc5f-e5f0-42ce-bd5a-de5eb8d5d3aa
+    Total devices 1 FS bytes used 876.26GiB
+    devid    1 size 931.01GiB used 931.01GiB path /dev/sdb1
+btrfs fi df sdb1
+Data, single: total=926.25GiB, used=872.65GiB
+System, single: total=4.00MiB, used=128.00KiB
+Metadata, single: total=4.76GiB, used=3.60GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+and the dmesg.log is on:
+https://gist.github.com/anonymous/16344244259bb2989701f3ec43e26f39

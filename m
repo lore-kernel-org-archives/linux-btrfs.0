@@ -1,62 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:54598 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752003AbdLJPtM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Dec 2017 10:49:12 -0500
-Date: Sun, 10 Dec 2017 16:49:10 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: exclusive subvolume space missing
-Message-ID: <20171210154910.GA13443@polanet.pl>
-References: <20171201161555.GA11892@polanet.pl>
- <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
- <20171202012324.GB20205@polanet.pl>
- <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
- <20171202022153.GA7727@polanet.pl>
- <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
- <20171202093301.GA28256@polanet.pl>
- <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
- <20171210112738.GA24090@polanet.pl>
+Received: from mail-qt0-f172.google.com ([209.85.216.172]:35738 "EHLO
+        mail-qt0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751100AbdLJVQm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Dec 2017 16:16:42 -0500
+Received: by mail-qt0-f172.google.com with SMTP id u10so33611070qtg.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 10 Dec 2017 13:16:42 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <20171210112738.GA24090@polanet.pl>
+In-Reply-To: <80e80ca8-5fbe-d0c9-c389-28df820f01dd@gmx.com>
+References: <CABi++uJj6x=ZT1QbB7vu5Zh3_Mf6nsLNMAO9QXNLEBQN_ngoYA@mail.gmail.com>
+ <211ded6e-5b02-0c33-b75e-b0ad6ff30ca4@gmx.com> <CABi++uKoMgi3WMw4z+kgJ1G2H_y_2e2Czg0OLwf18g9GmoU2Cg@mail.gmail.com>
+ <2f4346d5-ccb9-8de2-11d1-b270058723c1@gmx.com> <CABi++uLD_2sXjuF6b0GKhWAX6fRRA0jqqUaujWP6_q+hiuvSXw@mail.gmail.com>
+ <b484d30c-f32d-78cf-7f07-b9cadb43a2d1@gmx.com> <CABi++u+Asgyrxq7+txcdJ4EkknrpTTOo7B1G36-Mymk+Wfhv6A@mail.gmail.com>
+ <d6722177-45c5-5010-ae48-ab8ec2a89141@gmx.com> <80e80ca8-5fbe-d0c9-c389-28df820f01dd@gmx.com>
+From: Benjamin Beichler <hadrian2002@googlemail.com>
+Date: Sun, 10 Dec 2017 21:16:21 +0000
+Message-ID: <CABi++uJD=XRVq-tUNZMep+GKFUKf8=okxrhhRGRo00aS=B9OOw@mail.gmail.com>
+Subject: Re: Chunk-Recovery fails with alignment error
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 10, 2017 at 12:27:38 +0100, Tomasz Pala wrote:
+The patch let the chunk-recover be successful. But I'm no lucky man,
+the recovered chunk tree does not work or other metadata is also
+broken.
 
-> I have found a directory - pam_abl databases, which occupy 10 MB (yes,
-> TEN MEGAbytes) and released ...8.7 GB (almost NINE GIGAbytes) after
+Mounting the system is not successful (dmesg):
+BTRFS critical (device dm-0): corrupt node, invalid item slot:
+block=16384, root=1, slot=0
+BTRFS error (device dm-0): failed to read chunk root
+BTRFS error (device dm-0): open_ctree failed
 
-#  df            
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda2        64G   61G  2.8G  96% /
+Therefore I tried a btrfs check --repair, this time without error:
+https://gist.github.com/anonymous/5cf7ad9e187032d2c94db4f91bb62c24
 
-#  btrfs fi du .
-     Total   Exclusive  Set shared  Filename
-     0.00B       0.00B           -  ./1/__db.register
-  10.00MiB    10.00MiB           -  ./1/log.0000000001
-  16.00KiB       0.00B           -  ./1/hosts.db
-  16.00KiB       0.00B           -  ./1/users.db
- 168.00KiB       0.00B           -  ./1/__db.001
-  40.00KiB       0.00B           -  ./1/__db.002
-  44.00KiB       0.00B           -  ./1/__db.003
-  10.28MiB    10.00MiB           -  ./1
-     0.00B       0.00B           -  ./__db.register
-  16.00KiB    16.00KiB           -  ./hosts.db
-  16.00KiB    16.00KiB           -  ./users.db
-  10.00MiB    10.00MiB           -  ./log.0000000013
-     0.00B       0.00B           -  ./__db.001
-     0.00B       0.00B           -  ./__db.002
-     0.00B       0.00B           -  ./__db.003
-  20.31MiB    20.03MiB   284.00KiB  .
+Then I tried btrfs check --init-extent-tree and this produces much
+output. I put the beginning into here:
+https://gist.github.com/anonymous/70e2482646a8235ee2327105d920dadd
+>From a fast view, the messages keep to be similar to the last of the
+gist, but the messages in the beginning are not repeating. If it helps
+I have complete compressed log.
 
-#  btrfs fi defragment log.0000000013 
-#  df
-/dev/sda2        64G   54G  9.4G  86% /
+Then I tried a btrfs recover to get files, but for many files (also
+improtant data, but I filtered the output) I get outputs like in:
+https://gist.github.com/anonymous/1cc7f7ab5af33e76d0bf80960bb300eb
 
-
-6.6 GB / 10 MB = 660:1 overhead within 1 day of uptime.
-
--- 
-Tomasz Pala <gotar@pld-linux.org>
+Any new suggestions?

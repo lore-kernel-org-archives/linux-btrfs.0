@@ -1,118 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:51303 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754322AbdLGOwc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Dec 2017 09:52:32 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vB7EqOoD136209
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:31 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2eq4kn8w16-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Dec 2017 14:52:31 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vB7EqUjc002763
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:30 GMT
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vB7EqUJd028543
-        for <linux-btrfs@vger.kernel.org>; Thu, 7 Dec 2017 14:52:30 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from vs2.lukas-pirl.de ([5.45.100.90]:49100 "EHLO pim.lukas-pirl.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751281AbdLJXpl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Dec 2017 18:45:41 -0500
+Received: from [192.168.2.168] (ip-2-204-9-41.web.vodafone.de [2.204.9.41])
+        by pim.lukas-pirl.de (Postfix) with ESMTPSA id BBF106EA8A87
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 00:45:39 +0100 (CET)
+From: Lukas Pirl <btrfs@lukas-pirl.de>
+Subject: btrfs-progs: replace: error message can be improved when other
+ operation is running
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 2/2] btrfs-progs: add feature to deregister all devices
-Date: Thu,  7 Dec 2017 22:52:55 +0800
-Message-Id: <20171207145255.27686-2-anand.jain@oracle.com>
-In-Reply-To: <20171207145255.27686-1-anand.jain@oracle.com>
-References: <20171207143623.26710-1-anand.jain@oracle.com>
- <20171207145255.27686-1-anand.jain@oracle.com>
+Message-ID: <4ca6dcdd-7920-4943-376a-19bc6ecc43b3@lukas-pirl.de>
+Date: Mon, 11 Dec 2017 00:45:36 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds default no option to deregister all unmounted
-devices in the kernel at once. For example:
-  btrfs device deregister
+Dear all,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v1-4: NA.
-v5: New patch in v5.
+when trying to replace a device of a file system for which a balance is
+running, btrfs-progs fails with the error message:
 
- cmds-device.c | 31 +++++++++++++++++++++++++++++--
- ioctl.h       |  6 +++++-
- 2 files changed, 34 insertions(+), 3 deletions(-)
+ERROR: ioctl(DEV_REPLACE_START) on '/mnt/xyz' returns error: <illegal
+result value>
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 8244ff9802be..6b9c3616b641 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -331,10 +331,30 @@ out:
- 
- static const char * const cmd_device_deregister_usage[] = {
- 	"btrfs device deregister [<device>]",
--	"Deregister device in btrfs kernel module.",
-+	"Deregister one or all scanned device(s) in the kernel.",
- 	NULL
- };
- 
-+static int btrfs_deregister_devices(void)
-+{
-+	struct btrfs_ioctl_vol_args args;
-+	int fd;
-+	int ret;
-+
-+	fd = open("/dev/btrfs-control", O_RDWR);
-+	if (fd < 0)
-+		return -errno;
-+
-+	memset(&args, 0, sizeof(args));
-+	args.ioctl_flag = BTRFS_IOCTL_PURGE_ALL_DEVS;
-+	ret = ioctl(fd, BTRFS_IOC_DEREGISTER_DEV, &args);
-+	if (ret)
-+		ret = -errno;
-+	close(fd);
-+	return ret;
-+
-+}
-+
- static int btrfs_deregister_one_device(char *path)
- {
- 	struct btrfs_ioctl_vol_args args;
-@@ -359,9 +379,16 @@ static int cmd_device_deregister(int argc, char **argv)
- 	char *path;
- 	int ret = 0;
- 
--	if (check_argc_exact(argc - optind, 1))
-+	if (check_argc_max(argc - optind, 1))
- 		usage(cmd_device_deregister_usage);
- 
-+	if (argc == 1) {
-+		ret = btrfs_deregister_devices();
-+		if (ret)
-+			error("Can't deregister: %s", strerror(-ret));
-+		return ret;
-+	}
-+
- 	if (is_block_device(argv[1]) != 1) {
- 		error("Not a block device: %s", argv[1]);
- 		return -ENOENT;
-diff --git a/ioctl.h b/ioctl.h
-index 3cdb88eb5bb2..a36055b453e2 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -41,8 +41,12 @@ extern "C" {
- 
- /* this should be 4k */
- #define BTRFS_PATH_NAME_MAX 4087
-+#define BTRFS_IOCTL_PURGE_ALL_DEVS	(1ULL << 0)
- struct btrfs_ioctl_vol_args {
--	__s64 fd;
-+	union {
-+		__s64 fd;
-+		__u64 ioctl_flag;
-+	};
- 	char name[BTRFS_PATH_NAME_MAX + 1];
- };
- BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) == 4096);
--- 
-2.7.0
+This might also be true for alike operations, such as "add", "delete"
+and "resize", since those cases do not seem to be considered in
+cmds-replace.c [0].
 
+Apparently, this is not very helpful to the user (if not scary).
+In contrast, other commands give very helpful output in similar
+situations (e.g., "add/delete/… operation in progress" [1]).
+
+Other users' confusions might also be related to this potential issue [2].
+
+This is probably very easy to fix for someone into ioctl return values
+and all this.
+
+Thanks and cheers,
+
+Lukas
+
+GNU/Linux
+4.13.0-0.bpo.1-amd64 #1 SMP Debian 4.13.13-1~bpo9+1 (2017-11-22) x86_64
+btrfs-progs v4.13.3
+
+[0]
+https://github.com/kdave/btrfs-progs/blob/11c83cefb8b4a03b1835efaf603ddc95430a0c9e/cmds-replace.c#L48
+[1]
+https://github.com/kdave/btrfs-progs/blob/9fe889ac02b9c49b885c8999f5dd4e192697fa83/ioctl.h#L709
+[2] https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=866734

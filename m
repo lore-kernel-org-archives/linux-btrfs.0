@@ -1,50 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:54370 "EHLO pepin.polanet.pl"
+Received: from pepin.polanet.pl ([193.34.52.2]:54598 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751792AbdLJPiG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Dec 2017 10:38:06 -0500
-Date: Sun, 10 Dec 2017 16:38:05 +0100
+        id S1752003AbdLJPtM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 10 Dec 2017 10:49:12 -0500
+Date: Sun, 10 Dec 2017 16:49:10 +0100
 From: Tomasz Pala <gotar@polanet.pl>
-To: constantine <costas.magnuse@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: ERROR: failed to repair root items: Input/output error
-Message-ID: <20171210153804.GA32313@polanet.pl>
-References: <CANcfdL3LFXYFcr-qJDNhEvCttc3yEKKWY53aun0eC_gF0CXrrw@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: exclusive subvolume space missing
+Message-ID: <20171210154910.GA13443@polanet.pl>
+References: <20171201161555.GA11892@polanet.pl>
+ <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
+ <20171202012324.GB20205@polanet.pl>
+ <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
+ <20171202022153.GA7727@polanet.pl>
+ <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
+ <20171202093301.GA28256@polanet.pl>
+ <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
+ <20171210112738.GA24090@polanet.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <CANcfdL3LFXYFcr-qJDNhEvCttc3yEKKWY53aun0eC_gF0CXrrw@mail.gmail.com>
+In-Reply-To: <20171210112738.GA24090@polanet.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 10, 2017 at 15:18:32 +0000, constantine wrote:
+On Sun, Dec 10, 2017 at 12:27:38 +0100, Tomasz Pala wrote:
 
-> I have a laptop root hard drive (Samsung SSD 850 EVO 1TB), which is
-> within warranty.
-> I can't mount it read-write ("no rw mounting  after error").
+> I have found a directory - pam_abl databases, which occupy 10 MB (yes,
+> TEN MEGAbytes) and released ...8.7 GB (almost NINE GIGAbytes) after
 
-There is a data-corruption issue with this controller!
-The same as 840 EVO - just google this.
+#  df            
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        64G   61G  2.8G  96% /
 
-In short: either use recent kernel (AFAIR 4.0.5+ for 840 EVO and some
-newer for entire 8* Samsung SSD family blacklisting) or disable NCQ.
+#  btrfs fi du .
+     Total   Exclusive  Set shared  Filename
+     0.00B       0.00B           -  ./1/__db.register
+  10.00MiB    10.00MiB           -  ./1/log.0000000001
+  16.00KiB       0.00B           -  ./1/hosts.db
+  16.00KiB       0.00B           -  ./1/users.db
+ 168.00KiB       0.00B           -  ./1/__db.001
+  40.00KiB       0.00B           -  ./1/__db.002
+  44.00KiB       0.00B           -  ./1/__db.003
+  10.28MiB    10.00MiB           -  ./1
+     0.00B       0.00B           -  ./__db.register
+  16.00KiB    16.00KiB           -  ./hosts.db
+  16.00KiB    16.00KiB           -  ./users.db
+  10.00MiB    10.00MiB           -  ./log.0000000013
+     0.00B       0.00B           -  ./__db.001
+     0.00B       0.00B           -  ./__db.002
+     0.00B       0.00B           -  ./__db.003
+  20.31MiB    20.03MiB   284.00KiB  .
 
-Using queued TRIM on this drive leads to data loss! Firmware zeroes fist
-512 bytes of a block, sorry.
+#  btrfs fi defragment log.0000000013 
+#  df
+/dev/sda2        64G   54G  9.4G  86% /
 
-If you only had smaller drive, as 850s up to 512 GB have different
-controller...
 
-> checksum verify failed on 103009173504 found 25334496 wanted 00003500
-> bytenr mismatch, want=103009173504, have=889192478
-> ERROR: failed to repair root items: Input/output error
-> 
-> What do these errors mean?
-> What should I do to fix the filesystem and be able to mount it read-write?
-
-You probably can't fix this - there is data missing on bare metal, so you should
-recover using backups. If you don't have one, you need to perform manual
-data recovery procedures (like photorec) with little chances to restore
-complete files due to the nature of data loss (beginning of blocks).
+6.6 GB / 10 MB = 660:1 overhead within 1 day of uptime.
 
 -- 
 Tomasz Pala <gotar@pld-linux.org>

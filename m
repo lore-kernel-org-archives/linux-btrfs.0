@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f193.google.com ([209.85.216.193]:38965 "EHLO
-        mail-qt0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752705AbdLKQg4 (ORCPT
+Received: from mail-qt0-f194.google.com ([209.85.216.194]:38238 "EHLO
+        mail-qt0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752764AbdLKQg7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Dec 2017 11:36:56 -0500
-Received: by mail-qt0-f193.google.com with SMTP id k19so40002431qtj.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 08:36:56 -0800 (PST)
+        Mon, 11 Dec 2017 11:36:59 -0500
+Received: by mail-qt0-f194.google.com with SMTP id d4so40000156qtj.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 08:36:59 -0800 (PST)
 From: Josef Bacik <josef@toxicpanda.com>
 To: rostedt@goodmis.org, mingo@redhat.com, davem@davemloft.net,
         netdev@vger.kernel.org, linux-kernel@vger.kernel.org, ast@kernel.org,
         kernel-team@fb.com, daniel@iogearbox.net, linux-btrfs@vger.kernel.org
 Cc: Josef Bacik <jbacik@fb.com>
-Subject: [PATCH v9 2/5] btrfs: make open_ctree error injectable
-Date: Mon, 11 Dec 2017 11:36:47 -0500
-Message-Id: <1513010210-30594-3-git-send-email-josef@toxicpanda.com>
+Subject: [PATCH v9 4/5] samples/bpf: add a test for bpf_override_return
+Date: Mon, 11 Dec 2017 11:36:49 -0500
+Message-Id: <1513010210-30594-5-git-send-email-josef@toxicpanda.com>
 In-Reply-To: <1513010210-30594-1-git-send-email-josef@toxicpanda.com>
 References: <1513010210-30594-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,34 +21,177 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Josef Bacik <jbacik@fb.com>
 
-This allows us to do error injection with BPF for open_ctree.
+This adds a basic test for bpf_override_return to verify it works.  We
+override the main function for mounting a btrfs fs so it'll return
+-ENOMEM and then make sure that trying to mount a btrfs fs will fail.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Acked-by: Alexei Starovoitov <ast@kernel.org>
 Acked-by: Ingo Molnar <mingo@kernel.org>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/disk-io.c | 2 ++
- 1 file changed, 2 insertions(+)
+ samples/bpf/Makefile                      |  4 ++++
+ samples/bpf/test_override_return.sh       | 15 +++++++++++++++
+ samples/bpf/tracex7_kern.c                | 16 ++++++++++++++++
+ samples/bpf/tracex7_user.c                | 28 ++++++++++++++++++++++++++++
+ tools/include/uapi/linux/bpf.h            |  7 ++++++-
+ tools/testing/selftests/bpf/bpf_helpers.h |  3 ++-
+ 6 files changed, 71 insertions(+), 2 deletions(-)
+ create mode 100755 samples/bpf/test_override_return.sh
+ create mode 100644 samples/bpf/tracex7_kern.c
+ create mode 100644 samples/bpf/tracex7_user.c
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 10a2a579cc7f..02b5f5667754 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -30,6 +30,7 @@
- #include <linux/ratelimit.h>
- #include <linux/uuid.h>
- #include <linux/semaphore.h>
+diff --git a/samples/bpf/Makefile b/samples/bpf/Makefile
+index adeaa1302f34..4fb944a7ecf8 100644
+--- a/samples/bpf/Makefile
++++ b/samples/bpf/Makefile
+@@ -12,6 +12,7 @@ hostprogs-y += tracex3
+ hostprogs-y += tracex4
+ hostprogs-y += tracex5
+ hostprogs-y += tracex6
++hostprogs-y += tracex7
+ hostprogs-y += test_probe_write_user
+ hostprogs-y += trace_output
+ hostprogs-y += lathist
+@@ -58,6 +59,7 @@ tracex3-objs := bpf_load.o $(LIBBPF) tracex3_user.o
+ tracex4-objs := bpf_load.o $(LIBBPF) tracex4_user.o
+ tracex5-objs := bpf_load.o $(LIBBPF) tracex5_user.o
+ tracex6-objs := bpf_load.o $(LIBBPF) tracex6_user.o
++tracex7-objs := bpf_load.o $(LIBBPF) tracex7_user.o
+ load_sock_ops-objs := bpf_load.o $(LIBBPF) load_sock_ops.o
+ test_probe_write_user-objs := bpf_load.o $(LIBBPF) test_probe_write_user_user.o
+ trace_output-objs := bpf_load.o $(LIBBPF) trace_output_user.o
+@@ -101,6 +103,7 @@ always += tracex3_kern.o
+ always += tracex4_kern.o
+ always += tracex5_kern.o
+ always += tracex6_kern.o
++always += tracex7_kern.o
+ always += sock_flags_kern.o
+ always += test_probe_write_user_kern.o
+ always += trace_output_kern.o
+@@ -155,6 +158,7 @@ HOSTLOADLIBES_tracex3 += -lelf
+ HOSTLOADLIBES_tracex4 += -lelf -lrt
+ HOSTLOADLIBES_tracex5 += -lelf
+ HOSTLOADLIBES_tracex6 += -lelf
++HOSTLOADLIBES_tracex7 += -lelf
+ HOSTLOADLIBES_test_cgrp2_sock2 += -lelf
+ HOSTLOADLIBES_load_sock_ops += -lelf
+ HOSTLOADLIBES_test_probe_write_user += -lelf
+diff --git a/samples/bpf/test_override_return.sh b/samples/bpf/test_override_return.sh
+new file mode 100755
+index 000000000000..e68b9ee6814b
+--- /dev/null
++++ b/samples/bpf/test_override_return.sh
+@@ -0,0 +1,15 @@
++#!/bin/bash
++
++rm -f testfile.img
++dd if=/dev/zero of=testfile.img bs=1M seek=1000 count=1
++DEVICE=$(losetup --show -f testfile.img)
++mkfs.btrfs -f $DEVICE
++mkdir tmpmnt
++./tracex7 $DEVICE
++if [ $? -eq 0 ]
++then
++	echo "SUCCESS!"
++else
++	echo "FAILED!"
++fi
++losetup -d $DEVICE
+diff --git a/samples/bpf/tracex7_kern.c b/samples/bpf/tracex7_kern.c
+new file mode 100644
+index 000000000000..1ab308a43e0f
+--- /dev/null
++++ b/samples/bpf/tracex7_kern.c
+@@ -0,0 +1,16 @@
++#include <uapi/linux/ptrace.h>
++#include <uapi/linux/bpf.h>
++#include <linux/version.h>
++#include "bpf_helpers.h"
++
++SEC("kprobe/open_ctree")
++int bpf_prog1(struct pt_regs *ctx)
++{
++	unsigned long rc = -12;
++
++	bpf_override_return(ctx, rc);
++	return 0;
++}
++
++char _license[] SEC("license") = "GPL";
++u32 _version SEC("version") = LINUX_VERSION_CODE;
+diff --git a/samples/bpf/tracex7_user.c b/samples/bpf/tracex7_user.c
+new file mode 100644
+index 000000000000..8a52ac492e8b
+--- /dev/null
++++ b/samples/bpf/tracex7_user.c
+@@ -0,0 +1,28 @@
++#define _GNU_SOURCE
++
++#include <stdio.h>
 +#include <linux/bpf.h>
- #include <asm/unaligned.h>
- #include "ctree.h"
- #include "disk-io.h"
-@@ -3123,6 +3124,7 @@ int open_ctree(struct super_block *sb,
- 		goto fail_block_groups;
- 	goto retry_root_backup;
- }
-+BPF_ALLOW_ERROR_INJECTION(open_ctree);
++#include <unistd.h>
++#include "libbpf.h"
++#include "bpf_load.h"
++
++int main(int argc, char **argv)
++{
++	FILE *f;
++	char filename[256];
++	char command[256];
++	int ret;
++
++	snprintf(filename, sizeof(filename), "%s_kern.o", argv[0]);
++
++	if (load_bpf_file(filename)) {
++		printf("%s", bpf_log_buf);
++		return 1;
++	}
++
++	snprintf(command, 256, "mount %s tmpmnt/", argv[1]);
++	f = popen(command, "r");
++	ret = pclose(f);
++
++	return ret ? 0 : 1;
++}
+diff --git a/tools/include/uapi/linux/bpf.h b/tools/include/uapi/linux/bpf.h
+index 4c223ab30293..cf446c25c0ec 100644
+--- a/tools/include/uapi/linux/bpf.h
++++ b/tools/include/uapi/linux/bpf.h
+@@ -677,6 +677,10 @@ union bpf_attr {
+  *     @buf: buf to fill
+  *     @buf_size: size of the buf
+  *     Return : 0 on success or negative error code
++ *
++ * int bpf_override_return(pt_regs, rc)
++ *	@pt_regs: pointer to struct pt_regs
++ *	@rc: the return value to set
+  */
+ #define __BPF_FUNC_MAPPER(FN)		\
+ 	FN(unspec),			\
+@@ -736,7 +740,8 @@ union bpf_attr {
+ 	FN(xdp_adjust_meta),		\
+ 	FN(perf_event_read_value),	\
+ 	FN(perf_prog_read_value),	\
+-	FN(getsockopt),
++	FN(getsockopt),			\
++	FN(override_return),
  
- static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
- {
+ /* integer value in 'imm' field of BPF_CALL instruction selects which helper
+  * function eBPF program intends to call
+diff --git a/tools/testing/selftests/bpf/bpf_helpers.h b/tools/testing/selftests/bpf/bpf_helpers.h
+index fd9a17fa8a8b..33cb00e46c49 100644
+--- a/tools/testing/selftests/bpf/bpf_helpers.h
++++ b/tools/testing/selftests/bpf/bpf_helpers.h
+@@ -82,7 +82,8 @@ static int (*bpf_perf_event_read_value)(void *map, unsigned long long flags,
+ static int (*bpf_perf_prog_read_value)(void *ctx, void *buf,
+ 				       unsigned int buf_size) =
+ 	(void *) BPF_FUNC_perf_prog_read_value;
+-
++static int (*bpf_override_return)(void *ctx, unsigned long rc) =
++	(void *) BPF_FUNC_override_return;
+ 
+ /* llvm builtin functions that eBPF C program may use to
+  * emit BPF_LD_ABS and BPF_LD_IND instructions
 -- 
 2.7.5
 

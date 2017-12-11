@@ -1,65 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:44248 "EHLO
-        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750836AbdLKGLU (ORCPT
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:49167 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750709AbdLKGik (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Dec 2017 01:11:20 -0500
-Received: by mail-it0-f44.google.com with SMTP id b5so13276698itc.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Dec 2017 22:11:19 -0800 (PST)
+        Mon, 11 Dec 2017 01:38:40 -0500
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id BC2F4AC0143
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 15:38:36 +0900 (JST)
+Received: from G01JPEXCHKW16.g01.fujitsu.local (G01JPEXCHKW16.g01.fujitsu.local [10.0.194.55])
+        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 17425BD6660
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 15:38:36 +0900 (JST)
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [RFC v2] Improve subvolume usability for a normal user
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <eae0749c-eca0-4952-d4b3-ec4175d22653@jp.fujitsu.com>
+Date: Mon, 11 Dec 2017 15:38:31 +0900
 MIME-Version: 1.0
-In-Reply-To: <CAH=dxU6wbCOaAK5NRRe-yRX1F349pKg6xOsQOfFzc7kCoDTJNw@mail.gmail.com>
-References: <20170831070558.GB5783@rus.uni-stuttgart.de> <20170912162843.GA32233@rus.uni-stuttgart.de>
- <20170914133824.5cf9b59c@jupiter.sol.kaishome.de> <CABB28CyM9wQuDgn1ONTw3hrXQrLHwk30dxPcF_qnvdCM+A0gxA@mail.gmail.com>
- <20170914172434.39eae89d@jupiter.sol.kaishome.de> <CABB28Cx13a4eP3nM7PVYknmug-jpyeKv1ai5DWT0jKt4Zi0Rgg@mail.gmail.com>
- <59BBB15E.8010002@sarach.com.pl> <CABB28CxYR35HQgvf5PvRpDkGvtBxMR1LBDQO60N6QZ1cBmZGjQ@mail.gmail.com>
- <59BBDFA6.4020500@sarach.com.pl> <20170915190826.1f0be8a9@jupiter.sol.kaishome.de>
- <CABB28Cw6A-xYnwkcaoc=1XJa=K8g-Bz6_KFT2Q33FUJhbXD8JQ@mail.gmail.com>
- <CAH=dxU7R2fZQY12mJnYigt2s4BqVrsALJjxgbpvo7hfEwMXt-Q@mail.gmail.com>
- <pan$a362c$5b92cac0$d2d78b7f$25ff3b3a@cox.net> <CAH=dxU6f_DunAsOqKQTXKp469bOaLCiqOMuSE0T3QYqc9CqFNQ@mail.gmail.com>
- <23033.512.820691.680916@tree.ty.sabi.co.uk> <CAH=dxU47-52-asM5vJ_-qOpEpjZczHw7vQzgi1-TeKm58++zBQ@mail.gmail.com>
- <CAH=dxU6wbCOaAK5NRRe-yRX1F349pKg6xOsQOfFzc7kCoDTJNw@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Mon, 11 Dec 2017 09:10:39 +0300
-Message-ID: <CAGqmi74bs3VqF97Dt8xMbOmZvi-SU-U58po4earPhK9HL16Ocg@mail.gmail.com>
-Subject: Re: defragmenting best practice?
-To: Dave <davestechshop@gmail.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-12-11 8:18 GMT+03:00 Dave <davestechshop@gmail.com>:
-> On Tue, Oct 31, 2017 someone wrote:
->>
->>
->> > 2. Put $HOME/.cache on a separate BTRFS subvolume that is mounted
->> > nocow -- it will NOT be snapshotted
->
-> I did exactly this. It servers the purpose of avoiding snapshots.
-> However, today I saw the following at
-> https://wiki.archlinux.org/index.php/Btrfs
->
-> Note: From Btrfs Wiki Mount options: within a single file system, it
-> is not possible to mount some subvolumes with nodatacow and others
-> with datacow. The mount option of the first mounted subvolume applies
-> to any other subvolumes.
->
-> That makes me think my nodatacow mount option on $HOME/.cache is not
-> effective. True?
->
-> (My subjective performance results have not been as good as hoped for
-> with the tweaks I have tried so far.)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hello all,
 
-True, for magic dirs, that you may want mark as no cow, you need to
-use chattr, like:
-rm -rf ~/.cache
-mkdir ~/.cache
-chattr +C ~/.cache
+I reflected the comments of the first version of the RFC[1]. 
+Thanks for all those who commented.
 
--- 
-Have a nice day,
-Timofey.
+The summary of updated proposal is:
+ - Change the default behavior to allow a user to delete subvolume which is empty
+ - Add 2 new non-root ioctls to get subvolume/quota info under the specified path
+
+Please see the 'Proposal' section below for the detail.
+
+More comments are welcome.
+Regards,
+Tomohiro Misono
+
+[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg70666.html
+
+==========
+- Goal and current problem
+The goal of this RFC is to give a normal user more control to their own subvolumes.
+Currently the control to subvolumes for a normal user is restricted as below: 
+
++-------------+------+------+
+|   command   | root | user |
++-------------+------+------+
+| sub create  | Y    | Y    |
+| sub snap    | Y    | Y    |
+| sub del     | Y    | N    |
+| sub list    | Y    | N    |
+| sub show    | Y    | N    |
+| qgroup show | Y    | N    |
++-------------+------+------+
+
+In short, I want to change this as below in order to improve user's usability:
+
++-------------+------+--------+
+|   command   | root | user   |
++-------------+------+--------+
+| sub create  | Y    | Y      |
+| sub snap    | Y    | Y      |
+| sub del     | Y    | N -> Y |
+| sub list    | Y    | N -> Y |
+| sub show    | Y    | N -> Y |
+| qgroup show | Y    | N -> Y |
++-------------+------+--------+
+
+In words,
+(1) allow deletion of subvolume (if it is empty) and
+(2) allow getting subvolume/quota info (under the specified path)
+
+I think other commands not listed above (qgroup limit, send/receive etc.) should be done
+by root and not be allowed for a normal user.
+
+
+- Proposal
+ (1) deletion of subvolume
+
+  Change the default behavior for a user to allow to delete a subvolume (by "subvol del") if 
+    1. the user has write+exec right to it, and
+    2. it is empty
+  So, it is the same as user_subvol_rm_allowed option with emptiness check.
+
+  Emptiness check is needed because Snapshot creation wont' check the permission and 
+  can copy a dir which cannot be deleted by the user, and therefore just allowing deletion 
+  may cause data loss.
+
+  Summary of behavior by different condition is as follows:
+
+  +===============================+========================+======================+
+  |                               |        Current         |       Proposal       |
+  +===============================+========================+======================+
+  | root                          | Can delete all         | Same as the current  |
+  +-------------------------------+------------------------+----------------------+
+  | user (user_subvol_rm_allowed) | Can delete if he       | Same as the current  |
+  |                               | has write+exec right   |                      |
+  +-------------------------------+------------------------+----------------------+
+  | user (default)                | Cannot delete anything | Can delete if he     |
+  |                               |                        | has write+exec right |
+  |                               |                        | and is empty         |
+  +-------------------------------+------------------------+----------------------+
+ 
+ (2) getting subvolume/quota info
+
+  Introduce 2 new ioctls to get subol/quota info under the specified path (which needs
+  to be able to be opened by the user) and modify INO_LOOKUP to check permission
+  during path construction for a normal user. 
+
+  Current approach cannot be used directly for a normal user as explained below:
+    TREE_SEARCH ioctl is used to retrieve the subvolume/quota info by btrfs-progs
+    (sub show/list, qgroup show etc.). This requires the root permission. Also, 
+    in order to construct the path, INO_LOOKUP will be called afterwards, which also
+    requires root permission and omits the permission check during path construction.
+  
+    The easiest way to allow a user to get subvolume/quota info is just relaxing
+    the permission of TREE_SEARCH. However, since all the tree information (inc.
+    file name) will be exposed, this poses a sequrity risk and is not acceptable.
+ 
+  The detail of new ioctls and approach is here:
+   [subvolume info]
+    Searching ROOT tree for ROOT_ITEM/ROOT_BACKREF under the specified path, and 
+    checking its read right by searching FS/FILE tree and comparing the mode with caller's uid.
+    
+    After this ioctl is called, btrfs-progs calls modified INO_LOOKUP to construct the path
+    with permission check. In case path construction fails due to permission, btrfs-progs
+    skips to output the infomation of the subvolume.
+  
+   [quota info]
+    Same as above, but mainly searching QUOTA tree.
+
+
+- Summary of Proposal
+ - Change the default behavior to allow a user to delete subvolume which is empty
+ - Add 2 new non-root ioctls to get subvolume/quota info under the specified path
+==========
+

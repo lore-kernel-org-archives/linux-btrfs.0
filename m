@@ -1,26 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41913 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752543AbdLLR2B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Dec 2017 12:28:01 -0500
-Date: Tue, 12 Dec 2017 18:25:57 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Pravin Shedge <pravin.shedge4linux@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 23/45] fs: btrfs: remove duplicate includes
-Message-ID: <20171212172557.GL3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1512578671-4988-1-git-send-email-pravin.shedge4linux@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1512578671-4988-1-git-send-email-pravin.shedge4linux@gmail.com>
+Received: from mail-yb0-f171.google.com ([209.85.213.171]:39210 "EHLO
+        mail-yb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752358AbdLKVzj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 11 Dec 2017 16:55:39 -0500
+Received: by mail-yb0-f171.google.com with SMTP id 69so5269326ybc.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 13:55:39 -0800 (PST)
+From: Josef Bacik <josef@toxicpanda.com>
+To: hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
+        jack@suse.cz, linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 00/11] Metadata specific accouting and dirty writeout
+Date: Mon, 11 Dec 2017 16:55:25 -0500
+Message-Id: <1513029335-5112-1-git-send-email-josef@toxicpanda.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 06, 2017 at 10:14:31PM +0530, Pravin Shedge wrote:
-> These duplicate includes have been found with scripts/checkincludes.pl but
-> they have been removed manually to avoid removing false positives.
-> 
-> Signed-off-by: Pravin Shedge <pravin.shedge4linux@gmail.com>
+FYI patches 8-10 are purely there so people can see how I intend to use this.
+These are large changes that need to go through the btrfs tree and will
+undoubtedly change a lot.  My goal is for patches 1-7 to go through Andrew via
+the mm tree and then once they have landed to go ahead and work out the details
+of the btrfs patches with the other btrfs developers and merge via that tree.
+I'm not asking for reviews on those, Jan just mentioned that it would be easier
+to tell what I was trying to do if he could see how I intended to use it.
 
-Added to queue, thanks.
+v2->v3:
+- addressed issues brought up by Jan in the actual node metadata bytes
+  accounting patch.
+- collapsed the fprop patch that converted everything to bytes into the patch
+  that converted the wb usage of fprop stuff to bytes.
+
+-- Original message --
+These patches are to support having metadata accounting and dirty handling
+in a generic way.  For dirty metadata ext4 and xfs currently are limited by
+their journal size, which allows them to handle dirty metadata flushing in a
+relatively easy way.  Btrfs does not have this limiting factor, we can have as
+much dirty metadata on the system as we have memory, so we have a dummy inode
+that all of our metadat pages are allocated from so we can call
+balance_dirty_pages() on it and make sure we don't overwhelm the system with
+dirty metadata pages.
+
+The problem with this is it severely limits our ability to do things like
+support sub-pagesize blocksizes.  Btrfs also supports metadata blocksizes > page
+size, which makes keeping track of our metadata and it's pages particularly
+tricky.  We have the inode mapping with our pages, and we have another radix
+tree for our actual metadata buffers.  This double accounting leads to some fun
+shenanigans around reclaim and evicting pages we know we are done using.
+
+To solve this we would like to switch to a scheme like xfs has, where we simply
+have our metadata structures tied into the slab shrinking code, and we just use
+alloc_page() for our pages, or kmalloc() when we add sub-pagesize blocksizes.
+In order to do this we need infrastructure in place to make sure we still don't
+overwhelm the system with dirty metadata pages.
+
+Enter these patches.  Because metadata is tracked on a non-pagesize amount we
+need to convert a bunch of our existing counters to bytes.  From there I've
+added various counters for metadata, to keep track of overall metadata bytes,
+how many are dirty and how many are under writeback.  I've added a super
+operation to handle the dirty writeback, which is going to be handled mostly
+inside the fs since we will need a little more smarts around what we writeback.
+
+The last three patches are just there to show how we use the infrastructure in
+the first 8 patches.  The actuall kill btree_inode patch is pretty big,
+unfortunately ripping out all of the pagecache based handling and replacing it
+with the new infrastructure has to be done whole-hog and can't be broken up
+anymore than it already has been without making it un-bisectable.
+
+Thanks,
+
+Josef

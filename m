@@ -1,225 +1,301 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:46156 "EHLO
-        mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753498AbdL2CJZ (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:52096 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751499AbdLLGeN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Dec 2017 21:09:25 -0500
-Received: by mail-wm0-f46.google.com with SMTP id r78so46632244wme.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Dec 2017 18:09:24 -0800 (PST)
-From: Timofey Titovets <nefelim4ag@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH v2] Btrfs: enchanse raid1/10 balance heuristic
-Date: Fri, 29 Dec 2017 05:09:14 +0300
-Message-Id: <20171229020914.3618-1-nefelim4ag@gmail.com>
+        Tue, 12 Dec 2017 01:34:13 -0500
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v10.1 1/5] btrfs-progs: Basic framework for dedupe-inband command group
+Date: Tue, 12 Dec 2017 14:32:53 +0800
+Message-ID: <20171212063257.31451-2-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20171212063257.31451-1-lufq.fnst@cn.fujitsu.com>
+References: <20171212063257.31451-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs raid1/10 balancer bаlance requests to mirrors,
-based on pid % num of mirrors.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Make logic understood:
- - if one of underline devices are non rotational
- - Queue leght to underline devices
+Add basic ioctl header and command group framework for later use.
+Alone with basic man page doc.
 
-By default try use pid % num_mirrors guessing, but:
- - If one of mirrors are non rotational, repick optimal to it
- - If underline mirror have less queue leght then optimal,
-   repick to that mirror
-
-For avoid round-robin request balancing,
-lets round down queue leght:
- - By 8 for rotational devs
- - By 2 for all non rotational devs
-
-Changes:
-  v1 -> v2:
-    - Use helper part_in_flight() from genhd.c
-      to get queue lenght
-    - Move guess code to guess_optimal()
-    - Change balancer logic, try use pid % mirror by default
-      Make balancing on spinning rust if one of underline devices
-      are overloaded
-
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- block/genhd.c      |   1 +
- fs/btrfs/volumes.c | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 115 insertions(+), 2 deletions(-)
+ Documentation/Makefile.in                  |  1 +
+ Documentation/btrfs-dedupe-inband.asciidoc | 40 +++++++++++++++++++++++++++
+ Documentation/btrfs.asciidoc               |  4 +++
+ Makefile                                   |  2 +-
+ btrfs.c                                    |  2 ++
+ cmds-dedupe-ib.c                           | 43 ++++++++++++++++++++++++++++++
+ commands.h                                 |  2 ++
+ dedupe-ib.h                                | 36 +++++++++++++++++++++++++
+ ioctl.h                                    | 36 +++++++++++++++++++++++++
+ 9 files changed, 165 insertions(+), 1 deletion(-)
+ create mode 100644 Documentation/btrfs-dedupe-inband.asciidoc
+ create mode 100644 cmds-dedupe-ib.c
+ create mode 100644 dedupe-ib.h
 
-diff --git a/block/genhd.c b/block/genhd.c
-index 96a66f671720..a7742bbbb6a7 100644
---- a/block/genhd.c
-+++ b/block/genhd.c
-@@ -81,6 +81,7 @@ void part_in_flight(struct request_queue *q, struct hd_struct *part,
- 				atomic_read(&part->in_flight[1]);
- 	}
- }
-+EXPORT_SYMBOL_GPL(part_in_flight);
+diff --git a/Documentation/Makefile.in b/Documentation/Makefile.in
+index bdc3dc3f..980ee388 100644
+--- a/Documentation/Makefile.in
++++ b/Documentation/Makefile.in
+@@ -28,6 +28,7 @@ MAN8_TXT += btrfs-qgroup.asciidoc
+ MAN8_TXT += btrfs-replace.asciidoc
+ MAN8_TXT += btrfs-restore.asciidoc
+ MAN8_TXT += btrfs-property.asciidoc
++MAN8_TXT += btrfs-dedupe-inband.asciidoc
  
- struct hd_struct *__disk_get_part(struct gendisk *disk, int partno)
- {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9a04245003ab..1c84534df9a5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -27,6 +27,7 @@
- #include <linux/raid/pq.h>
- #include <linux/semaphore.h>
- #include <linux/uuid.h>
-+#include <linux/genhd.h>
- #include <asm/div64.h>
- #include "ctree.h"
- #include "extent_map.h"
-@@ -5216,6 +5217,112 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	return ret;
- }
+ # Category 5 manual page
+ MAN5_TXT += btrfs-man5.asciidoc
+diff --git a/Documentation/btrfs-dedupe-inband.asciidoc b/Documentation/btrfs-dedupe-inband.asciidoc
+new file mode 100644
+index 00000000..9ee2bc75
+--- /dev/null
++++ b/Documentation/btrfs-dedupe-inband.asciidoc
+@@ -0,0 +1,40 @@
++btrfs-dedupe(8)
++==============
++
++NAME
++----
++btrfs-dedupe-inband - manage in-band (write time) de-duplication of a btrfs
++filesystem
++
++SYNOPSIS
++--------
++*btrfs dedupe-inband* <subcommand> <args>
++
++DESCRIPTION
++-----------
++*btrfs dedupe-inband* is used to enable/disable or show current in-band de-duplication
++status of a btrfs filesystem.
++
++Kernel support for in-band de-duplication starts from 4.8.
++
++WARNING: In-band de-duplication is still an experimental feautre of btrfs,
++use with caution.
++
++SUBCOMMAND
++----------
++Nothing yet
++
++EXIT STATUS
++-----------
++*btrfs dedupe-inband* returns a zero exit status if it succeeds. Non zero is
++returned in case of failure.
++
++AVAILABILITY
++------------
++*btrfs* is part of btrfs-progs.
++Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
++further details.
++
++SEE ALSO
++--------
++`mkfs.btrfs`(8),
+diff --git a/Documentation/btrfs.asciidoc b/Documentation/btrfs.asciidoc
+index 100a6adf..64fc0d2c 100644
+--- a/Documentation/btrfs.asciidoc
++++ b/Documentation/btrfs.asciidoc
+@@ -50,6 +50,10 @@ COMMANDS
+ 	Do off-line check on a btrfs filesystem. +
+ 	See `btrfs-check`(8) for details.
  
-+/**
-+ * bdev_get_queue_len - return rounded down in flight queue lenght of bdev
++*dedupe*::
++	Control btrfs in-band(write time) de-duplication. +
++	See `btrfs-dedupe`(8) for details.
++
+ *device*::
+ 	Manage devices managed by btrfs, including add/delete/scan and so
+ 	on. +
+diff --git a/Makefile b/Makefile
+index 6369e8f4..188ee7be 100644
+--- a/Makefile
++++ b/Makefile
+@@ -113,7 +113,7 @@ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+ 	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
+-	       mkfs/common.o
++	       mkfs/common.o cmds-dedupe-ib.o
+ libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+ 		   kernel-lib/crc32c.o messages.o \
+ 		   uuid-tree.o utils-lib.o rbtree-utils.o
+diff --git a/btrfs.c b/btrfs.c
+index 2d39f2ce..2168f5a8 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -255,6 +255,8 @@ static const struct cmd_group btrfs_cmd_group = {
+ 		{ "quota", cmd_quota, NULL, &quota_cmd_group, 0 },
+ 		{ "qgroup", cmd_qgroup, NULL, &qgroup_cmd_group, 0 },
+ 		{ "replace", cmd_replace, NULL, &replace_cmd_group, 0 },
++		{ "dedupe-inband", cmd_dedupe_ib, NULL, &dedupe_ib_cmd_group,
++			0 },
+ 		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
+ 		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
+ 		NULL_CMD_STRUCT
+diff --git a/cmds-dedupe-ib.c b/cmds-dedupe-ib.c
+new file mode 100644
+index 00000000..853ec2a7
+--- /dev/null
++++ b/cmds-dedupe-ib.c
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (C) 2017 Fujitsu.  All rights reserved.
 + *
-+ * @bdev: target bdev
-+ * @round_down: round factor big for hdd and small for ssd, like 8 and 2
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
 + */
-+static int bdev_get_queue_len(struct block_device *bdev, int round_down)
++
++#include <getopt.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++
++#include "ctree.h"
++#include "ioctl.h"
++
++#include "commands.h"
++#include "utils.h"
++#include "kerncompat.h"
++#include "dedupe-ib.h"
++
++static const char * const dedupe_ib_cmd_group_usage[] = {
++	"btrfs dedupe-inband <command> [options] <path>",
++	NULL
++};
++
++static const char dedupe_ib_cmd_group_info[] =
++"manage inband(write time) de-duplication";
++
++const struct cmd_group dedupe_ib_cmd_group = {
++	dedupe_ib_cmd_group_usage, dedupe_ib_cmd_group_info, {
++		NULL_CMD_STRUCT
++	}
++};
++
++int cmd_dedupe_ib(int argc, char **argv)
 +{
-+	int sum;
-+	struct hd_struct *bd_part = bdev->bd_part;
-+	struct request_queue *rq = bdev_get_queue(bdev);
-+	uint32_t inflight[2] = {0, 0};
-+
-+	part_in_flight(rq, bd_part, inflight);
-+
-+	sum = max_t(uint32_t, inflight[0], inflight[1]);
-+
-+	/*
-+	 * Try prevent switch for every sneeze
-+	 * By roundup output num by some value
-+	 */
-+	return ALIGN_DOWN(sum, round_down);
++	return handle_command_group(&dedupe_ib_cmd_group, argc, argv);
 +}
-+
-+/**
-+ * guess_optimal - return guessed optimal mirror
+diff --git a/commands.h b/commands.h
+index 76991f2b..28b8eec7 100644
+--- a/commands.h
++++ b/commands.h
+@@ -81,6 +81,7 @@ extern const struct cmd_group quota_cmd_group;
+ extern const struct cmd_group qgroup_cmd_group;
+ extern const struct cmd_group replace_cmd_group;
+ extern const struct cmd_group rescue_cmd_group;
++extern const struct cmd_group dedupe_ib_cmd_group;
+ 
+ extern const char * const cmd_send_usage[];
+ extern const char * const cmd_receive_usage[];
+@@ -120,5 +121,6 @@ int cmd_select_super(int argc, char **argv);
+ int cmd_dump_super(int argc, char **argv);
+ int cmd_debug_tree(int argc, char **argv);
+ int cmd_rescue(int argc, char **argv);
++int cmd_dedupe_ib(int argc, char **argv);
+ 
+ #endif
+diff --git a/dedupe-ib.h b/dedupe-ib.h
+new file mode 100644
+index 00000000..1ee91716
+--- /dev/null
++++ b/dedupe-ib.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (C) 2017 Fujitsu.  All rights reserved.
 + *
-+ * Optimal expected to be pid % num_stripes
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
 + *
-+ * That's generaly ok for spread load
-+ * Add some balancer based on queue leght to device
-+ *
-+ * Basic ideas:
-+ *  - Sequential read generate low amount of request
-+ *    so if load of drives are equal, use pid % num_stripes balancing
-+ *  - For mixed rotate/non-rotate mirrors, pick non-rotate as optimal
-+ *    and repick if other dev have "significant" less queue lenght
-+ *  - Repick optimal if queue leght of other mirror are less
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
 + */
-+static int guess_optimal(struct map_lookup *map, int optimal)
-+{
-+	int i;
-+	int round_down = 8;
-+	int num = map->num_stripes;
-+	int qlen[num];
-+	bool is_nonrot[num];
-+	bool all_bdev_nonrot = true;
-+	bool all_bdev_rotate = true;
-+	struct block_device *bdev;
 +
-+	if (num == 1)
-+		return optimal;
++#ifndef __BTRFS_DEDUPE__
++#define __BTRFS_DEDUPE__
 +
-+	/* Check accessible bdevs */
-+	for (i = 0; i < num; i++) {
-+		/* Init for missing bdevs */
-+		is_nonrot[i] = false;
-+		qlen[i] = INT_MAX;
-+		bdev = map->stripes[i].dev->bdev;
-+		if (bdev) {
-+			qlen[i] = 0;
-+			is_nonrot[i] = blk_queue_nonrot(bdev_get_queue(bdev));
-+			if (is_nonrot[i])
-+				all_bdev_rotate = false;
-+			else
-+				all_bdev_nonrot = false;
-+		}
-+	}
++/*
++ * Dedup storage backend
++ * On disk is persist storage but overhead is large
++ * In memory is fast but will lose all its hash on umount
++ */
++#define BTRFS_DEDUPE_BACKEND_INMEMORY		0
++#define BTRFS_DEDUPE_BACKEND_LAST		1
 +
-+	/*
-+	 * Don't bother with computation
-+	 * if only one of two bdevs are accessible
-+	 */
-+	if (num == 2 && qlen[0] != qlen[1]) {
-+		if (qlen[0] < qlen[1])
-+			return 0;
-+		else
-+			return 1;
-+	}
++/* Dedup block size limit and default value */
++#define BTRFS_DEDUPE_BLOCKSIZE_MAX	(8 * 1024 * 1024)
++#define BTRFS_DEDUPE_BLOCKSIZE_MIN	(16 * 1024)
++#define BTRFS_DEDUPE_BLOCKSIZE_DEFAULT	(128 * 1024)
 +
-+	if (all_bdev_nonrot)
-+		round_down = 2;
++/* Default dedupe limit on number of hash */
++#define BTRFS_DEDUPE_LIMIT_NR_DEFAULT	(32 * 1024)
 +
-+	for (i = 0; i < num; i++) {
-+		if (qlen[i])
-+			continue;
-+		bdev = map->stripes[i].dev->bdev;
-+		qlen[i] = bdev_get_queue_len(bdev, round_down);
-+	}
++/* Hash algorithm, only support SHA256 yet */
++#define BTRFS_DEDUPE_HASH_SHA256		0
 +
-+	/* For mixed case, pick non rotational dev as optimal */
-+	if (all_bdev_rotate == all_bdev_nonrot) {
-+		for (i = 0; i < num; i++) {
-+			if (is_nonrot[i])
-+				optimal = i;
-+		}
-+	}
++#endif
+diff --git a/ioctl.h b/ioctl.h
+index 709e996f..8268c035 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -559,6 +559,42 @@ struct btrfs_ioctl_qgroup_create_args {
+ };
+ BUILD_ASSERT(sizeof(struct btrfs_ioctl_qgroup_create_args) == 16);
+ 
++/*
++ * de-duplication control modes
++ * For re-config, enable will handle it
++ */
++#define BTRFS_DEDUPE_CTL_ENABLE	1
++#define BTRFS_DEDUPE_CTL_DISABLE 2
++#define BTRFS_DEDUPE_CTL_STATUS	3
++#define BTRFS_DEDUPE_CTL_RECONF	4
++#define BTRFS_DEDUPE_CTL_LAST	5
 +
-+	for (i = 0; i < num; i++) {
-+		if (qlen[optimal] > qlen[i])
-+			optimal = i;
-+	}
++/*
++ * Allow enable command to be executed on dedupe enabled fs.
++ * Make dedupe_enable ioctl to be stateless.
++ *
++ * Or only dedup_reconf ioctl can be executed on dedupe enabled fs
++ */
++#define BTRFS_DEDUPE_FLAG_FORCE		(1 << 0)
++/*
++ * This structure is used for dedupe enable/disable/configure
++ * and status ioctl.
++ * Reserved range should be set to 0xff.
++ */
++struct btrfs_ioctl_dedupe_args {
++	__u16 cmd;		/* In: command */
++	__u64 blocksize;	/* In/Out: blocksize */
++	__u64 limit_nr;		/* In/Out: limit nr for inmem backend */
++	__u64 limit_mem;	/* In/Out: limit mem for inmem backend */
++	__u64 current_nr;	/* Out: current hash nr */
++	__u16 backend;		/* In/Out: current backend */
++	__u16 hash_algo;	/* In/Out: hash algorithm */
++	u8 status;		/* Out: enabled or disabled */
++	u8 flags;		/* In: special flags for ioctl */
++	u8 __unused[472];	/* Pad to 512 bytes */
++};
++BUILD_ASSERT(sizeof(btrfs_ioctl_dedupe_args) == 512);
 +
-+	return optimal;
-+}
-+
- static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 			    struct map_lookup *map, int first, int num,
- 			    int optimal, int dev_replace_is_ongoing)
-@@ -5664,6 +5771,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 	int i;
- 	int ret = 0;
- 	int num_stripes;
-+	int optimal;
- 	int max_errors = 0;
- 	int tgtdev_indexes = 0;
- 	struct btrfs_bio *bbio = NULL;
-@@ -5776,9 +5884,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 		else if (mirror_num)
- 			stripe_index = mirror_num - 1;
- 		else {
-+			optimal = guess_optimal(map,
-+					current->pid % map->num_stripes);
- 			stripe_index = find_live_mirror(fs_info, map, 0,
- 					    map->num_stripes,
--					    current->pid % map->num_stripes,
-+					    optimal,
- 					    dev_replace_is_ongoing);
- 			mirror_num = stripe_index + 1;
- 		}
-@@ -5804,10 +5914,12 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 			stripe_index += mirror_num - 1;
- 		else {
- 			int old_stripe_index = stripe_index;
-+			optimal = guess_optimal(map,
-+					current->pid % map->num_stripes);
- 			stripe_index = find_live_mirror(fs_info, map,
- 					      stripe_index,
- 					      map->sub_stripes, stripe_index +
--					      current->pid % map->sub_stripes,
-+					      optimal,
- 					      dev_replace_is_ongoing);
- 			mirror_num = stripe_index - old_stripe_index + 1;
- 		}
+ struct btrfs_ioctl_timespec {
+ 	__u64 sec;
+ 	__u32 nsec;
 -- 
 2.15.1
+
+
+

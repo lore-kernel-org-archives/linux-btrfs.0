@@ -1,66 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:10670 "EHLO
-        ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752066AbdLKXpp (ORCPT
+Received: from iolanthe.rowland.org ([192.131.102.54]:50366 "HELO
+        iolanthe.rowland.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with SMTP id S1751705AbdLLPvi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Dec 2017 18:45:45 -0500
-Date: Tue, 12 Dec 2017 10:38:35 +1100
-From: Dave Chinner <david@fromorbit.com>
+        Tue, 12 Dec 2017 10:51:38 -0500
+Date: Tue, 12 Dec 2017 10:51:37 -0500 (EST)
+From: Alan Stern <stern@rowland.harvard.edu>
 To: Joe Perches <joe@perches.com>
-Cc: Alan Stern <stern@rowland.harvard.edu>,
+cc: Matthew Wilcox <willy@infradead.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Whitcroft <apw@shadowen.org>, Dave Chinner <david@fromorbit.com>,
         Byungchul Park <byungchul.park@lge.com>,
-        "Theodore Ts'o" <tytso@mit.edu>, Matthew Wilcox <willy@infradead.org>,
+        "Theodore Ts'o" <tytso@mit.edu>,
         Matthew Wilcox <mawilcox@microsoft.com>,
         Ross Zwisler <ross.zwisler@linux.intel.com>,
         Jens Axboe <axboe@kernel.dk>, Rehas Sachdeva <aquannie@gmail.com>,
-        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org,
-        kernel-team@lge.com
+        <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>,
+        <linux-f2fs-devel@lists.sourceforge.net>,
+        <linux-nilfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-xfs@vger.kernel.org>, <linux-usb@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>, <kernel-team@lge.com>
 Subject: Re: [PATCH v4 72/73] xfs: Convert mru cache to XArray
-Message-ID: <20171211233835.GV5858@dastard>
-References: <fd7130d7-9066-524e-1053-a61eeb27cb36@lge.com>
- <Pine.LNX.4.44L0.1712081228430.1371-100000@iolanthe.rowland.org>
- <20171208223654.GP5858@dastard>
- <1512838818.26342.7.camel@perches.com>
- <20171211214300.GT5858@dastard>
- <1513030348.3036.5.camel@perches.com>
+In-Reply-To: <1513035963.3036.17.camel@perches.com>
+Message-ID: <Pine.LNX.4.44L0.1712121041240.1358-100000@iolanthe.rowland.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1513030348.3036.5.camel@perches.com>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 11, 2017 at 02:12:28PM -0800, Joe Perches wrote:
-> On Tue, 2017-12-12 at 08:43 +1100, Dave Chinner wrote:
-> > On Sat, Dec 09, 2017 at 09:00:18AM -0800, Joe Perches wrote:
-> > > On Sat, 2017-12-09 at 09:36 +1100, Dave Chinner wrote:
-> > > > 	1. Using lockdep_set_novalidate_class() for anything other
-> > > > 	than device->mutex will throw checkpatch warnings. Nice. (*)
-> > > []
-> > > > (*) checkpatch.pl is considered mostly harmful round here, too,
-> > > > but that's another rant....
-> > > 
-> > > How so?
+On Mon, 11 Dec 2017, Joe Perches wrote:
+
+> >  - I don't understand the error for xa_head here:
 > > 
-> > Short story is that it barfs all over the slightly non-standard
-> > coding style used in XFS.
-> []
-> > This sort of stuff is just lowest-common-denominator noise - great
-> > for new code and/or inexperienced developers, but not for working
-> > with large bodies of existing code with slightly non-standard
-> > conventions.
+> > struct xarray {
+> >         spinlock_t      xa_lock;
+> >         gfp_t           xa_flags;
+> >         void __rcu *    xa_head;
+> > };
+> > 
+> >    Do people really think that:
+> > 
+> > struct xarray {
+> >         spinlock_t      xa_lock;
+> >         gfp_t           xa_flags;
+> >         void __rcu	*xa_head;
+> > };
+> > 
+> >    is more aesthetically pleasing?  And not just that, but it's an *error*
+> >    so the former is *RIGHT* and this is *WRONG*.  And not just a matter
+
+Not sure what was meant here.  Neither one is *WRONG* in the sense of 
+being invalid C code.  In the sense of what checkpatch will accept, the 
+former is *WRONG* and the latter is *RIGHT* -- the opposite of what 
+was written.
+
+> >    of taste?
 > 
-> Completely reasonable.  Thanks.
-> 
-> Do you get many checkpatch submitters for fs/xfs?
+> No opinion really.
+> That's from Andy Whitcroft's original implementation.
 
-We used to. Not recently, though.
+This one, at least, is easy to explain.  The original version tends to
+lead to bugs, or easily misunderstood code.  Consider if another
+variable was added to the declaration; it could easily turn into:
 
-Cheers,
+	void __rcu *	xa_head, xa_head2;
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+(The compiler will reject this, but it wouldn't if the underlying type
+had been int instead of void.)
+
+Doing it the other way makes the meaning a lot more clear:
+
+	void __rcu	*xa_head, *xa_head2;
+
+This is an idiom specifically intended to reduce the likelihood of 
+errors.  Rather like avoiding assignments inside conditionals.
+
+Alan Stern
+

@@ -1,62 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:45220 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:49529 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752990AbdLHNQX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 8 Dec 2017 08:16:23 -0500
-From: Ming Lei <ming.lei@redhat.com>
-To: Jens Axboe <axboe@fb.com>, linux-block@vger.kernel.org
-Cc: Christoph Hellwig <hch@infradead.org>, Ming Lei <ming.lei@redhat.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Liu Bo <bo.li.liu@oracle.com>
-Subject: [PATCH 10/10] btrfs: avoid to access bvec table directly for a cloned bio
-Date: Fri,  8 Dec 2017 21:14:09 +0800
-Message-Id: <20171208131409.11889-11-ming.lei@redhat.com>
-In-Reply-To: <20171208131409.11889-1-ming.lei@redhat.com>
-References: <20171208131409.11889-1-ming.lei@redhat.com>
+        id S1752303AbdLLSar (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Dec 2017 13:30:47 -0500
+Date: Tue, 12 Dec 2017 19:28:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, josef@toxicpanda.com, clm@fb.com
+Subject: Re: [PATCH] btrfs: Fix out of bounds access in btrfs_search_slot
+Message-ID: <20171212182845.GP3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1513070089-19002-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1513070089-19002-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 17347cec15f919901c90(Btrfs: change how we iterate bios in endio)
-mentioned that for dio the submitted bio may be fast cloned, we
-can't access the bvec table directly for a cloned bio, so use
-bio_get_first_bvec() to retrieve the 1st bvec.
+On Tue, Dec 12, 2017 at 11:14:49AM +0200, Nikolay Borisov wrote:
+> When modifying a tree where the root is at BTRFS_MAX_LEVEL - 1 then
+> the level variable is going to be 7 (this is the max height of the
+> tree). On the other hand btrfs_cow_block is always called with
+> "level + 1" as an index into the nodes and slots arrays. This leads to
+> an out of bounds access. Admittdely this will be benign since an OOB
+> access of the nodes array will likely read the 0th element from the
+> slots array, which in this case is going to be 0 (since we start CoW at
+> the top of the tree). The OOB access into the slots array in turn will
+> read the 0th and 1st values of the locks array, which would both be 0
+> at the time. However, this benign behavior relies on the fact that the 
+> path being passed hasn't been initialised, if it has already been used to 
+> query a btree then it could potentially have populated the nodes/slots arrays.
+> 
+> Fix it by explicitly checking if we are at level 7 (the maximum allowed
+> index in nodes/slots arrays) and explicitly call the CoW routine with
+> NULL for parent's node/slot.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> Fixes-coverity-id: 711515
 
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>
-Cc: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Cc: Liu Bo <bo.li.liu@oracle.com>
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-Acked: David Sterba <dsterba@suse.com>
-Signed-off-by: Ming Lei <ming.lei@redhat.com>
----
- fs/btrfs/inode.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d28b66019d54..7f23c1993d24 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8013,6 +8013,7 @@ static blk_status_t dio_read_error(struct inode *inode, struct bio *failed_bio,
- 	int segs;
- 	int ret;
- 	blk_status_t status;
-+	struct bio_vec bvec;
- 
- 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
- 
-@@ -8028,8 +8029,9 @@ static blk_status_t dio_read_error(struct inode *inode, struct bio *failed_bio,
- 	}
- 
- 	segs = bio_segments(failed_bio);
-+	bio_get_first_bvec(failed_bio, &bvec);
- 	if (segs > 1 ||
--	    (failed_bio->bi_io_vec->bv_len > btrfs_inode_sectorsize(inode)))
-+	    (bvec.bv_len > btrfs_inode_sectorsize(inode)))
- 		read_mode |= REQ_FAILFAST_DEV;
- 
- 	isector = start - btrfs_io_bio(failed_bio)->logical;
--- 
-2.9.5
-
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,101 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:44434 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:54900 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752270AbdLLHfF (ORCPT
+        with ESMTP id S1750715AbdLLHet (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 12 Dec 2017 02:35:05 -0500
+        Tue, 12 Dec 2017 02:34:49 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
-Subject: [PATCH 14/14] Revert "btrfs: qgroups: Retry after commit on getting EDQUOT"
-Date: Tue, 12 Dec 2017 15:34:36 +0800
-Message-Id: <20171212073436.16447-15-wqu@suse.com>
-In-Reply-To: <20171212073436.16447-1-wqu@suse.com>
-References: <20171212073436.16447-1-wqu@suse.com>
+Subject: [PATCH 00/14] Qgroup metadata reservation rework
+Date: Tue, 12 Dec 2017 15:34:22 +0800
+Message-Id: <20171212073436.16447-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This reverts commit 48a89bc4f2ceab87bc858a8eb189636b09c846a7.
+[Overall]
+The previous rework on qgroup reservation system put a lot of effort on
+data, which works quite fine.
 
-The idea to commit transaction and free some space after hitting qgroup
-limit is good, although the problem is it will easily cause deadlocks.
+But it takes less focus on metadata reservation, causing some problem
+like metadata reservation underflow and noisy kernel warning.
 
-One deadlock example is caused by trying to flush data while still
-holding it:
-Call Trace:
- __schedule+0x49d/0x10f0
- schedule+0xc6/0x290
- schedule_timeout+0x187/0x1c0
- wait_for_completion+0x204/0x3a0
- btrfs_wait_ordered_extents+0xa40/0xaf0 [btrfs]
- qgroup_reserve+0x913/0xa10 [btrfs]
- btrfs_qgroup_reserve_data+0x3ef/0x580 [btrfs]
- btrfs_check_data_free_space+0x96/0xd0 [btrfs]
- __btrfs_buffered_write+0x3ac/0xd40 [btrfs]
- btrfs_file_write_iter+0x62a/0xba0 [btrfs]
- __vfs_write+0x320/0x430
- vfs_write+0x107/0x270
- SyS_write+0xbf/0x150
- do_syscall_64+0x1b0/0x3d0
- entry_SYSCALL64_slow_path+0x25/0x25
+This patchset will try to address the remaining problem of metadata
+reservation.
 
-Another case can be caused by trying to commit one transaction while
-nesting with trans handler hold by ourselves:
-btrfs_start_transaction()
-|- btrfs_qgroup_reserve_meta_pertrans()
-   |- qgroup_reserve()
-      |- btrfs_join_transaction()
-      |- btrfs_commit_transaction()
+The idea of new qgroup metadata reservation is to use 2 types of
+metadata reservation:
+1) Per-transaction reservation
+   Life span will be inside a transaction. Will be freed at transaction
+   commit time.
 
-The retry is causing more problem than expectation when limit is
-enabled.
-At least graceful EDQUOT is way better than kernel deadlock.
+2) Preallocated reservation
+   For case where we reserve space before starting a transaction.
+   Operation like dealloc and delayed-inode/item belongs to this type.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 22 ----------------------
- 1 file changed, 22 deletions(-)
+   This works similar to block_rsv, its reservation can be
+   reserved/released at any timing caller like.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index ee5b05dd10a9..02effd919452 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2416,7 +2416,6 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 ref_root = root->root_key.objectid;
- 	int ret = 0;
--	int retried = 0;
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
- 
-@@ -2457,27 +2456,6 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
- 		qg = unode_aux_to_qgroup(unode);
- 
- 		if (enforce && !qgroup_check_limits(qg, num_bytes)) {
--			/*
--			 * Commit the tree and retry, since we may have
--			 * deletions which would free up space.
--			 */
--			if (!retried && qgroup_rsv_total(qg) > 0) {
--				struct btrfs_trans_handle *trans;
--
--				spin_unlock(&fs_info->qgroup_lock);
--				ret = btrfs_start_delalloc_inodes(root, 0);
--				if (ret)
--					return ret;
--				btrfs_wait_ordered_extents(root, U64_MAX, 0, (u64)-1);
--				trans = btrfs_join_transaction(root);
--				if (IS_ERR(trans))
--					return PTR_ERR(trans);
--				ret = btrfs_commit_transaction(trans);
--				if (ret)
--					return ret;
--				retried++;
--				goto retry;
--			}
- 			ret = -EDQUOT;
- 			goto out;
- 		}
+   The only point to notice is, if preallocated reservation is used and
+   finished without problem, it should be converted to per-transaction
+   type instead of just freeing.
+   This is to co-operate with qgroup update at commit time.
+
+For preallocated type, this patch will integrate them into inode_rsv
+mechanism reworked by Josef, and delayed-inode/item reservation.
+
+
+[Problem: Over-reserve]
+Currently the patchset addresses metadata underflow quite well, but
+due to the over-reserve nature of btrfs and highly bounded to inode_rsv,
+qgroup metadata reservation also tends to be over-reserved.
+
+This is especially obvious for small limit.
+For 128M limit, it's will only be able to write about 70M before hitting
+quota limit.
+Although for larger limit, like 5G limit, it can reach 4.5G or more
+before hitting limit.
+
+Such over-reserved behavior can lead to some problem with existing test
+cases (where limit is normally less than 20M).
+
+While it's also possible to be addressed by use more accurate space other
+than max estimations.
+
+For example, to calculate metadata needed for delalloc, we use
+btrfs_calc_trans_metadata_size(), which always try to reserve space for
+CoW a full-height tree, and will also include csum size.
+Both calculate is way over-killed for qgroup metadata reservation.
+
+[Patch structure]
+The patch is consist of 2 main parts:
+1) Type based qgroup reservation
+   The original patchset is sent several months ago.
+   Nothing is modified at all, just rebased. And not conflict at all.
+
+   It's from patch 1 to patch 6.
+
+2) Split meta qgroup reservation into per-trans and prealloc sub types
+   The real work to address metadata underflow.
+   Due to the over-reserve problem, this part is still in RFC state.
+   But the framework should mostly be fine, only needs extra fine-tuning
+   to get more accurate qgroup rsv to avoid too early limit.
+
+   It's from patch 7 to 14.
+
+Qu Wenruo (14):
+  btrfs: qgroup: Skeleton to support separate qgroup reservation type
+  btrfs: qgroup: Introduce helpers to update and access new qgroup rsv
+  btrfs: qgroup: Make qgroup_reserve and its callers to use separate
+    reservation type
+  btrfs: qgroup: Fix wrong qgroup reservation update for relationship
+    modification
+  btrfs: qgroup: Update trace events to use new separate rsv types
+  btrfs: qgroup: Cleanup the remaining old reservation counters
+  btrfs: qgroup: Split meta rsv type into meta_prealloc and
+    meta_pertrans
+  btrfs: qgroup: Don't use root->qgroup_meta_rsv for qgroup
+  btrfs: qgroup: Introduce function to convert META_PREALLOC into
+    META_PERTRANS
+  btrfs: qgroup: Use separate meta reservation type for delalloc
+  btrfs: delayed-inode: Use new qgroup meta rsv for delayed inode and
+    item
+  btrfs: qgroup: Use root->qgroup_meta_rsv_* to record qgroup meta
+    reserved space
+  btrfs: qgroup: Update trace events for metadata reservation
+  Revert "btrfs: qgroups: Retry after commit on getting EDQUOT"
+
+ fs/btrfs/ctree.h             |  15 +-
+ fs/btrfs/delayed-inode.c     |  50 +++++--
+ fs/btrfs/disk-io.c           |   2 +-
+ fs/btrfs/extent-tree.c       |  49 +++---
+ fs/btrfs/file.c              |  15 +-
+ fs/btrfs/free-space-cache.c  |   2 +-
+ fs/btrfs/inode-map.c         |   4 +-
+ fs/btrfs/inode.c             |  27 ++--
+ fs/btrfs/ioctl.c             |  10 +-
+ fs/btrfs/ordered-data.c      |   2 +-
+ fs/btrfs/qgroup.c            | 350 ++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/qgroup.h            | 102 ++++++++++++-
+ fs/btrfs/relocation.c        |   9 +-
+ fs/btrfs/transaction.c       |   8 +-
+ include/trace/events/btrfs.h |  73 ++++++++-
+ 15 files changed, 537 insertions(+), 181 deletions(-)
+
 -- 
 2.15.1
 

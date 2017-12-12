@@ -1,111 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.automatix.de ([213.131.255.221]:40523 "EHLO
-        mail.automatix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751507AbdLLK37 (ORCPT
+Received: from mail-wr0-f175.google.com ([209.85.128.175]:42533 "EHLO
+        mail-wr0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753151AbdLLOC6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Dec 2017 05:29:59 -0500
-To: linux-btrfs@vger.kernel.org
-Reply-To: service@automatix.de
-From: Juergen Sauer <juergen.sauer@automatix.de>
-Subject: OFF-By-One Trouble? [BTRFS in Debian Stretch Kernel 4.9.0-4-amd64]
-Message-ID: <3bd97912-4561-9b75-8fd7-98bc52ddcbc2@automatix.de>
-Date: Tue, 12 Dec 2017 11:22:40 +0100
+        Tue, 12 Dec 2017 09:02:58 -0500
+Received: by mail-wr0-f175.google.com with SMTP id s66so21259059wrc.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Dec 2017 06:02:57 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="C930XosdwtSQorqsm8SNtelfVfbwONv7k"
+From: Neal Becker <ndbecker2@gmail.com>
+Date: Tue, 12 Dec 2017 09:02:56 -0500
+Message-ID: <CAG3t+pHLcrMLH8XxWSc+P6v-gtMZds+RNKBz6RKzAWdWr8ObhQ@mail.gmail.com>
+Subject: broken btrfs filesystem
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---C930XosdwtSQorqsm8SNtelfVfbwONv7k
-Content-Type: multipart/mixed; boundary="ftqaJOqqtiN263mTPGI4bQd2okM7B1G7S";
- protected-headers="v1"
-From: Juergen Sauer <juergen.sauer@automatix.de>
-Reply-To: service@automatix.de
-To: linux-btrfs@vger.kernel.org
-Message-ID: <3bd97912-4561-9b75-8fd7-98bc52ddcbc2@automatix.de>
-Subject: OFF-By-One Trouble? [BTRFS in Debian Stretch Kernel 4.9.0-4-amd64]
+sudo ls -la ~/
+[sudo] password for nbecker:
+ls: cannot access '/home/nbecker/.bash_history': No such file or directory
+ls: cannot access '/home/nbecker/.bash_history': No such file or directory
+ls: cannot access '/home/nbecker/.bash_history': No such file or directory
+ls: cannot access '/home/nbecker/.bash_history': No such file or directory
+ls: cannot access '/home/nbecker/.bash_history': No such file or directory
+ls: cannot access '/home/nbecker/.bash_history': No such file or directory
+total 11652
+drwxr-xr-x. 1 nbecker nbecker     5826 Dec 12 08:48  .
+drwxr-xr-x. 1 root    root          48 Aug  2 19:32  ..
+[...]
+-rwxrwxr-x. 1 nbecker nbecker      207 Dec  3  2015  BACKUP.sh
+-?????????? ? ?       ?              ?            ?  .bash_history
+-?????????? ? ?       ?              ?            ?  .bash_history
+-?????????? ? ?       ?              ?            ?  .bash_history
+-?????????? ? ?       ?              ?            ?  .bash_history
+-?????????? ? ?       ?              ?            ?  .bash_history
+-?????????? ? ?       ?              ?            ?  .bash_history
+-rw-r--r--. 1 nbecker nbecker       18 Oct  8  2014  .bash_logout
+[...]
 
---ftqaJOqqtiN263mTPGI4bQd2okM7B1G7S
-Content-Type: text/plain; charset=utf-8
-Content-Language: de-DE
-Content-Transfer-Encoding: quoted-printable
+uname -a
+Linux nbecker2 4.14.3-300.fc27.x86_64 #1 SMP Mon Dec 4 17:18:27 UTC
+2017 x86_64 x86_64 x86_64 GNU/Linux
 
-Hi collegues,
-this morning we've got a problm with btrfs in Debian Stable.
+ btrfs --version
+btrfs-progs v4.11.1
 
-Yesterday we had our fs filled below 30% space usage.
-No further usage came in the usage is nearly the same, but ...
+sudo btrfs fi show
+Label: 'fedora'  uuid: 93c586fa-6d86-4148-a528-e61e644db0c8
+Total devices 1 FS bytes used 80.96GiB
+devid    1 size 230.00GiB used 230.00GiB path /dev/sda3
 
-# df -h .
-Dateisystem    Gr=C3=B6=C3=9Fe Benutzt Verf. Verw% Eingeh=C3=A4ngt auf
-/dev/vdb1      483G    483G  148K  100% /mnt
+sudo btrfs fi df /home
+Data, single: total=226.99GiB, used=78.89GiB
+System, single: total=4.00MiB, used=48.00KiB
+Metadata, single: total=3.01GiB, used=2.07GiB
+GlobalReserve, single: total=222.36MiB, used=0.00B
 
-# btrfs fi df .
-Data, single: total=3D480.97GiB, used=3D480.97GiB
-System, single: total=3D32.00MiB, used=3D96.00KiB
-Metadata, single: total=3D2.00GiB, used=3D1.29GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+dmesg.log is here:
+https://nbecker.fedorapeople.org/dmesg.txt
 
-# btrfs fi show .
-Label: 'AXSDaten'  uuid: fde7e31f-4127-4a9d-b7c6-774ceff8f7c1
-        Total devices 1 FS bytes used 482.26GiB
-        devid    1 size 483.00GiB used 483.00GiB path /dev/vdb1
+mount | grep btrfs
+/dev/sda3 on / type btrfs
+(rw,relatime,seclabel,ssd,space_cache,subvolid=257,subvol=/root)
+/dev/sda3 on /home type btrfs
+(rw,relatime,seclabel,ssd,space_cache,subvolid=318,subvol=/home)
 
-# btrfs --version
-btrfs-progs v4.7.3
-
-we found exerpt of kernel log:
-[  199.391577] attempt to access beyond end of device
-[  199.391598] vdb1: rw=3D536870984, want=3D1012922336, limit=3D101292233=
-5
-[  199.391615] BTRFS error (device vdb1): bdev /dev/vdb1 errs: wr 301,
-rd 0, flush 0, corrupt 0, gen 0
-r
-If I interpret the log right, on the FS the kernel wants to write on
-block  1012922336, but the fs was created with max 1012922335 blocks.
-
-Looks to us here like a typical off-by-one error on accessing the last
-block of device.
-
-This error was repeating under ff. conditions:
-- shutdown the virtual server (kvm),
-- extend the physical file of the according virtual hdd by 20% (from 483
-Gib to 520 GiB)
-- restart virtual server
-- fixed partion size (parted), mounted
-- called btrfs fi resize max on the corresponding mount point
-
-Error came back, nearly at once.
-
-Any other Idea to fix this error?
-
-mit freundlichen Gr=C3=BC=C3=9Fen
-J=C3=BCrgen Sauer
-
---=20
-J=C3=BCrgen Sauer - automatiX GmbH,
-+49-4209-4699, juergen.sauer@automatix.de
-Gesch=C3=A4ftsf=C3=BChrer: J=C3=BCrgen Sauer,
-Gerichtstand: Amtsgericht Walsrode =E2=80=A2 HRB 120986
-Ust-Id: DE191468481 =E2=80=A2 St.Nr.: 36/211/08000
-GPG Public Key zur Signaturpr=C3=BCfung:
-http://www.automatix.de/juergen_sauer_publickey.gpg
-
-
---ftqaJOqqtiN263mTPGI4bQd2okM7B1G7S--
-
---C930XosdwtSQorqsm8SNtelfVfbwONv7k
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EARECAB0WIQTXnJOAsmrKYVtqq/xbtQoj0SpqsQUCWi+t9AAKCRBbtQoj0Spq
-sQGaAKCKAbCur/NsESIjTUoU2FbMYj0PXQCeIk2TU1hphroNevJnt5Po1V2TNzM=
-=HOD5
------END PGP SIGNATURE-----
-
---C930XosdwtSQorqsm8SNtelfVfbwONv7k--
+-- 
+Those who don't understand recursion are doomed to repeat it

@@ -1,69 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:52096 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751053AbdLLGeK (ORCPT
+Received: from mail-ot0-f169.google.com ([74.125.82.169]:40827 "EHLO
+        mail-ot0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750731AbdLLGuC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Dec 2017 01:34:10 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id A933B48089F3
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Dec 2017 14:34:04 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v10.1 0/5] In-band de-duplication for btrfs-progs
-Date: Tue, 12 Dec 2017 14:32:52 +0800
-Message-ID: <20171212063257.31451-1-lufq.fnst@cn.fujitsu.com>
+        Tue, 12 Dec 2017 01:50:02 -0500
+Received: by mail-ot0-f169.google.com with SMTP id e74so16961100ote.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 22:50:01 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <CABB28CxbiCTVOUYKbUv7-O-0bAAweSJF--7OnJtNAnud6TipwQ@mail.gmail.com>
+References: <CABB28CxbiCTVOUYKbUv7-O-0bAAweSJF--7OnJtNAnud6TipwQ@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 11 Dec 2017 23:50:00 -0700
+Message-ID: <CAJCQCtTd2y8vs5WYwgLKGZJfRr4-G0RGh+1OEanq_u00+zL-TQ@mail.gmail.com>
+Subject: Re: 4.15.0-0.rc2.git2.1.fc28.x86_64: possible circular locking
+ dependency detected
+To: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patchset can be fetched from github:
-https://github.com/littleroad/btrfs-progs.git dedupe_latest
+On Mon, Dec 11, 2017 at 10:12 PM, Tomasz Kłoczko
+<kloczko.tomasz@gmail.com> wrote:
+> Hi,
+>
+> Jut done upgrade on my laptop to the latest Fedora rawhide packages.
+> After reboot and login in dmesg I found logged btrfs issue:
+>
+> [   94.192907] ======================================================
+> [   94.192911] WARNING: possible circular locking dependency detected
+> [   94.192917] 4.15.0-0.rc2.git2.1.fc28.x86_64 #1 Not tainted
 
-Inband dedupe(in-memory backend only) ioctl support for btrfs-progs.
+I'm not seeing it so far with 4.15.0-0.rc3.git0.1.fc28.x86_64+debug.
 
-v7 changes:
-   Update ctree.h to follow kernel structure change
-   Update print-tree to follow kernel structure change
-V8 changes:
-   Move dedup props and on-disk backend support out of the patchset
-   Change command group name to "dedupe-inband", to avoid confusion with
-   possible out-of-band dedupe. Suggested by Mark.
-   Rebase to latest devel branch.
-V9 changes:
-   Follow kernels ioctl change to support FORCE flag, new reconf ioctl,
-   and more precious error reporting.
-v10 changes:
-   Rebase to v4.10.
-   Add BUILD_ASSERT for btrfs_ioctl_dedupe_args
 
-v10.1 changes:
-   Rebase to v4.14.
-
-Qu Wenruo (5):
-  btrfs-progs: Basic framework for dedupe-inband command group
-  btrfs-progs: dedupe: Add enable command for dedupe command group
-  btrfs-progs: dedupe: Add disable support for inband dedupelication
-  btrfs-progs: dedupe: Add status subcommand
-  btrfs-progs: dedupe: introduce reconfigure subcommand
-
- Documentation/Makefile.in                  |   1 +
- Documentation/btrfs-dedupe-inband.asciidoc | 167 +++++++++++
- Documentation/btrfs.asciidoc               |   4 +
- Makefile                                   |   2 +-
- btrfs-completion                           |   6 +-
- btrfs.c                                    |   2 +
- cmds-dedupe-ib.c                           | 438 +++++++++++++++++++++++++++++
- commands.h                                 |   2 +
- dedupe-ib.h                                |  36 +++
- ioctl.h                                    |  38 +++
- 10 files changed, 694 insertions(+), 2 deletions(-)
- create mode 100644 Documentation/btrfs-dedupe-inband.asciidoc
- create mode 100644 cmds-dedupe-ib.c
- create mode 100644 dedupe-ib.h
 
 -- 
-2.15.1
-
-
-
+Chris Murphy

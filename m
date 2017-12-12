@@ -1,127 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:54900 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:37235 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750715AbdLLHet (ORCPT
+        with ESMTP id S1751274AbdLLHet (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 12 Dec 2017 02:34:49 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
-Subject: [PATCH 00/14] Qgroup metadata reservation rework
-Date: Tue, 12 Dec 2017 15:34:22 +0800
-Message-Id: <20171212073436.16447-1-wqu@suse.com>
+Subject: [PATCH 01/14] btrfs: qgroup: Skeleton to support separate qgroup reservation type
+Date: Tue, 12 Dec 2017 15:34:23 +0800
+Message-Id: <20171212073436.16447-2-wqu@suse.com>
+In-Reply-To: <20171212073436.16447-1-wqu@suse.com>
+References: <20171212073436.16447-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Overall]
-The previous rework on qgroup reservation system put a lot of effort on
-data, which works quite fine.
+Instead of single qgroup->reserved, use a new structure btrfs_qgroup_rsv
+to restore different types of reservation.
 
-But it takes less focus on metadata reservation, causing some problem
-like metadata reservation underflow and noisy kernel warning.
+This patch only updates the header and needed modification to pass
+compile.
 
-This patchset will try to address the remaining problem of metadata
-reservation.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/qgroup.c | 16 ++++++++++------
+ fs/btrfs/qgroup.h | 27 +++++++++++++++++++++++++--
+ 2 files changed, 35 insertions(+), 8 deletions(-)
 
-The idea of new qgroup metadata reservation is to use 2 types of
-metadata reservation:
-1) Per-transaction reservation
-   Life span will be inside a transaction. Will be freed at transaction
-   commit time.
-
-2) Preallocated reservation
-   For case where we reserve space before starting a transaction.
-   Operation like dealloc and delayed-inode/item belongs to this type.
-
-   This works similar to block_rsv, its reservation can be
-   reserved/released at any timing caller like.
-
-   The only point to notice is, if preallocated reservation is used and
-   finished without problem, it should be converted to per-transaction
-   type instead of just freeing.
-   This is to co-operate with qgroup update at commit time.
-
-For preallocated type, this patch will integrate them into inode_rsv
-mechanism reworked by Josef, and delayed-inode/item reservation.
-
-
-[Problem: Over-reserve]
-Currently the patchset addresses metadata underflow quite well, but
-due to the over-reserve nature of btrfs and highly bounded to inode_rsv,
-qgroup metadata reservation also tends to be over-reserved.
-
-This is especially obvious for small limit.
-For 128M limit, it's will only be able to write about 70M before hitting
-quota limit.
-Although for larger limit, like 5G limit, it can reach 4.5G or more
-before hitting limit.
-
-Such over-reserved behavior can lead to some problem with existing test
-cases (where limit is normally less than 20M).
-
-While it's also possible to be addressed by use more accurate space other
-than max estimations.
-
-For example, to calculate metadata needed for delalloc, we use
-btrfs_calc_trans_metadata_size(), which always try to reserve space for
-CoW a full-height tree, and will also include csum size.
-Both calculate is way over-killed for qgroup metadata reservation.
-
-[Patch structure]
-The patch is consist of 2 main parts:
-1) Type based qgroup reservation
-   The original patchset is sent several months ago.
-   Nothing is modified at all, just rebased. And not conflict at all.
-
-   It's from patch 1 to patch 6.
-
-2) Split meta qgroup reservation into per-trans and prealloc sub types
-   The real work to address metadata underflow.
-   Due to the over-reserve problem, this part is still in RFC state.
-   But the framework should mostly be fine, only needs extra fine-tuning
-   to get more accurate qgroup rsv to avoid too early limit.
-
-   It's from patch 7 to 14.
-
-Qu Wenruo (14):
-  btrfs: qgroup: Skeleton to support separate qgroup reservation type
-  btrfs: qgroup: Introduce helpers to update and access new qgroup rsv
-  btrfs: qgroup: Make qgroup_reserve and its callers to use separate
-    reservation type
-  btrfs: qgroup: Fix wrong qgroup reservation update for relationship
-    modification
-  btrfs: qgroup: Update trace events to use new separate rsv types
-  btrfs: qgroup: Cleanup the remaining old reservation counters
-  btrfs: qgroup: Split meta rsv type into meta_prealloc and
-    meta_pertrans
-  btrfs: qgroup: Don't use root->qgroup_meta_rsv for qgroup
-  btrfs: qgroup: Introduce function to convert META_PREALLOC into
-    META_PERTRANS
-  btrfs: qgroup: Use separate meta reservation type for delalloc
-  btrfs: delayed-inode: Use new qgroup meta rsv for delayed inode and
-    item
-  btrfs: qgroup: Use root->qgroup_meta_rsv_* to record qgroup meta
-    reserved space
-  btrfs: qgroup: Update trace events for metadata reservation
-  Revert "btrfs: qgroups: Retry after commit on getting EDQUOT"
-
- fs/btrfs/ctree.h             |  15 +-
- fs/btrfs/delayed-inode.c     |  50 +++++--
- fs/btrfs/disk-io.c           |   2 +-
- fs/btrfs/extent-tree.c       |  49 +++---
- fs/btrfs/file.c              |  15 +-
- fs/btrfs/free-space-cache.c  |   2 +-
- fs/btrfs/inode-map.c         |   4 +-
- fs/btrfs/inode.c             |  27 ++--
- fs/btrfs/ioctl.c             |  10 +-
- fs/btrfs/ordered-data.c      |   2 +-
- fs/btrfs/qgroup.c            | 350 ++++++++++++++++++++++++++++++++-----------
- fs/btrfs/qgroup.h            | 102 ++++++++++++-
- fs/btrfs/relocation.c        |   9 +-
- fs/btrfs/transaction.c       |   8 +-
- include/trace/events/btrfs.h |  73 ++++++++-
- 15 files changed, 537 insertions(+), 181 deletions(-)
-
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 168fd03ca3ac..f6fe28ca0e86 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2444,7 +2444,8 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce)
+ }
+ 
+ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+-			       u64 ref_root, u64 num_bytes)
++			       u64 ref_root, u64 num_bytes,
++			       enum btrfs_qgroup_rsv_type type)
+ {
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_qgroup *qgroup;
+@@ -2936,7 +2937,8 @@ static int qgroup_free_reserved_data(struct inode *inode,
+ 			goto out;
+ 		freed += changeset.bytes_changed;
+ 	}
+-	btrfs_qgroup_free_refroot(root->fs_info, root->objectid, freed);
++	btrfs_qgroup_free_refroot(root->fs_info, root->objectid, freed,
++				  BTRFS_QGROUP_RSV_DATA);
+ 	ret = freed;
+ out:
+ 	extent_changeset_release(&changeset);
+@@ -2968,7 +2970,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
+ 	if (free)
+ 		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
+ 				BTRFS_I(inode)->root->objectid,
+-				changeset.bytes_changed);
++				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
+ 	ret = changeset.bytes_changed;
+ out:
+ 	extent_changeset_release(&changeset);
+@@ -3045,7 +3047,8 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
+ 	if (reserved == 0)
+ 		return;
+ 	trace_qgroup_meta_reserve(root, -(s64)reserved);
+-	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved);
++	btrfs_qgroup_free_refroot(fs_info, root->objectid, reserved,
++				  BTRFS_QGROUP_RSV_META);
+ }
+ 
+ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
+@@ -3060,7 +3063,8 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
+ 	WARN_ON(atomic64_read(&root->qgroup_meta_rsv) < num_bytes);
+ 	atomic64_sub(num_bytes, &root->qgroup_meta_rsv);
+ 	trace_qgroup_meta_reserve(root, -(s64)num_bytes);
+-	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes);
++	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes,
++				  BTRFS_QGROUP_RSV_META);
+ }
+ 
+ /*
+@@ -3088,7 +3092,7 @@ void btrfs_qgroup_check_reserved_leak(struct inode *inode)
+ 		}
+ 		btrfs_qgroup_free_refroot(BTRFS_I(inode)->root->fs_info,
+ 				BTRFS_I(inode)->root->objectid,
+-				changeset.bytes_changed);
++				changeset.bytes_changed, BTRFS_QGROUP_RSV_DATA);
+ 
+ 	}
+ 	extent_changeset_release(&changeset);
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index d9984e87cddf..fead9955af72 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -61,6 +61,26 @@ struct btrfs_qgroup_extent_record {
+ 	struct ulist *old_roots;
+ };
+ 
++enum btrfs_qgroup_rsv_type {
++	BTRFS_QGROUP_RSV_DATA = 0,
++	BTRFS_QGROUP_RSV_META,
++	BTRFS_QGROUP_RSV_LAST,
++};
++
++/*
++ * Represents how many bytes we have reserved for this qgroup.
++ *
++ * Each type should have different reservation behavior.
++ * E.g, data follows its io_tree flag modification, while
++ * *currently* meta is just reserve-and-clear during transcation.
++ *
++ * TODO: Add new type for reservation which can survive transaction commit.
++ * Currect metadata reservation behavior is not suitable for such case.
++ */
++struct btrfs_qgroup_rsv {
++	u64 values[BTRFS_QGROUP_RSV_LAST];
++};
++
+ /*
+  * one struct for each qgroup, organized in fs_info->qgroup_tree.
+  */
+@@ -88,6 +108,7 @@ struct btrfs_qgroup {
+ 	 * reservation tracking
+ 	 */
+ 	u64 reserved;
++	struct btrfs_qgroup_rsv rsv;
+ 
+ 	/*
+ 	 * lists
+@@ -228,12 +249,14 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
+ 			 struct btrfs_qgroup_inherit *inherit);
+ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+-			       u64 ref_root, u64 num_bytes);
++			       u64 ref_root, u64 num_bytes,
++			       enum btrfs_qgroup_rsv_type type);
+ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
+ 						 u64 ref_root, u64 num_bytes)
+ {
+ 	trace_btrfs_qgroup_free_delayed_ref(fs_info, ref_root, num_bytes);
+-	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
++	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes,
++				  BTRFS_QGROUP_RSV_DATA);
+ }
+ 
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
 -- 
 2.15.1
 

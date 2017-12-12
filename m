@@ -1,96 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36164 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752728AbdLLRiV (ORCPT
+Received: from mail-qt0-f176.google.com ([209.85.216.176]:44331 "EHLO
+        mail-qt0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752247AbdLLSFi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Dec 2017 12:38:21 -0500
-Subject: Re: [PATCH v9 0/5] Add the ability to do BPF directed error injection
-To: Josef Bacik <josef@toxicpanda.com>, <rostedt@goodmis.org>,
-        <mingo@redhat.com>, <davem@davemloft.net>, <netdev@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, <ast@kernel.org>, <kernel-team@fb.com>,
-        <daniel@iogearbox.net>, <linux-btrfs@vger.kernel.org>
-References: <1513010210-30594-1-git-send-email-josef@toxicpanda.com>
-From: Alexei Starovoitov <ast@fb.com>
-Message-ID: <1366bd39-4862-2f75-851c-a96d8de9648c@fb.com>
-Date: Tue, 12 Dec 2017 09:37:50 -0800
+        Tue, 12 Dec 2017 13:05:38 -0500
+Received: by mail-qt0-f176.google.com with SMTP id m59so49458463qte.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Dec 2017 10:05:38 -0800 (PST)
+Date: Tue, 12 Dec 2017 13:05:35 -0500
+From: Josef Bacik <josef@toxicpanda.com>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Josef Bacik <josef@toxicpanda.com>, hannes@cmpxchg.org, linux-mm@kvack.org,
+        akpm@linux-foundation.org, jack@suse.cz, linux-fsdevel@vger.kernel.org,
+        kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        Josef Bacik <jbacik@fb.com>
+Subject: Re: [PATCH v3 06/10] writeback: introduce
+ super_operations->write_metadata
+Message-ID: <20171212180534.c5f7luqz5oyfe7c3@destiny>
+References: <1513029335-5112-1-git-send-email-josef@toxicpanda.com>
+ <1513029335-5112-7-git-send-email-josef@toxicpanda.com>
+ <20171211233619.GQ4094@dastard>
 MIME-Version: 1.0
-In-Reply-To: <1513010210-30594-1-git-send-email-josef@toxicpanda.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171211233619.GQ4094@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/17 8:36 AM, Josef Bacik wrote:
-> This is the same as v8, just rebased onto the bpf tree.
->
-> v8->v9:
-> - rebased onto the bpf tree.
->
-> v7->v8:
-> - removed the _ASM_KPROBE_ERROR_INJECT since it was not needed.
->
-> v6->v7:
-> - moved the opt-in macro to bpf.h out of kprobes.h.
->
-> v5->v6:
-> - add BPF_ALLOW_ERROR_INJECTION() tagging for functions that will support this
->   feature.  This way only functions that opt-in will be allowed to be
->   overridden.
-> - added a btrfs patch to allow error injection for open_ctree() so that the bpf
->   sample actually works.
->
-> v4->v5:
-> - disallow kprobe_override programs from being put in the prog map array so we
->   don't tail call into something we didn't check.  This allows us to make the
->   normal path still fast without a bunch of percpu operations.
->
-> v3->v4:
-> - fix a build error found by kbuild test bot (I didn't wait long enough
->   apparently.)
-> - Added a warning message as per Daniels suggestion.
->
-> v2->v3:
-> - added a ->kprobe_override flag to bpf_prog.
-> - added some sanity checks to disallow attaching bpf progs that have
->   ->kprobe_override set that aren't for ftrace kprobes.
-> - added the trace_kprobe_ftrace helper to check if the trace_event_call is a
->   ftrace kprobe.
-> - renamed bpf_kprobe_state to bpf_kprobe_override, fixed it so we only read this
->   value in the kprobe path, and thus only write to it if we're overriding or
->   clearing the override.
->
-> v1->v2:
-> - moved things around to make sure that bpf_override_return could really only be
->   used for an ftrace kprobe.
-> - killed the special return values from trace_call_bpf.
-> - renamed pc_modified to bpf_kprobe_state so bpf_override_return could tell if
->   it was being called from an ftrace kprobe context.
-> - reworked the logic in kprobe_perf_func to take advantage of bpf_kprobe_state.
-> - updated the test as per Alexei's review.
->
-> - Original message -
->
-> A lot of our error paths are not well tested because we have no good way of
-> injecting errors generically.  Some subystems (block, memory) have ways to
-> inject errors, but they are random so it's hard to get reproduceable results.
->
-> With BPF we can add determinism to our error injection.  We can use kprobes and
-> other things to verify we are injecting errors at the exact case we are trying
-> to test.  This patch gives us the tool to actual do the error injection part.
-> It is very simple, we just set the return value of the pt_regs we're given to
-> whatever we provide, and then override the PC with a dummy function that simply
-> returns.
->
-> Right now this only works on x86, but it would be simple enough to expand to
-> other architectures.  Thanks,
+On Tue, Dec 12, 2017 at 10:36:19AM +1100, Dave Chinner wrote:
+> On Mon, Dec 11, 2017 at 04:55:31PM -0500, Josef Bacik wrote:
+> > From: Josef Bacik <jbacik@fb.com>
+> > 
+> > Now that we have metadata counters in the VM, we need to provide a way to kick
+> > writeback on dirty metadata.  Introduce super_operations->write_metadata.  This
+> > allows file systems to deal with writing back any dirty metadata we need based
+> > on the writeback needs of the system.  Since there is no inode to key off of we
+> > need a list in the bdi for dirty super blocks to be added.  From there we can
+> > find any dirty sb's on the bdi we are currently doing writeback on and call into
+> > their ->write_metadata callback.
+> > 
+> > Signed-off-by: Josef Bacik <jbacik@fb.com>
+> > Reviewed-by: Jan Kara <jack@suse.cz>
+> > Reviewed-by: Tejun Heo <tj@kernel.org>
+> > ---
+> >  fs/fs-writeback.c                | 72 ++++++++++++++++++++++++++++++++++++----
+> >  fs/super.c                       |  6 ++++
+> >  include/linux/backing-dev-defs.h |  2 ++
+> >  include/linux/fs.h               |  4 +++
+> >  mm/backing-dev.c                 |  2 ++
+> >  5 files changed, 80 insertions(+), 6 deletions(-)
+> > 
+> > diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+> > index 987448ed7698..fba703dff678 100644
+> > --- a/fs/fs-writeback.c
+> > +++ b/fs/fs-writeback.c
+> > @@ -1479,6 +1479,31 @@ static long writeback_chunk_size(struct bdi_writeback *wb,
+> >  	return pages;
+> >  }
+> >  
+> > +static long writeback_sb_metadata(struct super_block *sb,
+> > +				  struct bdi_writeback *wb,
+> > +				  struct wb_writeback_work *work)
+> > +{
+> > +	struct writeback_control wbc = {
+> > +		.sync_mode		= work->sync_mode,
+> > +		.tagged_writepages	= work->tagged_writepages,
+> > +		.for_kupdate		= work->for_kupdate,
+> > +		.for_background		= work->for_background,
+> > +		.for_sync		= work->for_sync,
+> > +		.range_cyclic		= work->range_cyclic,
+> > +		.range_start		= 0,
+> > +		.range_end		= LLONG_MAX,
+> > +	};
+> > +	long write_chunk;
+> > +
+> > +	write_chunk = writeback_chunk_size(wb, work);
+> > +	wbc.nr_to_write = write_chunk;
+> > +	sb->s_op->write_metadata(sb, &wbc);
+> > +	work->nr_pages -= write_chunk - wbc.nr_to_write;
+> > +
+> > +	return write_chunk - wbc.nr_to_write;
+> 
+> Ok, writeback_chunk_size() returns a page count. We've already gone
+> through the "metadata is not page sized" dance on the dirty
+> accounting side, so how are we supposed to use pages to account for
+> metadata writeback?
+> 
 
-Applied, thanks Josef!
+This is just one of those things that's going to be slightly shitty.  It's the
+same for memory reclaim, all of those places use pages so we just take
+METADATA_*_BYTES >> PAGE_SHIFT to get pages and figure it's close enough.
 
-While applying in the patch "bpf: add a bpf_override_function helper"
-I moved ifdef CONFIG_BPF_KPROBE_OVERRIDE few lines,
-so when it's not set the program will fail at load time with error
-"unknown func bpf_override_return#58"
-instead of returning EINVAL at run-time.
-That's more standard way of adding new helpers.
+> And, from what I can tell, if work->sync_mode = WB_SYNC_ALL or
+> work->tagged_writepages is set, this will basically tell us to flush
+> the entire dirty metadata cache because write_chunk will get set to
+> LONG_MAX.
+> 
+> IOWs, this would appear to me to change sync() behaviour quite
+> dramatically on filesystems where ->write_metadata is implemented.
+> That is, instead of leaving all the metadata dirty in memory and
+> just forcing the journal to stable storage, filesystems will be told
+> to also write back all their dirty metadata before sync() returns,
+> even though it is not necessary to provide correct sync()
+> semantics....
 
-Thanks
+Well for btrfs that's exactly what we have currently since it's just backed by
+an inode.  Obviously this is different for journaled fs'es, but I assumed that
+in your case you would either not use this part of the infrastructure or simply
+ignore WB_SYNC_ALL and use WB_SYNC_NONE as a way to be nice under memory
+pressure or whatever.
 
+> 
+> Mind you, writeback invocation is so convoluted now I could easily
+> be mis-interpretting this code, but it does seem to me like this
+> code is going to have some unintended behaviours....
+> 
+
+I don't think so, because right now this behavior is exactly what btrfs has
+currently with it's inode setup.  I didn't really think the journaled use case
+out since you guys are already rate limited by the journal.  If you would want
+to start using this stuff what would you like to see done instead?  Thanks,
+
+Josef

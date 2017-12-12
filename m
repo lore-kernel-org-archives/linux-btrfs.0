@@ -1,213 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:54603 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751123AbdLLAuV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Dec 2017 19:50:21 -0500
-Subject: Re: exclusive subvolume space missing
-To: Tomasz Pala <gotar@polanet.pl>, linux-btrfs@vger.kernel.org
-References: <20171201161555.GA11892@polanet.pl>
- <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
- <20171202012324.GB20205@polanet.pl>
- <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
- <20171202022153.GA7727@polanet.pl>
- <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
- <20171202093301.GA28256@polanet.pl>
- <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
- <20171210112738.GA24090@polanet.pl>
- <f9d281bb-e8a9-77c3-ab29-6fda9e5228ab@gmx.com>
- <20171211114043.GA5097@polanet.pl>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <7ea3ab01-eb63-4875-7496-a4ad833c5854@gmx.com>
-Date: Tue, 12 Dec 2017 08:50:15 +0800
+Received: from mail-wr0-f172.google.com ([209.85.128.172]:38297 "EHLO
+        mail-wr0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750715AbdLLFMq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 12 Dec 2017 00:12:46 -0500
+Received: by mail-wr0-f172.google.com with SMTP id o2so19773636wro.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 21:12:45 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20171211114043.GA5097@polanet.pl>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="cKrhjfiXQoeEU5a08m1M6r5neCAlQirLK"
+From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
+Date: Tue, 12 Dec 2017 05:12:44 +0000
+Message-ID: <CABB28CxbiCTVOUYKbUv7-O-0bAAweSJF--7OnJtNAnud6TipwQ@mail.gmail.com>
+Subject: 4.15.0-0.rc2.git2.1.fc28.x86_64: possible circular locking dependency detected
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---cKrhjfiXQoeEU5a08m1M6r5neCAlQirLK
-Content-Type: multipart/mixed; boundary="SS9dFUFnlTW0sOWfvUGBHTEVgEXFaKCX9";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Tomasz Pala <gotar@polanet.pl>, linux-btrfs@vger.kernel.org
-Message-ID: <7ea3ab01-eb63-4875-7496-a4ad833c5854@gmx.com>
-Subject: Re: exclusive subvolume space missing
-References: <20171201161555.GA11892@polanet.pl>
- <55036341-2e8e-41dc-535f-f68d8e74d43f@gmx.com>
- <20171202012324.GB20205@polanet.pl>
- <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
- <20171202022153.GA7727@polanet.pl>
- <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
- <20171202093301.GA28256@polanet.pl>
- <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
- <20171210112738.GA24090@polanet.pl>
- <f9d281bb-e8a9-77c3-ab29-6fda9e5228ab@gmx.com>
- <20171211114043.GA5097@polanet.pl>
-In-Reply-To: <20171211114043.GA5097@polanet.pl>
+Hi,
 
---SS9dFUFnlTW0sOWfvUGBHTEVgEXFaKCX9
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Jut done upgrade on my laptop to the latest Fedora rawhide packages.
+After reboot and login in dmesg I found logged btrfs issue:
 
+[   94.192907] ======================================================
+[   94.192911] WARNING: possible circular locking dependency detected
+[   94.192917] 4.15.0-0.rc2.git2.1.fc28.x86_64 #1 Not tainted
+[   94.192921] ------------------------------------------------------
+[   94.192926] mysqld/1225 is trying to acquire lock:
+[   94.192930]  (&mm->mmap_sem){++++}, at: [<0000000065e31c80>]
+get_user_pages_unlocked+0x5b/0x1b0
+[   94.192955]
+               but task is already holding lock:
+[   94.192962]  (&ei->dio_sem){++++}, at: [<0000000008becadb>]
+btrfs_direct_IO+0x395/0x410 [btrfs]
+[   94.193059]
+               which lock already depends on the new lock.
 
+[   94.193069]
+               the existing dependency chain (in reverse order) is:
+[   94.193076]
+               -> #4 (&ei->dio_sem){++++}:
+[   94.193102]        down_write+0x4d/0xb0
+[   94.193183]        btrfs_log_changed_extents+0x7c/0x680 [btrfs]
+[   94.193261]        btrfs_log_inode+0x9c0/0x11a0 [btrfs]
+[   94.193326]        btrfs_log_inode_parent+0x2d7/0xaa0 [btrfs]
+[   94.193395]        btrfs_log_dentry_safe+0x58/0x80 [btrfs]
+[   94.193466]        btrfs_sync_file+0x332/0x4e0 [btrfs]
+[   94.193477]        do_fsync+0x38/0x60
+[   94.193484]        SyS_fsync+0xc/0x10
+[   94.193493]        do_syscall_64+0x66/0x210
+[   94.193501]        return_from_SYSCALL_64+0x0/0x75
+[   94.193505]
+               -> #3 (&ei->log_mutex){+.+.}:
+[   94.193519]        __mutex_lock+0x7f/0xa40
+[   94.193563]        btrfs_log_inode+0x162/0x11a0 [btrfs]
+[   94.193604]        btrfs_log_inode_parent+0x2d7/0xaa0 [btrfs]
+[   94.193646]        btrfs_log_dentry_safe+0x58/0x80 [btrfs]
+[   94.193692]        btrfs_sync_file+0x332/0x4e0 [btrfs]
+[   94.193698]        do_fsync+0x38/0x60
+[   94.193705]        SyS_fsync+0xc/0x10
+[   94.193711]        do_syscall_64+0x66/0x210
+[   94.193718]        return_from_SYSCALL_64+0x0/0x75
+[   94.193721]
+               -> #2 (sb_internal){.+.+}:
+[   94.193737]        debug_check_no_obj_freed+0xde/0x248
+[   94.193740]
+               -> #1 ((completion)&async->wait){+.+.}:
+[   94.193753]        wait_for_completion+0x63/0x1e0
+[   94.193792]        btrfs_async_run_delayed_refs+0x14b/0x170 [btrfs]
+[   94.193837]        __btrfs_end_transaction+0x1ee/0x2e0 [btrfs]
+[   94.193881]        btrfs_dirty_inode+0x6a/0xd0 [btrfs]
+[   94.193891]        touch_atime+0xab/0xd0
+[   94.193934]        btrfs_file_mmap+0x3f/0x60 [btrfs]
+[   94.193942]        mmap_region+0x3ac/0x5e0
+[   94.193949]        do_mmap+0x2e1/0x450
+[   94.193959]        vm_mmap_pgoff+0xd5/0x120
+[   94.193966]        SyS_mmap_pgoff+0x1c2/0x250
+[   94.193973]        entry_SYSCALL_64_fastpath+0x1f/0x96
+[   94.193976]
+               -> #0 (&mm->mmap_sem){++++}:
+[   94.193990]        lock_acquire+0x9f/0x1f0
+[   94.193995]        down_read+0x44/0xa0
+[   94.194001]        get_user_pages_unlocked+0x5b/0x1b0
+[   94.194006]        get_user_pages_fast+0xcf/0x140
+[   94.194014]        iov_iter_get_pages+0xc5/0x2f0
+[   94.194021]        do_blockdev_direct_IO+0x193c/0x2950
+[   94.194065]        btrfs_direct_IO+0x166/0x410 [btrfs]
+[   94.194074]        generic_file_direct_write+0x9d/0x160
+[   94.194117]        btrfs_file_write_iter+0x300/0x650 [btrfs]
+[   94.194125]        aio_write+0x116/0x1a0
+[   94.194132]        do_io_submit+0x42d/0x940
+[   94.194139]        entry_SYSCALL_64_fastpath+0x1f/0x96
+[   94.194142]
+               other info that might help us debug this:
 
-On 2017=E5=B9=B412=E6=9C=8811=E6=97=A5 19:40, Tomasz Pala wrote:
-> On Mon, Dec 11, 2017 at 07:44:46 +0800, Qu Wenruo wrote:
->=20
->>> I could debug something before I'll clean this up, is there anything =
-you
->>> want to me to check/know about the files?
->>
->> fiemap result along with btrfs dump-tree -t2 result.
->=20
-> fiemap attached, but dump-tree requires unmounted fs, doesn't it?
+[   94.194147] Chain exists of:
+                 &mm->mmap_sem --> &ei->log_mutex --> &ei->dio_sem
 
-It doesn't.
+[   94.194162]  Possible unsafe locking scenario:
 
-You can dump your tree with fs mounted, although it may affect the accura=
-cy.
+[   94.194166]        CPU0                    CPU1
+[   94.194169]        ----                    ----
+[   94.194172]   lock(&ei->dio_sem);
+[   94.194178]                                lock(&ei->log_mutex);
+[   94.194184]                                lock(&ei->dio_sem);
+[   94.194190]   lock(&mm->mmap_sem);
+[   94.194196]
+                *** DEADLOCK ***
 
-The good news is, in your case, it doesn't really need extent tree, as
-there is no shared extent here.
+[   94.194202] 2 locks held by mysqld/1225:
+[   94.194205]  #0:  (sb_writers#10){.+.+}, at: [<00000000164669fb>]
+aio_write+0x191/0x1a0
+[   94.194220]  #1:  (&ei->dio_sem){++++}, at: [<0000000008becadb>]
+btrfs_direct_IO+0x395/0x410 [btrfs]
+[   94.194268]
+               stack backtrace:
+[   94.194276] CPU: 1 PID: 1225 Comm: mysqld Not tainted
+4.15.0-0.rc2.git2.1.fc28.x86_64 #1
+[   94.194281] Hardware name: Sony Corporation VPCSB2M9E/VAIO, BIOS
+R2087H4 06/15/2012
+[   94.194285] Call Trace:
+[   94.194296]  dump_stack+0x85/0xbf
+[   94.194304]  print_circular_bug+0x1f5/0x2e0
+[   94.194315]  ? copy_trace+0x80/0x80
+[   94.194320]  check_prev_add+0x3da/0x780
+[   94.194332]  ? __lock_acquire+0x11e9/0x1270
+[   94.194338]  __lock_acquire+0x11e9/0x1270
+[   94.194349]  lock_acquire+0x9f/0x1f0
+[   94.194355]  ? get_user_pages_unlocked+0x5b/0x1b0
+[   94.194365]  down_read+0x44/0xa0
+[   94.194371]  ? get_user_pages_unlocked+0x5b/0x1b0
+[   94.194376]  get_user_pages_unlocked+0x5b/0x1b0
+[   94.194383]  ? mark_held_locks+0x4e/0x80
+[   94.194391]  get_user_pages_fast+0xcf/0x140
+[   94.194400]  iov_iter_get_pages+0xc5/0x2f0
+[   94.194411]  do_blockdev_direct_IO+0x193c/0x2950
+[   94.194417]  ? __lock_acquire+0x2c3/0x1270
+[   94.194460]  ? btrfs_endio_direct_read+0xb0/0xb0 [btrfs]
+[   94.194504]  ? btrfs_page_exists_in_range+0x310/0x310 [btrfs]
+[   94.194552]  ? btrfs_page_exists_in_range+0x310/0x310 [btrfs]
+[   94.194591]  ? btrfs_endio_direct_read+0xb0/0xb0 [btrfs]
+[   94.194633]  ? btrfs_direct_IO+0x166/0x410 [btrfs]
+[   94.194669]  btrfs_direct_IO+0x166/0x410 [btrfs]
+[   94.194706]  ? btrfs_endio_direct_read+0xb0/0xb0 [btrfs]
+[   94.194718]  generic_file_direct_write+0x9d/0x160
+[   94.194763]  btrfs_file_write_iter+0x300/0x650 [btrfs]
+[   94.194776]  aio_write+0x116/0x1a0
+[   94.194787]  ? __might_fault+0x3e/0x90
+[   94.194797]  ? do_io_submit+0x42d/0x940
+[   94.194804]  do_io_submit+0x42d/0x940
+[   94.194819]  ? entry_SYSCALL_64_fastpath+0x1f/0x96
+[   94.194826]  entry_SYSCALL_64_fastpath+0x1f/0x96
+[   94.194833] RIP: 0033:0x7f7e2d309687
+[   94.194837] RSP: 002b:00007f7e10ce34a8 EFLAGS: 00000206 ORIG_RAX:
+00000000000000d1
+[   94.194844] RAX: ffffffffffffffda RBX: 00007f7e186a8000 RCX: 00007f7e2d309687
+[   94.194849] RDX: 00007f7e10ce34b0 RSI: 0000000000000001 RDI: 00007f7e24ddb000
+[   94.194853] RBP: 00007f7e10ce3830 R08: 00007f7e10ce34b0 R09: 0000000000000400
+[   94.194857] R10: 0000000000000000 R11: 0000000000000206 R12: 00007f7e17d18c50
+[   94.194861] R13: 0000561dfbb5d028 R14: 000000185b3a7525 R15: 0000000000000001
 
->=20
->>> - I've lost 3.6 GB during the night with reasonably small
->>> amount of writes, I guess it might be possible to trash entire
->>> filesystem within 10 minutes if doing this on purpose.
->>
->> That's a little complex.
->> To get into such situation, snapshot must be used and one must know
->> which file extent is shared and how it's shared.
->=20
-> Hostile user might assume that any of his own files old enough were
-> being snapshotted. Unless snapshots are not used at all...
->=20
-> The 'obvious' solution would be for quotas to limit the data size inclu=
-ding
-> extents lost due to fragmentation, but this is not the real solution as=
-
-> users don't care about fragmentation. So we're back to square one.
->=20
->> But as I mentioned, XFS supports reflink, which means file extent can =
-be
->> shared between several inodes.
->>
->> From the message I got from XFS guys, they free any unused space of a
->> file extent, so it should handle it quite well.
->=20
-> Forgive my ignorance, as I'm not familiar with details, but isn't the
-> problem 'solvable' by reusing space freed from the same extent for any
-> single (i.e. the same) inode?
-
-Not that easy.
-
-The extent tree design makes it a little tricky to do that.
-So btrfs use the current extent booking, the laziest way to delete extent=
-=2E
-
-> This would certainly increase
-> fragmentation of a file, but reduce extent usage significially.
->=20
->=20
-> Still, I don't comprehend the cause of my situation. If - after doing a=
-
-> defrag (after snapshotting whatever there were already trashed) btrfs
-> decides to allocate new extents for the file, why doesn't is use them
-> efficiently as long as I'm not doing snapshots anymore?
-
-Even without snapshot, things can easily go crazy.
-
-This will write 128M file (max btrfs file extent size) and write it to di=
-sk.
-# xfs_io -f -c "pwrite 0 128M" -c "sync" /mnt/btrfs/file
-
-Then, overwrite the 1~128M range.
-# xfs_io -f -c "pwrite 1M 127M" -c "sync" /mnt/btrfs/file
-
-Guess your real disk usage, it's 127M + 128M =3D 255M.
-
-The point here, if there is any reference of a file extent, the whole
-extent won't be freed, even it's only 1M of a 128M extent.
-
-While defrag will basically read out the whole 128M file, and rewrite it.=
-
-Basically the same as:
-
-# dd if=3D/mnt/btrfs/file of=3D/mnt/btrfs/file2
-# rm /mnt/btrfs/file
-
-In this case, it will cause a new 128M file extent, while old 128M+127M
-extents lost all their reference so they are freed.
-As a result, it frees 127M.
-
-
-
-> I'm attaching the second fiemap, the same file from last snapshot taken=
-=2E
-> According to this one-liner:
->=20
-> for i in `awk '{print $3}' fiemap`; do grep $i fiemap_old; done
->=20
-> current file doesn't share any physical locations with the old one.
-> But still grows, so what does this situation have with snapshots anyway=
-?
-
-In your fiemap, all your file extent is exclusive, so not really related
-to snapshot.
-
-But the file is very fragmented.
-Most of them is 4K sized, several 8K sized.
-And the final extent is 220K sized.
-
-Are you pre-allocating the file before write using tools like dd?
-If so, just as I explained above, it will at least *DOUBLE* on-disk
-space usage, and cause tons of fragment.
-
-It's recommended to use fallocate to prealloc file instead of things
-like dd.
-(preallocated range acts must like nocow, although only for first write)
-
-And if possible, use nocow for this file.
-
-
->=20
-> Oh, and BTW - 900+ extents for ~5 GB taken means there is about 5.5 MB
-> occupied per extent. How is that possible?
-
-Appending small write and frequently fsync or small random DIO.
-
-Avoid such pattern or at least use nocow.
-Also avoid using dd to preallocate file.
-
-Another solution is autodefrag, but I doubt the effect.
-
-Thanks,
-Qu
-
->=20
-
-
---SS9dFUFnlTW0sOWfvUGBHTEVgEXFaKCX9--
-
---cKrhjfiXQoeEU5a08m1M6r5neCAlQirLK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlovJ8cXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhKKAf+K9D8wbKn6CX1HONsIsGP5uRQ
-4DLrQjXlGkvY21IEtJX4jraIpKX0aSFsoxqF9IVIiCgn65MoTHylhMbqB1Qc6guZ
-jyiKxoYDsnXRezu66bY4fla9fHJdDTGCLjkzQbjAmIaqG3OARkDxSSQlJQeoIpz+
-su73SNUDIxWDHKAGqxfJ2SnYWWrLwVjF7gw8lU87039LDu4rynDs2yb/WE3vX0RW
-RiEanG+41quI9/Jpq7ymabOFi2BL4y8yagabM18mmoVHIAXhCGIHjBjBmDJid5Xn
-uWeYg5GPyYPYZrpARkbF5r0fWxN7/bqDo5XK/mFZoW8VGaIxMoB1lu6nqqtQOA==
-=mUm4
------END PGP SIGNATURE-----
-
---cKrhjfiXQoeEU5a08m1M6r5neCAlQirLK--
+kloczek
+-- 
+Tomasz Kłoczko  | LinkedIn: http://lnkd.in/FXPWxH

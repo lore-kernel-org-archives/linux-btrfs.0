@@ -1,125 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35757 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751818AbdLUPXj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Dec 2017 10:23:39 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 80CABAEF0
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 15:23:38 +0000 (UTC)
-Subject: Re: [PATCH 02/14] btrfs: qgroup: Introduce helpers to update and
- access new qgroup rsv
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:59088 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752209AbdLLHfE (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 12 Dec 2017 02:35:04 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, jeffm@suse.com
+Subject: [PATCH 06/14] btrfs: qgroup: Cleanup the remaining old reservation counters
+Date: Tue, 12 Dec 2017 15:34:28 +0800
+Message-Id: <20171212073436.16447-7-wqu@suse.com>
+In-Reply-To: <20171212073436.16447-1-wqu@suse.com>
 References: <20171212073436.16447-1-wqu@suse.com>
- <20171212073436.16447-3-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a4c7f1c3-a11f-075b-acec-076dbf2e929c@suse.com>
-Date: Thu, 21 Dec 2017 17:23:37 +0200
-MIME-Version: 1.0
-In-Reply-To: <20171212073436.16447-3-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+So qgroup is switched to new separate types reservation system.
 
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/qgroup.c | 13 -------------
+ fs/btrfs/qgroup.h |  1 -
+ 2 files changed, 14 deletions(-)
 
-On 12.12.2017 09:34, Qu Wenruo wrote:
-> Introduce helpers to:
-> 
-> 1) Get total reserved space
->    For limit calculation
-> 2) Add/release reserved space for given type
->    With underflow detection and warning
-> 3) Add/release reserved space according to child qgroup
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/qgroup.c | 68 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 68 insertions(+)
-> 
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index f6fe28ca0e86..14346ff9a162 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -47,6 +47,74 @@
->   *  - check all ioctl parameters
->   */
->  
-> +/*
-> + * Helpers to access qgroup reservation
-> + *
-> + * Callers should ensure the lock context and type are valid
-> + */
-> +
-> +static u64 qgroup_rsv_total(const struct btrfs_qgroup *qgroup)
-> +{
-> +	u64 ret = 0;
-> +	int i;
-> +
-> +	for (i = 0; i < BTRFS_QGROUP_RSV_LAST; i++)
-> +		ret += qgroup->rsv.values[i];
-> +
-> +	return ret;
-> +}
-> +
-> +#ifdef CONFIG_BTRFS_DEBUG
-> +static const char *qgroup_rsv_type_str(enum btrfs_qgroup_rsv_type type)
-> +{
-> +	if (type == BTRFS_QGROUP_RSV_DATA)
-> +		return "data";
-> +	if (type == BTRFS_QGROUP_RSV_META)
-> +		return "meta";
-> +	return NULL;
-> +}
-> +#endif
-> +
-> +static void qgroup_rsv_add(struct btrfs_qgroup *qgroup, u64 num_bytes,
-> +			   enum btrfs_qgroup_rsv_type type)
-> +{
-> +	qgroup->rsv.values[type] += num_bytes;
-> +}
-> +
-> +static void qgroup_rsv_release(struct btrfs_qgroup *qgroup, u64 num_bytes,
-> +			       enum btrfs_qgroup_rsv_type type)
-> +{
-> +	if (qgroup->rsv.values[type] >= num_bytes) {
-> +		qgroup->rsv.values[type] -= num_bytes;
-> +		return;
-> +	}
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index fbf7dd3b6fd1..39bdf5341372 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1065,19 +1065,6 @@ static void qgroup_dirty(struct btrfs_fs_info *fs_info,
+ 		list_add(&qgroup->dirty, &fs_info->dirty_qgroups);
+ }
+ 
+-static void report_reserved_underflow(struct btrfs_fs_info *fs_info,
+-				      struct btrfs_qgroup *qgroup,
+-				      u64 num_bytes)
+-{
+-#ifdef CONFIG_BTRFS_DEBUG
+-	WARN_ON(qgroup->reserved < num_bytes);
+-	btrfs_debug(fs_info,
+-		"qgroup %llu reserved space underflow, have: %llu, to free: %llu",
+-		qgroup->qgroupid, qgroup->reserved, num_bytes);
+-#endif
+-	qgroup->reserved = 0;
+-}
+-
+ /*
+  * The easy accounting, we're updating qgroup relationship whose child qgroup
+  * only has exclusive extents.
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index fead9955af72..c8c81b923674 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -107,7 +107,6 @@ struct btrfs_qgroup {
+ 	/*
+ 	 * reservation tracking
+ 	 */
+-	u64 reserved;
+ 	struct btrfs_qgroup_rsv rsv;
+ 
+ 	/*
+-- 
+2.15.1
 
-nit: Generally I'd prefer that the if tests for the exceptional
-condition and handle it inside i.e. we expect most of the time for
-underflow to not occur. Not a big deal so doesn't warrant a resend but
-something to think about in the future.
-
-> +#ifdef CONFIG_BTRFS_DEBUG
-> +	WARN_RATELIMIT(1,
-> +		"qgroup %llu %s reserved space underflow, have %llu to free %llu",
-> +		qgroup->qgroupid, qgroup_rsv_type_str(type),
-> +		qgroup->rsv.values[type], num_bytes);
-> +#endif
-> +	qgroup->rsv.values[type] = 0;
-> +}
-> +
-> +static void qgroup_rsv_add_by_qgroup(struct btrfs_qgroup *dest,
-> +					  struct btrfs_qgroup *src)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < BTRFS_QGROUP_RSV_LAST; i++)
-> +		qgroup_rsv_add(dest, src->rsv.values[i], i);
-> +}
-> +
-> +static void qgroup_rsv_release_by_qgroup(struct btrfs_qgroup *dest,
-> +					  struct btrfs_qgroup *src)
-> +{
-> +	int i;
-> +
-> +	for (i = 0; i < BTRFS_QGROUP_RSV_LAST; i++)
-> +		qgroup_rsv_release(dest, src->rsv.values[i], i);
-> +}
-> +
->  static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
->  					   int mod)
->  {
-> 

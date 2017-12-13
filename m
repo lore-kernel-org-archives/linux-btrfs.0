@@ -1,11 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:35489 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750795AbdLMGIu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Dec 2017 01:08:50 -0500
-Date: Tue, 12 Dec 2017 22:05:46 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:42947 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752279AbdLMLO7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Dec 2017 06:14:59 -0500
+Date: Wed, 13 Dec 2017 12:14:54 +0100
+From: Jan Kara <jack@suse.cz>
 To: Adam Borowski <kilobyte@angband.pl>
 Cc: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
         Jan Kara <jack@suse.com>, Jonathan Corbet <corbet@lwn.net>,
@@ -22,10 +21,10 @@ Cc: Alexander Viro <viro@zeniv.linux.org.uk>, linux-fsdevel@vger.kernel.org,
         David Woodhouse <dwmw2@infradead.org>, linux-mtd@lists.infradead.org,
         Dave Kleikamp <shaggy@kernel.org>,
         jfs-discussion@lists.sourceforge.net, reiserfs-devel@vger.kernel.org,
-        linux-xfs@vger.kernel.org
+        "Darrick J. Wong" <darrick.wong@oracle.com>, linux-xfs@vger.kernel.org
 Subject: Re: [PATCH] fs/*/Kconfig: drop links to 404-compliant
  http://acl.bestbits.at
-Message-ID: <20171213060546.GN19219@magnolia>
+Message-ID: <20171213111454.GC23068@quack2.suse.cz>
 References: <20171213053825.10903-1-kilobyte@angband.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -33,12 +32,19 @@ In-Reply-To: <20171213053825.10903-1-kilobyte@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 13, 2017 at 06:38:25AM +0100, Adam Borowski wrote:
+On Wed 13-12-17 06:38:25, Adam Borowski wrote:
 > This link is replicated in most filesystems' config stanzas.  Referring
 > to an archived version of that site is pointless as it mostly deals with
 > patches; user documentation is available elsewhere.
 > 
 > Signed-off-by: Adam Borowski <kilobyte@angband.pl>
+
+Looks good to me. You can add:
+
+Acked-by: Jan Kara <jack@suse.cz>
+	
+								Honza
+
 > ---
 > Sending this as one piece; if you guys would instead prefer this chopped
 > into tiny per-filesystem bits, please say so.
@@ -339,19 +345,13 @@ On Wed, Dec 13, 2017 at 06:38:25AM +0100, Adam Borowski wrote:
 > -	  To learn more about Access Control Lists, visit the POSIX ACLs for
 > -	  Linux website <http://acl.bestbits.at/>.
 > -
-
-The XFS bits look ok,
-Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
-
---D
-
 >  	  If you don't know what Access Control Lists are, say N.
 >  
 >  config XFS_RT
 > -- 
 > 2.15.1
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-xfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

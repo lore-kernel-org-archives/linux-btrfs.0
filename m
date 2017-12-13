@@ -1,107 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54687 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54694 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751049AbdLMIZq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Dec 2017 03:25:46 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id CC1C5ACA1
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Dec 2017 08:25:45 +0000 (UTC)
+        id S1751060AbdLMIZr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 13 Dec 2017 03:25:47 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 1EC79AD1C
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Dec 2017 08:25:46 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/4] btrfs: Remove redundant bio_get/set calls in compressed read/write paths
-Date: Wed, 13 Dec 2017 10:25:37 +0200
-Message-Id: <1513153540-10737-2-git-send-email-nborisov@suse.com>
+Subject: [PATCH 2/4] btrfs: Remove redundant bio_get/set from submit_dio_repair_bio
+Date: Wed, 13 Dec 2017 10:25:38 +0200
+Message-Id: <1513153540-10737-3-git-send-email-nborisov@suse.com>
 In-Reply-To: <1513153540-10737-1-git-send-email-nborisov@suse.com>
 References: <1513153540-10737-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-bio_get/set is necessary only if the bio is going to be referenced
-following submissions. In the code paths where such calls are made
-we don't really need them since the bio is referenced only if
-btrfs_map_bio returns an error. And this function can return an error
-prior to submission only. So referencing the bio is safe. Furthermore
-we do call bio_endio which will consume the last reference. So let's
-remove the redundant calls.
+The bio that is passsed is the newly created repair bio which already
+has a reference count of 1, which is going to be consumed by the
+endio routine on successful submission. On error the handler also
+calls bio_put.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/compression.c | 12 ------------
- 1 file changed, 12 deletions(-)
+ fs/btrfs/inode.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 9e06a052be60..93779bab5a61 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -362,8 +362,6 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 		page->mapping = NULL;
- 		if (submit || bio_add_page(bio, page, PAGE_SIZE, 0) <
- 		    PAGE_SIZE) {
--			bio_get(bio);
--
- 			/*
- 			 * inc the count before we submit the bio so
- 			 * we know the end IO handler won't happen before
-@@ -386,8 +384,6 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 				bio_endio(bio);
- 			}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9ad8c9321c8f..6d2fe773d479 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7941,15 +7941,12 @@ static inline blk_status_t submit_dio_repair_bio(struct inode *inode,
  
--			bio_put(bio);
--
- 			bio = btrfs_bio_alloc(bdev, first_byte);
- 			bio->bi_opf = REQ_OP_WRITE | write_flags;
- 			bio->bi_private = cb;
-@@ -403,7 +399,6 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 		first_byte += PAGE_SIZE;
- 		cond_resched();
- 	}
+ 	BUG_ON(bio_op(bio) == REQ_OP_WRITE);
+ 
 -	bio_get(bio);
+-
+ 	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DIO_REPAIR);
+ 	if (ret)
+-		goto err;
++		return ret;
  
- 	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
- 	BUG_ON(ret); /* -ENOMEM */
-@@ -419,7 +414,6 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- 		bio_endio(bio);
- 	}
- 
+ 	ret = btrfs_map_bio(fs_info, bio, mirror_num, 0);
+-err:
 -	bio_put(bio);
- 	return 0;
++
+ 	return ret;
  }
  
-@@ -652,8 +646,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 		page->mapping = NULL;
- 		if (submit || bio_add_page(comp_bio, page, PAGE_SIZE, 0) <
- 		    PAGE_SIZE) {
--			bio_get(comp_bio);
--
- 			ret = btrfs_bio_wq_end_io(fs_info, comp_bio,
- 						  BTRFS_WQ_ENDIO_DATA);
- 			BUG_ON(ret); /* -ENOMEM */
-@@ -680,8 +672,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 				bio_endio(comp_bio);
- 			}
- 
--			bio_put(comp_bio);
--
- 			comp_bio = btrfs_bio_alloc(bdev, cur_disk_byte);
- 			bio_set_op_attrs(comp_bio, REQ_OP_READ, 0);
- 			comp_bio->bi_private = cb;
-@@ -691,7 +681,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 		}
- 		cur_disk_byte += PAGE_SIZE;
- 	}
--	bio_get(comp_bio);
- 
- 	ret = btrfs_bio_wq_end_io(fs_info, comp_bio, BTRFS_WQ_ENDIO_DATA);
- 	BUG_ON(ret); /* -ENOMEM */
-@@ -707,7 +696,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 		bio_endio(comp_bio);
- 	}
- 
--	bio_put(comp_bio);
- 	return 0;
- 
- fail2:
 -- 
 2.7.4
 

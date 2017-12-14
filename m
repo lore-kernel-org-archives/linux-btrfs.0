@@ -1,141 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:59957 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751090AbdLNHqh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Dec 2017 02:46:37 -0500
-Subject: Re: OFF-By-One Trouble? [BTRFS in Debian Stretch Kernel
- 4.9.0-4-amd64]
-To: service@automatix.de, linux-btrfs@vger.kernel.org
-References: <3bd97912-4561-9b75-8fd7-98bc52ddcbc2@automatix.de>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <138ae3f6-024f-3a3b-b404-18a63925a9f7@gmx.com>
-Date: Thu, 14 Dec 2017 15:46:30 +0800
+Received: from mail-it0-f46.google.com ([209.85.214.46]:40700 "EHLO
+        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751646AbdLNL2Z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 14 Dec 2017 06:28:25 -0500
+Received: by mail-it0-f46.google.com with SMTP id f190so10308116ita.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 03:28:24 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <3bd97912-4561-9b75-8fd7-98bc52ddcbc2@automatix.de>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="k3oJ4M389bP48AD0GfSImPt697Nj63R7u"
+In-Reply-To: <pan$8770b$4eaee1a7$24cc02ce$7f0c8e7b@cox.net>
+References: <CAGqmi76womfiPa_EkKiJ-BgxEcU1GjK7efrh8bWVD0kD+C9NrQ@mail.gmail.com>
+ <CAGqmi74-Tap-K1xc4w9rUtVBZ7toesDgr3DiG_CjPSH86YbYmQ@mail.gmail.com> <pan$8770b$4eaee1a7$24cc02ce$7f0c8e7b@cox.net>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Thu, 14 Dec 2017 14:27:43 +0300
+Message-ID: <CAGqmi77HWCBmbt6+i7-31SuF-Ox_NTbtcSJAhn0jAuVc3q7Fqg@mail.gmail.com>
+Subject: Re: [BUG?] Defrag on compressed FS do massive data rewrites
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---k3oJ4M389bP48AD0GfSImPt697Nj63R7u
-Content-Type: multipart/mixed; boundary="k1vmiucvlrt4aU2FK7l1MvTUdGXMPoJtf";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: service@automatix.de, linux-btrfs@vger.kernel.org
-Message-ID: <138ae3f6-024f-3a3b-b404-18a63925a9f7@gmx.com>
-Subject: Re: OFF-By-One Trouble? [BTRFS in Debian Stretch Kernel
- 4.9.0-4-amd64]
-References: <3bd97912-4561-9b75-8fd7-98bc52ddcbc2@automatix.de>
-In-Reply-To: <3bd97912-4561-9b75-8fd7-98bc52ddcbc2@automatix.de>
+2017-12-14 8:58 GMT+03:00 Duncan <1i5t5.duncan@cox.net>:
+> Timofey Titovets posted on Thu, 14 Dec 2017 02:05:35 +0300 as excerpted:
+>
+>> Also, same problem exist for autodefrag case i.e.:
+>> write 4KiB at start of compressed file autodefrag code add that file to
+>> autodefrag queue, call btrfs_defrag_file, set range from start to u64-1.
+>> That will trigger to full file rewrite, as all extents are smaller then
+>> 256KiB.
+>>
+>> (if i understood all correctly).
+>
+> If so, it's rather ironic, because that's how I believed autodefrag to
+> work, whole-file, for quite some time.  Then I learned otherwise, but I
+> always enable both autodefrag and compress=lzo on all my btrfs, so it
+> looks like at least for my use-case, I was correct with the whole-file
+> assumption after all.  (Well, at least for files that are actually
+> compressed, I don't run compress-force=lzo, just compress=lzo, so a
+> reasonable number of files aren't actually compressed anyway, and they'd
+> do the partial-file rewrite I had learned to be normal.)
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---k1vmiucvlrt4aU2FK7l1MvTUdGXMPoJtf
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+btrfs fi def can easy avoid that problem if properly documented,
+but i think that fix must be in place, because "full rewrite" by
+autodefrag are unacceptable behaviour.
 
+How i see, "How it works":
+Both, defrag ioctl and autodefrag - call btrfs_defrag_file() (ioctl.c).
+btrfs_defrag_file() set extent_thresh to args, if args not provided
+(autodefrag not initialize range->extent_thresh);
+use default:
+if (extent_thresh == 0)
+     extent_thresh = SZ_256K;
 
+Later btrfs_defrag_file() try defrag file from start by "index" (page
+number from start, file virtually splitted to page sized blocks).
+Than it call should_defrag_range(), if need make i+1 or skip range by
+info from should_defrag_range().
 
-On 2017=E5=B9=B412=E6=9C=8812=E6=97=A5 18:22, Juergen Sauer wrote:
-> Hi collegues,
-> this morning we've got a problm with btrfs in Debian Stable.
->=20
-> Yesterday we had our fs filled below 30% space usage.
-> No further usage came in the usage is nearly the same, but ...
->=20
-> # df -h .
-> Dateisystem    Gr=C3=B6=C3=9Fe Benutzt Verf. Verw% Eingeh=C3=A4ngt auf
-> /dev/vdb1      483G    483G  148K  100% /mnt
->=20
-> # btrfs fi df .
-> Data, single: total=3D480.97GiB, used=3D480.97GiB
-> System, single: total=3D32.00MiB, used=3D96.00KiB
-> Metadata, single: total=3D2.00GiB, used=3D1.29GiB
-> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->=20
-> # btrfs fi show .
-> Label: 'AXSDaten'  uuid: fde7e31f-4127-4a9d-b7c6-774ceff8f7c1
->         Total devices 1 FS bytes used 482.26GiB
->         devid    1 size 483.00GiB used 483.00GiB path /dev/vdb1
->=20
-> # btrfs --version
-> btrfs-progs v4.7.3
->=20
-> we found exerpt of kernel log:
-> [  199.391577] attempt to access beyond end of device
-> [  199.391598] vdb1: rw=3D536870984, want=3D1012922336, limit=3D1012922=
-335
+should_defrag_range() get extent for specified start offset:
+em = defrag_lookup_extent(inode, start);
 
-I doubt if it's just a off-by-one bug.
+Later (em->len >= thresh || (!next_mergeable && !prev_mergeable)) will
+fail condition because len (<128KiB) < thresh (256KiB or 32MiB usual).
+So extent will be rewritten.
 
-It can be that, btrfs think it's enlarged while partition table doesn't
-think so, so btrfs tries to submit write beyond the partition end.
+struct extent_map{}; have two potential useful info:
 
-> [  199.391615] BTRFS error (device vdb1): bdev /dev/vdb1 errs: wr 301,
-> rd 0, flush 0, corrupt 0, gen 0
-> r
-> If I interpret the log right, on the FS the kernel wants to write on
-> block  1012922336, but the fs was created with max 1012922335 blocks.
->=20
-> Looks to us here like a typical off-by-one error on accessing the last
-> block of device.
->=20
-> This error was repeating under ff. conditions:
-> - shutdown the virtual server (kvm),
-> - extend the physical file of the according virtual hdd by 20% (from 48=
-3
-> Gib to 520 GiB)
-> - restart virtual server
-> - fixed partion size (parted), mounted
-> - called btrfs fi resize max on the corresponding mount point
+...
+u64 len;
+...
 
-The following info is needed to debug the problem.
+unsigned int compress_type;
+...
 
-1) Chunk tree dump of the btrfs:
-   # btrfs inspect dump-tree -t 3 /dev/vdb1
+As i see by code len store "real" length, so
+in theory that just need to add additional check later like:
+if (em->len = BTRFS_MAX_UNCOMPRESSED && em->compress_type > 0)
+    ret = 0;
 
-2) Super dump of the btrfs:
-   # btrfs inspect dump-super -f /dev/vdb1
+That must fix problem by "true" insight check for compressed extents.
 
-3) Kernel version
-   # uname -a
-   (Well, I'm not a Debian user so I don't really know the kernel
-    version just by "Debian Stable")
+Thanks.
 
-4) Partition info
-   Better with binary output in byte unit.
+P.S.
+(May be someone from more experienced devs can comment that?)
 
-Thanks,
-Qu
-
->=20
-> Error came back, nearly at once.
->=20
-> Any other Idea to fix this error?
->=20
-> mit freundlichen Gr=C3=BC=C3=9Fen
-> J=C3=BCrgen Sauer
->=20
-
-
---k1vmiucvlrt4aU2FK7l1MvTUdGXMPoJtf--
-
---k3oJ4M389bP48AD0GfSImPt697Nj63R7u
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAloyLFYXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qi9wAf/c5NDxlFAft5x9B2vOpg5PZq0
-98spsePkNjP5OUmUM2V5h3SDI/Wt/z9uAwCr5N1h7ahe7UOq3OoEQ5frifyVG1fk
-UiTdVg55D9Hr7uogUU0qv95qLRfWfgqLtIB6boZQT2KD/cc6om08FUW/5Tt6UVNY
-JlaH9Uxctu/m7fzqMsQ1clVJdoZCSDdY/w+8YYR7diqgSsrpNgG9lPbHUvALZOgC
-PdcZyQQZvpvdtSsZuKtA0wI1MKi3gNjbCOUSI/U6qAibJDqXGLCGal4EZ4Ug857I
-QhFAjYaGPqLfJdtsgmB9JENu6IxeQUCIHkKwhBWN43vDA/VRhGl+dgyqketw4A==
-=aeow
------END PGP SIGNATURE-----
-
---k3oJ4M389bP48AD0GfSImPt697Nj63R7u--
+-- 
+Have a nice day,
+Timofey.

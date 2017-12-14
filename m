@@ -1,322 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:40005 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751072AbdLNIZI (ORCPT
+Received: from mgwym01.jp.fujitsu.com ([211.128.242.40]:39505 "EHLO
+        mgwym01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750795AbdLNIZi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Dec 2017 03:25:08 -0500
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 7336EAC013D
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 17:25:05 +0900 (JST)
-Received: from g01jpexchkw35.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id AF12769272E
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 17:25:04 +0900 (JST)
-Subject: [PATCH v4 2/4] btrfs: cleanup btrfs_mount() using btrfs_mount_root()
+        Thu, 14 Dec 2017 03:25:38 -0500
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 3B3C8AC0155
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 17:25:32 +0900 (JST)
+Received: from g01jpexchkw38.g01.fujitsu.local (unknown [10.0.193.4])
+        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 58C8A328850
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 17:25:31 +0900 (JST)
+Subject: [PATCH v4 3/4] btrfs: split parse_early_options() in two
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 References: <7dbb897c-1f1d-b54b-0cea-2a1c6c1d5027@jp.fujitsu.com>
-Message-ID: <eba24d5a-d5ad-b928-27b8-3c7f0b6a0e43@jp.fujitsu.com>
-Date: Thu, 14 Dec 2017 17:25:01 +0900
+Message-ID: <aa504d5f-8ef6-c518-da0b-d9ecef07bd9d@jp.fujitsu.com>
+Date: Thu, 14 Dec 2017 17:25:28 +0900
 MIME-Version: 1.0
 In-Reply-To: <7dbb897c-1f1d-b54b-0cea-2a1c6c1d5027@jp.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleanup btrfs_mount() by using btrfs_mount_root(). This avoids getting
-btrfs_mount() called twice in mount path.
+Now parse_early_options() is used by both btrfs_mount() and
+btrfs_mount_root(). However, the former only needs subvol related part
+and the latter needs the others.
 
-Old btrfs_mount() will do:
-0. VFS layer calls vfs_kern_mount() with registered file_system_type
-   (for btrfs, btrfs_fs_type). btrfs_mount() is called on the way.
-1. btrfs_parse_early_options() parses "subvolid=" mount option and set the
-   value to subvol_objectid. Otherwise, subvol_objectid has the initial
-   value of 0
-2. check subvol_objectid is 5 or not. Assume this time id is not 5, then
-   btrfs_mount() returns by calling mount_subvol()
-3. In mount_subvol(), original mount options are modified to contain
-   "subvolid=0" in setup_root_args(). Then, vfs_kern_mount() is called with
-   btrfs_fs_type and new options
-4. btrfs_mount() is called again
-5. btrfs_parse_early_options() parses "subvolid=0" and set 5 (instead of 0)
-   to subvol_objectid
-6. check subvol_objectid is 5 or not. This time id is 5 and mount_subvol()
-   is not called. btrfs_mount() finishes mounting a root
-7. (in mount_subvol()) with using a return vale of vfs_kern_mount(), it
-   calls mount_subtree()
-8. return subvolume's dentry
-
-Reusing the same file_system_type (and btrfs_mount()) for vfs_kern_mount()
-is the cause of complication.
-
-Instead, new btrfs_mount() will do:
-1. parse subvol id related options for later use in mount_subvol()
-2. mount device's root by calling vfs_kern_mount() with
-   btrfs_root_fs_type, which is not registered to VFS by
-   register_filesystem(). As a result, btrfs_mount_root() is called
-3. return by calling mount_subvol()
-
-The code of 2. is moved from the first part of mount_subvol().
+Therefore extract the subvol related parts from parse_early_options() and
+move it to new parse function (parse_subvol_options()).
 
 Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 ---
- fs/btrfs/super.c | 193 +++++++++++++++++++------------------------------------
- 1 file changed, 65 insertions(+), 128 deletions(-)
+ fs/btrfs/super.c | 82 +++++++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 57 insertions(+), 25 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 14189ad47466..ce93d87b2a69 100644
+index ce93d87b2a69..f0ecba7a1190 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -66,6 +66,11 @@
- #include <trace/events/btrfs.h>
- 
- static const struct super_operations btrfs_super_ops;
-+/*
-+ * btrfs_root_fs_type is used internally while
-+ * btrfs_fs_type is used for VFS layer.
-+ * See the comment at btrfs_mount for more detail.
-+ */
- static struct file_system_type btrfs_root_fs_type;
- static struct file_system_type btrfs_fs_type;
- 
-@@ -1404,48 +1409,11 @@ static char *setup_root_args(char *args)
- 
- static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 				   int flags, const char *device_name,
--				   char *data)
-+				   char *data, struct vfsmount *mnt)
- {
- 	struct dentry *root;
--	struct vfsmount *mnt = NULL;
--	char *newargs;
- 	int ret;
- 
--	newargs = setup_root_args(data);
--	if (!newargs) {
--		root = ERR_PTR(-ENOMEM);
--		goto out;
--	}
--
--	mnt = vfs_kern_mount(&btrfs_fs_type, flags, device_name, newargs);
--	if (PTR_ERR_OR_ZERO(mnt) == -EBUSY) {
--		if (flags & SB_RDONLY) {
--			mnt = vfs_kern_mount(&btrfs_fs_type, flags & ~SB_RDONLY,
--					     device_name, newargs);
--		} else {
--			mnt = vfs_kern_mount(&btrfs_fs_type, flags | SB_RDONLY,
--					     device_name, newargs);
--			if (IS_ERR(mnt)) {
--				root = ERR_CAST(mnt);
--				mnt = NULL;
--				goto out;
--			}
--
--			down_write(&mnt->mnt_sb->s_umount);
--			ret = btrfs_remount(mnt->mnt_sb, &flags, NULL);
--			up_write(&mnt->mnt_sb->s_umount);
--			if (ret < 0) {
--				root = ERR_PTR(ret);
--				goto out;
--			}
--		}
--	}
--	if (IS_ERR(mnt)) {
--		root = ERR_CAST(mnt);
--		mnt = NULL;
--		goto out;
--	}
--
- 	if (!subvol_name) {
- 		if (!subvol_objectid) {
- 			ret = get_default_subvol_objectid(btrfs_sb(mnt->mnt_sb),
-@@ -1501,7 +1469,6 @@ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
- 
- out:
- 	mntput(mnt);
--	kfree(newargs);
- 	kfree(subvol_name);
- 	return root;
- }
-@@ -1556,6 +1523,12 @@ static int setup_security_options(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
-+/*
-+ * Find a superblock for the given device / mount point.
-+ *
-+ * Note: This is based on mount_bdev from fs/super.c with a few additions
-+ *       for multiple device setup.  Make sure to keep it in sync.
-+ */
- static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- 		int flags, const char *device_name, void *data)
- {
-@@ -1662,20 +1635,35 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- 	security_free_mnt_opts(&new_sec_opts);
- 	return ERR_PTR(error);
- }
-+
- /*
-- * Find a superblock for the given device / mount point.
-+ * Mount function which is called by VFS layer.
-+ *
-+ * In order to allow mounting a subvolume directly, btrfs uses
-+ * mount_subtree() which needs vfsmount* of device's root (/).
-+ * This means device's root has to be mounted internally in any case.
-+ *
-+ * Operation flow:
-+ *   1. Parse subvol id related options for later use in mount_subvol().
-+ *
-+ *   2. Mount device's root (/) by calling vfs_kern_mount().
-  *
-- * Note:  This is based on get_sb_bdev from fs/super.c with a few additions
-- *	  for multiple device setup.  Make sure to keep it in sync.
-+ *      NOTE: vfs_kern_mount() is used by VFS to call btrfs_mount() in the
-+ *      first place. In order to avoid calling btrfs_mount() again, we use
-+ *      different file_system_type which is not registered to VFS by
-+ *      register_filesystem() (btrfs_root_fs_type). As a result,
-+ *      btrfs_mount_root() is called. The return value will be used by
-+ *      mount_subtree() in mount_subvol().
-+ *
-+ *   3. Call mount_subvol() to get the dentry of subvolume. Since there is
-+ *      "btrfs subvolume set-default", mount_subvol() is called always.
+@@ -460,7 +460,8 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 		case Opt_subvolrootid:
+ 		case Opt_device:
+ 			/*
+-			 * These are parsed by btrfs_parse_early_options
++			 * These are parsed by btrfs_parse_subvol_options
++			 * and btrfs_parse_early_options
+ 			 * and can be happily ignored here.
+ 			 */
+ 			break;
+@@ -894,11 +895,60 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+  * only when we need to allocate a new super block.
   */
- static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 		const char *device_name, void *data)
+ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+-		void *holder, char **subvol_name, u64 *subvol_objectid,
+-		struct btrfs_fs_devices **fs_devices)
++		void *holder, struct btrfs_fs_devices **fs_devices)
  {
--	struct block_device *bdev = NULL;
--	struct super_block *s;
- 	struct btrfs_fs_devices *fs_devices = NULL;
--	struct btrfs_fs_info *fs_info = NULL;
--	struct security_mnt_opts new_sec_opts;
-+	struct vfsmount *mnt_root;
-+	struct dentry *root;
+ 	substring_t args[MAX_OPT_ARGS];
+ 	char *device_name, *opts, *orig, *p;
++	int error = 0;
++
++	if (!options)
++		return 0;
++
++	/*
++	 * strsep changes the string, duplicate it because btrfs_parse_options
++	 * gets called later
++	 */
++	opts = kstrdup(options, GFP_KERNEL);
++	if (!opts)
++		return -ENOMEM;
++	orig = opts;
++
++	while ((p = strsep(&opts, ",")) != NULL) {
++		int token;
++
++		if (!*p)
++			continue;
++
++		token = match_token(p, tokens, args);
++		if (token == Opt_device) {
++			device_name = match_strdup(&args[0]);
++			if (!device_name) {
++				error = -ENOMEM;
++				goto out;
++			}
++			error = btrfs_scan_one_device(device_name,
++					flags, holder, fs_devices);
++			kfree(device_name);
++			if (error)
++				goto out;
++		}
++	}
++
++out:
++	kfree(orig);
++	return error;
++}
++
++/*
++ * Parse mount options that are related to subvolume id
++ *
++ * The value is later passed to mount_subvol()
++ */
++static int btrfs_parse_subvol_options(const char *options, fmode_t flags,
++		void *holder, char **subvol_name, u64 *subvol_objectid)
++{
++	substring_t args[MAX_OPT_ARGS];
++	char *opts, *orig, *p;
+ 	char *num = NULL;
+ 	int error = 0;
+ 
+@@ -906,8 +956,8 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 		return 0;
+ 
+ 	/*
+-	 * strsep changes the string, duplicate it because parse_options
+-	 * gets called twice
++	 * strsep changes the string, duplicate it because
++	 * btrfs_parse_early_options gets called later
+ 	 */
+ 	opts = kstrdup(options, GFP_KERNEL);
+ 	if (!opts)
+@@ -946,18 +996,6 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 		case Opt_subvolrootid:
+ 			pr_warn("BTRFS: 'subvolrootid' mount option is deprecated and has no effect\n");
+ 			break;
+-		case Opt_device:
+-			device_name = match_strdup(&args[0]);
+-			if (!device_name) {
+-				error = -ENOMEM;
+-				goto out;
+-			}
+-			error = btrfs_scan_one_device(device_name,
+-					flags, holder, fs_devices);
+-			kfree(device_name);
+-			if (error)
+-				goto out;
+-			break;
+ 		default:
+ 			break;
+ 		}
+@@ -1538,18 +1576,14 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 	struct btrfs_fs_info *fs_info = NULL;
+ 	struct security_mnt_opts new_sec_opts;
  	fmode_t mode = FMODE_READ;
- 	char *subvol_name = NULL;
- 	u64 subvol_objectid = 0;
-@@ -1692,93 +1680,42 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+-	char *subvol_name = NULL;
+-	u64 subvol_objectid = 0;
+ 	int error = 0;
+ 
+ 	if (!(flags & SB_RDONLY))
+ 		mode |= FMODE_WRITE;
+ 
+ 	error = btrfs_parse_early_options(data, mode, fs_type,
+-					  &subvol_name, &subvol_objectid,
+ 					  &fs_devices);
+ 	if (error) {
+-		kfree(subvol_name);
  		return ERR_PTR(error);
  	}
  
--	if (subvol_name || subvol_objectid != BTRFS_FS_TREE_OBJECTID) {
--		/* mount_subvol() will free subvol_name. */
--		return mount_subvol(subvol_name, subvol_objectid, flags,
--				    device_name, data);
--	}
--
--	security_init_mnt_opts(&new_sec_opts);
--	if (data) {
--		error = parse_security_options(data, &new_sec_opts);
--		if (error)
--			return ERR_PTR(error);
--	}
--
--	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices);
--	if (error)
--		goto error_sec_opts;
--
--	/*
--	 * Setup a dummy root and fs_info for test/set super.  This is because
--	 * we don't actually fill this stuff out until open_ctree, but we need
--	 * it for searching for existing supers, so this lets us do that and
--	 * then open_ctree will properly initialize everything later.
--	 */
--	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_KERNEL);
--	if (!fs_info) {
--		error = -ENOMEM;
--		goto error_sec_opts;
--	}
--
--	fs_info->fs_devices = fs_devices;
--
--	fs_info->super_copy = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_KERNEL);
--	fs_info->super_for_commit = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_KERNEL);
--	security_init_mnt_opts(&fs_info->security_opts);
--	if (!fs_info->super_copy || !fs_info->super_for_commit) {
--		error = -ENOMEM;
--		goto error_fs_info;
--	}
--
--	error = btrfs_open_devices(fs_devices, mode, fs_type);
--	if (error)
--		goto error_fs_info;
--
--	if (!(flags & SB_RDONLY) && fs_devices->rw_devices == 0) {
--		error = -EACCES;
--		goto error_close_devices;
--	}
--
--	bdev = fs_devices->latest_bdev;
--	s = sget(fs_type, btrfs_test_super, btrfs_set_super, flags | SB_NOSEC,
--		 fs_info);
--	if (IS_ERR(s)) {
--		error = PTR_ERR(s);
--		goto error_close_devices;
--	}
-+	/* mount device's root (/) */
-+	mnt_root = vfs_kern_mount(&btrfs_root_fs_type, flags,
-+					device_name, data);
-+	if (PTR_ERR_OR_ZERO(mnt_root) == -EBUSY) {
-+		if (flags & SB_RDONLY) {
-+			mnt_root = vfs_kern_mount(&btrfs_root_fs_type,
-+				flags & ~SB_RDONLY, device_name, data);
-+		} else {
-+			mnt_root = vfs_kern_mount(&btrfs_root_fs_type,
-+				flags | SB_RDONLY, device_name, data);
-+			if (IS_ERR(mnt_root)) {
-+				root = ERR_CAST(mnt_root);
-+				goto out;
-+			}
+@@ -1661,7 +1695,6 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 		const char *device_name, void *data)
+ {
+-	struct btrfs_fs_devices *fs_devices = NULL;
+ 	struct vfsmount *mnt_root;
+ 	struct dentry *root;
+ 	fmode_t mode = FMODE_READ;
+@@ -1672,9 +1705,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	if (!(flags & SB_RDONLY))
+ 		mode |= FMODE_WRITE;
  
--	if (s->s_root) {
--		btrfs_close_devices(fs_devices);
--		free_fs_info(fs_info);
--		if ((flags ^ s->s_flags) & SB_RDONLY)
--			error = -EBUSY;
--	} else {
--		snprintf(s->s_id, sizeof(s->s_id), "%pg", bdev);
--		btrfs_sb(s)->bdev_holder = fs_type;
--		error = btrfs_fill_super(s, fs_devices, data);
--	}
--	if (error) {
--		deactivate_locked_super(s);
--		goto error_sec_opts;
-+			down_write(&mnt_root->mnt_sb->s_umount);
-+			error = btrfs_remount(mnt_root->mnt_sb, &flags, NULL);
-+			up_write(&mnt_root->mnt_sb->s_umount);
-+			if (error < 0) {
-+				root = ERR_PTR(error);
-+				mntput(mnt_root);
-+				goto out;
-+			}
-+		}
- 	}
--
--	fs_info = btrfs_sb(s);
--	error = setup_security_options(fs_info, s, &new_sec_opts);
--	if (error) {
--		deactivate_locked_super(s);
--		goto error_sec_opts;
-+	if (IS_ERR(mnt_root)) {
-+		root = ERR_CAST(mnt_root);
-+		goto out;
- 	}
- 
--	return dget(s->s_root);
-+	/* mount_subvol() will free subvol_name and mnt_root */
-+	root = mount_subvol(subvol_name, subvol_objectid, flags,
-+				    device_name, data, mnt_root);
- 
--error_close_devices:
--	btrfs_close_devices(fs_devices);
--error_fs_info:
--	free_fs_info(fs_info);
--error_sec_opts:
--	security_free_mnt_opts(&new_sec_opts);
--	return ERR_PTR(error);
-+out:
-+	return root;
- }
- 
- static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+-	error = btrfs_parse_early_options(data, mode, fs_type,
+-					  &subvol_name, &subvol_objectid,
+-					  &fs_devices);
++	error = btrfs_parse_subvol_options(data, mode, fs_type,
++					  &subvol_name, &subvol_objectid);
+ 	if (error) {
+ 		kfree(subvol_name);
+ 		return ERR_PTR(error);
 -- 
 2.13.6
 

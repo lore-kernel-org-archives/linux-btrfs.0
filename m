@@ -1,56 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:44282 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753448AbdLOIH5 (ORCPT
+Received: from mail-lf0-f66.google.com ([209.85.215.66]:33449 "EHLO
+        mail-lf0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752329AbdLNNgG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 03:07:57 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBF87I4k117662
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 08:07:57 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2120.oracle.com with ESMTP id 2evajs00a3-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 08:07:56 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vBF87txC018988
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 08:07:55 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vBF87tEP013937
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 08:07:55 GMT
-From: Anand Jain <anand.jain@oracle.com>
+        Thu, 14 Dec 2017 08:36:06 -0500
+Received: by mail-lf0-f66.google.com with SMTP id g80so2229217lfg.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 05:36:05 -0800 (PST)
+From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RESEND] btrfs: fix inconsistency during missing device rejoin
-Date: Fri, 15 Dec 2017 16:08:28 +0800
-Message-Id: <20171215080828.29321-1-anand.jain@oracle.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH] Btrfs: make should_defrag_range() understood compressed extents
+Date: Thu, 14 Dec 2017 16:35:46 +0300
+Message-Id: <20171214133546.28609-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When device is missing its not necessary that btrfs_device::name is null
-or the path is different when it reappears. Its possible that device can
-go missing after its been scanned where neither of
-btrfs_device::name == NULL OR btrfs_device::name != reappear_dev_path,
-is true. So just check for btrfs_device::dev_state.missing. Thanks.
+Both, defrag ioctl and autodefrag - call btrfs_defrag_file()
+for file defragmentation.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Kernel target extent size default is 256KiB
+Btrfs progs by default, use 32MiB.
+
+Both bigger then max (not fragmented) compressed extent size 128KiB.
+That lead to rewrite all compressed data on disk.
+
+Fix that and also make should_defrag_range() understood
+if requested target compression are same as current extent compression type.
+To avoid useless recompression of compressed extents.
+
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/volumes.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/ioctl.c | 28 +++++++++++++++++++++++++---
+ 1 file changed, 25 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ba06a4ccd5a6..93d65c72b731 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -767,7 +767,8 @@ static noinline int device_list_add(const char *path,
- 		ret = 1;
- 		device->fs_devices = fs_devices;
- 		btrfs_free_stale_device(path, device);
--	} else if (!device->name || strcmp(device->name->str, path)) {
-+	} else if (!device->name || strcmp(device->name->str, path) ||
-+			test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
- 		/*
- 		 * When FS is already mounted.
- 		 * 1. If you are here and if the device->name is NULL that
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index be5bd81b3669..12d4fa5d6dec 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1008,7 +1008,7 @@ static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em)
+ 
+ static int should_defrag_range(struct inode *inode, u64 start, u32 thresh,
+ 			       u64 *last_len, u64 *skip, u64 *defrag_end,
+-			       int compress)
++			       int compress, int compress_type)
+ {
+ 	struct extent_map *em;
+ 	int ret = 1;
+@@ -1043,8 +1043,29 @@ static int should_defrag_range(struct inode *inode, u64 start, u32 thresh,
+ 	 * real extent, don't bother defragging it
+ 	 */
+ 	if (!compress && (*last_len == 0 || *last_len >= thresh) &&
+-	    (em->len >= thresh || (!next_mergeable && !prev_mergeable)))
++	    (em->len >= thresh || (!next_mergeable && !prev_mergeable))) {
+ 		ret = 0;
++		goto out;
++	}
++
++
++	/*
++	 * Try not recompress compressed extents
++	 * thresh >= BTRFS_MAX_UNCOMPRESSED will lead to
++	 * recompress all compressed extents
++	 */
++	if (em->compress_type != 0 && thresh >= BTRFS_MAX_UNCOMPRESSED) {
++		if (!compress) {
++			if (em->len == BTRFS_MAX_UNCOMPRESSED)
++				ret = 0;
++		} else {
++			if (em->compress_type != compress_type)
++				goto out;
++			if (em->len == BTRFS_MAX_UNCOMPRESSED)
++				ret = 0;
++		}
++	}
++
+ out:
+ 	/*
+ 	 * last_len ends up being a counter of how many bytes we've defragged.
+@@ -1342,7 +1363,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 
+ 		if (!should_defrag_range(inode, (u64)i << PAGE_SHIFT,
+ 					 extent_thresh, &last_len, &skip,
+-					 &defrag_end, do_compress)){
++					 &defrag_end, do_compress,
++					 compress_type)){
+ 			unsigned long next;
+ 			/*
+ 			 * the should_defrag function tells us how much to skip
 -- 
-2.7.0
+2.15.1
 

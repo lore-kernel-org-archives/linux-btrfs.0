@@ -1,99 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f46.google.com ([209.85.214.46]:40700 "EHLO
-        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751646AbdLNL2Z (ORCPT
+Received: from mail-it0-f65.google.com ([209.85.214.65]:36792 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752228AbdLNNfz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Dec 2017 06:28:25 -0500
-Received: by mail-it0-f46.google.com with SMTP id f190so10308116ita.5
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 03:28:24 -0800 (PST)
+        Thu, 14 Dec 2017 08:35:55 -0500
+Received: by mail-it0-f65.google.com with SMTP id d16so11162618itj.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 05:35:54 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$8770b$4eaee1a7$24cc02ce$7f0c8e7b@cox.net>
-References: <CAGqmi76womfiPa_EkKiJ-BgxEcU1GjK7efrh8bWVD0kD+C9NrQ@mail.gmail.com>
- <CAGqmi74-Tap-K1xc4w9rUtVBZ7toesDgr3DiG_CjPSH86YbYmQ@mail.gmail.com> <pan$8770b$4eaee1a7$24cc02ce$7f0c8e7b@cox.net>
+In-Reply-To: <20171213232524.3709-1-nefelim4ag@gmail.com>
+References: <20171213232524.3709-1-nefelim4ag@gmail.com>
 From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Thu, 14 Dec 2017 14:27:43 +0300
-Message-ID: <CAGqmi77HWCBmbt6+i7-31SuF-Ox_NTbtcSJAhn0jAuVc3q7Fqg@mail.gmail.com>
-Subject: Re: [BUG?] Defrag on compressed FS do massive data rewrites
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: Thu, 14 Dec 2017 16:35:13 +0300
+Message-ID: <CAGqmi75AvLW7-sGcfi7gLOpONo3aCS=U2+BLyPmCrH5p4pORGw@mail.gmail.com>
+Subject: Re: [RFC PATCH] Btrfs: btrfs_defrag_file() force use target extent
+ size SZ_128KiB for compressed data
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2017-12-14 8:58 GMT+03:00 Duncan <1i5t5.duncan@cox.net>:
-> Timofey Titovets posted on Thu, 14 Dec 2017 02:05:35 +0300 as excerpted:
+Ignore that patch please, i will send another
+
+2017-12-14 2:25 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
+> Defrag heuristic use extent lengh as threshold,
+> kernel autodefrag use SZ_256KiB and btrfs-progs use SZ_32MiB as
+> target extent lengh.
 >
->> Also, same problem exist for autodefrag case i.e.:
->> write 4KiB at start of compressed file autodefrag code add that file to
->> autodefrag queue, call btrfs_defrag_file, set range from start to u64-1.
->> That will trigger to full file rewrite, as all extents are smaller then
->> 256KiB.
->>
->> (if i understood all correctly).
+> Problem:
+> Compressed extents always have lengh at < 128KiB (BTRFS_MAX_COMPRESSED)
+> So btrfs_defrag_file() always rewrite all extents in defrag range.
 >
-> If so, it's rather ironic, because that's how I believed autodefrag to
-> work, whole-file, for quite some time.  Then I learned otherwise, but I
-> always enable both autodefrag and compress=lzo on all my btrfs, so it
-> looks like at least for my use-case, I was correct with the whole-file
-> assumption after all.  (Well, at least for files that are actually
-> compressed, I don't run compress-force=lzo, just compress=lzo, so a
-> reasonable number of files aren't actually compressed anyway, and they'd
-> do the partial-file rewrite I had learned to be normal.)
+> Hot fix that by force set target extent size to BTRFS_MAX_COMPRESSED,
+> if file allowed to be compressed.
+>
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/ioctl.c | 23 +++++++++++++++++++++++
+>  1 file changed, 23 insertions(+)
+>
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index be5bd81b3669..952364ff4108 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1232,6 +1232,26 @@ static int cluster_pages_for_defrag(struct inode *inode,
+>
+>  }
+>
+> +static inline int inode_use_compression(struct inode *inode)
+> +{
+> +       struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> +
+> +       /* force compress */
+> +       if (btrfs_test_opt(fs_info, FORCE_COMPRESS))
+> +               return 1;
+> +       /* defrag ioctl */
+> +       if (BTRFS_I(inode)->defrag_compress)
+> +               return 1;
+> +       /* bad compression ratios */
+> +       if (BTRFS_I(inode)->flags & BTRFS_INODE_NOCOMPRESS)
+> +               return 0;
+> +       if (btrfs_test_opt(fs_info, COMPRESS) ||
+> +           BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS ||
+> +           BTRFS_I(inode)->prop_compress)
+> +               return 1;
+> +       return 0;
+> +}
+> +
+>  int btrfs_defrag_file(struct inode *inode, struct file *file,
+>                       struct btrfs_ioctl_defrag_range_args *range,
+>                       u64 newer_than, unsigned long max_to_defrag)
+> @@ -1270,6 +1290,9 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>                         compress_type = range->compress_type;
+>         }
+>
+> +       if (inode_use_compression(inode))
+> +               extent_thresh = BTRFS_MAX_COMPRESSED;
+> +
+>         if (extent_thresh == 0)
+>                 extent_thresh = SZ_256K;
 >
 > --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 2.15.1
 
-btrfs fi def can easy avoid that problem if properly documented,
-but i think that fix must be in place, because "full rewrite" by
-autodefrag are unacceptable behaviour.
 
-How i see, "How it works":
-Both, defrag ioctl and autodefrag - call btrfs_defrag_file() (ioctl.c).
-btrfs_defrag_file() set extent_thresh to args, if args not provided
-(autodefrag not initialize range->extent_thresh);
-use default:
-if (extent_thresh == 0)
-     extent_thresh = SZ_256K;
-
-Later btrfs_defrag_file() try defrag file from start by "index" (page
-number from start, file virtually splitted to page sized blocks).
-Than it call should_defrag_range(), if need make i+1 or skip range by
-info from should_defrag_range().
-
-should_defrag_range() get extent for specified start offset:
-em = defrag_lookup_extent(inode, start);
-
-Later (em->len >= thresh || (!next_mergeable && !prev_mergeable)) will
-fail condition because len (<128KiB) < thresh (256KiB or 32MiB usual).
-So extent will be rewritten.
-
-struct extent_map{}; have two potential useful info:
-
-...
-u64 len;
-...
-
-unsigned int compress_type;
-...
-
-As i see by code len store "real" length, so
-in theory that just need to add additional check later like:
-if (em->len = BTRFS_MAX_UNCOMPRESSED && em->compress_type > 0)
-    ret = 0;
-
-That must fix problem by "true" insight check for compressed extents.
-
-Thanks.
-
-P.S.
-(May be someone from more experienced devs can comment that?)
 
 -- 
 Have a nice day,

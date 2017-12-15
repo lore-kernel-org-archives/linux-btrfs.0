@@ -1,115 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f50.google.com ([209.85.214.50]:41762 "EHLO
-        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752208AbdLNNk3 (ORCPT
+Received: from mail-ua0-f194.google.com ([209.85.217.194]:36369 "EHLO
+        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754431AbdLOAjY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Dec 2017 08:40:29 -0500
-Received: by mail-it0-f50.google.com with SMTP id x28so11524235ita.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 05:40:29 -0800 (PST)
+        Thu, 14 Dec 2017 19:39:24 -0500
+Received: by mail-ua0-f194.google.com with SMTP id w47so5169651uah.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 16:39:24 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi77HWCBmbt6+i7-31SuF-Ox_NTbtcSJAhn0jAuVc3q7Fqg@mail.gmail.com>
-References: <CAGqmi76womfiPa_EkKiJ-BgxEcU1GjK7efrh8bWVD0kD+C9NrQ@mail.gmail.com>
- <CAGqmi74-Tap-K1xc4w9rUtVBZ7toesDgr3DiG_CjPSH86YbYmQ@mail.gmail.com>
- <pan$8770b$4eaee1a7$24cc02ce$7f0c8e7b@cox.net> <CAGqmi77HWCBmbt6+i7-31SuF-Ox_NTbtcSJAhn0jAuVc3q7Fqg@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Thu, 14 Dec 2017 16:39:48 +0300
-Message-ID: <CAGqmi74Xi5SDicEGbCt-69o-JYYMZBAyoxzS=Rbp2km-z=Vssg@mail.gmail.com>
-Subject: Re: [BUG?] Defrag on compressed FS do massive data rewrites
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Ian Kumlien <ian.kumlien@gmail.com>
+Date: Fri, 15 Dec 2017 01:39:03 +0100
+Message-ID: <CAA85sZvo8_39nhyoZP6SGiXTAEi4MCNPDLgqe75LNuUUwQSMqQ@mail.gmail.com>
+Subject: [4.14.3] btrfs out of space error
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I send:
-[PATCH] Btrfs: make should_defrag_range() understood compressed extents
+Hi,
 
-If you want you can test that, it fix btrfs fi def and autodefrag
-behavior with compressed data.
-Also it understood if user try recompress data with old/new compression algo.
+Running a 4.14.3 kernel, this just happened, but there should have
+been another 20 gigs or so available.
 
-2017-12-14 14:27 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
-> 2017-12-14 8:58 GMT+03:00 Duncan <1i5t5.duncan@cox.net>:
->> Timofey Titovets posted on Thu, 14 Dec 2017 02:05:35 +0300 as excerpted:
->>
->>> Also, same problem exist for autodefrag case i.e.:
->>> write 4KiB at start of compressed file autodefrag code add that file to
->>> autodefrag queue, call btrfs_defrag_file, set range from start to u64-1.
->>> That will trigger to full file rewrite, as all extents are smaller then
->>> 256KiB.
->>>
->>> (if i understood all correctly).
->>
->> If so, it's rather ironic, because that's how I believed autodefrag to
->> work, whole-file, for quite some time.  Then I learned otherwise, but I
->> always enable both autodefrag and compress=lzo on all my btrfs, so it
->> looks like at least for my use-case, I was correct with the whole-file
->> assumption after all.  (Well, at least for files that are actually
->> compressed, I don't run compress-force=lzo, just compress=lzo, so a
->> reasonable number of files aren't actually compressed anyway, and they'd
->> do the partial-file rewrite I had learned to be normal.)
->>
->> --
->> Duncan - List replies preferred.   No HTML msgs.
->> "Every nonfree program has a lord, a master --
->> and if you use the program, he is your master."  Richard Stallman
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> btrfs fi def can easy avoid that problem if properly documented,
-> but i think that fix must be in place, because "full rewrite" by
-> autodefrag are unacceptable behaviour.
->
-> How i see, "How it works":
-> Both, defrag ioctl and autodefrag - call btrfs_defrag_file() (ioctl.c).
-> btrfs_defrag_file() set extent_thresh to args, if args not provided
-> (autodefrag not initialize range->extent_thresh);
-> use default:
-> if (extent_thresh == 0)
->      extent_thresh = SZ_256K;
->
-> Later btrfs_defrag_file() try defrag file from start by "index" (page
-> number from start, file virtually splitted to page sized blocks).
-> Than it call should_defrag_range(), if need make i+1 or skip range by
-> info from should_defrag_range().
->
-> should_defrag_range() get extent for specified start offset:
-> em = defrag_lookup_extent(inode, start);
->
-> Later (em->len >= thresh || (!next_mergeable && !prev_mergeable)) will
-> fail condition because len (<128KiB) < thresh (256KiB or 32MiB usual).
-> So extent will be rewritten.
->
-> struct extent_map{}; have two potential useful info:
->
-> ...
-> u64 len;
-> ...
->
-> unsigned int compress_type;
-> ...
->
-> As i see by code len store "real" length, so
-> in theory that just need to add additional check later like:
-> if (em->len = BTRFS_MAX_UNCOMPRESSED && em->compress_type > 0)
->     ret = 0;
->
-> That must fix problem by "true" insight check for compressed extents.
->
-> Thanks.
->
-> P.S.
-> (May be someone from more experienced devs can comment that?)
->
-> --
-> Have a nice day,
-> Timofey.
+The filesystem seems fine after a reboot though
 
-
-
--- 
-Have a nice day,
-Timofey.
+[1070034.614893] ------------[ cut here ]------------
+[1070034.614899] WARNING: CPU: 4 PID: 18634 at fs/btrfs/inode.c:4647
+btrfs_truncate_inode_items+0xea5/0xfb0
+[1070034.614899] Modules linked in: mlx4_en chaoskey amdgpu mfd_core mlx4_core
+[1070034.614904] CPU: 4 PID: 18634 Comm: TaskSchedulerFo Not tainted 4.14.3 #165
+[1070034.614905] Hardware name: To be filled by O.E.M. To be filled by
+O.E.M./SABERTOOTH 990FX, BIOS 1604 10/16/2012
+[1070034.614906] task: ffff8bb0f2332c00 task.stack: ffff9630064c4000
+[1070034.614907] RIP: 0010:btrfs_truncate_inode_items+0xea5/0xfb0
+[1070034.614907] RSP: 0018:ffff9630064c7cc0 EFLAGS: 00010282
+[1070034.614909] RAX: 0000000000000026 RBX: ffff8bb11348a070 RCX:
+0000000000000000
+[1070034.614909] RDX: ffff8bb13ed147b0 RSI: ffff8bb13ed0c9d8 RDI:
+ffff8bb13ed0c9d8
+[1070034.614910] RBP: ffff8baf61905c70 R08: 0000000000000001 R09:
+00000000000005f1
+[1070034.614910] R10: 0000000000001000 R11: 0000000000000000 R12:
+ffff8bb1138e0800
+[1070034.614911] R13: 00000000000001e6 R14: ffff8baf60610ee0 R15:
+00000000000000eb
+[1070034.614912] FS:  00007fad68b7f700(0000) GS:ffff8bb13ed00000(0000)
+knlGS:0000000000000000
+[1070034.614912] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[1070034.614913] CR2: 00001c7e020d0000 CR3: 0000000180a19000 CR4:
+00000000000406e0
+[1070034.614913] Call Trace:
+[1070034.614918]  btrfs_truncate+0x11d/0x2c0
+[1070034.614919]  btrfs_setattr+0x27b/0x3c0
+[1070034.614921]  notify_change+0x29f/0x430
+[1070034.614923]  do_truncate+0x5e/0x90
+[1070034.614925]  do_sys_ftruncate.constprop.3+0x139/0x1a0
+[1070034.614927]  entry_SYSCALL_64_fastpath+0x13/0x94
+[1070034.614928] RIP: 0033:0x7fadd17c945e
+[1070034.614929] RSP: 002b:00007fad68b7e870 EFLAGS: 00000246 ORIG_RAX:
+000000000000004d
+[1070034.614930] RAX: ffffffffffffffda RBX: 000023f3339a9710 RCX:
+00007fadd17c945e
+[1070034.614930] RDX: 00000000000000bb RSI: 00000000000000eb RDI:
+0000000000000304
+[1070034.614931] RBP: 00005604376778bd R08: 0023ff6cb6a33301 R09:
+00007ffd8a3c0080
+[1070034.614931] R10: 0000000000000023 R11: 0000000000000246 R12:
+000023f3339a96c0
+[1070034.614932] R13: 0000000000000001 R14: 00007fad68b7e938 R15:
+000056043dfdbaf8
+[1070034.614933] Code: 48 8b 44 24 28 48 8b 40 60 f0 0f ba a8 08 ce 00
+00 02 72 19 83 7c 24 58 fb 74 12 8b 74 24 58 48 c7 c7 e8 3b 22 93 e8
+06 b5 c7 ff <0f> ff 8b 4c 24 58 ba 27 12 00 00 48 8b 7c 24 28 48 c7 c6
+30 0b
+[1070034.614950] ---[ end trace c8eff7895ddacab0 ]---
+[1070034.614951] BTRFS: error (device sdb2) in
+btrfs_truncate_inode_items:4647: errno=-28 No space left
+[1070034.614954] BTRFS info (device sdb2): forced readonly
+[1070034.616386] BTRFS error (device sdb2): pending csums is 106496

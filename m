@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40763 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48002 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752660AbdLOPHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 10:07:48 -0500
-Subject: Re: [PATCH 4/6] btrfs: make btrfs_free_stale_device() argument
- optional
+        id S932168AbdLOPdI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Dec 2017 10:33:08 -0500
+Subject: Re: [PATCH 1/6] btrfs: cleanup btrfs_free_stale_device() usage
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20171215034739.26090-1-anand.jain@oracle.com>
- <20171215034739.26090-5-anand.jain@oracle.com>
+ <20171215034739.26090-2-anand.jain@oracle.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <b3a90794-2186-8740-186f-ad84733595d3@suse.com>
-Date: Fri, 15 Dec 2017 17:07:47 +0200
+Message-ID: <fb2e920c-ea90-6ebd-e4a5-c1332cd88688@suse.com>
+Date: Fri, 15 Dec 2017 17:33:06 +0200
 MIME-Version: 1.0
-In-Reply-To: <20171215034739.26090-5-anand.jain@oracle.com>
+In-Reply-To: <20171215034739.26090-2-anand.jain@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -20,59 +19,45 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 15.12.2017 05:47, Anand Jain wrote:
-> This updates btrfs_free_stale_device() helper function to delete all
-> unmouted devices, when arg is NULL.
+> We call btrfs_free_stale_device() only when we alloc a new
+> struct btrfs_device (ret=1), so move it closer to where we
+> alloc the new device. Also drop the comments.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->  fs/btrfs/volumes.c | 14 ++++++--------
->  1 file changed, 6 insertions(+), 8 deletions(-)
+>  fs/btrfs/volumes.c | 8 +-------
+>  1 file changed, 1 insertion(+), 7 deletions(-)
 > 
 > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 70db6a1d5658..9aee4f987221 100644
+> index b8ba3de6e9e6..6317a3561ae1 100644
 > --- a/fs/btrfs/volumes.c
 > +++ b/fs/btrfs/volumes.c
-> @@ -613,9 +613,6 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
->  	struct btrfs_fs_devices *fs_devs, *tmp_fs_devs;
->  	struct btrfs_device *dev, *tmp_dev;
+> @@ -788,6 +788,7 @@ static noinline int device_list_add(const char *path,
+
+nit: not directly related to the series in question, but I think you can
+add one more patch which sinks the devid argument passed to
+device_list_add. We already pass the disk_super and we can get the devid
+in device_list_add this reduced the cognitive load when reading the code
+
 >  
-> -	if (!cur_dev->name)
-> -		return;
+>  		ret = 1;
+>  		device->fs_devices = fs_devices;
+> +		btrfs_free_stale_device(device);
+>  	} else if (!device->name || strcmp(device->name->str, path)) {
+>  		/*
+>  		 * When FS is already mounted.
+> @@ -846,13 +847,6 @@ static noinline int device_list_add(const char *path,
+>  	if (!fs_devices->opened)
+>  		device->generation = found_transid;
+>  
+> -	/*
+> -	 * if there is new btrfs on an already registered device,
+> -	 * then remove the stale device entry.
+> -	 */
+> -	if (ret > 0)
+> -		btrfs_free_stale_device(device);
 > -
->  	list_for_each_entry_safe(fs_devs, tmp_fs_devs, &fs_uuids, list) {
+>  	*fs_devices_ret = fs_devices;
 >  
->  		if (fs_devs->opened)
-> @@ -625,9 +622,7 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
->  				         &fs_devs->devices, dev_list) {
->  			int not_found;
->  
-> -			if (dev == cur_dev)
-> -				continue;
-> -			if (!dev->name)
-> +			if (cur_dev && (cur_dev == dev || !dev->name))
->  				continue;
->  
->  			/*
-> @@ -637,8 +632,11 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
->  			 * either use mapper or non mapper path throughout.
->  			 */
->  			rcu_read_lock();
-> -			not_found = strcmp(rcu_str_deref(dev->name),
-> -						rcu_str_deref(cur_dev->name));
-> +			if (cur_dev)
-> +				not_found = strcmp(rcu_str_deref(dev->name),
-> +						   rcu_str_deref(cur_dev->name));
-> +			else
-> +				not_found = 0;
-
-nit: Perhaps put a proper documentation header at the beginning of the
-function detailing this behavior. I.e.
-
-/*
- * btrfs_free_stale_device
- * ....
-
->  			rcu_read_unlock();
->  			if (not_found)
->  				continue;
+>  	return ret;
 > 

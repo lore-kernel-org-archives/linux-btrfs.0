@@ -1,55 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:33160 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759693AbdLSKDB (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:32988 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753942AbdLOHoN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 05:03:01 -0500
-Received: by mail-wr0-f193.google.com with SMTP id v21so7738011wrc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 02:03:01 -0800 (PST)
-From: Timofey Titovets <nefelim4ag@gmail.com>
+        Fri, 15 Dec 2017 02:44:13 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBF7gEAZ073855
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:44:11 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2120.oracle.com with ESMTP id 2ev9yug2n6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:44:11 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vBF7dh3J000715
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:39:43 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBF7dhP9029044
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:39:43 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH 4/4] Btrfs: reduce size of struct btrfs_inode
-Date: Tue, 19 Dec 2017 13:02:47 +0300
-Message-Id: <20171219100247.13880-5-nefelim4ag@gmail.com>
-In-Reply-To: <20171219100247.13880-1-nefelim4ag@gmail.com>
-References: <20171219100247.13880-1-nefelim4ag@gmail.com>
+Subject: [PATCH 1/3] btrfs: make code easy to read in btrfs_open_one_device()
+Date: Fri, 15 Dec 2017 15:40:14 +0800
+Message-Id: <20171215074016.26461-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs_inode have size equal 1136 bytes. (On x86_64).
+No functional change. First set the usual case, writeable then check
+for any special config.
 
-struct btrfs_inode store several vars releated to compression code,
-all states use 1 or 2 bits.
-
-Lets declare bitfields for compression releated vars, to reduce
-sizeof btrfs_inode to 1128 bytes.
-
-Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/btrfs_inode.h | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/volumes.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 9eb0c92ee4b4..9d29d7e68757 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -181,13 +181,13 @@ struct btrfs_inode {
- 	/*
- 	 * Cached values of inode properties
- 	 */
--	unsigned prop_compress;		/* per-file compression algorithm */
-+	unsigned prop_compress : 2;	/* per-file compression algorithm */
- 	/*
- 	 * Force compression on the file using the defrag ioctl, could be
- 	 * different from prop_compress and takes precedence if set
- 	 */
--	unsigned defrag_compress;
--	unsigned change_compress;
-+	unsigned defrag_compress : 2;
-+	unsigned change_compress : 1;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5a4c30451c7f..a81574dba124 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -676,14 +676,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
  
- 	struct btrfs_delayed_node *delayed_node;
+ 	device->generation = btrfs_super_generation(disk_super);
  
++	set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
+ 		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 		fs_devices->seeding = 1;
+-	} else {
+-		if (bdev_read_only(bdev))
+-			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+-		else
+-			set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
++	} else if (bdev_read_only(bdev)) {
++		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 	}
+ 
+ 	q = bdev_get_queue(bdev);
 -- 
-2.15.1
+2.7.0
+

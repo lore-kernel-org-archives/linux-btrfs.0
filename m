@@ -1,101 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:38691 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753852AbdLOIWQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 03:22:16 -0500
-Date: Fri, 15 Dec 2017 09:22:14 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: exclusive subvolume space missing
-Message-ID: <20171215082214.GA13892@polanet.pl>
-References: <20171202012324.GB20205@polanet.pl>
- <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
- <20171202022153.GA7727@polanet.pl>
- <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
- <20171202093301.GA28256@polanet.pl>
- <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
- <20171210112738.GA24090@polanet.pl>
- <f9d281bb-e8a9-77c3-ab29-6fda9e5228ab@gmx.com>
- <20171211114043.GA5097@polanet.pl>
- <7ea3ab01-eb63-4875-7496-a4ad833c5854@gmx.com>
+Received: from mail-ua0-f196.google.com ([209.85.217.196]:34619 "EHLO
+        mail-ua0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753544AbdLOIgj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 15 Dec 2017 03:36:39 -0500
+Received: by mail-ua0-f196.google.com with SMTP id d26so5719764uak.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 00:36:38 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <7ea3ab01-eb63-4875-7496-a4ad833c5854@gmx.com>
+In-Reply-To: <20171215103423.0fd678a6@natsu>
+References: <CAA85sZvo8_39nhyoZP6SGiXTAEi4MCNPDLgqe75LNuUUwQSMqQ@mail.gmail.com>
+ <20171215103423.0fd678a6@natsu>
+From: Ian Kumlien <ian.kumlien@gmail.com>
+Date: Fri, 15 Dec 2017 09:36:17 +0100
+Message-ID: <CAA85sZsEf7T+9s_BKpzoFm4aNO6hHsXNTk86LQCOiFiuA3aJYw@mail.gmail.com>
+Subject: Re: [4.14.3] btrfs out of space error
+To: Roman Mamedov <rm@romanrm.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 12, 2017 at 08:50:15 +0800, Qu Wenruo wrote:
+On Fri, Dec 15, 2017 at 6:34 AM, Roman Mamedov <rm@romanrm.net> wrote:
+> On Fri, 15 Dec 2017 01:39:03 +0100
+> Ian Kumlien <ian.kumlien@gmail.com> wrote:
+>
+>> Hi,
+>>
+>> Running a 4.14.3 kernel, this just happened, but there should have
+>> been another 20 gigs or so available.
+>>
+>> The filesystem seems fine after a reboot though
+>
+> What are your mount options, and can you show the output of "btrfs fi
+> df" and "btrfs fi us" for the filesystem? And what does
+> "cat /sys/block/sdb/queue/rotational" return.
 
-> Even without snapshot, things can easily go crazy.
-> 
-> This will write 128M file (max btrfs file extent size) and write it to disk.
-> # xfs_io -f -c "pwrite 0 128M" -c "sync" /mnt/btrfs/file
-> 
-> Then, overwrite the 1~128M range.
-> # xfs_io -f -c "pwrite 1M 127M" -c "sync" /mnt/btrfs/file
-> 
-> Guess your real disk usage, it's 127M + 128M = 255M.
-> 
-> The point here, if there is any reference of a file extent, the whole
-> extent won't be freed, even it's only 1M of a 128M extent.
+It's a btrfs raid1 mirror of two ssd:s
 
-OK, /this/ is scary. I guess nocow prevents this behaviour?
-I have +C chatted the file eating my space and it ceased.
+mount options was:
+defaults,acl,noatime,space_cache,autodefrag,compress=lzo
 
-> Are you pre-allocating the file before write using tools like dd?
+btrfs fi df /
+Data, RAID1: total=459.25GiB, used=372.42GiB
+Data, single: total=8.00MiB, used=0.00B
+System, RAID1: total=8.00MiB, used=80.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, RAID1: total=6.00GiB, used=3.69GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-I have no idea, this could be checked in source of http://pam-abl.sourceforge.net/
-But this is plain Berkeley DB (5.3 in my case)... which scarries me even
-more:
+btrfs fi us /
+Overall:
+    Device size: 930.54GiB
+    Device allocated: 930.53GiB
+    Device unallocated:   20.05MiB
+    Device missing:      0.00B
+    Used: 752.22GiB
+    Free (estimated):   86.84GiB (min: 86.84GiB)
+    Data ratio:       2.00
+    Metadata ratio:       2.00
+    Global reserve: 512.00MiB (used: 0.00B)
 
-$  rpm -q --what-requires 'libdb-5.2.so()(64bit)' 'libdb-5.3.so()(64bit)' | wc -l
-14
+Data,single: Size:8.00MiB, Used:0.00B
+   /dev/sdb2    8.00MiB
 
-#  ipoldek desc -B db5.3
-Package:        db5.3-5.3.28.0-4.x86_64
-Required(by):   apache1-base, apache1-mod_ssl, apr-util-dbm-db,
-bogofilter, 
-    c-icap, c-icap-srv_url_check, courier-authlib, 
-    courier-authlib-authuserdb, courier-imap, courier-imap-common, 
-    cyrus-imapd, cyrus-imapd-libs, cyrus-sasl, cyrus-sasl-sasldb, 
-    db5.3-devel, db5.3-utils, dnshistory, dsniff, evolution-data-server, 
-    evolution-data-server-libs, exim, gda-db, ggz-server, 
-    heimdal-libs-common, hotkeys, inn, inn-libs, isync, jabberd, jigdo, 
-    jigdo-gtk, jnettop, libetpan, libgda3, libgda3-devel, libhome, libqxt, 
-    libsolv, lizardfs-master, maildrop, moc, mutt, netatalk, nss_updatedb, 
-    ocaml-dbm, opensips, opensmtpd, pam-pam_abl, pam-pam_ccreds, perl-BDB, 
-    perl-BerkeleyDB, perl-BerkeleyDB, perl-DB_File, perl-URPM, 
-    perl-cyrus-imapd, php4-dba, php52-dba, php53-dba, php54-dba, php55-dba, 
-    php56-dba, php70-dba, php70-dba, php71-dba, php71-dba, php72-dba, 
-    php72-dba, postfix, python-bsddb, python-modules, python3-bsddb3, 
-    redland, ruby-modules, sendmail, squid-session_acl, 
-    squid-time_quota_acl, squidGuard, subversion-libs, swish-e, tomoe-svn, 
-    webalizer-base, wwwcount
+Data,RAID1: Size:459.25GiB, Used:372.42GiB
+   /dev/sdb2 459.25GiB
+   /dev/sdc2 459.25GiB
 
-OK, not much of user-applications here, as they mostly use sqlite.
-I wonder how this one db-library behaves:
+Metadata,single: Size:8.00MiB, Used:0.00B
+   /dev/sdb2    8.00MiB
 
-$  find . -name \*.sqlite | xargs ls -gGhS | head -n1
--rw-r--r-- 1  15M 2017-12-08 12:14 ./.mozilla/firefox/vni9ojqi.default/extension-data/ublock0.sqlite
+Metadata,RAID1: Size:6.00GiB, Used:3.69GiB
+   /dev/sdb2    6.00GiB
+   /dev/sdc2    6.00GiB
 
-$  ~/fiemap ./.mozilla/firefox/*.default/extension-data/ublock0.sqlite | head -n1
-File ./.mozilla/firefox/vni9ojqi.default/extension-data/ublock0.sqlite has 128 extents:
+System,single: Size:4.00MiB, Used:0.00B
+   /dev/sdb2    4.00MiB
 
+System,RAID1: Size:8.00MiB, Used:80.00KiB
+   /dev/sdb2    8.00MiB
+   /dev/sdc2    8.00MiB
 
-At least every $HOME/{.{,c}cache,tmp} should be +C...
+Unallocated:
+   /dev/sdb2   24.00KiB
+   /dev/sdc2   20.02MiB
 
-> And if possible, use nocow for this file.
+And as expected:
+cat /sys/block/sdb/queue/rotational
+0
 
-Actually, this should be officially advised to use +C for entire /var tree and
-every other tree that might be exposed for hostile write patterns, like /home
-or /tmp (if held on btrfs).
+> I wonder if it's the same old "ssd allocation scheme" problem, and no
+> balancing done in a long time or at all.
 
-I'd say, that from security point of view the nocow should be default,
-unless specified for mount or specific file... Currently, if I mount
-with nocow, there is no way to whitelist trusted users or secure
-location, and until btrfs-specific options could be handled per
-subvolume, there is really no alternative.
-
-
--- 
-Tomasz Pala <gotar@pld-linux.org>
+I had something similar happen on a laptop a while ago - took a while
+before i could get it back in order
+(in that case i think it was actually a oops --- it kept saying "no
+space left" and switched to read only even
+if you removed a lot of data, invalidated the space cache and so on)

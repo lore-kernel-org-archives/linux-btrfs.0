@@ -1,79 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f194.google.com ([209.85.217.194]:36369 "EHLO
-        mail-ua0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754431AbdLOAjY (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:53151 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754718AbdLODsS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Dec 2017 19:39:24 -0500
-Received: by mail-ua0-f194.google.com with SMTP id w47so5169651uah.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Dec 2017 16:39:24 -0800 (PST)
-MIME-Version: 1.0
-From: Ian Kumlien <ian.kumlien@gmail.com>
-Date: Fri, 15 Dec 2017 01:39:03 +0100
-Message-ID: <CAA85sZvo8_39nhyoZP6SGiXTAEi4MCNPDLgqe75LNuUUwQSMqQ@mail.gmail.com>
-Subject: [4.14.3] btrfs out of space error
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Thu, 14 Dec 2017 22:48:18 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBF3liw3182334
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 03:48:17 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2130.oracle.com with ESMTP id 2ev6fp01m7-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 03:48:17 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBF3mGsm003225
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 03:48:17 GMT
+Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBF3mGcT014361
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 03:48:16 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v5]  Add cli and ioctl to ignore a scanned device
+Date: Fri, 15 Dec 2017 11:48:45 +0800
+Message-Id: <20171215034847.26258-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Adds cli and ioctl to forget a scanned device or forget all stale
+devices in the kernel.
 
-Running a 4.14.3 kernel, this just happened, but there should have
-been another 20 gigs or so available.
+v5:
+  Adds feature to delete all stale devices
+  Reuses btrfs_free_stale_devices() fn and so depends on the
+    patch-set [1] in the ML.
+  Uses struct btrfs_ioctl_vol_args_v2 instead of
+    struct btrfs_ioctl_vol_args as arg
+  Does the device path matching instead of btrfs_device matching
+    (we won't delete the mounted device as btrfs_free_stale_devices()
+    checks for it)
+v4:
+  No change. But as the ML thread may be confusing, so resend.
+v3:
+  No change. Send to correct ML.
+v2:
+  Accepts review from Nikolay, details are in the specific patch.
+  Patch 1/2 is renamed from
+    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
+  to
+    [PATCH 1/2] btrfs: add function to device list delete
 
-The filesystem seems fine after a reboot though
+Anand Jain (1):
+  btrfs: add feature to forget one or all stale device(s) in the kernel
 
-[1070034.614893] ------------[ cut here ]------------
-[1070034.614899] WARNING: CPU: 4 PID: 18634 at fs/btrfs/inode.c:4647
-btrfs_truncate_inode_items+0xea5/0xfb0
-[1070034.614899] Modules linked in: mlx4_en chaoskey amdgpu mfd_core mlx4_core
-[1070034.614904] CPU: 4 PID: 18634 Comm: TaskSchedulerFo Not tainted 4.14.3 #165
-[1070034.614905] Hardware name: To be filled by O.E.M. To be filled by
-O.E.M./SABERTOOTH 990FX, BIOS 1604 10/16/2012
-[1070034.614906] task: ffff8bb0f2332c00 task.stack: ffff9630064c4000
-[1070034.614907] RIP: 0010:btrfs_truncate_inode_items+0xea5/0xfb0
-[1070034.614907] RSP: 0018:ffff9630064c7cc0 EFLAGS: 00010282
-[1070034.614909] RAX: 0000000000000026 RBX: ffff8bb11348a070 RCX:
-0000000000000000
-[1070034.614909] RDX: ffff8bb13ed147b0 RSI: ffff8bb13ed0c9d8 RDI:
-ffff8bb13ed0c9d8
-[1070034.614910] RBP: ffff8baf61905c70 R08: 0000000000000001 R09:
-00000000000005f1
-[1070034.614910] R10: 0000000000001000 R11: 0000000000000000 R12:
-ffff8bb1138e0800
-[1070034.614911] R13: 00000000000001e6 R14: ffff8baf60610ee0 R15:
-00000000000000eb
-[1070034.614912] FS:  00007fad68b7f700(0000) GS:ffff8bb13ed00000(0000)
-knlGS:0000000000000000
-[1070034.614912] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[1070034.614913] CR2: 00001c7e020d0000 CR3: 0000000180a19000 CR4:
-00000000000406e0
-[1070034.614913] Call Trace:
-[1070034.614918]  btrfs_truncate+0x11d/0x2c0
-[1070034.614919]  btrfs_setattr+0x27b/0x3c0
-[1070034.614921]  notify_change+0x29f/0x430
-[1070034.614923]  do_truncate+0x5e/0x90
-[1070034.614925]  do_sys_ftruncate.constprop.3+0x139/0x1a0
-[1070034.614927]  entry_SYSCALL_64_fastpath+0x13/0x94
-[1070034.614928] RIP: 0033:0x7fadd17c945e
-[1070034.614929] RSP: 002b:00007fad68b7e870 EFLAGS: 00000246 ORIG_RAX:
-000000000000004d
-[1070034.614930] RAX: ffffffffffffffda RBX: 000023f3339a9710 RCX:
-00007fadd17c945e
-[1070034.614930] RDX: 00000000000000bb RSI: 00000000000000eb RDI:
-0000000000000304
-[1070034.614931] RBP: 00005604376778bd R08: 0023ff6cb6a33301 R09:
-00007ffd8a3c0080
-[1070034.614931] R10: 0000000000000023 R11: 0000000000000246 R12:
-000023f3339a96c0
-[1070034.614932] R13: 0000000000000001 R14: 00007fad68b7e938 R15:
-000056043dfdbaf8
-[1070034.614933] Code: 48 8b 44 24 28 48 8b 40 60 f0 0f ba a8 08 ce 00
-00 02 72 19 83 7c 24 58 fb 74 12 8b 74 24 58 48 c7 c7 e8 3b 22 93 e8
-06 b5 c7 ff <0f> ff 8b 4c 24 58 ba 27 12 00 00 48 8b 7c 24 28 48 c7 c6
-30 0b
-[1070034.614950] ---[ end trace c8eff7895ddacab0 ]---
-[1070034.614951] BTRFS: error (device sdb2) in
-btrfs_truncate_inode_items:4647: errno=-28 No space left
-[1070034.614954] BTRFS info (device sdb2): forced readonly
-[1070034.616386] BTRFS error (device sdb2): pending csums is 106496
+ fs/btrfs/super.c           | 27 +++++++++++++++++++++++----
+ fs/btrfs/volumes.c         |  9 +++++++++
+ fs/btrfs/volumes.h         |  1 +
+ include/uapi/linux/btrfs.h |  6 +++++-
+ 4 files changed, 38 insertions(+), 5 deletions(-)
+
+Anand Jain (1):
+  btrfs-progs: add cli to forget one or all scanned devices
+
+ cmds-device.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h       |  6 ++++-
+ 2 files changed, 82 insertions(+), 1 deletion(-)
+
+-- 
+2.7.0
+

@@ -1,130 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:36913 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755593AbdLOTba (ORCPT
+Received: from syrinx.knorrie.org ([82.94.188.77]:52532 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756599AbdLOXHn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 14:31:30 -0500
-Received: by mail-io0-f193.google.com with SMTP id d16so3737401iob.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:31:30 -0800 (PST)
+        Fri, 15 Dec 2017 18:07:43 -0500
+Subject: Re: [4.14.3] btrfs out of space error
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Ian Kumlien <ian.kumlien@gmail.com>,
+        Roman Mamedov <rm@romanrm.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAA85sZvo8_39nhyoZP6SGiXTAEi4MCNPDLgqe75LNuUUwQSMqQ@mail.gmail.com>
+ <20171215103423.0fd678a6@natsu>
+ <CAA85sZsEf7T+9s_BKpzoFm4aNO6hHsXNTk86LQCOiFiuA3aJYw@mail.gmail.com>
+ <88ff9cce-fa9b-ef4e-e1ea-062e13eec833@gmx.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <87dfadcb-f4d6-1a63-838c-0725d3a3dde6@mendix.com>
+Date: Sat, 16 Dec 2017 00:07:40 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi76GhdUEJy=YxAN1RiZZkJeSoh6EYVO4RRp4n51Pge9ZZA@mail.gmail.com>
-References: <20171214133546.28609-1-nefelim4ag@gmail.com> <CAGqmi76GhdUEJy=YxAN1RiZZkJeSoh6EYVO4RRp4n51Pge9ZZA@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Fri, 15 Dec 2017 22:30:47 +0300
-Message-ID: <CAGqmi77Dh1Xn6WNP=32K98uSjW5NhXuheKpAMyKTi4gSL87vcA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: make should_defrag_range() understood compressed extents
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <88ff9cce-fa9b-ef4e-e1ea-062e13eec833@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Also,
-in theory that break following case:
-When fs mounted with compress=no, you can uncompress data by btrfs fi
-def -vr <path>, because of "bug" in logic/defaults.
-And man page show that btrfs "Currently it’s not possible to select no
-compression. See also section EXAMPLES."
+On 12/15/2017 09:53 AM, Qu Wenruo wrote:
+> 
+> 
+> On 2017年12月15日 16:36, Ian Kumlien wrote:
+>> On Fri, Dec 15, 2017 at 6:34 AM, Roman Mamedov <rm@romanrm.net> wrote:
+>>> On Fri, 15 Dec 2017 01:39:03 +0100
+>>> Ian Kumlien <ian.kumlien@gmail.com> wrote:
+>>>
+>>>> Hi,
+>>>>
+>>>> Running a 4.14.3 kernel, this just happened, but there should have
+>>>> been another 20 gigs or so available.
+>>>>
+>>>> The filesystem seems fine after a reboot though
+>>>
+>>> What are your mount options, and can you show the output of "btrfs fi
+>>> df" and "btrfs fi us" for the filesystem? And what does
+>>> "cat /sys/block/sdb/queue/rotational" return.
+>>
+>> It's a btrfs raid1 mirror of two ssd:s
+>>
+>> mount options was:
+>> defaults,acl,noatime,space_cache,autodefrag,compress=lzo
+>>
+>> btrfs fi df /
+>> Data, RAID1: total=459.25GiB, used=372.42GiB
+>> Data, single: total=8.00MiB, used=0.00B
+>> System, RAID1: total=8.00MiB, used=80.00KiB
+>> System, single: total=4.00MiB, used=0.00B
+>> Metadata, RAID1: total=6.00GiB, used=3.69GiB
+> 
+> Both meta and data has a lot of space let.
 
-I have a two simple patches that can provide a way (one to btrfs-progs
-and one to btrfs.ko),
-to uncompress data on fs mounted with compress=no, by run btrfs fi def
--vrcnone <path>
-But behavior on fs mounted with compress, will be recompress data with
-selected by "compress" algo,
-because of inode_need_compression() logic.
+The real question is how fragmented that free space is.
 
-In theory that also must be fixed.
+Here's a good starting point to read up about the -o ssd behavior pre 4.14:
 
+https://www.spinics.net/lists/linux-btrfs/msg70622.html
 
-2017-12-14 16:37 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
-> Compile tested and "battle" tested
->
-> 2017-12-14 16:35 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
->> Both, defrag ioctl and autodefrag - call btrfs_defrag_file()
->> for file defragmentation.
+>> Metadata, single: total=8.00MiB, used=0.00B
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
 >>
->> Kernel target extent size default is 256KiB
->> Btrfs progs by default, use 32MiB.
+>> btrfs fi us /
+>> Overall:
+>>     Device size: 930.54GiB
+>>     Device allocated: 930.53GiB
+>>     Device unallocated:   20.05MiB
+>>     Device missing:      0.00B
+>>     Used: 752.22GiB
+>>     Free (estimated):   86.84GiB (min: 86.84GiB)
+>>     Data ratio:       2.00
+>>     Metadata ratio:       2.00
+>>     Global reserve: 512.00MiB (used: 0.00B)
 >>
->> Both bigger then max (not fragmented) compressed extent size 128KiB.
->> That lead to rewrite all compressed data on disk.
+>> Data,single: Size:8.00MiB, Used:0.00B
+>>    /dev/sdb2    8.00MiB
 >>
->> Fix that and also make should_defrag_range() understood
->> if requested target compression are same as current extent compression type.
->> To avoid useless recompression of compressed extents.
+>> Data,RAID1: Size:459.25GiB, Used:372.42GiB
+>>    /dev/sdb2 459.25GiB
+>>    /dev/sdc2 459.25GiB
 >>
->> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
->> ---
->>  fs/btrfs/ioctl.c | 28 +++++++++++++++++++++++++---
->>  1 file changed, 25 insertions(+), 3 deletions(-)
+>> Metadata,single: Size:8.00MiB, Used:0.00B
+>>    /dev/sdb2    8.00MiB
 >>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index be5bd81b3669..12d4fa5d6dec 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -1008,7 +1008,7 @@ static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em)
+>> Metadata,RAID1: Size:6.00GiB, Used:3.69GiB
+>>    /dev/sdb2    6.00GiB
+>>    /dev/sdc2    6.00GiB
 >>
->>  static int should_defrag_range(struct inode *inode, u64 start, u32 thresh,
->>                                u64 *last_len, u64 *skip, u64 *defrag_end,
->> -                              int compress)
->> +                              int compress, int compress_type)
->>  {
->>         struct extent_map *em;
->>         int ret = 1;
->> @@ -1043,8 +1043,29 @@ static int should_defrag_range(struct inode *inode, u64 start, u32 thresh,
->>          * real extent, don't bother defragging it
->>          */
->>         if (!compress && (*last_len == 0 || *last_len >= thresh) &&
->> -           (em->len >= thresh || (!next_mergeable && !prev_mergeable)))
->> +           (em->len >= thresh || (!next_mergeable && !prev_mergeable))) {
->>                 ret = 0;
->> +               goto out;
->> +       }
->> +
->> +
->> +       /*
->> +        * Try not recompress compressed extents
->> +        * thresh >= BTRFS_MAX_UNCOMPRESSED will lead to
->> +        * recompress all compressed extents
->> +        */
->> +       if (em->compress_type != 0 && thresh >= BTRFS_MAX_UNCOMPRESSED) {
->> +               if (!compress) {
->> +                       if (em->len == BTRFS_MAX_UNCOMPRESSED)
->> +                               ret = 0;
->> +               } else {
->> +                       if (em->compress_type != compress_type)
->> +                               goto out;
->> +                       if (em->len == BTRFS_MAX_UNCOMPRESSED)
->> +                               ret = 0;
->> +               }
->> +       }
->> +
->>  out:
->>         /*
->>          * last_len ends up being a counter of how many bytes we've defragged.
->> @@ -1342,7 +1363,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>> System,single: Size:4.00MiB, Used:0.00B
+>>    /dev/sdb2    4.00MiB
 >>
->>                 if (!should_defrag_range(inode, (u64)i << PAGE_SHIFT,
->>                                          extent_thresh, &last_len, &skip,
->> -                                        &defrag_end, do_compress)){
->> +                                        &defrag_end, do_compress,
->> +                                        compress_type)){
->>                         unsigned long next;
->>                         /*
->>                          * the should_defrag function tells us how much to skip
->> --
->> 2.15.1
+>> System,RAID1: Size:8.00MiB, Used:80.00KiB
+>>    /dev/sdb2    8.00MiB
+>>    /dev/sdc2    8.00MiB
 >>
->
->
->
-> --
-> Have a nice day,
-> Timofey.
+>> Unallocated:
+>>    /dev/sdb2   24.00KiB
+>>    /dev/sdc2   20.02MiB
+> 
+> Well, at least no new chunk can be allocated.
 
+Exactly.
 
+> In v4.15, Josef introduced a new inode reservation system, which I think
+> it would enhance metadata related reservation.
+> 
+> If you're hitting the problem quite frequently, please consider to try
+> v4.15-rc* to see if it solves the problem.
+> 
+> Despite of that, there should be no damage to your fs.
+> (except some unwritten data in buffer)
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> And as expected:
+>> cat /sys/block/sdb/queue/rotational
+>> 0
+>>
+>>> I wonder if it's the same old "ssd allocation scheme" problem, and no
+>>> balancing done in a long time or at all.
+
+Looks like it. So, yay, you're on 4.14 already. Now just do a full
+balance of your entire filesystem, only once (data only, metadata not
+needed) and then you can forget about this again.
+
+>> I had something similar happen on a laptop a while ago - took a while
+>> before i could get it back in order
+>> (in that case i think it was actually a oops --- it kept saying "no
+>> space left" and switched to read only even
+>> if you removed a lot of data, invalidated the space cache and so on)
 
 -- 
-Have a nice day,
-Timofey.
+Hans van Kranenburg

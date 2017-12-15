@@ -1,28 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:34179 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753279AbdLOL2a (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:49004 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755409AbdLONGa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 06:28:30 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBFBST4s111252
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:28:29 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2evd2g0452-1
+        Fri, 15 Dec 2017 08:06:30 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBFD69YQ177631
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 13:06:30 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2evepfr3su-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:28:29 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBFBSSWs024599
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 13:06:30 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBFD6TwK019121
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:28:28 GMT
-Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBFBSSge014520
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:28:28 GMT
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 13:06:29 GMT
+Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vBFD6TsR010009
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 13:06:29 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/6] btrfs: cleanup to make btrfs_free_stale_device() readable
-Date: Fri, 15 Dec 2017 19:29:01 +0800
-Message-Id: <20171215112901.13264-1-anand.jain@oracle.com>
+Subject: [PATCH v2 6/6] btrfs: cleanup to make btrfs_free_stale_device() readable
+Date: Fri, 15 Dec 2017 21:07:00 +0800
+Message-Id: <20171215130700.18570-1-anand.jain@oracle.com>
 In-Reply-To: <20171215034739.26090-7-anand.jain@oracle.com>
 References: <20171215034739.26090-7-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -36,6 +36,7 @@ have cli to clean any device that's not a concern any more.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+[fix patch number]
 v2: btrfs_device::name is null when we have missing device and
     unmounted. So we still need to check for dev->name.
 

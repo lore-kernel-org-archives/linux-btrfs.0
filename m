@@ -1,88 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:54147 "EHLO
-        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1756638AbdLPPl1 (ORCPT
+Received: from forward104j.mail.yandex.net ([5.45.198.247]:36553 "EHLO
+        forward104j.mail.yandex.net" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1756865AbdLPT6L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Dec 2017 10:41:27 -0500
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.nyi.internal (Postfix) with ESMTP id 260B520AE2
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 10:41:27 -0500 (EST)
-Received: from [192.168.0.111] (unknown [183.89.31.79])
-        by mail.messagingengine.com (Postfix) with ESMTPA id 3C08724140
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 10:41:25 -0500 (EST)
+        Sat, 16 Dec 2017 14:58:11 -0500
+Received: from mxback17j.mail.yandex.net (mxback17j.mail.yandex.net [IPv6:2a02:6b8:0:1619::93])
+        by forward104j.mail.yandex.net (Yandex) with ESMTP id 6EF03433CF
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 22:50:34 +0300 (MSK)
+From: Dark Penguin <darkpenguin@yandex.ru>
+Subject: Unexpected raid1 behaviour
 To: linux-btrfs@vger.kernel.org
-From: Tom Hale <tom@hale.ee>
-Subject: How to repair errors only found with check --mode=lowmem
-Message-ID: <abb41cea-93eb-0e35-e9b2-195968fc4fd7@hale.ee>
-Date: Sat, 16 Dec 2017 22:41:23 +0700
+Message-ID: <5A357909.8010206@yandex.ru>
+Date: Sat, 16 Dec 2017 22:50:33 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following shows that errors are found with check --mode=lowmem, but 
-are not picked up without lowmem.
+Could someone please point me towards some read about how btrfs handles
+multiple devices? Namely, kicking faulty devices and re-adding them.
 
-How would I go about fixing errors only reported by lowmem?
+I've been using btrfs on single devices for a while, but now I want to
+start using it in raid1 mode. I booted into an Ubuntu 17.10 LiveCD and
+tried to see how does it handle various situations. The experience left
+me very surprised; I've tried a number of things, all of which produced
+unexpected results.
 
-----------------------------------------
+I create a btrfs raid1 filesystem on two hard drives and mount it.
 
-[manjaro manjaro]# btrfs check --mode=lowmem --progress 
-/dev/mapper/vg_svelte-home
-Checking filesystem on /dev/mapper/vg_svelte-home
-UUID: 93722fa7-7e8f-418a-a7ca-080aca8db94b
-ERROR: extent[691815358464, 11042816] referencer count mismatch (root: 
-257, owner: 1869679, offset: 613974016) wanted: 1, have: 2
-ERROR: extent[720156536832, 99430400] referencer count mismatch (root: 
-257, owner: 758215, offset: 1610616832) wanted: 8, have: 379
-ERROR: extent[720669147136, 268435456] referencer count mismatch (root: 
-257, owner: 758215, offset: 4096) wanted: 86, have: 1021
-ERROR: extent[720669147136, 268435456] referencer count mismatch (root: 
-257, owner: 1767807, offset: 4096) wanted: 87, have: 1021
-ERROR: extent[726724722688, 64069632] referencer count mismatch (root: 
-257, owner: 1480823, offset: 99090432) wanted: 1, have: 5
-ERROR: extent[737910194176, 134217728] referencer count mismatch (root: 
-257, owner: 1480726, offset: 268435456) wanted: 1, have: 8
-ERROR: extent[738077896704, 134217728] referencer count mismatch (root: 
-257, owner: 1869696, offset: 402653184) wanted: 5, have: 8
-ERROR: extent[744334426112, 268435456] referencer count mismatch (root: 
-257, owner: 1767802, offset: 0) wanted: 111, have: 294
-ERROR: extent[824948670464, 1671168] referencer count mismatch (root: 
-257, owner: 2000876, offset: 247861248) wanted: 16, have: 26
-ERROR: data extent[681550843904 8192] backref lost
-ERROR: errors found in extent allocation tree or chunk allocation
-cache and super generation don't match, space cache will be invalidated
-ERROR: errors found in fs roots
-found 172094545920 bytes used, error(s) found
-total csum bytes: 165679768
-total tree bytes: 3066789888
-total fs tree bytes: 2751315968
-total extent tree bytes: 112295936
-btree space waste bytes: 568660274
-file data blocks allocated: 8158426562560
-  referenced 597269540864
-[manjaro manjaro]# btrfs check --repair  --progress 
-/dev/mapper/vg_svelte-home
-enabling repair mode
-Checking filesystem on /dev/mapper/vg_svelte-home
-UUID: 93722fa7-7e8f-418a-a7ca-080aca8db94b
-checking extents [.]
-Fixed 0 roots.
-cache and super generation don't match, space cache will be invalidated
-checking fs roots [o]
-checking csums
-checking root refs
-found 172091723777 bytes used, no error found
-total csum bytes: 165679768
-total tree bytes: 2003206144
-total fs tree bytes: 1687732224
-total extent tree bytes: 112295936
-btree space waste bytes: 346177995
-file data blocks allocated: 5952940838912
-  referenced 474676633600
-[manjaro manjaro]#
+- When I pull one of the drives out (simulating a simple cable failure,
+which happens pretty often to me), the filesystem sometimes goes
+read-only. ???
+- But only after a while, and not always. ???
+- When I fix the cable problem (plug the device back), it's immediately
+"re-added" back. But I see no replication of the data I've written onto
+a degraded filesystem... Nothing shows any problems, so "my filesystem
+must be ok". ???
+- If I unmount the filesystem and then mount it back, I see all my
+recent changes lost (everything I wrote during the "degraded" period).
+- If I continue working with a degraded raid1 filesystem (even without
+damaging it further by re-adding the faulty device), after a while it
+won't mount at all, even with "-o degraded".
 
-----------------------------------------
+I can't wrap my head about all this. Either the kicked device should not
+be re-added, or it should be re-added "properly", or it should at least
+show some errors and not pretend nothing happened, right?..
+
+I must be missing something. Is there an explanation somewhere about
+what's really going on during those situations? Also, do I understand
+correctly that upon detecting a faulty device (a write error), nothing
+is done about it except logging an error into the 'btrfs device stats'
+report? No device kicking, no notification?.. And what about degraded
+filesystems - is it absolutely forbidden to work with them without
+converting them to a "single" filesystem first?..
+
+On Ubuntu 17.10, there's Linux 4.13.0-16 and btrfs-progs 4.12-1 .
+
 
 -- 
-Tom Hale
+darkpenguin

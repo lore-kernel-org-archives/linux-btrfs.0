@@ -1,74 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43575 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58550 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753336AbdLOKGV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 05:06:21 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 5B714ACAC
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 10:06:20 +0000 (UTC)
+        id S1750756AbdLPGmy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Dec 2017 01:42:54 -0500
+Subject: Re: [PATCH] btrfs: fix refcount_t usage when deleting
+ btrfs_delayed_nodes
+To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com
+References: <20171215195827.3952156-1-clm@fb.com>
 From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Remove unused btrfs_start_transaction_lflush function
-Date: Fri, 15 Dec 2017 12:06:18 +0200
-Message-Id: <1513332378-7193-1-git-send-email-nborisov@suse.com>
+Message-ID: <8f3cad0a-84f4-3402-f2a9-53c302aaf9f8@suse.com>
+Date: Sat, 16 Dec 2017 08:42:51 +0200
+MIME-Version: 1.0
+In-Reply-To: <20171215195827.3952156-1-clm@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 0e8c36a9fd81 ("Btrfs: fix lots of orphan inodes when the space
-is not enough") changed the way transaction reservation is made in
-btrfs_evict_node and as a result this function became unused. This has
-been the status quo for 5 years in which time no one noticed, so I'd
-say it's safe to assume it's unlikely it will ever be used again.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/transaction.c | 10 +---------
- fs/btrfs/transaction.h |  3 ---
- 2 files changed, 1 insertion(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5a8c2649af2f..b1793688c716 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -542,7 +542,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- 	 * and then we deadlock with somebody doing a freeze.
- 	 *
- 	 * If we are ATTACH, it means we just want to catch the current
--	 * transaction and commit it, so we needn't do sb_start_intwrite(). 
-+	 * transaction and commit it, so we needn't do sb_start_intwrite().
- 	 */
- 	if (type & __TRANS_FREEZABLE)
- 		sb_start_intwrite(fs_info->sb);
-@@ -658,14 +658,6 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 	return trans;
- }
- 
--struct btrfs_trans_handle *btrfs_start_transaction_lflush(
--					struct btrfs_root *root,
--					unsigned int num_items)
--{
--	return start_transaction(root, num_items, TRANS_START,
--				 BTRFS_RESERVE_FLUSH_LIMIT, true);
--}
--
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root)
- {
- 	return start_transaction(root, 0, TRANS_JOIN, BTRFS_RESERVE_NO_FLUSH,
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index c55e44560103..9b25b0ba92ee 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -187,9 +187,6 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
- 					struct btrfs_root *root,
- 					unsigned int num_items,
- 					int min_factor);
--struct btrfs_trans_handle *btrfs_start_transaction_lflush(
--					struct btrfs_root *root,
--					unsigned int num_items);
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root);
--- 
-2.7.4
+On 15.12.2017 21:58, Chris Mason wrote:
+> refcounts have a generic implementation and an asm optimized one.  The
+> generic version has extra debugging to make sure that once a refcount
+> goes to zero, refcount_inc won't increase it.
+                  ^^^^^^^^
 
+I guess you meant to say refcount_add
+> 
+> The btrfs delayed inode code wasn't expecting this, and we're tripping
+> over the warnings when the generic refcounts are used.  We ended up with
+> this race:
+> 
+> Process A                                         Process B
+>                                                   btrfs_get_delayed_node()
+> 						  spin_lock(root->inode_lock)
+> 						  radix_tree_lookup()
+> __btrfs_release_delayed_node()
+> refcount_dec_and_test(&delayed_node->refs)
+> our refcount is now zero
+> 						  refcount_add(2) <---
+> 						  warning here, refcount
+>                                                   unchanged
+> 
+> spin_lock(root->inode_lock)
+> radix_tree_delete()
+> 
+> With the generic refcounts, we actually warn again when process B above
+> tries to release his refcount because refcount_add() turned into a
+> no-op.
+> 
+> We saw this in production on older kernels without the asm optimized
+> refcounts.
+> 
+> The fix used here is to use refcount_inc_not_zero() to detect when the
+> object is in the middle of being freed and return NULL.  This is almost
+> always the right answer anyway, since we usually end up pitching the
+> delayed_node if it didn't have fresh data in it.
+> 
+> This also changes __btrfs_release_delayed_node() to remove the extra
+> check for zero refcounts before radix tree deletion.
+> btrfs_get_delayed_node() was the only path that was allowing refcounts
+> to go from zero to one.
+> 
+> Signed-off-by: Chris Mason <clm@fb.com>
+> Fixes: 6de5f18e7b0da
+> cc: <stable@vger.kernel.org> #4.12+
+> ---
+>  fs/btrfs/delayed-inode.c | 45 ++++++++++++++++++++++++++++++++++-----------
+>  1 file changed, 34 insertions(+), 11 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index 5d73f79..84c54af 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -87,6 +87,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
+>  
+>  	spin_lock(&root->inode_lock);
+>  	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
+> +
+>  	if (node) {
+>  		if (btrfs_inode->delayed_node) {
+>  			refcount_inc(&node->refs);	/* can be accessed */
+> @@ -94,9 +95,30 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
+>  			spin_unlock(&root->inode_lock);
+>  			return node;
+>  		}
+> -		btrfs_inode->delayed_node = node;
+> -		/* can be accessed and cached in the inode */
+> -		refcount_add(2, &node->refs);
+> +
+> +		/* it's possible that we're racing into the middle of
+> +		 * removing this node from the radix tree.  In this case,
+> +		 * the refcount was zero and it should never go back
+> +		 * to one.  Just return NULL like it was never in the radix
+> +		 * at all; our release function is in the process of removing
+> +		 * it.
+> +		 *
+> +		 * Some implementations of refcount_inc refuse to
+> +		 * bump the refcount once it has hit zero.  If we don't do
+> +		 * this dance here, refcount_inc() may decide to
+> +		 * just WARN_ONCE() instead of actually bumping the refcount.
+> +		 *
+> +		 * If this node is properly in the radix, we want to
+> +		 * bump the refcount twice, once for the inode
+> +		 * and once for this get operation.
+> +		 */
+> +		if (refcount_inc_not_zero(&node->refs)) {
+> +			refcount_inc(&node->refs);
+> +			btrfs_inode->delayed_node = node;
+> +		} else {
+> +			node = NULL;
+> +		}
+> +
+>  		spin_unlock(&root->inode_lock);
+>  		return node;
+>  	}
+> @@ -254,17 +276,18 @@ static void __btrfs_release_delayed_node(
+>  	mutex_unlock(&delayed_node->mutex);
+>  
+>  	if (refcount_dec_and_test(&delayed_node->refs)) {
+> -		bool free = false;
+>  		struct btrfs_root *root = delayed_node->root;
+> +
+>  		spin_lock(&root->inode_lock);
+> -		if (refcount_read(&delayed_node->refs) == 0) {
+> -			radix_tree_delete(&root->delayed_nodes_tree,
+> -					  delayed_node->inode_id);
+> -			free = true;
+> -		}
+> +		/*
+> +		 * once our refcount goes to zero, nobody is allowed to
+> +		 * bump it back up.  We can delete it now
+> +		 */
+> +		ASSERT(refcount_read(&delayed_node->refs) == 0);
+> +		radix_tree_delete(&root->delayed_nodes_tree,
+> +				  delayed_node->inode_id);
+>  		spin_unlock(&root->inode_lock);
+> -		if (free)
+> -			kmem_cache_free(delayed_node_cache, delayed_node);
+> +		kmem_cache_free(delayed_node_cache, delayed_node);
+>  	}
+>  }
+>  
+> 

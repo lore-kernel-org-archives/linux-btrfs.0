@@ -1,108 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:53612 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755977AbdLPCsZ (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:41173 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1756038AbdLPDVX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 21:48:25 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBG2lxNq190377
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 02:48:25 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2130.oracle.com with ESMTP id 2evthq013j-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 02:48:24 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBG2mNHO023779
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 02:48:23 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBG2mNlS018150
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Dec 2017 02:48:23 GMT
-From: Anand Jain <anand.jain@oracle.com>
+        Fri, 15 Dec 2017 22:21:23 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eQ32G-0006ns-77
+        for linux-btrfs@vger.kernel.org; Sat, 16 Dec 2017 04:21:12 +0100
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 6/6] btrfs: cleanup to make btrfs_free_stale_device() readable
-Date: Sat, 16 Dec 2017 10:48:57 +0800
-Message-Id: <20171216024857.14334-1-anand.jain@oracle.com>
-In-Reply-To: <20171215034739.26090-7-anand.jain@oracle.com>
-References: <20171215034739.26090-7-anand.jain@oracle.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: exclusive subvolume space missing
+Date: Sat, 16 Dec 2017 03:21:04 +0000 (UTC)
+Message-ID: <pan$daba3$1a46428e$8d941aa3$5ef253e8@cox.net>
+References: <20171202012324.GB20205@polanet.pl>
+        <0d3cd6f5-04ad-b080-6e62-7f25824860f1@gmx.com>
+        <20171202022153.GA7727@polanet.pl>
+        <af4ba078-8dc9-3f5d-b28c-7d72e0390294@gmx.com>
+        <20171202093301.GA28256@polanet.pl>
+        <65f1545c-7fc5-ee26-ed6b-cf1ed6e4f226@gmx.com>
+        <20171210112738.GA24090@polanet.pl>
+        <f9d281bb-e8a9-77c3-ab29-6fda9e5228ab@gmx.com>
+        <20171211114043.GA5097@polanet.pl>
+        <7ea3ab01-eb63-4875-7496-a4ad833c5854@gmx.com>
+        <20171215082214.GA13892@polanet.pl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now as the there is path in arg, so instead of reading the path from
-cur_device just get it from the caller, and so the purpose of cur_device
-is to skip the device, so rename it to skip_dev. Also drop the comment
-about different path being used for the same device, since now we will
-have cli to clean any device that's not a concern any more.
+Tomasz Pala posted on Fri, 15 Dec 2017 09:22:14 +0100 as excerpted:
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v3: add btrfs_free_stale_device() fn description, as suggested by
-    Nikolay
-    Fix line with longer than 80 char
-v2: btrfs_device::name is null when we have missing device and
-    unmounted. So we still need to check for dev->name.
+> I wonder how this one db-library behaves:
+> 
+> $  find . -name \*.sqlite | xargs ls -gGhS | head -n1
+> -rw-r--r-- 1  15M 2017-12-08 12:14
+> ./.mozilla/firefox/vni9ojqi.default/extension-data/ublock0.sqlite
+> 
+> $  ~/fiemap ./.mozilla/firefox/*.default/extension-data/ublock0.sqlite |
+> head -n1
+> File ./.mozilla/firefox/vni9ojqi.default/extension-data/ublock0.sqlite
+> has 128 extents:
+> 
+> 
+> At least every $HOME/{.{,c}cache,tmp} should be +C...
 
- fs/btrfs/volumes.c | 30 ++++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
+Many admins will put tmp, and sometimes cache or selected parts of it, on 
+tmpfs anyway... thereby both automatically clearing it on reboot, and 
+allowing enforced size control as necessary.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0bf3233859b6..6d3353ce50d8 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -607,8 +607,17 @@ static void pending_bios_fn(struct btrfs_work *work)
- 	run_scheduled_bios(device);
- }
- 
--
--static void btrfs_free_stale_device(struct btrfs_device *cur_dev, char *path)
-+/*
-+ * btrfs_free_stale_device()
-+ *  Search and remove all stale (devices which are not mounted) devices.
-+ *  When both inputs are NULL, it will search and release all stale devices.
-+ *  path:	Optional. When provided will it release all unmounted devices
-+ *  		matching this path only.
-+ *  skip_dev:	Optional. Will skip this device when searching for the stale
-+ *  		devices.
-+ */
-+static void btrfs_free_stale_device(const char *path,
-+				    struct btrfs_device *skip_dev)
- {
- 	struct btrfs_fs_devices *fs_devs, *tmp_fs_devs;
- 	struct btrfs_device *dev, *tmp_dev;
-@@ -622,20 +631,13 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev, char *path)
- 				         &fs_devs->devices, dev_list) {
- 			int not_found;
- 
--			if (cur_dev && (cur_dev == dev || !dev->name))
-+			if (skip_dev && skip_dev == dev)
-+				continue;
-+			if (path && !dev->name)
- 				continue;
- 
--			/*
--			 * Todo: This won't be enough. What if the same device
--			 * comes back (with new uuid and) with its mapper path?
--			 * But for now, this does help as mostly an admin will
--			 * either use mapper or non mapper path throughout.
--			 */
- 			rcu_read_lock();
--			if (cur_dev)
--				not_found = strcmp(rcu_str_deref(dev->name),
--						   rcu_str_deref(cur_dev->name));
--			else if (path)
-+			if (path)
- 				not_found = strcmp(rcu_str_deref(dev->name), path);
- 			else
- 				not_found = 0;
-@@ -784,7 +786,7 @@ static noinline int device_list_add(const char *path,
- 
- 		ret = 1;
- 		device->fs_devices = fs_devices;
--		btrfs_free_stale_device(device, NULL);
-+		btrfs_free_stale_device(path, device);
- 	} else if (!device->name || strcmp(device->name->str, path)) {
- 		/*
- 		 * When FS is already mounted.
+>> And if possible, use nocow for this file.
+> 
+> Actually, this should be officially advised to use +C for entire /var
+> tree and every other tree that might be exposed for hostile write
+> patterns, like /home or /tmp (if held on btrfs).
+> 
+> I'd say, that from security point of view the nocow should be default,
+> unless specified for mount or specific file... Currently, if I mount
+> with nocow, there is no way to whitelist trusted users or secure
+> location, and until btrfs-specific options could be handled per
+> subvolume, there is really no alternative.
+
+Nocow disables many reasons people run btrfs in the first place, 
+including checksumming and damage-detection, with auto-repair from other 
+copies where available (raid1/10 and dup modes primarily), as well as 
+btrfs transparent compression, for users using that.  Additionally, 
+snapshotting, another feature people use btrfs for, turns nocow into cow1 
+(cow the first time a block is written after a snapshot), since 
+snapshotting locks down the previous extent in ordered to maintain the 
+snapshotted reference.
+
+And given that any user can create a snapshot any time they want (even if 
+you lock down the btrfs executable, if they're malevolent users and not 
+locked to only running specifically whitelisted executables, they can 
+always get a copy of the executable elsewhere), and /home or individual 
+user subvols may well be auto-snapshotted already, setting nocow isn't 
+likely to be of much security value at all.
+
+So nocow is, as one regular wrote, most useful for "this really should go 
+on something other than btrfs, but I'm too lazy to set it up that way and 
+I'm already on btrfs, so the nocow band-aid is all I got.  And yes, I try 
+using my screwdriver as a hammer too, because that's what I have there 
+too!"
+
+In that sort of case, just use some other filesystem more appropriate to 
+the use-case, and you won't have to worry about btrfs issues, cow-
+triggered or otherwise, in the first place.
+
 -- 
-2.7.0
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

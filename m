@@ -1,10 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:43142 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:42158 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1757205AbdLPNtu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Dec 2017 08:49:50 -0500
-Message-ID: <1513432186.3428.6.camel@kernel.org>
-Subject: Re: [PATCH v2 05/19] afs: convert to new i_version API
+        id S1756981AbdLPNr0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 16 Dec 2017 08:47:26 -0500
 From: Jeff Layton <jlayton@kernel.org>
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
@@ -16,69 +14,37 @@ Cc: linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
         dsterba@suse.com, linux-integrity@vger.kernel.org,
         zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
         linux-afs@lists.infradead.org, dhowells@redhat.com
-Date: Sat, 16 Dec 2017 08:49:46 -0500
-In-Reply-To: <20171216134656.15561-6-jlayton@kernel.org>
+Subject: [PATCH v2 11/19] nfsd: convert to new i_version API
+Date: Sat, 16 Dec 2017 08:46:48 -0500
+Message-Id: <20171216134656.15561-12-jlayton@kernel.org>
+In-Reply-To: <20171216134656.15561-1-jlayton@kernel.org>
 References: <20171216134656.15561-1-jlayton@kernel.org>
-         <20171216134656.15561-6-jlayton@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2017-12-16 at 08:46 -0500, Jeff Layton wrote:
-> From: Jeff Layton <jlayton@redhat.com>
-> 
-> For AFS, it's generally treated as an opaque value, so we use the
-> *_raw variants of the API here.
-> 
-> Note that AFS has quite a different definition for this counter. AFS
-> only increments it on changes to the data, not for the metadata. We'll
-> need to reconcile that somehow if we ever want to present this to
-> userspace via statx.
-> 
-> Signed-off-by: Jeff Layton <jlayton@redhat.com>
-> ---
->  fs/afs/fsclient.c | 2 +-
->  fs/afs/inode.c    | 4 ++--
->  2 files changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/afs/fsclient.c b/fs/afs/fsclient.c
-> index b90ef39ae914..67ed9bb5fe31 100644
-> --- a/fs/afs/fsclient.c
-> +++ b/fs/afs/fsclient.c
-> @@ -124,7 +124,7 @@ static void xdr_decode_AFSFetchStatus(const __be32 **_bp,
->  		vnode->vfs_inode.i_ctime.tv_sec	= status->mtime_client;
->  		vnode->vfs_inode.i_mtime	= vnode->vfs_inode.i_ctime;
->  		vnode->vfs_inode.i_atime	= vnode->vfs_inode.i_ctime;
-> -		vnode->vfs_inode.i_version	= data_version;
-> +		inode_set_iversion_raw(&vnode->vfs_inode, data_version);
->  	}
->  
->  	expected_version = status->data_version;
-> diff --git a/fs/afs/inode.c b/fs/afs/inode.c
-> index 3415eb7484f6..af9577210a46 100644
-> --- a/fs/afs/inode.c
-> +++ b/fs/afs/inode.c
-> @@ -89,7 +89,7 @@ static int afs_inode_map_status(struct afs_vnode *vnode, struct key *key)
->  	inode->i_atime		= inode->i_mtime = inode->i_ctime;
->  	inode->i_blocks		= 0;
->  	inode->i_generation	= vnode->fid.unique;
-> -	inode->i_version	= vnode->status.data_version;
-> +	inode_set_iversion_raw(inode, vnode->status.data_version);
->  	inode->i_mapping->a_ops	= &afs_fs_aops;
->  
->  	read_sequnlock_excl(&vnode->cb_lock);
-> @@ -218,7 +218,7 @@ struct inode *afs_iget_autocell(struct inode *dir, const char *dev_name,
->  	inode->i_ctime.tv_nsec	= 0;
->  	inode->i_atime		= inode->i_mtime = inode->i_ctime;
->  	inode->i_blocks		= 0;
-> -	inode->i_version	= 0;
-> +	inode_set_iversion_raw(inode, 0);
->  	inode->i_generation	= 0;
->  
->  	set_bit(AFS_VNODE_PSEUDODIR, &vnode->flags);
+From: Jeff Layton <jlayton@redhat.com>
 
-TBH, we could just remove the i_version handling here. Nothing ever
-looks at the i_version field in AFS inodes.
+Mostly just making sure we use the "get" wrappers so we know when
+it is being fetched for later use.
+
+Signed-off-by: Jeff Layton <jlayton@redhat.com>
+---
+ fs/nfsd/nfsfh.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/nfsd/nfsfh.h b/fs/nfsd/nfsfh.h
+index 43f31cf49bae..7dedda5e3ed4 100644
+--- a/fs/nfsd/nfsfh.h
++++ b/fs/nfsd/nfsfh.h
+@@ -259,7 +259,7 @@ static inline u64 nfsd4_change_attribute(struct inode *inode)
+ 	chattr =  inode->i_ctime.tv_sec;
+ 	chattr <<= 30;
+ 	chattr += inode->i_ctime.tv_nsec;
+-	chattr += inode->i_version;
++	chattr += inode_query_iversion(inode);
+ 	return chattr;
+ }
+ 
 -- 
-Jeff Layton <jlayton@kernel.org>
+2.14.3
+

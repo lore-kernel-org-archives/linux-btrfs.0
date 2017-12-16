@@ -1,138 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:52532 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756599AbdLOXHn (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:53190 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1756557AbdLPCM5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 18:07:43 -0500
-Subject: Re: [4.14.3] btrfs out of space error
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Ian Kumlien <ian.kumlien@gmail.com>,
-        Roman Mamedov <rm@romanrm.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAA85sZvo8_39nhyoZP6SGiXTAEi4MCNPDLgqe75LNuUUwQSMqQ@mail.gmail.com>
- <20171215103423.0fd678a6@natsu>
- <CAA85sZsEf7T+9s_BKpzoFm4aNO6hHsXNTk86LQCOiFiuA3aJYw@mail.gmail.com>
- <88ff9cce-fa9b-ef4e-e1ea-062e13eec833@gmx.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <87dfadcb-f4d6-1a63-838c-0725d3a3dde6@mendix.com>
-Date: Sat, 16 Dec 2017 00:07:40 +0100
+        Fri, 15 Dec 2017 21:12:57 -0500
+Subject: Re: [PATCH 3/6] btrfs: make btrfs_free_stale_device() to iterate all
+ stales
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171215034739.26090-1-anand.jain@oracle.com>
+ <20171215034739.26090-4-anand.jain@oracle.com>
+ <72509d75-b878-a349-68f8-628cc8c0d5c4@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <e08cc875-0536-64c2-0022-9e8234a7e335@oracle.com>
+Date: Sat, 16 Dec 2017 10:13:30 +0800
 MIME-Version: 1.0
-In-Reply-To: <88ff9cce-fa9b-ef4e-e1ea-062e13eec833@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <72509d75-b878-a349-68f8-628cc8c0d5c4@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/15/2017 09:53 AM, Qu Wenruo wrote:
+
+
+On 12/15/2017 11:06 PM, Nikolay Borisov wrote:
 > 
 > 
-> On 2017年12月15日 16:36, Ian Kumlien wrote:
->> On Fri, Dec 15, 2017 at 6:34 AM, Roman Mamedov <rm@romanrm.net> wrote:
->>> On Fri, 15 Dec 2017 01:39:03 +0100
->>> Ian Kumlien <ian.kumlien@gmail.com> wrote:
->>>
->>>> Hi,
->>>>
->>>> Running a 4.14.3 kernel, this just happened, but there should have
->>>> been another 20 gigs or so available.
->>>>
->>>> The filesystem seems fine after a reboot though
->>>
->>> What are your mount options, and can you show the output of "btrfs fi
->>> df" and "btrfs fi us" for the filesystem? And what does
->>> "cat /sys/block/sdb/queue/rotational" return.
+> On 15.12.2017 05:47, Anand Jain wrote:
+>> Let the list iterator iterate further and find other stale
+>> devices and delete it. This is in preparation to add support
+>> for user land request-able stale devices cleanup.
 >>
->> It's a btrfs raid1 mirror of two ssd:s
->>
->> mount options was:
->> defaults,acl,noatime,space_cache,autodefrag,compress=lzo
->>
->> btrfs fi df /
->> Data, RAID1: total=459.25GiB, used=372.42GiB
->> Data, single: total=8.00MiB, used=0.00B
->> System, RAID1: total=8.00MiB, used=80.00KiB
->> System, single: total=4.00MiB, used=0.00B
->> Metadata, RAID1: total=6.00GiB, used=3.69GiB
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > 
-> Both meta and data has a lot of space let.
+> What is the lock protection of this function - uuid_mutex, it's not
+> really obvious. Perhaps adding a lockdep_assert_held for the correct
+> lock ? I guess David's earlier patch to document the locking in
+> volumes.c might shed some light on this one.
 
-The real question is how fragmented that free space is.
+  I remembered your earlier similar comments and I thought of adding
+  lockdep here, but as such I am also working on cleaning up uuid_mutext
+  and device_list_mutex I would like to include such lockdep assert in
+  those patches.
 
-Here's a good starting point to read up about the -o ssd behavior pre 4.14:
-
-https://www.spinics.net/lists/linux-btrfs/msg70622.html
-
->> Metadata, single: total=8.00MiB, used=0.00B
->> GlobalReserve, single: total=512.00MiB, used=0.00B
+Thanks, Anand
+>> ---
+>>   fs/btrfs/volumes.c | 20 +++++++++-----------
+>>   1 file changed, 9 insertions(+), 11 deletions(-)
 >>
->> btrfs fi us /
->> Overall:
->>     Device size: 930.54GiB
->>     Device allocated: 930.53GiB
->>     Device unallocated:   20.05MiB
->>     Device missing:      0.00B
->>     Used: 752.22GiB
->>     Free (estimated):   86.84GiB (min: 86.84GiB)
->>     Data ratio:       2.00
->>     Metadata ratio:       2.00
->>     Global reserve: 512.00MiB (used: 0.00B)
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 0e89409112d5..70db6a1d5658 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -610,19 +610,20 @@ static void pending_bios_fn(struct btrfs_work *work)
+>>   
+>>   static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+>>   {
+>> -	struct btrfs_fs_devices *fs_devs;
+>> -	struct btrfs_device *dev;
+>> +	struct btrfs_fs_devices *fs_devs, *tmp_fs_devs;
+>> +	struct btrfs_device *dev, *tmp_dev;
+>>   
+>>   	if (!cur_dev->name)
+>>   		return;
+>>   
+>> -	list_for_each_entry(fs_devs, &fs_uuids, list) {
+>> -		int del = 1;
+>> +	list_for_each_entry_safe(fs_devs, tmp_fs_devs, &fs_uuids, list) {
+>>   
+>>   		if (fs_devs->opened)
+>>   			continue;
+>>   
+>> -		list_for_each_entry(dev, &fs_devs->devices, dev_list) {
+>> +		list_for_each_entry_safe(dev, tmp_dev,
+>> +				         &fs_devs->devices, dev_list) {
+>> +			int not_found;
+>>   
+>>   			if (dev == cur_dev)
+>>   				continue;
+>> @@ -636,14 +637,12 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+>>   			 * either use mapper or non mapper path throughout.
+>>   			 */
+>>   			rcu_read_lock();
+>> -			del = strcmp(rcu_str_deref(dev->name),
+>> +			not_found = strcmp(rcu_str_deref(dev->name),
+>>   						rcu_str_deref(cur_dev->name));
+>>   			rcu_read_unlock();
+>> -			if (!del)
+>> -				break;
+>> -		}
+>> +			if (not_found)
+>> +				continue;
+>>   
+>> -		if (!del) {
+>>   			/* delete the stale device */
+>>   			if (fs_devs->num_devices == 1) {
+>>   				btrfs_sysfs_remove_fsid(fs_devs);
+>> @@ -654,7 +653,6 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+>>   				list_del(&dev->dev_list);
+>>   				free_device(dev);
+>>   			}
+>> -			break;
+>>   		}
+>>   	}
+>>   }
 >>
->> Data,single: Size:8.00MiB, Used:0.00B
->>    /dev/sdb2    8.00MiB
->>
->> Data,RAID1: Size:459.25GiB, Used:372.42GiB
->>    /dev/sdb2 459.25GiB
->>    /dev/sdc2 459.25GiB
->>
->> Metadata,single: Size:8.00MiB, Used:0.00B
->>    /dev/sdb2    8.00MiB
->>
->> Metadata,RAID1: Size:6.00GiB, Used:3.69GiB
->>    /dev/sdb2    6.00GiB
->>    /dev/sdc2    6.00GiB
->>
->> System,single: Size:4.00MiB, Used:0.00B
->>    /dev/sdb2    4.00MiB
->>
->> System,RAID1: Size:8.00MiB, Used:80.00KiB
->>    /dev/sdb2    8.00MiB
->>    /dev/sdc2    8.00MiB
->>
->> Unallocated:
->>    /dev/sdb2   24.00KiB
->>    /dev/sdc2   20.02MiB
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> Well, at least no new chunk can be allocated.
-
-Exactly.
-
-> In v4.15, Josef introduced a new inode reservation system, which I think
-> it would enhance metadata related reservation.
-> 
-> If you're hitting the problem quite frequently, please consider to try
-> v4.15-rc* to see if it solves the problem.
-> 
-> Despite of that, there should be no damage to your fs.
-> (except some unwritten data in buffer)
-> 
-> Thanks,
-> Qu
-> 
->>
->> And as expected:
->> cat /sys/block/sdb/queue/rotational
->> 0
->>
->>> I wonder if it's the same old "ssd allocation scheme" problem, and no
->>> balancing done in a long time or at all.
-
-Looks like it. So, yay, you're on 4.14 already. Now just do a full
-balance of your entire filesystem, only once (data only, metadata not
-needed) and then you can forget about this again.
-
->> I had something similar happen on a laptop a while ago - took a while
->> before i could get it back in order
->> (in that case i think it was actually a oops --- it kept saying "no
->> space left" and switched to read only even
->> if you removed a lot of data, invalidated the space cache and so on)
-
--- 
-Hans van Kranenburg

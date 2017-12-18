@@ -1,108 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:41245 "EHLO
-        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751110AbdLRHEn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 02:04:43 -0500
-From: Ravi Hale <tom@hale.ee>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
-Date: Mon, 18 Dec 2017 14:04:38 +0700
-Message-ID: <16068704b70.277a.1243720eb903aaa2f74f5d2a8df9f525@hale.ee>
-In-Reply-To: <19de77b6-0017-d172-993a-438d8bc9023d@gmx.com>
+Received: from mout.gmx.net ([212.227.17.22]:59007 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1758041AbdLRHSH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Dec 2017 02:18:07 -0500
+Subject: Re: How to repair errors only found with check --mode=lowmem
+To: Ravi Hale <tom@hale.ee>, linux-btrfs@vger.kernel.org
 References: <abb41cea-93eb-0e35-e9b2-195968fc4fd7@hale.ee>
  <19de77b6-0017-d172-993a-438d8bc9023d@gmx.com>
-Subject: Re: How to repair errors only found with check --mode=lowmem
+ <16068704b70.277a.1243720eb903aaa2f74f5d2a8df9f525@hale.ee>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <245e7c42-2ea6-7f03-c5d2-52a326a4ed7c@gmx.com>
+Date: Mon, 18 Dec 2017 15:17:58 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="UTF-8"
+In-Reply-To: <16068704b70.277a.1243720eb903aaa2f74f5d2a8df9f525@hale.ee>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="wwn9450EKAbMlINf8IamQE675Aro5HREA"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My bad. 4.14.
--- 
-Tom "Ravi" Hale
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--wwn9450EKAbMlINf8IamQE675Aro5HREA
+Content-Type: multipart/mixed; boundary="LrF2Fo44Hjitu48dHV5Mkxi0iGCDdxr0R";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Ravi Hale <tom@hale.ee>, linux-btrfs@vger.kernel.org
+Message-ID: <245e7c42-2ea6-7f03-c5d2-52a326a4ed7c@gmx.com>
+Subject: Re: How to repair errors only found with check --mode=lowmem
+References: <abb41cea-93eb-0e35-e9b2-195968fc4fd7@hale.ee>
+ <19de77b6-0017-d172-993a-438d8bc9023d@gmx.com>
+ <16068704b70.277a.1243720eb903aaa2f74f5d2a8df9f525@hale.ee>
+In-Reply-To: <16068704b70.277a.1243720eb903aaa2f74f5d2a8df9f525@hale.ee>
 
-Sent from my phone, please excuse brevity
-
-
-
-On 18 December 2017 08:10:18 Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-
->
->
-> On 2017年12月16日 23:41, Tom Hale wrote:
->> The following shows that errors are found with check --mode=lowmem, but
->> are not picked up without lowmem.
->
-> Btrfs-progs version please.
->
-> Depending on your btrfs-progs version, and the output, it's possible
-> that they're just false alerts and should be addressed in latest version.
->
-> Thanks,
-> Qu
->
->>
->> How would I go about fixing errors only reported by lowmem?
->>
->> ----------------------------------------
->>
->> [manjaro manjaro]# btrfs check --mode=lowmem --progress
->> /dev/mapper/vg_svelte-home
->> Checking filesystem on /dev/mapper/vg_svelte-home
->> UUID: 93722fa7-7e8f-418a-a7ca-080aca8db94b
->> ERROR: extent[691815358464, 11042816] referencer count mismatch (root:
->> 257, owner: 1869679, offset: 613974016) wanted: 1, have: 2
->> ERROR: extent[720156536832, 99430400] referencer count mismatch (root:
->> 257, owner: 758215, offset: 1610616832) wanted: 8, have: 379
->> ERROR: extent[720669147136, 268435456] referencer count mismatch (root:
->> 257, owner: 758215, offset: 4096) wanted: 86, have: 1021
->> ERROR: extent[720669147136, 268435456] referencer count mismatch (root:
->> 257, owner: 1767807, offset: 4096) wanted: 87, have: 1021
->> ERROR: extent[726724722688, 64069632] referencer count mismatch (root:
->> 257, owner: 1480823, offset: 99090432) wanted: 1, have: 5
->> ERROR: extent[737910194176, 134217728] referencer count mismatch (root:
->> 257, owner: 1480726, offset: 268435456) wanted: 1, have: 8
->> ERROR: extent[738077896704, 134217728] referencer count mismatch (root:
->> 257, owner: 1869696, offset: 402653184) wanted: 5, have: 8
->> ERROR: extent[744334426112, 268435456] referencer count mismatch (root:
->> 257, owner: 1767802, offset: 0) wanted: 111, have: 294
->> ERROR: extent[824948670464, 1671168] referencer count mismatch (root:
->> 257, owner: 2000876, offset: 247861248) wanted: 16, have: 26
->> ERROR: data extent[681550843904 8192] backref lost
->> ERROR: errors found in extent allocation tree or chunk allocation
->> cache and super generation don't match, space cache will be invalidated
->> ERROR: errors found in fs roots
->> found 172094545920 bytes used, error(s) found
->> total csum bytes: 165679768
->> total tree bytes: 3066789888
->> total fs tree bytes: 2751315968
->> total extent tree bytes: 112295936
->> btree space waste bytes: 568660274
->> file data blocks allocated: 8158426562560
->>  referenced 597269540864
->> [manjaro manjaro]# btrfs check --repair  --progress
->> /dev/mapper/vg_svelte-home
->> enabling repair mode
->> Checking filesystem on /dev/mapper/vg_svelte-home
->> UUID: 93722fa7-7e8f-418a-a7ca-080aca8db94b
->> checking extents [.]
->> Fixed 0 roots.
->> cache and super generation don't match, space cache will be invalidated
->> checking fs roots [o]
->> checking csums
->> checking root refs
->> found 172091723777 bytes used, no error found
->> total csum bytes: 165679768
->> total tree bytes: 2003206144
->> total fs tree bytes: 1687732224
->> total extent tree bytes: 112295936
->> btree space waste bytes: 346177995
->> file data blocks allocated: 5952940838912
->>  referenced 474676633600
->> [manjaro manjaro]#
->>
->> ----------------------------------------
->>
->
+--LrF2Fo44Hjitu48dHV5Mkxi0iGCDdxr0R
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
+
+On 2017=E5=B9=B412=E6=9C=8818=E6=97=A5 15:04, Ravi Hale wrote:
+> My bad. 4.14.
+
+Well, things get interesting now.
+
+Although there are several new lowmem fixes pending for v4.14.1, the
+backref mismatch bug should be addressed in v4.14.
+
+Anyway, would you please try this branch to see if it solves the false
+alerts?
+https://github.com/kdave/btrfs-progs/commits/devel
+
+If the devel branch still reports error, we still have good enough
+sample to dig further.
+
+>> ERROR: extent[691815358464, 11042816] referencer count mismatch
+(root: 257, owner: 1869679, offset: 613974016) wanted: 1, have: 2
+
+This is a pretty good sample, small enough to find out what's going on.
+Ff devel branch can't help you, would you please dump the output of the
+following commands?
+
+# btrfs-debug-tree -t extent /dev/mapper/vg_svelte-home |\
+  grep -C10 691815358464
+
+# btrfs-debug-tree -t 257 /dev/mapper/vg_svelte-home |\
+  grep -C20 1869679
+
+Please note that, the 2nd output may contain *FILENAMES*, so feel free
+to erase any file name if it's sensitive.
+
+Thanks,
+Qu
+
+
+--LrF2Fo44Hjitu48dHV5Mkxi0iGCDdxr0R--
+
+--wwn9450EKAbMlINf8IamQE675Aro5HREA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo3a6YXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qh5pAgAkV95RovosFXdXWhXiMaSXbbj
+OZDhfDZ32ymvIwO6zltc/1+u55mz3OegChePzyVFR5w0uGhW3sU8KrARygMobCyo
+XyMkzKxZzpq8SDMT5nTF5c6otc3bNXsT7OxO/ffwOUvxU/pMfwZBLVUBVXwSK5wU
+T46dDpEaTJPUkX1RdT/vXHFlGN/RaqAg1vCiRvCwxrTQGpKTIqYmkqvJff/5MJmz
+Sdsl8ckOj3cGbY4Zz9r4ipAq6LICIgEogZeuVYYTw8sEs+cnD3ARsaRWAiUIEPnO
+j5u3/u4HQjJerVZYMKW/ScgWMMO1d88ReMDxuaGmsPtNw7LYjGn1hALt4a4dJg==
+=W59E
+-----END PGP SIGNATURE-----
+
+--wwn9450EKAbMlINf8IamQE675Aro5HREA--

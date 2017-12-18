@@ -1,27 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f173.google.com ([74.125.82.173]:39903 "EHLO
-        mail-ot0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757685AbdLRCue (ORCPT
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:60120 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1757685AbdLRDDV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 17 Dec 2017 21:50:34 -0500
-Received: by mail-ot0-f173.google.com with SMTP id v21so12256883oth.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 17 Dec 2017 18:50:34 -0800 (PST)
-MIME-Version: 1.0
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 17 Dec 2017 19:50:33 -0700
-Message-ID: <CAJCQCtScin-9AomqOwiSTwj=5rCeJW12jv8rv8taxwUq+AX5Lw@mail.gmail.com>
-Subject: btrfs check lowmem crash, backref.c:466: __add_missing_keys:
+        Sun, 17 Dec 2017 22:03:21 -0500
+Subject: Re: btrfs check lowmem crash, backref.c:466: __add_missing_keys:
  Assertion `ref->root_id` failed
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAJCQCtScin-9AomqOwiSTwj=5rCeJW12jv8rv8taxwUq+AX5Lw@mail.gmail.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <b580f4c4-3eb0-9203-75b5-c918f15d12cf@cn.fujitsu.com>
+Date: Mon, 18 Dec 2017 11:07:22 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtScin-9AomqOwiSTwj=5rCeJW12jv8rv8taxwUq+AX5Lw@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is v4.14.
+Hi,
 
-I've filed a bug which contains the build steps, versions. It's
-crashing on all volumes I try it on so far.
+On 12/18/2017 10:50 AM, Chris Murphy wrote:
+> This is v4.14.
+> 
+> I've filed a bug which contains the build steps, versions. It's
+> crashing on all volumes I try it on so far.
+> 
+> 
+
+It was fixed by Qu's patch
+   btrfs-progs: backref: Allow backref walk to handle direct parent ref
+which is available on his github
+https://github.com/adam900710/btrfs-progs/tree/lowmem_fix
+
+Thanks,
+Su
 
 
--- 
-Chris Murphy

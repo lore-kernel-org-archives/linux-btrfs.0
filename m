@@ -1,55 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:44849 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933204AbdLRRel (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 12:34:41 -0500
-Received: by mail-lf0-f42.google.com with SMTP id x204so18648662lfa.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Dec 2017 09:34:40 -0800 (PST)
-Received: from [192.168.1.7] (ppp109-252-90-255.pppoe.spdop.ru. [109.252.90.255])
-        by smtp.gmail.com with ESMTPSA id n10sm2876026lfn.71.2017.12.18.09.34.38
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 18 Dec 2017 09:34:38 -0800 (PST)
-Subject: Re: btrfs subvolume list for not mounted filesystem?
-To: linux-btrfs@vger.kernel.org
-References: <20171218164941.GA22020@rus.uni-stuttgart.de>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <e0054e4f-1b80-ecd0-791b-ec146ecbc822@gmail.com>
-Date: Mon, 18 Dec 2017 20:34:38 +0300
+Received: from pepin.polanet.pl ([193.34.52.2]:42028 "EHLO pepin.polanet.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932764AbdLRTnw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Dec 2017 14:43:52 -0500
+Date: Mon, 18 Dec 2017 20:43:51 +0100
+From: Tomasz Pala <gotar@polanet.pl>
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Unexpected raid1 behaviour
+Message-ID: <20171218194351.GA25245@polanet.pl>
+References: <5A357909.8010206@yandex.ru>
+ <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
+ <23094.37316.66397.431081@tree.ty.sabi.co.uk>
+ <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20171218164941.GA22020@rus.uni-stuttgart.de>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-18.12.2017 19:49, Ulli Horlacher пишет:
-> I want to mount an alternative subvolume of a btrfs filesystem.
-> I can list the subvolumes when the filesystem is mounted, but how do I
-> know them, when the filesystem is not mounted? Is there a query command?
-> 
-> root@xerus:~# mount | grep /test
-> /dev/sdd4 on /test type btrfs (rw,relatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
-> 
-> root@xerus:~# btrfs subvolume list /test
-> ID 258 gen 156 top level 5 path tux/zz
-> ID 259 gen 156 top level 5 path tux/z1
-> ID 260 gen 156 top level 5 path tmp/zz
-> ID 261 gen 19 top level 260 path tmp/zz/z1
-> ID 269 gen 156 top level 5 path tux/test
-> ID 271 gen 129 top level 269 path tux/test/.snapshot/2017-12-02_1341.test
-> 
-> root@xerus:~# umount /test
-> 
-> root@xerus:~# btrfs subvolume list /dev/sdd4
-> ERROR: not a btrfs filesystem: /dev/sdd4
-> ERROR: can't access '/dev/sdd4'
-> 
-> 
-> 
+On Mon, Dec 18, 2017 at 08:06:57 -0500, Austin S. Hemmelgarn wrote:
 
-btrfs-debug-tree -r /dev/sdd4
+> The fact is, the only cases where this is really an issue is if you've 
+> either got intermittently bad hardware, or are dealing with external 
 
-(or in more recent btrfs-progs, "btrfs inspect-internal dump-tree") will
-show subvolume IDs (as ROOT_ITEM); I'm not sure of there is simple way
-to resolve subvolume path names on unmounted device.
+Well, the RAID1+ is all about the failing hardware.
+
+> storage devices.  For the majority of people who are using multi-device 
+> setups, the common case is internally connected fixed storage devices 
+> with properly working hardware, and for that use case, it works 
+> perfectly fine.
+
+If you're talking about "RAID"-0 or storage pools (volume management)
+that is true.
+But if you imply, that RAID1+ "works perfectly fine as long as hardware
+works fine" this is fundamentally wrong. If the hardware needs to work
+properly for the RAID to work properly, noone would need this RAID in
+the first place.
+
+> that BTRFS should not care.  At the point at which a device is dropping 
+> off the bus and reappearing with enough regularity for this to be an 
+> issue, you have absolutely no idea how else it's corrupting your data, 
+> and support of such a situation is beyond any filesystem (including ZFS).
+
+Support for such situation is exactly what RAID performs. So don't blame
+people for expecting this to be handled as long as you call the
+filesystem feature a 'RAID'.
+
+If this feature is not going to mitigate hardware hiccups by design (as
+opposed to "not implemented yet, needs some time", which is perfectly
+understandable), just don't call it 'RAID'.
+
+All the features currently working, like bit-rot mitigation for
+duplicated data (dup/raid*) using checksums, are something different
+than RAID itself. RAID means "survive failure of N devices/controllers"
+- I got one "RAID1" stuck in r/o after degraded mount, not nice... Not
+_expected_ to happen after single disk failure (without any reappearing).
+
+-- 
+Tomasz Pala <gotar@pld-linux.org>

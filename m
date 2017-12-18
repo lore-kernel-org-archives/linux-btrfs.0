@@ -1,127 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f46.google.com ([209.85.214.46]:41261 "EHLO
-        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752789AbdLRNcB (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:53439 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750733AbdLRNiK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 08:32:01 -0500
-Received: by mail-it0-f46.google.com with SMTP id x28so28384772ita.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Dec 2017 05:32:00 -0800 (PST)
-Subject: Re: Unexpected raid1 behaviour
-To: Dark Penguin <darkpenguin@yandex.ru>, linux-btrfs@vger.kernel.org
-References: <5A357909.8010206@yandex.ru>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5e9df444-0cbc-5854-2058-3435efe78c59@gmail.com>
-Date: Mon, 18 Dec 2017 08:31:56 -0500
+        Mon, 18 Dec 2017 08:38:10 -0500
+Subject: Re: [PATCH v3] btrfs: handle dynamically reappearing missing device
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <20171217030458.25885-1-anand.jain@oracle.com>
+ <59867b1d-4e24-2a7f-6e99-d10bc068d919@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <27282a26-e0fe-3ab8-493e-924c0ec4b5a6@oracle.com>
+Date: Mon, 18 Dec 2017 21:37:45 +0800
 MIME-Version: 1.0
-In-Reply-To: <5A357909.8010206@yandex.ru>
+In-Reply-To: <59867b1d-4e24-2a7f-6e99-d10bc068d919@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-12-16 14:50, Dark Penguin wrote:
-> Could someone please point me towards some read about how btrfs handles
-> multiple devices? Namely, kicking faulty devices and re-adding them.
+
+
+On 12/18/2017 08:01 PM, Nikolay Borisov wrote:
 > 
-> I've been using btrfs on single devices for a while, but now I want to
-> start using it in raid1 mode. I booted into an Ubuntu 17.10 LiveCD and
-> tried to see how does it handle various situations. The experience left
-> me very surprised; I've tried a number of things, all of which produced
-> unexpected results.
-Expounding a bit on Duncan's answer with some more specific info.
 > 
-> I create a btrfs raid1 filesystem on two hard drives and mount it.
+> On 17.12.2017 05:04, Anand Jain wrote:
+>> If the device is not present at the time of (-o degrade) mount,
+>> the mount context will create a dummy missing struct btrfs_device.
+>> Later this device may reappear after the FS is mounted and
+>> then device is included in the device list but it missed the
+>> open_device part. So this patch handles that case by going
+>> through the open_device steps which this device missed and finally
+>> adds to the device alloc list.
+>>
+>> So now with this patch, to bring back the missing device user can run,
+>>
+>>     btrfs dev scan <path-of-missing-device>
+>>
+>> Without this kernel patch, even though 'btrfs fi show' and 'btrfs
+>> dev ready' would tell you that missing device has reappeared
+>> successfully but actually in kernel FS layer it didn't.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>> This patch needs:
+>>   [PATCH 0/4]  factor __btrfs_open_devices()
+>> v3:
+>> The check for missing in the device_list_add() is now a another
+>> patch as its not related.
+>>   btrfs: fix inconsistency during missing device rejoin
+>>
+>> v2:
+>> Add more comments.
+>> Add more change log.
+>> Add to check if device missing is set, to handle the case
+>> dev open fail and user will rerun the dev scan.
+>>
+>>   fs/btrfs/volumes.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+>>   1 file changed, 55 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 93d65c72b731..5c3190c65f81 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -812,8 +812,61 @@ static noinline int device_list_add(const char *path,
+>>   		rcu_string_free(device->name);
+>>   		rcu_assign_pointer(device->name, name);
+>>   		if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
+>> -			fs_devices->missing_devices--;
+>> -			clear_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state);
+>> +			int ret;
+>> +			struct btrfs_fs_info *fs_info = fs_devices->fs_info;
+>> +			fmode_t fmode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
+>> +
+>> +			if (btrfs_super_flags(disk_super) &
+>> +					BTRFS_SUPER_FLAG_SEEDING)
+>> +				fmode &= ~FMODE_WRITE;
+>> +
+>> +			/*
+>> +			 * Missing can be set only when FS is mounted.
+>> +			 * So here its always fs_devices->opened > 0 and most
+>> +			 * of the struct device members are already updated by
+>> +			 * the mount process even if this device was missing, so
+>> +			 * now follow the normal open device procedure for this
+>> +			 * device. The scrub will take care of filling the
 > 
-> - When I pull one of the drives out (simulating a simple cable failure,
-> which happens pretty often to me), the filesystem sometimes goes
-> read-only. ??? > - But only after a while, and not always. ???
-The filesystem won't go read-only until it hits an I/O error, and it's 
-non-deterministic how long it will be before that happens on an idle 
-filesystem that only sees read access (because if all the files that are 
-being read are in the page cache).
-> - When I fix the cable problem (plug the device back), it's immediately
-> "re-added" back. But I see no replication of the data I've written onto
-> a degraded filesystem... Nothing shows any problems, so "my filesystem
-> must be ok". ???
-One of two things happens in this case, and why there is no re-sync is 
-dependent on which happens, but both ultimately have to do with the fact 
-that BTRFS assumes I/O errors are from device failures, and are at worst 
-transient.  Either:
+> So how is scrub supposed to be initiated - automatically or by the user
+> since it's assumed he will have seen the message that a device has been
+> added? Reading the comment I'd expect scrub is kicked automatically.
 
-1. The device reappears with the same name. This happens if the time it 
-was disconnected is less than the kernel's command timeout (30 seconds 
-by default).  In this case, BTRFS may not even notice that the device 
-was gone (and if it doesn't, then a re-sync isn't necessary, since it 
-will retry all the writes it needs to).  In this case, BTRFS assumes the 
-I/O errors were temporary, and keeps using the device after logging the 
-errors.  If this happens, then you need to manually re-sync things by 
-scrubbing the filesystem (or balancing, but scrubbing is preferred as it 
-should run quicker and will only re-write what is actually needed).
-2. The device reappears with a different name.  In this case, the device 
-was gone long enough that the block layer is certain it was 
-disconnected, and thus when it reappears and BTRFS still holds open 
-references to the old device node, it gets a new device node.  In this 
-case, if the 'new' device is scanned, BTRFS will recognize it as part of 
-the FS, but will keep using the old device node.  The correct fix here 
-is to unmount the filesystem, re-scan all devices, and then remount the 
-filesystem and manually re-sync with a scrub.
+  Oh. Right. it isn't a good idea to reset degraded option (below) in
+  this thread, instead let scrub do it. Then user can notice too. In fact
+  even if all the devices are present but if chunks does not match to
+  what user has configured for, then its a degraded volume.
 
-> - If I unmount the filesystem and then mount it back, I see all my
-> recent changes lost (everything I wrote during the "degraded" period).
-I'm not quite sure about this, but I think BTRFS is rolling back to the 
-last common generation number for some reason.
+  When I was resetting the degraded option below. I had that question,
+  but now the thought process and reasoning is satisfying. Will update.
+  Thanks.
 
-> - If I continue working with a degraded raid1 filesystem (even without
-> damaging it further by re-adding the faulty device), after a while it
-> won't mount at all, even with "-o degraded".
-This is (probably) a known bug relating to chunk handling.  In a two 
-device volume using a raid1 profile with a missing device, older kernels 
-(I don't remember when the fix went in, but I could have sworn it was in 
-4.13) will (erroneously) generate single-profile chunks when they need 
-to allocate new chunks.  When you then go to mount the filesystem, the 
-check for the degraded mount-ability of the FS fails because there is a 
-device missing and single profile chunks.
 
-Now, even without that bug, it's never a good idea t0o run a storage 
-array degraded for any extended period of time, regardless of what type 
-of array it is (BTRFS, ZFS, MD, LVM, or even hardware RAID).  By keeping 
-it in 'degraded' mode, you're essentially telling the system that the 
-array will be fixed in a reasonably short time-frame, which impacts how 
-it handles the array.  If you're not going to fix it almost immediately, 
-you should almost always reshape the array to account for the missing 
-device if at all possible, as that will improve relative data safety and 
-generally get you better performance than running degraded will.
+>> +			 * missing stripes for raid56 and balance for raid1 and
+>> +			 * raid10.
+>> +			 */
+>> +			ASSERT(fs_devices->opened);
+>> +			mutex_lock(&fs_devices->device_list_mutex);
+>> +			mutex_lock(&fs_info->chunk_mutex);
+>> +			/*
+>> +			 * As of now do not fail the dev scan thread for the
+>> +			 * reason that btrfs_open_one_device() fails and keep
+>> +			 * the legacy dev scan requisites as it is.
+>> +			 * And reset missing only if open is successful, as
+>> +			 * user can rerun dev scan after fixing the device
+>> +			 * for which the device open (below) failed.
+>> +			 */
+>> +			ret = btrfs_open_one_device(fs_devices, device, fmode,
+>> +							fs_info->bdev_holder);
+>> +			if (!ret) {
+>> +				fs_devices->missing_devices--;
+>> +				clear_bit(BTRFS_DEV_STATE_MISSING,
+>> +							&device->dev_state);
+>> +				btrfs_clear_opt(fs_info->mount_opt, DEGRADED);  <-- 
+
+
+>> +				btrfs_warn(fs_info,
+>> +					"BTRFS: device %s devid %llu joined\n",
+>> +					path, devid);
 > 
-> I can't wrap my head about all this. Either the kicked device should not
-> be re-added, or it should be re-added "properly", or it should at least
-> show some errors and not pretend nothing happened, right?..
-BTRFS is not the best at error reporting at the moment.  If you check 
-the output of `btrfs device stats` for that filesystem though, it should 
-show non-zero values in the error counters (note that these counters are 
-cumulative, so they are counts since the last time they were reset (or 
-when the FS was created if they have never been reset).  Similarly, 
-scrub should report errors, there should be error messages in the kernel 
-log, and switching the FS to read-only mode _is_ technically reporting 
-an error, as that's standard error behavior for most sensible 
-filesystems (ext[234] being the notable exception, they just continue as 
-if nothing happened).
+> why do we have to warn, this is considered to be a "good" thing so
+> perhaps btrfs_info?
+
+  you are right, it should be btrfs_info. Will change.
+
+>> +			}
+>> +
+>> +			if (test_bit(BTRFS_DEV_STATE_WRITEABLE,
+>> +				     &device->dev_state) &&
 > 
-> I must be missing something. Is there an explanation somewhere about
-> what's really going on during those situations? Also, do I understand
-> correctly that upon detecting a faulty device (a write error), nothing
-> is done about it except logging an error into the 'btrfs device stats'
-> report? No device kicking, no notification?.. And what about degraded
-> filesystems - is it absolutely forbidden to work with them without
-> converting them to a "single" filesystem first?..
-As mentioned above, going read-only _is_ a notification that something 
-is wrong.  Translating that (and the error counter increase, and the 
-kernel log messages) into a user visible notification is not really the 
-job of BTRFS, especially considering that no other filesystem or device 
-manager does so either (yes, you can get nice notifications from LVM, 
-but they aren't _from_ LVM itself, they're from other software that 
-watches for errors, and the same type of software works just fine for 
-BTRFS too).  If you're this worried about it and don't want to keep on 
-top of it yourself by monitoring things manually, you really need to 
-look into a tool like monit [1] that can handle this for you.
+> Can a device that is missing really be writable? So we have 2 cases
+> where we add a missing device:
+> 
+> 1. Is via add_missing_dev which sets dev_state_missing so writable will
+> be false.
+> 
+> 2. In read_one_dev when we have successfully found the device from
+> btrfs_find_device but it doesn't have a ->bdev member, in which case we
+> don't really clear the writable fact (but perhaps we should) ?
+
+  Writeable flag is more about seed device which isn't a writeable
+  device. btrfs_open_one_device() does reset writeable flag.
+
+> Overall the lifecycle of these flags is not very clear ;\
+
+  Yep. Its bit overlapping and needs cleanup.
+
+Thanks, Anand
 
 
-[1] https://mmonit.com/monit/
+>> +			    !test_bit(BTRFS_DEV_STATE_REPLACE_TGT,
+>> +				      &device->dev_state)) {
+>> +				fs_devices->total_rw_bytes +=
+>> +							device->total_bytes;
+>> +				atomic64_add(device->total_bytes -
+>> +						device->bytes_used,
+>> +						&fs_info->free_chunk_space);
+>> +			}
+>> +			set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
+>> +							&device->dev_state);
+>> +			mutex_unlock(&fs_info->chunk_mutex);
+>> +			mutex_unlock(&fs_devices->device_list_mutex);
+>>   		}
+>>   	}
+>>   
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:42038 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:42100 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1758927AbdLRM3R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 07:29:17 -0500
+        id S933363AbdLRMZX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Dec 2017 07:25:23 -0500
 From: Ming Lei <ming.lei@redhat.com>
 To: Jens Axboe <axboe@fb.com>, Christoph Hellwig <hch@infradead.org>,
         Alexander Viro <viro@zeniv.linux.org.uk>,
@@ -13,63 +13,56 @@ Cc: Huang Ying <ying.huang@intel.com>, linux-kernel@vger.kernel.org,
         "Darrick J . Wong" <darrick.wong@oracle.com>, Coly Li <colyli@suse.de>,
         Filipe Manana <fdmanana@gmail.com>, Ming Lei <ming.lei@redhat.com>,
         Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH V4 24/45] btrfs: use segment_last_page to get bio's last page
-Date: Mon, 18 Dec 2017 20:22:26 +0800
-Message-Id: <20171218122247.3488-25-ming.lei@redhat.com>
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Liu Bo <bo.li.liu@oracle.com>
+Subject: [PATCH V4 10/45] btrfs: avoid to access bvec table directly for a cloned bio
+Date: Mon, 18 Dec 2017 20:22:12 +0800
+Message-Id: <20171218122247.3488-11-ming.lei@redhat.com>
 In-Reply-To: <20171218122247.3488-1-ming.lei@redhat.com>
 References: <20171218122247.3488-1-ming.lei@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Preparing for supporting multipage bvec.
+Commit 17347cec15f919901c90(Btrfs: change how we iterate bios in endio)
+mentioned that for dio the submitted bio may be fast cloned, we
+can't access the bvec table directly for a cloned bio, so use
+bio_get_first_bvec() to retrieve the 1st bvec.
 
 Cc: Chris Mason <clm@fb.com>
 Cc: Josef Bacik <jbacik@fb.com>
 Cc: David Sterba <dsterba@suse.com>
 Cc: linux-btrfs@vger.kernel.org
+Cc: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Acked: David Sterba <dsterba@suse.com>
 Signed-off-by: Ming Lei <ming.lei@redhat.com>
 ---
- fs/btrfs/compression.c | 5 ++++-
- fs/btrfs/extent_io.c   | 5 +++--
- 2 files changed, 7 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 15430c9fc6d7..1a62725a5f08 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -412,8 +412,11 @@ blk_status_t btrfs_submit_compressed_write(struct inode *inode, u64 start,
- static u64 bio_end_offset(struct bio *bio)
- {
- 	struct bio_vec *last = bio_last_bvec_all(bio);
-+	struct bio_vec bv;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4d5cb6e93c80..cb1e2d201434 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8015,6 +8015,7 @@ static blk_status_t dio_read_error(struct inode *inode, struct bio *failed_bio,
+ 	int segs;
+ 	int ret;
+ 	blk_status_t status;
++	struct bio_vec bvec;
  
--	return page_offset(last->bv_page) + last->bv_len + last->bv_offset;
-+	segment_last_page(last, &bv);
-+
-+	return page_offset(bv.bv_page) + bv.bv_len + bv.bv_offset;
- }
+ 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
  
- static noinline int add_ra_bio_pages(struct inode *inode,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 6984e0d5b00d..f466289b66a3 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2726,11 +2726,12 @@ static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
- {
- 	blk_status_t ret = 0;
- 	struct bio_vec *bvec = bio_last_bvec_all(bio);
--	struct page *page = bvec->bv_page;
-+	struct bio_vec bv;
- 	struct extent_io_tree *tree = bio->bi_private;
- 	u64 start;
+@@ -8030,8 +8031,9 @@ static blk_status_t dio_read_error(struct inode *inode, struct bio *failed_bio,
+ 	}
  
--	start = page_offset(page) + bvec->bv_offset;
-+	segment_last_page(bvec, &bv);
-+	start = page_offset(bv.bv_page) + bv.bv_offset;
+ 	segs = bio_segments(failed_bio);
++	bio_get_first_bvec(failed_bio, &bvec);
+ 	if (segs > 1 ||
+-	    (failed_bio->bi_io_vec->bv_len > btrfs_inode_sectorsize(inode)))
++	    (bvec.bv_len > btrfs_inode_sectorsize(inode)))
+ 		read_mode |= REQ_FAILFAST_DEV;
  
- 	bio->bi_private = NULL;
- 	bio_get(bio);
+ 	isector = start - btrfs_io_bio(failed_bio)->logical;
 -- 
 2.9.5
 

@@ -1,88 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:52999 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750705AbdLZF57 (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 26 Dec 2017 00:57:59 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: [PATCH] fstests: btrfs: Add new 'limit' test group for btrfs
-Date: Tue, 26 Dec 2017 13:57:44 +0800
-Message-Id: <20171226055744.27697-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:59144 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750773AbdLRKG3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Dec 2017 05:06:29 -0500
+Subject: Re: [PATCH] btrfs: Fix memory leak on multiple mounts
+To: linux-btrfs@vger.kernel.org
+References: <1513591426-2349-1-git-send-email-nborisov@suse.com>
+Cc: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <37bc650d-a3d9-f626-7670-2550a0eb4c64@suse.com>
+Date: Mon, 18 Dec 2017 12:06:27 +0200
+MIME-Version: 1.0
+In-Reply-To: <1513591426-2349-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs qgroup also supports to limit the usage of specified qgroups.
 
-It's possible to enable qgroup but doesn't enable limit.
-(Most user won't use qgroup limit for various problems)
 
-So add a new test group 'limit' for btrfs, as a subset of existing
-'qgroup' group.
+On 18.12.2017 12:03, Nikolay Borisov wrote:
+> Currently if a mounted-btrfs instance is mounted for the 2nd time
+> without first unmounting the first instance then we hit a memory leak
+> in btrfs_mount_root due to the fs_info of the acquired superblock is
+> different than the newly allocated fs info. Fix this by specifically
+> checking if the fs_info instance of the newly acquired superblock is
+> the same as ours and free it if not.
+> 
+> Reproducer:
+> 
+> mount /dev/vdc /media/scratch
+> mount /dev/vdc /media/scratch2 <- memory leak hit
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/group | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+This one fixes:
 
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index f68abf4d6655..6324c54d7699 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -24,7 +24,7 @@
- 019 auto quick send
- 020 auto quick replace
- 021 auto quick balance defrag
--022 auto qgroup
-+022 auto qgroup limit
- 023 auto
- 024 auto quick compress
- 025 auto quick send clone
-@@ -44,7 +44,7 @@
- 039 auto quick send
- 040 auto quick send
- 041 auto quick compress
--042 auto quick qgroup
-+042 auto quick qgroup limit
- 043 auto quick send
- 044 auto quick send
- 045 auto quick send
-@@ -101,7 +101,7 @@
- 096 auto quick clone
- 097 auto quick send clone
- 098 auto quick metadata clone
--099 auto quick qgroup
-+099 auto quick qgroup limit
- 100 auto replace
- 101 auto replace
- 102 auto quick metadata enospc
-@@ -128,7 +128,7 @@
- 123 auto quick qgroup
- 124 auto replace
- 125 auto replace
--126 auto quick qgroup
-+126 auto quick qgroup limit
- 127 auto quick send
- 128 auto quick send
- 129 auto quick send
-@@ -141,7 +141,7 @@
- 136 auto convert
- 137 auto quick send
- 138 auto compress
--139 auto qgroup
-+139 auto qgroup limit
- 140 auto quick
- 141 auto quick
- 142 auto quick
-@@ -155,7 +155,7 @@
- 150 auto quick dangerous
- 151 auto quick
- 152 auto quick metadata qgroup send
--153 auto quick qgroup
-+153 auto quick qgroup limit
- 154 auto quick
- 155 auto quick send
- 156 auto quick trim
--- 
-2.15.1
+4da82a9e60a1 btrfs: add btrfs_mount_root() and new file_system_type
 
+Which seems to be in for-next only.
+
+> ---
+>  fs/btrfs/super.c | 6 +++++-
+>  1 file changed, 5 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index e57eb6e70278..ea3bca85be44 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1612,7 +1612,11 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+>  		goto error_sec_opts;
+>  	}
+>  
+> -	fs_info = btrfs_sb(s);
+> +	if (btrfs_sb(s) != fs_info) {
+> +		free_fs_info(fs_info);
+> +		fs_info = btrfs_sb(s);
+> +	}
+> +
+>  	error = setup_security_options(fs_info, s, &new_sec_opts);
+>  	if (error) {
+>  		deactivate_locked_super(s);
+> 

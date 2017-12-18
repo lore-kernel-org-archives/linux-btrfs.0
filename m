@@ -1,213 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46162 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752848AbdLRMwj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 07:52:39 -0500
-Subject: Re: [PATCH RESEND 1/2] btrfs: handle volume split brain scenario
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171217135247.1838-1-anand.jain@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <91c1bbc1-f543-b1e6-d9e4-4243db066bcc@suse.com>
-Date: Mon, 18 Dec 2017 14:52:37 +0200
+Received: from mail-it0-f50.google.com ([209.85.214.50]:35559 "EHLO
+        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750916AbdLRNHA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Dec 2017 08:07:00 -0500
+Received: by mail-it0-f50.google.com with SMTP id f143so27556126itb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Dec 2017 05:07:00 -0800 (PST)
+Subject: Re: Unexpected raid1 behaviour
+To: Peter Grandi <pg@btrfs.list.sabi.co.UK>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <5A357909.8010206@yandex.ru>
+ <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
+ <23094.37316.66397.431081@tree.ty.sabi.co.uk>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
+Date: Mon, 18 Dec 2017 08:06:57 -0500
 MIME-Version: 1.0
-In-Reply-To: <20171217135247.1838-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <23094.37316.66397.431081@tree.ty.sabi.co.uk>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 17.12.2017 15:52, Anand Jain wrote:
-> In two device configs of RAID1/RAID5 where one device can be missing
-> in the degraded mount, or in the configs such as four devices RAID6
-> where two devices can be missing, in these type of configs it can form
-> two separate set of devices where each of the set can be mounted without
-> the other set. And if user does that and writes the data, one set would
-> have to loose the data. As of now we just loose the data without the
-> user consent depending on the SB generation number which user won't have
-> any meaningful interpretations.
-
-This is rather hard to parse something like:
-
-In raid configs RAID1/RAID5/RAID6 it's possible to have some devices
-missing which would render btrfs to be mounted in degraded state but
-still be operational. In those cases it's possible (albeit highly
-undesirable) that the degraded and missing parts of the filesystem are
-mounted independently. When writes occur such split-brain scenarios
-(caused by intentional user action) then one of the sides of the RAID
-config will have to be blown away when bringing it back to the
-consistent state.
-
+On 2017-12-17 10:48, Peter Grandi wrote:
+> "Duncan"'s reply is slightly optimistic in parts, so some
+> further information...
 > 
-> This patch introduces a new SB flag BTRFS_SUPER_FLAG_VOL_MOVED_ON which
-MOVED_ON sounds way too colloquial. something like VOL_FORCED_MOUNT,
-VOL_PARTIAL_MOUNT.
-
-Another thing which comes to mind is why not piggyback on the degraded
-mount capabilities of the filesystem - is it just a mount option or do
-we have a flag which indicates this volume was mounted in degraded mode?
-If there is not flag perhaps name the flag VOL_DEGRADED_MOUNT?
-
-> will be set when RAID group is mounted with missing device, so when RAID
-> is mounted with no missing device and if all the devices contains this
-> flag then we know that each of these set are mounted without the other
-> set. In this scenario this patch will fail the mount so that user can
-> decide which set would they prefer to keep the data.
-
-This is also hard to parse
-
+> [ ... ]
 > 
-> Now the procedure to assemble the disks would be to continue to mount
-> the good set first without the device set on which new data can be
-> ignored, and later run btrfs device scan to bring in the missing device
-> and complete the RAID group which then shall reset the flag
-> BTRFS_SUPER_FLAG_VOL_MOVED_ON.
+>> Basically, at this point btrfs doesn't have "dynamic" device
+>> handling.  That is, if a device disappears, it doesn't know
+>> it.
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> On top of kdave misc-next.
+> That's just the consequence of what is a completely broken
+> conceptual model: the current way most multi-device profiles are
+> designed is that block-devices and only be "added" or "removed",
+> and cannot be "broken"/"missing". Therefore if IO fails, that is
+> just one IO failing, not the entire block-device going away.
+> The time when a block-device is noticed as sort-of missing is
+> when it is not available for "add"-ing at start.
 > 
->  fs/btrfs/disk-io.c              | 56 ++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/volumes.c              | 14 +++++++++--
->  include/uapi/linux/btrfs_tree.h |  1 +
->  3 files changed, 68 insertions(+), 3 deletions(-)
+> Put another way, the multi-device design is/was based on the
+> demented idea that block-devices that are missing are/should be
+> "remove"d, so that a 2-device volume with a 'raid1' profile
+> becomes a 1-device volume with a 'single'/'dup' profile, and not
+> a 2-device volume with a missing block-device and an incomplete
+> 'raid1' profile, even if things have been awkwardly moving in
+> that direction in recent years.
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index a3e9b74f6006..55bc6c846671 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -61,7 +61,8 @@
->  				 BTRFS_HEADER_FLAG_RELOC |\
->  				 BTRFS_SUPER_FLAG_ERROR |\
->  				 BTRFS_SUPER_FLAG_SEEDING |\
-> -				 BTRFS_SUPER_FLAG_METADUMP)
-> +				 BTRFS_SUPER_FLAG_METADUMP|\
-> +				 BTRFS_SUPER_FLAG_VOL_MOVED_ON)
->  
->  static const struct extent_io_ops btree_extent_io_ops;
->  static void end_workqueue_fn(struct btrfs_work *work);
-> @@ -2383,6 +2384,43 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
->  	return 0;
->  }
->  
-> +bool volume_has_split_brain(struct btrfs_fs_info *fs_info)
-> +{
-> +	unsigned long devs_moved_on = 0;
-> +	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
-
-almost every other instance of the which iterates fs_devices uses the
-full name of the temp variable fs_devices, let's do that here as well
-for the sake of grep
-
-> +	struct list_head *head = &fs_devs->devices;
-> +	struct btrfs_device *dev;
-> +
-> +again:
-> +	list_for_each_entry(dev, head, dev_list) {
-> +		struct buffer_head *bh;
-> +		struct btrfs_super_block *sb;
-> +
-> +		if (!dev->devid)
-> +			continue;
-> +
-> +		bh = btrfs_read_dev_super(dev->bdev);
-> +		if (IS_ERR(bh))
-> +			continue;
-> +
-> +		sb = (struct btrfs_super_block *)bh->b_data;
-> +		if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_VOL_MOVED_ON)
-> +			devs_moved_on++;
-> +		brelse(bh);
-> +	}
-> +
-> +	fs_devs = fs_devs->seed;
-> +	if (fs_devs) {
-> +		head = &fs_devs->devices;
-> +		goto again;
-> +	}
-> +
-> +	if (devs_moved_on == fs_info->fs_devices->total_devices)
-> +		return true;
-> +	else
-> +		return false;
-> +}
-> +
->  int open_ctree(struct super_block *sb,
->  	       struct btrfs_fs_devices *fs_devices,
->  	       char *options)
-> @@ -2872,6 +2910,22 @@ int open_ctree(struct super_block *sb,
->  		goto fail_sysfs;
->  	}
->  
-> +	if (fs_info->fs_devices->missing_devices) {
-> +		btrfs_set_super_flags(fs_info->super_copy,
-> +			fs_info->super_copy->flags |
-> +			BTRFS_SUPER_FLAG_VOL_MOVED_ON);
-> +	} else if (fs_info->super_copy->flags &
-> +			BTRFS_SUPER_FLAG_VOL_MOVED_ON) {
-> +		if (volume_has_split_brain(fs_info)) {
-> +			btrfs_err(fs_info,
-> +				"Detected 'moved_on' flag on all device");
-> +			goto fail_sysfs;
-> +		}
-> +		btrfs_set_super_flags(fs_info->super_copy,
-> +			fs_info->super_copy->flags &
-> +			~BTRFS_SUPER_FLAG_VOL_MOVED_ON);
-> +	}
-
-Is there any specific reason why you place this check right before the
-cleaner_kthread? If not I think it makes sense to be as close as
-possible to btrfs_read_chunk_tree, since the information it uses is
-populated by that function.
-
-> +
->  	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
->  					       "btrfs-cleaner");
->  	if (IS_ERR(fs_info->cleaner_kthread))
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 33e814ef992f..c08b9b89e285 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2057,8 +2057,13 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
->  	device->fs_devices->num_devices--;
->  	device->fs_devices->total_devices--;
->  
-> -	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
-> +	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
->  		device->fs_devices->missing_devices--;
-> +		if (!device->fs_devices->missing_devices)
-> +			btrfs_set_super_flags(fs_info->super_copy,
-> +				fs_info->super_copy->flags &
-> +				~BTRFS_SUPER_FLAG_VOL_MOVED_ON);
-> +	}
->  
->  	btrfs_assign_next_active_device(fs_info, device, NULL);
->  
-> @@ -2132,8 +2137,13 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
->  	list_del_rcu(&srcdev->dev_list);
->  	list_del(&srcdev->dev_alloc_list);
->  	fs_devices->num_devices--;
-> -	if (test_bit(BTRFS_DEV_STATE_MISSING, &srcdev->dev_state))
-> +	if (test_bit(BTRFS_DEV_STATE_MISSING, &srcdev->dev_state)) {
->  		fs_devices->missing_devices--;
-> +		if (!fs_devices->missing_devices)
-> +			btrfs_set_super_flags(fs_info->super_copy,
-> +				fs_info->super_copy->flags &
-> +				~BTRFS_SUPER_FLAG_VOL_MOVED_ON);
-> +	}
->  
->  	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &srcdev->dev_state))
->  		fs_devices->rw_devices--;
-> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-> index 6d6e5da51527..a9f625be0589 100644
-> --- a/include/uapi/linux/btrfs_tree.h
-> +++ b/include/uapi/linux/btrfs_tree.h
-> @@ -456,6 +456,7 @@ struct btrfs_free_space_header {
->  
->  #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
->  #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
-> +#define BTRFS_SUPER_FLAG_VOL_MOVED_ON	(1ULL << 36)
->  
->  
->  /*
+> Note the above is not totally accurate today because various
+> hacks have been introduced to work around the various issues.
+You do realize you just restated exactly what Duncan said, just in a 
+much more verbose (and aggressively negative) manner...
 > 
+>> Thus, if a device disappears, to get it back you really have
+>> to reboot, or at least unload/reload the btrfs kernel module,
+>> in ordered to clear the stale device state and have btrfs
+>> rescan and reassociate devices with the matching filesystems.
+> 
+> IIRC that is not quite accurate: a "missing" device can be
+> nowadays "replace"d (by "devid") or "remove"d, the latter
+> possibly implying profile changes:
+> 
+>    https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Using_add_and_delete
+> 
+> Terrible tricks like this also work:
+> 
+>    https://www.spinics.net/lists/linux-btrfs/msg48394.html
+While that is all true, none of that _fixes_ the issue of a device 
+disappearing and then being reconnected.  In theory, you can use `btrfs 
+device replace` to force BTRFS to acknowledge the new name (by 
+'replacing' the missing device with the now returned device), but doing 
+so is horribly inefficient as to not be worth it unless you have no 
+other choice.
+> 
+>> Meanwhile, as mentioned above, there's active work on proper
+>> dynamic btrfs device tracking and management. It may or may
+>> not be ready for 4.16, but once it goes in, btrfs should
+>> properly detect a device going away and react accordingly,
+> 
+> I haven't seen that, but I doubt that it is the radical redesign
+> of the multi-device layer of Btrfs that is needed to give it
+> operational semantics similar to those of MD RAID, and that I
+> have vaguely described previously.
+Anand has been working on hot spare support, and as part of that has 
+done some work on handling of missing devices.
+> 
+>> and it should detect a device coming back as a different
+>> device too.
+> 
+> That is disagreeable because of poor terminology: I guess that
+> what was intended that it should be able to detect a previous
+> member block-device becoming available again as a different
+> device inode, which currently is very dangerous in some vital
+> situations.
+How exactly is this dangerous?  The only situation I can think of is if 
+a bogus device is hot-plugged and happens to perfectly match all the 
+required identifiers, and at that point you've either got someone 
+attacking your system who already has sufficient access to do whatever 
+the hell they want with it, or you did something exceedingly stupid, and 
+both cases are dangerous by themselves.
+> 
+>> Longer term, there's further patches that will provide a
+>> hot-spare functionality, automatically bringing in a device
+>> pre-configured as a hot- spare if a device disappears, but
+>> that of course requires that btrfs properly recognize devices
+>> disappearing and coming back first, so one thing at a time.
+> 
+> That would be trivial if the complete redesign of block-device
+> states of the Btrfs multi-device layer happened, adding an
+> "active" flag to an "accessible" flag to describe new member
+> states, for example.
+No, it wouldn't be trivial, because a complete redesign of part of the 
+filesystem would be needed.
+> 
+> My guess that while logically consistent, the current
+> multi-device logic is fundamentally broken from an operational
+> point of view, and needs a complete replacement instead of
+> fixes.
+Then why don't you go write up some patches yourself if you feel so 
+strongly about it?
+
+The fact is, the only cases where this is really an issue is if you've 
+either got intermittently bad hardware, or are dealing with external 
+storage devices.  For the majority of people who are using multi-device 
+setups, the common case is internally connected fixed storage devices 
+with properly working hardware, and for that use case, it works 
+perfectly fine.  In fact, the only people I've seen any reports of 
+issues from are either:
+
+1. Testing the behavior of device management (such as the OP), in which 
+case, yes it doesn't work if you do things that aren't reasonably 
+expected of working hardware.
+2. Trying to do multi-device on USB, which is a bad idea regardless of 
+what you're using to create a single volume, because USB has pretty 
+serious reliability issues.
+
+Neither case is 'normal' usage of a multi-device volume though.  Yes, 
+the second case could be better supported, but that's likely going to 
+require some help from the block layer, and verification of writes.  As 
+far as handling of other marginal hardware, I'm very inclined to say 
+that BTRFS should not care.  At the point at which a device is dropping 
+off the bus and reappearing with enough regularity for this to be an 
+issue, you have absolutely no idea how else it's corrupting your data, 
+and support of such a situation is beyond any filesystem (including ZFS).

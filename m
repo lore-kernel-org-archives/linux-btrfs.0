@@ -1,262 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f196.google.com ([209.85.223.196]:45522 "EHLO
-        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934838AbdLRQ3f (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 11:29:35 -0500
-Received: by mail-io0-f196.google.com with SMTP id e204so10396429iof.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Dec 2017 08:29:35 -0800 (PST)
-Subject: Re: [PATCH RESEND 1/2] btrfs: handle volume split brain scenario
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20171217135247.1838-1-anand.jain@oracle.com>
- <c010dd5d-734a-6aad-e693-93041224735c@gmail.com>
- <2722fb00-5fed-44b7-7516-272ea052c3cc@oracle.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <bbdcdfd8-0ff4-060c-e1db-4725aed8154f@gmail.com>
-Date: Mon, 18 Dec 2017 11:29:31 -0500
+Received: from smtp01.belwue.de ([129.143.71.86]:40887 "EHLO smtp01.belwue.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S965281AbdLRQtn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 18 Dec 2017 11:49:43 -0500
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+        by smtp01.belwue.de (Postfix) with SMTP id 373968B10
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Dec 2017 17:49:42 +0100 (MET)
+Date: Mon, 18 Dec 2017 17:49:41 +0100
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs subvolume list for not mounted filesystem?
+Message-ID: <20171218164941.GA22020@rus.uni-stuttgart.de>
 MIME-Version: 1.0
-In-Reply-To: <2722fb00-5fed-44b7-7516-272ea052c3cc@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-12-18 09:39, Anand Jain wrote:
-> 
-> 
-> 
->>> Now the procedure to assemble the disks would be to continue to mount
->>> the good set first without the device set on which new data can be
->>> ignored, and later run btrfs device scan to bring in the missing device
->>> and complete the RAID group which then shall reset the flag
->>> BTRFS_SUPER_FLAG_VOL_MOVED_ON.
->> Couple of thoughts on this:
->>
->> 1. This needs to go in _after_ the patches to allow the kernel to 
->> forget devices.
-> 
->   Right will mention that explicitly or it can use kernel module reload
->   if its a choice.
-> 
->>   Otherwise, the only way to handle things is to physically disconnect 
->> the device you don't want, mount the other one, and then reconnect the 
->> disconnected device, because pretty much everything uses udev, which 
->> by default scans for BTRFS on every device that gets connected, and 
->> handling it like that is not an option for some people (potentially 
->> for quite a few people).
-> 
->   Yeah. That's a problem. If its a choice then they can reload
->   the module.
-Which may not always be a choice (though I sincerely hope people aren't 
-messing around with stuff like this with system-critical filesystems 
-like / and /usr...).
-> 
->> 2. How exactly is this supposed to work for people who don't have new 
->> enough btrfs-progs to tell the kernel to forget the device?  Ideally, 
->> there should be some other way to tell the kernel which one to use 
->> (perhaps a one-shot mount option?) without needing any userspace 
->> support (and if that happens, then I retract my first comment).  I'm 
->> not saying that the currently proposed method is a bad solution, just 
->> that it's not a complete solution from a usability perspective.
-> 
->   Oh. I got it. But the current solution using forget cli OR kernel
->   module reload is a kind of general solution, also split brain problem
->   arises from wrong usage.
-> 
->   Your concern of not having forget cli is only a short term concern,
->   developing a new mount-option for a short term concern is not
->   sure if its right. I am ok either way, if more people prefer that
->   way I don't mind writing one.
-> 
->> 3. How does this get handled with volumes using the raid1 profile and 
->> more than 2 devices?
->> In that case, things get complicated fast. Handling an array of N 
->> devices in raid1 mode where N-1 devices have this flag set is in 
->> theory easy, except you have no verification that the N-1 devices were 
->> mounted separately or as a group (in the first case, the user needs to 
->> pick one, in the second, it should automatically recover since they 
->> all agree on the state of the filesystem).
-> 
->   Even in N device raid1, the number of device that can be missing
->   is still one. There will be at least one or more devices which
->   are common to both the sets. So split brain can't happen.
-No, there isn't a guarantee that that's the case.  Suppose you have 3 
-devices in a raid1 and one goes missing.  The user can now, in trying to 
-fix this, mount each of the two remaining devices separately (by 
-accident of course), in which case you can still have a split brain 
-situation.  The same logic applies for all values of N greater than 3 as 
-well, with a greater number of possible situations for each higher N 
-(for N=4, you have at least 4 ways the user can create a split-brain, 
-for N=5 you have at least 11, etc).
+I want to mount an alternative subvolume of a btrfs filesystem.
+I can list the subvolumes when the filesystem is mounted, but how do I
+know them, when the filesystem is not mounted? Is there a query command?
 
-I have no issue with there being on handling for this (it should be a 
-reasonably rare case among people who don't have existing knowledge of 
-how to fix it as things are already), but if that's the case it should 
-ideally be explicitly stated that you don't handle this.
-> 
->> 4. Having some way to do this solely from btrfs-progs would be nice 
->> too (so that you can just drop to a shell during boot, or drop to the 
->> initramfs, and fix things without having to mess with device 
->> scanning), but is secondary to the kernel-side IMHO.
-> 
->   Pls. Note this patch only detects and avoids the split brain devices
->   to loose data, by failing the mount. However the fix is out side of
->   this patch. Next, cli 'btrfs dev forget' is anyway isn't purposely
->   made for this purpose. Its a generic un-scan code which helps here
->   otherwise as well.
-> 
->   If we need a purposely built cli (btrfstune ?) to fix the SB, it
->   can be done. But I think it will be complicated.
-It's arguably easier to make a (possibly single) call to `btrfstune` to 
-unset the flag on the device you want to drop and then mount again than 
-it is to make the kernel forget it, mount degraded, and then re-scan 
-devices (and sounds a whole lot safer and less error-prone too).
+root@xerus:~# mount | grep /test
+/dev/sdd4 on /test type btrfs (rw,relatime,space_cache,user_subvol_rm_allowed,subvolid=5,subvol=/)
 
-Even if that does become the case, having kernel code to mark the 
-devices mounted degraded and refuse the mount in some circumstances is 
-still needed though.
-> 
->> Other than all of that, I do think this is a good idea.  Being able to 
->> more sanely inform the user about the situation and help them figure 
->> out how to fix it correctly is something that's desperately needed here.
-> 
-> Thanks, Anand
-> 
->>>
->>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
->>> ---
->>> On top of kdave misc-next.
->>>
->>>   fs/btrfs/disk-io.c              | 56 
->>> ++++++++++++++++++++++++++++++++++++++++-
->>>   fs/btrfs/volumes.c              | 14 +++++++++--
->>>   include/uapi/linux/btrfs_tree.h |  1 +
->>>   3 files changed, 68 insertions(+), 3 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index a3e9b74f6006..55bc6c846671 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -61,7 +61,8 @@
->>>                    BTRFS_HEADER_FLAG_RELOC |\
->>>                    BTRFS_SUPER_FLAG_ERROR |\
->>>                    BTRFS_SUPER_FLAG_SEEDING |\
->>> -                 BTRFS_SUPER_FLAG_METADUMP)
->>> +                 BTRFS_SUPER_FLAG_METADUMP|\
->>> +                 BTRFS_SUPER_FLAG_VOL_MOVED_ON)
->>>   static const struct extent_io_ops btree_extent_io_ops;
->>>   static void end_workqueue_fn(struct btrfs_work *work);
->>> @@ -2383,6 +2384,43 @@ static int btrfs_read_roots(struct 
->>> btrfs_fs_info *fs_info)
->>>       return 0;
->>>   }
->>> +bool volume_has_split_brain(struct btrfs_fs_info *fs_info)
->>> +{
->>> +    unsigned long devs_moved_on = 0;
->>> +    struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
->>> +    struct list_head *head = &fs_devs->devices;
->>> +    struct btrfs_device *dev;
->>> +
->>> +again:
->>> +    list_for_each_entry(dev, head, dev_list) {
->>> +        struct buffer_head *bh;
->>> +        struct btrfs_super_block *sb;
->>> +
->>> +        if (!dev->devid)
->>> +            continue;
->>> +
->>> +        bh = btrfs_read_dev_super(dev->bdev);
->>> +        if (IS_ERR(bh))
->>> +            continue;
->>> +
->>> +        sb = (struct btrfs_super_block *)bh->b_data;
->>> +        if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_VOL_MOVED_ON)
->>> +            devs_moved_on++;
->>> +        brelse(bh);
->>> +    }
->>> +
->>> +    fs_devs = fs_devs->seed;
->>> +    if (fs_devs) {
->>> +        head = &fs_devs->devices;
->>> +        goto again;
->>> +    }
->>> +
->>> +    if (devs_moved_on == fs_info->fs_devices->total_devices)
->>> +        return true;
->>> +    else
->>> +        return false;
->>> +}
->>> +
->>>   int open_ctree(struct super_block *sb,
->>>              struct btrfs_fs_devices *fs_devices,
->>>              char *options)
->>> @@ -2872,6 +2910,22 @@ int open_ctree(struct super_block *sb,
->>>           goto fail_sysfs;
->>>       }
->>> +    if (fs_info->fs_devices->missing_devices) {
->>> +        btrfs_set_super_flags(fs_info->super_copy,
->>> +            fs_info->super_copy->flags |
->>> +            BTRFS_SUPER_FLAG_VOL_MOVED_ON);
->>> +    } else if (fs_info->super_copy->flags &
->>> +            BTRFS_SUPER_FLAG_VOL_MOVED_ON) {
->>> +        if (volume_has_split_brain(fs_info)) {
->>> +            btrfs_err(fs_info,
->>> +                "Detected 'moved_on' flag on all device");
->>> +            goto fail_sysfs;
->>> +        }
->>> +        btrfs_set_super_flags(fs_info->super_copy,
->>> +            fs_info->super_copy->flags &
->>> +            ~BTRFS_SUPER_FLAG_VOL_MOVED_ON);
->>> +    }
->>> +
->>>       fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
->>>                              "btrfs-cleaner");
->>>       if (IS_ERR(fs_info->cleaner_kthread))
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index 33e814ef992f..c08b9b89e285 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -2057,8 +2057,13 @@ int btrfs_rm_device(struct btrfs_fs_info 
->>> *fs_info, const char *device_path,
->>>       device->fs_devices->num_devices--;
->>>       device->fs_devices->total_devices--;
->>> -    if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
->>> +    if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
->>>           device->fs_devices->missing_devices--;
->>> +        if (!device->fs_devices->missing_devices)
->>> +            btrfs_set_super_flags(fs_info->super_copy,
->>> +                fs_info->super_copy->flags &
->>> +                ~BTRFS_SUPER_FLAG_VOL_MOVED_ON);
->>> +    }
->>>       btrfs_assign_next_active_device(fs_info, device, NULL);
->>> @@ -2132,8 +2137,13 @@ void btrfs_rm_dev_replace_remove_srcdev(struct 
->>> btrfs_fs_info *fs_info,
->>>       list_del_rcu(&srcdev->dev_list);
->>>       list_del(&srcdev->dev_alloc_list);
->>>       fs_devices->num_devices--;
->>> -    if (test_bit(BTRFS_DEV_STATE_MISSING, &srcdev->dev_state))
->>> +    if (test_bit(BTRFS_DEV_STATE_MISSING, &srcdev->dev_state)) {
->>>           fs_devices->missing_devices--;
->>> +        if (!fs_devices->missing_devices)
->>> +            btrfs_set_super_flags(fs_info->super_copy,
->>> +                fs_info->super_copy->flags &
->>> +                ~BTRFS_SUPER_FLAG_VOL_MOVED_ON);
->>> +    }
->>>       if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &srcdev->dev_state))
->>>           fs_devices->rw_devices--;
->>> diff --git a/include/uapi/linux/btrfs_tree.h 
->>> b/include/uapi/linux/btrfs_tree.h
->>> index 6d6e5da51527..a9f625be0589 100644
->>> --- a/include/uapi/linux/btrfs_tree.h
->>> +++ b/include/uapi/linux/btrfs_tree.h
->>> @@ -456,6 +456,7 @@ struct btrfs_free_space_header {
->>>   #define BTRFS_SUPER_FLAG_SEEDING    (1ULL << 32)
->>>   #define BTRFS_SUPER_FLAG_METADUMP    (1ULL << 33)
->>> +#define BTRFS_SUPER_FLAG_VOL_MOVED_ON    (1ULL << 36)
->>>   /*
->>>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+root@xerus:~# btrfs subvolume list /test
+ID 258 gen 156 top level 5 path tux/zz
+ID 259 gen 156 top level 5 path tux/z1
+ID 260 gen 156 top level 5 path tmp/zz
+ID 261 gen 19 top level 260 path tmp/zz/z1
+ID 269 gen 156 top level 5 path tux/test
+ID 271 gen 129 top level 269 path tux/test/.snapshot/2017-12-02_1341.test
 
+root@xerus:~# umount /test
+
+root@xerus:~# btrfs subvolume list /dev/sdd4
+ERROR: not a btrfs filesystem: /dev/sdd4
+ERROR: can't access '/dev/sdd4'
+
+
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum TIK         
+Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
+Allmandring 30a                Tel:    ++49-711-68565868
+70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20171218164941.GA22020@rus.uni-stuttgart.de>

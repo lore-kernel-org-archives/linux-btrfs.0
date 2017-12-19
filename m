@@ -1,51 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f176.google.com ([74.125.82.176]:35745 "EHLO
-        mail-ot0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751072AbdLSTfV (ORCPT
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:41356 "EHLO
+        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753258AbdLSThB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 14:35:21 -0500
-Received: by mail-ot0-f176.google.com with SMTP id q3so17711350oth.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 11:35:21 -0800 (PST)
+        Tue, 19 Dec 2017 14:37:01 -0500
+Received: by mail-pg0-f68.google.com with SMTP id o2so10946856pgc.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 11:37:01 -0800 (PST)
+Date: Tue, 19 Dec 2017 11:36:58 -0800
+From: Omar Sandoval <osandov@osandov.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [RFC PATCH] btrfs: qgroup: Deprecate the ability to manually
+ inherit rfer/excl numbers
+Message-ID: <20171219193658.GA22017@vader.DHCP.thefacebook.com>
+References: <20171219104511.3563-1-wqu@suse.com>
+ <20171219190125.GA19899@vader.DHCP.thefacebook.com>
+ <b6545013-8f09-d88b-20f4-df3ee9d4f39e@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20171219144644.GA9855@polanet.pl>
-References: <5A357909.8010206@yandex.ru> <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
- <23094.37316.66397.431081@tree.ty.sabi.co.uk> <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
- <20171218194351.GA25245@polanet.pl> <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
- <20171219144644.GA9855@polanet.pl>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 19 Dec 2017 12:35:20 -0700
-Message-ID: <CAJCQCtSwfoSmAfFyP15xp-uysBY1kWyt65Jhf37g68YcPQ2QEA@mail.gmail.com>
-Subject: Re: Unexpected raid1 behaviour
-To: Tomasz Pala <gotar@polanet.pl>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <b6545013-8f09-d88b-20f4-df3ee9d4f39e@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 19, 2017 at 7:46 AM, Tomasz Pala <gotar@polanet.pl> wrote:
+On Tue, Dec 19, 2017 at 09:19:10PM +0200, Nikolay Borisov wrote:
+> 
+> 
+> On 19.12.2017 21:01, Omar Sandoval wrote:
+> > My only objection is that we shouldn't rename the field names in the
+> > UAPI header. Let's just add a comment that the two counters are ignored.
+> > Besides that,
+> 
+> Why is that?
 
->Secondly - permanent failures are not handled "just
-> fine", as there is (1) no automatic mount as degraded, so the machine
-> won't reboot properly and (2) the r/w degraded mount is[*] one-timer.
-> Again, this should be:
-
-One of the reasons for problem 1 is problem 2. If we had automatic
-degraded mount, people would run into problem 2 and now they're stuck
-with a read only file system. Another reason is the kernel code and
-udev rule for device "readiness" means the volume is not "ready" until
-all member devices are present. And while the volume is not "ready"
-systemd will not even attempt to mount. Solving this requires kernel
-and udev work, or possibly a helper, to wait an appropriate amount of
-time. I also think it's a bad idea to implement automatic degraded
-mounts unless there's an API for user space to receive either a push
-or request notification for degradedness state, so desktop
-environments can inform the user of degradedness.
-
-There is no amount of documentation that makes up for these
-deficiencies enough to enable automatic degraded mounts by default. I
-would consider it a high order betrayal of user trust to do it.
-
-
-
--- 
-Chris Murphy
+We don't know if anyone is including the UAPI header and referring to
+these fields for whatever reason. A quick Google search doesn't turn up
+anything, but it has been there forever so I think we should err on the
+side of not breaking the API.

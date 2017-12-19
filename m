@@ -1,60 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:42204 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1759693AbdLSKC5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 05:02:57 -0500
-Received: by mail-wm0-f68.google.com with SMTP id b199so2413824wme.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 02:02:56 -0800 (PST)
-From: Timofey Titovets <nefelim4ag@gmail.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:43956 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1761989AbdLSKp3 (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 19 Dec 2017 05:45:29 -0500
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Subject: [PATCH 0/4] Btrfs: just bunch of patches to ioctl.c
-Date: Tue, 19 Dec 2017 13:02:43 +0300
-Message-Id: <20171219100247.13880-1-nefelim4ag@gmail.com>
+Cc: dsterba@suse.cz
+Subject: [RFC PATCH] btrfs: qgroup: Deprecate the ability to manually inherit rfer/excl numbers
+Date: Tue, 19 Dec 2017 18:45:11 +0800
+Message-Id: <20171219104511.3563-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-1st patch, remove 16MiB restriction from extent_same ioctl(),
-by doing iterations over passed range.
+btrfs_qgroup_inherit structure has two members, num_ref_copies and
+num_excl_copies, to info btrfs kernel modules to inherit (copy)
+rfer/excl numbers at snapshot/subvolume creation time.
 
-I did not see much difference in performance, so it's just remove
-logic restriction.
+Since qgroup number is already hard to maintain for multi-level qgroup
+scenario, allowing user to manually manipulate qgroup inherit is quite
+easy to screw up qgroup numbers.
 
-2-3 pathes, update defrag ioctl():
- - Fix bad behaviour with full rewriting all compressed
-   extents in defrag range. (that also make autodefrag on compressed fs
-   not so expensive)
- - Allow userspace specify NONE as target compression type,
-   that allow users to uncompress files by defragmentation with btrfs-progs
- - Make defrag ioctl understood requested compression type and current
-   compression type of extents, to make btrfs fi def -rc<type>
-   idempotent operation.
-   i.e. now possible to say, make all extents compressed with lzo,
-   and btrfs will not recompress lzo compressed data.
-   Same for zlib, zstd, none.
-   (patch to btrfs-progs in PR on kdave GitHub).
+Although btrfs-progs supports such inheritance specification, the
+options are hidden from user and not documented.
+So there is no need to allow user to manually specify inheritance in
+kernel.
 
-4th patch, reduce size of struct btrfs_inode
- - btrfs_inode store fields like: prop_compress, defrag_compress and
-   after 3rd patch, change_compress.
-   They use unsigned as a type, and use 12 bytes in sum.
-   But change_compress is a bitflag, and prop_compress/defrag_compress
-   only store compression type, that currently use 0-3 of 2^32-1.
-   
-   So, set a bitfields on that vars, and reduce size of btrfs_inode:
-   1136 -> 1128.
+Reported-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+The only concern is, currently we don't have good tool to handle
+inheritance of multi-level qgroups.
+The only method to get qgroup numbers correct is to run a quota rescan.
 
-Timofey Titovets (4):
-  Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
-  Btrfs: make should_defrag_range() understood compressed extents
-  Btrfs: allow btrfs_defrag_file() uncompress files on defragmentation
-  Btrfs: reduce size of struct btrfs_inode
+So there may be some case where experienced (well, mostly a developer)
+user can use the hidden btrfs-progs options or manually craft an ioctl
+to handle multi-level qgroups without costly rescan.
+---
+ fs/btrfs/qgroup.c          | 56 ++++++++++++++--------------------------------
+ include/uapi/linux/btrfs.h |  4 ++--
+ 2 files changed, 19 insertions(+), 41 deletions(-)
 
- fs/btrfs/btrfs_inode.h |   5 +-
- fs/btrfs/inode.c       |   4 +-
- fs/btrfs/ioctl.c       | 203 +++++++++++++++++++++++++++++++------------------
- 3 files changed, 133 insertions(+), 79 deletions(-)
-
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 168fd03ca3ac..d8a2413272f9 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2158,9 +2158,24 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	if (inherit) {
++		/*
++		 * num_excl/rfer_copies indicate how many qgroup pairs needs
++		 * to be manually inherited (copy rfer or excl from src
++		 * qgroup to dst)
++		 *
++		 * Allowing user to manipulate inheritance can easily cause
++		 * problem in multi-level qgroup scenario.
++		 * And the ioctl interface is hidden in btrfs-progs for a long
++		 * time, deprecate them should not be a big problem.
++		 */
++		if (inherit->__num_excl_copies || inherit->__num_ref_copies) {
++			ret = -ENOTTY;
++			btrfs_warn(fs_info,
++			"manually inherit excl/rfer is no longer supported");
++			goto out;
++		}
+ 		i_qgroups = (u64 *)(inherit + 1);
+-		nums = inherit->num_qgroups + 2 * inherit->num_ref_copies +
+-		       2 * inherit->num_excl_copies;
++		nums = inherit->num_qgroups;
+ 		for (i = 0; i < nums; ++i) {
+ 			srcgroup = find_qgroup_rb(fs_info, *i_qgroups);
+ 
+@@ -2286,43 +2301,6 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 		++i_qgroups;
+ 	}
+ 
+-	for (i = 0; i <  inherit->num_ref_copies; ++i, i_qgroups += 2) {
+-		struct btrfs_qgroup *src;
+-		struct btrfs_qgroup *dst;
+-
+-		if (!i_qgroups[0] || !i_qgroups[1])
+-			continue;
+-
+-		src = find_qgroup_rb(fs_info, i_qgroups[0]);
+-		dst = find_qgroup_rb(fs_info, i_qgroups[1]);
+-
+-		if (!src || !dst) {
+-			ret = -EINVAL;
+-			goto unlock;
+-		}
+-
+-		dst->rfer = src->rfer - level_size;
+-		dst->rfer_cmpr = src->rfer_cmpr - level_size;
+-	}
+-	for (i = 0; i <  inherit->num_excl_copies; ++i, i_qgroups += 2) {
+-		struct btrfs_qgroup *src;
+-		struct btrfs_qgroup *dst;
+-
+-		if (!i_qgroups[0] || !i_qgroups[1])
+-			continue;
+-
+-		src = find_qgroup_rb(fs_info, i_qgroups[0]);
+-		dst = find_qgroup_rb(fs_info, i_qgroups[1]);
+-
+-		if (!src || !dst) {
+-			ret = -EINVAL;
+-			goto unlock;
+-		}
+-
+-		dst->excl = src->excl + level_size;
+-		dst->excl_cmpr = src->excl_cmpr + level_size;
+-	}
+-
+ unlock:
+ 	spin_unlock(&fs_info->qgroup_lock);
+ out:
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index ce615b75e855..099e088414d6 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -80,8 +80,8 @@ struct btrfs_qgroup_limit {
+ struct btrfs_qgroup_inherit {
+ 	__u64	flags;
+ 	__u64	num_qgroups;
+-	__u64	num_ref_copies;
+-	__u64	num_excl_copies;
++	__u64	__num_ref_copies;	/* DEPRECATED */
++	__u64	__num_excl_copies;	/* DEPRECATED */
+ 	struct btrfs_qgroup_limit lim;
+ 	__u64	qgroups[0];
+ };
 -- 
 2.15.1
+

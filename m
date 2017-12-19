@@ -1,306 +1,306 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f194.google.com ([209.85.128.194]:39910 "EHLO
-        mail-wr0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751770AbdLVNtD (ORCPT
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:37174 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1760214AbdLSKC6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Dec 2017 08:49:03 -0500
-Received: by mail-wr0-f194.google.com with SMTP id a41so27943108wra.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Dec 2017 05:49:03 -0800 (PST)
+        Tue, 19 Dec 2017 05:02:58 -0500
+Received: by mail-wm0-f65.google.com with SMTP id f140so2365139wmd.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 02:02:57 -0800 (PST)
 From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Timofey Titovets <nefelim4ag@gmail.com>, David Sterba <dsterba@suse.com>
-Subject: [RFC PATCH] Btrfs: replace custom heuristic ws allocation logic with mempool API
-Date: Fri, 22 Dec 2017 16:48:49 +0300
-Message-Id: <20171222134849.26587-1-nefelim4ag@gmail.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH 1/4] Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
+Date: Tue, 19 Dec 2017 13:02:44 +0300
+Message-Id: <20171219100247.13880-2-nefelim4ag@gmail.com>
+In-Reply-To: <20171219100247.13880-1-nefelim4ag@gmail.com>
+References: <20171219100247.13880-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently btrfs compression code use custom wrapper
-for store allocated compression/heuristic workspaces.
+At now btrfs_dedupe_file_range() restricted to 16MiB range for
+limit locking time and memory requirement for dedup ioctl()
 
-That logic try store at least ncpu+1 each type of workspaces.
+For too big input range code silently set range to 16MiB
 
-As far, as i can see that logic fully reimplement
-mempool API.
-So i think, that use of mempool api can simplify code
-and allow for cleanup it.
+Let's remove that restriction by do iterating over dedup range.
+That's backward compatible and will not change anything for request
+less then 16MiB.
 
-That a proof of concept patch, i have tested it (at least that works),
-future version will looks mostly same.
-
-If that acceptable,
-next step will be:
-1. Create mempool_alloc_w()
-that will resize mempool to apropriate size ncpu+1
-And will create apropriate mempool, if creating failed in __init.
-
-2. Convert per compression ws to mempool.
-
-Thanks.
+Changes:
+  v1 -> v2:
+    - Refactor btrfs_cmp_data_prepare and btrfs_extent_same
+    - Store memory of pages array between iterations
+    - Lock inodes once, not on each iteration
+    - Small inplace cleanups
 
 Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
-Cc: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/compression.c | 123 ++++++++++++++++---------------------------------
- 1 file changed, 39 insertions(+), 84 deletions(-)
+ fs/btrfs/ioctl.c | 160 ++++++++++++++++++++++++++++++++-----------------------
+ 1 file changed, 94 insertions(+), 66 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 208334aa6c6e..cf47089b9ec0 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -34,6 +34,7 @@
- #include <linux/slab.h>
- #include <linux/sched/mm.h>
- #include <linux/log2.h>
-+#include <linux/mempool.h>
- #include "ctree.h"
- #include "disk-io.h"
- #include "transaction.h"
-@@ -768,14 +769,11 @@ struct heuristic_ws {
- 	struct bucket_item *bucket;
- 	/* Sorting buffer */
- 	struct bucket_item *bucket_b;
--	struct list_head list;
- };
- 
--static void free_heuristic_ws(struct list_head *ws)
-+static void heuristic_ws_free(void *element, void *pool_data)
- {
--	struct heuristic_ws *workspace;
--
--	workspace = list_entry(ws, struct heuristic_ws, list);
-+	struct heuristic_ws *workspace = (struct heuristic_ws *) element;
- 
- 	kvfree(workspace->sample);
- 	kfree(workspace->bucket);
-@@ -783,13 +781,12 @@ static void free_heuristic_ws(struct list_head *ws)
- 	kfree(workspace);
- }
- 
--static struct list_head *alloc_heuristic_ws(void)
-+static void *heuristic_ws_alloc(gfp_t gfp_mask, void *pool_data)
- {
--	struct heuristic_ws *ws;
-+	struct heuristic_ws *ws = kmalloc(sizeof(*ws), GFP_KERNEL);
- 
--	ws = kzalloc(sizeof(*ws), GFP_KERNEL);
- 	if (!ws)
--		return ERR_PTR(-ENOMEM);
-+		return ws;
- 
- 	ws->sample = kvmalloc(MAX_SAMPLE_SIZE, GFP_KERNEL);
- 	if (!ws->sample)
-@@ -803,11 +800,14 @@ static struct list_head *alloc_heuristic_ws(void)
- 	if (!ws->bucket_b)
- 		goto fail;
- 
--	INIT_LIST_HEAD(&ws->list);
--	return &ws->list;
-+	return ws;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index be5bd81b3669..45a47d0891fc 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2965,8 +2965,8 @@ static void btrfs_cmp_data_free(struct cmp_pages *cmp)
+ 			put_page(pg);
+ 		}
+ 	}
+-	kfree(cmp->src_pages);
+-	kfree(cmp->dst_pages);
 +
- fail:
--	free_heuristic_ws(&ws->list);
--	return ERR_PTR(-ENOMEM);
-+	kvfree(ws->sample);
-+	kfree(ws->bucket);
-+	kfree(ws->bucket_b);
-+	kfree(ws);
-+	return NULL;
++	cmp->num_pages = 0;
  }
  
- struct workspaces_list {
-@@ -821,10 +821,9 @@ struct workspaces_list {
- 	wait_queue_head_t ws_wait;
- };
- 
-+static mempool_t *btrfs_heuristic_ws_pool;
- static struct workspaces_list btrfs_comp_ws[BTRFS_COMPRESS_TYPES];
- 
--static struct workspaces_list btrfs_heuristic_ws;
--
- static const struct btrfs_compress_op * const btrfs_compress_op[] = {
- 	&btrfs_zlib_compress,
- 	&btrfs_lzo_compress,
-@@ -836,20 +835,15 @@ void __init btrfs_init_compress(void)
- 	struct list_head *workspace;
- 	int i;
- 
--	INIT_LIST_HEAD(&btrfs_heuristic_ws.idle_ws);
--	spin_lock_init(&btrfs_heuristic_ws.ws_lock);
--	atomic_set(&btrfs_heuristic_ws.total_ws, 0);
--	init_waitqueue_head(&btrfs_heuristic_ws.ws_wait);
-+	/*
-+	 * Try preallocate pool with minimum size for successful
-+	 * initialization of btrfs module
-+	 */
-+	btrfs_heuristic_ws_pool = mempool_create(1, heuristic_ws_alloc,
-+					    heuristic_ws_free, NULL);
- 
--	workspace = alloc_heuristic_ws();
--	if (IS_ERR(workspace)) {
--		pr_warn(
--	"BTRFS: cannot preallocate heuristic workspace, will try later\n");
--	} else {
--		atomic_set(&btrfs_heuristic_ws.total_ws, 1);
--		btrfs_heuristic_ws.free_ws = 1;
--		list_add(workspace, &btrfs_heuristic_ws.idle_ws);
--	}
-+	if (IS_ERR(btrfs_heuristic_ws_pool))
-+		pr_warn("BTRFS: cannot preallocate heuristic workspace, will try later\n");
- 
- 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
- 		INIT_LIST_HEAD(&btrfs_comp_ws[i].idle_ws);
-@@ -878,7 +872,7 @@ void __init btrfs_init_compress(void)
-  * Preallocation makes a forward progress guarantees and we do not return
-  * errors.
-  */
--static struct list_head *__find_workspace(int type, bool heuristic)
-+static struct list_head *find_workspace(int type)
+ static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
+@@ -2974,41 +2974,22 @@ static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
+ 				  u64 len, struct cmp_pages *cmp)
  {
- 	struct list_head *workspace;
- 	int cpus = num_online_cpus();
-@@ -890,19 +884,11 @@ static struct list_head *__find_workspace(int type, bool heuristic)
- 	wait_queue_head_t *ws_wait;
- 	int *free_ws;
- 
--	if (heuristic) {
--		idle_ws	 = &btrfs_heuristic_ws.idle_ws;
--		ws_lock	 = &btrfs_heuristic_ws.ws_lock;
--		total_ws = &btrfs_heuristic_ws.total_ws;
--		ws_wait	 = &btrfs_heuristic_ws.ws_wait;
--		free_ws	 = &btrfs_heuristic_ws.free_ws;
--	} else {
--		idle_ws	 = &btrfs_comp_ws[idx].idle_ws;
--		ws_lock	 = &btrfs_comp_ws[idx].ws_lock;
--		total_ws = &btrfs_comp_ws[idx].total_ws;
--		ws_wait	 = &btrfs_comp_ws[idx].ws_wait;
--		free_ws	 = &btrfs_comp_ws[idx].free_ws;
--	}
-+	idle_ws	 = &btrfs_comp_ws[idx].idle_ws;
-+	ws_lock	 = &btrfs_comp_ws[idx].ws_lock;
-+	total_ws = &btrfs_comp_ws[idx].total_ws;
-+	ws_wait	 = &btrfs_comp_ws[idx].ws_wait;
-+	free_ws	 = &btrfs_comp_ws[idx].free_ws;
- 
- again:
- 	spin_lock(ws_lock);
-@@ -933,10 +919,7 @@ static struct list_head *__find_workspace(int type, bool heuristic)
- 	 * context of btrfs_compress_bio/btrfs_compress_pages
- 	 */
- 	nofs_flag = memalloc_nofs_save();
--	if (heuristic)
--		workspace = alloc_heuristic_ws();
--	else
--		workspace = btrfs_compress_op[idx]->alloc_workspace();
-+	workspace = btrfs_compress_op[idx]->alloc_workspace();
- 	memalloc_nofs_restore(nofs_flag);
- 
- 	if (IS_ERR(workspace)) {
-@@ -967,17 +950,11 @@ static struct list_head *__find_workspace(int type, bool heuristic)
- 	return workspace;
- }
- 
--static struct list_head *find_workspace(int type)
--{
--	return __find_workspace(type, false);
--}
+ 	int ret;
+-	int num_pages = PAGE_ALIGN(len) >> PAGE_SHIFT;
+-	struct page **src_pgarr, **dst_pgarr;
 -
- /*
-  * put a workspace struct back on the list or free it if we have enough
-  * idle ones sitting around
-  */
--static void __free_workspace(int type, struct list_head *workspace,
--			     bool heuristic)
-+static void free_workspace(int type, struct list_head *workspace)
- {
- 	int idx = type - 1;
- 	struct list_head *idle_ws;
-@@ -986,19 +963,11 @@ static void __free_workspace(int type, struct list_head *workspace,
- 	wait_queue_head_t *ws_wait;
- 	int *free_ws;
- 
--	if (heuristic) {
--		idle_ws	 = &btrfs_heuristic_ws.idle_ws;
--		ws_lock	 = &btrfs_heuristic_ws.ws_lock;
--		total_ws = &btrfs_heuristic_ws.total_ws;
--		ws_wait	 = &btrfs_heuristic_ws.ws_wait;
--		free_ws	 = &btrfs_heuristic_ws.free_ws;
--	} else {
--		idle_ws	 = &btrfs_comp_ws[idx].idle_ws;
--		ws_lock	 = &btrfs_comp_ws[idx].ws_lock;
--		total_ws = &btrfs_comp_ws[idx].total_ws;
--		ws_wait	 = &btrfs_comp_ws[idx].ws_wait;
--		free_ws	 = &btrfs_comp_ws[idx].free_ws;
+-	/*
+-	 * We must gather up all the pages before we initiate our
+-	 * extent locking. We use an array for the page pointers. Size
+-	 * of the array is bounded by len, which is in turn bounded by
+-	 * BTRFS_MAX_DEDUPE_LEN.
+-	 */
+-	src_pgarr = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+-	dst_pgarr = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+-	if (!src_pgarr || !dst_pgarr) {
+-		kfree(src_pgarr);
+-		kfree(dst_pgarr);
+-		return -ENOMEM;
 -	}
-+	idle_ws	 = &btrfs_comp_ws[idx].idle_ws;
-+	ws_lock	 = &btrfs_comp_ws[idx].ws_lock;
-+	total_ws = &btrfs_comp_ws[idx].total_ws;
-+	ws_wait	 = &btrfs_comp_ws[idx].ws_wait;
-+	free_ws	 = &btrfs_comp_ws[idx].free_ws;
+-	cmp->num_pages = num_pages;
+-	cmp->src_pages = src_pgarr;
+-	cmp->dst_pages = dst_pgarr;
  
- 	spin_lock(ws_lock);
- 	if (*free_ws <= num_online_cpus()) {
-@@ -1009,10 +978,7 @@ static void __free_workspace(int type, struct list_head *workspace,
- 	}
- 	spin_unlock(ws_lock);
- 
--	if (heuristic)
--		free_heuristic_ws(workspace);
--	else
--		btrfs_compress_op[idx]->free_workspace(workspace);
-+	btrfs_compress_op[idx]->free_workspace(workspace);
- 	atomic_dec(total_ws);
- wake:
  	/*
-@@ -1023,11 +989,6 @@ static void __free_workspace(int type, struct list_head *workspace,
- 		wake_up(ws_wait);
- }
- 
--static void free_workspace(int type, struct list_head *ws)
--{
--	return __free_workspace(type, ws, false);
--}
--
- /*
-  * cleanup function for module exit
-  */
-@@ -1036,12 +997,7 @@ static void free_workspaces(void)
- 	struct list_head *workspace;
- 	int i;
- 
--	while (!list_empty(&btrfs_heuristic_ws.idle_ws)) {
--		workspace = btrfs_heuristic_ws.idle_ws.next;
--		list_del(workspace);
--		free_heuristic_ws(workspace);
--		atomic_dec(&btrfs_heuristic_ws.total_ws);
+ 	 * If deduping ranges in the same inode, locking rules make it mandatory
+ 	 * to always lock pages in ascending order to avoid deadlocks with
+ 	 * concurrent tasks (such as starting writeback/delalloc).
+ 	 */
+-	if (src == dst && dst_loff < loff) {
+-		swap(src_pgarr, dst_pgarr);
++	if (src == dst && dst_loff < loff)
+ 		swap(loff, dst_loff);
 -	}
-+	mempool_destroy(btrfs_heuristic_ws_pool);
  
- 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
- 		while (!list_empty(&btrfs_comp_ws[i].idle_ws)) {
-@@ -1558,13 +1514,12 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
-  */
- int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- {
--	struct list_head *ws_list = __find_workspace(0, true);
- 	struct heuristic_ws *ws;
- 	u32 i;
- 	u8 byte;
- 	int ret = 0;
+-	ret = gather_extent_pages(src, src_pgarr, cmp->num_pages, loff);
++	cmp->num_pages = PAGE_ALIGN(len) >> PAGE_SHIFT;
++
++	ret = gather_extent_pages(src, cmp->src_pages, cmp->num_pages, loff);
+ 	if (ret)
+ 		goto out;
  
--	ws = list_entry(ws_list, struct heuristic_ws, list);
-+	ws = mempool_alloc(btrfs_heuristic_ws_pool, GFP_KERNEL);
- 
- 	heuristic_collect_sample(inode, start, end, ws);
- 
-@@ -1627,7 +1582,7 @@ int btrfs_compress_heuristic(struct inode *inode, u64 start, u64 end)
- 	}
+-	ret = gather_extent_pages(dst, dst_pgarr, cmp->num_pages, dst_loff);
++	ret = gather_extent_pages(dst, cmp->dst_pages, cmp->num_pages, dst_loff);
  
  out:
--	__free_workspace(0, ws_list, true);
-+	mempool_free(ws, btrfs_heuristic_ws_pool);
+ 	if (ret)
+@@ -3078,31 +3059,23 @@ static int extent_same_check_offsets(struct inode *inode, u64 off, u64 *plen,
+ 	return 0;
+ }
+ 
+-static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+-			     struct inode *dst, u64 dst_loff)
++static int __btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
++			       struct inode *dst, u64 dst_loff,
++			       struct cmp_pages *cmp)
+ {
+ 	int ret;
+ 	u64 len = olen;
+-	struct cmp_pages cmp;
+ 	bool same_inode = (src == dst);
+ 	u64 same_lock_start = 0;
+ 	u64 same_lock_len = 0;
+ 
+-	if (len == 0)
+-		return 0;
+-
+-	if (same_inode)
+-		inode_lock(src);
+-	else
+-		btrfs_double_inode_lock(src, dst);
+-
+ 	ret = extent_same_check_offsets(src, loff, &len, olen);
+ 	if (ret)
+-		goto out_unlock;
++		return ret;
+ 
+ 	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
+ 	if (ret)
+-		goto out_unlock;
++		return ret;
+ 
+ 	if (same_inode) {
+ 		/*
+@@ -3119,32 +3092,21 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 		 * allow an unaligned length so long as it ends at
+ 		 * i_size.
+ 		 */
+-		if (len != olen) {
+-			ret = -EINVAL;
+-			goto out_unlock;
+-		}
++		if (len != olen)
++			return -EINVAL;
+ 
+ 		/* Check for overlapping ranges */
+-		if (dst_loff + len > loff && dst_loff < loff + len) {
+-			ret = -EINVAL;
+-			goto out_unlock;
+-		}
++		if (dst_loff + len > loff && dst_loff < loff + len)
++			return -EINVAL;
+ 
+ 		same_lock_start = min_t(u64, loff, dst_loff);
+ 		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
+ 	}
+ 
+-	/* don't make the dst file partly checksummed */
+-	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+-	    (BTRFS_I(dst)->flags & BTRFS_INODE_NODATASUM)) {
+-		ret = -EINVAL;
+-		goto out_unlock;
+-	}
+-
+ again:
+-	ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, &cmp);
++	ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, cmp);
+ 	if (ret)
+-		goto out_unlock;
++		return ret;
+ 
+ 	if (same_inode)
+ 		ret = lock_extent_range(src, same_lock_start, same_lock_len,
+@@ -3165,7 +3127,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 		 * Ranges in the io trees already unlocked. Now unlock all
+ 		 * pages before waiting for all IO to complete.
+ 		 */
+-		btrfs_cmp_data_free(&cmp);
++		btrfs_cmp_data_free(cmp);
+ 		if (same_inode) {
+ 			btrfs_wait_ordered_range(src, same_lock_start,
+ 						 same_lock_len);
+@@ -3178,12 +3140,12 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 	ASSERT(ret == 0);
+ 	if (WARN_ON(ret)) {
+ 		/* ranges in the io trees already unlocked */
+-		btrfs_cmp_data_free(&cmp);
++		btrfs_cmp_data_free(cmp);
+ 		return ret;
+ 	}
+ 
+ 	/* pass original length for comparison so we stay within i_size */
+-	ret = btrfs_cmp_data(olen, &cmp);
++	ret = btrfs_cmp_data(olen, cmp);
+ 	if (ret == 0)
+ 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+ 
+@@ -3193,8 +3155,79 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 	else
+ 		btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
+ 
+-	btrfs_cmp_data_free(&cmp);
+-out_unlock:
++	btrfs_cmp_data_free(cmp);
++
++	return ret;
++}
++
++#define BTRFS_MAX_DEDUPE_LEN	SZ_16M
++
++static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
++				 struct inode *dst, u64 dst_loff)
++{
++	int ret;
++	int num_pages;
++	bool same_inode = (src == dst);
++	u64 i, tail_len, chunk_count;
++	struct cmp_pages cmp;
++
++	if (olen == 0)
++		return 0;
++
++	/* don't make the dst file partly checksummed */
++	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
++	    (BTRFS_I(dst)->flags & BTRFS_INODE_NODATASUM)) {
++		return -EINVAL;
++	}
++
++	if (same_inode)
++		inode_lock(src);
++	else
++		btrfs_double_inode_lock(src, dst);
++
++	tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
++	chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
++
++	if (chunk_count > 0) {
++		num_pages = PAGE_ALIGN(BTRFS_MAX_DEDUPE_LEN) >> PAGE_SHIFT;
++	} else {
++		num_pages = PAGE_ALIGN(tail_len) >> PAGE_SHIFT;
++	}
++	/*
++	 * We must gather up all the pages before we initiate our
++	 * extent locking. We use an array for the page pointers. Size
++	 * of the array is bounded by len, which is in turn bounded by
++	 * BTRFS_MAX_DEDUPE_LEN.
++	 */
++	ret = -ENOMEM;
++	cmp.src_pages = kcalloc(num_pages, sizeof(struct page *),
++				GFP_KERNEL);
++	if (!cmp.src_pages)
++		goto out;
++	cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *),
++				GFP_KERNEL);
++	if (!cmp.dst_pages)
++		goto out;
++
++
++	for (i = 0; i < chunk_count; i++) {
++		ret = __btrfs_extent_same(src, loff, BTRFS_MAX_DEDUPE_LEN,
++					  dst, dst_loff, &cmp);
++		if (ret)
++			goto out;
++
++		loff += BTRFS_MAX_DEDUPE_LEN;
++		dst_loff += BTRFS_MAX_DEDUPE_LEN;
++	}
++
++	if (tail_len > 0)
++		ret = __btrfs_extent_same(src, loff, tail_len,
++					  dst, dst_loff, &cmp);
++
++out:
++	kfree(cmp.src_pages);
++	kfree(cmp.dst_pages);
++
+ 	if (same_inode)
+ 		inode_unlock(src);
+ 	else
+@@ -3203,8 +3236,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
  	return ret;
  }
  
+-#define BTRFS_MAX_DEDUPE_LEN	SZ_16M
+-
+ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 				struct file *dst_file, u64 dst_loff)
+ {
+@@ -3213,9 +3244,6 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+ 	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
+ 	ssize_t res;
+ 
+-	if (olen > BTRFS_MAX_DEDUPE_LEN)
+-		olen = BTRFS_MAX_DEDUPE_LEN;
+-
+ 	if (WARN_ON_ONCE(bs < PAGE_SIZE)) {
+ 		/*
+ 		 * Btrfs does not support blocksize < page_size. As a
 -- 
 2.15.1
+

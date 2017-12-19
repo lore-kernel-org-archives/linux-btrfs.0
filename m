@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:48893 "EHLO pepin.polanet.pl"
+Received: from pepin.polanet.pl ([193.34.52.2]:49414 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751291AbdLSV6v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 16:58:51 -0500
-Date: Tue, 19 Dec 2017 22:58:49 +0100
+        id S1751551AbdLSWXK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Dec 2017 17:23:10 -0500
+Date: Tue, 19 Dec 2017 23:23:08 +0100
 From: Tomasz Pala <gotar@polanet.pl>
 To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Unexpected raid1 behaviour
-Message-ID: <20171219215849.GD14726@polanet.pl>
+Message-ID: <20171219222308.GE14726@polanet.pl>
 References: <5A357909.8010206@yandex.ru>
  <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
  <23094.37316.66397.431081@tree.ty.sabi.co.uk>
@@ -15,114 +15,71 @@ References: <5A357909.8010206@yandex.ru>
  <20171218194351.GA25245@polanet.pl>
  <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
  <20171219144644.GA9855@polanet.pl>
- <639c6928-4f27-5c33-738a-385e5b4f299f@gmail.com>
- <20171219175633.GA19477@polanet.pl>
- <4b132c07-62c7-e313-d454-b7414c737602@gmail.com>
+ <CAJCQCtSwfoSmAfFyP15xp-uysBY1kWyt65Jhf37g68YcPQ2QEA@mail.gmail.com>
+ <20171219204155.GB14726@polanet.pl>
+ <aac98fbf-c94b-1a88-f191-902146ff544f@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <4b132c07-62c7-e313-d454-b7414c737602@gmail.com>
+In-Reply-To: <aac98fbf-c94b-1a88-f191-902146ff544f@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 19, 2017 at 15:11:22 -0500, Austin S. Hemmelgarn wrote:
+On Tue, Dec 19, 2017 at 15:47:03 -0500, Austin S. Hemmelgarn wrote:
 
-> Except the systems running on those ancient kernel versions are not 
-> necessarily using a recent version of btrfs-progs.
+>> Sth like this? I got such problem a few months ago, my solution was
+>> accepted upstream:
+>> https://github.com/systemd/systemd/commit/0e8856d25ab71764a279c2377ae593c0f2460d8f
+>> 
+>> Rationale is in referred ticket, udev would not support any more btrfs
+>> logic, so unless btrfs handles this itself on kernel level (daemon?),
+>> that is all that can be done.
+> Or maybe systemd can quit trying to treat BTRFS like a volume manager 
+> (which it isn't) and just try to mount the requested filesystem with the 
+> requested options?
 
-Still much easier to update a userspace tools than kernel (consider
-binary drivers for various hardware).
+Tried that before ("just mount my filesystem, stupid"), it is a no-go.
+The problem source is not within systemd treating BTRFS differently, but
+in btrfs kernel logic that it uses. Just to show it:
 
-> So in other words, spend the time to write up code for btrfs-progs that 
-> will then be run by a significant minority of users because people using 
-> old kernels usually use old userspace, and people using new kernels 
-> won't have to care, instead of working on other bugs that are still 
-> affecting people?
+1. create 2-volume btrfs, e.g. /dev/sda and /dev/sdb,
+2. reboot the system into clean state (init=/bin/sh), (or remove btrfs-scan tool),
+3. try
+mount /dev/sda /test - fails
+mount /dev/sdb /test - works
+4. reboot again and try in reversed order
+mount /dev/sdb /test - fails
+mount /dev/sda /test - works
 
-I am aware of the dillema and the answer is: that depends.
-Depends on expected usefulness of such infrastructure regarding _future_
-changes and possible bugs.
-In case of stable/mature/frozen projects this doesn't make much sense,
-as the possible incompatibilities would be very rare.
-Wheter this makes sense for btrfs? I don't know - it's not mature, but if the quirk rate
-would be too high to track appropriate kernel versions it might be
-really better to officially state "DO USE 4.14+ kernel, REALLY".
+THIS readiness is exposed via udev to systemd. And it must be used for
+multi-layer setups to work (consider stacked LUKS, LVM, MD, iSCSI, FC etc).
 
-This might be accomplished very easy - when releasing new btrfs-progs
-check currently available LTS kernel and use it as a base reference for
-warning.
+In short: until *something* scans all the btrfs components, so the
+kernel makes it ready, systemd won't even try to mount it.
 
-After all, "giving users a hurt me button is not ethical programming."
+> Then you would just be able to specify 'degraded' in 
+> your mount options, and you don't have to care that the kernel refuses 
+> to mount degraded filesystems without being explicitly asked to.
 
->> Now, if the current kernels won't toggle degraded RAID1 as ro, can I
->> safely add "degraded" to the mount options? My primary concern is the
->> machine UPTIME. I care less about the data, as they are backed up to
->> some remote location and loosing day or week of changes is acceptable,
->> brain-split as well, while every hour of downtime costs me a real money.
-> In which case you shouldn't be relying on _ANY_ kind of RAID by itself, 
-> let alone BTRFS.  If you care that much about uptime, you should be 
-> investing in a HA setup and going from there.  If downtime costs you 
+Exactly. But since LP refused to try mounting despite kernel "not-ready"
+state - it is the kernel that must emit 'ready'. So the
+question is: how can I make kernel to mark degraded array as "ready"?
 
-I got this handled and don't use btrfs there - the question remains:
-in a situation as described above, is it safe now to add "degraded"?
+The obvious answer is: do it via kernel command line, just like mdadm
+does:
+rootflags=device=/dev/sda,device=/dev/sdb
+rootflags=device=/dev/sda,device=missing
+rootflags=device=/dev/sda,device=/dev/sdb,degraded
 
-To rephrase the question: can degraded RAID1 run permanently as rw
-without some *internal* damage?
+If only btrfs.ko recognized this, kernel would be able to assemble
+multivolume btrfs itself. Not only this would allow automated degraded
+mounts, it would also allow using initrd-less kernels on such volumes.
 
->> Anyway, users shouldn't look through syslog, device status should be
->> reported by some monitoring tool.
-> This is a common complaint, and based on developer response, I think the 
-> consensus is that it's out of scope for the time being.  There have been 
-> some people starting work on such things, but nobody really got anywhere 
-> because most of the users who care enough about monitoring to be 
-> interested are already using some external monitoring tool that it's 
-> easy to hook into.
+>> It doesn't have to be default, might be kernel compile-time knob, module
+>> parameter or anything else to make the *R*aid work.
+> There's a mount option for it per-filesystem.  Just add that to all your 
+> mount calls, and you get exactly the same effect.
 
-I agree, the btrfs code should only emit events, so
-SomeUserspaceGUIWhatever could display blinking exclamation mark.
-
->> Well, the question is: either it is not raid YET, or maybe it's time to consider renaming?
-> Again, the naming is too ingrained.  At a minimum, you will have to keep 
-> the old naming, and at that point you're just wasting time and making 
-> things _more_ confusing because some documentation will use the old 
-
-True, but realizing that documentation is already flawed it gets easier.
-But I still don't know if it is going to be RAID some day? Or won't be
-"by design"?
-
->> Ha! I got this disabled on every bus (although for different reasons)
->> after boot completes. Lucky me:)
-> Security I'm guessing (my laptop behaves like that for USB devices for 
-> that exact reason)?  It's a viable option on systems that are tightly 
-
-Yes, machines are locked and only authorized devices are allowed during
-boot.
-
-> IOW, if I lose a disk in a two device BTRFS volume set up for 
-> replication, I'll mount it degraded, and convert it from the raid1 
-> profile to the single profile and then remove the missing disk from the 
-> volume.
-
-I was about to do the same with my r/o-stuck btrfs system, unfortunatelly
-unplugged the wrong cable...
-
->> Writing accurate documentation requires deep undestanding of internals.
-[...]
-> Writing up something like that is near useless, it would only be valid 
-> for upstream kernels (And if you're using upstream kernels and following 
-> the advice of keeping up to date, what does it matter anyway?  The 
-[...]
-> kernel that fixes the issues it reports.), because distros do whatever 
-> the hell they want with version numbers (RHEL for example is notorious 
-> for using _ancient_ version numbers bug having bunches of stuff 
-> back-ported, and most other big distros that aren't Arch, Gentoo, or 
-> Slackware derived do so too to a lesser degree), and it would require 
-> constant curation to keep up to date.  Only for long-term known issues 
-
-OK, you've convinced me that kernel-vs-feature list is overhead.
-
-So maybe other approach: just like systemd sets the system time (when no
-time source available) to it's own release date, maybe btrfs-progs
-should take the version of the kernel on which it was build?
+If only they were passed...
 
 -- 
 Tomasz Pala <gotar@pld-linux.org>

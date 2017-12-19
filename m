@@ -1,96 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:56777 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965702AbdLSL3c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 06:29:32 -0500
-Subject: Re: [RFC PATCH] btrfs: qgroup: Deprecate the ability to manually
- inherit rfer/excl numbers
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <20171219104511.3563-1-wqu@suse.com>
- <1dbba47b-2f03-2a65-1384-ba45bc6bc403@suse.com>
- <7d8cd1a8-fa0f-7b7a-f06b-ccc714b4e42e@gmx.com>
- <4a576fea-4245-702e-01a8-09d5ac359509@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <cd4b5ff5-6207-12bf-ac88-1c45f31c2851@gmx.com>
-Date: Tue, 19 Dec 2017 19:28:48 +0800
+Received: from mail-it0-f53.google.com ([209.85.214.53]:37780 "EHLO
+        mail-it0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751797AbdLSMZy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Dec 2017 07:25:54 -0500
+Received: by mail-it0-f53.google.com with SMTP id d137so2581193itc.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 04:25:54 -0800 (PST)
+Subject: Re: Unexpected raid1 behaviour
+To: Tomasz Pala <gotar@polanet.pl>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+References: <5A357909.8010206@yandex.ru>
+ <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
+ <23094.37316.66397.431081@tree.ty.sabi.co.uk>
+ <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
+ <20171218194351.GA25245@polanet.pl>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
+Date: Tue, 19 Dec 2017 07:25:49 -0500
 MIME-Version: 1.0
-In-Reply-To: <4a576fea-4245-702e-01a8-09d5ac359509@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="6ovENWfrRrtu9KuAB8TwiaD2JerKBXTUR"
+In-Reply-To: <20171218194351.GA25245@polanet.pl>
+Content-Type: text/plain; charset=iso-8859-2; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---6ovENWfrRrtu9KuAB8TwiaD2JerKBXTUR
-Content-Type: multipart/mixed; boundary="DsO8fvvH8l5mKqbFDUbb31QFjnhtQktBR";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Message-ID: <cd4b5ff5-6207-12bf-ac88-1c45f31c2851@gmx.com>
-Subject: Re: [RFC PATCH] btrfs: qgroup: Deprecate the ability to manually
- inherit rfer/excl numbers
-References: <20171219104511.3563-1-wqu@suse.com>
- <1dbba47b-2f03-2a65-1384-ba45bc6bc403@suse.com>
- <7d8cd1a8-fa0f-7b7a-f06b-ccc714b4e42e@gmx.com>
- <4a576fea-4245-702e-01a8-09d5ac359509@suse.com>
-In-Reply-To: <4a576fea-4245-702e-01a8-09d5ac359509@suse.com>
-
---DsO8fvvH8l5mKqbFDUbb31QFjnhtQktBR
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2017=E5=B9=B412=E6=9C=8819=E6=97=A5 19:24, Nikolay Borisov wrote:
->=20
->=20
-> On 19.12.2017 13:20, Qu Wenruo wrote:
->> Naming like pad1/2 will make the check in btrfs_qgroup_inherit() look
->> quite weird.
->>
->> Although I don't have any better idea, so I'm mostly fine with such re=
-name.
->=20
-> Right, I saw the check now, missed it the first time. I think we should=
-
-> remove it and the code should completely ignore these values. Ideally,
-> we would have removed them from qgroup_inherit struct as well but this
-> means breaking the on-disk format. So let's ignore them altogether.
-
-Ignoring the values completely seems quite reasonable.
-
-I'll update the patch.
-
-Thanks,
-Qu
->=20
->>
->> Thanks,
-
-
---DsO8fvvH8l5mKqbFDUbb31QFjnhtQktBR--
-
---6ovENWfrRrtu9KuAB8TwiaD2JerKBXTUR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo49/EXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiWfwgAqwt3dbDngL94qxLIz/hxWa4D
-kB6lH8sesN8rY6E2E1xiQPYGSAqyG4AOaYPrGIU9GLU/7Hl7ou5OEaK3WKWo6Z6J
-Vfx+/kroOOZ5LmzC7d8hgdPwq8dEFiwib/4P1shfZZ2W61F3v9nKnpj+r25G81CQ
-bGsb0yMOs8L0XRenkoqHG75pT34ymyoOWDeJMxCQ0EoiVv8pbvksetGz4TvEsYjB
-r7mZdutZNI/GhQ6ObNFuDLncxk8jmFg8jmcIePctHkpUMZb4MbqGhouWDExGVreh
-y6qBcBC4TdPKTBJaHws7d5yIU3VY/2iuE/5kyk5NAdz6hiBbAXMuRP/t7M2TBg==
-=dGCH
------END PGP SIGNATURE-----
-
---6ovENWfrRrtu9KuAB8TwiaD2JerKBXTUR--
+On 2017-12-18 14:43, Tomasz Pala wrote:
+> On Mon, Dec 18, 2017 at 08:06:57 -0500, Austin S. Hemmelgarn wrote:
+> 
+>> The fact is, the only cases where this is really an issue is if you've
+>> either got intermittently bad hardware, or are dealing with external
+> 
+> Well, the RAID1+ is all about the failing hardware.
+About catastrophically failing hardware, not intermittent failure.
+> 
+>> storage devices.  For the majority of people who are using multi-device
+>> setups, the common case is internally connected fixed storage devices
+>> with properly working hardware, and for that use case, it works
+>> perfectly fine.
+> 
+> If you're talking about "RAID"-0 or storage pools (volume management)
+> that is true.
+> But if you imply, that RAID1+ "works perfectly fine as long as hardware
+> works fine" this is fundamentally wrong. If the hardware needs to work
+> properly for the RAID to work properly, noone would need this RAID in
+> the first place.
+I never said the hardware needed to not fail, just that it needed to 
+fail in a consistent manner.  BTRFS handles catastrophic failures of 
+storage devices just fine right now.  It has issues with intermittent 
+failures, but so does hardware RAID, and so do MD and LVM to a lesser 
+degree.
+> 
+>> that BTRFS should not care.  At the point at which a device is dropping
+>> off the bus and reappearing with enough regularity for this to be an
+>> issue, you have absolutely no idea how else it's corrupting your data,
+>> and support of such a situation is beyond any filesystem (including ZFS).
+> 
+> Support for such situation is exactly what RAID performs. So don't blame
+> people for expecting this to be handled as long as you call the
+> filesystem feature a 'RAID'.
+No, classical RAID (other than RAID0) is supposed to handle catastrophic 
+failure of component devices.  That is the entirety of the original 
+design purpose, and that is the entirety of what you should be using it 
+for in production.  The point at which you are getting random corruption 
+on a disk and you're using anything but BTRFS for replication, you 
+_NEED_ to replace that disk, and if you don't you risk it causing 
+corruption on the other disk.  As of right now, BTRFS is no different in 
+that respect, but I agree that it _should_ be able to handle such a 
+situation eventually.
+> 
+> If this feature is not going to mitigate hardware hiccups by design (as
+> opposed to "not implemented yet, needs some time", which is perfectly
+> understandable), just don't call it 'RAID'.
+It shouldn't have been called RAID in the first place, that we can agree 
+on (even if for different reasons).
+> 
+> All the features currently working, like bit-rot mitigation for
+> duplicated data (dup/raid*) using checksums, are something different
+> than RAID itself. RAID means "survive failure of N devices/controllers"
+> - I got one "RAID1" stuck in r/o after degraded mount, not nice... Not
+> _expected_ to happen after single disk failure (without any reappearing).
+And that's a known bug on older kernels (not to mention that you should 
+not be mounting writable and degraded for any purpose other than fixing 
+the volume).

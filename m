@@ -1,100 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:54814 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752165AbdLUXum (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Dec 2017 18:50:42 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBLNoetL119407
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:50:41 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2f0q00g00m-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:50:41 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBLNje4m023423
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:45:41 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBLNjewS011273
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:45:40 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:51598 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1758908AbdLSHpM (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 19 Dec 2017 02:45:12 -0500
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/10] Btrfs: add tracepoint for em's EEXIST case
-Date: Thu, 21 Dec 2017 15:42:55 -0700
-Message-Id: <20171221224256.18196-10-bo.li.liu@oracle.com>
-In-Reply-To: <20171221224256.18196-1-bo.li.liu@oracle.com>
-References: <20171221224256.18196-1-bo.li.liu@oracle.com>
+Subject: [PATCH] btrfs: qgroup: Fix root item corruption when multiple same source snapshiots are created with quota enabled
+Date: Tue, 19 Dec 2017 15:44:54 +0800
+Message-Id: <20171219074454.2874-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is adding a tracepoint 'btrfs_handle_em_exist' to help debug the
-subtle bugs around merge_extent_mapping.
+When multiple pending snapshots referring the same source subvolume are
+executed, enabled quota will cause root item corruption, where root
+items are using old bytenr (no backref in extent tree).
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+This can be triggered by fstests btrfs/152.
+
+The cause is when source subvolume is still dirty, extra commit
+(simplied transaction commit) of qgroup_account_snapshot() can skip
+dirty roots not recorded in current transaction, making root item of
+source subvolume not updated.
+
+Fix it by forcing recording source subvolume in current transaction
+before qgroup sub-transaction commit.
+
+Reported-by: Justin Maggard <jmaggard@netgear.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_map.c        |  1 +
- include/trace/events/btrfs.h | 35 +++++++++++++++++++++++++++++++++++
- 2 files changed, 36 insertions(+)
+ fs/btrfs/transaction.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index a8b7e24..40e4d30 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -539,6 +539,7 @@ int btrfs_add_extent_mapping(struct extent_map_tree *em_tree,
- 		ret = 0;
- 
- 		existing = search_extent_mapping(em_tree, start, len);
-+		trace_btrfs_handle_em_exist(existing, em, start, len);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index ddae813c01dd..f645e5de5fa5 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -319,7 +319,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
+ 	if ((test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
+ 	    root->last_trans < trans->transid) || force) {
+ 		WARN_ON(root == fs_info->extent_root);
+-		WARN_ON(root->commit_root != root->node);
++		WARN_ON(!force && root->commit_root != root->node);
  
  		/*
- 		 * existing will always be non-NULL, since there must be
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 4342a32..b7ffcf7 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -249,6 +249,41 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
- 		  __entry->refs, __entry->compress_type)
- );
+ 		 * see below for IN_TRANS_SETUP usage rules
+@@ -1366,6 +1366,14 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
+ 		return 0;
  
-+TRACE_EVENT(btrfs_handle_em_exist,
++	/*
++	 * Ensure dirty @src will be commited.
++	 * Or after comming commit_fs_roots() and switch_commit_roots(),
++	 * any dirty but not recorded root will never be updated again.
++	 * Causing outdated root item.
++	 */
++	record_root_in_trans(trans, src, 1);
 +
-+	TP_PROTO(const struct extent_map *existing, const struct extent_map *map, u64 start, u64 len),
-+
-+	TP_ARGS(existing, map, start, len),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  e_start		)
-+		__field(	u64,  e_len		)
-+		__field(	u64,  map_start		)
-+		__field(	u64,  map_len		)
-+		__field(	u64,  start		)
-+		__field(	u64,  len		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->e_start	= existing->start;
-+		__entry->e_len		= existing->len;
-+		__entry->map_start	= map->start;
-+		__entry->map_len	= map->len;
-+		__entry->start		= start;
-+		__entry->len		= len;
-+	),
-+
-+	TP_printk("start=%llu len=%llu "
-+		  "existing(start=%llu len=%llu) "
-+		  "em(start=%llu len=%llu)",
-+		  (unsigned long long)__entry->start,
-+		  (unsigned long long)__entry->len,
-+		  (unsigned long long)__entry->e_start,
-+		  (unsigned long long)__entry->e_len,
-+		  (unsigned long long)__entry->map_start,
-+		  (unsigned long long)__entry->map_len)
-+);
-+
- /* file extent item */
- DECLARE_EVENT_CLASS(btrfs__file_extent_item_regular,
- 
+ 	/*
+ 	 * We are going to commit transaction, see btrfs_commit_transaction()
+ 	 * comment for reason locking tree_log_mutex
 -- 
-2.9.4
+2.15.1
 

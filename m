@@ -1,136 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:54826 "EHLO
-        ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S964920AbdLRWIF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Dec 2017 17:08:05 -0500
-Date: Tue, 19 Dec 2017 09:07:59 +1100
-From: Dave Chinner <david@fromorbit.com>
+Received: from mx2.suse.de ([195.135.220.15]:44413 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750916AbdLSJ3w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Dec 2017 04:29:52 -0500
+Date: Tue, 19 Dec 2017 10:29:47 +0100
+From: Jan Kara <jack@suse.cz>
 To: Jeff Layton <jlayton@kernel.org>
-Cc: "J. Bruce Fields" <bfields@fieldses.org>, Jan Kara <jack@suse.cz>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        viro@zeniv.linux.org.uk, linux-nfs@vger.kernel.org, neilb@suse.de,
+Cc: Jan Kara <jack@suse.cz>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
+        linux-nfs@vger.kernel.org, bfields@fieldses.org, neilb@suse.de,
         jack@suse.de, linux-ext4@vger.kernel.org, tytso@mit.edu,
         adilger.kernel@dilger.ca, linux-xfs@vger.kernel.org,
-        darrick.wong@oracle.com, linux-btrfs@vger.kernel.org, clm@fb.com,
-        jbacik@fb.com, dsterba@suse.com, linux-integrity@vger.kernel.org,
+        darrick.wong@oracle.com, david@fromorbit.com,
+        linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        dsterba@suse.com, linux-integrity@vger.kernel.org,
         zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
         linux-afs@lists.infradead.org, dhowells@redhat.com,
         jaltman@auristor.com
 Subject: Re: [PATCH v3 19/19] fs: handle inode->i_version more efficiently
-Message-ID: <20171218220759.GF4094@dastard>
+Message-ID: <20171219092947.GC2277@quack2.suse.cz>
 References: <20171218151156.14565-1-jlayton@kernel.org>
  <20171218151156.14565-20-jlayton@kernel.org>
  <20171218163418.GF30350@quack2.suse.cz>
  <1513617740.3422.30.camel@kernel.org>
- <20171218173651.GB12454@fieldses.org>
- <1513625720.3422.68.camel@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1513625720.3422.68.camel@kernel.org>
+In-Reply-To: <1513617740.3422.30.camel@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 18, 2017 at 02:35:20PM -0500, Jeff Layton wrote:
-> [PATCH] SQUASH: add memory barriers around i_version accesses
+On Mon 18-12-17 12:22:20, Jeff Layton wrote:
+> On Mon, 2017-12-18 at 17:34 +0100, Jan Kara wrote:
+> > On Mon 18-12-17 10:11:56, Jeff Layton wrote:
+> > >  static inline bool
+> > >  inode_maybe_inc_iversion(struct inode *inode, bool force)
+> > >  {
+> > > -	atomic64_t *ivp = (atomic64_t *)&inode->i_version;
+> > > +	u64 cur, old, new;
+> > >  
+> > > -	atomic64_inc(ivp);
+> > > +	cur = (u64)atomic64_read(&inode->i_version);
+> > > +	for (;;) {
+> > > +		/* If flag is clear then we needn't do anything */
+> > > +		if (!force && !(cur & I_VERSION_QUERIED))
+> > > +			return false;
+> > 
+> > The fast path here misses any memory barrier. Thus it seems this query
+> > could be in theory reordered before any store that happened to modify the
+> > inode? Or maybe we could race and miss the fact that in fact this i_version
+> > has already been queried? But maybe there's some higher level locking that
+> > makes sure this is all a non-issue... But in that case it would deserve
+> > some comment I guess.
+> > 
+> 
+> There's no higher-level locking. Getting locking out of this codepath is
+> a good thing IMO. The larger question here is whether we really care
+> about ordering this with anything else.
+> 
+> The i_version, as implemented today, is not ordered with actual changes
+> to the inode. We only take the i_lock today when modifying it, not when
+> querying it. It's possible today that you could see the results of a
+> change and then do a fetch of the i_version that doesn't show an
+> increment vs. a previous change.
 
-Why explicit memory barriers rather than annotating the operations
-with the required semantics and getting the barriers the arch
-requires automatically?  I suspect this should be using
-atomic_read_acquire() and atomic_cmpxchg_release(), because AFAICT
-the atomic_cmpxchg needs to have release semantics to match the
-acquire semantics needed for the load of the current value.
+Yeah, so I don't suggest that you should fix unrelated issues but original
+i_lock protection did actually provide memory barriers (although
+semi-permeable, but in practice they are very often enough) and your patch
+removing those could have changed a theoretical issue to a practical
+problem. So at least preserving that original acquire-release semantics
+of i_version handling would be IMHO good.
 
->From include/linux/atomics.h:
+> It'd be nice if this were atomic with the actual changes that it
+> represents, but I think that would be prohibitively expensive. That may
+> be something we need to address. I'm not sure we really want to do it as
+> part of this patchset though.
+> 
+> > > +
+> > > +		/* Since lowest bit is flag, add 2 to avoid it */
+> > > +		new = (cur & ~I_VERSION_QUERIED) + I_VERSION_INCREMENT;
+> > > +
+> > > +		old = atomic64_cmpxchg(&inode->i_version, cur, new);
+> > > +		if (likely(old == cur))
+> > > +			break;
+> > > +		cur = old;
+> > > +	}
+> > >  	return true;
+> > >  }
+> > >  
+> > 
+> > ...
+> > 
+> > >  static inline u64
+> > >  inode_query_iversion(struct inode *inode)
+> > >  {
+> > > -	return inode_peek_iversion(inode);
+> > > +	u64 cur, old, new;
+> > > +
+> > > +	cur = atomic64_read(&inode->i_version);
+> > > +	for (;;) {
+> > > +		/* If flag is already set, then no need to swap */
+> > > +		if (cur & I_VERSION_QUERIED)
+> > > +			break;
+> > > +
+> > > +		new = cur | I_VERSION_QUERIED;
+> > > +		old = atomic64_cmpxchg(&inode->i_version, cur, new);
+> > > +		if (old == cur)
+> > > +			break;
+> > > +		cur = old;
+> > > +	}
+> > 
+> > Why not just use atomic64_or() here?
+> > 
+> 
+> If the cmpxchg fails, then either:
+> 
+> 1) it was incremented
+> 2) someone flagged it QUERIED
+> 
+> If an increment happened then we don't need to flag it as QUERIED if
+> we're returning an older value. If we use atomic64_or, then we can't
+> tell if an increment happened so we'd end up potentially flagging it
+> more than necessary.
+> 
+> In principle, either outcome is technically OK and we don't have to loop
+> if the cmpxchg doesn't work. That said, if we think there might be a
+> later i_version available, then I think we probably want to try to query
+> it again so we can return as late a one as possible.
 
- * For compound atomics performing both a load and a store, ACQUIRE
- * semantics apply only to the load and RELEASE semantics only to the
- * store portion of the operation. Note that a failed cmpxchg_acquire
- * does -not- imply any memory ordering constraints.
+OK, makes sense. I'm just a bit vary of cmpxchg loops as they tend to
+behave pretty badly in contended cases but I guess i_version won't be
+hammered *that* hard.
 
-Memory barriers hurt my brain. :/
-
-At minimum, shouldn't the atomic op specific barriers be used rather
-than full memory barriers? i.e:
-
-> diff --git a/include/linux/iversion.h b/include/linux/iversion.h
-> index a9fbf99709df..39ec9aa9e08e 100644
-> --- a/include/linux/iversion.h
-> +++ b/include/linux/iversion.h
-> @@ -87,6 +87,25 @@ static inline void
->  inode_set_iversion_raw(struct inode *inode, const u64 val)
->  {
->  	atomic64_set(&inode->i_version, val);
-> +	smp_wmb();
-
-	smp_mb__after_atomic();
-.....
-> +static inline u64
-> +inode_peek_iversion_raw(const struct inode *inode)
-> +{
-> +	smp_rmb();
-
-	smp_mb__before_atomic();
-
-> +	return atomic64_read(&inode->i_version);
->  }
-
-And, of course, these will require comments explaining what they
-match with and what they are ordering.
-
-> @@ -152,7 +171,7 @@ inode_maybe_inc_iversion(struct inode *inode, bool force)
->  {
->  	u64 cur, old, new;
->  
-> -	cur = (u64)atomic64_read(&inode->i_version);
-> +	cur = inode_peek_iversion_raw(inode);
->  	for (;;) {
->  		/* If flag is clear then we needn't do anything */
->  		if (!force && !(cur & I_VERSION_QUERIED))
-
-cmpxchg in this loop needs a release barrier so everyone will
-see the change?
-
-> @@ -183,23 +202,6 @@ inode_inc_iversion(struct inode *inode)
->  	inode_maybe_inc_iversion(inode, true);
->  }
->  
-> -/**
-> - * inode_peek_iversion_raw - grab a "raw" iversion value
-> - * @inode: inode from which i_version should be read
-> - *
-> - * Grab a "raw" inode->i_version value and return it. The i_version is not
-> - * flagged or converted in any way. This is mostly used to access a self-managed
-> - * i_version.
-> - *
-> - * With those filesystems, we want to treat the i_version as an entirely
-> - * opaque value.
-> - */
-> -static inline u64
-> -inode_peek_iversion_raw(const struct inode *inode)
-> -{
-> -	return atomic64_read(&inode->i_version);
-> -}
-> -
->  /**
->   * inode_iversion_need_inc - is the i_version in need of being incremented?
->   * @inode: inode to check
-> @@ -248,7 +250,7 @@ inode_query_iversion(struct inode *inode)
->  {
->  	u64 cur, old, new;
->  
-> -	cur = atomic64_read(&inode->i_version);
-> +	cur = inode_peek_iversion_raw(inode);
->  	for (;;) {
->  		/* If flag is already set, then no need to swap */
->  		if (cur & I_VERSION_QUERIED)
-
-cmpxchg in this loop needs a release barrier so everyone will
-see the change on load?
-
-Cheers,
-
-Dave.
+								Honza
 -- 
-Dave Chinner
-david@fromorbit.com
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

@@ -1,112 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:42321 "EHLO
-        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753433AbdLTAIa (ORCPT
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:26162 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753439AbdLTAgW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 19:08:30 -0500
-Received: by mail-oi0-f65.google.com with SMTP id o64so13575986oia.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Dec 2017 16:08:30 -0800 (PST)
+        Tue, 19 Dec 2017 19:36:22 -0500
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 5D9B9AC0181
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 09:36:12 +0900 (JST)
+Subject: Re: [PATCH] btrfs-progs: qgroup: Remove support for specifying
+ inherit type
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+References: <20171219105331.9636-1-wqu@suse.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <0441718e-9a39-fbf5-b026-d54bec6fe36b@jp.fujitsu.com>
+Date: Wed, 20 Dec 2017 09:34:50 +0900
 MIME-Version: 1.0
-In-Reply-To: <20171219211757.GC14726@polanet.pl>
-References: <5A357909.8010206@yandex.ru> <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
- <23094.37316.66397.431081@tree.ty.sabi.co.uk> <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
- <20171218194351.GA25245@polanet.pl> <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
- <20171219144644.GA9855@polanet.pl> <639c6928-4f27-5c33-738a-385e5b4f299f@gmail.com>
- <20171219175633.GA19477@polanet.pl> <CAJCQCtT+DjUDf3NBEQNxYm6SRhDL_FFXpz===fgub_k+AMmABg@mail.gmail.com>
- <20171219211757.GC14726@polanet.pl>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 19 Dec 2017 17:08:28 -0700
-Message-ID: <CAJCQCtSqw=-_6PBzaTiVhA=yoN4Fm=uwwjtqKgncK4B6R-zfJw@mail.gmail.com>
-Subject: Re: Unexpected raid1 behaviour
-To: Tomasz Pala <gotar@polanet.pl>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20171219105331.9636-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 19, 2017 at 2:17 PM, Tomasz Pala <gotar@polanet.pl> wrote:
-> On Tue, Dec 19, 2017 at 12:47:33 -0700, Chris Murphy wrote:
->
->> The more verbose man pages are, the more likely it is that information
->> gets stale. We already see this with the Btrfs Wiki. So are you
->
-> True. The same applies to git documentation (3rd paragraph):
->
-> https://stevebennett.me/2012/02/24/10-things-i-hate-about-git/
->
-> Fortunately this CAN be done properly, one of the greatest
-> documentations I've seen is systemd one.
->
-> What I don't like about documentation is lack of objectivity:
->
-> $ zgrep -i bugs /usr/share/man/man8/*btrfs*.8.gz | grep -v bugs.debian.org
->
-> Nothing. The old-school manuals all had BUGS section even if it was
-> empty. Seriously, nothing appropriate to be put in there? Documentation
-> must be symmetric - if it mentions feature X, it must mention at least the
-> most common caveats.
+On 2017/12/19 19:53, Qu Wenruo wrote:
+> Since kernel is deprecating the support for specifying inherit type,
+> remove the support in btrfs-progs too.
+> 
+> Thankfully, the options for qgroup inheritance is hidden and not
+> documented, so user shouldn't be affected at all.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  cmds-subvolume.c | 21 ---------------------
+>  qgroup.c         | 42 ------------------------------------------
+>  qgroup.h         |  3 ---
+>  3 files changed, 66 deletions(-)
+> 
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index dc626a6495e5..e0839da7d8f8 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -134,13 +134,6 @@ static int cmd_subvol_create(int argc, char **argv)
+>  			break;
+>  
+>  		switch (c) {
+> -		case 'c':
+> -			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
+> -			if (res) {
+> -				retval = res;
+> -				goto out;
+> -			}
+> -			break;
+>  		case 'i':
+>  			res = qgroup_inherit_add_group(&inherit, optarg);
+>  			if (res) {
 
-It's reasonable to have a known bugs section in the man page, so long
-as people are willing to do the work adding to it and deleting it when
-bugs are fixed.
+No harm, but we should remove "c:" from getopt() too.
+Tomohiro
 
+> @@ -670,13 +663,6 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+>  			break;
+>  
+>  		switch (c) {
+> -		case 'c':
+> -			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
+> -			if (res) {
+> -				retval = res;
+> -				goto out;
+> -			}
+> -			break;
+>  		case 'i':
+>  			res = qgroup_inherit_add_group(&inherit, optarg);
+>  			if (res) {
+> @@ -687,13 +673,6 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+>  		case 'r':
+>  			readonly = 1;
+>  			break;
+> -		case 'x':
+> -			res = qgroup_inherit_add_copy(&inherit, optarg, 1);
+> -			if (res) {
+> -				retval = res;
+> -				goto out;
+> -			}
+> -			break;
+>  		default:
+>  			usage(cmd_subvol_snapshot_usage);
+>  		}
+> diff --git a/qgroup.c b/qgroup.c
+> index 156825fd431d..e9158a260251 100644
+> --- a/qgroup.c
+> +++ b/qgroup.c
+> @@ -1310,45 +1310,3 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg)
+>  
+>  	return 0;
+>  }
+> -
+> -int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+> -			    int type)
+> -{
+> -	int ret;
+> -	u64 qgroup_src;
+> -	u64 qgroup_dst;
+> -	char *p;
+> -	int pos = 0;
+> -
+> -	p = strchr(arg, ':');
+> -	if (!p) {
+> -bad:
+> -		error("invalid copy specification, missing separator :");
+> -		return -EINVAL;
+> -	}
+> -	*p = 0;
+> -	qgroup_src = parse_qgroupid(arg);
+> -	qgroup_dst = parse_qgroupid(p + 1);
+> -	*p = ':';
+> -
+> -	if (!qgroup_src || !qgroup_dst)
+> -		goto bad;
+> -
+> -	if (*inherit)
+> -		pos = (*inherit)->num_qgroups +
+> -		      (*inherit)->num_ref_copies * 2 * type;
+> -
+> -	ret = qgroup_inherit_realloc(inherit, 2, pos);
+> -	if (ret)
+> -		return ret;
+> -
+> -	(*inherit)->qgroups[pos++] = qgroup_src;
+> -	(*inherit)->qgroups[pos++] = qgroup_dst;
+> -
+> -	if (!type)
+> -		++(*inherit)->num_ref_copies;
+> -	else
+> -		++(*inherit)->num_excl_copies;
+> -
+> -	return 0;
+> -}
+> diff --git a/qgroup.h b/qgroup.h
+> index 875fbdf37f5f..3fc57123dc2d 100644
+> --- a/qgroup.h
+> +++ b/qgroup.h
+> @@ -92,7 +92,4 @@ int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set **comp_set,
+>  				int is_descending);
+>  int qgroup_inherit_size(struct btrfs_qgroup_inherit *p);
+>  int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
+> -int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+> -			    int type);
+> -
+>  #endif
+> 
 
-
-
-
->
->> volunteering to do the btrfs-progs work to easily check kernel
->> versions and print appropriate warnings? Or is this a case of
->> complaining about what other people aren't doing with their time?
->
-> This is definitely the second case. You see, I got my issues with btrfs, I
-> already know where to use it and when not. I've learned HARD and still
-> didn't fully recovered (some dangling r/o, some ENOSPACE due to
-> fragmentation etc). What I /MIGHT/ help to the community is to share my
-> opinions and suggestions. And it's all up to you, what would you do with
-> this. Either you blame me for complaining or you ignore me - you
-> should realize, that _I_do_not_care_, because I already know things that
-> I write. At least some other guy, some other day would read this thread and my
-> opinions might save HIS day. After all, using btrfs should be preceded
-> with research.
->
-> No offence, just trying to be honest with you. Because the other thing
-> that I've learned hard in my life is to listen regular users of my
-> products and appreciate any feedback, even if it doesn't suit me.
-
-Btrfs development has definitely been a lot more fractured and wild
-west and people who do the work get to dictate the direction, than
-perhaps other Linux file systems, and certainly that's true compared
-to ZFS which has a small team with a very clear ideology and direction
-established from the outset.
-
-
->
->>> Now, if the current kernels won't toggle degraded RAID1 as ro, can I
->>> safely add "degraded" to the mount options? My primary concern is the
-> [...]
->> Btrfs simply is not ready for this use case. If you need to depend on
->> degraded raid1 booting, you need to use mdadm or LVM or hardware raid.
->> Complaining about the lack of maturity in this area? Get in line. Or
->> propose a design and scope of work that needs to be completed to
->> enable it.
->
-> I thought the work was already done if current kernel handles degraded RAID1
-> without switching to r/o, doesn't it? Or something else is missing?
-
-Well it only does rw once, then the next degraded is ro - there are
-patches dealing with this better but I don't know the state. And
-there's no resync code that I'm aware of, absolutely it's not good
-enough to just kick off a full scrub - that has huge performance
-implications and I'd consider it a regression compared to
-functionality in LVM and mdadm RAID by default with the write intent
-bitmap.  Without some equivalent short cut, automatic degraded means a
-decently likely scenario where a slightly late assembly at boot time
-will end up requiring a full scrub. That's not an improvement over
-manual degraded so people aren't hit with even more silent
-consequences of their unfortunate situation.
-
-
-
--- 
-Chris Murphy

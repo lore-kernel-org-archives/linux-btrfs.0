@@ -1,28 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:47318 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753593AbdLTH3t (ORCPT
+Received: from userp2130.oracle.com ([156.151.31.86]:50813 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751384AbdLTHxr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 02:29:49 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBK7REWl098660
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:29:48 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2eyj2f8a5d-1
+        Wed, 20 Dec 2017 02:53:47 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBK7q6Lh062024
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:53:46 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2130.oracle.com with ESMTP id 2eykhdg2a9-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:29:48 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vBK7TmNE024642
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:53:46 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBK7rjv0024889
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:29:48 GMT
-Received: from abhmp0016.oracle.com (abhmp0016.oracle.com [141.146.116.22])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vBK7TlTG014695
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:29:47 GMT
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:53:45 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBK7rj6C005418
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 07:53:45 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4] btrfs: handle dynamically reappearing missing device
-Date: Wed, 20 Dec 2017 15:30:21 +0800
-Message-Id: <20171220073021.9951-1-anand.jain@oracle.com>
+Subject: [PATCH v5] btrfs: handle dynamically reappearing missing device
+Date: Wed, 20 Dec 2017 15:54:18 +0800
+Message-Id: <20171220075418.12005-1-anand.jain@oracle.com>
+In-Reply-To: <20171220073021.9951-1-anand.jain@oracle.com>
+References: <20171220073021.9951-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -54,6 +56,8 @@ Thanks,
 This patch needs:
  [PATCH 0/4]  factor __btrfs_open_devices()
 
+v5:
+. Fix git picking other changes not related to this. Sorry.
 v4:
 . Handle open_one_dev failure. And we could fail the scan thread if
 fs is mounted and device open fails.
@@ -137,36 +141,6 @@ index 9e152e196148..65d10f38dd99 100644
  		}
  	}
  
-@@ -2004,8 +2051,13 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	device->fs_devices->num_devices--;
- 	device->fs_devices->total_devices--;
- 
--	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
-+	if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state)) {
- 		device->fs_devices->missing_devices--;
-+		if (!device->fs_devices->missing_devices)
-+			btrfs_set_super_flags(fs_info->super_copy,
-+				fs_info->super_copy->flags &
-+				~BTRFS_SUPER_FLAG_DEGRADED);
-+	}
- 
- 	btrfs_assign_next_active_device(fs_info, device, NULL);
- 
-@@ -2079,8 +2131,13 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
- 	list_del_rcu(&srcdev->dev_list);
- 	list_del(&srcdev->dev_alloc_list);
- 	fs_devices->num_devices--;
--	if (test_bit(BTRFS_DEV_STATE_MISSING, &srcdev->dev_state))
-+	if (test_bit(BTRFS_DEV_STATE_MISSING, &srcdev->dev_state)) {
- 		fs_devices->missing_devices--;
-+		if (!fs_devices->missing_devices)
-+			btrfs_set_super_flags(fs_info->super_copy,
-+				fs_info->super_copy->flags &
-+				~BTRFS_SUPER_FLAG_DEGRADED);
-+	}
- 
- 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &srcdev->dev_state))
- 		fs_devices->rw_devices--;
 -- 
 2.7.0
 

@@ -1,48 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:41615 "EHLO
-        mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755637AbdLTVAB (ORCPT
+Received: from mail-it0-f43.google.com ([209.85.214.43]:35322 "EHLO
+        mail-it0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755607AbdLTVLD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 16:00:01 -0500
-Received: by mail-io0-f176.google.com with SMTP id o2so18719501ioe.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 13:00:01 -0800 (PST)
+        Wed, 20 Dec 2017 16:11:03 -0500
+Received: by mail-it0-f43.google.com with SMTP id f143so8443064itb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 13:11:02 -0800 (PST)
 MIME-Version: 1.0
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Wed, 20 Dec 2017 23:59:20 +0300
-Message-ID: <CAGqmi740EcovePxQswsZ=yh9E5Y1zLKCBaTvFN0EE_AuVPpQ7A@mail.gmail.com>
-Subject: Btrfs allow compression on NoDataCow files? (AFAIK Not, but it does)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <09697eee-b6f6-eb02-1c0d-1d6f156985f9@applied-asynchrony.com>
+References: <CAG+QAKXycv-a3G9QKts4V9RWtKxgRgTtSd6mkZP=Dagmi9Ebtg@mail.gmail.com>
+ <CAG+QAKUbtQc0V0njpXoC_UZL5NF1BP+qoH6Zbh4KgEN_2EiOdw@mail.gmail.com>
+ <83e041e2-a440-845f-df54-ecde29bd10dd@mendix.com> <CAG+QAKViZXY-NguA+=Dy=1pye1Da+sM2+epohnxyefT=BPwXxw@mail.gmail.com>
+ <CAG+QAKWN1X9jVWZeZ8q4DNNxSCXLbYFtM-t=LjpFqeGLE8QgGg@mail.gmail.com>
+ <CAJCQCtTD0sp_YZGv47m4sjUvuAeTuq_P5XaRfnZ=SjvGvhF+Nw@mail.gmail.com> <09697eee-b6f6-eb02-1c0d-1d6f156985f9@applied-asynchrony.com>
+From: Rich Rauenzahn <rrauenza@gmail.com>
+Date: Wed, 20 Dec 2017 13:11:02 -0800
+Message-ID: <CAG+QAKVc_V5D=076JUmZf90_8O_9fC_nPaAhTU4DqoC5zvdFAA@mail.gmail.com>
+Subject: Re: kernel hangs during balance
+To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?= <holger@applied-asynchrony.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-How reproduce:
-touch test_file
-chattr +C test_file
-dd if=/dev/zero of=test_file bs=1M count=1
-btrfs fi def -vrczlib test_file
-filefrag -v test_file
+I switched to the LT kernel because of this issue.  I was running
+mainline and thought that LT would get me stability.  I can switch
+back to LT while we RCA.
 
-test_file
-Filesystem type is: 9123683e
-File size of test_file is 1048576 (256 blocks of 4096 bytes)
-ext:     logical_offset:        physical_offset: length:   expected: flags:
-  0:        0..      31:   72917050..  72917081:     32:             encoded
-  1:       32..      63:   72917118..  72917149:     32:   72917082: encoded
-  2:       64..      95:   72919494..  72919525:     32:   72917150: encoded
-  3:       96..     127:   72927576..  72927607:     32:   72919526: encoded
-  4:      128..     159:   72943261..  72943292:     32:   72927608: encoded
-  5:      160..     191:   72944929..  72944960:     32:   72943293: encoded
-  6:      192..     223:   72944952..  72944983:     32:   72944961: encoded
-  7:      224..     255:   72967084..  72967115:     32:   72944984:
-last,encoded,eof
-test_file: 8 extents found
+At the risk of changing two things, I could add that
+(scsi_mod.use_blk_mq=n) to my boot and also switch back to ML.  I do
+notice that disk IO is high at the time of the hang -- I've assumed it
+is btrfs balance, but if I read the logs right, it may have finished
+before the hang.  Adding more logging.
 
-I can't found at now, where that error happen in code,
-but it's reproducible on Linux 4.14.8
+I've also put the kernel logs into a pastebin:  https://pastebin.com/80qRXA9c
 
-Thanks.
-
--- 
-Have a nice day,
-Timofey.
+...wish I could get the watchdog to force a dump/trace.  Will look at that, too.

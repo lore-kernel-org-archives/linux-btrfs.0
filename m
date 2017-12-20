@@ -1,56 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:35764 "EHLO pepin.polanet.pl"
+Received: from mx2.suse.de ([195.135.220.15]:35433 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754564AbdLTIv3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 03:51:29 -0500
-Date: Wed, 20 Dec 2017 09:51:27 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Unexpected raid1 behaviour
-Message-ID: <20171220085127.GA25056@polanet.pl>
-References: <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
- <23094.37316.66397.431081@tree.ty.sabi.co.uk>
- <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
- <20171218194351.GA25245@polanet.pl>
- <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
- <20171219144644.GA9855@polanet.pl>
- <CAJCQCtSwfoSmAfFyP15xp-uysBY1kWyt65Jhf37g68YcPQ2QEA@mail.gmail.com>
- <20171219204155.GB14726@polanet.pl>
- <CAJCQCtQPmov53Q=BTzywawkW2froYx49M+ez9WZsRy2cp-b3+w@mail.gmail.com>
- <20171220083448.GA25687@polanet.pl>
+        id S1754389AbdLTJaf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Dec 2017 04:30:35 -0500
+Subject: Re: [PATCH v2 2/2] btrfs: handle volume split brain condition for
+ dynamically reappearing device
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171220080403.12702-1-anand.jain@oracle.com>
+ <20171220080403.12702-2-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <3b2b817f-fe6f-defc-c78c-9e26faddf95a@suse.com>
+Date: Wed, 20 Dec 2017 11:30:33 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <20171220083448.GA25687@polanet.pl>
+In-Reply-To: <20171220080403.12702-2-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Errata:
 
-On Wed, Dec 20, 2017 at 09:34:48 +0100, Tomasz Pala wrote:
 
-> /dev/sda -> 'not ready'
-> /dev/sdb -> 'not ready'
-> /dev/sdc -> 'ready', triggers /dev/sda -> 'not ready' and /dev/sdb - still 'not ready'
-> /dev/sdc -> kernel says 'ready', triggers /dev/sda - 'ready' and /dev/sdb -> 'ready'
+On 20.12.2017 10:04, Anand Jain wrote:
+> When the missing device reappears and joins the RAID group, and if there
+> are no more missing device at the volume level, then reset the
+> BTRFS_SUPER_FLAG_VOL_MOVED_ON flag.
 
-The last line should start with /dev/sdd.
+You should rename the flag here as well. Also I believe the changelog
+can be simplified:
 
-> After such timeout, I'd like to tell the kernel: "no more devices, give
-> me all the remaining btrfs volumes in degraded mode if possible". By
+When the last missing device in a RAID group joins we know the split
+brain situation is resolved and we reset the SUPER_FLAG_DEGRADED.
 
-Actually "if possible" means both:
-- if technically possible (i.e. required data is available, like half of RAID1),
-- AND if allowed for specific volume as there might be different policies.
-
-For example - one might allow rootfs to be started in degraded-rw mode in
-order for the system to boot up, /home in degraded read-only for the
-users to have access to their files and do not mount /srv degraded at all.
-The failed mount can be non-critical with 'nofail' fstab flag.
-
-> "give me btrfs vulumes" I mean "mark them as 'ready'" so the udev could
-> fire it's rules. And if there would be anything for udev to distinguish
-> 'ready' from 'ready-degraded' one could easily compose some notification
-> scripting on top of it, including sending e-mail to sysadmin.
-
--- 
-Tomasz Pala <gotar@pld-linux.org>
+> 
+> This patch is on top of the patch [1] in the ML.
+> [1] btrfs: handle dynamically reappearing missing device
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+> On top of misc-next kdave.
+> v2:
+>  Rename to BTRFS_SUPER_FLAG_DEGRADED.
+> 
+>  fs/btrfs/volumes.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 65d10f38dd99..32571f4fa72b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -858,6 +858,10 @@ static noinline int device_list_add(const char *path,
+>  
+>  			fs_devices->missing_devices--;
+>  			clear_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state);
+> +			if (!fs_devices->missing_devices)
+> +				btrfs_set_super_flags(fs_info->super_copy,
+> +						      fs_info->super_copy->flags &
+> +						      ~BTRFS_SUPER_FLAG_DEGRADED);
+>  
+>  			if (test_bit(BTRFS_DEV_STATE_WRITEABLE,
+>  				     &device->dev_state) &&
+> 

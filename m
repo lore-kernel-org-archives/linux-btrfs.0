@@ -1,53 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vs2.lukas-pirl.de ([5.45.100.90]:49100 "EHLO pim.lukas-pirl.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751281AbdLJXpl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 10 Dec 2017 18:45:41 -0500
-Received: from [192.168.2.168] (ip-2-204-9-41.web.vodafone.de [2.204.9.41])
-        by pim.lukas-pirl.de (Postfix) with ESMTPSA id BBF106EA8A87
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Dec 2017 00:45:39 +0100 (CET)
-From: Lukas Pirl <btrfs@lukas-pirl.de>
-Subject: btrfs-progs: replace: error message can be improved when other
- operation is running
+Received: from victor.provo.novell.com ([137.65.250.26]:44024 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751692AbdLTFTY (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 20 Dec 2017 00:19:24 -0500
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Message-ID: <4ca6dcdd-7920-4943-376a-19bc6ecc43b3@lukas-pirl.de>
-Date: Mon, 11 Dec 2017 00:45:36 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Cc: misono.tomohiro@jp.fujitsu.com
+Subject: [PATCH v2] btrfs-progs: qgroup: Remove support for specifying inherit type
+Date: Wed, 20 Dec 2017 13:19:12 +0800
+Message-Id: <20171220051912.18147-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear all,
+Since kernel is deprecating the support for specifying inherit type,
+remove the support in btrfs-progs too.
 
-when trying to replace a device of a file system for which a balance is
-running, btrfs-progs fails with the error message:
+Thankfully, the options for qgroup inheritance is hidden and not
+documented, so user shouldn't be affected at all.
 
-ERROR: ioctl(DEV_REPLACE_START) on '/mnt/xyz' returns error: <illegal
-result value>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2:
+  Remove the "c:" option in getopt(), spotted by Misono.
+---
+ cmds-subvolume.c | 25 ++-----------------------
+ qgroup.c         | 42 ------------------------------------------
+ qgroup.h         |  3 ---
+ 3 files changed, 2 insertions(+), 68 deletions(-)
 
-This might also be true for alike operations, such as "add", "delete"
-and "resize", since those cases do not seem to be considered in
-cmds-replace.c [0].
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index dc626a6495e5..f8e34bc842b3 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -129,18 +129,11 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	DIR	*dirstream = NULL;
+ 
+ 	while (1) {
+-		int c = getopt(argc, argv, "c:i:");
++		int c = getopt(argc, argv, "i:");
+ 		if (c < 0)
+ 			break;
+ 
+ 		switch (c) {
+-		case 'c':
+-			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
+-			if (res) {
+-				retval = res;
+-				goto out;
+-			}
+-			break;
+ 		case 'i':
+ 			res = qgroup_inherit_add_group(&inherit, optarg);
+ 			if (res) {
+@@ -665,18 +658,11 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 
+ 	memset(&args, 0, sizeof(args));
+ 	while (1) {
+-		int c = getopt(argc, argv, "c:i:r");
++		int c = getopt(argc, argv, "i:r");
+ 		if (c < 0)
+ 			break;
+ 
+ 		switch (c) {
+-		case 'c':
+-			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
+-			if (res) {
+-				retval = res;
+-				goto out;
+-			}
+-			break;
+ 		case 'i':
+ 			res = qgroup_inherit_add_group(&inherit, optarg);
+ 			if (res) {
+@@ -687,13 +673,6 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 		case 'r':
+ 			readonly = 1;
+ 			break;
+-		case 'x':
+-			res = qgroup_inherit_add_copy(&inherit, optarg, 1);
+-			if (res) {
+-				retval = res;
+-				goto out;
+-			}
+-			break;
+ 		default:
+ 			usage(cmd_subvol_snapshot_usage);
+ 		}
+diff --git a/qgroup.c b/qgroup.c
+index 156825fd431d..e9158a260251 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -1310,45 +1310,3 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg)
+ 
+ 	return 0;
+ }
+-
+-int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+-			    int type)
+-{
+-	int ret;
+-	u64 qgroup_src;
+-	u64 qgroup_dst;
+-	char *p;
+-	int pos = 0;
+-
+-	p = strchr(arg, ':');
+-	if (!p) {
+-bad:
+-		error("invalid copy specification, missing separator :");
+-		return -EINVAL;
+-	}
+-	*p = 0;
+-	qgroup_src = parse_qgroupid(arg);
+-	qgroup_dst = parse_qgroupid(p + 1);
+-	*p = ':';
+-
+-	if (!qgroup_src || !qgroup_dst)
+-		goto bad;
+-
+-	if (*inherit)
+-		pos = (*inherit)->num_qgroups +
+-		      (*inherit)->num_ref_copies * 2 * type;
+-
+-	ret = qgroup_inherit_realloc(inherit, 2, pos);
+-	if (ret)
+-		return ret;
+-
+-	(*inherit)->qgroups[pos++] = qgroup_src;
+-	(*inherit)->qgroups[pos++] = qgroup_dst;
+-
+-	if (!type)
+-		++(*inherit)->num_ref_copies;
+-	else
+-		++(*inherit)->num_excl_copies;
+-
+-	return 0;
+-}
+diff --git a/qgroup.h b/qgroup.h
+index 875fbdf37f5f..3fc57123dc2d 100644
+--- a/qgroup.h
++++ b/qgroup.h
+@@ -92,7 +92,4 @@ int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set **comp_set,
+ 				int is_descending);
+ int qgroup_inherit_size(struct btrfs_qgroup_inherit *p);
+ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
+-int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+-			    int type);
+-
+ #endif
+-- 
+2.15.1
 
-Apparently, this is not very helpful to the user (if not scary).
-In contrast, other commands give very helpful output in similar
-situations (e.g., "add/delete/… operation in progress" [1]).
-
-Other users' confusions might also be related to this potential issue [2].
-
-This is probably very easy to fix for someone into ioctl return values
-and all this.
-
-Thanks and cheers,
-
-Lukas
-
-GNU/Linux
-4.13.0-0.bpo.1-amd64 #1 SMP Debian 4.13.13-1~bpo9+1 (2017-11-22) x86_64
-btrfs-progs v4.13.3
-
-[0]
-https://github.com/kdave/btrfs-progs/blob/11c83cefb8b4a03b1835efaf603ddc95430a0c9e/cmds-replace.c#L48
-[1]
-https://github.com/kdave/btrfs-progs/blob/9fe889ac02b9c49b885c8999f5dd4e192697fa83/ioctl.h#L709
-[2] https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=866734

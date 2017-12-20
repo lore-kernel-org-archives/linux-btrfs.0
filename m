@@ -1,38 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:57182 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:54771 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751844AbdLTFvd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 00:51:33 -0500
-Subject: Re: [PATCH v2 09/17] btrfs-progs: lowmem check: start to remove
- parameters @trans in lowmem
+        id S932185AbdLTGAL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Dec 2017 01:00:11 -0500
+Subject: Re: [PATCH v2 00/17] btrfs-progs: lowmem check: avoid extents
+ overwrite
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <3009296d-c010-ed37-acf6-4bdf8a4bcc11@gmx.com>
-Date: Wed, 20 Dec 2017 13:51:11 +0800
+Message-ID: <5971e0e8-42af-3044-71c4-7473f28b6e40@gmx.com>
+Date: Wed, 20 Dec 2017 13:59:49 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh"
+ boundary="sJqhtExWgalMtoajamSjMWmzvslrf3iLt"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh
-Content-Type: multipart/mixed; boundary="TkjRl2EOVZDjx8TTrkCnFPWh1YHRMJGp8";
+--sJqhtExWgalMtoajamSjMWmzvslrf3iLt
+Content-Type: multipart/mixed; boundary="fHWPMnnDpWLUlCpIT5FdMvI1yywvLHiOR";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <3009296d-c010-ed37-acf6-4bdf8a4bcc11@gmx.com>
-Subject: Re: [PATCH v2 09/17] btrfs-progs: lowmem check: start to remove
- parameters @trans in lowmem
+Message-ID: <5971e0e8-42af-3044-71c4-7473f28b6e40@gmx.com>
+Subject: Re: [PATCH v2 00/17] btrfs-progs: lowmem check: avoid extents
+ overwrite
 References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
 
---TkjRl2EOVZDjx8TTrkCnFPWh1YHRMJGp8
+--fHWPMnnDpWLUlCpIT5FdMvI1yywvLHiOR
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,131 +38,116 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2017=E5=B9=B412=E6=9C=8820=E6=97=A5 12:57, Su Yue wrote:
-> Since extents can be avoid overwrite by excluding or new chunk
-> allocation. It's unnessesary to do all repairs in one transaction.
+> This patchset can be fetched from my github:
+> https://github.com/Damenly/btrfs-progs/tree/lowmem_repair
+> based on kdave/devel.
 >=20
-> This patch removes parameter @trans of repair_extent_data_item().
-> repair_extent_data_item() calls try_avoid_extents_overwrite()
-> and starts a transaction by itself.
+> Thanks to Qu Wenruo's ideas and suggestions first.
+> Any suggestions about names of functions and variables are welcome.
 >=20
-> Note: This patch and next patches cause error in lowmem repair like:
-> "Error: Commit_root already set when starting transaction".
-> This error will disappear after removing @trans finished.
->=20
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->  cmds-check.c | 24 +++++++++++++++++++-----
->  1 file changed, 19 insertions(+), 5 deletions(-)
->=20
-> diff --git a/cmds-check.c b/cmds-check.c
-> index bc405d0f3fc0..20bf3d230946 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -12064,18 +12064,19 @@ out:
->  	return err;
->  }
-> =20
-> +static int try_avoid_extents_overwrite(struct btrfs_fs_info *fs_info);=
+> Patch[1-3] fix minor problems of lowmem repair.
 
->  /*
->   * If @err contains BACKREF_MISSING then add extent of the
->   * file_extent_data_item.
->   *
->   * Returns error bits after reapir.
->   */
-> -static int repair_extent_data_item(struct btrfs_trans_handle *trans,
-> -				   struct btrfs_root *root,
-> +static int repair_extent_data_item(struct btrfs_root *root,
->  				   struct btrfs_path *pathp,
->  				   struct node_refs *nrefs,
->  				   int err)
->  {
-> +	struct btrfs_trans_handle *trans =3D NULL;
->  	struct btrfs_file_extent_item *fi;
->  	struct btrfs_key fi_key;
->  	struct btrfs_key key;
-> @@ -12092,6 +12093,7 @@ static int repair_extent_data_item(struct btrfs=
-_trans_handle *trans,
->  	u64 file_offset;
->  	int generation;
->  	int slot;
-> +	int need_insert =3D 0;
->  	int ret =3D 0;
-> =20
->  	eb =3D pathp->nodes[0];
-> @@ -12130,9 +12132,20 @@ static int repair_extent_data_item(struct btrf=
-s_trans_handle *trans,
->  		ret =3D -EIO;
->  		goto out;
->  	}
-> +	need_insert =3D ret;
-> =20
-> +	ret =3D try_avoid_extents_overwrite(root->fs_info);
+Mostly fine for patch 1-3.
 
-Even it's much cheaper to pin extent tree using chunk unit, I don't
-think it's a good idea to do it every time you are going to fix some
-extent tree problem.
+So Reviewed-by: Qu Wenruo <wqu@suse.com> for those patches.
 
-Why not just do it at the beginning of extent tree check?
+Although for 2nd patch, I'm not sure if the naming or if the >0 for
+error is good.
+
+
+>=20
+> Patch[4-8] introduce two ways to avoid extents overwrite:
+> 1) Traverse trees and exclude all metadata blocks.
+> It's time-inefficient for big filesystems.
+> 2) Mark all existed chunks full, allocate new chunk for CoW.
+> More efficient than method 1. However, it can't not handle situation
+> like no space.
+> Lowmem repair will try method 2 first and method 1 next now.
+
+Commented in separate patches.
 
 Thanks,
 Qu
 
-> +	if (ret)
-> +		goto out;
-> +	trans =3D btrfs_start_transaction(root, 1);
-> +	if (IS_ERR(trans)) {
-> +		ret =3D PTR_ERR(trans);
-> +		trans =3D NULL;
-> +		error("fail to start transaction %s", strerror(-ret));
-> +		goto out;
-> +	}
->  	/* insert an extent item */
-> -	if (ret > 0) {
-> +	if (need_insert) {
->  		key.objectid =3D disk_bytenr;
->  		key.type =3D BTRFS_EXTENT_ITEM_KEY;
->  		key.offset =3D num_bytes;
-> @@ -12172,6 +12185,8 @@ static int repair_extent_data_item(struct btrfs=
-_trans_handle *trans,
-> =20
->  	err &=3D ~BACKREF_MISSING;
->  out:
-> +	if (trans)
-> +		btrfs_commit_transaction(trans, root);
->  	btrfs_release_path(&path);
->  	if (ret)
->  		error("can't repair root %llu extent data item[%llu %llu]",
-> @@ -13445,8 +13460,7 @@ again:
->  	case BTRFS_EXTENT_DATA_KEY:
->  		ret =3D check_extent_data_item(root, path, nrefs, account_bytes);
->  		if (repair && ret)
-> -			ret =3D repair_extent_data_item(trans, root, path, nrefs,
-> -						      ret);
-> +			ret =3D repair_extent_data_item(root, path, nrefs, ret);
->  		err |=3D ret;
->  		break;
->  	case BTRFS_BLOCK_GROUP_ITEM_KEY:
+>=20
+> Patch[9-17] remove parameters in lowmem repair functions. They
+> will try to avoid extents overwrite if necessary and start=20
+> transactions themselves.
+>=20
+> Those patches are mainly for lowmem repair. Original mode is not
+> influenced.
+> Since btrfs-progs v4.14, lowmem mode changed to check all tree blocks
+> backrefs. There are many bugs about shared backref in lowmem mode now.
+> If lowmem check can not work as expected, lowmem repair are useless.
+> I will fix lowmem check in next.
+>=20
+> ---
+> Changlog:
+> v1->v2:
+>  - Let @err in check_btrfs_root() record err bits but excluded
+>    negative values.
+>  - Do not delete a line of code to release path after extent item'
+>    insertion in repair_extent_data_item().
+>  - Add patch[3].
+>  - Force CoW in new allocated chunk to avoid extents overwrite.
+>  - Remove parameters @trans in check_chunks_and_extents_v2() and
+>    related callees.
+>  - Repair functions for lowmem mode call try_avoid_extents_overwrite()
+>    and start transactions.
+>=20
+> Su Yue (17):
+>   btrfs-progs: lowmem check: release path in repair_extent_data_item()
+>   btrfs-progs: lowmem check: record returned errors after
+>     walk_down_tree_v2()
+>   btrfs-progs: lowmem check: assign @parent early in
+>     repair_extent_data_item()
+>   btrfs-progs: lowmem check: exclude extents of metadata blocks
+>   btrfs-progs: lowmem check: introduce modify_block_groups_cache()
+>   btrfs-progs: lowmem check: introduce force_cow_in_new_chunk()
+>   btrfs-progs: lowmem check: introduce try_avoid_extents_overwrite()
+>   btrfs-progs: lowmem check: exclude extents if init-extent-tree in
+>     lowmem
+>   btrfs-progs: lowmem check: start to remove parameters @trans in lowme=
+m
+>   btrfs-progs: lowmem check: remove parameter @trans of
+>     delete_extent_item()
+>   btrfs-progs: lowmem check: remove parameter @trans of
+>     repair_chunk_item()
+>   btrfs-progs: lowmem check: remove parameter @trans of
+>     repair_extent_item()
+>   btrfs-progs: lowmem check: remove parameter @trans of
+>     check_leaf_items()
+>   btrfs-progs: lowmem check: remove parameter @trans of
+>     repair_tree_back_ref()
+>   btrfs-progs: lowmem check: remove parameter @trans of
+>     check_btrfs_root()
+>   btrfs-progs: lowmem check: introduce repair_block_accounting()
+>   btrfs-progs: lowmem check: end of removing parameters @trans in lowme=
+m
+>=20
+>  cmds-check.c | 620 +++++++++++++++++++++++++++++++++++++++++++++++++--=
+--------
+>  1 file changed, 515 insertions(+), 105 deletions(-)
 >=20
 
 
---TkjRl2EOVZDjx8TTrkCnFPWh1YHRMJGp8--
+--fHWPMnnDpWLUlCpIT5FdMvI1yywvLHiOR--
 
---hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh
+--sJqhtExWgalMtoajamSjMWmzvslrf3iLt
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo5+k8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qju7Qf9Ea5XUR2ntDZ8FoBvV33rCmyv
-guVWSOeTEduqRrTl0XLYk6RSao+36eTFCSmMzsa0vfx5v1QuBAEsZ9LbiNu3hA3w
-R+Psu9jGtS+l7iR6OJAPo23x5AeRsTC+Aydpj/2s7TJPmlb6Nk0MPpB3BgCTEfu1
-vlz9M3Uc9Z4leyqCq3gwO5HM+F3Tv/mYl0bRDmrFEkimRsv4GdWF0IhNj32V5cwa
-8idpR1TnPlTH8XkAUScsM92esr8LrUocgjB0Fh5XlTps8axeyGKWpsUb7te6BFsl
-pn08z0xVtAY2IovdkSmL+IX3hPWkW4lsFVjhwgABdSntMQj25vWg/mfqE09DRw==
-=G6mM
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo5/FUXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjMXQf+Kkl3KGynF6rYtwykYfG0uyG9
+tvqCkvU8JoHenb/uJsME0i9hIIoRSL5XZAU92f7QfYuIunccY+JU3NykDn/YErzF
+gufavH3izzOzyS/txtTunP33BpW9FC9rJKQ0OK+iOeNrqY6cipy0VLk73IGLtjNW
+wma+3jF29/34GsGeoJPP9qBL0Ben7YSV/1Q0TS9FpI2rU+EUcqaewiBGY9XNBVgl
+oQBoozhtXteo3vCCuARr8GGXgZL1Ow/btlUr1owoJZCJEgOwfQJjdYPd8vrbx5gX
+80AKZPAMUPlZAEHFLOf0+9C41ASrfPCptbxo6CT69pYVGeWKkG6E3JNg6nQkyA==
+=tBQT
 -----END PGP SIGNATURE-----
 
---hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh--
+--sJqhtExWgalMtoajamSjMWmzvslrf3iLt--

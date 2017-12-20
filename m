@@ -1,67 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:32847 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1755757AbdLTRae (ORCPT
+Received: from mail-oi0-f45.google.com ([209.85.218.45]:42847 "EHLO
+        mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755910AbdLTTCD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 12:30:34 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eRiAJ-0000y9-OQ
-        for linux-btrfs@vger.kernel.org; Wed, 20 Dec 2017 18:28:23 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Unexpected raid1 behaviour
-Date: Wed, 20 Dec 2017 17:28:10 +0000 (UTC)
-Message-ID: <pan$758ef$cfef6027$b6ab67ce$233e8581@cox.net>
-References: <5A357909.8010206@yandex.ru>
-        <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
-        <23094.37316.66397.431081@tree.ty.sabi.co.uk>
-        <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
-        <20171218194351.GA25245@polanet.pl>
-        <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
-        <20171219144644.GA9855@polanet.pl>
-        <CAJCQCtSwfoSmAfFyP15xp-uysBY1kWyt65Jhf37g68YcPQ2QEA@mail.gmail.com>
-        <20171219204155.GB14726@polanet.pl>
-        <aac98fbf-c94b-1a88-f191-902146ff544f@gmail.com>
-        <20171219222308.GE14726@polanet.pl>
-        <862f03b0-9311-09f6-ee2c-d53d35d176bd@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Wed, 20 Dec 2017 14:02:03 -0500
+Received: by mail-oi0-f45.google.com with SMTP id o64so15300468oia.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 11:02:03 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CAG+QAKWN1X9jVWZeZ8q4DNNxSCXLbYFtM-t=LjpFqeGLE8QgGg@mail.gmail.com>
+References: <CAG+QAKXycv-a3G9QKts4V9RWtKxgRgTtSd6mkZP=Dagmi9Ebtg@mail.gmail.com>
+ <CAG+QAKUbtQc0V0njpXoC_UZL5NF1BP+qoH6Zbh4KgEN_2EiOdw@mail.gmail.com>
+ <83e041e2-a440-845f-df54-ecde29bd10dd@mendix.com> <CAG+QAKViZXY-NguA+=Dy=1pye1Da+sM2+epohnxyefT=BPwXxw@mail.gmail.com>
+ <CAG+QAKWN1X9jVWZeZ8q4DNNxSCXLbYFtM-t=LjpFqeGLE8QgGg@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 20 Dec 2017 12:02:02 -0700
+Message-ID: <CAJCQCtTD0sp_YZGv47m4sjUvuAeTuq_P5XaRfnZ=SjvGvhF+Nw@mail.gmail.com>
+Subject: Re: kernel hangs during balance
+To: Rich Rauenzahn <rrauenza@gmail.com>
+Cc: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Wed, 20 Dec 2017 08:33:03 -0500 as
-excerpted:
+I don't know if it's the sending MUA or the list server, but the line
+wrapping makes this much harder to follow. I suggest putting it in a
+text file and attaching the text file. It's definitely not on the
+receiving side, I see it here also:
+https://www.spinics.net/lists/linux-btrfs/msg72872.html
 
->> The obvious answer is: do it via kernel command line, just like mdadm
->> does:
->> rootflags=device=/dev/sda,device=/dev/sdb
->> rootflags=device=/dev/sda,device=missing
->> rootflags=device=/dev/sda,device=/dev/sdb,degraded
->> 
->> If only btrfs.ko recognized this, kernel would be able to assemble
->> multivolume btrfs itself. Not only this would allow automated degraded
->> mounts, it would also allow using initrd-less kernels on such volumes.
-> Last I checked, the 'device=' options work on upstream kernels just
-> fine, though I've never tried the degraded option.  Of course, I'm also
-> not using systemd, so it may be some interaction with systemd that's
-> causing them to not work (and yes, I understand that I'm inclined to
-> blame systemd most of the time based on significant past experience with
-> systemd creating issues that never existed before).
+Also anytime you get a hang, it's best to issue sysrq+w which dumps
+extra information into kernel messages that the developers sometimes
+find useful.
 
-Has the bug where rootflags=device=/dev/sda1,device=/dev/sdb1 failed, 
-been fixed?  Last I knew (which was ancient history in btrfs terms, but 
-I've not seen mention of a patch for it in all that time either), device= 
-on the userspace commandline worked, and device= on the kernel commandline 
-worked if there was just one device, but it would fail for more than one 
-device.  Mounting degraded (on a pair-device raid1) would then of course 
-work, since it would just use the one device=, but that's simply 
-dangerous for routine use regardless of whether it actually assembled or 
-not, thus effectively forcing an initr* for multi-device btrfs root in 
-ordered to get it mounted properly.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

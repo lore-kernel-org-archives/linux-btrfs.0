@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:54128 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:57182 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932124AbdLTFqf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 00:46:35 -0500
-Subject: Re: [PATCH v2 07/17] btrfs-progs: lowmem check: introduce
- try_avoid_extents_overwrite()
+        id S1751844AbdLTFvd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Dec 2017 00:51:33 -0500
+Subject: Re: [PATCH v2 09/17] btrfs-progs: lowmem check: start to remove
+ parameters @trans in lowmem
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-8-suy.fnst@cn.fujitsu.com>
+ <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <9d409201-bad4-9475-af42-8c4dda959086@gmx.com>
-Date: Wed, 20 Dec 2017 13:46:27 +0800
+Message-ID: <3009296d-c010-ed37-acf6-4bdf8a4bcc11@gmx.com>
+Date: Wed, 20 Dec 2017 13:51:11 +0800
 MIME-Version: 1.0
-In-Reply-To: <20171220045731.19343-8-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="mcd9kTYj6j4hGjQvMrOLgFz2feu6xpxZL"
+ boundary="hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---mcd9kTYj6j4hGjQvMrOLgFz2feu6xpxZL
-Content-Type: multipart/mixed; boundary="g2REMFYuVJF05yrcncSLeEaA7UHydh5Id";
+--hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh
+Content-Type: multipart/mixed; boundary="TkjRl2EOVZDjx8TTrkCnFPWh1YHRMJGp8";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <9d409201-bad4-9475-af42-8c4dda959086@gmx.com>
-Subject: Re: [PATCH v2 07/17] btrfs-progs: lowmem check: introduce
- try_avoid_extents_overwrite()
+Message-ID: <3009296d-c010-ed37-acf6-4bdf8a4bcc11@gmx.com>
+Subject: Re: [PATCH v2 09/17] btrfs-progs: lowmem check: start to remove
+ parameters @trans in lowmem
 References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-8-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20171220045731.19343-8-suy.fnst@cn.fujitsu.com>
+ <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20171220045731.19343-10-suy.fnst@cn.fujitsu.com>
 
---g2REMFYuVJF05yrcncSLeEaA7UHydh5Id
+--TkjRl2EOVZDjx8TTrkCnFPWh1YHRMJGp8
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,176 +40,131 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2017=E5=B9=B412=E6=9C=8820=E6=97=A5 12:57, Su Yue wrote:
-> Define a global enum extents_operation to record extents are pinned,
-> excluded or new chunk is allocated for extents.
-> Although global variable is not so graceful, it simplifies codes much.
+> Since extents can be avoid overwrite by excluding or new chunk
+> allocation. It's unnessesary to do all repairs in one transaction.
 >=20
-> New function try_avoid_extents_overwrite() will try to mark block
-> groups full and allocate a new chunk. If it failed because of no space
-> or wrong used bytes(fsck-tests/004), then try to exclude metadata
-> blocks.
+> This patch removes parameter @trans of repair_extent_data_item().
+> repair_extent_data_item() calls try_avoid_extents_overwrite()
+> and starts a transaction by itself.
+>=20
+> Note: This patch and next patches cause error in lowmem repair like:
+> "Error: Commit_root already set when starting transaction".
+> This error will disappear after removing @trans finished.
 >=20
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 > ---
->  cmds-check.c | 101 +++++++++++++++++++++++++++++++++++++++++++++++++++=
-++++++++
->  1 file changed, 101 insertions(+)
+>  cmds-check.c | 24 +++++++++++++++++++-----
+>  1 file changed, 19 insertions(+), 5 deletions(-)
 >=20
 > diff --git a/cmds-check.c b/cmds-check.c
-> index 311c8a9f45e8..9042bab93785 100644
+> index bc405d0f3fc0..20bf3d230946 100644
 > --- a/cmds-check.c
 > +++ b/cmds-check.c
-> @@ -84,6 +84,15 @@ enum btrfs_check_mode {
-> =20
->  static enum btrfs_check_mode check_mode =3D CHECK_MODE_DEFAULT;
-> =20
-> +enum lowmem_extents_operation {
-> +	EXTENTS_PIN,
-> +	EXTENTS_EXCLUDE,
-> +	EXTENTS_MARK_BG_FULL,
-> +	EXTENTS_NONE
-> +};
-> +
-> +static enum lowmem_extents_operation extents_operation =3D EXTENTS_NON=
-E;
-> +
->  struct extent_backref {
->  	struct rb_node node;
->  	unsigned int is_data:1;
-> @@ -13517,6 +13526,98 @@ out:
+> @@ -12064,18 +12064,19 @@ out:
 >  	return err;
 >  }
 > =20
-> +static void cleanup_excluded_extents(struct btrfs_fs_info *fs_info);
-> +static int end_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
-> +{
-> +	int ret;
-> +
-> +	switch (extents_operation) {
-> +	case EXTENTS_PIN:
-> +		ret =3D btrfs_finish_extent_commit(NULL, fs_info->extent_root,
-> +						 &fs_info->pinned_extents);
-> +		break;
+> +static int try_avoid_extents_overwrite(struct btrfs_fs_info *fs_info);=
 
-Any particular reason to support pining down extents?
+>  /*
+>   * If @err contains BACKREF_MISSING then add extent of the
+>   * file_extent_data_item.
+>   *
+>   * Returns error bits after reapir.
+>   */
+> -static int repair_extent_data_item(struct btrfs_trans_handle *trans,
+> -				   struct btrfs_root *root,
+> +static int repair_extent_data_item(struct btrfs_root *root,
+>  				   struct btrfs_path *pathp,
+>  				   struct node_refs *nrefs,
+>  				   int err)
+>  {
+> +	struct btrfs_trans_handle *trans =3D NULL;
+>  	struct btrfs_file_extent_item *fi;
+>  	struct btrfs_key fi_key;
+>  	struct btrfs_key key;
+> @@ -12092,6 +12093,7 @@ static int repair_extent_data_item(struct btrfs=
+_trans_handle *trans,
+>  	u64 file_offset;
+>  	int generation;
+>  	int slot;
+> +	int need_insert =3D 0;
+>  	int ret =3D 0;
+> =20
+>  	eb =3D pathp->nodes[0];
+> @@ -12130,9 +12132,20 @@ static int repair_extent_data_item(struct btrf=
+s_trans_handle *trans,
+>  		ret =3D -EIO;
+>  		goto out;
+>  	}
+> +	need_insert =3D ret;
+> =20
+> +	ret =3D try_avoid_extents_overwrite(root->fs_info);
 
-As I already mentioned in the bug fix patch, pin will cause extent to be
-considered as free after transaction commitment.
+Even it's much cheaper to pin extent tree using chunk unit, I don't
+think it's a good idea to do it every time you are going to fix some
+extent tree problem.
 
-Or it's only designed to support extent-tree rebuild?
-
-At least I didn't see any where using EXTENT_PIN in the patchset.
+Why not just do it at the beginning of extent tree check?
 
 Thanks,
 Qu
 
-> +	case EXTENTS_EXCLUDE:
-> +		cleanup_excluded_extents(fs_info);
-> +		ret =3D 0;
-> +		break;
-> +	case EXTENTS_MARK_BG_FULL:
-> +		ret =3D modify_block_groups_cache(fs_info,
-> +						BTRFS_BLOCK_GROUP_METADATA, 0);
-> +		break;
-> +	case EXTENTS_NONE:
-> +		ret =3D 0;
-> +		break;
-> +	default:
-> +		ret =3D -EINVAL;
-> +	}
-> +
-> +	if (!ret)
-> +		extents_operation =3D EXTENTS_NONE;
-> +	return ret;
-> +}
-> +
-> +static int pin_metadata_blocks(struct btrfs_fs_info *fs_info);
-> +static int exclude_metadata_blocks(struct btrfs_fs_info *fs_info);
-> +/*
-> + * NOTE: Do not call this function during transaction.
-> + */
-> +static int avoid_extents_overwrite(struct btrfs_fs_info *fs_info,
-> +				   enum lowmem_extents_operation op)
-> +{
-> +	int ret;
-> +
-> +	if (op =3D=3D extents_operation)
-> +		return 0;
-> +
-> +	switch (op) {
-> +	case EXTENTS_PIN:
-> +		ret =3D pin_metadata_blocks(fs_info);
-> +		break;
-> +	case EXTENTS_EXCLUDE:
-> +		ret =3D exclude_metadata_blocks(fs_info);
-> +		break;
-> +	case EXTENTS_MARK_BG_FULL:
-> +		ret =3D force_cow_in_new_chunk(fs_info);
-> +		break;
-> +	case EXTENTS_NONE:
-> +		ret =3D 0;
-> +		break;
-> +	default:
-> +		return -EINVAL;
-> +	}
-> +
-> +	/* extents_operation should be assigned anyway for latter clean up. *=
-/
-> +	extents_operation =3D op;
-> +
 > +	if (ret)
-> +		end_avoid_extents_overwrite(fs_info);
-> +	return ret;
-> +}
-> +
-> +static int try_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
-> +{
-> +	int ret;
-> +	int mixed =3D btrfs_fs_incompat(fs_info, MIXED_GROUPS);
-> +
-> +	if (extents_operation !=3D EXTENTS_NONE)
-> +		return 0;
-> +	ret =3D avoid_extents_overwrite(fs_info, EXTENTS_MARK_BG_FULL);
-> +
-> +	/*
-> +	 * If there is no space left to allocate, try to exclude all metadata=
-
-> +	 * blocks. Mix filesystem is unsupported.
-> +	 */
-> +	if (ret && ret =3D=3D -ENOSPC && !mixed) {
-> +		printf(
-> +	"Try to exclude all metadata blcoks and extents, it may be slow\n");
-> +		ret =3D avoid_extents_overwrite(fs_info, EXTENTS_EXCLUDE);
+> +		goto out;
+> +	trans =3D btrfs_start_transaction(root, 1);
+> +	if (IS_ERR(trans)) {
+> +		ret =3D PTR_ERR(trans);
+> +		trans =3D NULL;
+> +		error("fail to start transaction %s", strerror(-ret));
+> +		goto out;
 > +	}
-> +
-> +	if (ret)
-> +		error("failed to avoid extents overwrite %s", strerror(-ret));
-> +	return ret;
-> +}
-> +
->  /*
->   * Low memory usage version check_chunks_and_extents.
->   */
+>  	/* insert an extent item */
+> -	if (ret > 0) {
+> +	if (need_insert) {
+>  		key.objectid =3D disk_bytenr;
+>  		key.type =3D BTRFS_EXTENT_ITEM_KEY;
+>  		key.offset =3D num_bytes;
+> @@ -12172,6 +12185,8 @@ static int repair_extent_data_item(struct btrfs=
+_trans_handle *trans,
+> =20
+>  	err &=3D ~BACKREF_MISSING;
+>  out:
+> +	if (trans)
+> +		btrfs_commit_transaction(trans, root);
+>  	btrfs_release_path(&path);
+>  	if (ret)
+>  		error("can't repair root %llu extent data item[%llu %llu]",
+> @@ -13445,8 +13460,7 @@ again:
+>  	case BTRFS_EXTENT_DATA_KEY:
+>  		ret =3D check_extent_data_item(root, path, nrefs, account_bytes);
+>  		if (repair && ret)
+> -			ret =3D repair_extent_data_item(trans, root, path, nrefs,
+> -						      ret);
+> +			ret =3D repair_extent_data_item(root, path, nrefs, ret);
+>  		err |=3D ret;
+>  		break;
+>  	case BTRFS_BLOCK_GROUP_ITEM_KEY:
 >=20
 
 
---g2REMFYuVJF05yrcncSLeEaA7UHydh5Id--
+--TkjRl2EOVZDjx8TTrkCnFPWh1YHRMJGp8--
 
---mcd9kTYj6j4hGjQvMrOLgFz2feu6xpxZL
+--hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo5+TMXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiz6gf9FzWb+rO+kuyfm+GcPvfZSlLI
-sW622Uf72ekgxmnP+FWf/aoc7hPPbwWs0bZfkv9b0rEZZMZgG9K1MnBgmq3o9tjG
-2S696RQryyrbfxNxmoscknmx4hjZ2uYa8/P6oftEJqLJDhI1w4p/RxnPjBdc3d2x
-fggD3efU8rk9rHUJt9Ysdbnoo/C9o9S+j/yxoH/3CtiSxx+WlwHfAgRcollk5/4O
-G0uZl/TUdxDIH3XTVKql2UFenDIeFrve0KQTFuNkDC1g27j03pRoosAfrmolIyAk
-xZKCoc0Eos+beF7qufQahNYUEvKkxCIUAmhqVFf+Qe6hSUvVfu3wgTjQbGBjTQ==
-=WM9k
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo5+k8XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qju7Qf9Ea5XUR2ntDZ8FoBvV33rCmyv
+guVWSOeTEduqRrTl0XLYk6RSao+36eTFCSmMzsa0vfx5v1QuBAEsZ9LbiNu3hA3w
+R+Psu9jGtS+l7iR6OJAPo23x5AeRsTC+Aydpj/2s7TJPmlb6Nk0MPpB3BgCTEfu1
+vlz9M3Uc9Z4leyqCq3gwO5HM+F3Tv/mYl0bRDmrFEkimRsv4GdWF0IhNj32V5cwa
+8idpR1TnPlTH8XkAUScsM92esr8LrUocgjB0Fh5XlTps8axeyGKWpsUb7te6BFsl
+pn08z0xVtAY2IovdkSmL+IX3hPWkW4lsFVjhwgABdSntMQj25vWg/mfqE09DRw==
+=G6mM
 -----END PGP SIGNATURE-----
 
---mcd9kTYj6j4hGjQvMrOLgFz2feu6xpxZL--
+--hPevlfMEoISugBOcD8TgMXpRyTT6CUxhh--

@@ -1,84 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f52.google.com ([209.85.214.52]:37755 "EHLO
-        mail-it0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754388AbdLTUOy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 15:14:54 -0500
-Received: by mail-it0-f52.google.com with SMTP id d137so8252279itc.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 12:14:54 -0800 (PST)
-Subject: Re: Unexpected raid1 behaviour
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>, Tomasz Pala <gotar@polanet.pl>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <5A357909.8010206@yandex.ru>
- <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
- <23094.37316.66397.431081@tree.ty.sabi.co.uk>
- <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
- <20171218194351.GA25245@polanet.pl>
- <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
- <20171219144644.GA9855@polanet.pl>
- <639c6928-4f27-5c33-738a-385e5b4f299f@gmail.com>
- <20171219175633.GA19477@polanet.pl>
- <CAJCQCtT+DjUDf3NBEQNxYm6SRhDL_FFXpz===fgub_k+AMmABg@mail.gmail.com>
- <2532cc1d-bbe4-a140-8c69-beecb2b73f79@gmail.com>
- <CAJCQCtR5HnDSOepiv4r4=kiL1P969oSyS1fr6UGUz23ksj-OYg@mail.gmail.com>
- <CAJCQCtTAbZ9Uf2pL_2KtHV3pSkpVhuo+DzwA9M2ZFL8=QUJxAg@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <7313f511-e4e9-3ceb-b2a1-c3d197a9625b@gmail.com>
-Date: Wed, 20 Dec 2017 15:14:49 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56789 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755292AbdLTUPp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 20 Dec 2017 15:15:45 -0500
+Subject: Re: WARN_ON in __writeback_inodes_sb_nr
+To: David Ahern <dsahern@gmail.com>, linux-btrfs@vger.kernel.org,
+        viro@zeniv.linux.org.uk, linux-fsdevel <linux-fsdevel@vger.kernel.org>
+References: <6833930a-08d7-6fbc-0141-eb9cdfd6bb4d@gmail.com>
+ <58a1255c-e96d-21bf-e206-7d6ebaa3e94c@gmail.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <53c96c6a-449a-42c1-a657-f07347296691@suse.com>
+Date: Wed, 20 Dec 2017 22:15:42 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTAbZ9Uf2pL_2KtHV3pSkpVhuo+DzwA9M2ZFL8=QUJxAg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <58a1255c-e96d-21bf-e206-7d6ebaa3e94c@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2017-12-20 15:07, Chris Murphy wrote:
-> On Wed, Dec 20, 2017 at 1:02 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> On Wed, Dec 20, 2017 at 9:53 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
->>> 19.12.2017 22:47, Chris Murphy пишет:
->>>>
->>>>>
->>>>> BTW, doesn't SuSE use btrfs by default? Would you expect everyone using
->>>>> this distro to research every component used?
->>>>
->>>> As far as I'm aware, only Btrfs single device stuff is "supported".
->>>> The multiple device stuff is definitely not supported on openSUSE, but
->>>> I have no idea to what degree they support it with enterprise license,
->>>> no doubt that support must come with caveats.
->>>>
->>>
->>> I was rather surprised seeing RAID1 and RAID10 listed as supported in
->>> SLES 12.x release notes, especially as there is no support for
->>> multi-device btrfs in YaST and hence no way to even install on such
->>> filesystem.
->>
->> Haha. OK well I'm at a loss then. And they use systemd which is going
->> to run into the udev rule that prevents systemd from even attempting
->> to mount rootfs if one or more devices are missing. So I don't know
->> how it really gets supported. At the dracut prompt, manually mount
->> using -o degraded to /sysroot and then exit? I guess?
-> 
-> 
-> There is an irony here:
-> 
-> YaST doesn't have Btrfs raid1 or raid10 options; and also won't do
-> encrypted root with Btrfs either because YaST enforces LVM to do LUKS
-> encryption for some weird reason; and it also enforces NOT putting
-> Btrfs on LVM.
-The 'LUKS must use LVM' thing is likely historical.  The BCP for using 
-LUKS is that it's at the bottom level (so you leak absolutely nothing 
-about how your storage stack is structured), and if that's the case you 
-need something on top to support separate filesystems, which up until 
-BTRFS came around has solely been LVM.
 
-The 'No BTRFS on LVM' thing is likely for sanity reasons.  Using BTRFS 
-on SuSE means allocating /boot and swap, and the entire rest of the disk 
-is BTRFS.  They only support a single PV or a single BTRFS volume at the 
-bottom level per-disk for /.
+
+On 20.12.2017 21:16, David Ahern wrote:
+> I am still seeing this problem on 4.15.0-rc3
+
+This is a known problem and the offending commit is this one
+ce8ea7cc6eb3 ("btrfs: don't call btrfs_start_delalloc_roots in
+flushoncommit") and this manifests only if you have mounted with
+flushoncommit mount option. A fix is unlikely to land for 4.15
 > 
-> Meanwhile, Fedora/Red Hat's Anaconda installer has supported both of
-> these use cases for something like 5 years (does support Btrfs raid1
-> and raid10 layouts; and also supports Btrfs directly on dmcrypt
-> without LVM) - with the caveat that it enforces /boot to be on ext4.
-And this caveat is because for some reason Fedora has chosen not to 
-integrate BTRFS support into their version of GRUB.
+> 
+> On 11/17/17 12:55 PM, David Ahern wrote:
+>> I see a backtrace booting 4.14+ on a mellanox switch. The trace is due
+>> to the WARN_ON in __writeback_inodes_sb_nr.
+>>
+>> [   40.958590] WARNING: CPU: 0 PID: 183 at
+>> /home/dsa/kernel-2.git/fs/fs-writeback.c:2339
+>> __writeback_inodes_sb_nr+0x8a/0x90
+>> [   40.958593] Modules linked in: ebtable_filter ebtables ip6table_raw
+>> ip6table_mangle ip6table_filter ip6_tables iTCO_wdt iTCO_vendor_support
+>> coretemp x86_pkg_temp_thermal kvm_intel kvm irqbypass lpc_ich mfd_core
+>> battery mei_me mei shpchp lm75 regmap_i2c pmbus pmbus_core i2c_dev
+>> i2c_mux k10temp mpls_iptunnel mpls_router ip_tunnel at24 tun
+>> br_netfilter bonding loop autofs4 dm_mod dax crc32c_intel i2c_i801
+>> i2c_core thermal mlxsw_spectrum psample parman bridge stp llc mlxsw_pci
+>> mlxsw_core mlxfw devlink e1000e hwmon
+>> [   40.958664] CPU: 0 PID: 183 Comm: btrfs-transacti Not tainted 4.14.0+ #38
+>> [   40.958666] Hardware name: Mellanox Technologies Ltd. Mellanox
+>> switch/Mellanox switch, BIOS 4.6.5 05/21/2015
+>> [   40.958669] task: ffff8803db266540 task.stack: ffffc90000344000
+>> [   40.958675] RIP: 0010:__writeback_inodes_sb_nr+0x8a/0x90
+>> [   40.958677] RSP: 0018:ffffc90000347dc8 EFLAGS: 00010246
+>> [   40.958681] RAX: 0000000000000000 RBX: ffff88040a641800 RCX:
+>> 0000000000000000
+>> [   40.958683] RDX: 0000000000000002 RSI: 00000000000045a7 RDI:
+>> ffffc90000347e10
+>> [   40.958685] RBP: ffffc90000347e20 R08: 0000000000000003 R09:
+>> ffffc90000347dd0
+>> [   40.958687] R10: ffff8803db287000 R11: 0000000000000000 R12:
+>> ffffc90000347dcc
+>> [   40.958689] R13: ffff8804015e7a00 R14: ffff8803dade2bc8 R15:
+>> ffff880400a68000
+>> [   40.958692] FS:  0000000000000000(0000) GS:ffff88041dc00000(0000)
+>> knlGS:0000000000000000
+>> [   40.958695] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>> [   40.958697] CR2: 00005602d78aad50 CR3: 0000000001e09002 CR4:
+>> 00000000001606f0
+>> [   40.958699] Call Trace:
+>> [   40.958710]  writeback_inodes_sb+0x27/0x30
+>> [   40.958719]  btrfs_commit_transaction+0x7b2/0x8e0
+>> [   40.958723]  ? start_transaction+0x9e/0x450
+>> [   40.958728]  transaction_kthread+0x177/0x1b0
+>> [   40.958735]  kthread+0x11d/0x150
+>> [   40.958740]  ? btrfs_cleanup_transaction+0x4f0/0x4f0
+>> [   40.958744]  ? kthread_associate_blkcg+0xb0/0xb0
+>> [   40.958751]  ret_from_fork+0x24/0x30
+>> [   40.958754] Code: 8b 42 70 48 85 c0 74 23 4c 89 ce 48 89 df 41 0f b6
+>> d3 e8 fa fc ff ff 4c 89 e6 48 89 df e8 8f de ff ff 48 83 c4 48 5b 41 5c
+>> 5d c3 <0f> ff eb d9 66 90 0f 1f 44 00 00 55 31 c9 48 89 e5 e8 60 ff ff
+>> [   40.958826] ---[ end trace defabeb7afdfd414 ]---
+>>
+>>
+>> Tree is DaveM's net-next, but it was recently merged with Linus' tree at:
+>>
+>> commit 6363b3f3ac5be096d08c8c504128befa0c033529
+>> Merge: 1b6115fbe3b3 6297fabd93f9
+>> Author: Linus Torvalds <torvalds@linux-foundation.org>
+>> Date:   Wed Nov 15 15:12:28 2017 -0800
+>>
+>>     Merge tag 'ipmi-for-4.15' of git://github.com/cminyard/linux-ipmi
+>>
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

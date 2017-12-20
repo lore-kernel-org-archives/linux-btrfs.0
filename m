@@ -1,224 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:65386 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754259AbdLTEvx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Dec 2017 23:51:53 -0500
-Subject: Re: Cannot balance, ENOSPC errors 4.14.2 vanilla kernel
-To: Adam Bahe <adambahe@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CACzgC9i6xUJTe6nbDP8pC+ZjViryLYfhMk+3du638cKnmjpsKw@mail.gmail.com>
- <CACzgC9hnC=s7cZruCRNJ0kUiU52w0FpRTkq7R0MtA71TURouoA@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <43ce8d2c-22cb-0b24-0735-c2c5177f0926@gmx.com>
-Date: Wed, 20 Dec 2017 12:51:32 +0800
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:48248 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754259AbdLTExb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 19 Dec 2017 23:53:31 -0500
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <quwenruo.btrfs@gmx.com>, <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 00/17] btrfs-progs: lowmem check: avoid extents overwrite
+Date: Wed, 20 Dec 2017 12:57:14 +0800
+Message-ID: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CACzgC9hnC=s7cZruCRNJ0kUiU52w0FpRTkq7R0MtA71TURouoA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="99ca5AuP1BasLIBk8eUVlPCWz6EF3jIlx"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---99ca5AuP1BasLIBk8eUVlPCWz6EF3jIlx
-Content-Type: multipart/mixed; boundary="soL9k2gTWPByihqzOVvdiFZT1LHd5rooI";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Adam Bahe <adambahe@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <43ce8d2c-22cb-0b24-0735-c2c5177f0926@gmx.com>
-Subject: Re: Cannot balance, ENOSPC errors 4.14.2 vanilla kernel
-References: <CACzgC9i6xUJTe6nbDP8pC+ZjViryLYfhMk+3du638cKnmjpsKw@mail.gmail.com>
- <CACzgC9hnC=s7cZruCRNJ0kUiU52w0FpRTkq7R0MtA71TURouoA@mail.gmail.com>
-In-Reply-To: <CACzgC9hnC=s7cZruCRNJ0kUiU52w0FpRTkq7R0MtA71TURouoA@mail.gmail.com>
+This patchset can be fetched from my github:
+https://github.com/Damenly/btrfs-progs/tree/lowmem_repair
+based on kdave/devel.
 
---soL9k2gTWPByihqzOVvdiFZT1LHd5rooI
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Thanks to Qu Wenruo's ideas and suggestions first.
+Any suggestions about names of functions and variables are welcome.
 
+Patch[1-3] fix minor problems of lowmem repair.
 
+Patch[4-8] introduce two ways to avoid extents overwrite:
+1) Traverse trees and exclude all metadata blocks.
+It's time-inefficient for big filesystems.
+2) Mark all existed chunks full, allocate new chunk for CoW.
+More efficient than method 1. However, it can't not handle situation
+like no space.
+Lowmem repair will try method 2 first and method 1 next now.
 
-On 2017=E5=B9=B412=E6=9C=8820=E6=97=A5 10:51, Adam Bahe wrote:
-> Forgot to add, I should have plenty of space:
->=20
-> Label: 'nas'  uuid: 4fcd5725-b6c6-4d8a-9860-f2fc5474cbcb
->         Total devices 20 FS bytes used 26.69TiB
->         devid    1 size 3.64TiB used 3.28TiB path /dev/sdm
->         devid    2 size 3.64TiB used 3.28TiB path /dev/sde
->         devid    3 size 7.28TiB used 3.45TiB path /dev/sdt
->         devid    4 size 9.03TiB used 2.51TiB path /dev/sdo
->         devid    5 size 7.28TiB used 3.45TiB path /dev/sdi
->         devid    6 size 7.28TiB used 3.45TiB path /dev/sdd
->         devid    7 size 1.82TiB used 1.82TiB path /dev/sdp
->         devid    9 size 1.82TiB used 1.82TiB path /dev/sdw
->         devid   10 size 1.82TiB used 1.82TiB path /dev/sdk
->         devid   11 size 9.03TiB used 1.82TiB path /dev/sdy
->         devid   12 size 1.82TiB used 1.82TiB path /dev/sdg
->         devid   13 size 1.82TiB used 1.82TiB path /dev/sdl
->         devid   14 size 1.82TiB used 1.82TiB path /dev/sdr
->         devid   15 size 1.82TiB used 1.82TiB path /dev/sdf
->         devid   16 size 5.46TiB used 3.45TiB path /dev/sds
->         devid   17 size 9.10TiB used 3.45TiB path /dev/sdn
->         devid   18 size 9.10TiB used 3.45TiB path /dev/sdh
->         devid   19 size 9.10TiB used 3.45TiB path /dev/sdc
->         devid   20 size 9.10TiB used 3.45TiB path /dev/sdu
->         devid   21 size 3.64TiB used 2.19TiB path /dev/sdj
+Patch[9-17] remove parameters in lowmem repair functions. They
+will try to avoid extents overwrite if necessary and start 
+transactions themselves.
 
-Depends on your profile.
+Those patches are mainly for lowmem repair. Original mode is not
+influenced.
+Since btrfs-progs v4.14, lowmem mode changed to check all tree blocks
+backrefs. There are many bugs about shared backref in lowmem mode now.
+If lowmem check can not work as expected, lowmem repair are useless.
+I will fix lowmem check in next.
 
-If using RAID0/5/6, the extra unallocated space means nothing if the
-smallest disk is used up.
+---
+Changlog:
+v1->v2:
+ - Let @err in check_btrfs_root() record err bits but excluded
+   negative values.
+ - Do not delete a line of code to release path after extent item'
+   insertion in repair_extent_data_item().
+ - Add patch[3].
+ - Force CoW in new allocated chunk to avoid extents overwrite.
+ - Remove parameters @trans in check_chunks_and_extents_v2() and
+   related callees.
+ - Repair functions for lowmem mode call try_avoid_extents_overwrite()
+   and start transactions.
 
-Thanks,
-Qu
+Su Yue (17):
+  btrfs-progs: lowmem check: release path in repair_extent_data_item()
+  btrfs-progs: lowmem check: record returned errors after
+    walk_down_tree_v2()
+  btrfs-progs: lowmem check: assign @parent early in
+    repair_extent_data_item()
+  btrfs-progs: lowmem check: exclude extents of metadata blocks
+  btrfs-progs: lowmem check: introduce modify_block_groups_cache()
+  btrfs-progs: lowmem check: introduce force_cow_in_new_chunk()
+  btrfs-progs: lowmem check: introduce try_avoid_extents_overwrite()
+  btrfs-progs: lowmem check: exclude extents if init-extent-tree in
+    lowmem
+  btrfs-progs: lowmem check: start to remove parameters @trans in lowmem
+  btrfs-progs: lowmem check: remove parameter @trans of
+    delete_extent_item()
+  btrfs-progs: lowmem check: remove parameter @trans of
+    repair_chunk_item()
+  btrfs-progs: lowmem check: remove parameter @trans of
+    repair_extent_item()
+  btrfs-progs: lowmem check: remove parameter @trans of
+    check_leaf_items()
+  btrfs-progs: lowmem check: remove parameter @trans of
+    repair_tree_back_ref()
+  btrfs-progs: lowmem check: remove parameter @trans of
+    check_btrfs_root()
+  btrfs-progs: lowmem check: introduce repair_block_accounting()
+  btrfs-progs: lowmem check: end of removing parameters @trans in lowmem
 
->=20
-> On Tue, Dec 19, 2017 at 8:47 PM, Adam Bahe <adambahe@gmail.com> wrote:
->> I have been having ENOSPC errors on any btrfs device delete, btrfs
->> balance, btrfs device add actions for awhile now. How do I fix this? I=
+ cmds-check.c | 620 +++++++++++++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 515 insertions(+), 105 deletions(-)
 
->> need to be able to remove devices and balance my filesystem again.
->>
->> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): relocating block
->> group 190774812082176 flags system|raid10
->> [Tue Dec 19 15:25:26 2017] BTRFS: Transaction aborted (error -27)
->> [Tue Dec 19 15:25:26 2017] ------------[ cut here ]------------
->> [Tue Dec 19 15:25:26 2017] WARNING: CPU: 1 PID: 17036 at
->> fs/btrfs/extent-tree.c:10151
->> btrfs_create_pending_block_groups+0x250/0x260 [btrfs]
->> [Tue Dec 19 15:25:26 2017] Modules linked in: dm_mod dax rpcrdma
->> ib_isert iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi
->> ib_srpt target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm
->> ib_ucm ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core
->> x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass=
-
->> crct10dif_pclmul crc32_pclmul ghash_clmulni_intel pcbc aesni_intel
->> crypto_simd glue_helper cryptd ext4 intel_cstate jbd2 intel_rapl_perf
->> mbcache iTCO_wdt iTCO_vendor_support ses mei_me lpc_ich pcspkr joydev
->> input_leds i2c_i801 mfd_core mei enclosure ioatdma sg wmi shpchp
->> ipmi_si ipmi_devintf ipmi_msghandler acpi_pad acpi_power_meter nfsd
->> auth_rpcgss nfs_acl lockd grace sunrpc ip_tables btrfs xor raid6_pq
->> mlx4_en sd_mod crc32c_intel ast i2c_algo_bit mlx4_core drm_kms_helper
->> ata_generic syscopyarea
->> [Tue Dec 19 15:25:26 2017]  pata_acpi sysfillrect sysimgblt
->> fb_sys_fops ttm drm ata_piix ixgbe mdio ptp mpt3sas pps_core libata
->> raid_class dca scsi_transport_sas 8021q garp mrp
->> [Tue Dec 19 15:25:26 2017] CPU: 1 PID: 17036 Comm: btrfs Not tainted
->> 4.14.2-1.x86_64 #1
->> [Tue Dec 19 15:25:26 2017] Hardware name: Supermicro Super
->> Server/X10DRi-T4+, BIOS 2.0 12/17/2015
->> [Tue Dec 19 15:25:26 2017] task: ffff8804620416c0 task.stack: ffffc900=
-26f64000
->> [Tue Dec 19 15:25:26 2017] RIP:
->> 0010:btrfs_create_pending_block_groups+0x250/0x260 [btrfs]
->> [Tue Dec 19 15:25:26 2017] RSP: 0018:ffffc90026f679e8 EFLAGS: 00010246=
-
->> [Tue Dec 19 15:25:26 2017] RAX: 0000000000000026 RBX: 00000000ffffffe5=
-
->> RCX: 0000000000000000
->> [Tue Dec 19 15:25:26 2017] RDX: 0000000000000000 RSI: ffff88046f84e108=
-
->> RDI: ffff88046f84e108
->> [Tue Dec 19 15:25:26 2017] RBP: ffffc90026f67a68 R08: 0000000000000000=
-
->> R09: 0000000000003611
->> [Tue Dec 19 15:25:26 2017] R10: 0000000000000004 R11: 0000000000003610=
-
->> R12: ffff8804679c38e8
->> [Tue Dec 19 15:25:26 2017] R13: ffff880108578000 R14: ffff8804679c3828=
-
->> R15: ffff880108578128
->> [Tue Dec 19 15:25:26 2017] FS:  00007f46ad2e48c0(0000)
->> GS:ffff88046f840000(0000) knlGS:0000000000000000
->> [Tue Dec 19 15:25:26 2017] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080=
-050033
->> [Tue Dec 19 15:25:26 2017] CR2: 00007f2daae8a000 CR3: 000000048be96000=
-
->> CR4: 00000000001406e0
->> [Tue Dec 19 15:25:26 2017] DR0: 0000000000000000 DR1: 0000000000000000=
-
->> DR2: 0000000000000000
->> [Tue Dec 19 15:25:26 2017] DR3: 0000000000000000 DR6: 00000000fffe0ff0=
-
->> DR7: 0000000000000400
->> [Tue Dec 19 15:25:26 2017] Call Trace:
->> [Tue Dec 19 15:25:26 2017]  do_chunk_alloc+0x278/0x2f0 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  btrfs_force_chunk_alloc+0x30/0x40 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  relocate_block_group+0xd2/0x610 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  btrfs_relocate_block_group+0x187/0x240 [bt=
-rfs]
->> [Tue Dec 19 15:25:26 2017]  btrfs_relocate_chunk+0x3b/0xc0 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  __btrfs_balance+0x854/0xc20 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  btrfs_balance+0x2f4/0x670 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  btrfs_ioctl_balance+0x439/0x560 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  btrfs_ioctl+0xf03/0x20f0 [btrfs]
->> [Tue Dec 19 15:25:26 2017]  ? tty_write_unlock+0x31/0x40
->> [Tue Dec 19 15:25:26 2017]  ? tty_ldisc_deref+0x16/0x20
->> [Tue Dec 19 15:25:26 2017]  ? tty_write+0x1e4/0x2c0
->> [Tue Dec 19 15:25:26 2017]  ? process_echoes+0x70/0x70
->> [Tue Dec 19 15:25:26 2017]  ? __vfs_write+0x37/0x140
->> [Tue Dec 19 15:25:26 2017]  do_vfs_ioctl+0xa7/0x5f0
->> [Tue Dec 19 15:25:26 2017]  ? getnstimeofday64+0xe/0x20
->> [Tue Dec 19 15:25:26 2017]  ? __audit_syscall_entry+0xb3/0xf0
->> [Tue Dec 19 15:25:26 2017]  ? syscall_trace_enter+0x1d0/0x2b0
->> [Tue Dec 19 15:25:26 2017]  SyS_ioctl+0x79/0x90
->> [Tue Dec 19 15:25:26 2017]  do_syscall_64+0x67/0x150
->> [Tue Dec 19 15:25:26 2017]  entry_SYSCALL64_slow_path+0x25/0x25
->> [Tue Dec 19 15:25:26 2017] RIP: 0033:0x7f46ac36b537
->> [Tue Dec 19 15:25:26 2017] RSP: 002b:00007ffcceffa448 EFLAGS: 00000206=
-
->> ORIG_RAX: 0000000000000010
->> [Tue Dec 19 15:25:26 2017] RAX: ffffffffffffffda RBX: 0000000000000003=
-
->> RCX: 00007f46ac36b537
->> [Tue Dec 19 15:25:26 2017] RDX: 00007ffcceffa4e0 RSI: 00000000c4009420=
-
->> RDI: 0000000000000003
->> [Tue Dec 19 15:25:26 2017] RBP: 00007ffcceffa4e0 R08: 00007f46ac639a00=
-
->> R09: 00007ffcceffa1c0
->> [Tue Dec 19 15:25:26 2017] R10: 00007ffcceffa1d0 R11: 0000000000000206=
-
->> R12: 00007f46ac638870
->> [Tue Dec 19 15:25:26 2017] R13: 00007ffcceffc893 R14: 0000000000000000=
-
->> R15: 0000000000000000
->> [Tue Dec 19 15:25:26 2017] Code: 79 ff ff ff 49 8b 7c 24 60 89 da 48
->> c7 c6 a8 55 57 a0 31 c0 e8 52 50 fe ff eb 9b 89 de 48 c7 c7 78 55 57
->> a0 31 c0 e8 be 8a cd e0 <0f> ff eb 87 66 90 66 2e 0f 1f 84 00 00 00 00=
-
->> 00 0f 1f 44 00 00
->> [Tue Dec 19 15:25:26 2017] ---[ end trace 7b033857aa29250b ]---
->> [Tue Dec 19 15:25:26 2017] BTRFS: error (device sdc) in
->> btrfs_create_pending_block_groups:10151: errno=3D-27 unknown
->> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): forced readonly
->> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): 3388 enospc errors=
-
->> during balance
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+-- 
+2.15.1
 
 
---soL9k2gTWPByihqzOVvdiFZT1LHd5rooI--
 
---99ca5AuP1BasLIBk8eUVlPCWz6EF3jIlx
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo57FQXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiTsAgAk6EpIAb7xkV7JD0vO6Ji4+es
-x9NPFYt3+zYD3dl9YwNQnxSGHo8QuBupQkGxW3nAiPveEc9kEux+95rhEw1AnH7v
-adF2dWXPnpMJ+BLNGezPspIQnzengcnGu8x8c/i0gBWsbLKct5OzHkSS8GnLBnip
-MCYIV4dHIGwkA3kEWJluI5JNyDZ67M95MJDMnnZQeiuK65ARiQFfz+ekVQyU+iB+
-BBaAd7qMQxgMFoGuI1udtk28dH6E4ZrO9iDY9hMk6CVvaD9YLXb8t/WJJfIYZCa+
-g3cGcElECm+Cvoz5YUHXzpOWfCkfa1a0uc4OdRBjr26NW9LJR1ww8nEA+SZHDQ==
-=Ol2X
------END PGP SIGNATURE-----
-
---99ca5AuP1BasLIBk8eUVlPCWz6EF3jIlx--

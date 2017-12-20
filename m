@@ -1,83 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f42.google.com ([209.85.160.42]:46804 "EHLO
-        mail-pl0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755904AbdLTTQd (ORCPT
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:37453 "EHLO
+        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755929AbdLTTts (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 14:16:33 -0500
-Subject: Re: WARN_ON in __writeback_inodes_sb_nr
-From: David Ahern <dsahern@gmail.com>
-To: linux-btrfs@vger.kernel.org, viro@zeniv.linux.org.uk,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>
-References: <6833930a-08d7-6fbc-0141-eb9cdfd6bb4d@gmail.com>
-Message-ID: <58a1255c-e96d-21bf-e206-7d6ebaa3e94c@gmail.com>
-Date: Wed, 20 Dec 2017 12:16:31 -0700
+        Wed, 20 Dec 2017 14:49:48 -0500
+Received: by mail-oi0-f46.google.com with SMTP id y75so15400218oie.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 11:49:48 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <6833930a-08d7-6fbc-0141-eb9cdfd6bb4d@gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20171220083448.GA25687@polanet.pl>
+References: <5A357909.8010206@yandex.ru> <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
+ <23094.37316.66397.431081@tree.ty.sabi.co.uk> <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
+ <20171218194351.GA25245@polanet.pl> <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
+ <20171219144644.GA9855@polanet.pl> <CAJCQCtSwfoSmAfFyP15xp-uysBY1kWyt65Jhf37g68YcPQ2QEA@mail.gmail.com>
+ <20171219204155.GB14726@polanet.pl> <CAJCQCtQPmov53Q=BTzywawkW2froYx49M+ez9WZsRy2cp-b3+w@mail.gmail.com>
+ <20171220083448.GA25687@polanet.pl>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 20 Dec 2017 12:49:46 -0700
+Message-ID: <CAJCQCtQ7fgma4-iXVO6aTY6O7odatG6Xg7b9LcY4Q21tHO+AUQ@mail.gmail.com>
+Subject: Re: Unexpected raid1 behaviour
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am still seeing this problem on 4.15.0-rc3
+On Wed, Dec 20, 2017 at 1:34 AM, Tomasz Pala <gotar@polanet.pl> wrote:
+> On Tue, Dec 19, 2017 at 16:59:39 -0700, Chris Murphy wrote:
+>
+>>> Sth like this? I got such problem a few months ago, my solution was
+>>> accepted upstream:
+>>> https://github.com/systemd/systemd/commit/0e8856d25ab71764a279c2377ae593c0f2460d8f
+>>
+>> I can't parse this commit. In particular I can't tell how long it
+>> waits, or what triggers the end to waiting.
+>
+> The point is - it doesn't wait at all. Instead, every 'ready' btrfs
+> device triggers event on all the pending devices. Consider 3-device
+> filesystem consisting of /dev/sd[abd] with /dev/sdc being different,
+> standalone btrfs:
+>
+> /dev/sda -> 'not ready'
+> /dev/sdb -> 'not ready'
+> /dev/sdc -> 'ready', triggers /dev/sda -> 'not ready' and /dev/sdb - still 'not ready'
+> /dev/sdc -> kernel says 'ready', triggers /dev/sda - 'ready' and /dev/sdb -> 'ready'
+>
+> This way all the parts of a volume are marked as ready, so systemd won't
+> refuse mounting using legacy device nodes like /dev/sda.
+>
+>
+> This particular solution depends on kernel returning 'btrfs ready',
+> which would obviously not work for degraded arrays unless the btrfs.ko
+> handles some 'missing' or 'mount_degraded' kernel cmdline options
+> _before_ actually _trying_ to mount it with -o degraded.
 
 
-On 11/17/17 12:55 PM, David Ahern wrote:
-> I see a backtrace booting 4.14+ on a mellanox switch. The trace is due
-> to the WARN_ON in __writeback_inodes_sb_nr.
-> 
-> [   40.958590] WARNING: CPU: 0 PID: 183 at
-> /home/dsa/kernel-2.git/fs/fs-writeback.c:2339
-> __writeback_inodes_sb_nr+0x8a/0x90
-> [   40.958593] Modules linked in: ebtable_filter ebtables ip6table_raw
-> ip6table_mangle ip6table_filter ip6_tables iTCO_wdt iTCO_vendor_support
-> coretemp x86_pkg_temp_thermal kvm_intel kvm irqbypass lpc_ich mfd_core
-> battery mei_me mei shpchp lm75 regmap_i2c pmbus pmbus_core i2c_dev
-> i2c_mux k10temp mpls_iptunnel mpls_router ip_tunnel at24 tun
-> br_netfilter bonding loop autofs4 dm_mod dax crc32c_intel i2c_i801
-> i2c_core thermal mlxsw_spectrum psample parman bridge stp llc mlxsw_pci
-> mlxsw_core mlxfw devlink e1000e hwmon
-> [   40.958664] CPU: 0 PID: 183 Comm: btrfs-transacti Not tainted 4.14.0+ #38
-> [   40.958666] Hardware name: Mellanox Technologies Ltd. Mellanox
-> switch/Mellanox switch, BIOS 4.6.5 05/21/2015
-> [   40.958669] task: ffff8803db266540 task.stack: ffffc90000344000
-> [   40.958675] RIP: 0010:__writeback_inodes_sb_nr+0x8a/0x90
-> [   40.958677] RSP: 0018:ffffc90000347dc8 EFLAGS: 00010246
-> [   40.958681] RAX: 0000000000000000 RBX: ffff88040a641800 RCX:
-> 0000000000000000
-> [   40.958683] RDX: 0000000000000002 RSI: 00000000000045a7 RDI:
-> ffffc90000347e10
-> [   40.958685] RBP: ffffc90000347e20 R08: 0000000000000003 R09:
-> ffffc90000347dd0
-> [   40.958687] R10: ffff8803db287000 R11: 0000000000000000 R12:
-> ffffc90000347dcc
-> [   40.958689] R13: ffff8804015e7a00 R14: ffff8803dade2bc8 R15:
-> ffff880400a68000
-> [   40.958692] FS:  0000000000000000(0000) GS:ffff88041dc00000(0000)
-> knlGS:0000000000000000
-> [   40.958695] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [   40.958697] CR2: 00005602d78aad50 CR3: 0000000001e09002 CR4:
-> 00000000001606f0
-> [   40.958699] Call Trace:
-> [   40.958710]  writeback_inodes_sb+0x27/0x30
-> [   40.958719]  btrfs_commit_transaction+0x7b2/0x8e0
-> [   40.958723]  ? start_transaction+0x9e/0x450
-> [   40.958728]  transaction_kthread+0x177/0x1b0
-> [   40.958735]  kthread+0x11d/0x150
-> [   40.958740]  ? btrfs_cleanup_transaction+0x4f0/0x4f0
-> [   40.958744]  ? kthread_associate_blkcg+0xb0/0xb0
-> [   40.958751]  ret_from_fork+0x24/0x30
-> [   40.958754] Code: 8b 42 70 48 85 c0 74 23 4c 89 ce 48 89 df 41 0f b6
-> d3 e8 fa fc ff ff 4c 89 e6 48 89 df e8 8f de ff ff 48 83 c4 48 5b 41 5c
-> 5d c3 <0f> ff eb d9 66 90 0f 1f 44 00 00 55 31 c9 48 89 e5 e8 60 ff ff
-> [   40.958826] ---[ end trace defabeb7afdfd414 ]---
-> 
-> 
-> Tree is DaveM's net-next, but it was recently merged with Linus' tree at:
-> 
-> commit 6363b3f3ac5be096d08c8c504128befa0c033529
-> Merge: 1b6115fbe3b3 6297fabd93f9
-> Author: Linus Torvalds <torvalds@linux-foundation.org>
-> Date:   Wed Nov 15 15:12:28 2017 -0800
-> 
->     Merge tag 'ipmi-for-4.15' of git://github.com/cminyard/linux-ipmi
-> 
+The thing that is valuing a Btrfs's "readiness" is udev. The kernel
+doesn't care, it still instantiates a volume UUID. And if you pass -o
+degraded mount to a non-ready Btrfs volume, the kernel code will try
+to mount that volume in degraded mode (assuming it passes tests for
+the minimum number of devices, can find all the supers it needs, and
+bootstrap the chunk tree, etc)
 
+
+If the udev rule were smarter, it could infer "non-ready" Btrfs volume
+to mean it should wait (and complaining might be nice so we know why
+it's waiting) for some period of time, and then if it's still not
+ready to try to mount with -o degraded. I don't know where teaching
+system about degraded attempts belongs, whether the udev rule can tell
+systemd to add that mount option if a volume is still not ready, of if
+systemd needs hard coded understanding of this mount option for Btrfs.
+There is no risk of using -o degraded on a Btrfs volume if it's
+missing too many devices, such a degraded mount will simply fail.
+
+
+
+> After such timeout, I'd like to tell the kernel: "no more devices, give
+> me all the remaining btrfs volumes in degraded mode if possible". By
+> "give me btrfs vulumes" I mean "mark them as 'ready'" so the udev could
+> fire it's rules. And if there would be anything for udev to distinguish
+> 'ready' from 'ready-degraded' one could easily compose some notification
+> scripting on top of it, including sending e-mail to sysadmin.
+
+I think the linguistics of "btrfs devices ready" is confusing because
+what we really care about is whether the volume/array can be mounted
+normally (not degraded). The BTRFS_IOC_DEVICES_READY ioctl is pointed
+to any one of the volume's devices, and you get a pass/fail. If it
+passes (ready), all other devices are present. If it fails (not
+ready), one or more devices are missing. It's not necessary to hit
+every device with this ioctl to understand what's going on.
+
+If the question can be answered with: ready, ready-degraded - It's
+highly likely that you always get read-degraded as the answer for all
+btrfs multiple device volumes. So if udev were to get read-degraded
+will it still wait to see if the state goes to ready? How long does it
+wait? Seems like it still should wait 90 seconds. In which case it's
+going to try to mount with -o degraded.
+
+So I see zero advantage and multiple disadvantages to having the
+kernel do a degradedness test well before the mount will be attempted.
+I think this is asking for a race condition.
+
+
+
+-- 
+Chris Murphy

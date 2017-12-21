@@ -1,145 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58550 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750756AbdLPGmy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Dec 2017 01:42:54 -0500
+Received: from aserp2130.oracle.com ([141.146.126.79]:58795 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752165AbdLVARP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Dec 2017 19:17:15 -0500
+Date: Thu, 21 Dec 2017 16:14:34 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org, dsterba@suse.com
 Subject: Re: [PATCH] btrfs: fix refcount_t usage when deleting
  btrfs_delayed_nodes
-To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
+Message-ID: <20171221231433.GA18808@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
 References: <20171215195827.3952156-1-clm@fb.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8f3cad0a-84f4-3402-f2a9-53c302aaf9f8@suse.com>
-Date: Sat, 16 Dec 2017 08:42:51 +0200
+ <8f3cad0a-84f4-3402-f2a9-53c302aaf9f8@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20171215195827.3952156-1-clm@fb.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <8f3cad0a-84f4-3402-f2a9-53c302aaf9f8@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Dec 16, 2017 at 08:42:51AM +0200, Nikolay Borisov wrote:
+> 
+> 
+> On 15.12.2017 21:58, Chris Mason wrote:
+> > refcounts have a generic implementation and an asm optimized one.  The
+> > generic version has extra debugging to make sure that once a refcount
+> > goes to zero, refcount_inc won't increase it.
+>                   ^^^^^^^^
+> 
+> I guess you meant to say refcount_add
 
+refcount_inc may also just throw a warning without bumping the refcnt.
 
-On 15.12.2017 21:58, Chris Mason wrote:
-> refcounts have a generic implementation and an asm optimized one.  The
-> generic version has extra debugging to make sure that once a refcount
-> goes to zero, refcount_inc won't increase it.
-                  ^^^^^^^^
+Thanks,
 
-I guess you meant to say refcount_add
-> 
-> The btrfs delayed inode code wasn't expecting this, and we're tripping
-> over the warnings when the generic refcounts are used.  We ended up with
-> this race:
-> 
-> Process A                                         Process B
->                                                   btrfs_get_delayed_node()
-> 						  spin_lock(root->inode_lock)
-> 						  radix_tree_lookup()
-> __btrfs_release_delayed_node()
-> refcount_dec_and_test(&delayed_node->refs)
-> our refcount is now zero
-> 						  refcount_add(2) <---
-> 						  warning here, refcount
->                                                   unchanged
-> 
-> spin_lock(root->inode_lock)
-> radix_tree_delete()
-> 
-> With the generic refcounts, we actually warn again when process B above
-> tries to release his refcount because refcount_add() turned into a
-> no-op.
-> 
-> We saw this in production on older kernels without the asm optimized
-> refcounts.
-> 
-> The fix used here is to use refcount_inc_not_zero() to detect when the
-> object is in the middle of being freed and return NULL.  This is almost
-> always the right answer anyway, since we usually end up pitching the
-> delayed_node if it didn't have fresh data in it.
-> 
-> This also changes __btrfs_release_delayed_node() to remove the extra
-> check for zero refcounts before radix tree deletion.
-> btrfs_get_delayed_node() was the only path that was allowing refcounts
-> to go from zero to one.
-> 
-> Signed-off-by: Chris Mason <clm@fb.com>
-> Fixes: 6de5f18e7b0da
-> cc: <stable@vger.kernel.org> #4.12+
-> ---
->  fs/btrfs/delayed-inode.c | 45 ++++++++++++++++++++++++++++++++++-----------
->  1 file changed, 34 insertions(+), 11 deletions(-)
-> 
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index 5d73f79..84c54af 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -87,6 +87,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
->  
->  	spin_lock(&root->inode_lock);
->  	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
-> +
->  	if (node) {
->  		if (btrfs_inode->delayed_node) {
->  			refcount_inc(&node->refs);	/* can be accessed */
-> @@ -94,9 +95,30 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
->  			spin_unlock(&root->inode_lock);
->  			return node;
->  		}
-> -		btrfs_inode->delayed_node = node;
-> -		/* can be accessed and cached in the inode */
-> -		refcount_add(2, &node->refs);
-> +
-> +		/* it's possible that we're racing into the middle of
-> +		 * removing this node from the radix tree.  In this case,
-> +		 * the refcount was zero and it should never go back
-> +		 * to one.  Just return NULL like it was never in the radix
-> +		 * at all; our release function is in the process of removing
-> +		 * it.
-> +		 *
-> +		 * Some implementations of refcount_inc refuse to
-> +		 * bump the refcount once it has hit zero.  If we don't do
-> +		 * this dance here, refcount_inc() may decide to
-> +		 * just WARN_ONCE() instead of actually bumping the refcount.
-> +		 *
-> +		 * If this node is properly in the radix, we want to
-> +		 * bump the refcount twice, once for the inode
-> +		 * and once for this get operation.
-> +		 */
-> +		if (refcount_inc_not_zero(&node->refs)) {
-> +			refcount_inc(&node->refs);
-> +			btrfs_inode->delayed_node = node;
-> +		} else {
-> +			node = NULL;
-> +		}
-> +
->  		spin_unlock(&root->inode_lock);
->  		return node;
->  	}
-> @@ -254,17 +276,18 @@ static void __btrfs_release_delayed_node(
->  	mutex_unlock(&delayed_node->mutex);
->  
->  	if (refcount_dec_and_test(&delayed_node->refs)) {
-> -		bool free = false;
->  		struct btrfs_root *root = delayed_node->root;
-> +
->  		spin_lock(&root->inode_lock);
-> -		if (refcount_read(&delayed_node->refs) == 0) {
-> -			radix_tree_delete(&root->delayed_nodes_tree,
-> -					  delayed_node->inode_id);
-> -			free = true;
-> -		}
-> +		/*
-> +		 * once our refcount goes to zero, nobody is allowed to
-> +		 * bump it back up.  We can delete it now
-> +		 */
-> +		ASSERT(refcount_read(&delayed_node->refs) == 0);
-> +		radix_tree_delete(&root->delayed_nodes_tree,
-> +				  delayed_node->inode_id);
->  		spin_unlock(&root->inode_lock);
-> -		if (free)
-> -			kmem_cache_free(delayed_node_cache, delayed_node);
-> +		kmem_cache_free(delayed_node_cache, delayed_node);
->  	}
->  }
->  
-> 
+-liubo
+> > 
+> > The btrfs delayed inode code wasn't expecting this, and we're tripping
+> > over the warnings when the generic refcounts are used.  We ended up with
+> > this race:
+> > 
+> > Process A                                         Process B
+> >                                                   btrfs_get_delayed_node()
+> > 						  spin_lock(root->inode_lock)
+> > 						  radix_tree_lookup()
+> > __btrfs_release_delayed_node()
+> > refcount_dec_and_test(&delayed_node->refs)
+> > our refcount is now zero
+> > 						  refcount_add(2) <---
+> > 						  warning here, refcount
+> >                                                   unchanged
+> > 
+> > spin_lock(root->inode_lock)
+> > radix_tree_delete()
+> > 
+> > With the generic refcounts, we actually warn again when process B above
+> > tries to release his refcount because refcount_add() turned into a
+> > no-op.
+> > 
+> > We saw this in production on older kernels without the asm optimized
+> > refcounts.
+> > 
+> > The fix used here is to use refcount_inc_not_zero() to detect when the
+> > object is in the middle of being freed and return NULL.  This is almost
+> > always the right answer anyway, since we usually end up pitching the
+> > delayed_node if it didn't have fresh data in it.
+> > 
+> > This also changes __btrfs_release_delayed_node() to remove the extra
+> > check for zero refcounts before radix tree deletion.
+> > btrfs_get_delayed_node() was the only path that was allowing refcounts
+> > to go from zero to one.
+> > 
+> > Signed-off-by: Chris Mason <clm@fb.com>
+> > Fixes: 6de5f18e7b0da
+> > cc: <stable@vger.kernel.org> #4.12+
+> > ---
+> >  fs/btrfs/delayed-inode.c | 45 ++++++++++++++++++++++++++++++++++-----------
+> >  1 file changed, 34 insertions(+), 11 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> > index 5d73f79..84c54af 100644
+> > --- a/fs/btrfs/delayed-inode.c
+> > +++ b/fs/btrfs/delayed-inode.c
+> > @@ -87,6 +87,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
+> >  
+> >  	spin_lock(&root->inode_lock);
+> >  	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
+> > +
+> >  	if (node) {
+> >  		if (btrfs_inode->delayed_node) {
+> >  			refcount_inc(&node->refs);	/* can be accessed */
+> > @@ -94,9 +95,30 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
+> >  			spin_unlock(&root->inode_lock);
+> >  			return node;
+> >  		}
+> > -		btrfs_inode->delayed_node = node;
+> > -		/* can be accessed and cached in the inode */
+> > -		refcount_add(2, &node->refs);
+> > +
+> > +		/* it's possible that we're racing into the middle of
+> > +		 * removing this node from the radix tree.  In this case,
+> > +		 * the refcount was zero and it should never go back
+> > +		 * to one.  Just return NULL like it was never in the radix
+> > +		 * at all; our release function is in the process of removing
+> > +		 * it.
+> > +		 *
+> > +		 * Some implementations of refcount_inc refuse to
+> > +		 * bump the refcount once it has hit zero.  If we don't do
+> > +		 * this dance here, refcount_inc() may decide to
+> > +		 * just WARN_ONCE() instead of actually bumping the refcount.
+> > +		 *
+> > +		 * If this node is properly in the radix, we want to
+> > +		 * bump the refcount twice, once for the inode
+> > +		 * and once for this get operation.
+> > +		 */
+> > +		if (refcount_inc_not_zero(&node->refs)) {
+> > +			refcount_inc(&node->refs);
+> > +			btrfs_inode->delayed_node = node;
+> > +		} else {
+> > +			node = NULL;
+> > +		}
+> > +
+> >  		spin_unlock(&root->inode_lock);
+> >  		return node;
+> >  	}
+> > @@ -254,17 +276,18 @@ static void __btrfs_release_delayed_node(
+> >  	mutex_unlock(&delayed_node->mutex);
+> >  
+> >  	if (refcount_dec_and_test(&delayed_node->refs)) {
+> > -		bool free = false;
+> >  		struct btrfs_root *root = delayed_node->root;
+> > +
+> >  		spin_lock(&root->inode_lock);
+> > -		if (refcount_read(&delayed_node->refs) == 0) {
+> > -			radix_tree_delete(&root->delayed_nodes_tree,
+> > -					  delayed_node->inode_id);
+> > -			free = true;
+> > -		}
+> > +		/*
+> > +		 * once our refcount goes to zero, nobody is allowed to
+> > +		 * bump it back up.  We can delete it now
+> > +		 */
+> > +		ASSERT(refcount_read(&delayed_node->refs) == 0);
+> > +		radix_tree_delete(&root->delayed_nodes_tree,
+> > +				  delayed_node->inode_id);
+> >  		spin_unlock(&root->inode_lock);
+> > -		if (free)
+> > -			kmem_cache_free(delayed_node_cache, delayed_node);
+> > +		kmem_cache_free(delayed_node_cache, delayed_node);
+> >  	}
+> >  }
+> >  
+> > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,90 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f65.google.com ([209.85.218.65]:40112 "EHLO
-        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755834AbdLUBeU (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:60748 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751723AbdLUG22 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 20:34:20 -0500
-Received: by mail-oi0-f65.google.com with SMTP id w125so15909142oie.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 17:34:20 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <7313f511-e4e9-3ceb-b2a1-c3d197a9625b@gmail.com>
-References: <5A357909.8010206@yandex.ru> <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
- <23094.37316.66397.431081@tree.ty.sabi.co.uk> <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
- <20171218194351.GA25245@polanet.pl> <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
- <20171219144644.GA9855@polanet.pl> <639c6928-4f27-5c33-738a-385e5b4f299f@gmail.com>
- <20171219175633.GA19477@polanet.pl> <CAJCQCtT+DjUDf3NBEQNxYm6SRhDL_FFXpz===fgub_k+AMmABg@mail.gmail.com>
- <2532cc1d-bbe4-a140-8c69-beecb2b73f79@gmail.com> <CAJCQCtR5HnDSOepiv4r4=kiL1P969oSyS1fr6UGUz23ksj-OYg@mail.gmail.com>
- <CAJCQCtTAbZ9Uf2pL_2KtHV3pSkpVhuo+DzwA9M2ZFL8=QUJxAg@mail.gmail.com> <7313f511-e4e9-3ceb-b2a1-c3d197a9625b@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Wed, 20 Dec 2017 18:34:19 -0700
-Message-ID: <CAJCQCtQMztjXJCF7DaEEx+zBjx6PtifAnidya8Z3fpu-3hYLcA@mail.gmail.com>
-Subject: Re: Unexpected raid1 behaviour
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>, Tomasz Pala <gotar@polanet.pl>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Thu, 21 Dec 2017 01:28:28 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1eRuJD-0003aU-Ui
+        for linux-btrfs@vger.kernel.org; Thu, 21 Dec 2017 07:26:23 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: kernel hangs during balance
+Date: Thu, 21 Dec 2017 06:26:16 +0000 (UTC)
+Message-ID: <pan$678dc$737b7f30$15572b76$e6022b@cox.net>
+References: <CAG+QAKXycv-a3G9QKts4V9RWtKxgRgTtSd6mkZP=Dagmi9Ebtg@mail.gmail.com>
+        <CAG+QAKUbtQc0V0njpXoC_UZL5NF1BP+qoH6Zbh4KgEN_2EiOdw@mail.gmail.com>
+        <83e041e2-a440-845f-df54-ecde29bd10dd@mendix.com>
+        <CAG+QAKViZXY-NguA+=Dy=1pye1Da+sM2+epohnxyefT=BPwXxw@mail.gmail.com>
+        <CAG+QAKWN1X9jVWZeZ8q4DNNxSCXLbYFtM-t=LjpFqeGLE8QgGg@mail.gmail.com>
+        <CAJCQCtTD0sp_YZGv47m4sjUvuAeTuq_P5XaRfnZ=SjvGvhF+Nw@mail.gmail.com>
+        <09697eee-b6f6-eb02-1c0d-1d6f156985f9@applied-asynchrony.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 20, 2017 at 1:14 PM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2017-12-20 15:07, Chris Murphy wrote:
+Holger Hoffstätte posted on Wed, 20 Dec 2017 20:58:14 +0100 as excerpted:
 
->> There is an irony here:
->>
->> YaST doesn't have Btrfs raid1 or raid10 options; and also won't do
->> encrypted root with Btrfs either because YaST enforces LVM to do LUKS
->> encryption for some weird reason; and it also enforces NOT putting
->> Btrfs on LVM.
->
-> The 'LUKS must use LVM' thing is likely historical.  The BCP for using LUKS
-> is that it's at the bottom level (so you leak absolutely nothing about how
-> your storage stack is structured), and if that's the case you need something
-> on top to support separate filesystems, which up until BTRFS came around has
-> solely been LVM.
+> On 12/20/17 20:02, Chris Murphy wrote:
+>> I don't know if it's the sending MUA or the list server, but the line
+>> wrapping makes this much harder to follow. I suggest putting it in a
+>> text file and attaching the text file. It's definitely not on the
+>> receiving side, I see it here also:
+>> https://www.spinics.net/lists/linux-btrfs/msg72872.html
+> 
+> You can see enough to suggest that blk-mq is hanging, which is
+> "unsurprising" (being kind here) with such an old kernel. Rich, build
+> your kernel with CONFIG_SCSI_MQ_DEFAULT=n or boot with
+> scsi_mod.use_blk_mq=n as kernel prarameter.
 
-*shrug* Anaconda has supported plain partition LUKS without
-device-mapper for ext3/4 and XFS since forever, even before the
-rewrite.
+Well, the kernel is 4.4 "el repo".  4.4 /is/ an LTS (and elrepo is AFAIK 
+a red hat backports repo, not sure how official, but useful for people on 
+red hat), but it's now the second-back LTS, with 4.9 and the new 4.14 
+being newer LTS series.
 
+The thing is that this is the btrfs list, and we're development and thus 
+rather forward focused here.  As such, we normally want at /least/ the 
+second newest (first back) lts series kernel for best chance at 
+reasonable support.  While I understand people who want to stick with LTS 
+being reluctant to go with the /newest/ LTS before even a single current 
+release has passed, making that LTS still a bit new as such things go, 
+certainly the one-back LTS, 4.9, should be reasonable.
 
->> Meanwhile, Fedora/Red Hat's Anaconda installer has supported both of
->> these use cases for something like 5 years (does support Btrfs raid1
->> and raid10 layouts; and also supports Btrfs directly on dmcrypt
->> without LVM) - with the caveat that it enforces /boot to be on ext4.
->
-> And this caveat is because for some reason Fedora has chosen not to
-> integrate BTRFS support into their version of GRUB.
+So yes, tho 4.4 is at least an LTS, for purposes of btrfs and this list, 
+it really is rather old now, and an upgrade, presumably to 4.9 in keeping 
+with the LTS theme, would be recommended.  If the issue can be confirmed 
+on the current and LTS 4.14, so much the better, but certainly, 4.9 is a 
+recommended upgrade, and a bug there would still be in the concern for a 
+fix range, while 4.4... really is just out of the focus range for this 
+list, tho various longer focus distros will of course still provide 
+support for it.
 
-No. The Fedora patchset for upstream GRUB doesn't remove Btrfs
-support. However, they don't use grub-mkconfig to rewrite the grub.cfg
-when a new kernel is installed. Instead, they use an unrelated project
-called grubby, which modifies the existing grub.cfg (and also supports
-most all other configs like syslinux/extlinux, yaboot, uboot, lilo,
-and others). And grubby gets confused [1] if the grub.cfg is on a
-subvolume (other than ID 5). If the grub.cfg is in the ID 5 subvolume,
-in a normal directory structure, it works fine.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Chris Murphy
-
-
-
-[1] Gory details
-
-The central part of the confusion appears to be this sequence of
-comments in this insanely long bug:
-https://bugzilla.redhat.com/show_bug.cgi?id=864198#c3
-https://bugzilla.redhat.com/show_bug.cgi?id=864198#c5
-https://bugzilla.redhat.com/show_bug.cgi?id=864198#c6
-https://bugzilla.redhat.com/show_bug.cgi?id=864198#c7
-
-The comments from Gene Czarcinski (now deceased, that's how old this
-bug is) try to negotiate understanding the problem and he had a fix
-but it didn't meet some upstream grubby requirement, and so the patch
-wasn't accepted. Grubby is sufficiently messy that near as I can tell
-no other distribution uses it, and no one really cares to maintain it
-until something in RHEL breaks and then *that* gets attention.
-
-Upstream bug
-https://github.com/rhboot/grubby/issues/22

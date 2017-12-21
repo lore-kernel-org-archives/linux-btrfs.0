@@ -1,251 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f68.google.com ([74.125.82.68]:40938 "EHLO
-        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756258AbdLTWOJ (ORCPT
+Received: from mail-oi0-f65.google.com ([209.85.218.65]:40112 "EHLO
+        mail-oi0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755834AbdLUBeU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 17:14:09 -0500
-Received: by mail-wm0-f68.google.com with SMTP id f206so12409066wmf.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 14:14:08 -0800 (PST)
+        Wed, 20 Dec 2017 20:34:20 -0500
+Received: by mail-oi0-f65.google.com with SMTP id w125so15909142oie.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 17:34:20 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <fdf7104f-1072-cb6c-e544-d2872350993d@gmx.com>
-References: <CACzgC9i6xUJTe6nbDP8pC+ZjViryLYfhMk+3du638cKnmjpsKw@mail.gmail.com>
- <CACzgC9hnC=s7cZruCRNJ0kUiU52w0FpRTkq7R0MtA71TURouoA@mail.gmail.com>
- <43ce8d2c-22cb-0b24-0735-c2c5177f0926@gmx.com> <CACzgC9i=8AX1N7LjnkBmes4e3gu15OvyuvmV-GxuHKiEEFJ36g@mail.gmail.com>
- <5ad0ede6-72c5-f9a0-1ad4-95e0d17ebd7d@gmx.com> <fdf7104f-1072-cb6c-e544-d2872350993d@gmx.com>
-From: Adam Bahe <adambahe@gmail.com>
-Date: Wed, 20 Dec 2017 16:13:26 -0600
-Message-ID: <CACzgC9iDQAEp7yinKEiwoRnAm-EGVa35WS7GjajuBgAZoHS_aA@mail.gmail.com>
-Subject: Re: Cannot balance, ENOSPC errors 4.14.2 vanilla kernel
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <7313f511-e4e9-3ceb-b2a1-c3d197a9625b@gmail.com>
+References: <5A357909.8010206@yandex.ru> <pan$36ed4$200dd538$4324239e$ed0f9f4@cox.net>
+ <23094.37316.66397.431081@tree.ty.sabi.co.uk> <91965e24-3b94-7334-c249-d8de5f585f29@gmail.com>
+ <20171218194351.GA25245@polanet.pl> <7ff86029-5b0f-1d02-778a-af78c6f3e461@gmail.com>
+ <20171219144644.GA9855@polanet.pl> <639c6928-4f27-5c33-738a-385e5b4f299f@gmail.com>
+ <20171219175633.GA19477@polanet.pl> <CAJCQCtT+DjUDf3NBEQNxYm6SRhDL_FFXpz===fgub_k+AMmABg@mail.gmail.com>
+ <2532cc1d-bbe4-a140-8c69-beecb2b73f79@gmail.com> <CAJCQCtR5HnDSOepiv4r4=kiL1P969oSyS1fr6UGUz23ksj-OYg@mail.gmail.com>
+ <CAJCQCtTAbZ9Uf2pL_2KtHV3pSkpVhuo+DzwA9M2ZFL8=QUJxAg@mail.gmail.com> <7313f511-e4e9-3ceb-b2a1-c3d197a9625b@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 20 Dec 2017 18:34:19 -0700
+Message-ID: <CAJCQCtQMztjXJCF7DaEEx+zBjx6PtifAnidya8Z3fpu-3hYLcA@mail.gmail.com>
+Subject: Re: Unexpected raid1 behaviour
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Andrei Borzenkov <arvidjaar@gmail.com>, Tomasz Pala <gotar@polanet.pl>,
+        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yeah I had a hunch that it was something to do with the 2TB disks.
-I've been slowly trying to replace them. But they're the remnants of
-my old storage system so it has been slow going. When I get some time
-I will try and compile the kernel with your patch. Thanks!
+On Wed, Dec 20, 2017 at 1:14 PM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2017-12-20 15:07, Chris Murphy wrote:
 
-On Wed, Dec 20, 2017 at 12:20 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> Also, if you're OK to compile kernel, would you please try the following
-> diff to help us to further enhance btrfs chunk allocator?
+>> There is an irony here:
+>>
+>> YaST doesn't have Btrfs raid1 or raid10 options; and also won't do
+>> encrypted root with Btrfs either because YaST enforces LVM to do LUKS
+>> encryption for some weird reason; and it also enforces NOT putting
+>> Btrfs on LVM.
 >
-> The chunk allocator itself is designed to handle your case, so it should
-> pick up the remaining devices and allocate new RAID10 chunk with the
-> unallocated space.
+> The 'LUKS must use LVM' thing is likely historical.  The BCP for using LUKS
+> is that it's at the bottom level (so you leak absolutely nothing about how
+> your storage stack is structured), and if that's the case you need something
+> on top to support separate filesystems, which up until BTRFS came around has
+> solely been LVM.
+
+*shrug* Anaconda has supported plain partition LUKS without
+device-mapper for ext3/4 and XFS since forever, even before the
+rewrite.
+
+
+>> Meanwhile, Fedora/Red Hat's Anaconda installer has supported both of
+>> these use cases for something like 5 years (does support Btrfs raid1
+>> and raid10 layouts; and also supports Btrfs directly on dmcrypt
+>> without LVM) - with the caveat that it enforces /boot to be on ext4.
 >
-> But the truth is not the case.
-> I'm wondering if it's the devs_increment and substripes calculation
-> causing the problem.
->
-> If you could help testing btrfs with the diff applied, dmesg would
-> contain extra info when you try to do device remove.
->
-> Thanks,
-> Qu
->
-> ================
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 49810b70afd3..851ff13f5c29 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4732,6 +4732,8 @@ static int __btrfs_alloc_chunk(struct
-> btrfs_trans_handle *trans,
->
->         if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
->                 ret = -ENOSPC;
-> +               pr_info("ndevs=%d dev_increment=%d sub_stripes=%d
-> devs_min=%d\n",
-> +                       ndevs, devs_increment, sub_stripes, devs_min);
->                 goto error;
->         }
->
->
-> On 2017年12月20日 14:11, Qu Wenruo wrote:
->>
->>
->> On 2017年12月20日 13:00, Adam Bahe wrote:
->>> I'm using raid10.
->>
->> Pretty much the same.
->>
->> Raid10 is RAID1 first then RAID0.
->>
->> For your 20 disks (well, quite amazing) layout, btrfs will try to
->> allocate using all disks for RAID10.
->>
->> Any unfortunately, devid 7, 9, 12, 13, 14, 15 are already full.
->>
->> Normally btrfs should exclude them in chunk allocation, but I think
->> there is some small unaligned unallocated space making btrfs to choose
->> them for allocation.
->>
->> And causing no new chunk could be allocated.
->>
->> And considering the size of your fs, common method like adding temporary
->> small USB disk to allow convert doesn't work in your case.
->>
->>
->> You could try convert the profile from RAID10 to RAID1, which will
->> always use 2 disk to allocate space, so it would be OK to allocate new
->> chunks to start your convert.
->>
->> And final suggestion, don't use any profile with stripe with so many
->> uneven disks.
->>
->> Thanks,
->> Qu
->>
->>>
->>> On Tue, Dec 19, 2017 at 10:51 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>
->>>>
->>>> On 2017年12月20日 10:51, Adam Bahe wrote:
->>>>> Forgot to add, I should have plenty of space:
->>>>>
->>>>> Label: 'nas'  uuid: 4fcd5725-b6c6-4d8a-9860-f2fc5474cbcb
->>>>>         Total devices 20 FS bytes used 26.69TiB
->>>>>         devid    1 size 3.64TiB used 3.28TiB path /dev/sdm
->>>>>         devid    2 size 3.64TiB used 3.28TiB path /dev/sde
->>>>>         devid    3 size 7.28TiB used 3.45TiB path /dev/sdt
->>>>>         devid    4 size 9.03TiB used 2.51TiB path /dev/sdo
->>>>>         devid    5 size 7.28TiB used 3.45TiB path /dev/sdi
->>>>>         devid    6 size 7.28TiB used 3.45TiB path /dev/sdd
->>>>>         devid    7 size 1.82TiB used 1.82TiB path /dev/sdp
->>>>>         devid    9 size 1.82TiB used 1.82TiB path /dev/sdw
->>>>>         devid   10 size 1.82TiB used 1.82TiB path /dev/sdk
->>>>>         devid   11 size 9.03TiB used 1.82TiB path /dev/sdy
->>>>>         devid   12 size 1.82TiB used 1.82TiB path /dev/sdg
->>>>>         devid   13 size 1.82TiB used 1.82TiB path /dev/sdl
->>>>>         devid   14 size 1.82TiB used 1.82TiB path /dev/sdr
->>>>>         devid   15 size 1.82TiB used 1.82TiB path /dev/sdf
->>>>>         devid   16 size 5.46TiB used 3.45TiB path /dev/sds
->>>>>         devid   17 size 9.10TiB used 3.45TiB path /dev/sdn
->>>>>         devid   18 size 9.10TiB used 3.45TiB path /dev/sdh
->>>>>         devid   19 size 9.10TiB used 3.45TiB path /dev/sdc
->>>>>         devid   20 size 9.10TiB used 3.45TiB path /dev/sdu
->>>>>         devid   21 size 3.64TiB used 2.19TiB path /dev/sdj
->>>>
->>>> Depends on your profile.
->>>>
->>>> If using RAID0/5/6, the extra unallocated space means nothing if the
->>>> smallest disk is used up.
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>>
->>>>> On Tue, Dec 19, 2017 at 8:47 PM, Adam Bahe <adambahe@gmail.com> wrote:
->>>>>> I have been having ENOSPC errors on any btrfs device delete, btrfs
->>>>>> balance, btrfs device add actions for awhile now. How do I fix this? I
->>>>>> need to be able to remove devices and balance my filesystem again.
->>>>>>
->>>>>> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): relocating block
->>>>>> group 190774812082176 flags system|raid10
->>>>>> [Tue Dec 19 15:25:26 2017] BTRFS: Transaction aborted (error -27)
->>>>>> [Tue Dec 19 15:25:26 2017] ------------[ cut here ]------------
->>>>>> [Tue Dec 19 15:25:26 2017] WARNING: CPU: 1 PID: 17036 at
->>>>>> fs/btrfs/extent-tree.c:10151
->>>>>> btrfs_create_pending_block_groups+0x250/0x260 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017] Modules linked in: dm_mod dax rpcrdma
->>>>>> ib_isert iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi
->>>>>> ib_srpt target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm
->>>>>> ib_ucm ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core
->>>>>> x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass
->>>>>> crct10dif_pclmul crc32_pclmul ghash_clmulni_intel pcbc aesni_intel
->>>>>> crypto_simd glue_helper cryptd ext4 intel_cstate jbd2 intel_rapl_perf
->>>>>> mbcache iTCO_wdt iTCO_vendor_support ses mei_me lpc_ich pcspkr joydev
->>>>>> input_leds i2c_i801 mfd_core mei enclosure ioatdma sg wmi shpchp
->>>>>> ipmi_si ipmi_devintf ipmi_msghandler acpi_pad acpi_power_meter nfsd
->>>>>> auth_rpcgss nfs_acl lockd grace sunrpc ip_tables btrfs xor raid6_pq
->>>>>> mlx4_en sd_mod crc32c_intel ast i2c_algo_bit mlx4_core drm_kms_helper
->>>>>> ata_generic syscopyarea
->>>>>> [Tue Dec 19 15:25:26 2017]  pata_acpi sysfillrect sysimgblt
->>>>>> fb_sys_fops ttm drm ata_piix ixgbe mdio ptp mpt3sas pps_core libata
->>>>>> raid_class dca scsi_transport_sas 8021q garp mrp
->>>>>> [Tue Dec 19 15:25:26 2017] CPU: 1 PID: 17036 Comm: btrfs Not tainted
->>>>>> 4.14.2-1.x86_64 #1
->>>>>> [Tue Dec 19 15:25:26 2017] Hardware name: Supermicro Super
->>>>>> Server/X10DRi-T4+, BIOS 2.0 12/17/2015
->>>>>> [Tue Dec 19 15:25:26 2017] task: ffff8804620416c0 task.stack: ffffc90026f64000
->>>>>> [Tue Dec 19 15:25:26 2017] RIP:
->>>>>> 0010:btrfs_create_pending_block_groups+0x250/0x260 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017] RSP: 0018:ffffc90026f679e8 EFLAGS: 00010246
->>>>>> [Tue Dec 19 15:25:26 2017] RAX: 0000000000000026 RBX: 00000000ffffffe5
->>>>>> RCX: 0000000000000000
->>>>>> [Tue Dec 19 15:25:26 2017] RDX: 0000000000000000 RSI: ffff88046f84e108
->>>>>> RDI: ffff88046f84e108
->>>>>> [Tue Dec 19 15:25:26 2017] RBP: ffffc90026f67a68 R08: 0000000000000000
->>>>>> R09: 0000000000003611
->>>>>> [Tue Dec 19 15:25:26 2017] R10: 0000000000000004 R11: 0000000000003610
->>>>>> R12: ffff8804679c38e8
->>>>>> [Tue Dec 19 15:25:26 2017] R13: ffff880108578000 R14: ffff8804679c3828
->>>>>> R15: ffff880108578128
->>>>>> [Tue Dec 19 15:25:26 2017] FS:  00007f46ad2e48c0(0000)
->>>>>> GS:ffff88046f840000(0000) knlGS:0000000000000000
->>>>>> [Tue Dec 19 15:25:26 2017] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->>>>>> [Tue Dec 19 15:25:26 2017] CR2: 00007f2daae8a000 CR3: 000000048be96000
->>>>>> CR4: 00000000001406e0
->>>>>> [Tue Dec 19 15:25:26 2017] DR0: 0000000000000000 DR1: 0000000000000000
->>>>>> DR2: 0000000000000000
->>>>>> [Tue Dec 19 15:25:26 2017] DR3: 0000000000000000 DR6: 00000000fffe0ff0
->>>>>> DR7: 0000000000000400
->>>>>> [Tue Dec 19 15:25:26 2017] Call Trace:
->>>>>> [Tue Dec 19 15:25:26 2017]  do_chunk_alloc+0x278/0x2f0 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_force_chunk_alloc+0x30/0x40 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  relocate_block_group+0xd2/0x610 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_relocate_block_group+0x187/0x240 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_relocate_chunk+0x3b/0xc0 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  __btrfs_balance+0x854/0xc20 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_balance+0x2f4/0x670 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_ioctl_balance+0x439/0x560 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_ioctl+0xf03/0x20f0 [btrfs]
->>>>>> [Tue Dec 19 15:25:26 2017]  ? tty_write_unlock+0x31/0x40
->>>>>> [Tue Dec 19 15:25:26 2017]  ? tty_ldisc_deref+0x16/0x20
->>>>>> [Tue Dec 19 15:25:26 2017]  ? tty_write+0x1e4/0x2c0
->>>>>> [Tue Dec 19 15:25:26 2017]  ? process_echoes+0x70/0x70
->>>>>> [Tue Dec 19 15:25:26 2017]  ? __vfs_write+0x37/0x140
->>>>>> [Tue Dec 19 15:25:26 2017]  do_vfs_ioctl+0xa7/0x5f0
->>>>>> [Tue Dec 19 15:25:26 2017]  ? getnstimeofday64+0xe/0x20
->>>>>> [Tue Dec 19 15:25:26 2017]  ? __audit_syscall_entry+0xb3/0xf0
->>>>>> [Tue Dec 19 15:25:26 2017]  ? syscall_trace_enter+0x1d0/0x2b0
->>>>>> [Tue Dec 19 15:25:26 2017]  SyS_ioctl+0x79/0x90
->>>>>> [Tue Dec 19 15:25:26 2017]  do_syscall_64+0x67/0x150
->>>>>> [Tue Dec 19 15:25:26 2017]  entry_SYSCALL64_slow_path+0x25/0x25
->>>>>> [Tue Dec 19 15:25:26 2017] RIP: 0033:0x7f46ac36b537
->>>>>> [Tue Dec 19 15:25:26 2017] RSP: 002b:00007ffcceffa448 EFLAGS: 00000206
->>>>>> ORIG_RAX: 0000000000000010
->>>>>> [Tue Dec 19 15:25:26 2017] RAX: ffffffffffffffda RBX: 0000000000000003
->>>>>> RCX: 00007f46ac36b537
->>>>>> [Tue Dec 19 15:25:26 2017] RDX: 00007ffcceffa4e0 RSI: 00000000c4009420
->>>>>> RDI: 0000000000000003
->>>>>> [Tue Dec 19 15:25:26 2017] RBP: 00007ffcceffa4e0 R08: 00007f46ac639a00
->>>>>> R09: 00007ffcceffa1c0
->>>>>> [Tue Dec 19 15:25:26 2017] R10: 00007ffcceffa1d0 R11: 0000000000000206
->>>>>> R12: 00007f46ac638870
->>>>>> [Tue Dec 19 15:25:26 2017] R13: 00007ffcceffc893 R14: 0000000000000000
->>>>>> R15: 0000000000000000
->>>>>> [Tue Dec 19 15:25:26 2017] Code: 79 ff ff ff 49 8b 7c 24 60 89 da 48
->>>>>> c7 c6 a8 55 57 a0 31 c0 e8 52 50 fe ff eb 9b 89 de 48 c7 c7 78 55 57
->>>>>> a0 31 c0 e8 be 8a cd e0 <0f> ff eb 87 66 90 66 2e 0f 1f 84 00 00 00 00
->>>>>> 00 0f 1f 44 00 00
->>>>>> [Tue Dec 19 15:25:26 2017] ---[ end trace 7b033857aa29250b ]---
->>>>>> [Tue Dec 19 15:25:26 2017] BTRFS: error (device sdc) in
->>>>>> btrfs_create_pending_block_groups:10151: errno=-27 unknown
->>>>>> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): forced readonly
->>>>>> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): 3388 enospc errors
->>>>>> during balance
->>>>> --
->>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>> the body of a message to majordomo@vger.kernel.org
->>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
->
+> And this caveat is because for some reason Fedora has chosen not to
+> integrate BTRFS support into their version of GRUB.
+
+No. The Fedora patchset for upstream GRUB doesn't remove Btrfs
+support. However, they don't use grub-mkconfig to rewrite the grub.cfg
+when a new kernel is installed. Instead, they use an unrelated project
+called grubby, which modifies the existing grub.cfg (and also supports
+most all other configs like syslinux/extlinux, yaboot, uboot, lilo,
+and others). And grubby gets confused [1] if the grub.cfg is on a
+subvolume (other than ID 5). If the grub.cfg is in the ID 5 subvolume,
+in a normal directory structure, it works fine.
+
+Chris Murphy
+
+
+
+[1] Gory details
+
+The central part of the confusion appears to be this sequence of
+comments in this insanely long bug:
+https://bugzilla.redhat.com/show_bug.cgi?id=864198#c3
+https://bugzilla.redhat.com/show_bug.cgi?id=864198#c5
+https://bugzilla.redhat.com/show_bug.cgi?id=864198#c6
+https://bugzilla.redhat.com/show_bug.cgi?id=864198#c7
+
+The comments from Gene Czarcinski (now deceased, that's how old this
+bug is) try to negotiate understanding the problem and he had a fix
+but it didn't meet some upstream grubby requirement, and so the patch
+wasn't accepted. Grubby is sufficiently messy that near as I can tell
+no other distribution uses it, and no one really cares to maintain it
+until something in RHEL breaks and then *that* gets attention.
+
+Upstream bug
+https://github.com/rhboot/grubby/issues/22

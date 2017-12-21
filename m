@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:10464 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:64212 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750871AbdLUHCK (ORCPT
+        with ESMTP id S1750730AbdLUHFY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Dec 2017 02:02:10 -0500
+        Thu, 21 Dec 2017 02:05:24 -0500
 Subject: Re: [PATCH v2 06/17] btrfs-progs: lowmem check: introduce
  force_cow_in_new_chunk()
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
@@ -14,8 +14,8 @@ References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
  <399b00c9-3ab5-e777-a69d-4cbaf3641ddb@gmx.com>
  <c70b76c8-61c8-999a-158f-667fa9c86b5f@gmx.com>
 From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <b34701d4-89bd-ee24-4224-bbd84d0ba390@cn.fujitsu.com>
-Date: Thu, 21 Dec 2017 15:06:16 +0800
+Message-ID: <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
+Date: Thu, 21 Dec 2017 15:09:32 +0800
 MIME-Version: 1.0
 In-Reply-To: <c70b76c8-61c8-999a-158f-667fa9c86b5f@gmx.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -135,16 +135,20 @@ On 12/21/2017 02:51 PM, Qu Wenruo wrote:
 > 
 > it just occurred to me that, a lot of use cases relies on the assumption
 > that btrfs_reserve_extent() will try to allocate new chunks.
-> Yes, it has many dependency so I considered to do chunk allocation
+> 
+> Especially for case like convert, certain btrfs check --repair, some
+> rescue tools.
+> 
+Sorry for the previous wrong format mail.
+
+Yes, it has many dependency so I considered to do chunk allocation
 manually in the patchset. If fix is not good enough, many funtions
 of btrfs-progs will behave abnormal.
 Since you ask it, I will go to fix it.
 
 Thanks,
 Su
-> Especially for case like convert, certain btrfs check --repair, some
-> rescue tools.
-> 
+
 > So this would be a quite nice start point for such fix.
 > 
 > Thanks,

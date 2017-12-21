@@ -1,321 +1,265 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:51375 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750730AbdLUHNI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Dec 2017 02:13:08 -0500
-Subject: Re: [PATCH v2 06/17] btrfs-progs: lowmem check: introduce
- force_cow_in_new_chunk()
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-7-suy.fnst@cn.fujitsu.com>
- <37268331-348d-fe29-db97-e289bb2dea1c@gmx.com>
- <3d829151-9b9a-9eae-e76d-b5bcd6e8c5fd@cn.fujitsu.com>
- <399b00c9-3ab5-e777-a69d-4cbaf3641ddb@gmx.com>
- <c70b76c8-61c8-999a-158f-667fa9c86b5f@gmx.com>
- <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <87e23c3c-73a9-47c6-e68c-b79186678bfa@gmx.com>
-Date: Thu, 21 Dec 2017 15:12:58 +0800
+Received: from mail-wm0-f65.google.com ([74.125.82.65]:39410 "EHLO
+        mail-wm0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750797AbdLUH5W (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 21 Dec 2017 02:57:22 -0500
+Received: by mail-wm0-f65.google.com with SMTP id i11so13982836wmf.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 23:57:22 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ESvn3N3I6QFJqoOxGpu4Xtf4783X7H2y2"
+In-Reply-To: <CACzgC9iDQAEp7yinKEiwoRnAm-EGVa35WS7GjajuBgAZoHS_aA@mail.gmail.com>
+References: <CACzgC9i6xUJTe6nbDP8pC+ZjViryLYfhMk+3du638cKnmjpsKw@mail.gmail.com>
+ <CACzgC9hnC=s7cZruCRNJ0kUiU52w0FpRTkq7R0MtA71TURouoA@mail.gmail.com>
+ <43ce8d2c-22cb-0b24-0735-c2c5177f0926@gmx.com> <CACzgC9i=8AX1N7LjnkBmes4e3gu15OvyuvmV-GxuHKiEEFJ36g@mail.gmail.com>
+ <5ad0ede6-72c5-f9a0-1ad4-95e0d17ebd7d@gmx.com> <fdf7104f-1072-cb6c-e544-d2872350993d@gmx.com>
+ <CACzgC9iDQAEp7yinKEiwoRnAm-EGVa35WS7GjajuBgAZoHS_aA@mail.gmail.com>
+From: Adam Bahe <adambahe@gmail.com>
+Date: Thu, 21 Dec 2017 01:56:40 -0600
+Message-ID: <CACzgC9j7+5BVqibgr3JkjcEx3n8vYjiZwGS6qkNRg6qRF7FBhw@mail.gmail.com>
+Subject: Re: Cannot balance, ENOSPC errors 4.14.2 vanilla kernel
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ESvn3N3I6QFJqoOxGpu4Xtf4783X7H2y2
-Content-Type: multipart/mixed; boundary="zfjPJlaQ3qaHt7RbdIw6S6rgKEuO78YEt";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <87e23c3c-73a9-47c6-e68c-b79186678bfa@gmx.com>
-Subject: Re: [PATCH v2 06/17] btrfs-progs: lowmem check: introduce
- force_cow_in_new_chunk()
-References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-7-suy.fnst@cn.fujitsu.com>
- <37268331-348d-fe29-db97-e289bb2dea1c@gmx.com>
- <3d829151-9b9a-9eae-e76d-b5bcd6e8c5fd@cn.fujitsu.com>
- <399b00c9-3ab5-e777-a69d-4cbaf3641ddb@gmx.com>
- <c70b76c8-61c8-999a-158f-667fa9c86b5f@gmx.com>
- <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
-In-Reply-To: <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
-
---zfjPJlaQ3qaHt7RbdIw6S6rgKEuO78YEt
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Alright, I have rebuilt kernel 4.14.8 and added the line of code you
+gave me. The kernel is installed and I have a full balance running.
+Right off the bat one thing I noticed is that the last time I ran a
+full balance, balance status showed something like "14 out of about
+200 chunks balanced". I thought that was interesting that it was only
+trying to balance 200 chunks. With your change, a full balance status
+right now shows "34 out of 9770 chunks balanced". It has been running
+for about 10 minutes now. But sometimes it took awhile to cause the
+filesystem to go read only. So we shall wait and see. A full balance
+across 21 devices and 120TB raw or thereabouts will take some time.
 
 
-
-On 2017=E5=B9=B412=E6=9C=8821=E6=97=A5 15:09, Su Yue wrote:
->=20
->=20
-> On 12/21/2017 02:51 PM, Qu Wenruo wrote:
+On Wed, Dec 20, 2017 at 4:13 PM, Adam Bahe <adambahe@gmail.com> wrote:
+> Yeah I had a hunch that it was something to do with the 2TB disks.
+> I've been slowly trying to replace them. But they're the remnants of
+> my old storage system so it has been slow going. When I get some time
+> I will try and compile the kernel with your patch. Thanks!
+>
+> On Wed, Dec 20, 2017 at 12:20 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>> Also, if you're OK to compile kernel, would you please try the following
+>> diff to help us to further enhance btrfs chunk allocator?
 >>
+>> The chunk allocator itself is designed to handle your case, so it should
+>> pick up the remaining devices and allocate new RAID10 chunk with the
+>> unallocated space.
 >>
->> On 2017=E5=B9=B412=E6=9C=8820=E6=97=A5 16:37, Qu Wenruo wrote:
->>>
->>>
->>> On 2017=E5=B9=B412=E6=9C=8820=E6=97=A5 16:21, Su Yue wrote:
->>>>
->>>>
->>>> On 12/20/2017 01:41 PM, Qu Wenruo wrote:
->>>>>
->>>>>
->>>>> On 2017=E5=B9=B412=E6=9C=8820=E6=97=A5 12:57, Su Yue wrote:
->>>>>> Introduce create_chunk_and_block_block_group() to allocate new chu=
-nk
->>>>>> and corresponding block group.
->>>>>>
->>>>>> The new function force_cow_in_new_chunk() first allocates new chun=
-k
->>>>>> and records its start.
->>>>>> Then it modifies all metadata block groups cached and full.
->>>>>> Finally it marks the new block group uncached and unfree.
->>>>>> In the next CoW, extents states will be updated automatically by
->>>>>> cache_block_group().
->>>>>>
->>>>>> Suggested-by: Qu Wenruo <wqu@suse.com>
->>>>>> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->>>>>> ---
->>>>>> =C2=A0=C2=A0 cmds-check.c | 80
->>>>>> ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>>>> =C2=A0=C2=A0 1 file changed, 80 insertions(+)
->>>>>>
->>>>>> diff --git a/cmds-check.c b/cmds-check.c
->>>>>> index d98d4bda7357..311c8a9f45e8 100644
->>>>>> --- a/cmds-check.c
->>>>>> +++ b/cmds-check.c
->>>>>> @@ -10911,6 +10911,86 @@ out:
->>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return ret;
->>>>>> =C2=A0=C2=A0 }
->>>>>> =C2=A0=C2=A0 +static int create_chunk_and_block_group(struct btrfs=
-_fs_info
->>>>>> *fs_info,
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 u64 flags, u64 *start, u=
-64 *nbytes)
->>>>>> +{
->>>>>> +=C2=A0=C2=A0=C2=A0 struct btrfs_trans_handle *trans;
->>>>>> +=C2=A0=C2=A0=C2=A0 struct btrfs_root *root =3D fs_info->extent_ro=
-ot;
->>>>>> +=C2=A0=C2=A0=C2=A0 int ret;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 if ((flags & BTRFS_BLOCK_GROUP_TYPE_MASK) =3D=3D=
- 0)
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return -EINVAL;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 trans =3D btrfs_start_transaction(root, 1);
->>>>>> +=C2=A0=C2=A0=C2=A0 if (IS_ERR(trans)) {
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D PTR_ERR(trans)=
-;
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 error("error starting =
-transaction %s", strerror(-ret));
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return ret;
->>>>>> +=C2=A0=C2=A0=C2=A0 }
->>>>>> +=C2=A0=C2=A0=C2=A0 ret =3D btrfs_alloc_chunk(trans, fs_info, star=
-t, nbytes, flags);
->>>>>> +=C2=A0=C2=A0=C2=A0 if (ret) {
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 error("fail to allocat=
-e new chunk %s", strerror(-ret));
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto out;
->>>>>> +=C2=A0=C2=A0=C2=A0 }
->>>>>> +=C2=A0=C2=A0=C2=A0 ret =3D btrfs_make_block_group(trans, fs_info,=
- 0, flags,
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 BTRFS_FIRST_CHUNK_TREE_OBJECTID, *start, *=
-nbytes);
->>>>>> +=C2=A0=C2=A0=C2=A0 if (ret) {
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 error("fail to make bl=
-ock group for chunk %llu %llu %s",
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0 *start, *nbytes, strerror(-ret));
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto out;
->>>>>> +=C2=A0=C2=A0=C2=A0 }
->>>>>> +out:
->>>>>> +=C2=A0=C2=A0=C2=A0 btrfs_commit_transaction(trans, root);
->>>>>> +=C2=A0=C2=A0=C2=A0 return ret;
->>>>>> +}
->>>>>> +
->>>>>> +static int force_cow_in_new_chunk(struct btrfs_fs_info *fs_info)
->>>>>> +{
->>>>>> +=C2=A0=C2=A0=C2=A0 struct btrfs_block_group_cache *bg;
->>>>>> +=C2=A0=C2=A0=C2=A0 u64 start;
->>>>>> +=C2=A0=C2=A0=C2=A0 u64 nbytes;
->>>>>> +=C2=A0=C2=A0=C2=A0 u64 alloc_profile;
->>>>>> +=C2=A0=C2=A0=C2=A0 u64 flags;
->>>>>> +=C2=A0=C2=A0=C2=A0 int ret;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 alloc_profile =3D (fs_info->avail_metadata_all=
-oc_bits &
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0 fs_info->metadata_alloc_profile);
->>>>>> +=C2=A0=C2=A0=C2=A0 flags =3D BTRFS_BLOCK_GROUP_METADATA | alloc_p=
-rofile;
->>>>>> +=C2=A0=C2=A0=C2=A0 if (btrfs_fs_incompat(fs_info, MIXED_GROUPS))
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 flags |=3D BTRFS_BLOCK=
-_GROUP_DATA;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 ret =3D create_chunk_and_block_group(fs_info, =
-flags, &start,
->>>>>> &nbytes);
->>>>>
->>>>> Why bother allocating a new chunk by yourself?
->>>>>
->>>>> Just mark all block groups full and that's all.
->>>>>
->>>>> Any later tree block allocation like btrfs_search_slot() with @cow =
-=3D 1
->>>>> will trigger chunk allocation automatically.
->>>>>
->>>>
->>>> Tried to let it happen but BUG_ON with -ENOSPC.
->>>
->>> Then fix it.
->>>
->>> It's not a normal behavior in this case.
->>>
->>> Thanks,
->>> Qu
+>> But the truth is not the case.
+>> I'm wondering if it's the devs_increment and substripes calculation
+>> causing the problem.
 >>
->> And I think the fix to allow btrfs_reserve_extent() to allocate new
->> chunk will solve a lot of strange BUG_ON().
->>
->> it just occurred to me that, a lot of use cases relies on the assumpti=
-on
->> that btrfs_reserve_extent() will try to allocate new chunks.
->>
->> Especially for case like convert, certain btrfs check --repair, some
->> rescue tools.
->>
-> Sorry for the previous wrong format mail.
->=20
-> Yes, it has many dependency so I considered to do chunk allocation
-> manually in the patchset. If fix is not good enough, many funtions
-> of btrfs-progs will behave abnormal.
-> Since you ask it, I will go to fix it.
-
-Manually allocation in advance has its advantage, like we can determine
-if there is enough space for new chunk instead of checking every return
-value with ENOSPC.
-
-
-However in current case, your metadata usage is limited to the new chunk
-only.
-If there extent tree has quite a lot of problem, and the chunk allocated
-is small (if using single profile and small fs), it can easily hit
-ENOSPC again, since btrfs doesn't allocate new chunk for later metadata
-write.
-
-So here, we still need to allow btrfs allocate new meta chunk, even we
-pre-allocate one meta chunk in advance.
-
-Thanks,
-Qu
->=20
-> Thanks,
-> Su
->=20
->> So this would be a quite nice start point for such fix.
+>> If you could help testing btrfs with the diff applied, dmesg would
+>> contain extra info when you try to do device remove.
 >>
 >> Thanks,
 >> Qu
 >>
+>> ================
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 49810b70afd3..851ff13f5c29 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -4732,6 +4732,8 @@ static int __btrfs_alloc_chunk(struct
+>> btrfs_trans_handle *trans,
+>>
+>>         if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
+>>                 ret = -ENOSPC;
+>> +               pr_info("ndevs=%d dev_increment=%d sub_stripes=%d
+>> devs_min=%d\n",
+>> +                       ndevs, devs_increment, sub_stripes, devs_min);
+>>                 goto error;
+>>         }
+>>
+>>
+>> On 2017年12月20日 14:11, Qu Wenruo wrote:
 >>>
->>>> Do you mean do_chunk_alloc() in btrfs_reserve_extent() which is call=
-ed
->>>> while doing CoW?> In progs, allocation of new chunk during CoW
->>>> depends @root->ref_cows.
->>>> However, @root->ref_cows should be set only if @root is root of a fs=
-
->>>> trees.
+>>>
+>>> On 2017年12月20日 13:00, Adam Bahe wrote:
+>>>> I'm using raid10.
+>>>
+>>> Pretty much the same.
+>>>
+>>> Raid10 is RAID1 first then RAID0.
+>>>
+>>> For your 20 disks (well, quite amazing) layout, btrfs will try to
+>>> allocate using all disks for RAID10.
+>>>
+>>> Any unfortunately, devid 7, 9, 12, 13, 14, 15 are already full.
+>>>
+>>> Normally btrfs should exclude them in chunk allocation, but I think
+>>> there is some small unaligned unallocated space making btrfs to choose
+>>> them for allocation.
+>>>
+>>> And causing no new chunk could be allocated.
+>>>
+>>> And considering the size of your fs, common method like adding temporary
+>>> small USB disk to allow convert doesn't work in your case.
+>>>
+>>>
+>>> You could try convert the profile from RAID10 to RAID1, which will
+>>> always use 2 disk to allocate space, so it would be OK to allocate new
+>>> chunks to start your convert.
+>>>
+>>> And final suggestion, don't use any profile with stripe with so many
+>>> uneven disks.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
 >>>>
->>>> Thanks,
->>>> Su
->>>>
+>>>> On Tue, Dec 19, 2017 at 10:51 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>>>
+>>>>>
+>>>>> On 2017年12月20日 10:51, Adam Bahe wrote:
+>>>>>> Forgot to add, I should have plenty of space:
+>>>>>>
+>>>>>> Label: 'nas'  uuid: 4fcd5725-b6c6-4d8a-9860-f2fc5474cbcb
+>>>>>>         Total devices 20 FS bytes used 26.69TiB
+>>>>>>         devid    1 size 3.64TiB used 3.28TiB path /dev/sdm
+>>>>>>         devid    2 size 3.64TiB used 3.28TiB path /dev/sde
+>>>>>>         devid    3 size 7.28TiB used 3.45TiB path /dev/sdt
+>>>>>>         devid    4 size 9.03TiB used 2.51TiB path /dev/sdo
+>>>>>>         devid    5 size 7.28TiB used 3.45TiB path /dev/sdi
+>>>>>>         devid    6 size 7.28TiB used 3.45TiB path /dev/sdd
+>>>>>>         devid    7 size 1.82TiB used 1.82TiB path /dev/sdp
+>>>>>>         devid    9 size 1.82TiB used 1.82TiB path /dev/sdw
+>>>>>>         devid   10 size 1.82TiB used 1.82TiB path /dev/sdk
+>>>>>>         devid   11 size 9.03TiB used 1.82TiB path /dev/sdy
+>>>>>>         devid   12 size 1.82TiB used 1.82TiB path /dev/sdg
+>>>>>>         devid   13 size 1.82TiB used 1.82TiB path /dev/sdl
+>>>>>>         devid   14 size 1.82TiB used 1.82TiB path /dev/sdr
+>>>>>>         devid   15 size 1.82TiB used 1.82TiB path /dev/sdf
+>>>>>>         devid   16 size 5.46TiB used 3.45TiB path /dev/sds
+>>>>>>         devid   17 size 9.10TiB used 3.45TiB path /dev/sdn
+>>>>>>         devid   18 size 9.10TiB used 3.45TiB path /dev/sdh
+>>>>>>         devid   19 size 9.10TiB used 3.45TiB path /dev/sdc
+>>>>>>         devid   20 size 9.10TiB used 3.45TiB path /dev/sdu
+>>>>>>         devid   21 size 3.64TiB used 2.19TiB path /dev/sdj
+>>>>>
+>>>>> Depends on your profile.
+>>>>>
+>>>>> If using RAID0/5/6, the extra unallocated space means nothing if the
+>>>>> smallest disk is used up.
+>>>>>
 >>>>> Thanks,
 >>>>> Qu
 >>>>>
->>>>>> +=C2=A0=C2=A0=C2=A0 if (!ret)
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 printf("Create new chu=
-nk %llu %llu\n", start, nbytes);
->>>>>> +=C2=A0=C2=A0=C2=A0 else
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto err;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 flags =3D BTRFS_BLOCK_GROUP_METADATA;
->>>>>> +=C2=A0=C2=A0=C2=A0 /* Mark all metadata block groups cached and f=
-ull in free
->>>>>> space*/
->>>>>> +=C2=A0=C2=A0=C2=A0 ret =3D modify_block_groups_cache(fs_info, fla=
-gs, 1);
->>>>>> +=C2=A0=C2=A0=C2=A0 if (ret)
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto clear_bg_cache;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 bg =3D btrfs_lookup_block_group(fs_info, start=
-);
->>>>>> +=C2=A0=C2=A0=C2=A0 if (!bg) {
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ret =3D -ENOENT;
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 error("fail to look up=
- block group %llu %llu", start,
->>>>>> nbytes);
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto clear_bg_cache;
->>>>>> +=C2=A0=C2=A0=C2=A0 }
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 /* Clear block group cache just allocated */
->>>>>> +=C2=A0=C2=A0=C2=A0 ret =3D modify_block_group_cache(fs_info, bg, =
-0);
->>>>>> +=C2=A0=C2=A0=C2=A0 if (ret)
->>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 goto clear_bg_cache;
->>>>>> +
->>>>>> +=C2=A0=C2=A0=C2=A0 return 0;
->>>>>> +
->>>>>> +clear_bg_cache:
->>>>>> +=C2=A0=C2=A0=C2=A0 modify_block_groups_cache(fs_info, flags, 0);
->>>>>> +err:
->>>>>> +=C2=A0=C2=A0=C2=A0 return ret;
->>>>>> +}
->>>>>> +
->>>>>> =C2=A0=C2=A0 static int check_extent_refs(struct btrfs_root *root,=
-
->>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 struct cache_tree *exten=
-t_cache)
->>>>>> =C2=A0=C2=A0 {
+>>>>>>
+>>>>>> On Tue, Dec 19, 2017 at 8:47 PM, Adam Bahe <adambahe@gmail.com> wrote:
+>>>>>>> I have been having ENOSPC errors on any btrfs device delete, btrfs
+>>>>>>> balance, btrfs device add actions for awhile now. How do I fix this? I
+>>>>>>> need to be able to remove devices and balance my filesystem again.
+>>>>>>>
+>>>>>>> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): relocating block
+>>>>>>> group 190774812082176 flags system|raid10
+>>>>>>> [Tue Dec 19 15:25:26 2017] BTRFS: Transaction aborted (error -27)
+>>>>>>> [Tue Dec 19 15:25:26 2017] ------------[ cut here ]------------
+>>>>>>> [Tue Dec 19 15:25:26 2017] WARNING: CPU: 1 PID: 17036 at
+>>>>>>> fs/btrfs/extent-tree.c:10151
+>>>>>>> btrfs_create_pending_block_groups+0x250/0x260 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017] Modules linked in: dm_mod dax rpcrdma
+>>>>>>> ib_isert iscsi_target_mod ib_iser libiscsi scsi_transport_iscsi
+>>>>>>> ib_srpt target_core_mod ib_srp scsi_transport_srp ib_ipoib rdma_ucm
+>>>>>>> ib_ucm ib_uverbs ib_umad rdma_cm ib_cm iw_cm mlx4_ib ib_core
+>>>>>>> x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass
+>>>>>>> crct10dif_pclmul crc32_pclmul ghash_clmulni_intel pcbc aesni_intel
+>>>>>>> crypto_simd glue_helper cryptd ext4 intel_cstate jbd2 intel_rapl_perf
+>>>>>>> mbcache iTCO_wdt iTCO_vendor_support ses mei_me lpc_ich pcspkr joydev
+>>>>>>> input_leds i2c_i801 mfd_core mei enclosure ioatdma sg wmi shpchp
+>>>>>>> ipmi_si ipmi_devintf ipmi_msghandler acpi_pad acpi_power_meter nfsd
+>>>>>>> auth_rpcgss nfs_acl lockd grace sunrpc ip_tables btrfs xor raid6_pq
+>>>>>>> mlx4_en sd_mod crc32c_intel ast i2c_algo_bit mlx4_core drm_kms_helper
+>>>>>>> ata_generic syscopyarea
+>>>>>>> [Tue Dec 19 15:25:26 2017]  pata_acpi sysfillrect sysimgblt
+>>>>>>> fb_sys_fops ttm drm ata_piix ixgbe mdio ptp mpt3sas pps_core libata
+>>>>>>> raid_class dca scsi_transport_sas 8021q garp mrp
+>>>>>>> [Tue Dec 19 15:25:26 2017] CPU: 1 PID: 17036 Comm: btrfs Not tainted
+>>>>>>> 4.14.2-1.x86_64 #1
+>>>>>>> [Tue Dec 19 15:25:26 2017] Hardware name: Supermicro Super
+>>>>>>> Server/X10DRi-T4+, BIOS 2.0 12/17/2015
+>>>>>>> [Tue Dec 19 15:25:26 2017] task: ffff8804620416c0 task.stack: ffffc90026f64000
+>>>>>>> [Tue Dec 19 15:25:26 2017] RIP:
+>>>>>>> 0010:btrfs_create_pending_block_groups+0x250/0x260 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017] RSP: 0018:ffffc90026f679e8 EFLAGS: 00010246
+>>>>>>> [Tue Dec 19 15:25:26 2017] RAX: 0000000000000026 RBX: 00000000ffffffe5
+>>>>>>> RCX: 0000000000000000
+>>>>>>> [Tue Dec 19 15:25:26 2017] RDX: 0000000000000000 RSI: ffff88046f84e108
+>>>>>>> RDI: ffff88046f84e108
+>>>>>>> [Tue Dec 19 15:25:26 2017] RBP: ffffc90026f67a68 R08: 0000000000000000
+>>>>>>> R09: 0000000000003611
+>>>>>>> [Tue Dec 19 15:25:26 2017] R10: 0000000000000004 R11: 0000000000003610
+>>>>>>> R12: ffff8804679c38e8
+>>>>>>> [Tue Dec 19 15:25:26 2017] R13: ffff880108578000 R14: ffff8804679c3828
+>>>>>>> R15: ffff880108578128
+>>>>>>> [Tue Dec 19 15:25:26 2017] FS:  00007f46ad2e48c0(0000)
+>>>>>>> GS:ffff88046f840000(0000) knlGS:0000000000000000
+>>>>>>> [Tue Dec 19 15:25:26 2017] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>>>>>>> [Tue Dec 19 15:25:26 2017] CR2: 00007f2daae8a000 CR3: 000000048be96000
+>>>>>>> CR4: 00000000001406e0
+>>>>>>> [Tue Dec 19 15:25:26 2017] DR0: 0000000000000000 DR1: 0000000000000000
+>>>>>>> DR2: 0000000000000000
+>>>>>>> [Tue Dec 19 15:25:26 2017] DR3: 0000000000000000 DR6: 00000000fffe0ff0
+>>>>>>> DR7: 0000000000000400
+>>>>>>> [Tue Dec 19 15:25:26 2017] Call Trace:
+>>>>>>> [Tue Dec 19 15:25:26 2017]  do_chunk_alloc+0x278/0x2f0 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_force_chunk_alloc+0x30/0x40 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  relocate_block_group+0xd2/0x610 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_relocate_block_group+0x187/0x240 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_relocate_chunk+0x3b/0xc0 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  __btrfs_balance+0x854/0xc20 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_balance+0x2f4/0x670 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_ioctl_balance+0x439/0x560 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  btrfs_ioctl+0xf03/0x20f0 [btrfs]
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? tty_write_unlock+0x31/0x40
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? tty_ldisc_deref+0x16/0x20
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? tty_write+0x1e4/0x2c0
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? process_echoes+0x70/0x70
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? __vfs_write+0x37/0x140
+>>>>>>> [Tue Dec 19 15:25:26 2017]  do_vfs_ioctl+0xa7/0x5f0
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? getnstimeofday64+0xe/0x20
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? __audit_syscall_entry+0xb3/0xf0
+>>>>>>> [Tue Dec 19 15:25:26 2017]  ? syscall_trace_enter+0x1d0/0x2b0
+>>>>>>> [Tue Dec 19 15:25:26 2017]  SyS_ioctl+0x79/0x90
+>>>>>>> [Tue Dec 19 15:25:26 2017]  do_syscall_64+0x67/0x150
+>>>>>>> [Tue Dec 19 15:25:26 2017]  entry_SYSCALL64_slow_path+0x25/0x25
+>>>>>>> [Tue Dec 19 15:25:26 2017] RIP: 0033:0x7f46ac36b537
+>>>>>>> [Tue Dec 19 15:25:26 2017] RSP: 002b:00007ffcceffa448 EFLAGS: 00000206
+>>>>>>> ORIG_RAX: 0000000000000010
+>>>>>>> [Tue Dec 19 15:25:26 2017] RAX: ffffffffffffffda RBX: 0000000000000003
+>>>>>>> RCX: 00007f46ac36b537
+>>>>>>> [Tue Dec 19 15:25:26 2017] RDX: 00007ffcceffa4e0 RSI: 00000000c4009420
+>>>>>>> RDI: 0000000000000003
+>>>>>>> [Tue Dec 19 15:25:26 2017] RBP: 00007ffcceffa4e0 R08: 00007f46ac639a00
+>>>>>>> R09: 00007ffcceffa1c0
+>>>>>>> [Tue Dec 19 15:25:26 2017] R10: 00007ffcceffa1d0 R11: 0000000000000206
+>>>>>>> R12: 00007f46ac638870
+>>>>>>> [Tue Dec 19 15:25:26 2017] R13: 00007ffcceffc893 R14: 0000000000000000
+>>>>>>> R15: 0000000000000000
+>>>>>>> [Tue Dec 19 15:25:26 2017] Code: 79 ff ff ff 49 8b 7c 24 60 89 da 48
+>>>>>>> c7 c6 a8 55 57 a0 31 c0 e8 52 50 fe ff eb 9b 89 de 48 c7 c7 78 55 57
+>>>>>>> a0 31 c0 e8 be 8a cd e0 <0f> ff eb 87 66 90 66 2e 0f 1f 84 00 00 00 00
+>>>>>>> 00 0f 1f 44 00 00
+>>>>>>> [Tue Dec 19 15:25:26 2017] ---[ end trace 7b033857aa29250b ]---
+>>>>>>> [Tue Dec 19 15:25:26 2017] BTRFS: error (device sdc) in
+>>>>>>> btrfs_create_pending_block_groups:10151: errno=-27 unknown
+>>>>>>> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): forced readonly
+>>>>>>> [Tue Dec 19 15:25:26 2017] BTRFS info (device sdc): 3388 enospc errors
+>>>>>>> during balance
+>>>>>> --
+>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>>>>>
 >>>>>
->>>>
->>>>
->>>> --=C2=A0
->>>> To unsubscribe from this list: send the line "unsubscribe
->>>> linux-btrfs" in
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 >>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.h=
-tml
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
 >>>
 >>
->=20
->=20
-
-
---zfjPJlaQ3qaHt7RbdIw6S6rgKEuO78YEt--
-
---ESvn3N3I6QFJqoOxGpu4Xtf4783X7H2y2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlo7XvoXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qh8kgf/T5pBPdxJj5Y1TGwnOs9E0c9P
-0SXUx10OTN1JrahbOEA8NBfEv8Kx9htEOhIdeWFMTCSSzfJ1/L55YU3Xuw/vXXZy
-We7sso2JuGy3A5IBY3k31Ga1/W28fosKZZeamdbeD3uqOZ2o+uAyC0UTFiU2/V+A
-U4CjViNTJXVok/DnSTem592P7FW5fZRecvgzb1l966yqSg8MvaS0MVEDA2DJQcRV
-KLkkGB34/hFx4XbkIDNxxhtTeZgOEOpqvkYx5phNyi1kjXlRnVgfJVD0QPOPBsCu
-FSV25PqRpWSttR2JjUclaj3gtFJNt6EZLUB+Wr/LdMCwQVz/xXoDJinoGywv4A==
-=6HXo
------END PGP SIGNATURE-----
-
---ESvn3N3I6QFJqoOxGpu4Xtf4783X7H2y2--

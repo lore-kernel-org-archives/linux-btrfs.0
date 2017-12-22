@@ -1,146 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36008 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1755406AbdLOT63 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 14:58:29 -0500
-Received: from pps.filterd (m0109333.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.0.21/8.16.0.21) with SMTP id vBFJsRGD032595
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:58:28 -0800
-Received: from mail.thefacebook.com ([199.201.64.23])
-        by mx0a-00082601.pphosted.com with ESMTP id 2evm2qr705-1
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 11:58:28 -0800
-From: Chris Mason <clm@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.com>
-Subject: [PATCH] btrfs: fix refcount_t usage when deleting btrfs_delayed_nodes
-Date: Fri, 15 Dec 2017 11:58:27 -0800
-Message-ID: <20171215195827.3952156-1-clm@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:51393 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751104AbdLVHXm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Dec 2017 02:23:42 -0500
+Subject: Re: [PATCH 01/10] Btrfs: add helper for em merge logic
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171221224256.18196-1-bo.li.liu@oracle.com>
+ <20171221224256.18196-2-bo.li.liu@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <e6987bab-a88c-3e6a-13b5-c05f73e53b71@suse.com>
+Date: Fri, 22 Dec 2017 09:23:40 +0200
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20171221224256.18196-2-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-refcounts have a generic implementation and an asm optimized one.  The
-generic version has extra debugging to make sure that once a refcount
-goes to zero, refcount_inc won't increase it.
 
-The btrfs delayed inode code wasn't expecting this, and we're tripping
-over the warnings when the generic refcounts are used.  We ended up with
-this race:
 
-Process A                                         Process B
-                                                  btrfs_get_delayed_node()
-						  spin_lock(root->inode_lock)
-						  radix_tree_lookup()
-__btrfs_release_delayed_node()
-refcount_dec_and_test(&delayed_node->refs)
-our refcount is now zero
-						  refcount_add(2) <---
-						  warning here, refcount
-                                                  unchanged
+On 22.12.2017 00:42, Liu Bo wrote:
+> This is a prepare work for the following extent map selftest, which
+> runs tests against em merge logic.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/ctree.h |   2 ++
+>  fs/btrfs/inode.c | 101 ++++++++++++++++++++++++++++++-------------------------
+>  2 files changed, 58 insertions(+), 45 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index b2e09fe..328f40f 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3148,6 +3148,8 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+>  						    int delay_iput);
+>  void btrfs_wait_and_free_delalloc_work(struct btrfs_delalloc_work *work);
+>  
+> +int btrfs_add_extent_mapping(struct extent_map_tree *em_tree,
+> +			     struct extent_map **em_in, u64 start, u64 len);
+>  struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
+>  		struct page *page, size_t pg_offset, u64 start,
+>  		u64 len, int create);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index e1a7f3c..527df6f 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6911,6 +6911,61 @@ static noinline int uncompress_inline(struct btrfs_path *path,
+>  	return ret;
+>  }
+>  
+> +int btrfs_add_extent_mapping(struct extent_map_tree *em_tree,
+> +			     struct extent_map **em_in, u64 start, u64 len)
 
-spin_lock(root->inode_lock)
-radix_tree_delete()
+How about adding the following comment above the function: 
 
-With the generic refcounts, we actually warn again when process B above
-tries to release his refcount because refcount_add() turned into a
-no-op.
+/**                                                                             
+ * btrfs_add_extent_mapping - try to add given extent mapping                   
+ * @em_tree - the extent tree into which we want to add the mapping             
+ * @em_in - extent we are inserting                                             
+ * @start - the start of the logical range of the extent we are adding          
+ * @len - logical length of the extent                                          
+ *                                                                              
+ * Insert @em_in into @em_tree. In case there is an overlapping range, handle   
+ * the -EEXIST by either:                                                       
+ * a) Returning the existing extent in @em_in if there is a full overlap        
+ * b) Merge the extents if they are near each other.                            
+ *                                                                              
+ * Returns 0 on success or a negative error code                               
+ *                                                                              
+ */ 
 
-We saw this in production on older kernels without the asm optimized
-refcounts.
+Also one thing which I'm not very clear is why do we need the start/len, aren't 
+those already set in em_in ?
 
-The fix used here is to use refcount_inc_not_zero() to detect when the
-object is in the middle of being freed and return NULL.  This is almost
-always the right answer anyway, since we usually end up pitching the
-delayed_node if it didn't have fresh data in it.
 
-This also changes __btrfs_release_delayed_node() to remove the extra
-check for zero refcounts before radix tree deletion.
-btrfs_get_delayed_node() was the only path that was allowing refcounts
-to go from zero to one.
 
-Signed-off-by: Chris Mason <clm@fb.com>
-Fixes: 6de5f18e7b0da
-cc: <stable@vger.kernel.org> #4.12+
----
- fs/btrfs/delayed-inode.c | 45 ++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 34 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 5d73f79..84c54af 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -87,6 +87,7 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 
- 	spin_lock(&root->inode_lock);
- 	node = radix_tree_lookup(&root->delayed_nodes_tree, ino);
-+
- 	if (node) {
- 		if (btrfs_inode->delayed_node) {
- 			refcount_inc(&node->refs);	/* can be accessed */
-@@ -94,9 +95,30 @@ static struct btrfs_delayed_node *btrfs_get_delayed_node(
- 			spin_unlock(&root->inode_lock);
- 			return node;
- 		}
--		btrfs_inode->delayed_node = node;
--		/* can be accessed and cached in the inode */
--		refcount_add(2, &node->refs);
-+
-+		/* it's possible that we're racing into the middle of
-+		 * removing this node from the radix tree.  In this case,
-+		 * the refcount was zero and it should never go back
-+		 * to one.  Just return NULL like it was never in the radix
-+		 * at all; our release function is in the process of removing
-+		 * it.
-+		 *
-+		 * Some implementations of refcount_inc refuse to
-+		 * bump the refcount once it has hit zero.  If we don't do
-+		 * this dance here, refcount_inc() may decide to
-+		 * just WARN_ONCE() instead of actually bumping the refcount.
-+		 *
-+		 * If this node is properly in the radix, we want to
-+		 * bump the refcount twice, once for the inode
-+		 * and once for this get operation.
-+		 */
-+		if (refcount_inc_not_zero(&node->refs)) {
-+			refcount_inc(&node->refs);
-+			btrfs_inode->delayed_node = node;
-+		} else {
-+			node = NULL;
-+		}
-+
- 		spin_unlock(&root->inode_lock);
- 		return node;
- 	}
-@@ -254,17 +276,18 @@ static void __btrfs_release_delayed_node(
- 	mutex_unlock(&delayed_node->mutex);
- 
- 	if (refcount_dec_and_test(&delayed_node->refs)) {
--		bool free = false;
- 		struct btrfs_root *root = delayed_node->root;
-+
- 		spin_lock(&root->inode_lock);
--		if (refcount_read(&delayed_node->refs) == 0) {
--			radix_tree_delete(&root->delayed_nodes_tree,
--					  delayed_node->inode_id);
--			free = true;
--		}
-+		/*
-+		 * once our refcount goes to zero, nobody is allowed to
-+		 * bump it back up.  We can delete it now
-+		 */
-+		ASSERT(refcount_read(&delayed_node->refs) == 0);
-+		radix_tree_delete(&root->delayed_nodes_tree,
-+				  delayed_node->inode_id);
- 		spin_unlock(&root->inode_lock);
--		if (free)
--			kmem_cache_free(delayed_node_cache, delayed_node);
-+		kmem_cache_free(delayed_node_cache, delayed_node);
- 	}
- }
- 
--- 
-2.9.5
-
+> +{
+> +	int ret;
+> +	struct extent_map *em = *em_in;
+> +
+> +	ret = add_extent_mapping(em_tree, em, 0);
+> +	/* it is possible that someone inserted the extent into the tree
+> +	 * while we had the lock dropped.  It is also possible that
+> +	 * an overlapping map exists in the tree
+> +	 */
+> +	if (ret == -EEXIST) {
+> +		struct extent_map *existing;
+> +
+> +		ret = 0;
+> +
+> +		existing = search_extent_mapping(em_tree, start, len);
+> +
+> +		/*
+> +		 * existing will always be non-NULL, since there must be
+> +		 * extent causing the -EEXIST.
+> +		 */
+> +		if (existing->start == em->start &&
+> +		    extent_map_end(existing) >= extent_map_end(em) &&
+> +		    em->block_start == existing->block_start) {
+> +			/*
+> +			 * The existing extent map already encompasses the
+> +			 * entire extent map we tried to add.
+> +			 */
+> +			free_extent_map(em);
+> +			*em_in = existing;
+> +			ret = 0;
+> +		} else if (start >= extent_map_end(existing) ||
+> +		    start <= existing->start) {
+> +			/*
+> +			 * The existing extent map is the one nearest to
+> +			 * the [start, start + len) range which overlaps
+> +			 */
+> +			ret = merge_extent_mapping(em_tree, existing,
+> +						   em, start);
+> +			free_extent_map(existing);
+> +			if (ret) {
+> +				free_extent_map(em);
+> +				*em_in = NULL;
+> +			}
+> +		} else {
+> +			free_extent_map(em);
+> +			*em_in = existing;
+> +			ret = 0;
+> +		}
+> +	}
+> +	ASSERT(ret == 0 || ret == -EEXIST);
+> +	return ret;
+> +}
+> +
+>  /*
+>   * a bit scary, this does extent mapping from logical file offset to the disk.
+>   * the ugly parts come from merging extents from the disk with the in-ram
+> @@ -7147,51 +7202,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+>  
+>  	err = 0;
+>  	write_lock(&em_tree->lock);
+> -	ret = add_extent_mapping(em_tree, em, 0);
+> -	/* it is possible that someone inserted the extent into the tree
+> -	 * while we had the lock dropped.  It is also possible that
+> -	 * an overlapping map exists in the tree
+> -	 */
+> -	if (ret == -EEXIST) {
+> -		struct extent_map *existing;
+> -
+> -		ret = 0;
+> -
+> -		existing = search_extent_mapping(em_tree, start, len);
+> -		/*
+> -		 * existing will always be non-NULL, since there must be
+> -		 * extent causing the -EEXIST.
+> -		 */
+> -		if (existing->start == em->start &&
+> -		    extent_map_end(existing) >= extent_map_end(em) &&
+> -		    em->block_start == existing->block_start) {
+> -			/*
+> -			 * The existing extent map already encompasses the
+> -			 * entire extent map we tried to add.
+> -			 */
+> -			free_extent_map(em);
+> -			em = existing;
+> -			err = 0;
+> -
+> -		} else if (start >= extent_map_end(existing) ||
+> -		    start <= existing->start) {
+> -			/*
+> -			 * The existing extent map is the one nearest to
+> -			 * the [start, start + len) range which overlaps
+> -			 */
+> -			err = merge_extent_mapping(em_tree, existing,
+> -						   em, start);
+> -			free_extent_map(existing);
+> -			if (err) {
+> -				free_extent_map(em);
+> -				em = NULL;
+> -			}
+> -		} else {
+> -			free_extent_map(em);
+> -			em = existing;
+> -			err = 0;
+> -		}
+> -	}
+> +	err = btrfs_add_extent_mapping(em_tree, &em, start, len);
+>  	write_unlock(&em_tree->lock);
+>  out:
+>  
+> 

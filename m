@@ -1,53 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54704 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.99]:45022 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751129AbdLMIZr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Dec 2017 03:25:47 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A95D7AD72
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Dec 2017 08:25:46 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4/4] btrfs: Remove redundant pair of bio_get/set in __btrfs_submit_dio_bio
-Date: Wed, 13 Dec 2017 10:25:40 +0200
-Message-Id: <1513153540-10737-5-git-send-email-nborisov@suse.com>
-In-Reply-To: <1513153540-10737-1-git-send-email-nborisov@suse.com>
-References: <1513153540-10737-1-git-send-email-nborisov@suse.com>
+        id S1755982AbdLVMGK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Dec 2017 07:06:10 -0500
+From: Jeff Layton <jlayton@kernel.org>
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
+        linux-nfs@vger.kernel.org, bfields@fieldses.org, neilb@suse.de,
+        jack@suse.de, linux-ext4@vger.kernel.org, tytso@mit.edu,
+        adilger.kernel@dilger.ca, linux-xfs@vger.kernel.org,
+        darrick.wong@oracle.com, david@fromorbit.com,
+        linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
+        dsterba@suse.com, linux-integrity@vger.kernel.org,
+        zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
+        linux-afs@lists.infradead.org, dhowells@redhat.com,
+        jaltman@auristor.com
+Subject: [PATCH v4 02/19] fs: don't take the i_lock in inode_inc_iversion
+Date: Fri, 22 Dec 2017 07:05:39 -0500
+Message-Id: <20171222120556.7435-3-jlayton@kernel.org>
+In-Reply-To: <20171222120556.7435-1-jlayton@kernel.org>
+References: <20171222120556.7435-1-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The bio is not referenced after it has been submitted and the endio is
-going to consume the sole reference on successful submission. On error,
-the callers of __btrfs_submit_dio_bio do invoke bio_put so we don't
-leak it either.
+From: Jeff Layton <jlayton@redhat.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+The rationale for taking the i_lock when incrementing this value is
+lost in antiquity. The readers of the field don't take it (at least
+not universally), so my assumption is that it was only done here to
+serialize incrementors.
+
+If that is indeed the case, then we can drop the i_lock from this
+codepath and treat it as a atomic64_t for the purposes of
+incrementing it. This allows us to use inode_inc_iversion without
+any danger of lock inversion.
+
+Note that the read side is not fetched atomically with this change.
+The assumption here is that that is not a critical issue since the
+i_version is not fully synchronized with anything else anyway.
+
+Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/btrfs/inode.c | 3 ---
- 1 file changed, 3 deletions(-)
+ include/linux/iversion.h | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6d2fe773d479..692dbd2fc239 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8449,8 +8449,6 @@ __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode, u64 file_offset,
- 	if (async_submit)
- 		async_submit = !atomic_read(&BTRFS_I(inode)->sync_writers);
- 
--	bio_get(bio);
--
- 	if (!write) {
- 		ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
- 		if (ret)
-@@ -8483,7 +8481,6 @@ __btrfs_submit_dio_bio(struct bio *bio, struct inode *inode, u64 file_offset,
- map:
- 	ret = btrfs_map_bio(fs_info, bio, 0, 0);
- err:
--	bio_put(bio);
- 	return ret;
+diff --git a/include/linux/iversion.h b/include/linux/iversion.h
+index bb50d27c71f9..e08c634779df 100644
+--- a/include/linux/iversion.h
++++ b/include/linux/iversion.h
+@@ -104,12 +104,13 @@ inode_set_iversion_queried(struct inode *inode, const u64 new)
+ static inline bool
+ inode_maybe_inc_iversion(struct inode *inode, bool force)
+ {
+-	spin_lock(&inode->i_lock);
+-	inode->i_version++;
+-	spin_unlock(&inode->i_lock);
++	atomic64_t *ivp = (atomic64_t *)&inode->i_version;
++
++	atomic64_inc(ivp);
+ 	return true;
  }
  
++
+ /**
+  * inode_inc_iversion - forcibly increment i_version
+  * @inode: inode that needs to be updated
 -- 
-2.7.4
+2.14.3
 

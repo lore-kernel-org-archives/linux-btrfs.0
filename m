@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:45710 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:45418 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756017AbdLVMGn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Dec 2017 07:06:43 -0500
+        id S1756279AbdLVMGk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Dec 2017 07:06:40 -0500
 From: Jeff Layton <jlayton@kernel.org>
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
@@ -15,9 +15,9 @@ Cc: linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
         zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
         linux-afs@lists.infradead.org, dhowells@redhat.com,
         jaltman@auristor.com
-Subject: [PATCH v4 17/19] xfs: avoid setting XFS_ILOG_CORE if i_version doesn't need incrementing
-Date: Fri, 22 Dec 2017 07:05:54 -0500
-Message-Id: <20171222120556.7435-18-jlayton@kernel.org>
+Subject: [PATCH v4 16/19] fs: only set S_VERSION when updating times if necessary
+Date: Fri, 22 Dec 2017 07:05:53 -0500
+Message-Id: <20171222120556.7435-17-jlayton@kernel.org>
 In-Reply-To: <20171222120556.7435-1-jlayton@kernel.org>
 References: <20171222120556.7435-1-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,41 +25,56 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Layton <jlayton@redhat.com>
 
-If XFS_ILOG_CORE is already set then go ahead and increment it.
+We only really need to update i_version if someone has queried for it
+since we last incremented it. By doing that, we can avoid having to
+update the inode if the times haven't changed.
+
+If the times have changed, then we go ahead and forcibly increment the
+counter, under the assumption that we'll be going to the storage
+anyway, and the increment itself is relatively cheap.
 
 Signed-off-by: Jeff Layton <jlayton@redhat.com>
 ---
- fs/xfs/xfs_trans_inode.c | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
+ fs/inode.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/fs/xfs/xfs_trans_inode.c b/fs/xfs/xfs_trans_inode.c
-index 225544327c4f..4a89da4b6fe7 100644
---- a/fs/xfs/xfs_trans_inode.c
-+++ b/fs/xfs/xfs_trans_inode.c
-@@ -112,15 +112,17 @@ xfs_trans_log_inode(
+diff --git a/fs/inode.c b/fs/inode.c
+index 19e72f500f71..2fa920188759 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -1635,17 +1635,21 @@ static int relatime_need_update(const struct path *path, struct inode *inode,
+ int generic_update_time(struct inode *inode, struct timespec *time, int flags)
+ {
+ 	int iflags = I_DIRTY_TIME;
++	bool dirty = false;
  
- 	/*
- 	 * First time we log the inode in a transaction, bump the inode change
--	 * counter if it is configured for this to occur. We don't use
--	 * inode_inc_version() because there is no need for extra locking around
--	 * i_version as we already hold the inode locked exclusively for
--	 * metadata modification.
-+	 * counter if it is configured for this to occur. While we have the
-+	 * inode locked exclusively for metadata modification, we can usually
-+	 * avoid setting XFS_ILOG_CORE if no one has queried the value since
-+	 * the last time it was incremented. If we have XFS_ILOG_CORE already
-+	 * set however, then go ahead and bump the i_version counter
-+	 * unconditionally.
- 	 */
- 	if (!(ip->i_itemp->ili_item.li_desc->lid_flags & XFS_LID_DIRTY) &&
- 	    IS_I_VERSION(VFS_I(ip))) {
--		inode_inc_iversion(VFS_I(ip));
--		flags |= XFS_ILOG_CORE;
-+		if (inode_maybe_inc_iversion(VFS_I(ip), flags & XFS_ILOG_CORE))
-+			flags |= XFS_ILOG_CORE;
- 	}
+ 	if (flags & S_ATIME)
+ 		inode->i_atime = *time;
+ 	if (flags & S_VERSION)
+-		inode_inc_iversion(inode);
++		dirty |= inode_maybe_inc_iversion(inode, dirty);
+ 	if (flags & S_CTIME)
+ 		inode->i_ctime = *time;
+ 	if (flags & S_MTIME)
+ 		inode->i_mtime = *time;
++	if ((flags & (S_ATIME | S_CTIME | S_MTIME)) &&
++	    !(inode->i_sb->s_flags & SB_LAZYTIME))
++		dirty = true;
  
- 	tp->t_flags |= XFS_TRANS_DIRTY;
+-	if (!(inode->i_sb->s_flags & SB_LAZYTIME) || (flags & S_VERSION))
++	if (dirty)
+ 		iflags |= I_DIRTY_SYNC;
+ 	__mark_inode_dirty(inode, iflags);
+ 	return 0;
+@@ -1864,7 +1868,7 @@ int file_update_time(struct file *file)
+ 	if (!timespec_equal(&inode->i_ctime, &now))
+ 		sync_it |= S_CTIME;
+ 
+-	if (IS_I_VERSION(inode))
++	if (IS_I_VERSION(inode) && inode_iversion_need_inc(inode))
+ 		sync_it |= S_VERSION;
+ 
+ 	if (!sync_it)
 -- 
 2.14.3
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:33086 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:51370 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752347AbdLVGTQ (ORCPT
+        with ESMTP id S1751465AbdLVIGx (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 22 Dec 2017 01:19:16 -0500
+        Fri, 22 Dec 2017 03:06:53 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 09/10] btrfs: qgroup: Commit transaction in advance to reduce early EDQUOT
-Date: Fri, 22 Dec 2017 14:18:46 +0800
-Message-Id: <20171222061847.13158-10-wqu@suse.com>
-In-Reply-To: <20171222061847.13158-1-wqu@suse.com>
-References: <20171222061847.13158-1-wqu@suse.com>
+Subject: [PATCH v2.1 09/10] btrfs: qgroup: Commit transaction in advance to reduce early EDQUOT
+Date: Fri, 22 Dec 2017 16:06:39 +0800
+Message-Id: <20171222080639.25348-1-wqu@suse.com>
+In-Reply-To: <20171222061847.13158-10-wqu@suse.com>
+References: <20171222061847.13158-10-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -32,11 +32,53 @@ anyway)
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/qgroup.c | 43 +++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 41 insertions(+), 2 deletions(-)
+v2.1
+  Allow transaction_kthread to commit without waiting for commit
+  interval.
+  Previous version it doesn't really work due to the commit interval
+  limit.
 
+  Now btrfs can handle small file creation much better. Although
+  btrfs/139 still hit EDQUOT earlier than expected.
+---
+ fs/btrfs/ctree.h       |  6 ++++++
+ fs/btrfs/disk-io.c     |  1 +
+ fs/btrfs/qgroup.c      | 43 +++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/transaction.c |  1 +
+ fs/btrfs/transaction.h | 14 ++++++++++++++
+ 5 files changed, 63 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0c58f92c2d44..141a36571bd7 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -724,6 +724,12 @@ struct btrfs_delayed_root;
+  */
+ #define BTRFS_FS_EXCL_OP			16
+ 
++/*
++ * To info transaction_kthread we need an immediate commit so it doesn't
++ * need to wait for commit_interval
++ */
++#define BTRFS_FS_NEED_ASYNC_COMMIT		17
++
+ struct btrfs_fs_info {
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d8eaadac4330..a33e1da195ec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1787,6 +1787,7 @@ static int transaction_kthread(void *arg)
+ 
+ 		now = get_seconds();
+ 		if (cur->state < TRANS_STATE_BLOCKED &&
++		    !test_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags) &&
+ 		    (now < cur->start_time ||
+ 		     now - cur->start_time < fs_info->commit_interval)) {
+ 			spin_unlock(&fs_info->trans_lock);
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 6d5b476feb08..02eed4250815 100644
+index 6d5b476feb08..57d8fd605655 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
 @@ -24,6 +24,7 @@
@@ -60,7 +102,7 @@ index 6d5b476feb08..02eed4250815 100644
 + * For SIZE, it will be in byte unit as threshold.
 + */
 +#define QGROUP_PERTRANS_RATIO		32
-+#define QGROUP_PERTRANS_SIZE		SZ_16M
++#define QGROUP_PERTRANS_SIZE		SZ_32M
 +static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
 +				const struct btrfs_qgroup *qg, u64 num_bytes)
  {
@@ -96,7 +138,7 @@ index 6d5b476feb08..02eed4250815 100644
 +		 * longer need to bother nested transaction nor lock context.
 +		 */
 +		if (qg->rsv.values[BTRFS_QGROUP_RSV_META_PERTRANS] > threshold)
-+			wake_up_process(fs_info->transaction_kthread);
++			btrfs_commit_transaction_locksafe(fs_info);
 +	}
 +
  	return true;
@@ -111,6 +153,43 @@ index 6d5b476feb08..02eed4250815 100644
  			ret = -EDQUOT;
  			goto out;
  		}
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index ddae813c01dd..5e1c1d2295eb 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2289,6 +2289,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	 */
+ 	cur_trans->state = TRANS_STATE_COMPLETED;
+ 	wake_up(&cur_trans->commit_wait);
++	clear_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
+ 
+ 	spin_lock(&fs_info->trans_lock);
+ 	list_del_init(&cur_trans->list);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index c55e44560103..63f1dc7f9268 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -204,6 +204,20 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
+ int btrfs_commit_transaction(struct btrfs_trans_handle *trans);
+ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
+ 				   int wait_for_unblock);
++
++/*
++ * Try to commit transaction asynchronously, so this is safe to call
++ * even holding a spinlock.
++ *
++ * It's done by informing transaction_kthread to commit transaction without
++ * waiting for commit interval.
++ */
++static inline void btrfs_commit_transaction_locksafe(
++		struct btrfs_fs_info *fs_info)
++{
++	set_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
++	wake_up_process(fs_info->transaction_kthread);
++}
+ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans);
+ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans);
+ void btrfs_throttle(struct btrfs_fs_info *fs_info);
 -- 
 2.15.1
 

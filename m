@@ -1,75 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:57218 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755156AbdLUXpk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Dec 2017 18:45:40 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBLNfbNF019917
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:45:39 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2f0ptyg0fv-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:45:39 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vBLNjcMu006262
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:45:39 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBLNjc6k011260
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Dec 2017 23:45:38 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 00/10] bugfixes and regression tests of btrfs_get_extent
-Date: Thu, 21 Dec 2017 15:42:46 -0700
-Message-Id: <20171221224256.18196-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:57616 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933113AbdLVI4d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 22 Dec 2017 03:56:33 -0500
+Subject: Re: [PATCH 09/10] Btrfs: add tracepoint for em's EEXIST case
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20171221224256.18196-1-bo.li.liu@oracle.com>
+ <20171221224256.18196-10-bo.li.liu@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <066b86a5-2836-b0a3-16b3-3c20e7ee2cf8@suse.com>
+Date: Fri, 22 Dec 2017 10:56:31 +0200
+MIME-Version: 1.0
+In-Reply-To: <20171221224256.18196-10-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although
-commit e6c4efd87ab0 ("btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map")
-fixed up the negetive em->len, it has introduced several regressions, several has been fixed by
 
-commit 32be3a1ac6d0 ("btrfs: Fix the wrong condition judgment about subset extent map"),
-commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map insertion in btrfs_get_extent") and
-commit 8e2bd3b7fac9 ("Btrfs: deal with existing encompassing extent map in btrfs_get_extent()").
 
-Unfortunately, there is one more regression which is caught recently in
-our test farm, more details are explained in patch 7.
+On 22.12.2017 00:42, Liu Bo wrote:
+> This is adding a tracepoint 'btrfs_handle_em_exist' to help debug the
+> subtle bugs around merge_extent_mapping.
 
-While debugging the above issue, I found that all of these bugs are caused
-by some racy situations, which can be very tricky to reproduce, so I made
-several extent map specific test cases in btrfs's selftest framework.
+In the next patch you are already making the function which takes all
+these values noinline, meaning you can attach a kprobe so you can
+interrogate the args via systemtap,perf probe or even bpf. So I'd rather
+not add this tracepoint since the general sentiment seems to be that
+tracepoints are ABI and so have to be maintained.
 
-Patch 1-2 are some preparatory work.
-Patch 3-5 are regression tests for handling EEXIST from adding extent map.
-Patch 6-7 are fixing two bugs which can be reproduced by the above test cases.
-Patch 8-10 are debugging wise, so that we can know what happened easily.
-
-Liu Bo (10):
-  Btrfs: add helper for em merge logic
-  Btrfs: move extent map specific code to extent_map.c
-  Btrfs: add extent map selftests
-  Btrfs: extent map selftest: buffered write vs dio read
-  Btrfs: extent map selftest: dio write vs dio read
-  Btrfs: fix incorrect block_len in merge_extent_mapping
-  Btrfs: fix unexpected EEXIST from btrfs_get_extent
-  Btrfs: add WARN_ONCE to detect unexpected error from
-    merge_extent_mapping
-  Btrfs: add tracepoint for em's EEXIST case
-  Btrfs: noinline merge_extent_mapping
-
- fs/btrfs/Makefile                 |   2 +-
- fs/btrfs/extent_map.c             | 120 +++++++++++++
- fs/btrfs/extent_map.h             |   2 +
- fs/btrfs/inode.c                  | 108 +-----------
- fs/btrfs/tests/btrfs-tests.c      |   3 +
- fs/btrfs/tests/btrfs-tests.h      |   1 +
- fs/btrfs/tests/extent-map-tests.c | 363 ++++++++++++++++++++++++++++++++++++++
- include/trace/events/btrfs.h      |  35 ++++
- 8 files changed, 526 insertions(+), 108 deletions(-)
- create mode 100644 fs/btrfs/tests/extent-map-tests.c
-
--- 
-2.9.4
-
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/extent_map.c        |  1 +
+>  include/trace/events/btrfs.h | 35 +++++++++++++++++++++++++++++++++++
+>  2 files changed, 36 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> index a8b7e24..40e4d30 100644
+> --- a/fs/btrfs/extent_map.c
+> +++ b/fs/btrfs/extent_map.c
+> @@ -539,6 +539,7 @@ int btrfs_add_extent_mapping(struct extent_map_tree *em_tree,
+>  		ret = 0;
+>  
+>  		existing = search_extent_mapping(em_tree, start, len);
+> +		trace_btrfs_handle_em_exist(existing, em, start, len);
+>  
+>  		/*
+>  		 * existing will always be non-NULL, since there must be
+> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+> index 4342a32..b7ffcf7 100644
+> --- a/include/trace/events/btrfs.h
+> +++ b/include/trace/events/btrfs.h
+> @@ -249,6 +249,41 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
+>  		  __entry->refs, __entry->compress_type)
+>  );
+>  
+> +TRACE_EVENT(btrfs_handle_em_exist,
+> +
+> +	TP_PROTO(const struct extent_map *existing, const struct extent_map *map, u64 start, u64 len),
+> +
+> +	TP_ARGS(existing, map, start, len),
+> +
+> +	TP_STRUCT__entry(
+> +		__field(	u64,  e_start		)
+> +		__field(	u64,  e_len		)
+> +		__field(	u64,  map_start		)
+> +		__field(	u64,  map_len		)
+> +		__field(	u64,  start		)
+> +		__field(	u64,  len		)
+> +	),
+> +
+> +	TP_fast_assign(
+> +		__entry->e_start	= existing->start;
+> +		__entry->e_len		= existing->len;
+> +		__entry->map_start	= map->start;
+> +		__entry->map_len	= map->len;
+> +		__entry->start		= start;
+> +		__entry->len		= len;
+> +	),
+> +
+> +	TP_printk("start=%llu len=%llu "
+> +		  "existing(start=%llu len=%llu) "
+> +		  "em(start=%llu len=%llu)",
+> +		  (unsigned long long)__entry->start,
+> +		  (unsigned long long)__entry->len,
+> +		  (unsigned long long)__entry->e_start,
+> +		  (unsigned long long)__entry->e_len,
+> +		  (unsigned long long)__entry->map_start,
+> +		  (unsigned long long)__entry->map_len)
+> +);
+> +
+>  /* file extent item */
+>  DECLARE_EVENT_CLASS(btrfs__file_extent_item_regular,
+>  
+> 

@@ -1,195 +1,248 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:51370 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:45121 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751465AbdLVIGx (ORCPT
+        with ESMTP id S1752356AbdLVGTQ (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 22 Dec 2017 03:06:53 -0500
+        Fri, 22 Dec 2017 01:19:16 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2.1 09/10] btrfs: qgroup: Commit transaction in advance to reduce early EDQUOT
-Date: Fri, 22 Dec 2017 16:06:39 +0800
-Message-Id: <20171222080639.25348-1-wqu@suse.com>
-In-Reply-To: <20171222061847.13158-10-wqu@suse.com>
-References: <20171222061847.13158-10-wqu@suse.com>
+Subject: [PATCH v2 10/10] btrfs: qgroup: Use independent and accurate per inode qgroup rsv
+Date: Fri, 22 Dec 2017 14:18:47 +0800
+Message-Id: <20171222061847.13158-11-wqu@suse.com>
+In-Reply-To: <20171222061847.13158-1-wqu@suse.com>
+References: <20171222061847.13158-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unlike previous method to try commit transaction inside
-qgroup_reserve(), this time we will try to commit transaction using
-fs_info->transaction_kthread to avoid nested transaction and no need to
-worry about lock context.
+Unlike reservation calculation used in inode rsv for metadata, qgroup
+doesn't really need to care things like csum size or extent usage for
+whole tree COW.
 
-Since it's an asynchronous function call and we won't wait transaction
-commit, unlike previous method, we must call it before we hit qgroup
-limit.
+Qgroup care more about net change of extent usage.
+That's to say, if we're going to insert one file extent, it will mostly
+find its place in CoWed tree block, leaving no change in extent usage.
+Or cause leaf split, result one new net extent, increasing qgroup number
+by nodesize.
+(Or even more rare case, increase the tree level, increasing qgroup
+number by 2 * nodesize)
 
-So this patch will use the ratio and size of qgroup meta_pertrans
-reservation as indicator to check if we should trigger a transaction
-commitment.
-(meta_prealloc won't be cleaned in transaction commitment, it's useless
-anyway)
+So here instead of using the way overkilled calculation for extent
+allocator, which cares more about accurate and no error, qgroup doesn't
+need that over-calculated reservation.
+
+This patch will maintain 2 new members in btrfs_block_rsv structure for
+qgroup, using much smaller calculation for qgroup rsv, reducing false
+EDQUOT.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-v2.1
-  Allow transaction_kthread to commit without waiting for commit
-  interval.
-  Previous version it doesn't really work due to the commit interval
-  limit.
-
-  Now btrfs can handle small file creation much better. Although
-  btrfs/139 still hit EDQUOT earlier than expected.
----
- fs/btrfs/ctree.h       |  6 ++++++
- fs/btrfs/disk-io.c     |  1 +
- fs/btrfs/qgroup.c      | 43 +++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/transaction.c |  1 +
- fs/btrfs/transaction.h | 14 ++++++++++++++
- 5 files changed, 63 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h       | 18 +++++++++++++++++
+ fs/btrfs/extent-tree.c | 55 ++++++++++++++++++++++++++++++++++++++++----------
+ 2 files changed, 62 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0c58f92c2d44..141a36571bd7 100644
+index 0c58f92c2d44..97783ba91e00 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -724,6 +724,12 @@ struct btrfs_delayed_root;
-  */
- #define BTRFS_FS_EXCL_OP			16
- 
-+/*
-+ * To info transaction_kthread we need an immediate commit so it doesn't
-+ * need to wait for commit_interval
-+ */
-+#define BTRFS_FS_NEED_ASYNC_COMMIT		17
+@@ -467,6 +467,24 @@ struct btrfs_block_rsv {
+ 	unsigned short full;
+ 	unsigned short type;
+ 	unsigned short failfast;
 +
- struct btrfs_fs_info {
- 	u8 fsid[BTRFS_FSID_SIZE];
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d8eaadac4330..a33e1da195ec 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1787,6 +1787,7 @@ static int transaction_kthread(void *arg)
++	/*
++	 * Qgroup equivalent for @size @reserved
++	 *
++	 * Unlike normal normal @size/@reserved for inode rsv,
++	 * qgroup doesn't care about things like csum size nor how many tree
++	 * blocks it will need to reserve.
++	 *
++	 * Qgroup cares more about *NET* change of extent usage.
++	 * So for ONE newly inserted file extent, in worst case it will cause
++	 * leaf split and level increase, nodesize for each file extent
++	 * is already way overkilled.
++	 *
++	 * In short, qgroup_size/reserved is the up limit of possible needed
++	 * qgroup metadata reservation.
++	 */
++	u64 qgroup_rsv_size;
++	u64 qgroup_rsv_reserved;
+ };
  
- 		now = get_seconds();
- 		if (cur->state < TRANS_STATE_BLOCKED &&
-+		    !test_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags) &&
- 		    (now < cur->start_time ||
- 		     now - cur->start_time < fs_info->commit_interval)) {
- 			spin_unlock(&fs_info->trans_lock);
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 6d5b476feb08..57d8fd605655 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -24,6 +24,7 @@
- #include <linux/slab.h>
- #include <linux/workqueue.h>
- #include <linux/btrfs.h>
-+#include <linux/sizes.h>
+ /*
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 986660f301de..9d579c7bcf7f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5565,14 +5565,18 @@ static void space_info_add_new_bytes(struct btrfs_fs_info *fs_info,
  
- #include "ctree.h"
- #include "transaction.h"
-@@ -2395,8 +2396,21 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ static u64 block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_block_rsv *block_rsv,
+-				    struct btrfs_block_rsv *dest, u64 num_bytes)
++				    struct btrfs_block_rsv *dest, u64 num_bytes,
++				    u64 *qgroup_to_release_ret)
+ {
+ 	struct btrfs_space_info *space_info = block_rsv->space_info;
++	u64 qgroup_to_release = 0;
+ 	u64 ret;
+ 
+ 	spin_lock(&block_rsv->lock);
+-	if (num_bytes == (u64)-1)
++	if (num_bytes == (u64)-1) {
+ 		num_bytes = block_rsv->size;
++		qgroup_to_release = block_rsv->qgroup_rsv_size;
++	}
+ 	block_rsv->size -= num_bytes;
+ 	if (block_rsv->reserved >= block_rsv->size) {
+ 		num_bytes = block_rsv->reserved - block_rsv->size;
+@@ -5581,6 +5585,12 @@ static u64 block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
+ 	} else {
+ 		num_bytes = 0;
+ 	}
++	if (block_rsv->qgroup_rsv_reserved >= block_rsv->qgroup_rsv_size) {
++		qgroup_to_release = block_rsv->qgroup_rsv_reserved -
++				    block_rsv->qgroup_rsv_size;
++		block_rsv->qgroup_rsv_reserved = block_rsv->qgroup_rsv_size;
++	} else
++		qgroup_to_release = 0;
+ 	spin_unlock(&block_rsv->lock);
+ 
+ 	ret = num_bytes;
+@@ -5603,6 +5613,8 @@ static u64 block_rsv_release_bytes(struct btrfs_fs_info *fs_info,
+ 			space_info_add_old_bytes(fs_info, space_info,
+ 						 num_bytes);
+ 	}
++	if (qgroup_to_release_ret)
++		*qgroup_to_release_ret = qgroup_to_release;
  	return ret;
  }
  
--static bool qgroup_check_limits(const struct btrfs_qgroup *qg, u64 num_bytes)
-+/*
-+ * Two limits to commit transaction in advance.
-+ *
-+ * For RATIO, it will be 1/RATIO of the remaining limit
-+ * (excluding data and prealloc meta) as threshold.
-+ * For SIZE, it will be in byte unit as threshold.
-+ */
-+#define QGROUP_PERTRANS_RATIO		32
-+#define QGROUP_PERTRANS_SIZE		SZ_32M
-+static bool qgroup_check_limits(struct btrfs_fs_info *fs_info,
-+				const struct btrfs_qgroup *qg, u64 num_bytes)
- {
-+	u64 limit;
-+	u64 threshold;
-+
- 	if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
- 	    qgroup_rsv_total(qg) + (s64)qg->rfer + num_bytes > qg->max_rfer)
- 		return false;
-@@ -2405,6 +2419,31 @@ static bool qgroup_check_limits(const struct btrfs_qgroup *qg, u64 num_bytes)
- 	    qgroup_rsv_total(qg) + (s64)qg->excl + num_bytes > qg->max_excl)
- 		return false;
+@@ -5744,17 +5756,21 @@ int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+ 	struct btrfs_root *root = inode->root;
+ 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+ 	u64 num_bytes = 0;
++	u64 qgroup_num_bytes = 0;
+ 	int ret = -ENOSPC;
  
-+	/*
-+	 * Even if we passed the check, it's better to check if reservation
-+	 * for meta_pertrans is pushing us near limit.
-+	 * If there is too much pertrans reservation or it's near the limit,
-+	 * let's try commit transaction to free some, using transaction_kthread
-+	 */
-+	if ((qg->lim_flags & (BTRFS_QGROUP_LIMIT_MAX_RFER |
-+			      BTRFS_QGROUP_LIMIT_MAX_EXCL))) {
-+		if (qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL)
-+			limit = qg->max_excl;
-+		else
-+			limit = qg->max_rfer;
-+		threshold = (limit - qg->rsv.values[BTRFS_QGROUP_RSV_DATA] -
-+			    qg->rsv.values[BTRFS_QGROUP_RSV_META_PREALLOC]) /
-+			    QGROUP_PERTRANS_RATIO;
-+		threshold = min_t(u64, threshold, QGROUP_PERTRANS_SIZE);
+ 	spin_lock(&block_rsv->lock);
+ 	if (block_rsv->reserved < block_rsv->size)
+ 		num_bytes = block_rsv->size - block_rsv->reserved;
++	if (block_rsv->qgroup_rsv_reserved < block_rsv->qgroup_rsv_size)
++		qgroup_num_bytes = block_rsv->qgroup_rsv_size -
++				   block_rsv->qgroup_rsv_reserved;
+ 	spin_unlock(&block_rsv->lock);
+ 
+ 	if (num_bytes == 0)
+ 		return 0;
+ 
+-	ret = btrfs_qgroup_reserve_meta_prealloc(root, num_bytes, true);
++	ret = btrfs_qgroup_reserve_meta_prealloc(root, qgroup_num_bytes, true);
+ 	if (ret)
+ 		return ret;
+ 	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
+@@ -5762,7 +5778,13 @@ int btrfs_inode_rsv_refill(struct btrfs_inode *inode,
+ 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
+ 		trace_btrfs_space_reservation(root->fs_info, "delalloc",
+ 					      btrfs_ino(inode), num_bytes, 1);
+-	}
 +
-+		/*
-+		 * Use transaction_kthread to commit transaction, so we no
-+		 * longer need to bother nested transaction nor lock context.
-+		 */
-+		if (qg->rsv.values[BTRFS_QGROUP_RSV_META_PERTRANS] > threshold)
-+			btrfs_commit_transaction_locksafe(fs_info);
-+	}
-+
- 	return true;
++		/* Don't forget to increase qgroup_rsv_reserved */
++		spin_lock(&block_rsv->lock);
++		block_rsv->qgroup_rsv_reserved += qgroup_num_bytes;
++		spin_unlock(&block_rsv->lock);
++	} else
++		btrfs_qgroup_free_meta_prealloc(root, qgroup_num_bytes);
+ 	return ret;
  }
  
-@@ -2454,7 +2493,7 @@ static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes, bool enforce,
+@@ -5784,20 +5806,23 @@ void btrfs_inode_rsv_release(struct btrfs_inode *inode, bool qgroup_free)
+ 	struct btrfs_block_rsv *global_rsv = &fs_info->global_block_rsv;
+ 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+ 	u64 released = 0;
++	u64 qgroup_to_release = 0;
  
- 		qg = unode_aux_to_qgroup(unode);
- 
--		if (enforce && !qgroup_check_limits(qg, num_bytes)) {
-+		if (enforce && !qgroup_check_limits(fs_info, qg, num_bytes)) {
- 			ret = -EDQUOT;
- 			goto out;
- 		}
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ddae813c01dd..5e1c1d2295eb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2289,6 +2289,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	/*
+ 	 * Since we statically set the block_rsv->size we just want to say we
+ 	 * are releasing 0 bytes, and then we'll just get the reservation over
+ 	 * the size free'd.
  	 */
- 	cur_trans->state = TRANS_STATE_COMPLETED;
- 	wake_up(&cur_trans->commit_wait);
-+	clear_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
+-	released = block_rsv_release_bytes(fs_info, block_rsv, global_rsv, 0);
++	released = block_rsv_release_bytes(fs_info, block_rsv, global_rsv, 0,
++					   &qgroup_to_release);
+ 	if (released > 0)
+ 		trace_btrfs_space_reservation(fs_info, "delalloc",
+ 					      btrfs_ino(inode), released, 0);
+ 	if (qgroup_free)
+-		btrfs_qgroup_free_meta_prealloc(inode->root, released);
++		btrfs_qgroup_free_meta_prealloc(inode->root, qgroup_to_release);
+ 	else
+-		btrfs_qgroup_convert_reserved_meta(inode->root, released);
++		btrfs_qgroup_convert_reserved_meta(inode->root,
++						   qgroup_to_release);
+ }
  
- 	spin_lock(&fs_info->trans_lock);
- 	list_del_init(&cur_trans->list);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index c55e44560103..63f1dc7f9268 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -204,6 +204,20 @@ int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
- int btrfs_commit_transaction(struct btrfs_trans_handle *trans);
- int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
- 				   int wait_for_unblock);
-+
-+/*
-+ * Try to commit transaction asynchronously, so this is safe to call
-+ * even holding a spinlock.
-+ *
-+ * It's done by informing transaction_kthread to commit transaction without
-+ * waiting for commit interval.
-+ */
-+static inline void btrfs_commit_transaction_locksafe(
-+		struct btrfs_fs_info *fs_info)
-+{
-+	set_bit(BTRFS_FS_NEED_ASYNC_COMMIT, &fs_info->flags);
-+	wake_up_process(fs_info->transaction_kthread);
-+}
- int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans);
- int btrfs_should_end_transaction(struct btrfs_trans_handle *trans);
- void btrfs_throttle(struct btrfs_fs_info *fs_info);
+ void btrfs_block_rsv_release(struct btrfs_fs_info *fs_info,
+@@ -5809,7 +5834,7 @@ void btrfs_block_rsv_release(struct btrfs_fs_info *fs_info,
+ 	if (global_rsv == block_rsv ||
+ 	    block_rsv->space_info != global_rsv->space_info)
+ 		global_rsv = NULL;
+-	block_rsv_release_bytes(fs_info, block_rsv, global_rsv, num_bytes);
++	block_rsv_release_bytes(fs_info, block_rsv, global_rsv, num_bytes, NULL);
+ }
+ 
+ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
+@@ -5889,7 +5914,7 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
+ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
+ {
+ 	block_rsv_release_bytes(fs_info, &fs_info->global_block_rsv, NULL,
+-				(u64)-1);
++				(u64)-1, NULL);
+ 	WARN_ON(fs_info->trans_block_rsv.size > 0);
+ 	WARN_ON(fs_info->trans_block_rsv.reserved > 0);
+ 	WARN_ON(fs_info->chunk_block_rsv.size > 0);
+@@ -5931,7 +5956,7 @@ void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans)
+ 	WARN_ON_ONCE(!list_empty(&trans->new_bgs));
+ 
+ 	block_rsv_release_bytes(fs_info, &fs_info->chunk_block_rsv, NULL,
+-				trans->chunk_bytes_reserved);
++				trans->chunk_bytes_reserved, NULL);
+ 	trans->chunk_bytes_reserved = 0;
+ }
+ 
+@@ -6036,6 +6061,7 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+ {
+ 	struct btrfs_block_rsv *block_rsv = &inode->block_rsv;
+ 	u64 reserve_size = 0;
++	u64 qgroup_rsv_size = 0;
+ 	u64 csum_leaves;
+ 	unsigned outstanding_extents;
+ 
+@@ -6048,9 +6074,16 @@ static void btrfs_calculate_inode_block_rsv_size(struct btrfs_fs_info *fs_info,
+ 						 inode->csum_bytes);
+ 	reserve_size += btrfs_calc_trans_metadata_size(fs_info,
+ 						       csum_leaves);
++	/*
++	 * For qgroup rsv, the calculation is very simple:
++	 * nodesize for each outstanding extent.
++	 * This is already overkilled under most case.
++	 */
++	qgroup_rsv_size = outstanding_extents * fs_info->nodesize;
+ 
+ 	spin_lock(&block_rsv->lock);
+ 	block_rsv->size = reserve_size;
++	block_rsv->qgroup_rsv_size = qgroup_rsv_size;
+ 	spin_unlock(&block_rsv->lock);
+ }
+ 
+@@ -8405,7 +8438,7 @@ static void unuse_block_rsv(struct btrfs_fs_info *fs_info,
+ 			    struct btrfs_block_rsv *block_rsv, u32 blocksize)
+ {
+ 	block_rsv_add_bytes(block_rsv, blocksize, 0);
+-	block_rsv_release_bytes(fs_info, block_rsv, NULL, 0);
++	block_rsv_release_bytes(fs_info, block_rsv, NULL, 0, NULL);
+ }
+ 
+ /*
 -- 
 2.15.1
 

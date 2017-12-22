@@ -1,242 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:39081 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:50189 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751912AbdLVGTB (ORCPT
+        with ESMTP id S1751976AbdLVGTB (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Fri, 22 Dec 2017 01:19:01 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 05/10] btrfs: delayed-inode: Use new qgroup meta rsv for delayed inode and item
-Date: Fri, 22 Dec 2017 14:18:42 +0800
-Message-Id: <20171222061847.13158-6-wqu@suse.com>
+Subject: [PATCH v2 06/10] btrfs: qgroup: Use root->qgroup_meta_rsv_* to record qgroup meta reserved space
+Date: Fri, 22 Dec 2017 14:18:43 +0800
+Message-Id: <20171222061847.13158-7-wqu@suse.com>
 In-Reply-To: <20171222061847.13158-1-wqu@suse.com>
 References: <20171222061847.13158-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quite similar for delalloc, some modification to delayed-inode and
-delayed-item reservation.
-Also needs extra parameter for release case to distinguish normal release and
-error release.
+For quota disabled->enable case, it's possible that at reservation time
+quota was not enabled so no byte was really reserved, while at release
+time, quota is enabled so we will try to release some bytes we didn't
+really own.
+
+Such situation can cause metadata reserveation underflow, for both types,
+also less possible for per-trans type since quota enable will commit
+transaction.
+
+To address this, record qgroup meta reserved bytes into
+root->qgroup_meta_rsv_pertrans/prealloc.
+So at releasing time we won't free any bytes we didn't reserve.
+
+For DATA, it's already handled by io_tree, so nothing needs to be
+worried about.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/delayed-inode.c | 56 ++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 40 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h   |  5 +++++
+ fs/btrfs/disk-io.c |  1 +
+ fs/btrfs/qgroup.c  | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 3 files changed, 68 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 5d73f79ded8b..e8d571d2ba06 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -22,6 +22,7 @@
- #include "disk-io.h"
- #include "transaction.h"
- #include "ctree.h"
-+#include "qgroup.h"
- 
- #define BTRFS_DELAYED_WRITEBACK		512
- #define BTRFS_DELAYED_BACKGROUND	128
-@@ -528,11 +529,12 @@ static struct btrfs_delayed_item *__btrfs_next_delayed_item(
- }
- 
- static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
--					       struct btrfs_fs_info *fs_info,
-+					       struct btrfs_root *root,
- 					       struct btrfs_delayed_item *item)
- {
- 	struct btrfs_block_rsv *src_rsv;
- 	struct btrfs_block_rsv *dst_rsv;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 num_bytes;
- 	int ret;
- 
-@@ -543,6 +545,12 @@ static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
- 	dst_rsv = &fs_info->delayed_block_rsv;
- 
- 	num_bytes = btrfs_calc_trans_metadata_size(fs_info, 1);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 091c0e06b32e..0c58f92c2d44 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1260,6 +1260,11 @@ struct btrfs_root {
+ 	int send_in_progress;
+ 	struct btrfs_subvolume_writers *subv_writers;
+ 	atomic_t will_be_snapshotted;
 +
-+	/*
-+	 * Here we migrate space rsv from transaction rsv, since have
-+	 * already reserved space when starting a transaction.
-+	 * So no need to reserve qgroup space here.
-+	 */
- 	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes, 1);
- 	if (!ret) {
- 		trace_btrfs_space_reservation(fs_info, "delayed_item",
-@@ -554,15 +562,20 @@ static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
- 	return ret;
- }
++	/* For qgroup metadata reserved space */
++	spinlock_t qgroup_meta_rsv_lock;
++	u64 qgroup_meta_rsv_pertrans;
++	u64 qgroup_meta_rsv_prealloc;
+ };
  
--static void btrfs_delayed_item_release_metadata(struct btrfs_fs_info *fs_info,
-+static void btrfs_delayed_item_release_metadata(struct btrfs_root *root,
- 						struct btrfs_delayed_item *item)
- {
- 	struct btrfs_block_rsv *rsv;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 
- 	if (!item->bytes_reserved)
- 		return;
- 
- 	rsv = &fs_info->delayed_block_rsv;
-+	/*
-+	 * Check btrfs_delayed_item_reserve_metadata() to see why we don't need
-+	 * to release/reserve qgroup space.
-+	 */
- 	trace_btrfs_space_reservation(fs_info, "delayed_item",
- 				      item->key.objectid, item->bytes_reserved,
- 				      0);
-@@ -598,6 +611,10 @@ static int btrfs_delayed_inode_reserve_metadata(
- 	 */
- 	if (!src_rsv || (!trans->bytes_reserved &&
- 			 src_rsv->type != BTRFS_BLOCK_RSV_DELALLOC)) {
-+		ret = btrfs_qgroup_reserve_meta_prealloc(root,
-+				fs_info->nodesize, true);
-+		if (ret < 0)
-+			return ret;
- 		ret = btrfs_block_rsv_add(root, dst_rsv, num_bytes,
- 					  BTRFS_RESERVE_NO_FLUSH);
- 		/*
-@@ -614,7 +631,9 @@ static int btrfs_delayed_inode_reserve_metadata(
- 						      "delayed_inode",
- 						      btrfs_ino(inode),
- 						      num_bytes, 1);
--		}
-+		} else
-+			btrfs_qgroup_free_meta_prealloc(root,
-+							fs_info->nodesize);
- 		return ret;
- 	}
- 
-@@ -629,7 +648,8 @@ static int btrfs_delayed_inode_reserve_metadata(
- }
- 
- static void btrfs_delayed_inode_release_metadata(struct btrfs_fs_info *fs_info,
--						struct btrfs_delayed_node *node)
-+						struct btrfs_delayed_node *node,
-+						bool qgroup_free)
- {
- 	struct btrfs_block_rsv *rsv;
- 
-@@ -641,6 +661,12 @@ static void btrfs_delayed_inode_release_metadata(struct btrfs_fs_info *fs_info,
- 				      node->inode_id, node->bytes_reserved, 0);
- 	btrfs_block_rsv_release(fs_info, rsv,
- 				node->bytes_reserved);
-+	if (qgroup_free)
-+		btrfs_qgroup_free_meta_prealloc(node->root,
-+				node->bytes_reserved);
-+	else
-+		btrfs_qgroup_convert_reserved_meta(node->root,
-+				node->bytes_reserved);
- 	node->bytes_reserved = 0;
- }
- 
-@@ -742,7 +768,7 @@ static int btrfs_batch_insert_items(struct btrfs_root *root,
- 				    curr->data_len);
- 		slot++;
- 
--		btrfs_delayed_item_release_metadata(fs_info, curr);
-+		btrfs_delayed_item_release_metadata(root, curr);
- 
- 		list_del(&curr->tree_list);
- 		btrfs_release_delayed_item(curr);
-@@ -764,7 +790,6 @@ static int btrfs_insert_delayed_item(struct btrfs_trans_handle *trans,
- 				     struct btrfs_path *path,
- 				     struct btrfs_delayed_item *delayed_item)
- {
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct extent_buffer *leaf;
- 	char *ptr;
- 	int ret;
-@@ -782,7 +807,7 @@ static int btrfs_insert_delayed_item(struct btrfs_trans_handle *trans,
- 			    delayed_item->data_len);
- 	btrfs_mark_buffer_dirty(leaf);
- 
--	btrfs_delayed_item_release_metadata(fs_info, delayed_item);
-+	btrfs_delayed_item_release_metadata(root, delayed_item);
- 	return 0;
- }
- 
-@@ -834,7 +859,6 @@ static int btrfs_batch_delete_items(struct btrfs_trans_handle *trans,
- 				    struct btrfs_path *path,
- 				    struct btrfs_delayed_item *item)
- {
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_delayed_item *curr, *next;
- 	struct extent_buffer *leaf;
- 	struct btrfs_key key;
-@@ -884,7 +908,7 @@ static int btrfs_batch_delete_items(struct btrfs_trans_handle *trans,
+ struct btrfs_file_private {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 03ea3b926fac..d8eaadac4330 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1168,6 +1168,7 @@ static void __setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
+ 	spin_lock_init(&root->accounting_lock);
+ 	spin_lock_init(&root->log_extents_lock[0]);
+ 	spin_lock_init(&root->log_extents_lock[1]);
++	spin_lock_init(&root->qgroup_meta_rsv_lock);
+ 	mutex_init(&root->objectid_mutex);
+ 	mutex_init(&root->log_mutex);
+ 	mutex_init(&root->ordered_extent_mutex);
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 24fc6e46f717..96ed678b3588 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2549,11 +2549,11 @@ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 	if (!qgroup)
  		goto out;
  
- 	list_for_each_entry_safe(curr, next, &head, tree_list) {
--		btrfs_delayed_item_release_metadata(fs_info, curr);
-+		btrfs_delayed_item_release_metadata(root, curr);
- 		list_del(&curr->tree_list);
- 		btrfs_release_delayed_item(curr);
- 	}
-@@ -1027,7 +1051,7 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
- no_iref:
- 	btrfs_release_path(path);
- err_out:
--	btrfs_delayed_inode_release_metadata(fs_info, node);
-+	btrfs_delayed_inode_release_metadata(fs_info, node, (ret < 0));
- 	btrfs_release_delayed_inode(node);
+-	/*
+-	 * We're freeing all pertrans rsv, get current value from level 0
+-	 * qgroup as real num_bytes to free.
+-	 */
+ 	if (num_bytes == (u64)-1)
++		/*
++		 * We're freeing all pertrans rsv, get reserved value from
++		 * level 0 qgroup as real num_bytes to free.
++		 */
+ 		num_bytes = qgroup->rsv.values[type];
  
+ 	ulist_reinit(fs_info->qgroup_ulist);
+@@ -3099,6 +3099,46 @@ int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
+ 	return __btrfs_qgroup_release_data(inode, NULL, start, len, 0);
+ }
+ 
++static void add_root_meta_rsv(struct btrfs_root *root, int num_bytes,
++			      enum btrfs_qgroup_rsv_type type)
++{
++	if (type != BTRFS_QGROUP_RSV_META_PREALLOC &&
++	    type != BTRFS_QGROUP_RSV_META_PERTRANS)
++		return;
++	if (num_bytes == 0)
++		return;
++
++	spin_lock(&root->qgroup_meta_rsv_lock);
++	if (type == BTRFS_QGROUP_RSV_META_PREALLOC)
++		root->qgroup_meta_rsv_prealloc += num_bytes;
++	else
++		root->qgroup_meta_rsv_pertrans += num_bytes;
++	spin_unlock(&root->qgroup_meta_rsv_lock);
++}
++
++static int sub_root_meta_rsv(struct btrfs_root *root, int num_bytes,
++			     enum btrfs_qgroup_rsv_type type)
++{
++	if (type != BTRFS_QGROUP_RSV_META_PREALLOC &&
++	    type != BTRFS_QGROUP_RSV_META_PERTRANS)
++		return 0;
++	if (num_bytes == 0)
++		return 0;
++
++	spin_lock(&root->qgroup_meta_rsv_lock);
++	if (type == BTRFS_QGROUP_RSV_META_PREALLOC) {
++		num_bytes = min_t(u64, root->qgroup_meta_rsv_prealloc,
++				  num_bytes);
++		root->qgroup_meta_rsv_prealloc -= num_bytes;
++	} else {
++		num_bytes = min_t(u64, root->qgroup_meta_rsv_pertrans,
++				  num_bytes);
++		root->qgroup_meta_rsv_pertrans -= num_bytes;
++	}
++	spin_unlock(&root->qgroup_meta_rsv_lock);
++	return num_bytes;
++}
++
+ int __btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
+ 				enum btrfs_qgroup_rsv_type type, bool enforce)
+ {
+@@ -3114,6 +3154,15 @@ int __btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes,
+ 	ret = qgroup_reserve(root, num_bytes, enforce, type);
+ 	if (ret < 0)
+ 		return ret;
++	/*
++	 * Record what we have reserved into root.
++	 *
++	 * To avoid quota disabled->enabled underflow.
++	 * In that case, we may try to free space we haven't reserved
++	 * (since quota was disabled), so record what we reserved into root.
++	 * And ensure later release won't underflow this number.
++	 */
++	add_root_meta_rsv(root, num_bytes, type);
  	return ret;
-@@ -1420,7 +1444,7 @@ int btrfs_insert_delayed_dir_index(struct btrfs_trans_handle *trans,
- 	btrfs_set_stack_dir_type(dir_item, type);
- 	memcpy((char *)(dir_item + 1), name, name_len);
+ }
  
--	ret = btrfs_delayed_item_reserve_metadata(trans, fs_info, delayed_item);
-+	ret = btrfs_delayed_item_reserve_metadata(trans, dir->root, delayed_item);
- 	/*
- 	 * we have reserved enough space when we start a new transaction,
- 	 * so reserving metadata failure is impossible
-@@ -1457,7 +1481,7 @@ static int btrfs_delete_delayed_insertion_item(struct btrfs_fs_info *fs_info,
- 		return 1;
- 	}
+@@ -3141,6 +3190,12 @@ void __btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes,
+ 	    !is_fstree(root->objectid))
+ 		return;
  
--	btrfs_delayed_item_release_metadata(fs_info, item);
-+	btrfs_delayed_item_release_metadata(node->root, item);
- 	btrfs_release_delayed_item(item);
- 	mutex_unlock(&node->mutex);
- 	return 0;
-@@ -1492,7 +1516,7 @@ int btrfs_delete_delayed_dir_index(struct btrfs_trans_handle *trans,
++	/*
++	 * reservation for META_PREALLOC can happen before quota is enabled,
++	 * which can lead to underflow.
++	 * Here ensure we will only free what we really have reserved.
++	 */
++	num_bytes = sub_root_meta_rsv(root, num_bytes, type);
+ 	BUG_ON(num_bytes != round_down(num_bytes, fs_info->nodesize));
+ 	trace_qgroup_meta_reserve(root, -(s64)num_bytes);
+ 	btrfs_qgroup_free_refroot(fs_info, root->objectid, num_bytes, type);
+@@ -3199,6 +3254,9 @@ void btrfs_qgroup_convert_reserved_meta(struct btrfs_root *root, int num_bytes)
+ 	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags) ||
+ 	    !is_fstree(root->objectid))
+ 		return;
++	/* Same as btrfs_qgroup_free_meta_prealloc() */
++	num_bytes = sub_root_meta_rsv(root, num_bytes,
++				      BTRFS_QGROUP_RSV_META_PREALLOC);
+ 	qgroup_convert_meta(fs_info, root->objectid, num_bytes);
+ }
  
- 	item->key = item_key;
- 
--	ret = btrfs_delayed_item_reserve_metadata(trans, fs_info, item);
-+	ret = btrfs_delayed_item_reserve_metadata(trans, dir->root, item);
- 	/*
- 	 * we have reserved enough space when we start a new transaction,
- 	 * so reserving metadata failure is impossible.
-@@ -1865,7 +1889,7 @@ static void __btrfs_kill_delayed_node(struct btrfs_delayed_node *delayed_node)
- 	mutex_lock(&delayed_node->mutex);
- 	curr_item = __btrfs_first_delayed_insertion_item(delayed_node);
- 	while (curr_item) {
--		btrfs_delayed_item_release_metadata(fs_info, curr_item);
-+		btrfs_delayed_item_release_metadata(root, curr_item);
- 		prev_item = curr_item;
- 		curr_item = __btrfs_next_delayed_item(prev_item);
- 		btrfs_release_delayed_item(prev_item);
-@@ -1873,7 +1897,7 @@ static void __btrfs_kill_delayed_node(struct btrfs_delayed_node *delayed_node)
- 
- 	curr_item = __btrfs_first_delayed_deletion_item(delayed_node);
- 	while (curr_item) {
--		btrfs_delayed_item_release_metadata(fs_info, curr_item);
-+		btrfs_delayed_item_release_metadata(root, curr_item);
- 		prev_item = curr_item;
- 		curr_item = __btrfs_next_delayed_item(prev_item);
- 		btrfs_release_delayed_item(prev_item);
-@@ -1883,7 +1907,7 @@ static void __btrfs_kill_delayed_node(struct btrfs_delayed_node *delayed_node)
- 		btrfs_release_delayed_iref(delayed_node);
- 
- 	if (test_bit(BTRFS_DELAYED_NODE_INODE_DIRTY, &delayed_node->flags)) {
--		btrfs_delayed_inode_release_metadata(fs_info, delayed_node);
-+		btrfs_delayed_inode_release_metadata(fs_info, delayed_node, false);
- 		btrfs_release_delayed_inode(delayed_node);
- 	}
- 	mutex_unlock(&delayed_node->mutex);
 -- 
 2.15.1
 

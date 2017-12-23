@@ -1,85 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oln040092069033.outbound.protection.outlook.com ([40.92.69.33]:39328
-        "EHLO EUR02-VE1-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1750752AbdLWL4V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Dec 2017 06:56:21 -0500
-From: Alberto Bursi <alberto.bursi@outlook.it>
-To: James Courtier-Dutton <james.dutton@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs balance problems
-Date: Sat, 23 Dec 2017 11:56:19 +0000
-Message-ID: <VI1PR08MB03368FD615EFAF0C3BB6195B92030@VI1PR08MB0336.eurprd08.prod.outlook.com>
-References: <CAAMvbhEL4gw29ttxN9xbey3YFwUpmeYht2_m4rPFn9F3fn1rqQ@mail.gmail.com>
-In-Reply-To: <CAAMvbhEL4gw29ttxN9xbey3YFwUpmeYht2_m4rPFn9F3fn1rqQ@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"
+Received: from mail-it0-f47.google.com ([209.85.214.47]:46101 "EHLO
+        mail-it0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750842AbdLWT7S (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 23 Dec 2017 14:59:18 -0500
+Received: by mail-it0-f47.google.com with SMTP id t1so17552006ite.5
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Dec 2017 11:59:18 -0800 (PST)
 MIME-Version: 1.0
+In-Reply-To: <pan$678dc$737b7f30$15572b76$e6022b@cox.net>
+References: <CAG+QAKXycv-a3G9QKts4V9RWtKxgRgTtSd6mkZP=Dagmi9Ebtg@mail.gmail.com>
+ <CAG+QAKUbtQc0V0njpXoC_UZL5NF1BP+qoH6Zbh4KgEN_2EiOdw@mail.gmail.com>
+ <83e041e2-a440-845f-df54-ecde29bd10dd@mendix.com> <CAG+QAKViZXY-NguA+=Dy=1pye1Da+sM2+epohnxyefT=BPwXxw@mail.gmail.com>
+ <CAG+QAKWN1X9jVWZeZ8q4DNNxSCXLbYFtM-t=LjpFqeGLE8QgGg@mail.gmail.com>
+ <CAJCQCtTD0sp_YZGv47m4sjUvuAeTuq_P5XaRfnZ=SjvGvhF+Nw@mail.gmail.com>
+ <09697eee-b6f6-eb02-1c0d-1d6f156985f9@applied-asynchrony.com> <pan$678dc$737b7f30$15572b76$e6022b@cox.net>
+From: Rich Rauenzahn <rrauenza@gmail.com>
+Date: Sat, 23 Dec 2017 11:59:17 -0800
+Message-ID: <CAG+QAKXj9=y9aEpWH3Tay22ZX-TMJiH0DtDdk-1Y6Vb+1VJfTg@mail.gmail.com>
+Subject: Re: kernel hangs during balance
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I finally got a full stack trace via sysrq.   A lot of stacks seem to
+end in page fault -- I wonder if its because my page file is a
+loopback on btrfs.
 
+https://pastebin.com/GyWAu1EP
 
-On 12/23/2017 12:19 PM, James Courtier-Dutton wrote:
-> Hi,
->
-> During a btrfs balance, the process hogs all CPU.
-> Or, to be exact, any other program that wishes to use the SSD during a
-> btrfs balance is blocked for long periods. Long periods being more
-> than 5 seconds.
-> Is there any way to multiplex SSD access while btrfs balance is
-> operating, so that other applications can still access the SSD with
-> relatively low latency?
->
-> My guess is that btrfs is doing a transaction with a large number of
-> SSD blocks at a time, and thus blocking other applications.
->
-> This makes for atrocious user interactivity as well as applications
-> failing because they cannot access the disk in a relatively low latent
-> manner.
-> For, example, this is causing a High Definition network CCTV
-> application to fail.
->
-> What I would really like, is for some way to limit SSD bandwidths to
-> applications.
-> For example the CCTV app always gets the bandwidth it needs, and all
-> other applications can still access the SSD, but are rate limited.
-> This would fix my particular problem.
-> We have rate limiting for network applications, why not disk access also?
->
-> Kind Regards
->
-> James
->
-
-On most I/O intensive programs in Linux you can use "ionice" tool to 
-change the disk access priority of a process. [1]
-This allows me to run I/O intensive background scripts in servers 
-without the users noticing slowdowns or lagging, of course this means 
-the process doing heavy I/O will run more slowly or get outright paused 
-if higher-priority processes need a lot of access to the disk.
-
-It works on btrfs balance too, see (commandline example) [2].
-
-If you don't start the process with ionice as in [2], you can always 
-change the priority later if you get the get the process ID. I use iotop 
-[3], which also supports commandline arguments to integrate its output 
-in scripts.
-
-For btrfs scrub it seems to be possible to specify the ionice options 
-directly, while btrfs balance does not seem to have them (would be nice 
-to add them imho). [4]
-
-For the sake of completeness, there is also "nice" tool for CPU usage 
-priority (also used in my scripts on servers to keep the scripts from 
-hogging the CPU for what is just a background process, and seen in [2] 
-commandline too). [5]
-
-1. http://man7.org/linux/man-pages/man1/ionice.1.html
-2. 
-https://unix.stackexchange.com/questions/390480/nice-and-ionice-which-one-should-come-first
-3. http://man7.org/linux/man-pages/man8/iotop.8.html
-4. https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-scrub
-5. http://man7.org/linux/man-pages/man1/nice.1.html
-
--Alberto
-ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m
+$ cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-4.14.8-1.el7.elrepo.x86_64
+root=UUID=35f0ce3f-0902-47a3-8ad8-86179d1f3e3a ro
+rootflags=subvol=root00 vconsole.keymap=us crashkernel=128M
+vconsole.font=latarcyrheb-sun16 consoleblank=600 scsi_mod.use_blk_mq=n
+LANG=en_US.UTF-8

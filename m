@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:35216 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:33146 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751887AbdLVGTB (ORCPT
+        with ESMTP id S1750705AbdLZFhp (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 22 Dec 2017 01:19:01 -0500
+        Tue, 26 Dec 2017 00:37:45 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 04/10] btrfs: qgroup: Use separate meta reservation type for delalloc
-Date: Fri, 22 Dec 2017 14:18:41 +0800
-Message-Id: <20171222061847.13158-5-wqu@suse.com>
-In-Reply-To: <20171222061847.13158-1-wqu@suse.com>
-References: <20171222061847.13158-1-wqu@suse.com>
+Subject: [PATCH v2.2 04/10] btrfs: qgroup: Use separate meta reservation type for delalloc
+Date: Tue, 26 Dec 2017 13:37:27 +0800
+Message-Id: <20171226053727.25505-1-wqu@suse.com>
+In-Reply-To: <20171222061847.13158-5-wqu@suse.com>
+References: <20171222061847.13158-5-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -50,6 +50,14 @@ exceeded (no convert at all) or metadata limitation is reached too soon
 (no free at all).
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+changelog:
+v2.2
+  Fix the wrong parameter in __btrfs_buffered_write(), where qgroup
+  should be freed but not converted.
+  Wrongly convert the reserved meta will easily flood the pertrans rsv,
+  as each successful buffered write will increase pertrans usage, which
+  results too early EDQUOT.
 ---
  fs/btrfs/ctree.h            |  9 ++++++---
  fs/btrfs/extent-tree.c      | 45 +++++++++++++++++++++++++--------------------
@@ -236,7 +244,7 @@ index 20923fce06c4..986660f301de 100644
  }
  
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index eb1bac7c8553..723cea16cd56 100644
+index eb1bac7c8553..3bf186746119 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
 @@ -1690,7 +1690,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
@@ -281,7 +289,7 @@ index eb1bac7c8553..723cea16cd56 100644
  					     GFP_NOFS);
 -		btrfs_delalloc_release_extents(BTRFS_I(inode), reserve_bytes);
 +		btrfs_delalloc_release_extents(BTRFS_I(inode), reserve_bytes,
-+					       (ret != 0));
++					       true);
  		if (ret) {
  			btrfs_drop_pages(pages, num_pages);
  			break;

@@ -1,80 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:43386 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753008AbdLWA2s (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Dec 2017 19:28:48 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBN0Slj0055700
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Dec 2017 00:28:47 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2f1cear0g6-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Dec 2017 00:28:47 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBN0PSLi027885
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Dec 2017 00:25:29 GMT
-Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBN0PSsg023815
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Dec 2017 00:25:28 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: remove unused wait in btrfs_stripe_hash
-Date: Fri, 22 Dec 2017 16:23:01 -0700
-Message-Id: <20171222232301.17979-1-bo.li.liu@oracle.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:52999 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750705AbdLZF57 (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 26 Dec 2017 00:57:59 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: [PATCH] fstests: btrfs: Add new 'limit' test group for btrfs
+Date: Tue, 26 Dec 2017 13:57:44 +0800
+Message-Id: <20171226055744.27697-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In fact nobody is waiting on @wait's waitqueue, it can be safely
-removed.
+Btrfs qgroup also supports to limit the usage of specified qgroups.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+It's possible to enable qgroup but doesn't enable limit.
+(Most user won't use qgroup limit for various problems)
+
+So add a new test group 'limit' for btrfs, as a subset of existing
+'qgroup' group.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h  |  1 -
- fs/btrfs/raid56.c | 10 ----------
- 2 files changed, 11 deletions(-)
+ tests/btrfs/group | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 13c260b..b2e09fe 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -679,7 +679,6 @@ enum btrfs_orphan_cleanup_state {
- /* used by the raid56 code to lock stripes for read/modify/write */
- struct btrfs_stripe_hash {
- 	struct list_head hash_list;
--	wait_queue_head_t wait;
- 	spinlock_t lock;
- };
- 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 3940906..9fa45e0 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -231,7 +231,6 @@ int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info)
- 		cur = h + i;
- 		INIT_LIST_HEAD(&cur->hash_list);
- 		spin_lock_init(&cur->lock);
--		init_waitqueue_head(&cur->wait);
- 	}
- 
- 	x = cmpxchg(&info->stripe_hash_table, NULL, table);
-@@ -815,15 +814,6 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
- 			}
- 
- 			goto done_nolock;
--			/*
--			 * The barrier for this waitqueue_active is not needed,
--			 * we're protected by h->lock and can't miss a wakeup.
--			 */
--		} else if (waitqueue_active(&h->wait)) {
--			spin_unlock(&rbio->bio_list_lock);
--			spin_unlock_irqrestore(&h->lock, flags);
--			wake_up(&h->wait);
--			goto done_nolock;
- 		}
- 	}
- done:
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index f68abf4d6655..6324c54d7699 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -24,7 +24,7 @@
+ 019 auto quick send
+ 020 auto quick replace
+ 021 auto quick balance defrag
+-022 auto qgroup
++022 auto qgroup limit
+ 023 auto
+ 024 auto quick compress
+ 025 auto quick send clone
+@@ -44,7 +44,7 @@
+ 039 auto quick send
+ 040 auto quick send
+ 041 auto quick compress
+-042 auto quick qgroup
++042 auto quick qgroup limit
+ 043 auto quick send
+ 044 auto quick send
+ 045 auto quick send
+@@ -101,7 +101,7 @@
+ 096 auto quick clone
+ 097 auto quick send clone
+ 098 auto quick metadata clone
+-099 auto quick qgroup
++099 auto quick qgroup limit
+ 100 auto replace
+ 101 auto replace
+ 102 auto quick metadata enospc
+@@ -128,7 +128,7 @@
+ 123 auto quick qgroup
+ 124 auto replace
+ 125 auto replace
+-126 auto quick qgroup
++126 auto quick qgroup limit
+ 127 auto quick send
+ 128 auto quick send
+ 129 auto quick send
+@@ -141,7 +141,7 @@
+ 136 auto convert
+ 137 auto quick send
+ 138 auto compress
+-139 auto qgroup
++139 auto qgroup limit
+ 140 auto quick
+ 141 auto quick
+ 142 auto quick
+@@ -155,7 +155,7 @@
+ 150 auto quick dangerous
+ 151 auto quick
+ 152 auto quick metadata qgroup send
+-153 auto quick qgroup
++153 auto quick qgroup limit
+ 154 auto quick
+ 155 auto quick send
+ 156 auto quick trim
 -- 
-2.9.4
+2.15.1
 

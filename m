@@ -1,61 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:32988 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753942AbdLOHoN (ORCPT
+Received: from mail-wr0-f193.google.com ([209.85.128.193]:43088 "EHLO
+        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751881AbdL0Wjk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Dec 2017 02:44:13 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBF7gEAZ073855
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:44:11 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2ev9yug2n6-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:44:11 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id vBF7dh3J000715
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:39:43 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id vBF7dhP9029044
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Dec 2017 07:39:43 GMT
-From: Anand Jain <anand.jain@oracle.com>
+        Wed, 27 Dec 2017 17:39:40 -0500
+Received: by mail-wr0-f193.google.com with SMTP id w68so25416713wrc.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Dec 2017 14:39:40 -0800 (PST)
+From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: make code easy to read in btrfs_open_one_device()
-Date: Fri, 15 Dec 2017 15:40:14 +0800
-Message-Id: <20171215074016.26461-1-anand.jain@oracle.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH] Btrfs: enchanse raid1/10 balance heuristic for non rotating  devices
+Date: Thu, 28 Dec 2017 01:39:31 +0300
+Message-Id: <20171227223931.7878-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No functional change. First set the usual case, writeable then check
-for any special config.
+Currently btrfs raid1/10 balancer blance requests to mirrors,
+based on pid % num of mirrors.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Update logic and make it understood if underline device are non rotational.
+
+If one of mirrors are non rotational, then all read requests will be moved to
+non rotational device.
+
+If both of mirrors are non rotational, calculate sum of
+pending and in flight request for queue on that bdev and use
+device with least queue leght.
+
+P.S.
+Inspired by md-raid1 read balancing
+
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/volumes.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5a4c30451c7f..a81574dba124 100644
+index 9a04245003ab..98bc2433a920 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -676,14 +676,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+@@ -5216,13 +5216,30 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ 	return ret;
+ }
  
- 	device->generation = btrfs_super_generation(disk_super);
++static inline int bdev_get_queue_len(struct block_device *bdev)
++{
++	int sum = 0;
++	struct request_queue *rq = bdev_get_queue(bdev);
++
++	sum += rq->nr_rqs[BLK_RW_SYNC] + rq->nr_rqs[BLK_RW_ASYNC];
++	sum += rq->in_flight[BLK_RW_SYNC] + rq->in_flight[BLK_RW_ASYNC];
++
++	/*
++	 * Try prevent switch for every sneeze
++	 * By roundup output num by 2
++	 */
++	return ALIGN(sum, 2);
++}
++
+ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 			    struct map_lookup *map, int first, int num,
+ 			    int optimal, int dev_replace_is_ongoing)
+ {
+ 	int i;
+ 	int tolerance;
++	struct block_device *bdev;
+ 	struct btrfs_device *srcdev;
++	bool all_bdev_nonrot = true;
  
-+	set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
- 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
- 		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
- 		fs_devices->seeding = 1;
--	} else {
--		if (bdev_read_only(bdev))
--			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
--		else
--			set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
-+	} else if (bdev_read_only(bdev)) {
-+		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
- 	}
+ 	if (dev_replace_is_ongoing &&
+ 	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
+@@ -5231,6 +5248,48 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 	else
+ 		srcdev = NULL;
  
- 	q = bdev_get_queue(bdev);
++	/*
++	 * Optimal expected to be pid % num
++	 * That's generaly ok for spinning rust drives
++	 * But if one of mirror are non rotating,
++	 * that bdev can show better performance
++	 *
++	 * if one of disks are non rotating:
++	 *  - set optimal to non rotating device
++	 * if both disk are non rotating
++	 *  - set optimal to bdev with least queue
++	 * If both disks are spinning rust:
++	 *  - leave old pid % nu,
++	 */
++	for (i = 0; i < num; i++) {
++		bdev = map->stripes[i].dev->bdev;
++		if (!bdev)
++			continue;
++		if (blk_queue_nonrot(bdev_get_queue(bdev)))
++			optimal = i;
++		else
++			all_bdev_nonrot = false;
++	}
++
++	if (all_bdev_nonrot) {
++		int qlen;
++		/* Forse following logic choise by init with some big number */
++		int optimal_dev_rq_count = 1 << 24;
++
++		for (i = 0; i < num; i++) {
++			bdev = map->stripes[i].dev->bdev;
++			if (!bdev)
++				continue;
++
++			qlen = bdev_get_queue_len(bdev);
++
++			if (qlen < optimal_dev_rq_count) {
++				optimal = i;
++				optimal_dev_rq_count = qlen;
++			}
++		}
++	}
++
+ 	/*
+ 	 * try to avoid the drive that is the source drive for a
+ 	 * dev-replace procedure, only choose it if no other non-missing
 -- 
-2.7.0
-
+2.15.1

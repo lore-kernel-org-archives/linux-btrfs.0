@@ -1,158 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:61299 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753151AbdL1MLX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Dec 2017 07:11:23 -0500
-Subject: Re: Hand Patching a BTRFS Superblock?
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>, swestrup@gmail.com,
-        linux-btrfs@vger.kernel.org
-References: <CAJt7KB-ORv77HBRzZrDymu-17BhmEjF9GQjC=bAQ2065fCpqog@mail.gmail.com>
- <c10a5117-7ffc-cda1-d396-0f2624288551@gmx.com>
- <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <178207b8-cf76-c112-0cce-fc326975f459@gmx.com>
-Date: Thu, 28 Dec 2017 20:11:14 +0800
+Received: from smtp.domeneshop.no ([194.63.252.55]:41413 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753293AbdL1NqZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Dec 2017 08:46:25 -0500
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: [PATCH] Btrfs: enchanse raid1/10 balance heuristic for non
+ rotating devices
+To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20171227223931.7878-1-nefelim4ag@gmail.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <7bce5b3a-893b-363d-91d9-7e4fafc0bf83@dirtcellar.net>
+Date: Thu, 28 Dec 2017 14:46:22 +0100
 MIME-Version: 1.0
-In-Reply-To: <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="tJ7qA5if5ftt4ZxSsyXNC5fE1sjbuHtUm"
+In-Reply-To: <20171227223931.7878-1-nefelim4ag@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tJ7qA5if5ftt4ZxSsyXNC5fE1sjbuHtUm
-Content-Type: multipart/mixed; boundary="TiTru2FReekPp5ukWzhyqOQrHD2uIn6jc";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Nikolay Borisov <n.borisov.lkml@gmail.com>, swestrup@gmail.com,
- linux-btrfs@vger.kernel.org
-Message-ID: <178207b8-cf76-c112-0cce-fc326975f459@gmx.com>
-Subject: Re: Hand Patching a BTRFS Superblock?
-References: <CAJt7KB-ORv77HBRzZrDymu-17BhmEjF9GQjC=bAQ2065fCpqog@mail.gmail.com>
- <c10a5117-7ffc-cda1-d396-0f2624288551@gmx.com>
- <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
-In-Reply-To: <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
-
---TiTru2FReekPp5ukWzhyqOQrHD2uIn6jc
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+Timofey Titovets wrote:
+> Currently btrfs raid1/10 balancer blance requests to mirrors,
+> based on pid % num of mirrors.
+>
+> Update logic and make it understood if underline device are non rotational.
+>
+> If one of mirrors are non rotational, then all read requests will be moved to
+> non rotational device.
+>
+And this would make reads regardless of the PID always end up on the 
+fastest device which sounds sane enough , but scubbing will be even more 
+important since there is a less chance that a "random PID" will check 
+the other copy every now and then.
 
-On 2017=E5=B9=B412=E6=9C=8828=E6=97=A5 19:41, Nikolay Borisov wrote:
->=20
->=20
-> On 28.12.2017 03:53, Qu Wenruo wrote:
->>
->>
->> On 2017=E5=B9=B412=E6=9C=8828=E6=97=A5 09:46, Stirling Westrup wrote:
->>> Here's my situation: I have a network file server containing a 12TB
->>> BTRFS spread out over four devices (sda-sdd) which I am trying to
->>> recover. I do have a backup, but it's about 3 months old, and while I=
+> If both of mirrors are non rotational, calculate sum of
+> pending and in flight request for queue on that bdev and use
+> device with least queue leght.
+>
+I think this would be tried out on rotational disk as well. I am happy 
+to test this out for you on a 7x disk server if you want.
+Note: I have no experience with compiling kernels and applying patches 
+(but I do code a bit in C every now and then) so a pre-compiled kernel 
+would be required (I believe you are on Debain as well)
+For rotational then perhaps it would not be wise to use another mirror 
+unless the queue length is significantly higher than the other. Again I 
+am happy to test if tunables are provided.
 
->>> could certainly rebuild everything from that if I really had to, I
->>> would far rather not have to rerip my latest DVDs. So, I am willing t=
-o
->>> experiment if it might save me a few hundred hours of reconstruction.=
-
->>> I don't currently have another 12 TB of space anywhere for making a
->>> scratch copy.
->>>
->>> A few days ago sdb developed hard errors and I can no longer mount th=
-e
->>> filesystem. sdb is no longer even recognized as a valid btrfs drive.
->>> However, when I ran ddrescue over the drive I managed to make a clone=
-
->>> (sdf) which contains all but 12K of the original drive. However, thos=
-e
->>> missing 12K are all in the various superblocks, so the cloned drive i=
-s
->>> still unreadable.
->>>
->>> In the hopes that I was only missing a few bits of the superblocks, I=
-
->>> started out by dd-ing the first 4M of sdd into sdf in the hopes that
->>> ddrescue would overwrite much of the superblocks, and the final bits
->>> from sdd would make things usable.
->>>
->>> No such luck. I now have a drive sdf which claims to be identical to
->>> sdd but which is a clone of sdb. In case it matters, sda and sdc are
->>> each 4TB while sdb and sdd are each 2TB drives; sde is my boot drive
->>> and sdf is a 2TB clone of sdb.
->>>
->>> What I need to do is to somehow patch sdf's primary superblock so it
->>> contains the correct device number and UUID_SUB for sdb, so that I ca=
-n
->>> attempt some sort of recovery. Right now my linux is (understandably)=
-
->>> quite confused by the situation:
->>
->> Did you tried "btrfs rescue super-recover"?
->>
->> Remember to use the devel branch from git, as there is a small bug
->> prevent it report correct result.
->=20
-> Unforutnately my patchset which fixes super-recover is still not merged=
-,
-> so he needs to grab the patches from the mailing list and compile the
-> btrfs tools himself. The patch in question can be found here:
->=20
-> https://patchwork.kernel.org/patch/10092471/
-
-And just in-case, "btrfs insp dump-super -fa" output could greatly help
-us to check if the backup superblocks are really good.
-
-Thanks,
-Qu
->=20
->>
->> super-recover will try to use the backup superblock to recover the
->> primary one.
->>
->> Thanks,
->> Qu
->>
->>>
->>> videon:~ # uname -a
->>> Linux videon 4.4.103-18.41-default #1 SMP Wed Dec 13 14:06:33 UTC 201=
-7
->>> (f66c68c) x86_64 x86_64 x86_64 GNU/Linux
->>>
->>> videon:~ # btrfs --version
->>> btrfs-progs v4.5.3+20160729
->>>
->>> videon:~ # btrfs fi show
->>> Label: 'Storage'  uuid: 33d2890d-f07d-4ba8-b1fc-7b4f14463b1f
->>>         Total devices 4 FS bytes used 10.69TiB
->>>         devid    1 size 1.82TiB used 1.82TiB path /dev/sdd
->>>         devid    3 size 3.64TiB used 3.54TiB path /dev/sdc
->>>         devid    4 size 3.64TiB used 3.54TiB path /dev/sda
->>>         *** Some devices missing
->>>
->>> Any suggestions on how to proceed would be appreciated.
->>>
->>
-
-
---TiTru2FReekPp5ukWzhyqOQrHD2uIn6jc--
-
---tJ7qA5if5ftt4ZxSsyXNC5fE1sjbuHtUm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpE32IXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qj+MAf/SrVLw6etPF73a7EinkgkH94a
-b/UESB9bZsW1kSFvRufnplRaSPYr4pKf8mtxF5rV5HA/xC2ncNFdUaL6L/Ei6W3+
-ZbiRqnvjY2VjzGcTg58A1WKlAvFx7seNFX+lJfaGpYmnFMUFSd7iiGsoRbTebll7
-Zobi4LQiqs3bFjtAyuxOnZesVDfO1G8G45eR+4JIe83aXPzAqrDPu51B4pfPagv4
-TFLSvZuhBs+qkM0jbkG2Mxx7Crju4FPcJxgZgX7tBFQOvnw5uyAQWETHoYP/Hbfv
-kJYJhdvbAw0lcie8ioyLOoYVk2rzwx06ceMp7RgnNh9icZcXB/h51FR0CHohPA==
-=tL4Z
------END PGP SIGNATURE-----
-
---tJ7qA5if5ftt4ZxSsyXNC5fE1sjbuHtUm--
+> P.S.
+> Inspired by md-raid1 read balancing
+>
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/volumes.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 59 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 9a04245003ab..98bc2433a920 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -5216,13 +5216,30 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+>  	return ret;
+>  }
+>
+> +static inline int bdev_get_queue_len(struct block_device *bdev)
+> +{
+> +	int sum = 0;
+> +	struct request_queue *rq = bdev_get_queue(bdev);
+> +
+> +	sum += rq->nr_rqs[BLK_RW_SYNC] + rq->nr_rqs[BLK_RW_ASYNC];
+> +	sum += rq->in_flight[BLK_RW_SYNC] + rq->in_flight[BLK_RW_ASYNC];
+> +
+> +	/*
+> +	 * Try prevent switch for every sneeze
+> +	 * By roundup output num by 2
+> +	 */
+> +	return ALIGN(sum, 2);
+> +}
+> +
+>  static int find_live_mirror(struct btrfs_fs_info *fs_info,
+>  			    struct map_lookup *map, int first, int num,
+>  			    int optimal, int dev_replace_is_ongoing)
+>  {
+>  	int i;
+>  	int tolerance;
+> +	struct block_device *bdev;
+>  	struct btrfs_device *srcdev;
+> +	bool all_bdev_nonrot = true;
+>
+>  	if (dev_replace_is_ongoing &&
+>  	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
+> @@ -5231,6 +5248,48 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+>  	else
+>  		srcdev = NULL;
+>
+> +	/*
+> +	 * Optimal expected to be pid % num
+> +	 * That's generaly ok for spinning rust drives
+> +	 * But if one of mirror are non rotating,
+> +	 * that bdev can show better performance
+> +	 *
+> +	 * if one of disks are non rotating:
+> +	 *  - set optimal to non rotating device
+> +	 * if both disk are non rotating
+> +	 *  - set optimal to bdev with least queue
+> +	 * If both disks are spinning rust:
+> +	 *  - leave old pid % nu,
+> +	 */
+> +	for (i = 0; i < num; i++) {
+> +		bdev = map->stripes[i].dev->bdev;
+> +		if (!bdev)
+> +			continue;
+> +		if (blk_queue_nonrot(bdev_get_queue(bdev)))
+> +			optimal = i;
+> +		else
+> +			all_bdev_nonrot = false;
+> +	}
+> +
+> +	if (all_bdev_nonrot) {
+> +		int qlen;
+> +		/* Forse following logic choise by init with some big number */
+> +		int optimal_dev_rq_count = 1 << 24;
+> +
+> +		for (i = 0; i < num; i++) {
+> +			bdev = map->stripes[i].dev->bdev;
+> +			if (!bdev)
+> +				continue;
+> +
+> +			qlen = bdev_get_queue_len(bdev);
+> +
+> +			if (qlen < optimal_dev_rq_count) {
+> +				optimal = i;
+> +				optimal_dev_rq_count = qlen;
+> +			}
+> +		}
+> +	}
+> +
+>  	/*
+>  	 * try to avoid the drive that is the source drive for a
+>  	 * dev-replace procedure, only choose it if no other non-missing
+>

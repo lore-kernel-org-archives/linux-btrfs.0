@@ -1,122 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from demfloro.ru ([188.166.0.225]:56284 "EHLO demfloro.ru"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752016AbdL1IGa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Dec 2017 03:06:30 -0500
-Date: Thu, 28 Dec 2017 11:06:06 +0300
-From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: enchanse raid1/10 balance heuristic for non
- rotating  devices
-Message-ID: <20171228110514.702aaaef@job>
-In-Reply-To: <20171227223931.7878-1-nefelim4ag@gmail.com>
-References: <20171227223931.7878-1-nefelim4ag@gmail.com>
+Received: from mail-wm0-f66.google.com ([74.125.82.66]:40587 "EHLO
+        mail-wm0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752905AbdL1LP6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 28 Dec 2017 06:15:58 -0500
+Received: by mail-wm0-f66.google.com with SMTP id f206so43219417wmf.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Dec 2017 03:15:57 -0800 (PST)
+Subject: Re: btrfs balance problems
+To: James Courtier-Dutton <james.dutton@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <CAAMvbhEL4gw29ttxN9xbey3YFwUpmeYht2_m4rPFn9F3fn1rqQ@mail.gmail.com>
+From: Nikolay Borisov <n.borisov.lkml@gmail.com>
+Message-ID: <e3629f7d-3278-bb11-d416-43e290c67e2a@gmail.com>
+Date: Thu, 28 Dec 2017 13:15:54 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+In-Reply-To: <CAAMvbhEL4gw29ttxN9xbey3YFwUpmeYht2_m4rPFn9F3fn1rqQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 28 Dec 2017 01:39:31 +0300
-Timofey Titovets <nefelim4ag@gmail.com> wrote:
 
-> Currently btrfs raid1/10 balancer blance requests to mirrors,
-> based on pid % num of mirrors.
+
+On 23.12.2017 13:19, James Courtier-Dutton wrote:
+> Hi,
 > 
-> Update logic and make it understood if underline device are non rotational.
+> During a btrfs balance, the process hogs all CPU.
+> Or, to be exact, any other program that wishes to use the SSD during a
+> btrfs balance is blocked for long periods. Long periods being more
+> than 5 seconds.
+> Is there any way to multiplex SSD access while btrfs balance is
+> operating, so that other applications can still access the SSD with
+> relatively low latency?
 > 
-> If one of mirrors are non rotational, then all read requests will be moved to
-> non rotational device.
+> My guess is that btrfs is doing a transaction with a large number of
+> SSD blocks at a time, and thus blocking other applications.
 > 
-> If both of mirrors are non rotational, calculate sum of
-> pending and in flight request for queue on that bdev and use
-> device with least queue leght.
+> This makes for atrocious user interactivity as well as applications
+> failing because they cannot access the disk in a relatively low latent
+> manner.
+> For, example, this is causing a High Definition network CCTV
+> application to fail.
 > 
-> P.S.
-> Inspired by md-raid1 read balancing
+> What I would really like, is for some way to limit SSD bandwidths to
+> applications.
+> For example the CCTV app always gets the bandwidth it needs, and all
+> other applications can still access the SSD, but are rate limited.
+> This would fix my particular problem.
+> We have rate limiting for network applications, why not disk access also?
+
+So how are you running btrfs balance? Are you using any filters
+whatsoever? The documentation
+[https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-balance] has the
+following warning:
+
+Warning: running balance without filters will take a lot of time as it
+basically rewrites the entire filesystem and needs to update all block
+pointers.
+
+
 > 
-> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
-> ---
->  fs/btrfs/volumes.c | 59
-> ++++++++++++++++++++++++++++++++++++++++++++++++++++++ 1 file changed, 59
-> insertions(+)
+> Kind Regards
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 9a04245003ab..98bc2433a920 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -5216,13 +5216,30 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info
-> *fs_info, u64 logical, u64 len) return ret;
->  }
->  
-> +static inline int bdev_get_queue_len(struct block_device *bdev)
-> +{
-> +	int sum = 0;
-> +	struct request_queue *rq = bdev_get_queue(bdev);
-> +
-> +	sum += rq->nr_rqs[BLK_RW_SYNC] + rq->nr_rqs[BLK_RW_ASYNC];
-> +	sum += rq->in_flight[BLK_RW_SYNC] + rq->in_flight[BLK_RW_ASYNC];
-> +
-
-This won't work as expected if bdev is controlled by blk-mq, these
-counters will be zero. AFAIK to get this info in block layer agnostic way
-part_in_flight[1] has to be used. It extracts these counters approriately.
-
-But it needs to be EXPORT_SYMBOL()'ed in block/genhd.c so we can continue
-to build btrfs as module.
-
-> +	/*
-> +	 * Try prevent switch for every sneeze
-> +	 * By roundup output num by 2
-> +	 */
-> +	return ALIGN(sum, 2);
-> +}
-> +
->  static int find_live_mirror(struct btrfs_fs_info *fs_info,
->  			    struct map_lookup *map, int first, int num,
->  			    int optimal, int dev_replace_is_ongoing)
->  {
->  	int i;
->  	int tolerance;
-> +	struct block_device *bdev;
->  	struct btrfs_device *srcdev;
-> +	bool all_bdev_nonrot = true;
->  
->  	if (dev_replace_is_ongoing &&
->  	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
-> @@ -5231,6 +5248,48 @@ static int find_live_mirror(struct btrfs_fs_info
-> *fs_info, else
->  		srcdev = NULL;
->  
-> +	/*
-> +	 * Optimal expected to be pid % num
-> +	 * That's generaly ok for spinning rust drives
-> +	 * But if one of mirror are non rotating,
-> +	 * that bdev can show better performance
-> +	 *
-> +	 * if one of disks are non rotating:
-> +	 *  - set optimal to non rotating device
-> +	 * if both disk are non rotating
-> +	 *  - set optimal to bdev with least queue
-> +	 * If both disks are spinning rust:
-> +	 *  - leave old pid % nu,
-> +	 */
-> +	for (i = 0; i < num; i++) {
-> +		bdev = map->stripes[i].dev->bdev;
-> +		if (!bdev)
-> +			continue;
-> +		if (blk_queue_nonrot(bdev_get_queue(bdev)))
-> +			optimal = i;
-> +		else
-> +			all_bdev_nonrot = false;
-> +	}
-> +
-> +	if (all_bdev_nonrot) {
-> +		int qlen;
-> +		/* Forse following logic choise by init with some big number
-> */
-> +		int optimal_dev_rq_count = 1 << 24;
-
-Probably better to use INT_MAX macro instead.
-
-[1] https://elixir.free-electrons.com/linux/v4.15-rc5/source/block/genhd.c#L68
-
+> James
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

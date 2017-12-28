@@ -1,61 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:46334 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932242AbdLTGly (ORCPT
+Received: from mail-wr0-f193.google.com ([209.85.128.193]:45919 "EHLO
+        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753464AbdL1P2N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Dec 2017 01:41:54 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id vBK6fSS8069795
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 06:41:52 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2120.oracle.com with ESMTP id 2eyj2f85ph-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 06:41:52 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id vBK6fpre019490
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 06:41:51 GMT
-Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id vBK6fpun004424
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Dec 2017 06:41:51 GMT
-From: Anand Jain <anand.jain@oracle.com>
+        Thu, 28 Dec 2017 10:28:13 -0500
+Received: by mail-wr0-f193.google.com with SMTP id o15so7274206wrf.12
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Dec 2017 07:28:12 -0800 (PST)
+From: Timofey Titovets <nefelim4ag@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: optimize code converge mutex unlock
-Date: Wed, 20 Dec 2017 14:42:26 +0800
-Message-Id: <20171220064226.4317-1-anand.jain@oracle.com>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [PATCH] Btrfs: replace raid56 stripe bubble sort with insert sort
+Date: Thu, 28 Dec 2017 18:28:04 +0300
+Message-Id: <20171228152804.4645-1-nefelim4ag@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No functional change rearrange the mutex_unlock.
+Insert sort are generaly perform better then bubble sort,
+by have less iterations on avarage.
+That version also try place element to right position
+instead of raw swap.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+I'm not sure how many stripes per bio raid56,
+btrfs try to store (and try to sort).
+
+So, that a bit shorter just in the name of a great justice.
+
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
- fs/btrfs/transaction.c | 7 ++-----
- 1 file changed, 2 insertions(+), 5 deletions(-)
+ fs/btrfs/volumes.c | 29 ++++++++++++-----------------
+ 1 file changed, 12 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 6348573e26a7..04f07144b45c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2265,16 +2265,13 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 98bc2433a920..7195fc8c49b1 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5317,29 +5317,24 @@ static inline int parity_smaller(u64 a, u64 b)
+ 	return a > b;
+ }
  
- 	ret = write_all_supers(fs_info, 0);
--	if (ret) {
--		mutex_unlock(&fs_info->tree_log_mutex);
--		goto scrub_continue;
--	}
+-/* Bubble-sort the stripe set to put the parity/syndrome stripes last */
++/* Insertion-sort the stripe set to put the parity/syndrome stripes last */
+ static void sort_parity_stripes(struct btrfs_bio *bbio, int num_stripes)
+ {
+ 	struct btrfs_bio_stripe s;
+-	int i;
++	int i, j;
+ 	u64 l;
+-	int again = 1;
+ 
+-	while (again) {
+-		again = 0;
+-		for (i = 0; i < num_stripes - 1; i++) {
+-			if (parity_smaller(bbio->raid_map[i],
+-					   bbio->raid_map[i+1])) {
+-				s = bbio->stripes[i];
+-				l = bbio->raid_map[i];
+-				bbio->stripes[i] = bbio->stripes[i+1];
+-				bbio->raid_map[i] = bbio->raid_map[i+1];
+-				bbio->stripes[i+1] = s;
+-				bbio->raid_map[i+1] = l;
 -
- 	/*
- 	 * the super is written, we can safely allow the tree-loggers
- 	 * to go about their business
- 	 */
- 	mutex_unlock(&fs_info->tree_log_mutex);
-+	if (ret)
-+		goto scrub_continue;
- 
- 	btrfs_finish_extent_commit(trans, fs_info);
+-				again = 1;
+-			}
++	for (i = 1; i < num_stripes; i++) {
++		s = bbio->stripes[i];
++		l = bbio->raid_map[i];
++		for (j = i - 1; j >= 0; j--) {
++			if (!parity_smaller(bbio->raid_map[j], l))
++				break;
++			bbio->stripes[j+1]  = bbio->stripes[j];
++			bbio->raid_map[j+1] = bbio->raid_map[j];
+ 		}
++		bbio->stripes[j+1]  = s;
++		bbio->raid_map[j+1] = l;
+ 	}
+ }
  
 -- 
-2.15.0
-
+2.15.1

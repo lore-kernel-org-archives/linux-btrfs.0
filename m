@@ -1,124 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:41144 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751881AbdL0Vyp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Dec 2017 16:54:45 -0500
-Reply-To: waxhead@dirtcellar.net
-Subject: Re: btrfs balance problems
-To: James Courtier-Dutton <james.dutton@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAAMvbhEL4gw29ttxN9xbey3YFwUpmeYht2_m4rPFn9F3fn1rqQ@mail.gmail.com>
- <VI1PR08MB03368FD615EFAF0C3BB6195B92030@VI1PR08MB0336.eurprd08.prod.outlook.com>
- <CAAMvbhHV=BvRLv14U0JRrYmhiXeREOTNiVLPkuq=MO6dH4jDiQ@mail.gmail.com>
- <CAAMvbhG62rbphgWXQ_UiHHtH89wpsZXaLU0mut+4E+uuK2nbFw@mail.gmail.com>
-From: waxhead <waxhead@dirtcellar.net>
-Message-ID: <271434ca-bee9-7582-786f-ff2a7a1d67b2@dirtcellar.net>
-Date: Wed, 27 Dec 2017 22:54:42 +0100
+Received: from mout.gmx.net ([212.227.17.21]:63428 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751964AbdL1Akg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 27 Dec 2017 19:40:36 -0500
+Subject: Re: [PATCH] Btrfs: enchanse raid1/10 balance heuristic for non
+ rotating devices
+To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20171227223931.7878-1-nefelim4ag@gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <55ed0f1b-8cbf-3faf-0041-8451c3747ed2@gmx.com>
+Date: Thu, 28 Dec 2017 08:40:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAAMvbhG62rbphgWXQ_UiHHtH89wpsZXaLU0mut+4E+uuK2nbFw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <20171227223931.7878-1-nefelim4ag@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="uM8o4B1ET9UgJurpaci79sUOsPJXHBTs0"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-James Courtier-Dutton wrote:
-> Hi,
->
-> Thank you for your suggestion.
-> It does not help at all.
-> btrfs balance's behaviour seems to be unchanged by ionice.
-> It still takes 100% while working and starves all other processes of
-> disk access.
->
-> I can I get btrfs balance to work in the background, without adversely
-> affecting other applications?
->
-Are you using block multiqueue or perhaps a scheduler other than CFQ?!
-I may be wrong on this , but from memory I think the only scheduler that 
-plays nicely (from a practical point of view) with ionice is CFQ
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--uM8o4B1ET9UgJurpaci79sUOsPJXHBTs0
+Content-Type: multipart/mixed; boundary="Qwtx9WHN6uqHl1Ws4zB30qtoyc0f4rcWo";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Timofey Titovets <nefelim4ag@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <55ed0f1b-8cbf-3faf-0041-8451c3747ed2@gmx.com>
+Subject: Re: [PATCH] Btrfs: enchanse raid1/10 balance heuristic for non
+ rotating devices
+References: <20171227223931.7878-1-nefelim4ag@gmail.com>
+In-Reply-To: <20171227223931.7878-1-nefelim4ag@gmail.com>
 
-check the output of:
-cat /sys/block/sda/queue/scheduler
-
-Of course you need to replace sda with the appropriate block device and 
-the selected scheduler will be shown in [brackets].
-
-If that does not help you can maybe reduce the time your system is 
-slowed down by using the usage balance filter and increasing the value 
-bit by bit....
-
-https://btrfs.wiki.kernel.org/index.php/Balance_Filters
+--Qwtx9WHN6uqHl1Ws4zB30qtoyc0f4rcWo
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
->>
->> On 23 December 2017 at 11:56, Alberto Bursi <alberto.bursi@outlook.it> wrote:
->>>
->>>
->>> On 12/23/2017 12:19 PM, James Courtier-Dutton wrote:
->>>> Hi,
->>>>
->>>> During a btrfs balance, the process hogs all CPU.
->>>> Or, to be exact, any other program that wishes to use the SSD during a
->>>> btrfs balance is blocked for long periods. Long periods being more
->>>> than 5 seconds.
->>>> Is there any way to multiplex SSD access while btrfs balance is
->>>> operating, so that other applications can still access the SSD with
->>>> relatively low latency?
->>>>
->>>> My guess is that btrfs is doing a transaction with a large number of
->>>> SSD blocks at a time, and thus blocking other applications.
->>>>
->>>> This makes for atrocious user interactivity as well as applications
->>>> failing because they cannot access the disk in a relatively low latent
->>>> manner.
->>>> For, example, this is causing a High Definition network CCTV
->>>> application to fail.
->>>>
->>>> What I would really like, is for some way to limit SSD bandwidths to
->>>> applications.
->>>> For example the CCTV app always gets the bandwidth it needs, and all
->>>> other applications can still access the SSD, but are rate limited.
->>>> This would fix my particular problem.
->>>> We have rate limiting for network applications, why not disk access also?
->>>>
->>>> Kind Regards
->>>>
->>>> James
->>>>
->>>
->>> On most I/O intensive programs in Linux you can use "ionice" tool to
->>> change the disk access priority of a process. [1]
->>> This allows me to run I/O intensive background scripts in servers
->>> without the users noticing slowdowns or lagging, of course this means
->>> the process doing heavy I/O will run more slowly or get outright paused
->>> if higher-priority processes need a lot of access to the disk.
->>>
->>> It works on btrfs balance too, see (commandline example) [2].
->>>
->>> If you don't start the process with ionice as in [2], you can always
->>> change the priority later if you get the get the process ID. I use iotop
->>> [3], which also supports commandline arguments to integrate its output
->>> in scripts.
->>>
->>> For btrfs scrub it seems to be possible to specify the ionice options
->>> directly, while btrfs balance does not seem to have them (would be nice
->>> to add them imho). [4]
->>>
->>> For the sake of completeness, there is also "nice" tool for CPU usage
->>> priority (also used in my scripts on servers to keep the scripts from
->>> hogging the CPU for what is just a background process, and seen in [2]
->>> commandline too). [5]
->>>
->>> 1. http://man7.org/linux/man-pages/man1/ionice.1.html
->>> 2.
->>> https://unix.stackexchange.com/questions/390480/nice-and-ionice-which-one-should-come-first
->>> 3. http://man7.org/linux/man-pages/man8/iotop.8.html
->>> 4. https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-scrub
->>> 5. http://man7.org/linux/man-pages/man1/nice.1.html
->>>
->>> -Alberto
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+
+On 2017=E5=B9=B412=E6=9C=8828=E6=97=A5 06:39, Timofey Titovets wrote:
+> Currently btrfs raid1/10 balancer blance requests to mirrors,
+> based on pid % num of mirrors.
+>=20
+> Update logic and make it understood if underline device are non rotatio=
+nal.
+>=20
+> If one of mirrors are non rotational, then all read requests will be mo=
+ved to
+> non rotational device.
+>=20
+> If both of mirrors are non rotational, calculate sum of
+> pending and in flight request for queue on that bdev and use
+> device with least queue leght.
+>=20
+> P.S.
+> Inspired by md-raid1 read balancing
+
+Any benchmark?
+
+It would be more persuasive.
+
+Thanks,
+Qu
+
+>=20
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/volumes.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++=
+++++++++
+>  1 file changed, 59 insertions(+)
+>=20
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 9a04245003ab..98bc2433a920 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -5216,13 +5216,30 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info=
+ *fs_info, u64 logical, u64 len)
+>  	return ret;
+>  }
+> =20
+> +static inline int bdev_get_queue_len(struct block_device *bdev)
+> +{
+> +	int sum =3D 0;
+> +	struct request_queue *rq =3D bdev_get_queue(bdev);
+> +
+> +	sum +=3D rq->nr_rqs[BLK_RW_SYNC] + rq->nr_rqs[BLK_RW_ASYNC];
+> +	sum +=3D rq->in_flight[BLK_RW_SYNC] + rq->in_flight[BLK_RW_ASYNC];
+> +
+> +	/*
+> +	 * Try prevent switch for every sneeze
+> +	 * By roundup output num by 2
+> +	 */
+> +	return ALIGN(sum, 2);
+> +}
+> +
+>  static int find_live_mirror(struct btrfs_fs_info *fs_info,
+>  			    struct map_lookup *map, int first, int num,
+>  			    int optimal, int dev_replace_is_ongoing)
+>  {
+>  	int i;
+>  	int tolerance;
+> +	struct block_device *bdev;
+>  	struct btrfs_device *srcdev;
+> +	bool all_bdev_nonrot =3D true;
+> =20
+>  	if (dev_replace_is_ongoing &&
+>  	    fs_info->dev_replace.cont_reading_from_srcdev_mode =3D=3D
+> @@ -5231,6 +5248,48 @@ static int find_live_mirror(struct btrfs_fs_info=
+ *fs_info,
+>  	else
+>  		srcdev =3D NULL;
+> =20
+> +	/*
+> +	 * Optimal expected to be pid % num
+> +	 * That's generaly ok for spinning rust drives
+> +	 * But if one of mirror are non rotating,
+> +	 * that bdev can show better performance
+> +	 *
+> +	 * if one of disks are non rotating:
+> +	 *  - set optimal to non rotating device
+> +	 * if both disk are non rotating
+> +	 *  - set optimal to bdev with least queue
+> +	 * If both disks are spinning rust:
+> +	 *  - leave old pid % nu,
+> +	 */
+> +	for (i =3D 0; i < num; i++) {
+> +		bdev =3D map->stripes[i].dev->bdev;
+> +		if (!bdev)
+> +			continue;
+> +		if (blk_queue_nonrot(bdev_get_queue(bdev)))
+> +			optimal =3D i;
+> +		else
+> +			all_bdev_nonrot =3D false;
+> +	}
+> +
+> +	if (all_bdev_nonrot) {
+> +		int qlen;
+> +		/* Forse following logic choise by init with some big number */
+> +		int optimal_dev_rq_count =3D 1 << 24;
+> +
+> +		for (i =3D 0; i < num; i++) {
+> +			bdev =3D map->stripes[i].dev->bdev;
+> +			if (!bdev)
+> +				continue;
+> +
+> +			qlen =3D bdev_get_queue_len(bdev);
+> +
+> +			if (qlen < optimal_dev_rq_count) {
+> +				optimal =3D i;
+> +				optimal_dev_rq_count =3D qlen;
+> +			}
+> +		}
+> +	}
+> +
+>  	/*
+>  	 * try to avoid the drive that is the source drive for a
+>  	 * dev-replace procedure, only choose it if no other non-missing
+>=20
+
+
+--Qwtx9WHN6uqHl1Ws4zB30qtoyc0f4rcWo--
+
+--uM8o4B1ET9UgJurpaci79sUOsPJXHBTs0
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpEPX0XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgC5wf/VHFxti0HBE5ppmuyAZfZsLXe
+hmK3UUq07H63TAE/2POtsJnbzux93zzfjpkvp36vVQUqZdeleBTh9aEYNP/RTQuo
+txo2UukraIFyLigivV6G21VkTAUD5uTgLkAGqK81j2uLeY23NSzyPGLQQytwWD84
+hOOkm1SLNqFj4BZtF5euXqd7fLUV5Sd0nzHFjiBn1YEpWvO8fb6bJ8S1ybI5COzg
+zTOm39tfh1fZOicVjglA2CS2u5/ZHW5VGCLSqt4MTNQ8Dtorou2SudKw7Rzlgdy1
+QaqRgi+6qqBbxA0MBEUv0M2wnrOSVF7pLJZZqhlsu3SMXzpI/61yZOM/IJqYsQ==
+=WQrg
+-----END PGP SIGNATURE-----
+
+--uM8o4B1ET9UgJurpaci79sUOsPJXHBTs0--

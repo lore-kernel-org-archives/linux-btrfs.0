@@ -1,96 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:63677 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:44041 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753736AbdL2EA5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Dec 2017 23:00:57 -0500
-Subject: Re: Hand Patching a BTRFS Superblock?
-To: swestrup@gmail.com
-Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAJt7KB-ORv77HBRzZrDymu-17BhmEjF9GQjC=bAQ2065fCpqog@mail.gmail.com>
- <c10a5117-7ffc-cda1-d396-0f2624288551@gmx.com>
- <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
- <178207b8-cf76-c112-0cce-fc326975f459@gmx.com>
- <CAJt7KB9sLArgDapkoypY-DnqFepX4R38E4RFOPUE6Adw9bdWkQ@mail.gmail.com>
- <dcdb28de-de4a-402f-f38a-790f509be95b@gmx.com>
- <CAJt7KB80n0qRViS7p8nRRNYNC1ivMtPJu-ec35vrVNfZ+AWvSA@mail.gmail.com>
- <ba3f9db1-fbc4-cd87-7d3e-b7f1fe73296c@gmx.com>
- <CAJt7KB_QMivwW8APX0Bxw4m+K4BRhZ0Qh1zxOxEkcpO5hF48EQ@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <cda353c4-8e9c-7bea-0c59-b4afc388da58@gmx.com>
-Date: Fri, 29 Dec 2017 12:00:49 +0800
+        id S1753861AbdL2LRV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Dec 2017 06:17:21 -0500
+Subject: Re: [PATCH v2 02/17] btrfs-progs: lowmem check: record returned
+ errors after walk_down_tree_v2()
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Cc: quwenruo.btrfs@gmx.com
+References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
+ <20171220045731.19343-3-suy.fnst@cn.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <d4013361-64e4-39be-3866-5baba6597669@suse.com>
+Date: Fri, 29 Dec 2017 13:17:17 +0200
 MIME-Version: 1.0
-In-Reply-To: <CAJt7KB_QMivwW8APX0Bxw4m+K4BRhZ0Qh1zxOxEkcpO5hF48EQ@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="6Mtmc4jGyJIlr8gjix1gIfJPIV7eRcYo3"
+In-Reply-To: <20171220045731.19343-3-suy.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---6Mtmc4jGyJIlr8gjix1gIfJPIV7eRcYo3
-Content-Type: multipart/mixed; boundary="AG0GD6oZykOnNwaRbXvzGIDtUEiBtdzRw";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: swestrup@gmail.com
-Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <cda353c4-8e9c-7bea-0c59-b4afc388da58@gmx.com>
-Subject: Re: Hand Patching a BTRFS Superblock?
-References: <CAJt7KB-ORv77HBRzZrDymu-17BhmEjF9GQjC=bAQ2065fCpqog@mail.gmail.com>
- <c10a5117-7ffc-cda1-d396-0f2624288551@gmx.com>
- <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
- <178207b8-cf76-c112-0cce-fc326975f459@gmx.com>
- <CAJt7KB9sLArgDapkoypY-DnqFepX4R38E4RFOPUE6Adw9bdWkQ@mail.gmail.com>
- <dcdb28de-de4a-402f-f38a-790f509be95b@gmx.com>
- <CAJt7KB80n0qRViS7p8nRRNYNC1ivMtPJu-ec35vrVNfZ+AWvSA@mail.gmail.com>
- <ba3f9db1-fbc4-cd87-7d3e-b7f1fe73296c@gmx.com>
- <CAJt7KB_QMivwW8APX0Bxw4m+K4BRhZ0Qh1zxOxEkcpO5hF48EQ@mail.gmail.com>
-In-Reply-To: <CAJt7KB_QMivwW8APX0Bxw4m+K4BRhZ0Qh1zxOxEkcpO5hF48EQ@mail.gmail.com>
-
---AG0GD6oZykOnNwaRbXvzGIDtUEiBtdzRw
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 20.12.2017 06:57, Su Yue wrote:
+> In lowmem mode with '--repair', check_chunks_and_extents_v2()
+> will fix accounting in block groups and clear the error
+> bit BG_ACCOUNTING_ERROR.
+> However, return value of check_btrfs_root() is 0 either 1 instead of
+> error bits.
+> 
+> If extent tree is on error, lowmem repair always prints error and
+> returns nonzero value even the filesystem is fine after repair.
+> 
+> So let @err contains bits after walk_down_tree_v2().
+> 
+> Introduce FATAL_ERROR for lowmem mode to represents negative return
+> values since negative and positive can't not be mixed in bits operations.
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  cmds-check.c | 13 +++++++------
+>  1 file changed, 7 insertions(+), 6 deletions(-)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 309ac9553b3a..ebede26cef01 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -134,6 +134,7 @@ struct data_backref {
+>  #define DIR_INDEX_MISMATCH      (1<<19) /* INODE_INDEX found but not match */
+>  #define DIR_COUNT_AGAIN         (1<<20) /* DIR isize should be recalculated */
+>  #define BG_ACCOUNTING_ERROR     (1<<21) /* Block group accounting error */
+> +#define FATAL_ERROR             (1<<22) /* fatal bit for errno */
+>  
+>  static inline struct data_backref* to_data_backref(struct extent_backref *back)
+>  {
+> @@ -6556,7 +6557,7 @@ static struct data_backref *find_data_backref(struct extent_record *rec,
+>   *                otherwise means check fs tree(s) items relationship and
+>   *		  @root MUST be a fs tree root.
+>   * Returns 0      represents OK.
+> - * Returns not 0  represents error.
+> + * Returns > 0    represents error bits.
+>   */
 
-On 2017=E5=B9=B412=E6=9C=8829=E6=97=A5 11:35, Stirling Westrup wrote:
-> On Thu, Dec 28, 2017 at 9:08 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wro=
-te:
->>
->>
->=20
->>
->> I strongly recommend to do a binary search for magic number "5f42 4852=
+What about the code in 'if (!check_all)' branch, check_fs_first_inode
+can return a negative value, hence check_btrfs_root can return a
+negative value. A negative value can also be returned from
+btrfs_search_slot.
 
->> 6653 5f4d" to locate the real offset (if it's offset, not a toasted im=
-age)
->>
-> I don't understand, how would I do a binary search for that signature?
->=20
-The most stupid idea is to use xxd and grep.
+Clearly this patch needs to be thought out better
 
-Something like:
+>  static int check_btrfs_root(struct btrfs_trans_handle *trans,
+>  			    struct btrfs_root *root, unsigned int ext_ref,
+> @@ -6607,12 +6608,12 @@ static int check_btrfs_root(struct btrfs_trans_handle *trans,
+>  	while (1) {
+>  		ret = walk_down_tree_v2(trans, root, &path, &level, &nrefs,
+>  					ext_ref, check_all);
+> -
+> -		err |= !!ret;
+> +		if (ret > 0)
+> +			err |= ret;
+>  
+>  		/* if ret is negative, walk shall stop */
+>  		if (ret < 0) {
+> -			ret = err;
+> +			ret = err | FATAL_ERROR;
+>  			break;
+>  		}
+>  
+> @@ -6636,12 +6637,12 @@ out:
+>   * @ext_ref:	the EXTENDED_IREF feature
+>   *
+>   * Return 0 if no error found.
+> - * Return <0 for error.
+> + * Return not 0 for error.
+>   */
+>  static int check_fs_root_v2(struct btrfs_root *root, unsigned int ext_ref)
+>  {
+>  	reset_cached_block_groups(root->fs_info);
+> -	return check_btrfs_root(NULL, root, ext_ref, 0);
+> +	return !!check_btrfs_root(NULL, root, ext_ref, 0);
+>  }
 
-# xxd /dev/sde | grep 5f42 -C1
+You make the function effectively boolean, make this explicit by
+changing its return value to bool. Also the name and the boolean return
+makes the function REALLY confusing. I.e when should we return true or
+false? As it stands it return "false" on success and "true" otherwise,
+this is a mess...
 
 
---AG0GD6oZykOnNwaRbXvzGIDtUEiBtdzRw--
-
---6Mtmc4jGyJIlr8gjix1gIfJPIV7eRcYo3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpFvfEXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhoogf8DNabbUvNlVrbbBVWC50zFv77
-49HSliZhumjAuwAH9045a/r3MTB2J3rS4K/fLc28Rmmk59+BQMYRG5EA3AYhS9tU
-NnGCwcsTk1vPn1jeO740jl+D0HyAKLka+QCytvb1T2xBB9qb32TWSyZ7pc0JFTs4
-3kealdSj6h7R9JWiOxxdBGKnPRn/dgbOKffZBzG1iUhtLgjYQ5tLfiJIeYgyX1xZ
-2b9qKnqGaPEWF3RrYFmFKQZrLZL9UEGoLvsd33W6whNwXwvmHGvyTFGiS50htMBj
-fQuHKYP9yj5kGTeTossaMwwb/bcLxCUVSYzUPWaLyJ+ebf5843tPC/rhmlHGVg==
-=wS47
------END PGP SIGNATURE-----
-
---6Mtmc4jGyJIlr8gjix1gIfJPIV7eRcYo3--
+>  
+>  /*
+> 

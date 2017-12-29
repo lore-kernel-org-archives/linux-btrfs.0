@@ -1,111 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44041 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753861AbdL2LRV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Dec 2017 06:17:21 -0500
-Subject: Re: [PATCH v2 02/17] btrfs-progs: lowmem check: record returned
- errors after walk_down_tree_v2()
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Cc: quwenruo.btrfs@gmx.com
-References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-3-suy.fnst@cn.fujitsu.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <d4013361-64e4-39be-3866-5baba6597669@suse.com>
-Date: Fri, 29 Dec 2017 13:17:17 +0200
+Received: from mailout1.hostsharing.net ([83.223.95.204]:45653 "EHLO
+        mailout1.hostsharing.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751070AbdL2QdP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Dec 2017 11:33:15 -0500
+Received: from h06.hostsharing.net (h06.hostsharing.net [83.223.95.25])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (Client CN "*.hostsharing.net", Issuer "COMODO RSA Domain Validation Secure Server CA" (not verified))
+        by mailout1.hostsharing.net (Postfix) with ESMTPS id 15F381032A75F
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Dec 2017 17:33:14 +0100 (CET)
+Received: from mail.home.lxtec.de (HSI-KBW-5-56-176-248.hsi16.kabel-badenwuerttemberg.de [5.56.176.248])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by h06.hostsharing.net (Postfix) with ESMTPSA id C32616173A28
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Dec 2017 17:33:13 +0100 (CET)
+Received: from localhost ([127.0.0.1])
+        by mail.home.lxtec.de with esmtp (Exim 4.90_RC4 4 (LXTEC))
+        id 1eUxar-0000v1-1K
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Dec 2017 17:33:13 +0100
+Received: from mail.home.lxtec.de ([127.0.0.1])
+        by localhost (baumbart.home.lxtec.de [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id X4ZxA1FKRCWq for <linux-btrfs@vger.kernel.org>;
+        Fri, 29 Dec 2017 17:33:12 +0100 (CET)
+Received: from galadriel.home.lxtec.de ([192.168.200.207])
+        by mail.home.lxtec.de with smtp (Exim 4.90_RC4 4 (LXTEC))
+        id 1eUxaq-0000uv-OZ
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Dec 2017 17:33:12 +0100
+Date: Fri, 29 Dec 2017 17:33:12 +0100
+From: Elimar Riesebieter <riesebie@lxtec.de>
+To: linux-btrfs@vger.kernel.org
+Subject: WARNING: CPU: 1 PID: 3016 at fs/btrfs/ctree.h:1564
+ btrfs_update_device+0x189/0x190 [btrfs]
+Message-ID: <20171229163312.b3k7rfagcycz5mvf@galadriel.home.lxtec.de>
 MIME-Version: 1.0
-In-Reply-To: <20171220045731.19343-3-suy.fnst@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi all,
 
+I get warnings as seen in attached dmesg.log. This is on 4.14.9.
+4.9.72 runs flawless so far.
 
-On 20.12.2017 06:57, Su Yue wrote:
-> In lowmem mode with '--repair', check_chunks_and_extents_v2()
-> will fix accounting in block groups and clear the error
-> bit BG_ACCOUNTING_ERROR.
-> However, return value of check_btrfs_root() is 0 either 1 instead of
-> error bits.
-> 
-> If extent tree is on error, lowmem repair always prints error and
-> returns nonzero value even the filesystem is fine after repair.
-> 
-> So let @err contains bits after walk_down_tree_v2().
-> 
-> Introduce FATAL_ERROR for lowmem mode to represents negative return
-> values since negative and positive can't not be mixed in bits operations.
-> 
-> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->  cmds-check.c | 13 +++++++------
->  1 file changed, 7 insertions(+), 6 deletions(-)
-> 
-> diff --git a/cmds-check.c b/cmds-check.c
-> index 309ac9553b3a..ebede26cef01 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -134,6 +134,7 @@ struct data_backref {
->  #define DIR_INDEX_MISMATCH      (1<<19) /* INODE_INDEX found but not match */
->  #define DIR_COUNT_AGAIN         (1<<20) /* DIR isize should be recalculated */
->  #define BG_ACCOUNTING_ERROR     (1<<21) /* Block group accounting error */
-> +#define FATAL_ERROR             (1<<22) /* fatal bit for errno */
->  
->  static inline struct data_backref* to_data_backref(struct extent_backref *back)
->  {
-> @@ -6556,7 +6557,7 @@ static struct data_backref *find_data_backref(struct extent_record *rec,
->   *                otherwise means check fs tree(s) items relationship and
->   *		  @root MUST be a fs tree root.
->   * Returns 0      represents OK.
-> - * Returns not 0  represents error.
-> + * Returns > 0    represents error bits.
->   */
+##########
+Linux toy 4.14.9-toy-lxtec-amd64 #7 SMP Fri Dec 29 10:43:28 CET 2017 x86_64 GNU/Linux
+--
+btrfs-progs v4.13.3
+--
+Label: 'TOY-RAID1'  uuid: 32fc4ea0-0b26-478c-9b2e-b299d6289270
+	Total devices 2 FS bytes used 560.98GiB
+	devid    1 size 3.62TiB used 566.03GiB path /dev/sda3
+	devid    2 size 3.62TiB used 566.03GiB path /dev/sdb3
+--
+Data, RAID1: total=563.00GiB, used=559.43GiB
+System, RAID1: total=32.00MiB, used=96.00KiB
+Metadata, RAID1: total=3.00GiB, used=1.55GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+#########
 
-What about the code in 'if (!check_all)' branch, check_fs_first_inode
-can return a negative value, hence check_btrfs_root can return a
-negative value. A negative value can also be returned from
-btrfs_search_slot.
+I want to run this machine as a 24/7 server with the latest
+LT-KERNEL. So please investigate.
 
-Clearly this patch needs to be thought out better
-
->  static int check_btrfs_root(struct btrfs_trans_handle *trans,
->  			    struct btrfs_root *root, unsigned int ext_ref,
-> @@ -6607,12 +6608,12 @@ static int check_btrfs_root(struct btrfs_trans_handle *trans,
->  	while (1) {
->  		ret = walk_down_tree_v2(trans, root, &path, &level, &nrefs,
->  					ext_ref, check_all);
-> -
-> -		err |= !!ret;
-> +		if (ret > 0)
-> +			err |= ret;
->  
->  		/* if ret is negative, walk shall stop */
->  		if (ret < 0) {
-> -			ret = err;
-> +			ret = err | FATAL_ERROR;
->  			break;
->  		}
->  
-> @@ -6636,12 +6637,12 @@ out:
->   * @ext_ref:	the EXTENDED_IREF feature
->   *
->   * Return 0 if no error found.
-> - * Return <0 for error.
-> + * Return not 0 for error.
->   */
->  static int check_fs_root_v2(struct btrfs_root *root, unsigned int ext_ref)
->  {
->  	reset_cached_block_groups(root->fs_info);
-> -	return check_btrfs_root(NULL, root, ext_ref, 0);
-> +	return !!check_btrfs_root(NULL, root, ext_ref, 0);
->  }
-
-You make the function effectively boolean, make this explicit by
-changing its return value to bool. Also the name and the boolean return
-makes the function REALLY confusing. I.e when should we return true or
-false? As it stands it return "false" on success and "true" otherwise,
-this is a mess...
-
-
->  
->  /*
-> 
+Many thanks in advance
+Elimar
+-- 
+  355/113: Not the famous irrational number pi,
+           but an incredible simulation!
+	                -unknown

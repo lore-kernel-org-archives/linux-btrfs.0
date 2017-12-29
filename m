@@ -1,41 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:35589 "EHLO
-        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752828AbdLWU7B (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Dec 2017 15:59:01 -0500
-Received: from mekker.bofh.hq.mendix.net (mekker.bofh.hq.mendix.net [IPv6:2001:828:13c8:10b::21])
-        by smtp.dpl.mendix.net (Postfix) with ESMTP id 6BF7B2036E
-        for <linux-btrfs@vger.kernel.org>; Sat, 23 Dec 2017 21:52:38 +0100 (CET)
-From: Hans van Kranenburg <hans@knorrie.org>
+Received: from mx2.suse.de ([195.135.220.15]:56263 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754628AbdL2JBs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Dec 2017 04:01:48 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 47A9BAAEF
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Dec 2017 09:01:47 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: Fix build of btrfs-calc-size
-Date: Sat, 23 Dec 2017 21:52:38 +0100
-Message-Id: <20171223205238.19678-3-hans@knorrie.org>
-In-Reply-To: <20171223205238.19678-1-hans@knorrie.org>
-References: <20171223205238.19678-1-hans@knorrie.org>
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] bytrfs-progs: Print error on invalid extent item format during check
+Date: Fri, 29 Dec 2017 11:01:44 +0200
+Message-Id: <1514538104-20005-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Build would fail because it couldn't find the usage function.
+While performing normal mode check if the code comes across an invalid
+extent format it will just BUG() and exit without printing any useful
+information for debugging. Improve the situation by outputting the
+key/leaf bytenr/slot which will enable to quickly inspect the tree and
+see what the corruption is.
 
-Signed-off-by: Hans van Kranenburg <hans@knorrie.org>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- btrfs-calc-size.c | 1 +
- 1 file changed, 1 insertion(+)
+ cmds-check.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
-index 1ac7c785..d2d68ab2 100644
---- a/btrfs-calc-size.c
-+++ b/btrfs-calc-size.c
-@@ -19,6 +19,7 @@
- #include "volumes.h"
- #include "utils.h"
- #include "commands.h"
-+#include "help.h"
- 
- int main(int argc, char **argv)
- {
+diff --git a/cmds-check.c b/cmds-check.c
+index a93ac2c88a38..371516709ed8 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -8362,7 +8362,12 @@ static int process_extent_item(struct btrfs_root *root,
+ 	if (item_size < sizeof(*ei)) {
+ #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+ 		struct btrfs_extent_item_v0 *ei0;
+-		BUG_ON(item_size != sizeof(*ei0));
++		if (item_size != sizeof(*ei0)) {
++			error("invalid extent item format: ITEM[%llu %u %llu] leaf: %llu slot: %d",
++			      key.objectid, key.type, key.offset,
++			      btrfs_header_bytenr(eb), slot);
++			BUG();
++		}
+ 		ei0 = btrfs_item_ptr(eb, slot, struct btrfs_extent_item_v0);
+ 		refs = btrfs_extent_refs_v0(eb, ei0);
+ #else
 -- 
-2.11.0
+2.7.4
 

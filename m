@@ -1,84 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout1.hostsharing.net ([83.223.95.204]:42485 "EHLO
-        mailout1.hostsharing.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750895AbdL3OhP (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:37519 "EHLO
+        mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750937AbdL3Tyy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 30 Dec 2017 09:37:15 -0500
-Received: from h06.hostsharing.net (h06.hostsharing.net [83.223.95.25])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (Client CN "*.hostsharing.net", Issuer "COMODO RSA Domain Validation Secure Server CA" (not verified))
-        by mailout1.hostsharing.net (Postfix) with ESMTPS id A0332103839D7
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Dec 2017 15:37:12 +0100 (CET)
-Received: from mail.home.lxtec.de (HSI-KBW-5-56-176-248.hsi16.kabel-badenwuerttemberg.de [5.56.176.248])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by h06.hostsharing.net (Postfix) with ESMTPSA id 70B7460C6971
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Dec 2017 15:37:12 +0100 (CET)
-Received: from localhost ([127.0.0.1])
-        by mail.home.lxtec.de with esmtp (Exim 4.90 4 (LXTEC))
-        id 1eVIG7-00076Y-L8
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Dec 2017 15:37:11 +0100
-Received: from mail.home.lxtec.de ([127.0.0.1])
-        by localhost (baumbart.home.lxtec.de [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id EwuykhEyqwDp for <linux-btrfs@vger.kernel.org>;
-        Sat, 30 Dec 2017 15:37:11 +0100 (CET)
-Received: from riesebie by mail.home.lxtec.de with local (Exim 4.90 4 (LXTEC))
-        id 1eVIG7-00075s-8K
-        for <linux-btrfs@vger.kernel.org>; Sat, 30 Dec 2017 15:37:11 +0100
-Date: Sat, 30 Dec 2017 15:37:11 +0100
-From: Elimar Riesebieter <riesebie@lxtec.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: WARNING: CPU: 1 PID: 3016 at fs/btrfs/ctree.h:1564
- btrfs_update_device+0x189/0x190 [btrfs]
-Message-ID: <20171230143711.tx66xmuwjqx5mioo@baumbart.home.lxtec.de>
-References: <20171229163312.b3k7rfagcycz5mvf@galadriel.home.lxtec.de>
- <0a34347a-ae74-dbab-98bd-08d822347c9b@applied-asynchrony.com>
- <0b81a3bf-958a-7c82-eea0-a04c916703b1@suse.com>
- <20171229181738.gdsdgcu2yicritu4@galadriel.home.lxtec.de>
- <828bbb38-f803-f542-c959-4297b5c10c90@suse.com>
+        Sat, 30 Dec 2017 14:54:54 -0500
+Received: by mail-io0-f179.google.com with SMTP id n14so20756928iob.4
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 Dec 2017 11:54:54 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <828bbb38-f803-f542-c959-4297b5c10c90@suse.com>
+Reply-To: swestrup@gmail.com
+In-Reply-To: <ba3f9db1-fbc4-cd87-7d3e-b7f1fe73296c@gmx.com>
+References: <CAJt7KB-ORv77HBRzZrDymu-17BhmEjF9GQjC=bAQ2065fCpqog@mail.gmail.com>
+ <c10a5117-7ffc-cda1-d396-0f2624288551@gmx.com> <439f024c-0061-9625-26f2-69002a6ea797@gmail.com>
+ <178207b8-cf76-c112-0cce-fc326975f459@gmx.com> <CAJt7KB9sLArgDapkoypY-DnqFepX4R38E4RFOPUE6Adw9bdWkQ@mail.gmail.com>
+ <dcdb28de-de4a-402f-f38a-790f509be95b@gmx.com> <CAJt7KB80n0qRViS7p8nRRNYNC1ivMtPJu-ec35vrVNfZ+AWvSA@mail.gmail.com>
+ <ba3f9db1-fbc4-cd87-7d3e-b7f1fe73296c@gmx.com>
+From: Stirling Westrup <swestrup@gmail.com>
+Date: Sat, 30 Dec 2017 14:54:53 -0500
+Message-ID: <CAJt7KB8OcRWE0=MUcA+tXgSYUr_=2RXsWTZcdEjhuN1agqh_nw@mail.gmail.com>
+Subject: Re: Hand Patching a BTRFS Superblock?
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* Nikolay Borisov <nborisov@suse.com> [2017-12-30 01:53 +0200]:
+Okay, so I've gone back to your earlier suggestion of dumping the
+chunk tree to get info for rebuiling a superblock by hand, but its not
+working.
 
-> 
-> 
-> On 29.12.2017 20:17, Elimar Riesebieter wrote:
-> > Thanks,
-> > 
-> > * Nikolay Borisov <nborisov@suse.com> [2017-12-29 19:23 +0200]:
-> > 
-> > [...]
-> > 
-> >> So OP:
-> >>
-> >> Update your btrfs-progs package to latest 4.14 and run btrfs rescue :
-> >>
-> >> btrfs rescue fix-device-size <device>
-> > 
-> > I installed btrfs-progs 4.14. Can't run 
-> > 'btrfs rescue fix-device-size /dev/sd(a|b)3'. The devices are mounted
-> > including my root... 
-> > 
-> > How to accomplish?
-> 
-> Then you have to resize your fs to a multiple of 4k, either up or down.
+/usr/local/bin/btrfs ins dump-tree -t chunk /dev/sdc
+btrfs-progs v4.14
+bytenr mismatch, want=294191104, have=314114048
+Couldn't read tree root
+ERROR: unable to open /dev/sdc
 
-I did:
+I get the exact same error (except for device name) for every valid
+device in the FS.
 
--> booted grml-live
--> built and installed btrfs-progs 4.14
--> ran 'btrfs rescue fix-device-size /dev/sda3' -> size was corrected
--> boot from btrfs and stressed the raid -> No more warnings :-))
 
-The machine now runs since 6 houres or so. I didn't noticed any
-warning so far...
 
-Thanks for the support Nikolay!
-Elimar
--- 
-  On the keyboard of life you have always
-  to keep a finger at the escape key;-)
+On Thu, Dec 28, 2017 at 9:08 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+>
+> Yes, this means you could get the needed device UUID and hand craft a
+> superblock.
+> But I really doubt about the possibility to success.
+>
+> If you really want to do that, there is needed steps for you:
+>
+> 1) Get device info from your existing fs
+>    # btrfs ins dump-tree -t chunk </dev/sda>
+>    And looking for the following thing:
+> ------
+>        item 1 key (DEV_ITEMS DEV_ITEM 2) itemoff 16185 itemsize 98
+>                 devid 2 total_bytes 10737418240 bytes_used 289406976
+>                 io_align 4096 io_width 4096 sector_size 4096 type 0
+>                 generation 0 start_offset 0 dev_group 0
+>                 seek_speed 0 bandwidth 0
+>                 uuid f1d9b288-7865-463f-a65c-ca8b1fbde09b
+>                 fsid 1dd513fb-45f8-404f-ae23-979e3acb78ad
+> ------
+>    Look for the key (DEV_ITEMS DEV_ITEM 2) and grab the "uuid"
+>    "total_bytes" "bytes_used" (other fields are mostly fixed)
+>
+> 2) Fill the fields of dev_item of a good superblock.
+>    If you feel it hard, I could help to do it if you provide the binary
+>    dump of any valid superblock, with above tree dump info.
+>

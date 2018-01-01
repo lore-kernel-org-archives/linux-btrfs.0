@@ -1,167 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from demfloro.ru ([188.166.0.225]:57724 "EHLO demfloro.ru"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751300AbeAATxl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Jan 2018 14:53:41 -0500
-Date: Mon, 1 Jan 2018 22:53:14 +0300
-From: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-To: Timofey Titovets <nefelim4ag@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V3] Btrfs: enchanse raid1/10 balance heuristic
-Message-ID: <20180101225314.340c53e7@xps.localdomain>
-In-Reply-To: <20171231002902.70599c8d@demfloro.ru>
-References: <20171230203204.13151-1-nefelim4ag@gmail.com>
-        <20171231002902.70599c8d@demfloro.ru>
+Received: from smtp.domeneshop.no ([194.63.252.55]:52405 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752219AbeAAWuL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jan 2018 17:50:11 -0500
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: A Big Thank You, and some Notes on Current Recovery Tools.
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, swestrup@gmail.com,
+        linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <n.borisov.lkml@gmail.com>
+References: <CAJt7KB9UuW5Zg35VJ+fNV8RVZk_kAukmcgyK8GH4d1M286DkXA@mail.gmail.com>
+ <c3d54bf6-20a8-0b98-baef-d2353b97849e@gmx.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <717c7835-98c8-3c6d-5cc0-fa9ed1ae6200@dirtcellar.net>
+Date: Mon, 1 Jan 2018 23:50:08 +0100
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="MP_/UmE1t/TmenE+t9pJWbRrhCS"
+In-Reply-To: <c3d54bf6-20a8-0b98-baef-d2353b97849e@gmx.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---MP_/UmE1t/TmenE+t9pJWbRrhCS
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Qu Wenruo wrote:
+>
+>
+> On 2018年01月01日 08:48, Stirling Westrup wrote:
+>> Okay, I want to start this post with a HUGE THANK YOU THANK YOU THANK
+>> YOU to Nikolay Borisov and most especially to Qu Wenruo!
+>>
+>> Thanks to their tireless help in answering all my dumb questions I
+>> have managed to get my BTRFS working again! As I speak I have the
+>> full, non-degraded, quad of drives mounted and am updating my latest
+>> backup of their contents.
+>>
+>> I had a 4-drive setup with 2x4T and 2x2T drives and one of the 2T
+>> drives failed, and with help I was able to make a 100% recovery of the
+>> lost data. I do have some observations on what I went through though.
+>> Take this as constructive criticism, or as a point for discussing
+>> additions to the recovery tools:
+>>
+>> 1) I had a 2T drive die with exactly 3 hard-sector errors and those 3
+>> errors exactly coincided with the 3 super-blocks on the drive.
+>
+> WTF, why all these corruption all happens at btrfs super blocks?!
+>
+> What a coincident.
+>
+>> The
+>> odds against this happening as random independent events is so
+>> unlikely as to be mind-boggling. (Something like odds of 1 in 10^26)
+>
+> Yep, that's also why I was thinking the corruption is much heavier than
+> our expectation.
+>
+> But if this turns out to be superblocks only, then as long as superblock
+> can be recovered, you're OK to go.
+>
+>> So, I'm going to guess this wasn't random chance. Its possible that
+>> something inside the drive's layers of firmware is to blame, but it
+>> seems more likely to me that there must be some BTRFS process that
+>> can, under some conditions, try to update all superblocks as quickly
+>> as possible.
+>
+> Btrfs only tries to update its superblock when committing transaction.
+> And it's only done after all devices are flushed.
+>
+> AFAIK there is nothing strange.
+>
+>> I think it must be that a drive failure during this
+>> window managed to corrupt all three superblocks.
+>
+> Maybe, but at least the first (primary) superblock is written with FUA
+> flag, unless you enabled libata FUA support (which is disabled by
+> default) AND your driver supports native FUA (not all HDD supports it, I
+> only have a seagate 3.5 HDD supports it), FUA write will be converted to
+> write & flush, which should be quite safe.
+>
+> The only timing I can think of is, between the superblock write request
+> submit and the wait for them.
+>
+> But anyway, btrfs superblocks are the ONLY metadata not protected by
+> CoW, so it is possible something may go wrong at certain timming.
+>
 
-On Sun, 31 Dec 2017 00:29:11 +0300
-Dmitrii Tcvetkov <demfloro@demfloro.ru> wrote:
+So from what I can piece together SSD mode is safer even for regular 
+harddisks correct?
 
-> On Sat, 30 Dec 2017 23:32:04 +0300
-> Timofey Titovets <nefelim4ag@gmail.com> wrote:
-> 
-> > Currently btrfs raid1/10 balancer balance requests to mirrors,
-> > based on pid % num of mirrors.
-> > 
-> > Make logic understood:
-> >  - if one of underline devices are non rotational
-> >  - Queue leght to underline devices
-> > 
-> > By default try use pid % num_mirrors guessing, but:
-> >  - If one of mirrors are non rotational, repick optimal to it
-> >  - If underline mirror have less queue leght then optimal,
-> >    repick to that mirror
-> > 
-> > For avoid round-robin request balancing,
-> > lets round down queue leght:
-> >  - By 8 for rotational devs
-> >  - By 2 for all non rotational devs
-> > 
-> > Changes:
-> >   v1 -> v2:
-> >     - Use helper part_in_flight() from genhd.c
-> >       to get queue lenght
-> >     - Move guess code to guess_optimal()
-> >     - Change balancer logic, try use pid % mirror by default
-> >       Make balancing on spinning rust if one of underline devices
-> >       are overloaded
-> >   v2 -> v3:
-> >     - Fix arg for RAID10 - use sub_stripes, instead of num_stripes
-> > 
-> > Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>  
-> 
-> Reviewed-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
-> 
-Tested-by: Dmitrii Tcvetkov <demfloro@demfloro.ru>
+According to this...
+https://btrfs.wiki.kernel.org/index.php/On-disk_Format#Superblock
 
-Benchmark summary (arithmetic mean of 3 runs):
-		Mainline		Patch
---------------------------------------------------------------
-RAID1	|	18.9 MiB/s	|	26.5 MiB/s
-RAID10	|	30.7 MiB/s	|	30.7 MiB/s
+- There is 3x superblocks for every device.
+- The superblocks are updated every 30 seconds if there is any changes...
+- SSD mode will not try to update all superblocks in one go, but update 
+one by one every 30 seconds.
 
+So if SSD mode is enabled even for harddisks then only 60 seconds of 
+filesystem history / activity will potentially be lost... this sounds 
+like a reasonable trade-off compared to having your entire filesystem 
+hampered if your hardware is not perhaps optimal (which is sort of the 
+point with BTRFS' checksumming anyway)
 
-fio configuration:
-[global]                                                                                                                                                                   
-ioengine=libaio
-buffered=0
-direct=1
-bssplit=32k/100
-size=8G
-directory=/mnt/
-iodepth=16
-time_based
-runtime=900
+So would it make sense to enable SSD behavior by default for HDD's ?!
 
-[test-fio]
-rw=randread
-
-All tests were run on 4 HDD btrfs filesystem in a VM with 4 Gb
-of ram on idle host. Full results attached to the email.
-
---MP_/UmE1t/TmenE+t9pJWbRrhCS
-Content-Type: application/gzip
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename=results.tar.gz
-
-H4sICNGPSloAA3Jlc3VsdHMudGFyAO2dW2/jyJWA+7l/BV8a6AEsps6lbgK0wA52EWSDQRaTBfKw
-yIPH1vQo6LYMSc4kQH78niJZVaRU7KZnPY7jrvMiukgeFlmlw0/nUj5sjw8fT8ffvPkVRYlYrbtP
-kfPPbhsIEbUcZuU4ADT6TaN/zU5FeTierg9N8+aw358+d9yX9v+LymEY//vr081P29vV4Xp3C6sf
-d4fj091tGGDDPDf+RHYYf9bWGpTxZ6vVm0Y9WQ8+I1/5+J+2x5MM937dvP+wUd+sm8PPm8P13e1h
-e3171fxw3Lz//puGsFW/3327Gj6vmvd/KjX+T6Fxt9/efdjdbTcfdz9c7/ah4XZ7f/ppA+atXHZF
-Lb79o4zAaXf3oYHm/rC/2R6Pb9+O+3XYP9zvbjfqqvnLXnoE0svt4bBp1LoJ7agUrJvv9nfNf13f
-NaIEzBphrUyDCtzbpmnCzayb3/3hv/+4cZavmm//tEHb0ne7b39zbN6ja813svXNe+RW/VYavcxK
-zZ+O25tvwunN8eP1qXn/EP5eN592dxvAq+bT9d82hBr8VXP91w8b0QLmqjmebrd/3YDSLVJ37s35
-uahMfzJbQgv92eDQGDklKfDksXWqU9FcqEBOKkRHUuF1a8xYBbUGci/ut4eb7d1p93F7jOp6/f+Q
-p9YqJaPyv/KXtu7PV/KRWkh5Ky2gUgsjhmMwt2gfjonqKO+whrQcyrnFk0Vp0alFzL0KFzC5hdlx
-VmfzDhkaI4e61IKGOLT41MIAOqjz6Q60cc5kdd7HHV57Dr2TFt21SFcsYt/i+xbNwDC06K7FkoKp
-Ou/DDiTtSf05tP/wc/O+aX4fJtgwZo0FFUfNyfy6CsOx6c59N8wg6y20VsUBREDox/P6072MmYyw
-6ibEbn9/bAYZlDdiPXvlDeigPCiUud5CUifzi+BCWZ5anTJ5BW/kQYYuiRrZdCSbtmslfBcmQddM
-8C6e/CmfLDusloN4Y1oN3dEb4taHTVTdV0R3muXeWlYFFaJ+o+XJhxN0un7fFdVd8+b+oWny3T8c
-D+GqLEcd/37cYOudbN6c/raxwGhteCh/+THYDnlOP26AvOj43R+azggdex0gGrouDp88fLrhE4x8
-oeX6sknhmLDxbxvD3WY/C44PP3zanXp1ajiE01luaBFFZ2oGJRf6bvZhlE7bBfpgib7d8fiwvRXj
-flo3p/3p+uPGOuPEdKirMEF+2h9OG9X/cXvY399vb/s/k/3Z3t38vbs7sdUftuHg5ufd3e3+500/
-kwfD0ncxdCBZ+bffP9zJFLw+PRybzpQ3qnl//fFjZ8x7C/T9f/77f6zlO1O0yjIusXVV2L8aHbjb
-bwYTLvt16377rTQeHu42vUFfZbv+9p/93n0pUuY/eUL7u9unusZy/jNgVOA/rUzlv2eRV8F/QOf8
-R2YNrsx/tIz/aAn/CbRpTPzHnPnPRXi74D+wfoBHTdZkeAvvfp3hjcHJe3iO/1RW4ZMKwZJxH0SF
-n1DoUv4LrDTlP8Iz/gN7wX/hmGX8hx1PPRn/GeXO+M84mPKfZVDPwH/gQdMM/4HO/GdQuSL/GWh1
-mgOoZD6yX8Z/bBP/cZgDPf9Ra13iP/mqXcJkkf8gQ5d1mf9oxH84w39ODfzXbQz8Zwf+s0K3if9o
-jv9MqzDzn17EfzrzHyX+My4Ab+W/Of7T2n1F/Ec9/1Hlv7GU+e/00+7wZPj3GP4jsead/w915b/n
-kFfBf4jn/Kd5rYr8Z73u+U9eS9GSmBYG/gOxGZH/zAL+Y7ZAif8ou+8Ut87N8J+3w8lCAUoPZyvl
-sDXpZY1IICpgjv8wqyATVQi89C6epEK3rB7Nf16d859GOuM/q3HKf0a7sv/PIU75T94QnfNwzH/e
-85T/NCso8Z88J62n/Oegp73MfywwPeE/w4gl/x8AGMsT/pN7NXbCf84ab8b8h8poq0r8p41XOMd/
-pnP6daMmFyn5/zSzfB2Sw044U7pll/GfjsobIDP4/2x4AskfrLmlpfwHCbq0SfwHLvMfzvn/2HWk
-osMRPf9RS3rgP9876nr+E2ab47/eYSiHQa/vi/xnXOK/jjAD/8kgeU+V/+b4D+RXEb40/itYZRmX
-2Loq7F+NDgz815tw2U+tnvKfWWW7XvlvkCL/qacNAH+J/1hRjP8Tk+r8f6ry37PIK+A/cM5N+c8L
-/M3wn3fQ8Z8Qih0sifQ18p+8ehL/0QL+0wBWRe9NqzP/kW0tzvHfEP/VJIA28B8YtNSa/O53SnBL
-z8Z/dVZhOaoghcJ7YxXyljWP5j/CM/5DZ9y5/6+LuS6K/3asNPb/OW/9lP+UcTTlP/RQ5D8QzoQp
-/yF0LJr5j8jBlP/Y8bh3I/8fWA1T/x9ZCxP+s8qDm/j/vFFj72TmP6tkQOb4TyFH/vO+xH8E5JwA
-TwJ4reQ3hVrGf4SJ/3TkPy9Pydmozooyt5D/otMNZE4n/kM/4r85/5/1g/+vg77Af0b60POfzArf
-R5bl6uEiZf4j+emU/H/WjPkvduUzKNgFjAMKUo+gnSvQA/d8PEFBW1GwQ0Hn0Bt4YShYMtBXTWpd
-FfavRgcGFOyteecq9FMUpFU28V83Cs7w35MGgBf7/7TYT+z4D4gr/z2HvAr+8xf8h7xWqsx/WOA/
-TPyX4r9ol+T/GR8z+EJowmX+Y3n7zPCfczEMyGrEfywKfPb9OAp/z/AfjFRk/kMr/aexivDKfzz/
-nfv/Xjb/yfCrX5P/jLHIU/7rL1nw/ykDc/l/wunKxV8NNkygyH8u8R/LgIU4bnTghpCtXuj/Y478
-Z8BE/pPfA2k+yEO0C/P/MPMf68x/egH/OY78ZxP/eU7851zmv5ILsee/LoY78N+i+K+DBH3gE/TJ
-C8VX/98s9DF5/6KhD78AfRihDyfQpyL0qQn0oV1lu/51Q99IZvjvSQPAj+A/S6B7/x9U/nsOeQ38
-55U55z+GtYIy/6ll/j+tP8d/MPCXvGwH/Arn5toLMNF5V+C/If+PNXlnM7zZVuXkPeuFB9HN8V+M
-/2pWgSqi/0+3iFMV/hfwX8iV+2r5jx2qKf85h9P8Px/G7dH8x9pHrzGCmfH/0Tj/L7gD3aXLrpz/
-p03iPxr5/3I5ieXW8EL+M5n/stMN7RL+g8h/mPkPB/6DHg16/lNuEf/ZRfl/PvNfqv/wSr4Blf/m
-nX5Of01OP61X2a5X/hsk8t+n693dR3lP/xoFwF+O/2LM/7OGde//q/z3LPIa+M9ZnvKfXaNbK13i
-vy44JvwHttWDJZF3EfX8F/LlIv/ZJfFfkJcUJv9fftcyt06X8Q+jF8gqduRi8qAm6t/13fmhqoNa
-mk3/01mF4aTCoFz1TIV9NP5Z5c/S/3yodhjjn1CnneKfEAIX8c9rRdP0v5AIN8U/th1NjvDPYyDO
-QvrfUOyR8Y8E/qf4JzaEeIx/oBCphH8R5DL+obAj0Rj/KAQl/Bj/yKBTroB/wXoZPVf+a4gGQiMG
-ay7xT3hdZmKu1xBgNC1cElsR/8C7iH/KDJNK63ATaUpquceF4V9MzGVH6X9j91+pdqNL/+v5ifq8
-QehqPjqa7Mt/U/mHTPYSQQb88z1Dhq5wOCp2pXMofjH8y5EEIVeCsPXe10rgORKUr64y5oWRYMk+
-y23G1lVh/2p0oJDgYMxlvznLBLR9+NfW8O8s/z1r/JcVDPxnw7sg8J9sVv57DnkV/OfxnP+Y1sjL
-+Y8L/PdZ/9/Af67L6Rrwz6TSC7E43n8h+88q8j7Gjh17N3LdkRWYa/Uc/oFP+KcwlZ9o6QKcqeDH
-e/9Ml01X8S/in3JGT/BPOwNUwj8WZJld/cVwLNAIq+mU8Y+hhTyHyOoWF1b/Yqr+aHzCP3mgOtEk
-h5VRFnr/MnMZn/HPZPwDP4d/GPHPlfDPuIR/Apaz+McZ/1TGP7cE/zQl/HMxEMwOFLua/TePfxZe
-miOwZJ7n8Y8j/vEi/OsdgbY6At/M8t/zxn+NjfwX8tk7/x9U/nsWeR3858/5T7s1+RL/GT+s/wIp
-koAomz3/+dH6f7Ag/gtaa5/rP1KuvbGtmgn/oqKYu6fBxPJfUuwnqf+eFiz/ElR4k1SEDH+cqtD4
-aABkA2cAiF3LOPzLXch1Uv6LUC7/ZX1e/tsHe0cASL5juBEAOkRVBEDWMA3/EhNPy381Gj9d/sWS
-DzXIlwCIVgB6Ev7VqJjHAIiAzkzCv8hiqbAAgARiwMxs+a8oiuW/GJy2F+W/CEJ8lJcAMvIlosXl
-vyn9j+KKRMaH1VBS+a8M8dLl/3LNrc9Ot6GgVw2pgGUANPZdX/5raABAH5yFPQCaHgsDAOqAhWUA
-dDn8i300dwj/8nz5b6Q+DKvK9NSnnWa6rPmoTr+e+gySe3HUVzLKMi6xdVXYvxodGKjPx/Q/+TEy
-Df/CKpv1r536spT572kLgBfn/7HVuq//EDNc+e855DXwn0c15T+3DgiI5fw/+kz9hx3Vf7gl+X9o
-UCf+g1x7IXQzW//rIgAqUGhS/h+ZsffHCnXI33MeQJ1VcFZhuNU4VoEtPz4ATHjmAUTXLeE3yf8L
-LrCF+X/BNfh0+X+s1T+9/uOX5f8pl+p/iblY/yFjrlINEJKVb8fCADDH4uKwdg7G/D8aeYTDYtBL
-8//i+n/D+ivD+n9qBID0pfw/juv/Tet/Tc7/4/n8vxgA/iX1Hzrl/xmla9HvfP6fVvAK6z9sBEB/
-Xv/hVtmuVwAcZI7/njIA/Aj+s9Tn/0lb5b/nkNfBf+6c/4jWquj/W8x/i/x/jI4p1X+Mlm8R60Nm
-hv+sjsXD1hNl/uN+fd4Ib0CttmX+S0sIBhUmqxDeg3H9L7C8Px/Pf5f1v0v4b2795yX8p7ug84uo
-/7hY/9mwQTvhv3ADpQgwstMwu/4Ldqmaw/ovruAADPxnWptqgJAh8PtC/lP5/3+YEf/l9SCDc3Fp
-BNhn/sPsAHRL+A8j/3Hiv96f19f/4rsl9R/8WP7L9R+KMv+xwcp/8/wX1q76evivOgBLMsd/TxkA
-Xpz/J79IsF//T0xh5b/nkFfBf2TO+Y/dWhf//9ti/uNF9b+oyCb+c7l8V1DGzPAfucSOgHntFobW
-jdjNh/q12eVfbFahR+4/P4r3iQpSk0VoFuPfL3L/vRL8u3T/PaL893PLP2NaoYWdL5f/sg71ttn9
-h7r/l4JLlv/zGf9y+S+2Lrv/sDWXa8mc4V9Mr4v0hS6DoCmDYMmL14EgXYJgh2kDCEIGQTsPgvkf
-gUwXAlziCMyr//HweCYg6CoIxoVg7Atf/e//B4LnC8Fwn//HNf+vSpUqVapUqVKlSpUqVapUqVKl
-SpUqVapUqVKlSpUqVapUqVKlSpUqVar8y8r/AWuQS5AAoAAA
-
---MP_/UmE1t/TmenE+t9pJWbRrhCS--
+>> It may be better to
+>> perform an update-readback-compare on each superblock before moving
+>> onto the next, so as to avoid this particular failure in the future. I
+>> doubt this would slow things down much as the superblocks must be
+>> cached in memory anyway.
+>
+> That should be done by block layer, where things like dm-integrity could
+> help.
+>
+>>
+>> 2) The recovery tools seem too dumb while thinking they are smarter
+>> than they are. There should be some way to tell the various tools to
+>> consider some subset of the drives in a system as worth considering.
+>
+> My fault, in fact there is a -F option for dump-super, to force it to
+> recognize the bad superblock and output whatever it has.
+>
+> In that case at least we could be able to see if it was really corrupted
+> or just some bitflip in magic numbers.
+>
+>> Not knowing that a superblock was a single 4096-byte sector, I had
+>> primed my recovery by copying a valid superblock from one drive to the
+>> clone of my broken drive before starting the ddrescue of the failing
+>> drive. I had hoped that I could piece together a valid superblock from
+>> a good drive, and whatever I could recover from the failing one. In
+>> the end this turned out to be a useful strategy, but meanwhile I had
+>> two drives that both claimed to be drive 2 of 4, and no drive claiming
+>> to be drive 1 of 4. The tools completely failed to deal with this case
+>> and were consistently preferring to read the bogus drive 2 instead of
+>> the real drive 2, and it wasn't until I deliberately patched over the
+>> magic in the cloned drive that I could use the various recovery tools
+>> without bizarre and spurious errors. I understand how this was never
+>> an anticipated scenario for the recovery process, but if its happened
+>> once, it could happen again. Just dealing with a failing drive and its
+>> clone both available in one system could cause this.
+>
+> Well, most tools put more focus on not screwing things further, so it's
+> common it's not as smart as user really want.
+>
+> At least, super-recover could take more advantage of using chunk tree to
+> regenerate the super if user really want.
+> (Although so far only one case, and that's your case, could take use of
+> this possible new feature though)
+>
+>>
+>> 3) There don't appear to be any tools designed for dumping a full
+>> superblock in hex notation, or for patching a superblock in place.
+>> Seeing as I was forced to use a hex editor to do exactly that, and
+>> then go through hoops to generate a correct CSUM for the patched
+>> block, I would certainly have preferred there to be some sort of
+>> utility to do the patching for me.
+>
+> Mostly because we think current super-recovery is good enough, until
+> your case.
+>
+>>
+>> 4) Despite having lost all 3 superblocks on one drive in a 4-drive
+>> setup (RAID0 Data with RAID1 Metadata), it was possible to derive all
+>> missing information needed to rebuild the lost superblock from the
+>> existing good drives. I don't know how often it can be done, or if it
+>> was due to some peculiarity of the particular RAID configuration I was
+>> using, or what. But seeing as this IS possible at least under some
+>> circumstances, it would be useful to have some recovery tools that
+>> knew what those circumstances were, and could make use of them.
+>
+> In fact, you don't even need any special tool to do the recovery.
+>
+> The basic ro+degraded mount should allow you to recover 75% of your data.
+> And btrfs-recovery should do pretty much the same.
+>
+> The biggest advantage you have is, your faith and knowledge about only
+> superblocks are corrupted in the device, which turns out to be a miracle.
+> (While at the point I know your backup supers are also corrupted, I lose
+> the faith)
+>
+> Thanks,
+> Qu
+>
+>>
+>> 5) Finally, I want to comment on the fact that each drive only stored
+>> up to 3 superblocks. Knowing how important they are to system
+>> integrity, I would have been happy to have had 5 or 10 such blocks, or
+>> had each drive keep one copy of each superblock for each other drive.
+>> At 4K per superblock, this would seem a trivial amount to store even
+>> in a huge raid with 64 or 128 drives in it. Could there be some method
+>> introduced for keeping far more redundant metainformation around? I
+>> admit I'm unclear on what the optimal numbers of these things would
+>> be. Certainly if I hadn't lost all 3 superblocks at once, I might have
+>> thought that number adequate.
+>>
+>> Anyway, I hope no one takes these criticisms the wrong way. I'm a huge
+>> fan of BTRFS and its potential, and I know its still early days for
+>> the code base, and it's yet to fully mature in its recovery and
+>> diagnostic tools. I'm just hoping that these points can contribute in
+>> some small way and give back some of the help I got in fixing my
+>> system!
+>>
+>>
+>>
+>

@@ -1,44 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f41.google.com ([209.85.215.41]:37786 "EHLO
-        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751505AbeABOp6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jan 2018 09:45:58 -0500
-Received: by mail-lf0-f41.google.com with SMTP id f3so19737567lfe.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jan 2018 06:45:58 -0800 (PST)
-Received: from [10.1.1.2] (89-69-130-4.dynamic.chello.pl. [89.69.130.4])
-        by smtp.gmail.com with ESMTPSA id u23sm8868862lje.79.2018.01.02.06.45.55
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 02 Jan 2018 06:45:56 -0800 (PST)
-Message-ID: <5A4B9B23.7080902@gmail.com>
-Date: Tue, 02 Jan 2018 15:45:55 +0100
-From: ein <ein.net@gmail.com>
-MIME-Version: 1.0
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: A Big Thank You, and some Notes on Current Recovery Tools.
-References: <CAJt7KB9UuW5Zg35VJ+fNV8RVZk_kAukmcgyK8GH4d1M286DkXA@mail.gmail.com> <c3d54bf6-20a8-0b98-baef-d2353b97849e@gmx.com> <1clphe-a7q.ln1@hurikhan77.spdns.de> <CAJt7KB-sq0sxHe_3LSC5kzU0CG8ABk4baDnGP138vNaLK0KN-Q@mail.gmail.com> <5A4B58BF.1090804@gmail.com> <MEXPR01MB216862D183D39368072481CE9E190@MEXPR01MB2168.ausprd01.prod.outlook.com> <095B13AF-A31F-485B-A335-3040E076A965@rqc.ru>
-In-Reply-To: <095B13AF-A31F-485B-A335-3040E076A965@rqc.ru>
-Content-Type: text/plain; charset=utf-8
-To: unlisted-recipients:; (no To-header on input)
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:39420 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752360AbeABGd3 (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 2 Jan 2018 01:33:29 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: adambahe@gmail.com, dsterba@suse.cz
+Subject: [PATCH 1/2] btrfs-progs: fi-usage: Fix wrong RAID10 used and unallocated space
+Date: Tue,  2 Jan 2018 14:33:14 +0800
+Message-Id: <20180102063315.32382-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/02/2018 01:45 PM, Marat Khalili wrote:
->> I think the 1-3TB Seagate drives are garbage.
-> 
-> There are known problems with ST3000DM001, but first of all you should not put PC-oriented disks in RAID, they are not designed for it on multiple levels (vibration tolerance, error reporting...) There are similar horror stories about people filling whole cases with WD Greens and observing their (non-BTRFS) RAID 6 fail. 
-> 
-> 
+[BUG]
+For a very basic RAID10 with 4 disks, "fi usage" and "fi show" are
+outputting conflicting result:
+------
+ # btrfs fi show /mnt/btrfs/
+Label: none  uuid: 6d0229db-28d1-4696-ac20-e828cc45dc40
+	Total devices 4 FS bytes used 1.12MiB
+	devid    1 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk1
+	devid    2 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk2
+	devid    3 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk3
+	devid    4 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk4
 
-Same with ST2000DM001, lenovo and seagate did that for instance. How the
-hell user may know...
+Here the unallocated space for disk4 should be a little less than 3G.
+(5.00 Gib - 2.01GiB)
 
->
-> (Sorry for OT.)
+ # btrfs fi usage  /mnt/btrfs/
+Overall:
+    Device size:		  20.00GiB
+    Device allocated:		   8.03GiB
+    Device unallocated:		  11.97GiB
+    Device missing:		     0.00B
+    Used:			   2.25MiB
+    Free (estimated):		   7.98GiB	(min: 7.98GiB)
+    Data ratio:			      2.00
+    Metadata ratio:		      2.00
+    Global reserve:		  16.00MiB	(used: 0.00B)
 
-m2
+Data,RAID10: Size:2.00GiB, Used:1.00MiB
+   ...
+   /dev/mapper/data-disk4	 512.00MiB
 
+Metadata,RAID10: Size:2.00GiB, Used:112.00KiB
+   ...
+   /dev/mapper/data-disk4	 512.00MiB
+
+System,RAID10: Size:16.00MiB, Used:16.00KiB
+   ...
+   /dev/mapper/data-disk4	   4.00MiB
+
+Unallocated:
+   ...
+   /dev/mapper/data-disk4	   4.00GiB
+
+While fi usage shows we still have 4.00GiB unallocated space.
+------
+
+[CAUSE]
+calc_chunk_size() is used to convert chunk size to device extent size,
+which is used to get the per-device data/meta/sys used space.
+
+However, for RAID10 we just divide the chunk size with num_stripes,
+without taking sub stripes into account.
+
+Resulting data/meta/sys usage in RAID10 halved.
+
+[FIX]
+Take the missing sub stripes into consideration.
+
+Reported-by: Adam Bahe <adambahe@gmail.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ cmds-fi-usage.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
+index 0b0e47fee194..0af4bdbc9370 100644
+--- a/cmds-fi-usage.c
++++ b/cmds-fi-usage.c
+@@ -664,7 +664,7 @@ static u64 calc_chunk_size(struct chunk_info *ci)
+ 	else if (ci->type & BTRFS_BLOCK_GROUP_RAID6)
+ 		return ci->size / (ci->num_stripes -2);
+ 	else if (ci->type & BTRFS_BLOCK_GROUP_RAID10)
+-		return ci->size / ci->num_stripes;
++		return ci->size / (ci->num_stripes / 2);
+ 	return ci->size;
+ }
+ 
 -- 
-PGP Public Key (RSA/4096b):
-ID: 0xF2C6EA10
-SHA-1: 51DA 40EE 832A 0572 5AD8 B3C0 7AFF 69E1 F2C6 EA10
+2.15.1
+

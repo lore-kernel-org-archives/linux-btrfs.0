@@ -1,37 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34256 "EHLO mx1.redhat.com"
+Received: from mx2.suse.de ([195.135.220.15]:38328 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751150AbeABRUP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Jan 2018 12:20:15 -0500
-From: David Howells <dhowells@redhat.com>
-In-Reply-To: <20171222120556.7435-6-jlayton@kernel.org>
-References: <20171222120556.7435-6-jlayton@kernel.org> <20171222120556.7435-1-jlayton@kernel.org>
-To: Jeff Layton <jlayton@kernel.org>
-Cc: dhowells@redhat.com, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
-        linux-nfs@vger.kernel.org, bfields@fieldses.org, neilb@suse.de,
-        jack@suse.de, linux-ext4@vger.kernel.org, tytso@mit.edu,
-        adilger.kernel@dilger.ca, linux-xfs@vger.kernel.org,
-        darrick.wong@oracle.com, david@fromorbit.com,
-        linux-btrfs@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        dsterba@suse.com, linux-integrity@vger.kernel.org,
-        zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
-        linux-afs@lists.infradead.org, jaltman@auristor.com
-Subject: Re: [PATCH v4 05/19] afs: convert to new i_version API
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Tue, 02 Jan 2018 17:20:10 +0000
-Message-ID: <5112.1514913610@warthog.procyon.org.uk>
+        id S1751047AbeABRYg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Jan 2018 12:24:36 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 60B96ACC8
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Jan 2018 17:24:35 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: drop unused parameters from mount_subvol
+Date: Tue,  2 Jan 2018 18:22:25 +0100
+Message-Id: <20180102172225.22691-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jeff Layton <jlayton@kernel.org> wrote:
+Recent patches reworking the mount path left some unused parameters. We
+pass a vfsmount to mount_subvol, the flags and data (ie. mount options)
+have been already applied and we will not need them.
 
-> Note that AFS has quite a different definition for this counter. AFS
-> only increments it on changes to the data, not for the metadata.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/super.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-This also applies to AFS directories: create, mkdir, unlink, rmdir, link,
-symlink, rename, and mountpoint creation/removal all bump the data version
-number on a directory by exactly one if they change it.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index a35ac567384a..1434f288a397 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1395,8 +1395,7 @@ static inline int is_subvolume_inode(struct inode *inode)
+ }
+ 
+ static struct dentry *mount_subvol(const char *subvol_name, u64 subvol_objectid,
+-				   int flags, const char *device_name,
+-				   char *data, struct vfsmount *mnt)
++				   const char *device_name, struct vfsmount *mnt)
+ {
+ 	struct dentry *root;
+ 	int ret;
+@@ -1691,8 +1690,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	}
+ 
+ 	/* mount_subvol() will free subvol_name and mnt_root */
+-	root = mount_subvol(subvol_name, subvol_objectid, flags, device_name,
+-			data, mnt_root);
++	root = mount_subvol(subvol_name, subvol_objectid, device_name, mnt_root);
+ 
+ out:
+ 	return root;
+-- 
+2.15.1
 
-David

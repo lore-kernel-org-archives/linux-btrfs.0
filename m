@@ -1,95 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:39420 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:47854 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752360AbeABGd3 (ORCPT
+        with ESMTP id S1752362AbeABGd3 (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 2 Jan 2018 01:33:29 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: adambahe@gmail.com, dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs-progs: fi-usage: Fix wrong RAID10 used and unallocated space
-Date: Tue,  2 Jan 2018 14:33:14 +0800
-Message-Id: <20180102063315.32382-1-wqu@suse.com>
+Subject: [PATCH 2/2] btrfs-progs: misc-test: Add test case to check if fi usage and show report consistent unallocated space
+Date: Tue,  2 Jan 2018 14:33:15 +0800
+Message-Id: <20180102063315.32382-2-wqu@suse.com>
+In-Reply-To: <20180102063315.32382-1-wqu@suse.com>
+References: <20180102063315.32382-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
-For a very basic RAID10 with 4 disks, "fi usage" and "fi show" are
-outputting conflicting result:
-------
- # btrfs fi show /mnt/btrfs/
-Label: none  uuid: 6d0229db-28d1-4696-ac20-e828cc45dc40
-	Total devices 4 FS bytes used 1.12MiB
-	devid    1 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk1
-	devid    2 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk2
-	devid    3 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk3
-	devid    4 size 5.00GiB used 2.01GiB path /dev/mapper/data-disk4
-
-Here the unallocated space for disk4 should be a little less than 3G.
-(5.00 Gib - 2.01GiB)
-
- # btrfs fi usage  /mnt/btrfs/
-Overall:
-    Device size:		  20.00GiB
-    Device allocated:		   8.03GiB
-    Device unallocated:		  11.97GiB
-    Device missing:		     0.00B
-    Used:			   2.25MiB
-    Free (estimated):		   7.98GiB	(min: 7.98GiB)
-    Data ratio:			      2.00
-    Metadata ratio:		      2.00
-    Global reserve:		  16.00MiB	(used: 0.00B)
-
-Data,RAID10: Size:2.00GiB, Used:1.00MiB
-   ...
-   /dev/mapper/data-disk4	 512.00MiB
-
-Metadata,RAID10: Size:2.00GiB, Used:112.00KiB
-   ...
-   /dev/mapper/data-disk4	 512.00MiB
-
-System,RAID10: Size:16.00MiB, Used:16.00KiB
-   ...
-   /dev/mapper/data-disk4	   4.00MiB
-
-Unallocated:
-   ...
-   /dev/mapper/data-disk4	   4.00GiB
-
-While fi usage shows we still have 4.00GiB unallocated space.
-------
-
-[CAUSE]
-calc_chunk_size() is used to convert chunk size to device extent size,
-which is used to get the per-device data/meta/sys used space.
-
-However, for RAID10 we just divide the chunk size with num_stripes,
-without taking sub stripes into account.
-
-Resulting data/meta/sys usage in RAID10 halved.
-
-[FIX]
-Take the missing sub stripes into consideration.
-
-Reported-by: Adam Bahe <adambahe@gmail.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds-fi-usage.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ tests/misc-tests/028-fi-usage-cross-check/test.sh | 46 +++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+ create mode 100755 tests/misc-tests/028-fi-usage-cross-check/test.sh
 
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index 0b0e47fee194..0af4bdbc9370 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -664,7 +664,7 @@ static u64 calc_chunk_size(struct chunk_info *ci)
- 	else if (ci->type & BTRFS_BLOCK_GROUP_RAID6)
- 		return ci->size / (ci->num_stripes -2);
- 	else if (ci->type & BTRFS_BLOCK_GROUP_RAID10)
--		return ci->size / ci->num_stripes;
-+		return ci->size / (ci->num_stripes / 2);
- 	return ci->size;
- }
- 
+diff --git a/tests/misc-tests/028-fi-usage-cross-check/test.sh b/tests/misc-tests/028-fi-usage-cross-check/test.sh
+new file mode 100755
+index 000000000000..bf438b60abf1
+--- /dev/null
++++ b/tests/misc-tests/028-fi-usage-cross-check/test.sh
+@@ -0,0 +1,46 @@
++#!/bin/bash
++# check fi-usage is output correct unallocated space for RAID10
++
++source "$TOP/tests/common"
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++
++setup_loopdevs 4
++prepare_loopdevs
++dev1=${loopdevs[1]}
++
++run_check "$TOP/mkfs.btrfs" -d raid10 -m raid10 -f ${loopdevs[@]}
++run_check $SUDO_HELPER mount $dev1 "$TEST_MNT"
++
++output_dir=$(mktemp -d --tmpdir btrfs-progs-misc.XXXXXXXX)
++
++run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem show --raw "$TEST_MNT" |\
++	grep "$dev1" > "$output_dir/fi_show_output"
++if [ ! -s "$output_dir/fi_show_output" ]; then
++	_fail "failed to get correct fi show output"
++fi
++
++dev1_total=$(cat "$output_dir/fi_show_output" | awk '{print $4}')
++dev1_used=$(cat "$output_dir/fi_show_output" | awk '{print $6}')
++dev1_fi_show_unallocated=$(( $dev1_total - $dev1_used))
++
++run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem usage --raw "$TEST_MNT" |\
++	grep "$dev1" | tail -n1 > "$output_dir/fi_usage_output"
++if [ ! -s "$output_dir/fi_usage_output" ]; then
++	_fail "failed to get correct fi usage output"
++fi
++
++dev1_fi_usage_unallocated=$(cat "$output_dir/fi_usage_output" | awk '{print $2}')
++echo "fi usage unallocated for devid1 is $dev1_fi_usage_unallocated" >> "$RESULTS"
++echo "fi show unallocated for devid1 is $dev1_fi_show_unallocated" >> "$RESULTS"
++
++if [ $dev1_fi_show_unallocated -ne $dev1_fi_usage_unallocated ]; then
++	_fail "fi usage unallocated mismatch with fi show"
++fi
++
++run_check $SUDO_HELPER umount "$TEST_MNT"
++cleanup_loopdevs
++rm $output_dir -rf
 -- 
 2.15.1
 

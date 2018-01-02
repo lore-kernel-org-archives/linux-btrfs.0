@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:11496 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:31964 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753545AbeABBke (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jan 2018 20:40:34 -0500
+        with ESMTP id S1751130AbeABBqP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jan 2018 20:46:15 -0500
 Subject: Re: [PATCH v2 02/17] btrfs-progs: lowmem check: record returned
  errors after walk_down_tree_v2()
 To: Nikolay Borisov <nborisov@suse.com>, <linux-btrfs@vger.kernel.org>
@@ -11,8 +11,8 @@ References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
  <20171220045731.19343-3-suy.fnst@cn.fujitsu.com>
  <d4013361-64e4-39be-3866-5baba6597669@suse.com>
 From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <6572f6da-66f0-1156-1b7f-e00e25a1d997@cn.fujitsu.com>
-Date: Tue, 2 Jan 2018 09:44:47 +0800
+Message-ID: <078b49d6-3dff-0e87-9163-562fd87b1e7c@cn.fujitsu.com>
+Date: Tue, 2 Jan 2018 09:50:30 +0800
 MIME-Version: 1.0
 In-Reply-To: <d4013361-64e4-39be-3866-5baba6597669@suse.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -71,6 +71,8 @@ On 12/29/2017 07:17 PM, Nikolay Borisov wrote:
 > 
 > Clearly this patch needs to be thought out better
 > 
+OK, I will update it.
+Thanks for review.
 >>   static int check_btrfs_root(struct btrfs_trans_handle *trans,
 >>   			    struct btrfs_root *root, unsigned int ext_ref,
 >> @@ -6607,12 +6608,12 @@ static int check_btrfs_root(struct btrfs_trans_handle *trans,
@@ -106,22 +108,9 @@ On 12/29/2017 07:17 PM, Nikolay Borisov wrote:
 > You make the function effectively boolean, make this explicit by
 > changing its return value to bool. Also the name and the boolean return
 > makes the function REALLY confusing. I.e when should we return true or
-
-In the past and present, check_fs_root_v2() always returns boolean.
-So the old annotation "Return <0 for error." is wrong.
-
-Here check_btrfs_root() returns error bits instead of boolean, so I
-just make check_fs_root_v2() return boolean explictly.
-
 > false? As it stands it return "false" on success and "true" otherwise,
 > this is a mess...
 > 
-Although it returns 1 or 0, IMHO, let it return inteager
-is good enough.
-
-Thanks,
-Su
-
 > 
 >>   
 >>   /*

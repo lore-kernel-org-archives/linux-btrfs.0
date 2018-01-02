@@ -1,73 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:22396 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932107AbeAKHba (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 02:31:30 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id DA30648AEA11
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:26 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 17/17] btrfs-progs: lowmem check: end of removing parameters @trans in lowmem
-Date: Thu, 11 Jan 2018 15:35:11 +0800
-Message-ID: <20180111073511.25288-18-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
-References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:58478 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750979AbeABPmm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Jan 2018 10:42:42 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C97CFACBD
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Jan 2018 15:42:40 +0000 (UTC)
+Date: Tue, 2 Jan 2018 16:40:35 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/4] Cleanup of bio_get/set
+Message-ID: <20180102154035.GS3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1513153540-10737-1-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1513153540-10737-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove @trans in check_chunks_and_extents.
+On Wed, Dec 13, 2017 at 10:25:36AM +0200, Nikolay Borisov wrote:
+> Hello, 
+> 
+> Here is a series which cleans the btrfs source code of all the redundant 
+> bio_get/set calls. After it's applied there is only a single bio_get inovcation
+> left in __alloc_device for the flush_bio (and that is wrong since it 
+> leaks the bio, but this will be fixed in a follow up fix).
+> 
+> Nikolay Borisov (4):
+>   btrfs: Remove redundant bio_get/set calls in compressed read/write
+>     paths
+>   btrfs: Remove redundant bio_get/set from submit_dio_repair_bio
+>   btrfs: Remove redundan bio_get/bio_set pair from submit_one_bio
+>   btrfs: Remove redundant pair of bio_get/set in __btrfs_submit_dio_bio
 
-After this patch, Lowmem repair should work again.
+All
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- cmds-check.c | 12 ------------
- 1 file changed, 12 deletions(-)
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 4d6245fa909b..4884d78681ab 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -13804,7 +13804,6 @@ static int repair_block_accounting(struct btrfs_fs_info *fs_info)
-  */
- static int check_chunks_and_extents_v2(struct btrfs_fs_info *fs_info)
- {
--	struct btrfs_trans_handle *trans = NULL;
- 	struct btrfs_path path;
- 	struct btrfs_key old_key;
- 	struct btrfs_key key;
-@@ -13816,14 +13815,6 @@ static int check_chunks_and_extents_v2(struct btrfs_fs_info *fs_info)
- 
- 	root = fs_info->fs_root;
- 
--	if (repair) {
--		trans = btrfs_start_transaction(fs_info->extent_root, 1);
--		if (IS_ERR(trans)) {
--			error("failed to start transaction before check");
--			return PTR_ERR(trans);
--		}
--	}
--
- 	root1 = root->fs_info->chunk_root;
- 	ret = check_btrfs_root(root1, 0, 1);
- 	err |= ret;
-@@ -13892,9 +13883,6 @@ out:
- 			err &= ~BG_ACCOUNTING_ERROR;
- 	}
- 
--	if (trans)
--		btrfs_commit_transaction(trans, root->fs_info->extent_root);
--
- 	btrfs_release_path(&path);
- 	return err;
- }
--- 
-2.15.1
-
-
-
+and added to 4.16 queue.

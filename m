@@ -1,30 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37849 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35800 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750968AbeABRRw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Jan 2018 12:17:52 -0500
-Date: Tue, 2 Jan 2018 18:15:45 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: cleanup unnecessary string dup in
- btrfs_parse_options()
-Message-ID: <20180102171545.GX3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <0530ed22-f85e-ad17-58f3-9f4d147f8430@jp.fujitsu.com>
+        id S1751097AbeABQui (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Jan 2018 11:50:38 -0500
+Date: Tue, 2 Jan 2018 17:50:34 +0100
+From: Jan Kara <jack@suse.cz>
+To: Jeff Layton <jlayton@kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        viro@zeniv.linux.org.uk, linux-nfs@vger.kernel.org,
+        bfields@fieldses.org, neilb@suse.de, jack@suse.de,
+        linux-ext4@vger.kernel.org, tytso@mit.edu, adilger.kernel@dilger.ca,
+        linux-xfs@vger.kernel.org, darrick.wong@oracle.com,
+        david@fromorbit.com, linux-btrfs@vger.kernel.org, clm@fb.com,
+        jbacik@fb.com, dsterba@suse.com, linux-integrity@vger.kernel.org,
+        zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
+        linux-afs@lists.infradead.org, dhowells@redhat.com,
+        jaltman@auristor.com
+Subject: Re: [PATCH v4 16/19] fs: only set S_VERSION when updating times if
+ necessary
+Message-ID: <20180102165034.GA4911@quack2.suse.cz>
+References: <20171222120556.7435-1-jlayton@kernel.org>
+ <20171222120556.7435-17-jlayton@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0530ed22-f85e-ad17-58f3-9f4d147f8430@jp.fujitsu.com>
+In-Reply-To: <20171222120556.7435-17-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 14, 2017 at 05:28:00PM +0900, Misono, Tomohiro wrote:
-> Long ago, commit edf24abe51493 ("btrfs: sanity mount option parsing and
-> early mount code") split the btrfs_parse_options() into two parts
-> (btrfs_parse_early_options() and btrfs_parse_options()). As a result,
-> btrfs_parse_optins no longer gets called twice and is the last one to parse
-> mount option string. Therefore there is no need to dup it.
+On Fri 22-12-17 07:05:53, Jeff Layton wrote:
+> From: Jeff Layton <jlayton@redhat.com>
 > 
-> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> We only really need to update i_version if someone has queried for it
+> since we last incremented it. By doing that, we can avoid having to
+> update the inode if the times haven't changed.
+> 
+> If the times have changed, then we go ahead and forcibly increment the
+> counter, under the assumption that we'll be going to the storage
+> anyway, and the increment itself is relatively cheap.
+> 
+> Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> ---
+>  fs/inode.c | 10 +++++++---
+>  1 file changed, 7 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/inode.c b/fs/inode.c
+> index 19e72f500f71..2fa920188759 100644
+> --- a/fs/inode.c
+> +++ b/fs/inode.c
+> @@ -1635,17 +1635,21 @@ static int relatime_need_update(const struct path *path, struct inode *inode,
+>  int generic_update_time(struct inode *inode, struct timespec *time, int flags)
+>  {
+>  	int iflags = I_DIRTY_TIME;
+> +	bool dirty = false;
+>  
+>  	if (flags & S_ATIME)
+>  		inode->i_atime = *time;
+>  	if (flags & S_VERSION)
+> -		inode_inc_iversion(inode);
+> +		dirty |= inode_maybe_inc_iversion(inode, dirty);
+>  	if (flags & S_CTIME)
+>  		inode->i_ctime = *time;
+>  	if (flags & S_MTIME)
+>  		inode->i_mtime = *time;
+> +	if ((flags & (S_ATIME | S_CTIME | S_MTIME)) &&
+> +	    !(inode->i_sb->s_flags & SB_LAZYTIME))
+> +		dirty = true;
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+When you pass 'dirty' to inode_maybe_inc_iversion(), it is always false.
+Maybe this condition should be at the beginning of the function? Once you
+fix that the patch looks good so you can add:
+
+Reviewed-by: Jan Kara <jack@suse.cz>
+
+
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

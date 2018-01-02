@@ -1,52 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40346 "EHLO mx2.suse.de"
+Received: from mga14.intel.com ([192.55.52.115]:8219 "EHLO mga14.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751228AbeABR5M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 2 Jan 2018 12:57:12 -0500
-Date: Tue, 2 Jan 2018 18:55:04 +0100
-From: David Sterba <dsterba@suse.cz>
-To: David Disseldorp <ddiss@suse.de>
-Cc: Ceriel Jacobs <linux-ide@crashplan.pro>, linux-btrfs@vger.kernel.org
-Subject: Re: Project idea: reduce boot time/RAM usage: option to
- disable/delay raid6_pq and xor kmod
-Message-ID: <20180102175504.GY3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <6f082a1d-ed15-2583-fabf-9aa7c80baef0@crashplan.pro>
- <20171228211807.60f115f4@suse.de>
+        id S1750986AbeABXP0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Jan 2018 18:15:26 -0500
+Date: Wed, 3 Jan 2018 07:15:11 +0800
+From: kbuild test robot <fengguang.wu@intel.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
+Subject: [josef-btrfs:kill-btree-inode 30/32] fs/btrfs/disk-io.c:1059:13:
+ sparse: incorrect type in assignment (different base types)
+Message-ID: <201801030709.FpqC6oZl%fengguang.wu@intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <20171228211807.60f115f4@suse.de>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 28, 2017 at 09:18:07PM +0100, David Disseldorp wrote:
-> On Sun, 24 Dec 2017 13:31:40 +0100, Ceriel Jacobs wrote:
-> 
-> > Saving:
-> > 1. ± 0.4 seconds of boot time (10% of boot until root)
-> > 2. ± 150k of RAM
-> > 3. ± 75k of disk space
-> 
-> Thanks for bringing this up - I'm also particularly frustrated by the
-> boot delay caused by the raid6 algorithm benchmark (1).
-> 
-> > New kernel command-line parameters?
-> > a.) disable, like:
-> >      - btrfs=noraid6_pq
-> >      - btrfs=noraid (=no xor at all)
-> > b.) delay raid6_pq and xor module loading, for cases where root mount 
-> > doesn't need raid6_pq and/or xor.
-> 
-> c) It might not help with (2) or (3), but I'd be happy with an option to
-> preselect the raid6 algorithm, so that the benchmark didn't run on each
-> boot.
+tree:   https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git kill-btree-inode
+head:   225f09a5848138ede157eff4aa27bfa70d354fcb
+commit: fb6cad3454e3172599129cff50d5234a7abc551c [30/32] Btrfs: kill the btree_inode
+reproduce:
+        # apt-get install sparse
+        git checkout fb6cad3454e3172599129cff50d5234a7abc551c
+        make ARCH=x86_64 allmodconfig
+        make C=1 CF=-D__CHECK_ENDIAN__
 
-The preselection looks like the least intrusive option.
 
-Another other option is loading the modules on demand (either explicitly
-eg.  inside the first mount or implicitly on the first use of the loaded
-module), which might be tricky.
+sparse warnings: (new ones prefixed by >>)
 
-The crc32c functions are loaded through the crypto API, and not as a
-direct module, but still initialized in the btfs module initialization
-itself.
+
+vim +1059 fs/btrfs/disk-io.c
+
+  1047	
+  1048	static blk_status_t __btree_submit_bio_done(void *private_data, struct bio *bio,
+  1049						    int mirror_num, unsigned long bio_flags,
+  1050						    u64 bio_offset)
+  1051	{
+  1052		struct btrfs_eb_info *eb_info = private_data;
+  1053		int ret;
+  1054	
+  1055		/*
+  1056		 * when we're called for a write, we're already in the async
+  1057		 * submission context.  Just jump into btrfs_map_bio
+  1058		 */
+> 1059		ret = btrfs_map_bio(eb_info->fs_info, bio, mirror_num, 1);
+  1060		if (ret) {
+> 1061			bio->bi_status = ret;
+  1062			bio_endio(bio);
+  1063		}
+> 1064		return ret;
+  1065	}
+  1066	
+
+---
+0-DAY kernel test infrastructure                Open Source Technology Center
+https://lists.01.org/pipermail/kbuild-all                   Intel Corporation

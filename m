@@ -1,75 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:46004 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:43876 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751185AbeACHNX (ORCPT
+        with ESMTP id S1751256AbeACHNX (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Wed, 3 Jan 2018 02:13:23 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 3/5] btrfs-progs: volumes: Remove unnecessary trans parameter
-Date: Wed,  3 Jan 2018 15:13:04 +0800
-Message-Id: <20180103071306.11500-4-wqu@suse.com>
+Subject: [PATCH 4/5] btrfs-progs: volumes: Remove unnecessary parameters when allocating device extent
+Date: Wed,  3 Jan 2018 15:13:05 +0800
+Message-Id: <20180103071306.11500-5-wqu@suse.com>
 In-Reply-To: <20180103071306.11500-1-wqu@suse.com>
 References: <20180103071306.11500-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove @trans parameter for find_free_dev_extent_start() and its
-callers.
+@chunk_tree and @chunk_objectid of device extent is fixed to
+BTRFS_CHUNK_TREE_OBJECTID and BTRFS_FIRST_CHUNK_TREE_OBJECTID
+respectively.
 
-The function itself is doing read-only tree search, no use of
-transaction.
+There is no need to pass them as parameter explicitly.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- volumes.c | 17 +++++++----------
- 1 file changed, 7 insertions(+), 10 deletions(-)
+ volumes.c | 18 +++++++-----------
+ 1 file changed, 7 insertions(+), 11 deletions(-)
 
 diff --git a/volumes.c b/volumes.c
-index 0e50e1d5833e..f6c6447fe925 100644
+index f6c6447fe925..fa3c6de023f9 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -316,9 +316,9 @@ int btrfs_scan_one_device(int fd, const char *path,
-  * But if we don't find suitable free space, it is used to store the size of
-  * the max free space.
-  */
--static int find_free_dev_extent_start(struct btrfs_trans_handle *trans,
--			       struct btrfs_device *device, u64 num_bytes,
--			       u64 search_start, u64 *start, u64 *len)
-+static int find_free_dev_extent_start(struct btrfs_device *device,
-+				      u64 num_bytes, u64 search_start,
-+				      u64 *start, u64 *len)
- {
- 	struct btrfs_key key;
- 	struct btrfs_root *root = device->dev_root;
-@@ -457,13 +457,11 @@ out:
- 	return ret;
- }
- 
--static int find_free_dev_extent(struct btrfs_trans_handle *trans,
--			 struct btrfs_device *device, u64 num_bytes,
--			 u64 *start)
-+static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
-+				u64 *start)
- {
- 	/* FIXME use last free of some kind */
--	return find_free_dev_extent_start(trans, device,
--					  num_bytes, 0, start, NULL);
-+	return find_free_dev_extent_start(device, num_bytes, 0, start, NULL);
- }
+@@ -466,9 +466,8 @@ static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
  
  static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
-@@ -488,8 +486,7 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
- 	 * is responsible to make sure it's free.
- 	 */
- 	if (!convert) {
--		ret = find_free_dev_extent(trans, device, num_bytes,
--					   start);
-+		ret = find_free_dev_extent(device, num_bytes, start);
- 		if (ret)
- 			goto err;
- 	}
+ 				  struct btrfs_device *device,
+-				  u64 chunk_tree, u64 chunk_objectid,
+-				  u64 chunk_offset,
+-				  u64 num_bytes, u64 *start, int convert)
++				  u64 chunk_offset, u64 num_bytes, u64 *start,
++				  int convert)
+ {
+ 	int ret;
+ 	struct btrfs_path *path;
+@@ -501,8 +500,9 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 	leaf = path->nodes[0];
+ 	extent = btrfs_item_ptr(leaf, path->slots[0],
+ 				struct btrfs_dev_extent);
+-	btrfs_set_dev_extent_chunk_tree(leaf, extent, chunk_tree);
+-	btrfs_set_dev_extent_chunk_objectid(leaf, extent, chunk_objectid);
++	btrfs_set_dev_extent_chunk_tree(leaf, extent, BTRFS_CHUNK_TREE_OBJECTID);
++	btrfs_set_dev_extent_chunk_objectid(leaf, extent,
++					    BTRFS_FIRST_CHUNK_TREE_OBJECTID);
+ 	btrfs_set_dev_extent_chunk_offset(leaf, extent, chunk_offset);
+ 
+ 	write_extent_buffer(leaf, root->fs_info->chunk_tree_uuid,
+@@ -1039,9 +1039,7 @@ again:
+ 		    (index == num_stripes - 1))
+ 			list_move_tail(&device->dev_list, dev_list);
+ 
+-		ret = btrfs_alloc_dev_extent(trans, device,
+-			     info->chunk_root->root_key.objectid,
+-			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
++		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
+ 			     calc_size, &dev_offset, 0);
+ 		if (ret < 0)
+ 			goto out_chunk_map;
+@@ -1176,9 +1174,7 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 	while (index < num_stripes) {
+ 		struct btrfs_stripe *stripe;
+ 
+-		ret = btrfs_alloc_dev_extent(trans, device,
+-			     info->chunk_root->root_key.objectid,
+-			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
++		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
+ 			     calc_size, &dev_offset, convert);
+ 		BUG_ON(ret);
+ 
 -- 
 2.15.1
 

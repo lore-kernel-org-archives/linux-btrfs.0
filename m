@@ -1,53 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37783 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752432AbeADNyS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 4 Jan 2018 08:54:18 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3C29BADF8
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 Jan 2018 13:54:17 +0000 (UTC)
-Subject: Re: [PATCH 0/5] Cleanups for later btrfs_alloc_chunk() rework
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Received: from victor.provo.novell.com ([137.65.250.26]:60906 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751284AbeAEIMY (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 5 Jan 2018 03:12:24 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-References: <20180103071306.11500-1-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a4cc71f8-dcc1-0c85-1734-17916858fa95@suse.com>
-Date: Thu, 4 Jan 2018 15:54:16 +0200
-MIME-Version: 1.0
-In-Reply-To: <20180103071306.11500-1-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
+Subject: [PATCH 0/2] Preparation for later btrfs_alloc_chunk() rework, Part 2
+Date: Fri,  5 Jan 2018 16:12:10 +0800
+Message-Id: <20180105081212.27175-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patchset, along with its prerequisite (patchset named:
+"[PATCH 0/5] Cleanups for later btrfs_alloc_chunk() rework") can be
+fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/chunk_alloc_enospc
 
+This patchset can still be treated as cleanup, but brings a much larger
+structure modification of btrfs_alloc_chunk().
 
-On  3.01.2018 09:13, Qu Wenruo wrote:
-> Just small cleanups for incoming btrfs_alloc_chunk() rework, which is
-> designed to allow btrfs_alloc_chunk() to be able to alloc meta chunk,
-> even current meta chunks are already full.
-> 
-> The cleanups are quite small, most of them are just removing unnecessary
-> parameters, and make some function static.
-> 
-> Qu Wenruo (5):
->   btrfs-progs: Use bool parameter to determine if we're allocating data
->     extent
->   btrfs-progs: volumes: Make find_free_dev_extent_start static
->   btrfs-progs: volumes: Remove unnecessary trans parameter
->   btrfs-progs: volumes: Remove unnecessary parameters when allocating
->     device extent
->   btrfs-progs: Remove unnecessary parameter for btrfs_add_block_group
-> 
+The first patch will merge the original btrfs_alloc_data_chunk() with
+more generic btrfs_alloc_chunk().
 
-For the whole series:
+And 2nd patch integrate btrfs_make_block_group() into
+btrfs_alloc_chunk(), provides the critical basis for later rework.
+(Later rework needs to update space info before any tree modification,
+so btrfs_make_block_group must be integrated)
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+Considering the importance of btrfs_alloc_chunk() in btrfs-progs, these
+2 patches are separated out for a longer review window before larger
+rework.
 
->  cmds-check.c   |  4 ++--
->  convert/main.c |  4 +---
->  ctree.h        |  7 +++----
->  extent-tree.c  | 31 ++++++++++++++++---------------
->  mkfs/main.c    | 14 ++++----------
->  volumes.c      | 35 ++++++++++++++---------------------
->  6 files changed, 40 insertions(+), 55 deletions(-)
-> 
+Qu Wenruo (2):
+  btrfs-progs: Merge btrfs_alloc_data_chunk into btrfs_alloc_chunk
+  btrfs-progs: Make btrfs_alloc_chunk to handle block group creation
+
+ convert/main.c |  10 +--
+ extent-tree.c  |  12 +---
+ mkfs/main.c    |  42 ++---------
+ volumes.c      | 222 +++++++++++++++++++++++----------------------------------
+ volumes.h      |   5 +-
+ 5 files changed, 102 insertions(+), 189 deletions(-)
+
+-- 
+2.15.1
+

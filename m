@@ -1,81 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:45030 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753019AbeAJWwv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 17:52:51 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0AMqPQ9155505
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:51 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2fdtjurcdt-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:51 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0AMqo9I028680
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:50 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0AMqoYQ014533
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:50 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: drop devid as device_list_add() arg
-Date: Thu, 11 Jan 2018 06:53:37 +0800
-Message-Id: <20180110225337.5877-5-anand.jain@oracle.com>
-In-Reply-To: <20180110225337.5877-1-anand.jain@oracle.com>
-References: <20180110225337.5877-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:38310 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752393AbeAEQq4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Jan 2018 11:46:56 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 93589ACA7
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2018 16:46:55 +0000 (UTC)
+Date: Fri, 5 Jan 2018 17:44:49 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: handle failure of add_pending_csums
+Message-ID: <20180105164449.GQ3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1512474703-30066-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1512474703-30066-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As struct btrfs_disk_super is being passed, so it can get devid
-the same way its parent does.
+On Tue, Dec 05, 2017 at 01:51:43PM +0200, Nikolay Borisov wrote:
+> add_pending_csums was added as part of the new data=ordered implementation in
+> e6dcd2dc9c48 ("Btrfs: New data=ordered implementation"). Even back then it
+> called the btrfs_csum_file_blocks which can fail but it never bothered handling
+> the failure. In ENOMEM situation this could lead to the filesystem failing to
+> write the checksums for a particular extent and not detect this. On read this
+> could lead to the filesystem erroring out due to crc mismatch. Fix it by
+> propagating failure from add_pending_csums and handling them
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  fs/btrfs/inode.c | 11 +++++++++--
+>  1 file changed, 9 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index e87ec11c0986..432bffdbb02f 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2039,11 +2039,14 @@ static noinline int add_pending_csums(struct btrfs_trans_handle *trans,
+>  			     struct inode *inode, struct list_head *list)
+>  {
+>  	struct btrfs_ordered_sum *sum;
+> +	int ret;
+>  
+>  	list_for_each_entry(sum, list, list) {
+>  		trans->adding_csums = true;
+> -		btrfs_csum_file_blocks(trans,
+> +		ret = btrfs_csum_file_blocks(trans,
+>  		       BTRFS_I(inode)->root->fs_info->csum_root, sum);
+> +		if (ret)
+> +			return ret;
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/volumes.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+The return should come after the line below, otherwise the transaction
+will be left in the "adding csums".
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d93ee0b91ad9..e947e47f8fff 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -730,12 +730,13 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
-  * error pointer when failed
-  */
- static noinline struct btrfs_device *device_list_add(const char *path,
--			   struct btrfs_super_block *disk_super, u64 devid)
-+			   struct btrfs_super_block *disk_super)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct rcu_string *name;
- 	u64 found_transid = btrfs_super_generation(disk_super);
-+	u64 devid = btrfs_stack_device_id(&disk_super->dev_item);
- 
- 	fs_devices = find_fsid(disk_super->fsid);
- 	if (!fs_devices) {
-@@ -1183,7 +1184,6 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	struct block_device *bdev;
- 	struct page *page;
- 	int ret = 0;
--	u64 devid;
- 	u64 bytenr;
- 
- 	/*
-@@ -1204,10 +1204,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 		goto error_bdev_put;
- 	}
- 
--	devid = btrfs_stack_device_id(&disk_super->dev_item);
--
- 	mutex_lock(&uuid_mutex);
--	device = device_list_add(path, disk_super, devid);
-+	device = device_list_add(path, disk_super);
- 	mutex_unlock(&uuid_mutex);
- 	if (IS_ERR(device))
- 		ret = PTR_ERR(device);
--- 
-2.7.0
+>  		trans->adding_csums = false;
 
+...
+>  	}
+>  	return 0;
+> @@ -3051,7 +3054,11 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+>  		goto out;
+>  	}
+>  
+> -	add_pending_csums(trans, inode, &ordered_extent->list);
+> +	ret = add_pending_csums(trans, inode, &ordered_extent->list);
+> +	if (ret) {
+> +		btrfs_abort_transaction(trans, ret);
+
+Ok, we can't do better here, this is too late and
+add_pending_csums -> btrfs_csum_file_blocks modifies too much of the
+state to be rolled back safely.

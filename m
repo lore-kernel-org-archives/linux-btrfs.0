@@ -1,40 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55612 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45899 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751400AbeAEO2O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jan 2018 09:28:14 -0500
-Date: Fri, 5 Jan 2018 15:26:06 +0100
+        id S1751109AbeAEMxX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Jan 2018 07:53:23 -0500
+Date: Fri, 5 Jan 2018 13:51:15 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add missing BTRFS_SUPER_FLAG define
-Message-ID: <20180105142606.GO3553@twin.jikos.cz>
+Subject: Re: [PATCH 1/2 RESEND] Btrfs: make raid6 rebuild retry more
+Message-ID: <20180105125115.GH3553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180105092422.9794-1-anand.jain@oracle.com>
+References: <20180102203642.14105-1-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180105092422.9794-1-anand.jain@oracle.com>
+In-Reply-To: <20180102203642.14105-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 05, 2018 at 05:24:22PM +0800, Anand Jain wrote:
-> btrfs-progs uses additional two super flag bits. So just define
-> that so that we know its been used.
+On Tue, Jan 02, 2018 at 01:36:41PM -0700, Liu Bo wrote:
+> There is a scenario that can end up with rebuild process failing to
+> return good content, i.e.
+> suppose that all disks can be read without problems and if the content
+> that was read out doesn't match its checksum, currently for raid6
+> btrfs at most retries twice,
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> The btrfs-progs commits (very old) introduced them,
+> - the 1st retry is to rebuild with all other stripes, it'll eventually
+>   be a raid5 xor rebuild,
+> - if the 1st fails, the 2nd retry will deliberately fail parity p so
+>   that it will do raid6 style rebuild,
 > 
->  commit 7cc792872a133cabc3467e6ccaf5a2c8ea9e5218
->     btrfs-progs: Add CHANGING_FSID super flag
+> however, the chances are that another non-parity stripe content also
+> has something corrupted, so that the above retries are not able to
+> return correct content, and users will think of this as data loss.
+> More seriouly, if the loss happens on some important internal btree
+> roots, it could refuse to mount.
 > 
->  commit 797a937e5dd8db0092add633a80f3cd698e182df
->     Btrfs-progs: Introduce metadump_v2
+> This extends btrfs to do more retries and each retry fails only one
+> stripe.  Since raid6 can tolerate 2 disk failures, if there is one
+> more failure besides the failure on which we're recovering, this can
+> always work.
 > 
-> Appears that we need bit of support from the kernel side like
-> failing to mount if CHANGING_FSID is set. And device mounted
-> with metadump_v2 flag is kind of broken on the kernel side
-> as of now, this patch does not fix those.
+> The worst case is to retry as many times as the number of raid6 disks,
+> but given the fact that such a scenario is really rare in practice,
+> it's still acceptable.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Please add the code that uses the flags, at least the for the pending
-uuid change.
+1 and added to for-next.

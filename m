@@ -1,53 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44148 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45300 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752015AbeAESQJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jan 2018 13:16:09 -0500
-Date: Fri, 5 Jan 2018 19:14:01 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] Btrfs: avoid losing data raid profile when deleting a
- device
-Message-ID: <20180105181401.GS3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171010175305.31633-1-bo.li.liu@oracle.com>
- <20171115232811.9756-1-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171115232811.9756-1-bo.li.liu@oracle.com>
+        id S1752087AbeAEShL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Jan 2018 13:37:11 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.14.1
+Date: Fri,  5 Jan 2018 19:34:58 +0100
+Message-Id: <20180105183458.3884-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 15, 2017 at 04:28:11PM -0700, Liu Bo wrote:
-> We've avoided data losing raid profile when doing balance, but it
-> turns out that deleting a device could also result in the same
-> problem.
-> 
-> Say we have 3 disks, and they're created with '-d raid1' profile.
-> 
-> - We have chunk P (the only data chunk on the empty btrfs).
-> 
-> - Suppose that chunk P's two raid1 copies reside in disk A and disk B.
-> 
-> - Now, 'btrfs device remove disk B'
->          btrfs_rm_device()
-> 	   -> btrfs_shrink_device()
-> 	      -> btrfs_relocate_chunk() #relocate any chunk on disk B
-> 	      	 			 to other places.
-> 
-> - Chunk P will be removed and a new chunk will be created to hold
->   those data, but as chunk P is the only one holding raid1 profile,
->   after it goes away, the new chunk will be created as single profile
->   which is our default profile.
-> 
-> This fixes the problem by creating an empty data chunk before
-> relocating the data chunk.
-> 
-> Metadata/System chunk are supposed to have non-zero bytes all the time
-> so their raid profile is preserved.
-> 
-> Reported-by: James Alandt <James.Alandt@wdc.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Hi,
 
-Added to 4.16 queue, thanks.
+btrfs-progs version 4.14.1 have been released.
+
+Changes:
+  * dump-tree: print times of root items
+  * check: fix several lowmem mode bugs
+  * convert: fix rollback after balance
+  * other
+    * new and updated tests, enabled lowmem mode in CI
+    * docs updates
+    * fix travis CI build
+    * build fixes
+    * cleanups
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Shortlog:
+
+David Sterba (9):
+      btrfs-progs: tests: fix path for travis helper script
+      btrfs-progs: fix build of btrfs-show-super
+      btrfs-progs: tests: enable check lowmem in travis CI
+      btrfs-progs: tests: mkfs/008 mkfs with force
+      btrfs-progs: tests: fix typos in test names
+      btrfs-progs: build: specify minimal library version for reiserfs support
+      btrfs-progs: docs: make option -A of mkfs less visible
+      btrfs-progs: update CHANGES for v4.14.1
+      Btrfs progs v4.14.1
+
+Faalagorn (1):
+      btrfs-progs: docs: fix typo in btrfs-man5
+
+Hans van Kranenburg (1):
+      btrfs-progs: dump_tree: remove superfluous _TREE
+
+Howard (1):
+      btrfs-progs: docs: update btrfs-subvolume manual page
+
+Lu Fengqi (1):
+      btrfs-progs: lowmem check: Reword an unclear error message about file extent gap
+
+Misono, Tomohiro (2):
+      btrfs-progs: dump-tree: print c/o/s/r time of ROOT_ITEM
+      btrfs-progs: mkfs: check the status of file at mkfs
+
+Nicholas D Steeves (1):
+      btrfs-progs: docs: annual typo, clarity, & grammar review & fixups
+
+Qu Wenruo (20):
+      btrfs-progs: lowmem check: Fix regression which screws up extent allocator
+      btrfs-progs: lowmem check: Fix NULL pointer access caused by large tree reloc tree
+      btrfs-progs: lowmem check: Fix inlined data extent ref lookup
+      btrfs-progs: lowmem check: Fix false backref lost warning for keyed extent data ref
+      btrfs-progs: fsck-test: Introduce test case for false data extent backref lost
+      btrfs-progs: backref: Allow backref walk to handle direct parent ref
+      btrfs-progs: lowmem check: Fix function call stack overflow caused by wrong tree reloc tree detection
+      btrfs-progs: lowmem check: Fix false alerts for image with shared block ref only backref
+      btrfs-progs: fsck-test: Add new image with shared block ref only metadata backref
+      btrfs-progs: lowmem check: Fix false alerts of referencer count mismatch for snapshot
+      btrfs-progs: fsck-tests: Introduce test case with keyed data backref with shared tree blocks
+      btrfs-progs: test/fsck: Introduce test images containing tree reloc tree
+      btrfs-progs: test/fsck/020: Cleanup custom check function by overriding check_image function
+      btrfs-progs: test/fsck/021: Cleanup custom check by overriding check_image
+      btrfs-progs: test/common: Introduce run_mustfail_stdout
+      btrfs-progs: test/common: Enhance prepare_test_dev to reset device size
+      btrfs-progs: mkfs: Enhance minimal device size calculation to fix mkfs failure on small file
+      btrfs-progs: mkfs: Only zero out the first 1M for rootdir
+      btrfs-progs: convert: Fix a bug in rollback check which overwrite return value
+      btrfs-progs: tests/convert: ensure btrfs-convert won't rollback the filesystem after balance
+
+Su Yue (1):
+      btrfs-progs: fi defrag: clean up duplicate code if find errors
+

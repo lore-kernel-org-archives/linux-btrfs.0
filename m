@@ -1,198 +1,195 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:43456 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:14657 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751302AbeAEJ6B (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 04:58:01 -0500
-Subject: Re: [PATCH 2/2] btrfs-progs: Make btrfs_alloc_chunk to handle block
- group creation
-To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-References: <20180105081212.27175-1-wqu@suse.com>
- <20180105081212.27175-3-wqu@suse.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <ec92c382-47ae-5022-6532-389d090bb7df@cn.fujitsu.com>
-Date: Fri, 5 Jan 2018 18:02:17 +0800
+        with ESMTP id S1751062AbeAELRS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 06:17:18 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 9ECCD486A799
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Jan 2018 19:17:17 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [v6 00/16] Btrfs-progs offline scrub
+Date: Fri, 5 Jan 2018 19:01:08 +0800
+Message-ID: <1515150084-17231-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20180105081212.27175-3-wqu@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+For any one who wants to try it, it can be get from my repo:
+https://github.com/gujx2017/btrfs-progs/tree/offline-scrub/
 
+In this v6, just rebase to v4.14 and a test for offline-scrub.
 
-On 01/05/2018 04:12 PM, Qu Wenruo wrote:
-> Before this patch, chunk allocation is split into 2 parts:
-> 
-> 1) Chunk allocation
->     Handled by btrfs_alloc_chunk(), which will insert chunk and device
->     extent items.
-> 
-> 2) Block group allocation
->     Handled by btrfs_make_block_group(), which will insert block group
->     item and update space info.
-> 
-> However for chunk allocation, we don't really need to split these
-> operations as all btrfs_alloc_chunk() has btrfs_make_block_group()
-> followed.
-> 
-> So it's reasonable to merge btrfs_make_block_group() call into
-> btrfs_alloc_chunk() to save several lines, and provides the basis for
-> later btrfs_alloc_chunk() rework.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Several reports on kernel scrub screwing up good data stripes are in ML for sometime.
 
-Looks good to me.
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->   convert/main.c |  4 ----
->   extent-tree.c  | 10 ++--------
->   mkfs/main.c    | 28 ----------------------------
->   volumes.c      | 10 ++++++----
->   4 files changed, 8 insertions(+), 44 deletions(-)
-> 
-> diff --git a/convert/main.c b/convert/main.c
-> index 8ee858fb2d05..96a04eda5b18 100644
-> --- a/convert/main.c
-> +++ b/convert/main.c
-> @@ -915,10 +915,6 @@ static int make_convert_data_block_groups(struct btrfs_trans_handle *trans,
->   					BTRFS_BLOCK_GROUP_DATA, true);
->   			if (ret < 0)
->   				break;
-> -			ret = btrfs_make_block_group(trans, fs_info, 0,
-> -					BTRFS_BLOCK_GROUP_DATA, cur, len);
-> -			if (ret < 0)
-> -				break;
->   			cur += len;
->   		}
->   	}
-> diff --git a/extent-tree.c b/extent-tree.c
-> index 4231be11bd53..90e792a3fe62 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -1910,15 +1910,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
->   	                        space_info->flags, false);
->   	if (ret == -ENOSPC) {
->   		space_info->full = 1;
-> -		return 0;
-> +		return ret;
->   	}
-> -
-> -	BUG_ON(ret);
-> -
-> -	ret = btrfs_make_block_group(trans, fs_info, 0, space_info->flags,
-> -				     start, num_bytes);
-> -	BUG_ON(ret);
-> -	return 0;
-> +	return ret;
->   }
->   
->   static int update_block_group(struct btrfs_trans_handle *trans,
-> diff --git a/mkfs/main.c b/mkfs/main.c
-> index f8e27a7ec8b8..9377aa30f39d 100644
-> --- a/mkfs/main.c
-> +++ b/mkfs/main.c
-> @@ -97,12 +97,6 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
->   			error("no space to allocate data/metadata chunk");
->   			goto err;
->   		}
-> -		if (ret)
-> -			return ret;
-> -		ret = btrfs_make_block_group(trans, fs_info, 0,
-> -					     BTRFS_BLOCK_GROUP_METADATA |
-> -					     BTRFS_BLOCK_GROUP_DATA,
-> -					     chunk_start, chunk_size);
->   		if (ret)
->   			return ret;
->   		allocation->mixed += chunk_size;
-> @@ -116,12 +110,7 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
->   		}
->   		if (ret)
->   			return ret;
-> -		ret = btrfs_make_block_group(trans, fs_info, 0,
-> -					     BTRFS_BLOCK_GROUP_METADATA,
-> -					     chunk_start, chunk_size);
->   		allocation->metadata += chunk_size;
-> -		if (ret)
-> -			return ret;
->   	}
->   
->   	root->fs_info->system_allocs = 0;
-> @@ -150,12 +139,7 @@ static int create_data_block_groups(struct btrfs_trans_handle *trans,
->   		}
->   		if (ret)
->   			return ret;
-> -		ret = btrfs_make_block_group(trans, fs_info, 0,
-> -					     BTRFS_BLOCK_GROUP_DATA,
-> -					     chunk_start, chunk_size);
->   		allocation->data += chunk_size;
-> -		if (ret)
-> -			return ret;
->   	}
->   
->   err:
-> @@ -259,9 +243,6 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
->   	if (ret)
->   		return ret;
->   
-> -	ret = btrfs_make_block_group(trans, fs_info, 0,
-> -				     type, chunk_start, chunk_size);
-> -
->   	type &= BTRFS_BLOCK_GROUP_TYPE_MASK;
->   	if (type == BTRFS_BLOCK_GROUP_DATA) {
->   		allocation->data += chunk_size;
-> @@ -1006,12 +987,7 @@ static int create_chunks(struct btrfs_trans_handle *trans,
->   				&chunk_start, &chunk_size, meta_type, false);
->   		if (ret)
->   			return ret;
-> -		ret = btrfs_make_block_group(trans, fs_info, 0,
-> -					     meta_type, chunk_start,
-> -					     chunk_size);
->   		allocation->metadata += chunk_size;
-> -		if (ret)
-> -			return ret;
->   		set_extent_dirty(&root->fs_info->free_space_cache,
->   				 chunk_start, chunk_start + chunk_size - 1);
->   	}
-> @@ -1023,11 +999,7 @@ static int create_chunks(struct btrfs_trans_handle *trans,
->   				&chunk_start, &size_of_data, data_type, false);
->   	if (ret)
->   		return ret;
-> -	ret = btrfs_make_block_group(trans, fs_info, 0,
-> -				     data_type, chunk_start, size_of_data);
->   	allocation->data += size_of_data;
-> -	if (ret)
-> -		return ret;
->   	set_extent_dirty(&root->fs_info->free_space_cache,
->   			 chunk_start, chunk_start + size_of_data - 1);
->   	return ret;
-> diff --git a/volumes.c b/volumes.c
-> index 89c2f952f5b3..7bcebc708190 100644
-> --- a/volumes.c
-> +++ b/volumes.c
-> @@ -845,10 +845,9 @@ error:
->   				/ sizeof(struct btrfs_stripe) + 1)
->   
->   /*
-> - * Alloc a chunk, will insert dev extents, chunk item.
-> - * NOTE: This function will not insert block group item nor mark newly
-> - * allocated chunk available for later allocation.
-> - * Block group item and free space update is handled by btrfs_make_block_group()
-> + * Alloc a chunk, will insert dev extents, chunk item, and insert new
-> + * block group and update space info (so that extent allocator can use
-> + * newly allocated chunk).
->    *
->    * @start:	return value of allocated chunk start bytenr.
->    * @num_bytes:	return value of allocated chunk size
-> @@ -1168,6 +1167,9 @@ alloc_chunk:
->   	}
->   
->   	kfree(chunk);
-> +
-> +	ret = btrfs_make_block_group(trans, info, 0, type, map->ce.start,
-> +				     map->ce.size);
->   	return ret;
->   
->   out_chunk_map:
-> 
+And since kernel scrub won't account P/Q corruption, it makes us quite 
+hard to detect error like kernel screwing up P/Q when scrubbing.
+
+To get a comparable tool for kernel scrub, we need a user-space tool to act as benchmark to compare their different behaviors.
+
+So here is the patchset for user-space scrub.
+
+Which can do:
+1) All mirror/backup check for non-parity based stripe
+   Which means for RAID1/DUP/RAID10, we can really check all mirrors
+   other than the 1st good mirror.
+
+   Current "--check-data-csum" option should be finally replaced by
+   offline scrub.
+   As "--check-data-csum" doesn't really check all mirrors, if it hits
+   a good copy, then resting copies will just be ignored.
+
+   In v4 update, data check is further improved, inspired by kernel
+   behavior, now data extent is checked sector by sector, so it can
+   handle the following corruption case:
+
+   Data extent A contains data from 0~28K.
+   And |///| = corrupted  |   | = good
+             0   4k  8k  12k 16k 20k 24k 28k
+   Mirror 0  |///|   |///|   |///|   |   |
+   Mirror 1  |   |///|   |///|   |///|   |
+
+   Extent A should be RECOVERABLE, while in v3 we treat data extent A as
+   a whole unit, above case is reported as CORRUPTED.
+
+2) RAID5/6 full stripe check
+   It will take full use of btrfs csum(both tree and data).
+   It will only recover the full stripe if all recovered data matches
+   with its csum.
+
+   NOTE: Due to the lack of good bitmap facilities, RAID56 sector by
+   sector repair will be quite complex, especially when NODATASUM is
+   involved.
+
+   So current RAID56 doesn't support vertical sector recovery yet.
+
+   Data extent A contains data from 0~64K
+   And |///| = corrupted while |   | = good
+                  0   8K  16K 24K 32K 40K 48K 56K 64K
+   Data stripe 0  |///|   |///|   |///|   |///|   |
+   Data stripe 1  |   |///|   |///|   |///|   |///|
+   Parity         |   |   |   |   |   |   |   |   |
+
+   Kernel will recover it, while current scrub will report it as
+   CORRUPTED.
+
+3) Repair
+   In v4 update, repair is finally added.
+
+And this patchset also introduces new btrfs_map_block() function, 
+which is more flex than current btrfs_map_block(), and has a unified interface for all profiles, not just an extra array for RAID56.
+
+Check the 6th and 7th patch for details.
+
+They are already used in RAID5/6 scrub, but can also be used for other profiles too.
+
+The to-do list has been shortened, since repair is added in v4 update.
+1) Test cases
+   Need to make the infrastructure able to handle multi-device first.
+
+2) Make btrfsck able to handle RAID5 with missing device
+   Now it doesn't even open RAID5 btrfs with missing device, even though
+   scrub should be able to handle it.
+
+3) RAID56 vertical sector repair
+   Although I consider such case is minor compared to RAID1 vertical
+   sector repair.
+   As for RAID1, an extent can be as large as 128M, while for RAID56 one
+   stripe will always be 64K, much smaller than RAID1 case, making the
+   possibility lower.
+
+   I prefer to add this function after the patchset get merged, as no
+   one really likes get 20 mails every time I update the patchset.
+
+For guys who want to review the patchset, there is a basic function relationships slide.
+I hope this will reduce the time needed to get what the patchset is doing.
+https://docs.google.com/presentation/d/1tAU3lUVaRUXooSjhFaDUeyW3wauHDS
+g9H-AiLBOSuIM/edit?usp=sharing
+
+Changelog:
+V0.8 RFC:
+   Initial RFC patchset
+
+v1:
+   First formal patchset.
+   RAID6 recovery support added, mainly copied from kernel radi6 lib.
+   Cleaner recovery logical.
+
+v2:
+   More comments in both code and commit message, suggested by David.
+   File re-arrangement, no check/ dir, raid56.ch moved to kernel-lib,
+   Suggested by David
+
+v3:
+  Put "--offline" option to scrub, other than put it in fsck.
+  Use bitmap to read multiple csums in one run, to improve performance.
+  Add --progress/--no-progress option, to tell user we're not just
+  wasting CPU and IO.
+
+v4:
+  Improve data check. Make data extent to be checked sector by sector.
+  And make repair to be supported.
+  
+v5:
+  just make some small fixups of comments on the left 15 patches,
+  according to problems pointed out by David when mergering the first
+  5 patches of this patchset.
+  And rebase it to 93a9004dde410d920f08f85c6365e138713992d8.
+
+v6:
+  rebase to v4.14.
+  add a test for offline-scrub.
+
+Gu Jinxiang (1):
+  btrfs-progs: add test for offline-scrub
+
+Qu Wenruo (15):
+  btrfs-progs: Introduce new btrfs_map_block function which returns more
+    unified result.
+  btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
+  btrfs-progs: csum: Introduce function to read out data csums
+  btrfs-progs: scrub: Introduce structures to support offline scrub for
+    RAID56
+  btrfs-progs: scrub: Introduce functions to scrub mirror based tree
+    block
+  btrfs-progs: scrub: Introduce functions to scrub mirror based data
+    blocks
+  btrfs-progs: scrub: Introduce function to scrub one mirror-based
+    extent
+  btrfs-progs: scrub: Introduce function to scrub one data stripe
+  btrfs-progs: scrub: Introduce function to verify parities
+  btrfs-progs: extent-tree: Introduce function to check if there is any
+    extent in given range.
+  btrfs-progs: scrub: Introduce function to recover data parity
+  btrfs-progs: scrub: Introduce helper to write a full stripe
+  btrfs-progs: scrub: Introduce a function to scrub one full stripe
+  btrfs-progs: scrub: Introduce function to check a whole block group
+  btrfs-progs: scrub: Introduce offline scrub function
+
+ Documentation/btrfs-scrub.asciidoc                 |    9 +
+ Makefile                                           |    9 +-
+ cmds-scrub.c                                       |  116 +-
+ csum.c                                             |  130 ++
+ ctree.h                                            |   12 +
+ disk-io.c                                          |    4 +-
+ disk-io.h                                          |    2 +
+ extent-tree.c                                      |   60 +
+ kerncompat.h                                       |    3 +
+ scrub.c                                            | 1363 ++++++++++++++++++++
+ tests/scrub-tests.sh                               |   43 +
+ tests/scrub-tests/001-offline-scrub-raid10/test.sh |   50 +
+ utils.h                                            |   11 +
+ volumes.c                                          |  282 ++++
+ volumes.h                                          |   78 ++
+ 15 files changed, 2164 insertions(+), 8 deletions(-)
+ create mode 100644 csum.c
+ create mode 100644 scrub.c
+ create mode 100755 tests/scrub-tests.sh
+ create mode 100755 tests/scrub-tests/001-offline-scrub-raid10/test.sh
+
+-- 
+2.14.3
+
 
 

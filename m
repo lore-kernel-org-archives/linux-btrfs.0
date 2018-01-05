@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:26117 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:14657 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751361AbeAELR0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 06:17:26 -0500
+        with ESMTP id S1751047AbeAELR3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 06:17:29 -0500
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Subject: [v6 02/16] btrfs-progs: Allow __btrfs_map_block_v2 to remove unrelated stripes
-Date: Fri, 5 Jan 2018 19:01:10 +0800
-Message-ID: <1515150084-17231-3-git-send-email-gujx@cn.fujitsu.com>
+CC: Qu Wenruo <quwenruo@cn.fujitsu.com>, Su Yue <suy.fnst@cn.fujitsu.com>
+Subject: [v6 03/16] btrfs-progs: csum: Introduce function to read out data csums
+Date: Fri, 5 Jan 2018 19:01:11 +0800
+Message-ID: <1515150084-17231-4-git-send-email-gujx@cn.fujitsu.com>
 In-Reply-To: <1515150084-17231-1-git-send-email-gujx@cn.fujitsu.com>
 References: <1515150084-17231-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,155 +18,223 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-For READ, caller normally hopes to get what they request, other than
-full stripe map.
+Introduce a new function: btrfs_read_data_csums(), to read out csums
+for sectors in range.
 
-In this case, we should remove unrelated stripe map, just like the
-following case:
-               32K               96K
-               |<-request range->|
-         0              64k           128K
-RAID0:   |    Data 1    |   Data 2    |
-              disk1         disk2
-Before this patch, we return the full stripe:
-Stripe 0: Logical 0, Physical X, Len 64K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 64K, Dev disk2
-
-After this patch, we limit the stripe result to the request range:
-Stripe 0: Logical 32K, Physical X+32K, Len 32K, Dev disk1
-Stripe 1: Logical 64k, Physical Y, Len 32K, Dev disk2
-
-And if it's a RAID5/6 stripe, we just handle it like RAID0, ignoring
-parities.
-
-This should make caller easier to use.
+This is quite useful for read out data csum so we don't need to do it
+using open code.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 ---
- volumes.c | 103 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 102 insertions(+), 1 deletion(-)
+ Makefile     |   2 +-
+ csum.c       | 130 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ctree.h      |   4 ++
+ kerncompat.h |   3 ++
+ utils.h      |   5 +++
+ 5 files changed, 143 insertions(+), 1 deletion(-)
+ create mode 100644 csum.c
 
-diff --git a/volumes.c b/volumes.c
-index 2d23712a..72399cde 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1760,6 +1760,107 @@ static int fill_full_map_block(struct map_lookup *map, u64 start, u64 length,
- 	return 0;
- }
- 
-+static void del_one_stripe(struct btrfs_map_block *map_block, int i)
+diff --git a/Makefile b/Makefile
+index 6369e8f4..ab45ab7f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -106,7 +106,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+ 	  qgroup.o free-space-cache.o kernel-lib/list_sort.o props.o \
+ 	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+ 	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
+-	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o
++	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o csum.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+diff --git a/csum.c b/csum.c
+new file mode 100644
+index 00000000..a2ce755e
+--- /dev/null
++++ b/csum.c
+@@ -0,0 +1,130 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++#include "kerncompat.h"
++#include "kernel-lib/bitops.h"
++#include "ctree.h"
++#include "utils.h"
++
++/*
++ * TODO:
++ * 1) Add write support for csum
++ *    So we can write new data extents and add csum into csum tree
++ *
++ * Get csums of range[@start, @start + len).
++ *
++ * @start:    Start offset, shall be aligned to sectorsize.
++ * @len:      Length, shall be aligned to sectorsize.
++ * @csum_ret: The size of csum_ret shall be @len / sectorsize * csum_size.
++ * @bit_map:  Every bit corresponds to the offset have csum or not.
++ *            The size in byte of bit_map should be
++ *            calculate_bitmap_len(csum_ret's size / csum_size).
++ *
++ * Returns 0  means success
++ * Returns >0 means on error
++ * Returns <0 means on fatal error
++ */
++
++int btrfs_read_data_csums(struct btrfs_fs_info *fs_info, u64 start, u64 len,
++			  void *csum_ret, unsigned long *bitmap_ret)
++
 +{
-+	int cur_nr = map_block->num_stripes;
-+	int size_left = (cur_nr - 1 - i) * sizeof(struct btrfs_map_stripe);
++	struct btrfs_path path;
++	struct btrfs_key key;
++	struct btrfs_root *csum_root = fs_info->csum_root;
++	u32 item_offset;
++	u32 item_size;
++	u32 final_offset;
++	u32 final_len;
++	u32 i;
++	u32 sectorsize = fs_info->sectorsize;
++	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
++	u64 cur_start;
++	u64 cur_end;
++	int found = 0;
++	int ret;
 +
-+	memmove(&map_block->stripes[i], &map_block->stripes[i + 1], size_left);
-+	map_block->num_stripes--;
-+}
++	ASSERT(IS_ALIGNED(start, sectorsize));
++	ASSERT(IS_ALIGNED(len, sectorsize));
++	ASSERT(csum_ret);
++	ASSERT(bitmap_ret);
 +
-+static void remove_unrelated_stripes(struct map_lookup *map,
-+				     int rw, u64 start, u64 length,
-+				     struct btrfs_map_block *map_block)
-+{
-+	int i = 0;
-+	/*
-+	 * RAID5/6 write must use full stripe.
-+	 * No need to do anything.
-+	 */
-+	if (map->type & (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6) &&
-+	    rw == WRITE)
-+		return;
++	memset(bitmap_ret, 0, calculate_bitmap_len(len / sectorsize));
++	btrfs_init_path(&path);
 +
-+	/*
-+	 * For RAID0/1/10/DUP, whatever read/write, we can remove unrelated
-+	 * stripes without causing anything wrong.
-+	 * RAID5/6 READ is just like RAID0, we don't care parity unless we need
-+	 * to recovery.
-+	 * For recovery, rw should be set to WRITE.
-+	 */
-+	while (i < map_block->num_stripes) {
-+		struct btrfs_map_stripe *stripe;
-+		u64 orig_logical; /* Original stripe logical start */
-+		u64 orig_end; /* Original stripe logical end */
++	key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key.type = BTRFS_EXTENT_CSUM_KEY;
++	key.offset = start;
 +
-+		stripe = &map_block->stripes[i];
-+
-+		/*
-+		 * For READ, we don't really care parity
-+		 */
-+		if (stripe->logical == BTRFS_RAID5_P_STRIPE ||
-+		    stripe->logical == BTRFS_RAID6_Q_STRIPE) {
-+			del_one_stripe(map_block, i);
-+			continue;
-+		}
-+		/* Completely unrelated stripe */
-+		if (stripe->logical >= start + length ||
-+		    stripe->logical + stripe->length <= start) {
-+			del_one_stripe(map_block, i);
-+			continue;
-+		}
-+		/* Covered stripe, modify its logical and physical */
-+		orig_logical = stripe->logical;
-+		orig_end = stripe->logical + stripe->length;
-+		if (start + length <= orig_end) {
-+			/*
-+			 * |<--range-->|
-+			 *   |  stripe   |
-+			 * Or
-+			 *     |<range>|
-+			 *   |  stripe   |
-+			 */
-+			stripe->logical = max(orig_logical, start);
-+			stripe->length = start + length;
-+			stripe->physical += stripe->logical - orig_logical;
-+		} else if (start >= orig_logical) {
-+			/*
-+			 *     |<-range--->|
-+			 * |  stripe     |
-+			 * Or
-+			 *     |<range>|
-+			 * |  stripe     |
-+			 */
-+			stripe->logical = start;
-+			stripe->length = min(orig_end, start + length);
-+			stripe->physical += stripe->logical - orig_logical;
-+		}
-+		/*
-+		 * Remaining case:
-+		 * |<----range----->|
-+		 *   | stripe |
-+		 * No need to do any modification
-+		 */
-+		i++;
++	ret = btrfs_search_slot(NULL, csum_root, &key, &path, 0, 0);
++	if (ret < 0)
++		goto out;
++	if (ret > 0) {
++		ret = btrfs_previous_item(csum_root, &path,
++					  BTRFS_EXTENT_CSUM_OBJECTID,
++					  BTRFS_EXTENT_CSUM_KEY);
++		if (ret < 0)
++			goto out;
 +	}
++	/* The csum tree may be empty. */
++	if (!btrfs_header_nritems(path.nodes[0]))
++		goto next;
 +
-+	/* Recaculate map_block size */
-+	map_block->start = 0;
-+	map_block->length = 0;
-+	for (i = 0; i < map_block->num_stripes; i++) {
-+		struct btrfs_map_stripe *stripe;
++	while (1) {
++		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
 +
-+		stripe = &map_block->stripes[i];
-+		if (stripe->logical > map_block->start)
-+			map_block->start = stripe->logical;
-+		if (stripe->logical + stripe->length >
-+		    map_block->start + map_block->length)
-+			map_block->length = stripe->logical + stripe->length -
-+					    map_block->start;
++		if (!IS_ALIGNED(key.offset, sectorsize)) {
++			error("csum item bytenr %llu is not aligned to %u",
++			      key.offset, sectorsize);
++			ret = -EIO;
++			break;
++		}
++		/* exceeds end */
++		if (key.offset >= start + len)
++			break;
++
++		item_offset = btrfs_item_ptr_offset(path.nodes[0],
++						    path.slots[0]);
++		item_size = btrfs_item_size_nr(path.nodes[0], path.slots[0]);
++
++		if (key.offset + item_size / csum_size * sectorsize < start)
++			goto next;
++
++		/* get start of the extent */
++		cur_start = max(start, key.offset);
++		/* get end of the extent */
++		cur_end = min(start + len, key.offset + item_size / csum_size *
++			      sectorsize);
++
++		final_offset = (cur_start - key.offset) / sectorsize *
++			csum_size + item_offset;
++		final_len = (cur_end - cur_start) / sectorsize * csum_size;
++		read_extent_buffer(path.nodes[0],
++				   (csum_ret + (cur_start - start) /
++				    sectorsize * csum_size),
++				   final_offset, final_len);
++
++		for (i = 0; i != final_len / csum_size; i++)
++			set_bit(i + (cur_start - start) / sectorsize,
++				bitmap_ret);
++
++		found = 1;
++next:
++		ret = btrfs_next_item(csum_root, &path);
++		if (ret)
++			break;
 +	}
++out:
++	if (ret >= 0)
++		ret = !found;
++	btrfs_release_path(&path);
++	return ret;
 +}
-+
- int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 			 u64 length, struct btrfs_map_block **map_ret)
- {
-@@ -1795,7 +1896,7 @@ int __btrfs_map_block_v2(struct btrfs_fs_info *fs_info, int rw, u64 logical,
- 		free(map_block);
- 		return ret;
- 	}
--	/* TODO: Remove unrelated map_stripes for READ operation */
-+	remove_unrelated_stripes(map, rw, logical, length, map_block);
+diff --git a/ctree.h b/ctree.h
+index b92df1c1..a7d26455 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2761,4 +2761,8 @@ int btrfs_punch_hole(struct btrfs_trans_handle *trans,
+ int btrfs_read_file(struct btrfs_root *root, u64 ino, u64 start, int len,
+ 		    char *dest);
  
- 	*map_ret = map_block;
- 	return 0;
++/* csum.c */
++int btrfs_read_data_csums(struct btrfs_fs_info *fs_info, u64 start, u64 len,
++			  void *csum_ret, unsigned long *bitmap_ret);
++
+ #endif
+diff --git a/kerncompat.h b/kerncompat.h
+index fa96715f..4eb62f68 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -273,6 +273,9 @@ static inline int IS_ERR_OR_NULL(const void *ptr)
+ #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
+ #define round_down(x, y) ((x) & ~__round_mask(x, y))
+ 
++#define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
++#define DIV_ROUND_UP __KERNEL_DIV_ROUND_UP
++
+ /*
+  * printk
+  */
+diff --git a/utils.h b/utils.h
+index a82d46f6..5d869a50 100644
+--- a/utils.h
++++ b/utils.h
+@@ -29,6 +29,7 @@
+ #include "sizes.h"
+ #include "messages.h"
+ #include "ioctl.h"
++#include "kerncompat.h"
+ 
+ #define BTRFS_SCAN_MOUNTED	(1ULL << 0)
+ #define BTRFS_SCAN_LBLKID	(1ULL << 1)
+@@ -76,6 +77,10 @@ struct seen_fsid {
+ 	DIR *dirstream;
+ 	int fd;
+ };
++static inline int calculate_bitmap_len(int nsectors)
++{
++	return (DIV_ROUND_UP(nsectors, BITS_PER_LONG) * sizeof(long));
++}
+ 
+ int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root, u64 objectid);
 -- 
 2.14.3
 

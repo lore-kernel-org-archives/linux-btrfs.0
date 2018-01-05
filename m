@@ -1,46 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43279 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44148 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752497AbeAESBf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jan 2018 13:01:35 -0500
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 4.15-rc7
-Date: Fri,  5 Jan 2018 18:59:17 +0100
-Message-Id: <cover.1515172578.git.dsterba@suse.com>
+        id S1752015AbeAESQJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 5 Jan 2018 13:16:09 -0500
+Date: Fri, 5 Jan 2018 19:14:01 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] Btrfs: avoid losing data raid profile when deleting a
+ device
+Message-ID: <20180105181401.GS3553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171010175305.31633-1-bo.li.liu@oracle.com>
+ <20171115232811.9756-1-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20171115232811.9756-1-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Wed, Nov 15, 2017 at 04:28:11PM -0700, Liu Bo wrote:
+> We've avoided data losing raid profile when doing balance, but it
+> turns out that deleting a device could also result in the same
+> problem.
+> 
+> Say we have 3 disks, and they're created with '-d raid1' profile.
+> 
+> - We have chunk P (the only data chunk on the empty btrfs).
+> 
+> - Suppose that chunk P's two raid1 copies reside in disk A and disk B.
+> 
+> - Now, 'btrfs device remove disk B'
+>          btrfs_rm_device()
+> 	   -> btrfs_shrink_device()
+> 	      -> btrfs_relocate_chunk() #relocate any chunk on disk B
+> 	      	 			 to other places.
+> 
+> - Chunk P will be removed and a new chunk will be created to hold
+>   those data, but as chunk P is the only one holding raid1 profile,
+>   after it goes away, the new chunk will be created as single profile
+>   which is our default profile.
+> 
+> This fixes the problem by creating an empty data chunk before
+> relocating the data chunk.
+> 
+> Metadata/System chunk are supposed to have non-zero bytes all the time
+> so their raid profile is preserved.
+> 
+> Reported-by: James Alandt <James.Alandt@wdc.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-we have two more fixes for 4.15, aimed for stable. The leak fix is
-obvious, the second patch fixes a bug revealed by the refcount API, when
-it behaves differently than previous atomic_t and reports refs going
-from 0 to 1 in one case.
-
-No merge conflicts. Please pull, thanks.
-
-The following changes since commit c8bcbfbd239ed60a6562964b58034ac8a25f4c31:
-
-  btrfs: Fix possible off-by-one in btrfs_search_path_in_tree (2017-12-07 00:35:15 +0100)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.15-rc7-tag
-
-for you to fetch changes up to ec35e48b286959991cdbb886f1bdeda4575c80b4:
-
-  btrfs: fix refcount_t usage when deleting btrfs_delayed_nodes (2018-01-02 18:00:14 +0100)
-
-----------------------------------------------------------------
-Chris Mason (1):
-      btrfs: fix refcount_t usage when deleting btrfs_delayed_nodes
-
-Nikolay Borisov (1):
-      btrfs: Fix flush bio leak
-
- fs/btrfs/delayed-inode.c | 45 ++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/volumes.c       |  1 -
- 2 files changed, 34 insertions(+), 12 deletions(-)
+Added to 4.16 queue, thanks.

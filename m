@@ -1,287 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f193.google.com ([209.85.223.193]:46704 "EHLO
-        mail-io0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751954AbeACPk1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jan 2018 10:40:27 -0500
-Received: by mail-io0-f193.google.com with SMTP id z130so2445536ioe.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Jan 2018 07:40:27 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAL3q7H5dZ7P-8UaOEUQERKM9Oa=8WcPysqo=Vc5RQEPjiC858w@mail.gmail.com>
-References: <20171228152804.4645-1-nefelim4ag@gmail.com> <CAL3q7H5dZ7P-8UaOEUQERKM9Oa=8WcPysqo=Vc5RQEPjiC858w@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Wed, 3 Jan 2018 18:39:45 +0300
-Message-ID: <CAGqmi77fkjuk-cvV4M8nvDs-yhygcvM8=J_vq=-kq9WwMfYHSw@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: replace raid56 stripe bubble sort with insert sort
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/mixed; boundary="001a114f07dacb44190561e10806"
+Received: from userp2120.oracle.com ([156.151.31.85]:55158 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751260AbeAEJXd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 04:23:33 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id w059MBjl044556
+        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 09:23:32 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2fa5m38897-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jan 2018 09:23:32 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w059NVYO014607
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 09:23:31 GMT
+Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w059NVSB031053
+        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 09:23:31 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: add missing BTRFS_SUPER_FLAG define
+Date: Fri,  5 Jan 2018 17:24:22 +0800
+Message-Id: <20180105092422.9794-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---001a114f07dacb44190561e10806
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+btrfs-progs uses additional two super flag bits. So just define
+that so that we know its been used.
 
-2018-01-03 14:40 GMT+03:00 Filipe Manana <fdmanana@gmail.com>:
-> On Thu, Dec 28, 2017 at 3:28 PM, Timofey Titovets <nefelim4ag@gmail.com> =
-wrote:
->> Insert sort are generaly perform better then bubble sort,
->> by have less iterations on avarage.
->> That version also try place element to right position
->> instead of raw swap.
->>
->> I'm not sure how many stripes per bio raid56,
->> btrfs try to store (and try to sort).
->
-> If you don't know it, besides unlikely to be doing the best possible
-> thing here, you might actually make things worse or not offering any
-> benefit. IOW, you should know it for sure before submitting such
-> changes.
->
-> You should know if the number of elements to sort is big enough such
-> that an insertion sort is faster than a bubble sort, and more
-> importantly, measure it and mention it in the changelog.
-> As it is, you are showing lack of understanding of the code and
-> component you are touching, and leaving many open questions such as
-> how faster this is, why insertion sort and not a
-> quick/merge/heap/whatever sort, etc.
-> --
-> Filipe David Manana,
->
-> =E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you'=
-re right.=E2=80=9D
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+The btrfs-progs commits (very old) introduced them,
 
-Sorry, you are right,
-I must do some tests and investigations before send a patch.
-(I just try believe in some magic math things).
+ commit 7cc792872a133cabc3467e6ccaf5a2c8ea9e5218
+    btrfs-progs: Add CHANGING_FSID super flag
 
-Input size depends on number of devs,
-so on small arrays, like 3-5 no meaningful difference.
+ commit 797a937e5dd8db0092add633a80f3cd698e182df
+    Btrfs-progs: Introduce metadump_v2
 
-Example: raid6 (with 4 disks) produce many stripe line addresses like:
-1. 4641783808 4641849344 4641914880 18446744073709551614
-2. 4641652736 4641718272 18446744073709551614 4641587200
-3. 18446744073709551614 4636475392 4636540928 4636606464
-4. 4641521664 18446744073709551614 4641390592 4641456128
+Appears that we need bit of support from the kernel side like
+failing to mount if CHANGING_FSID is set. And device mounted
+with metadump_v2 flag is kind of broken on the kernel side
+as of now, this patch does not fix those.
 
-For that count of elements any sorting algo will work fast enough.
+ include/uapi/linux/btrfs_tree.h | 2 ++
+ 1 file changed, 2 insertions(+)
 
-Let's, consider that addresses as random non-repeating numbers.
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 6d6e5da51527..aff1356c2bb8 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -456,6 +456,8 @@ struct btrfs_free_space_header {
+ 
+ #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
+ #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
++#define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
++#define BTRFS_SUPER_FLAG_CHANGING_FSID	(1ULL << 35)
+ 
+ 
+ /*
+-- 
+2.15.0
 
-We can use tool like Sound Of Sorting (SoS) to make some
-easy to interpret tests of algorithms.
-
-(Sorry, no script to reproduce, as SoS not provide a cli,
-just hand made by run SoS with different params).
-
-Table (also in attach with source data points):
-Sort_algo |Disk_num       |3   |4    |6    |8    |10    |12    |14    |AVG
-Bubble    |Comparasions   |3   |6    |15   |28   |45    |66    |91    |36,2857142857143
-Bubble    |Array_Accesses |7,8 |18,2 |45,8 |81,8 |133,4 |192   |268,6 |106,8
-Insertion |Comparasions   |2,8 |5    |11,6 |17   |28,6  |39,4  |55,2  |22,8
-Insertion |Array_Accesses |8,4 |13,6 |31   |48,8 |80,4  |109,6 |155,8 |63,9428571428571
-
-i.e. on Size like 3-4 no much difference,
-Insertion sort will work faster on bigger arrays (up to 1.7x for 14 disk ar=
-ray).
-
-Does that make a sense?
-I think yes, i.e. in any case that are several dozen machine instructions.
-Which can be used elsewhere.
-
-P.S. For heap sort, which are also available in kernel by sort(),
-That will to much overhead on that small number of devices,
-i.e. heap sort will show a profit over insert sort at 16+ cells in array.
-
-/* Snob mode on */
-P.S.S.
-Heap sort & other like, need additional memory,
-so that useless to compare in our case,
-but they will works faster, of course.
-/* Snob mode off */
-
-Thanks.
---=20
-Have a nice day,
-Timofey.
-
---001a114f07dacb44190561e10806
-Content-Type: application/vnd.oasis.opendocument.spreadsheet;
-	name="Bubble_vs_Insertion.ods"
-Content-Disposition: attachment; filename="Bubble_vs_Insertion.ods"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_jbz6n7fw0
-
-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
-c3QueG1sUEsFBgAAAAARABEAZQQAALQhAAAAAA==
---001a114f07dacb44190561e10806--

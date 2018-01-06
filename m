@@ -1,28 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53201 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751316AbeAEONv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 5 Jan 2018 09:13:51 -0500
-Date: Fri, 5 Jan 2018 15:11:44 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs: optimize move uuid_mutex closer to the
- critical section
-Message-ID: <20180105141144.GM3553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171215074016.26461-1-anand.jain@oracle.com>
- <20171215074016.26461-2-anand.jain@oracle.com>
+Received: from tartarus.angband.pl ([89.206.35.136]:33920 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750769AbeAFFLI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Jan 2018 00:11:08 -0500
+Received: from kilobyte by tartarus.angband.pl with local (Exim 4.89)
+        (envelope-from <kilobyte@angband.pl>)
+        id 1eXgl1-0008Mj-MV
+        for linux-btrfs@vger.kernel.org; Sat, 06 Jan 2018 06:10:59 +0100
+Date: Sat, 6 Jan 2018 06:10:59 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: linux-btrfs@vger.kernel.org
+Subject: hang in btrfs_async_reclaim_metadata_space
+Message-ID: <20180106051059.kpultyyfhgxjowf5@angband.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20171215074016.26461-2-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 15, 2017 at 03:40:15PM +0800, Anand Jain wrote:
-> Move uuid_mutex closer to the exclusion section.
+Hi!
+I got a reproducible infinite hang, reliably triggered by the testsuite of
+"flatpak"; fails on at least 4.15-rc6, 4.9.75, and on another machine with
+Debian's 4.14.2-1.
 
-Looks good, there's really something unrelated inside the critical
-section so this could potentially speed up scanning devices.
+[580632.355107] INFO: task kworker/u8:2:11105 blocked for more than 120 seconds.
+[580632.355120]       Not tainted 4.14.0-1-amd64 #1 Debian 4.14.2-1
+[580632.355124] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[580632.355129] kworker/u8:2    D    0 11105      2 0x80000000
+[580632.355176] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
+[580632.355179] Call Trace:
+[580632.355192]  __schedule+0x28e/0x880
+[580632.355196]  schedule+0x2c/0x80
+[580632.355200]  wb_wait_for_completion+0x64/0x90
+[580632.355205]  ? finish_wait+0x80/0x80
+[580632.355207]  __writeback_inodes_sb_nr+0xa1/0xd0
+[580632.355210]  writeback_inodes_sb_nr+0x10/0x20
+[580632.355235]  flush_space+0x3ed/0x520 [btrfs]
+[580632.355238]  ? pick_next_task_fair+0x158/0x590
+[580632.355242]  ? __switch_to+0x1f3/0x460
+[580632.355267]  btrfs_async_reclaim_metadata_space+0xf6/0x4a0 [btrfs]
+[580632.355278]  process_one_work+0x198/0x390
+[580632.355281]  worker_thread+0x35/0x3c0
+[580632.355284]  kthread+0x125/0x140
+[580632.355287]  ? process_one_work+0x390/0x390
+[580632.355289]  ? kthread_create_on_node+0x70/0x70
+[580632.355292]  ? SyS_exit_group+0x14/0x20
+[580632.355295]  ret_from_fork+0x25/0x30
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+The machines are distinct enough that this probably should happen
+everywhere:
+
+AMD Phenom2, SSD, noatime,compress=lzo,space_cache=v2
+Intel Braswell, rust, noatime,autodefrag,space_cache=v2
+
+
+Meow!
+-- 
+// If you believe in so-called "intellectual property", please immediately
+// cease using counterfeit alphabets.  Instead, contact the nearest temple
+// of Amon, whose priests will provide you with scribal services for all
+// your writing needs, for Reasonable And Non-Discriminatory prices.

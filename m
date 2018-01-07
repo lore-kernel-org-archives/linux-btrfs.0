@@ -1,88 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:48316 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752770AbeAFJl2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Jan 2018 04:41:28 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eXkwb-0001wa-W8
-        for linux-btrfs@vger.kernel.org; Sat, 06 Jan 2018 10:39:13 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mout.gmx.net ([212.227.15.18]:52723 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751367AbeAGGVq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 7 Jan 2018 01:21:46 -0500
 Subject: Re: btrfs quota exceeded notifications through netlink sockets
-Date: Sat, 6 Jan 2018 09:39:00 +0000 (UTC)
-Message-ID: <pan$3d8d7$c8b149c2$8a47644$e2fce472@cox.net>
+To: "Karsai, Gabor" <gabor.karsai@Vanderbilt.Edu>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <660251B721353E428446B0F99FE510A2A508D507@ITS-HCWNEM102.ds.vanderbilt.edu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <f67fafee-fac3-21fa-d89f-a830da646ea5@gmx.com>
+Date: Sun, 7 Jan 2018 14:21:36 +0800
+MIME-Version: 1.0
+In-Reply-To: <660251B721353E428446B0F99FE510A2A508D507@ITS-HCWNEM102.ds.vanderbilt.edu>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="Km5v218cFbDNFhXj3rpUar7AvGc26Roqz"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Karsai, Gabor posted on Sat, 06 Jan 2018 01:34:09 +0000 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--Km5v218cFbDNFhXj3rpUar7AvGc26Roqz
+Content-Type: multipart/mixed; boundary="Hw18aya0EYaEBNFfaSlgE39qHC4tjtqZU";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "Karsai, Gabor" <gabor.karsai@Vanderbilt.Edu>,
+ "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <f67fafee-fac3-21fa-d89f-a830da646ea5@gmx.com>
+Subject: Re: btrfs quota exceeded notifications through netlink sockets
+References: <660251B721353E428446B0F99FE510A2A508D507@ITS-HCWNEM102.ds.vanderbilt.edu>
+In-Reply-To: <660251B721353E428446B0F99FE510A2A508D507@ITS-HCWNEM102.ds.vanderbilt.edu>
 
-> I created a subvolume on a btrfs, set a limit and the quota is enforced
-> - dumping too much data into the subvolume results in a 'quota exceeded'
-> message (from dd, for example). But when I am trying to get netlink
-> socket notifications, nothing arrives on the socket (I am using pyroute2
-> which is supposedly able to receive disk quota notifications)
-> 
+--Hw18aya0EYaEBNFfaSlgE39qHC4tjtqZU
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2018=E5=B9=B401=E6=9C=8806=E6=97=A5 09:34, Karsai, Gabor wrote:
+> I created a subvolume on a btrfs, set a limit and the quota is enforced=
+ - dumping too much data into the subvolume results in a 'quota exceeded'=
+ message (from dd, for example). But when I am trying to get netlink sock=
+et notifications, nothing arrives on the socket (I am using pyroute2 whic=
+h is supposedly able to receive disk quota notifications)
+>=20
 > $ uname -a
-> Linux riaps-dev 4.10.0-42-generic #46~16.04.1-Ubuntu SMP
-> Mon Dec 4 15:57:59 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
-> 
-> btrfs: whatever Ubuntu 16.04 has
-> 
+> Linux riaps-dev 4.10.0-42-generic #46~16.04.1-Ubuntu SMP Mon Dec 4 15:5=
+7:59 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+>=20
+> btrfs: whatever Ubuntu 16.04 has=20
+>=20
 > Kconfig:
-> CONFIG_QUOTA_NETLINK_INTERFACE=y
+> CONFIG_QUOTA_NETLINK_INTERFACE=3Dy
 
-Someone with a bit more knowledge of quotas in general and btrfs quotas 
-in particular will hopefully confirm (I'm just a btrfs user and list 
-regular, without quotas in my own use-case, so this is only what I've 
-seen on-list), but sometimes a fast non-authoritative answer can be more 
-useful than a slower authoritative answer, so here's the first...
+This quota netlink support is for generic quota (implemented by
+fs/quota/*), while btrfs is not using the generic quota for several
+reasons (mostly related to subvolume quota).
+So that's why quota netlink gets nothing to report.
 
-Btrfs quotas don't use the normal kernel quota mechanism as they work 
-somewhat differently.  Indeed, the kernel-config help for CONFIG_QUOTA 
-doesn't mention btrfs support at all.  As such, I don't believe the btrfs 
-quota subsystem uses the normal kernel quota netlink interface at all.  
-At least, I've never seen it mentioned, and it would surprise me if btrfs 
-quotas /did/ use that interface, because they are different enough to be 
-unlikely to properly match the expected interface API.
+Thanks,
+Qu
 
-Meanwhile, be aware that until recently btrfs quotas were too buggy to be 
-used reliably.  While they work rather better now, more minor fixes are 
-still being made, with every recent kernel including 4.14 having quota 
-fixes.  For this feature a current kernel is definitely recommended, and 
-4.10 is neither an LTS kernel series (4.9 and 4.14 are the two most 
-recent and best supported LTS series, 4.10 was simply a normal kernel and 
-only had upstream support thru 4.11) nor within the latest two current 
-kernels, so on-list support won't be as good as if you were running an LTS 
-or current kernel.
+>=20
+> Any advice would be appreciated.
+> Thanks,
+> -- Gabor Karsai
+>=20
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
-And even with the fixes, enabling quotas increases btrfs scaling issues 
-when running commands such as btrfs balance and check, tho normal runtime 
-performance isn't so severely affected.  Balance in particular takes /
-much/ longer when quotas are enabled due to constant quota updates as the 
-blockgroups are moved around, so temporarily disabling them during 
-balances is recommended to speed up the balance.  Unfortunately, the 
-scenarios under which you're likely to need to run check, when the 
-filesystem won't mount, prevent disabling quotas then.
 
-So while quota numbers should be reliable with supported kernels now, 
-leaving them off unless you really need the feature is still recommended.
+--Hw18aya0EYaEBNFfaSlgE39qHC4tjtqZU--
 
-The one good thing for use-cases that /do/ need quotas is that such use-
-cases tend to be commercial systems with proper backups, where the 
-performance of commands such as balance and check may not matter so much, 
-since maintenance in such use-cases often consists of failing the entire 
-filesystem and falling back to the hot-spare, rather than trying to do on-
-the-fly filesystem maintenance such as rebalancing to a new device or 
-raid layout or checking and trying to repair a filesystem that won't 
-mount.  Since normal runtime performance isn't particularly affected, 
-quotas tend to be fine for such use-cases.
+--Km5v218cFbDNFhXj3rpUar7AvGc26Roqz
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+-----BEGIN PGP SIGNATURE-----
 
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpRvHAXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhWiwf9HdF3INKJpwQKQ8WLrSO30zs2
+9XxerHZ+uJi3cGwo8ZTOZP50J75ARmkcyvjYBLEipPg9HpE3DW17VplCHcIk4iPo
+skcd1eh5GChgzsQhvS60FPo9pBCBxUGOS4IrTyHdnY3dlzNc8IeL9qXT4AS7pWS6
+Tgrrr04SDVfnxD2HdNbStkmp7oS7/QOuKwphuDKBCZuS+WzU3TS+5pIM29yukQbH
+IbxART4PXh6pgpOr+QmveW4oMq1FKEwYYrVIrGmfXhVEpqU7VJZ8v4cqc3X6wpU3
+YWmLWdAVD0p049qRk197zdwVs6CmOEC8tqvD7/OB8MEXXd/7qn+SOKpbZUe9ug==
+=fgb0
+-----END PGP SIGNATURE-----
+
+--Km5v218cFbDNFhXj3rpUar7AvGc26Roqz--

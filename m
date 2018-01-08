@@ -1,95 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:50597 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755245AbeAHEwT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 7 Jan 2018 23:52:19 -0500
-Subject: Re: [PATCH 1/2] btrfs: add missing BTRFS_SUPER_FLAG define
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Received: from aserp2130.oracle.com ([141.146.126.79]:36176 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754925AbeAHDFB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Jan 2018 22:05:01 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Cc: wqu@suse.com
-References: <20180108030512.22344-1-anand.jain@oracle.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <348a9814-5ed7-bf49-704a-d24e70f89bdd@gmx.com>
-Date: Mon, 8 Jan 2018 12:52:01 +0800
-MIME-Version: 1.0
+Subject: [PATCH 2/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko
+Date: Mon,  8 Jan 2018 11:05:12 +0800
+Message-Id: <20180108030512.22344-2-anand.jain@oracle.com>
 In-Reply-To: <20180108030512.22344-1-anand.jain@oracle.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="zGskRo3Vz1156SpSrBytTCg5BEplwhGcZ"
+References: <20180108030512.22344-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---zGskRo3Vz1156SpSrBytTCg5BEplwhGcZ
-Content-Type: multipart/mixed; boundary="l7fo0M7X9DyJXUiAYg1Lc2zXZYLEzeXUb";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Cc: wqu@suse.com
-Message-ID: <348a9814-5ed7-bf49-704a-d24e70f89bdd@gmx.com>
-Subject: Re: [PATCH 1/2] btrfs: add missing BTRFS_SUPER_FLAG define
-References: <20180108030512.22344-1-anand.jain@oracle.com>
-In-Reply-To: <20180108030512.22344-1-anand.jain@oracle.com>
+Userland uses this flag and resets it only when changing the fsid is
+complete. Its not a good idea to mount the device anything in between,
+so this patch fails the mount if SB SUPER_FLAG_CHANGING_FSID is set.
 
---l7fo0M7X9DyJXUiAYg1Lc2zXZYLEzeXUb
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+  cc: wqu@suse.com
+---
+ fs/btrfs/disk-io.c              | 7 ++++++-
+ include/uapi/linux/btrfs_tree.h | 1 +
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a69e5944dc08..8b76faa77235 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -61,7 +61,8 @@
+ 				 BTRFS_HEADER_FLAG_RELOC |\
+ 				 BTRFS_SUPER_FLAG_ERROR |\
+ 				 BTRFS_SUPER_FLAG_SEEDING |\
+-				 BTRFS_SUPER_FLAG_METADUMP)
++				 BTRFS_SUPER_FLAG_METADUMP |\
++				 BTRFS_SUPER_FLAG_CHANGING_FSID)
+ 
+ static const struct extent_io_ops btree_extent_io_ops;
+ static void end_workqueue_fn(struct btrfs_work *work);
+@@ -3906,6 +3907,10 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
+ 		btrfs_err(fs_info, "no valid FS found");
+ 		ret = -EINVAL;
+ 	}
++	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_CHANGING_FSID) {
++		btrfs_err(fs_info, "SUPER_FLAG_CHANGING_FSID is set");
++		ret = -EINVAL;
++	}
+ 	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP)
+ 		btrfs_warn(fs_info, "unrecognized super flag: %llu",
+ 				btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP);
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index 38ab0e06259a..aff1356c2bb8 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -457,6 +457,7 @@ struct btrfs_free_space_header {
+ #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
+ #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
+ #define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
++#define BTRFS_SUPER_FLAG_CHANGING_FSID	(1ULL << 35)
+ 
+ 
+ /*
+-- 
+2.15.0
 
-
-On 2018=E5=B9=B401=E6=9C=8808=E6=97=A5 11:05, Anand Jain wrote:
-> btrfs-progs uses super flag bit BTRFS_SUPER_FLAG_METADUMP_V2 (1ULL << 3=
-4).
-> So just define that in kernel so that we know its been used. This patch=
-
-> does not add it to BTRFS_SUPER_FLAG_SUPP yet, and will continue to warn=
-
-> about unsupported flag.
->=20
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
-> ---
->  include/uapi/linux/btrfs_tree.h | 1 +
->  1 file changed, 1 insertion(+)
->=20
-> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs=
-_tree.h
-> index 6d6e5da51527..38ab0e06259a 100644
-> --- a/include/uapi/linux/btrfs_tree.h
-> +++ b/include/uapi/linux/btrfs_tree.h
-> @@ -456,6 +456,7 @@ struct btrfs_free_space_header {
-> =20
->  #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
->  #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
-> +#define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
-> =20
-> =20
->  /*
->=20
-
-
---l7fo0M7X9DyJXUiAYg1Lc2zXZYLEzeXUb--
-
---zGskRo3Vz1156SpSrBytTCg5BEplwhGcZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpS+PEXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiPRQf/eAbfy6HPdIVzkRX9Sq4AkyJz
-O8NFDnH1EJicWMm2uGNZQOXtl/APqAv2Ou5lelf2MA2WO4SnnoAFYUqwWZXW2XtT
-fhNm8hO5eoXboapDWHn8jAdqWHZ/dkmUD46raP7gJlVZSv40+l30fo/rcwfId9te
-Cv+h+DEBnvTCLriaueqjdKfc2ukL46uFrG2lLj7TwKJFGi1I0IibM/ryKxEoPwRO
-yyqvIYt0oLzeXFRGvUWSzohiMyAiMEq+eQwyorBLc9wGpxMFoCwatZgkl16qHwQs
-E+qE0kDPz3D43M1Isulewj8hWfonflv/ouDhN/L5iSFhEbHmq3jiF1sjCjd+Aw==
-=yDvA
------END PGP SIGNATURE-----
-
---zGskRo3Vz1156SpSrBytTCg5BEplwhGcZ--

@@ -1,65 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37257 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751447AbeAaPOH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 10:14:07 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 04B7AACDE
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 15:14:06 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Handle btrfs_set_extent_delalloc failure in relocate_file_extent_cluster
-Date: Wed, 31 Jan 2018 17:14:02 +0200
-Message-Id: <1517411642-6564-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1517322767-3044-1-git-send-email-nborisov@suse.com>
-References: <1517322767-3044-1-git-send-email-nborisov@suse.com>
+Received: from youngberry.canonical.com ([91.189.89.112]:37518 "EHLO
+        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751263AbeAHXGi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 18:06:38 -0500
+From: Colin King <colin.king@canonical.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Liu Bo <bo.li.liu@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Cc: kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH][btrfs-next] Btrfs: extent map selftest: add missing void parameter to btrfs_test_extent_map
+Date: Mon,  8 Jan 2018 23:06:32 +0000
+Message-Id: <20180108230632.8101-1-colin.king@canonical.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Essentially duplicate the error handling from the above block which
-handles the !PageUptodate(page) case and additionally clear
-EXTENT_BOUNDARY.
+From: Colin Ian King <colin.king@canonical.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Add a missing void parameter to function btrfs_test_extent_map, fixes
+sparse warning:
+
+warning: non-ANSI function declaration of function 'btrfs_test_extent_map'
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
 ---
+ fs/btrfs/tests/extent-map-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-V2: 
- * Remove unrelated whitespace fix 
-
- fs/btrfs/relocation.c | 18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index f0c3f00e97cb..cd2298d185dd 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3268,8 +3268,22 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 			nr++;
- 		}
+diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
+index 66d5523d7a2b..d42e14c43a6a 100644
+--- a/fs/btrfs/tests/extent-map-tests.c
++++ b/fs/btrfs/tests/extent-map-tests.c
+@@ -340,7 +340,7 @@ static void test_case_4(struct extent_map_tree *em_tree)
+ 	__test_case_4(em_tree, SZ_4K);
+ }
  
--		btrfs_set_extent_delalloc(inode, page_start, page_end, 0, NULL,
--					  0);
-+		ret = btrfs_set_extent_delalloc(inode, page_start, page_end, 0,
-+						NULL, 0);
-+		if (ret) {
-+			unlock_page(page);
-+			put_page(page);
-+			btrfs_delalloc_release_metadata(BTRFS_I(inode),
-+							 PAGE_SIZE);
-+			btrfs_delalloc_release_extents(BTRFS_I(inode),
-+			                               PAGE_SIZE);
-+
-+			clear_extent_bits(&BTRFS_I(inode)->io_tree,
-+					  page_start, page_end,
-+					  EXTENT_LOCKED | EXTENT_BOUNDARY);
-+			goto out;
-+
-+		}
- 		set_page_dirty(page);
+-int btrfs_test_extent_map()
++int btrfs_test_extent_map(void)
+ {
+ 	struct extent_map_tree *em_tree;
  
- 		unlock_extent(&BTRFS_I(inode)->io_tree,
 -- 
-2.7.4
+2.15.1
 

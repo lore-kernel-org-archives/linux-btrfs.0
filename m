@@ -1,93 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42788 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933401AbeAHTlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jan 2018 14:41:24 -0500
-Date: Mon, 8 Jan 2018 20:39:16 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, adambahe@gmail.com, dsterba@suse.cz
-Subject: Re: [PATCH 2/2] btrfs-progs: misc-test: Add test case to check if fi
- usage and show report consistent unallocated space
-Message-ID: <20180108193916.GM13726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180102063315.32382-1-wqu@suse.com>
- <20180102063315.32382-2-wqu@suse.com>
+Received: from a4-5.smtp-out.eu-west-1.amazonses.com ([54.240.4.5]:37082 "EHLO
+        a4-5.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751761AbeAHU3U (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Jan 2018 15:29:20 -0500
+Subject: Re: Recommendations for balancing as part of regular maintenance?
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
+ <5A539A3A.10107@gmail.com> <b3020ddf-5820-dd8b-ecde-51a5f7026cad@gmail.com>
+ <811ff9be-d155-dae0-8841-0c1b20c18843@cobb.uk.net>
+ <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
+From: Martin Raiber <martin@urbackup.org>
+Message-ID: <01020160d7768587-50a9392c-7250-4735-9d14-66ff03a161c9-000000@eu-west-1.amazonses.com>
+Date: Mon, 8 Jan 2018 20:29:19 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180102063315.32382-2-wqu@suse.com>
+In-Reply-To: <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 02, 2018 at 02:33:15PM +0800, Qu Wenruo wrote:
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  tests/misc-tests/028-fi-usage-cross-check/test.sh | 46 +++++++++++++++++++++++
->  1 file changed, 46 insertions(+)
->  create mode 100755 tests/misc-tests/028-fi-usage-cross-check/test.sh
-> 
-> diff --git a/tests/misc-tests/028-fi-usage-cross-check/test.sh b/tests/misc-tests/028-fi-usage-cross-check/test.sh
-> new file mode 100755
-> index 000000000000..bf438b60abf1
-> --- /dev/null
-> +++ b/tests/misc-tests/028-fi-usage-cross-check/test.sh
-> @@ -0,0 +1,46 @@
-> +#!/bin/bash
-> +# check fi-usage is output correct unallocated space for RAID10
-> +
-> +source "$TOP/tests/common"
-> +
-> +check_prereq mkfs.btrfs
-> +check_prereq btrfs
-> +
-> +setup_root_helper
-> +
-> +setup_loopdevs 4
-> +prepare_loopdevs
-> +dev1=${loopdevs[1]}
-> +
-> +run_check "$TOP/mkfs.btrfs" -d raid10 -m raid10 -f ${loopdevs[@]}
-> +run_check $SUDO_HELPER mount $dev1 "$TEST_MNT"
+On 08.01.2018 19:34 Austin S. Hemmelgarn wrote:
+> On 2018-01-08 13:17, Graham Cobb wrote:
+>> On 08/01/18 16:34, Austin S. Hemmelgarn wrote:
+>>> Ideally, I think it should be as generic as reasonably possible,
+>>> possibly something along the lines of:
+>>>
+>>> A: While not strictly necessary, running regular filtered balances (for
+>>> example `btrfs balance start -dusage=50 -dlimit=2 -musage=50
+>>> -mlimit=4`,
+>>> see `man btrfs-balance` for more info on what the options mean) can
+>>> help
+>>> keep a volume healthy by mitigating the things that typically cause
+>>> ENOSPC errors.  Full balances by contrast are long and expensive
+>>> operations, and should be done only as a last resort.
+>>
+>> That recommendation is similar to what I do and it works well for my use
+>> case. I would recommend it to anyone with my usage, but cannot say how
+>> well it would work for other uses. In my case, I run balances like that
+>> once a week: some weeks nothing happens, other weeks 5 or 10 blocks may
+>> get moved.
+>
+> In my own usage I've got a pretty varied mix of other stuff going on.
+> All my systems are Gentoo, so system updates mean that I'm building
+> software regularly (though on most of the systems that happens on
+> tmpfs in RAM), I run a home server with a dozen low use QEMU VM's and
+> a bunch of transient test VM's, all of which I'm currently storing
+> disk images for raw on top of BTRFS (which is actually handling all of
+> it pretty well, though that may be thanks to all the VM's using
+> PV-SCSI for their disks), I run a BOINC client system that sees pretty
+> heavy filesystem usage, and have a lot of personal files that get
+> synced regularly across systems, and all of this is on raid1 with
+> essentially no snapshots.  For me the balance command I mentioned
+> above run daily seems to help, even if the balance doesn't move much
+> most of the time on most filesystems, and the actual balance
+> operations take at most a few seconds most of the time (I've got
+> reasonably nice SSD's in everything).
 
-There's a helper macro for that, run_check_mount_test_dev, that expects
-the TEST_DEV to be set. I suggest to use this variable instead of dev1,
-and then the umount command can be replaced by
-run_check_umount_test_dev.
-> +
-> +output_dir=$(mktemp -d --tmpdir btrfs-progs-misc.XXXXXXXX)
+There have been reports of (rare) corruption caused by balance (won't be
+detected by a scrub) here on the mailing list. So I would stay a away
+from btrfs balance unless it is absolutely needed (ENOSPC), and while it
+is run I would try not to do anything else wrt. to writes simultaneously.
 
-This is not IMO necessary, you get only one line from the fi show output
-and check if it's not empty. A simple 'if grep ...' . The output is
-reused so you can store it to a variable.
-
-> +
-> +run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem show --raw "$TEST_MNT" |\
-> +	grep "$dev1" > "$output_dir/fi_show_output"
-> +if [ ! -s "$output_dir/fi_show_output" ]; then
-> +	_fail "failed to get correct fi show output"
-> +fi
-> +
-> +dev1_total=$(cat "$output_dir/fi_show_output" | awk '{print $4}')
-> +dev1_used=$(cat "$output_dir/fi_show_output" | awk '{print $6}')
-> +dev1_fi_show_unallocated=$(( $dev1_total - $dev1_used))
-> +
-> +run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem usage --raw "$TEST_MNT" |\
-> +	grep "$dev1" | tail -n1 > "$output_dir/fi_usage_output"
-> +if [ ! -s "$output_dir/fi_usage_output" ]; then
-> +	_fail "failed to get correct fi usage output"
-> +fi
-> +
-> +dev1_fi_usage_unallocated=$(cat "$output_dir/fi_usage_output" | awk '{print $2}')
-> +echo "fi usage unallocated for devid1 is $dev1_fi_usage_unallocated" >> "$RESULTS"
-> +echo "fi show unallocated for devid1 is $dev1_fi_show_unallocated" >> "$RESULTS"
-> +
-> +if [ $dev1_fi_show_unallocated -ne $dev1_fi_usage_unallocated ]; then
-> +	_fail "fi usage unallocated mismatch with fi show"
-> +fi
-> +
-> +run_check $SUDO_HELPER umount "$TEST_MNT"
-> +cleanup_loopdevs
-> +rm $output_dir -rf
-
-Please quote all arguments, namely if it's passed to 'rm', and options
-should go before arugments.

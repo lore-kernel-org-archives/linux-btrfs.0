@@ -1,62 +1,337 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42109 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753061AbeAGLRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 7 Jan 2018 06:17:22 -0500
-Subject: Re: hang in btrfs_async_reclaim_metadata_space
-To: Adam Borowski <kilobyte@angband.pl>, linux-btrfs@vger.kernel.org
-References: <20180106051059.kpultyyfhgxjowf5@angband.pl>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <80c373ee-1bd7-d59b-a252-04309c8b0210@suse.com>
-Date: Sun, 7 Jan 2018 13:17:19 +0200
+Received: from mail-io0-f196.google.com ([209.85.223.196]:45171 "EHLO
+        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755931AbeAHJR4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 04:17:56 -0500
+Received: by mail-io0-f196.google.com with SMTP id e20so12225232iof.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Jan 2018 01:17:56 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20180106051059.kpultyyfhgxjowf5@angband.pl>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20171219212333.GA11950@magnolia>
+References: <20171219100247.13880-1-nefelim4ag@gmail.com> <20171219100247.13880-2-nefelim4ag@gmail.com>
+ <20171219212333.GA11950@magnolia>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Mon, 8 Jan 2018 12:17:15 +0300
+Message-ID: <CAGqmi75rjdJ8cSpy=ZuKoqMihBwUcD-VWxRtR7xReQo=bPO9pw@mail.gmail.com>
+Subject: Re: [PATCH 1/4] Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+2017-12-20 0:23 GMT+03:00 Darrick J. Wong <darrick.wong@oracle.com>:
+> On Tue, Dec 19, 2017 at 01:02:44PM +0300, Timofey Titovets wrote:
+>> At now btrfs_dedupe_file_range() restricted to 16MiB range for
+>> limit locking time and memory requirement for dedup ioctl()
+>>
+>> For too big input range code silently set range to 16MiB
+>>
+>> Let's remove that restriction by do iterating over dedup range.
+>> That's backward compatible and will not change anything for request
+>> less then 16MiB.
+>>
+>> Changes:
+>>   v1 -> v2:
+>>     - Refactor btrfs_cmp_data_prepare and btrfs_extent_same
+>>     - Store memory of pages array between iterations
+>>     - Lock inodes once, not on each iteration
+>>     - Small inplace cleanups
+>
+> /me wonders if you could take advantage of vfs_clone_file_prep_inodes,
+> which takes care of the content comparison (and flushing files, and inode
+> checks, etc.) ?
+>
+> (ISTR Qu Wenruo(??) or someone remarking that this might not work well
+> with btrfs locking model, but I could be mistaken about all that...)
+>
+> --D
+
+Sorry, not enough knowledge to give an authoritative answer.
+I can only say that, i try lightly test that, by add call before
+btrfs_extent_same() with inode_locks,
+at least that works.
+
+Thanks.
+
+>>
+>> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+>> ---
+>>  fs/btrfs/ioctl.c | 160 ++++++++++++++++++++++++++++++++-----------------------
+>>  1 file changed, 94 insertions(+), 66 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index be5bd81b3669..45a47d0891fc 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -2965,8 +2965,8 @@ static void btrfs_cmp_data_free(struct cmp_pages *cmp)
+>>                       put_page(pg);
+>>               }
+>>       }
+>> -     kfree(cmp->src_pages);
+>> -     kfree(cmp->dst_pages);
+>> +
+>> +     cmp->num_pages = 0;
+>>  }
+>>
+>>  static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
+>> @@ -2974,41 +2974,22 @@ static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
+>>                                 u64 len, struct cmp_pages *cmp)
+>>  {
+>>       int ret;
+>> -     int num_pages = PAGE_ALIGN(len) >> PAGE_SHIFT;
+>> -     struct page **src_pgarr, **dst_pgarr;
+>> -
+>> -     /*
+>> -      * We must gather up all the pages before we initiate our
+>> -      * extent locking. We use an array for the page pointers. Size
+>> -      * of the array is bounded by len, which is in turn bounded by
+>> -      * BTRFS_MAX_DEDUPE_LEN.
+>> -      */
+>> -     src_pgarr = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+>> -     dst_pgarr = kcalloc(num_pages, sizeof(struct page *), GFP_KERNEL);
+>> -     if (!src_pgarr || !dst_pgarr) {
+>> -             kfree(src_pgarr);
+>> -             kfree(dst_pgarr);
+>> -             return -ENOMEM;
+>> -     }
+>> -     cmp->num_pages = num_pages;
+>> -     cmp->src_pages = src_pgarr;
+>> -     cmp->dst_pages = dst_pgarr;
+>>
+>>       /*
+>>        * If deduping ranges in the same inode, locking rules make it mandatory
+>>        * to always lock pages in ascending order to avoid deadlocks with
+>>        * concurrent tasks (such as starting writeback/delalloc).
+>>        */
+>> -     if (src == dst && dst_loff < loff) {
+>> -             swap(src_pgarr, dst_pgarr);
+>> +     if (src == dst && dst_loff < loff)
+>>               swap(loff, dst_loff);
+>> -     }
+>>
+>> -     ret = gather_extent_pages(src, src_pgarr, cmp->num_pages, loff);
+>> +     cmp->num_pages = PAGE_ALIGN(len) >> PAGE_SHIFT;
+>> +
+>> +     ret = gather_extent_pages(src, cmp->src_pages, cmp->num_pages, loff);
+>>       if (ret)
+>>               goto out;
+>>
+>> -     ret = gather_extent_pages(dst, dst_pgarr, cmp->num_pages, dst_loff);
+>> +     ret = gather_extent_pages(dst, cmp->dst_pages, cmp->num_pages, dst_loff);
+>>
+>>  out:
+>>       if (ret)
+>> @@ -3078,31 +3059,23 @@ static int extent_same_check_offsets(struct inode *inode, u64 off, u64 *plen,
+>>       return 0;
+>>  }
+>>
+>> -static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>> -                          struct inode *dst, u64 dst_loff)
+>> +static int __btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>> +                            struct inode *dst, u64 dst_loff,
+>> +                            struct cmp_pages *cmp)
+>>  {
+>>       int ret;
+>>       u64 len = olen;
+>> -     struct cmp_pages cmp;
+>>       bool same_inode = (src == dst);
+>>       u64 same_lock_start = 0;
+>>       u64 same_lock_len = 0;
+>>
+>> -     if (len == 0)
+>> -             return 0;
+>> -
+>> -     if (same_inode)
+>> -             inode_lock(src);
+>> -     else
+>> -             btrfs_double_inode_lock(src, dst);
+>> -
+>>       ret = extent_same_check_offsets(src, loff, &len, olen);
+>>       if (ret)
+>> -             goto out_unlock;
+>> +             return ret;
+>>
+>>       ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
+>>       if (ret)
+>> -             goto out_unlock;
+>> +             return ret;
+>>
+>>       if (same_inode) {
+>>               /*
+>> @@ -3119,32 +3092,21 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>>                * allow an unaligned length so long as it ends at
+>>                * i_size.
+>>                */
+>> -             if (len != olen) {
+>> -                     ret = -EINVAL;
+>> -                     goto out_unlock;
+>> -             }
+>> +             if (len != olen)
+>> +                     return -EINVAL;
+>>
+>>               /* Check for overlapping ranges */
+>> -             if (dst_loff + len > loff && dst_loff < loff + len) {
+>> -                     ret = -EINVAL;
+>> -                     goto out_unlock;
+>> -             }
+>> +             if (dst_loff + len > loff && dst_loff < loff + len)
+>> +                     return -EINVAL;
+>>
+>>               same_lock_start = min_t(u64, loff, dst_loff);
+>>               same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
+>>       }
+>>
+>> -     /* don't make the dst file partly checksummed */
+>> -     if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+>> -         (BTRFS_I(dst)->flags & BTRFS_INODE_NODATASUM)) {
+>> -             ret = -EINVAL;
+>> -             goto out_unlock;
+>> -     }
+>> -
+>>  again:
+>> -     ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, &cmp);
+>> +     ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, cmp);
+>>       if (ret)
+>> -             goto out_unlock;
+>> +             return ret;
+>>
+>>       if (same_inode)
+>>               ret = lock_extent_range(src, same_lock_start, same_lock_len,
+>> @@ -3165,7 +3127,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>>                * Ranges in the io trees already unlocked. Now unlock all
+>>                * pages before waiting for all IO to complete.
+>>                */
+>> -             btrfs_cmp_data_free(&cmp);
+>> +             btrfs_cmp_data_free(cmp);
+>>               if (same_inode) {
+>>                       btrfs_wait_ordered_range(src, same_lock_start,
+>>                                                same_lock_len);
+>> @@ -3178,12 +3140,12 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>>       ASSERT(ret == 0);
+>>       if (WARN_ON(ret)) {
+>>               /* ranges in the io trees already unlocked */
+>> -             btrfs_cmp_data_free(&cmp);
+>> +             btrfs_cmp_data_free(cmp);
+>>               return ret;
+>>       }
+>>
+>>       /* pass original length for comparison so we stay within i_size */
+>> -     ret = btrfs_cmp_data(olen, &cmp);
+>> +     ret = btrfs_cmp_data(olen, cmp);
+>>       if (ret == 0)
+>>               ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+>>
+>> @@ -3193,8 +3155,79 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>>       else
+>>               btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
+>>
+>> -     btrfs_cmp_data_free(&cmp);
+>> -out_unlock:
+>> +     btrfs_cmp_data_free(cmp);
+>> +
+>> +     return ret;
+>> +}
+>> +
+>> +#define BTRFS_MAX_DEDUPE_LEN SZ_16M
+>> +
+>> +static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>> +                              struct inode *dst, u64 dst_loff)
+>> +{
+>> +     int ret;
+>> +     int num_pages;
+>> +     bool same_inode = (src == dst);
+>> +     u64 i, tail_len, chunk_count;
+>> +     struct cmp_pages cmp;
+>> +
+>> +     if (olen == 0)
+>> +             return 0;
+>> +
+>> +     /* don't make the dst file partly checksummed */
+>> +     if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+>> +         (BTRFS_I(dst)->flags & BTRFS_INODE_NODATASUM)) {
+>> +             return -EINVAL;
+>> +     }
+>> +
+>> +     if (same_inode)
+>> +             inode_lock(src);
+>> +     else
+>> +             btrfs_double_inode_lock(src, dst);
+>> +
+>> +     tail_len = olen % BTRFS_MAX_DEDUPE_LEN;
+>> +     chunk_count = div_u64(olen, BTRFS_MAX_DEDUPE_LEN);
+>> +
+>> +     if (chunk_count > 0) {
+>> +             num_pages = PAGE_ALIGN(BTRFS_MAX_DEDUPE_LEN) >> PAGE_SHIFT;
+>> +     } else {
+>> +             num_pages = PAGE_ALIGN(tail_len) >> PAGE_SHIFT;
+>> +     }
+>> +     /*
+>> +      * We must gather up all the pages before we initiate our
+>> +      * extent locking. We use an array for the page pointers. Size
+>> +      * of the array is bounded by len, which is in turn bounded by
+>> +      * BTRFS_MAX_DEDUPE_LEN.
+>> +      */
+>> +     ret = -ENOMEM;
+>> +     cmp.src_pages = kcalloc(num_pages, sizeof(struct page *),
+>> +                             GFP_KERNEL);
+>> +     if (!cmp.src_pages)
+>> +             goto out;
+>> +     cmp.dst_pages = kcalloc(num_pages, sizeof(struct page *),
+>> +                             GFP_KERNEL);
+>> +     if (!cmp.dst_pages)
+>> +             goto out;
+>> +
+>> +
+>> +     for (i = 0; i < chunk_count; i++) {
+>> +             ret = __btrfs_extent_same(src, loff, BTRFS_MAX_DEDUPE_LEN,
+>> +                                       dst, dst_loff, &cmp);
+>> +             if (ret)
+>> +                     goto out;
+>> +
+>> +             loff += BTRFS_MAX_DEDUPE_LEN;
+>> +             dst_loff += BTRFS_MAX_DEDUPE_LEN;
+>> +     }
+>> +
+>> +     if (tail_len > 0)
+>> +             ret = __btrfs_extent_same(src, loff, tail_len,
+>> +                                       dst, dst_loff, &cmp);
+>> +
+>> +out:
+>> +     kfree(cmp.src_pages);
+>> +     kfree(cmp.dst_pages);
+>> +
+>>       if (same_inode)
+>>               inode_unlock(src);
+>>       else
+>> @@ -3203,8 +3236,6 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+>>       return ret;
+>>  }
+>>
+>> -#define BTRFS_MAX_DEDUPE_LEN SZ_16M
+>> -
+>>  ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+>>                               struct file *dst_file, u64 dst_loff)
+>>  {
+>> @@ -3213,9 +3244,6 @@ ssize_t btrfs_dedupe_file_range(struct file *src_file, u64 loff, u64 olen,
+>>       u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
+>>       ssize_t res;
+>>
+>> -     if (olen > BTRFS_MAX_DEDUPE_LEN)
+>> -             olen = BTRFS_MAX_DEDUPE_LEN;
+>> -
+>>       if (WARN_ON_ONCE(bs < PAGE_SIZE)) {
+>>               /*
+>>                * Btrfs does not support blocksize < page_size. As a
+>> --
+>> 2.15.1
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
-On  6.01.2018 07:10, Adam Borowski wrote:
-> Hi!
-> I got a reproducible infinite hang, reliably triggered by the testsuite of
-> "flatpak"; fails on at least 4.15-rc6, 4.9.75, and on another machine with
-> Debian's 4.14.2-1.
-> 
-> [580632.355107] INFO: task kworker/u8:2:11105 blocked for more than 120 seconds.
-> [580632.355120]       Not tainted 4.14.0-1-amd64 #1 Debian 4.14.2-1
-> [580632.355124] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [580632.355129] kworker/u8:2    D    0 11105      2 0x80000000
-> [580632.355176] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
-> [580632.355179] Call Trace:
-> [580632.355192]  __schedule+0x28e/0x880
-> [580632.355196]  schedule+0x2c/0x80
-> [580632.355200]  wb_wait_for_completion+0x64/0x90
-> [580632.355205]  ? finish_wait+0x80/0x80
-> [580632.355207]  __writeback_inodes_sb_nr+0xa1/0xd0
-> [580632.355210]  writeback_inodes_sb_nr+0x10/0x20
-> [580632.355235]  flush_space+0x3ed/0x520 [btrfs]
-> [580632.355238]  ? pick_next_task_fair+0x158/0x590
-> [580632.355242]  ? __switch_to+0x1f3/0x460
-> [580632.355267]  btrfs_async_reclaim_metadata_space+0xf6/0x4a0 [btrfs]
-> [580632.355278]  process_one_work+0x198/0x390
-> [580632.355281]  worker_thread+0x35/0x3c0
-> [580632.355284]  kthread+0x125/0x140
-> [580632.355287]  ? process_one_work+0x390/0x390
-> [580632.355289]  ? kthread_create_on_node+0x70/0x70
-> [580632.355292]  ? SyS_exit_group+0x14/0x20
-> [580632.355295]  ret_from_fork+0x25/0x30
-> 
-> The machines are distinct enough that this probably should happen
-> everywhere:
-> 
-> AMD Phenom2, SSD, noatime,compress=lzo,space_cache=v2
-> Intel Braswell, rust, noatime,autodefrag,space_cache=v2
 
-
-Provide output of echo w > /proc/sysrq-trigger when the hang happens.
-
-> 
-> 
-> Meow!
-> 
+-- 
+Have a nice day,
+Timofey.

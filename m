@@ -1,60 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:56210 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.21]:54807 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755566AbeAHE4a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 7 Jan 2018 23:56:30 -0500
-Subject: Re: [PATCH 2/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in
+        id S1750710AbeAHFJU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Jan 2018 00:09:20 -0500
+Subject: Re: [PATCH v2 1/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in
  btrfs.ko
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 Cc: wqu@suse.com
-References: <20180108030512.22344-1-anand.jain@oracle.com>
- <20180108030512.22344-2-anand.jain@oracle.com>
+References: <20180108030512.22344-2-anand.jain@oracle.com>
+ <20180108050409.727-1-anand.jain@oracle.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <83756e06-446f-2807-8c9a-b918f609b741@gmx.com>
-Date: Mon, 8 Jan 2018 12:55:43 +0800
+Message-ID: <dffaa3c8-30d9-2ec0-4fac-3bb6457c7136@gmx.com>
+Date: Mon, 8 Jan 2018 13:08:33 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180108030512.22344-2-anand.jain@oracle.com>
+In-Reply-To: <20180108050409.727-1-anand.jain@oracle.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="9uMl0yUdO4GHkTnNPo5wZxxbPQqm2asBK"
+ boundary="rMOPASHf5ZullUG6aPFiEeO7VqAGXJrbr"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---9uMl0yUdO4GHkTnNPo5wZxxbPQqm2asBK
-Content-Type: multipart/mixed; boundary="5HfpdU7y3ZX75SfTSlHtnlsW00uQ6OnvU";
+--rMOPASHf5ZullUG6aPFiEeO7VqAGXJrbr
+Content-Type: multipart/mixed; boundary="k7qUh8VnG9dWrcB23wZTOf59rAKGy1o2d";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 Cc: wqu@suse.com
-Message-ID: <83756e06-446f-2807-8c9a-b918f609b741@gmx.com>
-Subject: Re: [PATCH 2/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in
+Message-ID: <dffaa3c8-30d9-2ec0-4fac-3bb6457c7136@gmx.com>
+Subject: Re: [PATCH v2 1/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in
  btrfs.ko
-References: <20180108030512.22344-1-anand.jain@oracle.com>
- <20180108030512.22344-2-anand.jain@oracle.com>
-In-Reply-To: <20180108030512.22344-2-anand.jain@oracle.com>
+References: <20180108030512.22344-2-anand.jain@oracle.com>
+ <20180108050409.727-1-anand.jain@oracle.com>
+In-Reply-To: <20180108050409.727-1-anand.jain@oracle.com>
 
---5HfpdU7y3ZX75SfTSlHtnlsW00uQ6OnvU
+--k7qUh8VnG9dWrcB23wZTOf59rAKGy1o2d
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8808=E6=97=A5 11:05, Anand Jain wrote:
-> Userland uses this flag and resets it only when changing the fsid is
-> complete. Its not a good idea to mount the device anything in between,
-> so this patch fails the mount if SB SUPER_FLAG_CHANGING_FSID is set.
+On 2018=E5=B9=B401=E6=9C=8808=E6=97=A5 13:04, Anand Jain wrote:
+> Userland sets SUPER_FLAG_CHANGING_FSID and resets it only when changing=
+
+> fsid is complete. Its not a good idea to mount the device anything in
+> between, so this patch fails the mount if SB SUPER_FLAG_CHANGING_FSID
+> is set.
 >=20
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >   cc: wqu@suse.com
 > ---
+> v1->v2: Oops. Fix cut and paste error, remove ~. My bad.
+>=20
 >  fs/btrfs/disk-io.c              | 7 ++++++-
 >  include/uapi/linux/btrfs_tree.h | 1 +
 >  2 files changed, 7 insertions(+), 1 deletion(-)
 >=20
 > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index a69e5944dc08..8b76faa77235 100644
+> index a69e5944dc08..0dd215258ff9 100644
 > --- a/fs/btrfs/disk-io.c
 > +++ b/fs/btrfs/disk-io.c
 > @@ -61,7 +61,8 @@
@@ -65,8 +69,14 @@ On 2018=E5=B9=B401=E6=9C=8808=E6=97=A5 11:05, Anand Jain wrote:
 > +				 BTRFS_SUPER_FLAG_METADUMP |\
 > +				 BTRFS_SUPER_FLAG_CHANGING_FSID)
 
-If we don't want the half changed fs to be mounted, it's better not to
-include FLAG_CHANGING_FSID into BTRFS_SUPER_FLAG_SUPP.
+Still the same problem here.
+
+Since that super flag is excluded in btrfs_check_super_valid(), I didn't
+see any meaning including it into BTRFS_SUPER_FLAG_SUPP, and it will
+confuse later BTRFS_SUPER_FLAG_SUPP users.
+
+Thanks,
+Qu
 
 > =20
 >  static const struct extent_io_ops btree_extent_io_ops;
@@ -76,15 +86,7 @@ fs_info *fs_info)
 >  		btrfs_err(fs_info, "no valid FS found");
 >  		ret =3D -EINVAL;
 >  	}
-> +	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_CHANGING_FSID) {
-
-This doesn't seems right.
-
-Shouldn't it be "btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_CHANING_FSID"?
-
-Thanks,
-Qu
-
+> +	if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_CHANGING_FSID) {
 > +		btrfs_err(fs_info, "SUPER_FLAG_CHANGING_FSID is set");
 > +		ret =3D -EINVAL;
 > +	}
@@ -107,23 +109,23 @@ _tree.h
 >=20
 
 
---5HfpdU7y3ZX75SfTSlHtnlsW00uQ6OnvU--
+--k7qUh8VnG9dWrcB23wZTOf59rAKGy1o2d--
 
---9uMl0yUdO4GHkTnNPo5wZxxbPQqm2asBK
+--rMOPASHf5ZullUG6aPFiEeO7VqAGXJrbr
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpS+c8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qilngf/Swferc2RgL9RobnFaKWYJHoT
-zNigpG2MpcEUtx+8/EzPog+Iei6BKr7DuulZof/jl7DIuO5EBUw4txlezgxGTCcZ
-a//9oHBwxfhe/5wfwv4wwbNjVnwWc0sCiTqlmsfDKVfFWSPqwDs/qRLCTU9OhGvF
-F7lVtFWH13ifQp/CkwYQId5gw/hhtL6Y9HdeH7Aw/5Aki4TnWhuNuddFuCpw5bdI
-0JbC96bGGOmP/Somapwg25VvHYKb81AnwJcZr3eY4UeWuiDDU5vxX7TOyeUuqJI4
-Wx4R4voNGpWs0p+ODqRbjWrtpcrfnevLziclYLNa0wEKUza8h5U+gtHqdUTEuw==
-=On4q
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpS/NEXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgyeAf9F4zcIYsp/htupmuQSlTk4iVi
+zqD+q6nh6GFLguqTc0RLU7/mrGAFkgsinrjtpbypWcjnkK7ubBjlnfvhS/6HVoHk
+qT9fIQp43jv8y4it2fMjqLVAwLo1GGmCit/apr3YtrjEMm707D5uo0lBeoCqLpZe
+kc9BiUgI0+6Cp2mtNp4Mz2vTKcE0vakPzA+syCk130ZVphIf6CF9XBy8s6v7PgYx
+lWd6wksLRNZT8AEezT8yFG+JGcvJk/YRoPd92/2bz+T3jsVyHAiDsDNYcLflsrCn
+3e4vVls02BwJdMSJk52ik+7D0judlvGBFPrlfh7TYRlcmXMyEHObsHUb/MDitg==
+=Hv1R
 -----END PGP SIGNATURE-----
 
---9uMl0yUdO4GHkTnNPo5wZxxbPQqm2asBK--
+--rMOPASHf5ZullUG6aPFiEeO7VqAGXJrbr--

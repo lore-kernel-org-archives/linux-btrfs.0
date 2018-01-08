@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:37880 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:37945 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751323AbeAEIMY (ORCPT
+        with ESMTP id S1755009AbeAHIZl (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 5 Jan 2018 03:12:24 -0500
+        Mon, 8 Jan 2018 03:25:41 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 1/2] btrfs-progs: Merge btrfs_alloc_data_chunk into btrfs_alloc_chunk
-Date: Fri,  5 Jan 2018 16:12:11 +0800
-Message-Id: <20180105081212.27175-2-wqu@suse.com>
-In-Reply-To: <20180105081212.27175-1-wqu@suse.com>
-References: <20180105081212.27175-1-wqu@suse.com>
+Subject: [PATCH v2 1/2] btrfs-progs: Merge btrfs_alloc_data_chunk into btrfs_alloc_chunk
+Date: Mon,  8 Jan 2018 16:25:29 +0800
+Message-Id: <20180108082529.30384-1-wqu@suse.com>
+In-Reply-To: <20180105081212.27175-2-wqu@suse.com>
+References: <20180105081212.27175-2-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -29,12 +29,19 @@ thing to maintain.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
+changelog:
+v2:
+  Instead of re-init @private_devs list, change the later BUG_ON() for
+  convert case.
+  Update wrong comment to reflect the code.
+  Remove unnecessary new-line in error().
+---
  convert/main.c |   6 +-
  extent-tree.c  |   2 +-
  mkfs/main.c    |  14 ++--
- volumes.c      | 220 ++++++++++++++++++++++-----------------------------------
+ volumes.c      | 221 ++++++++++++++++++++++-----------------------------------
  volumes.h      |   5 +-
- 5 files changed, 98 insertions(+), 149 deletions(-)
+ 5 files changed, 98 insertions(+), 150 deletions(-)
 
 diff --git a/convert/main.c b/convert/main.c
 index 4a510a786394..8ee858fb2d05 100644
@@ -127,7 +134,7 @@ index 938025bfd32e..f8e27a7ec8b8 100644
  		return ret;
  	ret = btrfs_make_block_group(trans, fs_info, 0,
 diff --git a/volumes.c b/volumes.c
-index fa3c6de023f9..89c2f952f5b3 100644
+index fa3c6de023f9..a6522b3c72f8 100644
 --- a/volumes.c
 +++ b/volumes.c
 @@ -844,9 +844,23 @@ error:
@@ -155,29 +162,28 @@ index fa3c6de023f9..89c2f952f5b3 100644
  {
  	u64 dev_offset;
  	struct btrfs_root *extent_root = info->extent_root;
-@@ -876,10 +890,39 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+@@ -876,10 +890,38 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  	struct btrfs_key key;
  	u64 offset;
  
 -	if (list_empty(dev_list)) {
-+	INIT_LIST_HEAD(&private_devs);
 +	if (list_empty(dev_list))
  		return -ENOSPC;
 -	}
  
 +	if (convert) {
-+		/* For convert, profile must be BTRFS_BLOCK_GROUP_DATA */
++		/* For convert, profile must be SINGLE */
 +		if (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
 +			error("convert only suports SINGLE profile");
 +			return -EINVAL;
 +		}
 +		if (!IS_ALIGNED(*start, info->sectorsize)) {
-+			error("chunk start not aligned, start=%llu sectorsize=%u\n",
++			error("chunk start not aligned, start=%llu sectorsize=%u",
 +				*start, info->sectorsize);
 +			return -EINVAL;
 +		}
 +		if (!IS_ALIGNED(*num_bytes, info->sectorsize)) {
-+			error("chunk size not aligned, size=%llu sectorsize=%u\n",
++			error("chunk size not aligned, size=%llu sectorsize=%u",
 +				*num_bytes, info->sectorsize);
 +			return -EINVAL;
 +		}
@@ -197,7 +203,7 @@ index fa3c6de023f9..89c2f952f5b3 100644
  	if (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
  		if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
  			calc_size = SZ_8M;
-@@ -950,6 +993,9 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+@@ -950,6 +992,9 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  	percent_max = div_factor(btrfs_super_total_bytes(info->super_copy), 1);
  	max_chunk_size = min(percent_max, max_chunk_size);
  
@@ -207,7 +213,7 @@ index fa3c6de023f9..89c2f952f5b3 100644
  again:
  	if (chunk_bytes_by_type(type, calc_size, num_stripes, sub_stripes) >
  	    max_chunk_size) {
-@@ -980,7 +1026,8 @@ again:
+@@ -980,7 +1025,8 @@ again:
  			return ret;
  		cur = cur->next;
  		if (avail >= min_free) {
@@ -217,7 +223,7 @@ index fa3c6de023f9..89c2f952f5b3 100644
  			index++;
  			if (type & BTRFS_BLOCK_GROUP_DUP)
  				index++;
-@@ -1007,9 +1054,16 @@ again:
+@@ -1007,9 +1053,16 @@ again:
  		}
  		return -ENOSPC;
  	}
@@ -237,7 +243,7 @@ index fa3c6de023f9..89c2f952f5b3 100644
  	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
  	key.type = BTRFS_CHUNK_ITEM_KEY;
  	key.offset = offset;
-@@ -1030,17 +1084,31 @@ again:
+@@ -1030,17 +1083,31 @@ again:
  	index = 0;
  	while(index < num_stripes) {
  		struct btrfs_stripe *stripe;
@@ -277,7 +283,16 @@ index fa3c6de023f9..89c2f952f5b3 100644
  		if (ret < 0)
  			goto out_chunk_map;
  
-@@ -1077,6 +1145,9 @@ again:
+@@ -1057,7 +1124,7 @@ again:
+ 		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
+ 		index++;
+ 	}
+-	BUG_ON(!list_empty(&private_devs));
++	BUG_ON(!convert && !list_empty(&private_devs));
+ 
+ 	/* key was set above */
+ 	btrfs_set_stack_chunk_length(chunk, *num_bytes);
+@@ -1077,6 +1144,9 @@ again:
  	map->num_stripes = num_stripes;
  	map->sub_stripes = sub_stripes;
  
@@ -287,7 +302,7 @@ index fa3c6de023f9..89c2f952f5b3 100644
  	ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
  				btrfs_chunk_item_size(num_stripes));
  	BUG_ON(ret);
-@@ -1106,125 +1177,6 @@ out_chunk:
+@@ -1106,125 +1176,6 @@ out_chunk:
  	return ret;
  }
  

@@ -1,32 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:36176 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754925AbeAHDFB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Jan 2018 22:05:01 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:51152 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750710AbeAHFDR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 00:03:17 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: wqu@suse.com
-Subject: [PATCH 2/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko
-Date: Mon,  8 Jan 2018 11:05:12 +0800
-Message-Id: <20180108030512.22344-2-anand.jain@oracle.com>
-In-Reply-To: <20180108030512.22344-1-anand.jain@oracle.com>
-References: <20180108030512.22344-1-anand.jain@oracle.com>
+Subject: [PATCH v2 1/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko
+Date: Mon,  8 Jan 2018 13:04:09 +0800
+Message-Id: <20180108050409.727-1-anand.jain@oracle.com>
+In-Reply-To: <20180108030512.22344-2-anand.jain@oracle.com>
+References: <20180108030512.22344-2-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Userland uses this flag and resets it only when changing the fsid is
-complete. Its not a good idea to mount the device anything in between,
-so this patch fails the mount if SB SUPER_FLAG_CHANGING_FSID is set.
+Userland sets SUPER_FLAG_CHANGING_FSID and resets it only when changing
+fsid is complete. Its not a good idea to mount the device anything in
+between, so this patch fails the mount if SB SUPER_FLAG_CHANGING_FSID
+is set.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
   cc: wqu@suse.com
 ---
+v1->v2: Oops. Fix cut and paste error, remove ~. My bad.
+
  fs/btrfs/disk-io.c              | 7 ++++++-
  include/uapi/linux/btrfs_tree.h | 1 +
  2 files changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a69e5944dc08..8b76faa77235 100644
+index a69e5944dc08..0dd215258ff9 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
 @@ -61,7 +61,8 @@
@@ -43,7 +46,7 @@ index a69e5944dc08..8b76faa77235 100644
  		btrfs_err(fs_info, "no valid FS found");
  		ret = -EINVAL;
  	}
-+	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_CHANGING_FSID) {
++	if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_CHANGING_FSID) {
 +		btrfs_err(fs_info, "SUPER_FLAG_CHANGING_FSID is set");
 +		ret = -EINVAL;
 +	}

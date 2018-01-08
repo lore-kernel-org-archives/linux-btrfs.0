@@ -1,63 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from a4-5.smtp-out.eu-west-1.amazonses.com ([54.240.4.5]:37082 "EHLO
-        a4-5.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751761AbeAHU3U (ORCPT
+Received: from smtp97.iad3a.emailsrvr.com ([173.203.187.97]:42474 "EHLO
+        smtp97.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1757930AbeAHVvv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jan 2018 15:29:20 -0500
+        Mon, 8 Jan 2018 16:51:51 -0500
+Received: from smtp37.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp37.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 51AA7641D
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 Jan 2018 16:43:03 -0500 (EST)
+Received: by smtp37.relay.iad3a.emailsrvr.com (Authenticated sender: fsb-AT-thefsb.org) with ESMTPSA id 38CE25AB4
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 Jan 2018 16:43:03 -0500 (EST)
+From: "Tom Worster" <fsb@thefsb.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: Recommendations for balancing as part of regular maintenance?
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
- <5A539A3A.10107@gmail.com> <b3020ddf-5820-dd8b-ecde-51a5f7026cad@gmail.com>
- <811ff9be-d155-dae0-8841-0c1b20c18843@cobb.uk.net>
- <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
-From: Martin Raiber <martin@urbackup.org>
-Message-ID: <01020160d7768587-50a9392c-7250-4735-9d14-66ff03a161c9-000000@eu-west-1.amazonses.com>
-Date: Mon, 8 Jan 2018 20:29:19 +0000
+Date: Mon, 08 Jan 2018 16:43:02 -0500
+Message-ID: <C11AC11F-C4CC-41B8-BE2F-52486E42C987@thefsb.org>
 MIME-Version: 1.0
-In-Reply-To: <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08.01.2018 19:34 Austin S. Hemmelgarn wrote:
-> On 2018-01-08 13:17, Graham Cobb wrote:
->> On 08/01/18 16:34, Austin S. Hemmelgarn wrote:
->>> Ideally, I think it should be as generic as reasonably possible,
->>> possibly something along the lines of:
->>>
->>> A: While not strictly necessary, running regular filtered balances (for
->>> example `btrfs balance start -dusage=50 -dlimit=2 -musage=50
->>> -mlimit=4`,
->>> see `man btrfs-balance` for more info on what the options mean) can
->>> help
->>> keep a volume healthy by mitigating the things that typically cause
->>> ENOSPC errors.  Full balances by contrast are long and expensive
->>> operations, and should be done only as a last resort.
->>
->> That recommendation is similar to what I do and it works well for my use
->> case. I would recommend it to anyone with my usage, but cannot say how
->> well it would work for other uses. In my case, I run balances like that
->> once a week: some weeks nothing happens, other weeks 5 or 10 blocks may
->> get moved.
+On 01/08/2018 04:55 PM, Austin S. Hemmelgarn wrote:
+
+> On 2018-01-08 11:20, ein wrote:
 >
-> In my own usage I've got a pretty varied mix of other stuff going on.
-> All my systems are Gentoo, so system updates mean that I'm building
-> software regularly (though on most of the systems that happens on
-> tmpfs in RAM), I run a home server with a dozen low use QEMU VM's and
-> a bunch of transient test VM's, all of which I'm currently storing
-> disk images for raw on top of BTRFS (which is actually handling all of
-> it pretty well, though that may be thanks to all the VM's using
-> PV-SCSI for their disks), I run a BOINC client system that sees pretty
-> heavy filesystem usage, and have a lot of personal files that get
-> synced regularly across systems, and all of this is on raid1 with
-> essentially no snapshots.  For me the balance command I mentioned
-> above run daily seems to help, even if the balance doesn't move much
-> most of the time on most filesystems, and the actual balance
-> operations take at most a few seconds most of the time (I've got
-> reasonably nice SSD's in everything).
+> > On 01/08/2018 04:55 PM, Austin S. Hemmelgarn wrote:
+> >
+> > > [...]
+> > >
+> > > And here's the FAQ entry:
+> > >
+> > > Q: Do I need to run a balance regularly?
+> > >
+> > > A: In general usage, no. A full unfiltered balance typically takes 
+> a
+> > > long time, and will rewrite huge amounts of data unnecessarily. 
+> You may
+> > > wish to run a balance on metadata only (see Balance_Filters) if 
+> you find
+> > > you have very large amounts of metadata space allocated but 
+> unused, but
+> > > this should be a last resort.
+> >
+> > IHMO three more sentencens and the answer would be more useful:
+> > 1. BTRFS balance command example with note check the man first.
+> > 2. What use case may cause 'large amounts of metadata space 
+> allocated
+> > but unused'.
+>
+> That's kind of what I was thinking as well, but I'm hesitant to get 
+> too heavily into stuff along the lines of 'for use case X, do 1, for 
+> use case Y, do 2, etc', as that tends to result in pigeonholing 
+> (people just go with what sounds closest to their use case instead of 
+> trying to figure out what actually is best for their use case).
+>
+> Ideally, I think it should be as generic as reasonably possible, 
+> possibly something along the lines of:
+>
+> A: While not strictly necessary, running regular filtered balances 
+> (for example `btrfs balance start -dusage=50 -dlimit=2 -musage=50 
+> -mlimit=4`, see `man btrfs-balance` for more info on what the options 
+> mean) can help keep a volume healthy by mitigating the things that 
+> typically cause ENOSPC errors. Full balances by contrast are long and 
+> expensive operations, and should be done only as a last resort.
 
-There have been reports of (rare) corruption caused by balance (won't be
-detected by a scrub) here on the mailing list. So I would stay a away
-from btrfs balance unless it is absolutely needed (ENOSPC), and while it
-is run I would try not to do anything else wrt. to writes simultaneously.
+As the BTRFS noob who started the conversation on netdata's Github 
+issues, I'd like to describe my experience.
 
+I got an alert that unallocated space on a BTRFS filesystem on one host 
+was low. A netdata caption suggested btrfs-balance and directed me to 
+its man page. But I found it hard to understand since I don't know how 
+BTRFS works or its particular terminology. The FAQ was easier to 
+understand but didn't help me find a solution to my problem.
+
+It's a 420GiB NVMe with single data and metadata. It has a MariaDB 
+datadir with an OLTP workload and a small GlusterFS brick for 
+replicating filesystem with little activity. I recall that unallocated 
+space was under 2G, metadata allocation was low, a few G and about 1/3 
+used. Data allocation was very large, almost everything else, with ~25% 
+used.
+
+Given the documentation and the usage stats, I did not know what options 
+to use with balance. I spent some time reading and researching and 
+trying to understand the filters and how they should relate to my 
+situation. Eventually I abandoned that effort and ran balance without 
+options.
+
+While general recommendations about running balance would be welcome, 
+what I needed was a dummy's guide to what the output of btrfs usage 
+_means_ and how to use balance to tackle problems with it.
+
+The other mystery is how the data allocation became so large.
+
+Tom

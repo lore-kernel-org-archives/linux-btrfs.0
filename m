@@ -1,38 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40465 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1756301AbeAHTG1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jan 2018 14:06:27 -0500
-Date: Mon, 8 Jan 2018 20:04:19 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 1/3] btrfs-progs: check: report more specific info
- about invalid location
-Message-ID: <20180108190419.GK13726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171121101524.2014-1-suy.fnst@cn.fujitsu.com>
- <20171122021716.5957-1-suy.fnst@cn.fujitsu.com>
- <2cb57ad1-2af7-5222-9d62-5fb78333ece3@suse.com>
+Received: from userp2120.oracle.com ([156.151.31.85]:41202 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754955AbeAHDQx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Jan 2018 22:16:53 -0500
+Subject: Re: [PATCH] btrfs: add missing BTRFS_SUPER_FLAG define
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20180105092422.9794-1-anand.jain@oracle.com>
+ <20180105142606.GO3553@twin.jikos.cz>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <2824fe75-94fe-ba4b-2b86-66255d188df7@oracle.com>
+Date: Mon, 8 Jan 2018 11:17:46 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <2cb57ad1-2af7-5222-9d62-5fb78333ece3@suse.com>
+In-Reply-To: <20180105142606.GO3553@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 22, 2017 at 09:06:55AM +0200, Nikolay Borisov wrote:
-> 
-> 
-> On 22.11.2017 04:17, Su Yue wrote:
-> > Previously, it was so useless to print message like
-> > "invalid location %d".
-> > 
-> > Let it print objectid and offset of dir_item too.
-> > Debug is easier now.
-> > 
-> > Suggested-by: Nikolay Borisov <nborisov@suse.com>
-> > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-Applied, thanks.
+
+On 01/05/2018 10:26 PM, David Sterba wrote:
+> On Fri, Jan 05, 2018 at 05:24:22PM +0800, Anand Jain wrote:
+>> btrfs-progs uses additional two super flag bits. So just define
+>> that so that we know its been used.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>> The btrfs-progs commits (very old) introduced them,
+>>
+>>   commit 7cc792872a133cabc3467e6ccaf5a2c8ea9e5218
+>>      btrfs-progs: Add CHANGING_FSID super flag
+>>
+>>   commit 797a937e5dd8db0092add633a80f3cd698e182df
+>>      Btrfs-progs: Introduce metadump_v2
+>>
+>> Appears that we need bit of support from the kernel side like
+>> failing to mount if CHANGING_FSID is set. And device mounted
+>> with metadump_v2 flag is kind of broken on the kernel side
+>> as of now, this patch does not fix those.
+> 
+> Please add the code that uses the flags, at least the for the pending
+> uuid change.
+
+  OK. I have sent them as a set.
+   [PATCH 1/2] btrfs: add missing BTRFS_SUPER_FLAG define
+   [PATCH 2/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko
+
+
+Thanks, Anand

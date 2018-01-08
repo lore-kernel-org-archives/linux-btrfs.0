@@ -1,62 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:16545 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753660AbeAKIMe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 03:12:34 -0500
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <nborisov@suse.com>
-CC: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        Gu JinXiang <gujx@cn.fujitsu.com>
-Subject: [PATCH v3 2/2] btrfs: use enum instead of constant value
-Date: Thu, 11 Jan 2018 16:12:18 +0800
-Message-ID: <1515658338-6781-2-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1515658338-6781-1-git-send-email-gujx@cn.fujitsu.com>
-References: <69b34781-2275-ba9b-0df8-50f3c2752e45@suse.com>
- <1515658338-6781-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:46150 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1756343AbeAHJpP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 8 Jan 2018 04:45:15 -0500
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, herbert@gondor.apana.org.au,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/2] Remove custom crc32c init code from btrfs 
+Date: Mon,  8 Jan 2018 11:45:03 +0200
+Message-Id: <1515404705-490-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Gu JinXiang <gujx@cn.fujitsu.com>
+So here is a small 2 patch set which removes btrfs' manual initialisation of 
+the lower level crc32c module. Explanation why is ok can be found in Patch 2/2.
 
-load_free_space_tree calls either function load_free_space_bitmaps or
-load_free_space_extents. And either of those two will lead to call
-btrfs_next_item.
-So in function load_free_space_tree, use READA_FORWARD to read forward
-ahead.
+Patch 1/2 just adds a function to the generic crc32c header which allows 
+querying the actual crc32c implementaiton used (i.e. software or hw-accelerated)
+to retain current btrfs behavior. This is mainly used for debugging purposes 
+and is independent. 
 
-Changelog:
-v2->v1: change enum from READA_BACK to READA_FORWARD, since according
-to the logic of the source, it should reada_for_search forward, not
-backward.
-And, Reference:
-commit e4058b54d1e4 ("btrfs: cleanup, use enum values for btrfs_path reada")
+Nikolay Borisov (2):
+  libcrc32c: Add crc32c_impl function
+  btrfs: Remove custom crc32c init code
 
-v3->v2: add commit message to make it easy to understand. And split it
-to two patch.
+ fs/btrfs/Kconfig           |  3 +--
+ fs/btrfs/Makefile          |  2 +-
+ fs/btrfs/check-integrity.c |  4 ++--
+ fs/btrfs/ctree.h           | 16 ++++++++++++++
+ fs/btrfs/dir-item.c        |  1 -
+ fs/btrfs/disk-io.c         |  4 ++--
+ fs/btrfs/extent-tree.c     | 10 ++++-----
+ fs/btrfs/hash.c            | 54 ----------------------------------------------
+ fs/btrfs/hash.h            | 43 ------------------------------------
+ fs/btrfs/inode-item.c      |  1 -
+ fs/btrfs/inode.c           |  1 -
+ fs/btrfs/props.c           |  2 +-
+ fs/btrfs/send.c            |  4 ++--
+ fs/btrfs/super.c           | 14 ++++--------
+ fs/btrfs/tree-log.c        |  2 +-
+ include/linux/crc32c.h     |  1 +
+ lib/libcrc32c.c            |  6 ++++++
+ 17 files changed, 42 insertions(+), 126 deletions(-)
+ delete mode 100644 fs/btrfs/hash.c
+ delete mode 100644 fs/btrfs/hash.h
 
-Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
----
- fs/btrfs/free-space-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index d7b6c0017143..af36a6a971fe 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -1573,7 +1573,7 @@ int load_free_space_tree(struct btrfs_caching_control *caching_ctl)
- 	 */
- 	path->skip_locking = 1;
- 	path->search_commit_root = 1;
--	path->reada = 1;
-+	path->reada = READA_FORWARD;
- 
- 	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
- 	if (IS_ERR(info)) {
 -- 
-2.14.3
-
-
+2.7.4
 

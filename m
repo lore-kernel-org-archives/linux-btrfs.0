@@ -1,70 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:51152 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750710AbeAHFDR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 00:03:17 -0500
+Received: from aserp2120.oracle.com ([141.146.126.78]:47300 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755852AbeAHIDc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 03:03:32 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: wqu@suse.com
-Subject: [PATCH v2 1/2] btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko
-Date: Mon,  8 Jan 2018 13:04:09 +0800
-Message-Id: <20180108050409.727-1-anand.jain@oracle.com>
-In-Reply-To: <20180108030512.22344-2-anand.jain@oracle.com>
-References: <20180108030512.22344-2-anand.jain@oracle.com>
+Subject: [PATCH v3 0/3] Add missing flags in the kernel.
+Date: Mon,  8 Jan 2018 16:04:18 +0800
+Message-Id: <20180108080421.17668-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Userland sets SUPER_FLAG_CHANGING_FSID and resets it only when changing
-fsid is complete. Its not a good idea to mount the device anything in
-between, so this patch fails the mount if SB SUPER_FLAG_CHANGING_FSID
-is set.
+v2->v3:
+Modify BTRFS_SUPER_FLAG_SUPP so that it would fail instead of warn.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-  cc: wqu@suse.com
----
-v1->v2: Oops. Fix cut and paste error, remove ~. My bad.
+v1->v2:
+Fail to mount if BTRFS_SUPER_FLAG_CHANGING_FSID is set.
 
- fs/btrfs/disk-io.c              | 7 ++++++-
- include/uapi/linux/btrfs_tree.h | 1 +
- 2 files changed, 7 insertions(+), 1 deletion(-)
+Following bits are already used in user land, so bring it to the kernel
+as well.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a69e5944dc08..0dd215258ff9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -61,7 +61,8 @@
- 				 BTRFS_HEADER_FLAG_RELOC |\
- 				 BTRFS_SUPER_FLAG_ERROR |\
- 				 BTRFS_SUPER_FLAG_SEEDING |\
--				 BTRFS_SUPER_FLAG_METADUMP)
-+				 BTRFS_SUPER_FLAG_METADUMP |\
-+				 BTRFS_SUPER_FLAG_CHANGING_FSID)
- 
- static const struct extent_io_ops btree_extent_io_ops;
- static void end_workqueue_fn(struct btrfs_work *work);
-@@ -3906,6 +3907,10 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
- 		btrfs_err(fs_info, "no valid FS found");
- 		ret = -EINVAL;
- 	}
-+	if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_CHANGING_FSID) {
-+		btrfs_err(fs_info, "SUPER_FLAG_CHANGING_FSID is set");
-+		ret = -EINVAL;
-+	}
- 	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP)
- 		btrfs_warn(fs_info, "unrecognized super flag: %llu",
- 				btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP);
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 38ab0e06259a..aff1356c2bb8 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -457,6 +457,7 @@ struct btrfs_free_space_header {
- #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
- #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
- #define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
-+#define BTRFS_SUPER_FLAG_CHANGING_FSID	(1ULL << 35)
- 
- 
- /*
+#define BTRFS_SUPER_FLAG_METADUMP_V2   (1ULL << 34)
+#define BTRFS_SUPER_FLAG_CHANGING_FSID (1ULL << 35)
+
+Anand Jain (3):
+  btrfs: fail mount when sb flag is not in BTRFS_SUPER_FLAG_SUPP
+  btrfs: define SUPER_FLAG_METADUMP_V2
+  btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko
+
+ fs/btrfs/disk-io.c              | 6 ++++--
+ include/uapi/linux/btrfs_tree.h | 2 ++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
 -- 
 2.15.0
 

@@ -1,38 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx-relay14-hz1.antispameurope.com ([94.100.132.214]:39249 "EHLO
-        mx-relay14-hz1.antispameurope.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1753564AbeAIKWa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Jan 2018 05:22:30 -0500
-Date: Tue, 9 Jan 2018 11:15:56 +0100
-From: Joerg Schilling <Joerg.Schilling@fokus.fraunhofer.de>
-To: <praiskup@redhat.com>, <eggert@cs.ucla.edu>
-CC: <mhw@netris.org>, <linux-btrfs@vger.kernel.org>, <bug-tar@gnu.org>
-Subject: Re: [Bug-tar] [PATCH] Re: Detection of sparse files is broken on
- btrfs
-Message-ID: <5a54965c.D6Hm4qlW4vP6gFVx%Joerg.Schilling@fokus.fraunhofer.de>
-References: <87fu7hccci.fsf@netris.org>
- <5923534.bzxSDfjug7@nb.usersys.redhat.com>
- <ae4ec76e-7681-6338-cec5-c0be658df62d@cs.ucla.edu>
- <2685951.fM9P32U3bG@nb.usersys.redhat.com>
-In-Reply-To: <2685951.fM9P32U3bG@nb.usersys.redhat.com>
+Received: from mail-io0-f194.google.com ([209.85.223.194]:38282 "EHLO
+        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750827AbeAIKxx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 05:53:53 -0500
+Received: by mail-io0-f194.google.com with SMTP id 87so18079047ior.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 02:53:52 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20171219100247.13880-1-nefelim4ag@gmail.com>
+References: <20171219100247.13880-1-nefelim4ag@gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Tue, 9 Jan 2018 13:53:11 +0300
+Message-ID: <CAGqmi76adh21b34o_B8uj4RN+Ym7TmFdzyVX9pX89XXxWJsxzA@mail.gmail.com>
+Subject: Re: [PATCH 0/4] Btrfs: just bunch of patches to ioctl.c
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Timofey Titovets <nefelim4ag@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Pavel Raiskup <praiskup@redhat.com> wrote:
+Gentle ping
 
-> On Tuesday, January 9, 2018 8:59:06 AM CET Paul Eggert wrote:
-> > Pavel Raiskup wrote:
-> > > So what about special casing that filesystem, where we can lseek() for
-> > > holes anyway?
-> > 
-> > If we can lseek for holes, then why not just do that?
+2017-12-19 13:02 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
+> 1st patch, remove 16MiB restriction from extent_same ioctl(),
+> by doing iterations over passed range.
 >
-> Checking whether lseek() actually works costs some additional syscalls _per
-> sparse_ file;  checking for ST_NBLOCKS() is without this penalty.
+> I did not see much difference in performance, so it's just remove
+> logic restriction.
+>
+> 2-3 pathes, update defrag ioctl():
+>  - Fix bad behaviour with full rewriting all compressed
+>    extents in defrag range. (that also make autodefrag on compressed fs
+>    not so expensive)
+>  - Allow userspace specify NONE as target compression type,
+>    that allow users to uncompress files by defragmentation with btrfs-progs
+>  - Make defrag ioctl understood requested compression type and current
+>    compression type of extents, to make btrfs fi def -rc<type>
+>    idempotent operation.
+>    i.e. now possible to say, make all extents compressed with lzo,
+>    and btrfs will not recompress lzo compressed data.
+>    Same for zlib, zstd, none.
+>    (patch to btrfs-progs in PR on kdave GitHub).
+>
+> 4th patch, reduce size of struct btrfs_inode
+>  - btrfs_inode store fields like: prop_compress, defrag_compress and
+>    after 3rd patch, change_compress.
+>    They use unsigned as a type, and use 12 bytes in sum.
+>    But change_compress is a bitflag, and prop_compress/defrag_compress
+>    only store compression type, that currently use 0-3 of 2^32-1.
+>
+>    So, set a bitfields on that vars, and reduce size of btrfs_inode:
+>    1136 -> 1128.
+>
+> Timofey Titovets (4):
+>   Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
+>   Btrfs: make should_defrag_range() understood compressed extents
+>   Btrfs: allow btrfs_defrag_file() uncompress files on defragmentation
+>   Btrfs: reduce size of struct btrfs_inode
+>
+>  fs/btrfs/btrfs_inode.h |   5 +-
+>  fs/btrfs/inode.c       |   4 +-
+>  fs/btrfs/ioctl.c       | 203 +++++++++++++++++++++++++++++++------------------
+>  3 files changed, 133 insertions(+), 79 deletions(-)
+>
+> --
+> 2.15.1
 
-Well, star does this since a long time and the penalty is a few microseconds.
 
-"~A
+
+-- 
+Have a nice day,
+Timofey.

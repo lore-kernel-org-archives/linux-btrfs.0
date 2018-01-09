@@ -1,49 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga05-in.huawei.com ([45.249.212.191]:3753 "EHLO huawei.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1756407AbeAHLqK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jan 2018 06:46:10 -0500
-From: Xiongfeng Wang <wangxiongfeng2@huawei.com>
-To: <dsterba@suse.com>, <clm@fb.com>, <jbacik@fb.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        <arnd@arndb.de>, <wangxiongfeng2@huawei.com>
-Subject: [PATCH] btrfs: use correct string length
-Date: Mon, 8 Jan 2018 19:51:22 +0800
-Message-ID: <1515412282-57381-1-git-send-email-wangxiongfeng2@huawei.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from aserp2120.oracle.com ([141.146.126.78]:34820 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932432AbeAIOuf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 09:50:35 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w09EnLAe169010
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 Jan 2018 14:50:34 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp2120.oracle.com with ESMTP id 2fcsj19s6h-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 14:50:34 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w09EjXPa014649
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 Jan 2018 14:45:33 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w09EjWvN027647
+        for <linux-btrfs@vger.kernel.org>; Tue, 9 Jan 2018 14:45:33 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/5] device_list_add() peparation to add reappearing missing device
+Date: Tue,  9 Jan 2018 22:46:20 +0800
+Message-Id: <20180109144625.28381-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Xiongfeng Wang <xiongfeng.wang@linaro.org>
+Cleanup of device_list_add(), mainly in preparation to handle
+reappearing missing device which its next reroll will be sent
+separately.
 
-gcc-8 reports
+Anand Jain (5):
+  btrfs: move pr_info into device_list_add
+  btrfs: set the total_devices in device_list_add()
+  btrfs: get device pointer from device_list_add()
+  btrfs: drop devid as device_list_add() arg
+  btrfs: move uuid_mutex closer to exclusivity
 
-fs/btrfs/ioctl.c: In function 'btrfs_ioctl':
-./include/linux/string.h:245:9: warning: '__builtin_strncpy' specified
-bound 1024 equals destination size [-Wstringop-truncation]
+ fs/btrfs/volumes.c | 49 +++++++++++++++++++++----------------------------
+ 1 file changed, 21 insertions(+), 28 deletions(-)
 
-We need one less byte or call strlcpy() to make it a nul-terminated
-string.
-
-Signed-off-by: Xiongfeng Wang <xiongfeng.wang@linaro.org>
----
- fs/btrfs/ioctl.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2ef8aca..e88c9e8 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2807,7 +2807,7 @@ static long btrfs_ioctl_dev_info(struct btrfs_fs_info *fs_info,
- 
- 		rcu_read_lock();
- 		name = rcu_dereference(dev->name);
--		strncpy(di_args->path, name->str, sizeof(di_args->path));
-+		strncpy(di_args->path, name->str, sizeof(di_args->path) - 1);
- 		rcu_read_unlock();
- 		di_args->path[sizeof(di_args->path) - 1] = 0;
- 	} else {
 -- 
-1.8.3.1
+2.7.0
 

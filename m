@@ -1,120 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f195.google.com ([209.85.220.195]:37376 "EHLO
-        mail-qk0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752264AbeAIR1K (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 12:27:10 -0500
-Received: by mail-qk0-f195.google.com with SMTP id p13so19476967qke.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 09:27:10 -0800 (PST)
-Date: Tue, 9 Jan 2018 12:27:08 -0500
+Received: from mail-qt0-f195.google.com ([209.85.216.195]:34321 "EHLO
+        mail-qt0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1760090AbeAIR15 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 12:27:57 -0500
+Received: by mail-qt0-f195.google.com with SMTP id 33so18740286qtv.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 09:27:57 -0800 (PST)
+Date: Tue, 9 Jan 2018 12:27:56 -0500
 From: Josef Bacik <josef@toxicpanda.com>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 02/10] Btrfs: fix unexpected EEXIST from
- btrfs_get_extent
-Message-ID: <20180109172707.cmo5qs7q3ihd3zum@destiny>
+Subject: Re: [PATCH v2 03/10] Btrfs: add helper for em merge logic
+Message-ID: <20180109172755.c564qqnlresbrvi6@destiny>
 References: <20180105195117.5131-1-bo.li.liu@oracle.com>
- <20180105195117.5131-3-bo.li.liu@oracle.com>
+ <20180105195117.5131-4-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180105195117.5131-3-bo.li.liu@oracle.com>
+In-Reply-To: <20180105195117.5131-4-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 05, 2018 at 12:51:09PM -0700, Liu Bo wrote:
-> This fixes a corner case that is caused by a race of dio write vs dio
-> read/write.
+On Fri, Jan 05, 2018 at 12:51:10PM -0700, Liu Bo wrote:
+> This is a prepare work for the following extent map selftest, which
+> runs tests against em merge logic.
 > 
-> Here is how the race could happen.
-> 
-> Suppose that no extent map has been loaded into memory yet.
-> There is a file extent [0, 32K), two jobs are running concurrently
-> against it, t1 is doing dio write to [8K, 32K) and t2 is doing dio
-> read from [0, 4K) or [4K, 8K).
-> 
-> t1 goes ahead of t2 and splits em [0, 32K) to em [0K, 8K) and [8K 32K).
-> 
-> ------------------------------------------------------
->              t1                                t2
->       btrfs_get_blocks_direct()         btrfs_get_blocks_direct()
->        -> btrfs_get_extent()              -> btrfs_get_extent()
->            -> lookup_extent_mapping()
->            -> add_extent_mapping()            -> lookup_extent_mapping()
->               # load [0, 32K)
->        -> btrfs_new_extent_direct()
->            -> btrfs_drop_extent_cache()
->               # split [0, 32K) and
-> 	      # drop [8K, 32K)
->            -> add_extent_mapping()
->               # add [8K, 32K)
->                                               -> add_extent_mapping()
->                                                  # handle -EEXIST when adding
->                                                  # [0, 32K)
-> ------------------------------------------------------
-> About how t2(dio read/write) runs into -EEXIST:
-> 
-> a) add_extent_mapping() gets -EEXIST for adding em [0, 32k),
-> 
-> b) search_extent_mapping() then returns [0, 8k) as the existing em,
->    even though start == existing->start, em is [0, 32k) so that
->    extent_map_end(em) > extent_map_end(existing), i.e. 32k > 8k,
-> 
-> c) then it goes thru merge_extent_mapping() which tries to add a [8k, 8k)
->    (with a length 0) and returns -EEXIST as [8k, 32k) is already in tree,
-> 
-> d) so btrfs_get_extent() ends up returning -EEXIST to dio read/write,
->    which is confusing applications.
-> 
-> Here I conclude all the possible situations,
-> 1) start < existing->start
-> 
->             +-----------+em+-----------+
-> +--prev---+ |     +-------------+      |
-> |         | |     |             |      |
-> +---------+ +     +---+existing++      ++
->                 +
->                 |
->                 +
->              start
-> 
-> 2) start == existing->start
-> 
->       +------------em------------+
->       |     +-------------+      |
->       |     |             |      |
->       +     +----existing-+      +
->             |
->             |
->             +
->          start
-> 
-> 3) start > existing->start && start < (existing->start + existing->len)
-> 
->       +------------em------------+
->       |     +-------------+      |
->       |     |             |      |
->       +     +----existing-+      +
->                |
->                |
->                +
->              start
-> 
-> 4) start >= (existing->start + existing->len)
-> 
-> +-----------+em+-----------+
-> |     +-------------+      | +--next---+
-> |     |             |      | |         |
-> +     +---+existing++      + +---------+
->                       +
->                       |
->                       +
->                    start
-> 
-> As we can see, it turns out that if start is within existing em (front
-> inclusive), then the existing em should be returned as is, otherwise,
-> we try our best to merge candidate em with sibling ems to form a
-> larger em (in order to reduce the total number of em).
-> 
-> Reported-by: David Vallender <david.vallender@landmark.co.uk>
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
 Reviewed-by: Josef Bacik <jbacik@fb.com>

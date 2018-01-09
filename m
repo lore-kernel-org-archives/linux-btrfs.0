@@ -1,53 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:58578 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752763AbeAIHsd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 02:48:33 -0500
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.com>
-Subject: [PATCH 2/3 v2] btrfs-progs: check: do not reset ret after try_repair_inode
-Date: Tue, 9 Jan 2018 15:52:51 +0800
-Message-ID: <20180109075251.17264-1-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20171121101524.2014-1-suy.fnst@cn.fujitsu.com>
-References: <20171121101524.2014-1-suy.fnst@cn.fujitsu.com>
+Received: from zimbra.cs.ucla.edu ([131.179.128.68]:37260 "EHLO
+        zimbra.cs.ucla.edu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932377AbeAIIEp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 03:04:45 -0500
+Subject: Re: [Bug-tar] [PATCH] Re: Detection of sparse files is broken on
+ btrfs
+To: Pavel Raiskup <praiskup@redhat.com>, bug-tar@gnu.org
+Cc: Mark H Weaver <mhw@netris.org>, linux btrfs <linux-btrfs@vger.kernel.org>
+References: <87fu7hccci.fsf@netris.org>
+ <5923534.bzxSDfjug7@nb.usersys.redhat.com>
+From: Paul Eggert <eggert@cs.ucla.edu>
+Message-ID: <ae4ec76e-7681-6338-cec5-c0be658df62d@cs.ucla.edu>
+Date: Mon, 8 Jan 2018 23:59:06 -0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <5923534.bzxSDfjug7@nb.usersys.redhat.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If repair is enabled and try_repair_inode() failed in
-check_inode_recs(), then value @ret will be reset to 0 anyway.
-Then counter @error won't be incremented.
+Pavel Raiskup wrote:
+> So
+> what about special casing that filesystem, where we can lseek() for holes
+> anyway?
 
-In other words, if previous check of the root directory is fine,
-check_inode_recs() always returns 0 even it failed to repair inodes.
-
-So do not reset @ret after try_repair_inode().
-
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
-Changlog:
-v1->v2:
-	Add more detailed commit message.
----
- cmds-check.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/cmds-check.c b/cmds-check.c
-index 635c1c44ff6f..00cbc0114b22 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -3968,7 +3968,6 @@ static int check_inode_recs(struct btrfs_root *root,
- 				free_inode_rec(rec);
- 				continue;
- 			}
--			ret = 0;
- 		}
- 
- 		if (!(repair && ret == 0))
--- 
-2.15.1
-
-
-
+If we can lseek for holes, then why not just do that? We shouldn't need 
+special-case code for btrfs per se. Any filesystem where we can lseek for holes 
+should take advantage of that optimization.

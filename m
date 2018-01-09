@@ -1,72 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f194.google.com ([209.85.223.194]:38282 "EHLO
-        mail-io0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750827AbeAIKxx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 05:53:53 -0500
-Received: by mail-io0-f194.google.com with SMTP id 87so18079047ior.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 02:53:52 -0800 (PST)
+Received: from mail-io0-f171.google.com ([209.85.223.171]:45118 "EHLO
+        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754768AbeAIMXL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 07:23:11 -0500
+Received: by mail-io0-f171.google.com with SMTP id e20so18327342iof.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 04:23:10 -0800 (PST)
+Subject: Re: Recommendations for balancing as part of regular maintenance?
+To: Tom Worster <fsb@thefsb.org>, linux-btrfs@vger.kernel.org
+References: <C11AC11F-C4CC-41B8-BE2F-52486E42C987@thefsb.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <33ee8802-df5a-b153-6e24-2b38be597846@gmail.com>
+Date: Tue, 9 Jan 2018 07:23:06 -0500
 MIME-Version: 1.0
-In-Reply-To: <20171219100247.13880-1-nefelim4ag@gmail.com>
-References: <20171219100247.13880-1-nefelim4ag@gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Tue, 9 Jan 2018 13:53:11 +0300
-Message-ID: <CAGqmi76adh21b34o_B8uj4RN+Ym7TmFdzyVX9pX89XXxWJsxzA@mail.gmail.com>
-Subject: Re: [PATCH 0/4] Btrfs: just bunch of patches to ioctl.c
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: Timofey Titovets <nefelim4ag@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <C11AC11F-C4CC-41B8-BE2F-52486E42C987@thefsb.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gentle ping
-
-2017-12-19 13:02 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
-> 1st patch, remove 16MiB restriction from extent_same ioctl(),
-> by doing iterations over passed range.
->
-> I did not see much difference in performance, so it's just remove
-> logic restriction.
->
-> 2-3 pathes, update defrag ioctl():
->  - Fix bad behaviour with full rewriting all compressed
->    extents in defrag range. (that also make autodefrag on compressed fs
->    not so expensive)
->  - Allow userspace specify NONE as target compression type,
->    that allow users to uncompress files by defragmentation with btrfs-progs
->  - Make defrag ioctl understood requested compression type and current
->    compression type of extents, to make btrfs fi def -rc<type>
->    idempotent operation.
->    i.e. now possible to say, make all extents compressed with lzo,
->    and btrfs will not recompress lzo compressed data.
->    Same for zlib, zstd, none.
->    (patch to btrfs-progs in PR on kdave GitHub).
->
-> 4th patch, reduce size of struct btrfs_inode
->  - btrfs_inode store fields like: prop_compress, defrag_compress and
->    after 3rd patch, change_compress.
->    They use unsigned as a type, and use 12 bytes in sum.
->    But change_compress is a bitflag, and prop_compress/defrag_compress
->    only store compression type, that currently use 0-3 of 2^32-1.
->
->    So, set a bitfields on that vars, and reduce size of btrfs_inode:
->    1136 -> 1128.
->
-> Timofey Titovets (4):
->   Btrfs: btrfs_dedupe_file_range() ioctl, remove 16MiB restriction
->   Btrfs: make should_defrag_range() understood compressed extents
->   Btrfs: allow btrfs_defrag_file() uncompress files on defragmentation
->   Btrfs: reduce size of struct btrfs_inode
->
->  fs/btrfs/btrfs_inode.h |   5 +-
->  fs/btrfs/inode.c       |   4 +-
->  fs/btrfs/ioctl.c       | 203 +++++++++++++++++++++++++++++++------------------
->  3 files changed, 133 insertions(+), 79 deletions(-)
->
-> --
-> 2.15.1
-
-
-
--- 
-Have a nice day,
-Timofey.
+On 2018-01-08 16:43, Tom Worster wrote:
+> On 01/08/2018 04:55 PM, Austin S. Hemmelgarn wrote:
+> 
+>> On 2018-01-08 11:20, ein wrote:
+>>
+>> > On 01/08/2018 04:55 PM, Austin S. Hemmelgarn wrote:
+>> >
+>> > > [...]
+>> > >
+>> > > And here's the FAQ entry:
+>> > >
+>> > > Q: Do I need to run a balance regularly?
+>> > >
+>> > > A: In general usage, no. A full unfiltered balance typically takes a
+>> > > long time, and will rewrite huge amounts of data unnecessarily. 
+>> You may
+>> > > wish to run a balance on metadata only (see Balance_Filters) if 
+>> you find
+>> > > you have very large amounts of metadata space allocated but 
+>> unused, but
+>> > > this should be a last resort.
+>> >
+>> > IHMO three more sentencens and the answer would be more useful:
+>> > 1. BTRFS balance command example with note check the man first.
+>> > 2. What use case may cause 'large amounts of metadata space allocated
+>> > but unused'.
+>>
+>> That's kind of what I was thinking as well, but I'm hesitant to get 
+>> too heavily into stuff along the lines of 'for use case X, do 1, for 
+>> use case Y, do 2, etc', as that tends to result in pigeonholing 
+>> (people just go with what sounds closest to their use case instead of 
+>> trying to figure out what actually is best for their use case).
+>>
+>> Ideally, I think it should be as generic as reasonably possible, 
+>> possibly something along the lines of:
+>>
+>> A: While not strictly necessary, running regular filtered balances 
+>> (for example `btrfs balance start -dusage=50 -dlimit=2 -musage=50 
+>> -mlimit=4`, see `man btrfs-balance` for more info on what the options 
+>> mean) can help keep a volume healthy by mitigating the things that 
+>> typically cause ENOSPC errors. Full balances by contrast are long and 
+>> expensive operations, and should be done only as a last resort.
+> 
+> As the BTRFS noob who started the conversation on netdata's Github 
+> issues, I'd like to describe my experience.
+> 
+> I got an alert that unallocated space on a BTRFS filesystem on one host 
+> was low. A netdata caption suggested btrfs-balance and directed me to 
+> its man page. But I found it hard to understand since I don't know how 
+> BTRFS works or its particular terminology. The FAQ was easier to 
+> understand but didn't help me find a solution to my problem.
+> 
+> It's a 420GiB NVMe with single data and metadata. It has a MariaDB 
+> datadir with an OLTP workload and a small GlusterFS brick for 
+> replicating filesystem with little activity. I recall that unallocated 
+> space was under 2G, metadata allocation was low, a few G and about 1/3 
+> used. Data allocation was very large, almost everything else, with ~25% 
+> used.
+> 
+> Given the documentation and the usage stats, I did not know what options 
+> to use with balance. I spent some time reading and researching and 
+> trying to understand the filters and how they should relate to my 
+> situation. Eventually I abandoned that effort and ran balance without 
+> options.
+Hopefully the explanation I gave on the filters in the Github issue 
+helped some.  In this case though, it sounds like running a filtered 
+balance probably wouldn't have saved you much over a full one.
+> 
+> While general recommendations about running balance would be welcome, 
+> what I needed was a dummy's guide to what the output of btrfs usage 
+> _means_ and how to use balance to tackle problems with it.
+This really is a great point.  Our documentation does a decent job as a 
+reference for people who already have some idea what they're doing, but 
+it really is worthless for people who have no prior experience.
+> 
+> The other mystery is how the data allocation became so large.
+The most common case is that you had a lot of data on the device, and 
+then deleted most of it.  Unless a chunk becomes completely empty 
+(either because the data that was in it becomes completely unused, or 
+because a balance moved all the data), it won't be automatically deleted 
+by the kernel, so it's not unusual for filesystems that have been very 
+active (especially if they have the 'ssd' mount option set, which 
+happens automatically on most SSD's and a lot of other things the kernel 
+marks as not being rotational media) to have a reasonably large amount 
+of empty space scattered around the data chunks.

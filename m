@@ -1,165 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:64575 "EHLO mout.gmx.net"
+Received: from mx1.redhat.com ([209.132.183.28]:59500 "EHLO mx1.redhat.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751263AbeAIHo1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Jan 2018 02:44:27 -0500
-Subject: Re: [PATCH v2 06/17] btrfs-progs: lowmem check: introduce
- force_cow_in_new_chunk()
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-7-suy.fnst@cn.fujitsu.com>
- <37268331-348d-fe29-db97-e289bb2dea1c@gmx.com>
- <3d829151-9b9a-9eae-e76d-b5bcd6e8c5fd@cn.fujitsu.com>
- <399b00c9-3ab5-e777-a69d-4cbaf3641ddb@gmx.com>
- <c70b76c8-61c8-999a-158f-667fa9c86b5f@gmx.com>
- <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
- <87e23c3c-73a9-47c6-e68c-b79186678bfa@gmx.com>
- <262f2016-4b63-49db-11d1-83e4ab964957@cn.fujitsu.com>
- <802a5de7-c058-ac24-2ba7-dbe911f858a3@gmx.com>
- <0804626a-eaa4-9958-c4bc-27c16f596b30@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <48c2d3e9-7b9b-f133-64cf-cb69ca0da763@gmx.com>
-Date: Tue, 9 Jan 2018 15:44:16 +0800
+        id S1751575AbeAIHqi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Jan 2018 02:46:38 -0500
+From: Pavel Raiskup <praiskup@redhat.com>
+To: bug-tar@gnu.org
+Cc: Mark H Weaver <mhw@netris.org>, linux btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Re: [Bug-tar] Detection of sparse files is broken on btrfs
+Date: Tue, 09 Jan 2018 08:46:36 +0100
+Message-ID: <5923534.bzxSDfjug7@nb.usersys.redhat.com>
+In-Reply-To: <87fu7hccci.fsf@netris.org>
+References: <87fu7hccci.fsf@netris.org>
 MIME-Version: 1.0
-In-Reply-To: <0804626a-eaa4-9958-c4bc-27c16f596b30@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="kqIt9AnOS793HYkjkVfxtWLHvhPgzwQIL"
+Content-Type: multipart/mixed; boundary="nextPart1537565.GD2qFbBCsi"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---kqIt9AnOS793HYkjkVfxtWLHvhPgzwQIL
-Content-Type: multipart/mixed; boundary="PLvfjlQeyKBP2srVA8QV19Y4WQ039J2Jg";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <48c2d3e9-7b9b-f133-64cf-cb69ca0da763@gmx.com>
-Subject: Re: [PATCH v2 06/17] btrfs-progs: lowmem check: introduce
- force_cow_in_new_chunk()
-References: <20171220045731.19343-1-suy.fnst@cn.fujitsu.com>
- <20171220045731.19343-7-suy.fnst@cn.fujitsu.com>
- <37268331-348d-fe29-db97-e289bb2dea1c@gmx.com>
- <3d829151-9b9a-9eae-e76d-b5bcd6e8c5fd@cn.fujitsu.com>
- <399b00c9-3ab5-e777-a69d-4cbaf3641ddb@gmx.com>
- <c70b76c8-61c8-999a-158f-667fa9c86b5f@gmx.com>
- <45d9878a-b6cd-fd0d-5309-05e17c9db51a@cn.fujitsu.com>
- <87e23c3c-73a9-47c6-e68c-b79186678bfa@gmx.com>
- <262f2016-4b63-49db-11d1-83e4ab964957@cn.fujitsu.com>
- <802a5de7-c058-ac24-2ba7-dbe911f858a3@gmx.com>
- <0804626a-eaa4-9958-c4bc-27c16f596b30@cn.fujitsu.com>
-In-Reply-To: <0804626a-eaa4-9958-c4bc-27c16f596b30@cn.fujitsu.com>
+This is a multi-part message in MIME format.
 
---PLvfjlQeyKBP2srVA8QV19Y4WQ039J2Jg
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+--nextPart1537565.GD2qFbBCsi
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
+On Monday, January 8, 2018 3:29:17 AM CET Mark H Weaver wrote:
+> I propose that we revisit this bug and fix it.  We clearly cannot assume that
+> st_blocks == 0 implies that the file contains only zeroes.
 
+. only on btrfs, as far as we know, because of some race condition.  So
+what about special casing that filesystem, where we can lseek() for holes
+anyway?  Since I would prefer fixing btrfs, I'm CC'ing devels again.
 
-On 2017=E5=B9=B412=E6=9C=8827=E6=97=A5 09:11, Su Yue wrote:
->=20
->=20
-[snip]
->>>>
->>>> Manually allocation in advance has its advantage, like we can determ=
-ine
->>>> if there is enough space for new chunk instead of checking every ret=
-urn
->>>> value with ENOSPC.
->>>>
->>>>
->>>> However in current case, your metadata usage is limited to the new
->>>> chunk
->>>> only.
->>>> If there extent tree has quite a lot of problem, and the chunk
->>>> allocated
->>>> is small (if using single profile and small fs), it can easily hit
->>>> ENOSPC again, since btrfs doesn't allocate new chunk for later metad=
-ata
->>>> write.
->>>>
->>> SAD. After I tried to implement above nice idea, infinite recursive
->>> brings me back to the reality.
->>>
->>> Here is the reason why btrfs_reserve_extent can not allocate chunk
->>> by itself if ENOSPC hints:
->>>
->>> btrfs_cow_block
->>> ...
->>> =C2=A0=C2=A0 btrfs_reserve_extent
->>> =C2=A0=C2=A0=C2=A0=C2=A0 btrfs_alloc_chunk
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_alloc_dev_extent
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_insert_empty_i=
-tem
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ...
->>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bt=
-rfs_cow_block
->>
->> The order is just wrong.
->>
->> We should first check for the new chunk space, not doing the insert
->> right now.
->>
->> I'll take over the work if you're OK with it.
->>
-> OK. Thanks a lot.
->=20
-> Thanks,
-> Su
+I'm attaching tar patch (public domain, use as you wish) mostly for
+discussion about the idea (I can or anybody finalize the ifdef-hell,
+etc.).  Note this fixes the failing sparse03.at for me (Fedora 27 x86_64 +
+btrfs).
 
-Well, even after my preparation patches, the situation is still much
-complex than my expectation.
+references for btrfs guys:
+https://www.mail-archive.com/bug-tar@gnu.org/msg05453.html
+https://www.spinics.net/lists/linux-btrfs/msg56768.html
 
-Yes, We could delay chunk/extent tree modification so newer chunk
-allocation can be used for extent tree CoW.
+Pavel
 
+--nextPart1537565.GD2qFbBCsi
+Content-Disposition: attachment; filename="btrfs-wholesparse.patch"
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/x-patch; charset="UTF-8"; name="btrfs-wholesparse.patch"
 
-But a lot of other infrastructure can't handle it well
-The main problem is, we break a lot of ctree.c assumption.
+diff --git a/src/sparse.c b/src/sparse.c
+index d41c0ea..d0a7a55 100644
+--- a/src/sparse.c
++++ b/src/sparse.c
+@@ -18,6 +18,7 @@
+ #include <system.h>
+ #include <inttostr.h>
+ #include <quotearg.h>
++#include <sys/statfs.h>
+ #include "common.h"
+ 
+ struct tar_sparse_file;
+@@ -261,12 +262,58 @@ sparse_scan_file_raw (struct tar_sparse_file *file)
+   return tar_sparse_scan (file, scan_end, NULL);
+ }
+ 
++enum sparse_fs_behavior
++  {
++    sparse_fs_behavior_init = 0,
++    sparse_fs_behavior_fine,
++    sparse_fs_behavior_uncertain
++  };
++
++static enum sparse_fs_behavior
++check_sparse_behavior (int fd)
++{
++  struct statfs buf;
++  if (fstatfs (fd, &buf))
++    return sparse_fs_behavior_fine;
++
++  if (buf.f_type == 0x9123683e)
++    return sparse_fs_behavior_uncertain; /* btrfs */
++
++  return sparse_fs_behavior_fine;
++}
++
++static bool
++wholesparse_detection_prohibited (struct tar_stat_info *st)
++{
++  static dev_t cached_device = 0;
++  static enum sparse_fs_behavior behavior;
++
++  if (behavior == sparse_fs_behavior_init
++      || cached_device != st->stat.st_dev)
++    {
++      cached_device = st->stat.st_dev;
++      behavior = check_sparse_behavior (st->fd);
++    }
++
++  return behavior == sparse_fs_behavior_uncertain;
++}
++
++
+ static bool
+ sparse_scan_file_wholesparse (struct tar_sparse_file *file)
+ {
+   struct tar_stat_info *st = file->stat_info;
+   struct sp_array sp = {0, 0};
+ 
++  /* Some file-systems report st_blksize=0 for files which have some
++     inode-inlined data.  This is, per bug-tar@, rather unfortunate
++     behavior, but we need to deal with these filesystems somehow.  So,
++     let's prohibit the "wholesparse" detection method for such filesystems,
++     and let's hope that 'SEEK_HOLE/SEEK_DATA' works (if not, we fallback to
++     slow-but-safe 'raw' method anyway).  */
++  if (wholesparse_detection_prohibited (file->stat_info))
++    return false;
++
+   /* Note that this function is called only for truly sparse files of size >= 1
+      block size (checked via ST_IS_SPARSE before).  See the thread
+      http://www.mail-archive.com/bug-tar@gnu.org/msg04209.html for more info */
 
-For case like a normal tree CoW:
-
-btrfs_search_slot(root=3Dextent_root)
-|- btrfs_cow_block()
-   |- btrfs_alloc_tree_block()
-      |- btrfs_reserve_extent()
-         |- btrfs_alloc_chunk()
-            |- insert block group item
-               *CoW* extent tree
-
-In above case, extent_root changed even before we cow the extent root.
-And will cause later (b =3D=3D root->node) check fail and trigger a SEGV.=
-
-
-To really address it, we may need a large code rework with dynamic chunk
-allocation in mind, which seems to expensive for a rarely used case.
-
-So in short, I'm totally wrong and too optimistic about the feature.
-Please use the original way, which is to alloc a new meta chunk manually.=
+--nextPart1537565.GD2qFbBCsi--
 
 
-Thanks,
-Qu
 
-
---PLvfjlQeyKBP2srVA8QV19Y4WQ039J2Jg--
-
---kqIt9AnOS793HYkjkVfxtWLHvhPgzwQIL
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpUctAXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjC8wf9ENHZ00c7HqpM8x+eIdMnw3Ke
-OUWB5BReBzb6abRQeONQxeT9I03dra9n9wBSV9avQQERTeINXv4oId/F68W/ffbB
-uY4Rtw0AUkqIW5PpgwNehnFHMc1qANJNQMM6rshdI1aEdLe9aiREDgA49dlnloUA
-Md/sWEsoIJQ4fhcNY8U6q9wnzXxO6USl3w7TUF3WTV0+SLgYfat8LvzGPYTfuyjc
-T332g0sOM3SxLG0x2LuocaTpHzSUYzT0giPuyoqYP9JvK8lL8219m4+IZske9Z9W
-R5062FInGAfRTS2LXdmW19dFpQMWtIkvs2qDUBgH1zfUc/xPPL8Qnf4E/zSwXw==
-=Ch5H
------END PGP SIGNATURE-----
-
---kqIt9AnOS793HYkjkVfxtWLHvhPgzwQIL--

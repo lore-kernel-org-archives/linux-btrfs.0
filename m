@@ -1,50 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44399 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750990AbeAHT7m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jan 2018 14:59:42 -0500
-Date: Mon, 8 Jan 2018 20:57:34 +0100
-From: David Sterba <dsterba@suse.cz>
+Received: from mail-qt0-f180.google.com ([209.85.216.180]:33013 "EHLO
+        mail-qt0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1760099AbeAIRYd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 12:24:33 -0500
+Received: by mail-qt0-f180.google.com with SMTP id e2so18739224qti.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 09:24:32 -0800 (PST)
+Date: Tue, 9 Jan 2018 12:24:31 -0500
+From: Josef Bacik <josef@toxicpanda.com>
 To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/10] bugfixes and regression tests of
- btrfs_get_extent
-Message-ID: <20180108195734.GO13726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Subject: Re: [PATCH v2 01/10] Btrfs: fix incorrect block_len in
+ merge_extent_mapping
+Message-ID: <20180109172430.nt23fi6uvwj62jsv@destiny>
 References: <20180105195117.5131-1-bo.li.liu@oracle.com>
+ <20180105195117.5131-2-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180105195117.5131-1-bo.li.liu@oracle.com>
+In-Reply-To: <20180105195117.5131-2-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 05, 2018 at 12:51:07PM -0700, Liu Bo wrote:
-> Although
-> commit e6c4efd87ab0 ("btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map")
-> fixed up the negetive em->len, it has introduced several regressions, several has been fixed by
+On Fri, Jan 05, 2018 at 12:51:08PM -0700, Liu Bo wrote:
+> %block_len could be checked on deciding if two em are mergeable.
 > 
-> commit 32be3a1ac6d0 ("btrfs: Fix the wrong condition judgment about subset extent map"),
-> commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map insertion in btrfs_get_extent") and
-> commit 8e2bd3b7fac9 ("Btrfs: deal with existing encompassing extent map in btrfs_get_extent()").
+> merge_extent_mapping() has only added the front pad if the front part
+> of em gets truncated, but it's possible that the end part gets
+> truncated.
 > 
-> Unfortunately, there is one more regression which is caught recently by a
-> user's workloads.
+> For both compressed extent and inline extent, em->block_len is not
+> adjusted accordingly, and for regular extent, em->block_len always
+> equals to em->len, hence this sets em->block_len with em->len.
 > 
-> While debugging the above issue, I found that all of these bugs are caused
-> by some racy situations, which can be very tricky to reproduce, so I
-> created several extent map specific test cases in btrfs's selftest
-> framework.
-> 
-> Patch 1-2 are fixing two bugs.
-> Patch 3-4 are some preparatory work.
-> Patch 3-5 are regression tests about the logic of handling EEXIST from
-> adding extent map.
-> Patch 8-10 are debugging wise, one is a direct tracepoint and the other is
-> to enable kprobe on merge_extent_mapping.
-> 
-> v2:
-> - Improve commit log to provide more details about the bug.
-> - Adjust bugfixes to the front so that we can merge them firstly.
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Patchset updated in for-next. Expected merge target is 4.16, review is
-still needed (and welcome).
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+
+Thanks,
+
+Josef

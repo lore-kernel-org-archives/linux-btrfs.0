@@ -1,164 +1,458 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:53636 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754495AbeAIAVq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 8 Jan 2018 19:21:46 -0500
-Subject: Re: [PATCH 2/2] btrfs-progs: misc-test: Add test case to check if fi
- usage and show report consistent unallocated space
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        adambahe@gmail.com
-References: <20180102063315.32382-1-wqu@suse.com>
- <20180102063315.32382-2-wqu@suse.com> <20180108193916.GM13726@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <71de1f27-734d-1024-283d-885cb5de3fdd@gmx.com>
-Date: Tue, 9 Jan 2018 08:21:29 +0800
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:58506 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1754799AbeAIBvC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 20:51:02 -0500
+Subject: Re: [PATCH v2 1/2] btrfs-progs: Merge btrfs_alloc_data_chunk into
+ btrfs_alloc_chunk
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+References: <20180105081212.27175-2-wqu@suse.com>
+ <20180108082529.30384-1-wqu@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <8476df15-cb6b-579c-4285-fbabda88d474@cn.fujitsu.com>
+Date: Tue, 9 Jan 2018 09:55:21 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180108193916.GM13726@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="xN1lxt7mRAXwkwS3WGEfLEG5gaOKs7j0s"
+In-Reply-To: <20180108082529.30384-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---xN1lxt7mRAXwkwS3WGEfLEG5gaOKs7j0s
-Content-Type: multipart/mixed; boundary="TutY4Fot9YBEHu1zbKZ9V5Mj2jGtDOl1S";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
- adambahe@gmail.com
-Message-ID: <71de1f27-734d-1024-283d-885cb5de3fdd@gmx.com>
-Subject: Re: [PATCH 2/2] btrfs-progs: misc-test: Add test case to check if fi
- usage and show report consistent unallocated space
-References: <20180102063315.32382-1-wqu@suse.com>
- <20180102063315.32382-2-wqu@suse.com> <20180108193916.GM13726@twin.jikos.cz>
-In-Reply-To: <20180108193916.GM13726@twin.jikos.cz>
-
---TutY4Fot9YBEHu1zbKZ9V5Mj2jGtDOl1S
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 01/08/2018 04:25 PM, Qu Wenruo wrote:
+> We used to have two chunk allocators, btrfs_alloc_chunk() and
+> btrfs_alloc_data_chunk(), the former is the more generic one, while the
+> later is only used in mkfs and convert, to allocate SINGLE data chunk.
+> 
+> Although btrfs_alloc_data_chunk() has some special hacks to cooperate
+> with convert, it's quite simple to integrity it into the generic chunk
+> allocator.
+> 
+> So merge them into one btrfs_alloc_chunk(), with extra @convert
+> parameter and necessary comment, to make code less duplicated and less
+> thing to maintain.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-On 2018=E5=B9=B401=E6=9C=8809=E6=97=A5 03:39, David Sterba wrote:
-> On Tue, Jan 02, 2018 at 02:33:15PM +0800, Qu Wenruo wrote:
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>  tests/misc-tests/028-fi-usage-cross-check/test.sh | 46 ++++++++++++++=
-+++++++++
->>  1 file changed, 46 insertions(+)
->>  create mode 100755 tests/misc-tests/028-fi-usage-cross-check/test.sh
->>
->> diff --git a/tests/misc-tests/028-fi-usage-cross-check/test.sh b/tests=
-/misc-tests/028-fi-usage-cross-check/test.sh
->> new file mode 100755
->> index 000000000000..bf438b60abf1
->> --- /dev/null
->> +++ b/tests/misc-tests/028-fi-usage-cross-check/test.sh
->> @@ -0,0 +1,46 @@
->> +#!/bin/bash
->> +# check fi-usage is output correct unallocated space for RAID10
->> +
->> +source "$TOP/tests/common"
->> +
->> +check_prereq mkfs.btrfs
->> +check_prereq btrfs
->> +
->> +setup_root_helper
->> +
->> +setup_loopdevs 4
->> +prepare_loopdevs
->> +dev1=3D${loopdevs[1]}
->> +
->> +run_check "$TOP/mkfs.btrfs" -d raid10 -m raid10 -f ${loopdevs[@]}
->> +run_check $SUDO_HELPER mount $dev1 "$TEST_MNT"
->=20
-> There's a helper macro for that, run_check_mount_test_dev, that expects=
+Looks good to me.
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+> changelog:
+> v2:
+>    Instead of re-init @private_devs list, change the later BUG_ON() for
+>    convert case.
+>    Update wrong comment to reflect the code.
+>    Remove unnecessary new-line in error().
+> ---
+>   convert/main.c |   6 +-
+>   extent-tree.c  |   2 +-
+>   mkfs/main.c    |  14 ++--
+>   volumes.c      | 221 ++++++++++++++++++++++-----------------------------------
+>   volumes.h      |   5 +-
+>   5 files changed, 98 insertions(+), 150 deletions(-)
+> 
+> diff --git a/convert/main.c b/convert/main.c
+> index 4a510a786394..8ee858fb2d05 100644
+> --- a/convert/main.c
+> +++ b/convert/main.c
+> @@ -910,9 +910,9 @@ static int make_convert_data_block_groups(struct btrfs_trans_handle *trans,
+>   
+>   			len = min(max_chunk_size,
+>   				  cache->start + cache->size - cur);
+> -			ret = btrfs_alloc_data_chunk(trans, fs_info,
+> -					&cur_backup, len,
+> -					BTRFS_BLOCK_GROUP_DATA, 1);
+> +			ret = btrfs_alloc_chunk(trans, fs_info,
+> +					&cur_backup, &len,
+> +					BTRFS_BLOCK_GROUP_DATA, true);
+>   			if (ret < 0)
+>   				break;
+>   			ret = btrfs_make_block_group(trans, fs_info, 0,
+> diff --git a/extent-tree.c b/extent-tree.c
+> index db24da3a3a8c..4231be11bd53 100644
+> --- a/extent-tree.c
+> +++ b/extent-tree.c
+> @@ -1907,7 +1907,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+>   		return 0;
+>   
+>   	ret = btrfs_alloc_chunk(trans, fs_info, &start, &num_bytes,
+> -	                        space_info->flags);
+> +	                        space_info->flags, false);
+>   	if (ret == -ENOSPC) {
+>   		space_info->full = 1;
+>   		return 0;
+> diff --git a/mkfs/main.c b/mkfs/main.c
+> index 938025bfd32e..f8e27a7ec8b8 100644
+> --- a/mkfs/main.c
+> +++ b/mkfs/main.c
+> @@ -92,7 +92,7 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
+>   		ret = btrfs_alloc_chunk(trans, fs_info,
+>   					&chunk_start, &chunk_size,
+>   					BTRFS_BLOCK_GROUP_METADATA |
+> -					BTRFS_BLOCK_GROUP_DATA);
+> +					BTRFS_BLOCK_GROUP_DATA, false);
+>   		if (ret == -ENOSPC) {
+>   			error("no space to allocate data/metadata chunk");
+>   			goto err;
+> @@ -109,7 +109,7 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
+>   	} else {
+>   		ret = btrfs_alloc_chunk(trans, fs_info,
+>   					&chunk_start, &chunk_size,
+> -					BTRFS_BLOCK_GROUP_METADATA);
+> +					BTRFS_BLOCK_GROUP_METADATA, false);
+>   		if (ret == -ENOSPC) {
+>   			error("no space to allocate metadata chunk");
+>   			goto err;
+> @@ -143,7 +143,7 @@ static int create_data_block_groups(struct btrfs_trans_handle *trans,
+>   	if (!mixed) {
+>   		ret = btrfs_alloc_chunk(trans, fs_info,
+>   					&chunk_start, &chunk_size,
+> -					BTRFS_BLOCK_GROUP_DATA);
+> +					BTRFS_BLOCK_GROUP_DATA, false);
+>   		if (ret == -ENOSPC) {
+>   			error("no space to allocate data chunk");
+>   			goto err;
+> @@ -251,7 +251,7 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
+>   	int ret;
+>   
+>   	ret = btrfs_alloc_chunk(trans, fs_info,
+> -				&chunk_start, &chunk_size, type);
+> +				&chunk_start, &chunk_size, type, false);
+>   	if (ret == -ENOSPC) {
+>   		error("not enough free space to allocate chunk");
+>   		exit(1);
+> @@ -1003,7 +1003,7 @@ static int create_chunks(struct btrfs_trans_handle *trans,
+>   
+>   	for (i = 0; i < num_of_meta_chunks; i++) {
+>   		ret = btrfs_alloc_chunk(trans, fs_info,
+> -					&chunk_start, &chunk_size, meta_type);
+> +				&chunk_start, &chunk_size, meta_type, false);
+>   		if (ret)
+>   			return ret;
+>   		ret = btrfs_make_block_group(trans, fs_info, 0,
+> @@ -1019,8 +1019,8 @@ static int create_chunks(struct btrfs_trans_handle *trans,
+>   	if (size_of_data < minimum_data_chunk_size)
+>   		size_of_data = minimum_data_chunk_size;
+>   
+> -	ret = btrfs_alloc_data_chunk(trans, fs_info,
+> -				     &chunk_start, size_of_data, data_type, 0);
+> +	ret = btrfs_alloc_chunk(trans, fs_info,
+> +				&chunk_start, &size_of_data, data_type, false);
+>   	if (ret)
+>   		return ret;
+>   	ret = btrfs_make_block_group(trans, fs_info, 0,
+> diff --git a/volumes.c b/volumes.c
+> index fa3c6de023f9..a6522b3c72f8 100644
+> --- a/volumes.c
+> +++ b/volumes.c
+> @@ -844,9 +844,23 @@ error:
+>   				- 2 * sizeof(struct btrfs_chunk))	\
+>   				/ sizeof(struct btrfs_stripe) + 1)
+>   
+> +/*
+> + * Alloc a chunk, will insert dev extents, chunk item.
+> + * NOTE: This function will not insert block group item nor mark newly
+> + * allocated chunk available for later allocation.
+> + * Block group item and free space update is handled by btrfs_make_block_group()
+> + *
+> + * @start:	return value of allocated chunk start bytenr.
+> + * @num_bytes:	return value of allocated chunk size
+> + * @type:	chunk type (including both profile and type)
+> + * @convert:	if the chunk is allocated for convert case.
+> + * 		If @convert is true, chunk allocator will skip device extent
+> + * 		search, but use *start and *num_bytes as chunk start/num_bytes
+> + * 		and devive offset, to build a 1:1 chunk mapping for convert.
+> + */
+>   int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>   		      struct btrfs_fs_info *info, u64 *start,
+> -		      u64 *num_bytes, u64 type)
+> +		      u64 *num_bytes, u64 type, bool convert)
+>   {
+>   	u64 dev_offset;
+>   	struct btrfs_root *extent_root = info->extent_root;
+> @@ -876,10 +890,38 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>   	struct btrfs_key key;
+>   	u64 offset;
+>   
+> -	if (list_empty(dev_list)) {
+> +	if (list_empty(dev_list))
+>   		return -ENOSPC;
+> -	}
+>   
+> +	if (convert) {
+> +		/* For convert, profile must be SINGLE */
+> +		if (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+> +			error("convert only suports SINGLE profile");
+> +			return -EINVAL;
+> +		}
+> +		if (!IS_ALIGNED(*start, info->sectorsize)) {
+> +			error("chunk start not aligned, start=%llu sectorsize=%u",
+> +				*start, info->sectorsize);
+> +			return -EINVAL;
+> +		}
+> +		if (!IS_ALIGNED(*num_bytes, info->sectorsize)) {
+> +			error("chunk size not aligned, size=%llu sectorsize=%u",
+> +				*num_bytes, info->sectorsize);
+> +			return -EINVAL;
+> +		}
+> +		calc_size = *num_bytes;
+> +		offset = *start;
+> +		/*
+> +		 * For convert, we use 1:1 chunk mapping specified by @start and
+> +		 * @num_bytes, so there is no need to go through dev_extent
+> +		 * searching.
+> +		 */
+> +		goto alloc_chunk;
+> +	}
+> +	
+> +	/*
+> +	 * Chunk size calculation part.
+> +	 */
+>   	if (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+>   		if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
+>   			calc_size = SZ_8M;
+> @@ -950,6 +992,9 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>   	percent_max = div_factor(btrfs_super_total_bytes(info->super_copy), 1);
+>   	max_chunk_size = min(percent_max, max_chunk_size);
+>   
+> +	/*
+> +	 * Reserve space from each device.
+> +	 */
+>   again:
+>   	if (chunk_bytes_by_type(type, calc_size, num_stripes, sub_stripes) >
+>   	    max_chunk_size) {
+> @@ -980,7 +1025,8 @@ again:
+>   			return ret;
+>   		cur = cur->next;
+>   		if (avail >= min_free) {
+> -			list_move_tail(&device->dev_list, &private_devs);
+> +			list_move_tail(&device->dev_list,
+> +				       &private_devs);
+>   			index++;
+>   			if (type & BTRFS_BLOCK_GROUP_DUP)
+>   				index++;
+> @@ -1007,9 +1053,16 @@ again:
+>   		}
+>   		return -ENOSPC;
+>   	}
+> -	ret = find_next_chunk(info, &offset);
+> -	if (ret)
+> -		return ret;
+> +
+> +	/*
+> +	 * Fill chunk mapping and chunk stripes
+> +	 */
+> +alloc_chunk:
+> +	if (!convert) {
+> +		ret = find_next_chunk(info, &offset);
+> +		if (ret)
+> +			return ret;
+> +	}
+>   	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+>   	key.type = BTRFS_CHUNK_ITEM_KEY;
+>   	key.offset = offset;
+> @@ -1030,17 +1083,31 @@ again:
+>   	index = 0;
+>   	while(index < num_stripes) {
+>   		struct btrfs_stripe *stripe;
+> -		BUG_ON(list_empty(&private_devs));
+> -		cur = private_devs.next;
+> -		device = list_entry(cur, struct btrfs_device, dev_list);
+>   
+> -		/* loop over this device again if we're doing a dup group */
+> -		if (!(type & BTRFS_BLOCK_GROUP_DUP) ||
+> -		    (index == num_stripes - 1))
+> -			list_move_tail(&device->dev_list, dev_list);
+> +		if (!convert) {
+> +			if (list_empty(&private_devs))
+> +				return -ENODEV;
+> +			cur = private_devs.next;
+> +			device = list_entry(cur, struct btrfs_device, dev_list);
+> +			if (!(type & BTRFS_BLOCK_GROUP_DUP) ||
+> +			    (index == num_stripes - 1)) {
+> +				/*
+> +				 * loop over this device again if we're doing a
+> +				 * dup group
+> +				 */
+> +				list_move_tail(&device->dev_list, dev_list);
+> +			}
+> +		} else {
+> +			/* Only SINGLE is accepted in convert case */
+> +			BUG_ON(num_stripes > 1);
+> +			device = list_entry(dev_list->next, struct btrfs_device,
+> +					    dev_list);
+> +			key.offset = *start;
+> +			dev_offset = *start;
+> +		}
+>   
+>   		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
+> -			     calc_size, &dev_offset, 0);
+> +			     calc_size, &dev_offset, convert);
+>   		if (ret < 0)
+>   			goto out_chunk_map;
+>   
+> @@ -1057,7 +1124,7 @@ again:
+>   		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
+>   		index++;
+>   	}
+> -	BUG_ON(!list_empty(&private_devs));
+> +	BUG_ON(!convert && !list_empty(&private_devs));
+>   
+>   	/* key was set above */
+>   	btrfs_set_stack_chunk_length(chunk, *num_bytes);
+> @@ -1077,6 +1144,9 @@ again:
+>   	map->num_stripes = num_stripes;
+>   	map->sub_stripes = sub_stripes;
+>   
+> +	/*
+> +	 * Insert chunk item and chunk mapping.
+> +	 */
+>   	ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
+>   				btrfs_chunk_item_size(num_stripes));
+>   	BUG_ON(ret);
+> @@ -1106,125 +1176,6 @@ out_chunk:
+>   	return ret;
+>   }
+>   
+> -/*
+> - * Alloc a DATA chunk with SINGLE profile.
+> - *
+> - * If 'convert' is set, it will alloc a chunk with 1:1 mapping
+> - * (btrfs logical bytenr == on-disk bytenr)
+> - * For that case, caller must make sure the chunk and dev_extent are not
+> - * occupied.
+> - */
+> -int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+> -			   struct btrfs_fs_info *info, u64 *start,
+> -			   u64 num_bytes, u64 type, int convert)
+> -{
+> -	u64 dev_offset;
+> -	struct btrfs_root *extent_root = info->extent_root;
+> -	struct btrfs_root *chunk_root = info->chunk_root;
+> -	struct btrfs_stripe *stripes;
+> -	struct btrfs_device *device = NULL;
+> -	struct btrfs_chunk *chunk;
+> -	struct list_head *dev_list = &info->fs_devices->devices;
+> -	struct list_head *cur;
+> -	struct map_lookup *map;
+> -	u64 calc_size = SZ_8M;
+> -	int num_stripes = 1;
+> -	int sub_stripes = 0;
+> -	int ret;
+> -	int index;
+> -	int stripe_len = BTRFS_STRIPE_LEN;
+> -	struct btrfs_key key;
+> -
+> -	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+> -	key.type = BTRFS_CHUNK_ITEM_KEY;
+> -	if (convert) {
+> -		if (*start != round_down(*start, info->sectorsize)) {
+> -			error("DATA chunk start not sectorsize aligned: %llu",
+> -					(unsigned long long)*start);
+> -			return -EINVAL;
+> -		}
+> -		key.offset = *start;
+> -		dev_offset = *start;
+> -	} else {
+> -		u64 tmp;
+> -
+> -		ret = find_next_chunk(info, &tmp);
+> -		key.offset = tmp;
+> -		if (ret)
+> -			return ret;
+> -	}
+> -
+> -	chunk = kmalloc(btrfs_chunk_item_size(num_stripes), GFP_NOFS);
+> -	if (!chunk)
+> -		return -ENOMEM;
+> -
+> -	map = kmalloc(btrfs_map_lookup_size(num_stripes), GFP_NOFS);
+> -	if (!map) {
+> -		kfree(chunk);
+> -		return -ENOMEM;
+> -	}
+> -
+> -	stripes = &chunk->stripe;
+> -	calc_size = num_bytes;
+> -
+> -	index = 0;
+> -	cur = dev_list->next;
+> -	device = list_entry(cur, struct btrfs_device, dev_list);
+> -
+> -	while (index < num_stripes) {
+> -		struct btrfs_stripe *stripe;
+> -
+> -		ret = btrfs_alloc_dev_extent(trans, device, key.offset,
+> -			     calc_size, &dev_offset, convert);
+> -		BUG_ON(ret);
+> -
+> -		device->bytes_used += calc_size;
+> -		ret = btrfs_update_device(trans, device);
+> -		BUG_ON(ret);
+> -
+> -		map->stripes[index].dev = device;
+> -		map->stripes[index].physical = dev_offset;
+> -		stripe = stripes + index;
+> -		btrfs_set_stack_stripe_devid(stripe, device->devid);
+> -		btrfs_set_stack_stripe_offset(stripe, dev_offset);
+> -		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
+> -		index++;
+> -	}
+> -
+> -	/* key was set above */
+> -	btrfs_set_stack_chunk_length(chunk, num_bytes);
+> -	btrfs_set_stack_chunk_owner(chunk, extent_root->root_key.objectid);
+> -	btrfs_set_stack_chunk_stripe_len(chunk, stripe_len);
+> -	btrfs_set_stack_chunk_type(chunk, type);
+> -	btrfs_set_stack_chunk_num_stripes(chunk, num_stripes);
+> -	btrfs_set_stack_chunk_io_align(chunk, stripe_len);
+> -	btrfs_set_stack_chunk_io_width(chunk, stripe_len);
+> -	btrfs_set_stack_chunk_sector_size(chunk, info->sectorsize);
+> -	btrfs_set_stack_chunk_sub_stripes(chunk, sub_stripes);
+> -	map->sector_size = info->sectorsize;
+> -	map->stripe_len = stripe_len;
+> -	map->io_align = stripe_len;
+> -	map->io_width = stripe_len;
+> -	map->type = type;
+> -	map->num_stripes = num_stripes;
+> -	map->sub_stripes = sub_stripes;
+> -
+> -	ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
+> -				btrfs_chunk_item_size(num_stripes));
+> -	BUG_ON(ret);
+> -	if (!convert)
+> -		*start = key.offset;
+> -
+> -	map->ce.start = key.offset;
+> -	map->ce.size = num_bytes;
+> -
+> -	ret = insert_cache_extent(&info->mapping_tree.cache_tree, &map->ce);
+> -	BUG_ON(ret);
+> -
+> -	kfree(chunk);
+> -	return ret;
+> -}
+> -
+>   int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+>   {
+>   	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+> diff --git a/volumes.h b/volumes.h
+> index 11572e78c04f..7bbdf615d31a 100644
+> --- a/volumes.h
+> +++ b/volumes.h
+> @@ -208,10 +208,7 @@ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info);
+>   int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info);
+>   int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>   		      struct btrfs_fs_info *fs_info, u64 *start,
+> -		      u64 *num_bytes, u64 type);
+> -int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+> -			   struct btrfs_fs_info *fs_info, u64 *start,
+> -			   u64 num_bytes, u64 type, int convert);
+> +		      u64 *num_bytes, u64 type, bool convert);
+>   int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>   		       int flags);
+>   int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+> 
 
-> the TEST_DEV to be set. I suggest to use this variable instead of dev1,=
 
-> and then the umount command can be replaced by
-> run_check_umount_test_dev.
->> +
->> +output_dir=3D$(mktemp -d --tmpdir btrfs-progs-misc.XXXXXXXX)
->=20
-> This is not IMO necessary, you get only one line from the fi show outpu=
-t
-> and check if it's not empty. A simple 'if grep ...' . The output is
-> reused so you can store it to a variable.
->=20
->> +
->> +run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem show --raw "$TE=
-ST_MNT" |\
->> +	grep "$dev1" > "$output_dir/fi_show_output"
->> +if [ ! -s "$output_dir/fi_show_output" ]; then
->> +	_fail "failed to get correct fi show output"
->> +fi
->> +
->> +dev1_total=3D$(cat "$output_dir/fi_show_output" | awk '{print $4}')
->> +dev1_used=3D$(cat "$output_dir/fi_show_output" | awk '{print $6}')
->> +dev1_fi_show_unallocated=3D$(( $dev1_total - $dev1_used))
->> +
->> +run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem usage --raw "$T=
-EST_MNT" |\
->> +	grep "$dev1" | tail -n1 > "$output_dir/fi_usage_output"
->> +if [ ! -s "$output_dir/fi_usage_output" ]; then
->> +	_fail "failed to get correct fi usage output"
->> +fi
->> +
->> +dev1_fi_usage_unallocated=3D$(cat "$output_dir/fi_usage_output" | awk=
- '{print $2}')
->> +echo "fi usage unallocated for devid1 is $dev1_fi_usage_unallocated" =
->> "$RESULTS"
->> +echo "fi show unallocated for devid1 is $dev1_fi_show_unallocated" >>=
- "$RESULTS"
->> +
->> +if [ $dev1_fi_show_unallocated -ne $dev1_fi_usage_unallocated ]; then=
-
->> +	_fail "fi usage unallocated mismatch with fi show"
->> +fi
->> +
->> +run_check $SUDO_HELPER umount "$TEST_MNT"
->> +cleanup_loopdevs
->> +rm $output_dir -rf
->=20
-> Please quote all arguments, namely if it's passed to 'rm', and options
-> should go before arugments.
-
-However the $output_dir won't contain any space or any escaping.
-
-It will always be something like "/tmp/btrfs-progs-misc.1234567", do we
-still need to quota something we're sure it's safe?
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---TutY4Fot9YBEHu1zbKZ9V5Mj2jGtDOl1S--
-
---xN1lxt7mRAXwkwS3WGEfLEG5gaOKs7j0s
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpUCwkXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgPDgf/UyWmivmstwJPZ97UZTQBSt0D
-o5fr0X9VLAIQiBw9BrIcmsLYfn4ID/2esrYDKtBpBU+seRmrDMd9A7fSPYG8OVIt
-Q4N/aOjGkpvFiGiszHm8wmd/5nPdwayA88orZj22O/xBea2xLa2aNSncHp0e/Zkf
-+8UwPqxJ5tOij8BAgYYprkLsSayDrtjCuc3rrAPx8n6lTntZmz2xCNeQO7Wo/WJ8
-SNRxcZCtVq8roHQ/kyYJ/FIApWYwWF0jV6fZjNF+NylAIUHRaIstP2lSIUg4YoAw
-/x7Xc62It5NK5Jk+NyJe+jSt6A5J/hqA655+RTZK8OAl1sRclBlZmzSO82bC2w==
-=MHmj
------END PGP SIGNATURE-----
-
---xN1lxt7mRAXwkwS3WGEfLEG5gaOKs7j0s--

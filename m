@@ -1,45 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49376 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41417 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932956AbeAJPd2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 10:33:28 -0500
-Subject: Re: [RFC PATCH] btrfs: Fix slight df misreporting when listing mixed
- block groups fs
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-References: <1515513845-3749-1-git-send-email-nborisov@suse.com>
- <b9da1d4e-f32c-d923-1e9c-243f753ffa20@gmx.com>
+        id S933174AbeAIQEK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Jan 2018 11:04:10 -0500
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <d9ab30af-0b3a-7021-876c-5e545b417d40@suse.com>
-Date: Wed, 10 Jan 2018 17:33:25 +0200
-MIME-Version: 1.0
-In-Reply-To: <b9da1d4e-f32c-d923-1e9c-243f753ffa20@gmx.com>
-Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
+Cc: quwenruo.btrfs@gmx.com, dsterba@suse.cz,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [RFC PATCH] btrfs: Fix slight df misreporting when listing mixed block groups fs
+Date: Tue,  9 Jan 2018 18:04:05 +0200
+Message-Id: <1515513845-3749-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Currently when df (resp. statfs) is executed on a btrfs instance the
+free space is calculated as the freespace of the block groups +
+any unallocated space on the devices, constituting this filesystem.
+There is a catch, however, in that the unallocated space from the
+devices has 1 mb subtracted from each device to closely follow btrfs'
+allocator behavior. This is all good except that when we have a file
+system and the system chunk's allocation profile is single (as is the
+default in mixed mode) it occupies the range 0..4mb and thus implicitly
+prevents allocation starting in the range 0..1mb. In those cases
+additionally subtracting 1mb during statfs makes us misreport the
+actual free space and this causes generic/015 to fail.
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+Hello,                                                                          
+                                                                                
+So with this patch and adding sync to generic/015 (which is a different issue)  
+I can make generic/015 pass. In any case I think this behavior is correct       
+though frankly I feel it's not really worth it, in the worst case we are        
+underreporting by at most 1mb per device.
 
-On 10.01.2018 03:30, Qu Wenruo wrote:
-> That system chunk can be relocated by balance, and in that case new
-> chunk may start beyond 1M.
-> 
-> So the most reliable method would be manually checking the the first
-> device extent of this device, and to determine if we should minus that 1M.
-> 
-> If the first device extent starts beyond 1M, reducing 1M would be good.
-> Or don't modify it.
+ fs/btrfs/super.c | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
 
-So assuming I run generic/015 on a system with your mkfs patches to put
-system chunk after 1mb and I implement a logic in
-btrfs_calc_avail_data_space to subtract 1mb if the first extent of a
-device starts at 1mb. In that case the test is still going to fail i.e
-have the discrepancy of 1mb due to 1mb being subtracted first due to
-there being unallocated space on the device, but then on the second df
-btrfs_calc_avail_data_space will return 0 so df is going to report space
-only from the block groups.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f33a55272deb..a4dfc9701220 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1925,12 +1925,13 @@ static int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_device_info *devices_info;
+ 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	struct btrfs_device *device;
+-	u64 skip_space;
+ 	u64 type;
+ 	u64 avail_space;
+ 	u64 min_stripe_size;
+ 	int min_stripes = 1, num_stripes = 1;
+ 	int i = 0, nr_devices;
++	bool sys_chunk_single = !(btrfs_system_alloc_profile(fs_info) &
++				  ~BTRFS_BLOCK_GROUP_SYSTEM);
+ 
+ 	/*
+ 	 * We aren't under the device list lock, so this is racy-ish, but good
+@@ -1988,18 +1989,18 @@ static int btrfs_calc_avail_data_space(struct btrfs_fs_info *fs_info,
+ 		/*
+ 		 * In order to avoid overwriting the superblock on the drive,
+ 		 * btrfs starts at an offset of at least 1MB when doing chunk
+-		 * allocation.
++		 * allocation. There is one notable exception, and that is
++		 * when the System chunk has allocation profile of single. In
++		 * this case it occupies 0..4m  and we don't really need to
++		 * subtract 1mb as it's implied
+ 		 */
+-		skip_space = SZ_1M;
+-
+-		/*
+-		 * we can use the free space in [0, skip_space - 1], subtract
+-		 * it from the total.
+-		 */
+-		if (avail_space && avail_space >= skip_space)
+-			avail_space -= skip_space;
+-		else
+-			avail_space = 0;
++		if (device->devid != 1 ||
++		    (!sys_chunk_single && device->devid == 1)) {
++			if (avail_space && avail_space >= SZ_1M)
++				avail_space -= SZ_1M;
++			else
++				avail_space = 0;
++		}
+ 
+ 		if (avail_space < min_stripe_size)
+ 			continue;
+-- 
+2.7.4
 
-
-Thinking a bit more I think with your mkfs.btrfs patch there is no need
-to check where the device extent starts, since now we are guaranteed to
-always have a hole of at least 1mb at the beginning.

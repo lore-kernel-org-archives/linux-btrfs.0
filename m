@@ -1,52 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:58590 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1755360AbeAIBE7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jan 2018 20:04:59 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: wqu@suse.com
-Subject: [PATCH 3/3] btrfs: fail mount when sb flag is not in BTRFS_SUPER_FLAG_SUPP
-Date: Tue,  9 Jan 2018 09:05:43 +0800
-Message-Id: <20180109010543.16053-4-anand.jain@oracle.com>
-In-Reply-To: <20180109010543.16053-1-anand.jain@oracle.com>
-References: <20180109010543.16053-1-anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:49436 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751647AbeAIRi3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Jan 2018 12:38:29 -0500
+Date: Tue, 9 Jan 2018 18:36:20 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Xiongfeng Wang <wangxiongfeng2@huawei.com>
+Cc: dsterba@suse.com, clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, arnd@arndb.de
+Subject: Re: [PATCH] btrfs: use correct string length
+Message-ID: <20180109173620.GS13726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1515412282-57381-1-git-send-email-wangxiongfeng2@huawei.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1515412282-57381-1-git-send-email-wangxiongfeng2@huawei.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It appear from the original commit [1] that there isn't any design
-specific reason not to fail the mount instead of just warning. This
-patch will change it to fail.
+On Mon, Jan 08, 2018 at 07:51:22PM +0800, Xiongfeng Wang wrote:
+> From: Xiongfeng Wang <xiongfeng.wang@linaro.org>
+> 
+> gcc-8 reports
+> 
+> fs/btrfs/ioctl.c: In function 'btrfs_ioctl':
+> ./include/linux/string.h:245:9: warning: '__builtin_strncpy' specified
+> bound 1024 equals destination size [-Wstringop-truncation]
+> 
+> We need one less byte or call strlcpy() to make it a nul-terminated
+> string.
 
-[1]
- commit 319e4d0661e5323c9f9945f0f8fb5905e5fe74c3
-    btrfs: Enhance super validation check
+The null termination is on the following line, so this patch fixes
+namely the gcc warning:
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
- cc: wqu@suse.com
-Reviewed-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+> -		strncpy(di_args->path, name->str, sizeof(di_args->path));
+> +		strncpy(di_args->path, name->str, sizeof(di_args->path) - 1);
+>  		rcu_read_unlock();
+>  		di_args->path[sizeof(di_args->path) - 1] = 0;
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7cd4935f690f..b5fe6eb7b697 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3907,9 +3907,11 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
- 		btrfs_err(fs_info, "no valid FS found");
- 		ret = -EINVAL;
- 	}
--	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP)
--		btrfs_warn(fs_info, "unrecognized super flag: %llu",
-+	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP) {
-+		btrfs_err(fs_info, "unrecognized or unsupported super flag: %llu",
- 				btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP);
-+		ret = -EINVAL;
-+	}
- 	if (btrfs_super_root_level(sb) >= BTRFS_MAX_LEVEL) {
- 		btrfs_err(fs_info, "tree_root level too big: %d >= %d",
- 				btrfs_super_root_level(sb), BTRFS_MAX_LEVEL);
--- 
-2.15.0
+Reviewed-by: David Sterba <dsterba@suse.com>
 

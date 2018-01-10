@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39419 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39575 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751031AbeAJNhO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 08:37:14 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 499F9ADEF
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 13:37:13 +0000 (UTC)
+        id S1751047AbeAJNkG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 08:40:06 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C32CAADEF
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 13:40:04 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Remove userspace transaction ioctls
-Date: Wed, 10 Jan 2018 15:37:11 +0200
-Message-Id: <1515591431-16425-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH v3] btrfs: Remove userspace transaction ioctls
+Date: Wed, 10 Jan 2018 15:40:02 +0200
+Message-Id: <1515591602-17400-1-git-send-email-nborisov@suse.com>
 In-Reply-To: <1515590477-22878-2-git-send-email-nborisov@suse.com>
 References: <1515590477-22878-2-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,14 +23,27 @@ finishes the job!
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
-
+V3: 
+ Remove btrfs_ioctl_trans_end declaration in ctree.h 
 V2: 
  Remove btrfs_ioctl_trans_end reference in btrfs_sync_fil
-
+ fs/btrfs/ctree.h |  1 -
  fs/btrfs/file.c  |  6 ----
  fs/btrfs/ioctl.c | 95 --------------------------------------------------------
- 2 files changed, 101 deletions(-)
+ 3 files changed, 102 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1a462ab85c49..6a4752177ad8 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3193,7 +3193,6 @@ void btrfs_destroy_inode(struct inode *inode);
+ int btrfs_drop_inode(struct inode *inode);
+ int __init btrfs_init_cachep(void);
+ void btrfs_destroy_cachep(void);
+-long btrfs_ioctl_trans_end(struct file *file);
+ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			 struct btrfs_root *root, int *was_new);
+ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
 index cba2ac371ce0..291036513017 100644
 --- a/fs/btrfs/file.c

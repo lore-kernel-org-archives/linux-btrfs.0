@@ -1,64 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:51038 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752676AbeAJFRG (ORCPT
+Received: from mail-qt0-f181.google.com ([209.85.216.181]:39632 "EHLO
+        mail-qt0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965845AbeAJPtU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 00:17:06 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0A5H5gG009707
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:17:05 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2120.oracle.com with ESMTP id 2fd8bdrhee-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:17:04 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0A5ESpP015830
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:14:28 GMT
-Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0A5EShR015703
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:14:28 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 0/6] preparatory work to add device forget
-Date: Wed, 10 Jan 2018 13:15:17 +0800
-Message-Id: <20180110051523.3681-1-anand.jain@oracle.com>
+        Wed, 10 Jan 2018 10:49:20 -0500
+Received: by mail-qt0-f181.google.com with SMTP id k19so22568700qtj.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 07:49:19 -0800 (PST)
+Date: Wed, 10 Jan 2018 10:49:18 -0500
+From: Josef Bacik <josef@toxicpanda.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/6] btrfs: make btrfs_free_stale_device() to iterate all
+ stales
+Message-ID: <20180110154917.b2l7w4m3lsipmail@destiny>
+References: <20180110051523.3681-1-anand.jain@oracle.com>
+ <20180110051523.3681-4-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180110051523.3681-4-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-v3->v4:
- Mainly fix as per comments from Josef.
- @3/6: rename btrfs_free_stale_device() to btrfs_free_stale_devices()
- @4/6: reorg logic, init not_found = 0; drop else part
- @5/6: added new in v4. Renames arg cur_dev to skip_dev
- @6/6: v3:5/6 is merged to v4:6/6
- checkpath error fixes.
+On Wed, Jan 10, 2018 at 01:15:20PM +0800, Anand Jain wrote:
+> From: Anand Jain <Anand.Jain@oracle.com>
+> 
+> Let the list iterator iterate further and find other stale
+> devices and delete it. This is in preparation to add support
+> for user land request-able stale devices cleanup. Also rename
+> btrfs_free_stale_device() to btrfs_free_stale_devices().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-v2->v3:
- @ 6/6:
- add btrfs_free_stale_device() fn description, suggested by Nikolay
- Fix line with longer than 80 char
- 
-v1->v2:
- @ 6/6:
- btrfs_device::name is null when we have missing device and
- unmounted. So we still need to check for dev->name.
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 
-We can reuse the function btrfs_free_stale_device() to add feature
-to forget a scanned device or all stale devices. So this patch set
-proposes following changes to it.
+Thanks,
 
-Anand Jain (6):
-  btrfs: cleanup btrfs_free_stale_device() usage
-  btrfs: no need to check for btrfs_fs_devices::seeding
-  btrfs: make btrfs_free_stale_device() to iterate all stales
-  btrfs: make btrfs_free_stale_device() argument optional
-  btrfs: rename btrfs_free_stale_devices() arg to skip_dev
-  btrfs: make btrfs_free_stale_device() to match the path
-
- fs/btrfs/volumes.c | 59 +++++++++++++++++++++++-------------------------------
- 1 file changed, 25 insertions(+), 34 deletions(-)
-
--- 
-2.7.0
-
+Josef

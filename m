@@ -1,71 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:49566 "EHLO
+Received: from userp2120.oracle.com ([156.151.31.85]:51038 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753189AbeARDdm (ORCPT
+        with ESMTP id S1752676AbeAJFRG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Jan 2018 22:33:42 -0500
-Subject: Re: [lkp-robot] [btrfs] d1f6ad52c3: BTRFS error (device md0):
- SUPER_FLAG_CHANGING_FSID is set
-To: kernel test robot <xiaolong.ye@intel.com>
-Cc: linux-btrfs@vger.kernel.org, wqu@suse.com, lkp@01.org
-References: <20180117124559.GB3474@yexl-desktop>
+        Wed, 10 Jan 2018 00:17:06 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0A5H5gG009707
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:17:05 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by userp2120.oracle.com with ESMTP id 2fd8bdrhee-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:17:04 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0A5ESpP015830
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:14:28 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0A5EShR015703
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:14:28 GMT
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <e105cef6-6fef-71fb-4736-0ae7f6f916cc@oracle.com>
-Date: Thu, 18 Jan 2018 11:34:42 +0800
-MIME-Version: 1.0
-In-Reply-To: <20180117124559.GB3474@yexl-desktop>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 0/6] preparatory work to add device forget
+Date: Wed, 10 Jan 2018 13:15:17 +0800
+Message-Id: <20180110051523.3681-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+v3->v4:
+ Mainly fix as per comments from Josef.
+ @3/6: rename btrfs_free_stale_device() to btrfs_free_stale_devices()
+ @4/6: reorg logic, init not_found = 0; drop else part
+ @5/6: added new in v4. Renames arg cur_dev to skip_dev
+ @6/6: v3:5/6 is merged to v4:6/6
+ checkpath error fixes.
 
-This seems to have picked up wrong patch for testing, it should use [1],
-a set of 3 patches.
+v2->v3:
+ @ 6/6:
+ add btrfs_free_stale_device() fn description, suggested by Nikolay
+ Fix line with longer than 80 char
+ 
+v1->v2:
+ @ 6/6:
+ btrfs_device::name is null when we have missing device and
+ unmounted. So we still need to check for dev->name.
 
-[1]
-   [PATCH V4 0/3] Add missing flags in the kernel
+We can reuse the function btrfs_free_stale_device() to add feature
+to forget a scanned device or all stale devices. So this patch set
+proposes following changes to it.
 
-Thanks, Anand
+Anand Jain (6):
+  btrfs: cleanup btrfs_free_stale_device() usage
+  btrfs: no need to check for btrfs_fs_devices::seeding
+  btrfs: make btrfs_free_stale_device() to iterate all stales
+  btrfs: make btrfs_free_stale_device() argument optional
+  btrfs: rename btrfs_free_stale_devices() arg to skip_dev
+  btrfs: make btrfs_free_stale_device() to match the path
 
-On 01/17/2018 08:45 PM, kernel test robot wrote:
-> 
-> FYI, we noticed the following commit (built with gcc-7):
-> 
-> commit: d1f6ad52c3f93a9da45e11001e0a0be8f3c31e9e ("btrfs: add support for SUPER_FLAG_CHANGING_FSID in btrfs.ko")
-> url: https://github.com/0day-ci/linux/commits/Anand-Jain/btrfs-add-missing-BTRFS_SUPER_FLAG-define/20180109-041023
-> base: https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git next
-> 
-> in testcase: aim7
-> with following parameters:
-> 
-> 	disk: 4BRD_12G
-> 	md: RAID1
-> 	fs: btrfs
-> 	test: disk_src
-> 	load: 500
-> 	cpufreq_governor: performance
-> 
-> test-description: AIM7 is a traditional UNIX system level benchmark suite which is used to test and measure the performance of multiuser system.
-> test-url: https://sourceforge.net/projects/aimbench/files/aim-suite7/
-> 
-> 
-> on test machine: 40 threads Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz with 384G memory
-> 
-> caused below changes (please refer to attached dmesg/kmsg for entire log/backtrace):
-> 
-> [   25.285253] BTRFS error (device md0): SUPER_FLAG_CHANGING_FSID is set
-> [   25.285255] BTRFS error (device md0): superblock contains fatal errors
-> 
-> 
-> To reproduce:
-> 
->          git clone https://github.com/intel/lkp-tests.git
->          cd lkp-tests
->          bin/lkp install job.yaml  # job file is attached in this email
->          bin/lkp run     job.yaml
-> 
-> 
-> 
-> Thanks,
-> Xiaolong
-> 
+ fs/btrfs/volumes.c | 59 +++++++++++++++++++++++-------------------------------
+ 1 file changed, 25 insertions(+), 34 deletions(-)
+
+-- 
+2.7.0
+

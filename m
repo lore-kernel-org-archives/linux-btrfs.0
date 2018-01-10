@@ -1,29 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37615 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39419 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755074AbeAJNVW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 08:21:22 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1F131ADF2
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 13:21:21 +0000 (UTC)
+        id S1751031AbeAJNhO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 08:37:14 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 499F9ADEF
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 13:37:13 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/4] btrfs: Remove userspace transaction ioctls
-Date: Wed, 10 Jan 2018 15:21:14 +0200
-Message-Id: <1515590477-22878-2-git-send-email-nborisov@suse.com>
-In-Reply-To: <1515590477-22878-1-git-send-email-nborisov@suse.com>
-References: <1515590477-22878-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Remove userspace transaction ioctls
+Date: Wed, 10 Jan 2018 15:37:11 +0200
+Message-Id: <1515591431-16425-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1515590477-22878-2-git-send-email-nborisov@suse.com>
+References: <1515590477-22878-2-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Commit 3558d4f88ec8 ("btrfs: Deprecate userspace transaction ioctls")
 marked the beginning of the end of userspace transaction. This commit
 finishes the job!
----
- fs/btrfs/ioctl.c | 95 --------------------------------------------------------
- 1 file changed, 95 deletions(-)
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+
+V2: 
+ Remove btrfs_ioctl_trans_end reference in btrfs_sync_fil
+
+ fs/btrfs/file.c  |  6 ----
+ fs/btrfs/ioctl.c | 95 --------------------------------------------------------
+ 2 files changed, 101 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index cba2ac371ce0..291036513017 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2189,12 +2189,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	}
+ 
+ 	/*
+-	 * ok we haven't committed the transaction yet, lets do a commit
+-	 */
+-	if (file->private_data)
+-		btrfs_ioctl_trans_end(file);
+-
+-	/*
+ 	 * We use start here because we will need to wait on the IO to complete
+ 	 * in btrfs_sync_log, which could require joining a transaction (for
+ 	 * example checking cross references in the nocow path).  If we use join
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
 index f573cad72b7e..3094e079fc4f 100644
 --- a/fs/btrfs/ioctl.c

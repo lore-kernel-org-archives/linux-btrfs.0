@@ -1,107 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:33069 "EHLO
+Received: from [195.159.176.226] ([195.159.176.226]:48424 "EHLO
         blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1756607AbeAJDvX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 22:51:23 -0500
+        with ESMTP id S1752903AbeAJEk3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 23:40:29 -0500
 Received: from list by blaine.gmane.org with local (Exim 4.84_2)
         (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eZ7O7-0005bk-Uy
-        for linux-btrfs@vger.kernel.org; Wed, 10 Jan 2018 04:49:15 +0100
+        id 1eZ89Y-0006m0-BA
+        for linux-btrfs@vger.kernel.org; Wed, 10 Jan 2018 05:38:16 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Recommendations for balancing as part of regular maintenance?
-Date: Wed, 10 Jan 2018 03:49:04 +0000 (UTC)
-Message-ID: <pan$5d0d3$29334af9$ed04365a$f8d9747d@cox.net>
+Date: Wed, 10 Jan 2018 04:38:09 +0000 (UTC)
+Message-ID: <pan$c820$53f2dc3f$a7c2e26e$ab6cc680@cox.net>
 References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
         <5A539A3A.10107@gmail.com> <b3020ddf-5820-dd8b-ecde-51a5f7026cad@gmail.com>
         <811ff9be-d155-dae0-8841-0c1b20c18843@cobb.uk.net>
-        <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
-        <01020160d7768587-50a9392c-7250-4735-9d14-66ff03a161c9-000000@eu-west-1.amazonses.com>
-        <3eae37f6-3776-15c9-84ae-568e56abfa7e@rqc.ru>
-        <13b5063c-a7bd-5c95-1f6e-16124d385569@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Tue, 09 Jan 2018 07:46:48 -0500 as
-excerpted:
+Graham Cobb posted on Mon, 08 Jan 2018 18:17:13 +0000 as excerpted:
 
->> On 08/01/18 23:29, Martin Raiber wrote:
->>> There have been reports of (rare) corruption caused by balance (won't
->>> be detected by a scrub) here on the mailing list. So I would stay a
->>> away from btrfs balance unless it is absolutely needed (ENOSPC), and
->>> while it is run I would try not to do anything else wrt. to writes
->>> simultaneously.
+> On 08/01/18 16:34, Austin S. Hemmelgarn wrote:
+>> Ideally, I think it should be as generic as reasonably possible,
+>> possibly something along the lines of:
 >> 
->> This is my opinion too as a normal user, based upon reading this list
->> and own attempts to recover from ENOSPC. I'd rather re-create
->> filesystem from scratch, or at least make full verified backup before
->> attempting to fix problems with balance.
-
-> While I'm generally of the same opinion (and I have a feeling most other
-> people who have been server admins are too), it's not a very user
-> friendly position to recommend that.  Keep in mind that many (probably
-> most) users don't keep proper backups, and just targeting 'sensible'
-> people as your primary audience is a bad idea.  It also needs to work at
-> at least a basic level anyway though simply because you can't always
-> just nuke the volume and rebuild it from scratch.
+>> A: While not strictly necessary, running regular filtered balances (for
+>> example `btrfs balance start -dusage=50 -dlimit=2 -musage=50
+>> -mlimit=4`,
+>> see `man btrfs-balance` for more info on what the options mean) can
+>> help keep a volume healthy by mitigating the things that typically
+>> cause ENOSPC errors.  Full balances by contrast are long and expensive
+>> operations, and should be done only as a last resort.
 > 
-> Personally though, I don't think I've ever seen issues with balance
-> corrupting data, and I don't recall seeing complaints about it either
-> (though I would love to see some links that prove me wrong).
-
-AFAIK, such corruption reports re balance aren't really balance, per se, 
-at all.
-
-Instead, what I've seen in nearly all cases is a number of filesystem 
-maintenance commands involving heavy I/O colliding, that is, being run at 
-the same time, possibly because some of them are scheduled, and the admin 
-didn't take into account scheduled commands when issuing others manually.
-
-I don't believe anyone would recommend running balance, scrub, snapshot-
-deletion, and backups (rsync or btrfs send/receive being the common 
-ones), all at the same time, or even two or more at the same time, if for 
-no other reason than because they're all IO intensive and running just 
-/one/ of them at a time is hard /enough/ on the system and the 
-performance of anything else running at the same time, even when all 
-components are fully stable and mature (and as we all know, btrfs is 
-stabilizing, but not yet fully stable and mature), yet that's what these 
-sorts of reports invariably involve.
-
-Of course, with a certainty btrfs /should/ be able to handle more than 
-one of these at once without corruption, because anything else is a bug, 
-but... btrfs /is/ still stabilizing and maturing, and it's precisely this 
-sort of rare corner-case race-condition bugs where more than one 
-extremely heavy IO filesystem maintenance command is being run at the 
-same time that tend to be the last to be found and fixed, because they 
-/are/ rare corner-cases, often depending on race conditions, that tend to 
-be rare enough reported, and then extremely difficult to duplicate, so 
-that's exactly the type of bugs that tend to remain around at this point.
+> That recommendation is similar to what I do and it works well for my use
+> case. I would recommend it to anyone with my usage, but cannot say how
+> well it would work for other uses. In my case, I run balances like that
+> once a week: some weeks nothing happens, other weeks 5 or 10 blocks may
+> get moved.
 
 
-So rather than discouraging a sane-filtered regular balance (which I'll 
-discuss in a different reply), I'd suggest that the more sane 
-recommendation is to be aware of other major-IO filesystem maintenance 
-commands (not just btrfs commands but rsync-based backups, etc, too, 
-rsync being demanding enough on its own to have triggered a number of 
-btrfs bug reports and fixes over the years), including scheduled 
-commands, and to only run one at a time.
+Why 50% usage, and why the rather low limits?
 
-IOW, don't do a balance if your scheduled backup or snapshot-deletion is 
-about to kick in.  One at a time is stressful enough on the filesystem 
-and hardware, don't compound the problem trying to do two or more at once!
+OK, so it rarely makes sense to go over 50% usage when the intent of the 
+balance is to return chunks to the unallocated pool, because at 50% the 
+payback ratio is one free chunk for two processed and it gets worse after 
+that and MUCH worse after ~67-75%, where the ratios are 1:3 and 1:4 
+respectively, but why so high especially for a suggested scheduled/
+routine command?
 
-So assuming a weekly schedule, do one a day of balance, scrub, snapshot-
-deletion, backups (after ensuring that none of them take over a day, 
-balance in particular could at TiB-scale+ if not sanely filtered, 
-particularly if quotas are enabled due to the scaling issues of that 
-feature).  And if any of those are scheduled daily or more frequently, 
-space the scheduling appropriately and ensure they're done before 
-starting the next task.
+I'd suggest a rather lower usage value, say 20/25/34%, for favorable 
+payback ratios of 5:1, 4:1, and 3:1.  That should be reasonable for a 
+generic recommendation for scheduled/routine balances.  If that's not 
+enough, people can do more manually or increase the values from the 
+generic recommendation for their specific use-case.
 
-And keep in mind the scheduled tasks when running things manually, so as 
-not to collide there either.
+And I'd suggest either no limits or (for kernels that can handle it, 
+4.4+, which at this point is everything within our recommended support 
+range of the last two LTSs, thus now 4.9 earliest, anyway) range-limits, 
+say 2..20, so it won't bother if there's less than enough to clear at 
+least one chunk within the usage target (but see the observed behavior 
+change noted below), but will do more than the low 2-4 in the above 
+suggested limits if there is.  With the lower usage= values, processing 
+should take less time per chunk, and if there's no more that fit the 
+usage filter it won't use the higher range anyway, so the limit can and 
+should be higher.
+
+
+Meanwhile, for any recommendation of balance, I'd suggest also mentioning 
+the negative effect that enabled quotas have on balance times, probably 
+with a link to a fuller discussion where I'd suggest disabling them due 
+to the scaling issues if the use-case doesn't require them, and if that's 
+not possible due to the use-case, to at least consider temporarily 
+disabling quotas before doing a balance so as to speed it up, after which 
+they can be enabled again.  (I'm not sure if a manual quota rescan is 
+required to update them at that point, or not.  I don't use quotas here 
+or I'd test.)
+
+
+And an additional observation...
+
+I'm on ssd here and run many rather small independent btrfs instead of 
+fewer larger ones, so I'm used to keeping an eye on usage, tho I've never 
+found the need to schedule balances, partly because on ssd with 
+relatively small btrfs, balances are fast enough they're not a problem to 
+do "while I wait".
+
+And I've definitely noticed an effect since the ssd option stopped using 
+the 2 MiB spreading algorithm in 4.14.  In particular, while chunk usage 
+was generally stable before that and I only occasionally needed to run 
+balance to clear out empty chunks, now, balance with the usage filter 
+will apparently actively fill in empty space in existing chunks, so while 
+previously a usage-filtered balance that only rewrote one chunk didn't 
+actually free anything, simply allocating a new chunk to replace the one 
+it freed, so at least two chunks needed rewritten to actually free space 
+back to unallocated...
+
+Now, usage-filtered rewrites of only a single chunk routinely frees the 
+allocated space, because it writes that small bit of data in the freed 
+chunk into existing free space in other chunks.
+
+At least I /presume/ that new balance-usage behavior is due to the ssd 
+changes.  Maybe it's due to other patches.  Either way, it's an 
+interesting and useful change. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

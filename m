@@ -1,141 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:45345 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933092AbeAJFvT (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 10 Jan 2018 00:51:19 -0500
-From: Qu Wenruo <wqu@suse.com>
+Received: from smtp65.iad3a.emailsrvr.com ([173.203.187.65]:53070 "EHLO
+        smtp65.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751812AbeAJQbK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 11:31:10 -0500
+Received: from smtp25.relay.iad3a.emailsrvr.com (localhost [127.0.0.1])
+        by smtp25.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id DBBE325524
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 11:31:09 -0500 (EST)
+Received: by smtp25.relay.iad3a.emailsrvr.com (Authenticated sender: fsb-AT-thefsb.org) with ESMTPSA id C2CF42552D
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 11:31:09 -0500 (EST)
+From: "Tom Worster" <fsb@thefsb.org>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: Fix wrong chunk allocation type in btrfs_reserve_extent
-Date: Wed, 10 Jan 2018 13:51:13 +0800
-Message-Id: <20180110055113.18976-1-wqu@suse.com>
+Subject: Re: Recommendations for balancing as part of regular maintenance?
+Date: Wed, 10 Jan 2018 11:30:58 -0500
+Message-ID: <BE09A377-4702-4D51-ACB9-44950865D26E@thefsb.org>
+In-Reply-To: <pan$5d0d3$29334af9$ed04365a$f8d9747d@cox.net>
+References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
+ <5A539A3A.10107@gmail.com> <b3020ddf-5820-dd8b-ecde-51a5f7026cad@gmail.com>
+ <811ff9be-d155-dae0-8841-0c1b20c18843@cobb.uk.net>
+ <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
+ <01020160d7768587-50a9392c-7250-4735-9d14-66ff03a161c9-000000@eu-west-1.amazonses.com>
+ <3eae37f6-3776-15c9-84ae-568e56abfa7e@rqc.ru>
+ <13b5063c-a7bd-5c95-1f6e-16124d385569@gmail.com>
+ <pan$5d0d3$29334af9$ed04365a$f8d9747d@cox.net>
+MIME-Version: 1.0
+Content-Type: text/plain; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_reserve_extent() will try to allocate new chunk if there is not
-enough space (mostly meta space).
+On 9 Jan 2018, at 22:49, Duncan wrote:
 
-However when it tries to allocate new meta chunk, it will always try to
-allocate SINGLE meta chunk, and if the fs is using other profile, it
-will cause dead allocation which can't be really used.
+> AFAIK, such corruption reports re balance aren't really balance, per 
+> se,
+> at all.
+>
+> Instead, what I've seen in nearly all cases is a number of filesystem
+> maintenance commands involving heavy I/O colliding, that is, being run 
+> at
+> the same time
 
-And when trying to allocate new meta chunk for fs trees, it uses the
-@num_bytes which is normally times larger than metadata space.
+I hope there is consensus on this because it might be the key to 
+resolving the contradictions that appear to me in the following 
+propositions that all seem plausible/reasonable:
 
-Fix it by using proper meta profile and calculate based on file extent
-other than @num_bytes if we are allocating meta space for file extents.
+- Depletion of unallocated space (DoUS, apologies for coining the term 
+if there already is one) is a property of BTRFS even if the volume's 
+capacity is more than enough for the files on it.
 
-And all such chunk allocation condition is not explained at all.
-Add needed (although maybe a little overkilled) comment for it.
+- To a user that isn't a BTRFS expert, DoUS can be unexpected, its 
+advance can be surprisingly fast and it can become severe.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Needed prerequisite is pushed to github:
-https://github.com/adam900710/btrfs-progs/tree/chunk_alloc_fixes
+- BTRFS does not recycle allocated but unused space to the unallocated 
+pool.
 
-And unfortunately, the condition to trigger chunk allocation is pretty
-hard to trigger.
-For normal mkfs case, we will always have enough space, while for normal
-usage, kernel will ensure there is enough space (global reservation) for
-extent tree update, which is normally larger than the 2M headroom used in 
-btrfs-progs.
+- Resolving severe DoUS involves either running `btrfs balance` or 
+recreating the filesystem from, e.g. backups.
 
-So no easy test case here.
----
- extent-tree.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 47 insertions(+), 8 deletions(-)
+- People have reported that `btrfs balance` sometimes causes filesystem 
+corruption.
 
-diff --git a/extent-tree.c b/extent-tree.c
-index 90e792a3fe62..aab09d926043 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -1907,7 +1907,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	ret = btrfs_alloc_chunk(trans, fs_info, &start, &num_bytes,
--	                        space_info->flags, false);
-+	                        flags, false);
- 	if (ret == -ENOSPC) {
- 		space_info->full = 1;
- 		return ret;
-@@ -2652,8 +2652,11 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
- 	u64 search_start = 0;
- 	u64 alloc_profile;
- 	u64 profile;
-+	u64 meta_profile;
- 	struct btrfs_fs_info *info = root->fs_info;
- 
-+	meta_profile = info->avail_metadata_alloc_bits &
-+		       info->metadata_alloc_profile;
- 	if (is_data) {
- 		alloc_profile = info->avail_data_alloc_bits &
- 			        info->data_alloc_profile;
-@@ -2663,21 +2666,57 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
- 			        info->system_alloc_profile;
- 		profile = BTRFS_BLOCK_GROUP_SYSTEM | alloc_profile;
- 	} else {
--		alloc_profile = info->avail_metadata_alloc_bits &
--			        info->metadata_alloc_profile;
-+		alloc_profile = meta_profile;
- 		profile = BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
- 	}
- 
-+	/*
-+	 * If we're modifying global trees likes extent/root/device tree
-+	 * (whose ref_cows is 0), we shouldn't trigger chunk allocation AT ALL!
-+	 *
-+	 * The problem is, if root is extent tree, we trigger a chunk
-+	 * allocation, then it will modify extent tree, causing a path deadlock.
-+	 * (Although not implemented in btrfs-progs, it will still cause tree
-+	 * modification screwed up)
-+	 */
- 	if (root->ref_cows) {
-+		u64 meta_reserve;
-+
- 		if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
--			ret = do_chunk_alloc(trans, info,
--					     num_bytes,
--					     BTRFS_BLOCK_GROUP_METADATA);
--			BUG_ON(ret);
-+			/*
-+			 * If we're modifying fs trees and allocating data
-+			 * extent, we need to ensure we have enough metadata
-+			 * space to insert new file extent item.
-+			 *
-+			 * Here we need to ensure we have enough space for the
-+			 * following operations:
-+			 * 1) Insert one file extent
-+			 *    A full tree CoW + Leaf split should be enough.
-+			 *
-+			 * 2) Possible new chunk allocation
-+			 *    4 trees are involved, chunk, device, extent and
-+			 *    root tree.
-+			 *    However chunk tree is counted as system chunk, and
-+			 *    never
-+			 *    really needs a new system chunk even for super
-+			 *    large fs.
-+			 *    Only 3 trees are need.
-+			 *
-+			 * So it's total 4 trees, subvolume, extent, device and
-+			 * root tree.
-+			 * Each tree needs a full tree CoW + Leaf split.
-+			 */
-+			meta_reserve = 4 * ( BTRFS_MAX_LEVEL + 1) *
-+				       info->nodesize;
-+			ret = do_chunk_alloc(trans, info, meta_reserve,
-+				meta_profile | BTRFS_BLOCK_GROUP_METADATA);
- 		}
-+
-+		/* Keep 2M as free space headroom */
- 		ret = do_chunk_alloc(trans, info,
- 				     num_bytes + SZ_2M, profile);
--		BUG_ON(ret);
-+		if (ret < 0)
-+			return ret;
- 	}
- 
- 	WARN_ON(num_bytes < info->sectorsize);
--- 
-2.15.1
+- Some experienced users say that, to resolve a problem with DoUS, they 
+would rather recreate the filesystem than run balance.
 
+- Some experienced users say you should stop all other use of the 
+filesystem while running balance.
+
+- Some experts recommend running balance regularly, even once a day, to 
+prevent DoUS.
+
+Without some satisfactory way to resolve the contradictions, I'm not 
+sure how to proceed. For example, I'm not willing to offload the 
+workload from each filesystem once a day for prophylactic balance. And 
+I'm not going to let balance run unattended if those more experienced 
+than me say it's known to corrupt filesystems. The best I can do is 
+monitor DoUS and respond ad hoc. Or I can use a different fs type.
+
+But if Duncan is right (which, for me, is practically the same as 
+consensus on the proposition) that problems with corruption while 
+running balance are associated with heavy coincident IO activity, then I 
+can see a reasonable way forwards. I can even see how general 
+recommendations for BTRFS maintenance might develop.
+
+Tom

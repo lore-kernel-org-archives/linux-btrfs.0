@@ -1,186 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39575 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37618 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751047AbeAJNkG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 08:40:06 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C32CAADEF
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 13:40:04 +0000 (UTC)
+        id S1754461AbeAJNVW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 08:21:22 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4CBD3ADF4
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 13:21:21 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3] btrfs: Remove userspace transaction ioctls
-Date: Wed, 10 Jan 2018 15:40:02 +0200
-Message-Id: <1515591602-17400-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1515590477-22878-2-git-send-email-nborisov@suse.com>
-References: <1515590477-22878-2-git-send-email-nborisov@suse.com>
+Subject: [PATCH 2/4] btrfs: Remove code referencing unused TRANS_USERSPACE
+Date: Wed, 10 Jan 2018 15:21:15 +0200
+Message-Id: <1515590477-22878-3-git-send-email-nborisov@suse.com>
+In-Reply-To: <1515590477-22878-1-git-send-email-nborisov@suse.com>
+References: <1515590477-22878-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 3558d4f88ec8 ("btrfs: Deprecate userspace transaction ioctls")
-marked the beginning of the end of userspace transaction. This commit
-finishes the job!
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Now that the userspace transaction ioctls have been removed,
+TRANS_USERSPACE is no longer used hence we can remove it.
 ---
-V3: 
- Remove btrfs_ioctl_trans_end declaration in ctree.h 
-V2: 
- Remove btrfs_ioctl_trans_end reference in btrfs_sync_fil
- fs/btrfs/ctree.h |  1 -
- fs/btrfs/file.c  |  6 ----
- fs/btrfs/ioctl.c | 95 --------------------------------------------------------
- 3 files changed, 102 deletions(-)
+ fs/btrfs/transaction.c | 27 ++++++---------------------
+ fs/btrfs/transaction.h |  5 +----
+ 2 files changed, 7 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1a462ab85c49..6a4752177ad8 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3193,7 +3193,6 @@ void btrfs_destroy_inode(struct inode *inode);
- int btrfs_drop_inode(struct inode *inode);
- int __init btrfs_init_cachep(void);
- void btrfs_destroy_cachep(void);
--long btrfs_ioctl_trans_end(struct file *file);
- struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 			 struct btrfs_root *root, int *was_new);
- struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cba2ac371ce0..291036513017 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2189,12 +2189,6 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	}
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 04f07144b45c..d61d1fd59ccd 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -37,22 +37,16 @@
  
- 	/*
--	 * ok we haven't committed the transaction yet, lets do a commit
--	 */
--	if (file->private_data)
--		btrfs_ioctl_trans_end(file);
+ static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
+ 	[TRANS_STATE_RUNNING]		= 0U,
+-	[TRANS_STATE_BLOCKED]		= (__TRANS_USERSPACE |
+-					   __TRANS_START),
+-	[TRANS_STATE_COMMIT_START]	= (__TRANS_USERSPACE |
+-					   __TRANS_START |
+-					   __TRANS_ATTACH),
+-	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_USERSPACE |
+-					   __TRANS_START |
++	[TRANS_STATE_BLOCKED]		=  __TRANS_START,
++	[TRANS_STATE_COMMIT_START]	= (__TRANS_START | __TRANS_ATTACH),
++	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_START |
+ 					   __TRANS_ATTACH |
+ 					   __TRANS_JOIN),
+-	[TRANS_STATE_UNBLOCKED]		= (__TRANS_USERSPACE |
+-					   __TRANS_START |
++	[TRANS_STATE_UNBLOCKED]		= (__TRANS_START |
+ 					   __TRANS_ATTACH |
+ 					   __TRANS_JOIN |
+ 					   __TRANS_JOIN_NOLOCK),
+-	[TRANS_STATE_COMPLETED]		= (__TRANS_USERSPACE |
+-					   __TRANS_START |
++	[TRANS_STATE_COMPLETED]		= (__TRANS_START |
+ 					   __TRANS_ATTACH |
+ 					   __TRANS_JOIN |
+ 					   __TRANS_JOIN_NOLOCK),
+@@ -449,9 +443,6 @@ static int may_wait_transaction(struct btrfs_fs_info *fs_info, int type)
+ 	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
+ 		return 0;
+ 
+-	if (type == TRANS_USERSPACE)
+-		return 1;
 -
--	/*
- 	 * We use start here because we will need to wait on the IO to complete
- 	 * in btrfs_sync_log, which could require joining a transaction (for
- 	 * example checking cross references in the nocow path).  If we use join
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f573cad72b7e..3094e079fc4f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3935,73 +3935,6 @@ int btrfs_clone_file_range(struct file *src_file, loff_t off,
- 	return btrfs_clone_files(dst_file, src_file, off, len, destoff);
+ 	if (type == TRANS_START &&
+ 	    !atomic_read(&fs_info->open_ioctl_trans))
+ 		return 1;
+@@ -593,7 +584,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ got_it:
+ 	btrfs_record_root_in_trans(h, root);
+ 
+-	if (!current->journal_info && type != TRANS_USERSPACE)
++	if (!current->journal_info)
+ 		current->journal_info = h;
+ 	return h;
+ 
+@@ -678,12 +669,6 @@ struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root
+ 				 BTRFS_RESERVE_NO_FLUSH, true);
  }
  
--/*
-- * there are many ways the trans_start and trans_end ioctls can lead
-- * to deadlocks.  They should only be used by applications that
-- * basically own the machine, and have a very in depth understanding
-- * of all the possible deadlocks and enospc problems.
-- */
--static long btrfs_ioctl_trans_start(struct file *file)
+-struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *root)
 -{
--	struct inode *inode = file_inode(file);
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_trans_handle *trans;
--	struct btrfs_file_private *private;
--	int ret;
--	static bool warned = false;
--
--	ret = -EPERM;
--	if (!capable(CAP_SYS_ADMIN))
--		goto out;
--
--	if (!warned) {
--		btrfs_warn(fs_info,
--			"Userspace transaction mechanism is considered "
--			"deprecated and slated to be removed in 4.17. "
--			"If you have a valid use case please "
--			"speak up on the mailing list");
--		WARN_ON(1);
--		warned = true;
--	}
--
--	ret = -EINPROGRESS;
--	private = file->private_data;
--	if (private && private->trans)
--		goto out;
--	if (!private) {
--		private = kzalloc(sizeof(struct btrfs_file_private),
--				  GFP_KERNEL);
--		if (!private)
--			return -ENOMEM;
--		file->private_data = private;
--	}
--
--	ret = -EROFS;
--	if (btrfs_root_readonly(root))
--		goto out;
--
--	ret = mnt_want_write_file(file);
--	if (ret)
--		goto out;
--
--	atomic_inc(&fs_info->open_ioctl_trans);
--
--	ret = -ENOMEM;
--	trans = btrfs_start_ioctl_transaction(root);
--	if (IS_ERR(trans))
--		goto out_drop;
--
--	private->trans = trans;
--	return 0;
--
--out_drop:
--	atomic_dec(&fs_info->open_ioctl_trans);
--	mnt_drop_write_file(file);
--out:
--	return ret;
+-	return start_transaction(root, 0, TRANS_USERSPACE,
+-				 BTRFS_RESERVE_NO_FLUSH, true);
 -}
 -
- static long btrfs_ioctl_default_subvol(struct file *file, void __user *argp)
- {
- 	struct inode *inode = file_inode(file);
-@@ -4243,30 +4176,6 @@ static long btrfs_ioctl_space_info(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
+ /*
+  * btrfs_attach_transaction() - catch the running transaction
+  *
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 6beee072b1bd..8bc25c7cca7b 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -89,21 +89,18 @@ struct btrfs_transaction {
  
--/*
-- * there are many ways the trans_start and trans_end ioctls can lead
-- * to deadlocks.  They should only be used by applications that
-- * basically own the machine, and have a very in depth understanding
-- * of all the possible deadlocks and enospc problems.
-- */
--long btrfs_ioctl_trans_end(struct file *file)
--{
--	struct inode *inode = file_inode(file);
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_file_private *private = file->private_data;
--
--	if (!private || !private->trans)
--		return -EINVAL;
--
--	btrfs_end_transaction(private->trans);
--	private->trans = NULL;
--
--	atomic_dec(&root->fs_info->open_ioctl_trans);
--
--	mnt_drop_write_file(file);
--	return 0;
--}
--
- static noinline long btrfs_ioctl_start_sync(struct btrfs_root *root,
- 					    void __user *argp)
- {
-@@ -5573,10 +5482,6 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_dev_info(fs_info, argp);
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_ioctl_balance(file, NULL);
--	case BTRFS_IOC_TRANS_START:
--		return btrfs_ioctl_trans_start(file);
--	case BTRFS_IOC_TRANS_END:
--		return btrfs_ioctl_trans_end(file);
- 	case BTRFS_IOC_TREE_SEARCH:
- 		return btrfs_ioctl_tree_search(file, argp);
- 	case BTRFS_IOC_TREE_SEARCH_V2:
+ #define __TRANS_FREEZABLE	(1U << 0)
+ 
+-#define __TRANS_USERSPACE	(1U << 8)
+ #define __TRANS_START		(1U << 9)
+ #define __TRANS_ATTACH		(1U << 10)
+ #define __TRANS_JOIN		(1U << 11)
+ #define __TRANS_JOIN_NOLOCK	(1U << 12)
+ #define __TRANS_DUMMY		(1U << 13)
+ 
+-#define TRANS_USERSPACE		(__TRANS_USERSPACE | __TRANS_FREEZABLE)
+ #define TRANS_START		(__TRANS_START | __TRANS_FREEZABLE)
+ #define TRANS_ATTACH		(__TRANS_ATTACH)
+ #define TRANS_JOIN		(__TRANS_JOIN | __TRANS_FREEZABLE)
+ #define TRANS_JOIN_NOLOCK	(__TRANS_JOIN_NOLOCK)
+ 
+-#define TRANS_EXTWRITERS	(__TRANS_USERSPACE | __TRANS_START |	\
+-				 __TRANS_ATTACH)
++#define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
+ 
+ #define BTRFS_SEND_TRANS_STUB	((void *)1)
+ 
 -- 
 2.7.4
 

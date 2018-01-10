@@ -1,113 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40163 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750802AbeAPHcB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Jan 2018 02:32:01 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6094AAD14
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2018 07:32:00 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:49664 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753019AbeAJWwq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 17:52:46 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0AMqjqc191737
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:45 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2fdukar2su-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:45 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0AMqjCQ028478
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:45 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0AMqjgP020510
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 22:52:45 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Remove btrfs_inode::delayed_iput_count
-Date: Tue, 16 Jan 2018 09:31:58 +0200
-Message-Id: <1516087918-8617-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1516019494-24210-1-git-send-email-nborisov@suse.com>
-References: <1516019494-24210-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH v4 0/4] device_list_add() peparation to add reappearing missing device
+Date: Thu, 11 Jan 2018 06:53:33 +0800
+Message-Id: <20180110225337.5877-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-delayed_iput_count wa supposed to be used to implement, well, delayed
-iput. The idea is that we keep accumulating the number of iputs we do
-until eventually the inode is deleted. Turns out we never really
-switched the delayed_iput_count from 0 to 1, hence all conditional
-code relying on the value of that member being different than 0 was
-never executed. This, as it turns out, didn't cause any problem due
-to the simple fact that the generic inode's i_count member was always
-used to count the number of iputs. So let's just remove the unused
-member and all unused code. This patch essentially provides no
-functional changes. While at it, also add proper documentation for 
-btrfs_add_delayed_iput 
+(Apply on top of my patchset
+   [PATCH v4 0/6] preparatory work to add device forget
+ for conflict free apply. They don't actually depend on
+ each other though).
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-v2: Add function documentation to make it clear how delayed_iput works and 
-uses vfs_inode::i_count
+v3->v4:
+ @3/4: Just return device instead of PTR_ERR(ERR_PTR(device));
 
- fs/btrfs/btrfs_inode.h |  1 -
- fs/btrfs/inode.c       | 26 ++++++++++++--------------
- 2 files changed, 12 insertions(+), 15 deletions(-)
+v2->v3:
+ Fix device_list_add() fn description which was still referring to the
+ previous return values.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 63f0ccc92a71..f527e99c9f8d 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -195,7 +195,6 @@ struct btrfs_inode {
- 
- 	/* Hook into fs_info->delayed_iputs */
- 	struct list_head delayed_iput;
--	long delayed_iput_count;
- 
- 	/*
- 	 * To avoid races between lockless (i_mutex not held) direct IO writes
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 029399593049..7f568b05b8fd 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3243,6 +3243,15 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 				      start, (size_t)(end - start + 1));
- }
- 
-+/* btrfs_add_delayed_iput - perform a delayed iput on @inode
-+ *
-+ * @inode: The inode we want to perform iput on
-+ *
-+ * This function uses the generic vfs_inode::i_count to track whether we
-+ * should just decrement it (in case it's > 1) or if this is the last
-+ * iput then link the inode to the delayed iput machinery. Delayed iputs
-+ * are processed at transaction commit time/superblock commit/cleaner kthread
-+ */
- void btrfs_add_delayed_iput(struct inode *inode)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-@@ -3252,12 +3261,8 @@ void btrfs_add_delayed_iput(struct inode *inode)
- 		return;
- 
- 	spin_lock(&fs_info->delayed_iput_lock);
--	if (binode->delayed_iput_count == 0) {
--		ASSERT(list_empty(&binode->delayed_iput));
--		list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
--	} else {
--		binode->delayed_iput_count++;
--	}
-+	ASSERT(list_empty(&binode->delayed_iput));
-+	list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
- 	spin_unlock(&fs_info->delayed_iput_lock);
- }
- 
-@@ -3270,13 +3275,7 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
- 
- 		inode = list_first_entry(&fs_info->delayed_iputs,
- 				struct btrfs_inode, delayed_iput);
--		if (inode->delayed_iput_count) {
--			inode->delayed_iput_count--;
--			list_move_tail(&inode->delayed_iput,
--					&fs_info->delayed_iputs);
--		} else {
--			list_del_init(&inode->delayed_iput);
--		}
-+		list_del_init(&inode->delayed_iput);
- 		spin_unlock(&fs_info->delayed_iput_lock);
- 		iput(&inode->vfs_inode);
- 		spin_lock(&fs_info->delayed_iput_lock);
-@@ -9424,7 +9423,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->dir_index = 0;
- 	ei->last_unlink_trans = 0;
- 	ei->last_log_commit = 0;
--	ei->delayed_iput_count = 0;
- 
- 	spin_lock_init(&ei->lock);
- 	ei->outstanding_extents = 0;
+v1->v2:
+ Drop patch 5/5 for uuid_mutex optimize. That was wrong. Thanks Josef.
+ In patch 3/5 make btrfs_device * as return.
+
+Cleanup of device_list_add(), mainly in preparation to handle
+reappearing missing device which its next reroll will be sent
+separately.
+
+Anand Jain (4):
+  btrfs: move pr_info into device_list_add
+  btrfs: set the total_devices in device_list_add()
+  btrfs: get device pointer from device_list_add()
+  btrfs: drop devid as device_list_add() arg
+
+ fs/btrfs/volumes.c | 63 +++++++++++++++++++++++-------------------------------
+ 1 file changed, 27 insertions(+), 36 deletions(-)
+
 -- 
-2.7.4
-
+2.7.0

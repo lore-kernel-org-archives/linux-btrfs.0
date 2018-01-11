@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:42499 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754020AbeAKFKb (ORCPT
+        with ESMTP id S1754099AbeAKFKa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 00:10:31 -0500
+        Thu, 11 Jan 2018 00:10:30 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id B327B49F0E42
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:10:18 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 308B549F0E44
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:10:19 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 58/67] btrfs-progs: add the stack prefix for super_stripesize set/get function
-Date: Thu, 11 Jan 2018 13:09:30 +0800
-Message-ID: <20180111050939.21251-59-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 59/67] btrfs-progs: add the stack prefix for super_root_dir set/get function
+Date: Thu, 11 Jan 2018 13:09:31 +0800
+Message-ID: <20180111050939.21251-60-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
 References: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,135 +19,106 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The super_stripesize set/get function defined by
+The super_root_dir set/get function defined by
 BTRFS_SETGET_STACK_FUNCS macro is missing the prefix stack.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- chunk-recover.c           | 2 +-
  cmds-inspect-dump-super.c | 2 +-
- convert/common.c          | 2 +-
+ convert/main.c            | 6 +++---
  ctree.h                   | 2 +-
- disk-io.c                 | 9 +++++----
- mkfs/common.c             | 2 +-
- volumes.c                 | 4 ++--
- 7 files changed, 12 insertions(+), 11 deletions(-)
+ dir-test.c                | 2 +-
+ mkfs/main.c               | 2 +-
+ utils.c                   | 3 ++-
+ 6 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 788b241b..ad0f36f5 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1477,7 +1477,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
- 	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
- 	fs_info->sectorsize = btrfs_stack_super_sectorsize(disk_super);
- 	fs_info->nodesize = btrfs_stack_super_nodesize(disk_super);
--	fs_info->stripesize = btrfs_super_stripesize(disk_super);
-+	fs_info->stripesize = btrfs_stack_super_stripesize(disk_super);
- 
- 	ret = btrfs_check_fs_compatibility(disk_super, OPEN_CTREE_WRITES);
- 	if (ret)
 diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
-index 7320bc28..1a92a8dd 100644
+index 1a92a8dd..cbeef769 100644
 --- a/cmds-inspect-dump-super.c
 +++ b/cmds-inspect-dump-super.c
-@@ -400,7 +400,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	printf("leafsize (deprecated)\t\t%u\n",
- 	       le32_to_cpu(sb->__unused_leafsize));
+@@ -402,7 +402,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
  	printf("stripesize\t\t%llu\n",
--	       (unsigned long long)btrfs_super_stripesize(sb));
-+	       (unsigned long long)btrfs_stack_super_stripesize(sb));
+ 	       (unsigned long long)btrfs_stack_super_stripesize(sb));
  	printf("root_dir\t\t%llu\n",
- 	       (unsigned long long)btrfs_super_root_dir(sb));
+-	       (unsigned long long)btrfs_super_root_dir(sb));
++	       (unsigned long long)btrfs_stack_super_root_dir(sb));
  	printf("num_devices\t\t%llu\n",
-diff --git a/convert/common.c b/convert/common.c
-index 81fe80df..b83bfbcd 100644
---- a/convert/common.c
-+++ b/convert/common.c
-@@ -130,7 +130,7 @@ static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
- 	btrfs_set_stack_super_sectorsize(super, cfg->sectorsize);
- 	super->__unused_leafsize = cpu_to_le32(cfg->nodesize);
- 	btrfs_set_stack_super_nodesize(super, cfg->nodesize);
--	btrfs_set_super_stripesize(super, cfg->stripesize);
-+	btrfs_set_stack_super_stripesize(super, cfg->stripesize);
- 	btrfs_set_super_csum_type(super, BTRFS_CSUM_TYPE_CRC32);
- 	btrfs_set_stack_super_chunk_root(super, chunk_bytenr);
- 	btrfs_set_super_cache_generation(super, -1);
+ 	       (unsigned long long)btrfs_super_num_devices(sb));
+ 	printf("compat_flags\t\t0x%llx\n",
+diff --git a/convert/main.c b/convert/main.c
+index 66b839e2..8b2c61a5 100644
+--- a/convert/main.c
++++ b/convert/main.c
+@@ -972,13 +972,13 @@ static int init_btrfs(struct btrfs_mkfs_config *cfg, struct btrfs_root *root,
+ 	memcpy(&location, &root->root_key, sizeof(location));
+ 	location.offset = (u64)-1;
+ 	ret = btrfs_insert_dir_item(trans, fs_info->tree_root, "default", 7,
+-				btrfs_super_root_dir(fs_info->super_copy),
++				btrfs_stack_super_root_dir(fs_info->super_copy),
+ 				&location, BTRFS_FT_DIR, 0);
+ 	if (ret)
+ 		goto err;
+ 	ret = btrfs_insert_inode_ref(trans, fs_info->tree_root, "default", 7,
+-				location.objectid,
+-				btrfs_super_root_dir(fs_info->super_copy), 0);
++			location.objectid,
++			btrfs_stack_super_root_dir(fs_info->super_copy), 0);
+ 	if (ret)
+ 		goto err;
+ 	btrfs_set_stack_root_dirid(&fs_info->fs_root->root_item,
 diff --git a/ctree.h b/ctree.h
-index a8bad6f2..ccad87e8 100644
+index ccad87e8..ccc97125 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -2192,7 +2192,7 @@ BTRFS_SETGET_STACK_FUNCS(stack_super_sectorsize, struct btrfs_super_block,
- 			 sectorsize, 32);
- BTRFS_SETGET_STACK_FUNCS(stack_super_nodesize, struct btrfs_super_block,
+@@ -2194,7 +2194,7 @@ BTRFS_SETGET_STACK_FUNCS(stack_super_nodesize, struct btrfs_super_block,
  			 nodesize, 32);
--BTRFS_SETGET_STACK_FUNCS(super_stripesize, struct btrfs_super_block,
-+BTRFS_SETGET_STACK_FUNCS(stack_super_stripesize, struct btrfs_super_block,
+ BTRFS_SETGET_STACK_FUNCS(stack_super_stripesize, struct btrfs_super_block,
  			 stripesize, 32);
- BTRFS_SETGET_STACK_FUNCS(super_root_dir, struct btrfs_super_block,
+-BTRFS_SETGET_STACK_FUNCS(super_root_dir, struct btrfs_super_block,
++BTRFS_SETGET_STACK_FUNCS(stack_super_root_dir, struct btrfs_super_block,
  			 root_dir_objectid, 64);
-diff --git a/disk-io.c b/disk-io.c
-index d17c4163..16fb9afd 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -1164,7 +1164,7 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
- 	fs_info->sectorsize = btrfs_stack_super_sectorsize(disk_super);
- 	fs_info->nodesize = btrfs_stack_super_nodesize(disk_super);
--	fs_info->stripesize = btrfs_super_stripesize(disk_super);
-+	fs_info->stripesize = btrfs_stack_super_stripesize(disk_super);
+ BTRFS_SETGET_STACK_FUNCS(super_num_devices, struct btrfs_super_block,
+ 			 num_devices, 64);
+diff --git a/dir-test.c b/dir-test.c
+index 8fb23b82..15c83aaf 100644
+--- a/dir-test.c
++++ b/dir-test.c
+@@ -445,7 +445,7 @@ int main(int ac, char **av)
+ 	trans = btrfs_start_transaction(root, 1);
+ 	BUG_ON(IS_ERR(trans));
  
- 	ret = btrfs_check_fs_compatibility(fs_info->super_copy, flags);
+-	dir_oid = btrfs_super_root_dir(&super);
++	dir_oid = btrfs_stack_super_root_dir(&super);
+ 
+ 	signal(SIGTERM, sigstopper);
+ 	signal(SIGINT, sigstopper);
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 5cf265ea..51e176c4 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -183,7 +183,7 @@ static int make_root_dir(struct btrfs_trans_handle *trans,
+ 	location.offset = (u64)-1;
+ 	ret = btrfs_insert_dir_item(trans, root->fs_info->tree_root,
+ 			"default", 7,
+-			btrfs_super_root_dir(root->fs_info->super_copy),
++			btrfs_stack_super_root_dir(root->fs_info->super_copy),
+ 			&location, BTRFS_FT_DIR, 0);
  	if (ret)
-@@ -1369,10 +1369,11 @@ static int check_super(struct btrfs_super_block *sb, unsigned sbflags)
- 		      btrfs_stack_super_bytes_used(sb));
- 		goto error_out;
- 	}
--	if ((btrfs_super_stripesize(sb) != 4096)
--		&& (btrfs_super_stripesize(sb) !=
-+	if ((btrfs_stack_super_stripesize(sb) != 4096)
-+		&& (btrfs_stack_super_stripesize(sb) !=
- 			btrfs_stack_super_sectorsize(sb))) {
--		error("invalid stripesize %u", btrfs_super_stripesize(sb));
-+		error("invalid stripesize %u",
-+		      btrfs_stack_super_stripesize(sb));
- 		goto error_out;
- 	}
+ 		goto err;
+diff --git a/utils.c b/utils.c
+index 6787efa1..150623fc 100644
+--- a/utils.c
++++ b/utils.c
+@@ -393,7 +393,8 @@ int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+ 	btrfs_set_stack_timespec_nsec(&inode_item.otime, 0);
  
-diff --git a/mkfs/common.c b/mkfs/common.c
-index d51f2e15..6a8fdb19 100644
---- a/mkfs/common.c
-+++ b/mkfs/common.c
-@@ -169,7 +169,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
- 	btrfs_set_stack_super_sectorsize(&super, cfg->sectorsize);
- 	super.__unused_leafsize = cpu_to_le32(cfg->nodesize);
- 	btrfs_set_stack_super_nodesize(&super, cfg->nodesize);
--	btrfs_set_super_stripesize(&super, cfg->stripesize);
-+	btrfs_set_stack_super_stripesize(&super, cfg->stripesize);
- 	btrfs_set_super_csum_type(&super, BTRFS_CSUM_TYPE_CRC32);
- 	btrfs_set_stack_super_chunk_root_generation(&super, 1);
- 	btrfs_set_super_cache_generation(&super, -1);
-diff --git a/volumes.c b/volumes.c
-index 95480f41..5df064b3 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -938,7 +938,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			return -ENOSPC;
- 		min_stripes = 2;
- 		stripe_len = find_raid56_stripe_len(num_stripes - 1,
--				    btrfs_super_stripesize(info->super_copy));
-+				btrfs_stack_super_stripesize(info->super_copy));
- 	}
- 	if (type & (BTRFS_BLOCK_GROUP_RAID6)) {
- 		num_stripes = btrfs_super_num_devices(info->super_copy);
-@@ -948,7 +948,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 			return -ENOSPC;
- 		min_stripes = 3;
- 		stripe_len = find_raid56_stripe_len(num_stripes - 2,
--				    btrfs_super_stripesize(info->super_copy));
-+				btrfs_stack_super_stripesize(info->super_copy));
- 	}
+ 	if (root->fs_info->tree_root == root)
+-		btrfs_set_super_root_dir(root->fs_info->super_copy, objectid);
++		btrfs_set_stack_super_root_dir(root->fs_info->super_copy,
++					       objectid);
  
- 	/* we don't want a chunk larger than 10% of the FS */
+ 	ret = btrfs_insert_inode(trans, root, objectid, &inode_item);
+ 	if (ret)
 -- 
 2.15.1
 

@@ -1,154 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:48954 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752727AbeAKBY6 (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:34250 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752900AbeAKBZA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 20:24:58 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0B1CUuo084276
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:58 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2fdvb889b8-1
+        Wed, 10 Jan 2018 20:25:00 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0B1CZS6103031
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:59 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2120.oracle.com with ESMTP id 2fdv65raat-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:58 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0B1Ov8x022278
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:59 +0000
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0B1OwMl027297
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:57 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:58 GMT
 Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0B1OvYh016788
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:57 GMT
+        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0B1Ow3g003353
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:58 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs: introduce feature to forget a btrfs device
-Date: Thu, 11 Jan 2018 09:25:50 +0800
-Message-Id: <20180111012551.14765-2-anand.jain@oracle.com>
+Subject: [PATCH 1/1] btrfs-progs: add cli to forget one or all scanned devices
+Date: Thu, 11 Jan 2018 09:25:51 +0800
+Message-Id: <20180111012551.14765-3-anand.jain@oracle.com>
 In-Reply-To: <20180111012551.14765-1-anand.jain@oracle.com>
 References: <20180111012551.14765-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Support for a new command 'btrfs dev forget [dev]' is proposed here,
-to undo the effects of 'btrfs dev scan [dev]'. For this purpose,
-this patch proposes to use ioctl #5 as it was empty.
-	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
-This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
-the /dev/btrfs-control to forget one or all devices, (devices which are
-not mounted) from the btrfs kernel.
-
-The argument it takes is struct btrfs_ioctl_vol_args_v2, and ::name can be
-set to specify the device path. And all unmounted devices can be removed
-from the kernel using the BTRFS_DEVICE_SPEC_ALL_DEV flag. Remove all
-devices functionality would override remove one device when both are
-specified in an IOCTL call.
-Again, the devices are removed only if the relevant fsid aren't mounted.
+This patch adds cli
+  btrfs device forget [dev]
+which shall remove the relevant device entries in the kernel
+matching the dev. If no argument is given it shall remove all
+stale (device which are not mounted) from the kernel.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/super.c           | 27 +++++++++++++++++++++++----
- fs/btrfs/volumes.c         |  9 +++++++++
- fs/btrfs/volumes.h         |  1 +
- include/uapi/linux/btrfs.h |  6 +++++-
- 4 files changed, 38 insertions(+), 5 deletions(-)
+ cmds-device.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ioctl.h       |  6 ++++-
+ 2 files changed, 82 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 559fc53ff59e..6a9a5ce8af3b 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2219,21 +2219,37 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 				unsigned long arg)
- {
- 	struct btrfs_ioctl_vol_args *vol;
-+	struct btrfs_ioctl_vol_args_v2 *vol2;
- 	struct btrfs_fs_devices *fs_devices;
- 	int ret = -ENOTTY;
+diff --git a/cmds-device.c b/cmds-device.c
+index f4cdb39f64ac..8c3ad3080437 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -329,6 +329,82 @@ out:
+ 	return !!ret;
+ }
  
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
- 
--	vol = memdup_user((void __user *)arg, sizeof(*vol));
--	if (IS_ERR(vol))
--		return PTR_ERR(vol);
-+	if (cmd == BTRFS_IOC_FORGET_DEV) {
-+		vol2 = memdup_user((void __user *)arg, sizeof(*vol2));
-+		if (IS_ERR(vol2))
-+			return PTR_ERR(vol2);
++static const char * const cmd_device_forget_usage[] = {
++	"btrfs device forget [<device>]",
++	"Forget a scanned device or all stale devices in the btrfs.ko",
++	NULL
++};
 +
-+		if (vol2->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
-+			return -EOPNOTSUPP;
-+	} else {
-+		vol = memdup_user((void __user *)arg, sizeof(*vol));
-+		if (IS_ERR(vol))
-+			return PTR_ERR(vol);
-+	}
- 
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
- 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
- 					    &btrfs_fs_type, &fs_devices);
- 		break;
-+	case BTRFS_IOC_FORGET_DEV:
-+		if (vol2->flags & BTRFS_DEVICE_SPEC_ALL_DEV)
-+			ret = btrfs_forget_devices(NULL);
-+		else
-+			ret = btrfs_forget_devices(vol2->name);
-+		break;
- 	case BTRFS_IOC_DEVICES_READY:
- 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
- 					    &btrfs_fs_type, &fs_devices);
-@@ -2246,7 +2262,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 		break;
- 	}
- 
--	kfree(vol);
-+	if (cmd == BTRFS_IOC_FORGET_DEV)
-+		kfree(vol2);
-+	else
-+		kfree(vol);
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e947e47f8fff..b0c9948baf9a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1171,6 +1171,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
- 	return 0;
- }
- 
-+int btrfs_forget_devices(const char *path)
++static int btrfs_forget_devices(void)
 +{
-+	mutex_lock(&uuid_mutex);
-+	btrfs_free_stale_devices(path, NULL);
-+	mutex_unlock(&uuid_mutex);
++	struct btrfs_ioctl_vol_args_v2 args;
++	int fd;
++	int ret;
 +
-+	return 0;
++	fd = open("/dev/btrfs-control", O_RDWR);
++	if (fd < 0)
++		return -errno;
++
++	memset(&args, 0, sizeof(args));
++	args.flags = BTRFS_DEVICE_SPEC_ALL;
++	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
++	if (ret)
++		ret = -errno;
++	close(fd);
++	return ret;
++
 +}
 +
- /*
-  * Look for a btrfs signature on a device. This may be called out of the mount path
-  * and we are not allowed to call set_blocksize during the scan. The superblock
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 15216fed918b..b954ca3b79a9 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -422,6 +422,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
- int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 			  struct btrfs_fs_devices **fs_devices_ret);
-+int btrfs_forget_devices(const char *path);
- int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
- void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index c8d99b9ca550..4e8ec1391872 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -41,12 +41,14 @@ struct btrfs_ioctl_vol_args {
++static int btrfs_forget_one_device(char *path)
++{
++	struct btrfs_ioctl_vol_args_v2 args;
++	int fd;
++	int ret;
++
++	fd = open("/dev/btrfs-control", O_RDWR);
++	if (fd < 0)
++		return -errno;
++
++	memset(&args, 0, sizeof(args));
++	strncpy_null(args.name, path);
++	ret = ioctl(fd, BTRFS_IOC_FORGET_DEV, &args);
++	if (ret)
++		ret = -errno;
++	close(fd);
++	return ret;
++}
++
++static int cmd_device_forget(int argc, char **argv)
++{
++	char *path;
++	int ret = 0;
++
++	if (check_argc_max(argc - optind, 1))
++		usage(cmd_device_forget_usage);
++
++	if (argc == 1) {
++		ret = btrfs_forget_devices();
++		if (ret)
++			error("Can't forget: %s", strerror(-ret));
++		return ret;
++	}
++
++	path = canonicalize_path(argv[1]);
++	if (!path) {
++		error("Could not canonicalize path '%s': %s",
++					argv[1], strerror(errno));
++		return -ENOENT;
++	}
++
++	ret  = btrfs_forget_one_device(path);
++	if (ret)
++		error("Can't forget '%s': %s", path, strerror(-ret));
++
++	free(path);
++
++	return ret;
++}
++
+ static const char * const cmd_device_ready_usage[] = {
+ 	"btrfs device ready <device>",
+ 	"Check device to see if it has all of its devices in cache for mounting",
+@@ -604,6 +680,7 @@ const struct cmd_group device_cmd_group = {
+ 			CMD_ALIAS },
+ 		{ "remove", cmd_device_remove, cmd_device_remove_usage, NULL, 0 },
+ 		{ "scan", cmd_device_scan, cmd_device_scan_usage, NULL, 0 },
++		{ "forget", cmd_device_forget, cmd_device_forget_usage, NULL, 0 },
+ 		{ "ready", cmd_device_ready, cmd_device_ready_usage, NULL, 0 },
+ 		{ "stats", cmd_device_stats, cmd_device_stats_usage, NULL, 0 },
+ 		{ "usage", cmd_device_usage,
+diff --git a/ioctl.h b/ioctl.h
+index 709e996f401c..ac697f044950 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -53,12 +53,14 @@ BUILD_ASSERT(sizeof(struct btrfs_ioctl_vol_args) == 4096);
+ #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
  #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
- 
  #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
-+#define BTRFS_DEVICE_SPEC_ALL_DEV	(1ULL << 4)
++#define BTRFS_DEVICE_SPEC_ALL		(1ULL << 4)
  
  #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
  			(BTRFS_SUBVOL_CREATE_ASYNC |	\
@@ -156,11 +151,11 @@ index c8d99b9ca550..4e8ec1391872 100644
  			BTRFS_SUBVOL_QGROUP_INHERIT |	\
 -			BTRFS_DEVICE_SPEC_BY_ID)
 +			BTRFS_DEVICE_SPEC_BY_ID |	\
-+			BTRFS_DEVICE_SPEC_ALL_DEV)
++			BTRFS_DEVICE_SPEC_ALL)
  
  #define BTRFS_FSID_SIZE 16
  #define BTRFS_UUID_SIZE 16
-@@ -745,6 +747,8 @@ enum btrfs_err_code {
+@@ -721,6 +723,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
  				   struct btrfs_ioctl_vol_args)
  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
  				   struct btrfs_ioctl_vol_args)

@@ -1,101 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f44.google.com ([209.85.214.44]:41578 "EHLO
-        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932732AbeAKMuJ (ORCPT
+Received: from mail-it0-f51.google.com ([209.85.214.51]:42558 "EHLO
+        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933386AbeAKNAH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 07:50:09 -0500
-Received: by mail-it0-f44.google.com with SMTP id b77so3978696itd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 04:50:09 -0800 (PST)
+        Thu, 11 Jan 2018 08:00:07 -0500
+Received: by mail-it0-f51.google.com with SMTP id p139so4028947itb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 05:00:06 -0800 (PST)
 Subject: Re: Recommendations for balancing as part of regular maintenance?
-To: waxhead@dirtcellar.net, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Timofey Titovets <nefelim4ag@gmail.com>, Tom Worster <fsb@thefsb.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
- <8a80ff4a-07ef-f442-0730-9be659177c7c@dirtcellar.net>
+ <5A539A3A.10107@gmail.com> <b3020ddf-5820-dd8b-ecde-51a5f7026cad@gmail.com>
+ <811ff9be-d155-dae0-8841-0c1b20c18843@cobb.uk.net>
+ <796ad87c-852f-c6a0-7366-5e888d51fc5c@gmail.com>
+ <01020160d7768587-50a9392c-7250-4735-9d14-66ff03a161c9-000000@eu-west-1.amazonses.com>
+ <3eae37f6-3776-15c9-84ae-568e56abfa7e@rqc.ru>
+ <13b5063c-a7bd-5c95-1f6e-16124d385569@gmail.com>
+ <pan$5d0d3$29334af9$ed04365a$f8d9747d@cox.net>
+ <BE09A377-4702-4D51-ACB9-44950865D26E@thefsb.org>
+ <3e353e79-3a13-d2cf-e098-6074a3e17918@gmail.com>
+ <3B79EE2F-030E-4B2D-9A1A-8E70D965E6CB@thefsb.org>
+ <CAGqmi75afCNomxFALABtUhoSV7Op8onXa=9xeBTvY0ob=OpGXw@mail.gmail.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <8d9609fa-69ce-0bf0-9d8c-5b123677db29@gmail.com>
-Date: Thu, 11 Jan 2018 07:50:03 -0500
+Message-ID: <c6fe2fcc-554b-d4e7-cb76-4b761f945a18@gmail.com>
+Date: Thu, 11 Jan 2018 08:00:01 -0500
 MIME-Version: 1.0
-In-Reply-To: <8a80ff4a-07ef-f442-0730-9be659177c7c@dirtcellar.net>
+In-Reply-To: <CAGqmi75afCNomxFALABtUhoSV7Op8onXa=9xeBTvY0ob=OpGXw@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-01-10 16:37, waxhead wrote:
-> Austin S. Hemmelgarn wrote:
->> So, for a while now I've been recommending small filtered balances to
->> people as part of regular maintenance for BTRFS filesystems under the
->> logic that it does help in some cases and can't really hurt (and if done
->> right, is really inexpensive in terms of resources).  This ended up
->> integrated partially in the info text next to the BTRFS charts on
->> netdata's dashboard, and someone has now pointed out (correctly I might
->> add) that this is at odds with the BTRFS FAQ entry on balances.
+On 2018-01-10 15:44, Timofey Titovets wrote:
+> 2018-01-10 21:33 GMT+03:00 Tom Worster <fsb@thefsb.org>:
+>> On 10 Jan 2018, at 12:01, Austin S. Hemmelgarn wrote:
 >>
->> For reference, here's the bit about it in netdata:
->>
->> You can keep your volume healthy by running the `btrfs balance` command
->> on it regularly (check `man btrfs-balance` for more info).
+>>> On 2018-01-10 11:30, Tom Worster wrote:
+>>>
+>>> Also, for future reference, the term we typically use is ENOSPC, as that's
+>>> the symbolic name for the error code you get when this happens (or when your
+>>> filesystem is just normally full), but I actually kind of like your name for
+>>> it too, it conveys the exact condition being discussed in a way that should
+>>> be a bit easier for non-technical types to understand.
 >>
 >>
->> And here's the FAQ entry:
+>> Iiuc, ENOSPC is _exhaustion_ of unallocated space, which is a specific case
+>> of depletion.
 >>
->> Q: Do I need to run a balance regularly?
->>
->> A: In general usage, no. A full unfiltered balance typically takes a
->> long time, and will rewrite huge amounts of data unnecessarily. You may
->> wish to run a balance on metadata only (see Balance_Filters) if you find
->> you have very large amounts of metadata space allocated but unused, but
->> this should be a last resort.
+>> I sought a term to refer to the phenomenon of unallocated space shrinking
+>> beyond what filesystem use would demand and how it ratchets down. Hence a
+>> sysop needs to manage DoUS. ENOSPC is likely a failure of such management.
 >>
 >>
->> I've commented in the issue in netdata's issue tracker that I feel that
->> the FAQ entry could be better worded (strictly speaking, you don't
->> _need_ to run balances regularly, but it's usually a good idea). Looking
->> at both though, I think they could probably both be improved, but I
->> would like to get some input here on what people actually think the best
->> current practices are regarding this (and ideally why they feel that
->> way) before I go and change anything.
+>>>> - Some experienced users say that, to resolve a problem with DoUS, they
+>>>> would rather recreate the filesystem than run balance.
+>>>
+>>> This is kind of independent of BTRFS.
 >>
->> So, on that note, how does anybody else out there feel about this?  Is
->> balancing regularly with filters restricting things to small numbers of
->> mostly empty chunks a good thing for regular maintenance or not?
->> -- 
-> As just a regular user I would think that the first thing you would need 
-> is an analyze that can tell you if it is a good idea to balance or not 
-> in the first place.
-In an ideal situation, the only reason it should ever be a bad idea to 
-run a balance is the performance impact (which is of course why we have 
-filters).  Beyond that though, there's too much involved for even a 
-computer to reliably tell you if it will be beneficial to run a balance 
-or not.  It depends not just on how the data looks on the filesystem, 
-but also how you are going to be using the filesystem in the near future 
-(for example, if you've got a number of large blocks of empty space 
-within data chunks, it might make sense to balance, but not if you're 
-likely to be adding a bunch of new files in the very near future (they 
-will just end up packed into that empty space in existing chunks, and 
-your actual layout on disk shouldn't be all that different from if you 
-had run a balance)).
+>>
+>> Yes. I mentioned it only because it was, to me, a striking statement of lack
+>> of confidence in balance.
+>>
+>>
+>>>> But if Duncan is right (which, for me, is practically the same as
+>>>> consensus on the proposition) that problems with corruption while running
+>>>> balance are associated with heavy coincident IO activity, then I can see a
+>>>> reasonable way forwards. I can even see how general recommendations for
+>>>> BTRFS maintenance might develop.
+>>>
+>>> As I commented above, I would tend to believe Duncan is right in this case
+>>> (both because it makes sense, and because he seems to generally be right
+>>> about this type of thing).  That said, I really do think that normal user
+>>> I/O is probably not the issue, but low-level filesystem operations are.
+>>> That said, there is no reason that BTRFS shouldn't either:
+>>> 1. Handle this just fine without causing corruption.
+>>> or:
+>>> 2. Extend the mutex used to prevent concurrent balances to cover other
+>>> operations that might cause issues (that is, make it so you can't scrub a
+>>> filesystem while it's being balanced, or defragment it, or whatever else).
+>>
+>>
+>> Yes, but backtracking a bit, I think there's another really important point
+>> here. Assuming Duncan's right, it's not so hard to develop guidelines for
+>> general BTRFS management that include DoUS among other topics. Duncan's
+>> other email today contains or implies quite a lot of those guidelines.
+>>
+>> Or, to put it another way, it's enough for me. I think I know what to do
+>> now. And that much could be written down for the benefit of others.
+>>
+>> Tom
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> Scrub seems like a great place to start - e.g. scrub could auto-analyze 
-> and report back need to balance. I also think that scrub should 
-> optionally autobalance if needed.
+> My two cents,
+> I've about ~50 different systems
+> (VCS Systems, MySQL DB, Web Servers, Elastic Search nodes & etc.).
+> All running btrfs only and run fine, even with auto snapshot rotating
+> on some of them,
+> (btrfs make my life easier and i like it).
 > 
-> Balance may not be needed, but if one can determine that balancing would 
-> speed up things a bit I don't see why this as an option can't be 
-> scheduled automatically. Ideally there should be a "scrub and polish" 
-> option that would scrub, balance and perhaps even defragment in one go.
-In this case, the recommendation isn't as much about speed as it is 
-about trying to keep things from getting into a state where you get 
-ENOSPC but conventional tools report lots of free space.  As a general 
-rule, unless things are pathologically bad to begin with, balancing a 
-filesystem won't usually have any measurable impact on performance.
+> Most of them are small VMs From 3GiB..512GiB (I use compression everywhere).
+> And no one of them need balance, only that i care,
+> i try have always some unallocated space on it.
 > 
-> In fact, the way I see it btrfs should idealy by itself keep track on 
-> each data/metadata chunk and it should know , when was this chunk last 
-> affected by a scrub, balance, defrag etc and perform the required 
-> operations by itself based on a configuration or similar. Some may 
-> disagree for good reasons , but for me this is my wishlist for a 
-> filesystem :) e.g. a pool that just works and only annoys you with the 
-> need of replacing a bad disk every now and then :)
-Long-term, that type of things is a goal, but I doubt that we're going 
-to go that far with automation (even ZFS doesn't go that far, you still 
-have to schedule scrubs and similar things).
+> Most of them are stuck with some used/allocated/unallocated ratio.
+> 
+> I.e. as i see from conversation point of view.
+> We run balance for reallocate data -> make more unallocated space,
+> but if someone have plenty of it, that useless, no?
+Not exactly.  In terms of reactive, after-the-fact type maintenance, 
+that's most of what it's used for.  For preventative maintenance (which 
+is what the recommendations I'm trying to work out are about), it can be 
+used to help avoid ending up in such situations in the first place.
 
+IOW, balancing in small increments on a regular basis can be used as a 
+prophylactic measure to help keep things from getting into a state where 
+you have a bunch of free space in one type of chunk, but need more space 
+in another type of chunk and can't allocate any of that second type of 
+chunk (which is the most common case of ENOSPC problems, df and 
+statvfs() both show lots of free space, but certain VFS ops reliably 
+return ENOSPC).  While it's unlikely to end up in such a state if you 
+keep a reasonable amount of space unallocated, it is still possible, and 
+even aside from that balancing can help keep the load evenly distributed 
+in a multi-device volume.
+> 
+> ex. I've 60% allocated by data/meta data chunks on my notebook,
+> And only 40% are really used by data, even then i have 90% allocated,
+> and 85% used, i don't face into ENOSPC problems. (256GiB ssd).
+> 
+> And if i run balance, i run it only to fight with btrfs discard processing bug,
+> which leads to trim only unallocated space (probably fixed already).
+Yes, it is fixed in mainline, though I forget what kernel version the 
+fix went into (I think 4.9 and newer have it, but I'm not sure).
+> 
+> So if we talk about "regular" running of balance, may be that make a sense
+> To check free space, i.e. if system have some percentage of space
+> allocated, like 80%,
+> and have plenty of allocated/unused space, only then balance will be needed, no?
+> 
+> (I'm not say that btrfs have no problems, i see some rare hateful bugs,
+> on some systems, but most of them are internal btrfs problems
+> or problems with coop of btrfs with applications).

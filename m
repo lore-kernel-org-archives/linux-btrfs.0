@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:54301 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:42499 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754014AbeAKFKV (ORCPT
+        with ESMTP id S1754024AbeAKFK2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 00:10:21 -0500
+        Thu, 11 Jan 2018 00:10:28 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 9D52249F0D60
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:10:11 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 3977E486A78B
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:10:12 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 43/67] btrfs-progs: add the stack prefix for super_flags set/get function
-Date: Thu, 11 Jan 2018 13:09:15 +0800
-Message-ID: <20180111050939.21251-44-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 44/67] btrfs-progs: add the stack prefix for super_generation set/get function
+Date: Thu, 11 Jan 2018 13:09:16 +0800
+Message-ID: <20180111050939.21251-45-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
 References: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,217 +19,215 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The super_flags set/get function defined by
+The super_generation set/get function defined by
 BTRFS_SETGET_STACK_FUNCS macro is missing the prefix stack.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
- btrfstune.c               | 14 +++++++-------
+ btrfs-find-root.c         |  2 +-
  chunk-recover.c           |  2 +-
  cmds-check.c              |  2 +-
- cmds-inspect-dump-super.c |  4 ++--
- ctree.h                   |  3 ++-
- disk-io.c                 | 10 ++++++----
- image/main.c              |  8 ++++----
+ cmds-inspect-dump-super.c |  2 +-
+ cmds-restore.c            |  2 +-
+ convert/common.c          |  2 +-
+ ctree.h                   |  2 +-
+ disk-io.c                 | 12 ++++++------
+ mkfs/common.c             |  2 +-
+ super-recover.c           |  4 ++--
  volumes.c                 |  2 +-
- 8 files changed, 24 insertions(+), 21 deletions(-)
+ 11 files changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/btrfstune.c b/btrfstune.c
-index eccedf79..e502126a 100644
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -45,7 +45,7 @@ static int update_seeding_flag(struct btrfs_root *root, int set_flag)
- 	int ret;
- 
- 	disk_super = root->fs_info->super_copy;
--	super_flags = btrfs_super_flags(disk_super);
-+	super_flags = btrfs_stack_super_flags(disk_super);
- 	if (set_flag) {
- 		if (super_flags & BTRFS_SUPER_FLAG_SEEDING) {
- 			if (force)
-@@ -67,7 +67,7 @@ static int update_seeding_flag(struct btrfs_root *root, int set_flag)
- 
- 	trans = btrfs_start_transaction(root, 1);
- 	BUG_ON(IS_ERR(trans));
--	btrfs_set_super_flags(disk_super, super_flags);
-+	btrfs_set_stack_super_flags(disk_super, super_flags);
- 	ret = btrfs_commit_transaction(trans, root);
- 
- 	return ret;
-@@ -237,11 +237,11 @@ out:
- static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *tree_root = fs_info->tree_root;
--	u64 flags = btrfs_super_flags(fs_info->super_copy);
-+	u64 flags = btrfs_stack_super_flags(fs_info->super_copy);
- 	int ret = 0;
- 
- 	flags |= BTRFS_SUPER_FLAG_CHANGING_FSID;
--	btrfs_set_super_flags(fs_info->super_copy, flags);
-+	btrfs_set_stack_super_flags(fs_info->super_copy, flags);
- 
- 	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid, BTRFS_FSID_SIZE);
- 	ret = write_all_supers(fs_info);
-@@ -257,10 +257,10 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
- 
- static int change_fsid_done(struct btrfs_fs_info *fs_info)
- {
--	u64 flags = btrfs_super_flags(fs_info->super_copy);
-+	u64 flags = btrfs_stack_super_flags(fs_info->super_copy);
- 
- 	flags &= ~BTRFS_SUPER_FLAG_CHANGING_FSID;
--	btrfs_set_super_flags(fs_info->super_copy, flags);
-+	btrfs_set_stack_super_flags(fs_info->super_copy, flags);
- 
- 	return write_all_supers(fs_info);
- }
-@@ -274,7 +274,7 @@ static int check_unfinished_fsid_change(struct btrfs_fs_info *fs_info,
- 					uuid_t fsid_ret, uuid_t chunk_id_ret)
- {
- 	struct btrfs_root *tree_root = fs_info->tree_root;
--	u64 flags = btrfs_super_flags(fs_info->super_copy);
-+	u64 flags = btrfs_stack_super_flags(fs_info->super_copy);
- 
- 	if (flags & BTRFS_SUPER_FLAG_CHANGING_FSID) {
- 		memcpy(fsid_ret, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
+diff --git a/btrfs-find-root.c b/btrfs-find-root.c
+index e2d2e70c..df241c97 100644
+--- a/btrfs-find-root.c
++++ b/btrfs-find-root.c
+@@ -65,7 +65,7 @@ static void get_root_gen_and_level(u64 objectid, struct btrfs_fs_info *fs_info,
+ 	switch (objectid) {
+ 	case BTRFS_ROOT_TREE_OBJECTID:
+ 		level = btrfs_super_root_level(super);
+-		gen = btrfs_super_generation(super);
++		gen = btrfs_stack_super_generation(super);
+ 		break;
+ 	case BTRFS_CHUNK_TREE_OBJECTID:
+ 		level = btrfs_super_chunk_root_level(super);
 diff --git a/chunk-recover.c b/chunk-recover.c
-index 123cd097..6734212c 100644
+index 6734212c..d0a7cfe0 100644
 --- a/chunk-recover.c
 +++ b/chunk-recover.c
-@@ -1540,7 +1540,7 @@ static int recover_prepare(struct recover_control *rc, char *path)
+@@ -1535,7 +1535,7 @@ static int recover_prepare(struct recover_control *rc, char *path)
+ 
+ 	rc->sectorsize = btrfs_super_sectorsize(sb);
+ 	rc->nodesize = btrfs_super_nodesize(sb);
+-	rc->generation = btrfs_super_generation(sb);
++	rc->generation = btrfs_stack_super_generation(sb);
+ 	rc->chunk_root_generation = btrfs_super_chunk_root_generation(sb);
  	rc->csum_size = btrfs_super_csum_size(sb);
  
- 	/* if seed, the result of scanning below will be partial */
--	if (btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_SEEDING) {
-+	if (btrfs_stack_super_flags(sb) & BTRFS_SUPER_FLAG_SEEDING) {
- 		fprintf(stderr, "this device is seed device\n");
- 		ret = -1;
- 		goto out_close_fd;
 diff --git a/cmds-check.c b/cmds-check.c
-index 6070e8d5..170da424 100644
+index 170da424..6218eddb 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -11291,7 +11291,7 @@ static bool is_super_size_valid(struct btrfs_fs_info *fs_info)
- 	 *
- 	 * For a btrfs-image restored fs, we don't need to check it anyway.
- 	 */
--	if (btrfs_super_flags(fs_info->super_copy) &
-+	if (btrfs_stack_super_flags(fs_info->super_copy) &
- 	    (BTRFS_SUPER_FLAG_METADUMP | BTRFS_SUPER_FLAG_METADUMP_V2))
- 		return true;
- 	if (!IS_ALIGNED(super_bytes, fs_info->sectorsize) ||
+@@ -8647,7 +8647,7 @@ static int check_space_cache(struct btrfs_root *root)
+ 	int error = 0;
+ 
+ 	if (btrfs_super_cache_generation(root->fs_info->super_copy) != -1ULL &&
+-	    btrfs_super_generation(root->fs_info->super_copy) !=
++	    btrfs_stack_super_generation(root->fs_info->super_copy) !=
+ 	    btrfs_super_cache_generation(root->fs_info->super_copy)) {
+ 		printf("cache and super generation don't match, space cache "
+ 		       "will be invalidated\n");
 diff --git a/cmds-inspect-dump-super.c b/cmds-inspect-dump-super.c
-index cbd86c50..3a8acd7e 100644
+index 3a8acd7e..d525fb4f 100644
 --- a/cmds-inspect-dump-super.c
 +++ b/cmds-inspect-dump-super.c
-@@ -348,8 +348,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
- 	printf("bytenr\t\t\t%llu\n",
- 		(unsigned long long)btrfs_stack_super_bytenr(sb));
- 	printf("flags\t\t\t0x%llx\n",
--		(unsigned long long)btrfs_super_flags(sb));
--	print_readable_super_flag(btrfs_super_flags(sb));
-+		(unsigned long long)btrfs_stack_super_flags(sb));
-+	print_readable_super_flag(btrfs_stack_super_flags(sb));
+@@ -370,7 +370,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
+ 	putchar('\n');
  
- 	printf("magic\t\t\t");
- 	s = (char *) &sb->magic;
+ 	printf("generation\t\t%llu\n",
+-	       (unsigned long long)btrfs_super_generation(sb));
++	       (unsigned long long)btrfs_stack_super_generation(sb));
+ 	printf("root\t\t\t%llu\n", (unsigned long long)btrfs_super_root(sb));
+ 	printf("sys_array_size\t\t%llu\n",
+ 	       (unsigned long long)btrfs_super_sys_array_size(sb));
+diff --git a/cmds-restore.c b/cmds-restore.c
+index 37368766..416ff32d 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -1303,7 +1303,7 @@ static struct btrfs_root *open_fs(const char *dev, u64 root_location,
+ 		root = fs_info->tree_root;
+ 		if (!root_location)
+ 			root_location = btrfs_super_root(fs_info->super_copy);
+-		generation = btrfs_super_generation(fs_info->super_copy);
++		generation = btrfs_stack_super_generation(fs_info->super_copy);
+ 		root->node = read_tree_block(fs_info, root_location,
+ 					     generation);
+ 		if (!extent_buffer_uptodate(root->node)) {
+diff --git a/convert/common.c b/convert/common.c
+index 38769081..e509fe5d 100644
+--- a/convert/common.c
++++ b/convert/common.c
+@@ -117,7 +117,7 @@ static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
+ 	btrfs_set_stack_super_bytenr(super, cfg->super_bytenr);
+ 	btrfs_set_super_num_devices(super, 1);
+ 	btrfs_set_super_magic(super, BTRFS_MAGIC_PARTIAL);
+-	btrfs_set_super_generation(super, 1);
++	btrfs_set_stack_super_generation(super, 1);
+ 	btrfs_set_super_root(super, root_bytenr);
+ 	btrfs_set_super_chunk_root(super, chunk_bytenr);
+ 	btrfs_set_super_total_bytes(super, cfg->num_bytes);
 diff --git a/ctree.h b/ctree.h
-index 14e5aac8..fdf274d6 100644
+index fdf274d6..bf7a4d75 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -2163,7 +2163,8 @@ BTRFS_SETGET_STACK_FUNCS(stack_backup_num_devices, struct btrfs_root_backup,
- 
- BTRFS_SETGET_STACK_FUNCS(stack_super_bytenr, struct btrfs_super_block, bytenr,
+@@ -2165,7 +2165,7 @@ BTRFS_SETGET_STACK_FUNCS(stack_super_bytenr, struct btrfs_super_block, bytenr,
  			 64);
--BTRFS_SETGET_STACK_FUNCS(super_flags, struct btrfs_super_block, flags, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_super_flags, struct btrfs_super_block, flags,
-+			 64);
- BTRFS_SETGET_STACK_FUNCS(super_generation, struct btrfs_super_block,
+ BTRFS_SETGET_STACK_FUNCS(stack_super_flags, struct btrfs_super_block, flags,
+ 			 64);
+-BTRFS_SETGET_STACK_FUNCS(super_generation, struct btrfs_super_block,
++BTRFS_SETGET_STACK_FUNCS(stack_super_generation, struct btrfs_super_block,
  			 generation, 64);
  BTRFS_SETGET_STACK_FUNCS(super_root, struct btrfs_super_block, root, 64);
+ BTRFS_SETGET_STACK_FUNCS(super_sys_array_size,
 diff --git a/disk-io.c b/disk-io.c
-index 9458242b..3a3275b5 100644
+index 3a3275b5..c5c7ee10 100644
 --- a/disk-io.c
 +++ b/disk-io.c
-@@ -1069,7 +1069,7 @@ int btrfs_setup_chunk_tree_and_device_map(struct btrfs_fs_info *fs_info,
+@@ -522,7 +522,7 @@ static int find_and_setup_log_root(struct btrfs_root *tree_root,
+ 			 BTRFS_TREE_LOG_OBJECTID);
+ 
+ 	log_root->node = read_tree_block(fs_info, blocknr,
+-				     btrfs_super_generation(disk_super) + 1);
++				btrfs_stack_super_generation(disk_super) + 1);
+ 
+ 	fs_info->log_root_tree = log_root;
+ 
+@@ -793,7 +793,7 @@ int btrfs_check_fs_compatibility(struct btrfs_super_block *sb,
+ static int find_best_backup_root(struct btrfs_super_block *super)
+ {
+ 	struct btrfs_root_backup *backup;
+-	u64 orig_gen = btrfs_super_generation(super);
++	u64 orig_gen = btrfs_stack_super_generation(super);
+ 	u64 gen = 0;
+ 	int best_index = 0;
+ 	int i;
+@@ -847,7 +847,7 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
+ 
+ 	root = fs_info->tree_root;
+ 	btrfs_setup_root(root, fs_info, BTRFS_ROOT_TREE_OBJECTID);
+-	generation = btrfs_super_generation(sb);
++	generation = btrfs_stack_super_generation(sb);
+ 
+ 	if (!root_tree_bytenr && !(flags & OPEN_CTREE_BACKUP_ROOT)) {
+ 		root_tree_bytenr = btrfs_super_root(sb);
+@@ -1486,9 +1486,9 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr,
+ 			continue;
+ 		}
+ 
+-		if (btrfs_super_generation(buf) > transid) {
++		if (btrfs_stack_super_generation(buf) > transid) {
+ 			memcpy(sb, buf, BTRFS_SUPER_INFO_SIZE);
+-			transid = btrfs_super_generation(buf);
++			transid = btrfs_stack_super_generation(buf);
  		}
  	}
  
--	if (!(btrfs_super_flags(sb) & BTRFS_SUPER_FLAG_METADUMP)) {
-+	if (!(btrfs_stack_super_flags(sb) & BTRFS_SUPER_FLAG_METADUMP)) {
- 		ret = btrfs_read_chunk_tree(fs_info);
- 		if (ret) {
- 			fprintf(stderr, "Couldn't read chunk tree\n");
-@@ -1154,7 +1154,8 @@ static struct btrfs_fs_info *__open_ctree_fd(int fp, const char *path,
- 		goto out_devices;
+@@ -1603,7 +1603,7 @@ int write_ctree_super(struct btrfs_trans_handle *trans,
+ 	if (fs_info->readonly)
+ 		return 0;
+ 
+-	btrfs_set_super_generation(fs_info->super_copy,
++	btrfs_set_stack_super_generation(fs_info->super_copy,
+ 				   trans->transid);
+ 	btrfs_set_super_root(fs_info->super_copy,
+ 			     tree_root->node->start);
+diff --git a/mkfs/common.c b/mkfs/common.c
+index 1845cb14..1ebacbc6 100644
+--- a/mkfs/common.c
++++ b/mkfs/common.c
+@@ -161,7 +161,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_stack_super_bytenr(&super, cfg->blocks[MKFS_SUPER_BLOCK]);
+ 	btrfs_set_super_num_devices(&super, 1);
+ 	btrfs_set_super_magic(&super, BTRFS_MAGIC_PARTIAL);
+-	btrfs_set_super_generation(&super, 1);
++	btrfs_set_stack_super_generation(&super, 1);
+ 	btrfs_set_super_root(&super, cfg->blocks[MKFS_ROOT_TREE]);
+ 	btrfs_set_super_chunk_root(&super, cfg->blocks[MKFS_CHUNK_TREE]);
+ 	btrfs_set_super_total_bytes(&super, num_bytes);
+diff --git a/super-recover.c b/super-recover.c
+index 6b80416f..2a82aa75 100644
+--- a/super-recover.c
++++ b/super-recover.c
+@@ -133,7 +133,7 @@ read_dev_supers(char *filename, struct btrfs_recover_superblock *recover)
+ 							&recover->good_supers);
+ 			if (ret)
+ 				goto out;
+-			max_gen = btrfs_super_generation(sb);
++			max_gen = btrfs_stack_super_generation(sb);
+ 			if (max_gen > recover->max_generation)
+ 				recover->max_generation = max_gen;
+ 		} else if (ret == -EIO){
+@@ -169,7 +169,7 @@ static int read_fs_supers(struct btrfs_recover_superblock *recover)
  	}
- 
--	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_CHANGING_FSID &&
-+	if (btrfs_stack_super_flags(disk_super) &
-+			BTRFS_SUPER_FLAG_CHANGING_FSID &&
- 	    !fs_info->ignore_fsid_mismatch) {
- 		fprintf(stderr, "ERROR: Filesystem UUID change in progress\n");
- 		goto out_devices;
-@@ -1582,8 +1583,9 @@ int write_all_supers(struct btrfs_fs_info *fs_info)
- 		memcpy(dev_item->uuid, dev->uuid, BTRFS_UUID_SIZE);
- 		memcpy(dev_item->fsid, dev->fs_devices->fsid, BTRFS_UUID_SIZE);
- 
--		flags = btrfs_super_flags(sb);
--		btrfs_set_super_flags(sb, flags | BTRFS_HEADER_FLAG_WRITTEN);
-+		flags = btrfs_stack_super_flags(sb);
-+		btrfs_set_stack_super_flags(sb,
-+					    flags | BTRFS_HEADER_FLAG_WRITTEN);
- 
- 		ret = write_dev_supers(fs_info, sb, dev);
- 		BUG_ON(ret);
-diff --git a/image/main.c b/image/main.c
-index 84d4d0dd..e9df95ad 100644
---- a/image/main.c
-+++ b/image/main.c
-@@ -1091,10 +1091,10 @@ static void update_super_old(u8 *buffer)
- 	struct btrfs_chunk *chunk;
- 	struct btrfs_disk_key *key;
- 	u32 sectorsize = btrfs_super_sectorsize(super);
--	u64 flags = btrfs_super_flags(super);
-+	u64 flags = btrfs_stack_super_flags(super);
- 
- 	flags |= BTRFS_SUPER_FLAG_METADUMP;
--	btrfs_set_super_flags(super, flags);
-+	btrfs_set_stack_super_flags(super, flags);
- 
- 	key = (struct btrfs_disk_key *)(super->sys_chunk_array);
- 	chunk = (struct btrfs_chunk *)(super->sys_chunk_array +
-@@ -1126,7 +1126,7 @@ static int update_super(struct mdrestore_struct *mdres, u8 *buffer)
- 	struct btrfs_chunk *chunk;
- 	struct btrfs_disk_key *disk_key;
- 	struct btrfs_key key;
--	u64 flags = btrfs_super_flags(super);
-+	u64 flags = btrfs_stack_super_flags(super);
- 	u32 new_array_size = 0;
- 	u32 array_size;
- 	u32 cur = 0;
-@@ -1187,7 +1187,7 @@ static int update_super(struct mdrestore_struct *mdres, u8 *buffer)
- 		btrfs_set_super_cache_generation(super, 0);
- 
- 	flags |= BTRFS_SUPER_FLAG_METADUMP_V2;
--	btrfs_set_super_flags(super, flags);
-+	btrfs_set_stack_super_flags(super, flags);
- 	btrfs_set_super_sys_array_size(super, new_array_size);
- 	btrfs_set_super_num_devices(super, 1);
- 	csum_block(buffer, BTRFS_SUPER_INFO_SIZE);
+ 	list_for_each_entry_safe(record, next_record,
+ 			&recover->good_supers, list) {
+-		gen = btrfs_super_generation(&record->sb);
++		gen = btrfs_stack_super_generation(&record->sb);
+ 		if (gen < recover->max_generation)
+ 			list_move_tail(&record->list, &recover->bad_supers);
+ 	}
 diff --git a/volumes.c b/volumes.c
-index ce3a5405..90c23582 100644
+index 90c23582..20203024 100644
 --- a/volumes.c
 +++ b/volumes.c
-@@ -285,7 +285,7 @@ int btrfs_scan_one_device(int fd, const char *path,
- 	if (ret < 0)
- 		return -EIO;
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
--	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)
-+	if (btrfs_stack_super_flags(disk_super) & BTRFS_SUPER_FLAG_METADUMP)
- 		*total_devs = 1;
- 	else
- 		*total_devs = btrfs_super_num_devices(disk_super);
+@@ -89,7 +89,7 @@ static int device_list_add(const char *path,
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_fs_devices *fs_devices;
+-	u64 found_transid = btrfs_super_generation(disk_super);
++	u64 found_transid = btrfs_stack_super_generation(disk_super);
+ 
+ 	fs_devices = find_fsid(disk_super->fsid);
+ 	if (!fs_devices) {
 -- 
 2.15.1
 

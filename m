@@ -1,109 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:56598 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1757414AbeAIONK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 09:13:10 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w09ED5PK144158
-        for <linux-btrfs@vger.kernel.org>; Tue, 9 Jan 2018 14:13:10 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2fcpfyt346-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jan 2018 14:13:07 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w09ECZGv017089
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Tue, 9 Jan 2018 14:12:36 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w09ECZ9Q023086
-        for <linux-btrfs@vger.kernel.org>; Tue, 9 Jan 2018 14:12:35 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs: cleanup to make btrfs_free_stale_device() readable
-Date: Tue,  9 Jan 2018 22:13:14 +0800
-Message-Id: <20180109141314.23795-7-anand.jain@oracle.com>
-In-Reply-To: <20180109141314.23795-1-anand.jain@oracle.com>
-References: <20180109141314.23795-1-anand.jain@oracle.com>
+Received: from mout.gmx.net ([212.227.17.21]:53497 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752651AbeAKBbL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 20:31:11 -0500
+Subject: Re: [RFC PATCH] btrfs: Fix slight df misreporting when listing mixed
+ block groups fs
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <1515513845-3749-1-git-send-email-nborisov@suse.com>
+ <b9da1d4e-f32c-d923-1e9c-243f753ffa20@gmx.com>
+ <d9ab30af-0b3a-7021-876c-5e545b417d40@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <d5c6d2f2-97ab-4ccd-f1f2-ca4506bef138@gmx.com>
+Date: Thu, 11 Jan 2018 09:30:58 +0800
+MIME-Version: 1.0
+In-Reply-To: <d9ab30af-0b3a-7021-876c-5e545b417d40@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="ASuYbcVLdnTCl5yaMSDpoExHYWNfRZjDn"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--ASuYbcVLdnTCl5yaMSDpoExHYWNfRZjDn
+Content-Type: multipart/mixed; boundary="ZJoIkheR1CxyaDlg9OtnVgc1m8PhZr8sq";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Message-ID: <d5c6d2f2-97ab-4ccd-f1f2-ca4506bef138@gmx.com>
+Subject: Re: [RFC PATCH] btrfs: Fix slight df misreporting when listing mixed
+ block groups fs
+References: <1515513845-3749-1-git-send-email-nborisov@suse.com>
+ <b9da1d4e-f32c-d923-1e9c-243f753ffa20@gmx.com>
+ <d9ab30af-0b3a-7021-876c-5e545b417d40@suse.com>
+In-Reply-To: <d9ab30af-0b3a-7021-876c-5e545b417d40@suse.com>
 
-Now as the there is path in arg, so instead of reading the path from
-cur_device just get it from the caller, and so the purpose of cur_device
-is to skip the device, so rename it to skip_dev. Also drop the comment
-about different path being used for the same device, since now we will
-have cli to clean any device that's not a concern any more.
+--ZJoIkheR1CxyaDlg9OtnVgc1m8PhZr8sq
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v3: add btrfs_free_stale_device() fn description, as suggested by
-    Nikolay
-    Fix line with longer than 80 char
-v2: btrfs_device::name is null when we have missing device and
-    unmounted. So we still need to check for dev->name.
 
- fs/btrfs/volumes.c | 30 ++++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f87d30aa0e18..848824fe98a3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -605,8 +605,17 @@ static void pending_bios_fn(struct btrfs_work *work)
- 	run_scheduled_bios(device);
- }
- 
--
--static void btrfs_free_stale_device(struct btrfs_device *cur_dev, char *path)
-+/*
-+ * btrfs_free_stale_device()
-+ *  Search and remove all stale (devices which are not mounted) devices.
-+ *  When both inputs are NULL, it will search and release all stale devices.
-+ *  path:	Optional. When provided will it release all unmounted devices
-+ *  		matching this path only.
-+ *  skip_dev:	Optional. Will skip this device when searching for the stale
-+ *  		devices.
-+ */
-+static void btrfs_free_stale_device(const char *path,
-+				    struct btrfs_device *skip_dev)
- {
- 	struct btrfs_fs_devices *fs_devs, *tmp_fs_devs;
- 	struct btrfs_device *dev, *tmp_dev;
-@@ -620,20 +629,13 @@ static void btrfs_free_stale_device(struct btrfs_device *cur_dev, char *path)
- 				         &fs_devs->devices, dev_list) {
- 			int not_found;
- 
--			if (cur_dev && (cur_dev == dev || !dev->name))
-+			if (skip_dev && skip_dev == dev)
-+				continue;
-+			if (path && !dev->name)
- 				continue;
- 
--			/*
--			 * Todo: This won't be enough. What if the same device
--			 * comes back (with new uuid and) with its mapper path?
--			 * But for now, this does help as mostly an admin will
--			 * either use mapper or non mapper path throughout.
--			 */
- 			rcu_read_lock();
--			if (cur_dev)
--				not_found = strcmp(rcu_str_deref(dev->name),
--						   rcu_str_deref(cur_dev->name));
--			else if (path)
-+			if (path)
- 				not_found = strcmp(rcu_str_deref(dev->name), path);
- 			else
- 				not_found = 0;
-@@ -778,7 +780,7 @@ static noinline int device_list_add(const char *path,
- 
- 		ret = 1;
- 		device->fs_devices = fs_devices;
--		btrfs_free_stale_device(device, NULL);
-+		btrfs_free_stale_device(path, device);
- 	} else if (!device->name || strcmp(device->name->str, path)) {
- 		/*
- 		 * When FS is already mounted.
--- 
-2.7.0
+On 2018=E5=B9=B401=E6=9C=8810=E6=97=A5 23:33, Nikolay Borisov wrote:
+>=20
+>=20
+> On 10.01.2018 03:30, Qu Wenruo wrote:
+>> That system chunk can be relocated by balance, and in that case new
+>> chunk may start beyond 1M.
+>>
+>> So the most reliable method would be manually checking the the first
+>> device extent of this device, and to determine if we should minus that=
+ 1M.
+>>
+>> If the first device extent starts beyond 1M, reducing 1M would be good=
+=2E
+>> Or don't modify it.
+>=20
+> So assuming I run generic/015 on a system with your mkfs patches to put=
 
+> system chunk after 1mb and I implement a logic in
+> btrfs_calc_avail_data_space to subtract 1mb if the first extent of a
+> device starts at 1mb. In that case the test is still going to fail i.e
+> have the discrepancy of 1mb due to 1mb being subtracted first due to
+> there being unallocated space on the device, but then on the second df
+> btrfs_calc_avail_data_space will return 0 so df is going to report spac=
+e
+> only from the block groups.
+>=20
+>=20
+> Thinking a bit more I think with your mkfs.btrfs patch there is no need=
+
+> to check where the device extent starts, since now we are guaranteed to=
+
+> always have a hole of at least 1mb at the beginning.
+
+The check here is mainly for old filesystems, whose device extent can
+start in the reserved range.
+
+But considering the difference will be no larger than 1MB, and using
+small filesystem (100ish MiB) is already very rare in btrfs, such
+difference won't really cause much problem, except for the test case.
+
+Thanks,
+Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--ZJoIkheR1CxyaDlg9OtnVgc1m8PhZr8sq--
+
+--ASuYbcVLdnTCl5yaMSDpoExHYWNfRZjDn
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpWvlIXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjMLQf9H3O1bKTG2ruzQTnjUkDswQhA
+ukqWSrJVDopd5rHQJuv2LWiR/0N01i3rAd3aAOOVelY8xdXmnGtf3XvNljBmasgE
+nXKPC6E3+PP1A/clnzp8ibFp/SMCE0PCa8yPcHtGCUkFpb1aaR6zFTvfVLVEQGD/
+l6R2soX6dKud3fOAJdPDpujqhFN0Ui4uja0jh0nRinIA7u5bCghWYogc6h+oh6km
+r3CqBYw4LK9BVl0FitMZd1Iicm6YNKY7/Au3fDXBaOBR3rwonXaxrQIUAhr2b3LF
+cU8pnAzsCQIa9jObh5q4Ucc/k/hnTTy1mkUb2OsPKTCWazMfS43qzJ6I3O2Ebg==
+=0DKN
+-----END PGP SIGNATURE-----
+
+--ASuYbcVLdnTCl5yaMSDpoExHYWNfRZjDn--

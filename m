@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:53400 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:41663 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753959AbeAKHbN (ORCPT
+        with ESMTP id S932107AbeAKHbS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 02:31:13 -0500
+        Thu, 11 Jan 2018 02:31:18 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 99E2649F0F85
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:12 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 98F9748AEA0C
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:14 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 10/17] btrfs-progs: lowmem check: remove parameter @trans of delete_extent_item()
-Date: Thu, 11 Jan 2018 15:35:04 +0800
-Message-ID: <20180111073511.25288-11-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 11/17] btrfs-progs: lowmem check: remove parameter @trans of repair_chunk_item()
+Date: Thu, 11 Jan 2018 15:35:05 +0800
+Message-ID: <20180111073511.25288-12-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,8 +20,9 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch removes the parameter @trans of delete_extent_item().
-It calls try_avoid_extents_overwrite() and starts a transaction by itself.
+This patch removes parameter @trans of repair_chunk_item().
+It calls try_avoid_extents_overwrite() and starts a transaction by
+itself.
 
 Note: This patch and next patches cause error in lowmem repair like:
 "Error: Commit_root already set when starting transaction".
@@ -29,91 +30,89 @@ This error will disappear after removing @trans finished.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 24 +++++++++++++++++-------
- 1 file changed, 17 insertions(+), 7 deletions(-)
+ cmds-check.c | 48 ++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 32 insertions(+), 16 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index cd8b6ed3898f..aebae43c1fa7 100644
+index aebae43c1fa7..15cc628092c2 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -13492,13 +13492,22 @@ out:
- 	return err;
- }
- 
--static int delete_extent_tree_item(struct btrfs_trans_handle *trans,
--				   struct btrfs_root *root,
-+static int delete_extent_tree_item(struct btrfs_root *root,
- 				   struct btrfs_path *path)
+@@ -13350,13 +13350,14 @@ out:
+  *
+  * Returns error after repair.
+  */
+-static int repair_chunk_item(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *chunk_root,
++static int repair_chunk_item(struct btrfs_root *chunk_root,
+ 			     struct btrfs_path *path, int err)
  {
- 	struct btrfs_key key;
+ 	struct btrfs_chunk *chunk;
+ 	struct btrfs_key chunk_key;
+ 	struct extent_buffer *eb = path->nodes[0];
++	struct btrfs_root *extent_root = chunk_root->fs_info->extent_root;
 +	struct btrfs_trans_handle *trans;
- 	int ret = 0;
+ 	u64 length;
+ 	int slot = path->slots[0];
+ 	u64 type;
+@@ -13369,21 +13370,36 @@ static int repair_chunk_item(struct btrfs_trans_handle *trans,
+ 	type = btrfs_chunk_type(path->nodes[0], chunk);
+ 	length = btrfs_chunk_length(eb, chunk);
  
-+	ret = try_avoid_extents_overwrite(root->fs_info);
+-	if (err & REFERENCER_MISSING) {
+-		ret = btrfs_make_block_group(trans, chunk_root->fs_info, 0,
+-		     type, chunk_key.objectid, chunk_key.offset, length);
+-		if (ret) {
+-			error("fail to add block group item[%llu %llu]",
+-			      chunk_key.offset, length);
+-			goto out;
+-		} else {
+-			err &= ~REFERENCER_MISSING;
+-			printf("Added block group item[%llu %llu]\n",
+-			       chunk_key.offset, length);
+-		}
++	/* now repair only adds block group */
++	if ((err & REFERENCER_MISSING) == 0)
++		return err;
++
++	ret = try_avoid_extents_overwrite(chunk_root->fs_info);
 +	if (ret)
 +		return ret;
-+	trans = btrfs_start_transaction(root, 1);
++
++	trans = btrfs_start_transaction(extent_root, 1);
 +	if (IS_ERR(trans)) {
 +		ret = PTR_ERR(trans);
 +		error("fail to start transaction %s", strerror(-ret));
-+		goto out;
++		return ret;
+ 	}
+ 
+-out:
++	ret = btrfs_make_block_group(trans, chunk_root->fs_info, 0, type,
++			     chunk_key.objectid, chunk_key.offset, length);
++	if (ret) {
++		error("fail to add block group item[%llu %llu]",
++		      chunk_key.offset, length);
++	} else {
++		err &= ~REFERENCER_MISSING;
++		printf("Added block group item[%llu %llu]\n", chunk_key.offset,
++		       length);
 +	}
- 	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
- 	btrfs_release_path(path);
- 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
-@@ -13516,6 +13525,7 @@ static int delete_extent_tree_item(struct btrfs_trans_handle *trans,
- 	else
- 		path->slots[0]--;
- out:
-+	btrfs_commit_transaction(trans, root);
- 	if (ret)
- 		error("failed to delete root %llu item[%llu, %u, %llu]",
- 		      root->objectid, key.objectid, key.type, key.offset);
-@@ -13567,7 +13577,7 @@ again:
- 		ret = check_block_group_item(fs_info, eb, slot);
- 		if (repair &&
- 		    ret & REFERENCER_MISSING)
--			ret = delete_extent_tree_item(trans, root, path);
-+			ret = delete_extent_tree_item(root, path);
++
++	btrfs_commit_transaction(trans, extent_root);
++	if (ret)
++		error("fail to repair item(s) related to chunk item[%llu %llu]",
++		      chunk_key.objectid, chunk_key.offset);
+ 	return err;
+ }
+ 
+@@ -13587,7 +13603,7 @@ again:
+ 	case BTRFS_CHUNK_ITEM_KEY:
+ 		ret = check_chunk_item(fs_info, eb, slot);
+ 		if (repair && ret)
+-			ret = repair_chunk_item(trans, root, path, ret);
++			ret = repair_chunk_item(root, path, ret);
  		err |= ret;
  		break;
- 	case BTRFS_DEV_ITEM_KEY:
-@@ -13598,7 +13608,7 @@ again:
- 					       key.objectid, -1);
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(trans, root, path);
-+			ret = delete_extent_tree_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_EXTENT_DATA_REF_KEY:
-@@ -13611,7 +13621,7 @@ again:
- 				btrfs_extent_data_ref_count(eb, dref));
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(trans, root, path);
-+			ret = delete_extent_tree_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_SHARED_BLOCK_REF_KEY:
-@@ -13619,7 +13629,7 @@ again:
- 						 key.objectid, -1);
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(trans, root, path);
-+			ret = delete_extent_tree_item(root, path);
- 		err |= ret;
- 		break;
- 	case BTRFS_SHARED_DATA_REF_KEY:
-@@ -13627,7 +13637,7 @@ again:
- 						key.objectid);
- 		if (repair &&
- 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
--			ret = delete_extent_tree_item(trans, root, path);
-+			ret = delete_extent_tree_item(root, path);
- 		err |= ret;
- 		break;
- 	default:
+ 	case BTRFS_DEV_EXTENT_KEY:
 -- 
 2.15.1
 

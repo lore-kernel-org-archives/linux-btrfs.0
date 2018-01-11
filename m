@@ -1,81 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:38578 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752463AbeAJFQT (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:57614 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933811AbeAKThK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 00:16:19 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0A5CXvk016171
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:16:18 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2fd8su8esk-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:16:18 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0A5GIJb014989
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:16:18 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0A5GIxj020133
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 05:16:18 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: drop devid as device_list_add() arg
-Date: Wed, 10 Jan 2018 13:16:24 +0800
-Message-Id: <20180110051624.3813-5-anand.jain@oracle.com>
-In-Reply-To: <20180110051624.3813-1-anand.jain@oracle.com>
-References: <20180110051624.3813-1-anand.jain@oracle.com>
+        Thu, 11 Jan 2018 14:37:10 -0500
+Date: Thu, 11 Jan 2018 11:30:32 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Jeff Layton <jlayton@kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        viro@zeniv.linux.org.uk, linux-nfs@vger.kernel.org,
+        bfields@fieldses.org, neilb@suse.de, jack@suse.de,
+        linux-ext4@vger.kernel.org, tytso@mit.edu, adilger.kernel@dilger.ca,
+        linux-xfs@vger.kernel.org, darrick.wong@oracle.com,
+        david@fromorbit.com, linux-btrfs@vger.kernel.org, clm@fb.com,
+        jbacik@fb.com, dsterba@suse.com, linux-integrity@vger.kernel.org,
+        zohar@linux.vnet.ibm.com, dmitry.kasatkin@gmail.com,
+        linux-afs@lists.infradead.org, dhowells@redhat.com,
+        jaltman@auristor.com, krzk@kernel.org
+Subject: Re: [PATCH v5 18/19] btrfs: only dirty the inode in
+ btrfs_update_time if something was changed
+Message-ID: <20180111193031.GA12421@dhcp-10-159-141-29.vpn.oracle.com>
+Reply-To: bo.li.liu@oracle.com
+References: <20180109141059.25929-1-jlayton@kernel.org>
+ <20180109141059.25929-19-jlayton@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180109141059.25929-19-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As struct btrfs_disk_super is being passed, so it can get devid
-the same way its parent does.
+Hi Jeff,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/volumes.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+On Tue, Jan 09, 2018 at 09:10:58AM -0500, Jeff Layton wrote:
+> From: Jeff Layton <jlayton@redhat.com>
+> 
+> At this point, we know that "now" and the file times may differ, and we
+> suspect that the i_version has been flagged to be bumped. Attempt to
+> bump the i_version, and only mark the inode dirty if that actually
+> occurred or if one of the times was updated.
+> 
+> Signed-off-by: Jeff Layton <jlayton@redhat.com>
+> Acked-by: David Sterba <dsterba@suse.com>
+> ---
+>  fs/btrfs/inode.c | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index ac8692849a81..76245323a7c8 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6107,19 +6107,20 @@ static int btrfs_update_time(struct inode *inode, struct timespec *now,
+>  			     int flags)
+>  {
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> +	bool dirty = flags & ~S_VERSION;
+>  
+>  	if (btrfs_root_readonly(root))
+>  		return -EROFS;
+>  
+>  	if (flags & S_VERSION)
+> -		inode_inc_iversion(inode);
+> +		dirty |= inode_maybe_inc_iversion(inode, dirty);
+>  	if (flags & S_CTIME)
+>  		inode->i_ctime = *now;
+>  	if (flags & S_MTIME)
+>  		inode->i_mtime = *now;
+>  	if (flags & S_ATIME)
+>  		inode->i_atime = *now;
+> -	return btrfs_dirty_inode(inode);
+> +	return dirty ? btrfs_dirty_inode(inode) : 0;
+>  }
+>  
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b5305bd48338..ffeb02cbcf3d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -730,12 +730,13 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
-  * error pointer when failed
-  */
- static noinline struct btrfs_device *device_list_add(const char *path,
--			   struct btrfs_super_block *disk_super, u64 devid)
-+			   struct btrfs_super_block *disk_super)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *fs_devices;
- 	struct rcu_string *name;
- 	u64 found_transid = btrfs_super_generation(disk_super);
-+	u64 devid = btrfs_stack_device_id(&disk_super->dev_item);
- 
- 	fs_devices = find_fsid(disk_super->fsid);
- 	if (!fs_devices) {
-@@ -1183,7 +1184,6 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	struct block_device *bdev;
- 	struct page *page;
- 	int ret = 0;
--	u64 devid;
- 	u64 bytenr;
- 
- 	/*
-@@ -1204,10 +1204,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 		goto error_bdev_put;
- 	}
- 
--	devid = btrfs_stack_device_id(&disk_super->dev_item);
--
- 	mutex_lock(&uuid_mutex);
--	device = device_list_add(path, disk_super, devid);
-+	device = device_list_add(path, disk_super);
- 	mutex_unlock(&uuid_mutex);
- 	if (IS_ERR(device))
- 		ret = PTR_ERR(device);
--- 
-2.7.0
+In order to have a easier error handling for ENOSPC, btrfs has split
+file_update_time() into 2-step work,
+- step 1 is to update time/iversion of in-memory inode in
+  update_time_for_write(),
+- step 2 is to update the time/iversion of on-disk inode in
+  btrfs_update_inode()->fill_inode_item().
 
+I think update_time_for_write() also needs to be updated to use the
+new iversion API.
+
+With that,
+
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+
+Thanks,
+
+-liubo
+>  /*
+> -- 
+> 2.14.3
+> 

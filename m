@@ -1,105 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49802 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:51511 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752343AbeADJyF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 4 Jan 2018 04:54:05 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9B69DABB4
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 Jan 2018 09:54:04 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Remove unused btrfs_start_transaction_lflush
- function
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <1513332378-7193-1-git-send-email-nborisov@suse.com>
- <20180102161718.GU3553@twin.jikos.cz>
+        id S1751042AbeAKHYI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Jan 2018 02:24:08 -0500
+Subject: Re: [PATCH v2] btrfs: use enum instead of constant value
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+References: <20171205173546.GL3553@twin.jikos.cz>
+ <1515653941-6378-1-git-send-email-gujx@cn.fujitsu.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <b5dc2e44-9d5a-ba25-345f-fbc9c23d6c7f@suse.com>
-Date: Thu, 4 Jan 2018 11:53:51 +0200
+Message-ID: <69b34781-2275-ba9b-0df8-50f3c2752e45@suse.com>
+Date: Thu, 11 Jan 2018 09:24:06 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180102161718.GU3553@twin.jikos.cz>
+In-Reply-To: <1515653941-6378-1-git-send-email-gujx@cn.fujitsu.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On  2.01.2018 18:17, David Sterba wrote:
-> On Fri, Dec 15, 2017 at 12:06:18PM +0200, Nikolay Borisov wrote:
->> Commit 0e8c36a9fd81 ("Btrfs: fix lots of orphan inodes when the space
->> is not enough") changed the way transaction reservation is made in
->> btrfs_evict_node and as a result this function became unused. This has
->> been the status quo for 5 years in which time no one noticed, so I'd
->> say it's safe to assume it's unlikely it will ever be used again.
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+On 11.01.2018 08:59, Gu Jinxiang wrote:
+> Use enum READA_FORWARD instead of integers value to keep source robust.
 > 
-> https://marc.info/?l=linux-btrfs&m=142117508730660&w=2
-> https://marc.info/?l=linux-kernel&m=142119399504907&w=2
+> Changelog:
+> v2->v1: change enum from READA_BACK to READA_FORWARD, since according
+> to the logic of the source, it should reada_for_search forward, not
+> backward.
+> And, Reference:
+> commit e4058b54d1e4 ("btrfs: cleanup, use enum values for btrfs_path reada")
 > 
-> "Transcaction API, removing the func does not make sense without
-> removing BTRFS_RESERVE_FLUSH_LIMIT at the same time."
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 
-I can't quite understand what you are saying. There are couple of more
-places where BTRFS_RESERVE_FLUSH_LIMIT is used outside of the
-transaction api (btrfs_delalloc_reserve_metadata, btrfs_evict_inode and
-reserve_metadata_space). Do you mean those function should also remove
-the usage of FLUSH_LIMIT?
+> ---
+>  fs/btrfs/free-space-tree.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+> index fe5e0324dca9..af36a6a971fe 100644
+> --- a/fs/btrfs/free-space-tree.c
+> +++ b/fs/btrfs/free-space-tree.c
+> @@ -1071,7 +1071,7 @@ static int populate_free_space_tree(struct btrfs_trans_handle *trans,
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+>  		return -ENOMEM;
+> -	path->reada = 1;
+> +	path->reada = READA_FORWARD;
 
 
+So in  btrfs_search_slot_for_read we can go either backwards to forward
+based on the penultimate parameter (find_higher). We always pass that to
+1 meaning we will be going iterating the leaves forward. In that regard
+we do want READA_FORWARD. Perhaps you might want to put this explanation
+in your commit message.
+
+
+>  
+>  	path2 = btrfs_alloc_path();
+>  	if (!path2) {
+> @@ -1573,7 +1573,7 @@ int load_free_space_tree(struct btrfs_caching_control *caching_ctl)
+>  	 */
+>  	path->skip_locking = 1;
+>  	path->search_commit_root = 1;
+> -	path->reada = 1;
+> +	path->reada = READA_FORWARD;
+
+Similar thing here. When we call load_free_space_bitmaps or
+load_free_space_extents we would be calling btrfs_next_item so reading
+forward makes sense.
+
+>  
+>  	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
+>  	if (IS_ERR(info)) {
 > 
->> ---
->>  fs/btrfs/transaction.c | 10 +---------
->>  fs/btrfs/transaction.h |  3 ---
->>  2 files changed, 1 insertion(+), 12 deletions(-)
->>
->> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->> index 5a8c2649af2f..b1793688c716 100644
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -542,7 +542,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
->>  	 * and then we deadlock with somebody doing a freeze.
->>  	 *
->>  	 * If we are ATTACH, it means we just want to catch the current
->> -	 * transaction and commit it, so we needn't do sb_start_intwrite(). 
->> +	 * transaction and commit it, so we needn't do sb_start_intwrite().
-> 
-> Unrelated change.
-> 
->>  	 */
->>  	if (type & __TRANS_FREEZABLE)
->>  		sb_start_intwrite(fs_info->sb);
->> @@ -658,14 +658,6 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
->>  	return trans;
->>  }
->>  
->> -struct btrfs_trans_handle *btrfs_start_transaction_lflush(
->> -					struct btrfs_root *root,
->> -					unsigned int num_items)
->> -{
->> -	return start_transaction(root, num_items, TRANS_START,
->> -				 BTRFS_RESERVE_FLUSH_LIMIT, true);
->> -}
->> -
->>  struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root)
->>  {
->>  	return start_transaction(root, 0, TRANS_JOIN, BTRFS_RESERVE_NO_FLUSH,
->> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
->> index c55e44560103..9b25b0ba92ee 100644
->> --- a/fs/btrfs/transaction.h
->> +++ b/fs/btrfs/transaction.h
->> @@ -187,9 +187,6 @@ struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
->>  					struct btrfs_root *root,
->>  					unsigned int num_items,
->>  					int min_factor);
->> -struct btrfs_trans_handle *btrfs_start_transaction_lflush(
->> -					struct btrfs_root *root,
->> -					unsigned int num_items);
->>  struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root);
->>  struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root);
->>  struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root);
->> -- 
->> 2.7.4
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,82 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:56100 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751606AbeAJVh2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 16:37:28 -0500
-Reply-To: waxhead@dirtcellar.net
-Subject: Re: Recommendations for balancing as part of regular maintenance?
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
-From: waxhead <waxhead@dirtcellar.net>
-Message-ID: <8a80ff4a-07ef-f442-0730-9be659177c7c@dirtcellar.net>
-Date: Wed, 10 Jan 2018 22:37:25 +0100
+Received: from mout.gmx.net ([212.227.17.21]:53318 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753729AbeAKCKf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Jan 2018 21:10:35 -0500
+Subject: Re: [PATCH] btrfs: return 0 for success in
+ btrfs_alloc_data_chunk_ondemand
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>
+References: <1515603334-21423-1-git-send-email-josef@toxicpanda.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <52a9ddd8-5637-4f66-42f5-dd3f943ab57a@gmx.com>
+Date: Thu, 11 Jan 2018 10:10:23 +0800
 MIME-Version: 1.0
-In-Reply-To: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <1515603334-21423-1-git-send-email-josef@toxicpanda.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="WMK2ZGqqFfCXPLpZr8gAehG42vd8WRpYt"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn wrote:
-> So, for a while now I've been recommending small filtered balances to
-> people as part of regular maintenance for BTRFS filesystems under the
-> logic that it does help in some cases and can't really hurt (and if done
-> right, is really inexpensive in terms of resources).  This ended up
-> integrated partially in the info text next to the BTRFS charts on
-> netdata's dashboard, and someone has now pointed out (correctly I might
-> add) that this is at odds with the BTRFS FAQ entry on balances.
->
-> For reference, here's the bit about it in netdata:
->
-> You can keep your volume healthy by running the `btrfs balance` command
-> on it regularly (check `man btrfs-balance` for more info).
->
->
-> And here's the FAQ entry:
->
-> Q: Do I need to run a balance regularly?
->
-> A: In general usage, no. A full unfiltered balance typically takes a
-> long time, and will rewrite huge amounts of data unnecessarily. You may
-> wish to run a balance on metadata only (see Balance_Filters) if you find
-> you have very large amounts of metadata space allocated but unused, but
-> this should be a last resort.
->
->
-> I've commented in the issue in netdata's issue tracker that I feel that
-> the FAQ entry could be better worded (strictly speaking, you don't
-> _need_ to run balances regularly, but it's usually a good idea). Looking
-> at both though, I think they could probably both be improved, but I
-> would like to get some input here on what people actually think the best
-> current practices are regarding this (and ideally why they feel that
-> way) before I go and change anything.
->
-> So, on that note, how does anybody else out there feel about this?  Is
-> balancing regularly with filters restricting things to small numbers of
-> mostly empty chunks a good thing for regular maintenance or not?
-> --
-As just a regular user I would think that the first thing you would need 
-is an analyze that can tell you if it is a good idea to balance or not 
-in the first place.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--WMK2ZGqqFfCXPLpZr8gAehG42vd8WRpYt
+Content-Type: multipart/mixed; boundary="OuxzbXkBul09EOP9ZhhndyFaqqdZxxx4Z";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+Cc: Josef Bacik <jbacik@fb.com>
+Message-ID: <52a9ddd8-5637-4f66-42f5-dd3f943ab57a@gmx.com>
+Subject: Re: [PATCH] btrfs: return 0 for success in
+ btrfs_alloc_data_chunk_ondemand
+References: <1515603334-21423-1-git-send-email-josef@toxicpanda.com>
+In-Reply-To: <1515603334-21423-1-git-send-email-josef@toxicpanda.com>
 
-Scrub seems like a great place to start - e.g. scrub could auto-analyze 
-and report back need to balance. I also think that scrub should 
-optionally autobalance if needed.
+--OuxzbXkBul09EOP9ZhhndyFaqqdZxxx4Z
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Balance may not be needed, but if one can determine that balancing would 
-speed up things a bit I don't see why this as an option can't be 
-scheduled automatically. Ideally there should be a "scrub and polish" 
-option that would scrub, balance and perhaps even defragment in one go.
 
-In fact, the way I see it btrfs should idealy by itself keep track on 
-each data/metadata chunk and it should know , when was this chunk last 
-affected by a scrub, balance, defrag etc and perform the required 
-operations by itself based on a configuration or similar. Some may 
-disagree for good reasons , but for me this is my wishlist for a 
-filesystem :) e.g. a pool that just works and only annoys you with the 
-need of replacing a bad disk every now and then :)
 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On 2018=E5=B9=B401=E6=9C=8811=E6=97=A5 00:55, Josef Bacik wrote:
+> From: Josef Bacik <jbacik@fb.com>
+>=20
+> My delayed refs rsv patches uncovered a problem in
+> btrfs_alloc_data_chunk_ondemand where we don't clear ret before
+> returning, so we could have whatever left over value we had from trying=
+
+> to do a chunk allocation or whatever that may have failed.  Since we
+> know we've succeeded at this point just unconditionally return 0.  This=
+
+> fixed the xfstests failures I was seeing with my delayed refs rsv
+> patches.
+>=20
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+The branch to leave ret =3D 1 would be the "ret =3D do_chunk_alloc()" cal=
+l,
+which could return 1, and goes to final return.
+So the fix is good.
+
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/extent-tree.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index dbae25d882de..33c9efbfc9a7 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4387,8 +4387,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_=
+inode *inode, u64 bytes)
+>  	trace_btrfs_space_reservation(fs_info, "space_info",
+>  				      data_sinfo->flags, bytes, 1);
+>  	spin_unlock(&data_sinfo->lock);
+> -
+> -	return ret;
+> +	return 0;
+>  }
+> =20
+>  int btrfs_check_data_free_space(struct inode *inode,
+>=20
+
+
+--OuxzbXkBul09EOP9ZhhndyFaqqdZxxx4Z--
+
+--WMK2ZGqqFfCXPLpZr8gAehG42vd8WRpYt
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpWx5AXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgcfAf/e5rLeaFH1qGoQDnpghRDj9Oe
+UOCyXBF1pekTZmreefG7BFYMqEELcWBw/7OfM4VZyZXKluBqTgZrisXRR8Ai+0Lo
+ms4/NDuvmFWHpypK4nPdXy9CRbtR/WhF7PA/rcgol1RCBpyo9VUDT+C1VB9e9QTG
+XWcsOTJT0/av2jyYU+6JSxB9QiZxoryqIqqkDBRsmdrp7heg43NZEmoPp3Spil3H
+6ycvr19TUxw+9jfyfR6mPJ+Y0eRz+YQktk/T5bmiZvwwIBF1Bge3PaQXn15wBUrK
+otwlfN6g7b7SBKIaqxXnB07JR+uEqCWSUO95Dsrb/v6mXnuQ/yxmYBjF1Kwjew==
+=lVh9
+-----END PGP SIGNATURE-----
+
+--WMK2ZGqqFfCXPLpZr8gAehG42vd8WRpYt--

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:21049 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:53400 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753959AbeAKHbK (ORCPT
+        with ESMTP id S1751042AbeAKHbL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 02:31:10 -0500
+        Thu, 11 Jan 2018 02:31:11 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 2E892486A76D
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:01 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id DB94548AEA0C
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:02 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 04/17] btrfs-progs: lowmem check: exclude extents of metadata blocks
-Date: Thu, 11 Jan 2018 15:34:58 +0800
-Message-ID: <20180111073511.25288-5-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 05/17] btrfs-progs: lowmem check: introduce mark/clear_block_groups_full()
+Date: Thu, 11 Jan 2018 15:34:59 +0800
+Message-ID: <20180111073511.25288-6-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,162 +20,127 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit d17d6663c99c ("btrfs-progs: lowmem check: Fix regression which
-screws up extent allocator") removes pin_metadata_blocks() from
-lowmem repair.
-So we have to find another way to exclude extents which should be
-occupied by tree blocks.
+Excluding or pining all metadata blocks is not time-efficient for large
+storage filesystems.
+Here is another way to mark all metadata block groups full and allocate
+a new chunk for CoW. So new reservered extents never overwrite
+extents.
 
-Modify pin_down_tree_blocks() only for code reuse.
-So behavior of pin_metadata_blocks() which works with option
-'init-extent-tree' is not influenced.
+Introduce modify_block_groups_cache() to modify all blocks groups
+cache state and set all extents in block groups unfree in free space
+cache.
+mark/clear_block_groups_full() are wrapper of above function.
 
-Introduce exclude_blocks_and_extent_items() to mark extents of all tree
-blocks dirty in fs_info->excluded_extents.
-
+Suggested-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 63 insertions(+), 10 deletions(-)
+ cmds-check.c | 93 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 24fb4bc50b95..ba60285cf80d 100644
+index ba60285cf80d..d4bf2175b96d 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -13543,40 +13543,54 @@ init:
- 	return 0;
+@@ -10834,6 +10834,99 @@ static void reset_cached_block_groups(struct btrfs_fs_info *fs_info)
+ 	}
  }
  
--static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
--				struct extent_buffer *eb, int tree_root)
-+static int traverse_tree_blocks(struct btrfs_fs_info *fs_info,
-+				struct extent_buffer *eb, int tree_root,
-+				int pin)
- {
- 	struct extent_buffer *tmp;
- 	struct btrfs_root_item *ri;
- 	struct btrfs_key key;
-+	struct extent_io_tree *tree;
- 	u64 bytenr;
- 	int level = btrfs_header_level(eb);
- 	int nritems;
- 	int ret;
- 	int i;
-+	u64 end = eb->start + eb->len;
- 
-+	if (pin)
-+		tree = &fs_info->pinned_extents;
-+	else
-+		tree = fs_info->excluded_extents;
- 	/*
--	 * If we have pinned this block before, don't pin it again.
-+	 * If we have pinned/excluded this block before, don't do it again.
- 	 * This can not only avoid forever loop with broken filesystem
- 	 * but also give us some speedups.
- 	 */
--	if (test_range_bit(&fs_info->pinned_extents, eb->start,
--			   eb->start + eb->len - 1, EXTENT_DIRTY, 0))
-+	if (test_range_bit(tree, eb->start, end - 1, EXTENT_DIRTY, 0))
- 		return 0;
- 
--	btrfs_pin_extent(fs_info, eb->start, eb->len);
-+	if (pin)
-+		btrfs_pin_extent(fs_info, eb->start, eb->len);
-+	else
-+		set_extent_dirty(tree, eb->start, end - 1);
- 
- 	nritems = btrfs_header_nritems(eb);
- 	for (i = 0; i < nritems; i++) {
- 		if (level == 0) {
-+			bool is_extent_root;
- 			btrfs_item_key_to_cpu(eb, &key, i);
- 			if (key.type != BTRFS_ROOT_ITEM_KEY)
- 				continue;
- 			/* Skip the extent root and reloc roots */
--			if (key.objectid == BTRFS_EXTENT_TREE_OBJECTID ||
--			    key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
-+			if (key.objectid == BTRFS_TREE_RELOC_OBJECTID ||
- 			    key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID)
- 				continue;
-+			is_extent_root =
-+				key.objectid == BTRFS_EXTENT_TREE_OBJECTID;
-+			/* If pin, skip the extent root */
-+			if (pin && is_extent_root)
-+				continue;
- 			ri = btrfs_item_ptr(eb, i, struct btrfs_root_item);
- 			bytenr = btrfs_disk_root_bytenr(eb, ri);
- 
-@@ -13591,7 +13605,7 @@ static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
- 				fprintf(stderr, "Error reading root block\n");
- 				return -EIO;
- 			}
--			ret = pin_down_tree_blocks(fs_info, tmp, 0);
-+			ret = traverse_tree_blocks(fs_info, tmp, 0, pin);
- 			free_extent_buffer(tmp);
- 			if (ret)
- 				return ret;
-@@ -13610,7 +13624,8 @@ static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
- 				fprintf(stderr, "Error reading tree block\n");
- 				return -EIO;
- 			}
--			ret = pin_down_tree_blocks(fs_info, tmp, tree_root);
-+			ret = traverse_tree_blocks(fs_info, tmp, tree_root,
-+						   pin);
- 			free_extent_buffer(tmp);
- 			if (ret)
- 				return ret;
-@@ -13620,6 +13635,12 @@ static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
-+static int pin_down_tree_blocks(struct btrfs_fs_info *fs_info,
-+				struct extent_buffer *eb, int tree_root)
++/*
++ * Mark all extents unfree in the block group. And set @block_group->cached
++ * according to @cache.
++ */
++static int modify_block_group_cache(struct btrfs_fs_info *fs_info,
++		    struct btrfs_block_group_cache *block_group, int cache)
 +{
-+	return traverse_tree_blocks(fs_info, eb, tree_root, 1);
-+}
++	struct extent_io_tree *free_space_cache = &fs_info->free_space_cache;
++	u64 start = block_group->key.objectid;
++	u64 end = start + block_group->key.offset;
 +
- static int pin_metadata_blocks(struct btrfs_fs_info *fs_info)
- {
- 	int ret;
-@@ -13631,6 +13652,38 @@ static int pin_metadata_blocks(struct btrfs_fs_info *fs_info)
- 	return pin_down_tree_blocks(fs_info, fs_info->tree_root->node, 1);
- }
- 
-+static int exclude_tree_blocks(struct btrfs_fs_info *fs_info,
-+				struct extent_buffer *eb, int tree_root)
-+{
-+	return traverse_tree_blocks(fs_info, eb, tree_root, 0);
-+}
-+
-+static int exclude_metadata_blocks(struct btrfs_fs_info *fs_info)
-+{
-+	int ret;
-+	struct extent_io_tree *excluded_extents;
-+
-+	excluded_extents = malloc(sizeof(*excluded_extents));
-+	if (!excluded_extents)
-+		return -ENOMEM;
-+	extent_io_tree_init(excluded_extents);
-+	fs_info->excluded_extents = excluded_extents;
-+
-+	ret = exclude_tree_blocks(fs_info, fs_info->chunk_root->node, 0);
-+	if (ret)
-+		return ret;
-+	return exclude_tree_blocks(fs_info, fs_info->tree_root->node, 1);
-+}
-+
-+static void cleanup_excluded_extents(struct btrfs_fs_info *fs_info)
-+{
-+	if (fs_info->excluded_extents) {
-+		extent_io_tree_cleanup(fs_info->excluded_extents);
-+		free(fs_info->excluded_extents);
++	if (cache && !block_group->cached) {
++		block_group->cached = 1;
++		clear_extent_dirty(free_space_cache, start, end - 1);
 +	}
-+	fs_info->excluded_extents = NULL;
++
++	if (!cache && block_group->cached) {
++		block_group->cached = 0;
++		clear_extent_dirty(free_space_cache, start, end - 1);
++	}
++	return 0;
 +}
 +
- static int reset_block_groups(struct btrfs_fs_info *fs_info)
++/*
++ * Modify block groups which have @flags unfree in free space cache.
++ *
++ * @cache: if 0, clear block groups cache state;
++ *         not 0, mark blocks groups cached.
++ */
++static int modify_block_groups_cache(struct btrfs_fs_info *fs_info, u64 flags,
++				     int cache)
++{
++	struct btrfs_root *root = fs_info->extent_root;
++	struct btrfs_key key;
++	struct btrfs_path path;
++	struct btrfs_block_group_cache *bg_cache;
++	struct btrfs_block_group_item *bi;
++	struct btrfs_block_group_item bg_item;
++	struct extent_buffer *eb;
++	int slot;
++	int ret;
++
++	key.objectid = 0;
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
++	key.offset = 0;
++
++	btrfs_init_path(&path);
++	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
++	if (ret < 0) {
++		error("fail to search block groups due to %s", strerror(-ret));
++		goto out;
++	}
++
++	while (1) {
++		eb = path.nodes[0];
++		slot = path.slots[0];
++		btrfs_item_key_to_cpu(eb, &key, slot);
++		bg_cache = btrfs_lookup_block_group(fs_info, key.objectid);
++		if (!bg_cache) {
++			ret = -ENOENT;
++			goto out;
++		}
++
++		bi = btrfs_item_ptr(eb, slot, struct btrfs_block_group_item);
++		read_extent_buffer(eb, &bg_item, (unsigned long)bi,
++				   sizeof(bg_item));
++		if (btrfs_block_group_flags(&bg_item) & flags)
++			modify_block_group_cache(fs_info, bg_cache, cache);
++
++		ret = btrfs_next_item(root, &path);
++		if (ret > 0) {
++			ret = 0;
++			goto out;
++		}
++		if (ret < 0)
++			goto out;
++	}
++
++out:
++	btrfs_release_path(&path);
++	return ret;
++}
++
++static int mark_block_groups_full(struct btrfs_fs_info *fs_info, u64 flags)
++{
++	return modify_block_groups_cache(fs_info, flags, 1);
++}
++
++static int clear_block_groups_full(struct btrfs_fs_info *fs_info, u64 flags)
++{
++	return modify_block_groups_cache(fs_info, flags, 0);
++}
++
+ static int check_extent_refs(struct btrfs_root *root,
+ 			     struct cache_tree *extent_cache)
  {
- 	struct btrfs_block_group_cache *cache;
 -- 
 2.15.1
 

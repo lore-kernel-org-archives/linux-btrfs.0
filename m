@@ -1,64 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:56421 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751200AbeASHZr (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 19 Jan 2018 02:25:47 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: nborisov@suse.com
-Subject: [PATCH v2 3/3] btrfs-progs: dir-item: Make btrfs_delete_one_dir_name more robust to handle corrupted name len
-Date: Fri, 19 Jan 2018 15:25:36 +0800
-Message-Id: <20180119072536.22286-4-wqu@suse.com>
-In-Reply-To: <20180119072536.22286-1-wqu@suse.com>
-References: <20180119072536.22286-1-wqu@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:16872 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753959AbeAKHa6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Jan 2018 02:30:58 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 09D3648AEA0C
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:30:55 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 01/17] btrfs-progs: lowmem check: release path in repair_extent_data_item()
+Date: Thu, 11 Jan 2018 15:34:55 +0800
+Message-ID: <20180111073511.25288-2-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
+References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Function btrfs_delete_one_dir_name() will check if the dir_item is the
-last content of the item, and delete the whole item if needed.
+In repair_extent_data_item(), path is not be released if some
+errors occurs which causes extent buffer leak.
 
-However if @name_len of one dir_item/dir_index is corrupted and larger
-than the item size, the function will still try to treat it as partly
-remove, which will screw up the whole leaf.
+So release path in end of the function.
 
-This patch will enhance the item deletion check, to cover corrupted name
-len, so in that case we just delete the whole item.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- dir-item.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ cmds-check.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/dir-item.c b/dir-item.c
-index e0a0ab4d7a5d..35e0615fb423 100644
---- a/dir-item.c
-+++ b/dir-item.c
-@@ -263,7 +263,6 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
- 			      struct btrfs_path *path,
- 			      struct btrfs_dir_item *di)
- {
--
- 	struct extent_buffer *leaf;
- 	u32 sub_item_len;
- 	u32 item_len;
-@@ -273,7 +272,15 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
- 	sub_item_len = sizeof(*di) + btrfs_dir_name_len(leaf, di) +
- 		btrfs_dir_data_len(leaf, di);
- 	item_len = btrfs_item_size_nr(leaf, path->slots[0]);
--	if (sub_item_len == item_len) {
-+
-+	/*
-+	 * If @sub_item_len is longer than @item_len, then it means the
-+	 * name_len is just corrupted.
-+	 * No good idea to know if there is anything we can recover from
-+	 * the corrupted item.
-+	 * Just delete the item.
-+	 */
-+	if (sub_item_len >= item_len) {
- 		ret = btrfs_del_item(trans, root, path);
- 	} else {
- 		unsigned long ptr = (unsigned long)di;
+diff --git a/cmds-check.c b/cmds-check.c
+index 5fc0ea9d4f4d..ba2048004054 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -12005,6 +12005,7 @@ static int repair_extent_data_item(struct btrfs_trans_handle *trans,
+ 
+ 	err &= ~BACKREF_MISSING;
+ out:
++	btrfs_release_path(&path);
+ 	if (ret)
+ 		error("can't repair root %llu extent data item[%llu %llu]",
+ 		      root->objectid, disk_bytenr, num_bytes);
 -- 
 2.15.1
+
+
 

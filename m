@@ -1,209 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:42499 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753625AbeAKFJ5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 00:09:57 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id E9425486A78B
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:09:48 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 00/67] btrfs-progs: add the stack prefix for the set/get
-Date: Thu, 11 Jan 2018 13:08:32 +0800
-Message-ID: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
+Received: from mout.gmx.net ([212.227.15.19]:59389 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750892AbeAKGFZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Jan 2018 01:05:25 -0500
+Subject: Re: [PATCH v2 00/12] mkfs: Quota support through -R|--runtime quota
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <20171107084259.22367-1-wqu@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c3643f3f-da0b-0e4c-3bb5-35c09962f409@gmx.com>
+Date: Thu, 11 Jan 2018 14:04:39 +0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20171107084259.22367-1-wqu@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="0zkRSLHsM9CtHI9tdlVdFStJynn2d2a0N"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-These set/get functions defined by BTRFS_SETGET_STACK_FUNCS macro is
-missing the prefix stack. I can't add an extent buffer version set/get
-function as the result of the function name conflict.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--0zkRSLHsM9CtHI9tdlVdFStJynn2d2a0N
+Content-Type: multipart/mixed; boundary="KAjTQOvkQWPB1g1pV4QnRaiqN6li0Epus";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Message-ID: <c3643f3f-da0b-0e4c-3bb5-35c09962f409@gmx.com>
+Subject: Re: [PATCH v2 00/12] mkfs: Quota support through -R|--runtime quota
+References: <20171107084259.22367-1-wqu@suse.com>
+In-Reply-To: <20171107084259.22367-1-wqu@suse.com>
 
-To settle a matter once and for all, I have written a script to rename
-these functions. And, I will attach this script generated this patchset to
-make review easier. At the beginning I forget renaming these functions will
-bring on a ton of warning like "WARNING: line over 80 characters".
-Consequently, you know I have to split those lines manually. This step is
-too boring and stupid.
+--KAjTQOvkQWPB1g1pV4QnRaiqN6li0Epus
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-I'm not sure how to split this patchset appropriately. If this bunch of
-patches is annoying, I'm OK with squashing these patches. At last, If this
-btrfs-progs version patchset is acceptable, I can send the kernel version
-as well.
+Ping?
 
-#!/bin/bash
-funcs=$(grep -oP '(?<=^BTRFS_SETGET_STACK_FUNCS\()(?!stack)\w+(?=,)' ctree.h)
+Or do I need to rebase the patchset?
 
-for func in ${funcs}; do
-	echo $func
-	files=$(grep -PIRwl 'btrfs_(set_)?'${func})
-	sed -i 's/'"\(btrfs_\(set_\)\?\)\(${func}(\)"'/\1stack_\3/g' ${files}
-	sed -i 's/'"^\(BTRFS_SETGET_STACK_FUNCS(\)\(${func},\)"'/\1stack_\2/g' ctree.h
-	if ! make; then
-		break;
-	fi
-	git commit -as -F <(cat <<EOF
-btrfs-progs: add the stack prefix for ${func} set/get function
+Thanks,
+Qu
 
-The ${func} set/get function defined by
-BTRFS_SETGET_STACK_FUNCS macro is missing the prefix stack.
-EOF
-)
-done
+On 2017=E5=B9=B411=E6=9C=8807=E6=97=A5 16:42, Qu Wenruo wrote:
+> Can be fetched from github:
+> https://github.com/adam900710/btrfs-progs/tree/mkfs_qgroup
+>=20
+> This patchset adds quota support, which means the result fs will have
+> quota enabled by default, and its accounting is already consistent, no
+> manually rescan or quota enable is needed.
+>=20
+> The overall design of such support is:
+> 1) Create needed tree
+>    Both btrfs_root and real root item and tree root leaf.
+>    For this, a new infrastructure, btrfs_create_tree(), is added for
+>    this.
+>=20
+> 2) Fill quota root with basic skeleton
+>    Only 3 items are really needed
+>    a) global quota status item
+>    b) quota info for specified qgroup
+>    c) quota limit for specified qgroup
+>=20
+>    Currently only 0/5 qgroup is passed.
+>    If we're going to support extra subvolume at mkfs time, just pass th=
+e
+>    subvolume id into insert_qgroup_items().
+>=20
+>    The content doesn't matter at all.
+>=20
+> 3) Repair qgroups using infrastructure from qgroup-verify
+>    In fact, qgroup repair is just offline rescan.
+>    Although the original qgroup-verify infrastructure is mostly noisy,
+>    modify it a little to make it silent to function as offline quota
+>    rescan.
+>=20
+> And such support is mainly designed for developers and QA guys.
+>=20
+> As to enable quota, before we must normally mount the fs, enable quota
+> (and rescan if needed).
+> This ioctl based procedure is not common, and fstests doesn't provide
+> such support.
+>=20
+> There are several attempts to make fstests to support it, but due to
+> different reasons, all these attempts failed.
+>=20
+> To make it easier to test all existing test cases with btrfs quota
+> enabled, the current best method is to support quota at mkfs time, and
+> here comes the patchset.
+>=20
+>=20
+> BTW with -R|--runtime-features, we have several possible target to add.=
 
-Lu Fengqi (67):
-  btrfs-progs: add the stack prefix for block_group_used set/get
-    function
-  btrfs-progs: add the stack prefix for block_group_chunk_objectid
-    set/get function
-  btrfs-progs: add the stack prefix for block_group_flags set/get
-    function
-  btrfs-progs: add the stack prefix for disk_key_objectid set/get
-    function
-  btrfs-progs: add the stack prefix for disk_key_offset set/get function
-  btrfs-progs: add the stack prefix for disk_key_type set/get function
-  btrfs-progs: add the stack prefix for root_generation set/get function
-  btrfs-progs: add the stack prefix for root_bytenr set/get function
-  btrfs-progs: add the stack prefix for root_level set/get function
-  btrfs-progs: add the stack prefix for root_dirid set/get function
-  btrfs-progs: add the stack prefix for root_refs set/get function
-  btrfs-progs: add the stack prefix for root_flags set/get function
-  btrfs-progs: add the stack prefix for root_used set/get function
-  btrfs-progs: add the stack prefix for root_limit set/get function
-  btrfs-progs: add the stack prefix for root_last_snapshot set/get
-    function
-  btrfs-progs: add the stack prefix for root_generation_v2 set/get
-    function
-  btrfs-progs: add the stack prefix for root_ctransid set/get function
-  btrfs-progs: add the stack prefix for root_otransid set/get function
-  btrfs-progs: add the stack prefix for root_stransid set/get function
-  btrfs-progs: add the stack prefix for root_rtransid set/get function
-  btrfs-progs: add the stack prefix for backup_tree_root set/get
-    function
-  btrfs-progs: add the stack prefix for backup_tree_root_gen set/get
-    function
-  btrfs-progs: add the stack prefix for backup_tree_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for backup_chunk_root set/get
-    function
-  btrfs-progs: add the stack prefix for backup_chunk_root_gen set/get
-    function
-  btrfs-progs: add the stack prefix for backup_chunk_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for backup_extent_root set/get
-    function
-  btrfs-progs: add the stack prefix for backup_extent_root_gen set/get
-    function
-  btrfs-progs: add the stack prefix for backup_extent_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for backup_fs_root set/get function
-  btrfs-progs: add the stack prefix for backup_fs_root_gen set/get
-    function
-  btrfs-progs: add the stack prefix for backup_fs_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for backup_dev_root set/get function
-  btrfs-progs: add the stack prefix for backup_dev_root_gen set/get
-    function
-  btrfs-progs: add the stack prefix for backup_dev_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for backup_csum_root set/get
-    function
-  btrfs-progs: add the stack prefix for backup_csum_root_gen set/get
-    function
-  btrfs-progs: add the stack prefix for backup_csum_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for backup_total_bytes set/get
-    function
-  btrfs-progs: add the stack prefix for backup_bytes_used set/get
-    function
-  btrfs-progs: add the stack prefix for backup_num_devices set/get
-    function
-  btrfs-progs: add the stack prefix for super_bytenr set/get function
-  btrfs-progs: add the stack prefix for super_flags set/get function
-  btrfs-progs: add the stack prefix for super_generation set/get
-    function
-  btrfs-progs: add the stack prefix for super_root set/get function
-  btrfs-progs: add the stack prefix for super_sys_array_size set/get
-    function
-  btrfs-progs: add the stack prefix for super_chunk_root_generation
-    set/get function
-  btrfs-progs: add the stack prefix for super_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for super_chunk_root set/get
-    function
-  btrfs-progs: add the stack prefix for super_chunk_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for super_log_root set/get function
-  btrfs-progs: add the stack prefix for super_log_root_transid set/get
-    function
-  btrfs-progs: add the stack prefix for super_log_root_level set/get
-    function
-  btrfs-progs: add the stack prefix for super_total_bytes set/get
-    function
-  btrfs-progs: add the stack prefix for super_bytes_used set/get
-    function
-  btrfs-progs: add the stack prefix for super_sectorsize set/get
-    function
-  btrfs-progs: add the stack prefix for super_nodesize set/get function
-  btrfs-progs: add the stack prefix for super_stripesize set/get
-    function
-  btrfs-progs: add the stack prefix for super_root_dir set/get function
-  btrfs-progs: add the stack prefix for super_num_devices set/get
-    function
-  btrfs-progs: add the stack prefix for super_compat_flags set/get
-    function
-  btrfs-progs: add the stack prefix for super_compat_ro_flags set/get
-    function
-  btrfs-progs: add the stack prefix for super_incompat_flags set/get
-    function
-  btrfs-progs: add the stack prefix for super_csum_type set/get function
-  btrfs-progs: add the stack prefix for super_cache_generation set/get
-    function
-  btrfs-progs: add the stack prefix for super_uuid_tree_generation
-    set/get function
-  btrfs-progs: add the stack prefix for super_magic set/get function
+> Not limited to such ioctl based operation, but also mount option based
+> ones.
+> Like space-cache-tree (space_cache=3Dv2).
+>=20
+>=20
+> Qu Wenruo (12):
+>   btrfs-progs: qgroup-verify: Also repair qgroup status version
+>   btrfs-progs: qgroup-verify: Use fs_info->readonly to check if we
+>     should repair qgroups
+>   btrfs-progs: qgroup-verify: Move qgroup classification out of
+>     report_qgroups
+>   btrfs-progs: qgroup-verify: Allow repair_qgroups function to do silen=
+t
+>     repair
+>   btrfs-progs: ctree: Introduce function to create an empty tree
+>   btrfs-progs: mkfs: Introduce function to insert qgroup info and limit=
 
- backref.c                 |   2 +-
- btrfs-find-root.c         |  14 ++--
- btrfs-fragments.c         |   4 +-
- btrfs-list.c              |  10 +--
- btrfs-zero-log.c          |   8 +--
- btrfstune.c               |  18 ++---
- chunk-recover.c           |  37 ++++++-----
- cmds-check.c              | 111 ++++++++++++++++---------------
- cmds-inspect-dump-super.c | 105 ++++++++++++++---------------
- cmds-inspect-dump-tree.c  |  37 ++++++-----
- cmds-rescue.c             |   8 +--
- cmds-restore.c            |   9 +--
- convert/common.c          |  98 +++++++++++++--------------
- convert/main.c            |  20 +++---
- ctree.c                   |  12 ++--
- ctree.h                   | 150 ++++++++++++++++++++++-------------------
- dir-test.c                |   6 +-
- disk-io.c                 | 166 ++++++++++++++++++++++++----------------------
- extent-tree.c             |  49 +++++++-------
- find-root.c               |   2 +-
- free-space-cache.c        |   4 +-
- free-space-tree.c         |   4 +-
- image/main.c              |  39 +++++------
- inode.c                   |   2 +-
- mkfs/common.c             |  83 ++++++++++++-----------
- mkfs/main.c               |  17 ++---
- print-tree.c              |  46 ++++++-------
- qgroup-verify.c           |   2 +-
- random-test.c             |   4 +-
- root-tree.c               |   6 +-
- send-utils.c              |  23 ++++---
- super-recover.c           |   4 +-
- transaction.c             |  10 +--
- utils.c                   |  20 +++---
- volumes.c                 |  39 ++++++-----
- 35 files changed, 610 insertions(+), 559 deletions(-)
+>     items
+>=20
+>   ^^^ Above patches are not modified at all ^^^
+>   vvv Modification starts below vvv
+>=20
+>   btrfs-progs: mkfs: Introduce function to setup quota root and rescan
+>   btrfs-progs: fsfeatures: Introduce a new set of features,
+>     runtime_features
+>   btrfs-progs: mkfs: Introduce --runtime-features option
+>   btrfs-progs: mkfs: Introduce quota runtime feature
+>   btrfs-progs: test/mkfs: Add test case for -R quota option
+>   btrfs-progs: test/mkfs: Add test case for --rootdir and -R quota
+>=20
+>  Documentation/mkfs.btrfs.asciidoc              |  23 +++
+>  cmds-check.c                                   |   2 +-
+>  convert/main.c                                 |   4 +-
+>  ctree.c                                        | 109 ++++++++++++++
+>  ctree.h                                        |   3 +
+>  fsfeatures.c                                   | 131 ++++++++++++++---=
 
--- 
-2.15.1
+>  fsfeatures.h                                   |  10 +-
+>  mkfs/main.c                                    | 194 +++++++++++++++++=
++++++---
+>  qgroup-verify.c                                |  51 +++++--
+>  qgroup-verify.h                                |   2 +-
+>  tests/mkfs-tests/001-basic-profiles/test.sh    |  10 ++
+>  tests/mkfs-tests/010-rootdir-and-quota/test.sh |  51 +++++++
+>  12 files changed, 529 insertions(+), 61 deletions(-)
+>  create mode 100755 tests/mkfs-tests/010-rootdir-and-quota/test.sh
+>=20
 
 
+--KAjTQOvkQWPB1g1pV4QnRaiqN6li0Epus--
 
+--0zkRSLHsM9CtHI9tdlVdFStJynn2d2a0N
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpW/ncXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qir5wgAmEKn7+9EDCaLqgjcW95wzJ4F
+lOBFXle9hU2swuN9hO9Q5fy4ow3Sjdw1ErllJqf8cvbT8EUCcJfC1VD/pmtrHpYA
+vc935B+6owqMNrIkxYsrqTio3L6xzy+Ogj7VzZ4lYo+0N35UUVGHrA3ElAuzQXOu
+UztQmbT2UVfaPm0C2FWJFnUzIZcVmXE8p9kOXcB8XLYc9aaed57ldmWpyw2ZNrfK
+4XDcHCT55fCG969yn8YtETl7i0vz48cgt4UobOo6E0B+XQjHloPZaknfiEcxKWc3
+RZlkq3UlvIUAqkwnjpM93FFxIQYLHTl+Bml/EwwIECiYMrWlxB+/E1eSlwUypA==
+=MJsy
+-----END PGP SIGNATURE-----
+
+--0zkRSLHsM9CtHI9tdlVdFStJynn2d2a0N--

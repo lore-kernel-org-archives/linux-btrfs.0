@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:36208 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:44389 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753885AbeAKFKK (ORCPT
+        with ESMTP id S1753765AbeAKFKH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 00:10:10 -0500
+        Thu, 11 Jan 2018 00:10:07 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 9966348AEA18
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:09:57 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 1688348AEA1A
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 13:09:58 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 16/67] btrfs-progs: add the stack prefix for root_generation_v2 set/get function
-Date: Thu, 11 Jan 2018 13:08:48 +0800
-Message-ID: <20180111050939.21251-17-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH 17/67] btrfs-progs: add the stack prefix for root_ctransid set/get function
+Date: Thu, 11 Jan 2018 13:08:49 +0800
+Message-ID: <20180111050939.21251-18-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
 References: <20180111050939.21251-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,67 +19,65 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The root_generation_v2 set/get function defined by
+The root_ctransid set/get function defined by
 BTRFS_SETGET_STACK_FUNCS macro is missing the prefix stack.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
  ctree.h      | 2 +-
- root-tree.c  | 6 ++++--
- send-utils.c | 3 ++-
- 3 files changed, 7 insertions(+), 4 deletions(-)
+ print-tree.c | 2 +-
+ send-utils.c | 5 +++--
+ 3 files changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/ctree.h b/ctree.h
-index b5379d3b..ab06e66a 100644
+index ab06e66a..6538bd23 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -2065,7 +2065,7 @@ BTRFS_SETGET_STACK_FUNCS(stack_root_limit, struct btrfs_root_item, byte_limit,
- 			 64);
- BTRFS_SETGET_STACK_FUNCS(stack_root_last_snapshot, struct btrfs_root_item,
+@@ -2067,7 +2067,7 @@ BTRFS_SETGET_STACK_FUNCS(stack_root_last_snapshot, struct btrfs_root_item,
  			 last_snapshot, 64);
--BTRFS_SETGET_STACK_FUNCS(root_generation_v2, struct btrfs_root_item,
-+BTRFS_SETGET_STACK_FUNCS(stack_root_generation_v2, struct btrfs_root_item,
+ BTRFS_SETGET_STACK_FUNCS(stack_root_generation_v2, struct btrfs_root_item,
  			 generation_v2, 64);
- BTRFS_SETGET_STACK_FUNCS(root_ctransid, struct btrfs_root_item,
+-BTRFS_SETGET_STACK_FUNCS(root_ctransid, struct btrfs_root_item,
++BTRFS_SETGET_STACK_FUNCS(stack_root_ctransid, struct btrfs_root_item,
  			 ctransid, 64);
-diff --git a/root-tree.c b/root-tree.c
-index 2de63f6c..d6c4bd62 100644
---- a/root-tree.c
-+++ b/root-tree.c
-@@ -121,7 +121,8 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	 * Update generation_v2 so at the next mount we know the new root
- 	 * fields are valid.
- 	 */
--	btrfs_set_root_generation_v2(item, btrfs_stack_root_generation(item));
-+	btrfs_set_stack_root_generation_v2(item,
-+					   btrfs_stack_root_generation(item));
- 
- 	write_extent_buffer(l, item, ptr, sizeof(*item));
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
-@@ -139,7 +140,8 @@ int btrfs_insert_root(struct btrfs_trans_handle *trans, struct btrfs_root
- 	/*
- 	 * Make sure generation v1 and v2 match. See update_root for details.
- 	 */
--	btrfs_set_root_generation_v2(item, btrfs_stack_root_generation(item));
-+	btrfs_set_stack_root_generation_v2(item,
-+					   btrfs_stack_root_generation(item));
- 	ret = btrfs_insert_item(trans, root, key, item, sizeof(*item));
- 	return ret;
- }
+ BTRFS_SETGET_STACK_FUNCS(root_otransid, struct btrfs_root_item,
+ 			 otransid, 64);
+diff --git a/print-tree.c b/print-tree.c
+index 7315a8bf..edffd6f2 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -613,7 +613,7 @@ static void print_root_item(struct extent_buffer *leaf, int slot)
+ 		}
+ 		if (root_item.ctransid) {
+ 			printf("\t\tctransid %llu otransid %llu stransid %llu rtransid %llu\n",
+-				btrfs_root_ctransid(&root_item),
++				btrfs_stack_root_ctransid(&root_item),
+ 				btrfs_root_otransid(&root_item),
+ 				btrfs_root_stransid(&root_item),
+ 				btrfs_root_rtransid(&root_item));
 diff --git a/send-utils.c b/send-utils.c
-index 3da6b9c7..7273d4ed 100644
+index 7273d4ed..c59e505b 100644
 --- a/send-utils.c
 +++ b/send-utils.c
-@@ -153,7 +153,8 @@ static int btrfs_read_root_item(int mnt_fd, u64 root_id,
- 		return ret;
- 
- 	if (read_len < sizeof(*item) ||
--	    btrfs_stack_root_generation(item) != btrfs_root_generation_v2(item))
-+	    btrfs_stack_root_generation(item) !=
-+			btrfs_stack_root_generation_v2(item))
- 		memset(&item->generation_v2, 0,
- 			sizeof(*item) - offsetof(struct btrfs_root_item,
- 						 generation_v2));
+@@ -496,7 +496,7 @@ struct subvol_info *subvol_uuid_search2(struct subvol_uuid_search *s,
+ 	memcpy(info->uuid, root_item.uuid, BTRFS_UUID_SIZE);
+ 	memcpy(info->received_uuid, root_item.received_uuid, BTRFS_UUID_SIZE);
+ 	memcpy(info->parent_uuid, root_item.parent_uuid, BTRFS_UUID_SIZE);
+-	info->ctransid = btrfs_root_ctransid(&root_item);
++	info->ctransid = btrfs_stack_root_ctransid(&root_item);
+ 	info->otransid = btrfs_root_otransid(&root_item);
+ 	info->stransid = btrfs_root_stransid(&root_item);
+ 	info->rtransid = btrfs_root_rtransid(&root_item);
+@@ -672,7 +672,8 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 				memcpy(si->received_uuid,
+ 						root_item.received_uuid,
+ 						BTRFS_UUID_SIZE);
+-				si->ctransid = btrfs_root_ctransid(&root_item);
++				si->ctransid = btrfs_stack_root_ctransid(
++							&root_item);
+ 				si->otransid = btrfs_root_otransid(&root_item);
+ 				si->stransid = btrfs_root_stransid(&root_item);
+ 				si->rtransid = btrfs_root_rtransid(&root_item);
 -- 
 2.15.1
 

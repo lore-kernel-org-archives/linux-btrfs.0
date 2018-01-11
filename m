@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:21049 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751042AbeAKHbJ (ORCPT
+        with ESMTP id S1753567AbeAKHbL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 02:31:09 -0500
+        Thu, 11 Jan 2018 02:31:11 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 8C79448AEA11
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:04 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id A604348AEA14
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:06 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 06/17] btrfs-progs: lowmem check: introduce force_cow_in_new_chunk()
-Date: Thu, 11 Jan 2018 15:35:00 +0800
-Message-ID: <20180111073511.25288-7-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 07/17] btrfs-progs: lowmem check: introduce try_avoid_extents_overwrite()
+Date: Thu, 11 Jan 2018 15:35:01 +0800
+Message-ID: <20180111073511.25288-8-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,184 +20,164 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce create_chunk_and_block_block_group() to allocate new chunk
-and corresponding block group.
+Define a global enum extents_operation to record extents are excluded
+or new chunk is allocated for extents.
+Another global u64 last_allocated_chunk records the last chunk start
+allocated by lowmem repair.
+Although global variable is not so graceful, it simplifies codes much.
 
-The new function force_cow_in_new_chunk() first allocates new chunk
-and records its start.
-Then it modifies all metadata block groups cached and full.
-Finally it marks the new block group uncached and unfree.
-In the next CoW, extents states will be updated automatically by
-cache_block_group().
+New function try_to_force_cow_in_new_chunk() will try to mark block
+groups full, allocate a new chunk and records the start.
+If the last allocated chunk is almost full, a new chunk will be
+allocated.
 
-is_chunk_almost_full() is for further patch.
-If one chunk is not enough for CoW or uses more than 90% of capacity.
-we thinks it's almost full.
+try_avoid_extents_overwrite() prefer to allocates new chunk first.
+If it failed because of no space or wrong used bytes(fsck-tests/004),
+then it try to exclude metadata blocks but costs lots of time in
+large filesystem.
 
-Suggested-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 147 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 147 insertions(+)
+ cmds-check.c | 112 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 112 insertions(+)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index d4bf2175b96d..795e452a4e63 100644
+index 795e452a4e63..8ebd1a38a1b9 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -10927,6 +10927,153 @@ static int clear_block_groups_full(struct btrfs_fs_info *fs_info, u64 flags)
- 	return modify_block_groups_cache(fs_info, flags, 0);
+@@ -84,6 +84,15 @@ enum btrfs_check_mode {
+ 
+ static enum btrfs_check_mode check_mode = CHECK_MODE_DEFAULT;
+ 
++enum lowmem_extents_operation {
++	EXTENTS_NONE,
++	EXTENTS_EXCLUDE,
++	EXTENTS_MARK_BG_FULL,
++};
++
++static enum lowmem_extents_operation extents_operation = EXTENTS_NONE;
++static u64 last_allocated_chunk;
++
+ struct extent_backref {
+ 	struct rb_node node;
+ 	unsigned int is_data:1;
+@@ -11074,6 +11083,23 @@ out:
+ 	return ret;
  }
  
-+static int create_chunk_and_block_group(struct btrfs_fs_info *fs_info,
-+					u64 flags, u64 *start, u64 *nbytes)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_root *root = fs_info->extent_root;
-+	int ret;
-+
-+	if ((flags & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0)
-+		return -EINVAL;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		error("error starting transaction %s", strerror(-ret));
-+		return ret;
-+	}
-+	ret = btrfs_alloc_chunk(trans, fs_info, start, nbytes, flags);
-+	if (ret) {
-+		error("fail to allocate new chunk %s", strerror(-ret));
-+		goto out;
-+	}
-+	ret = btrfs_make_block_group(trans, fs_info, 0, flags,
-+			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, *start, *nbytes);
-+	if (ret) {
-+		error("fail to make block group for chunk %llu %llu %s",
-+		      *start, *nbytes, strerror(-ret));
-+		goto out;
-+	}
-+out:
-+	btrfs_commit_transaction(trans, root);
-+	return ret;
-+}
-+
-+static int force_cow_in_new_chunk(struct btrfs_fs_info *fs_info,
-+				  u64 *start_ret)
-+{
-+	struct btrfs_block_group_cache *bg;
-+	u64 start;
-+	u64 nbytes;
-+	u64 alloc_profile;
-+	u64 flags;
-+	int ret;
-+
-+	alloc_profile = (fs_info->avail_metadata_alloc_bits &
-+			 fs_info->metadata_alloc_profile);
-+	flags = BTRFS_BLOCK_GROUP_METADATA | alloc_profile;
-+	if (btrfs_fs_incompat(fs_info, MIXED_GROUPS))
-+		flags |= BTRFS_BLOCK_GROUP_DATA;
-+
-+	ret = create_chunk_and_block_group(fs_info, flags, &start, &nbytes);
-+	if (ret)
-+		goto err;
-+	printf("Created new chunk [%llu %llu]\n", start, nbytes);
-+
-+	flags = BTRFS_BLOCK_GROUP_METADATA;
-+	/* Mark all metadata block groups cached and full in free space*/
-+	ret = mark_block_groups_full(fs_info, flags);
-+	if (ret)
-+		goto clear_bgs_full;
-+
-+	bg = btrfs_lookup_block_group(fs_info, start);
-+	if (!bg) {
-+		ret = -ENOENT;
-+		error("fail to look up block group %llu %llu", start, nbytes);
-+		goto clear_bgs_full;
-+	}
-+
-+	/* Clear block group cache just allocated */
-+	ret = modify_block_group_cache(fs_info, bg, 0);
-+	if (ret)
-+		goto clear_bgs_full;
-+	if (start_ret)
-+		*start_ret = start;
-+	return 0;
-+
-+clear_bgs_full:
-+	clear_block_groups_full(fs_info, flags);
-+err:
-+	return ret;
-+}
-+
 +/*
-+ * Returns 0 means not almost full.
-+ * Returns >0 means almost full.
-+ * Returns <0 means fatal error.
++ * Returns <0 for error.
++ * Returns 0 for success.
 + */
-+static int is_chunk_almost_full(struct btrfs_fs_info *fs_info, u64 start)
++static int try_to_force_cow_in_new_chunk(struct btrfs_fs_info *fs_info)
 +{
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	struct btrfs_root *root = fs_info->extent_root;
-+	struct btrfs_block_group_item *bi;
-+	struct btrfs_block_group_item bg_item;
-+	struct extent_buffer *eb;
-+	u64 used;
-+	u64 total;
-+	u64 min_free;
 +	int ret;
-+	int slot;
 +
-+	key.objectid = start;
-+	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-+	key.offset = (u64)-1;
-+
-+	btrfs_init_path(&path);
-+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-+	if (!ret)
-+		ret = -EIO;
-+	if (ret < 0)
-+		goto out;
-+	ret = btrfs_previous_item(root, &path, start,
-+				  BTRFS_BLOCK_GROUP_ITEM_KEY);
-+	if (ret) {
-+		error("failed to find block group %llu", start);
-+		ret = -ENOENT;
-+		goto out;
++	if (last_allocated_chunk) {
++		ret = is_chunk_almost_full(fs_info, last_allocated_chunk);
++		if (ret <= 0)
++			return ret;
 +	}
-+
-+	eb = path.nodes[0];
-+	slot = path.slots[0];
-+	btrfs_item_key_to_cpu(eb, &key, slot);
-+	if (key.objectid != start) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+
-+	total = key.offset;
-+	bi = btrfs_item_ptr(eb, slot, struct btrfs_block_group_item);
-+	read_extent_buffer(eb, &bg_item, (unsigned long)bi, sizeof(bg_item));
-+	used = btrfs_block_group_used(&bg_item);
-+
-+	/*
-+	 * if the free space in the chunk is less than %10 of total,
-+	 * or not not enough for CoW once, we think the chunk is almost full.
-+	 */
-+	min_free = max_t(u64, (BTRFS_MAX_LEVEL + 1) * fs_info->nodesize,
-+			 div_factor(total, 1));
-+
-+	if ((total - used) > min_free)
-+		ret = 0;
-+	else
-+		ret = 1;
-+out:
-+	btrfs_release_path(&path);
++	ret = force_cow_in_new_chunk(fs_info, &last_allocated_chunk);
 +	return ret;
 +}
 +
  static int check_extent_refs(struct btrfs_root *root,
  			     struct cache_tree *extent_cache)
  {
+@@ -13600,6 +13626,92 @@ out:
+ 	return err;
+ }
+ 
++static void cleanup_excluded_extents(struct btrfs_fs_info *fs_info);
++static int end_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
++{
++	int ret;
++
++	switch (extents_operation) {
++	case EXTENTS_EXCLUDE:
++		cleanup_excluded_extents(fs_info);
++		ret = 0;
++		break;
++	case EXTENTS_MARK_BG_FULL:
++		ret = modify_block_groups_cache(fs_info,
++						BTRFS_BLOCK_GROUP_METADATA, 0);
++		break;
++	case EXTENTS_NONE:
++		ret = 0;
++		break;
++	default:
++		ret = -EINVAL;
++	}
++
++	if (!ret)
++		extents_operation = EXTENTS_NONE;
++	return ret;
++}
++
++static int pin_metadata_blocks(struct btrfs_fs_info *fs_info);
++static int exclude_metadata_blocks(struct btrfs_fs_info *fs_info);
++/*
++ * NOTE: Do not call this function during transaction.
++ */
++static int avoid_extents_overwrite(struct btrfs_fs_info *fs_info,
++				   enum lowmem_extents_operation op)
++{
++	int ret;
++
++	if (op == extents_operation && EXTENTS_MARK_BG_FULL != op)
++		return 0;
++
++	switch (op) {
++	case EXTENTS_EXCLUDE:
++		ret = exclude_metadata_blocks(fs_info);
++		break;
++	case EXTENTS_MARK_BG_FULL:
++		ret = try_to_force_cow_in_new_chunk(fs_info);
++		break;
++	case EXTENTS_NONE:
++		ret = end_avoid_extents_overwrite(fs_info);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	/* extents_operation should be assigned anyway for latter clean up. */
++	extents_operation = op;
++
++	if (ret)
++		end_avoid_extents_overwrite(fs_info);
++	return ret;
++}
++
++static int try_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
++{
++	int ret;
++	int mixed = btrfs_fs_incompat(fs_info, MIXED_GROUPS);
++
++	if (extents_operation != EXTENTS_NONE &&
++	    extents_operation != EXTENTS_MARK_BG_FULL)
++		return 0;
++	ret = avoid_extents_overwrite(fs_info, EXTENTS_MARK_BG_FULL);
++
++	/*
++	 * If there is no space left to allocate, try to exclude all metadata
++	 * blocks. Mix filesystem is unsupported.
++	 */
++	if (ret && ret == -ENOSPC && !mixed) {
++		printf(
++	"Try to exclude all metadata blcoks and extents, it may be slow\n");
++		ret = avoid_extents_overwrite(fs_info, EXTENTS_EXCLUDE);
++	}
++
++	if (ret)
++		error("failed to avoid extents overwrite %s", strerror(-ret));
++	return ret;
++}
++
+ /*
+  * Low memory usage version check_chunks_and_extents.
+  */
 -- 
 2.15.1
 

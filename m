@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:13569 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:53400 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1754147AbeAKHbM (ORCPT
+        with ESMTP id S1753959AbeAKHbN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 02:31:12 -0500
+        Thu, 11 Jan 2018 02:31:13 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 9816B48AEA12
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:10 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 99E2649F0F85
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 15:31:12 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 09/17] btrfs-progs: lowmem check: start to remove parameters @trans in lowmem
-Date: Thu, 11 Jan 2018 15:35:03 +0800
-Message-ID: <20180111073511.25288-10-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v3 10/17] btrfs-progs: lowmem check: remove parameter @trans of delete_extent_item()
+Date: Thu, 11 Jan 2018 15:35:04 +0800
+Message-ID: <20180111073511.25288-11-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,12 +20,8 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since extents can be avoid overwrite by excluding or new chunk
-allocation. It's unnessesary to do all repairs in one transaction.
-
-This patch removes parameter @trans of repair_extent_data_item().
-repair_extent_data_item() calls try_avoid_extents_overwrite()
-and starts a transaction by itself.
+This patch removes the parameter @trans of delete_extent_item().
+It calls try_avoid_extents_overwrite() and starts a transaction by itself.
 
 Note: This patch and next patches cause error in lowmem repair like:
 "Error: Commit_root already set when starting transaction".
@@ -33,84 +29,91 @@ This error will disappear after removing @trans finished.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 24 +++++++++++++++++++-----
- 1 file changed, 19 insertions(+), 5 deletions(-)
+ cmds-check.c | 24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index 341f73829ec7..cd8b6ed3898f 100644
+index cd8b6ed3898f..aebae43c1fa7 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -12164,18 +12164,19 @@ out:
+@@ -13492,13 +13492,22 @@ out:
  	return err;
  }
  
-+static int try_avoid_extents_overwrite(struct btrfs_fs_info *fs_info);
- /*
-  * If @err contains BACKREF_MISSING then add extent of the
-  * file_extent_data_item.
-  *
-  * Returns error bits after reapir.
-  */
--static int repair_extent_data_item(struct btrfs_trans_handle *trans,
+-static int delete_extent_tree_item(struct btrfs_trans_handle *trans,
 -				   struct btrfs_root *root,
-+static int repair_extent_data_item(struct btrfs_root *root,
- 				   struct btrfs_path *pathp,
- 				   struct node_refs *nrefs,
- 				   int err)
++static int delete_extent_tree_item(struct btrfs_root *root,
+ 				   struct btrfs_path *path)
  {
-+	struct btrfs_trans_handle *trans = NULL;
- 	struct btrfs_file_extent_item *fi;
- 	struct btrfs_key fi_key;
  	struct btrfs_key key;
-@@ -12192,6 +12193,7 @@ static int repair_extent_data_item(struct btrfs_trans_handle *trans,
- 	u64 file_offset;
- 	int generation;
- 	int slot;
-+	int need_insert = 0;
++	struct btrfs_trans_handle *trans;
  	int ret = 0;
- 
- 	eb = pathp->nodes[0];
-@@ -12230,9 +12232,20 @@ static int repair_extent_data_item(struct btrfs_trans_handle *trans,
- 		ret = -EIO;
- 		goto out;
- 	}
-+	need_insert = ret;
  
 +	ret = try_avoid_extents_overwrite(root->fs_info);
 +	if (ret)
-+		goto out;
++		return ret;
 +	trans = btrfs_start_transaction(root, 1);
 +	if (IS_ERR(trans)) {
 +		ret = PTR_ERR(trans);
-+		trans = NULL;
 +		error("fail to start transaction %s", strerror(-ret));
 +		goto out;
 +	}
- 	/* insert an extent item */
--	if (ret > 0) {
-+	if (need_insert) {
- 		key.objectid = disk_bytenr;
- 		key.type = BTRFS_EXTENT_ITEM_KEY;
- 		key.offset = num_bytes;
-@@ -12272,6 +12285,8 @@ static int repair_extent_data_item(struct btrfs_trans_handle *trans,
- 
- 	err &= ~BACKREF_MISSING;
+ 	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+ 	btrfs_release_path(path);
+ 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+@@ -13516,6 +13525,7 @@ static int delete_extent_tree_item(struct btrfs_trans_handle *trans,
+ 	else
+ 		path->slots[0]--;
  out:
-+	if (trans)
-+		btrfs_commit_transaction(trans, root);
- 	btrfs_release_path(&path);
++	btrfs_commit_transaction(trans, root);
  	if (ret)
- 		error("can't repair root %llu extent data item[%llu %llu]",
-@@ -13545,8 +13560,7 @@ again:
- 	case BTRFS_EXTENT_DATA_KEY:
- 		ret = check_extent_data_item(root, path, nrefs, account_bytes);
- 		if (repair && ret)
--			ret = repair_extent_data_item(trans, root, path, nrefs,
--						      ret);
-+			ret = repair_extent_data_item(root, path, nrefs, ret);
+ 		error("failed to delete root %llu item[%llu, %u, %llu]",
+ 		      root->objectid, key.objectid, key.type, key.offset);
+@@ -13567,7 +13577,7 @@ again:
+ 		ret = check_block_group_item(fs_info, eb, slot);
+ 		if (repair &&
+ 		    ret & REFERENCER_MISSING)
+-			ret = delete_extent_tree_item(trans, root, path);
++			ret = delete_extent_tree_item(root, path);
  		err |= ret;
  		break;
- 	case BTRFS_BLOCK_GROUP_ITEM_KEY:
+ 	case BTRFS_DEV_ITEM_KEY:
+@@ -13598,7 +13608,7 @@ again:
+ 					       key.objectid, -1);
+ 		if (repair &&
+ 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+-			ret = delete_extent_tree_item(trans, root, path);
++			ret = delete_extent_tree_item(root, path);
+ 		err |= ret;
+ 		break;
+ 	case BTRFS_EXTENT_DATA_REF_KEY:
+@@ -13611,7 +13621,7 @@ again:
+ 				btrfs_extent_data_ref_count(eb, dref));
+ 		if (repair &&
+ 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+-			ret = delete_extent_tree_item(trans, root, path);
++			ret = delete_extent_tree_item(root, path);
+ 		err |= ret;
+ 		break;
+ 	case BTRFS_SHARED_BLOCK_REF_KEY:
+@@ -13619,7 +13629,7 @@ again:
+ 						 key.objectid, -1);
+ 		if (repair &&
+ 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+-			ret = delete_extent_tree_item(trans, root, path);
++			ret = delete_extent_tree_item(root, path);
+ 		err |= ret;
+ 		break;
+ 	case BTRFS_SHARED_DATA_REF_KEY:
+@@ -13627,7 +13637,7 @@ again:
+ 						key.objectid);
+ 		if (repair &&
+ 		    ret & (REFERENCER_MISMATCH | REFERENCER_MISSING))
+-			ret = delete_extent_tree_item(trans, root, path);
++			ret = delete_extent_tree_item(root, path);
+ 		err |= ret;
+ 		break;
+ 	default:
 -- 
 2.15.1
 

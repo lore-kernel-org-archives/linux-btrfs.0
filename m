@@ -1,82 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:47586 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752728AbeAKBY7 (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:48954 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752727AbeAKBY6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 20:24:59 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0B1Cqw1049075
+        Wed, 10 Jan 2018 20:24:58 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0B1CUuo084276
         for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:58 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2fdv8n0a5q-1
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2fdvb889b8-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
         for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:58 +0000
 Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0B1Ou6D018602
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0B1Ov8x022278
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:56 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:57 GMT
 Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0B1Ouhn016785
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:56 GMT
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0B1OvYh016788
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 01:24:57 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v6] Add cli and ioctl to forget scanned device(s)
-Date: Thu, 11 Jan 2018 09:25:49 +0800
-Message-Id: <20180111012551.14765-1-anand.jain@oracle.com>
+Subject: [PATCH 1/1] btrfs: introduce feature to forget a btrfs device
+Date: Thu, 11 Jan 2018 09:25:50 +0800
+Message-Id: <20180111012551.14765-2-anand.jain@oracle.com>
+In-Reply-To: <20180111012551.14765-1-anand.jain@oracle.com>
+References: <20180111012551.14765-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-v6:
- Use the changed fn name btrfs_free_stale_devices().
- 
- Change in title:
- Old v5:
- Cover-letter:
-  [PATCH v5] Add cli and ioctl to ignore a scanned device
- Kernel:
-  [PATCH v5] btrfs: introduce feature to ignore a btrfs device
- Progs:
-  [PATCH v5] btrfs-progs: add 'btrfs device ignore' cli
+Support for a new command 'btrfs dev forget [dev]' is proposed here,
+to undo the effects of 'btrfs dev scan [dev]'. For this purpose,
+this patch proposes to use ioctl #5 as it was empty.
+	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+the /dev/btrfs-control to forget one or all devices, (devices which are
+not mounted) from the btrfs kernel.
 
-v5:
-  Adds feature to delete all stale devices
-  Reuses btrfs_free_stale_devices() fn and so depends on the
-    patch-set [1] in the ML.
-  Uses struct btrfs_ioctl_vol_args_v2 instead of
-    struct btrfs_ioctl_vol_args as arg
-  Does the device path matching instead of btrfs_device matching
-    (we won't delete the mounted device as btrfs_free_stale_devices()
-    checks for it)
-v4:
-  No change. But as the ML thread may be confusing, so resend.
-v3:
-  No change. Send to correct ML.
-v2:
-  Accepts review from Nikolay, details are in the specific patch.
-  Patch 1/2 is renamed from
-    [PATCH 1/2] btrfs: refactor btrfs_free_stale_device() to get device list delete
-  to
-    [PATCH 1/2] btrfs: add function to device list delete
+The argument it takes is struct btrfs_ioctl_vol_args_v2, and ::name can be
+set to specify the device path. And all unmounted devices can be removed
+from the kernel using the BTRFS_DEVICE_SPEC_ALL_DEV flag. Remove all
+devices functionality would override remove one device when both are
+specified in an IOCTL call.
+Again, the devices are removed only if the relevant fsid aren't mounted.
 
-Adds cli and ioctl to forget a scanned device or forget all stale
-devices in the kernel.
-
-Anand Jain (1):
-  btrfs: introduce feature to forget a btrfs device
-
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
  fs/btrfs/super.c           | 27 +++++++++++++++++++++++----
  fs/btrfs/volumes.c         |  9 +++++++++
  fs/btrfs/volumes.h         |  1 +
  include/uapi/linux/btrfs.h |  6 +++++-
  4 files changed, 38 insertions(+), 5 deletions(-)
 
-Anand Jain (1):
-  btrfs-progs: add cli to forget one or all scanned devices
-
- cmds-device.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h       |  6 ++++-
- 2 files changed, 82 insertions(+), 1 deletion(-)
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 559fc53ff59e..6a9a5ce8af3b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2219,21 +2219,37 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 				unsigned long arg)
+ {
+ 	struct btrfs_ioctl_vol_args *vol;
++	struct btrfs_ioctl_vol_args_v2 *vol2;
+ 	struct btrfs_fs_devices *fs_devices;
+ 	int ret = -ENOTTY;
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	vol = memdup_user((void __user *)arg, sizeof(*vol));
+-	if (IS_ERR(vol))
+-		return PTR_ERR(vol);
++	if (cmd == BTRFS_IOC_FORGET_DEV) {
++		vol2 = memdup_user((void __user *)arg, sizeof(*vol2));
++		if (IS_ERR(vol2))
++			return PTR_ERR(vol2);
++
++		if (vol2->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
++			return -EOPNOTSUPP;
++	} else {
++		vol = memdup_user((void __user *)arg, sizeof(*vol));
++		if (IS_ERR(vol))
++			return PTR_ERR(vol);
++	}
+ 
+ 	switch (cmd) {
+ 	case BTRFS_IOC_SCAN_DEV:
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+ 					    &btrfs_fs_type, &fs_devices);
+ 		break;
++	case BTRFS_IOC_FORGET_DEV:
++		if (vol2->flags & BTRFS_DEVICE_SPEC_ALL_DEV)
++			ret = btrfs_forget_devices(NULL);
++		else
++			ret = btrfs_forget_devices(vol2->name);
++		break;
+ 	case BTRFS_IOC_DEVICES_READY:
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+ 					    &btrfs_fs_type, &fs_devices);
+@@ -2246,7 +2262,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 		break;
+ 	}
+ 
+-	kfree(vol);
++	if (cmd == BTRFS_IOC_FORGET_DEV)
++		kfree(vol2);
++	else
++		kfree(vol);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e947e47f8fff..b0c9948baf9a 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1171,6 +1171,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+ 	return 0;
+ }
+ 
++int btrfs_forget_devices(const char *path)
++{
++	mutex_lock(&uuid_mutex);
++	btrfs_free_stale_devices(path, NULL);
++	mutex_unlock(&uuid_mutex);
++
++	return 0;
++}
++
+ /*
+  * Look for a btrfs signature on a device. This may be called out of the mount path
+  * and we are not allowed to call set_blocksize during the scan. The superblock
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 15216fed918b..b954ca3b79a9 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -422,6 +422,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 			  struct btrfs_fs_devices **fs_devices_ret);
++int btrfs_forget_devices(const char *path);
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
+ void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index c8d99b9ca550..4e8ec1391872 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -41,12 +41,14 @@ struct btrfs_ioctl_vol_args {
+ #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
+ 
+ #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
++#define BTRFS_DEVICE_SPEC_ALL_DEV	(1ULL << 4)
+ 
+ #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
+ 			(BTRFS_SUBVOL_CREATE_ASYNC |	\
+ 			BTRFS_SUBVOL_RDONLY |		\
+ 			BTRFS_SUBVOL_QGROUP_INHERIT |	\
+-			BTRFS_DEVICE_SPEC_BY_ID)
++			BTRFS_DEVICE_SPEC_BY_ID |	\
++			BTRFS_DEVICE_SPEC_ALL_DEV)
+ 
+ #define BTRFS_FSID_SIZE 16
+ #define BTRFS_UUID_SIZE 16
+@@ -745,6 +747,8 @@ enum btrfs_err_code {
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+ 				   struct btrfs_ioctl_vol_args)
++#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
++				   struct btrfs_ioctl_vol_args)
+ /* trans start and trans end are dangerous, and only for
+  * use by applications that know how to avoid the
+  * resulting deadlocks
 -- 
 2.7.0
 

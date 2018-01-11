@@ -1,43 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54293 "EHLO mx2.suse.de"
+Received: from lambda.cetim.fr ([93.20.250.198]:56292 "EHLO lambda.cetim.fr"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965925AbeAJQ2U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 11:28:20 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 06A7FACAE
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 16:28:19 +0000 (UTC)
-Date: Wed, 10 Jan 2018 17:26:11 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/4] Finally remove userspace transaction support
-Message-ID: <20180110162611.GU13726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1515590477-22878-1-git-send-email-nborisov@suse.com>
+        id S933762AbeAKLQN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Jan 2018 06:16:13 -0500
+Received: from lambda.cetim.fr (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 81DB2422D9
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 11:51:43 +0100 (CET)
+Received: from lambda.cetim.fr (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 74003422D5
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 11:51:43 +0100 (CET)
+Received: from aquilon.cetim.priv (unknown [172.16.9.29])
+        by lambda.cetim.fr (Postfix) with ESMTPS
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jan 2018 11:51:43 +0100 (CET)
+From: Ext-Strii-Houttemane Philippe <Philippe.Houttemane@cetim.fr>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: recommendations and contraindications of using btrfs for Oracle
+ Database Server
+Date: Thu, 11 Jan 2018 10:51:43 +0000
+Message-ID: <8444d2a08c8f4e8dab2ee48139ce5bb9@AQUILON.cetim.priv>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1515590477-22878-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 10, 2018 at 03:21:13PM +0200, Nikolay Borisov wrote:
-> Userspace transaction were initially added to he benefit of Ceph, however 
-> in recent times it became clear that btrfs is not suitable for Ceph's workload
-> and has even been actively discoured. Additionaly, the userspace transaction
-> mechanism has always been a sort of a hack, which could easily lead to a 
-> deadlock unless care is taken. 
-> 
-> All things considered there is no point in keeping the code around. Userspace
-> transaction interface was deprecated in kernel version 4.14. Now it's time to 
-> completely remove it in 4.17. 
-> 
-> The first patch removes the ioctl-related code. Following patches just deal 
-> with unused functions/values following ioctl removal. 
-> 
-> Nikolay Borisov (4):
->   btrfs: Remove userspace transaction ioctls
->   btrfs: Remove code referencing unused TRANS_USERSPACE
->   btrfs: Remove transaction handle from btrfs_file_private
->   btrfs: Remove btrfs_fs_info::open_ioctl_trans
+Hello,
 
-Please resend and add the missing Signed-off-by lines.
+   We are using btrfs filesystem on local disks (RAID 1) as underlying filesystem to host our Oracle 12c datafiles.
+This allow us to cold backup databases via snapshot in a few seconds and benefit from higher performance than over Linux filesystem formats.
+This is the problem we meet: Oracle regularly crashes with error of this 2 types, the errors occur on different physical machines with same softwares:
+
+ORA-63999: data file suffered media failure
+ORA-01114: IO error writing block to file 99 (block # 99968)
+ORA-01110: data file 99: '/oradata/PS92PRD/data/pcapp.dbf'
+ORA-27072: File I/O error
+Linux-x86_64 Error: 17: File exists
+Additional information: 4
+Additional information: 99968
+
+And 
+
+ORA-63999: data file suffered media failure
+ORA-01114: IO error writing block to file 99 (block # 99994)
+ORA-01110: data file 99: '/oradata/PS92PRD/data/pcapp.dbf'
+ORA-27072: File I/O error
+Linux-x86_64 Error: 5: Input/output error
+Additional information: 4
+Additional information: 99994
+
+It nevers append with over filesystem types, all the hardware has been checked.
+I suspect a Btrfs activated feature via our mount options instead of a bug: Oracle see a ghost or a duplicated bloc even if copy on cow feature is disabled.
+
+Here are few details of the system:
+
+Mount options: defaults,nofail,nodatacow,nobarrier,noatime
+
+uname -a:
+Linux 3.10.0-514.10.2.el7.x86_64 #1 SMP Fri Mar 3 00:04:05 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+btrfs -version: btrfs-progs v4.9.1
+
+btrfs fi show:
+Label: 'oradataBtrfs'  
+        Total devices 1 FS bytes used 1.98TiB
+        devid    1 size 3.18TiB used 2.02TiB path /dev/sdb1
+
+Thank you very much for your advice.
+
+Philippe Houttemane
+System, network and DBA engineer.
+
+
+
+

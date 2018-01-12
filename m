@@ -1,82 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:50750 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751301AbeA3WeJ (ORCPT
+Received: from youngberry.canonical.com ([91.189.89.112]:33392 "EHLO
+        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S964809AbeALQxE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 17:34:09 -0500
-From: Howard McLauchlan <hmclauchlan@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <kernel-team@fb.com>, Omar Sandoval <osandov@osandov.com>,
-        Josef Bacik <jbacik@fb.com>, Howard McLauchlan <hmclauchlan@fb.com>
-Subject: [PATCH v2] btrfs: print error if primary super block write fails
-Date: Tue, 30 Jan 2018 14:33:49 -0800
-Message-ID: <20180130223349.5808-1-hmclauchlan@fb.com>
+        Fri, 12 Jan 2018 11:53:04 -0500
+From: Colin King <colin.king@canonical.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Liu Bo <bo.li.liu@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Cc: kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH][btrfs-next] btrfs: remove redundant check on ret and goto
+Date: Fri, 12 Jan 2018 16:52:58 +0000
+Message-Id: <20180112165258.27431-1-colin.king@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Presently, failing a primary super block write but succeeding in at
-least one super block write in general will appear to users as if
-nothing important went wrong. However, upon unmounting and re-mounting,
-the file system will be in a rolled back state. This was discovered
-with a BCC program that uses bpf_override_return() to fail super block
-writes.
+From: Colin Ian King <colin.king@canonical.com>
 
-This patch outputs an error clarifying that the primary super block
-write has failed, so users can expect potentially erroneous behaviour.
-It also forces wait_dev_supers() to return an error to its caller if
-the primary super block write fails.
+The check for a non-zero ret is redundant as the goto will jump to
+the very next statement anyway.  Remove this extraneous code.
 
-Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
+Detected by CoverityScan, CID#1463784 ("Identical code for different
+branches")
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
 ---
-V2: Added devid to output, removed unnecessary fs_info parameter
+ fs/btrfs/tests/btrfs-tests.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
- fs/btrfs/disk-io.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 5da18ebc9222..6d98f2f21d5f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3298,6 +3298,7 @@ static int wait_dev_supers(struct btrfs_device *device, int max_mirrors)
- 	struct buffer_head *bh;
- 	int i;
- 	int errors = 0;
-+	bool primary_failed = false;
- 	u64 bytenr;
- 
- 	if (max_mirrors == 0)
-@@ -3314,11 +3315,14 @@ static int wait_dev_supers(struct btrfs_device *device, int max_mirrors)
- 				      BTRFS_SUPER_INFO_SIZE);
- 		if (!bh) {
- 			errors++;
-+			primary_failed = (i == 0) || primary_failed;
- 			continue;
+diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
+index 9786d8cd0aa6..e74278170806 100644
+--- a/fs/btrfs/tests/btrfs-tests.c
++++ b/fs/btrfs/tests/btrfs-tests.c
+@@ -278,8 +278,7 @@ int btrfs_run_sanity_tests(void)
  		}
- 		wait_on_buffer(bh);
--		if (!buffer_uptodate(bh))
-+		if (!buffer_uptodate(bh)) {
- 			errors++;
-+			primary_failed = (i == 0) || primary_failed;
-+		}
- 
- 		/* drop our reference */
- 		brelse(bh);
-@@ -3327,6 +3331,13 @@ static int wait_dev_supers(struct btrfs_device *device, int max_mirrors)
- 		brelse(bh);
  	}
- 
-+	/* log error, force error return */
-+	if (primary_failed) {
-+		btrfs_err(device->fs_info, "error writing primary super block to device %llu",
-+			  device->devid);
-+		return -1;
-+	}
+ 	ret = btrfs_test_extent_map();
+-	if (ret)
+-		goto out;
 +
- 	return errors < i ? 0 : -1;
- }
- 
+ out:
+ 	btrfs_destroy_test_fs();
+ 	return ret;
 -- 
-2.14.1
+2.15.1
 

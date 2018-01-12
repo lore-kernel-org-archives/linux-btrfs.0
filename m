@@ -1,50 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:56239 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932812AbeALDDq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 22:03:46 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 63B66486A78B
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 11:03:41 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: correct wrong comment about magic number of index_cnt
-Date: Fri, 12 Jan 2018 11:08:02 +0800
-Message-ID: <20180112030803.28341-1-suy.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:33116 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933810AbeALO1t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Jan 2018 09:27:49 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6D769ADEC
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 14:27:48 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: remove stale reada_lock from device
+Date: Fri, 12 Jan 2018 15:25:39 +0100
+Message-Id: <20180112142539.9891-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is no function named btrfs_get_inode_index_count.
-Explanation for magic number index_cnt=2 in btrfs_new_inode() is
-actually located in btrfs_set_inode_index_count().
+We the global readahead lock in fs_info, the per-device has been unused
+since the initial commit 90519d66abbccc ("btrfs: state information for
+readahead").
 
-So replace 'btrfs_get_inode_index_count' in the comment by
-'btrfs_set_inode_index_count'.
-
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+Reported-by: Matthew Wilcox <mawilcox@microsoft.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/inode.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/volumes.h | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 37bdb78b4766..f6454719192e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6315,7 +6315,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	}
- 	/*
- 	 * index_cnt is ignored for everything but a dir,
--	 * btrfs_get_inode_index_count has an explanation for the magic
-+	 * btrfs_set_inode_index_count has an explanation for the magic
- 	 * number
- 	 */
- 	BTRFS_I(inode)->index_cnt = 2;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 15216fed918b..28c28eeadff3 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -137,7 +137,6 @@ struct btrfs_device {
+ 	struct rcu_head rcu;
+ 
+ 	/* readahead state */
+-	spinlock_t reada_lock;
+ 	atomic_t reada_in_flight;
+ 	u64 reada_next;
+ 	struct reada_zone *reada_curr_zone;
 -- 
 2.15.1
-
-
 

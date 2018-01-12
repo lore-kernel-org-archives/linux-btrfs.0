@@ -1,42 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from Chamillionaire.breakpoint.cc ([146.0.238.67]:35408 "EHLO
-        Chamillionaire.breakpoint.cc" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S964844AbeALVEo (ORCPT
+Received: from mail-qk0-f179.google.com ([209.85.220.179]:40022 "EHLO
+        mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965176AbeALVib (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jan 2018 16:04:44 -0500
-Date: Fri, 12 Jan 2018 22:04:40 +0100
-From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Subject: invalid files names, btrfs check can't repair it
-Message-ID: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
+        Fri, 12 Jan 2018 16:38:31 -0500
+Received: by mail-qk0-f179.google.com with SMTP id d18so10420482qke.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 13:38:31 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+From: "Daniel E. Shub" <daniel.e.shub@gmail.com>
+Date: Fri, 12 Jan 2018 16:38:30 -0500
+Message-ID: <CA+-0u-Yp85JieqjcVk3UkPVtF2ppgpiD27wajEvR0Q3pbf2AUg@mail.gmail.com>
+Subject: Limit on the number of btrfs snapshots?
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+A couple of years ago I asked a question on the Unix and Linux Stack
+Exchange about the limit on the number of BTRFS snapshots:
+https://unix.stackexchange.com/q/140360/22724
 
-so I had bad memory and before I realized it and removed it btrfs took some
-damage. Now I have this:
+Basically, I want to use something like snapper to take time based
+snapshots so that I can browse old versions of my data. This would be
+in addition to my current off site backup since a drive failure would
+wipe out the data and the snapshots. Is there a limit to the number of
+snapshots I can take and store? If I have a million snapshots (e.g., a
+snapshot every minute for two years) would that cause havoc, assuming
+I have enough disk space for the data, the changed data, and the meta
+data?
 
-|ls -lh crap/
-|ls: cannot access 'crap/2f3f379b2a3d7499471edb74869efe-1948311.d': No such file or directory
-|ls: cannot access 'crap/454bf066ddfbf42e0f3b77ea71c82f-878732.o': No such file or directory
-|total 0
-|-????????? ? ? ? ?            ? 2f3f379b2a3d7499471edb74869efe-1948311.d
-|-????????? ? ? ? ?            ? 454bf066ddfbf42e0f3b77ea71c82f-878732.o
+The answers there provided a link to the wiki:
+https://btrfs.wiki.kernel.org/index.php/Btrfs_design#Snapshots_and_Subvolumes
+that says: "snapshots are writable, and they can be snapshotted again
+any number of times."
 
-and in dmesg I see:
+While I don't doubt that that is technically true, another user
+suggested that the practical limit is around 100 snapshots.
 
-| BTRFS critical (device sda4): invalid dir item type: 33
-| BTRFS critical (device sda4): invalid dir item name len: 8231
+While I am not convinced that having minute-by-minute versions of my
+data for two years is helpful (how the hell is anyone going to find
+the exact minute they are looking for), if there is no cost then I
+figure why not.
 
-`btrfs check' (from v4.14.1) finds them and prints them but has no idea
-what to do with it. Would it be possible to let the check tool rename
-the offended filename to something (like its inode number) put it in
-lost+found if it has any data attached to it and otherwise simply remove
-it? Right now I can't remove that folder.
-
-Sebastian
+I guess I am asking is what is the story and where is it documented.

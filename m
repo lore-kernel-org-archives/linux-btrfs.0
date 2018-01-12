@@ -1,48 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from len.romanrm.net ([91.121.75.85]:60164 "EHLO len.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965105AbeALUhv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jan 2018 15:37:51 -0500
-Date: Sat, 13 Jan 2018 01:37:49 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: "Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs subvolume mount with different options
-Message-ID: <20180113013749.5338c057@natsu>
-In-Reply-To: <20055256.49.1515779377187.JavaMail.gkos@dynomob>
-References: <20055256.49.1515779377187.JavaMail.gkos@dynomob>
+Received: from Chamillionaire.breakpoint.cc ([146.0.238.67]:35408 "EHLO
+        Chamillionaire.breakpoint.cc" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S964844AbeALVEo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 12 Jan 2018 16:04:44 -0500
+Date: Fri, 12 Jan 2018 22:04:40 +0100
+From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Subject: invalid files names, btrfs check can't repair it
+Message-ID: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 12 Jan 2018 17:49:38 +0000 (GMT)
-"Konstantin V. Gavrilenko" <k.gavrilenko@arhont.com> wrote:
+Hi,
 
-> Hi list,
-> 
-> just wondering whether it is possible to mount two subvolumes with different mount options, i.e.
-> 
-> |
-> |- /a  defaults,compress-force=lza
+so I had bad memory and before I realized it and removed it btrfs took some
+damage. Now I have this:
 
-You can have use different compression algorithms across the filesystem
-(including none), via "btrfs properties" on directories or subvolumes. They
-are inherited down the tree.
+|ls -lh crap/
+|ls: cannot access 'crap/2f3f379b2a3d7499471edb74869efe-1948311.d': No such file or directory
+|ls: cannot access 'crap/454bf066ddfbf42e0f3b77ea71c82f-878732.o': No such file or directory
+|total 0
+|-????????? ? ? ? ?            ? 2f3f379b2a3d7499471edb74869efe-1948311.d
+|-????????? ? ? ? ?            ? 454bf066ddfbf42e0f3b77ea71c82f-878732.o
 
-$ mkdir test
-$ sudo btrfs prop set test compression zstd
-$ echo abc > test/def
-$ sudo btrfs prop get test/def compression
-compression=zstd
+and in dmesg I see:
 
-But it appears this doesn't provide a way to apply compress-force.
+| BTRFS critical (device sda4): invalid dir item type: 33
+| BTRFS critical (device sda4): invalid dir item name len: 8231
 
-> |- /b  defaults,nodatacow
+`btrfs check' (from v4.14.1) finds them and prints them but has no idea
+what to do with it. Would it be possible to let the check tool rename
+the offended filename to something (like its inode number) put it in
+lost+found if it has any data attached to it and otherwise simply remove
+it? Right now I can't remove that folder.
 
-Nodatacow can be applied to any dir/subvolume recursively, or any file (as long as it's created but not
-written yet) via chattr +C.
-
--- 
-With respect,
-Roman
+Sebastian

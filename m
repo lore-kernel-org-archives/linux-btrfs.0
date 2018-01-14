@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:55572 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751239AbeANQcy (ORCPT
+Received: from mail-qk0-f180.google.com ([209.85.220.180]:40405 "EHLO
+        mail-qk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751766AbeANQgy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 Jan 2018 11:32:54 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1ealBE-0000TV-H8
-        for linux-btrfs@vger.kernel.org; Sun, 14 Jan 2018 17:30:44 +0100
+        Sun, 14 Jan 2018 11:36:54 -0500
+Received: by mail-qk0-f180.google.com with SMTP id d18so14293285qke.7
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jan 2018 08:36:54 -0800 (PST)
+MIME-Version: 1.0
+From: evan d <forumscollective@gmail.com>
+Date: Sun, 14 Jan 2018 16:36:53 +0000
+Message-ID: <CAG__1a5by0WZ+-LiJTAY9Y3qrpJY-drDt9BuGgCZgqaUuG+mAQ@mail.gmail.com>
+Subject: Partionless Btrfs drives now return PTTYPE="PMBR"
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Hanging after frequent use of systemd-nspawn --ephemeral
-Date: Sun, 14 Jan 2018 16:30:38 +0000 (UTC)
-Message-ID: <pan$46776$62a5e0fc$bbee4809$9a4f8e9d@cox.net>
-References: <6B7B9360-41EA-4190-8C7D-9E001D186B23@gmail.com>
-        <8c9933e1-f694-a513-83ca-33fcb503b7e8@gmx.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Sun, 14 Jan 2018 10:27:40 +0800 as excerpted:
+I removed two partitionless Btrfs formatted drives from an Arch Linux
+based PC and installed them in another Linux based PC also running
+Arch.  The drives are independent of one another, each containing its
+own Btrfs filesystem.  Both machines are running recent kernels and
+the original host would be running whatever kernel was current in Arch
+on 1 Jan 2018.
 
-> Despite of that, did that really hangs?
-> Qgroup dramatically increase overhead to delete a subvolume or balance
-> the fs.
-> Maybe it's just a little slow?
+lsblk shows the two drives as partitionless as I'd expect, but
+attempting to mount them returns an error saying they're not
+recognised and btrfs filesystem show /dev/sdX also returns that the
+devices do not contain a Brtfs partition.  1 Jan 2018 was the last
+time I accessed these drives, which were mounted via the first
+machine's fstab.
 
-Same question about the "hang" here.
+blkid returns PTTYPE="PMBR" for both.
 
-Note that btrfs is optimized to make snapshot creation fast, while 
-snapshot deletion has to do more work to clean things up.  So even 
-without qgroup enabled, deletion can take a bit of time (much longer than 
-creation, which should be nearly instantaneous in human terms) if there's 
-a lot of relinks and the like to clean up.
+For the current machine:
+uname -a returns:
+Linux ryzen 4.14.13-1-ARCH #1 SMP PREEMPT Wed Jan 10 11:14:50 UTC 2018
+x86_64 GNU/Linux
 
-And qgroups makes btrfs do much more work to track that as well, so as Qu 
-says, that'll make snapshot deletion take even longer, and you probably 
-want it disabled unless you actually need the feature for something 
-you're doing.
+btrfs --version returns:
+btrfs-progs v4.14
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 
+Any ideas what could have gone wrong here?  I'm  hoping that
+reinserting them in the original machine may allow me to access the
+underlying data again, but that machine is in another country at
+present.
+
+Any help much appreciated.
+
+Thanks
+Evan

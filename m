@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f179.google.com ([209.85.128.179]:39327 "EHLO
+Received: from mail-wr0-f179.google.com ([209.85.128.179]:40084 "EHLO
         mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752127AbeAOJFJ (ORCPT
+        with ESMTP id S932533AbeAOJYt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jan 2018 04:05:09 -0500
-Received: by mail-wr0-f179.google.com with SMTP id z48so10894108wrz.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 01:05:09 -0800 (PST)
+        Mon, 15 Jan 2018 04:24:49 -0500
+Received: by mail-wr0-f179.google.com with SMTP id 100so10931010wrb.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 01:24:48 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <4897b464-7212-f92c-c6cf-6fbfd04ec30c@gmx.com>
 References: <CAJUuSvFtEG=CZPjhACCvp8hVA83xFuFpJcScx4xAj4tPkW8uCw@mail.gmail.com>
@@ -18,8 +18,8 @@ References: <CAJUuSvFtEG=CZPjhACCvp8hVA83xFuFpJcScx4xAj4tPkW8uCw@mail.gmail.com>
  <1431a38e-f7ec-3286-a468-50bce9a952da@gmx.com> <CAJUuSvGSG4nM5Cie_vwXg3p95Wfu1rRsCKft6cqvuiWpvOW=kg@mail.gmail.com>
  <4897b464-7212-f92c-c6cf-6fbfd04ec30c@gmx.com>
 From: Ilan Schwarts <ilan84@gmail.com>
-Date: Mon, 15 Jan 2018 11:05:07 +0200
-Message-ID: <CAJUuSvHdkUP_zo3r=WY2s_CGfXnANPBpJEBJkXNjHbFPn0BaPw@mail.gmail.com>
+Date: Mon, 15 Jan 2018 11:24:47 +0200
+Message-ID: <CAJUuSvH2EzQnPorkyPOrGNyCkWaumoLEf8YY4DDqK-BKf4GUqQ@mail.gmail.com>
 Subject: Re: Fwd: Fwd: Question regarding to Btrfs patchwork /2831525
 To: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Cc: Nikolay Borisov <nborisov@suse.com>,
@@ -28,33 +28,9 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu, Thank you very much for detailed response.
-
-I would like to understand something, on VFS, it is guaranteed that in
-a given filesystem, only 1 inode number will be used, it is unique.
-In btrfs, you say the inode uniqueness is per volume, each volume has
-its own inode space, How is it possible ?
-
-Thats why when I execute "stat /somepath/file" I receive fsid that
-looks like "36h/54d" but from kernel code, If I examine struct
-fs_info->fsid i get 52.
-I call this Physical/Virtual, physical is the real id - 52, and
-virtual is 36h/54d, because this what btrfs implementation returns..
-from where is that property taken ?
-
-The inode number inode->i_ino is the same from both userspace (stat
-...) and kernel code.
-
-If on the same filesystem (52), you say, same inode number can be
-used, as long as they are on different volumes - Is it possible ?
-Doesn't it break the VFS inode uniqueness ?
-Is there also a virtual/physical inode numbers ? and if so, is it
-possible to get from kernel structure ? because inode->i_ino always
-return what stat returns.. unlike fsid as i wrote above.
-
-Thanks !!
-
-
+Qu,
+Given inode, i get the fsid via: inode->i_sb->s_dev;
+this return dev_t and not u8/u16
 
 
 

@@ -1,220 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:62503 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.20]:63879 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752037AbeAOB0v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 Jan 2018 20:26:51 -0500
-Subject: Re: invalid files names, btrfs check can't repair it
-To: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-References: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
- <1471d17b-3b53-b2c3-4a84-cb6df98c375e@gmx.com>
- <20180113204114.g4jup552d5g5o5pa@breakpoint.cc>
- <b0cc58c1-af7b-e4f7-2393-4d47a66bba59@gmx.com>
- <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
+        id S1751252AbeAOBfC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 14 Jan 2018 20:35:02 -0500
+Subject: Re: Hanging after frequent use of systemd-nspawn --ephemeral
+To: Johannes Ernst <johannes.ernst@gmail.com>, linux-btrfs@vger.kernel.org
+References: <6B7B9360-41EA-4190-8C7D-9E001D186B23@gmail.com>
+ <8c9933e1-f694-a513-83ca-33fcb503b7e8@gmx.com>
+ <AA437C7B-EB91-46F7-BE01-2254A20DB75E@gmail.com>
+ <d507460e-5a91-4129-3cd2-b270ab73c8b5@gmx.com>
+ <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
-Date: Mon, 15 Jan 2018 09:26:27 +0800
+Message-ID: <618575b8-419e-3d09-add0-e42d2c0bb7b2@gmx.com>
+Date: Mon, 15 Jan 2018 09:34:56 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
+In-Reply-To: <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="b0IcZCRZLUWM2olXbPd03r70X3TNTxsB1"
+ boundary="16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---b0IcZCRZLUWM2olXbPd03r70X3TNTxsB1
-Content-Type: multipart/mixed; boundary="2YG54meZeez6XV0y9toqRsEyWBWZjP41Z";
+--16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy
+Content-Type: multipart/mixed; boundary="mOQjLeJF6ZIfn2oeb7aIAz5mjqG21GfXn";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
- Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Message-ID: <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
-Subject: Re: invalid files names, btrfs check can't repair it
-References: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
- <1471d17b-3b53-b2c3-4a84-cb6df98c375e@gmx.com>
- <20180113204114.g4jup552d5g5o5pa@breakpoint.cc>
- <b0cc58c1-af7b-e4f7-2393-4d47a66bba59@gmx.com>
- <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
-In-Reply-To: <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
+To: Johannes Ernst <johannes.ernst@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <618575b8-419e-3d09-add0-e42d2c0bb7b2@gmx.com>
+Subject: Re: Hanging after frequent use of systemd-nspawn --ephemeral
+References: <6B7B9360-41EA-4190-8C7D-9E001D186B23@gmail.com>
+ <8c9933e1-f694-a513-83ca-33fcb503b7e8@gmx.com>
+ <AA437C7B-EB91-46F7-BE01-2254A20DB75E@gmail.com>
+ <d507460e-5a91-4129-3cd2-b270ab73c8b5@gmx.com>
+ <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
+In-Reply-To: <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
 
---2YG54meZeez6XV0y9toqRsEyWBWZjP41Z
+--mOQjLeJF6ZIfn2oeb7aIAz5mjqG21GfXn
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8815=E6=97=A5 00:38, Sebastian Andrzej Siewior w=
-rote:
-> On 2018-01-14 08:36:41 [+0800], Qu Wenruo wrote:
->> Still needs more. (and maybe even more depending on the output)
+On 2018=E5=B9=B401=E6=9C=8815=E6=97=A5 08:58, Johannes Ernst wrote:
+>>> INFO: task systemd-journal:20876 blocked for more than 120 seconds.
+>>> [ 5037.962603]       Tainted: G         C O    4.14.9-1-ARCH #1
+>>> [ 5037.962609] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" dis=
+ables this message.
+>>> [ 5037.962616] systemd-journal D    0 20876  20860 0x00000100
+>>> [ 5037.962622] Call Trace:
+>>> [ 5037.962635]  ? __schedule+0x290/0x890
+>>> [ 5037.962640]  ? __slab_free+0x14e/0x300
+>>> [ 5037.962645]  ? _copy_to_iter+0x8f/0x3d0
+>>> [ 5037.962651]  schedule+0x2f/0x90
+>>> [ 5037.962704]  btrfs_tree_read_lock+0xb6/0x100 [btrfs]
 >>
->> The original mode doesn't report error clear enough, so it would help =
-if
->> --mode=3Dlowmem can be used.
+>> Still some tree write is blocking all incoming read.
 >>
->> # btrfs check --mode=3Dlowmem /dev/sdb4
->=20
-> ~# btrfs check --mode=3Dlowmem /dev/sdb4
-> Checking filesystem on /dev/sdb4
-> UUID: b3bfb56e-d445-4335-93f0-c1fb2d1f6df1
-> checking extents
-> checking free space cache
-> Wanted bytes 4096, found 8192 for off 159178047488
-> Wanted bytes 1073725440, found 8192 for off 159178047488
-> cache appears valid but isn't 159178031104
-> ERROR: errors found in free space cache
-
-A new bug is exposed for lowmem mode.
-It doesn't check fs tree if space cache has any problem.
-
-> found 63691210752 bytes used, error(s) found
-> total csum bytes: 61339388
-> total tree bytes: 860540928
-> total fs tree bytes: 688816128
-> total extent tree bytes: 84549632
-> btree space waste bytes: 224428280
-> file data blocks allocated: 62890483712
->  referenced 62828957696
->=20
->> And the tree dump of the affected dir inode would help too:
+>> BTW, did your tests include any send and relocation operations?
 >>
->> # btrfs inspect dump-tree /dev/sdb4 | grep -C 20 \(57648595
+>> IIRC there is a bug that makes send and relocation (I'm not sure thoug=
+h)
+>> will cause similar problem.
 >=20
-> ~# btrfs inspect dump-tree /dev/sdb4 | grep -C 20 \(57648595
->                 generation 88831 type 1 (regular)
->                 extent data disk byte 193705541632 nr 134217728
->                 extent data offset 0 nr 134217728 ram 134217728
->                 extent compression 0 (none)
->         item 4 key (57022249 EXTENT_DATA 402653184) itemoff 3769 itemsi=
-ze 53
->                 generation 88831 type 1 (regular)
->                 extent data disk byte 190035439616 nr 60600320
->                 extent data offset 0 nr 60600320 ram 60600320
->                 extent compression 0 (none)
->         item 5 key (57643659 INODE_ITEM 0) itemoff 3609 itemsize 160
->                 generation 89044 transid 89423 size 2 nbytes 0
->                 block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev=
- 0
->                 sequence 0 flags 0x150be(none)
->                 atime 1513266994.264310920 (2017-12-14 16:56:34)
->                 ctime 1513868332.369178014 (2017-12-21 15:58:52)
->                 mtime 1513868332.369178014 (2017-12-21 15:58:52)
->                 otime 1513266994.264310920 (2017-12-14 16:56:34)
->         item 6 key (57643659 INODE_REF 58477961) itemoff 3598 itemsize =
-11
->                 index 6 namelen 1 name: 4
->         item 7 key (57643659 DIR_ITEM 4189400016) itemoff 3567 itemsize=
- 31
->                 location key (57648595 INODE_ITEM 0) type DIR
->                 transid 89045 data_len 0 name_len 1
->                 name: d
->         item 8 key (57643659 DIR_INDEX 113) itemoff 3536 itemsize 31
->                 location key (57648595 INODE_ITEM 0) type DIR
->                 transid 89045 data_len 0 name_len 1
->                 name: d
->         item 9 key (57643872 INODE_ITEM 0) itemoff 3376 itemsize 160
->                 generation 89044 transid 89699 size 0 nbytes 0
->                 block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev=
- 0
->                 sequence 0 flags 0x603b3(none)
->                 atime 1513266995.540343055 (2017-12-14 16:56:35)
->                 ctime 1515602448.66422211 (2018-01-10 17:40:48)
->                 mtime 1515602448.66422211 (2018-01-10 17:40:48)
->                 otime 1513266995.540343055 (2017-12-14 16:56:35)
->         item 10 key (57643872 INODE_REF 682) itemoff 3363 itemsize 13
->                 index 58 namelen 3 name: tmp
->         item 11 key (57648595 INODE_ITEM 0) itemoff 3203 itemsize 160
->                 generation 89045 transid 89423 size 8350 nbytes 0
->                 block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev=
- 0
->                 sequence 0 flags 0xc90(none)
->                 atime 1513267009.164686143 (2017-12-14 16:56:49)
->                 ctime 1513868329.753150507 (2017-12-21 15:58:49)
->                 mtime 1513868329.753150507 (2017-12-21 15:58:49)
->                 otime 1513267009.164686143 (2017-12-14 16:56:49)
->         item 12 key (57648595 INODE_REF 57643659) itemoff 3192 itemsize=
- 11
->                 index 113 namelen 1 name: d
->         item 13 key (57648595 DIR_ITEM 3331247447) itemoff 3123 itemsiz=
-e 69
->                 location key (58472210 INODE_ITEM 0) type FILE
->                 transid 89418 data_len 0 name_len 8231
->                 name: 454bf066ddfbf42e0f3b77ea71c82f-878732.oq
->         item 14 key (57648595 DIR_ITEM 3363354030) itemoff 3053 itemsiz=
-e 70
->                 location key (57923894 INODE_ITEM 0) type DIR_ITEM.33
->                 transid 89142 data_len 0 name_len 40
->                 name: 2f3f379b2a3d7499471edb74869efe-1948311.d
->         item 15 key (57648595 DIR_INDEX 435) itemoff 2983 itemsize 70
->                 location key (57923894 INODE_ITEM 0) type FILE
+> No. I=E2=80=99m doing nothing btrfs-specific at all, it=E2=80=99s just =
+whatever systemd-nspawn =E2=80=94ephemeral does.
 
-Please run the following command too:
+So, only systemd-nspwan --ephemeral, and nothing else at all?
 
-# btrfs inspect dump-tree <device> | grep -C20 \(57923894
-
->                 transid 89142 data_len 0 name_len 40
->                 name: 2f3f379b2a3d7499471edb74869efe-1948311.d
->         item 16 key (57648595 DIR_INDEX 1137) itemoff 2914 itemsize 69
->                 location key (58472210 INODE_ITEM 0) type FILE
-
-And this command too:
-
-# btrfs inspect dump-tree <device> | grep -C20 \(58472210
+Even nothing happened inside the container?
 
 Thanks,
 Qu
 
->                 transid 89418 data_len 0 name_len 39
->                 name: 454bf066ddfbf42e0f3b77ea71c82f-878732.o
->         item 17 key (57923894 INODE_ITEM 0) itemoff 2754 itemsize 160
->                 generation 89142 transid 89142 size 36092 nbytes 36864
->                 block group 0 mode 100644 links 1 uid 1000 gid 1000 rde=
-v 0
->                 sequence 0 flags 0x91(none)
->                 atime 1513278413.460486168 (2017-12-14 20:06:53)
->                 ctime 1513278413.460486168 (2017-12-14 20:06:53)
->                 mtime 1513278413.460486168 (2017-12-14 20:06:53)
->                 otime 1513278413.460486168 (2017-12-14 20:06:53)
->         item 18 key (57923894 INODE_REF 57648595) itemoff 2704 itemsize=
- 50
->                 index 435 namelen 40 name: 2f3f379b2a3d7499471edb74869e=
-fe-1948311.d
->         item 19 key (57923894 EXTENT_DATA 0) itemoff 2651 itemsize 53
->                 generation 89142 type 1 (regular)
->                 extent data disk byte 123290755072 nr 36864
->                 extent data offset 0 nr 36864 ram 36864
->                 extent compression 0 (none)
->         item 20 key (58191388 INODE_ITEM 0) itemoff 2491 itemsize 160
->                 generation 89259 transid 89259 size 395280 nbytes 39731=
-2
->> Thanks,
->> Qu
 >=20
-> Sebastian
+> Cheers,
+>=20
+>=20
+>=20
+> Johannes.--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >=20
 
 
---2YG54meZeez6XV0y9toqRsEyWBWZjP41Z--
+--mOQjLeJF6ZIfn2oeb7aIAz5mjqG21GfXn--
 
---b0IcZCRZLUWM2olXbPd03r70X3TNTxsB1
+--16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpcA0MXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjvFQf7Bh/Fe1U6e+9E3blAfiKYT4pI
-JwFMMv0dXKQOaoGZKCdcLmD7091mfMQ91BnIuQJ4o08nZzLmsiL7XlvqHPyvZoN9
-5cCAm6r13jf0zpi97aFxxIgN94qRsUvVHxcgzD8sg3pkDRtvHwNeI+bHsVHM+yMH
-fVjVj4my7+uj3bqvZOZXgwEq9ZbAlC9Go5g1SFGFT8vytQojMzE0eAplU0xw8F+1
-rmnmHP/CR57aroLjR90p8u0UXcTNvSBZrWwgO7dJy1bc05HEP22AtkcWG3Mluxt1
-mELhEBzLn8735fY+iHrQ6tVHau9c0SdcMAJ64y62DQ3yE2cquzMB/LQt+27L4A==
-=LzRq
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpcBUAXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjX/Qf+KHc7dkZOKm6ZOYfZfWomVlOT
+sfYfMml7Ydb5TVYXrFKkQxt/mEYuRMy3TzQNs0kKVJyMToPcXwKRAtfLcd15k2u2
+SRFVCjtCdNKrufQruqf/ouHSs48tq+nAejvWBDnqfNl3c/AXUc7f81kKUocT4WiY
+/kx9so9oHetABJFm+Q9k3j/2CQnncid5+Zvh2b9pB3HNZ20Bh7CW6LaaBnDa3SVF
+2uVhp9UEuJw0Wsis5/p39YLpDdA8ZBEBVGf5zuskz0Dic/X1OrE59/ibv9/fzaMx
+uK0+a5lzCKFlyOZQT+OZsNhtohUAm4mwBhDq83IsZ8Udk4KmkReIBWVZAvPG3w==
+=uO59
 -----END PGP SIGNATURE-----
 
---b0IcZCRZLUWM2olXbPd03r70X3TNTxsB1--
+--16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy--

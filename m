@@ -1,58 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47958 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44832 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753054AbeASXey (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jan 2018 18:34:54 -0500
-Date: Sat, 20 Jan 2018 00:32:43 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org, jeffm@suse.com
-Subject: Re: [PATCH v2 09/10] Btrfs: add tracepoint for em's EEXIST case
-Message-ID: <20180119233243.GC15713@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180105195117.5131-1-bo.li.liu@oracle.com>
- <20180105195117.5131-10-bo.li.liu@oracle.com>
- <20180119181539.GA15713@twin.jikos.cz>
- <f263a361-1e58-0bb0-9be4-c6c362f78e73@suse.com>
+        id S1755018AbeAOJRf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Jan 2018 04:17:35 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 02910ACF6
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 09:17:34 +0000 (UTC)
+Subject: Re: [PATCH 0/7] Misc btrfs-progs cleanups/fixes
+To: linux-btrfs@vger.kernel.org
+References: <1512463189-24724-1-git-send-email-nborisov@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <e5d7b12d-d669-0f7d-caf6-2b2b8340f01d@suse.com>
+Date: Mon, 15 Jan 2018 11:17:33 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f263a361-1e58-0bb0-9be4-c6c362f78e73@suse.com>
+In-Reply-To: <1512463189-24724-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 19, 2018 at 08:22:36PM +0200, Nikolay Borisov wrote:
+
+
+On  5.12.2017 10:39, Nikolay Borisov wrote:
+> Here is a series doing some minor code cleanups, hopefully making the code 
+> more idiomatic and easier to follow. They should be pretty low-risk and 
+> introduce no functional changes (patches 1-5). 
 > 
+> The the last 2 patches deal with a regression of btrfs rescue super-recovery. 
+> Turns out this was broken for sometime. Patch 6 introduces a regression test
+> which hopefully will prevent further occurences and patch 7 fixes the actual 
+> bug. 
 > 
-> On 19.01.2018 20:15, David Sterba wrote:
-> > On Fri, Jan 05, 2018 at 12:51:16PM -0700, Liu Bo wrote:
-> >> This is adding a tracepoint 'btrfs_handle_em_exist' to help debug the
-> >> subtle bugs around merge_extent_mapping.
-> >>
-> >> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > 
-> > Nikolay has some concernas about adding the tracepoint, so I'll leave
-> > this patch out of the series for now as we should decide how to proceed.
-> > 
-> > Thacepoints are considered an ABI by some and not ABI by others. I think
-> > it's a good addition to the debugging aids that also may turn out to be
-> > useful for evaluating performance later.
-> > 
-> > At minimum we could add some prefix/suffix to the debugging tracepoint
-> > name, so we can let developers add what they need right away.
-> My concern specifically has to do with the fact that if tracepoints are
-> considere ABI then whatever decision we make now will be cast in stone
+> Nikolay Borisov (7):
+>   btrfs-progs: Explictly state test.sh must be executable
+>   btrfs-progs: Factor out common print_device_info
+>   btrfs-progs: Remove recover_get_good_super
+>   btrfs-progs: Use list_for_each_entry in write_dev_all_supers
+>   btrfs-progs: Document logic of btrfs_read_dev_super
+>   btrfs-progs: Add test for super block recovery
+>   btrfs-progs: Fix super-recovery
+> 
+>  chunk-recover.c                                  | 18 -------
+>  disk-io.c                                        | 21 ++++++--
+>  super-recover.c                                  | 28 ++---------
+>  tests/README.md                                  |  4 +-
+>  tests/fsck-tests/029-superblock-recovery/test.sh | 64 ++++++++++++++++++++++++
+>  utils.c                                          | 18 +++++++
+>  utils.h                                          |  3 ++
+>  7 files changed, 110 insertions(+), 46 deletions(-)
+>  create mode 100755 tests/fsck-tests/029-superblock-recovery/test.sh
 
-Right, same as with the ioctls, we take a great care there and still do
-mistakes that get discovered months after.
 
-> and if we juggle the code around we will still have to retain the format
-> of the tracepoint. If, OTOH we are able to remove and change the
-> tracepoint as we see fit - then it's okay. Otherwise we risk polluting
-> the code
+Gentle ping since I'd like to get this into next btrfs-progs version,
+especially the  "fix super-recovery" patch.
 
-Understood and agreed.
-
-Jeff raised a question if there are namespaces in the tracepoints.
-That's an interesting point and would be more systematic than inventing
-our own naming scheme.
+> 

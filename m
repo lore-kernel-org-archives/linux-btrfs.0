@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:55793 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:59378 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933218AbeAOJ7x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jan 2018 04:59:53 -0500
+        id S932413AbeAOKBw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Jan 2018 05:01:52 -0500
 Subject: Re: Fwd: Fwd: Question regarding to Btrfs patchwork /2831525
 To: Ilan Schwarts <ilan84@gmail.com>
 Cc: Nikolay Borisov <nborisov@suse.com>,
@@ -20,27 +20,27 @@ References: <CAJUuSvFtEG=CZPjhACCvp8hVA83xFuFpJcScx4xAj4tPkW8uCw@mail.gmail.com>
  <1431a38e-f7ec-3286-a468-50bce9a952da@gmx.com>
  <CAJUuSvGSG4nM5Cie_vwXg3p95Wfu1rRsCKft6cqvuiWpvOW=kg@mail.gmail.com>
  <4897b464-7212-f92c-c6cf-6fbfd04ec30c@gmx.com>
- <CAJUuSvHdkUP_zo3r=WY2s_CGfXnANPBpJEBJkXNjHbFPn0BaPw@mail.gmail.com>
+ <CAJUuSvH2EzQnPorkyPOrGNyCkWaumoLEf8YY4DDqK-BKf4GUqQ@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <50174b92-74c3-7c6f-844f-4bdb4f93d3ff@gmx.com>
-Date: Mon, 15 Jan 2018 17:59:40 +0800
+Message-ID: <d5a48369-1495-d94d-01e1-81e68048a4f1@gmx.com>
+Date: Mon, 15 Jan 2018 18:01:10 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJUuSvHdkUP_zo3r=WY2s_CGfXnANPBpJEBJkXNjHbFPn0BaPw@mail.gmail.com>
+In-Reply-To: <CAJUuSvH2EzQnPorkyPOrGNyCkWaumoLEf8YY4DDqK-BKf4GUqQ@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="0lWESUUXaxam8gZIUS1p8LU6aFtXvDDhZ"
+ boundary="bUoeHEspY5zgygRmVXnw5xg8S8YgqfkoM"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---0lWESUUXaxam8gZIUS1p8LU6aFtXvDDhZ
-Content-Type: multipart/mixed; boundary="5WabxqOPeAO49UIeFxTowTAvaPvpuVk3t";
+--bUoeHEspY5zgygRmVXnw5xg8S8YgqfkoM
+Content-Type: multipart/mixed; boundary="oBiyXz7xGgoPhcD7sW0vWVrVflVpkGFfW";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Ilan Schwarts <ilan84@gmail.com>
 Cc: Nikolay Borisov <nborisov@suse.com>,
  linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <50174b92-74c3-7c6f-844f-4bdb4f93d3ff@gmx.com>
+Message-ID: <d5a48369-1495-d94d-01e1-81e68048a4f1@gmx.com>
 Subject: Re: Fwd: Fwd: Question regarding to Btrfs patchwork /2831525
 References: <CAJUuSvFtEG=CZPjhACCvp8hVA83xFuFpJcScx4xAj4tPkW8uCw@mail.gmail.com>
  <CAJUuSvHo6N+esmjX8+Ly+kV+Nm1bUB=f85Mv=_xoyiLaUFA-ug@mail.gmail.com>
@@ -55,132 +55,28 @@ References: <CAJUuSvFtEG=CZPjhACCvp8hVA83xFuFpJcScx4xAj4tPkW8uCw@mail.gmail.com>
  <1431a38e-f7ec-3286-a468-50bce9a952da@gmx.com>
  <CAJUuSvGSG4nM5Cie_vwXg3p95Wfu1rRsCKft6cqvuiWpvOW=kg@mail.gmail.com>
  <4897b464-7212-f92c-c6cf-6fbfd04ec30c@gmx.com>
- <CAJUuSvHdkUP_zo3r=WY2s_CGfXnANPBpJEBJkXNjHbFPn0BaPw@mail.gmail.com>
-In-Reply-To: <CAJUuSvHdkUP_zo3r=WY2s_CGfXnANPBpJEBJkXNjHbFPn0BaPw@mail.gmail.com>
+ <CAJUuSvH2EzQnPorkyPOrGNyCkWaumoLEf8YY4DDqK-BKf4GUqQ@mail.gmail.com>
+In-Reply-To: <CAJUuSvH2EzQnPorkyPOrGNyCkWaumoLEf8YY4DDqK-BKf4GUqQ@mail.gmail.com>
 
---5WabxqOPeAO49UIeFxTowTAvaPvpuVk3t
+--oBiyXz7xGgoPhcD7sW0vWVrVflVpkGFfW
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8815=E6=97=A5 17:05, Ilan Schwarts wrote:
-> Qu, Thank you very much for detailed response.
->=20
-> I would like to understand something, on VFS, it is guaranteed that in
-> a given filesystem, only 1 inode number will be used, it is unique.> In=
- btrfs, you say the inode uniqueness is per volume, each volume has
-> its own inode space, How is it possible ?
+On 2018=E5=B9=B401=E6=9C=8815=E6=97=A5 17:24, Ilan Schwarts wrote:
+> Qu,
+> Given inode, i get the fsid via: inode->i_sb->s_dev;
+> this return dev_t and not u8/u16
 
+That's just a device number.
 
-Not 100% sure on how VFS should handle an inode, but since each
-filesystem has its own interfaces to handle inode allocation/drop/evict
-and etc, I don't believe VFS will be so stupid to just use a u64 inode
-number to distinguish different inodes (if VFS really needs to).
-
-And since each inode is allocated by implementing fs, it's completely
-fine for two VFS inodes have same inode number.
-But in fact such two inodes will still be different as their fs-specific
-inode structures are still different.
-
->=20
-> Thats why when I execute "stat /somepath/file" I receive fsid that
-> looks like "36h/54d" but from kernel code, If I examine struct
-> fs_info->fsid i get 52.
-
-That's not FSID!!
-
-That's device!
-
-Define what you really need first.
-
-For FSID, that should be something in lsblk output like:
-=E2=94=9C=E2=94=80nvme0n1p1     vfat           5188-EF6C                 =
-   /boot
-  =E2=94=9C=E2=94=80system-root xfs            07179caf-b406-4357-8cd8-32=
-68c6238fb6   /
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                               This is FSID! ID to identify a fs.
-
-And each fs can have their own FSID schema, just as you can see, FAT32
-FSID is only 4 bytes, while XFS has 16 bytes FSID.
-
-So there is no generic way to get a fsid.
-
-And the "false" fsid is just device, just like stat command shows:
-stat  /mnt/btrfs/
-  File: /mnt/btrfs/
-  Size: 6         	Blocks: 0          IO Block: 4096   directory
-Device: fe00h/65024d	Inode: 75732       Links: 2
-^^^^^^
-
-And for btrfs, I'm not pretty sure if the device of an inode has any
-real meaning.
-
-> I call this Physical/Virtual, physical is the real id - 52, and
-> virtual is 36h/54d, because this what btrfs implementation returns..
-> from where is that property taken ?
-
-Don't call it, check all man pages of stat first.
-
-And I really don't understand how you get the wrong understanding of fsid=
-=2E
-There is even no string "fsid" in include/linux/fs.h.
-
->=20
-> The inode number inode->i_ino is the same from both userspace (stat
-> ...) and kernel code.
->=20
-> If on the same filesystem (52)
-
-Check the correct man pages.
-That 52 is your major and minor block device number of the device for
-the containing fs.
-
->, you say, same inode number can be
-> used, as long as they are on different volumes - Is it possible ?
-
-So in short, yet.
-
-> Doesn't it break the VFS inode uniqueness ?
-
-No. VFS inode is just part of fs-specific inode structure.
-In btrfs' case, VFS inode is just btrfs_inode->vfs_inode.
-
-So even vfs_inode have same inode number, they are still different inodes=
-=2E
-
-> Is there also a virtual/physical inode numbers ?
-
-That's device. And yes it's possible to get that device number.
-But almost meaningless for btrfs, since btrfs can be across several disks=
-=2E
-
-(This needs to understand btrfs chunk mapping first)
-
-> and if so, is it
-> possible to get from kernel structure ?
-
-For what reason? It's not that useful in btrfs.
-
-> because inode->i_ino always
-> return what stat returns.. unlike fsid as i wrote above.
-
-I think you should build a correct understanding of what an
-inode/filesystem is.
-
-And most importantly, read newer kernel source instead of some ancient
-random vendor specified kernel source.
+Not really useful in btrfs, since btrfs is a multi-device filesystem.
 
 Thanks,
 Qu
 
->=20
-> Thanks !!
->=20
->=20
->=20
 >=20
 >=20
 > On Sun, Jan 14, 2018 at 12:44 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
@@ -396,23 +292,23 @@ html
 >=20
 
 
---5WabxqOPeAO49UIeFxTowTAvaPvpuVk3t--
+--oBiyXz7xGgoPhcD7sW0vWVrVflVpkGFfW--
 
---0lWESUUXaxam8gZIUS1p8LU6aFtXvDDhZ
+--bUoeHEspY5zgygRmVXnw5xg8S8YgqfkoM
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpce4wXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgr5Qf/Z5X68iwTuEqCmUGjKadOk6EG
-xr6TNmQKetohLnNyT2+hF9aATc1AnsF9tf6ibY0TCZHU2s0t5BzqDOiv2o4u/njg
-s8OecvUOWIrQrS8IKmvykvbi7keywMctcY4ZNEC4w/0r/D+o/Z3b10LF3qEEFW/Z
-IhIdK2JGuH8dpyVLA3QKN2b4sVtR6T781vKziXxTwJiPQNbz0WJwdnDqSJ5bjh/v
-4sKSWeq47SdMOKDxiNy32+Sf7ZYz/M51SuZ2N2v0Rts2RbtpLZ6wdulh7GN5/Lqr
-mDjKCeTLKRCi9uhKiJLaIZDD9GuBPGI5Gz1F2Xt1Chy1UOcZKIvY1R/PcW5D+g==
-=7PeO
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpce+YXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjjRAf/VC+CzuBCskVlV2r3YcWdJ4+2
+E1seM5yv3hwyL5GYpgv5ytfTWbM7nL0adA/C1CvPcOURvRjR0qnyb5Am/A+O4J8U
+qmsa2B+UUt2Bz7R0pNCJz4t3wr7h6ryVMsAOOw/sj8u+qbVDHmBIaRiXhi0GIFiU
+9/mrqa7cVSnh94YnljWFaWgq8pcXzpvUwB5FxGFFYuXgxoLPsTCjlkNldiC8QXNQ
+hHmGJ8VcAaC7ut67+Gjvgp46rz3nNKcJtdtKmzuv9G3BCmU6qTJPVjnrNCWPL0SP
+XTb36vdzll5P/BfFclhzsGFpRD0Q1Tk4ApQoGLf4QWkyt8HyreYic+S5wgUlVw==
+=cgMS
 -----END PGP SIGNATURE-----
 
---0lWESUUXaxam8gZIUS1p8LU6aFtXvDDhZ--
+--bUoeHEspY5zgygRmVXnw5xg8S8YgqfkoM--

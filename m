@@ -1,56 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38708 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38166 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965247AbeAORXG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jan 2018 12:23:06 -0500
-Date: Mon, 15 Jan 2018 18:20:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Eryu Guan <eguan@redhat.com>
-Cc: Liu Bo <bo.li.liu@oracle.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: common/rc: fix device still mounted error with
- SCRATCH_DEV_POOL
-Message-ID: <20180115172056.GD13726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180113010459.24321-1-bo.li.liu@oracle.com>
- <20180115062228.GA3102@eguan.usersys.redhat.com>
+        id S966342AbeAORQ6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 15 Jan 2018 12:16:58 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 00ACAAD8B
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 17:16:57 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Remove btrfs_inode::delayed_iput_count
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1516019494-24210-1-git-send-email-nborisov@suse.com>
+From: Edmund Nadolski <enadolski@suse.de>
+Message-ID: <3188dc79-0fc7-9fc9-b5e9-bc5c2f55d1af@suse.de>
+Date: Mon, 15 Jan 2018 10:16:54 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180115062228.GA3102@eguan.usersys.redhat.com>
+In-Reply-To: <1516019494-24210-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 15, 2018 at 02:22:28PM +0800, Eryu Guan wrote:
-> On Fri, Jan 12, 2018 at 06:04:59PM -0700, Liu Bo wrote:
-> > One of btrfs tests, btrfs/011, uses SCRATCH_DEV_POOL and puts a non-SCRATCH_DEV
-> > device as the first one when doing mkfs, and this makes
-> > _require_scratch{_nocheck} fail to umount $SCRATCH_MNT since it checks mount
-> > point with SCRATCH_DEV only, and for sure it finds nothing to umount and the
-> > following tests complain about 'device still mounted' alike errors.
-> > 
-> > Introduce a helper to address this special case where both btrfs and scratch
-> > dev pool are in use.
-> > 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Hmm, I didn't see this problem, I ran btrfs/011 then another tests that
-> uses $SCRATCH_DEV, and the second test ran fine too. Can you please
-> provide more details?
-> 
-> Anyway, I think we should fix btrfs/011 to either not use $SCRATCH_DEV
-> in replace operations (AFAIK, other btrfs replace tests do this) or
-> umount all devices before exit. And I noticed btrfs/011 does umount
-> $SCRATCH_MNT at the end of workout(), so usually all should be fine
-> (perhaps it would leave a device mounted if interrupted in the middle of
-> test run, because _cleanup() doesn't do umount).
 
-In my case I saw lots of test failures (btrfs/ 012 068 071 074 116 136
-138 152 154 155 ...), some of them repeatedly but not reliably. This
-could have been triggered by a patch in my testing branch, but I can't
-tell for sure due to the inaccurate fstest checks. The common problem
-was that the scratch device appeared as mounted.
 
-We discussed that with Bo, I was suspecting some of our changes that
-could theoretically leave some data in flight after umount. Bo found the
-potential problems in fstests so I'll redo all the testing again with
-updated fstests.
+On 01/15/2018 05:31 AM, Nikolay Borisov wrote:
+> delayed_iput_count wa supposed to be used to implement, well, delayed
+> iput. The idea is that we keep accumulating the number of iputs we do
+> until eventually the inode is deleted. Turns out we never really
+> switched the delayed_iput_count from 0 to 1, hence all conditional
+> code relying on the value of that member being different than 0 was
+> never executed. This, as it turns out, didn't cause any problem due
+> to the simple fact that the generic inode's i_count member was always
+> used to count the number of iputs. So let's just remove the unused
+> member and all unused code. This patch essentially provides no
+> functional changes.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+
+Since the 8089fe62c6 changelog mentions the need for a count, it might
+be nice to include a brief code comment about the i_count effect.
+
+Reviewed-by: Edmund Nadolski <enadolski@suse.com>
+
+
+> ---
+>  fs/btrfs/btrfs_inode.h |  1 -
+>  fs/btrfs/inode.c       | 17 +++--------------
+>  2 files changed, 3 insertions(+), 15 deletions(-)
+> 
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 63f0ccc92a71..f527e99c9f8d 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -195,7 +195,6 @@ struct btrfs_inode {
+>  
+>  	/* Hook into fs_info->delayed_iputs */
+>  	struct list_head delayed_iput;
+> -	long delayed_iput_count;
+>  
+>  	/*
+>  	 * To avoid races between lockless (i_mutex not held) direct IO writes
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 029399593049..2225f613516c 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3252,12 +3252,8 @@ void btrfs_add_delayed_iput(struct inode *inode)
+>  		return;
+>  
+>  	spin_lock(&fs_info->delayed_iput_lock);
+> -	if (binode->delayed_iput_count == 0) {
+> -		ASSERT(list_empty(&binode->delayed_iput));
+> -		list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
+> -	} else {
+> -		binode->delayed_iput_count++;
+> -	}
+> +	ASSERT(list_empty(&binode->delayed_iput));
+> +	list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
+>  	spin_unlock(&fs_info->delayed_iput_lock);
+>  }
+>  
+> @@ -3270,13 +3266,7 @@ void btrfs_run_delayed_iputs(struct btrfs_fs_info *fs_info)
+>  
+>  		inode = list_first_entry(&fs_info->delayed_iputs,
+>  				struct btrfs_inode, delayed_iput);
+> -		if (inode->delayed_iput_count) {
+> -			inode->delayed_iput_count--;
+> -			list_move_tail(&inode->delayed_iput,
+> -					&fs_info->delayed_iputs);
+> -		} else {
+> -			list_del_init(&inode->delayed_iput);
+> -		}
+> +		list_del_init(&inode->delayed_iput);
+>  		spin_unlock(&fs_info->delayed_iput_lock);
+>  		iput(&inode->vfs_inode);
+>  		spin_lock(&fs_info->delayed_iput_lock);
+> @@ -9424,7 +9414,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+>  	ei->dir_index = 0;
+>  	ei->last_unlink_trans = 0;
+>  	ei->last_log_commit = 0;
+> -	ei->delayed_iput_count = 0;
+>  
+>  	spin_lock_init(&ei->lock);
+>  	ei->outstanding_extents = 0;
+> 

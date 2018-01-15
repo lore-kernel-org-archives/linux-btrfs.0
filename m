@@ -1,209 +1,245 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from Chamillionaire.breakpoint.cc ([146.0.238.67]:40044 "EHLO
-        Chamillionaire.breakpoint.cc" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932231AbeAOJAy (ORCPT
+Received: from mail-wr0-f179.google.com ([209.85.128.179]:39327 "EHLO
+        mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752127AbeAOJFJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jan 2018 04:00:54 -0500
-Date: Mon, 15 Jan 2018 10:00:50 +0100
-From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Subject: Re: invalid files names, btrfs check can't repair it
-Message-ID: <20180115090049.6tcnoadsam7adsea@breakpoint.cc>
-References: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
- <1471d17b-3b53-b2c3-4a84-cb6df98c375e@gmx.com>
- <20180113204114.g4jup552d5g5o5pa@breakpoint.cc>
- <b0cc58c1-af7b-e4f7-2393-4d47a66bba59@gmx.com>
- <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
- <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
+        Mon, 15 Jan 2018 04:05:09 -0500
+Received: by mail-wr0-f179.google.com with SMTP id z48so10894108wrz.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 01:05:09 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
+In-Reply-To: <4897b464-7212-f92c-c6cf-6fbfd04ec30c@gmx.com>
+References: <CAJUuSvFtEG=CZPjhACCvp8hVA83xFuFpJcScx4xAj4tPkW8uCw@mail.gmail.com>
+ <CAJUuSvHo6N+esmjX8+Ly+kV+Nm1bUB=f85Mv=_xoyiLaUFA-ug@mail.gmail.com>
+ <20170301180817.GJ4662@suse.cz> <CAJUuSvHpP-GV50P9dDJxX-WyzqtoHZLiuOVdLTMvR8k9EL_08w@mail.gmail.com>
+ <CAJUuSvFUFnxuoXDE0+ykTXYN4B4GOWps7rAYAiHom6NKMX2nFA@mail.gmail.com>
+ <e9ccb880-dfb3-aba6-d05a-869c53ec69d8@gmx.com> <CAJUuSvFCNmCiXwPdswsBdofs2UmtuTJA-xTnhvPKwu6OT9+9Zw@mail.gmail.com>
+ <60b03797-ff8b-0e51-f72c-66e0ada596b7@suse.com> <CAJUuSvGcx3oMMmj=goXurrMRsYpmxjSA8aPmGvrgMTjYbSGz+A@mail.gmail.com>
+ <CAJUuSvF51_ZTpQk7QjFC5_o=y5DLAn--4=Kmyy3ei-A0DQuRjQ@mail.gmail.com>
+ <1431a38e-f7ec-3286-a468-50bce9a952da@gmx.com> <CAJUuSvGSG4nM5Cie_vwXg3p95Wfu1rRsCKft6cqvuiWpvOW=kg@mail.gmail.com>
+ <4897b464-7212-f92c-c6cf-6fbfd04ec30c@gmx.com>
+From: Ilan Schwarts <ilan84@gmail.com>
+Date: Mon, 15 Jan 2018 11:05:07 +0200
+Message-ID: <CAJUuSvHdkUP_zo3r=WY2s_CGfXnANPBpJEBJkXNjHbFPn0BaPw@mail.gmail.com>
+Subject: Re: Fwd: Fwd: Question regarding to Btrfs patchwork /2831525
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-01-15 09:26:27 [+0800], Qu Wenruo wrote:
-> Please run the following command too:
-> 
-> # btrfs inspect dump-tree <device> | grep -C20 \(57923894
+Qu, Thank you very much for detailed response.
 
-~# btrfs inspect dump-tree /dev/sdb4 | grep -C20 \(57923894
-                ctime 1515602448.66422211 (2018-01-10 17:40:48)
-                mtime 1515602448.66422211 (2018-01-10 17:40:48)
-                otime 1513266995.540343055 (2017-12-14 16:56:35)
-        item 10 key (57643872 INODE_REF 682) itemoff 3363 itemsize 13
-                index 58 namelen 3 name: tmp
-        item 11 key (57648595 INODE_ITEM 0) itemoff 3203 itemsize 160
-                generation 89045 transid 89423 size 8350 nbytes 0
-                block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0xc90(none)
-                atime 1513267009.164686143 (2017-12-14 16:56:49)
-                ctime 1513868329.753150507 (2017-12-21 15:58:49)
-                mtime 1513868329.753150507 (2017-12-21 15:58:49)
-                otime 1513267009.164686143 (2017-12-14 16:56:49)
-        item 12 key (57648595 INODE_REF 57643659) itemoff 3192 itemsize 11
-                index 113 namelen 1 name: d
-        item 13 key (57648595 DIR_ITEM 3331247447) itemoff 3123 itemsize 69
-                location key (58472210 INODE_ITEM 0) type FILE
-                transid 89418 data_len 0 name_len 8231
-                name: 454bf066ddfbf42e0f3b77ea71c82f-878732.oq
-        item 14 key (57648595 DIR_ITEM 3363354030) itemoff 3053 itemsize 70
-                location key (57923894 INODE_ITEM 0) type DIR_ITEM.33
-                transid 89142 data_len 0 name_len 40
-                name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-        item 15 key (57648595 DIR_INDEX 435) itemoff 2983 itemsize 70
-                location key (57923894 INODE_ITEM 0) type FILE
-                transid 89142 data_len 0 name_len 40
-                name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-        item 16 key (57648595 DIR_INDEX 1137) itemoff 2914 itemsize 69
-                location key (58472210 INODE_ITEM 0) type FILE
-                transid 89418 data_len 0 name_len 39
-                name: 454bf066ddfbf42e0f3b77ea71c82f-878732.o
-        item 17 key (57923894 INODE_ITEM 0) itemoff 2754 itemsize 160
-                generation 89142 transid 89142 size 36092 nbytes 36864
-                block group 0 mode 100644 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0x91(none)
-                atime 1513278413.460486168 (2017-12-14 20:06:53)
-                ctime 1513278413.460486168 (2017-12-14 20:06:53)
-                mtime 1513278413.460486168 (2017-12-14 20:06:53)
-                otime 1513278413.460486168 (2017-12-14 20:06:53)
-        item 18 key (57923894 INODE_REF 57648595) itemoff 2704 itemsize 50
-                index 435 namelen 40 name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-        item 19 key (57923894 EXTENT_DATA 0) itemoff 2651 itemsize 53
-                generation 89142 type 1 (regular)
-                extent data disk byte 123290755072 nr 36864
-                extent data offset 0 nr 36864 ram 36864
-                extent compression 0 (none)
-        item 20 key (58191388 INODE_ITEM 0) itemoff 2491 itemsize 160
-                generation 89259 transid 89259 size 395280 nbytes 397312
-                block group 0 mode 100644 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0xa4(none)
-                atime 1513332325.477020047 (2017-12-15 11:05:25)
-                ctime 1513332325.477020047 (2017-12-15 11:05:25)
-                mtime 1513332325.477020047 (2017-12-15 11:05:25)
-                otime 1513332325.477020047 (2017-12-15 11:05:25)
-        item 21 key (58191388 INODE_REF 40424284) itemoff 2470 itemsize 21
-                index 1094 namelen 11 name: bzImage.tsc
-leaf 146426621952 items 46 free space 11 generation 89680 owner 5
-leaf 146426621952 flags 0x1(WRITTEN) backref revision 1
-fs uuid b3bfb56e-d445-4335-93f0-c1fb2d1f6df1
-chunk uuid 732d73c9-d037-4406-8dcb-dfa101bc5a9b
-        item 0 key (58191388 EXTENT_DATA 0) itemoff 3942 itemsize 53
-                generation 87303 type 1 (regular)
+I would like to understand something, on VFS, it is guaranteed that in
+a given filesystem, only 1 inode number will be used, it is unique.
+In btrfs, you say the inode uniqueness is per volume, each volume has
+its own inode space, How is it possible ?
 
-> >                 transid 89142 data_len 0 name_len 40
-> >                 name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-> >         item 16 key (57648595 DIR_INDEX 1137) itemoff 2914 itemsize 69
-> >                 location key (58472210 INODE_ITEM 0) type FILE
-> 
-> And this command too:
-> 
-> # btrfs inspect dump-tree <device> | grep -C20 \(58472210
+Thats why when I execute "stat /somepath/file" I receive fsid that
+looks like "36h/54d" but from kernel code, If I examine struct
+fs_info->fsid i get 52.
+I call this Physical/Virtual, physical is the real id - 52, and
+virtual is 36h/54d, because this what btrfs implementation returns..
+from where is that property taken ?
 
-~# btrfs inspect dump-tree /dev/sdb4 | grep -C20 \(58472210
-                generation 89044 transid 89699 size 0 nbytes 0
-                block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0x603b3(none)
-                atime 1513266995.540343055 (2017-12-14 16:56:35)
-                ctime 1515602448.66422211 (2018-01-10 17:40:48)
-                mtime 1515602448.66422211 (2018-01-10 17:40:48)
-                otime 1513266995.540343055 (2017-12-14 16:56:35)
-        item 10 key (57643872 INODE_REF 682) itemoff 3363 itemsize 13
-                index 58 namelen 3 name: tmp
-        item 11 key (57648595 INODE_ITEM 0) itemoff 3203 itemsize 160
-                generation 89045 transid 89423 size 8350 nbytes 0
-                block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0xc90(none)
-                atime 1513267009.164686143 (2017-12-14 16:56:49)
-                ctime 1513868329.753150507 (2017-12-21 15:58:49)
-                mtime 1513868329.753150507 (2017-12-21 15:58:49)
-                otime 1513267009.164686143 (2017-12-14 16:56:49)
-        item 12 key (57648595 INODE_REF 57643659) itemoff 3192 itemsize 11
-                index 113 namelen 1 name: d
-        item 13 key (57648595 DIR_ITEM 3331247447) itemoff 3123 itemsize 69
-                location key (58472210 INODE_ITEM 0) type FILE
-                transid 89418 data_len 0 name_len 8231
-                name: 454bf066ddfbf42e0f3b77ea71c82f-878732.oq
-        item 14 key (57648595 DIR_ITEM 3363354030) itemoff 3053 itemsize 70
-                location key (57923894 INODE_ITEM 0) type DIR_ITEM.33
-                transid 89142 data_len 0 name_len 40
-                name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-        item 15 key (57648595 DIR_INDEX 435) itemoff 2983 itemsize 70
-                location key (57923894 INODE_ITEM 0) type FILE
-                transid 89142 data_len 0 name_len 40
-                name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-        item 16 key (57648595 DIR_INDEX 1137) itemoff 2914 itemsize 69
-                location key (58472210 INODE_ITEM 0) type FILE
-                transid 89418 data_len 0 name_len 39
-                name: 454bf066ddfbf42e0f3b77ea71c82f-878732.o
-        item 17 key (57923894 INODE_ITEM 0) itemoff 2754 itemsize 160
-                generation 89142 transid 89142 size 36092 nbytes 36864
-                block group 0 mode 100644 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0x91(none)
-                atime 1513278413.460486168 (2017-12-14 20:06:53)
-                ctime 1513278413.460486168 (2017-12-14 20:06:53)
-                mtime 1513278413.460486168 (2017-12-14 20:06:53)
-                otime 1513278413.460486168 (2017-12-14 20:06:53)
-        item 18 key (57923894 INODE_REF 57648595) itemoff 2704 itemsize 50
-                index 435 namelen 40 name: 2f3f379b2a3d7499471edb74869efe-1948311.d
-        item 19 key (57923894 EXTENT_DATA 0) itemoff 2651 itemsize 53
-                generation 89142 type 1 (regular)
-                extent data disk byte 123290755072 nr 36864
-                extent data offset 0 nr 36864 ram 36864
-                extent compression 0 (none)
-        item 20 key (58191388 INODE_ITEM 0) itemoff 2491 itemsize 160
-                generation 89259 transid 89259 size 395280 nbytes 397312
-                block group 0 mode 100644 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0xa4(none)
-                atime 1513332325.477020047 (2017-12-15 11:05:25)
-                ctime 1513332325.477020047 (2017-12-15 11:05:25)
-                mtime 1513332325.477020047 (2017-12-15 11:05:25)
-                otime 1513332325.477020047 (2017-12-15 11:05:25)
-        item 21 key (58191388 INODE_REF 40424284) itemoff 2470 itemsize 21
-                index 1094 namelen 11 name: bzImage.tsc
-leaf 146426621952 items 46 free space 11 generation 89680 owner 5
-leaf 146426621952 flags 0x1(WRITTEN) backref revision 1
-fs uuid b3bfb56e-d445-4335-93f0-c1fb2d1f6df1
-chunk uuid 732d73c9-d037-4406-8dcb-dfa101bc5a9b
-        item 0 key (58191388 EXTENT_DATA 0) itemoff 3942 itemsize 53
-                generation 87303 type 1 (regular)
-                extent data disk byte 153024724992 nr 397312
-                extent data offset 0 nr 397312 ram 397312
-                extent compression 0 (none)
-        item 1 key (58472210 INODE_ITEM 0) itemoff 3782 itemsize 160
-                generation 89418 transid 89419 size 168464 nbytes 172032
-                block group 0 mode 100644 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0x48(none)
-                atime 1513868153.15329422 (2017-12-21 15:55:53)
-                ctime 1513868153.15329422 (2017-12-21 15:55:53)
-                mtime 1513868153.15329422 (2017-12-21 15:55:53)
-                otime 1513868153.15329422 (2017-12-21 15:55:53)
-        item 2 key (58472210 INODE_REF 57648595) itemoff 3733 itemsize 49
-                index 1137 namelen 39 name: 454bf066ddfbf42e0f3b77ea71c82f-878732.o
-        item 3 key (58472210 EXTENT_DATA 0) itemoff 3680 itemsize 53
-                generation 89419 type 1 (regular)
-                extent data disk byte 153083658240 nr 172032
-                extent data offset 0 nr 172032 ram 172032
-                extent compression 0 (none)
-        item 4 key (58477961 INODE_ITEM 0) itemoff 3520 itemsize 160
-                generation 89420 transid 89424 size 2 nbytes 0
-                block group 0 mode 40755 links 1 uid 1000 gid 1000 rdev 0
-                sequence 0 flags 0x1ec(none)
-                atime 1513868234.836162788 (2017-12-21 15:57:14)
-                ctime 1513868371.49586338 (2017-12-21 15:59:31)
-                mtime 1513868371.49586338 (2017-12-21 15:59:31)
-                otime 1513868234.836162788 (2017-12-21 15:57:14)
-        item 5 key (58477961 INODE_REF 682) itemoff 3509 itemsize 11
-                index 59 namelen 1 name: X
-        item 6 key (58477961 DIR_ITEM 2828071171) itemoff 3478 itemsize 31
-                location key (57643659 INODE_ITEM 0) type DIR
-                transid 89420 data_len 0 name_len 1
-                name: 4
-        item 7 key (58477961 DIR_INDEX 6) itemoff 3447 itemsize 31
-                location key (57643659 INODE_ITEM 0) type DIR
+The inode number inode->i_ino is the same from both userspace (stat
+...) and kernel code.
 
+If on the same filesystem (52), you say, same inode number can be
+used, as long as they are on different volumes - Is it possible ?
+Doesn't it break the VFS inode uniqueness ?
+Is there also a virtual/physical inode numbers ? and if so, is it
+possible to get from kernel structure ? because inode->i_ino always
+return what stat returns.. unlike fsid as i wrote above.
+
+Thanks !!
+
+
+
+
+
+On Sun, Jan 14, 2018 at 12:44 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+> On 2018年01月14日 18:32, Ilan Schwarts wrote:
+>> Thank you for clarification.
+>> Just 2 quick questions,
+>> 1. Sub volumes - 2 sub volumes cannot have 2 same inode numbers ?
+>
+> They can.
+>
+> So to really locate an inode in btrfs, you need:
+>
+> fsid (locate the fs) -> subvolume id (locate subvolume) -> inode number.
+>
+> fsid can be feteched from superblock as mentioned in previous reply.
+>
+> subvolume id can be get from BTRFS_I(inode)->root.
+> And normally root is what you need.
+>
+> If you really want the number, then either
+> BTRFS_I(inode)->root->objectid or
+> BTRFS_I(inode)->root->root_key->objectid will give you the u64 subvolume id.
+>
+>> 2. Why fsInfo fsid return u8 and the traditional file system return
+>> dev_t, usually 32 integer ?
+>
+> As far as I found in xfs or ext4, their fsid is still u8[16] or uuid_t,
+> same as btrfs.
+>
+> For ext4 it's ext4_super_block->s_uuid[16]
+> And for xfs, it's xfs_sb->sb_uuid.
+>
+> I don't know how you get the dev_t parameter.
+>
 > Thanks,
 > Qu
+>
+>>
+>>
+>> On Sun, Jan 14, 2018 at 12:22 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>>>
+>>>
+>>> On 2018年01月14日 18:13, Ilan Schwarts wrote:
+>>>> both btrfs filesystems will have same fsid ?
+>>>>
+>>>>
+>>>> On Sun, Jan 14, 2018 at 12:06 PM, Ilan Schwarts <ilan84@gmail.com> wrote:
+>>>>> But both filesystems will have same fsid?
+>>>>>
+>>>>> On Jan 14, 2018 12:04, "Nikolay Borisov" <nborisov@suse.com> wrote:
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> On 14.01.2018 12:02, Ilan Schwarts wrote:
+>>>>>>> First of all, Thanks for response !
+>>>>>>> So if i have 2 btrfs file system on the same machine (not your
+>>>>>>> everyday scenario, i know)
+>>>
+>>> Not a problem, the 2 filesystems will have 2 different fsid.
+>>>
+>>> (And it's my everyday scenario, since fstests neeeds TEST_DEV and
+>>> SCRATCH_DEV_POOL)
+>>>
+>>>>>>> Lets say a file is created on device A, the file gets inode number X
+>>>>>>> is it possible on device B to have inode number X also ?
+>>>>>>> or each device has its own Inode number range ?
+>>>
+>>> Forget the mess about device.
+>>>
+>>> Inode is bounded to a filesystem, not bounded to a device.
+>>>
+>>> Just traditional filesytems are normally bounded to a single device.
+>>> (Although even traditional filesystems can have external journal devices)
+>>>
+>>> So there is nothing to do with device at all.
+>>>
+>>> And you can have same inode numbers in different filesystems, but
+>>> BTRFS_I(inode)->root->fs_info will point to different fs_infos, with
+>>> different fsid.
+>>>
+>>> So return to your initial question:
+>>>> both btrfs filesystems will have same fsid ?
+>>>
+>>> No, different filesystems will have different fsid.
+>>>
+>>> (Unless you're SUUUUUUUUUUUUUUUUUUUPER lucky to have 2 filesystems with
+>>> same fsid)
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>>
+>>>>>>
+>>>>>> Of course it is possible. Inodes are guaranteed to be unique only across
+>>>>>> filesystem instances. In your case you are going to have 2 fs instances.
+>>>>>>
+>>>>>>>
+>>>>>>> I need to create unique identifier for a file, I need to understand if
+>>>>>>> the identifier would be: GlobalFSID_DeviceID_Inode or DeviceID_Inode
+>>>>>>> is enough.
+>>>>>>>
+>>>>>>> Thanks
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>> On Sun, Jan 14, 2018 at 11:13 AM, Qu Wenruo <quwenruo.btrfs@gmx.com>
+>>>>>>> wrote:
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> On 2018年01月14日 16:33, Ilan Schwarts wrote:
+>>>>>>>>> Hello btrfs developers/users,
+>>>>>>>>>
+>>>>>>>>> I was wondering regarding to fetching the correct fsid on btrfs from
+>>>>>>>>> the context of a kernel module.
+>>>>>>>>
+>>>>>>>> There are two IDs for btrfs. (in fact more, but you properly won't need
+>>>>>>>> the extra ids)
+>>>>>>>>
+>>>>>>>> FSID: Global one, one fs one FSID.
+>>>>>>>> Device ID: Bonded to device, each device will have one.
+>>>>>>>>
+>>>>>>>> So in case of 2 devices btrfs, each device will has its own device id,
+>>>>>>>> while both of the devices have the same fsid.
+>>>>>>>>
+>>>>>>>> And I think you're talking about the global fsid instead of device id.
+>>>>>>>>
+>>>>>>>>> if on suse11.3 kernel 3.0.101-0.47.71-default in order to get fsid, I
+>>>>>>>>> do the following:
+>>>>>>>>> convert inode struct to btrfs_inode struct (use btrfsInode =
+>>>>>>>>> BTRFS_I(inode)), then from btrfs_inode struct i go to root field, and
+>>>>>>>>> from root i take anon_dev or anon_super.s_dev.
+>>>>>>>>>         struct btrfs_inode *btrfsInode;
+>>>>>>>>>         btrfsInode = BTRFS_I(inode);
+>>>>>>>>>        btrfsInode->root->anon_super.s_dev    or
+>>>>>>>>>        btrfsInode->root->anon_dev    - depend on kernel.
+>>>>>>>>
+>>>>>>>> The most directly method would be:
+>>>>>>>>
+>>>>>>>> btrfs_inode->root->fs_info->fsid.
+>>>>>>>> (For newer kernel, as I'm not familiar with older kernels)
+>>>>>>>>
+>>>>>>>> Or from superblock:
+>>>>>>>> btrfs_inode->root->fs_info->super_copy->fsid.
+>>>>>>>> (The most reliable one, no matter which kernel version you're using, as
+>>>>>>>> long as the super block format didn't change)
+>>>>>>>>
+>>>>>>>> For device id, it's not that commonly used unless you're dealing with
+>>>>>>>> chunk mapping, so I'm assuming you're referring to fsid.
+>>>>>>>>
+>>>>>>>> Thanks,
+>>>>>>>> Qu
+>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> In kernel 3.12.28-4-default in order to get the fsid, i need to go
+>>>>>>>>> to the inode -> superblock -> device id (inode->i_sb->s_dev)
+>>>>>>>>>
+>>>>>>>>> Why is this ? and is there a proper/an official way to get it ?
+>>>>>>>>> --
+>>>>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>>>>>> in
+>>>>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>>>>>
+>>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>>>>
+>>>>
+>>>>
+>>>>
+>>>
+>>
+>>
+>>
+>
 
-Sebastian
+
+
+-- 
+
+
+-
+Ilan Schwarts

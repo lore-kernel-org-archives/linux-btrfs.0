@@ -1,85 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:63879 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:58428 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751252AbeAOBfC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 Jan 2018 20:35:02 -0500
-Subject: Re: Hanging after frequent use of systemd-nspawn --ephemeral
-To: Johannes Ernst <johannes.ernst@gmail.com>, linux-btrfs@vger.kernel.org
-References: <6B7B9360-41EA-4190-8C7D-9E001D186B23@gmail.com>
- <8c9933e1-f694-a513-83ca-33fcb503b7e8@gmx.com>
- <AA437C7B-EB91-46F7-BE01-2254A20DB75E@gmail.com>
- <d507460e-5a91-4129-3cd2-b270ab73c8b5@gmx.com>
- <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
+        id S1751252AbeAOBkW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 14 Jan 2018 20:40:22 -0500
+Subject: Re: Partionless Btrfs drives now return PTTYPE="PMBR"
+To: evan d <forumscollective@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAG__1a5by0WZ+-LiJTAY9Y3qrpJY-drDt9BuGgCZgqaUuG+mAQ@mail.gmail.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <618575b8-419e-3d09-add0-e42d2c0bb7b2@gmx.com>
-Date: Mon, 15 Jan 2018 09:34:56 +0800
+Message-ID: <4cdc7d98-681d-15b8-c65b-21ac736e6034@gmx.com>
+Date: Mon, 15 Jan 2018 09:40:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
+In-Reply-To: <CAG__1a5by0WZ+-LiJTAY9Y3qrpJY-drDt9BuGgCZgqaUuG+mAQ@mail.gmail.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy"
+ boundary="WqGI6LBlyllxoeE48Y1c0mYrgj0w60ZWf"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy
-Content-Type: multipart/mixed; boundary="mOQjLeJF6ZIfn2oeb7aIAz5mjqG21GfXn";
+--WqGI6LBlyllxoeE48Y1c0mYrgj0w60ZWf
+Content-Type: multipart/mixed; boundary="rvety0OYHjpfaOplhX7UMzNMFFhhPl87G";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Johannes Ernst <johannes.ernst@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <618575b8-419e-3d09-add0-e42d2c0bb7b2@gmx.com>
-Subject: Re: Hanging after frequent use of systemd-nspawn --ephemeral
-References: <6B7B9360-41EA-4190-8C7D-9E001D186B23@gmail.com>
- <8c9933e1-f694-a513-83ca-33fcb503b7e8@gmx.com>
- <AA437C7B-EB91-46F7-BE01-2254A20DB75E@gmail.com>
- <d507460e-5a91-4129-3cd2-b270ab73c8b5@gmx.com>
- <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
-In-Reply-To: <C376D549-BE55-4B02-A681-39180F63E372@gmail.com>
+To: evan d <forumscollective@gmail.com>, linux-btrfs@vger.kernel.org
+Message-ID: <4cdc7d98-681d-15b8-c65b-21ac736e6034@gmx.com>
+Subject: Re: Partionless Btrfs drives now return PTTYPE="PMBR"
+References: <CAG__1a5by0WZ+-LiJTAY9Y3qrpJY-drDt9BuGgCZgqaUuG+mAQ@mail.gmail.com>
+In-Reply-To: <CAG__1a5by0WZ+-LiJTAY9Y3qrpJY-drDt9BuGgCZgqaUuG+mAQ@mail.gmail.com>
 
---mOQjLeJF6ZIfn2oeb7aIAz5mjqG21GfXn
+--rvety0OYHjpfaOplhX7UMzNMFFhhPl87G
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8815=E6=97=A5 08:58, Johannes Ernst wrote:
->>> INFO: task systemd-journal:20876 blocked for more than 120 seconds.
->>> [ 5037.962603]       Tainted: G         C O    4.14.9-1-ARCH #1
->>> [ 5037.962609] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" dis=
-ables this message.
->>> [ 5037.962616] systemd-journal D    0 20876  20860 0x00000100
->>> [ 5037.962622] Call Trace:
->>> [ 5037.962635]  ? __schedule+0x290/0x890
->>> [ 5037.962640]  ? __slab_free+0x14e/0x300
->>> [ 5037.962645]  ? _copy_to_iter+0x8f/0x3d0
->>> [ 5037.962651]  schedule+0x2f/0x90
->>> [ 5037.962704]  btrfs_tree_read_lock+0xb6/0x100 [btrfs]
->>
->> Still some tree write is blocking all incoming read.
->>
->> BTW, did your tests include any send and relocation operations?
->>
->> IIRC there is a bug that makes send and relocation (I'm not sure thoug=
-h)
->> will cause similar problem.
+On 2018=E5=B9=B401=E6=9C=8815=E6=97=A5 00:36, evan d wrote:
+> I removed two partitionless Btrfs formatted drives from an Arch Linux
+> based PC and installed them in another Linux based PC also running
+> Arch.  The drives are independent of one another, each containing its
+> own Btrfs filesystem.  Both machines are running recent kernels and
+> the original host would be running whatever kernel was current in Arch
+> on 1 Jan 2018.
 >=20
-> No. I=E2=80=99m doing nothing btrfs-specific at all, it=E2=80=99s just =
-whatever systemd-nspawn =E2=80=94ephemeral does.
+> lsblk shows the two drives as partitionless as I'd expect, but
+> attempting to mount them returns an error saying they're not
+> recognised and btrfs filesystem show /dev/sdX also returns that the
+> devices do not contain a Brtfs partition.  1 Jan 2018 was the last
+> time I accessed these drives, which were mounted via the first
+> machine's fstab.
+>=20
+> blkid returns PTTYPE=3D"PMBR" for both.
+>=20
+> For the current machine:
+> uname -a returns:
+> Linux ryzen 4.14.13-1-ARCH #1 SMP PREEMPT Wed Jan 10 11:14:50 UTC 2018
+> x86_64 GNU/Linux
 
-So, only systemd-nspwan --ephemeral, and nothing else at all?
+Nice to see another Ryzen system. :)
 
-Even nothing happened inside the container?
+>=20
+> btrfs --version returns:
+> btrfs-progs v4.14
+>=20
+>=20
+> Any ideas what could have gone wrong here?  I'm  hoping that
+> reinserting them in the original machine may allow me to access the
+> underlying data again, but that machine is in another country at
+> present.
+
+btrfs inspect dump-super -Ffa will help us to determine if it's still a
+btrfs filesystem.
+
+And it's also recommended to use grep to find the btrfs magic in the
+beginning several MB range to ensure there is no offset screwing up fs
+detection:
+
+dd if=3D<device> of=3D/tmp/output bs=3D1M count=3D128
+grep -obUaP "\x5F\x42\x48\x52\x66\x53\x5F\x4D" /tmp/output
 
 Thanks,
 Qu
 
 >=20
-> Cheers,
+> Any help much appreciated.
 >=20
->=20
->=20
-> Johannes.--
+> Thanks
+> Evan
+> --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in
 > the body of a message to majordomo@vger.kernel.org
@@ -87,23 +95,23 @@ in
 >=20
 
 
---mOQjLeJF6ZIfn2oeb7aIAz5mjqG21GfXn--
+--rvety0OYHjpfaOplhX7UMzNMFFhhPl87G--
 
---16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy
+--WqGI6LBlyllxoeE48Y1c0mYrgj0w60ZWf
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpcBUAXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjX/Qf+KHc7dkZOKm6ZOYfZfWomVlOT
-sfYfMml7Ydb5TVYXrFKkQxt/mEYuRMy3TzQNs0kKVJyMToPcXwKRAtfLcd15k2u2
-SRFVCjtCdNKrufQruqf/ouHSs48tq+nAejvWBDnqfNl3c/AXUc7f81kKUocT4WiY
-/kx9so9oHetABJFm+Q9k3j/2CQnncid5+Zvh2b9pB3HNZ20Bh7CW6LaaBnDa3SVF
-2uVhp9UEuJw0Wsis5/p39YLpDdA8ZBEBVGf5zuskz0Dic/X1OrE59/ibv9/fzaMx
-uK0+a5lzCKFlyOZQT+OZsNhtohUAm4mwBhDq83IsZ8Udk4KmkReIBWVZAvPG3w==
-=uO59
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpcBoEXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjgvwf/VOXk+YJXqI2R8NNAIPi8cb1l
+8EnZA/xNoDHRNXQqN6zRqL4Fdcxmd3afrnYzn72xXMZ54/zYqT7tdfiof29Ndxmk
+UbDns7ANq1aCfFN9At9SLMess2xhaFz+F5x02iqn8zQUngW0HzbX0eaWPWffLPZu
+cNP5G6DSyEafnVc1co4Qj+PA0D1vDVUj51wjMKeiKEpXmabqRpMJ5B76HOTyo+FX
+JBjrsFYbAVuESM1F0zgMUW9YG6bbdYoqNzrlk4AURZ/+bJ65hY1QVWW2GofIU0nl
+YLI6ZqiYjyPMJaS6ROuTVJRYDpwNzd8oGrrmPB7QV6aP8UHXRWMJQdH19qT3dA==
+=esIx
 -----END PGP SIGNATURE-----
 
---16kFDBM25L8ueRO9Sz1KIlAE4riNAlpoy--
+--WqGI6LBlyllxoeE48Y1c0mYrgj0w60ZWf--

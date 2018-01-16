@@ -1,164 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:49427 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750738AbeAPFUa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Jan 2018 00:20:30 -0500
-Subject: Re: invalid files names, btrfs check can't repair it
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-References: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
- <1471d17b-3b53-b2c3-4a84-cb6df98c375e@gmx.com>
- <20180113204114.g4jup552d5g5o5pa@breakpoint.cc>
- <b0cc58c1-af7b-e4f7-2393-4d47a66bba59@gmx.com>
- <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
- <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
- <20180115090049.6tcnoadsam7adsea@breakpoint.cc>
- <fbd3016e-51c9-ae21-4fce-8b878a14f9ea@gmx.com>
-Message-ID: <b926ecdb-94da-1067-ff74-7d5392a7fe46@gmx.com>
-Date: Tue, 16 Jan 2018 13:19:50 +0800
+Received: from mail-ot0-f178.google.com ([74.125.82.178]:34853 "EHLO
+        mail-ot0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750716AbeAPGpd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Jan 2018 01:45:33 -0500
+Received: by mail-ot0-f178.google.com with SMTP id 53so12717061otj.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 22:45:33 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <fbd3016e-51c9-ae21-4fce-8b878a14f9ea@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="dkzyxnSQD257vKYThRgMca8nALAjD0u7d"
+In-Reply-To: <3BF0F2D0-AC05-4EF9-A159-7DBF5A42A79C@thefsb.org>
+References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
+ <c4908bdb-cd9c-929d-e681-16311b6adbc5@gmail.com> <CAJCQCtS4ZKYbZGbpuOcCCuNdcZjNNUf=gkBu6Ky_DdJ-zVB+HQ@mail.gmail.com>
+ <3BF0F2D0-AC05-4EF9-A159-7DBF5A42A79C@thefsb.org>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 15 Jan 2018 23:45:31 -0700
+Message-ID: <CAJCQCtSKhpLPu_YtbLNEjd82fwgqN+5w=GZociXhJacOQbCjZw@mail.gmail.com>
+Subject: Re: Recommendations for balancing as part of regular maintenance?
+To: Tom Worster <fsb@thefsb.org>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---dkzyxnSQD257vKYThRgMca8nALAjD0u7d
-Content-Type: multipart/mixed; boundary="k0cIxOvhYyILM7FZnFqEMBnGP9P5g60m4";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
- Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Message-ID: <b926ecdb-94da-1067-ff74-7d5392a7fe46@gmx.com>
-Subject: Re: invalid files names, btrfs check can't repair it
-References: <20180112210439.2ivh2wmlq2uuisjo@breakpoint.cc>
- <1471d17b-3b53-b2c3-4a84-cb6df98c375e@gmx.com>
- <20180113204114.g4jup552d5g5o5pa@breakpoint.cc>
- <b0cc58c1-af7b-e4f7-2393-4d47a66bba59@gmx.com>
- <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
- <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
- <20180115090049.6tcnoadsam7adsea@breakpoint.cc>
- <fbd3016e-51c9-ae21-4fce-8b878a14f9ea@gmx.com>
-In-Reply-To: <fbd3016e-51c9-ae21-4fce-8b878a14f9ea@gmx.com>
+On Mon, Jan 15, 2018 at 11:23 AM, Tom Worster <fsb@thefsb.org> wrote:
+> On 13 Jan 2018, at 17:09, Chris Murphy wrote:
+>
+>> On Fri, Jan 12, 2018 at 11:24 AM, Austin S. Hemmelgarn
+>> <ahferroin7@gmail.com> wrote:
+>>
+>>
+>>> To that end, I propose the following text for the FAQ:
+>>>
+>>> Q: Do I need to run a balance regularly?
+>>>
+>>> A: While not strictly necessary for normal operations, running a filtered
+>>> balance regularly can help prevent your filesystem from ending up with
+>>> ENOSPC issues.  The following command run daily on each BTRFS volume
+>>> should
+>>> be more than sufficient for most users:
+>>>
+>>> `btrfs balance start -dusage=25 -dlimit=2..10 -musage=25 -mlimit=2..10`
+>>
+>>
+>>
+>> Daily? Seems excessive.
+>>
+>> I've got multiple Btrfs file systems that I haven't balanced, full or
+>> partial, in a year. And I have no problems. One is a laptop which
+>> accumulates snapshots until roughly 25% free space remains and then
+>> most of the snapshots are deleted, except the most recent few, all at
+>> one time. I'm not experiencing any problems so far. The other is a NAS
+>> and it's multiple copies, with maybe 100-200 snapshots. One backup
+>> volume is 99% full, there's no more unallocated free space, I delete
+>> snapshots only to make room for btrfs send receive to keep pushing the
+>> most recent snapshot from the main volume to the backup. Again no
+>> problems.
+>>
+>> I really think suggestions this broad are just going to paper over
+>> bugs or design flaws, we won't see as many bug reports and then real
+>> problems won't get fixed.
+>
+>
+> This is just an answer to a FAQ. This is not Austin or anyone else trying to
+> telling you or anyone else that you should do this. It should be clear that
+> there is an implied caveat along the lines of: "There are other ways to
+> manage allocation besides regular balancing. This recommendation is a
+> For-Dummies-kinda default that should work well enough if you don't have
+> another strategy better adapted to your situation." If this implication is
+> not obvious enough then we can add something explicit.
 
---k0cIxOvhYyILM7FZnFqEMBnGP9P5g60m4
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B401=E6=9C=8816=E6=97=A5 12:51, Qu Wenruo wrote:
-> Now the problems are all located:
->=20
-> For file "2f3f379b2a3d7499471edb74869efe-1948311.d", it's the problem o=
-f
-> its DIR_ITEM has wrong type:
->=20
-> ------
->         item 14 key (57648595 DIR_ITEM 3363354030) itemoff 3053 itemsiz=
-e 70
->                 location key (57923894 INODE_ITEM 0) type DIR_ITEM.33
->                                                           ^^^^^^^^^^^
-> ------
->=20
-> There is unexpected type DIR_ITEM and a special number 33 here.
->=20
-> Despite that, the file is completely fine.
->=20
->=20
-> For file "454bf066ddfbf42e0f3b77ea71c82f-878732.o"
-> The problem is its namelen.
->=20
-> ------
->         item 13 key (57648595 DIR_ITEM 3331247447) itemoff 3123 itemsiz=
-e 69
->                 location key (58472210 INODE_ITEM 0) type FILE
->                 transid 89418 data_len 0 name_len 8231
->                                                   ^^^^ Insane
->                 name: 454bf066ddfbf42e0f3b77ea71c82f-878732.oq
-> ------
->=20
-> Despite that, it should be fine.
->=20
-> I'm not 100% sure if repair can really handle it well.
-> But I could craft a temporary fix based on btrfs-corrupt-block (I know
-> the name is scary).
-> And you may need to compile btrfs-progs with my patch.
-
-I just assume it's fs_root, and pushed the hard-coded fix branch to my
-github:
-https://github.com/adam900710/btrfs-progs/tree/hard_coded_fix_for_sebasti=
-an
-
-Usage:
-=2E/btrfs-corrupt-block -X <device>
-
-Just as commit message says, if anything went wrong, it will not touch
-the fs at all.
-So it should be somewhat safe to use.
-
-And if something went wrong, it will cause backtrace and abort, it's
-designed and you don't need to panic:
-
-Example: No dir_item in my btrfs
-------
-=2E/btrfs-corrupt-block -X /dev/data/btrfs
-ERROR: corrupted DIR_ITEM not found
-extent buffer leak: start 4227072 len 16384
-extent_io.c:607: free_extent_buffer_internal: BUG_ON `eb->flags &
-EXTENT_DIRTY` triggered, value 1
-=2E/btrfs-corrupt-block(+0x251df)[0x5623e003a1df]
-=2E/btrfs-corrupt-block(free_extent_buffer_nocache+0x1f)[0x5623e003aac1]
-=2E/btrfs-corrupt-block(extent_io_tree_cleanup+0x6d)[0x5623e003ab33]
-=2E/btrfs-corrupt-block(btrfs_cleanup_all_caches+0x76)[0x5623e0027747]
-=2E/btrfs-corrupt-block(close_ctree_fs_info+0x111)[0x5623e0028027]
-=2E/btrfs-corrupt-block(main+0x3f5)[0x5623e00551df]
-/usr/lib/libc.so.6(__libc_start_main+0xea)[0x7fdce4e0ff4a]
-=2E/btrfs-corrupt-block(_start+0x2a)[0x5623e001ee3a]
-Aborted (core dumped)
-------
-
-And if above error happens, please paste the error output and provide
-the subvolume id.
-
-Thanks,
-Qu
-
->=20
-> The only remaining thing I need is the subvolume id which contains the
-> corrupted files.
->=20
-> Since there is no other hit, I assume it's root subvolume (5), but I
-> still need the extra confirm since the fix will be hard-coded.
->=20
-> Thanks,
-> Qu
->=20
+It's an upstream answer to a frequently asked question. It's rather
+official, or about as close as it gets to it.
 
 
---k0cIxOvhYyILM7FZnFqEMBnGP9P5g60m4--
 
---dkzyxnSQD257vKYThRgMca8nALAjD0u7d
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+>
+>
+>> I also thing the time based method is too subjective. What about the
+>> layout means a balance is needed? And if it's really a suggestion, why
+>> isn't there a chron or systemd unit that just does this for the user,
+>> in btrfs-progs, working and enabled by default?
+>
+>
+> As a newcomer to BTRFS, I was astonished to learn that it demands each user
+> figure out some workaround for what is, in my judgement, a required but
+> missing feature, i.e. a defect, a bug. At present the docs are pretty
+> confusing for someone trying to deal with it on their own.
+>
+> Unless some better fix is in the works, this _should_ be a systemd unit or
+> something. Until then, please put it in FAQ.
 
------BEGIN PGP SIGNATURE-----
+At least openSUSE has a systemd unit for a long time now, but last
+time I checked (a bit over a year ago) it's disabled by default. Why?
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpdi3cXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiiyQgAmyrbRHBGYZ1/Or2iVH5t2kRb
-reHVqqJIGOpGnGd2Hgt07feyqeyPNoaL4afRTFLbOpoTBMSl60KBIRQjH88d99tE
-vN9qhkQDzlf2CSNSYZaXAwjbim/t29mCQWOJgvGD0iv4YdnqnEBVpfTtES3cTf0r
-wCc16/VrjF762GRQlguXwwTDcmsLeBLsmGGmCHO0ONAybwYK43lANVqOHqhfcumb
-iQOf6oqkgYEJ3IC/qBX+H+CNzd3hB1xaLtMgat+xzZqk7VarYBo6p0+P61YR9Btc
-Fg/YK3nQGdyil8yaHw0p76Pd5Gd2bE9dUS029PIjGIqCvziJOvJDyy0NDM5Zcg==
-=Qz/3
------END PGP SIGNATURE-----
+And insofar as I'm aware, openSUSE users aren't having big problems
+related to lack of balancing, they have problems due to the lack of
+balancing combined with schizo snapper defaults, which are these days
+masked somewhat by turning on quotas so snapper can be more accurate
+about cleaning up.
 
---dkzyxnSQD257vKYThRgMca8nALAjD0u7d--
+Basically the scripted balance tells me two things:
+a. Something is broken (still)
+b. None of the developers has time to investigate coherent bug reports
+about a. and fix/refine it.
+
+And therefore papering over the problem is all we have. Basically it's
+a sledgehammer approach.
+
+The main person working on enoscp stuff is Josef so I'd run this by
+him and make sure this papering over bugs is something he agrees with.
+
+
+
+
+>
+>
+>> I really do not like
+>> all this hand holding of Btrfs, it's not going to make it better.
+>
+>
+> Maybe it won't but, absent better proposals, and given the nature of the
+> problem, this kind of hand-holding is only fair to the user.
+
+
+This is hardly the biggest gotcha with Btrfs. I'm fine with the idea
+of papering over design flaws and long standing bugs with user space
+work arounds. I just want everyone on the same page about it, so it's
+not some big surprise it's happening. As far as I know, none of the
+developers regularly looks at the Btrfs wiki.
+
+And I think the best way of communicating:
+a. this is busted, and it sucks
+b. here's a proposed user space work around, so users aren't so pissed off.
+
+Is to try and get it into btrfs-progs, and enabled by default, because
+that will get in front of at least one developer.
+
+
+
+-- 
+Chris Murphy

@@ -1,32 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:30599 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932432AbeALDOJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Jan 2018 22:14:09 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 554AD48AE82D
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 11:14:07 +0800 (CST)
+Received: from mx2.suse.de ([195.135.220.15]:35613 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750752AbeAPPYx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Jan 2018 10:24:53 -0500
+Date: Tue, 16 Jan 2018 16:22:43 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: correct wrong comment about magic number of
  index_cnt
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20180116152243.GH13726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180112030803.28341-1-suy.fnst@cn.fujitsu.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <69eb939f-d1f2-ec00-1b8c-1ea0c4f65631@cn.fujitsu.com>
-Date: Fri, 12 Jan 2018 11:18:31 +0800
+ <20180112030803.28341-2-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20180112030803.28341-1-suy.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180112030803.28341-2-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, the two patches are same.
-Please the latter one.
-
-Thanks,
-Su
-
-On 01/12/2018 11:08 AM, Su Yue wrote:
+On Fri, Jan 12, 2018 at 11:08:03AM +0800, Su Yue wrote:
 > There is no function named btrfs_get_inode_index_count.
 > Explanation for magic number index_cnt=2 in btrfs_new_inode() is
 > actually located in btrfs_set_inode_index_count().
@@ -35,23 +28,5 @@ On 01/12/2018 11:08 AM, Su Yue wrote:
 > 'btrfs_set_inode_index_count'.
 > 
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->   fs/btrfs/inode.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 37bdb78b4766..f6454719192e 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6315,7 +6315,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
->   	}
->   	/*
->   	 * index_cnt is ignored for everything but a dir,
-> -	 * btrfs_get_inode_index_count has an explanation for the magic
-> +	 * btrfs_set_inode_index_count has an explanation for the magic
->   	 * number
->   	 */
->   	BTRFS_I(inode)->index_cnt = 2;
-> 
 
-
+Added to 4.16 queue, thanks.

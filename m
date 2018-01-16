@@ -1,58 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from Chamillionaire.breakpoint.cc ([146.0.238.67]:46078 "EHLO
-        Chamillionaire.breakpoint.cc" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1750802AbeAPKtx (ORCPT
+Received: from mail-qt0-f178.google.com ([209.85.216.178]:36002 "EHLO
+        mail-qt0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750812AbeAPLCV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Jan 2018 05:49:53 -0500
-Date: Tue, 16 Jan 2018 11:49:50 +0100
-From: Sebastian Andrzej Siewior <sebastian@breakpoint.cc>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>
-Subject: Re: invalid files names, btrfs check can't repair it
-Message-ID: <20180116104949.7qtf67mrdvyxrvs4@breakpoint.cc>
-References: <1471d17b-3b53-b2c3-4a84-cb6df98c375e@gmx.com>
- <20180113204114.g4jup552d5g5o5pa@breakpoint.cc>
- <b0cc58c1-af7b-e4f7-2393-4d47a66bba59@gmx.com>
- <20180114163854.rghjpsx2ikwmqo7m@breakpoint.cc>
- <f242b71e-6539-3f60-314f-2a85efa5f26f@gmx.com>
- <20180115090049.6tcnoadsam7adsea@breakpoint.cc>
- <fbd3016e-51c9-ae21-4fce-8b878a14f9ea@gmx.com>
- <b926ecdb-94da-1067-ff74-7d5392a7fe46@gmx.com>
- <20180116101058.wtcdjnqldcb5q3a7@breakpoint.cc>
- <4b929845-beae-9e13-2df9-ddc3232ad39a@gmx.com>
+        Tue, 16 Jan 2018 06:02:21 -0500
+Received: by mail-qt0-f178.google.com with SMTP id a16so17712484qtj.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2018 03:02:21 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <4b929845-beae-9e13-2df9-ddc3232ad39a@gmx.com>
+In-Reply-To: <CAJCQCtSKhpLPu_YtbLNEjd82fwgqN+5w=GZociXhJacOQbCjZw@mail.gmail.com>
+References: <e370d8c9-4ff0-9ba5-2ae0-69524152c772@gmail.com>
+ <c4908bdb-cd9c-929d-e681-16311b6adbc5@gmail.com> <CAJCQCtS4ZKYbZGbpuOcCCuNdcZjNNUf=gkBu6Ky_DdJ-zVB+HQ@mail.gmail.com>
+ <3BF0F2D0-AC05-4EF9-A159-7DBF5A42A79C@thefsb.org> <CAJCQCtSKhpLPu_YtbLNEjd82fwgqN+5w=GZociXhJacOQbCjZw@mail.gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Date: Tue, 16 Jan 2018 14:02:20 +0300
+Message-ID: <CAA91j0X40cYJkubNmeT_00U_ZODQ+0OUzemnj2bEwgSQZ-P9-w@mail.gmail.com>
+Subject: Re: Recommendations for balancing as part of regular maintenance?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Tom Worster <fsb@thefsb.org>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-01-16 18:22:14 [+0800], Qu Wenruo wrote:
-> Btrfs check is always recommended before really mount it.
+On Tue, Jan 16, 2018 at 9:45 AM, Chris Murphy <lists@colorremedies.com> wrote:
+...
+>>
+>> Unless some better fix is in the works, this _should_ be a systemd unit or
+>> something. Until then, please put it in FAQ.
+>
+> At least openSUSE has a systemd unit for a long time now, but last
+> time I checked (a bit over a year ago) it's disabled by default. Why?
+>
 
- # btrfs check -p /dev/sdb4 
- Checking filesystem on /dev/sdb4
- UUID: b3bfb56e-d445-4335-93f0-c1fb2d1f6df1
- checking extents [O]
- cache and super generation don't match, space cache will be invalidated
- root 5 inode 57648595 errors 200, dir isize wrong
+It is now enabled by default on Tumbleweed and hence likely on SLE/Leap 15.
 
- ERROR: errors found in fs roots
- found 64009740288 bytes used, error(s) found
- total csum bytes: 61644600
- total tree bytes: 865746944
- total fs tree bytes: 693469184
- total extent tree bytes: 84905984
- btree space waste bytes: 225096302
- file data blocks allocated: 63203807232
-  referenced 63142268928
+> And insofar as I'm aware, openSUSE users aren't having big problems
+> related to lack of balancing, they have problems due to the lack of
+> balancing combined with schizo snapper defaults, which are these days
+> masked somewhat by turning on quotas so snapper can be more accurate
+> about cleaning up.
+>
 
-> However as long as there is no other problem, btrfs check should not
-> report anything wrong.
-
-Is it important to note that the filesystem is a raid1 one?
-
-> Thanks,
-> Qu
-
-Sebastian
+Not only that but also making snapshot policy less aggressive - now
+(in Tumbleweed/Leap 42.3) periodical snapshots are turned off by
+default, only configuration changes via YaST/package updates via
+zypper trigger snapshot creation.

@@ -1,43 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:40366 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751124AbeAPDsk (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:54764 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751341AbeAPDuf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jan 2018 22:48:40 -0500
-Received: by mail-lf0-f42.google.com with SMTP id h92so5320178lfi.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Jan 2018 19:48:39 -0800 (PST)
-Subject: Re: how to make a cache directory nodatacow while also excluded from
- snapshots?
-To: Dave <davestechshop@gmail.com>,
-        Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-References: <CAH=dxU6A75wET7_bZZ3sVhCFpr8RRWhJJsd=L66YyuW_kiHCcg@mail.gmail.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <de2e32dc-92c2-3f63-0de5-5d50469709ec@gmail.com>
-Date: Tue, 16 Jan 2018 06:48:36 +0300
-MIME-Version: 1.0
-In-Reply-To: <CAH=dxU6A75wET7_bZZ3sVhCFpr8RRWhJJsd=L66YyuW_kiHCcg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+        Mon, 15 Jan 2018 22:50:35 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1ebIEV-0004EN-Dk
+        for linux-btrfs@vger.kernel.org; Tue, 16 Jan 2018 04:48:19 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: big volumes only work reliable with ssd_spread
+Date: Tue, 16 Jan 2018 03:48:04 +0000 (UTC)
+Message-ID: <pan$6f2ed$a4643565$6c45fc9$81b96ddb@cox.net>
+References: <344ef7c2-404a-2f79-198c-9de8c5e31629@profihost.ag>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-16.01.2018 00:56, Dave пишет:
-> I want to exclude my ~/.cache directory from snapshots. The obvious
-> way to do this is to mount a btrfs subvolume at that location.
-> 
-> However, I also want the ~/.cache directory to be nodatacow. Since the
-> parent volume is COW, I believe it isn't possible to mount the
-> subvolume with different mount options.
-> 
-> What's the solution for achieving both of these goals?
-> 
-> I tried this without success:
-> 
->     chattr +C ~/.cache
-> 
-> Since ~/.cache is a btrfs subvolume, apparently that doesn't work.
-> 
->     lsattr ~/.cache
-> 
-> returns nothing.
+Stefan Priebe - Profihost AG posted on Mon, 15 Jan 2018 10:55:42 +0100 as
+excerpted:
 
-Try creating file under ~/.cache and check its attributes.
+> since around two or three years i'm using btrfs for incremental VM
+> backups.
+> 
+> some data:
+> - volume size 60TB
+> - around 2000 subvolumes
+> - each differential backup stacks on top of a subvolume
+> - compress-force=zstd
+> - space_cache=v2
+> - no quote / qgroup
+> 
+> this works fine since Kernel 4.14 except that i need ssd_spread as an
+> option. If i do not use ssd_spread i always end up with very slow
+> performance and a single kworker process using 100% CPU after some days.
+> 
+> With ssd_spread those boxes run fine since around 6 month. Is this
+> something expected? I haven't found any hint regarding such an impact.
+
+My understanding of the technical details is "limited" as I'm not a dev, 
+and I expect you'll get a more technically accurate response later, but 
+sometimes a first not particularly technical response can be helpful as 
+long as it's not /wrong/.  (And if it is this is a good way to have my 
+understanding corrected as well. =:^)  With that caveat, based on my 
+understanding of what I've seen on-list...
+
+The kernel v4.14 ssd mount-option changes apparently primarily affected 
+data, not metadata.  Apparently, ssd_spread has a heavier metadata 
+effect, and the v4.14 changes moved additional (I believe metadata) 
+functionality to ssd-spread that had originally been part of ssd as 
+well.  There has been some discussion of metadata tweaks similar to those 
+in 4.14 for the ssd option with data, but they weren't deemed as 
+demonstrably needed as the ssd option tweaks and needed further 
+discussion, so were put off until the effect of the 4.14 tweaks could be 
+gauged in more widespread use, after which they were to be reconsidered, 
+if necessary.
+
+Meanwhile, in the discussion I saw, Chris Mason mentioned that Facebook 
+is using ssd-spread for various reasons there, so it's well-tested with 
+their deployments, which I'd assume have many of the same qualities yours 
+do, thus implying that your observations about ssd-spread are no accident.
+
+In fact, if I interpreted Chris's comments correctly, they use ssd_spread 
+on very large multi-layered non-ssd storage arrays, in part because the 
+larger layout-alignment optimizations make sense there as well as on 
+ssds.  That would appear to be precisely what you are seeing. =:^)  If 
+that's the case, then arguably the option is misnamed and the ssd_spread 
+name may well at some point be deprecated in favor of something more 
+descriptive of its actual function and target devices.  Purely my own 
+speculation here, but perhaps something like vla_spread (very-large-
+array)?
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

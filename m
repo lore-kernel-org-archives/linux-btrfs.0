@@ -1,25 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59571 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:34659 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S964995AbeALUan (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jan 2018 15:30:43 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 31326ADAC
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 20:30:42 +0000 (UTC)
-Subject: Re: [PATCH] btrfs: Streamline btrfs_delalloc_reserve_metadata initial
- operations
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+        id S1751404AbeAPPO3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 16 Jan 2018 10:14:29 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4943BAE07
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jan 2018 15:14:28 +0000 (UTC)
+Date: Tue, 16 Jan 2018 16:12:19 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Streamline btrfs_delalloc_reserve_metadata
+ initial operations
+Message-ID: <20180116151219.GG13726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1515766865-13652-1-git-send-email-nborisov@suse.com>
-From: Edmund Nadolski <enadolski@suse.de>
-Message-ID: <75904c3b-e2d6-2343-94d0-c5e45ba3b668@suse.de>
-Date: Fri, 12 Jan 2018 13:30:39 -0700
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1515766865-13652-1-git-send-email-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/12/2018 07:21 AM, Nikolay Borisov wrote:
+On Fri, Jan 12, 2018 at 04:21:05PM +0200, Nikolay Borisov wrote:
 > The behavior of btrfs_delalloc_reserve_metadata depends on whether
 > the inode we are allocating for is the freespace inode or not. As it
 > stands if we are the free node we set 'flush' and 'delalloc_lock'
@@ -34,46 +36,7 @@ On 01/12/2018 07:21 AM, Nikolay Borisov wrote:
 > Function                                     old     new   delta
 > btrfs_delalloc_reserve_metadata             1876    1859     -17
 > Total: Before=85966, After=85949, chg -0.02%
-> 
-> No functional changes.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Reviewed-by: Edmund Nadolski <enadolski@suse.com>
-
-> ---
->  fs/btrfs/extent-tree.c | 14 +++++++-------
->  1 file changed, 7 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 8d51e4bb67c1..47295804d91d 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6062,19 +6062,19 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
->  	 * If we have a transaction open (can happen if we call truncate_block
->  	 * from truncate), then we need FLUSH_LIMIT so we don't deadlock.
->  	 */
-> +
->  	if (btrfs_is_free_space_inode(inode)) {
->  		flush = BTRFS_RESERVE_NO_FLUSH;
->  		delalloc_lock = false;
-> -	} else if (current->journal_info) {
-> -		flush = BTRFS_RESERVE_FLUSH_LIMIT;
-> -	}
-> +	} else {
-> +		if (current->journal_info)
-> +			flush = BTRFS_RESERVE_FLUSH_LIMIT;
->  
-> -	if (flush != BTRFS_RESERVE_NO_FLUSH &&
-> -	    btrfs_transaction_in_commit(fs_info))
-> -		schedule_timeout(1);
-> +		if (btrfs_transaction_in_commit(fs_info))
-> +			schedule_timeout(1);
->  
-> -	if (delalloc_lock)
->  		mutex_lock(&inode->delalloc_mutex);
-> +	}
->  
->  	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
->  
-> 
+This looks too fine grained and IMHO not useful to mention. The overall
+module size delta is interesting when compared between the base nad pull
+request, but not for individual patches, namely if it's just 17 bytes.

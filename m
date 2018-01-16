@@ -1,80 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:54764 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751341AbeAPDuf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Jan 2018 22:50:35 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1ebIEV-0004EN-Dk
-        for linux-btrfs@vger.kernel.org; Tue, 16 Jan 2018 04:48:19 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: big volumes only work reliable with ssd_spread
-Date: Tue, 16 Jan 2018 03:48:04 +0000 (UTC)
-Message-ID: <pan$6f2ed$a4643565$6c45fc9$81b96ddb@cox.net>
-References: <344ef7c2-404a-2f79-198c-9de8c5e31629@profihost.ag>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:33459 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751224AbeAPEcq (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Mon, 15 Jan 2018 23:32:46 -0500
+Subject: Re: [PATCH] btrfs-progs: ins: fix arg order in print_inode_item()
+From: Qu Wenruo <wqu@suse.com>
+To: David Sterba <dsterba@suse.cz>
+References: <91513913-9626-da65-5830-b372895f1325@jp.fujitsu.com>
+ <6ee6b71f-a3a2-380e-8b6c-cb7fd4212186@suse.com>
+Cc: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <a0e1484e-9dca-f946-203b-d9e223ebb6b1@suse.com>
+Date: Tue, 16 Jan 2018 12:32:28 +0800
+MIME-Version: 1.0
+In-Reply-To: <6ee6b71f-a3a2-380e-8b6c-cb7fd4212186@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="lx1aWMwIrYtYyEwarQyAoLd7aZL96NwWC"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Priebe - Profihost AG posted on Mon, 15 Jan 2018 10:55:42 +0100 as
-excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--lx1aWMwIrYtYyEwarQyAoLd7aZL96NwWC
+Content-Type: multipart/mixed; boundary="XdpyASZmM87BU46gcLeg1y3UTUyVouOc1";
+ protected-headers="v1"
+From: Qu Wenruo <wqu@suse.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <a0e1484e-9dca-f946-203b-d9e223ebb6b1@suse.com>
+Subject: Re: [PATCH] btrfs-progs: ins: fix arg order in print_inode_item()
+References: <91513913-9626-da65-5830-b372895f1325@jp.fujitsu.com>
+ <6ee6b71f-a3a2-380e-8b6c-cb7fd4212186@suse.com>
+In-Reply-To: <6ee6b71f-a3a2-380e-8b6c-cb7fd4212186@suse.com>
 
-> since around two or three years i'm using btrfs for incremental VM
-> backups.
-> 
-> some data:
-> - volume size 60TB
-> - around 2000 subvolumes
-> - each differential backup stacks on top of a subvolume
-> - compress-force=zstd
-> - space_cache=v2
-> - no quote / qgroup
-> 
-> this works fine since Kernel 4.14 except that i need ssd_spread as an
-> option. If i do not use ssd_spread i always end up with very slow
-> performance and a single kworker process using 100% CPU after some days.
-> 
-> With ssd_spread those boxes run fine since around 6 month. Is this
-> something expected? I haven't found any hint regarding such an impact.
+--XdpyASZmM87BU46gcLeg1y3UTUyVouOc1
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-My understanding of the technical details is "limited" as I'm not a dev, 
-and I expect you'll get a more technically accurate response later, but 
-sometimes a first not particularly technical response can be helpful as 
-long as it's not /wrong/.  (And if it is this is a good way to have my 
-understanding corrected as well. =:^)  With that caveat, based on my 
-understanding of what I've seen on-list...
+Hi David,
 
-The kernel v4.14 ssd mount-option changes apparently primarily affected 
-data, not metadata.  Apparently, ssd_spread has a heavier metadata 
-effect, and the v4.14 changes moved additional (I believe metadata) 
-functionality to ssd-spread that had originally been part of ssd as 
-well.  There has been some discussion of metadata tweaks similar to those 
-in 4.14 for the ssd option with data, but they weren't deemed as 
-demonstrably needed as the ssd option tweaks and needed further 
-discussion, so were put off until the effect of the 4.14 tweaks could be 
-gauged in more widespread use, after which they were to be reconsidered, 
-if necessary.
+Would you please queue this patch to devel branch?
 
-Meanwhile, in the discussion I saw, Chris Mason mentioned that Facebook 
-is using ssd-spread for various reasons there, so it's well-tested with 
-their deployments, which I'd assume have many of the same qualities yours 
-do, thus implying that your observations about ssd-spread are no accident.
+This is a small enough, but quite important fix when handling dump tree
+output.
 
-In fact, if I interpreted Chris's comments correctly, they use ssd_spread 
-on very large multi-layered non-ssd storage arrays, in part because the 
-larger layout-alignment optimizations make sense there as well as on 
-ssds.  That would appear to be precisely what you are seeing. =:^)  If 
-that's the case, then arguably the option is misnamed and the ssd_spread 
-name may well at some point be deprecated in favor of something more 
-descriptive of its actual function and target devices.  Purely my own 
-speculation here, but perhaps something like vla_spread (very-large-
-array)?
+Thanks,
+Qu
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+On 2017=E5=B9=B410=E6=9C=8830=E6=97=A5 16:20, Qu Wenruo wrote:
+>=20
+>=20
+> On 2017=E5=B9=B410=E6=9C=8830=E6=97=A5 16:10, Misono, Tomohiro wrote:
+>> In the print_inode_item(), the argument order of sequence and flags ar=
+e
+>> reversed:
+>>
+>> printf("... sequence %llu flags 0x%llx(%s)\n",
+>> 				...=20
+>> 	       (unsigned long long)btrfs_inode_flags(eb,ii),
+>>  	       (unsigned long long)btrfs_inode_sequence(eb, ii),
+>> 				...)
+>>
+>> So, just fix it.
+>>
+>> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+>=20
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Thanks,
+> Qu
+>=20
+>> ---
+>>  print-tree.c | 2 +-
+>>  1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/print-tree.c b/print-tree.c
+>> index 3c585e3..8abd760 100644
+>> --- a/print-tree.c
+>> +++ b/print-tree.c
+>> @@ -896,8 +896,8 @@ static void print_inode_item(struct extent_buffer =
+*eb,
+>>  	       btrfs_inode_uid(eb, ii),
+>>  	       btrfs_inode_gid(eb, ii),
+>>  	       (unsigned long long)btrfs_inode_rdev(eb,ii),
+>> -	       (unsigned long long)btrfs_inode_flags(eb,ii),
+>>  	       (unsigned long long)btrfs_inode_sequence(eb, ii),
+>> +	       (unsigned long long)btrfs_inode_flags(eb,ii),
+>>  	       flags_str);
+>>  	print_timespec(eb, btrfs_inode_atime(ii), "\t\tatime ", "\n");
+>>  	print_timespec(eb, btrfs_inode_ctime(ii), "\t\tctime ", "\n");
+>>
+>=20
 
+
+--XdpyASZmM87BU46gcLeg1y3UTUyVouOc1--
+
+--lx1aWMwIrYtYyEwarQyAoLd7aZL96NwWC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFBBAEBCAArFiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpdgFwNHHdxdUBzdXNl
+LmNvbQAKCRDCPZHzoSX+qHVGB/9TuZ3Q1B1j7KDNNHTlvNTCwCPQJgnOgcIazJyX
+7S8kOGesKgAWfB0CwmIvhyRfhnMchZ81qmcKhUi82cnw7GWhhfHo5jGkw+byf1YR
+/J1NDCXc8XxCsAkUpVO/lEwvqAOCLku++nhCk11kpWig6TgKukTk0oOeGYLDeOHA
+e7HiZZMw+5AMod8DzQxA6qTudbcBxDuLjXF6Ygf7cxWrk+AuydNzdQnTrYqbZSKW
+3Ckv1aWPVPjjqEHCjviM9lJuVa3OzlFUeKs/8cozidAvgbuwdB89HGOwcWIfaied
+zYkGkH8W+GdYF4jJ9c/KPbqljnyuZoy9G/QfqJ3E9hkIyv6a
+=Zwmk
+-----END PGP SIGNATURE-----
+
+--lx1aWMwIrYtYyEwarQyAoLd7aZL96NwWC--

@@ -1,62 +1,285 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:47892 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750806AbeAQFRW (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 17 Jan 2018 00:17:22 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:34521 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750816AbeAQNOB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Jan 2018 08:14:01 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 616ECAF39
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jan 2018 13:14:00 +0000 (UTC)
+Subject: Re: [PATCH 2/3] btrfs-progs: dir-item: Allow dir item and dir index
+ lookup to ignore found problem
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 0/3] Lowmem fsck repair to fix filetype mismatch
-Date: Wed, 17 Jan 2018 13:17:07 +0800
-Message-Id: <20180117051710.16853-1-wqu@suse.com>
+References: <20180117051710.16853-1-wqu@suse.com>
+ <20180117051710.16853-3-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <091f7f35-5ac1-810d-46f0-b375ce96203a@suse.com>
+Date: Wed, 17 Jan 2018 15:13:59 +0200
+MIME-Version: 1.0
+In-Reply-To: <20180117051710.16853-3-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sebastian reported a filesystem corruption where DIR_INDEX has wrong
-filetype against INODE_ITEM.
 
-Lowmem mode normally handles such problem by checking DIR_INDEX,
-DIR_ITEM and INODE_REF/INODE_ITEM to determine the correct file type.
-In such case, lowmem mode fsck can get the correct filetype.
 
-When fixing the problem, lowmem mode will try to re-insert correct
-(DIR_INDEX, DIR_ITEM, INODE_REF) tuple, and if existing correct
-DIR_ITEM and INODE_REF is found, btrfs_link() will just skip and only
-insert correct DIR_INDEX.
+On 17.01.2018 07:17, Qu Wenruo wrote:
+> For functions btrfs_lookup_dir_index() and btrfs_lookup_dir_item(), they
+> will check if the dir item/index is valid before doing further check.
+> 
+> The behavior is pretty good for healthy fs, but calling them on
+> corrupted fs with incorrect dir item/index will also return NULL, making
+> repair code unable to reuse them.
+> 
+> This patch add a new parameter @verify to address the problem.
+> For normal operation, @verify should be set to true to keep the old
+> behavior.
+> 
+> While for some functions used in repair, like btrfs_unlink(), they can
+> set @verify to false, so repair code can locate corrupted dir index/item
+> and do what they should do (either repair or just delete).
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-However, when inserting correct DIR_INDEX, due to extra DIR_INDEX
-validation, incorrect one will be skiped and correct one will be
-inserted after invalid one.
+I'm not satisfied with the approach taken. A boolean parameter is
+sprinkled around the code just so that we decide whether we invoke
+verify_dir_item or not. My idea (which dunno how sensible it is for this
+patch series) is to have 2 sets of public API functions:
 
-This leads to lowmem mode repair to create duplicated DIR_INDEX.
+1. Augmented checking ones (equivalent to the boolean parameter set to
+true i.e. btrfs_lookup_dir_index_verify or somesuch). The idea is they
+should be used in contexts where we want extended validation and it
+should be explicit we require this. Likely we'd use them during the
+check phase
 
-This patch will fix it by removing the whole (DIR_INDEX, DIR_ITEM,
-INODE_REF) tuple before inserting correct tuple.
-And the removing part, btrfs_unlink(), will be enhanced to handle
-incorrect tuple member more robust.
+2. Same api but without the _verify (or whatever suffix, I don't mind)
 
-Please note that, due a bug in lowmem mode repair, btrfs check will
-still show "error(s) found in fs tree" even repair is done successfully.
+The two sets of apis should be really slim and implemented from
+composable low-level/private functions. To put things concretely I
+believe btrfs_match_dir_item_name in this case to be the
+"low-level/private" function and the above 2 version to consist of the
+private version + additional code necessary to satisfy their interfaces.
 
-And test case for this repair still needs extra work for original mode
-to support such repair, or test case won't pass original mode test.
+This comment should really be considered in the broader context of your
+lowmem/original mode refactoring work, not necessarily for this patch
+set. But in the long term we should really strive to avoid horrendous
+function interface where we add a parameter for tweaking every little
+bit of behavior.
 
-Qu Wenruo (3):
-  btrfs-progs: lowmem fsck: Remove corupted link before re-add correct
-    link
-  btrfs-progs: dir-item: Allow dir item and dir index lookup to ignore
-    found problem
-  btrfs-progs: dir-item: Make btrfs_delete_one_dir_name more robust to
-    handle corrupted name len
+> ---
+>  cmds-check.c   |  2 +-
+>  convert/main.c |  2 +-
+>  ctree.h        |  4 ++--
+>  dir-item.c     | 34 ++++++++++++++++++++++++++--------
+>  inode.c        | 14 +++++++-------
+>  5 files changed, 37 insertions(+), 19 deletions(-)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index f302724dd840..59575506c83e 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -3074,7 +3074,7 @@ static int delete_dir_index(struct btrfs_root *root,
+>  	btrfs_init_path(&path);
+>  	di = btrfs_lookup_dir_index(trans, root, &path, backref->dir,
+>  				    backref->name, backref->namelen,
+> -				    backref->index, -1);
+> +				    backref->index, -1, false);
+>  	if (IS_ERR(di)) {
+>  		ret = PTR_ERR(di);
+>  		btrfs_release_path(&path);
+> diff --git a/convert/main.c b/convert/main.c
+> index 89f9261172ca..102ba4fc5ae2 100644
+> --- a/convert/main.c
+> +++ b/convert/main.c
+> @@ -1580,7 +1580,7 @@ static int do_rollback(const char *devname)
+>  	/* Search the image file */
+>  	root_dir = btrfs_root_dirid(&image_root->root_item);
+>  	dir = btrfs_lookup_dir_item(NULL, image_root, &path, root_dir,
+> -			image_name, strlen(image_name), 0);
+> +			image_name, strlen(image_name), 0, true);
+>  
+>  	if (!dir || IS_ERR(dir)) {
+>  		btrfs_release_path(&path);
+> diff --git a/ctree.h b/ctree.h
+> index ef422ea60031..02529f4cb021 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -2679,12 +2679,12 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+>  					     struct btrfs_root *root,
+>  					     struct btrfs_path *path, u64 dir,
+>  					     const char *name, int name_len,
+> -					     int mod);
+> +					     int mod, bool verify);
+>  struct btrfs_dir_item *btrfs_lookup_dir_index(struct btrfs_trans_handle *trans,
+>  					      struct btrfs_root *root,
+>  					      struct btrfs_path *path, u64 dir,
+>  					      const char *name, int name_len,
+> -					      u64 index, int mod);
+> +					      u64 index, int mod, bool verify);
+>  int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+>  			      struct btrfs_root *root,
+>  			      struct btrfs_path *path,
+> diff --git a/dir-item.c b/dir-item.c
+> index 462546c0eaf4..31ad1eca29d5 100644
+> --- a/dir-item.c
+> +++ b/dir-item.c
+> @@ -24,7 +24,7 @@
+>  
+>  static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
+>  			      struct btrfs_path *path,
+> -			      const char *name, int name_len);
+> +			      const char *name, int name_len, bool verify);
+>  
+>  static struct btrfs_dir_item *insert_with_overflow(struct btrfs_trans_handle
+>  						   *trans,
+> @@ -43,7 +43,8 @@ static struct btrfs_dir_item *insert_with_overflow(struct btrfs_trans_handle
+>  	ret = btrfs_insert_empty_item(trans, root, path, cpu_key, data_size);
+>  	if (ret == -EEXIST) {
+>  		struct btrfs_dir_item *di;
+> -		di = btrfs_match_dir_item_name(root, path, name, name_len);
+> +		di = btrfs_match_dir_item_name(root, path, name, name_len,
+> +					       true);
+>  		if (di)
+>  			return ERR_PTR(-EEXIST);
+>  		ret = btrfs_extend_item(root, path, data_size);
+> @@ -196,7 +197,7 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+>  					     struct btrfs_root *root,
+>  					     struct btrfs_path *path, u64 dir,
+>  					     const char *name, int name_len,
+> -					     int mod)
+> +					     int mod, bool verify)
+>  {
+>  	int ret;
+>  	struct btrfs_key key;
+> @@ -227,14 +228,31 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+>  	    found_key.offset != key.offset)
+>  		return NULL;
+>  
+> -	return btrfs_match_dir_item_name(root, path, name, name_len);
+> +	return btrfs_match_dir_item_name(root, path, name, name_len, verify);
+>  }
+>  
+> +/*
+> + * Lookup dir index
+> + * 
+> + * @dir:	dir inode number
+> + * @name:	the filename we're looking for
+> + * @name_len:	name length
+> + * @index:	dir index
+> + *
+> + * Normally (@root, @dir, @index) should be enough to locate a dir index in a
+> + * *healthy* fs.
+> + * But with @name and @name_len, we can even handle corrupted fs with
+> + * duplicated DIR_INDEX.
 
- cmds-check.c   |  6 +++++-
- convert/main.c |  2 +-
- ctree.h        |  4 ++--
- dir-item.c     | 45 +++++++++++++++++++++++++++++++++++----------
- inode.c        | 14 +++++++-------
- 5 files changed, 50 insertions(+), 21 deletions(-)
+Put this description text after you documented the members.
 
--- 
-2.15.1
-
+> + *
+> + * @mod:	if we're going to modify the dir_index, needs @trans
+> + * @verify:	if we need to verify the dir_item before search
+> + * 		useful for check to delet corrupted dir index.
+> + */
+>  struct btrfs_dir_item *btrfs_lookup_dir_index(struct btrfs_trans_handle *trans,
+>  					      struct btrfs_root *root,
+>  					      struct btrfs_path *path, u64 dir,
+>  					      const char *name, int name_len,
+> -					      u64 index, int mod)
+> +					      u64 index, int mod, bool verify)
+>  {
+>  	int ret;
+>  	struct btrfs_key key;
+> @@ -251,7 +269,7 @@ struct btrfs_dir_item *btrfs_lookup_dir_index(struct btrfs_trans_handle *trans,
+>  	if (ret > 0)
+>  		return ERR_PTR(-ENOENT);
+>  
+> -	return btrfs_match_dir_item_name(root, path, name, name_len);
+> +	return btrfs_match_dir_item_name(root, path, name, name_len, verify);
+>  }
+>  
+>  /*
+> @@ -323,7 +341,7 @@ static int verify_dir_item(struct btrfs_root *root,
+>  
+>  static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
+>  			      struct btrfs_path *path,
+> -			      const char *name, int name_len)
+> +			      const char *name, int name_len, bool verify)
+>  {
+>  	struct btrfs_dir_item *dir_item;
+>  	unsigned long name_ptr;
+> @@ -335,7 +353,7 @@ static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,
+>  	leaf = path->nodes[0];
+>  	dir_item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
+>  	total_len = btrfs_item_size_nr(leaf, path->slots[0]);
+> -	if (verify_dir_item(root, leaf, dir_item))
+> +	if (verify && verify_dir_item(root, leaf, dir_item))
+>  		return NULL;
+>  
+>  	while(cur < total_len) {
+> diff --git a/inode.c b/inode.c
+> index 2398bca4a109..7b9a40062bb3 100644
+> --- a/inode.c
+> +++ b/inode.c
+> @@ -123,7 +123,7 @@ int check_dir_conflict(struct btrfs_root *root, char *name, int namelen,
+>  
+>  	/* Name conflicting? */
+>  	dir_item = btrfs_lookup_dir_item(NULL, root, path, dir, name,
+> -					 namelen, 0);
+> +					 namelen, 0, true);
+>  	if (IS_ERR(dir_item)) {
+>  		ret = PTR_ERR(dir_item);
+>  		goto out;
+> @@ -136,7 +136,7 @@ int check_dir_conflict(struct btrfs_root *root, char *name, int namelen,
+>  
+>  	/* Index conflicting? */
+>  	dir_item = btrfs_lookup_dir_index(NULL, root, path, dir, name,
+> -					  namelen, index, 0);
+> +					  namelen, index, 0, true);
+>  	if (IS_ERR(dir_item) && PTR_ERR(dir_item) == -ENOENT)
+>  		dir_item = NULL;
+>  	if (IS_ERR(dir_item)) {
+> @@ -301,7 +301,7 @@ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  	btrfs_release_path(path);
+>  
+>  	dir_item = btrfs_lookup_dir_item(NULL, root, path, parent_ino,
+> -					 name, namelen, 0);
+> +					 name, namelen, 0, false);
+>  	if (IS_ERR(dir_item)) {
+>  		ret = PTR_ERR(dir_item);
+>  		goto out;
+> @@ -311,7 +311,7 @@ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  	btrfs_release_path(path);
+>  
+>  	dir_item = btrfs_lookup_dir_index(NULL, root, path, parent_ino,
+> -					  name, namelen, index, 0);
+> +					  name, namelen, index, 0, false);
+>  	/*
+>  	 * Since lookup_dir_index() will return -ENOENT when not found,
+>  	 * we need to do extra check.
+> @@ -370,7 +370,7 @@ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  	if (del_dir_index) {
+>  		dir_item = btrfs_lookup_dir_index(trans, root, path,
+>  						  parent_ino, name, namelen,
+> -						  index, -1);
+> +						  index, -1, false);
+>  		if (IS_ERR(dir_item)) {
+>  			ret = PTR_ERR(dir_item);
+>  			goto out;
+> @@ -403,7 +403,7 @@ int btrfs_unlink(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  
+>  	if (del_dir_item) {
+>  		dir_item = btrfs_lookup_dir_item(trans, root, path, parent_ino,
+> -						 name, namelen, -1);
+> +						 name, namelen, -1, false);
+>  		if (IS_ERR(dir_item)) {
+>  			ret = PTR_ERR(dir_item);
+>  			goto out;
+> @@ -532,7 +532,7 @@ int btrfs_mkdir(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+>  		ret_ino = *ino;
+>  
+>  	dir_item = btrfs_lookup_dir_item(NULL, root, path, parent_ino,
+> -					 name, namelen, 0);
+> +					 name, namelen, 0, true);
+>  	if (IS_ERR(dir_item)) {
+>  		ret = PTR_ERR(dir_item);
+>  		goto out;
+> 

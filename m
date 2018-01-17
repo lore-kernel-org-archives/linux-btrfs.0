@@ -1,29 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44433 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932066AbeARPRT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Jan 2018 10:17:19 -0500
-Date: Thu, 18 Jan 2018 16:15:08 +0100
-From: David Sterba <dsterba@suse.cz>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz,
-        Anand Jain <anand.jain@oracle.com>
-Subject: Re: [PATCH 2/2] btrfs: remove unused arg from parse_subvol_options()
-Message-ID: <20180118151508.GM13726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <7fba2dc9-44a9-4317-b9fd-263b2a687e9a@jp.fujitsu.com>
- <557567d8-1557-389b-81b6-bb269c147320@jp.fujitsu.com>
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:46715 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750953AbeAQIgu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Jan 2018 03:36:50 -0500
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id B84C5AC0149
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jan 2018 17:36:46 +0900 (JST)
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>, Anand Jain <anand.jain@oracle.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH 0/2] btrfs: additional fix for mount cleanup
+Message-ID: <7fba2dc9-44a9-4317-b9fd-263b2a687e9a@jp.fujitsu.com>
+Date: Wed, 17 Jan 2018 17:36:38 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <557567d8-1557-389b-81b6-bb269c147320@jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 17, 2018 at 05:38:31PM +0900, Misono, Tomohiro wrote:
-> Remove unused arg 'holder' from parse_subvol_options(), which has been
-> forgotten to be cleaned in the commit b99beb110e2d ("btrfs: split
-> parse_early_options() in two").
-> 
-> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+This is based on the following branch:
+https://github.com/kdave/btrfs-devel/tree/misc-next
 
-Thanks, added to the rest of mount patches.
+And this is the additional fix for mount cleanup patch.
+(https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg71148.html
+
+1st patch fixes the problem "device scan/ready" fails for mounted
+filesystem.
+2nd patch drops unused argument.
+
+Sorry for messing things up.
+Regards,
+Tomohiro Misono
+
+*** BLURB HERE ***
+
+Tomohiro Misono (2):
+  btrfs: fix the bug of device scan/ready for mounted filesystem
+  btrfs: remove unused arg from parse_subvol_options()
+
+ fs/btrfs/super.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+-- 
+2.14.3
+

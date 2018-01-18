@@ -1,44 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yb0-f196.google.com ([209.85.213.196]:37926 "EHLO
-        mail-yb0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932859AbeALRm4 (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:52733 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752184AbeAREYT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jan 2018 12:42:56 -0500
-Received: by mail-yb0-f196.google.com with SMTP id b132so3017792yba.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 09:42:56 -0800 (PST)
+        Wed, 17 Jan 2018 23:24:19 -0500
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 5D29CAC0150
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:24:14 +0900 (JST)
+Received: from g01jpexchkw36.g01.fujitsu.local (unknown [10.0.193.4])
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id A14B96924C0
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:24:13 +0900 (JST)
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: bug report: mounting the same device to different mount points in
+ parallel may fail
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <db01b798-cc0a-f276-df4d-e9c334ea912e@jp.fujitsu.com>
+Date: Thu, 18 Jan 2018 13:23:35 +0900
 MIME-Version: 1.0
-From: Maciej Piechotka <uzytkownik2@gmail.com>
-Date: Fri, 12 Jan 2018 09:42:35 -0800
-Message-ID: <CAMcAH6gNbtTfxQGU1pOKifgN3k7r14wB2dNdqVpoB6eZJphRuQ@mail.gmail.com>
-Subject: Small btrfs corruptions on 4.14.13
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Although I think this rarely happens in the real world, mounting 
+the same device to different mount points in parallel may fail:
 
-Yesterday, after update to 4.14.13 from 4.14.12 I got a corruptions of
-btrfs. Each time transaction was aborted with error about something
-being already present. Unfortunatly as logs were on btrfs partition as
-well the only recovered part is:
+- kernel 4.15.0-rc8
 
-Jan 11 20:52:30 babylon5 kernel: BTRFS: Transaction aborted (error -17)
-Jan 11 20:52:30 babylon5 kernel: ------------[ cut here ]------------
-Jan 11 20:52:30 babylon5 kernel: WARNING: CPU: 3 PID: 312 at
-fs/btrfs/extent-tree.c:3089 btrfs_run_delayed_refs+0x249/0x260 [btrfs]
-(after reboot)
-Jan 11 21:01:02 babylon5 kernel: BTRFS warning (device dm-1): block
-group 13971226624 has wrong amount of free space
-Jan 11 21:01:02 babylon5 kernel: BTRFS warning (device dm-1): failed
-to load free space cache for block group 13971226624, rebuilding it
-now
+- Procedure
+[mount.sh]
+#!/bin/bash
+for i in `seq 1 1000`; do
+  echo $i
+  mount $1 $2
+  umount $2
+  if [ $? -ne 0 ]; then
+    exit 1;
+  fi
+done
 
+$ mkfs.btrfs -f /dev/sde
+$ ./mount.sh /dev/sde /mnt
+$ ./mount.sh /dev/sde /mnt2 (on the different terminal)
 
-First time it corrupted perf.js file in Firefox profile making seeming
-zeroing it's entry (owner root:root, wrong file type, permissions
-0000, timestamp on start of Unix epoch etc.). I could not find any
-corruptions second time. After each time scrub finished without
-problems.
+- stdout
+mount: /mnt2: wrong fs type, bad option, bad superblock on 
+/dev/sde, missing codepage or helper program, or other error.
 
-Matt
+- dmesg
+[  108.122576] BTRFS error (device sde): super_total_bytes 199481098240 mismatch with fs_devices total_rw_bytes 398962196480
+[  108.122647] BTRFS error (device sde): failed to read chunk tree: -22
+[  108.150060] BTRFS error (device sde): open_ctree failed
+
+xfs or ext4 works fine.
+
+Regards,
+Tomohiro Misono
+

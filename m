@@ -1,79 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f194.google.com ([209.85.192.194]:39988 "EHLO
-        mail-pf0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751650AbeAYX41 (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:41202 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753228AbeARCgL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Jan 2018 18:56:27 -0500
-Received: by mail-pf0-f194.google.com with SMTP id i66so6986821pfd.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 15:56:26 -0800 (PST)
-From: Omar Sandoval <osandov@osandov.com>
+        Wed, 17 Jan 2018 21:36:11 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0I2XAw8075660
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:36:11 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp2130.oracle.com with ESMTP id 2fjjung0qm-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:36:10 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0I2V9um016491
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:31:09 GMT
+Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0I2V92V004441
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:31:09 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kernel-team@fb.com
-Subject: [PATCH] Btrfs: delete dead code in btrfs_orphan_add()
-Date: Thu, 25 Jan 2018 15:56:17 -0800
-Message-Id: <ddecfd9f65019017bba48685a86554cf21350ade.1516924547.git.osandov@fb.com>
+Subject: [PATCH 0/2] fix device orders consistency
+Date: Thu, 18 Jan 2018 10:32:10 +0800
+Message-Id: <20180118023212.14256-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+By maintaining the device order (some) consistency it makes reproducing
+the problem more consistent.
 
-btrfs_orphan_add() has had this case commented out since it was first
-introduced in commit d68fc57b7e32 ("Btrfs: Metadata reservation for
-orphan inodes"). Most of the orphan cleanup code has been rewritten
-since then, so it's safe to say that this code isn't needed.
+Anand Jain (2):
+  btrfs: fix device order consistency
+  btrfs: fix alloc device order consistency
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/inode.c | 22 +---------------------
- 1 file changed, 1 insertion(+), 21 deletions(-)
+ fs/btrfs/volumes.c | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e1a7f3cb5be9..d4e3a09c0ea4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3334,17 +3334,6 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
- 
- 	if (!test_and_set_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 			      &inode->runtime_flags)) {
--#if 0
--		/*
--		 * For proper ENOSPC handling, we should do orphan
--		 * cleanup when mounting. But this introduces backward
--		 * compatibility issue.
--		 */
--		if (!xchg(&root->orphan_item_inserted, 1))
--			insert = 2;
--		else
--			insert = 1;
--#endif
- 		insert = 1;
- 		atomic_inc(&root->orphan_inodes);
- 	}
-@@ -3370,7 +3359,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
- 	}
- 
- 	/* insert an orphan item to track this unlinked/truncated file */
--	if (insert >= 1) {
-+	if (insert) {
- 		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
- 		if (ret) {
- 			atomic_dec(&root->orphan_inodes);
-@@ -3389,15 +3378,6 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
- 		ret = 0;
- 	}
- 
--	/* insert an orphan item to track subvolume contains orphan files */
--	if (insert >= 2) {
--		ret = btrfs_insert_orphan_item(trans, fs_info->tree_root,
--					       root->root_key.objectid);
--		if (ret && ret != -EEXIST) {
--			btrfs_abort_transaction(trans, ret);
--			return ret;
--		}
--	}
- 	return 0;
- }
- 
 -- 
-2.16.1
+2.15.0
 

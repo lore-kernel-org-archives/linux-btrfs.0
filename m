@@ -1,42 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33116 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933810AbeALO1t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jan 2018 09:27:49 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6D769ADEC
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 14:27:48 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: remove stale reada_lock from device
-Date: Fri, 12 Jan 2018 15:25:39 +0100
-Message-Id: <20180112142539.9891-1-dsterba@suse.com>
+Received: from userp2130.oracle.com ([156.151.31.86]:37248 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753812AbeARG41 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Jan 2018 01:56:27 -0500
+Subject: Re: [PATCH 1/2] btrfs: fix the bug of device scan/ready for mounted,
+ filesystem
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+References: <7fba2dc9-44a9-4317-b9fd-263b2a687e9a@jp.fujitsu.com>
+ <923e5500-d6d8-b4b5-eb0b-30b80760a3f1@jp.fujitsu.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <36426d8e-35a1-e35c-d654-90e3b1a80418@oracle.com>
+Date: Thu, 18 Jan 2018 14:57:28 +0800
+MIME-Version: 1.0
+In-Reply-To: <923e5500-d6d8-b4b5-eb0b-30b80760a3f1@jp.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We the global readahead lock in fs_info, the per-device has been unused
-since the initial commit 90519d66abbccc ("btrfs: state information for
-readahead").
 
-Reported-by: Matthew Wilcox <mawilcox@microsoft.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/volumes.h | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 15216fed918b..28c28eeadff3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -137,7 +137,6 @@ struct btrfs_device {
- 	struct rcu_head rcu;
- 
- 	/* readahead state */
--	spinlock_t reada_lock;
- 	atomic_t reada_in_flight;
- 	u64 reada_next;
- 	struct reada_zone *reada_curr_zone;
--- 
-2.15.1
+On 01/17/2018 04:37 PM, Misono, Tomohiro wrote:
+> commit ae3acc5fc0bf ("btrfs: cleanup btrfs_mount() using
+> btrfs_mount_root()") introduces a bug that "btrfs device scan/ready" for
+> mounted filesystem fails.
+> 
+> This is because fs_info->bdev_holder has been changed to hold
+> btrfs_root_fs_type instead of btrfs_fs_type by this commit, but ioctl
+> for device scan/ready still uses btrfs_fs_type to call
+> btrfs_scan_one_device(). This leads to failiure of blkdev_get_by_path()
+> for mounted filesystem because of different holder type.
+> 
+> Fix this by specifying btrfs_root_fs_type for btrfs_scan_one_device() in
+> the path of device ready/scan ioctl.
 
+
+   Reviewed-by: Anand Jain <Anand.Jain@oracle.com>
+
+Thanks, Anand
+
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> ---
+>   fs/btrfs/super.c | 4 ++--
+>   1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 9438d32c4267..6ff13948b655 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2231,11 +2231,11 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>   	switch (cmd) {
+>   	case BTRFS_IOC_SCAN_DEV:
+>   		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+> -					    &btrfs_fs_type, &fs_devices);
+> +					    &btrfs_root_fs_type, &fs_devices);
+>   		break;
+>   	case BTRFS_IOC_DEVICES_READY:
+>   		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+> -					    &btrfs_fs_type, &fs_devices);
+> +					    &btrfs_root_fs_type, &fs_devices);
+>   		if (ret)
+>   			break;
+>   		ret = !(fs_devices->num_devices == fs_devices->total_devices);
+> 

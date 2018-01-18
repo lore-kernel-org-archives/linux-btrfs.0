@@ -1,105 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:60098 "EHLO
+Received: from aserp2120.oracle.com ([141.146.126.78]:33554 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756437AbeARN7p (ORCPT
+        with ESMTP id S1756215AbeAROBh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Jan 2018 08:59:45 -0500
+        Thu, 18 Jan 2018 09:01:37 -0500
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0IDunEa127618
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:59:45 GMT
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0IE1MrG131523
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 14:01:36 GMT
 Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2fjvfr848y-1
+        by aserp2120.oracle.com with ESMTP id 2fjvfr84ja-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:59:45 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0IDxigm005075
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 14:01:36 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0IE1ZBE015156
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:59:44 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0IDxiZU016497
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:59:44 GMT
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 14:01:36 GMT
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0IE1ZJf001241
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 14:01:35 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] btrfs: make btrfs_free_stale_devices() to match the path
-Date: Thu, 18 Jan 2018 22:00:37 +0800
-Message-Id: <20180118140037.25158-7-anand.jain@oracle.com>
-In-Reply-To: <20180118140037.25158-1-anand.jain@oracle.com>
-References: <20180118140037.25158-1-anand.jain@oracle.com>
+Subject: [PATCH RESEND v4 0/4] device_list_add() peparation to add reappearing missing device
+Date: Thu, 18 Jan 2018 22:02:32 +0800
+Message-Id: <20180118140236.25349-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+(Apply on top of my patchset
+   [PATCH v4 0/6] preparatory work to add device forget
+ for conflict free apply. They don't actually depend on
+ each other though).
 
-The btrfs_free_stale_devices() is updated to match for the given
-device path and delete it. (It searches for only unmounted list of
-devices.) Also drop the comment about different path being used
-for the same device, since now we will have cli to clean any
-device that's not a concern any more.
+v3->v4:
+ @3/4: Just return device instead of PTR_ERR(ERR_PTR(device));
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
----
- fs/btrfs/volumes.c | 29 +++++++++++++++++------------
- 1 file changed, 17 insertions(+), 12 deletions(-)
+v2->v3:
+ Fix device_list_add() fn description which was still referring to the
+ previous return values.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a3edd4d92c57..68674da7f5fc 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -605,8 +605,17 @@ static void pending_bios_fn(struct btrfs_work *work)
- 	run_scheduled_bios(device);
- }
- 
--
--static void btrfs_free_stale_devices(struct btrfs_device *skip_dev)
-+/*
-+ * btrfs_free_stale_devices()
-+ *  Search and remove all stale (devices which are not mounted) devices.
-+ *  When both inputs are NULL, it will search and release all stale devices.
-+ *  path:	Optional. When provided will it release all unmounted devices
-+ *		matching this path only.
-+ *  skip_dev:	Optional. Will skip this device when searching for the stale
-+ *		devices.
-+ */
-+static void btrfs_free_stale_devices(const char *path,
-+				     struct btrfs_device *skip_dev)
- {
- 	struct btrfs_fs_devices *fs_devs, *tmp_fs_devs;
- 	struct btrfs_device *dev, *tmp_dev;
-@@ -620,19 +629,15 @@ static void btrfs_free_stale_devices(struct btrfs_device *skip_dev)
- 					 &fs_devs->devices, dev_list) {
- 			int not_found = 0;
- 
--			if (skip_dev && (skip_dev == dev || !dev->name))
-+			if (skip_dev && skip_dev == dev)
-+				continue;
-+			if (path && !dev->name)
- 				continue;
- 
--			/*
--			 * Todo: This won't be enough. What if the same device
--			 * comes back (with new uuid and) with its mapper path?
--			 * But for now, this does help as mostly an admin will
--			 * either use mapper or non mapper path throughout.
--			 */
- 			rcu_read_lock();
--			if (skip_dev)
-+			if (path)
- 				not_found = strcmp(rcu_str_deref(dev->name),
--						   rcu_str_deref(skip_dev->name));
-+						   path);
- 			rcu_read_unlock();
- 			if (not_found)
- 				continue;
-@@ -774,7 +779,7 @@ static noinline int device_list_add(const char *path,
- 
- 		ret = 1;
- 		device->fs_devices = fs_devices;
--		btrfs_free_stale_devices(device);
-+		btrfs_free_stale_devices(path, device);
- 	} else if (!device->name || strcmp(device->name->str, path)) {
- 		/*
- 		 * When FS is already mounted.
+v1->v2:
+ Drop patch 5/5 for uuid_mutex optimize. That was wrong. Thanks Josef.
+ In patch 3/5 make btrfs_device * as return.
+
+Cleanup of device_list_add(), mainly in preparation to handle
+reappearing missing device which its next reroll will be sent
+separately.
+
+Anand Jain (4):
+  btrfs: move pr_info into device_list_add
+  btrfs: set the total_devices in device_list_add()
+  btrfs: get device pointer from device_list_add()
+  btrfs: drop devid as device_list_add() arg
+
+ fs/btrfs/volumes.c | 63 +++++++++++++++++++++++-------------------------------
+ 1 file changed, 27 insertions(+), 36 deletions(-)
+
 -- 
 2.7.0
-

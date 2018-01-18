@@ -1,171 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:45326 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752530AbeAEUyK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 15:54:10 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.21/8.16.0.21) with SMTP id w05KqYq4068967
-        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 20:54:09 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2fagch035q-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jan 2018 20:54:09 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w05Ks8H3004947
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 20:54:08 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w05Ks84C031546
-        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 20:54:08 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 02/10] Btrfs: fix unexpected EEXIST from btrfs_get_extent
-Date: Fri,  5 Jan 2018 12:51:09 -0700
-Message-Id: <20180105195117.5131-3-bo.li.liu@oracle.com>
-In-Reply-To: <20180105195117.5131-1-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:56344 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753361AbeARQyA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Jan 2018 11:54:00 -0500
+Date: Thu, 18 Jan 2018 17:51:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 00/10] bugfixes and regression tests of
+ btrfs_get_extent
+Message-ID: <20180118165150.GR13726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180105195117.5131-1-bo.li.liu@oracle.com>
+ <20180108195734.GO13726@twin.jikos.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180108195734.GO13726@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes a corner case that is caused by a race of dio write vs dio
-read/write.
+On Mon, Jan 08, 2018 at 08:57:34PM +0100, David Sterba wrote:
+> On Fri, Jan 05, 2018 at 12:51:07PM -0700, Liu Bo wrote:
+> > Although
+> > commit e6c4efd87ab0 ("btrfs: Fix and enhance merge_extent_mapping() to insert best fitted extent map")
+> > fixed up the negetive em->len, it has introduced several regressions, several has been fixed by
+> > 
+> > commit 32be3a1ac6d0 ("btrfs: Fix the wrong condition judgment about subset extent map"),
+> > commit 8dff9c853410 ("Btrfs: deal with duplciates during extent_map insertion in btrfs_get_extent") and
+> > commit 8e2bd3b7fac9 ("Btrfs: deal with existing encompassing extent map in btrfs_get_extent()").
+> > 
+> > Unfortunately, there is one more regression which is caught recently by a
+> > user's workloads.
+> > 
+> > While debugging the above issue, I found that all of these bugs are caused
+> > by some racy situations, which can be very tricky to reproduce, so I
+> > created several extent map specific test cases in btrfs's selftest
+> > framework.
+> > 
+> > Patch 1-2 are fixing two bugs.
+> > Patch 3-4 are some preparatory work.
+> > Patch 3-5 are regression tests about the logic of handling EEXIST from
+> > adding extent map.
+> > Patch 8-10 are debugging wise, one is a direct tracepoint and the other is
+> > to enable kprobe on merge_extent_mapping.
+> > 
+> > v2:
+> > - Improve commit log to provide more details about the bug.
+> > - Adjust bugfixes to the front so that we can merge them firstly.
+> 
+> Patchset updated in for-next. Expected merge target is 4.16, review is
+> still needed (and welcome).
 
-Here is how the race could happen.
-
-Suppose that no extent map has been loaded into memory yet.
-There is a file extent [0, 32K), two jobs are running concurrently
-against it, t1 is doing dio write to [8K, 32K) and t2 is doing dio
-read from [0, 4K) or [4K, 8K).
-
-t1 goes ahead of t2 and splits em [0, 32K) to em [0K, 8K) and [8K 32K).
-
-------------------------------------------------------
-             t1                                t2
-      btrfs_get_blocks_direct()         btrfs_get_blocks_direct()
-       -> btrfs_get_extent()              -> btrfs_get_extent()
-           -> lookup_extent_mapping()
-           -> add_extent_mapping()            -> lookup_extent_mapping()
-              # load [0, 32K)
-       -> btrfs_new_extent_direct()
-           -> btrfs_drop_extent_cache()
-              # split [0, 32K) and
-	      # drop [8K, 32K)
-           -> add_extent_mapping()
-              # add [8K, 32K)
-                                              -> add_extent_mapping()
-                                                 # handle -EEXIST when adding
-                                                 # [0, 32K)
-------------------------------------------------------
-About how t2(dio read/write) runs into -EEXIST:
-
-a) add_extent_mapping() gets -EEXIST for adding em [0, 32k),
-
-b) search_extent_mapping() then returns [0, 8k) as the existing em,
-   even though start == existing->start, em is [0, 32k) so that
-   extent_map_end(em) > extent_map_end(existing), i.e. 32k > 8k,
-
-c) then it goes thru merge_extent_mapping() which tries to add a [8k, 8k)
-   (with a length 0) and returns -EEXIST as [8k, 32k) is already in tree,
-
-d) so btrfs_get_extent() ends up returning -EEXIST to dio read/write,
-   which is confusing applications.
-
-Here I conclude all the possible situations,
-1) start < existing->start
-
-            +-----------+em+-----------+
-+--prev---+ |     +-------------+      |
-|         | |     |             |      |
-+---------+ +     +---+existing++      ++
-                +
-                |
-                +
-             start
-
-2) start == existing->start
-
-      +------------em------------+
-      |     +-------------+      |
-      |     |             |      |
-      +     +----existing-+      +
-            |
-            |
-            +
-         start
-
-3) start > existing->start && start < (existing->start + existing->len)
-
-      +------------em------------+
-      |     +-------------+      |
-      |     |             |      |
-      +     +----existing-+      +
-               |
-               |
-               +
-             start
-
-4) start >= (existing->start + existing->len)
-
-+-----------+em+-----------+
-|     +-------------+      | +--next---+
-|     |             |      | |         |
-+     +---+existing++      + +---------+
-                      +
-                      |
-                      +
-                   start
-
-As we can see, it turns out that if start is within existing em (front
-inclusive), then the existing em should be returned as is, otherwise,
-we try our best to merge candidate em with sibling ems to form a
-larger em (in order to reduce the total number of em).
-
-Reported-by: David Vallender <david.vallender@landmark.co.uk>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: Improve commit log to provide more details about the bug.
-
- fs/btrfs/inode.c | 17 +++--------------
- 1 file changed, 3 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2784bb3..a270fe2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7162,19 +7162,12 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 		 * existing will always be non-NULL, since there must be
- 		 * extent causing the -EEXIST.
- 		 */
--		if (existing->start == em->start &&
--		    extent_map_end(existing) >= extent_map_end(em) &&
--		    em->block_start == existing->block_start) {
--			/*
--			 * The existing extent map already encompasses the
--			 * entire extent map we tried to add.
--			 */
-+		if (start >= existing->start &&
-+		    start < extent_map_end(existing)) {
- 			free_extent_map(em);
- 			em = existing;
- 			err = 0;
--
--		} else if (start >= extent_map_end(existing) ||
--		    start <= existing->start) {
-+		} else {
- 			/*
- 			 * The existing extent map is the one nearest to
- 			 * the [start, start + len) range which overlaps
-@@ -7186,10 +7179,6 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
- 				free_extent_map(em);
- 				em = NULL;
- 			}
--		} else {
--			free_extent_map(em);
--			em = existing;
--			err = 0;
- 		}
- 	}
- 	write_unlock(&em_tree->lock);
--- 
-2.9.4
-
+Patchset added to 4.16.

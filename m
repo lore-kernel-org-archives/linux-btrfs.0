@@ -1,102 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:36283 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751747AbeASID2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jan 2018 03:03:28 -0500
+Received: from mx2.suse.de ([195.135.220.15]:41252 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754440AbeASJk7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Jan 2018 04:40:59 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id B8347ACB3
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Jan 2018 09:40:58 +0000 (UTC)
 Subject: Re: [PATCH v2 2/3] btrfs-progs: dir-item: Don't do extra filetype
  validaction check for btrfs_match_dir_item_name
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        <linux-btrfs@vger.kernel.org>
-CC: <nborisov@suse.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180119072536.22286-1-wqu@suse.com>
  <20180119072536.22286-3-wqu@suse.com>
- <9fe43408-dfcd-efa3-7195-87fcdba033ab@cn.fujitsu.com>
- <195d1a89-ba5d-081b-91de-f441679414c0@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <ff6ae052-0130-a937-4d81-213d58b1e841@cn.fujitsu.com>
-Date: Fri, 19 Jan 2018 16:07:59 +0800
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <56ce96dd-a711-c19e-b0b7-df65d305c763@suse.com>
+Date: Fri, 19 Jan 2018 11:40:57 +0200
 MIME-Version: 1.0
-In-Reply-To: <195d1a89-ba5d-081b-91de-f441679414c0@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20180119072536.22286-3-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 01/19/2018 03:38 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年01月19日 15:39, Su Yue wrote:
->>
->>
->> On 01/19/2018 03:25 PM, Qu Wenruo wrote:
->>> btrfs_match_dir_item_name() will check if its filetype is valid before
->>> doing search, this makes btrfs-progs unable to locate and remove invalid
->>> dir_index for btrfs_unlink().
->>>
->>> This function only affects btrfs_link() and btrfs_unlink() in upper
->>> layer, and normal check can find invalid filetype by itself.
->>>
->> Lowmem mode can't handles wrong filetype well now.
->> I'm working on it. And this change is okay for me.
-> 
-> I think you mean *original* mode can't handle it.
-> 
-Sorry, I mean that lowmem mode can't handle more complex cases.
-This patchset does well enough for the single case.
-I will fix it for original mode and new test-case will be
-submitted.
+On 19.01.2018 09:25, Qu Wenruo wrote:
+> btrfs_match_dir_item_name() will check if its filetype is valid before
+> doing search, this makes btrfs-progs unable to locate and remove invalid
+> dir_index for btrfs_unlink().>
+> This function only affects btrfs_link() and btrfs_unlink() in upper
+> layer, and normal check can find invalid filetype by itself.
 
-Thanks,
-Su
-> As v4.14.1 lowmem mode can detect such problem without problem:
-> -------
-> checking fs roots
-> ERROR: root 5 INODE_ITEM[258] index 2 name file1 filetype 34 mismath
-> ERROR: root 5 DIR INDEX[257 2] missing name file1 filetype 1
-> ERROR: errors found in fs roots
-> found 131072 bytes used, error(s) found
-> -------
+There is no function btrfs_link in btrfs-progs, there is, however,
+btrfs_add_link did you mean that function? However, it doesn't seem to
+use verify_dir_item hence the check you are removing. I think this part
+of the commit log should be more precise. Also it's not really clear
+what you mean by "normal check" in this sentence.
 > 
-> And patch 1/3 will handle the repair, so it shouldn't be a problem for
-> lowmem.
-> 
-> Thanks,
-> Qu
->>
->> Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
->>
->>> So remove the filetype check is completely safe in this case, and will
->>> enhance btrfs_unlink() to remove invalid dir_index/dir_item for repair.
->>>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>> ---
->>>    dir-item.c | 6 ------
->>>    1 file changed, 6 deletions(-)
->>>
->>> diff --git a/dir-item.c b/dir-item.c
->>> index 462546c0eaf4..e0a0ab4d7a5d 100644
->>> --- a/dir-item.c
->>> +++ b/dir-item.c
->>> @@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
->>>        u16 namelen = BTRFS_NAME_LEN;
->>>        u8 type = btrfs_dir_type(leaf, dir_item);
->>>    -    if (type >= BTRFS_FT_MAX) {
->>> -        fprintf(stderr, "invalid dir item type: %d\n",
->>> -               (int)type);
->>> -        return 1;
->>> -    }
->>> -
->>>        if (type == BTRFS_FT_XATTR)
->>>            namelen = XATTR_NAME_MAX;
->>>   
->>
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> So remove the filetype check is completely safe in this case, and will
+> enhance btrfs_unlink() to remove invalid dir_index/dir_item for repair.
+
+So the problem is that since btrfs_unlink calls verify_item and the
+latter has the filetype check in case of wrong filetype (corruption)
+verify_dir_item fails, hence we cannot perform the unlink? If my
+understanding is correct how about something like:
 
 
+If we have a corrupted dir item and enough information to repair it we
+need to first delete the old/corrupted version and then insert a new
+one. However, btrfs_unlink calls btrfs_match_dir_item_name to locate the
+offending dir item for deletion. The latter, in turn, uses
+verify_dir_item which checks if the value for DIR item's type is sane.
+In case of a corrupted type value then verify_dir_item will fail which
+in turn will prevent btrfs_unlink from deleting the offending item.
+
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  dir-item.c | 6 ------
+>  1 file changed, 6 deletions(-)
+> 
+> diff --git a/dir-item.c b/dir-item.c
+> index 462546c0eaf4..e0a0ab4d7a5d 100644
+> --- a/dir-item.c
+> +++ b/dir-item.c
+> @@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
+>  	u16 namelen = BTRFS_NAME_LEN;
+>  	u8 type = btrfs_dir_type(leaf, dir_item);
+>  
+> -	if (type >= BTRFS_FT_MAX) {
+> -		fprintf(stderr, "invalid dir item type: %d\n",
+> -		       (int)type);
+> -		return 1;
+> -	}
+> -
+>  	if (type == BTRFS_FT_XATTR)
+>  		namelen = XATTR_NAME_MAX;
+>  
+> 

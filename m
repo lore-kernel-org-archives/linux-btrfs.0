@@ -1,62 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:35601 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752940AbeAEUyL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jan 2018 15:54:11 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.21/8.16.0.21) with SMTP id w05KqOso024209
-        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 20:54:11 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by userp2130.oracle.com with ESMTP id 2fagex02gb-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jan 2018 20:54:11 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w05KsAhw010421
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 20:54:10 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w05KsAcA014920
-        for <linux-btrfs@vger.kernel.org>; Fri, 5 Jan 2018 20:54:10 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 10/10] Btrfs: noinline merge_extent_mapping
-Date: Fri,  5 Jan 2018 12:51:17 -0700
-Message-Id: <20180105195117.5131-11-bo.li.liu@oracle.com>
-In-Reply-To: <20180105195117.5131-1-bo.li.liu@oracle.com>
-References: <20180105195117.5131-1-bo.li.liu@oracle.com>
+Received: from mout.gmx.net ([212.227.15.19]:61593 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754796AbeASAqV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 18 Jan 2018 19:46:21 -0500
+Subject: Re: [PATCH] btrfs: Use IS_ALIGNED in btrfs_truncate_block instead of
+ opencoding it
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1516279626-6111-1-git-send-email-nborisov@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <7d7570f4-43fa-8ebc-9a16-b2777eeabf3f@gmx.com>
+Date: Fri, 19 Jan 2018 08:45:40 +0800
+MIME-Version: 1.0
+In-Reply-To: <1516279626-6111-1-git-send-email-nborisov@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="qRLsniUpJu8GJG79YijmJJFJVUFulAky7"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to debug subtle bugs around merge_extent_mapping(), perf probe
-can be used to check the arguments, but sometimes merge_extent_mapping()
-got inlined by compiler and couldn't be probed.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--qRLsniUpJu8GJG79YijmJJFJVUFulAky7
+Content-Type: multipart/mixed; boundary="eMN5lWVxQMQFTCIhvrET9j0UehXbEzjPe";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <7d7570f4-43fa-8ebc-9a16-b2777eeabf3f@gmx.com>
+Subject: Re: [PATCH] btrfs: Use IS_ALIGNED in btrfs_truncate_block instead of
+ opencoding it
+References: <1516279626-6111-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1516279626-6111-1-git-send-email-nborisov@suse.com>
 
-This is adding noinline attribute to merge_extent_mapping().
+--eMN5lWVxQMQFTCIhvrET9j0UehXbEzjPe
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent_map.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index a5a1d17..9e5fdf9 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -480,10 +480,10 @@ static struct extent_map *prev_extent_map(struct extent_map *em)
-  * and an extent that you want to insert, deal with overlap and insert
-  * the best fitted new extent into the tree.
-  */
--static int merge_extent_mapping(struct extent_map_tree *em_tree,
--				struct extent_map *existing,
--				struct extent_map *em,
--				u64 map_start)
-+static noinline int merge_extent_mapping(struct extent_map_tree *em_tree,
-+					 struct extent_map *existing,
-+					 struct extent_map *em,
-+					 u64 map_start)
- {
- 	struct extent_map *prev;
- 	struct extent_map *next;
--- 
-2.9.4
 
+On 2018=E5=B9=B401=E6=9C=8818=E6=97=A5 20:47, Nikolay Borisov wrote:
+> No functional changes, just makes the code more readable
+>=20
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/inode.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 269d129ffb1f..e9690e2aba09 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4775,8 +4775,8 @@ int btrfs_truncate_block(struct inode *inode, lof=
+f_t from, loff_t len,
+>  	u64 block_start;
+>  	u64 block_end;
+> =20
+> -	if ((offset & (blocksize - 1)) =3D=3D 0 &&
+> -	    (!len || ((len & (blocksize - 1)) =3D=3D 0)))
+> +	if (IS_ALIGNED(offset, blocksize) &&
+> +	    (!len || IS_ALIGNED(len, blocksize)))
+>  		goto out;
+> =20
+>  	block_start =3D round_down(from, blocksize);
+>=20
+
+
+--eMN5lWVxQMQFTCIhvrET9j0UehXbEzjPe--
+
+--qRLsniUpJu8GJG79YijmJJFJVUFulAky7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlphP7QXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgmtAf+J1vtlPuQjXAV6P+24Or4XXUy
+MCyHBswnK7xIMTaNtQcIu9FerFlZ5DLQuEgnNIYd2QczkBe4eJCxOgQC7HLrK1wX
+YiCP7dsJ8qWpCnbGTNkLTg5vWSINRzWpIRg2J8l7oz5zD8B/QZaZZ7y0Fk+uIq+b
+0yu9Q7GVwWOYECpf178Rs7dYGIkmBhFliTdBTeyAzR0B290T7+DzcYPTHskDfUPb
+EkxAU6FGO7llG3RXk9TvD+9/TZy/r7WzjzIXvWoVLsvG9YSkV7j1u2S7g+iqzSDp
++PbQAiflKEsm50XRW4zcKWqoppEkGAS1iRUdyT+C/jQUhsPAkMt8IEX5HKWv2g==
+=pyqa
+-----END PGP SIGNATURE-----
+
+--qRLsniUpJu8GJG79YijmJJFJVUFulAky7--

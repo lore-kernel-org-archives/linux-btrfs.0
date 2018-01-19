@@ -1,187 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56055 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754104AbeASMey (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jan 2018 07:34:54 -0500
-Subject: Re: [PATCH v2 2/3] btrfs-progs: dir-item: Don't do extra filetype
- validaction check for btrfs_match_dir_item_name
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180119072536.22286-1-wqu@suse.com>
- <20180119072536.22286-3-wqu@suse.com>
- <56ce96dd-a711-c19e-b0b7-df65d305c763@suse.com>
- <cf26e3d3-61c4-2086-4414-64b5a004c0f7@gmx.com>
- <36928b14-2f3b-d072-de63-fb79a1734ea7@suse.com>
- <403e7168-aec5-e4b3-b7cf-687832d56c07@gmx.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <214a4911-938a-8ab9-59f5-ac61e374ebf2@suse.com>
-Date: Fri, 19 Jan 2018 14:34:52 +0200
-MIME-Version: 1.0
-In-Reply-To: <403e7168-aec5-e4b3-b7cf-687832d56c07@gmx.com>
-Content-Type: text/plain; charset=utf-8
+Received: from victor.provo.novell.com ([137.65.250.26]:42750 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754104AbeASFiC (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 19 Jan 2018 00:38:02 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 16/16] btrfs-progs: check/lowmem: Cleanup unnecessary _v2 suffix
+Date: Fri, 19 Jan 2018 13:37:31 +0800
+Message-Id: <20180119053731.10795-17-wqu@suse.com>
+In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
+References: <20180119053731.10795-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There used to be some functions with _v2 suffix to distinguish them from
+original mode similar functions.
 
+However now moved lowmem code to their own check/lowmem.[ch], cleanup
+such _v2 suffixes, and for functions really needs to be distinguished
+from original mode (exported functions), change the _v2 suffix to
+_lowmem.
 
-On 19.01.2018 12:39, Qu Wenruo wrote:
-> 
-> 
-> On 2018年01月19日 18:21, Nikolay Borisov wrote:
->>
->>
->> On 19.01.2018 12:03, Qu Wenruo wrote:
->>>
->>>
->>> On 2018年01月19日 17:40, Nikolay Borisov wrote:
->>>>
->>>>
->>>> On 19.01.2018 09:25, Qu Wenruo wrote:
->>>>> btrfs_match_dir_item_name() will check if its filetype is valid before
->>>>> doing search, this makes btrfs-progs unable to locate and remove invalid
->>>>> dir_index for btrfs_unlink().>
->>>>> This function only affects btrfs_link() and btrfs_unlink() in upper
->>>>> layer, and normal check can find invalid filetype by itself.
->>>>
->>>> There is no function btrfs_link in btrfs-progs, there is, however,
->>>> btrfs_add_link did you mean that function?
->>>
->>> Yep, sorry for the wrong name.
->>>
->>>> However, it doesn't seem to
->>>> use verify_dir_item hence the check you are removing. I think this part
->>>> of the commit log should be more precise. Also it's not really clear
->>>> what you mean by "normal check" in this sentence.
->>>
->>> I skipped several function calls.
->>>
->>> btrfs_add_link()
->>> |- check_dir_conflict
->>>    |- btrfs_lookup_dir_index() / btrfs_lookup_dir_item()
->>>       |- btrfs_match_dir_item_name()
->>>          |- verify_dir_item()
->>>
->>> And for btrfs_add_link() without checking invalid filetype, we can avoid
->>> case like inserting duplicated DIR_ITEM/DIR_INDEX to avoid further
->>> screwing up things.
->>
->> Right, since if verify_dir_item fails we just return NULL as opposed to
->> an error from btrfs_match_dir_item_name.
->>
->> <offtopic>
->> Hm, so is it really possible to get a result for (key DIR_ITEM offset)
->> and have btrfs_match_dir_item_name fail for that result?
->>
->> What I'm getting is that if btrfs_Search_slot returns 0 for such a query
->> irrespective of whether the string name matches or not we should return
->> some error code other than NULL ?
-> 
-> This sounds reasonable, but it may end up as replacing NULL to
-> PTR_ERR(-ENOENT).
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/lowmem.c | 46 +++++++++++++++++++++++-----------------------
+ check/lowmem.h |  4 ++--
+ check/main.c   |  4 ++--
+ 3 files changed, 27 insertions(+), 27 deletions(-)
 
-Well in the case of check_dir_conflict it makes a whole lot of
-difference. Currently if verify_dir_item fails then we propagate NULL up
-to check_dir_conflict where we have the following error handling:
+diff --git a/check/lowmem.c b/check/lowmem.c
+index 7fb2016edb4a..fdd4d624881e 100644
+--- a/check/lowmem.c
++++ b/check/lowmem.c
+@@ -28,8 +28,8 @@
+ #include "check/common.h"
+ #include "check/lowmem.h"
+ 
+-static int calc_extent_flag_v2(struct btrfs_root *root, struct extent_buffer *eb,
+-			       u64 *flags_ret)
++static int calc_extent_flag(struct btrfs_root *root, struct extent_buffer *eb,
++			    u64 *flags_ret)
+ {
+ 	struct btrfs_root *extent_root = root->fs_info->extent_root;
+ 	struct btrfs_root_item *ri = &root->root_item;
+@@ -225,7 +225,7 @@ static int update_nodes_refs(struct btrfs_root *root, u64 bytenr,
+ 	}
+ 
+ 	if (check_all && eb) {
+-		calc_extent_flag_v2(root, eb, &flags);
++		calc_extent_flag(root, eb, &flags);
+ 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)
+ 			nrefs->full_backref[level] = 1;
+ 	}
+@@ -2084,8 +2084,8 @@ out:
+  * Returns <0  Fatal error, must exit the whole check
+  * Returns 0   No errors found
+  */
+-static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
+-			       struct node_refs *nrefs, int *level, int ext_ref)
++static int process_one_leaf(struct btrfs_root *root, struct btrfs_path *path,
++			    struct node_refs *nrefs, int *level, int ext_ref)
+ {
+ 	struct extent_buffer *cur = path->nodes[0];
+ 	struct btrfs_key key;
+@@ -3898,10 +3898,10 @@ out:
+  * Returns <0  Fatal error, must exit the whole check
+  * Returns 0   No errors found
+  */
+-static int walk_down_tree_v2(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root, struct btrfs_path *path,
+-			     int *level, struct node_refs *nrefs, int ext_ref,
+-			     int check_all)
++static int walk_down_tree(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root, struct btrfs_path *path,
++			  int *level, struct node_refs *nrefs, int ext_ref,
++			  int check_all)
+ {
+ 	enum btrfs_tree_block_status status;
+ 	u64 bytenr;
+@@ -3971,8 +3971,8 @@ static int walk_down_tree_v2(struct btrfs_trans_handle *trans,
+ 
+ 			ret = 0;
+ 			if (!check_all)
+-				ret = process_one_leaf_v2(root, path, nrefs,
+-							  level, ext_ref);
++				ret = process_one_leaf(root, path, nrefs,
++						       level, ext_ref);
+ 			else
+ 				ret = check_leaf_items(trans, root, path,
+ 					       nrefs, account_file_data);
+@@ -3996,7 +3996,7 @@ static int walk_down_tree_v2(struct btrfs_trans_handle *trans,
+ 		if (ret < 0)
+ 			break;
+ 		/*
+-		 * check all trees in check_chunks_and_extent_v2
++		 * check all trees in check_chunks_and_extent
+ 		 * check shared node once in check_fs_roots
+ 		 */
+ 		if (!check_all && !nrefs->need_check[*level - 1]) {
+@@ -4049,8 +4049,8 @@ static int walk_down_tree_v2(struct btrfs_trans_handle *trans,
+ 	return err;
+ }
+ 
+-static int walk_up_tree_v2(struct btrfs_root *root, struct btrfs_path *path,
+-			   int *level)
++static int walk_up_tree(struct btrfs_root *root, struct btrfs_path *path,
++			int *level)
+ {
+ 	int i;
+ 	struct extent_buffer *leaf;
+@@ -4203,7 +4203,7 @@ out:
+ }
+ 
+ /*
+- * This function calls walk_down_tree_v2 and walk_up_tree_v2 to check tree
++ * This function calls walk_down_tree and walk_up_tree to check tree
+  * blocks and integrity of fs tree items.
+  *
+  * @root:         the root of the tree to be checked.
+@@ -4260,8 +4260,8 @@ static int check_btrfs_root(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	while (1) {
+-		ret = walk_down_tree_v2(trans, root, &path, &level, &nrefs,
+-					ext_ref, check_all);
++		ret = walk_down_tree(trans, root, &path, &level, &nrefs,
++				     ext_ref, check_all);
+ 
+ 		err |= !!ret;
+ 
+@@ -4271,7 +4271,7 @@ static int check_btrfs_root(struct btrfs_trans_handle *trans,
+ 			break;
+ 		}
+ 
+-		ret = walk_up_tree_v2(root, &path, &level);
++		ret = walk_up_tree(root, &path, &level);
+ 		if (ret != 0) {
+ 			/* Normal exit, reset ret to err */
+ 			ret = err;
+@@ -4293,7 +4293,7 @@ out:
+  * Return 0 if no error found.
+  * Return <0 for error.
+  */
+-static int check_fs_root_v2(struct btrfs_root *root, unsigned int ext_ref)
++static int check_fs_root(struct btrfs_root *root, unsigned int ext_ref)
+ {
+ 	reset_cached_block_groups(root->fs_info);
+ 	return check_btrfs_root(NULL, root, ext_ref, 0);
+@@ -4393,12 +4393,12 @@ out:
+ /*
+  * Check all fs/file tree in low_memory mode.
+  *
+- * 1. for fs tree root item, call check_fs_root_v2()
++ * 1. for fs tree root item, call check_fs_root()
+  * 2. for fs tree root ref/backref, call check_root_ref()
+  *
+  * Return 0 if no error occurred.
+  */
+-int check_fs_roots_v2(struct btrfs_fs_info *fs_info)
++int check_fs_roots_lowmem(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_root *tree_root = fs_info->tree_root;
+ 	struct btrfs_root *cur_root = NULL;
+@@ -4449,7 +4449,7 @@ int check_fs_roots_v2(struct btrfs_fs_info *fs_info)
+ 				goto next;
+ 			}
+ 
+-			ret = check_fs_root_v2(cur_root, ext_ref);
++			ret = check_fs_root(cur_root, ext_ref);
+ 			err |= ret;
+ 
+ 			if (key.objectid == BTRFS_TREE_RELOC_OBJECTID)
+@@ -4477,7 +4477,7 @@ out:
+ /*
+  * Low memory usage version check_chunks_and_extents.
+  */
+-int check_chunks_and_extents_v2(struct btrfs_fs_info *fs_info)
++int check_chunks_and_extents_lowmem(struct btrfs_fs_info *fs_info)
+ {
+ 	struct btrfs_trans_handle *trans = NULL;
+ 	struct btrfs_path path;
+diff --git a/check/lowmem.h b/check/lowmem.h
+index d1051a0b37ec..39deff0cc26c 100644
+--- a/check/lowmem.h
++++ b/check/lowmem.h
+@@ -61,7 +61,7 @@
+ #define ACCOUNTING_MISMATCH	(1 << 7) /* Used space accounting error */
+ #define CHUNK_TYPE_MISMATCH	(1 << 8)
+ 
+-int check_fs_roots_v2(struct btrfs_fs_info *fs_info);
+-int check_chunks_and_extents_v2(struct btrfs_fs_info *fs_info);
++int check_fs_roots_lowmem(struct btrfs_fs_info *fs_info);
++int check_chunks_and_extents_lowmem(struct btrfs_fs_info *fs_info);
+ 
+ #endif
+diff --git a/check/main.c b/check/main.c
+index ac4e6655f9b9..77bbc7504d31 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -3524,7 +3524,7 @@ static int do_check_fs_roots(struct btrfs_fs_info *fs_info,
+ 	if (!ctx.progress_enabled)
+ 		fprintf(stderr, "checking fs roots\n");
+ 	if (check_mode == CHECK_MODE_LOWMEM)
+-		ret = check_fs_roots_v2(fs_info);
++		ret = check_fs_roots_lowmem(fs_info);
+ 	else
+ 		ret = check_fs_roots(fs_info, root_cache);
+ 
+@@ -8310,7 +8310,7 @@ static int do_check_chunks_and_extents(struct btrfs_fs_info *fs_info)
+ 	if (!ctx.progress_enabled)
+ 		fprintf(stderr, "checking extents\n");
+ 	if (check_mode == CHECK_MODE_LOWMEM)
+-		ret = check_chunks_and_extents_v2(fs_info);
++		ret = check_chunks_and_extents_lowmem(fs_info);
+ 	else
+ 		ret = check_chunks_and_extents(fs_info);
+ 
+-- 
+2.15.1
 
-if (IS_ERR(dir_item)) {
-                ret = PTR_ERR(dir_item);
-
-                goto out;
-
-        }
-
-        if (dir_item) {
-
-                ret = -EEXIST;
-
-                goto out;
-
-        }
-
-so NULL won't really trigger anything, OTOH if we return an error and
-IS_ERR triggers we won't add a duplicate item.
-
-Be that as it may, I still think your patch as-is with modified commit
-message is a good enough fix.
-
-> Not much different for callers though.
-> 
-> Thanks,
-> Qu
-> 
->> </offtopic>
->>
->>
->>>
->>> For btrfs_unlink() it will be different story, as btrfs_unlink() can
->>> locate the conflicting but invalid DIR_ITEM/DIR_INDEX and remove it,
->>> allow us to fix the problem.
->>>
->>> And by "normal check" I mean btrfs check.
->>>
->>> I'll add the call trace to it.
->>>
->>>>>
->>>>> So remove the filetype check is completely safe in this case, and will
->>>>> enhance btrfs_unlink() to remove invalid dir_index/dir_item for repair.
->>>>
->>>> So the problem is that since btrfs_unlink calls verify_item and the
->>>> latter has the filetype check in case of wrong filetype (corruption)
->>>> verify_dir_item fails, hence we cannot perform the unlink? If my
->>>> understanding is correct how about something like:
->>>>
->>>>
->>>> If we have a corrupted dir item and enough information to repair it we
->>>> need to first delete the old/corrupted version and then insert a new
->>>> one.
->>>> However, btrfs_unlink calls btrfs_match_dir_item_name to locate the
->>>> offending dir item for deletion. The latter, in turn, uses
->>>> verify_dir_item which checks if the value for DIR item's type is sane.
->>>> In case of a corrupted type value then verify_dir_item will fail which
->>>> in turn will prevent btrfs_unlink from deleting the offending item.
->>>
->>> Your understanding is completely right, and much shorter than my planned
->>> explanation.
->>>
->>> I'll take it with extra call trace.
->>>
->>> Thanks,
->>> Qu
->>>
->>>>
->>>>>
->>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>>> ---
->>>>>  dir-item.c | 6 ------
->>>>>  1 file changed, 6 deletions(-)
->>>>>
->>>>> diff --git a/dir-item.c b/dir-item.c
->>>>> index 462546c0eaf4..e0a0ab4d7a5d 100644
->>>>> --- a/dir-item.c
->>>>> +++ b/dir-item.c
->>>>> @@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
->>>>>  	u16 namelen = BTRFS_NAME_LEN;
->>>>>  	u8 type = btrfs_dir_type(leaf, dir_item);
->>>>>  
->>>>> -	if (type >= BTRFS_FT_MAX) {
->>>>> -		fprintf(stderr, "invalid dir item type: %d\n",
->>>>> -		       (int)type);
->>>>> -		return 1;
->>>>> -	}
->>>>> -
->>>>>  	if (type == BTRFS_FT_XATTR)
->>>>>  		namelen = XATTR_NAME_MAX;
->>>>>  
->>>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 

@@ -1,35 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45113 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753977AbeAaQ3g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 11:29:36 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C2FD4ADA7
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 16:29:35 +0000 (UTC)
-Date: Wed, 31 Jan 2018 17:27:23 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs-progs: fsck-tests: Rename tree-reloc-tree test
- number
-Message-ID: <20180131162723.GI18553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180131024036.23307-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180131024036.23307-1-wqu@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:49509 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753195AbeASFhq (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 19 Jan 2018 00:37:46 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 01/16] btrfs-progs: Moves cmds-check.c to check/main.c
+Date: Fri, 19 Jan 2018 13:37:16 +0800
+Message-Id: <20180119053731.10795-2-wqu@suse.com>
+In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
+References: <20180119053731.10795-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 31, 2018 at 10:40:36AM +0800, Qu Wenruo wrote:
-> There are 2 fsck tests with the same number 027:
-> tree-reloc-tree
-> bad-extent-inline-ref-type
-> 
-> And we also have a hole in 015, so just rename tree-reloc-tree to 015,
-> to get rid of the duplicated test number and fill in the hole.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Makefile                     | 4 ++--
+ cmds-check.c => check/main.c | 0
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ rename cmds-check.c => check/main.c (100%)
 
-Applied thanks. I've changed the subject so it mentions the numbers for
-future reference.
+diff --git a/Makefile b/Makefile
+index 6369e8f4209c..c4e2dc5b68a9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -109,7 +109,7 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+ 	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+-	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
++	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
+ 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
+ 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
+ 	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
+@@ -544,7 +544,7 @@ clean: $(CLEANDIRS)
+ 		kernel-shared/*.o kernel-shared/*.o.d \
+ 		image/*.o image/*.o.d \
+ 		convert/*.o convert/*.o.d \
+-		mkfs/*.o mkfs/*.o.d \
++		mkfs/*.o mkfs/*.o.d check/*.o check/*.o.d \
+ 	      dir-test ioctl-test quick-test library-test library-test-static \
+               mktables btrfs.static mkfs.btrfs.static fssum \
+ 	      $(check_defs) \
+diff --git a/cmds-check.c b/check/main.c
+similarity index 100%
+rename from cmds-check.c
+rename to check/main.c
+-- 
+2.15.1
+

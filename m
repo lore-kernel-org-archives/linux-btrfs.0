@@ -1,42 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49436 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56908 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754805AbeARMrK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Jan 2018 07:47:10 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 73808ACDC
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 12:47:09 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Use IS_ALIGNED in btrfs_truncate_block instead of opencoding it
-Date: Thu, 18 Jan 2018 14:47:06 +0200
-Message-Id: <1516279626-6111-1-git-send-email-nborisov@suse.com>
+        id S1755949AbeASSRv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Jan 2018 13:17:51 -0500
+Date: Fri, 19 Jan 2018 19:15:39 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, nborisov@suse.com
+Subject: Re: [PATCH v2 09/10] Btrfs: add tracepoint for em's EEXIST case
+Message-ID: <20180119181539.GA15713@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180105195117.5131-1-bo.li.liu@oracle.com>
+ <20180105195117.5131-10-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180105195117.5131-10-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No functional changes, just makes the code more readable
+On Fri, Jan 05, 2018 at 12:51:16PM -0700, Liu Bo wrote:
+> This is adding a tracepoint 'btrfs_handle_em_exist' to help debug the
+> subtle bugs around merge_extent_mapping.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/inode.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Nikolay has some concernas about adding the tracepoint, so I'll leave
+this patch out of the series for now as we should decide how to proceed.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 269d129ffb1f..e9690e2aba09 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4775,8 +4775,8 @@ int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
- 	u64 block_start;
- 	u64 block_end;
- 
--	if ((offset & (blocksize - 1)) == 0 &&
--	    (!len || ((len & (blocksize - 1)) == 0)))
-+	if (IS_ALIGNED(offset, blocksize) &&
-+	    (!len || IS_ALIGNED(len, blocksize)))
- 		goto out;
- 
- 	block_start = round_down(from, blocksize);
--- 
-2.7.4
+Thacepoints are considered an ABI by some and not ABI by others. I think
+it's a good addition to the debugging aids that also may turn out to be
+useful for evaluating performance later.
 
+At minimum we could add some prefix/suffix to the debugging tracepoint
+name, so we can let developers add what they need right away.

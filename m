@@ -1,80 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:50201 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:56421 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750848AbeAVFpl (ORCPT
+        with ESMTP id S1751200AbeASHZr (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Mon, 22 Jan 2018 00:45:41 -0500
+        Fri, 19 Jan 2018 02:25:47 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: nborisov@suse.com
-Subject: [PATCH v2.1 2/3] btrfs-progs: dir-item: Don't do extra filetype validaction check for btrfs_match_dir_item_name
-Date: Mon, 22 Jan 2018 13:45:29 +0800
-Message-Id: <20180122054529.7055-1-wqu@suse.com>
-In-Reply-To: <20180119072536.22286-3-wqu@suse.com>
-References: <20180119072536.22286-3-wqu@suse.com>
+Subject: [PATCH v2 3/3] btrfs-progs: dir-item: Make btrfs_delete_one_dir_name more robust to handle corrupted name len
+Date: Fri, 19 Jan 2018 15:25:36 +0800
+Message-Id: <20180119072536.22286-4-wqu@suse.com>
+In-Reply-To: <20180119072536.22286-1-wqu@suse.com>
+References: <20180119072536.22286-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-verify_dir_item() is called in btrfs_match_dir_item_name() to ensure we
-won't search beyond item boundary and does extra filetype check.
+Function btrfs_delete_one_dir_name() will check if the dir_item is the
+last content of the item, and delete the whole item if needed.
 
-However in the follow call chain, such extra filetype check can cause
-problems:
+However if @name_len of one dir_item/dir_index is corrupted and larger
+than the item size, the function will still try to treat it as partly
+remove, which will screw up the whole leaf.
 
-1) btrfs_add_link()
-   |- check_dir_conflict()
-      |- btrfs_lookup_dir_index()
-         |- btrfs_match_dir_item_name()
-
-   And if we have an offending dir index whose filetype is invalid,
-   btrfs_match_dir_item_name() will return NULL, meaning no match dir
-   index is found.
-   So btrfs_add_link() will still try to insert a dir index, which may
-   have same key->offset and leading to duplicated dir index.
-
-2) btrfs_unlink()
-   |- btrfs_lookup_dir_index()
-      |- btrfs_lookup_dir_index()
-         |- btrfs_match_dir_item_name()
-
-   For the same offending dir index with invalid filetype, this will
-   return NULL, and btrfs_unlink() will just consider there is no
-   existing dir_index and do nothing.
-   Leave an orphan and invalid dir_index hanging there forever.
-
-The patch removes the extra filetype check, as "btrfs check" can already
-handle invalid filetype correctly for both modes.
-
-And this makes "btrfs check --repair --mode=lowmem" to delete the
-offending dir index to repair it correctly.
+This patch will enhance the item deletion check, to cover corrupted name
+len, so in that case we just delete the whole item.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-v2:
-  Get rid of the new parameter.
-v2.1:
-  Better commit message.
----
- dir-item.c | 6 ------
- 1 file changed, 6 deletions(-)
+ dir-item.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
 diff --git a/dir-item.c b/dir-item.c
-index 462546c0eaf4..e0a0ab4d7a5d 100644
+index e0a0ab4d7a5d..35e0615fb423 100644
 --- a/dir-item.c
 +++ b/dir-item.c
-@@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
- 	u16 namelen = BTRFS_NAME_LEN;
- 	u8 type = btrfs_dir_type(leaf, dir_item);
- 
--	if (type >= BTRFS_FT_MAX) {
--		fprintf(stderr, "invalid dir item type: %d\n",
--		       (int)type);
--		return 1;
--	}
+@@ -263,7 +263,6 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_path *path,
+ 			      struct btrfs_dir_item *di)
+ {
 -
- 	if (type == BTRFS_FT_XATTR)
- 		namelen = XATTR_NAME_MAX;
- 
+ 	struct extent_buffer *leaf;
+ 	u32 sub_item_len;
+ 	u32 item_len;
+@@ -273,7 +272,15 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+ 	sub_item_len = sizeof(*di) + btrfs_dir_name_len(leaf, di) +
+ 		btrfs_dir_data_len(leaf, di);
+ 	item_len = btrfs_item_size_nr(leaf, path->slots[0]);
+-	if (sub_item_len == item_len) {
++
++	/*
++	 * If @sub_item_len is longer than @item_len, then it means the
++	 * name_len is just corrupted.
++	 * No good idea to know if there is anything we can recover from
++	 * the corrupted item.
++	 * Just delete the item.
++	 */
++	if (sub_item_len >= item_len) {
+ 		ret = btrfs_del_item(trans, root, path);
+ 	} else {
+ 		unsigned long ptr = (unsigned long)di;
 -- 
 2.15.1
 

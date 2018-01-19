@@ -1,20 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f174.google.com ([74.125.82.174]:33178 "EHLO
-        mail-ot0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1756563AbeASVgb (ORCPT
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:35411 "EHLO
+        mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1755307AbeASVpg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jan 2018 16:36:31 -0500
-Received: by mail-ot0-f174.google.com with SMTP id x15so2614567ote.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Jan 2018 13:36:31 -0800 (PST)
+        Fri, 19 Jan 2018 16:45:36 -0500
+Received: by mail-oi0-f47.google.com with SMTP id b11so2103025oif.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Jan 2018 13:45:36 -0800 (PST)
 MIME-Version: 1.0
 From: Rosen Penev <rosenp@gmail.com>
-Date: Fri, 19 Jan 2018 13:36:28 -0800
-Message-ID: <CAKxU2N_-=-rOWA-BM3UsN2UzTyN5W8riFn2LzwGg0CA3q+AO4A@mail.gmail.com>
-Subject: 
+Date: Fri, 19 Jan 2018 13:45:35 -0800
+Message-ID: <CAKxU2N_4A_bC7xKEhvRTu0+H3Bgm58hvnFx-bLSK39WH0BtWEg@mail.gmail.com>
+Subject: btrfs volume corrupt. btrfs-progs bug or need to rebuild volume?
 To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+
+v2: Add proper subject
 
 I've been playing around with a specific kernel on a specific device
 trying to figure out why btrfs keeps throwing csum errors after ~15
@@ -61,6 +63,8 @@ Aborted
 
 This is with version 4.14 of btrfs-progs. Do I need a newer version or
 should I just reinitialize my array and copy everything back?
+
+Log on mount attached below:
 
 Fri Jan 19 14:26:01 2018 kern.info kernel: [168376.739242] BTRFS info
 (device sda): disk space caching is enabled

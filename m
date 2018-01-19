@@ -1,88 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:48406 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:57624 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753969AbeASFiB (ORCPT
+        with ESMTP id S1753986AbeASFiB (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Fri, 19 Jan 2018 00:38:01 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 11/16] btrfs-progs: check: Move check_dev_size_alignment to check/common.c
-Date: Fri, 19 Jan 2018 13:37:26 +0800
-Message-Id: <20180119053731.10795-12-wqu@suse.com>
+Subject: [PATCH 12/16] btrfs-progs: check: move reada_walk_down to check/common.c
+Date: Fri, 19 Jan 2018 13:37:27 +0800
+Message-Id: <20180119053731.10795-13-wqu@suse.com>
 In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
 References: <20180119053731.10795-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Both original and lowmem mode shares this function to do readahead.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/common.c | 15 +++++++++++++++
- check/common.h |  1 +
- check/main.c   | 16 ----------------
- 3 files changed, 16 insertions(+), 16 deletions(-)
+ check/common.c | 23 +++++++++++++++++++++++
+ check/common.h |  2 ++
+ check/main.c   | 22 ----------------------
+ 3 files changed, 25 insertions(+), 22 deletions(-)
 
 diff --git a/check/common.c b/check/common.c
-index 9051936a61cb..7392ed6b472f 100644
+index 7392ed6b472f..1ea9f506713a 100644
 --- a/check/common.c
 +++ b/check/common.c
-@@ -237,3 +237,18 @@ out:
- 	return ret;
- }
+@@ -20,6 +20,7 @@
+ #include "messages.h"
+ #include "transaction.h"
+ #include "utils.h"
++#include "disk-io.h"
+ #include "check/common.h"
  
-+/*
-+ * Extra (optional) check for dev_item size to report possbile problem on a new
-+ * kernel.
-+ */
-+void check_dev_size_alignment(u64 devid, u64 total_bytes, u32 sectorsize)
+ /*
+@@ -252,3 +253,25 @@ void check_dev_size_alignment(u64 devid, u64 total_bytes, u32 sectorsize)
+ 		warning("this can be fixed by 'btrfs rescue fix-device-size'");
+ 	}
+ }
++
++void reada_walk_down(struct btrfs_root *root, struct extent_buffer *node,
++		     int slot)
 +{
-+	if (!IS_ALIGNED(total_bytes, sectorsize)) {
-+		warning(
-+"unaligned total_bytes detected for devid %llu, have %llu should be aligned to %u",
-+			devid, total_bytes, sectorsize);
-+		warning(
-+"this is OK for older kernel, but may cause kernel warning for newer kernels");
-+		warning("this can be fixed by 'btrfs rescue fix-device-size'");
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	u64 bytenr;
++	u64 ptr_gen;
++	u32 nritems;
++	int i;
++	int level;
++
++	level = btrfs_header_level(node);
++	if (level != 1)
++		return;
++
++	nritems = btrfs_header_nritems(node);
++	for (i = slot; i < nritems; i++) {
++		bytenr = btrfs_node_blockptr(node, i);
++		ptr_gen = btrfs_node_ptr_generation(node, i);
++		readahead_tree_block(fs_info, bytenr, ptr_gen);
 +	}
 +}
 diff --git a/check/common.h b/check/common.h
-index 9a3488ae365a..72146b444a79 100644
+index 72146b444a79..34b2f8a9cd87 100644
 --- a/check/common.h
 +++ b/check/common.h
-@@ -90,5 +90,6 @@ int link_inode_to_lostfound(struct btrfs_trans_handle *trans,
- 			    struct btrfs_path *path,
+@@ -91,5 +91,7 @@ int link_inode_to_lostfound(struct btrfs_trans_handle *trans,
  			    u64 ino, char *namebuf, u32 name_len,
  			    u8 filetype, u64 *ref_count);
-+void check_dev_size_alignment(u64 devid, u64 total_bytes, u32 sectorsize);
+ void check_dev_size_alignment(u64 devid, u64 total_bytes, u32 sectorsize);
++void reada_walk_down(struct btrfs_root *root, struct extent_buffer *node,
++		     int slot);
  
  #endif
 diff --git a/check/main.c b/check/main.c
-index 0da25c460336..a8155630df18 100644
+index a8155630df18..aa7098a0be96 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -10708,22 +10708,6 @@ static int check_device_used(struct device_record *dev_rec,
- 	}
+@@ -1667,28 +1667,6 @@ out:
+ 	return ret;
  }
  
--/*
-- * Extra (optional) check for dev_item size to report possbile problem on a new
-- * kernel.
-- */
--static void check_dev_size_alignment(u64 devid, u64 total_bytes, u32 sectorsize)
+-static void reada_walk_down(struct btrfs_root *root,
+-			    struct extent_buffer *node, int slot)
 -{
--	if (!IS_ALIGNED(total_bytes, sectorsize)) {
--		warning(
--"unaligned total_bytes detected for devid %llu, have %llu should be aligned to %u",
--			devid, total_bytes, sectorsize);
--		warning(
--"this is OK for older kernel, but may cause kernel warning for newer kernels");
--		warning("this can be fixed by 'btrfs rescue fix-device-size'");
+-	struct btrfs_fs_info *fs_info = root->fs_info;
+-	u64 bytenr;
+-	u64 ptr_gen;
+-	u32 nritems;
+-	int i;
+-	int level;
+-
+-	level = btrfs_header_level(node);
+-	if (level != 1)
+-		return;
+-
+-	nritems = btrfs_header_nritems(node);
+-	for (i = slot; i < nritems; i++) {
+-		bytenr = btrfs_node_blockptr(node, i);
+-		ptr_gen = btrfs_node_ptr_generation(node, i);
+-		readahead_tree_block(fs_info, bytenr, ptr_gen);
 -	}
 -}
 -
  /*
-  * Unlike device size alignment check above, some super total_bytes check
-  * failure can lead to mount failure for newer kernel.
+  * Check the child node/leaf by the following condition:
+  * 1. the first item key of the node/leaf should be the same with the one
 -- 
 2.15.1
 

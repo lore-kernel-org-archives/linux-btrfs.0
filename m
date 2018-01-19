@@ -1,92 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:50172 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:36283 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750785AbeASHph (ORCPT
+        with ESMTP id S1751747AbeASID2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jan 2018 02:45:37 -0500
-Subject: Re: [PATCH 00/16] btrfs-progs: Split lowmem mode check to its own
-To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <20180119053731.10795-1-wqu@suse.com>
+        Fri, 19 Jan 2018 03:03:28 -0500
+Subject: Re: [PATCH v2 2/3] btrfs-progs: dir-item: Don't do extra filetype
+ validaction check for btrfs_match_dir_item_name
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        <linux-btrfs@vger.kernel.org>
+CC: <nborisov@suse.com>
+References: <20180119072536.22286-1-wqu@suse.com>
+ <20180119072536.22286-3-wqu@suse.com>
+ <9fe43408-dfcd-efa3-7195-87fcdba033ab@cn.fujitsu.com>
+ <195d1a89-ba5d-081b-91de-f441679414c0@gmx.com>
 From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <2a299e0d-71ee-78da-8dac-a1bd1a4f6ba6@cn.fujitsu.com>
-Date: Fri, 19 Jan 2018 15:50:10 +0800
+Message-ID: <ff6ae052-0130-a937-4d81-213d58b1e841@cn.fujitsu.com>
+Date: Fri, 19 Jan 2018 16:07:59 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
+In-Reply-To: <195d1a89-ba5d-081b-91de-f441679414c0@gmx.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 01/19/2018 01:37 PM, Qu Wenruo wrote:
-> The long planned cmds-check re-construction is finally here.
+On 01/19/2018 03:38 PM, Qu Wenruo wrote:
 > 
-> As the original cmds-check.c is getting larger and larger (already over
-> 15K lines), it's always a good idea to split it into its own check/
-> directory.
 > 
-> This patchset do the following work:
-> 1) Move cmds-check.c to check/main.c
-> 2) Put codes shared by both original and lowmem mode into
->     check/common.[ch]
-> 3) Put lowmem code into check/lowmem.[ch]
->     With minor renaming to get rid of unnecessary _v2 suffix.
+> On 2018年01月19日 15:39, Su Yue wrote:
+>>
+>>
+>> On 01/19/2018 03:25 PM, Qu Wenruo wrote:
+>>> btrfs_match_dir_item_name() will check if its filetype is valid before
+>>> doing search, this makes btrfs-progs unable to locate and remove invalid
+>>> dir_index for btrfs_unlink().
+>>>
+>>> This function only affects btrfs_link() and btrfs_unlink() in upper
+>>> layer, and normal check can find invalid filetype by itself.
+>>>
+>> Lowmem mode can't handles wrong filetype well now.
+>> I'm working on it. And this change is okay for me.
 > 
-> The modification looks scary, but no functional change at all.
+> I think you mean *original* mode can't handle it.
 > 
-> And considering how much the file structure changed, it's a good idea to
-> put PART1 as quick as possible, and there will be less pressure to
-> rebase new incoming fsck related codes.
-> 
-> The real move work happens in the 15th patch, which due to its size
-> (500KB+), it may not be able to reach mail list.
-> So please fetch the whole patchset from github:
-> https://github.com/adam900710/btrfs-progs/tree/split_check
-> 
-> There will be a part 2, mostly moving original mode to its own
-> check/original.[ch], along with extra comment explaining how the two
-> different modes work.
-> 
-It's fine to do cleanup and extra comment in part2.
-So, all patches except patch[4] with wrong title
-are
+Sorry, I mean that lowmem mode can't handle more complex cases.
+This patchset does well enough for the single case.
+I will fix it for original mode and new test-case will be
+submitted.
 
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> Qu Wenruo (16):
->    btrfs-progs: Moves cmds-check.c to check/main.c
->    btrfs-progs: check: Move original mode definitions to check/original.h
->    btrfs-progs: check: Move definitions of lowmem mode to check/lowmem.h
->    btrfs-progs: check: Move node_ptr structure to check/common.h
->    btrfs-progs: check: Export check global variables to check/common.h
->    btrfs-progs: check: Move imode_to_type function to check/common.h
->    btrfs-progs: check: Move fs_root_objectid function to check/common.h
->    btrfs-progs: check: Move count_csum_range function to check/common.c
->    btrfs-progs: check: Move __create_inode_item function to
->      check/common.c
->    btrfs-progs: check: Move link_inode_to_lostfound function to common.c
->    btrfs-progs: check: Move check_dev_size_alignment to check/common.c
->    btrfs-progs: check: move reada_walk_down to check/common.c
->    btrfs-progs: check: Move check_child_node to check/common.c
->    btrfs-progs: check: Move reset_cached_block_groups to check/common.c
->    btrfs-progs: check: Move lowmem check code to its own
->      check/lowmem.[ch]
->    btrfs-progs: check/lowmem: Cleanup unnecessary _v2 suffix
+Thanks,
+Su
+> As v4.14.1 lowmem mode can detect such problem without problem:
+> -------
+> checking fs roots
+> ERROR: root 5 INODE_ITEM[258] index 2 name file1 filetype 34 mismath
+> ERROR: root 5 DIR INDEX[257 2] missing name file1 filetype 1
+> ERROR: errors found in fs roots
+> found 131072 bytes used, error(s) found
+> -------
 > 
->   Makefile                     |     6 +-
->   check/common.c               |   351 +
->   check/common.h               |   100 +
->   check/lowmem.c               |  4571 ++++++++++++
->   check/lowmem.h               |    67 +
->   cmds-check.c => check/main.c | 16389 ++++++++++++++---------------------------
->   check/original.h             |   293 +
->   7 files changed, 11007 insertions(+), 10770 deletions(-)
->   create mode 100644 check/common.c
->   create mode 100644 check/common.h
->   create mode 100644 check/lowmem.c
->   create mode 100644 check/lowmem.h
->   rename cmds-check.c => check/main.c (65%)
->   create mode 100644 check/original.h
+> And patch 1/3 will handle the repair, so it shouldn't be a problem for
+> lowmem.
+> 
+> Thanks,
+> Qu
+>>
+>> Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
+>>
+>>> So remove the filetype check is completely safe in this case, and will
+>>> enhance btrfs_unlink() to remove invalid dir_index/dir_item for repair.
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>>    dir-item.c | 6 ------
+>>>    1 file changed, 6 deletions(-)
+>>>
+>>> diff --git a/dir-item.c b/dir-item.c
+>>> index 462546c0eaf4..e0a0ab4d7a5d 100644
+>>> --- a/dir-item.c
+>>> +++ b/dir-item.c
+>>> @@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
+>>>        u16 namelen = BTRFS_NAME_LEN;
+>>>        u8 type = btrfs_dir_type(leaf, dir_item);
+>>>    -    if (type >= BTRFS_FT_MAX) {
+>>> -        fprintf(stderr, "invalid dir item type: %d\n",
+>>> -               (int)type);
+>>> -        return 1;
+>>> -    }
+>>> -
+>>>        if (type == BTRFS_FT_XATTR)
+>>>            namelen = XATTR_NAME_MAX;
+>>>   
+>>
+>>
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
 
 

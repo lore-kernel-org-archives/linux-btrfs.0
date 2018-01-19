@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41252 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41465 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754440AbeASJk7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Jan 2018 04:40:59 -0500
+        id S1753670AbeASJnL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 19 Jan 2018 04:43:11 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id B8347ACB3
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Jan 2018 09:40:58 +0000 (UTC)
-Subject: Re: [PATCH v2 2/3] btrfs-progs: dir-item: Don't do extra filetype
- validaction check for btrfs_match_dir_item_name
+        by mx2.suse.de (Postfix) with ESMTP id CF871AECF
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Jan 2018 09:43:09 +0000 (UTC)
+Subject: Re: [PATCH v2 3/3] btrfs-progs: dir-item: Make
+ btrfs_delete_one_dir_name more robust to handle corrupted name len
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180119072536.22286-1-wqu@suse.com>
- <20180119072536.22286-3-wqu@suse.com>
+ <20180119072536.22286-4-wqu@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <56ce96dd-a711-c19e-b0b7-df65d305c763@suse.com>
-Date: Fri, 19 Jan 2018 11:40:57 +0200
+Message-ID: <648ca774-916b-59d1-08b1-e8e9df0d4a8f@suse.com>
+Date: Fri, 19 Jan 2018 11:43:09 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180119072536.22286-3-wqu@suse.com>
+In-Reply-To: <20180119072536.22286-4-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -23,56 +23,53 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On 19.01.2018 09:25, Qu Wenruo wrote:
-> btrfs_match_dir_item_name() will check if its filetype is valid before
-> doing search, this makes btrfs-progs unable to locate and remove invalid
-> dir_index for btrfs_unlink().>
-> This function only affects btrfs_link() and btrfs_unlink() in upper
-> layer, and normal check can find invalid filetype by itself.
-
-There is no function btrfs_link in btrfs-progs, there is, however,
-btrfs_add_link did you mean that function? However, it doesn't seem to
-use verify_dir_item hence the check you are removing. I think this part
-of the commit log should be more precise. Also it's not really clear
-what you mean by "normal check" in this sentence.
+> Function btrfs_delete_one_dir_name() will check if the dir_item is the
+> last content of the item, and delete the whole item if needed.
 > 
-> So remove the filetype check is completely safe in this case, and will
-> enhance btrfs_unlink() to remove invalid dir_index/dir_item for repair.
-
-So the problem is that since btrfs_unlink calls verify_item and the
-latter has the filetype check in case of wrong filetype (corruption)
-verify_dir_item fails, hence we cannot perform the unlink? If my
-understanding is correct how about something like:
-
-
-If we have a corrupted dir item and enough information to repair it we
-need to first delete the old/corrupted version and then insert a new
-one. However, btrfs_unlink calls btrfs_match_dir_item_name to locate the
-offending dir item for deletion. The latter, in turn, uses
-verify_dir_item which checks if the value for DIR item's type is sane.
-In case of a corrupted type value then verify_dir_item will fail which
-in turn will prevent btrfs_unlink from deleting the offending item.
-
+> However if @name_len of one dir_item/dir_index is corrupted and larger
+> than the item size, the function will still try to treat it as partly
+> remove, which will screw up the whole leaf.
+> 
+> This patch will enhance the item deletion check, to cover corrupted name
+> len, so in that case we just delete the whole item.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+Perhaps it would be worth it creating a regression test for that ?
+
 > ---
->  dir-item.c | 6 ------
->  1 file changed, 6 deletions(-)
+>  dir-item.c | 11 +++++++++--
+>  1 file changed, 9 insertions(+), 2 deletions(-)
 > 
 > diff --git a/dir-item.c b/dir-item.c
-> index 462546c0eaf4..e0a0ab4d7a5d 100644
+> index e0a0ab4d7a5d..35e0615fb423 100644
 > --- a/dir-item.c
 > +++ b/dir-item.c
-> @@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
->  	u16 namelen = BTRFS_NAME_LEN;
->  	u8 type = btrfs_dir_type(leaf, dir_item);
->  
-> -	if (type >= BTRFS_FT_MAX) {
-> -		fprintf(stderr, "invalid dir item type: %d\n",
-> -		       (int)type);
-> -		return 1;
-> -	}
+> @@ -263,7 +263,6 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+>  			      struct btrfs_path *path,
+>  			      struct btrfs_dir_item *di)
+>  {
 > -
->  	if (type == BTRFS_FT_XATTR)
->  		namelen = XATTR_NAME_MAX;
->  
+>  	struct extent_buffer *leaf;
+>  	u32 sub_item_len;
+>  	u32 item_len;
+> @@ -273,7 +272,15 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+>  	sub_item_len = sizeof(*di) + btrfs_dir_name_len(leaf, di) +
+>  		btrfs_dir_data_len(leaf, di);
+>  	item_len = btrfs_item_size_nr(leaf, path->slots[0]);
+> -	if (sub_item_len == item_len) {
+> +
+> +	/*
+> +	 * If @sub_item_len is longer than @item_len, then it means the
+> +	 * name_len is just corrupted.
+> +	 * No good idea to know if there is anything we can recover from
+> +	 * the corrupted item.
+> +	 * Just delete the item.
+> +	 */
+> +	if (sub_item_len >= item_len) {
+>  		ret = btrfs_del_item(trans, root, path);
+>  	} else {
+>  		unsigned long ptr = (unsigned long)di;
 > 

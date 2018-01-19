@@ -1,101 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:59189 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:37852 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753427AbeASFhr (ORCPT
+        with ESMTP id S1753527AbeASFhr (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Fri, 19 Jan 2018 00:37:47 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH 04/16] btrfs-progs: check: Move node_ptr structure to check/common.h
-Date: Fri, 19 Jan 2018 13:37:19 +0800
-Message-Id: <20180119053731.10795-5-wqu@suse.com>
+Subject: [PATCH 05/16] btrfs-progs: check: Export check global variables to check/common.h
+Date: Fri, 19 Jan 2018 13:37:20 +0800
+Message-Id: <20180119053731.10795-6-wqu@suse.com>
 In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
 References: <20180119053731.10795-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There are a dozen of variables which are used as "check global"
+variables, like @total_csum_bytes or @no_holes.
+
+These variables are used freely across the check code, however since
+we're splitting check code, they need to be exported so they can be used
+in other files.
+
+This patch just export them and add declarations for them in
+check/common.h.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/common.h | 39 +++++++++++++++++++++++++++++++++++++++
- check/main.c   | 11 +----------
- 2 files changed, 40 insertions(+), 10 deletions(-)
- create mode 100644 check/common.h
+ check/common.h | 17 +++++++++++++++++
+ check/main.c   | 32 ++++++++++++++++----------------
+ 2 files changed, 33 insertions(+), 16 deletions(-)
 
 diff --git a/check/common.h b/check/common.h
-new file mode 100644
-index 000000000000..25874aec597b
---- /dev/null
+index 25874aec597b..8d93ddbf4afb 100644
+--- a/check/common.h
 +++ b/check/common.h
-@@ -0,0 +1,39 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
+@@ -36,4 +36,21 @@ struct node_refs {
+ 	int full_backref[BTRFS_MAX_LEVEL];
+ };
+ 
++extern u64 bytes_used;
++extern u64 total_csum_bytes;
++extern u64 total_btree_bytes;
++extern u64 total_fs_tree_bytes;
++extern u64 total_extent_tree_bytes;
++extern u64 btree_space_waste;
++extern u64 data_bytes_allocated;
++extern u64 data_bytes_referenced;
++extern struct list_head duplicate_extents;
++extern struct list_head delete_items;
++extern int no_holes;
++extern int init_extent_tree;
++extern int check_data_csum;
++extern struct btrfs_fs_info *global_info;
++extern struct task_ctx ctx;
++extern struct cache_tree *roots_info_cache;
 +
-+/*
-+ * Defines and function declarations for code shared by both lowmem and
-+ * original mode
-+ */
-+#ifndef __BTRFS_CHECK_COMMON_H__
-+#define __BTRFS_CHECK_COMMON_H__
-+#include "ctree.h"
-+
-+/*
-+ * Use for tree walk to walk through trees whose leaves/nodes can be shared
-+ * between different trees. (Namely subvolume/fs trees)
-+ */
-+struct node_refs {
-+	u64 bytenr[BTRFS_MAX_LEVEL];
-+	u64 refs[BTRFS_MAX_LEVEL];
-+	int need_check[BTRFS_MAX_LEVEL];
-+	/* field for checking all trees */
-+	int checked[BTRFS_MAX_LEVEL];
-+	/* the corresponding extent should be marked as full backref or not */
-+	int full_backref[BTRFS_MAX_LEVEL];
-+};
-+
-+#endif
+ #endif
 diff --git a/check/main.c b/check/main.c
-index dbd2b755c48f..fbd73c42bee8 100644
+index fbd73c42bee8..bb927ecc87ee 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -45,6 +45,7 @@
- #include "help.h"
- #include "check/original.h"
- #include "check/lowmem.h"
-+#include "check/common.h"
+@@ -61,22 +61,22 @@ struct task_ctx {
+ 	struct task_info *info;
+ };
  
- enum task_position {
- 	TASK_EXTENTS,
-@@ -1667,16 +1668,6 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
- 	return ret;
- }
+-static u64 bytes_used = 0;
+-static u64 total_csum_bytes = 0;
+-static u64 total_btree_bytes = 0;
+-static u64 total_fs_tree_bytes = 0;
+-static u64 total_extent_tree_bytes = 0;
+-static u64 btree_space_waste = 0;
+-static u64 data_bytes_allocated = 0;
+-static u64 data_bytes_referenced = 0;
+-static LIST_HEAD(duplicate_extents);
+-static LIST_HEAD(delete_items);
+-static int no_holes = 0;
+-static int init_extent_tree = 0;
+-static int check_data_csum = 0;
+-static struct btrfs_fs_info *global_info;
+-static struct task_ctx ctx = { 0 };
+-static struct cache_tree *roots_info_cache = NULL;
++u64 bytes_used = 0;
++u64 total_csum_bytes = 0;
++u64 total_btree_bytes = 0;
++u64 total_fs_tree_bytes = 0;
++u64 total_extent_tree_bytes = 0;
++u64 btree_space_waste = 0;
++u64 data_bytes_allocated = 0;
++u64 data_bytes_referenced = 0;
++LIST_HEAD(duplicate_extents);
++LIST_HEAD(delete_items);
++int no_holes = 0;
++int init_extent_tree = 0;
++int check_data_csum = 0;
++struct btrfs_fs_info *global_info;
++struct task_ctx ctx = { 0 };
++struct cache_tree *roots_info_cache = NULL;
  
--struct node_refs {
--	u64 bytenr[BTRFS_MAX_LEVEL];
--	u64 refs[BTRFS_MAX_LEVEL];
--	int need_check[BTRFS_MAX_LEVEL];
--	/* field for checking all trees */
--	int checked[BTRFS_MAX_LEVEL];
--	/* the corresponding extent should be marked as full backref or not */
--	int full_backref[BTRFS_MAX_LEVEL];
--};
--
- static int update_nodes_refs(struct btrfs_root *root, u64 bytenr,
- 			     struct extent_buffer *eb, struct node_refs *nrefs,
- 			     u64 level, int check_all);
+ enum btrfs_check_mode {
+ 	CHECK_MODE_ORIGINAL,
 -- 
 2.15.1
 

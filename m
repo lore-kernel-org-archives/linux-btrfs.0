@@ -1,85 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:40753 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1751022AbeATGfb (ORCPT
+Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:49483 "EHLO
+        postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751022AbeATKyv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 20 Jan 2018 01:35:31 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1ecmiN-00089U-9y
-        for linux-btrfs@vger.kernel.org; Sat, 20 Jan 2018 07:33:19 +0100
+        Sat, 20 Jan 2018 05:54:51 -0500
+Received: from [192.168.0.1] (p5B0A3E0D.dip0.t-ipconnect.de [91.10.62.13])
+        by postfix.iai.uni-bonn.de (Postfix) with ESMTP id D95625C40A
+        for <linux-btrfs@vger.kernel.org>; Sat, 20 Jan 2018 11:47:27 +0100 (MET)
+        (envelope-from ochmann@cs.uni-bonn.de)
+        (envelope-to linux-btrfs@vger.kernel.org) (1)
+        (internal use: ta=1, tu=1, te=1, am=P, au=ochmann)
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs volume corrupt. btrfs-progs bug or need to rebuild volume?
-Date: Sat, 20 Jan 2018 06:32:59 +0000 (UTC)
-Message-ID: <pan$2713d$bb24c7f5$b5fab30e$2e2a6027@cox.net>
-References: <CAKxU2N_4A_bC7xKEhvRTu0+H3Bgm58hvnFx-bLSK39WH0BtWEg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Sebastian Ochmann <ochmann@cs.uni-bonn.de>
+Subject: Periodic frame losses when recording to btrfs volume with OBS
+Message-ID: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
+Date: Sat, 20 Jan 2018 11:47:25 +0100
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rosen Penev posted on Fri, 19 Jan 2018 13:45:35 -0800 as excerpted:
+Hello,
 
-> v2: Add proper subject
+I would like to describe a real-world use case where btrfs does not 
+perform well for me. I'm recording 60 fps, larger-than-1080p video using 
+OBS Studio [1] where it is important that the video stream is encoded 
+and written out to disk in real-time for a prolonged period of time (2-5 
+hours). The result is a H264 video encoded on the GPU with a data rate 
+ranging from approximately 10-50 MB/s.
 
-=:^)
+The hardware used is powerful enough to handle this task. When I use a 
+XFS volume for recording, no matter whether it's a SSD or HDD, the 
+recording is smooth and no frame drops are reported (OBS has a nice 
+Stats window where it shows the number of frames dropped due to encoding 
+lag which seemingly also includes writing the data out to disk).
 
-> I've been playing around with a specific kernel on a specific device
-> trying to figure out why btrfs keeps throwing csum errors after ~15
-> hours. I've almost nailed it down to some specific CONFIG option in the
-> kernel, possibly related to IRQs.
-> 
-> Anyway, I managed to get my btrfs RAID5 array corrupted to the point
-> where it will just mount to read-only mode.
+However, when using a btrfs volume I quickly observe severe, periodic 
+frame drops. It's not single frames but larger chunks of frames that a 
+dropped at a time. I tried mounting the volume with nobarrier but to no 
+avail.
 
-[...]
+Of course, the simple fix is to use a FS that works for me(TM). However 
+I thought since this is a common real-world use case I'd describe the 
+symptoms here in case anyone is interested in analyzing this behavior. 
+It's not immediately obvious that the FS makes such a difference. Also, 
+if anyone has an idea what I could try to mitigate this issue (mount or 
+mkfs options?) I can try that.
 
-> This is with version 4.14 of btrfs-progs. Do I need a newer version or
-> should I just reinitialize my array and copy everything back?
-> 
-> Log on mount attached below:
+I saw this behavior on two different machines with kernels 4.14.13 and 
+4.14.5, both Arch Linux. btrfs-progs 4.14, OBS 20.1.3-241-gf5c3af1b 
+built from git.
 
-[...]
+Best regards
+Sebastian
 
-> Fri Jan 19 14:26:08 2018 kern.warn kernel:
-> [168383.378239] CPU: 0 PID:
-> 2496 Comm: kworker/u8:2 Tainted: G        W       4.9.75 #0
-
-Tho as the penultimate LTS kernel series 4.9 is still on the btrfs-list 
-supported list in general... 4.9 still had known btrfs raid56 mode issues 
-and is strongly negatively recommended for use with btrfs raid56 mode.  
-Those weren't fixed until 4.12, which /finally/ brought raid56 mode into 
-generally working and not negatively recommended state.
-
-While as an LTS applicable general btrfs bug fixes would be backported to 
-4.9, because raid56 mode had never worked /well/ at that point, I'm not 
-sure those fixes were backported.
-
-So you really need either kernel 4.12+, presumably the LTS 4.14 series 
-since you're on LTS 4.9 series now, for btrfs raid56 mode, or don't use 
-raid56 mode if you plan on staying with the 4.9 LTS, as it still had 
-severe known issues back then and I haven't seen on-list confirmation 
-that the 4.12 btrfs raid56 mode fixes were backported to 4.9-LTS.  
-
-If you need/choose to stick with 4.9 and dump raid56 mode, the 
-recommended alternative depends on the number of devices in the 
-filesystem.
-
-For a small number of devices in the filesystem, btrfs raid1 is 
-effectively as stable as the still stabilizing and maturing btrfs itself 
-is at this point and is recommended.
-
-For a larger number of devices, btrfs raid1 is still a good choice 
-because it /is/ the most mature, but btrfs raid10 is /reasonably/ stable 
-tho IMO not quite as stable as raid1, or for better performance (due to 
-btrfs raid10 not being read-optimized yet) while keeping btrfs 
-checksumming and error repair from the second copy when available, 
-consider a layered approach, with btrfs raid1 on top of a pair of mdraid0s 
-(or dmraid0s, or hardware raid0s).
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+[1] https://github.com/jp9000/obs-studio

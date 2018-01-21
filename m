@@ -1,237 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:55131 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:62999 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751128AbeAUJyC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Jan 2018 04:54:02 -0500
-Subject: Re: btrfs volume corrupt. btrfs-progs bug or need to rebuild volume?
-To: Rosen Penev <rosenp@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAKxU2N_4A_bC7xKEhvRTu0+H3Bgm58hvnFx-bLSK39WH0BtWEg@mail.gmail.com>
+        id S1751009AbeAUKEj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 21 Jan 2018 05:04:39 -0500
+Subject: Re: Periodic frame losses when recording to btrfs volume with OBS
+To: Sebastian Ochmann <ochmann@cs.uni-bonn.de>, linux-btrfs@vger.kernel.org
+References: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <c0eee716-6210-eb54-89b5-e2c330117e82@gmx.com>
-Date: Sun, 21 Jan 2018 17:53:54 +0800
+Message-ID: <35acc308-d68d-3a4b-a626-38b9a7820fd4@gmx.com>
+Date: Sun, 21 Jan 2018 18:04:30 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAKxU2N_4A_bC7xKEhvRTu0+H3Bgm58hvnFx-bLSK39WH0BtWEg@mail.gmail.com>
+In-Reply-To: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="5pg6uWTC3Bh7upbe97841P97AMbwK0G9D"
+ boundary="N3ZByYPmRnPVWQUzaXk0AYUz9DNXih2Cb"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---5pg6uWTC3Bh7upbe97841P97AMbwK0G9D
-Content-Type: multipart/mixed; boundary="cO8cZbcx8g7fQDeQVKAa2tvohhHFldjXE";
+--N3ZByYPmRnPVWQUzaXk0AYUz9DNXih2Cb
+Content-Type: multipart/mixed; boundary="veOdQM9AZ8lGC1I4fqoetDkw9at8z1R5m";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Rosen Penev <rosenp@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <c0eee716-6210-eb54-89b5-e2c330117e82@gmx.com>
-Subject: Re: btrfs volume corrupt. btrfs-progs bug or need to rebuild volume?
-References: <CAKxU2N_4A_bC7xKEhvRTu0+H3Bgm58hvnFx-bLSK39WH0BtWEg@mail.gmail.com>
-In-Reply-To: <CAKxU2N_4A_bC7xKEhvRTu0+H3Bgm58hvnFx-bLSK39WH0BtWEg@mail.gmail.com>
+To: Sebastian Ochmann <ochmann@cs.uni-bonn.de>, linux-btrfs@vger.kernel.org
+Message-ID: <35acc308-d68d-3a4b-a626-38b9a7820fd4@gmx.com>
+Subject: Re: Periodic frame losses when recording to btrfs volume with OBS
+References: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
+In-Reply-To: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
 
---cO8cZbcx8g7fQDeQVKAa2tvohhHFldjXE
+--veOdQM9AZ8lGC1I4fqoetDkw9at8z1R5m
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8820=E6=97=A5 05:45, Rosen Penev wrote:
-> v2: Add proper subject
+On 2018=E5=B9=B401=E6=9C=8820=E6=97=A5 18:47, Sebastian Ochmann wrote:
+> Hello,
 >=20
-> I've been playing around with a specific kernel on a specific device
-> trying to figure out why btrfs keeps throwing csum errors after ~15
-> hours. I've almost nailed it down to some specific CONFIG option in
-> the kernel, possibly related to IRQs.
-
-According to the hostname, it seems to be LEDE (or should be called
-OpenWRT soon?).
-Using btrfs in embedded environment is really interesting to see.
-
->=20
-> Anyway, I managed to get my btrfs RAID5 array corrupted to the point
-> where it will just mount to read-only mode. btrfs check doesn't seem
-> to work either. Here's some output.
-
-So not really deadly corrupted, if the data matters mount it RO and grab
-whatever you could get.
+> I would like to describe a real-world use case where btrfs does not
+> perform well for me. I'm recording 60 fps, larger-than-1080p video usin=
+g
+> OBS Studio [1] where it is important that the video stream is encoded
+> and written out to disk in real-time for a prolonged period of time (2-=
+5
+> hours). The result is a H264 video encoded on the GPU with a data rate
+> ranging from approximately 10-50 MB/s.
 
 >=20
-> root@LEDE:~# btrfs check /dev/sda
-> Checking filesystem on /dev/sda
-> UUID: 22d612d9-b7b6-4c4c-95cd-64f5056d420b
-> checksum verify failed on 3174631424000 found 6F04F3FC wanted 2658452A
-> checksum verify failed on 3174631424000 found 6F04F3FC wanted 2658452A
-> checksum verify failed on 3174631424000 found 6F04F3FC wanted 2658452A
-> checksum verify failed on 3174631424000 found 6F04F3FC wanted 2658452A
-> Csum didn't match
-> ERROR: failed to repair root items: I/O error
+> The hardware used is powerful enough to handle this task. When I use a
+> XFS volume for recording, no matter whether it's a SSD or HDD, the
+> recording is smooth and no frame drops are reported (OBS has a nice
+> Stats window where it shows the number of frames dropped due to encodin=
+g
+> lag which seemingly also includes writing the data out to disk).
+>=20
+> However, when using a btrfs volume I quickly observe severe, periodic
+> frame drops. It's not single frames but larger chunks of frames that a
+> dropped at a time. I tried mounting the volume with nobarrier but to no=
 
-IIRC btrfs-progs doesn't handle RAID5/6 repair well, so if something
-went wrong btrfs-progs just give up.
+> avail.
 
-So don't expect too much when using btrfs-progs with RAID5/6.
+What's the drop internal? Something near 30s?
+If so, try mount option commit=3D300 to see if it helps.
 
 >=20
-> root@LEDE:~# btrfs check --init-extent-tree /dev/sda
-> Checking filesystem on /dev/sda
-> UUID: 22d612d9-b7b6-4c4c-95cd-64f5056d420b
-> Creating a new extent tree
-> Failed to find [3174144425984, 168, 16384]
-> btrfs unable to find ref byte nr 3174347603968 parent 0 root 1  owner 1=
- offset 0
-> Failed to find [3174144475136, 168, 16384]
-> btrfs unable to find ref byte nr 3174444449792 parent 0 root 1  owner 0=
- offset 1
-> Failed to find [3174144507904, 168, 16384]
-> btrfs unable to find ref byte nr 3174631505920 parent 0 root 1  owner 0=
- offset 1
-> checking extents
-> cmds-check.c:7866: add_data_backref: BUG_ON `!back` triggered, value 1
-> Aborted
+> Of course, the simple fix is to use a FS that works for me(TM). However=
 
-You're calling one of the most dangerous operation.
-It's a fortune it just aborts before causing more dangerous.
+> I thought since this is a common real-world use case I'd describe the
+> symptoms here in case anyone is interested in analyzing this behavior.
+> It's not immediately obvious that the FS makes such a difference. Also,=
 
->=20
-> root@LEDE:~# btrfs check --init-csum-tree /dev/sda
-> Creating a new CRC tree
-> Checking filesystem on /dev/sda
-> UUID: 22d612d9-b7b6-4c4c-95cd-64f5056d420b
-> Reinitialize checksum tree
-> Fixed 0 roots.
-> checking extents
-> cmds-check.c:7866: add_data_backref: BUG_ON `!back` triggered, value 1
-> Aborted
->=20
-> This is with version 4.14 of btrfs-progs. Do I need a newer version or
-> should I just reinitialize my array and copy everything back?
->=20
-> Log on mount attached below:
->=20
-> Fri Jan 19 14:26:01 2018 kern.info kernel: [168376.739242] BTRFS info
-> (device sda): disk space caching is enabled
-> Fri Jan 19 14:26:01 2018 kern.info kernel: [168376.752038] BTRFS info
-> (device sda): has skinny extents
-> Fri Jan 19 14:26:04 2018 kern.info kernel: [168380.493600] BTRFS info
-> (device sda): continuing balance
+> if anyone has an idea what I could try to mitigate this issue (mount or=
 
-It seems to be a problem relocating the chunk.
+> mkfs options?) I can try that.
 
-Try 'skip_balance' to see if it allow you to mount it RW.
+Mkfs.options can help, but only marginally AFAIK.
 
-If it doesn't work, and since btrfs-progs won't help much in such case,
-rebuilding seems to be your only option.
+You could try mkfs with -n 4K (minimal supported nodesize), to reduce
+the tree lock critical region by a little, at the cost of more metadata
+fragmentation.
+
+And is there any special features enabled like quota?
+Or scheduled balance running at background?
+Which is known to dramatically impact performance of transaction
+commitment, so it's recommended to disable quota/scheduled balance first.=
+
+
+
+Another recommendation is to use nodatacow mount option to reduce the
+CoW metadata overhead, but I doubt about the effectiveness.
 
 Thanks,
 Qu
 
-> Fri Jan 19 14:26:07 2018 kern.info kernel: [168382.691771] BTRFS info
-> (device sda): relocating block group 3295510790144 flags 129
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.028958] BTRFS
-> warning (device sda): sda checksum verify failed on 3174631424000
-> wanted 2658452A found 6F04F3FC level 0
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.052699] BTRFS
-> warning (device sda): sda checksum verify failed on 3174631424000
-> wanted 2658452A found 6F04F3FC level 0
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.087279] BTRFS
-> warning (device sda): sda checksum verify failed on 3174631424000
-> wanted 2658452A found 6F04F3FC level 0
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.110017]
-> ------------[ cut here ]------------
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.119950] WARNING:
-> CPU: 0 PID: 2496 at fs/btrfs/extent-tree.c:6958
-> btrfs_lookup_block_group+0x1438/0x1f74 [btrfs]
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.120096] BTRFS
-> warning (device sda): sda checksum verify failed on 3174631424000
-> wanted 2658452A found 6F04F3FC level 0
-> Fri Jan 19 14:26:07 2018 kern.crit kernel: [168383.120189] BTRFS:
-> error (device sda) in __btrfs_free_extent:6958: errno=3D-5 IO failure
-> Fri Jan 19 14:26:07 2018 kern.info kernel: [168383.120197] BTRFS info
-> (device sda): forced readonly
-> Fri Jan 19 14:26:07 2018 kern.crit kernel: [168383.120214] BTRFS:
-> error (device sda) in btrfs_run_delayed_refs:2967: errno=3D-5 IO failur=
-e
-> Fri Jan 19 14:26:07 2018 kern.debug kernel: [168383.207466] BTRFS:
-> Transaction aborted (error -5)
-> Fri Jan 19 14:26:07 2018 kern.warn kernel: [168383.217230] Modules
-> linked in: snd_usb_audio nf_conntrack_ipv6 iptable_nat ipt_REJECT
-> ipt_MASQUERADE xt_time xt_tcpudp xt_state xt_nat xt_multiport xt_mark
-> xt_mac xt_limit xt_conntrack xt_comment xt_TCPMSS xt_REDIRECT xt_LOG
-> snd_usbmidi_lib nf_reject_ipv4 nf_nat_redirect nf_nat_masquerade_ipv4
-> nf_conntrack_ipv4 nf_nat_ipv4 nf_nat nf_log_ipv4 nf_defrag_ipv6
-> nf_defrag_ipv4 nf_conntrack_rtcache nf_conntrack libcrc32c
-> iptable_mangle iptable_filter ip_tables ip6t_REJECT nf_reject_ipv6
-> nf_log_ipv6 nf_log_common ip6table_mangle ip6table_filter ip6_tables
-> x_tables snd_compress snd_pcm_oss snd_mixer_oss snd_pcm snd_timer
-> snd_rawmidi snd_seq_device snd_hwdep snd soundcore cifs sha256_generic
-> md5 md4 hmac ecb des_generic usb_storage leds_gpio xhci_mtk
-> xhci_plat_hcd xhci_pci xhci_hcd ahci libahci libata sd_mod
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.361711]  scsi_mod
-> gpio_button_hotplug btrfs xor raid6_pq usbcore nls_base usb_common
-> crc32c_generic
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.378239] CPU: 0 PID:
-> 2496 Comm: kworker/u8:2 Tainted: G        W       4.9.75 #0
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.394206] Workqueue:
-> btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.408183] Stack :
-> 8b3b8200 804c0000 8045bc04 8f7d359c 00000009 00001b2e 8ed29270
-> 00000000
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.425374]
-> 8f673800 8006b9c8 8045bc04 00000000 000009c0 80523824 8045bb70
-> 8c6b3b24
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.442564]
-> 804c0000 800a8670 00000001 80520000 804c9ec4 804c9ec8 80460810
-> 8c6b3b24
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.459753]
-> 804c0000 8004334c 8ed29270 8c6b3b5c 000005ae 00000000 00000006
-> 006b3b44
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.476942]
-> 8f7777ac 8fe2e400 8fe2eb00 66727462 78652d73 746e6574 6665722d
-> 00000073
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.494132]         ...
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.499272] Call Trace:
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.504435]
-> [<8000f814>] show_stack+0x54/0x88
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.513472]
-> [<801da9cc>] dump_stack+0x8c/0xd0
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.522505]
-> [<8002bdc4>] __warn+0xe4/0x118
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.531005]
-> [<8002be28>] warn_slowpath_fmt+0x30/0x3c
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.541343]
-> [<8f716adc>] btrfs_lookup_block_group+0x1438/0x1f74 [btrfs]
-> Fri Jan 19 14:26:08 2018 kern.warn kernel: [168383.555109] ---[ end
-> trace d625fb7e6ea3d882 ]---
-> Fri Jan 19 14:26:08 2018 kern.crit kernel: [168383.564700] BTRFS:
-> error (device sda) in __btrfs_free_extent:6958: errno=3D-5 IO failure
-> Fri Jan 19 14:26:08 2018 kern.crit kernel: [168383.581024] BTRFS:
-> error (device sda) in btrfs_run_delayed_refs:2967: errno=3D-5 IO failur=
-e
-> --
+>=20
+> I saw this behavior on two different machines with kernels 4.14.13 and
+> 4.14.5, both Arch Linux. btrfs-progs 4.14, OBS 20.1.3-241-gf5c3af1b
+> built from git.
+>=20
+> Best regards
+> Sebastian
+>=20
+> [1] https://github.com/jp9000/obs-studio
+> --=20
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
 
 
---cO8cZbcx8g7fQDeQVKAa2tvohhHFldjXE--
 
---5pg6uWTC3Bh7upbe97841P97AMbwK0G9D
+--veOdQM9AZ8lGC1I4fqoetDkw9at8z1R5m--
+
+--N3ZByYPmRnPVWQUzaXk0AYUz9DNXih2Cb
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpkYzMXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjHkggApGDIkvZJA6HAtkkOujazZnZk
-ReozFIE2VxOM35JeNAil1A9HjAgf1gpNCHJq5RHyaGfxeUCjoKfOL61817CAlpx3
-9m0V1+k51+njpn3lhnNNkcCIhiZP6+8zg5ybxPvPRcEPt6aioPUucdgUfw9dOfY/
-gtfdCADIM0v9JTI3T+3pN3v2LZ5uAFRbCJEo5v7US8whmb67J2IIJSLW3cwT0E/f
-GlNfEWrGkMPyJ/ydnbp3RcqxY+jHGoX2gNciXWQISZmF/pyRdWgp2xB7s5F8vZYS
-DdqTxuFk8HqVe3ztCCx6wqsKENPqyEoc5ckILFfkDVgZEnSVrrAFnKWg7+sE1Q==
-=Bg2v
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpkZa4XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg7XQf/X2dH7dYw/rHkx3Ug71Z8AYEc
+///21q+14qRwQ+fwg9cf8/DjdpFZ7OAXlnHLGouvaWHt8UufNW5xQaaH8BlGOYZ8
+hZk3RDqgkDUpI8oB3qSHAwU015ajSg1SJ/fEUzLqha4uZoJVtVuflP9q6hI2Adnn
+GePb+eNI8NDTLUAJP/lh9vpxzInRFzwyHIjmHe70FJ1yNdcfUJDK3N+aHlTFlSB3
+HIZr2JRl1OCvdg1mNl6WWO782ASS3Uqk/tZgmpvD3cgDyyEkf7Ilv1Hmc+Bmogee
+tXUfysEu/YsCeOZwpSMVsZaalEO1FH4KfTbxhKxA8dnaqkOGOrvUUIJokxjJ8Q==
+=a+nE
 -----END PGP SIGNATURE-----
 
---5pg6uWTC3Bh7upbe97841P97AMbwK0G9D--
+--N3ZByYPmRnPVWQUzaXk0AYUz9DNXih2Cb--

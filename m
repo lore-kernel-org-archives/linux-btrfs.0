@@ -1,41 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from postfix.iai.uni-bonn.de ([131.220.8.4]:36066 "EHLO
-        postfix.iai.uni-bonn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750869AbeAUWeD (ORCPT
+Received: from mail-ot0-f175.google.com ([74.125.82.175]:43084 "EHLO
+        mail-ot0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750869AbeAUXYs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Jan 2018 17:34:03 -0500
-Subject: Re: Periodic frame losses when recording to btrfs volume with OBS
-To: Chris Murphy <lists@colorremedies.com>, linux-btrfs@vger.kernel.org
-References: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
- <35acc308-d68d-3a4b-a626-38b9a7820fd4@gmx.com>
- <a0b4a2c9-b61c-7f9a-5a24-88e4b83b887c@cs.uni-bonn.de>
- <CAJCQCtQOTNZZnkiw2Tq9Mgwnc4pykbOjCb2DCOm4iCjn5K9jQw@mail.gmail.com>
-From: Sebastian Ochmann <ochmann@cs.uni-bonn.de>
-Message-ID: <5e705af4-2bd7-6e3e-2179-a957a81275fc@cs.uni-bonn.de>
-Date: Sun, 21 Jan 2018 23:33:59 +0100
+        Sun, 21 Jan 2018 18:24:48 -0500
+Received: by mail-ot0-f175.google.com with SMTP id p36so5996535otd.10
+        for <linux-btrfs@vger.kernel.org>; Sun, 21 Jan 2018 15:24:48 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQOTNZZnkiw2Tq9Mgwnc4pykbOjCb2DCOm4iCjn5K9jQw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAJCQCtSkPTLJ0d94_HrNmr_g+1spOBXjS8EY1RkXnXf15wUKFw@mail.gmail.com>
+References: <7ebd40d4-3eea-9ad7-492f-b5d22cf935b0@gmail.com>
+ <CAJCQCtSRj1v-qksod3FetjVCutSL1MbLWdg1KSt1RsndJkTU=A@mail.gmail.com>
+ <05babf08-00de-ae0f-06f3-546719674aa1@gmail.com> <CAJCQCtSkPTLJ0d94_HrNmr_g+1spOBXjS8EY1RkXnXf15wUKFw@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 21 Jan 2018 16:24:47 -0700
+Message-ID: <CAJCQCtQ8n-MzjtHrbxYXiP03ypRf48NnqsfrqBn+0evC=HM_Ug@mail.gmail.com>
+Subject: Re: Can't mount (even in ro) after power outage - corrupt leaf,
+ open_ctree failed
+To: msk conf <msk.conf@gmail.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21.01.2018 23:04, Chris Murphy wrote:
-> On Sun, Jan 21, 2018 at 8:27 AM, Sebastian Ochmann
-> <ochmann@cs.uni-bonn.de> wrote:
->> On 21.01.2018 11:04, Qu Wenruo wrote:
-> 
->> The output of "mount" after setting 10 seconds commit interval:
+On Sun, Jan 21, 2018 at 4:13 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Sun, Jan 21, 2018 at 3:31 PM, msk conf <msk.conf@gmail.com> wrote:
+>> Hello,
 >>
->> /dev/sdc1 on /mnt/rec type btrfs
->> (rw,relatime,space_cache,commit=10,subvolid=5,subvol=/)
-> 
-> I wonder if it gets stuck updating v1 space cache. Instead of trying
-> v2, you could try nospace_cache mount option and see if there's a
-> change in behavior.
+>> thank you for the reply.
+>>
+>>> What do you get for btrfs fi df /array
+>>
+>>
+>> Can't do that because filesystem is not mountable. I will get stats for '/'
+>> filesystem instead (because '/array' is an empty directory - mountpoint on /
+>
+> Try
+> $ sudo btrfs-debug-tree -t chunk /dev/mapper/first | grep 'METADATA\|SYSTEM'
 
-I tried disabling space_cache, also on a newly formatted volume when 
-first mounting it. However, it doesn't seem to make a difference. 
-Basically the same lags in the same interval, sorry.
 
-Best regards
-Sebastian
+You need to adapt that /dev/ node for your case, I just copy pasted
+that from my setup. Anyway, that will look at the chunk tree and show
+the profile for these chunk types.
+
+
+-- 
+Chris Murphy

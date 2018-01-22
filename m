@@ -1,64 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40279 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753168AbeAZPXi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 10:23:38 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 02994ACC0
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 15:18:02 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: wqu@suse.com
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [RFC PATCH] btrfs: Gracefully handle errors in btrfs_qgroup_trace_extent_post
-Date: Fri, 26 Jan 2018 16:13:41 +0200
-Message-Id: <1516976021-11935-1-git-send-email-nborisov@suse.com>
+Received: from userp2130.oracle.com ([156.151.31.86]:46400 "EHLO
+        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751111AbeAVFzR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 22 Jan 2018 00:55:17 -0500
+Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
+        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0M5qKSR095679
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 05:55:16 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by userp2130.oracle.com with ESMTP id 2fna5e00ts-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 05:55:16 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0M5oG6m030697
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 05:50:16 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0M5oF9T013927
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 05:50:15 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/2] btrfs: make code easy to read in btrfs_open_one_device()
+Date: Mon, 22 Jan 2018 13:51:22 +0800
+Message-Id: <20180122055123.10404-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Running generic/019 with qgroups on the scratch device enabled is
-almost guaranteed to trigger the BUG_ON in btrfs_free_tree_block. It's
-supposed to trigger only on -ENOMEM, in reality, however, it's possible
-to get -EIO from btrfs_qgroup_trace_extent_post. This function just
-finds the roots of the extent being tracked and sets the qrecord->old_roots
-list. If this operation fails nothing critical happens except the
-quota accounting can be considered wrong. In such case just set the
-INCONSISTENT flag for the quota and be done with it.
+From: Anand Jain <Anand.Jain@oracle.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+First set the usual case that is writeable, then check
+for any special case like a seed device or a rdonly device
+and set the state appropriately.
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+v1->v2:
+ Add comment and commit log to explain its safe to set writeable
+ first and then reset to the special case such as seed or readonly
+ device. (no code change).
 
-Qu, 
+ fs/btrfs/volumes.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
 
-This fixes the crash for me, however I'm not entirely sure it's really the 
-best fix since it's leaking the usage of INCONSISTENT out of qgroup.c. Ideally
-I'd like to avoid this. Since you have more experience with qgroups and also you
-introduced the extent tracking code in add_delayed_tree_ref how does 
-look to you? 
-
-
- fs/btrfs/delayed-ref.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index a1a40cf382e3..1e9aa18cc0d8 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -820,8 +820,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 			     num_bytes, parent, ref_root, level, action);
- 	spin_unlock(&delayed_refs->lock);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5750cd9df417..001894782d84 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -689,14 +689,18 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
  
--	if (qrecord_inserted)
--		return btrfs_qgroup_trace_extent_post(fs_info, record);
-+	if (qrecord_inserted) {
-+		int ret = btrfs_qgroup_trace_extent_post(fs_info, record);
-+		if (ret != -ENOMEM)
-+			fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
-+		else
-+			return -ENOMEM;
-+	}
- 	return 0;
+ 	device->generation = btrfs_super_generation(disk_super);
  
- free_head_ref:
++	/*
++	 * Set the device as writeable and then check if its
++	 * seed or readonly device. Both SUPER_FLAG_SEEDING and
++	 * bdev_read_only(bdev) can be set by the user when device
++	 * is unmounted. And this fn is called at the time of mount.
++	 */
++	set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
+ 		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 		fs_devices->seeding = 1;
+-	} else {
+-		if (bdev_read_only(bdev))
+-			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+-		else
+-			set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
++	} else if (bdev_read_only(bdev)) {
++		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+ 	}
+ 
+ 	q = bdev_get_queue(bdev);
 -- 
-2.7.4
+2.15.0
 

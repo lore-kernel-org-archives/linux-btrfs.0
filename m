@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:60031 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:37293 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932153AbeAOGOI (ORCPT
+        with ESMTP id S1750886AbeAVFvL (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Mon, 15 Jan 2018 01:14:08 -0500
+        Mon, 22 Jan 2018 00:51:11 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs: Add chunk allocation ENOSPC debug message for enospc_debug mount option
-Date: Mon, 15 Jan 2018 14:13:52 +0800
-Message-Id: <20180115061352.13799-1-wqu@suse.com>
+Cc: nborisov@suse.com
+Subject: [PATCH v2] btrfs: Add chunk allocation ENOSPC debug message for enospc_debug mount option
+Date: Mon, 22 Jan 2018 13:50:54 +0800
+Message-Id: <20180122055054.7933-1-wqu@suse.com>
+In-Reply-To: <20180115061352.13799-1-wqu@suse.com>
+References: <20180115061352.13799-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -35,11 +37,15 @@ chunk allocator ENOSPC, but such debug info won't help.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
+v2:
+  Unify all message level to btrfs_debug().
+  More meaningful message if we don't have enough device.
+---
  fs/btrfs/volumes.c | 19 +++++++++++++++++--
  1 file changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a25684287501..664d8a1b90b3 100644
+index a25684287501..86cae6a15b1e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -4622,8 +4622,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
@@ -49,7 +55,7 @@ index a25684287501..664d8a1b90b3 100644
 -	if (list_empty(&fs_devices->alloc_list))
 +	if (list_empty(&fs_devices->alloc_list)) {
 +		if (btrfs_test_opt(info, ENOSPC_DEBUG))
-+			btrfs_warn(info, "%s: No writable device", __func__);
++			btrfs_debug(info, "%s: No writable device", __func__);
  		return -ENOSPC;
 +	}
  
@@ -77,9 +83,9 @@ index a25684287501..664d8a1b90b3 100644
  		ret = -ENOSPC;
 +		if (btrfs_test_opt(info, ENOSPC_DEBUG)) {
 +			btrfs_debug(info,
-+		"%s: not enough devices with free space: have=%d minimal=%d increment=%d",
-+				    __func__, ndevs, devs_min,
-+				    devs_increment * sub_stripes);
++		"%s: not enough devices with free space: have=%d minimal required=%d",
++				    __func__, ndevs, min(devs_min,
++				    devs_increment * sub_stripes));
 +		}
  		goto error;
  	}

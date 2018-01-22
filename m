@@ -1,258 +1,370 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f181.google.com ([209.85.128.181]:43935 "EHLO
-        mail-wr0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750955AbeAVOLk (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36622 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1750955AbeAVO2f (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Jan 2018 09:11:40 -0500
-Received: by mail-wr0-f181.google.com with SMTP id t16so8796175wrc.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 06:11:40 -0800 (PST)
+        Mon, 22 Jan 2018 09:28:35 -0500
+Subject: Re: Periodic frame losses when recording to btrfs volume with OBS
+To: Sebastian Ochmann <ochmann@cs.uni-bonn.de>, <linux-btrfs@vger.kernel.org>
+References: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
+From: Chris Mason <clm@fb.com>
+Message-ID: <8f04ccba-efca-a415-3ee0-61bcf1cb3d9d@fb.com>
+Date: Mon, 22 Jan 2018 09:27:03 -0500
 MIME-Version: 1.0
-From: "^m'e" <marcoep@gmail.com>
-Date: Mon, 22 Jan 2018 14:11:18 +0000
-Message-ID: <CAAxOLF8pwZ5jcZxB4=h-bPZBxsnCV7sB=LOghGfa0HhRqgJfSg@mail.gmail.com>
-Subject: btrfs check: backref lost, mismatch with its hash -- can't repair
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
+Content-Type: multipart/mixed;
+        boundary="------------489B9CA0E4CEFE34F5A52FC0"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+--------------489B9CA0E4CEFE34F5A52FC0
+Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Transfer-Encoding: 7bit
 
-After resuming from hibernation, my system shows weirdness; the
-following dmesg line alerted me:
+On 01/20/2018 05:47 AM, Sebastian Ochmann wrote:
+> Hello,
+> 
+> I would like to describe a real-world use case where btrfs does not 
+> perform well for me. I'm recording 60 fps, larger-than-1080p video using 
+> OBS Studio [1] where it is important that the video stream is encoded 
+> and written out to disk in real-time for a prolonged period of time (2-5 
+> hours). The result is a H264 video encoded on the GPU with a data rate 
+> ranging from approximately 10-50 MB/s.
+> 
+> The hardware used is powerful enough to handle this task. When I use a 
+> XFS volume for recording, no matter whether it's a SSD or HDD, the 
+> recording is smooth and no frame drops are reported (OBS has a nice 
+> Stats window where it shows the number of frames dropped due to encoding 
+> lag which seemingly also includes writing the data out to disk).
+> 
+> However, when using a btrfs volume I quickly observe severe, periodic 
+> frame drops. It's not single frames but larger chunks of frames that a 
+> dropped at a time. I tried mounting the volume with nobarrier but to no 
+> avail.
+> 
+> Of course, the simple fix is to use a FS that works for me(TM). However 
+> I thought since this is a common real-world use case I'd describe the 
+> symptoms here in case anyone is interested in analyzing this behavior. 
+> It's not immediately obvious that the FS makes such a difference. Also, 
+> if anyone has an idea what I could try to mitigate this issue (mount or 
+> mkfs options?) I can try that.
+> 
+> I saw this behavior on two different machines with kernels 4.14.13 and 
+> 4.14.5, both Arch Linux. btrfs-progs 4.14, OBS 20.1.3-241-gf5c3af1b 
+> built from git.
+> 
 
-  Jan 22 08:10:33 [kernel] BTRFS critical (device sdb3): invalid dir
-item name + data len: 3 + 32907
+This could be a few different things, trying without the space cache was 
+already suggested, and that's a top suspect.
 
-Although I can boot (root is BTRFS), (re-)mount the concerned FS,
-succesfully scrub it (no error reported), I'm unable to repair... More
-info (using a sysrescue with static a btrfs-progs build -- the same
-installed on the main Funtoo system):
+How does the application do the writes?  Are they always 4K aligned or 
+does it send them out in odd sizes?
 
-  # uname -a
-  Linux sysresccd 4.9.60-std512-amd64 #2 SMP Thu Nov 2 17:43:13 UTC
-2017 x86_64 Intel(R) Core(TM) i7-4702MQ CPU @ 2.20GHz GenuineIntel
-GNU/Linux
-
-  # ./btrfs.static --version
-  btrfs-progs v4.14.1
-
-  # ./btrfs.static fi show
-   Label: 'BTR-POOL'  uuid: de1723e2-150c-4448-bb36-be14d7d96093
-    Total devices 1 FS bytes used 97.73GiB
-    devid    1 size 230.35GiB used 173.04GiB path /dev/sdb3
-
-  # ./btrfs.static fi df /mnt/gentoo/
-  Data, single: total=167.00GiB, used=95.64GiB
-  System, single: total=32.00MiB, used=48.00KiB
-  Metadata, single: total=6.01GiB, used=2.09GiB
-  GlobalReserve, single: total=512.00MiB, used=0.00B
-
-  # dmesg | grep BTRFS
- [14963.234135] BTRFS info (device sdb3): disk space caching is enabled
- [14963.234138] BTRFS info (device sdb3): has skinny extents
- [14963.261054] BTRFS info (device sdb3): detected SSD devices,
-enabling SSD mode
- [14963.261485] BTRFS info (device sdb3): checking UUID tree
-
-
-As for check and repair attempts:
-
-------------------------------------------8<--------------------------------------
-# ./btrfs.static check -p --mode=lowmem --check-data-csum /dev/sdb3
-Checking filesystem on /dev/sdb3
-UUID: de1723e2-150c-4448-bb36-be14d7d96093
-ERROR: data extent[1862352896 425984] backref lost
-ERROR: data extent[1886453760 479232] backref lost
-ERROR: data extent[1902219264 524288] backref lost
-ERROR: data extent[1817378816 151552] backref lost
-ERROR: data extent[1799688192 57344] backref lost
-ERROR: data extent[1830277120 258048] backref lost
-ERROR: data extent[2558107648 1368064] backref lost
-ERROR: errors found in extent allocation tree or chunk allocation
-cache and super generation don't match, space cache will be invalidated
-ERROR: root 257 DIR_ITEM[30039322 4007295565] name  namelen 0 filetype
-0 mismatch with its hash, wanted 4007295565 have 4294967294
-ERROR: root 257 INODE_ITEM[0] index 18446744073709551615 name
-filetype 0 missing
-ERROR: root 257 DIR_ITEM[30039322 4007295565] data_len shouldn't be 32907
-ERROR: root 257 DIR_ITEM[30039322 4007295565] name  namelen 3 filetype
-0 mismatch with its hash, wanted 4007295565 have 987418363
-ERROR: root 257 INODE_ITEM[0] index 18446744073709551615 name
-filetype 0 missing
-ERROR: root 1385 INODE_ITEM[0] index 18446744073709551615 name
-metadata.xml filetype 1 missing
-ERROR: root 1385 DIR_ITEM[30039322 4007295565] name  namelen 0
-filetype 0 mismatch with its hash, wanted 4007295565 have 4294967294
-ERROR: root 1385 INODE_ITEM[0] index 18446744073709551615 name
-filetype 0 missing
-ERROR: root 1385 DIR_ITEM[30039322 4007295565] data_len shouldn't be 32907
-ERROR: root 1385 DIR_ITEM[30039322 4007295565] name  namelen 3
-filetype 0 mismatch with its hash, wanted 4007295565 have 987418363
-ERROR: root 1385 INODE_ITEM[0] index 18446744073709551615 name
-filetype 0 missing
-ERROR: root 1385 DIR ITEM[30039322 2] name  filetype 1 missing
-ERROR: root 1385 INODE REF[30039323, 30039322] name  filetype 1 missing
-ERROR: root 1385 DIR ITEM[30039322 3] name metadata.xml filetype 1 mismath
-ERROR: root 1385 DIR ITEM[30039322 5] name Manifest filetype 1 mismath
-ERROR: root 1385 INODE_ITEM[47302014] index 6 name metadata.xml
-filetype 1 missing
-ERROR: root 1385 INODE_ITEM[47302015] index 7 name metadata.xml
-filetype 1 missing
-ERROR: root 1385 DIR INODE [30039322] size 152 not equal to 163
-ERROR: errors found in fs roots
-found 104939749376 bytes used, error(s) found
-total csum bytes: 100264520
-total tree bytes: 15521644544
-total fs tree bytes: 15299624960
-total extent tree bytes: 88293376
-btree space waste bytes: 3468278611
-file data blocks allocated: 373752188928
- referenced 322517573632
-------------------------------------------8<--------------------------------------
+The easiest way to nail it down is to use offcputime from the iovisor 
+project:
 
 
-------------------------------------------8<--------------------------------------
-# ./btrfs.static check -p  --repair /dev/sdb3
-Fixed 0 roots.
-enabling repair mode
-Checking filesystem on /dev/sdb3
-UUID: de1723e2-150c-4448-bb36-be14d7d96093
-ref mismatch on [1799688192 57344] extent item 2, found 1
-Incorrect local backref count on 1799688192 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xde7d020
-Backref disk bytenr does not match extent record, bytenr=1799688192,
-ref bytenr=0
-backpointer mismatch on [1799688192 57344]
-repair deleting extent record: key 1799688192 168 57344
-adding new data backref on 1799688192 root 257 owner 47301992 offset 0 found 1
-Repaired extent references for 1799688192
-ref mismatch on [1817378816 151552] extent item 2, found 1
-Incorrect local backref count on 1817378816 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xde78200
-Backref disk bytenr does not match extent record, bytenr=1817378816,
-ref bytenr=0
-backpointer mismatch on [1817378816 151552]
-repair deleting extent record: key 1817378816 168 151552
-adding new data backref on 1817378816 root 257 owner 47301982 offset 0 found 1
-Repaired extent references for 1817378816
-ref mismatch on [1830277120 258048] extent item 2, found 1
-Incorrect local backref count on 1830277120 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xde98c00
-Backref disk bytenr does not match extent record, bytenr=1830277120,
-ref bytenr=0
-backpointer mismatch on [1830277120 258048]
-repair deleting extent record: key 1830277120 168 258048
-adding new data backref on 1830277120 root 257 owner 47302002 offset 0 found 1
-Repaired extent references for 1830277120
-ref mismatch on [1862352896 425984] extent item 2, found 1
-Incorrect local backref count on 1862352896 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xddedd30
-Backref disk bytenr does not match extent record, bytenr=1862352896,
-ref bytenr=0
-backpointer mismatch on [1862352896 425984]
-repair deleting extent record: key 1862352896 168 425984
-adding new data backref on 1862352896 root 257 owner 47301952 offset 0 found 1
-Repaired extent references for 1862352896
-ref mismatch on [1886453760 479232] extent item 2, found 1
-Incorrect local backref count on 1886453760 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xde45b10
-Backref disk bytenr does not match extent record, bytenr=1886453760,
-ref bytenr=0
-backpointer mismatch on [1886453760 479232]
-repair deleting extent record: key 1886453760 168 479232
-adding new data backref on 1886453760 root 257 owner 47301962 offset 0 found 1
-Repaired extent references for 1886453760
-ref mismatch on [1902219264 524288] extent item 2, found 1
-Incorrect local backref count on 1902219264 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xde54c50
-Backref disk bytenr does not match extent record, bytenr=1902219264,
-ref bytenr=0
-backpointer mismatch on [1902219264 524288]
-repair deleting extent record: key 1902219264 168 524288
-adding new data backref on 1902219264 root 257 owner 47301972 offset 0 found 1
-Repaired extent references for 1902219264
-ref mismatch on [2558107648 1368064] extent item 2, found 1
-Incorrect local backref count on 2558107648 parent 186517012480 owner
-0 offset 0 found 0 wanted 1 back 0xdefd520
-Backref disk bytenr does not match extent record, bytenr=2558107648,
-ref bytenr=0
-backpointer mismatch on [2558107648 1368064]
-repair deleting extent record: key 2558107648 168 1368064
-adding new data backref on 2558107648 root 257 owner 47302009 offset 0 found 1
-Repaired extent references for 2558107648
-owner ref check failed [186517012480 16384]
-repair deleting extent record: key 186517012480 168 16384
-adding new tree backref on start 186517012480 len 16384 parent 0 root 1385
-Repaired extent references for 186517012480
+https://github.com/iovisor/bcc/blob/master/tools/offcputime.py
 
-No device size related problem found
-cache and super generation don't match, space cache will be invalidated
-ERROR: DIR_ITEM[30039322 4007295565] name  ]�  namelen 0 filetype 0
-mismatch with its hash, wanted 4007295565 have 4294967294
-invalid location in dir item 0
-ERROR: DIR_ITEM[30039322 4007295565] name  namelen 3 filetype 0
-mismatch with its hash, wanted 4007295565 have 987418363
-invalid location in dir item 125
-root 257 inode 30039322 errors 10, odd dir item
-Failed to reset nlink for inode 18446744073709551361: No such file or directory
-    unresolved ref dir 30039322 index 0 namelen 0 name  filetype 0
-errors 6, no dir index, no inode ref
-    unresolved ref dir 30039322 index 0 namelen 3 name  filetype 0
-errors 6, no dir index, no inode ref
-invalid location in dir item 0
-ERROR: DIR_ITEM[30039322 4007295565] name  ]�  namelen 0 filetype 0
-mismatch with its hash, wanted 4007295565 have 4294967294
-invalid location in dir item 0
-ERROR: DIR_ITEM[30039322 4007295565] name  namelen 3 filetype 0
-mismatch with its hash, wanted 4007295565 have 987418363
-invalid location in dir item 125
-Deleting bad dir index [30039322,96,2] root 1385
-Deleting bad dir index [30039322,96,6] root 1385
-Deleting bad dir index [30039322,96,7] root 1385
-invalid dir item size
-adding missing dir index/item pair for inode 30039323
-invalid dir item size
-ERROR: DIR_ITEM[30039322 4007295565] name  ]�  namelen 0 filetype 0
-mismatch with its hash, wanted 4007295565 have 4294967294
-invalid location in dir item 0
-ERROR: DIR_ITEM[30039322 4007295565] name  namelen 3 filetype 0
-mismatch with its hash, wanted 4007295565 have 987418363
-invalid location in dir item 125
-root 257 inode 30039322 errors 10, odd dir item
-Failed to reset nlink for inode 18446744073709551361: No such file or directory
-    unresolved ref dir 30039322 index 0 namelen 0 name  filetype 0
-errors 6, no dir index, no inode ref
-    unresolved ref dir 30039322 index 0 namelen 3 name  filetype 0
-errors 6, no dir index, no inode ref
-ERROR: DIR_ITEM[30039322 4007295565] name  ]�  namelen 0 filetype 0
-mismatch with its hash, wanted 4007295565 have 4294967294
-invalid location in dir item 0
-ERROR: DIR_ITEM[30039322 4007295565] name  namelen 3 filetype 0
-mismatch with its hash, wanted 4007295565 have 987418363
-invalid location in dir item 125
-root 257 inode 30039322 errors 10, odd dir item
-Failed to reset nlink for inode 18446744073709551361: No such file or directory
-    unresolved ref dir 30039322 index 0 namelen 0 name  filetype 0
-errors 6, no dir index, no inode ref
-    unresolved ref dir 30039322 index 0 namelen 3 name  filetype 0
-errors 6, no dir index, no inode ref
-ERROR: DIR_ITEM[30039322 4007295565] name  ]�  namelen 0 filetype 0
-mismatch with its hash, wanted 4007295565 have 4294967294
-invalid location in dir item 0
-ERROR: DIR_ITEM[30039322 4007295565] name  namelen 3 filetype 0
-mismatch with its hash, wanted 4007295565 have 987418363
-invalid location in dir item 125
-root 257 inode 30039322 errors 10, odd dir item
-....
-------------------------------------------8<--------------------------------------
+If you haven't already configured this it may take a little while, but 
+it's the perfect tool for this problem.
 
-Note that the repair run seems stuck * looping* on the same inode
-18446744073709551361, it doesn't progress (though I stopped it after
-half an hour).
+Otherwise, if the stalls are long enough you can try to catch it with 
+/proc/<pid>/stack.  I've attached a helper script I often use to dump 
+the stack trace of all the tasks in D state.
 
-Please, help!
+Just run walker.py and it should give you something useful.  You can use 
+walker.py -a to see all the tasks instead of just D state.  This just 
+walks /proc/<pid>/stack, so you'll need to run it as someone with 
+permissions to see the stack traces of the procs you care about.
 
-Cheers,
+-chris
 
-   Marco
+
+
+--------------489B9CA0E4CEFE34F5A52FC0
+Content-Type: text/x-python; name="walker.py"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="walker.py"
+
+#!/usr/bin/env python3
+#
+# this walks all the tasks on the system and prints out a stack trace
+# of any tasks waiting in D state.  If you pass -a, it will print out
+# the stack of every task it finds.
+#
+# It also makes a histogram of the common stacks so you can see where
+# more of the tasks are.
+#
+
+import sys
+import os
+
+from optparse import OptionParser
+
+usage = "usage: %prog [options]"
+parser = OptionParser(usage=usage)
+parser.add_option("-a", "--all_tasks", help="Dump all stacks", default=False,
+                  action="store_true")
+parser.add_option("-s", "--smaps", help="Dump /proc/pid/smaps", default=False,
+                  action="store_true")
+parser.add_option("-S", "--sort", help="/proc/pid/smaps sort key",
+                  default="size", type="str")
+parser.add_option("-p", "--pid", help="Filter on pid", default=None,
+                 type="str")
+parser.add_option("-c", "--command", help="Filter on command name",
+                 default=None, type="str")
+parser.add_option("-f", "--files", help="don't collapse open files",
+                  default=False, action="store_true")
+parser.add_option("-v", "--verbose", help="details++", default=False,
+                  action="store_true")
+(options, args) = parser.parse_args()
+
+stacks = {}
+
+maps = {}
+
+lines = []
+
+# parse the units from a number and normalize into KB
+def parse_number(s):
+    try:
+        words = s.split()
+        unit = words[-1].lower()
+        number = int(words[1])
+        tag = words[0].lower().rstrip(':')
+
+        # we store in kb
+        if unit == "mb":
+            number = number * 1024
+        elif unit == "gb":
+            number = number * 1024 * 1024
+        elif unit == "tb":
+            number = number * 1024 * 1024
+
+        return (tag, number)
+    except:
+        return (None, None)
+
+# pretty print a number in KB with units
+def print_number(num):
+    # we store the number in kb
+    units = ['KB', 'MB', 'GB', 'TB']
+    index = 0
+
+    while num > 1024:
+        num /= 1024
+        index += 1
+
+    final = float(num + num / 1024)
+    return (final, units[index])
+
+# find a given line in the record and pretty print it
+def print_line(header, record, tag):
+    num, unit = print_number(record[tag])
+
+    if options.verbose:
+        header = header + " "
+    else:
+        header = ""
+
+    print("\t%s%s: %.2f %s" % (header, tag.capitalize(), num, unit))
+
+
+# print all the lines we care about in a given record
+def print_record(record):
+    tag = record['tag']
+
+    print(tag)
+    print_line(tag, record, "size")
+    print_line(tag, record, "rss")
+    print_line(tag, record, "pss")
+    print_line(tag, record, "anonymous")
+    print_line(tag, record, "swap")
+    print_line(tag, record, "locked")
+
+# stuff a record with a group of lines from /proc/pid/smaps
+# into the smaps hash.  This does all the collapsing by cmd name
+# unless we're in -a mode
+#
+def add_record(cmd, pid, record):
+    global maps
+
+    if not record:
+        return
+
+    val = record["tag"]
+
+    if val[0] != '[':
+        if val.find('/') < 0:
+            val = "[anonymous]"
+        elif options.files:
+            val = "[files:%s]" % val
+        else:
+            val = "[files]"
+
+    if not options.verbose and val.startswith('[stack:'):
+        val = val[0:6] + "]"
+    if options.all_tasks:
+        val = "%s:%s:%s" % (cmd, pid, val)
+    else:
+        val = "%s:%s" % (cmd, val)
+    proc = maps.setdefault(val, {"tag": val})
+
+    for x in record:
+        if x != "tag":
+            e = proc.get(x, 0)
+            proc[x] = e + record[x]
+
+# open the smap file for a given pid and collect all the records
+def add_smap(path, pid, cmd):
+    try:
+        fd = open(os.path.join(path, "smaps"), "r")
+    except:
+        return
+
+    record = {}
+
+    while True:
+        l = fd.readline()
+        if not l:
+            break
+        l = l.lstrip().rstrip()
+
+        if l.find('-') >= 0:
+            add_record(cmd, pid, record)
+            record = {}
+            words = l.split()
+
+            # if the tag includes information about filenames
+            # add them in
+            #
+            if len(words) > 5:
+                record['tag'] = " ".join(words[5:])
+            else:
+                record['tag'] = words[-1]
+
+            continue
+
+        tag, number = parse_number(l)
+        if tag:
+            record[tag] = number
+
+    add_record(cmd, pid, record)
+
+# read /proc/pid/stack and add it to the hashes
+def add_stack(path, pid, cmd, status):
+    global stacks
+
+    try:
+        stack = open(os.path.join(path, "stack"), "r").read()
+    except:
+        return
+
+    if (status != "D" and not options.all_tasks):
+        return
+
+    print("%s %s %s" % (pid, cmd, status))
+    print(stack)
+    v = stacks.get(stack)
+    if v:
+        v += 1
+    else:
+        v = 1
+    stacks[stack] = v
+
+
+# worker to read all the files for one individual task
+def run_one_task(path):
+
+    try:
+        stat = open(os.path.join(path, "stat"), "r").read()
+    except:
+        pass
+
+    words = stat.split()
+    pid, cmd, status = words[0:3]
+
+    cmd = cmd.lstrip('(')
+    cmd = cmd.rstrip(')')
+
+    if options.command and options.command != cmd:
+        return
+
+    if options.smaps:
+        add_smap(path, pid, cmd)
+    else:
+        add_stack(path, pid, cmd, status)
+
+def print_usage():
+    sys.stderr.write("Usage: %s [-a]\n" % sys.argv[0])
+    sys.exit(1)
+
+# for a given pid in string form, read the files from proc
+def run_pid(name):
+    try:
+        pid = int(name)
+    except:
+        return
+
+    if options.smaps:
+        p = os.path.join("/proc", name)
+        try:
+            run_one_task(p)
+        except:
+            pass
+    else:
+        p = os.path.join("/proc", name, "task")
+        if not os.path.exists(p):
+            return
+
+        try:
+            for t in os.listdir(p):
+                run_one_task(os.path.join(p, t))
+        except:
+            raise
+
+if options.pid:
+    run_pid(options.pid)
+else:
+    for name in os.listdir("/proc"):
+        run_pid(name)
+
+if options.smaps:
+    key = options.sort.lower()
+    sort = {}
+
+    for x in maps:
+        record = maps[x]
+        val = record.get(key, 0)
+        sort.setdefault(val, []).append(x)
+
+    ar = list(sort.keys())
+    ar.sort()
+    for x in ar:
+        bucket = sort[x]
+        for x in bucket:
+            print_record(maps[x])
+else:
+    values = {}
+    for stack, count in stacks.items():
+        l = values.setdefault(count, [])
+        l.append(stack)
+
+    counts = list(values.keys())
+    counts.sort(reverse=True)
+    if counts:
+            print("-----\nstack summary\n")
+
+    for x in counts:
+        if x == 1:
+            print("1 hit:")
+        else:
+            print("%d hits: " % x)
+
+        l = values[x]
+        for stack in l:
+            print(stack)
+            print("-----")
+
+--------------489B9CA0E4CEFE34F5A52FC0--

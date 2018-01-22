@@ -1,85 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:46185 "EHLO
-        mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750890AbeAVDbV (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:45088 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751003AbeAVEKo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 21 Jan 2018 22:31:21 -0500
-Received: by mail-lf0-f48.google.com with SMTP id q194so8812949lfe.13
-        for <linux-btrfs@vger.kernel.org>; Sun, 21 Jan 2018 19:31:20 -0800 (PST)
+        Sun, 21 Jan 2018 23:10:44 -0500
+From: Anand Jain <anand.jain@oracle.com>
+Subject: Re: [PATCH 1/3] btrfs: make code easy to read in
+ btrfs_open_one_device()
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <20171215074016.26461-1-anand.jain@oracle.com>
+ <20180105140915.GL3553@twin.jikos.cz>
+Message-ID: <851cdeca-2b4a-2b01-862e-c9c9ec96cec0@oracle.com>
+Date: Mon, 22 Jan 2018 12:11:50 +0800
 MIME-Version: 1.0
-From: Liwei <xieliwei@gmail.com>
-Date: Mon, 22 Jan 2018 11:30:58 +0800
-Message-ID: <CAPE0SYw9Z0fx9O6sc3NhRTU5yfQhdghUs6kQcF2KMdn0JG2-xg@mail.gmail.com>
-Subject: Re: Damaged Root Tree(s)
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20180105140915.GL3553@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
-
-> On Sun, Jan 21, 2018 at 12:16 PM, Liwei <xieli...@gmail.com> wrote:
-> > Hi list,
-> >
-> > ====TLDR====
-> > 1. Can I mount a filesystem using one of the roots found with btrfs-find-root?
->
-> Not necessarily because more than just the tree root needs to be
-> readable to do a mount.
->
-> But decent chance it's possible to do an offline scrape using one of
-> those root trees with btrfs restore.
->
-
-Its starting to look like that, I'll probably have to send a separate
-email troubleshooting that, as there seems to be some errors occurring
-even with the best root I've found.
-
->
-> >
-> > ====Background Information====
-> >     I have a 2x10TB raid0 (20TB, raid0 provided by md) volume that (my
-> > theory is) experienced a headcrash while updating the root tree, or
-> > maybe while it was carrying out background defragmentation.
-> >
-> >     This occurred while I was setting up redundancy by using LVM
-> > mirroring, so in the logs you'll see some dm errors. Unfortunately the
-> > lost data has not been mirrored yet (what are the chances, given that
-> > the mirror was 97% complete when this happened).
-> >
-> >     Running a scrub on the raid shows that I have 1000+ unreadable
-> > sectors, amounting to about 800kB of data. So I've got spare drives
-> > and imaged the offending drive. Currently ddrescue is still trying to
-> > read those sectors, but it seems unlikely that they'll ever succeed.
->
-> Bad luck. What's the metadata profile? Single or DUP?
 
 
-Metadata profile is DUP, but it seems like there is only one
-up-to-date tree root at any time?
+On 01/05/2018 10:09 PM, David Sterba wrote:
+> On Fri, Dec 15, 2017 at 03:40:14PM +0800, Anand Jain wrote:
+>> No functional change. First set the usual case, writeable then check
+>> for any special config.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/volumes.c | 8 +++-----
+>>   1 file changed, 3 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 5a4c30451c7f..a81574dba124 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -676,14 +676,12 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
+>>   
+>>   	device->generation = btrfs_super_generation(disk_super);
+>>   
+>> +	set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+> 
+> I would not say there's no functional change. This line will
+> unconditionally set the writeable flag, but this was not the case
+> before.
 
->
->
-> >
-> >     Next I ran btrfs-find-root, which gave me the following:
-> > Superblock thinks the generation is 318593
-> > Superblock thinks the level is 1
-> > Well block 25826479144960(gen: 318346 level: 1) seems good, but
-> > generation/level doesn't match, want gen: 318593 level: 1
->
->
-> That there's a big gap in generation between what's wanted and what's
-> found, a bunch of those more recent trees must be colocated and are
-> probably missing.
+  (Sorry for the delay, got distracted by other patches).
 
-I thought so too. Is there a reason why they ended up being colocated?
-I'm surprised with all the redundancies btrfs is capable of, this can
-happen. Was it because the volume was starting to become full? (This
-whole exercise of turning on mirroring was because we're migrating to
-bigger disks)
+  agreed here.
 
->
-> Anyway I think it's best to look at restore, and my limited experience
-> it tends to be more successful when restoring from snapshots
+> Sure it's dropped a few lines below, but this would need some checking
+> that it's not a problem. btrfs_open_one_device is indirectly called from
+> mount so it should be safe (we can't use one device twice), but this
+> needs to be documented.
 
-Seems like that's the way forward indeed.
+  Sure will do.
+
+Thanks, Anand
+
+
+>>   	if (btrfs_super_flags(disk_super) & BTRFS_SUPER_FLAG_SEEDING) {
+>>   		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+>>   		fs_devices->seeding = 1;
+>> -	} else {
+>> -		if (bdev_read_only(bdev))
+>> -			clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+>> -		else
+>> -			set_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+>> +	} else if (bdev_read_only(bdev)) {
+>> +		clear_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state);
+>>   	}
+>>   
+>>   	q = bdev_get_queue(bdev);
+>> -- 
+>> 2.7.0
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

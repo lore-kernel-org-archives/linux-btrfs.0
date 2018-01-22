@@ -1,192 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:42934 "EHLO
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:45350 "EHLO
         james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751085AbeAVR6U (ORCPT
+        with ESMTP id S1751085AbeAVSSV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Jan 2018 12:58:20 -0500
-Date: Mon, 22 Jan 2018 12:58:08 -0500
+        Mon, 22 Jan 2018 13:18:21 -0500
+Date: Mon, 22 Jan 2018 13:18:10 -0500
 From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Nikolay Borisov <nborisov@suse.com>, enadolski@suse.com,
-        linux-btrfs@vger.kernel.org
+Cc: enadolski@suse.com, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: remove spurious WARN_ON(ref->count) in
  find_parent_nodes
-Message-ID: <20180122175754.7efpwtbnil73m6ay@hungrycats.org>
+Message-ID: <20180122181756.654umekixszxpxxm@hungrycats.org>
 References: <20180121190848.7wmps6q5ng6b42ki@hungrycats.org>
  <20180122033452.GA532@fnst.localdomain>
- <9151459e-8db2-bdd1-a21e-23d730cb52a4@suse.com>
- <87ed4d9c-9af4-4425-5a35-b0ccd9305e76@cn.fujitsu.com>
- <377c6852-6617-b4e0-5e69-60a9566bd894@suse.com>
- <20180122130622.GB532@fnst.localdomain>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="qt6ssn6zhdtmetpa"
-In-Reply-To: <20180122130622.GB532@fnst.localdomain>
+        protocol="application/pgp-signature"; boundary="sbo5vbjbnhmuhwth"
+In-Reply-To: <20180122033452.GA532@fnst.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---qt6ssn6zhdtmetpa
-Content-Type: text/plain; charset=utf-8
+--sbo5vbjbnhmuhwth
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, Jan 22, 2018 at 09:06:23PM +0800, Lu Fengqi wrote:
-> On Mon, Jan 22, 2018 at 02:38:42PM +0200, Nikolay Borisov wrote:
+On Mon, Jan 22, 2018 at 11:34:52AM +0800, Lu Fengqi wrote:
+> On Sun, Jan 21, 2018 at 02:08:58PM -0500, Zygo Blaxell wrote:
+> >This warning appears during execution of the LOGICAL_INO ioctl and
+> >appears to be spurious:
 > >
+> >	------------[ cut here ]------------
+> >	WARNING: CPU: 3 PID: 18172 at fs/btrfs/backref.c:1391 find_parent_nodes=
++0xc41/0x14e0
+> >	Modules linked in: ib_iser rdma_cm iw_cm ib_cm ib_core configfs iscsi_t=
+cp libiscsi_tcp libiscsi scsi_transport_iscsi overlay r8169 ufs qnx4 hfsplu=
+s hfs minix ntfs vfat msdos fat jfs xfs cpuid rpcsec_gss_krb5 nfsv4 nfsv3 n=
+fs fscache algif_skcipher af_alg softdog nfsd auth_rpcgss nfs_acl lockd gra=
+ce sunrpc bnep cpufreq_userspace cpufreq_powersave cpufreq_conservative nfn=
+etlink_queue nfnetlink_log nfnetlink bluetooth rfkill snd_seq_dummy snd_hrt=
+imer snd_seq_midi snd_seq_oss snd_seq_midi_event snd_rawmidi snd_seq snd_se=
+q_device binfmt_misc fuse nbd xt_REDIRECT nf_nat_redirect ipt_REJECT nf_rej=
+ect_ipv4 xt_nat xt_conntrack xt_tcpudp nf_log_ipv4 nf_log_common xt_LOG ip6=
+table_nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 iptable_nat nf_connt=
+rack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack
+> >	 ip6table_mangle iptable_mangle ip6table_filter ip6_tables iptable_filt=
+er ip_tables x_tables tcp_cubic dummy lp dm_crypt edac_mce_amd edac_core sn=
+d_hda_codec_hdmi ppdev kvm_amd kvm irqbypass crct10dif_pclmul crc32_pclmul =
+ghash_clmulni_intel snd_hda_codec_via pcbc amdkfd snd_hda_codec_generic amd=
+_iommu_v2 aesni_intel snd_hda_intel radeon snd_hda_codec aes_x86_64 snd_hda=
+_core snd_hwdep crypto_simd glue_helper sg snd_pcm_oss cryptd input_leds jo=
+ydev pcspkr serio_raw snd_mixer_oss rtc_cmos snd_pcm parport_pc parport shp=
+chp wmi acpi_cpufreq evdev snd_timer asus_atk0110 k10temp fam15h_power snd =
+soundcore sp5100_tco hid_generic ipv6 af_packet crc_ccitt raid10 raid456 as=
+ync_raid6_recov async_memcpy async_pq async_xor async_tx libcrc32c raid0 mu=
+ltipath linear dm_mod raid1 md_mod ohci_pci ide_pci_generic
+> >	 sr_mod cdrom pdc202xx_new ohci_hcd crc32c_intel atiixp ehci_pci psmous=
+e ide_core i2c_piix4 ehci_hcd xhci_pci mii xhci_hcd [last unloaded: r8169]
+> >	CPU: 3 PID: 18172 Comm: bees Tainted: G      D W    L  4.11.9-zb64+ #1
+> >	Hardware name: System manufacturer System Product Name/M5A78L-M/USB3, B=
+IOS 2101    12/02/2014
+> >	Call Trace:
+> >	 dump_stack+0x85/0xc2
+> >	 __warn+0xd1/0xf0
+> >	 warn_slowpath_null+0x1d/0x20
+> >	 find_parent_nodes+0xc41/0x14e0
+> >	 __btrfs_find_all_roots+0xad/0x120
+> >	 ? extent_same_check_offsets+0x70/0x70
+> >	 iterate_extent_inodes+0x168/0x300
+> >	 iterate_inodes_from_logical+0x87/0xb0
+> >	 ? iterate_inodes_from_logical+0x87/0xb0
+> >	 ? extent_same_check_offsets+0x70/0x70
+> >	 btrfs_ioctl+0x8ac/0x2820
+> >	 ? lock_acquire+0xc2/0x200
+> >	 do_vfs_ioctl+0x91/0x700
+> >	 ? __fget+0x112/0x200
+> >	 SyS_ioctl+0x79/0x90
+> >	 entry_SYSCALL_64_fastpath+0x23/0xc6
+> >	RIP: 0033:0x7f727b20be07
+> >	RSP: 002b:00007f7279f1e018 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+> >	RAX: ffffffffffffffda RBX: ffffffff9c0f4d7f RCX: 00007f727b20be07
+> >	RDX: 00007f7279f1e118 RSI: 00000000c0389424 RDI: 0000000000000003
+> >	RBP: 0000000000000035 R08: 00007f72581bf340 R09: 0000000000000000
+> >	R10: 0000000000000020 R11: 0000000000000246 R12: 0000000000000040
+> >	R13: 00007f725818d230 R14: 00007f7279f1b640 R15: 00007f7258000020
+> >	 ? trace_hardirqs_off_caller+0x1f/0x140
+> >	---[ end trace 5de243350f6762c6 ]---
+> >	------------[ cut here ]------------
 > >
-> >On 22.01.2018 14:19, Lu Fengqi wrote:
-> >> On 01/22/2018 04:46 PM, Nikolay Borisov wrote:
-> >>>
-> >>>
-> >>> On 22.01.2018 05:34, Lu Fengqi wrote:
-> >>>> According to my bisect result, The frequency of the warning occurren=
-ce
-> >>>> increased to the detectable degree after this patch
-> >>>
-> >>> That sentence implies that even before Ed's patch it was possible to
-> >>> trigger those warnings, is that true? Personally I've never seen such
-> >>> warnings while executing btrfs/004. How do you configure the filesyst=
-em
-> >>> for the test runs?
-> >>>
-> >>=20
-> >> Just only default mount option.
-> >>=20
-> >> =E2=9E=9C=C2=A0 xfstests-dev git:(master) for i in $(seq 1 100); do ec=
-ho $i; if !
-> >> sudo ./check btrfs/004; then break; fi; done
-> >> 1
-> >>=20
-> >> FSTYP=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 -- btrfs
-> >>=20
-> >> PLATFORM=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 -- Linux/x86_64 sarch 4.15.0-rc9
-> >>=20
-> >> MKFS_OPTIONS=C2=A0 -- /dev/vdd1
-> >>=20
-> >> MOUNT_OPTIONS -- /dev/vdd1 /mnt/scratch
-> >>=20
-> >>=20
-> >>=20
-> >>=20
-> >> btrfs/004 47s ... 49s
-> >>=20
-> >> Ran: btrfs/004
-> >>=20
-> >> Passed all 1 tests
-> >>=20
-> >>=20
-> >>=20
-> >>=20
-> >> 2
-> >>=20
-> >> FSTYP=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 -- btrfs
-> >>=20
-> >> PLATFORM=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 -- Linux/x86_64 sarch 4.15.0-rc9
-> >>=20
-> >> MKFS_OPTIONS=C2=A0 -- /dev/vdd1
-> >>=20
-> >> MOUNT_OPTIONS -- /dev/vdd1 /mnt/scratch
-> >>=20
-> >>=20
-> >>=20
-> >>=20
-> >> btrfs/004 49s ... 52s
-> >>=20
-> >> _check_dmesg: something found in dmesg (see
-> >> /home/luke/workspace/xfstests-dev/results//btrfs/004.dmesg)
-> >>=20
-> >> Ran: btrfs/004
-> >>=20
-> >> Failures: btrfs/004
-> >>=20
-> >> Failed 1 of 1 tests
-> >>=20
-> >> The probability of this warning appearing is rather low, and I only
-> >> encountered 52 warnings when I looped 1008 times btrfs/004 for 20 hours
-> >> in 4.15-rc6 (IOW, the probability is nearly 5%). So you want to trigger
-> >> warning also need more luck or patience.
-> >
-> >Thanks but is this before or after the mentioned commit below?
+> >ref->count can be below zero under normal conditions (for delayed refs),
+> >so there is no need to spam dmesg when it happens.
 > >
 >=20
-> After this commit. The bisect condition I use to locate this commit is
-> to repeat btrfs/004 20 times without warning (This may not be accurate en=
-ough,
-> can only be used as a reference).=20
+> Added Edmund.
+>=20
+> Hi,
+>=20
+> I've also encountered the same problem when running the test case
+> xfstests/btrfs/004. However, I'm not sure whether the negative ref->count
+> is reasonable.
+>=20
+> IMO, these functions (such as add_delayed_refs, add_delayed_refs,
+> add_delayed_refs, add_missing_keys and resolve_indirect_refs) have been
+> executed at this point in time. Hence, these references not only include
+> these refs in the memory (delayed) but also include those refs in the disk
+> (inline/keyed).=20
 
-I have been seeing this warning since at least 2015 (v3.18?),
-possibly earlier.  In the past it has never been correlated to any
-event I've need to take action to correct (i.e. no data corruption,
-no crashes, no hangs, no filesystem damage, and no obvious functional
-failures in userspace).
+I don't have the complete picture, but while looking at other code, comment=
+s,
+and git log messages surrounding ref->count in btrfs, I found:
 
-In v4.14 nothing seems to have changed, except the warning now appears
-three orders of magnitude more often.  This spams console terminals and
-kernel logs with gigabytes of stacktrace and bumps this phenomenon up
-to the top of my priority list.
+  * ref->count starts off at -1 (for a delayed ref).  During the process
+    of becoming a non-delayed ref, ref->count is incremented until it
+    is positive.
 
-It looks like the warning has been there with only minor editorial changes
-since Jan Schmidt's 2011 commit "Btrfs: added btrfs_find_all_roots()"
-in v3.3-rc1.
+  * refs are only deleted during a positive-to-zero transition of
+    ref->count, not a negative-to-zero transition.
 
-> Maybe Zygo has found a finer way to reproduce
-> it, so he reproduce this warning more frequently than me.
+  * ref->count is sometimes incremented by more than one, specifically 2
+    in some cases (e.g. when the ref is attached to an inode?).
+    This would skip directly from ref->count =3D=3D -1 to ref->count =3D=3D
+    1 without touching 0 in between.
 
-It's not really a finer way, but bees hits this warning most often,
-sometimes many times per second in bursts lasting minutes at a time.
+So the condition ref->count < 0 seems to be both possible and (at least
+in some parts of btrfs) expected.  Years of observing this warning
+without correlation to bad side-effects seems to suggest the condition
+is also harmless (though it does not exclude the possibility that there
+is something elsewhere that is unintentionally mitigating the harm).
 
-btrfs balance also hits the warning occasionally (it was the most common
-trigger of that warning in 2015 before I was running bees everywhere).
+> I would appreciate it if you could explain to me why the
+> reference count can be reduced to less than zero.
 
-The net effect of the bees worker loop looks fairly similar to btrfs/004,
-basically calling LOGICAL_INO many times per second on a busy filesystem.
+I don't think this happens (the ref would be destroyed, possibly
+deallocated in that case).  I think ref->count starts below zero
+(suggested by comments in other parts of btrfs) and is still below zero
+when we hit the WARN_ON().
 
-bees focuses its activity on active parts of the filesystem, which
-means it's more likely to do backref walks against extents that are also
-being affected by user activity and therefore more likely to encounter
-delayed refs.
-
-Contrast with 'btrfs balance' which spreads its effect across the entire
-filesystem and is much less likely to collide with user activity.
-
-Every duplicate extent hit in bees uses LOGICAL_INO at least once to map
-a stored duplicate block bytenr back to something that can be passed to
-open() and FILE_EXTENT_SAME.  The warnings do arrive in bursts at the
-same time as bees hitting clusters of duplicate extents.
-
-
-
-> >
-> >>=20
-> >>>> 86d5f9944252 ("btrfs: convert prelimary reference tracking to use
-> >>>> rbtrees")
-> >>>> is committed. I understand that this does not mean that this patch
-> >>>> caused
-> >>>> the problem, but maybe Edmund can give us some help, so I added him
-> >>>> to the
-> >>>> recipient.
-> >>>
-> >>>
-> >>=20
-> >>=20
-> >
-> >
+> >On kernel v4.14 this warning occurs 100-1000 times more frequently than
+> >on kernels v4.2..v4.12.  In the worst case, one test machine had 59020
+> >warnings in 24 hours on v4.14.14 compared to 55 on v4.12.14.
+>=20
+> According to my bisect result, The frequency of the warning occurrence
+> increased to the detectable degree after this patch
+> 86d5f9944252 ("btrfs: convert prelimary reference tracking to use rbtrees=
+")
+> is committed. I understand that this does not mean that this patch caused
+> the problem, but maybe Edmund can give us some help, so I added him to the
+> recipient.
 >=20
 > --=20
 > Thanks,
 > Lu
 >=20
+> >
+> >Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> >---
+> > fs/btrfs/backref.c | 1 -
+> > 1 file changed, 1 deletion(-)
+> >
+> >diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> >index 7d0dc100a09a..57e8d2562ed5 100644
+> >--- a/fs/btrfs/backref.c
+> >+++ b/fs/btrfs/backref.c
+> >@@ -1263,7 +1263,6 @@ static int find_parent_nodes(struct btrfs_trans_ha=
+ndle *trans,
+> > 	while (node) {
+> > 		ref =3D rb_entry(node, struct prelim_ref, rbnode);
+> > 		node =3D rb_next(&ref->rbnode);
+> >-		WARN_ON(ref->count < 0);
+> > 		if (roots && ref->count && ref->root_id && ref->parent =3D=3D 0) {
+> > 			if (sc && sc->root_objectid &&
+> > 			    ref->root_id !=3D sc->root_objectid) {
+> >--=20
+> >2.11.0
+> >
+> >--
+> >To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> >the body of a message to majordomo@vger.kernel.org
+> >More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >
+> >
 >=20
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
---qt6ssn6zhdtmetpa
+--sbo5vbjbnhmuhwth
 Content-Type: application/pgp-signature; name="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWmYmGQAKCRCB+YsaVrMb
-nNdHAKDIOglqdSnCpd2WzM+VR1FG5ssx7QCgslEo+Tac0zAuZrV4xPBFSV1WMrQ=
-=6uh+
+iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWmYq0QAKCRCB+YsaVrMb
+nLPhAJ4wNmVM5TA9lt4j8fWxHP/XAXNVmwCeP8X9OHQggfi6LVzslsQg7Slk9Gk=
+=ICsx
 -----END PGP SIGNATURE-----
 
---qt6ssn6zhdtmetpa--
+--sbo5vbjbnhmuhwth--

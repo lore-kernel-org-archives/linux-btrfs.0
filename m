@@ -1,252 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:56034 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1752966AbeAVJCQ (ORCPT
+Received: from mail-wr0-f175.google.com ([209.85.128.175]:39396 "EHLO
+        mail-wr0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751966AbeAVJPF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Jan 2018 04:02:16 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1edXxI-00032o-Or
-        for linux-btrfs@vger.kernel.org; Mon, 22 Jan 2018 09:59:52 +0100
+        Mon, 22 Jan 2018 04:15:05 -0500
+Received: by mail-wr0-f175.google.com with SMTP id z48so7783283wrz.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 01:15:04 -0800 (PST)
+Received: from [10.1.2.221] ([89.24.100.190])
+        by smtp.googlemail.com with ESMTPSA id e128sm4690146wmg.1.2018.01.22.01.14.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 22 Jan 2018 01:14:48 -0800 (PST)
+Subject: Re: Can't mount (even in ro) after power outage - corrupt leaf,
+ open_ctree failed
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Periodic frame losses when recording to btrfs volume with OBS
-Date: Mon, 22 Jan 2018 08:59:19 +0000 (UTC)
-Message-ID: <pan$ef8df$2d463ba0$6a8d2cfc$bcf35f@cox.net>
-References: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
-        <35acc308-d68d-3a4b-a626-38b9a7820fd4@gmx.com>
-        <a0b4a2c9-b61c-7f9a-5a24-88e4b83b887c@cs.uni-bonn.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+References: <7ebd40d4-3eea-9ad7-492f-b5d22cf935b0@gmail.com>
+ <CAJCQCtSRj1v-qksod3FetjVCutSL1MbLWdg1KSt1RsndJkTU=A@mail.gmail.com>
+ <05babf08-00de-ae0f-06f3-546719674aa1@gmail.com>
+ <CAJCQCtSkPTLJ0d94_HrNmr_g+1spOBXjS8EY1RkXnXf15wUKFw@mail.gmail.com>
+ <CAJCQCtQ8n-MzjtHrbxYXiP03ypRf48NnqsfrqBn+0evC=HM_Ug@mail.gmail.com>
+From: =?UTF-8?B?WmF0a292c2vDvSBEdcWhYW4=?= <msk.conf@gmail.com>
+Message-ID: <ed9f0354-3c83-ed11-4f42-881929524298@gmail.com>
+Date: Mon, 22 Jan 2018 10:14:47 +0100
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQ8n-MzjtHrbxYXiP03ypRf48NnqsfrqBn+0evC=HM_Ug@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sebastian Ochmann posted on Sun, 21 Jan 2018 16:27:55 +0100 as excerpted:
+Hi.
 
-> On 21.01.2018 11:04, Qu Wenruo wrote:
->> 
->> 
->> On 2018年01月20日 18:47, Sebastian Ochmann wrote:
+Badblocks finished on both disks with no errors. The only messages from 
+kernel
+during night are 6x perf: interrupt took too long (2511 > 2500), 
+lowering kernel.perf_event_max_sample_rate to 79500
+
+root@nas:~# smartctl -l scterc /dev/sda
+smartctl 6.6 2016-05-31 r4324 [x86_64-linux-4.9.0-4-amd64] (local build)
+Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
+
+SCT Error Recovery Control:
+            Read:     70 (7.0 seconds)
+           Write:     70 (7.0 seconds)
+
+root@nas:~# smartctl -l scterc /dev/sdb
+smartctl 6.6 2016-05-31 r4324 [x86_64-linux-4.9.0-4-amd64] (local build)
+Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.org
+
+SCT Error Recovery Control:
+            Read:     70 (7.0 seconds)
+           Write:     70 (7.0 seconds)
+
+root@nas:~# btrfs-debug-tree -t chunk /dev/sda4 | grep 'METADATA\|SYSTEM'
+incorrect offsets 13686 13622
+                 type METADATA|RAID1 num_stripes 2
+                 type METADATA|RAID1 num_stripes 2
+                 type SYSTEM|RAID1 num_stripes 2
+                 type METADATA|RAID1 num_stripes 2
+                 type METADATA|RAID1 num_stripes 2
+
+root@nas:~# btrfs-debug-tree -t chunk /dev/sdb4 | grep 'METADATA\|SYSTEM'
+incorrect offsets 13686 13622
+                 type METADATA|RAID1 num_stripes 2
+                 type METADATA|RAID1 num_stripes 2
+                 type SYSTEM|RAID1 num_stripes 2
+                 type METADATA|RAID1 num_stripes 2
+                 type METADATA|RAID1 num_stripes 2
+
+(still used "old" version of btrfs tools, working remotely now, I will 
+boot something newer when I will get access to that NAS at EOD)
+
+Thank you
+msk
+
+
+Dňa 22. 1. 2018 o 0:24 Chris Murphy napísal(a):
+> On Sun, Jan 21, 2018 at 4:13 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>> On Sun, Jan 21, 2018 at 3:31 PM, msk conf <msk.conf@gmail.com> wrote:
 >>> Hello,
 >>>
->>> I would like to describe a real-world use case where btrfs does not
->>> perform well for me. I'm recording 60 fps, larger-than-1080p video
->>> using OBS Studio [1] where it is important that the video stream is
->>> encoded and written out to disk in real-time for a prolonged period of
->>> time (2-5 hours). The result is a H264 video encoded on the GPU with a
->>> data rate ranging from approximately 10-50 MB/s.
->> 
->> 
->>> The hardware used is powerful enough to handle this task. When I use a
->>> XFS volume for recording, no matter whether it's a SSD or HDD, the
->>> recording is smooth and no frame drops are reported (OBS has a nice
->>> Stats window where it shows the number of frames dropped due to
->>> encoding lag which seemingly also includes writing the data out to
->>> disk).
+>>> thank you for the reply.
 >>>
->>> However, when using a btrfs volume I quickly observe severe, periodic
->>> frame drops. It's not single frames but larger chunks of frames that a
->>> dropped at a time. I tried mounting the volume with nobarrier but to
->>> no avail.
->> 
->> What's the drop internal? Something near 30s?
->> If so, try mount option commit=300 to see if it helps.
-> 
-> Thank you for your reply. I observed the interval more closely and it
-> shows that the first, quite small drop occurs about 10 seconds after
-> starting the recording (some initial metadata being written?). After
-> that, the interval is indeed about 30 seconds with large drops each
-> time.
-> 
-> Thus I tried setting the commit option to different values. I confirmed
-> that the setting was activated by looking at the options "mount" shows
-> (see below). However, no matter whether I set the commit interval to
-> 300, 60 or 10 seconds, the results were always similar. About every 30
-> seconds the drive shows activity for a few seconds and the drop occurs
-> shortly thereafter. It almost seems like the commit setting doesn't have
-> any effect. By the way, the machine I'm currently testing on has 64 GB
-> of RAM so it should have plenty of room for caching.
-
-64 GB RAM...
-
-Do you know about the /proc/sys/vm/dirty_* files and how to use/tweak 
-them?  If not, read $KERNDIR/Documentation/sysctl/vm.txt, focusing on 
-these files.
-
-These tunables control the amount of writeback cache that is allowed to 
-accumulate before the system starts flushing it.  The problem is that the 
-defaults for these tunables were selected back when system memory 
-normally measured in the MiB, not the GiB of today, so the default ratios 
-allow too much dirty data to accumulate before attempting to flush it to 
-storage, resulting in flush storms that hog the available IO and starve 
-other tasks that might be trying to use it.
-
-The fix is to tweak these settings to try to smooth things out, starting 
-background flush earlier, so with a bit of luck the system never hits 
-high priority foreground flush mode, or if it does there's not so much to 
-be written as much of it has already been done in the background.
-
-There are five files, two pairs of files, one pair controlling foreground 
-sizes, the other background, and one file setting the time limit.  The 
-sizes can be set by either ratio, percentage of RAM, or bytes, with the 
-other appearing as zero when read.
-
-To set these temporarily you write to the appropriate file.  Once you 
-have a setting that works well for you, write it to your distro's sysctl 
-configuration (/etc/sysctl.conf or /etc/sysctrl.d/*.conf, usually), and 
-it should be automatically applied at boot for you.
-
-Here's the settings in my /etc/sysctl.conf, complete with notes about the 
-defaults and the values I've chosen for my 16G of RAM.  Note that while I 
-have fast ssds now, I set these values back when I had spinning rust.  I 
-was happy with them then, and while I shouldn't really need the settings 
-on my ssds, I've seen no reason to change them.
-
-At 16G, 1% ~ 160M.  At 64G, it'd be four times larger, 640M, likely too 
-chunky a granularity to be useful, so you'll probably want to set the 
-bytes value instead of ratio.
-
-# write-cache, foreground/background flushing
-# vm.dirty_ratio = 10 (% of RAM)
-# make it 3% of 16G ~ half a gig
-vm.dirty_ratio = 3
-# vm.dirty_bytes = 0
-
-# vm.dirty_background_ratio = 5 (% of RAM)
-# make it 1% of 16G ~ 160 M
-vm.dirty_background_ratio = 1
-# vm.dirty_background_bytes = 0
-
-# vm.dirty_expire_centisecs = 2999 (30 sec)
-# vm.dirty_writeback_centisecs = 499 (5 sec)
-# make it 10 sec
-vm.dirty_writeback_centisecs = 1000
-
-
-Now the other factor in the picture is how fast your actual hardware can 
-write.  hdparm's -t parameter tests sequential write speed and can give 
-you some idea.  You'll need to run it as root:
-
-hdparm -t /dev/sda
-
-/dev/sda:
- Timing buffered disk reads: 1578 MB in  3.00 seconds = 525.73 MB/sec
-
-... Like I said, fast ssd...  I believe fast modern spinning rust should 
-be 100 MB/sec or so, tho slower devices may only do 30 MB/sec, likely too 
-slow for your reported 10-50 MB/sec stream, tho you say yours should be 
-fast enough as it's fine with xfs.
-
-
-Now here's the problem.  As Qu mentions elsewhere on-thread, 30 seconds 
-of your 10-50 MB/sec stream is 300-1500 MiB.  Say your available device 
-IO bandwidth is 100 MiB/sec.  That should be fine.  But the default 
-dirty_* settings allow 5% of RAM in dirty writeback cache before even 
-starting low priority background flush, while it won't kick to high 
-priority until 10% of RAM or 30 seconds, whichever comes first.
-
-And at 64 GiB RAM, 1% is as I said, about 640 MiB, so 10% is 6.4 GB dirty 
-before it kicks to high priority, and 3.2 GB is the 5% accumulation 
-before it even starts low priority background writing.  That's assuming 
-the 30 second timeout hasn't expired yet, of course.
-
-But as we established above the write stream maxes out at ~1.5 GiB in 30 
-seconds, and that's well below the ~3.2 GiB @ 64 GiB RAM that would kick 
-in even low priority background writeback!
-
-So at the defaults, the background writeback never kicks in at all, until 
-the 30 second timeout expires, forcing immediate high priority foreground 
-flushing!
-
-Meanwhile, the way the kernel handles /background/ writeback flushing is 
-that it will take the opportunity to writeback what it can while the 
-device is idle.  But as we've just established, background never kicks in.
-
-So then the timeout expires and the kernel kicks in high priority 
-foreground writeback.
-
-And the kernel handles foreground writeback *MUCH* differently!  
-Basically, it stops anything attempting to dirty more writeback cache 
-until it can write the dirty cache out.  And it charges the time it 
-spends doing just that to the thread it stopped in ordered to do that 
-high priority writeback! 
-
-Now as designed this should work well, and it does when the dirty_* 
-values are set correctly, because any process that's trying to dirty the 
-writeback cache faster than it can be written out, thus kicking in 
-foreground mode, gets stopped until the data can be written out, thus 
-preventing it from dirtying even MORE cache faster than the system can 
-handle it, which in /theory/ is what kicked it into high priority 
-foreground mode in the /first/ place.
-
-But as I said, the default ratios were selected when memory was far 
-smaller.  With half a gig of RAM, the default 5% to kick in background 
-mode would be only ~25 MiB, easily writable within a second on modern 
-devices and back then, still writable within say 5-10 seconds.  And if it 
-ever reached foreground mode, that would still be only 50 MiB worth, and 
-it would still complete in well under the 30 seconds before the next 
-expiry.
-
-But with modern RAM levels, my 16 GiB to some extent and your 64 GiB is 
-even worse, as we've seen, even our max ~1500 MiB doesn't kick in 
-background writeback mode, so the stuff just sits there until it expires 
-and then it get slammed into high priority foreground mode, stopping your 
-streaming until it has a chance to write some of that dirty data out.
-
-And at our assumed 100 MiB/sec IO bandwidth, that 300-1500 MiB is going 
-to take 3-15 seconds to write out, well within the 30 seconds before the 
-next expiry, but for a time-critical streaming app, stopping it even the 
-minimal 3 seconds is very likely to drop frames!
-
-
-So try setting something a bit more reasonable and see if it helps.  That 
-1% ratio at 16 GiB RAM for ~160 MB was fine for me, but I'm not doing 
-critical streaming, and at 64 GiB you're looking at ~640 MB per 1%, as I 
-said, too chunky.  For streaming, I'd suggest something approaching the 
-value of your per-second IO bandwidth, we're assuming 100 MB/sec here so 
-100 MiB but let's round that up to a nice binary 128 MiB, for the 
-background value, perhaps half a GiB or 5 seconds worth of writeback time 
-for foreground, 4 times the background value.  So:
-
-vm.dirty_background_bytes = 134217728   # 128*1024*1024, 128 MiB
-vm.dirty_bytes = 536870912              # 512*1024*1024, 512 MiB
-
-
-As mentioned, try writing those values directly into /proc/sys/vm/
-dirty_background_bytes and dirty_bytes , first, to see if it helps.  If 
-my guess is correct, that should vastly improve the situation for you.  
-If it does but not quite enough or you just want to try tweaking some 
-more, you can tweak it from there, but those are reasonable starting 
-values and really should work far better than the default 5% and 10% of 
-RAM with 64 GiB of it!
-
-
-Other things to try tweaking include the IO scheduler -- the default is 
-the venerable CFQ but deadline may well be better for a streaming use-
-case, and now there's the new multi-queue stuff and the multi-queue kyber 
-and bfq schedulers, as well -- and setting IO priority -- probably by 
-increasing the IO priority of the streaming app.  The tool to use for the 
-latter is called ionice.  Do note, however, that not all schedulers 
-implement IO priorities.  CFQ does, but while I think deadline should 
-work better for the streaming use-case, it's simpler code and I don't 
-believe it implements IO priority.  Similarly for multi-queue, I'd guess 
-the low-code-designed-for-fast-direct-PCIE-connected-SSD kyber doesn't 
-implement IO priorities, while the more complex and general purpose 
-suitable-for-spinning-rust bfq /might/ implement IO priorities.
-
-But I know less about that stuff and it's googlable, should you decide to 
-try playing with it too.  I know what the dirty_* stuff does from 
-personal experience. =:^)
-
-
-And to tie up a loose end, xfs has somewhat different design principles 
-and may well not be particularly sensitive to the dirty_* settings, while 
-btrfs, due to COW and other design choices, is likely more sensitive to 
-them than the widely used ext* and reiserfs (my old choice and the basis 
-of my own settings, above).
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+>>>> What do you get for btrfs fi df /array
+>>>
+>>> Can't do that because filesystem is not mountable. I will get stats for '/'
+>>> filesystem instead (because '/array' is an empty directory - mountpoint on /
+>> Try
+>> $ sudo btrfs-debug-tree -t chunk /dev/mapper/first | grep 'METADATA\|SYSTEM'
+>
+> You need to adapt that /dev/ node for your case, I just copy pasted
+> that from my setup. Anyway, that will look at the chunk tree and show
+> the profile for these chunk types.
+>
+>
 

@@ -1,31 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38171 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750897AbeAWHMk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 02:12:40 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:39180 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750907AbeAWHgb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Jan 2018 02:36:31 -0500
+Date: Tue, 23 Jan 2018 15:36:06 +0800
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: Edmund Nadolski <enadolski@suse.de>
+CC: Nikolay Borisov <nborisov@suse.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] btrfs: remove spurious WARN_ON(ref->count) in
  find_parent_nodes
-To: Edmund Nadolski <enadolski@suse.de>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20180123072410.GC532@fnst.localdomain>
 References: <20180121190848.7wmps6q5ng6b42ki@hungrycats.org>
  <118fbbae-298a-d7e6-8d22-bdc6d9789aad@suse.com>
  <7958b8dd-11d8-b3dc-b28b-99464aa67f2b@suse.de>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <fa61e5b9-d981-d6ee-07ef-c89a2ab98194@suse.com>
-Date: Tue, 23 Jan 2018 09:12:37 +0200
 MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 In-Reply-To: <7958b8dd-11d8-b3dc-b28b-99464aa67f2b@suse.de>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 23.01.2018 05:35, Edmund Nadolski wrote:
-> On 1/22/18 5:58 AM, Nikolay Borisov wrote:
->>
->>
+On Mon, Jan 22, 2018 at 08:35:43PM -0700, Edmund Nadolski wrote:
+>On 1/22/18 5:58 AM, Nikolay Borisov wrote:
+>> 
+>> 
 >> On 21.01.2018 21:08, Zygo Blaxell wrote:
 >>> This warning appears during execution of the LOGICAL_INO ioctl and
 >>> appears to be spurious:
@@ -67,26 +67,40 @@ On 23.01.2018 05:35, Edmund Nadolski wrote:
 >>>
 >>> ref->count can be below zero under normal conditions (for delayed refs),
 >>> so there is no need to spam dmesg when it happens.
->>
+>> 
 >> Why do you think it's normal for this to be a negative value under
 >> normal conditions? There should be some rationale about that otherwise
 >> you are pampering over a bug.
-> 
-> 
-> The ref->count in the prelim_ref can be <0 for a delayed ref that
-> has a node->action of BTRFS_DROP_DELAYED_REF.  The prelim_ref_insert()
-> relies on this when merging identical refs to keep the overall
-> count correct.  So it looks to me like it should be OK to remove
-> the WARN.
+>
+>
+>The ref->count in the prelim_ref can be <0 for a delayed ref that
+>has a node->action of BTRFS_DROP_DELAYED_REF.  The prelim_ref_insert()
+>relies on this when merging identical refs to keep the overall
+>count correct.  So it looks to me like it should be OK to remove
+>the WARN.
 
-Right, I don't understand the backref code so I will have to agree with
-you :) At least the explanation you provided should be in the change log
+The call graph of find_parent_nodes：
+add_delayed_refs
+add_inline_refs
+add_keyed_refs
+add_missing_keys
+-merge_refs (MERGE_IDENTICAL_KEYS)
+resolve_indirect_refs
+-merge_refs (MERGE_IDENTICAL_PARENTS)
+WARN_ON(ref->count < 0)
 
-> 
-> (However the ref_mod in the btrfs_delayed_ref_node evidently cannot
-> go <0).
-> 
-> 
+Yes, I agree that the ref->count in the prelim_ref can be less than 0
+between add_delayed_refs and add_inline_refs. However, prelim_ref_insert
+(or merge_refs before commit 86d5f9944252 ("btrfs: convert prelimary
+reference tracking to use rbtrees")) have merged all refs for the same
+block before this WARN_ON, so I'm still confused about why there is the
+independent negative delayed ref.
+
+>
+>(However the ref_mod in the btrfs_delayed_ref_node evidently cannot
+>go <0).
+>
+>
 >>> On kernel v4.14 this warning occurs 100-1000 times more frequently than
 >>> on kernels v4.2..v4.12.  In the worst case, one test machine had 59020
 >>> warnings in 24 hours on v4.14.14 compared to 55 on v4.12.14.
@@ -109,11 +123,18 @@ you :) At least the explanation you provided should be in the change log
 >>>  			if (sc && sc->root_objectid &&
 >>>  			    ref->root_id != sc->root_objectid) {
 >>>
-> 
-> Reviewed-by: Edmund Nadolski <enadolski@suse.com>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>
+>Reviewed-by: Edmund Nadolski <enadolski@suse.com>
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+-- 
+Thanks,
+Lu
+
+

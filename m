@@ -1,34 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41998 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47867 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752078AbeAWSdp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 13:33:45 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1C043AF85
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jan 2018 18:33:44 +0000 (UTC)
-Date: Tue, 23 Jan 2018 19:31:33 +0100
+        id S1751964AbeAWTo2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Jan 2018 14:44:28 -0500
+Date: Tue, 23 Jan 2018 20:42:16 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 5/5] btrfs-progs: Remove unnecessary parameter for
- btrfs_add_block_group
-Message-ID: <20180123183133.GP15713@twin.jikos.cz>
+To: Rosen Penev <rosenp@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: treewide: Replace strerror(errno) with %m.
+Message-ID: <20180123194216.GQ15713@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20180103071306.11500-1-wqu@suse.com>
- <20180103071306.11500-6-wqu@suse.com>
+References: <1515362061-13281-1-git-send-email-rosenp@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180103071306.11500-6-wqu@suse.com>
+In-Reply-To: <1515362061-13281-1-git-send-email-rosenp@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 03, 2018 at 03:13:06PM +0800, Qu Wenruo wrote:
-> @chunk_objectid of btrfs_make_block_group() function is always fixed to
-> BTRFS_FIRST_FREE_OBJECTID, so there is no need to pass it as parameter
-> explicitly.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+On Sun, Jan 07, 2018 at 01:54:21PM -0800, Rosen Penev wrote:
+> As btrfs is specific to Linux, %m can be used instead of strerror(errno)
+> in format strings. This has some size reduction benefits for embedded
+> systems.
 
-Can you please refresh this patch on top of current devel? There were
-some merge conflicts due to other patches, the rest has been applied.
-Thanks.
+Makes sense.
+
+> glibc, musl, and uclibc-ng all support %m as a modifier to printf.
+> A quick glance at the BIONIC libc source indicates that it has
+> support for %m as well. BSDs and Windows do not but I do believe
+> them to be beyond the scope of btrfs-progs.
+
+Thanks for checking the compatibility. The %m can be substituted
+by a wrapper if this becomes a problem in the future.
+
+> Compiled sizes on Ubuntu 16.04:
+> 
+> Before:
+> 3916512 btrfs
+
+> After:
+> 3908744 btrfs
+
+the delta is about 7KiB, that's not much but still counts. I would not
+object further optimizations towards size reduction as long as the code
+remains maintainable.
+
+> 233256  libbtrfs.so.0.1
+> 4899    bcp
+> 2366560 btrfs-convert
+> 2207432 btrfs-corrupt-block
+> 13302   btrfs-debugfs
+> 2151104 btrfs-debug-tree
+> 2134968 btrfs-find-root
+> 2281864 btrfs-image
+> 2143536 btrfs-map-logical
+> 2129704 btrfs-select-super
+> 2151552 btrfstune
+> 2130696 btrfs-zero-log
+> 2276272 mkfs.btrfs
+
+Some of the utilities are typically installed by default, the binaries
+share a lot of code as they get built from the same object files. I had
+once an idea of a compound binary that would switch the function by the
+name of the executable. Similar to what busybox does.
+
+https://github.com/kdave/btrfs-progs/commit/8fc697a7f763f39f3afe0abaa68ac13a49ac8a86
+
+---
+* btrfs
+* mkfs.btrfs
+* btrfstun
+* btrfs-image
+* btrfs-convert
+* btrfs-debug-tree
+* btrfs-show-super
+* btrfs-find-root
+
+The static target is also supported. The name of resulting boxed
+binaries is btrfs.box and btrfs.box.static .
+
+   text    data     bss     dec     hex filename
+ 550988   19120   15444  585552   8ef50 btrfs
+1562099   25316   42256 1629671  18dde7 btrfs.static
+ 659504   21104   16492  697100   aa30c btrfs.box
+1817274   27988   44088 1889350  1cd446 btrfs.box.static
+---
+
+I was not sure if this is was just another good idea waiting for a usecase (or
+not), so I haven't continued past the prototype. Please let me know if you'd be
+interested in this functionality, the patch is fairly trivial to update.
+
+> @@ -815,7 +815,7 @@ static const char * const cmd_filesystem_sync_usage[] = {
+>  
+>  static int cmd_filesystem_sync(int argc, char **argv)
+>  {
+> -	int 	fd, res, e;
+> +	int 	fd, res;
+>  	char	*path;
+>  	DIR	*dirstream = NULL;
+>  
+> @@ -831,10 +831,9 @@ static int cmd_filesystem_sync(int argc, char **argv)
+>  		return 1;
+>  
+>  	res = ioctl(fd, BTRFS_IOC_SYNC);
+> -	e = errno;
+>  	close_file_or_dir(fd, dirstream);
+>  	if( res < 0 ){
+> -		error("sync ioctl failed on '%s': %s", path, strerror(e));
+> +		error("sync ioctl failed on '%s': %m", path);
+
+Let me use that one as example, there are a few more similar updates.
+
+There's potentially lost errno from the ioctl if something inside
+close_file_or_dir() overwrites it, as there are closedir and close. This
+is highly unlikely and I'll deal with that separately, so I'm going to
+apply the patch without further changes. Thanks.

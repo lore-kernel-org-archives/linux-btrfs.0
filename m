@@ -1,96 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:42032 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751054AbeAVGaF (ORCPT
+Received: from mail-pf0-f181.google.com ([209.85.192.181]:37578 "EHLO
+        mail-pf0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751633AbeAWN31 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Jan 2018 01:30:05 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0M6RSFx054258
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 06:30:04 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2120.oracle.com with ESMTP id 2fna5e055u-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 06:30:04 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0M6U4pl020422
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 06:30:04 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0M6U4Fq016216
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 06:30:04 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2.1 2/2] btrfs: optimize move uuid_mutex closer to the critical section
-Date: Mon, 22 Jan 2018 14:31:08 +0800
-Message-Id: <20180122063108.12826-2-anand.jain@oracle.com>
-In-Reply-To: <20180122063108.12826-1-anand.jain@oracle.com>
-References: <20180122063108.12826-1-anand.jain@oracle.com>
+        Tue, 23 Jan 2018 08:29:27 -0500
+Received: by mail-pf0-f181.google.com with SMTP id p1so323290pfh.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jan 2018 05:29:27 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com>
+References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
+ <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com> <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com>
+From: Claes Fransson <claes.v.fransson@gmail.com>
+Date: Tue, 23 Jan 2018 14:29:26 +0100
+Message-ID: <CAEY8F1pZyqVBhuOK79eOgDX41-vYRdym5hVKoMRcFVV25_WMJA@mail.gmail.com>
+Subject: Re: bad key ordering - repairable?
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Move uuid_mutex closer to the exclusion section.
+2018-01-23 13:51 GMT+01:00 Austin S. Hemmelgarn <ahferroin7@gmail.com>:
+> On 2018-01-22 21:35, Chris Murphy wrote:
+>>
+>> On Mon, Jan 22, 2018 at 2:06 PM, Claes Fransson
+>> <claes.v.fransson@gmail.com> wrote:
+>>>
+>>> Hi!
+>>>
+>>> I really like the features of BTRFS, especially deduplication,
+>>> snapshotting and checksumming. However, when using it on my laptop the
+>>> last couple of years, it has became corrupted a lot of times.
+>>> Sometimes I have managed to fix the problems (at least so much that I
+>>> can continue to use the filesystem) with check --repair, but several
+>>> times I had to recreate the file system and reinstall the operating
+>>> system.
+>>>
+>>> I am guessing the corruptions might be the results of unclean
+>>> shutdowns, mostly after system hangs, but also because of running out
+>>> of battery sometimes?
+>>
+>>
+>> I think it's something else because I intentionally and
+>> unintentionally do unclean shutdowns (I'm really impatient and I'm a
+>> saboteur) on my laptop and I never get corruptions. In 18 months with
+>> an HP Spectre which doesn't even have ECC memory, and has an NVMe
+>> drive, *and* really remarkable for almost half this time I used the
+>> discard mount option which pretty much instantly obliterates unused
+>> roots, even when referenced in the super block as backup roots - and
+>> yet still zero corruption. No complaints on mount, scrub, or readonly
+>> checks. *shrug*
+>>
+>> Anyway I suspect hardware or power issue. Or even SSD firmware issue.
+>
+> I would tend to agree here, with one caveat, if it's a laptop that's less
+> than 3 years old, you can probably rule out power issues.  Some more info on
+> the particular system might help identify what's wrong.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
----
-v2->v2.1: updated the v2 reroll log below.
-v1->v2:
- Add received reviewed-by. Thxs.
- Fix conflict on top of kdave misc-next.
+Hi,
 
- fs/btrfs/volumes.c | 17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
+I boughtThe laptop new in July 2014, but have had corruption issues
+with btrfs I think as long as I have been trying it, since the end of
+2014 I think. You can find addtitional info about my laptop in my
+original post, please let me know if you want som more info.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 001894782d84..d9166737c747 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1197,13 +1197,10 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	 */
- 	bytenr = btrfs_sb_offset(0);
- 	flags |= FMODE_EXCL;
--	mutex_lock(&uuid_mutex);
- 
- 	bdev = blkdev_get_by_path(path, flags, holder);
--	if (IS_ERR(bdev)) {
--		ret = PTR_ERR(bdev);
--		goto error;
--	}
-+	if (IS_ERR(bdev))
-+		return PTR_ERR(bdev);
- 
- 	if (btrfs_read_disk_super(bdev, bytenr, &page, &disk_super)) {
- 		ret = -EINVAL;
-@@ -1214,7 +1211,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	transid = btrfs_super_generation(disk_super);
- 	total_devices = btrfs_super_num_devices(disk_super);
- 
-+	mutex_lock(&uuid_mutex);
- 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
-+	if (ret >= 0 && fs_devices_ret)
-+		(*fs_devices_ret)->total_devices = total_devices;
-+	mutex_unlock(&uuid_mutex);
-+
- 	if (ret > 0) {
- 		if (disk_super->label[0])
- 			pr_info("BTRFS: device label %s ", disk_super->label);
-@@ -1224,15 +1226,12 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 		pr_cont("devid %llu transid %llu %s\n", devid, transid, path);
- 		ret = 0;
- 	}
--	if (!ret && fs_devices_ret)
--		(*fs_devices_ret)->total_devices = total_devices;
- 
- 	btrfs_release_disk_super(page);
- 
- error_bdev_put:
- 	blkdev_put(bdev, flags);
--error:
--	mutex_unlock(&uuid_mutex);
-+
- 	return ret;
- }
- 
--- 
-2.7.0
+>>
+>>
+>>> Furthermore, the power-led has recently started blinking (also when
+>>> the power-cable is plugged in), I guess because of an old and bad
+>>> battery. Maybe the current corruption also can have something to do
+>>> with this? However I almost always run with power cable plugged in in
+>>> last year, only on battery a few seconds a few times when moving the
+>>> laptop.
+>>>
+>>> Currently, I can only mount the filesystem readonly, it goes readonly
+>>> automatically if I try to mount it normally.
+>>
+>>
+>> Btrfs is confused and doesn't want to make the corruption worse. >
+>>>
+>>>
+>>> Fstab mount options: noatime,autodefrag (I have been using the option
+>>> nossd with older kernels one period in the past on the filesystem).
+>>>
+>>> If it matters, I have been running duperemove many times on the
+>>> filesystem since creation.
+>>
+>>
+>> I don't think it's related.
+>>
+>>
+>>>
+>>> To test the RAM, I have been running mprime Blend-test for 24 hours
+>>> after the corruption without any error or warning.
+>>
+>>
+>> I'm not familiar with it, pretty sure you want this for UEFI:
+>>
+>> https://www.memtest86.com/download.htm
+>>
+>> Where you can use that or memtest86+ if the firmware is BIOS based.
+>
+> Do keep in mind that just because it passes memory checks does not mean it's
+> not an issue with the RAM.  Memory testers rarely throw false positives, but
+> it's pretty common to get false negatives from them.>
 
+Okay, thanks for telling me.
+
+>>>
+>>> I have never noticed any corruptions on the NTFS and Ext4 file systems
+>>> on the laptop, only on the Btrfs file systems.
+>>
+>>
+>> NTFS and ext4 likely won't notice such corruptions either (although
+>> new ext4 volumes any day now will have checksummed metadata by
+>> default) as they're weren't designed with such detection in mind.
+>
+> This is extremely important to understand.  BTRFS and ZFS are essentially
+> the only filesystems available on Linux that actually validate things enough
+> to notice this reliably (ReFS on Windows probably does, and I think whatever
+> Apple is calling their new FS does too). Even if ext4 did notice it, it
+> would just mark the filesystem for a check and then keep going without doing
+> anything else about it (seriously, the default behavior for internal errors
+> on ext4 is to just continue like nothing happened and mark the FS for fsck).
+
+Well, personally I think it would be great if I (optionally) could do
+that with Btrfs too. Even if it notice me of corruption and I might
+even lose e few files, I think it would be good if I could continue to
+use the filesystem with normal read/write capabilities, so I wouldnt
+need to reinstall the operating system.
+
+Best regards,
+
+Claes

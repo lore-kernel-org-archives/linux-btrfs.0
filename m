@@ -1,58 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:52733 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752184AbeAREYT (ORCPT
+Received: from mail-wr0-f174.google.com ([209.85.128.174]:35342 "EHLO
+        mail-wr0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751436AbeAWRLW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Jan 2018 23:24:19 -0500
-Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 5D29CAC0150
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:24:14 +0900 (JST)
-Received: from g01jpexchkw36.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id A14B96924C0
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 13:24:13 +0900 (JST)
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: bug report: mounting the same device to different mount points in
- parallel may fail
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <db01b798-cc0a-f276-df4d-e9c334ea912e@jp.fujitsu.com>
-Date: Thu, 18 Jan 2018 13:23:35 +0900
+        Tue, 23 Jan 2018 12:11:22 -0500
+Received: by mail-wr0-f174.google.com with SMTP id g38so1375149wrd.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jan 2018 09:11:21 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+From: Mike Gilbert <floppymaster@gmail.com>
+Date: Tue, 23 Jan 2018 12:11:00 -0500
+Message-ID: <CAJ0EP42wcb4uQQ-qivb38ZAYR8_+3k9fD+pDrj1cRZ_uVzdVvg@mail.gmail.com>
+Subject: btrfs directory listing temporarily includes a recently removed file
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fb.com
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although I think this rarely happens in the real world, mounting 
-the same device to different mount points in parallel may fail:
+Hi all,
 
-- kernel 4.15.0-rc8
+I just wanted to draw some attention to a recent regression regarding
+a race condition when listing directories on btrfs. Your assistance in
+resolving this would be appreciated.
 
-- Procedure
-[mount.sh]
-#!/bin/bash
-for i in `seq 1 1000`; do
-  echo $i
-  mount $1 $2
-  umount $2
-  if [ $? -ne 0 ]; then
-    exit 1;
-  fi
-done
-
-$ mkfs.btrfs -f /dev/sde
-$ ./mount.sh /dev/sde /mnt
-$ ./mount.sh /dev/sde /mnt2 (on the different terminal)
-
-- stdout
-mount: /mnt2: wrong fs type, bad option, bad superblock on 
-/dev/sde, missing codepage or helper program, or other error.
-
-- dmesg
-[  108.122576] BTRFS error (device sde): super_total_bytes 199481098240 mismatch with fs_devices total_rw_bytes 398962196480
-[  108.122647] BTRFS error (device sde): failed to read chunk tree: -22
-[  108.150060] BTRFS error (device sde): open_ctree failed
-
-xfs or ext4 works fine.
-
-Regards,
-Tomohiro Misono
-
+https://bugzilla.kernel.org/show_bug.cgi?id=198483

@@ -1,65 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:49738 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751031AbeAVWBm (ORCPT
+Received: from mail-ot0-f170.google.com ([74.125.82.170]:43029 "EHLO
+        mail-ot0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751077AbeAWCf6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Jan 2018 17:01:42 -0500
-Subject: Re: [PATCH RESEND v4 0/4] device_list_add() peparation to add
- reappearing missing device
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-References: <20180118140236.25349-1-anand.jain@oracle.com>
- <20180118174717.GT13726@twin.jikos.cz> <20180119232756.GB15713@twin.jikos.cz>
- <334ef632-a913-372b-a91b-826278329fc3@oracle.com>
- <20180122152642.GG15713@twin.jikos.cz>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <2b12274d-2d78-061d-b35d-fbe2f35cd0f0@oracle.com>
-Date: Tue, 23 Jan 2018 05:52:47 +0800
+        Mon, 22 Jan 2018 21:35:58 -0500
+Received: by mail-ot0-f170.google.com with SMTP id p36so9410267otd.10
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jan 2018 18:35:57 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20180122152642.GG15713@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
+References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Mon, 22 Jan 2018 19:35:56 -0700
+Message-ID: <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com>
+Subject: Re: bad key ordering - repairable?
+To: Claes Fransson <claes.v.fransson@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jan 22, 2018 at 2:06 PM, Claes Fransson
+<claes.v.fransson@gmail.com> wrote:
+> Hi!
+>
+> I really like the features of BTRFS, especially deduplication,
+> snapshotting and checksumming. However, when using it on my laptop the
+> last couple of years, it has became corrupted a lot of times.
+> Sometimes I have managed to fix the problems (at least so much that I
+> can continue to use the filesystem) with check --repair, but several
+> times I had to recreate the file system and reinstall the operating
+> system.
+>
+> I am guessing the corruptions might be the results of unclean
+> shutdowns, mostly after system hangs, but also because of running out
+> of battery sometimes?
+
+I think it's something else because I intentionally and
+unintentionally do unclean shutdowns (I'm really impatient and I'm a
+saboteur) on my laptop and I never get corruptions. In 18 months with
+an HP Spectre which doesn't even have ECC memory, and has an NVMe
+drive, *and* really remarkable for almost half this time I used the
+discard mount option which pretty much instantly obliterates unused
+roots, even when referenced in the super block as backup roots - and
+yet still zero corruption. No complaints on mount, scrub, or readonly
+checks. *shrug*
+
+Anyway I suspect hardware or power issue. Or even SSD firmware issue.
+
+> Furthermore, the power-led has recently started blinking (also when
+> the power-cable is plugged in), I guess because of an old and bad
+> battery. Maybe the current corruption also can have something to do
+> with this? However I almost always run with power cable plugged in in
+> last year, only on battery a few seconds a few times when moving the
+> laptop.
+>
+> Currently, I can only mount the filesystem readonly, it goes readonly
+> automatically if I try to mount it normally.
+
+Btrfs is confused and doesn't want to make the corruption worse.
 
 
-On 01/22/2018 11:26 PM, David Sterba wrote:
-> On Mon, Jan 22, 2018 at 09:31:47PM +0800, Anand Jain wrote:
->>    Problem was mainly due to the patch 3/4, which tried to access the
->>    return pointer even for the failed condition. The fix is to bring the
->>    device point access under the else part as show below [2]. I have
->>    included this fix in V5. Which is tested with btrfs xfstests.
->>    Pls could you consider v5 for 4.16 ?
-> 
-> Hm ok, thre's still some time to test it. One more fstests report that
-> appeared before and also with the v5:
-
-  I will try to nail it down. It passes on bare metal and a VM here.
-  btrfs-progs: I am using your latest master at
-     (git://github.com/kdave/btrfs-progs.git).
 
 
-> btrfs/007 4s ...        [16:38:09] [16:38:12] [failed, exit status 1] - output mismatch (see /root/test/mmtests/work/sources/xfstests-git-installed/results//btrfs/007.out.bad)
->      --- tests/btrfs/007.out     2017-09-20 14:24:58.334716658 +0200
->      +++ /root/test/mmtests/work/sources/xfstests-git-installed/results//btrfs/007.out.bad       2018-01-22 16:38:12.883931593 +0100
->      @@ -1,4 +1,5 @@
->       QA output created by 007
->       *** test send / receive
->      -*** done
->      +failed: '/root/test/mmtests/work/sources/xfstests-git-installed/src/fssum -r /tmp/tmp.eZcr17wqNn/incr.fssum /root/test/mmtests/scratch_mnt/incr'
+>
+> Fstab mount options: noatime,autodefrag (I have been using the option
+> nossd with older kernels one period in the past on the filesystem).
+>
+> If it matters, I have been running duperemove many times on the
+> filesystem since creation.
 
-  Looks like fssum on the reverse copied file failed.
+I don't think it's related.
 
->      +(see /root/test/mmtests/work/sources/xfstests-git-installed/results//btrfs/007.full for details)
 
-  Can you pls send me this ?
+>
+> To test the RAM, I have been running mprime Blend-test for 24 hours
+> after the corruption without any error or warning.
 
-Thanks, Anand
+I'm not familiar with it, pretty sure you want this for UEFI:
 
->       *** unmount
->      ...
->      (Run 'diff -u tests/btrfs/007.out /root/test/mmtests/work/sources/xfstests-git-installed/results//btrfs/007.out.bad'  to see the entire diff)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+https://www.memtest86.com/download.htm
+
+Where you can use that or memtest86+ if the firmware is BIOS based.
+
+
+> I have never noticed any corruptions on the NTFS and Ext4 file systems
+> on the laptop, only on the Btrfs file systems.
+
+NTFS and ext4 likely won't notice such corruptions either (although
+new ext4 volumes any day now will have checksummed metadata by
+default) as they're weren't designed with such detection in mind.
+
+
+-- 
+Chris Murphy

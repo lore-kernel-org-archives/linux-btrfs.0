@@ -1,116 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47867 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751964AbeAWTo2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 14:44:28 -0500
-Date: Tue, 23 Jan 2018 20:42:16 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Rosen Penev <rosenp@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: treewide: Replace strerror(errno) with %m.
-Message-ID: <20180123194216.GQ15713@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1515362061-13281-1-git-send-email-rosenp@gmail.com>
+Received: from smtp.domeneshop.no ([194.63.252.55]:48174 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752200AbeAWTvK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Jan 2018 14:51:10 -0500
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: Superblock update: Is there really any benefits of updating
+ synchronously?
+To: Nikolay Borisov <nborisov@suse.com>,
+        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <2f19aa79-b8f4-294e-5298-3a7ed7fbd67d@dirtcellar.net>
+ <f8674469-cb64-ace6-ae08-3c3b360fb8e3@suse.com>
+ <e9b4a3f8-7b40-574f-20d0-579f5119a3f6@mendix.com>
+ <a2a658d6-87ea-e2fc-1d57-825932ad82d9@suse.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <0358d7af-bbce-7e2f-0b00-51b2823f83cb@dirtcellar.net>
+Date: Tue, 23 Jan 2018 20:51:06 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1515362061-13281-1-git-send-email-rosenp@gmail.com>
+In-Reply-To: <a2a658d6-87ea-e2fc-1d57-825932ad82d9@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 07, 2018 at 01:54:21PM -0800, Rosen Penev wrote:
-> As btrfs is specific to Linux, %m can be used instead of strerror(errno)
-> in format strings. This has some size reduction benefits for embedded
-> systems.
 
-Makes sense.
 
-> glibc, musl, and uclibc-ng all support %m as a modifier to printf.
-> A quick glance at the BIONIC libc source indicates that it has
-> support for %m as well. BSDs and Windows do not but I do believe
-> them to be beyond the scope of btrfs-progs.
-
-Thanks for checking the compatibility. The %m can be substituted
-by a wrapper if this becomes a problem in the future.
-
-> Compiled sizes on Ubuntu 16.04:
+Nikolay Borisov wrote:
 > 
-> Before:
-> 3916512 btrfs
+> 
+> On 23.01.2018 16:20, Hans van Kranenburg wrote:
+>> On 01/23/2018 10:03 AM, Nikolay Borisov wrote:
+>>>
+>>> On 23.01.2018 09:03, waxhead wrote:
+>>>> Note: This have been mentioned before, but since I see some issues
+>>>> related to superblocks I think it would be good to bring up the question
+>>>> again.
+>>>>
+>>>> [...]
+>>>> https://btrfs.wiki.kernel.org/index.php/On-disk_Format#Superblock
+>>>>
+>>>> The superblocks are updated synchronously on HDD's and one after each
+>>>> other on SSD's.
+>>>
+>>> There is currently no distinction in the code whether we are writing to
+>>> SSD or HDD.
+>>
+>> So what does that line in the wiki mean, and why is it there? "btrfs
+>> normally updates all superblocks, but in SSD mode it will update only
+>> one at a time."
+> 
+> It means the wiki is outdated.
+> 
+Ok and now the wiki is updated. Great :)
 
-> After:
-> 3908744 btrfs
+>>
+>>> Also what do you mean by synchronously, if you inspect the
+>>> code in write_all_supers you will see what for every device we issue
+>>> writes for every available copy of the superblock and then wait for all
+>>> of them to be finished via the 'wait_dev_supers'. In that regard sb
+>>> writeout is asynchronous.
+>>>
+I meant basically what you have explained. You write the same memory to 
+all superblocks "step by step" but in one operation.
 
-the delta is about 7KiB, that's not much but still counts. I would not
-object further optimizations towards size reduction as long as the code
-remains maintainable.
+>>>> Superblocks are also (to my knowledge) not protected by copy-on-write
+>>>> and are read-modify-update.
+>>>>
+>>>> On a storage device with >256GB there will be three superblocks.
+>>>>
+>>>> BTRFS will always prefer the superblock with the highest generation
+>>>> number providing that the checksum is good.
+>>>
+>>> Wrong. On mount btrfs will only ever read the first superblock at 64k.
+>>> If that one is corrupted it will refuse to mount, then it's expected the
+>>> user will initiate recovery procedure with btrfs-progs which reads all
+>>> supers and replaces them with the "newest" one (as decided by the
+>>> generation number)
+>>
+>> So again, the line "The superblock with the highest generation is used
+>> when reading." in the wiki needs to go away then?
+> 
+> Yep, for background information you can read the discussion here:
+> https://www.spinics.net/lists/linux-btrfs/msg71878.html
+> 
+And the wiki is also updated... Great!
 
-> 233256  libbtrfs.so.0.1
-> 4899    bcp
-> 2366560 btrfs-convert
-> 2207432 btrfs-corrupt-block
-> 13302   btrfs-debugfs
-> 2151104 btrfs-debug-tree
-> 2134968 btrfs-find-root
-> 2281864 btrfs-image
-> 2143536 btrfs-map-logical
-> 2129704 btrfs-select-super
-> 2151552 btrfstune
-> 2130696 btrfs-zero-log
-> 2276272 mkfs.btrfs
+>>
+>>>> On the list there seem to be a few incidents where the superblocks have
+>>>> gone toast and I am pondering what (if any) benefits there is by
+>>>> updating the superblocks synchronously.
+>>>>
+>>>> The superblock is checkpoint'ed every 30 seconds by default and if
+>>>> someone pulls the plug (poweroutage) on HDD's then a synchronous write
+>>>> depending on (the quality of) your hardware may perhaps ruin all the
+>>>> superblock copies in one go. E.g. Copy A,B and C will all be updated at
+>>>> 30s.
+>>>>
+>>>> On SSD's, since one superblock is updated after other it would mean that
+>>>> using the default 30 second checkpoint Copy A=30s, Copy B=1m, Copy C=1m30s
+>>>
+>>> As explained previously there is no notion of "SSD vs HDD" modes.
+Ok, thanks for clearing things up. But the main thing here is that all 
+superblocks are updated at the same time both on SSD and HDD's. I think 
+the question is still valid. What is there to gain on updating all of 
+them every 30s instead of updating them one by one?! Would not that be 
+safer, perhaps itty-bitty quicker and perhaps better in terms of recovery?!
 
-Some of the utilities are typically installed by default, the binaries
-share a lot of code as they get built from the same object files. I had
-once an idea of a compound binary that would switch the function by the
-name of the executable. Similar to what busybox does.
+>>
+>> We also had a discussion about the "backup roots" that are stored
+>> besides the superblock, and that they are "better than nothing" to help
+>> maybe recover something from a borken fs, but never ever guarantee you
+>> will get a working filesystem back.
+>>
+>> The same holds for superblocks from a previous generation. As soon as
+>> the transaction for generation X succesfully hits the disk, all space
+>> that was occupied in generation X-1 but no longer in X is available to
+>> be overwritten immediately.
+>>
+Ok so this means that superblocks with a older generation is utterly 
+useless and will lead to corruption (effectively making my argument 
+above useless as that would in fact assist corruption then).
 
-https://github.com/kdave/btrfs-progs/commit/8fc697a7f763f39f3afe0abaa68ac13a49ac8a86
+Does this means that if disk space was allocated in X-1 and is freed in 
+X it will unallocated if you roll back to X-1 e.g. writing to 
+unallocated storage.
 
----
-* btrfs
-* mkfs.btrfs
-* btrfstun
-* btrfs-image
-* btrfs-convert
-* btrfs-debug-tree
-* btrfs-show-super
-* btrfs-find-root
+I was under the impression that a superblock was like a "snapshot" of 
+the entire filesystem and that rollbacks via pre-gen superblocks was 
+possible. Am I mistaking?
 
-The static target is also supported. The name of resulting boxed
-binaries is btrfs.box and btrfs.box.static .
 
-   text    data     bss     dec     hex filename
- 550988   19120   15444  585552   8ef50 btrfs
-1562099   25316   42256 1629671  18dde7 btrfs.static
- 659504   21104   16492  697100   aa30c btrfs.box
-1817274   27988   44088 1889350  1cd446 btrfs.box.static
----
 
-I was not sure if this is was just another good idea waiting for a usecase (or
-not), so I haven't continued past the prototype. Please let me know if you'd be
-interested in this functionality, the patch is fairly trivial to update.
-
-> @@ -815,7 +815,7 @@ static const char * const cmd_filesystem_sync_usage[] = {
->  
->  static int cmd_filesystem_sync(int argc, char **argv)
->  {
-> -	int 	fd, res, e;
-> +	int 	fd, res;
->  	char	*path;
->  	DIR	*dirstream = NULL;
->  
-> @@ -831,10 +831,9 @@ static int cmd_filesystem_sync(int argc, char **argv)
->  		return 1;
->  
->  	res = ioctl(fd, BTRFS_IOC_SYNC);
-> -	e = errno;
->  	close_file_or_dir(fd, dirstream);
->  	if( res < 0 ){
-> -		error("sync ioctl failed on '%s': %s", path, strerror(e));
-> +		error("sync ioctl failed on '%s': %m", path);
-
-Let me use that one as example, there are a few more similar updates.
-
-There's potentially lost errno from the ioctl if something inside
-close_file_or_dir() overwrites it, as there are closedir and close. This
-is highly unlikely and I'll deal with that separately, so I'm going to
-apply the patch without further changes. Thanks.

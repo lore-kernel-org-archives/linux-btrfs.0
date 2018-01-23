@@ -1,99 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51472 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40381 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751814AbeAWOsq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 09:48:46 -0500
-Subject: Re: Superblock update: Is there really any benefits of updating
- synchronously?
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        waxhead@dirtcellar.net, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <2f19aa79-b8f4-294e-5298-3a7ed7fbd67d@dirtcellar.net>
- <f8674469-cb64-ace6-ae08-3c3b360fb8e3@suse.com>
- <e9b4a3f8-7b40-574f-20d0-579f5119a3f6@mendix.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <a2a658d6-87ea-e2fc-1d57-825932ad82d9@suse.com>
-Date: Tue, 23 Jan 2018 16:48:43 +0200
+        id S1751508AbeAWSJl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Jan 2018 13:09:41 -0500
+Date: Tue, 23 Jan 2018 19:07:28 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        adambahe@gmail.com
+Subject: Re: [PATCH 2/2] btrfs-progs: misc-test: Add test case to check if fi
+ usage and show report consistent unallocated space
+Message-ID: <20180123180728.GO15713@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180102063315.32382-1-wqu@suse.com>
+ <20180102063315.32382-2-wqu@suse.com>
+ <20180108193916.GM13726@twin.jikos.cz>
+ <71de1f27-734d-1024-283d-885cb5de3fdd@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <e9b4a3f8-7b40-574f-20d0-579f5119a3f6@mendix.com>
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <71de1f27-734d-1024-283d-885cb5de3fdd@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Jan 09, 2018 at 08:21:29AM +0800, Qu Wenruo wrote:
+> On 2018年01月09日 03:39, David Sterba wrote:
+> > On Tue, Jan 02, 2018 at 02:33:15PM +0800, Qu Wenruo wrote:
+> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> >> ---
+> >>  tests/misc-tests/028-fi-usage-cross-check/test.sh | 46 +++++++++++++++++++++++
+> >>  1 file changed, 46 insertions(+)
+> >>  create mode 100755 tests/misc-tests/028-fi-usage-cross-check/test.sh
+> >>
+> >> diff --git a/tests/misc-tests/028-fi-usage-cross-check/test.sh b/tests/misc-tests/028-fi-usage-cross-check/test.sh
+> >> new file mode 100755
+> >> index 000000000000..bf438b60abf1
+> >> --- /dev/null
+> >> +++ b/tests/misc-tests/028-fi-usage-cross-check/test.sh
+> >> @@ -0,0 +1,46 @@
+> >> +#!/bin/bash
+> >> +# check fi-usage is output correct unallocated space for RAID10
+> >> +
+> >> +source "$TOP/tests/common"
+> >> +
+> >> +check_prereq mkfs.btrfs
+> >> +check_prereq btrfs
+> >> +
+> >> +setup_root_helper
+> >> +
+> >> +setup_loopdevs 4
+> >> +prepare_loopdevs
+> >> +dev1=${loopdevs[1]}
+> >> +
+> >> +run_check "$TOP/mkfs.btrfs" -d raid10 -m raid10 -f ${loopdevs[@]}
+> >> +run_check $SUDO_HELPER mount $dev1 "$TEST_MNT"
+> > 
+> > There's a helper macro for that, run_check_mount_test_dev, that expects
+> > the TEST_DEV to be set. I suggest to use this variable instead of dev1,
+> > and then the umount command can be replaced by
+> > run_check_umount_test_dev.
+> >> +
+> >> +output_dir=$(mktemp -d --tmpdir btrfs-progs-misc.XXXXXXXX)
+> > 
+> > This is not IMO necessary, you get only one line from the fi show output
+> > and check if it's not empty. A simple 'if grep ...' . The output is
+> > reused so you can store it to a variable.
+> > 
+> >> +
+> >> +run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem show --raw "$TEST_MNT" |\
+> >> +	grep "$dev1" > "$output_dir/fi_show_output"
+> >> +if [ ! -s "$output_dir/fi_show_output" ]; then
+> >> +	_fail "failed to get correct fi show output"
+> >> +fi
+> >> +
+> >> +dev1_total=$(cat "$output_dir/fi_show_output" | awk '{print $4}')
+> >> +dev1_used=$(cat "$output_dir/fi_show_output" | awk '{print $6}')
+> >> +dev1_fi_show_unallocated=$(( $dev1_total - $dev1_used))
+> >> +
+> >> +run_check_stdout $SUDO_HELPER "$TOP/btrfs" filesystem usage --raw "$TEST_MNT" |\
+> >> +	grep "$dev1" | tail -n1 > "$output_dir/fi_usage_output"
+> >> +if [ ! -s "$output_dir/fi_usage_output" ]; then
+> >> +	_fail "failed to get correct fi usage output"
+> >> +fi
+> >> +
+> >> +dev1_fi_usage_unallocated=$(cat "$output_dir/fi_usage_output" | awk '{print $2}')
+> >> +echo "fi usage unallocated for devid1 is $dev1_fi_usage_unallocated" >> "$RESULTS"
+> >> +echo "fi show unallocated for devid1 is $dev1_fi_show_unallocated" >> "$RESULTS"
+> >> +
+> >> +if [ $dev1_fi_show_unallocated -ne $dev1_fi_usage_unallocated ]; then
+> >> +	_fail "fi usage unallocated mismatch with fi show"
+> >> +fi
+> >> +
+> >> +run_check $SUDO_HELPER umount "$TEST_MNT"
+> >> +cleanup_loopdevs
+> >> +rm $output_dir -rf
+> > 
+> > Please quote all arguments, namely if it's passed to 'rm', and options
+> > should go before arugments.
+> 
+> However the $output_dir won't contain any space or any escaping.
+> 
+> It will always be something like "/tmp/btrfs-progs-misc.1234567", do we
+> still need to quota something we're sure it's safe?
 
-
-On 23.01.2018 16:20, Hans van Kranenburg wrote:
-> On 01/23/2018 10:03 AM, Nikolay Borisov wrote:
->>
->> On 23.01.2018 09:03, waxhead wrote:
->>> Note: This have been mentioned before, but since I see some issues
->>> related to superblocks I think it would be good to bring up the question
->>> again.
->>>
->>> [...]
->>> https://btrfs.wiki.kernel.org/index.php/On-disk_Format#Superblock
->>>
->>> The superblocks are updated synchronously on HDD's and one after each
->>> other on SSD's.
->>
->> There is currently no distinction in the code whether we are writing to
->> SSD or HDD.
-> 
-> So what does that line in the wiki mean, and why is it there? "btrfs
-> normally updates all superblocks, but in SSD mode it will update only
-> one at a time."
-
-It means the wiki is outdated.
-
-> 
->> Also what do you mean by synchronously, if you inspect the
->> code in write_all_supers you will see what for every device we issue
->> writes for every available copy of the superblock and then wait for all
->> of them to be finished via the 'wait_dev_supers'. In that regard sb
->> writeout is asynchronous.
->>
->>> Superblocks are also (to my knowledge) not protected by copy-on-write
->>> and are read-modify-update.
->>>
->>> On a storage device with >256GB there will be three superblocks.
->>>
->>> BTRFS will always prefer the superblock with the highest generation
->>> number providing that the checksum is good.
->>
->> Wrong. On mount btrfs will only ever read the first superblock at 64k.
->> If that one is corrupted it will refuse to mount, then it's expected the
->> user will initiate recovery procedure with btrfs-progs which reads all
->> supers and replaces them with the "newest" one (as decided by the
->> generation number)
-> 
-> So again, the line "The superblock with the highest generation is used
-> when reading." in the wiki needs to go away then?
-
-Yep, for background information you can read the discussion here:
-https://www.spinics.net/lists/linux-btrfs/msg71878.html
-
-> 
->>> On the list there seem to be a few incidents where the superblocks have
->>> gone toast and I am pondering what (if any) benefits there is by
->>> updating the superblocks synchronously.
->>>
->>> The superblock is checkpoint'ed every 30 seconds by default and if
->>> someone pulls the plug (poweroutage) on HDD's then a synchronous write
->>> depending on (the quality of) your hardware may perhaps ruin all the
->>> superblock copies in one go. E.g. Copy A,B and C will all be updated at
->>> 30s.
->>>
->>> On SSD's, since one superblock is updated after other it would mean that
->>> using the default 30 second checkpoint Copy A=30s, Copy B=1m, Copy C=1m30s
->>
->> As explained previously there is no notion of "SSD vs HDD" modes.
-> 
-> We also had a discussion about the "backup roots" that are stored
-> besides the superblock, and that they are "better than nothing" to help
-> maybe recover something from a borken fs, but never ever guarantee you
-> will get a working filesystem back.
-> 
-> The same holds for superblocks from a previous generation. As soon as
-> the transaction for generation X succesfully hits the disk, all space
-> that was occupied in generation X-1 but no longer in X is available to
-> be overwritten immediately.
-> 
+For sake of consistency, yes. There are only a few exceptions where we
+don't want quotes around variables.

@@ -1,29 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f195.google.com ([209.85.223.195]:37421 "EHLO
-        mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751173AbeAWMvr (ORCPT
+Received: from mail-pg0-f43.google.com ([74.125.83.43]:43402 "EHLO
+        mail-pg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751491AbeAWNGo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 07:51:47 -0500
-Received: by mail-io0-f195.google.com with SMTP id f89so807984ioj.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jan 2018 04:51:47 -0800 (PST)
-Subject: Re: bad key ordering - repairable?
-To: Chris Murphy <lists@colorremedies.com>,
-        Claes Fransson <claes.v.fransson@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
- <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com>
-Date: Tue, 23 Jan 2018 07:51:42 -0500
+        Tue, 23 Jan 2018 08:06:44 -0500
+Received: by mail-pg0-f43.google.com with SMTP id n17so233479pgf.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jan 2018 05:06:43 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20180122212250.GY3807@carfax.org.uk>
+References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
+ <20180122212250.GY3807@carfax.org.uk>
+From: Claes Fransson <claes.v.fransson@gmail.com>
+Date: Tue, 23 Jan 2018 14:06:42 +0100
+Message-ID: <CAEY8F1pstmMVaypLo31vkvOWZZw0L_-d4U4=3LpoQCcJHyZ91Q@mail.gmail.com>
+Subject: Re: bad key ordering - repairable?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-01-22 21:35, Chris Murphy wrote:
-> On Mon, Jan 22, 2018 at 2:06 PM, Claes Fransson
-> <claes.v.fransson@gmail.com> wrote:
+2018-01-22 22:22 GMT+01:00 Hugo Mills <hugo@carfax.org.uk>:
+> On Mon, Jan 22, 2018 at 10:06:58PM +0100, Claes Fransson wrote:
 >> Hi!
 >>
 >> I really like the features of BTRFS, especially deduplication,
@@ -37,22 +34,6 @@ On 2018-01-22 21:35, Chris Murphy wrote:
 >> I am guessing the corruptions might be the results of unclean
 >> shutdowns, mostly after system hangs, but also because of running out
 >> of battery sometimes?
-> 
-> I think it's something else because I intentionally and
-> unintentionally do unclean shutdowns (I'm really impatient and I'm a
-> saboteur) on my laptop and I never get corruptions. In 18 months with
-> an HP Spectre which doesn't even have ECC memory, and has an NVMe
-> drive, *and* really remarkable for almost half this time I used the
-> discard mount option which pretty much instantly obliterates unused
-> roots, even when referenced in the super block as backup roots - and
-> yet still zero corruption. No complaints on mount, scrub, or readonly
-> checks. *shrug*
-> 
-> Anyway I suspect hardware or power issue. Or even SSD firmware issue.
-I would tend to agree here, with one caveat, if it's a laptop that's 
-less than 3 years old, you can probably rule out power issues.  Some 
-more info on the particular system might help identify what's wrong.
-> 
 >> Furthermore, the power-led has recently started blinking (also when
 >> the power-cable is plugged in), I guess because of an old and bad
 >> battery. Maybe the current corruption also can have something to do
@@ -62,41 +43,128 @@ more info on the particular system might help identify what's wrong.
 >>
 >> Currently, I can only mount the filesystem readonly, it goes readonly
 >> automatically if I try to mount it normally.
-> 
-> Btrfs is confused and doesn't want to make the corruption worse. >
+>>
+>> When booting an OpenSUSE Tumbleweed-20180119 live-iso:
+>> localhost:~ # uname -r
+>> 4.14.13-1-default
+>> localhost:~ # btrfs --version
+>> btrfs-progs v4.14.1
+>>
+>> localhost:~ # btrfs check -p /dev/sda12
+>> Checking filesystem on /dev/sda12
+>
+> [fixing up bad paste]
+>
+>> UUID: d2819d5a-fd69-484b-bf34-f2b5692cbe1f
+>> bad key ordering 159 160 bad block 690436964352
+>> ERROR: errors found in extent allocation tree or chunk allocation
+>> checking free space cache [.]
+>> checking fs roots [o]
+>> checking csums
+>> bad key ordering 159 160
+>> Error looking up extent record -1
+>
+> [snip]
+>
+>> localhost:~ # btrfs inspect-internal dump-tree -b 690436964352
+>> /dev/sda12
+>> btrfs-progs v4.14.1
+>>     leaf 690436964352 items 170 free space 1811 generation 196864 owner 2
+>>     leaf 690436964352 flags 0x1(WRITTEN) backref revision 1
+>>     fs uuid d2819d5a-fd69-484b-bf34-f2b5692cbe1f
+>>     chunk uuid 52f81fe6-893b-4432-9336-895057ee81e1
+>> .
+>> .
+>> .
+>>         item 157 key (22732500992 EXTENT_ITEM 16384) itemoff 6538 itemsize 53
+>>                 refs 1 gen 821 flags DATA
+>>                 extent data backref root 287 objectid 51665 offset 0 count 1
+>>         item 158 key (22732517376 EXTENT_ITEM 16384) itemoff 6485 itemsize 53
+>>                 refs 1 gen 821 flags DATA
+>>                 extent data backref root 287 objectid 51666 offset 0 count 1
+>>         item 159 key (22732533760 EXTENT_ITEM 16384) itemoff 6485 itemsize 0
+>> print-tree.c:428: print_extent_item: BUG_ON `item_size != sizeof(*ei0)` triggered, value 1
+>> btrfs(+0x365c6)[0x55bdfaada5c6]
+>> btrfs(print_extent_item+0x424)[0x55bdfaadb284]
+>> btrfs(btrfs_print_leaf+0x94e)[0x55bdfaadbc1e]
+>> btrfs(btrfs_print_tree+0x295)[0x55bdfaadcf05]
+>> btrfs(cmd_inspect_dump_tree+0x734)[0x55bdfab1b024]
+>> btrfs(main+0x7d)[0x55bdfaac7d4d]
+>> /lib64/libc.so.6(__libc_start_main+0xea)[0x7ff42100ff4a]
+>> btrfs(_start+0x2a)[0x55bdfaac7e5a]
+>> Aborted (core dumped)
+>
+>    Wow, I've never seen it do that before. It's the next thing I'd
+> have asked for, so it's good you've preempted it.
+>
+>    The main thing is that bad key ordering is almost always due to RAM
+> corruption. That's either bad RAM, or dodgy power regulation -- the
+> latter could be the PSU, or capacitors on the motherboard. (In this
+> case, it might also be something funny with the battery).
+>
+>    I would definitely recommend a long run of memtest86. At least 8
+> hours, preferably 24. If you get errors repeatedly in the sme place,
+> it's the RAM. If they appear randomly, it's probably the power
+> regulation.
+>
+Thanks for the suggestion, I will try to do this in the next days.
+
+> [snip]
+>
+>>
+>> The filesystem had become pretty full, I had planned to increase the
+>> Btrfs-partition size before it became corrupt.
+>>
+>> Active kernel when the filesystem went read only: OpenSUSE Linux
+>> 4.14.14-1.geef6178-default, from the
+>> http://download.opensuse.org/repositories/Kernel:/stable/standard/stable
+>> repository.
 >>
 >> Fstab mount options: noatime,autodefrag (I have been using the option
 >> nossd with older kernels one period in the past on the filesystem).
 >>
 >> If it matters, I have been running duperemove many times on the
 >> filesystem since creation.
-> 
-> I don't think it's related.
-> 
-> 
 >>
 >> To test the RAM, I have been running mprime Blend-test for 24 hours
 >> after the corruption without any error or warning.
-> 
-> I'm not familiar with it, pretty sure you want this for UEFI:
-> 
-> https://www.memtest86.com/download.htm
-> 
-> Where you can use that or memtest86+ if the firmware is BIOS based.
-Do keep in mind that just because it passes memory checks does not mean 
-it's not an issue with the RAM.  Memory testers rarely throw false 
-positives, but it's pretty common to get false negatives from them.>
+>
+>    Of all of the bad key order errors I've seen (dozens), I think
+> there were a whole two which turned out not to be obviously related to
+> corrupt RAM. I still say that it's most likely the hardware.
+
+Okay, thank you for sharing your experience with me.
+
+>
+>> Is there a way I can try to repair this filesystem without the need to
+>> recreate it and reinstall the operating system? A reinstall including
+>> all currently installed packages, and restoring all current system
+>> settings, would probably take some time for me to do.
+>> If it is currently not repairable, it would be nice if this kind of
+>> corruption could be repaired in the future, even if losing a few
+>> files. Or if the corruptions could be avoided in the first place.
+>
+>    Given that the current tools crash, the answer's a definite
+> no. However, if you can get a developer interested, they may be able
+> to write a fix for it, given an image of the FS (using btrfs-image).
+>
+Okay, will try to produce and upload an image within the next week.
+
+
+> [snip]
 >> I have never noticed any corruptions on the NTFS and Ext4 file systems
 >> on the laptop, only on the Btrfs file systems.
-> 
-> NTFS and ext4 likely won't notice such corruptions either (although
-> new ext4 volumes any day now will have checksummed metadata by
-> default) as they're weren't designed with such detection in mind.
-This is extremely important to understand.  BTRFS and ZFS are 
-essentially the only filesystems available on Linux that actually 
-validate things enough to notice this reliably (ReFS on Windows probably 
-does, and I think whatever Apple is calling their new FS does too). 
-Even if ext4 did notice it, it would just mark the filesystem for a 
-check and then keep going without doing anything else about it 
-(seriously, the default behavior for internal errors on ext4 is to just 
-continue like nothing happened and mark the FS for fsck).
+>
+>    You've never _noticed_ them. :)
+>
+>    Hugo.
+>
+> --
+> Hugo Mills             | ... one ping(1) to rule them all, and in the
+> hugo@... carfax.org.uk | darkness bind(2) them.
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |                                                Illiad
+
+Thank you for your answers.
+
+Claes

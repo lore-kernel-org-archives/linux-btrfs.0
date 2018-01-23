@@ -1,134 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f181.google.com ([209.85.192.181]:37578 "EHLO
-        mail-pf0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751633AbeAWN31 (ORCPT
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:35813 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751686AbeAWO1o (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 08:29:27 -0500
-Received: by mail-pf0-f181.google.com with SMTP id p1so323290pfh.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Jan 2018 05:29:27 -0800 (PST)
+        Tue, 23 Jan 2018 09:27:44 -0500
+Subject: Re: Superblock update: Is there really any benefits of updating
+ synchronously?
+To: Nikolay Borisov <nborisov@suse.com>, waxhead@dirtcellar.net,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <2f19aa79-b8f4-294e-5298-3a7ed7fbd67d@dirtcellar.net>
+ <f8674469-cb64-ace6-ae08-3c3b360fb8e3@suse.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <e9b4a3f8-7b40-574f-20d0-579f5119a3f6@mendix.com>
+Date: Tue, 23 Jan 2018 15:20:01 +0100
 MIME-Version: 1.0
-In-Reply-To: <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com>
-References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
- <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com> <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com>
-From: Claes Fransson <claes.v.fransson@gmail.com>
-Date: Tue, 23 Jan 2018 14:29:26 +0100
-Message-ID: <CAEY8F1pZyqVBhuOK79eOgDX41-vYRdym5hVKoMRcFVV25_WMJA@mail.gmail.com>
-Subject: Re: bad key ordering - repairable?
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <f8674469-cb64-ace6-ae08-3c3b360fb8e3@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2018-01-23 13:51 GMT+01:00 Austin S. Hemmelgarn <ahferroin7@gmail.com>:
-> On 2018-01-22 21:35, Chris Murphy wrote:
+On 01/23/2018 10:03 AM, Nikolay Borisov wrote:
+> 
+> On 23.01.2018 09:03, waxhead wrote:
+>> Note: This have been mentioned before, but since I see some issues
+>> related to superblocks I think it would be good to bring up the question
+>> again.
 >>
->> On Mon, Jan 22, 2018 at 2:06 PM, Claes Fransson
->> <claes.v.fransson@gmail.com> wrote:
->>>
->>> Hi!
->>>
->>> I really like the features of BTRFS, especially deduplication,
->>> snapshotting and checksumming. However, when using it on my laptop the
->>> last couple of years, it has became corrupted a lot of times.
->>> Sometimes I have managed to fix the problems (at least so much that I
->>> can continue to use the filesystem) with check --repair, but several
->>> times I had to recreate the file system and reinstall the operating
->>> system.
->>>
->>> I am guessing the corruptions might be the results of unclean
->>> shutdowns, mostly after system hangs, but also because of running out
->>> of battery sometimes?
+>> [...]
+>> https://btrfs.wiki.kernel.org/index.php/On-disk_Format#Superblock
 >>
+>> The superblocks are updated synchronously on HDD's and one after each
+>> other on SSD's.
+> 
+> There is currently no distinction in the code whether we are writing to
+> SSD or HDD.
+
+So what does that line in the wiki mean, and why is it there? "btrfs
+normally updates all superblocks, but in SSD mode it will update only
+one at a time."
+
+> Also what do you mean by synchronously, if you inspect the
+> code in write_all_supers you will see what for every device we issue
+> writes for every available copy of the superblock and then wait for all
+> of them to be finished via the 'wait_dev_supers'. In that regard sb
+> writeout is asynchronous.
+> 
+>> Superblocks are also (to my knowledge) not protected by copy-on-write
+>> and are read-modify-update.
 >>
->> I think it's something else because I intentionally and
->> unintentionally do unclean shutdowns (I'm really impatient and I'm a
->> saboteur) on my laptop and I never get corruptions. In 18 months with
->> an HP Spectre which doesn't even have ECC memory, and has an NVMe
->> drive, *and* really remarkable for almost half this time I used the
->> discard mount option which pretty much instantly obliterates unused
->> roots, even when referenced in the super block as backup roots - and
->> yet still zero corruption. No complaints on mount, scrub, or readonly
->> checks. *shrug*
+>> On a storage device with >256GB there will be three superblocks.
 >>
->> Anyway I suspect hardware or power issue. Or even SSD firmware issue.
+>> BTRFS will always prefer the superblock with the highest generation
+>> number providing that the checksum is good.
+> 
+> Wrong. On mount btrfs will only ever read the first superblock at 64k.
+> If that one is corrupted it will refuse to mount, then it's expected the
+> user will initiate recovery procedure with btrfs-progs which reads all
+> supers and replaces them with the "newest" one (as decided by the
+> generation number)
+
+So again, the line "The superblock with the highest generation is used
+when reading." in the wiki needs to go away then?
+
+>> On the list there seem to be a few incidents where the superblocks have
+>> gone toast and I am pondering what (if any) benefits there is by
+>> updating the superblocks synchronously.
+>>
+>> The superblock is checkpoint'ed every 30 seconds by default and if
+>> someone pulls the plug (poweroutage) on HDD's then a synchronous write
+>> depending on (the quality of) your hardware may perhaps ruin all the
+>> superblock copies in one go. E.g. Copy A,B and C will all be updated at
+>> 30s.
+>>
+>> On SSD's, since one superblock is updated after other it would mean that
+>> using the default 30 second checkpoint Copy A=30s, Copy B=1m, Copy C=1m30s
 >
-> I would tend to agree here, with one caveat, if it's a laptop that's less
-> than 3 years old, you can probably rule out power issues.  Some more info on
-> the particular system might help identify what's wrong.
+> As explained previously there is no notion of "SSD vs HDD" modes.
 
-Hi,
+We also had a discussion about the "backup roots" that are stored
+besides the superblock, and that they are "better than nothing" to help
+maybe recover something from a borken fs, but never ever guarantee you
+will get a working filesystem back.
 
-I boughtThe laptop new in July 2014, but have had corruption issues
-with btrfs I think as long as I have been trying it, since the end of
-2014 I think. You can find addtitional info about my laptop in my
-original post, please let me know if you want som more info.
+The same holds for superblocks from a previous generation. As soon as
+the transaction for generation X succesfully hits the disk, all space
+that was occupied in generation X-1 but no longer in X is available to
+be overwritten immediately.
 
->>
->>
->>> Furthermore, the power-led has recently started blinking (also when
->>> the power-cable is plugged in), I guess because of an old and bad
->>> battery. Maybe the current corruption also can have something to do
->>> with this? However I almost always run with power cable plugged in in
->>> last year, only on battery a few seconds a few times when moving the
->>> laptop.
->>>
->>> Currently, I can only mount the filesystem readonly, it goes readonly
->>> automatically if I try to mount it normally.
->>
->>
->> Btrfs is confused and doesn't want to make the corruption worse. >
->>>
->>>
->>> Fstab mount options: noatime,autodefrag (I have been using the option
->>> nossd with older kernels one period in the past on the filesystem).
->>>
->>> If it matters, I have been running duperemove many times on the
->>> filesystem since creation.
->>
->>
->> I don't think it's related.
->>
->>
->>>
->>> To test the RAM, I have been running mprime Blend-test for 24 hours
->>> after the corruption without any error or warning.
->>
->>
->> I'm not familiar with it, pretty sure you want this for UEFI:
->>
->> https://www.memtest86.com/download.htm
->>
->> Where you can use that or memtest86+ if the firmware is BIOS based.
->
-> Do keep in mind that just because it passes memory checks does not mean it's
-> not an issue with the RAM.  Memory testers rarely throw false positives, but
-> it's pretty common to get false negatives from them.>
-
-Okay, thanks for telling me.
-
->>>
->>> I have never noticed any corruptions on the NTFS and Ext4 file systems
->>> on the laptop, only on the Btrfs file systems.
->>
->>
->> NTFS and ext4 likely won't notice such corruptions either (although
->> new ext4 volumes any day now will have checksummed metadata by
->> default) as they're weren't designed with such detection in mind.
->
-> This is extremely important to understand.  BTRFS and ZFS are essentially
-> the only filesystems available on Linux that actually validate things enough
-> to notice this reliably (ReFS on Windows probably does, and I think whatever
-> Apple is calling their new FS does too). Even if ext4 did notice it, it
-> would just mark the filesystem for a check and then keep going without doing
-> anything else about it (seriously, the default behavior for internal errors
-> on ext4 is to just continue like nothing happened and mark the FS for fsck).
-
-Well, personally I think it would be great if I (optionally) could do
-that with Btrfs too. Even if it notice me of corruption and I might
-even lose e few files, I think it would be good if I could continue to
-use the filesystem with normal read/write capabilities, so I wouldnt
-need to reinstall the operating system.
-
-Best regards,
-
-Claes
+-- 
+Hans van Kranenburg

@@ -1,149 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:55321 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964999AbeAXSyE (ORCPT
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:45863 "EHLO
+        mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965049AbeAXTBV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Jan 2018 13:54:04 -0500
-Reply-To: waxhead@dirtcellar.net
-Subject: Re: Superblock update: Is there really any benefits of updating
- synchronously?
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <2f19aa79-b8f4-294e-5298-3a7ed7fbd67d@dirtcellar.net>
- <f8674469-cb64-ace6-ae08-3c3b360fb8e3@suse.com>
- <e9b4a3f8-7b40-574f-20d0-579f5119a3f6@mendix.com>
- <a2a658d6-87ea-e2fc-1d57-825932ad82d9@suse.com>
- <0358d7af-bbce-7e2f-0b00-51b2823f83cb@dirtcellar.net>
- <7bf3c40d-30ef-1911-a1b8-49bf49fbdcd5@mendix.com>
-From: waxhead <waxhead@dirtcellar.net>
-Message-ID: <79b2a2dc-ce6f-f69e-bf28-a45225025c5f@dirtcellar.net>
-Date: Wed, 24 Jan 2018 19:54:00 +0100
+        Wed, 24 Jan 2018 14:01:21 -0500
+Received: by mail-wm0-f51.google.com with SMTP id i186so10315766wmi.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jan 2018 11:01:20 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <7bf3c40d-30ef-1911-a1b8-49bf49fbdcd5@mendix.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <CAAxOLF_DB4_5wBem3qgU-B97Hq8xkmE67_qD-7Fe2=my-FN_iw@mail.gmail.com>
+References: <CAAxOLF8pwZ5jcZxB4=h-bPZBxsnCV7sB=LOghGfa0HhRqgJfSg@mail.gmail.com>
+ <270851c6-7725-ec63-fa6d-6ff63e99c637@gmx.com> <CAAxOLF8GRV3ZX=cahf0szsvtyQO0Qv32PEKoMBzq+1R=imjzxw@mail.gmail.com>
+ <c0f89fad-2c98-fd78-4bcb-7c19dd3c03b0@gmx.com> <08afcd3e-b365-b49f-55c6-770a2b560395@gmail.com>
+ <a990d2db-a9ba-256b-1389-e9f350a94060@gmx.com> <CAAxOLF9Hqnbc6g20dPasrtXW+Es562mOBujc7ve7Fc6LzG7tcQ@mail.gmail.com>
+ <03ba8382-3271-6c11-b217-a48d1423e684@gmx.com> <CAAxOLF_DB4_5wBem3qgU-B97Hq8xkmE67_qD-7Fe2=my-FN_iw@mail.gmail.com>
+From: "^m'e" <marcoep@gmail.com>
+Date: Wed, 24 Jan 2018 19:00:59 +0000
+Message-ID: <CAAxOLF8KgC=_LoaEaKft2Q7gUhKL3Fp8OLizbnnA9v4h_cSprQ@mail.gmail.com>
+Subject: Re: btrfs check: backref lost, mismatch with its hash -- can't repair
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hans van Kranenburg wrote:
-> On 01/23/2018 08:51 PM, waxhead wrote:
->> Nikolay Borisov wrote:
->>> On 23.01.2018 16:20, Hans van Kranenburg wrote:
-> 
-> [...]
-> 
->>>>
->>>> We also had a discussion about the "backup roots" that are stored
->>>> besides the superblock, and that they are "better than nothing" to help
->>>> maybe recover something from a borken fs, but never ever guarantee you
->>>> will get a working filesystem back.
->>>>
->>>> The same holds for superblocks from a previous generation. As soon as
->>>> the transaction for generation X succesfully hits the disk, all space
->>>> that was occupied in generation X-1 but no longer in X is available to
->>>> be overwritten immediately.
->>>>
->> Ok so this means that superblocks with a older generation is utterly
->> useless and will lead to corruption (effectively making my argument
->> above useless as that would in fact assist corruption then).
-> 
-> Mostly, yes.
-> 
->> Does this means that if disk space was allocated in X-1 and is freed in
->> X it will unallocated if you roll back to X-1 e.g. writing to
->> unallocated storage.
-> 
-> Can you reword that? I can't follow that sentence.
-Sure why not. I'll give it a go:
+The complete check:
 
-Does this mean that if...
-* Superblock generation N-1 have range 1234-2345 allocated and used.
-
-and....
-
-* Superblock generation N-0 (the current) have range 1234-2345 free 
-because someone deleted a file or something
-
-Then....
-
-It is no point in rolling back to generation N-1 because that refers to 
-what is no essentially free "memory" which may or may have not been 
-written over by generation N-0. And therefore N-1 which still thinks 
-range 1234-2345 is allocated may point to the wrong data.
-
-I hope that was easier to follow - if not don't hold back on the 
-explicitives! :)
-
-> 
->> I was under the impression that a superblock was like a "snapshot" of
->> the entire filesystem and that rollbacks via pre-gen superblocks was
->> possible. Am I mistaking?
-> 
-> Yes. The first fundamental thing in Btrfs is COW which makes sure that
-> everything referenced from transaction X, from the superblock all the
-> way down to metadata trees and actual data space is never overwritten by
-> changes done in transaction X+1.
-> 
-Perhaps a tad off topic, but assuming the (hopefully) better explanation 
-above clear things up a bit. What happens if a block is freed?! in X+1 
---- which must mean that it can be overwritten in transaction X+1 (which 
-I assume means a new superblock generation). After all without freeing 
-and overwriting data there is no way to re-use space.
-
-> For metadata trees that are NOT filesystem trees a.k.a. subvolumes, the
-> way this is done is actually quite simple. If a block is cowed, the old
-> location is added to a 'pinned extents' list (in memory), which is used
-> as a blacklist for choosing space to put new writes in. After a
-> transaction is completed on disk, that list with pinned extents is
-> emptied and all that space is available for immediate reuse. This way we
-> make sure that if the transaction that is ongoing is aborted, the
-> previous one (latest one that is completely on disk) is always still
-> there. If the computer crashes and the in memory list is lost, no big
-> deal, we just continue from the latest completed transaction again after
-> a reboot. (ignoring extra log things for simplicity)
-> 
-> So, the only situation in which you can fully use an X-1 superblock is
-> when none of that previously pinned space has actually been overwritten
-> yet afterwards.
-> 
-> And if any of the space was overwritten already, you can go play around
-> with using an older superblock and your filesystem mounts and everything
-> might look fine, until you hit that distant corner and BOOM!
-Got it , this takes care of my questions above, but I'll leave them in 
-just for completeness sake.
-Thanks for the good explanation.
-
-> 
-> ---- >8 ---- Extra!! Moar!! ---- >8 ----
-> 
-> But, doing so does not give you snapshot functionality yet! It's more
-> like a poor mans snapshot that only can prevent from messing up the
-> current version.
-> 
-> Snapshot functionality is implemented only for filesystem trees
-> (subvolumes) by adding reference counting (which does end up on disk) to
-> the metadata blocks, and then COW trees as a whole.
-> 
-> If you make a snapshot of a filesystem tree, the snapshot gets a whole
-> new tree ID! It's not a previous version of the same subvolume you're
-> looking at, it's a clone!
-> 
-> This is a big difference. The extent tree is always tree 2. The chunk
-> tree is always tree 3. But your subvolume snapshot gets a new tree number.
-> 
-> Technically, it would maybe be possible to implement reference counting
-> and snapshots to all of the metadata trees, but it would probably mean
-> that the whole filesystem would get stuck in rewriting itself all day
-> instead of doing any useful work. The current extent tree already has
-> such amount of rumination problems that the added work of keeping track
-> of reference counts would make it completely unusable.
-> 
-> In the wiki, it's here:
-> https://btrfs.wiki.kernel.org/index.php/Btrfs_design#Copy_on_Write_Logging
-> 
-> Actually, I just paraphrased the first two of those six alineas... The
-> subvolume trees actually having a previous version of themselves again
-> (whaaaa!) is another thing... ;]
-> 
-hehe , again thanks for giving a good explanation. Clear things up a bit 
-indeed!
+Checking filesystem on /dev/sdb3
+UUID: de1723e2-150c-4448-bb36-be14d7d96093
+ERROR: extent[64368619520, 524288] referencer count mismatch (root:
+257, owner: 7804556, offset: 212992) wanted: 1, have: 0
+ERROR: data extent[1862352896 425984] backref lost
+ERROR: data extent[1886453760 479232] backref lost
+ERROR: data extent[1902219264 524288] backref lost
+ERROR: data extent[1817378816 151552] backref lost
+ERROR: data extent[1799688192 57344] backref lost
+ERROR: data extent[1830277120 258048] backref lost
+ERROR: data extent[2558107648 1368064] backref lost
+ERROR: errors found in extent allocation tree or chunk allocation
+cache and super generation don't match, space cache will be invalidated
+ERROR: root 257 DIR_ITEM[30039322 4007295565] couldn't find relative
+INODE_ITEM[0] namelen 0 filename  filetype 0
+ERROR: root 257 DIR_ITEM[30039322 4007295565] data_len shouldn't be 32907
+ERROR: root 257 DIR_ITEM[30039322 4007295565] couldn't find relative
+INODE_ITEM[0] namelen 3 filename  filetype 0
+ERROR: root 258 EXTENT_DATA[1119172 1966080] prealloc shouldn't have datasum
+ERROR: root 1327 EXTENT_DATA[60710 18219008] prealloc shouldn't have datasum
+ERROR: root 1331 EXTENT_DATA[60710 18219008] prealloc shouldn't have datasum
+ERROR: root 1333 EXTENT_DATA[60710 18219008] prealloc shouldn't have datasum
+ERROR: root 1362 EXTENT_DATA[1119172 1966080] prealloc shouldn't have datasum
+ERROR: root 1366 EXTENT_DATA[1119172 1966080] prealloc shouldn't have datasum
+ERROR: root 1382 EXTENT_DATA[1119172 1966080] prealloc shouldn't have datasum
+ERROR: root 1385 DIR_ITEM[30039322 2438219243] couldn't find relative
+INODE_ITEM[0] namelen 12 filename metadata.xml filetype 1
+ERROR: root 1385 DIR INODE [30039322] size(152) not equal to 136
+ERROR: root 1385 INODE REF[30039324 30039322] and DIR_ITEM[30039322
+2438219243] mismatch namelen 12 filename metadata.xml filetype 1
+found 104348008448 bytes used err is -5
+total csum bytes: 99534904
+total tree bytes: 3204612096
+total fs tree bytes: 2984034304
+total extent tree bytes: 87818240
+btree space waste bytes: 778261104
+file data blocks allocated: 242964852736
+ referenced 198454632448

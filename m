@@ -1,69 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:37976 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932342AbeAJE5E (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 9 Jan 2018 23:57:04 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, nborisov@suse.com
-Subject: [PATCH 2/2] btrfs-progs: mkfs-tests: Add test case to check if the first device extent is occupying reserved 0~1M range
-Date: Wed, 10 Jan 2018 12:56:48 +0800
-Message-Id: <20180110045648.3239-2-wqu@suse.com>
-In-Reply-To: <20180110045648.3239-1-wqu@suse.com>
-References: <20180110045648.3239-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:42214 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932618AbeAXJkr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Jan 2018 04:40:47 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 3A0C8AE60
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jan 2018 09:40:46 +0000 (UTC)
+Subject: Re: [PATCH 1/2] btrfs-progs: mkfs: Fix minimal device size
+ calculation for new temporary chunk layout
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
+References: <20180124023830.26184-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <61695dbe-d1f4-f2b2-0afc-df118c9547db@suse.com>
+Date: Wed, 24 Jan 2018 11:40:45 +0200
+MIME-Version: 1.0
+In-Reply-To: <20180124023830.26184-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../mkfs-tests/010-reserved-1M-for-single/test.sh  | 37 ++++++++++++++++++++++
- 1 file changed, 37 insertions(+)
- create mode 100755 tests/mkfs-tests/010-reserved-1M-for-single/test.sh
 
-diff --git a/tests/mkfs-tests/010-reserved-1M-for-single/test.sh b/tests/mkfs-tests/010-reserved-1M-for-single/test.sh
-new file mode 100755
-index 000000000000..1a4936eaf72e
---- /dev/null
-+++ b/tests/mkfs-tests/010-reserved-1M-for-single/test.sh
-@@ -0,0 +1,37 @@
-+#!/bin/bash
-+# Test if "-m single" or "-M" can cause dev extent to use reserved 1M range
-+#
-+# Other profiles will cause mkfs.btrfs to allocate new meta/sys chunks
-+# using btrfs_alloc_chunk() which won't use 0~1M range, so other profiles
-+# are safe.
-+
-+source "$TOP/tests/common"
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+prepare_test_dev
-+
-+do_one_test ()
-+{
-+	run_check "$TOP/mkfs.btrfs" -f $@ "$TEST_DEV"
-+
-+	# Use dev-extent tree to find first device extent
-+	first_dev_extent=$(run_check_stdout "$TOP/btrfs" inspect-internal \
-+		dump-tree -t device "$TEST_DEV" | \
-+		grep -oP '(?<=DEV_EXTENT )[[:digit:]]*' | head -n1)
-+
-+	if [ -z $first_dev_extent ]; then
-+		_fail "Failed to get first device extent"
-+	fi
-+
-+	echo "First dev extent starts at $first_dev_extent" >> "$RESULTS"
-+	echo "Reserved range is [0, $(( 1024 * 1024)))" >> "$RESULTS"
-+	# First device extent should not start below 1M
-+	if [ $first_dev_extent -lt $(( 1024 * 1024 )) ]; then
-+		_fail "First device extent occupies reserved 0~1M range"
-+	fi
-+}
-+
-+do_one_test "-M"
-+do_one_test "-m single"
--- 
-2.15.1
 
+On 24.01.2018 04:38, Qu Wenruo wrote:
+> Commit 0b2161becf8e ("btrfs-progs: mkfs: Prevent temporary system chunk
+> to use space in reserved 1M range") changed the hard-coded temporary
+> chunk layout to avoid the first 1M.
+> 
+> However this also affects btrfs_min_dev_size() which still assume
+> temporary chunks starts at device offset 0.
+> 
+> This patch will fix it.
+> 
+> Fixes: 0b2161becf8e ("btrfs-progs: mkfs: Prevent temporary system chunk
+> to use space in reserved 1M range")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  mkfs/common.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/mkfs/common.c b/mkfs/common.c
+> index 5c5e9c3b9e01..8e85942ef4eb 100644
+> --- a/mkfs/common.c
+> +++ b/mkfs/common.c
+> @@ -483,6 +483,8 @@ u64 btrfs_min_dev_size(u32 nodesize, int mixed, u64 meta_profile,
+>  
+>  	/*
+>  	 * Minimal size calculation is complex due to several factors:
+> +	 * 0) Reserved 1M range.
+> +	 *
+>  	 * 1) Temporary chunk reuse
+>  	 *    If specified chunk profile is SINGLE, we can reuse
+>  	 *    temporary chunks, no need to allocate new chunks.
+> @@ -501,7 +503,8 @@ u64 btrfs_min_dev_size(u32 nodesize, int mixed, u64 meta_profile,
+>  	 * The latter two are all 8M, accroding to @calc_size of
+>  	 * btrfs_alloc_chunk().
+>  	 */
+> -	reserved += BTRFS_MKFS_SYSTEM_GROUP_SIZE + SZ_8M * 2;
+> +	reserved += BTRFS_BLOCK_RESERVED_1M_FOR_SUPER +
+> +		    BTRFS_MKFS_SYSTEM_GROUP_SIZE + SZ_8M * 2;
+>  
+>  	/*
+>  	 * For real chunks, we need to select different sizes:
+> 

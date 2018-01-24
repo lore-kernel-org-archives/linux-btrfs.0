@@ -1,61 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:33460 "EHLO
-        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S964850AbeAXRyH (ORCPT
+Received: from smtp.domeneshop.no ([194.63.252.55]:55321 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S964999AbeAXSyE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Jan 2018 12:54:07 -0500
-Subject: Re: Periodic frame losses when recording to btrfs volume with OBS
-To: Sebastian Ochmann <ochmann@cs.uni-bonn.de>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>,
-        <nborisov@suse.com>
-References: <f52e20c8-db0d-ffbb-91e3-268c548a544a@cs.uni-bonn.de>
- <35acc308-d68d-3a4b-a626-38b9a7820fd4@gmx.com>
- <a0b4a2c9-b61c-7f9a-5a24-88e4b83b887c@cs.uni-bonn.de>
- <218e3b6d-a15a-7a43-35b0-721be18fcd86@gmx.com>
- <c276765c-ab66-29a9-c3d6-209ef039a8be@cs.uni-bonn.de>
- <fb757d69-add3-703f-1132-a8b97ac47d56@fb.com>
- <837ffe27-e9df-33c4-a8e8-6f7b67944eae@cs.uni-bonn.de>
-From: Chris Mason <clm@fb.com>
-Message-ID: <f31bcfca-8c36-ea30-c4f0-0aeb437d411d@fb.com>
-Date: Wed, 24 Jan 2018 12:52:20 -0500
+        Wed, 24 Jan 2018 13:54:04 -0500
+Reply-To: waxhead@dirtcellar.net
+Subject: Re: Superblock update: Is there really any benefits of updating
+ synchronously?
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <2f19aa79-b8f4-294e-5298-3a7ed7fbd67d@dirtcellar.net>
+ <f8674469-cb64-ace6-ae08-3c3b360fb8e3@suse.com>
+ <e9b4a3f8-7b40-574f-20d0-579f5119a3f6@mendix.com>
+ <a2a658d6-87ea-e2fc-1d57-825932ad82d9@suse.com>
+ <0358d7af-bbce-7e2f-0b00-51b2823f83cb@dirtcellar.net>
+ <7bf3c40d-30ef-1911-a1b8-49bf49fbdcd5@mendix.com>
+From: waxhead <waxhead@dirtcellar.net>
+Message-ID: <79b2a2dc-ce6f-f69e-bf28-a45225025c5f@dirtcellar.net>
+Date: Wed, 24 Jan 2018 19:54:00 +0100
 MIME-Version: 1.0
-In-Reply-To: <837ffe27-e9df-33c4-a8e8-6f7b67944eae@cs.uni-bonn.de>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <7bf3c40d-30ef-1911-a1b8-49bf49fbdcd5@mendix.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/22/2018 04:17 PM, Sebastian Ochmann wrote:
-> Hello,
+Hans van Kranenburg wrote:
+> On 01/23/2018 08:51 PM, waxhead wrote:
+>> Nikolay Borisov wrote:
+>>> On 23.01.2018 16:20, Hans van Kranenburg wrote:
 > 
-> I attached to the ffmpeg-mux process for a little while and pasted the 
-> result here:
+> [...]
 > 
-> https://urldefense.proofpoint.com/v2/url?u=https-3A__pastebin.com_XHaMLX8z&d=DwIDaQ&c=5VD0RTtNlTh3ycd41b3MUw&r=9QPtTAxcitoznaWRKKHoEQ&m=IkofqwZ_S5C0_qAXjt4EQae-mVE09Ir8zmSbuGqXaCs&s=1nw7xUkEoQF7MgYOlZ8iAA9U0UsRQObH1Z4VLqx8IF8&e= 
+>>>>
+>>>> We also had a discussion about the "backup roots" that are stored
+>>>> besides the superblock, and that they are "better than nothing" to help
+>>>> maybe recover something from a borken fs, but never ever guarantee you
+>>>> will get a working filesystem back.
+>>>>
+>>>> The same holds for superblocks from a previous generation. As soon as
+>>>> the transaction for generation X succesfully hits the disk, all space
+>>>> that was occupied in generation X-1 but no longer in X is available to
+>>>> be overwritten immediately.
+>>>>
+>> Ok so this means that superblocks with a older generation is utterly
+>> useless and will lead to corruption (effectively making my argument
+>> above useless as that would in fact assist corruption then).
 > 
+> Mostly, yes.
 > 
-> Can you help me with interpreting this result? If you'd like me to run 
-> strace with specific options, please let me know. This is a level of 
-> debugging I'm not dealing with on a daily basis. :)
+>> Does this means that if disk space was allocated in X-1 and is freed in
+>> X it will unallocated if you roll back to X-1 e.g. writing to
+>> unallocated storage.
 > 
+> Can you reword that? I can't follow that sentence.
+Sure why not. I'll give it a go:
 
-Going to guess it's these sequences:
+Does this mean that if...
+* Superblock generation N-1 have range 1234-2345 allocated and used.
 
-lseek(3, 1302012898, SEEK_SET)          = 1302012898
-write(3, "\37C\266u\1\377\377\377\377\377\377\377\277\204|\271\347J\347\203\3@\0\243CY\202\0\0\0!\21"..., 262144) = 262144
-write(3, "\310\22\323g7J#h\351\0\323\270\f\206\5\207(.\232\246\27\371/\376\341\0\0\200\th\3\37"..., 262144) = 262144
-write(3, "\225*\245<8N\32\263\237k\331]\313\215\301\366$\7\216\0349\302AS\201\302\307T\361\365\3375"..., 262144) = 262144
-write(3, "\272e\37\255\250\24n\235\341E\272Me\36'\345W\353\2337K.n\367\264\\\370\307\341_\206|"..., 262144) = 262144
-write(3, "iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii"..., 53271) = 53271
-lseek(3, 1302012902, SEEK_SET)          = 1302012902
-write(3, "\1\0\0\0\0\20\320\v", 8)      = 8
-lseek(3, 1303114745, SEEK_SET)          = 1303114745
+and....
 
-It's seeking, writing, then jumping back and updating what had been written 
-before.
+* Superblock generation N-0 (the current) have range 1234-2345 free 
+because someone deleted a file or something
 
-That's going to hit the stable page writing code in btrfs that I had mentioned earlier.
+Then....
 
-At Facebook, we've been experimenting with fixes for this that are limited to O_APPEND 
-slowly growing log files.  Let me think harder...
+It is no point in rolling back to generation N-1 because that refers to 
+what is no essentially free "memory" which may or may have not been 
+written over by generation N-0. And therefore N-1 which still thinks 
+range 1234-2345 is allocated may point to the wrong data.
 
--chris
+I hope that was easier to follow - if not don't hold back on the 
+explicitives! :)
+
+> 
+>> I was under the impression that a superblock was like a "snapshot" of
+>> the entire filesystem and that rollbacks via pre-gen superblocks was
+>> possible. Am I mistaking?
+> 
+> Yes. The first fundamental thing in Btrfs is COW which makes sure that
+> everything referenced from transaction X, from the superblock all the
+> way down to metadata trees and actual data space is never overwritten by
+> changes done in transaction X+1.
+> 
+Perhaps a tad off topic, but assuming the (hopefully) better explanation 
+above clear things up a bit. What happens if a block is freed?! in X+1 
+--- which must mean that it can be overwritten in transaction X+1 (which 
+I assume means a new superblock generation). After all without freeing 
+and overwriting data there is no way to re-use space.
+
+> For metadata trees that are NOT filesystem trees a.k.a. subvolumes, the
+> way this is done is actually quite simple. If a block is cowed, the old
+> location is added to a 'pinned extents' list (in memory), which is used
+> as a blacklist for choosing space to put new writes in. After a
+> transaction is completed on disk, that list with pinned extents is
+> emptied and all that space is available for immediate reuse. This way we
+> make sure that if the transaction that is ongoing is aborted, the
+> previous one (latest one that is completely on disk) is always still
+> there. If the computer crashes and the in memory list is lost, no big
+> deal, we just continue from the latest completed transaction again after
+> a reboot. (ignoring extra log things for simplicity)
+> 
+> So, the only situation in which you can fully use an X-1 superblock is
+> when none of that previously pinned space has actually been overwritten
+> yet afterwards.
+> 
+> And if any of the space was overwritten already, you can go play around
+> with using an older superblock and your filesystem mounts and everything
+> might look fine, until you hit that distant corner and BOOM!
+Got it , this takes care of my questions above, but I'll leave them in 
+just for completeness sake.
+Thanks for the good explanation.
+
+> 
+> ---- >8 ---- Extra!! Moar!! ---- >8 ----
+> 
+> But, doing so does not give you snapshot functionality yet! It's more
+> like a poor mans snapshot that only can prevent from messing up the
+> current version.
+> 
+> Snapshot functionality is implemented only for filesystem trees
+> (subvolumes) by adding reference counting (which does end up on disk) to
+> the metadata blocks, and then COW trees as a whole.
+> 
+> If you make a snapshot of a filesystem tree, the snapshot gets a whole
+> new tree ID! It's not a previous version of the same subvolume you're
+> looking at, it's a clone!
+> 
+> This is a big difference. The extent tree is always tree 2. The chunk
+> tree is always tree 3. But your subvolume snapshot gets a new tree number.
+> 
+> Technically, it would maybe be possible to implement reference counting
+> and snapshots to all of the metadata trees, but it would probably mean
+> that the whole filesystem would get stuck in rewriting itself all day
+> instead of doing any useful work. The current extent tree already has
+> such amount of rumination problems that the added work of keeping track
+> of reference counts would make it completely unusable.
+> 
+> In the wiki, it's here:
+> https://btrfs.wiki.kernel.org/index.php/Btrfs_design#Copy_on_Write_Logging
+> 
+> Actually, I just paraphrased the first two of those six alineas... The
+> subvolume trees actually having a previous version of themselves again
+> (whaaaa!) is another thing... ;]
+> 
+hehe , again thanks for giving a good explanation. Clear things up a bit 
+indeed!

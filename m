@@ -1,125 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:52614 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S932294AbeAXXSI (ORCPT
+Received: from mail-oi0-f50.google.com ([209.85.218.50]:43712 "EHLO
+        mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932072AbeAXXyQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Jan 2018 18:18:08 -0500
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-        id 1eeUGn-0002fD-DD
-        for linux-btrfs@vger.kernel.org; Thu, 25 Jan 2018 00:15:53 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: bad key ordering - repairable?
-Date: Wed, 24 Jan 2018 23:15:38 +0000 (UTC)
-Message-ID: <pan$90574$4f3a26c9$e38a1488$c00f0eb7@cox.net>
+        Wed, 24 Jan 2018 18:54:16 -0500
+Received: by mail-oi0-f50.google.com with SMTP id 4so507675ois.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jan 2018 15:54:15 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <1ad78ca9-f0bd-1420-4a92-27a453ea7540@gmail.com>
 References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
-        <20180122212250.GY3807@carfax.org.uk>
-        <CAEY8F1pstmMVaypLo31vkvOWZZw0L_-d4U4=3LpoQCcJHyZ91Q@mail.gmail.com>
-        <CAEY8F1qBNg=_PszmbEMMTG83zzmpU4Qc=rQhHOjjVCCcOw3X6g@mail.gmail.com>
-        <CAJCQCtS_=kK1L4ob1YsOO7G2LAGXBiweEMjuSFXw7NBK2OWoZg@mail.gmail.com>
-        <CAEY8F1oUdNjvcx0DGqsdZqzfeRKEckf_a2KRAjcESyr1uuH1Xw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com>
+ <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com> <CAJCQCtSTeNmL=uk_j6Wt1CXC9HOdRDCKGiO+U-9ovt0CHNijFg@mail.gmail.com>
+ <1ad78ca9-f0bd-1420-4a92-27a453ea7540@gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Wed, 24 Jan 2018 16:54:14 -0700
+Message-ID: <CAJCQCtRNx6pbk1b0fgTS8HU18svQ7Z_a5dQjtfOL_=1ah-srQg@mail.gmail.com>
+Subject: Re: bad key ordering - repairable?
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Claes Fransson <claes.v.fransson@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Claes Fransson posted on Wed, 24 Jan 2018 20:44:33 +0100 as excerpted:
+On Wed, Jan 24, 2018 at 5:30 AM, Austin S. Hemmelgarn
+<ahferroin7@gmail.com> wrote:
 
-> So, I have now some results from the PassMark Memtest86! I let the
-> default automatic tests run for about 19 hours and 16 passes. It
-> reported zero "Errors", but 4 lines of "[Note] RAM may be vulnerable to
-> high frequency row hammer bit flips". If I understand it correctly,
-> it means that some errors were detected when the RAM was tested at
-> higher rates than guaranteed accurate by the vendors.
-
->From Wikipedia:
-
-Row hammer (also written as rowhammer) is an unintended side effect in 
-dynamic random-access memory (DRAM) that causes memory cells to leak 
-their charges and interact electrically between themselves, possibly 
-altering the contents of nearby memory rows that were not addressed in 
-the original memory access. This circumvention of the isolation between 
-DRAM memory cells results from the high cell density in modern DRAM, and 
-can be triggered by specially crafted memory access patterns that rapidly 
-activate the same memory rows numerous times.[1][2][3]
-
-The row hammer effect has been used in some privilege escalation computer 
-security exploits.
-
-https://en.wikipedia.org/wiki/Row_hammer
-
-So it has nothing to do with (generic) testing the RAM at higher rates 
-than guaranteed by the vendors, but rather, with deliberate rapid 
-repeated access (at normal clock rates) of the same cell rows in ordered 
-to trigger a bitflip in nearby memory cells that could not normally be 
-accessed due to process separation and insufficient privileges.
-
-IOW, it's unlikely to be accidentally tripped, and thus is exceedingly 
-unlikely to be relevant here, unless you're being hacked, of course.
+>> APFS is really vague on this front, it may be checksumming metadata,
+>> it's not checksumming data and with no option to. Apple proposes their
+>> branded storage devices do not return bogus data. OK so then why
+>> checksum the metadata?
+>
+> Even aside from the fact that it might be checksumming data, Apple's storage
+> engineers are still smoking something pretty damn strong if they think that
+> they can claim their storage devices _never_ return bogus data.  Either
+> they're running some kind of checksumming _and_ replication below the block
+> layer in the storage device itself (which actually might explain the insane
+> cost of at least one piece of their hardware), or they think they've come up
+> with some fail-safe way to detect corruption and return errors reliably, and
+> in either case things can still fail.  I smell a potential future lawsuit in
+> the works.
 
 
-That said, and entirely unrelated to rowhammer, I know one of the 
-problems of memory test false-negatives from experience.
+I read somewhere the hardware (or more correctly their flash firmware)
+supposedly uses 128 bytes of checksum per 4KB data. That's a lot, I
+wonder if it's actually some kind of parity. But regardless, this kind
+of in-hardware checksumming won't account for things like misdirected
+or torn writes or literally any sort of corruption happening prior to
+the flash firmware computing those checksums.
 
-In my case, I was even running ECC RAM.  But the memory I had purchased 
-(back in the day when memory was far more expensive and sub-GB memory was 
-the norm) was cheap, and as it happened, marked as stable at slightly 
-higher clock rates than it actually was.  But I couldn't afford more (or 
-I'd have procured less dodgy RAM in the first place) and had little 
-recourse but to live with it for awhile.  A year or so later there was a 
-BIOS update that added better memory clocking control, and I was able to 
-declock the RAM slightly from its rating (IIRC to PC-3000 level, it was 
-PC3200 rated, this was DDR1 era), after which it was /entirely/ stable, 
-even after reducing some of the wait-state settings somewhat to try to 
-claw back some of what I lost due to the underclocking.
+On flash storage, maybe they're just concerned about bit rot or even
+the most superficial bit flips, and having just enough information to
+detect and correct for 1 or 2 flips per 4KB, not totally dissimilar to
+ECC memory. But that they don't use ECC memory, leave them open to
+corruption in the storage stack happening outside the literal storage
+device.
 
-I run gentoo, and nearly all of my problems occurred when I was doing 
-updates, building packages at 100% CPU with multiple cores accessing the 
-same RAM.  FWIW, the most frequent /detected/ problem was bunzip checksum 
-errors as it decompressed and verified the data in memory (before writing 
-out)... that would move or go away if I tried again.  Occasionally I'd 
-get machine-check errors (MCEs), but not frequently, and the ECC RAM 
-subsystem /never/ reported errors.
 
-But the memory tests gave that memory an all-clear.
+> Actually, I forgot about the (newer) metadata checksumming feature in ext4,
+> and was just basing my statement on behavior the last time I used it for
+> anything serious.  Having just checked mkfs.ext4, it appears that the
+> metadata in the SB that tells the kernel what to do when it runs into an
+> error for the FS still defaults to continuing on as if nothing happens, even
+> if you enable metadata checksumming (which still seems to be disabled by
+> default).  Whether or not that actually is honored by modern kernels, I
+> don't know, but I've seen no evidence to suggest that it isn't.
 
-The problem with the memory tests in this case is that they tend to work 
-on an otherwise unloaded system, and test the retention of the memory 
-cells, /not/ so much the speed and reliability at which they are accessed 
-under fully loaded system stress -- and how could they when memory speed 
-is normally set by the BIOS and not something the memory tester has 
-access to?
 
-But my memory problems weren't with the memory cells themselves -- they 
-retained their data just fine and indeed it was ECC RAM so would have 
-triggered ECC errors if they didn't -- but with the precision timing of 
-memory IO -- it wasn't quite up to the specs it claimed to support and 
-would occasionally produce in-transit errors (the ECC would have detected 
-and possibly corrected errors in storage), and the memory testers simply 
-didn't test that like a fully loaded system doing unpacks of sources and 
-builds from them did.
+Depending on the corruption, Btrfs continues as well. If I corrupt a
+deadend leaf that contains file metadata (like names or security
+contexts), I just get some complaints of corruption. The file system
+remains rw mounted though. I don't know the metric by which metadata
+can be damaged and Btrfs says "whoooaa!!" and puts on the brakes by
+going read only. XFS certainly has its limits and goes read only when
+it detects certain metadata corruption via checksum fail. I'd guess
+ext4 will do the same thing, otherwise whats the point if it's going
+to knowingly eat itself alive?
 
-As mentioned, once I got a BIOS update that let me declock the RAM a bit, 
-everything was fine, and it remained fine when I did upgrade the RAM some 
-years later, after prices had fallen, as well.
-
-(The system was first-gen AMD Opteron, on a server-grade Tyan board, that 
-I ran from purchase in late 2003 for over eight years, maxing out the 
-pair of CPUs to dual-core Opteron 290s and the RAM to 8 gigs, over time, 
-until the board finally died in 2012 due to burst capacitors.  Which 
-reminds me, I'm still running the replacement, a Gigabyte with an fx6100 
-overclocked a bit to 3.9 GHz and 16 gig RAM, and it's now nearing six 
-years old, so I suppose I better start planning for the next upgrade...  
-I've spent that six years upgrading to big-screen TVs as monitors, with a 
-65inch/165cm 4K as my primary now and a 48inch/122cm as a secondary to 
-put youtube or whatever on fullscreen, and to now my second generation of 
-ssds, a pair of 1 TB samsung evos, but this reminds me that at nearing 
-six years old the main system's aging too, so I better start thinking of 
-replacing it again...)
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

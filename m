@@ -1,33 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f175.google.com ([209.85.216.175]:34186 "EHLO
-        mail-qt0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751758AbeAZOWZ (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:57770 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751256AbeAYTIq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 09:22:25 -0500
-Received: by mail-qt0-f175.google.com with SMTP id a27so1644595qtd.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 06:22:25 -0800 (PST)
-Date: Fri, 26 Jan 2018 09:22:21 -0500
-From: Josef Bacik <josef@toxicpanda.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: do not check inode's runtime flags under
- root->orphan_lock
-Message-ID: <20180126142220.fiqfkmy4cmmixa6v@destiny>
-References: <20180125180256.10844-8-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180125180256.10844-8-bo.li.liu@oracle.com>
+        Thu, 25 Jan 2018 14:08:46 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0PJ7Qah021833
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:46 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2fqkb38hwu-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:46 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0PJ8ji7001130
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:46 GMT
+Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0PJ8j1v007087
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:45 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: do not check inode's runtime flags under root->orphan_lock
+Date: Thu, 25 Jan 2018 11:02:55 -0700
+Message-Id: <20180125180256.10844-8-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 25, 2018 at 11:02:55AM -0700, Liu Bo wrote:
-> It's not necessary to hold ->orphan_lock when checking inode's runtime
-> flags.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+It's not necessary to hold ->orphan_lock when checking inode's runtime
+flags.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
-Thanks,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index b3fe0a8..1511db2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3354,14 +3354,6 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+ 			return -ENOMEM;
+ 	}
+ 
+-	spin_lock(&root->orphan_lock);
+-	if (!root->orphan_block_rsv) {
+-		root->orphan_block_rsv = block_rsv;
+-	} else if (block_rsv) {
+-		btrfs_free_block_rsv(fs_info, block_rsv);
+-		block_rsv = NULL;
+-	}
+-
+ 	if (!test_and_set_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+ 			      &inode->runtime_flags)) {
+ #if 0
+@@ -3376,12 +3368,23 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+ 			insert = 1;
+ #endif
+ 		insert = 1;
+-		atomic_inc(&root->orphan_inodes);
+ 	}
+ 
+ 	if (!test_and_set_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
+ 			      &inode->runtime_flags))
+ 		reserve = 1;
++
++	spin_lock(&root->orphan_lock);
++	/* If someone has created ->orphan_block_rsv, be happy to use it. */
++	if (!root->orphan_block_rsv) {
++		root->orphan_block_rsv = block_rsv;
++	} else if (block_rsv) {
++		btrfs_free_block_rsv(fs_info, block_rsv);
++		block_rsv = NULL;
++	}
++
++	if (insert)
++		atomic_inc(&root->orphan_inodes);
+ 	spin_unlock(&root->orphan_lock);
+ 
+ 	/* grab metadata reservation from transaction handle */
+-- 
+2.9.4
 
-Josef

@@ -1,142 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:54735 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751808AbeAYMhY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Jan 2018 07:37:24 -0500
-Subject: Re: btrfs check: backref lost, mismatch with its hash -- can't repair
-To: "^m'e" <marcoep@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <CAAxOLF8pwZ5jcZxB4=h-bPZBxsnCV7sB=LOghGfa0HhRqgJfSg@mail.gmail.com>
- <270851c6-7725-ec63-fa6d-6ff63e99c637@gmx.com>
- <CAAxOLF8GRV3ZX=cahf0szsvtyQO0Qv32PEKoMBzq+1R=imjzxw@mail.gmail.com>
- <c0f89fad-2c98-fd78-4bcb-7c19dd3c03b0@gmx.com>
- <08afcd3e-b365-b49f-55c6-770a2b560395@gmail.com>
- <a990d2db-a9ba-256b-1389-e9f350a94060@gmx.com>
- <CAAxOLF9Hqnbc6g20dPasrtXW+Es562mOBujc7ve7Fc6LzG7tcQ@mail.gmail.com>
- <03ba8382-3271-6c11-b217-a48d1423e684@gmx.com>
- <CAAxOLF_DB4_5wBem3qgU-B97Hq8xkmE67_qD-7Fe2=my-FN_iw@mail.gmail.com>
- <CAAxOLF8KgC=_LoaEaKft2Q7gUhKL3Fp8OLizbnnA9v4h_cSprQ@mail.gmail.com>
- <CAAxOLF9k3WJ-JPJsCEaW4ZD+XMzhRdaRXouaWLwX1JBSM1Xnxw@mail.gmail.com>
- <6d5bfa3f-3c49-1380-2bcf-d6eeca57020a@gmx.com>
- <CAAxOLF_wRCxgebwXUy7A5AqKtKchGLz46DKNiM-iPejVpfjbFg@mail.gmail.com>
- <0662a08f-5869-3eb3-5ab2-391ba9603095@gmx.com>
- <CAAxOLF8wt98KCONdEJXMvUuzxeB5_GwigGhCzEE6hSpmurXRNw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <80321b99-a89c-fadf-8f1a-26ed8f598a66@gmx.com>
-Date: Thu, 25 Jan 2018 20:37:18 +0800
+Received: from mail-it0-f45.google.com ([209.85.214.45]:44262 "EHLO
+        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752071AbeAYMlp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Jan 2018 07:41:45 -0500
+Received: by mail-it0-f45.google.com with SMTP id b5so9099116itc.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 04:41:45 -0800 (PST)
+Subject: Re: bad key ordering - repairable?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Claes Fransson <claes.v.fransson@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
+ <CAJCQCtQAn0LTs0S9=NX5YZ1ORQwqrVxMH6HEpbQ=euC3EYhh8Q@mail.gmail.com>
+ <8f74430a-0f72-cd26-ee50-f9b4239b5558@gmail.com>
+ <CAJCQCtSTeNmL=uk_j6Wt1CXC9HOdRDCKGiO+U-9ovt0CHNijFg@mail.gmail.com>
+ <1ad78ca9-f0bd-1420-4a92-27a453ea7540@gmail.com>
+ <CAJCQCtRNx6pbk1b0fgTS8HU18svQ7Z_a5dQjtfOL_=1ah-srQg@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <8af003c2-1ac4-d773-0588-edcffed54fbe@gmail.com>
+Date: Thu, 25 Jan 2018 07:41:40 -0500
 MIME-Version: 1.0
-In-Reply-To: <CAAxOLF8wt98KCONdEJXMvUuzxeB5_GwigGhCzEE6hSpmurXRNw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="Qs2YnFcZ3thEyFNei712lYS4M2GDglUSj"
+In-Reply-To: <CAJCQCtRNx6pbk1b0fgTS8HU18svQ7Z_a5dQjtfOL_=1ah-srQg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---Qs2YnFcZ3thEyFNei712lYS4M2GDglUSj
-Content-Type: multipart/mixed; boundary="SviGuqvW3IizT5NWmcDL8pII6Yp4QJnCK";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: ^m'e <marcoep@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <80321b99-a89c-fadf-8f1a-26ed8f598a66@gmx.com>
-Subject: Re: btrfs check: backref lost, mismatch with its hash -- can't repair
-References: <CAAxOLF8pwZ5jcZxB4=h-bPZBxsnCV7sB=LOghGfa0HhRqgJfSg@mail.gmail.com>
- <270851c6-7725-ec63-fa6d-6ff63e99c637@gmx.com>
- <CAAxOLF8GRV3ZX=cahf0szsvtyQO0Qv32PEKoMBzq+1R=imjzxw@mail.gmail.com>
- <c0f89fad-2c98-fd78-4bcb-7c19dd3c03b0@gmx.com>
- <08afcd3e-b365-b49f-55c6-770a2b560395@gmail.com>
- <a990d2db-a9ba-256b-1389-e9f350a94060@gmx.com>
- <CAAxOLF9Hqnbc6g20dPasrtXW+Es562mOBujc7ve7Fc6LzG7tcQ@mail.gmail.com>
- <03ba8382-3271-6c11-b217-a48d1423e684@gmx.com>
- <CAAxOLF_DB4_5wBem3qgU-B97Hq8xkmE67_qD-7Fe2=my-FN_iw@mail.gmail.com>
- <CAAxOLF8KgC=_LoaEaKft2Q7gUhKL3Fp8OLizbnnA9v4h_cSprQ@mail.gmail.com>
- <CAAxOLF9k3WJ-JPJsCEaW4ZD+XMzhRdaRXouaWLwX1JBSM1Xnxw@mail.gmail.com>
- <6d5bfa3f-3c49-1380-2bcf-d6eeca57020a@gmx.com>
- <CAAxOLF_wRCxgebwXUy7A5AqKtKchGLz46DKNiM-iPejVpfjbFg@mail.gmail.com>
- <0662a08f-5869-3eb3-5ab2-391ba9603095@gmx.com>
- <CAAxOLF8wt98KCONdEJXMvUuzxeB5_GwigGhCzEE6hSpmurXRNw@mail.gmail.com>
-In-Reply-To: <CAAxOLF8wt98KCONdEJXMvUuzxeB5_GwigGhCzEE6hSpmurXRNw@mail.gmail.com>
-
---SviGuqvW3IizT5NWmcDL8pII6Yp4QJnCK
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B401=E6=9C=8825=E6=97=A5 20:29, ^m'e wrote:
-> No luck this time:
->=20
-> # ./btrfs-corrupt-block.static -X /dev/sdb3
-> ERROR: Failed to unlink the old file "Manifest": No such file or direct=
-ory
-> extent buffer leak: start 4210688 len 16384
-> extent_io.c:607: free_extent_buffer_internal: BUG_ON `eb->flags &
-> EXTENT_DIRTY` triggered, value 1
-> [0x416a32]
-> [0x41720e]
-> [0x41725a]
-> [0x40a6e1]
-> [0x40aee3]
-> [0x403245]
-> [0x43ba83]
-> [0x43bbdf]
-> [0x400989]
-> Aborted
-
-Checked the dump again, no need to unlink, just remove the offending
-item should be good enough.
-
-Branch updated, please check again.
-
-Thanks,
-Qu
-
->=20
-> On Thu, Jan 25, 2018 at 12:09 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wr=
-ote:
->> Confirmed same problem as previous root.
+On 2018-01-24 18:54, Chris Murphy wrote:
+> On Wed, Jan 24, 2018 at 5:30 AM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+> 
+>>> APFS is really vague on this front, it may be checksumming metadata,
+>>> it's not checksumming data and with no option to. Apple proposes their
+>>> branded storage devices do not return bogus data. OK so then why
+>>> checksum the metadata?
 >>
->> So branch updated to fix the same problem for root 257.
->>
->> Please try and see if the following error message is gone:
->>
->> ------
->> ERROR: root 257 DIR_ITEM[30039322 4007295565] couldn't find relative
->> INODE_ITEM[0] namelen 0 filename  filetype 0
->> ERROR: root 257 DIR_ITEM[30039322 4007295565] data_len shouldn't be 32=
-907
->> ERROR: root 257 DIR_ITEM[30039322 4007295565] couldn't find relative
->> INODE_ITEM[0] namelen 3 filename  filetype 0
->> ------
->>
->> Thanks,
->> Qu
->>
->>
->=20
->=20
->=20
+>> Even aside from the fact that it might be checksumming data, Apple's storage
+>> engineers are still smoking something pretty damn strong if they think that
+>> they can claim their storage devices _never_ return bogus data.  Either
+>> they're running some kind of checksumming _and_ replication below the block
+>> layer in the storage device itself (which actually might explain the insane
+>> cost of at least one piece of their hardware), or they think they've come up
+>> with some fail-safe way to detect corruption and return errors reliably, and
+>> in either case things can still fail.  I smell a potential future lawsuit in
+>> the works.
+> 
+> 
+> I read somewhere the hardware (or more correctly their flash firmware)
+> supposedly uses 128 bytes of checksum per 4KB data. That's a lot, I
+> wonder if it's actually some kind of parity. But regardless, this kind
+> of in-hardware checksumming won't account for things like misdirected
+> or torn writes or literally any sort of corruption happening prior to
+> the flash firmware computing those checksums.
+It's most likely more generic erasure coding (parity as most people 
+think of it in the storage sense (RAID5 and RAID6) is a special case of 
+(n, n-1) or (n, n-2) erasure coding that happens to be optimal), so in 
+theory they could correct up to 1024 bits of errors, which is all well 
+and good, but as you say doesn't really protect against much (more 
+specifically, it only protects reliably against cell discharges from 
+various sources, or more generic read-disturb errors).
+> 
+> On flash storage, maybe they're just concerned about bit rot or even
+> the most superficial bit flips, and having just enough information to
+> detect and correct for 1 or 2 flips per 4KB, not totally dissimilar to
+> ECC memory. But that they don't use ECC memory, leave them open to
+> corruption in the storage stack happening outside the literal storage
+> device.
+They also don't appear to use T.10 DIF (or whatever the T.13 equivalent 
+that I can never remember the name of is), which means even if they did 
+use ECC RAM they would still have a period of time where the data is 
+unprotected.
+> 
+>> Actually, I forgot about the (newer) metadata checksumming feature in ext4,
+>> and was just basing my statement on behavior the last time I used it for
+>> anything serious.  Having just checked mkfs.ext4, it appears that the
+>> metadata in the SB that tells the kernel what to do when it runs into an
+>> error for the FS still defaults to continuing on as if nothing happens, even
+>> if you enable metadata checksumming (which still seems to be disabled by
+>> default).  Whether or not that actually is honored by modern kernels, I
+>> don't know, but I've seen no evidence to suggest that it isn't.
+> 
+> 
+> Depending on the corruption, Btrfs continues as well. If I corrupt a
+> deadend leaf that contains file metadata (like names or security
+> contexts), I just get some complaints of corruption. The file system
+> remains rw mounted though. I don't know the metric by which metadata
+> can be damaged and Btrfs says "whoooaa!!" and puts on the brakes by
+> going read only. XFS certainly has its limits and goes read only when
+> it detects certain metadata corruption via checksum fail. I'd guess
+> ext4 will do the same thing, otherwise whats the point if it's going
+> to knowingly eat itself alive?
+I'm pretty sure the ext4 behavior is a hold-over from the original ext 
+filesystem, and I think even as far back as the version of the MINIX 
+filesystem that Linux originally used (which ext evolved out of).  At a 
+minimum, all three error behaviors (panic, go read-only, or flag and 
+ignore) have been around since the early days of ext2.
 
-
---SviGuqvW3IizT5NWmcDL8pII6Yp4QJnCK--
-
---Qs2YnFcZ3thEyFNei712lYS4M2GDglUSj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlppz34XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjaEAf9Ge1p+VUfLyEzheEXD+CUsdYB
-BmRAqdc4r66vwo55HExI6OYTnI7oT1N+GZdM2CBmaxcbnHa+KlD1HJwB6ejpIXYo
-5EL+G892YkYPQPMqJ+/mqki4zh3uS6xyWBwdkeqd0kQTy5u4H2ZUvfzw86+xSxag
-+iM277mM8WO2BTBrIcMQiSQDYTvODsS5lbOuJSeGhskHWZFBstEYuCj7HXEvze3F
-D3Cfe6B5GvxzPNw8ltU6Q9jd3ufBARtCzlY63rv02XToMX0++9JxHAPLcTiFo+32
-737rgFA9TLRfb1QQmQjxHBkccb0IScsas379RduUVAWa8RNX0zCXTqNghJtf1Q==
-=Fot4
------END PGP SIGNATURE-----
-
---Qs2YnFcZ3thEyFNei712lYS4M2GDglUSj--
+FWIW, there are some cases where it does make sense to just not care and 
+ignore the errors.  As a pretty specific example, one of the last 
+remaining places I still use ext4 is on top of compressed ramdisks when 
+I need some quick ephemeral storage that I want to be more memory 
+efficient than tmpfs.  In such cases, the FS gets mounted exactly once, 
+and is usually used only for a very short period of time, and as a 
+result, the 'on-disk' data doesn't really matter much, so there's not 
+much point in worrying about it.

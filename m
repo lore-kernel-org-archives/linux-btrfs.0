@@ -1,25 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qt0-f196.google.com ([209.85.216.196]:33625 "EHLO
-        mail-qt0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751758AbeAZOXe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 09:23:34 -0500
-Received: by mail-qt0-f196.google.com with SMTP id d8so1647633qtm.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 06:23:34 -0800 (PST)
-Date: Fri, 26 Jan 2018 09:23:32 -0500
-From: Josef Bacik <josef@toxicpanda.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from mx2.suse.de ([195.135.220.15]:46748 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751776AbeAZQ0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 11:26:42 -0500
 Subject: Re: [PATCH] Btrfs: fix unexpected -EEXIST when creating new inode
-Message-ID: <20180126142331.iyigcgucqqtwcj63@destiny>
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
 References: <20180125180256.10844-9-bo.li.liu@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <f175aa62-2486-4e30-8b50-4dd129f89a6f@suse.com>
+Date: Fri, 26 Jan 2018 13:48:19 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <20180125180256.10844-9-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 25, 2018 at 11:02:56AM -0700, Liu Bo wrote:
+
+
+On 25.01.2018 20:02, Liu Bo wrote:
 > The highest objectid, which is assigned to new inode, is decided at
 > the time of initializing fs roots.  However, in cases where log replay
 > gets processed, the btree which fs root owns might be changed, so we
@@ -30,11 +28,47 @@ On Thu, Jan 25, 2018 at 11:02:56AM -0700, Liu Bo wrote:
 > Fixes: f32e48e92596 ("Btrfs: Initialize btrfs_root->highest_objectid when loading tree root and subvolume roots")
 > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
+>  fs/btrfs/tree-log.c | 19 +++++++++++++++++++
+>  1 file changed, 19 insertions(+)
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index a7e6235..646cdbf 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -28,6 +28,7 @@
+>  #include "hash.h"
+>  #include "compression.h"
+>  #include "qgroup.h"
+> +#include "inode-map.h"
+>  
+>  /* magic values for the inode_only field in btrfs_log_inode:
+>   *
+> @@ -5715,6 +5716,24 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
+>  						      path);
+>  		}
+>  
+> +		if (!ret && wc.stage == LOG_WALK_REPLAY_ALL) {
+> +			struct btrfs_root *root = wc.replay_dest;
+> +
+> +			btrfs_release_path(path);
+> +
+> +			/*
+> +			 * We have just replayed everything, and the highest
+> +			 * objectid of fs roots probably has changed in case
+> +			 * some inode_item's got replayed.
+> +			 */
+> +			/*
 
-Eesh that's bad.
+nit: No need to start a new multiline comment
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
-
-Thanks,
-
-Josef
+> +			 * root->objectid_mutex is not acquired as log replay
+> +			 * could only happen during mount.
+> +			 */
+> +			ret = btrfs_find_highest_objectid(root,
+> +						  &root->highest_objectid);
+> +		}
+> +
+>  		key.offset = found_key.offset - 1;
+>  		wc.replay_dest->log_root = NULL;
+>  		free_extent_buffer(log->node);
+> 

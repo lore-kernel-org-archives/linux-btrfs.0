@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:52633 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:59073 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752523AbeAZIts (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 03:49:48 -0500
+        id S1752402AbeAZJOf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 04:14:35 -0500
 Subject: Re: [PATCH 02/15] btrfs-progs: lowmem check: find and guess inode
  filetype
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
  <20180126083519.28373-3-suy.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <d3b4ce5b-4fc8-350e-1efa-2c1d99f5f5ca@gmx.com>
-Date: Fri, 26 Jan 2018 16:49:40 +0800
+Message-ID: <cafbed34-4b59-7cc3-3cf9-f52d9e74ba4f@gmx.com>
+Date: Fri, 26 Jan 2018 17:14:27 +0800
 MIME-Version: 1.0
 In-Reply-To: <20180126083519.28373-3-suy.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="vJyFG5fZq2D5eLT55wrS85TZohvL5lSDH"
+ boundary="FeyARhADAfVhK22SL5Za55B2yLqlWzn5A"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---vJyFG5fZq2D5eLT55wrS85TZohvL5lSDH
-Content-Type: multipart/mixed; boundary="8uZpbTN2jf1Pl3OL1RL5piUFXzm6QOxFf";
+--FeyARhADAfVhK22SL5Za55B2yLqlWzn5A
+Content-Type: multipart/mixed; boundary="Ta1r4DFfFOHeEboUWnf9AnuNNqXDhVqbU";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <d3b4ce5b-4fc8-350e-1efa-2c1d99f5f5ca@gmx.com>
+Message-ID: <cafbed34-4b59-7cc3-3cf9-f52d9e74ba4f@gmx.com>
 Subject: Re: [PATCH 02/15] btrfs-progs: lowmem check: find and guess inode
  filetype
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
  <20180126083519.28373-3-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180126083519.28373-3-suy.fnst@cn.fujitsu.com>
 
---8uZpbTN2jf1Pl3OL1RL5piUFXzm6QOxFf
+--Ta1r4DFfFOHeEboUWnf9AnuNNqXDhVqbU
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -50,13 +50,6 @@ On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 16:35, Su Yue wrote:
 > returns with filetype.
 >=20
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
-
-Looks good.
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
 > ---
 >  cmds-check.c | 193 +++++++++++++++++++++++++++++++++++++++++++++++++++=
 ++++++++
@@ -74,11 +67,16 @@ rec, u8 *type)
 > +/*
 > + * Fetch filetype from exited completed dir_item, dir_index and inode_=
 item.
+                          ^^^^^^
+                          existing?
 > + * If two of tree items'filetype are same, we think the type is truste=
 d.
 > + *
 > + * Return 0 if file type is found and BTRFS_FT_* is stored into type.
 > + * Return <0 if file type is not found.
+
+This also includes extra error like -EIO from btrfs_search_slot().
+
 > + */
 > +static int find_file_type_lowmem(struct btrfs_root *root, u64 ino, u8 =
 *type)
@@ -133,10 +131,14 @@ d.
 > +
 > +	btrfs_init_path(&path2);
 > +next:
-> +	btrfs_release_path(&path2);
-> +	ret =3D btrfs_previous_item(root, &path, ino, BTRFS_INODE_REF_KEY);
+> +	btrfs_release_path(&path2)> +	ret =3D btrfs_previous_item(root, &path=
+, ino, BTRFS_INODE_REF_KEY);
 > +	if (ret) {
 > +		ret =3D -ENOENT;
+
+For ret < 0 case, return value is overwritten.
+
+
 > +		goto out;
 > +	}
 > +
@@ -210,12 +212,29 @@ pe.
 > +	int ret;
 > +
 > +	if (find_normal_file_extent(root, ino)) {
+
+Nice reusing the existing code.
+
 > +		is_file =3D true;
 > +		goto out;
 > +	}
 > +
 > +	key.objectid =3D ino;
 > +	key.type =3D BTRFS_DIR_ITEM_KEY;
+
+You could merge the code together, using just one loop instead of using
+two search separately for DIR_ITEM and DIR_INDEX.
+
+Search for key (ino, DIR_INDEX, -1), as DIR_INDEX is larger than DIR_ITEM=
+=2E
+
+And search backward, not using btrfs_previous_item() but manually
+checking the type (and do prev_leaf() manually).
+It should save you several lines.
+
+Thanks,
+Qu
+
 > +	key.offset =3D (u64)-1;
 > +
 > +	path =3D btrfs_alloc_path();
@@ -232,8 +251,8 @@ pe.
 > +		goto out;
 > +	}
 > +
-> +	ret =3D btrfs_previous_item(root, path, ino, BTRFS_DIR_ITEM_KEY);
-> +	if (!ret) {
+> +	ret =3D btrfs_previous_item(root, path, ino, BTRFS_DIR_ITEM_KEY);> +	=
+if (!ret) {
 > +		is_dir =3D true;
 > +		goto out;
 > +	}
@@ -276,23 +295,23 @@ pe.
 >=20
 
 
---8uZpbTN2jf1Pl3OL1RL5piUFXzm6QOxFf--
+--Ta1r4DFfFOHeEboUWnf9AnuNNqXDhVqbU--
 
---vJyFG5fZq2D5eLT55wrS85TZohvL5lSDH
+--FeyARhADAfVhK22SL5Za55B2yLqlWzn5A
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq66QXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qilJwf+JkG+cFdGBp1YILxoZqjAnglL
-Y7vLHsg5HShsuPTmMclIl8sokhuQU4+nuwhJXSt8nJlt3tMFhUsQTZR8nycx7rm5
-0wFYnqpMMI7VM0A7S1g0LTv4AAzNoTNgNh7cB6K7uOXTuxzUKZUqGFdGZX/hBofb
-gMzqiw70QZT/prBlHYZfSEeYqjlYSeM14MzrCRrKAoPi5UsokoQDzbhs0cxbiwvM
-O8eN2T8F/dXs+Aa1mXjhW+FvIgeyBIOODuaK6b2hzYgTNehPJRX8hBxe631mQMGx
-xA0ftBItKeAU8C2iNBomJPGJ9hbCRFqZCIkm2uNjGUCGwX4qE6+5NNUjKsYlAg==
-=Z83/
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq8XMXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgwBggAlE9LdQtgS0nTHVlBx4tDmcZU
+c5z8P/fOhVjSISP0VhCIIdVo4c0n1gBDFAWp4et0cxiSYo3nMBBOvPtcJxcmDeCM
+sDvbzcZabcl81hEEf0nYF/rUSyZA2ebDn5evuDbl8qbxRmXrCG5D+Fgf2shO71ys
+bvqBdBxRpfGK8hmmtmU0uMhyN1/1V+eunxsRSrv7hFe3SQt5eSQVTBWvC2/sWoCu
+Kb/8JYGdO2uO87IsfZuSfHgrjFEQatCjvwkZQ8kDjOz/JVkpBoK5b9/Rg3b6dpil
+bYiB5idwMfxji7Ywtrzy2XCSeUrWxkWU9zaF9H++IAHlqrii0PD1yEiyhn57KQ==
+=P5Sj
 -----END PGP SIGNATURE-----
 
---vJyFG5fZq2D5eLT55wrS85TZohvL5lSDH--
+--FeyARhADAfVhK22SL5Za55B2yLqlWzn5A--

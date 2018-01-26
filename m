@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:64106 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:53642 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752918AbeAZJgm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 04:36:42 -0500
-Subject: Re: [PATCH 05/15] btrfs-progs: lowmem check: let check_dir_item()
- continue if find wrong inode_item
+        id S1751409AbeAZJhc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 04:37:32 -0500
+Subject: Re: [PATCH 07/15] btrfs-progs: lowmem check: find_dir_item by di_key
+ in check_dir_item()
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
- <20180126083519.28373-6-suy.fnst@cn.fujitsu.com>
+ <20180126083519.28373-8-suy.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <2db3f205-5969-98fd-32b8-1c8e68b89eb9@gmx.com>
-Date: Fri, 26 Jan 2018 17:36:34 +0800
+Message-ID: <9a968a12-464c-91bd-4396-8ec76a2bea49@gmx.com>
+Date: Fri, 26 Jan 2018 17:37:25 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180126083519.28373-6-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180126083519.28373-8-suy.fnst@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="wg75knC3plBk42bDCFCd0b6Q4LdBkfiwX"
+ boundary="vRFL7yhuOd8FbM3LojHvzv4xD92wVV8ZS"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---wg75knC3plBk42bDCFCd0b6Q4LdBkfiwX
-Content-Type: multipart/mixed; boundary="DBxelXm3dN6IupdU6IaBzJfGYFDBYwxqx";
+--vRFL7yhuOd8FbM3LojHvzv4xD92wVV8ZS
+Content-Type: multipart/mixed; boundary="u2TuWwzGleceVG2yeycXQe7nuaANfZa1F";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <2db3f205-5969-98fd-32b8-1c8e68b89eb9@gmx.com>
-Subject: Re: [PATCH 05/15] btrfs-progs: lowmem check: let check_dir_item()
- continue if find wrong inode_item
+Message-ID: <9a968a12-464c-91bd-4396-8ec76a2bea49@gmx.com>
+Subject: Re: [PATCH 07/15] btrfs-progs: lowmem check: find_dir_item by di_key
+ in check_dir_item()
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
- <20180126083519.28373-6-suy.fnst@cn.fujitsu.com>
-In-Reply-To: <20180126083519.28373-6-suy.fnst@cn.fujitsu.com>
+ <20180126083519.28373-8-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180126083519.28373-8-suy.fnst@cn.fujitsu.com>
 
---DBxelXm3dN6IupdU6IaBzJfGYFDBYwxqx
+--u2TuWwzGleceVG2yeycXQe7nuaANfZa1F
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,8 +40,9 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 16:35, Su Yue wrote:
-> check_dir_item can handle missed/mismatched inode item well.
-> Let it continue to check corresponding dir_item/index and inode_ref.
+> In check_dir_item, we are going to search corresponding
+> dir_item/index.
+> @key shouldn't be used here. It should be @di_key.
 >=20
 > Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
@@ -51,55 +52,42 @@ Thanks,
 Qu
 
 > ---
->  cmds-check.c | 15 ++++++---------
->  1 file changed, 6 insertions(+), 9 deletions(-)
+>  cmds-check.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 >=20
 > diff --git a/cmds-check.c b/cmds-check.c
-> index e33dd7db0048..eb65a18fe64b 100644
+> index 4ce6139b3ab1..caac71a67472 100644
 > --- a/cmds-check.c
 > +++ b/cmds-check.c
-> @@ -5984,15 +5984,12 @@ begin:
->  		ret =3D btrfs_search_slot(NULL, root, &location, path, 0, 0);
->  		if (ret) {
->  			tmp_err |=3D INODE_ITEM_MISSING;
-> -			goto next;
-> -		}
-> -
-> -		ii =3D btrfs_item_ptr(path->nodes[0], path->slots[0],
-> -				    struct btrfs_inode_item);
-> -		mode =3D btrfs_inode_mode(path->nodes[0], ii);
-> -		if (imode_to_type(mode) !=3D filetype) {
-> -			tmp_err |=3D INODE_ITEM_MISMATCH;
-> -			goto next;
-> +		} else {
-> +			ii =3D btrfs_item_ptr(path->nodes[0], path->slots[0],
-> +					    struct btrfs_inode_item);
-> +			mode =3D btrfs_inode_mode(path->nodes[0], ii);
-> +			if (imode_to_type(mode) !=3D filetype)
-> +				tmp_err |=3D INODE_ITEM_MISMATCH;
->  		}
+> @@ -6001,7 +6001,7 @@ begin:
 > =20
->  		/* Check relative INODE_REF/INODE_EXTREF */
+>  		/* check relative INDEX/ITEM */
+>  		key.objectid =3D di_key->objectid;
+> -		if (key.type =3D=3D BTRFS_DIR_ITEM_KEY) {
+> +		if (di_key->type =3D=3D BTRFS_DIR_ITEM_KEY) {
+>  			key.type =3D BTRFS_DIR_INDEX_KEY;
+>  			key.offset =3D index;
+>  		} else {
 >=20
 
 
---DBxelXm3dN6IupdU6IaBzJfGYFDBYwxqx--
+--u2TuWwzGleceVG2yeycXQe7nuaANfZa1F--
 
---wg75knC3plBk42bDCFCd0b6Q4LdBkfiwX
+--vRFL7yhuOd8FbM3LojHvzv4xD92wVV8ZS
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq9qIXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiNXQf/UpDW7KaOrVSsyaBc19H3sUt4
-aGzbHRbKY34oiJL3IjkgyBQSyBk5vqXr+Tp6bIFSrJA//7WvDxzwnrGdgpdmVpoO
-Z4F6lejArLXmQXd2bIB2B1xztabhbxDRxkOKLde+xCjacQzZ+2n1iTEyYLEgGVQg
-J3f8pCOfNFaXD+btiDO9/tiCXHoEzObInPu2OkOq6aTWuMPAVUpGlk2SPZs12IqE
-k3c6U2YcJWux2Ct0y3eRLT3MTwKeJXqOpxzr5hl9DddvwD0b0/VSB143TJvVFITw
-/tolKcZiI6jg0vQjwjzpdS4nvCCRM5yEvgN+dKBFVhUliOtCdooYgN8rfwwdYA==
-=bCXY
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq9tUXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhq/QgAhLbIwPX9ZVN9+OrapD/7s0AU
+3t+wbMGVHsQBhLCktmrhGKNQP381m5Sc5F/E1jzHadk+pENnw0Tvov493mMTi73H
+UVylPnfWL1SMGlZlqbqEH768G4hJ/Q4tOSPlnmQMsYAEBW0pmw444UPhwf583PI0
+XbzC0JbHz305S0XTMqHYCf60LFolPYnVTwpljzzsTeC/zkGNlyRbrqTCGD+yQ3Po
+I0J78+xKTjgTCz1e2H8pndzzku/kJkb9yPf4wg7brHHjjFFynh71Muo5CfLKfIRj
+TuH8KPyol1HpQl9Uc0pGJyVS50pclKF1NSqk8FwNvjJULzvG6Uftpdo0ujc0ZQ==
+=OltZ
 -----END PGP SIGNATURE-----
 
---wg75knC3plBk42bDCFCd0b6Q4LdBkfiwX--
+--vRFL7yhuOd8FbM3LojHvzv4xD92wVV8ZS--

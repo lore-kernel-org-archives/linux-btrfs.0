@@ -1,98 +1,236 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:54552 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751696AbeAZFcw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 00:32:52 -0500
-Subject: Re: [PATCH 6/6] btrfs-progs: remove no longer be used
- btrfs_alloc_extent
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:24649 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751765AbeAZFeQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 00:34:16 -0500
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [PATCH 2/6] btrfs-progs: Use fs_info instead of root for
+ BTRFS_NODEPTRS_PER_BLOCK
+Date: Fri, 26 Jan 2018 05:34:09 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D016B124A41@G08CNEXMBPEKD02.g08.fujitsu.local>
 References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
- <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a8cd0b6e-bb91-1fa0-d8eb-707e395c46e3@gmx.com>
-Date: Fri, 26 Jan 2018 13:32:45 +0800
+ <1516936926-18707-2-git-send-email-gujx@cn.fujitsu.com>
+ <61c11ba9-d746-9d0d-be4b-9c783666ab5a@gmx.com>
+In-Reply-To: <61c11ba9-d746-9d0d-be4b-9c783666ab5a@gmx.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD
-Content-Type: multipart/mixed; boundary="uvb5EkslHwHQR6i6nOQkUZF8krGkZ7DS7";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <a8cd0b6e-bb91-1fa0-d8eb-707e395c46e3@gmx.com>
-Subject: Re: [PATCH 6/6] btrfs-progs: remove no longer be used
- btrfs_alloc_extent
-References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
- <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
+Hi,
 
---uvb5EkslHwHQR6i6nOQkUZF8krGkZ7DS7
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 11:22, Gu Jinxiang wrote:
-> Do a cleanup.
-> Function btrfs_alloc_extent is no longer be used.
-> So let's remove it.
->=20
-> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+> -----Original Message-----
+> From: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com]
+> Sent: Friday, January 26, 2018 1:16 PM
+> To: Gu, Jinxiang/È°æ ÈáëÈ¶ô <gujx@cn.fujitsu.com>;
+> linux-btrfs@vger.kernel.org
+> Subject: Re: [PATCH 2/6] btrfs-progs: Use fs_info instead of root for
+> BTRFS_NODEPTRS_PER_BLOCK
+> 
+> 
+> 
+> On 2018Âπ¥01Êúà26Êó• 11:22, Gu Jinxiang wrote:
+> > Do a cleanup. Also make it consistent with kernel.
+> > Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK, since maybe
+> > in some situation we do not know root, but just know fs_info.
+> >
+> > Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> > ---
+> >  cmds-check.c |  4 ++--
+> >  ctree.c      | 18 +++++++++---------
+> >  ctree.h      |  3 +--
+> >  print-tree.c |  2 +-
+> >  quick-test.c |  2 +-
+> >  5 files changed, 14 insertions(+), 15 deletions(-)
+> >
+> > diff --git a/cmds-check.c b/cmds-check.c index b118ea71..b94fab4f
+> > 100644
+> > --- a/cmds-check.c
+> > +++ b/cmds-check.c
+> > @@ -2529,7 +2529,7 @@ static void account_bytes(struct btrfs_root *root,
+> struct btrfs_path *path,
+> >  	if (level == 0) {
+> >  		btree_space_waste += btrfs_leaf_free_space(root, eb);
+> >  	} else {
+> > -		free_nrs = (BTRFS_NODEPTRS_PER_BLOCK(root) -
+> > +		free_nrs = (BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
+> >  			    btrfs_header_nritems(eb));
+> >  		btree_space_waste += free_nrs * sizeof(struct
+> btrfs_key_ptr);
+> >  	}
+> > @@ -9504,7 +9504,7 @@ static int run_next_block(struct btrfs_root *root,
+> >  				add_pending(pending, seen, ptr, size);
+> >  			}
+> >  		}
+> > -		btree_space_waste += (BTRFS_NODEPTRS_PER_BLOCK(root) -
+> > +		btree_space_waste += (BTRFS_NODEPTRS_PER_BLOCK(fs_info)
+> -
+> >  				      nritems) * sizeof(struct
+> btrfs_key_ptr);
+> >  	}
+> >  	total_btree_bytes += buf->len;
+> > diff --git a/ctree.c b/ctree.c
+> > index cb16c42c..11d207e7 100644
+> > --- a/ctree.c
+> > +++ b/ctree.c
+> > @@ -429,7 +429,7 @@ btrfs_check_node(struct btrfs_root *root, struct
+> btrfs_disk_key *parent_key,
+> >  	u32 nritems = btrfs_header_nritems(buf);
+> >  	enum btrfs_tree_block_status ret =
+> BTRFS_TREE_BLOCK_INVALID_NRITEMS;
+> >
+> > -	if (nritems == 0 || nritems > BTRFS_NODEPTRS_PER_BLOCK(root))
+> > +	if (nritems == 0 || nritems >
+> > +BTRFS_NODEPTRS_PER_BLOCK(root->fs_info))
+> >  		goto fail;
+> >
+> >  	ret = BTRFS_TREE_BLOCK_INVALID_PARENT_KEY;
+> > @@ -716,7 +716,7 @@ static int balance_level(struct btrfs_trans_handle
+> *trans,
+> >  		return ret;
+> >  	}
+> >  	if (btrfs_header_nritems(mid) >
+> > -	    BTRFS_NODEPTRS_PER_BLOCK(root) / 4)
+> > +	    BTRFS_NODEPTRS_PER_BLOCK(fs_info) / 4)
+> >  		return 0;
+> >
+> >  	left = read_node_slot(fs_info, parent, pslot - 1); @@ -884,7 +884,7
+> > @@ static int noinline push_nodes_for_insert(struct btrfs_trans_handle
+> *trans,
+> >  	if (extent_buffer_uptodate(left)) {
+> >  		u32 left_nr;
+> >  		left_nr = btrfs_header_nritems(left);
+> > -		if (left_nr >= BTRFS_NODEPTRS_PER_BLOCK(root) - 1) {
+> > +		if (left_nr >= BTRFS_NODEPTRS_PER_BLOCK(fs_info) - 1) {
+> >  			wret = 1;
+> >  		} else {
+> >  			ret = btrfs_cow_block(trans, root, left, parent,
+> @@ -927,7 +927,7
+> > @@ static int noinline push_nodes_for_insert(struct btrfs_trans_handle
+> *trans,
+> >  	if (extent_buffer_uptodate(right)) {
+> >  		u32 right_nr;
+> >  		right_nr = btrfs_header_nritems(right);
+> > -		if (right_nr >= BTRFS_NODEPTRS_PER_BLOCK(root) - 1) {
+> > +		if (right_nr >= BTRFS_NODEPTRS_PER_BLOCK(root->fs_info)
+> - 1) {
+> >  			wret = 1;
+> >  		} else {
+> >  			ret = btrfs_cow_block(trans, root, right, @@
+> -1146,7 +1146,7 @@
+> > again:
+> >  			p->slots[level] = slot;
+> >  			if ((p->search_for_split || ins_len > 0) &&
+> >  			    btrfs_header_nritems(b) >=
+> > -			    BTRFS_NODEPTRS_PER_BLOCK(root) - 3) {
+> > +			    BTRFS_NODEPTRS_PER_BLOCK(fs_info) - 3) {
+> >  				int sret = split_node(trans, root, p,
+> level);
+> >  				BUG_ON(sret > 0);
+> >  				if (sret)
+> > @@ -1292,7 +1292,7 @@ static int push_node_left(struct
+> > btrfs_trans_handle *trans,
+> >
+> >  	src_nritems = btrfs_header_nritems(src);
+> >  	dst_nritems = btrfs_header_nritems(dst);
+> > -	push_items = BTRFS_NODEPTRS_PER_BLOCK(root) - dst_nritems;
+> > +	push_items = BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
+> dst_nritems;
+> >  	WARN_ON(btrfs_header_generation(src) != trans->transid);
+> >  	WARN_ON(btrfs_header_generation(dst) != trans->transid);
+> >
+> > @@ -1362,7 +1362,7 @@ static int balance_node_right(struct
+> > btrfs_trans_handle *trans,
+> >
+> >  	src_nritems = btrfs_header_nritems(src);
+> >  	dst_nritems = btrfs_header_nritems(dst);
+> > -	push_items = BTRFS_NODEPTRS_PER_BLOCK(root) - dst_nritems;
+> > +	push_items = BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
+> dst_nritems;
+> >  	if (push_items <= 0) {
+> >  		return 1;
+> >  	}
+> > @@ -1490,7 +1490,7 @@ static int insert_ptr(struct btrfs_trans_handle
+> *trans, struct btrfs_root
+> >  	nritems = btrfs_header_nritems(lower);
+> >  	if (slot > nritems)
+> >  		BUG();
+> > -	if (nritems == BTRFS_NODEPTRS_PER_BLOCK(root))
+> > +	if (nritems == BTRFS_NODEPTRS_PER_BLOCK(root->fs_info))
+> >  		BUG();
+> >  	if (slot < nritems) {
+> >  		/* shift the items */
+> > @@ -1539,7 +1539,7 @@ static int split_node(struct btrfs_trans_handle
+> *trans, struct btrfs_root
+> >  		ret = push_nodes_for_insert(trans, root, path, level);
+> >  		c = path->nodes[level];
+> >  		if (!ret && btrfs_header_nritems(c) <
+> > -		    BTRFS_NODEPTRS_PER_BLOCK(root) - 3)
+> > +		    BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - 3)
+> >  			return 0;
+> >  		if (ret < 0)
+> >  			return ret;
+> > diff --git a/ctree.h b/ctree.h
+> > index 11913efa..9e9d3d22 100644
+> > --- a/ctree.h
+> > +++ b/ctree.h
+> > @@ -356,8 +356,7 @@ struct btrfs_header {
+> >  	u8 level;
+> >  } __attribute__ ((__packed__));
+> >
+> > -#define BTRFS_NODEPTRS_PER_BLOCK(r) (((r)->fs_info->nodesize - \
+> > -			        sizeof(struct btrfs_header)) / \
+> > +#define BTRFS_NODEPTRS_PER_BLOCK(fs_info)
+> > +(BTRFS_LEAF_DATA_SIZE(fs_info) / \
+> >  			        sizeof(struct btrfs_key_ptr))
+> 
+> Why not declare it as inline function?
+> Since kernel code is using inline function.
+OK, you are right.
+I will change it to inline function.
+And so as BTRFS_NODEPTRS_PER_BLOCK and BTRFS_MAX_INLINE_DATA_SIZE.
 
 Thanks,
-Qu
+Gu
+> 
+> Thanks,
+> Qu
+> 
+> >  #define __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct
+> > btrfs_header))  #define BTRFS_LEAF_DATA_SIZE(fs_info) \ diff --git
+> > a/print-tree.c b/print-tree.c index d3fa8621..5f37ef3e 100644
+> > --- a/print-tree.c
+> > +++ b/print-tree.c
+> > @@ -1359,7 +1359,7 @@ void btrfs_print_tree(struct btrfs_root *root,
+> struct extent_buffer *eb, int fol
+> >  	printf("node %llu level %d items %d free %u generation %llu
+> owner %llu\n",
+> >  	       (unsigned long long)eb->start,
+> >  	        btrfs_header_level(eb), nr,
+> > -		(u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr,
+> > +		(u32)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - nr,
+> >  		(unsigned long long)btrfs_header_generation(eb),
+> >  		(unsigned long long)btrfs_header_owner(eb));
+> >  	print_uuids(eb);
+> > diff --git a/quick-test.c b/quick-test.c index b1e7999d..5da47c32
+> > 100644
+> > --- a/quick-test.c
+> > +++ b/quick-test.c
+> > @@ -110,7 +110,7 @@ int main(int ac, char **av) {
+> >  	printf("node %p level %d total ptrs %d free spc %lu\n", root->node,
+> >  	        btrfs_header_level(root->node),
+> >  		btrfs_header_nritems(root->node),
+> > -		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root) -
+> > +		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info)
+> -
+> >  		btrfs_header_nritems(root->node));
+> >  	printf("all searches good, deleting some items\n");
+> >  	i = 0;
+> >
 
-> ---
->  ctree.h | 6 ------
->  1 file changed, 6 deletions(-)
->=20
-> diff --git a/ctree.h b/ctree.h
-> index c82e7547..34d2505e 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -2487,12 +2487,6 @@ struct extent_buffer *btrfs_alloc_free_block(str=
-uct btrfs_trans_handle *trans,
->  					u32 blocksize, u64 root_objectid,
->  					struct btrfs_disk_key *key, int level,
->  					u64 hint, u64 empty_size);
-> -int btrfs_alloc_extent(struct btrfs_trans_handle *trans,
-> -		       struct btrfs_root *root,
-> -		       u64 num_bytes, u64 parent,
-> -		       u64 root_objectid, u64 ref_generation,
-> -		       u64 owner, u64 empty_size, u64 hint_byte,
-> -		       u64 search_end, struct btrfs_key *ins, int data);
->  int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
->  			     struct btrfs_root *root, u64 bytenr,
->  			     u64 offset, int metadata, u64 *refs, u64 *flags);
->=20
 
 
---uvb5EkslHwHQR6i6nOQkUZF8krGkZ7DS7--
-
---IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpqvX0XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgm+gf9GEh++Dta0DMWug1BApmaNufQ
-Q4KB7847GlN/qpk0RI8iFtUc84tRCY8FOQhm22b6YbyNThAPrMQX4JOAdnzM2Lhp
-syz9FKecwpXBDqPusVb8RPnIB7bwWN+FIBTaQ36vxkyRdwXovSWgB9qPqqX0FmsW
-ItYiAmpCgF+pPrwiibzSQRLh4NqpalxBCxO93AhAKwV2wyelETRkpif3HBt3/rlA
-31JJ6+TvNllL7nLctl7g9wMEi1Q0j5ni3AWjd3H3n9h8/HlSkEOo3fViaXpP8CY8
-EknQAQHmKq8IMglWXcqXPed3QMtBpRAq59hVLMjLMRzIC2pNK0du3BH8+r0F6g==
-=45F2
------END PGP SIGNATURE-----
-
---IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD--
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

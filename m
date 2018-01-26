@@ -1,284 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:50358 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752521AbeAZJ1L (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 04:27:11 -0500
-Subject: Re: [PATCH 02/15] btrfs-progs: lowmem check: find and guess inode
- filetype
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+Received: from mout.gmx.net ([212.227.15.15]:49960 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752828AbeAZJeB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 04:34:01 -0500
+Subject: Re: [PATCH 04/15] btrfs-progs: lowmem check: repair complex cases in
+ repair_dir_item()
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
- <20180126083519.28373-3-suy.fnst@cn.fujitsu.com>
- <cafbed34-4b59-7cc3-3cf9-f52d9e74ba4f@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <568ca340-ea42-0247-5594-cc75111eb748@cn.fujitsu.com>
-Date: Fri, 26 Jan 2018 17:31:24 +0800
+ <20180126083519.28373-5-suy.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <aae3aa94-d331-aada-9956-57f88ca8649e@gmx.com>
+Date: Fri, 26 Jan 2018 17:33:53 +0800
 MIME-Version: 1.0
-In-Reply-To: <cafbed34-4b59-7cc3-3cf9-f52d9e74ba4f@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20180126083519.28373-5-suy.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="zZ8Owv1xNXSoZdwUSwP05BDKgvxxwl4j9"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--zZ8Owv1xNXSoZdwUSwP05BDKgvxxwl4j9
+Content-Type: multipart/mixed; boundary="zgeQdksTo1u6SxXaz8jpfMoeTADLA82vT";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <aae3aa94-d331-aada-9956-57f88ca8649e@gmx.com>
+Subject: Re: [PATCH 04/15] btrfs-progs: lowmem check: repair complex cases in
+ repair_dir_item()
+References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
+ <20180126083519.28373-5-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180126083519.28373-5-suy.fnst@cn.fujitsu.com>
+
+--zgeQdksTo1u6SxXaz8jpfMoeTADLA82vT
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 01/26/2018 05:14 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年01月26日 16:35, Su Yue wrote:
->> Introduce find_file_type_lowmem() and guess_file_type_lowmem().
->>
->> find_file_type_lowmem() gets filetypes from inode_item, dir_item and
->> dir_index. If two of three's filetype are same and valid, it thinks
->> the value is correct.
->>
->> guess_file_type_lowmem() searches file_extent and dir_item/index then
->> returns with filetype.
->>
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->>   cmds-check.c | 193 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 193 insertions(+)
->>
->> diff --git a/cmds-check.c b/cmds-check.c
->> index e3505a7f9d6b..b200fdccf0e5 100644
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -3306,6 +3306,199 @@ static int find_file_type(struct inode_record *rec, u8 *type)
->>   	return -ENOENT;
->>   }
->>   
->> +/*
->> + * Fetch filetype from exited completed dir_item, dir_index and inode_item.
->                            ^^^^^^
->                            existing?
 
-Oh.. a Typo.
->> + * If two of tree items'filetype are same, we think the type is trusted.
->> + *
->> + * Return 0 if file type is found and BTRFS_FT_* is stored into type.
->> + * Return <0 if file type is not found.
-> 
-> This also includes extra error like -EIO from btrfs_search_slot().
-> 
->> + */
->> +static int find_file_type_lowmem(struct btrfs_root *root, u64 ino, u8 *type)
->> +{
->> +	struct btrfs_key key;
->> +	struct btrfs_path path;
->> +	struct btrfs_path path2;
->> +	struct btrfs_inode_ref *iref;
->> +	struct btrfs_dir_item *dir_item;
->> +	struct btrfs_dir_item *dir_index;
->> +	struct extent_buffer *eb;
->> +	u64 dir;
->> +	u64 index;
->> +	char namebuf[BTRFS_NAME_LEN] = {0};
->> +	u32 namelen;
->> +	u8 inode_filetype = BTRFS_FT_UNKNOWN;
->> +	u8 dir_item_filetype;
->> +	u8 dir_index_filetype;
->> +	u8 true_file_type;
->> +	int slot;
->> +	int ret;
->> +
->> +	key.objectid = ino;
->> +	key.type = BTRFS_INODE_ITEM_KEY;
->> +	key.offset = 0;
->> +
->> +	btrfs_init_path(&path);
->> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
->> +	if (ret < 0)
->> +		goto out;
->> +	if (!ret) {
->> +		struct btrfs_inode_item *ii;
->> +
->> +		ii = btrfs_item_ptr(path.nodes[0], path.slots[0],
->> +				    struct btrfs_inode_item);
->> +		inode_filetype = imode_to_type(btrfs_inode_mode(path.nodes[0],
->> +								ii));
->> +	}
->> +
->> +	key.objectid = ino;
->> +	key.type = BTRFS_INODE_REF_KEY;
->> +	key.offset = (u64)-1;
->> +
->> +	btrfs_release_path(&path);
->> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
->> +	if (ret < 0)
->> +		goto out;
->> +	if (!ret) {
->> +		ret = -EIO;
->> +		goto out;
->> +	}
->> +
->> +	btrfs_init_path(&path2);
->> +next:
->> +	btrfs_release_path(&path2)> +	ret = btrfs_previous_item(root, &path, ino, BTRFS_INODE_REF_KEY);
->> +	if (ret) {
->> +		ret = -ENOENT;
-> 
-> For ret < 0 case, return value is overwritten.
-> 
-Will fix it.
-> 
->> +		goto out;
->> +	}
->> +
->> +	eb = path.nodes[0];
->> +	slot = path.slots[0];
->> +	btrfs_item_key_to_cpu(eb, &key, slot);
->> +	dir = key.offset;
->> +	iref = btrfs_item_ptr(eb, slot, struct btrfs_inode_ref);
->> +	index = btrfs_inode_ref_index(eb, iref);
->> +	namelen = btrfs_inode_ref_name_len(eb, iref);
->> +	read_extent_buffer(eb, namebuf, (unsigned long)(iref + 1), namelen);
->> +
->> +	dir_index = btrfs_lookup_dir_index(NULL, root, &path2, dir, namebuf,
->> +					   namelen, index, 0);
->> +	if (!dir_index)
->> +		goto next;
->> +	dir_index_filetype = btrfs_dir_type(path2.nodes[0], dir_index);
->> +	btrfs_release_path(&path2);
->> +	if (dir_index_filetype == inode_filetype) {
->> +		true_file_type = inode_filetype;
->> +		goto found;
->> +	}
->> +
->> +	dir_item = btrfs_lookup_dir_item(NULL, root, &path2, dir, namebuf,
->> +					 namelen, 0);
->> +	if (!dir_item)
->> +		goto next;
->> +	dir_item_filetype = btrfs_dir_type(path2.nodes[0], dir_item);
->> +	btrfs_release_path(&path2);
->> +	if (dir_item_filetype == inode_filetype) {
->> +		true_file_type = inode_filetype;
->> +		goto found;
->> +	}
->> +
->> +	if (dir_index_filetype == dir_item_filetype) {
->> +		true_file_type = dir_index_filetype;
->> +		goto found;
->> +	}
->> +	goto next;
->> +found:
->> +	/* rare case, two of three items are both corrupted */
->> +	if (true_file_type == BTRFS_FT_UNKNOWN ||
->> +	    true_file_type >= BTRFS_FT_MAX)
->> +		goto next;
->> +	*type = true_file_type;
->> +	ret = 0;
->> +out:
->> +	btrfs_release_path(&path);
->> +	return ret;
->> +}
->> +
->> +static int find_normal_file_extent(struct btrfs_root *root, u64 ino);
->> +/*
->> + * Try to determine inode type if type not found.
->> + *
->> + * For found regular file extent, it must be FILE.
->> + * For found dir_item/index, it must be DIR.
->> + *
->> + * Return 0 if file type is confirmed and BTRFS_FT_* is stored into type.
->> + * Return <0 if file type is unknown.
->> + */
->> +static int guess_file_type_lowmem(struct btrfs_root *root, u64 ino, u8 *type)
->> +{
->> +	struct btrfs_key key;
->> +	struct btrfs_path *path = NULL;
->> +	bool is_dir = false;
->> +	bool is_file = false;
->> +	int ret;
->> +
->> +	if (find_normal_file_extent(root, ino)) {
-> 
-> Nice reusing the existing code.
-> 
->> +		is_file = true;
->> +		goto out;
->> +	}
->> +
->> +	key.objectid = ino;
->> +	key.type = BTRFS_DIR_ITEM_KEY;
-> 
-> You could merge the code together, using just one loop instead of using
-> two search separately for DIR_ITEM and DIR_INDEX.
-> 
-> Search for key (ino, DIR_INDEX, -1), as DIR_INDEX is larger than DIR_ITEM.
-> 
-> And search backward, not using btrfs_previous_item() but manually
-> checking the type (and do prev_leaf() manually).
-> It should save you several lines.
-> 
-I have thought up this way. I prefer to call btrfs_previous_item()
-instead because it make code more readable and manually move path
-pointer is pretty tricky.
+On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 16:35, Su Yue wrote:
+> If inode item is missing or filetype is corrupted maybe, and filetypes
+> of dir_item and dir_index are corrupted too, lowmem repair may insert
+> wrong inode item and dir_item/index.
+>=20
+> First, find and guess filetype of inode item, if failed, use
+> BTRFS_REG_FILE as fallback for insertion.
+> If filetype is not available, just delete current dir_item/index.
+>=20
+> And repair_dir_item also calls repair_inode_item_mismatch() now.
+>=20
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-Since your suggestion is more efficient, I will do it in next version.
+Looks good.
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
-Su
+Qu
+> ---
+>  cmds-check.c | 95 +++++++++++++++++++++++++++++++++++++++++++++++++---=
+--------
+>  1 file changed, 78 insertions(+), 17 deletions(-)
+>=20
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 08a2662e603c..e33dd7db0048 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -2811,7 +2811,7 @@ static int walk_down_tree_v2(struct btrfs_trans_h=
+andle *trans,
+> =20
+>  		ret =3D check_child_node(cur, path->slots[*level], next);
+>  		err |=3D ret;
+> -		if (ret < 0)=20
+> +		if (ret < 0)
+>  			break;
+> =20
+>  		if (btrfs_is_leaf(next))
+> @@ -5697,29 +5697,91 @@ static void print_dir_item_err(struct btrfs_roo=
+t *root, struct btrfs_key *key,
+>  /*
+>   * Call repair_inode_item_missing and repair_ternary_lowmem to repair
+>   *
+> + * @filetype:	filetype of the dir_item/index
+> + *
+>   * Returns error after repair
+>   */
+> -static int repair_dir_item(struct btrfs_root *root, u64 dirid, u64 ino=
+,
+> -			   u64 index, u8 filetype, char *namebuf, u32 name_len,
+> -			   int err)
+> +static int repair_dir_item(struct btrfs_root *root, struct btrfs_key *=
+key,
+> +			   u64 ino, u64 index, u8 filetype, char *namebuf,
+> +			   u32 name_len, int err)
+>  {
+>  	int ret;
+> +	u64 dirid =3D key->objectid;
+> +	u8 true_filetype;
+> =20
+> -	if (err & INODE_ITEM_MISSING) {
+> -		ret =3D repair_inode_item_missing(root, ino, filetype);
+> -		if (!ret)
+> -			err &=3D ~(INODE_ITEM_MISMATCH | INODE_ITEM_MISSING);
+> +	if (err & (INODE_ITEM_MISMATCH | INODE_ITEM_MISSING)) {
+> +		ret =3D find_file_type_lowmem(root, ino, &true_filetype);
+> +		if (ret) {
+> +			ret =3D guess_file_type_lowmem(root, ino,
+> +						     &true_filetype);
+> +			if (ret) {
+> +				true_filetype =3D BTRFS_FT_REG_FILE;
+> +				error(
+> +		"can't get file type for inode %llu, using FILE as fallback",
+> +				      ino);
+> +			}
+> +		}
+>  	}
+> =20
+> -	if (err & ~(INODE_ITEM_MISMATCH | INODE_ITEM_MISSING)) {
+> -		ret =3D repair_ternary_lowmem(root, dirid, ino, index, namebuf,
+> -					    name_len, filetype, err);
+> +	/*
+> +	 * Case: the dir_item has corresponding inode_ref but
+> +	 * mismatch/missed inode_item and mismatch/missed another
+> +	 * dir_item/index.
+> +	 * repair_ternary_lowmem prefer to change another dir_item/index with=
 
-> Thanks,
-> Qu
-> 
->> +	key.offset = (u64)-1;
->> +
->> +	path = btrfs_alloc_path();
->> +	if (!path)
->> +		goto out;
->> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
->> +	if (ret < 0)
->> +		goto out;
->> +	/*
->> +	 * (u64)-1 may hit the hashed value in offset.
->> +	 */
->> +	if (!ret) {
->> +		is_dir = true;
->> +		goto out;
->> +	}
->> +
->> +	ret = btrfs_previous_item(root, path, ino, BTRFS_DIR_ITEM_KEY);> +	if (!ret) {
->> +		is_dir = true;
->> +		goto out;
->> +	}
->> +
->> +	key.type = BTRFS_DIR_INDEX_KEY;
->> +	key.offset = (u64)-1;
->> +
->> +	btrfs_release_path(path);
->> +	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
->> +	if (ret < 0)
->> +		goto out;
->> +	if (!ret) {
->> +		is_dir = true;
->> +		goto out;
->> +	}
->> +	ret = btrfs_previous_item(root, path, ino, BTRFS_DIR_INDEX_KEY);
->> +	if (!ret) {
->> +		is_dir = true;
->> +		goto out;
->> +	}
->> +out:
->> +	if (path)
->> +		btrfs_release_path(path);
->> +
->> +	if (is_dir) {
->> +		*type = BTRFS_FT_DIR;
->> +		ret = 0;
->> +	} else if (is_file) {
->> +		*type = BTRFS_FT_REG_FILE;
->> +		ret = 0;
->> +	} else {
->> +		ret = -ENOENT;
->> +	}
->> +	return ret;
->> +}
->> +
->>   /*
->>    * To determine the file name for nlink repair
->>    *
->>
-> 
+> +	 * wrong filetype. So delete the item here.
+> +	 */
+> +	if (filetype !=3D true_filetype &&
+> +	    (err & (DIR_ITEM_MISMATCH | DIR_ITEM_MISSING) ||
+> +	     err & (DIR_INDEX_MISMATCH | DIR_INDEX_MISSING))) {
+> +		struct btrfs_trans_handle *trans;
+> +		struct btrfs_path *path;
+> +
+> +		path =3D btrfs_alloc_path();
+> +		if (!path)
+> +			goto out;
+> +		trans =3D btrfs_start_transaction(root, 0);
+> +		ret =3D btrfs_search_slot(trans, root, key, path, -1, 1);
+> +		if (ret) {
+> +			btrfs_commit_transaction(trans, root);
+> +			btrfs_release_path(path);
+> +			goto out;
+> +		}
+> +		ret =3D btrfs_del_item(trans, root, path);
+>  		if (!ret) {
+> -			err &=3D ~(DIR_INDEX_MISMATCH | DIR_INDEX_MISSING);
+> -			err &=3D ~(DIR_ITEM_MISMATCH | DIR_ITEM_MISSING);
+> -			err &=3D ~(INODE_REF_MISSING);
+> +			err =3D 0;
+> +			printf(
+> +		"Deleted dir_item[%llu %u %llu]root %llu name %s filetype %u\n",
+> +			       key->objectid, key->type, key->offset,
+> +			       root->objectid, namebuf, filetype);
+>  		}
+> +		btrfs_commit_transaction(trans, root);
+> +		btrfs_release_path(path);
+> +		/*
+> +		 * Leave remains to check_inode_item() and check_inode_ref().
+> +		 */
+> +		goto out;
+> +	}
+> +
+> +	ret =3D repair_ternary_lowmem(root, dirid, ino, index, namebuf,
+> +				    name_len, true_filetype, err);
+> +	if (!ret) {
+> +		err &=3D ~(DIR_INDEX_MISMATCH | DIR_INDEX_MISSING);
+> +		err &=3D ~(DIR_ITEM_MISMATCH | DIR_ITEM_MISSING);
+> +		err &=3D ~(INODE_REF_MISSING);
+> +	}
+> +
+> +	if (err & INODE_ITEM_MISSING) {
+> +		ret =3D repair_inode_item_missing(root, ino, true_filetype);
+> +		if (!ret || ret =3D=3D -EEXIST)
+> +			err &=3D ~INODE_ITEM_MISSING;
+>  	}
+> +
+> +	if (err & INODE_ITEM_MISMATCH) {
+> +		ret =3D repair_inode_item_mismatch(root, ino, true_filetype);
+> +		if (!ret)
+> +			err &=3D ~INODE_ITEM_MISMATCH;
+> +	}
+> +out:
+>  	return err;
+>  }
+> =20
+> @@ -5958,9 +6020,8 @@ begin:
+>  next:
+> =20
+>  		if (tmp_err && repair) {
+> -			ret =3D repair_dir_item(root, di_key->objectid,
+> -					      location.objectid, index,
+> -					      imode_to_type(mode), namebuf,
+> +			ret =3D repair_dir_item(root, di_key, location.objectid,
+> +					      index, filetype, namebuf,
+>  					      name_len, tmp_err);
+>  			if (ret !=3D tmp_err) {
+>  				need_research =3D 1;
+>=20
 
 
+--zgeQdksTo1u6SxXaz8jpfMoeTADLA82vT--
+
+--zZ8Owv1xNXSoZdwUSwP05BDKgvxxwl4j9
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq9gEXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg5vAf/aPnc4pG4zXJgZWdG8y12ygnl
+IdM3k7jpLp5DIAw8svsbuyPzgP9Mc4S74r6ry5aQd3+xxDAbsLGYQEbDwjpF75sM
+VzK8A/g3ByemQiYgPd87qU5s9h155UjOE8iiGk5SMipaZXWtZg6I1XOHJOldtbv1
+vhf+qsP/jpqiUOgfi3cxIABwQKxCuZI6gdCryThvYT9AwwvZ3OF0N5m3K/TNxP30
+ouADTOjeSZd/+0xluQg5ns2CS5NNhdwo7wtsSUZeRylS/IEzKZrqM6qZSdcGLwna
+ISTKEA/ME1ZPzp0tITl6cYc5OAFQIFW5GSp4e1Hx/kTKfsSU8emM8SFnzUDNbw==
+=0f7Z
+-----END PGP SIGNATURE-----
+
+--zZ8Owv1xNXSoZdwUSwP05BDKgvxxwl4j9--

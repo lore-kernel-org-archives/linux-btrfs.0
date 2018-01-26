@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f196.google.com ([209.85.192.196]:36741 "EHLO
-        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751613AbeAZSlq (ORCPT
+Received: from mail-pg0-f67.google.com ([74.125.83.67]:41652 "EHLO
+        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752084AbeAZSlr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 13:41:46 -0500
-Received: by mail-pf0-f196.google.com with SMTP id 23so821978pfp.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 10:41:46 -0800 (PST)
+        Fri, 26 Jan 2018 13:41:47 -0500
+Received: by mail-pg0-f67.google.com with SMTP id 136so782099pgd.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 10:41:47 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 23/26] btrfs-progs: replace test_issubvolume() with btrfs_util_is_subvolume()
-Date: Fri, 26 Jan 2018 10:41:11 -0800
-Message-Id: <f64e3fccdab1d0967f943720bd4e149748236449.1516991902.git.osandov@fb.com>
+Subject: [PATCH 24/26] btrfs-progs: add recursive snapshot/delete using libbtrfsutil
+Date: Fri, 26 Jan 2018 10:41:12 -0800
+Message-Id: <e42cdc5d5287269faf4d09e8c9786d0b3adeb658.1516991902.git.osandov@fb.com>
 In-Reply-To: <cover.1516991902.git.osandov@fb.com>
 References: <cover.1516991902.git.osandov@fb.com>
 In-Reply-To: <cover.1516991902.git.osandov@fb.com>
@@ -21,162 +21,153 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-This gets the remaining occurrences that weren't covered by previous
-conversions.
+And update the documentation.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- cmds-qgroup.c    | 13 ++++++-------
- cmds-subvolume.c | 11 ++++-------
- utils.c          | 34 +++++-----------------------------
- utils.h          |  1 -
- 4 files changed, 15 insertions(+), 44 deletions(-)
+ Documentation/btrfs-subvolume.asciidoc | 14 ++++++++++++--
+ cmds-subvolume.c                       | 25 +++++++++++++++++++++----
+ 2 files changed, 33 insertions(+), 6 deletions(-)
 
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index fac692d4..16ba6f86 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -20,6 +20,8 @@
- #include <unistd.h>
- #include <getopt.h>
+diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
+index a8c4af4b..7a2ec8d2 100644
+--- a/Documentation/btrfs-subvolume.asciidoc
++++ b/Documentation/btrfs-subvolume.asciidoc
+@@ -81,6 +81,12 @@ wait for transaction commit at the end of the operation
+ +
+ -C|--commit-each::::
+ wait for transaction commit after deleting each subvolume
+++
++-R|--recursive::::
++delete subvolumes beneath each subvolume recursively
+++
++-v|--verbose::::
++output more verbosely
  
-+#include <btrfsutil.h>
-+
- #include "ctree.h"
- #include "ioctl.h"
+ *find-new* <subvolume> <last_gen>::
+ List the recently modified files in a subvolume, after <last_gen> ID.
+@@ -157,7 +163,7 @@ The id can be obtained from *btrfs subvolume list*, *btrfs subvolume show* or
+ *show* <path>::
+ Show information of a given subvolume in the <path>.
  
-@@ -431,6 +433,7 @@ static int cmd_qgroup_limit(int argc, char **argv)
- 	int compressed = 0;
- 	int exclusive = 0;
- 	DIR *dirstream = NULL;
-+	enum btrfs_util_error err;
+-*snapshot* [-r] <source> <dest>|[<dest>/]<name>::
++*snapshot* [-r|-R] <source> <dest>|[<dest>/]<name>::
+ Create a snapshot of the subvolume <source> with the
+ name <name> in the <dest> directory.
+ +
+@@ -167,7 +173,11 @@ If <source> is not a subvolume, btrfs returns an error.
+ `Options`
+ +
+ -r::::
+-Make the new snapshot read only.
++make the new snapshot read-only
+++
++-R::::
++recursively snapshot subvolumes beneath the source; this option cannot be
++combined with -r
  
- 	while (1) {
- 		int c = getopt(argc, argv, "ce");
-@@ -471,13 +474,9 @@ static int cmd_qgroup_limit(int argc, char **argv)
- 	if (argc - optind == 2) {
- 		args.qgroupid = 0;
- 		path = argv[optind + 1];
--		ret = test_issubvolume(path);
--		if (ret < 0) {
--			error("cannot access '%s': %s", path, strerror(-ret));
--			return 1;
--		}
--		if (!ret) {
--			error("'%s' is not a subvolume", path);
-+		err = btrfs_util_is_subvolume(path);
-+		if (err) {
-+			error_btrfs_util(err);
- 			return 1;
- 		}
- 		/*
+ *sync* <path> [subvolid...]::
+ Wait until given subvolume(s) are completely removed from the filesystem after
 diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 8dbb3e49..5c75799c 100644
+index 5c75799c..3521e7b7 100644
 --- a/cmds-subvolume.c
 +++ b/cmds-subvolume.c
-@@ -748,6 +748,7 @@ static int cmd_subvol_find_new(int argc, char **argv)
- 	char *subvol;
- 	u64 last_gen;
- 	DIR *dirstream = NULL;
-+	enum btrfs_util_error err;
+@@ -187,6 +187,7 @@ static const char * const cmd_subvol_delete_usage[] = {
+ 	"",
+ 	"-c|--commit-after      wait for transaction commit at the end of the operation",
+ 	"-C|--commit-each       wait for transaction commit after deleting each subvolume",
++	"-R|--recursive         delete subvolumes beneath each subvolume recursively",
+ 	"-v|--verbose           verbose output of operations",
+ 	NULL
+ };
+@@ -203,6 +204,7 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	DIR	*dirstream = NULL;
+ 	int verbose = 0;
+ 	int commit_mode = 0;
++	int flags = 0;
+ 	u8 fsid[BTRFS_FSID_SIZE];
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+ 	struct seen_fsid *seen_fsid_hash[SEEN_FSID_HASH_SIZE] = { NULL, };
+@@ -214,11 +216,12 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 		static const struct option long_options[] = {
+ 			{"commit-after", no_argument, NULL, 'c'},
+ 			{"commit-each", no_argument, NULL, 'C'},
++			{"recursive", no_argument, NULL, 'R'},
+ 			{"verbose", no_argument, NULL, 'v'},
+ 			{NULL, 0, NULL, 0}
+ 		};
  
- 	clean_args_no_options(argc, argv, cmd_subvol_find_new_usage);
+-		c = getopt_long(argc, argv, "cCv", long_options, NULL);
++		c = getopt_long(argc, argv, "cCRv", long_options, NULL);
+ 		if (c < 0)
+ 			break;
  
-@@ -757,13 +758,9 @@ static int cmd_subvol_find_new(int argc, char **argv)
- 	subvol = argv[optind];
- 	last_gen = arg_strtou64(argv[optind + 1]);
+@@ -229,6 +232,9 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 		case 'C':
+ 			commit_mode = COMMIT_EACH;
+ 			break;
++		case 'R':
++			flags |= BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE;
++			break;
+ 		case 'v':
+ 			verbose++;
+ 			break;
+@@ -281,7 +287,7 @@ again:
+ 		commit_mode == COMMIT_EACH || (commit_mode == COMMIT_AFTER && cnt + 1 == argc)
+ 		? "commit" : "no-commit", dname, vname);
  
--	ret = test_issubvolume(subvol);
--	if (ret < 0) {
--		error("cannot access subvolume %s: %s", subvol, strerror(-ret));
--		return 1;
--	}
--	if (!ret) {
--		error("not a subvolume: %s", subvol);
-+	err = btrfs_util_is_subvolume(subvol);
-+	if (err) {
-+		error_btrfs_util(err);
- 		return 1;
- 	}
- 
-diff --git a/utils.c b/utils.c
-index 6a667907..bdb389cf 100644
---- a/utils.c
-+++ b/utils.c
-@@ -40,6 +40,8 @@
- #include <linux/magic.h>
- #include <getopt.h>
- 
-+#include <btrfsutil.h>
-+
- #include "kerncompat.h"
- #include "radix-tree.h"
- #include "ctree.h"
-@@ -1451,6 +1453,7 @@ u64 parse_qgroupid(const char *p)
- 	char *s = strchr(p, '/');
- 	const char *ptr_src_end = p + strlen(p);
- 	char *ptr_parse_end = NULL;
-+	enum btrfs_util_error err;
- 	u64 level;
- 	u64 id;
- 	int fd;
-@@ -1478,8 +1481,8 @@ u64 parse_qgroupid(const char *p)
- 
- path:
- 	/* Path format like subv at 'my_subvol' is the fallback case */
--	ret = test_issubvolume(p);
--	if (ret < 0 || !ret)
-+	err = btrfs_util_is_subvolume(p);
-+	if (err)
- 		goto err;
- 	fd = open(p, O_RDONLY);
- 	if (fd < 0)
-@@ -2443,33 +2446,6 @@ int test_issubvolname(const char *name)
- 		strcmp(name, ".") && strcmp(name, "..");
+-	err = btrfs_util_f_delete_subvolume(fd, vname, 0);
++	err = btrfs_util_f_delete_subvolume(fd, vname, flags);
+ 	if (err) {
+ 		error_btrfs_util(err);
+ 		ret = 1;
+@@ -571,13 +577,15 @@ out:
  }
  
--/*
-- * Test if path is a subvolume
-- * Returns:
-- *   0 - path exists but it is not a subvolume
-- *   1 - path exists and it is  a subvolume
-- * < 0 - error
-- */
--int test_issubvolume(const char *path)
--{
--	struct stat	st;
--	struct statfs stfs;
--	int		res;
--
--	res = stat(path, &st);
--	if (res < 0)
--		return -errno;
--
--	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode))
--		return 0;
--
--	res = statfs(path, &stfs);
--	if (res < 0)
--		return -errno;
--
--	return (int)stfs.f_type == BTRFS_SUPER_MAGIC;
--}
--
- const char *subvol_strip_mountpoint(const char *mnt, const char *full_path)
- {
- 	int len = strlen(mnt);
-diff --git a/utils.h b/utils.h
-index 4a95bfb5..4bfbf63e 100644
---- a/utils.h
-+++ b/utils.h
-@@ -147,7 +147,6 @@ u64 disk_size(const char *path);
- u64 get_partition_size(const char *dev);
+ static const char * const cmd_subvol_snapshot_usage[] = {
+-	"btrfs subvolume snapshot [-r] [-i <qgroupid>] <source> <dest>|[<dest>/]<name>",
++	"btrfs subvolume snapshot [-r|-R] [-i <qgroupid>] <source> <dest>|[<dest>/]<name>",
+ 	"Create a snapshot of the subvolume",
+ 	"Create a writable/readonly snapshot of the subvolume <source> with",
+ 	"the name <name> in the <dest> directory.  If only <dest> is given,",
+ 	"the subvolume will be named the basename of <source>.",
+ 	"",
+ 	"-r             create a readonly snapshot",
++	"-R             recursively snapshot subvolumes beneath the source; this",
++	"               option cannot be combined with -r",
+ 	"-i <qgroupid>  add the newly created snapshot to a qgroup. This",
+ 	"               option can be given multiple times.",
+ 	NULL
+@@ -591,7 +599,7 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 	int retval = 1;
  
- int test_issubvolname(const char *name);
--int test_issubvolume(const char *path);
- int test_isdir(const char *path);
+ 	while (1) {
+-		int c = getopt(argc, argv, "i:r");
++		int c = getopt(argc, argv, "i:rR");
+ 		if (c < 0)
+ 			break;
  
- const char *subvol_strip_mountpoint(const char *mnt, const char *full_path);
+@@ -603,11 +611,20 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 		case 'r':
+ 			flags |= BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY;
+ 			break;
++		case 'R':
++			flags |= BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE;
++			break;
+ 		default:
+ 			usage(cmd_subvol_snapshot_usage);
+ 		}
+ 	}
+ 
++	if ((flags & BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY) &&
++	    (flags & BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE)) {
++		error("-r and -R cannot be combined");
++		return 1;
++	}
++
+ 	if (check_argc_exact(argc - optind, 2))
+ 		usage(cmd_subvol_snapshot_usage);
+ 
 -- 
 2.16.1
 

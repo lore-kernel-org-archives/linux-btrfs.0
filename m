@@ -1,500 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:61508 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:62430 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751427AbeAZFVK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 00:21:10 -0500
-Subject: Re: [PATCH 1/6] btrfs-progs: Use fs_info instead of root for
- BTRFS_LEAF_DATA_SIZE
-To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+        id S1751427AbeAZF34 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 00:29:56 -0500
+Subject: Re: [PATCH 3/6] btrfs-progs: Use fs_info instead of root for
+ BTRFS_MAX_INLINE_DATA_SIZE
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
- <faa1a976-f8da-cae8-ec60-9c0f68b59a30@gmx.com>
- <516DDBE5B1D92D42BCF7A2E37F045A5D016B1249E5@G08CNEXMBPEKD02.g08.fujitsu.local>
+ <1516936926-18707-3-git-send-email-gujx@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <9b0e8420-da7f-66e8-aa1c-e71995694bb0@gmx.com>
-Date: Fri, 26 Jan 2018 13:21:03 +0800
+Message-ID: <ea670ded-f8cb-eb91-a341-7704a0f3f9a5@gmx.com>
+Date: Fri, 26 Jan 2018 13:29:49 +0800
 MIME-Version: 1.0
-In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D016B1249E5@G08CNEXMBPEKD02.g08.fujitsu.local>
+In-Reply-To: <1516936926-18707-3-git-send-email-gujx@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="yiPQ7egN9sY8pfYPYRaJKRcuZIrnbIBD6"
+ boundary="6p3vrBF196mCgjVJu2i1dEA0pbb44oFeS"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---yiPQ7egN9sY8pfYPYRaJKRcuZIrnbIBD6
-Content-Type: multipart/mixed; boundary="ttuQh0QNKa4oCFxbuMJtf4anoLyphKMfj";
+--6p3vrBF196mCgjVJu2i1dEA0pbb44oFeS
+Content-Type: multipart/mixed; boundary="q0Onmj4SoQZykqOWb32qVGdyHtrr3otNN";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "Gu, Jinxiang" <gujx@cn.fujitsu.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <9b0e8420-da7f-66e8-aa1c-e71995694bb0@gmx.com>
-Subject: Re: [PATCH 1/6] btrfs-progs: Use fs_info instead of root for
- BTRFS_LEAF_DATA_SIZE
+To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <ea670ded-f8cb-eb91-a341-7704a0f3f9a5@gmx.com>
+Subject: Re: [PATCH 3/6] btrfs-progs: Use fs_info instead of root for
+ BTRFS_MAX_INLINE_DATA_SIZE
 References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
- <faa1a976-f8da-cae8-ec60-9c0f68b59a30@gmx.com>
- <516DDBE5B1D92D42BCF7A2E37F045A5D016B1249E5@G08CNEXMBPEKD02.g08.fujitsu.local>
-In-Reply-To: <516DDBE5B1D92D42BCF7A2E37F045A5D016B1249E5@G08CNEXMBPEKD02.g08.fujitsu.local>
+ <1516936926-18707-3-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1516936926-18707-3-git-send-email-gujx@cn.fujitsu.com>
 
---ttuQh0QNKa4oCFxbuMJtf4anoLyphKMfj
+--q0Onmj4SoQZykqOWb32qVGdyHtrr3otNN
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 13:12, Gu, Jinxiang wrote:
-> Hi,
+On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 11:22, Gu Jinxiang wrote:
+> Do a cleanup. Also make it consistent with kernel.
+> Use fs_info instead of root for BTRFS_MAX_INLINE_DATA_SIZE, since
+> maybe in some situation we do not know root, but just know fs_info.
 >=20
->> -----Original Message-----
->> From: Qu Wenruo [mailto:quwenruo.btrfs@gmx.com]
->> Sent: Friday, January 26, 2018 11:37 AM
->> To: Gu, Jinxiang/=E9=A1=BE =E9=87=91=E9=A6=99 <gujx@cn.fujitsu.com>;
->> linux-btrfs@vger.kernel.org
->> Subject: Re: [PATCH 1/6] btrfs-progs: Use fs_info instead of root for
->> BTRFS_LEAF_DATA_SIZE
->>
->>
->>
->> On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 11:22, Gu Jinxiang wrote:
->>> Do a cleanup. Also make it consistent with kernel.
->>> Use fs_info instead of root for BTRFS_LEAF_DATA_SIZE, since maybe in
->>> some situation we do not know root, but just know fs_info.
->>>
->>> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
->>> ---
->>>  cmds-check.c              |  6 +++---
->>>  convert/source-ext2.c     |  2 +-
->>>  convert/source-reiserfs.c |  4 ++--
->>>  ctree.c                   | 49
->> +++++++++++++++++++++++++++--------------------
->>>  ctree.h                   | 10 ++++++----
->>>  file-item.c               |  2 +-
->>>  volumes.c                 |  2 +-
->>>  7 files changed, 42 insertions(+), 33 deletions(-)
->>>
->>> diff --git a/cmds-check.c b/cmds-check.c index 7d6bbb07..b118ea71
->>> 100644
->>> --- a/cmds-check.c
->>> +++ b/cmds-check.c
->>> @@ -7255,9 +7255,9 @@ again:
->>>  		unsigned int shift =3D 0, offset;
->>>
->>>  		if (i =3D=3D 0 && btrfs_item_end_nr(buf, i) !=3D
->>> -		    BTRFS_LEAF_DATA_SIZE(root)) {
->>> +		    BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  			if (btrfs_item_end_nr(buf, i) >
->>> -			    BTRFS_LEAF_DATA_SIZE(root)) {
->>> +			    BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  				ret =3D delete_bogus_item(root, path, buf,
->> i);
->>>  				if (!ret)
->>>  					goto again;
->>> @@ -7266,7 +7266,7 @@ again:
->>>  				ret =3D -EIO;
->>>  				break;
->>>  			}
->>> -			shift =3D BTRFS_LEAF_DATA_SIZE(root) -
->>> +			shift =3D BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>>  				btrfs_item_end_nr(buf, i);
->>>  		} else if (i > 0 && btrfs_item_end_nr(buf, i) !=3D
->>>  			   btrfs_item_offset_nr(buf, i - 1)) { diff --git
->>> a/convert/source-ext2.c b/convert/source-ext2.c index
->>> e9277213..e5c2a943 100644
->>> --- a/convert/source-ext2.c
->>> +++ b/convert/source-ext2.c
->>> @@ -520,7 +520,7 @@ static int ext2_copy_single_xattr(struct
->> btrfs_trans_handle *trans,
->>>  	}
->>>  	strncpy(namebuf, xattr_prefix_table[name_index],
->> XATTR_NAME_MAX);
->>>  	strncat(namebuf, EXT2_EXT_ATTR_NAME(entry), entry->e_name_len);
->>> -	if (name_len + datalen > BTRFS_LEAF_DATA_SIZE(root) -
->>> +	if (name_len + datalen > BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>>  	    sizeof(struct btrfs_item) - sizeof(struct btrfs_dir_item)) {
->>>  		fprintf(stderr, "skip large xattr on inode %Lu
->> name %.*s\n",
->>>  			objectid - INO_OFFSET, name_len, namebuf); diff
->> --git
->>> a/convert/source-reiserfs.c b/convert/source-reiserfs.c index
->>> be79d8e2..e3582bda 100644
->>> --- a/convert/source-reiserfs.c
->>> +++ b/convert/source-reiserfs.c
->>> @@ -676,7 +676,7 @@ static int
->> reiserfs_xattr_indirect_fn(reiserfs_filsys_t fs, u64 position,
->>>  	size_t alloc =3D min(position + num_blocks * fs->fs_blocksize, size=
-);
->>>  	char *body;
->>>
->>> -	if (size > BTRFS_LEAF_DATA_SIZE(xa_data->root) -
->>> +	if (size > BTRFS_LEAF_DATA_SIZE(xa_data->root->fs_info) -
->>>  	    sizeof(struct btrfs_item) - sizeof(struct btrfs_dir_item)) {
->>>  		fprintf(stderr, "skip large xattr on objectid %llu
->> name %.*s\n",
->>>  			xa_data->target_oid, (int)xa_data->namelen, @@
->> -714,7 +714,7 @@
->>> static int reiserfs_xattr_direct_fn(reiserfs_filsys_t fs, __u64
->> position,
->>>  	struct reiserfs_xattr_data *xa_data =3D data;
->>>  	char *newbody;
->>>
->>> -	if (size > BTRFS_LEAF_DATA_SIZE(xa_data->root) -
->>> +	if (size > BTRFS_LEAF_DATA_SIZE(xa_data->root->fs_info) -
->>>  	    sizeof(struct btrfs_item) - sizeof(struct btrfs_dir_item)) {
->>>  		fprintf(stderr, "skip large xattr on objectid %llu
->> name %.*s\n",
->>>  			xa_data->target_oid, (int)xa_data->namelen,
->> diff --git a/ctree.c
->>> b/ctree.c index f4cf006b..cb16c42c 100644
->>> --- a/ctree.c
->>> +++ b/ctree.c
->>> @@ -415,7 +415,7 @@ static inline unsigned int leaf_data_end(struct
->>> btrfs_root *root,
->>
->> Why not make this function to follow the parameters of kernel one?
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> ---
+>  convert/source-ext2.c     | 2 +-
+>  convert/source-reiserfs.c | 2 +-
+>  ctree.h                   | 2 +-
+>  mkfs/main.c               | 4 ++--
+>  4 files changed, 5 insertions(+), 5 deletions(-)
 >=20
-> In mkfs procedure(i.e. function make_btrfs), need to use BTRFS_LEAF_DAT=
-A_SIZE to get the data size of a leaf,
-> however fs_info is not be initialed yet.
-> So, in progs, __BTRFS_LEAF_DATA_SIZE is designed for those situation. A=
-nd BTRFS_LEAF_DATA_SIZE calls __BTRFS_LEAF_DATA_SIZE
-> by transfer fs_info->nodesize.
+> diff --git a/convert/source-ext2.c b/convert/source-ext2.c
+> index e5c2a943..f5ecd8cf 100644
+> --- a/convert/source-ext2.c
+> +++ b/convert/source-ext2.c
+> @@ -309,7 +309,7 @@ static int ext2_create_file_extents(struct btrfs_tr=
+ans_handle *trans,
+>  		goto fail;
+>  	if ((convert_flags & CONVERT_FLAG_INLINE_DATA) && data.first_block =3D=
+=3D 0
+>  	    && data.num_blocks > 0
+> -	    && inode_size <=3D BTRFS_MAX_INLINE_DATA_SIZE(root)) {
+> +	    && inode_size <=3D BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
+>  		u64 num_bytes =3D data.num_blocks * sectorsize;
+>  		u64 disk_bytenr =3D data.disk_block * sectorsize;
+>  		u64 nbytes;
+> diff --git a/convert/source-reiserfs.c b/convert/source-reiserfs.c
+> index e3582bda..39d6f072 100644
+> --- a/convert/source-reiserfs.c
+> +++ b/convert/source-reiserfs.c
+> @@ -376,7 +376,7 @@ static int reiserfs_convert_tail(struct btrfs_trans=
+_handle *trans,
+>  	u64 isize;
+>  	int ret;
+> =20
+> -	if (length >=3D BTRFS_MAX_INLINE_DATA_SIZE(root))
+> +	if (length >=3D BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
+>  		return convert_direct(trans, root, objectid, inode, body,
+>  				      length, offset, convert_flags);
+> =20
+> diff --git a/ctree.h b/ctree.h
+> index 9e9d3d22..ace93cc3 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -361,7 +361,7 @@ struct btrfs_header {
+>  #define __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct btrfs_header)=
+)
+>  #define BTRFS_LEAF_DATA_SIZE(fs_info) \
+>  				(__BTRFS_LEAF_DATA_SIZE(fs_info->nodesize))
+> -#define BTRFS_MAX_INLINE_DATA_SIZE(r) (BTRFS_LEAF_DATA_SIZE(r->fs_info=
+) - \
+> +#define BTRFS_MAX_INLINE_DATA_SIZE(fs_info) (BTRFS_LEAF_DATA_SIZE(fs_i=
+nfo) - \
+>  					sizeof(struct btrfs_item) - \
+>  					sizeof(struct btrfs_file_extent_item))
 
-I mean why function leaf_data_end() is not using btrfs_fs_info.
+I found this function is different from kernel one, not only in
+declaration, but also result:
 
-This function is static and not used outside of ctree.c, so it's not
-possible to be called in mkfs/convert.
+Kernel one is:
+BTRFS_MAX_ITEM_SIZE(info) - BTRFS_FILE_EXTENT_INLINE_DATA_START
+
+Which equals to:
+BTRFS_LEAF_DATA_SIZE(info) - sizeof(struct btrfs_item) - =09
+(offsetof(struct btrfs_file_extent_item, disk_bytenr))
+
+However in btrfs-progs we have:
+BTRFS_LEAF_DATA_SIZE(fs_info) - sizeof(struct btrfs_item) -
+sizeof(struct btrfs_file_extent_item).
+
+Although the btrfs-progs definition is safer, but for sake of
+consistency, it's better to copy the whole kernel definition here.
 
 Thanks,
 Qu
 
->=20
-> Thanks,
-> Gu
->=20
->>
->> Thanks,
->> Qu
->>
->>>  {
->>>  	u32 nr =3D btrfs_header_nritems(leaf);
->>>  	if (nr =3D=3D 0)
->>> -		return BTRFS_LEAF_DATA_SIZE(root);
->>> +		return BTRFS_LEAF_DATA_SIZE(root->fs_info);
->>>  	return btrfs_item_offset_nr(leaf, nr - 1);  }
->>>
->>> @@ -517,24 +517,26 @@ btrfs_check_leaf(struct btrfs_root *root, struc=
-t
->> btrfs_disk_key *parent_key,
->>>  			goto fail;
->>>  		}
->>>  		if (i =3D=3D 0 && btrfs_item_end_nr(buf, i) !=3D
->>> -		    BTRFS_LEAF_DATA_SIZE(root)) {
->>> +		    BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  			ret =3D BTRFS_TREE_BLOCK_INVALID_OFFSETS;
->>>  			fprintf(stderr, "bad item end %u wanted %u\n",
->>>  				btrfs_item_end_nr(buf, i),
->>> -				(unsigned)BTRFS_LEAF_DATA_SIZE(root));
->>> +
->> 	(unsigned)BTRFS_LEAF_DATA_SIZE(root->fs_info));
->>>  			goto fail;
->>>  		}
->>>  	}
->>>
->>>  	for (i =3D 0; i < nritems; i++) {
->>> -		if (btrfs_item_end_nr(buf, i) >
->> BTRFS_LEAF_DATA_SIZE(root)) {
->>> +		if (btrfs_item_end_nr(buf, i) >
->>> +				BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  			btrfs_item_key(buf, &key, 0);
->>>  			btrfs_print_key(&key);
->>>  			fflush(stdout);
->>>  			ret =3D BTRFS_TREE_BLOCK_INVALID_OFFSETS;
->>>  			fprintf(stderr, "slot end outside of leaf %llu
->>> %llu\n",
->>>  				(unsigned long
->> long)btrfs_item_end_nr(buf, i),
->>> -				(unsigned long
->> long)BTRFS_LEAF_DATA_SIZE(root));
->>> +				(unsigned long
->> long)BTRFS_LEAF_DATA_SIZE(
->>> +					root->fs_info));
->>>  			goto fail;
->>>  		}
->>>  	}
->>> @@ -1621,7 +1623,7 @@ static int leaf_space_used(struct extent_buffer=
-
->> *l, int start, int nr)
->>>   */
->>>  int btrfs_leaf_free_space(struct btrfs_root *root, struct
->>> extent_buffer *leaf)  {
->>> -	u32 nodesize =3D (root ? BTRFS_LEAF_DATA_SIZE(root) : leaf->len);
->>> +	u32 nodesize =3D (root ? BTRFS_LEAF_DATA_SIZE(root->fs_info) :
->>> +leaf->len);
->>>  	int nritems =3D btrfs_header_nritems(leaf);
->>>  	int ret;
->>>  	ret =3D nodesize - leaf_space_used(leaf, 0, nritems); @@ -1742,11
->>> +1744,11 @@ static int push_leaf_right(struct btrfs_trans_handle *tra=
-ns,
->> struct btrfs_root
->>>  	memmove_extent_buffer(right,
->>>  			      btrfs_leaf_data(right) + data_end -
->> push_space,
->>>  			      btrfs_leaf_data(right) + data_end,
->>> -			      BTRFS_LEAF_DATA_SIZE(root) - data_end);
->>> +			      BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->> data_end);
->>>
->>>  	/* copy from the left data area */
->>>  	copy_extent_buffer(right, left, btrfs_leaf_data(right) +
->>> -		     BTRFS_LEAF_DATA_SIZE(root) - push_space,
->>> +		     BTRFS_LEAF_DATA_SIZE(root->fs_info) - push_space,
->>>  		     btrfs_leaf_data(left) + leaf_data_end(root, left),
->>>  		     push_space);
->>>
->>> @@ -1762,7 +1764,7 @@ static int push_leaf_right(struct
->> btrfs_trans_handle *trans, struct btrfs_root
->>>  	/* update the item pointers */
->>>  	right_nritems +=3D push_items;
->>>  	btrfs_set_header_nritems(right, right_nritems);
->>> -	push_space =3D BTRFS_LEAF_DATA_SIZE(root);
->>> +	push_space =3D BTRFS_LEAF_DATA_SIZE(root->fs_info);
->>>  	for (i =3D 0; i < right_nritems; i++) {
->>>  		item =3D btrfs_item_nr(i);
->>>  		push_space -=3D btrfs_item_size(right, item); @@ -1881,7
->> +1883,7 @@
->>> static int push_leaf_left(struct btrfs_trans_handle *trans, struct
->> btrfs_root
->>>  			   btrfs_item_nr_offset(0),
->>>  			   push_items * sizeof(struct btrfs_item));
->>>
->>> -	push_space =3D BTRFS_LEAF_DATA_SIZE(root) -
->>> +	push_space =3D BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>>  		     btrfs_item_offset_nr(right, push_items -1);
->>>
->>>  	copy_extent_buffer(left, right, btrfs_leaf_data(left) + @@
->> -1899,7
->>> +1901,8 @@ static int push_leaf_left(struct btrfs_trans_handle *trans=
-,
->> struct btrfs_root
->>>  		item =3D btrfs_item_nr(i);
->>>  		ioff =3D btrfs_item_offset(left, item);
->>>  		btrfs_set_item_offset(left, item,
->>> -		      ioff - (BTRFS_LEAF_DATA_SIZE(root) -
->> old_left_item_size));
->>> +		      ioff - (BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>> +			      old_left_item_size));
->>>  	}
->>>  	btrfs_set_header_nritems(left, old_left_nritems + push_items);
->>>
->>> @@ -1913,7 +1916,8 @@ static int push_leaf_left(struct btrfs_trans_ha=
-ndle
->> *trans, struct btrfs_root
->>>  		push_space =3D btrfs_item_offset_nr(right, push_items - 1)
->> -
->>>  						  leaf_data_end(root,
->> right);
->>>  		memmove_extent_buffer(right, btrfs_leaf_data(right) +
->>> -				      BTRFS_LEAF_DATA_SIZE(root) -
->> push_space,
->>> +
->> BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>> +				      push_space,
->>>  				      btrfs_leaf_data(right) +
->>>  				      leaf_data_end(root, right),
->> push_space);
->>>
->>> @@ -1924,7 +1928,7 @@ static int push_leaf_left(struct btrfs_trans_ha=
-ndle
->> *trans, struct btrfs_root
->>>  	}
->>>  	right_nritems -=3D push_items;
->>>  	btrfs_set_header_nritems(right, right_nritems);
->>> -	push_space =3D BTRFS_LEAF_DATA_SIZE(root);
->>> +	push_space =3D BTRFS_LEAF_DATA_SIZE(root->fs_info);
->>>  	for (i =3D 0; i < right_nritems; i++) {
->>>  		item =3D btrfs_item_nr(i);
->>>  		push_space =3D push_space - btrfs_item_size(right, item);
->> @@ -1981,11
->>> +1985,12 @@ static noinline int copy_for_split(struct btrfs_trans_han=
-dle
->> *trans,
->>>  			   nritems * sizeof(struct btrfs_item));
->>>
->>>  	copy_extent_buffer(right, l,
->>> -		     btrfs_leaf_data(right) +
->> BTRFS_LEAF_DATA_SIZE(root) -
->>> +		     btrfs_leaf_data(right) +
->>> +		     BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>>  		     data_copy_size, btrfs_leaf_data(l) +
->>>  		     leaf_data_end(root, l), data_copy_size);
->>>
->>> -	rt_data_off =3D BTRFS_LEAF_DATA_SIZE(root) -
->>> +	rt_data_off =3D BTRFS_LEAF_DATA_SIZE(root->fs_info) -
->>>  		      btrfs_item_end_nr(l, mid);
->>>
->>>  	for (i =3D 0; i < nritems; i++) {
->>> @@ -2046,7 +2051,7 @@ static noinline int split_leaf(struct
->> btrfs_trans_handle *trans,
->>>  	l =3D path->nodes[0];
->>>  	slot =3D path->slots[0];
->>>  	if (extend && data_size + btrfs_item_size_nr(l, slot) +
->>> -	    sizeof(struct btrfs_item) > BTRFS_LEAF_DATA_SIZE(root))
->>> +	    sizeof(struct btrfs_item) >
->> BTRFS_LEAF_DATA_SIZE(root->fs_info))
->>>  		return -EOVERFLOW;
->>>
->>>  	/* first try to make some room by pushing left and right */ @@
->>> -2081,21 +2086,22 @@ again:
->>>  	if (mid <=3D slot) {
->>>  		if (nritems =3D=3D 1 ||
->>>  		    leaf_space_used(l, mid, nritems - mid) + data_size >
->>> -			BTRFS_LEAF_DATA_SIZE(root)) {
->>> +			BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  			if (slot >=3D nritems) {
->>>  				split =3D 0;
->>>  			} else {
->>>  				mid =3D slot;
->>>  				if (mid !=3D nritems &&
->>>  				    leaf_space_used(l, mid, nritems -
->> mid) +
->>> -				    data_size >
->> BTRFS_LEAF_DATA_SIZE(root)) {
->>> +				    data_size >
->>> +
->> BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  					split =3D 2;
->>>  				}
->>>  			}
->>>  		}
->>>  	} else {
->>>  		if (leaf_space_used(l, 0, mid) + data_size >
->>> -			BTRFS_LEAF_DATA_SIZE(root)) {
->>> +			BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  			if (!extend && data_size && slot =3D=3D 0) {
->>>  				split =3D 0;
->>>  			} else if ((extend || !data_size) && slot =3D=3D 0)
->> { @@ -2104,7
->>> +2110,8 @@ again:
->>>  				mid =3D slot;
->>>  				if (mid !=3D nritems &&
->>>  				    leaf_space_used(l, mid, nritems -
->> mid) +
->>> -				    data_size >
->> BTRFS_LEAF_DATA_SIZE(root)) {
->>> +				    data_size >
->>> +
->> BTRFS_LEAF_DATA_SIZE(root->fs_info)) {
->>>  					split =3D 2 ;
->>>  				}
->>>  			}
->>> @@ -2729,7 +2736,7 @@ int btrfs_del_items(struct btrfs_trans_handle
->> *trans, struct btrfs_root *root,
->>>  		}
->>>
->>>  		/* delete the leaf if it is mostly empty */
->>> -		if (used < BTRFS_LEAF_DATA_SIZE(root) / 4) {
->>> +		if (used < BTRFS_LEAF_DATA_SIZE(root->fs_info) / 4) {
->>>  			/* push_leaf_left fixes the path.
->>>  			 * make sure the path still points to our leaf
->>>  			 * for possible call to del_ptr below diff --git
->> a/ctree.h
->>> b/ctree.h index ef422ea6..11913efa 100644
->>> --- a/ctree.h
->>> +++ b/ctree.h
->>> @@ -360,11 +360,12 @@ struct btrfs_header {
->>>  			        sizeof(struct btrfs_header)) / \
->>>  			        sizeof(struct btrfs_key_ptr))  #define
->>> __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct btrfs_header))
->>> -#define BTRFS_LEAF_DATA_SIZE(r)
->>> (__BTRFS_LEAF_DATA_SIZE(r->fs_info->nodesize))
->>> -#define BTRFS_MAX_INLINE_DATA_SIZE(r) (BTRFS_LEAF_DATA_SIZE(r) - \
->>> +#define BTRFS_LEAF_DATA_SIZE(fs_info) \
->>> +
->> 	(__BTRFS_LEAF_DATA_SIZE(fs_info->nodesize))
->>> +#define BTRFS_MAX_INLINE_DATA_SIZE(r)
->>> +(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
->>>  					sizeof(struct btrfs_item) - \
->>>  					sizeof(struct
->> btrfs_file_extent_item))
->>> -#define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r) - \
->>> +#define BTRFS_MAX_XATTR_SIZE(r)
->> 	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
->>>  				 sizeof(struct btrfs_item) -\
->>>  				 sizeof(struct btrfs_dir_item))
->>>
->>> @@ -599,7 +600,8 @@ struct btrfs_extent_item_v0 {
->>>  	__le32 refs;
->>>  } __attribute__ ((__packed__));
->>>
->>> -#define BTRFS_MAX_EXTENT_ITEM_SIZE(r) ((BTRFS_LEAF_DATA_SIZE(r) >> 4=
-)
->>> - \
->>> +#define BTRFS_MAX_EXTENT_ITEM_SIZE(r) \
->>> +			((BTRFS_LEAF_DATA_SIZE(r->fs_info) >> 4) - \
->>>  					sizeof(struct btrfs_item))
->>>  #define BTRFS_MAX_EXTENT_SIZE		SZ_128M
->>>
->>> diff --git a/file-item.c b/file-item.c index 8e169e18..7b0ff358 10064=
-4
->>> --- a/file-item.c
->>> +++ b/file-item.c
->>> @@ -27,7 +27,7 @@
->>>  #include "crc32c.h"
->>>  #include "internal.h"
->>>
->>> -#define MAX_CSUM_ITEMS(r,size) ((((BTRFS_LEAF_DATA_SIZE(r) - \
->>> +#define MAX_CSUM_ITEMS(r, size) ((((BTRFS_LEAF_DATA_SIZE(r->fs_info)=
-
->>> +- \
->>>  			       sizeof(struct btrfs_item) * 2) / \
->>>  			       size) - 1))
->>>  int btrfs_insert_file_extent(struct btrfs_trans_handle *trans, diff
->>> --git a/volumes.c b/volumes.c index ce3a5405..034f5d45 100644
->>> --- a/volumes.c
->>> +++ b/volumes.c
->>> @@ -837,7 +837,7 @@ error:
->>>  	return ret;
->>>  }
->>>
->>> -#define BTRFS_MAX_DEVS(r) ((BTRFS_LEAF_DATA_SIZE(r)		\
->>> +#define BTRFS_MAX_DEVS(r) ((BTRFS_LEAF_DATA_SIZE(r->fs_info)	\
->>>  			- sizeof(struct btrfs_item)		\
->>>  			- sizeof(struct btrfs_chunk))		\
->>>  			/ sizeof(struct btrfs_stripe) + 1)
->>>
->=20
->=20
->=20
-> N=EF=BF=BD=EF=BF=BD=EF=BF=BD=EF=BF=BD=EF=BF=BDr=EF=BF=BD=EF=BF=BDy=EF=BF=
-=BD=EF=BF=BD=EF=BF=BDb=EF=BF=BDX=EF=BF=BD=EF=BF=BD=C7=A7v=EF=BF=BD^=EF=BF=
-=BD)=DE=BA{.n=EF=BF=BD+=EF=BF=BD=EF=BF=BD=EF=BF=BD=EF=BF=BD{=EF=BF=BDn=EF=
-=BF=BD=DF=B2)=EF=BF=BD=EF=BF=BD=EF=BF=BDw*=1Fjg=EF=BF=BD=EF=BF=BD=EF=BF=BD=
-=1E=EF=BF=BD=EF=BF=BD=EF=BF=BD=EF=BF=BD=EF=BF=BD=DD=A2j/=EF=BF=BD=EF=BF=BD=
-=EF=BF=BDz=EF=BF=BD=DE=96=EF=BF=BD=EF=BF=BD2=EF=BF=BD=DE=99=EF=BF=BD=EF=BF=
-=BD=EF=BF=BD&=EF=BF=BD)=DF=A1=EF=BF=BDa=EF=BF=BD=EF=BF=BD=7F=EF=BF=BD=EF=BF=
-=BD=1E=EF=BF=BDG=EF=BF=BD=EF=BF=BD=EF=BF=BDh=EF=BF=BD=0F=EF=BF=BDj:+v=EF=BF=
-=BD=EF=BF=BD=EF=BF=BDw=EF=BF=BD=D9=A5
+>  #define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
+> diff --git a/mkfs/main.c b/mkfs/main.c
+> index d817ad8d..a301efc3 100644
+> --- a/mkfs/main.c
+> +++ b/mkfs/main.c
+> @@ -498,7 +498,7 @@ static int fill_inode_item(struct btrfs_trans_handl=
+e *trans,
+>  	}
+>  	if (S_ISREG(src->st_mode)) {
+>  		btrfs_set_stack_inode_size(dst, (u64)src->st_size);
+> -		if (src->st_size <=3D BTRFS_MAX_INLINE_DATA_SIZE(root))
+> +		if (src->st_size <=3D BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
+>  			btrfs_set_stack_inode_nbytes(dst, src->st_size);
+>  		else {
+>  			blocks =3D src->st_size / sectorsize;
+> @@ -686,7 +686,7 @@ static int add_file_items(struct btrfs_trans_handle=
+ *trans,
+>  	if (st->st_size % sectorsize)
+>  		blocks +=3D 1;
+> =20
+> -	if (st->st_size <=3D BTRFS_MAX_INLINE_DATA_SIZE(root)) {
+> +	if (st->st_size <=3D BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
+>  		char *buffer =3D malloc(st->st_size);
+> =20
+>  		if (!buffer) {
 >=20
 
 
---ttuQh0QNKa4oCFxbuMJtf4anoLyphKMfj--
+--q0Onmj4SoQZykqOWb32qVGdyHtrr3otNN--
 
---yiPQ7egN9sY8pfYPYRaJKRcuZIrnbIBD6
+--6p3vrBF196mCgjVJu2i1dEA0pbb44oFeS
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpqur8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgfzAgAi4xSGV1JVpzro5iuYchF26jm
-Zig7vvP13hxsmdOQES8FWlAVZ67VfKmUw3SJmdG1q+ZBirALKbNkG7X1uz0KvAjd
-yV9ijw351Ob6f0zSlVlIASXduf3HoY2sZh9pI+/2VFu6Qf4AaHqwl8DrYTB20eBT
-yRBlEwGtCmeY088SQQSLDC2WkwMopjpZ+qQsDNrtrhKesVE19rfek/8yuy/3aB+n
-wIfwL4e1wM3jOTmAtwO1GyL7vW0PRgeX0jRFnTcrc30qz+Rimx/mkV+rlXGwpddG
-8KNVjIMACfVHbROeiCa2WCnuKQTZC1Cw51bdcpjgsD6MQJ8QFYyZdmB8DVL8FA==
-=dJu4
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpqvM0XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiUwAf+LjN3dHsb3GlWv4JYblkbwxAi
+u9BzXHqQqVmxgRQKjpG6n4ZU8JwJL6D9i9v+8knE/BEBJO6WLyPhx2XQGDUVg2LU
+Z91THxlJYZYYE13mIvTCpzaZG7lpYxItT1kcVa+b9skdE5Qq17TfrNpCymjdjR+T
+gZ5uempIzyuGMB5PcQpSq+DyO06P+BbsUTbTb0oGpXQCY71GoABjfz5Bb/GAjOQ8
+ASbVlGgn4NYpzRiiWcgZ64h1eTazhtKe/f5x+bxNqdQgsc+2ySyzivd+U4EiOxxI
+TWdYb+Bkbd5t2+gXnrjQU3czo5E780KJ3xjWwDF3hi9qeChkdazNatSaCJOQGw==
+=kQhg
 -----END PGP SIGNATURE-----
 
---yiPQ7egN9sY8pfYPYRaJKRcuZIrnbIBD6--
+--6p3vrBF196mCgjVJu2i1dEA0pbb44oFeS--

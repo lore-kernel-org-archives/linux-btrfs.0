@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:60187 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:54552 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751493AbeAZFbL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 00:31:11 -0500
-Subject: Re: [PATCH 4/6] btrfs-progs: Use fs_info instead of root for
- BTRFS_MAX_XATTR_SIZE
+        id S1751696AbeAZFcw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 00:32:52 -0500
+Subject: Re: [PATCH 6/6] btrfs-progs: remove no longer be used
+ btrfs_alloc_extent
 To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
- <1516936926-18707-4-git-send-email-gujx@cn.fujitsu.com>
+ <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <10bbd7df-ab9d-fe3f-b6dc-ef51444d8321@gmx.com>
-Date: Fri, 26 Jan 2018 13:31:04 +0800
+Message-ID: <a8cd0b6e-bb91-1fa0-d8eb-707e395c46e3@gmx.com>
+Date: Fri, 26 Jan 2018 13:32:45 +0800
 MIME-Version: 1.0
-In-Reply-To: <1516936926-18707-4-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="C21NyaQWy0h5FuGgwpsYjiJgY1ZTCgGTj"
+ boundary="IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---C21NyaQWy0h5FuGgwpsYjiJgY1ZTCgGTj
-Content-Type: multipart/mixed; boundary="znd1GTdEb3Dnz6uJ9WewggywcgYUzVpuj";
+--IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD
+Content-Type: multipart/mixed; boundary="uvb5EkslHwHQR6i6nOQkUZF8krGkZ7DS7";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <10bbd7df-ab9d-fe3f-b6dc-ef51444d8321@gmx.com>
-Subject: Re: [PATCH 4/6] btrfs-progs: Use fs_info instead of root for
- BTRFS_MAX_XATTR_SIZE
+Message-ID: <a8cd0b6e-bb91-1fa0-d8eb-707e395c46e3@gmx.com>
+Subject: Re: [PATCH 6/6] btrfs-progs: remove no longer be used
+ btrfs_alloc_extent
 References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
- <1516936926-18707-4-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1516936926-18707-4-git-send-email-gujx@cn.fujitsu.com>
+ <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
 
---znd1GTdEb3Dnz6uJ9WewggywcgYUzVpuj
+--uvb5EkslHwHQR6i6nOQkUZF8krGkZ7DS7
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,73 +40,59 @@ Content-Transfer-Encoding: quoted-printable
 
 
 On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 11:22, Gu Jinxiang wrote:
-> Do a cleanup. Also make it consistent with kernel.
-> Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE, since
-> maybe in some situation we do not know root, but just know fs_info.
+> Do a cleanup.
+> Function btrfs_alloc_extent is no longer be used.
+> So let's remove it.
 >=20
 > Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> ---
->  ctree.h    | 2 +-
->  dir-item.c | 3 ++-
->  2 files changed, 3 insertions(+), 2 deletions(-)
->=20
-> diff --git a/ctree.h b/ctree.h
-> index ace93cc3..c82e7547 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -364,7 +364,7 @@ struct btrfs_header {
->  #define BTRFS_MAX_INLINE_DATA_SIZE(fs_info) (BTRFS_LEAF_DATA_SIZE(fs_i=
-nfo) - \
->  					sizeof(struct btrfs_item) - \
->  					sizeof(struct btrfs_file_extent_item))
-> -#define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
-> +#define BTRFS_MAX_XATTR_SIZE(fs_info)	(BTRFS_LEAF_DATA_SIZE(fs_info) -=
- \
->  				 sizeof(struct btrfs_item) -\
->  				 sizeof(struct btrfs_dir_item))
 
-For sake of consistency, it's better to copy kernel definition here.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
-> =20
-> diff --git a/dir-item.c b/dir-item.c
-> index 462546c0..0b7250c9 100644
-> --- a/dir-item.c
-> +++ b/dir-item.c
-> @@ -311,7 +311,8 @@ static int verify_dir_item(struct btrfs_root *root,=
-
-> =20
->  	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
->  	if ((btrfs_dir_data_len(leaf, dir_item) +
-> -	     btrfs_dir_name_len(leaf, dir_item)) > BTRFS_MAX_XATTR_SIZE(root)=
-) {
-> +	     btrfs_dir_name_len(leaf, dir_item)) >
-> +			BTRFS_MAX_XATTR_SIZE(root->fs_info)) {
->  		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
->  		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
->  		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
+> ---
+>  ctree.h | 6 ------
+>  1 file changed, 6 deletions(-)
+>=20
+> diff --git a/ctree.h b/ctree.h
+> index c82e7547..34d2505e 100644
+> --- a/ctree.h
+> +++ b/ctree.h
+> @@ -2487,12 +2487,6 @@ struct extent_buffer *btrfs_alloc_free_block(str=
+uct btrfs_trans_handle *trans,
+>  					u32 blocksize, u64 root_objectid,
+>  					struct btrfs_disk_key *key, int level,
+>  					u64 hint, u64 empty_size);
+> -int btrfs_alloc_extent(struct btrfs_trans_handle *trans,
+> -		       struct btrfs_root *root,
+> -		       u64 num_bytes, u64 parent,
+> -		       u64 root_objectid, u64 ref_generation,
+> -		       u64 owner, u64 empty_size, u64 hint_byte,
+> -		       u64 search_end, struct btrfs_key *ins, int data);
+>  int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+>  			     struct btrfs_root *root, u64 bytenr,
+>  			     u64 offset, int metadata, u64 *refs, u64 *flags);
 >=20
 
 
---znd1GTdEb3Dnz6uJ9WewggywcgYUzVpuj--
+--uvb5EkslHwHQR6i6nOQkUZF8krGkZ7DS7--
 
---C21NyaQWy0h5FuGgwpsYjiJgY1ZTCgGTj
+--IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpqvRgXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qi/eQf/QTvHytJkZzL3HkPyKPtslzU0
-Jx8rcxJOGAVPlX3zjfUnO9k20PCJc4vf04HWdQN5APIg88ij6PJVO+1ff5aVSZWJ
-bfcNCg10Sn54JSLyKWncImFt5PPITEfVbrmwj9aJiDsVN02QzciI5IkZjqiVhe1K
-c2FY4SRRKA3uhd2N674e3TJ3sBmIzDZ8Uu9xMLtRP8onCLwLYaWRHrd1+okBalIU
-dUqPldGW/WG6nvZhSESwMAIng7mqgtaYj30Lbj4AchgJHzOLogZ4koa7plTgwzeK
-PwuiGQb6W72OhW4HhYKffNGH5pVadnLbUZZlKtstZDCNO5DM/1iSiey6rgGxFA==
-=YtK6
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpqvX0XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgm+gf9GEh++Dta0DMWug1BApmaNufQ
+Q4KB7847GlN/qpk0RI8iFtUc84tRCY8FOQhm22b6YbyNThAPrMQX4JOAdnzM2Lhp
+syz9FKecwpXBDqPusVb8RPnIB7bwWN+FIBTaQ36vxkyRdwXovSWgB9qPqqX0FmsW
+ItYiAmpCgF+pPrwiibzSQRLh4NqpalxBCxO93AhAKwV2wyelETRkpif3HBt3/rlA
+31JJ6+TvNllL7nLctl7g9wMEi1Q0j5ni3AWjd3H3n9h8/HlSkEOo3fViaXpP8CY8
+EknQAQHmKq8IMglWXcqXPed3QMtBpRAq59hVLMjLMRzIC2pNK0du3BH8+r0F6g==
+=45F2
 -----END PGP SIGNATURE-----
 
---C21NyaQWy0h5FuGgwpsYjiJgY1ZTCgGTj--
+--IxGgEKTn3uVIvDmxawRUX7SLizUIv8hOD--

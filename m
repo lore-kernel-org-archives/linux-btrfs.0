@@ -1,64 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:57762 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751241AbeAYTIq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Jan 2018 14:08:46 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0PJ7QMg021852
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:46 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2fqkb38hwp-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:45 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0PJ8iX5010737
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:45 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0PJ8ifJ030641
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jan 2018 19:08:44 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix extent state leak from tree log
-Date: Thu, 25 Jan 2018 11:02:52 -0700
-Message-Id: <20180125180256.10844-5-bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:45455 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751347AbeAZLjS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 06:39:18 -0500
+Subject: Re: [PATCH] Btrfs: fix btrfs_evict_inode to handle abnormal inodes
+ correctly
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20180125180256.10844-6-bo.li.liu@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <91c651c2-bdbb-8e6b-e453-a5289378f5e6@suse.com>
+Date: Fri, 26 Jan 2018 13:35:24 +0200
+MIME-Version: 1.0
+In-Reply-To: <20180125180256.10844-6-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's possible that btrfs_sync_log() bails out after one of the two
-btrfs_write_marked_extents() which convert extent state's state bit into
-EXTENT_NEED_WAIT from EXTENT_DIRTY/EXTENT_NEW, however only EXTENT_DIRTY
-and EXTENT_NEW are searched by free_log_tree() so that those extent states
-with EXTENT_NEED_WAIT lead to memory leak.
 
-cc: <stable@vger.kernel.org>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/tree-log.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 22046ed..a7e6235 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3049,13 +3049,14 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- 
- 	while (1) {
- 		ret = find_first_extent_bit(&log->dirty_log_pages,
--				0, &start, &end, EXTENT_DIRTY | EXTENT_NEW,
-+				0, &start, &end,
-+				EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT,
- 				NULL);
- 		if (ret)
- 			break;
- 
- 		clear_extent_bits(&log->dirty_log_pages, start, end,
--				  EXTENT_DIRTY | EXTENT_NEW);
-+				  EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT);
- 	}
- 
- 	/*
--- 
-2.9.4
+On 25.01.2018 20:02, Liu Bo wrote:
+> This regression is introduced in
+> commit 3d48d9810de4 ("btrfs: Handle uninitialised inode eviction").
+> 
+> There are two problems,
+> 
+> a) it is ->destroy_inode() that does the final free on inode, not
+>    ->evict_inode(),
+> b) clear_inode() must be called before ->evict_inode() returns.
+> 
+> This could end up hitting BUG_ON(inode->i_state != (I_FREEING | I_CLEAR));
+> in evict() because I_CLEAR is set in clear_inode().
+> 
 
+Oops, It seems I've missed that when I wrote the original patch.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> Fixes: commit 3d48d9810de4 ("btrfs: Handle uninitialised inode eviction")
+> Cc: <stable@vger.kernel.org> # v4.7-rc6+
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/inode.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 281a250..bc6ef73 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5286,7 +5286,7 @@ void btrfs_evict_inode(struct inode *inode)
+>  	trace_btrfs_inode_evict(inode);
+>  
+>  	if (!root) {
+> -		kmem_cache_free(btrfs_inode_cachep, BTRFS_I(inode));
+> +		clear_inode(inode);
+>  		return;
+>  	}
+>  
+> 

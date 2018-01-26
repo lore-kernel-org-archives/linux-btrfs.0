@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f196.google.com ([209.85.192.196]:37282 "EHLO
-        mail-pf0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751710AbeAZSld (ORCPT
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:41006 "EHLO
+        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751734AbeAZSle (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 13:41:33 -0500
-Received: by mail-pf0-f196.google.com with SMTP id p1so822676pfh.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 10:41:33 -0800 (PST)
+        Fri, 26 Jan 2018 13:41:34 -0500
+Received: by mail-pf0-f195.google.com with SMTP id c6so815702pfi.8
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 10:41:34 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH 10/26] libbtrfsutil: add subvolume iterator helpers
-Date: Fri, 26 Jan 2018 10:40:58 -0800
-Message-Id: <206a465bd3bb838282e8a7bcba040697ff516ffb.1516991902.git.osandov@fb.com>
+Subject: [PATCH 11/26] libbtrfsutil: add btrfs_util_create_snapshot()
+Date: Fri, 26 Jan 2018 10:40:59 -0800
+Message-Id: <ffe3cf7d259065bbce8e54b7a5bae5528faca3d0.1516991902.git.osandov@fb.com>
 In-Reply-To: <cover.1516991902.git.osandov@fb.com>
 References: <cover.1516991902.git.osandov@fb.com>
 In-Reply-To: <cover.1516991902.git.osandov@fb.com>
@@ -21,777 +21,451 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-This is how we can implement stuff like `btrfs subvol list`. Rather than
-producing the entire list upfront, the iterator approach uses less
-memory in the common case where the whole list is not stored (O(max
-subvolume path length)). It supports both pre-order traversal (useful
-for, e.g, recursive snapshot) and post-order traversal (useful for
-recursive delete).
+Thanks to subvolume iterators, we can also implement recursive snapshot
+fairly easily.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- libbtrfsutil/btrfsutil.h                    |  92 ++++++++
+ libbtrfsutil/btrfsutil.h                    |  55 +++++++++
  libbtrfsutil/python/btrfsutilpy.h           |   1 +
- libbtrfsutil/python/module.c                |   8 +
- libbtrfsutil/python/subvolume.c             | 211 ++++++++++++++++++
- libbtrfsutil/python/tests/test_subvolume.py |  56 +++++
- libbtrfsutil/subvolume.c                    | 322 ++++++++++++++++++++++++++++
- 6 files changed, 690 insertions(+)
+ libbtrfsutil/python/module.c                |  11 ++
+ libbtrfsutil/python/subvolume.c             |  49 ++++++++
+ libbtrfsutil/python/tests/test_qgroup.py    |  10 ++
+ libbtrfsutil/python/tests/test_subvolume.py |  55 +++++++++
+ libbtrfsutil/subvolume.c                    | 166 ++++++++++++++++++++++++++++
+ 7 files changed, 347 insertions(+)
 
 diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index 1643ea7b..3f78a34d 100644
+index 3f78a34d..829f72b2 100644
 --- a/libbtrfsutil/btrfsutil.h
 +++ b/libbtrfsutil/btrfsutil.h
-@@ -332,6 +332,98 @@ enum btrfs_util_error btrfs_util_f_create_subvolume(int parent_fd,
+@@ -332,6 +332,61 @@ enum btrfs_util_error btrfs_util_f_create_subvolume(int parent_fd,
  						    uint64_t *async_transid,
  						    struct btrfs_util_qgroup_inherit *qgroup_inherit);
  
-+struct btrfs_util_subvolume_iterator;
-+
 +/**
-+ * BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER - Iterate post-order. The default
-+ * behavior is pre-order, e.g., foo will be yielded before foo/bar. If this flag
-+ * is specified, foo/bar will be yielded before foo.
++ * BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE - Also snapshot subvolumes beneath the
++ * source subvolume onto the same location on the new snapshot. Note that this
++ * modifies the newly-created snapshot, so it cannot be combined with
++ * %BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY.
 + */
-+#define BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER (1 << 0)
-+#define BTRFS_UTIL_SUBVOLUME_ITERATOR_MASK ((1 << 1) - 1)
++#define BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE (1 << 0)
++/**
++ * BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY - Create a read-only snapshot.
++ */
++#define BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY (1 << 1)
++#define BTRFS_UTIL_CREATE_SNAPSHOT_MASK ((1 << 2) - 1)
 +
 +/**
-+ * btrfs_util_create_subvolume_iterator() - Create an iterator over subvolumes
-+ * in a Btrfs filesystem.
-+ * @path: Path in a Btrfs filesystem. This may be any path in the filesystem; it
-+ * does not have to refer to a subvolume unless @top is zero.
-+ * @top: List subvolumes beneath (but not including) the subvolume with this ID.
-+ * If zero is given, the subvolume ID of @path is used. To list all subvolumes,
-+ * pass %BTRFS_FS_TREE_OBJECTID (i.e., 5). The returned paths are relative to
-+ * the subvolume with this ID.
-+ * @flags: Bitmask of BTRFS_UTIL_SUBVOLUME_ITERATOR_* flags.
-+ * @ret: Returned iterator.
-+ *
-+ * The returned iterator must be freed with
-+ * btrfs_util_destroy_subvolume_iterator().
++ * btrfs_util_create_snapshot() - Create a new snapshot from a source subvolume
++ * path.
++ * @source: Path of the existing subvolume to snapshot.
++ * @path: Where to create the snapshot.
++ * @flags: Bitmask of BTRFS_UTIL_CREATE_SNAPSHOT_* flags.
++ * @async_transid: See btrfs_util_create_subvolume(). If
++ * %BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE was in @flags, then this will contain
++ * the largest transaction ID of all created subvolumes.
++ * @qgroup_inherit: See btrfs_util_create_subvolume().
 + *
 + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
 + */
-+enum btrfs_util_error btrfs_util_create_subvolume_iterator(const char *path,
-+							   uint64_t top,
-+							   int flags,
-+							   struct btrfs_util_subvolume_iterator **ret);
++enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
++						 const char *path, int flags,
++						 uint64_t *async_transid,
++						 struct btrfs_util_qgroup_inherit *qgroup_inherit);
 +
 +/**
-+ * btrfs_util_f_create_subvolume_iterator() - See
-+ * btrfs_util_create_subvolume_iterator().
++ * btrfs_util_f_create_snapshot() - See btrfs_util_create_snapshot().
 + */
-+enum btrfs_util_error btrfs_util_f_create_subvolume_iterator(int fd, uint64_t top,
-+							     int flags,
-+							     struct btrfs_util_subvolume_iterator **ret);
++enum btrfs_util_error btrfs_util_f_create_snapshot(int fd, const char *path,
++						   int flags,
++						   uint64_t *async_transid,
++						   struct btrfs_util_qgroup_inherit *qgroup_inherit);
 +
 +/**
-+ * btrfs_util_destroy_subvolume_iterator() - Destroy a subvolume iterator
-+ * previously created by btrfs_util_create_subvolume_iterator().
-+ * @iter: Iterator to destroy.
++ * btrfs_util_f2_create_snapshot() - Create a new snapshot from a source
++ * subvolume file descriptor and a target parent file descriptor and name.
++ * @fd: File descriptor of the existing subvolume to snapshot.
++ * @parent_fd: File descriptor of the parent directory where the snapshot should
++ * be created.
++ * @name: Name of the snapshot to create.
++ * @flags: See btrfs_util_create_snapshot().
++ * @async_transid: See btrfs_util_create_snapshot().
++ * @qgroup_inherit: See btrfs_util_create_snapshot().
 + */
-+void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_iterator *iter);
++enum btrfs_util_error btrfs_util_f2_create_snapshot(int fd, int parent_fd,
++						    const char *name, int flags,
++						    uint64_t *async_transid,
++						    struct btrfs_util_qgroup_inherit *qgroup_inherit);
 +
-+/**
-+ * btrfs_util_subvolume_iterator_fd() - Get the file descriptor associated with
-+ * a subvolume iterator.
-+ * @iter: Iterator to get.
-+ *
-+ * This can be used to get the file descriptor opened by
-+ * btrfs_util_create_subvolume_iterator() in order to use it for other
-+ * functions.
-+ *
-+ * Return: File descriptor.
-+ */
-+int btrfs_util_subvolume_iterator_fd(const struct btrfs_util_subvolume_iterator *iter);
-+
-+/**
-+ * btrfs_util_subvolume_iterator_next() - Get the next subvolume from a
-+ * subvolume iterator.
-+ * @iter: Subvolume iterator.
-+ * @path_ret: Returned subvolume path, relative to the subvolume ID used to
-+ * create the iterator. May be %NULL.
-+ * Must be freed with free().
-+ * @id_ret: Returned subvolume ID. May be %NULL.
-+ *
-+ * Return: %BTRFS_UTIL_OK on success, %BTRFS_UTIL_ERROR_STOP_ITERATION if there
-+ * are no more subvolumes, non-zero error code on failure.
-+ */
-+enum btrfs_util_error btrfs_util_subvolume_iterator_next(struct btrfs_util_subvolume_iterator *iter,
-+							 char **path_ret,
-+							 uint64_t *id_ret);
-+
-+/**
-+ * btrfs_util_subvolume_iterator_next_info() - Get information about the next
-+ * subvolume for a subvolume iterator.
-+ * @iter: Subvolume iterator.
-+ * @path_ret: See btrfs_util_subvolume_iterator_next().
-+ * @subvol: Returned subvolume information.
-+ *
-+ * This convenience function basically combines
-+ * btrfs_util_subvolume_iterator_next() and btrfs_util_subvolume_info().
-+ *
-+ * Return: See btrfs_util_subvolume_iterator_next().
-+ */
-+enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_subvolume_iterator *iter,
-+							      char **path_ret,
-+							      struct btrfs_util_subvolume_info *subvol);
-+
+ struct btrfs_util_subvolume_iterator;
+ 
  /**
-  * btrfs_util_create_qgroup_inherit() - Create a qgroup inheritance specifier
-  * for btrfs_util_create_subvolume() or btrfs_util_create_snapshot().
 diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
-index 41314d4a..a9c15219 100644
+index a9c15219..d552e416 100644
 --- a/libbtrfsutil/python/btrfsutilpy.h
 +++ b/libbtrfsutil/python/btrfsutilpy.h
-@@ -37,6 +37,7 @@ typedef struct {
- extern PyTypeObject BtrfsUtilError_type;
- extern PyStructSequence_Desc SubvolumeInfo_desc;
- extern PyTypeObject SubvolumeInfo_type;
-+extern PyTypeObject SubvolumeIterator_type;
- extern PyTypeObject QgroupInherit_type;
+@@ -70,6 +70,7 @@ PyObject *set_subvolume_read_only(PyObject *self, PyObject *args, PyObject *kwds
+ PyObject *get_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
++PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds);
  
- /*
+ void add_module_constants(PyObject *m);
+ 
 diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
-index 0ac4d63a..daf0747f 100644
+index daf0747f..d8f797cb 100644
 --- a/libbtrfsutil/python/module.c
 +++ b/libbtrfsutil/python/module.c
-@@ -218,6 +218,10 @@ PyInit_btrfsutil(void)
- 	if (PyStructSequence_InitType2(&SubvolumeInfo_type, &SubvolumeInfo_desc) < 0)
- 		return NULL;
+@@ -195,6 +195,17 @@ static PyMethodDef btrfsutil_methods[] = {
+ 	 "path -- string, bytes, or path-like object\n"
+ 	 "async -- create the subvolume without waiting for it to commit to\n"
+ 	 "disk and return the transaction ID"},
++	{"create_snapshot", (PyCFunction)create_snapshot,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "create_snapshot(source, path, recursive=False, read_only=False, async=False)\n\n"
++	 "Create a new snapshot.\n\n"
++	 "Arguments:\n"
++	 "source -- string, bytes, path-like object, or open file descriptor\n"
++	 "path -- string, bytes, or path-like object\n"
++	 "recursive -- also snapshot child subvolumes\n"
++	 "read_only -- create a read-only snapshot\n"
++	 "async -- create the subvolume without waiting for it to commit to\n"
++	 "disk and return the transaction ID"},
+ 	{},
+ };
  
-+	SubvolumeIterator_type.tp_new = PyType_GenericNew;
-+	if (PyType_Ready(&SubvolumeIterator_type) < 0)
-+		return NULL;
-+
- 	QgroupInherit_type.tp_new = PyType_GenericNew;
- 	if (PyType_Ready(&QgroupInherit_type) < 0)
- 		return NULL;
-@@ -233,6 +237,10 @@ PyInit_btrfsutil(void)
- 	Py_INCREF(&SubvolumeInfo_type);
- 	PyModule_AddObject(m, "SubvolumeInfo", (PyObject *)&SubvolumeInfo_type);
- 
-+	Py_INCREF(&SubvolumeIterator_type);
-+	PyModule_AddObject(m, "SubvolumeIterator",
-+			   (PyObject *)&SubvolumeIterator_type);
-+
- 	Py_INCREF(&QgroupInherit_type);
- 	PyModule_AddObject(m, "QgroupInherit",
- 			   (PyObject *)&QgroupInherit_type);
 diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
-index 7b30e03c..23163176 100644
+index 23163176..763a06d9 100644
 --- a/libbtrfsutil/python/subvolume.c
 +++ b/libbtrfsutil/python/subvolume.c
-@@ -346,3 +346,214 @@ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
- 	else
+@@ -347,6 +347,55 @@ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
  		Py_RETURN_NONE;
  }
-+
-+typedef struct {
-+	PyObject_HEAD
-+	struct btrfs_util_subvolume_iterator *iter;
-+	bool info;
-+} SubvolumeIterator;
-+
-+static void SubvolumeIterator_dealloc(SubvolumeIterator *self)
+ 
++PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds)
 +{
-+	btrfs_util_destroy_subvolume_iterator(self->iter);
-+	Py_TYPE(self)->tp_free((PyObject *)self);
-+}
-+
-+static PyObject *SubvolumeIterator_next(SubvolumeIterator *self)
-+{
++	static char *keywords[] = {
++		"source", "path", "recursive", "read_only", "async",
++		"qgroup_inherit", NULL,
++	};
++	struct path_arg src = {.allow_fd = true}, dst = {.allow_fd = false};
 +	enum btrfs_util_error err;
-+	PyObject *ret, *tmp;
-+	char *path;
-+
-+	if (!self->iter) {
-+		PyErr_SetString(PyExc_ValueError,
-+				"operation on closed iterator");
-+		return NULL;
-+	}
-+
-+	if (self->info) {
-+		struct btrfs_util_subvolume_info subvol;
-+
-+		err = btrfs_util_subvolume_iterator_next_info(self->iter, &path,
-+							      &subvol);
-+		if (err == BTRFS_UTIL_ERROR_STOP_ITERATION) {
-+			PyErr_SetNone(PyExc_StopIteration);
-+			return NULL;
-+		} else if (err) {
-+			SetFromBtrfsUtilError(err);
-+			return NULL;
-+		}
-+
-+		tmp = subvolume_info_to_object(&subvol);
-+	} else {
-+		uint64_t id;
-+
-+		err = btrfs_util_subvolume_iterator_next(self->iter, &path, &id);
-+		if (err == BTRFS_UTIL_ERROR_STOP_ITERATION) {
-+			PyErr_SetNone(PyExc_StopIteration);
-+			return NULL;
-+		} else if (err) {
-+			SetFromBtrfsUtilError(err);
-+			return NULL;
-+		}
-+
-+		tmp = PyLong_FromUnsignedLongLong(id);
-+
-+	}
-+	if (tmp) {
-+		ret = Py_BuildValue("O&O", PyUnicode_DecodeFSDefault, path,
-+				    tmp);
-+		Py_DECREF(tmp);
-+		free(path);
-+	} else {
-+		ret = NULL;
-+	}
-+	return ret;
-+}
-+
-+static int SubvolumeIterator_init(SubvolumeIterator *self, PyObject *args,
-+				  PyObject *kwds)
-+{
-+	static char *keywords[] = {"path", "top", "info", "post_order", NULL};
-+	struct path_arg path = {.allow_fd = true};
-+	enum btrfs_util_error err;
-+	unsigned long long top = 5;
-+	int info = 0;
-+	int post_order = 0;
++	int recursive = 0, read_only = 0, async = 0;
 +	int flags = 0;
++	QgroupInherit *inherit = NULL;
++	uint64_t transid;
 +
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|Kpp:SubvolumeIterator",
-+					 keywords, &path_converter, &path, &top,
-+					 &info, &post_order))
-+		return -1;
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O&|pppO!:create_snapshot",
++					 keywords, &path_converter, &src,
++					 &path_converter, &dst, &recursive,
++					 &read_only, &async,
++					 &QgroupInherit_type, &inherit))
++		return NULL;
 +
-+	if (post_order)
-+		flags |= BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER;
++	if (recursive)
++		flags |= BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE;
++	if (read_only)
++		flags |= BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY;
 +
-+	if (path.path) {
-+		err = btrfs_util_create_subvolume_iterator(path.path, top,
-+							   flags, &self->iter);
++	if (src.path) {
++		err = btrfs_util_create_snapshot(src.path, dst.path, flags,
++						 async ? &transid : NULL,
++						 inherit ? inherit->inherit : NULL);
 +	} else {
-+		err = btrfs_util_f_create_subvolume_iterator(path.fd, top,
-+							     flags,
-+							     &self->iter);
++		err = btrfs_util_f_create_snapshot(src.fd, dst.path, flags,
++						   async ? &transid : NULL,
++						   inherit ? inherit->inherit : NULL);
 +	}
 +	if (err) {
-+		SetFromBtrfsUtilErrorWithPath(err, &path);
-+		path_cleanup(&path);
-+		return -1;
-+	}
-+
-+	self->info = info;
-+
-+	return 0;
-+}
-+
-+static PyObject *SubvolumeIterator_close(SubvolumeIterator *self)
-+{
-+	if (self->iter) {
-+		btrfs_util_destroy_subvolume_iterator(self->iter);
-+		self->iter = NULL;
-+	}
-+	Py_RETURN_NONE;
-+}
-+
-+static PyObject *SubvolumeIterator_fileno(SubvolumeIterator *self)
-+{
-+	if (!self->iter) {
-+		PyErr_SetString(PyExc_ValueError,
-+				"operation on closed iterator");
++		SetFromBtrfsUtilErrorWithPaths(err, &src, &dst);
++		path_cleanup(&src);
++		path_cleanup(&dst);
 +		return NULL;
 +	}
-+	return PyLong_FromLong(btrfs_util_subvolume_iterator_fd(self->iter));
++
++	path_cleanup(&src);
++	path_cleanup(&dst);
++	if (async)
++		return PyLong_FromUnsignedLongLong(transid);
++	else
++		Py_RETURN_NONE;
 +}
 +
-+static PyObject *SubvolumeIterator_enter(SubvolumeIterator *self)
-+{
-+	Py_INCREF((PyObject *)self);
-+	return (PyObject *)self;
-+}
+ typedef struct {
+ 	PyObject_HEAD
+ 	struct btrfs_util_subvolume_iterator *iter;
+diff --git a/libbtrfsutil/python/tests/test_qgroup.py b/libbtrfsutil/python/tests/test_qgroup.py
+index 19e6b05a..74fc46b6 100644
+--- a/libbtrfsutil/python/tests/test_qgroup.py
++++ b/libbtrfsutil/python/tests/test_qgroup.py
+@@ -31,6 +31,16 @@ class TestQgroup(BtrfsTestCase):
+ 
+         btrfsutil.create_subvolume(subvol, qgroup_inherit=inherit)
+ 
++    def test_snapshot_inherit(self):
++        subvol = os.path.join(self.mountpoint, 'subvol')
++        snapshot = os.path.join(self.mountpoint, 'snapshot')
 +
-+static PyObject *SubvolumeIterator_exit(SubvolumeIterator *self, PyObject *args,
-+				       PyObject *kwds)
-+{
-+	static char *keywords[] = {"exc_type", "exc_value", "traceback", NULL};
-+	PyObject *exc_type, *exc_value, *traceback;
++        inherit = btrfsutil.QgroupInherit()
++        inherit.add_group(5)
 +
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOO:__exit__", keywords,
-+					 &exc_type, &exc_value, &traceback))
-+		return NULL;
++        btrfsutil.create_subvolume(subvol)
++        btrfsutil.create_snapshot(subvol, snapshot, qgroup_inherit=inherit)
 +
-+	return SubvolumeIterator_close(self);
-+}
-+
-+#define SubvolumeIterator_DOC	\
-+	 "SubvolumeIterator(path, top=0, info=False, post_order=False) -> new subvolume iterator\n\n"	\
-+	 "Create a new iterator that produces tuples of (path, ID) representing\n"	\
-+	 "subvolumes on a filesystem.\n\n"						\
-+	 "Arguments:\n"									\
-+	 "path -- string, bytes, path-like object, or open file descriptor in\n"	\
-+	 "filesystem to list\n"								\
-+	 "top -- if not zero, instead of only listing subvolumes beneath the\n"		\
-+	 "given path, list subvolumes beneath the subvolume with this ID; passing\n"	\
-+	 "BTRFS_FS_TREE_OBJECTID (5) here lists all subvolumes. The subvolumes\n"	\
-+	 "are listed relative to the subvolume with this ID.\n"				\
-+	 "info -- bool indicating the iterator should yield SubvolumeInfo instead of\n"	\
-+	 "the subvolume ID\n"								\
-+	 "post_order -- bool indicating whether to yield parent subvolumes before\n"	\
-+	 "child subvolumes (e.g., 'foo/bar' before 'foo')"
-+
-+static PyMethodDef SubvolumeIterator_methods[] = {
-+	{"close", (PyCFunction)SubvolumeIterator_close,
-+	 METH_NOARGS,
-+	 "close()\n\n"
-+	 "Close this iterator."},
-+	{"fileno", (PyCFunction)SubvolumeIterator_fileno,
-+	 METH_NOARGS,
-+	 "fileno() -> int\n\n"
-+	 "Get the file descriptor associated with this iterator."},
-+	{"__enter__", (PyCFunction)SubvolumeIterator_enter,
-+	 METH_NOARGS, ""},
-+	{"__exit__", (PyCFunction)SubvolumeIterator_exit,
-+	 METH_VARARGS | METH_KEYWORDS, ""},
-+	{},
-+};
-+
-+PyTypeObject SubvolumeIterator_type = {
-+	PyVarObject_HEAD_INIT(NULL, 0)
-+	"btrfsutil.SubvolumeIterator",		/* tp_name */
-+	sizeof(SubvolumeIterator),		/* tp_basicsize */
-+	0,					/* tp_itemsize */
-+	(destructor)SubvolumeIterator_dealloc,	/* tp_dealloc */
-+	NULL,					/* tp_print */
-+	NULL,					/* tp_getattr */
-+	NULL,					/* tp_setattr */
-+	NULL,					/* tp_as_async */
-+	NULL,					/* tp_repr */
-+	NULL,					/* tp_as_number */
-+	NULL,					/* tp_as_sequence */
-+	NULL,					/* tp_as_mapping */
-+	NULL,					/* tp_hash  */
-+	NULL,					/* tp_call */
-+	NULL,					/* tp_str */
-+	NULL,					/* tp_getattro */
-+	NULL,					/* tp_setattro */
-+	NULL,					/* tp_as_buffer */
-+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
-+	SubvolumeIterator_DOC,			/* tp_doc */
-+	NULL,					/* tp_traverse */
-+	NULL,					/* tp_clear */
-+	NULL,					/* tp_richcompare */
-+	0,					/* tp_weaklistoffset */
-+	PyObject_SelfIter,			/* tp_iter */
-+	(iternextfunc)SubvolumeIterator_next,	/* tp_iternext */
-+	SubvolumeIterator_methods,		/* tp_methods */
-+	NULL,					/* tp_members */
-+	NULL,					/* tp_getset */
-+	NULL,					/* tp_base */
-+	NULL,					/* tp_dict */
-+	NULL,					/* tp_descr_get */
-+	NULL,					/* tp_descr_set */
-+	0,					/* tp_dictoffset */
-+	(initproc)SubvolumeIterator_init,	/* tp_init */
-+};
+ 
+ class TestQgroupInherit(unittest.TestCase):
+     def test_new(self):
 diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
-index 937a4397..b43beca7 100644
+index b43beca7..2951154e 100644
 --- a/libbtrfsutil/python/tests/test_subvolume.py
 +++ b/libbtrfsutil/python/tests/test_subvolume.py
-@@ -214,3 +214,59 @@ class TestSubvolume(BtrfsTestCase):
-         wstatus = os.waitpid(pid, 0)[1]
+@@ -129,6 +129,13 @@ class TestSubvolume(BtrfsTestCase):
+         self.assertEqual(info.stime, 0)
+         self.assertEqual(info.rtime, 0)
+ 
++        subvol_uuid = info.uuid
++        snapshot = os.path.join(self.mountpoint, 'snapshot')
++        btrfsutil.create_snapshot(subvol, snapshot)
++
++        info = btrfsutil.subvolume_info(snapshot)
++        self.assertEqual(info.parent_uuid, subvol_uuid)
++
+         # TODO: test received_uuid, stransid, rtransid, stime, and rtime
+ 
+         for arg in self.path_or_fd(self.mountpoint):
+@@ -215,6 +222,54 @@ class TestSubvolume(BtrfsTestCase):
          self.assertTrue(os.WIFEXITED(wstatus))
          self.assertEqual(os.WEXITSTATUS(wstatus), 0)
+ 
++    def test_create_snapshot(self):
++        subvol = os.path.join(self.mountpoint, 'subvol')
 +
-+    def test_subvolume_iterator(self):
-+        pwd = os.getcwd()
-+        try:
-+            os.chdir(self.mountpoint)
-+            btrfsutil.create_subvolume('foo')
++        btrfsutil.create_subvolume(subvol)
++        os.mkdir(os.path.join(subvol, 'dir'))
 +
-+            path, subvol = next(btrfsutil.SubvolumeIterator('.', info=True))
-+            self.assertEqual(path, 'foo')
-+            self.assertIsInstance(subvol, btrfsutil.SubvolumeInfo)
-+            self.assertEqual(subvol.id, 256)
-+            self.assertEqual(subvol.parent_id, 5)
++        for i, arg in enumerate(self.path_or_fd(subvol)):
++            with self.subTest(type=type(arg)):
++                snapshots_dir = os.path.join(self.mountpoint, 'snapshots{}'.format(i))
++                os.mkdir(snapshots_dir)
++                snapshot = os.path.join(snapshots_dir, 'snapshot')
 +
-+            btrfsutil.create_subvolume('foo/bar')
-+            btrfsutil.create_subvolume('foo/bar/baz')
++                btrfsutil.create_snapshot(subvol, snapshot + '1')
++                self.assertTrue(btrfsutil.is_subvolume(snapshot + '1'))
++                self.assertTrue(os.path.exists(os.path.join(snapshot + '1', 'dir')))
 +
-+            subvols = [
-+                ('foo', 256),
-+                ('foo/bar', 257),
-+                ('foo/bar/baz', 258),
-+            ]
++                btrfsutil.create_snapshot(subvol, (snapshot + '2').encode())
++                self.assertTrue(btrfsutil.is_subvolume(snapshot + '2'))
++                self.assertTrue(os.path.exists(os.path.join(snapshot + '2', 'dir')))
 +
-+            for arg in self.path_or_fd('.'):
-+                with self.subTest(type=type(arg)):
-+                    self.assertEqual(list(btrfsutil.SubvolumeIterator(arg)), subvols)
-+            self.assertEqual(list(btrfsutil.SubvolumeIterator('.', top=0)), subvols)
++                if HAVE_PATH_LIKE:
++                    btrfsutil.create_snapshot(subvol, PurePath(snapshot + '3'))
++                    self.assertTrue(btrfsutil.is_subvolume(snapshot + '3'))
++                    self.assertTrue(os.path.exists(os.path.join(snapshot + '3', 'dir')))
 +
-+            self.assertEqual(list(btrfsutil.SubvolumeIterator('.', post_order=True)),
-+                             [('foo/bar/baz', 258),
-+                              ('foo/bar', 257),
-+                              ('foo', 256)])
++        nested_subvol = os.path.join(subvol, 'nested')
++        more_nested_subvol = os.path.join(nested_subvol, 'more_nested')
++        btrfsutil.create_subvolume(nested_subvol)
++        btrfsutil.create_subvolume(more_nested_subvol)
++        os.mkdir(os.path.join(more_nested_subvol, 'nested_dir'))
 +
-+            subvols = [
-+                ('bar', 257),
-+                ('bar/baz', 258),
-+            ]
++        snapshot = os.path.join(self.mountpoint, 'snapshot')
 +
-+            self.assertEqual(list(btrfsutil.SubvolumeIterator('.', top=256)), subvols)
-+            self.assertEqual(list(btrfsutil.SubvolumeIterator('foo', top=0)), subvols)
++        btrfsutil.create_snapshot(subvol, snapshot + '1')
++        # Dummy subvolume.
++        self.assertEqual(os.stat(os.path.join(snapshot + '1', 'nested')).st_ino, 2)
++        self.assertFalse(os.path.exists(os.path.join(snapshot + '1', 'nested', 'more_nested')))
 +
-+            os.rename('foo/bar/baz', 'baz')
-+            self.assertEqual(sorted(btrfsutil.SubvolumeIterator('.')),
-+                             [('baz', 258),
-+                              ('foo', 256),
-+                              ('foo/bar', 257)])
++        btrfsutil.create_snapshot(subvol, snapshot + '2', recursive=True)
++        self.assertTrue(os.path.exists(os.path.join(snapshot + '2', 'nested/more_nested/nested_dir')))
 +
-+            with btrfsutil.SubvolumeIterator('.') as it:
-+                self.assertGreaterEqual(it.fileno(), 0)
-+                it.close()
-+                with self.assertRaises(ValueError):
-+                    next(iter(it))
-+                with self.assertRaises(ValueError):
-+                    it.fileno()
-+                it.close()
-+        finally:
-+            os.chdir(pwd)
++        transid = btrfsutil.create_snapshot(subvol, snapshot + '3', recursive=True, async=True)
++        self.assertTrue(os.path.exists(os.path.join(snapshot + '3', 'nested/more_nested/nested_dir')))
++        self.assertGreater(transid, 0)
++
++        btrfsutil.create_snapshot(subvol, snapshot + '4', read_only=True)
++        self.assertTrue(btrfsutil.get_subvolume_read_only(snapshot + '4'))
++
+     def test_subvolume_iterator(self):
+         pwd = os.getcwd()
+         try:
 diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
-index eb57b4c4..2fb4e59f 100644
+index 2fb4e59f..27f64657 100644
 --- a/libbtrfsutil/subvolume.c
 +++ b/libbtrfsutil/subvolume.c
-@@ -710,3 +710,325 @@ enum btrfs_util_error btrfs_util_f_create_subvolume(int parent_fd,
- 
- 	return BTRFS_UTIL_OK;
+@@ -856,6 +856,172 @@ out_iter:
+ 	return err;
  }
-+
-+#define BTRFS_UTIL_SUBVOLUME_ITERATOR_CLOSE_FD (1 << 30)
-+
-+struct search_stack_entry {
-+	struct btrfs_ioctl_search_args search;
-+	size_t items_pos, buf_off;
-+	size_t path_len;
-+};
-+
-+struct btrfs_util_subvolume_iterator {
-+	int fd;
-+	int flags;
-+
-+	struct search_stack_entry *search_stack;
-+	size_t search_stack_len;
-+	size_t search_stack_capacity;
-+
-+	char *cur_path;
-+	size_t cur_path_capacity;
-+};
-+
-+static enum btrfs_util_error append_to_search_stack(struct btrfs_util_subvolume_iterator *iter,
-+						    uint64_t tree_id,
-+						    size_t path_len)
+ 
++static enum btrfs_util_error snapshot_subvolume_children(int fd, int parent_fd,
++							 const char *name,
++							 uint64_t *async_transid)
 +{
-+	struct search_stack_entry *entry;
-+
-+	if (iter->search_stack_len >= iter->search_stack_capacity) {
-+		size_t new_capacity = iter->search_stack_capacity * 2;
-+		struct search_stack_entry *new_search_stack;
-+
-+		new_search_stack = reallocarray(iter->search_stack,
-+						new_capacity,
-+						sizeof(*iter->search_stack));
-+		if (!new_search_stack)
-+			return BTRFS_UTIL_ERROR_NO_MEMORY;
-+
-+		iter->search_stack_capacity = new_capacity;
-+		iter->search_stack = new_search_stack;
-+	}
-+
-+	entry = &iter->search_stack[iter->search_stack_len++];
-+
-+	memset(&entry->search, 0, sizeof(entry->search));
-+	entry->search.key.tree_id = BTRFS_ROOT_TREE_OBJECTID;
-+	entry->search.key.min_objectid = tree_id;
-+	entry->search.key.max_objectid = tree_id;
-+	entry->search.key.min_type = BTRFS_ROOT_REF_KEY;
-+	entry->search.key.max_type = BTRFS_ROOT_REF_KEY;
-+	entry->search.key.min_offset = 0;
-+	entry->search.key.max_offset = UINT64_MAX;
-+	entry->search.key.min_transid = 0;
-+	entry->search.key.max_transid = UINT64_MAX;
-+	entry->search.key.nr_items = 0;
-+
-+	entry->items_pos = 0;
-+	entry->buf_off = 0;
-+
-+	entry->path_len = path_len;
-+
-+	return BTRFS_UTIL_OK;
-+}
-+
-+__attribute__((visibility("default")))
-+enum btrfs_util_error btrfs_util_create_subvolume_iterator(const char *path,
-+							   uint64_t top,
-+							   int flags,
-+							   struct btrfs_util_subvolume_iterator **ret)
-+{
++	struct btrfs_util_subvolume_iterator *iter;
 +	enum btrfs_util_error err;
-+	int fd;
++	int dstfd;
 +
-+	fd = open(path, O_RDONLY);
-+	if (fd == -1)
++	dstfd = openat(parent_fd, name, O_RDONLY);
++	if (dstfd == -1)
 +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
 +
-+	err = btrfs_util_f_create_subvolume_iterator(fd, top, flags, ret);
-+	if (err == BTRFS_UTIL_OK)
-+		(*ret)->flags |= BTRFS_UTIL_SUBVOLUME_ITERATOR_CLOSE_FD;
++	err = btrfs_util_f_create_subvolume_iterator(fd, 0, 0, &iter);
++	if (err)
++		goto out;
 +
++	for (;;) {
++		char child_name[BTRFS_SUBVOL_NAME_MAX + 1];
++		char *child_path;
++		int child_fd, new_parent_fd;
++		uint64_t tmp_transid;
++
++		err = btrfs_util_subvolume_iterator_next(iter, &child_path,
++							 NULL);
++		if (err) {
++			if (err == BTRFS_UTIL_ERROR_STOP_ITERATION)
++				err = BTRFS_UTIL_OK;
++			break;
++		}
++
++		/* Remove the placeholder directory. */
++		if (unlinkat(dstfd, child_path, AT_REMOVEDIR) == -1) {
++			free(child_path);
++			err = BTRFS_UTIL_ERROR_RMDIR_FAILED;
++			break;
++		}
++
++		child_fd = openat(fd, child_path, O_RDONLY);
++		if (child_fd == -1) {
++			free(child_path);
++			err = BTRFS_UTIL_ERROR_OPEN_FAILED;
++			break;
++		}
++
++		err = openat_parent_and_name(dstfd, child_path, child_name,
++					     sizeof(child_name),
++					     &new_parent_fd);
++		free(child_path);
++		if (err) {
++			SAVE_ERRNO_AND_CLOSE(child_fd);
++			break;
++		}
++
++		err = btrfs_util_f2_create_snapshot(child_fd, new_parent_fd,
++						    child_name, 0,
++						    async_transid ? &tmp_transid : NULL,
++						    NULL);
++		SAVE_ERRNO_AND_CLOSE(child_fd);
++		SAVE_ERRNO_AND_CLOSE(new_parent_fd);
++		if (err)
++			break;
++		if (async_transid && tmp_transid > *async_transid)
++			*async_transid = tmp_transid;
++	}
++
++	btrfs_util_destroy_subvolume_iterator(iter);
++out:
++	SAVE_ERRNO_AND_CLOSE(dstfd);
 +	return err;
 +}
 +
 +__attribute__((visibility("default")))
-+enum btrfs_util_error btrfs_util_f_create_subvolume_iterator(int fd, uint64_t top,
-+							     int flags,
-+							     struct btrfs_util_subvolume_iterator **ret)
++enum btrfs_util_error btrfs_util_create_snapshot(const char *source,
++						 const char *path, int flags,
++						 uint64_t *async_transid,
++						 struct btrfs_util_qgroup_inherit *qgroup_inherit)
 +{
-+	struct btrfs_util_subvolume_iterator *iter;
 +	enum btrfs_util_error err;
++	int fd;
 +
-+	if (flags & ~BTRFS_UTIL_SUBVOLUME_ITERATOR_MASK) {
++	fd = open(source, O_RDONLY);
++	if (fd == -1)
++		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++
++	err = btrfs_util_f_create_snapshot(fd, path, flags, async_transid,
++					   qgroup_inherit);
++	SAVE_ERRNO_AND_CLOSE(fd);
++	return err;
++}
++
++__attribute__((visibility("default")))
++enum btrfs_util_error btrfs_util_f_create_snapshot(int fd, const char *path,
++						   int flags,
++						   uint64_t *async_transid,
++						   struct btrfs_util_qgroup_inherit *qgroup_inherit)
++{
++	char name[BTRFS_SUBVOL_NAME_MAX + 1];
++	enum btrfs_util_error err;
++	int parent_fd;
++
++	err = openat_parent_and_name(AT_FDCWD, path, name, sizeof(name),
++				     &parent_fd);
++	if (err)
++		return err;
++
++	err = btrfs_util_f2_create_snapshot(fd, parent_fd, name, flags,
++					    async_transid, qgroup_inherit);
++	SAVE_ERRNO_AND_CLOSE(parent_fd);
++	return err;
++}
++
++__attribute__((visibility("default")))
++enum btrfs_util_error btrfs_util_f2_create_snapshot(int fd, int parent_fd,
++						    const char *name, int flags,
++						    uint64_t *async_transid,
++						    struct btrfs_util_qgroup_inherit *qgroup_inherit)
++{
++	struct btrfs_ioctl_vol_args_v2 args = {.fd = fd};
++	enum btrfs_util_error err;
++	size_t len;
++	int ret;
++
++	if ((flags & ~BTRFS_UTIL_CREATE_SNAPSHOT_MASK) ||
++	    ((flags & BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY) &&
++	     (flags & BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE))) {
 +		errno = EINVAL;
 +		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
 +	}
 +
-+	if (top == 0) {
-+		err = btrfs_util_f_is_subvolume(fd);
-+		if (err)
-+			return err;
-+
-+		err = btrfs_util_f_subvolume_id(fd, &top);
-+		if (err)
-+			return err;
++	if (flags & BTRFS_UTIL_CREATE_SNAPSHOT_READ_ONLY)
++		args.flags |= BTRFS_SUBVOL_RDONLY;
++	if (async_transid)
++		args.flags |= BTRFS_SUBVOL_CREATE_ASYNC;
++	if (qgroup_inherit) {
++		args.flags |= BTRFS_SUBVOL_QGROUP_INHERIT;
++		args.qgroup_inherit = (struct btrfs_qgroup_inherit *)qgroup_inherit;
++		args.size = (sizeof(*args.qgroup_inherit) +
++			     args.qgroup_inherit->num_qgroups *
++			     sizeof(args.qgroup_inherit->qgroups[0]));
 +	}
 +
-+	iter = malloc(sizeof(*iter));
-+	if (!iter)
-+		return BTRFS_UTIL_ERROR_NO_MEMORY;
-+
-+	iter->fd = fd;
-+	iter->flags = flags;
-+
-+	iter->search_stack_len = 0;
-+	iter->search_stack_capacity = 4;
-+	iter->search_stack = malloc(sizeof(*iter->search_stack) *
-+				    iter->search_stack_capacity);
-+	if (!iter->search_stack) {
-+		err = BTRFS_UTIL_ERROR_NO_MEMORY;
-+		goto out_iter;
++	len = strlen(name);
++	if (len >= sizeof(args.name)) {
++		errno = ENAMETOOLONG;
++		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
 +	}
++	memcpy(args.name, name, len);
++	args.name[len] = '\0';
 +
-+	iter->cur_path_capacity = 256;
-+	iter->cur_path = malloc(iter->cur_path_capacity);
-+	if (!iter->cur_path) {
-+		err = BTRFS_UTIL_ERROR_NO_MEMORY;
-+		goto out_search_stack;
-+	}
-+
-+	err = append_to_search_stack(iter, top, 0);
-+	if (err)
-+		goto out_cur_path;
-+
-+	*ret = iter;
-+
-+	return BTRFS_UTIL_OK;
-+
-+out_cur_path:
-+	free(iter->cur_path);
-+out_search_stack:
-+	free(iter->search_stack);
-+out_iter:
-+	free(iter);
-+	return err;
-+}
-+
-+__attribute__((visibility("default")))
-+void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_iterator *iter)
-+{
-+	if (iter) {
-+		free(iter->cur_path);
-+		free(iter->search_stack);
-+		if (iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_CLOSE_FD)
-+			SAVE_ERRNO_AND_CLOSE(iter->fd);
-+		free(iter);
-+	}
-+}
-+
-+__attribute__((visibility("default")))
-+int btrfs_util_subvolume_iterator_fd(const struct btrfs_util_subvolume_iterator *iter)
-+{
-+	return iter->fd;
-+}
-+
-+static struct search_stack_entry *top_search_stack_entry(struct btrfs_util_subvolume_iterator *iter)
-+{
-+	return &iter->search_stack[iter->search_stack_len - 1];
-+}
-+
-+static enum btrfs_util_error build_subvol_path(struct btrfs_util_subvolume_iterator *iter,
-+					       const struct btrfs_ioctl_search_header *header,
-+					       const struct btrfs_root_ref *ref,
-+					       const char *name,
-+					       size_t *path_len_ret)
-+{
-+	struct btrfs_ioctl_ino_lookup_args lookup = {
-+		.treeid = header->objectid,
-+		.objectid = le64_to_cpu(ref->dirid),
-+	};
-+	struct search_stack_entry *top = top_search_stack_entry(iter);
-+	size_t dir_len, name_len, path_len;
-+	char *p;
-+	int ret;
-+
-+	ret = ioctl(iter->fd, BTRFS_IOC_INO_LOOKUP, &lookup);
++	ret = ioctl(parent_fd, BTRFS_IOC_SNAP_CREATE_V2, &args);
 +	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_INO_LOOKUP_FAILED;
++		return BTRFS_UTIL_ERROR_SUBVOL_CREATE_FAILED;
 +
-+	dir_len = strlen(lookup.name);
-+	name_len = le16_to_cpu(ref->name_len);
++	if (async_transid)
++		*async_transid = args.transid;
 +
-+	path_len = top->path_len;
-+	/*
-+	 * We need a joining slash if we have a current path and a subdirectory.
-+	 */
-+	if (top->path_len && dir_len)
-+		path_len++;
-+	path_len += dir_len;
-+	/*
-+	 * We need another joining slash if we have a current path and a name,
-+	 * but not if we have a subdirectory, because the lookup ioctl includes
-+	 * a trailing slash.
-+	 */
-+	if (top->path_len && !dir_len && name_len)
-+		path_len++;
-+	path_len += name_len;
-+
-+	if (path_len > iter->cur_path_capacity) {
-+		char *tmp = realloc(iter->cur_path, path_len);
-+
-+		if (!tmp)
-+			return BTRFS_UTIL_ERROR_NO_MEMORY;
-+		iter->cur_path = tmp;
-+		iter->cur_path_capacity = path_len;
++	if (flags & BTRFS_UTIL_CREATE_SNAPSHOT_RECURSIVE) {
++		err = snapshot_subvolume_children(fd, parent_fd, name,
++						  async_transid);
++		if (err)
++			return err;
 +	}
-+
-+	p = iter->cur_path + top->path_len;
-+	if (top->path_len && dir_len)
-+		*p++ = '/';
-+	memcpy(p, lookup.name, dir_len);
-+	p += dir_len;
-+	if (top->path_len && !dir_len && name_len)
-+		*p++ = '/';
-+	memcpy(p, name, name_len);
-+	p += name_len;
-+
-+	*path_len_ret = path_len;
 +
 +	return BTRFS_UTIL_OK;
 +}
 +
-+__attribute__((visibility("default")))
-+enum btrfs_util_error btrfs_util_subvolume_iterator_next(struct btrfs_util_subvolume_iterator *iter,
-+							 char **path_ret,
-+							 uint64_t *id_ret)
-+{
-+	struct search_stack_entry *top;
-+	const struct btrfs_ioctl_search_header *header;
-+	const struct btrfs_root_ref *ref;
-+	const char *name;
-+	enum btrfs_util_error err;
-+	size_t path_len;
-+	int ret;
-+
-+	for (;;) {
-+		for (;;) {
-+			if (iter->search_stack_len == 0)
-+				return BTRFS_UTIL_ERROR_STOP_ITERATION;
-+
-+			top = top_search_stack_entry(iter);
-+			if (top->items_pos < top->search.key.nr_items) {
-+				break;
-+			} else {
-+				top->search.key.nr_items = 4096;
-+				ret = ioctl(iter->fd, BTRFS_IOC_TREE_SEARCH, &top->search);
-+				if (ret == -1)
-+					return BTRFS_UTIL_ERROR_SEARCH_FAILED;
-+				top->items_pos = 0;
-+				top->buf_off = 0;
-+
-+				if (top->search.key.nr_items == 0) {
-+					iter->search_stack_len--;
-+					if ((iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER) &&
-+					    iter->search_stack_len)
-+						goto out;
-+				}
-+			}
-+		}
-+
-+		header = (struct btrfs_ioctl_search_header *)(top->search.buf + top->buf_off);
-+
-+		top->items_pos++;
-+		top->buf_off += sizeof(*header) + header->len;
-+		top->search.key.min_offset = header->offset + 1;
-+
-+		/* This shouldn't happen, but handle it just in case. */
-+		if (header->type != BTRFS_ROOT_REF_KEY)
-+			continue;
-+
-+		ref = (struct btrfs_root_ref *)(header + 1);
-+		name = (const char *)(ref + 1);
-+		err = build_subvol_path(iter, header, ref, name, &path_len);
-+		if (err)
-+			return err;
-+
-+		err = append_to_search_stack(iter, header->offset, path_len);
-+		if (err)
-+			return err;
-+
-+		if (!(iter->flags & BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER)) {
-+			top = top_search_stack_entry(iter);
-+			goto out;
-+		}
-+	}
-+
-+out:
-+	if (path_ret) {
-+		*path_ret = malloc(top->path_len + 1);
-+		if (!*path_ret)
-+			return BTRFS_UTIL_ERROR_NO_MEMORY;
-+		memcpy(*path_ret, iter->cur_path, top->path_len);
-+		(*path_ret)[top->path_len] = '\0';
-+	}
-+	if (id_ret)
-+		*id_ret = top->search.key.min_objectid;
-+	return BTRFS_UTIL_OK;
-+}
-+
-+__attribute__((visibility("default")))
-+enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_subvolume_iterator *iter,
-+							      char **path_ret,
-+							      struct btrfs_util_subvolume_info *subvol)
-+{
-+	enum btrfs_util_error err;
-+	uint64_t id;
-+
-+	err = btrfs_util_subvolume_iterator_next(iter, path_ret, &id);
-+	if (err)
-+		return err;
-+
-+	return btrfs_util_f_subvolume_info(iter->fd, id, subvol);
-+}
+ __attribute__((visibility("default")))
+ void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_iterator *iter)
+ {
 -- 
 2.16.1
 

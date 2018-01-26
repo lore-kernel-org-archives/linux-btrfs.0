@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:59414 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:34399 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752445AbeAZIa4 (ORCPT
+        with ESMTP id S1752436AbeAZIa6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 03:30:56 -0500
+        Fri, 26 Jan 2018 03:30:58 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 09DEA49F19B0
+        by cn.fujitsu.com (Postfix) with ESMTP id 9959549F19B1
         for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 16:30:51 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH 11/15] btrfs-progs: check: modify indoe_rec and backref after repair
-Date: Fri, 26 Jan 2018 16:35:15 +0800
-Message-ID: <20180126083519.28373-12-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH 12/15] btrfs-progs: check: increase counter error in check_inode_recs()
+Date: Fri, 26 Jan 2018 16:35:16 +0800
+Message-ID: <20180126083519.28373-13-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,43 +20,55 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-repair_inode_backrefs() forgets to modify backrefs and inode records
-after repair them.
+Counter @error decides return values of check_inode_recs().
+
+Previously, @error won't be incremented even repair_inode_recs() failed.
+It causes 'btrfs check --repair' prints some error information but
+returns 0.
+
+So, if root dir is missing and repair is disabled, @error should be
+incremented.
+And after repair_inode_recs(), increase @error if any errors in inodes
+and backrefs.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- cmds-check.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ cmds-check.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/cmds-check.c b/cmds-check.c
-index d8d9a3227c06..b23a4493b12b 100644
+index b23a4493b12b..a83f0a92f48b 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -3192,6 +3192,7 @@ static int repair_inode_backrefs(struct btrfs_root *root,
- 				ret = create_inode_item(root, rec, 1);
- 				if (ret)
- 					break;
-+				rec->found_inode_item = 1;
- 				repaired++;
+@@ -4137,6 +4137,7 @@ static int check_inode_recs(struct btrfs_root *root,
+ 			return -EAGAIN;
+ 		}
+ 
++		error++;
+ 		fprintf(stderr, "root %llu root dir %llu not found\n",
+ 			(unsigned long long)root->root_key.objectid,
+ 			(unsigned long long)root_dirid);
+@@ -4176,10 +4177,9 @@ static int check_inode_recs(struct btrfs_root *root,
+ 				free_inode_rec(rec);
+ 				continue;
  			}
- 		}
-@@ -3268,6 +3269,8 @@ static int repair_inode_backrefs(struct btrfs_root *root,
- 						    backref->index);
- 			BUG_ON(ret);
- 			btrfs_commit_transaction(trans, root);
-+			backref->found_dir_index = 1;
-+			backref->found_dir_item = 1;
- 			repaired++;
+-			ret = 0;
  		}
  
-@@ -3279,6 +3282,7 @@ static int repair_inode_backrefs(struct btrfs_root *root,
- 			ret = create_inode_item(root, rec, 0);
- 			if (ret)
- 				break;
-+			rec->found_inode_item = 1;
- 			repaired++;
- 		}
- 
+-		if (!(repair && ret == 0))
++		if (rec->errors)
+ 			error++;
+ 		print_inode_error(root, rec);
+ 		list_for_each_entry(backref, &rec->backrefs, list) {
+@@ -4189,6 +4189,8 @@ static int check_inode_recs(struct btrfs_root *root,
+ 				backref->errors |= REF_ERR_NO_DIR_INDEX;
+ 			if (!backref->found_inode_ref)
+ 				backref->errors |= REF_ERR_NO_INODE_REF;
++			if (backref->errors)
++				error++;
+ 			fprintf(stderr, "\tunresolved ref dir %llu index %llu"
+ 				" namelen %u name %s filetype %d errors %x",
+ 				(unsigned long long)backref->dir,
 -- 
 2.16.1
 

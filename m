@@ -1,69 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43436 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752120AbeAaQOX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 11:14:23 -0500
-Date: Wed, 31 Jan 2018 17:12:10 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 7/7] btrfs-progs: Cleanup use of root in leaf_data_end
-Message-ID: <20180131161210.GF18553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1516951566-21777-1-git-send-email-gujx@cn.fujitsu.com>
- <1516951566-21777-8-git-send-email-gujx@cn.fujitsu.com>
- <532054be-f016-67e3-93b2-5adcc191bef3@gmx.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:53295 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751543AbeAZDWQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Jan 2018 22:22:16 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+        by cn.fujitsu.com (Postfix) with ESMTP id 19AD749F19B0
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 11:22:11 +0800 (CST)
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 4/6] btrfs-progs: Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE
+Date: Fri, 26 Jan 2018 11:22:04 +0800
+Message-ID: <1516936926-18707-4-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
+References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <532054be-f016-67e3-93b2-5adcc191bef3@gmx.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 30, 2018 at 03:36:28PM +0800, Qu Wenruo wrote:
-> On 2018年01月26日 15:26, Gu Jinxiang wrote:
-> > In function leaf_data_end, root is just used to get fs_info,
-> > so change the parameter of this function from btrfs_root to
-> > btrfs_fs_info.
-> > And also make it consistent with kernel.
-> > 
-> > Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> > ---
-> >  ctree.c | 32 +++++++++++++++++---------------
-> >  1 file changed, 17 insertions(+), 15 deletions(-)
-> > 
-> > diff --git a/ctree.c b/ctree.c
-> > index 11d207e7..2417483d 100644
-> > --- a/ctree.c
-> > +++ b/ctree.c
-> > @@ -410,12 +410,12 @@ static int btrfs_comp_keys(struct btrfs_disk_key *disk, struct btrfs_key *k2)
-> >   * this returns the address of the start of the last item,
-> >   * which is the stop of the leaf data stack
-> >   */
-> > -static inline unsigned int leaf_data_end(struct btrfs_root *root,
-> > -					 struct extent_buffer *leaf)
-> > +static inline unsigned int leaf_data_end(const struct btrfs_fs_info *fs_info,
-> > +					 const struct extent_buffer *leaf)
-> 
-> Here leaf is const, which is fine.
-> 
-> >  {
-> >  	u32 nr = btrfs_header_nritems(leaf);
-> >  	if (nr == 0)
-> > -		return BTRFS_LEAF_DATA_SIZE(root->fs_info);
-> > +		return BTRFS_LEAF_DATA_SIZE(fs_info);
-> >  	return btrfs_item_offset_nr(leaf, nr - 1);
-> 
-> But btrfs_item_offset_nr() doesn't have const prefix for leaf.
-> Leaving the following warning:
-> 
-> passing argument 1 of ‘btrfs_item_offset_nr’ discards ‘const’ qualifier
-> from pointer target type [-Wdiscarded-qualifiers]
->   return btrfs_item_offset_nr(leaf, nr - 1);
->                               ^~~~
+Do a cleanup. Also make it consistent with kernel.
+Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE, since
+maybe in some situation we do not know root, but just know fs_info.
 
-I don't want to add the warning, so I'll skip this patch for now. The
-constification of arguments will likely propagate to more helpers so
-it's not a trivial fix to this patch.
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+ ctree.h    | 2 +-
+ dir-item.c | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-Gu Jinxiang, please fix the warning and resend with possibly more
-preparatory cleanups if necessary. Thanks.
+diff --git a/ctree.h b/ctree.h
+index ace93cc3..c82e7547 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -364,7 +364,7 @@ struct btrfs_header {
+ #define BTRFS_MAX_INLINE_DATA_SIZE(fs_info) (BTRFS_LEAF_DATA_SIZE(fs_info) - \
+ 					sizeof(struct btrfs_item) - \
+ 					sizeof(struct btrfs_file_extent_item))
+-#define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
++#define BTRFS_MAX_XATTR_SIZE(fs_info)	(BTRFS_LEAF_DATA_SIZE(fs_info) - \
+ 				 sizeof(struct btrfs_item) -\
+ 				 sizeof(struct btrfs_dir_item))
+ 
+diff --git a/dir-item.c b/dir-item.c
+index 462546c0..0b7250c9 100644
+--- a/dir-item.c
++++ b/dir-item.c
+@@ -311,7 +311,8 @@ static int verify_dir_item(struct btrfs_root *root,
+ 
+ 	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
+ 	if ((btrfs_dir_data_len(leaf, dir_item) +
+-	     btrfs_dir_name_len(leaf, dir_item)) > BTRFS_MAX_XATTR_SIZE(root)) {
++	     btrfs_dir_name_len(leaf, dir_item)) >
++			BTRFS_MAX_XATTR_SIZE(root->fs_info)) {
+ 		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
+ 		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
+ 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
+-- 
+2.14.3
+
+
+

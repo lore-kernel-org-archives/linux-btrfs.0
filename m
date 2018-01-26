@@ -1,54 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:49354 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751899AbeAaFMt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 00:12:49 -0500
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0V5CnAx099469
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 05:12:49 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2120.oracle.com with ESMTP id 2fu5bwr81m-4
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 05:12:48 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0V2SOVQ015411
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 02:28:24 GMT
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0V2SOv2030341
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 02:28:24 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:57247 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751408AbeA0N0Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 27 Jan 2018 08:26:25 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 23007AD4F
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Jan 2018 13:22:04 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/2] btrfs: fix alloc device order consistency
-Date: Wed, 31 Jan 2018 10:28:56 +0800
-Message-Id: <20180131022856.16791-3-anand.jain@oracle.com>
-In-Reply-To: <20180131022856.16791-1-anand.jain@oracle.com>
-References: <20180131022856.16791-1-anand.jain@oracle.com>
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Handle btrfs_set_extent_delalloc failure in relocate_file_extent_cluster
+Date: Fri, 26 Jan 2018 17:05:17 +0200
+Message-Id: <1516979117-15117-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add opened device to the tail of dev_alloc_list instead of head, so that
-it maintains the same order as dev_list.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/volumes.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0109f370ad5b..9c3b4ff7f505 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -708,7 +708,7 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
- 	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
- 		fs_devices->rw_devices++;
--		list_add(&device->dev_alloc_list, &fs_devices->alloc_list);
-+		list_add_tail(&device->dev_alloc_list, &fs_devices->alloc_list);
- 	}
- 	brelse(bh);
+Based on off-list feadback from Josef I'm also clearing the EXTENT_BOUNDARY 
+flag so we don't leak it. Otherwise it's okay. 
+
+He said to add his Reviewed-by as long as the extent clearing bit is adjusted. 
+ fs/btrfs/relocation.c | 21 +++++++++++++++++----
+ 1 file changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index f0c3f00e97cb..8b2a31cef5cf 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3268,12 +3268,25 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 			nr++;
+ 		}
+ 
+-		btrfs_set_extent_delalloc(inode, page_start, page_end, 0, NULL,
+-					  0);
++		ret = btrfs_set_extent_delalloc(inode, page_start, page_end, 0,
++						NULL, 0);
++		if (ret) {
++			unlock_page(page);
++			put_page(page);
++			btrfs_delalloc_release_metadata(BTRFS_I(inode),
++							 PAGE_SIZE);
++			btrfs_delalloc_release_extents(BTRFS_I(inode),
++			                               PAGE_SIZE);
++
++			clear_extent_bits(&BTRFS_I(inode)->io_tree,
++					  page_start, page_end,
++					  EXTENT_LOCKED | EXTENT_BOUNDARY);
++			goto out;
++
++		}
+ 		set_page_dirty(page);
+ 
+-		unlock_extent(&BTRFS_I(inode)->io_tree,
+-			      page_start, page_end);
++		unlock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
+ 		unlock_page(page);
+ 		put_page(page);
  
 -- 
-2.7.0
+2.7.4
 

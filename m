@@ -1,69 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56444 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40279 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751994AbeAaS3H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 13:29:07 -0500
+        id S1753168AbeAZPXi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 10:23:38 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6E4C2AB40
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 18:29:06 +0000 (UTC)
-Date: Wed, 31 Jan 2018 19:26:54 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 00/16] btrfs-progs: Split lowmem mode check to its own
-Message-ID: <20180131182654.GJ18553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180119053731.10795-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 02994ACC0
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 15:18:02 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: wqu@suse.com
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [RFC PATCH] btrfs: Gracefully handle errors in btrfs_qgroup_trace_extent_post
+Date: Fri, 26 Jan 2018 16:13:41 +0200
+Message-Id: <1516976021-11935-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 19, 2018 at 01:37:15PM +0800, Qu Wenruo wrote:
-> The long planned cmds-check re-construction is finally here.
-> 
-> As the original cmds-check.c is getting larger and larger (already over
-> 15K lines), it's always a good idea to split it into its own check/
-> directory.
-> 
-> This patchset do the following work:
-> 1) Move cmds-check.c to check/main.c
-> 2) Put codes shared by both original and lowmem mode into
->    check/common.[ch]
-> 3) Put lowmem code into check/lowmem.[ch]
->    With minor renaming to get rid of unnecessary _v2 suffix.
-> 
-> The modification looks scary, but no functional change at all.
-> 
-> And considering how much the file structure changed, it's a good idea to
-> put PART1 as quick as possible, and there will be less pressure to
-> rebase new incoming fsck related codes.
+Running generic/019 with qgroups on the scratch device enabled is
+almost guaranteed to trigger the BUG_ON in btrfs_free_tree_block. It's
+supposed to trigger only on -ENOMEM, in reality, however, it's possible
+to get -EIO from btrfs_qgroup_trace_extent_post. This function just
+finds the roots of the extent being tracked and sets the qrecord->old_roots
+list. If this operation fails nothing critical happens except the
+quota accounting can be considered wrong. In such case just set the
+INCONSISTENT flag for the quota and be done with it.
 
-I agree with the way you split check, my attempts were going along the
-same lines. The question whether to split first and then add fixes shall
-be resolved as I'm going to merge the split first. This would need
-refreshing the lowmem fixes but the other way around would not avoid the
-merge conflicts anyway.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
 
-The patch 15 does not apply cleanly to current devel, the conflict did
-not seem big, but I did not try to resolve it and merge the last patch.
-So, 1-14 goes to devel, please refresh 15 and 16.
+Qu, 
 
-> The real move work happens in the 15th patch, which due to its size
-> (500KB+), it may not be able to reach mail list.
-> So please fetch the whole patchset from github:
-> https://github.com/adam900710/btrfs-progs/tree/split_check
-> 
-> There will be a part 2, mostly moving original mode to its own
-> check/original.[ch], along with extra comment explaining how the two
-> different modes work.
+This fixes the crash for me, however I'm not entirely sure it's really the 
+best fix since it's leaking the usage of INCONSISTENT out of qgroup.c. Ideally
+I'd like to avoid this. Since you have more experience with qgroups and also you
+introduced the extent tracking code in add_delayed_tree_ref how does 
+look to you? 
 
-I'm going to do a few file renames, eg. original.c -> mode-original.c
-and similar. It would be better if you send part 2 after that. I'm
-expecting more patches that would do no functional change so we can
-settle down with the new check/ structure.
 
-As 'check' is the 1st level command, the cmds-check.c will need to be
-restored at some point, but it will be only a simple wrapper around the
-commandline handling.
+ fs/btrfs/delayed-ref.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index a1a40cf382e3..1e9aa18cc0d8 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -820,8 +820,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 			     num_bytes, parent, ref_root, level, action);
+ 	spin_unlock(&delayed_refs->lock);
+ 
+-	if (qrecord_inserted)
+-		return btrfs_qgroup_trace_extent_post(fs_info, record);
++	if (qrecord_inserted) {
++		int ret = btrfs_qgroup_trace_extent_post(fs_info, record);
++		if (ret != -ENOMEM)
++			fs_info->qgroup_flags |= BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
++		else
++			return -ENOMEM;
++	}
+ 	return 0;
+ 
+ free_head_ref:
+-- 
+2.7.4
+

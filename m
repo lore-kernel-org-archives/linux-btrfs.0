@@ -1,205 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:29749 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751852AbeAZKKb (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 05:10:31 -0500
-Subject: Re: [PATCH 09/15] btrfs-progs: lowmem check: change logic of leaf
- process if repair
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
+Received: from mout.gmx.net ([212.227.15.19]:49237 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751852AbeAZKLI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 05:11:08 -0500
+Subject: Re: [PATCH 13/15] btrfs-progs: check: find inode filetype in
+ create_inode_item()
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
- <20180126083519.28373-10-suy.fnst@cn.fujitsu.com>
- <82116eb9-1ae0-a619-142e-79b27f44d431@gmx.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <b2a9c5af-65e3-e2f9-fa65-be4d8d912612@cn.fujitsu.com>
-Date: Fri, 26 Jan 2018 18:15:09 +0800
+ <20180126083519.28373-14-suy.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <58ab5c56-62cf-ae11-c1eb-0383820936e6@gmx.com>
+Date: Fri, 26 Jan 2018 18:11:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <82116eb9-1ae0-a619-142e-79b27f44d431@gmx.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <20180126083519.28373-14-suy.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="C5kkuxaJ3wqh9WMjYFoBDZWYFKnaCNYp1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--C5kkuxaJ3wqh9WMjYFoBDZWYFKnaCNYp1
+Content-Type: multipart/mixed; boundary="OH1cC6i8XFhqIatc7PoVKiUdnNvplBGYu";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Su Yue <suy.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <58ab5c56-62cf-ae11-c1eb-0383820936e6@gmx.com>
+Subject: Re: [PATCH 13/15] btrfs-progs: check: find inode filetype in
+ create_inode_item()
+References: <20180126083519.28373-1-suy.fnst@cn.fujitsu.com>
+ <20180126083519.28373-14-suy.fnst@cn.fujitsu.com>
+In-Reply-To: <20180126083519.28373-14-suy.fnst@cn.fujitsu.com>
+
+--OH1cC6i8XFhqIatc7PoVKiUdnNvplBGYu
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 01/26/2018 06:01 PM, Qu Wenruo wrote:
-> 
-> 
-> On 2018年01月26日 16:35, Su Yue wrote:
->> In lowmem check without repair, process_one_leaf_v2() will process one
->> entire leaf and inner check_inode_item() leads path point next
->> leaf.
->> In the beginning, process_one_leaf_v2() will let path point fist inode
->> item or first position where inode id changed.
->>
->> However, in lowmem repair, process_one_leaf_v2() will be interrupted
->> to process one leaf because repair will CoW the leaf. Then some items
->> unprocessed is skipped.
->> Since repair may also delete some items, we can't use tricks like
->> record last checked key.
->>
->> So, only for lowmem repair:
->> 1. check_inode_item is responsible for handle case missing inode item.
-> 
-> I think the idea to use inode item as the indicator is a good idea.
-> And since only check_inode_item() can delete inode item, let it to
-> handle the path is reasonable.
-> 
->> 2. process_one_leaf_v2() do not modify path manually, and check_inode()
->>     promise that @path points last checked item.
->>     Only when something are fixed, process_one_leaf_v2() will continue
->>     to check in next round.
->>
->> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
->> ---
->>   cmds-check.c | 68 ++++++++++++++++++++++++++++++++++++++++++++++++++++--------
->>   1 file changed, 59 insertions(+), 9 deletions(-)
->>
->> diff --git a/cmds-check.c b/cmds-check.c
->> index e57eea4e61c9..ae0a9e146399 100644
->> --- a/cmds-check.c
->> +++ b/cmds-check.c
->> @@ -2007,6 +2007,8 @@ static int process_one_leaf_v2(struct btrfs_root *root, struct btrfs_path *path,
->>   
->>   	cur_bytenr = cur->start;
->>   
->> +	if (repair)
->> +		goto again;
->>   	/* skip to first inode item or the first inode number change */
->>   	nritems = btrfs_header_nritems(cur);
->>   	for (i = 0; i < nritems; i++) {
->> @@ -2033,9 +2035,12 @@ again:
->>   		goto out;
->>   
->>   	/* still have inode items in thie leaf */
->> -	if (cur->start == cur_bytenr)
->> +	if (cur->start == cur_bytenr) {
->> +		ret = btrfs_next_item(root, path);
->> +		if (ret > 0)
->> +			goto out;
->>   		goto again;
->> -
->> +	}
->>   	/*
->>   	 * we have switched to another leaf, above nodes may
->>   	 * have changed, here walk down the path, if a node
->> @@ -5721,6 +5726,8 @@ static int repair_dir_item(struct btrfs_root *root, struct btrfs_key *key,
->>   				      ino);
->>   			}
->>   		}
->> +	} else {
->> +		true_filetype = filetype;
-> 
-> This modification doesn't seems related to this patch.
-> 
-> Maybe it's better to move it 4th patch?
-> 
-Yep.
->>   	}
->>   
->>   	/*
->> @@ -6489,6 +6496,45 @@ out:
->>   	return ret;
->>   }
->>   
->> +/*
->> + * Try insert new inode item frist.
->> + * If failed, jump to next inode item.
->> + */
->> +static int handle_inode_item_missing(struct btrfs_root *root,
->> +				     struct btrfs_path *path)
->> +{
->> +	struct btrfs_key key;
->> +	int ret;
->> +
->> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
->> +
->> +	ret = repair_inode_item_missing(root, key.objectid, 0);
->> +	if (!ret) {
->> +		btrfs_release_path(path);
->> +		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
->> +		if (ret)
->> +			goto next_inode;
->> +		else
->> +			goto out;
->> +	}
->> +
->> +next_inode:
->> +	error("inode item[%llu] is missing, skip to check next inode",
->> +	      key.objectid);
->> +	while (1) {
->> +		ret = btrfs_next_item(root, path);
->> +		if (ret > 0)
->> +			goto out;
-> 
-> ret < 0 case is not handled.
-> 
->> +		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
->> +		if (key.type == BTRFS_INODE_ITEM_KEY) {
->> +			ret = 0;
->> +			break;
->> +		}
->> +	}
->> +out:
->> +	return ret;
->> +}
->> +
->>   /*
->>    * Check INODE_ITEM and related ITEMs (the same inode number)
->>    * 1. check link count
->> @@ -6536,6 +6582,13 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
->>   			err |= LAST_ITEM;
->>   		return err;
->>   	}
->> +	if (key.type != BTRFS_INODE_ITEM_KEY && repair) {
->> +		ret = handle_inode_item_missing(root, path);
->> +		if (ret > 0)
->> +			err |= LAST_ITEM;
->> +		if (ret)
->> +			return err;
->> +	}
->>   
->>   	ii = btrfs_item_ptr(node, slot, struct btrfs_inode_item);
->>   	isize = btrfs_inode_size(node, ii);
->> @@ -6561,7 +6614,6 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
->>   		btrfs_item_key_to_cpu(node, &key, slot);
->>   		if (key.objectid != inode_id)
->>   			goto out;
->> -
->>   		switch (key.type) {
->>   		case BTRFS_INODE_REF_KEY:
->>   			ret = check_inode_ref(root, &key, path, namebuf,
->> @@ -6608,12 +6660,10 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
->>   	}
->>   
->>   out:
->> -	if (err & LAST_ITEM) {
->> -		btrfs_release_path(path);
->> -		ret = btrfs_search_slot(NULL, root, &last_key, path, 0, 0);
->> -		if (ret)
->> -			return err;
->> -	}
->> +	btrfs_release_path(path);
->> +	ret = btrfs_search_slot(NULL, root, &last_key, path, 0, 0);
->> +	if (ret)
->> +		return err;
-> 
-> Why the LAST_ITEM bit is ignored now?
-> 
-My bad. Wrong commit message. This patch influnces lowmem check too.
-Here check_inode_item() points to last checked item.
-Above process_one_leaf_v2() calls btrfs_next_item() but needs more
-strict condition. Will fix it.
 
-Thank,
-Su
+On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 16:35, Su Yue wrote:
+> Now, find_file_type() doesn't return 0 if mismatched filetype is in a
+> backref.
+>=20
+> Let create_inode_item() first call find_file_type() to get filetype.
+> If it failed, then guess filetype.
+>=20
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+> ---
+>  cmds-check.c | 29 ++++++++++++++++++++++-------
+>  1 file changed, 22 insertions(+), 7 deletions(-)
+>=20
+> diff --git a/cmds-check.c b/cmds-check.c
+> index a83f0a92f48b..6091c7ef3442 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -3140,6 +3140,8 @@ static int create_inode_item_lowmem(struct btrfs_=
+trans_handle *trans,
+>  	return __create_inode_item(trans, root, ino, 0, 0, 0, mode);
+>  }
+> =20
+> +static u32 btrfs_type_to_imode(u8 type);
+> +static int find_file_type(struct inode_record *rec, u8 *type);
 
-> Thanks,
-> Qu
-> 
->>   
->>   	/* verify INODE_ITEM nlink/isize/nbytes */
->>   	if (dir) {
->>
-> 
+Nice to see code shared between original and lowmem mode.
+
+>  static int create_inode_item(struct btrfs_root *root,
+>  			     struct inode_record *rec, int root_dir)
+>  {
+> @@ -3148,14 +3150,19 @@ static int create_inode_item(struct btrfs_root =
+*root,
+>  	u32 mode =3D 0;
+>  	u64 size =3D 0;
+>  	int ret;
+> +	u8 type =3D 0;
+> =20
+> -	trans =3D btrfs_start_transaction(root, 1);
+> -	if (IS_ERR(trans)) {
+> -		ret =3D PTR_ERR(trans);
+> -		return ret;
+> +	nlink =3D root_dir ? 1 : rec->found_link;
+> +	ret =3D find_file_type(rec, &type);
+> +	if (!ret) {
+> +		mode =3D btrfs_type_to_imode(type) | 0755;
+> +		if (type =3D=3D BTRFS_FT_REG_FILE)
+> +			size =3D rec->found_size;
+> +		else
+> +			size =3D rec->extent_end;
+> +		goto create_inode;
+>  	}
+
+Just a nicpick, here we could use simple if else branch to avoid extra ta=
+g:
+
+if (!ret) {
+    ...
+} else if (rec->found_dir_item) {
+    ...
+} else if (!rec->found_dir_item) {
+    ...
+}
+
+Despite that, feel free to add my tag:
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> =20
+> -	nlink =3D root_dir ? 1 : rec->found_link;
+>  	if (rec->found_dir_item) {
+>  		if (rec->found_file_extent)
+>  			fprintf(stderr, "root %llu inode %llu has both a dir "
+> @@ -3167,7 +3174,14 @@ static int create_inode_item(struct btrfs_root *=
+root,
+>  		size =3D rec->found_size;
+>  	} else if (!rec->found_dir_item) {
+>  		size =3D rec->extent_end;
+> -		mode =3D  S_IFREG | 0755;
+> +		mode =3D S_IFREG | 0755;
+> +	}
+> +
+> +create_inode:
+> +	trans =3D btrfs_start_transaction(root, 1);
+> +	if (IS_ERR(trans)) {
+> +		ret =3D PTR_ERR(trans);
+> +		return ret;
+>  	}
+> =20
+>  	ret =3D __create_inode_item(trans, root, rec->ino, size, rec->nbytes,=
+
+> @@ -3307,7 +3321,8 @@ static int find_file_type(struct inode_record *re=
+c, u8 *type)
+>  	}
+> =20
+>  	list_for_each_entry(backref, &rec->backrefs, list) {
+> -		if (backref->found_dir_index || backref->found_dir_item) {
+> +		if ((backref->found_dir_index || backref->found_dir_item) &&
+> +		    (!(backref->errors & REF_ERR_FILETYPE_UNMATCH))) {
+>  			*type =3D backref->filetype;
+>  			return 0;
+>  		}
+>=20
 
 
+--OH1cC6i8XFhqIatc7PoVKiUdnNvplBGYu--
+
+--C5kkuxaJ3wqh9WMjYFoBDZWYFKnaCNYp1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq/rYXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg52Qf+K0Qw4QZ0lu/Q3WY5izDz+3Sa
+z1rHHBj50bIR0WFbXPujXNvPYIWv/ca40FgD31xvRsMxkUaSkpAfkviUJsjiwExD
+BTxM3t5MhRRGikLKX7FTzG/oNh6enf2NZZMJNBmkT+V+tmwr+v3EQncvb0I8KDyj
+GBxvNT4Xsar44QbudYgPfYWdc3cv1hN8ll9Bo39EOx6O7ouE2rKTggc1rvNHPt5/
+c9i94zAZ4KABLl4UhEDID9Ai95gJJHAy6VfZvEs0TBQnxSEIeF5NCLa7lS5JPEdt
+fe+9F23yS2/2od35XJh0sCeFhapI3tzXtuu7KasiihvF58CQMZNnAFhIL2fXFQ==
+=J8Wj
+-----END PGP SIGNATURE-----
+
+--C5kkuxaJ3wqh9WMjYFoBDZWYFKnaCNYp1--

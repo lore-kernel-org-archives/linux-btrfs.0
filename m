@@ -1,48 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49484 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751374AbeA3GyK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 01:54:10 -0500
-Subject: Re: [PATCH 04/26] libbtrfsutil: add btrfs_util_is_subvolume() and
- btrfs_util_subvolume_id()
-To: Omar Sandoval <osandov@osandov.com>
-Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Received: from mail-pf0-f195.google.com ([209.85.192.195]:33610 "EHLO
+        mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751476AbeAZSlZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 13:41:25 -0500
+Received: by mail-pf0-f195.google.com with SMTP id t5so829443pfi.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 10:41:24 -0800 (PST)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com
+Subject: [PATCH 01/26] btrfs-progs: get rid of undocumented qgroup inheritance options
+Date: Fri, 26 Jan 2018 10:40:49 -0800
+Message-Id: <fca7091998d0aff6e7e4118c09dfa3bce80469d0.1516991902.git.osandov@fb.com>
+In-Reply-To: <cover.1516991902.git.osandov@fb.com>
 References: <cover.1516991902.git.osandov@fb.com>
- <ec89f2b55edb450ce4fcbe1485ae8f57ed51187c.1516991902.git.osandov@fb.com>
- <c1c4fa63-7ab5-ad6a-d1a4-066ac58be161@suse.com>
- <20180129214354.GA1362@vader.DHCP.thefacebook.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <fdfbec55-a04b-2009-b200-35bf1aa090e9@suse.com>
-Date: Tue, 30 Jan 2018 08:54:08 +0200
-MIME-Version: 1.0
-In-Reply-To: <20180129214354.GA1362@vader.DHCP.thefacebook.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <cover.1516991902.git.osandov@fb.com>
+References: <cover.1516991902.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Omar Sandoval <osandov@fb.com>
 
+The -c option to subvol create and the -c and -x options to subvol
+snapshot have never been documented (and -x doesn't actually work
+because it's not in the getopt option string). The functionality is
+dubious and the kernel interface is being removed, so get rid of these.
 
-On 29.01.2018 23:43, Omar Sandoval wrote:
-> On Mon, Jan 29, 2018 at 12:24:26PM +0200, Nikolay Borisov wrote:
->> On 26.01.2018 20:40, Omar Sandoval wrote:
-> [snip]
->>> +/*
->>> + * This intentionally duplicates btrfs_util_f_is_subvolume() instead of opening
->>> + * a file descriptor and calling it, because fstat() and fstatfs() don't accept
->>> + * file descriptors opened with O_PATH on old kernels (before v3.6 and before
->>> + * v3.12, respectively), but stat() and statfs() can be called on a path that
->>> + * the user doesn't have read or write permissions to.
->>> + */
->>> +__attribute__((visibility("default")))
->>
->> Why do we need to explicitly set the attribute visibility to default,
->> isn't it implicitly default already?
-> 
-> Ah, I forgot to add -fvisibility=hidden to the build rule when I ported
-> this to the btrfs-progs Makefile, that's why that's there. I'll add
-> -fvisibility=hidden to the Makefile.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ cmds-subvolume.c | 25 ++-----------------------
+ qgroup.c         | 42 ------------------------------------------
+ qgroup.h         |  2 --
+ 3 files changed, 2 insertions(+), 67 deletions(-)
 
-Right, it could be a good idea to hide the visibility attribute behind
-an eloquent macro i.e. (PUBLIC|LIBRARY)_FUNC or some such.
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index dc626a64..f8e34bc8 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -129,18 +129,11 @@ static int cmd_subvol_create(int argc, char **argv)
+ 	DIR	*dirstream = NULL;
+ 
+ 	while (1) {
+-		int c = getopt(argc, argv, "c:i:");
++		int c = getopt(argc, argv, "i:");
+ 		if (c < 0)
+ 			break;
+ 
+ 		switch (c) {
+-		case 'c':
+-			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
+-			if (res) {
+-				retval = res;
+-				goto out;
+-			}
+-			break;
+ 		case 'i':
+ 			res = qgroup_inherit_add_group(&inherit, optarg);
+ 			if (res) {
+@@ -665,18 +658,11 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 
+ 	memset(&args, 0, sizeof(args));
+ 	while (1) {
+-		int c = getopt(argc, argv, "c:i:r");
++		int c = getopt(argc, argv, "i:r");
+ 		if (c < 0)
+ 			break;
+ 
+ 		switch (c) {
+-		case 'c':
+-			res = qgroup_inherit_add_copy(&inherit, optarg, 0);
+-			if (res) {
+-				retval = res;
+-				goto out;
+-			}
+-			break;
+ 		case 'i':
+ 			res = qgroup_inherit_add_group(&inherit, optarg);
+ 			if (res) {
+@@ -687,13 +673,6 @@ static int cmd_subvol_snapshot(int argc, char **argv)
+ 		case 'r':
+ 			readonly = 1;
+ 			break;
+-		case 'x':
+-			res = qgroup_inherit_add_copy(&inherit, optarg, 1);
+-			if (res) {
+-				retval = res;
+-				goto out;
+-			}
+-			break;
+ 		default:
+ 			usage(cmd_subvol_snapshot_usage);
+ 		}
+diff --git a/qgroup.c b/qgroup.c
+index 156825fd..e9158a26 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -1310,45 +1310,3 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg)
+ 
+ 	return 0;
+ }
+-
+-int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+-			    int type)
+-{
+-	int ret;
+-	u64 qgroup_src;
+-	u64 qgroup_dst;
+-	char *p;
+-	int pos = 0;
+-
+-	p = strchr(arg, ':');
+-	if (!p) {
+-bad:
+-		error("invalid copy specification, missing separator :");
+-		return -EINVAL;
+-	}
+-	*p = 0;
+-	qgroup_src = parse_qgroupid(arg);
+-	qgroup_dst = parse_qgroupid(p + 1);
+-	*p = ':';
+-
+-	if (!qgroup_src || !qgroup_dst)
+-		goto bad;
+-
+-	if (*inherit)
+-		pos = (*inherit)->num_qgroups +
+-		      (*inherit)->num_ref_copies * 2 * type;
+-
+-	ret = qgroup_inherit_realloc(inherit, 2, pos);
+-	if (ret)
+-		return ret;
+-
+-	(*inherit)->qgroups[pos++] = qgroup_src;
+-	(*inherit)->qgroups[pos++] = qgroup_dst;
+-
+-	if (!type)
+-		++(*inherit)->num_ref_copies;
+-	else
+-		++(*inherit)->num_excl_copies;
+-
+-	return 0;
+-}
+diff --git a/qgroup.h b/qgroup.h
+index 875fbdf3..bb6610d7 100644
+--- a/qgroup.h
++++ b/qgroup.h
+@@ -92,7 +92,5 @@ int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set **comp_set,
+ 				int is_descending);
+ int qgroup_inherit_size(struct btrfs_qgroup_inherit *p);
+ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
+-int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
+-			    int type);
+ 
+ #endif
+-- 
+2.16.1
 
-> 

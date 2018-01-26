@@ -1,49 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:41612 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1751127AbeA2JFA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jan 2018 04:05:00 -0500
-Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.0.22/8.16.0.22) with SMTP id w0T94lY6057151
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 04:05:00 -0500
-Received: from e06smtp13.uk.ibm.com (e06smtp13.uk.ibm.com [195.75.94.109])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 2fsyp9tp5y-1
-        (version=TLSv1.2 cipher=AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 04:04:59 -0500
-Received: from localhost
-        by e06smtp13.uk.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-        for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-        Mon, 29 Jan 2018 09:04:55 -0000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: Josef Bacik <josef@toxicpanda.com>
-Cc: Jan Kara <jack@suse.cz>, Dave Chinner <david@fromorbit.com>,
-        hannes@cmpxchg.org, linux-mm@kvack.org, akpm@linux-foundation.org,
-        linux-fsdevel@vger.kernel.org, kernel-team@fb.com,
-        linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH v3 06/10] writeback: introduce super_operations->write_metadata
-Date: Mon, 29 Jan 2018 14:36:15 +0530
-In-Reply-To: <20180103162922.rxs2jpvmpxa62usa@destiny>
-References: <20171212180534.c5f7luqz5oyfe7c3@destiny> <20180103162603.GO4911@quack2.suse.cz> <20180103162922.rxs2jpvmpxa62usa@destiny>
+Received: from mx2.suse.de ([195.135.220.15]:41009 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752090AbeAZKyk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 05:54:40 -0500
+Subject: Re: [PATCH] Btrfs: delete dead code in btrfs_orphan_add()
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com
+References: <ddecfd9f65019017bba48685a86554cf21350ade.1516924547.git.osandov@fb.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <e8357487-934e-846d-9063-6185759dd745@suse.com>
+Date: Fri, 26 Jan 2018 12:54:38 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Message-Id: <2857272.fAFXmvyrml@dhcp-9-109-247-21>
+In-Reply-To: <ddecfd9f65019017bba48685a86554cf21350ade.1516924547.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, January 3, 2018 9:59:24 PM IST Josef Bacik wrote:
-> On Wed, Jan 03, 2018 at 05:26:03PM +0100, Jan Kara wrote:
+
+
+On 26.01.2018 01:56, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> btrfs_orphan_add() has had this case commented out since it was first
+> introduced in commit d68fc57b7e32 ("Btrfs: Metadata reservation for
+> orphan inodes"). Most of the orphan cleanup code has been rewritten
+> since then, so it's safe to say that this code isn't needed.
+
+I've tried removing this a couple of times but David objected due to
+missing historical context and whether we might need it. I'm totally
+fine with killing it.
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
 > 
-> Oh ok well if that's the case then I'll fix this up to be a ratio, test
-> everything, and send it along probably early next week.  Thanks,
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+>  fs/btrfs/inode.c | 22 +---------------------
+>  1 file changed, 1 insertion(+), 21 deletions(-)
 > 
-
-Hi Josef,
-
-Did you get a chance to work on the next version of this patchset?
-
-
--- 
-chandan
-
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index e1a7f3cb5be9..d4e3a09c0ea4 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -3334,17 +3334,6 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+>  
+>  	if (!test_and_set_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+>  			      &inode->runtime_flags)) {
+> -#if 0
+> -		/*
+> -		 * For proper ENOSPC handling, we should do orphan
+> -		 * cleanup when mounting. But this introduces backward
+> -		 * compatibility issue.
+> -		 */
+> -		if (!xchg(&root->orphan_item_inserted, 1))
+> -			insert = 2;
+> -		else
+> -			insert = 1;
+> -#endif
+>  		insert = 1;
+>  		atomic_inc(&root->orphan_inodes);
+>  	}
+> @@ -3370,7 +3359,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+>  	}
+>  
+>  	/* insert an orphan item to track this unlinked/truncated file */
+> -	if (insert >= 1) {
+> +	if (insert) {
+>  		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
+>  		if (ret) {
+>  			atomic_dec(&root->orphan_inodes);
+> @@ -3389,15 +3378,6 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans,
+>  		ret = 0;
+>  	}
+>  
+> -	/* insert an orphan item to track subvolume contains orphan files */
+> -	if (insert >= 2) {
+> -		ret = btrfs_insert_orphan_item(trans, fs_info->tree_root,
+> -					       root->root_key.objectid);
+> -		if (ret && ret != -EEXIST) {
+> -			btrfs_abort_transaction(trans, ret);
+> -			return ret;
+> -		}
+> -	}
+>  	return 0;
+>  }
+>  
+> 

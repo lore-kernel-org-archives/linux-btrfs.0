@@ -1,54 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:39638 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752403AbeARCeO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Jan 2018 21:34:14 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0I2WMgj075177
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:34:12 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2130.oracle.com with ESMTP id 2fjjung0gu-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:34:12 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0I2VB8u015203
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:31:12 GMT
-Received: from abhmp0017.oracle.com (abhmp0017.oracle.com [141.146.116.23])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0I2VBSw004449
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Jan 2018 02:31:11 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: fix alloc device order consistency
-Date: Thu, 18 Jan 2018 10:32:12 +0800
-Message-Id: <20180118023212.14256-3-anand.jain@oracle.com>
-In-Reply-To: <20180118023212.14256-1-anand.jain@oracle.com>
-References: <20180118023212.14256-1-anand.jain@oracle.com>
+Received: from mout.gmx.net ([212.227.17.22]:57717 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751946AbeA0EtX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 23:49:23 -0500
+Subject: Re: [PATCH] btrfs: print error if primary super block write fails
+To: Howard McLauchlan <hmclauchlan@fb.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Omar Sandoval <osandov@osandov.com>,
+        Josef Bacik <jbacik@fb.com>
+References: <20180126224709.23139-1-hmclauchlan@fb.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <75705b9e-0b20-5f95-b519-093b91c01f13@gmx.com>
+Date: Sat, 27 Jan 2018 12:49:12 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180126224709.23139-1-hmclauchlan@fb.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="JlkG98Omac6ZRGE8QiU2LvXFpPcR0tS9Y"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add opened device to the tail of dev_alloc_list so that it maintains
-the same order as dev_list.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--JlkG98Omac6ZRGE8QiU2LvXFpPcR0tS9Y
+Content-Type: multipart/mixed; boundary="3xMj5PJhrdpo2Vtd3IFVhUaC0LCyDL20Q";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Howard McLauchlan <hmclauchlan@fb.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Omar Sandoval <osandov@osandov.com>,
+ Josef Bacik <jbacik@fb.com>
+Message-ID: <75705b9e-0b20-5f95-b519-093b91c01f13@gmx.com>
+Subject: Re: [PATCH] btrfs: print error if primary super block write fails
+References: <20180126224709.23139-1-hmclauchlan@fb.com>
+In-Reply-To: <20180126224709.23139-1-hmclauchlan@fb.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/volumes.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--3xMj5PJhrdpo2Vtd3IFVhUaC0LCyDL20Q
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 68be58a5b03f..543c166049e7 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -713,7 +713,7 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
- 	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
- 		fs_devices->rw_devices++;
--		list_add(&device->dev_alloc_list, &fs_devices->alloc_list);
-+		list_add_tail(&device->dev_alloc_list, &fs_devices->alloc_list);
- 	}
- 	brelse(bh);
- 
--- 
-2.15.0
 
+
+On 2018=E5=B9=B401=E6=9C=8827=E6=97=A5 06:47, Howard McLauchlan wrote:
+> Presently, failing a primary super block write but succeeding in at
+> least one super block write in general will appear to users as if
+> nothing important went wrong. However, upon unmounting and re-mounting,=
+
+> the file system will be in a rolled back state. This was discovered
+> with a BCC program that uses bpf_override_return() to fail super block
+> writes.
+>=20
+> This patch outputs an error clarifying that the primary super block
+> write has failed, so users can expect potentially erroneous behaviour.
+> It also forces wait_dev_supers() to return an error to its caller if
+> the primary super block write fails.
+>=20
+> Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
+> ---
+>  fs/btrfs/disk-io.c | 17 ++++++++++++++---
+>  1 file changed, 14 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5da18ebc9222..8f96e1e4c613 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3293,11 +3293,13 @@ static int write_dev_supers(struct btrfs_device=
+ *device,
+>   * Return number of errors when buffer head is not found or not marked=
+ up to
+>   * date.
+>   */
+> -static int wait_dev_supers(struct btrfs_device *device, int max_mirror=
+s)
+> +static int wait_dev_supers(struct btrfs_fs_info *fs_info,
+
+fs_info can be fetch from device->fs_info.
+
+> +			   struct btrfs_device *device, int max_mirrors)
+>  {
+>  	struct buffer_head *bh;
+>  	int i;
+>  	int errors =3D 0;
+> +	bool primary_failed =3D false;
+>  	u64 bytenr;
+> =20
+>  	if (max_mirrors =3D=3D 0)
+> @@ -3314,11 +3316,14 @@ static int wait_dev_supers(struct btrfs_device =
+*device, int max_mirrors)
+>  				      BTRFS_SUPER_INFO_SIZE);
+>  		if (!bh) {
+>  			errors++;
+> +			primary_failed =3D (i =3D=3D 0) || primary_failed;
+>  			continue;
+>  		}
+>  		wait_on_buffer(bh);
+> -		if (!buffer_uptodate(bh))
+> +		if (!buffer_uptodate(bh)) {
+>  			errors++;
+> +			primary_failed =3D (i =3D=3D 0) || primary_failed;
+> +		}
+> =20
+>  		/* drop our reference */
+>  		brelse(bh);
+> @@ -3327,6 +3332,12 @@ static int wait_dev_supers(struct btrfs_device *=
+device, int max_mirrors)
+>  		brelse(bh);
+>  	}
+> =20
+> +	/* log error, force error return */
+> +	if (primary_failed) {
+> +		btrfs_err(fs_info, "error encountered writing primary super block");=
+
+
+It would be better if device id can also be outputted.
+
+Otherwise it looks good.
+
+Thanks,
+Qu
+
+> +		return -1;
+> +	}
+> +
+>  	return errors < i ? 0 : -1;
+>  }
+> =20
+> @@ -3557,7 +3568,7 @@ int write_all_supers(struct btrfs_fs_info *fs_inf=
+o, int max_mirrors)
+>  		if (!dev->in_fs_metadata || !dev->writeable)
+>  			continue;
+> =20
+> -		ret =3D wait_dev_supers(dev, max_mirrors);
+> +		ret =3D wait_dev_supers(fs_info, dev, max_mirrors);
+>  		if (ret)
+>  			total_errors++;
+>  	}
+>=20
+
+
+--3xMj5PJhrdpo2Vtd3IFVhUaC0LCyDL20Q--
+
+--JlkG98Omac6ZRGE8QiU2LvXFpPcR0tS9Y
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpsBMgXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiDfgf/ejv1H/afvCVKPIrCqqTxcvJc
+CkHe8pV6+GYJtdIg67awLtlt70OBkIL3gV/wCyeBpFp8jNTpYHU+rlW8nYqyWpx9
+cRGIKG4MdNZp9Tiu62RZNAxMvN93g5PnmyDE8lUWXV6VN1x5mLdvbEZs7Fmz647j
+VQCNhBUQUChIwXH85TNd327Mu4t/zTgvAoTi4e3oxtnzd7T+qUG4PUl3WAxGsv84
+p1ULIdYAnGzI/0Ahlazw+udLzWukr+W4IfshTB/PM7hh455vkdPvO3e3hN1N1II6
+92Yk3yuGc4pUJXi0iziMi5vodFu6ZRq5qymvVMsH9LnlzRmw39mhmTDGfD/ajA==
+=RFpV
+-----END PGP SIGNATURE-----
+
+--JlkG98Omac6ZRGE8QiU2LvXFpPcR0tS9Y--

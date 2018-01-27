@@ -1,151 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f54.google.com ([209.85.160.54]:37711 "EHLO
-        mail-pl0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752108AbeA0Rmo (ORCPT
+Received: from mail-oi0-f46.google.com ([209.85.218.46]:41166 "EHLO
+        mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751467AbeA0U5a (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 Jan 2018 12:42:44 -0500
-Received: by mail-pl0-f54.google.com with SMTP id ay8so889170plb.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Jan 2018 09:42:44 -0800 (PST)
+        Sat, 27 Jan 2018 15:57:30 -0500
+Received: by mail-oi0-f46.google.com with SMTP id m83so2522129oik.8
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Jan 2018 12:57:30 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAEY8F1pVrZnf3M6mGJaxogx14ZrJ5CV3++_-y13sTniJ3ds4ww@mail.gmail.com>
-References: <CAEY8F1qw-6Xa+ESJH0X3zhJcQ1UaoJO4wkPjdDt63JEYHBuAoQ@mail.gmail.com>
- <20180122212250.GY3807@carfax.org.uk> <CAEY8F1pstmMVaypLo31vkvOWZZw0L_-d4U4=3LpoQCcJHyZ91Q@mail.gmail.com>
- <CAEY8F1qBNg=_PszmbEMMTG83zzmpU4Qc=rQhHOjjVCCcOw3X6g@mail.gmail.com>
- <CAJCQCtS_=kK1L4ob1YsOO7G2LAGXBiweEMjuSFXw7NBK2OWoZg@mail.gmail.com>
- <CAEY8F1oUdNjvcx0DGqsdZqzfeRKEckf_a2KRAjcESyr1uuH1Xw@mail.gmail.com> <CAEY8F1pVrZnf3M6mGJaxogx14ZrJ5CV3++_-y13sTniJ3ds4ww@mail.gmail.com>
-From: Claes Fransson <claes.v.fransson@gmail.com>
-Date: Sat, 27 Jan 2018 18:42:42 +0100
-Message-ID: <CAEY8F1rp9_rCozyRQWrdma1NpqNx+G6QmVfPQL0yaeP76bSi=Q@mail.gmail.com>
-Subject: Re: bad key ordering - repairable?
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <20180127110619.GA10472@polanet.pl>
+References: <1516975360.4083556.1249069832.1B287A04@webmail.messagingengine.com>
+ <5d342036-0de0-9bf7-3e9e-4885b62d8100@gmail.com> <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
+ <84c23047-522d-2529-5b16-d07ed8c28fc6@gmail.com> <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
+ <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com> <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
+ <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me> <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
+ <20180127110619.GA10472@polanet.pl>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 27 Jan 2018 13:57:29 -0700
+Message-ID: <CAJCQCtT8_zdmc5oTLLa7AQt5_ObQchwBvFJCNf2UkC7ygn0rXw@mail.gmail.com>
+Subject: Re: degraded permanent mount option
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2018-01-27 18:32 GMT+01:00 Claes Fransson <claes.v.fransson@gmail.com>:
->
-> Duncan Wed, 24 Jan 2018 15:18:25 -0800
->
-> Claes Fransson posted on Wed, 24 Jan 2018 20:44:33 +0100 as excerpted:
->
-> > So, I have now some results from the PassMark Memtest86! I let the
-> > default automatic tests run for about 19 hours and 16 passes. It
-> > reported zero "Errors", but 4 lines of "[Note] RAM may be vulnerable to
-> > high frequency row hammer bit flips". If I understand it correctly,
-> > it means that some errors were detected when the RAM was tested at
-> > higher rates than guaranteed accurate by the vendors.
->
-> >From Wikipedia:
->
->> Row hammer (also written as rowhammer) is an unintended side effect in
->> dynamic random-access memory (DRAM) that causes memory cells to leak
->> their charges and interact electrically between themselves, possibly
->> altering the contents of nearby memory rows that were not addressed in
->> the original memory access. This circumvention of the isolation between
->> DRAM memory cells results from the high cell density in modern DRAM, and
->> can be triggered by specially crafted memory access patterns that rapidly
->> activate the same memory rows numerous times.[1][2][3]
->>
->> The row hammer effect has been used in some privilege escalation computer
->> security exploits.
->>
->> https://en.wikipedia.org/wiki/Row_hammer
->>
->> So it has nothing to do with (generic) testing the RAM at higher rates
->> than guaranteed by the vendors, but rather, with deliberate rapid
->> repeated access (at normal clock rates) of the same cell rows in ordered
->> to trigger a bitflip in nearby memory cells that could not normally be
->> accessed due to process separation and insufficient privileges.
->
->
-Well, I was thinking of the specific error message by memtest86.
-According to the PassMark website,
-https://www.memtest86.com/troubleshooting.htm, "Why am I only getting
-errors during Test 13 Hammer Test?", second paragraph.
-Thanks for the Wikipedia explanation though.
->
->> IOW, it's unlikely to be accidentally tripped, and thus is exceedingly
->> unlikely to be relevant here, unless you're being hacked, of course.
->
->
-Okay, thanks for your conclusion.
->
->>
-> That said, and entirely unrelated to rowhammer, I know one of the
-> problems of memory test false-negatives from experience.
->
-> In my case, I was even running ECC RAM.  But the memory I had purchased
-> (back in the day when memory was far more expensive and sub-GB memory was
-> the norm) was cheap, and as it happened, marked as stable at slightly
-> higher clock rates than it actually was.  But I couldn't afford more (or
-> I'd have procured less dodgy RAM in the first place) and had little
-> recourse but to live with it for awhile.  A year or so later there was a
-> BIOS update that added better memory clocking control, and I was able to
-> declock the RAM slightly from its rating (IIRC to PC-3000 level, it was
-> PC3200 rated, this was DDR1 era), after which it was /entirely/ stable,
-> even after reducing some of the wait-state settings somewhat to try to
-> claw back some of what I lost due to the underclocking.
->
-> I run gentoo, and nearly all of my problems occurred when I was doing
-> updates, building packages at 100% CPU with multiple cores accessing the
-> same RAM.  FWIW, the most frequent /detected/ problem was bunzip checksum
-> errors as it decompressed and verified the data in memory (before writing
-> out)... that would move or go away if I tried again.  Occasionally I'd
-> get machine-check errors (MCEs), but not frequently, and the ECC RAM
-> subsystem /never/ reported errors.
->
-My filesystem went readonly just after I did some updating of a lot of
-packages (I think it was thousands of packages :) ), so massive
-disk-IO for me, but possible also some CPU and RAM usage...
->
->> But the memory tests gave that memory an all-clear.
->
->
->>> The problem with the memory tests in this case is that they tend to work
->>> on an otherwise unloaded system, and test the retention of the memory
->>> cells, /not/ so much the speed and reliability at which they are accessed
->>> under fully loaded system stress -- and how could they when memory speed
->>> is normally set by the BIOS and not something the memory tester has
->>> access to?
->>>
->>> But my memory problems weren't with the memory cells themselves -- they
->>> retained their data just fine and indeed it was ECC RAM so would have
->>> triggered ECC errors if they didn't -- but with the precision timing of
->>> memory IO -- it wasn't quite up to the specs it claimed to support and
->>> would occasionally produce in-transit errors (the ECC would have detected
->>> and possibly corrected errors in storage), and the memory testers simply
->>> didn't test that like a fully loaded system doing unpacks of sources and
->>> builds from them did.
->>>
->>> As mentioned, once I got a BIOS update that let me declock the RAM a bit,
->>> everything was fine, and it remained fine when I did upgrade the RAM some
->>> years later, after prices had fallen, as well.
->
->
-Thanks for telling, but unfortunately I do not have any setting to
-change the clocking of the RAM on my laptop when booting into the
-BIOS-settings menus.
+On Sat, Jan 27, 2018 at 4:06 AM, Tomasz Pala <gotar@polanet.pl> wrote:
 
-Claes
->
->> (The system was first-gen AMD Opteron, on a server-grade Tyan board, that
->> I ran from purchase in late 2003 for over eight years, maxing out the
->>
->> pair of CPUs to dual-core Opteron 290s and the RAM to 8 gigs, over time,
->> until the board finally died in 2012 due to burst capacitors.  Which
->> reminds me, I'm still running the replacement, a Gigabyte with an fx6100
->> overclocked a bit to 3.9 GHz and 16 gig RAM, and it's now nearing six
->> years old, so I suppose I better start planning for the next upgrade...
->> I've spent that six years upgrading to big-screen TVs as monitors, with a
->> 65inch/165cm 4K as my primary now and a 48inch/122cm as a secondary to
->> put youtube or whatever on fullscreen, and to now my second generation of
->> ssds, a pair of 1 TB samsung evos, but this reminds me that at nearing
->> six years old the main system's aging too, so I better start thinking of
->> replacing it again...)
->>
->> --
->> Duncan - List replies preferred.   No HTML msgs.
->> "Every nonfree program has a lord, a master --
->> and if you use the program, he is your master."  Richard Stallman
->>
->> --
+> As for the regular by-UUID mounts: these links are created by udev WHEN
+> underlying devices appear. Does btrfs volume appear? No.
+
+If I boot with rd.break=pre-mount I can absolutely mount a Btrfs
+multiple volume that has a missing device by UUID with --uuid flag, or
+by /dev/sdXY, along with -o degraded. And I can then use the exit
+command to continue the startup process. In fact I can try to mount
+without -o degraded, and the mount command "works" in that it does not
+complain about an invalid node or UUID.
+
+The Btrfs systemd udev rule is a sledghammer because it has no
+timeout. It neither times out and tries to mount anyway, nor does it
+time out and just drop to a dracut prompt. There are a number of
+things in systemd startups that have timeouts, I have no idea how they
+get defined, but that single thing would make this a lot better. Right
+now the Btrfs udev rule means if all devices aren't available, hang
+indefinitely.
+
+I don't know systemd or systemd-udev well enough at all to know if
+this rule can have a timer. Service units absolutely can have timers,
+so maybe there's a way to marry a udev rule with a service which has a
+timer. The absolute dumbest thing that's better than now, is at the
+timer just fail and drop to a dracut prompt. Better would be to try a
+normal mount anyway, which also fails to a dracut prompt, but
+additionally gives us a kernel error for Btrfs (the missing device
+open ctree error you'd expect to get when mounting without -o degraded
+when you're missing a device). And even better would be a way for the
+user to edit the service unit to indicate "upon timeout being reached,
+use mount -o degraded rather than just mount". This is the simplest of
+Boolean logic, so I'd be surprised if systemd doesn't offer a way for
+us to do exactly what I'm describing.
+
+Again the central problem is the udev rule now means "wait for device
+to appear" with no timed fallback.
+
+The mdadm case has this, and it's done by dracut. At this same stage
+of startup with a  missing device, there is in fact no fs colume UUID
+yet because the array hasn't started. Dracut+mdadm knows there's a
+missing device so it's just iterating: look, sleep 3, look, sleep 3,
+look, sleep 3. It's on a loop. And after that loop hits something like
+100, the script says f it, start array anyway, so now there is a
+degraded array, and for the first time the fs volume UUID appears, and
+systemd goes "ahaha! mount that!" and it does it normally.
+
+So the timer and timeout and what happens at the timeout is defined by
+dracut. That's probably why the systemd folks say "not our problem"
+and why the kernel folks say "not our problem".
+
+
+> If btrfs pretends to be device manager it should expose more states,
+> especially "ready to be mounted, but not fully populated" (i.e.
+> "degraded mount possible"). Then systemd could _fallback_ after timing
+> out to degraded mount automatically according to some systemd-level
+> option.
+
+No, mdadm is a device manager and it has no such facility. Something
+issues a command to start the array anyway, and only then do you find
+out if there are enough devices to start it. I don't understand the
+value of knowing whether it is possible. Just try to mount it degraded
+and then if it fails we fail, nothing can be done automatically it's
+up to an admin.
+
+And even if you had this "degraded mount possible" state, you still
+need a timer. So just build the timer.
+
+If all devices ready ioctl is true, the timer doesn't start, it means
+all devices are available, mount normally.
+If all devices ready ioctl is false, the timer starts, if all devices
+appear later the ioctl goes to true, the timer is belayed, mount
+normally.
+If all devices ready ioctl is false, the timer starts, when the timer
+times out, mount normally which fails and gives us a shell to
+troubleshoot at.
+OR
+If all devices ready ioctl is false, the timer starts, when the timer
+times out, mount with -o degraded which either succeeds and we boot or
+it fails and we have a troubleshooting shell.
+
+
+The central problem is the lack of a timer and time out.
+
+
+> Unless there is *some* signalling from btrfs, there is really not much
+> systemd can *safely* do.
+
+That is not true. It's not how mdadm works anyway.
+
+
+-- 
+Chris Murphy

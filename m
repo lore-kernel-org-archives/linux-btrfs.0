@@ -1,76 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out3-smtp.messagingengine.com ([66.111.4.27]:41279 "EHLO
-        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1751257AbeAZWDc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 17:03:32 -0500
-Content-Type: text/plain;
-        charset=us-ascii
-Mime-Version: 1.0 (1.0)
-Subject: Re: degraded permanent mount option
-From: Christophe Yayon <cyayon@nbux.org>
-In-Reply-To: <CAJCQCtR-ip1egtG9bMypWfvB=etoAV1JDP0SFdxHC0A=NG-t8g@mail.gmail.com>
-Date: Fri, 26 Jan 2018 23:03:27 +0100
-Cc: Christophe Yayon <cyayon-list@nbux.org>,
-        "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-Id: <BF542664-8297-4BDC-AE30-330E880495C7@yayon.me>
-References: <1516975360.4083556.1249069832.1B287A04@webmail.messagingengine.com> <CAJCQCtR-ip1egtG9bMypWfvB=etoAV1JDP0SFdxHC0A=NG-t8g@mail.gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
+Received: from mout.gmx.net ([212.227.17.22]:53143 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751340AbeA0C0k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Jan 2018 21:26:40 -0500
+Subject: Re: [RFC PATCH] btrfs: Gracefully handle errors in
+ btrfs_qgroup_trace_extent_post
+To: Nikolay Borisov <nborisov@suse.com>, wqu@suse.com
+Cc: linux-btrfs@vger.kernel.org
+References: <1516976021-11935-1-git-send-email-nborisov@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c2837c88-1f9b-54c8-347d-a2e5fe2658f1@gmx.com>
+Date: Sat, 27 Jan 2018 10:26:26 +0800
+MIME-Version: 1.0
+In-Reply-To: <1516976021-11935-1-git-send-email-nborisov@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="rWBPKJp35vzQp0JfZgIA9Wq6KpgfQs7ZX"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--rWBPKJp35vzQp0JfZgIA9Wq6KpgfQs7ZX
+Content-Type: multipart/mixed; boundary="tQT8ztEaJD9eFyGC06YcvasKmrn1kt5UU";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Nikolay Borisov <nborisov@suse.com>, wqu@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Message-ID: <c2837c88-1f9b-54c8-347d-a2e5fe2658f1@gmx.com>
+Subject: Re: [RFC PATCH] btrfs: Gracefully handle errors in
+ btrfs_qgroup_trace_extent_post
+References: <1516976021-11935-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1516976021-11935-1-git-send-email-nborisov@suse.com>
 
-Thanks for this complete answer.
+--tQT8ztEaJD9eFyGC06YcvasKmrn1kt5UU
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-I have to do some benchmark with mdadm raid and btrfs native raid...
 
-Thanks
 
---
-Christophe Yayon
+On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 22:13, Nikolay Borisov wrote:
+> Running generic/019 with qgroups on the scratch device enabled is
+> almost guaranteed to trigger the BUG_ON in btrfs_free_tree_block. It's
+> supposed to trigger only on -ENOMEM, in reality, however, it's possible=
 
-> On 26 Jan 2018, at 22:54, Chris Murphy <lists@colorremedies.com> wrote:
-> 
->> On Fri, Jan 26, 2018 at 7:02 AM, Christophe Yayon <cyayon-list@nbux.org> wrote:
->> 
->> Just a little question about "degraded" mount option. Is it a good idea to add this option (permanent) in fstab and grub rootflags for raid1/10 array ? Just to allow the system to boot again if a single hdd fail.
-> 
-> No because it's going to open a window where a delayed member drive
-> will mean the volume is mounted degraded, which will happen silently.
-> And current behavior in such a case, any new writes go to single
-> chunks. Again it's silent. When the delayed drive appears, it's not
-> going to be added, the volume is still treated as degraded. And even
-> when you remount to bring them all together in a normal mount, Btrfs
-> will not automatically sync the drives, so you will still have some
-> single chunk writes on one drive not the other. So you have a window
-> of time where there can be data loss if a real failure occurs, and you
-> need degraded mounting. Further, right now Btrfs will only do one
-> degraded rw mount, and you *must* fix that degradedness before it is
-> umounted or else you will only ever be able to mount it again ro.
-> There are unmerged patches to work around this, so you'd need to
-> commit to building your own kernel. I can't see any way of reliably
-> using Btrfs in production for the described use case otherwise. You
-> can't depend on getting the delayed or replacement drive restored, and
-> the volume made healthy again, because ostensibly the whole point of
-> the setup is having good uptime and you won't have that assurance
-> unless you carry these patches.
-> 
-> Also note that there are two kinds of degraded writes. a.) drive was
-> missing at mount time, and volume is mounted degraded, for raid1
-> volumes you get single chunks written; to sync once the missing drive
-> appears you do a btrfs balance -dconvert=raid1,soft
-> -mconvert=raid1,soft which should be fairly fast; b.) if the drive
-> goes missing after a normal mount, Btrfs continues to write out raid1
-> chunks; to sync once the missing drive appears you have to do a full
-> scrub or balance of the entire volume there's no shortcut.
-> 
-> Anyway, for the described use case I think you're better off with
-> mdadm or LVM raid1 or raid10, and then format with Btrfs and DUP
-> metadata (default mkfs) in which case you get full error detection and
-> metadata error detection and correction, as well as the uptime you
-> want.
-> 
-> -- 
-> Chris Murphy
+> to get -EIO from btrfs_qgroup_trace_extent_post. This function just
+> finds the roots of the extent being tracked and sets the qrecord->old_r=
+oots
+> list. If this operation fails nothing critical happens except the
+> quota accounting can be considered wrong. In such case just set the
+> INCONSISTENT flag for the quota and be done with it.
+>=20
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>=20
+> Qu,=20
+>=20
+> This fixes the crash for me, however I'm not entirely sure it's really =
+the=20
+> best fix since it's leaking the usage of INCONSISTENT out of qgroup.c. =
+Ideally
+> I'd like to avoid this. Since you have more experience with qgroups and=
+ also you
+> introduced the extent tracking code in add_delayed_tree_ref how does=20
+> look to you?=20
+>=20
+>=20
+>  fs/btrfs/delayed-ref.c | 9 +++++++--
+>  1 file changed, 7 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index a1a40cf382e3..1e9aa18cc0d8 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -820,8 +820,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_inf=
+o *fs_info,
+>  			     num_bytes, parent, ref_root, level, action);
+>  	spin_unlock(&delayed_refs->lock);
+> =20
+> -	if (qrecord_inserted)
+> -		return btrfs_qgroup_trace_extent_post(fs_info, record);
+> +	if (qrecord_inserted) {
+> +		int ret =3D btrfs_qgroup_trace_extent_post(fs_info, record);
 
+Since generic/019 is using make_fail_request, it can cause some tree
+reads fail.
+
+And since btrfs_qgroup_trace_extent_post() cause btrfs_find_all_roots()
+to fill @old_roots for new extents, it will definitely read tree blocks,
+and when its request failed, it returns -EIO as expected.
+
+So yes, the qgroup code break the old assumption that
+btrfs_add_delayed_tree|data_ref() could only return -ENOMEM.
+
+
+But compared to delayed-ref, qgroup is not a critical payload (if
+delayed-ref is screwed up, extent tree and possible data extent will be
+corrupted, while qgroup failure only affects qgroup), so it's OK to keep
+the old assumption.
+
+> +		if (ret !=3D -ENOMEM)
+Here we don't really need to handle ENOMEM specially.
+Just check ( ret < 0 ) should be enough.
+
+> +			fs_info->qgroup_flags |=3D BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT;
+
+And extra btrfs_warn() would help.
+
+> +		else
+> +			return -ENOMEM;
+
+Since btrfs is not a critical payload compared to delayed ref, returning
+0 should not be a problem as we have already marked qgroup inconsistent.
+(With comment explaining why it's OK to return 0)
+
+Thanks,
+Qu
+
+> +	}
+>  	return 0;
+> =20
+>  free_head_ref:
+>=20
+
+
+--tQT8ztEaJD9eFyGC06YcvasKmrn1kt5UU--
+
+--rWBPKJp35vzQp0JfZgIA9Wq6KpgfQs7ZX
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpr41IXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhcZwf/Wy17NWge6qIvG5X5B2p4tTuY
+6+4w01Gsr2O/GGktxPH/ibLOP56eNIVZ7aw27/DuxXSdXeJwUt6w5bbqy8QZeKvw
+vgAMYOpUb3AjihYcd2oBOeIUSxUjL0NAV07y050ZQhr5yHuAOcJn/qepqICrLsPq
+YByOyUKKHBGlPaqpJhgzrVr1gcjRysWKWF7GgHGf+V2bSNr1LB0E87KBIZrTVVkg
+ab5ZfteucM73O/i1OeLrBYpiF8AuwclAuzCqJ31a9Z3lp9tiA5NcSwn8/5YvAh6t
+nLdMAZ6Q3xnf9u0a4CDDF2G7u1HHKXMa5H2BEHA5BHC6hpUZtY23fnrCqZnpJg==
+=13T3
+-----END PGP SIGNATURE-----
+
+--rWBPKJp35vzQp0JfZgIA9Wq6KpgfQs7ZX--

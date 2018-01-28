@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:47378 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751251AbeA1AjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 Jan 2018 19:39:11 -0500
-Date: Sun, 28 Jan 2018 01:39:10 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: linux-btrfs@vger.kernel.org
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:44477 "EHLO
+        mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751159AbeA1IGK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 28 Jan 2018 03:06:10 -0500
+Received: by mail-lf0-f68.google.com with SMTP id v188so5580056lfa.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jan 2018 00:06:09 -0800 (PST)
 Subject: Re: degraded permanent mount option
-Message-ID: <20180128003910.GA31699@polanet.pl>
-References: <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <1516975360.4083556.1249069832.1B287A04@webmail.messagingengine.com>
+ <5d342036-0de0-9bf7-3e9e-4885b62d8100@gmail.com>
+ <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
  <84c23047-522d-2529-5b16-d07ed8c28fc6@gmail.com>
  <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
  <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com>
@@ -18,39 +20,39 @@ References: <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
  <20180127110619.GA10472@polanet.pl>
  <20180127132641.mhmdhpokqrahgd4n@angband.pl>
  <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <7c95b4ae-f65e-b31d-f907-5eae5c60c49a@gmail.com>
+Date: Sun, 28 Jan 2018 11:06:06 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
 In-Reply-To: <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 27, 2018 at 15:22:38 +0000, Duncan wrote:
-
+27.01.2018 18:22, Duncan пишет:
+> Adam Borowski posted on Sat, 27 Jan 2018 14:26:41 +0100 as excerpted:
+> 
+>> On Sat, Jan 27, 2018 at 12:06:19PM +0100, Tomasz Pala wrote:
+>>> On Sat, Jan 27, 2018 at 13:26:13 +0300, Andrei Borzenkov wrote:
+>>>
+>>>>> I just tested to boot with a single drive (raid1 degraded), even
+>>>>> with degraded option in fstab and grub, unable to boot !  The boot
+>>>>> process stop on initramfs.
+>>>>>
+>>>>> Is there a solution to boot with systemd and degraded array ?
+>>>>
+>>>> No. It is finger pointing. Both btrfs and systemd developers say
+>>>> everything is fine from their point of view.
+>>
+>> It's quite obvious who's the culprit: every single remaining rc system
 >> manages to mount degraded btrfs without problems.  They just don't try
 >> to outsmart the kernel.
 > 
 > No kidding.
 > 
 > All systemd has to do is leave the mount alone that the kernel has 
-> already done, instead of insisting it knows what's going on better than 
-> the kernel does, and immediately umounting it.
+> already done,
 
-Tell me please, if you mount -o degraded btrfs - what would
-BTRFS_IOC_DEVICES_READY return?
-
-This is not "outsmarting" nor "knowing better", on the contrary, this is "FOLLOWING the
-kernel-returned data". The umounting case is simply a bug in btrfs.ko
-that should change to READY state *if* someone has tried and apparently
-succeeded mounting the not-ready volume.
-
-Otherwise - how should any system part behave when you detach some drive? Insist
-that "the kernel has already mounted it" and ignore kernel screaming
-"the device is (not yet there/gone)"?
-
-
-Just update the internal state after successful mount and this
-particular problem is gone. Unless there is some race condition and the
-state should be changed before the mount is announced to the userspace.
-
--- 
-Tomasz Pala <gotar@pld-linux.org>
+Are you sure you really understand the problem? No mount happens because
+systemd waits for indication that it can mount and it never gets this
+indication.

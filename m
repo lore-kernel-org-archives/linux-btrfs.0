@@ -1,94 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:45477 "EHLO
-        mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752092AbeA1U24 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Jan 2018 15:28:56 -0500
-Received: by mail-oi0-f45.google.com with SMTP id c189so2940355oib.12
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jan 2018 12:28:56 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <7c95b4ae-f65e-b31d-f907-5eae5c60c49a@gmail.com>
-References: <1516975360.4083556.1249069832.1B287A04@webmail.messagingengine.com>
- <5d342036-0de0-9bf7-3e9e-4885b62d8100@gmail.com> <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
- <84c23047-522d-2529-5b16-d07ed8c28fc6@gmail.com> <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
- <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com> <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
- <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me> <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
- <20180127110619.GA10472@polanet.pl> <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <pan$49d38$869e8d62$c0063169$584b8866@cox.net> <7c95b4ae-f65e-b31d-f907-5eae5c60c49a@gmail.com>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sun, 28 Jan 2018 13:28:55 -0700
-Message-ID: <CAJCQCtSCC5RFEybWTpWVDeVS9MPwBsbY0-F4C_mB0Mq5EDhH9g@mail.gmail.com>
+Received: from pepin.polanet.pl ([193.34.52.2]:47303 "EHLO pepin.polanet.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752895AbeA1Wjt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 28 Jan 2018 17:39:49 -0500
+Date: Sun, 28 Jan 2018 23:39:47 +0100
+From: Tomasz Pala <gotar@polanet.pl>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: degraded permanent mount option
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Message-ID: <20180128223946.GA26726@polanet.pl>
+References: <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
+ <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com>
+ <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
+ <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me>
+ <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
+ <20180127110619.GA10472@polanet.pl>
+ <20180127132641.mhmdhpokqrahgd4n@angband.pl>
+ <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
+ <20180128003910.GA31699@polanet.pl>
+ <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 28, 2018 at 1:06 AM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
-> 27.01.2018 18:22, Duncan пишет:
->> Adam Borowski posted on Sat, 27 Jan 2018 14:26:41 +0100 as excerpted:
->>
->>> On Sat, Jan 27, 2018 at 12:06:19PM +0100, Tomasz Pala wrote:
->>>> On Sat, Jan 27, 2018 at 13:26:13 +0300, Andrei Borzenkov wrote:
->>>>
->>>>>> I just tested to boot with a single drive (raid1 degraded), even
->>>>>> with degraded option in fstab and grub, unable to boot !  The boot
->>>>>> process stop on initramfs.
->>>>>>
->>>>>> Is there a solution to boot with systemd and degraded array ?
->>>>>
->>>>> No. It is finger pointing. Both btrfs and systemd developers say
->>>>> everything is fine from their point of view.
->>>
->>> It's quite obvious who's the culprit: every single remaining rc system
->>> manages to mount degraded btrfs without problems.  They just don't try
->>> to outsmart the kernel.
->>
->> No kidding.
->>
->> All systemd has to do is leave the mount alone that the kernel has
->> already done,
+On Sun, Jan 28, 2018 at 13:02:08 -0700, Chris Murphy wrote:
+
+>> Tell me please, if you mount -o degraded btrfs - what would
+>> BTRFS_IOC_DEVICES_READY return?
+> 
+> case BTRFS_IOC_DEVICES_READY:
+>     ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>                     &btrfs_fs_type, &fs_devices);
+>     if (ret)
+>         break;
+>     ret = !(fs_devices->num_devices == fs_devices->total_devices);
+>     break;
+> 
+> 
+> All it cares about is whether the number of devices found is the same
+> as the number of devices any of that volume's supers claim make up
+> that volume. That's it.
 >
-> Are you sure you really understand the problem? No mount happens because
-> systemd waits for indication that it can mount and it never gets this
-> indication.
+>> This is not "outsmarting" nor "knowing better", on the contrary, this is "FOLLOWING the
+>> kernel-returned data". The umounting case is simply a bug in btrfs.ko
+>> that should change to READY state *if* someone has tried and apparently
+>> succeeded mounting the not-ready volume.
+> 
+> Nope. That is not what the ioctl does.
 
-"not ready" is rather vague terminology but yes that's how systemd
-ends up using the ioctl this rule depends on, even though the rule has
-nothing to do with readiness per se. If all devices for a volume
-aren't found, we can correctly conclude a normal mount attempt *will*
-fail. But that's all we can conclude. What I can't parse in all of
-this is if the udev rule is a one shot, if the ioctl is a one shot, if
-something is constantly waiting for "not all devices are found" to
-transition to "all devices are found" or what. I can't actually parse
-the two critical lines in this rule. I
+So who is to blame for creating utterly useless code? Userspace
+shouldn't depend on some stats (as number of devices is nothing more
+than that), but overall _availability_.
 
-
-$ cat /usr/lib/udev/rules.d/64-btrfs.rules
-# do not edit this file, it will be overwritten on update
-
-SUBSYSTEM!="block", GOTO="btrfs_end"
-ACTION=="remove", GOTO="btrfs_end"
-ENV{ID_FS_TYPE}!="btrfs", GOTO="btrfs_end"
-
-# let the kernel know about this btrfs filesystem, and check if it is complete
-IMPORT{builtin}="btrfs ready $devnode"
-
-# mark the device as not ready to be used by the system
-ENV{ID_BTRFS_READY}=="0", ENV{SYSTEMD_READY}="0"
-
-LABEL="btrfs_end"
-
-
-----
-
-And udev builtin btrfs, which I guess the above rule is referring to:
-
-https://github.com/systemd/systemd/blob/master/src/udev/udev-builtin-btrfs.c
-
-I think the Btrfs ioctl is a one shot. Either they are all present or
-not. The waiting is a policy by systemd udev rule near as I can tell.
+I do not care if there are 2, 5 or 100 devices. I do care if there is
+ENOUGH devices to run regular (including N-way mirroring and hot spares)
+and if not - if there is ENOUGH devices to run degraded. Having ALL the
+devices is just the edge case.
 
 -- 
-Chris Murphy
+Tomasz Pala <gotar@pld-linux.org>

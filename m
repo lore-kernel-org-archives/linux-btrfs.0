@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:46880 "EHLO pepin.polanet.pl"
+Received: from pepin.polanet.pl ([193.34.52.2]:47378 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752023AbeA1AQd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 Jan 2018 19:16:33 -0500
-Date: Sun, 28 Jan 2018 01:16:32 +0100
+        id S1751251AbeA1AjL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 27 Jan 2018 19:39:11 -0500
+Date: Sun, 28 Jan 2018 01:39:10 +0100
 From: Tomasz Pala <gotar@polanet.pl>
-To: "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: degraded permanent mount option
-Message-ID: <20180128001632.GC16927@polanet.pl>
+Message-ID: <20180128003910.GA31699@polanet.pl>
 References: <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
  <84c23047-522d-2529-5b16-d07ed8c28fc6@gmail.com>
  <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
@@ -17,56 +17,40 @@ References: <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
  <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
  <20180127110619.GA10472@polanet.pl>
  <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <CAJCQCtT+jgHxuYvTjAKWPhnX2H6yTwB6Z7Hqk+56GVfUtKB7Xw@mail.gmail.com>
+ <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <CAJCQCtT+jgHxuYvTjAKWPhnX2H6yTwB6Z7Hqk+56GVfUtKB7Xw@mail.gmail.com>
+In-Reply-To: <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 27, 2018 at 14:12:01 -0700, Chris Murphy wrote:
+On Sat, Jan 27, 2018 at 15:22:38 +0000, Duncan wrote:
 
-> doesn't count devices itself. The Btrfs systemd udev rule defers to
-> Btrfs kernel code by using BTRFS_IOC_DEVICES_READY. And it's totally
-> binary. Either they are all ready, in which case it exits 0, and if
-> they aren't all ready it exits 1.
+>> manages to mount degraded btrfs without problems.  They just don't try
+>> to outsmart the kernel.
 > 
-> But yes, mounting whether degraded or not is sufficiently complicated
-> that you just have to try it. I don't get the point of wanting to know
-> whether it's possible without trying. Why would this information be
-
-If you want to blind-try it, just tell the btrfs.ko to flip the IOCTL bit.
-
-No shortcuts please, do it legit, where it belongs.
-
->> Ie, the thing systemd can safely do, is to stop trying to rule everything,
->> and refrain from telling the user whether he can mount something or not.
+> No kidding.
 > 
-> Right. Open question is whether the timer and timeout can be
-> implemented in the systemd world and I don't see why not, I certainly
+> All systemd has to do is leave the mount alone that the kernel has 
+> already done, instead of insisting it knows what's going on better than 
+> the kernel does, and immediately umounting it.
 
-It can. The reasons why it's not already there follow:
+Tell me please, if you mount -o degraded btrfs - what would
+BTRFS_IOC_DEVICES_READY return?
 
-1. noone created udev rules and systemd units for btrfs-progs yet (that
-   is trivial),
-2. btrfs is not degraded-safe yet (the rules would have to check if the
-   filesystem won't stuck in read-only mode for example, this is NOT
-   trivial),
-3. there is not way to tell the kernel that we want degraded (probably
-   some new IOCTL) - this is the path that timer would use to trigger udev
-   event releasing systemd mount.
+This is not "outsmarting" nor "knowing better", on the contrary, this is "FOLLOWING the
+kernel-returned data". The umounting case is simply a bug in btrfs.ko
+that should change to READY state *if* someone has tried and apparently
+succeeded mounting the not-ready volume.
 
-Let me repeat this, so this would be clear: this is NOT going to work
-as some systemd-shortcut being "mount -o degraded", this must go through
-the kernel IOCTL -> udev -> systemd path, i.e.:
-
-timer expires -> executes IOCTL with "OK, give me degraded /dev/blah" ->
-BTRFS_IOC_DEVICES_READY returns "READY" (or new value "DEGRADED") -> udev
-catches event and changes SYSTEMD_READY -> systemd mounts the volume.
+Otherwise - how should any system part behave when you detach some drive? Insist
+that "the kernel has already mounted it" and ignore kernel screaming
+"the device is (not yet there/gone)"?
 
 
-This is really simple. All you need to do is to pass "degraded" to the
-btrfs.ko, so the BTRFS_IOC_DEVICES_READY would return "go ahead".
+Just update the internal state after successful mount and this
+particular problem is gone. Unless there is some race condition and the
+state should be changed before the mount is announced to the userspace.
 
 -- 
 Tomasz Pala <gotar@pld-linux.org>

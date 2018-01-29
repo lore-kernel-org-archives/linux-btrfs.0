@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:37344 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751864AbeA2M0j (ORCPT
+Received: from mail-it0-f41.google.com ([209.85.214.41]:33606 "EHLO
+        mail-it0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751574AbeA2Vut (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jan 2018 07:26:39 -0500
-Received: by mail-qk0-f193.google.com with SMTP id y80so5217517qkb.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 04:26:38 -0800 (PST)
-Message-ID: <1517228795.5965.24.camel@redhat.com>
-Subject: [GIT PULL] inode->i_version rework for v4.16
-From: Jeff Layton <jlayton@redhat.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
+        Mon, 29 Jan 2018 16:50:49 -0500
+MIME-Version: 1.0
+In-Reply-To: <1517228795.5965.24.camel@redhat.com>
+References: <1517228795.5965.24.camel@redhat.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Mon, 29 Jan 2018 13:50:47 -0800
+Message-ID: <CA+55aFxXg8JprOwfm0qCm4VkkM8cPM38YMvpkf3gBJq3bSJwPw@mail.gmail.com>
+Subject: Re: [GIT PULL] inode->i_version rework for v4.16
+To: Jeff Layton <jlayton@redhat.com>
 Cc: open list <linux-kernel@vger.kernel.org>,
         "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>,
         Al Viro <viro@zeniv.linux.org.uk>, xfs <linux-xfs@vger.kernel.org>,
@@ -18,142 +20,68 @@ Cc: open list <linux-kernel@vger.kernel.org>,
         linux-integrity <linux-integrity@vger.kernel.org>,
         Andrew Morton <akpm@linux-foundation.org>,
         "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>
-Date: Mon, 29 Jan 2018 07:26:35 -0500
 Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following changes since commit 50c4c4e268a2d7a3e58ebb698ac74da0de40ae36:
+On Mon, Jan 29, 2018 at 4:26 AM, Jeff Layton <jlayton@redhat.com> wrote:
+>
+> This pile of patches is a rework of the inode->i_version field. We have
+> traditionally incremented that field on every inode data or metadata
+> change. Typically this increment needs to be logged on disk even when
+> nothing else has changed, which is rather expensive.
 
-  Linux 4.15-rc3 (2017-12-10 17:56:26 -0800)
+Hmm. I have pulled this, but it is really really broken in one place,
+to the degree that I always went "no, I won't pull this garbage".
 
-are available in the Git repository at:
+But the breakage is potential, not actual, and can be fixed trivially,
+so I'll let it slide - but I do require it to be fixed. And I require
+people to *think* about it.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/jlayton/linux.git tags/iversion-v4.16-1
+So what's to horribly horribly wrong?
 
-for you to fetch changes up to f02a9ad1f15daf4378afeda025a53455f72645dd:
+The inode_cmp_iversion{+raw}() functions are pure and utter crap.
 
-  fs: handle inode->i_version more efficiently (2018-01-29 06:42:21 -0500)
+Why?
 
-----------------------------------------------------------------
-Hi Linus,
+You say that they return 0/negative/positive, but they do so in a
+completely broken manner. They return that ternary value as the
+sequence number difference in a 's64', which means that if you
+actually care about that ternary value, and do the *sane* thing that
+the kernel-doc of the function implies is the right thing, you would
+do
 
-This pile of patches is a rework of the inode->i_version field. We have
-traditionally incremented that field on every inode data or metadata
-change. Typically this increment needs to be logged on disk even when
-nothing else has changed, which is rather expensive.
+    int cmp = inode_cmp_iversion(inode, old);
 
-It turns out though that none of the consumers of that field actually
-require this behavior. The only real requirement for all of them is that
-it be different iff the inode has changed since the last time the field
-was checked.
+    if (cmp < 0 ...
 
-Given that, we can optimize away most of the i_version increments and
-avoid dirtying inode metadata when the only change is to the i_version 
-and no one is querying it. Queries of the i_version field are rather
-rare, so we can help write performance under many common workloads.
+and as a result you get code that looks sane, but that doesn't
+actually *WORK* right.
 
-This patch series converts existing accesses of the i_version field to a
-new API, and then converts all of the in-kernel filesystems to use it.
-The last patch in the series then converts the backend implementation to
-a scheme that optimizes away a large portion of the metadata updates
-when no one is looking at it.
+To make it even worse, it will actually work in practice by accident
+in 99.99999% of all cases, so now you have
 
-In my own testing this series significantly helps performance with small
-I/O sizes. I also got this email for Christmas this year from the kernel
-test robot (a 244% r/w bandwidth improvement with XFS over DAX, with 4k
-writes):
+ (a) subtly buggy code
+ (b) that looks fine
+ (c) and that works in testing
 
-    https://lkml.org/lkml/2017/12/25/8
+which is just about the worst possible case for any code. The
+interface is simply garbage that encourages bugs.
 
-A few of the earlier patches in this pile are also flowing to you via
-other trees (mm, integrity, and nfsd trees in particular), so there may
-be some minor merge conflicts here. Hopefully they're trivial to
-resolve, but let me know if there are problems.
+And the bug wouldn't be in the user, the bug would be in this code you
+just sent me. The interface is simply wrong.
 
-Thanks!
-----------------------------------------------------------------
-Jeff Layton (21):
-      lustre: don't set f_version in ll_readdir
-      ntfs: remove i_version handling
-      fs: new API for handling inode->i_version
-      fs: don't take the i_lock in inode_inc_iversion
-      fat: convert to new i_version API
-      affs: convert to new i_version API
-      afs: convert to new i_version API
-      btrfs: convert to new i_version API
-      exofs: switch to new i_version API
-      ext2: convert to new i_version API
-      ext4: convert to new i_version API
-      nfs: convert to new i_version API
-      nfsd: convert to new i_version API
-      ocfs2: convert to new i_version API
-      ufs: use new i_version API
-      xfs: convert to new i_version API
-      IMA: switch IMA over to new i_version API
-      fs: only set S_VERSION when updating times if necessary
-      xfs: avoid setting XFS_ILOG_CORE if i_version doesn't need incrementing
-      btrfs: only dirty the inode in btrfs_update_time if something was changed
-      fs: handle inode->i_version more efficiently
+So this absolutely needs to be fixed. I see two fixes:
 
-Sascha Hauer (1):
-      ima: Use i_version only when filesystem supports it
+ - just return a boolean. That's all that any current user actually
+wants, so the ternary value seems pointless.
 
- drivers/staging/lustre/lustre/llite/dir.c |   3 -
- fs/affs/amigaffs.c                        |   5 +-
- fs/affs/dir.c                             |   5 +-
- fs/affs/super.c                           |   3 +-
- fs/afs/fsclient.c                         |   3 +-
- fs/afs/inode.c                            |   5 +-
- fs/btrfs/delayed-inode.c                  |   7 +-
- fs/btrfs/file.c                           |   1 +
- fs/btrfs/inode.c                          |  12 +-
- fs/btrfs/ioctl.c                          |   1 +
- fs/btrfs/tree-log.c                       |   4 +-
- fs/btrfs/xattr.c                          |   1 +
- fs/exofs/dir.c                            |   9 +-
- fs/exofs/super.c                          |   3 +-
- fs/ext2/dir.c                             |   9 +-
- fs/ext2/super.c                           |   5 +-
- fs/ext4/dir.c                             |   9 +-
- fs/ext4/inline.c                          |   7 +-
- fs/ext4/inode.c                           |  13 +-
- fs/ext4/ioctl.c                           |   3 +-
- fs/ext4/namei.c                           |   5 +-
- fs/ext4/super.c                           |   3 +-
- fs/ext4/xattr.c                           |   5 +-
- fs/fat/dir.c                              |   3 +-
- fs/fat/inode.c                            |   9 +-
- fs/fat/namei_msdos.c                      |   7 +-
- fs/fat/namei_vfat.c                       |  22 +-
- fs/inode.c                                |  11 +-
- fs/nfs/delegation.c                       |   3 +-
- fs/nfs/fscache-index.c                    |   5 +-
- fs/nfs/inode.c                            |  18 +-
- fs/nfs/nfs4proc.c                         |  10 +-
- fs/nfs/nfstrace.h                         |   5 +-
- fs/nfs/write.c                            |   8 +-
- fs/nfsd/nfsfh.h                           |   3 +-
- fs/ntfs/inode.c                           |   9 -
- fs/ntfs/mft.c                             |   6 -
- fs/ocfs2/dir.c                            |  15 +-
- fs/ocfs2/inode.c                          |   3 +-
- fs/ocfs2/namei.c                          |   3 +-
- fs/ocfs2/quota_global.c                   |   3 +-
- fs/ufs/dir.c                              |   9 +-
- fs/ufs/inode.c                            |   3 +-
- fs/ufs/super.c                            |   3 +-
- fs/xfs/libxfs/xfs_inode_buf.c             |   7 +-
- fs/xfs/xfs_icache.c                       |   5 +-
- fs/xfs/xfs_inode.c                        |   3 +-
- fs/xfs/xfs_inode_item.c                   |   3 +-
- fs/xfs/xfs_trans_inode.c                  |  16 +-
- include/linux/fs.h                        |  17 +-
- include/linux/iversion.h                  | 341 ++++++++++++++++++++++++++++++
- security/integrity/ima/ima_api.c          |   3 +-
- security/integrity/ima/ima_main.c         |   4 +-
- 53 files changed, 525 insertions(+), 153 deletions(-)
- create mode 100644 include/linux/iversion.h
--- 
-Jeff Layton <jlayton@redhat.com>
+ - make it return an 'int', and not just any int, but -1/0/1. That way
+there is no worry about uses, and if somebody *really* cares about the
+ternary value, they can now use a "switch" statement to get it
+(alternatively, make it return an enum, but whatever).
+
+That "ternary" function that has 18446744069414584320 incorrect return
+values really is unacceptable.
+
+                Linus

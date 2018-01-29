@@ -1,109 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:48024 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752651AbeA1XNc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Jan 2018 18:13:32 -0500
-Date: Mon, 29 Jan 2018 00:13:30 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: degraded permanent mount option
-Message-ID: <20180128231330.GB26726@polanet.pl>
-References: <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
- <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com>
- <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
- <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me>
- <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
- <20180127110619.GA10472@polanet.pl>
- <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
- <7c95b4ae-f65e-b31d-f907-5eae5c60c49a@gmail.com>
- <CAJCQCtSCC5RFEybWTpWVDeVS9MPwBsbY0-F4C_mB0Mq5EDhH9g@mail.gmail.com>
+Received: from mail-oi0-f44.google.com ([209.85.218.44]:39264 "EHLO
+        mail-oi0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752934AbeA2AAs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 28 Jan 2018 19:00:48 -0500
+Received: by mail-oi0-f44.google.com with SMTP id j188so2432849oib.6
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jan 2018 16:00:47 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <CAJCQCtSCC5RFEybWTpWVDeVS9MPwBsbY0-F4C_mB0Mq5EDhH9g@mail.gmail.com>
+In-Reply-To: <20180128223946.GA26726@polanet.pl>
+References: <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
+ <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com> <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
+ <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me> <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
+ <20180127110619.GA10472@polanet.pl> <20180127132641.mhmdhpokqrahgd4n@angband.pl>
+ <pan$49d38$869e8d62$c0063169$584b8866@cox.net> <20180128003910.GA31699@polanet.pl>
+ <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com> <20180128223946.GA26726@polanet.pl>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sun, 28 Jan 2018 17:00:46 -0700
+Message-ID: <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
+Subject: Re: degraded permanent mount option
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 28, 2018 at 13:28:55 -0700, Chris Murphy wrote:
+On Sun, Jan 28, 2018 at 3:39 PM, Tomasz Pala <gotar@polanet.pl> wrote:
+> On Sun, Jan 28, 2018 at 13:02:08 -0700, Chris Murphy wrote:
+>
+>>> Tell me please, if you mount -o degraded btrfs - what would
+>>> BTRFS_IOC_DEVICES_READY return?
+>>
+>> case BTRFS_IOC_DEVICES_READY:
+>>     ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>>                     &btrfs_fs_type, &fs_devices);
+>>     if (ret)
+>>         break;
+>>     ret = !(fs_devices->num_devices == fs_devices->total_devices);
+>>     break;
+>>
+>>
+>> All it cares about is whether the number of devices found is the same
+>> as the number of devices any of that volume's supers claim make up
+>> that volume. That's it.
+>>
+>>> This is not "outsmarting" nor "knowing better", on the contrary, this is "FOLLOWING the
+>>> kernel-returned data". The umounting case is simply a bug in btrfs.ko
+>>> that should change to READY state *if* someone has tried and apparently
+>>> succeeded mounting the not-ready volume.
+>>
+>> Nope. That is not what the ioctl does.
+>
+> So who is to blame for creating utterly useless code? Userspace
+> shouldn't depend on some stats (as number of devices is nothing more
+> than that), but overall _availability_.
 
->> Are you sure you really understand the problem? No mount happens because
->> systemd waits for indication that it can mount and it never gets this
->> indication.
-> 
-> "not ready" is rather vague terminology but yes that's how systemd
-> ends up using the ioctl this rule depends on, even though the rule has
-> nothing to do with readiness per se. If all devices for a volume
+There's quite a lot missing. Btrfs doesn't even really have a degraded
+state concept. It has a degraded mount option, but this is not a
+state. e.g. if you have a normally mounted volume, and a drive dies or
+vanishes, there's no way for the user to know the array is degraded.
+They can only infer that it's degraded by a.) metric f tons of
+read/write errors to a bdev b.) the application layer isn't pissed off
+about it; or in lieu of a. they see via 'btrfs fi show' that a device
+is missing. Likewise, when a device is failing to read and write,
+Btrfs doesn't consider it faulty and boot it out of the array, it just
+keeps on trying, the spew of which can cause disk contention of those
+errors are written to a log on spinning rust.
 
-If you avoid using THIS ioctl, then you'd have nothing to fire the rule
-at all. One way or another, this is btrfs that must emit _some_ event or
-be polled _somehow_.
-
-> aren't found, we can correctly conclude a normal mount attempt *will*
-> fail. But that's all we can conclude. What I can't parse in all of
-> this is if the udev rule is a one shot, if the ioctl is a one shot, if
-> something is constantly waiting for "not all devices are found" to
-> transition to "all devices are found" or what. I can't actually parse
-
-It's not one shot. This works like this:
-
-sda1 appears -> udev catches event -> udev detects btrfs and IOCTLs => not ready
-sdb1 appears -> udev catches event -> udev detects btrfs and IOCTLs => ready
-
-The end.
-
-If there were some other device appearing after assembly, like /dev/md1,
-or if there were some event generated by btrfs code itself, udev could
-catch this and follow. Now, if you unplug sdb1, there's no such event at
-all.
-
-Since this IOCTL is the *only* thing that udev can rely on, it cannot be
-removed from the logic. So even if you create a timer to force assembly,
-you must do it by influencing the IOCTL response.
-
-Or creating some other IOCTL for this purpose, or creating some
-userspace daemon or whatever.
-
-> the two critical lines in this rule. I
-> 
-> # let the kernel know about this btrfs filesystem, and check if it is complete
-> IMPORT{builtin}="btrfs ready $devnode"
-
-This sends IOCTL.
-
-> # mark the device as not ready to be used by the system
-> ENV{ID_BTRFS_READY}=="0", ENV{SYSTEMD_READY}="0"
-      ^^^^^^^^^^^^^^this is IOCTL response being checked
-
-and SYSTEMD_READY set to 0 prevents systemd from mounting.
-
-> I think the Btrfs ioctl is a one shot. Either they are all present or not.
-
-The rules are called once per (block) device.
-So when btrfs scans all the devices to return READY, this would finally
-be systemd-ready. This is trivial to re-trigger udev rule (udevadm trigger),
-but there is no way to force btrfs to return READY after any timeout.
-
-> The waiting is a policy by systemd udev rule near as I can tell.
-
-There is no problem in waiting or re-triggering. This can be done in ~10
-lines of rules. The problem is that the IOCTL won't EVER return READY until
-there are ALL the components present.
-
-It's simple as that: there MUST be some mechanism at device-manager
-level that tells if a compound device is mountable, degraded or not;
-upper layers (systemd-mount) do not care about degradation, handling
-redundancy/mirrors/chunks/stripes/spares is not it's job.
-It (systemd) can (easily!) handle expiration timer to push pending
-compound to be force-assembled, but currently there is no way to push.
+Anyway, the fact many state features are missing doesn't mean the
+necessary information to do the right thing is missing.
 
 
-If the IOCTL would be extended to return TRYING_DEGRADED (when
-instructed to do so after expired timeout), systemd could handle
-additional per-filesystem fstab options, like x-systemd.allow-degraded.
 
-Then in would be possible to have best-effort policy for rootfs (to make
-machine boot), and more strict one for crucial data (do not mount it
-when there is no redundancy, wait for operator intervention).
+> I do not care if there are 2, 5 or 100 devices. I do care if there is
+> ENOUGH devices to run regular (including N-way mirroring and hot spares)
+> and if not - if there is ENOUGH devices to run degraded. Having ALL the
+> devices is just the edge case.
+
+systemd can't possibly need to know more information than a person
+does in the exact same situation in order to do the right thing. No
+human would wait 10 minutes, let alone literally the heat death of the
+planet for "all devices have appeared" but systemd will. And it does
+that by its own choice, its own policy. That's the complaint. It's
+choosing to do something a person wouldn't do, given identical
+available information. There's nothing the kernel is doing that's
+telling systemd to wait for goddamn ever.
+
+
 
 -- 
-Tomasz Pala <gotar@pld-linux.org>
+Chris Murphy

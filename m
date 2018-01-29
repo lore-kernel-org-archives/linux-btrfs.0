@@ -1,127 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f193.google.com ([209.85.128.193]:41634 "EHLO
-        mail-wr0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751072AbeA2SQW (ORCPT
+Received: from mail-it0-f49.google.com ([209.85.214.49]:55778 "EHLO
+        mail-it0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751373AbeA2TA5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jan 2018 13:16:22 -0500
-Received: by mail-wr0-f193.google.com with SMTP id v15so8281801wrb.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 10:16:21 -0800 (PST)
+        Mon, 29 Jan 2018 14:00:57 -0500
+Received: by mail-it0-f49.google.com with SMTP id c16so9583784itc.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 11:00:57 -0800 (PST)
+Subject: Re: degraded permanent mount option
+To: Andrei Borzenkov <arvidjaar@gmail.com>,
+        Adam Borowski <kilobyte@angband.pl>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me>
+ <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
+ <20180127110619.GA10472@polanet.pl>
+ <20180127132641.mhmdhpokqrahgd4n@angband.pl>
+ <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
+ <20180128003910.GA31699@polanet.pl>
+ <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
+ <20180128223946.GA26726@polanet.pl>
+ <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
+ <20180129085404.GA2500@polanet.pl>
+ <20180129112456.r7ksq5mwp3ie6gmg@angband.pl>
+ <dd2863d2-6f50-47b4-06a9-f34e7b341f2f@gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <f97f4e60-47fb-f1d6-dc09-0b46638a9eb4@gmail.com>
+Date: Mon, 29 Jan 2018 14:00:53 -0500
 MIME-Version: 1.0
-In-Reply-To: <44af6e3e-c580-2174-9a9c-14b7cea3a904@gmx.com>
-References: <CAAxOLF8pwZ5jcZxB4=h-bPZBxsnCV7sB=LOghGfa0HhRqgJfSg@mail.gmail.com>
- <CAAxOLF9k3WJ-JPJsCEaW4ZD+XMzhRdaRXouaWLwX1JBSM1Xnxw@mail.gmail.com>
- <6d5bfa3f-3c49-1380-2bcf-d6eeca57020a@gmx.com> <CAAxOLF_wRCxgebwXUy7A5AqKtKchGLz46DKNiM-iPejVpfjbFg@mail.gmail.com>
- <0662a08f-5869-3eb3-5ab2-391ba9603095@gmx.com> <CAAxOLF8wt98KCONdEJXMvUuzxeB5_GwigGhCzEE6hSpmurXRNw@mail.gmail.com>
- <80321b99-a89c-fadf-8f1a-26ed8f598a66@gmx.com> <CAAxOLF9wYwUzT_AAx1Wa12XyCwACo7vp021BytHn-VaANC--=Q@mail.gmail.com>
- <802534f4-55cd-8404-5c21-4f383468c7e5@gmx.com> <CAAxOLF9_N0zEhED9ZQfitcNu8j=8krYbWAYNqr271o_LnMKfmw@mail.gmail.com>
- <1e6c6814-d120-144b-bed7-c1dac0d140d3@gmx.com> <CAAxOLF-sp1nbhbBu7TeNwfvjwRuX9i7QrRGx3Jbm=wh1n+2zQA@mail.gmail.com>
- <365e746e-de87-2977-daee-7b2335c545b1@gmx.com> <CAAxOLF82tDaCa8+MBNnyWXDTWX2v-H=7a9qwFtBoehGW8Q=TyA@mail.gmail.com>
- <f0a66bee-f648-9f00-b56b-b59646c06779@gmx.com> <CAAxOLF9NTd4TcDc1FW23CE=5nR-Kp62=OJz31XmG_LqZBZJmsg@mail.gmail.com>
- <44af6e3e-c580-2174-9a9c-14b7cea3a904@gmx.com>
-From: "^m'e" <marcoep@gmail.com>
-Date: Mon, 29 Jan 2018 18:16:00 +0000
-Message-ID: <CAAxOLF_45qefY7d8zz3LzbPGXY_xt5D9YS5H6m1e0FcRE_iBMA@mail.gmail.com>
-Subject: Re: btrfs check: backref lost, mismatch with its hash -- can't repair
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <dd2863d2-6f50-47b4-06a9-f34e7b341f2f@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks!
-
-Got these
-
-  # ./btrfs.static inspect dump-super -fFa /dev/sdb3 |grep
-backup_tree_root: | sort -u
-        backup_tree_root:    180410073088    gen: 463765    level: 1
-        backup_tree_root:    180415758336    gen: 463766    level: 1
-        backup_tree_root:    180416364544    gen: 463767    level: 1
-        backup_tree_root:    4194304    gen: 463764    level: 1
-
-but, nada: all have transid failures...
-
-The backup snapshots are OK as per original check.
-
-
-On Mon, Jan 29, 2018 at 3:09 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->
->
-> On 2018年01月29日 22:49, ^m'e wrote:
->> On Mon, Jan 29, 2018 at 2:04 PM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>
->>>
->>> On 2018年01月29日 21:58, ^m'e wrote:
->>>> Thanks for the advice, Qu!
->>>>
->>>> I used the system for a while, did some package upgrades -- writing in
->>>> the suspect corrupted area. Then tried a btrfs-send to my backup vol,
->>>> and it failed miserably with a nice kernel oops.
->>>>
->>>> So I went for a lowmem repair:
->>>> ----------------------------------------------------------------------------------------
->>>> # ./btrfsck.static check --repair --mode=lowmem /dev/sdb3 2>&1 | tee
->>>> /mnt/custom/rescue/btrfs-recovery/btrfs-repair.BTR-POOL.1.log
->>>> WARNING: low-memory mode repair support is only partial
->>>> Fixed 0 roots.
->>>> checking extents
->>>> checking free space cache
->>>> checking fs roots
->>>> ERROR: failed to add inode 28891726 as orphan item root 257
->>>> ERROR: root 257 INODE[28891726] is orphan item
->>>
->>> At least I need dig the kernel code further to determine if the orphan
->>> inode handling in btrfs-progs is correct or not.
->>>
->>> So there won't be more dirty fix soon.
->>>
->>> Hopefully you could get some good backup and restore the system.
->>>
->>> At least the problem is limited to a very small range, and it's
->>> something we could handle easily.
->>>
->>> Thanks for all your report,
->>> Qu
->>>
->>>
+On 2018-01-29 12:58, Andrei Borzenkov wrote:
+> 29.01.2018 14:24, Adam Borowski пишет:
+> ...
 >>
->> Right.
+>> So any event (the user's request) has already happened.  A rc system, of
+>> which systemd is one, knows whether we reached the "want root filesystem" or
+>> "want secondary filesystems" stage.  Once you're there, you can issue the
+>> mount() call and let the kernel do the work.
 >>
->> Meanwhile, could you please suggest the best course of action? btrfs
->> rescue or restore?
->> I have snapshots of my two subvols (rootfs, home -- now fs-checking
->> them  just in case...)
->
-> Don't run --repair any more.
-> It seems to make the case worse.
->
-> While the RW mount with orphan cleanup abort seems to screwed up the
-> filesystem.
->
-> In this case, it's pretty hard to recover, but still has small chance.
->
-> Use btrfs inspec dump-super to get backup roots:
->
-> # btrfs inspect dump-super -fFa <device> |grep backup_tree_root: | sort
-> | uniq
->
-> And try all the 4 numbers in the following commands:
->
-> # btrfs check --tree-root <number> <device>
->
-> To see if is there any good one without transid error.
->
-> Thanks,
-> Qu
->
+>>> It is a btrfs choice to not expose compound device as separate one (like
+>>> every other device manager does)
 >>
->> Cheers,
+>> Btrfs is not a device manager, it's a filesystem.
 >>
->>   Marco
+>>> it is a btrfs drawback that doesn't provice anything else except for this
+>>> IOCTL with it's logic
 >>
->
+>> How can it provide you with something it doesn't yet have?  If you want the
+>> information, call mount().  And as others in this thread have mentioned,
+>> what, pray tell, would you want to know "would a mount succeed?" for if you
+>> don't want to mount?
+>>
+>>> it is a btrfs drawback that there is nothing to push assembling into "OK,
+>>> going degraded" state
+>>
+>> The way to do so is to timeout, then retry with -o degraded.
+>>
+> 
+> That's possible way to solve it. This likely requires support from
+> mount.btrfs (or btrfs.ko) to return proper indication that filesystem is
+> incomplete so caller can decide whether to retry or to try degraded mount.
+We already do so in the accepted standard manner.  If the mount fails 
+because of a missing device, you get a very specific message in the 
+kernel log about it, as is the case for most other common errors (for 
+uncommon ones you usually just get a generic open_ctree error).  This is 
+really the only option too, as the mount() syscall (which the mount 
+command calls) returns only 0 on success or -1 and an appropriate errno 
+value on failure, and we can't exactly go about creating a half dozen 
+new error numbers just for this (well, technically we could, but I very 
+much doubt that they would be accepted upstream, which defeats the purpose).
+> 
+> Or may be mount.btrfs should implement this logic internally. This would
+> really be the most simple way to make it acceptable to the other side by
+> not needing to accept anything :)
+And would also be another layering violation which would require a 
+proliferation of extra mount options to control the mount command itself 
+and adjust the timeout handling.
 
+This has been done before with mount.nfs, but for slightly different 
+reasons (primarily to allow nested NFS mounts, since the local directory 
+that the filesystem is being mounted on not being present is treated 
+like a mount timeout), and it had near zero control.  It works there 
+because they push the complicated policy decisions to userspace (namely, 
+there is no support for retrying with different options or trying a 
+different server).
 
+With what you're proposing for BTRFS however, _everything_ is a 
+complicated decision, namely:
+1. Do you retry at all?  During boot, the answer should usually be yes, 
+but during normal system operation it should normally be no (because we 
+should be letting the user handle issues at that point).
+2. How long should you wait before you retry?  There is no right answer 
+here that will work in all cases (I've seen systems which take multiple 
+minutes for devices to become available on boot), especially considering 
+those of us who would rather have things fail early.
+3. If the retry fails, do you retry again?  How many times before it 
+just outright fails?  This is going to be system specific policy.  On 
+systems where devices may take a while to come online, the answer is 
+probably yes and some reasonably large number, while on systems where 
+devices are known to reliably be online immediately, it makes no sense 
+to retry more than once or twice.
+4. If you are going to retry, should you try a degraded mount?  Again, 
+this is going to be system specific policy (regular users would probably 
+want this to be a yes, while people who care about data integrity over 
+availability would likely want it to be a no).
+5. Assuming you do retry with the degraded mount, how many times should 
+a normal mount fail before things go degraded?  This ties in with 3 and 
+has the same arguments about variability I gave there.
+6. How many times do you try a degraded mount before just giving up? 
+Again, similar variability to 3.
+7. Should each attempt try first a regular mount and then a degraded 
+one, or do you try just normal a couple times and then switch to 
+degraded, or even start out trying normal and then start alternating? 
+Any of those patterns has valid arguments both for and against it, so 
+this again needs to be user configurable policy.
 
--- 
-^m'e
+Altogether, that's a total of 7 policy decisions that should be user 
+configurable.  Having a config file other than /etc/fstab for the mount 
+command should probably be avoided for sanity reasons (again, BTRFS is a 
+filesystem, not a volume manager), so they would all have to be handled 
+through mount options.  The kernel will additionally have to understand 
+that those options need to be ignored (things do try to mount 
+filesystems without calling a mount helper, most notably the kernel when 
+it mounts the root filesystem on boot if you're not using an initramfs). 
+  All in all, this type of thing gets out of hand _very_ fast.

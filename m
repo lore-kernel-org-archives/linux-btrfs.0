@@ -1,111 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:63337 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751042AbeA2F5N (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jan 2018 00:57:13 -0500
-Subject: Re: [PATCH v3 00/17] btrfs-progs: lowmem check: avoid extents
- overwrite
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-References: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <8fea18d7-123d-7f4d-b30d-aad18216e815@cn.fujitsu.com>
-Date: Mon, 29 Jan 2018 14:01:53 +0800
+Received: from pepin.polanet.pl ([193.34.52.2]:60919 "EHLO pepin.polanet.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751127AbeA2IyH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Jan 2018 03:54:07 -0500
+Date: Mon, 29 Jan 2018 09:54:04 +0100
+From: Tomasz Pala <gotar@polanet.pl>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: degraded permanent mount option
+Message-ID: <20180129085404.GA2500@polanet.pl>
+References: <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
+ <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me>
+ <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
+ <20180127110619.GA10472@polanet.pl>
+ <20180127132641.mhmdhpokqrahgd4n@angband.pl>
+ <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
+ <20180128003910.GA31699@polanet.pl>
+ <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
+ <20180128223946.GA26726@polanet.pl>
+ <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20180111073511.25288-1-suy.fnst@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just ping since some patches are meaningful
-for further fixes.
+On Sun, Jan 28, 2018 at 17:00:46 -0700, Chris Murphy wrote:
 
-On 01/11/2018 03:34 PM, Su Yue wrote:
-> This patchset can be fetched from my github:
-> https://github.com/Damenly/btrfs-progs/tree/lowmem
-> based on kdave/devel.
-> 
-It can be rebased to kdave/master now but not changing
-kdave/devel.
+> systemd can't possibly need to know more information than a person
+> does in the exact same situation in order to do the right thing. No
+> human would wait 10 minutes, let alone literally the heat death of the
+> planet for "all devices have appeared" but systemd will. And it does
 
-And the below solves little conflicts with kdave/devel:
-https://github.com/Damenly/btrfs-progs/tree/lowmem_dev
+We're already repeating - systemd waits for THE btrfs-compound-device,
+not ALL the block-devices. Just like it 'waits' for someone to plug USB
+pendrive in.
 
-Thanks,
-Su
+It is a btrfs choice to not expose compound device as separate one (like
+every other device manager does), it is a btrfs drawback that doesn't
+provice anything else except for this IOCTL with it's logic, it is a
+btrfs drawback that there is nothing to push assembling into "OK, going
+degraded" state, it is btrfs drawback that there are no states...
 
-> Thanks to Qu Wenruo's ideas and suggestions first.
-> 
-> Patch[1-3] fix minor problems of lowmem repair.
-> 
-> Patch[4-8] introduce two ways to avoid extents overwrite:
-> 1) Traverse trees and exclude all metadata blocks.
->     It's time-inefficient for large filesystems.
-> 2) Mark all existed chunks full, allocate new chunk for CoW and
->     records chunk start.
->     If the last allocated chunk is almost full, allocated a new one.
-> 2) is More efficient than 1). However, it can't handle situations
-> like no space(fsck/004).
-> Lowmem repair will try method 2 first and then method 1.
-> 
-> Patch[9-17] remove parameters @trans in functions for lowmem repair.
-> They try to avoid extents overwrite if necessary and start
-> transactions by themselves.
-> 
-> Those patches are mainly for lowmem repair. Original mode is not
-> influenced.
-> 
-> ---
-> Changlog:
-> v2->v3:
->   - check_btrfs_root() returns FATAL_ERROR if check_fs_first_inode()
->     failed. Thanks Nikolay Borisov.
->   - Add function try_to_force_cow_in_new_chunk() and global u64
->     varaiable to record start of the last allocated chunk.
->   - Remove unused EXTENTS_PIN in enum lowmem_extents_operation.
->   
-> v1->v2:
->   - Let @err in check_btrfs_root() record err bits but excluded
->     negative values.
->   - Do not delete a line of code to release path after extent item'
->     insertion in repair_extent_data_item().
->   - Add patch[3].
->   - Force CoW in new allocated chunk to avoid extents overwrite.
->   - Remove parameters @trans in check_chunks_and_extents_v2() and
->     related callees.
->   - Repair functions for lowmem mode call try_avoid_extents_overwrite()
->     and start transactions.
->     
-> Su Yue (17):
->    btrfs-progs: lowmem check: release path in repair_extent_data_item()
->    btrfs-progs: lowmem check: record returned errors after
->      walk_down_tree_v2()
->    btrfs-progs: lowmem check: assign @parent early in
->      repair_extent_data_item()
->    btrfs-progs: lowmem check: exclude extents of metadata blocks
->    btrfs-progs: lowmem check: introduce mark/clear_block_groups_full()
->    btrfs-progs: lowmem check: introduce force_cow_in_new_chunk()
->    btrfs-progs: lowmem check: introduce try_avoid_extents_overwrite()
->    btrfs-progs: lowmem check: exclude extents if init-extent-tree in
->      lowmem
->    btrfs-progs: lowmem check: start to remove parameters @trans in lowmem
->    btrfs-progs: lowmem check: remove parameter @trans of
->      delete_extent_item()
->    btrfs-progs: lowmem check: remove parameter @trans of
->      repair_chunk_item()
->    btrfs-progs: lowmem check: remove parameter @trans of
->      repair_extent_item()
->    btrfs-progs: lowmem check: remove parameter @trans of
->      check_leaf_items()
->    btrfs-progs: lowmem check: remove parameter @trans of
->      repair_tree_back_ref()
->    btrfs-progs: lowmem check: remove parameter @trans of
->      check_btrfs_root()
->    btrfs-progs: lowmem check: introduce repair_block_accounting()
->    btrfs-progs: lowmem check: end of removing parameters @trans in lowmem
-> 
->   cmds-check.c | 710 ++++++++++++++++++++++++++++++++++++++++++++++++++---------
->   1 file changed, 604 insertions(+), 106 deletions(-)
-> 
+I've told already - pretend the /dev/sda1 device doesn't
+exist until assembled. If this overlapping usage was designed with
+'easier mounting' on mind, this is simply bad design.
+
+> that by its own choice, its own policy. That's the complaint. It's
+> choosing to do something a person wouldn't do, given identical
+> available information.
+
+You are expecting systemd to mix in functions of kernel and udev.
+There is NO concept of 'assembled stuff' in systemd AT ALL.
+There is NO concept of 'waiting' in udev AT ALL.
+If you want to do some crazy interlayer shortcuts just implement btrfsd.
+
+> There's nothing the kernel is doing that's
+> telling systemd to wait for goddamn ever.
+
+There's nothing the kernel is doing that's
+telling udev there IS a degraded device assembled to be used.
+
+There's nothing a userspace-thing is doing that's
+telling udev to mark degraded device as mountable.
+
+There is NO DEVICE to be mounted, so systemd doesn't mount it.
+
+The difference is:
+
+YOU think that sda1 device is ephemeral, as it's covered by sda1 btrfs device that COULD BE mounted.
+
+I think that there is real sda1 device, following Linux rules of system
+registration, which CAN be overtaken by ephemeral btrfs-compound device.
+Can I mount that thing above sda1 block device? ONLY when it's properly
+registered in the system.
+
+Does btrfs-compound-device register in the system? - Yes, but only fully populated.
+
+Just don't expect people will break their code with broken designs just
+to overcome your own limitations. If you want systemd to mount degraded
+btrfs volume, just MAKE IT REGISTER in the system.
+
+How can btrfs register in the system being degraded? Either by some
+userspace daemon handling btrfs volumes states (which are missing from
+the kernel), or by some IOCTLs altering in-kernel states.
 
 
+So for the last time: nobody will break his own code to patch missing
+code from other (actively maintained) subsystem.
+
+If you expect degraded mounts, there are 2 choices:
+
+1. implement degraded STATE _some_where_ - udev would handle falling
+   back to degraded mount after specified timeout,
+
+2. change this IOCTL to _always_ return 1 - udev would register any
+   btrfs device, but you will get random behaviour of mounting
+   degraded/populated. But you should expect that since there is no
+   concept of any state below.
+
+
+Actually, this is ridiculous - you expect the degradation to be handled
+in some 3rd party software?! In init system? With the only thing you got
+is 'degraded' mount option?!
+What next - moving MD and LVM logic into systemd?
+
+This is not systemd's job - there are
+btrfs-specific kernel cmdline options to be parsed (allowing degraded
+volumes), there is tracking of volume health required.
+Yes, device-manager needs to track it's components, RAID controller
+needs to track minimum required redundancy. It's not only about
+mounting. But doing the degraded mounting is easy, only this one
+particular ioctl needs to be fixed:
+
+1. counted devices<all	=> not_ready
+
+2. counted devices<all BUT
+- 'go degraded' received from userspace or kernel cmdline OR
+- volume IS mounted and doesn't report errors (i.e. mount -o degraded
+  DID succeeded)	=> ok_degraded
+
+3. counted devices==all => ok
+
+
+If btrfs DISTINGUISHES these two states, systemd would be able to use them.
+
+
+You might ask why this is important for the state to be kept inside some
+btrfs-related stuff, like kernel or btrfsd, while the systemd timer
+could do the same and 'just mount degraded'. The answear is simple:
+systemd.timer is just a sane default CONFIGURATION, that can be EASILY
+changed by system administrator. But somewhere, sometime, someone would
+have a NEED for totally different set of rules for handling degraded
+volumes, just like MD or LVM does. This would be totally irresponsible
+to hardcode any mount-degraded rule inside systemd itself.
+
+That is exactly why this must go through the udev - udev is responsible
+for handling devices in Linux world. How can I register btrfs device
+in udev, since it's overlapping the block device? I can't - the ioctl
+is one-way, doesn't accept any userspace feedback.
+
+-- 
+Tomasz Pala <gotar@pld-linux.org>

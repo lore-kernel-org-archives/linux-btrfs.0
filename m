@@ -1,175 +1,484 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f65.google.com ([209.85.214.65]:39952 "EHLO
-        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751256AbeA2Nmh (ORCPT
+Received: from mail-wm0-f68.google.com ([74.125.82.68]:53495 "EHLO
+        mail-wm0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751591AbeA2N6X (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jan 2018 08:42:37 -0500
-Received: by mail-it0-f65.google.com with SMTP id 196so9331826iti.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 05:42:37 -0800 (PST)
-Subject: Re: degraded permanent mount option
-To: Tomasz Pala <gotar@polanet.pl>,
-        "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <5d342036-0de0-9bf7-3e9e-4885b62d8100@gmail.com>
- <1516978054.4103196.1249114200.76EC1546@webmail.messagingengine.com>
- <84c23047-522d-2529-5b16-d07ed8c28fc6@gmail.com>
- <1517035210.1252874.1249880112.19FABD13@webmail.messagingengine.com>
- <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com>
- <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
- <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me>
- <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
- <20180127110619.GA10472@polanet.pl>
- <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <20180127224200.GA16927@polanet.pl>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <6b6b8e07-27b2-c181-49dc-3fbd1cd9e023@gmail.com>
-Date: Mon, 29 Jan 2018 08:42:32 -0500
+        Mon, 29 Jan 2018 08:58:23 -0500
+Received: by mail-wm0-f68.google.com with SMTP id t74so14503304wme.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 05:58:22 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20180127224200.GA16927@polanet.pl>
-Content-Type: text/plain; charset=iso-8859-2; format=flowed
+In-Reply-To: <365e746e-de87-2977-daee-7b2335c545b1@gmx.com>
+References: <CAAxOLF8pwZ5jcZxB4=h-bPZBxsnCV7sB=LOghGfa0HhRqgJfSg@mail.gmail.com>
+ <CAAxOLF9Hqnbc6g20dPasrtXW+Es562mOBujc7ve7Fc6LzG7tcQ@mail.gmail.com>
+ <03ba8382-3271-6c11-b217-a48d1423e684@gmx.com> <CAAxOLF_DB4_5wBem3qgU-B97Hq8xkmE67_qD-7Fe2=my-FN_iw@mail.gmail.com>
+ <CAAxOLF8KgC=_LoaEaKft2Q7gUhKL3Fp8OLizbnnA9v4h_cSprQ@mail.gmail.com>
+ <CAAxOLF9k3WJ-JPJsCEaW4ZD+XMzhRdaRXouaWLwX1JBSM1Xnxw@mail.gmail.com>
+ <6d5bfa3f-3c49-1380-2bcf-d6eeca57020a@gmx.com> <CAAxOLF_wRCxgebwXUy7A5AqKtKchGLz46DKNiM-iPejVpfjbFg@mail.gmail.com>
+ <0662a08f-5869-3eb3-5ab2-391ba9603095@gmx.com> <CAAxOLF8wt98KCONdEJXMvUuzxeB5_GwigGhCzEE6hSpmurXRNw@mail.gmail.com>
+ <80321b99-a89c-fadf-8f1a-26ed8f598a66@gmx.com> <CAAxOLF9wYwUzT_AAx1Wa12XyCwACo7vp021BytHn-VaANC--=Q@mail.gmail.com>
+ <802534f4-55cd-8404-5c21-4f383468c7e5@gmx.com> <CAAxOLF9_N0zEhED9ZQfitcNu8j=8krYbWAYNqr271o_LnMKfmw@mail.gmail.com>
+ <1e6c6814-d120-144b-bed7-c1dac0d140d3@gmx.com> <CAAxOLF-sp1nbhbBu7TeNwfvjwRuX9i7QrRGx3Jbm=wh1n+2zQA@mail.gmail.com>
+ <365e746e-de87-2977-daee-7b2335c545b1@gmx.com>
+From: "^m'e" <marcoep@gmail.com>
+Date: Mon, 29 Jan 2018 13:58:00 +0000
+Message-ID: <CAAxOLF82tDaCa8+MBNnyWXDTWX2v-H=7a9qwFtBoehGW8Q=TyA@mail.gmail.com>
+Subject: Re: btrfs check: backref lost, mismatch with its hash -- can't repair
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-01-27 17:42, Tomasz Pala wrote:
-> On Sat, Jan 27, 2018 at 14:26:41 +0100, Adam Borowski wrote:
-> 
->> It's quite obvious who's the culprit: every single remaining rc system
->> manages to mount degraded btrfs without problems.  They just don't try to
->> outsmart the kernel.
-> 
-> Yes. They are stupid enough to fail miserably with any more complicated
-> setups, like stacking volume managers, crypto layer, network attached
-> storage etc.
-I think you mean any setup that isn't sensibly layered.  BCP for over a 
-decade has been to put multipathing at the bottom, then crypto, then 
-software RAID, than LVM, and then whatever filesystem you're using. 
-Multipathing has to be the bottom layer for a given node because it 
-interacts directly with hardware topology which gets obscured by the 
-other layers.  Crypto essentially has to be next, otherwise you leak 
-info about the storage stack.  Swapping LVM and software RAID ends up 
-giving you a setup which is difficult for most people to understand and 
-therefore is hard to reliably maintain.
+Thanks for the advice, Qu!
 
-Other init systems enforce things being this way because it maintains 
-people's sanity, not because they have significant difficulty doing 
-things differently (and in fact, it is _trivial_ to change the ordering 
-in some of them, OpenRC on Gentoo for example quite literally requires 
-exactly N-1 lines to change in each of N files when re-ordering N 
-layers), provided each layer occurs exactly once for a given device and 
-the relative ordering is the same on all devices.  And you know what? 
-Given my own experience with systemd, it has exactly the same constraint 
-on relative ordering.  I've tried to run split setups with LVM and 
-dm-crypt where one device had dm-crypt as the bottom layer and the other 
-had it as the top layer, and things locked up during boot on _every_ 
-generalized init system I tried.
+I used the system for a while, did some package upgrades -- writing in
+the suspect corrupted area. Then tried a btrfs-send to my backup vol,
+and it failed miserably with a nice kernel oops.
 
-> Recently I've started mdadm on top of bunch of LVM volumes, with others
-> using btrfs and others prepared for crypto. And you know what? systemd
-> assembled everything just fine.
-> 
-> So with argument just like yours:
-> 
-> It's quite obvious who's the culprit: every single remaining filesystem
-> manages to mount under systemd without problems. They just expose
-> informations about their state.
-No, they don't (except ZFS).  There is no 'state' to expose for anything 
-but BTRFS (and ZFS) except possibly if the filesystem needs checked or 
-not.  You're conflating filesystems and volume management.
+So I went for a lowmem repair:
+----------------------------------------------------------------------------------------
+# ./btrfsck.static check --repair --mode=lowmem /dev/sdb3 2>&1 | tee
+/mnt/custom/rescue/btrfs-recovery/btrfs-repair.BTR-POOL.1.log
+WARNING: low-memory mode repair support is only partial
+Fixed 0 roots.
+checking extents
+checking free space cache
+checking fs roots
+ERROR: failed to add inode 28891726 as orphan item root 257
+ERROR: root 257 INODE[28891726] is orphan item
+ERROR: failed to add inode 28892766 as orphan item root 257
+ERROR: root 257 INODE[28892766] is orphan item
+ERROR: failed to add inode 28892768 as orphan item root 257
+ERROR: root 257 INODE[28892768] is orphan item
+ERROR: failed to add inode 28893017 as orphan item root 257
+ERROR: root 257 INODE[28893017] is orphan item
+ERROR: failed to add inode 28893132 as orphan item root 257
+ERROR: root 257 INODE[28893132] is orphan item
+ERROR: failed to add inode 28893724 as orphan item root 257
+ERROR: root 257 INODE[28893724] is orphan item
+ERROR: failed to add inode 28893744 as orphan item root 257
+ERROR: root 257 INODE[28893744] is orphan item
+ERROR: failed to add inode 28893858 as orphan item root 257
+ERROR: root 257 INODE[28893858] is orphan item
+ERROR: failed to add inode 28893860 as orphan item root 257
+ERROR: root 257 INODE[28893860] is orphan item
+ERROR: failed to add inode 28894007 as orphan item root 257
+ERROR: root 257 INODE[28894007] is orphan item
+ERROR: failed to add inode 28894011 as orphan item root 257
+ERROR: root 257 INODE[28894011] is orphan item
+ERROR: failed to add inode 28894084 as orphan item root 257
+ERROR: root 257 INODE[28894084] is orphan item
+ERROR: failed to add inode 28894145 as orphan item root 257
+ERROR: root 257 INODE[28894145] is orphan item
+ERROR: failed to add inode 28894223 as orphan item root 257
+ERROR: root 257 INODE[28894223] is orphan item
+ERROR: failed to add inode 28894249 as orphan item root 257
+ERROR: root 257 INODE[28894249] is orphan item
+ERROR: failed to add inode 28895101 as orphan item root 257
+ERROR: root 257 INODE[28895101] is orphan item
+ERROR: failed to add inode 44565472 as orphan item root 257
+ERROR: root 257 INODE[44565472] is orphan item
+ERROR: failed to add inode 44565473 as orphan item root 257
+ERROR: root 257 INODE[44565473] is orphan item
+ERROR: failed to add inode 44565474 as orphan item root 257
+ERROR: root 257 INODE[44565474] is orphan item
+ERROR: failed to add inode 44565475 as orphan item root 257
+ERROR: root 257 INODE[44565475] is orphan item
+ERROR: failed to add inode 44565477 as orphan item root 257
+ERROR: root 257 INODE[44565477] is orphan item
+ERROR: failed to add inode 44565478 as orphan item root 257
+ERROR: root 257 INODE[44565478] is orphan item
+ERROR: failed to add inode 44565486 as orphan item root 257
+ERROR: root 257 INODE[44565486] is orphan item
+ERROR: failed to add inode 44565487 as orphan item root 257
+ERROR: root 257 INODE[44565487] is orphan item
+ERROR: failed to add inode 44565489 as orphan item root 257
+ERROR: root 257 INODE[44565489] is orphan item
+ERROR: failed to add inode 44773502 as orphan item root 257
+ERROR: root 257 INODE[44773502] is orphan item
+ERROR: failed to add inode 44773506 as orphan item root 257
+ERROR: root 257 INODE[44773506] is orphan item
+ERROR: failed to add inode 44773507 as orphan item root 257
+ERROR: root 257 INODE[44773507] is orphan item
+ERROR: failed to add inode 44773508 as orphan item root 257
+ERROR: root 257 INODE[44773508] is orphan item
+ERROR: failed to add inode 44825557 as orphan item root 257
+ERROR: root 257 INODE[44825557] is orphan item
+ERROR: failed to add inode 47300728 as orphan item root 257
+ERROR: root 257 INODE[47300728] is orphan item
+ERROR: failed to add inode 47300730 as orphan item root 257
+ERROR: root 257 INODE[47300730] is orphan item
+ERROR: failed to add inode 47300732 as orphan item root 257
+ERROR: root 257 INODE[47300732] is orphan item
+ERROR: failed to add inode 47300733 as orphan item root 257
+ERROR: root 257 INODE[47300733] is orphan item
+ERROR: failed to add inode 47333260 as orphan item root 257
+ERROR: root 257 INODE[47333260] is orphan item
+ERROR: failed to add inode 47347678 as orphan item root 257
+ERROR: root 257 INODE[47347678] is orphan item
+ERROR: failed to add inode 47499572 as orphan item root 257
+ERROR: root 257 INODE[47499572] is orphan item
+enabling repair mode
+Checking filesystem on /dev/sdb3
+UUID: de1723e2-150c-4448-bb36-be14d7d96093
+No device size related problem found
+cache and super generation don't match, space cache will be invalidated
+Can't find file name for inode 47353519, use 47353519 instead
+Moving file '47353519' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47353519 name 47353519 filetype 2
+Can't find file name for inode 47353521, use 47353521 instead
+Moving file '47353521' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47353521 name 47353521 filetype 2
+Can't find file name for inode 47411510, use 47411510 instead
+Moving file '47411510' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47411510 name 47411510 filetype 2
+Can't find file name for inode 47413179, use 47413179 instead
+Moving file '47413179' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47413179 name 47413179 filetype 2
+Can't find file name for inode 47417030, use 47417030 instead
+Moving file '47417030' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47417030 name 47417030 filetype 2
+Can't find file name for inode 47417033, use 47417033 instead
+Moving file '47417033' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47417033 name 47417033 filetype 2
+Can't find file name for inode 47417866, use 47417866 instead
+Moving file '47417866' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47417866 name 47417866 filetype 2
+Can't find file name for inode 47430048, use 47430048 instead
+Moving file '47430048' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47430048 name 47430048 filetype 2
+Can't find file name for inode 47430050, use 47430050 instead
+Moving file '47430050' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47430050 name 47430050 filetype 2
+Can't find file name for inode 47431474, use 47431474 instead
+Moving file '47431474' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47431474 name 47431474 filetype 2
+Can't find file name for inode 47431522, use 47431522 instead
+Moving file '47431522' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47431522 name 47431522 filetype 2
+Can't find file name for inode 47431745, use 47431745 instead
+Moving file '47431745' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47431745 name 47431745 filetype 2
+Can't find file name for inode 47431747, use 47431747 instead
+Moving file '47431747' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47431747 name 47431747 filetype 2
+Can't find file name for inode 47440642, use 47440642 instead
+Moving file '47440642' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47440642 name 47440642 filetype 2
+Can't find file name for inode 47440645, use 47440645 instead
+Moving file '47440645' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47440645 name 47440645 filetype 2
+Can't find file name for inode 47440647, use 47440647 instead
+Moving file '47440647' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47440647 name 47440647 filetype 2
+Can't find file name for inode 47440667, use 47440667 instead
+Moving file '47440667' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47440667 name 47440667 filetype 2
+Can't find file name for inode 47831628, use 47831628 instead
+Moving file '47831628' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47831628 name 47831628 filetype 2
+Can't find file name for inode 47831630, use 47831630 instead
+Moving file '47831630' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47831630 name 47831630 filetype 2
+Can't find file name for inode 47833987, use 47833987 instead
+Moving file '47833987' to 'lost+found' dir sincERROR: ROOT_REF[228621
+72057594038112278] couldn't find relative ref
+ERROR: errors found in fs roots
+e it has no valid backref
+Fixed nlink of inode 257 root 47833987 name 47833987 filetype 2
+Can't find file name for inode 47833988, use 47833988 instead
+Moving file '47833988' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47833988 name 47833988 filetype 2
+Can't find file name for inode 47833989, use 47833989 instead
+Moving file '47833989' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47833989 name 47833989 filetype 2
+Can't find file name for inode 47833990, use 47833990 instead
+Moving file '47833990' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47833990 name 47833990 filetype 2
+Can't find file name for inode 47833993, use 47833993 instead
+Moving file '47833993' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47833993 name 47833993 filetype 2
+Can't find file name for inode 47833999, use 47833999 instead
+Moving file '47833999' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47833999 name 47833999 filetype 2
+Can't find file name for inode 47834000, use 47834000 instead
+Moving file '47834000' to 'lost+found' dir since it has no valid backref
+Fixed nlink of inode 257 root 47834000 name 47834000 filetype 2
+found 107441020928 bytes used, error(s) found
+total csum bytes: 102422976
+total tree bytes: 15472656384
+total fs tree bytes: 15243919360
+total extent tree bytes: 92798976
+btree space waste bytes: 3363742740
+file data blocks allocated: 384446418944
+ referenced 335525724160
+----------------------------------------------------------------------------------------
 
-The alternative way of putting what you just said is:
-Every single remaining filesystem manages to mount under systemd without 
-problems, because it doesn't try to treat them as a block layer.
-> 
->>> This is not a systemd issue, but apparently btrfs design choice to allow
->>> using any single component device name also as volume name itself.
->>
->> And what other user interface would you propose? The only alternative I see
->> is inventing a device manager (like you're implying below that btrfs does),
->> which would needlessly complicate the usual, single-device, case.
-> 
-> The 'needless complication', as you named it, usually should be the default
-> to use. Avoiding LVM? Then take care of repartitioning. Avoiding mdadm?
-> No easy way to RAID the drive (there are device-mapper tricks, they are
-> just way more complicated). Even attaching SSD cache is not trivial
-> without preparations (for bcache being the absolutely necessary, much
-> easier with LVM in place).
-For a bog-standard client system, all of those _ARE_ overkill (and 
-actually, so is BTRFS in many cases too, it's just that we're the only 
-option for main-line filesystem-level snapshots at the moment).
-> 
->>> If btrfs pretends to be device manager it should expose more states,
->>
->> But it doesn't pretend to.
-> 
-> Why mounting sda2 requires sdb2 in my setup then?
-First off, it shouldn't unless you're using a profile that doesn't 
-tolerate any missing devices and have provided the `degraded` mount 
-option.  It doesn't in your case because you are using systemd.
+Then tried to mount the rootfs subvol:
 
-Second, BTRFS is not a volume manager, it's a filesystem with 
-multi-device support.  The difference is that it's not a block layer, 
-despite the fact that systemd is treating it as such.   Yes, BTRFS has 
-failure modes that result in regular operations being refused based on 
-what storage devices are present, but so does every single distributed 
-filesystem in existence, and none of those are volume managers either.
-> 
->>> especially "ready to be mounted, but not fully populated" (i.e.
->>> "degraded mount possible"). Then systemd could _fallback_ after timing
->>> out to degraded mount automatically according to some systemd-level
->>> option.
->>
->> You're assuming that btrfs somehow knows this itself.
-> 
-> "It's quite obvious who's the culprit: every single volume manager keeps
-> track of it's component devices".
-> 
->>   Unlike the bogus
->> assumption systemd does that by counting devices you can know whether a
->> degraded or non-degraded mount is possible, it is in general not possible to
->> know whether a mount attempt will succeed without actually trying.
-> 
-> There is a term for such situation: broken by design.
-So in other words, it's broken by design to try to connect to a remote 
-host without pinging it first to see if it's online?  Or to try to send 
-a signal to a given process without first checking that it's still 
-running, or to open a file without first checking if we have permission 
-to read it, or to try to mount any other filesystem without first 
-checking if the superblock is valid?
+# mount -o subvol=rootfs /dev/sdb3 /mnt/gentoo/
+mount: /mnt/gentoo: wrong fs type, bad option, bad superblock on
+/dev/sdb3, missing codepage or helper program, or other error.
 
-In all of those cases, there is no advantage to trying to figure out if 
-what you're trying to do is going to work before doing it, because every 
-one of those operations is functionally atomic (it either happens or it 
-doesn't, period), and has a clear-cut return code that tells you 
-directly if it succeeded or not.
+kernel says:
+----------------------------------------------------------------------------------------
+[ 2172.296994] ------------[ cut here ]------------
+[ 2172.297001] WARNING: CPU: 6 PID: 3576 at fs/btrfs/inode.c:3585
+btrfs_orphan_cleanup+0x2d7/0x3e6
+[ 2172.297002] Modules linked in: ccm binfmt_misc rmi_smbus rmi_core
+arc4 iwlmvm mac80211 intel_rapl iTCO_wdt iTCO_vendor_support mei_wdt
+x86_pkg_temp_thermal intel_powerclamp joydev iwlwifi btusb btrtl btbcm
+btintel coretemp tpm_tis bluetooth serio_raw cfg80211 crct10dif_pclmul
+crc32_pclmul thinkpad_acpi tpm_tis_core tpm ecdh_generic crc32c_intel
+ghash_clmulni_intel rfkill i2c_i801 intel_cstate shpchp mei_me
+wmi_bmof intel_uncore mei ie31200_edac lpc_ich intel_rapl_perf raid10
+raid456 async_raid6_recov async_pq async_xor async_memcpy async_tx
+raid1 raid0 multipath linear uas usb_storage nouveau i915 rtsx_pci_ms
+memstick rtsx_pci_sdmmc mmc_core ttm drm_kms_helper drm rtsx_pci r8169
+i2c_algo_bit mxm_wmi mii wmi video
+[ 2172.297052] CPU: 6 PID: 3576 Comm: mount Not tainted 4.14.8-std520-amd64 #2
+[ 2172.297053] Hardware name: LENOVO 20C6003AMZ/20C6003AMZ, BIOS
+J9ET9FWW (2.25 ) 09/13/2017
+[ 2172.297054] task: ffff979c2c8e0000 task.stack: ffffa716c31dc000
+[ 2172.297056] RIP: 0010:btrfs_orphan_cleanup+0x2d7/0x3e6
+[ 2172.297057] RSP: 0018:ffffa716c31df960 EFLAGS: 00210a87
+[ 2172.297059] RAX: 0000000000084000 RBX: ffff979c71994000 RCX: 0000000000000000
+[ 2172.297060] RDX: ffffffffa30061e8 RSI: 0000000000000000 RDI: ffffa716c31df8a8
+[ 2172.297061] RBP: ffffa716c31df9d0 R08: ffffffffa30061e0 R09: ffffffffa24123c1
+[ 2172.297063] R10: ffffa716c31df8a0 R11: fffff4bdc447c580 R12: ffff979b51f16a80
+[ 2172.297064] R13: ffff979c6f9c01f0 R14: ffff979c2cb88000 R15: 0000000000000000
+[ 2172.297066] FS:  0000000000000000(0000) GS:ffff979c7e380000(0063)
+knlGS:00000000f7cf0b00
+[ 2172.297067] CS:  0010 DS: 002b ES: 002b CR0: 0000000080050033
+[ 2172.297068] CR2: 00000000086a5424 CR3: 00000001eed41003 CR4: 00000000001606e0
+[ 2172.297069] Call Trace:
+[ 2172.297074]  btrfs_lookup_dentry+0x37b/0x3b1
+[ 2172.297076]  btrfs_lookup+0xd/0x2b
+[ 2172.297080]  lookup_slow+0xce/0x103
+[ 2172.297083]  walk_component+0x6c/0xdd
+[ 2172.297085]  ? path_init+0xa5/0x259
+[ 2172.297088]  path_lookupat+0xde/0x186
+[ 2172.297091]  ? wake_up_bit+0x19/0x1b
+[ 2172.297095]  ? slab_pre_alloc_hook+0x19/0x1f
+[ 2172.297099]  ? idr_get_free_cmn+0x3d/0x25e
+[ 2172.297101]  filename_lookup+0x78/0xf5
+[ 2172.297106]  ? _raw_spin_unlock_irqrestore+0xf/0x11
+[ 2172.297108]  ? slab_pre_alloc_hook+0x19/0x1f
+[ 2172.297110]  ? kmem_cache_alloc+0x97/0x122
+[ 2172.297112]  ? getname_kernel+0x28/0xe4
+[ 2172.297114]  vfs_path_lookup+0x36/0x3d
+[ 2172.297116]  ? vfs_path_lookup+0x36/0x3d
+[ 2172.297120]  mount_subtree+0x3a/0x79
+[ 2172.297123]  btrfs_mount+0x69f/0xadd
+[ 2172.297127]  ? find_next_bit+0xb/0xd
+[ 2172.297131]  ? pcpu_next_unpop+0x36/0x42
+[ 2172.297135]  mount_fs+0x62/0x10c
+[ 2172.297137]  vfs_kern_mount+0x66/0xd0
+[ 2172.297139]  do_mount+0x6ef/0x96e
+[ 2172.297142]  compat_SyS_mount+0x180/0x1a9
+[ 2172.297147]  do_fast_syscall_32+0xb7/0xfe
+[ 2172.297150]  entry_SYSENTER_compat+0x4c/0x5b
+[ 2172.297151] RIP: 0023:0xf7f88c29
+[ 2172.297152] RSP: 002b:00000000ff9aa530 EFLAGS: 00000296 ORIG_RAX:
+0000000000000015
+[ 2172.297154] RAX: ffffffffffffffda RBX: 00000000085bc498 RCX: 00000000085bc170
+[ 2172.297155] RDX: 00000000085c57d0 RSI: 00000000c0ed0000 RDI: 00000000085bc468
+[ 2172.297156] RBP: 00000000ff9aa5f8 R08: 0000000000000000 R09: 0000000000000000
+[ 2172.297157] R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
+[ 2172.297158] R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
+[ 2172.297160] Code: 45 a8 f0 41 80 8d 20 ff ff ff 20 f0 ff 83 dc 03
+00 00 41 83 7d 48 00 0f 84 91 00 00 00 41 8b 45 00 66 25 00 f0 66 3d
+00 80 74 0f <0f> ff 4c 89 ef e8 8c 45 d9 ff e9 e7 fe ff ff be 01 00 00
+00 48
+[ 2172.297193] ---[ end trace c4a78519a58b55de ]---
+----------------------------------------------------------------------------------------
 
-There's a name for the type of design you're saying we should have here, 
-it's called a time of check time of use (TOCTOU) race condition.  It's 
-one of the easiest types of race conditions to find, and also one of the 
-easiest to fix.  Ask any sane programmer, and he will say that _that_ is 
-broken by design.
-> 
->> Compare with the 4.14 chunk check patchset by Qu -- in the past, btrfs did
->> naive counting of this kind, it had to be replaced by actually checking
->> whether at least one copy of every block group is actually present.
-> 
-> And you still blame systemd for using BTRFS_IOC_DEVICES_READY?
-Given that it's been proven that it doesn't work and the developers 
-responsible for it's usage don't want to accept that it doesn't work?  Yes.
-> 
-> [...]
->> just slow to initialize (USB...).  So, systemd asks sda how many devices
->> there are, answer is "3" (sdb and sdc would answer the same, BTW).  It can
->> even ask for UUIDs -- all devices are present.  So, mount will succeed,
->> right?
-> 
-> Systemd doesn't count anything, it asks BTRFS_IOC_DEVICES_READY as
-> implemented in btrfs/super.c.
-> 
->> Ie, the thing systemd can safely do, is to stop trying to rule everything,
->> and refrain from telling the user whether he can mount something or not.
-> 
-> Just change the BTRFS_IOC_DEVICES_READY handler to always return READY.
-> 
-Or maybe we should just remove it completely, because checking it _IS 
-WRONG_, which is why no other init system does it, and in fact no 
-_human_ who has any kind of basic knowledge of how BTRFS operates does 
-it either.
+More luck without the subvol opt, though with errors
+----------------------------------------------------------------------------------------
+[ 2172.297200] BTRFS error (device sdb3): Error removing orphan entry,
+stopping orphan cleanup
+[ 2172.297202] BTRFS error (device sdb3): could not do orphan cleanup -22
+[ 2172.308961] BTRFS info (device sdb3): inode 47834000 still on the orphan list
+[ 2203.992802] BTRFS info (device sdb3): disk space caching is enabled
+[ 2203.992804] BTRFS info (device sdb3): has skinny extents
+[ 2204.027064] BTRFS info (device sdb3): enabling ssd optimizations
+----------------------------------------------------------------------------------------
+
+I could check some stuff in "lost+found", didn't do any write.
+Unmounted it, but something bad must have happened, as mount now fails
+(whatever I try -- 'ro,recovery,clear_cache,check_int_data'') as with
+the first attempt:
+----------------------------------------------------------------------------------------
+[ 2378.813926] BTRFS info (device sdb3): disk space caching is enabled
+[ 2378.813927] BTRFS info (device sdb3): has skinny extents
+[ 2378.837456] BTRFS error (device sdb3): parent transid verify failed
+on 180409597952 wanted 463700 found 463765
+[ 2378.837462] BTRFS error (device sdb3): failed to read block groups: -5
+[ 2378.857965] BTRFS error (device sdb3): open_ctree failed
+----------------------------------------------------------------------------------------
+
+Subsequent lowmem repairs attempts *crash*:
+----------------------------------------------------------------------------------------
+# ./btrfsck.static check --repair --mode=lowmem /dev/sdb3
+WARNING: low-memory mode repair support is only partial
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+Fixed 0 roots.
+checking extents
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+ERROR: chunk[143902375936 144976117760) did not find the related block
+group item
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+----------------------------------------------------------------------------------------
+[ 2552.772433] btrfsck.static[3797]: segfault at f6 ip
+00000000004029d8 sp 00007ffee2bc8960 error 6 in
+btrfs.static[400000+1c5000]
+----------------------------------------------------------------------------------------
+
+Standard repair still goes:
+----------------------------------------------------------------------------------------
+# ./btrfsck.static check --repair /dev/sdb3
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+Fixed 0 roots.
+checking extents
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+bad block 180409597952
+ERROR: errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+checking csums
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143880400896-143883313152
+Csum exists for 143880400896-143883313152 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143884201984-143884873728
+Csum exists for 143884201984-143884873728 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143885082624-143886172160
+Csum exists for 143885082624-143886172160 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143886176256-143891030016
+Csum exists for 143886176256-143891030016 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143891054592-143895662592
+Csum exists for 143891054592-143895662592 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143895982080-143896252416
+Csum exists for 143895982080-143896252416 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143899418624-143900753920
+Csum exists for 143899418624-143900753920 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143902375936-143906275328
+Csum exists for 143902375936-143906275328 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143907614720-143907672064
+Csum exists for 143907614720-143907672064 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143907938304-143910674432
+Csum exists for 143907938304-143910674432 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143910744064-143916498944
+Csum exists for 143910744064-143916498944 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143916601344-143916675072
+Csum exists for 143916601344-143916675072 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143916781568-143918166016
+Csum exists for 143916781568-143918166016 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143918206976-143918305280
+Csum exists for 143918206976-143918305280 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143918325760-143921917952
+Csum exists for 143918325760-143921917952 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143922094080-143924146176
+Csum exists for 143922094080-143924146176 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143924269056-143925121024
+Csum exists for 143924269056-143925121024 but there is no extent record
+parent transid verify failed on 180409597952 wanted 463700 found 463765
+Ignoring transid failure
+There are no extents for csum range 143925137408-143928786944
+Csum exists for 143925137408-143928786944 but there is no extent record
+ERROR: errors found in csum tree
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 180416380928 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+extent buffer leak: start 44046696448 len 16384
+enabling repair mode
+Checking filesystem on /dev/sdb3
+UUID: de1723e2-150c-4448-bb36-be14d7d96093
+found 70715043840 bytes used, error(s) found
+total csum bytes: 0
+total tree bytes: 77332480
+total fs tree bytes: 0
+total extent tree bytes: 77201408
+btree space waste bytes: 20938256
+file data blocks allocated: 18350080
+ referenced 18350080
+----------------------------------------------------------------------------------------
+
+Mmh, smells like Dip Sheet (TM)... :-(

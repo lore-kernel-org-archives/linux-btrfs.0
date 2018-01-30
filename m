@@ -1,80 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:43670 "EHLO
-        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753379AbeA3Qg6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 11:36:58 -0500
-MIME-Version: 1.0
-In-Reply-To: <1517313948.3658.8.camel@redhat.com>
-References: <1517228795.5965.24.camel@redhat.com> <CA+55aFxXg8JprOwfm0qCm4VkkM8cPM38YMvpkf3gBJq3bSJwPw@mail.gmail.com>
- <1517313948.3658.8.camel@redhat.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Tue, 30 Jan 2018 08:36:56 -0800
-Message-ID: <CA+55aFwD-=YNXQTOSNZE9SQwsin=ay56GOt4gekYe1U0qPeksQ@mail.gmail.com>
-Subject: Re: [GIT PULL] inode->i_version rework for v4.16
-To: Jeff Layton <jlayton@redhat.com>
-Cc: open list <linux-kernel@vger.kernel.org>,
-        "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>, xfs <linux-xfs@vger.kernel.org>,
-        "open list:NFS, SUNRPC, AND..." <linux-nfs@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-integrity <linux-integrity@vger.kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Received: from mail.kernel.org ([198.145.29.99]:58788 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751714AbeA3Rb3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 12:31:29 -0500
+From: Jeff Layton <jlayton@kernel.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: viro@zeniv.linux.org.uk, tytso@mit.edu, linux-nfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-integrity@vger.kernel.org,
+        linux-xfs@vger.kernel.org, akpm@linux-foundation.org,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH] iversion: make inode_cmp_iversion{+raw} return bool instead of s64
+Date: Tue, 30 Jan 2018 12:31:26 -0500
+Message-Id: <20180130173126.2806-1-jlayton@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 30, 2018 at 4:05 AM, Jeff Layton <jlayton@redhat.com> wrote:
->
-> My intent here was to have this handle wraparound using the same sort of
-> method that the time_before/time_after macros do. Obviously, I didn't
-> document that well.
+From: Jeff Layton <jlayton@redhat.com>
 
-Oh, the intent was clear. The implementation was wrong.
+As Linus points out:
 
-Note that "time_before()" returns a _boolean_.
+    The inode_cmp_iversion{+raw}() functions are pure and utter crap.
 
-So yes, the time comparison functions do a 64-bit subtraction, exactly
-like yours do. BUT THEY DO NOT RETURN THAT DIFFERENCE. They test the
-sign in 64 bits and return that boolean single-bit value.
+    Why?
 
-> I want to make sure I understand what's actually broken here thoug. Is
-> it only broken when the two values are more than 2**63 apart, or is
-> there something else more fundamentally wrong here?
+    You say that they return 0/negative/positive, but they do so in a
+    completely broken manner. They return that ternary value as the
+    sequence number difference in a 's64', which means that if you
+    actually care about that ternary value, and do the *sane* thing that
+    the kernel-doc of the function implies is the right thing, you would
+    do
 
-There's something fundamentally wrong. The _intent_ is to allow
-numbers up to 2**63 apart, but if somebody does that
+        int cmp = inode_cmp_iversion(inode, old);
+        if (cmp < 0 ...
 
-     int cmp = inode_cmp_iversion(inode, old);
+    and as a result you get code that looks sane, but that doesn't
+    actually *WORK* right.
 
-     if (cmp < 0 ...
+Since none of the callers actually care about the ternary value here,
+convert the inode_cmp_iversion{+raw} functions to just return a boolean
+value (false for matching, true for non-matching).
 
-then it actually only ever tests numbers 2**31 apart, because the high
-32 bits will have been thrown away when the 64-bit difference is cast
-to "int".
+This matches the existing use of these functions just fine, and makes it
+simple to convert them to return a ternary value in the future if we
+grow callers that need it.
 
-And what used to be a sign bit (in 64 bits) no longer exists, and the
-above tests the *new* sign bit that is bit #31, not #63.
+Signed-off-by: Jeff Layton <jlayton@redhat.com>
+---
+ include/linux/iversion.h | 20 +++++++++-----------
+ 1 file changed, 9 insertions(+), 11 deletions(-)
 
-So you are a factor of four billion off.
+diff --git a/include/linux/iversion.h b/include/linux/iversion.h
+index 858463fca249..ace32775c5f0 100644
+--- a/include/linux/iversion.h
++++ b/include/linux/iversion.h
+@@ -309,13 +309,13 @@ inode_query_iversion(struct inode *inode)
+  * @inode: inode to check
+  * @old: old value to check against its i_version
+  *
+- * Compare the current raw i_version counter with a previous one. Returns 0 if
+- * they are the same or non-zero if they are different.
++ * Compare the current raw i_version counter with a previous one. Returns false
++ * if they are the same or true if they are different.
+  */
+-static inline s64
++static inline bool
+ inode_cmp_iversion_raw(const struct inode *inode, u64 old)
+ {
+-	return (s64)inode_peek_iversion_raw(inode) - (s64)old;
++	return inode_peek_iversion_raw(inode) != old;
+ }
+ 
+ /**
+@@ -323,19 +323,17 @@ inode_cmp_iversion_raw(const struct inode *inode, u64 old)
+  * @inode: inode to check
+  * @old: old value to check against its i_version
+  *
+- * Compare an i_version counter with a previous one. Returns 0 if they are
+- * the same, a positive value if the one in the inode appears newer than @old,
+- * and a negative value if @old appears to be newer than the one in the
+- * inode.
++ * Compare an i_version counter with a previous one. Returns false if they are
++ * the same, and true if they are different.
+  *
+  * Note that we don't need to set the QUERIED flag in this case, as the value
+  * in the inode is not being recorded for later use.
+  */
+ 
+-static inline s64
++static inline bool
+ inode_cmp_iversion(const struct inode *inode, u64 old)
+ {
+-	return (s64)(inode_peek_iversion_raw(inode) & ~I_VERSION_QUERIED) -
+-	       (s64)(old << I_VERSION_QUERIED_SHIFT);
++	return (inode_peek_iversion_raw(inode) & ~I_VERSION_QUERIED) !=
++			(old << I_VERSION_QUERIED_SHIFT);
+ }
+ #endif
+-- 
+2.14.3
 
-And while 2**63 is a big number and perfectly ok for a filesystem
-event difference, a difference of 2**31 is a "this can actually
-happen".
-
-Yes, even 2**31 is still a big difference, and it will take a very
-unusual situation, and quite a long time to trigger: something that
-does a thousand filesystem ops per second will not see the problem for
-24 days. So you'll never see it in a test. But 24 days happens in real
-life..
-
-That's why you need to do the comparison against zero inside the
-actual helper functions like the time comparisons do. Because if you
-return the 64-bit difference, it will be trivially lost, and the code
-will _look_ right, but not work right.
-
-The fact that you didn't even seem to see the problem in my example
-calling sequence just proves that point.
-
-                   Linus

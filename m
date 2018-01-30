@@ -1,47 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:53725 "EHLO pepin.polanet.pl"
+Received: from pepin.polanet.pl ([193.34.52.2]:53936 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751219AbeA3Tk4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 14:40:56 -0500
-Date: Tue, 30 Jan 2018 20:40:54 +0100
+        id S1751719AbeA3TuD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 14:50:03 -0500
+Date: Tue, 30 Jan 2018 20:50:01 +0100
 From: Tomasz Pala <gotar@polanet.pl>
-To: "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: degraded permanent mount option
-Message-ID: <20180130194054.GA10716@polanet.pl>
-References: <8607255b-98e7-5623-6f62-75d6f7cf23db@gmail.com>
- <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
- <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me>
- <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
- <20180127110619.GA10472@polanet.pl>
- <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <20180127224200.GA16927@polanet.pl>
- <6b6b8e07-27b2-c181-49dc-3fbd1cd9e023@gmail.com>
- <20180130150950.GB7126@polanet.pl>
- <246588cf-01dd-9754-a96b-9fc44e2fd74d@gmail.com>
+Message-ID: <20180130195000.GA21701@polanet.pl>
+References: <20180128003910.GA31699@polanet.pl>
+ <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
+ <20180128223946.GA26726@polanet.pl>
+ <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
+ <20180129085404.GA2500@polanet.pl>
+ <20180129112456.r7ksq5mwp3ie6gmg@angband.pl>
+ <dd2863d2-6f50-47b4-06a9-f34e7b341f2f@gmail.com>
+ <f97f4e60-47fb-f1d6-dc09-0b46638a9eb4@gmail.com>
+ <f8f72b3e-e0c0-cccb-a52a-8c8568e103ba@dirtcellar.net>
+ <c6b6bb8c-b4ea-07f9-400f-39d8de9c0be9@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <246588cf-01dd-9754-a96b-9fc44e2fd74d@gmail.com>
+In-Reply-To: <c6b6bb8c-b4ea-07f9-400f-39d8de9c0be9@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just one final word, as all was already said:
+On Tue, Jan 30, 2018 at 08:46:32 -0500, Austin S. Hemmelgarn wrote:
 
-On Tue, Jan 30, 2018 at 11:30:31 -0500, Austin S. Hemmelgarn wrote:
+>> I personally think the degraded mount option is a mistake as this 
+>> assumes that a lightly degraded system is not able to work which is false.
+>> If the system can mount to some working state then it should mount 
+>> regardless if it is fully operative or not. If the array is in a bad 
+>> state you need to learn about it by issuing a command or something. The 
+>> same goes for a MD array (and yes, I am aware of the block layer vs 
+>> filesystem thing here).
+> The problem with this is that right now, it is not safe to run a BTRFS 
+> volume degraded and writable, but for an even remotely usable system 
 
->> In other words, is it:
->> - the systemd that threats btrfs WORSE than distributed filesystems, OR
->> - btrfs that requires from systemd to be threaded BETTER than other fss?
-> Or maybe it's both?  I'm more than willing to admit that what BTRFS does 
-> expose currently is crap in terms of usability.  The reason it hasn't 
-> changed is that we (that is, the BTRFS people and the systemd people) 
-> can't agree on what it should look like.
+Mounting read-only is still better than not mounting at all.
 
-Hard to agree with someone who refuses to do _anything_.
+For example, my emergency.target has limited network access and starts
+ssh server so I could recover from this situation remotely.
 
-You can choose to follow whatever, MD, LVM, ZFS, invent something
-totally different, write custom daemon or put timeout logic inside the
-kernel itself. It doesn't matter. You know the ecosystem - it is the
-udev that must be signalled somehow and systemd WILL follow.
+> with pretty much any modern distro, you need your root filesystem to be 
+> writable (or you need to have jumped through the hoops to make sure /var 
+> and /tmp are writable even if / isn't).
+
+Easy to handle by systemd. Not only this, but much more is planned:
+
+http://0pointer.net/blog/projects/stateless.html
 
 -- 
 Tomasz Pala <gotar@pld-linux.org>

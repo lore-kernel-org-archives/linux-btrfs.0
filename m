@@ -1,120 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:33234 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753451AbeAJCjC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jan 2018 21:39:02 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0A2bYwo121897
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 02:39:01 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2fd8su85mw-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 02:39:01 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w0A2d166020016
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 02:39:01 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0A2d02Z025367
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 02:39:00 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: raid56: fix race between merge_bio and rbio_orig_end_io
-Date: Tue,  9 Jan 2018 18:36:25 -0700
-Message-Id: <20180110013625.14297-1-bo.li.liu@oracle.com>
-In-Reply-To: <20171208230235.30636-1-bo.li.liu@oracle.com>
-References: <20171208230235.30636-1-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-qk0-f171.google.com ([209.85.220.171]:43266 "EHLO
+        mail-qk0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751444AbeA3MFv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 07:05:51 -0500
+Received: by mail-qk0-f171.google.com with SMTP id a5so9736818qkg.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 04:05:51 -0800 (PST)
+Message-ID: <1517313948.3658.8.camel@redhat.com>
+Subject: Re: [GIT PULL] inode->i_version rework for v4.16
+From: Jeff Layton <jlayton@redhat.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: open list <linux-kernel@vger.kernel.org>,
+        "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>,
+        Al Viro <viro@zeniv.linux.org.uk>, xfs <linux-xfs@vger.kernel.org>,
+        "open list:NFS, SUNRPC, AND..." <linux-nfs@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-integrity <linux-integrity@vger.kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>
+Date: Tue, 30 Jan 2018 07:05:48 -0500
+In-Reply-To: <CA+55aFxXg8JprOwfm0qCm4VkkM8cPM38YMvpkf3gBJq3bSJwPw@mail.gmail.com>
+References: <1517228795.5965.24.camel@redhat.com>
+         <CA+55aFxXg8JprOwfm0qCm4VkkM8cPM38YMvpkf3gBJq3bSJwPw@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before rbio_orig_end_io() goes to free rbio, rbio may get merged with
-more bios from other rbios and rbio->bio_list becomes non-empty,
-in that case, these newly merged bios don't end properly.
+On Mon, 2018-01-29 at 13:50 -0800, Linus Torvalds wrote:
+> On Mon, Jan 29, 2018 at 4:26 AM, Jeff Layton <jlayton@redhat.com> wrote:
+> > 
+> > This pile of patches is a rework of the inode->i_version field. We have
+> > traditionally incremented that field on every inode data or metadata
+> > change. Typically this increment needs to be logged on disk even when
+> > nothing else has changed, which is rather expensive.
+> 
+> Hmm. I have pulled this, but it is really really broken in one place,
+> to the degree that I always went "no, I won't pull this garbage".
+> 
+> But the breakage is potential, not actual, and can be fixed trivially,
+> so I'll let it slide - but I do require it to be fixed. And I require
+> people to *think* about it.
+> 
+> So what's to horribly horribly wrong?
+> 
+> The inode_cmp_iversion{+raw}() functions are pure and utter crap.
+> 
+> Why?
+> 
+> You say that they return 0/negative/positive, but they do so in a
+> completely broken manner. They return that ternary value as the
+> sequence number difference in a 's64', which means that if you
+> actually care about that ternary value, and do the *sane* thing that
+> the kernel-doc of the function implies is the right thing, you would
+> do
+> 
+>     int cmp = inode_cmp_iversion(inode, old);
+> 
+>     if (cmp < 0 ...
+> 
+> and as a result you get code that looks sane, but that doesn't
+> actually *WORK* right.
+> 
 
-Once unlock_stripe() is done, rbio->bio_list will not be updated any
-more and we can call bio_endio() on all queued bios.
+My intent here was to have this handle wraparound using the same sort of
+method that the time_before/time_after macros do. Obviously, I didn't
+document that well.
 
-It should only happen in error-out cases, the normal path of recover
-and full stripe write have already set RBIO_RMW_LOCKED_BIT to disable
-merge before doing IO, so rbio_orig_end_io() called by them doesn't
-have the above issue.
+I want to make sure I understand what's actually broken here thoug. Is
+it only broken when the two values are more than 2**63 apart, or is
+there something else more fundamentally wrong here?
 
-Reported-by: Jérôme Carretero <cJ-ko@zougloub.eu>
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: - Remove the usage spin_lock as there is a chance of deadlock in
-      interrupt context, it's reported by lockdep, although it'd never
-      happen because we've taken care of it by saving irq flags at all
-      places.
-    - Update commit log and comments of code to explain the new idea.
-    - This has been tested against btrfs/011 for 50 times.
+> To make it even worse, it will actually work in practice by accident
+> in 99.99999% of all cases, so now you have
+> 
+>  (a) subtly buggy code
+>  (b) that looks fine
+>  (c) and that works in testing
+> 
+> which is just about the worst possible case for any code. The
+> interface is simply garbage that encourages bugs.
+> 
+> And the bug wouldn't be in the user, the bug would be in this code you
+> just sent me. The interface is simply wrong.
+> 
+> So this absolutely needs to be fixed. I see two fixes:
+> 
+>  - just return a boolean. That's all that any current user actually
+> wants, so the ternary value seems pointless.
+> 
+>  - make it return an 'int', and not just any int, but -1/0/1. That way
+> there is no worry about uses, and if somebody *really* cares about the
+> ternary value, they can now use a "switch" statement to get it
+> (alternatively, make it return an enum, but whatever).
+> 
+> That "ternary" function that has 18446744069414584320 incorrect return
+> values really is unacceptable.
+> 
 
- fs/btrfs/raid56.c | 37 +++++++++++++++++++++++++------------
- 1 file changed, 25 insertions(+), 12 deletions(-)
+I think I'll just make it return a boolean value like you suggested
+first. I'll send a patch to fix it once I've done some basic testing
+with it.
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 7747323..b2b426d 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -864,10 +864,17 @@ static void __free_raid_bio(struct btrfs_raid_bio *rbio)
- 	kfree(rbio);
- }
- 
--static void free_raid_bio(struct btrfs_raid_bio *rbio)
-+static void rbio_endio_bio_list(struct bio *cur, blk_status_t err)
- {
--	unlock_stripe(rbio);
--	__free_raid_bio(rbio);
-+	struct bio *next;
-+
-+	while (cur) {
-+		next = cur->bi_next;
-+		cur->bi_next = NULL;
-+		cur->bi_status = err;
-+		bio_endio(cur);
-+		cur = next;
-+	}
- }
- 
- /*
-@@ -877,20 +884,26 @@ static void free_raid_bio(struct btrfs_raid_bio *rbio)
- static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t err)
- {
- 	struct bio *cur = bio_list_get(&rbio->bio_list);
--	struct bio *next;
-+	struct bio *extra;
- 
- 	if (rbio->generic_bio_cnt)
- 		btrfs_bio_counter_sub(rbio->fs_info, rbio->generic_bio_cnt);
- 
--	free_raid_bio(rbio);
-+	/*
-+	 * At this moment, rbio->bio_list is empty, however since rbio does not
-+	 * always have RBIO_RMW_LOCKED_BIT set and rbio is still linked on the
-+	 * hash list, rbio may be merged with others so that rbio->bio_list
-+	 * becomes non-empty.
-+	 * Once unlock_stripe() is done, rbio->bio_list will not be updated any
-+	 * more and we can call bio_endio() on all queued bios.
-+	 */
-+	unlock_stripe(rbio);
-+	extra = bio_list_get(&rbio->bio_list);
-+	__free_raid_bio(rbio);
- 
--	while (cur) {
--		next = cur->bi_next;
--		cur->bi_next = NULL;
--		cur->bi_status = err;
--		bio_endio(cur);
--		cur = next;
--	}
-+	rbio_endio_bio_list(cur, err);
-+	if (extra)
-+		rbio_endio_bio_list(extra, err);
- }
- 
- /*
--- 
-2.9.4
-
+Many thanks,
+--
+Jeff Layton <jlayton@redhat.com>

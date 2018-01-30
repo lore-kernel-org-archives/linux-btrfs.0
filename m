@@ -1,73 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60568 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44881 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933687AbeALOVN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Jan 2018 09:21:13 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 688AFAE06
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jan 2018 14:21:12 +0000 (UTC)
+        id S1751720AbeA3Or5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 09:47:57 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 07689ADA5
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 14:47:56 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: Streamline btrfs_delalloc_reserve_metadata initial
+ operations
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+References: <1515766865-13652-1-git-send-email-nborisov@suse.com>
+ <20180130143441.GK19355@twin.jikos.cz>
 From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Streamline btrfs_delalloc_reserve_metadata initial operations
-Date: Fri, 12 Jan 2018 16:21:05 +0200
-Message-Id: <1515766865-13652-1-git-send-email-nborisov@suse.com>
+Message-ID: <cadd8981-4834-46ad-e8cc-6dff2ae13ab7@suse.com>
+Date: Tue, 30 Jan 2018 16:47:54 +0200
+MIME-Version: 1.0
+In-Reply-To: <20180130143441.GK19355@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The behavior of btrfs_delalloc_reserve_metadata depends on whether
-the inode we are allocating for is the freespace inode or not. As it
-stands if we are the free node we set 'flush' and 'delalloc_lock'
-variable to certain values. Subsequently we check the values of those
-vars and act accordingly. Instead, simplify things by having 1 if
-which checks whether we are the freespace inode or not and do any
-specific operation in either branches of that if. This makes the code
-a bit easier to understand, as an added bonus it also shrinks the
-compiled size:
 
-add/remove: 0/0 grow/shrink: 0/1 up/down: 0/-17 (-17)
-Function                                     old     new   delta
-btrfs_delalloc_reserve_metadata             1876    1859     -17
-Total: Before=85966, After=85949, chg -0.02%
 
-No functional changes.
+On 30.01.2018 16:34, David Sterba wrote:
+> On Fri, Jan 12, 2018 at 04:21:05PM +0200, Nikolay Borisov wrote:
+>> @@ -6062,19 +6062,19 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
+>>  	 * If we have a transaction open (can happen if we call truncate_block
+>>  	 * from truncate), then we need FLUSH_LIMIT so we don't deadlock.
+>>  	 */
+>> +
+>>  	if (btrfs_is_free_space_inode(inode)) {
+>>  		flush = BTRFS_RESERVE_NO_FLUSH;
+>>  		delalloc_lock = false;
+>> -	} else if (current->journal_info) {
+>> -		flush = BTRFS_RESERVE_FLUSH_LIMIT;
+>> -	}
+>> +	} else {
+>> +		if (current->journal_info)
+>> +			flush = BTRFS_RESERVE_FLUSH_LIMIT;
+>>  
+>> -	if (flush != BTRFS_RESERVE_NO_FLUSH &&
+>> -	    btrfs_transaction_in_commit(fs_info))
+>> -		schedule_timeout(1);
+>> +		if (btrfs_transaction_in_commit(fs_info))
+>> +			schedule_timeout(1);
+>>  
+>> -	if (delalloc_lock)
+>>  		mutex_lock(&inode->delalloc_mutex);
+>> +	}
+> 
+> Squeezing the condition branches makes the code more readable, I have
+> only one objection and it's the mutex_lock. It IMHO looks better when
+> it's a separate branch as it pairs with the unlock:
+> 
+> if (delalloc_lock)
+> 	mutex_lock(...);
+> 
+> ...
+> 
+> if (delalloc_lock)
+> 	mutex_unlock(...);
+> 
+> In your version it's implied by the first if that checks
+> btrfs_is_free_space_inode and delalloc_lock is hidden there.
+> 
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/extent-tree.c | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+My line of thought when developing the patch was that delalloc is
+another level of indirection and. What I wanted to achieve in the end is
+to make it clear that delalloc_mutex really depends on whether we are
+reserving for the freespace inode or not.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8d51e4bb67c1..47295804d91d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6062,19 +6062,19 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes)
- 	 * If we have a transaction open (can happen if we call truncate_block
- 	 * from truncate), then we need FLUSH_LIMIT so we don't deadlock.
- 	 */
-+
- 	if (btrfs_is_free_space_inode(inode)) {
- 		flush = BTRFS_RESERVE_NO_FLUSH;
- 		delalloc_lock = false;
--	} else if (current->journal_info) {
--		flush = BTRFS_RESERVE_FLUSH_LIMIT;
--	}
-+	} else {
-+		if (current->journal_info)
-+			flush = BTRFS_RESERVE_FLUSH_LIMIT;
- 
--	if (flush != BTRFS_RESERVE_NO_FLUSH &&
--	    btrfs_transaction_in_commit(fs_info))
--		schedule_timeout(1);
-+		if (btrfs_transaction_in_commit(fs_info))
-+			schedule_timeout(1);
- 
--	if (delalloc_lock)
- 		mutex_lock(&inode->delalloc_mutex);
-+	}
- 
- 	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);
- 
--- 
-2.7.4
-
+>>  
+>>  	num_bytes = ALIGN(num_bytes, fs_info->sectorsize);

@@ -1,115 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60030 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751632AbeA3NHm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 08:07:42 -0500
-Subject: Re: umount btrfs hang
-To: Christophe Yayon <cyayon-list@nbux.org>,
-        "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <1517299408.578486.1252869768.3537850D@webmail.messagingengine.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <d34ea1e9-db3d-d82d-5a07-0067d576a401@suse.com>
-Date: Tue, 30 Jan 2018 15:07:40 +0200
-MIME-Version: 1.0
-In-Reply-To: <1517299408.578486.1252869768.3537850D@webmail.messagingengine.com>
-Content-Type: text/plain; charset=utf-8
+Received: from userp2120.oracle.com ([156.151.31.85]:50432 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752715AbeA3G3K (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 01:29:10 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0U6RMFx087673
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:09 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2ftk6n81v9-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:09 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0U6T8r9025195
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:08 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w0U6T8v7011118
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:08 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: add mount option read_mirror_policy
+Date: Tue, 30 Jan 2018 14:30:19 +0800
+Message-Id: <20180130063020.14850-2-anand.jain@oracle.com>
+In-Reply-To: <20180130063020.14850-1-anand.jain@oracle.com>
+References: <20180130063020.14850-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In case of RAID1 and RAID10 devices are mirror-ed, a read IO can
+pick any device for reading. This choice of picking a device for
+reading should be configurable. In short not one policy would
+satisfy all types of workload and configs.
 
+So before we add more policies, this patch-set makes existing
+$pid policy configurable from the mount option.
 
-On 30.01.2018 10:03, Christophe Yayon wrote:
-> Hi all,
-> 
-> While trying umount a single btrfs volume i get stuck and get a call kernel trace.
-> My kernel is 4.14.13 (archlinux).
+For example..
+  mount -o read_mirror_policy=pid (which is also default)
 
-Is this upstream 4.14.13 or 4.14 with some Arch patches?
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/ctree.h   |  2 ++
+ fs/btrfs/super.c   | 10 ++++++++++
+ fs/btrfs/volumes.c |  8 +++++++-
+ fs/btrfs/volumes.h |  5 +++++
+ 4 files changed, 24 insertions(+), 1 deletion(-)
 
-> 
-> Unable to umount, tried to killed command, no way...
-> 
-> what should i do ? Thanks.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1a462ab85c49..4759e988b0df 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1100,6 +1100,8 @@ struct btrfs_fs_info {
+ 	spinlock_t ref_verify_lock;
+ 	struct rb_root block_tree;
+ #endif
++	/* Policy to balance read across mirrored devices */
++	int read_mirror_policy;
+ };
+ 
+ static inline struct btrfs_fs_info *btrfs_sb(struct super_block *sb)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 367ecbf477b9..dfe6b3c67df3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -329,6 +329,7 @@ enum {
+ #ifdef CONFIG_BTRFS_FS_REF_VERIFY
+ 	Opt_ref_verify,
+ #endif
++	Opt_read_mirror_policy,
+ 	Opt_err,
+ };
+ 
+@@ -393,6 +394,7 @@ static const match_table_t tokens = {
+ #ifdef CONFIG_BTRFS_FS_REF_VERIFY
+ 	{Opt_ref_verify, "ref_verify"},
+ #endif
++	{Opt_read_mirror_policy, "read_mirror_policy=%s"},
+ 	{Opt_err, NULL},
+ };
+ 
+@@ -839,6 +841,14 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			btrfs_set_opt(info->mount_opt, REF_VERIFY);
+ 			break;
+ #endif
++		case Opt_read_mirror_policy:
++			if (strcmp(args[0].from, "pid") == 0) {
++				info->read_mirror_policy =
++					BTRFS_READ_MIRROR_BY_PID;
++				break;
++			}
++			ret = -EINVAL;
++			goto out;
+ 		case Opt_err:
+ 			btrfs_info(info, "unrecognized mount option '%s'", p);
+ 			ret = -EINVAL;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a61715677b67..39ba59832f38 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5269,7 +5269,13 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+ 	else
+ 		num = map->num_stripes;
+ 
+-	optimal = first + current->pid % num;
++	switch(fs_info->read_mirror_policy) {
++	case BTRFS_READ_MIRROR_DEFAULT:
++	case BTRFS_READ_MIRROR_BY_PID:
++	default:
++		optimal = first + current->pid % num;
++		break;
++	}
+ 
+ 	if (dev_replace_is_ongoing &&
+ 	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 28c28eeadff3..78f35d299a61 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -47,6 +47,11 @@ struct btrfs_pending_bios {
+ #define btrfs_device_data_ordered_init(device) do { } while (0)
+ #endif
+ 
++enum btrfs_read_mirror_type {
++	BTRFS_READ_MIRROR_DEFAULT,
++	BTRFS_READ_MIRROR_BY_PID,
++};
++
+ #define BTRFS_DEV_STATE_WRITEABLE	(0)
+ #define BTRFS_DEV_STATE_IN_FS_METADATA	(1)
+ #define BTRFS_DEV_STATE_MISSING		(2)
+-- 
+2.7.0
 
-When this occurs the next time provide the output of
-echo w > /proc/sysrq-trigger. Without it it's impossible to reason what
-might have caused the lock up.
-
-> 
-> # btrfs fi df /mnt/vol3
-> Data, single: total=25.97GiB, used=6.84GiB
-> System, DUP: total=8.00MiB, used=4.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, DUP: total=1.00GiB, used=111.44MiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=16.00MiB, used=0.00B
-> 
-> -------------
-> Jan 30 08:57:58 daneel.nbux.org kernel: INFO: task kworker/u16:5:4967 blocked for more than 120 seconds.
-> Jan 30 08:57:58 daneel.nbux.org kernel:       Tainted: G         C      4.14.13-1-ARCH #1
-> Jan 30 08:57:58 daneel.nbux.org kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Jan 30 08:57:58 daneel.nbux.org kernel: kworker/u16:5   D    0  4967      2 0x80000000
-> Jan 30 08:57:58 daneel.nbux.org kernel: Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel: Call Trace:
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? __schedule+0x290/0x890
-> Jan 30 08:57:58 daneel.nbux.org kernel:  schedule+0x2f/0x90
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_tree_read_lock+0xb6/0x100 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? wait_woken+0x80/0x80
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_search_slot+0x703/0x9f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? kmem_cache_alloc+0x153/0x1a0
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_iget+0x10e/0x6f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  __lookup_free_space_inode+0x106/0x160 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  lookup_free_space_inode+0x63/0xe0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  load_free_space_cache+0x66/0x180 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? kmem_cache_alloc_trace+0x161/0x1b0
-> Jan 30 08:57:58 daneel.nbux.org kernel:  cache_block_group+0x1c6/0x3e0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? wait_woken+0x80/0x80
-> Jan 30 08:57:58 daneel.nbux.org kernel:  find_free_extent+0x63e/0xfb0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_reserve_extent+0x9b/0x180 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_alloc_tree_block+0x123/0x4c0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  __btrfs_cow_block+0x121/0x5b0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_cow_block+0xca/0x1c0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_search_slot+0x321/0x9f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_del_csums+0x107/0x3c0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  __btrfs_free_extent.isra.61+0x49b/0xd60 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  __btrfs_run_delayed_refs+0x725/0x12f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_run_delayed_refs+0x68/0x240 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  delayed_ref_async_start+0x8d/0xa0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_worker_helper+0x70/0x330 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  process_one_work+0x1db/0x410
-> Jan 30 08:57:58 daneel.nbux.org kernel:  worker_thread+0x2b/0x3d0
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? process_one_work+0x410/0x410
-> Jan 30 08:57:58 daneel.nbux.org kernel:  kthread+0x118/0x130
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? kthread_create_on_node+0x70/0x70
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? SyS_exit+0x13/0x20
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ret_from_fork+0x1f/0x30
-> Jan 30 08:57:58 daneel.nbux.org kernel: INFO: task kworker/u16:11:13568 blocked for more than 120 seconds.
-> Jan 30 08:57:58 daneel.nbux.org kernel:       Tainted: G         C      4.14.13-1-ARCH #1
-> Jan 30 08:57:58 daneel.nbux.org kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Jan 30 08:57:58 daneel.nbux.org kernel: kworker/u16:11  D    0 13568      2 0x80000000
-> Jan 30 08:57:58 daneel.nbux.org kernel: Workqueue: btrfs-freespace-write btrfs_freespace_write_helper [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel: Call Trace:
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? __schedule+0x290/0x890
-> Jan 30 08:57:58 daneel.nbux.org kernel:  schedule+0x2f/0x90
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_tree_lock+0xd1/0x1f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? wait_woken+0x80/0x80
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_search_slot+0x6e7/0x9f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_mark_extent_written+0xb1/0xbb0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? lock_extent_bits+0x54/0x1b0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? join_transaction+0x10c/0x3f0 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? start_transaction+0x9e/0x410 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_finish_ordered_io+0x591/0x810 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? pick_next_task_fair+0x171/0x560
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? __switch_to+0xa2/0x4e0
-> Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_worker_helper+0x70/0x330 [btrfs]
-> Jan 30 08:57:58 daneel.nbux.org kernel:  process_one_work+0x1db/0x410
-> Jan 30 08:57:58 daneel.nbux.org kernel:  worker_thread+0x2b/0x3d0
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? process_one_work+0x410/0x410
-> Jan 30 08:57:58 daneel.nbux.org kernel:  kthread+0x118/0x130
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? kthread_create_on_node+0x70/0x70
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ? SyS_exit+0x13/0x20
-> Jan 30 08:57:58 daneel.nbux.org kernel:  ret_from_fork+0x1f/0x30
-> -------------
-> 

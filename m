@@ -1,92 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:59874 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752715AbeA3G3I (ORCPT
+Received: from out3-smtp.messagingengine.com ([66.111.4.27]:41239 "EHLO
+        out3-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1751606AbeA3ID3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 01:29:08 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0U6RSrj066648
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:08 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2130.oracle.com with ESMTP id 2ftfrsgk8v-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:08 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0U6T7gt025168
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:07 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0U6T7M0015255
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:07 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] Policy to balance read across mirrored devices
-Date: Tue, 30 Jan 2018 14:30:18 +0800
-Message-Id: <20180130063020.14850-1-anand.jain@oracle.com>
+        Tue, 30 Jan 2018 03:03:29 -0500
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.nyi.internal (Postfix) with ESMTP id B516420D31
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 03:03:28 -0500 (EST)
+Message-Id: <1517299408.578486.1252869768.3537850D@webmail.messagingengine.com>
+From: Christophe Yayon <cyayon-list@nbux.org>
+To: "Majordomo vger.kernel.org" <linux-btrfs@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Date: Tue, 30 Jan 2018 09:03:28 +0100
+Subject: umount btrfs hang
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In case of RAID1 and RAID10 devices are mirror-ed, a read IO can
-pick any device for reading. This choice of picking a device for
-reading should be configurable. In short not one policy would
-satisfy all types of workload and configs.
+Hi all,
 
-So before we add more policies, this patch-set makes existing
-$pid policy configurable from the mount option and adds a devid
-based read_mirror device policy. And keeps $pid based policy as
-the default option for now. So this mount option helps to try out
-different read mirror load balances.
+While trying umount a single btrfs volume i get stuck and get a call kernel trace.
+My kernel is 4.14.13 (archlinux).
 
-Further we can add more policies on top of it, for example..
+Unable to umount, tried to killed command, no way...
 
-  mount -o read_mirror_policy=pid (current, default) [1]
-  mount -o read_mirror_policy=<devid> [2]
-  mount -o read_mirror_policy=lba (illustration only) [3]
-  mount -o read_mirror_policy=ssd (illustration only) [4]
-  mount -o read_mirror_policy=io (illustration only) [5]
-  mount -o read_mirror_policy=<heuristic1> (illustration only) [6]
+what should i do ? Thanks.
 
-[1]
- Current PID based read mirror balance.
+# btrfs fi df /mnt/vol3
+Data, single: total=25.97GiB, used=6.84GiB
+System, DUP: total=8.00MiB, used=4.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=1.00GiB, used=111.44MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=16.00MiB, used=0.00B
 
-[2]
- Set the devid of the device which should be used for read. That
- means all the normal read will go to that particular device only.
- This also helps testing and gives a better control for the test
- scripts including mount context reads.
-
-[3]
- In case of SAN storage, some storage prefers that host access the
- LUN based on the LBA so that there won't be duplications of
- caching on the storage.
-
-[4]
- In case of mix of SSD and HD we may want to use SSD as the primary
- read device.
-
-[5]
- If storage caching is not the bottleneck but the transport layer
- is then read load should be tuned based on the IO load.
-
-[6]
- Or a combination of any of above as per the priority.
- Timofey should consider to base his patch on top of this.
-    Btrfs: enchanse raid1/10 balance heuristic
-
-This patch set is on top of the preparatory patch set:
-  [PATCH 0/2] Preparatory to add read_mirror mount option
-
-
-Anand Jain (2):
-  btrfs: add mount option read_mirror_policy
-  btrfs: add read_mirror_policy parameter devid
-
- fs/btrfs/ctree.h   |  2 ++
- fs/btrfs/super.c   | 31 +++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c | 18 +++++++++++++++++-
- fs/btrfs/volumes.h |  7 +++++++
- 4 files changed, 57 insertions(+), 1 deletion(-)
+-------------
+Jan 30 08:57:58 daneel.nbux.org kernel: INFO: task kworker/u16:5:4967 blocked for more than 120 seconds.
+Jan 30 08:57:58 daneel.nbux.org kernel:       Tainted: G         C      4.14.13-1-ARCH #1
+Jan 30 08:57:58 daneel.nbux.org kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jan 30 08:57:58 daneel.nbux.org kernel: kworker/u16:5   D    0  4967      2 0x80000000
+Jan 30 08:57:58 daneel.nbux.org kernel: Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel: Call Trace:
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? __schedule+0x290/0x890
+Jan 30 08:57:58 daneel.nbux.org kernel:  schedule+0x2f/0x90
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_tree_read_lock+0xb6/0x100 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? wait_woken+0x80/0x80
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_read_lock_root_node+0x2f/0x40 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_search_slot+0x703/0x9f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_lookup_inode+0x3a/0xc0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? kmem_cache_alloc+0x153/0x1a0
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_iget+0x10e/0x6f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  __lookup_free_space_inode+0x106/0x160 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  lookup_free_space_inode+0x63/0xe0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  load_free_space_cache+0x66/0x180 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? kmem_cache_alloc_trace+0x161/0x1b0
+Jan 30 08:57:58 daneel.nbux.org kernel:  cache_block_group+0x1c6/0x3e0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? wait_woken+0x80/0x80
+Jan 30 08:57:58 daneel.nbux.org kernel:  find_free_extent+0x63e/0xfb0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_reserve_extent+0x9b/0x180 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_alloc_tree_block+0x123/0x4c0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  __btrfs_cow_block+0x121/0x5b0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_cow_block+0xca/0x1c0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_search_slot+0x321/0x9f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_del_csums+0x107/0x3c0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  __btrfs_free_extent.isra.61+0x49b/0xd60 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  __btrfs_run_delayed_refs+0x725/0x12f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_run_delayed_refs+0x68/0x240 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  delayed_ref_async_start+0x8d/0xa0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_worker_helper+0x70/0x330 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  process_one_work+0x1db/0x410
+Jan 30 08:57:58 daneel.nbux.org kernel:  worker_thread+0x2b/0x3d0
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? process_one_work+0x410/0x410
+Jan 30 08:57:58 daneel.nbux.org kernel:  kthread+0x118/0x130
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? kthread_create_on_node+0x70/0x70
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? SyS_exit+0x13/0x20
+Jan 30 08:57:58 daneel.nbux.org kernel:  ret_from_fork+0x1f/0x30
+Jan 30 08:57:58 daneel.nbux.org kernel: INFO: task kworker/u16:11:13568 blocked for more than 120 seconds.
+Jan 30 08:57:58 daneel.nbux.org kernel:       Tainted: G         C      4.14.13-1-ARCH #1
+Jan 30 08:57:58 daneel.nbux.org kernel: "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+Jan 30 08:57:58 daneel.nbux.org kernel: kworker/u16:11  D    0 13568      2 0x80000000
+Jan 30 08:57:58 daneel.nbux.org kernel: Workqueue: btrfs-freespace-write btrfs_freespace_write_helper [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel: Call Trace:
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? __schedule+0x290/0x890
+Jan 30 08:57:58 daneel.nbux.org kernel:  schedule+0x2f/0x90
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_tree_lock+0xd1/0x1f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? wait_woken+0x80/0x80
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_search_slot+0x6e7/0x9f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_mark_extent_written+0xb1/0xbb0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? lock_extent_bits+0x54/0x1b0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? join_transaction+0x10c/0x3f0 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? start_transaction+0x9e/0x410 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_finish_ordered_io+0x591/0x810 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? pick_next_task_fair+0x171/0x560
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? __switch_to+0xa2/0x4e0
+Jan 30 08:57:58 daneel.nbux.org kernel:  btrfs_worker_helper+0x70/0x330 [btrfs]
+Jan 30 08:57:58 daneel.nbux.org kernel:  process_one_work+0x1db/0x410
+Jan 30 08:57:58 daneel.nbux.org kernel:  worker_thread+0x2b/0x3d0
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? process_one_work+0x410/0x410
+Jan 30 08:57:58 daneel.nbux.org kernel:  kthread+0x118/0x130
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? kthread_create_on_node+0x70/0x70
+Jan 30 08:57:58 daneel.nbux.org kernel:  ? SyS_exit+0x13/0x20
+Jan 30 08:57:58 daneel.nbux.org kernel:  ret_from_fork+0x1f/0x30
+-------------
 
 -- 
-2.7.0
-
+  Christophe Yayon
+  cyayon-list@nbux.org

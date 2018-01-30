@@ -1,112 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:50050 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.17.22]:62648 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752232AbeAZITC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Jan 2018 03:19:02 -0500
-Subject: Re: [PATCH v2 0/7] btrfs-progs: Do some clean up to be consistent
+        id S1751511AbeA3Hgj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 02:36:39 -0500
+Subject: Re: [PATCH v2 7/7] btrfs-progs: Cleanup use of root in leaf_data_end
 To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <1516951566-21777-1-git-send-email-gujx@cn.fujitsu.com>
+ <1516951566-21777-8-git-send-email-gujx@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ea189b02-035e-7e27-20f0-08691bf2b83a@gmx.com>
-Date: Fri, 26 Jan 2018 16:18:55 +0800
+Message-ID: <532054be-f016-67e3-93b2-5adcc191bef3@gmx.com>
+Date: Tue, 30 Jan 2018 15:36:28 +0800
 MIME-Version: 1.0
-In-Reply-To: <1516951566-21777-1-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1516951566-21777-8-git-send-email-gujx@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="0iMSIZUoqAbq171rtMiPOuAKNfsKfPHz0"
+ boundary="OokbgRvaDPDNFFBSdEpvUTH1wr8iFvLf9"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---0iMSIZUoqAbq171rtMiPOuAKNfsKfPHz0
-Content-Type: multipart/mixed; boundary="JUPir69xZMYaNGZnjVa6LOtWbsK6xuBph";
+--OokbgRvaDPDNFFBSdEpvUTH1wr8iFvLf9
+Content-Type: multipart/mixed; boundary="WqrWun5Xa05Fs0niFzCqsbjExIDvvYc0M";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Message-ID: <ea189b02-035e-7e27-20f0-08691bf2b83a@gmx.com>
-Subject: Re: [PATCH v2 0/7] btrfs-progs: Do some clean up to be consistent
+Message-ID: <532054be-f016-67e3-93b2-5adcc191bef3@gmx.com>
+Subject: Re: [PATCH v2 7/7] btrfs-progs: Cleanup use of root in leaf_data_end
 References: <1516951566-21777-1-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1516951566-21777-1-git-send-email-gujx@cn.fujitsu.com>
+ <1516951566-21777-8-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1516951566-21777-8-git-send-email-gujx@cn.fujitsu.com>
 
---JUPir69xZMYaNGZnjVa6LOtWbsK6xuBph
+--WqrWun5Xa05Fs0niFzCqsbjExIDvvYc0M
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
 
 
-On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 15:25, Gu Jinxiang wrote:
-> Patch 1~4 and 7: clean up use of btrfs_root.
-> Patch 5: remove redundancy value assignment.
-> Patch 6: remove no longer be used function define.
-
-Overall it looks good, just one small nitpick, which should not need
-another update.
-
-> Changelog:
-> v2->v1:
-> Patch 2,4: To be consistent with kernel, change macro to inline functio=
-n.
-> Patch 3:
-> 	Change macro to inline function to be consistent with kernel.
-> 	And change the function body to match kernel.
+On 2018=E5=B9=B401=E6=9C=8826=E6=97=A5 15:26, Gu Jinxiang wrote:
+> In function leaf_data_end, root is just used to get fs_info,
+> so change the parameter of this function from btrfs_root to
+> btrfs_fs_info.
+> And also make it consistent with kernel.
 >=20
-> Gu Jinxiang (7):
->   btrfs-progs: Use fs_info instead of root for BTRFS_LEAF_DATA_SIZE
->   btrfs-progs: Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK=
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+> ---
+>  ctree.c | 32 +++++++++++++++++---------------
+>  1 file changed, 17 insertions(+), 15 deletions(-)
+>=20
+> diff --git a/ctree.c b/ctree.c
+> index 11d207e7..2417483d 100644
+> --- a/ctree.c
+> +++ b/ctree.c
+> @@ -410,12 +410,12 @@ static int btrfs_comp_keys(struct btrfs_disk_key =
+*disk, struct btrfs_key *k2)
+>   * this returns the address of the start of the last item,
+>   * which is the stop of the leaf data stack
+>   */
+> -static inline unsigned int leaf_data_end(struct btrfs_root *root,
+> -					 struct extent_buffer *leaf)
+> +static inline unsigned int leaf_data_end(const struct btrfs_fs_info *f=
+s_info,
+> +					 const struct extent_buffer *leaf)
 
->   btrfs-progs: Use fs_info instead of root for
->     BTRFS_MAX_INLINE_DATA_SIZE
+Here leaf is const, which is fine.
 
-Not only this patch modified the parameter but also sync the code with
-kernel.
-It would be better to mention it in commit message, but anyway, just a
-small nitpick, nothing to worry about.
+>  {
+>  	u32 nr =3D btrfs_header_nritems(leaf);
+>  	if (nr =3D=3D 0)
+> -		return BTRFS_LEAF_DATA_SIZE(root->fs_info);
+> +		return BTRFS_LEAF_DATA_SIZE(fs_info);
+>  	return btrfs_item_offset_nr(leaf, nr - 1);
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+But btrfs_item_offset_nr() doesn't have const prefix for leaf.
+Leaving the following warning:
+
+passing argument 1 of =E2=80=98btrfs_item_offset_nr=E2=80=99 discards =E2=
+=80=98const=E2=80=99 qualifier
+from pointer target type [-Wdiscarded-qualifiers]
+  return btrfs_item_offset_nr(leaf, nr - 1);
+                              ^~~~
 
 Thanks,
 Qu
-
->   btrfs-progs: Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE
->   btrfs-progs: do clean up for redundancy value assignment
->   btrfs-progs: remove no longer be used btrfs_alloc_extent
->   btrfs-progs: Cleanup use of root in leaf_data_end
+>  }
+> =20
+> @@ -1737,10 +1737,10 @@ static int push_leaf_right(struct btrfs_trans_h=
+andle *trans, struct btrfs_root
+>  	right_nritems =3D btrfs_header_nritems(right);
+> =20
+>  	push_space =3D btrfs_item_end_nr(left, left_nritems - push_items);
+> -	push_space -=3D leaf_data_end(root, left);
+> +	push_space -=3D leaf_data_end(fs_info, left);
+> =20
+>  	/* make room in the right data area */
+> -	data_end =3D leaf_data_end(root, right);
+> +	data_end =3D leaf_data_end(fs_info, right);
+>  	memmove_extent_buffer(right,
+>  			      btrfs_leaf_data(right) + data_end - push_space,
+>  			      btrfs_leaf_data(right) + data_end,
+> @@ -1749,7 +1749,7 @@ static int push_leaf_right(struct btrfs_trans_han=
+dle *trans, struct btrfs_root
+>  	/* copy from the left data area */
+>  	copy_extent_buffer(right, left, btrfs_leaf_data(right) +
+>  		     BTRFS_LEAF_DATA_SIZE(root->fs_info) - push_space,
+> -		     btrfs_leaf_data(left) + leaf_data_end(root, left),
+> +		     btrfs_leaf_data(left) + leaf_data_end(fs_info, left),
+>  		     push_space);
+> =20
+>  	memmove_extent_buffer(right, btrfs_item_nr_offset(push_items),
+> @@ -1887,7 +1887,7 @@ static int push_leaf_left(struct btrfs_trans_hand=
+le *trans, struct btrfs_root
+>  		     btrfs_item_offset_nr(right, push_items -1);
+> =20
+>  	copy_extent_buffer(left, right, btrfs_leaf_data(left) +
+> -		     leaf_data_end(root, left) - push_space,
+> +		     leaf_data_end(fs_info, left) - push_space,
+>  		     btrfs_leaf_data(right) +
+>  		     btrfs_item_offset_nr(right, push_items - 1),
+>  		     push_space);
+> @@ -1914,12 +1914,13 @@ static int push_leaf_left(struct btrfs_trans_ha=
+ndle *trans, struct btrfs_root
+> =20
+>  	if (push_items < right_nritems) {
+>  		push_space =3D btrfs_item_offset_nr(right, push_items - 1) -
+> -						  leaf_data_end(root, right);
+> +						  leaf_data_end(fs_info, right);
+>  		memmove_extent_buffer(right, btrfs_leaf_data(right) +
+>  				      BTRFS_LEAF_DATA_SIZE(root->fs_info) -
+>  				      push_space,
+>  				      btrfs_leaf_data(right) +
+> -				      leaf_data_end(root, right), push_space);
+> +				      leaf_data_end(fs_info, right),
+> +				      push_space);
+> =20
+>  		memmove_extent_buffer(right, btrfs_item_nr_offset(0),
+>  			      btrfs_item_nr_offset(push_items),
+> @@ -1978,7 +1979,8 @@ static noinline int copy_for_split(struct btrfs_t=
+rans_handle *trans,
+> =20
+>  	nritems =3D nritems - mid;
+>  	btrfs_set_header_nritems(right, nritems);
+> -	data_copy_size =3D btrfs_item_end_nr(l, mid) - leaf_data_end(root, l)=
+;
+> +	data_copy_size =3D btrfs_item_end_nr(l, mid) -
+> +		leaf_data_end(root->fs_info, l);
+> =20
+>  	copy_extent_buffer(right, l, btrfs_item_nr_offset(0),
+>  			   btrfs_item_nr_offset(mid),
+> @@ -1988,7 +1990,7 @@ static noinline int copy_for_split(struct btrfs_t=
+rans_handle *trans,
+>  		     btrfs_leaf_data(right) +
+>  		     BTRFS_LEAF_DATA_SIZE(root->fs_info) -
+>  		     data_copy_size, btrfs_leaf_data(l) +
+> -		     leaf_data_end(root, l), data_copy_size);
+> +		     leaf_data_end(root->fs_info, l), data_copy_size);
+> =20
+>  	rt_data_off =3D BTRFS_LEAF_DATA_SIZE(root->fs_info) -
+>  		      btrfs_item_end_nr(l, mid);
+> @@ -2326,7 +2328,7 @@ int btrfs_truncate_item(struct btrfs_root *root, =
+struct btrfs_path *path,
+>  		return 0;
+> =20
+>  	nritems =3D btrfs_header_nritems(leaf);
+> -	data_end =3D leaf_data_end(root, leaf);
+> +	data_end =3D leaf_data_end(root->fs_info, leaf);
+> =20
+>  	old_data_start =3D btrfs_item_offset_nr(leaf, slot);
+> =20
+> @@ -2415,7 +2417,7 @@ int btrfs_extend_item(struct btrfs_root *root, st=
+ruct btrfs_path *path,
+>  	leaf =3D path->nodes[0];
+> =20
+>  	nritems =3D btrfs_header_nritems(leaf);
+> -	data_end =3D leaf_data_end(root, leaf);
+> +	data_end =3D leaf_data_end(root->fs_info, leaf);
+> =20
+>  	if (btrfs_leaf_free_space(root, leaf) < data_size) {
+>  		btrfs_print_leaf(root, leaf);
+> @@ -2501,7 +2503,7 @@ int btrfs_insert_empty_items(struct btrfs_trans_h=
+andle *trans,
+>  	leaf =3D path->nodes[0];
+> =20
+>  	nritems =3D btrfs_header_nritems(leaf);
+> -	data_end =3D leaf_data_end(root, leaf);
+> +	data_end =3D leaf_data_end(root->fs_info, leaf);
+> =20
+>  	if (btrfs_leaf_free_space(root, leaf) < total_size) {
+>  		btrfs_print_leaf(root, leaf);
+> @@ -2692,7 +2694,7 @@ int btrfs_del_items(struct btrfs_trans_handle *tr=
+ans, struct btrfs_root *root,
+>  	nritems =3D btrfs_header_nritems(leaf);
+> =20
+>  	if (slot + nr !=3D nritems) {
+> -		int data_end =3D leaf_data_end(root, leaf);
+> +		int data_end =3D leaf_data_end(root->fs_info, leaf);
+> =20
+>  		memmove_extent_buffer(leaf, btrfs_leaf_data(leaf) +
+>  			      data_end + dsize,
 >=20
->  cmds-check.c              | 10 ++---
->  convert/source-ext2.c     |  4 +-
->  convert/source-reiserfs.c |  6 +--
->  ctree.c                   | 96 +++++++++++++++++++++++++--------------=
---------
->  ctree.h                   | 45 +++++++++++++---------
->  dir-item.c                |  3 +-
->  extent-tree.c             |  1 -
->  file-item.c               |  2 +-
->  mkfs/main.c               |  4 +-
->  print-tree.c              |  2 +-
->  quick-test.c              |  2 +-
->  volumes.c                 |  2 +-
->  12 files changed, 97 insertions(+), 80 deletions(-)
->=20
 
 
---JUPir69xZMYaNGZnjVa6LOtWbsK6xuBph--
+--WqrWun5Xa05Fs0niFzCqsbjExIDvvYc0M--
 
---0iMSIZUoqAbq171rtMiPOuAKNfsKfPHz0
+--OokbgRvaDPDNFFBSdEpvUTH1wr8iFvLf9
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpq5G8XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhabQgAmeRE4nuEgvn3+6UNak1DDKim
-sWDAviup+VfzOLpFHMI6fE6MlnKxFI7wPJtTnCEGMSO8Hlo1aDeMWyd0pdK6a/GP
-tmSxW/4Bt9d1uykDn4RoyLb+XMJ0kEdiIfGFpxvDzk26l+QhGRq7GXJcqYO3bm5p
-+1zP32BtSySY0/9m/y47s3z2YHq/F0xyISkdVsKoxRFHeAYa1l9URl4tumQDPJSz
-YJytF7GqAGpwK2p+EAZzA7hRvRyj5Dk9wZDKfIZydJ9+U7oEj/64uc+M3IopxrD/
-DpgyKDEXr6VpXd2fb1bhLintbxUIFQ41nhm+2h2YTYH1bdIGMkN0fMYdQVxpzg==
-=Uj0v
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpwIHwXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjDdgf+PaVryRMB50j6jTUNObnxrSKv
+dceV20aiIm/pOjGrLc/WGFXgQz6AfvWNg3toGqEthanZsHvvbLejAYMVLp/5VvYC
+TEF7+MP6eolMjWLrfUQn4bSmOKF61JZJ47DwFxM81f++0xd8VuI0XLVgKzCVZGc8
+FWFmoILbEByvdSIV/6e7NZVv3CZNMzzilFEuBmbOer4sezAwl1tAfs1ZYfoVYkWz
+5+2HXU4eS3p985KV1MnHn+lwBCo6jJ7Iq26i//EQGkY5uqvxhcJgG/zc3M4cQXDs
+lT6zYie5aHj6udP0cuXEG008WxJjFJu88dHlmZmmJ2useRsyqcbGf1JtkBQT5A==
+=jOHD
 -----END PGP SIGNATURE-----
 
---0iMSIZUoqAbq171rtMiPOuAKNfsKfPHz0--
+--OokbgRvaDPDNFFBSdEpvUTH1wr8iFvLf9--

@@ -1,66 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:44770 "EHLO
-        mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752449AbeA3EoZ (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:59874 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752715AbeA3G3I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Jan 2018 23:44:25 -0500
-Received: by mail-oi0-f48.google.com with SMTP id b3so3918719oib.11
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jan 2018 20:44:25 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20180129085404.GA2500@polanet.pl>
-References: <569AC15F-174E-4C78-8FE5-6CE9E0BED479@yayon.me>
- <E23AAC7C-6CAA-4290-9CF1-19285DB31D05@yayon.me> <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
- <20180127110619.GA10472@polanet.pl> <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <pan$49d38$869e8d62$c0063169$584b8866@cox.net> <20180128003910.GA31699@polanet.pl>
- <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
- <20180128223946.GA26726@polanet.pl> <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
- <20180129085404.GA2500@polanet.pl>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Mon, 29 Jan 2018 21:44:23 -0700
-Message-ID: <CAJCQCtSx89hjvQ+030KOPx5Xb2bbW8xc8w0zOf=V3A-QXtvMQg@mail.gmail.com>
-Subject: Re: degraded permanent mount option
-To: Tomasz Pala <gotar@polanet.pl>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Tue, 30 Jan 2018 01:29:08 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w0U6RSrj066648
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:08 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2130.oracle.com with ESMTP id 2ftfrsgk8v-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:08 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w0U6T7gt025168
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:07 GMT
+Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w0U6T7M0015255
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 06:29:07 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] Policy to balance read across mirrored devices
+Date: Tue, 30 Jan 2018 14:30:18 +0800
+Message-Id: <20180130063020.14850-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 29, 2018 at 1:54 AM, Tomasz Pala <gotar@polanet.pl> wrote:
-> On Sun, Jan 28, 2018 at 17:00:46 -0700, Chris Murphy wrote:
->
->> systemd can't possibly need to know more information than a person
->> does in the exact same situation in order to do the right thing. No
->> human would wait 10 minutes, let alone literally the heat death of the
->> planet for "all devices have appeared" but systemd will. And it does
->
-> We're already repeating - systemd waits for THE btrfs-compound-device,
-> not ALL the block-devices. Just like it 'waits' for someone to plug USB
-> pendrive in.
+In case of RAID1 and RAID10 devices are mirror-ed, a read IO can
+pick any device for reading. This choice of picking a device for
+reading should be configurable. In short not one policy would
+satisfy all types of workload and configs.
 
-Btrfs is orthogonal to systemd's willingness to wait forever while
-making no progress. It doesn't matter what it is, it shouldn't wait
-forever.
+So before we add more policies, this patch-set makes existing
+$pid policy configurable from the mount option and adds a devid
+based read_mirror device policy. And keeps $pid based policy as
+the default option for now. So this mount option helps to try out
+different read mirror load balances.
 
-It occurs to me there are such systemd service units specifically for
-waiting for example
+Further we can add more policies on top of it, for example..
 
-systemd-networkd-wait-online.service, systemd-networkd-wait-online -
-Wait for network to
-       come online
+  mount -o read_mirror_policy=pid (current, default) [1]
+  mount -o read_mirror_policy=<devid> [2]
+  mount -o read_mirror_policy=lba (illustration only) [3]
+  mount -o read_mirror_policy=ssd (illustration only) [4]
+  mount -o read_mirror_policy=io (illustration only) [5]
+  mount -o read_mirror_policy=<heuristic1> (illustration only) [6]
 
- chrony-wait.service - Wait for chrony to synchronize system clock
+[1]
+ Current PID based read mirror balance.
 
-NetworkManager has a version of this. I don't see why there can't be a
-wait for Btrfs to normally mount, just simply try to mount, it fails,
-wait 10, try again, wait 10 try again. And then fail the unit so we
-end up at a prompt. Or some people can optionally ask for a mount -o
-degraded instead of a fail, and then if that also doesn't work, the
-unit fails. Of course service units can have such conditionals rather
-than waiting forever.
+[2]
+ Set the devid of the device which should be used for read. That
+ means all the normal read will go to that particular device only.
+ This also helps testing and gives a better control for the test
+ scripts including mount context reads.
+
+[3]
+ In case of SAN storage, some storage prefers that host access the
+ LUN based on the LBA so that there won't be duplications of
+ caching on the storage.
+
+[4]
+ In case of mix of SSD and HD we may want to use SSD as the primary
+ read device.
+
+[5]
+ If storage caching is not the bottleneck but the transport layer
+ is then read load should be tuned based on the IO load.
+
+[6]
+ Or a combination of any of above as per the priority.
+ Timofey should consider to base his patch on top of this.
+    Btrfs: enchanse raid1/10 balance heuristic
+
+This patch set is on top of the preparatory patch set:
+  [PATCH 0/2] Preparatory to add read_mirror mount option
 
 
+Anand Jain (2):
+  btrfs: add mount option read_mirror_policy
+  btrfs: add read_mirror_policy parameter devid
 
-
+ fs/btrfs/ctree.h   |  2 ++
+ fs/btrfs/super.c   | 31 +++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c | 18 +++++++++++++++++-
+ fs/btrfs/volumes.h |  7 +++++++
+ 4 files changed, 57 insertions(+), 1 deletion(-)
 
 -- 
-Chris Murphy
+2.7.0
+

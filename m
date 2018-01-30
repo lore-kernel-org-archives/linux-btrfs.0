@@ -1,66 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56626 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.20]:55955 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751511AbeA3IWI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 03:22:08 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2642CACDB
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 08:22:07 +0000 (UTC)
-Subject: Re: [PATCH 3/3] btrfs: Refactor parameter of BTRFS_MAX_DEVS() from
- root to fs_info
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
+        id S1752000AbeA3J7i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 04:59:38 -0500
+Subject: Re: [PATCH 2/3] btrfs: Unexport get_block_group_index()
+To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.cz,
+        Anand Jain <anand.jain@oracle.com>
 References: <20180130074039.24987-1-wqu@suse.com>
- <20180130074039.24987-3-wqu@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8c68879c-e52d-9da1-5b5c-e478ea5a64bc@suse.com>
-Date: Tue, 30 Jan 2018 10:22:06 +0200
+ <20180130074039.24987-2-wqu@suse.com>
+ <995dc89a-2f5e-28c0-70e5-f7b18719c1a0@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <0742c05a-31eb-ec35-21c9-e35934a98039@gmx.com>
+Date: Tue, 30 Jan 2018 17:59:15 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180130074039.24987-3-wqu@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <995dc89a-2f5e-28c0-70e5-f7b18719c1a0@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="ihnEdbJVN9xwKOINcZvu1jtP6i62iYQVL"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--ihnEdbJVN9xwKOINcZvu1jtP6i62iYQVL
+Content-Type: multipart/mixed; boundary="bl8KisEWe00TYKd4XrCsaqQPGmZfT9ET6";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
+ linux-btrfs@vger.kernel.org, dsterba@suse.cz,
+ Anand Jain <anand.jain@oracle.com>
+Message-ID: <0742c05a-31eb-ec35-21c9-e35934a98039@gmx.com>
+Subject: Re: [PATCH 2/3] btrfs: Unexport get_block_group_index()
+References: <20180130074039.24987-1-wqu@suse.com>
+ <20180130074039.24987-2-wqu@suse.com>
+ <995dc89a-2f5e-28c0-70e5-f7b18719c1a0@suse.com>
+In-Reply-To: <995dc89a-2f5e-28c0-70e5-f7b18719c1a0@suse.com>
+
+--bl8KisEWe00TYKd4XrCsaqQPGmZfT9ET6
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
 
-On 30.01.2018 09:40, Qu Wenruo wrote:
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+On 2018=E5=B9=B401=E6=9C=8830=E6=97=A5 16:18, Nikolay Borisov wrote:
+>=20
+>=20
+> On 30.01.2018 09:40, Qu Wenruo wrote:
+>> That function is only used inside extent-tree.c.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>  fs/btrfs/ctree.h       | 1 -
+>>  fs/btrfs/extent-tree.c | 3 ++-
+>>  2 files changed, 2 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index 13c260b525a1..27249240fa3e 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -2629,7 +2629,6 @@ struct btrfs_block_group_cache *btrfs_lookup_blo=
+ck_group(
+>>  						 u64 bytenr);
+>>  void btrfs_get_block_group(struct btrfs_block_group_cache *cache);
+>>  void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
+>> -int get_block_group_index(struct btrfs_block_group_cache *cache);
+>>  struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handl=
+e *trans,
+>>  					     struct btrfs_root *root,
+>>  					     u64 parent, u64 root_objectid,
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index e9c31b567a9c..6e1128aa29d6 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -7346,7 +7346,8 @@ wait_block_group_cache_done(struct btrfs_block_g=
+roup_cache *cache)
+>>  	return ret;
+>>  }
+>> =20
+>> -int get_block_group_index(struct btrfs_block_group_cache *cache)
+>> +static enum btrfs_raid_types
+>> +get_block_group_index(struct btrfs_block_group_cache *cache)
+>>  {
+>>  	return btrfs_bg_flags_to_raid_index(cache->flags);
+>>  }
+>=20
+> I'd rather you removed this function and used bg_flags_to_raid_index
+> directly. Otherwise we have yet another level of indirection with a
+> rather wrong name - "block_group_index" ?
+
+Right, also pointed out by Anand, I'll just remove it.
+
+Thanks,
+Qu
+
+>=20
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
 
-> ---
->  fs/btrfs/volumes.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index d818b1f9c625..215e85e22c8e 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4581,7 +4581,7 @@ static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
->  	btrfs_set_fs_incompat(info, RAID56);
->  }
->  
-> -#define BTRFS_MAX_DEVS(r) ((BTRFS_MAX_ITEM_SIZE(r->fs_info)		\
-> +#define BTRFS_MAX_DEVS(info) ((BTRFS_MAX_ITEM_SIZE(info)	\
->  			- sizeof(struct btrfs_chunk))		\
->  			/ sizeof(struct btrfs_stripe) + 1)
->  
-> @@ -4638,7 +4638,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  		max_stripe_size = SZ_1G;
->  		max_chunk_size = 10 * max_stripe_size;
->  		if (!devs_max)
-> -			devs_max = BTRFS_MAX_DEVS(info->chunk_root);
-> +			devs_max = BTRFS_MAX_DEVS(info);
->  	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
->  		/* for larger filesystems, use larger metadata chunks */
->  		if (fs_devices->total_rw_bytes > 50ULL * SZ_1G)
-> @@ -4647,7 +4647,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  			max_stripe_size = SZ_256M;
->  		max_chunk_size = max_stripe_size;
->  		if (!devs_max)
-> -			devs_max = BTRFS_MAX_DEVS(info->chunk_root);
-> +			devs_max = BTRFS_MAX_DEVS(info);
->  	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
->  		max_stripe_size = SZ_32M;
->  		max_chunk_size = 2 * max_stripe_size;
-> 
+--bl8KisEWe00TYKd4XrCsaqQPGmZfT9ET6--
+
+--ihnEdbJVN9xwKOINcZvu1jtP6i62iYQVL
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpwQfMXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgSTwf+Ixzp4YDfOPnkOCA1hKIgYc3C
+gJvUMwn6yuJY9usdYGd2IB9TotQiL123IyRENC+prXyMNV7iGdTzMFkpQXX3BMoK
+TYg7Yg8aPbRyb+W1GbjfxkxU8n5h5DmzntqaaE6tIZOW2vMFpSzVdMmmU/fGNHps
+BpUJSIMT79uMk1TX4oUhbVLJ6Ec9/qdPIb7wDNFvI6+E+oyqEkd/Gl+TxCxEhMH9
+ou2+Gn0vgbmXOi+GC+b7KCeWRZ0pj3G+brunokWapCscB8wmQMG/ezZml2Zz8ZYw
+M89/wlxil06OH+o1I1W2nhqxkigTXUE32MuTaKZIhTlKoK++4l3tRxGdz78A5Q==
+=5HbX
+-----END PGP SIGNATURE-----
+
+--ihnEdbJVN9xwKOINcZvu1jtP6i62iYQVL--

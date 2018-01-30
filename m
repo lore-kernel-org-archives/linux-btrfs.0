@@ -1,96 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:48072 "EHLO pepin.polanet.pl"
+Received: from pepin.polanet.pl ([193.34.52.2]:48727 "EHLO pepin.polanet.pl"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751787AbeA3Pkn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 10:40:43 -0500
-Date: Tue, 30 Jan 2018 16:40:42 +0100
+        id S1751444AbeA3QIA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 11:08:00 -0500
+Date: Tue, 30 Jan 2018 17:07:59 +0100
 From: Tomasz Pala <gotar@polanet.pl>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: degraded permanent mount option
-Message-ID: <20180130154042.GD7126@polanet.pl>
-References: <111ca301-f631-694d-93eb-b73a790f57d4@gmail.com>
- <20180127110619.GA10472@polanet.pl>
- <20180127132641.mhmdhpokqrahgd4n@angband.pl>
- <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
+Message-ID: <20180130160759.GE7126@polanet.pl>
+References: <pan$49d38$869e8d62$c0063169$584b8866@cox.net>
  <20180128003910.GA31699@polanet.pl>
  <CAJCQCtSo12iFeyg3DSWNmOwtXHHk_sdg_MDJUrAM+Q1oaOJcAA@mail.gmail.com>
  <20180128223946.GA26726@polanet.pl>
  <CAJCQCtQi+Lks6SxrGkyQ1xF-_mJM2bDYMiBnQXt6hk7qikuwWA@mail.gmail.com>
  <20180129085404.GA2500@polanet.pl>
- <CAJCQCtSx89hjvQ+030KOPx5Xb2bbW8xc8w0zOf=V3A-QXtvMQg@mail.gmail.com>
+ <20180129112456.r7ksq5mwp3ie6gmg@angband.pl>
+ <6804d30d-53ff-403f-1eac-ac5da01509f7@gmail.com>
+ <20180130134649.GA7126@polanet.pl>
+ <2e6b43ce-048f-2404-9455-c768f95e34fb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <CAJCQCtSx89hjvQ+030KOPx5Xb2bbW8xc8w0zOf=V3A-QXtvMQg@mail.gmail.com>
+In-Reply-To: <2e6b43ce-048f-2404-9455-c768f95e34fb@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 29, 2018 at 21:44:23 -0700, Chris Murphy wrote:
+On Tue, Jan 30, 2018 at 10:05:34 -0500, Austin S. Hemmelgarn wrote:
 
-> Btrfs is orthogonal to systemd's willingness to wait forever while
-> making no progress. It doesn't matter what it is, it shouldn't wait
-> forever.
+>> Instead, they should move their legs continuously and if the train is > not on the station yet, just climb back and retry.
+> No, that's really not a good analogy given the fact that that check for 
+> the presence of a train takes a normal person milliseconds while the 
+> event being raced against (the train departing) takes minutes.  In the 
 
-It times out after 90 seconds (by default) and then it fails the mount
-entirely.
+OMG... preventing races by "this would always take longer"? Seriously?
 
-> It occurs to me there are such systemd service units specifically for
-> waiting for example
-> 
-> systemd-networkd-wait-online.service, systemd-networkd-wait-online -
-> Wait for network to
->        come online
-> 
->  chrony-wait.service - Wait for chrony to synchronize system clock
-> 
-> NetworkManager has a version of this. I don't see why there can't be a
-> wait for Btrfs to normally mount,
+> You're already looping forever _waiting_ for the volume to appear.  How 
 
-Because mounting degraded btrfs without -o degraded won't WAIT for
-anything just immediatelly return failed.
+udev is waiting for events, not systemd. Nobody will do some crazy
+cross-layered shortcuts to overcome other's lazyness.
 
-> just simply try to mount, it fails, wait 10, try again, wait 10 try again.
+> is that any different from lopping forever trying to _mount_ the volume 
 
-For the last time:
+Yes, because udev doesn't mount anything, ever. Not this binary dude!
 
-No
-	Such
-		Logic
-			In
-				Systemd
-						CORE
+> instead given that failing to mount the volume is not going to damage 
+> things. 
 
-Every wait/repeat is done using UNITS - as you already noticed
-itself. And these are plain, regular UNITS.
+Failed premature attempt to mount prevents the system from booting WHEN
+the devices are ready - this is fatal. System boots randomly on racy
+conditions.
 
-Is there anything that prevents YOU, Chris, from writing these UNITS for
-btrfs?
+But hey, "the devices will always appear faster, than the init attempt
+to do the mount"!
 
-I know what makes ME stop writing these units - it's lack of feedback
-from btrfs.ko ioctl handler. Without this I am unable to write UNITS
-handling fstab mount entries, because the logic would PROBABLY have to
-be hardcoded inside systemd-fstab-generator.
+Have you ever had some hardware RAID controller? Never heard about
+devices appearing after 5 minutes of warming up?
 
-And such logic MUST NOT be hardcoded - this MUST be user-configurable,
-i.e. made on UNITS level.
+> The issue here is that systemd refuses to implement any method 
+> of actually retrying things that fail during startup.>
 
-You might argue that some-distros-SysV units or some Gentoo-OpenRC have
-support for this and if you want to change anything this is only a few
-lines of shell code to be altered. But systemd-fstab-generator is
-compiled binary and so WON'T allow the behaviour to be user-configurable.
+1. Such methods are trivial and I've already mentioned them a dozen of times.
+2. They should be implemented in btrfs-upstream, not systemd-upstream,
+   but I personally would happily help with writing them here.
+3. They require full-circle path of 'allow-degraded' to be passed
+   through btrfs code.
 
-> And then fail the unit so we end up at a prompt.
+>> mounting BEFORE volume is complete is FATAL - since no userspace daemon
+>> would ever retrigger the mount and the system won't came up. Provide one
+>> btrfsd volume manager and systemd could probably switch to using it.
+> And here you've lost any respect I might have had for you.
 
-This can also be easily done, just like emergency-shell spawns
-when configured. If only btrfs could accept and keep information about
-volume being allowed for degraded mount.
+Going personal? So thank you for discussion and good bye.
 
+Please refrain from answering me, I'm not going to discuss this any
+further with you.
 
-OK, to be honest I _can_ write such rules now, keeping the
-'allow-degraded' state somewhere else (in a file for example).
+> **YOU DO NOT NEED A DAEMON TO DO EVERY LAST TASK ON THE SYSTEM**
 
-But since this is some non-standarized side-channel, such code won't
-be accepted in systemd upstream, especially because it requires the
-current udev rule to be slightly changed.
+Sorry dude, but I won't repeat for the 5th times all the alternatives.
+
+You *all* refuse to step in ANY possible solution mentioned.
+You *all* except the systemd to do ALL the job, just like other init
+systems were forced to do, against the good design principles.
+
+Good luck having btrfs degraded mount under systemd.
+
+> <rant>
+> This is one of the two biggest things I hate about systemd(the journal 
+> is the other one for those who care).
+
+The journal has currently *many* drawbacks, but this is not 'by design'
+but 'by appropriate code missing for now'. The same applies to btrfs,
+isn't it?
+
+> You don't need some special daemon to set the time,
+
+Ever heard about NTP?
+
+> or to set the hostname,
+
+FUD - no such daemon
+
+> or to fetch account data,
+
+FUD
+
+> or even to track who's logged in
+
+FUD
+
+> As much as it may surprise the systemd developers, people got on just 
+> fine handling setting the system time, setting the hostname, fetching 
+> account info, tracking active users, and any number of myriad other 
+> tasks before systemd decided they needed to have their own special daemon.
+> </rant>
+
+Sure, in myriad of different scattered distro-specific files. The only
+reason systemd stepped in for some of there is that nobody else could
+introduce and force Linux-wide consensus. And if anyone would succeed,
+there would be some Austins blaming them for 'overtaking good old
+trashyard into coherent de facto standard.'
+
+> In this particular case, you don't need a daemon because the kernel does 
+> the state tracking. 
+
+Sure, MD doesn't require daemon and LVM doesn't require either. But they
+do provide some - I know, they are all wrong.
 
 -- 
 Tomasz Pala <gotar@pld-linux.org>

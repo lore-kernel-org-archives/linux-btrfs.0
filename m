@@ -1,15 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45158 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38513 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751344AbeA0GPl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 Jan 2018 01:15:41 -0500
+        id S1751603AbeA3OHq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 09:07:46 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id CC3CFAAB9
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jan 2018 14:07:45 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, anand.jain@oracle.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Fix UAF
-Date: Fri, 26 Jan 2018 15:20:27 +0200
-Message-Id: <1516972827-1481-1-git-send-email-nborisov@suse.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [RESEND PATCH] btrfs: Fix UAF when cleaning up fs_devs with a single stale device
+Date: Tue, 30 Jan 2018 16:07:37 +0200
+Message-Id: <1517321257-314-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1516972827-1481-1-git-send-email-nborisov@suse.com>
+References: <1516972827-1481-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -28,6 +32,9 @@ fs_devs.
 Fixes: 4fde46f0cc71 ("Btrfs: free the stale device")
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
+
+Changed the subject to make it more descriptive 
+
  fs/btrfs/volumes.c | 1 +
  1 file changed, 1 insertion(+)
 

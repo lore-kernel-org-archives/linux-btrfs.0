@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:14550 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752316AbeAaDJc (ORCPT
+        with ESMTP id S1752356AbeAaDJd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 22:09:32 -0500
+        Tue, 30 Jan 2018 22:09:33 -0500
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <quwenruo.btrfs@gmx.com>
-Subject: [PATCH v3 2/7] btrfs-progs: Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK
-Date: Wed, 31 Jan 2018 11:09:14 +0800
-Message-ID: <1517368159-12858-3-git-send-email-gujx@cn.fujitsu.com>
+Subject: [PATCH v3 3/7] btrfs-progs: Sync code with kernel for BTRFS_MAX_INLINE_DATA_SIZE
+Date: Wed, 31 Jan 2018 11:09:15 +0800
+Message-ID: <1517368159-12858-4-git-send-email-gujx@cn.fujitsu.com>
 In-Reply-To: <1517368159-12858-1-git-send-email-gujx@cn.fujitsu.com>
 References: <1517368159-12858-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,181 +18,112 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Do a cleanup. Also make it consistent with kernel.
-Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK, since
+Use fs_info instead of root for BTRFS_MAX_INLINE_DATA_SIZE, since
 maybe in some situation we do not know root, but just know fs_info.
 
 Changelog:
 v2->v1:
-To be consistent with kernel, change macro to inline function.
+Change macro to inline function to be consistent with kernel.
+And change the function body to match kernel.
+v3->v2:
+Change the title of this commit to make it more exact.
 
 Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- cmds-check.c |  4 ++--
- ctree.c      | 18 +++++++++---------
- ctree.h      |  7 ++++---
- print-tree.c |  2 +-
- quick-test.c |  2 +-
- 5 files changed, 17 insertions(+), 16 deletions(-)
+ convert/source-ext2.c     |  2 +-
+ convert/source-reiserfs.c |  2 +-
+ ctree.h                   | 17 ++++++++++++++---
+ mkfs/main.c               |  4 ++--
+ 4 files changed, 18 insertions(+), 7 deletions(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 8d54564..5495dbe 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2517,7 +2517,7 @@ static void account_bytes(struct btrfs_root *root, struct btrfs_path *path,
- 	if (level == 0) {
- 		btree_space_waste += btrfs_leaf_free_space(root, eb);
- 	} else {
--		free_nrs = (BTRFS_NODEPTRS_PER_BLOCK(root) -
-+		free_nrs = (BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
- 			    btrfs_header_nritems(eb));
- 		btree_space_waste += free_nrs * sizeof(struct btrfs_key_ptr);
- 	}
-@@ -9475,7 +9475,7 @@ static int run_next_block(struct btrfs_root *root,
- 				add_pending(pending, seen, ptr, size);
- 			}
- 		}
--		btree_space_waste += (BTRFS_NODEPTRS_PER_BLOCK(root) -
-+		btree_space_waste += (BTRFS_NODEPTRS_PER_BLOCK(fs_info) -
- 				      nritems) * sizeof(struct btrfs_key_ptr);
- 	}
- 	total_btree_bytes += buf->len;
-diff --git a/ctree.c b/ctree.c
-index 6d130f5..4efc96f 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -427,7 +427,7 @@ btrfs_check_node(struct btrfs_root *root, struct btrfs_disk_key *parent_key,
- 	u32 nritems = btrfs_header_nritems(buf);
- 	enum btrfs_tree_block_status ret = BTRFS_TREE_BLOCK_INVALID_NRITEMS;
- 
--	if (nritems == 0 || nritems > BTRFS_NODEPTRS_PER_BLOCK(root))
-+	if (nritems == 0 || nritems > BTRFS_NODEPTRS_PER_BLOCK(root->fs_info))
+diff --git a/convert/source-ext2.c b/convert/source-ext2.c
+index e5c2a94..f5ecd8c 100644
+--- a/convert/source-ext2.c
++++ b/convert/source-ext2.c
+@@ -309,7 +309,7 @@ static int ext2_create_file_extents(struct btrfs_trans_handle *trans,
  		goto fail;
+ 	if ((convert_flags & CONVERT_FLAG_INLINE_DATA) && data.first_block == 0
+ 	    && data.num_blocks > 0
+-	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root)) {
++	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
+ 		u64 num_bytes = data.num_blocks * sectorsize;
+ 		u64 disk_bytenr = data.disk_block * sectorsize;
+ 		u64 nbytes;
+diff --git a/convert/source-reiserfs.c b/convert/source-reiserfs.c
+index e3582bd..39d6f07 100644
+--- a/convert/source-reiserfs.c
++++ b/convert/source-reiserfs.c
+@@ -376,7 +376,7 @@ static int reiserfs_convert_tail(struct btrfs_trans_handle *trans,
+ 	u64 isize;
+ 	int ret;
  
- 	ret = BTRFS_TREE_BLOCK_INVALID_PARENT_KEY;
-@@ -714,7 +714,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
- 		return ret;
- 	}
- 	if (btrfs_header_nritems(mid) >
--	    BTRFS_NODEPTRS_PER_BLOCK(root) / 4)
-+	    BTRFS_NODEPTRS_PER_BLOCK(fs_info) / 4)
- 		return 0;
+-	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root))
++	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
+ 		return convert_direct(trans, root, objectid, inode, body,
+ 				      length, offset, convert_flags);
  
- 	left = read_node_slot(fs_info, parent, pslot - 1);
-@@ -882,7 +882,7 @@ static int noinline push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 	if (extent_buffer_uptodate(left)) {
- 		u32 left_nr;
- 		left_nr = btrfs_header_nritems(left);
--		if (left_nr >= BTRFS_NODEPTRS_PER_BLOCK(root) - 1) {
-+		if (left_nr >= BTRFS_NODEPTRS_PER_BLOCK(fs_info) - 1) {
- 			wret = 1;
- 		} else {
- 			ret = btrfs_cow_block(trans, root, left, parent,
-@@ -925,7 +925,7 @@ static int noinline push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 	if (extent_buffer_uptodate(right)) {
- 		u32 right_nr;
- 		right_nr = btrfs_header_nritems(right);
--		if (right_nr >= BTRFS_NODEPTRS_PER_BLOCK(root) - 1) {
-+		if (right_nr >= BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - 1) {
- 			wret = 1;
- 		} else {
- 			ret = btrfs_cow_block(trans, root, right,
-@@ -1144,7 +1144,7 @@ again:
- 			p->slots[level] = slot;
- 			if ((p->search_for_split || ins_len > 0) &&
- 			    btrfs_header_nritems(b) >=
--			    BTRFS_NODEPTRS_PER_BLOCK(root) - 3) {
-+			    BTRFS_NODEPTRS_PER_BLOCK(fs_info) - 3) {
- 				int sret = split_node(trans, root, p, level);
- 				BUG_ON(sret > 0);
- 				if (sret)
-@@ -1290,7 +1290,7 @@ static int push_node_left(struct btrfs_trans_handle *trans,
- 
- 	src_nritems = btrfs_header_nritems(src);
- 	dst_nritems = btrfs_header_nritems(dst);
--	push_items = BTRFS_NODEPTRS_PER_BLOCK(root) - dst_nritems;
-+	push_items = BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - dst_nritems;
- 	WARN_ON(btrfs_header_generation(src) != trans->transid);
- 	WARN_ON(btrfs_header_generation(dst) != trans->transid);
- 
-@@ -1360,7 +1360,7 @@ static int balance_node_right(struct btrfs_trans_handle *trans,
- 
- 	src_nritems = btrfs_header_nritems(src);
- 	dst_nritems = btrfs_header_nritems(dst);
--	push_items = BTRFS_NODEPTRS_PER_BLOCK(root) - dst_nritems;
-+	push_items = BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - dst_nritems;
- 	if (push_items <= 0) {
- 		return 1;
- 	}
-@@ -1488,7 +1488,7 @@ static int insert_ptr(struct btrfs_trans_handle *trans, struct btrfs_root
- 	nritems = btrfs_header_nritems(lower);
- 	if (slot > nritems)
- 		BUG();
--	if (nritems == BTRFS_NODEPTRS_PER_BLOCK(root))
-+	if (nritems == BTRFS_NODEPTRS_PER_BLOCK(root->fs_info))
- 		BUG();
- 	if (slot < nritems) {
- 		/* shift the items */
-@@ -1537,7 +1537,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
- 		ret = push_nodes_for_insert(trans, root, path, level);
- 		c = path->nodes[level];
- 		if (!ret && btrfs_header_nritems(c) <
--		    BTRFS_NODEPTRS_PER_BLOCK(root) - 3)
-+		    BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - 3)
- 			return 0;
- 		if (ret < 0)
- 			return ret;
 diff --git a/ctree.h b/ctree.h
-index 11913ef..f3964f1 100644
+index f3964f1..7be48e2 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -356,9 +356,6 @@ struct btrfs_header {
- 	u8 level;
- } __attribute__ ((__packed__));
- 
--#define BTRFS_NODEPTRS_PER_BLOCK(r) (((r)->fs_info->nodesize - \
--			        sizeof(struct btrfs_header)) / \
--			        sizeof(struct btrfs_key_ptr))
+@@ -359,9 +359,6 @@ struct btrfs_header {
  #define __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct btrfs_header))
  #define BTRFS_LEAF_DATA_SIZE(fs_info) \
  				(__BTRFS_LEAF_DATA_SIZE(fs_info->nodesize))
-@@ -1191,6 +1188,10 @@ struct btrfs_root {
+-#define BTRFS_MAX_INLINE_DATA_SIZE(r) (BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
+-					sizeof(struct btrfs_item) - \
+-					sizeof(struct btrfs_file_extent_item))
+ #define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
+ 				 sizeof(struct btrfs_item) -\
+ 				 sizeof(struct btrfs_dir_item))
+@@ -1188,10 +1185,24 @@ struct btrfs_root {
  	struct rb_node rb_node;
  };
  
-+static inline u32 BTRFS_NODEPTRS_PER_BLOCK(const struct btrfs_fs_info *info)
++static inline u32 BTRFS_MAX_ITEM_SIZE(const struct btrfs_fs_info *info)
 +{
-+	return BTRFS_LEAF_DATA_SIZE(info) / sizeof(struct btrfs_key_ptr);
++	return BTRFS_LEAF_DATA_SIZE(info) - sizeof(struct btrfs_item);
 +}
++
+ static inline u32 BTRFS_NODEPTRS_PER_BLOCK(const struct btrfs_fs_info *info)
+ {
+ 	return BTRFS_LEAF_DATA_SIZE(info) / sizeof(struct btrfs_key_ptr);
+ }
++
++#define BTRFS_FILE_EXTENT_INLINE_DATA_START		\
++	(offsetof(struct btrfs_file_extent_item, disk_bytenr))
++static inline u32 BTRFS_MAX_INLINE_DATA_SIZE(const struct btrfs_fs_info *info)
++{
++	return BTRFS_MAX_ITEM_SIZE(info) -
++		BTRFS_FILE_EXTENT_INLINE_DATA_START;
++}
++
  /*
   * inode items have the data typically returned from stat and store other
   * info about object characteristics.  There is one for every file and dir in
-diff --git a/print-tree.c b/print-tree.c
-index d3fa862..5f37ef3 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -1359,7 +1359,7 @@ void btrfs_print_tree(struct btrfs_root *root, struct extent_buffer *eb, int fol
- 	printf("node %llu level %d items %d free %u generation %llu owner %llu\n",
- 	       (unsigned long long)eb->start,
- 	        btrfs_header_level(eb), nr,
--		(u32)BTRFS_NODEPTRS_PER_BLOCK(root) - nr,
-+		(u32)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) - nr,
- 		(unsigned long long)btrfs_header_generation(eb),
- 		(unsigned long long)btrfs_header_owner(eb));
- 	print_uuids(eb);
-diff --git a/quick-test.c b/quick-test.c
-index b1e7999..5da47c3 100644
---- a/quick-test.c
-+++ b/quick-test.c
-@@ -110,7 +110,7 @@ int main(int ac, char **av) {
- 	printf("node %p level %d total ptrs %d free spc %lu\n", root->node,
- 	        btrfs_header_level(root->node),
- 		btrfs_header_nritems(root->node),
--		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root) -
-+		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
- 		btrfs_header_nritems(root->node));
- 	printf("all searches good, deleting some items\n");
- 	i = 0;
+diff --git a/mkfs/main.c b/mkfs/main.c
+index d817ad8..a301efc 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -498,7 +498,7 @@ static int fill_inode_item(struct btrfs_trans_handle *trans,
+ 	}
+ 	if (S_ISREG(src->st_mode)) {
+ 		btrfs_set_stack_inode_size(dst, (u64)src->st_size);
+-		if (src->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root))
++		if (src->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
+ 			btrfs_set_stack_inode_nbytes(dst, src->st_size);
+ 		else {
+ 			blocks = src->st_size / sectorsize;
+@@ -686,7 +686,7 @@ static int add_file_items(struct btrfs_trans_handle *trans,
+ 	if (st->st_size % sectorsize)
+ 		blocks += 1;
+ 
+-	if (st->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root)) {
++	if (st->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
+ 		char *buffer = malloc(st->st_size);
+ 
+ 		if (!buffer) {
 -- 
 1.9.1
 

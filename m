@@ -1,111 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:42524 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752009AbeAXDWS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Jan 2018 22:22:18 -0500
-Date: Tue, 23 Jan 2018 22:22:09 -0500
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Received: from mx2.suse.de ([195.135.220.15]:36269 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752716AbeAaPFv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Jan 2018 10:05:51 -0500
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: remove spurious WARN_ON(ref->count < 0) in
- find_parent_nodes
-Message-ID: <20180124032203.3dszkkof5f36qpmf@hungrycats.org>
-References: <20180121190848.7wmps6q5ng6b42ki@hungrycats.org>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="wm32q42yjtttn4wp"
-In-Reply-To: <20180121190848.7wmps6q5ng6b42ki@hungrycats.org>
+Cc: clm@fb.com
+Subject: Btrfs progs pre-release 4.15-rc1
+Date: Wed, 31 Jan 2018 16:03:35 +0100
+Message-Id: <20180131150335.17038-1-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---wm32q42yjtttn4wp
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+a pre-release has been tagged.
 
-Until v4.14, this warning was very infrequent:
+The only significant change is removing the custom chunk allocator from mkfs
+for the --rootdir option.
 
-	WARNING: CPU: 3 PID: 18172 at fs/btrfs/backref.c:1391 find_parent_nodes+0x=
-c41/0x14e0
-	Modules linked in: [...]
-	CPU: 3 PID: 18172 Comm: bees Tainted: G      D W    L  4.11.9-zb64+ #1
-	Hardware name: System manufacturer System Product Name/M5A78L-M/USB3, BIOS=
- 2101    12/02/2014
-	Call Trace:
-	 dump_stack+0x85/0xc2
-	 __warn+0xd1/0xf0
-	 warn_slowpath_null+0x1d/0x20
-	 find_parent_nodes+0xc41/0x14e0
-	 __btrfs_find_all_roots+0xad/0x120
-	 ? extent_same_check_offsets+0x70/0x70
-	 iterate_extent_inodes+0x168/0x300
-	 iterate_inodes_from_logical+0x87/0xb0
-	 ? iterate_inodes_from_logical+0x87/0xb0
-	 ? extent_same_check_offsets+0x70/0x70
-	 btrfs_ioctl+0x8ac/0x2820
-	 ? lock_acquire+0xc2/0x200
-	 do_vfs_ioctl+0x91/0x700
-	 ? __fget+0x112/0x200
-	 SyS_ioctl+0x79/0x90
-	 entry_SYSCALL_64_fastpath+0x23/0xc6
-	 ? trace_hardirqs_off_caller+0x1f/0x140
+ETA for 4.15 is in +2 days (2018-02-02).
 
-Starting with v4.14 (specifically 86d5f9944252 ("btrfs: convert prelimary
-reference tracking to use rbtrees")) the WARN_ON occurs three orders of
-magnitude more frequently--almost once per second while running workloads
-like bees.
+Changes:
 
-Replace the WARN_ON() with a comment rationale for its removal.
-The rationale is paraphrased from an explanation by Edmund Nadolski
-<enadolski@suse.de> on the linux-btrfs mailing list.
+* mkfs --rootdir reworked, does not minimize the final image but can be still
+  done using a new option --shrink
+* fix allocation of system chunk, don't allocate from the reserved area
+* other
+  * new and updated tests
+  * cleanups, refactoring
+  * doc updates
 
-Fixes: 8da6d5815c59 ("Btrfs: added btrfs_find_all_roots()")
-Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
----
-v2:=20
-	Replace WARN_ON with rationale instead of merely deleting it.
-	Trim irrelevant detail from the backtrace.  Add Fixes reference.
-	Fix subject line (missing "< 0").
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
- fs/btrfs/backref.c | 10 +++++++++-
- 1 file changed, 9 insertions(+), 1 deletion(-)
+Shortlog:
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 7d0dc100a09a..06597c5f9f4b 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1263,7 +1263,16 @@ static int find_parent_nodes(struct btrfs_trans_hand=
-le *trans,
- 	while (node) {
- 		ref =3D rb_entry(node, struct prelim_ref, rbnode);
- 		node =3D rb_next(&ref->rbnode);
--		WARN_ON(ref->count < 0);
-+		/*
-+		 * ref->count < 0 can happen here if there are delayed
-+		 * refs with a node->action of BTRFS_DROP_DELAYED_REF.
-+		 * prelim_ref_insert() relies on this when merging
-+		 * identical refs to keep the overall count correct.
-+		 * prelim_ref_insert() will merge only those refs
-+		 * which compare identically.  Any refs having
-+		 * e.g. different offsets would not be merged,
-+		 * and would retain their original ref->count < 0.
-+		 */
- 		if (roots && ref->count && ref->root_id && ref->parent =3D=3D 0) {
- 			if (sc && sc->root_objectid &&
- 			    ref->root_id !=3D sc->root_objectid) {
---=20
-2.11.0
+David Sterba (14):
+      btrfs-progs: docs: update manual for mkfs --shrink
+      btrfs-progs: tests: fix typo in error message
+      btrfs-progs: tests: bump zstd version in CI to 1.3.3
+      btrfs-progs: build: simplify version tracking
+      btrfs-progs: tests: 029-super-recovery: cleanup the test
+      btrfs-progs: tests: add more coverage to mkfs-tests/013-reserved-1M-for-single
+      btrfs-progs: tests: truncate test image to 0 first
+      btrfs-progs: don't clobber errno in close_file_or_dir
+      btrfs-progs: build: update help text for zstd
+      btrfs-progs: docs: clean all generated files
+      btrfs-progs: tests: disable some mkfs/010 testcases inside travis
+      btrfs-progs: tests: enhance common umount helper to take optional paths
+      btrfs-progs: tests: fixup mount tests of fsck/028-unaligned-super-dev-sizes
+      btrfs-progs: update CHANGES for v4.15
 
+Gu Jinxiang (2):
+      btrfs-progs: Remove unused parameter trans
+      btrfs-progs: build: Remove unused variable TESTS
 
---wm32q42yjtttn4wp
-Content-Type: application/pgp-signature; name="signature.asc"
+Hans van Kranenburg (2):
+      btrfs-progs: Fix progs_extra build dependencies
+      btrfs-progs: Fix build of btrfs-calc-size
 
------BEGIN PGP SIGNATURE-----
+Lu Fengqi (2):
+      btrfs-progs: qgroup: move btrfs_show_qgroups's error handler to __qgroup_search
+      btrfs-progs: qgroup: cleanup __qgroup_search
 
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWmf71gAKCRCB+YsaVrMb
-nLlRAKCoFVpNFH9ET1LiGGmjf35h+173KwCg3EbKA6kLB6sLqvsSfffmbsCaBHw=
-=4Qng
------END PGP SIGNATURE-----
+Nikolay Borisov (8):
+      btrfs-progs: Print error on invalid extent item format during check
+      btrfs-progs: tests: Explictly state test.sh must be executable
+      btrfs-progs: Factor out common print_device_info
+      btrfs-progs: Remove recover_get_good_super
+      btrfs-progs: Replace usage of list_for_each with list_for_each_entry
+      btrfs-progs: Document logic of btrfs_read_dev_super
+      btrfs-progs: super-recover: fix the broken sb detection
+      btrfs-progs: tests: Add test for super block recovery
 
---wm32q42yjtttn4wp--
+Qu Wenruo (22):
+      btrfs-progs: mkfs: move image creation of rootdir to its own files
+      btrfs-progs: mkfs: move source dir size calculation to its own files
+      btrfs-progs: test/mkfs: Test if the minimal device size is valid
+      btrfs-progs: mkfs/rootdir: Introduce function to get end position of last device extent
+      btrfs-progs: mkfs: Update allocation info before verbose output
+      btrfs-progs: mkfs: Cleanup temporary chunks before filling rootdir
+      btrfs-progs: mkfs: Don't use custom chunk allocator for rootdir
+      btrfs-progs: mkfs/rootdir: Use over-reserve method to make size estimate easier
+      btrfs-progs: mkfs/rootdir: Shrink fs for rootdir option
+      btrfs-progs: mkfs: Separate shrink from rootdir
+      btrfs-progs: mkfs: fix regression preventing --rootdir to create file
+      btrfs-progs: tests/mkfs: Introduce test case to check if mkfs rootdir can create a new file
+      btrfs-progs: mkfs: Use the whole file or block device to mkfs for rootdir
+      btrfs-progs: tests/mkfs: verify that mkfs.btrfs rootdir+shrink behaves correctly
+      btrfs-progs: mkfs: Prevent temporary system chunk to use space in reserved 1M range
+      btrfs-progs: tests:mkfs/010: Output minimal device size
+      btrfs-progs: tests: mkfs: don't overwrite first 1M for single
+      btrfs-progs: Use bool parameter to determine if we're allocating data extent
+      btrfs-progs: volumes: Make find_free_dev_extent_start static
+      btrfs-progs: volumes: Remove unnecessary trans parameter
+      btrfs-progs: volumes: Remove unnecessary parameters when allocating device extent
+      btrfs-progs: Remove unnecessary parameter for btrfs_add_block_group
+
+Rosen Penev (1):
+      btrfs-progs: treewide: Replace strerror(errno) with %m.
+
+Su Yue (1):
+      btrfs-progs: check: report more specific info about invalid location
+
+William Giokas (1):
+      btrfs-progs: docs: fix typo in btrfs-filesystem manual page
+

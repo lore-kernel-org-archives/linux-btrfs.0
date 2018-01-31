@@ -1,101 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:57338 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751899AbeAaOf2 (ORCPT
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:36124 "EHLO
+        mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752988AbeAaOwN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 09:35:28 -0500
-Subject: Re: [PATCH 2/2] btrfs: add read_mirror_policy parameter devid
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180130063020.14850-1-anand.jain@oracle.com>
- <20180130063020.14850-3-anand.jain@oracle.com>
- <f4772f0c-c53e-c859-7da9-b2181a3507c1@suse.com>
- <7a21d5f0-b7f0-9da6-22b6-b45976d6ab40@oracle.com>
- <7fdfcf9a-2bc5-7f1b-1417-3ccc95cdcf83@suse.com>
- <27eaef30-69ae-b5a6-2cd6-9035c61615e7@oracle.com>
- <7eb73e78-f6ca-be5f-4505-a88d60172037@suse.com>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <c0e67c67-324e-938a-b87c-3831c2604676@oracle.com>
-Date: Wed, 31 Jan 2018 22:36:43 +0800
+        Wed, 31 Jan 2018 09:52:13 -0500
+Received: by mail-lf0-f41.google.com with SMTP id t79so21143294lfe.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 06:52:13 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <7eb73e78-f6ca-be5f-4505-a88d60172037@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <cd9f0109-8c7c-3c98-53d8-100f06dcd46f@oracle.com>
+References: <20180130063020.14850-1-anand.jain@oracle.com> <CAEtw4r2rj7YF+c3wXprM+PNXKVJZDFLMTznjc9egqB1bSR+Wxw@mail.gmail.com>
+ <80358280-ce31-9049-61a8-c9a4b78f4b2b@oracle.com> <CAEtw4r1PM+zhmQHYXK8SfHczESg=NVsK9O2rd6FZ8-33_7at=A@mail.gmail.com>
+ <cd9f0109-8c7c-3c98-53d8-100f06dcd46f@oracle.com>
+From: Peter Becker <floyd.net@gmail.com>
+Date: Wed, 31 Jan 2018 15:52:11 +0100
+Message-ID: <CAEtw4r1gZCexSZnq_G43d55MwpXN0s-vS2Uyn2M9N2Cvi15QYA@mail.gmail.com>
+Subject: Re: [PATCH 0/2] Policy to balance read across mirrored devices
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is all clear. My question referes to "use the lower devid disk
+containing the stripe"
 
+2018-01-31 10:01 GMT+01:00 Anand Jain <anand.jain@oracle.com>:
+>  When a stripe is not present on the read optimized disk it will just
+>  use the lower devid disk containing the stripe (instead of failing back
+>  to the pid based random disk).
 
-On 01/31/2018 09:42 PM, Nikolay Borisov wrote:
+Use only one disk (the disk with the lowest devid that containing the
+stripe) as fallback should be not a good option imho.
+Instead of it should still be used the pid as fallback to distribute
+the workload among all available drives.
 
+[stripe to use] = [preffer stripes present on read_mirror_policy
+devids] > [fallback to pid % stripe count]
 
->>> So usually this should be functionality handled by the raid/san
->>> controller I guess, > but given that btrfs is playing the role of a
->>> controller here at what point are we drawing the line of not
->>> implementing block-level functionality into the filesystem ?
+Perhaps I'm not be able to express myself in English or did I misunderstand you?
+
+2018-01-31 15:26 GMT+01:00 Anand Jain <anand.jain@oracle.com>:
+>
+>
+> On 01/31/2018 06:47 PM, Peter Becker wrote:
 >>
->>   Don't worry this is not invading into the block layer. How
->>   can you even build this functionality in the block layer ?
->>   Block layer even won't know that disks are mirrored. RAID
->>   does or BTRFS in our case.
->>
-> 
-> By block layer I guess I meant the storage driver of a particular raid
-> card. Because what is currently happening is re-implementing
-> functionality that will generally sit in the driver. So my question was
-> more generic and high-level - at what point do we draw the line of
-> implementing feature that are generally implemented in hardware devices
-> (be it their drivers or firmware).
-
-  Not all HW configs use RAID capable HBAs. A server connected to a SATA
-  JBOD using a SATA HBA without MD will relay on BTRFS to provide all the
-  features and capabilities that otherwise would have provided by such a
-  presumable HW config.
-
-::
-
->>>> ::
->>>>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>>>> index 39ba59832f38..478623e6e074 100644
->>>>>> --- a/fs/btrfs/volumes.c
->>>>>> +++ b/fs/btrfs/volumes.c
->>>>>> @@ -5270,6 +5270,16 @@ static int find_live_mirror(struct
->>>>>> btrfs_fs_info *fs_info,
->>>>>>             num = map->num_stripes;
->>>>>>           switch(fs_info->read_mirror_policy) {
->>>>>> +    case BTRFS_READ_MIRROR_BY_DEV:
->>>>>> +        optimal = first;
->>>>>> +        if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
->>>>>> +                 &map->stripes[optimal].dev->dev_state))
->>>>>> +            break;
->>>>>> +        if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
->>>>>> +                 &map->stripes[++optimal].dev->dev_state))
->>>>>> +            break;
->>>>>> +        optimal = first;
->>>>>
->>>>> you set optimal 2 times, the second one seems redundant.
->>>>
->>>>    No actually. When both the disks containing the stripe does not
->>>>    have the BTRFS_DEV_STATE_READ_MIRROR, then I would just want to
->>>>    use first found stripe.
+>> 2018-01-31 10:01 GMT+01:00 Anand Jain <anand.jain@oracle.com>:
 >>>
->>> Yes, and the fact that you've already set optimal = first right after
->>> BTRFS_READ_MIRROR_BY_DEV ensures that, no ? Why do you need to again set
->>> optimal right before the final break? What am I missing here?
+>>>   When a stripe is not present on the read optimized disk it will just
+>>>   use the lower devid disk containing the stripe (instead of failing back
+>>>   to the pid based random disk).
 >>
->>    Ah. I think you are missing ++optimal in the 2nd if.
-> 
-> You are right, but I'd prefer you index the stripes array with 'optimal'
-> and 'optimal + 1' and leave just a single assignment
-
-  Ok. Will improve that.
-
-Thanks, Anand
-
-
 >>
->> Thanks, Anand
+>> Is this a good behavior? beause this would eliminate every performance
+>> benefit of the pid base random disk pick if the requested stripe is
+>> not present on the read optimized disk.
+>> Wouldn't it be better to specify a fallback and use the pid base
+>> random pick as default for the fallback.
 >>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>> For example:
+>>
+>> RAID 1 over 4 disk's
+>>
+>> devid | rpm | size
+>> ------------------------
+>> 1 | 7200 rpm | 3 TB
+>> 2 | 7200 rpm | 3 TB
+>> 3 | 5400 rpm | 4 TB
+>> 4 | 5400 rpm | 4 TB
+>>
+>> mount -o read_mirror_policy=1,read_mirror_policy=2
+>>
+>> Cases:
+>> 1. if the requested stripe is on devid 3 and 4 the algorithm should
+>> choise on of both randomly to incresse performance instead of read
+>> everytime from 3 and never from 4
+>> 2. if the requested stripe is on devid 1 and 3, all is fine ( in case
+>> of the queue deep of 1 isn't mutch larger then the queue deep of 3 )
+>> 3. if the requested stripe is on devid 1 and 2, the algorithm should
+>> choise on of both randomly to incresse performance instead of read
+>> everytime from 1 and never from 2
+>
+>>
+>>
+>> And all randomly picks of a device should be replaced by a heuristic
+>> algorithm wo respect the queue deep and sequential reads in the
+>> future.
+>
+>
+>  This scenario is very well handled by the pid/heuristic based
+>  read load balancer, pid based read load balancer is by default still,
+>  Tim has written IO load based read balancer which can be set using
+>  this mount option when all integrated together, and it needs
+>  experiments to see if it can be by default replacing the pid method.
+>  Further as of now we don't do allocation grouping, so if you have two
+>  ssd and two hd in a RAID1 its not guaranteed that allocation will
+>  always span across a SSD and a HD, so there is bit of randomness
+>  in the allocation itself.
+>
+> Thanks, Anand

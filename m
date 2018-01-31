@@ -1,133 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:59070 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750837AbeABTFH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jan 2018 14:05:07 -0500
-Date: Tue, 2 Jan 2018 11:02:52 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 09/10] Btrfs: add tracepoint for em's EEXIST case
-Message-ID: <20180102180251.GA22892@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Reply-To: bo.li.liu@oracle.com
-References: <20171221224256.18196-1-bo.li.liu@oracle.com>
- <20171221224256.18196-10-bo.li.liu@oracle.com>
- <066b86a5-2836-b0a3-16b3-3c20e7ee2cf8@suse.com>
- <20171222190718.GD21643@lim.localdomain>
- <b97dfe4c-0648-eb7a-7e82-45fec97728db@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:44969 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752166AbeAaHfR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Jan 2018 02:35:17 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id BE55BAC64
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 07:35:15 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: volumes: Remove the meaningless condition of
+ minimal nr_devs when allocating a chunk
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
+References: <20180131055615.14454-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <786c6ed0-0764-96cf-c494-78b40979f70d@suse.com>
+Date: Wed, 31 Jan 2018 09:35:13 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b97dfe4c-0648-eb7a-7e82-45fec97728db@suse.com>
+In-Reply-To: <20180131055615.14454-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 23, 2017 at 09:39:00AM +0200, Nikolay Borisov wrote:
+
+
+On 31.01.2018 07:56, Qu Wenruo wrote:
+> When checking the minimal nr_devs, there is one dead and meaningless
+> condition:
 > 
+> if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
+>     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 > 
-> On 22.12.2017 21:07, Liu Bo wrote:
-> > On Fri, Dec 22, 2017 at 10:56:31AM +0200, Nikolay Borisov wrote:
-> >>
-> >>
-> >> On 22.12.2017 00:42, Liu Bo wrote:
-> >>> This is adding a tracepoint 'btrfs_handle_em_exist' to help debug the
-> >>> subtle bugs around merge_extent_mapping.
-> >>
-> >> In the next patch you are already making the function which takes all
-> >> these values noinline, meaning you can attach a kprobe so you can
-> >> interrogate the args via systemtap,perf probe or even bpf. So I'd rather
-> >> not add this tracepoint since the general sentiment seems to be that
-> >> tracepoints are ABI and so have to be maintained.
-> >>
-> > 
-> > The following patch of noinline function is inside the else {} branch,
-> > so kprobe would give us something back only when it runs to else{}.
-> > 
-> > Since subtle bugs may lie in this area, a simple tracepoint like this
-> > can help us understand them more efficiently.
+> This condition is meaningless, @devs_increment has nothing to do with
+> @sub_stripes.
 > 
-> In that case if you make search_extent_mapping and put a kprobe/ret
-> kprobe there you should be able to gain the same information, we should
-> really careful when adding trace events...
+> In fact, in btrfs_raid_array[], profile with sub_stripes larger than 1
+> (RAID10) already has the @devs_increment set to 2.
+> So no need to multiple it by @sub_stripes.
+> 
+> And above condition is also dead.
+> For RAID10, @devs_increment * @sub_stripes equals 4, which is also the
+> @devs_min of RAID10.
+> For other profiles, @sub_stripes is always 1, and since @ndevs is
+> rounded down to @devs_increment, the condition will always be true.
+> 
+> Remove the meaningless condition to make later reader wander less.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Correct me if I'm wrong, using 'perf probe' can only return @retval,
-it seems that we're not able to reference retval's number like
-retval->var or retval.val.
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-As @exisiting is returned by search_extent_mapping(), I'm fine without
-this tracepoint if 'perf probe' can do the referencing for retval.
-
-Thanks,
-
--liubo
-> > 
-> >>>
-> >>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> >>> ---
-> >>>  fs/btrfs/extent_map.c        |  1 +
-> >>>  include/trace/events/btrfs.h | 35 +++++++++++++++++++++++++++++++++++
-> >>>  2 files changed, 36 insertions(+)
-> >>>
-> >>> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> >>> index a8b7e24..40e4d30 100644
-> >>> --- a/fs/btrfs/extent_map.c
-> >>> +++ b/fs/btrfs/extent_map.c
-> >>> @@ -539,6 +539,7 @@ int btrfs_add_extent_mapping(struct extent_map_tree *em_tree,
-> >>>  		ret = 0;
-> >>>  
-> >>>  		existing = search_extent_mapping(em_tree, start, len);
-> >>> +		trace_btrfs_handle_em_exist(existing, em, start, len);
-> >>>  
-> >>>  		/*
-> >>>  		 * existing will always be non-NULL, since there must be
-> >>> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-> >>> index 4342a32..b7ffcf7 100644
-> >>> --- a/include/trace/events/btrfs.h
-> >>> +++ b/include/trace/events/btrfs.h
-> >>> @@ -249,6 +249,41 @@ TRACE_EVENT_CONDITION(btrfs_get_extent,
-> >>>  		  __entry->refs, __entry->compress_type)
-> >>>  );
-> >>>  
-> >>> +TRACE_EVENT(btrfs_handle_em_exist,
-> >>> +
-> >>> +	TP_PROTO(const struct extent_map *existing, const struct extent_map *map, u64 start, u64 len),
-> >>> +
-> >>> +	TP_ARGS(existing, map, start, len),
-> >>> +
-> >>> +	TP_STRUCT__entry(
-> >>> +		__field(	u64,  e_start		)
-> >>> +		__field(	u64,  e_len		)
-> >>> +		__field(	u64,  map_start		)
-> >>> +		__field(	u64,  map_len		)
-> >>> +		__field(	u64,  start		)
-> >>> +		__field(	u64,  len		)
-> >>> +	),
-> >>> +
-> >>> +	TP_fast_assign(
-> >>> +		__entry->e_start	= existing->start;
-> >>> +		__entry->e_len		= existing->len;
-> >>> +		__entry->map_start	= map->start;
-> >>> +		__entry->map_len	= map->len;
-> >>> +		__entry->start		= start;
-> >>> +		__entry->len		= len;
-> >>> +	),
-> >>> +
-> >>> +	TP_printk("start=%llu len=%llu "
-> >>> +		  "existing(start=%llu len=%llu) "
-> >>> +		  "em(start=%llu len=%llu)",
-> >>> +		  (unsigned long long)__entry->start,
-> >>> +		  (unsigned long long)__entry->len,
-> >>> +		  (unsigned long long)__entry->e_start,
-> >>> +		  (unsigned long long)__entry->e_len,
-> >>> +		  (unsigned long long)__entry->map_start,
-> >>> +		  (unsigned long long)__entry->map_len)
-> >>> +);
-> >>> +
-> >>>  /* file extent item */
-> >>>  DECLARE_EVENT_CLASS(btrfs__file_extent_item_regular,
-> >>>  
-> >>>
-> > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Quick question : What exactly is a substripe? Stripe is essentially how
+many contiguous portions of disk are necessary to satisfy the profile,
+right? So for raid1 we write 1 copy of the data per device (hence
+dev_stripes = 1). For DUP we have 2 copies of the data on the same disk
+hence dev_stripes 2. How does sub_stripes fit in the grand scheme of things?
+> ---
+>  fs/btrfs/volumes.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 215e85e22c8e..cb0a8d27661b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4729,7 +4729,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>  	/* round down to number of usable stripes */
+>  	ndevs = round_down(ndevs, devs_increment);
+>  
+> -	if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
+> +	if (ndevs < devs_min) {
+>  		ret = -ENOSPC;
+>  		goto error;
+>  	}
+> 

@@ -1,40 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:39618 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752819AbeAaJA1 (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:41554 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751320AbeAaJFT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 04:00:27 -0500
-Subject: Re: [PATCH 0/2] Policy to balance read across mirrored devices
-To: Peter Becker <floyd.net@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+        Wed, 31 Jan 2018 04:05:19 -0500
+Subject: Re: [PATCH 1/2] btrfs: add mount option read_mirror_policy
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180130063020.14850-1-anand.jain@oracle.com>
- <CAEtw4r2rj7YF+c3wXprM+PNXKVJZDFLMTznjc9egqB1bSR+Wxw@mail.gmail.com>
+ <20180130063020.14850-2-anand.jain@oracle.com>
+ <f55fe4f5-cf50-d251-e147-3d6b6d20f496@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <80358280-ce31-9049-61a8-c9a4b78f4b2b@oracle.com>
-Date: Wed, 31 Jan 2018 17:01:39 +0800
+Message-ID: <ad2a20c8-a049-2844-dc42-b1319f591141@oracle.com>
+Date: Wed, 31 Jan 2018 17:06:34 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAEtw4r2rj7YF+c3wXprM+PNXKVJZDFLMTznjc9egqB1bSR+Wxw@mail.gmail.com>
+In-Reply-To: <f55fe4f5-cf50-d251-e147-3d6b6d20f496@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 01/31/2018 03:51 PM, Peter Becker wrote:
 
-> A little question about mount -o read_mirror_policy=<devid>.
+On 01/31/2018 04:06 PM, Nikolay Borisov wrote:
+
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index 1a462ab85c49..4759e988b0df 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -1100,6 +1100,8 @@ struct btrfs_fs_info {
+>>   	spinlock_t ref_verify_lock;
+>>   	struct rb_root block_tree;
+>>   #endif
+>> +	/* Policy to balance read across mirrored devices */
+>> +	int read_mirror_policy;
 > 
-> How would this work with RAID1 over 3 or 4 HDD's?
-> In particular, if the desired block is not available on device <devid>.
+> make that member enum btrfs_read_mirror_type
 
-  When a stripe is not present on the read optimized disk it will just
-  use the lower devid disk containing the stripe (instead of failing back
-  to the pid based random disk).
+  yep. Will do.
 
-> Could i repeat this option like the device-option to specify a
-> order/priority like this:
+::
+
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index a61715677b67..39ba59832f38 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -5269,7 +5269,13 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
+>>   	else
+>>   		num = map->num_stripes;
+>>   
+>> -	optimal = first + current->pid % num;
+>> +	switch(fs_info->read_mirror_policy) {
+>> +	case BTRFS_READ_MIRROR_DEFAULT:
+>> +	case BTRFS_READ_MIRROR_BY_PID:
+>> +	default:
+>> +		optimal = first + current->pid % num;
+>> +		break;
+>> +	}
 > 
-> mount -o read_mirror_policy= 1,read_mirror_policy= 3
+> Why not factor out this code in a separate function with descriptive
+> name and some documentation. It seems you have plans how to extend this
+> mechanism further so let's try and make it maintainable from the get-go.
 
-  Yes.
+   This is in fact restoring the original design, will add comments.
+   In the long term we may have up couple of more choices (like LBA),
+   will move it to a function.
 
 Thanks, Anand

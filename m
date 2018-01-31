@@ -1,64 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36717 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45050 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752622AbeAaPIu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 10:08:50 -0500
-Date: Wed, 31 Jan 2018 16:06:37 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-Cc: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: remove spurious WARN_ON(ref->count < 0) in
- find_parent_nodes
-Message-ID: <20180131150637.GB18553@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180121190848.7wmps6q5ng6b42ki@hungrycats.org>
- <20180124032203.3dszkkof5f36qpmf@hungrycats.org>
- <20180124033308.GF532@fnst.localdomain>
+        id S1752015AbeAaHgn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Jan 2018 02:36:43 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id D119EAC64
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 07:36:41 +0000 (UTC)
+Subject: Re: [PATCH] btrfs: volumes: Cleanup stripe size calculation
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
+References: <20180131061634.17383-1-wqu@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <02241cf3-1577-df10-faf2-b201320cd668@suse.com>
+Date: Wed, 31 Jan 2018 09:36:41 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180124033308.GF532@fnst.localdomain>
+In-Reply-To: <20180131061634.17383-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 24, 2018 at 11:33:08AM +0800, Lu Fengqi wrote:
-> On Tue, Jan 23, 2018 at 10:22:09PM -0500, Zygo Blaxell wrote:
-> >Until v4.14, this warning was very infrequent:
-> >
-> >	WARNING: CPU: 3 PID: 18172 at fs/btrfs/backref.c:1391 find_parent_nodes+0xc41/0x14e0
-> >	Modules linked in: [...]
-> >	CPU: 3 PID: 18172 Comm: bees Tainted: G      D W    L  4.11.9-zb64+ #1
-> >	Hardware name: System manufacturer System Product Name/M5A78L-M/USB3, BIOS 2101    12/02/2014
-> >	Call Trace:
-> >	 dump_stack+0x85/0xc2
-> >	 __warn+0xd1/0xf0
-> >	 warn_slowpath_null+0x1d/0x20
-> >	 find_parent_nodes+0xc41/0x14e0
-> >	 __btrfs_find_all_roots+0xad/0x120
-> >	 ? extent_same_check_offsets+0x70/0x70
-> >	 iterate_extent_inodes+0x168/0x300
-> >	 iterate_inodes_from_logical+0x87/0xb0
-> >	 ? iterate_inodes_from_logical+0x87/0xb0
-> >	 ? extent_same_check_offsets+0x70/0x70
-> >	 btrfs_ioctl+0x8ac/0x2820
-> >	 ? lock_acquire+0xc2/0x200
-> >	 do_vfs_ioctl+0x91/0x700
-> >	 ? __fget+0x112/0x200
-> >	 SyS_ioctl+0x79/0x90
-> >	 entry_SYSCALL_64_fastpath+0x23/0xc6
-> >	 ? trace_hardirqs_off_caller+0x1f/0x140
-> >
-> >Starting with v4.14 (specifically 86d5f9944252 ("btrfs: convert prelimary
-> >reference tracking to use rbtrees")) the WARN_ON occurs three orders of
-> >magnitude more frequently--almost once per second while running workloads
-> >like bees.
-> >
-> >Replace the WARN_ON() with a comment rationale for its removal.
-> >The rationale is paraphrased from an explanation by Edmund Nadolski
-> ><enadolski@suse.de> on the linux-btrfs mailing list.
-> >
-> >Fixes: 8da6d5815c59 ("Btrfs: added btrfs_find_all_roots()")
-> >Signed-off-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-> 
-> Reviewed-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-Added to next, thanks.
+
+On 31.01.2018 08:16, Qu Wenruo wrote:
+> Cleanup the following things:
+> 1) open coded SZ_16M round up
+> 2) use min() to replace open-coded size comparison
+> 3) code style
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+
+> ---
+>  fs/btrfs/volumes.c | 11 +++++------
+>  1 file changed, 5 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index cb0a8d27661b..90ad716d2b50 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4761,18 +4761,17 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+>  	 * and compare that answer with the max chunk size
+>  	 */
+>  	if (stripe_size * data_stripes > max_chunk_size) {
+> -		u64 mask = (1ULL << 24) - 1;
+> -
+>  		stripe_size = div_u64(max_chunk_size, data_stripes);
+>  
+>  		/* bump the answer up to a 16MB boundary */
+> -		stripe_size = (stripe_size + mask) & ~mask;
+> +		stripe_size = round_up(stripe_size, SZ_16M);
+>  
+> -		/* but don't go higher than the limits we found
+> +		/*
+> +		 * but don't go higher than the limits we found
+>  		 * while searching for free extents
+>  		 */
+> -		if (stripe_size > devices_info[ndevs-1].max_avail)
+> -			stripe_size = devices_info[ndevs-1].max_avail;
+> +		stripe_size = min(devices_info[ndevs - 1].max_avail,
+> +				  stripe_size);
+>  	}
+>  
+>  	stripe_size = div_u64(stripe_size, dev_stripes);
+> 

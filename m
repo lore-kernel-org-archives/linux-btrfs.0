@@ -1,52 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:32016 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:8838 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1751478AbeAZDWQ (ORCPT
+        with ESMTP id S1751647AbeAaDJ0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Jan 2018 22:22:16 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id 46ADE49F19B7
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jan 2018 11:22:12 +0800 (CST)
+        Tue, 30 Jan 2018 22:09:26 -0500
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 6/6] btrfs-progs: remove no longer be used btrfs_alloc_extent
-Date: Fri, 26 Jan 2018 11:22:06 +0800
-Message-ID: <1516936926-18707-6-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
-References: <1516936926-18707-1-git-send-email-gujx@cn.fujitsu.com>
+CC: <quwenruo.btrfs@gmx.com>
+Subject: [PATCH v3 0/7] btrfs-progs: Do some clean up to be consistent with kernel
+Date: Wed, 31 Jan 2018 11:09:12 +0800
+Message-ID: <1517368159-12858-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Do a cleanup.
-Function btrfs_alloc_extent is no longer be used.
-So let's remove it.
+Patch 1~4 and 7: clean up use of btrfs_root.
+		Beside it, syncs code with kernel.
+Patch 5: remove redundancy value assignment.
+Patch 6: remove no longer be used function define.
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- ctree.h | 6 ------
- 1 file changed, 6 deletions(-)
+Changelog:
+v2->v1:
+Patch 2,4: To be consistent with kernel, change macro to inline function.
+Patch 3:
+        Change macro to inline function to be consistent with kernel.
+        And change the function body to match kernel.
+v3->v2: 
+Patch 3: Change the title to make it more exact.
+Patch 7: 
+	Add const to parameter leaf of function btrfs_item_offset_nr
+	to keep type consistent with leaf_data_end.
 
-diff --git a/ctree.h b/ctree.h
-index c82e7547..34d2505e 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2487,12 +2487,6 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
- 					u32 blocksize, u64 root_objectid,
- 					struct btrfs_disk_key *key, int level,
- 					u64 hint, u64 empty_size);
--int btrfs_alloc_extent(struct btrfs_trans_handle *trans,
--		       struct btrfs_root *root,
--		       u64 num_bytes, u64 parent,
--		       u64 root_objectid, u64 ref_generation,
--		       u64 owner, u64 empty_size, u64 hint_byte,
--		       u64 search_end, struct btrfs_key *ins, int data);
- int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 bytenr,
- 			     u64 offset, int metadata, u64 *refs, u64 *flags);
+Gu Jinxiang (7):
+  btrfs-progs: Use fs_info instead of root for BTRFS_LEAF_DATA_SIZE
+  btrfs-progs: Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK
+  btrfs-progs: Sync code with kernel for BTRFS_MAX_INLINE_DATA_SIZE
+  btrfs-progs: Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE
+  btrfs-progs: do clean up for redundancy value assignment
+  btrfs-progs: remove no longer be used btrfs_alloc_extent
+  btrfs-progs: Cleanup use of root in leaf_data_end
+
+ cmds-check.c              | 10 ++---
+ convert/source-ext2.c     |  4 +-
+ convert/source-reiserfs.c |  6 +--
+ ctree.c                   | 97 ++++++++++++++++++++++++++---------------------
+ ctree.h                   | 47 +++++++++++++----------
+ dir-item.c                |  3 +-
+ extent-tree.c             |  1 -
+ file-item.c               |  2 +-
+ mkfs/main.c               |  4 +-
+ print-tree.c              |  2 +-
+ quick-test.c              |  2 +-
+ volumes.c                 |  2 +-
+ 12 files changed, 99 insertions(+), 81 deletions(-)
+
 -- 
-2.14.3
+1.9.1
 
 
 

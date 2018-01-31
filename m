@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:14550 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:38079 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752356AbeAaDJd (ORCPT
+        with ESMTP id S1752416AbeAaDJe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Jan 2018 22:09:33 -0500
+        Tue, 30 Jan 2018 22:09:34 -0500
 From: Gu Jinxiang <gujx@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <quwenruo.btrfs@gmx.com>
-Subject: [PATCH v3 3/7] btrfs-progs: Sync code with kernel for BTRFS_MAX_INLINE_DATA_SIZE
-Date: Wed, 31 Jan 2018 11:09:15 +0800
-Message-ID: <1517368159-12858-4-git-send-email-gujx@cn.fujitsu.com>
+Subject: [PATCH v3 4/7] btrfs-progs: Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE
+Date: Wed, 31 Jan 2018 11:09:16 +0800
+Message-ID: <1517368159-12858-5-git-send-email-gujx@cn.fujitsu.com>
 In-Reply-To: <1517368159-12858-1-git-send-email-gujx@cn.fujitsu.com>
 References: <1517368159-12858-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,112 +18,61 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Do a cleanup. Also make it consistent with kernel.
-Use fs_info instead of root for BTRFS_MAX_INLINE_DATA_SIZE, since
+Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE, since
 maybe in some situation we do not know root, but just know fs_info.
 
 Changelog:
 v2->v1:
-Change macro to inline function to be consistent with kernel.
-And change the function body to match kernel.
-v3->v2:
-Change the title of this commit to make it more exact.
+To be consistent with kernel, change macro to inline function.
 
 Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- convert/source-ext2.c     |  2 +-
- convert/source-reiserfs.c |  2 +-
- ctree.h                   | 17 ++++++++++++++---
- mkfs/main.c               |  4 ++--
- 4 files changed, 18 insertions(+), 7 deletions(-)
+ ctree.h    | 9 +++++----
+ dir-item.c | 3 ++-
+ 2 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/convert/source-ext2.c b/convert/source-ext2.c
-index e5c2a94..f5ecd8c 100644
---- a/convert/source-ext2.c
-+++ b/convert/source-ext2.c
-@@ -309,7 +309,7 @@ static int ext2_create_file_extents(struct btrfs_trans_handle *trans,
- 		goto fail;
- 	if ((convert_flags & CONVERT_FLAG_INLINE_DATA) && data.first_block == 0
- 	    && data.num_blocks > 0
--	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root)) {
-+	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
- 		u64 num_bytes = data.num_blocks * sectorsize;
- 		u64 disk_bytenr = data.disk_block * sectorsize;
- 		u64 nbytes;
-diff --git a/convert/source-reiserfs.c b/convert/source-reiserfs.c
-index e3582bd..39d6f07 100644
---- a/convert/source-reiserfs.c
-+++ b/convert/source-reiserfs.c
-@@ -376,7 +376,7 @@ static int reiserfs_convert_tail(struct btrfs_trans_handle *trans,
- 	u64 isize;
- 	int ret;
- 
--	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root))
-+	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
- 		return convert_direct(trans, root, objectid, inode, body,
- 				      length, offset, convert_flags);
- 
 diff --git a/ctree.h b/ctree.h
-index f3964f1..7be48e2 100644
+index 7be48e2..679bbc9 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -359,9 +359,6 @@ struct btrfs_header {
+@@ -359,10 +359,6 @@ struct btrfs_header {
  #define __BTRFS_LEAF_DATA_SIZE(bs) ((bs) - sizeof(struct btrfs_header))
  #define BTRFS_LEAF_DATA_SIZE(fs_info) \
  				(__BTRFS_LEAF_DATA_SIZE(fs_info->nodesize))
--#define BTRFS_MAX_INLINE_DATA_SIZE(r) (BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
--					sizeof(struct btrfs_item) - \
--					sizeof(struct btrfs_file_extent_item))
- #define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
- 				 sizeof(struct btrfs_item) -\
- 				 sizeof(struct btrfs_dir_item))
-@@ -1188,10 +1185,24 @@ struct btrfs_root {
- 	struct rb_node rb_node;
- };
+-#define BTRFS_MAX_XATTR_SIZE(r)	(BTRFS_LEAF_DATA_SIZE(r->fs_info) - \
+-				 sizeof(struct btrfs_item) -\
+-				 sizeof(struct btrfs_dir_item))
+-
  
-+static inline u32 BTRFS_MAX_ITEM_SIZE(const struct btrfs_fs_info *info)
-+{
-+	return BTRFS_LEAF_DATA_SIZE(info) - sizeof(struct btrfs_item);
-+}
-+
- static inline u32 BTRFS_NODEPTRS_PER_BLOCK(const struct btrfs_fs_info *info)
- {
- 	return BTRFS_LEAF_DATA_SIZE(info) / sizeof(struct btrfs_key_ptr);
+ /*
+  * this is a very generous portion of the super block, giving us
+@@ -1203,6 +1199,11 @@ static inline u32 BTRFS_MAX_INLINE_DATA_SIZE(const struct btrfs_fs_info *info)
+ 		BTRFS_FILE_EXTENT_INLINE_DATA_START;
  }
-+
-+#define BTRFS_FILE_EXTENT_INLINE_DATA_START		\
-+	(offsetof(struct btrfs_file_extent_item, disk_bytenr))
-+static inline u32 BTRFS_MAX_INLINE_DATA_SIZE(const struct btrfs_fs_info *info)
+ 
++static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
 +{
-+	return BTRFS_MAX_ITEM_SIZE(info) -
-+		BTRFS_FILE_EXTENT_INLINE_DATA_START;
++	return BTRFS_MAX_ITEM_SIZE(info) - sizeof(struct btrfs_dir_item);
 +}
 +
  /*
   * inode items have the data typically returned from stat and store other
   * info about object characteristics.  There is one for every file and dir in
-diff --git a/mkfs/main.c b/mkfs/main.c
-index d817ad8..a301efc 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -498,7 +498,7 @@ static int fill_inode_item(struct btrfs_trans_handle *trans,
- 	}
- 	if (S_ISREG(src->st_mode)) {
- 		btrfs_set_stack_inode_size(dst, (u64)src->st_size);
--		if (src->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root))
-+		if (src->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
- 			btrfs_set_stack_inode_nbytes(dst, src->st_size);
- 		else {
- 			blocks = src->st_size / sectorsize;
-@@ -686,7 +686,7 @@ static int add_file_items(struct btrfs_trans_handle *trans,
- 	if (st->st_size % sectorsize)
- 		blocks += 1;
+diff --git a/dir-item.c b/dir-item.c
+index 462546c..0b7250c 100644
+--- a/dir-item.c
++++ b/dir-item.c
+@@ -311,7 +311,8 @@ static int verify_dir_item(struct btrfs_root *root,
  
--	if (st->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root)) {
-+	if (st->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
- 		char *buffer = malloc(st->st_size);
- 
- 		if (!buffer) {
+ 	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
+ 	if ((btrfs_dir_data_len(leaf, dir_item) +
+-	     btrfs_dir_name_len(leaf, dir_item)) > BTRFS_MAX_XATTR_SIZE(root)) {
++	     btrfs_dir_name_len(leaf, dir_item)) >
++			BTRFS_MAX_XATTR_SIZE(root->fs_info)) {
+ 		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
+ 		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
+ 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
 -- 
 1.9.1
 

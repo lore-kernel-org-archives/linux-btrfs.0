@@ -1,63 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:37208 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:43617 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752840AbeAaRza (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Jan 2018 12:55:30 -0500
-Message-ID: <1517421324.32569.15.camel@kernel.org>
-Subject: Re: [PATCH v2] iversion: make inode_cmp_iversion{+raw} return bool
- instead of s64
-From: Jeff Layton <jlayton@kernel.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        linux-ext4@vger.kernel.org, "Theodore Ts'o" <tytso@mit.edu>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-integrity <linux-integrity@vger.kernel.org>,
-        Trond Myklebust <trondmy@primarydata.com>,
-        GoffredoBaroncelli <kreijack@libero.it>
-Date: Wed, 31 Jan 2018 12:55:24 -0500
-In-Reply-To: <CA+55aFxB6og=iRkRchiOrr8EW2=jgb_i4nUiPsvEa+8F64APxA@mail.gmail.com>
-References: <20180130173126.2806-1-jlayton@kernel.org>
-         <20180130203221.29310-1-jlayton@kernel.org>
-         <CA+55aFw5Xf4V-BF1JK+SpjXnmrgeMe-k0wLaFc_=6ojbhfWEtQ@mail.gmail.com>
-         <1517401762.3612.0.camel@kernel.org>
-         <CA+55aFxB6og=iRkRchiOrr8EW2=jgb_i4nUiPsvEa+8F64APxA@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+        id S1753182AbeAaQQz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Jan 2018 11:16:55 -0500
+Date: Wed, 31 Jan 2018 17:14:42 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Gu Jinxiang <gujx@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/7] btrfs-progs: Do some clean up to be consistent
+Message-ID: <20180131161442.GG18553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1516951566-21777-1-git-send-email-gujx@cn.fujitsu.com>
+ <ea189b02-035e-7e27-20f0-08691bf2b83a@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <ea189b02-035e-7e27-20f0-08691bf2b83a@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 2018-01-31 at 08:46 -0800, Linus Torvalds wrote:
-> On Wed, Jan 31, 2018 at 4:29 AM, Jeff Layton <jlayton@kernel.org> wrote:
+On Fri, Jan 26, 2018 at 04:18:55PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2018年01月26日 15:25, Gu Jinxiang wrote:
+> > Patch 1~4 and 7: clean up use of btrfs_root.
+> > Patch 5: remove redundancy value assignment.
+> > Patch 6: remove no longer be used function define.
+> 
+> Overall it looks good, just one small nitpick, which should not need
+> another update.
+> 
+> > Changelog:
+> > v2->v1:
+> > Patch 2,4: To be consistent with kernel, change macro to inline function.
+> > Patch 3:
+> > 	Change macro to inline function to be consistent with kernel.
+> > 	And change the function body to match kernel.
 > > 
-> > Do you mind just taking it directly? I don't have anything else queued
-> > up for this cycle.
+> > Gu Jinxiang (7):
+> >   btrfs-progs: Use fs_info instead of root for BTRFS_LEAF_DATA_SIZE
+> >   btrfs-progs: Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK
+> >   btrfs-progs: Use fs_info instead of root for
+> >     BTRFS_MAX_INLINE_DATA_SIZE
 > 
-> Done.
-> 
+> Not only this patch modified the parameter but also sync the code with
+> kernel.
+> It would be better to mention it in commit message, but anyway, just a
+> small nitpick, nothing to worry about.
 
-Thanks...and also many thanks for spotting the original issue. I agree
-that this makes it much harder for the callers to get things wrong (and
-is probably much more efficient on some arches, as Ted pointed out).
+I've updated the changelogs so it mentions the kernel code sync.
 
-> I wonder if "false for same, true for different" calling convention
-> makes much sense, but it matches the old "0 for same" so obviously
-> makes for a smaller diff.
-> 
-> If it ever ends up confusing people, maybe the sense of that function
-> should be reversed, and the name changed to something like
-> "same_inode_version()" or something.
-> 
-> But at least for now the situation seems ok to me,
-> 
-
-G. Baroncelli suggested changing the name too, so maybe we should just
-go ahead and do it. Let me think on what the best approach is and I may
-try to send another patch or PR before the end of the merge window.
-
-Cheers,
--- 
-Jeff Layton <jlayton@kernel.org>
+Patches 1-6 applied to devel as they're fairly independend of the other
+patchsets waiting fo merge.

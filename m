@@ -1,93 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54572 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.22]:53784 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934224AbeAJQcS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Jan 2018 11:32:18 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id F0D83AE82
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jan 2018 16:32:16 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH RESEND 4/4] btrfs: Remove btrfs_fs_info::open_ioctl_trans
-Date: Wed, 10 Jan 2018 18:32:13 +0200
-Message-Id: <1515601933-27331-4-git-send-email-nborisov@suse.com>
-In-Reply-To: <1515601933-27331-1-git-send-email-nborisov@suse.com>
-References: <1515590477-22878-1-git-send-email-nborisov@suse.com>
- <1515601933-27331-1-git-send-email-nborisov@suse.com>
+        id S1753249AbeAaAjn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 30 Jan 2018 19:39:43 -0500
+Subject: Re: [PATCH v2] btrfs: print error if primary super block write fails
+To: Howard McLauchlan <hmclauchlan@fb.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Omar Sandoval <osandov@osandov.com>,
+        Josef Bacik <jbacik@fb.com>
+References: <20180130223349.5808-1-hmclauchlan@fb.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <1861909f-521d-6dc2-5cee-bc6c681279e4@gmx.com>
+Date: Wed, 31 Jan 2018 08:39:31 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180130223349.5808-1-hmclauchlan@fb.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="xEoKZri8IGeFARYxAYTqVnU23hAn8Jtud"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since userspace transaction have been removed we no longer have use
-for this field so delete it.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--xEoKZri8IGeFARYxAYTqVnU23hAn8Jtud
+Content-Type: multipart/mixed; boundary="tzQFSNlbU9FiSak98KyGYNOLujqehELBd";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Howard McLauchlan <hmclauchlan@fb.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-team@fb.com, Omar Sandoval <osandov@osandov.com>,
+ Josef Bacik <jbacik@fb.com>
+Message-ID: <1861909f-521d-6dc2-5cee-bc6c681279e4@gmx.com>
+Subject: Re: [PATCH v2] btrfs: print error if primary super block write fails
+References: <20180130223349.5808-1-hmclauchlan@fb.com>
+In-Reply-To: <20180130223349.5808-1-hmclauchlan@fb.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/ctree.h       | 1 -
- fs/btrfs/extent-tree.c | 3 +--
- fs/btrfs/transaction.c | 9 +++------
- 3 files changed, 4 insertions(+), 9 deletions(-)
+--tzQFSNlbU9FiSak98KyGYNOLujqehELBd
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index dc679246b8e8..57a0d0b0ea74 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -877,7 +877,6 @@ struct btrfs_fs_info {
- 	struct rb_root tree_mod_log;
- 
- 	atomic_t async_delalloc_pages;
--	atomic_t open_ioctl_trans;
- 
- 	/*
- 	 * this is used to protect the following list -- ordered_roots.
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8d51e4bb67c1..dcb059a46b77 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4329,8 +4329,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
- 
- 		/* commit the current transaction and try again */
- commit_trans:
--		if (need_commit &&
--		    !atomic_read(&fs_info->open_ioctl_trans)) {
-+		if (need_commit) {
- 			need_commit--;
- 
- 			if (need_commit > 0) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index d61d1fd59ccd..c5ef42318058 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -443,8 +443,7 @@ static int may_wait_transaction(struct btrfs_fs_info *fs_info, int type)
- 	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
- 		return 0;
- 
--	if (type == TRANS_START &&
--	    !atomic_read(&fs_info->open_ioctl_trans))
-+	if (type == TRANS_START)
- 		return 1;
- 
- 	return 0;
-@@ -774,8 +773,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid)
- 
- void btrfs_throttle(struct btrfs_fs_info *fs_info)
- {
--	if (!atomic_read(&fs_info->open_ioctl_trans))
--		wait_current_trans(fs_info);
-+	wait_current_trans(fs_info);
- }
- 
- static int should_end_transaction(struct btrfs_trans_handle *trans)
-@@ -857,8 +855,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_trans_release_chunk_metadata(trans);
- 
--	if (lock && !atomic_read(&info->open_ioctl_trans) &&
--	    should_end_transaction(trans) &&
-+	if (lock && should_end_transaction(trans) &&
- 	    READ_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
- 		spin_lock(&info->trans_lock);
- 		if (cur_trans->state == TRANS_STATE_RUNNING)
--- 
-2.7.4
 
+
+On 2018=E5=B9=B401=E6=9C=8831=E6=97=A5 06:33, Howard McLauchlan wrote:
+> Presently, failing a primary super block write but succeeding in at
+> least one super block write in general will appear to users as if
+> nothing important went wrong. However, upon unmounting and re-mounting,=
+
+> the file system will be in a rolled back state. This was discovered
+> with a BCC program that uses bpf_override_return() to fail super block
+> writes.
+>=20
+> This patch outputs an error clarifying that the primary super block
+> write has failed, so users can expect potentially erroneous behaviour.
+> It also forces wait_dev_supers() to return an error to its caller if
+> the primary super block write fails.
+>=20
+> Signed-off-by: Howard McLauchlan <hmclauchlan@fb.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+> V2: Added devid to output, removed unnecessary fs_info parameter
+>=20
+>  fs/btrfs/disk-io.c | 13 ++++++++++++-
+>  1 file changed, 12 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 5da18ebc9222..6d98f2f21d5f 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3298,6 +3298,7 @@ static int wait_dev_supers(struct btrfs_device *d=
+evice, int max_mirrors)
+>  	struct buffer_head *bh;
+>  	int i;
+>  	int errors =3D 0;
+> +	bool primary_failed =3D false;
+>  	u64 bytenr;
+> =20
+>  	if (max_mirrors =3D=3D 0)
+> @@ -3314,11 +3315,14 @@ static int wait_dev_supers(struct btrfs_device =
+*device, int max_mirrors)
+>  				      BTRFS_SUPER_INFO_SIZE);
+>  		if (!bh) {
+>  			errors++;
+> +			primary_failed =3D (i =3D=3D 0) || primary_failed;
+>  			continue;
+>  		}
+>  		wait_on_buffer(bh);
+> -		if (!buffer_uptodate(bh))
+> +		if (!buffer_uptodate(bh)) {
+>  			errors++;
+> +			primary_failed =3D (i =3D=3D 0) || primary_failed;
+> +		}
+> =20
+>  		/* drop our reference */
+>  		brelse(bh);
+> @@ -3327,6 +3331,13 @@ static int wait_dev_supers(struct btrfs_device *=
+device, int max_mirrors)
+>  		brelse(bh);
+>  	}
+> =20
+> +	/* log error, force error return */
+> +	if (primary_failed) {
+> +		btrfs_err(device->fs_info, "error writing primary super block to dev=
+ice %llu",
+> +			  device->devid);
+> +		return -1;
+> +	}
+> +
+>  	return errors < i ? 0 : -1;
+>  }
+> =20
+>=20
+
+
+--tzQFSNlbU9FiSak98KyGYNOLujqehELBd--
+
+--xEoKZri8IGeFARYxAYTqVnU23hAn8Jtud
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpxEEMXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg3fgf/ZdDr3DVzbET+a4B2ZoV8J+w4
+SV2xz2/gjgcN+b4A9y9e3DbTV0G+C2qSWGtkQMuuolpOhLTLoVqa37d1w82Fz3Vd
+lNpFvsDF3skGzwKC951kGASXoGKIbSB6ZEGHKr0Oy2yn/uyADmsDmMjOkF8Xtrq8
+wkmIhaYQ94ekhYX3EdO5jlZ7YwRU0Hf8L1TxoXhY/qyVv+DNwmd/as0qOLvNMeOo
+YDY9iDVBg6h1FdJvaS5LtjFOKg6AhcftyiQdmIGPMkhfeFN8RrIDe6d+Uf4DEEDc
+Okld+Xy2tSpaneA9fMoh88IrBgsJa+lfHBhH256i7A9yCrvVW1Dtp5Za6UODWQ==
+=2a9p
+-----END PGP SIGNATURE-----
+
+--xEoKZri8IGeFARYxAYTqVnU23hAn8Jtud--

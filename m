@@ -1,52 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:54933 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750931AbeASHZr (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 19 Jan 2018 02:25:47 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: nborisov@suse.com
-Subject: [PATCH v2 2/3] btrfs-progs: dir-item: Don't do extra filetype validaction check for btrfs_match_dir_item_name
-Date: Fri, 19 Jan 2018 15:25:35 +0800
-Message-Id: <20180119072536.22286-3-wqu@suse.com>
-In-Reply-To: <20180119072536.22286-1-wqu@suse.com>
-References: <20180119072536.22286-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:56444 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751994AbeAaS3H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 31 Jan 2018 13:29:07 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6E4C2AB40
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 Jan 2018 18:29:06 +0000 (UTC)
+Date: Wed, 31 Jan 2018 19:26:54 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH 00/16] btrfs-progs: Split lowmem mode check to its own
+Message-ID: <20180131182654.GJ18553@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180119053731.10795-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180119053731.10795-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_match_dir_item_name() will check if its filetype is valid before
-doing search, this makes btrfs-progs unable to locate and remove invalid
-dir_index for btrfs_unlink().
+On Fri, Jan 19, 2018 at 01:37:15PM +0800, Qu Wenruo wrote:
+> The long planned cmds-check re-construction is finally here.
+> 
+> As the original cmds-check.c is getting larger and larger (already over
+> 15K lines), it's always a good idea to split it into its own check/
+> directory.
+> 
+> This patchset do the following work:
+> 1) Move cmds-check.c to check/main.c
+> 2) Put codes shared by both original and lowmem mode into
+>    check/common.[ch]
+> 3) Put lowmem code into check/lowmem.[ch]
+>    With minor renaming to get rid of unnecessary _v2 suffix.
+> 
+> The modification looks scary, but no functional change at all.
+> 
+> And considering how much the file structure changed, it's a good idea to
+> put PART1 as quick as possible, and there will be less pressure to
+> rebase new incoming fsck related codes.
 
-This function only affects btrfs_link() and btrfs_unlink() in upper
-layer, and normal check can find invalid filetype by itself.
+I agree with the way you split check, my attempts were going along the
+same lines. The question whether to split first and then add fixes shall
+be resolved as I'm going to merge the split first. This would need
+refreshing the lowmem fixes but the other way around would not avoid the
+merge conflicts anyway.
 
-So remove the filetype check is completely safe in this case, and will
-enhance btrfs_unlink() to remove invalid dir_index/dir_item for repair.
+The patch 15 does not apply cleanly to current devel, the conflict did
+not seem big, but I did not try to resolve it and merge the last patch.
+So, 1-14 goes to devel, please refresh 15 and 16.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- dir-item.c | 6 ------
- 1 file changed, 6 deletions(-)
+> The real move work happens in the 15th patch, which due to its size
+> (500KB+), it may not be able to reach mail list.
+> So please fetch the whole patchset from github:
+> https://github.com/adam900710/btrfs-progs/tree/split_check
+> 
+> There will be a part 2, mostly moving original mode to its own
+> check/original.[ch], along with extra comment explaining how the two
+> different modes work.
 
-diff --git a/dir-item.c b/dir-item.c
-index 462546c0eaf4..e0a0ab4d7a5d 100644
---- a/dir-item.c
-+++ b/dir-item.c
-@@ -294,12 +294,6 @@ static int verify_dir_item(struct btrfs_root *root,
- 	u16 namelen = BTRFS_NAME_LEN;
- 	u8 type = btrfs_dir_type(leaf, dir_item);
- 
--	if (type >= BTRFS_FT_MAX) {
--		fprintf(stderr, "invalid dir item type: %d\n",
--		       (int)type);
--		return 1;
--	}
--
- 	if (type == BTRFS_FT_XATTR)
- 		namelen = XATTR_NAME_MAX;
- 
--- 
-2.15.1
+I'm going to do a few file renames, eg. original.c -> mode-original.c
+and similar. It would be better if you send part 2 after that. I'm
+expecting more patches that would do no functional change so we can
+settle down with the new check/ structure.
 
+As 'check' is the 1st level command, the cmds-check.c will need to be
+restored at some point, but it will be only a simple wrapper around the
+commandline handling.

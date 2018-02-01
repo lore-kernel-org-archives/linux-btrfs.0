@@ -1,100 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41334 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41108 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751557AbeBBJcb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Feb 2018 04:32:31 -0500
-Subject: Re: Writeback errors in kernel log with Linux 4.15 (m=s=raid1,
- d=raid5, 5 disks)
-To: "Janos Toth F." <toth.f.janos@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CANznX5Eza4E--py7nzj+-vZB_-_Stj-_4LP=Fb2hbTkQQ7LGsA@mail.gmail.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <bdb7e5d5-1ea6-2398-be5d-0100c6abc97a@suse.com>
-Date: Fri, 2 Feb 2018 08:21:55 +0200
+        id S1751700AbeBBJck (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Feb 2018 04:32:40 -0500
+Subject: Re: [PATCH 2/2] btrfs: add read_mirror_policy parameter devid
+To: Anand Jain <anand.jain@oracle.com>, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20180130063020.14850-1-anand.jain@oracle.com>
+ <20180130063020.14850-3-anand.jain@oracle.com>
+ <f4772f0c-c53e-c859-7da9-b2181a3507c1@suse.com>
+ <7a21d5f0-b7f0-9da6-22b6-b45976d6ab40@oracle.com>
+ <7fdfcf9a-2bc5-7f1b-1417-3ccc95cdcf83@suse.com>
+ <27eaef30-69ae-b5a6-2cd6-9035c61615e7@oracle.com>
+ <7eb73e78-f6ca-be5f-4505-a88d60172037@suse.com>
+ <c0e67c67-324e-938a-b87c-3831c2604676@oracle.com>
+ <d87d2cbb-0512-1c26-28c0-4e7733ec35bf@suse.de>
+ <fe6055a4-8778-03dd-1ade-692a7a83a946@oracle.com>
+From: Edmund Nadolski <enadolski@suse.de>
+Message-ID: <6b033ae4-ab8f-199d-cc9a-d8bcdd4c4ad4@suse.de>
+Date: Thu, 1 Feb 2018 16:46:30 -0700
 MIME-Version: 1.0
-In-Reply-To: <CANznX5Eza4E--py7nzj+-vZB_-_Stj-_4LP=Fb2hbTkQQ7LGsA@mail.gmail.com>
+In-Reply-To: <fe6055a4-8778-03dd-1ade-692a7a83a946@oracle.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On  2.02.2018 03:28, Janos Toth F. wrote:
-> I started seeing these on my d=raid5 filesystem after upgrading to Linux 4.15.
+On 02/01/2018 01:12 AM, Anand Jain wrote:
 > 
-> Some files created since the upgrade seem to be corrupted.
 > 
-> The disks seem to be fine (according to btrfs device stats and
-> smartmontools device logs).
+> On 02/01/2018 01:26 PM, Edmund Nadolski wrote:
+>> On 1/31/18 7:36 AM, Anand Jain wrote:
+>>>
+>>>
+>>> On 01/31/2018 09:42 PM, Nikolay Borisov wrote:
+>>>
+>>>
+>>>>>> So usually this should be functionality handled by the raid/san
+>>>>>> controller I guess, > but given that btrfs is playing the role of a
+>>>>>> controller here at what point are we drawing the line of not
+>>>>>> implementing block-level functionality into the filesystem ?
+>>>>>
+>>>>>    Don't worry this is not invading into the block layer. How
+>>>>>    can you even build this functionality in the block layer ?
+>>>>>    Block layer even won't know that disks are mirrored. RAID
+>>>>>    does or BTRFS in our case.
+>>>>>
+>>>>
+>>>> By block layer I guess I meant the storage driver of a particular raid
+>>>> card. Because what is currently happening is re-implementing
+>>>> functionality that will generally sit in the driver. So my question was
+>>>> more generic and high-level - at what point do we draw the line of
+>>>> implementing feature that are generally implemented in hardware devices
+>>>> (be it their drivers or firmware).
+>>>
+>>>   Not all HW configs use RAID capable HBAs. A server connected to a SATA
+>>>   JBOD using a SATA HBA without MD will relay on BTRFS to provide all
+>>> the
+>>>   features and capabilities that otherwise would have provided by such a
+>>>   presumable HW config.
+>>
+>> That does sort of sound like means implementing some portion of the
+>> HBA features/capabilities in the filesystem.
+>>
+>> To me it seems this this could be workable at the fs level, provided it
+>> deals just with policies and remains hardware-neutral.
 > 
-> The rest of the Btrfs filesystems (with m=s=d=single profiles) do not
-> seem to have any issues but it could be linked to the specific load
-> the d=raid5 filesystem handles (unlikely since it's nothing too
-> fancy).
+>  Thanks. Ok.
 > 
-> The mount options are (for all Btrfs filesystems on this machine):
-> noatime,max_inline=0,commit=300,space_cache=v2,flushoncommit
+>> However most
+>> of the use cases appear to involve some hardware-dependent knowledge
+>> or assumptions. 
 > 
-> dmesg is full of these:
+>> What happens when someone sets this on a virtual disk,
+>> or say a (persistent) memory-backed block device? 
 > 
-> [12848.106644] Code: 8d 74 24 08 e8 ec fd ff ff 48 89 ee 48 89 df e8
-> d1 fe ff ff 48 8b 44 24 48 65 48 33 04 25 28 00 00 00 75 0b 48 83 c4
-> 50 5b 5d c3 <0f> ff eb c0 e8 71 70 ef ff 90 53 48 c7 c3 60 62 83 9d 48
-> 85 ff
-> [12848.106664] ---[ end trace bb7f6cdb25fa37db ]---
-> [12850.114566] WARNING: CPU: 0 PID: 7277 at fs/fs-writeback.c:2339
-> __writeback_inodes_sb_nr+0xc6/0xd0
-> [12850.114573] CPU: 0 PID: 7277 Comm: btrfs Tainted: G        W
-> 4.15.0-gentoo #2
-> [12850.114575] Hardware name: Gigabyte Technology Co., Ltd. X150M-PRO
-> ECC/X150M-PRO ECC-CF, BIOS F22b 07/04/2017
-> [12850.114581] RIP: 0010:__writeback_inodes_sb_nr+0xc6/0xd0
-> [12850.114584] RSP: 0018:ffffa2e7c619b9c0 EFLAGS: 00010246
-> [12850.114588] RAX: 0000000000000000 RBX: ffff8963b99ca800 RCX: 0000000000000000
-> [12850.114591] RDX: 0000000000000002 RSI: 0000000000002fcf RDI: ffff8963b982a800
-> [12850.114593] RBP: ffffa2e7c619b9c4 R08: fffffffffffffffe R09: 0000000000000003
-> [12850.114596] R10: fffff2ec00094c40 R11: 000000000000008f R12: ffff89612accc400
-> [12850.114598] R13: ffff8963b98235b8 R14: ffff8961166a5000 R15: ffff8963b98235e0
-> [12850.114602] FS:  00007f9c6280c8c0(0000) GS:ffff8963bec00000(0000)
-> knlGS:0000000000000000
-> [12850.114605] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [12850.114607] CR2: 00007ffd26332e78 CR3: 000000024443a005 CR4: 00000000002606f0
-> [12850.114609] Call Trace:
-> [12850.114618]  btrfs_commit_transaction+0x776/0x860
-> [12850.114626]  prepare_to_merge+0x226/0x240
-> [12850.114632]  relocate_block_group+0x234/0x620
-> [12850.114638]  btrfs_relocate_block_group+0x17e/0x230
-> [12850.114643]  btrfs_relocate_chunk+0x2e/0xc0
-> [12850.114647]  btrfs_balance+0xb42/0x1270
-> [12850.114654]  ? terminate_walk+0x8c/0x100
-> [12850.114660]  btrfs_ioctl_balance+0x330/0x390
-> [12850.114665]  btrfs_ioctl+0x4a6/0x23da
-> [12850.114674]  ? __alloc_pages_nodemask+0xa9/0x130
-> [12850.114678]  ? do_vfs_ioctl+0x9f/0x620
-> [12850.114684]  ? btrfs_ioctl_get_supported_features+0x20/0x20
-> [12850.114687]  do_vfs_ioctl+0x9f/0x620
-> [12850.114692]  SyS_ioctl+0x36/0x70
-> [12850.114698]  ? get_vtime_delta+0x9/0x40
-> [12850.114702]  do_syscall_64+0x72/0x360
-> [12850.114707]  ? get_vtime_delta+0x9/0x40
-> [12850.114711]  ? get_vtime_delta+0x9/0x40
-> [12850.114716]  ? __vtime_account_system+0x10/0x50
-> [12850.114722]  entry_SYSCALL64_slow_path+0x25/0x25
-> [12850.114726] RIP: 0033:0x7f9c616063a7
-> [12850.114728] RSP: 002b:00007ffe0d33a3d8 EFLAGS: 00000206 ORIG_RAX:
-> 0000000000000010
-> [12850.114733] RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f9c616063a7
-> [12850.114735] RDX: 00007ffe0d33a470 RSI: 00000000c4009420 RDI: 0000000000000003
-> [12850.114738] RBP: 0000000000000003 R08: 0000000000000003 R09: 0000000000000001
-> [12850.114740] R10: 0000000000000559 R11: 0000000000000206 R12: 00007ffe0d33a470
-> [12850.114743] R13: 00007ffe0d33a470 R14: 0000000000000001 R15: 00007ffe0d33caf6
-> --
+>  Do you have any policy in particular ?
+
+No, this is your proposal ;^)
+
+You've said cases #3 thru #6 are illustrative only. However they make
+assumptions about the underlying storage, and/or introduce potential for
+unexpected behaviors. Plus they could end up replicating functionality
+from other layers as Nikolay pointed out. Seems unlikely these would be
+practical to implement.
+
+Case #2 seems concerning if it exposes internal,
+implementation-dependent filesystem data into a de facto user-level
+interface. (Do we ensure the devid is unique, and cannot get changed or
+re-assigned internally to a different device, etc?)
+
+Thanks,
+Ed
 
 
-Yeah, that's a known issue and there is still no fix. Do you have
-flushoncommit option enabled ? If so, remount without it and this
-warning wil disappear.
-
+>> Case #6 seems to
+>> open up some potential for unexpected interactions (which may be hard
+>> to reproduce, esp. in error/recovery scenarios).
+> 
+>  Yep. Even the #1 pid based (current default) which motivated
+>  me to provide the devid based policy.
+> 
+>> Case #2 takes a devid, but I notice btrfs_device::devid says, "the
+>> internal btrfs device id".  How does a user obtain that internal value
+>> so it can be set as a mount option?
+> 
+>   btrfs fi show -m
+> 
+> Thanks, Anand
+> 
+>> Thanks,
+>> Ed
+>>
+>>
+>>>>>>> ::
+>>>>>>>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>>>>>>>> index 39ba59832f38..478623e6e074 100644
+>>>>>>>>> --- a/fs/btrfs/volumes.c
+>>>>>>>>> +++ b/fs/btrfs/volumes.c
+>>>>>>>>> @@ -5270,6 +5270,16 @@ static int find_live_mirror(struct
+>>>>>>>>> btrfs_fs_info *fs_info,
+>>>>>>>>>              num = map->num_stripes;
+>>>>>>>>>            switch(fs_info->read_mirror_policy) {
+>>>>>>>>> +    case BTRFS_READ_MIRROR_BY_DEV:
+>>>>>>>>> +        optimal = first;
+>>>>>>>>> +        if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
+>>>>>>>>> +                 &map->stripes[optimal].dev->dev_state))
+>>>>>>>>> +            break;
+>>>>>>>>> +        if (test_bit(BTRFS_DEV_STATE_READ_MIRROR,
+>>>>>>>>> +                 &map->stripes[++optimal].dev->dev_state))
+>>>>>>>>> +            break;
+>>>>>>>>> +        optimal = first;
+>>>>>>>>
+>>>>>>>> you set optimal 2 times, the second one seems redundant.
+>>>>>>>
+>>>>>>>     No actually. When both the disks containing the stripe does not
+>>>>>>>     have the BTRFS_DEV_STATE_READ_MIRROR, then I would just want to
+>>>>>>>     use first found stripe.
+>>>>>>
+>>>>>> Yes, and the fact that you've already set optimal = first right after
+>>>>>> BTRFS_READ_MIRROR_BY_DEV ensures that, no ? Why do you need to again
+>>>>>> set
+>>>>>> optimal right before the final break? What am I missing here?
+>>>>>
+>>>>>     Ah. I think you are missing ++optimal in the 2nd if.
+>>>>
+>>>> You are right, but I'd prefer you index the stripes array with
+>>>> 'optimal'
+>>>> and 'optimal + 1' and leave just a single assignment
+>>>
+>>>   Ok. Will improve that.
+>>>
+>>> Thanks, Anand
+>>>
+>>>
+>>>>>
+>>>>> Thanks, Anand
+>>>>>
+>>>> -- 
+>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>> linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
+>>> -- 
+>>> To unsubscribe from this list: send the line "unsubscribe
+>>> linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> -- 
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html

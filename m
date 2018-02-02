@@ -1,50 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35648 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38973 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753525AbeBBSNV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Feb 2018 13:13:21 -0500
-Date: Fri, 2 Feb 2018 19:11:07 +0100
+        id S1752388AbeBBStZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Feb 2018 13:49:25 -0500
+Date: Fri, 2 Feb 2018 19:47:11 +0100
 From: David Sterba <dsterba@suse.cz>
 To: Gu Jinxiang <gujx@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, quwenruo.btrfs@gmx.com
-Subject: Re: [RFC PATCH v2 3/4] btrfs-progs: Modify rootdir files when use
- mkfs.btrfs
-Message-ID: <20180202181107.GB18553@twin.jikos.cz>
+Subject: Re: [RFC PATCH v2 0/4] Add support for export testsuits
+Message-ID: <20180202184711.GC18553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1517560445-5712-1-git-send-email-gujx@cn.fujitsu.com>
- <1517560445-5712-4-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1517560445-5712-4-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1517560445-5712-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 02, 2018 at 04:34:04PM +0800, Gu Jinxiang wrote:
-> Since there is no $TOP/Documentation file after package the testsuite.
-> So use a common file that is usually exsits.
-> 
-> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
-> ---
->  tests/misc-tests/002-uuid-rewrite/test.sh       | 4 ++--
->  tests/misc-tests/003-zero-log/test.sh           | 2 +-
->  tests/mkfs-tests/004-rootdir-keeps-size/test.sh | 2 +-
->  3 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/tests/misc-tests/002-uuid-rewrite/test.sh b/tests/misc-tests/002-uuid-rewrite/test.sh
-> index 158bda90..27341322 100755
-> --- a/tests/misc-tests/002-uuid-rewrite/test.sh
-> +++ b/tests/misc-tests/002-uuid-rewrite/test.sh
-> @@ -25,7 +25,7 @@ test_uuid_random()
->  
->  	run_check $SUDO_HELPER $EXEC/mkfs.btrfs -f \
->  		--uuid $origuuid \
-> -		--rootdir $TOP/Documentation \
-> +		--rootdir /lib/modules/`uname -r`/ \
+On Fri, Feb 02, 2018 at 04:34:01PM +0800, Gu Jinxiang wrote:
+> Achieved:
+> 1. export testsuit by:
+>  $ make EXPORT=/where/you/want/to/generate/tests.tar.gz package
+> relative path and absolute path both be ok.
+> Besides tests itself, fssum and btrfs-corrupt-block will also be
+> included in tests.tar.gz, since misc and fsck tests depend on
+> btrfs-corrupt-block, and misc tests depend on fssum. 
 
-As an easy source of filesystem data it's ok, maybe in the log term
-something more deterministic should be implemented. The size of the
-modules is unpredictable and may not fit on the filesystem and the test
-would fail.
+My idea was:
 
-The size of the Documentation/ is 388KiB on my system, the modules are
-+260MiB, that also makes the test run longer for no reason.
+$ make testuite
+
+that will build all dependencies, ie. fssum and btrfs-corrupt-block, and
+create btrfs-progs-tests.tar.gz in the current directory, ie. no need
+for the EXPORT variable.
+
+The tar command you used would add anything that's under tessts/ but we
+don't need everything. So I'd expect there's a file that lists all files
+and directories that we want in the testsuite tarball.
+
+Some sort of identification should be put to the tarball, eg. what git
+describe says and timestamp of generation.
+
+> 2. after decompress tests.tar.gz, run test by:
+>  $ TEST=`MASK` ./mkfs-tests.sh
+> and, without MASK also be ok.
+> replenish:
+> The directory Structure after decompress tests.tar.gz is:
+>  $ tar -xzvf ./tests.tar.gz
+>  $ ls
+>    tests fssum btrfs-corrupt-block
+
+The structure could be reduced by one directory level if the contents of
+tests is moved one directory up. That way all the test driver scritps
+are in the same place as fssum and btrfs-corrupt-block. This would need
+to be reflected in the test scripts.

@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53535 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53891 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751017AbeBBLhN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Feb 2018 06:37:13 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2F37BAECF
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Feb 2018 11:37:12 +0000 (UTC)
-Subject: Re: [PATCH 4/7] btrfs-progs: Introduce btrfs_raid_array and related
- infrastructures
+        id S1751664AbeBBLld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Feb 2018 06:41:33 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 8872CAECF
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Feb 2018 11:41:32 +0000 (UTC)
+Subject: Re: [PATCH 5/7] btrfs-progs: volumes: Allow find_free_dev_extent() to
+ return maximum hole size
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
 References: <20180202081929.15162-1-wqu@suse.com>
- <20180202081929.15162-5-wqu@suse.com>
+ <20180202081929.15162-6-wqu@suse.com>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <79ec4cb5-e891-73e9-71f6-523b48c4a9c9@suse.com>
-Date: Fri, 2 Feb 2018 13:37:10 +0200
+Message-ID: <295a561d-dc4c-8a05-ac51-02d3ab24c278@suse.com>
+Date: Fri, 2 Feb 2018 13:41:29 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180202081929.15162-5-wqu@suse.com>
+In-Reply-To: <20180202081929.15162-6-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -23,171 +23,41 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 
 On  2.02.2018 10:19, Qu Wenruo wrote:
-> As part of the effort to unify code and behavior between btrfs-progs and
-> kernel, copy the btrfs_raid_array from kernel to btrfs-progs.
-> 
-> So later we can use the btrfs_raid_array[] to get needed raid info other
-> than manually do if-else branches.
+> Just as kernel find_free_dev_extent(), allow it to return maximum hole
+> size for us to build device list for later chunk allocator rework.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  ctree.h   | 12 +++++++++++-
->  volumes.c | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  volumes.h | 30 +++++++++++++++++++++++++++++
->  3 files changed, 107 insertions(+), 1 deletion(-)
+>  volumes.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
 > 
-> diff --git a/ctree.h b/ctree.h
-> index 17cdac76c58c..c76849d8deb7 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -958,7 +958,17 @@ struct btrfs_csum_item {
->  #define BTRFS_BLOCK_GROUP_RAID5    	(1ULL << 7)
->  #define BTRFS_BLOCK_GROUP_RAID6    	(1ULL << 8)
->  #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
-<not related to this patch but i just saw it> 
-
-BTRFS_BLOCK_GROUP_RESERVED differs in userspace than in kernel space. 
-The btrfs_Tree header has it defined as: 
-
-#define BTRFS_BLOCK_GROUP_RESERVED      (BTRFS_AVAIL_ALLOC_BIT_SINGLE | \       
-                                         BTRFS_SPACE_INFO_GLOBAL_RSV)
-
-
-Otherwise LGTM: 
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> -#define BTRFS_NR_RAID_TYPES             7
-> +
-> +enum btrfs_raid_types {
-> +	BTRFS_RAID_RAID10,
-> +	BTRFS_RAID_RAID1,
-> +	BTRFS_RAID_DUP,
-> +	BTRFS_RAID_RAID0,
-> +	BTRFS_RAID_SINGLE,
-> +	BTRFS_RAID_RAID5,
-> +	BTRFS_RAID_RAID6,
-> +	BTRFS_NR_RAID_TYPES
-> +};
->  
->  #define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
->  					 BTRFS_BLOCK_GROUP_SYSTEM |  \
 > diff --git a/volumes.c b/volumes.c
-> index a9dc8c939dc5..b47ff1f392b5 100644
+> index b47ff1f392b5..f4009ffa7c9e 100644
 > --- a/volumes.c
 > +++ b/volumes.c
-> @@ -30,6 +30,72 @@
->  #include "utils.h"
->  #include "kernel-lib/raid56.h"
+> @@ -516,10 +516,10 @@ out:
+>  }
 >  
-> +const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
-> +	[BTRFS_RAID_RAID10] = {
-> +		.sub_stripes	= 2,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 0,	/* 0 == as many as possible */
-> +		.devs_min	= 4,
-> +		.tolerated_failures = 1,
-> +		.devs_increment	= 2,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_RAID1] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 2,
-> +		.devs_min	= 2,
-> +		.tolerated_failures = 1,
-> +		.devs_increment	= 2,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_DUP] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 2,
-> +		.devs_max	= 1,
-> +		.devs_min	= 1,
-> +		.tolerated_failures = 0,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_RAID0] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 0,
-> +		.devs_min	= 2,
-> +		.tolerated_failures = 0,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 1,
-> +	},
-> +	[BTRFS_RAID_SINGLE] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 1,
-> +		.devs_min	= 1,
-> +		.tolerated_failures = 0,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 1,
-> +	},
-> +	[BTRFS_RAID_RAID5] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 0,
-> +		.devs_min	= 2,
-> +		.tolerated_failures = 1,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 2,
-> +	},
-> +	[BTRFS_RAID_RAID6] = {
-> +		.sub_stripes	= 1,
-> +		.dev_stripes	= 1,
-> +		.devs_max	= 0,
-> +		.devs_min	= 3,
-> +		.tolerated_failures = 2,
-> +		.devs_increment	= 1,
-> +		.ncopies	= 3,
-> +	},
-> +};
-> +
->  struct stripe {
->  	struct btrfs_device *dev;
->  	u64 physical;
-> diff --git a/volumes.h b/volumes.h
-> index 7bbdf615d31a..612a0a7586f4 100644
-> --- a/volumes.h
-> +++ b/volumes.h
-> @@ -108,6 +108,36 @@ struct map_lookup {
->  	struct btrfs_bio_stripe stripes[];
->  };
+>  static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
+> -				u64 *start)
+> +				u64 *start, u64 *len)
+>  {
+>  	/* FIXME use last free of some kind */
+> -	return find_free_dev_extent_start(device, num_bytes, 0, start, NULL);
+> +	return find_free_dev_extent_start(device, num_bytes, 0, start, len);
+
+Why do we need the free_dev_extent() wrapper over free_dev_extent_start
+at all?
+>  }
 >  
-> +struct btrfs_raid_attr {
-> +	int sub_stripes;	/* sub_stripes info for map */
-> +	int dev_stripes;	/* stripes per dev */
-> +	int devs_max;		/* max devs to use */
-> +	int devs_min;		/* min devs needed */
-> +	int tolerated_failures; /* max tolerated fail devs */
-> +	int devs_increment;	/* ndevs has to be a multiple of this */
-> +	int ncopies;		/* how many copies to data has */
-> +};
-> +
-> +extern const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES];
-> +
-> +static inline enum btrfs_raid_types btrfs_bg_flags_to_raid_index(u64 flags)
-> +{
-> +	if (flags & BTRFS_BLOCK_GROUP_RAID10)
-> +		return BTRFS_RAID_RAID10;
-> +	else if (flags & BTRFS_BLOCK_GROUP_RAID1)
-> +		return BTRFS_RAID_RAID1;
-> +	else if (flags & BTRFS_BLOCK_GROUP_DUP)
-> +		return BTRFS_RAID_DUP;
-> +	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
-> +		return BTRFS_RAID_RAID0;
-> +	else if (flags & BTRFS_BLOCK_GROUP_RAID5)
-> +		return BTRFS_RAID_RAID5;
-> +	else if (flags & BTRFS_BLOCK_GROUP_RAID6)
-> +		return BTRFS_RAID_RAID6;
-> +
-> +	return BTRFS_RAID_SINGLE; /* BTRFS_BLOCK_GROUP_SINGLE */
-> +}
-> +
->  #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
->  			    (sizeof(struct btrfs_bio_stripe) * (n)))
->  #define btrfs_map_lookup_size(n) (sizeof(struct map_lookup) + \
-> 
+>  static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+> @@ -543,7 +543,7 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+>  	 * is responsible to make sure it's free.
+>  	 */
+>  	if (!convert) {
+> -		ret = find_free_dev_extent(device, num_bytes, start);
+> +		ret = find_free_dev_extent(device, num_bytes, start, NULL);
+>  		if (ret)
+>  			goto err;
+>  	}
+>

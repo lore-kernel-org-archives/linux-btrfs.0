@@ -1,41 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55978 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59766 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752087AbeBFO4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 6 Feb 2018 09:56:37 -0500
-Date: Tue, 6 Feb 2018 15:54:22 +0100
+        id S1752249AbeBBRb4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Feb 2018 12:31:56 -0500
+Date: Fri, 2 Feb 2018 18:29:42 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>
-Cc: nborisov@suse.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/2] btrfs: use enum instead of constant value
-Message-ID: <20180206145422.GB31890@twin.jikos.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        herbert@gondor.apana.org.au, linux-crypto@vger.kernel.org
+Subject: Re: [PATCH 1/2] libcrc32c: Add crc32c_impl function
+Message-ID: <20180202172942.GU18553@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <69b34781-2275-ba9b-0df8-50f3c2752e45@suse.com>
- <1515658338-6781-1-git-send-email-gujx@cn.fujitsu.com>
+References: <1515404705-490-1-git-send-email-nborisov@suse.com>
+ <1515404705-490-2-git-send-email-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1515658338-6781-1-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1515404705-490-2-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 11, 2018 at 04:12:17PM +0800, Gu Jinxiang wrote:
-> populate_free_space_tree calls function btrfs_search_slot_for_read with
-> parameter int find_higher = 1, it means that, if no exact match is found,
-> then use the next higher item.
-> So in function populate_free_space_tree, use READA_FORWARD to read
-> forward ahead.
-> 
-> Changelog:
-> v2->v1: change enum from READA_BACK to READA_FORWARD, since according
-> to the logic of the source, it should reada_for_search forward, not
-> backward.
-> And, Reference:
-> commit e4058b54d1e4 ("btrfs: cleanup, use enum values for btrfs_path reada")
-> 
-> v3->v2: add commit message to make it easy to understand. And split it
-> to two patch.
-> 
-> Signed-off-by: Gu JinXiang <gujx@cn.fujitsu.com>
+Adding linux-crypto@vger.kernel.org to CC
 
-For some reason I have the two mails tagged as applied but don't see
-them in any branch. Anyway, now added, thanks.
+Link to the 2/2 patch https://patchwork.kernel.org/patch/10149203/
+
+On Mon, Jan 08, 2018 at 11:45:04AM +0200, Nikolay Borisov wrote:
+> This function returns a string with the currently in-use implementation
+> of the crc32c algorithm, i.e crc32c-generic (for unoptimised, generic
+> implementation) or crc32c-intel for the sse optimised version. This
+> will be used by btrfs.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> ---
+>  include/linux/crc32c.h | 1 +
+>  lib/libcrc32c.c        | 6 ++++++
+>  2 files changed, 7 insertions(+)
+> 
+> diff --git a/include/linux/crc32c.h b/include/linux/crc32c.h
+> index 357ae4611a45..bd21af828ff6 100644
+> --- a/include/linux/crc32c.h
+> +++ b/include/linux/crc32c.h
+> @@ -5,6 +5,7 @@
+>  #include <linux/types.h>
+>  
+>  extern u32 crc32c(u32 crc, const void *address, unsigned int length);
+> +extern const char *crc32c_impl(void);
+>  
+>  /* This macro exists for backwards-compatibility. */
+>  #define crc32c_le crc32c
+> diff --git a/lib/libcrc32c.c b/lib/libcrc32c.c
+> index 9f79547d1b97..eaf71e0e04be 100644
+> --- a/lib/libcrc32c.c
+> +++ b/lib/libcrc32c.c
+> @@ -71,6 +71,12 @@ static void __exit libcrc32c_mod_fini(void)
+>  	crypto_free_shash(tfm);
+>  }
+>  
+> +const char *crc32c_impl(void)
+> +{
+> +	return crypto_tfm_alg_driver_name(crypto_shash_tfm(tfm));
+> +}
+> +EXPORT_SYMBOL(crc32c_impl);
+
+Crypto maintainers, would it be still possible to squeeze this patch to
+4.16? It's quite trivial, but as it is not in a code I maintain I'm not
+comfortable to add it to my tree (unless I get an ACK).
+
+The linked patch depends on that change and would let us get rid of some
+custom crypto wrappers around crc32c.

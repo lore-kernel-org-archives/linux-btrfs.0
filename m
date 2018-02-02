@@ -1,235 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:40651 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751579AbeBBBkg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Feb 2018 20:40:36 -0500
-Subject: Re: btrfs - kernel warning
-To: Patrik Ostrihon <patrik.ostrihon@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CALvFGyCYKs_MMB5st-nm463_UBcA859iBDHX8xjRX8eCME7Ytw@mail.gmail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <a95b4757-c63a-3566-e6ed-9065240a6f1d@gmx.com>
-Date: Fri, 2 Feb 2018 09:40:30 +0800
+Received: from mail-ot0-f193.google.com ([74.125.82.193]:38838 "EHLO
+        mail-ot0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751725AbeBBB6x (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Feb 2018 20:58:53 -0500
+Received: by mail-ot0-f193.google.com with SMTP id v5so18886256oth.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Feb 2018 17:58:53 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CALvFGyCYKs_MMB5st-nm463_UBcA859iBDHX8xjRX8eCME7Ytw@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="tcjokA2M9zd51cv3VkepgVwJ55soioik6"
+In-Reply-To: <CANznX5Eza4E--py7nzj+-vZB_-_Stj-_4LP=Fb2hbTkQQ7LGsA@mail.gmail.com>
+References: <CANznX5Eza4E--py7nzj+-vZB_-_Stj-_4LP=Fb2hbTkQQ7LGsA@mail.gmail.com>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Thu, 1 Feb 2018 18:58:52 -0700
+Message-ID: <CAJCQCtTBDTaPc=yGLkwR-UYDAGLVUrXtDvDXohfhuigBX=Qohw@mail.gmail.com>
+Subject: Re: Writeback errors in kernel log with Linux 4.15 (m=s=raid1,
+ d=raid5, 5 disks)
+To: "Janos Toth F." <toth.f.janos@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---tcjokA2M9zd51cv3VkepgVwJ55soioik6
-Content-Type: multipart/mixed; boundary="e6EnVLbvE9mdWA9x6UBHi0gzOV9j17axF";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Patrik Ostrihon <patrik.ostrihon@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <a95b4757-c63a-3566-e6ed-9065240a6f1d@gmx.com>
-Subject: Re: btrfs - kernel warning
-References: <CALvFGyCYKs_MMB5st-nm463_UBcA859iBDHX8xjRX8eCME7Ytw@mail.gmail.com>
-In-Reply-To: <CALvFGyCYKs_MMB5st-nm463_UBcA859iBDHX8xjRX8eCME7Ytw@mail.gmail.com>
+On Thu, Feb 1, 2018 at 6:28 PM, Janos Toth F. <toth.f.janos@gmail.com> wrote:
+> I started seeing these on my d=raid5 filesystem after upgrading to Linux 4.15.
+>
+> Some files created since the upgrade seem to be corrupted.
 
---e6EnVLbvE9mdWA9x6UBHi0gzOV9j17axF
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+How are you determining they're corrupt? Btrfs will spit back an I/O
+error rather than deliver corrupt data, so it must have been corrupted
+prior to writing extents, and prior to computing and writing csums.
 
 
-
-On 2018=E5=B9=B402=E6=9C=8802=E6=97=A5 05:06, Patrik Ostrihon wrote:
-> Hi,
->=20
-> Today I saw warning in dmesg output. But I don't know what it means.
-> Could you help me please? Is it something dangerous for my dato on
-> this filesystem?
->=20
-> Thanks
->=20
-> pa3k
->=20
-> root@merkur:~# uname -a
->=20
-> Linux merkur 4.14.8-041408-generic #201712200555 SMP Wed Dec 20
-> 10:57:38 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
->=20
-> root@merkur:~# btrfs --version
-> Btrfs v3.12
->=20
-> root@merkur:~# btrfs fi show
->=20
-> Label: none  uuid: 96f60fa9-c20e-4a13-82b1-9074dd942eab
->         Total devices 2 FS bytes used 2.43TiB
->         devid    1 size 8.19TiB used 2.45TiB path /dev/sdc2
->         devid    2 size 8.19TiB used 2.45TiB path /dev/sdd2
->=20
-> Label: none  uuid: 2da0261b-143a-4814-aacb-de46373aebe9
->         Total devices 2 FS bytes used 203.11GiB
->         devid    1 size 930.00GiB used 206.03GiB path /dev/sdc1
->         devid    2 size 930.00GiB used 206.01GiB path /dev/sdd1
->=20
-> Btrfs v3.12
->=20
->=20
-> root@merkur:~# btrfs fi df /usr/local/data
->=20
-> Data, RAID1: total=3D2.44TiB, used=3D2.43TiB
-> Data, single: total=3D8.00MiB, used=3D0.00
-> System, RAID1: total=3D8.00MiB, used=3D368.00KiB
-> System, single: total=3D4.00MiB, used=3D0.00
-> Metadata, RAID1: total=3D5.00GiB, used=3D3.33GiB
-> Metadata, single: total=3D8.00MiB, used=3D0.00
-> unknown, single: total=3D512.00MiB, used=3D0.00
-> root@merkur:~# btrfs fi df /usr/local/data/hts
-> Data, RAID1: total=3D205.00GiB, used=3D202.90GiB
-> Data, single: total=3D8.00MiB, used=3D0.00
-> System, RAID1: total=3D8.00MiB, used=3D48.00KiB
-> System, single: total=3D4.00MiB, used=3D0.00
-> Metadata, RAID1: total=3D1.00GiB, used=3D213.25MiB
-> Metadata, single: total=3D8.00MiB, used=3D0.00
-> unknown, single: total=3D211.78MiB, used=3D0.00
->=20
->=20
-> [ 4084.704514] ------------[ cut here ]------------
-> [ 4084.704561] WARNING: CPU: 3 PID: 1865 at
-> /home/kernel/COD/linux/fs/btrfs/ctree.h:1564
-
-This normally means your device size is not aligned to 4K.
-
-It's normal if your fs has some age as old mkfs.btrfs doesn't align
-device size.
-
-And recently kernel makes the device size alignment check more restrict,
-so it will cause such warning.
-
-
-Fortunately btrfs-progs provides offline tool to fix it.
-You could use "btrfs rescue fix-device-size <device>" to easily fix it.
-And since it's an offline tool, you need to umount your fs first.
-
-Thanks,
-Qu
-
-> btrfs_update_device+0x1be/0x1d0 [btrfs]
-> [ 4084.704562] Modules linked in: snd_hda_codec_hdmi
-> snd_hda_codec_realtek snd_hda_codec_generic gpio_ich intel_powerclamp
-> coretemp mxl5xx i915 kvm_intel kvm video drm_kms_helper ftdi_sio drm
-> usbserial joydev irqbypass input_leds intel_cstate snd_hda_intel
-> snd_hda_codec snd_hda_core ddbridge snd_hwdep i2c_algo_bit snd_pcm
-> snd_timer fb_sys_fops syscopyarea snd cxd2099(C) sysfillrect soundcore
-> sysimgblt dvb_core lpc_ich mei_me nuvoton_cir mei mac_hid rc_core
-> shpchp 8021q garp mrp stp llc lp parport btrfs zstd_compress raid10
-> raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor
-> hid_generic e1000e usbhid uas ptp raid6_pq usb_storage hid libcrc32c
-> pps_core pata_acpi raid1 raid0 multipath linear
-> [ 4084.704598] CPU: 3 PID: 1865 Comm: btrfs-cleaner Tainted: G
-> C      4.14.8-041408-generic #201712200555
-> [ 4084.704598] Hardware name:                  /DH57JG, BIOS
-> JGIBX10J.86A.0663.2011.1019.0408 10/19/2011
-> [ 4084.704599] task: ffff9803b17f8000 task.stack: ffffa6f2822f0000
-> [ 4084.704616] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
-> [ 4084.704617] RSP: 0018:ffffa6f2822f3d40 EFLAGS: 00010206
-> [ 4084.704618] RAX: 0000000000000fff RBX: ffff9803b38bf9a0 RCX: 0000082=
-fffff6e00
-> [ 4084.704619] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff980=
-397b574c8
-> [ 4084.704619] RBP: ffffa6f2822f3d88 R08: ffffa6f2822f3cf0 R09: ffffa6f=
-2822f3cf8
-> [ 4084.704620] R10: 0000000000001000 R11: 0000000000003000 R12: ffff980=
-375d41000
-> [ 4084.704621] R13: 0000000000000000 R14: 0000000000003f3c R15: ffff980=
-397b574c8
-> [ 4084.704622] FS:  0000000000000000(0000) GS:ffff9803b72c0000(0000)
+> The rest of the Btrfs filesystems (with m=s=d=single profiles) do not
+> seem to have any issues but it could be linked to the specific load
+> the d=raid5 filesystem handles (unlikely since it's nothing too
+> fancy).
+>
+> The mount options are (for all Btrfs filesystems on this machine):
+> noatime,max_inline=0,commit=300,space_cache=v2,flushoncommit
+>
+> dmesg is full of these:
+>
+> [12848.106644] Code: 8d 74 24 08 e8 ec fd ff ff 48 89 ee 48 89 df e8
+> d1 fe ff ff 48 8b 44 24 48 65 48 33 04 25 28 00 00 00 75 0b 48 83 c4
+> 50 5b 5d c3 <0f> ff eb c0 e8 71 70 ef ff 90 53 48 c7 c3 60 62 83 9d 48
+> 85 ff
+> [12848.106664] ---[ end trace bb7f6cdb25fa37db ]---
+> [12850.114566] WARNING: CPU: 0 PID: 7277 at fs/fs-writeback.c:2339
+> __writeback_inodes_sb_nr+0xc6/0xd0
+> [12850.114573] CPU: 0 PID: 7277 Comm: btrfs Tainted: G        W
+> 4.15.0-gentoo #2
+> [12850.114575] Hardware name: Gigabyte Technology Co., Ltd. X150M-PRO
+> ECC/X150M-PRO ECC-CF, BIOS F22b 07/04/2017
+> [12850.114581] RIP: 0010:__writeback_inodes_sb_nr+0xc6/0xd0
+> [12850.114584] RSP: 0018:ffffa2e7c619b9c0 EFLAGS: 00010246
+> [12850.114588] RAX: 0000000000000000 RBX: ffff8963b99ca800 RCX: 0000000000000000
+> [12850.114591] RDX: 0000000000000002 RSI: 0000000000002fcf RDI: ffff8963b982a800
+> [12850.114593] RBP: ffffa2e7c619b9c4 R08: fffffffffffffffe R09: 0000000000000003
+> [12850.114596] R10: fffff2ec00094c40 R11: 000000000000008f R12: ffff89612accc400
+> [12850.114598] R13: ffff8963b98235b8 R14: ffff8961166a5000 R15: ffff8963b98235e0
+> [12850.114602] FS:  00007f9c6280c8c0(0000) GS:ffff8963bec00000(0000)
 > knlGS:0000000000000000
-> [ 4084.704623] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [ 4084.704624] CR2: 00007f883404d000 CR3: 000000001fa09003 CR4: 0000000=
-0000206e0
-> [ 4084.704625] Call Trace:
-> [ 4084.704644]  btrfs_remove_chunk+0x365/0x870 [btrfs]
-> [ 4084.704658]  btrfs_delete_unused_bgs+0x320/0x3c0 [btrfs]
-> [ 4084.704672]  cleaner_kthread+0x159/0x170 [btrfs]
-> [ 4084.704676]  kthread+0x125/0x140
-> [ 4084.704689]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
-> [ 4084.704691]  ? kthread_create_on_node+0x70/0x70
-> [ 4084.704694]  ret_from_fork+0x25/0x30
-> [ 4084.704695] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 1a
-> 20 ff ff 4c 89 ff e8 82 ea fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
-> d0 fe ff ff <0f> ff eb b6 e8 c9 15 9e de 66 0f 1f 84 00 00 00 00 00 66
-> 66 66
-> [ 4084.704717] ---[ end trace 4a9fc911d4199609 ]---
-> [ 4084.705475] ------------[ cut here ]------------
-> [ 4084.705516] WARNING: CPU: 2 PID: 1865 at
-> /home/kernel/COD/linux/fs/btrfs/ctree.h:1564
-> btrfs_update_device+0x1be/0x1d0 [btrfs]
-> [ 4084.705517] Modules linked in: snd_hda_codec_hdmi
-> snd_hda_codec_realtek snd_hda_codec_generic gpio_ich intel_powerclamp
-> coretemp mxl5xx i915 kvm_intel kvm video drm_kms_helper ftdi_sio drm
-> usbserial joydev irqbypass input_leds intel_cstate snd_hda_intel
-> snd_hda_codec snd_hda_core ddbridge snd_hwdep i2c_algo_bit snd_pcm
-> snd_timer fb_sys_fops syscopyarea snd cxd2099(C) sysfillrect soundcore
-> sysimgblt dvb_core lpc_ich mei_me nuvoton_cir mei mac_hid rc_core
-> shpchp 8021q garp mrp stp llc lp parport btrfs zstd_compress raid10
-> raid456 async_raid6_recov async_memcpy async_pq async_xor async_tx xor
-> hid_generic e1000e usbhid uas ptp raid6_pq usb_storage hid libcrc32c
-> pps_core pata_acpi raid1 raid0 multipath linear
-> [ 4084.705573] CPU: 2 PID: 1865 Comm: btrfs-cleaner Tainted: G
-> WC      4.14.8-041408-generic #201712200555
-> [ 4084.705574] Hardware name:                  /DH57JG, BIOS
-> JGIBX10J.86A.0663.2011.1019.0408 10/19/2011
-> [ 4084.705576] task: ffff9803b17f8000 task.stack: ffffa6f2822f0000
-> [ 4084.705611] RIP: 0010:btrfs_update_device+0x1be/0x1d0 [btrfs]
-> [ 4084.705613] RSP: 0018:ffffa6f2822f3d40 EFLAGS: 00010206
-> [ 4084.705616] RAX: 0000000000000fff RBX: ffff9803b1787000 RCX: 0000082=
-fffff6e00
-> [ 4084.705617] RDX: 0000000000001000 RSI: 0000000000003f5c RDI: ffff980=
-397b574c8
-> [ 4084.705619] RBP: ffffa6f2822f3d88 R08: ffffa6f2822f3cf0 R09: ffffa6f=
-2822f3cf8
-> [ 4084.705620] R10: 0000000000001000 R11: 0000000000003000 R12: ffff980=
-375d41000
-> [ 4084.705622] R13: 0000000000000000 R14: 0000000000003f3c R15: ffff980=
-397b574c8
-> [ 4084.705624] FS:  0000000000000000(0000) GS:ffff9803b7280000(0000)
-> knlGS:0000000000000000
-> [ 4084.705626] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [ 4084.705628] CR2: 00007f8834051000 CR3: 000000001fa09006 CR4: 0000000=
-0000206e0
-> [ 4084.705629] Call Trace:
-> [ 4084.705667]  btrfs_remove_chunk+0x365/0x870 [btrfs]
-> [ 4084.705698]  btrfs_delete_unused_bgs+0x320/0x3c0 [btrfs]
-> [ 4084.705729]  cleaner_kthread+0x159/0x170 [btrfs]
-> [ 4084.705732]  kthread+0x125/0x140
-> [ 4084.705762]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
-> [ 4084.705765]  ? kthread_create_on_node+0x70/0x70
-> [ 4084.705768]  ret_from_fork+0x25/0x30
-> [ 4084.705771] Code: 4c 89 ff 45 31 c0 ba 10 00 00 00 4c 89 f6 e8 1a
-> 20 ff ff 4c 89 ff e8 82 ea fc ff e9 d3 fe ff ff 41 bd f4 ff ff ff e9
-> d0 fe ff ff <0f> ff eb b6 e8 c9 15 9e de 66 0f 1f 84 00 00 00 00 00 66
-> 66 66
-> [ 4084.705819] ---[ end trace 4a9fc911d419960a ]---
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+> [12850.114605] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [12850.114607] CR2: 00007ffd26332e78 CR3: 000000024443a005 CR4: 00000000002606f0
+> [12850.114609] Call Trace:
+> [12850.114618]  btrfs_commit_transaction+0x776/0x860
+> [12850.114626]  prepare_to_merge+0x226/0x240
+> [12850.114632]  relocate_block_group+0x234/0x620
+> [12850.114638]  btrfs_relocate_block_group+0x17e/0x230
+> [12850.114643]  btrfs_relocate_chunk+0x2e/0xc0
+> [12850.114647]  btrfs_balance+0xb42/0x1270
+> [12850.114654]  ? terminate_walk+0x8c/0x100
+> [12850.114660]  btrfs_ioctl_balance+0x330/0x390
+> [12850.114665]  btrfs_ioctl+0x4a6/0x23da
+> [12850.114674]  ? __alloc_pages_nodemask+0xa9/0x130
+> [12850.114678]  ? do_vfs_ioctl+0x9f/0x620
+> [12850.114684]  ? btrfs_ioctl_get_supported_features+0x20/0x20
+> [12850.114687]  do_vfs_ioctl+0x9f/0x620
+> [12850.114692]  SyS_ioctl+0x36/0x70
+> [12850.114698]  ? get_vtime_delta+0x9/0x40
+> [12850.114702]  do_syscall_64+0x72/0x360
+> [12850.114707]  ? get_vtime_delta+0x9/0x40
+> [12850.114711]  ? get_vtime_delta+0x9/0x40
+> [12850.114716]  ? __vtime_account_system+0x10/0x50
+> [12850.114722]  entry_SYSCALL64_slow_path+0x25/0x25
+> [12850.114726] RIP: 0033:0x7f9c616063a7
+> [12850.114728] RSP: 002b:00007ffe0d33a3d8 EFLAGS: 00000206 ORIG_RAX:
+> 0000000000000010
+> [12850.114733] RAX: ffffffffffffffda RBX: 0000000000000001 RCX: 00007f9c616063a7
+> [12850.114735] RDX: 00007ffe0d33a470 RSI: 00000000c4009420 RDI: 0000000000000003
+> [12850.114738] RBP: 0000000000000003 R08: 0000000000000003 R09: 0000000000000001
+> [12850.114740] R10: 0000000000000559 R11: 0000000000000206 R12: 00007ffe0d33a470
+> [12850.114743] R13: 00007ffe0d33a470 R14: 0000000000000001 R15: 00007ffe0d33caf6
 
+All the messages from at least 5 minutes prior might be useful if not
+everything from mount time. There is a balance going on at the time of
+this call trace. What was the most recently working kernel version?
 
---e6EnVLbvE9mdWA9x6UBHi0gzOV9j17axF--
-
---tcjokA2M9zd51cv3VkepgVwJ55soioik6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlpzwY4XHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjDsQf/eulhObGVjGScqegdM2EiL+Xp
-2Es8uc9oVlurOLPrAeBFi/8mCkWB2uFyIoykB/eMONCD9X4ng5zxG53FdX0CWm+m
-Mpykdga37u2zHh90zb78xEg2BT+2LIZPruFF/MGLj23D9MSywI7DMo6Yl8UFjrDo
-Hp2aeAqiRFNE2h5r/U6SxWOWoOUPGh0jlDZZFUdv2X7pK38RiGNwM7difLPKVXf1
-x/de7afFNhZhZd4vlUYsBwpKHp6EiPsAs0+LntSZIrDuEIt6sgkIi+HN2rAaUzdj
-/eQzELrDW6xQE0rCYFm2mC+08TZEHEWs7AzKCI4rilKarGHRP1wERbrC5VZ+iQ==
-=McR1
------END PGP SIGNATURE-----
-
---tcjokA2M9zd51cv3VkepgVwJ55soioik6--
+-- 
+Chris Murphy

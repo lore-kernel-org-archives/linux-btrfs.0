@@ -1,60 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f174.google.com ([209.85.192.174]:42225 "EHLO
-        mail-pf0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752328AbeBBTO2 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Feb 2018 14:14:28 -0500
-Received: by mail-pf0-f174.google.com with SMTP id b25so17793298pfd.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Feb 2018 11:14:28 -0800 (PST)
-Date: Fri, 2 Feb 2018 11:14:26 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH 04/26] libbtrfsutil: add btrfs_util_is_subvolume() and
- btrfs_util_subvolume_id()
-Message-ID: <20180202191426.GA10465@vader.DHCP.thefacebook.com>
+Received: from syrinx.knorrie.org ([82.94.188.77]:35414 "EHLO
+        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751990AbeBBX2c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Feb 2018 18:28:32 -0500
+Subject: Re: [PATCH 21/26] btrfs-progs: use libbtrfsutil for subvol show
+To: Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
 References: <cover.1516991902.git.osandov@fb.com>
- <ec89f2b55edb450ce4fcbe1485ae8f57ed51187c.1516991902.git.osandov@fb.com>
- <c1c4fa63-7ab5-ad6a-d1a4-066ac58be161@suse.com>
- <20180129214354.GA1362@vader.DHCP.thefacebook.com>
- <fdfbec55-a04b-2009-b200-35bf1aa090e9@suse.com>
- <20180201162828.GM18553@twin.jikos.cz>
+ <537f3ffac3eac01c6a36f613817f9c3f206ee568.1516991902.git.osandov@fb.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <fc3703b7-30cb-230b-7e3d-5efc33c456fb@mendix.com>
+Date: Sat, 3 Feb 2018 00:18:02 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180201162828.GM18553@twin.jikos.cz>
+In-Reply-To: <537f3ffac3eac01c6a36f613817f9c3f206ee568.1516991902.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 01, 2018 at 05:28:28PM +0100, David Sterba wrote:
-> On Tue, Jan 30, 2018 at 08:54:08AM +0200, Nikolay Borisov wrote:
-> > 
-> > 
-> > On 29.01.2018 23:43, Omar Sandoval wrote:
-> > > On Mon, Jan 29, 2018 at 12:24:26PM +0200, Nikolay Borisov wrote:
-> > >> On 26.01.2018 20:40, Omar Sandoval wrote:
-> > > [snip]
-> > >>> +/*
-> > >>> + * This intentionally duplicates btrfs_util_f_is_subvolume() instead of opening
-> > >>> + * a file descriptor and calling it, because fstat() and fstatfs() don't accept
-> > >>> + * file descriptors opened with O_PATH on old kernels (before v3.6 and before
-> > >>> + * v3.12, respectively), but stat() and statfs() can be called on a path that
-> > >>> + * the user doesn't have read or write permissions to.
-> > >>> + */
-> > >>> +__attribute__((visibility("default")))
-> > >>
-> > >> Why do we need to explicitly set the attribute visibility to default,
-> > >> isn't it implicitly default already?
-> > > 
-> > > Ah, I forgot to add -fvisibility=hidden to the build rule when I ported
-> > > this to the btrfs-progs Makefile, that's why that's there. I'll add
-> > > -fvisibility=hidden to the Makefile.
-> > 
-> > Right, it could be a good idea to hide the visibility attribute behind
-> > an eloquent macro i.e. (PUBLIC|LIBRARY)_FUNC or some such.
+On 01/26/2018 07:41 PM, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
 > 
-> Macro would be better (but is not needed for the initial version).
+> Now implemented with btrfs_util_subvolume_path(),
+> btrfs_util_subvolume_info(), and subvolume iterators.
 > 
-> Alternatively the library .sym file can externally track the exported
-> symbols and also track versioning.
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+>  cmds-subvolume.c | 150 ++++++++++++++++++++++++++++++++++++-------------------
+>  utils.c          | 118 -------------------------------------------
+>  utils.h          |   5 --
+>  3 files changed, 99 insertions(+), 174 deletions(-)
+> 
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index c5e03011..b969fc88 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+>
+>
+> [...]
+>  	} else
+>  		strcpy(tstr, "-");
+>  	printf("\tCreation time: \t\t%s\n", tstr);
+>  
+> -	printf("\tSubvolume ID: \t\t%llu\n", get_ri.root_id);
+> -	printf("\tGeneration: \t\t%llu\n", get_ri.gen);
+> -	printf("\tGen at creation: \t%llu\n", get_ri.ogen);
+> -	printf("\tParent ID: \t\t%llu\n", get_ri.ref_tree);
+> -	printf("\tTop level ID: \t\t%llu\n", get_ri.top_id);
+> +	printf("\tSubvolume ID: \t\t%" PRIu64 "\n", subvol.id);
+> +	printf("\tGeneration: \t\t%" PRIu64 "\n", subvol.generation);
+> +	printf("\tGen at creation: \t%" PRIu64 "\n", subvol.otransid);
+> +	printf("\tParent ID: \t\t%" PRIu64 "\n", subvol.parent_id);
+> +	printf("\tTop level ID: \t\t%" PRIu64 "\n", subvol.parent_id);
+>  
+> -	if (get_ri.flags & BTRFS_ROOT_SUBVOL_RDONLY)
+> +	if (subvol.flags & BTRFS_ROOT_SUBVOL_RDONLY)
+>  		printf("\tFlags: \t\t\treadonly\n");
+>  	else
+>  		printf("\tFlags: \t\t\t-\n");
+>  
+>  	/* print the snapshots of the given subvol if any*/
+>  	printf("\tSnapshot(s):\n");
+> -	filter_set = btrfs_list_alloc_filter_set();
+> -	btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_BY_PARENT,
+> -				(u64)(unsigned long)get_ri.uuid);
+> -	btrfs_list_setup_print_column(BTRFS_LIST_PATH);
+>  
+> -	fd = open_file_or_dir(fullpath, &dirstream1);
+> -	if (fd < 0) {
+> -		fprintf(stderr, "ERROR: can't access '%s'\n", fullpath);
+> -		goto out;
+> +	err = btrfs_util_f_create_subvolume_iterator(fd,
+> +						     BTRFS_FS_TREE_OBJECTID,
+> +						     0, &iter);
+> +
+> [...]
+When you have enough subvolumes in a filesystem, let's say 100000 (yes,
+that sometimes happens), the current btrfs sub list is quite unusable,
+which is kind of expected. But, currently, sub show is also unusable
+because it still starts loading a list of all subvolumes to be able to
+print the 'snapshots, if any'.
 
-I'll add a macro for this, thanks.
+So I guess that this new sub show will at least print the info first and
+then use the iterator and start crawling through the list, which can be
+interrupted? At least you get the relevant info first then. :-)
+
+-- 
+Hans van Kranenburg

@@ -1,83 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga06.intel.com ([134.134.136.31]:10970 "EHLO mga06.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753553AbeBBROC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Feb 2018 12:14:02 -0500
-Date: Sat, 3 Feb 2018 01:13:29 +0800
-From: kbuild test robot <fengguang.wu@intel.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
-Subject: [josef-btrfs:current-work 3/3] block/blk-wbt.c:919:1-10: alloc with
- no test, possible model on line 924
-Message-ID: <201802030126.iLSHnHGq%fengguang.wu@intel.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:56066 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1750795AbeBBIeW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Feb 2018 03:34:22 -0500
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>, <quwenruo.btrfs@gmx.com>
+Subject: [RFC PATCH v2 0/4] Add support for export testsuits
+Date: Fri, 2 Feb 2018 16:34:01 +0800
+Message-ID: <1517560445-5712-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git current-work
-head:   1ac686f6d1b04b480cd245fb927180e1238bd3ac
-commit: 1ac686f6d1b04b480cd245fb927180e1238bd3ac [3/3] current-work
+Achieved:
+1. export testsuit by:
+ $ make EXPORT=/where/you/want/to/generate/tests.tar.gz package
+relative path and absolute path both be ok.
+Besides tests itself, fssum and btrfs-corrupt-block will also be
+included in tests.tar.gz, since misc and fsck tests depend on
+btrfs-corrupt-block, and misc tests depend on fssum. 
+
+2. after decompress tests.tar.gz, run test by:
+ $ TEST=`MASK` ./mkfs-tests.sh
+and, without MASK also be ok.
+replenish:
+The directory Structure after decompress tests.tar.gz is:
+ $ tar -xzvf ./tests.tar.gz
+ $ ls
+   tests fssum btrfs-corrupt-block
+
+Gu Jinxiang (4):
+  btrfs-progs: Add package command for packaging tests
+  btrfs-progs: Add EXEC represent path of executable file
+  btrfs-progs: Modify rootdir files when use mkfs.btrfs
+  btrfs-progs: Add readme for export testsuits
+
+ Makefile                                           |  4 ++
+ tests/README.md                                    | 20 ++++++++
+ tests/cli-tests.sh                                 |  5 ++
+ tests/cli-tests/001-btrfs/test.sh                  | 20 ++++----
+ .../cli-tests/002-balance-full-no-filters/test.sh  | 10 ++--
+ tests/cli-tests/003-fi-resize-args/test.sh         | 30 +++++------
+ .../cli-tests/004-send-parent-multi-subvol/test.sh | 12 ++---
+ tests/cli-tests/005-qgroup-show/test.sh            | 14 ++---
+ tests/cli-tests/006-qgroup-show-sync/test.sh       | 14 ++---
+ tests/cli-tests/007-check-force/test.sh            | 14 ++---
+ .../008-subvolume-get-set-default/test.sh          | 20 ++++----
+ tests/common                                       | 16 +++---
+ tests/common.convert                               |  8 +--
+ tests/convert-tests.sh                             |  5 ++
+ .../004-ext2-backup-superblock-ranges/test.sh      | 10 ++--
+ .../convert-tests/005-delete-all-rollback/test.sh  |  2 +-
+ .../007-unsupported-block-sizes/test.sh            |  2 +-
+ .../011-reiserfs-delete-all-rollback/test.sh       |  2 +-
+ .../015-no-rollback-after-balance/test.sh          |  6 +--
+ tests/export-tests.sh                              | 28 ++++++++++
+ tests/fsck-tests.sh                                |  5 ++
+ tests/fsck-tests/012-leaf-corruption/test.sh       |  2 +-
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh   | 12 ++---
+ tests/fsck-tests/018-leaf-crossing-stripes/test.sh |  2 +-
+ .../fsck-tests/019-non-skinny-false-alert/test.sh  |  2 +-
+ tests/fsck-tests/020-extent-ref-cases/test.sh      |  2 +-
+ .../021-partially-dropped-snapshot-case/test.sh    |  2 +-
+ tests/fsck-tests/022-qgroup-rescan-halfway/test.sh |  2 +-
+ tests/fsck-tests/023-qgroup-stack-overflow/test.sh |  2 +-
+ tests/fsck-tests/024-clear-space-cache/test.sh     | 10 ++--
+ tests/fsck-tests/025-file-extents/test.sh          | 14 ++---
+ tests/fsck-tests/026-bad-dir-item-name/test.sh     |  2 +-
+ tests/fsck-tests/027-tree-reloc-tree/test.sh       |  2 +-
+ .../028-unaligned-super-dev-sizes/test.sh          |  6 +--
+ tests/fuzz-tests.sh                                |  5 ++
+ .../fuzz-tests/001-simple-check-unmounted/test.sh  |  2 +-
+ tests/fuzz-tests/002-simple-image/test.sh          |  2 +-
+ tests/fuzz-tests/003-multi-check-unmounted/test.sh | 12 ++---
+ tests/fuzz-tests/004-simple-dump-tree/test.sh      |  2 +-
+ tests/fuzz-tests/005-simple-dump-super/test.sh     |  4 +-
+ tests/fuzz-tests/006-simple-tree-stats/test.sh     |  2 +-
+ tests/fuzz-tests/007-simple-super-recover/test.sh  |  2 +-
+ tests/fuzz-tests/008-simple-chunk-recover/test.sh  |  2 +-
+ tests/fuzz-tests/009-simple-zero-log/test.sh       |  2 +-
+ tests/misc-tests.sh                                |  5 ++
+ tests/misc-tests/001-btrfstune-features/test.sh    | 10 ++--
+ tests/misc-tests/002-uuid-rewrite/test.sh          | 24 ++++-----
+ tests/misc-tests/003-zero-log/test.sh              | 18 +++----
+ tests/misc-tests/004-shrink-fs/test.sh             | 14 ++---
+ .../005-convert-progress-thread-crash/test.sh      |  2 +-
+ .../misc-tests/006-image-on-missing-device/test.sh | 10 ++--
+ tests/misc-tests/007-subvolume-sync/test.sh        | 18 +++----
+ tests/misc-tests/008-leaf-crossing-stripes/test.sh |  4 +-
+ .../009-subvolume-sync-must-wait/test.sh           | 22 ++++----
+ .../010-convert-delete-ext2-subvol/test.sh         | 10 ++--
+ tests/misc-tests/011-delete-missing-device/test.sh | 18 +++----
+ tests/misc-tests/012-find-root-no-result/test.sh   |  4 +-
+ tests/misc-tests/013-subvolume-sync-crash/test.sh  | 20 ++++----
+ tests/misc-tests/014-filesystem-label/test.sh      | 22 ++++----
+ tests/misc-tests/015-dump-super-garbage/test.sh    | 18 +++----
+ tests/misc-tests/016-send-clone-src/test.sh        | 12 ++---
+ .../017-recv-stream-malformatted/test.sh           |  8 +--
+ tests/misc-tests/018-recv-end-of-stream/test.sh    | 60 +++++++++++-----------
+ .../019-receive-clones-on-mounted-subvol/test.sh   | 38 +++++++-------
+ .../020-fix-superblock-corruption/test.sh          |  8 +--
+ tests/misc-tests/021-image-multi-devices/test.sh   |  6 +--
+ .../022-filesystem-du-on-empty-subvol/test.sh      | 12 ++---
+ .../023-device-usage-with-missing-device/test.sh   | 10 ++--
+ .../misc-tests/024-inspect-internal-rootid/test.sh | 24 ++++-----
+ tests/misc-tests/025-zstd-compression/test.sh      |  6 +--
+ .../026-image-non-printable-chars/test.sh          |  8 +--
+ .../027-subvol-list-deleted-toplevel/test.sh       |  6 +--
+ tests/mkfs-tests.sh                                |  5 ++
+ tests/mkfs-tests/001-basic-profiles/test.sh        | 12 ++---
+ .../002-no-force-mixed-on-small-volume/test.sh     |  2 +-
+ .../003-mixed-with-wrong-nodesize/test.sh          |  2 +-
+ tests/mkfs-tests/004-rootdir-keeps-size/test.sh    |  4 +-
+ .../005-long-device-name-for-ssd/test.sh           |  4 +-
+ tests/mkfs-tests/006-partitioned-loopdev/test.sh   |  4 +-
+ .../mkfs-tests/007-mix-nodesize-sectorsize/test.sh |  6 +--
+ .../008-sectorsize-nodesize-combination/test.sh    |  4 +-
+ .../009-special-files-for-rootdir/test.sh          |  4 +-
+ 82 files changed, 446 insertions(+), 360 deletions(-)
+ create mode 100755 tests/export-tests.sh
+
+-- 
+2.14.3
 
 
-coccinelle warnings: (new ones prefixed by >>)
 
->> block/blk-wbt.c:919:1-10: alloc with no test, possible model on line 924
-
-vim +919 block/blk-wbt.c
-
-   910	
-   911	static int blkcg_qos_init(struct request_queue *q)
-   912	{
-   913		struct blkcg_qos *blkcg_qos;
-   914		struct rq_qos *rqos;
-   915		int i;
-   916	
-   917		BUILD_BUG_ON(WBT_NR_BITS > BLK_STAT_RES_BITS);
-   918	
- > 919		blkcg_qos = kzalloc(sizeof(*blkcg_qos), GFP_KERNEL);
-   920		if (!rwb)
-   921			return -ENOMEM;
-   922	
-   923		rqos = &blkcg_qos->rqos;
- > 924		rqos->cb = blk_stat_alloc_callback(qos_timer_fn, wbt_data_dir, 2,
-   925						   blkcg_qos);
-   926		if (!rqos->cb) {
-   927			kfree(blkcg_qos);
-   928			return -ENOMEM;
-   929		}
-   930	
-   931		rq_qos_add(q, rqos);
-   932		blk_stat_add_callback(q, rqos->cb);
-   933		atomic_set(&blkcg_qos->scale_cookie, DEFAULT_SCALE_COOKIE);
-   934		blkcg_qos->scale_lat = 0;
-   935	#if 0
-   936		for (i = 0; i < WBT_NUM_RWQ; i++) {
-   937			atomic_set(&rwb->rq_wait[i].inflight, 0);
-   938			init_waitqueue_head(&rwb->rq_wait[i].wait);
-   939		}
-   940	
-   941		rwb->enable_state = WBT_STATE_ON_DEFAULT;
-   942		wbt_update_limits(rwb);
-   943	
-   944		/*
-   945		 * Assign rwb and add the stats callback.
-   946		 */
-   947		if (q->rq_wb)
-   948			q->rq_wb->next = rwb;
-   949		else (q->rq_wb)
-   950			q->rq_wb = rwb;
-   951		blk_stat_add_callback(q, rwb->cb);
-   952	
-   953		rwb->min_lat_nsec = wbt_default_latency_nsec(q);
-   954	
-   955		wbt_set_queue_depth(rwb, blk_queue_depth(q));
-   956		wbt_set_write_cache(rwb, test_bit(QUEUE_FLAG_WC, &q->queue_flags));
-   957	#endif
-   958		return 0;
-   959	}
-   960	
-
----
-0-DAY kernel test infrastructure                Open Source Technology Center
-https://lists.01.org/pipermail/kbuild-all                   Intel Corporation

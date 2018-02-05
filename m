@@ -1,87 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:45678 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:44812 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750943AbeBEGrU (ORCPT
+        with ESMTP id S1750943AbeBEGre (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Mon, 5 Feb 2018 01:47:20 -0500
+        Mon, 5 Feb 2018 01:47:34 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 1/4] btrfs-progs: mode-lowmem: Fix false alert about orphan inode
-Date: Mon,  5 Feb 2018 14:47:11 +0800
-Message-Id: <20180205064714.15659-1-wqu@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: fsck-tests: Add test case with valid orphan inode
+Date: Mon,  5 Feb 2018 14:47:12 +0800
+Message-Id: <20180205064714.15659-2-wqu@suse.com>
+In-Reply-To: <20180205064714.15659-1-wqu@suse.com>
+References: <20180205064714.15659-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs can delay inode deletion and in that case btrfs will unlink the
-victim inode from its parent dir, and insert a marker to info btrfs to
-delete it later.
-
-In that case, such victim inode will have nlinks == 0, but is still
-completely valid.
-Original mode won't report such problem, but lowmem mode doesn't check
-the ORPHAN_ITEM key for such inode, and can report false alert like:
-------
-ERROR: root 257 INODE[28891726] is orphan item
-------
-
-Fix such false alert by checking orphan item for inode whose nlink is 0.
+Regression test for false alerts in lowmem mode.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/mode-lowmem.c | 24 ++++++++++++++++++++++--
- 1 file changed, 22 insertions(+), 2 deletions(-)
+ .../029-valid-orphan-item/orphan_inode.img.xz         | Bin 0 -> 1620 bytes
+ tests/fsck-tests/029-valid-orphan-item/test.sh        |  18 ++++++++++++++++++
+ 2 files changed, 18 insertions(+)
+ create mode 100644 tests/fsck-tests/029-valid-orphan-item/orphan_inode.img.xz
+ create mode 100755 tests/fsck-tests/029-valid-orphan-item/test.sh
 
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 62bcf3d2e126..b11a6d77d102 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -1861,6 +1861,24 @@ out:
- 	return ret;
- }
- 
-+static bool has_orphan_item(struct btrfs_root *root, u64 ino)
-+{
-+	struct btrfs_path path;
-+	struct btrfs_key key;
-+	int ret;
+diff --git a/tests/fsck-tests/029-valid-orphan-item/orphan_inode.img.xz b/tests/fsck-tests/029-valid-orphan-item/orphan_inode.img.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..26e4cf8a370f64fef0701fbbcb6d4d2a824f9e4b
+GIT binary patch
+literal 1620
+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
+Se@k4k#Ao{g000001X)^tvJ;K~
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/fsck-tests/029-valid-orphan-item/test.sh b/tests/fsck-tests/029-valid-orphan-item/test.sh
+new file mode 100755
+index 000000000000..997eb70e671c
+--- /dev/null
++++ b/tests/fsck-tests/029-valid-orphan-item/test.sh
+@@ -0,0 +1,18 @@
++#!/bin/bash
++# To check if btrfs check can handle valid orphan items without problem
++# Orphan item is a marker used to delete inode/root.
++# Orphan inode/root will has no referencer to it, and will have an orphan item,
++# which should not be reported as error.
 +
-+	btrfs_init_path(&path);
-+	key.objectid = BTRFS_ORPHAN_OBJECTID;
-+	key.type = BTRFS_ORPHAN_ITEM_KEY;
-+	key.offset = ino;
++source "$TOP/tests/common"
 +
-+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-+	btrfs_release_path(&path);
-+	if (ret == 0)
-+		return true;
-+	return false;
++check_prereq btrfs
++
++check_image() {
++	local image
++
++	image=$1
++	run_check "$TOP/btrfs" check "$image"
 +}
 +
- /*
-  * Check INODE_ITEM and related ITEMs (the same inode number)
-  * 1. check link count
-@@ -1890,6 +1908,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
- 	u64 extent_size = 0;
- 	unsigned int dir;
- 	unsigned int nodatasum;
-+	bool is_orphan = false;
- 	int slot;
- 	int ret;
- 	int err = 0;
-@@ -2040,10 +2059,11 @@ out:
- 				      root->objectid, inode_id, nlink, refs);
- 			}
- 		} else if (!nlink) {
--			if (repair)
-+			is_orphan = has_orphan_item(root, inode_id);
-+			if (!is_orphan && repair)
- 				ret = repair_inode_orphan_item_lowmem(root,
- 							      path, inode_id);
--			if (!repair || ret) {
-+			if (!is_orphan && (!repair || ret)) {
- 				err |= ORPHAN_ITEM;
- 				error("root %llu INODE[%llu] is orphan item",
- 				      root->objectid, inode_id);
++check_all_images
 -- 
 2.16.1
 

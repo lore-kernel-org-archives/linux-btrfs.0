@@ -1,177 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:49748 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933008AbeBMBNu (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Mon, 12 Feb 2018 20:13:50 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH] btrfs: Verify extent allocated by find_free_extent() won't overlap with extents from previous transaction
-Date: Tue, 13 Feb 2018 09:13:32 +0800
-Message-Id: <20180213011332.13287-1-wqu@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:39962 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751979AbeBEGzy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Feb 2018 01:55:54 -0500
+Subject: Re: [PATCH 1/4] btrfs-progs: mode-lowmem: Fix false alert about
+ orphan inode
+To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>, <dsterba@suse.cz>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+References: <20180205064714.15659-1-wqu@suse.com>
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+Message-ID: <f929f410-7413-9892-4e9c-a11c77f7e21a@cn.fujitsu.com>
+Date: Mon, 5 Feb 2018 15:00:39 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180205064714.15659-1-wqu@suse.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are reports in mail list, even with latest mainline kernel, btrfs
-can't survive a power loss.
 
-Unlike journal based filesystem, btrfs doesn't use journal for such
-work. (log tree is an optimization for fsync, not to keep fs healthy)
-In btrfs we use metadata CoW to ensure all tree blocks are as atomic as
-superblock.
 
-This leads to an obvious assumption, some code breaks such metadata CoW
-makes btrfs no longer bullet-proof against power loss.
+On 02/05/2018 02:47 PM, Qu Wenruo wrote:
+> Btrfs can delay inode deletion and in that case btrfs will unlink the
+> victim inode from its parent dir, and insert a marker to info btrfs to
+> delete it later.
+> 
+> In that case, such victim inode will have nlinks == 0, but is still
+> completely valid.
+> Original mode won't report such problem, but lowmem mode doesn't check
+> the ORPHAN_ITEM key for such inode, and can report false alert like:
+> ------
+> ERROR: root 257 INODE[28891726] is orphan item
+> ------
+> 
+> Fix such false alert by checking orphan item for inode whose nlink is 0.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   check/mode-lowmem.c | 24 ++++++++++++++++++++++--
+>   1 file changed, 22 insertions(+), 2 deletions(-)
+> 
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index 62bcf3d2e126..b11a6d77d102 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -1861,6 +1861,24 @@ out:
+>   	return ret;
+>   }
+>   
+> +static bool has_orphan_item(struct btrfs_root *root, u64 ino)
+> +{
+> +	struct btrfs_path path;
+> +	struct btrfs_key key;
+> +	int ret;
+> +
+> +	btrfs_init_path(&path);
+> +	key.objectid = BTRFS_ORPHAN_OBJECTID;
+> +	key.type = BTRFS_ORPHAN_ITEM_KEY;
+> +	key.offset = ino;
+> +
+> +	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+> +	btrfs_release_path(&path);
+> +	if (ret == 0)
+> +		return true;
+> +	return false;
+> +}
+> +
 
-This patch adds extra runtime selftest to find_free_extent(), which
-will check the range in commit root of extent tree to ensure there is no
-overlap at all.
+Suggestion:
+Maybe "is_orphan_item" is a better name?
+Anyway,
 
-And hopes this could help us to catch the cause of the problem.
+Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Unfortunately, no new problem exposed yet.
----
- fs/btrfs/extent-tree.c | 118 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 118 insertions(+)
+>   /*
+>    * Check INODE_ITEM and related ITEMs (the same inode number)
+>    * 1. check link count
+> @@ -1890,6 +1908,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path,
+>   	u64 extent_size = 0;
+>   	unsigned int dir;
+>   	unsigned int nodatasum;
+> +	bool is_orphan = false;
+>   	int slot;
+>   	int ret;
+>   	int err = 0;
+> @@ -2040,10 +2059,11 @@ out:
+>   				      root->objectid, inode_id, nlink, refs);
+>   			}
+>   		} else if (!nlink) {
+> -			if (repair)
+> +			is_orphan = has_orphan_item(root, inode_id);
+> +			if (!is_orphan && repair)
+>   				ret = repair_inode_orphan_item_lowmem(root,
+>   							      path, inode_id);
+> -			if (!repair || ret) {
+> +			if (!is_orphan && (!repair || ret)) {
+>   				err |= ORPHAN_ITEM;
+>   				error("root %llu INODE[%llu] is orphan item",
+>   				      root->objectid, inode_id);
+> 
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 2f4328511ac8..3b3cd82bce3a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7458,6 +7458,114 @@ btrfs_release_block_group(struct btrfs_block_group_cache *cache,
- 	btrfs_put_block_group(cache);
- }
- 
-+#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-+/*
-+ * Verify if the given extent range [@start, @start + @len) conflicts any
-+ * existing extent in commit root.
-+ *
-+ * Btrfs doesn't use journal, but depends on metadata (and data) CoW to keep
-+ * the whole filesystem consistent against powerloss.
-+ * If we have overwritten any extent used by previous trans (commit root),
-+ * and powerloss happen we will corrupt our filesystem.
-+ *
-+ * Return 0 if nothing wrong.
-+ * Return <0 (including ENOMEM) means we have something wrong.
-+ * Except NOEMEM, this normally means we have extent conflicts with previous
-+ * transaction.
-+ */
-+static int check_extent_conflicts(struct btrfs_fs_info *fs_info,
-+				  u64 start, u64 len)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_path *path;
-+	struct btrfs_root *extent_root = fs_info->extent_root;
-+	u64 extent_start;
-+	u64 extent_len;
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+
-+	key.objectid = start + len;
-+	key.type = 0;
-+	key.offset = 0;
-+
-+	/*
-+	 * Here we use extent commit root to search for any conflicts.
-+	 * If extent commit tree is already overwritten, we will get transid
-+	 * error and error out any way.
-+	 * If extent commit tree is OK, but other extent conflicts, we will
-+	 * find it.
-+	 * So anyway, such search should be OK to find the conflicts.
-+	 */
-+	path->search_commit_root = true;
-+	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
-+
-+	if (ret < 0)
-+		goto out;
-+	/* Impossible as no type/offset should be (u64)-1 */
-+	if (ret == 0) {
-+		ret = -EUCLEAN;
-+		goto out;
-+	}
-+	ret = btrfs_previous_extent_item(extent_root, path, start);
-+	if (ret < 0)
-+		goto out;
-+	if (ret == 0) {
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		extent_start = key.objectid;
-+		if (key.type == BTRFS_EXTENT_ITEM_KEY)
-+			extent_len = key.offset;
-+		else
-+			extent_len = fs_info->nodesize;
-+		goto report;
-+	}
-+	/*
-+	 * Even we didn't found extent starts after @start, we still need to
-+	 * ensure previous extent doesn't overlap with [@start, @start + @len)
-+	 */
-+	while (1) {
-+		extent_len = 0;
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		if (key.type == BTRFS_EXTENT_ITEM_KEY)
-+			extent_len = key.offset;
-+		else if (key.type == BTRFS_METADATA_ITEM_KEY)
-+			extent_len = fs_info->nodesize;
-+
-+		if (extent_len) {
-+			if (extent_len + key.objectid <= start) {
-+				ret = 0;
-+				goto out;
-+			}
-+			extent_start = key.objectid;
-+			goto report;
-+		}
-+		if (path->slots[0] == 0) {
-+			ret = btrfs_prev_leaf(extent_root, path);
-+			if (ret > 0) {
-+				ret = 0;
-+				goto out;
-+			}
-+			if (ret < 0)
-+				goto out;
-+		} else {
-+			path->slots[0]--;
-+		}
-+	}
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+report:
-+	WARN(1,
-+"broken CoW detected: old extent [%llu, %llu) new extent [%llu, %llu)\n",
-+	     extent_start, extent_start + extent_len, start, start + len);
-+	btrfs_free_path(path);
-+	return -EEXIST;
-+}
-+#endif
-+
- /*
-  * walks the btree of allocated extents and find a hole of a given size.
-  * The key ins is changed to record the hole:
-@@ -7949,6 +8057,16 @@ static noinline int find_free_extent(struct btrfs_fs_info *fs_info,
- 		spin_unlock(&space_info->lock);
- 		ins->offset = max_extent_size;
- 	}
-+#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-+	if (!ret) {
-+		/*
-+		 * Any extent allocated must not conflict with any extent in
-+		 * commit root
-+		 */
-+		ret = check_extent_conflicts(fs_info, ins->objectid,
-+					     ins->offset);
-+	}
-+#endif
- 	return ret;
- }
- 
--- 
-2.16.1
 

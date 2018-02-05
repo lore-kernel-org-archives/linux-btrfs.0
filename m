@@ -1,136 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36064 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36067 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752689AbeBEIlV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752686AbeBEIlV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 5 Feb 2018 03:41:21 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1C4FCAC42
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6711DAC64
         for <linux-btrfs@vger.kernel.org>; Mon,  5 Feb 2018 08:41:20 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 3/4] btrfs: Remove code referencing unused TRANS_USERSPACE
-Date: Mon,  5 Feb 2018 10:41:15 +0200
-Message-Id: <1517820076-13613-3-git-send-email-nborisov@suse.com>
+Subject: [PATCH v2 4/4] btrfs: Remove btrfs_fs_info::open_ioctl_trans
+Date: Mon,  5 Feb 2018 10:41:16 +0200
+Message-Id: <1517820076-13613-4-git-send-email-nborisov@suse.com>
 In-Reply-To: <1517820076-13613-1-git-send-email-nborisov@suse.com>
 References: <1515590477-22878-1-git-send-email-nborisov@suse.com>
  <1517820076-13613-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that the userspace transaction ioctls have been removed,
-TRANS_USERSPACE is no longer used hence we can remove it.
+Since userspace transaction have been removed we no longer have use
+for this field so delete it.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
 
 V2: 
- * This was 2/4 but now is 3/4
- * Also remove the declaration of btrfs_start_ioctl_transaction from 
- transaction.h
- fs/btrfs/transaction.c | 27 ++++++---------------------
- fs/btrfs/transaction.h |  6 +-----
- 2 files changed, 7 insertions(+), 26 deletions(-)
+ * No changes
+ fs/btrfs/ctree.h       | 1 -
+ fs/btrfs/extent-tree.c | 3 +--
+ fs/btrfs/transaction.c | 9 +++------
+ 3 files changed, 4 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index dc679246b8e8..57a0d0b0ea74 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -877,7 +877,6 @@ struct btrfs_fs_info {
+ 	struct rb_root tree_mod_log;
+ 
+ 	atomic_t async_delalloc_pages;
+-	atomic_t open_ioctl_trans;
+ 
+ 	/*
+ 	 * this is used to protect the following list -- ordered_roots.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8d51e4bb67c1..dcb059a46b77 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4329,8 +4329,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
+ 
+ 		/* commit the current transaction and try again */
+ commit_trans:
+-		if (need_commit &&
+-		    !atomic_read(&fs_info->open_ioctl_trans)) {
++		if (need_commit) {
+ 			need_commit--;
+ 
+ 			if (need_commit > 0) {
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 04f07144b45c..d61d1fd59ccd 100644
+index d61d1fd59ccd..c5ef42318058 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -37,22 +37,16 @@
- 
- static const unsigned int btrfs_blocked_trans_types[TRANS_STATE_MAX] = {
- 	[TRANS_STATE_RUNNING]		= 0U,
--	[TRANS_STATE_BLOCKED]		= (__TRANS_USERSPACE |
--					   __TRANS_START),
--	[TRANS_STATE_COMMIT_START]	= (__TRANS_USERSPACE |
--					   __TRANS_START |
--					   __TRANS_ATTACH),
--	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_USERSPACE |
--					   __TRANS_START |
-+	[TRANS_STATE_BLOCKED]		=  __TRANS_START,
-+	[TRANS_STATE_COMMIT_START]	= (__TRANS_START | __TRANS_ATTACH),
-+	[TRANS_STATE_COMMIT_DOING]	= (__TRANS_START |
- 					   __TRANS_ATTACH |
- 					   __TRANS_JOIN),
--	[TRANS_STATE_UNBLOCKED]		= (__TRANS_USERSPACE |
--					   __TRANS_START |
-+	[TRANS_STATE_UNBLOCKED]		= (__TRANS_START |
- 					   __TRANS_ATTACH |
- 					   __TRANS_JOIN |
- 					   __TRANS_JOIN_NOLOCK),
--	[TRANS_STATE_COMPLETED]		= (__TRANS_USERSPACE |
--					   __TRANS_START |
-+	[TRANS_STATE_COMPLETED]		= (__TRANS_START |
- 					   __TRANS_ATTACH |
- 					   __TRANS_JOIN |
- 					   __TRANS_JOIN_NOLOCK),
-@@ -449,9 +443,6 @@ static int may_wait_transaction(struct btrfs_fs_info *fs_info, int type)
+@@ -443,8 +443,7 @@ static int may_wait_transaction(struct btrfs_fs_info *fs_info, int type)
  	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
  		return 0;
  
--	if (type == TRANS_USERSPACE)
--		return 1;
--
- 	if (type == TRANS_START &&
- 	    !atomic_read(&fs_info->open_ioctl_trans))
+-	if (type == TRANS_START &&
+-	    !atomic_read(&fs_info->open_ioctl_trans))
++	if (type == TRANS_START)
  		return 1;
-@@ -593,7 +584,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
- got_it:
- 	btrfs_record_root_in_trans(h, root);
  
--	if (!current->journal_info && type != TRANS_USERSPACE)
-+	if (!current->journal_info)
- 		current->journal_info = h;
- 	return h;
+ 	return 0;
+@@ -774,8 +773,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid)
  
-@@ -678,12 +669,6 @@ struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root
- 				 BTRFS_RESERVE_NO_FLUSH, true);
+ void btrfs_throttle(struct btrfs_fs_info *fs_info)
+ {
+-	if (!atomic_read(&fs_info->open_ioctl_trans))
+-		wait_current_trans(fs_info);
++	wait_current_trans(fs_info);
  }
  
--struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *root)
--{
--	return start_transaction(root, 0, TRANS_USERSPACE,
--				 BTRFS_RESERVE_NO_FLUSH, true);
--}
--
- /*
-  * btrfs_attach_transaction() - catch the running transaction
-  *
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 6beee072b1bd..8a6361828c69 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -89,21 +89,18 @@ struct btrfs_transaction {
+ static int should_end_transaction(struct btrfs_trans_handle *trans)
+@@ -857,8 +855,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
  
- #define __TRANS_FREEZABLE	(1U << 0)
+ 	btrfs_trans_release_chunk_metadata(trans);
  
--#define __TRANS_USERSPACE	(1U << 8)
- #define __TRANS_START		(1U << 9)
- #define __TRANS_ATTACH		(1U << 10)
- #define __TRANS_JOIN		(1U << 11)
- #define __TRANS_JOIN_NOLOCK	(1U << 12)
- #define __TRANS_DUMMY		(1U << 13)
- 
--#define TRANS_USERSPACE		(__TRANS_USERSPACE | __TRANS_FREEZABLE)
- #define TRANS_START		(__TRANS_START | __TRANS_FREEZABLE)
- #define TRANS_ATTACH		(__TRANS_ATTACH)
- #define TRANS_JOIN		(__TRANS_JOIN | __TRANS_FREEZABLE)
- #define TRANS_JOIN_NOLOCK	(__TRANS_JOIN_NOLOCK)
- 
--#define TRANS_EXTWRITERS	(__TRANS_USERSPACE | __TRANS_START |	\
--				 __TRANS_ATTACH)
-+#define TRANS_EXTWRITERS	(__TRANS_START | __TRANS_ATTACH)
- 
- #define BTRFS_SEND_TRANS_STUB	((void *)1)
- 
-@@ -194,7 +191,6 @@ struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root
- struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_attach_transaction_barrier(
- 					struct btrfs_root *root);
--struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *root);
- int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid);
- 
- void btrfs_add_dead_root(struct btrfs_root *root);
+-	if (lock && !atomic_read(&info->open_ioctl_trans) &&
+-	    should_end_transaction(trans) &&
++	if (lock && should_end_transaction(trans) &&
+ 	    READ_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
+ 		spin_lock(&info->trans_lock);
+ 		if (cur_trans->state == TRANS_STATE_RUNNING)
 -- 
 2.7.4
 

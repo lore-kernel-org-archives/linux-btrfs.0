@@ -1,96 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36067 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:54609 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752686AbeBEIlV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Feb 2018 03:41:21 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6711DAC64
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Feb 2018 08:41:20 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 4/4] btrfs: Remove btrfs_fs_info::open_ioctl_trans
-Date: Mon,  5 Feb 2018 10:41:16 +0200
-Message-Id: <1517820076-13613-4-git-send-email-nborisov@suse.com>
-In-Reply-To: <1517820076-13613-1-git-send-email-nborisov@suse.com>
-References: <1515590477-22878-1-git-send-email-nborisov@suse.com>
- <1517820076-13613-1-git-send-email-nborisov@suse.com>
+        id S1751796AbeBFOq6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Feb 2018 09:46:58 -0500
+Date: Tue, 6 Feb 2018 15:44:42 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Colin King <colin.king@canonical.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Liu Bo <bo.li.liu@oracle.com>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH][btrfs-next] btrfs: remove redundant check on ret and goto
+Message-ID: <20180206144442.GA31890@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180112165258.27431-1-colin.king@canonical.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180112165258.27431-1-colin.king@canonical.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since userspace transaction have been removed we no longer have use
-for this field so delete it.
+On Fri, Jan 12, 2018 at 04:52:58PM +0000, Colin King wrote:
+> From: Colin Ian King <colin.king@canonical.com>
+> 
+> The check for a non-zero ret is redundant as the goto will jump to
+> the very next statement anyway.  Remove this extraneous code.
+> 
+> Detected by CoverityScan, CID#1463784 ("Identical code for different
+> branches")
+> 
+> Signed-off-by: Colin Ian King <colin.king@canonical.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
-
-V2: 
- * No changes
- fs/btrfs/ctree.h       | 1 -
- fs/btrfs/extent-tree.c | 3 +--
- fs/btrfs/transaction.c | 9 +++------
- 3 files changed, 4 insertions(+), 9 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index dc679246b8e8..57a0d0b0ea74 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -877,7 +877,6 @@ struct btrfs_fs_info {
- 	struct rb_root tree_mod_log;
- 
- 	atomic_t async_delalloc_pages;
--	atomic_t open_ioctl_trans;
- 
- 	/*
- 	 * this is used to protect the following list -- ordered_roots.
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8d51e4bb67c1..dcb059a46b77 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4329,8 +4329,7 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes)
- 
- 		/* commit the current transaction and try again */
- commit_trans:
--		if (need_commit &&
--		    !atomic_read(&fs_info->open_ioctl_trans)) {
-+		if (need_commit) {
- 			need_commit--;
- 
- 			if (need_commit > 0) {
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index d61d1fd59ccd..c5ef42318058 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -443,8 +443,7 @@ static int may_wait_transaction(struct btrfs_fs_info *fs_info, int type)
- 	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
- 		return 0;
- 
--	if (type == TRANS_START &&
--	    !atomic_read(&fs_info->open_ioctl_trans))
-+	if (type == TRANS_START)
- 		return 1;
- 
- 	return 0;
-@@ -774,8 +773,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid)
- 
- void btrfs_throttle(struct btrfs_fs_info *fs_info)
- {
--	if (!atomic_read(&fs_info->open_ioctl_trans))
--		wait_current_trans(fs_info);
-+	wait_current_trans(fs_info);
- }
- 
- static int should_end_transaction(struct btrfs_trans_handle *trans)
-@@ -857,8 +855,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_trans_release_chunk_metadata(trans);
- 
--	if (lock && !atomic_read(&info->open_ioctl_trans) &&
--	    should_end_transaction(trans) &&
-+	if (lock && should_end_transaction(trans) &&
- 	    READ_ONCE(cur_trans->state) == TRANS_STATE_RUNNING) {
- 		spin_lock(&info->trans_lock);
- 		if (cur_trans->state == TRANS_STATE_RUNNING)
--- 
-2.7.4
-
+Added to next, thanks.

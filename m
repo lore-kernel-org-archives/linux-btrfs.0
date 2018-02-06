@@ -1,155 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:32968 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:32980 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753794AbeBGLdH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Feb 2018 06:33:07 -0500
+        id S1753794AbeBGLdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Feb 2018 06:33:16 -0500
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id A3FA621738
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 11:33:06 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id BA05A21738
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 11:33:15 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: skip writeback of last page when truncating file to same size
-Date: Tue,  6 Feb 2018 20:40:31 +0000
-Message-Id: <20180206204031.9759-1-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: send, do not issue unnecessary truncate operations
+Date: Tue,  6 Feb 2018 20:40:40 +0000
+Message-Id: <20180206204040.9809-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When we truncate a file to the same size and that size is not aligned
-with the sector size, we end up triggering writeback (and wait for it to
-complete) of the last page. This is unncessary as we can not have delayed
-allocation beyond the inode's i_size and the goal of truncating a file
-to its own size is to discard prealloc extents (allocated via the
-fallocate(2) system call). Besides the unnecessary IO start and wait, it
-also breaks the oppurtunity for larger contiguous extents on disk, as
-before the last dirty page there might be other dirty pages.
+When send finishes processing an inode representing a regular file, it
+always issues a truncate operation for that file, even if its size did
+not change or the last write sets the file size correctly. In the most
+common cases, the issued write operations set the file to correct size
+(either full or incremental sends) or the file size did not change (for
+incremental sends), so the only case where a truncate operation is needed
+is when a file size becomes smaller in the send snapshot when compared
+to the parent snapshot.
 
-This scenario is probably not very common in general, however it is
-common for btrfs receive implementations because currently the send
-stream always issues a truncate operation for each processed inode as
-the last operation for that inode (this truncate operation is not
-always needed and the send implementation will be addressed to avoid
-them).
+By not issuing unnecessary truncate operations we reduce the stream size
+and save time in the receiver. Currently truncating a file to the same
+size triggers writeback of its last page (if it's dirty) and waits for it
+to complete (only if the file size is not aligned with the filesystem's
+sector size). This is being fixed by another patch and is independent of
+this change (that patch's title is "Btrfs: skip writeback of last page
+when truncating file to same size").
 
-So improve this by not starting and waiting for writeback of the inode's
-last page when we are truncating to exactly the same size.
+The following script was used to measure time spent by a receiver without
+this change applied, with this change applied, and without this change and
+with the truncate fix applied (the fix to not make it start and wait for
+writeback to complete).
 
-The following script was used to quickly measure the time a receive
-operation takes:
+  $ cat test_send.sh
+  #!/bin/bash
 
- $ cat test_send.sh
- #!/bin/bash
+  SRC_DEV=/dev/sdc
+  DST_DEV=/dev/sdd
+  SRC_MNT=/mnt/sdc
+  DST_MNT=/mnt/sdd
 
- SRC_DEV=/dev/sdc
- DST_DEV=/dev/sdd
- SRC_MNT=/mnt/sdc
- DST_MNT=/mnt/sdd
+  mkfs.btrfs -f $SRC_DEV >/dev/null
+  mkfs.btrfs -f $DST_DEV >/dev/null
+  mount $SRC_DEV $SRC_MNT
+  mount $DST_DEV $DST_MNT
 
- mkfs.btrfs -f $SRC_DEV >/dev/null
- mkfs.btrfs -f $DST_DEV >/dev/null
- mount $SRC_DEV $SRC_MNT
- mount $DST_DEV $DST_MNT
-
- echo "Creating source filesystem"
- for ((t = 0; t < 10; t++)); do
-     (
-         for ((i = 1; i <= 20000; i++)); do
-             xfs_io -f -c "pwrite -S 0xab 0 5000" \
-                $SRC_MNT/file_$i > /dev/null
-         done
-     ) &
+  echo "Creating source filesystem"
+  for ((t = 0; t < 10; t++)); do
+      (
+          for ((i = 1; i <= 20000; i++)); do
+              xfs_io -f -c "pwrite -S 0xab 0 5000" \
+                  $SRC_MNT/file_$i > /dev/null
+          done
+      ) &
      worker_pids[$t]=$!
- done
- wait ${worker_pids[@]}
+  done
+  wait ${worker_pids[@]}
 
- echo "Creating and sending snapshot"
- btrfs subvolume snapshot -r $SRC_MNT $SRC_MNT/snap1 >/dev/null
- /usr/bin/time -f "send took %e seconds"    \
-     btrfs send -f $SRC_MNT/send_file $SRC_MNT/snap1
- /usr/bin/time -f "receive took %e seconds" \
-     btrfs receive -f $SRC_MNT/send_file $DST_MNT
+  echo "Creating and sending snapshot"
+  btrfs subvolume snapshot -r $SRC_MNT $SRC_MNT/snap1 >/dev/null
+  /usr/bin/time -f "send took %e seconds"    \
+         btrfs send -f $SRC_MNT/send_file $SRC_MNT/snap1
+  /usr/bin/time -f "receive took %e seconds" \
+         btrfs receive -f $SRC_MNT/send_file $DST_MNT
 
- umount $SRC_MNT
- umount $DST_MNT
+  umount $SRC_MNT
+  umount $DST_MNT
 
-The results for 5 runs were the following:
+The results, which are averages for 5 runs for each case, were the
+following:
 
 * Without this change
 
 average receive time was 26.49 seconds
 standard deviation of 2.53 seconds
 
-* With this change
+* Without this change and with the truncate fix
 
 average receive time was 12.51 seconds
 standard deviation of 0.32 seconds
 
-Reported-by: Robbie Ko <robbieko@synology.com>
+* With this change and without the truncate fix
+
+average receive time was 10.02 seconds
+standard deviation of 1.11 seconds
+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 18 ++++++++++--------
- 1 file changed, 10 insertions(+), 8 deletions(-)
+ fs/btrfs/send.c | 26 +++++++++++++++++++++-----
+ 1 file changed, 21 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2a19413a7868..dae631ab5cb2 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -101,7 +101,7 @@ static const unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
- };
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 484e2af793de..5df50d67d319 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -112,6 +112,7 @@ struct send_ctx {
+ 	u64 cur_inode_mode;
+ 	u64 cur_inode_rdev;
+ 	u64 cur_inode_last_extent;
++	u64 cur_inode_next_write_offset;
  
- static int btrfs_setsize(struct inode *inode, struct iattr *attr);
--static int btrfs_truncate(struct inode *inode);
-+static int btrfs_truncate(struct inode *inode, bool skip_writeback);
- static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
- static noinline int cow_file_range(struct inode *inode,
- 				   struct page *locked_page,
-@@ -3625,7 +3625,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 				goto out;
- 			}
+ 	u64 send_progress;
  
--			ret = btrfs_truncate(inode);
-+			ret = btrfs_truncate(inode, false);
- 			if (ret)
- 				btrfs_orphan_del(NULL, BTRFS_I(inode));
- 		} else {
-@@ -5109,7 +5109,7 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 		inode_dio_wait(inode);
- 		btrfs_inode_resume_unlocked_dio(BTRFS_I(inode));
- 
--		ret = btrfs_truncate(inode);
-+		ret = btrfs_truncate(inode, newsize == oldsize);
- 		if (ret && inode->i_nlink) {
- 			int err;
- 
-@@ -9087,7 +9087,7 @@ int btrfs_page_mkwrite(struct vm_fault *vmf)
+@@ -5029,6 +5030,7 @@ static int send_hole(struct send_ctx *sctx, u64 end)
+ 			break;
+ 		offset += len;
+ 	}
++	sctx->cur_inode_next_write_offset = offset;
+ tlv_put_failure:
+ 	fs_path_free(p);
+ 	return ret;
+@@ -5264,6 +5266,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
+ 	} else {
+ 		ret = send_extent_data(sctx, offset, len);
+ 	}
++	sctx->cur_inode_next_write_offset = offset + len;
+ out:
  	return ret;
  }
+@@ -5788,6 +5791,7 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 	u64 right_gid;
+ 	int need_chmod = 0;
+ 	int need_chown = 0;
++	int need_truncate = 1;
+ 	int pending_move = 0;
+ 	int refs_processed = 0;
  
--static int btrfs_truncate(struct inode *inode)
-+static int btrfs_truncate(struct inode *inode, bool skip_writeback)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -9098,10 +9098,12 @@ static int btrfs_truncate(struct inode *inode)
- 	u64 mask = fs_info->sectorsize - 1;
- 	u64 min_size = btrfs_calc_trunc_metadata_size(fs_info, 1);
+@@ -5825,9 +5829,13 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 		need_chown = 1;
+ 		if (!S_ISLNK(sctx->cur_inode_mode))
+ 			need_chmod = 1;
++		if (sctx->cur_inode_next_write_offset == sctx->cur_inode_size)
++			need_truncate = 0;
+ 	} else {
++		u64 old_size;
++
+ 		ret = get_inode_info(sctx->parent_root, sctx->cur_ino,
+-				NULL, NULL, &right_mode, &right_uid,
++				&old_size, NULL, &right_mode, &right_uid,
+ 				&right_gid, NULL);
+ 		if (ret < 0)
+ 			goto out;
+@@ -5836,6 +5844,10 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 			need_chown = 1;
+ 		if (!S_ISLNK(sctx->cur_inode_mode) && left_mode != right_mode)
+ 			need_chmod = 1;
++		if ((old_size == sctx->cur_inode_size) ||
++		    (sctx->cur_inode_size > old_size &&
++		     sctx->cur_inode_next_write_offset == sctx->cur_inode_size))
++			need_truncate = 0;
+ 	}
  
--	ret = btrfs_wait_ordered_range(inode, inode->i_size & (~mask),
--				       (u64)-1);
--	if (ret)
--		return ret;
-+	if (!skip_writeback) {
-+		ret = btrfs_wait_ordered_range(inode, inode->i_size & (~mask),
-+					       (u64)-1);
-+		if (ret)
-+			return ret;
-+	}
+ 	if (S_ISREG(sctx->cur_inode_mode)) {
+@@ -5854,10 +5866,13 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
+ 					goto out;
+ 			}
+ 		}
+-		ret = send_truncate(sctx, sctx->cur_ino, sctx->cur_inode_gen,
+-				sctx->cur_inode_size);
+-		if (ret < 0)
+-			goto out;
++		if (need_truncate) {
++			ret = send_truncate(sctx, sctx->cur_ino,
++					    sctx->cur_inode_gen,
++					    sctx->cur_inode_size);
++			if (ret < 0)
++				goto out;
++		}
+ 	}
+ 
+ 	if (need_chown) {
+@@ -5911,6 +5926,7 @@ static int changed_inode(struct send_ctx *sctx,
+ 	sctx->cur_ino = key->objectid;
+ 	sctx->cur_inode_new_gen = 0;
+ 	sctx->cur_inode_last_extent = (u64)-1;
++	sctx->cur_inode_next_write_offset = 0;
  
  	/*
- 	 * Yes ladies and gentlemen, this is indeed ugly.  The fact is we have
+ 	 * Set send_progress to current inode. This will tell all get_cur_xxx
 -- 
 2.11.0
 

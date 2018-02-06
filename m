@@ -1,49 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:59946 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752738AbeBESJD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Feb 2018 13:09:03 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w15I2NTO063157
-        for <linux-btrfs@vger.kernel.org>; Mon, 5 Feb 2018 18:09:02 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by userp2130.oracle.com with ESMTP id 2fxv5w0247-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Feb 2018 18:09:02 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w15HxVQD031650
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Mon, 5 Feb 2018 17:59:31 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w15HxVpt028276
-        for <linux-btrfs@vger.kernel.org>; Mon, 5 Feb 2018 17:59:31 GMT
-From: Nikita Gerasimov <nikita.gerasimov@oracle.com>
-Subject: How to efficiently remove a subvolume with children located further
- than BTRFS_INO_LOOKUP_PATH_MAX?
+Received: from mail-wm0-f47.google.com ([74.125.82.47]:40127 "EHLO
+        mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752237AbeBFH4c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Feb 2018 02:56:32 -0500
+Received: by mail-wm0-f47.google.com with SMTP id v123so1870846wmd.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Feb 2018 23:56:32 -0800 (PST)
+Received: from [192.168.1.175] (dslb-094-217-067-240.094.217.pools.vodafone-ip.de. [94.217.67.240])
+        by smtp.gmail.com with ESMTPSA id d20sm7252099ede.16.2018.02.05.23.56.29
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 05 Feb 2018 23:56:30 -0800 (PST)
 To: linux-btrfs@vger.kernel.org
-Message-ID: <1ea28071-c539-b923-e75f-dc1cf21b8414@oracle.com>
-Date: Mon, 5 Feb 2018 20:59:28 +0300
+From: Ralph Gauges <ralphgauges@googlemail.com>
+Subject: segmentation fault in btrfs tool v4.15
+Message-ID: <10214501-3b8e-7f9b-11d6-14fb75da07a5@googlemail.com>
+Date: Tue, 6 Feb 2018 08:56:28 +0100
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All,
+Hi,
 
-I have an issue with recursively subvolume deletion when child created further than PATH_MAX.
+I recently started using the btrfs file system on my backup disk and 
+until a power failure during a backup everything seemed to work well.
+Due a power failure however, the file systems seems to have become 
+corrupted and all trials to check or repair it so far have lead to a 
+segmentation fault.
 
-As I understand current algorithm is:
-- Find child by BTRFS_IOC_TREE_SEARCH, which is work fine.
-- Get relative path to child by BTRFS_IOC_INO_LOOKUP. (that's a problem)
-- Open child fd and recursively repeat until BTRFS_IOC_TREE_SEARCH could found something.
+Normally I am using Ubuntu 17.10 and the btrfs version that goes along 
+with it, but for testing purposes, I compiled my own version 
+(btrfs-progs v4.15).
+Unfortunately the segmentation fault is also present in this latest 
+version. At the end of this email, you can see the output from btrfs 
+when I try to check the partition as well as the backtrace from gdb. I 
+hope that helps.
 
-So when relative path is not fit into BTRFS_INO_LOOKUP_PATH_MAX,
-BTRFS_IOC_INO_LOOKUP return ENAMETOOLONG and zeros as btrfs_ioctl_ino_lookup_args.
-The only way I can see by far is walk through parent fs tree to find objects
-matching by name with BTRFS_IOC_TREE_SEARCH results and check them byfstat. It doesn't look very good in terms of performance. Is there any 
-shorter way to get fd by child btrfs_root_ref?
+My system is running kernel 4.13.0-32-generic on x86_64.
 
-Also btrfs-progs are fail to delete subvolumes with canonical path > PATH_MAX
-because of realpath also return ENAMETOOLONG. At the same time creation by
-relative path works fine.
+If you need any additional information please contace me directly since 
+I don't subscribe to the mailing list.
 
+Sincerily
+
+Ralph Gauges
+
+
+
+
+
+
+(gdb) set args check /dev/sdf1
+(gdb) run
+Starting program: /home/gauges/Applications/bin/btrfs check /dev/sdf1
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+parent transid verify failed on 266195058688 wanted 1857 found 1864
+parent transid verify failed on 266195058688 wanted 1857 found 1864
+parent transid verify failed on 266195058688 wanted 1857 found 1864
+parent transid verify failed on 266195058688 wanted 1857 found 1864
+Ignoring transid failure
+Checking filesystem on /dev/sdf1
+UUID: 9ccb1eaa-a9ae-46f3-8885-fba4799d6e85
+parent transid verify failed on 266196516864 wanted 1858 found 1864
+parent transid verify failed on 266196516864 wanted 1858 found 1864
+parent transid verify failed on 266196516864 wanted 1858 found 1864
+parent transid verify failed on 266196516864 wanted 1858 found 1864
+Ignoring transid failure
+parent transid verify failed on 266196205568 wanted 1858 found 1864
+parent transid verify failed on 266196205568 wanted 1858 found 1864
+parent transid verify failed on 266196205568 wanted 1858 found 1864
+parent transid verify failed on 266196205568 wanted 1858 found 1864
+Ignoring transid failure
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00005555555bf7a7 in btrfs_extent_flags (s=0xcc344065, 
+eb=0x5555584acce0) at ctree.h:1694
+1694    BTRFS_SETGET_FUNCS(extent_flags, struct btrfs_extent_item, 
+flags, 64);
+(gdb) bt
+#0  0x00005555555bf7a7 in btrfs_extent_flags (s=0xcc344065, 
+eb=0x5555584acce0) at ctree.h:1694
+#1  build_roots_info_cache (info=0x555555821a00) at cmds-check.c:14285
+#2  repair_root_items (info=0x555555821a00) at cmds-check.c:14450
+#3  cmd_check (argc=<optimized out>, argv=<optimized out>) at 
+cmds-check.c:14965
+#4  0x0000555555566320 in main (argc=2, argv=0x7fffffffde30) at btrfs.c:302
+(gdb)

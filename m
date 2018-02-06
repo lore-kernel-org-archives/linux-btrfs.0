@@ -1,83 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:41210 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751962AbeBZIqs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Feb 2018 03:46:48 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1Q8gmPV098261
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:48 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2120.oracle.com with ESMTP id 2gcdvyg9x0-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:48 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w1Q8kla1029229
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:47 GMT
-Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w1Q8klpC003515
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:47 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mail.kernel.org ([198.145.29.99]:32908 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753796AbeBGLb5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Feb 2018 06:31:57 -0500
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id A68EE21738
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 11:31:56 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: drop nonvaring variable, instead define it
-Date: Mon, 26 Feb 2018 16:48:14 +0800
-Message-Id: <20180226084814.7229-1-anand.jain@oracle.com>
+Subject: [PATCH] Btrfs: send, fix issuing write op when processing hole in no data mode
+Date: Tue,  6 Feb 2018 20:39:20 +0000
+Message-Id: <20180206203920.9709-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_defrag_leaves() has min_trans = 0 which doesn't vary.
-Defining it makes sense.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+When doing an incremental send of a filesystem with the no-holes feature
+enabled, we end up issuing a write operation when using the no data mode
+send flag, instead of issuing an update extent operation. Fix this by
+issuing the update extent operation instead.
+
+Trivial reproducer:
+
+  $ mkfs.btrfs -f -O no-holes /dev/sdc
+  $ mkfs.btrfs -f /dev/sdd
+  $ mount /dev/sdc /mnt/sdc
+  $ mount /dev/sdd /mnt/sdd
+
+  $ xfs_io -f -c "pwrite -S 0xab 0 32K" /mnt/sdc/foobar
+  $ btrfs subvolume snapshot -r /mnt/sdc /mnt/sdc/snap1
+
+  $ xfs_io -c "fpunch 8K 8K" /mnt/sdc/foobar
+  $ btrfs subvolume snapshot -r /mnt/sdc /mnt/sdc/snap2
+
+  $ btrfs send /mnt/sdc/snap1 | btrfs receive /mnt/sdd
+  $ btrfs send --no-data -p /mnt/sdc/snap1 /mnt/sdc/snap2 \
+       | btrfs receive -vv /mnt/sdd
+
+Before this change the output of the second receive command is:
+
+  receiving snapshot snap2 uuid=f6922049-8c22-e544-9ff9-fc6755918447...
+  utimes
+  write foobar, offset 8192, len 8192
+  utimes foobar
+  BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=f6922049-8c22-e544-9ff9-...
+
+After this change it is:
+
+  receiving snapshot snap2 uuid=564d36a3-ebc8-7343-aec9-bf6fda278e64...
+  utimes
+  update_extent foobar: offset=8192, len=8192
+  utimes foobar
+  BTRFS_IOC_SET_RECEIVED_SUBVOL uuid=564d36a3-ebc8-7343-aec9-bf6fda278e64...
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h       | 2 ++
- fs/btrfs/tree-defrag.c | 5 ++---
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index cb6c1ecb3cb0..295c6cf85d0f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -66,6 +66,8 @@ struct btrfs_ordered_sum;
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index f306c608dc28..484e2af793de 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -5005,6 +5005,9 @@ static int send_hole(struct send_ctx *sctx, u64 end)
+ 	u64 len;
+ 	int ret = 0;
  
- #define BTRFS_MAX_LEVEL 8
- 
-+#define BTRFS_OLDEST_GENERATION	0ULL
++	if (sctx->flags & BTRFS_SEND_FLAG_NO_FILE_DATA)
++		return send_update_extent(sctx, offset, end - offset);
 +
- #define BTRFS_COMPAT_EXTENT_TREE_V0
- 
- /*
-diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
-index cb65089127cc..c09dbe4bd6e7 100644
---- a/fs/btrfs/tree-defrag.c
-+++ b/fs/btrfs/tree-defrag.c
-@@ -39,7 +39,6 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 	int level;
- 	int next_key_ret = 0;
- 	u64 last_ret = 0;
--	u64 min_trans = 0;
- 
- 	if (root->fs_info->extent_root == root) {
- 		/*
-@@ -81,7 +80,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 
- 	path->keep_locks = 1;
- 
--	ret = btrfs_search_forward(root, &key, path, min_trans);
-+	ret = btrfs_search_forward(root, &key, path, BTRFS_OLDEST_GENERATION);
- 	if (ret < 0)
- 		goto out;
- 	if (ret > 0) {
-@@ -130,7 +129,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 	 */
- 	path->slots[1] = btrfs_header_nritems(path->nodes[1]);
- 	next_key_ret = btrfs_find_next_key(root, path, &key, 1,
--					   min_trans);
-+					   BTRFS_OLDEST_GENERATION);
- 	if (next_key_ret == 0) {
- 		memcpy(&root->defrag_progress, &key, sizeof(key));
- 		ret = -EAGAIN;
+ 	p = fs_path_alloc();
+ 	if (!p)
+ 		return -ENOMEM;
 -- 
-2.15.0
+2.11.0
 

@@ -1,54 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34356 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.17.21]:62853 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753576AbeBLSAg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Feb 2018 13:00:36 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D96FFAE90
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 18:00:34 +0000 (UTC)
-Date: Mon, 12 Feb 2018 18:58:19 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/14] Misc transaction cleanups
-Message-ID: <20180212175819.GN3003@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1518018950-31456-1-git-send-email-nborisov@suse.com>
+        id S1753147AbeBGJYE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Feb 2018 04:24:04 -0500
+Subject: Re: [PATCH] btrfs: Don't hardcode the csum size in
+ btrfs_ordered_sum_size
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1517995150-28081-1-git-send-email-nborisov@suse.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <cd9452f1-3218-6ac7-3d79-57398f7eff2f@gmx.com>
+Date: Wed, 7 Feb 2018 17:23:52 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1518018950-31456-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1517995150-28081-1-git-send-email-nborisov@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="sUdP7bLci121BeJGpa3ovwsK1wpz9nLAf"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 07, 2018 at 05:55:36PM +0200, Nikolay Borisov wrote:
-> Here are a bunch of transaction-related cleanups all of them present no 
-> functional changes. The first 2 patches could be more interesting - the first
-> one moves trans_release_metadata to transaction.c and makes it static and the 
-> second one opencodes btrfs_write_and_wait_marked_extents in its sole caller
-> to make the chall chain shorter. The rest of the patches just kill the 
-> extraneous fs_info argument since they also take either a btrfs_trans_handle or
-> btrfs_transaction pointer which already contain fs_info. 
-> 
-> The modified functions are all called from btrfs_commit_transaction. With this
-> series applied the only function which remain that still take fs_info and 
-> some type of transaction reference are: 
-> 
-> btrfs_finish_extent_commit
-> btrfs_qgroup_account_extents
-> btrfs_run_delayed_refs
-> 
-> 
-> The reason I haven't touched them is that David expressed some reservation 
-> about mass cleaning of functions which are more or less public interface. And 
-> the above 3 are such functions. David if you don't objec to converting those 3
-> I will keep them in mind when doing further cleanups in the transaction area. 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--sUdP7bLci121BeJGpa3ovwsK1wpz9nLAf
+Content-Type: multipart/mixed; boundary="Qhu2Tk9xQDgbkkY6DohRlTuSFDeEDnckB";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <cd9452f1-3218-6ac7-3d79-57398f7eff2f@gmx.com>
+Subject: Re: [PATCH] btrfs: Don't hardcode the csum size in
+ btrfs_ordered_sum_size
+References: <1517995150-28081-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1517995150-28081-1-git-send-email-nborisov@suse.com>
 
-I think all 3 functions don't need the explicit fs_info parameter, the
-main object for the functions is the transaction. I don't have a good
-example for the API function that should keep both parameters, nothing
-in transaction.h and nothing after a few quick greps. For functions like
-add_delayed_ref_head, removing the fs_info would be a welcome change as
-the number of parameters is high already (more than 10).
+--Qhu2Tk9xQDgbkkY6DohRlTuSFDeEDnckB
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-The patchset has been added to misc-next, briefly checking the effects
-on stack consumption, there are several -8 deltas. Which is good.
+
+
+On 2018=E5=B9=B402=E6=9C=8807=E6=97=A5 17:19, Nikolay Borisov wrote:
+> Currently the function uses a hardcoded value for the checksum size of
+> a sector. This is fine, given that we currently support only a single
+> algorithm, whose checksum is 4 bytes =3D=3D sizeof(u32). Despite not
+> having other algorithms, btrfs' design supports using a different
+> algorithm whith different space requirements. To future-proof the code
+> query the size of the currently used algorithm from the in-memory copy
+> of the super block. No functional changes.
+>=20
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/ordered-data.h | 4 +++-
+>  1 file changed, 3 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+> index 56c4c0ee6381..c53e2cfb72d9 100644
+> --- a/fs/btrfs/ordered-data.h
+> +++ b/fs/btrfs/ordered-data.h
+> @@ -151,7 +151,9 @@ static inline int btrfs_ordered_sum_size(struct btr=
+fs_fs_info *fs_info,
+>  					 unsigned long bytes)
+>  {
+>  	int num_sectors =3D (int)DIV_ROUND_UP(bytes, fs_info->sectorsize);
+> -	return sizeof(struct btrfs_ordered_sum) + num_sectors * sizeof(u32);
+> +	int csum_size =3D btrfs_super_csum_size(fs_info->super_copy);
+> +
+> +	return sizeof(struct btrfs_ordered_sum) + num_sectors * csum_size;
+>  }
+> =20
+>  static inline void
+>=20
+
+
+--Qhu2Tk9xQDgbkkY6DohRlTuSFDeEDnckB--
+
+--sUdP7bLci121BeJGpa3ovwsK1wpz9nLAf
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlp6xagXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiaeggApJcSCNIVDrrq33/nIFlO7G1e
+VOFMbgGFEAFBp2Mm7WfyCnx/+oI1X5JQgpzJBKacibPMILKa8m6zxh79V0xN3Kpo
+d6WJFirxPLdAc7MhIJkB4FR2FNyj3+LQMwqjk6iHL2JHhick9/kwooYBUKCFKgbf
+cqiS79VZLsJCRR10JiXuZ3Y+4OPK5OEIja9SgsaRxyXaK+wHVGLSNfFY2sdywb55
+Grj36EoPKTA5yNq0o073qjHX46WK2jg0AWfZN1UWtC/rDpyt8dVlg70EDzbVmfMW
+YlIO3Y3U3ASXNLahtRi95na1GBzlvXBwvqG/yIDFks6mmofZ1/eMqAUYx/8mWw==
+=GnqW
+-----END PGP SIGNATURE-----
+
+--sUdP7bLci121BeJGpa3ovwsK1wpz9nLAf--

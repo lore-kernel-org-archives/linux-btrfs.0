@@ -1,106 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56371 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56374 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754377AbeBGP4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1754382AbeBGP4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 7 Feb 2018 10:56:04 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 3D21EACFB
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 70425ADCB
         for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 15:56:03 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 01/14] btrfs: Make btrfs_trans_release_metadata private to transaction.c
-Date: Wed,  7 Feb 2018 17:55:37 +0200
-Message-Id: <1518018950-31456-2-git-send-email-nborisov@suse.com>
+Subject: [PATCH 02/14] btrfs: Open code btrfs_write_and_wait_marked_extents
+Date: Wed,  7 Feb 2018 17:55:38 +0200
+Message-Id: <1518018950-31456-3-git-send-email-nborisov@suse.com>
 In-Reply-To: <1518018950-31456-1-git-send-email-nborisov@suse.com>
 References: <1518018950-31456-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function is only ever used in __btrfs_end_transaction and
-btrfs_commit_transaction so there is no need to export it via header.
-Let's move it closer to where it's used, make it static and remove it
-from the header. No functional changes
+btrfs_write_and_wait_transaction is essentially a wrapper of
+btrfs_write_and_wait_marked_extents with the addition of calling
+clear_btree_io_tree. Having the code split doesn't really bring any
+benefit. Open code the later into the former and add proper
+documentation header.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h       |  2 --
- fs/btrfs/extent-tree.c | 18 ------------------
- fs/btrfs/transaction.c | 19 +++++++++++++++++++
- 3 files changed, 19 insertions(+), 20 deletions(-)
+ fs/btrfs/transaction.c | 40 ++++++++++++++++------------------------
+ 1 file changed, 16 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index aee4365e82ba..1cc77c4bf3c3 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2748,8 +2748,6 @@ void btrfs_delalloc_release_space(struct inode *inode,
- 			struct extent_changeset *reserved, u64 start, u64 len);
- void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
- 					    u64 len);
--void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
--				  struct btrfs_fs_info *fs_info);
- void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans);
- int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
- 				  struct btrfs_inode *inode);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index cc08e6af3542..b079ebc1f842 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5893,24 +5893,6 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	WARN_ON(fs_info->delayed_block_rsv.reserved > 0);
- }
- 
--void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
--				  struct btrfs_fs_info *fs_info)
--{
--	if (!trans->block_rsv) {
--		ASSERT(!trans->bytes_reserved);
--		return;
--	}
--
--	if (!trans->bytes_reserved)
--		return;
--
--	ASSERT(trans->block_rsv == &fs_info->trans_block_rsv);
--	trace_btrfs_space_reservation(fs_info, "transaction",
--				      trans->transid, trans->bytes_reserved, 0);
--	btrfs_block_rsv_release(fs_info, trans->block_rsv,
--				trans->bytes_reserved);
--	trans->bytes_reserved = 0;
--}
- 
- /*
-  * To be called after all the new block groups attached to the transaction
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 2141587195d4..beca25635787 100644
+index beca25635787..5ca4302c136c 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -818,6 +818,25 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
- 	return should_end_transaction(trans);
+@@ -1082,41 +1082,33 @@ int btrfs_wait_tree_log_extents(struct btrfs_root *log_root, int mark)
+ 	return err;
  }
  
-+static void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
-+				  struct btrfs_fs_info *fs_info)
-+{
-+	if (!trans->block_rsv) {
-+		ASSERT(!trans->bytes_reserved);
-+		return;
-+	}
+-/*
+- * when btree blocks are allocated, they have some corresponding bits set for
+- * them in one of two extent_io trees.  This is used to make sure all of
+- * those extents are on disk for transaction or log commit
 +
-+	if (!trans->bytes_reserved)
-+		return;
-+
-+	ASSERT(trans->block_rsv == &fs_info->trans_block_rsv);
-+	trace_btrfs_space_reservation(fs_info, "transaction",
-+				      trans->transid, trans->bytes_reserved, 0);
-+	btrfs_block_rsv_release(fs_info, trans->block_rsv,
-+				trans->bytes_reserved);
-+	trans->bytes_reserved = 0;
-+}
-+
- static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 				   int throttle)
++/* btrfs_write_and_wait_transaction - When btree blocks are allocated the
++ * corresponding extents are marked dirty. This function ensures such extents
++ * are persisted on disk for  * transaction or log commit.
++ *
++ * @trans: transaction whose dirty pages we'd like to write
+  */
+-static int btrfs_write_and_wait_marked_extents(struct btrfs_fs_info *fs_info,
+-				struct extent_io_tree *dirty_pages, int mark)
++static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
++					    struct btrfs_fs_info *fs_info)
  {
+-	int ret;
+-	int ret2;
++	struct extent_io_tree *dirty_pages = &trans->transaction->dirty_pages;
+ 	struct blk_plug plug;
++	int ret, ret2;
+ 
+ 	blk_start_plug(&plug);
+-	ret = btrfs_write_marked_extents(fs_info, dirty_pages, mark);
++	ret = btrfs_write_marked_extents(fs_info, dirty_pages, EXTENT_DIRTY);
+ 	blk_finish_plug(&plug);
+ 	ret2 = btrfs_wait_extents(fs_info, dirty_pages);
+ 
++	clear_btree_io_tree(&trans->transaction->dirty_pages);
++
+ 	if (ret)
+ 		return ret;
+-	if (ret2)
++	else if (ret2)
+ 		return ret2;
+-	return 0;
+-}
+-
+-static int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
+-					    struct btrfs_fs_info *fs_info)
+-{
+-	int ret;
+-
+-	ret = btrfs_write_and_wait_marked_extents(fs_info,
+-					   &trans->transaction->dirty_pages,
+-					   EXTENT_DIRTY);
+-	clear_btree_io_tree(&trans->transaction->dirty_pages);
+-
+-	return ret;
++	else
++		return 0;
+ }
+ 
+ /*
 -- 
 2.7.4
 

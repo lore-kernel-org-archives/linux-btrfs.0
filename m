@@ -1,75 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56386 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56385 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754554AbeBGP4F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1754553AbeBGP4F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 7 Feb 2018 10:56:05 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 39E62ADD3
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 78BBAADD5
         for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 15:56:04 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 05/14] btrfs: Don't pass fs_info arg to btrfs_start_dirty_block_groups
-Date: Wed,  7 Feb 2018 17:55:41 +0200
-Message-Id: <1518018950-31456-6-git-send-email-nborisov@suse.com>
+Subject: [PATCH 06/14] btrfs: Don't pass fs_info to __btrfs_run_delayed_items
+Date: Wed,  7 Feb 2018 17:55:42 +0200
+Message-Id: <1518018950-31456-7-git-send-email-nborisov@suse.com>
 In-Reply-To: <1518018950-31456-1-git-send-email-nborisov@suse.com>
 References: <1518018950-31456-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It can be referenced from the passed transaction so no point in passing
-it as a function argument. No functional changes
+We already pass the transactino handle, which contains a refrence to
+the fs_info so grab it from there. No functional changes
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.h       | 3 +--
- fs/btrfs/extent-tree.c | 4 ++--
- fs/btrfs/transaction.c | 2 +-
- 3 files changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/delayed-inode.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 9963b6caadeb..f929685b80e2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2690,8 +2690,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 			 u64 bytenr, u64 num_bytes, u64 parent,
- 			 u64 root_objectid, u64 owner, u64 offset);
- 
--int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
--				   struct btrfs_fs_info *fs_info);
-+int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans);
- int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 				   struct btrfs_fs_info *fs_info);
- int btrfs_setup_space_cache(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 99bfc628ab89..47c27fc403b9 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3660,9 +3660,9 @@ int btrfs_setup_space_cache(struct btrfs_trans_handle *trans,
-  * the commit latency by getting rid of the easy block groups while
-  * we're still allowing others to join the commit.
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 1c0bab4080a0..1305872bbff8 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1114,9 +1114,9 @@ __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+  * Returns < 0 on error and returns with an aborted transaction with any
+  * outstanding delayed items cleaned up.
   */
--int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
--				   struct btrfs_fs_info *fs_info)
-+int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
+-static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+-				     struct btrfs_fs_info *fs_info, int nr)
++static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans, int nr)
  {
 +	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_block_group_cache *cache;
- 	struct btrfs_transaction *cur_trans = trans->transaction;
- 	int ret = 0;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 82b7e5855119..aef311531ab2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2014,7 +2014,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		mutex_unlock(&fs_info->ro_block_group_mutex);
+ 	struct btrfs_delayed_root *delayed_root;
+ 	struct btrfs_delayed_node *curr_node, *prev_node;
+ 	struct btrfs_path *path;
+@@ -1164,13 +1164,13 @@ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info)
+ {
+-	return __btrfs_run_delayed_items(trans, fs_info, -1);
++	return __btrfs_run_delayed_items(trans, -1);
+ }
  
- 		if (run_it)
--			ret = btrfs_start_dirty_block_groups(trans, fs_info);
-+			ret = btrfs_start_dirty_block_groups(trans);
- 	}
- 	if (ret) {
- 		btrfs_end_transaction(trans);
+ int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_fs_info *fs_info, int nr)
+ {
+-	return __btrfs_run_delayed_items(trans, fs_info, nr);
++	return __btrfs_run_delayed_items(trans, nr);
+ }
+ 
+ int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
 -- 
 2.7.4
 

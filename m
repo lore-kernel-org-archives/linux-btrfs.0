@@ -1,33 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:41348 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753117AbeBGJSE (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 7 Feb 2018 04:18:04 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Cc: ralphgauges@googlemail.com
-Subject: [PATCH] btrfs-progs: fsck-tests: Cleanup the restored image for 028
-Date: Wed,  7 Feb 2018 17:17:46 +0800
-Message-Id: <20180207091746.10039-1-wqu@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:22540 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1753614AbeBGJxC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Feb 2018 04:53:02 -0500
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
+        by cn.fujitsu.com (Postfix) with ESMTP id 226DF48AE761
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 17:53:00 +0800 (CST)
+From: Su Yue <suy.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <suy.fnst@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: tests common: remove meaningless colon in extract_image()
+Date: Wed, 7 Feb 2018 17:57:43 +0800
+Message-ID: <20180207095743.28128-1-suy.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/fsck-tests/028-unaligned-super-dev-sizes/test.sh | 2 ++
- 1 file changed, 2 insertions(+)
+The colon is meaningless so remove it.
 
-diff --git a/tests/fsck-tests/028-unaligned-super-dev-sizes/test.sh b/tests/fsck-tests/028-unaligned-super-dev-sizes/test.sh
-index 3928f548c3f9..4bbcfbae662e 100755
---- a/tests/fsck-tests/028-unaligned-super-dev-sizes/test.sh
-+++ b/tests/fsck-tests/028-unaligned-super-dev-sizes/test.sh
-@@ -21,3 +21,5 @@ run_check "$TOP/btrfs" check "$TEST_DEV"
- # mount test
- run_check_mount_test_dev
- run_check_umount_test_dev "$TEST_MNT"
-+# don't forget to clean it up
-+rm "$TEST_DEV"
+Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
+---
+ tests/common | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/common b/tests/common
+index 8e5d0cde1b7e..7f641a004661 100644
+--- a/tests/common
++++ b/tests/common
+@@ -331,7 +331,7 @@ extract_image()
+ 	case "$image" in
+ 	*.img)
+ 		rm -f "$image.restored"
+-		: ;;
++		;;
+ 	*.img.xz)
+ 		xz --decompress --keep "$image" || \
+ 			_fail "failed to decompress image $image" >&2
 -- 
 2.16.1
+
+
 

@@ -1,100 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:39618 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753044AbeBLPgt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Feb 2018 10:36:49 -0500
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1CFajNX066931
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:36:49 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by userp2130.oracle.com with ESMTP id 2g3d8x07dt-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:36:45 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w1CFZA73013948
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:35:10 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w1CFZ9sS002231
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:35:09 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:56368 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754333AbeBGP4E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Feb 2018 10:56:04 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 00A5EACED
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 15:56:03 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs: open code btrfs_init_dev_replace_tgtdev_for_resume()
-Date: Mon, 12 Feb 2018 23:36:25 +0800
-Message-Id: <20180212153625.19541-1-anand.jain@oracle.com>
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 00/14] Misc transaction cleanups
+Date: Wed,  7 Feb 2018 17:55:36 +0200
+Message-Id: <1518018950-31456-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_init_dev_replace_tgtdev_for_resume()  initializes replace
-target device in few simple steps, so do it at the parent function.
-Moreover, there isn't any other caller so just open code it.
+Here are a bunch of transaction-related cleanups all of them present no 
+functional changes. The first 2 patches could be more interesting - the first
+one moves trans_release_metadata to transaction.c and makes it static and the 
+second one opencodes btrfs_write_and_wait_marked_extents in its sole caller
+to make the chall chain shorter. The rest of the patches just kill the 
+extraneous fs_info argument since they also take either a btrfs_trans_handle or
+btrfs_transaction pointer which already contain fs_info. 
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/dev-replace.c | 10 ++++++++--
- fs/btrfs/volumes.c     | 13 -------------
- fs/btrfs/volumes.h     |  2 --
- 3 files changed, 8 insertions(+), 17 deletions(-)
+The modified functions are all called from btrfs_commit_transaction. With this
+series applied the only function which remain that still take fs_info and 
+some type of transaction reference are: 
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 7efbc4d1128b..197be3fe307b 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -174,8 +174,14 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 			}
- 			set_bit(BTRFS_DEV_STATE_REPLACE_TGT,
- 				&dev_replace->tgtdev->dev_state);
--			btrfs_init_dev_replace_tgtdev_for_resume(fs_info,
--				dev_replace->tgtdev);
-+
-+			WARN_ON(fs_info->fs_devices->rw_devices == 0);
-+			dev_replace->tgtdev->io_width = fs_info->sectorsize;
-+			dev_replace->tgtdev->io_align = fs_info->sectorsize;
-+			dev_replace->tgtdev->sector_size = fs_info->sectorsize;
-+			dev_replace->tgtdev->fs_info = fs_info;
-+			set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
-+				&dev_replace->tgtdev->dev_state);
- 		}
- 		break;
- 	}
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bbdcf50cd65b..28c385d6419a 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2681,19 +2681,6 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
--void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
--					      struct btrfs_device *tgtdev)
--{
--	u32 sectorsize = fs_info->sectorsize;
--
--	WARN_ON(fs_info->fs_devices->rw_devices == 0);
--	tgtdev->io_width = sectorsize;
--	tgtdev->io_align = sectorsize;
--	tgtdev->sector_size = sectorsize;
--	tgtdev->fs_info = fs_info;
--	set_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &tgtdev->dev_state);
--}
--
- static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
- 					struct btrfs_device *device)
- {
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7281f55dea05..c69d8b4eb4c6 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -483,8 +483,6 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
- 				      struct btrfs_device *srcdev);
- void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 				      struct btrfs_device *tgtdev);
--void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
--					      struct btrfs_device *tgtdev);
- void btrfs_scratch_superblocks(struct block_device *bdev, const char *device_path);
- int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
- 			   u64 logical, u64 len);
+btrfs_finish_extent_commit
+btrfs_qgroup_account_extents
+btrfs_run_delayed_refs
+
+
+The reason I haven't touched them is that David expressed some reservation 
+about mass cleaning of functions which are more or less public interface. And 
+the above 3 are such functions. David if you don't objec to converting those 3
+I will keep them in mind when doing further cleanups in the transaction area. 
+
+Nikolay Borisov (14):
+  btrfs: Make btrfs_trans_release_metadata private to transaction.c
+  btrfs: Open code btrfs_write_and_wait_marked_extents
+  btrfs: Remove fs_info argument from btrfs_trans_release_metadata
+  btrfs: Remove fs_info argument from btrfs_create_pending_block_groups
+  btrfs: Don't pass fs_info arg to btrfs_start_dirty_block_groups
+  btrfs: Don't pass fs_info to __btrfs_run_delayed_items
+  btrfs: Don't pass fs_info to btrfs_run_delayed_items/_nr
+  btrfs: Don't pass fs_info to commit_fs_roots
+  btrfs: Don't pass fs_info to commit_cowonly_roots
+  btrfs: Remove root argument of cleanup_transaction
+  btrfs: Remove fs_info argument from switch_commit_roots
+  btrfs: Remove fs_info argument from
+    create_pending_snapshots/create_pending_snapshot
+  btrfs: Remove fs_info argument from
+    btrfs_update_commit_device_bytes_used
+  btrfs: Remove fs_info argument of btrfs_write_and_wait_transaction
+
+ fs/btrfs/ctree.h         |   8 +--
+ fs/btrfs/delayed-inode.c |  14 +++--
+ fs/btrfs/delayed-inode.h |   6 +--
+ fs/btrfs/extent-tree.c   |  34 +++---------
+ fs/btrfs/transaction.c   | 134 ++++++++++++++++++++++++++---------------------
+ fs/btrfs/tree-log.c      |  12 ++---
+ fs/btrfs/volumes.c       |  10 ++--
+ fs/btrfs/volumes.h       |   3 +-
+ 8 files changed, 101 insertions(+), 120 deletions(-)
+
 -- 
-2.15.0
+2.7.4
 

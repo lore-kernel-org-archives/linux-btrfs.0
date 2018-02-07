@@ -1,44 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:22540 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1753614AbeBGJxC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Feb 2018 04:53:02 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 226DF48AE761
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 17:53:00 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: tests common: remove meaningless colon in extract_image()
-Date: Wed, 7 Feb 2018 17:57:43 +0800
-Message-ID: <20180207095743.28128-1-suy.fnst@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:50191 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932067AbeBGOed (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Feb 2018 09:34:33 -0500
+Date: Wed, 7 Feb 2018 15:32:17 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Su Yue <suy.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: tests common: remove meaningless colon in
+ extract_image()
+Message-ID: <20180207143217.GA3003@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180207095743.28128-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180207095743.28128-1-suy.fnst@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The colon is meaningless so remove it.
+On Wed, Feb 07, 2018 at 05:57:43PM +0800, Su Yue wrote:
+> The colon is meaningless so remove it.
+> 
+> Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- tests/common | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/tests/common b/tests/common
-index 8e5d0cde1b7e..7f641a004661 100644
---- a/tests/common
-+++ b/tests/common
-@@ -331,7 +331,7 @@ extract_image()
- 	case "$image" in
- 	*.img)
- 		rm -f "$image.restored"
--		: ;;
-+		;;
- 	*.img.xz)
- 		xz --decompress --keep "$image" || \
- 			_fail "failed to decompress image $image" >&2
--- 
-2.16.1
-
-
-
+Applied, thanks.

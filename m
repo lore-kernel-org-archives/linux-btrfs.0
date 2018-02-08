@@ -1,48 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47775 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753774AbeBGJTN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Feb 2018 04:19:13 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 9C735ACF0
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Feb 2018 09:19:12 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Don't hardcode the csum size in btrfs_ordered_sum_size
-Date: Wed,  7 Feb 2018 11:19:10 +0200
-Message-Id: <1517995150-28081-1-git-send-email-nborisov@suse.com>
+Received: from youngberry.canonical.com ([91.189.89.112]:39844 "EHLO
+        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751094AbeBHONb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Feb 2018 09:13:31 -0500
+From: Colin King <colin.king@canonical.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Cc: kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH][btrfs-next] Btrfs: extent map selftest: fix non-ANSI btrfs_test_extent_map declaration
+Date: Thu,  8 Feb 2018 14:13:27 +0000
+Message-Id: <20180208141327.10951-1-colin.king@canonical.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently the function uses a hardcoded value for the checksum size of
-a sector. This is fine, given that we currently support only a single
-algorithm, whose checksum is 4 bytes == sizeof(u32). Despite not
-having other algorithms, btrfs' design supports using a different
-algorithm whith different space requirements. To future-proof the code
-query the size of the currently used algorithm from the in-memory copy
-of the super block. No functional changes.
+From: Colin Ian King <colin.king@canonical.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+The function btrfs_test_extent_map requires a void argument to be ANSI C
+compliant and so it matches the prototype in fs/btrfs/tests/btrfs-tests.h
+
+Cleans up sparse warning:
+fs/btrfs/tests/extent-map-tests.c:346:27: warning: non-ANSI function
+declaration of function 'btrfs_test_extent_map'
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
 ---
- fs/btrfs/ordered-data.h | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/tests/extent-map-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 56c4c0ee6381..c53e2cfb72d9 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -151,7 +151,9 @@ static inline int btrfs_ordered_sum_size(struct btrfs_fs_info *fs_info,
- 					 unsigned long bytes)
- {
- 	int num_sectors = (int)DIV_ROUND_UP(bytes, fs_info->sectorsize);
--	return sizeof(struct btrfs_ordered_sum) + num_sectors * sizeof(u32);
-+	int csum_size = btrfs_super_csum_size(fs_info->super_copy);
-+
-+	return sizeof(struct btrfs_ordered_sum) + num_sectors * csum_size;
+diff --git a/fs/btrfs/tests/extent-map-tests.c b/fs/btrfs/tests/extent-map-tests.c
+index 70c993f01670..c23bd00bdd92 100644
+--- a/fs/btrfs/tests/extent-map-tests.c
++++ b/fs/btrfs/tests/extent-map-tests.c
+@@ -343,7 +343,7 @@ static void test_case_4(struct extent_map_tree *em_tree)
+ 	__test_case_4(em_tree, SZ_4K);
  }
  
- static inline void
+-int btrfs_test_extent_map()
++int btrfs_test_extent_map(void)
+ {
+ 	struct extent_map_tree *em_tree;
+ 
 -- 
-2.7.4
+2.15.1
 

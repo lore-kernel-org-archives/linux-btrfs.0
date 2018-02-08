@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:40618 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:3171 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752197AbeBHDXW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Feb 2018 22:23:22 -0500
+        with ESMTP id S1752193AbeBHDXV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Feb 2018 22:23:21 -0500
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id C036948AE765
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2018 11:23:17 +0800 (CST)
+        by cn.fujitsu.com (Postfix) with ESMTP id 584D248AE767
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2018 11:23:19 +0800 (CST)
 From: Su Yue <suy.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 14/18] btrfs-progs: lowmem check: remove parameter @trans of repair_tree_back_ref()
-Date: Thu, 8 Feb 2018 11:27:33 +0800
-Message-ID: <20180208032737.31561-15-suy.fnst@cn.fujitsu.com>
+Subject: [PATCH v4 15/18] btrfs-progs: lowmem check: remove parameter @trans of check_btrfs_root()
+Date: Thu, 8 Feb 2018 11:27:34 +0800
+Message-ID: <20180208032737.31561-16-suy.fnst@cn.fujitsu.com>
 In-Reply-To: <20180208032737.31561-1-suy.fnst@cn.fujitsu.com>
 References: <20180208032737.31561-1-suy.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,9 +19,7 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch removes parameter @trans of repair_tree_back_ref().
-It calls try_avoid_extents_overwrite() and starts a transaction by
-itself.
+Remove parameters @trans of delete_extent_item() and walk_down_tree_v2().
 
 Note: This patch and next patches cause error in lowmem repair like:
 "Error: Commit_root already set when starting transaction".
@@ -29,62 +27,74 @@ This error will disappear after removing @trans finished.
 
 Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
 ---
- check/mode-lowmem.c | 18 +++++++++++++++---
- 1 file changed, 15 insertions(+), 3 deletions(-)
+ check/mode-lowmem.c | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
 
 diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index a7660a25b844..d4c8de4e69af 100644
+index d4c8de4e69af..d92278d2993c 100644
 --- a/check/mode-lowmem.c
 +++ b/check/mode-lowmem.c
-@@ -544,11 +544,11 @@ static int end_avoid_extents_overwrite(struct btrfs_fs_info *fs_info)
-  *
-  * Returns error bits after repair.
+@@ -4271,8 +4271,7 @@ out:
+  * Returns <0  Fatal error, must exit the whole check
+  * Returns 0   No errors found
   */
--static int repair_tree_block_ref(struct btrfs_trans_handle *trans,
--				 struct btrfs_root *root,
-+static int repair_tree_block_ref(struct btrfs_root *root,
- 				 struct extent_buffer *node,
- 				 struct node_refs *nrefs, int level, int err)
+-static int walk_down_tree(struct btrfs_trans_handle *trans,
+-			  struct btrfs_root *root, struct btrfs_path *path,
++static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+ 			  int *level, struct node_refs *nrefs, int ext_ref,
+ 			  int check_all)
  {
-+	struct btrfs_trans_handle *trans = NULL;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_root *extent_root = fs_info->extent_root;
+@@ -4585,8 +4584,7 @@ out:
+  * Returns 0      represents OK.
+  * Returns >0     represents error bits.
+  */
+-static int check_btrfs_root(struct btrfs_trans_handle *trans,
+-			    struct btrfs_root *root, unsigned int ext_ref,
++static int check_btrfs_root(struct btrfs_root *root, unsigned int ext_ref,
+ 			    int check_all)
+ {
  	struct btrfs_path path;
-@@ -598,6 +598,16 @@ static int repair_tree_block_ref(struct btrfs_trans_handle *trans,
- 	if (nrefs->full_backref[level] != 0)
- 		flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
+@@ -4631,7 +4629,7 @@ static int check_btrfs_root(struct btrfs_trans_handle *trans,
+ 	}
  
-+	ret = avoid_extents_overwrite(root->fs_info);
-+	if (ret)
-+		goto out;
-+	trans = btrfs_start_transaction(extent_root, 1);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		trans = NULL;
-+		error("fail to start transaction %s", strerror(-ret));
-+		goto out;
-+	}
- 	/* insert an extent item */
- 	if (insert_extent) {
- 		struct btrfs_disk_key copy_key;
-@@ -663,6 +673,8 @@ static int repair_tree_block_ref(struct btrfs_trans_handle *trans,
+ 	while (1) {
+-		ret = walk_down_tree(trans, root, &path, &level, &nrefs,
++		ret = walk_down_tree(root, &path, &level, &nrefs,
+ 				     ext_ref, check_all);
  
- 	nrefs->refs[level]++;
- out:
-+	if (trans)
-+		btrfs_commit_transaction(trans, extent_root);
- 	btrfs_release_path(&path);
- 	if (ret) {
- 		error(
-@@ -4304,7 +4316,7 @@ static int walk_down_tree(struct btrfs_trans_handle *trans,
- 			   btrfs_header_owner(cur), nrefs);
+ 		if (ret > 0)
+@@ -4667,7 +4665,7 @@ out:
+ static int check_fs_root(struct btrfs_root *root, unsigned int ext_ref)
+ {
+ 	reset_cached_block_groups(root->fs_info);
+-	return check_btrfs_root(NULL, root, ext_ref, 0);
++	return check_btrfs_root(root, ext_ref, 0);
+ }
  
- 			if (repair && ret)
--				ret = repair_tree_block_ref(trans, root,
-+				ret = repair_tree_block_ref(root,
- 				    path->nodes[*level], nrefs, *level, ret);
- 			err |= ret;
+ /*
+@@ -4871,11 +4869,11 @@ int check_chunks_and_extents_lowmem(struct btrfs_fs_info *fs_info)
+ 	}
  
+ 	root1 = root->fs_info->chunk_root;
+-	ret = check_btrfs_root(trans, root1, 0, 1);
++	ret = check_btrfs_root(root1, 0, 1);
+ 	err |= ret;
+ 
+ 	root1 = root->fs_info->tree_root;
+-	ret = check_btrfs_root(trans, root1, 0, 1);
++	ret = check_btrfs_root(root1, 0, 1);
+ 	err |= ret;
+ 
+ 	btrfs_init_path(&path);
+@@ -4906,7 +4904,7 @@ int check_chunks_and_extents_lowmem(struct btrfs_fs_info *fs_info)
+ 			goto next;
+ 		}
+ 
+-		ret = check_btrfs_root(trans, cur_root, 0, 1);
++		ret = check_btrfs_root(cur_root, 0, 1);
+ 		err |= ret;
+ 
+ 		if (key.objectid == BTRFS_TREE_RELOC_OBJECTID)
 -- 
 2.16.1
 

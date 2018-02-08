@@ -1,47 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:55305 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750793AbeBHFJk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Feb 2018 00:09:40 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-        by cn.fujitsu.com (Postfix) with ESMTP id D0B0848AE768
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Feb 2018 13:09:35 +0800 (CST)
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/3] btrfs-progs: add prerequisite btrfs-convert for test-misc
-Date: Thu, 8 Feb 2018 13:08:58 +0800
-Message-ID: <1518066538-16076-3-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1518066538-16076-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:40124 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1752003AbeBHOON (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Feb 2018 09:14:13 -0500
+Date: Thu, 8 Feb 2018 15:11:52 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Gu Jinxiang <gujx@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs-progs: add prerequisite mkfs.btrfs for test-cli
+Message-ID: <20180208141152.GD3003@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1518066538-16076-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1518066538-16076-1-git-send-email-gujx@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since tests/misc-tests/005-convert-progress-thread-crash/test.sh need
-the btrfs-convert for prerequisite.
-So add the dependency in Makefile.
+On Thu, Feb 08, 2018 at 01:08:56PM +0800, Gu Jinxiang wrote:
+> Since tests/cli-tests/002-balance-full-no-filters/test.sh need
+> the mkfs.btrfs for prerequisite.
+> So add the dependency in Makefile.
+> 
+> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- Makefile | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/Makefile b/Makefile
-index 9299411..7ccba62 100644
---- a/Makefile
-+++ b/Makefile
-@@ -303,7 +303,7 @@ test-fsck: btrfs btrfs-image btrfs-corrupt-block mkfs.btrfs btrfstune
- 	$(Q)bash tests/fsck-tests.sh
- 
- test-misc: btrfs btrfs-image btrfs-corrupt-block mkfs.btrfs btrfstune fssum \
--		btrfs-zero-log btrfs-find-root btrfs-select-super
-+		btrfs-zero-log btrfs-find-root btrfs-select-super btrfs-convert
- 	@echo "    [TEST]   misc-tests.sh"
- 	$(Q)bash tests/misc-tests.sh
- 
--- 
-1.9.1
-
-
-
+1-3 applied, thanks.

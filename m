@@ -1,27 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40124 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752003AbeBHOON (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Feb 2018 09:14:13 -0500
-Date: Thu, 8 Feb 2018 15:11:52 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Gu Jinxiang <gujx@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] btrfs-progs: add prerequisite mkfs.btrfs for test-cli
-Message-ID: <20180208141152.GD3003@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1518066538-16076-1-git-send-email-gujx@cn.fujitsu.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:12465 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1751544AbeBHGfG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Feb 2018 01:35:06 -0500
+From: Gu Jinxiang <gujx@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.cz>
+Subject: [PATCH v5 3/3] btrfs-progs: Add readme for export testsuits
+Date: Thu, 8 Feb 2018 14:34:20 +0800
+Message-ID: <1518071660-16878-4-git-send-email-gujx@cn.fujitsu.com>
+In-Reply-To: <1518071660-16878-1-git-send-email-gujx@cn.fujitsu.com>
+References: <1518071660-16878-1-git-send-email-gujx@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1518066538-16076-1-git-send-email-gujx@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 08, 2018 at 01:08:56PM +0800, Gu Jinxiang wrote:
-> Since tests/cli-tests/002-balance-full-no-filters/test.sh need
-> the mkfs.btrfs for prerequisite.
-> So add the dependency in Makefile.
-> 
-> Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+Add the readme of command for export testsuits.
+And add the excute method of exported testsuits.
 
-1-3 applied, thanks.
+Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
+---
+ tests/README.md | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/tests/README.md b/tests/README.md
+index 04d2ce2a..23f35cfc 100644
+--- a/tests/README.md
++++ b/tests/README.md
+@@ -48,6 +48,19 @@ $ TEST=001\* ./fsck-tests.sh
+ will run the first test in fsck-tests subdirectory.
+ 
+ 
++## Package testsuit
++
++The tests can be export as a btrfs-progs-tests.tar.gz current path. Use:
++
++```shell
++$ make testsuite
++```
++
++
++And, after decompress btrfs-progs-tests.tar.gz, test can be run selectively
++from `tests/` directory introduced above.
++
++
+ ## Test structure
+ 
+ *tests/fsck-tests/:*
+-- 
+2.14.3
+
+
+

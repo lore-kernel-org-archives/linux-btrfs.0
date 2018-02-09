@@ -1,131 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:35369 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750832AbeBIHeW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Feb 2018 02:34:22 -0500
-Subject: Re: segmentation fault in btrfs tool v4.15
-To: Ralph Gauges <ralphgauges@googlemail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <10214501-3b8e-7f9b-11d6-14fb75da07a5@googlemail.com>
- <bda6e11b-c978-ce90-70d0-2ac1f7210e3d@gmx.com>
- <15274509-75d4-af47-46ea-8ac048b58ba9@googlemail.com>
- <31d87507-982c-b735-9f3a-9fbad4d247e2@gmx.com>
- <c525bb95-1a17-c01e-4c15-f89a6cc68c6e@googlemail.com>
- <6bb438c5-811d-d7b8-f551-a1a08be321c5@gmx.com>
- <b0b40b12-1130-ad31-6ff0-e0b674a71691@googlemail.com>
- <0f66e50a-520d-f565-0d2d-2411d480da05@gmx.com>
- <adbe7eae-268d-fffd-4bc4-e724e26ab584@googlemail.com>
- <bfb10542-2bd3-5926-f8ac-036eef890a29@gmx.com>
- <0e0755f1-b97e-1256-5a7f-231c2e851b1b@googlemail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <54be9660-0236-576c-87e7-f07862a02244@gmx.com>
-Date: Fri, 9 Feb 2018 15:34:16 +0800
-MIME-Version: 1.0
-In-Reply-To: <0e0755f1-b97e-1256-5a7f-231c2e851b1b@googlemail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="VlGoGuLwP2BY2ygf6pRvY0Sfa10TU6M58"
+Received: from victor.provo.novell.com ([137.65.250.26]:36461 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750942AbeBIHog (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 9 Feb 2018 02:44:36 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH v2 00/10] Chunk allocator unification
+Date: Fri,  9 Feb 2018 15:44:17 +0800
+Message-Id: <20180209074428.29187-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---VlGoGuLwP2BY2ygf6pRvY0Sfa10TU6M58
-Content-Type: multipart/mixed; boundary="zT2xXfuBDf9MCOkhCAuO4XfzzQ99hAJyD";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Ralph Gauges <ralphgauges@googlemail.com>,
- "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Message-ID: <54be9660-0236-576c-87e7-f07862a02244@gmx.com>
-Subject: Re: segmentation fault in btrfs tool v4.15
-References: <10214501-3b8e-7f9b-11d6-14fb75da07a5@googlemail.com>
- <bda6e11b-c978-ce90-70d0-2ac1f7210e3d@gmx.com>
- <15274509-75d4-af47-46ea-8ac048b58ba9@googlemail.com>
- <31d87507-982c-b735-9f3a-9fbad4d247e2@gmx.com>
- <c525bb95-1a17-c01e-4c15-f89a6cc68c6e@googlemail.com>
- <6bb438c5-811d-d7b8-f551-a1a08be321c5@gmx.com>
- <b0b40b12-1130-ad31-6ff0-e0b674a71691@googlemail.com>
- <0f66e50a-520d-f565-0d2d-2411d480da05@gmx.com>
- <adbe7eae-268d-fffd-4bc4-e724e26ab584@googlemail.com>
- <bfb10542-2bd3-5926-f8ac-036eef890a29@gmx.com>
- <0e0755f1-b97e-1256-5a7f-231c2e851b1b@googlemail.com>
-In-Reply-To: <0e0755f1-b97e-1256-5a7f-231c2e851b1b@googlemail.com>
+This patchset can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/libbtrfs_prepare
 
---zT2xXfuBDf9MCOkhCAuO4XfzzQ99hAJyD
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+This patchset unified a large part of chunk allocator (free device
+extent search) between kernel and btrfs-progs.
+And reuses kernel function structures like btrfs_finish_chunk_alloc()
+and btrfs_alloc_dev_extent().
 
+Before the unification:
+               Kernel                |              Btrfs-progs
+ btrfs_alloc_chunk()                 | btrfs_alloc_chunk()
+ |- __btrfs_alloc_chunk()            | |- Do all the work
+                                     |
+ btrfs_create_pending_block_groups() |
+ |- btrfs_insert_item()              |
+ |- btrfs_finish_chunk_alloc()       |
+    |- btrfs_alloc_dev_extent()      |
 
+After the unification:
+               Kernel                |              Btrfs-progs
+ btrfs_alloc_chunk()                 | btrfs_alloc_chunk()
+ |- __btrfs_alloc_chunk()            | |- __btrfs_alloc_chunk()
+                                     | |- btrfs_finish_chunk_alloc()
+ btrfs_create_pending_block_groups() |    |- btrfs_alloc_dev_extent()
+ |- btrfs_insert_item()              |
+ |- btrfs_finish_chunk_alloc()       |
 
-On 2018=E5=B9=B402=E6=9C=8809=E6=97=A5 15:23, Ralph Gauges wrote:
-> Hi Qu,
->=20
-> I applied the patch to the sources of v4.15 and ran it in gdb. This is
-> the result.
->=20
-> (gdb) set args check /dev/sdf1
-> (gdb) run
-> Starting program: /home/gauges/Applications/bin/btrfs check /dev/sdf1
-> [Thread debugging using libthread_db enabled]
-> Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.=
-1".
-> parent transid verify failed on 266195058688 wanted 1857 found 1864
-> parent transid verify failed on 266195058688 wanted 1857 found 1864
-> parent transid verify failed on 266195058688 wanted 1857 found 1864
-> parent transid verify failed on 266195058688 wanted 1857 found 1864
-> Ignoring transid failure
-> ERROR: child eb corrupted: parent bytenr=3D247283269632 item=3D23 paren=
-t
-> level=3D1 child level=3D2
-> ERROR: cannot open file system
-> [Inferior 1 (process 7149) exited with code 01]
->=20
->=20
-> So obviously it does not crash any more. Thanks.
-> Since you are an expert on the btrfs filesystem, any hints as to how I
-> could fix my backup
-> partition?
+And the similiar functions are share the same code base, with minor
+member/functions change.
 
-Guys in mail list may have better ideas, CCed to mail list.
+This update only modifies patches 7 and after.
 
-In fact the problem all happens in extent tree, may be we could salvage
-something by RO mount it?
+Changelog:
+v2:
+  Make error handler in patch 7 better.
+  New patches to unify more functions used in btrfs_alloc_chunk()
 
-If kernel can't mount it even RO, then "btrfs restore" may be your last
-chance.
+Qu Wenruo (10):
+  btrfs-progs: Refactor parameter of BTRFS_MAX_DEVS() from root to
+    fs_info
+  btrfs-progs: Merge btrfs_alloc_data_chunk into btrfs_alloc_chunk
+  btrfs-progs: Make btrfs_alloc_chunk to handle block group creation
+  btrfs-progs: Introduce btrfs_raid_array and related infrastructures
+  btrfs-progs: volumes: Allow find_free_dev_extent() to return maximum
+    hole size
+  btrfs-progs: kernel-lib: Port kernel sort() to btrfs-progs
+  btrfs-progs: volumes: Unify free dev extent search behavior between
+    kernel and btrfs-progs.
+  btrfs-progs: Move chunk stripe size calcution function to volumes.h
+  btrfs-progs: Use btrfs_device->fs_info to replace
+    btrfs_device->dev_root
+  btrfs-progs: Refactor btrfs_alloc_chunk to mimic kernel structure and
+    behavior
 
-Thanks,
-Qu
+ Makefile          |   3 +-
+ check/main.c      |  22 --
+ convert/main.c    |  10 +-
+ ctree.h           |  12 +-
+ extent-tree.c     |  12 +-
+ kerncompat.h      |   5 +
+ kernel-lib/sort.c | 104 ++++++
+ kernel-lib/sort.h |  16 +
+ mkfs/main.c       |  27 +-
+ utils.c           |   2 +-
+ volumes.c         | 927 ++++++++++++++++++++++++++++--------------------------
+ volumes.h         |  66 +++-
+ 12 files changed, 695 insertions(+), 511 deletions(-)
+ create mode 100644 kernel-lib/sort.c
+ create mode 100644 kernel-lib/sort.h
 
-> This output from btrfs seems to suggest that "btrfs check"
-> can't handle this error?!
-> Or this this last error something else that didn't show up so far
-> because of the segfault?
->=20
-> Thanks
->=20
-> Ralph
->=20
->=20
+-- 
+2.16.1
 
-
---zT2xXfuBDf9MCOkhCAuO4XfzzQ99hAJyD--
-
---VlGoGuLwP2BY2ygf6pRvY0Sfa10TU6M58
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlp9TvgXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhPyggAolX1ppx+8NFS76nSlUBlQQ4+
-Fh9zMdShJmPjmoljk+LL7DhHszKOqsOVHJ0kTM2iXYAsGidlCk0d21wSAM/6bwW9
-LO91TvXN87oG0CrLcZj3MY9iNXyW2OWsFZA4fjJyHjStLVnq9ZDUb8mnZPbNS9Hg
-u7IzsPc+9RwVOeN2CrHmhIRuMHjjELqOG/QdHjPd1BaBGsSch3LENczW4TiWT8j0
-zNjnDfzSnQgfUFIzSuMRk+eRF2PdM5Cr7cARnnzqYaLn9yj/pBDWbmgoPf/21dch
-AkCSxYt+Nd4CdWn+6zGO6zKFh7VISLn2sw6ANLnPRX0zfZG8uH6kpVVDLdPs4w==
-=L2G/
------END PGP SIGNATURE-----
-
---VlGoGuLwP2BY2ygf6pRvY0Sfa10TU6M58--

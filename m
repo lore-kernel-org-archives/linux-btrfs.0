@@ -1,130 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bl2nam02on0063.outbound.protection.outlook.com ([104.47.38.63]:61856
-        "EHLO NAM02-BL2-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S938131AbeBUPTt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Feb 2018 10:19:49 -0500
-Subject: Re: Status of FST and mount times
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        linux-btrfs@vger.kernel.org
-References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
- <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
- <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
- <0fa921f1-9a54-e410-1305-c88136f4823c@mendix.com>
- <5773ab23-8bee-1434-522b-231c154c4c6e@panasas.com>
- <c59b3618-0dc8-f07c-391f-45b9f42e3aaf@gmx.com>
- <db1e0ee1-c1ae-cc5c-842c-1caa714ef62b@panasas.com>
- <b5b93505-13ad-2e30-8daa-b624de5512bd@gmx.com>
- <5743750c-644d-9160-c0f3-599caf92dcb6@panasas.com>
- <ccc1f937-1cdd-afdd-d164-99c3ad648387@gmail.com>
- <4590b70e-2be7-b511-1428-685dcf2c26c6@gmx.com>
- <bcb18a10-3e87-66f7-63a4-b6f9906680ec@panasas.com>
- <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
-From: "Ellis H. Wilson III" <ellisw@panasas.com>
-Message-ID: <baa3898d-d636-012b-3262-8984006ee146@panasas.com>
-Date: Wed, 21 Feb 2018 10:19:44 -0500
-MIME-Version: 1.0
-In-Reply-To: <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from victor.provo.novell.com ([137.65.250.26]:33996 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751047AbeBIHov (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Fri, 9 Feb 2018 02:44:51 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH v2 04/10] btrfs-progs: Introduce btrfs_raid_array and related infrastructures
+Date: Fri,  9 Feb 2018 15:44:22 +0800
+Message-Id: <20180209074428.29187-6-wqu@suse.com>
+In-Reply-To: <20180209074428.29187-1-wqu@suse.com>
+References: <20180209074428.29187-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/21/2018 10:03 AM, Hans van Kranenburg wrote:
-> On 02/21/2018 03:49 PM, Ellis H. Wilson III wrote:
->> On 02/20/2018 08:49 PM, Qu Wenruo wrote:
->>> My suggestion is to use balance to reduce number of block groups, so we
->>> could do less search at mount time.
->>>
->>> It's more like reason 2.
->>>
->>> But it only works for case where there are a lot of fragments so a lot
->>> of chunks are not fully utilized.
->>> Unfortunately, that's not the case for OP, so my suggestion doesn't make
->>> sense here.
->>
->> I ran the balance all the same, and the number of chunks has not
->> changed.  Before 3454, and after 3454:
->>   $ sudo btrfs-debug-tree -t chunk /dev/sdb | grep CHUNK_ITEM | wc -l
->> 3454
->>
->> HOWEVER, the time to mount has gone up somewhat significantly, from
->> 11.537s to 16.553s, which was very unexpected.  Output from previously
->> run commands shows the extent tree metadata grew about 25% due to the
->> balance.  Everything else stayed roughly the same, and no additional
->> data was added to the system (nor snapshots taken, nor additional
->> volumes added, etc):
->>
->> Before balance:
->> $ sudo ./show_metadata_tree_sizes.py /mnt/btrfs/
->> ROOT_TREE           1.14MiB 0(    72) 1(     1)
->> EXTENT_TREE       644.27MiB 0( 41101) 1(   131) 2(     1)
->> CHUNK_TREE        384.00KiB 0(    23) 1(     1)
->> DEV_TREE          272.00KiB 0(    16) 1(     1)
->> FS_TREE            11.55GiB 0(754442) 1(  2179) 2(     5) 3(     2)
->> CSUM_TREE           3.50GiB 0(228593) 1(   791) 2(     2) 3(     1)
->> QUOTA_TREE            0.00B
->> UUID_TREE          16.00KiB 0(     1)
->> FREE_SPACE_TREE       0.00B
->> DATA_RELOC_TREE    16.00KiB 0(     1)
->>
->> After balance:
->> $ sudo ./show_metadata_tree_sizes.py /mnt/btrfs/
->> ROOT_TREE           1.16MiB 0(    73) 1(     1)
->> EXTENT_TREE       806.50MiB 0( 51419) 1(   196) 2(     1)
->> CHUNK_TREE        384.00KiB 0(    23) 1(     1)
->> DEV_TREE          272.00KiB 0(    16) 1(     1)
->> FS_TREE            11.55GiB 0(754442) 1(  2179) 2(     5) 3(     2)
->> CSUM_TREE           3.49GiB 0(227920) 1(   804) 2(     2) 3(     1)
->> QUOTA_TREE            0.00B
->> UUID_TREE          16.00KiB 0(     1)
->> FREE_SPACE_TREE       0.00B
->> DATA_RELOC_TREE    16.00KiB 0(     1)
-> 
-> Heu, interesting.
-> 
-> What's the output of `btrfs fi df /mountpoint` and `grep btrfs
-> /proc/self/mounts` (does it contain 'ssd') and which kernel version is
-> this? (I get a bit lost in the many messages and subthreads in this
-> thread) I also can't find in the threads which command "the balance" means.
+As part of the effort to unify code and behavior between btrfs-progs and
+kernel, copy the btrfs_raid_array from kernel to btrfs-progs.
 
-Short recap:
-- I found long mount time for 1.65TB of home dir data at ~4s
-- Doubling this data on the same btrfs fs to 3.3TB increased mount time 
-to 11s
-- Qu et. al. suggested balance might reduce chunks, which came in around 
-3400, and the chunk walk on mount was the driving factor in terms of time
-- I ran balance
-- Mount time went up to 16s, and all else remains the same except the 
-extent tree.
+So later we can use the btrfs_raid_array[] to get needed raid info other
+than manually do if-else branches.
 
-$ sudo btrfs fi df /mnt/btrfs
-Data, single: total=3.32TiB, used=3.32TiB
-System, DUP: total=8.00MiB, used=384.00KiB
-Metadata, DUP: total=16.50GiB, used=15.82GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ ctree.h   | 12 +++++++++++-
+ volumes.c | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ volumes.h | 30 +++++++++++++++++++++++++++++
+ 3 files changed, 107 insertions(+), 1 deletion(-)
 
-$ sudo grep btrfs /proc/self/mounts
-/dev/sdb /mnt/btrfs btrfs rw,relatime,space_cache,subvolid=5,subvol=/ 0 0
+diff --git a/ctree.h b/ctree.h
+index 17cdac76c58c..c76849d8deb7 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -958,7 +958,17 @@ struct btrfs_csum_item {
+ #define BTRFS_BLOCK_GROUP_RAID5    	(1ULL << 7)
+ #define BTRFS_BLOCK_GROUP_RAID6    	(1ULL << 8)
+ #define BTRFS_BLOCK_GROUP_RESERVED	BTRFS_AVAIL_ALLOC_BIT_SINGLE
+-#define BTRFS_NR_RAID_TYPES             7
++
++enum btrfs_raid_types {
++	BTRFS_RAID_RAID10,
++	BTRFS_RAID_RAID1,
++	BTRFS_RAID_DUP,
++	BTRFS_RAID_RAID0,
++	BTRFS_RAID_SINGLE,
++	BTRFS_RAID_RAID5,
++	BTRFS_RAID_RAID6,
++	BTRFS_NR_RAID_TYPES
++};
+ 
+ #define BTRFS_BLOCK_GROUP_TYPE_MASK	(BTRFS_BLOCK_GROUP_DATA |    \
+ 					 BTRFS_BLOCK_GROUP_SYSTEM |  \
+diff --git a/volumes.c b/volumes.c
+index a9dc8c939dc5..b47ff1f392b5 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -30,6 +30,72 @@
+ #include "utils.h"
+ #include "kernel-lib/raid56.h"
+ 
++const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
++	[BTRFS_RAID_RAID10] = {
++		.sub_stripes	= 2,
++		.dev_stripes	= 1,
++		.devs_max	= 0,	/* 0 == as many as possible */
++		.devs_min	= 4,
++		.tolerated_failures = 1,
++		.devs_increment	= 2,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID1] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 2,
++		.devs_min	= 2,
++		.tolerated_failures = 1,
++		.devs_increment	= 2,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_DUP] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 2,
++		.devs_max	= 1,
++		.devs_min	= 1,
++		.tolerated_failures = 0,
++		.devs_increment	= 1,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID0] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 2,
++		.tolerated_failures = 0,
++		.devs_increment	= 1,
++		.ncopies	= 1,
++	},
++	[BTRFS_RAID_SINGLE] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 1,
++		.devs_min	= 1,
++		.tolerated_failures = 0,
++		.devs_increment	= 1,
++		.ncopies	= 1,
++	},
++	[BTRFS_RAID_RAID5] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 2,
++		.tolerated_failures = 1,
++		.devs_increment	= 1,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID6] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 3,
++		.tolerated_failures = 2,
++		.devs_increment	= 1,
++		.ncopies	= 3,
++	},
++};
++
+ struct stripe {
+ 	struct btrfs_device *dev;
+ 	u64 physical;
+diff --git a/volumes.h b/volumes.h
+index 7bbdf615d31a..612a0a7586f4 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -108,6 +108,36 @@ struct map_lookup {
+ 	struct btrfs_bio_stripe stripes[];
+ };
+ 
++struct btrfs_raid_attr {
++	int sub_stripes;	/* sub_stripes info for map */
++	int dev_stripes;	/* stripes per dev */
++	int devs_max;		/* max devs to use */
++	int devs_min;		/* min devs needed */
++	int tolerated_failures; /* max tolerated fail devs */
++	int devs_increment;	/* ndevs has to be a multiple of this */
++	int ncopies;		/* how many copies to data has */
++};
++
++extern const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES];
++
++static inline enum btrfs_raid_types btrfs_bg_flags_to_raid_index(u64 flags)
++{
++	if (flags & BTRFS_BLOCK_GROUP_RAID10)
++		return BTRFS_RAID_RAID10;
++	else if (flags & BTRFS_BLOCK_GROUP_RAID1)
++		return BTRFS_RAID_RAID1;
++	else if (flags & BTRFS_BLOCK_GROUP_DUP)
++		return BTRFS_RAID_DUP;
++	else if (flags & BTRFS_BLOCK_GROUP_RAID0)
++		return BTRFS_RAID_RAID0;
++	else if (flags & BTRFS_BLOCK_GROUP_RAID5)
++		return BTRFS_RAID_RAID5;
++	else if (flags & BTRFS_BLOCK_GROUP_RAID6)
++		return BTRFS_RAID_RAID6;
++
++	return BTRFS_RAID_SINGLE; /* BTRFS_BLOCK_GROUP_SINGLE */
++}
++
+ #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
+ 			    (sizeof(struct btrfs_bio_stripe) * (n)))
+ #define btrfs_map_lookup_size(n) (sizeof(struct map_lookup) + \
+-- 
+2.16.1
 
-  $ uname -a
-Linux <snip> 4.5.5-300.fc24.x86_64 #1 SMP Thu May 19 13:05:32 UTC 2016 
-x86_64 x86_64 x86_64 GNU/Linux
-
-I plan to rerun this on a newer kernel, but haven't had time to spin up 
-another machine with a modern kernel yet, and this machine is also being 
-used for other things right now so I can't just upgrade it.
-
-> And what does this tell you?
-> 
-> https://github.com/knorrie/python-btrfs/blob/develop/examples/show_free_space_fragmentation.py
-
-$ sudo ./show_free_space_fragmentation.py /mnt/btrfs
-No Free Space Tree (space_cache=v2) found!
-Falling back to using the extent tree to determine free space extents.
-vaddr 6529453391872 length 1073741824 used_pct 27 free space fragments 1 
-score 0
-Skipped because of usage > 90%: 3397 chunks
-
-Best,
-
-ellis

@@ -1,52 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-dm3nam03on0050.outbound.protection.outlook.com ([104.47.41.50]:55728
-        "EHLO NAM03-DM3-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751040AbeBIQpb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Feb 2018 11:45:31 -0500
-To: linux-btrfs@vger.kernel.org
-From: "Ellis H. Wilson III" <ellisw@panasas.com>
-Subject: btrfs-cleaner / snapshot performance analysis
-Message-ID: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
-Date: Fri, 9 Feb 2018 11:45:24 -0500
+Received: from azure.uno.uk.net ([95.172.254.11]:48722 "EHLO azure.uno.uk.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751024AbeBISZE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Feb 2018 13:25:04 -0500
+Received: from ty.sabi.co.uk ([95.172.230.208]:43198)
+        by azure.uno.uk.net with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+        (Exim 4.89_1)
+        (envelope-from <postmaster@root.t00.sabi.co.uk>)
+        id 1ekCC3-0006ya-EG
+        for linux-btrfs@vger.kernel.org; Fri, 09 Feb 2018 17:10:35 +0000
+Received: from from [127.0.0.1] (helo=tree.ty.sabi.co.uk)
+        by ty.sabi.co.UK with esmtps(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)(Exim 4.82 3)
+        id 1ekCBx-0002EB-Hl
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Feb 2018 17:10:29 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Message-ID: <23165.54788.765684.62484@tree.ty.sabi.co.uk>
+Date: Fri, 9 Feb 2018 17:10:28 +0000
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs-cleaner / snapshot performance analysis
+In-Reply-To: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
+References: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
+From: pg@btrfs.list.sabi.co.UK (Peter Grandi)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+> I am trying to better understand how the cleaner kthread
+> (btrfs-cleaner) impacts foreground performance, specifically
+> during snapshot deletion.  My experience so far has been that
+> it can be dramatically disruptive to foreground I/O.
 
-I am trying to better understand how the cleaner kthread (btrfs-cleaner) 
-impacts foreground performance, specifically during snapshot deletion. 
-My experience so far has been that it can be dramatically disruptive to 
-foreground I/O.
+That's such a warmly innocent and optimistic question! This post
+gives the answer, and to an even more general question:
 
-Looking through the wiki at kernel.org I have not yet stumbled onto any 
-analysis that would shed light on this specific problem.  I have found 
-numerous complaints about btrfs-cleaner online, especially relating to 
-quotas being enabled.  This has proven thus far less than helpful, as 
-the response tends to be "use less snapshots," or "disable quotas," both 
-of which strike me as intellectually unsatisfying answers, especially 
-the former in a filesystem where snapshots are supposed to be 
-"first-class citizens."
+  http://www.sabi.co.uk/blog/17-one.html?170610#170610
 
-The 2007 and 2013 Rodeh papers don't do the thorough practical snapshot 
-performance analysis I would expect to see given the assertions in the 
-latter that "BTRFS...supports efficient snapshots..."  The former is 
-sufficiently pre-BTRFS that while it does performance analysis of btree 
-clones, it's unclear (to me at least) if the results can be 
-forward-propagated in some way to real-world performance expectations 
-for BTRFS snapshot creation/deletion/modification.
+> the response tends to be "use less snapshots," or "disable
+> quotas," both of which strike me as intellectually
+> unsatisfying answers, especially the former in a filesystem
+> where snapshots are supposed to be "first-class citizens."
 
-Has this analysis been performed somewhere else and I'm just missing it? 
-  Also, I'll be glad to comment on my specific setup, kernel version, 
-etc, and discuss pragmatic work-arounds, but I'd like to better 
-understand the high-level performance implications first.
-
-Thanks in advance to anyone who can comment on this.  I am very inclined 
-to read anything thrown at me, so if there is documentation I failed to 
-read, please just send the link.
-
-Best,
-
-ellis
+They are "first class" but not "cost-free".
+In particular every extent is linked in a forward map and a
+reverse map, and deleting a snapshot involves materializing and
+updating a join of the two, which seems to be done with a
+classic nested-loop join strategy resulting in N^2 running
+time. I suspect that quotas have a similar optimization.

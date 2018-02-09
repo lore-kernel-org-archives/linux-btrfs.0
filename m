@@ -1,163 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59049 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:60319 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750973AbeBIHoh (ORCPT
+        with ESMTP id S1751054AbeBIHov (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 9 Feb 2018 02:44:37 -0500
+        Fri, 9 Feb 2018 02:44:51 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH v2 03/10] btrfs-progs: Make btrfs_alloc_chunk to handle block group creation
-Date: Fri,  9 Feb 2018 15:44:21 +0800
-Message-Id: <20180209074428.29187-5-wqu@suse.com>
+Subject: [PATCH v2 06/10] btrfs-progs: kernel-lib: Port kernel sort() to btrfs-progs
+Date: Fri,  9 Feb 2018 15:44:24 +0800
+Message-Id: <20180209074428.29187-8-wqu@suse.com>
 In-Reply-To: <20180209074428.29187-1-wqu@suse.com>
 References: <20180209074428.29187-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before this patch, chunk allocation is split into 2 parts:
-
-1) Chunk allocation
-   Handled by btrfs_alloc_chunk(), which will insert chunk and device
-   extent items.
-
-2) Block group allocation
-   Handled by btrfs_make_block_group(), which will insert block group
-   item and update space info.
-
-However for chunk allocation, we don't really need to split these
-operations as all btrfs_alloc_chunk() has btrfs_make_block_group()
-followed.
-
-So it's reasonable to merge btrfs_make_block_group() call into
-btrfs_alloc_chunk() to save several lines, and provides the basis for
-later btrfs_alloc_chunk() rework.
+Used by later btrfs_alloc_chunk() rework.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- convert/main.c |  4 ----
- extent-tree.c  | 10 ++--------
- mkfs/main.c    | 19 -------------------
- volumes.c      | 10 ++++++----
- 4 files changed, 8 insertions(+), 35 deletions(-)
+ Makefile          |   3 +-
+ kernel-lib/sort.c | 104 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel-lib/sort.h |  16 +++++++++
+ 3 files changed, 122 insertions(+), 1 deletion(-)
+ create mode 100644 kernel-lib/sort.c
+ create mode 100644 kernel-lib/sort.h
 
-diff --git a/convert/main.c b/convert/main.c
-index b2444bb2ff21..240d3aa46db9 100644
---- a/convert/main.c
-+++ b/convert/main.c
-@@ -915,10 +915,6 @@ static int make_convert_data_block_groups(struct btrfs_trans_handle *trans,
- 					BTRFS_BLOCK_GROUP_DATA, true);
- 			if (ret < 0)
- 				break;
--			ret = btrfs_make_block_group(trans, fs_info, 0,
--					BTRFS_BLOCK_GROUP_DATA, cur, len);
--			if (ret < 0)
--				break;
- 			cur += len;
- 		}
- 	}
-diff --git a/extent-tree.c b/extent-tree.c
-index b085ab0352b3..bccd83d1bae6 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -1909,15 +1909,9 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 	                        space_info->flags, false);
- 	if (ret == -ENOSPC) {
- 		space_info->full = 1;
--		return 0;
-+		return ret;
- 	}
--
--	BUG_ON(ret);
--
--	ret = btrfs_make_block_group(trans, fs_info, 0, space_info->flags,
--				     start, num_bytes);
--	BUG_ON(ret);
--	return 0;
-+	return ret;
- }
- 
- static int update_block_group(struct btrfs_root *root,
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 358395ca0250..49159ea533b9 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -87,12 +87,6 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
- 			error("no space to allocate data/metadata chunk");
- 			goto err;
- 		}
--		if (ret)
--			return ret;
--		ret = btrfs_make_block_group(trans, fs_info, 0,
--					     BTRFS_BLOCK_GROUP_METADATA |
--					     BTRFS_BLOCK_GROUP_DATA,
--					     chunk_start, chunk_size);
- 		if (ret)
- 			return ret;
- 		allocation->mixed += chunk_size;
-@@ -106,12 +100,7 @@ static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
- 		}
- 		if (ret)
- 			return ret;
--		ret = btrfs_make_block_group(trans, fs_info, 0,
--					     BTRFS_BLOCK_GROUP_METADATA,
--					     chunk_start, chunk_size);
- 		allocation->metadata += chunk_size;
--		if (ret)
--			return ret;
- 	}
- 
- 	root->fs_info->system_allocs = 0;
-@@ -140,12 +129,7 @@ static int create_data_block_groups(struct btrfs_trans_handle *trans,
- 		}
- 		if (ret)
- 			return ret;
--		ret = btrfs_make_block_group(trans, fs_info, 0,
--					     BTRFS_BLOCK_GROUP_DATA,
--					     chunk_start, chunk_size);
- 		allocation->data += chunk_size;
--		if (ret)
--			return ret;
- 	}
- 
- err:
-@@ -249,9 +233,6 @@ static int create_one_raid_group(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		return ret;
- 
--	ret = btrfs_make_block_group(trans, fs_info, 0,
--				     type, chunk_start, chunk_size);
--
- 	type &= BTRFS_BLOCK_GROUP_TYPE_MASK;
- 	if (type == BTRFS_BLOCK_GROUP_DATA) {
- 		allocation->data += chunk_size;
-diff --git a/volumes.c b/volumes.c
-index 9ee4650351c3..a9dc8c939dc5 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -837,10 +837,9 @@ error:
- 				/ sizeof(struct btrfs_stripe) + 1)
- 
- /*
-- * Alloc a chunk, will insert dev extents, chunk item.
-- * NOTE: This function will not insert block group item nor mark newly
-- * allocated chunk available for later allocation.
-- * Block group item and free space update is handled by btrfs_make_block_group()
-+ * Alloc a chunk, will insert dev extents, chunk item, and insert new
-+ * block group and update space info (so that extent allocator can use
-+ * newly allocated chunk).
-  *
-  * @start:	return value of allocated chunk start bytenr.
-  * @num_bytes:	return value of allocated chunk size
-@@ -1159,6 +1158,9 @@ alloc_chunk:
- 	}
- 
- 	kfree(chunk);
+diff --git a/Makefile b/Makefile
+index 327cdfa08eba..3db7bbe04662 100644
+--- a/Makefile
++++ b/Makefile
+@@ -106,7 +106,8 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
+ 	  qgroup.o free-space-cache.o kernel-lib/list_sort.o props.o \
+ 	  kernel-shared/ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+ 	  inode.o file.o find-root.o free-space-tree.o help.o send-dump.o \
+-	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o
++	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o \
++	  kernel-lib/sort.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
+diff --git a/kernel-lib/sort.c b/kernel-lib/sort.c
+new file mode 100644
+index 000000000000..70ae3dbe2852
+--- /dev/null
++++ b/kernel-lib/sort.c
+@@ -0,0 +1,104 @@
++/*
++ * taken from linux kernel lib/sort.c, removed kernel config code and adapted
++ * for btrfsprogs
++ */
 +
-+	ret = btrfs_make_block_group(trans, info, 0, type, map->ce.start,
-+				     map->ce.size);
- 	return ret;
- 
- out_chunk_map:
++#include "sort.h"
++
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * A fast, small, non-recursive O(nlog n) sort for the Linux kernel
++ *
++ * Jan 23 2005  Matt Mackall <mpm@selenic.com>
++ */
++
++static int alignment_ok(const void *base, int align)
++{
++	return ((unsigned long)base & (align - 1)) == 0;
++}
++
++static void u32_swap(void *a, void *b, int size)
++{
++	u32 t = *(u32 *)a;
++	*(u32 *)a = *(u32 *)b;
++	*(u32 *)b = t;
++}
++
++static void u64_swap(void *a, void *b, int size)
++{
++	u64 t = *(u64 *)a;
++	*(u64 *)a = *(u64 *)b;
++	*(u64 *)b = t;
++}
++
++static void generic_swap(void *a, void *b, int size)
++{
++	char t;
++
++	do {
++		t = *(char *)a;
++		*(char *)a++ = *(char *)b;
++		*(char *)b++ = t;
++	} while (--size > 0);
++}
++
++/**
++ * sort - sort an array of elements
++ * @base: pointer to data to sort
++ * @num: number of elements
++ * @size: size of each element
++ * @cmp_func: pointer to comparison function
++ * @swap_func: pointer to swap function or NULL
++ *
++ * This function does a heapsort on the given array. You may provide a
++ * swap_func function optimized to your element type.
++ *
++ * Sorting time is O(n log n) both on average and worst-case. While
++ * qsort is about 20% faster on average, it suffers from exploitable
++ * O(n*n) worst-case behavior and extra memory requirements that make
++ * it less suitable for kernel use.
++ */
++
++void sort(void *base, size_t num, size_t size,
++	  int (*cmp_func)(const void *, const void *),
++	  void (*swap_func)(void *, void *, int size))
++{
++	/* pre-scale counters for performance */
++	int i = (num/2 - 1) * size, n = num * size, c, r;
++
++	if (!swap_func) {
++		if (size == 4 && alignment_ok(base, 4))
++			swap_func = u32_swap;
++		else if (size == 8 && alignment_ok(base, 8))
++			swap_func = u64_swap;
++		else
++			swap_func = generic_swap;
++	}
++
++	/* heapify */
++	for ( ; i >= 0; i -= size) {
++		for (r = i; r * 2 + size < n; r  = c) {
++			c = r * 2 + size;
++			if (c < n - size &&
++					cmp_func(base + c, base + c + size) < 0)
++				c += size;
++			if (cmp_func(base + r, base + c) >= 0)
++				break;
++			swap_func(base + r, base + c, size);
++		}
++	}
++
++	/* sort */
++	for (i = n - size; i > 0; i -= size) {
++		swap_func(base, base + i, size);
++		for (r = 0; r * 2 + size < i; r = c) {
++			c = r * 2 + size;
++			if (c < i - size &&
++					cmp_func(base + c, base + c + size) < 0)
++				c += size;
++			if (cmp_func(base + r, base + c) >= 0)
++				break;
++			swap_func(base + r, base + c, size);
++		}
++	}
++}
+diff --git a/kernel-lib/sort.h b/kernel-lib/sort.h
+new file mode 100644
+index 000000000000..9355e01248f2
+--- /dev/null
++++ b/kernel-lib/sort.h
+@@ -0,0 +1,16 @@
++/*
++ * taken from linux kernel include/list_sort.h
++ * changed include to kerncompat.h
++ */
++
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _LINUX_SORT_H
++#define _LINUX_SORT_H
++
++#include "kerncompat.h"
++
++void sort(void *base, size_t num, size_t size,
++	  int (*cmp)(const void *, const void *),
++	  void (*swap)(void *, void *, int));
++
++#endif
 -- 
 2.16.1
 

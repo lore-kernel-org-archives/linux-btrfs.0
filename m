@@ -1,40 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44322 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S967717AbeBNNP4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Feb 2018 08:15:56 -0500
-Date: Wed, 14 Feb 2018 14:13:39 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Add enospc_debug printing in
- metadata_reserve_bytes
-Message-ID: <20180214131339.GD3003@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1513332337-7068-1-git-send-email-nborisov@suse.com>
- <fd31d262-3b22-dbc0-6315-3ce734334625@suse.com>
- <b905db35-f6c6-2de3-f1fb-154d697cc747@gmx.com>
- <4317cffa-e7ef-6ded-dfd8-68ccfb84fe55@suse.com>
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:26460 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752132AbeBIBdg (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Feb 2018 20:33:36 -0500
+From: "Gu, Jinxiang" <gujx@cn.fujitsu.com>
+To: "dsterba@suse.cz" <dsterba@suse.cz>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: [PATCH v5 0/3] Add support for export testsuits
+Date: Fri, 9 Feb 2018 01:33:33 +0000
+Message-ID: <516DDBE5B1D92D42BCF7A2E37F045A5D016B1287AC@G08CNEXMBPEKD02.g08.fujitsu.local>
+References: <1518071660-16878-1-git-send-email-gujx@cn.fujitsu.com>
+ <20180208180211.GE3003@twin.jikos.cz>
+In-Reply-To: <20180208180211.GE3003@twin.jikos.cz>
+Content-Type: text/plain; charset="gb2312"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4317cffa-e7ef-6ded-dfd8-68ccfb84fe55@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 06, 2018 at 11:18:41AM +0200, Nikolay Borisov wrote:
-> >> On 15.12.2017 12:05, Nikolay Borisov wrote:
-> >>> Currently when enoscp_debug mount option is turned on we do not print
-> >>> any debug info in case metadata reservation failures happen. Fix this
-> >>> by adding the necessary hook in reserve_metadata_bytes.
-> >>>
-> >>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> > 
-> > Looks good.
-> > 
-> > Reviewed-by: Qu Wenruo <wqu@suse.com>
+Hi,
+
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Friday, February 09, 2018 2:02 AM
+> To: Gu, Jinxiang/¹Ë ½ğÏã <gujx@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org; dsterba@suse.cz
+> Subject: Re: [PATCH v5 0/3] Add support for export testsuits
 > 
-> Yeah you already reviewed it back in December, I was bumping it to make
-> sure David won't miss it since it's a rather old patch :)
+> On Thu, Feb 08, 2018 at 02:34:17PM +0800, Gu Jinxiang wrote:
+> > Achieved:
+> > 1. export testsuite by:
+> >  $ make testsuite
+> > files list in testsuites-list will be added into tarball btrfs-progs-tests.tar.gz.
+> >
+> > 2. after decompress btrfs-progs-tests.tar.gz, run test by:
+> >  $ TEST=`MASK` ./tests/mkfs-tests.sh
+> > and, without MASK also be ok.
+> > replenish:
+> >  $ tar -xzvf ./btrfs-progs-tests.tar.gz  $ ls
+> >    btrfs-progs
+> > tests directory and other files is in btrfs-progs.
+> >
+> > Changelog:
+> > v5->v4: modify patch2.
+> > 	make TEST_TOP to represent tests directory.
+> > 	and introduce INTERNAL_BIN for internal binaries.
+> 
+> Patches 1 and 2 applied. I reworked most of 1, my idea of the end result of the testsutie is different. In patch 2, I've added quotes to all lines
+> that changed the variables on 'source ..' line. In such cases please also look at the resulting code and do not just mechanically apply the
+> suggestion to rename a variable. Patch 3 does not bring much information so I did not apply it and wrote the section myself.
+Thank you for the change.
+My idea was keep the structure as git when export testsuite. But I saw the modification, they are more reasonable indeed. 
 
-Added to next, thanks.
+> 
+> The project idea lacked details, as the cards on the github Projects page are supposed to be short. Not all of the tasks there are simple, so
+> if you'd want to work on something found there and see that's not clear what to do, it would be better to open an issue so I can fill in.
+OK. Got it.
+Thanks.
+> 
 
+
+
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

@@ -1,41 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:44374 "EHLO
-        mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752273AbeBKJbp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Feb 2018 04:31:45 -0500
-Received: by mail-lf0-f42.google.com with SMTP id c188so801973lfc.11
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Feb 2018 01:31:45 -0800 (PST)
+Received: from mail-by2nam01on0081.outbound.protection.outlook.com ([104.47.34.81]:33304
+        "EHLO NAM01-BY2-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751077AbeBKP7l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 11 Feb 2018 10:59:41 -0500
 Subject: Re: btrfs-cleaner / snapshot performance analysis
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        "Ellis H. Wilson III" <ellisw@panasas.com>,
-        linux-btrfs@vger.kernel.org
+To: Tomasz Pala <gotar@polanet.pl>
+Cc: linux-btrfs@vger.kernel.org
 References: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
  <96cd9e57-cde4-5bc4-0312-02b54668e59a@mendix.com>
  <76e7f364-62b9-5ef1-a8ed-f6fb9e534963@panasas.com>
- <13d35a99-98ef-5861-3b44-17428d999a7c@mendix.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <437ef3be-58ef-9195-0422-113b5fd17bff@gmail.com>
-Date: Sun, 11 Feb 2018 12:31:42 +0300
+ <20180210220549.GA30438@polanet.pl>
+From: "Ellis H. Wilson III" <ellisw@panasas.com>
+Message-ID: <6abc187c-b5fe-a776-6b89-ca5b6c7ee790@panasas.com>
+Date: Sun, 11 Feb 2018 10:59:46 -0500
 MIME-Version: 1.0
-In-Reply-To: <13d35a99-98ef-5861-3b44-17428d999a7c@mendix.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180210220549.GA30438@polanet.pl>
+Content-Type: text/plain; charset=iso-8859-2; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-11.02.2018 04:02, Hans van Kranenburg пишет:
-...
+Thanks Tomasz,
+
+Comments in-line:
+
+On 02/10/2018 05:05 PM, Tomasz Pala wrote:
+> You won't have anything close to "accurate" in btrfs - quotas don't
+> include space wasted by fragmentation, which happens to allocate from tens
+> to thousands times (sic!) more space than the files itself.
+> Not in some worst-case scenarios, but in real life situations...
+> I got 10 MB db-file which was eating 10 GB of space after a week of
+> regular updates - withOUT snapshotting it. All described here.
+
+The underlying filesystem this is replacing was an in-house developed 
+COW filesystem, so we're aware of the difficulties of fragmentation. 
+I'm more interested in an approximate space consumed across snapshots 
+when considering CoW.  I realize it will be approximate.  Approximate is 
+ok for us -- no accounting for snapshot space consumed is not.
+
+Also, I don't see the thread you mentioned.  Perhaps you forgot to 
+mention it, or an html link didn't come through properly?
+
+>> course) or how many subvolumes/snapshots there are.  If I know that
+>> above N snapshots per subvolume performance tanks by M%, I can apply
+>> limits on the use-case in the field, but I am not aware of those kinds
+>> of performance implications yet.
 > 
->> - /dev/sda6 / btrfs
->> rw,relatime,ssd,space_cache,subvolid=259,subvol=/@/.snapshots/1/snapshot
->> 0 0
+> This doesn't work like this. It all depends on data that are subject of
+> snapshots, especially how they are updated. How exactly, including write
+> patterns.
 > 
-> Note that changes on atime cause writes to metadata, which means cowing
-> metadata blocks and unsharing them from a previous snapshot, only when
-> using the filesystem, not even when changing things (!).
+> I think you expect answers that can't be formulated - with fs architecture so
+> advanced as ZFS or btrfs it's behavior can't be analyzed for simple
+> answers like 'keep less than N snapshots'.
 
-With relatime atime is updated only once after file was changed. So your
-description is not entirely accurate and things should not be that
-dramatic unless files are continuously being changed.
+I was using an extremely simple heuristic to drive at what I was looking 
+to get out of this.  I should have been more explicit that the example 
+was not to be taken literally.
 
+> This is an exception of easy-answer: btrfs doesn't handle databases with
+> CoW. Period. Doesn't matter if snapshotted or not, ANY database files
+> (systemd-journal, PostgreSQL, sqlite, db) are not handled at all. They
+> slow down entire system to the speed of cheap SD card.
 
+I will keep this in mind, thank you.  We do have a higher level above 
+BTRFS that stages data.  I will consider implementing an algorithm to 
+add the nocow flag to the file if it has been written to sufficiently to 
+indicate it will be a bad fit for the BTRFS COW algorithm.
+
+> Actually, if you do not use compression and don't need checksums of data
+> blocks, you may want to mount all the btrfs with nocow by default.
+> This way the quotas would be more accurate (no fragmentation _between_
+> snapshots) and you'll have some decent performance with snapshots.
+> If that is all you care.
+
+CoW is still valuable for us as we're shooting to support on the order 
+of hundreds of snapshots per subvolume, and without it (if BTRFS COW 
+works the same as our old COW FS) that's going to be quite expensive to 
+keep snapshots around.  So some hybrid solution is required here.
+
+Best,
+
+ellis

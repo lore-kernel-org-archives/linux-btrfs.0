@@ -1,65 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www262.sakura.ne.jp ([202.181.97.72]:32803 "EHLO
-        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751385AbeBLNqu (ORCPT
+Received: from userp2120.oracle.com ([156.151.31.85]:34988 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752616AbeBLPUN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Feb 2018 08:46:50 -0500
-To: nborisov@suse.com, peterz@infradead.org
-Cc: torvalds@linux-foundation.org, davej@codemonkey.org.uk, npiggin@gmail.com,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        netdev@vger.kernel.org, mhocko@kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] lockdep: Fix fs_reclaim warning.
-From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-References: <201801292047.EHC05241.OHSQOJOVtFMFLF@I-love.SAKURA.ne.jp>
-        <20180129135547.GR2269@hirez.programming.kicks-ass.net>
-        <201802012036.FEE78102.HOMFFOtJVFOSQL@I-love.SAKURA.ne.jp>
-        <201802082043.FFJ39503.SVQFFFOJMHLOtO@I-love.SAKURA.ne.jp>
-        <e6f5dc9b-2066-4f31-8e0f-c713f53e6592@suse.com>
-In-Reply-To: <e6f5dc9b-2066-4f31-8e0f-c713f53e6592@suse.com>
-Message-Id: <201802122246.FAI52698.FVOStMHQFLFJOO@I-love.SAKURA.ne.jp>
-Date: Mon, 12 Feb 2018 22:46:51 +0900
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+        Mon, 12 Feb 2018 10:20:13 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1CFHOSP029705
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:20:12 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by userp2120.oracle.com with ESMTP id 2g3d6cr7yj-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:20:12 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w1CFKB7t022629
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:20:11 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w1CFKAkW008704
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 15:20:11 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: print-tree: fix INODE_ITEM sequence and flags
+Date: Mon, 12 Feb 2018 23:21:26 +0800
+Message-Id: <20180212152126.17984-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nikolay Borisov wrote:
-> I think I've hit another incarnation of that one. The call stack is:
-> http://paste.opensuse.org/3f22d013
-> 
-> The cleaned up callstack of all the ? entries look like:
-> 
-> __lock_acquire+0x2d8a/0x4b70
-> lock_acquire+0x110/0x330
-> kmem_cache_alloc+0x29/0x2c0
-> __clear_extent_bit+0x488/0x800
-> try_release_extent_mapping+0x288/0x3c0
-> __btrfs_releasepage+0x6c/0x140
-> shrink_page_list+0x227e/0x3110
-> shrink_inactive_list+0x414/0xdb0
-> shrink_node_memcg+0x7c8/0x1250
-> shrink_node+0x2ae/0xb50
-> do_try_to_free_pages+0x2b1/0xe20
-> try_to_free_pages+0x205/0x570
->  __alloc_pages_nodemask+0xb91/0x2160
-> new_slab+0x27a/0x4e0
-> ___slab_alloc+0x355/0x610
->  __slab_alloc+0x4c/0xa0
-> kmem_cache_alloc+0x22d/0x2c0
-> mempool_alloc+0xe1/0x280
+dump-tree prints wrong sequence number and the flags numbers,
+as we misplaced the printf args. This patch fixes it.
 
-Yes, for mempool_alloc() is adding __GFP_NOMEMALLOC | __GFP_NOWARN to gfp_mask.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ print-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-	gfp_mask |= __GFP_NOMEMALLOC;   /* don't allocate emergency reserves */
-	gfp_mask |= __GFP_NORETRY;      /* don't loop in __alloc_pages */
-	gfp_mask |= __GFP_NOWARN;       /* failures are OK */
+diff --git a/print-tree.c b/print-tree.c
+index d3fa862139ef..cdc39c971ec9 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -919,8 +919,8 @@ static void print_inode_item(struct extent_buffer *eb,
+ 	       btrfs_inode_uid(eb, ii),
+ 	       btrfs_inode_gid(eb, ii),
+ 	       (unsigned long long)btrfs_inode_rdev(eb,ii),
+-	       (unsigned long long)btrfs_inode_flags(eb,ii),
+ 	       (unsigned long long)btrfs_inode_sequence(eb, ii),
++	       (unsigned long long)btrfs_inode_flags(eb,ii),
+ 	       flags_str);
+ 	print_timespec(eb, btrfs_inode_atime(ii), "\t\tatime ", "\n");
+ 	print_timespec(eb, btrfs_inode_ctime(ii), "\t\tctime ", "\n");
+-- 
+2.15.0
 
-> bio_alloc_bioset+0x1d7/0x830
-> ext4_mpage_readpages+0x99f/0x1000 <-
-> __do_page_cache_readahead+0x4be/0x840
-> filemap_fault+0x8c8/0xfc0
-> ext4_filemap_fault+0x7d/0xb0
-> __do_fault+0x7a/0x150
-> __handle_mm_fault+0x1542/0x29d0
-> __do_page_fault+0x557/0xa30
-> async_page_fault+0x4c/0x60

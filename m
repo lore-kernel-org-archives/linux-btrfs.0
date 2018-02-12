@@ -1,73 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tty0.vserver.softronics.ch ([91.214.169.36]:50639 "EHLO
-        fe1.digint.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753614AbeBKTKS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Feb 2018 14:10:18 -0500
-Subject: Re: [btrfs-progs] coreutils-like -i parameter, splitting permissions
- for various tasks
-To: Tomasz Pala <gotar@polanet.pl>, linux-btrfs@vger.kernel.org
-References: <20180210112441.GA25166@polanet.pl>
-From: Axel Burri <axel@tty0.ch>
-Message-ID: <45c8f8bd-3372-a1f6-63b9-4679710356ff@tty0.ch>
-Date: Sun, 11 Feb 2018 20:04:39 +0100
+Received: from mail-bn3nam01on0075.outbound.protection.outlook.com ([104.47.33.75]:3776
+        "EHLO NAM01-BN3-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S936020AbeBLOpX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Feb 2018 09:45:23 -0500
+Subject: Re: btrfs-cleaner / snapshot performance analysis
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
+References: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
+ <96cd9e57-cde4-5bc4-0312-02b54668e59a@mendix.com>
+ <76e7f364-62b9-5ef1-a8ed-f6fb9e534963@panasas.com>
+ <13d35a99-98ef-5861-3b44-17428d999a7c@mendix.com>
+ <bd443816-88e6-acd8-599b-8e34de1ac88c@panasas.com>
+ <b5b7fa86-0fa3-84e2-13c8-f63f1b219148@mendix.com>
+From: "Ellis H. Wilson III" <ellisw@panasas.com>
+Message-ID: <90e07db4-f5c0-9a44-b62d-58c76ed0fa62@panasas.com>
+Date: Mon, 12 Feb 2018 09:45:33 -0500
 MIME-Version: 1.0
-In-Reply-To: <20180210112441.GA25166@polanet.pl>
-Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <b5b7fa86-0fa3-84e2-13c8-f63f1b219148@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 02/11/2018 01:03 PM, Hans van Kranenburg wrote:
+>> 3. I need to look at the code to understand the interplay between
+>> qgroups, snapshots, and foreground I/O performance as there isn't
+>> existing architecture documentation to point me to that covers this
+> 
+> Well, the excellent write-up of Qu this morning shows some explanation
+> from the design point of view.
 
+Sorry, I may have missed this email.  Or perhaps you are referring to a 
+wiki or blog post of some kind I'm not following actively?  Either way, 
+if you can forward me the link, I'd greatly appreciate it.
 
-On 2018-02-10 12:24, Tomasz Pala wrote:
-> There is a serious flaw in btrfs subcommands handling. Since all of them
-> are handled by single 'btrfs' binary, there is no way to create any
-> protection against accidental data loss for (the only one I've found,
-> but still DANGEROUS) 'btrfs subvolume delete'.
-> 
-> There are several protections that are being used for various commands.
-> For example, with zsh having hist_ignore_space enabled I got:
-> 
-> alias kill=' kill'
-> alias halt=' halt'
-> alias init=' init'
-> alias poweroff=' poweroff'
-> alias reboot=' reboot'
-> alias shutdown=' shutdown'
-> alias telinit=' telinit'
-> 
-> so that these command are never saved into my shell history.
-> 
-> Other system-wide protection enabled by default might be coreutils.sh
-> creating aliases:
-> 
-> alias cp=' cp --interactive --archive --backup=numbered --reflink=auto'
-> alias mv=' mv --interactive --backup=numbered'
-> alias rm=' rm --interactive --one-file-system --interactive=once'
-> 
-> All such countermeasures reduce the probability of fatal mistakes.
-> 
-> 
-> There is no 'prompt before doing ANYTHING irreversible' option for btrfs,
-> so everyone needs to take special care typing commands. Since snapshotting
-> and managing subvolumes is some daily-routine, not anything special
-> (like creating storage pools or managing devices), this should be more
-> forgiving for any user errors. Since there is no other (obvious)
-> solution, I propose makeing "subvolume delete" ask for confirmation by
-> default, unless used with newly introduced option, like -y(--yes).
-> 
-> 
-> Moreover, since there might be different admin roles on the system, the
-> btrfs-progs should be splitted into separate tools, so one could have
-> quota-admin without permissions for managing devices, backup-admin
-> with access to all the subvolumes or maintenance-admin that could issue
-> scrub or rebalance volumes. For backward compatibility, these tools
-> could be issued by 'btrfs' wrapper binary.
+> nocow only keeps the cows on a distance as long as you don't start
+> snapshotting (or cp --reflink) those files... If you take a snapshot,
+> then you force btrfs to keep the data around that is referenced by the
+> snapshot. So, that means that every next write will be cowed once again,
+> moo, so small writes will be redirected to a new location, causing
+> fragmentation again. The second and third write can go in the same (new)
+> location of the first new write, but as soon as you snapshot again, this
+> happens again.
 
-FWIW, I maintain a little patchset on btrfs-progs which separates
-specific btrfs command groups and thus can be used to set/restrict
-privileged access:
+Ah, very interesting.  Thank you for clarifying!
 
-https://github.com/digint/btrfs-progs-btrbk
+Best,
 
-It's far from being complete, merely an ugly hack. I use it to constrain
-btrfs actions (issued by btrbk) on remote machines within cron jobs.
+ellis

@@ -1,61 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37159 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37972 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933698AbeBMQBA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Feb 2018 11:01:00 -0500
-Date: Tue, 13 Feb 2018 16:58:43 +0100
+        id S934056AbeBMQM7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Feb 2018 11:12:59 -0500
+Date: Tue, 13 Feb 2018 17:10:43 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: manage thread_pool mount option as %u
-Message-ID: <20180213155843.GU3003@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: manage subvolid mount option as %u
+Message-ID: <20180213161042.GV3003@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20180213095048.9550-1-anand.jain@oracle.com>
- <12714050-aece-8bfd-2e83-ef5da4590c81@suse.com>
- <b72463c0-6d27-5fe7-b790-4d6c3b5dfca0@oracle.com>
- <2cc7eedc-b047-6cdf-b3d2-b5eecab0d22b@suse.com>
+ <20180213095048.9550-2-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <2cc7eedc-b047-6cdf-b3d2-b5eecab0d22b@suse.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180213095048.9550-2-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 13, 2018 at 05:34:56PM +0200, Nikolay Borisov wrote:
-> >>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> >>> index 02c7766e6849..8112619cac95 100644
-> >>> --- a/fs/btrfs/super.c
-> >>> +++ b/fs/btrfs/super.c
-> >>> @@ -346,7 +346,7 @@ static const match_table_t tokens = {
-> >>>       {Opt_barrier, "barrier"},
-> >>>       {Opt_max_inline, "max_inline=%u"},
-> >>>       {Opt_alloc_start, "alloc_start=%s"},
-> >>> -    {Opt_thread_pool, "thread_pool=%d"},
-> >>> +    {Opt_thread_pool, "thread_pool=%u"},
-> >>>       {Opt_compress, "compress"},
-> >>>       {Opt_compress_type, "compress=%s"},
-> >>>       {Opt_compress_force, "compress-force"},
-> >>> @@ -596,12 +596,11 @@ int btrfs_parse_options(struct btrfs_fs_info
-> >>> *info, char *options,
-> >>>               ret = match_int(&args[0], &intarg);
-> >>>               if (ret) {
-> >>>                   goto out;
-> >>> -            } else if (intarg > 0) {
-> >>> -                info->thread_pool_size = intarg;
-> >>> -            } else {
-> >>> +            } else if (intarg == 0) {
-> >>
-> >> One thing I'm worried about is the fact that match_int parses a signed
-> >> int. So If someone pases -1 then it would be parsed to -1 but when you
-> >> set it to thread_pool_size the actual value is going to be the 2's
-> >> complement of the value i.e. a very large number. So a check for intarg
-> >> < 0 is required to avoid that. Same applies to your other patches
-> > 
-> >  That's not true. When -o thread_pool=-1 is passed it would fail
-> >  to match to any token. And same applies to other patches too.
+On Tue, Feb 13, 2018 at 05:50:43PM +0800, Anand Jain wrote:
+> As -o subvolid mount option is an u64 manage it as %u for
+> token verifications, instead of %s.
 > 
-> Indeed, the subtleties of the matching machinery. In that case for the
-> whole series:
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  fs/btrfs/super.c | 23 ++++++++++-------------
+>  1 file changed, 10 insertions(+), 13 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 8112619cac95..bf629c8a6a47 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -336,7 +336,7 @@ enum {
+>  static const match_table_t tokens = {
+>  	{Opt_degraded, "degraded"},
+>  	{Opt_subvol, "subvol=%s"},
+> -	{Opt_subvolid, "subvolid=%s"},
+> +	{Opt_subvolid, "subvolid=%u"},
 
-Yeah, it's not very clear from the sources, but with %u the parser
-refuses negative numbers. Even with match_int, the typecasts will not
-damage the result when assigning to u32 from intarg.
+This gets implemented as simple_strtoul, deep in the perser it uses an
+unsigned long long and then casts to usigned long. Long and long-long
+are same only on subset of architectures, so we'd need to either extend
+teh parser capabilities to really do u64 or we'd have to use the %s and
+match_u64.
+
+Though a subvolid larger than full 32bit number is unlikely, for sake of
+correctness I think we should stick to the constraints of the subvolid
+that allows u64.
+
+>  	{Opt_device, "device=%s"},
+>  	{Opt_nodatasum, "nodatasum"},
+>  	{Opt_datasum, "datasum"},
+> @@ -964,8 +964,8 @@ static int btrfs_parse_subvol_options(const char *options, fmode_t flags,
+>  {
+>  	substring_t args[MAX_OPT_ARGS];
+>  	char *opts, *orig, *p;
+> -	char *num = NULL;
+>  	int error = 0;
+> +	u64 subvolid;
+>  
+>  	if (!options)
+>  		return 0;
+> @@ -995,18 +995,15 @@ static int btrfs_parse_subvol_options(const char *options, fmode_t flags,
+>  			}
+>  			break;
+>  		case Opt_subvolid:
+> -			num = match_strdup(&args[0]);
+> -			if (num) {
+> -				*subvol_objectid = memparse(num, NULL);
+> -				kfree(num);
+> -				/* we want the original fs_tree */
+> -				if (!*subvol_objectid)
+> -					*subvol_objectid =
+> -						BTRFS_FS_TREE_OBJECTID;
+> -			} else {
+> -				error = -EINVAL;
+> +			error = match_u64(&args[0], &subvolid);
+
+So this is the right way (with the %s), as memparse accepts the size
+suffixes (K/M/G/...), that we don't want for a subvolume id.
+
+> +			if (error)
+>  				goto out;
+> -			}
+> +
+> +			/* we want the original fs_tree */
+> +			if (subvolid == 0)
+> +				subvolid = BTRFS_FS_TREE_OBJECTID;
+> +
+> +			*subvol_objectid = subvolid;
+>  			break;
+>  		case Opt_subvolrootid:
+>  			pr_warn("BTRFS: 'subvolrootid' mount option is deprecated and has no effect\n");
+> -- 
+> 2.7.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,56 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:36515 "EHLO
-        mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752822AbeBLSHM (ORCPT
+Received: from mail-lf0-f43.google.com ([209.85.215.43]:43251 "EHLO
+        mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933825AbeBMKWB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Feb 2018 13:07:12 -0500
-Received: by mail-io0-f178.google.com with SMTP id l17so18261710ioc.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Feb 2018 10:07:12 -0800 (PST)
-Subject: Re: btrfs-cleaner / snapshot performance analysis
-To: "Ellis H. Wilson III" <ellisw@panasas.com>,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Tomasz Pala <gotar@polanet.pl>
-Cc: linux-btrfs@vger.kernel.org
-References: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
- <96cd9e57-cde4-5bc4-0312-02b54668e59a@mendix.com>
- <76e7f364-62b9-5ef1-a8ed-f6fb9e534963@panasas.com>
- <20180210220549.GA30438@polanet.pl>
- <6abc187c-b5fe-a776-6b89-ca5b6c7ee790@panasas.com>
- <20c617b6-7179-a67a-3997-8fee766088a5@mendix.com>
- <c7e267a4-d47d-9713-c222-81dcb441e009@panasas.com>
- <57d8d368-9c96-db65-14a6-2af39cc509f9@gmail.com>
- <41d6badc-90d4-54f9-085e-fd75afde74eb@panasas.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <300f0068-d83a-5eeb-e0e0-039badcea6f4@gmail.com>
-Date: Mon, 12 Feb 2018 13:07:07 -0500
+        Tue, 13 Feb 2018 05:22:01 -0500
+Received: by mail-lf0-f43.google.com with SMTP id q69so6541974lfi.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 02:22:00 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <41d6badc-90d4-54f9-085e-fd75afde74eb@panasas.com>
-Content-Type: text/plain; charset=iso-8859-2; format=flowed
+In-Reply-To: <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+ <55C1F3DD.7020603@gmail.com> <CAJ3TwYSW+SvbBrh1u_x+c3HTRx03qSR6BoH5cj_VzCXxZYv6EA@mail.gmail.com>
+ <126f9f09-4e28-3c12-5384-63032e17942f@cn.fujitsu.com> <CAJ3TwYRXwDVVfT0TRRiM9dEw-7TvY8qG=WvMYKczZOv6wkFWAQ@mail.gmail.com>
+ <fd718727-9b54-ba58-5f39-63066181d13e@cn.fujitsu.com> <CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
+ <CAJ3TwYTnMPVwkrZEU-=Q_Nq+9Bn0vM3z+EFC8RP=RTyaufSoqw@mail.gmail.com>
+ <5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com> <CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
+ <799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com> <CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
+ <e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com> <CAJ3TwYS6UTkWf=PNku3RG7hPrXMKz3yhk2WqCRLix4v_VwgrmA@mail.gmail.com>
+ <36291cd0-64bc-8708-9e23-0aac30539785@cn.fujitsu.com> <CAJ3TwYQ47SVpbO1Pb-TWjhaTCCpMFFmijwTgmV8=7+1_a6_3Ww@mail.gmail.com>
+ <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
+From: John Ettedgui <john.ettedgui@gmail.com>
+Date: Tue, 13 Feb 2018 02:21:58 -0800
+Message-ID: <CAJ3TwYRgHfCNxKwWnfWXr=w_mBo2B2AuSDeE+PgYEtn7kyAx7w@mail.gmail.com>
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-02-12 11:39, Ellis H. Wilson III wrote:
-> On 02/12/2018 11:02 AM, Austin S. Hemmelgarn wrote:
->> BTRFS in general works fine at that scale, dependent of course on the 
->> level of concurrent access you need to support.  Each tree update 
->> needs to lock a bunch of things in the tree itself, and having large 
->> numbers of clients writing to the same set of files concurrently can 
->> cause lock contention issues because of this, especially if all of 
->> them are calling fsync() or fdatasync() regularly.  These issues can 
->> be mitigated by segregating workloads into their own subvolumes (each 
->> subvolume is a mostly independent filesystem tree), but it sounds like 
->> you're already doing that, so I don't think that would be an issue for 
->> you.
-> Hmm...I'll think harder about this.  There is potential for us to 
-> artificially divide access to files across subvolumes automatically 
-> because of the way we are using BTRFS as a backing store for our 
-> parallel file system.  So far even with around 1000 threads across about 
-> 10 machines accessing BTRFS via our parallel filesystem over the wire 
-> we've not seen issues, but if we do I have some ways out I've not 
-> explored yet.  Thanks!
-For what it's worth, most of the issues I've personally seen with 
-parallel performance involved very heavy use of fsync(), or lots of 
-parallel calls to stat() and statvfs() happening while files are also 
-being written to, so it may just be the way you happen to be doing 
-things just doesn't cause issues.
+On Thu, Jul 21, 2016 at 1:19 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> No more.
+>
+> The dump is already good enough for me to dig for some time.
+>
+> We don't usually get such large extent tree dump from a real world use case.
+>
+> It would help us in several ways, from determine how fragmented a block
+> group is to determine if a defrag will help.
+>
+> Thanks,
+> Qu
+>
+>
 
+
+Hello there,
+
+have you found anything good since then?
+With a default system, the behavior is pretty much still the same,
+though I have not recreated the partitions since.
+
+Defrag helps, but I think balance helps even more.
+clear_cache may help too, but I'm not really sure as I've not tried it
+on its own.
+I was actually able to get a 4TB partition on a 5400rpm HDD to mount
+in around 500ms, quite faster that even some Gb partitions I have on
+SSDs! Alas I wrote some files to it and it's taking over a second
+again, so no more magic there.
+
+The workarounds do work, so it's still not a major issue, but they're
+slow and sometimes I have to workaround the "no space left on device"
+which then takes even more time.
+
+Thank you!
+John

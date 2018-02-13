@@ -1,17 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:41882 "EHLO
-        mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934974AbeBMM1A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Feb 2018 07:27:00 -0500
+Received: from mout.gmx.net ([212.227.15.19]:51037 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S935077AbeBMMqX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Feb 2018 07:46:23 -0500
 Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        John Ettedgui <john.ettedgui@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
+To: John Ettedgui <john.ettedgui@gmail.com>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
         btrfs <linux-btrfs@vger.kernel.org>
 References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
  <CAJ3TwYTnMPVwkrZEU-=Q_Nq+9Bn0vM3z+EFC8RP=RTyaufSoqw@mail.gmail.com>
  <5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com>
  <CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
@@ -26,28 +22,27 @@ References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
  <87975474-0cb9-13d7-f623-c0622b31f437@gmx.com>
  <CAJ3TwYQ-GgZCCoD07AgQ0EDtpOknt3Ta1=WNAH7sSvXO3R-u8w@mail.gmail.com>
  <a27b619e-6e39-20e6-413e-c9d5c7a90b6f@gmx.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <5fc99565-b46a-a52a-b1d4-b3ce3e10c830@applied-asynchrony.com>
-Date: Tue, 13 Feb 2018 13:26:56 +0100
+ <CAJ3TwYTAhOc1eRUC_FoUFjpC=Ys_DRbHBp9NW6EdVSXArqiMww@mail.gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <00946e24-cf79-92c0-9e70-5425b4b06b7c@gmx.com>
+Date: Tue, 13 Feb 2018 20:46:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <a27b619e-6e39-20e6-413e-c9d5c7a90b6f@gmx.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
+In-Reply-To: <CAJ3TwYTAhOc1eRUC_FoUFjpC=Ys_DRbHBp9NW6EdVSXArqiMww@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="iiFlpjhtfq5MVNRHsU35YqDfLjX38XXCf"
+ boundary="bJRrFfYFjBvVhueZnUKay3nRHu6VUeq2Q"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---iiFlpjhtfq5MVNRHsU35YqDfLjX38XXCf
-Content-Type: multipart/mixed; boundary="Cf96xS65fTyJAU8wJ71w8ATtNl1CZ3Zes";
+--bJRrFfYFjBvVhueZnUKay3nRHu6VUeq2Q
+Content-Type: multipart/mixed; boundary="GhIdWyUB1fg9cXtlPoUQlqP741wtWOcLK";
  protected-headers="v1"
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
- John Ettedgui <john.ettedgui@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
- Austin S Hemmelgarn <ahferroin7@gmail.com>,
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: John Ettedgui <john.ettedgui@gmail.com>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
  btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <5fc99565-b46a-a52a-b1d4-b3ce3e10c830@applied-asynchrony.com>
+Message-ID: <00946e24-cf79-92c0-9e70-5425b4b06b7c@gmx.com>
 Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
 References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
  <CAJ3TwYSTnQfj=qmBLtnmtXQKexMMD4x=9Gk3p3anf4uF+G26kw@mail.gmail.com>
@@ -65,52 +60,111 @@ References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
  <87975474-0cb9-13d7-f623-c0622b31f437@gmx.com>
  <CAJ3TwYQ-GgZCCoD07AgQ0EDtpOknt3Ta1=WNAH7sSvXO3R-u8w@mail.gmail.com>
  <a27b619e-6e39-20e6-413e-c9d5c7a90b6f@gmx.com>
-In-Reply-To: <a27b619e-6e39-20e6-413e-c9d5c7a90b6f@gmx.com>
+ <CAJ3TwYTAhOc1eRUC_FoUFjpC=Ys_DRbHBp9NW6EdVSXArqiMww@mail.gmail.com>
+In-Reply-To: <CAJ3TwYTAhOc1eRUC_FoUFjpC=Ys_DRbHBp9NW6EdVSXArqiMww@mail.gmail.com>
 
---Cf96xS65fTyJAU8wJ71w8ATtNl1CZ3Zes
+--GhIdWyUB1fg9cXtlPoUQlqP741wtWOcLK
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 
-On 02/13/18 12:40, Qu Wenruo wrote:
->>> The problem is not about how much space it takes, but how many extent=
+
+
+On 2018=E5=B9=B402=E6=9C=8813=E6=97=A5 20:06, John Ettedgui wrote:
+>>>>
+>>> That's fairly straightforward to do, though it should be quite slow s=
+o
+>>> I'd hope not to have to do that too often.
+>>
+>> Then it could be tried on the most frequently updated files then.
+>=20
+> That's an interesting idea.
+> More than 3/4 of the data is just storage, so that should be very ok.
+
+BTW, how the initial data is created?
+
+If the initial data is all written once and doesn't get modified later,
+then the problem may not be fragments.
+
+>=20
+>>
+>> And since you don't use snapshot, locate such files and then "chattr +=
+C"
+>> would make them nodatacow, reducing later fragments.
+>=20
+> I don't understand, why would that reduce later fragments?
+
+Later overwrite will not create new extent, but overwrite existing extent=
+s.
+Other than CoW and cause new extents (fragments)
+
+Although expand write will still cause new extent, but that's
+unavoidable anyway.
+
+Thanks,
+Qu
+
+>=20
+>>
+>>>>    This should acts much better than traditional defrag, although it=
+'s
+>>>>    time-consuming and makes snapshot completely meaningless.
+>>>>    (and since you're already hitting ENOSPC, I don't think the idea =
+is
+>>>>     really working for you)
+>>>>
+>>>> And since you're already hitting ENOSPC, either it's caused by
+>>>> unbalanced meta/data usage, or it's really going hit the limit, I wo=
+uld
+>>>> recommend to enlarge the fs or delete some files to see if it helps.=
+
+>>>>
+>>> Yup, I usually either slowly ramp up the {d,m}usage to pass it, or
+>>> when that does not work I free some space, then balance will finish.
+>>> Or did you mean to free some space to see about mount speed?
+>>
+>> Kind of, just do such freeing in advance, and try to make btrfs always=
+
+>> have unallocated space in case.
+>>
+>=20
+> I actually have very little free space on those partitions, usually
+> under 90Gb, maybe that's part of my problem.
+>=20
+>> And finally, use latest kernel if possible.
+>> IIRC old kernel doesn't have empty block group auto remove, which make=
 s
->>> are here in the filesystem.
-
-I have no idea why btrfs' mount even needs to touch all block groups to
-get going (which seems to be the root of the problem), but here's a
-not so crazy idea for more "mechanical sympathy". Feel free to mock
-me if this is terribly wrong or not possible. ;)
-
-Mounting of even large filesystems (with many extents) seems to be fine
-on SSDS, but not so fine on rotational storage. We've heard that from
-several people with large (multi-TB) filesystems, and obviously it's
-even more terrible on 5400RPM drives because their seeks are sooo sloow.
-
-If the problem is that the bgs are touched/iterated in "tree order",
-would it then not be possible to sort the block groups in physical order
-before trying to load whatever mount needs to load? That way the entire
-process would involve less seeking (no backward seeks for one) and the
-drive could very likely get more done during a rotation before stepping
-further.
-
-cheers,
-Holger
+>> user need to manually balance to free some space.
+>>
+>> Thanks,
+>> Qu
+>>
+>=20
+> I am on 4.15 so no problem there.
+>=20
+> So manual defrag and new FS to try.
+>=20
+> Thank you!
+>=20
 
 
---Cf96xS65fTyJAU8wJ71w8ATtNl1CZ3Zes--
+--GhIdWyUB1fg9cXtlPoUQlqP741wtWOcLK--
 
---iiFlpjhtfq5MVNRHsU35YqDfLjX38XXCf
+--bJRrFfYFjBvVhueZnUKay3nRHu6VUeq2Q
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iHwEARECADwWIQSvMMXkF4alyejNm0QPgTQJ2NzuzQUCWoLZkB4caG9sZ2VyQGFw
-cGxpZWQtYXN5bmNocm9ueS5jb20ACgkQD4E0Cdjc7s0ioQCfdBPI0iuPfUs6Vg4x
-X0JQ2viDSZkAn2rw2UN1Bi2KodMDNGUt2vVCyMdh
-=5x3g
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqC3hkXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjWrAgAmyevudvf7Yb/mu1BcK6VXyON
+obspBqDM+fd8ZWYgJkygrtf2Ccw5LsSdV+ZW35GlEJK8vMZ7D7TFt/g62pLgvDMi
+IzUQs443cccZSJSeEnnVMbNDJmpeeC7NiELpagzGzcTENzb5vjst/vvyV9aOeGOk
+nvemoABC263jlgMXF2Tn8fAA5Q8N1UMDUaLpdd7rEenGbhmcU51gNpFhAecxzjOk
+ni21BKBUk3eXypVWygkZ6OUGwUmOOmyOKOt1t0WsEN80lPmmcpj+Gt/ve2cZwadq
+zvdtwja6GHkGwsdCp1G/KNSqvvs6CdODZI55J+KkMXQhA6HRdo21Okqm1xLPyg==
+=Q5Xq
 -----END PGP SIGNATURE-----
 
---iiFlpjhtfq5MVNRHsU35YqDfLjX38XXCf--
+--bJRrFfYFjBvVhueZnUKay3nRHu6VUeq2Q--

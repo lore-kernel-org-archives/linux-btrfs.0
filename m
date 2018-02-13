@@ -1,145 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:51527 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:37240 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933102AbeBMBsm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Feb 2018 20:48:42 -0500
-Subject: Re: [PATCH 1/1] btrfs: open code
- btrfs_init_dev_replace_tgtdev_for_resume()
+        id S933455AbeBMHSx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Feb 2018 02:18:53 -0500
+Subject: Re: [PATCH] btrfs: extent_buffer_uptodate() make it static and inline
 To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20180212153625.19541-1-anand.jain@oracle.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <e811c90b-5b90-9735-88a1-ff73428a47a5@gmx.com>
-Date: Tue, 13 Feb 2018 09:48:34 +0800
+References: <20180213043544.25225-1-anand.jain@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <c83c3abd-b9e7-17cf-4ad2-f9666aa63750@suse.com>
+Date: Tue, 13 Feb 2018 09:18:51 +0200
 MIME-Version: 1.0
-In-Reply-To: <20180212153625.19541-1-anand.jain@oracle.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB"
+In-Reply-To: <20180213043544.25225-1-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB
-Content-Type: multipart/mixed; boundary="IQ7Uqj3HvGQGmswtrFEcFutJzMHFHz60G";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Message-ID: <e811c90b-5b90-9735-88a1-ff73428a47a5@gmx.com>
-Subject: Re: [PATCH 1/1] btrfs: open code
- btrfs_init_dev_replace_tgtdev_for_resume()
-References: <20180212153625.19541-1-anand.jain@oracle.com>
-In-Reply-To: <20180212153625.19541-1-anand.jain@oracle.com>
-
---IQ7Uqj3HvGQGmswtrFEcFutJzMHFHz60G
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
-
-On 2018=E5=B9=B402=E6=9C=8812=E6=97=A5 23:36, Anand Jain wrote:
-> btrfs_init_dev_replace_tgtdev_for_resume()  initializes replace
-> target device in few simple steps, so do it at the parent function.
-> Moreover, there isn't any other caller so just open code it.
->=20
+On 13.02.2018 06:35, Anand Jain wrote:
+> extent_buffer_uptodate() is a trivial wrapper around test_bit()
+> and nothing else. So make it static and inline, save on code
+> space and call indirection.
+> 
+> Before:
+>    text	   data	    bss	    dec	    hex	filename
+> 1131257	  82898	  18992	1233147	 12d0fb	fs/btrfs/btrfs.ko
+> 
+> After:
+>    text	   data	    bss	    dec	    hex	filename
+> 1131090	  82898	  18992	1232980	 12d054	fs/btrfs/btrfs.ko
+> 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
+Reviewed-by: Nikolay Borisov <nborisov@suse.com> although there is one
+nit below
 
 > ---
->  fs/btrfs/dev-replace.c | 10 ++++++++--
->  fs/btrfs/volumes.c     | 13 -------------
->  fs/btrfs/volumes.h     |  2 --
->  3 files changed, 8 insertions(+), 17 deletions(-)
->=20
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 7efbc4d1128b..197be3fe307b 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -174,8 +174,14 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *f=
-s_info)
->  			}
->  			set_bit(BTRFS_DEV_STATE_REPLACE_TGT,
->  				&dev_replace->tgtdev->dev_state);
-> -			btrfs_init_dev_replace_tgtdev_for_resume(fs_info,
-> -				dev_replace->tgtdev);
-> +
-> +			WARN_ON(fs_info->fs_devices->rw_devices =3D=3D 0);
-> +			dev_replace->tgtdev->io_width =3D fs_info->sectorsize;
-> +			dev_replace->tgtdev->io_align =3D fs_info->sectorsize;
-> +			dev_replace->tgtdev->sector_size =3D fs_info->sectorsize;
-> +			dev_replace->tgtdev->fs_info =3D fs_info;
-> +			set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
-> +				&dev_replace->tgtdev->dev_state);
->  		}
->  		break;
+>  fs/btrfs/extent_io.c | 5 -----
+>  fs/btrfs/extent_io.h | 5 ++++-
+>  2 files changed, 4 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index bae57b408901..f300edae044b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -5229,11 +5229,6 @@ void set_extent_buffer_uptodate(struct extent_buffer *eb)
 >  	}
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index bbdcf50cd65b..28c385d6419a 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2681,19 +2681,6 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_f=
-s_info *fs_info,
->  	return ret;
 >  }
-> =20
-> -void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs=
-_info,
-> -					      struct btrfs_device *tgtdev)
+>  
+> -int extent_buffer_uptodate(struct extent_buffer *eb)
 > -{
-> -	u32 sectorsize =3D fs_info->sectorsize;
-> -
-> -	WARN_ON(fs_info->fs_devices->rw_devices =3D=3D 0);
-> -	tgtdev->io_width =3D sectorsize;
-> -	tgtdev->io_align =3D sectorsize;
-> -	tgtdev->sector_size =3D sectorsize;
-> -	tgtdev->fs_info =3D fs_info;
-> -	set_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &tgtdev->dev_state);
+> -	return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
 > -}
 > -
->  static noinline int btrfs_update_device(struct btrfs_trans_handle *tra=
-ns,
->  					struct btrfs_device *device)
+>  int read_extent_buffer_pages(struct extent_io_tree *tree,
+>  			     struct extent_buffer *eb, int wait, int mirror_num)
 >  {
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 7281f55dea05..c69d8b4eb4c6 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -483,8 +483,6 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_=
-fs_info *fs_info,
->  				      struct btrfs_device *srcdev);
->  void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->  				      struct btrfs_device *tgtdev);
-> -void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs=
-_info,
-> -					      struct btrfs_device *tgtdev);
->  void btrfs_scratch_superblocks(struct block_device *bdev, const char *=
-device_path);
->  int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
->  			   u64 logical, u64 len);
->=20
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 72e5af2965a8..953d94662b8e 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -489,7 +489,10 @@ void clear_extent_buffer_dirty(struct extent_buffer *eb);
+>  int set_extent_buffer_dirty(struct extent_buffer *eb);
+>  void set_extent_buffer_uptodate(struct extent_buffer *eb);
+>  void clear_extent_buffer_uptodate(struct extent_buffer *eb);
+> -int extent_buffer_uptodate(struct extent_buffer *eb);
+> +static inline int extent_buffer_uptodate(struct extent_buffer *eb)
+> +{
+> +	return test_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+> +}
+
+nit: It just doesn't look good to have a static inline function
+definition among a list of function declarations. A quick look at
+extent_io.h shows that this function could have been put below the
+inline def of extent_buffer_get.
 
 
---IQ7Uqj3HvGQGmswtrFEcFutJzMHFHz60G--
-
---N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqCQ/IXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiIEgf7B7ICjqcqwt2wv2Poxz88wMvi
-b8Kz1/Eh9JEOVXDXGsHgDAt58JdZSRc8poP5AdwmIay86DRoHIyEuexsVO8r6DUB
-waP9F68IyE3RW4Ai+ObQTqUzdAKNfiOJejoCGhRnP/1Wf12iERE81L0RplPcagtu
-8KFPUqA68D4bP0ob/TuQ+F15umXq5NGpolovRt4qbUeNspLIMSZm1tIzDmxzvAN9
-fLNs1EGsFk6wNSAeNaDwx8cv0FipOckAUUSZr2nui7x3U8Rm0xpsLnHdQW52lejM
-yRpr7bkxxt2LhsgzPJeAvlx0EIqq9kqk5SE1fGXGEiTcl3mF+wgfX2JvlP5f+Q==
-=IAEE
------END PGP SIGNATURE-----
-
---N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB--
+>  int extent_buffer_under_io(struct extent_buffer *eb);
+>  int map_private_extent_buffer(const struct extent_buffer *eb,
+>  			      unsigned long offset, unsigned long min_len,
+> 

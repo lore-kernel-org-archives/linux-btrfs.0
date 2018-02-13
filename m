@@ -1,60 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36197 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60496 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753250AbeBLSWV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Feb 2018 13:22:21 -0500
-Date: Mon, 12 Feb 2018 19:20:05 +0100
+        id S965079AbeBMPQE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Feb 2018 10:16:04 -0500
+Date: Tue, 13 Feb 2018 16:13:47 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        wqu@suse.com
-Subject: Re: [PATCH] btrfs: Move qgroup rescan on quota enable to
- btrfs_quota_enable
-Message-ID: <20180212182005.GO3003@twin.jikos.cz>
+To: Dan Robertson <danlrobertson89@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-progs: compile with musl libc
+Message-ID: <20180213151347.GT3003@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1517388724-1483-1-git-send-email-nborisov@suse.com>
- <fd3a625b-cc65-b032-911a-e9154ddd99d5@gmx.com>
+References: <20180213132509.GA16525@drobertson-crashbox.lab.tripwire.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <fd3a625b-cc65-b032-911a-e9154ddd99d5@gmx.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180213132509.GA16525@drobertson-crashbox.lab.tripwire.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 03, 2018 at 11:30:42AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2018年01月31日 16:52, Nikolay Borisov wrote:
-> > Currently btrfs_run_qgroups is doing a bit too much. Not only is it
-> > responsible for synchronizing in-memory state of qgroups to disk but
-> > it also contains code to trigger the initial qgroup rescan when
-> > quota is enabled initially. This condition is detected by checking that
-> > BTRFS_FS_QUOTA_ENABLED is not set and BTRFS_FS_QUOTA_ENABLING is set.
-> > Nothing really requires fro the code to be structured (and scattered)
-> > the way it is so let's streamline things. First move the quota rescan
-> > code into btrfs_quota_enable, where its invocation is closer to the
-> > user. This also makes the FS_QUOTA_ENABLING flag redundant so let's
-> > remove it as well.i
-> > 
-> > This has been tested with a full xfstest run with qgroups enabled on
-> > the scratch device of every xfstest and no regressions were observed.
-> > 
-> > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> Looks good.
-> 
-> Since rescan work is async, initializing it at enable looks pretty
-> reasonable.
-> 
-> No delaying makes it easier to read.
-> 
-> > ---
-> >  fs/btrfs/ctree.h  |  1 -
-> >  fs/btrfs/qgroup.c | 35 ++++++++++-------------------------
-> >  2 files changed, 10 insertions(+), 26 deletions(-)
-> 
-> And indeed reduces codes.
-> 
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
+On Tue, Feb 13, 2018 at 01:25:10PM +0000, Dan Robertson wrote:
+> Ensure that limits.h is included in mkfs/main.c as PATH_MAX is used. The lack
+> of this currently causes btrfs-progs to fail to compile when the systems libc
+> is musl.
 
-Looks good to me to, added to next. The two bits tracking the state
-seemed like an overkill to me. Thanks.
+> From 7859e0d01778e844ae0fcbefe55581277ce7cab3 Mon Sep 17 00:00:00 2001
+> From: Dan Robertson <danlrobertson89@gmail.com>
+> Date: Tue, 13 Feb 2018 13:04:29 +0000
+> Subject: [PATCH] btrfs-progs: compile with musl libc
+> 
+> Ensure that limits.h is included in mkfs/main.c as PATH_MAX is used.
+> 
+> Signed-off-by: Dan Robertson <danlrobertson89@gmail.com>
+
+Thanks, this has been fixed in
+https://github.com/kdave/btrfs-progs/commit/3aa1bbdd89ee9c9c48d260a6192fae08328f1b2f
+
+and the musl build check is now in place so the breakage should not
+happen anymore. I'll do a release this week with the fix included.

@@ -1,96 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:48390 "EHLO
+Received: from aserp2120.oracle.com ([141.146.126.78]:49386 "EHLO
         aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S934420AbeBMJs2 (ORCPT
+        with ESMTP id S933852AbeBMJt2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Feb 2018 04:48:28 -0500
+        Tue, 13 Feb 2018 04:49:28 -0500
 Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1D9l5Fv013434
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:48:27 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2g3wh282re-1
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1D9l5G7013683
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:49:27 GMT
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+        by aserp2120.oracle.com with ESMTP id 2g3wh28321-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:48:27 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w1D9mQA0008303
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:49:27 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w1D9nQVK027515
         (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:48:26 GMT
-Received: from abhmp0012.oracle.com (abhmp0012.oracle.com [141.146.116.18])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w1D9mQIF005003
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:48:26 GMT
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:49:27 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w1D9nQt1009846
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 09:49:26 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: verify max_inline mount parameter
-Date: Tue, 13 Feb 2018 17:49:50 +0800
-Message-Id: <20180213094950.9412-2-anand.jain@oracle.com>
-In-Reply-To: <20180213094950.9412-1-anand.jain@oracle.com>
-References: <20180213094950.9412-1-anand.jain@oracle.com>
+Subject: [PATCH] btrfs: manage thread_pool mount option as %u
+Date: Tue, 13 Feb 2018 17:50:42 +0800
+Message-Id: <20180213095048.9550-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We aren't verifying the parameter passed to the max_inline mount option,
-so we won't report and fail the mount if a junk value is specified for
-example, -o max_inline=abc.
-This patch converts the max_inline option to %d and checks if it's a
-number >= 0.
+-o thread_pool is alway unsigned. Manage it that way all around.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v1->v2: use match_int ret value if error
-        use %u instead of %d for parser
+ fs/btrfs/ctree.h   |  2 +-
+ fs/btrfs/disk-io.c |  4 ++--
+ fs/btrfs/super.c   | 13 ++++++-------
+ 3 files changed, 9 insertions(+), 10 deletions(-)
 
- fs/btrfs/super.c | 23 ++++++-----------------
- 1 file changed, 6 insertions(+), 17 deletions(-)
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0b738f0a9a23..23b7e6756b15 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -935,7 +935,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_workqueue *extent_workers;
+ 	struct task_struct *transaction_kthread;
+ 	struct task_struct *cleaner_kthread;
+-	int thread_pool_size;
++	u32 thread_pool_size;
+ 
+ 	struct kobject *space_info_kobj;
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 87d24c903152..3cec2455b603 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2180,7 +2180,7 @@ static void btrfs_init_qgroup(struct btrfs_fs_info *fs_info)
+ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info,
+ 		struct btrfs_fs_devices *fs_devices)
+ {
+-	int max_active = fs_info->thread_pool_size;
++	u32 max_active = fs_info->thread_pool_size;
+ 	unsigned int flags = WQ_MEM_RECLAIM | WQ_FREEZABLE | WQ_UNBOUND;
+ 
+ 	fs_info->workers =
+@@ -2401,7 +2401,7 @@ int open_ctree(struct super_block *sb,
+ 	int err = -EINVAL;
+ 	int num_backups_tried = 0;
+ 	int backup_index = 0;
+-	int max_active;
++	u32 max_active;
+ 	int clear_free_space_tree = 0;
+ 
+ 	tree_root = fs_info->tree_root = btrfs_alloc_root(fs_info, GFP_KERNEL);
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b13d68506f15..02c7766e6849 100644
+index 02c7766e6849..8112619cac95 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -344,7 +344,7 @@ static const match_table_t tokens = {
- 	{Opt_datacow, "datacow"},
- 	{Opt_nobarrier, "nobarrier"},
+@@ -346,7 +346,7 @@ static const match_table_t tokens = {
  	{Opt_barrier, "barrier"},
--	{Opt_max_inline, "max_inline=%s"},
-+	{Opt_max_inline, "max_inline=%u"},
+ 	{Opt_max_inline, "max_inline=%u"},
  	{Opt_alloc_start, "alloc_start=%s"},
- 	{Opt_thread_pool, "thread_pool=%d"},
+-	{Opt_thread_pool, "thread_pool=%d"},
++	{Opt_thread_pool, "thread_pool=%u"},
  	{Opt_compress, "compress"},
-@@ -407,7 +407,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			unsigned long new_flags)
- {
- 	substring_t args[MAX_OPT_ARGS];
--	char *p, *num;
-+	char *p;
- 	u64 cache_gen;
- 	int intarg;
- 	int ret = 0;
-@@ -604,22 +604,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 	{Opt_compress_type, "compress=%s"},
+ 	{Opt_compress_force, "compress-force"},
+@@ -596,12 +596,11 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
+ 			ret = match_int(&args[0], &intarg);
+ 			if (ret) {
+ 				goto out;
+-			} else if (intarg > 0) {
+-				info->thread_pool_size = intarg;
+-			} else {
++			} else if (intarg == 0) {
+ 				ret = -EINVAL;
+ 				goto out;
  			}
++			info->thread_pool_size = intarg;
  			break;
  		case Opt_max_inline:
--			num = match_strdup(&args[0]);
--			if (num) {
--				info->max_inline = memparse(num, NULL);
--				kfree(num);
--
--				if (info->max_inline) {
--					info->max_inline = min_t(u32,
--						info->max_inline,
--						info->sectorsize);
--				}
--				btrfs_info(info, "max_inline at %u",
--					   info->max_inline);
--			} else {
--				ret = -ENOMEM;
-+			ret = match_int(&args[0], &intarg);
-+			if (ret)
- 				goto out;
--			}
-+			info->max_inline = min_t(u32, intarg, info->sectorsize);
-+			btrfs_info(info, "max_inline at %u", info->max_inline);
- 			break;
- 		case Opt_alloc_start:
- 			btrfs_info(info,
+ 			ret = match_int(&args[0], &intarg);
+@@ -1317,7 +1316,7 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_printf(seq, ",max_inline=%u", info->max_inline);
+ 	if (info->thread_pool_size !=  min_t(unsigned long,
+ 					     num_online_cpus() + 2, 8))
+-		seq_printf(seq, ",thread_pool=%d", info->thread_pool_size);
++		seq_printf(seq, ",thread_pool=%u", info->thread_pool_size);
+ 	if (btrfs_test_opt(info, COMPRESS)) {
+ 		compress_type = btrfs_compress_type2str(info->compress_type);
+ 		if (btrfs_test_opt(info, FORCE_COMPRESS))
+@@ -1723,7 +1722,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ }
+ 
+ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
+-				     int new_pool_size, int old_pool_size)
++				     u32 new_pool_size, u32 old_pool_size)
+ {
+ 	if (new_pool_size == old_pool_size)
+ 		return;
+@@ -1791,7 +1790,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 	unsigned long old_opts = fs_info->mount_opt;
+ 	unsigned long old_compress_type = fs_info->compress_type;
+ 	u32 old_max_inline = fs_info->max_inline;
+-	int old_thread_pool_size = fs_info->thread_pool_size;
++	u32 old_thread_pool_size = fs_info->thread_pool_size;
+ 	unsigned int old_metadata_ratio = fs_info->metadata_ratio;
+ 	int ret;
+ 
 -- 
 2.7.0
 

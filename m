@@ -1,58 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f45.google.com ([209.85.214.45]:36873 "EHLO
-        mail-it0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964828AbeBMPUa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Feb 2018 10:20:30 -0500
-Received: by mail-it0-f45.google.com with SMTP id d10so5284630itj.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Feb 2018 07:20:30 -0800 (PST)
-Date: Tue, 13 Feb 2018 15:19:44 +0000
-From: Dan Robertson <danlrobertson89@gmail.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs: compile with musl libc
-Message-ID: <20180213151943.GA16750@drobertson-crashbox.lab.tripwire.com>
-References: <20180213132509.GA16525@drobertson-crashbox.lab.tripwire.com>
- <20180213151347.GT3003@twin.jikos.cz>
+Received: from mout.gmx.net ([212.227.15.15]:51527 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933102AbeBMBsm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Feb 2018 20:48:42 -0500
+Subject: Re: [PATCH 1/1] btrfs: open code
+ btrfs_init_dev_replace_tgtdev_for_resume()
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20180212153625.19541-1-anand.jain@oracle.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <e811c90b-5b90-9735-88a1-ff73428a47a5@gmx.com>
+Date: Tue, 13 Feb 2018 09:48:34 +0800
 MIME-Version: 1.0
+In-Reply-To: <20180212153625.19541-1-anand.jain@oracle.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
-        protocol="application/pgp-signature"; boundary="x+6KMIRAuhnl3hBn"
-In-Reply-To: <20180213151347.GT3003@twin.jikos.cz>
+ protocol="application/pgp-signature";
+ boundary="N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB
+Content-Type: multipart/mixed; boundary="IQ7Uqj3HvGQGmswtrFEcFutJzMHFHz60G";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Message-ID: <e811c90b-5b90-9735-88a1-ff73428a47a5@gmx.com>
+Subject: Re: [PATCH 1/1] btrfs: open code
+ btrfs_init_dev_replace_tgtdev_for_resume()
+References: <20180212153625.19541-1-anand.jain@oracle.com>
+In-Reply-To: <20180212153625.19541-1-anand.jain@oracle.com>
 
---x+6KMIRAuhnl3hBn
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--IQ7Uqj3HvGQGmswtrFEcFutJzMHFHz60G
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-> Thanks, this has been fixed in
-> https://github.com/kdave/btrfs-progs/commit/3aa1bbdd89ee9c9c48d260a6192fae08328f1b2f
 
-Ah, my bad. Didn't check the dev branch. Thanks for the quick response!
 
-Cheers,
+On 2018=E5=B9=B402=E6=9C=8812=E6=97=A5 23:36, Anand Jain wrote:
+> btrfs_init_dev_replace_tgtdev_for_resume()  initializes replace
+> target device in few simple steps, so do it at the parent function.
+> Moreover, there isn't any other caller so just open code it.
+>=20
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-Dan
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
---x+6KMIRAuhnl3hBn
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/dev-replace.c | 10 ++++++++--
+>  fs/btrfs/volumes.c     | 13 -------------
+>  fs/btrfs/volumes.h     |  2 --
+>  3 files changed, 8 insertions(+), 17 deletions(-)
+>=20
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 7efbc4d1128b..197be3fe307b 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -174,8 +174,14 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *f=
+s_info)
+>  			}
+>  			set_bit(BTRFS_DEV_STATE_REPLACE_TGT,
+>  				&dev_replace->tgtdev->dev_state);
+> -			btrfs_init_dev_replace_tgtdev_for_resume(fs_info,
+> -				dev_replace->tgtdev);
+> +
+> +			WARN_ON(fs_info->fs_devices->rw_devices =3D=3D 0);
+> +			dev_replace->tgtdev->io_width =3D fs_info->sectorsize;
+> +			dev_replace->tgtdev->io_align =3D fs_info->sectorsize;
+> +			dev_replace->tgtdev->sector_size =3D fs_info->sectorsize;
+> +			dev_replace->tgtdev->fs_info =3D fs_info;
+> +			set_bit(BTRFS_DEV_STATE_IN_FS_METADATA,
+> +				&dev_replace->tgtdev->dev_state);
+>  		}
+>  		break;
+>  	}
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index bbdcf50cd65b..28c385d6419a 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2681,19 +2681,6 @@ int btrfs_init_dev_replace_tgtdev(struct btrfs_f=
+s_info *fs_info,
+>  	return ret;
+>  }
+> =20
+> -void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs=
+_info,
+> -					      struct btrfs_device *tgtdev)
+> -{
+> -	u32 sectorsize =3D fs_info->sectorsize;
+> -
+> -	WARN_ON(fs_info->fs_devices->rw_devices =3D=3D 0);
+> -	tgtdev->io_width =3D sectorsize;
+> -	tgtdev->io_align =3D sectorsize;
+> -	tgtdev->sector_size =3D sectorsize;
+> -	tgtdev->fs_info =3D fs_info;
+> -	set_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &tgtdev->dev_state);
+> -}
+> -
+>  static noinline int btrfs_update_device(struct btrfs_trans_handle *tra=
+ns,
+>  					struct btrfs_device *device)
+>  {
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 7281f55dea05..c69d8b4eb4c6 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -483,8 +483,6 @@ void btrfs_rm_dev_replace_free_srcdev(struct btrfs_=
+fs_info *fs_info,
+>  				      struct btrfs_device *srcdev);
+>  void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  				      struct btrfs_device *tgtdev);
+> -void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs=
+_info,
+> -					      struct btrfs_device *tgtdev);
+>  void btrfs_scratch_superblocks(struct block_device *bdev, const char *=
+device_path);
+>  int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info,
+>  			   u64 logical, u64 len);
+>=20
+
+
+--IQ7Uqj3HvGQGmswtrFEcFutJzMHFHz60G--
+
+--N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEE/rsbXA6uV265z+m9Btkjh+bF0AgFAlqDAg8ACgkQBtkjh+bF
-0AhkEg/9GIdrZddTGougR/hPnt765pVJQaB1/zj1SGZ/2pnCUInU95WToub9Q+23
-8d5NpgvQMRUJ9zTj/eIP9Zsqz97AzEauqX/13VxS0S5cW1lmdcdYMc8yKEbzG33+
-xQRwRqACfIlw+XZ/7Rb7TxNxiWP7bqd7nFDEcgbkNbCR1ZUQ6NMDuxsgb4y39Eb6
-uTQpQ4SE6iNehJoeZ2q47AlRD2KXygezCumVgzJcrVP5ri48r5znIkrA7lH8E+YR
-HtcDWK1sW2DCDzNTUJkpCCLHvjVZa+MbiTABIb60t+EZ5EfITrf9PnnNAv0by/nv
-0fW3UlAyhQTz7elkVugxbCZyOkNRHljXE+4xZyFYv9fEd8i3K+kK/0O2cUA5ijv3
-3Rknu+sRlyH+CbY0BZ595p4wqhE9GmsxciNgqt3fPUMGkD3VRxz4Rw4/x6kP005r
-f1RsnR/FUs+4Gj+O/v2yRMQfhaOZNO6VY/GjxqCvNiCtLQhODI+IMgDVkc8lhJzM
-LecNUH75hPPBZemhlQj71+PC1N/OmHSOtyAbyjxXm/cvi99v0RAzD8CTAQOqEc+d
-8r+3OZOWzZv7NEBoZyeXswzDsxGg81Y9b+OgBPIuVOY2Qtj5f/ueM+dyG1Urc74j
-8p6N5D9vwIf2INpPLXDtxllVgT7H4iY9KyhtBMe5MiDYLbulDf0=
-=hikP
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqCQ/IXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiIEgf7B7ICjqcqwt2wv2Poxz88wMvi
+b8Kz1/Eh9JEOVXDXGsHgDAt58JdZSRc8poP5AdwmIay86DRoHIyEuexsVO8r6DUB
+waP9F68IyE3RW4Ai+ObQTqUzdAKNfiOJejoCGhRnP/1Wf12iERE81L0RplPcagtu
+8KFPUqA68D4bP0ob/TuQ+F15umXq5NGpolovRt4qbUeNspLIMSZm1tIzDmxzvAN9
+fLNs1EGsFk6wNSAeNaDwx8cv0FipOckAUUSZr2nui7x3U8Rm0xpsLnHdQW52lejM
+yRpr7bkxxt2LhsgzPJeAvlx0EIqq9kqk5SE1fGXGEiTcl3mF+wgfX2JvlP5f+Q==
+=IAEE
 -----END PGP SIGNATURE-----
 
---x+6KMIRAuhnl3hBn--
+--N1OOWClOPZGRVNxEbUdBGYFsE8tZ5WqKB--

@@ -1,193 +1,296 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:39133 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S966343AbeBNAnt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Feb 2018 19:43:49 -0500
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
-        John Ettedgui <john.ettedgui@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
- <799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com>
- <CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
- <e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com>
- <CAJ3TwYS6UTkWf=PNku3RG7hPrXMKz3yhk2WqCRLix4v_VwgrmA@mail.gmail.com>
- <36291cd0-64bc-8708-9e23-0aac30539785@cn.fujitsu.com>
- <CAJ3TwYQ47SVpbO1Pb-TWjhaTCCpMFFmijwTgmV8=7+1_a6_3Ww@mail.gmail.com>
- <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
- <CAJ3TwYRgHfCNxKwWnfWXr=w_mBo2B2AuSDeE+PgYEtn7kyAx7w@mail.gmail.com>
- <87975474-0cb9-13d7-f623-c0622b31f437@gmx.com>
- <CAJ3TwYQ-GgZCCoD07AgQ0EDtpOknt3Ta1=WNAH7sSvXO3R-u8w@mail.gmail.com>
- <a27b619e-6e39-20e6-413e-c9d5c7a90b6f@gmx.com>
- <5fc99565-b46a-a52a-b1d4-b3ce3e10c830@applied-asynchrony.com>
- <900c77fc-6ad0-624c-6831-b8e5da636fb4@gmx.com>
- <c05528ee-41e0-c0a7-b53b-be9cf7d9d799@applied-asynchrony.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <485a006d-76ec-13b1-f113-6468feea6f74@gmx.com>
-Date: Wed, 14 Feb 2018 08:43:39 +0800
+Received: from aserp2120.oracle.com ([141.146.126.78]:50002 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S966225AbeBNBRJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Feb 2018 20:17:09 -0500
+Date: Tue, 13 Feb 2018 17:14:01 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: "Ellis H. Wilson III" <ellisw@panasas.com>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs-cleaner / snapshot performance analysis
+Message-ID: <20180214011401.GA5201@magnolia>
+References: <346220b8-d129-1de9-eb28-6344ec0b0d3a@panasas.com>
+ <659ed727-f5dc-e81b-c01c-b6a063f3ed34@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <c05528ee-41e0-c0a7-b53b-be9cf7d9d799@applied-asynchrony.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="rZ1j4PrYTyj3Y4DwDGYnPGL1EyMJjz37U"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <659ed727-f5dc-e81b-c01c-b6a063f3ed34@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---rZ1j4PrYTyj3Y4DwDGYnPGL1EyMJjz37U
-Content-Type: multipart/mixed; boundary="bomsWic8NpB1vub2TTLWoPtM5JeAwG0CJ";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>,
- John Ettedgui <john.ettedgui@gmail.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
- Austin S Hemmelgarn <ahferroin7@gmail.com>,
- btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <485a006d-76ec-13b1-f113-6468feea6f74@gmx.com>
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <5cc93522-1bd2-bdc1-d5da-a11d5e4816a7@cn.fujitsu.com>
- <CAJ3TwYRpc_R-wVur0T6+Uy_aPVXTGpvp_ag1Ar9K2HoB0H1ySQ@mail.gmail.com>
- <799054c4-b4f5-2dc0-4f70-4345159d9078@cn.fujitsu.com>
- <CAJ3TwYRH8JVkuv2Hu7FYb+BSwKGrq1spx079zwOF_FO1y=9NFA@mail.gmail.com>
- <e51aaa6e-a4b9-c187-84fa-c57799865b0e@cn.fujitsu.com>
- <CAJ3TwYS6UTkWf=PNku3RG7hPrXMKz3yhk2WqCRLix4v_VwgrmA@mail.gmail.com>
- <36291cd0-64bc-8708-9e23-0aac30539785@cn.fujitsu.com>
- <CAJ3TwYQ47SVpbO1Pb-TWjhaTCCpMFFmijwTgmV8=7+1_a6_3Ww@mail.gmail.com>
- <e8d681cb-aa1b-6395-f968-38e8425ed8fb@cn.fujitsu.com>
- <CAJ3TwYRgHfCNxKwWnfWXr=w_mBo2B2AuSDeE+PgYEtn7kyAx7w@mail.gmail.com>
- <87975474-0cb9-13d7-f623-c0622b31f437@gmx.com>
- <CAJ3TwYQ-GgZCCoD07AgQ0EDtpOknt3Ta1=WNAH7sSvXO3R-u8w@mail.gmail.com>
- <a27b619e-6e39-20e6-413e-c9d5c7a90b6f@gmx.com>
- <5fc99565-b46a-a52a-b1d4-b3ce3e10c830@applied-asynchrony.com>
- <900c77fc-6ad0-624c-6831-b8e5da636fb4@gmx.com>
- <c05528ee-41e0-c0a7-b53b-be9cf7d9d799@applied-asynchrony.com>
-In-Reply-To: <c05528ee-41e0-c0a7-b53b-be9cf7d9d799@applied-asynchrony.com>
+On Sun, Feb 11, 2018 at 02:40:16PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2018年02月10日 00:45, Ellis H. Wilson III wrote:
+> > Hi all,
+> > 
+> > I am trying to better understand how the cleaner kthread (btrfs-cleaner)
+> > impacts foreground performance, specifically during snapshot deletion.
+> > My experience so far has been that it can be dramatically disruptive to
+> > foreground I/O.
+> > 
+> > Looking through the wiki at kernel.org I have not yet stumbled onto any
+> > analysis that would shed light on this specific problem.  I have found
+> > numerous complaints about btrfs-cleaner online, especially relating to
+> > quotas being enabled.  This has proven thus far less than helpful, as
+> > the response tends to be "use less snapshots," or "disable quotas," both
+> > of which strike me as intellectually unsatisfying answers, especially
+> > the former in a filesystem where snapshots are supposed to be
+> > "first-class citizens."
+> 
+> Yes, snapshots of btrfs is really "first-class citizen".
+> Tons of designs are all biased to snapshot.
+> 
+> But one should be clear about one thing:
+> Snapshot creation and backref walk (used in qgroup, relocation and
+> extent deletion), are two conflicting workload in fact.
+> 
+> Btrfs puts snapshot creation on a very high priority, so that it greatly
+> degrades the performance of backref walk (used in snapshot deletion,
+> relocation and extent exclusive/shared calculation of qgroup).
+> 
+> Let me explain this problem in detail.
+> 
+> Just as explained by Peter Grandi, for any snapshot system (or any
+> system supports reflink) there must be a reserved mapping tree, to tell
+> which extent is used by who.
+> 
+> It's very critical, to determine if an extent is shared so we determine
+> if we need to do CoW.
+> 
+> There are several different ways to implement it, and this hugely
+> affects snapshot creation performance.
+> 
+> 1) Direct mapping record
+>    Just records exactly which extent is used by who, directly.
+>    So when we needs to check the owner, just search the tree ONCE, then
+>    we get it.
+> 
+>    This is simple and it seems that LVM thin-provision and LVM
+>    traditional targets are all using them.
+>    (Maybe XFS also follows this way?)
 
---bomsWic8NpB1vub2TTLWoPtM5JeAwG0CJ
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+Yes, it does.
+
+>    Pros:
+>    *FAST* backref walk, which means quick extent deletion and CoW
+>    condition check.
+> 
+> 
+>    Cons:
+>    *SLOW* snapshot creation.
+>    Each snapshot creation needs to insert new owner relationship into
+>    the tree. This modification grow with the size of snapshot source.
+
+...of course xfs also doesn't support snapshots. :)
+
+--D
+
+> 2) Indirect mapping record
+>    Records upper level referencer only.
+> 
+>    To get all direct owner of an extent, it will needs multiple lookup
+>    in the reserved mapping tree.
+> 
+>    And obviously, btrfs is using this method.
+> 
+>    Pros:
+>    *FAST* owner inheritance, which means snapshot creation.
+>    (Well, the only advantage I can think of)
+> 
+>    Cons:
+>    *VERY SLOW* backref walk, used by extent deletion, relocation, qgroup
+>    and Cow condition check.
+>    (That may also be why btrfs default to CoW data, so that it can skip
+>     the costy backref walk)
+> 
+> And a more detailed example of the difference between them will be:
+> 
+> [Basic tree layout]
+>                              Tree X
+>                              node A
+>                            /        \
+>                         node B         node C
+>                         /     \       /      \
+>                      leaf D  leaf E  leaf F  leaf G
+> 
+> Use above tree X as snapshot source.
+> 
+> [Snapshot creation: Direct mapping]
+> Then for direct mapping record, if we are going to create snapshot Y
+> then we would get:
+> 
+>             Tree X      Tree Y
+>             node A     <node H>
+>              |      \ /     |
+>              |       X      |
+>              |      / \     |
+>             node B      node C
+>          /      \          /     \
+>       leaf D  leaf E   leaf F   leaf G
+> 
+> We need to create new node H, and update the owner for node B/C/D/E/F/G.
+> 
+> That's to say, we need to create 1 new node, and update 6 references of
+> existing nodes/leaves.
+> And this will grow rapidly if the tree is large, but still should be a
+> linear increase.
+> 
+> 
+> [Snapshot creation: Indirect mapping]
+> And if using indirect mapping tree, firstly, reserved mapping tree
+> doesn't record exactly the owner for each leaf/node, but only records
+> its parent(s).
+> 
+> So even when tree X exists along, without snapshot Y, if we need to know
+> the owner of leaf D, we only knows its only parent is node B.
+> And do the same query on node B until we read node A and knows it's
+> owned by tree X.
+> 
+>                              Tree X         ^
+>                              node A         ^ Look upward until
+>                            /                | we reach tree root
+>                         node B              | to search the owner
+>                         /                   | of a leaf/node
+>                      leaf D                 |
+> 
+> So even in its best case, to look up the owner of leaf D, we need to do
+> 3 times lookup. One for leaf D, one for node B, one for node A (which is
+> the end).
+> Such lookup will get more and more complex if there are extra branch in
+> the lookup chain.
+> 
+> But such complicated design makes one thing easier, that is snapshot
+> creation:
+>             Tree X      Tree Y
+>             node A     <node H>
+>              |      \ /     |
+>              |       X      |
+>              |      / \     |
+>             node B      node C
+>          /      \          /     \
+>       leaf D  leaf E   leaf F   leaf G
+> 
+> Still same tree Y, snapshot from tree X.
+> 
+> Despite the new node H, we only needs to update the reference lookup for
+> node B and C.
+> 
+> So far so good, as for indirect mapping, we reduced the modification to
+> reserved mapping tree, from 6 to 2.
+> And it reduce will be even more obvious if the tree is larger.
+> 
+> But the problem is reserved for snapshot deletion:
+> 
+> [Snapshot deletion: Direct mapping]
+> 
+> To delete snapshot Y:
+> 
+>             Tree X      Tree Y
+>             node A     <node H>
+>              |      \ /     |
+>              |       X      |
+>              |      / \     |
+>             node B      node C
+>          /      \          /     \
+>       leaf D  leaf E   leaf F   leaf G
+> 
+> [Snapshot deletion: Direct mapping]
+> Quite straightforward, just check the owner of each node to see if we
+> can delete the node/leaf.
+> 
+> For direct mapping, we just do the owner lookup in the reserved mapping
+> tree, 7 times. And we found node H can be deleted.
+> 
+> That's all, same amount of work for snapshot creation and deletion.
+> Not bad.
+> 
+> [Snapshot deletion: Indirect mapping]
+> Here we still needs to the lookup, 7 times.
+> 
+> But the difference is, each lookup can cause extra lookup.
+> 
+> For node H, just one single lookup as it's the root.
+> But for leaf G, it needs 4 times lookup.
+>             Tree X      Tree Y
+>             node A     <node H>
+>                     \       |
+>                      \      |
+>                       \     |
+>                         node C
+>                              |
+>                         leaf G
+> 
+> One for leaf G itself, one for node C, one for node A (parent of node C)
+> and one for node H (parent of node C again).
+> 
+> When summing up the lookup, for indirect mapping it needs:
+> 1 for node H
+> 3 for node B and C each
+> 4 for leaf D~G each
+> 
+> total 23 lookup opeartions.
+> 
+> And it will just be even more if there are more snapshots, and it's not
+> a linear increase.
+> 
+> 
+> Although we could do some optimization, for example for above extent
+> deletion, we don't really care all the owners of the node/leaf, but only
+> cares if the extent is shared.
+> 
+> In that case, if we find node C is also shared by tree X, we don't need
+> to check node H.
+> If using this optimization, the lookup times reduced to 17 times.
+> 
+> 
+> But here comes to qgroup and balance, where they can't use such
+> optimization, as they needs to update all owners to handle the owner
+> change. (tree relocation tree for relocation, and qgroup number change
+> for quota).
+> 
+> That's why quota brings an obvious impact on performance.
+> 
+> 
+> So in short conclusions:
+> 1) Snapshot is not an easy workload to be considered as one single
+>    operation
+>    Creation and deletion are different workload, at least for btrfs.
+> 
+> 2) Snapshot deletion and qgroup is the biggest cost, by the btrfs design
+>    Either reduce number of snapshots to reduce branches, or disable
+>    quota to optimize the lookup operation.
+> 
+> Thanks,
+> Qu
+> 
+> 
+> > 
+> > The 2007 and 2013 Rodeh papers don't do the thorough practical snapshot
+> > performance analysis I would expect to see given the assertions in the
+> > latter that "BTRFS...supports efficient snapshots..."  The former is
+> > sufficiently pre-BTRFS that while it does performance analysis of btree
+> > clones, it's unclear (to me at least) if the results can be
+> > forward-propagated in some way to real-world performance expectations
+> > for BTRFS snapshot creation/deletion/modification.
+> > 
+> > Has this analysis been performed somewhere else and I'm just missing it?
+> >  Also, I'll be glad to comment on my specific setup, kernel version,
+> > etc, and discuss pragmatic work-arounds, but I'd like to better
+> > understand the high-level performance implications first.
+> > 
+> > Thanks in advance to anyone who can comment on this.  I am very inclined
+> > to read anything thrown at me, so if there is documentation I failed to
+> > read, please just send the link.
+> > 
+> > Best,
+> > 
+> > ellis
+> > -- 
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
 
 
-On 2018=E5=B9=B402=E6=9C=8814=E6=97=A5 00:24, Holger Hoffst=C3=A4tte wrot=
-e:
-> On 02/13/18 13:54, Qu Wenruo wrote:
->> On 2018=E5=B9=B402=E6=9C=8813=E6=97=A5 20:26, Holger Hoffst=C3=A4tte w=
-rote:
->>> On 02/13/18 12:40, Qu Wenruo wrote:
->>>>>> The problem is not about how much space it takes, but how many ext=
-ents
->>>>>> are here in the filesystem.
->>>
->>> I have no idea why btrfs' mount even needs to touch all block groups =
-to
->>> get going (which seems to be the root of the problem), but here's a
->>> not so crazy idea for more "mechanical sympathy". Feel free to mock
->>> me if this is terribly wrong or not possible. ;)
->>>
->>> Mounting of even large filesystems (with many extents) seems to be fi=
-ne
->>> on SSDS, but not so fine on rotational storage. We've heard that from=
-
->>> several people with large (multi-TB) filesystems, and obviously it's
->>> even more terrible on 5400RPM drives because their seeks are sooo slo=
-ow.
->>>
->>> If the problem is that the bgs are touched/iterated in "tree order",
->>> would it then not be possible to sort the block groups in physical or=
-der
->>> before trying to load whatever mount needs to load?
->>
->> This is in fact a good idea.
->> Make block group into its own tree.
->=20
-> Well, that's not what I was thinking about at all..yet. :)
-> (keep in mind I'm not really that familiar with the internals).
->=20
-> Out of curiosity I ran a bit of perf on my own mount process, which is
-> fast (~700 ms) despite being a ~1.1TB fs, mixture of lots of large and
-> small files. Unfortunately it's also very fresh since I recreated it ju=
-st
-> this weekend, so everything is neatly packed together and fast.
->=20
-> In contrast a friend's fs is ~800 GB, but has 11 GB metadata and is pre=
-tty
-> old and fragmented (but running an up-to-date kernel). His fs mounts in=
- ~5s.
->=20
-> My perf run shows that the only interesting part responsible for mount =
-time
-> is the nested loop in btrfs_read_block_groups calling find_first_block_=
-group
-> (which got inlined & is not in the perf callgraph) over and over again,=
-
-> accounting for 75% of time spent.
->=20
-> I now understand your comment why the real solution to this problem
-> is to move bgs into their own tree, and agree: both kitchens and databa=
-ses
-> have figured out a long time ago that the key to fast scan and lookup
-> performance is to not put different things in the same storage containe=
-r;
-> in the case of analytical DBMS this is columnar storage. :)
->=20
-> But what I originally meant was something much simpler and more
-> brute-force-ish. I see that btrfs_read_block_groups adds readahead
-> (is that actually effective?) but what I was looking for was the equiva=
-lent
-> of a DBMS' sequential scan. Right now finding (and loading) a bg seems =
-to
-> involve a nested loop of tree lookups. It seems easier to rip through t=
-he
-> entire tree in nice 8MB chunks and discard what you don't need instead
-> of seeking around trying to find all the right bits in scattered order.=
-
-
-The problem is, the tree (extent tree) containing block groups is very,
-very very large.
-
-It's a tree shared by all subvolumes. And since tree nodes and leaves
-can be scattered around the whole disk, it's pretty hard to do batch
-readahead.
-
->=20
-> Could we alleviate cold mounts by starting more readaheads in
-> btrfs_read_block_groups, so that the extent tree is scanned more linear=
-ly?
-
-Since extent tree is not linear, it won't be as effective as we believe.
-
-Thanks,
-Qu
-
->=20
-> cheers,
-> Holger
->=20
-
-
---bomsWic8NpB1vub2TTLWoPtM5JeAwG0CJ--
-
---rZ1j4PrYTyj3Y4DwDGYnPGL1EyMJjz37U
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqDhjsXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgXjAgAlSAwyAMpNtuFrablVSOOjXzV
-PdTr0ZjerX5FgBO/DTkLBX8WZ46M35vo9+8jL72KLtOqTYRrqlV/ER/Nu6KHSIBZ
-fVA0o8zq83DuXmUUIQWl2ubaA1KpF331LG0CfbNZ0vveuH4D3vPVyPsuWfNyxYMF
-2TT3DQEzGfmicZHQylClJH2NFv6eeR4Kmt4+0mj8+c9xUlJPrsl6xgFpISF+FRpW
-NAkECbidPdZ/6iylAeBs88llKMXw6ZS6e1R/Oz6E9BpxCY3NwZkPTPDzegvYwYfA
-RkDaKFxAkjM6MmQxX4zFHWrKcA0bfXtfu4uLeWx6M7CU7GoM3rtIQRIvOHwkaQ==
-=OOVj
------END PGP SIGNATURE-----
-
---rZ1j4PrYTyj3Y4DwDGYnPGL1EyMJjz37U--

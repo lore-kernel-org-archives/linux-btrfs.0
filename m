@@ -1,33 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.virtall.com ([46.4.129.203]:48902 "EHLO mail.virtall.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1030429AbeBNOZ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Feb 2018 09:25:29 -0500
-Received: from mail.virtall.com (localhost [127.0.0.1])
-        by mail.virtall.com (Postfix) with ESMTP id 3806A1E1145D
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2018 14:19:22 +0000 (UTC)
-Received: from localhost (localhost [127.0.0.1]) (Authenticated sender: tch@virtall.com)
-        by mail.virtall.com (Postfix) with ESMTPSA
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2018 14:19:22 +0000 (UTC)
+Received: from mail-yw0-f181.google.com ([209.85.161.181]:43345 "EHLO
+        mail-yw0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1031640AbeBNPmC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Feb 2018 10:42:02 -0500
+Received: by mail-yw0-f181.google.com with SMTP id p2so1369849ywg.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2018 07:42:02 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Wed, 14 Feb 2018 23:19:20 +0900
-From: Tomasz Chmielewski <tch@virtall.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: fatal database corruption with btrfs "out of space" with ~50 GB left
-Message-ID: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
+From: Ilan Schwarts <ilan84@gmail.com>
+Date: Wed, 14 Feb 2018 17:42:01 +0200
+Message-ID: <CAJUuSvFH1cAe2ivNP6i5pjqpgnba9NSgxNeuHiH+x2YEObrnPw@mail.gmail.com>
+Subject: calling inode->i_op->getattr to get kstat structure to obtain device id
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just FYI, how dangerous running btrfs can be - we had a fatal, 
-unrecoverable MySQL corruption when btrfs decided to do one of these "I 
-have ~50 GB left, so let's do out of space (and corrupt some files at 
-the same time, ha ha!)".
+Hi all,
+I know you dont like it, but i need to get the device id as it appear
+in user space from kernel space.
+i know its anonymous device id and i should not get it. but i still need it.
 
-Running btrfs RAID-1 with kernel 4.14.
+I found there are 2 ways to get it:
+1.  cast inode to btrfs_inode and get it from btrfs_inode->root->anon_dev
+2. from dentry object: dentry->d_inode->i_op->getattr(NULL, dentry,kstat);
+
+There is a problem !
+Usually what I do on file system event is to take the
+dentry->d_inode-... everything works fine.
+
+BUT on rename operations, the signature for vfs_rename is dual of
+inode-struct: (struct inode *, struct dentry *,struct inode *, struct
+dentry *, unsigned int)
+So what i do is take the 2nd dual dentry struct (destination dentry),
+and when i look for d_inode, there is no inode.
+And if i take the 2nd dual inode parameter from the vfs_rename
+function and try to call it inode->i_op->getattr(...) with the 2nd
+dual dentry -> I get btrfs_getattr exception.
+
+Is there a solution ?
+This happens on Suse kernel 3.12.69-60 - hello david s :)
 
 
+-- 
 
-Tomasz Chmielewski
-https://lxadm.com
+
+-
+Ilan Schwarts

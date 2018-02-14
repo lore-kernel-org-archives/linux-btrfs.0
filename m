@@ -1,58 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41054 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750830AbeBIJaX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Feb 2018 04:30:23 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id C6BACACB2
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Feb 2018 09:30:21 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Move error handling of btrfs_start_dirty_block_groups closer to call site
-Date: Fri,  9 Feb 2018 11:30:18 +0200
-Message-Id: <1518168618-16708-1-git-send-email-nborisov@suse.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:43159 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754578AbeBNIKE (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 14 Feb 2018 03:10:04 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: convert/ext2: Fix memory leak caused by handled ext2_filsys
+Date: Wed, 14 Feb 2018 16:09:56 +0800
+Message-Id: <20180214080956.9953-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even though btrfs_start_dirty_block_groups fairly in the beginning of
-btrfs_commit_transaction outside of the critical section defined by the
-transaction states it can only be run by a single comitter. In other
-words it defines its own critical section thanks to the
-BTRFS_TRANS_DIRTY_BG run flag and ro_block_group_mutex. However, its
-error handling is outside of this critical section which is a bit
-counter-intuitive. So move the error handling righ after the function
-is executed and let the sole runner of dirty block groups handle the
-return value. no functional changes
+Exposed convert-test with D=asan.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Unlike btrfs, ext2fs_close() still leaves its ext2_filsys parameter
+filled with allocated pointers.
+
+It needs ext2fs_free() to free those pointers.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/transaction.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ convert/source-ext2.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a57065f022ff..2cdf7be02f41 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2012,12 +2012,13 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 			run_it = 1;
- 		mutex_unlock(&fs_info->ro_block_group_mutex);
+diff --git a/convert/source-ext2.c b/convert/source-ext2.c
+index e9277213b77a..67e97cf87185 100644
+--- a/convert/source-ext2.c
++++ b/convert/source-ext2.c
+@@ -95,6 +95,7 @@ static int ext2_open_fs(struct btrfs_convert_context *cctx, const char *name)
+ 	return 0;
+ fail:
+ 	ext2fs_close(ext2_fs);
++	ext2fs_free(ext2_fs);
+ 	return -1;
+ }
  
--		if (run_it)
-+		if (run_it) {
- 			ret = btrfs_start_dirty_block_groups(trans);
--	}
--	if (ret) {
--		btrfs_end_transaction(trans);
--		return ret;
-+			if (ret) {
-+				btrfs_end_transaction(trans);
-+				return ret;
-+			}
-+		}
+@@ -179,6 +180,7 @@ static void ext2_close_fs(struct btrfs_convert_context *cctx)
+ 		cctx->volume_name = NULL;
  	}
+ 	ext2fs_close(cctx->fs_data);
++	ext2fs_free(cctx->fs_data);
+ }
  
- 	spin_lock(&fs_info->trans_lock);
+ static u8 ext2_filetype_conversion_table[EXT2_FT_MAX] = {
 -- 
-2.7.4
+2.16.1
 

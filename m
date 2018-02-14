@@ -1,49 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:43159 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1754578AbeBNIKE (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 14 Feb 2018 03:10:04 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: convert/ext2: Fix memory leak caused by handled ext2_filsys
-Date: Wed, 14 Feb 2018 16:09:56 +0800
-Message-Id: <20180214080956.9953-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:39681 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934301AbeBNPjW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Feb 2018 10:39:22 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4142AAB4B
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2018 15:39:20 +0000 (UTC)
+Date: Wed, 14 Feb 2018 16:37:05 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: Re: [PATCH] btrfs-progs: convert/ext2: Fix memory leak caused by
+ handled ext2_filsys
+Message-ID: <20180214153705.GH3003@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180214080956.9953-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180214080956.9953-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Exposed convert-test with D=asan.
+On Wed, Feb 14, 2018 at 04:09:56PM +0800, Qu Wenruo wrote:
+> Exposed convert-test with D=asan.
+> 
+> Unlike btrfs, ext2fs_close() still leaves its ext2_filsys parameter
+> filled with allocated pointers.
+> 
+> It needs ext2fs_free() to free those pointers.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Unlike btrfs, ext2fs_close() still leaves its ext2_filsys parameter
-filled with allocated pointers.
-
-It needs ext2fs_free() to free those pointers.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- convert/source-ext2.c | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/convert/source-ext2.c b/convert/source-ext2.c
-index e9277213b77a..67e97cf87185 100644
---- a/convert/source-ext2.c
-+++ b/convert/source-ext2.c
-@@ -95,6 +95,7 @@ static int ext2_open_fs(struct btrfs_convert_context *cctx, const char *name)
- 	return 0;
- fail:
- 	ext2fs_close(ext2_fs);
-+	ext2fs_free(ext2_fs);
- 	return -1;
- }
- 
-@@ -179,6 +180,7 @@ static void ext2_close_fs(struct btrfs_convert_context *cctx)
- 		cctx->volume_name = NULL;
- 	}
- 	ext2fs_close(cctx->fs_data);
-+	ext2fs_free(cctx->fs_data);
- }
- 
- static u8 ext2_filetype_conversion_table[EXT2_FT_MAX] = {
--- 
-2.16.1
-
+Applied, thanks.

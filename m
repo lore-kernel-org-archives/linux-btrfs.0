@@ -1,49 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f181.google.com ([209.85.161.181]:43345 "EHLO
-        mail-yw0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1031640AbeBNPmC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Feb 2018 10:42:02 -0500
-Received: by mail-yw0-f181.google.com with SMTP id p2so1369849ywg.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Feb 2018 07:42:02 -0800 (PST)
+Received: from mail-sn1nam02on0076.outbound.protection.outlook.com ([104.47.36.76]:31584
+        "EHLO NAM02-SN1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1031553AbeBNQAh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Feb 2018 11:00:37 -0500
+To: linux-btrfs@vger.kernel.org
+From: "Ellis H. Wilson III" <ellisw@panasas.com>
+Subject: Status of FST and mount times
+Message-ID: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
+Date: Wed, 14 Feb 2018 11:00:29 -0500
 MIME-Version: 1.0
-From: Ilan Schwarts <ilan84@gmail.com>
-Date: Wed, 14 Feb 2018 17:42:01 +0200
-Message-ID: <CAJUuSvFH1cAe2ivNP6i5pjqpgnba9NSgxNeuHiH+x2YEObrnPw@mail.gmail.com>
-Subject: calling inode->i_op->getattr to get kstat structure to obtain device id
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-I know you dont like it, but i need to get the device id as it appear
-in user space from kernel space.
-i know its anonymous device id and i should not get it. but i still need it.
+Hi again -- back with a few more questions:
 
-I found there are 2 ways to get it:
-1.  cast inode to btrfs_inode and get it from btrfs_inode->root->anon_dev
-2. from dentry object: dentry->d_inode->i_op->getattr(NULL, dentry,kstat);
+Frame-of-reference here: RAID0.  Around 70TB raw capacity.  No 
+compression.  No quotas enabled.  Many (potentially tens to hundreds) of 
+subvolumes, each with tens of snapshots.  No control over size or number 
+of files, but directory tree (entries per dir and general tree depth) 
+can be controlled in case that's helpful).
 
-There is a problem !
-Usually what I do on file system event is to take the
-dentry->d_inode-... everything works fine.
+1. I've been reading up about the space cache, and it appears there is a 
+v2 of it called the free space tree that is much friendlier to large 
+filesystems such as the one I am designing for.  It is listed as OK/OK 
+on the wiki status page, but there is a note that btrfs progs treats it 
+as read only (i.e., btrfs check repair cannot help me without a full 
+space cache rebuild is my biggest concern) and the last status update on 
+this I can find was circa fall 2016.  Can anybody give me an updated 
+status on this feature?  From what I read, v1 and tens of TB filesystems 
+will not play well together, so I'm inclined to dig into this.
 
-BUT on rename operations, the signature for vfs_rename is dual of
-inode-struct: (struct inode *, struct dentry *,struct inode *, struct
-dentry *, unsigned int)
-So what i do is take the 2nd dual dentry struct (destination dentry),
-and when i look for d_inode, there is no inode.
-And if i take the 2nd dual inode parameter from the vfs_rename
-function and try to call it inode->i_op->getattr(...) with the 2nd
-dual dentry -> I get btrfs_getattr exception.
+2. There's another thread on-going about mount delays.  I've been 
+completely blind to this specific problem until it caught my eye.  Does 
+anyone have ballpark estimates for how long very large HDD-based 
+filesystems will take to mount?  Yes, I know it will depend on the 
+dataset.  I'm looking for O() worst-case approximations for 
+enterprise-grade large drives (12/14TB), as I expect it should scale 
+with multiple drives so approximating for a single drive should be good 
+enough.
 
-Is there a solution ?
-This happens on Suse kernel 3.12.69-60 - hello david s :)
+3. Do long mount delays relate to space_cache v1 vs v2 (I would guess 
+no, unless it needed to be regenerated)?
 
+Note that I'm not sensitive to multi-second mount delays.  I am 
+sensitive to multi-minute mount delays, hence why I'm bringing this up.
 
--- 
+FWIW: I am currently populating a machine we have with 6TB drives in it 
+with real-world home dir data to see if I can replicate the mount issue.
 
+Thanks,
 
--
-Ilan Schwarts
+ellis

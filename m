@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f66.google.com ([74.125.83.66]:42356 "EHLO
-        mail-pg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161045AbeBOTFd (ORCPT
+Received: from mail-pg0-f65.google.com ([74.125.83.65]:43687 "EHLO
+        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1161634AbeBOTFb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 14:05:33 -0500
-Received: by mail-pg0-f66.google.com with SMTP id y8so493774pgr.9
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:32 -0800 (PST)
+        Thu, 15 Feb 2018 14:05:31 -0500
+Received: by mail-pg0-f65.google.com with SMTP id f6so491317pgs.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:31 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH v2 05/27] libbtrfsutil: add qgroup inheritance helpers
-Date: Thu, 15 Feb 2018 11:04:50 -0800
-Message-Id: <b359d9884c99e9bf3d6c7a22584c6e365e13eb24.1518720598.git.osandov@fb.com>
+Subject: [PATCH v2 04/27] libbtrfsutil: add btrfs_util_is_subvolume() and btrfs_util_subvolume_id()
+Date: Thu, 15 Feb 2018 11:04:49 -0800
+Message-Id: <72c661cf7dc5cd27373ff0d19eb77cea14ce391c.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
@@ -21,153 +21,144 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-We want to hide struct btrfs_qgroup_inherit from the user because that
-comes from the Btrfs UAPI headers. Instead, wrap it in a struct
-btrfs_util_qgroup_inherit and provide helpers to manipulate it. This
-will be used for subvolume and snapshot creation.
+These are the most trivial helpers in the library and will be used to
+implement several of the more involved functions.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Makefile                                 |   3 +-
- libbtrfsutil/btrfsutil.h                 |  45 +++++++++
- libbtrfsutil/python/btrfsutilpy.h        |   6 ++
- libbtrfsutil/python/module.c             |   8 ++
- libbtrfsutil/python/qgroup.c             | 154 +++++++++++++++++++++++++++++++
- libbtrfsutil/python/setup.py             |   1 +
- libbtrfsutil/python/tests/test_qgroup.py |  36 ++++++++
- libbtrfsutil/qgroup.c                    |  83 +++++++++++++++++
- 8 files changed, 335 insertions(+), 1 deletion(-)
- create mode 100644 libbtrfsutil/python/qgroup.c
- create mode 100644 libbtrfsutil/python/tests/test_qgroup.py
- create mode 100644 libbtrfsutil/qgroup.c
+ Makefile                                    |   2 +-
+ libbtrfsutil/btrfsutil.h                    |  33 ++++++++
+ libbtrfsutil/python/btrfsutilpy.h           |   3 +
+ libbtrfsutil/python/module.c                |  12 +++
+ libbtrfsutil/python/setup.py                |   1 +
+ libbtrfsutil/python/subvolume.c             |  73 ++++++++++++++++
+ libbtrfsutil/python/tests/__init__.py       |  66 +++++++++++++++
+ libbtrfsutil/python/tests/test_subvolume.py |  57 +++++++++++++
+ libbtrfsutil/subvolume.c                    | 127 ++++++++++++++++++++++++++++
+ 9 files changed, 373 insertions(+), 1 deletion(-)
+ create mode 100644 libbtrfsutil/python/subvolume.c
+ create mode 100644 libbtrfsutil/python/tests/test_subvolume.py
+ create mode 100644 libbtrfsutil/subvolume.c
 
 diff --git a/Makefile b/Makefile
-index 58b3eca4..fa32c50d 100644
+index 95ee9678..58b3eca4 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -135,7 +135,8 @@ libbtrfsutil_major := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MAJOR ([0-
+@@ -135,7 +135,7 @@ libbtrfsutil_major := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MAJOR ([0-
  libbtrfsutil_minor := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MINOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
  libbtrfsutil_patch := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_PATCH ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
  libbtrfsutil_version := $(libbtrfsutil_major).$(libbtrfsutil_minor).$(libbtrfsutil_patch)
--libbtrfsutil_objects = libbtrfsutil/errors.o libbtrfsutil/subvolume.o
-+libbtrfsutil_objects = libbtrfsutil/errors.o libbtrfsutil/qgroup.o \
-+		       libbtrfsutil/subvolume.o
+-libbtrfsutil_objects = libbtrfsutil/errors.o
++libbtrfsutil_objects = libbtrfsutil/errors.o libbtrfsutil/subvolume.o
  convert_objects = convert/main.o convert/common.o convert/source-fs.o \
  		  convert/source-ext2.o convert/source-reiserfs.o
  mkfs_objects = mkfs/main.o mkfs/common.o mkfs/rootdir.o
 diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index ca36f695..76bf0b60 100644
+index 867418f2..ca36f695 100644
 --- a/libbtrfsutil/btrfsutil.h
 +++ b/libbtrfsutil/btrfsutil.h
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,8 @@
  #ifndef BTRFS_UTIL_H
  #define BTRFS_UTIL_H
  
-+#include <stddef.h>
- #include <stdint.h>
- 
++#include <stdint.h>
++
  #define BTRFS_UTIL_VERSION_MAJOR 1
-@@ -102,6 +103,50 @@ enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
+ #define BTRFS_UTIL_VERSION_MINOR 0
+ #define BTRFS_UTIL_VERSION_PATCH 0
+@@ -69,6 +71,37 @@ enum btrfs_util_error {
   */
- enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd, uint64_t *id_ret);
+ const char *btrfs_util_strerror(enum btrfs_util_error err);
  
-+struct btrfs_util_qgroup_inherit;
-+
 +/**
-+ * btrfs_util_create_qgroup_inherit() - Create a qgroup inheritance specifier
-+ * for btrfs_util_create_subvolume() or btrfs_util_create_snapshot().
-+ * @flags: Must be zero.
-+ * @ret: Returned qgroup inheritance specifier.
++ * btrfs_util_is_subvolume() - Return whether a given path is a Btrfs subvolume.
++ * @path: Path to check.
 + *
-+ * The returned structure must be freed with
-+ * btrfs_util_destroy_qgroup_inherit().
-+ *
-+ * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
++ * Return: %BTRFS_UTIL_OK if @path is a Btrfs subvolume,
++ * %BTRFS_UTIL_ERROR_NOT_BTRFS if @path is not on a Btrfs filesystem,
++ * %BTRFS_UTIL_ERROR_NOT_SUBVOLUME if @path is not a subvolume, non-zero error
++ * code on any other failure.
 + */
-+enum btrfs_util_error btrfs_util_create_qgroup_inherit(int flags,
-+						       struct btrfs_util_qgroup_inherit **ret);
++enum btrfs_util_error btrfs_util_is_subvolume(const char *path);
 +
 +/**
-+ * btrfs_util_destroy_qgroup_inherit() - Destroy a qgroup inheritance specifier
-+ * previously created with btrfs_util_create_qgroup_inherit().
-+ * @inherit: Specifier to destroy.
++ * btrfs_util_is_subvolume_fd() - See btrfs_util_is_subvolume().
 + */
-+void btrfs_util_destroy_qgroup_inherit(struct btrfs_util_qgroup_inherit *inherit);
++enum btrfs_util_error btrfs_util_is_subvolume_fd(int fd);
 +
 +/**
-+ * btrfs_util_qgroup_inherit_add_group() - Add inheritance from a qgroup to a
-+ * qgroup inheritance specifier.
-+ * @inherit: Specifier to modify. May be reallocated.
-+ * @qgroupid: ID of qgroup to inherit from.
++ * btrfs_util_subvolume_id() - Get the ID of the subvolume containing a path.
++ * @path: Path on a Btrfs filesystem.
++ * @id_ret: Returned subvolume ID.
 + *
 + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
 + */
-+enum btrfs_util_error btrfs_util_qgroup_inherit_add_group(struct btrfs_util_qgroup_inherit **inherit,
-+							  uint64_t qgroupid);
++enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
++					      uint64_t *id_ret);
 +
 +/**
-+ * btrfs_util_qgroup_inherit_get_groups() - Get the qgroups a qgroup inheritance
-+ * specifier contains.
-+ * @inherit: Qgroup inheritance specifier.
-+ * @groups: Returned array of qgroup IDs.
-+ * @n: Returned number of entries in the @groups array.
++ * btrfs_util_subvolume_id_fd() - See btrfs_util_subvolume_id().
 + */
-+void btrfs_util_qgroup_inherit_get_groups(const struct btrfs_util_qgroup_inherit *inherit,
-+					  const uint64_t **groups, size_t *n);
++enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd, uint64_t *id_ret);
 +
  #ifdef __cplusplus
  }
  #endif
 diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
-index 9a04fda7..a36f2671 100644
+index 6d82f7e1..9a04fda7 100644
 --- a/libbtrfsutil/python/btrfsutilpy.h
 +++ b/libbtrfsutil/python/btrfsutilpy.h
-@@ -29,7 +29,13 @@
+@@ -52,6 +52,9 @@ void SetFromBtrfsUtilErrorWithPaths(enum btrfs_util_error err,
+ 				    struct path_arg *path1,
+ 				    struct path_arg *path2);
  
- #include <btrfsutil.h>
- 
-+typedef struct {
-+	PyObject_HEAD
-+	struct btrfs_util_qgroup_inherit *inherit;
-+} QgroupInherit;
++PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
++PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds);
 +
- extern PyTypeObject BtrfsUtilError_type;
-+extern PyTypeObject QgroupInherit_type;
+ void add_module_constants(PyObject *m);
  
- /*
-  * Helpers for path arguments based on posixmodule.c in CPython.
+ #endif /* BTRFSUTILPY_H */
 diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
-index d492cbc7..de7d17a1 100644
+index d7398808..d492cbc7 100644
 --- a/libbtrfsutil/python/module.c
 +++ b/libbtrfsutil/python/module.c
-@@ -164,6 +164,10 @@ PyInit_btrfsutil(void)
- 	if (PyType_Ready(&BtrfsUtilError_type) < 0)
- 		return NULL;
+@@ -132,6 +132,18 @@ void path_cleanup(struct path_arg *path)
+ }
  
-+	QgroupInherit_type.tp_new = PyType_GenericNew;
-+	if (PyType_Ready(&QgroupInherit_type) < 0)
-+		return NULL;
-+
- 	m = PyModule_Create(&btrfsutilmodule);
- 	if (!m)
- 		return NULL;
-@@ -172,6 +176,10 @@ PyInit_btrfsutil(void)
- 	PyModule_AddObject(m, "BtrfsUtilError",
- 			   (PyObject *)&BtrfsUtilError_type);
+ static PyMethodDef btrfsutil_methods[] = {
++	{"is_subvolume", (PyCFunction)is_subvolume,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "is_subvolume(path) -> bool\n\n"
++	 "Get whether a file is a subvolume.\n\n"
++	 "Arguments:\n"
++	 "path -- string, bytes, path-like object, or open file descriptor"},
++	{"subvolume_id", (PyCFunction)subvolume_id,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "subvolume_id(path) -> int\n\n"
++	 "Get the ID of the subvolume containing a file.\n\n"
++	 "Arguments:\n"
++	 "path -- string, bytes, path-like object, or open file descriptor"},
+ 	{},
+ };
  
-+	Py_INCREF(&QgroupInherit_type);
-+	PyModule_AddObject(m, "QgroupInherit",
-+			   (PyObject *)&QgroupInherit_type);
-+
- 	add_module_constants(m);
- 
- 	return m;
-diff --git a/libbtrfsutil/python/qgroup.c b/libbtrfsutil/python/qgroup.c
+diff --git a/libbtrfsutil/python/setup.py b/libbtrfsutil/python/setup.py
+index cd8a6048..57249829 100755
+--- a/libbtrfsutil/python/setup.py
++++ b/libbtrfsutil/python/setup.py
+@@ -91,6 +91,7 @@ module = Extension(
+         'constants.c',
+         'error.c',
+         'module.c',
++        'subvolume.c',
+     ],
+     include_dirs=['..'],
+     library_dirs=['../..'],
+diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
 new file mode 100644
-index 00000000..69716d92
+index 00000000..4aab06a5
 --- /dev/null
-+++ b/libbtrfsutil/python/qgroup.c
-@@ -0,0 +1,154 @@
++++ b/libbtrfsutil/python/subvolume.c
+@@ -0,0 +1,73 @@
 +/*
 + * Copyright (C) 2018 Facebook
 + *
@@ -189,157 +180,63 @@ index 00000000..69716d92
 +
 +#include "btrfsutilpy.h"
 +
-+static void QgroupInherit_dealloc(QgroupInherit *self)
++PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 +{
-+	btrfs_util_destroy_qgroup_inherit(self->inherit);
-+	Py_TYPE(self)->tp_free((PyObject *)self);
-+}
-+
-+static int QgroupInherit_init(QgroupInherit *self, PyObject *args,
-+			      PyObject *kwds)
-+{
-+	static char *keywords[] = {NULL};
++	static char *keywords[] = {"path", NULL};
++	struct path_arg path = {.allow_fd = true};
 +	enum btrfs_util_error err;
 +
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, ":QgroupInherit",
-+					 keywords))
-+		return -1;
-+
-+	err = btrfs_util_create_qgroup_inherit(0, &self->inherit);
-+	if (err) {
-+		SetFromBtrfsUtilError(err);
-+		return -1;
-+	}
-+
-+	return 0;
-+}
-+
-+static PyObject *QgroupInherit_getattro(QgroupInherit *self, PyObject *nameobj)
-+{
-+    const char *name = "";
-+
-+    if (PyUnicode_Check(nameobj)) {
-+	    name = PyUnicode_AsUTF8(nameobj);
-+	    if (!name)
-+		    return NULL;
-+    }
-+
-+    if (strcmp(name, "groups") == 0) {
-+	    PyObject *ret, *tmp;
-+	    const uint64_t *arr;
-+	    size_t n, i;
-+
-+	    btrfs_util_qgroup_inherit_get_groups(self->inherit, &arr, &n);
-+	    ret = PyList_New(n);
-+	    if (!ret)
-+		    return NULL;
-+
-+	    for (i = 0; i < n; i++) {
-+		    tmp = PyLong_FromUnsignedLongLong(arr[i]);
-+		    if (!tmp) {
-+			    Py_DECREF(ret);
-+			    return NULL;
-+		    }
-+		    PyList_SET_ITEM(ret, i, tmp);
-+	    }
-+
-+	    return ret;
-+    } else {
-+	    return PyObject_GenericGetAttr((PyObject *)self, nameobj);
-+    }
-+}
-+
-+static PyObject *QgroupInherit_add_group(QgroupInherit *self, PyObject *args,
-+					 PyObject *kwds)
-+{
-+	static char *keywords[] = {"qgroupid", NULL};
-+	enum btrfs_util_error err;
-+	uint64_t qgroupid;
-+
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "K:add_group", keywords,
-+					 &qgroupid))
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:is_subvolume",
++					 keywords, &path_converter, &path))
 +		return NULL;
 +
-+	err = btrfs_util_qgroup_inherit_add_group(&self->inherit, qgroupid);
++	if (path.path)
++		err = btrfs_util_is_subvolume(path.path);
++	else
++		err = btrfs_util_is_subvolume_fd(path.fd);
++	if (err == BTRFS_UTIL_OK) {
++		path_cleanup(&path);
++		Py_RETURN_TRUE;
++	} else if (err == BTRFS_UTIL_ERROR_NOT_BTRFS ||
++		   err == BTRFS_UTIL_ERROR_NOT_SUBVOLUME) {
++		path_cleanup(&path);
++		Py_RETURN_FALSE;
++	} else {
++		SetFromBtrfsUtilErrorWithPath(err, &path);
++		path_cleanup(&path);
++		return NULL;
++	}
++}
++
++PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds)
++{
++	static char *keywords[] = {"path", NULL};
++	struct path_arg path = {.allow_fd = true};
++	enum btrfs_util_error err;
++	uint64_t id;
++
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:subvolume_id",
++					 keywords, &path_converter, &path))
++		return NULL;
++
++	if (path.path)
++		err = btrfs_util_subvolume_id(path.path, &id);
++	else
++		err = btrfs_util_subvolume_id_fd(path.fd, &id);
 +	if (err) {
-+		SetFromBtrfsUtilError(err);
++		SetFromBtrfsUtilErrorWithPath(err, &path);
++		path_cleanup(&path);
 +		return NULL;
 +	}
 +
-+	Py_RETURN_NONE;
++	path_cleanup(&path);
++	return PyLong_FromUnsignedLongLong(id);
 +}
-+
-+static PyMethodDef QgroupInherit_methods[] = {
-+	{"add_group", (PyCFunction)QgroupInherit_add_group,
-+	 METH_VARARGS | METH_KEYWORDS,
-+	 "add_group(qgroupid)\n\n"
-+	 "Add a qgroup to inherit from.\n\n"
-+	 "Arguments:\n"
-+	 "qgroupid -- ID of qgroup to add"},
-+	{},
-+};
-+
-+#define QgroupInherit_DOC	\
-+	"QgroupInherit() -> new qgroup inheritance specifier\n\n"	\
-+	"Create a new object which specifies what qgroups to inherit\n"	\
-+	"from for create_subvolume() and create_snapshot()"
-+
-+PyTypeObject QgroupInherit_type = {
-+	PyVarObject_HEAD_INIT(NULL, 0)
-+	"btrfsutil.QgroupInherit",		/* tp_name */
-+	sizeof(QgroupInherit),			/* tp_basicsize */
-+	0,					/* tp_itemsize */
-+	(destructor)QgroupInherit_dealloc,	/* tp_dealloc */
-+	NULL,					/* tp_print */
-+	NULL,					/* tp_getattr */
-+	NULL,					/* tp_setattr */
-+	NULL,					/* tp_as_async */
-+	NULL,					/* tp_repr */
-+	NULL,					/* tp_as_number */
-+	NULL,					/* tp_as_sequence */
-+	NULL,					/* tp_as_mapping */
-+	NULL,					/* tp_hash  */
-+	NULL,					/* tp_call */
-+	NULL,					/* tp_str */
-+	(getattrofunc)QgroupInherit_getattro,	/* tp_getattro */
-+	NULL,					/* tp_setattro */
-+	NULL,					/* tp_as_buffer */
-+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
-+	QgroupInherit_DOC,			/* tp_doc */
-+	NULL,					/* tp_traverse */
-+	NULL,					/* tp_clear */
-+	NULL,					/* tp_richcompare */
-+	0,					/* tp_weaklistoffset */
-+	NULL,					/* tp_iter */
-+	NULL,					/* tp_iternext */
-+	QgroupInherit_methods,			/* tp_methods */
-+	NULL,					/* tp_members */
-+	NULL,					/* tp_getset */
-+	NULL,					/* tp_base */
-+	NULL,					/* tp_dict */
-+	NULL,					/* tp_descr_get */
-+	NULL,					/* tp_descr_set */
-+	0,					/* tp_dictoffset */
-+	(initproc)QgroupInherit_init,		/* tp_init */
-+};
-diff --git a/libbtrfsutil/python/setup.py b/libbtrfsutil/python/setup.py
-index 57249829..06857084 100755
---- a/libbtrfsutil/python/setup.py
-+++ b/libbtrfsutil/python/setup.py
-@@ -91,6 +91,7 @@ module = Extension(
-         'constants.c',
-         'error.c',
-         'module.c',
-+        'qgroup.c',
-         'subvolume.c',
-     ],
-     include_dirs=['..'],
-diff --git a/libbtrfsutil/python/tests/test_qgroup.py b/libbtrfsutil/python/tests/test_qgroup.py
-new file mode 100644
-index 00000000..a590464b
---- /dev/null
-+++ b/libbtrfsutil/python/tests/test_qgroup.py
-@@ -0,0 +1,36 @@
+diff --git a/libbtrfsutil/python/tests/__init__.py b/libbtrfsutil/python/tests/__init__.py
+index e69de29b..d2c6ff28 100644
+--- a/libbtrfsutil/python/tests/__init__.py
++++ b/libbtrfsutil/python/tests/__init__.py
+@@ -0,0 +1,66 @@
 +# Copyright (C) 2018 Facebook
 +#
 +# This file is part of libbtrfsutil.
@@ -358,30 +255,123 @@ index 00000000..a590464b
 +# along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
 +
 +import os
++from pathlib import PurePath
++import subprocess
++import tempfile
 +import unittest
 +
-+import btrfsutil
++
++HAVE_PATH_LIKE = hasattr(PurePath, '__fspath__')
 +
 +
-+class TestQgroupInherit(unittest.TestCase):
-+    def test_new(self):
-+        inherit = btrfsutil.QgroupInherit()
-+        self.assertEqual(inherit.groups, [])
++@unittest.skipIf(os.geteuid() != 0, 'must be run as root')
++class BtrfsTestCase(unittest.TestCase):
++    def setUp(self):
++        self.mountpoint = tempfile.mkdtemp()
++        try:
++            with tempfile.NamedTemporaryFile(delete=False) as f:
++                os.truncate(f.fileno(), 1024 * 1024 * 1024)
++                self.image = f.name
++        except Exception as e:
++            os.rmdir(self.mountpoint)
++            raise e
 +
-+    def test_add_group(self):
-+        inherit = btrfsutil.QgroupInherit()
-+        inherit.add_group(1)
-+        self.assertEqual(inherit.groups, [1])
-+        inherit.add_group(2)
-+        self.assertEqual(inherit.groups, [1, 2])
-+        inherit.add_group(3)
-+        self.assertEqual(inherit.groups, [1, 2, 3])
-diff --git a/libbtrfsutil/qgroup.c b/libbtrfsutil/qgroup.c
++        try:
++            subprocess.check_call(['mkfs.btrfs', '-q', self.image])
++            subprocess.check_call(['mount', '-o', 'loop', '--', self.image, self.mountpoint])
++        except Exception as e:
++            os.remove(self.image)
++            os.rmdir(self.mountpoint)
++            raise e
++
++    def tearDown(self):
++        try:
++            subprocess.check_call(['umount', self.mountpoint])
++        finally:
++            os.remove(self.image)
++            os.rmdir(self.mountpoint)
++
++    @staticmethod
++    def path_or_fd(path, open_flags=os.O_RDONLY):
++        yield path
++        yield path.encode()
++        if HAVE_PATH_LIKE:
++            yield PurePath(path)
++        fd = os.open(path, open_flags)
++        try:
++            yield fd
++        finally:
++            os.close(fd)
++
+diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
 new file mode 100644
-index 00000000..d2916184
+index 00000000..44b1d7f0
 --- /dev/null
-+++ b/libbtrfsutil/qgroup.c
-@@ -0,0 +1,83 @@
++++ b/libbtrfsutil/python/tests/test_subvolume.py
+@@ -0,0 +1,57 @@
++# Copyright (C) 2018 Facebook
++#
++# This file is part of libbtrfsutil.
++#
++# libbtrfsutil is free software: you can redistribute it and/or modify
++# it under the terms of the GNU Lesser General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++#
++# libbtrfsutil is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Lesser General Public License for more details.
++#
++# You should have received a copy of the GNU Lesser General Public License
++# along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
++
++import fcntl
++import errno
++import os
++import os.path
++from pathlib import PurePath
++import traceback
++
++import btrfsutil
++from tests import BtrfsTestCase
++
++
++class TestSubvolume(BtrfsTestCase):
++    def test_is_subvolume(self):
++        dir = os.path.join(self.mountpoint, 'foo')
++        os.mkdir(dir)
++
++        for arg in self.path_or_fd(self.mountpoint):
++            with self.subTest(type=type(arg)):
++                self.assertTrue(btrfsutil.is_subvolume(arg))
++        for arg in self.path_or_fd(dir):
++            with self.subTest(type=type(arg)):
++                self.assertFalse(btrfsutil.is_subvolume(arg))
++
++        with self.assertRaises(btrfsutil.BtrfsUtilError) as e:
++            btrfsutil.is_subvolume(os.path.join(self.mountpoint, 'bar'))
++        # This is a bit of an implementation detail, but really this is testing
++        # that the exception is initialized correctly.
++        self.assertEqual(e.exception.btrfsutilerror, btrfsutil.ERROR_STATFS_FAILED)
++        self.assertEqual(e.exception.errno, errno.ENOENT)
++
++    def test_subvolume_id(self):
++        dir = os.path.join(self.mountpoint, 'foo')
++        os.mkdir(dir)
++
++        for arg in self.path_or_fd(self.mountpoint):
++            with self.subTest(type=type(arg)):
++                self.assertEqual(btrfsutil.subvolume_id(arg), 5)
++        for arg in self.path_or_fd(dir):
++            with self.subTest(type=type(arg)):
++                self.assertEqual(btrfsutil.subvolume_id(arg), 5)
+diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
+new file mode 100644
+index 00000000..04988c14
+--- /dev/null
++++ b/libbtrfsutil/subvolume.c
+@@ -0,0 +1,127 @@
 +/*
 + * Copyright (C) 2018 Facebook
 + *
@@ -402,68 +392,112 @@ index 00000000..d2916184
 + */
 +
 +#include <errno.h>
-+#include <stdarg.h>
-+#include <stdlib.h>
-+#include <string.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <sys/vfs.h>
 +#include <linux/btrfs.h>
++#include <linux/btrfs_tree.h>
++#include <linux/magic.h>
 +
 +#include "btrfsutil_internal.h"
 +
-+PUBLIC enum btrfs_util_error btrfs_util_create_qgroup_inherit(int flags,
-+							      struct btrfs_util_qgroup_inherit **ret)
++/*
++ * This intentionally duplicates btrfs_util_is_subvolume_fd() instead of opening
++ * a file descriptor and calling it, because fstat() and fstatfs() don't accept
++ * file descriptors opened with O_PATH on old kernels (before v3.6 and before
++ * v3.12, respectively), but stat() and statfs() can be called on a path that
++ * the user doesn't have read or write permissions to.
++ */
++PUBLIC enum btrfs_util_error btrfs_util_is_subvolume(const char *path)
 +{
-+	struct btrfs_qgroup_inherit *inherit;
++	struct statfs sfs;
++	struct stat st;
++	int ret;
 +
-+	if (flags) {
++	ret = statfs(path, &sfs);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_STATFS_FAILED;
++
++	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
 +		errno = EINVAL;
-+		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
++		return BTRFS_UTIL_ERROR_NOT_BTRFS;
 +	}
 +
-+	inherit = calloc(1, sizeof(*inherit));
-+	if (!inherit)
-+		return BTRFS_UTIL_ERROR_NO_MEMORY;
++	ret = stat(path, &st);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_STAT_FAILED;
 +
-+	/*
-+	 * struct btrfs_util_qgroup_inherit is a lie; it's actually struct
-+	 * btrfs_qgroup_inherit, but we abstract it away so that users don't
-+	 * need to depend on the Btrfs UAPI headers.
-+	 */
-+	*ret = (struct btrfs_util_qgroup_inherit *)inherit;
++	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode)) {
++		errno = EINVAL;
++		return BTRFS_UTIL_ERROR_NOT_SUBVOLUME;
++	}
 +
 +	return BTRFS_UTIL_OK;
 +}
 +
-+PUBLIC void btrfs_util_destroy_qgroup_inherit(struct btrfs_util_qgroup_inherit *inherit)
++PUBLIC enum btrfs_util_error btrfs_util_is_subvolume_fd(int fd)
 +{
-+	free(inherit);
-+}
++	struct statfs sfs;
++	struct stat st;
++	int ret;
 +
-+PUBLIC enum btrfs_util_error btrfs_util_qgroup_inherit_add_group(struct btrfs_util_qgroup_inherit **inherit,
-+								 uint64_t qgroupid)
-+{
-+	struct btrfs_qgroup_inherit *tmp = (struct btrfs_qgroup_inherit *)*inherit;
++	ret = fstatfs(fd, &sfs);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_STATFS_FAILED;
 +
-+	tmp = realloc(tmp, sizeof(*tmp) +
-+		      (tmp->num_qgroups + 1) * sizeof(tmp->qgroups[0]));
-+	if (!tmp)
-+		return BTRFS_UTIL_ERROR_NO_MEMORY;
++	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
++		errno = EINVAL;
++		return BTRFS_UTIL_ERROR_NOT_BTRFS;
++	}
 +
-+	tmp->qgroups[tmp->num_qgroups++] = qgroupid;
++	ret = fstat(fd, &st);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_STAT_FAILED;
 +
-+	*inherit = (struct btrfs_util_qgroup_inherit *)tmp;
++	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode)) {
++		errno = EINVAL;
++		return BTRFS_UTIL_ERROR_NOT_SUBVOLUME;
++	}
 +
 +	return BTRFS_UTIL_OK;
 +}
 +
-+PUBLIC void btrfs_util_qgroup_inherit_get_groups(const struct btrfs_util_qgroup_inherit *inherit,
-+						 const uint64_t **groups,
-+						 size_t *n)
++PUBLIC enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
++						     uint64_t *id_ret)
 +{
-+	struct btrfs_qgroup_inherit *tmp = (struct btrfs_qgroup_inherit *)inherit;
++	enum btrfs_util_error err;
++	int fd;
 +
-+	/* Need to cast because __u64 != uint64_t. */
-+	*groups = (const uint64_t *)&tmp->qgroups[0];
-+	*n = tmp->num_qgroups;
++	fd = open(path, O_RDONLY);
++	if (fd == -1)
++		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++
++	err = btrfs_util_subvolume_id_fd(fd, id_ret);
++	SAVE_ERRNO_AND_CLOSE(fd);
++	return err;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd,
++							uint64_t *id_ret)
++{
++	struct btrfs_ioctl_ino_lookup_args args = {
++		.treeid = 0,
++		.objectid = BTRFS_FIRST_FREE_OBJECTID,
++	};
++	int ret;
++
++	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
++	if (ret == -1) {
++		close(fd);
++		return BTRFS_UTIL_ERROR_INO_LOOKUP_FAILED;
++	}
++
++	*id_ret = args.treeid;
++
++	return BTRFS_UTIL_OK;
 +}
 -- 
 2.16.1

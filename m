@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f65.google.com ([74.125.83.65]:43687 "EHLO
-        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161634AbeBOTFb (ORCPT
+Received: from mail-pl0-f67.google.com ([209.85.160.67]:34350 "EHLO
+        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1161634AbeBOTFr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 14:05:31 -0500
-Received: by mail-pg0-f65.google.com with SMTP id f6so491317pgs.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:31 -0800 (PST)
+        Thu, 15 Feb 2018 14:05:47 -0500
+Received: by mail-pl0-f67.google.com with SMTP id bd10so360893plb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:47 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH v2 04/27] libbtrfsutil: add btrfs_util_is_subvolume() and btrfs_util_subvolume_id()
-Date: Thu, 15 Feb 2018 11:04:49 -0800
-Message-Id: <72c661cf7dc5cd27373ff0d19eb77cea14ce391c.1518720598.git.osandov@fb.com>
+Subject: [PATCH v2 18/27] btrfs-progs: use libbtrfsutil for set-default
+Date: Thu, 15 Feb 2018 11:05:03 -0800
+Message-Id: <c3478546696001ebc2763ff0d6f9807870c4beeb.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
@@ -21,484 +21,78 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-These are the most trivial helpers in the library and will be used to
-implement several of the more involved functions.
-
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- Makefile                                    |   2 +-
- libbtrfsutil/btrfsutil.h                    |  33 ++++++++
- libbtrfsutil/python/btrfsutilpy.h           |   3 +
- libbtrfsutil/python/module.c                |  12 +++
- libbtrfsutil/python/setup.py                |   1 +
- libbtrfsutil/python/subvolume.c             |  73 ++++++++++++++++
- libbtrfsutil/python/tests/__init__.py       |  66 +++++++++++++++
- libbtrfsutil/python/tests/test_subvolume.py |  57 +++++++++++++
- libbtrfsutil/subvolume.c                    | 127 ++++++++++++++++++++++++++++
- 9 files changed, 373 insertions(+), 1 deletion(-)
- create mode 100644 libbtrfsutil/python/subvolume.c
- create mode 100644 libbtrfsutil/python/tests/test_subvolume.py
- create mode 100644 libbtrfsutil/subvolume.c
+ cmds-subvolume.c | 43 ++++++++-----------------------------------
+ 1 file changed, 8 insertions(+), 35 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 95ee9678..58b3eca4 100644
---- a/Makefile
-+++ b/Makefile
-@@ -135,7 +135,7 @@ libbtrfsutil_major := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MAJOR ([0-
- libbtrfsutil_minor := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MINOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
- libbtrfsutil_patch := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_PATCH ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
- libbtrfsutil_version := $(libbtrfsutil_major).$(libbtrfsutil_minor).$(libbtrfsutil_patch)
--libbtrfsutil_objects = libbtrfsutil/errors.o
-+libbtrfsutil_objects = libbtrfsutil/errors.o libbtrfsutil/subvolume.o
- convert_objects = convert/main.o convert/common.o convert/source-fs.o \
- 		  convert/source-ext2.o convert/source-reiserfs.o
- mkfs_objects = mkfs/main.o mkfs/common.o mkfs/rootdir.o
-diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index 867418f2..ca36f695 100644
---- a/libbtrfsutil/btrfsutil.h
-+++ b/libbtrfsutil/btrfsutil.h
-@@ -20,6 +20,8 @@
- #ifndef BTRFS_UTIL_H
- #define BTRFS_UTIL_H
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 6006a278..700e822c 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -851,11 +851,9 @@ static const char * const cmd_subvol_set_default_usage[] = {
  
-+#include <stdint.h>
-+
- #define BTRFS_UTIL_VERSION_MAJOR 1
- #define BTRFS_UTIL_VERSION_MINOR 0
- #define BTRFS_UTIL_VERSION_PATCH 0
-@@ -69,6 +71,37 @@ enum btrfs_util_error {
-  */
- const char *btrfs_util_strerror(enum btrfs_util_error err);
- 
-+/**
-+ * btrfs_util_is_subvolume() - Return whether a given path is a Btrfs subvolume.
-+ * @path: Path to check.
-+ *
-+ * Return: %BTRFS_UTIL_OK if @path is a Btrfs subvolume,
-+ * %BTRFS_UTIL_ERROR_NOT_BTRFS if @path is not on a Btrfs filesystem,
-+ * %BTRFS_UTIL_ERROR_NOT_SUBVOLUME if @path is not a subvolume, non-zero error
-+ * code on any other failure.
-+ */
-+enum btrfs_util_error btrfs_util_is_subvolume(const char *path);
-+
-+/**
-+ * btrfs_util_is_subvolume_fd() - See btrfs_util_is_subvolume().
-+ */
-+enum btrfs_util_error btrfs_util_is_subvolume_fd(int fd);
-+
-+/**
-+ * btrfs_util_subvolume_id() - Get the ID of the subvolume containing a path.
-+ * @path: Path on a Btrfs filesystem.
-+ * @id_ret: Returned subvolume ID.
-+ *
-+ * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
-+ */
-+enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
-+					      uint64_t *id_ret);
-+
-+/**
-+ * btrfs_util_subvolume_id_fd() - See btrfs_util_subvolume_id().
-+ */
-+enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd, uint64_t *id_ret);
-+
- #ifdef __cplusplus
- }
- #endif
-diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
-index 6d82f7e1..9a04fda7 100644
---- a/libbtrfsutil/python/btrfsutilpy.h
-+++ b/libbtrfsutil/python/btrfsutilpy.h
-@@ -52,6 +52,9 @@ void SetFromBtrfsUtilErrorWithPaths(enum btrfs_util_error err,
- 				    struct path_arg *path1,
- 				    struct path_arg *path2);
- 
-+PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
-+PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds);
-+
- void add_module_constants(PyObject *m);
- 
- #endif /* BTRFSUTILPY_H */
-diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
-index d7398808..d492cbc7 100644
---- a/libbtrfsutil/python/module.c
-+++ b/libbtrfsutil/python/module.c
-@@ -132,6 +132,18 @@ void path_cleanup(struct path_arg *path)
- }
- 
- static PyMethodDef btrfsutil_methods[] = {
-+	{"is_subvolume", (PyCFunction)is_subvolume,
-+	 METH_VARARGS | METH_KEYWORDS,
-+	 "is_subvolume(path) -> bool\n\n"
-+	 "Get whether a file is a subvolume.\n\n"
-+	 "Arguments:\n"
-+	 "path -- string, bytes, path-like object, or open file descriptor"},
-+	{"subvolume_id", (PyCFunction)subvolume_id,
-+	 METH_VARARGS | METH_KEYWORDS,
-+	 "subvolume_id(path) -> int\n\n"
-+	 "Get the ID of the subvolume containing a file.\n\n"
-+	 "Arguments:\n"
-+	 "path -- string, bytes, path-like object, or open file descriptor"},
- 	{},
- };
- 
-diff --git a/libbtrfsutil/python/setup.py b/libbtrfsutil/python/setup.py
-index cd8a6048..57249829 100755
---- a/libbtrfsutil/python/setup.py
-+++ b/libbtrfsutil/python/setup.py
-@@ -91,6 +91,7 @@ module = Extension(
-         'constants.c',
-         'error.c',
-         'module.c',
-+        'subvolume.c',
-     ],
-     include_dirs=['..'],
-     library_dirs=['../..'],
-diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
-new file mode 100644
-index 00000000..4aab06a5
---- /dev/null
-+++ b/libbtrfsutil/python/subvolume.c
-@@ -0,0 +1,73 @@
-+/*
-+ * Copyright (C) 2018 Facebook
-+ *
-+ * This file is part of libbtrfsutil.
-+ *
-+ * libbtrfsutil is free software: you can redistribute it and/or modify
-+ * it under the terms of the GNU Lesser General Public License as published by
-+ * the Free Software Foundation, either version 3 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * libbtrfsutil is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public License
-+ * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-+ */
-+
-+#include "btrfsutilpy.h"
-+
-+PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
-+{
-+	static char *keywords[] = {"path", NULL};
-+	struct path_arg path = {.allow_fd = true};
+ static int cmd_subvol_set_default(int argc, char **argv)
+ {
+-	int	ret=0, fd;
+-	u64	objectid;
+-	char	*path;
+-	char	*subvolid;
+-	DIR	*dirstream = NULL;
++	u64 objectid;
++	char *path;
 +	enum btrfs_util_error err;
-+
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:is_subvolume",
-+					 keywords, &path_converter, &path))
-+		return NULL;
-+
-+	if (path.path)
-+		err = btrfs_util_is_subvolume(path.path);
-+	else
-+		err = btrfs_util_is_subvolume_fd(path.fd);
-+	if (err == BTRFS_UTIL_OK) {
-+		path_cleanup(&path);
-+		Py_RETURN_TRUE;
-+	} else if (err == BTRFS_UTIL_ERROR_NOT_BTRFS ||
-+		   err == BTRFS_UTIL_ERROR_NOT_SUBVOLUME) {
-+		path_cleanup(&path);
-+		Py_RETURN_FALSE;
-+	} else {
-+		SetFromBtrfsUtilErrorWithPath(err, &path);
-+		path_cleanup(&path);
-+		return NULL;
-+	}
-+}
-+
-+PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds)
-+{
-+	static char *keywords[] = {"path", NULL};
-+	struct path_arg path = {.allow_fd = true};
-+	enum btrfs_util_error err;
-+	uint64_t id;
-+
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:subvolume_id",
-+					 keywords, &path_converter, &path))
-+		return NULL;
-+
-+	if (path.path)
-+		err = btrfs_util_subvolume_id(path.path, &id);
-+	else
-+		err = btrfs_util_subvolume_id_fd(path.fd, &id);
+ 
+ 	clean_args_no_options(argc, argv, cmd_subvol_set_default_usage);
+ 
+@@ -865,42 +863,17 @@ static int cmd_subvol_set_default(int argc, char **argv)
+ 
+ 	if (argc - optind == 1) {
+ 		/* path to the subvolume is specified */
++		objectid = 0;
+ 		path = argv[optind];
+-
+-		ret = test_issubvolume(path);
+-		if (ret < 0) {
+-			error("stat error: %s", strerror(-ret));
+-			return 1;
+-		} else if (!ret) {
+-			error("'%s' is not a subvolume", path);
+-			return 1;
+-		}
+-
+-		fd = btrfs_open_dir(path, &dirstream, 1);
+-		if (fd < 0)
+-			return 1;
+-
+-		ret = lookup_path_rootid(fd, &objectid);
+-		if (ret) {
+-			error("unable to get subvol id: %s", strerror(-ret));
+-			close_file_or_dir(fd, dirstream);
+-			return 1;
+-		}
+ 	} else {
+ 		/* subvol id and path to the filesystem are specified */
+-		subvolid = argv[optind];
++		objectid = arg_strtou64(argv[optind]);
+ 		path = argv[optind + 1];
+-		objectid = arg_strtou64(subvolid);
+-
+-		fd = btrfs_open_dir(path, &dirstream, 1);
+-		if (fd < 0)
+-			return 1;
+ 	}
+ 
+-	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
+-	close_file_or_dir(fd, dirstream);
+-	if (ret < 0) {
+-		error("unable to set a new default subvolume: %m");
++	err = btrfs_util_set_default_subvolume(path, objectid);
 +	if (err) {
-+		SetFromBtrfsUtilErrorWithPath(err, &path);
-+		path_cleanup(&path);
-+		return NULL;
-+	}
-+
-+	path_cleanup(&path);
-+	return PyLong_FromUnsignedLongLong(id);
-+}
-diff --git a/libbtrfsutil/python/tests/__init__.py b/libbtrfsutil/python/tests/__init__.py
-index e69de29b..d2c6ff28 100644
---- a/libbtrfsutil/python/tests/__init__.py
-+++ b/libbtrfsutil/python/tests/__init__.py
-@@ -0,0 +1,66 @@
-+# Copyright (C) 2018 Facebook
-+#
-+# This file is part of libbtrfsutil.
-+#
-+# libbtrfsutil is free software: you can redistribute it and/or modify
-+# it under the terms of the GNU Lesser General Public License as published by
-+# the Free Software Foundation, either version 3 of the License, or
-+# (at your option) any later version.
-+#
-+# libbtrfsutil is distributed in the hope that it will be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU Lesser General Public License for more details.
-+#
-+# You should have received a copy of the GNU Lesser General Public License
-+# along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-+
-+import os
-+from pathlib import PurePath
-+import subprocess
-+import tempfile
-+import unittest
-+
-+
-+HAVE_PATH_LIKE = hasattr(PurePath, '__fspath__')
-+
-+
-+@unittest.skipIf(os.geteuid() != 0, 'must be run as root')
-+class BtrfsTestCase(unittest.TestCase):
-+    def setUp(self):
-+        self.mountpoint = tempfile.mkdtemp()
-+        try:
-+            with tempfile.NamedTemporaryFile(delete=False) as f:
-+                os.truncate(f.fileno(), 1024 * 1024 * 1024)
-+                self.image = f.name
-+        except Exception as e:
-+            os.rmdir(self.mountpoint)
-+            raise e
-+
-+        try:
-+            subprocess.check_call(['mkfs.btrfs', '-q', self.image])
-+            subprocess.check_call(['mount', '-o', 'loop', '--', self.image, self.mountpoint])
-+        except Exception as e:
-+            os.remove(self.image)
-+            os.rmdir(self.mountpoint)
-+            raise e
-+
-+    def tearDown(self):
-+        try:
-+            subprocess.check_call(['umount', self.mountpoint])
-+        finally:
-+            os.remove(self.image)
-+            os.rmdir(self.mountpoint)
-+
-+    @staticmethod
-+    def path_or_fd(path, open_flags=os.O_RDONLY):
-+        yield path
-+        yield path.encode()
-+        if HAVE_PATH_LIKE:
-+            yield PurePath(path)
-+        fd = os.open(path, open_flags)
-+        try:
-+            yield fd
-+        finally:
-+            os.close(fd)
-+
-diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
-new file mode 100644
-index 00000000..44b1d7f0
---- /dev/null
-+++ b/libbtrfsutil/python/tests/test_subvolume.py
-@@ -0,0 +1,57 @@
-+# Copyright (C) 2018 Facebook
-+#
-+# This file is part of libbtrfsutil.
-+#
-+# libbtrfsutil is free software: you can redistribute it and/or modify
-+# it under the terms of the GNU Lesser General Public License as published by
-+# the Free Software Foundation, either version 3 of the License, or
-+# (at your option) any later version.
-+#
-+# libbtrfsutil is distributed in the hope that it will be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU Lesser General Public License for more details.
-+#
-+# You should have received a copy of the GNU Lesser General Public License
-+# along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-+
-+import fcntl
-+import errno
-+import os
-+import os.path
-+from pathlib import PurePath
-+import traceback
-+
-+import btrfsutil
-+from tests import BtrfsTestCase
-+
-+
-+class TestSubvolume(BtrfsTestCase):
-+    def test_is_subvolume(self):
-+        dir = os.path.join(self.mountpoint, 'foo')
-+        os.mkdir(dir)
-+
-+        for arg in self.path_or_fd(self.mountpoint):
-+            with self.subTest(type=type(arg)):
-+                self.assertTrue(btrfsutil.is_subvolume(arg))
-+        for arg in self.path_or_fd(dir):
-+            with self.subTest(type=type(arg)):
-+                self.assertFalse(btrfsutil.is_subvolume(arg))
-+
-+        with self.assertRaises(btrfsutil.BtrfsUtilError) as e:
-+            btrfsutil.is_subvolume(os.path.join(self.mountpoint, 'bar'))
-+        # This is a bit of an implementation detail, but really this is testing
-+        # that the exception is initialized correctly.
-+        self.assertEqual(e.exception.btrfsutilerror, btrfsutil.ERROR_STATFS_FAILED)
-+        self.assertEqual(e.exception.errno, errno.ENOENT)
-+
-+    def test_subvolume_id(self):
-+        dir = os.path.join(self.mountpoint, 'foo')
-+        os.mkdir(dir)
-+
-+        for arg in self.path_or_fd(self.mountpoint):
-+            with self.subTest(type=type(arg)):
-+                self.assertEqual(btrfsutil.subvolume_id(arg), 5)
-+        for arg in self.path_or_fd(dir):
-+            with self.subTest(type=type(arg)):
-+                self.assertEqual(btrfsutil.subvolume_id(arg), 5)
-diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
-new file mode 100644
-index 00000000..04988c14
---- /dev/null
-+++ b/libbtrfsutil/subvolume.c
-@@ -0,0 +1,127 @@
-+/*
-+ * Copyright (C) 2018 Facebook
-+ *
-+ * This file is part of libbtrfsutil.
-+ *
-+ * libbtrfsutil is free software: you can redistribute it and/or modify
-+ * it under the terms of the GNU Lesser General Public License as published by
-+ * the Free Software Foundation, either version 3 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * libbtrfsutil is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public License
-+ * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-+ */
-+
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <sys/ioctl.h>
-+#include <sys/stat.h>
-+#include <sys/types.h>
-+#include <sys/vfs.h>
-+#include <linux/btrfs.h>
-+#include <linux/btrfs_tree.h>
-+#include <linux/magic.h>
-+
-+#include "btrfsutil_internal.h"
-+
-+/*
-+ * This intentionally duplicates btrfs_util_is_subvolume_fd() instead of opening
-+ * a file descriptor and calling it, because fstat() and fstatfs() don't accept
-+ * file descriptors opened with O_PATH on old kernels (before v3.6 and before
-+ * v3.12, respectively), but stat() and statfs() can be called on a path that
-+ * the user doesn't have read or write permissions to.
-+ */
-+PUBLIC enum btrfs_util_error btrfs_util_is_subvolume(const char *path)
-+{
-+	struct statfs sfs;
-+	struct stat st;
-+	int ret;
-+
-+	ret = statfs(path, &sfs);
-+	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_STATFS_FAILED;
-+
-+	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
-+		errno = EINVAL;
-+		return BTRFS_UTIL_ERROR_NOT_BTRFS;
-+	}
-+
-+	ret = stat(path, &st);
-+	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_STAT_FAILED;
-+
-+	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode)) {
-+		errno = EINVAL;
-+		return BTRFS_UTIL_ERROR_NOT_SUBVOLUME;
-+	}
-+
-+	return BTRFS_UTIL_OK;
-+}
-+
-+PUBLIC enum btrfs_util_error btrfs_util_is_subvolume_fd(int fd)
-+{
-+	struct statfs sfs;
-+	struct stat st;
-+	int ret;
-+
-+	ret = fstatfs(fd, &sfs);
-+	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_STATFS_FAILED;
-+
-+	if (sfs.f_type != BTRFS_SUPER_MAGIC) {
-+		errno = EINVAL;
-+		return BTRFS_UTIL_ERROR_NOT_BTRFS;
-+	}
-+
-+	ret = fstat(fd, &st);
-+	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_STAT_FAILED;
-+
-+	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode)) {
-+		errno = EINVAL;
-+		return BTRFS_UTIL_ERROR_NOT_SUBVOLUME;
-+	}
-+
-+	return BTRFS_UTIL_OK;
-+}
-+
-+PUBLIC enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
-+						     uint64_t *id_ret)
-+{
-+	enum btrfs_util_error err;
-+	int fd;
-+
-+	fd = open(path, O_RDONLY);
-+	if (fd == -1)
-+		return BTRFS_UTIL_ERROR_OPEN_FAILED;
-+
-+	err = btrfs_util_subvolume_id_fd(fd, id_ret);
-+	SAVE_ERRNO_AND_CLOSE(fd);
-+	return err;
-+}
-+
-+PUBLIC enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd,
-+							uint64_t *id_ret)
-+{
-+	struct btrfs_ioctl_ino_lookup_args args = {
-+		.treeid = 0,
-+		.objectid = BTRFS_FIRST_FREE_OBJECTID,
-+	};
-+	int ret;
-+
-+	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
-+	if (ret == -1) {
-+		close(fd);
-+		return BTRFS_UTIL_ERROR_INO_LOOKUP_FAILED;
-+	}
-+
-+	*id_ret = args.treeid;
-+
-+	return BTRFS_UTIL_OK;
-+}
++		error_btrfs_util(err);
+ 		return 1;
+ 	}
+ 	return 0;
 -- 
 2.16.1
 

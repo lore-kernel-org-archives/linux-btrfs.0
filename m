@@ -1,106 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:34507 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1032245AbeBOBr0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Feb 2018 20:47:26 -0500
-Subject: Re: fatal database corruption with btrfs "out of space" with ~50 GB
- left
-To: Tomasz Chmielewski <tch@virtall.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <72c2c665-97f1-3356-6d65-66ba162736de@gmx.com>
-Date: Thu, 15 Feb 2018 09:47:15 +0800
-MIME-Version: 1.0
-In-Reply-To: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ecgkeLpV0gj1lvIABbmUYuRpI1BNDsMHx"
+Received: from [195.159.176.226] ([195.159.176.226]:40989 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1032447AbeBOCSK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Feb 2018 21:18:10 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+        id 1em95T-0001HX-7L
+        for linux-btrfs@vger.kernel.org; Thu, 15 Feb 2018 03:15:51 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Status of FST and mount times
+Date: Thu, 15 Feb 2018 02:15:36 +0000 (UTC)
+Message-ID: <pan$4ce4f$f90ad4b5$3f1cd3cd$26789d16@cox.net>
+References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
+        <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
+        <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ecgkeLpV0gj1lvIABbmUYuRpI1BNDsMHx
-Content-Type: multipart/mixed; boundary="dooGDU0ntroaoma9zn6AUnkAtLg79x12D";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Tomasz Chmielewski <tch@virtall.com>,
- Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Message-ID: <72c2c665-97f1-3356-6d65-66ba162736de@gmx.com>
-Subject: Re: fatal database corruption with btrfs "out of space" with ~50 GB
- left
-References: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
-In-Reply-To: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
+Qu Wenruo posted on Thu, 15 Feb 2018 09:42:27 +0800 as excerpted:
 
---dooGDU0ntroaoma9zn6AUnkAtLg79x12D
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> The easiest way to get a basic idea of how large your extent tree is
+> using debug tree:
+> 
+> # btrfs-debug-tree -r -t extent <device>
+> 
+> You would get something like:
+> btrfs-progs v4.15 extent tree key (EXTENT_TREE ROOT_ITEM 0) 30539776
+> level 0  <<<
+> total bytes 10737418240 bytes used 393216 uuid
+> 651fcf0c-0ffd-4351-9721-84b1615f02e0
+> 
+> That level is would give you some basic idea of the size of your extent
+> tree.
+> 
+> For level 0, it could contains about 400 items for average.
+> For level 1, it could contains up to 197K items.
+> ...
+> For leven n, it could contains up to 400 * 493 ^ (n - 1) items.
+> ( n <= 7 )
 
+So for level 2 (which I see on a couple of mine here, ran it out of 
+curiosity):
 
+400 * 493 ^ (2 - 1) = 400 * 493 = 197200
 
-On 2018=E5=B9=B402=E6=9C=8814=E6=97=A5 22:19, Tomasz Chmielewski wrote:
-> Just FYI, how dangerous running btrfs can be - we had a fatal,
-> unrecoverable MySQL corruption when btrfs decided to do one of these "I=
+197K for both level 1 and level 2?  Doesn't look correct.
 
-> have ~50 GB left, so let's do out of space (and corrupt some files at
-> the same time, ha ha!)".
+Perhaps you meant a simple power of n, instead of (n-1)?  That would 
+yield ~97M for level 2, and would yield the given numbers for levels 0 
+and 1 as well, whereby using n-1 for level 0 yields less than a single 
+entry, and 400 for level 1.
 
-I'm recently looking into unexpected corruption problem of btrfs.
+Or the given numbers were for level 1 and 2, with level 0 not holding 
+anything, not levels 0 and 1.  But that wouldn't jive with your level 0 
+example, which I would assume could never happen if it couldn't hold even 
+a single entry.
 
-Would you please provide some extra info about how the corruption happene=
-d?
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-1) Is there any power reset?
-   Btrfs should be bullet proof, but in fact it's not, so I'm here to
-   get some clue.
-
-2) Are MySQL files set with nodatacow?
-   If so, data corruption is more or less expected, but should be
-   handled by checkpoint of MySQL.
-
-3) Is the filesystem metadata corrupted? (AKA, btrfs check report error)
-   If so, that should be the problem I'm looking into.
-
-4) Metadata/data ratio?
-   "btrfs fi usage" could have quite good result about it.
-   And "btrfs fi df" also helps.
-
-Thanks,
-Qu
-
->=20
-> Running btrfs RAID-1 with kernel 4.14.
->=20
->=20
->=20
-> Tomasz Chmielewski
-> https://lxadm.com
-> --=20
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
-
-
-
---dooGDU0ntroaoma9zn6AUnkAtLg79x12D--
-
---ecgkeLpV0gj1lvIABbmUYuRpI1BNDsMHx
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqE5qMXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhJeAf+MRXEo2kXzIKYm4z7ketQXmel
-ocLJs3ztZ52q8GhlAnKKTlbrKBacHRPfYYgqSCTPfeCcZa0c/yFJ0NuyxZbeWZTH
-2kmJp1T1yjOi9nzdExVu4fuTx2xtnnmogdkxoimmSccwBUdeni3eq0+6nRyWWvgb
-OvhtuTZPK1h5MqCIeDM8GGcDMqnRmlcnPTnetWnALdLfl0AdOCxg50UcLoxD1nOS
-XdHjkND1eOHog2TNhLNOfGhhcU3YG6zoNICqtD8zE5M32ih8WuZoAFwIfSCItZQb
-cawtJ7ACMEU4mUthJkUfV9E99qvZk+Ksoub61HNeGQAbLjmhzhbUwRYqlzyE4w==
-=v0Kp
------END PGP SIGNATURE-----
-
---ecgkeLpV0gj1lvIABbmUYuRpI1BNDsMHx--

@@ -1,125 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34099 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755034AbeBOJGO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 04:06:14 -0500
-Subject: Re: fatal database corruption with btrfs "out of space" with ~50 GB
- left
-To: Tomasz Chmielewski <tch@virtall.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
- <72c2c665-97f1-3356-6d65-66ba162736de@gmx.com>
- <f77a1a28c2cbf08efd24577088a29de0@virtall.com>
- <58ea1e02-6f38-97f7-34aa-e993a1aa261b@gmx.com>
- <57960c49a431cdfdb4c659d0a9b40856@virtall.com>
- <c20bd378f5c9684f45fab80a234888bc@virtall.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <0d710af1-f40d-41f4-ef1a-68ccb90160a0@suse.com>
-Date: Thu, 15 Feb 2018 11:06:11 +0200
+Received: from smtp.dpl.mendix.net ([83.96.177.10]:36020 "EHLO
+        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S967668AbeBOLMl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Feb 2018 06:12:41 -0500
+Subject: Re: Status of FST and mount times
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Nikolay Borisov <nborisov@suse.com>,
+        "Ellis H. Wilson III" <ellisw@panasas.com>,
+        linux-btrfs@vger.kernel.org
+References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
+ <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
+ <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
+From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
+Message-ID: <0fa921f1-9a54-e410-1305-c88136f4823c@mendix.com>
+Date: Thu, 15 Feb 2018 12:12:38 +0100
 MIME-Version: 1.0
-In-Reply-To: <c20bd378f5c9684f45fab80a234888bc@virtall.com>
+In-Reply-To: <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 15.02.2018 09:17, Tomasz Chmielewski wrote:
-> On 2018-02-15 16:02, Tomasz Chmielewski wrote:
->> On 2018-02-15 13:32, Qu Wenruo wrote:
->>
->>> Is there any kernel message like kernel warning or backtrace?
->>
->> I see there was this one:
->>
->> Feb 13 13:53:32 lxd01 kernel: [9351710.878404] ------------[ cut here
->> ]------------
->> Feb 13 13:53:32 lxd01 kernel: [9351710.878430] WARNING: CPU: 9 PID:
->> 7780 at /home/kernel/COD/linux/fs/btrfs/tree-log.c:3361
->> log_dir_items+0x54b/0x560 [btrfs]
-> (...)
->> Feb 13 13:53:32 lxd01 kernel: [9351710.878707] ---[ end trace
->> 81aeb3fb0c68ce00 ]---
+On 02/15/2018 02:42 AM, Qu Wenruo wrote:
+> 
+> 
+> On 2018年02月15日 01:08, Nikolay Borisov wrote:
 >>
 >>
->> BTW we've updated to the latest 4.15 kernel after that.
+>> On 14.02.2018 18:00, Ellis H. Wilson III wrote:
+>>> Hi again -- back with a few more questions:
+>>>
+>>> Frame-of-reference here: RAID0.  Around 70TB raw capacity.  No
+>>> compression.  No quotas enabled.  Many (potentially tens to hundreds) of
+>>> subvolumes, each with tens of snapshots.  No control over size or number
+>>> of files, but directory tree (entries per dir and general tree depth)
+>>> can be controlled in case that's helpful).
+>>>
+>>> 1. I've been reading up about the space cache, and it appears there is a
+>>> v2 of it called the free space tree that is much friendlier to large
+>>> filesystems such as the one I am designing for.  It is listed as OK/OK
+>>> on the wiki status page, but there is a note that btrfs progs treats it
+>>> as read only (i.e., btrfs check repair cannot help me without a full
+>>> space cache rebuild is my biggest concern) and the last status update on
+>>> this I can find was circa fall 2016.  Can anybody give me an updated
+>>> status on this feature?  From what I read, v1 and tens of TB filesystems
+>>> will not play well together, so I'm inclined to dig into this.
+>>
+>> V1 for large filesystems is jut awful. Facebook have been experiencing
+>> the pain hence they implemented v2. You can view the spacecache tree as
+>> the complement version of the extent tree. v1 cache is implemented as a
+>> hidden inode and even though writes (aka flushing of the freespace
+>> cache) are metadata they are essentially treated as data. This could
+>> potentially lead to priority inversions if cgroups io controller is
+>> involved.
+>>
+>> Furthermore, there is at least 1 known deadlock problem in freespace
+>> cache v1. So yes, if you want to use btrfs ona multi-tb system v2 is
+>> really the way to go.
+>>
+>>>
+>>> 2. There's another thread on-going about mount delays.  I've been
+>>> completely blind to this specific problem until it caught my eye.  Does
+>>> anyone have ballpark estimates for how long very large HDD-based
+>>> filesystems will take to mount?  Yes, I know it will depend on the
+>>> dataset.  I'm looking for O() worst-case approximations for
+>>> enterprise-grade large drives (12/14TB), as I expect it should scale
+>>> with multiple drives so approximating for a single drive should be good
+>>> enough.
+>>>
+>>> 3. Do long mount delays relate to space_cache v1 vs v2 (I would guess
+>>> no, unless it needed to be regenerated)?
+>>
+>> No, the long mount times seems to be due to the fact that in order for a
+>> btrfs filesystem to mount it needs to enumerate its block_groups items
+>> and those are stored in the extent tree, which also holds all of the
+>> information pertaining to allocated extents. So mixing those
+>> data structures in the same tree and the fact that blockgroups are
+>> iterated linearly during mount (check btrfs_read_block_groups) means on
+>> spinning rust with shitty seek times this can take a while.
 > 
-> Also, we were just running a balance there and it printed this in dmesg.
+> And, space cache is not loaded at mount time.
+> It's delayed until we determine to allocate extent from one block group.
 > 
-> Not sure if it's something serious or not. The filesystem still runs
-> correctly.
+> So space cache is completely unrelated to long mount time.
 > 
-> [60082.349447] WARNING: CPU: 2 PID: 780 at
-> /home/kernel/COD/linux/fs/btrfs/extent-tree.c:124
-> btrfs_put_block_group+0x4f/0x60 [btrfs]
-> [60082.349449] Modules linked in: xt_nat xt_REDIRECT nf_nat_redirect
-> tcp_diag inet_diag sunrpc xt_NFLOG cfg80211 xt_conntrack nfnetlink_log
-> nfnetlink ipt_REJECT nf_reject_ipv4 binfmt_misc veth ebtable_filter
-> ebtables ip6t_MASQUERADE nf_nat_masquerade_ipv6 ip6table_nat
-> nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 xt_comment nf_log_ipv4
-> nf_log_common xt_LOG ipt_MASQUERADE nf_nat_masquerade_ipv4 iptable_nat
-> nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat ip_vs nf_conntrack
-> ip6table_filter ip6_tables iptable_filter xt_CHECKSUM xt_tcpudp
-> iptable_mangle ip_tables x_tables intel_rapl sb_edac
-> x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass
-> crct10dif_pclmul crc32_pclmul ghash_clmulni_intel btrfs bridge pcbc
-> zstd_compress stp llc aesni_intel aes_x86_64 crypto_simd glue_helper
-> input_leds
-> [60082.349471]  cryptd intel_cstate intel_rapl_perf serio_raw shpchp
-> lpc_ich acpi_pad mac_hid autofs4 raid10 raid456 async_raid6_recov
-> async_memcpy async_pq async_xor async_tx xor raid6_pq libcrc32c raid1
-> raid0 multipath linear ttm drm_kms_helper syscopyarea sysfillrect
-> sysimgblt fb_sys_fops igb drm dca ahci ptp libahci pps_core i2c_algo_bit
-> wmi
-> [60082.349488] CPU: 2 PID: 780 Comm: btrfs-cleaner Tainted: G        W  
->      4.15.3-041503-generic #201802120730
-> [60082.349489] Hardware name: ASUSTeK COMPUTER INC. Z10PA-U8
-> Series/Z10PA-U8 Series, BIOS 0601 06/26/2015
-> [60082.349497] RIP: 0010:btrfs_put_block_group+0x4f/0x60 [btrfs]
-> [60082.349497] RSP: 0018:ffffc1468d3afe48 EFLAGS: 00010206
-> [60082.349498] RAX: 0000000000000000 RBX: ffff9d072f740000 RCX:
-> 0000000000000000
-> [60082.349499] RDX: 0000000000000001 RSI: 0000000000000246 RDI:
-> ffff9d072bcb8c00
-> [60082.349499] RBP: ffffc1468d3afe50 R08: ffff9d072bcbfc00 R09:
-> 0000000180200019
-> [60082.349500] R10: ffffc1468d3afe38 R11: 0000000000000100 R12:
-> ffff9d072b87ce00
-> [60082.349500] R13: ffff9d072bcb8c00 R14: ffff9d072b87ced0 R15:
-> ffff9d072bcb8d20
-> [60082.349501] FS:  0000000000000000(0000) GS:ffff9d073f280000(0000)
-> knlGS:0000000000000000
-> [60082.349502] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [60082.349502] CR2: 00007f9221375000 CR3: 00000019a660a005 CR4:
-> 00000000001606e0
-> [60082.349503] Call Trace:
-> [60082.349513]  btrfs_delete_unused_bgs+0x243/0x3c0 [btrfs]
-> [60082.349521]  cleaner_kthread+0x159/0x170 [btrfs]
-> [60082.349524]  kthread+0x121/0x140
-> [60082.349531]  ? __btree_submit_bio_start+0x20/0x20 [btrfs]
-> [60082.349533]  ? kthread_create_worker_on_cpu+0x70/0x70
-> [60082.349535]  ret_from_fork+0x35/0x40
-> [60082.349536] Code: e8 01 00 00 48 85 c0 75 1a 48 89 fb 48 8b bf d8 00
-> 00 00 e8 14 3a 66 d7 48 89 df e8 0c 3a 66 d7 5b 5d c3 0f ff eb e2 0f ff
-> eb cb <0f> ff eb ce 0f 1f 00 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00
-> [60082.349554] ---[ end trace 9492ee1b902c858d ]---
+>>
+>> However, this will really depend on the amount of extents you have and
+>> having taken a look at the thread you referred to it seems there is not
+>> clear-cut reason why mounting is taking so long on that particular
+>> occasion .
+> 
+> Just as said by Nikolay, the biggest problem of slow mount is the size
+> of extent tree (and HDD seek time)
+> 
+> The easiest way to get a basic idea of how large your extent tree is
+> using debug tree:
+> 
+> # btrfs-debug-tree -r -t extent <device>
+> 
+> You would get something like:
+> btrfs-progs v4.15
+> extent tree key (EXTENT_TREE ROOT_ITEM 0) 30539776 level 0  <<<
+> total bytes 10737418240
+> bytes used 393216
+> uuid 651fcf0c-0ffd-4351-9721-84b1615f02e0
+> 
+> That level is would give you some basic idea of the size of your extent
+> tree.
+> 
+> For level 0, it could contains about 400 items for average.
+> For level 1, it could contains up to 197K items.
+> ...
+> For leven n, it could contains up to 400 * 493 ^ (n - 1) items.
+> ( n <= 7 )
+
+Another one to get that data:
+
+https://github.com/knorrie/python-btrfs/blob/master/examples/show_metadata_tree_sizes.py
+
+Example, with amount of leaves on level 0 and nodes higher up:
+
+-# ./show_metadata_tree_sizes.py /
+ROOT_TREE         336.00KiB 0(    20) 1(     1)
+EXTENT_TREE       123.52MiB 0(  7876) 1(    28) 2(     1)
+CHUNK_TREE        112.00KiB 0(     6) 1(     1)
+DEV_TREE           80.00KiB 0(     4) 1(     1)
+FS_TREE          1016.34MiB 0( 64113) 1(   881) 2(    52)
+CSUM_TREE         777.42MiB 0( 49571) 1(   183) 2(     1)
+QUOTA_TREE            0.00B
+UUID_TREE          16.00KiB 0(     1)
+FREE_SPACE_TREE   336.00KiB 0(    20) 1(     1)
+DATA_RELOC_TREE    16.00KiB 0(     1)
+
+> 
+> Thanks,
+> Qu
+> 
+>>
+>>
+>>>
+>>> Note that I'm not sensitive to multi-second mount delays.  I am
+>>> sensitive to multi-minute mount delays, hence why I'm bringing this up.
+>>>
+>>> FWIW: I am currently populating a machine we have with 6TB drives in it
+>>> with real-world home dir data to see if I can replicate the mount issue.
+>>>
+>>> Thanks,
+>>>
+>>> ellis
+>>> -- 
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 > 
 
-If you have the vmlinux for that particular kernel can you run the 
-following command and provide the output: 
 
-./scripts/faddr2line <path-to-vmlinux> btrfs_delete_unused_bgs+0x243/0x3c0
-
-./scripts/faddr2line is in the kernel source directory. This 
-warn on indicates we are freeing an unused blockgroup (one which 
-shouldn't have any space reserved in it) yet we trigger a warning 
-due to having reserved space for that block group. Quite strange
-
-> 
-> Tomasz Chmielewski
-> https://lxadm.com
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+-- 
+Hans van Kranenburg

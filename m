@@ -1,131 +1,134 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:42877 "EHLO mout.gmx.net"
+Received: from mail.virtall.com ([46.4.129.203]:47302 "EHLO mail.virtall.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752371AbeBODuI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Feb 2018 22:50:08 -0500
-Subject: Re: Status of FST and mount times
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
- <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
- <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
- <pan$4ce4f$f90ad4b5$3f1cd3cd$26789d16@cox.net>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <7a938ce0-b7f2-0087-ca43-8b23525cc3f2@gmx.com>
-Date: Thu, 15 Feb 2018 11:49:59 +0800
+        id S1754214AbeBOEUC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Feb 2018 23:20:02 -0500
 MIME-Version: 1.0
-In-Reply-To: <pan$4ce4f$f90ad4b5$3f1cd3cd$26789d16@cox.net>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="ykWRR1C8NYndr49yZ5q8xQC6fLGssefky"
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Thu, 15 Feb 2018 13:19:58 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: fatal database corruption with btrfs "out of space" with ~50 GB
+ left
+In-Reply-To: <72c2c665-97f1-3356-6d65-66ba162736de@gmx.com>
+References: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
+ <72c2c665-97f1-3356-6d65-66ba162736de@gmx.com>
+Message-ID: <f77a1a28c2cbf08efd24577088a29de0@virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---ykWRR1C8NYndr49yZ5q8xQC6fLGssefky
-Content-Type: multipart/mixed; boundary="4CXTKXUH4c7lBL3Y30GP8Qm9Ahv9nlQTL";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Message-ID: <7a938ce0-b7f2-0087-ca43-8b23525cc3f2@gmx.com>
-Subject: Re: Status of FST and mount times
-References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
- <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
- <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
- <pan$4ce4f$f90ad4b5$3f1cd3cd$26789d16@cox.net>
-In-Reply-To: <pan$4ce4f$f90ad4b5$3f1cd3cd$26789d16@cox.net>
+On 2018-02-15 10:47, Qu Wenruo wrote:
+> On 2018年02月14日 22:19, Tomasz Chmielewski wrote:
+>> Just FYI, how dangerous running btrfs can be - we had a fatal,
+>> unrecoverable MySQL corruption when btrfs decided to do one of these 
+>> "I
+>> have ~50 GB left, so let's do out of space (and corrupt some files at
+>> the same time, ha ha!)".
+> 
+> I'm recently looking into unexpected corruption problem of btrfs.
+> 
+> Would you please provide some extra info about how the corruption 
+> happened?
+> 
+> 1) Is there any power reset?
+>    Btrfs should be bullet proof, but in fact it's not, so I'm here to
+>    get some clue.
 
---4CXTKXUH4c7lBL3Y30GP8Qm9Ahv9nlQTL
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B402=E6=9C=8815=E6=97=A5 10:15, Duncan wrote:
-> Qu Wenruo posted on Thu, 15 Feb 2018 09:42:27 +0800 as excerpted:
->=20
->> The easiest way to get a basic idea of how large your extent tree is
->> using debug tree:
->>
->> # btrfs-debug-tree -r -t extent <device>
->>
->> You would get something like:
->> btrfs-progs v4.15 extent tree key (EXTENT_TREE ROOT_ITEM 0) 30539776
->> level 0  <<<
->> total bytes 10737418240 bytes used 393216 uuid
->> 651fcf0c-0ffd-4351-9721-84b1615f02e0
->>
->> That level is would give you some basic idea of the size of your exten=
-t
->> tree.
->>
->> For level 0, it could contains about 400 items for average.
->> For level 1, it could contains up to 197K items.
->> ...
->> For leven n, it could contains up to 400 * 493 ^ (n - 1) items.
->> ( n <=3D 7 )
->=20
-> So for level 2 (which I see on a couple of mine here, ran it out of=20
-> curiosity):
->=20
-> 400 * 493 ^ (2 - 1) =3D 400 * 493 =3D 197200
->=20
-> 197K for both level 1 and level 2?  Doesn't look correct.
->=20
-> Perhaps you meant a simple power of n, instead of (n-1)?
-
-My fault, off by 1 is really easy to screw things up.
-
-So it's 400 * 493 ^ n.
-
-And level 0 also fits into the calculation.
-
->  That would=20
-> yield ~97M for level 2, and would yield the given numbers for levels 0 =
-
-> and 1 as well, whereby using n-1 for level 0 yields less than a single =
-
-> entry, and 400 for level 1.
->=20
-> Or the given numbers were for level 1 and 2, with level 0 not holding=20
-> anything, not levels 0 and 1.  But that wouldn't jive with your level 0=
-=20
-> example, which I would assume could never happen if it couldn't hold ev=
-en=20
-> a single entry.
-
-Here level 0 means it's leaf. And I assume the average item size of each
-EXTENT_ITEM/METADATA item to be 40.
-And using 16K nodesize we have 16283, we get 407, I just round it to 400
-to make calculation a little easier and more headroom for larger item.
-
-So for level 0, we could have around 400 items.
-For nodes (1 < level <=3D 7), since node ptr is fixed to 33 bytes, the
-calculation is pretty simple now.
-
-Thanks,
-Qu
-
->=20
+No power reset.
 
 
---4CXTKXUH4c7lBL3Y30GP8Qm9Ahv9nlQTL--
+> 2) Are MySQL files set with nodatacow?
+>    If so, data corruption is more or less expected, but should be
+>    handled by checkpoint of MySQL.
 
---ykWRR1C8NYndr49yZ5q8xQC6fLGssefky
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Yes, MySQL files were using "nodatacow".
 
------BEGIN PGP SIGNATURE-----
+I've seen many cases of "filesystem full" with ext4, but none lead to 
+database corruption (i.e. the database would always recover after 
+releasing some space)
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqFA2cXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgTQwf+NrKWRtj1dRJI1x4PFuzzaXyQ
-FByOhczofm90YIhgeGVhZcRzCuyNZW9krhqoRfkK1TkhFrl801znCxmdMIUQknWa
-0PHG6rZEX7+alRYp0u1ENNgo8LnOnlb3USoQZxLL937eFR9m34FDLK1nhd83VM5p
-sls8qAL98DCGfLyCPPi1f3Al+MiXSCuL0KlgBhEvXiDHAfO5Ku7SxI8h6a/KbEdg
-TVoIZxWYWMhok4A40huDOJ3agx7bmOThO4dXc9ePEVZGDsWTj8ocgBVkQDw/WfOe
-AD04ogFEyz0Okh7QhPYD1WfA2cuiOOrAjzKhhNqdY9k8462Kpavlarne2rucUA==
-=Y8Z3
------END PGP SIGNATURE-----
+On the other hand, I've seen a handful of "out of space" with gigabytes 
+of free space with btrfs, which lead to some light, heavy or 
+unrecoverable MySQL or mongo corruption.
 
---ykWRR1C8NYndr49yZ5q8xQC6fLGssefky--
+
+Can it be because of of how "predictable" out of space situations are 
+with btrfs and other filesystems?
+
+- in short, ext4 will report out of space when there is 0 bytes left 
+(perhaps slightly faster for non-root users) - the application trying to 
+write data will see "out of space" at some point, and it can stay like 
+this for hours (i.e. until some data is removed manually)
+
+- on the other hand, btrfs can report out of space when there is still 
+10, 50 or 100 GB left, meaning, any capacity planning is close to 
+impossible; also, the application trying to write data can be seeing the 
+fs as transitioning between "out of space" and "data written 
+successfully" many times per minute/second?
+
+
+> 3) Is the filesystem metadata corrupted? (AKA, btrfs check report 
+> error)
+>    If so, that should be the problem I'm looking into.
+
+I don't think so, there are no scary things in dmesg. However, I didn't 
+unmount the filesystem to run btrfs check.
+
+
+> 4) Metadata/data ratio?
+>    "btrfs fi usage" could have quite good result about it.
+>    And "btrfs fi df" also helps.
+
+Here it is - however, that's after removing some 80 GB data, so most 
+likely doesn't reflect when the failure happened.
+
+# btrfs fi usage /var/lib/lxd
+Overall:
+     Device size:                 846.25GiB
+     Device allocated:            840.05GiB
+     Device unallocated:            6.20GiB
+     Device missing:                  0.00B
+     Used:                        498.26GiB
+     Free (estimated):            167.96GiB      (min: 167.96GiB)
+     Data ratio:                       2.00
+     Metadata ratio:                   2.00
+     Global reserve:              512.00MiB      (used: 0.00B)
+
+Data,RAID1: Size:411.00GiB, Used:246.14GiB
+    /dev/sda3     411.00GiB
+    /dev/sdb3     411.00GiB
+
+Metadata,RAID1: Size:9.00GiB, Used:2.99GiB
+    /dev/sda3       9.00GiB
+    /dev/sdb3       9.00GiB
+
+System,RAID1: Size:32.00MiB, Used:80.00KiB
+    /dev/sda3      32.00MiB
+    /dev/sdb3      32.00MiB
+
+Unallocated:
+    /dev/sda3       3.10GiB
+    /dev/sdb3       3.10GiB
+
+
+
+# btrfs fi df /var/lib/lxd
+Data, RAID1: total=411.00GiB, used=246.15GiB
+System, RAID1: total=32.00MiB, used=80.00KiB
+Metadata, RAID1: total=9.00GiB, used=2.99GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+
+
+# btrfs fi show /var/lib/lxd
+Label: 'btrfs'  uuid: f5f30428-ec5b-4497-82de-6e20065e6f61
+         Total devices 2 FS bytes used 249.15GiB
+         devid    1 size 423.13GiB used 420.03GiB path /dev/sda3
+         devid    2 size 423.13GiB used 420.03GiB path /dev/sdb3
+
+
+
+Tomasz Chmielewski
+https://lxadm.com

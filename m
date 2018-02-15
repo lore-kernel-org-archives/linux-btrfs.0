@@ -1,68 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:37856 "EHLO
-        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1164177AbeBOR5V (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 12:57:21 -0500
-Received: by mail-io0-f170.google.com with SMTP id t126so1487692iof.4
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 09:57:20 -0800 (PST)
-Subject: Re: Status of FST and mount times
-To: "Ellis H. Wilson III" <ellisw@panasas.com>, linux-btrfs@vger.kernel.org
-References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
- <pan$1e47d$b81e6870$8ea78200$5b24ec4@cox.net>
- <a344bfd4-51c3-334a-1f79-7ffe9e875128@panasas.com>
- <77826af0-594a-01c9-35fa-1511364f0489@gmail.com>
- <39aa2851-2c0a-d6c4-6ccf-d364c4aacbf4@panasas.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <2d653ebf-11b0-2163-a223-609420423a5b@gmail.com>
-Date: Thu, 15 Feb 2018 12:57:17 -0500
+Received: from mx2.suse.de ([195.135.220.15]:35134 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1165926AbeBOSAy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Feb 2018 13:00:54 -0500
+Subject: Re: Ongoing Btrfs stability issues
+To: Alex Adriaanse <alex@oseberg.io>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <83bfc8da-82fd-e2bf-4b27-175bf90ac072@suse.com>
+Date: Thu, 15 Feb 2018 20:00:51 +0200
 MIME-Version: 1.0
-In-Reply-To: <39aa2851-2c0a-d6c4-6ccf-d364c4aacbf4@panasas.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-02-15 11:58, Ellis H. Wilson III wrote:
-> On 02/15/2018 11:51 AM, Austin S. Hemmelgarn wrote:
->> There are scaling performance issues with directory listings on BTRFS 
->> for directories with more than a few thousand files, but they're not 
->> well documented (most people don't hit them because most applications 
->> are designed around the expectation that directory listings will be 
->> slow in big directories), and I would not expect them to be much of an 
->> issue unless you're dealing with tens of thousands of files and 
->> particularly slow storage.
+
+
+On 15.02.2018 18:18, Alex Adriaanse wrote:
+> We've been using Btrfs in production on AWS EC2 with EBS devices for over 2 years. There is so much I love about Btrfs: CoW snapshots, compression, subvolumes, flexibility, the tools, etc. However, lack of stability has been a serious ongoing issue for us, and we're getting to the point that it's becoming hard to justify continuing to use it unless we make some changes that will get it stable. The instability manifests itself mostly in the form of the VM completely crashing, I/O operations freezing, or the filesystem going into readonly mode. We've spent an enormous amount of time trying to recover corrupted filesystems, and the time that servers were down as a result of Btrfs instability has accumulated to many days.
 > 
-> Understood -- thanks.  Then plan is to keep it to around 1k entries per 
-> directory.  We've done some fairly concrete testing here to find the 
-> fall-off point for dirent caching in BTRFS, and the sweet-spot between 
-> having a large number of small directories cached vs. a few massive 
-> directories cached.  ~1k seems most palatable for our use-case and 
-> directory tree structure.
-Yeah, in my own experience this starts to get noticeable on slower 
-storage around about 4k or more entries in a directory, but it ends up 
-depending on the hardware to a certain extent and the rest of the system 
-as well (something Samba does seems to make it significantly worse than 
-listing locally for example, while NFS seems to be only be worse because 
-of network latency).
+> We've made many changes to try to improve Btrfs stability: upgrading to newer kernels, setting up nightly balances, setting up monitoring to ensure our filesystems stay under 70% utilization, etc. This has definitely helped quite a bit, but even with these things in place it's still unstable. Take https://bugzilla.kernel.org/show_bug.cgi?id=198787 for example, which I created yesterday: we've had 4 VMs (out of 20) go down over the past week alone because of Btrfs errors. Thankfully, no data was lost, but I did have to copy everything over to a new filesystem.
+
+So in all of the cases you are hitting some form of premature enospc.
+There was a fix that landed in 4.15 that should have fixed a rather
+long-standing issue with the way metadata reservations are satisfied,
+namely:
+
+996478ca9c46 ("btrfs: change how we decide to commit transactions during
+flushing").
+
+That commit was introduced in 4.14.3 stable kernel. Since you are not
+using upstream kernel I'd advise you check whether the respective commit
+is contained in the kernel versions you are using.
+
+Other than that in the reports you mentioned there is one crash in
+__del_reloc_root which looks rather interesting, at the very least it
+shouldn't crash...
+
+> Many of our VMs that run Btrfs have a high rate of I/O (both read/write; I/O utilization is often pegged at 100%). The filesystems that get little I/O seem pretty stable, but the ones that undergo a lot of I/O activity are the ones that suffer from the most instability problems. We run the following balances on every filesystem every night:
 > 
->> I've only ever lost a BTRFS volume to a power failure _once_ in the 
->> multiple years I've been using it, and that ended up being because the 
->> power failure trashed the storage device pretty severely (it was 
->> super-cheap flash storage).  I do know however that there are people 
->> who have had much worse results than me.
+>     btrfs balance start -dusage=10 <fs>
+>     btrfs balance start -dusage=20 <fs>
+>     btrfs balance start -dusage=40,limit=100 <fs>
 > 
-> Good to know.  We'll be running power-fail testing over the next couple 
-> months.  I'm waiting for some hardware to arrive presently.  We'll 
-> power-cycle fairly large filesystems a few thousand times before we deem 
-> it safe to ship.  If there are latent bugs in BTRFS still w.r.t. 
-> power-fail, I can guarantee we'll trip over them...
-Most of my own experience regarding power failures with BTRFS is on 
-SSD's.  We actually use it on the embedded systems we build where I 
-work, and a lot of our customers don't have the most reliable mains 
-power (or they're too lazy to shut off the computer properly before 
-flipping the main breaker for the machine to power it off for the 
-evening), so some of our systems may see power failures on an almost 
-daily basis.  Despite that, we've never had issues with BTRFS not 
-recovering by itself, though we do have a very read-heavy workload with 
-very infrequent writes, so that may be part of why it's worked so well 
-for us.
+> We also use the following btrfs-snap cronjobs to implement rotating snapshots, with short-term snapshots taking place every 15 minutes and less frequent ones being retained for up to 3 days:
+> 
+>     0 1-23 * * * /opt/btrfs-snap/btrfs-snap -r <fs> 23
+>     15,30,45 * * * * /opt/btrfs-snap/btrfs-snap -r <fs> 15m 3
+>     0 0 * * * /opt/btrfs-snap/btrfs-snap -r <fs> daily 3
+> 
+> Our filesystems are mounted with the "compress=lzo" option.
+> 
+> Are we doing something wrong? Are there things we should change to improve stability? I wouldn't be surprised if eliminating snapshots would stabilize things, but if we do that we might as well be using a filesystem like XFS. Are there fixes queued up that will solve the problems listed in the Bugzilla ticket referenced above? Or is our I/O-intensive workload just not a good fit for Btrfs?
+> 
+> Thanks,
+> 
+> Alex--
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

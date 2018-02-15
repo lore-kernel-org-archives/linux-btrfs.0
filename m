@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f68.google.com ([74.125.83.68]:43709 "EHLO
-        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1167159AbeBOTFl (ORCPT
+Received: from mail-pl0-f66.google.com ([209.85.160.66]:42836 "EHLO
+        mail-pl0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1167165AbeBOTFo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 14:05:41 -0500
-Received: by mail-pg0-f68.google.com with SMTP id f6so491652pgs.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:40 -0800 (PST)
+        Thu, 15 Feb 2018 14:05:44 -0500
+Received: by mail-pl0-f66.google.com with SMTP id 31so346361ple.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:44 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH v2 13/27] libbtrfsutil: add btrfs_util_delete_subvolume()
-Date: Thu, 15 Feb 2018 11:04:58 -0800
-Message-Id: <0ff0bebb7d74e53a31a2867fb3d4c2a1c8317892.1518720598.git.osandov@fb.com>
+Subject: [PATCH v2 15/27] libbtrfsutil: add filesystem sync helpers
+Date: Thu, 15 Feb 2018 11:05:00 -0800
+Message-Id: <6781520f9495a917484119df37b0a7ada42dbcc0.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
@@ -21,118 +21,257 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-We also support recursive deletion using a subvolume iterator.
+Namely, sync, start_sync, and wait_sync.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- libbtrfsutil/btrfsutil.h                    |  33 +++++++++
- libbtrfsutil/python/btrfsutilpy.h           |   1 +
- libbtrfsutil/python/module.c                |   8 +++
- libbtrfsutil/python/subvolume.c             |  27 ++++++++
- libbtrfsutil/python/tests/test_subvolume.py |  48 +++++++++++++
- libbtrfsutil/subvolume.c                    | 102 ++++++++++++++++++++++++++++
- 6 files changed, 219 insertions(+)
+ Makefile                                     |   4 +-
+ libbtrfsutil/btrfsutil.h                     |  44 ++++++++++++
+ libbtrfsutil/filesystem.c                    | 103 +++++++++++++++++++++++++++
+ libbtrfsutil/python/btrfsutilpy.h            |   3 +
+ libbtrfsutil/python/filesystem.c             |  94 ++++++++++++++++++++++++
+ libbtrfsutil/python/module.c                 |  21 ++++++
+ libbtrfsutil/python/setup.py                 |   1 +
+ libbtrfsutil/python/tests/test_filesystem.py |  73 +++++++++++++++++++
+ 8 files changed, 341 insertions(+), 2 deletions(-)
+ create mode 100644 libbtrfsutil/filesystem.c
+ create mode 100644 libbtrfsutil/python/filesystem.c
+ create mode 100644 libbtrfsutil/python/tests/test_filesystem.py
 
+diff --git a/Makefile b/Makefile
+index fa32c50d..37bd6e5d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -135,8 +135,8 @@ libbtrfsutil_major := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MAJOR ([0-
+ libbtrfsutil_minor := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MINOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
+ libbtrfsutil_patch := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_PATCH ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
+ libbtrfsutil_version := $(libbtrfsutil_major).$(libbtrfsutil_minor).$(libbtrfsutil_patch)
+-libbtrfsutil_objects = libbtrfsutil/errors.o libbtrfsutil/qgroup.o \
+-		       libbtrfsutil/subvolume.o
++libbtrfsutil_objects = libbtrfsutil/errors.o libbtrfsutil/filesystem.o \
++		       libbtrfsutil/qgroup.o libbtrfsutil/subvolume.o
+ convert_objects = convert/main.o convert/common.o convert/source-fs.o \
+ 		  convert/source-ext2.o convert/source-reiserfs.o
+ mkfs_objects = mkfs/main.o mkfs/common.o mkfs/rootdir.o
 diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-index 04fe6666..00c86174 100644
+index 677ab3c1..34a2fc4a 100644
 --- a/libbtrfsutil/btrfsutil.h
 +++ b/libbtrfsutil/btrfsutil.h
-@@ -404,6 +404,39 @@ enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd, int parent_fd,
- 						     uint64_t *async_transid,
- 						     struct btrfs_util_qgroup_inherit *qgroup_inherit);
+@@ -74,6 +74,50 @@ enum btrfs_util_error {
+  */
+ const char *btrfs_util_strerror(enum btrfs_util_error err);
  
 +/**
-+ * BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE - Delete subvolumes beneath the given
-+ * subvolume before attempting to delete the given subvolume.
-+ *
-+ * If this flag is not used, deleting a subvolume with child subvolumes is an
-+ * error. Note that this is currently implemented in userspace non-atomically.
-+ * It requires appropriate privilege (CAP_SYS_ADMIN).
-+ */
-+#define BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE (1 << 0)
-+#define BTRFS_UTIL_DELETE_SUBVOLUME_MASK ((1 << 1) - 1)
-+
-+/**
-+ * btrfs_util_delete_subvolume() - Delete a subvolume or snapshot.
-+ * @path: Path of the subvolume to delete.
-+ * @flags: Bitmask of BTRFS_UTIL_DELETE_SUBVOLUME_* flags.
++ * btrfs_util_sync() - Force a sync on a specific Btrfs filesystem.
++ * @path: Path on a Btrfs filesystem.
 + *
 + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
 + */
-+enum btrfs_util_error btrfs_util_delete_subvolume(const char *path, int flags);
++enum btrfs_util_error btrfs_util_sync(const char *path);
 +
 +/**
-+ * btrfs_util_delete_subvolume_fd() - Delete a subvolume or snapshot given its
-+ * parent and name.
-+ * @parent_fd: File descriptor of the subvolume's parent directory.
-+ * @name: Name of the subvolume.
-+ * @flags: See btrfs_util_delete_subvolume().
++ * btrfs_util_sync_fd() - See btrfs_util_sync().
++ */
++enum btrfs_util_error btrfs_util_sync_fd(int fd);
++
++/**
++ * btrfs_util_start_sync() - Start a sync on a specific Btrfs filesystem but
++ * don't wait for it.
++ * @path: Path on a Btrfs filesystem.
++ * @transid: Returned transaction ID which can be waited on with
++ * btrfs_util_wait_sync(). This can be %NULL.
 + *
 + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
 + */
-+enum btrfs_util_error btrfs_util_delete_subvolume_fd(int parent_fd,
-+						     const char *name,
-+						     int flags);
++enum btrfs_util_error btrfs_util_start_sync(const char *path,
++					    uint64_t *transid);
 +
- struct btrfs_util_subvolume_iterator;
- 
++/**
++ * btrfs_util_start_sync_fd() - See btrfs_util_start_sync().
++ */
++enum btrfs_util_error btrfs_util_start_sync_fd(int fd, uint64_t *transid);
++
++/**
++ * btrfs_util_wait_sync() - Wait for a transaction with a given ID to sync.
++ * @path: Path on a Btrfs filesystem.
++ * @transid: Transaction ID to wait for, or zero for the current transaction.
++ *
++ * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
++ */
++enum btrfs_util_error btrfs_util_wait_sync(const char *path, uint64_t transid);
++
++/**
++ * btrfs_util_wait_sync_fd() - See btrfs_util_wait_sync().
++ */
++enum btrfs_util_error btrfs_util_wait_sync_fd(int fd, uint64_t transid);
++
  /**
+  * btrfs_util_is_subvolume() - Return whether a given path is a Btrfs subvolume.
+  * @path: Path to check.
+diff --git a/libbtrfsutil/filesystem.c b/libbtrfsutil/filesystem.c
+new file mode 100644
+index 00000000..dfd171bf
+--- /dev/null
++++ b/libbtrfsutil/filesystem.c
+@@ -0,0 +1,103 @@
++/*
++ * Copyright (C) 2018 Facebook
++ *
++ * This file is part of libbtrfsutil.
++ *
++ * libbtrfsutil is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU Lesser General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * libbtrfsutil is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License
++ * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <errno.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++#include <linux/btrfs.h>
++
++#include "btrfsutil_internal.h"
++
++PUBLIC enum btrfs_util_error btrfs_util_sync(const char *path)
++{
++	enum btrfs_util_error err;
++	int fd;
++
++	fd = open(path, O_RDONLY);
++	if (fd == -1)
++		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++
++	err = btrfs_util_sync_fd(fd);
++	SAVE_ERRNO_AND_CLOSE(fd);
++	return err;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_sync_fd(int fd)
++{
++	int ret;
++
++	ret = ioctl(fd, BTRFS_IOC_SYNC, NULL);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_SYNC_FAILED;
++
++	return BTRFS_UTIL_OK;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_start_sync(const char *path,
++						   uint64_t *transid)
++{
++	enum btrfs_util_error err;
++	int fd;
++
++	fd = open(path, O_RDONLY);
++	if (fd == -1)
++		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++
++	err = btrfs_util_start_sync_fd(fd, transid);
++	SAVE_ERRNO_AND_CLOSE(fd);
++	return err;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_start_sync_fd(int fd, uint64_t *transid)
++{
++	int ret;
++
++	ret = ioctl(fd, BTRFS_IOC_START_SYNC, transid);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_START_SYNC_FAILED;
++
++	return BTRFS_UTIL_OK;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_wait_sync(const char *path,
++						  uint64_t transid)
++{
++	enum btrfs_util_error err;
++	int fd;
++
++	fd = open(path, O_RDONLY);
++	if (fd == -1)
++		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++
++	err = btrfs_util_wait_sync_fd(fd, transid);
++	SAVE_ERRNO_AND_CLOSE(fd);
++	return err;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_wait_sync_fd(int fd, uint64_t transid)
++{
++	int ret;
++
++	ret = ioctl(fd, BTRFS_IOC_WAIT_SYNC, &transid);
++	if (ret == -1)
++		return BTRFS_UTIL_ERROR_WAIT_SYNC_FAILED;
++
++	return BTRFS_UTIL_OK;
++}
 diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
-index d552e416..b3ec047f 100644
+index be5122e2..af3a6edf 100644
 --- a/libbtrfsutil/python/btrfsutilpy.h
 +++ b/libbtrfsutil/python/btrfsutilpy.h
-@@ -71,6 +71,7 @@ PyObject *get_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
- PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
- PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
- PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds);
-+PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+@@ -63,6 +63,9 @@ void SetFromBtrfsUtilErrorWithPaths(enum btrfs_util_error err,
+ 				    struct path_arg *path1,
+ 				    struct path_arg *path2);
  
- void add_module_constants(PyObject *m);
- 
-diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
-index d8f797cb..e995a1be 100644
---- a/libbtrfsutil/python/module.c
-+++ b/libbtrfsutil/python/module.c
-@@ -206,6 +206,14 @@ static PyMethodDef btrfsutil_methods[] = {
- 	 "read_only -- create a read-only snapshot\n"
- 	 "async -- create the subvolume without waiting for it to commit to\n"
- 	 "disk and return the transaction ID"},
-+	{"delete_subvolume", (PyCFunction)delete_subvolume,
-+	 METH_VARARGS | METH_KEYWORDS,
-+	 "delete_subvolume(path, recursive=False)\n\n"
-+	 "Delete a subvolume or snapshot.\n\n"
-+	 "Arguments:\n"
-+	 "path -- string, bytes, or path-like object\n"
-+	 "recursive -- if the given subvolume has child subvolumes, delete\n"
-+	 "them instead of failing"},
- 	{},
- };
- 
-diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
-index a158ade7..eb3f6e27 100644
---- a/libbtrfsutil/python/subvolume.c
-+++ b/libbtrfsutil/python/subvolume.c
-@@ -398,6 +398,33 @@ PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds)
- 		Py_RETURN_NONE;
- }
- 
-+PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
-+{
-+	static char *keywords[] = {"path", "recursive", NULL};
-+	struct path_arg path = {.allow_fd = false};
-+	enum btrfs_util_error err;
-+	int recursive = 0;
-+	int flags = 0;
++PyObject *filesystem_sync(PyObject *self, PyObject *args, PyObject *kwds);
++PyObject *start_sync(PyObject *self, PyObject *args, PyObject *kwds);
++PyObject *wait_sync(PyObject *self, PyObject *args, PyObject *kwds);
+ PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+ PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds);
+ PyObject *subvolume_path(PyObject *self, PyObject *args, PyObject *kwds);
+diff --git a/libbtrfsutil/python/filesystem.c b/libbtrfsutil/python/filesystem.c
+new file mode 100644
+index 00000000..627ed193
+--- /dev/null
++++ b/libbtrfsutil/python/filesystem.c
+@@ -0,0 +1,94 @@
++/*
++ * Copyright (C) 2018 Facebook
++ *
++ * This file is part of libbtrfsutil.
++ *
++ * libbtrfsutil is free software: you can redistribute it and/or modify
++ * it under the terms of the GNU Lesser General Public License as published by
++ * the Free Software Foundation, either version 3 of the License, or
++ * (at your option) any later version.
++ *
++ * libbtrfsutil is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public License
++ * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
++ */
 +
-+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|p:delete_subvolume",
-+					 keywords, &path_converter, &path,
-+					 &recursive))
++#include "btrfsutilpy.h"
++
++PyObject *filesystem_sync(PyObject *self, PyObject *args, PyObject *kwds)
++{
++	static char *keywords[] = {"path", NULL};
++	struct path_arg path = {.allow_fd = true};
++	enum btrfs_util_error err;
++
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:sync", keywords,
++					 &path_converter, &path))
 +		return NULL;
 +
-+	if (recursive)
-+		flags |= BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE;
-+
-+	err = btrfs_util_delete_subvolume(path.path, flags);
++	if (path.path)
++		err = btrfs_util_sync(path.path);
++	else
++		err = btrfs_util_sync_fd(path.fd);
 +	if (err) {
 +		SetFromBtrfsUtilErrorWithPath(err, &path);
 +		path_cleanup(&path);
@@ -143,181 +282,178 @@ index a158ade7..eb3f6e27 100644
 +	Py_RETURN_NONE;
 +}
 +
- typedef struct {
- 	PyObject_HEAD
- 	struct btrfs_util_subvolume_iterator *iter;
-diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
-index 2951154e..08083abe 100644
---- a/libbtrfsutil/python/tests/test_subvolume.py
-+++ b/libbtrfsutil/python/tests/test_subvolume.py
-@@ -270,6 +270,54 @@ class TestSubvolume(BtrfsTestCase):
-         btrfsutil.create_snapshot(subvol, snapshot + '4', read_only=True)
-         self.assertTrue(btrfsutil.get_subvolume_read_only(snapshot + '4'))
- 
-+    def test_delete_subvolume(self):
-+        subvol = os.path.join(self.mountpoint, 'subvol')
-+        btrfsutil.create_subvolume(subvol + '1')
-+        self.assertTrue(os.path.exists(subvol + '1'))
-+        btrfsutil.create_subvolume(subvol + '2')
-+        self.assertTrue(os.path.exists(subvol + '2'))
-+        btrfsutil.create_subvolume(subvol + '3')
-+        self.assertTrue(os.path.exists(subvol + '3'))
++PyObject *start_sync(PyObject *self, PyObject *args, PyObject *kwds)
++{
++	static char *keywords[] = {"path", NULL};
++	struct path_arg path = {.allow_fd = true};
++	uint64_t transid;
++	enum btrfs_util_error err;
 +
-+        btrfsutil.delete_subvolume(subvol + '1')
-+        self.assertFalse(os.path.exists(subvol + '1'))
-+        btrfsutil.delete_subvolume((subvol + '2').encode())
-+        self.assertFalse(os.path.exists(subvol + '2'))
-+        if HAVE_PATH_LIKE:
-+            btrfsutil.delete_subvolume(PurePath(subvol + '3'))
-+            self.assertFalse(os.path.exists(subvol + '3'))
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:start_sync", keywords,
++					 &path_converter, &path))
++		return NULL;
 +
-+        # Test deleting subvolumes under '/' in a chroot.
-+        pid = os.fork()
-+        if pid == 0:
-+            try:
-+                os.chroot(self.mountpoint)
-+                os.chdir('/')
-+                btrfsutil.create_subvolume('/subvol4')
-+                self.assertTrue(os.path.exists('/subvol4'))
-+                btrfsutil.delete_subvolume('/subvol4')
-+                self.assertFalse(os.path.exists('/subvol4'))
-+                with self.assertRaises(btrfsutil.BtrfsUtilError):
-+                    btrfsutil.delete_subvolume('/')
-+                os._exit(0)
-+            except Exception:
-+                traceback.print_exc()
-+                os._exit(1)
-+        wstatus = os.waitpid(pid, 0)[1]
-+        self.assertTrue(os.WIFEXITED(wstatus))
-+        self.assertEqual(os.WEXITSTATUS(wstatus), 0)
++	if (path.path)
++		err = btrfs_util_start_sync(path.path, &transid);
++	else
++		err = btrfs_util_start_sync_fd(path.fd, &transid);
++	if (err) {
++		SetFromBtrfsUtilErrorWithPath(err, &path);
++		path_cleanup(&path);
++		return NULL;
++	}
 +
-+        btrfsutil.create_subvolume(subvol + '5')
-+        btrfsutil.create_subvolume(subvol + '5/foo')
-+        btrfsutil.create_subvolume(subvol + '5/bar')
-+        btrfsutil.create_subvolume(subvol + '5/bar/baz')
-+        btrfsutil.create_subvolume(subvol + '5/bar/qux')
-+        btrfsutil.create_subvolume(subvol + '5/quux')
-+        with self.assertRaises(btrfsutil.BtrfsUtilError):
-+            btrfsutil.delete_subvolume(subvol + '5')
-+        btrfsutil.delete_subvolume(subvol + '5', recursive=True)
-+        self.assertFalse(os.path.exists(subvol + '5'))
++	path_cleanup(&path);
++	return PyLong_FromUnsignedLongLong(transid);
++}
 +
-     def test_subvolume_iterator(self):
-         pwd = os.getcwd()
-         try:
-diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
-index ca3d43c8..908e71db 100644
---- a/libbtrfsutil/subvolume.c
-+++ b/libbtrfsutil/subvolume.c
-@@ -1003,6 +1003,108 @@ PUBLIC enum btrfs_util_error btrfs_util_create_snapshot_fd2(int fd,
- 	return BTRFS_UTIL_OK;
++PyObject *wait_sync(PyObject *self, PyObject *args, PyObject *kwds)
++{
++	static char *keywords[] = {"path", "transid", NULL};
++	struct path_arg path = {.allow_fd = true};
++	unsigned long long transid = 0;
++	enum btrfs_util_error err;
++
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|K:wait_sync", keywords,
++					 &path_converter, &path, &transid))
++		return NULL;
++
++	if (path.path)
++		err = btrfs_util_wait_sync(path.path, transid);
++	else
++		err = btrfs_util_wait_sync_fd(path.fd, transid);
++	if (err) {
++		SetFromBtrfsUtilErrorWithPath(err, &path);
++		path_cleanup(&path);
++		return NULL;
++	}
++
++	path_cleanup(&path);
++	Py_RETURN_NONE;
++}
+diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
+index eaa062ac..2dbdc7be 100644
+--- a/libbtrfsutil/python/module.c
++++ b/libbtrfsutil/python/module.c
+@@ -155,6 +155,27 @@ void path_cleanup(struct path_arg *path)
  }
  
-+static enum btrfs_util_error delete_subvolume_children(int parent_fd,
-+						       const char *name)
-+{
-+	struct btrfs_util_subvolume_iterator *iter;
-+	enum btrfs_util_error err;
-+	int fd;
+ static PyMethodDef btrfsutil_methods[] = {
++	{"sync", (PyCFunction)filesystem_sync,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "sync(path)\n\n"
++	 "Sync a specific Btrfs filesystem.\n\n"
++	 "Arguments:\n"
++	 "path -- string, bytes, path-like object, or open file descriptor"},
++	{"start_sync", (PyCFunction)start_sync,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "start_sync(path) -> int\n\n"
++	 "Start a sync on a specific Btrfs filesystem and return the\n"
++	 "transaction ID.\n\n"
++	 "Arguments:\n"
++	 "path -- string, bytes, path-like object, or open file descriptor"},
++	{"wait_sync", (PyCFunction)wait_sync,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "wait_sync(path, transid=0)\n\n"
++	 "Wait for a transaction to sync.\n"
++	 "Arguments:\n"
++	 "path -- string, bytes, path-like object, or open file descriptor\n"
++	 "transid -- int transaction ID to wait for, or zero for the current\n"
++	 "transaction"},
+ 	{"is_subvolume", (PyCFunction)is_subvolume,
+ 	 METH_VARARGS | METH_KEYWORDS,
+ 	 "is_subvolume(path) -> bool\n\n"
+diff --git a/libbtrfsutil/python/setup.py b/libbtrfsutil/python/setup.py
+index 06857084..131f1755 100755
+--- a/libbtrfsutil/python/setup.py
++++ b/libbtrfsutil/python/setup.py
+@@ -90,6 +90,7 @@ module = Extension(
+     sources=[
+         'constants.c',
+         'error.c',
++        'filesystem.c',
+         'module.c',
+         'qgroup.c',
+         'subvolume.c',
+diff --git a/libbtrfsutil/python/tests/test_filesystem.py b/libbtrfsutil/python/tests/test_filesystem.py
+new file mode 100644
+index 00000000..006a6b1e
+--- /dev/null
++++ b/libbtrfsutil/python/tests/test_filesystem.py
+@@ -0,0 +1,73 @@
++# Copyright (C) 2018 Facebook
++#
++# This file is part of libbtrfsutil.
++#
++# libbtrfsutil is free software: you can redistribute it and/or modify
++# it under the terms of the GNU Lesser General Public License as published by
++# the Free Software Foundation, either version 3 of the License, or
++# (at your option) any later version.
++#
++# libbtrfsutil is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Lesser General Public License for more details.
++#
++# You should have received a copy of the GNU Lesser General Public License
++# along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
 +
-+	fd = openat(parent_fd, name, O_RDONLY);
-+	if (fd == -1)
-+		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++import os
++import time
 +
-+	err = btrfs_util_create_subvolume_iterator_fd(fd, 0,
-+						      BTRFS_UTIL_SUBVOLUME_ITERATOR_POST_ORDER,
-+						      &iter);
-+	if (err)
-+		goto out;
++import btrfsutil
++from tests import BtrfsTestCase, HAVE_PATH_LIKE
 +
-+	for (;;) {
-+		char child_name[BTRFS_PATH_NAME_MAX + 1];
-+		char *child_path;
-+		int child_parent_fd;
 +
-+		err = btrfs_util_subvolume_iterator_next(iter, &child_path,
-+							 NULL);
-+		if (err) {
-+			if (err == BTRFS_UTIL_ERROR_STOP_ITERATION)
-+				err = BTRFS_UTIL_OK;
-+			break;
-+		}
++def touch(path):
++    now = time.time()
++    os.utime(path, (now, now))
 +
-+		err = openat_parent_and_name(fd, child_path, child_name,
-+					     sizeof(child_name),
-+					     &child_parent_fd);
-+		free(child_path);
-+		if (err)
-+			break;
 +
-+		err = btrfs_util_delete_subvolume_fd(child_parent_fd,
-+						     child_name, 0);
-+		SAVE_ERRNO_AND_CLOSE(child_parent_fd);
-+		if (err)
-+			break;
-+	}
++class TestSubvolume(BtrfsTestCase):
++    def super_generation(self):
++        with open(self.image, 'rb') as f:
++            # csum is 32 bytes, fsid is 16 bytes, bytenr is 8 bytes, flags is 8
++            # bytes
++            f.seek(65536 + 32 + 16 + 8 + 8)
++            self.assertEqual(f.read(8), b'_BHRfS_M')
++            return int.from_bytes(f.read(8), 'little')
 +
-+	btrfs_util_destroy_subvolume_iterator(iter);
-+out:
-+	SAVE_ERRNO_AND_CLOSE(fd);
-+	return err;
-+}
++    def test_sync(self):
++        old_generation = self.super_generation()
++        for arg in self.path_or_fd(self.mountpoint):
++            with self.subTest(type=type(arg)):
++                touch(arg)
++                btrfsutil.sync(arg)
++                new_generation = self.super_generation()
++                self.assertGreater(new_generation, old_generation)
++                old_generation = new_generation
 +
-+PUBLIC enum btrfs_util_error btrfs_util_delete_subvolume(const char *path,
-+							 int flags)
-+{
-+	char name[BTRFS_PATH_NAME_MAX + 1];
-+	enum btrfs_util_error err;
-+	int parent_fd;
++    def test_start_sync(self):
++        old_generation = self.super_generation()
++        for arg in self.path_or_fd(self.mountpoint):
++            with self.subTest(type=type(arg)):
++                touch(arg)
++                transid = btrfsutil.start_sync(arg)
++                self.assertGreater(transid, old_generation)
 +
-+	err = openat_parent_and_name(AT_FDCWD, path, name, sizeof(name),
-+				     &parent_fd);
-+	if (err)
-+		return err;
++    def test_wait_sync(self):
++        old_generation = self.super_generation()
++        for arg in self.path_or_fd(self.mountpoint):
++            with self.subTest(type=type(arg)):
++                touch(arg)
++                transid = btrfsutil.start_sync(arg)
++                btrfsutil.wait_sync(arg, transid)
++                new_generation = self.super_generation()
++                self.assertGreater(new_generation, old_generation)
++                old_generation = new_generation
 +
-+	err = btrfs_util_delete_subvolume_fd(parent_fd, name, flags);
-+	SAVE_ERRNO_AND_CLOSE(parent_fd);
-+	return err;
-+}
-+
-+PUBLIC enum btrfs_util_error btrfs_util_delete_subvolume_fd(int parent_fd,
-+							    const char *name,
-+							    int flags)
-+{
-+	struct btrfs_ioctl_vol_args args = {};
-+	enum btrfs_util_error err;
-+	size_t len;
-+	int ret;
-+
-+	if (flags & ~BTRFS_UTIL_DELETE_SUBVOLUME_MASK) {
-+		errno = EINVAL;
-+		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
-+	}
-+
-+	if (flags & BTRFS_UTIL_DELETE_SUBVOLUME_RECURSIVE) {
-+		err = delete_subvolume_children(parent_fd, name);
-+		if (err)
-+			return err;
-+	}
-+
-+	len = strlen(name);
-+	if (len >= sizeof(args.name)) {
-+		errno = ENAMETOOLONG;
-+		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
-+	}
-+	memcpy(args.name, name, len);
-+	args.name[len] = '\0';
-+
-+	ret = ioctl(parent_fd, BTRFS_IOC_SNAP_DESTROY, &args);
-+	if (ret == -1)
-+		return BTRFS_UTIL_ERROR_SNAP_DESTROY_FAILED;
-+
-+	return BTRFS_UTIL_OK;
-+}
-+
- PUBLIC void btrfs_util_destroy_subvolume_iterator(struct btrfs_util_subvolume_iterator *iter)
- {
- 	if (iter) {
++                touch(arg)
++                btrfsutil.start_sync(arg)
++                btrfsutil.wait_sync(arg)
++                new_generation = self.super_generation()
++                self.assertGreater(new_generation, old_generation)
++                old_generation = new_generation
 -- 
 2.16.1
 

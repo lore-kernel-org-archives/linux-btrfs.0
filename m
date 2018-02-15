@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35134 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1165926AbeBOSAy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 13:00:54 -0500
-Subject: Re: Ongoing Btrfs stability issues
-To: Alex Adriaanse <alex@oseberg.io>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <83bfc8da-82fd-e2bf-4b27-175bf90ac072@suse.com>
-Date: Thu, 15 Feb 2018 20:00:51 +0200
+Received: from tartarus.angband.pl ([89.206.35.136]:33144 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1167118AbeBOTGu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Feb 2018 14:06:50 -0500
+Date: Thu, 15 Feb 2018 20:06:47 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: "Ellis H. Wilson III" <ellisw@panasas.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Metadata / Data on Heterogeneous Media
+Message-ID: <20180215190647.ato4mnvzzom36frc@angband.pl>
+References: <1b2df382-0402-a806-9ebf-996fabf22ba4@panasas.com>
 MIME-Version: 1.0
-In-Reply-To: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1b2df382-0402-a806-9ebf-996fabf22ba4@panasas.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Feb 15, 2018 at 12:15:49PM -0500, Ellis H. Wilson III wrote:
+> In discussing the performance of various metadata operations over the past
+> few days I've had this idea in the back of my head, and wanted to see if
+> anybody had already thought about it before (likely, I would guess).
+>
+> It appears based on this page:
+> https://btrfs.wiki.kernel.org/index.php/Btrfs_design
+> that data and metadata in BTRFS are fairly well isolated from one another,
+> particularly in the case of large files.  This appears reinforced by a
+> recent comment from Qu ("...btrfs strictly
+> split metadata and data usage...").
+> 
+> Yet, while there are plenty of options to RAID0/1/10/etc across generally
+> homogeneous media types, there doesn't appear to be any functionality (at
+> least that I can find) to segment different BTRFS internals to different
+> types of devices.  E.G., place metadata trees and extent block groups on
+> SSD, and data trees and extent block groups on HDD(s).
+> 
+> Is this something that has already been considered (and if so, implemented,
+> which would make me extremely happy)?  Is it feasible it is hasn't been
+> approached yet?  I admit my internal knowledge of BTRFS is fleeting, though
+> I'm trying to work on that daily at this time, so forgive me if this is
+> unapproachable for obvious architectural reasons.
+
+Considered: many times.  It's an obvious improvement, and one that shouldn't
+even be that hard to implement.  What remains, it's SMoC then SMoR (Simple
+Matter of Coding then Simple Matter of Review), but both of those are in
+short supply.
+
+After the maximum size of inline extents has been lowered, there's no real
+point in putting different types of metadata or not-really-metadata on
+different media: thus, existing split of data -vs- metadata block groups is
+fine.
+
+What you'd want is an ability to tell the block allocator that metadata
+block groups should prefer device[s] A, while data ones, device[s] B.
+
+Right now, the allocator's algorithm is: any new allocations are placed on
+device that has the most available space, for 2nd/etc RAID chunk obviously
+excluding the device which 1st chunk has been already placed on.  This is
+optimal wrt not wasting space, but doesn't always provide best performance,
+especially when devices' speed varies.  There are also other downsides, like
+usual RAID10 having 2/3 chance for tolerating two missing devices, while
+btrfs RAID10 almost guarantees massive data loss with two missing devices.
+
+Thus, allowing to specify an allocation policy that alters this algorithm
+would be the way to go.
 
 
-On 15.02.2018 18:18, Alex Adriaanse wrote:
-> We've been using Btrfs in production on AWS EC2 with EBS devices for over 2 years. There is so much I love about Btrfs: CoW snapshots, compression, subvolumes, flexibility, the tools, etc. However, lack of stability has been a serious ongoing issue for us, and we're getting to the point that it's becoming hard to justify continuing to use it unless we make some changes that will get it stable. The instability manifests itself mostly in the form of the VM completely crashing, I/O operations freezing, or the filesystem going into readonly mode. We've spent an enormous amount of time trying to recover corrupted filesystems, and the time that servers were down as a result of Btrfs instability has accumulated to many days.
-> 
-> We've made many changes to try to improve Btrfs stability: upgrading to newer kernels, setting up nightly balances, setting up monitoring to ensure our filesystems stay under 70% utilization, etc. This has definitely helped quite a bit, but even with these things in place it's still unstable. Take https://bugzilla.kernel.org/show_bug.cgi?id=198787 for example, which I created yesterday: we've had 4 VMs (out of 20) go down over the past week alone because of Btrfs errors. Thankfully, no data was lost, but I did have to copy everything over to a new filesystem.
-
-So in all of the cases you are hitting some form of premature enospc.
-There was a fix that landed in 4.15 that should have fixed a rather
-long-standing issue with the way metadata reservations are satisfied,
-namely:
-
-996478ca9c46 ("btrfs: change how we decide to commit transactions during
-flushing").
-
-That commit was introduced in 4.14.3 stable kernel. Since you are not
-using upstream kernel I'd advise you check whether the respective commit
-is contained in the kernel versions you are using.
-
-Other than that in the reports you mentioned there is one crash in
-__del_reloc_root which looks rather interesting, at the very least it
-shouldn't crash...
-
-> Many of our VMs that run Btrfs have a high rate of I/O (both read/write; I/O utilization is often pegged at 100%). The filesystems that get little I/O seem pretty stable, but the ones that undergo a lot of I/O activity are the ones that suffer from the most instability problems. We run the following balances on every filesystem every night:
-> 
->     btrfs balance start -dusage=10 <fs>
->     btrfs balance start -dusage=20 <fs>
->     btrfs balance start -dusage=40,limit=100 <fs>
-> 
-> We also use the following btrfs-snap cronjobs to implement rotating snapshots, with short-term snapshots taking place every 15 minutes and less frequent ones being retained for up to 3 days:
-> 
->     0 1-23 * * * /opt/btrfs-snap/btrfs-snap -r <fs> 23
->     15,30,45 * * * * /opt/btrfs-snap/btrfs-snap -r <fs> 15m 3
->     0 0 * * * /opt/btrfs-snap/btrfs-snap -r <fs> daily 3
-> 
-> Our filesystems are mounted with the "compress=lzo" option.
-> 
-> Are we doing something wrong? Are there things we should change to improve stability? I wouldn't be surprised if eliminating snapshots would stabilize things, but if we do that we might as well be using a filesystem like XFS. Are there fixes queued up that will solve the problems listed in the Bugzilla ticket referenced above? Or is our I/O-intensive workload just not a good fit for Btrfs?
-> 
-> Thanks,
-> 
-> Alex--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ The bill with 3 years prison for mentioning Polish concentration
+⣾⠁⢰⠒⠀⣿⡁ camps is back.  What about KL Warschau (operating until 1956)?
+⢿⡄⠘⠷⠚⠋⠀ Zgoda?  Łambinowice?  Most ex-German KLs?  If those were "soviet
+⠈⠳⣄⠀⠀⠀⠀ puppets", Bereza Kartuska?  Sikorski's camps in UK (thanks Brits!)?

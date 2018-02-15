@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f67.google.com ([209.85.160.67]:34350 "EHLO
-        mail-pl0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161634AbeBOTFr (ORCPT
+Received: from mail-pg0-f65.google.com ([74.125.83.65]:42397 "EHLO
+        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1167182AbeBOTFy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 14:05:47 -0500
-Received: by mail-pl0-f67.google.com with SMTP id bd10so360893plb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:47 -0800 (PST)
+        Thu, 15 Feb 2018 14:05:54 -0500
+Received: by mail-pg0-f65.google.com with SMTP id y8so494537pgr.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:54 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH v2 18/27] btrfs-progs: use libbtrfsutil for set-default
-Date: Thu, 15 Feb 2018 11:05:03 -0800
-Message-Id: <c3478546696001ebc2763ff0d6f9807870c4beeb.1518720598.git.osandov@fb.com>
+Subject: [PATCH v2 24/27] btrfs-progs: replace test_issubvolume() with btrfs_util_is_subvolume()
+Date: Thu, 15 Feb 2018 11:05:09 -0800
+Message-Id: <e663b885b0ff54aa31f5c79841c6d4621a62d41f.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
 In-Reply-To: <cover.1518720598.git.osandov@fb.com>
@@ -21,78 +21,145 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
+This gets the remaining occurrences that weren't covered by previous
+conversions.
+
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- cmds-subvolume.c | 43 ++++++++-----------------------------------
- 1 file changed, 8 insertions(+), 35 deletions(-)
+ cmds-qgroup.c    | 11 ++++-------
+ cmds-subvolume.c | 10 +++-------
+ utils.c          | 34 +++++-----------------------------
+ utils.h          |  1 -
+ 4 files changed, 12 insertions(+), 44 deletions(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 6006a278..700e822c 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -851,11 +851,9 @@ static const char * const cmd_subvol_set_default_usage[] = {
- 
- static int cmd_subvol_set_default(int argc, char **argv)
- {
--	int	ret=0, fd;
--	u64	objectid;
--	char	*path;
--	char	*subvolid;
--	DIR	*dirstream = NULL;
-+	u64 objectid;
-+	char *path;
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index f9a52fa8..f733565e 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -425,6 +425,7 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 	int compressed = 0;
+ 	int exclusive = 0;
+ 	DIR *dirstream = NULL;
 +	enum btrfs_util_error err;
  
- 	clean_args_no_options(argc, argv, cmd_subvol_set_default_usage);
- 
-@@ -865,42 +863,17 @@ static int cmd_subvol_set_default(int argc, char **argv)
- 
- 	if (argc - optind == 1) {
- 		/* path to the subvolume is specified */
-+		objectid = 0;
- 		path = argv[optind];
--
+ 	while (1) {
+ 		int c = getopt(argc, argv, "ce");
+@@ -465,13 +466,9 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 	if (argc - optind == 2) {
+ 		args.qgroupid = 0;
+ 		path = argv[optind + 1];
 -		ret = test_issubvolume(path);
 -		if (ret < 0) {
--			error("stat error: %s", strerror(-ret));
+-			error("cannot access '%s': %s", path, strerror(-ret));
 -			return 1;
--		} else if (!ret) {
+-		}
+-		if (!ret) {
 -			error("'%s' is not a subvolume", path);
--			return 1;
--		}
--
--		fd = btrfs_open_dir(path, &dirstream, 1);
--		if (fd < 0)
--			return 1;
--
--		ret = lookup_path_rootid(fd, &objectid);
--		if (ret) {
--			error("unable to get subvol id: %s", strerror(-ret));
--			close_file_or_dir(fd, dirstream);
--			return 1;
--		}
- 	} else {
- 		/* subvol id and path to the filesystem are specified */
--		subvolid = argv[optind];
-+		objectid = arg_strtou64(argv[optind]);
- 		path = argv[optind + 1];
--		objectid = arg_strtou64(subvolid);
--
--		fd = btrfs_open_dir(path, &dirstream, 1);
--		if (fd < 0)
--			return 1;
- 	}
++		err = btrfs_util_is_subvolume(path);
++		if (err) {
++			error_btrfs_util(err);
+ 			return 1;
+ 		}
+ 		/*
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 9bab9312..43875c96 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -756,13 +756,9 @@ static int cmd_subvol_find_new(int argc, char **argv)
+ 	subvol = argv[optind];
+ 	last_gen = arg_strtou64(argv[optind + 1]);
  
--	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
--	close_file_or_dir(fd, dirstream);
+-	ret = test_issubvolume(subvol);
 -	if (ret < 0) {
--		error("unable to set a new default subvolume: %m");
-+	err = btrfs_util_set_default_subvolume(path, objectid);
+-		error("cannot access subvolume %s: %s", subvol, strerror(-ret));
+-		return 1;
+-	}
+-	if (!ret) {
+-		error("not a subvolume: %s", subvol);
++	err = btrfs_util_is_subvolume(subvol);
 +	if (err) {
 +		error_btrfs_util(err);
  		return 1;
  	}
- 	return 0;
+ 
+diff --git a/utils.c b/utils.c
+index 6e6f295f..9be91437 100644
+--- a/utils.c
++++ b/utils.c
+@@ -40,6 +40,8 @@
+ #include <linux/magic.h>
+ #include <getopt.h>
+ 
++#include <btrfsutil.h>
++
+ #include "kerncompat.h"
+ #include "radix-tree.h"
+ #include "ctree.h"
+@@ -1453,6 +1455,7 @@ u64 parse_qgroupid(const char *p)
+ 	char *s = strchr(p, '/');
+ 	const char *ptr_src_end = p + strlen(p);
+ 	char *ptr_parse_end = NULL;
++	enum btrfs_util_error err;
+ 	u64 level;
+ 	u64 id;
+ 	int fd;
+@@ -1480,8 +1483,8 @@ u64 parse_qgroupid(const char *p)
+ 
+ path:
+ 	/* Path format like subv at 'my_subvol' is the fallback case */
+-	ret = test_issubvolume(p);
+-	if (ret < 0 || !ret)
++	err = btrfs_util_is_subvolume(p);
++	if (err)
+ 		goto err;
+ 	fd = open(p, O_RDONLY);
+ 	if (fd < 0)
+@@ -2451,33 +2454,6 @@ int test_issubvolname(const char *name)
+ 		strcmp(name, ".") && strcmp(name, "..");
+ }
+ 
+-/*
+- * Test if path is a subvolume
+- * Returns:
+- *   0 - path exists but it is not a subvolume
+- *   1 - path exists and it is  a subvolume
+- * < 0 - error
+- */
+-int test_issubvolume(const char *path)
+-{
+-	struct stat	st;
+-	struct statfs stfs;
+-	int		res;
+-
+-	res = stat(path, &st);
+-	if (res < 0)
+-		return -errno;
+-
+-	if (st.st_ino != BTRFS_FIRST_FREE_OBJECTID || !S_ISDIR(st.st_mode))
+-		return 0;
+-
+-	res = statfs(path, &stfs);
+-	if (res < 0)
+-		return -errno;
+-
+-	return (int)stfs.f_type == BTRFS_SUPER_MAGIC;
+-}
+-
+ const char *subvol_strip_mountpoint(const char *mnt, const char *full_path)
+ {
+ 	int len = strlen(mnt);
+diff --git a/utils.h b/utils.h
+index eb460e9b..403de481 100644
+--- a/utils.h
++++ b/utils.h
+@@ -149,7 +149,6 @@ u64 disk_size(const char *path);
+ u64 get_partition_size(const char *dev);
+ 
+ int test_issubvolname(const char *name);
+-int test_issubvolume(const char *path);
+ int test_isdir(const char *path);
+ 
+ const char *subvol_strip_mountpoint(const char *mnt, const char *full_path);
 -- 
 2.16.1
 

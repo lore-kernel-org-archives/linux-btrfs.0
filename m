@@ -1,169 +1,322 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f53.google.com ([74.125.83.53]:45349 "EHLO
-        mail-pg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1161045AbeBOTF1 (ORCPT
+Received: from mail-pg0-f65.google.com ([74.125.83.65]:39511 "EHLO
+        mail-pg0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1161140AbeBOTFe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 14:05:27 -0500
-Received: by mail-pg0-f53.google.com with SMTP id e11so486410pgq.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:27 -0800 (PST)
+        Thu, 15 Feb 2018 14:05:34 -0500
+Received: by mail-pg0-f65.google.com with SMTP id w17so502202pgv.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Feb 2018 11:05:34 -0800 (PST)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: kernel-team@fb.com
-Subject: [PATCH v2 00/27] btrfs-progs: introduce libbtrfsutil, "btrfs-progs as a library"
-Date: Thu, 15 Feb 2018 11:04:45 -0800
-Message-Id: <cover.1518720598.git.osandov@fb.com>
+Subject: [PATCH v2 07/27] libbtrfsutil: add btrfs_util_subvolume_path()
+Date: Thu, 15 Feb 2018 11:04:52 -0800
+Message-Id: <af89178dc6f35fe6a807aec6fecc0611ae99b3fb.1518720598.git.osandov@fb.com>
+In-Reply-To: <cover.1518720598.git.osandov@fb.com>
+References: <cover.1518720598.git.osandov@fb.com>
+In-Reply-To: <cover.1518720598.git.osandov@fb.com>
+References: <cover.1518720598.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-Hi,
+We can just walk up root backrefs with BTRFS_IOC_TREE_SEARCH and inode
+paths with BTRFS_IOC_INO_LOOKUP.
 
-This is v2 of "btrfs-progs as a library".
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ libbtrfsutil/btrfsutil.h                    |  21 +++++
+ libbtrfsutil/python/btrfsutilpy.h           |   2 +-
+ libbtrfsutil/python/module.c                |   8 ++
+ libbtrfsutil/python/subvolume.c             |  30 +++++++
+ libbtrfsutil/python/tests/test_subvolume.py |  31 +++++++
+ libbtrfsutil/subvolume.c                    | 125 ++++++++++++++++++++++++++++
+ 6 files changed, 216 insertions(+), 1 deletion(-)
 
-Most of the changes since v1 are small:
-
-- Rebased onto v4.15
-- Split up btrfs_util_subvolume_path() which was accidentally squashed together
-  with the commit adding btrfs_util_create_subvolume()
-- Renamed btrfs_util_f_* functions to btrfs_util_*_fd for clarity
-- Added -fvisibility=hidden and a macro for
-  __attribute__((visibility("default")))
-- Changed to use semantic versioning
-- Fixed missing install of btrfsutil.h
-- Documented functions which require root or are non-atomic
-- Added a missing license to setup.py
-
-The bigger change is in the last two patches. Dave requested that I get
-rid of the runtime dependency of libbtrfsutil from libbtrfs. The easiest
-way to do this was to remove the btrfs_list_subvols_print()
-implementation from libbtrfs and put it in cmds-subvolume.c (details in
-patch 26). I'm open to alternatives.
-
-Please share feedback, thanks!
-
-Cover letter from v1:
-
-One of the features requests I get most often is a library to do the
-sorts of operations that we do with btrfs-progs. We can shell out to
-btrfs-progs, but the output format isn't always easily parsasble, and
-shelling out isn't always ideal. There's libbtrfs, but it's very
-incomplete, doesn't have a well thought out API, and is licensed under
-the GPL, making it hard to use for many projects.
-
-libbtrfsutil is a new library written from scratch to address these
-issues. The implementation is completely independent of the existing
-btrfs-progs code, including kerncompat.h, and has a clean API and naming
-scheme. It is licensed under the LGPL. It also includes Python bindings
-by default. I will maintain the library code.
-
-Patch 1 is a preparation cleanup which can go in independently. Patch 2
-adds the build system stuff for the library, and patch 3 does the same
-for the Python bindings. Patches 4-14 implement the library helpers,
-currently subvolume helpers and the sync ioctls. Patches 15-26 replace
-the btrfs-progs and libbtrfs code to use libbtrfsutil instead. I took
-care to preserve backwards-compatibility. `btrfs subvol list` in
-particular had some buggy behaviors for -o and -a that I emulated in the
-new code, see the comments in the code.
-
-These patches are also available on my GitHub:
-https://github.com/osandov/btrfs-progs/tree/libbtrfsutil. That branch
-will rebase as I update this series.
-
-Omar Sandoval (27):
-  btrfs-progs: get rid of undocumented qgroup inheritance options
-  Add libbtrfsutil
-  libbtrfsutil: add Python bindings
-  libbtrfsutil: add btrfs_util_is_subvolume() and
-    btrfs_util_subvolume_id()
-  libbtrfsutil: add qgroup inheritance helpers
-  libbtrfsutil: add btrfs_util_create_subvolume()
-  libbtrfsutil: add btrfs_util_subvolume_path()
-  libbtrfsutil: add btrfs_util_subvolume_info()
-  libbtrfsutil: add btrfs_util_[gs]et_read_only()
-  libbtrfsutil: add btrfs_util_[gs]et_default_subvolume()
-  libbtrfsutil: add subvolume iterator helpers
-  libbtrfsutil: add btrfs_util_create_snapshot()
-  libbtrfsutil: add btrfs_util_delete_subvolume()
-  libbtrfsutil: add btrfs_util_deleted_subvolumes()
-  libbtrfsutil: add filesystem sync helpers
-  btrfs-progs: use libbtrfsutil for read-only property
-  btrfs-progs: use libbtrfsutil for sync ioctls
-  btrfs-progs: use libbtrfsutil for set-default
-  btrfs-progs: use libbtrfsutil for get-default
-  btrfs-progs: use libbtrfsutil for subvol create and snapshot
-  btrfs-progs: use libbtrfsutil for subvol delete
-  btrfs-progs: use libbtrfsutil for subvol show
-  btrfs-progs: use libbtrfsutil for subvol sync
-  btrfs-progs: replace test_issubvolume() with btrfs_util_is_subvolume()
-  btrfs-progs: add recursive snapshot/delete using libbtrfsutil
-  btrfs-progs: use libbtrfsutil for subvolume list
-  btrfs-progs: deprecate libbtrfs helpers
-
- .gitignore                                   |    2 +
- Documentation/btrfs-subvolume.asciidoc       |   14 +-
- INSTALL                                      |    4 +
- Makefile                                     |  109 +-
- Makefile.inc.in                              |    4 +-
- btrfs-list.c                                 |  810 +----------
- btrfs-list.h                                 |  104 +-
- cmds-filesystem.c                            |   19 +-
- cmds-inspect.c                               |   10 +-
- cmds-qgroup.c                                |   21 +-
- cmds-receive.c                               |   13 +-
- cmds-subvolume.c                             | 1877 ++++++++++++++++++--------
- configure.ac                                 |   15 +
- libbtrfsutil/COPYING                         |  674 +++++++++
- libbtrfsutil/COPYING.LESSER                  |  165 +++
- libbtrfsutil/README.md                       |   38 +
- libbtrfsutil/btrfsutil.h                     |  648 +++++++++
- libbtrfsutil/btrfsutil_internal.h            |   40 +
- libbtrfsutil/errors.c                        |   55 +
- libbtrfsutil/filesystem.c                    |  103 ++
- libbtrfsutil/python/.gitignore               |    7 +
- libbtrfsutil/python/btrfsutilpy.h            |   84 ++
- libbtrfsutil/python/error.c                  |  202 +++
- libbtrfsutil/python/filesystem.c             |   94 ++
- libbtrfsutil/python/module.c                 |  321 +++++
- libbtrfsutil/python/qgroup.c                 |  141 ++
- libbtrfsutil/python/setup.py                 |  111 ++
- libbtrfsutil/python/subvolume.c              |  667 +++++++++
- libbtrfsutil/python/tests/__init__.py        |   66 +
- libbtrfsutil/python/tests/test_filesystem.py |   73 +
- libbtrfsutil/python/tests/test_qgroup.py     |   57 +
- libbtrfsutil/python/tests/test_subvolume.py  |  383 ++++++
- libbtrfsutil/qgroup.c                        |   83 ++
- libbtrfsutil/subvolume.c                     | 1368 +++++++++++++++++++
- messages.h                                   |   13 +
- props.c                                      |   69 +-
- qgroup.c                                     |  106 --
- qgroup.h                                     |    4 -
- send-utils.c                                 |   25 +-
- utils.c                                      |  152 +--
- utils.h                                      |    7 -
- 41 files changed, 6899 insertions(+), 1859 deletions(-)
- create mode 100644 libbtrfsutil/COPYING
- create mode 100644 libbtrfsutil/COPYING.LESSER
- create mode 100644 libbtrfsutil/README.md
- create mode 100644 libbtrfsutil/btrfsutil.h
- create mode 100644 libbtrfsutil/btrfsutil_internal.h
- create mode 100644 libbtrfsutil/errors.c
- create mode 100644 libbtrfsutil/filesystem.c
- create mode 100644 libbtrfsutil/python/.gitignore
- create mode 100644 libbtrfsutil/python/btrfsutilpy.h
- create mode 100644 libbtrfsutil/python/error.c
- create mode 100644 libbtrfsutil/python/filesystem.c
- create mode 100644 libbtrfsutil/python/module.c
- create mode 100644 libbtrfsutil/python/qgroup.c
- create mode 100755 libbtrfsutil/python/setup.py
- create mode 100644 libbtrfsutil/python/subvolume.c
- create mode 100644 libbtrfsutil/python/tests/__init__.py
- create mode 100644 libbtrfsutil/python/tests/test_filesystem.py
- create mode 100644 libbtrfsutil/python/tests/test_qgroup.py
- create mode 100644 libbtrfsutil/python/tests/test_subvolume.py
- create mode 100644 libbtrfsutil/qgroup.c
- create mode 100644 libbtrfsutil/subvolume.c
-
+diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
+index 5d67f111..f96c9c4e 100644
+--- a/libbtrfsutil/btrfsutil.h
++++ b/libbtrfsutil/btrfsutil.h
+@@ -103,6 +103,27 @@ enum btrfs_util_error btrfs_util_subvolume_id(const char *path,
+  */
+ enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd, uint64_t *id_ret);
+ 
++/**
++ * btrfs_util_subvolume_path() - Get the path of the subvolume with a given ID
++ * relative to the filesystem root.
++ * @path: Path on a Btrfs filesystem.
++ * @id: ID of subvolume to set as the default. If zero is given, the subvolume
++ * ID of @path is used.
++ * @path_ret: Returned path.
++ *
++ * This requires appropriate privilege (CAP_SYS_ADMIN).
++ *
++ * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
++ */
++enum btrfs_util_error btrfs_util_subvolume_path(const char *path, uint64_t id,
++						char **path_ret);
++
++/**
++ * btrfs_util_subvolume_path_fd() - See btrfs_util_subvolume_path().
++ */
++enum btrfs_util_error btrfs_util_subvolume_path_fd(int fd, uint64_t id,
++						   char **path_ret);
++
+ struct btrfs_util_qgroup_inherit;
+ 
+ /**
+diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
+index 87d47ae0..ffd62ba7 100644
+--- a/libbtrfsutil/python/btrfsutilpy.h
++++ b/libbtrfsutil/python/btrfsutilpy.h
+@@ -60,7 +60,7 @@ void SetFromBtrfsUtilErrorWithPaths(enum btrfs_util_error err,
+ 
+ PyObject *is_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+ PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds);
+-PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
++PyObject *subvolume_path(PyObject *self, PyObject *args, PyObject *kwds);
+ 
+ void add_module_constants(PyObject *m);
+ 
+diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
+index 69bba704..444516b1 100644
+--- a/libbtrfsutil/python/module.c
++++ b/libbtrfsutil/python/module.c
+@@ -144,6 +144,14 @@ static PyMethodDef btrfsutil_methods[] = {
+ 	 "Get the ID of the subvolume containing a file.\n\n"
+ 	 "Arguments:\n"
+ 	 "path -- string, bytes, path-like object, or open file descriptor"},
++	{"subvolume_path", (PyCFunction)subvolume_path,
++	 METH_VARARGS | METH_KEYWORDS,
++	 "subvolume_path(path, id=0) -> int\n\n"
++	 "Get the path of a subvolume relative to the filesystem root.\n\n"
++	 "Arguments:\n"
++	 "path -- string, bytes, path-like object, or open file descriptor\n"
++	 "id -- if not zero, instead of returning the subvolume path of the\n"
++	 "given path, return the path of the subvolume with this ID"},
+ 	{"create_subvolume", (PyCFunction)create_subvolume,
+ 	 METH_VARARGS | METH_KEYWORDS,
+ 	 "create_subvolume(path, async=False)\n\n"
+diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
+index 6f2080ee..6382d290 100644
+--- a/libbtrfsutil/python/subvolume.c
++++ b/libbtrfsutil/python/subvolume.c
+@@ -72,6 +72,36 @@ PyObject *subvolume_id(PyObject *self, PyObject *args, PyObject *kwds)
+ 	return PyLong_FromUnsignedLongLong(id);
+ }
+ 
++PyObject *subvolume_path(PyObject *self, PyObject *args, PyObject *kwds)
++{
++	static char *keywords[] = {"path", "id", NULL};
++	struct path_arg path = {.allow_fd = true};
++	enum btrfs_util_error err;
++	uint64_t id = 0;
++	char *subvol_path;
++	PyObject *ret;
++
++	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|K:subvolume_path",
++					 keywords, &path_converter, &path, &id))
++		return NULL;
++
++	if (path.path)
++		err = btrfs_util_subvolume_path(path.path, id, &subvol_path);
++	else
++		err = btrfs_util_subvolume_path_fd(path.fd, id, &subvol_path);
++	if (err) {
++		SetFromBtrfsUtilErrorWithPath(err, &path);
++		path_cleanup(&path);
++		return NULL;
++	}
++
++	path_cleanup(&path);
++
++	ret = PyUnicode_DecodeFSDefault(subvol_path);
++	free(subvol_path);
++	return ret;
++}
++
+ PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+ {
+ 	static char *keywords[] = {"path", "async", "qgroup_inherit", NULL};
+diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
+index f6c5958d..57ba27bf 100644
+--- a/libbtrfsutil/python/tests/test_subvolume.py
++++ b/libbtrfsutil/python/tests/test_subvolume.py
+@@ -56,6 +56,37 @@ class TestSubvolume(BtrfsTestCase):
+             with self.subTest(type=type(arg)):
+                 self.assertEqual(btrfsutil.subvolume_id(arg), 5)
+ 
++    def test_subvolume_path(self):
++        btrfsutil.create_subvolume(os.path.join(self.mountpoint, 'subvol1'))
++        os.mkdir(os.path.join(self.mountpoint, 'dir1'))
++        os.mkdir(os.path.join(self.mountpoint, 'dir1/dir2'))
++        btrfsutil.create_subvolume(os.path.join(self.mountpoint, 'dir1/dir2/subvol2'))
++        btrfsutil.create_subvolume(os.path.join(self.mountpoint, 'dir1/dir2/subvol2/subvol3'))
++        os.mkdir(os.path.join(self.mountpoint, 'subvol1/dir3'))
++        btrfsutil.create_subvolume(os.path.join(self.mountpoint, 'subvol1/dir3/subvol4'))
++
++        for arg in self.path_or_fd(self.mountpoint):
++            with self.subTest(type=type(arg)):
++                self.assertEqual(btrfsutil.subvolume_path(arg), '')
++                self.assertEqual(btrfsutil.subvolume_path(arg, 5), '')
++                self.assertEqual(btrfsutil.subvolume_path(arg, 256), 'subvol1')
++                self.assertEqual(btrfsutil.subvolume_path(arg, 257), 'dir1/dir2/subvol2')
++                self.assertEqual(btrfsutil.subvolume_path(arg, 258), 'dir1/dir2/subvol2/subvol3')
++                self.assertEqual(btrfsutil.subvolume_path(arg, 259), 'subvol1/dir3/subvol4')
++
++        pwd = os.getcwd()
++        try:
++            os.chdir(self.mountpoint)
++            path = ''
++            for i in range(26):
++                name = chr(ord('a') + i) * 255
++                path = os.path.join(path, name)
++                btrfsutil.create_subvolume(name)
++                os.chdir(name)
++            self.assertEqual(btrfsutil.subvolume_path('.'), path)
++        finally:
++            os.chdir(pwd)
++
+     def test_create_subvolume(self):
+         subvol = os.path.join(self.mountpoint, 'subvol')
+ 
+diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
+index 8efbdd43..54a63b52 100644
+--- a/libbtrfsutil/subvolume.c
++++ b/libbtrfsutil/subvolume.c
+@@ -128,6 +128,131 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_id_fd(int fd,
+ 	return BTRFS_UTIL_OK;
+ }
+ 
++PUBLIC enum btrfs_util_error btrfs_util_subvolume_path(const char *path,
++						       uint64_t id,
++						       char **path_ret)
++{
++	enum btrfs_util_error err;
++	int fd;
++
++	fd = open(path, O_RDONLY);
++	if (fd == -1)
++		return BTRFS_UTIL_ERROR_OPEN_FAILED;
++
++	err = btrfs_util_subvolume_path_fd(fd, id, path_ret);
++	SAVE_ERRNO_AND_CLOSE(fd);
++	return err;
++}
++
++PUBLIC enum btrfs_util_error btrfs_util_subvolume_path_fd(int fd, uint64_t id,
++							  char **path_ret)
++{
++	char *path, *p;
++	size_t capacity = 4096;
++
++	path = malloc(capacity);
++	if (!path)
++		return BTRFS_UTIL_ERROR_NO_MEMORY;
++	p = path + capacity - 1;
++	p[0] = '\0';
++
++	if (id == 0) {
++		enum btrfs_util_error err;
++
++		err = btrfs_util_is_subvolume_fd(fd);
++		if (err)
++			return err;
++
++		err = btrfs_util_subvolume_id_fd(fd, &id);
++		if (err)
++			return err;
++	}
++
++	while (id != BTRFS_FS_TREE_OBJECTID) {
++		struct btrfs_ioctl_search_args search = {
++			.key = {
++				.tree_id = BTRFS_ROOT_TREE_OBJECTID,
++				.min_objectid = id,
++				.max_objectid = id,
++				.min_type = BTRFS_ROOT_BACKREF_KEY,
++				.max_type = BTRFS_ROOT_BACKREF_KEY,
++				.min_offset = 0,
++				.max_offset = UINT64_MAX,
++				.min_transid = 0,
++				.max_transid = UINT64_MAX,
++				.nr_items = 1,
++			},
++		};
++		struct btrfs_ioctl_ino_lookup_args lookup;
++		const struct btrfs_ioctl_search_header *header;
++		const struct btrfs_root_ref *ref;
++		const char *name;
++		uint16_t name_len;
++		size_t lookup_len;
++		size_t total_len;
++		int ret;
++
++		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &search);
++		if (ret == -1) {
++			free(path);
++			return BTRFS_UTIL_ERROR_SEARCH_FAILED;
++		}
++
++		if (search.key.nr_items == 0) {
++			free(path);
++			errno = ENOENT;
++			return BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND;
++		}
++
++		header = (struct btrfs_ioctl_search_header *)search.buf;
++		ref = (struct btrfs_root_ref *)(header + 1);
++		name = (char *)(ref + 1);
++		name_len = le16_to_cpu(ref->name_len);
++
++		id = header->offset;
++
++		lookup.treeid = id;
++		lookup.objectid = le64_to_cpu(ref->dirid);
++		ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &lookup);
++		if (ret == -1) {
++			free(path);
++			return BTRFS_UTIL_ERROR_SEARCH_FAILED;
++		}
++		lookup_len = strlen(lookup.name);
++
++		total_len = name_len + lookup_len + (id != BTRFS_FS_TREE_OBJECTID);
++		if (p - total_len < path) {
++			char *new_path, *new_p;
++			size_t new_capacity = capacity * 2;
++
++			new_path = malloc(new_capacity);
++			if (!new_path) {
++				free(path);
++				return BTRFS_UTIL_ERROR_NO_MEMORY;
++			}
++			new_p = new_path + new_capacity - (path + capacity - p);
++			memcpy(new_p, p, path + capacity - p);
++			free(path);
++			path = new_path;
++			p = new_p;
++			capacity = new_capacity;
++		}
++		p -= name_len;
++		memcpy(p, name, name_len);
++		p -= lookup_len;
++		memcpy(p, lookup.name, lookup_len);
++		if (id != BTRFS_FS_TREE_OBJECTID)
++			*--p = '/';
++	}
++
++	if (p != path)
++		memmove(path, p, path + capacity - p);
++
++	*path_ret = path;
++
++	return BTRFS_UTIL_OK;
++}
++
+ static enum btrfs_util_error openat_parent_and_name(int dirfd, const char *path,
+ 						    char *name, size_t name_len,
+ 						    int *fd)
 -- 
 2.16.1
 

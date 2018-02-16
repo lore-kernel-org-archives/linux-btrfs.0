@@ -1,104 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:53743 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752038AbeBFHCm (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Tue, 6 Feb 2018 02:02:42 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 3/3] btrfs-progs: Move check/main.c to cmds-check.c to maintain the subcommand hierarchy
-Date: Tue,  6 Feb 2018 15:02:23 +0800
-Message-Id: <20180206070223.28791-4-wqu@suse.com>
-In-Reply-To: <20180206070223.28791-1-wqu@suse.com>
-References: <20180206070223.28791-1-wqu@suse.com>
+Received: from mail.linuxfoundation.org ([140.211.169.12]:39072 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750713AbeBPUH3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Feb 2018 15:07:29 -0500
+Date: Fri, 16 Feb 2018 20:56:54 +0100
+From: Greg KH <gregkh@linuxfoundation.org>
+To: Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: Re: [PATCH] Fix NULL pointer exception in find_bio_stripe()
+Message-ID: <20180216195654.GA9698@kroah.com>
+References: <4F831C76-2968-4A34-B7EF-2D8741A50529@wdc.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <4F831C76-2968-4A34-B7EF-2D8741A50529@wdc.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cmds-check.c is back now, with include files cleaned up.
+On Fri, Feb 16, 2018 at 07:51:38PM +0000, Dmitriy Gorokh wrote:
+> On detaching of a disk which is a part of a RAID6 filesystem, the following kernel OOPS may happen:
+> 
+> [63122.680461] BTRFS error (device sdo): bdev /dev/sdo errs: wr 0, rd 0, flush 1, corrupt 0, gen 0 
+> [63122.719584] BTRFS warning (device sdo): lost page write due to IO error on /dev/sdo 
+> [63122.719587] BTRFS error (device sdo): bdev /dev/sdo errs: wr 1, rd 0, flush 1, corrupt 0, gen 0 
+> [63122.803516] BTRFS warning (device sdo): lost page write due to IO error on /dev/sdo 
+> [63122.803519] BTRFS error (device sdo): bdev /dev/sdo errs: wr 2, rd 0, flush 1, corrupt 0, gen 0 
+> [63122.863902] BTRFS critical (device sdo): fatal error on device /dev/sdo 
+> [63122.935338] BUG: unable to handle kernel NULL pointer dereference at 0000000000000080 
+> [63122.946554] IP: fail_bio_stripe+0x58/0xa0 [btrfs] 
+> [63122.958185] PGD 9ecda067 P4D 9ecda067 PUD b2b37067 PMD 0 
+> [63122.971202] Oops: 0000 [#1] SMP 
+> [63122.990786] Modules linked in: libcrc32c dlm configfs cpufreq_userspace cpufreq_powersave cpufreq_conservative softdog nfsd auth_rpcgss nfs_acl nfs lockd grace fscache sunrpc bonding ipmi_devintf ipmi_msghandler joydev snd_intel8x0 snd_ac97_codec snd_pcm snd_timer snd psmouse evdev parport_pc soundcore serio_raw battery pcspkr video ac97_bus ac parport ohci_pci ohci_hcd i2c_piix4 button crc32c_generic crc32c_intel btrfs xor zstd_decompress zstd_compress xxhash raid6_pq dm_mod dax raid1 md_mod hid_generic usbhid hid xhci_pci xhci_hcd ehci_pci ehci_hcd usbcore sg sd_mod sr_mod cdrom ata_generic ahci libahci ata_piix libata e1000 scsi_mod [last unloaded: scst] 
+> [63123.006760] CPU: 0 PID: 3979 Comm: kworker/u8:9 Tainted: G W 4.14.2-16-scst34x+ #8 
+> [63123.007091] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006 
+> [63123.007402] Workqueue: btrfs-worker btrfs_worker_helper [btrfs] 
+> [63123.007595] task: ffff880036ea4040 task.stack: ffffc90006384000 
+> [63123.007796] RIP: 0010:fail_bio_stripe+0x58/0xa0 [btrfs] 
+> [63123.007968] RSP: 0018:ffffc90006387ad8 EFLAGS: 00010287 
+> [63123.008140] RAX: 0000000000000002 RBX: ffff88004beaa0b8 RCX: ffff8800b2bd5690 
+> [63123.008359] RDX: 0000000000000000 RSI: ffff88007bb43500 RDI: ffff88004beaa000 
+> [63123.008621] RBP: ffffc90006387ae8 R08: 0000000099100000 R09: ffff8800b2bd5600 
+> [63123.008840] R10: 0000000000000004 R11: 0000000000010000 R12: ffff88007bb43500 
+> [63123.009059] R13: 00000000fffffffb R14: ffff880036fc5180 R15: 0000000000000004 
+> [63123.009278] FS: 0000000000000000(0000) GS:ffff8800b7000000(0000) knlGS:0000000000000000 
+> [63123.009564] CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033 
+> [63123.009748] CR2: 0000000000000080 CR3: 00000000b0866000 CR4: 00000000000406f0 
+> [63123.009969] Call Trace: 
+> [63123.010085] raid_write_end_io+0x7e/0x80 [btrfs] 
+> [63123.010251] bio_endio+0xa1/0x120 
+> [63123.010378] generic_make_request+0x218/0x270 
+> [63123.010921] submit_bio+0x66/0x130 
+> [63123.011073] finish_rmw+0x3fc/0x5b0 [btrfs] 
+> [63123.011245] full_stripe_write+0x96/0xc0 [btrfs] 
+> [63123.011428] raid56_parity_write+0x117/0x170 [btrfs] 
+> [63123.011604] btrfs_map_bio+0x2ec/0x320 [btrfs] 
+> [63123.011759] ? ___cache_free+0x1c5/0x300 
+> [63123.011909] __btrfs_submit_bio_done+0x26/0x50 [btrfs] 
+> [63123.012087] run_one_async_done+0x9c/0xc0 [btrfs] 
+> [63123.012257] normal_work_helper+0x19e/0x300 [btrfs] 
+> [63123.012429] btrfs_worker_helper+0x12/0x20 [btrfs] 
+> [63123.012656] process_one_work+0x14d/0x350 
+> [63123.012888] worker_thread+0x4d/0x3a0 
+> [63123.013026] ? _raw_spin_unlock_irqrestore+0x15/0x20 
+> [63123.013192] kthread+0x109/0x140 
+> [63123.013315] ? process_scheduled_works+0x40/0x40 
+> [63123.013472] ? kthread_stop+0x110/0x110 
+> [63123.013610] ret_from_fork+0x25/0x30 
+> [63123.013741] Code: 7e 43 31 c0 48 63 d0 48 8d 14 52 49 8d 4c d1 60 48 8b 51 08 49 39 d0 72 1f 4c 63 1b 4c 01 da 49 39 d0 73 14 48 8b 11 48 8b 52 68 <48> 8b 8a 80 00 00 00 48 39 4e 08 74 14 83 c0 01 44 39 d0 75 c4 
+> [63123.014469] RIP: fail_bio_stripe+0x58/0xa0 [btrfs] RSP: ffffc90006387ad8 
+> [63123.014678] CR2: 0000000000000080 
+> [63123.016590] ---[ end trace a295ea7259c17880 ]— 
+> 
+> This is reproducible in a cycle, where a series of writes is followed by SCSI device delete command. The test may take up to few minutes.
+> 
+> Fixes: commit 74d46992e0d9dee7f1f376de0d56d31614c8a17a ("block: replace bi_bdev with a gendisk pointer and partitions index")
+> ---
+>  fs/btrfs/raid56.c | 1 +
+>  1 file changed, 1 insertion(+)
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Makefile                     |  8 ++++----
- check/main.c => cmds-check.c | 17 -----------------
- 2 files changed, 4 insertions(+), 21 deletions(-)
- rename check/main.c => cmds-check.c (97%)
+<formletter>
 
-diff --git a/Makefile b/Makefile
-index f51a8d701a2c..58e894c0171b 100644
---- a/Makefile
-+++ b/Makefile
-@@ -100,6 +100,7 @@ CHECKER_FLAGS := -include $(check_defs) -D__CHECKER__ \
- 	-D__CHECK_ENDIAN__ -Wbitwise -Wuninitialized -Wshadow -Wundef \
- 	-U_FORTIFY_SOURCE -Wdeclaration-after-statement -Wdefault-bitfield-sign
- 
-+check_objects = check/mode-lowmem.o check/mode-original.o check/mode-common.o
- objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
- 	  root-tree.o dir-item.o file-item.o inode-item.o inode-map.o \
- 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
-@@ -109,12 +110,11 @@ objects = ctree.o disk-io.o kernel-lib/radix-tree.o extent-tree.o print-tree.o \
- 	  fsfeatures.o kernel-lib/tables.o kernel-lib/raid56.o transaction.o
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
--	       cmds-quota.o cmds-qgroup.o cmds-replace.o check/main.o \
-+	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
- 	       cmds-restore.o cmds-rescue.o chunk-recover.o super-recover.o \
- 	       cmds-property.o cmds-fi-usage.o cmds-inspect-dump-tree.o \
- 	       cmds-inspect-dump-super.o cmds-inspect-tree-stats.o cmds-fi-du.o \
--	       mkfs/common.o check/mode-common.o check/mode-lowmem.o \
--	       check/mode-original.o
-+	       mkfs/common.o
- libbtrfs_objects = send-stream.o send-utils.o kernel-lib/rbtree.o btrfs-list.o \
- 		   kernel-lib/crc32c.o messages.o \
- 		   uuid-tree.o utils-lib.o rbtree-utils.o
-@@ -391,7 +391,7 @@ btrfs-%: btrfs-%.o $(objects) $(standalone_deps) $(libs_static)
- 		$(libs_static) \
- 		$(LDFLAGS) $(LIBS) $($(subst -,_,$@-libs))
- 
--btrfs: btrfs.o $(objects) $(cmds_objects) $(libs_static)
-+btrfs: btrfs.o $(objects) $(cmds_objects) $(libs_static) $(check_objects)
- 	@echo "    [LD]     $@"
- 	$(Q)$(CC) -o $@ $^ $(LDFLAGS) $(LIBS) $(LIBS_COMP)
- 
-diff --git a/check/main.c b/cmds-check.c
-similarity index 97%
-rename from check/main.c
-rename to cmds-check.c
-index 1bb2142e113e..28746712fac1 100644
---- a/check/main.c
-+++ b/cmds-check.c
-@@ -16,32 +16,15 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#include <stdio.h>
--#include <stdlib.h>
--#include <unistd.h>
--#include <fcntl.h>
--#include <sys/types.h>
--#include <sys/stat.h>
--#include <unistd.h>
- #include <getopt.h>
- #include <uuid/uuid.h>
--#include "ctree.h"
- #include "volumes.h"
- #include "repair.h"
- #include "disk-io.h"
--#include "print-tree.h"
- #include "task-utils.h"
- #include "transaction.h"
- #include "utils.h"
--#include "commands.h"
--#include "free-space-cache.h"
--#include "free-space-tree.h"
--#include "btrfsck.h"
- #include "qgroup-verify.h"
--#include "rbtree-utils.h"
--#include "backref.h"
--#include "kernel-shared/ulist.h"
--#include "hash.h"
- #include "help.h"
- #include "check/mode-common.h"
- #include "check/mode-original.h"
--- 
-2.16.1
+This is not the correct way to submit patches for inclusion in the
+stable kernel tree.  Please read:
+    https://www.kernel.org/doc/html/latest/process/stable-kernel-rules.html
+for how to do this properly.
 
+</formletter>

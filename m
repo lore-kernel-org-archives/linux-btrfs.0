@@ -1,80 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57950 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753688AbeBPHkw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Feb 2018 02:40:52 -0500
-Subject: Re: Ongoing Btrfs stability issues
-To: Alex Adriaanse <alex@oseberg.io>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
- <83bfc8da-82fd-e2bf-4b27-175bf90ac072@suse.com>
- <2A1FE868-FE3A-489A-B600-8F460D3DFFC8@oseberg.io>
- <17374c30-4376-a96f-ee38-791a95676ae0@suse.com>
- <81FC1059-87DE-49DE-81D0-95C651A5A928@oseberg.io>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <57784be9-55b7-2465-3cfe-c693a55e44f7@suse.com>
-Date: Fri, 16 Feb 2018 09:40:49 +0200
+Received: from frost.carfax.org.uk ([85.119.82.111]:57927 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932081AbeBPJiB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Feb 2018 04:38:01 -0500
+Date: Fri, 16 Feb 2018 09:38:00 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Sampson Fung <sampsonfung@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send/receive in reverse possible?
+Message-ID: <20180216093800.GQ3807@carfax.org.uk>
+References: <CACEy+ERPPDqAzZEUtuSTS=QROnfHV-_C5Z4y-EZ303PObX94Qg@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <81FC1059-87DE-49DE-81D0-95C651A5A928@oseberg.io>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="wrbiW19WTymQQzps"
+In-Reply-To: <CACEy+ERPPDqAzZEUtuSTS=QROnfHV-_C5Z4y-EZ303PObX94Qg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--wrbiW19WTymQQzps
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 16.02.2018 06:54, Alex Adriaanse wrote:
+On Fri, Feb 16, 2018 at 10:43:54AM +0800, Sampson Fung wrote:
+> I have snapshot A on Drive_A.
+> I send snapshot A to an empty Drive_B.  Then keep Drive_A as backup.
+> I use Drive_B as active.
+> I create new snapshot B on Drive_B.
 > 
->> On Feb 15, 2018, at 2:42 PM, Nikolay Borisov <nborisov@suse.com> wrote:
->>
->> On 15.02.2018 21:41, Alex Adriaanse wrote:
->>>
->>>> On Feb 15, 2018, at 12:00 PM, Nikolay Borisov <nborisov@suse.com> wrote:
->>>>
->>>> So in all of the cases you are hitting some form of premature enospc.
->>>> There was a fix that landed in 4.15 that should have fixed a rather
->>>> long-standing issue with the way metadata reservations are satisfied,
->>>> namely:
->>>>
->>>> 996478ca9c46 ("btrfs: change how we decide to commit transactions during
->>>> flushing").
->>>>
->>>> That commit was introduced in 4.14.3 stable kernel. Since you are not
->>>> using upstream kernel I'd advise you check whether the respective commit
->>>> is contained in the kernel versions you are using.
->>>>
->>>> Other than that in the reports you mentioned there is one crash in
->>>> __del_reloc_root which looks rather interesting, at the very least it
->>>> shouldn't crash...
->>>
->>> I checked the Debian source code that's used for building the kernels that we run, and can confirm that both 4.14.7-1~bpo9+1 and 4.14.13-1~bpo9+1 contain the changes associated with the commit you referenced. So crash instances #2, #3, and #4 at https://bugzilla.kernel.org/show_bug.cgi?id=198787 were all running kernels that contain this fix already.
->>>
->>> Could it be that some on-disk data structures got (silently) corrupted while we were running pre-4.14.7 kernels, and the aforementioned fix doesn't address anything relating to damage that has already been done? If so, is there a way to detect and/or repair this for existing filesystems other than running a "btrfs check --repair" or rebuilding filesystems (both of which require a significant amount of downtime)?
->>
->> From the logs provided I can see only a single crash, the others are
->> just ENOSPC which can cause corruption due to delayed refs (in majority
->> of examples) not finishing. Is btrfs hosted on the EBS volume or on the
->> ephemeral storage of the instance? Is the EBS an ssd? If it's ssd are
->> you using an io scheduler for those ebs devices? You ca check what the
->> io scheduler for a device is by reading the following sysfs file:
->>
->> /sys/block/<disk device>/queue/scheduler
-> 
-> It's hosted on an EBS volume; we don't use ephemeral storage at all. The EBS volumes are all SSD. We didn't change the default schedulers on the VMs and it looks like it's using mq-deadline:
-> 
-> $ cat /sys/block/xvdc/queue/scheduler
-> [mq-deadline] none
+> Can I use btrfs send/receive to send incremental differences back to Drive_A?
+> What is the correct way of doing this?
 
-SO one thing I can advise to test is set the scheduler for that xvdc to
-none. Next, I'ad advise you backport the following patch to your kernel:
-https://github.com/kdave/btrfs-devel/commit/1b816c23e91f70603c532af52cccf17e68393682
+   You can't do it with the existing tools -- it needs a change to the
+send stream format. Here's a write-up of what's going on behind the
+scenes, and what needs to change:
 
-then mount the filesystem with -o enospc_debug. And the next time an
-enospc occurs additional info should be printed in dmesg with the state
-of the space_info structure.
+https://www.spinics.net/lists/linux-btrfs/msg44089.html
 
-> 
-> Alex--
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+   Hugo.
+
+-- 
+Hugo Mills             | I can't foretell the future, I just work there.
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                            The Doctor
+
+--wrbiW19WTymQQzps
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJahqZ3AAoJEFheFHXiqx3kufAP/jMAkPQ5lE6QSEbTYg6rwIlT
+7YT59ErDE2gNgr/0ONKOeTZIUCRGQvjqTiLSca0wGVawuC5FEfhtfQVUvrGT0NqN
+EkSTA2BihcbeVeUo6RkBvO1/HEmzsxRflbGVJbM5NJpYfIArGnhcN09DNc4HaNhA
+axQXvpZDxqWMLne+LbXqw6o7j0IIPVBm6aU44aDcrOViHFV7l3EOw65WgJGADc33
+OT42J1yn4jQNIQ1BJZ/KDOM5YzMOgzDi1gHYnlm6WwIm86euvg0pN9c3ofWV3ZsI
+w3ZgTW3zD/QAjpD2w7hKc2gPY5N7yDTpNn1Cy7SmBm5AKIo/vXvtzlxxhHMw68dG
+qzisPX7DwNVppFGRPmdDpd8UH1KP/rxvYpZX7S83v1E0j9mO5EWup2UA8wZMtvRS
+HS9RS/Y7Bjt+5m2oXaT/Lsy/ctKRJC7R0fiw0LDBWMW9fmZEo77pB101lM8l+snA
+g/y/qgb+bZgtl8RfPyP6X5VYw0yOJsJZPIr52+EKXTKbecCYffzuNH7ex9UkT0zt
+8eharohHxEBwPAfg5ah8UZnijFCbJL8C7Jtic9OJ0y3dikxCa140ATV4rIfK31fe
+ATxwnlAm2UgQ0cGBqsjo+4pm2t/vtEnYEgz2pHThV/I0Ncmfuq3tys3tGydV2DPr
+ldSgy3IiX5lx0XsjaQ9n
+=YT3R
+-----END PGP SIGNATURE-----
+
+--wrbiW19WTymQQzps--

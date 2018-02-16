@@ -1,32 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga06.intel.com ([134.134.136.31]:6582 "EHLO mga06.intel.com"
+Received: from mga17.intel.com ([192.55.52.151]:33347 "EHLO mga17.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753416AbeBPHBS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Feb 2018 02:01:18 -0500
-Date: Fri, 16 Feb 2018 15:01:07 +0800
+        id S1753416AbeBPHBR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Feb 2018 02:01:17 -0500
+Date: Fri, 16 Feb 2018 15:01:08 +0800
 From: kbuild test robot <fengguang.wu@intel.com>
 To: Josef Bacik <jbacik@fb.com>
 Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
-Subject: [josef-btrfs:blk-qos 13/13] block/blkcg-qos.c:340:5: sparse: symbol
- 'blkcg_qos_init' was not declared. Should it be static?
-Message-ID: <201802161335.keR3zHOI%fengguang.wu@intel.com>
+Subject: [RFC PATCH josef-btrfs] block: blkcg_qos_init() can be static
+Message-ID: <20180216070108.GA17588@lkp-wsm-ep1>
+References: <201802161335.keR3zHOI%fengguang.wu@intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201802161335.keR3zHOI%fengguang.wu@intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git blk-qos
-head:   6389939532e7f4a0d8f19f9efc8a4936f8368d29
-commit: 6389939532e7f4a0d8f19f9efc8a4936f8368d29 [13/13] block: introduce blkcg-qos io controller
-reproduce:
-        # apt-get install sparse
-        git checkout 6389939532e7f4a0d8f19f9efc8a4936f8368d29
-        make ARCH=x86_64 allmodconfig
-        make C=1 CF=-D__CHECK_ENDIAN__
 
-
-Please review and possibly fold the followup patch.
-
+Fixes: 6389939532e7 ("block: introduce blkcg-qos io controller")
+Signed-off-by: Fengguang Wu <fengguang.wu@intel.com>
 ---
-0-DAY kernel test infrastructure                Open Source Technology Center
-https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
+ blkcg-qos.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/block/blkcg-qos.c b/block/blkcg-qos.c
+index a28adcc..6588b1c 100644
+--- a/block/blkcg-qos.c
++++ b/block/blkcg-qos.c
+@@ -337,7 +337,7 @@ static struct rq_qos_ops blkcg_qos_ops = {
+ 	.done_bio = blkcg_qos_done_bio,
+ };
+ 
+-int blkcg_qos_init(struct request_queue *q)
++static int blkcg_qos_init(struct request_queue *q)
+ {
+ 	struct blkcg_qos *blkqos;
+ 	struct rq_qos *rqos;

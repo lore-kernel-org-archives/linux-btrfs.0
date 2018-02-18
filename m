@@ -1,70 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f179.google.com ([209.85.128.179]:39250 "EHLO
-        mail-wr0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751163AbeBRIO1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Feb 2018 03:14:27 -0500
-Received: by mail-wr0-f179.google.com with SMTP id w77so6669127wrc.6
-        for <linux-btrfs@vger.kernel.org>; Sun, 18 Feb 2018 00:14:27 -0800 (PST)
+Received: from pepin.polanet.pl ([193.34.52.2]:52720 "EHLO pepin.polanet.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751238AbeBRJ2D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 18 Feb 2018 04:28:03 -0500
+Date: Sun, 18 Feb 2018 10:28:02 +0100
+From: Tomasz Pala <gotar@polanet.pl>
+To: Tomasz =?iso-8859-2?Q?K=B3oczko?= <kloczko.tomasz@gmail.com>
+Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: your mail
+Message-ID: <20180218092802.GA25085@polanet.pl>
+References: <CABB28Cw2+jYynXk1e+Lbx+4otsj5BLXucVV6W3+kvm3RDbH_AQ@mail.gmail.com>
 MIME-Version: 1.0
-From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
-Date: Sun, 18 Feb 2018 08:14:25 +0000
-Message-ID: <CABB28Cw2+jYynXk1e+Lbx+4otsj5BLXucVV6W3+kvm3RDbH_AQ@mail.gmail.com>
-Subject: 
-To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=iso-8859-2
+In-Reply-To: <CABB28Cw2+jYynXk1e+Lbx+4otsj5BLXucVV6W3+kvm3RDbH_AQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sun, Feb 18, 2018 at 08:14:25 +0000, Tomasz K³oczko wrote:
 
-For some reasons btrfs pool each volume is not displayed in mount and
-df output, and I cannot find how to display volumes/snapshots usage
-using btrfs command.
-I'm looking for equivalent of the "zfs list -r -t [all|snapshot,filesystem]"
-https://docs.oracle.com/cd/E23824_01/html/821-1448/gazsu.html#scrolltoc
-Can someone help with exact command syntax?
-As it is a quite basic function I think that some man page must be not
-up-to-date or I'm looking at the wrong doc .. or I'm just blind :-/
+> For some reasons btrfs pool each volume is not displayed in mount and
+> df output, and I cannot find how to display volumes/snapshots usage
+> using btrfs command.
 
-Another question related to btrfs functionalities.
-Is anyone working on the analog of zfs delegations?
-https://docs.oracle.com/cd/E23824_01/html/821-1448/gbchv.html#scrolltoc
+In general: not possible without enabling quotas, which in turn impact
+snapshot performance significally.
 
-I'm using now btrfs quite intensively and I'm trying to use btrfs as
-same way as I've been using for veeery long time zfs :-P
-So now I have many volumes and snapshots in my home directory, but to
-maintain all this I must use root permission. As non-root working in
-my own home which is separated btrfs volume it would be nice to have
-the possibility to delegate permission to create, destroy,
-send/receive, mount/umount etc. snapshots, volumes like it os possible
-on zfs.
+btrfs quota enable /
+btrfs quota rescan /
+btrfs qgroup sh --sort=excl /
 
-BTW: someone maybe started working on something like .zfs hidden
-directory functions which is in each zfs volume mountpoint?
-Have few or few tenths snapshots is not so big deal but the same on
-scale few hundreds, thousands or more snapshots I think that would be
-really hard without something like hidden .btrfs/snapshots directory.
-On zfs .zfs/snapshots directory is especially useful when the volume
-is exported over for example NFS. With zfs volume exported over NFS on
-NFS client is possible to do "mkdir .zfs/snapshot/my_snapshot" to
-create the snapshot (even from NFS client working on Windows) or
-"rmdir .zfs/snapshot/my_snapshot" to destroy snapshot from remote NFS
-client system. All without login over for example ssh on NFS server.
+> So now I have many volumes and snapshots in my home directory, but to
+> maintain all this I must use root permission. As non-root working in
+> my own home which is separated btrfs volume it would be nice to have
+> the possibility to delegate permission to create, destroy,
+> send/receive, mount/umount etc. snapshots, volumes like it os possible
+> on zfs.
 
-And last question.
-As Linux has now containers which provide most of the core Solaris
-non-global zones functions it would be good to have as well equivalent
-of the zfs zoned property.
-https://docs.oracle.com/cd/E19253-01/819-5461/gbbre/index.html
-Someone maybe started working on something like this for btrfs?
+I've already noticed this problem on February 10th:
+[btrfs-progs] coreutils-like -i parameter, splitting permissions for various tasks
 
-After few years not using btrfs (because previously was quite
-unstable) It is really good to see that now I'm not able to crash it.
-I must say "big thank you" to all those people involved in reaching
-current state :)
+In short: not possible. Regular user can only create subvolumes.
 
-kloczek
+> BTW: someone maybe started working on something like .zfs hidden
+> directory functions which is in each zfs volume mountpoint?
+
+In btrfs world this is done differently - don't put main (working) volume in the
+root, but mount some branch by default, keeping all the subvolumes next
+to it. I.e. don't:
+
+@working_subvolume
+@working_subvolume/snapshots
+
+but:
+
+@root_of_the_fs
+@root_of_the_fs/working_subvolume
+@root_of_the_fs/snapshots
+
+In fact this is manual workaroud for the problem you've mentioned.
+
+> Have few or few tenths snapshots is not so big deal but the same on
+> scale few hundreds, thousands or more snapshots I think that would be
+> really hard without something like hidden .btrfs/snapshots directory.
+
+With few hundreds of subvolumes btrfs would fail miserably.
+
+> After few years not using btrfs (because previously was quite
+> unstable) It is really good to see that now I'm not able to crash it.
+
+It's not crashing with LTS 4.4 and 4.9 kernels, many reports of various
+crashes in 4.12, 4.14 and 4.15 were posted here. It is really hard to say,
+which of the post-4.9 kernels have reliable btrfs.
 
 -- 
-Tomasz KÅ‚oczko | LinkedIn: http://lnkd.in/FXPWxH
+Tomasz Pala <gotar@pld-linux.org>

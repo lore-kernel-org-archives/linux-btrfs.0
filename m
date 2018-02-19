@@ -1,34 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from pepin.polanet.pl ([193.34.52.2]:52913 "EHLO pepin.polanet.pl"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751238AbeBRJe4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Feb 2018 04:34:56 -0500
-Date: Sun, 18 Feb 2018 10:34:55 +0100
-From: Tomasz Pala <gotar@polanet.pl>
-To: Tomasz =?iso-8859-2?Q?K=B3oczko?= <kloczko.tomasz@gmail.com>
-Cc: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: your mail
-Message-ID: <20180218093454.GA13420@polanet.pl>
-References: <CABB28Cw2+jYynXk1e+Lbx+4otsj5BLXucVV6W3+kvm3RDbH_AQ@mail.gmail.com>
- <20180218092802.GA25085@polanet.pl>
+Received: from userp2120.oracle.com ([156.151.31.85]:45598 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751840AbeBSE2b (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 18 Feb 2018 23:28:31 -0500
+Subject: Re: fatal database corruption with btrfs "out of space" with ~50 GB
+ left
+To: Tomasz Chmielewski <tch@virtall.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <d8289a56-5874-dfe9-60fd-72b3c06b1664@oracle.com>
+Date: Mon, 19 Feb 2018 12:29:59 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-In-Reply-To: <20180218092802.GA25085@polanet.pl>
+In-Reply-To: <de1fdabb35ffe14eb92433ef444494e7@virtall.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 18, 2018 at 10:28:02 +0100, Tomasz Pala wrote:
 
-> I've already noticed this problem on February 10th:
-> [btrfs-progs] coreutils-like -i parameter, splitting permissions for various tasks
-> 
-> In short: not possible. Regular user can only create subvolumes.
 
-Not possible "oficially". Axel Burri has replied with more helpful approach:
-https://github.com/digint/btrfs-progs-btrbk
+On 02/14/2018 10:19 PM, Tomasz Chmielewski wrote:
+> Just FYI, how dangerous running btrfs can be - we had a fatal, 
+> unrecoverable MySQL corruption when btrfs decided to do one of these "I 
+> have ~50 GB left, so let's do out of space (and corrupt some files at 
+> the same time, ha ha!)".
 
-Unfortunately this issue was not picked up by any developer, so for now
-we can only wait for splitting libbtrfsutil so this task could be easier.
+  Thanks for reporting.
 
--- 
-Tomasz Pala <gotar@pld-linux.org>
+> Running btrfs RAID-1 with kernel 4.14.
+
+  Can you pls let us know..
+  1. What tool cli/reported/identified that data is corrupted?
+  2. Disk error stat using.. btrfs dev stat <mnt>
+     (dev stat is stored on disk)
+  3. Wheather the disk was mounted as degraded any time before?
+
+Thanks, Anand

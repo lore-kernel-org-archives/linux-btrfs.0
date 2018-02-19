@@ -1,55 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:29287 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1750751AbeBFFhd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Feb 2018 00:37:33 -0500
-From: Gu Jinxiang <gujx@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH v4 3/3] btrfs-progs: Add readme for export testsuits
-Date: Tue, 6 Feb 2018 13:37:25 +0800
-Message-ID: <1517895445-17767-4-git-send-email-gujx@cn.fujitsu.com>
-In-Reply-To: <1517895445-17767-1-git-send-email-gujx@cn.fujitsu.com>
-References: <1517895445-17767-1-git-send-email-gujx@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from www262.sakura.ne.jp ([202.181.97.72]:44862 "EHLO
+        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752594AbeBSLwq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Feb 2018 06:52:46 -0500
+To: peterz@infradead.org
+Cc: torvalds@linux-foundation.org, davej@codemonkey.org.uk, npiggin@gmail.com,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        netdev@vger.kernel.org, mhocko@kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] lockdep: Fix fs_reclaim warning.
+From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+References: <20180129102746.GQ2269@hirez.programming.kicks-ass.net>
+        <201801292047.EHC05241.OHSQOJOVtFMFLF@I-love.SAKURA.ne.jp>
+        <20180129135547.GR2269@hirez.programming.kicks-ass.net>
+        <201802012036.FEE78102.HOMFFOtJVFOSQL@I-love.SAKURA.ne.jp>
+        <201802082043.FFJ39503.SVQFFFOJMHLOtO@I-love.SAKURA.ne.jp>
+In-Reply-To: <201802082043.FFJ39503.SVQFFFOJMHLOtO@I-love.SAKURA.ne.jp>
+Message-Id: <201802192052.CGB00556.VHOOFJSQOMFLtF@I-love.SAKURA.ne.jp>
+Date: Mon, 19 Feb 2018 20:52:45 +0900
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add the readme of command for export testsuits.
-And add the excute method of exported testsuits.
+Peter, are you OK with this patch?
 
-Signed-off-by: Gu Jinxiang <gujx@cn.fujitsu.com>
----
- tests/README.md | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-diff --git a/tests/README.md b/tests/README.md
-index 04d2ce2a..23f35cfc 100644
---- a/tests/README.md
-+++ b/tests/README.md
-@@ -48,6 +48,19 @@ $ TEST=001\* ./fsck-tests.sh
- will run the first test in fsck-tests subdirectory.
- 
- 
-+## Package testsuit
-+
-+The tests can be export as a btrfs-progs-tests.tar.gz current path. Use:
-+
-+```shell
-+$ make testsuite
-+```
-+
-+
-+And, after decompress btrfs-progs-tests.tar.gz, test can be run selectively
-+from `tests/` directory introduced above.
-+
-+
- ## Test structure
- 
- *tests/fsck-tests/:*
--- 
-2.14.3
-
-
-
+Tetsuo Handa wrote:
+> From 361d37a7d36978020dfb4c11ec1f4800937ccb68 Mon Sep 17 00:00:00 2001
+> From: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+> Date: Thu, 8 Feb 2018 10:35:35 +0900
+> Subject: [PATCH v2] lockdep: Fix fs_reclaim warning.
+> 
+> Dave Jones reported fs_reclaim lockdep warnings.
+> 
+>   ============================================
+>   WARNING: possible recursive locking detected
+>   4.15.0-rc9-backup-debug+ #1 Not tainted
+>   --------------------------------------------
+>   sshd/24800 is trying to acquire lock:
+>    (fs_reclaim){+.+.}, at: [<0000000084f438c2>] fs_reclaim_acquire.part.102+0x5/0x30
+> 
+>   but task is already holding lock:
+>    (fs_reclaim){+.+.}, at: [<0000000084f438c2>] fs_reclaim_acquire.part.102+0x5/0x30
+> 
+>   other info that might help us debug this:
+>    Possible unsafe locking scenario:
+> 
+>          CPU0
+>          ----
+>     lock(fs_reclaim);
+>     lock(fs_reclaim);
+> 
+>    *** DEADLOCK ***
+> 
+>    May be due to missing lock nesting notation
+> 
+>   2 locks held by sshd/24800:
+>    #0:  (sk_lock-AF_INET6){+.+.}, at: [<000000001a069652>] tcp_sendmsg+0x19/0x40
+>    #1:  (fs_reclaim){+.+.}, at: [<0000000084f438c2>] fs_reclaim_acquire.part.102+0x5/0x30
+> 
+>   stack backtrace:
+>   CPU: 3 PID: 24800 Comm: sshd Not tainted 4.15.0-rc9-backup-debug+ #1
+>   Call Trace:
+>    dump_stack+0xbc/0x13f
+>    __lock_acquire+0xa09/0x2040
+>    lock_acquire+0x12e/0x350
+>    fs_reclaim_acquire.part.102+0x29/0x30
+>    kmem_cache_alloc+0x3d/0x2c0
+>    alloc_extent_state+0xa7/0x410
+>    __clear_extent_bit+0x3ea/0x570
+>    try_release_extent_mapping+0x21a/0x260
+>    __btrfs_releasepage+0xb0/0x1c0
+>    btrfs_releasepage+0x161/0x170
+>    try_to_release_page+0x162/0x1c0
+>    shrink_page_list+0x1d5a/0x2fb0
+>    shrink_inactive_list+0x451/0x940
+>    shrink_node_memcg.constprop.88+0x4c9/0x5e0
+>    shrink_node+0x12d/0x260
+>    try_to_free_pages+0x418/0xaf0
+>    __alloc_pages_slowpath+0x976/0x1790
+>    __alloc_pages_nodemask+0x52c/0x5c0
+>    new_slab+0x374/0x3f0
+>    ___slab_alloc.constprop.81+0x47e/0x5a0
+>    __slab_alloc.constprop.80+0x32/0x60
+>    __kmalloc_track_caller+0x267/0x310
+>    __kmalloc_reserve.isra.40+0x29/0x80
+>    __alloc_skb+0xee/0x390
+>    sk_stream_alloc_skb+0xb8/0x340
+>    tcp_sendmsg_locked+0x8e6/0x1d30
+>    tcp_sendmsg+0x27/0x40
+>    inet_sendmsg+0xd0/0x310
+>    sock_write_iter+0x17a/0x240
+>    __vfs_write+0x2ab/0x380
+>    vfs_write+0xfb/0x260
+>    SyS_write+0xb6/0x140
+>    do_syscall_64+0x1e5/0xc05
+>    entry_SYSCALL64_slow_path+0x25/0x25
+> 
+> This warning is caused by commit d92a8cfcb37ecd13 ("locking/lockdep: Rework
+> FS_RECLAIM annotation") which replaced lockdep_set_current_reclaim_state()/
+> lockdep_clear_current_reclaim_state() in __perform_reclaim() and
+> lockdep_trace_alloc() in slab_pre_alloc_hook() with fs_reclaim_acquire()/
+> fs_reclaim_release(). Since __kmalloc_reserve() from __alloc_skb() adds
+> __GFP_NOMEMALLOC | __GFP_NOWARN to gfp_mask, and all reclaim path simply
+> propagates __GFP_NOMEMALLOC, fs_reclaim_acquire() in slab_pre_alloc_hook()
+> is trying to grab the 'fake' lock again when __perform_reclaim() already
+> grabbed the 'fake' lock.
+> 
+> The
+> 
+>   /* this guy won't enter reclaim */
+>   if ((current->flags & PF_MEMALLOC) && !(gfp_mask & __GFP_NOMEMALLOC))
+>           return false;
+> 
+> test which causes slab_pre_alloc_hook() to try to grab the 'fake' lock
+> was added by commit cf40bd16fdad42c0 ("lockdep: annotate reclaim context
+> (__GFP_NOFS)"). But that test is outdated because PF_MEMALLOC thread won't
+> enter reclaim regardless of __GFP_NOMEMALLOC after commit 341ce06f69abfafa
+> ("page allocator: calculate the alloc_flags for allocation only once")
+> added the PF_MEMALLOC safeguard (
+> 
+>   /* Avoid recursion of direct reclaim */
+>   if (p->flags & PF_MEMALLOC)
+>           goto nopage;
+> 
+> in __alloc_pages_slowpath()).
+> 
+> Thus, let's fix outdated test by removing __GFP_NOMEMALLOC test and allow
+> __need_fs_reclaim() to return false.
+> 
+> Reported-and-tested-by: Dave Jones <davej@codemonkey.org.uk>
+> Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+> Cc: Peter Zijlstra <peterz@infradead.org>
+> Cc: Nick Piggin <npiggin@gmail.com>
+> ---
+>  mm/page_alloc.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+> index 81e18ce..19fb76b 100644
+> --- a/mm/page_alloc.c
+> +++ b/mm/page_alloc.c
+> @@ -3590,7 +3590,7 @@ static bool __need_fs_reclaim(gfp_t gfp_mask)
+>  		return false;
+>  
+>  	/* this guy won't enter reclaim */
+> -	if ((current->flags & PF_MEMALLOC) && !(gfp_mask & __GFP_NOMEMALLOC))
+> +	if (current->flags & PF_MEMALLOC)
+>  		return false;
+>  
+>  	/* We're only interested __GFP_FS allocations for now */
+> -- 
+> 1.8.3.1
+> 

@@ -1,131 +1,298 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f50.google.com ([209.85.214.50]:33884 "EHLO
-        mail-it0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752313AbeBTPla (ORCPT
+Received: from mail-io0-f196.google.com ([209.85.223.196]:45275 "EHLO
+        mail-io0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751328AbeBTPqQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Feb 2018 10:41:30 -0500
-Received: by mail-it0-f50.google.com with SMTP id a203so5925434itd.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Feb 2018 07:41:30 -0800 (PST)
-Subject: Re: Status of FST and mount times
-To: "Ellis H. Wilson III" <ellisw@panasas.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
- <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
- <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
- <0fa921f1-9a54-e410-1305-c88136f4823c@mendix.com>
- <5773ab23-8bee-1434-522b-231c154c4c6e@panasas.com>
- <c59b3618-0dc8-f07c-391f-45b9f42e3aaf@gmx.com>
- <db1e0ee1-c1ae-cc5c-842c-1caa714ef62b@panasas.com>
- <b5b93505-13ad-2e30-8daa-b624de5512bd@gmx.com>
- <5743750c-644d-9160-c0f3-599caf92dcb6@panasas.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <ccc1f937-1cdd-afdd-d164-99c3ad648387@gmail.com>
-Date: Tue, 20 Feb 2018 10:41:23 -0500
+        Tue, 20 Feb 2018 10:46:16 -0500
+Received: by mail-io0-f196.google.com with SMTP id m22so1890272iob.12
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Feb 2018 07:46:16 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <5743750c-644d-9160-c0f3-599caf92dcb6@panasas.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAGqmi74KanHmQm-r9Sxa11QWz68bjPAvWWpZ-Zg3PvJ90HPbpw@mail.gmail.com>
+References: <20171230203204.13151-1-nefelim4ag@gmail.com> <20180102183152.GB22892@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+ <CAGqmi74KanHmQm-r9Sxa11QWz68bjPAvWWpZ-Zg3PvJ90HPbpw@mail.gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Tue, 20 Feb 2018 18:45:35 +0300
+Message-ID: <CAGqmi77-kXHk8h1t6=Fo0-JP1E6i_XWOqJBxzcwR5tJ_T955uQ@mail.gmail.com>
+Subject: Re: [PATCH V3] Btrfs: enchanse raid1/10 balance heuristic
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-02-20 09:59, Ellis H. Wilson III wrote:
-> On 02/16/2018 07:59 PM, Qu Wenruo wrote:
->> On 2018年02月16日 22:12, Ellis H. Wilson III wrote:
->>> $ sudo btrfs-debug-tree -t chunk /dev/sdb | grep CHUNK_ITEM | wc -l
->>> 3454
->>
->> OK, this explains everything.
->>
->> There are too many chunks.
->> This means at mount you need to search for block group item 3454 times.
->>
->> Even each search only needs to iterate 3 tree blocks, multiply it 3454
->> it would still be a big work.
->> Although some tree blocks like the root node and level 1 nodes can be
->> cached, we still need to read about 3500 tree blocks.
->>
->> If the fs is created using 16K nodesize, this means you need to do
->> random read for 54M using 16K blocksize.
->>
->> No wonder it will takes some time.
->>
->> Normally I would expect 1G chunk for each data and metadata chunk.
->>
->> If there is nothing special, it means your filesystem is already larger
->> than 3T.
->> If your used space is way smaller (less than 30%) than 3.5T, then this
->> means your chunk usage is pretty low, and in that case, balance to
->> reduce number of chunks (block groups) would reduce mount time.
-> 
-> The nodesize is 16K, and the filesystem data is 3.32TiB as reported by 
-> btrfs fi df.  So, from what I am hearing, this mount time is normal for 
-> a filesystem this size.  Ignoring a more complex and proper fix like the 
-> ones we've been discussing, would bumping the nodesize reduce the number 
-> of chunks, thereby reducing the mount time?
-It would probably not.  Chunk size is only based on the total size of 
-the filesystem, with reasonable base values, so you would still need to 
-have at least as many chunks to store the same amount of data (increase 
-the node size too much though, and you will end up with more chunks, 
-because you'll have more empty space wasted).
-> 
-> I don't see why balance would come into play here -- my understanding 
-> was that was for aged filesystems.  The only operations I've done on 
-> here was:
-> 1. Format filesystem clean
-> 2. Create a subvolume
-> 3. rsync our home directories into that new subvolume
-> 4. Create another subvolume
-> 5. rsync our home directories into that new subvolume
-> 
-> Accordingly, zero (or at least, extremely little) data should have been 
-> overwritten, so I would expect things to be fairly well allocated 
-> already.  Please correct me if this is naive thinking.
-Your logic is in general correct regarding data, but not necessarily 
-metadata.  Assuming you did not use the `--inplace` option for rsync, it 
-had to issue a rename for each individual file that got copied in, and 
-as a result there was likely a lot of metadata being rewritten.
+Gentle ping.
 
-As far as balance being for aged filesystems, that's not exactly true. 
-There are four big reasons you might run a balance:
-
-1. As part of reshaping a volume.  You generally want run a balance 
-whenever the number of disks in a volume permanently increases (it will 
-happen automatically when it permanently decreases, as the device 
-deletion operation is a special type of balance under the hood).  It's 
-also used for converting chunk profiles.
-2. To free up empty space inside chunks when the filesystem is full at 
-the chunk level.
-3. To redistribute data across multiple disks in a more even manner 
-after deleting a lot of data.
-4. To reduce the likelihood of 2 or 3 being an issue.
-
-Reasons 2 and 3 are generally more likely to be needed on old volumes. 
-Reason 1 is independent of the age of a volume.  Reason 4 is the reason 
-for the regular filtered balances that I and some other people recommend 
-be run as part of preventative maintenance, and is also generally 
-independent of the age of a volume.
-
-Qu's suggestion is actually independent of all the above reasons, but 
-does kind of fit in with the fourth as another case of preventative 
-maintenance.
-> 
->>> I was using btrfs sub del -C for the deletions, so I believe (if that
->>> command truly waits for the subvolume to be utterly gone) it captures
->>> the entirety of the snapshot.
+2018-01-03 0:23 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
+> 2018-01-02 21:31 GMT+03:00 Liu Bo <bo.li.liu@oracle.com>:
+>> On Sat, Dec 30, 2017 at 11:32:04PM +0300, Timofey Titovets wrote:
+>>> Currently btrfs raid1/10 balancer bаlance requests to mirrors,
+>>> based on pid % num of mirrors.
+>>>
+>>> Make logic understood:
+>>>  - if one of underline devices are non rotational
+>>>  - Queue leght to underline devices
+>>>
+>>> By default try use pid % num_mirrors guessing, but:
+>>>  - If one of mirrors are non rotational, repick optimal to it
+>>>  - If underline mirror have less queue leght then optimal,
+>>>    repick to that mirror
+>>>
+>>> For avoid round-robin request balancing,
+>>> lets round down queue leght:
+>>>  - By 8 for rotational devs
+>>>  - By 2 for all non rotational devs
+>>>
 >>
->> No, snapshot deletion is completely delayed in background.
+>> Sorry for making a late comment on v3.
 >>
->> -C only ensures that even a powerloss happen after command return, you
->> won't see the snapshot anywhere, but it will still be deleted in 
->> background.
-> 
-> Ah, I had no idea.  Thank you!  Is there any way to "encourage" 
-> btrfs-cleaner to run at specific times, which I presume is the snapshot 
-> deletion process you are referring to?  If it can be told to run at a 
-> given time, can I throttle how fast it works, such that I avoid some of 
-> the high foreground interruption I've seen in the past?
-I don't think there's any way to do this right now (though it would be 
-nice if there was).  In theory, you could adjust the priority of the 
-kernel thread itself, but messing around with kthread priorities is 
-seriously dangerous even if you know exactly what you're doing.
+>> It's good to choose non-rotational if it could.
+>>
+>> But I'm not sure whether it's a good idea to guess queue depth here
+>> because filesystem is still at a high position of IO stack.  It'd
+>> probably get good results when running tests, but in practical mixed
+>> workloads, the underlying queue depth will be changing all the time.
+>
+> First version supposed for SSD, SSD + HDD only cases.
+> At that version that just a "attempt", make LB on hdd.
+> That can be easy dropped, if we decide that's a bad behaviour.
+>
+> If i understood correctly, which counters used,
+> we check count of I/O ops that device processing currently
+> (i.e. after merging & etc),
+> not queue what not send (i.e. before merging & etc).
+>
+> i.e. we guessed based on low level block io stuff.
+> As example that not work on zram devs (AFAIK, as zram don't have that counters).
+>
+> So, no matter at which level we check that.
+>
+>> In fact, I think for rotational disks, more merging and less seeking
+>> make more sense, even in raid1/10 case.
+>>
+>> Thanks,
+>>
+>> -liubo
+>
+> queue_depth changing must not create big problems there,
+> i.e. round_down must make all changes "equal".
+>
+> For hdd, if we have a "big" (8..16?) queue depth,
+> with high probability that hdd overloaded,
+> and if other hdd have much less load
+> (may be instead of round_down, that better use abs diff > 8)
+> we try to requeue requests to other hdd.
+>
+> That will not show true equal distribution, but in case where
+> one disks have more load, and pid based mechanism fail to make LB,
+> we will just move part of load to other hdd.
+>
+> Until load distribution will not changed.
+>
+> May be for HDD that need to make threshold more aggressive, like 16
+> (i.e. afaik SATA drives have hw rq len 31, so just use half of that).
+>
+> Thanks.
+>
+>>> Changes:
+>>>   v1 -> v2:
+>>>     - Use helper part_in_flight() from genhd.c
+>>>       to get queue lenght
+>>>     - Move guess code to guess_optimal()
+>>>     - Change balancer logic, try use pid % mirror by default
+>>>       Make balancing on spinning rust if one of underline devices
+>>>       are overloaded
+>>>   v2 -> v3:
+>>>     - Fix arg for RAID10 - use sub_stripes, instead of num_stripes
+>>>
+>>> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+>>> ---
+>>>  block/genhd.c      |   1 +
+>>>  fs/btrfs/volumes.c | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>>>  2 files changed, 114 insertions(+), 2 deletions(-)
+>>>
+>>> diff --git a/block/genhd.c b/block/genhd.c
+>>> index 96a66f671720..a7742bbbb6a7 100644
+>>> --- a/block/genhd.c
+>>> +++ b/block/genhd.c
+>>> @@ -81,6 +81,7 @@ void part_in_flight(struct request_queue *q, struct hd_struct *part,
+>>>                               atomic_read(&part->in_flight[1]);
+>>>       }
+>>>  }
+>>> +EXPORT_SYMBOL_GPL(part_in_flight);
+>>>
+>>>  struct hd_struct *__disk_get_part(struct gendisk *disk, int partno)
+>>>  {
+>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>>> index 49810b70afd3..a3b80ba31d4d 100644
+>>> --- a/fs/btrfs/volumes.c
+>>> +++ b/fs/btrfs/volumes.c
+>>> @@ -27,6 +27,7 @@
+>>>  #include <linux/raid/pq.h>
+>>>  #include <linux/semaphore.h>
+>>>  #include <linux/uuid.h>
+>>> +#include <linux/genhd.h>
+>>>  #include <asm/div64.h>
+>>>  #include "ctree.h"
+>>>  #include "extent_map.h"
+>>> @@ -5153,6 +5154,111 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+>>>       return ret;
+>>>  }
+>>>
+>>> +/**
+>>> + * bdev_get_queue_len - return rounded down in flight queue lenght of bdev
+>>> + *
+>>> + * @bdev: target bdev
+>>> + * @round_down: round factor big for hdd and small for ssd, like 8 and 2
+>>> + */
+>>> +static int bdev_get_queue_len(struct block_device *bdev, int round_down)
+>>> +{
+>>> +     int sum;
+>>> +     struct hd_struct *bd_part = bdev->bd_part;
+>>> +     struct request_queue *rq = bdev_get_queue(bdev);
+>>> +     uint32_t inflight[2] = {0, 0};
+>>> +
+>>> +     part_in_flight(rq, bd_part, inflight);
+>>> +
+>>> +     sum = max_t(uint32_t, inflight[0], inflight[1]);
+>>> +
+>>> +     /*
+>>> +      * Try prevent switch for every sneeze
+>>> +      * By roundup output num by some value
+>>> +      */
+>>> +     return ALIGN_DOWN(sum, round_down);
+>>> +}
+>>> +
+>>> +/**
+>>> + * guess_optimal - return guessed optimal mirror
+>>> + *
+>>> + * Optimal expected to be pid % num_stripes
+>>> + *
+>>> + * That's generaly ok for spread load
+>>> + * Add some balancer based on queue leght to device
+>>> + *
+>>> + * Basic ideas:
+>>> + *  - Sequential read generate low amount of request
+>>> + *    so if load of drives are equal, use pid % num_stripes balancing
+>>> + *  - For mixed rotate/non-rotate mirrors, pick non-rotate as optimal
+>>> + *    and repick if other dev have "significant" less queue lenght
+>>> + *  - Repick optimal if queue leght of other mirror are less
+>>> + */
+>>> +static int guess_optimal(struct map_lookup *map, int num, int optimal)
+>>> +{
+>>> +     int i;
+>>> +     int round_down = 8;
+>>> +     int qlen[num];
+>>> +     bool is_nonrot[num];
+>>> +     bool all_bdev_nonrot = true;
+>>> +     bool all_bdev_rotate = true;
+>>> +     struct block_device *bdev;
+>>> +
+>>> +     if (num == 1)
+>>> +             return optimal;
+>>> +
+>>> +     /* Check accessible bdevs */
+>>> +     for (i = 0; i < num; i++) {
+>>> +             /* Init for missing bdevs */
+>>> +             is_nonrot[i] = false;
+>>> +             qlen[i] = INT_MAX;
+>>> +             bdev = map->stripes[i].dev->bdev;
+>>> +             if (bdev) {
+>>> +                     qlen[i] = 0;
+>>> +                     is_nonrot[i] = blk_queue_nonrot(bdev_get_queue(bdev));
+>>> +                     if (is_nonrot[i])
+>>> +                             all_bdev_rotate = false;
+>>> +                     else
+>>> +                             all_bdev_nonrot = false;
+>>> +             }
+>>> +     }
+>>> +
+>>> +     /*
+>>> +      * Don't bother with computation
+>>> +      * if only one of two bdevs are accessible
+>>> +      */
+>>> +     if (num == 2 && qlen[0] != qlen[1]) {
+>>> +             if (qlen[0] < qlen[1])
+>>> +                     return 0;
+>>> +             else
+>>> +                     return 1;
+>>> +     }
+>>> +
+>>> +     if (all_bdev_nonrot)
+>>> +             round_down = 2;
+>>> +
+>>> +     for (i = 0; i < num; i++) {
+>>> +             if (qlen[i])
+>>> +                     continue;
+>>> +             bdev = map->stripes[i].dev->bdev;
+>>> +             qlen[i] = bdev_get_queue_len(bdev, round_down);
+>>> +     }
+>>> +
+>>> +     /* For mixed case, pick non rotational dev as optimal */
+>>> +     if (all_bdev_rotate == all_bdev_nonrot) {
+>>> +             for (i = 0; i < num; i++) {
+>>> +                     if (is_nonrot[i])
+>>> +                             optimal = i;
+>>> +             }
+>>> +     }
+>>> +
+>>> +     for (i = 0; i < num; i++) {
+>>> +             if (qlen[optimal] > qlen[i])
+>>> +                     optimal = i;
+>>> +     }
+>>> +
+>>> +     return optimal;
+>>> +}
+>>> +
+>>>  static int find_live_mirror(struct btrfs_fs_info *fs_info,
+>>>                           struct map_lookup *map, int first, int num,
+>>>                           int optimal, int dev_replace_is_ongoing)
+>>> @@ -5601,6 +5707,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>>>       int i;
+>>>       int ret = 0;
+>>>       int num_stripes;
+>>> +     int optimal;
+>>>       int max_errors = 0;
+>>>       int tgtdev_indexes = 0;
+>>>       struct btrfs_bio *bbio = NULL;
+>>> @@ -5713,9 +5820,11 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>>>               else if (mirror_num)
+>>>                       stripe_index = mirror_num - 1;
+>>>               else {
+>>> +                     optimal = guess_optimal(map, map->num_stripes,
+>>> +                                     current->pid % map->num_stripes);
+>>>                       stripe_index = find_live_mirror(fs_info, map, 0,
+>>>                                           map->num_stripes,
+>>> -                                         current->pid % map->num_stripes,
+>>> +                                         optimal,
+>>>                                           dev_replace_is_ongoing);
+>>>                       mirror_num = stripe_index + 1;
+>>>               }
+>>> @@ -5741,10 +5850,12 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
+>>>                       stripe_index += mirror_num - 1;
+>>>               else {
+>>>                       int old_stripe_index = stripe_index;
+>>> +                     optimal = guess_optimal(map, map->sub_stripes,
+>>> +                                     current->pid % map->sub_stripes);
+>>>                       stripe_index = find_live_mirror(fs_info, map,
+>>>                                             stripe_index,
+>>>                                             map->sub_stripes, stripe_index +
+>>> -                                           current->pid % map->sub_stripes,
+>>> +                                           optimal,
+>>>                                             dev_replace_is_ongoing);
+>>>                       mirror_num = stripe_index - old_stripe_index + 1;
+>>>               }
+>>> --
+>>> 2.15.1
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+> --
+> Have a nice day,
+> Timofey.
+
+
+
+-- 
+Have a nice day,
+Timofey.

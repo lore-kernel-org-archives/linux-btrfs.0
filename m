@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:39072 "EHLO
-        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750713AbeBPUH3 (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:34220 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752771AbeBTSKj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Feb 2018 15:07:29 -0500
-Date: Fri, 16 Feb 2018 20:56:54 +0100
-From: Greg KH <gregkh@linuxfoundation.org>
+        Tue, 20 Feb 2018 13:10:39 -0500
+Date: Tue, 20 Feb 2018 10:08:07 -0700
+From: Liu Bo <bo.li.liu@oracle.com>
 To: Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Fix NULL pointer exception in find_bio_stripe()
-Message-ID: <20180216195654.GA9698@kroah.com>
+Message-ID: <20180220170807.GA22059@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Reply-To: bo.li.liu@oracle.com
 References: <4F831C76-2968-4A34-B7EF-2D8741A50529@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
@@ -74,16 +74,31 @@ On Fri, Feb 16, 2018 at 07:51:38PM +0000, Dmitriy Gorokh wrote:
 > 
 > This is reproducible in a cycle, where a series of writes is followed by SCSI device delete command. The test may take up to few minutes.
 > 
+
+Please also place your SOB here.
+
 > Fixes: commit 74d46992e0d9dee7f1f376de0d56d31614c8a17a ("block: replace bi_bdev with a gendisk pointer and partitions index")
 > ---
 >  fs/btrfs/raid56.c | 1 +
 >  1 file changed, 1 insertion(+)
+> 
+> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+> index dec0907dfb8a..fcfc20de2df3 100644
+> --- a/fs/btrfs/raid56.c
+> +++ b/fs/btrfs/raid56.c
+> @@ -1370,6 +1370,7 @@ static int find_bio_stripe(struct btrfs_raid_bio *rbio,
+>                 stripe_start = stripe->physical;
+>                 if (physical >= stripe_start &&
+>                     physical < stripe_start + rbio->stripe_len &&
+> +                   stripe->dev->bdev &&
+>                     bio->bi_disk == stripe->dev->bdev->bd_disk &&
+>                     bio->bi_partno == stripe->dev->bdev->bd_partno) {
+>                         return i;
 
-<formletter>
+Patch looks good to me.
 
-This is not the correct way to submit patches for inclusion in the
-stable kernel tree.  Please read:
-    https://www.kernel.org/doc/html/latest/process/stable-kernel-rules.html
-for how to do this properly.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-</formletter>
+Thanks,
+
+-liubo

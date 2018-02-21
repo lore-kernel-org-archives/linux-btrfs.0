@@ -1,72 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57371 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39537 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750943AbeBWGg4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Feb 2018 01:36:56 -0500
-Subject: Re: [PATCH] btrfs: Fix locking during DIO read
-To: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        Filipe Manana <fdmanana@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>
-References: <1519213303-2802-1-git-send-email-nborisov@suse.com>
- <CAL3q7H4aiNyzgtDoziTXYkwuSggUAF+b9uLTWcm15GQSigp1_w@mail.gmail.com>
- <de457af6-6a9c-43f4-b9c6-429b69deec77@suse.com>
- <CAL3q7H7PiYd2yXNeG3Lkx8XVOgwFhx_1-9kaY8wqHBYkXStJ7w@mail.gmail.com>
- <20180221182817.GB9910@lim.localdomain>
- <CAL3q7H4eus5pO-NohXRKDytjPQcMjCXov9s7W_p+5JCuuYe_Lg@mail.gmail.com>
- <20180221223806.GA32259@lim.localdomain>
- <29ab09a7-a6a2-d9d4-13d7-724cf4050c1c@suse.com>
- <20180222190945.GA11675@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <20180222192440.GB11675@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <20180222233911.GJ1469@twin.jikos.cz>
+        id S932538AbeBULls (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Feb 2018 06:41:48 -0500
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <f7a2ac72-6ad8-990a-58d8-0076d2d9e004@suse.com>
-Date: Fri, 23 Feb 2018 08:36:53 +0200
-MIME-Version: 1.0
-In-Reply-To: <20180222233911.GJ1469@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
+Cc: bo.li.liu@oracle.com, josef@toxicpanda.com,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Fix locking during DIO read
+Date: Wed, 21 Feb 2018 13:41:43 +0200
+Message-Id: <1519213303-2802-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Currently the DIO read cases uses a botched idea from ext4 to ensure
+that DIO reads don't race with truncate. The idea is that if we have a
+pending truncate we set BTRFS_INODE_READDIO_NEED_LOCK which in turn
+forces the dio read case to fallback to inode_locking to prevent
+read/truncate races. Unfortunately this is subtly broken for at least
+2 reasons:
 
+1. inode_dio_begin in btrfs_direct_IO is called outside of inode_lock
+(for the read case). This means that there is no ordering guarantee
+between the invocation of inode_dio_wait and the increment of
+i_dio_count in btrfs_direct_IO in the tread case.
 
-On 23.02.2018 01:39, David Sterba wrote:
-> On Thu, Feb 22, 2018 at 12:24:40PM -0700, Liu Bo wrote:
->>>>> Not even that far, isize is truncated before calling inode_dio_wait()
->>>>> and a memory barrier is set to ensure the correct order, so dio read
->>>>> would simply return if it's reading past isize.
->>>>
->>>> Please, describe concretely which meory barriers pairs with chich in
->>>> order to ensure proper visibility. Because I'm of the opinion there are
->>>> insufficient memoru barriers to ensure setting READDIO_LOCK is properly
->>>> visible in btrfs_direct_IO. Since the latter has no barriers whatsoever.
->>>
->>> smp_mb() is supposed to be paired, so there is one missing, I agree.
->>>
->>
->> So the missing smp_mb() was there (commit
->> 2e60a51e62185cce48758e596ae7cb2da673b58f), but was removed in some
->> cleanup I guess.
-> 
-> Not a cleanup, and not a single commit:
-> 
-> 38851cc19adbfa1def2b47106d8050a80e0a3673
-> Btrfs: serialize unlocked dio reads with truncate
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> 
-> at this time the i_dio_counter was still used directly and the barrier
-> was moved before the if-else block, technically still in the right
-> before the test_bit.
-> 
-> dc59215d4f42084ee13654bafe3e5130b146aeb7
-> btrfs: remove unnecessary memory barrier in btrfs_direct_IO
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> ... simply removes the barrier.
+2. The memory barriers used in btrfs_inode_(block|resume)_unlocked_dio
+are not really paired with the reader side - the test_bit in
+btrfs_direct_IO, since the latter is missing a memory barrier. Furthermore,
+the actual sleeping condition that needs ordering to prevent live-locks/
+missed wakeups is the modification/read of i_dio_count. So in this case
+the waker(T2) needs to make the condition false _BEFORE_ doing a test.
 
-Right, I removed this barrier because indeed it wasn't paired with
-anything in inode_dio_wait. The barrier that is missing here has to
-order accessing test_bit(READDIO_LOCK) and not ordering the atomic_inc
-vs inode_dio_wait.
+The interraction between the two threads roughly looks like:
 
-> 
+T1(truncate):		                         T2(btrfs_direct_IO):
+set_bit(BTRFS_INODE_READDIO_NEED_LOCK)             if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK))
+if (atomic_read())                                  if (atomic_dec_and_test(&inode->i_dio_count)
+  schedule()			                        wake_up_bit
+clear_bit(BTRFS_INODE_READDIO_NEED_LOCK)
+
+Without the ordering between the test_bit in T2 and setting the bit in
+T1 (due to a missing pairing barrier in T2) it's possible that T1 goes
+to sleep in schedule and T2 misses the bit set, resulting in missing the
+wake up.
+
+In any case all of this is VERY subtle. So fix it by simply making
+the DIO READ case take inode_lock_shared. This ensure that we can have
+DIO reads in parallel at the same time we are protected against
+concurrent modification of the target file. This way we closely mimic
+what ext4 codes does and simplify this mess.
+
+Multiple xfstest runs didn't show any regressions.
+
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/btrfs_inode.h | 17 -----------------
+ fs/btrfs/inode.c       | 34 ++++++++++++++++++++--------------
+ 2 files changed, 20 insertions(+), 31 deletions(-)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index f527e99c9f8d..3519e49d4ef0 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -329,23 +329,6 @@ struct btrfs_dio_private {
+ 			blk_status_t);
+ };
+ 
+-/*
+- * Disable DIO read nolock optimization, so new dio readers will be forced
+- * to grab i_mutex. It is used to avoid the endless truncate due to
+- * nonlocked dio read.
+- */
+-static inline void btrfs_inode_block_unlocked_dio(struct btrfs_inode *inode)
+-{
+-	set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+-	smp_mb();
+-}
+-
+-static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
+-{
+-	smp_mb__before_atomic();
+-	clear_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+-}
+-
+ static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
+ 		u64 logical_start, u32 csum, u32 csum_expected, int mirror_num)
+ {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 491a7397f6fa..9c43257e6e11 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5149,10 +5149,13 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+ 		/* we don't support swapfiles, so vmtruncate shouldn't fail */
+ 		truncate_setsize(inode, newsize);
+ 
+-		/* Disable nonlocked read DIO to avoid the end less truncate */
+-		btrfs_inode_block_unlocked_dio(BTRFS_I(inode));
++		/*
++		 * Truncate after all in-flight dios are finished, new ones
++		 * will block on inode_lock. This only matters for AIO requests
++		 * since DIO READ is performed under inode_shared_lock and
++		 * write under exclusive lock.
++		 */
+ 		inode_dio_wait(inode);
+-		btrfs_inode_resume_unlocked_dio(BTRFS_I(inode));
+ 
+ 		ret = btrfs_truncate(inode);
+ 		if (ret && inode->i_nlink) {
+@@ -8669,15 +8672,12 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 	loff_t offset = iocb->ki_pos;
+ 	size_t count = 0;
+ 	int flags = 0;
+-	bool wakeup = true;
+ 	bool relock = false;
+ 	ssize_t ret;
+ 
+ 	if (check_direct_IO(fs_info, iter, offset))
+ 		return 0;
+ 
+-	inode_dio_begin(inode);
+-
+ 	/*
+ 	 * The generic stuff only does filemap_write_and_wait_range, which
+ 	 * isn't enough if we've written compressed pages to this area, so
+@@ -8691,6 +8691,9 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 					 offset + count - 1);
+ 
+ 	if (iov_iter_rw(iter) == WRITE) {
++
++		inode_dio_begin(inode);
++
+ 		/*
+ 		 * If the write DIO is beyond the EOF, we need update
+ 		 * the isize, but it is protected by i_mutex. So we can
+@@ -8720,11 +8723,13 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 		dio_data.unsubmitted_oe_range_end = (u64)offset;
+ 		current->journal_info = &dio_data;
+ 		down_read(&BTRFS_I(inode)->dio_sem);
+-	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
+-				     &BTRFS_I(inode)->runtime_flags)) {
+-		inode_dio_end(inode);
+-		flags = DIO_LOCKING | DIO_SKIP_HOLES;
+-		wakeup = false;
++	} else {
++		/*
++		 * In DIO READ case locking the inode in shared mode ensures
++		 * we are protected against parallel writes/truncates
++		 */
++		inode_lock_shared(inode);
++		inode_dio_begin(inode);
+ 	}
+ 
+ 	ret = __blockdev_direct_IO(iocb, inode,
+@@ -8755,10 +8760,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+ 			btrfs_delalloc_release_space(inode, data_reserved,
+ 					offset, count - (size_t)ret);
+ 		btrfs_delalloc_release_extents(BTRFS_I(inode), count);
+-	}
++	} else
++		inode_unlock_shared(inode);
+ out:
+-	if (wakeup)
+-		inode_dio_end(inode);
++	inode_dio_end(inode);
++
+ 	if (relock)
+ 		inode_lock(inode);
+ 
+-- 
+2.7.4
+

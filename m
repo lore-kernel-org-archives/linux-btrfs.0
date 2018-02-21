@@ -1,417 +1,226 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:24820 "EHLO
-        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751628AbeB1EMI (ORCPT
+Received: from mail-vk0-f66.google.com ([209.85.213.66]:37648 "EHLO
+        mail-vk0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752579AbeBUN1O (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Feb 2018 23:12:08 -0500
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 576ACAC017E
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Feb 2018 13:12:05 +0900 (JST)
-Subject: Re: [PATCH v2 14/27] libbtrfsutil: add
- btrfs_util_deleted_subvolumes()
-To: Omar Sandoval <osandov@osandov.com>
-CC: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-References: <cover.1518720598.git.osandov@fb.com>
- <ac64e7314e3f716898dd8a7ec7c7657f66ee4c4a.1518720598.git.osandov@fb.com>
- <8901bd06-8ea9-a5f2-6a54-2118367472ed@jp.fujitsu.com>
- <20180223233327.GH7046@vader.DHCP.thefacebook.com>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <e4d08b0c-7438-32d8-e076-90fc4c4f6c79@jp.fujitsu.com>
-Date: Wed, 28 Feb 2018 13:11:06 +0900
+        Wed, 21 Feb 2018 08:27:14 -0500
+Received: by mail-vk0-f66.google.com with SMTP id u200so921258vke.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Feb 2018 05:27:14 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20180223233327.GH7046@vader.DHCP.thefacebook.com>
-Content-Type: text/plain; charset="utf-8"
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <afc74c91-77f6-2c34-e33d-7c203ba1cc43@suse.com>
+References: <1519213303-2802-1-git-send-email-nborisov@suse.com>
+ <CAL3q7H7ccJybVDcr9=zT4hGOR0q0f2ukFabFyYRRc_Kn=X1BQw@mail.gmail.com> <afc74c91-77f6-2c34-e33d-7c203ba1cc43@suse.com>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Wed, 21 Feb 2018 13:27:13 +0000
+Message-ID: <CAL3q7H5dz_UWFwqXHvZMx9=sV3Pw67ZZKbQ1btZYeAbEVZFhwA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Fix locking during DIO read
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Liu Bo <bo.li.liu@oracle.com>,
+        Josef Bacik <josef@toxicpanda.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/02/24 8:33, Omar Sandoval wrote:
-> On Fri, Feb 23, 2018 at 11:12:56AM +0900, Misono, Tomohiro wrote:
->>
->> On 2018/02/16 4:04, Omar Sandoval wrote:
->>> From: Omar Sandoval <osandov@fb.com>
+On Wed, Feb 21, 2018 at 1:10 PM, Nikolay Borisov <nborisov@suse.com> wrote:
+>
+>
+> On 21.02.2018 15:06, Filipe Manana wrote:
+>> On Wed, Feb 21, 2018 at 11:41 AM, Nikolay Borisov <nborisov@suse.com> wrote:
+>>> Currently the DIO read cases uses a botched idea from ext4 to ensure
+>>> that DIO reads don't race with truncate. The idea is that if we have a
+>>> pending truncate we set BTRFS_INODE_READDIO_NEED_LOCK which in turn
+>>> forces the dio read case to fallback to inode_locking to prevent
+>>> read/truncate races. Unfortunately this is subtly broken for at least
+>>> 2 reasons:
 >>>
->>> Signed-off-by: Omar Sandoval <osandov@fb.com>
+>>> 1. inode_dio_begin in btrfs_direct_IO is called outside of inode_lock
+>>> (for the read case). This means that there is no ordering guarantee
+>>> between the invocation of inode_dio_wait and the increment of
+>>> i_dio_count in btrfs_direct_IO in the tread case.
+>>>
+>>> 2. The memory barriers used in btrfs_inode_(block|resume)_unlocked_dio
+>>> are not really paired with the reader side - the test_bit in
+>>> btrfs_direct_IO, since the latter is missing a memory barrier. Furthermore,
+>>> the actual sleeping condition that needs ordering to prevent live-locks/
+>>> missed wakeups is the modification/read of i_dio_count. So in this case
+>>> the waker(T2) needs to make the condition false _BEFORE_ doing a test.
+>>>
+>>> The interraction between the two threads roughly looks like:
+>>>
+>>> T1(truncate):                                    T2(btrfs_direct_IO):
+>>> set_bit(BTRFS_INODE_READDIO_NEED_LOCK)             if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK))
+>>> if (atomic_read())                                  if (atomic_dec_and_test(&inode->i_dio_count)
+>>>   schedule()                                            wake_up_bit
+>>> clear_bit(BTRFS_INODE_READDIO_NEED_LOCK)
+>>>
+>>> Without the ordering between the test_bit in T2 and setting the bit in
+>>> T1 (due to a missing pairing barrier in T2) it's possible that T1 goes
+>>> to sleep in schedule and T2 misses the bit set, resulting in missing the
+>>> wake up.
+>>>
+>>> In any case all of this is VERY subtle. So fix it by simply making
+>>> the DIO READ case take inode_lock_shared. This ensure that we can have
+>>> DIO reads in parallel at the same time we are protected against
+>>> concurrent modification of the target file.
+>>
+>> And that prevents writes and reads against different (i.e. not
+>> overlapping) ranges from happening in parallel.
+>> That has a big impact on applications (databases for e.g.) that
+>> operate on large files serving multiple requests.
+>> Now all reads are serialized against all writes and vice versa.
+>>
+>
+> Correct, but I'd prefer correctness over performance! And I assume other
+> people as well, since as is the code atm it's not providing full
+> protection between racing reads and truncate.
+
+And even more people prefer correctness without significant impact on
+performance.
+
+So fix it differently please.
+
+>
+>> Unless I missed something, a big NAK to this change as it is.
+>
+>
+>
+>>
+>>
+>>> This way we closely mimic
+>>> what ext4 codes does and simplify this mess.
+>>>
+>>> Multiple xfstest runs didn't show any regressions.
+>>>
+>>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 >>> ---
->>>  libbtrfsutil/btrfsutil.h                    | 21 +++++++
->>>  libbtrfsutil/python/btrfsutilpy.h           |  3 +
->>>  libbtrfsutil/python/module.c                | 30 ++++++++++
->>>  libbtrfsutil/python/qgroup.c                | 17 +-----
->>>  libbtrfsutil/python/subvolume.c             | 30 ++++++++++
->>>  libbtrfsutil/python/tests/test_subvolume.py |  8 +++
->>>  libbtrfsutil/subvolume.c                    | 89 +++++++++++++++++++++++++++++
->>>  7 files changed, 183 insertions(+), 15 deletions(-)
+>>>  fs/btrfs/btrfs_inode.h | 17 -----------------
+>>>  fs/btrfs/inode.c       | 34 ++++++++++++++++++++--------------
+>>>  2 files changed, 20 insertions(+), 31 deletions(-)
 >>>
->>> diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
->>> index 00c86174..677ab3c1 100644
->>> --- a/libbtrfsutil/btrfsutil.h
->>> +++ b/libbtrfsutil/btrfsutil.h
->>> @@ -534,6 +534,27 @@ enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_
->>>  							      char **path_ret,
->>>  							      struct btrfs_util_subvolume_info *subvol);
->>>  
->>> +/**
->>> + * btrfs_util_deleted_subvolumes() - Get a list of subvolume which have been
->>> + * deleted but not yet cleaned up.
->>> + * @path: Path on a Btrfs filesystem.
->>> + * @ids: Returned array of subvolume IDs.
->>> + * @n: Returned number of IDs in the @ids array.
->>> + *
->>> + * This requires appropriate privilege (CAP_SYS_ADMIN).
->>> + *
->>> + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
->>> + */
->>> +enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
->>> +						    uint64_t **ids,
->>> +						    size_t *n);
->>> +
->>> +/**
->>> + * btrfs_util_deleted_subvolumes_fd() - See btrfs_util_deleted_subvolumes().
->>> + */
->>> +enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd, uint64_t **ids,
->>> +						       size_t *n);
->>> +
->>>  /**
->>>   * btrfs_util_create_qgroup_inherit() - Create a qgroup inheritance specifier
->>>   * for btrfs_util_create_subvolume() or btrfs_util_create_snapshot().
->>> diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
->>> index b3ec047f..be5122e2 100644
->>> --- a/libbtrfsutil/python/btrfsutilpy.h
->>> +++ b/libbtrfsutil/python/btrfsutilpy.h
->>> @@ -54,6 +54,8 @@ struct path_arg {
->>>  int path_converter(PyObject *o, void *p);
->>>  void path_cleanup(struct path_arg *path);
->>>  
->>> +PyObject *list_from_uint64_array(const uint64_t *arr, size_t n);
->>> +
->>>  void SetFromBtrfsUtilError(enum btrfs_util_error err);
->>>  void SetFromBtrfsUtilErrorWithPath(enum btrfs_util_error err,
->>>  				   struct path_arg *path);
->>> @@ -72,6 +74,7 @@ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
->>>  PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
->>>  PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds);
->>>  PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
->>> +PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds);
->>>  
->>>  void add_module_constants(PyObject *m);
->>>  
->>> diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
->>> index e995a1be..eaa062ac 100644
->>> --- a/libbtrfsutil/python/module.c
->>> +++ b/libbtrfsutil/python/module.c
->>> @@ -125,6 +125,29 @@ err:
->>>  	return 0;
->>>  }
->>>  
->>> +PyObject *list_from_uint64_array(const uint64_t *arr, size_t n)
->>> +{
->>> +    PyObject *ret;
->>> +    size_t i;
->>> +
->>> +    ret = PyList_New(n);
->>> +    if (!ret)
->>> +	    return NULL;
->>> +
->>> +    for (i = 0; i < n; i++) {
->>> +	    PyObject *tmp;
->>> +
->>> +	    tmp = PyLong_FromUnsignedLongLong(arr[i]);
->>> +	    if (!tmp) {
->>> +		    Py_DECREF(ret);
->>> +		    return NULL;
->>> +	    }
->>> +	    PyList_SET_ITEM(ret, i, tmp);
->>> +    }
->>> +
->>> +    return ret;
->>> +}
->>> +
->>>  void path_cleanup(struct path_arg *path)
->>>  {
->>>  	Py_CLEAR(path->object);
->>> @@ -214,6 +237,13 @@ static PyMethodDef btrfsutil_methods[] = {
->>>  	 "path -- string, bytes, or path-like object\n"
->>>  	 "recursive -- if the given subvolume has child subvolumes, delete\n"
->>>  	 "them instead of failing"},
->>> +	{"deleted_subvolumes", (PyCFunction)deleted_subvolumes,
->>> +	 METH_VARARGS | METH_KEYWORDS,
->>> +	 "deleted_subvolumes(path)\n\n"
->>> +	 "Get the list of subvolume IDs which have been deleted but not yet\n"
->>> +	 "cleaned up\n\n"
->>> +	 "Arguments:\n"
->>> +	 "path -- string, bytes, path-like object, or open file descriptor"},
->>>  	{},
+>>> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+>>> index f527e99c9f8d..3519e49d4ef0 100644
+>>> --- a/fs/btrfs/btrfs_inode.h
+>>> +++ b/fs/btrfs/btrfs_inode.h
+>>> @@ -329,23 +329,6 @@ struct btrfs_dio_private {
+>>>                         blk_status_t);
 >>>  };
->>>  
->>> diff --git a/libbtrfsutil/python/qgroup.c b/libbtrfsutil/python/qgroup.c
->>> index 69716d92..44ac5ebc 100644
->>> --- a/libbtrfsutil/python/qgroup.c
->>> +++ b/libbtrfsutil/python/qgroup.c
->>> @@ -55,25 +55,12 @@ static PyObject *QgroupInherit_getattro(QgroupInherit *self, PyObject *nameobj)
->>>      }
->>>  
->>>      if (strcmp(name, "groups") == 0) {
->>> -	    PyObject *ret, *tmp;
->>>  	    const uint64_t *arr;
->>> -	    size_t n, i;
->>> +	    size_t n;
->>>  
->>>  	    btrfs_util_qgroup_inherit_get_groups(self->inherit, &arr, &n);
->>> -	    ret = PyList_New(n);
->>> -	    if (!ret)
->>> -		    return NULL;
+>>>
+>>> -/*
+>>> - * Disable DIO read nolock optimization, so new dio readers will be forced
+>>> - * to grab i_mutex. It is used to avoid the endless truncate due to
+>>> - * nonlocked dio read.
+>>> - */
+>>> -static inline void btrfs_inode_block_unlocked_dio(struct btrfs_inode *inode)
+>>> -{
+>>> -       set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+>>> -       smp_mb();
+>>> -}
 >>> -
->>> -	    for (i = 0; i < n; i++) {
->>> -		    tmp = PyLong_FromUnsignedLongLong(arr[i]);
->>> -		    if (!tmp) {
->>> -			    Py_DECREF(ret);
->>> -			    return NULL;
->>> -		    }
->>> -		    PyList_SET_ITEM(ret, i, tmp);
->>> -	    }
->>>  
->>> -	    return ret;
->>> +	    return list_from_uint64_array(arr, n);
->>>      } else {
->>>  	    return PyObject_GenericGetAttr((PyObject *)self, nameobj);
->>>      }
->>> diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
->>> index eb3f6e27..069e606b 100644
->>> --- a/libbtrfsutil/python/subvolume.c
->>> +++ b/libbtrfsutil/python/subvolume.c
->>> @@ -425,6 +425,36 @@ PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
->>>  	Py_RETURN_NONE;
->>>  }
->>>  
->>> +PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds)
->>> +{
->>> +	static char *keywords[] = {"path", NULL};
->>> +	struct path_arg path = {.allow_fd = true};
->>> +	PyObject *ret;
->>> +	uint64_t *ids;
->>> +	size_t n;
->>> +	enum btrfs_util_error err;
+>>> -static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
+>>> -{
+>>> -       smp_mb__before_atomic();
+>>> -       clear_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
+>>> -}
+>>> -
+>>>  static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
+>>>                 u64 logical_start, u32 csum, u32 csum_expected, int mirror_num)
+>>>  {
+>>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>>> index 491a7397f6fa..9c43257e6e11 100644
+>>> --- a/fs/btrfs/inode.c
+>>> +++ b/fs/btrfs/inode.c
+>>> @@ -5149,10 +5149,13 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+>>>                 /* we don't support swapfiles, so vmtruncate shouldn't fail */
+>>>                 truncate_setsize(inode, newsize);
+>>>
+>>> -               /* Disable nonlocked read DIO to avoid the end less truncate */
+>>> -               btrfs_inode_block_unlocked_dio(BTRFS_I(inode));
+>>> +               /*
+>>> +                * Truncate after all in-flight dios are finished, new ones
+>>> +                * will block on inode_lock. This only matters for AIO requests
+>>> +                * since DIO READ is performed under inode_shared_lock and
+>>> +                * write under exclusive lock.
+>>> +                */
+>>>                 inode_dio_wait(inode);
+>>> -               btrfs_inode_resume_unlocked_dio(BTRFS_I(inode));
+>>>
+>>>                 ret = btrfs_truncate(inode);
+>>>                 if (ret && inode->i_nlink) {
+>>> @@ -8669,15 +8672,12 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>>>         loff_t offset = iocb->ki_pos;
+>>>         size_t count = 0;
+>>>         int flags = 0;
+>>> -       bool wakeup = true;
+>>>         bool relock = false;
+>>>         ssize_t ret;
+>>>
+>>>         if (check_direct_IO(fs_info, iter, offset))
+>>>                 return 0;
+>>>
+>>> -       inode_dio_begin(inode);
+>>> -
+>>>         /*
+>>>          * The generic stuff only does filemap_write_and_wait_range, which
+>>>          * isn't enough if we've written compressed pages to this area, so
+>>> @@ -8691,6 +8691,9 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>>>                                          offset + count - 1);
+>>>
+>>>         if (iov_iter_rw(iter) == WRITE) {
 >>> +
->>> +	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:deleted_subvolumes",
->>> +					 keywords, &path_converter, &path))
->>> +		return NULL;
+>>> +               inode_dio_begin(inode);
 >>> +
->>> +	if (path.path)
->>> +		err = btrfs_util_deleted_subvolumes(path.path, &ids, &n);
->>> +	else
->>> +		err = btrfs_util_deleted_subvolumes_fd(path.fd, &ids, &n);
->>> +	if (err) {
->>> +		SetFromBtrfsUtilErrorWithPath(err, &path);
->>> +		path_cleanup(&path);
->>> +		return NULL;
->>> +	}
+>>>                 /*
+>>>                  * If the write DIO is beyond the EOF, we need update
+>>>                  * the isize, but it is protected by i_mutex. So we can
+>>> @@ -8720,11 +8723,13 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>>>                 dio_data.unsubmitted_oe_range_end = (u64)offset;
+>>>                 current->journal_info = &dio_data;
+>>>                 down_read(&BTRFS_I(inode)->dio_sem);
+>>> -       } else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
+>>> -                                    &BTRFS_I(inode)->runtime_flags)) {
+>>> -               inode_dio_end(inode);
+>>> -               flags = DIO_LOCKING | DIO_SKIP_HOLES;
+>>> -               wakeup = false;
+>>> +       } else {
+>>> +               /*
+>>> +                * In DIO READ case locking the inode in shared mode ensures
+>>> +                * we are protected against parallel writes/truncates
+>>> +                */
+>>> +               inode_lock_shared(inode);
+>>> +               inode_dio_begin(inode);
+>>>         }
+>>>
+>>>         ret = __blockdev_direct_IO(iocb, inode,
+>>> @@ -8755,10 +8760,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+>>>                         btrfs_delalloc_release_space(inode, data_reserved,
+>>>                                         offset, count - (size_t)ret);
+>>>                 btrfs_delalloc_release_extents(BTRFS_I(inode), count);
+>>> -       }
+>>> +       } else
+>>> +               inode_unlock_shared(inode);
+>>>  out:
+>>> -       if (wakeup)
+>>> -               inode_dio_end(inode);
+>>> +       inode_dio_end(inode);
 >>> +
->>> +	path_cleanup(&path);
->>> +
->>> +	ret = list_from_uint64_array(ids, n);
->>> +	free(ids);
->>> +	return ret;
->>> +}
->>> +
->>>  typedef struct {
->>>  	PyObject_HEAD
->>>  	struct btrfs_util_subvolume_iterator *iter;
->>> diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
->>> index 08083abe..a46d4a34 100644
->>> --- a/libbtrfsutil/python/tests/test_subvolume.py
->>> +++ b/libbtrfsutil/python/tests/test_subvolume.py
->>> @@ -318,6 +318,14 @@ class TestSubvolume(BtrfsTestCase):
->>>          btrfsutil.delete_subvolume(subvol + '5', recursive=True)
->>>          self.assertFalse(os.path.exists(subvol + '5'))
->>>  
->>> +    def test_deleted_subvolumes(self):
->>> +        subvol = os.path.join(self.mountpoint, 'subvol')
->>> +        btrfsutil.create_subvolume(subvol + '1')
->>> +        btrfsutil.delete_subvolume(subvol + '1')
->>> +        for arg in self.path_or_fd(self.mountpoint):
->>> +            with self.subTest(type=type(arg)):
->>> +                self.assertEqual(btrfsutil.deleted_subvolumes(arg), [256])
->>> +
->>>      def test_subvolume_iterator(self):
->>>          pwd = os.getcwd()
->>>          try:
->>> diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
->>> index 908e71db..4ae581b2 100644
->>> --- a/libbtrfsutil/subvolume.c
->>> +++ b/libbtrfsutil/subvolume.c
->>> @@ -1277,3 +1277,92 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrf
->>>  
->>>  	return btrfs_util_subvolume_info_fd(iter->fd, id, subvol);
->>>  }
->>> +
->>> +PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
->>> +							   uint64_t **ids,
->>> +							   size_t *n)
->>> +{
->>> +	enum btrfs_util_error err;
->>> +	int fd;
->>> +
->>> +	fd = open(path, O_RDONLY);
->>> +	if (fd == -1)
->>> +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
->>> +
->>> +	err = btrfs_util_deleted_subvolumes_fd(fd, ids, n);
->>> +	SAVE_ERRNO_AND_CLOSE(fd);
->>> +	return err;
->>> +}
->>> +
->>> +PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd,
->>> +							      uint64_t **ids,
->>> +							      size_t *n)
->>> +{
->>> +	size_t capacity = 0;
->>> +	struct btrfs_ioctl_search_args search = {
->>> +		.key = {
->>> +			.tree_id = BTRFS_ROOT_TREE_OBJECTID,
->>> +			.min_objectid = BTRFS_ORPHAN_OBJECTID,
->>> +			.max_objectid = BTRFS_ORPHAN_OBJECTID,
->>> +			.min_type = BTRFS_ORPHAN_ITEM_KEY,
->>> +			.max_type = BTRFS_ORPHAN_ITEM_KEY,
->>> +			.min_offset = 0,
->>> +			.max_offset = UINT64_MAX,
->>> +			.min_transid = 0,
->>> +			.max_transid = UINT64_MAX,
->>> +			.nr_items = 0,
->>> +		},
->>> +	};
->> It seems btrfs_util_deleted_subvolume() does not works perfectly.
+>>>         if (relock)
+>>>                 inode_lock(inode);
+>>>
+>>> --
+>>> 2.7.4
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >>
->> Above search will return all ORPHAN_ITEM but some may be of free space cache inode (correct me if I'm wrong).
->> Since this is a public function, we should filter those non-subvolume objectid by checking root tree again.
->> I think this is the reason of failure of misc-test/013 after merging 26th patch.
-> 
-> So looking at the code that this replaces, I don't see the difference:
-> 
-> static int enumerate_dead_subvols(int fd, u64 **ids)
-> {
-> 	int ret;
-> 	struct btrfs_ioctl_search_args args;
-> 	struct btrfs_ioctl_search_key *sk = &args.key;
-> 	int idx = 0;
-> 	int count = 0;
-> 
-> 	memset(&args, 0, sizeof(args));
-> 
-> 	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
-> 	sk->min_objectid = BTRFS_ORPHAN_OBJECTID;
-> 	sk->max_objectid = BTRFS_ORPHAN_OBJECTID;
-> 	sk->min_type = BTRFS_ORPHAN_ITEM_KEY;
-> 	sk->max_type = BTRFS_ORPHAN_ITEM_KEY;
-> 	sk->min_offset = 0;
-> 	sk->max_offset = (u64)-1;
-> 	sk->min_transid = 0;
-> 	sk->max_transid = (u64)-1;
-> 	sk->nr_items = 4096;
-> 
-> 	*ids = NULL;
-> 	while (1) {
-> 		struct btrfs_ioctl_search_header *sh;
-> 		unsigned long off;
-> 		int i;
-> 
-> 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-> 		if (ret < 0)
-> 			return -errno;
-> 
-> 		if (!sk->nr_items)
-> 			return idx;
-> 
-> 		off = 0;
-> 		for (i = 0; i < sk->nr_items; i++) {
-> 			sh = (struct btrfs_ioctl_search_header*)(args.buf + off);
-> 			off += sizeof(*sh);
-> 
-> 			if (btrfs_search_header_type(sh)
-> 			    == BTRFS_ORPHAN_ITEM_KEY) {
-> 				if (idx >= count) {
-> 					u64 *newids;
-> 
-> 					count += SUBVOL_ID_BATCH;
-> 					newids = (u64*)realloc(*ids,
-> 							count * sizeof(u64));
-> 					if (!newids)
-> 						return -ENOMEM;
-> 					*ids = newids;
-> 				}
-> 				(*ids)[idx] = btrfs_search_header_offset(sh);
-> 				idx++;
-> 			}
-> 			off += btrfs_search_header_len(sh);
-> 
-> 			sk->min_objectid = btrfs_search_header_objectid(sh);
-> 			sk->min_type = btrfs_search_header_type(sh);
-> 			sk->min_offset = btrfs_search_header_offset(sh);
-> 		}
-> 		if (sk->min_offset < (u64)-1)
-> 			sk->min_offset++;
-> 		else
-> 			break;
-> 		if (sk->min_type != BTRFS_ORPHAN_ITEM_KEY)
-> 			break;
-> 		if (sk->min_objectid != BTRFS_ORPHAN_OBJECTID)
-> 			break;
-> 	}
-> 
-> 	return idx;
-> }
-> 
-> This function does the same exact search, as far as I can tell. What does the
-> test failure look like? I'll try to reproduce it on my side.
-> 
+>>
+>>
 
-Hello, sorry for late replay.
 
-Actually this is not a problem for functionality of "sub list -d" or "sub sync",
-because after this function is called we check root tree to see if ROOT_ITEM
-for deleted subvolume still exists or not. If the returned id is not related subvolume,
-there is no ROOT_ITEM at first.
 
-Since your github branch (libbtrfs) is updated to skip BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND as I said
-in 26th patch, there is no test failure anymore.
+-- 
+Filipe David Manana,
 
-But if I run misc-test/013 (on 4.16-rc3) with following diff[1] on libbtrfs branch to show
-which objectid returns BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND after btrfs_util_subvolume_info_fd(),
-I can see the garbage id in tests/misc-tests-result.txt:
-===
-[snip]
-
- ID 291 gen 78 top level 5 path snap34
- ID 293 gen 78 top level 5 path snap35
-
-[snip]
- 
- Subvolume id 291 is gone
- Subvolume id 293 is gone
-
-[snip]
-
-############### /home/misono/src/btrfs-progs/btrfs subvolum list -d .
- cleaned: 292  <- there was no subvolume with objectid 292
-
-[snip]
-===
-
-I'm not sure where this number comes from, but isn't it better to filter them?
-
----
- cmds-subvolume.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 5fa390ff..b034bb77 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -1112,6 +1112,7 @@ static struct subvol_list *btrfs_list_deleted_subvols(int fd,
- 			 * The subvolume might have been cleaned up since it was
- 			 * returned.
- 			 */
-+			printf("cleaned: %ld\n", ids[i]);
- 			continue;
- 		} else if (err) {
- 			error_btrfs_util(err);
----
-
+“Whether you think you can, or you think you can't — you're right.”

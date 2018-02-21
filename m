@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f65.google.com ([209.85.213.65]:45941 "EHLO
-        mail-vk0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964964AbeBUNGJ (ORCPT
+Received: from mail-vk0-f66.google.com ([209.85.213.66]:45691 "EHLO
+        mail-vk0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965393AbeBUNvY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Feb 2018 08:06:09 -0500
-Received: by mail-vk0-f65.google.com with SMTP id k187so869866vke.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Feb 2018 05:06:08 -0800 (PST)
+        Wed, 21 Feb 2018 08:51:24 -0500
+Received: by mail-vk0-f66.google.com with SMTP id k187so952563vke.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Feb 2018 05:51:24 -0800 (PST)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
 In-Reply-To: <1519213303-2802-1-git-send-email-nborisov@suse.com>
 References: <1519213303-2802-1-git-send-email-nborisov@suse.com>
 From: Filipe Manana <fdmanana@gmail.com>
-Date: Wed, 21 Feb 2018 13:06:07 +0000
-Message-ID: <CAL3q7H7ccJybVDcr9=zT4hGOR0q0f2ukFabFyYRRc_Kn=X1BQw@mail.gmail.com>
+Date: Wed, 21 Feb 2018 13:51:23 +0000
+Message-ID: <CAL3q7H4aiNyzgtDoziTXYkwuSggUAF+b9uLTWcm15GQSigp1_w@mail.gmail.com>
 Subject: Re: [PATCH] btrfs: Fix locking during DIO read
 To: Nikolay Borisov <nborisov@suse.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, Liu Bo <bo.li.liu@oracle.com>,
@@ -33,10 +33,30 @@ On Wed, Feb 21, 2018 at 11:41 AM, Nikolay Borisov <nborisov@suse.com> wrote:
 > (for the read case). This means that there is no ordering guarantee
 > between the invocation of inode_dio_wait and the increment of
 > i_dio_count in btrfs_direct_IO in the tread case.
+
+Also, looking at this changelog, the diff and the code, why is it a
+problem not calling inode_dio_begin without the inode lock in the dio
+read path?
+The truncate path calls inode_dio_wait after setting the bit
+BTRFS_INODE_READDIO_NEED_LOCK and before clearing it.
+Assuming the functions to set and clear that bit are correct, I don't
+see what problem this brings.
+
+Have you observed any issue in practice? Or can you show a diagram
+that points a sequence of concurrent steps leading to a problem?
+
 >
 > 2. The memory barriers used in btrfs_inode_(block|resume)_unlocked_dio
 > are not really paired with the reader side - the test_bit in
-> btrfs_direct_IO, since the latter is missing a memory barrier. Furthermore,
+> btrfs_direct_IO, since the latter is missing a memory barrier.
+
+Which memory barrier is missing?
+Both btrfs_inode_block_unlocked_dio() and
+btrfs_inode_resume_unlocked_dio() have memory barriers, and I think
+they are even not needed.
+Why do you think they are needed?
+
+> Furthermore,
 > the actual sleeping condition that needs ordering to prevent live-locks/
 > missed wakeups is the modification/read of i_dio_count. So in this case
 > the waker(T2) needs to make the condition false _BEFORE_ doing a test.
@@ -53,22 +73,15 @@ On Wed, Feb 21, 2018 at 11:41 AM, Nikolay Borisov <nborisov@suse.com> wrote:
 > T1 (due to a missing pairing barrier in T2) it's possible that T1 goes
 > to sleep in schedule and T2 misses the bit set, resulting in missing the
 > wake up.
+
+set_bit and test_bit are atomic. I don't understand from that sequence
+diagram how the wakeup is missed.
+
 >
 > In any case all of this is VERY subtle. So fix it by simply making
 > the DIO READ case take inode_lock_shared. This ensure that we can have
 > DIO reads in parallel at the same time we are protected against
-> concurrent modification of the target file.
-
-And that prevents writes and reads against different (i.e. not
-overlapping) ranges from happening in parallel.
-That has a big impact on applications (databases for e.g.) that
-operate on large files serving multiple requests.
-Now all reads are serialized against all writes and vice versa.
-
-Unless I missed something, a big NAK to this change as it is.
-
-
-> This way we closely mimic
+> concurrent modification of the target file. This way we closely mimic
 > what ext4 codes does and simplify this mess.
 >
 > Multiple xfstest runs didn't show any regressions.

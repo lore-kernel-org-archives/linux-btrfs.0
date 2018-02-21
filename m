@@ -1,11 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.dpl.mendix.net ([83.96.177.10]:36089 "EHLO
-        smtp.dpl.mendix.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964943AbeBUPDu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Feb 2018 10:03:50 -0500
+Received: from mail-bl2nam02on0063.outbound.protection.outlook.com ([104.47.38.63]:61856
+        "EHLO NAM02-BL2-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S938131AbeBUPTt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Feb 2018 10:19:49 -0500
 Subject: Re: Status of FST and mount times
-To: "Ellis H. Wilson III" <ellisw@panasas.com>, linux-btrfs@vger.kernel.org
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        linux-btrfs@vger.kernel.org
 References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
  <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
  <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
@@ -18,112 +19,112 @@ References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
  <ccc1f937-1cdd-afdd-d164-99c3ad648387@gmail.com>
  <4590b70e-2be7-b511-1428-685dcf2c26c6@gmx.com>
  <bcb18a10-3e87-66f7-63a4-b6f9906680ec@panasas.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
-Date: Wed, 21 Feb 2018 16:03:47 +0100
+ <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
+From: "Ellis H. Wilson III" <ellisw@panasas.com>
+Message-ID: <baa3898d-d636-012b-3262-8984006ee146@panasas.com>
+Date: Wed, 21 Feb 2018 10:19:44 -0500
 MIME-Version: 1.0
-In-Reply-To: <bcb18a10-3e87-66f7-63a4-b6f9906680ec@panasas.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/21/2018 03:49 PM, Ellis H. Wilson III wrote:
-> On 02/20/2018 08:49 PM, Qu Wenruo wrote:
->>>>> On 2018年02月16日 22:12, Ellis H. Wilson III wrote:
->>>>>> $ sudo btrfs-debug-tree -t chunk /dev/sdb | grep CHUNK_ITEM | wc -l
->>>>>> 3454
->>>>>
->> Increasing node size may reduce extent tree size. Although at most
->> reduce one level AFAIK.
+On 02/21/2018 10:03 AM, Hans van Kranenburg wrote:
+> On 02/21/2018 03:49 PM, Ellis H. Wilson III wrote:
+>> On 02/20/2018 08:49 PM, Qu Wenruo wrote:
+>>> My suggestion is to use balance to reduce number of block groups, so we
+>>> could do less search at mount time.
+>>>
+>>> It's more like reason 2.
+>>>
+>>> But it only works for case where there are a lot of fragments so a lot
+>>> of chunks are not fully utilized.
+>>> Unfortunately, that's not the case for OP, so my suggestion doesn't make
+>>> sense here.
 >>
->> But considering that the higher the node is, the more chance it's
->> cached, reducing tree height wouldn't bring much performance impact
->> AFAIK.
+>> I ran the balance all the same, and the number of chunks has not
+>> changed.  Before 3454, and after 3454:
+>>   $ sudo btrfs-debug-tree -t chunk /dev/sdb | grep CHUNK_ITEM | wc -l
+>> 3454
 >>
->> If one could do real world benchmark to beat or prove my assumption, it
->> would be much better though.
-> 
-> I'm willing to try this if you tell me exactly what you'd like me to do.
->  I've not mucked with nodesize before, so I'd like to avoid changing it
-> to something absurd.
-> 
->>> Qu's suggestion is actually independent of all the above reasons, but
->>> does kind of fit in with the fourth as another case of preventative
->>> maintenance.
+>> HOWEVER, the time to mount has gone up somewhat significantly, from
+>> 11.537s to 16.553s, which was very unexpected.  Output from previously
+>> run commands shows the extent tree metadata grew about 25% due to the
+>> balance.  Everything else stayed roughly the same, and no additional
+>> data was added to the system (nor snapshots taken, nor additional
+>> volumes added, etc):
 >>
->> My suggestion is to use balance to reduce number of block groups, so we
->> could do less search at mount time.
+>> Before balance:
+>> $ sudo ./show_metadata_tree_sizes.py /mnt/btrfs/
+>> ROOT_TREE           1.14MiB 0(    72) 1(     1)
+>> EXTENT_TREE       644.27MiB 0( 41101) 1(   131) 2(     1)
+>> CHUNK_TREE        384.00KiB 0(    23) 1(     1)
+>> DEV_TREE          272.00KiB 0(    16) 1(     1)
+>> FS_TREE            11.55GiB 0(754442) 1(  2179) 2(     5) 3(     2)
+>> CSUM_TREE           3.50GiB 0(228593) 1(   791) 2(     2) 3(     1)
+>> QUOTA_TREE            0.00B
+>> UUID_TREE          16.00KiB 0(     1)
+>> FREE_SPACE_TREE       0.00B
+>> DATA_RELOC_TREE    16.00KiB 0(     1)
 >>
->> It's more like reason 2.
->>
->> But it only works for case where there are a lot of fragments so a lot
->> of chunks are not fully utilized.
->> Unfortunately, that's not the case for OP, so my suggestion doesn't make
->> sense here.
+>> After balance:
+>> $ sudo ./show_metadata_tree_sizes.py /mnt/btrfs/
+>> ROOT_TREE           1.16MiB 0(    73) 1(     1)
+>> EXTENT_TREE       806.50MiB 0( 51419) 1(   196) 2(     1)
+>> CHUNK_TREE        384.00KiB 0(    23) 1(     1)
+>> DEV_TREE          272.00KiB 0(    16) 1(     1)
+>> FS_TREE            11.55GiB 0(754442) 1(  2179) 2(     5) 3(     2)
+>> CSUM_TREE           3.49GiB 0(227920) 1(   804) 2(     2) 3(     1)
+>> QUOTA_TREE            0.00B
+>> UUID_TREE          16.00KiB 0(     1)
+>> FREE_SPACE_TREE       0.00B
+>> DATA_RELOC_TREE    16.00KiB 0(     1)
 > 
-> I ran the balance all the same, and the number of chunks has not
-> changed.  Before 3454, and after 3454:
->  $ sudo btrfs-debug-tree -t chunk /dev/sdb | grep CHUNK_ITEM | wc -l
-> 3454
+> Heu, interesting.
 > 
-> HOWEVER, the time to mount has gone up somewhat significantly, from
-> 11.537s to 16.553s, which was very unexpected.  Output from previously
-> run commands shows the extent tree metadata grew about 25% due to the
-> balance.  Everything else stayed roughly the same, and no additional
-> data was added to the system (nor snapshots taken, nor additional
-> volumes added, etc):
+> What's the output of `btrfs fi df /mountpoint` and `grep btrfs
+> /proc/self/mounts` (does it contain 'ssd') and which kernel version is
+> this? (I get a bit lost in the many messages and subthreads in this
+> thread) I also can't find in the threads which command "the balance" means.
+
+Short recap:
+- I found long mount time for 1.65TB of home dir data at ~4s
+- Doubling this data on the same btrfs fs to 3.3TB increased mount time 
+to 11s
+- Qu et. al. suggested balance might reduce chunks, which came in around 
+3400, and the chunk walk on mount was the driving factor in terms of time
+- I ran balance
+- Mount time went up to 16s, and all else remains the same except the 
+extent tree.
+
+$ sudo btrfs fi df /mnt/btrfs
+Data, single: total=3.32TiB, used=3.32TiB
+System, DUP: total=8.00MiB, used=384.00KiB
+Metadata, DUP: total=16.50GiB, used=15.82GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+$ sudo grep btrfs /proc/self/mounts
+/dev/sdb /mnt/btrfs btrfs rw,relatime,space_cache,subvolid=5,subvol=/ 0 0
+
+  $ uname -a
+Linux <snip> 4.5.5-300.fc24.x86_64 #1 SMP Thu May 19 13:05:32 UTC 2016 
+x86_64 x86_64 x86_64 GNU/Linux
+
+I plan to rerun this on a newer kernel, but haven't had time to spin up 
+another machine with a modern kernel yet, and this machine is also being 
+used for other things right now so I can't just upgrade it.
+
+> And what does this tell you?
 > 
-> Before balance:
-> $ sudo ./show_metadata_tree_sizes.py /mnt/btrfs/
-> ROOT_TREE           1.14MiB 0(    72) 1(     1)
-> EXTENT_TREE       644.27MiB 0( 41101) 1(   131) 2(     1)
-> CHUNK_TREE        384.00KiB 0(    23) 1(     1)
-> DEV_TREE          272.00KiB 0(    16) 1(     1)
-> FS_TREE            11.55GiB 0(754442) 1(  2179) 2(     5) 3(     2)
-> CSUM_TREE           3.50GiB 0(228593) 1(   791) 2(     2) 3(     1)
-> QUOTA_TREE            0.00B
-> UUID_TREE          16.00KiB 0(     1)
-> FREE_SPACE_TREE       0.00B
-> DATA_RELOC_TREE    16.00KiB 0(     1)
-> 
-> After balance:
-> $ sudo ./show_metadata_tree_sizes.py /mnt/btrfs/
-> ROOT_TREE           1.16MiB 0(    73) 1(     1)
-> EXTENT_TREE       806.50MiB 0( 51419) 1(   196) 2(     1)
-> CHUNK_TREE        384.00KiB 0(    23) 1(     1)
-> DEV_TREE          272.00KiB 0(    16) 1(     1)
-> FS_TREE            11.55GiB 0(754442) 1(  2179) 2(     5) 3(     2)
-> CSUM_TREE           3.49GiB 0(227920) 1(   804) 2(     2) 3(     1)
-> QUOTA_TREE            0.00B
-> UUID_TREE          16.00KiB 0(     1)
-> FREE_SPACE_TREE       0.00B
-> DATA_RELOC_TREE    16.00KiB 0(     1)
+> https://github.com/knorrie/python-btrfs/blob/develop/examples/show_free_space_fragmentation.py
 
-Heu, interesting.
+$ sudo ./show_free_space_fragmentation.py /mnt/btrfs
+No Free Space Tree (space_cache=v2) found!
+Falling back to using the extent tree to determine free space extents.
+vaddr 6529453391872 length 1073741824 used_pct 27 free space fragments 1 
+score 0
+Skipped because of usage > 90%: 3397 chunks
 
-What's the output of `btrfs fi df /mountpoint` and `grep btrfs
-/proc/self/mounts` (does it contain 'ssd') and which kernel version is
-this? (I get a bit lost in the many messages and subthreads in this
-thread) I also can't find in the threads which command "the balance" means.
+Best,
 
-And what does this tell you?
-
-https://github.com/knorrie/python-btrfs/blob/develop/examples/show_free_space_fragmentation.py
-
-Just to make sure you're not pointlessly shovelling data around on a
-filesystem that is already in bad shape.
-
->> BTW, if OP still wants to try something to possibly to reduce mount time
->> with same the fs, I could try some modification to current block group
->> iteration code to see if it makes sense.
-> 
-> I'm glad to try anything if it's helpful to improving BTRFS.  Just let
-> me know.
-> 
-> Best,
-> 
-> ellis
-
-
--- 
-Hans van Kranenburg
+ellis

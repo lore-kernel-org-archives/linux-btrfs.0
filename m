@@ -1,59 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:33370 "EHLO
-        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753719AbeBVMls (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Feb 2018 07:41:48 -0500
-Received: by mail-io0-f170.google.com with SMTP id n7so5894125iob.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 04:41:48 -0800 (PST)
-Subject: Re: Status of FST and mount times
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
-        "Ellis H. Wilson III" <ellisw@panasas.com>,
-        linux-btrfs@vger.kernel.org
-References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
- <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
- <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
- <0fa921f1-9a54-e410-1305-c88136f4823c@mendix.com>
- <5773ab23-8bee-1434-522b-231c154c4c6e@panasas.com>
- <c59b3618-0dc8-f07c-391f-45b9f42e3aaf@gmx.com>
- <db1e0ee1-c1ae-cc5c-842c-1caa714ef62b@panasas.com>
- <b5b93505-13ad-2e30-8daa-b624de5512bd@gmx.com>
- <5743750c-644d-9160-c0f3-599caf92dcb6@panasas.com>
- <ccc1f937-1cdd-afdd-d164-99c3ad648387@gmail.com>
- <4590b70e-2be7-b511-1428-685dcf2c26c6@gmx.com>
- <bcb18a10-3e87-66f7-63a4-b6f9906680ec@panasas.com>
- <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
- <baa3898d-d636-012b-3262-8984006ee146@panasas.com>
- <32e974f6-3238-eae3-65d4-a2e748c72c3f@mendix.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <703e7894-00da-86d0-39dc-13518db81d9e@gmail.com>
-Date: Thu, 22 Feb 2018 07:41:44 -0500
+Received: from mail-cys01nam02on0076.outbound.protection.outlook.com ([104.47.37.76]:33920
+        "EHLO NAM02-CY1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S932942AbeBVQbc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Feb 2018 11:31:32 -0500
+Subject: Re: [RFC PATCH] btrfs: Speedup btrfs_read_block_groups()
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.cz
+References: <20180222045215.16426-1-wqu@suse.com>
+ <c85baf37-d030-1718-1ee8-c64d2f031101@gmx.com>
+From: "Ellis H. Wilson III" <ellisw@panasas.com>
+Message-ID: <59c448b6-cc46-da82-a0bf-3b64d1a79081@panasas.com>
+Date: Thu, 22 Feb 2018 11:31:26 -0500
 MIME-Version: 1.0
-In-Reply-To: <32e974f6-3238-eae3-65d4-a2e748c72c3f@mendix.com>
+In-Reply-To: <c85baf37-d030-1718-1ee8-c64d2f031101@gmx.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-02-21 10:56, Hans van Kranenburg wrote:
-> On 02/21/2018 04:19 PM, Ellis H. Wilson III wrote:
+On 02/21/2018 11:56 PM, Qu Wenruo wrote:
+> On 2018年02月22日 12:52, Qu Wenruo wrote:
+>> btrfs_read_block_groups() is used to build up the block group cache for
+>> all block groups, so it will iterate all block group items in extent
+>> tree.
 >>
->> $ sudo btrfs fi df /mnt/btrfs
->> Data, single: total=3.32TiB, used=3.32TiB
->> System, DUP: total=8.00MiB, used=384.00KiB
->> Metadata, DUP: total=16.50GiB, used=15.82GiB
->> GlobalReserve, single: total=512.00MiB, used=0.00B
+>> For large filesystem (TB level), it will search for BLOCK_GROUP_ITEM
+>> thousands times, which is the most time consuming part of mounting
+>> btrfs.
+>>
+>> So this patch will try to speed it up by:
+>>
+>> 1) Avoid unnecessary readahead
+>>     We were using READA_FORWARD to search for block group item.
+>>     However block group items are in fact scattered across quite a lot of
+>>     leaves. Doing readahead will just waste our IO (especially important
+>>     for HDD).
+>>
+>>     In real world case, for a filesystem with 3T used space, it would
+>>     have about 50K extent tree leaves, but only have 3K block group
+>>     items. Meaning we need to iterate 16 leaves to meet one block group
+>>     on average.
+>>
+>>     So readahead won't help but waste slow HDD seeks.
+>>
+>> 2) Use chunk mapping to locate block group items
+>>     Since one block group item always has one corresponding chunk item,
+>>     we could use chunk mapping to get the block group item size.
+>>
+>>     With block group item size, we can do a pinpoint tree search, instead
+>>     of searching with some uncertain value and do forward search.
+>>
+>>     In some case, like next BLOCK_GROUP_ITEM is in the next leaf of
+>>     current path, we could save such unnecessary tree block read.
+>>
+>> Cc: Ellis H. Wilson III <ellisw@panasas.com>
 > 
-> Ah, so allocated data space is 100% filled with data. That's very good
-> yes. And it explains why you can't lower the amount of chunks by
-> balancing. You're just moving around data and replacing full chunks with
-> new full chunks. :]
+> Hi Ellis,
 > 
-> Doesn't explain why it blows up the size of the extent tree though. I
-> have no idea why that is.
-This is just a guess, but I think it might have reordered extents within 
-each chunk.  Any given extent can't span across a chunk boundary, so if 
-the order changed, it may have split extents that had previously been 
-full extents.  I'd be somewhat curious to see if defragmenting might 
-help here (it should re-combine the split extents, though it will 
-probably allocate a new chunk).
+> Would you please try this patch to see if it helps to speedup the mount
+> of your large filesystem?
 
+I will try either tomorrow or over the weekend.  I'm waiting on hardware 
+to be able to build and load a custom kernel on.
+
+Thanks so much for taking a stab at this!
+
+ellis

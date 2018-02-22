@@ -1,61 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43538 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43539 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933139AbeBVQMT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Feb 2018 11:12:19 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id BFE23AED7
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 16:12:17 +0000 (UTC)
+        id S932952AbeBVQMU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Feb 2018 11:12:20 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0B00AAEE3
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 16:12:18 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/2] btrfs: Factor out read portion of btrfs_get_blocks_direct
-Date: Thu, 22 Feb 2018 18:12:13 +0200
-Message-Id: <1519315934-13611-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 2/2] btrfs: Factor out write portion of btrfs_get_blocks_direct
+Date: Thu, 22 Feb 2018 18:12:14 +0200
+Message-Id: <1519315934-13611-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1519315934-13611-1-git-send-email-nborisov@suse.com>
+References: <1519315934-13611-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently this function handles both the READ and WRITE dio cases. This
-is facilitated by a bunch of 'if' statements, a goto short-circuit
-statement and a very perverse aliasing of "!created"(READ) case
-by setting lockstart = lockend and checking for lockstart < lockend for
-detecting the write. Let's simplify this mess by extracting the
-READ-only code into a separate __btrfs_get_block_direct_read function.
-This is only the first step, the next one will be to factor out the
-write side as well. The end goal will be to have the common locking/
-unlocking code in btrfs_get_blocks_direct and then it will call either
-the read|write subvariants. No functional changes.
+Now that the read side is extracted into its own function, do the same
+to the write side. This leaves btrfs_get_blocks_direct_write with the
+sole purpose of handling common locking required. Also flip the
+condition in btrfs_get_blocks_direct_write so that the write case
+comes first and we check for if (Create) rather than if (!create). This
+is purely subjective but I believe makes reading a bit more "linear".
+No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/inode.c | 49 ++++++++++++++++++++++++++++++++++++-------------
- 1 file changed, 36 insertions(+), 13 deletions(-)
+
+Both patches survived xfstests runs.
+
+ fs/btrfs/inode.c | 204 ++++++++++++++++++++++++++++---------------------------
+ 1 file changed, 104 insertions(+), 100 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 491a7397f6fa..fd99347d0c91 100644
+index fd99347d0c91..f45d12a5219b 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -7677,6 +7677,27 @@ static struct extent_map *create_io_em(struct inode *inode, u64 start, u64 len,
- 	return em;
+@@ -7698,6 +7698,99 @@ static int __btrfs_get_blocks_direct_read(struct extent_map *em,
+ 	return 0;
  }
  
-+
-+static int __btrfs_get_blocks_direct_read(struct extent_map *em,
-+					 struct buffer_head *bh_result,
-+					 struct inode *inode,
-+					 u64 start, u64 len)
++static int __btrfs_get_blocks_direct_write(struct extent_map **map,
++					  struct buffer_head *bh_result,
++					  struct inode *inode,
++					  struct btrfs_dio_data *dio_data,
++					  u64 start, u64 len)
 +{
-+	if (em->block_start == EXTENT_MAP_HOLE ||
-+			test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
-+		return -ENOENT;
++	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct extent_map *em = *map;
++
++	/*
++	 * We don't allocate a new extent in the following cases
++	 *
++	 * 1) The inode is marked as NODATACOW. In this case we'll just use the
++	 * existing extent.
++	 * 2) The extent is marked as PREALLOC. We're good to go here and can
++	 * just use the extent.
++	 *
++	 */
++	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags) ||
++	    ((BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) &&
++	     em->block_start != EXTENT_MAP_HOLE)) {
++		int type;
++		u64 block_start, orig_start, orig_block_len, ram_bytes;
++
++		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++			type = BTRFS_ORDERED_PREALLOC;
++		else
++			type = BTRFS_ORDERED_NOCOW;
++		len = min(len, em->len - (start - em->start));
++		block_start = em->block_start + (start - em->start);
++
++		if (can_nocow_extent(inode, start, &len, &orig_start,
++				     &orig_block_len, &ram_bytes) == 1 &&
++		    btrfs_inc_nocow_writers(fs_info, block_start)) {
++			struct extent_map *em2;
++
++			em2 = btrfs_create_dio_extent(inode, start, len,
++						      orig_start, block_start,
++						      len, orig_block_len,
++						      ram_bytes, type);
++			btrfs_dec_nocow_writers(fs_info, block_start);
++			if (type == BTRFS_ORDERED_PREALLOC) {
++				free_extent_map(em);
++				*map = em = em2;
++			}
++
++			if (em2 && IS_ERR(em2))
++				return PTR_ERR(em2);
++			/*
++			 * For inode marked NODATACOW or extent marked PREALLOC,
++			 * use the existing or preallocated extent, so does not
++			 * need to adjust btrfs_space_info's bytes_may_use.
++			 */
++			btrfs_free_reserved_data_space_noquota(inode, start,
++							       len);
++			goto skip_cow;
++		}
++	}
++
++	/* this will cow the extent */
++	len = bh_result->b_size;
++	free_extent_map(em);
++	*map = em = btrfs_new_extent_direct(inode, start, len);
++	if (IS_ERR(em))
++		return PTR_ERR(em);
 +
 +	len = min(len, em->len - (start - em->start));
 +
++skip_cow:
 +	bh_result->b_blocknr = (em->block_start + (start - em->start)) >>
 +		inode->i_blkbits;
 +	bh_result->b_size = len;
 +	bh_result->b_bdev = em->bdev;
 +	set_buffer_mapped(bh_result);
++
++	if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++		set_buffer_new(bh_result);
++
++	/*
++	 * Need to update the i_size under the extent lock so buffered
++	 * readers will get the updated i_size when we unlock.
++	 */
++	if (!dio_data->overwrite && start + len > i_size_read(inode))
++		i_size_write(inode, start + len);
++
++	WARN_ON(dio_data->reserve < len);
++	dio_data->reserve -= len;
++	dio_data->unsubmitted_oe_range_end = start + len;
++	current->journal_info = dio_data;
 +
 +	return 0;
 +}
@@ -63,54 +137,131 @@ index 491a7397f6fa..fd99347d0c91 100644
  static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
  				   struct buffer_head *bh_result, int create)
  {
-@@ -7745,11 +7766,22 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+@@ -7766,9 +7859,18 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
  		goto unlock_err;
  	}
  
--	/* Just a good old fashioned hole, return */
--	if (!create && (em->block_start == EXTENT_MAP_HOLE ||
--			test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
-+	if (!create) {
-+		ret = __btrfs_get_blocks_direct_read(em, bh_result, inode,
-+						   start, len);
-+		/* Can be negative only if we read from a hole */
-+		if (ret < 0) {
-+			ret = 0;
-+			free_extent_map(em);
-+			goto unlock_err;
-+		}
-+		/*
-+		 * We need to unlock only the end area that we aren't using
-+		 * if there is any leftover space
-+		 */
-+		free_extent_state(cached_state);
- 		free_extent_map(em);
--		goto unlock_err;
-+		return 0;
- 	}
- 
- 	/*
-@@ -7761,12 +7793,6 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	 * just use the extent.
- 	 *
- 	 */
 -	if (!create) {
--		len = min(len, em->len - (start - em->start));
--		lockstart = start + len;
--		goto unlock;
++	if (create) {
++		ret = __btrfs_get_blocks_direct_write(&em, bh_result, inode,
++						      dio_data, start, len);
++		if (ret < 0)
++			goto unlock_err;
++
++		/* clear and unlock the entire range */
++		clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
++				 unlock_bits, 1, 0, &cached_state);
++	} else {
+ 		ret = __btrfs_get_blocks_direct_read(em, bh_result, inode,
+-						   start, len);
++						    start, len);
+ 		/* Can be negative only if we read from a hole */
+ 		if (ret < 0) {
+ 			ret = 0;
+@@ -7780,106 +7882,8 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 		 * if there is any leftover space
+ 		 */
+ 		free_extent_state(cached_state);
+-		free_extent_map(em);
+-		return 0;
 -	}
 -
- 	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags) ||
- 	    ((BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) &&
- 	     em->block_start != EXTENT_MAP_HOLE)) {
-@@ -7853,10 +7879,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 		clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
- 				 lockend, unlock_bits, 1, 0,
- 				 &cached_state);
--	} else {
--		free_extent_state(cached_state);
- 	}
+-	/*
+-	 * We don't allocate a new extent in the following cases
+-	 *
+-	 * 1) The inode is marked as NODATACOW.  In this case we'll just use the
+-	 * existing extent.
+-	 * 2) The extent is marked as PREALLOC.  We're good to go here and can
+-	 * just use the extent.
+-	 *
+-	 */
+-	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags) ||
+-	    ((BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) &&
+-	     em->block_start != EXTENT_MAP_HOLE)) {
+-		int type;
+-		u64 block_start, orig_start, orig_block_len, ram_bytes;
 -
+-		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+-			type = BTRFS_ORDERED_PREALLOC;
+-		else
+-			type = BTRFS_ORDERED_NOCOW;
+-		len = min(len, em->len - (start - em->start));
+-		block_start = em->block_start + (start - em->start);
+-
+-		if (can_nocow_extent(inode, start, &len, &orig_start,
+-				     &orig_block_len, &ram_bytes) == 1 &&
+-		    btrfs_inc_nocow_writers(fs_info, block_start)) {
+-			struct extent_map *em2;
+-
+-			em2 = btrfs_create_dio_extent(inode, start, len,
+-						      orig_start, block_start,
+-						      len, orig_block_len,
+-						      ram_bytes, type);
+-			btrfs_dec_nocow_writers(fs_info, block_start);
+-			if (type == BTRFS_ORDERED_PREALLOC) {
+-				free_extent_map(em);
+-				em = em2;
+-			}
+-			if (em2 && IS_ERR(em2)) {
+-				ret = PTR_ERR(em2);
+-				goto unlock_err;
+-			}
+-			/*
+-			 * For inode marked NODATACOW or extent marked PREALLOC,
+-			 * use the existing or preallocated extent, so does not
+-			 * need to adjust btrfs_space_info's bytes_may_use.
+-			 */
+-			btrfs_free_reserved_data_space_noquota(inode,
+-					start, len);
+-			goto unlock;
+-		}
+ 	}
+ 
+-	/*
+-	 * this will cow the extent, reset the len in case we changed
+-	 * it above
+-	 */
+-	len = bh_result->b_size;
+-	free_extent_map(em);
+-	em = btrfs_new_extent_direct(inode, start, len);
+-	if (IS_ERR(em)) {
+-		ret = PTR_ERR(em);
+-		goto unlock_err;
+-	}
+-	len = min(len, em->len - (start - em->start));
+-unlock:
+-	bh_result->b_blocknr = (em->block_start + (start - em->start)) >>
+-		inode->i_blkbits;
+-	bh_result->b_size = len;
+-	bh_result->b_bdev = em->bdev;
+-	set_buffer_mapped(bh_result);
+-	if (create) {
+-		if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+-			set_buffer_new(bh_result);
+-
+-		/*
+-		 * Need to update the i_size under the extent lock so buffered
+-		 * readers will get the updated i_size when we unlock.
+-		 */
+-		if (!dio_data->overwrite && start + len > i_size_read(inode))
+-			i_size_write(inode, start + len);
+-
+-		WARN_ON(dio_data->reserve < len);
+-		dio_data->reserve -= len;
+-		dio_data->unsubmitted_oe_range_end = start + len;
+-		current->journal_info = dio_data;
+-	}
+-
+-	/*
+-	 * In the case of write we need to clear and unlock the entire range,
+-	 * in the case of read we need to unlock only the end area that we
+-	 * aren't using if there is any left over space.
+-	 */
+-	if (lockstart < lockend) {
+-		clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
+-				 lockend, unlock_bits, 1, 0,
+-				 &cached_state);
+-	}
  	free_extent_map(em);
  
  	return 0;

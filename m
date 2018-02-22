@@ -1,139 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57545 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753056AbeBVJ1L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Feb 2018 04:27:11 -0500
-Subject: Re: [RFC PATCH] btrfs: Speedup btrfs_read_block_groups()
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Cc: "Ellis H . Wilson III" <ellisw@panasas.com>
-References: <20180222045215.16426-1-wqu@suse.com>
- <bc11f64d-5e5a-54d0-79c1-1459f3eb7c68@suse.com>
- <4ef8f699-fb40-2116-e640-540b79919412@gmx.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <1dd70132-513a-c287-dab9-092229560524@suse.com>
-Date: Thu, 22 Feb 2018 11:27:03 +0200
+Received: from mail-io0-f170.google.com ([209.85.223.170]:33370 "EHLO
+        mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753719AbeBVMls (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Feb 2018 07:41:48 -0500
+Received: by mail-io0-f170.google.com with SMTP id n7so5894125iob.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 04:41:48 -0800 (PST)
+Subject: Re: Status of FST and mount times
+To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>,
+        "Ellis H. Wilson III" <ellisw@panasas.com>,
+        linux-btrfs@vger.kernel.org
+References: <4d705301-c3a1-baaa-3eb8-f7b92f12f505@panasas.com>
+ <27ee5e0b-4127-e890-1322-a31bd62e2412@suse.com>
+ <0c3fb0bb-6fd1-67f6-1c74-3ee98ae15303@gmx.com>
+ <0fa921f1-9a54-e410-1305-c88136f4823c@mendix.com>
+ <5773ab23-8bee-1434-522b-231c154c4c6e@panasas.com>
+ <c59b3618-0dc8-f07c-391f-45b9f42e3aaf@gmx.com>
+ <db1e0ee1-c1ae-cc5c-842c-1caa714ef62b@panasas.com>
+ <b5b93505-13ad-2e30-8daa-b624de5512bd@gmx.com>
+ <5743750c-644d-9160-c0f3-599caf92dcb6@panasas.com>
+ <ccc1f937-1cdd-afdd-d164-99c3ad648387@gmail.com>
+ <4590b70e-2be7-b511-1428-685dcf2c26c6@gmx.com>
+ <bcb18a10-3e87-66f7-63a4-b6f9906680ec@panasas.com>
+ <93a21379-bb9b-7f44-a6b1-36b93ba0f926@mendix.com>
+ <baa3898d-d636-012b-3262-8984006ee146@panasas.com>
+ <32e974f6-3238-eae3-65d4-a2e748c72c3f@mendix.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <703e7894-00da-86d0-39dc-13518db81d9e@gmail.com>
+Date: Thu, 22 Feb 2018 07:41:44 -0500
 MIME-Version: 1.0
-In-Reply-To: <4ef8f699-fb40-2116-e640-540b79919412@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <32e974f6-3238-eae3-65d4-a2e748c72c3f@mendix.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 22.02.2018 11:23, Qu Wenruo wrote:
-> 
-> 
-> [snip]
->>> -}
->>> -
->>>  void btrfs_put_block_group_cache(struct btrfs_fs_info *info)
->>>  {
->>>  	struct btrfs_block_group_cache *block_group;
->>> @@ -9988,12 +9934,15 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
->>>  {
->>>  	struct btrfs_path *path;
->>>  	int ret;
->>> +	struct btrfs_mapping_tree *map_tree = &info->mapping_tree;
->>> +	struct btrfs_root *extent_root = info->extent_root;
->>>  	struct btrfs_block_group_cache *cache;
->>>  	struct btrfs_space_info *space_info;
->>>  	struct btrfs_key key;
->>>  	struct btrfs_key found_key;
->>>  	struct extent_buffer *leaf;
->>>  	int need_clear = 0;
->>> +	u64 cur = 0;
->>>  	u64 cache_gen;
->>>  	u64 feature;
->>>  	int mixed;
->>> @@ -10001,13 +9950,9 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
->>>  	feature = btrfs_super_incompat_flags(info->super_copy);
->>>  	mixed = !!(feature & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS);
->>>  
->>> -	key.objectid = 0;
->>> -	key.offset = 0;
->>> -	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
->>>  	path = btrfs_alloc_path();
->>>  	if (!path)
->>>  		return -ENOMEM;
->>> -	path->reada = READA_FORWARD;
->>>  
->>>  	cache_gen = btrfs_super_cache_generation(info->super_copy);
->>>  	if (btrfs_test_opt(info, SPACE_CACHE) &&
->>> @@ -10017,10 +9962,30 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
->>>  		need_clear = 1;
->>>  
->>>  	while (1) {
->>> -		ret = find_first_block_group(info, path, &key);
->>> -		if (ret > 0)
->>> +		struct extent_map *em;
->>> +
->>> +		read_lock(&map_tree->map_tree.lock);
->>> +		em = lookup_extent_mapping(&map_tree->map_tree, cur,
->>> +					   ((u64)-1) - cur);
->>> +		read_unlock(&map_tree->map_tree.lock);
->>> +		if (!em)
->>>  			break;
->>> -		if (ret != 0)
->>> +
->>> +		key.objectid = em->start;
->>> +		key.offset = em->len;
->>> +		key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
->>> +		cur = em->start + em->len;
->>> +		free_extent_map(em);
->>> +
->>> +		ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
->>> +		if (ret > 0) {
->>> +			WARN(1, KERN_ERR
->>> +			"chunk [%llu %llu) doesn't has its block group item\n",
+On 2018-02-21 10:56, Hans van Kranenburg wrote:
+> On 02/21/2018 04:19 PM, Ellis H. Wilson III wrote:
 >>
->> I'd rephrase this to "chunk [%llu %llu) doesn't have matching block
->> group item"
+>> $ sudo btrfs fi df /mnt/btrfs
+>> Data, single: total=3.32TiB, used=3.32TiB
+>> System, DUP: total=8.00MiB, used=384.00KiB
+>> Metadata, DUP: total=16.50GiB, used=15.82GiB
+>> GlobalReserve, single: total=512.00MiB, used=0.00B
 > 
-> Sounds good.
+> Ah, so allocated data space is 100% filled with data. That's very good
+> yes. And it explains why you can't lower the amount of chunks by
+> balancing. You're just moving around data and replacing full chunks with
+> new full chunks. :]
 > 
-> Sorry for my poor English.
+> Doesn't explain why it blows up the size of the extent tree though. I
+> have no idea why that is.
+This is just a guess, but I think it might have reordered extents within 
+each chunk.  Any given extent can't span across a chunk boundary, so if 
+the order changed, it may have split extents that had previously been 
+full extents.  I'd be somewhat curious to see if defragmenting might 
+help here (it should re-combine the split extents, though it will 
+probably allocate a new chunk).
 
-No need to apologise neither of us is a native speaker :)
-
-> 
->>
->>> +			     key.objectid, key.objectid + key.offset);
->>> +			ret = -ENOENT;
->>> +			goto error;
->>> +		}
->>
->> Looks good, howevr when the time for merging comes I'd rather have this
->> code be part of a function named find_block_group or some such. Let's
->> see if this code brings any improvements and then bikeshed on the details.
-> 
-> Isn't that the original find_first_block_group() function?
-
-Yes but since you have removed it and you are not really looking for the
-"first" block group but just looking for a block group then the new name
-makes more sense and collects the code in one place.
-
-> 
-> Thanks,
-> Qu
-> 
->>
->>> +		if (ret < 0)
->>>  			goto error;
->>>  
->>>  		leaf = path->nodes[0];
->>> @@ -10062,7 +10027,6 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
->>>  			goto error;
->>>  		}
->>>  
->>> -		key.objectid = found_key.objectid + found_key.offset;
->>>  		btrfs_release_path(path);
->>>  
->>>  		/*
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 

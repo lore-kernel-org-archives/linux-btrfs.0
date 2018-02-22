@@ -1,130 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48321 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752557AbeBVGtd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Feb 2018 01:49:33 -0500
-Subject: Re: [PATCH] btrfs: Fix locking during DIO read
-To: bo.li.liu@oracle.com, Filipe Manana <fdmanana@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>
+Received: from mail-ua0-f172.google.com ([209.85.217.172]:34269 "EHLO
+        mail-ua0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753000AbeBVKF3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Feb 2018 05:05:29 -0500
+Received: by mail-ua0-f172.google.com with SMTP id m43so2946487uah.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 02:05:29 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20180221223806.GA32259@lim.localdomain>
 References: <1519213303-2802-1-git-send-email-nborisov@suse.com>
  <CAL3q7H4aiNyzgtDoziTXYkwuSggUAF+b9uLTWcm15GQSigp1_w@mail.gmail.com>
- <de457af6-6a9c-43f4-b9c6-429b69deec77@suse.com>
- <CAL3q7H7PiYd2yXNeG3Lkx8XVOgwFhx_1-9kaY8wqHBYkXStJ7w@mail.gmail.com>
- <20180221182817.GB9910@lim.localdomain>
- <CAL3q7H4eus5pO-NohXRKDytjPQcMjCXov9s7W_p+5JCuuYe_Lg@mail.gmail.com>
+ <de457af6-6a9c-43f4-b9c6-429b69deec77@suse.com> <CAL3q7H7PiYd2yXNeG3Lkx8XVOgwFhx_1-9kaY8wqHBYkXStJ7w@mail.gmail.com>
+ <20180221182817.GB9910@lim.localdomain> <CAL3q7H4eus5pO-NohXRKDytjPQcMjCXov9s7W_p+5JCuuYe_Lg@mail.gmail.com>
  <20180221223806.GA32259@lim.localdomain>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <29ab09a7-a6a2-d9d4-13d7-724cf4050c1c@suse.com>
-Date: Thu, 22 Feb 2018 08:49:30 +0200
-MIME-Version: 1.0
-In-Reply-To: <20180221223806.GA32259@lim.localdomain>
-Content-Type: text/plain; charset=utf-8
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Thu, 22 Feb 2018 10:05:28 +0000
+Message-ID: <CAL3q7H7AN7dEdG_kH5eGHwHGMiwYc1Cjfso=RiT2Nm4niGpAFQ@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: Fix locking during DIO read
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 22.02.2018 00:38, Liu Bo wrote:
+On Wed, Feb 21, 2018 at 10:38 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
 > On Wed, Feb 21, 2018 at 07:05:13PM +0000, Filipe Manana wrote:
 >> On Wed, Feb 21, 2018 at 6:28 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
->>> On Wed, Feb 21, 2018 at 02:42:08PM +0000, Filipe Manana wrote:
->>>> On Wed, Feb 21, 2018 at 2:15 PM, Nikolay Borisov <nborisov@suse.com> wrote:
->>>>>
->>>>>
->>>>> On 21.02.2018 15:51, Filipe Manana wrote:
->>>>>> On Wed, Feb 21, 2018 at 11:41 AM, Nikolay Borisov <nborisov@suse.com> wrote:
->>>>>>> Currently the DIO read cases uses a botched idea from ext4 to ensure
->>>>>>> that DIO reads don't race with truncate. The idea is that if we have a
->>>>>>> pending truncate we set BTRFS_INODE_READDIO_NEED_LOCK which in turn
->>>>>>> forces the dio read case to fallback to inode_locking to prevent
->>>>>>> read/truncate races. Unfortunately this is subtly broken for at least
->>>>>>> 2 reasons:
->>>>>>>
->>>>>>> 1. inode_dio_begin in btrfs_direct_IO is called outside of inode_lock
->>>>>>> (for the read case). This means that there is no ordering guarantee
->>>>>>> between the invocation of inode_dio_wait and the increment of
->>>>>>> i_dio_count in btrfs_direct_IO in the tread case.
->>>>>>
->>>>>> Also, looking at this changelog, the diff and the code, why is it a
->>>>>> problem not calling inode_dio_begin without the inode lock in the dio
->>>>>> read path?
->>>>>> The truncate path calls inode_dio_wait after setting the bit
->>>>>> BTRFS_INODE_READDIO_NEED_LOCK and before clearing it.
->>>>>> Assuming the functions to set and clear that bit are correct, I don't
->>>>>> see what problem this brings.
->>>>>
->>>>> Assume you have a truncate and a dio READ in parallel. So the following
->>>>> execution is possible:
->>>>>
->>>>> T1:                                                           T2:
->>>>> btrfs_setattr
->>>>>  set_bit(BTRFS_INODE_READDIO_NEED_LOCK)
->>>>>  inode_dio_wait (reads i_dio_count)                        btrfs_direct_IO
->>>>>  clear_bit(BTRFS_INODE_READDIO_NEED_LOCK)                  inode_dio_begin (inc's i_dio_count)
->>>>>
->>>>> Since we have no ordering between beginning a dio and waiting for it then
->>>>> truncate can assume there isn't any pending dio. At the same time
->>>>> btrfs_direct_IO will increment i_dio_count but won't see BTRFS_INODE_READDIO_NEED_LOCK
->>>>> ever being set and so will proceed servicing the read.
->>>>
->>>> So what you are saying, is that you are concerned with a dio read
->>>> starting after clearing the BTRFS_INODE_READDIO_NEED_LOCK.
->>>> I don't think that is a problem, because the truncate path has already
->>>> started a transaction before, which means blocks/extents deallocated
->>>> by the truncation can not be reused and allocated to other inodes or
->>>> the same inode (only after the transaction is committed).
->>>>
->>>> And considering that, commit 2e60a51e62185cce48758e596ae7cb2da673b58f
->>>> ("Btrfs: serialize unlocked dio reads with truncate"), which
->>>> introduced all this protection logic, is completely bogus. Looking at
->>>> its changelog:
->>>>
->>>>     Btrfs: serialize unlocked dio reads with truncate
->>>>
->>>>     Currently, we can do unlocked dio reads, but the following race
->>>>     is possible:
->>>>
->>>>     dio_read_task                   truncate_task
->>>>                                     ->btrfs_setattr()
->>>>     ->btrfs_direct_IO
->>>>         ->__blockdev_direct_IO
->>>>           ->btrfs_get_block
->>>>                                       ->btrfs_truncate()
->>>>                                      #alloc truncated blocks
->>>>                                      #to other inode
->>>>           ->submit_io()
->>>>          #INFORMATION LEAK
->>>>
->>>>     In order to avoid this problem, we must serialize unlocked dio reads with
->>>>     truncate. There are two approaches:
->>>>     - use extent lock to protect the extent that we truncate
->>>>     - use inode_dio_wait() to make sure the truncating task will wait for
->>>>       the read DIO.
->>>>
->>>>     If we use the 1st one, we will meet the endless truncation problem due to
->>>>     the nonlocked read DIO after we implement the nonlocked write DIO. It is
->>>>     because we still need invoke inode_dio_wait() avoid the race between write
->>>>     DIO and truncation. By that time, we have to introduce
->>>>
->>>>       btrfs_inode_{block, resume}_nolock_dio()
->>>>
->>>>     again. That is we have to implement this patch again, so I choose the 2nd
->>>>     way to fix the problem.
->>>>
->>>> It's concerned with extents deallocated during the truncate operation
->>>> being leaked through concurrent reads from other inodes that got that
->>>> those extents allocated to them in the meanwhile (and the dio reads
->>>> complete after the re-allocations and before the extents get written
->>>> with new data) - but that can't happen because truncate is holding a
->>>> transaction open. Further all that code that it introduced, can only
->>>> prevent concurrent reads from the same inode, not from other inodes.
->>>> So I think that commit does absolutely nothing and we should revert
->>>> it.
->>>>
->>>
->>> Well...make sense, but still dio read can read stale data past isize
->>> if this inode_dio_wait() is removed.
+>> > On Wed, Feb 21, 2018 at 02:42:08PM +0000, Filipe Manana wrote:
+>> >> On Wed, Feb 21, 2018 at 2:15 PM, Nikolay Borisov <nborisov@suse.com> wrote:
+>> >> >
+>> >> >
+>> >> > On 21.02.2018 15:51, Filipe Manana wrote:
+>> >> >> On Wed, Feb 21, 2018 at 11:41 AM, Nikolay Borisov <nborisov@suse.com> wrote:
+>> >> >>> Currently the DIO read cases uses a botched idea from ext4 to ensure
+>> >> >>> that DIO reads don't race with truncate. The idea is that if we have a
+>> >> >>> pending truncate we set BTRFS_INODE_READDIO_NEED_LOCK which in turn
+>> >> >>> forces the dio read case to fallback to inode_locking to prevent
+>> >> >>> read/truncate races. Unfortunately this is subtly broken for at least
+>> >> >>> 2 reasons:
+>> >> >>>
+>> >> >>> 1. inode_dio_begin in btrfs_direct_IO is called outside of inode_lock
+>> >> >>> (for the read case). This means that there is no ordering guarantee
+>> >> >>> between the invocation of inode_dio_wait and the increment of
+>> >> >>> i_dio_count in btrfs_direct_IO in the tread case.
+>> >> >>
+>> >> >> Also, looking at this changelog, the diff and the code, why is it a
+>> >> >> problem not calling inode_dio_begin without the inode lock in the dio
+>> >> >> read path?
+>> >> >> The truncate path calls inode_dio_wait after setting the bit
+>> >> >> BTRFS_INODE_READDIO_NEED_LOCK and before clearing it.
+>> >> >> Assuming the functions to set and clear that bit are correct, I don't
+>> >> >> see what problem this brings.
+>> >> >
+>> >> > Assume you have a truncate and a dio READ in parallel. So the following
+>> >> > execution is possible:
+>> >> >
+>> >> > T1:                                                           T2:
+>> >> > btrfs_setattr
+>> >> >  set_bit(BTRFS_INODE_READDIO_NEED_LOCK)
+>> >> >  inode_dio_wait (reads i_dio_count)                        btrfs_direct_IO
+>> >> >  clear_bit(BTRFS_INODE_READDIO_NEED_LOCK)                  inode_dio_begin (inc's i_dio_count)
+>> >> >
+>> >> > Since we have no ordering between beginning a dio and waiting for it then
+>> >> > truncate can assume there isn't any pending dio. At the same time
+>> >> > btrfs_direct_IO will increment i_dio_count but won't see BTRFS_INODE_READDIO_NEED_LOCK
+>> >> > ever being set and so will proceed servicing the read.
+>> >>
+>> >> So what you are saying, is that you are concerned with a dio read
+>> >> starting after clearing the BTRFS_INODE_READDIO_NEED_LOCK.
+>> >> I don't think that is a problem, because the truncate path has already
+>> >> started a transaction before, which means blocks/extents deallocated
+>> >> by the truncation can not be reused and allocated to other inodes or
+>> >> the same inode (only after the transaction is committed).
+>> >>
+>> >> And considering that, commit 2e60a51e62185cce48758e596ae7cb2da673b58f
+>> >> ("Btrfs: serialize unlocked dio reads with truncate"), which
+>> >> introduced all this protection logic, is completely bogus. Looking at
+>> >> its changelog:
+>> >>
+>> >>     Btrfs: serialize unlocked dio reads with truncate
+>> >>
+>> >>     Currently, we can do unlocked dio reads, but the following race
+>> >>     is possible:
+>> >>
+>> >>     dio_read_task                   truncate_task
+>> >>                                     ->btrfs_setattr()
+>> >>     ->btrfs_direct_IO
+>> >>         ->__blockdev_direct_IO
+>> >>           ->btrfs_get_block
+>> >>                                       ->btrfs_truncate()
+>> >>                                      #alloc truncated blocks
+>> >>                                      #to other inode
+>> >>           ->submit_io()
+>> >>          #INFORMATION LEAK
+>> >>
+>> >>     In order to avoid this problem, we must serialize unlocked dio reads with
+>> >>     truncate. There are two approaches:
+>> >>     - use extent lock to protect the extent that we truncate
+>> >>     - use inode_dio_wait() to make sure the truncating task will wait for
+>> >>       the read DIO.
+>> >>
+>> >>     If we use the 1st one, we will meet the endless truncation problem due to
+>> >>     the nonlocked read DIO after we implement the nonlocked write DIO. It is
+>> >>     because we still need invoke inode_dio_wait() avoid the race between write
+>> >>     DIO and truncation. By that time, we have to introduce
+>> >>
+>> >>       btrfs_inode_{block, resume}_nolock_dio()
+>> >>
+>> >>     again. That is we have to implement this patch again, so I choose the 2nd
+>> >>     way to fix the problem.
+>> >>
+>> >> It's concerned with extents deallocated during the truncate operation
+>> >> being leaked through concurrent reads from other inodes that got that
+>> >> those extents allocated to them in the meanwhile (and the dio reads
+>> >> complete after the re-allocations and before the extents get written
+>> >> with new data) - but that can't happen because truncate is holding a
+>> >> transaction open. Further all that code that it introduced, can only
+>> >> prevent concurrent reads from the same inode, not from other inodes.
+>> >> So I think that commit does absolutely nothing and we should revert
+>> >> it.
+>> >>
+>> >
+>> > Well...make sense, but still dio read can read stale data past isize
+>> > if this inode_dio_wait() is removed.
 >>
 >> Yes, the inode_dio_wait() would remain, to prevent a dio read from
 >> submitting the bio before truncate drops an extent and the bio finish
@@ -132,30 +133,45 @@ On 22.02.2018 00:38, Liu Bo wrote:
 >> extents could have been allocated for someone else and be partially,
 >> fully rewritten or discarded). All that stuff with the bit
 >> BTRFS_INODE_READDIO_NEED_LOCK would go away.
-> 
+>
 > The commit description doesn't point it out but the code has the
 > necessary comment, BTRFS_INODE_READDIO_NEED_LOCK is used to prevent a
 > livelock if there are enough agreesive dio readers rushing in.
-> 
+
+Now I see it. Well the comment doesn't say why, that's it's due to dio
+counter being constantly incremented and never getting down to zero
+due to too many parallel dio readers.
+
+>
 >> If the transaction commits after the dio read, then everything is fine
 >> as for the cases where it reads data past the isize set by truncate,
 >> that data is preserved since the dropped extents are pinned, there's
 >> no chance for the application to read partial contents or garbage from
 >> the dropped extents.
-> 
+>
 > Not even that far, isize is truncated before calling inode_dio_wait()
 > and a memory barrier is set to ensure the correct order, so dio read
 > would simply return if it's reading past isize.
-
-Please, describe concretely which meory barriers pairs with chich in
-order to ensure proper visibility. Because I'm of the opinion there are
-insufficient memoru barriers to ensure setting READDIO_LOCK is properly
-visible in btrfs_direct_IO. Since the latter has no barriers whatsoever.
-
-> 
+>
 > The code is very subtle, but so far it looks reasonable to me.
-> 
+
+To me too now.
+
+The commit's changelog is terrible however, it mentions a problem that
+it doesn't solve, of leaking data to dio readers of other inodes - it
+can't happen for all the reasons mentioned before. Why the hell is it
+there in the changelog?
+And there's no information whatsoever about why this "endless
+truncation" can happen.
+
+>
 > thanks,
-> 
+>
 > -liubo
-> 
+
+
+
+-- 
+Filipe David Manana,
+
+“Whether you think you can, or you think you can't — you're right.”

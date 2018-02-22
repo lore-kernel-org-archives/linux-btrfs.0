@@ -1,33 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:34732 "EHLO
-        mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751771AbeBVCDR (ORCPT
+Received: from mgwym04.jp.fujitsu.com ([211.128.242.43]:34113 "EHLO
+        mgwym04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751802AbeBVCKG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Feb 2018 21:03:17 -0500
-Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 42613AC010B
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 11:03:11 +0900 (JST)
+        Wed, 21 Feb 2018 21:10:06 -0500
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 2F338AC00A4
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 11:10:02 +0900 (JST)
 Subject: Re: [PATCH v2 23/27] btrfs-progs: use libbtrfsutil for subvol sync
 To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
 CC: <kernel-team@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
  <f39e48b3ed0f860ec47b31fbfe08f6455d6fbaa8.1518720598.git.osandov@fb.com>
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <c706be51-70d3-9b5b-f0b9-79268f9d2960@jp.fujitsu.com>
-Date: Thu, 22 Feb 2018 11:03:05 +0900
+Message-ID: <afa94587-3343-8595-9447-84578adc609c@jp.fujitsu.com>
+Date: Thu, 22 Feb 2018 11:09:55 +0900
 MIME-Version: 1.0
 In-Reply-To: <f39e48b3ed0f860ec47b31fbfe08f6455d6fbaa8.1518720598.git.osandov@fb.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
 On 2018/02/16 4:05, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 > 
 > btrfs_util_f_deleted_subvolumes() replaces enumerate_dead_subvols() and
 > btrfs_util_f_subvolume_info() replaces is_subvolume_cleaned().
+
+And, the function names are older version.
+
 > 
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
 > ---
@@ -263,10 +264,6 @@ On 2018/02/16 4:05, Omar Sandoval wrote:
 > -	u64 *ids = NULL;
 > -	int id_count;
 > +	uint64_t *ids;
-
-"ids" should be initialized to prevent to be used uninitialized for free()
-in error path (clang build warning).
-
 > +	size_t id_count, i;
 >  	int sleep_interval = 1;
 > +	enum btrfs_util_error err;

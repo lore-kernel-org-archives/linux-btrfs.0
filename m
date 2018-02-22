@@ -1,53 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:49021 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:44182 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752516AbeBVGrp (ORCPT
+        with ESMTP id S1752557AbeBVGsA (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 22 Feb 2018 01:47:45 -0500
+        Thu, 22 Feb 2018 01:48:00 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH v3 5/9] btrfs-progs: volumes: Allow find_free_dev_extent() to return maximum hole size
-Date: Thu, 22 Feb 2018 14:47:29 +0800
-Message-Id: <20180222064733.12126-6-wqu@suse.com>
+Subject: [PATCH v3 7/9] btrfs-progs: Move chunk stripe size calcution function to volumes.h
+Date: Thu, 22 Feb 2018 14:47:31 +0800
+Message-Id: <20180222064733.12126-8-wqu@suse.com>
 In-Reply-To: <20180222064733.12126-1-wqu@suse.com>
 References: <20180222064733.12126-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just as kernel find_free_dev_extent(), allow it to return maximum hole
-size for us to build device list for later chunk allocator rework.
-
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- volumes.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ check/main.c | 22 ----------------------
+ volumes.h    | 22 ++++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 22 deletions(-)
 
-diff --git a/volumes.c b/volumes.c
-index b47ff1f392b5..f4009ffa7c9e 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -516,10 +516,10 @@ out:
+diff --git a/check/main.c b/check/main.c
+index 97baae583f04..8ad7ab03e0e8 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -7638,28 +7638,6 @@ repair_abort:
+ 	return err;
  }
  
- static int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
--				u64 *start)
-+				u64 *start, u64 *len)
- {
- 	/* FIXME use last free of some kind */
--	return find_free_dev_extent_start(device, num_bytes, 0, start, NULL);
-+	return find_free_dev_extent_start(device, num_bytes, 0, start, len);
+-u64 calc_stripe_length(u64 type, u64 length, int num_stripes)
+-{
+-	u64 stripe_size;
+-
+-	if (type & BTRFS_BLOCK_GROUP_RAID0) {
+-		stripe_size = length;
+-		stripe_size /= num_stripes;
+-	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
+-		stripe_size = length * 2;
+-		stripe_size /= num_stripes;
+-	} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
+-		stripe_size = length;
+-		stripe_size /= (num_stripes - 1);
+-	} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
+-		stripe_size = length;
+-		stripe_size /= (num_stripes - 2);
+-	} else {
+-		stripe_size = length;
+-	}
+-	return stripe_size;
+-}
+-
+ /*
+  * Check the chunk with its block group/dev list ref:
+  * Return 0 if all refs seems valid.
+diff --git a/volumes.h b/volumes.h
+index 3741d45cae80..950de5a9f910 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -216,6 +216,28 @@ static inline int check_crossing_stripes(struct btrfs_fs_info *fs_info,
+ 		(bg_offset + len - 1) / BTRFS_STRIPE_LEN);
  }
  
- static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
-@@ -543,7 +543,7 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
- 	 * is responsible to make sure it's free.
- 	 */
- 	if (!convert) {
--		ret = find_free_dev_extent(device, num_bytes, start);
-+		ret = find_free_dev_extent(device, num_bytes, start, NULL);
- 		if (ret)
- 			goto err;
- 	}
++static inline u64 calc_stripe_length(u64 type, u64 length, int num_stripes)
++{
++	u64 stripe_size;
++
++	if (type & BTRFS_BLOCK_GROUP_RAID0) {
++		stripe_size = length;
++		stripe_size /= num_stripes;
++	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
++		stripe_size = length * 2;
++		stripe_size /= num_stripes;
++	} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
++		stripe_size = length;
++		stripe_size /= (num_stripes - 1);
++	} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
++		stripe_size = length;
++		stripe_size /= (num_stripes - 2);
++	} else {
++		stripe_size = length;
++	}
++	return stripe_size;
++}
++
+ int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		      u64 logical, u64 *length, u64 *type,
+ 		      struct btrfs_multi_bio **multi_ret, int mirror_num,
 -- 
 2.16.2
 

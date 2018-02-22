@@ -1,90 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34543 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751402AbeBTLke (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Feb 2018 06:40:34 -0500
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, anand.jain@oracle.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Fix rcu_dereference usage outside of read critical section
-Date: Tue, 20 Feb 2018 13:40:29 +0200
-Message-Id: <1519126829-29742-1-git-send-email-nborisov@suse.com>
+Received: from mail-wm0-f42.google.com ([74.125.82.42]:35244 "EHLO
+        mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752135AbeBVEd0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Feb 2018 23:33:26 -0500
+Received: by mail-wm0-f42.google.com with SMTP id x21so1253409wmh.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Feb 2018 20:33:25 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <bug-1547319-399363-GV0megqgjZ@bugzilla.redhat.com>
+References: <bug-1547319-399363@bugzilla.redhat.com> <bug-1547319-399363-GV0megqgjZ@bugzilla.redhat.com>
+From: =?UTF-8?Q?Tomasz_K=C5=82oczko?= <kloczko.tomasz@gmail.com>
+Date: Thu, 22 Feb 2018 04:33:24 +0000
+Message-ID: <CABB28CwoGbEGNiYdY_SmBJV+REWMWNxL7f8kjM5+S4t--w5-LQ@mail.gmail.com>
+Subject: Fwd: [Bug 1547319] 4.16.0-0.rc1.git4.1.fc28.x86_64 #1 Not tainted:
+ possible recursive locking detected
+To: Linux fs Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patch 11ac3f1da5fd ("btrfs: log, when replace, is canceled by the user")
-added a new btrfs_info call with a couple of btrfs_dev_name() args. This
-is wrong since the latter require being called in rcu read side
-critical section. Fix it by instead calling btrfs_info_in_rcu. This
-fixes the following splat:
+---------- Forwarded message ----------
+From:  <bugzilla@redhat.com>
+Date: 21 February 2018 at 16:22
+Subject: [Bug 1547319] 4.16.0-0.rc1.git4.1.fc28.x86_64 #1 Not tainted:
+  possible recursive locking detected
+To: kloczko.tomasz@gmail.com
 
-=============================
-WARNING: suspicious RCU usage
-4.16.0-rc2-nbor #463 Not tainted
------------------------------
-fs/btrfs/dev-replace.c:318 suspicious rcu_dereference_check() usage!
 
-other info that might help us debug this:
+https://bugzilla.redhat.com/show_bug.cgi?id=1547319
 
-rcu_scheduler_active = 2, debug_locks = 1
-1 lock held by btrfs/5698:
- #0:  (&fs_info->dev_replace.lock_finishing_cancel_unmount){+.+.}, at: [<00000000942cb4ee>] btrfs_dev_replace_cancel+0xac/0x3f0
+Laura Abbott <labbott@redhat.com> changed:
 
-stack backtrace:
-CPU: 2 PID: 5698 Comm: btrfs Not tainted 4.16.0-rc2-nbor #463
-Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Ubuntu-1.8.2-1ubuntu1 04/01/2014
-Call Trace:
- dump_stack+0x85/0xc9
- lockdep_rcu_suspicious+0x123/0x170
- btrfs_dev_name.part.1+0x6d/0x80
- btrfs_dev_replace_cancel+0x330/0x3f0
- btrfs_ioctl+0x2751/0x65b0
- ? debug_check_no_locks_freed+0x290/0x290
- ? trace_hardirqs_on_caller+0x400/0x570
- ? trace_hardirqs_on+0xd/0x10
- ? btrfs_ioctl_get_supported_features+0x30/0x30
- ? __handle_mm_fault+0x1aca/0x3230
- ? lock_downgrade+0x650/0x650
- ? trace_hardirqs_on+0xd/0x10
- ? mem_cgroup_commit_charge+0xc0/0xdd0
- ? _raw_spin_unlock+0x27/0x40
- ? __handle_mm_fault+0x1aca/0x3230
- ? lock_downgrade+0x650/0x650
- ? vm_insert_page+0x650/0x650
- ? __vma_link_rb+0x125/0x1d0
- do_vfs_ioctl+0x184/0xf00
- ? do_vfs_ioctl+0x184/0xf00
- ? lock_downgrade+0x650/0x650
- ? ioctl_preallocate+0x1a0/0x1a0
- ? up_read+0x1f/0x40
- ? __do_page_fault+0x5c6/0xb30
- ? SyS_brk+0x412/0x5f0
- ? mm_fault_error+0x2e0/0x2e0
- SyS_ioctl+0x41/0x70
- ? do_vfs_ioctl+0xf00/0xf00
- do_syscall_64+0x19d/0x5d0
- entry_SYSCALL_64_after_hwframe+0x42/0xb7
+           What    |Removed                     |Added
+----------------------------------------------------------------------------
+                 CC|                            |labbott@redhat.com
 
-Fixes: 11ac3f1da5fd ("btrfs: log, when replace, is canceled by the user")
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/dev-replace.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 3b0760f7ec8a..0e776eb90ad8 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -744,7 +744,7 @@ int btrfs_dev_replace_cancel(struct btrfs_fs_info *fs_info)
- 	ret = btrfs_commit_transaction(trans);
- 	WARN_ON(ret);
- 
--	btrfs_info(fs_info, "dev_replace from %s (devid %llu) to %s canceled",
-+	btrfs_info_in_rcu(fs_info, "dev_replace from %s (devid %llu) to %s cancelled",
- 		   btrfs_dev_name(src_device), src_device->devid,
- 		   btrfs_dev_name(tgt_device));
- 
+
+--- Comment #1 from Laura Abbott <labbott@redhat.com> ---
+This is btrfs which is pretty far down on our priority list. This is best
+reported to the upstream btrfs devs.
+
+--
+You are receiving this mail because:
+You reported the bug.
+
+kloczek
 -- 
-2.7.4
-
+Tomasz Kłoczko | LinkedIn: http://lnkd.in/FXPWxH

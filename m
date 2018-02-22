@@ -1,22 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:27365 "EHLO
-        mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751639AbeBVBoi (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:49254 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751659AbeBVB4A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Feb 2018 20:44:38 -0500
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 9DC2BAC0196
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 10:44:34 +0900 (JST)
-Subject: Re: [PATCH v2 03/27] libbtrfsutil: add Python bindings
+        Wed, 21 Feb 2018 20:56:00 -0500
+Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
+        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id F3223AC02F1
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Feb 2018 10:55:53 +0900 (JST)
+Subject: Re: [PATCH v2 10/27] libbtrfsutil: add
+ btrfs_util_[gs]et_default_subvolume()
 To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
 CC: <kernel-team@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
- <818e5d95ac69282a1e8c193bf92671f4b9982728.1518720598.git.osandov@fb.com>
+ <12357e01654532c78dccd2eb52edbdc7589d6ee6.1518720598.git.osandov@fb.com>
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <5a731554-4009-1387-7730-e04e836dbc98@jp.fujitsu.com>
-Date: Thu, 22 Feb 2018 10:44:24 +0900
+Message-ID: <9e93751b-02fe-93a7-a866-3ec56fbdb839@jp.fujitsu.com>
+Date: Thu, 22 Feb 2018 10:55:48 +0900
 MIME-Version: 1.0
-In-Reply-To: <818e5d95ac69282a1e8c193bf92671f4b9982728.1518720598.git.osandov@fb.com>
+In-Reply-To: <12357e01654532c78dccd2eb52edbdc7589d6ee6.1518720598.git.osandov@fb.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -24,773 +25,328 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 2018/02/16 4:04, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 > 
-> The C libbtrfsutil library isn't very useful for scripting, so we also
-> want bindings for Python. Writing unit tests in Python is also much
-> easier than doing so in C. Only Python 3 is supported; if someone really
-> wants Python 2 support, they can write their own bindings. This commit
-> is just the scaffolding.
+> set_default_subvolume() is a trivial ioctl(), but there's no ioctl() for
+> get_default_subvolume(), so we need to search the root tree.
 > 
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
 > ---
->  INSTALL                               |   4 +
->  Makefile                              |  36 ++++++
->  Makefile.inc.in                       |   2 +
->  configure.ac                          |  15 +++
->  libbtrfsutil/README.md                |   5 +-
->  libbtrfsutil/python/.gitignore        |   7 ++
->  libbtrfsutil/python/btrfsutilpy.h     |  57 ++++++++++
->  libbtrfsutil/python/error.c           | 202 ++++++++++++++++++++++++++++++++++
->  libbtrfsutil/python/module.c          | 166 ++++++++++++++++++++++++++++
->  libbtrfsutil/python/setup.py          | 108 ++++++++++++++++++
->  libbtrfsutil/python/tests/__init__.py |   0
->  11 files changed, 601 insertions(+), 1 deletion(-)
->  create mode 100644 libbtrfsutil/python/.gitignore
->  create mode 100644 libbtrfsutil/python/btrfsutilpy.h
->  create mode 100644 libbtrfsutil/python/error.c
->  create mode 100644 libbtrfsutil/python/module.c
->  create mode 100755 libbtrfsutil/python/setup.py
->  create mode 100644 libbtrfsutil/python/tests/__init__.py
+>  libbtrfsutil/btrfsutil.h                    |  41 ++++++++++
+>  libbtrfsutil/python/btrfsutilpy.h           |   2 +
+>  libbtrfsutil/python/module.c                |  14 ++++
+>  libbtrfsutil/python/subvolume.c             |  50 ++++++++++++
+>  libbtrfsutil/python/tests/test_subvolume.py |  14 ++++
+>  libbtrfsutil/subvolume.c                    | 113 ++++++++++++++++++++++++++++
+>  6 files changed, 234 insertions(+)
 > 
-> diff --git a/INSTALL b/INSTALL
-> index 819b92ea..24d6e24f 100644
-> --- a/INSTALL
-> +++ b/INSTALL
-> @@ -41,6 +41,10 @@ To build from the released tarballs:
->      $ make
->      $ make install
+> diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
+> index 8bd2b847..54777f1d 100644
+> --- a/libbtrfsutil/btrfsutil.h
+> +++ b/libbtrfsutil/btrfsutil.h
+> @@ -256,6 +256,8 @@ enum btrfs_util_error btrfs_util_get_subvolume_read_only_fd(int fd, bool *ret);
+>   * @path: Subvolume path.
+>   * @read_only: New value of read-only flag.
+>   *
+> + * This requires appropriate privilege (CAP_SYS_ADMIN).
+> + *
+>   * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+>   */
+>  enum btrfs_util_error btrfs_util_set_subvolume_read_only(const char *path,
+> @@ -268,6 +270,45 @@ enum btrfs_util_error btrfs_util_set_subvolume_read_only(const char *path,
+>  enum btrfs_util_error btrfs_util_set_subvolume_read_only_fd(int fd,
+>  							    bool read_only);
 >  
-> +To install the libbtrfsutil Python bindings:
+> +/**
+> + * btrfs_util_get_default_subvolume() - Get the default subvolume for a
+> + * filesystem.
+> + * @path: Path on a Btrfs filesystem.
+> + * @id_ret: Returned subvolume ID.
+> + *
+> + * This requires appropriate privilege (CAP_SYS_ADMIN).
+> + *
+> + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+> + */
+> +enum btrfs_util_error btrfs_util_get_default_subvolume(const char *path,
+> +						       uint64_t *id_ret);
 > +
-> +    $ make install_python
+> +/**
+> + * btrfs_util_get_default_subvolume_fd() - See
+> + * btrfs_util_get_default_subvolume().
+> + */
+> +enum btrfs_util_error btrfs_util_get_default_subvolume_fd(int fd,
+> +							  uint64_t *id_ret);
 > +
->  You may disable building some parts like documentation, btrfs-convert or
->  backtrace support. See ./configure --help for more.
->  
-> diff --git a/Makefile b/Makefile
-> index 7fb70d06..95ee9678 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -154,8 +154,10 @@ endif
->  
->  ifeq ($(BUILD_VERBOSE),1)
->    Q =
-> +  SETUP_PY_Q =
->  else
->    Q = @
-> +  SETUP_PY_Q = -q
->  endif
->  
->  ifeq ("$(origin D)", "command line")
-> @@ -302,6 +304,9 @@ endif
->  		$($(subst -,_,btrfs-$(@:%/$(notdir $@)=%)-cflags))
->  
->  all: $(progs) $(libs) $(lib_links) $(BUILDDIRS)
-> +ifeq ($(PYTHON_BINDINGS),1)
-> +all: libbtrfsutil_python
-> +endif
->  $(SUBDIRS): $(BUILDDIRS)
->  $(BUILDDIRS):
->  	@echo "Making all in $(patsubst build-%,%,$@)"
-> @@ -345,6 +350,16 @@ test-inst: all
->  
->  test: test-fsck test-mkfs test-convert test-misc test-fuzz test-cli
->  
-> +ifeq ($(PYTHON_BINDINGS),1)
-> +test-libbtrfsutil: libbtrfsutil_python
-> +	$(Q)cd libbtrfsutil/python; \
-> +		LD_LIBRARY_PATH=../.. $(PYTHON) -m unittest discover -v tests
-> +
-> +.PHONY: test-libbtrfsutil
-> +
-> +test: test-libbtrfsutil
-> +endif
-> +
->  #
->  # NOTE: For static compiles, you need to have all the required libs
->  # 	static equivalent available
-> @@ -395,6 +410,15 @@ libbtrfsutil.so.$(libbtrfsutil_major) libbtrfsutil.so: libbtrfsutil.so.$(libbtrf
->  	@echo "    [LN]     $@"
->  	$(Q)$(LN_S) -f $< $@
->  
-> +ifeq ($(PYTHON_BINDINGS),1)
-> +libbtrfsutil_python: libbtrfsutil.so libbtrfsutil/btrfsutil.h
-> +	@echo "    [PY]     libbtrfsutil"
-> +	$(Q)cd libbtrfsutil/python; \
-> +		CFLAGS= LDFLAGS= $(PYTHON) setup.py $(SETUP_PY_Q) build_ext -i build
-> +
-> +.PHONY: libbtrfsutil_python
-> +endif
-> +
->  # keep intermediate files from the below implicit rules around
->  .PRECIOUS: $(addsuffix .o,$(progs))
->  
-> @@ -578,6 +602,10 @@ clean: $(CLEANDIRS)
->  	      $(libs) $(lib_links) \
->  	      $(progs_static) $(progs_extra) \
->  	      libbtrfsutil/*.o libbtrfsutil/*.o.d
-> +ifeq ($(PYTHON_BINDINGS),1)
-> +	$(Q)cd libbtrfsutil/python; \
-> +		$(PYTHON) setup.py $(SETUP_PY_Q) clean -a
-> +endif
->  
->  clean-doc:
->  	@echo "Cleaning Documentation"
-> @@ -613,6 +641,14 @@ ifneq ($(udevdir),)
->  	$(INSTALL) -m644 $(udev_rules) $(DESTDIR)$(udevruledir)
->  endif
->  
-> +ifeq ($(PYTHON_BINDINGS),1)
-> +install_python: libbtrfsutil_python
-> +	$(Q)cd libbtrfsutil/python; \
-> +		$(PYTHON) setup.py install --skip-build $(if $(DESTDIR),--root $(DESTDIR)) --prefix $(prefix)
-> +
-> +.PHONY: install_python
-> +endif
-> +
->  install-static: $(progs_static) $(INSTALLDIRS)
->  	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
->  	$(INSTALL) $(progs_static) $(DESTDIR)$(bindir)
-> diff --git a/Makefile.inc.in b/Makefile.inc.in
-> index b53bef80..159d38ed 100644
-> --- a/Makefile.inc.in
-> +++ b/Makefile.inc.in
-> @@ -14,6 +14,8 @@ DISABLE_BTRFSCONVERT = @DISABLE_BTRFSCONVERT@
->  BTRFSCONVERT_EXT2 = @BTRFSCONVERT_EXT2@
->  BTRFSCONVERT_REISERFS = @BTRFSCONVERT_REISERFS@
->  BTRFSRESTORE_ZSTD = @BTRFSRESTORE_ZSTD@
-> +PYTHON_BINDINGS = @PYTHON_BINDINGS@
-> +PYTHON = @PYTHON@
->  
->  SUBST_CFLAGS = @CFLAGS@
->  SUBST_LDFLAGS = @LDFLAGS@
-> diff --git a/configure.ac b/configure.ac
-> index 3afcdb47..50d36e4f 100644
-> --- a/configure.ac
-> +++ b/configure.ac
-> @@ -195,6 +195,19 @@ fi
->  AS_IF([test "x$enable_zstd" = xyes], [BTRFSRESTORE_ZSTD=1], [BTRFSRESTORE_ZSTD=0])
->  AC_SUBST(BTRFSRESTORE_ZSTD)
->  
-> +AC_ARG_ENABLE([python],
-> +	AS_HELP_STRING([--disable-python], [do not build libbtrfsutil Python bindings]),
-> +	[], [enable_python=yes]
-> +)
-> +
-> +if test "x$enable_python" = xyes; then
-> +	AM_PATH_PYTHON([3.4])
-> +fi
+> +/**
+> + * btrfs_util_set_default_subvolume() - Set the default subvolume for a
+> + * filesystem.
+> + * @path: Path in a Btrfs filesystem. This may be any path in the filesystem; it
+> + * does not have to refer to a subvolume unless @id is zero.
+> + * @id: ID of subvolume to set as the default. If zero is given, the subvolume
+> + * ID of @path is used.
 
-I'm not familiar with autoconf, but python3-devel package is also needed for Python.h for Fedora
-and can we check the dependency too?
+The line "This requires appropriate privilege (CAP_SYS_ADMIN)." is missing here.
 
-> +AS_IF([test "x$enable_python" = xyes], [PYTHON_BINDINGS=1], [PYTHON_BINDINGS=0])
-> +AC_SUBST(PYTHON_BINDINGS)
-> +AC_SUBST(PYTHON)
+> + *
+> + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+> + */
+> +enum btrfs_util_error btrfs_util_set_default_subvolume(const char *path,
+> +						       uint64_t id);
 > +
->  # udev v190 introduced the btrfs builtin and a udev rule to use it.
->  # Our udev rule gives us the friendly dm names but isn't required (or valid)
->  # on earlier releases.
-> @@ -249,6 +262,8 @@ AC_MSG_RESULT([
->  	backtrace support:  ${enable_backtrace}
->  	btrfs-convert:      ${enable_convert} ${convertfs:+($convertfs)}
->  	btrfs-restore zstd: ${enable_zstd}
-> +	Python bindings:    ${enable_python}
-> +	Python interpreter: ${PYTHON}
+> +/**
+> + * btrfs_util_set_default_subvolume_fd() - See
+> + * btrfs_util_set_default_subvolume().
+> + */
+> +enum btrfs_util_error btrfs_util_set_default_subvolume_fd(int fd, uint64_t id);
+> +
+>  struct btrfs_util_qgroup_inherit;
 >  
->  	Type 'make' to compile.
->  ])
-> diff --git a/libbtrfsutil/README.md b/libbtrfsutil/README.md
-> index ee4c6a1d..0c8eba44 100644
-> --- a/libbtrfsutil/README.md
-> +++ b/libbtrfsutil/README.md
-> @@ -3,7 +3,8 @@ libbtrfsutil
->  
->  libbtrfsutil is a library for managing Btrfs filesystems. It is licensed under
->  the LGPL. libbtrfsutil provides interfaces for a subset of the operations
-> -offered by the `btrfs` command line utility.
-> +offered by the `btrfs` command line utility. It also includes official Python
-> +bindings (Python 3 only).
->  
->  Development
->  -----------
-> @@ -33,3 +34,5 @@ A few guidelines:
->    type specific to `libbtrfsutil`)
->  * Preserve API and ABI compatability at all times (i.e., we don't want to bump
->    the library major version if we don't have to)
-> +* Include Python bindings for all interfaces
-> +* Write tests for all interfaces
-> diff --git a/libbtrfsutil/python/.gitignore b/libbtrfsutil/python/.gitignore
-> new file mode 100644
-> index 00000000..d050ff7c
-> --- /dev/null
-> +++ b/libbtrfsutil/python/.gitignore
-> @@ -0,0 +1,7 @@
-> +__pycache__
-> +*.pyc
-> +/btrfsutil.egg-info
-> +/btrfsutil*.so
-> +/build
-> +/constants.c
-> +/dist
+>  /**
 > diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
-> new file mode 100644
-> index 00000000..6d82f7e1
-> --- /dev/null
+> index 21253e51..41314d4a 100644
+> --- a/libbtrfsutil/python/btrfsutilpy.h
 > +++ b/libbtrfsutil/python/btrfsutilpy.h
-> @@ -0,0 +1,57 @@
-> +/*
-> + * Copyright (C) 2018 Facebook
-> + *
-> + * This file is part of libbtrfsutil.
-> + *
-> + * libbtrfsutil is free software: you can redistribute it and/or modify
-> + * it under the terms of the GNU Lesser General Public License as published by
-> + * the Free Software Foundation, either version 3 of the License, or
-> + * (at your option) any later version.
-> + *
-> + * libbtrfsutil is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> + * GNU Lesser General Public License for more details.
-> + *
-> + * You should have received a copy of the GNU Lesser General Public License
-> + * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-> + */
-> +
-> +#ifndef BTRFSUTILPY_H
-> +#define BTRFSUTILPY_H
-> +
-> +#define PY_SSIZE_T_CLEAN
-> +
-> +#include <stdbool.h>
-> +#include <stddef.h>
-> +#include <Python.h>
-> +#include "structmember.h"
-> +
-> +#include <btrfsutil.h>
-> +
-> +extern PyTypeObject BtrfsUtilError_type;
-> +
-> +/*
-> + * Helpers for path arguments based on posixmodule.c in CPython.
-> + */
-> +struct path_arg {
-> +	bool allow_fd;
-> +	char *path;
-> +	int fd;
-> +	Py_ssize_t length;
-> +	PyObject *object;
-> +	PyObject *cleanup;
-> +};
-> +int path_converter(PyObject *o, void *p);
-> +void path_cleanup(struct path_arg *path);
-> +
-> +void SetFromBtrfsUtilError(enum btrfs_util_error err);
-> +void SetFromBtrfsUtilErrorWithPath(enum btrfs_util_error err,
-> +				   struct path_arg *path);
-> +void SetFromBtrfsUtilErrorWithPaths(enum btrfs_util_error err,
-> +				    struct path_arg *path1,
-> +				    struct path_arg *path2);
-> +
-> +void add_module_constants(PyObject *m);
-> +
-> +#endif /* BTRFSUTILPY_H */
-> diff --git a/libbtrfsutil/python/error.c b/libbtrfsutil/python/error.c
-> new file mode 100644
-> index 00000000..0876c9b4
-> --- /dev/null
-> +++ b/libbtrfsutil/python/error.c
-> @@ -0,0 +1,202 @@
-> +/*
-> + * Copyright (C) 2018 Facebook
-> + *
-> + * This file is part of libbtrfsutil.
-> + *
-> + * libbtrfsutil is free software: you can redistribute it and/or modify
-> + * it under the terms of the GNU Lesser General Public License as published by
-> + * the Free Software Foundation, either version 3 of the License, or
-> + * (at your option) any later version.
-> + *
-> + * libbtrfsutil is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> + * GNU Lesser General Public License for more details.
-> + *
-> + * You should have received a copy of the GNU Lesser General Public License
-> + * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-> + */
-> +
-> +#include "btrfsutilpy.h"
-> +
-> +typedef struct {
-> +	PyOSErrorObject os_error;
-> +	PyObject *btrfsutilerror;
-> +} BtrfsUtilError;
-> +
-> +void SetFromBtrfsUtilError(enum btrfs_util_error err)
+> @@ -66,6 +66,8 @@ PyObject *subvolume_path(PyObject *self, PyObject *args, PyObject *kwds);
+>  PyObject *subvolume_info(PyObject *self, PyObject *args, PyObject *kwds);
+>  PyObject *get_subvolume_read_only(PyObject *self, PyObject *args, PyObject *kwds);
+>  PyObject *set_subvolume_read_only(PyObject *self, PyObject *args, PyObject *kwds);
+> +PyObject *get_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+> +PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+>  PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+>  
+>  void add_module_constants(PyObject *m);
+> diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
+> index 3395fb14..0ac4d63a 100644
+> --- a/libbtrfsutil/python/module.c
+> +++ b/libbtrfsutil/python/module.c
+> @@ -173,6 +173,20 @@ static PyMethodDef btrfsutil_methods[] = {
+>  	 "Arguments:\n"
+>  	 "path -- string, bytes, path-like object, or open file descriptor\n"
+>  	 "read_only -- bool flag value"},
+> +	{"get_default_subvolume", (PyCFunction)get_default_subvolume,
+> +	 METH_VARARGS | METH_KEYWORDS,
+> +	 "get_default_subvolume(path) -> int\n\n"
+> +	 "Get the ID of the default subvolume of a filesystem.\n\n"
+> +	 "Arguments:\n"
+> +	 "path -- string, bytes, path-like object, or open file descriptor"},
+> +	{"set_default_subvolume", (PyCFunction)set_default_subvolume,
+> +	 METH_VARARGS | METH_KEYWORDS,
+> +	 "set_default_subvolume(path, id=0)\n\n"
+> +	 "Set the default subvolume of a filesystem.\n\n"
+> +	 "Arguments:\n"
+> +	 "path -- string, bytes, path-like object, or open file descriptor\n"
+> +	 "id -- if not zero, set the default subvolume to the subvolume with\n"
+> +	 "this ID instead of the given path"},
+>  	{"create_subvolume", (PyCFunction)create_subvolume,
+>  	 METH_VARARGS | METH_KEYWORDS,
+>  	 "create_subvolume(path, async=False)\n\n"
+> diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
+> index 76487865..fa3ec4a7 100644
+> --- a/libbtrfsutil/python/subvolume.c
+> +++ b/libbtrfsutil/python/subvolume.c
+> @@ -270,6 +270,56 @@ PyObject *set_subvolume_read_only(PyObject *self, PyObject *args, PyObject *kwds
+>  	Py_RETURN_NONE;
+>  }
+>  
+> +PyObject *get_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 > +{
-> +	SetFromBtrfsUtilErrorWithPaths(err, NULL, NULL);
-> +}
+> +	static char *keywords[] = {"path", NULL};
+> +	struct path_arg path = {.allow_fd = true};
+> +	enum btrfs_util_error err;
+> +	uint64_t id;
 > +
-> +void SetFromBtrfsUtilErrorWithPath(enum btrfs_util_error err,
-> +				   struct path_arg *path1)
-> +{
-> +	SetFromBtrfsUtilErrorWithPaths(err, path1, NULL);
-> +}
-> +
-> +void SetFromBtrfsUtilErrorWithPaths(enum btrfs_util_error err,
-> +				    struct path_arg *path1,
-> +				    struct path_arg *path2)
-> +{
-> +	PyObject *strobj, *args, *exc;
-> +	int i = errno;
-> +	const char *str1 = btrfs_util_strerror(err), *str2 = strerror(i);
-> +
-> +	if (str1 && str2 && strcmp(str1, str2) != 0) {
-> +		strobj = PyUnicode_FromFormat("%s: %s", str1, str2);
-> +	} else if (str1) {
-> +		strobj = PyUnicode_FromString(str1);
-> +	} else if (str2) {
-> +		strobj = PyUnicode_FromString(str2);
-> +	} else {
-> +		Py_INCREF(Py_None);
-> +		strobj = Py_None;
-> +	}
-> +	if (strobj == NULL)
-> +		return;
-> +
-> +	args = Py_BuildValue("iOOOOi", i, strobj,
-> +			     path1 ? path1->object : Py_None, Py_None,
-> +			     path2 ? path2->object : Py_None, (int)err);
-> +	Py_DECREF(strobj);
-> +	if (args == NULL)
-> +		return;
-> +
-> +	exc = PyObject_CallObject((PyObject *)&BtrfsUtilError_type, args);
-> +	Py_DECREF(args);
-> +	if (exc == NULL)
-> +		return;
-> +
-> +	PyErr_SetObject((PyObject *)&BtrfsUtilError_type, exc);
-> +	Py_DECREF(exc);
-> +}
-> +
-> +static int BtrfsUtilError_clear(BtrfsUtilError *self)
-> +{
-> +	Py_CLEAR(self->btrfsutilerror);
-> +	return Py_TYPE(self)->tp_base->tp_clear((PyObject *)self);
-> +}
-> +
-> +static void BtrfsUtilError_dealloc(BtrfsUtilError *self)
-> +{
-> +	PyObject_GC_UnTrack(self);
-> +	BtrfsUtilError_clear(self);
-> +	Py_TYPE(self)->tp_free((PyObject *)self);
-> +}
-> +
-> +static int BtrfsUtilError_traverse(BtrfsUtilError *self, visitproc visit,
-> +				   void *arg)
-> +{
-> +	Py_VISIT(self->btrfsutilerror);
-> +	return Py_TYPE(self)->tp_base->tp_traverse((PyObject *)self, visit, arg);
-> +}
-> +
-> +static PyObject *BtrfsUtilError_new(PyTypeObject *type, PyObject *args,
-> +				    PyObject *kwds)
-> +{
-> +	BtrfsUtilError *self;
-> +	PyObject *oserror_args = args;
-> +
-> +	if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 6) {
-> +		oserror_args = PyTuple_GetSlice(args, 0, 5);
-> +		if (oserror_args == NULL)
-> +			return NULL;
-> +	}
-> +
-> +	self = (BtrfsUtilError *)type->tp_base->tp_new(type, oserror_args,
-> +						       kwds);
-> +	if (oserror_args != args)
-> +		Py_DECREF(oserror_args);
-> +	if (self == NULL)
+> +	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get_default_subvolume",
+> +					 keywords, &path_converter, &path))
 > +		return NULL;
 > +
-> +	if (PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 6) {
-> +		self->btrfsutilerror = PyTuple_GET_ITEM(args, 5);
-> +		Py_INCREF(self->btrfsutilerror);
+> +	if (path.path)
+> +		err = btrfs_util_get_default_subvolume(path.path, &id);
+> +	else
+> +		err = btrfs_util_get_default_subvolume_fd(path.fd, &id);
+> +	if (err) {
+> +		SetFromBtrfsUtilErrorWithPath(err, &path);
+> +		path_cleanup(&path);
+> +		return NULL;
 > +	}
 > +
-> +	return (PyObject *)self;
+> +	path_cleanup(&path);
+> +	return PyLong_FromUnsignedLongLong(id);
 > +}
 > +
-> +static PyObject *BtrfsUtilError_str(BtrfsUtilError *self)
+> +PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
 > +{
-> +#define OR_NONE(x) ((x) ? (x) : Py_None)
-> +	if (self->btrfsutilerror) {
-> +		if (self->os_error.filename) {
-> +			if (self->os_error.filename2) {
-> +				return PyUnicode_FromFormat("[BtrfsUtilError %S Errno %S] %S: %R -> %R",
-> +							    OR_NONE(self->btrfsutilerror),
-> +							    OR_NONE(self->os_error.myerrno),
-> +							    OR_NONE(self->os_error.strerror),
-> +							    self->os_error.filename,
-> +							    self->os_error.filename2);
-> +			} else {
-> +				return PyUnicode_FromFormat("[BtrfsUtilError %S Errno %S] %S: %R",
-> +							    OR_NONE(self->btrfsutilerror),
-> +							    OR_NONE(self->os_error.myerrno),
-> +							    OR_NONE(self->os_error.strerror),
-> +							    self->os_error.filename);
+> +	static char *keywords[] = {"path", "id", NULL};
+> +	struct path_arg path = {.allow_fd = true};
+> +	enum btrfs_util_error err;
+> +	uint64_t id = 0;
+> +
+> +	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|K:set_default_subvolume",
+> +					 keywords, &path_converter, &path, &id))
+> +		return NULL;
+> +
+> +	if (path.path)
+> +		err = btrfs_util_set_default_subvolume(path.path, id);
+> +	else
+> +		err = btrfs_util_set_default_subvolume_fd(path.fd, id);
+> +	if (err) {
+> +		SetFromBtrfsUtilErrorWithPath(err, &path);
+> +		path_cleanup(&path);
+> +		return NULL;
+> +	}
+> +
+> +	path_cleanup(&path);
+> +	Py_RETURN_NONE;
+> +}
+> +
+>  PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+>  {
+>  	static char *keywords[] = {"path", "async", "qgroup_inherit", NULL};
+> diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
+> index 23871de9..937a4397 100644
+> --- a/libbtrfsutil/python/tests/test_subvolume.py
+> +++ b/libbtrfsutil/python/tests/test_subvolume.py
+> @@ -154,6 +154,20 @@ class TestSubvolume(BtrfsTestCase):
+>  
+>                  btrfsutil.set_subvolume_read_only(arg, False)
+>  
+> +    def test_default_subvolume(self):
+> +        for arg in self.path_or_fd(self.mountpoint):
+> +            with self.subTest(type=type(arg)):
+> +                self.assertEqual(btrfsutil.get_default_subvolume(arg), 5)
+> +
+> +        subvol = os.path.join(self.mountpoint, 'subvol')
+> +        btrfsutil.create_subvolume(subvol)
+> +        for arg in self.path_or_fd(subvol):
+> +            with self.subTest(type=type(arg)):
+> +                btrfsutil.set_default_subvolume(arg)
+> +                self.assertEqual(btrfsutil.get_default_subvolume(arg), 256)
+> +                btrfsutil.set_default_subvolume(arg, 5)
+> +                self.assertEqual(btrfsutil.get_default_subvolume(arg), 5)
+> +
+>      def test_create_subvolume(self):
+>          subvol = os.path.join(self.mountpoint, 'subvol')
+>  
+> diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
+> index bc5b309e..b3f768ed 100644
+> --- a/libbtrfsutil/subvolume.c
+> +++ b/libbtrfsutil/subvolume.c
+> @@ -467,6 +467,119 @@ PUBLIC enum btrfs_util_error btrfs_util_set_subvolume_read_only_fd(int fd,
+>  	return BTRFS_UTIL_OK;
+>  }
+>  
+> +PUBLIC enum btrfs_util_error btrfs_util_get_default_subvolume(const char *path,
+> +							      uint64_t *id_ret)
+> +{
+> +	enum btrfs_util_error err;
+> +	int fd;
+> +
+> +	fd = open(path, O_RDONLY);
+> +	if (fd == -1)
+> +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
+> +
+> +	err = btrfs_util_get_default_subvolume_fd(fd, id_ret);
+> +	SAVE_ERRNO_AND_CLOSE(fd);
+> +	return err;
+> +}
+> +
+> +PUBLIC enum btrfs_util_error btrfs_util_get_default_subvolume_fd(int fd,
+> +								 uint64_t *id_ret)
+> +{
+> +	struct btrfs_ioctl_search_args search = {
+> +		.key = {
+> +			.tree_id = BTRFS_ROOT_TREE_OBJECTID,
+> +			.min_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID,
+> +			.max_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID,
+> +			.min_type = BTRFS_DIR_ITEM_KEY,
+> +			.max_type = BTRFS_DIR_ITEM_KEY,
+> +			.min_offset = 0,
+> +			.max_offset = UINT64_MAX,
+> +			.min_transid = 0,
+> +			.max_transid = UINT64_MAX,
+> +			.nr_items = 0,
+> +		},
+> +	};
+> +	size_t items_pos = 0, buf_off = 0;
+> +	int ret;
+> +
+> +	for (;;) {
+> +		const struct btrfs_ioctl_search_header *header;
+> +
+> +		if (items_pos >= search.key.nr_items) {
+> +			search.key.nr_items = 4096;
+> +			ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &search);
+> +			if (ret == -1)
+> +				return BTRFS_UTIL_ERROR_SEARCH_FAILED;
+> +			items_pos = 0;
+> +			buf_off = 0;
+> +
+> +			if (search.key.nr_items == 0) {
+> +				errno = ENOENT;
+> +				return BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND;
 > +			}
 > +		}
-> +		if (self->os_error.myerrno && self->os_error.strerror) {
-> +			return PyUnicode_FromFormat("[BtrfsUtilError %S Errno %S] %S",
-> +						    self->btrfsutilerror,
-> +						    self->os_error.myerrno,
-> +						    self->os_error.strerror);
+> +
+> +		header = (struct btrfs_ioctl_search_header *)(search.buf + buf_off);
+> +		if (header->type == BTRFS_DIR_ITEM_KEY) {
+> +			const struct btrfs_dir_item *dir;
+> +			const char *name;
+> +			uint16_t name_len;
+> +
+> +			dir = (struct btrfs_dir_item *)(header + 1);
+> +			name = (const char *)(dir + 1);
+> +			name_len = le16_to_cpu(dir->name_len);
+> +			if (strncmp(name, "default", name_len) == 0) {
+> +				*id_ret = le64_to_cpu(dir->location.objectid);
+> +				break;
+> +			}
 > +		}
+> +
+> +		items_pos++;
+> +		buf_off += sizeof(*header) + header->len;
+> +		search.key.min_offset = header->offset + 1;
 > +	}
-> +	return Py_TYPE(self)->tp_base->tp_str((PyObject *)self);
-> +#undef OR_NONE
+> +
+> +	return BTRFS_UTIL_OK;
 > +}
 > +
-> +static PyMemberDef BtrfsUtilError_members[] = {
-> +	{"btrfsutilerror", T_OBJECT,
-> +	 offsetof(BtrfsUtilError, btrfsutilerror), 0,
-> +	 "btrfsutil error code"},
-> +	{},
-> +};
-> +
-> +#define BtrfsUtilError_DOC	\
-> +	"Btrfs operation error."
-> +
-> +PyTypeObject BtrfsUtilError_type = {
-> +	PyVarObject_HEAD_INIT(NULL, 0)
-> +	"btrfsutil.BtrfsUtilError",			/* tp_name */
-> +	sizeof(BtrfsUtilError),				/* tp_basicsize */
-> +	0,						/* tp_itemsize */
-> +	(destructor)BtrfsUtilError_dealloc,		/* tp_dealloc */
-> +	NULL,						/* tp_print */
-> +	NULL,						/* tp_getattr */
-> +	NULL,						/* tp_setattr */
-> +	NULL,						/* tp_as_async */
-> +	NULL,						/* tp_repr */
-> +	NULL,						/* tp_as_number */
-> +	NULL,						/* tp_as_sequence */
-> +	NULL,						/* tp_as_mapping */
-> +	NULL,						/* tp_hash  */
-> +	NULL,						/* tp_call */
-> +	(reprfunc)BtrfsUtilError_str,			/* tp_str */
-> +	NULL,						/* tp_getattro */
-> +	NULL,						/* tp_setattro */
-> +	NULL,						/* tp_as_buffer */
-> +	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,	/* tp_flags */
-> +	BtrfsUtilError_DOC,				/* tp_doc */
-> +	(traverseproc)BtrfsUtilError_traverse,		/* tp_traverse */
-> +	(inquiry)BtrfsUtilError_clear,			/* tp_clear */
-> +	NULL,						/* tp_richcompare */
-> +	0,						/* tp_weaklistoffset */
-> +	NULL,						/* tp_iter */
-> +	NULL,						/* tp_iternext */
-> +	NULL,						/* tp_methods */
-> +	BtrfsUtilError_members,				/* tp_members */
-> +	NULL,						/* tp_getset */
-> +	NULL,						/* tp_base */
-> +	NULL,						/* tp_dict */
-> +	NULL,						/* tp_descr_get */
-> +	NULL,						/* tp_descr_set */
-> +	offsetof(BtrfsUtilError, os_error.dict),	/* tp_dictoffset */
-> +	NULL,						/* tp_init */
-> +	NULL,						/* tp_alloc */
-> +	BtrfsUtilError_new,				/* tp_new */
-> +};
-> diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
-> new file mode 100644
-> index 00000000..d7398808
-> --- /dev/null
-> +++ b/libbtrfsutil/python/module.c
-> @@ -0,0 +1,166 @@
-> +/*
-> + * Copyright (C) 2018 Facebook
-> + *
-> + * This file is part of libbtrfsutil.
-> + *
-> + * libbtrfsutil is free software: you can redistribute it and/or modify
-> + * it under the terms of the GNU Lesser General Public License as published by
-> + * the Free Software Foundation, either version 3 of the License, or
-> + * (at your option) any later version.
-> + *
-> + * libbtrfsutil is distributed in the hope that it will be useful,
-> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> + * GNU Lesser General Public License for more details.
-> + *
-> + * You should have received a copy of the GNU Lesser General Public License
-> + * along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-> + */
-> +
-> +#include "btrfsutilpy.h"
-> +
-> +static int fd_converter(PyObject *o, void *p)
+> +PUBLIC enum btrfs_util_error btrfs_util_set_default_subvolume(const char *path,
+> +							      uint64_t id)
 > +{
-> +	int *fd = p;
-> +	long tmp;
-> +	int overflow;
+> +	enum btrfs_util_error err;
+> +	int fd;
 > +
-> +	tmp = PyLong_AsLongAndOverflow(o, &overflow);
-> +	if (tmp == -1 && PyErr_Occurred())
-> +		return 0;
-> +	if (overflow > 0 || tmp > INT_MAX) {
-> +		PyErr_SetString(PyExc_OverflowError,
-> +				"fd is greater than maximum");
-> +		return 0;
-> +	}
-> +	if (overflow < 0 || tmp < 0) {
-> +		PyErr_SetString(PyExc_ValueError, "fd is negative");
-> +		return 0;
-> +	}
-> +	*fd = tmp;
-> +	return 1;
+> +	fd = open(path, O_RDONLY);
+> +	if (fd == -1)
+> +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
+> +
+> +	err = btrfs_util_set_default_subvolume_fd(fd, id);
+> +	SAVE_ERRNO_AND_CLOSE(fd);
+> +	return err;
 > +}
 > +
-> +int path_converter(PyObject *o, void *p)
+> +PUBLIC enum btrfs_util_error btrfs_util_set_default_subvolume_fd(int fd,
+> +								 uint64_t id)
 > +{
-> +	struct path_arg *path = p;
-> +	int is_index, is_bytes, is_unicode;
-> +	PyObject *bytes = NULL;
-> +	Py_ssize_t length = 0;
-> +	char *tmp;
+> +	enum btrfs_util_error err;
+> +	int ret;
 > +
-> +	if (o == NULL) {
-> +		path_cleanup(p);
-> +		return 1;
+> +	if (id == 0) {
+> +		err = btrfs_util_is_subvolume_fd(fd);
+> +		if (err)
+> +			return err;
+> +
+> +		err = btrfs_util_subvolume_id_fd(fd, &id);
+> +		if (err)
+> +			return err;
 > +	}
 > +
-> +	path->object = path->cleanup = NULL;
-> +	Py_INCREF(o);
+> +	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &id);
+> +	if (ret == -1)
+> +		return BTRFS_UTIL_ERROR_DEFAULT_SUBVOL_FAILED;
 > +
-> +	path->fd = -1;
-> +
-> +	is_index = path->allow_fd && PyIndex_Check(o);
-> +	is_bytes = PyBytes_Check(o);
-> +	is_unicode = PyUnicode_Check(o);
-> +
-> +	if (!is_index && !is_bytes && !is_unicode) {
-> +		_Py_IDENTIFIER(__fspath__);
-> +		PyObject *func;
-> +
-> +		func = _PyObject_LookupSpecial(o, &PyId___fspath__);
-> +		if (func == NULL)
-> +			goto err_format;
-> +		Py_DECREF(o);
-> +		o = PyObject_CallFunctionObjArgs(func, NULL);
-> +		Py_DECREF(func);
-> +		if (o == NULL)
-> +			return 0;
-> +		is_bytes = PyBytes_Check(o);
-> +		is_unicode = PyUnicode_Check(o);
-> +	}
-> +
-> +	if (is_unicode) {
-> +		if (!PyUnicode_FSConverter(o, &bytes))
-> +			goto err;
-> +	} else if (is_bytes) {
-> +		bytes = o;
-> +		Py_INCREF(bytes);
-> +	} else if (is_index) {
-> +		if (!fd_converter(o, &path->fd))
-> +			goto err;
-> +		path->path = NULL;
-> +		goto out;
-> +	} else {
-> +err_format:
-> +		PyErr_Format(PyExc_TypeError, "expected %s, not %s",
-> +			     path->allow_fd ? "string, bytes, os.PathLike, or integer" :
-> +			     "string, bytes, or os.PathLike",
-> +			     Py_TYPE(o)->tp_name);
-> +		goto err;
-> +	}
-> +
-> +	length = PyBytes_GET_SIZE(bytes);
-> +	tmp = PyBytes_AS_STRING(bytes);
-> +	if ((size_t)length != strlen(tmp)) {
-> +		PyErr_SetString(PyExc_TypeError,
-> +				"path has embedded nul character");
-> +		goto err;
-> +	}
-> +
-> +	path->path = tmp;
-> +	if (bytes == o)
-> +		Py_DECREF(bytes);
-> +	else
-> +		path->cleanup = bytes;
-> +	path->fd = -1;
-> +
-> +out:
-> +	path->length = length;
-> +	path->object = o;
-> +	return Py_CLEANUP_SUPPORTED;
-> +
-> +err:
-> +	Py_XDECREF(o);
-> +	Py_XDECREF(bytes);
-> +	return 0;
+> +	return BTRFS_UTIL_OK;
 > +}
 > +
-> +void path_cleanup(struct path_arg *path)
-> +{
-> +	Py_CLEAR(path->object);
-> +	Py_CLEAR(path->cleanup);
-> +}
-> +
-> +static PyMethodDef btrfsutil_methods[] = {
-> +	{},
-> +};
-> +
-> +static struct PyModuleDef btrfsutilmodule = {
-> +	PyModuleDef_HEAD_INIT,
-> +	"btrfsutil",
-> +	"Library for managing Btrfs filesystems",
-> +	-1,
-> +	btrfsutil_methods,
-> +};
-> +
-> +PyMODINIT_FUNC
-> +PyInit_btrfsutil(void)
-> +{
-> +	PyObject *m;
-> +
-> +	BtrfsUtilError_type.tp_base = (PyTypeObject *)PyExc_OSError;
-> +	if (PyType_Ready(&BtrfsUtilError_type) < 0)
-> +		return NULL;
-> +
-> +	m = PyModule_Create(&btrfsutilmodule);
-> +	if (!m)
-> +		return NULL;
-> +
-> +	Py_INCREF(&BtrfsUtilError_type);
-> +	PyModule_AddObject(m, "BtrfsUtilError",
-> +			   (PyObject *)&BtrfsUtilError_type);
-> +
-> +	add_module_constants(m);
-> +
-> +	return m;
-> +}
-> diff --git a/libbtrfsutil/python/setup.py b/libbtrfsutil/python/setup.py
-> new file mode 100755
-> index 00000000..cd8a6048
-> --- /dev/null
-> +++ b/libbtrfsutil/python/setup.py
-> @@ -0,0 +1,108 @@
-> +#!/usr/bin/env python3
-> +
-> +# Copyright (C) 2018 Facebook
-> +#
-> +# This file is part of libbtrfsutil.
-> +#
-> +# libbtrfsutil is free software: you can redistribute it and/or modify
-> +# it under the terms of the GNU Lesser General Public License as published by
-> +# the Free Software Foundation, either version 3 of the License, or
-> +# (at your option) any later version.
-> +#
-> +# libbtrfsutil is distributed in the hope that it will be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU Lesser General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU Lesser General Public License
-> +# along with libbtrfsutil.  If not, see <http://www.gnu.org/licenses/>.
-> +
-> +import re
-> +import os
-> +import os.path
-> +from setuptools import setup, Extension
-> +from setuptools.command.build_ext import build_ext
-> +import subprocess
-> +
-> +
-> +def get_version():
-> +    with open('../btrfsutil.h', 'r') as f:
-> +        btrfsutil_h = f.read()
-> +    major = re.search(r'^#define BTRFS_UTIL_VERSION_MAJOR ([0-9]+)$',
-> +                      btrfsutil_h, flags=re.MULTILINE).group(1)
-> +    minor = re.search(r'^#define BTRFS_UTIL_VERSION_MINOR ([0-9]+)$',
-> +                      btrfsutil_h, flags=re.MULTILINE).group(1)
-> +    patch = re.search(r'^#define BTRFS_UTIL_VERSION_PATCH ([0-9]+)$',
-> +                      btrfsutil_h, flags=re.MULTILINE).group(1)
-> +    return major + '.' + minor + '.' + patch
-> +
-> +
-> +def out_of_date(dependencies, target):
-> +    dependency_mtimes = [os.path.getmtime(dependency) for dependency in dependencies]
-> +    try:
-> +        target_mtime = os.path.getmtime(target)
-> +    except OSError:
-> +        return True
-> +    return any(dependency_mtime >= target_mtime for dependency_mtime in dependency_mtimes)
-> +
-> +
-> +def gen_constants():
-> +    with open('../btrfsutil.h', 'r') as f:
-> +        btrfsutil_h = f.read()
-> +
-> +    constants = re.findall(
-> +        r'^\s*(BTRFS_UTIL_ERROR_[a-zA-Z0-9_]+)',
-> +        btrfsutil_h, flags=re.MULTILINE)
-> +
-> +    with open('constants.c', 'w') as f:
-> +        f.write("""\
-> +#include <btrfsutil.h>
-> +#include "btrfsutilpy.h"
-> +
-> +void add_module_constants(PyObject *m)
-> +{
-> +""")
-> +        for constant in constants:
-> +            assert constant.startswith('BTRFS_UTIL_')
-> +            name = constant[len('BTRFS_UTIL_'):]
-> +            f.write('\tPyModule_AddIntConstant(m, "{}", {});\n'.format(name, constant))
-> +        f.write("""\
-> +}
-> +""")
-> +
-> +
-> +class my_build_ext(build_ext):
-> +    def run(self):
-> +        if out_of_date(['../btrfsutil.h'], 'constants.c'):
-> +            try:
-> +                gen_constants()
-> +            except Exception as e:
-> +                try:
-> +                    os.remove('constants.c')
-> +                except OSError:
-> +                    pass
-> +                raise e
-> +        super().run()
-> +
-> +
-> +module = Extension(
-> +    name='btrfsutil',
-> +    sources=[
-> +        'constants.c',
-> +        'error.c',
-> +        'module.c',
-> +    ],
-> +    include_dirs=['..'],
-> +    library_dirs=['../..'],
-> +    libraries=['btrfsutil'],
-> +)
-> +
-> +setup(
-> +    name='btrfsutil',
-> +    version=get_version(),
-> +    description='Library for managing Btrfs filesystems',
-> +    url='https://github.com/kdave/btrfs-progs',
-> +    license='GPLv3',
-> +    cmdclass={'build_ext': my_build_ext},
-> +    ext_modules=[module],
-> +)
-> diff --git a/libbtrfsutil/python/tests/__init__.py b/libbtrfsutil/python/tests/__init__.py
-> new file mode 100644
-> index 00000000..e69de29b
+>  static enum btrfs_util_error openat_parent_and_name(int dirfd, const char *path,
+>  						    char *name, size_t name_len,
+>  						    int *fd)
 > 
 

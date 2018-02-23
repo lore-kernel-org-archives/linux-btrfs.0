@@ -1,86 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:55817 "EHLO
-        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750916AbeBWC0p (ORCPT
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:46867 "EHLO
+        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750943AbeBWG2F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Feb 2018 21:26:45 -0500
-Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 696F2AC01C5
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 11:26:40 +0900 (JST)
-Subject: Re: [PATCH v2 26/27] btrfs-progs: use libbtrfsutil for subvolume list
+        Fri, 23 Feb 2018 01:28:05 -0500
+Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 4A885AC01B3
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 15:27:58 +0900 (JST)
+Subject: Re: [PATCH v2 07/27] libbtrfsutil: add btrfs_util_subvolume_path()
 To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
 CC: <kernel-team@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
- <6492726d6e89bf792627e4431f7ba7691f09c3d2.1518720598.git.osandov@fb.com>
+ <af89178dc6f35fe6a807aec6fecc0611ae99b3fb.1518720598.git.osandov@fb.com>
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <2bbba01e-1c72-90ae-a7b5-56b341ec1c1a@jp.fujitsu.com>
-Date: Fri, 23 Feb 2018 11:26:35 +0900
+Message-ID: <0452f2f6-02c5-7cb8-6a20-e1a65de096db@jp.fujitsu.com>
+Date: Fri, 23 Feb 2018 15:27:52 +0900
 MIME-Version: 1.0
-In-Reply-To: <6492726d6e89bf792627e4431f7ba7691f09c3d2.1518720598.git.osandov@fb.com>
+In-Reply-To: <af89178dc6f35fe6a807aec6fecc0611ae99b3fb.1518720598.git.osandov@fb.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 2018/02/16 4:05, Omar Sandoval wrote:
+On 2018/02/16 4:04, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 
-> +static struct subvol_list *btrfs_list_deleted_subvols(int fd,
-> +						      struct btrfs_list_filter_set *filter_set)
+> +PUBLIC enum btrfs_util_error btrfs_util_subvolume_path_fd(int fd, uint64_t id,
+> +							  char **path_ret)
 > +{
-> +	struct subvol_list *subvols = NULL;
-> +	uint64_t *ids = NULL;
-> +	size_t i, n;
-> +	enum btrfs_util_error err;
-> +	int ret = -1;
+> +	char *path, *p;
+> +	size_t capacity = 4096;
 > +
-> +	err = btrfs_util_deleted_subvolumes_fd(fd, &ids, &n);
-> +	if (err) {
-> +		error_btrfs_util(err);
-> +		return NULL;
+> +	path = malloc(capacity);
+> +	if (!path)
+> +		return BTRFS_UTIL_ERROR_NO_MEMORY;
+> +	p = path + capacity - 1;
+> +	p[0] = '\0';
+> +
+> +	if (id == 0) {
+> +		enum btrfs_util_error err;
+> +
+> +		err = btrfs_util_is_subvolume_fd(fd);
+> +		if (err)
+> +			return err;
+
+'path' should be freed here and below.
+
+> +
+> +		err = btrfs_util_subvolume_id_fd(fd, &id);
+> +		if (err)
+> +			return err;
 > +	}
 > +
-> +	subvols = malloc(sizeof(*subvols) + n * sizeof(subvols->subvols[0]));
-> +	if (!subvols) {
-> +		error("out of memory");
-> +		goto out;
-> +	}
+> +	while (id != BTRFS_FS_TREE_OBJECTID) {
+> +		struct btrfs_ioctl_search_args search = {
+> +			.key = {
+> +				.tree_id = BTRFS_ROOT_TREE_OBJECTID,
+> +				.min_objectid = id,
+> +				.max_objectid = id,
+> +				.min_type = BTRFS_ROOT_BACKREF_KEY,
+> +				.max_type = BTRFS_ROOT_BACKREF_KEY,
+> +				.min_offset = 0,
+> +				.max_offset = UINT64_MAX,
+> +				.min_transid = 0,
+> +				.max_transid = UINT64_MAX,
+> +				.nr_items = 1,
+> +			},
+> +		};
+> +		struct btrfs_ioctl_ino_lookup_args lookup;
+> +		const struct btrfs_ioctl_search_header *header;
+> +		const struct btrfs_root_ref *ref;
+> +		const char *name;
+> +		uint16_t name_len;
+> +		size_t lookup_len;
+> +		size_t total_len;
+> +		int ret;
 > +
-> +	subvols->num = 0;
-> +	for (i = 0; i < n; i++) {
-> +		struct listed_subvol *subvol = &subvols->subvols[subvols->num];
-> +
-> +		err = btrfs_util_subvolume_info_fd(fd, ids[i], &subvol->info);
-> +		if (err) {
-
-I think there is a small chance that subvolume would be removed from tree between 
-btrfs_util_deleted_subvolumes_fd() and btrfs_util_subvolume_info_fd().
-So, error of BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND should be ignored.
-
-> +			error_btrfs_util(err);
-> +			goto out;
+> +		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &search);
+> +		if (ret == -1) {
+> +			free(path);
+> +			return BTRFS_UTIL_ERROR_SEARCH_FAILED;
 > +		}
 > +
-> +		subvol->path = strdup("DELETED");
-> +		if (!subvol->path)
-> +			goto out;
-> +
-> +		if (!filters_match(subvol, filter_set)) {
-> +			free(subvol->path);
-> +			continue;
+> +		if (search.key.nr_items == 0) {
+> +			free(path);
+> +			errno = ENOENT;
+> +			return BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND;
 > +		}
 > +
-> +		subvols->num++;
+> +		header = (struct btrfs_ioctl_search_header *)search.buf;
+> +		ref = (struct btrfs_root_ref *)(header + 1);
+> +		name = (char *)(ref + 1);
+> +		name_len = le16_to_cpu(ref->name_len);
+> +
+> +		id = header->offset;
+> +
+> +		lookup.treeid = id;
+> +		lookup.objectid = le64_to_cpu(ref->dirid);
+> +		ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &lookup);
+> +		if (ret == -1) {
+> +			free(path);
+> +			return BTRFS_UTIL_ERROR_SEARCH_FAILED;
+> +		}
+> +		lookup_len = strlen(lookup.name);
+> +
+> +		total_len = name_len + lookup_len + (id != BTRFS_FS_TREE_OBJECTID);
+> +		if (p - total_len < path) {
+> +			char *new_path, *new_p;
+> +			size_t new_capacity = capacity * 2;
+> +
+> +			new_path = malloc(new_capacity);
+> +			if (!new_path) {
+> +				free(path);
+> +				return BTRFS_UTIL_ERROR_NO_MEMORY;
+> +			}
+> +			new_p = new_path + new_capacity - (path + capacity - p);
+> +			memcpy(new_p, p, path + capacity - p);
+> +			free(path);
+> +			path = new_path;
+> +			p = new_p;
+> +			capacity = new_capacity;
+> +		}
+> +		p -= name_len;
+> +		memcpy(p, name, name_len);
+> +		p -= lookup_len;
+> +		memcpy(p, lookup.name, lookup_len);
+> +		if (id != BTRFS_FS_TREE_OBJECTID)
+> +			*--p = '/';
 > +	}
 > +
-> +	ret = 0;
-> +out:
-> +	if (ret) {
-> +		free_subvol_list(subvols);
-> +		subvols = NULL;
-> +		free(ids);
-> +	}
-> +	return subvols;
+> +	if (p != path)
+> +		memmove(path, p, path + capacity - p);
+> +
+> +	*path_ret = path;
+> +
+> +	return BTRFS_UTIL_OK;
 > +}
+> +
+>  static enum btrfs_util_error openat_parent_and_name(int dirfd, const char *path,
+>  						    char *name, size_t name_len,
+>  						    int *fd)
+> 
 

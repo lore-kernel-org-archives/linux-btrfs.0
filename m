@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:34220 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752771AbeBTSKj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Feb 2018 13:10:39 -0500
-Date: Tue, 20 Feb 2018 10:08:07 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:50997 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751570AbeBWXLw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Feb 2018 18:11:52 -0500
+Date: Sat, 24 Feb 2018 00:09:32 +0100
+From: David Sterba <dsterba@suse.cz>
 To: Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
 Subject: Re: [PATCH] Fix NULL pointer exception in find_bio_stripe()
-Message-ID: <20180220170807.GA22059@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Reply-To: bo.li.liu@oracle.com
+Message-ID: <20180223230932.GR1469@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <4F831C76-2968-4A34-B7EF-2D8741A50529@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
@@ -74,31 +74,12 @@ On Fri, Feb 16, 2018 at 07:51:38PM +0000, Dmitriy Gorokh wrote:
 > 
 > This is reproducible in a cycle, where a series of writes is followed by SCSI device delete command. The test may take up to few minutes.
 > 
-
-Please also place your SOB here.
-
 > Fixes: commit 74d46992e0d9dee7f1f376de0d56d31614c8a17a ("block: replace bi_bdev with a gendisk pointer and partitions index")
-> ---
->  fs/btrfs/raid56.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index dec0907dfb8a..fcfc20de2df3 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -1370,6 +1370,7 @@ static int find_bio_stripe(struct btrfs_raid_bio *rbio,
->                 stripe_start = stripe->physical;
->                 if (physical >= stripe_start &&
->                     physical < stripe_start + rbio->stripe_len &&
-> +                   stripe->dev->bdev &&
->                     bio->bi_disk == stripe->dev->bdev->bd_disk &&
->                     bio->bi_partno == stripe->dev->bdev->bd_partno) {
->                         return i;
 
-Patch looks good to me.
+Right, the commit introduced dereference of stripe->dev->bdev so we have
+to check it first.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+Please update the Fixes: tag, the word 'commit' should not be there and
+the sha1 length can be shortened to 12 digits.
 
-Thanks,
-
--liubo
+Also please add your Signed-off-by. Thanks.

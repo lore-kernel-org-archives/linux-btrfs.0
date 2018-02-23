@@ -1,102 +1,416 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51299 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1163956AbeBOP3G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Feb 2018 10:29:06 -0500
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs pre-release 4.15.1-rc1
-Date: Thu, 15 Feb 2018 16:26:42 +0100
-Message-Id: <20180215152642.4370-1-dsterba@suse.com>
+Received: from mail-pg0-f68.google.com ([74.125.83.68]:39771 "EHLO
+        mail-pg0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751936AbeBWXd3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Feb 2018 18:33:29 -0500
+Received: by mail-pg0-f68.google.com with SMTP id w17so3927874pgv.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 15:33:29 -0800 (PST)
+Date: Fri, 23 Feb 2018 15:33:27 -0800
+From: Omar Sandoval <osandov@osandov.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 14/27] libbtrfsutil: add
+ btrfs_util_deleted_subvolumes()
+Message-ID: <20180223233327.GH7046@vader.DHCP.thefacebook.com>
+References: <cover.1518720598.git.osandov@fb.com>
+ <ac64e7314e3f716898dd8a7ec7c7657f66ee4c4a.1518720598.git.osandov@fb.com>
+ <8901bd06-8ea9-a5f2-6a54-2118367472ed@jp.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <8901bd06-8ea9-a5f2-6a54-2118367472ed@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, Feb 23, 2018 at 11:12:56AM +0900, Misono, Tomohiro wrote:
+> 
+> On 2018/02/16 4:04, Omar Sandoval wrote:
+> > From: Omar Sandoval <osandov@fb.com>
+> > 
+> > Signed-off-by: Omar Sandoval <osandov@fb.com>
+> > ---
+> >  libbtrfsutil/btrfsutil.h                    | 21 +++++++
+> >  libbtrfsutil/python/btrfsutilpy.h           |  3 +
+> >  libbtrfsutil/python/module.c                | 30 ++++++++++
+> >  libbtrfsutil/python/qgroup.c                | 17 +-----
+> >  libbtrfsutil/python/subvolume.c             | 30 ++++++++++
+> >  libbtrfsutil/python/tests/test_subvolume.py |  8 +++
+> >  libbtrfsutil/subvolume.c                    | 89 +++++++++++++++++++++++++++++
+> >  7 files changed, 183 insertions(+), 15 deletions(-)
+> > 
+> > diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
+> > index 00c86174..677ab3c1 100644
+> > --- a/libbtrfsutil/btrfsutil.h
+> > +++ b/libbtrfsutil/btrfsutil.h
+> > @@ -534,6 +534,27 @@ enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_
+> >  							      char **path_ret,
+> >  							      struct btrfs_util_subvolume_info *subvol);
+> >  
+> > +/**
+> > + * btrfs_util_deleted_subvolumes() - Get a list of subvolume which have been
+> > + * deleted but not yet cleaned up.
+> > + * @path: Path on a Btrfs filesystem.
+> > + * @ids: Returned array of subvolume IDs.
+> > + * @n: Returned number of IDs in the @ids array.
+> > + *
+> > + * This requires appropriate privilege (CAP_SYS_ADMIN).
+> > + *
+> > + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+> > + */
+> > +enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
+> > +						    uint64_t **ids,
+> > +						    size_t *n);
+> > +
+> > +/**
+> > + * btrfs_util_deleted_subvolumes_fd() - See btrfs_util_deleted_subvolumes().
+> > + */
+> > +enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd, uint64_t **ids,
+> > +						       size_t *n);
+> > +
+> >  /**
+> >   * btrfs_util_create_qgroup_inherit() - Create a qgroup inheritance specifier
+> >   * for btrfs_util_create_subvolume() or btrfs_util_create_snapshot().
+> > diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
+> > index b3ec047f..be5122e2 100644
+> > --- a/libbtrfsutil/python/btrfsutilpy.h
+> > +++ b/libbtrfsutil/python/btrfsutilpy.h
+> > @@ -54,6 +54,8 @@ struct path_arg {
+> >  int path_converter(PyObject *o, void *p);
+> >  void path_cleanup(struct path_arg *path);
+> >  
+> > +PyObject *list_from_uint64_array(const uint64_t *arr, size_t n);
+> > +
+> >  void SetFromBtrfsUtilError(enum btrfs_util_error err);
+> >  void SetFromBtrfsUtilErrorWithPath(enum btrfs_util_error err,
+> >  				   struct path_arg *path);
+> > @@ -72,6 +74,7 @@ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+> >  PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+> >  PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds);
+> >  PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+> > +PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds);
+> >  
+> >  void add_module_constants(PyObject *m);
+> >  
+> > diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
+> > index e995a1be..eaa062ac 100644
+> > --- a/libbtrfsutil/python/module.c
+> > +++ b/libbtrfsutil/python/module.c
+> > @@ -125,6 +125,29 @@ err:
+> >  	return 0;
+> >  }
+> >  
+> > +PyObject *list_from_uint64_array(const uint64_t *arr, size_t n)
+> > +{
+> > +    PyObject *ret;
+> > +    size_t i;
+> > +
+> > +    ret = PyList_New(n);
+> > +    if (!ret)
+> > +	    return NULL;
+> > +
+> > +    for (i = 0; i < n; i++) {
+> > +	    PyObject *tmp;
+> > +
+> > +	    tmp = PyLong_FromUnsignedLongLong(arr[i]);
+> > +	    if (!tmp) {
+> > +		    Py_DECREF(ret);
+> > +		    return NULL;
+> > +	    }
+> > +	    PyList_SET_ITEM(ret, i, tmp);
+> > +    }
+> > +
+> > +    return ret;
+> > +}
+> > +
+> >  void path_cleanup(struct path_arg *path)
+> >  {
+> >  	Py_CLEAR(path->object);
+> > @@ -214,6 +237,13 @@ static PyMethodDef btrfsutil_methods[] = {
+> >  	 "path -- string, bytes, or path-like object\n"
+> >  	 "recursive -- if the given subvolume has child subvolumes, delete\n"
+> >  	 "them instead of failing"},
+> > +	{"deleted_subvolumes", (PyCFunction)deleted_subvolumes,
+> > +	 METH_VARARGS | METH_KEYWORDS,
+> > +	 "deleted_subvolumes(path)\n\n"
+> > +	 "Get the list of subvolume IDs which have been deleted but not yet\n"
+> > +	 "cleaned up\n\n"
+> > +	 "Arguments:\n"
+> > +	 "path -- string, bytes, path-like object, or open file descriptor"},
+> >  	{},
+> >  };
+> >  
+> > diff --git a/libbtrfsutil/python/qgroup.c b/libbtrfsutil/python/qgroup.c
+> > index 69716d92..44ac5ebc 100644
+> > --- a/libbtrfsutil/python/qgroup.c
+> > +++ b/libbtrfsutil/python/qgroup.c
+> > @@ -55,25 +55,12 @@ static PyObject *QgroupInherit_getattro(QgroupInherit *self, PyObject *nameobj)
+> >      }
+> >  
+> >      if (strcmp(name, "groups") == 0) {
+> > -	    PyObject *ret, *tmp;
+> >  	    const uint64_t *arr;
+> > -	    size_t n, i;
+> > +	    size_t n;
+> >  
+> >  	    btrfs_util_qgroup_inherit_get_groups(self->inherit, &arr, &n);
+> > -	    ret = PyList_New(n);
+> > -	    if (!ret)
+> > -		    return NULL;
+> > -
+> > -	    for (i = 0; i < n; i++) {
+> > -		    tmp = PyLong_FromUnsignedLongLong(arr[i]);
+> > -		    if (!tmp) {
+> > -			    Py_DECREF(ret);
+> > -			    return NULL;
+> > -		    }
+> > -		    PyList_SET_ITEM(ret, i, tmp);
+> > -	    }
+> >  
+> > -	    return ret;
+> > +	    return list_from_uint64_array(arr, n);
+> >      } else {
+> >  	    return PyObject_GenericGetAttr((PyObject *)self, nameobj);
+> >      }
+> > diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
+> > index eb3f6e27..069e606b 100644
+> > --- a/libbtrfsutil/python/subvolume.c
+> > +++ b/libbtrfsutil/python/subvolume.c
+> > @@ -425,6 +425,36 @@ PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+> >  	Py_RETURN_NONE;
+> >  }
+> >  
+> > +PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds)
+> > +{
+> > +	static char *keywords[] = {"path", NULL};
+> > +	struct path_arg path = {.allow_fd = true};
+> > +	PyObject *ret;
+> > +	uint64_t *ids;
+> > +	size_t n;
+> > +	enum btrfs_util_error err;
+> > +
+> > +	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:deleted_subvolumes",
+> > +					 keywords, &path_converter, &path))
+> > +		return NULL;
+> > +
+> > +	if (path.path)
+> > +		err = btrfs_util_deleted_subvolumes(path.path, &ids, &n);
+> > +	else
+> > +		err = btrfs_util_deleted_subvolumes_fd(path.fd, &ids, &n);
+> > +	if (err) {
+> > +		SetFromBtrfsUtilErrorWithPath(err, &path);
+> > +		path_cleanup(&path);
+> > +		return NULL;
+> > +	}
+> > +
+> > +	path_cleanup(&path);
+> > +
+> > +	ret = list_from_uint64_array(ids, n);
+> > +	free(ids);
+> > +	return ret;
+> > +}
+> > +
+> >  typedef struct {
+> >  	PyObject_HEAD
+> >  	struct btrfs_util_subvolume_iterator *iter;
+> > diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
+> > index 08083abe..a46d4a34 100644
+> > --- a/libbtrfsutil/python/tests/test_subvolume.py
+> > +++ b/libbtrfsutil/python/tests/test_subvolume.py
+> > @@ -318,6 +318,14 @@ class TestSubvolume(BtrfsTestCase):
+> >          btrfsutil.delete_subvolume(subvol + '5', recursive=True)
+> >          self.assertFalse(os.path.exists(subvol + '5'))
+> >  
+> > +    def test_deleted_subvolumes(self):
+> > +        subvol = os.path.join(self.mountpoint, 'subvol')
+> > +        btrfsutil.create_subvolume(subvol + '1')
+> > +        btrfsutil.delete_subvolume(subvol + '1')
+> > +        for arg in self.path_or_fd(self.mountpoint):
+> > +            with self.subTest(type=type(arg)):
+> > +                self.assertEqual(btrfsutil.deleted_subvolumes(arg), [256])
+> > +
+> >      def test_subvolume_iterator(self):
+> >          pwd = os.getcwd()
+> >          try:
+> > diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
+> > index 908e71db..4ae581b2 100644
+> > --- a/libbtrfsutil/subvolume.c
+> > +++ b/libbtrfsutil/subvolume.c
+> > @@ -1277,3 +1277,92 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrf
+> >  
+> >  	return btrfs_util_subvolume_info_fd(iter->fd, id, subvol);
+> >  }
+> > +
+> > +PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
+> > +							   uint64_t **ids,
+> > +							   size_t *n)
+> > +{
+> > +	enum btrfs_util_error err;
+> > +	int fd;
+> > +
+> > +	fd = open(path, O_RDONLY);
+> > +	if (fd == -1)
+> > +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
+> > +
+> > +	err = btrfs_util_deleted_subvolumes_fd(fd, ids, n);
+> > +	SAVE_ERRNO_AND_CLOSE(fd);
+> > +	return err;
+> > +}
+> > +
+> > +PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd,
+> > +							      uint64_t **ids,
+> > +							      size_t *n)
+> > +{
+> > +	size_t capacity = 0;
+> > +	struct btrfs_ioctl_search_args search = {
+> > +		.key = {
+> > +			.tree_id = BTRFS_ROOT_TREE_OBJECTID,
+> > +			.min_objectid = BTRFS_ORPHAN_OBJECTID,
+> > +			.max_objectid = BTRFS_ORPHAN_OBJECTID,
+> > +			.min_type = BTRFS_ORPHAN_ITEM_KEY,
+> > +			.max_type = BTRFS_ORPHAN_ITEM_KEY,
+> > +			.min_offset = 0,
+> > +			.max_offset = UINT64_MAX,
+> > +			.min_transid = 0,
+> > +			.max_transid = UINT64_MAX,
+> > +			.nr_items = 0,
+> > +		},
+> > +	};
+> It seems btrfs_util_deleted_subvolume() does not works perfectly.
+> 
+> Above search will return all ORPHAN_ITEM but some may be of free space cache inode (correct me if I'm wrong).
+> Since this is a public function, we should filter those non-subvolume objectid by checking root tree again.
+> I think this is the reason of failure of misc-test/013 after merging 26th patch.
 
-a pre-release has been tagged.  This is going to be a minor maintenance
-release.
+So looking at the code that this replaces, I don't see the difference:
 
-ETA for 4.15.1 is in +1 days (2018-02-16).
+static int enumerate_dead_subvols(int fd, u64 **ids)
+{
+	int ret;
+	struct btrfs_ioctl_search_args args;
+	struct btrfs_ioctl_search_key *sk = &args.key;
+	int idx = 0;
+	int count = 0;
 
-Changes:
+	memset(&args, 0, sizeof(args));
 
-* build
-  * fix build on musl
-  * support asciidoctor for doc generation
-* cleanups
-  * sync some code with kernel
-  * move code to own directory, split to more files
-* tests
-  * more build tests in travis
-  * tests now pass with asan and ubsan
-  * testsuite can be exported and used separately
+	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+	sk->min_objectid = BTRFS_ORPHAN_OBJECTID;
+	sk->max_objectid = BTRFS_ORPHAN_OBJECTID;
+	sk->min_type = BTRFS_ORPHAN_ITEM_KEY;
+	sk->max_type = BTRFS_ORPHAN_ITEM_KEY;
+	sk->min_offset = 0;
+	sk->max_offset = (u64)-1;
+	sk->min_transid = 0;
+	sk->max_transid = (u64)-1;
+	sk->nr_items = 4096;
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+	*ids = NULL;
+	while (1) {
+		struct btrfs_ioctl_search_header *sh;
+		unsigned long off;
+		int i;
 
-Shortlog:
+		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+		if (ret < 0)
+			return -errno;
 
-Anand Jain (1):
-      btrfs-progs: print-tree: fix INODE_ITEM sequence and flags
+		if (!sk->nr_items)
+			return idx;
 
-David Sterba (17):
-      btrfs-progs: check: rename files after moving code
-      btrfs-progs: docs: fix manual page title format
-      btrfs-progs: build: add support for asciidoctor doc generator
-      btrfs-progs: convert: fix build on musl
-      btrfs-progs: mkfs: fix build on musl
-      btrfs-progs: ci: change clone depth to 1
-      btrfs-progs: ci: add support scripts for docker build
-      btrfs-progs: ci: add dockerfile for a musl build test
-      btrfs-progs: ci: enable musl build tests in docker
-      btrfs-progs: ci: use helper script for default build commands
-      btrfs-progs: ci: replace inline shell commands with scripts
-      btrfs-progs: rework testsuite export
-      btrfs-progs: tests: update README.md
-      btrfs-progs: tests: unify test drivers, make ready for extenral testsuite
-      btrfs-progs: test: update clean-test.sh after the TEST_TOP update
-      btrfs-progs: tests: document exported testsuite
-      btrfs-progs: reorder tests in make target
+		off = 0;
+		for (i = 0; i < sk->nr_items; i++) {
+			sh = (struct btrfs_ioctl_search_header*)(args.buf + off);
+			off += sizeof(*sh);
 
-Gu Jinxiang (12):
-      btrfs-progs: Use fs_info instead of root for BTRFS_LEAF_DATA_SIZE
-      btrfs-progs: Use fs_info instead of root for BTRFS_NODEPTRS_PER_BLOCK
-      btrfs-progs: Sync code with kernel for BTRFS_MAX_INLINE_DATA_SIZE
-      btrfs-progs: Use fs_info instead of root for BTRFS_MAX_XATTR_SIZE
-      btrfs-progs: do clean up for redundancy value assignment
-      btrfs-progs: remove no longer used btrfs_alloc_extent
-      btrfs-progs: Cleanup use of root in leaf_data_end
-      btrfs-progs: add prerequisite mkfs.btrfs for test-cli
-      btrfs-progs: add prerequisite btrfs-image for test-fuzz
-      btrfs-progs: add prerequisite btrfs-convert for test-misc
-      btrfs-progs: Add make testsuite command for export tests
-      btrfs-progs: introduce TEST_TOP and INTERNAL_BIN for tests
+			if (btrfs_search_header_type(sh)
+			    == BTRFS_ORPHAN_ITEM_KEY) {
+				if (idx >= count) {
+					u64 *newids;
 
-Qu Wenruo (22):
-      btrfs-progs: tests: chang tree-reloc-tree test number from 027 to 015
-      btrfs-progs: Move cmds-check.c to check/main.c
-      btrfs-progs: check: Move original mode definitions to check/original.h
-      btrfs-progs: check: Move definitions of lowmem mode to check/lowmem.h
-      btrfs-progs: check: Move node_refs structure to check/common.h
-      btrfs-progs: check: Export check global variables to check/common.h
-      btrfs-progs: check: Move imode_to_type function to check/common.h
-      btrfs-progs: check: Move fs_root_objectid function to check/common.h
-      btrfs-progs: check: Move count_csum_range function to check/common.c
-      btrfs-progs: check: Move __create_inode_item function to check/common.c
-      btrfs-progs: check: Move link_inode_to_lostfound function to common.c
-      btrfs-progs: check: Move check_dev_size_alignment to check/common.c
-      btrfs-progs: check: move reada_walk_down to check/common.c
-      btrfs-progs: check: Move check_child_node to check/common.c
-      btrfs-progs: check: Move reset_cached_block_groups to check/common.c
-      btrfs-progs: check: Move lowmem check code to its own check/lowmem.[ch]
-      btrfs-progs: check/lowmem: Cleanup unnecessary _v2 suffixes
-      btrfs-progs: check: Cleanup all checkpatch error and warning
-      btrfs-progs: fsck-tests: Cleanup the restored image for 028
-      btrfs-progs: btrfs-progs: Fix read beyond boundary bug in build_roots_info_cache()
-      btrfs-progs: mkfs/rootdir: Fix memory leak in traverse_directory()
-      btrfs-progs: convert/ext2: Fix memory leak caused by handled ext2_filsys
+					count += SUBVOL_ID_BATCH;
+					newids = (u64*)realloc(*ids,
+							count * sizeof(u64));
+					if (!newids)
+						return -ENOMEM;
+					*ids = newids;
+				}
+				(*ids)[idx] = btrfs_search_header_offset(sh);
+				idx++;
+			}
+			off += btrfs_search_header_len(sh);
 
-Su Yue (1):
-      btrfs-progs: tests common: remove meaningless colon in extract_image()
+			sk->min_objectid = btrfs_search_header_objectid(sh);
+			sk->min_type = btrfs_search_header_type(sh);
+			sk->min_offset = btrfs_search_header_offset(sh);
+		}
+		if (sk->min_offset < (u64)-1)
+			sk->min_offset++;
+		else
+			break;
+		if (sk->min_type != BTRFS_ORPHAN_ITEM_KEY)
+			break;
+		if (sk->min_objectid != BTRFS_ORPHAN_OBJECTID)
+			break;
+	}
 
+	return idx;
+}
+
+This function does the same exact search, as far as I can tell. What does the
+test failure look like? I'll try to reproduce it on my side.
+
+> > +	enum btrfs_util_error err;
+> > +	size_t items_pos = 0, buf_off = 0;
+> > +	int ret;
+> > +
+> > +	*ids = NULL;
+> > +	*n = 0;
+> > +	for (;;) {
+> > +		const struct btrfs_ioctl_search_header *header;
+> > +
+> > +		if (items_pos >= search.key.nr_items) {
+> > +			search.key.nr_items = 4096;
+> > +			ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &search);
+> > +			if (ret == -1) {
+> > +				err = BTRFS_UTIL_ERROR_SEARCH_FAILED;
+> > +				goto out;
+> > +			}
+> > +			items_pos = 0;
+> > +			buf_off = 0;
+> > +
+> > +			if (search.key.nr_items == 0)
+> > +				break;
+> > +		}
+> > +
+> > +		header = (struct btrfs_ioctl_search_header *)(search.buf + buf_off);
+> > +		if (*n >= capacity) {
+> > +			size_t new_capacity = capacity ? capacity * 2 : 1;
+> > +			uint64_t *new_ids;
+> > +
+> > +			new_ids = reallocarray(*ids, new_capacity,
+> > +					       sizeof(**ids));
+> > +			if (!new_ids)
+> > +				return BTRFS_UTIL_ERROR_NO_MEMORY;
+> > +
+> > +			*ids = new_ids;
+> > +			capacity = new_capacity;
+> > +		}
+> > +
+> > +		(*ids)[(*n)++] = header->offset;
+> > +
+> > +		items_pos++;
+> > +		buf_off += sizeof(*header) + header->len;
+> > +		search.key.min_offset = header->offset + 1;
+> > +	}
+> > +
+> > +	err = BTRFS_UTIL_OK;
+> > +out:
+> > +	if (err) {
+> > +		free(ids);
+> > +		*ids = NULL;
+> > +		*n = 0;
+> > +	}
+> > +	return err;
+> > +}
+> > 
+> 

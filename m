@@ -1,56 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f47.google.com ([209.85.160.47]:33943 "EHLO
-        mail-pl0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751527AbeBWWoq (ORCPT
+Received: from mail-pg0-f49.google.com ([74.125.83.49]:45487 "EHLO
+        mail-pg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752031AbeBWWtf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Feb 2018 17:44:46 -0500
-Received: by mail-pl0-f47.google.com with SMTP id u13so5715559plq.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 14:44:46 -0800 (PST)
-Date: Fri, 23 Feb 2018 14:44:44 -0800
+        Fri, 23 Feb 2018 17:49:35 -0500
+Received: by mail-pg0-f49.google.com with SMTP id e11so3889708pgq.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 14:49:35 -0800 (PST)
+Date: Fri, 23 Feb 2018 14:49:33 -0800
 From: Omar Sandoval <osandov@osandov.com>
 To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 07/27] libbtrfsutil: add btrfs_util_subvolume_path()
-Message-ID: <20180223224444.GD7046@vader.DHCP.thefacebook.com>
+Subject: Re: [PATCH v2 11/27] libbtrfsutil: add subvolume iterator helpers
+Message-ID: <20180223224933.GE7046@vader.DHCP.thefacebook.com>
 References: <cover.1518720598.git.osandov@fb.com>
- <af89178dc6f35fe6a807aec6fecc0611ae99b3fb.1518720598.git.osandov@fb.com>
- <0452f2f6-02c5-7cb8-6a20-e1a65de096db@jp.fujitsu.com>
+ <4cc1bad06e7e064dbf1af7a4e5b9d66ffe9c0913.1518720598.git.osandov@fb.com>
+ <2bd6c3a5-722f-412a-041c-66837bc21d73@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0452f2f6-02c5-7cb8-6a20-e1a65de096db@jp.fujitsu.com>
+In-Reply-To: <2bd6c3a5-722f-412a-041c-66837bc21d73@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 23, 2018 at 03:27:52PM +0900, Misono, Tomohiro wrote:
+On Fri, Feb 23, 2018 at 04:40:45PM +0900, Misono, Tomohiro wrote:
 > On 2018/02/16 4:04, Omar Sandoval wrote:
 > > From: Omar Sandoval <osandov@fb.com>
 > 
-> > +PUBLIC enum btrfs_util_error btrfs_util_subvolume_path_fd(int fd, uint64_t id,
-> > +							  char **path_ret)
+> > +PUBLIC enum btrfs_util_error btrfs_util_create_subvolume_iterator(const char *path,
+> > +								  uint64_t top,
+> > +								  int flags,
+> > +								  struct btrfs_util_subvolume_iterator **ret)
 > > +{
-> > +	char *path, *p;
-> > +	size_t capacity = 4096;
+> > +	enum btrfs_util_error err;
+> > +	int fd;
 > > +
-> > +	path = malloc(capacity);
-> > +	if (!path)
-> > +		return BTRFS_UTIL_ERROR_NO_MEMORY;
-> > +	p = path + capacity - 1;
-> > +	p[0] = '\0';
+> > +	fd = open(path, O_RDONLY);
+> > +	if (fd == -1)
+> > +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
 > > +
-> > +	if (id == 0) {
-> > +		enum btrfs_util_error err;
-> > +
-> > +		err = btrfs_util_is_subvolume_fd(fd);
-> > +		if (err)
-> > +			return err;
+> > +	err = btrfs_util_create_subvolume_iterator_fd(fd, top, flags, ret);
+> > +	if (err == BTRFS_UTIL_OK)
+> > +		(*ret)->flags |= BTRFS_UTIL_SUBVOLUME_ITERATOR_CLOSE_FD;
 > 
-> 'path' should be freed here and below.
-> 
-> > +
-> > +		err = btrfs_util_subvolume_id_fd(fd, &id);
-> > +		if (err)
-> > +			return err;
-> > +	}
+> If btrfs_util_create_subvolume_iterator_fd() returns error, 'fd' remains open.
+> So, fd should be closed here.
 
-Indeed, although I'll just change it to allocate path after this
-instead.
+Good catch, fixed.

@@ -1,89 +1,271 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f65.google.com ([209.85.160.65]:35207 "EHLO
-        mail-pl0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751468AbeBWWkj (ORCPT
+Received: from mail-pg0-f66.google.com ([74.125.83.66]:43935 "EHLO
+        mail-pg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751907AbeBWWla (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Feb 2018 17:40:39 -0500
-Received: by mail-pl0-f65.google.com with SMTP id bb3so5701609plb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 14:40:38 -0800 (PST)
-Date: Fri, 23 Feb 2018 14:40:36 -0800
+        Fri, 23 Feb 2018 17:41:30 -0500
+Received: by mail-pg0-f66.google.com with SMTP id f6so3884887pgs.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 14:41:30 -0800 (PST)
+Date: Fri, 23 Feb 2018 14:41:27 -0800
 From: Omar Sandoval <osandov@osandov.com>
 To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 10/27] libbtrfsutil: add
- btrfs_util_[gs]et_default_subvolume()
-Message-ID: <20180223224036.GA7046@vader.DHCP.thefacebook.com>
+Subject: Re: [PATCH v2 23/27] btrfs-progs: use libbtrfsutil for subvol sync
+Message-ID: <20180223224127.GB7046@vader.DHCP.thefacebook.com>
 References: <cover.1518720598.git.osandov@fb.com>
- <12357e01654532c78dccd2eb52edbdc7589d6ee6.1518720598.git.osandov@fb.com>
- <9e93751b-02fe-93a7-a866-3ec56fbdb839@jp.fujitsu.com>
+ <f39e48b3ed0f860ec47b31fbfe08f6455d6fbaa8.1518720598.git.osandov@fb.com>
+ <c706be51-70d3-9b5b-f0b9-79268f9d2960@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <9e93751b-02fe-93a7-a866-3ec56fbdb839@jp.fujitsu.com>
+In-Reply-To: <c706be51-70d3-9b5b-f0b9-79268f9d2960@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 22, 2018 at 10:55:48AM +0900, Misono, Tomohiro wrote:
-> On 2018/02/16 4:04, Omar Sandoval wrote:
+On Thu, Feb 22, 2018 at 11:03:05AM +0900, Misono, Tomohiro wrote:
+> 
+> 
+> On 2018/02/16 4:05, Omar Sandoval wrote:
 > > From: Omar Sandoval <osandov@fb.com>
 > > 
-> > set_default_subvolume() is a trivial ioctl(), but there's no ioctl() for
-> > get_default_subvolume(), so we need to search the root tree.
+> > btrfs_util_f_deleted_subvolumes() replaces enumerate_dead_subvols() and
+> > btrfs_util_f_subvolume_info() replaces is_subvolume_cleaned().
 > > 
 > > Signed-off-by: Omar Sandoval <osandov@fb.com>
 > > ---
-> >  libbtrfsutil/btrfsutil.h                    |  41 ++++++++++
-> >  libbtrfsutil/python/btrfsutilpy.h           |   2 +
-> >  libbtrfsutil/python/module.c                |  14 ++++
-> >  libbtrfsutil/python/subvolume.c             |  50 ++++++++++++
-> >  libbtrfsutil/python/tests/test_subvolume.py |  14 ++++
-> >  libbtrfsutil/subvolume.c                    | 113 ++++++++++++++++++++++++++++
-> >  6 files changed, 234 insertions(+)
+> >  cmds-subvolume.c | 217 ++++++-------------------------------------------------
+> >  1 file changed, 21 insertions(+), 196 deletions(-)
 > > 
-> > diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
-> > index 8bd2b847..54777f1d 100644
-> > --- a/libbtrfsutil/btrfsutil.h
-> > +++ b/libbtrfsutil/btrfsutil.h
-> > @@ -256,6 +256,8 @@ enum btrfs_util_error btrfs_util_get_subvolume_read_only_fd(int fd, bool *ret);
-> >   * @path: Subvolume path.
-> >   * @read_only: New value of read-only flag.
-> >   *
-> > + * This requires appropriate privilege (CAP_SYS_ADMIN).
-> > + *
-> >   * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
-> >   */
-> >  enum btrfs_util_error btrfs_util_set_subvolume_read_only(const char *path,
-> > @@ -268,6 +270,45 @@ enum btrfs_util_error btrfs_util_set_subvolume_read_only(const char *path,
-> >  enum btrfs_util_error btrfs_util_set_subvolume_read_only_fd(int fd,
-> >  							    bool read_only);
+> > diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> > index 49c9c8cf..9bab9312 100644
+> > --- a/cmds-subvolume.c
+> > +++ b/cmds-subvolume.c
+> > @@ -42,38 +42,11 @@
+> >  #include "utils.h"
+> >  #include "help.h"
 > >  
-> > +/**
-> > + * btrfs_util_get_default_subvolume() - Get the default subvolume for a
-> > + * filesystem.
-> > + * @path: Path on a Btrfs filesystem.
-> > + * @id_ret: Returned subvolume ID.
-> > + *
-> > + * This requires appropriate privilege (CAP_SYS_ADMIN).
-> > + *
-> > + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
-> > + */
-> > +enum btrfs_util_error btrfs_util_get_default_subvolume(const char *path,
-> > +						       uint64_t *id_ret);
-> > +
-> > +/**
-> > + * btrfs_util_get_default_subvolume_fd() - See
-> > + * btrfs_util_get_default_subvolume().
-> > + */
-> > +enum btrfs_util_error btrfs_util_get_default_subvolume_fd(int fd,
-> > +							  uint64_t *id_ret);
-> > +
-> > +/**
-> > + * btrfs_util_set_default_subvolume() - Set the default subvolume for a
-> > + * filesystem.
-> > + * @path: Path in a Btrfs filesystem. This may be any path in the filesystem; it
-> > + * does not have to refer to a subvolume unless @id is zero.
-> > + * @id: ID of subvolume to set as the default. If zero is given, the subvolume
-> > + * ID of @path is used.
+> > -static int is_subvolume_cleaned(int fd, u64 subvolid)
+> > +static int wait_for_subvolume_cleaning(int fd, size_t count, uint64_t *ids,
+> > +				       int sleep_interval)
+> >  {
+> > -	int ret;
+> > -	struct btrfs_ioctl_search_args args;
+> > -	struct btrfs_ioctl_search_key *sk = &args.key;
+> > -
+> > -	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> > -	sk->min_objectid = subvolid;
+> > -	sk->max_objectid = subvolid;
+> > -	sk->min_type = BTRFS_ROOT_ITEM_KEY;
+> > -	sk->max_type = BTRFS_ROOT_ITEM_KEY;
+> > -	sk->min_offset = 0;
+> > -	sk->max_offset = (u64)-1;
+> > -	sk->min_transid = 0;
+> > -	sk->max_transid = (u64)-1;
+> > -	sk->nr_items = 1;
+> > -
+> > -	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> > -	if (ret < 0)
+> > -		return -errno;
+> > -
+> > -	if (sk->nr_items == 0)
+> > -		return 1;
+> > -
+> > -	return 0;
+> > -}
+> > -
+> > -static int wait_for_subvolume_cleaning(int fd, int count, u64 *ids,
+> > -		int sleep_interval)
+> > -{
+> > -	int ret;
+> > -	int i;
+> > +	size_t i;
+> > +	enum btrfs_util_error err;
+> >  
+> >  	while (1) {
+> >  		int clean = 1;
+> > @@ -81,16 +54,14 @@ static int wait_for_subvolume_cleaning(int fd, int count, u64 *ids,
+> >  		for (i = 0; i < count; i++) {
+> >  			if (!ids[i])
+> >  				continue;
+> > -			ret = is_subvolume_cleaned(fd, ids[i]);
+> > -			if (ret < 0) {
+> > -				error(
+> > -			    "cannot read status of dead subvolume %llu: %s",
+> > -					(unsigned long long)ids[i], strerror(-ret));
+> > -				return ret;
+> > -			}
+> > -			if (ret) {
+> > -				printf("Subvolume id %llu is gone\n", ids[i]);
+> > +			err = btrfs_util_subvolume_info_fd(fd, ids[i], NULL);
+> > +			if (err == BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND) {
+> > +				printf("Subvolume id %" PRIu64 " is gone\n",
+> > +				       ids[i]);
+> >  				ids[i] = 0;
+> > +			} else if (err) {
+> > +				error_btrfs_util(err);
+> > +				return -errno;
+> >  			} else {
+> >  				clean = 0;
+> >  			}
+> > @@ -1028,160 +999,15 @@ static const char * const cmd_subvol_sync_usage[] = {
+> >  	NULL
+> >  };
+> >  
+> > -#if 0
+> > -/*
+> > - * If we're looking for any dead subvolume, take a shortcut and look
+> > - * for any ORPHAN_ITEMs in the tree root
+> > - */
+> > -static int fs_has_dead_subvolumes(int fd)
+> > -{
+> > -	int ret;
+> > -	struct btrfs_ioctl_search_args args;
+> > -	struct btrfs_ioctl_search_key *sk = &args.key;
+> > -	struct btrfs_ioctl_search_header sh;
+> > -	u64 min_subvolid = 0;
+> > -
+> > -again:
+> > -	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> > -	sk->min_objectid = BTRFS_ORPHAN_OBJECTID;
+> > -	sk->max_objectid = BTRFS_ORPHAN_OBJECTID;
+> > -	sk->min_type = BTRFS_ORPHAN_ITEM_KEY;
+> > -	sk->max_type = BTRFS_ORPHAN_ITEM_KEY;
+> > -	sk->min_offset = min_subvolid;
+> > -	sk->max_offset = (u64)-1;
+> > -	sk->min_transid = 0;
+> > -	sk->max_transid = (u64)-1;
+> > -	sk->nr_items = 1;
+> > -
+> > -	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> > -	if (ret < 0)
+> > -		return -errno;
+> > -
+> > -	if (!sk->nr_items)
+> > -		return 0;
+> > -
+> > -	memcpy(&sh, args.buf, sizeof(sh));
+> > -	min_subvolid = sh.offset;
+> > -
+> > -	/*
+> > -	 * Verify that the root item is really there and we haven't hit
+> > -	 * a stale orphan
+> > -	 */
+> > -	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> > -	sk->min_objectid = min_subvolid;
+> > -	sk->max_objectid = min_subvolid;
+> > -	sk->min_type = BTRFS_ROOT_ITEM_KEY;
+> > -	sk->max_type = BTRFS_ROOT_ITEM_KEY;
+> > -	sk->min_offset = 0;
+> > -	sk->max_offset = (u64)-1;
+> > -	sk->min_transid = 0;
+> > -	sk->max_transid = (u64)-1;
+> > -	sk->nr_items = 1;
+> > -
+> > -	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> > -	if (ret < 0)
+> > -		return -errno;
+> > -
+> > -	/*
+> > -	 * Stale orphan, try the next one
+> > -	 */
+> > -	if (!sk->nr_items) {
+> > -		min_subvolid++;
+> > -		goto again;
+> > -	}
+> > -
+> > -	return 1;
+> > -}
+> > -#endif
+> > -
+> > -#define SUBVOL_ID_BATCH		1024
+> > -
+> > -/*
+> > - * Enumerate all dead subvolumes that exist in the filesystem.
+> > - * Fill @ids and reallocate to bigger size if needed.
+> > - */
+> > -static int enumerate_dead_subvols(int fd, u64 **ids)
+> > -{
+> > -	int ret;
+> > -	struct btrfs_ioctl_search_args args;
+> > -	struct btrfs_ioctl_search_key *sk = &args.key;
+> > -	int idx = 0;
+> > -	int count = 0;
+> > -
+> > -	memset(&args, 0, sizeof(args));
+> > -
+> > -	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> > -	sk->min_objectid = BTRFS_ORPHAN_OBJECTID;
+> > -	sk->max_objectid = BTRFS_ORPHAN_OBJECTID;
+> > -	sk->min_type = BTRFS_ORPHAN_ITEM_KEY;
+> > -	sk->max_type = BTRFS_ORPHAN_ITEM_KEY;
+> > -	sk->min_offset = 0;
+> > -	sk->max_offset = (u64)-1;
+> > -	sk->min_transid = 0;
+> > -	sk->max_transid = (u64)-1;
+> > -	sk->nr_items = 4096;
+> > -
+> > -	*ids = NULL;
+> > -	while (1) {
+> > -		struct btrfs_ioctl_search_header *sh;
+> > -		unsigned long off;
+> > -		int i;
+> > -
+> > -		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> > -		if (ret < 0)
+> > -			return -errno;
+> > -
+> > -		if (!sk->nr_items)
+> > -			return idx;
+> > -
+> > -		off = 0;
+> > -		for (i = 0; i < sk->nr_items; i++) {
+> > -			sh = (struct btrfs_ioctl_search_header*)(args.buf + off);
+> > -			off += sizeof(*sh);
+> > -
+> > -			if (btrfs_search_header_type(sh)
+> > -			    == BTRFS_ORPHAN_ITEM_KEY) {
+> > -				if (idx >= count) {
+> > -					u64 *newids;
+> > -
+> > -					count += SUBVOL_ID_BATCH;
+> > -					newids = (u64*)realloc(*ids,
+> > -							count * sizeof(u64));
+> > -					if (!newids)
+> > -						return -ENOMEM;
+> > -					*ids = newids;
+> > -				}
+> > -				(*ids)[idx] = btrfs_search_header_offset(sh);
+> > -				idx++;
+> > -			}
+> > -			off += btrfs_search_header_len(sh);
+> > -
+> > -			sk->min_objectid = btrfs_search_header_objectid(sh);
+> > -			sk->min_type = btrfs_search_header_type(sh);
+> > -			sk->min_offset = btrfs_search_header_offset(sh);
+> > -		}
+> > -		if (sk->min_offset < (u64)-1)
+> > -			sk->min_offset++;
+> > -		else
+> > -			break;
+> > -		if (sk->min_type != BTRFS_ORPHAN_ITEM_KEY)
+> > -			break;
+> > -		if (sk->min_objectid != BTRFS_ORPHAN_OBJECTID)
+> > -			break;
+> > -	}
+> > -
+> > -	return idx;
+> > -}
+> > -
+> >  static int cmd_subvol_sync(int argc, char **argv)
+> >  {
+> >  	int fd = -1;
+> > -	int i;
+> >  	int ret = 1;
+> >  	DIR *dirstream = NULL;
+> > -	u64 *ids = NULL;
+> > -	int id_count;
+> > +	uint64_t *ids;
 > 
-> The line "This requires appropriate privilege (CAP_SYS_ADMIN)." is missing here.
+> "ids" should be initialized to prevent to be used uninitialized for free()
+> in error path (clang build warning).
 
-Good catch, thanks, fixed.
+I'm disappointed that GCC didn't also warn here, but thanks, fixed.

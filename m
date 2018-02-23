@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail02.iobjects.de ([188.40.134.68]:44570 "EHLO
+Received: from mail02.iobjects.de ([188.40.134.68]:44634 "EHLO
         mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750776AbeBWAuq (ORCPT
+        with ESMTP id S1750776AbeBWBMP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Feb 2018 19:50:46 -0500
+        Thu, 22 Feb 2018 20:12:15 -0500
 Subject: Re: [RFC] btrfs: Speedup btrfs_read_block_groups()
 To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org, dsterba@suse.cz
 Cc: "Ellis H . Wilson III" <ellisw@panasas.com>
 References: <20180222045215.16426-1-wqu@suse.com>
 From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?= <holger@applied-asynchrony.com>
-Message-ID: <e250b087-f640-3246-a3b5-c9ac74eeeb58@applied-asynchrony.com>
-Date: Fri, 23 Feb 2018 01:50:32 +0100
+Message-ID: <a4ee5d23-93c5-bf12-cb24-dd903d6f77f9@applied-asynchrony.com>
+Date: Fri, 23 Feb 2018 02:12:03 +0100
 MIME-Version: 1.0
 In-Reply-To: <20180222045215.16426-1-wqu@suse.com>
 Content-Type: text/plain; charset=utf-8
@@ -53,7 +53,55 @@ On 02/22/18 05:52, Qu Wenruo wrote:
 > 
 > Cc: Ellis H. Wilson III <ellisw@panasas.com>
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Since all my TB level storage is all occupied by my NAS, any feedback
+> (especially for the real world mount speed change) is welcome.
 
-Decided to give this a try & got interesting results!
+(sorry for the previous mail without results..finger salad)
 
-The scene of the crime:
+Decided to give this a try & got some nice results!
+Probably not on the same scale & nonlinear behaviour as Ellis will
+provide since I just don't have that much storage, but interesting
+nevertheless.
+
+$btrfs filesystem df /mnt/backup 
+Data, single: total=1.10TiB, used=1.09TiB
+System, DUP: total=32.00MiB, used=144.00KiB
+Metadata, DUP: total=4.00GiB, used=2.23GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+$btrfs-debug-tree -t chunk /dev/sdc1 | grep CHUNK_ITEM | wc -l
+1137
+
+current kernel (4.14++ with most of blk-mq+BFQ from 4.16):
+mount /mnt/backup  0.00s user 0.02s system 1% cpu 1.211 total
+mount /mnt/backup  0.00s user 0.02s system 2% cpu 1.122 total
+mount /mnt/backup  0.00s user 0.02s system 2% cpu 1.236 total
+
+patched:
+mount /mnt/backup  0.00s user 0.02s system 1% cpu 1.070 total
+mount /mnt/backup  0.00s user 0.02s system 1% cpu 1.056 total
+mount /mnt/backup  0.00s user 0.02s system 1% cpu 1.058 total
+
+That's not overwhelming, but still measurable and nice to have!
+
+While I was at it I decided to fill up the drive to almost-max
+~3.7TB and see how much slower it woulöd get...you won't believe
+what happened next. :-)
+
+$btrfs-debug-tree -t chunk /dev/sdc1 | grep CHUNK_ITEM | wc -l
+3719
+
+mount /mnt/backup  0.00s user 0.02s system 2% cpu 1.328 total
+mount /mnt/backup  0.00s user 0.03s system 2% cpu 1.361 total
+mount /mnt/backup  0.00s user 0.03s system 2% cpu 1.368 total
+
+Over three times the data, almost the same mount time as before?
+Yes please!
+
+Overall this looks like a really nice improvement. Glad to see
+that my suspicion about the (non)usefulness of the readhead turned
+out to be true. :)
+
+cheers,
+Holger

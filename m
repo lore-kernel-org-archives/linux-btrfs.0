@@ -1,79 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:63118 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750855AbeBWIYN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Feb 2018 03:24:13 -0500
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 5B254AC0109
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Feb 2018 17:24:10 +0900 (JST)
-Subject: Re: [PATCH v2 06/27] libbtrfsutil: add btrfs_util_create_subvolume()
-To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
-CC: <kernel-team@fb.com>
+Received: from mx2.suse.de ([195.135.220.15]:43780 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753582AbeBWUbB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Feb 2018 15:31:01 -0500
+Date: Fri, 23 Feb 2018 21:28:42 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 00/27] btrfs-progs: introduce libbtrfsutil,
+ "btrfs-progs as a library"
+Message-ID: <20180223202841.GL1469@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1518720598.git.osandov@fb.com>
- <afd80fc716f0242909ca573abdf0ba3ae432b6e4.1518720598.git.osandov@fb.com>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <3bbfd6e3-d89e-add3-3391-74802cbcdf6a@jp.fujitsu.com>
-Date: Fri, 23 Feb 2018 17:24:04 +0900
+ <20180220185048.GR10193@twin.jikos.cz>
+ <20180221151338.GF1469@twin.jikos.cz>
+ <20180221185032.GA879@vader>
 MIME-Version: 1.0
-In-Reply-To: <afd80fc716f0242909ca573abdf0ba3ae432b6e4.1518720598.git.osandov@fb.com>
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180221185032.GA879@vader>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/02/16 4:04, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
+On Wed, Feb 21, 2018 at 10:50:32AM -0800, Omar Sandoval wrote:
+> On Wed, Feb 21, 2018 at 04:13:38PM +0100, David Sterba wrote:
+> > On Tue, Feb 20, 2018 at 07:50:48PM +0100, David Sterba wrote:
+> > > I have more comments or maybe questions about the future development
+> > > workflow, but at this point the patchset is in a good shape for
+> > > incremental merge.
+> > 
+> > After removnig the first patch adding subvolume.c (with
+> > linux/btrfs_tree.h) and what depends on it, I'm left with:
+> > 
+> > Omar Sandoval (4):
+> >       Add libbtrfsutil
+> >       libbtrfsutil: add Python bindings
+> >       libbtrfsutil: add qgroup inheritance helpers
+> >       libbtrfsutil: add filesystem sync helpers
+> > 
+> > with some context updates. That builds and passes the CI tests.
+> 
+> Great. Does the CI system run the Python tests yet?
 
-> +static enum btrfs_util_error openat_parent_and_name(int dirfd, const char *path,
-> +						    char *name, size_t name_len,
-> +						    int *fd)
-> +{
-> +	char *tmp_path, *slash, *dirname, *basename;
-> +	size_t len;
-> +
-> +	/* Ignore trailing slashes. */
-> +	len = strlen(path);
-> +	while (len > 1 && path[len - 1] == '/')
-> +		len--;
-> +
-> +	tmp_path = malloc(len + 1);
-> +	if (!tmp_path)
-> +		return BTRFS_UTIL_ERROR_NO_MEMORY;
-> +	memcpy(tmp_path, path, len);
-> +	tmp_path[len] = '\0';
-> +
-> +	slash = memrchr(tmp_path, '/', len);
-> +	if (slash == tmp_path) {
-> +		dirname = "/";
-> +		basename = tmp_path + 1;
-> +	} else if (slash) {
-> +		*slash = '\0';
-> +		dirname = tmp_path;
-> +		basename = slash + 1;
-> +	} else {
-> +		dirname = ".";
-> +		basename = tmp_path;
-> +	}
-> +
-> +	len = strlen(basename);
-> +	if (len >= name_len) {
-> +		errno = ENAMETOOLONG;
-
-tmp_path should be also freed here.
-
-> +		return BTRFS_UTIL_ERROR_INVALID_ARGUMENT;
-> +	}
-> +	memcpy(name, basename, len);
-> +	name[len] = '\0';
-> +
-> +	*fd = openat(dirfd, dirname, O_RDONLY | O_DIRECTORY);
-> +	if (*fd == -1) {
-> +		free(tmp_path);
-> +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
-> +	}
-> +
-> +	free(tmp_path);
-> +	return BTRFS_UTIL_OK;
-> +}
+Tested here https://travis-ci.org/kdave/btrfs-progs/jobs/345410536 ,
+does not pass.
 
 
+test_start_sync (test_filesystem.TestSubvolume) ... mkfs.btrfs: invalid option -- 'q'
+usage: mkfs.btrfs [options] dev [ dev ... ]
+
+
+Looks like it tries to use the system mkfs.btrfs that is old.

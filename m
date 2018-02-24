@@ -1,68 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36714 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753238AbeB0PGr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Feb 2018 10:06:47 -0500
-Date: Tue, 27 Feb 2018 16:04:28 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 00/27] btrfs-progs: introduce libbtrfsutil,
- "btrfs-progs as a library"
-Message-ID: <20180227150428.GA27791@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1518720598.git.osandov@fb.com>
- <20180220185048.GR10193@twin.jikos.cz>
- <20180221151338.GF1469@twin.jikos.cz>
- <20180221185032.GA879@vader>
- <20180223202841.GL1469@twin.jikos.cz>
- <20180226233641.GA15264@vader.DHCP.thefacebook.com>
+Received: from smtp.domeneshop.no ([194.63.252.55]:51532 "EHLO
+        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751873AbeBXCFv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Feb 2018 21:05:51 -0500
+Received: from 68.79-160-168.customer.lyse.net ([79.160.168.68]:35530 helo=[10.0.0.10])
+        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        (Exim 4.84_2)
+        (envelope-from <waxhead@dirtcellar.net>)
+        id 1epPDh-0005Py-FJ
+        for linux-btrfs@vger.kernel.org; Sat, 24 Feb 2018 03:05:49 +0100
+To: linux-btrfs@vger.kernel.org
+Reply-To: waxhead@dirtcellar.net
+From: waxhead <waxhead@dirtcellar.net>
+Subject: Please update the BTRFS status page
+Message-ID: <7c9bd8e9-ab8c-7860-ffe3-d948e6b43c60@dirtcellar.net>
+Date: Sat, 24 Feb 2018 03:05:48 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180226233641.GA15264@vader.DHCP.thefacebook.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 26, 2018 at 03:36:41PM -0800, Omar Sandoval wrote:
-> On Fri, Feb 23, 2018 at 09:28:42PM +0100, David Sterba wrote:
-> > On Wed, Feb 21, 2018 at 10:50:32AM -0800, Omar Sandoval wrote:
-> > > On Wed, Feb 21, 2018 at 04:13:38PM +0100, David Sterba wrote:
-> > > > On Tue, Feb 20, 2018 at 07:50:48PM +0100, David Sterba wrote:
-> > > > > I have more comments or maybe questions about the future development
-> > > > > workflow, but at this point the patchset is in a good shape for
-> > > > > incremental merge.
-> > > > 
-> > > > After removnig the first patch adding subvolume.c (with
-> > > > linux/btrfs_tree.h) and what depends on it, I'm left with:
-> > > > 
-> > > > Omar Sandoval (4):
-> > > >       Add libbtrfsutil
-> > > >       libbtrfsutil: add Python bindings
-> > > >       libbtrfsutil: add qgroup inheritance helpers
-> > > >       libbtrfsutil: add filesystem sync helpers
-> > > > 
-> > > > with some context updates. That builds and passes the CI tests.
-> > > 
-> > > Great. Does the CI system run the Python tests yet?
-> > 
-> > Tested here https://travis-ci.org/kdave/btrfs-progs/jobs/345410536 ,
-> > does not pass.
-> > 
-> > 
-> > test_start_sync (test_filesystem.TestSubvolume) ... mkfs.btrfs: invalid option -- 'q'
-> > usage: mkfs.btrfs [options] dev [ dev ... ]
-> > 
-> > 
-> > Looks like it tries to use the system mkfs.btrfs that is old.
-> 
-> Hm... according the documentation for the existing tests, the person
-> running the tests is expected to set PATH to contain the local binaries,
-
-No, where is this written? The closest hit is in the 'Exported
-testsuite' but otherwise all paths must be "$TOP/mkfs.btrfs". The
-testsuite will detect where it is running and will set the TOP variable
-accordingly, but this is transparent to the tests.
-
-The python tests should probably build on the same exec path magic.
-
-> otherwise it'll use the system ones. Does the CI system not do that?
+The latest released kernel is 4.15

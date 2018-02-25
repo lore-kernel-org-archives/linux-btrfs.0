@@ -1,105 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f54.google.com ([209.85.214.54]:38038 "EHLO
-        mail-it0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751568AbeBXQn1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Feb 2018 11:43:27 -0500
-Received: by mail-it0-f54.google.com with SMTP id j7so5209377ita.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Feb 2018 08:43:27 -0800 (PST)
+Received: from mout.gmx.net ([212.227.15.19]:58127 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751508AbeBYBg5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 24 Feb 2018 20:36:57 -0500
+Subject: Re: BTRFS RESTORE issue
+To: =?UTF-8?B?TWFyacOhbiBNbMSNb2No?= <marian@prima.pis.sk>,
+        linux-btrfs@vger.kernel.org
+References: <E9DC5E3A12524BBAA0B7D3BDE7FB87F2@pc7ssd>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <a7984d0a-15e0-a087-1616-1eb21f5ab60e@gmx.com>
+Date: Sun, 25 Feb 2018 09:36:49 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAG+QAKVwAFQFh8Gc9DvZ2jOKXVYqa3QnmUCxNH=t6NAMYM8J2Q@mail.gmail.com>
-References: <CAG+QAKVwAFQFh8Gc9DvZ2jOKXVYqa3QnmUCxNH=t6NAMYM8J2Q@mail.gmail.com>
-From: Rich Rauenzahn <rrauenza@gmail.com>
-Date: Sat, 24 Feb 2018 08:43:26 -0800
-Message-ID: <CAG+QAKXwnhVEYXfuqXRscgToxsjN58AK4o+4bfnVh4tu16PMmQ@mail.gmail.com>
-Subject: Re: fs was hung
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <E9DC5E3A12524BBAA0B7D3BDE7FB87F2@pc7ssd>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="fZfSREvervayubO4mOLaTCFgcdlSlTQzG"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Huh.  If I do an strace of a dd of the drive once, it works for a
-while, ^C and start again and the strace hangs on a read() syscall!
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--fZfSREvervayubO4mOLaTCFgcdlSlTQzG
+Content-Type: multipart/mixed; boundary="OgoP9wYWJffhKPZM48NKrKvnT0m2vtSO7";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: =?UTF-8?B?TWFyacOhbiBNbMSNb2No?= <marian@prima.pis.sk>,
+ linux-btrfs@vger.kernel.org
+Message-ID: <a7984d0a-15e0-a087-1616-1eb21f5ab60e@gmx.com>
+Subject: Re: BTRFS RESTORE issue
+References: <E9DC5E3A12524BBAA0B7D3BDE7FB87F2@pc7ssd>
+In-Reply-To: <E9DC5E3A12524BBAA0B7D3BDE7FB87F2@pc7ssd>
 
-So... seems like a hardware problem that coincided with the drive
-filling up.  Or something!
+--OgoP9wYWJffhKPZM48NKrKvnT0m2vtSO7
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-This will be my first btrfs raid1 replacement, so I'm hoping its
-straightforward! :) :)
 
-On Wed, Feb 21, 2018 at 8:50 PM, Rich Rauenzahn <rrauenza@gmail.com> wrote:
-> I have a mount point that became ... hung for lack of a better word.
->
-> I was doing a LARGE sort of a file in it, using temporary files in that
-> directory, and the
-> system hung and probably the watchdog kicked in, reset the system.
->
-> Upon reboot, the filesystem hung if you touched it.  Processes were
-> unkillable if they were using it.
->
-> Kernel logs showed nothing ... nothing in dmesg.
->
-> $ btrfs filesystem df /.MEDIA/
-> Data, RAID1: total=1.51TiB, used=1.51TiB
-> System, RAID1: total=32.00MiB, used=304.00KiB
-> Metadata, RAID1: total=4.00GiB, used=2.17GiB
-> GlobalReserve, single: total=512.00MiB, used=2.23MiB
->
-> .....is it out of space?  Data might be?  It's 2 x 2TB drives in RAID1,
-> and I don't think I'm quite up to that above.   I'm using a single
-> partition:
->
-> Disk /dev/sde: 3907029168 sectors, 1.8 TiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): 5214ED9D-769A-4DF8-886F-8EEC3FDD4D0D
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 3907029134
-> Partitions will be aligned on 8-sector boundaries
-> Total free space is 6 sectors (3.0 KiB)
->
-> Number  Start (sector)    End (sector)  Size       Code  Name
->    1              40      3907029134   1.8 TiB     8300  BTRFS MEDIA
->
-> I'm not using any advanced features like snapshots or subvolumes here.
->
-> I did try a btrfs balance, but it seemed to suffer the same hanging fate...
->
-> btfs check was fine:
->
-> $ sudo btrfs check /dev/sde1
-> Checking filesystem on /dev/sde1
-> UUID: 6a69975b-20f9-408f-9120-c457d23d0e55
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 1661050089472 bytes used err is 0
-> total csum bytes: 1612603964
-> total tree bytes: 2325479424
-> total fs tree bytes: 280821760
-> total extent tree bytes: 182353920
-> btree space waste bytes: 317572754
-> file data blocks allocated: 2495485378560
->  referenced 1674323156992
->
-> $ sudo btrfs fi show /dev/sde1
-> Label: 'MEDIA'  uuid: 6a69975b-20f9-408f-9120-c457d23d0e55
->         Total devices 2 FS bytes used 1.51TiB
->         devid    1 size 1.82TiB used 1.51TiB path /dev/sde1
->         devid    2 size 1.82TiB used 1.51TiB path /dev/sdd1
->
-> $ sudo mount -oro /.MEDIA
->
-> worked...
->
-> $ sudo mount -orw,remount /.MEDIA
->
-> worked ...
->
-> I removed the temporary files, and it seem to be ok now.
->
-> But why did it hang when I still had free space on the drive...
->
-> Rich
->
+
+On 2018=E5=B9=B402=E6=9C=8824=E6=97=A5 19:13, Mari=C3=A1n Ml=C4=8Doch wro=
+te:
+> Hello,
+> i requst IRC , but nobody helps.
+> My primary question is , how mark restored files with ignored errors.
+>=20
+> btrfs restore =E2=80=93iv /vol /restorage
+>=20
+> this command restores files like charm but no marker for ok and bad
+> files (bad crc , bad ...). WHY?
+> This file system isnt newbie , i mean this is urgent feature.
+
+=46rom btrfs-restore(8):
+
+btrfs-restore - try to restore files from a *damaged* btrfs filesystem im=
+age
+
+Unless your filesystem is really damaged, you shouldn't use btrfs-restore=
+=2E
+It's used to *salvage* data, no wonder it will bypass all checksum checki=
+ng.
+
+If you want checksum and your fs can stand normal RO mount, go RO mount,
+and do normal cp, you will get csum error in kernel message if there is a=
+ny.
+
+>=20
+> I restore terabytes miloins files , how after this check bad files ???
+>=20
+> Please send me info around this , and add this feature ifnt exist.
+>=20
+> I see one way use dump restore filter but how?
+>=20
+> btrfs restore =E2=80=93ivD /vol /restorage | grep ??? for bad files
+>=20
+> Second question is when files is restored with switch =E2=80=93iv , exi=
+st way to
+> update metadata in next restore without overwrite?
+
+What did you mean update metadata?
+
+Thanks,
+Qu
+
+> This is for restore
+> next urgent feature.
+>=20
+> Thanks for info Marian.
+> --=20
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at=C2=A0 http://vger.kernel.org/majordomo-info.html=
+
+
+
+--OgoP9wYWJffhKPZM48NKrKvnT0m2vtSO7--
+
+--fZfSREvervayubO4mOLaTCFgcdlSlTQzG
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqSEzIXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg/owgAkUKz627MnNevELhdiPLG4UNN
+gyc0YiS9bbv1CNvuPzwRCvzKRYSIK2zJOXa6dBhA8SZxV1XeO8HZY20Tf4XAPgJR
+KIurNXBMobSD7pI+OKIu6FxAFxC60NP7wD64033vZoj/d140ZyVX1U0cJQa7CtkH
+3IzsJ+PKj2owkJ+Y9/04bgCBxymLv7AX+rzxV8JfmlewHITnKq7m6l8FsnQyqiYT
+ypMLeDHc1yIThz1+D4aNMISYkmjwx5jX+1gVVrzfgvFQkJFneLVmmY6vZyk0Wp2v
+Y0m3lGx9yyHIrBeQTNtkrkiAGzKdx6ntjpo8JOMRiTF3/1VZjj8qoPmZf7LlKg==
+=+SQU
+-----END PGP SIGNATURE-----
+
+--fZfSREvervayubO4mOLaTCFgcdlSlTQzG--

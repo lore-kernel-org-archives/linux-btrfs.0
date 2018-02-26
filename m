@@ -1,108 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f170.google.com ([209.85.161.170]:45744 "EHLO
-        mail-yw0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752714AbeBZNvE (ORCPT
+Received: from mail-lf0-f43.google.com ([209.85.215.43]:37154 "EHLO
+        mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751521AbeBZWyW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Feb 2018 08:51:04 -0500
+        Mon, 26 Feb 2018 17:54:22 -0500
+Received: by mail-lf0-f43.google.com with SMTP id y19so24687710lfd.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 14:54:22 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <4b9de5cb-1366-a95c-118c-7b57042bf32e@suse.com>
-References: <1519141810.8586.4.camel@venev.name> <2ce8eab1-8951-a1c7-d4fa-5f4f3201923d@suse.com>
- <1519646493.12248.7.camel@venev.name> <4b9de5cb-1366-a95c-118c-7b57042bf32e@suse.com>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Mon, 26 Feb 2018 15:51:03 +0200
-Message-ID: <CAOQ4uxgnsXy7vOeVFzE0+x7amjzR20XMm-D_rT8hWfFPvz0pxQ@mail.gmail.com>
-Subject: Re: btrfs_clone_files and bind mounts
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: Hristo Venev <hristo@venev.name>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        Christoph Hellwig <hch@lst.de>
+From: "Emil.s" <emil@sandnabba.se>
+Date: Mon, 26 Feb 2018 23:54:00 +0100
+Message-ID: <CAEA9r7BC+ozxzK_Gp50LNobgFOXfi9CoUdGLPbFjMCAW+ujVDQ@mail.gmail.com>
+Subject: incremental send/receive ERROR: cannot find parent subvolume
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 26, 2018 at 3:01 PM, Nikolay Borisov <nborisov@suse.com> wrote:
-> [CCing Amir since he touched precisely the code responsible for this
-> semantics]
+Hello,
 
-[CCing fsdevel and NFS list since there is already a long standing attempt
- to relax the copy_file_range() API for cross server copy]
+I'm trying to restore a subvolume from a backup, but I'm failing when
+I try to setup the replication chain again.
 
->
-> On 26.02.2018 14:01, Hristo Venev wrote:
->> On Tue, 2018-02-20 at 18:41 +0200, Nikolay Borisov wrote:
->>>
->>> On 20.02.2018 17:50, Hristo Venev wrote:
->>>> What is the problem with cloning files between different
->>>> (vfs)mounts of
->>>> the same filesystem?
->>>>
->>>
->>> The "problem" is not really a problem, but rather a well-imposed
->>> restriction:
->>>
->>> From  http://man7.org/linux/man-pages/man2/ioctl_ficlonerange.2.html
->>>
->>> "Both files must reside within the same filesystem."
->>>
->>> And as a matter of fact this is enforced in the generic
->>> vfs_clone_file_range. Of course if we were to do this across
->>> filesystem
->>> then we'd have all the problems associated with not being able to
->>> ensure
->>> atomicity of operations.
->>
->> My question was about doing this within the same filesystem. In my case
->> (and I think it's relatively common), subvolumes of the same filesystem
->> are mounted separately, and I can't think of a good reason why
->> FICLONERANGE can't be made to work (it works if the subvolumes are
->> accessed within the same mount point).
->>
->
-> So Amir,
->
-> In 913b86e92e1f ("vfs: allow vfs_clone_file_range() across mount
-> points") you did relax the requirements of vfs_clone_file_range by
-> moving the mount point check into ioctl_file_clone.
+Previously I had disk A and B, where I was sending snapshots from A to
+B using "send -c /disk_a/1 /disk_a/2 | receive /disk_b" and so on.
+Now disk A failed, so I got a new disk: C.
 
-[...]
->
->
-> Shouldn't reflinking be allowed in this case? ftrace shows that we are
-> failing "if (src_file.file->f_path.mnt != dst_file->f_path.mnt)" in
-> ioctl_file_clone
->
->
-> In your commit you state:
->
-> FICLONE/FICLONERANGE ioctls enforce that src and dest files are on
->  the same mount.
->
-> Whereas the man page says they should be on the same filesystem (not
-> necessarily on the same mount?)
+First I sent the last backup from B to C by running "send disk_b/2 |
+receive /disk_c/".
 
-See, all I did was avoid the flames involved with changing application
-behavior, because I had no reason to change it.
-Not that the man page is what matters, its what applications expect that
-matter, but the man page also says this open for interpretation phrase:
-EXDEV  dest_fd and src_fd are not on the same *mounted* filesystem.
+Then my plan was to use disk B as the new main disk, so on disk B, I
+created a new snapshot by running "snapshot -r disk_b/2
+disk_b/my_volume".
+Now I want to send "disk_b/my_volume" to disk C, so that I can set
+disk_b/2 to RW and start using it again, but the last send fails with
+"ERROR: cannot find parent subvolume".
 
-NFS folks have been trying to change the behavior of copy_file_range()
-for over two years now, we little success as far as I can tell:
-https://marc.info/?l=linux-fsdevel&m=149971144627690&w=2
+Disk B:
+root@tillberga: /backup #> btrfs subvol sh snapshots/user_data_2018-02-17/
+snapshots/user_data_2018-02-17
+Name: user_data_2018-02-17
+UUID: 93433261-d954-9f4b-8319-d450ae079a9a
+Parent UUID: 51180286-c202-c94c-b8f9-2ecc8d2b5b7c
+Received UUID: 014fc004-ae04-0148-9525-1bf556fd4d10
+Flags: readonly
+Snapshot(s):
+user_data_test
 
-Semi-interesting point - it looks like this commit has changed behavior
-of clone file range on CIFS:
-04b38d601239 vfs: pull btrfs clone API to vfs layer
+Disk C:
+root@hedemora: /btrfs #> btrfs subvol sh user_data_2018-02-17/
+user_data_2018-02-17
+Name: user_data_2018-02-17
+UUID: 35361429-a42c-594b-b390-51ffb9725324
+Parent UUID: -
+Received UUID: 93433261-d954-9f4b-8319-d450ae079a9a
+Flags: readonly
+Snapshot(s):
 
-I don't see that CIFS has the "same mount" restriction before the
-generalized VFS API, but btrfs had the restriction in-place and it still exists
-in the btrfs implementation btrfs_clone_files().
+Disk B has UUID 93433261-d954-9f4b-8319-d450ae079a9a, and disk C has
+"Received UUID: 93433261-d954-9f4b-8319-d450ae079a9a". I think that's
+alright?
 
-So I think you will have no way around this other than proposing a new
-ioctl FICLONERANGE2 with flags argument to opt-in for the new required
-behavior. I you do that please CC linux-api and expect the flames.
+The new snapshot on disk B looks as following:
+root@tillberga: /backup #> btrfs subvol sh user_data_test
+user_data_test
+Name: user_data_test
+UUID: bf88000c-e3a6-434b-8f69-f5ce2174227e
+Parent UUID: 93433261-d954-9f4b-8319-d450ae079a9a
+Received UUID: 014fc004-ae04-0148-9525-1bf556fd4d10
+Flags: readonly
+Snapshot(s):
 
-Thanks,
-Amir.
+But when I'm trying to send it, I'm getting the following:
+root@tillberga: /backup #> btrfs send -v -c
+snapshots/user_data_2018-02-17 user_data_test | ssh user@hedemora
+"sudo btrfs receive -v /btrfs/"
+At subvol user_data_test
+BTRFS_IOC_SEND returned 0
+joining genl thread
+receiving snapshot user_data_test
+uuid=014fc004-ae04-0148-9525-1bf556fd4d10, ctransid=52373
+parent_uuid=014fc004-ae04-0148-9525-1bf556fd4d10,
+parent_ctransid=52373
+At snapshot user_data_test
+ERROR: cannot find parent subvolume
+
+Note that the receiver says
+"parent_uuid=014fc004-ae04-0148-9525-1bf556fd4d10". Not really sure
+where that comes from, but disk B has the same, so maybe that's the
+UUID of the original snapshot on disk A?
+
+Is it possible to continue to send incremental snapshots between these
+two file systems, or must I do a full sync?

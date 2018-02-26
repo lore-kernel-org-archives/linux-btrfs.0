@@ -1,186 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2120.oracle.com ([156.151.31.85]:53470 "EHLO
+Received: from userp2120.oracle.com ([156.151.31.85]:42840 "EHLO
         userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751959AbeBZEBQ (ORCPT
+        with ESMTP id S1752676AbeBZIZW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Feb 2018 23:01:16 -0500
+        Mon, 26 Feb 2018 03:25:22 -0500
 Subject: Re: Help with leaf parent key incorrect
 To: Paul Jones <paul@pauljones.id.au>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <MEXPR01MB03427A142FC749C4C2126A0A9EC20@MEXPR01MB0342.ausprd01.prod.outlook.com>
+ <d870155a-0523-d453-b302-ca5addeda67e@oracle.com>
+ <ME1PR01MB0338086CF4FF5F185BA52C029EC10@ME1PR01MB0338.ausprd01.prod.outlook.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <d870155a-0523-d453-b302-ca5addeda67e@oracle.com>
-Date: Mon, 26 Feb 2018 12:02:39 +0800
+Message-ID: <2fd186fe-34b3-c2dd-ad36-a043368104eb@oracle.com>
+Date: Mon, 26 Feb 2018 16:26:43 +0800
 MIME-Version: 1.0
-In-Reply-To: <MEXPR01MB03427A142FC749C4C2126A0A9EC20@MEXPR01MB0342.ausprd01.prod.outlook.com>
+In-Reply-To: <ME1PR01MB0338086CF4FF5F185BA52C029EC10@ME1PR01MB0338.ausprd01.prod.outlook.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 02/25/2018 06:16 PM, Paul Jones wrote:
-> Hi all,
-> 
-> I was running dedupe on my filesystem and something went wrong overnight, by the time I noticed the fs was readonly.
+ > There is one io error in the log below,
 
-  Thanks for the report. I have few questions..
-   Kind of raid profile used here?
-   Dedupe tool that was used?
-   Was the fs full before dedupe?
-   Were there any IO errors?
+Apparently, that's not a real EIO. We need to fix it.
+But can't be the root cause we are looking for here.
+
+----
+ > Feb 24 22:41:59 home kernel: BTRFS: error (device dm-6) in 
+btrfs_run_delayed_refs:3076: errno=-5 IO failure
+ > Feb 24 22:41:59 home kernel: BTRFS info (device dm-6): forced readonly
+
+static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+                                  struct btrfs_fs_info *fs_info,
+                                  struct btrfs_delayed_ref_head *head,
+                                  struct btrfs_delayed_extent_op *extent_op)
+{
+::
+
+                 } else {
+                         err = -EIO;
+                         goto out;
+                 }
+----
+
+ > but other than that I have never had io errors before, or any other 
+troubles.
+
+  Hm. btrfs dev stat shows real disk IO errors.
+  As this FS isn't mountable .. pls try
+   btrfs dev stat <dev> > file
+   search for 'device stats', there will be one for each disk.
+  Or it reports in the syslog when it happens not necessarily
+  during dedupe.
+
+ > One of my other filesystems share the same two discs and it is still 
+fine, so I think the hardware is probably ok.
+  Right. I guess that too. A confirmation will be better.
+ > I've copied the beginning of the errors below.
+
+
+  At my end finding the root cause of 'parent transid verify failed'
+  during/after dedupe is is kind of fading as disk seems to be had
+  no issues. which I had in mind.
+
+  Also, there wasn't abrupt power-recycle here? I presume.
+
+  It's better to save the output disk1-log and disk2-log as below
+  before further efforts to recovery. Just in case if something
+  pops out.
+
+   btrfs in dump-super -fa disk1 > disk1-log
+   btrfs in dump-tree --degraded disk1 >> disk1-log [1]
+
+   btrfs in dump-super -fa disk2 > disk2-log
+   btrfs in dump-tree --degraded disk2 >> disk2-log [1]
+
+  [1]
+   --degraded option is in the ML.
+   [PATCH] btrfs-progs: dump-tree: add degraded option
 
 Thanks, Anand
-
-> When trying to check it this is what I get:
-> vm-server ~ # btrfs check /dev/mapper/a-backup--a
-> parent transid verify failed on 2371034071040 wanted 62977 found 62893
-> parent transid verify failed on 2371034071040 wanted 62977 found 62893
-> parent transid verify failed on 2371034071040 wanted 62977 found 62893
-> parent transid verify failed on 2371034071040 wanted 62977 found 62893
-> Ignoring transid failure
-> leaf parent key incorrect 2371034071040
-> ERROR: cannot open file system
-> 
-> Is there a way to fix this? I'm using kernel 4.15.5
-> 
-> This is the last part of dmesg
-> 
-> [  +0.000002] BTRFS error (device dm-6): parent transid verify failed on 2374016368640 wanted 63210 found 63208
-> [  +0.000004] BTRFS error (device dm-6): parent transid verify failed on 2374016368640 wanted 63210 found 63208
-> [  +1.107963] BTRFS error (device dm-6): parent transid verify failed on 2374016368640 wanted 63210 found 63208
-> [  +0.000005] BTRFS error (device dm-6): parent transid verify failed on 2374016368640 wanted 63210 found 63208
-> [  +1.473598] BTRFS error (device dm-6): parent transid verify failed on 2373996298240 wanted 63210 found 63208
-> [  +0.000004] BTRFS error (device dm-6): parent transid verify failed on 2373996298240 wanted 63210 found 63208
-> [  +0.001927] BTRFS error (device dm-6): parent transid verify failed on 2373996298240 wanted 63210 found 63208
-> [  +0.000003] BTRFS error (device dm-6): parent transid verify failed on 2373996298240 wanted 63210 found 63208
-> [  +0.000060] BTRFS error (device dm-6): parent transid verify failed on 2373996298240 wanted 63210 found 63208
-> [  +0.000001] BTRFS error (device dm-6): parent transid verify failed on 2373996298240 wanted 63210 found 63208
-> [  +2.676048] verify_parent_transid: 10362 callbacks suppressed
-> [  +0.000002] BTRFS error (device dm-6): parent transid verify failed on 2373991677952 wanted 63210 found 63208
-> [  +0.000003] BTRFS error (device dm-6): parent transid verify failed on 2373991677952 wanted 63210 found 63208
-> [  +0.078432] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.000004] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.000043] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.000001] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.058638] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.000004] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.139174] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [  +0.000004] BTRFS error (device dm-6): parent transid verify failed on 2373996232704 wanted 63210 found 63208
-> [Feb25 20:48] BTRFS info (device dm-6): using free space tree
-> [  +0.000002] BTRFS error (device dm-6): Remounting read-write after error is not allowed
-> [Feb25 20:49] BTRFS error (device dm-6): cleaner transaction attach returned -30
-> [  +0.238718] BTRFS warning (device dm-6): page private not zero on page 1596642967552
-> [  +0.000003] BTRFS warning (device dm-6): page private not zero on page 1596642971648
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596642975744
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596642979840
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643672064
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643676160
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643680256
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643684352
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643704832
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643708928
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643713024
-> [  +0.000002] BTRFS warning (device dm-6): page private not zero on page 1596643717120
-> [  +0.000028] BTRFS warning (device dm-6): page private not zero on page 2363051098112
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2363051102208
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2363051106304
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2363051110400
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2368056344576
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2368056348672
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2368056352768
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2368056356864
-> [  +0.000007] BTRFS warning (device dm-6): page private not zero on page 2368124452864
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2368124456960
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2368124461056
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2368124465152
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2370526740480
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2370526744576
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2370526748672
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2370526752768
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2370531917824
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2370531921920
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2370531926016
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2370531930112
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371211624448
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371211628544
-> [  +0.000005] BTRFS warning (device dm-6): page private not zero on page 2371211632640
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371211636736
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371521855488
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371521859584
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2371521863680
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371521867776
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371522543616
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371522547712
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371522551808
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2371522555904
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371735420928
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371735425024
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371735429120
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2371735433216
-> [  +0.000007] BTRFS warning (device dm-6): page private not zero on page 2371835379712
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371835383808
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371835387904
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2371835392000
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2372929699840
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2372929703936
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2372929708032
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2372929712128
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373108727808
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373108731904
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2373108736000
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373108740096
-> [  +0.000004] BTRFS warning (device dm-6): page private not zero on page 2373987221504
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373987225600
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373987229696
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373987233792
-> [  +0.000008] BTRFS warning (device dm-6): page private not zero on page 2373987696640
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373987700736
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373987704832
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2373987708928
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373989564416
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373989568512
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373989572608
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373989576704
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2373990318080
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373990322176
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373990326272
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373990330368
-> [  +0.000004] BTRFS warning (device dm-6): page private not zero on page 2373991677952
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373991682048
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373991686144
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373991690240
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996134400
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2373996138496
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996142592
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996146688
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996232704
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996236800
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2373996240896
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996244992
-> [  +0.000005] BTRFS warning (device dm-6): page private not zero on page 2373996298240
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996302336
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996306432
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2373996310528
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2374002032640
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2374002036736
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2374002040832
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2374002044928
-> [  +0.000000] BTRFS warning (device dm-6): page private not zero on page 2374016368640
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2374016372736
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2374016376832
-> [  +0.000001] BTRFS warning (device dm-6): page private not zero on page 2374016380928
-> [  +3.303065] BTRFS info (device dm-6): enabling ssd optimizations
-> [  +0.000003] BTRFS info (device dm-6): use zstd compression, level 0
-> [  +0.000002] BTRFS info (device dm-6): using free space tree
-> [  +0.000000] BTRFS info (device dm-6): has skinny extents
-> [  +0.623207] verify_parent_transid: 28 callbacks suppressed
-> [  +0.000002] BTRFS error (device dm-6): parent transid verify failed on 2371034071040 wanted 62977 found 62893
-> [  +0.007895] BTRFS error (device dm-6): parent transid verify failed on 2371034071040 wanted 62977 found 62893
-> [  +0.000003] BTRFS error (device dm-6): failed to read block groups: -5
-> [  +0.037630] BTRFS error (device dm-6): open_ctree failed
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

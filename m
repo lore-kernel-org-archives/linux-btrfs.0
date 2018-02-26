@@ -1,173 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39537 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932538AbeBULls (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Feb 2018 06:41:48 -0500
-From: Nikolay Borisov <nborisov@suse.com>
+Received: from aserp2120.oracle.com ([141.146.126.78]:41210 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751962AbeBZIqs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Feb 2018 03:46:48 -0500
+Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
+        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1Q8gmPV098261
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:48 GMT
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+        by aserp2120.oracle.com with ESMTP id 2gcdvyg9x0-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:48 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w1Q8kla1029229
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:47 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w1Q8klpC003515
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 08:46:47 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: bo.li.liu@oracle.com, josef@toxicpanda.com,
-        Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Fix locking during DIO read
-Date: Wed, 21 Feb 2018 13:41:43 +0200
-Message-Id: <1519213303-2802-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH] btrfs: drop nonvaring variable, instead define it
+Date: Mon, 26 Feb 2018 16:48:14 +0800
+Message-Id: <20180226084814.7229-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently the DIO read cases uses a botched idea from ext4 to ensure
-that DIO reads don't race with truncate. The idea is that if we have a
-pending truncate we set BTRFS_INODE_READDIO_NEED_LOCK which in turn
-forces the dio read case to fallback to inode_locking to prevent
-read/truncate races. Unfortunately this is subtly broken for at least
-2 reasons:
+btrfs_defrag_leaves() has min_trans = 0 which doesn't vary.
+Defining it makes sense.
 
-1. inode_dio_begin in btrfs_direct_IO is called outside of inode_lock
-(for the read case). This means that there is no ordering guarantee
-between the invocation of inode_dio_wait and the increment of
-i_dio_count in btrfs_direct_IO in the tread case.
-
-2. The memory barriers used in btrfs_inode_(block|resume)_unlocked_dio
-are not really paired with the reader side - the test_bit in
-btrfs_direct_IO, since the latter is missing a memory barrier. Furthermore,
-the actual sleeping condition that needs ordering to prevent live-locks/
-missed wakeups is the modification/read of i_dio_count. So in this case
-the waker(T2) needs to make the condition false _BEFORE_ doing a test.
-
-The interraction between the two threads roughly looks like:
-
-T1(truncate):		                         T2(btrfs_direct_IO):
-set_bit(BTRFS_INODE_READDIO_NEED_LOCK)             if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK))
-if (atomic_read())                                  if (atomic_dec_and_test(&inode->i_dio_count)
-  schedule()			                        wake_up_bit
-clear_bit(BTRFS_INODE_READDIO_NEED_LOCK)
-
-Without the ordering between the test_bit in T2 and setting the bit in
-T1 (due to a missing pairing barrier in T2) it's possible that T1 goes
-to sleep in schedule and T2 misses the bit set, resulting in missing the
-wake up.
-
-In any case all of this is VERY subtle. So fix it by simply making
-the DIO READ case take inode_lock_shared. This ensure that we can have
-DIO reads in parallel at the same time we are protected against
-concurrent modification of the target file. This way we closely mimic
-what ext4 codes does and simplify this mess.
-
-Multiple xfstest runs didn't show any regressions.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/btrfs_inode.h | 17 -----------------
- fs/btrfs/inode.c       | 34 ++++++++++++++++++++--------------
- 2 files changed, 20 insertions(+), 31 deletions(-)
+ fs/btrfs/ctree.h       | 2 ++
+ fs/btrfs/tree-defrag.c | 5 ++---
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index f527e99c9f8d..3519e49d4ef0 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -329,23 +329,6 @@ struct btrfs_dio_private {
- 			blk_status_t);
- };
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index cb6c1ecb3cb0..295c6cf85d0f 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -66,6 +66,8 @@ struct btrfs_ordered_sum;
  
--/*
-- * Disable DIO read nolock optimization, so new dio readers will be forced
-- * to grab i_mutex. It is used to avoid the endless truncate due to
-- * nonlocked dio read.
-- */
--static inline void btrfs_inode_block_unlocked_dio(struct btrfs_inode *inode)
--{
--	set_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
--	smp_mb();
--}
--
--static inline void btrfs_inode_resume_unlocked_dio(struct btrfs_inode *inode)
--{
--	smp_mb__before_atomic();
--	clear_bit(BTRFS_INODE_READDIO_NEED_LOCK, &inode->runtime_flags);
--}
--
- static inline void btrfs_print_data_csum_error(struct btrfs_inode *inode,
- 		u64 logical_start, u32 csum, u32 csum_expected, int mirror_num)
- {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 491a7397f6fa..9c43257e6e11 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5149,10 +5149,13 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
- 		/* we don't support swapfiles, so vmtruncate shouldn't fail */
- 		truncate_setsize(inode, newsize);
+ #define BTRFS_MAX_LEVEL 8
  
--		/* Disable nonlocked read DIO to avoid the end less truncate */
--		btrfs_inode_block_unlocked_dio(BTRFS_I(inode));
-+		/*
-+		 * Truncate after all in-flight dios are finished, new ones
-+		 * will block on inode_lock. This only matters for AIO requests
-+		 * since DIO READ is performed under inode_shared_lock and
-+		 * write under exclusive lock.
-+		 */
- 		inode_dio_wait(inode);
--		btrfs_inode_resume_unlocked_dio(BTRFS_I(inode));
- 
- 		ret = btrfs_truncate(inode);
- 		if (ret && inode->i_nlink) {
-@@ -8669,15 +8672,12 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 	loff_t offset = iocb->ki_pos;
- 	size_t count = 0;
- 	int flags = 0;
--	bool wakeup = true;
- 	bool relock = false;
- 	ssize_t ret;
- 
- 	if (check_direct_IO(fs_info, iter, offset))
- 		return 0;
- 
--	inode_dio_begin(inode);
--
- 	/*
- 	 * The generic stuff only does filemap_write_and_wait_range, which
- 	 * isn't enough if we've written compressed pages to this area, so
-@@ -8691,6 +8691,9 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 					 offset + count - 1);
- 
- 	if (iov_iter_rw(iter) == WRITE) {
++#define BTRFS_OLDEST_GENERATION	0ULL
 +
-+		inode_dio_begin(inode);
-+
+ #define BTRFS_COMPAT_EXTENT_TREE_V0
+ 
+ /*
+diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
+index cb65089127cc..c09dbe4bd6e7 100644
+--- a/fs/btrfs/tree-defrag.c
++++ b/fs/btrfs/tree-defrag.c
+@@ -39,7 +39,6 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ 	int level;
+ 	int next_key_ret = 0;
+ 	u64 last_ret = 0;
+-	u64 min_trans = 0;
+ 
+ 	if (root->fs_info->extent_root == root) {
  		/*
- 		 * If the write DIO is beyond the EOF, we need update
- 		 * the isize, but it is protected by i_mutex. So we can
-@@ -8720,11 +8723,13 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 		dio_data.unsubmitted_oe_range_end = (u64)offset;
- 		current->journal_info = &dio_data;
- 		down_read(&BTRFS_I(inode)->dio_sem);
--	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
--				     &BTRFS_I(inode)->runtime_flags)) {
--		inode_dio_end(inode);
--		flags = DIO_LOCKING | DIO_SKIP_HOLES;
--		wakeup = false;
-+	} else {
-+		/*
-+		 * In DIO READ case locking the inode in shared mode ensures
-+		 * we are protected against parallel writes/truncates
-+		 */
-+		inode_lock_shared(inode);
-+		inode_dio_begin(inode);
- 	}
+@@ -81,7 +80,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
  
- 	ret = __blockdev_direct_IO(iocb, inode,
-@@ -8755,10 +8760,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
- 			btrfs_delalloc_release_space(inode, data_reserved,
- 					offset, count - (size_t)ret);
- 		btrfs_delalloc_release_extents(BTRFS_I(inode), count);
--	}
-+	} else
-+		inode_unlock_shared(inode);
- out:
--	if (wakeup)
--		inode_dio_end(inode);
-+	inode_dio_end(inode);
-+
- 	if (relock)
- 		inode_lock(inode);
+ 	path->keep_locks = 1;
  
+-	ret = btrfs_search_forward(root, &key, path, min_trans);
++	ret = btrfs_search_forward(root, &key, path, BTRFS_OLDEST_GENERATION);
+ 	if (ret < 0)
+ 		goto out;
+ 	if (ret > 0) {
+@@ -130,7 +129,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ 	 */
+ 	path->slots[1] = btrfs_header_nritems(path->nodes[1]);
+ 	next_key_ret = btrfs_find_next_key(root, path, &key, 1,
+-					   min_trans);
++					   BTRFS_OLDEST_GENERATION);
+ 	if (next_key_ret == 0) {
+ 		memcpy(&root->defrag_progress, &key, sizeof(key));
+ 		ret = -EAGAIN;
 -- 
-2.7.4
+2.15.0
 

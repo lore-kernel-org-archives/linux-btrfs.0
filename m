@@ -1,62 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f176.google.com ([74.125.82.176]:34646 "EHLO
-        mail-ot0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752107AbeB0NJx (ORCPT
+Received: from mail-it0-f65.google.com ([209.85.214.65]:55584 "EHLO
+        mail-it0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932117AbeB0NzA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Feb 2018 08:09:53 -0500
-Received: by mail-ot0-f176.google.com with SMTP id n74so3707113ota.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Feb 2018 05:09:52 -0800 (PST)
+        Tue, 27 Feb 2018 08:55:00 -0500
+Received: by mail-it0-f65.google.com with SMTP id n7so15134885ita.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Feb 2018 05:55:00 -0800 (PST)
+Subject: Re: btrfs space used issue
+To: vinayak hegde <vinayakhegdev@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <9d98d11a-0c30-56eb-efa9-889237592b4b@gmail.com>
+Date: Tue, 27 Feb 2018 08:54:55 -0500
 MIME-Version: 1.0
-From: vinayak hegde <vinayakhegdev@gmail.com>
-Date: Tue, 27 Feb 2018 18:39:51 +0530
-Message-ID: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
-Subject: btrfs space used issue
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am using btrfs, But I am seeing du -sh and df -h showing huge size
-difference on ssd.
+On 2018-02-27 08:09, vinayak hegde wrote:
+> I am using btrfs, But I am seeing du -sh and df -h showing huge size
+> difference on ssd.
+> 
+> mount:
+> /dev/drbd1 on /dc/fileunifier.datacache type btrfs
+> (rw,noatime,nodiratime,flushoncommit,discard,nospace_cache,recovery,commit=5,subvolid=5,subvol=/)
+> 
+> 
+> du -sh /dc/fileunifier.datacache/ -  331G
+> 
+> df -h
+> /dev/drbd1      746G  346G  398G  47% /dc/fileunifier.datacache
+> 
+> btrfs fi usage /dc/fileunifier.datacache/
+> Overall:
+>      Device size:         745.19GiB
+>      Device allocated:         368.06GiB
+>      Device unallocated:         377.13GiB
+>      Device missing:             0.00B
+>      Used:             346.73GiB
+>      Free (estimated):         396.36GiB    (min: 207.80GiB)
+>      Data ratio:                  1.00
+>      Metadata ratio:              2.00
+>      Global reserve:         176.00MiB    (used: 0.00B)
+> 
+> Data,single: Size:365.00GiB, Used:345.76GiB
+>     /dev/drbd1     365.00GiB
+> 
+> Metadata,DUP: Size:1.50GiB, Used:493.23MiB
+>     /dev/drbd1       3.00GiB
+> 
+> System,DUP: Size:32.00MiB, Used:80.00KiB
+>     /dev/drbd1      64.00MiB
+> 
+> Unallocated:
+>     /dev/drbd1     377.13GiB
+> 
+> 
+> Even if we consider 6G metadata its 331+6 = 337.
+> where is 9GB used?
+> 
+> Please explain.
+First, you're counting the metadata wrong.  The value shown per-device 
+by `btrfs filesystem usage` already accounts for replication (so it's 
+only 3 GB of metadata allocated, not 6 GB).  Neither `df` nor `du` looks 
+at the chunk level allocations though.
 
-mount:
-/dev/drbd1 on /dc/fileunifier.datacache type btrfs
-(rw,noatime,nodiratime,flushoncommit,discard,nospace_cache,recovery,commit=5,subvolid=5,subvol=/)
+Now, with that out of the way, the discrepancy almost certainly comes 
+form differences in how `df` and `du` calculate space usage.  In 
+particular, `df` calls statvfs and looks at the f_blocks and f_bfree 
+values to compute space usage, while `du` walks the filesystem tree 
+calling stat on everything and looking at st_blksize and st_blocks (or 
+instead at st_size if you pass in `--apparent-size` as an option).  This 
+leads to a couple of differences in what they will count:
 
+1. `du` may or may not properly count hardlinks, sparse files, and 
+transparently compressed data, dependent on whether or not you use 
+`--apparent-sizes` (by default, it does properly count all of those), 
+while `df` will always account for those properly.
+2. `du` does not properly account for reflinked blocks (from 
+deduplication, snapshots, or use of the CLONE ioctl), and will count 
+each reflink of every block as part of the total size, while `df` will 
+always count each block exactly once no matter how many reflinks it has.
+3. `du` does not account for all of the BTRFS metadata allocations, 
+functionally ignoring space allocated for anything but inline data, 
+while `df` accounts for all BTRFS metadata properly.
+4. `du` will recurse into other filesystems if you don't pass the `-x` 
+option to it, while `df` will only report for each filesystem separately.
+5. `du` will only count data usage under the given mount point, and 
+won't account for data on other subvolumes that may be mounted elsewhere 
+(and if you pass in `-x` won't count data on other subvolumes located 
+under the given path either), while `df` will count all the data in all 
+subvolumes.
+6. There are a couple of other differences too, but they're rather 
+complex and dependent on the internals of BTRFS.
 
-du -sh /dc/fileunifier.datacache/ -  331G
+In your case, I think the issue is probably one of the various things 
+under item 6.  Items 1, 2 and 4 will cause `du` to report more space 
+usage than `df`, item 3 is irrelevant because `du` shows less space than 
+the total data chunk usage reported by `btrfs filesystem usage`, and 
+item 5 is irrelevant because you're mounting the root subvolume and not 
+using the `-x` option on `du` (and therefore there can't be other 
+subvolumes you're missing).
 
-df -h
-/dev/drbd1      746G  346G  398G  47% /dc/fileunifier.datacache
-
-btrfs fi usage /dc/fileunifier.datacache/
-Overall:
-    Device size:         745.19GiB
-    Device allocated:         368.06GiB
-    Device unallocated:         377.13GiB
-    Device missing:             0.00B
-    Used:             346.73GiB
-    Free (estimated):         396.36GiB    (min: 207.80GiB)
-    Data ratio:                  1.00
-    Metadata ratio:              2.00
-    Global reserve:         176.00MiB    (used: 0.00B)
-
-Data,single: Size:365.00GiB, Used:345.76GiB
-   /dev/drbd1     365.00GiB
-
-Metadata,DUP: Size:1.50GiB, Used:493.23MiB
-   /dev/drbd1       3.00GiB
-
-System,DUP: Size:32.00MiB, Used:80.00KiB
-   /dev/drbd1      64.00MiB
-
-Unallocated:
-   /dev/drbd1     377.13GiB
-
-
-Even if we consider 6G metadata its 331+6 = 337.
-where is 9GB used?
-
-Please explain.
-
-Vinayak
+Try running a full defrag of the given mount point.  If what I think is 
+causing this is in fact the issue, that should bring the numbers back 
+in-line with each other.

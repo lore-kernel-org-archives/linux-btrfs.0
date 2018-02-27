@@ -1,144 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from syrinx.knorrie.org ([82.94.188.77]:52884 "EHLO
-        syrinx.knorrie.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751079AbeBZXU3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Feb 2018 18:20:29 -0500
-Subject: Re: incremental send/receive ERROR: cannot find parent subvolume
-To: "Emil.s" <emil@sandnabba.se>, linux-btrfs@vger.kernel.org
-References: <CAEA9r7BC+ozxzK_Gp50LNobgFOXfi9CoUdGLPbFjMCAW+ujVDQ@mail.gmail.com>
-From: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Message-ID: <cdc11036-72ff-7f6a-77d7-17db81547a98@mendix.com>
-Date: Tue, 27 Feb 2018 00:20:26 +0100
+Received: from mail-me1aus01on0072.outbound.protection.outlook.com ([104.47.116.72]:6958
+        "EHLO AUS01-ME1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751767AbeB0F1O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Feb 2018 00:27:14 -0500
+From: Paul Jones <paul@pauljones.id.au>
+To: Anand Jain <anand.jain@oracle.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: RE: Help with leaf parent key incorrect
+Date: Tue, 27 Feb 2018 05:27:10 +0000
+Message-ID: <ME1PR01MB0338D3920E8640FA64F4329C9EC00@ME1PR01MB0338.ausprd01.prod.outlook.com>
+References: <MEXPR01MB03427A142FC749C4C2126A0A9EC20@MEXPR01MB0342.ausprd01.prod.outlook.com>
+ <d870155a-0523-d453-b302-ca5addeda67e@oracle.com>
+ <ME1PR01MB0338086CF4FF5F185BA52C029EC10@ME1PR01MB0338.ausprd01.prod.outlook.com>
+ <2fd186fe-34b3-c2dd-ad36-a043368104eb@oracle.com>
+In-Reply-To: <2fd186fe-34b3-c2dd-ad36-a043368104eb@oracle.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <CAEA9r7BC+ozxzK_Gp50LNobgFOXfi9CoUdGLPbFjMCAW+ujVDQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/26/2018 11:54 PM, Emil.s wrote:
-> Hello,
+> -----Original Message-----
+> From: Anand Jain [mailto:anand.jain@oracle.com]
+> Sent: Monday, 26 February 2018 7:27 PM
+> To: Paul Jones <paul@pauljones.id.au>; linux-btrfs@vger.kernel.org
+> Subject: Re: Help with leaf parent key incorrect
 > 
-> I'm trying to restore a subvolume from a backup, but I'm failing when
-> I try to setup the replication chain again.
 > 
-> Previously I had disk A and B, where I was sending snapshots from A to
-> B using "send -c /disk_a/1 /disk_a/2 | receive /disk_b" and so on.
-> Now disk A failed, so I got a new disk: C.
 > 
-> First I sent the last backup from B to C by running "send disk_b/2 |
-> receive /disk_c/".
-
-I can't read all of it right now, my time is a bit limited, but I have a
-quick suggestion to at least make the original goal work, I think.
-
-The list of snapshots that were on your A was organized differently than
-the list with the same numbers 1, 2, 3 on B.
-
-On A, you always snapshot the main r/w subvolume.
-
-A
-\_ A1
-\_ A2
-\_ A3
-
-On B, every time you receive based on a previous one, it snapshots the
-previous one and then puts changes on top:
-
-B1 (received from A1)
-\_ B2 (snap from B1, with changes from A1->A2)
-   \_ B3 (snap from B2, with changes from A2->A3)
-      \_ etc...
-
-If A is gone, and you have new empty C:
-
-> Then my plan was to use disk B as the new main disk, so on disk B, I
-> created a new snapshot by running "snapshot -r disk_b/2
-> disk_b/my_volume".
-> Now I want to send "disk_b/my_volume" to disk C, so that I can set
-> disk_b/2 to RW and start using it again, but the last send fails with
-> "ERROR: cannot find parent subvolume".
-
-Do it like this:
-
--# btrfs snap B2 my_volume (so no -r)
-
-now my_volume is a writable clone of B2
-
--# btrfs snap -r my_volume my_volume1
-
-now you start a new line of snapshots where my_volume has the same role
-as A before.
-
-my_volume
-\_ my_volume1
-\_ my_volume2
-\_ my_volume3
-
-Now you can send my_volume3 -p my_volume2 etc...
-
-Then you discard all old Bx whenever you want.
-
-In the following, disk_b/2 and your other example names are suddenly
-replaced by real names, which makes it a bit hard to follow quickly.
-
-> Disk B:
-> root@tillberga: /backup #> btrfs subvol sh snapshots/user_data_2018-02-17/
-> snapshots/user_data_2018-02-17
-> Name: user_data_2018-02-17
-> UUID: 93433261-d954-9f4b-8319-d450ae079a9a
-> Parent UUID: 51180286-c202-c94c-b8f9-2ecc8d2b5b7c
-> Received UUID: 014fc004-ae04-0148-9525-1bf556fd4d10
-> Flags: readonly
-> Snapshot(s):
-> user_data_test
+>  > There is one io error in the log below,
 > 
-> Disk C:
-> root@hedemora: /btrfs #> btrfs subvol sh user_data_2018-02-17/
-> user_data_2018-02-17
-> Name: user_data_2018-02-17
-> UUID: 35361429-a42c-594b-b390-51ffb9725324
-> Parent UUID: -
-> Received UUID: 93433261-d954-9f4b-8319-d450ae079a9a
-> Flags: readonly
-> Snapshot(s):
+> Apparently, that's not a real EIO. We need to fix it.
+> But can't be the root cause we are looking for here.
 > 
-> Disk B has UUID 93433261-d954-9f4b-8319-d450ae079a9a, and disk C has
-> "Received UUID: 93433261-d954-9f4b-8319-d450ae079a9a". I think that's
-> alright?
+> ----
+>  > Feb 24 22:41:59 home kernel: BTRFS: error (device dm-6) in
+> btrfs_run_delayed_refs:3076: errno=-5 IO failure  > Feb 24 22:41:59 home
+> kernel: BTRFS info (device dm-6): forced readonly
 > 
-> The new snapshot on disk B looks as following:
-> root@tillberga: /backup #> btrfs subvol sh user_data_test
-> user_data_test
-> Name: user_data_test
-> UUID: bf88000c-e3a6-434b-8f69-f5ce2174227e
-> Parent UUID: 93433261-d954-9f4b-8319-d450ae079a9a
-> Received UUID: 014fc004-ae04-0148-9525-1bf556fd4d10
-> Flags: readonly
-> Snapshot(s):
+> static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
+>                                   struct btrfs_fs_info *fs_info,
+>                                   struct btrfs_delayed_ref_head *head,
+>                                   struct btrfs_delayed_extent_op *extent_op) {
+> ::
 > 
-> But when I'm trying to send it, I'm getting the following:
-> root@tillberga: /backup #> btrfs send -v -c
-> snapshots/user_data_2018-02-17 user_data_test | ssh user@hedemora
-> "sudo btrfs receive -v /btrfs/"
-> At subvol user_data_test
-> BTRFS_IOC_SEND returned 0
-> joining genl thread
-> receiving snapshot user_data_test
-> uuid=014fc004-ae04-0148-9525-1bf556fd4d10, ctransid=52373
-> parent_uuid=014fc004-ae04-0148-9525-1bf556fd4d10,
-> parent_ctransid=52373
-> At snapshot user_data_test
-> ERROR: cannot find parent subvolume
+>                  } else {
+>                          err = -EIO;
+>                          goto out;
+>                  }
+> ----
 > 
-> Note that the receiver says
-> "parent_uuid=014fc004-ae04-0148-9525-1bf556fd4d10". Not really sure
-> where that comes from, but disk B has the same, so maybe that's the
-> UUID of the original snapshot on disk A?
+>  > but other than that I have never had io errors before, or any other
+> troubles.
 > 
-> Is it possible to continue to send incremental snapshots between these
-> two file systems, or must I do a full sync?
+>   Hm. btrfs dev stat shows real disk IO errors.
+>   As this FS isn't mountable .. pls try
+>    btrfs dev stat <dev> > file
+>    search for 'device stats', there will be one for each disk.
+>   Or it reports in the syslog when it happens not necessarily
+>   during dedupe.
 
+vm-server ~ # btrfs dev stat /media/storage/
+[/dev/mapper/b-storage--b].write_io_errs    0
+[/dev/mapper/b-storage--b].read_io_errs     0
+[/dev/mapper/b-storage--b].flush_io_errs    0
+[/dev/mapper/b-storage--b].corruption_errs  0
+[/dev/mapper/b-storage--b].generation_errs  0
+[/dev/mapper/a-storage--a].write_io_errs    0
+[/dev/mapper/a-storage--a].read_io_errs     0
+[/dev/mapper/a-storage--a].flush_io_errs    0
+[/dev/mapper/a-storage--a].corruption_errs  0
+[/dev/mapper/a-storage--a].generation_errs  0
+vm-server ~ # btrfs dev stat /
+[/dev/sdb1].write_io_errs    0
+[/dev/sdb1].read_io_errs     0
+[/dev/sdb1].flush_io_errs    0
+[/dev/sdb1].corruption_errs  0
+[/dev/sdb1].generation_errs  0
+[/dev/sda1].write_io_errs    0
+[/dev/sda1].read_io_errs     0
+[/dev/sda1].flush_io_errs    0
+[/dev/sda1].corruption_errs  0
+[/dev/sda1].generation_errs  0
+vm-server ~ # btrfs dev stat /dev/mapper/a-backup--a
+ERROR: '/dev/mapper/a-backup--a' is not a mounted btrfs device
 
--- 
-Hans van Kranenburg
+I check syslog regularly and I haven't seen any errors on any drives for over a year.
+
+> 
+>  > One of my other filesystems share the same two discs and it is still fine, so I
+> think the hardware is probably ok.
+>   Right. I guess that too. A confirmation will be better.
+>  > I've copied the beginning of the errors below.
+> 
+> 
+>   At my end finding the root cause of 'parent transid verify failed'
+>   during/after dedupe is is kind of fading as disk seems to be had
+>   no issues. which I had in mind.
+> 
+>   Also, there wasn't abrupt power-recycle here? I presume.
+
+No, although now that I think about it I just realised it happened right after I upgraded from 4.15.4 to 4.15.5 and I didn't quit bees before rebooting, I let the system do it. Not sure if it's relevant or not.
+I also just noticed that the kernel has spawned hundreds of kworkers - the highest number I can see is 516.
+
+> 
+>   It's better to save the output disk1-log and disk2-log as below
+>   before further efforts to recovery. Just in case if something
+>   pops out.
+> 
+>    btrfs in dump-super -fa disk1 > disk1-log
+>    btrfs in dump-tree --degraded disk1 >> disk1-log [1]
+
+I applied the patch and started dumping the tree, but I stopped it after about 10 mins and 9GB.
+Because I use zstd and free space tree the recovery tools wouldn't do anything in RW mode, so I've decided to just blow it away and restore from a backup.
+I made a block level copy of both discs in case I need anything.
+
+Thanks for your help anyway.
+
+Regards,
+Paul.
+ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

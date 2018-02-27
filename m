@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:51532 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751873AbeBXCFv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Feb 2018 21:05:51 -0500
-Received: from 68.79-160-168.customer.lyse.net ([79.160.168.68]:35530 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.2:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.84_2)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1epPDh-0005Py-FJ
-        for linux-btrfs@vger.kernel.org; Sat, 24 Feb 2018 03:05:49 +0100
-To: linux-btrfs@vger.kernel.org
-Reply-To: waxhead@dirtcellar.net
-From: waxhead <waxhead@dirtcellar.net>
-Subject: Please update the BTRFS status page
-Message-ID: <7c9bd8e9-ab8c-7860-ffe3-d948e6b43c60@dirtcellar.net>
-Date: Sat, 24 Feb 2018 03:05:48 +0100
+Received: from mx2.suse.de ([195.135.220.15]:49091 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750746AbeB0RZE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Feb 2018 12:25:04 -0500
+Date: Tue, 27 Feb 2018 18:22:45 +0100
+From: David Sterba <dsterba@suse.cz>
+To: waxhead <waxhead@dirtcellar.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Please update the BTRFS status page
+Message-ID: <20180227172245.GD27791@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <7c9bd8e9-ab8c-7860-ffe3-d948e6b43c60@dirtcellar.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <7c9bd8e9-ab8c-7860-ffe3-d948e6b43c60@dirtcellar.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The latest released kernel is 4.15
+On Sat, Feb 24, 2018 at 03:05:48AM +0100, waxhead wrote:
+> The latest released kernel is 4.15
+
+Updated. There's one pending ack for the degraded mount that's still
+mostly-ok but IMHO it's been fixed in 4.14 so it'll be OK.

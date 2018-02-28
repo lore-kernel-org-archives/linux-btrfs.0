@@ -1,66 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:38112 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1752048AbeBZCqj (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:33005 "EHLO
+        mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750789AbeB1E2X (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 25 Feb 2018 21:46:39 -0500
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w1Q2kamX077291
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 02:46:37 GMT
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-        by aserp2130.oracle.com with ESMTP id 2gc950g2a1-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 02:46:35 +0000
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w1Q2jccS027980
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 02:45:38 GMT
-Received: from abhmp0006.oracle.com (abhmp0006.oracle.com [141.146.116.12])
-        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w1Q2jb3k002066
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Feb 2018 02:45:37 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3] btrfs: verify max_inline mount parameter
-Date: Mon, 26 Feb 2018 10:47:04 +0800
-Message-Id: <20180226024704.15567-1-anand.jain@oracle.com>
-In-Reply-To: <20180215164338.GC10193@twin.jikos.cz>
-References: <20180215164338.GC10193@twin.jikos.cz>
+        Tue, 27 Feb 2018 23:28:23 -0500
+Received: by mail-lf0-f52.google.com with SMTP id o145so1542007lff.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Feb 2018 20:28:22 -0800 (PST)
+Subject: Re: incremental send/receive ERROR: cannot find parent subvolume
+To: "Emil.s" <emil@sandnabba.se>, linux-btrfs@vger.kernel.org
+References: <CAEA9r7BC+ozxzK_Gp50LNobgFOXfi9CoUdGLPbFjMCAW+ujVDQ@mail.gmail.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <852aefb3-30b9-133e-17e7-90b60c65a821@gmail.com>
+Date: Wed, 28 Feb 2018 07:28:20 +0300
+MIME-Version: 1.0
+In-Reply-To: <CAEA9r7BC+ozxzK_Gp50LNobgFOXfi9CoUdGLPbFjMCAW+ujVDQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We aren't verifying the parameter passed to the max_inline mount option.
-So we won't fail the mount if a junk value is specified, for example,
--o max_inline=abc. This patch checks if input is valid.
+27.02.2018 01:54, Emil.s пишет:
+> Hello,
+> 
+> I'm trying to restore a subvolume from a backup, but I'm failing when
+> I try to setup the replication chain again.
+> 
+> Previously I had disk A and B, where I was sending snapshots from A to
+> B using "send -c /disk_a/1 /disk_a/2 | receive /disk_b" and so on.
+> Now disk A failed, so I got a new disk: C.
+> 
+> First I sent the last backup from B to C by running "send disk_b/2 |
+> receive /disk_c/".
+> 
+> Then my plan was to use disk B as the new main disk, so on disk B, I
+> created a new snapshot by running "snapshot -r disk_b/2
+> disk_b/my_volume".
+> Now I want to send "disk_b/my_volume" to disk C, so that I can set
+> disk_b/2 to RW and start using it again, but the last send fails with
+> "ERROR: cannot find parent subvolume".
+> 
+> Disk B:
+> root@tillberga: /backup #> btrfs subvol sh snapshots/user_data_2018-02-17/
+> snapshots/user_data_2018-02-17
+> Name: user_data_2018-02-17
+> UUID: 93433261-d954-9f4b-8319-d450ae079a9a
+> Parent UUID: 51180286-c202-c94c-b8f9-2ecc8d2b5b7c
+> Received UUID: 014fc004-ae04-0148-9525-1bf556fd4d10
+> Flags: readonly
+> Snapshot(s):
+> user_data_test
+> 
+> Disk C:
+> root@hedemora: /btrfs #> btrfs subvol sh user_data_2018-02-17/
+> user_data_2018-02-17
+> Name: user_data_2018-02-17
+> UUID: 35361429-a42c-594b-b390-51ffb9725324
+> Parent UUID: -
+> Received UUID: 93433261-d954-9f4b-8319-d450ae079a9a
+> Flags: readonly
+> Snapshot(s):
+> 
+> Disk B has UUID 93433261-d954-9f4b-8319-d450ae079a9a, and disk C has
+> "Received UUID: 93433261-d954-9f4b-8319-d450ae079a9a". I think that's
+> alright?
+> 
+> The new snapshot on disk B looks as following:
+> root@tillberga: /backup #> btrfs subvol sh user_data_test
+> user_data_test
+> Name: user_data_test
+> UUID: bf88000c-e3a6-434b-8f69-f5ce2174227e
+> Parent UUID: 93433261-d954-9f4b-8319-d450ae079a9a
+> Received UUID: 014fc004-ae04-0148-9525-1bf556fd4d10
+> Flags: readonly
+> Snapshot(s):
+> 
+> But when I'm trying to send it, I'm getting the following:
+> root@tillberga: /backup #> btrfs send -v -c
+> snapshots/user_data_2018-02-17 user_data_test | ssh user@hedemora
+> "sudo btrfs receive -v /btrfs/"
+> At subvol user_data_test
+> BTRFS_IOC_SEND returned 0
+> joining genl thread
+> receiving snapshot user_data_test
+> uuid=014fc004-ae04-0148-9525-1bf556fd4d10, ctransid=52373
+> parent_uuid=014fc004-ae04-0148-9525-1bf556fd4d10,
+> parent_ctransid=52373
+> At snapshot user_data_test
+> ERROR: cannot find parent subvolume
+> 
+> Note that the receiver says
+> "parent_uuid=014fc004-ae04-0148-9525-1bf556fd4d10". Not really sure
+> where that comes from, but disk B has the same, so maybe that's the
+> UUID of the original snapshot on disk A?
+> 
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v2->v3: Handle parameter with unit, such as 4K. Use memparse() 2nd arg.
-v1->v2: use match_int ret value if error
-        use %u instead of %d for parser
 
- fs/btrfs/super.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+If "Received UUID" is set on a subvolume, "btrfs send" will forward it
+and set on destination unchanged, instead of computing "correct"
+Received UUID. This has been discussed several times.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 77e0537e1db5..76b58da8d56d 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -605,7 +605,14 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 		case Opt_max_inline:
- 			num = match_strdup(&args[0]);
- 			if (num) {
--				info->max_inline = memparse(num, NULL);
-+				char *retptr;
-+
-+				info->max_inline = memparse(num, &retptr);
-+				if (*retptr != '\0') {
-+					ret = -EINVAL;
-+					kfree(num);
-+					goto out;
-+				}
- 				kfree(num);
- 
- 				if (info->max_inline) {
--- 
-2.15.0
+> Is it possible to continue to send incremental snapshots between these
+> two file systems, or must I do a full sync?
 
+You would need to create writable clone on B first and start with this
+clone; new writable clone won't have (misleading) Received UUID and you
+start clean.

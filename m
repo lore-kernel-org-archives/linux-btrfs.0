@@ -1,89 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ua0-f196.google.com ([209.85.217.196]:32823 "EHLO
-        mail-ua0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750773AbeBBLps (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Feb 2018 06:45:48 -0500
-Received: by mail-ua0-f196.google.com with SMTP id p12so13992896uad.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Feb 2018 03:45:47 -0800 (PST)
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:63371 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1752085AbeB1KNc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Feb 2018 05:13:32 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+        by cn.fujitsu.com (Postfix) with ESMTP id A912748AE762
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Feb 2018 18:13:30 +0800 (CST)
+From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 1/3] btrfs-progs: check/lowmem: Fix the incorrect error message of check_extent_data_item
+Date: Wed, 28 Feb 2018 18:13:21 +0800
+Message-ID: <20180228101323.25442-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20171219074454.2874-1-wqu@suse.com>
-References: <20171219074454.2874-1-wqu@suse.com>
-From: Filipe Manana <fdmanana@gmail.com>
-Date: Fri, 2 Feb 2018 11:45:46 +0000
-Message-ID: <CAL3q7H5F36cvDh63PaedAXcarE8EftUj6-QAMqoARh-p2DikHA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: qgroup: Fix root item corruption when multiple
- same source snapshiots are created with quota enabled
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 19, 2017 at 7:44 AM, Qu Wenruo <wqu@suse.com> wrote:
-> When multiple pending snapshots referring the same source subvolume are
-> executed, enabled quota will cause root item corruption, where root
-> items are using old bytenr (no backref in extent tree).
->
-> This can be triggered by fstests btrfs/152.
->
-> The cause is when source subvolume is still dirty, extra commit
-> (simplied transaction commit) of qgroup_account_snapshot() can skip
-> dirty roots not recorded in current transaction, making root item of
-> source subvolume not updated.
->
-> Fix it by forcing recording source subvolume in current transaction
-> before qgroup sub-transaction commit.
->
-> Reported-by: Justin Maggard <jmaggard@netgear.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Instead of the disk_bytenr and disk_num_bytes of the extent_item which the
+file extent references, we should output the objectid and offset of the
+file extent. And the leaf may be shared by the file trees, we should print
+the objectid of the root and the owner of the leaf.
 
-Looks good.
+Fixes: b0d360b541f0 ("btrfs-progs: check: introduce function to check data backref in extent tree")
+Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+---
+V2: Output the objectid of the root and the owner of the leaf.
 
-> ---
->  fs/btrfs/transaction.c | 10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index ddae813c01dd..f645e5de5fa5 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -319,7 +319,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
->         if ((test_bit(BTRFS_ROOT_REF_COWS, &root->state) &&
->             root->last_trans < trans->transid) || force) {
->                 WARN_ON(root == fs_info->extent_root);
-> -               WARN_ON(root->commit_root != root->node);
-> +               WARN_ON(!force && root->commit_root != root->node);
->
->                 /*
->                  * see below for IN_TRANS_SETUP usage rules
-> @@ -1366,6 +1366,14 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
->         if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags))
->                 return 0;
->
-> +       /*
-> +        * Ensure dirty @src will be commited.
-> +        * Or after comming commit_fs_roots() and switch_commit_roots(),
-> +        * any dirty but not recorded root will never be updated again.
-> +        * Causing outdated root item.
-> +        */
-> +       record_root_in_trans(trans, src, 1);
-> +
->         /*
->          * We are going to commit transaction, see btrfs_commit_transaction()
->          * comment for reason locking tree_log_mutex
-> --
-> 2.15.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ check/mode-lowmem.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-
-
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 62bcf3d2e126..f37b1b2c1571 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -2631,9 +2631,9 @@ static int check_extent_data_item(struct btrfs_root *root,
+ 
+ 	if (!(extent_flags & BTRFS_EXTENT_FLAG_DATA)) {
+ 		error(
+-		    "extent[%llu %llu] backref type mismatch, wanted bit: %llx",
+-		    disk_bytenr, disk_num_bytes,
+-		    BTRFS_EXTENT_FLAG_DATA);
++"file extent[%llu %llu] root %llu owner %llu backref type mismatch, wanted bit: %llx",
++			fi_key.objectid, fi_key.offset, root->objectid, owner,
++			BTRFS_EXTENT_FLAG_DATA);
+ 		err |= BACKREF_MISMATCH;
+ 	}
+ 
+@@ -2722,8 +2722,9 @@ out:
+ 		err |= BACKREF_MISSING;
+ 	btrfs_release_path(&path);
+ 	if (err & BACKREF_MISSING) {
+-		error("data extent[%llu %llu] backref lost",
+-		      disk_bytenr, disk_num_bytes);
++		error(
++		"file extent[%llu %llu] root %llu owner %llu backref lost",
++			fi_key.objectid, fi_key.offset, root->objectid, owner);
+ 	}
+ 	return err;
+ }
 -- 
-Filipe David Manana,
+2.16.2
 
-“Whether you think you can, or you think you can't — you're right.”
+
+

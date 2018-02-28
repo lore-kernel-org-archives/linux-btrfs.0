@@ -1,136 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f196.google.com ([209.85.220.196]:44393 "EHLO
-        mail-qk0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932121AbeB1PWL (ORCPT
+Received: from [195.159.176.226] ([195.159.176.226]:48940 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S932367AbeB1TLZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Feb 2018 10:22:11 -0500
-Received: by mail-qk0-f196.google.com with SMTP id v124so3388246qkh.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Feb 2018 07:22:10 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAFmraXjW_J-ezbwcS6YW6=4WThYmZ6-coeFBqtMUgyEdQKCkrw@mail.gmail.com>
-References: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
- <9d98d11a-0c30-56eb-efa9-889237592b4b@gmail.com> <CAFmraXjW_J-ezbwcS6YW6=4WThYmZ6-coeFBqtMUgyEdQKCkrw@mail.gmail.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Date: Wed, 28 Feb 2018 18:22:10 +0300
-Message-ID: <CAA91j0Xqco3jYYnPJS81_xa7b73hzLNA8AN6WXiqHeW5sJzu2w@mail.gmail.com>
+        Wed, 28 Feb 2018 14:11:25 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1er76J-0006zP-KJ
+        for linux-btrfs@vger.kernel.org; Wed, 28 Feb 2018 20:09:15 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs space used issue
-To: vinayak hegde <vinayakhegdev@gmail.com>
-Cc: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Date: Wed, 28 Feb 2018 19:09:08 +0000 (UTC)
+Message-ID: <pan$e116f$e5aa2400$88c9d453$f5589ed1@cox.net>
+References: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 28, 2018 at 9:01 AM, vinayak hegde <vinayakhegdev@gmail.com> wrote:
-> I ran full defragement and balance both, but didnt help.
+vinayak hegde posted on Tue, 27 Feb 2018 18:39:51 +0530 as excerpted:
 
-Showing the same information immediately after full defragment would be helpful.
+> I am using btrfs, But I am seeing du -sh and df -h showing huge size
+> difference on ssd.
+> 
+> mount:
+> /dev/drbd1 on /dc/fileunifier.datacache type btrfs
+> 
+(rw,noatime,nodiratime,flushoncommit,discard,nospace_cache,recovery,commit=5,subvolid=5,subvol=/)
+> 
+> 
+> du -sh /dc/fileunifier.datacache/ -  331G
+> 
+> df -h /dev/drbd1      746G  346G  398G  47% /dc/fileunifier.datacache
+> 
+> btrfs fi usage /dc/fileunifier.datacache/
+> Overall:
+>     Device size:         745.19GiB Device allocated:         368.06GiB
+>     Device unallocated:         377.13GiB Device missing:            
+>     0.00B Used:             346.73GiB Free (estimated):        
+>     396.36GiB    (min: 207.80GiB)
+>     Data ratio:                  1.00 Metadata ratio:              2.00
+>     Global reserve:         176.00MiB    (used: 0.00B)
+> 
+> Data,single: Size:365.00GiB, Used:345.76GiB
+>    /dev/drbd1     365.00GiB
+> 
+> Metadata,DUP: Size:1.50GiB, Used:493.23MiB
+>    /dev/drbd1       3.00GiB
+> 
+> System,DUP: Size:32.00MiB, Used:80.00KiB
+>    /dev/drbd1      64.00MiB
+> 
+> Unallocated:
+>    /dev/drbd1     377.13GiB
+> 
+> 
+> Even if we consider 6G metadata its 331+6 = 337.
+> where is 9GB used?
+> 
+> Please explain.
 
-> My created and accounting usage files are matching the du -sh output.
-> But I am not getting why btrfs internals use so much extra space.
-> My worry is, will get no space error earlier than I expect.
-> Is it expected with btrfs internal that it will use so much extra space?
->
+Taking a somewhat higher level view than Austin's reply, on btrfs, plain 
+df and to a somewhat lessor extent du[1] are at best good /estimations/ 
+of usage, and for df, space remaining.  Due to btrfs' COW/copy-on-write 
+semantics and features such as the various replication/raid schemes, 
+snapshotting, etc, btrfs makes available, that df/du don't really 
+understand as they simply don't have and weren't /designed/ to have that 
+level of filesystem-specific insight, they, particularly df due to its 
+whole-filesystem focus, aren't particularly accurate on btrfs.  Consider 
+their output more a "best estimate given the rough data we have 
+available" sort of report.
 
-Did you try to reboot? Deleted opened file could well cause this effect.
+To get the real filesystem focused picture, use btrfs filesystem usage, 
+or btrfs filesystem show combined with btrfs filesystem df.  That's what 
+you should trust, altho various utilities that check for available space 
+before doing something often use the kernel-call equivalent of (plain) df 
+to ensure they have the required space, so it's worthwhile to keep an eye 
+on it as the filesystem fills, as well.  If it gets too out of sync with 
+btrfs filesystem usage, or if btrfs filesystem usage unallocated drops 
+below say five gigs or data or metadata size vs used shows a spread of 
+multiple gigs (your data shows a spread of ~20 gigs ATM, but with 377 
+gigs still unallocated it's no big deal; it would be a big deal if those 
+were reversed, tho, only 20 gigs unallocated and a spread of 300+ gigs in 
+data size vs used), then corrective action such as a filtered rebalance 
+may be necessary.
 
-> Vinayak
->
->
->
->
-> On Tue, Feb 27, 2018 at 7:24 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2018-02-27 08:09, vinayak hegde wrote:
->>>
->>> I am using btrfs, But I am seeing du -sh and df -h showing huge size
->>> difference on ssd.
->>>
->>> mount:
->>> /dev/drbd1 on /dc/fileunifier.datacache type btrfs
->>>
->>> (rw,noatime,nodiratime,flushoncommit,discard,nospace_cache,recovery,commit=5,subvolid=5,subvol=/)
->>>
->>>
->>> du -sh /dc/fileunifier.datacache/ -  331G
->>>
->>> df -h
->>> /dev/drbd1      746G  346G  398G  47% /dc/fileunifier.datacache
->>>
->>> btrfs fi usage /dc/fileunifier.datacache/
->>> Overall:
->>>      Device size:         745.19GiB
->>>      Device allocated:         368.06GiB
->>>      Device unallocated:         377.13GiB
->>>      Device missing:             0.00B
->>>      Used:             346.73GiB
->>>      Free (estimated):         396.36GiB    (min: 207.80GiB)
->>>      Data ratio:                  1.00
->>>      Metadata ratio:              2.00
->>>      Global reserve:         176.00MiB    (used: 0.00B)
->>>
->>> Data,single: Size:365.00GiB, Used:345.76GiB
->>>     /dev/drbd1     365.00GiB
->>>
->>> Metadata,DUP: Size:1.50GiB, Used:493.23MiB
->>>     /dev/drbd1       3.00GiB
->>>
->>> System,DUP: Size:32.00MiB, Used:80.00KiB
->>>     /dev/drbd1      64.00MiB
->>>
->>> Unallocated:
->>>     /dev/drbd1     377.13GiB
->>>
->>>
->>> Even if we consider 6G metadata its 331+6 = 337.
->>> where is 9GB used?
->>>
->>> Please explain.
->>
->> First, you're counting the metadata wrong.  The value shown per-device by
->> `btrfs filesystem usage` already accounts for replication (so it's only 3 GB
->> of metadata allocated, not 6 GB).  Neither `df` nor `du` looks at the chunk
->> level allocations though.
->>
->> Now, with that out of the way, the discrepancy almost certainly comes form
->> differences in how `df` and `du` calculate space usage.  In particular, `df`
->> calls statvfs and looks at the f_blocks and f_bfree values to compute space
->> usage, while `du` walks the filesystem tree calling stat on everything and
->> looking at st_blksize and st_blocks (or instead at st_size if you pass in
->> `--apparent-size` as an option).  This leads to a couple of differences in
->> what they will count:
->>
->> 1. `du` may or may not properly count hardlinks, sparse files, and
->> transparently compressed data, dependent on whether or not you use
->> `--apparent-sizes` (by default, it does properly count all of those), while
->> `df` will always account for those properly.
->> 2. `du` does not properly account for reflinked blocks (from deduplication,
->> snapshots, or use of the CLONE ioctl), and will count each reflink of every
->> block as part of the total size, while `df` will always count each block
->> exactly once no matter how many reflinks it has.
->> 3. `du` does not account for all of the BTRFS metadata allocations,
->> functionally ignoring space allocated for anything but inline data, while
->> `df` accounts for all BTRFS metadata properly.
->> 4. `du` will recurse into other filesystems if you don't pass the `-x`
->> option to it, while `df` will only report for each filesystem separately.
->> 5. `du` will only count data usage under the given mount point, and won't
->> account for data on other subvolumes that may be mounted elsewhere (and if
->> you pass in `-x` won't count data on other subvolumes located under the
->> given path either), while `df` will count all the data in all subvolumes.
->> 6. There are a couple of other differences too, but they're rather complex
->> and dependent on the internals of BTRFS.
->>
->> In your case, I think the issue is probably one of the various things under
->> item 6.  Items 1, 2 and 4 will cause `du` to report more space usage than
->> `df`, item 3 is irrelevant because `du` shows less space than the total data
->> chunk usage reported by `btrfs filesystem usage`, and item 5 is irrelevant
->> because you're mounting the root subvolume and not using the `-x` option on
->> `du` (and therefore there can't be other subvolumes you're missing).
->>
->> Try running a full defrag of the given mount point.  If what I think is
->> causing this is in fact the issue, that should bring the numbers back
->> in-line with each other.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+There are entries in the FAQ discussing free space issues that you should 
+definitely read if you haven't, altho they obviously address the general 
+case, so if you have more questions about an individual case after having 
+read them, here is a good place to ask. =:^)
+
+Everything having to do with "space" (see both the 1/Important-questions 
+and 4/Common-questions sections) here:
+
+https://btrfs.wiki.kernel.org/index.php/FAQ
+
+Meanwhile, it's worth noting that not entirely intuitively, btrfs' COW 
+implementation can "waste" space on larger files that are mostly, but not 
+entirely, rewritten.  An example is the best way to demonstrate.  
+Consider each x a used block and each - an unused but still referenced 
+block:
+
+Original file, written as a single extent (diagram works best with 
+monospace, not arbitrarily rewrapped):
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+First rewrite of part of it:
+
+xxxxxxxxxxx------xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+           xxxxxx
+
+
+Nth rewrite, where some blocks of the original still remain as originally 
+written:
+
+------------------xxx------------------------------
+           xxx---
+xxxx----xxx
+    xxxx
+                     xxxxxxxxxxxxxxxxxxxxx---xxxxxx
+                                          xxx
+              xxx
+
+
+As you can see, that first really large extent remains fully referenced, 
+altho only three blocks of it remain in actual use.  All those -- won't 
+be returned to free space until those last three blocks get rewritten as 
+well, thus freeing the entire original extent.
+
+I believe this effect is what Austin was referencing when he suggested 
+the defrag, tho defrag won't necessarily /entirely/ clear it up.  One way 
+to be /sure/ it's cleared up would be to rewrite the entire file, 
+deleting the original, either by copying it to a different filesystem and 
+back (with the off-filesystem copy guaranteeing that it can't use reflinks 
+to the existing extents), or by using cp's --reflink=never option.  
+(FWIW, I prefer the former, just to be sure, using temporary copies to a 
+suitably sized tmpfs for speed where possible, tho obviously if the file 
+is larger than your memory size that's not possible.)
+
+Of course where applicable, snapshots and dedup keep reflink-references 
+to the old extents, so they must be adjusted or deleted as well, to 
+properly free that space.
+
+---
+[1] du: Because its purpose is different.  du's primary purpose is 
+telling you in detail what space files take up, per-file and per-
+directory, without particular regard to usage on the filesystem itself.  
+df's focus, by contrast, is on the filesystem as a whole.  So where two 
+files share the same extent due to reflinking, du should and does count 
+that usage for each file, because that's what each file /uses/ even if 
+they both use the same extents.
+
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

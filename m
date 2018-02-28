@@ -1,72 +1,417 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f65.google.com ([209.85.160.65]:35712 "EHLO
-        mail-pl0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751721AbeB0UsQ (ORCPT
+Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:24820 "EHLO
+        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751628AbeB1EMI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Feb 2018 15:48:16 -0500
-Received: by mail-pl0-f65.google.com with SMTP id bb3-v6so114127plb.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Feb 2018 12:48:16 -0800 (PST)
-Date: Tue, 27 Feb 2018 12:48:13 -0800
-From: Omar Sandoval <osandov@osandov.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 00/27] btrfs-progs: introduce libbtrfsutil,
- "btrfs-progs as a library"
-Message-ID: <20180227204813.GB23026@vader.DHCP.thefacebook.com>
+        Tue, 27 Feb 2018 23:12:08 -0500
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 576ACAC017E
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Feb 2018 13:12:05 +0900 (JST)
+Subject: Re: [PATCH v2 14/27] libbtrfsutil: add
+ btrfs_util_deleted_subvolumes()
+To: Omar Sandoval <osandov@osandov.com>
+CC: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
 References: <cover.1518720598.git.osandov@fb.com>
- <20180220185048.GR10193@twin.jikos.cz>
- <20180221151338.GF1469@twin.jikos.cz>
- <20180221185032.GA879@vader>
- <20180223202841.GL1469@twin.jikos.cz>
- <20180226233641.GA15264@vader.DHCP.thefacebook.com>
- <20180227150428.GA27791@twin.jikos.cz>
+ <ac64e7314e3f716898dd8a7ec7c7657f66ee4c4a.1518720598.git.osandov@fb.com>
+ <8901bd06-8ea9-a5f2-6a54-2118367472ed@jp.fujitsu.com>
+ <20180223233327.GH7046@vader.DHCP.thefacebook.com>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <e4d08b0c-7438-32d8-e076-90fc4c4f6c79@jp.fujitsu.com>
+Date: Wed, 28 Feb 2018 13:11:06 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180227150428.GA27791@twin.jikos.cz>
+In-Reply-To: <20180223233327.GH7046@vader.DHCP.thefacebook.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Feb 27, 2018 at 04:04:28PM +0100, David Sterba wrote:
-> On Mon, Feb 26, 2018 at 03:36:41PM -0800, Omar Sandoval wrote:
-> > On Fri, Feb 23, 2018 at 09:28:42PM +0100, David Sterba wrote:
-> > > On Wed, Feb 21, 2018 at 10:50:32AM -0800, Omar Sandoval wrote:
-> > > > On Wed, Feb 21, 2018 at 04:13:38PM +0100, David Sterba wrote:
-> > > > > On Tue, Feb 20, 2018 at 07:50:48PM +0100, David Sterba wrote:
-> > > > > > I have more comments or maybe questions about the future development
-> > > > > > workflow, but at this point the patchset is in a good shape for
-> > > > > > incremental merge.
-> > > > > 
-> > > > > After removnig the first patch adding subvolume.c (with
-> > > > > linux/btrfs_tree.h) and what depends on it, I'm left with:
-> > > > > 
-> > > > > Omar Sandoval (4):
-> > > > >       Add libbtrfsutil
-> > > > >       libbtrfsutil: add Python bindings
-> > > > >       libbtrfsutil: add qgroup inheritance helpers
-> > > > >       libbtrfsutil: add filesystem sync helpers
-> > > > > 
-> > > > > with some context updates. That builds and passes the CI tests.
-> > > > 
-> > > > Great. Does the CI system run the Python tests yet?
-> > > 
-> > > Tested here https://travis-ci.org/kdave/btrfs-progs/jobs/345410536 ,
-> > > does not pass.
-> > > 
-> > > 
-> > > test_start_sync (test_filesystem.TestSubvolume) ... mkfs.btrfs: invalid option -- 'q'
-> > > usage: mkfs.btrfs [options] dev [ dev ... ]
-> > > 
-> > > 
-> > > Looks like it tries to use the system mkfs.btrfs that is old.
-> > 
-> > Hm... according the documentation for the existing tests, the person
-> > running the tests is expected to set PATH to contain the local binaries,
+On 2018/02/24 8:33, Omar Sandoval wrote:
+> On Fri, Feb 23, 2018 at 11:12:56AM +0900, Misono, Tomohiro wrote:
+>>
+>> On 2018/02/16 4:04, Omar Sandoval wrote:
+>>> From: Omar Sandoval <osandov@fb.com>
+>>>
+>>> Signed-off-by: Omar Sandoval <osandov@fb.com>
+>>> ---
+>>>  libbtrfsutil/btrfsutil.h                    | 21 +++++++
+>>>  libbtrfsutil/python/btrfsutilpy.h           |  3 +
+>>>  libbtrfsutil/python/module.c                | 30 ++++++++++
+>>>  libbtrfsutil/python/qgroup.c                | 17 +-----
+>>>  libbtrfsutil/python/subvolume.c             | 30 ++++++++++
+>>>  libbtrfsutil/python/tests/test_subvolume.py |  8 +++
+>>>  libbtrfsutil/subvolume.c                    | 89 +++++++++++++++++++++++++++++
+>>>  7 files changed, 183 insertions(+), 15 deletions(-)
+>>>
+>>> diff --git a/libbtrfsutil/btrfsutil.h b/libbtrfsutil/btrfsutil.h
+>>> index 00c86174..677ab3c1 100644
+>>> --- a/libbtrfsutil/btrfsutil.h
+>>> +++ b/libbtrfsutil/btrfsutil.h
+>>> @@ -534,6 +534,27 @@ enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrfs_util_
+>>>  							      char **path_ret,
+>>>  							      struct btrfs_util_subvolume_info *subvol);
+>>>  
+>>> +/**
+>>> + * btrfs_util_deleted_subvolumes() - Get a list of subvolume which have been
+>>> + * deleted but not yet cleaned up.
+>>> + * @path: Path on a Btrfs filesystem.
+>>> + * @ids: Returned array of subvolume IDs.
+>>> + * @n: Returned number of IDs in the @ids array.
+>>> + *
+>>> + * This requires appropriate privilege (CAP_SYS_ADMIN).
+>>> + *
+>>> + * Return: %BTRFS_UTIL_OK on success, non-zero error code on failure.
+>>> + */
+>>> +enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
+>>> +						    uint64_t **ids,
+>>> +						    size_t *n);
+>>> +
+>>> +/**
+>>> + * btrfs_util_deleted_subvolumes_fd() - See btrfs_util_deleted_subvolumes().
+>>> + */
+>>> +enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd, uint64_t **ids,
+>>> +						       size_t *n);
+>>> +
+>>>  /**
+>>>   * btrfs_util_create_qgroup_inherit() - Create a qgroup inheritance specifier
+>>>   * for btrfs_util_create_subvolume() or btrfs_util_create_snapshot().
+>>> diff --git a/libbtrfsutil/python/btrfsutilpy.h b/libbtrfsutil/python/btrfsutilpy.h
+>>> index b3ec047f..be5122e2 100644
+>>> --- a/libbtrfsutil/python/btrfsutilpy.h
+>>> +++ b/libbtrfsutil/python/btrfsutilpy.h
+>>> @@ -54,6 +54,8 @@ struct path_arg {
+>>>  int path_converter(PyObject *o, void *p);
+>>>  void path_cleanup(struct path_arg *path);
+>>>  
+>>> +PyObject *list_from_uint64_array(const uint64_t *arr, size_t n);
+>>> +
+>>>  void SetFromBtrfsUtilError(enum btrfs_util_error err);
+>>>  void SetFromBtrfsUtilErrorWithPath(enum btrfs_util_error err,
+>>>  				   struct path_arg *path);
+>>> @@ -72,6 +74,7 @@ PyObject *set_default_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+>>>  PyObject *create_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+>>>  PyObject *create_snapshot(PyObject *self, PyObject *args, PyObject *kwds);
+>>>  PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds);
+>>> +PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds);
+>>>  
+>>>  void add_module_constants(PyObject *m);
+>>>  
+>>> diff --git a/libbtrfsutil/python/module.c b/libbtrfsutil/python/module.c
+>>> index e995a1be..eaa062ac 100644
+>>> --- a/libbtrfsutil/python/module.c
+>>> +++ b/libbtrfsutil/python/module.c
+>>> @@ -125,6 +125,29 @@ err:
+>>>  	return 0;
+>>>  }
+>>>  
+>>> +PyObject *list_from_uint64_array(const uint64_t *arr, size_t n)
+>>> +{
+>>> +    PyObject *ret;
+>>> +    size_t i;
+>>> +
+>>> +    ret = PyList_New(n);
+>>> +    if (!ret)
+>>> +	    return NULL;
+>>> +
+>>> +    for (i = 0; i < n; i++) {
+>>> +	    PyObject *tmp;
+>>> +
+>>> +	    tmp = PyLong_FromUnsignedLongLong(arr[i]);
+>>> +	    if (!tmp) {
+>>> +		    Py_DECREF(ret);
+>>> +		    return NULL;
+>>> +	    }
+>>> +	    PyList_SET_ITEM(ret, i, tmp);
+>>> +    }
+>>> +
+>>> +    return ret;
+>>> +}
+>>> +
+>>>  void path_cleanup(struct path_arg *path)
+>>>  {
+>>>  	Py_CLEAR(path->object);
+>>> @@ -214,6 +237,13 @@ static PyMethodDef btrfsutil_methods[] = {
+>>>  	 "path -- string, bytes, or path-like object\n"
+>>>  	 "recursive -- if the given subvolume has child subvolumes, delete\n"
+>>>  	 "them instead of failing"},
+>>> +	{"deleted_subvolumes", (PyCFunction)deleted_subvolumes,
+>>> +	 METH_VARARGS | METH_KEYWORDS,
+>>> +	 "deleted_subvolumes(path)\n\n"
+>>> +	 "Get the list of subvolume IDs which have been deleted but not yet\n"
+>>> +	 "cleaned up\n\n"
+>>> +	 "Arguments:\n"
+>>> +	 "path -- string, bytes, path-like object, or open file descriptor"},
+>>>  	{},
+>>>  };
+>>>  
+>>> diff --git a/libbtrfsutil/python/qgroup.c b/libbtrfsutil/python/qgroup.c
+>>> index 69716d92..44ac5ebc 100644
+>>> --- a/libbtrfsutil/python/qgroup.c
+>>> +++ b/libbtrfsutil/python/qgroup.c
+>>> @@ -55,25 +55,12 @@ static PyObject *QgroupInherit_getattro(QgroupInherit *self, PyObject *nameobj)
+>>>      }
+>>>  
+>>>      if (strcmp(name, "groups") == 0) {
+>>> -	    PyObject *ret, *tmp;
+>>>  	    const uint64_t *arr;
+>>> -	    size_t n, i;
+>>> +	    size_t n;
+>>>  
+>>>  	    btrfs_util_qgroup_inherit_get_groups(self->inherit, &arr, &n);
+>>> -	    ret = PyList_New(n);
+>>> -	    if (!ret)
+>>> -		    return NULL;
+>>> -
+>>> -	    for (i = 0; i < n; i++) {
+>>> -		    tmp = PyLong_FromUnsignedLongLong(arr[i]);
+>>> -		    if (!tmp) {
+>>> -			    Py_DECREF(ret);
+>>> -			    return NULL;
+>>> -		    }
+>>> -		    PyList_SET_ITEM(ret, i, tmp);
+>>> -	    }
+>>>  
+>>> -	    return ret;
+>>> +	    return list_from_uint64_array(arr, n);
+>>>      } else {
+>>>  	    return PyObject_GenericGetAttr((PyObject *)self, nameobj);
+>>>      }
+>>> diff --git a/libbtrfsutil/python/subvolume.c b/libbtrfsutil/python/subvolume.c
+>>> index eb3f6e27..069e606b 100644
+>>> --- a/libbtrfsutil/python/subvolume.c
+>>> +++ b/libbtrfsutil/python/subvolume.c
+>>> @@ -425,6 +425,36 @@ PyObject *delete_subvolume(PyObject *self, PyObject *args, PyObject *kwds)
+>>>  	Py_RETURN_NONE;
+>>>  }
+>>>  
+>>> +PyObject *deleted_subvolumes(PyObject *self, PyObject *args, PyObject *kwds)
+>>> +{
+>>> +	static char *keywords[] = {"path", NULL};
+>>> +	struct path_arg path = {.allow_fd = true};
+>>> +	PyObject *ret;
+>>> +	uint64_t *ids;
+>>> +	size_t n;
+>>> +	enum btrfs_util_error err;
+>>> +
+>>> +	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:deleted_subvolumes",
+>>> +					 keywords, &path_converter, &path))
+>>> +		return NULL;
+>>> +
+>>> +	if (path.path)
+>>> +		err = btrfs_util_deleted_subvolumes(path.path, &ids, &n);
+>>> +	else
+>>> +		err = btrfs_util_deleted_subvolumes_fd(path.fd, &ids, &n);
+>>> +	if (err) {
+>>> +		SetFromBtrfsUtilErrorWithPath(err, &path);
+>>> +		path_cleanup(&path);
+>>> +		return NULL;
+>>> +	}
+>>> +
+>>> +	path_cleanup(&path);
+>>> +
+>>> +	ret = list_from_uint64_array(ids, n);
+>>> +	free(ids);
+>>> +	return ret;
+>>> +}
+>>> +
+>>>  typedef struct {
+>>>  	PyObject_HEAD
+>>>  	struct btrfs_util_subvolume_iterator *iter;
+>>> diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
+>>> index 08083abe..a46d4a34 100644
+>>> --- a/libbtrfsutil/python/tests/test_subvolume.py
+>>> +++ b/libbtrfsutil/python/tests/test_subvolume.py
+>>> @@ -318,6 +318,14 @@ class TestSubvolume(BtrfsTestCase):
+>>>          btrfsutil.delete_subvolume(subvol + '5', recursive=True)
+>>>          self.assertFalse(os.path.exists(subvol + '5'))
+>>>  
+>>> +    def test_deleted_subvolumes(self):
+>>> +        subvol = os.path.join(self.mountpoint, 'subvol')
+>>> +        btrfsutil.create_subvolume(subvol + '1')
+>>> +        btrfsutil.delete_subvolume(subvol + '1')
+>>> +        for arg in self.path_or_fd(self.mountpoint):
+>>> +            with self.subTest(type=type(arg)):
+>>> +                self.assertEqual(btrfsutil.deleted_subvolumes(arg), [256])
+>>> +
+>>>      def test_subvolume_iterator(self):
+>>>          pwd = os.getcwd()
+>>>          try:
+>>> diff --git a/libbtrfsutil/subvolume.c b/libbtrfsutil/subvolume.c
+>>> index 908e71db..4ae581b2 100644
+>>> --- a/libbtrfsutil/subvolume.c
+>>> +++ b/libbtrfsutil/subvolume.c
+>>> @@ -1277,3 +1277,92 @@ PUBLIC enum btrfs_util_error btrfs_util_subvolume_iterator_next_info(struct btrf
+>>>  
+>>>  	return btrfs_util_subvolume_info_fd(iter->fd, id, subvol);
+>>>  }
+>>> +
+>>> +PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes(const char *path,
+>>> +							   uint64_t **ids,
+>>> +							   size_t *n)
+>>> +{
+>>> +	enum btrfs_util_error err;
+>>> +	int fd;
+>>> +
+>>> +	fd = open(path, O_RDONLY);
+>>> +	if (fd == -1)
+>>> +		return BTRFS_UTIL_ERROR_OPEN_FAILED;
+>>> +
+>>> +	err = btrfs_util_deleted_subvolumes_fd(fd, ids, n);
+>>> +	SAVE_ERRNO_AND_CLOSE(fd);
+>>> +	return err;
+>>> +}
+>>> +
+>>> +PUBLIC enum btrfs_util_error btrfs_util_deleted_subvolumes_fd(int fd,
+>>> +							      uint64_t **ids,
+>>> +							      size_t *n)
+>>> +{
+>>> +	size_t capacity = 0;
+>>> +	struct btrfs_ioctl_search_args search = {
+>>> +		.key = {
+>>> +			.tree_id = BTRFS_ROOT_TREE_OBJECTID,
+>>> +			.min_objectid = BTRFS_ORPHAN_OBJECTID,
+>>> +			.max_objectid = BTRFS_ORPHAN_OBJECTID,
+>>> +			.min_type = BTRFS_ORPHAN_ITEM_KEY,
+>>> +			.max_type = BTRFS_ORPHAN_ITEM_KEY,
+>>> +			.min_offset = 0,
+>>> +			.max_offset = UINT64_MAX,
+>>> +			.min_transid = 0,
+>>> +			.max_transid = UINT64_MAX,
+>>> +			.nr_items = 0,
+>>> +		},
+>>> +	};
+>> It seems btrfs_util_deleted_subvolume() does not works perfectly.
+>>
+>> Above search will return all ORPHAN_ITEM but some may be of free space cache inode (correct me if I'm wrong).
+>> Since this is a public function, we should filter those non-subvolume objectid by checking root tree again.
+>> I think this is the reason of failure of misc-test/013 after merging 26th patch.
 > 
-> No, where is this written? The closest hit is in the 'Exported
-> testsuite' but otherwise all paths must be "$TOP/mkfs.btrfs". The
-> testsuite will detect where it is running and will set the TOP variable
-> accordingly, but this is transparent to the tests.
+> So looking at the code that this replaces, I don't see the difference:
 > 
-> The python tests should probably build on the same exec path magic.
+> static int enumerate_dead_subvols(int fd, u64 **ids)
+> {
+> 	int ret;
+> 	struct btrfs_ioctl_search_args args;
+> 	struct btrfs_ioctl_search_key *sk = &args.key;
+> 	int idx = 0;
+> 	int count = 0;
+> 
+> 	memset(&args, 0, sizeof(args));
+> 
+> 	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> 	sk->min_objectid = BTRFS_ORPHAN_OBJECTID;
+> 	sk->max_objectid = BTRFS_ORPHAN_OBJECTID;
+> 	sk->min_type = BTRFS_ORPHAN_ITEM_KEY;
+> 	sk->max_type = BTRFS_ORPHAN_ITEM_KEY;
+> 	sk->min_offset = 0;
+> 	sk->max_offset = (u64)-1;
+> 	sk->min_transid = 0;
+> 	sk->max_transid = (u64)-1;
+> 	sk->nr_items = 4096;
+> 
+> 	*ids = NULL;
+> 	while (1) {
+> 		struct btrfs_ioctl_search_header *sh;
+> 		unsigned long off;
+> 		int i;
+> 
+> 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> 		if (ret < 0)
+> 			return -errno;
+> 
+> 		if (!sk->nr_items)
+> 			return idx;
+> 
+> 		off = 0;
+> 		for (i = 0; i < sk->nr_items; i++) {
+> 			sh = (struct btrfs_ioctl_search_header*)(args.buf + off);
+> 			off += sizeof(*sh);
+> 
+> 			if (btrfs_search_header_type(sh)
+> 			    == BTRFS_ORPHAN_ITEM_KEY) {
+> 				if (idx >= count) {
+> 					u64 *newids;
+> 
+> 					count += SUBVOL_ID_BATCH;
+> 					newids = (u64*)realloc(*ids,
+> 							count * sizeof(u64));
+> 					if (!newids)
+> 						return -ENOMEM;
+> 					*ids = newids;
+> 				}
+> 				(*ids)[idx] = btrfs_search_header_offset(sh);
+> 				idx++;
+> 			}
+> 			off += btrfs_search_header_len(sh);
+> 
+> 			sk->min_objectid = btrfs_search_header_objectid(sh);
+> 			sk->min_type = btrfs_search_header_type(sh);
+> 			sk->min_offset = btrfs_search_header_offset(sh);
+> 		}
+> 		if (sk->min_offset < (u64)-1)
+> 			sk->min_offset++;
+> 		else
+> 			break;
+> 		if (sk->min_type != BTRFS_ORPHAN_ITEM_KEY)
+> 			break;
+> 		if (sk->min_objectid != BTRFS_ORPHAN_OBJECTID)
+> 			break;
+> 	}
+> 
+> 	return idx;
+> }
+> 
+> This function does the same exact search, as far as I can tell. What does the
+> test failure look like? I'll try to reproduce it on my side.
+> 
 
-Oops, I misunderstood from skimming the exported testsuite too quickly.
-I'll update the Python tests to do something similar.
+Hello, sorry for late replay.
+
+Actually this is not a problem for functionality of "sub list -d" or "sub sync",
+because after this function is called we check root tree to see if ROOT_ITEM
+for deleted subvolume still exists or not. If the returned id is not related subvolume,
+there is no ROOT_ITEM at first.
+
+Since your github branch (libbtrfs) is updated to skip BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND as I said
+in 26th patch, there is no test failure anymore.
+
+But if I run misc-test/013 (on 4.16-rc3) with following diff[1] on libbtrfs branch to show
+which objectid returns BTRFS_UTIL_ERROR_SUBVOLUME_NOT_FOUND after btrfs_util_subvolume_info_fd(),
+I can see the garbage id in tests/misc-tests-result.txt:
+===
+[snip]
+
+ ID 291 gen 78 top level 5 path snap34
+ ID 293 gen 78 top level 5 path snap35
+
+[snip]
+ 
+ Subvolume id 291 is gone
+ Subvolume id 293 is gone
+
+[snip]
+
+############### /home/misono/src/btrfs-progs/btrfs subvolum list -d .
+ cleaned: 292  <- there was no subvolume with objectid 292
+
+[snip]
+===
+
+I'm not sure where this number comes from, but isn't it better to filter them?
+
+---
+ cmds-subvolume.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 5fa390ff..b034bb77 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -1112,6 +1112,7 @@ static struct subvol_list *btrfs_list_deleted_subvols(int fd,
+ 			 * The subvolume might have been cleaned up since it was
+ 			 * returned.
+ 			 */
++			printf("cleaned: %ld\n", ids[i]);
+ 			continue;
+ 		} else if (err) {
+ 			error_btrfs_util(err);
+---
+

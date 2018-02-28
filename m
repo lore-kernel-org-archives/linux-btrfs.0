@@ -1,124 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f194.google.com ([74.125.82.194]:40588 "EHLO
-        mail-ot0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751027AbeB1GBt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Feb 2018 01:01:49 -0500
-Received: by mail-ot0-f194.google.com with SMTP id l12so1219623otj.7
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Feb 2018 22:01:49 -0800 (PST)
+Received: from mout.gmx.net ([212.227.17.20]:42325 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751707AbeB1IgW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Feb 2018 03:36:22 -0500
+Subject: Re: Fwd: Re: BUG: unable to handle kernel paging request at
+ ffff9fb75f827100
+To: Christoph Anton Mitterer <calestyo@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <26306A4D-2D8E-4661-B89E-9F050FD184D5@scientia.net>
+ <BF03A3DF-684D-47FE-A9AD-320256F64763@scientia.net>
+ <b6b4ed0e-9569-158d-19ad-82c885bab4ec@gmx.com>
+ <BB977A40-847C-4611-A468-9BF1137CE711@scientia.net>
+ <d2a14d69-dfa9-8794-6375-03d1b209632f@gmx.com>
+ <68697875-6E77-49C4-B54E-0FADB94700DA@scientia.net>
+ <99ee9b31-a38a-d479-5b1d-30e9c942d577@gmx.com>
+ <A19E863A-F83C-4630-9675-4309CECB318E@scientia.net>
+ <1b24e69e-2c1e-71af-fb1d-9d32f72cc78c@gmx.com>
+ <8DB99A3B-6238-497D-A70F-8834CC014DCF@gmail.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <c88d6721-ad20-c45d-0ac1-a49f2bab66cb@gmx.com>
+Date: Wed, 28 Feb 2018 16:36:12 +0800
 MIME-Version: 1.0
-In-Reply-To: <9d98d11a-0c30-56eb-efa9-889237592b4b@gmail.com>
-References: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
- <9d98d11a-0c30-56eb-efa9-889237592b4b@gmail.com>
-From: vinayak hegde <vinayakhegdev@gmail.com>
-Date: Wed, 28 Feb 2018 11:31:48 +0530
-Message-ID: <CAFmraXjW_J-ezbwcS6YW6=4WThYmZ6-coeFBqtMUgyEdQKCkrw@mail.gmail.com>
-Subject: Re: btrfs space used issue
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <8DB99A3B-6238-497D-A70F-8834CC014DCF@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="VAf0QNCEmehftWNf88ZETLUdBWZ2IC9S6"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I ran full defragement and balance both, but didnt help.
-My created and accounting usage files are matching the du -sh output.
-But I am not getting why btrfs internals use so much extra space.
-My worry is, will get no space error earlier than I expect.
-Is it expected with btrfs internal that it will use so much extra space?
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--VAf0QNCEmehftWNf88ZETLUdBWZ2IC9S6
+Content-Type: multipart/mixed; boundary="PNlgXiL4il2ENpFeuzJ5ZOaRIFdxXPOm9";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Christoph Anton Mitterer <calestyo@gmail.com>,
+ "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Message-ID: <c88d6721-ad20-c45d-0ac1-a49f2bab66cb@gmx.com>
+Subject: Re: Fwd: Re: BUG: unable to handle kernel paging request at
+ ffff9fb75f827100
+References: <26306A4D-2D8E-4661-B89E-9F050FD184D5@scientia.net>
+ <BF03A3DF-684D-47FE-A9AD-320256F64763@scientia.net>
+ <b6b4ed0e-9569-158d-19ad-82c885bab4ec@gmx.com>
+ <BB977A40-847C-4611-A468-9BF1137CE711@scientia.net>
+ <d2a14d69-dfa9-8794-6375-03d1b209632f@gmx.com>
+ <68697875-6E77-49C4-B54E-0FADB94700DA@scientia.net>
+ <99ee9b31-a38a-d479-5b1d-30e9c942d577@gmx.com>
+ <A19E863A-F83C-4630-9675-4309CECB318E@scientia.net>
+ <1b24e69e-2c1e-71af-fb1d-9d32f72cc78c@gmx.com>
+ <8DB99A3B-6238-497D-A70F-8834CC014DCF@gmail.com>
+In-Reply-To: <8DB99A3B-6238-497D-A70F-8834CC014DCF@gmail.com>
 
-Vinayak
+--PNlgXiL4il2ENpFeuzJ5ZOaRIFdxXPOm9
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+Hi Christoph,
+
+Since I'm still digging the unexpected corruption (although without much
+progress yet), would you please describe how the corruption happens?
+
+In my current investigation, btrfs is indeed bullet-proof, (unlike my
+original assumption) using newer dm-log-writes tool.
+
+But free space cache file (v1 free space cache) is not CoW protected so
+it's vulnerable against power loss.
+
+So my current assumption is, there are at least 2 power loss happens
+during the problem.
+
+The 1st power loss caused free space cache corrupted but not detected by
+its checksum, and btrfs used the corrupted free space cache to allocate
+tree blocks.
+
+And then 2nd power loss happened. Since new allocated tree blocks can
+overwrite existing tree blocks, it breaks metadata CoW of btrfs, and
+leads the final corruption.
+
+Would you please provide some detailed info about the corruption?
+
+Thanks,
+Qu
+
+On 2018=E5=B9=B402=E6=9C=8823=E6=97=A5 03:21, Christoph Anton Mitterer wr=
+ote:
+> Am 22. Februar 2018 04:57:53 MEZ schrieb Qu Wenruo <quwenruo.btrfs@gmx.=
+com>:
+>>
+>>
+>> On 2018=E5=B9=B402=E6=9C=8822=E6=97=A5 10:56, Christoph Anton Mitterer=
+ wrote:
+>>> Just one last for today... I did a quick run with the byte nr from
+>> the last mail... See screenshot
+>>>
+>>> It still gives these mapping errors... But does seem to write
+>> files...
+>>
+>>From your previous picture, it seems that FS_TREE is your primary
+>> subvolume, and 257 would be your snapshot.
+>>
+>> And for that block which can't be mapped, it seems to be a corruption
+>> and it's really too large.
+>>
+>> So ignoring it wouldn't be a problem.
+>>
+>> And just keep btrfs-store running to see what it salvaged?
+>>
+>>>
+>>> But these mapping errors... Wtf?!=20
+>>>
+>>>
+>>> Thanks and until tomorrow.
+>>>
+>>> Chris
+>>>
+>>> Oh and in my panic (I still fear that my main data fs, which is on
+>> other hard disks could be affected by that strange bug, too, and have
+>> no idea how to verify they are not) I forgot: you are from China,
+>> aren't you? So a blessed happy new year. :-)
+>>
+>> Happy new year too.
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>=20
+> Hey
+>=20
+> Have you written more after the mail below?  Cause my normal email acco=
+unt ran full and I cannot recover that right now with my computer.
+>=20
+> Anyway... I tried now the restore and it seems to give back some data (=
+haven't looked at it yet)... I also made a dd copy of the whole fs image =
+to another freshly crafted btrfs fs (as an image file).
+>=20
+> That seemed to work well, but when I differs that image with the origin=
+al, new csum errors of that file were found. (see attached image)
+>=20
+> Could that be a pointer to some hardware defect? Perhaps the memory? Th=
+ough I did do an extensive memtest86+ a while ago.
+>=20
+> And that could be the reason for the corruption in the first place...
+>=20
+> Thanks,
+> Chris.
+>=20
 
 
+--PNlgXiL4il2ENpFeuzJ5ZOaRIFdxXPOm9--
 
+--VAf0QNCEmehftWNf88ZETLUdBWZ2IC9S6
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-On Tue, Feb 27, 2018 at 7:24 PM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2018-02-27 08:09, vinayak hegde wrote:
->>
->> I am using btrfs, But I am seeing du -sh and df -h showing huge size
->> difference on ssd.
->>
->> mount:
->> /dev/drbd1 on /dc/fileunifier.datacache type btrfs
->>
->> (rw,noatime,nodiratime,flushoncommit,discard,nospace_cache,recovery,commit=5,subvolid=5,subvol=/)
->>
->>
->> du -sh /dc/fileunifier.datacache/ -  331G
->>
->> df -h
->> /dev/drbd1      746G  346G  398G  47% /dc/fileunifier.datacache
->>
->> btrfs fi usage /dc/fileunifier.datacache/
->> Overall:
->>      Device size:         745.19GiB
->>      Device allocated:         368.06GiB
->>      Device unallocated:         377.13GiB
->>      Device missing:             0.00B
->>      Used:             346.73GiB
->>      Free (estimated):         396.36GiB    (min: 207.80GiB)
->>      Data ratio:                  1.00
->>      Metadata ratio:              2.00
->>      Global reserve:         176.00MiB    (used: 0.00B)
->>
->> Data,single: Size:365.00GiB, Used:345.76GiB
->>     /dev/drbd1     365.00GiB
->>
->> Metadata,DUP: Size:1.50GiB, Used:493.23MiB
->>     /dev/drbd1       3.00GiB
->>
->> System,DUP: Size:32.00MiB, Used:80.00KiB
->>     /dev/drbd1      64.00MiB
->>
->> Unallocated:
->>     /dev/drbd1     377.13GiB
->>
->>
->> Even if we consider 6G metadata its 331+6 = 337.
->> where is 9GB used?
->>
->> Please explain.
->
-> First, you're counting the metadata wrong.  The value shown per-device by
-> `btrfs filesystem usage` already accounts for replication (so it's only 3 GB
-> of metadata allocated, not 6 GB).  Neither `df` nor `du` looks at the chunk
-> level allocations though.
->
-> Now, with that out of the way, the discrepancy almost certainly comes form
-> differences in how `df` and `du` calculate space usage.  In particular, `df`
-> calls statvfs and looks at the f_blocks and f_bfree values to compute space
-> usage, while `du` walks the filesystem tree calling stat on everything and
-> looking at st_blksize and st_blocks (or instead at st_size if you pass in
-> `--apparent-size` as an option).  This leads to a couple of differences in
-> what they will count:
->
-> 1. `du` may or may not properly count hardlinks, sparse files, and
-> transparently compressed data, dependent on whether or not you use
-> `--apparent-sizes` (by default, it does properly count all of those), while
-> `df` will always account for those properly.
-> 2. `du` does not properly account for reflinked blocks (from deduplication,
-> snapshots, or use of the CLONE ioctl), and will count each reflink of every
-> block as part of the total size, while `df` will always count each block
-> exactly once no matter how many reflinks it has.
-> 3. `du` does not account for all of the BTRFS metadata allocations,
-> functionally ignoring space allocated for anything but inline data, while
-> `df` accounts for all BTRFS metadata properly.
-> 4. `du` will recurse into other filesystems if you don't pass the `-x`
-> option to it, while `df` will only report for each filesystem separately.
-> 5. `du` will only count data usage under the given mount point, and won't
-> account for data on other subvolumes that may be mounted elsewhere (and if
-> you pass in `-x` won't count data on other subvolumes located under the
-> given path either), while `df` will count all the data in all subvolumes.
-> 6. There are a couple of other differences too, but they're rather complex
-> and dependent on the internals of BTRFS.
->
-> In your case, I think the issue is probably one of the various things under
-> item 6.  Items 1, 2 and 4 will cause `du` to report more space usage than
-> `df`, item 3 is irrelevant because `du` shows less space than the total data
-> chunk usage reported by `btrfs filesystem usage`, and item 5 is irrelevant
-> because you're mounting the root subvolume and not using the `-x` option on
-> `du` (and therefore there can't be other subvolumes you're missing).
->
-> Try running a full defrag of the given mount point.  If what I think is
-> causing this is in fact the issue, that should bring the numbers back
-> in-line with each other.
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqWafwXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qj0Qwf/cSLSVFqqZ5m2ef45LWZmMaP3
+bsBzI6iF10w2oXOsrEC6lZbxmh/qO+Y4I60Hiis1jgeN+4yzvHjB8xJSQC98f3X3
+gmNYHhFUJOFrCNR4VzE3Qxnnt1V5PmCiOov1npE8HwIqD3P4Kfd/ExYV8acjiUcT
+SSUS0xgzevTpjtz43Ivbs9i/03tK2TM/8bLXFAVJxci8DEzCykGLzXRBTqgp3urE
+uYM/BXaUvJom/fHO76/zLOp+/5y4oQeiJ692/yqdnFmxacB/7BKyJSOD7MBq5k96
+XDRDWy+QZiLe1OMTN5IOApc5dEf1VmPkLliH97D8/rRMMP31f1Zk1RdPvVEcYA==
+=oGza
+-----END PGP SIGNATURE-----
+
+--VAf0QNCEmehftWNf88ZETLUdBWZ2IC9S6--

@@ -1,71 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39519 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.99]:57238 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753133AbeB0PhX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Feb 2018 10:37:23 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1AB6BAEB8
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Feb 2018 15:37:22 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
+        id S933738AbeB1Pzq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 28 Feb 2018 10:55:46 -0500
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id BF18821748
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Feb 2018 15:55:45 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/3] btrfs: Remove root argument from btrfs_log_dentry_safe
-Date: Tue, 27 Feb 2018 17:37:18 +0200
-Message-Id: <1519745838-25584-3-git-send-email-nborisov@suse.com>
-In-Reply-To: <1519745838-25584-1-git-send-email-nborisov@suse.com>
-References: <1519745838-25584-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 1/2] Btrfs: fix log replay failure after linking special file and fsync
+Date: Wed, 28 Feb 2018 15:55:40 +0000
+Message-Id: <20180228155540.5766-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now that nothing uses the root arg of btrfs_log_dentry_safe it can be
-safely removed. No functional changes.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+If in the same transaction we rename a special file (fifo, character/block
+device or symbolic link), create a hard link for it having its old name
+then sync the log, we will end up with a log that can not be replayed and
+at when attempting to replay it, an EEXIST error is returned and mounting
+the filesystem fails. Example scenario:
+
+  $ mkfs.btrfs -f /dev/sdc
+  $ mount /dev/sdc /mnt
+  $ mkdir /mnt/testdir
+  $ mkfifo /mnt/testdir/foo
+  # Make sure everything done so far is durably persisted.
+  $ sync
+
+  # Create some unrelated file and fsync it, this is just to create a log
+  # tree. The file must be in the same directory as our special file.
+  $ touch /mnt/testdir/f1
+  $ xfs_io -c "fsync" /mnt/testdir/f1
+
+  # Rename our special file and then create a hard link with its old name.
+  $ mv /mnt/testdir/foo /mnt/testdir/bar
+  $ ln /mnt/testdir/bar /mnt/testdir/foo
+
+  # Create some other unrelated file and fsync it, this is just to persist
+  # the log tree which was modified by the previous rename and link
+  # operations. Alternatively we could have modified file f1 and fsync it.
+  $ touch /mnt/f2
+  $ xfs_io -c "fsync" /mnt/f2
+
+  <power failure>
+
+  $ mount /dev/sdc /mnt
+  mount: mount /dev/sdc on /mnt failed: File exists
+
+This happens because when both the log tree and the subvolume's tree have
+an entry in the directory "testdir" with the same name, that is, there
+is one key (258 INODE_REF 257) in the subvolume tree and another one in
+the log tree (where 258 is the inode number of our special file and 257
+is the inode for directory "testdir"). Only the data of those two keys
+differs, in the subvolume tree the index field for inode reference has
+a value of 3 while the log tree it has a value of 5. Because the same key
+exists in both trees, but have different index, the log replay fails with
+an -EEXIST error when attempting to replay the inode reference from the
+log tree.
+
+Fix this by setting the last_unlink_trans field of the inode (our special
+file) to the current transaction id when a hard link is created, as this
+forces logging the parent directory inode, solving the conflict at log
+replay time.
+
+A new generic test case for fstests was also submitted.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c     | 2 +-
  fs/btrfs/tree-log.c | 2 +-
- fs/btrfs/tree-log.h | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 41ab9073d1d4..f048879c222f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2214,7 +2214,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	}
- 	trans->sync = true;
- 
--	ret = btrfs_log_dentry_safe(trans, root, dentry, start, end, &ctx);
-+	ret = btrfs_log_dentry_safe(trans, dentry, start, end, &ctx);
- 	if (ret < 0) {
- 		/* Fallthrough and commit/free transaction. */
- 		ret = 1;
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index f6b1795c44ee..f83048023666 100644
+index 28d0de199b05..411a022489e4 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -5572,7 +5572,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
-  * data on disk.
-  */
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, struct dentry *dentry,
-+			  struct dentry *dentry,
- 			  const loff_t start,
- 			  const loff_t end,
- 			  struct btrfs_log_ctx *ctx)
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index 483027f9a7f4..88abc43312a1 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -65,7 +65,7 @@ int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info);
- int btrfs_recover_log_trees(struct btrfs_root *tree_root);
- int btrfs_log_dentry_safe(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, struct dentry *dentry,
-+			  struct dentry *dentry,
- 			  const loff_t start,
- 			  const loff_t end,
- 			  struct btrfs_log_ctx *ctx);
+@@ -5841,7 +5841,7 @@ int btrfs_log_new_name(struct btrfs_trans_handle *trans,
+ 	 * this will force the logging code to walk the dentry chain
+ 	 * up for the file
+ 	 */
+-	if (S_ISREG(inode->vfs_inode.i_mode))
++	if (!S_ISDIR(inode->vfs_inode.i_mode))
+ 		inode->last_unlink_trans = trans->transid;
+ 
+ 	/*
 -- 
-2.7.4
+2.11.0
 

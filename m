@@ -1,104 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:54558 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964783AbeB1XWq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Feb 2018 18:22:46 -0500
-Date: Wed, 28 Feb 2018 15:20:08 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix unexpected -EEXIST when creating new inode
-Message-ID: <20180228222008.GA8751@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Reply-To: bo.li.liu@oracle.com
-References: <20180125180256.10844-9-bo.li.liu@oracle.com>
- <CAL3q7H6XiMGuJkiiW8svi8vvxCjPii1DOG1CnTuM6dauk_bAXg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAL3q7H6XiMGuJkiiW8svi8vvxCjPii1DOG1CnTuM6dauk_bAXg@mail.gmail.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:55245 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965468AbeCACsA (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 28 Feb 2018 21:48:00 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, peteryuchuang@gmail.com
+Subject: [PATCH 0/4] Fix long standing -EOPNOTSUPP problem caused by
+Date: Thu,  1 Mar 2018 10:47:43 +0800
+Message-Id: <20180301024747.26192-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 28, 2018 at 04:06:40PM +0000, Filipe Manana wrote:
-> On Thu, Jan 25, 2018 at 6:02 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> > The highest objectid, which is assigned to new inode, is decided at
-> > the time of initializing fs roots.  However, in cases where log replay
-> > gets processed, the btree which fs root owns might be changed, so we
-> > have to search it again for the highest objectid, otherwise creating
-> > new inode would end up with -EEXIST.
-> >
-> > cc: <stable@vger.kernel.org> v4.4-rc6+
-> > Fixes: f32e48e92596 ("Btrfs: Initialize btrfs_root->highest_objectid when loading tree root and subvolume roots")
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Hi Bo,
-> 
-> Any reason to not have submitted a test case for fstests?
-> Unless I missed something this should be easy to reproduce, deterministic issue.
->
+Kernel doesn't support dropping range inside inline extent, and prevents
+such thing happening by limiting max inline extent size to
+min(max_inline, sectorsize - 1) in cow_file_range_inline().
 
-It's on my todo list for a while until I forgot it...will do after I
-fix the bugs I have now.
+However btrfs-progs only inherit the BTRFS_MAX_INLINE_DATA_SIZE() macro,
+which doesn't have sectorsize check.
+And since btrfs-progs defaults to 16K nodesize, above macro allows large
+inline extent over 15K size.
 
-I found this originally from running generic/475.
+This leads to unexpected kernel behavior.
 
-Thanks,
+The bug exists from the very beginning of btrfs-convert, dating back to
+2008 when btrfs-convert is first introduced.
 
--liubo
-> thanks
-> 
-> > ---
-> >  fs/btrfs/tree-log.c | 19 +++++++++++++++++++
-> >  1 file changed, 19 insertions(+)
-> >
-> > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> > index a7e6235..646cdbf 100644
-> > --- a/fs/btrfs/tree-log.c
-> > +++ b/fs/btrfs/tree-log.c
-> > @@ -28,6 +28,7 @@
-> >  #include "hash.h"
-> >  #include "compression.h"
-> >  #include "qgroup.h"
-> > +#include "inode-map.h"
-> >
-> >  /* magic values for the inode_only field in btrfs_log_inode:
-> >   *
-> > @@ -5715,6 +5716,24 @@ int btrfs_recover_log_trees(struct btrfs_root *log_root_tree)
-> >                                                       path);
-> >                 }
-> >
-> > +               if (!ret && wc.stage == LOG_WALK_REPLAY_ALL) {
-> > +                       struct btrfs_root *root = wc.replay_dest;
-> > +
-> > +                       btrfs_release_path(path);
-> > +
-> > +                       /*
-> > +                        * We have just replayed everything, and the highest
-> > +                        * objectid of fs roots probably has changed in case
-> > +                        * some inode_item's got replayed.
-> > +                        */
-> > +                       /*
-> > +                        * root->objectid_mutex is not acquired as log replay
-> > +                        * could only happen during mount.
-> > +                        */
-> > +                       ret = btrfs_find_highest_objectid(root,
-> > +                                                 &root->highest_objectid);
-> > +               }
-> > +
-> >                 key.offset = found_key.offset - 1;
-> >                 wc.replay_dest->log_root = NULL;
-> >                 free_extent_buffer(log->node);
-> > --
-> > 2.9.4
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> -- 
-> Filipe David Manana,
-> 
-> “Whether you think you can, or you think you can't — you're right.”
+Qu Wenruo (4):
+  btrfs-progs: Limit inline extent below page size
+  btrfs-progs: check/original mode: Check inline extent size
+  btrfs-progs: check/lowmem mode: Check inline extent size
+  btrfs-progs: test/convert: Add test case for invalid large inline data
+    extent
+
+ check/main.c                                       |  4 ++++
+ check/mode-lowmem.c                                |  8 ++++++++
+ check/mode-original.h                              |  1 +
+ ctree.h                                            | 11 +++++++++--
+ .../016-invalid-large-inline-extent/test.sh        | 22 ++++++++++++++++++++++
+ 5 files changed, 44 insertions(+), 2 deletions(-)
+ create mode 100755 tests/convert-tests/016-invalid-large-inline-extent/test.sh
+
+-- 
+2.16.2
+

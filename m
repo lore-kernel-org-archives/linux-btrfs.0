@@ -1,62 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:8878 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S965488AbeCACzA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Feb 2018 21:55:00 -0500
-Subject: Re: [PATCH 3/4] btrfs-progs: check/lowmem mode: Check inline extent
- size
-To: Qu Wenruo <wqu@suse.com>, <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>, <peteryuchuang@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:37370 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1031346AbeCAOzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Mar 2018 09:55:47 -0500
+Date: Thu, 1 Mar 2018 15:53:28 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, peteryuchuang@gmail.com
+Subject: Re: [PATCH 0/4] Fix long standing -EOPNOTSUPP problem caused by
+Message-ID: <20180301145328.GB4817@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180301024747.26192-1-wqu@suse.com>
- <20180301024747.26192-4-wqu@suse.com>
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-Message-ID: <62feedeb-de8e-2dcb-aaaf-2e6106bd4a98@cn.fujitsu.com>
-Date: Thu, 1 Mar 2018 10:59:57 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180301024747.26192-4-wqu@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180301024747.26192-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 03/01/2018 10:47 AM, Qu Wenruo wrote:
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-
-Looks good to me.
-
-Reviewed-by: Su Yue <suy.fnst@cn.fujitsu.com>
-> ---
->   check/mode-lowmem.c | 8 ++++++++
->   1 file changed, 8 insertions(+)
+On Thu, Mar 01, 2018 at 10:47:43AM +0800, Qu Wenruo wrote:
+> Kernel doesn't support dropping range inside inline extent, and prevents
+> such thing happening by limiting max inline extent size to
+> min(max_inline, sectorsize - 1) in cow_file_range_inline().
 > 
-> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> index 62bcf3d2e126..44c58163f8f7 100644
-> --- a/check/mode-lowmem.c
-> +++ b/check/mode-lowmem.c
-> @@ -1417,6 +1417,7 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
->   	u64 csum_found;		/* In byte size, sectorsize aligned */
->   	u64 search_start;	/* Logical range start we search for csum */
->   	u64 search_len;		/* Logical range len we search for csum */
-> +	u32 max_inline_extent_size = BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info);
->   	unsigned int extent_type;
->   	unsigned int is_hole;
->   	int compressed = 0;
-> @@ -1440,6 +1441,13 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
->   				root->objectid, fkey->objectid, fkey->offset);
->   			err |= FILE_EXTENT_ERROR;
->   		}
-> +		if (extent_num_bytes > max_inline_extent_size) {
-> +			error(
-> +		"root %llu EXTENT_DATA[%llu %llu] too large inline extent size, have %llu, max: %u",
-> +				root->objectid, fkey->objectid, fkey->offset,
-> +				extent_num_bytes, max_inline_extent_size);
-> +			err |= FILE_EXTENT_ERROR;
-> +		}
->   		if (!compressed && extent_num_bytes != item_inline_len) {
->   			error(
->   		"root %llu EXTENT_DATA[%llu %llu] wrong inline size, have: %llu, expected: %u",
+> However btrfs-progs only inherit the BTRFS_MAX_INLINE_DATA_SIZE() macro,
+> which doesn't have sectorsize check.
+> And since btrfs-progs defaults to 16K nodesize, above macro allows large
+> inline extent over 15K size.
 > 
+> This leads to unexpected kernel behavior.
+> 
+> The bug exists from the very beginning of btrfs-convert, dating back to
+> 2008 when btrfs-convert is first introduced.
+> 
+> Qu Wenruo (4):
+>   btrfs-progs: Limit inline extent below page size
+>   btrfs-progs: check/original mode: Check inline extent size
+>   btrfs-progs: check/lowmem mode: Check inline extent size
+>   btrfs-progs: test/convert: Add test case for invalid large inline data
+>     extent
 
-
+Thanks, added to devel. Fixes will be added to 4.15.2.

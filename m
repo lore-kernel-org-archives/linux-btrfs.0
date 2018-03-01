@@ -1,63 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50445 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:34360 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965487AbeCACsA (ORCPT
+        with ESMTP id S965488AbeCACsB (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Wed, 28 Feb 2018 21:48:00 -0500
+        Wed, 28 Feb 2018 21:48:01 -0500
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, peteryuchuang@gmail.com
-Subject: [PATCH 1/4] btrfs-progs: Limit inline extent below page size
-Date: Thu,  1 Mar 2018 10:47:44 +0800
-Message-Id: <20180301024747.26192-2-wqu@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: check/original mode: Check inline extent size
+Date: Thu,  1 Mar 2018 10:47:45 +0800
+Message-Id: <20180301024747.26192-3-wqu@suse.com>
 In-Reply-To: <20180301024747.26192-1-wqu@suse.com>
 References: <20180301024747.26192-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel doesn't support to drop extent inside an inlined extent.
-And kernel tends to limit inline extent just below sectorsize, so also
-limit it in btrfs-progs.
+Kernel doesn't allow inline extent equal or larger than 4K.
+And for inline extent larger than 4K, __btrfs_drop_extents() can return
+-EOPNOTSUPP and cause unexpected error.
 
-This fixes unexpected -EOPNOTSUPP error from __btrfs_drop_extents() on
-converted btrfs.
+Check it in original mode.
 
-Fixes: 806528b8755f ("Add Yan Zheng's ext3->btrfs conversion program")
-Reported-by: Peter Y. Chuang <peteryuchuang@gmail.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- ctree.h | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
+ check/main.c          | 4 ++++
+ check/mode-original.h | 1 +
+ 2 files changed, 5 insertions(+)
 
-diff --git a/ctree.h b/ctree.h
-index 17cdac76c58c..0282deef339b 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -20,6 +20,7 @@
- #define __BTRFS_CTREE_H__
+diff --git a/check/main.c b/check/main.c
+index 97baae583f04..ce41550ab16a 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -560,6 +560,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ 		fprintf(stderr, ", bad file extent");
+ 	if (errors & I_ERR_FILE_EXTENT_OVERLAP)
+ 		fprintf(stderr, ", file extent overlap");
++	if (errors & I_ERR_FILE_EXTENT_TOO_LARGE)
++		fprintf(stderr, ", inline file extent too large");
+ 	if (errors & I_ERR_FILE_EXTENT_DISCOUNT)
+ 		fprintf(stderr, ", file extent discount");
+ 	if (errors & I_ERR_DIR_ISIZE_WRONG)
+@@ -1461,6 +1463,8 @@ static int process_file_extent(struct btrfs_root *root,
+ 		num_bytes = btrfs_file_extent_inline_len(eb, slot, fi);
+ 		if (num_bytes == 0)
+ 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
++		if (num_bytes > BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
++			rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
+ 		rec->found_size += num_bytes;
+ 		num_bytes = (num_bytes + mask) & ~mask;
+ 	} else if (extent_type == BTRFS_FILE_EXTENT_REG ||
+diff --git a/check/mode-original.h b/check/mode-original.h
+index f859af478f0f..368de692fdd1 100644
+--- a/check/mode-original.h
++++ b/check/mode-original.h
+@@ -185,6 +185,7 @@ struct file_extent_hole {
+ #define I_ERR_SOME_CSUM_MISSING		(1 << 12)
+ #define I_ERR_LINK_COUNT_WRONG		(1 << 13)
+ #define I_ERR_FILE_EXTENT_ORPHAN	(1 << 14)
++#define I_ERR_FILE_EXTENT_TOO_LARGE	(1 << 15)
  
- #include <stdbool.h>
-+#include "internal.h"
- 
- #if BTRFS_FLAT_INCLUDES
- #include "list.h"
-@@ -1195,8 +1196,14 @@ static inline u32 BTRFS_NODEPTRS_PER_BLOCK(const struct btrfs_fs_info *info)
- 	(offsetof(struct btrfs_file_extent_item, disk_bytenr))
- static inline u32 BTRFS_MAX_INLINE_DATA_SIZE(const struct btrfs_fs_info *info)
- {
--	return BTRFS_MAX_ITEM_SIZE(info) -
--		BTRFS_FILE_EXTENT_INLINE_DATA_START;
-+	/*
-+	 * Inline extent larger than pagesize could lead to kernel unexpected
-+	 * error when dropping extents, so we need to limit the inline extent
-+	 * size to less than sectorsize.
-+	 */
-+	return min_t(u32, info->sectorsize - 1,
-+		     BTRFS_MAX_ITEM_SIZE(info) -
-+		     BTRFS_FILE_EXTENT_INLINE_DATA_START);
- }
- 
- static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ struct inode_record {
+ 	struct list_head backrefs;
 -- 
 2.16.2
 

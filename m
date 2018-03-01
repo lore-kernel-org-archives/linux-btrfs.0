@@ -1,42 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37370 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1031346AbeCAOzr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Mar 2018 09:55:47 -0500
-Date: Thu, 1 Mar 2018 15:53:28 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, peteryuchuang@gmail.com
-Subject: Re: [PATCH 0/4] Fix long standing -EOPNOTSUPP problem caused by
-Message-ID: <20180301145328.GB4817@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180301024747.26192-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50445 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965487AbeCACsA (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Wed, 28 Feb 2018 21:48:00 -0500
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, peteryuchuang@gmail.com
+Subject: [PATCH 1/4] btrfs-progs: Limit inline extent below page size
+Date: Thu,  1 Mar 2018 10:47:44 +0800
+Message-Id: <20180301024747.26192-2-wqu@suse.com>
 In-Reply-To: <20180301024747.26192-1-wqu@suse.com>
+References: <20180301024747.26192-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 01, 2018 at 10:47:43AM +0800, Qu Wenruo wrote:
-> Kernel doesn't support dropping range inside inline extent, and prevents
-> such thing happening by limiting max inline extent size to
-> min(max_inline, sectorsize - 1) in cow_file_range_inline().
-> 
-> However btrfs-progs only inherit the BTRFS_MAX_INLINE_DATA_SIZE() macro,
-> which doesn't have sectorsize check.
-> And since btrfs-progs defaults to 16K nodesize, above macro allows large
-> inline extent over 15K size.
-> 
-> This leads to unexpected kernel behavior.
-> 
-> The bug exists from the very beginning of btrfs-convert, dating back to
-> 2008 when btrfs-convert is first introduced.
-> 
-> Qu Wenruo (4):
->   btrfs-progs: Limit inline extent below page size
->   btrfs-progs: check/original mode: Check inline extent size
->   btrfs-progs: check/lowmem mode: Check inline extent size
->   btrfs-progs: test/convert: Add test case for invalid large inline data
->     extent
+Kernel doesn't support to drop extent inside an inlined extent.
+And kernel tends to limit inline extent just below sectorsize, so also
+limit it in btrfs-progs.
 
-Thanks, added to devel. Fixes will be added to 4.15.2.
+This fixes unexpected -EOPNOTSUPP error from __btrfs_drop_extents() on
+converted btrfs.
+
+Fixes: 806528b8755f ("Add Yan Zheng's ext3->btrfs conversion program")
+Reported-by: Peter Y. Chuang <peteryuchuang@gmail.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ ctree.h | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/ctree.h b/ctree.h
+index 17cdac76c58c..0282deef339b 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -20,6 +20,7 @@
+ #define __BTRFS_CTREE_H__
+ 
+ #include <stdbool.h>
++#include "internal.h"
+ 
+ #if BTRFS_FLAT_INCLUDES
+ #include "list.h"
+@@ -1195,8 +1196,14 @@ static inline u32 BTRFS_NODEPTRS_PER_BLOCK(const struct btrfs_fs_info *info)
+ 	(offsetof(struct btrfs_file_extent_item, disk_bytenr))
+ static inline u32 BTRFS_MAX_INLINE_DATA_SIZE(const struct btrfs_fs_info *info)
+ {
+-	return BTRFS_MAX_ITEM_SIZE(info) -
+-		BTRFS_FILE_EXTENT_INLINE_DATA_START;
++	/*
++	 * Inline extent larger than pagesize could lead to kernel unexpected
++	 * error when dropping extents, so we need to limit the inline extent
++	 * size to less than sectorsize.
++	 */
++	return min_t(u32, info->sectorsize - 1,
++		     BTRFS_MAX_ITEM_SIZE(info) -
++		     BTRFS_FILE_EXTENT_INLINE_DATA_START);
+ }
+ 
+ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+-- 
+2.16.2
+

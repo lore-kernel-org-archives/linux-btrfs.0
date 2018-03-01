@@ -1,54 +1,212 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out30-133.freemail.mail.aliyun.com ([115.124.30.133]:43017 "EHLO
-        out30-133.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752282AbeC3WMH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Mar 2018 18:12:07 -0400
-From: Liu Bo <bo.liu@linux.alibaba.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: clean up resources during umount after trans is aborted
-Date: Sat, 31 Mar 2018 06:11:56 +0800
-Message-Id: <1522447918-19147-2-git-send-email-bo.liu@linux.alibaba.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:35014 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S967916AbeCAMBd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Mar 2018 07:01:33 -0500
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w21BvhVA003451
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Mar 2018 12:01:33 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2gegja84wv-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Mar 2018 12:01:33 +0000
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w21C1WBe000916
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=FAIL)
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Mar 2018 12:01:32 GMT
+Received: from abhmp0005.oracle.com (abhmp0005.oracle.com [141.146.116.11])
+        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w21C1WHD016698
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Mar 2018 12:01:32 GMT
+Subject: Re: [PATCH 1/1] btrfs: introduce feature to forget a btrfs device
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org
+References: <20180111012551.14765-1-anand.jain@oracle.com>
+ <20180111012551.14765-2-anand.jain@oracle.com>
+ <20180228005711.GE12338@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <f1cdd8ea-ec04-9f62-38f9-8a9af3d9e8da@oracle.com>
+Date: Thu, 1 Mar 2018 20:03:10 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180228005711.GE12338@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently if some fatal errors occur, like all IO get -EIO, resources
-would be cleaned up when
-a) transaction is being committed or
-b) BTRFS_FS_STATE_ERROR is set
 
-However, in some rare cases, resources may be left alone after transaction
-gets aborted and umount may run into some ASSERT(), e.g.
-ASSERT(list_empty(&block_group->dirty_list));
 
-For case a), in btrfs_commit_transaciton(), there're several places at the
-beginning where we just call btrfs_end_transaction() without cleaning up
-resources.  For case b), it is possible that the trans handle doesn't have
-any dirty stuff, then only trans hanlde is marked as aborted while
-BTRFS_FS_STATE_ERROR is not set, so resources remain in memory.
+On 02/28/2018 08:57 AM, Liu Bo wrote:
+> On Thu, Jan 11, 2018 at 09:25:50AM +0800, Anand Jain wrote:
+>> Support for a new command 'btrfs dev forget [dev]' is proposed here,
+>> to undo the effects of 'btrfs dev scan [dev]'. For this purpose,
+>> this patch proposes to use ioctl #5 as it was empty.
+>> 	IOW(BTRFS_IOCTL_MAGIC, 5, ..)
+>> This patch adds new ioctl BTRFS_IOC_FORGET_DEV which can be sent from
+>> the /dev/btrfs-control to forget one or all devices, (devices which are
+>> not mounted) from the btrfs kernel.
+>>
+> 
+> To me this seems to offer a debugging ability, could you please
+> elaborate the use case where we need to forget a particular device
+> instead of just wiping the uuid?
 
-This makes btrfs also check BTRFS_FS_STATE_TRANS_ABORTED to make sure that
-all resources won't stay in memory after umount.
 
-Signed-off-by: Liu Bo <bo.liu@linux.alibaba.com>
----
- fs/btrfs/disk-io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Right, debug is one use case, the other use case is to recover from
+the split brain scenario [1].
+When it happens we need to bring user's attention to decide which
+disk is good and needs a way to un-scan/forget the device so that
+the FS can be mounted with a disk missing.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 21f34ad..643bd69 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3735,7 +3735,8 @@ void close_ctree(struct btrfs_fs_info *fs_info)
- 			btrfs_err(fs_info, "commit super ret %d", ret);
- 	}
- 
--	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state))
-+	if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state) ||
-+	    test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
- 		btrfs_error_commit_super(fs_info);
- 
- 	kthread_stop(fs_info->transaction_kthread);
--- 
-1.8.3.1
+[1]
+  https://patchwork.kernel.org/patch/10055145/
 
+Thanks, Anand
+
+
+> Thanks,
+> 
+> -liubo
+>> The argument it takes is struct btrfs_ioctl_vol_args_v2, and ::name can be
+>> set to specify the device path. And all unmounted devices can be removed
+>> from the kernel using the BTRFS_DEVICE_SPEC_ALL_DEV flag. Remove all
+>> devices functionality would override remove one device when both are
+>> specified in an IOCTL call.
+>> Again, the devices are removed only if the relevant fsid aren't mounted.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>   fs/btrfs/super.c           | 27 +++++++++++++++++++++++----
+>>   fs/btrfs/volumes.c         |  9 +++++++++
+>>   fs/btrfs/volumes.h         |  1 +
+>>   include/uapi/linux/btrfs.h |  6 +++++-
+>>   4 files changed, 38 insertions(+), 5 deletions(-)
+>>
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> index 559fc53ff59e..6a9a5ce8af3b 100644
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -2219,21 +2219,37 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>>   				unsigned long arg)
+>>   {
+>>   	struct btrfs_ioctl_vol_args *vol;
+>> +	struct btrfs_ioctl_vol_args_v2 *vol2;
+>>   	struct btrfs_fs_devices *fs_devices;
+>>   	int ret = -ENOTTY;
+>>   
+>>   	if (!capable(CAP_SYS_ADMIN))
+>>   		return -EPERM;
+>>   
+>> -	vol = memdup_user((void __user *)arg, sizeof(*vol));
+>> -	if (IS_ERR(vol))
+>> -		return PTR_ERR(vol);
+>> +	if (cmd == BTRFS_IOC_FORGET_DEV) {
+>> +		vol2 = memdup_user((void __user *)arg, sizeof(*vol2));
+>> +		if (IS_ERR(vol2))
+>> +			return PTR_ERR(vol2);
+>> +
+>> +		if (vol2->flags & ~BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED)
+>> +			return -EOPNOTSUPP;
+>> +	} else {
+>> +		vol = memdup_user((void __user *)arg, sizeof(*vol));
+>> +		if (IS_ERR(vol))
+>> +			return PTR_ERR(vol);
+>> +	}
+>>   
+>>   	switch (cmd) {
+>>   	case BTRFS_IOC_SCAN_DEV:
+>>   		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>>   					    &btrfs_fs_type, &fs_devices);
+>>   		break;
+>> +	case BTRFS_IOC_FORGET_DEV:
+>> +		if (vol2->flags & BTRFS_DEVICE_SPEC_ALL_DEV)
+>> +			ret = btrfs_forget_devices(NULL);
+>> +		else
+>> +			ret = btrfs_forget_devices(vol2->name);
+>> +		break;
+>>   	case BTRFS_IOC_DEVICES_READY:
+>>   		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>>   					    &btrfs_fs_type, &fs_devices);
+>> @@ -2246,7 +2262,10 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>>   		break;
+>>   	}
+>>   
+>> -	kfree(vol);
+>> +	if (cmd == BTRFS_IOC_FORGET_DEV)
+>> +		kfree(vol2);
+>> +	else
+>> +		kfree(vol);
+>>   	return ret;
+>>   }
+>>   
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index e947e47f8fff..b0c9948baf9a 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -1171,6 +1171,15 @@ static int btrfs_read_disk_super(struct block_device *bdev, u64 bytenr,
+>>   	return 0;
+>>   }
+>>   
+>> +int btrfs_forget_devices(const char *path)
+>> +{
+>> +	mutex_lock(&uuid_mutex);
+>> +	btrfs_free_stale_devices(path, NULL);
+>> +	mutex_unlock(&uuid_mutex);
+>> +
+>> +	return 0;
+>> +}
+>> +
+>>   /*
+>>    * Look for a btrfs signature on a device. This may be called out of the mount path
+>>    * and we are not allowed to call set_blocksize during the scan. The superblock
+>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+>> index 15216fed918b..b954ca3b79a9 100644
+>> --- a/fs/btrfs/volumes.h
+>> +++ b/fs/btrfs/volumes.h
+>> @@ -422,6 +422,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+>>   		       fmode_t flags, void *holder);
+>>   int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>>   			  struct btrfs_fs_devices **fs_devices_ret);
+>> +int btrfs_forget_devices(const char *path);
+>>   int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+>>   void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices, int step);
+>>   void btrfs_assign_next_active_device(struct btrfs_fs_info *fs_info,
+>> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+>> index c8d99b9ca550..4e8ec1391872 100644
+>> --- a/include/uapi/linux/btrfs.h
+>> +++ b/include/uapi/linux/btrfs.h
+>> @@ -41,12 +41,14 @@ struct btrfs_ioctl_vol_args {
+>>   #define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
+>>   
+>>   #define BTRFS_DEVICE_SPEC_BY_ID		(1ULL << 3)
+>> +#define BTRFS_DEVICE_SPEC_ALL_DEV	(1ULL << 4)
+>>   
+>>   #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
+>>   			(BTRFS_SUBVOL_CREATE_ASYNC |	\
+>>   			BTRFS_SUBVOL_RDONLY |		\
+>>   			BTRFS_SUBVOL_QGROUP_INHERIT |	\
+>> -			BTRFS_DEVICE_SPEC_BY_ID)
+>> +			BTRFS_DEVICE_SPEC_BY_ID |	\
+>> +			BTRFS_DEVICE_SPEC_ALL_DEV)
+>>   
+>>   #define BTRFS_FSID_SIZE 16
+>>   #define BTRFS_UUID_SIZE 16
+>> @@ -745,6 +747,8 @@ enum btrfs_err_code {
+>>   				   struct btrfs_ioctl_vol_args)
+>>   #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
+>>   				   struct btrfs_ioctl_vol_args)
+>> +#define BTRFS_IOC_FORGET_DEV _IOW(BTRFS_IOCTL_MAGIC, 5, \
+>> +				   struct btrfs_ioctl_vol_args)
+>>   /* trans start and trans end are dangerous, and only for
+>>    * use by applications that know how to avoid the
+>>    * resulting deadlocks
+>> -- 
+>> 2.7.0
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59503 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59509 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1947353AbeCBSkV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Mar 2018 13:40:21 -0500
+        id S965341AbeCBSkX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Mar 2018 13:40:23 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id D8D6DAE90
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:40:18 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 143E9AE94
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:40:19 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
-Date: Fri,  2 Mar 2018 13:40:00 -0500
-Message-Id: <20180302184004.22036-9-jeffm@suse.com>
+Subject: [PATCH 7/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
+Date: Fri,  2 Mar 2018 13:40:01 -0500
+Message-Id: <20180302184004.22036-10-jeffm@suse.com>
 In-Reply-To: <20180302184004.22036-1-jeffm@suse.com>
 References: <20180302184004.22036-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -28,15 +28,15 @@ we can search for a single qgroupid more easily.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- qgroup.c | 98 +++++++++++++++++++++++++++++++++++++++++++++-------------------
- qgroup.h |  7 +++++
- 2 files changed, 77 insertions(+), 28 deletions(-)
+ qgroup.c | 100 +++++++++++++++++++++++++++++++++++++++++++++------------------
+ qgroup.h |   7 +++++
+ 2 files changed, 78 insertions(+), 29 deletions(-)
 
 diff --git a/qgroup.c b/qgroup.c
-index b1be3311..2d0a6947 100644
+index 7ec12ec1..f632a45c 100644
 --- a/qgroup.c
 +++ b/qgroup.c
-@@ -1146,11 +1146,11 @@ static inline void print_status_flag_warning(u64 flags)
+@@ -1150,11 +1150,11 @@ static inline void print_status_flag_warning(u64 flags)
  		warning("qgroup data inconsistent, rescan recommended");
  }
  
@@ -51,7 +51,7 @@ index b1be3311..2d0a6947 100644
  	struct btrfs_ioctl_search_header *sh;
  	unsigned long off = 0;
  	unsigned int i;
-@@ -1161,30 +1161,12 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+@@ -1165,30 +1165,12 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
  	u64 qgroupid;
  	u64 qgroupid1;
  
@@ -84,7 +84,7 @@ index b1be3311..2d0a6947 100644
  			break;
  		}
  
-@@ -1198,14 +1180,14 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+@@ -1202,14 +1184,14 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
  		 * read the root_ref item it contains
  		 */
  		for (i = 0; i < sk->nr_items; i++) {
@@ -101,7 +101,7 @@ index b1be3311..2d0a6947 100644
  				flags = btrfs_stack_qgroup_status_flags(si);
  
  				print_status_flag_warning(flags);
-@@ -1213,7 +1195,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+@@ -1217,7 +1199,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
  			case BTRFS_QGROUP_INFO_KEY:
  				qgroupid = btrfs_search_header_offset(sh);
  				info = (struct btrfs_qgroup_info_item *)
@@ -110,7 +110,7 @@ index b1be3311..2d0a6947 100644
  
  				ret = update_qgroup_info(fd, qgroup_lookup,
  							 qgroupid, info);
-@@ -1221,7 +1203,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+@@ -1225,7 +1207,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
  			case BTRFS_QGROUP_LIMIT_KEY:
  				qgroupid = btrfs_search_header_offset(sh);
  				limit = (struct btrfs_qgroup_limit_item *)
@@ -119,7 +119,7 @@ index b1be3311..2d0a6947 100644
  
  				ret = update_qgroup_limit(fd, qgroup_lookup,
  							  qgroupid, limit);
-@@ -1267,6 +1249,66 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+@@ -1271,6 +1253,66 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
  	return ret;
  }
  
@@ -186,7 +186,7 @@ index b1be3311..2d0a6947 100644
  static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bool verbose)
  {
  
-@@ -1293,7 +1335,7 @@ int btrfs_show_qgroups(int fd,
+@@ -1297,7 +1339,7 @@ int btrfs_show_qgroups(int fd,
  	struct qgroup_lookup sort_tree;
  	int ret;
  
@@ -195,8 +195,17 @@ index b1be3311..2d0a6947 100644
  	if (ret)
  		return ret;
  	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
+@@ -1500,7 +1542,7 @@ int btrfs_export_qgroups_json(int fd,
+ 	struct qgroup_lookup sort_tree;
+ 	int ret = 0;
+ 
+-	ret = __qgroups_search(fd, &qgroup_lookup);
++	ret = qgroups_search_all(fd, &qgroup_lookup);
+ 	if (ret)
+ 		return ret;
+ 	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
 diff --git a/qgroup.h b/qgroup.h
-index 5e71349c..688f92b2 100644
+index e11bbef3..2883727b 100644
 --- a/qgroup.h
 +++ b/qgroup.h
 @@ -87,6 +87,12 @@ struct btrfs_qgroup_info {
@@ -212,7 +221,7 @@ index 5e71349c..688f92b2 100644
  int btrfs_qgroup_parse_sort_string(const char *opt_arg,
  				struct btrfs_qgroup_comparer_set **comps);
  int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
-@@ -105,4 +111,5 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
+@@ -108,4 +114,5 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_inherit **inherit, char *arg);
  int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, char *arg,
  			    int type);
  

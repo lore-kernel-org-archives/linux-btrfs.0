@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59500 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59502 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S967970AbeCBSkV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1947352AbeCBSkV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 2 Mar 2018 13:40:21 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id A9CE8AE8B
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id C18F8AE8D
         for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:40:18 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 5/8] btrfs-progs: qgroups: introduce and use info and limit structures
-Date: Fri,  2 Mar 2018 13:39:58 -0500
-Message-Id: <20180302184004.22036-7-jeffm@suse.com>
+Subject: [PATCH 6/8] btrfs-progs: qgroups: introduce and use info and limit structures
+Date: Fri,  2 Mar 2018 13:39:59 -0500
+Message-Id: <20180302184004.22036-8-jeffm@suse.com>
 In-Reply-To: <20180302184004.22036-1-jeffm@suse.com>
 References: <20180302184004.22036-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -28,15 +28,15 @@ btrfs_qgroup_limit in btrfs_qgroup.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- qgroup.c | 73 +++++++++++++++++++++++++++++++---------------------------------
+ qgroup.c | 83 +++++++++++++++++++++++++++++++---------------------------------
  qgroup.h |  8 +++++++
- 2 files changed, 43 insertions(+), 38 deletions(-)
+ 2 files changed, 48 insertions(+), 43 deletions(-)
 
 diff --git a/qgroup.c b/qgroup.c
-index 83918134..b1be3311 100644
+index 5a7a8530..7ec12ec1 100644
 --- a/qgroup.c
 +++ b/qgroup.c
-@@ -46,20 +46,12 @@ struct btrfs_qgroup {
+@@ -50,20 +50,12 @@ struct btrfs_qgroup {
  	/*
  	 * info_item
  	 */
@@ -59,7 +59,7 @@ index 83918134..b1be3311 100644
  
  	/*qgroups this group is member of*/
  	struct list_head qgroups;
-@@ -272,24 +264,24 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+@@ -276,24 +268,24 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
  		print_qgroup_column_add_blank(BTRFS_QGROUP_QGROUPID, len);
  		break;
  	case BTRFS_QGROUP_RFER:
@@ -90,7 +90,7 @@ index 83918134..b1be3311 100644
  		else
  			len = printf("%*s", max_len, "none");
  		break;
-@@ -432,9 +424,9 @@ static int comp_entry_with_rfer(struct btrfs_qgroup *entry1,
+@@ -436,9 +428,9 @@ static int comp_entry_with_rfer(struct btrfs_qgroup *entry1,
  {
  	int ret;
  
@@ -102,7 +102,7 @@ index 83918134..b1be3311 100644
  		ret = -1;
  	else
  		ret = 0;
-@@ -448,9 +440,9 @@ static int comp_entry_with_excl(struct btrfs_qgroup *entry1,
+@@ -452,9 +444,9 @@ static int comp_entry_with_excl(struct btrfs_qgroup *entry1,
  {
  	int ret;
  
@@ -114,7 +114,7 @@ index 83918134..b1be3311 100644
  		ret = -1;
  	else
  		ret = 0;
-@@ -464,9 +456,9 @@ static int comp_entry_with_max_rfer(struct btrfs_qgroup *entry1,
+@@ -468,9 +460,9 @@ static int comp_entry_with_max_rfer(struct btrfs_qgroup *entry1,
  {
  	int ret;
  
@@ -126,7 +126,7 @@ index 83918134..b1be3311 100644
  		ret = -1;
  	else
  		ret = 0;
-@@ -480,9 +472,9 @@ static int comp_entry_with_max_excl(struct btrfs_qgroup *entry1,
+@@ -484,9 +476,9 @@ static int comp_entry_with_max_excl(struct btrfs_qgroup *entry1,
  {
  	int ret;
  
@@ -138,7 +138,7 @@ index 83918134..b1be3311 100644
  		ret = -1;
  	else
  		ret = 0;
-@@ -739,11 +731,13 @@ static int update_qgroup_info(int fd, struct qgroup_lookup *qgroup_lookup,
+@@ -743,11 +735,13 @@ static int update_qgroup_info(int fd, struct qgroup_lookup *qgroup_lookup,
  	if (IS_ERR_OR_NULL(bq))
  		return PTR_ERR(bq);
  
@@ -157,7 +157,7 @@ index 83918134..b1be3311 100644
  
  	return 0;
  }
-@@ -758,11 +752,14 @@ static int update_qgroup_limit(int fd, struct qgroup_lookup *qgroup_lookup,
+@@ -762,11 +756,14 @@ static int update_qgroup_limit(int fd, struct qgroup_lookup *qgroup_lookup,
  	if (IS_ERR_OR_NULL(bq))
  		return PTR_ERR(bq);
  
@@ -177,7 +177,7 @@ index 83918134..b1be3311 100644
  
  	return 0;
  }
-@@ -1053,22 +1050,22 @@ static void __update_columns_max_len(struct btrfs_qgroup *bq,
+@@ -1057,22 +1054,22 @@ static void __update_columns_max_len(struct btrfs_qgroup *bq,
  			btrfs_qgroup_columns[column].max_len = len;
  		break;
  	case BTRFS_QGROUP_RFER:
@@ -204,8 +204,41 @@ index 83918134..b1be3311 100644
  		if (btrfs_qgroup_columns[column].max_len < len)
  			btrfs_qgroup_columns[column].max_len = len;
  		break;
+@@ -1367,27 +1364,27 @@ static bool export_one_qgroup(json_object *container,
+ 		goto failure;
+ 	json_object_object_add(obj, "qgroupid_raw", tmp);
+ 
+-	tmp = export_one_u64(qgroup->generation, compat);
++	tmp = export_one_u64(qgroup->info.generation, compat);
+ 	if (!tmp)
+ 		goto failure;
+ 	json_object_object_add(obj, "generation", tmp);
+ 
+-	tmp = export_one_u64(qgroup->rfer, compat);
++	tmp = export_one_u64(qgroup->info.referenced, compat);
+ 	if (!tmp)
+ 		goto failure;
+ 	json_object_object_add(obj, "referenced_bytes", tmp);
+ 
+-	tmp = export_one_u64(qgroup->excl, compat);
++	tmp = export_one_u64(qgroup->info.exclusive, compat);
+ 	if (!tmp)
+ 		goto failure;
+ 	json_object_object_add(obj, "exclusive_bytes", tmp);
+ 
+-	tmp = export_one_u64(qgroup->max_rfer, compat);
++	tmp = export_one_u64(qgroup->limit.max_referenced, compat);
+ 	if (!tmp)
+ 		goto failure;
+ 	json_object_object_add(obj, "referenced_limit_bytes", tmp);
+ 
+-	tmp = export_one_u64(qgroup->max_excl, compat);
++	tmp = export_one_u64(qgroup->limit.max_exclusive, compat);
+ 	if (!tmp)
+ 		goto failure;
+ 	json_object_object_add(obj, "exclusive_limit_bytes", tmp);
 diff --git a/qgroup.h b/qgroup.h
-index f7ab7de5..5e71349c 100644
+index 94717b67..e11bbef3 100644
 --- a/qgroup.h
 +++ b/qgroup.h
 @@ -79,6 +79,14 @@ enum btrfs_qgroup_filter_enum {

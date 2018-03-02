@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59478 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59476 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S967967AbeCBSkS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Mar 2018 13:40:18 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 8AD35AE88
+        id S967966AbeCBSkR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Mar 2018 13:40:17 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 72AB3AE87
         for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:40:16 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 4/8] btrfs-progs: qgroups: add pathname to show output
-Date: Fri,  2 Mar 2018 13:39:56 -0500
-Message-Id: <20180302184004.22036-5-jeffm@suse.com>
+Subject: [PATCH 5/8] btrfs-progs: qgroups: export qgroups usage information as JSON
+Date: Fri,  2 Mar 2018 13:39:57 -0500
+Message-Id: <20180302184004.22036-6-jeffm@suse.com>
 In-Reply-To: <20180302184004.22036-1-jeffm@suse.com>
 References: <20180302184004.22036-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,499 +19,408 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-The btrfs qgroup show command currently only exports qgroup IDs,
-forcing the user to resolve which subvolume each corresponds to.
+One of the common requests I receive is for 'df' like facilities
+for subvolume usage.  Really, the request is for monitoring tools to be
+able to understand when subvolumes may be approaching quota in the same
+manner traditional file systems approach ENOSPC.
 
-This patch adds pathname resolution to qgroup show so that when
-the -P option is used, the last column contains the pathname of
-the root of the subvolume it describes.  In the case of nested
-qgroups, it will show the number of member qgroups or the paths
-of the members if the -v option is used.
+This patch allows us to export the qgroups data in a machine-readable
+format so that monitoring tools can parse it easily.
 
-Pathname can also be used as a sort parameter.
+There are two modes since JSON can technically handle 64-bit numbers
+but JavaScript proper cannot.  show -j enables JSON mode using 64-bit
+integers directly.  --json-compat presents 64-bit numbers as an array
+of two 32-bit numbers (high followed by low).
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
  Documentation/btrfs-qgroup.asciidoc |   4 +
- cmds-qgroup.c                       |  17 ++++-
- kerncompat.h                        |   1 +
- qgroup.c                            | 142 ++++++++++++++++++++++++++++++++----
- qgroup.h                            |   4 +-
- utils.c                             |  22 ++++--
- utils.h                             |   2 +
- 7 files changed, 166 insertions(+), 26 deletions(-)
+ Makefile.inc.in                     |   4 +-
+ cmds-qgroup.c                       |  36 +++++-
+ configure.ac                        |   6 +
+ qgroup.c                            | 211 ++++++++++++++++++++++++++++++++++++
+ qgroup.h                            |   3 +
+ 6 files changed, 258 insertions(+), 6 deletions(-)
 
 diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
-index 3108457c..360b3269 100644
+index 360b3269..22a9c2a7 100644
 --- a/Documentation/btrfs-qgroup.asciidoc
 +++ b/Documentation/btrfs-qgroup.asciidoc
-@@ -97,10 +97,14 @@ print child qgroup id.
- print limit of referenced size of qgroup.
- -e::::
- print limit of exclusive size of qgroup.
-+-P::::
-+print pathname to the root of the subvolume managed by qgroup.  For nested qgroups, the number of members will be printed unless -v is specified.
- -F::::
- list all qgroups which impact the given path(include ancestral qgroups)
- -f::::
+@@ -105,6 +105,10 @@ list all qgroups which impact the given path(include ancestral qgroups)
  list all qgroups which impact the given path(exclude ancestral qgroups)
-+-v::::
-+Be more verbose.  Print pathnames of member qgroups when nested.
+ -v::::
+ Be more verbose.  Print pathnames of member qgroups when nested.
++-j::::
++If enabled, export qgroup usage information in JSON format.  This implies --raw.
++--json-compat::::
++By default, JSON output contains full 64-bit integers, which may be incompatible with some JSON parsers.  This option exports those values as an array of 32-bit numbers in [high, low] format.
  --raw::::
  raw numbers in bytes, without the 'B' suffix.
  --human-readable::::
+diff --git a/Makefile.inc.in b/Makefile.inc.in
+index 56271903..68bddbed 100644
+--- a/Makefile.inc.in
++++ b/Makefile.inc.in
+@@ -18,9 +18,9 @@ BTRFSRESTORE_ZSTD = @BTRFSRESTORE_ZSTD@
+ SUBST_CFLAGS = @CFLAGS@
+ SUBST_LDFLAGS = @LDFLAGS@
+ 
+-LIBS_BASE = @UUID_LIBS@ @BLKID_LIBS@ -L. -pthread
++LIBS_BASE = @UUID_LIBS@ @BLKID_LIBS@ @JSON_LIBS@ -L. -pthread
+ LIBS_COMP = @ZLIB_LIBS@ @LZO2_LIBS@ @ZSTD_LIBS@
+-STATIC_LIBS_BASE = @UUID_LIBS_STATIC@ @BLKID_LIBS_STATIC@ -L. -pthread
++STATIC_LIBS_BASE = @UUID_LIBS_STATIC@ @BLKID_LIBS_STATIC@ @JSON_LIBS_STATIC@ -L. -pthread
+ STATIC_LIBS_COMP = @ZLIB_LIBS_STATIC@ @LZO2_LIBS_STATIC@ @ZSTD_LIBS_STATIC@
+ 
+ prefix ?= @prefix@
 diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 48686436..94cd0fd3 100644
+index 94cd0fd3..eee15ef1 100644
 --- a/cmds-qgroup.c
 +++ b/cmds-qgroup.c
-@@ -280,8 +280,10 @@ static const char * const cmd_qgroup_show_usage[] = {
- 	"               (including ancestral qgroups)",
- 	"-f             list all qgroups which impact the given path",
+@@ -282,6 +282,10 @@ static const char * const cmd_qgroup_show_usage[] = {
  	"               (excluding ancestral qgroups)",
-+	"-P             print first-level qgroups using pathname",
-+	"-v             verbose, prints all nested subvolumes",
+ 	"-P             print first-level qgroups using pathname",
+ 	"-v             verbose, prints all nested subvolumes",
++#ifdef HAVE_JSON
++	"-j             export in JSON format",
++	"--json-compat  export in JSON compatibility mode",
++#endif
  	HELPINFO_UNITS_LONG,
--	"--sort=qgroupid,rfer,excl,max_rfer,max_excl",
-+	"--sort=qgroupid,rfer,excl,max_rfer,max_excl,pathname",
+ 	"--sort=qgroupid,rfer,excl,max_rfer,max_excl,pathname",
  	"               list qgroups sorted by specified items",
- 	"               you can use '+' or '-' in front of each item.",
- 	"               (+:ascending, -:descending, ascending default)",
-@@ -299,6 +301,7 @@ static int cmd_qgroup_show(int argc, char **argv)
- 	int filter_flag = 0;
+@@ -302,6 +306,8 @@ static int cmd_qgroup_show(int argc, char **argv)
  	unsigned unit_mode;
  	int sync = 0;
-+	bool verbose = false;
+ 	bool verbose = false;
++	bool export_json = false;
++	bool compat_json = false;
  
  	struct btrfs_qgroup_comparer_set *comparer_set;
  	struct btrfs_qgroup_filter_set *filter_set;
-@@ -316,10 +319,11 @@ static int cmd_qgroup_show(int argc, char **argv)
+@@ -314,16 +320,26 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 		int c;
+ 		enum {
+ 			GETOPT_VAL_SORT = 256,
+-			GETOPT_VAL_SYNC
++			GETOPT_VAL_SYNC,
++			GETOPT_VAL_JSCOMPAT,
+ 		};
  		static const struct option long_options[] = {
  			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
  			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
-+			{"verbose", no_argument, NULL, 'v'},
+ 			{"verbose", no_argument, NULL, 'v'},
++#ifdef HAVE_JSON
++			{"json-compat", no_argument, NULL, GETOPT_VAL_JSCOMPAT},
++#endif
  			{ NULL, 0, NULL, 0 }
  		};
- 
--		c = getopt_long(argc, argv, "pcreFf", long_options, NULL);
-+		c = getopt_long(argc, argv, "pPcreFfv", long_options, NULL);
+-
+-		c = getopt_long(argc, argv, "pPcreFfv", long_options, NULL);
++		const char getopt_chars[] = {
++			'p', 'P', 'c', 'r', 'e', 'F', 'f', 'v',
++#ifdef HAVE_JSON
++			'j',
++#endif
++			'\0' };
++
++		c = getopt_long(argc, argv, getopt_chars, long_options, NULL);
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -327,6 +331,10 @@ static int cmd_qgroup_show(int argc, char **argv)
- 			btrfs_qgroup_setup_print_column(
- 				BTRFS_QGROUP_PARENT);
+@@ -353,6 +369,14 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 		case 'f':
+ 			filter_flag |= 0x2;
  			break;
-+		case 'P':
-+			btrfs_qgroup_setup_print_column(
-+				BTRFS_QGROUP_PATHNAME);
++#ifdef HAVE_JSON
++		case GETOPT_VAL_JSCOMPAT:
++			compat_json = true;
++		case 'j':
++			unit_mode = UNITS_RAW;
++			export_json = true;
 +			break;
- 		case 'c':
- 			btrfs_qgroup_setup_print_column(
- 				BTRFS_QGROUP_CHILD);
-@@ -354,6 +362,9 @@ static int cmd_qgroup_show(int argc, char **argv)
- 		case GETOPT_VAL_SYNC:
- 			sync = 1;
- 			break;
-+		case 'v':
-+			verbose = true;
-+			break;
- 		default:
- 			usage(cmd_qgroup_show_usage);
- 		}
-@@ -394,7 +405,7 @@ static int cmd_qgroup_show(int argc, char **argv)
++#endif
+ 		case GETOPT_VAL_SORT:
+ 			ret = btrfs_qgroup_parse_sort_string(optarg,
+ 							     &comparer_set);
+@@ -405,7 +429,11 @@ static int cmd_qgroup_show(int argc, char **argv)
  					BTRFS_QGROUP_FILTER_PARENT,
  					qgroupid);
  	}
--	ret = btrfs_show_qgroups(fd, filter_set, comparer_set);
-+	ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
+-	ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
++	if (export_json)
++		ret = btrfs_export_qgroups_json(fd, filter_set, comparer_set,
++						compat_json);
++	else
++		ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
  	close_file_or_dir(fd, dirstream);
  	free(filter_set);
  	free(comparer_set);
-diff --git a/kerncompat.h b/kerncompat.h
-index fa96715f..f97495ee 100644
---- a/kerncompat.h
-+++ b/kerncompat.h
-@@ -29,6 +29,7 @@
- #include <stddef.h>
- #include <linux/types.h>
- #include <stdint.h>
-+#include <stdbool.h>
+diff --git a/configure.ac b/configure.ac
+index 56d17c3a..6aec672a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -197,6 +197,12 @@ PKG_STATIC(UUID_LIBS_STATIC, [uuid])
+ PKG_CHECK_MODULES(ZLIB, [zlib])
+ PKG_STATIC(ZLIB_LIBS_STATIC, [zlib])
  
- #include <features.h>
- 
++PKG_CHECK_MODULES(JSON, [json-c], [
++	AC_DEFINE(HAVE_JSON, [1], [Have JSON]),
++	PKG_STATIC(JSON_LIBS_STATIC, [json-c], [
++		AC_DEFINE(HAVE_JSON_STATIC, [1], [Have JSON static])], [true])
++	], [true])
++
+ AC_ARG_ENABLE([zstd],
+ 	AS_HELP_STRING([--disable-zstd], [build without zstd support]),
+ 	[], [enable_zstd=yes]
 diff --git a/qgroup.c b/qgroup.c
-index 67bc0738..83918134 100644
+index 83918134..5a7a8530 100644
 --- a/qgroup.c
 +++ b/qgroup.c
-@@ -40,6 +40,9 @@ struct btrfs_qgroup {
- 	struct rb_node all_parent_node;
- 	u64 qgroupid;
- 
-+	/* NULL for qgroups with level > 0 */
-+	const char *pathname;
-+
- 	/*
- 	 * info_item
- 	 */
-@@ -133,6 +136,13 @@ static struct {
- 		.unit_mode	= 0,
- 		.max_len	= 5,
- 	},
-+	{
-+		.name		= "pathname",
-+		.column_name	= "pathname",
-+		.need_print	= 0,
-+		.unit_mode	= 0,
-+		.max_len	= 10,
-+	},
- 	{
- 		.name		= NULL,
- 		.column_name	= NULL,
-@@ -210,8 +220,42 @@ static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
- 		printf(" ");
- }
- 
-+void print_pathname_column(struct btrfs_qgroup *qgroup, bool verbose)
-+{
-+	struct btrfs_qgroup_list *list = NULL;
-+
-+	fputs("  ", stdout);
-+	if (btrfs_qgroup_level(qgroup->qgroupid) > 0) {
-+		int count = 0;
-+		list_for_each_entry(list, &qgroup->qgroups,
-+				    next_qgroup) {
-+			if (verbose) {
-+				struct btrfs_qgroup *member = list->qgroup;
-+				u64 level = btrfs_qgroup_level(member->qgroupid);
-+				u64 sid = btrfs_qgroup_subvid(member->qgroupid);
-+				if (count)
-+					fputs(" ", stdout);
-+				if (btrfs_qgroup_level(member->qgroupid) == 0)
-+					fputs(member->pathname, stdout);
-+				else
-+					printf("%llu/%llu", level, sid);
-+			}
-+			count++;
-+		}
-+		if (!count)
-+			fputs("<empty>", stdout);
-+		else if (!verbose)
-+			printf("<%u member qgroup%c>", count,
-+			       count != 1 ? 's' : '\0');
-+	} else if (qgroup->pathname)
-+		fputs(qgroup->pathname, stdout);
-+	else
-+		fputs("<missing>", stdout);
-+}
-+
- static void print_qgroup_column(struct btrfs_qgroup *qgroup,
--				enum btrfs_qgroup_column_enum column)
-+				enum btrfs_qgroup_column_enum column,
-+				bool verbose)
- {
- 	int len;
- 	int unit_mode = btrfs_qgroup_columns[column].unit_mode;
-@@ -253,19 +297,22 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
- 		len = print_child_column(qgroup);
- 		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
- 		break;
-+	case BTRFS_QGROUP_PATHNAME:
-+		print_pathname_column(qgroup, verbose);
-+		break;
- 	default:
- 		break;
- 	}
- }
- 
--static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
-+static void print_single_qgroup_table(struct btrfs_qgroup *qgroup, bool verbose)
- {
- 	int i;
- 
- 	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
- 		if (!btrfs_qgroup_columns[i].need_print)
- 			continue;
--		print_qgroup_column(qgroup, i);
-+		print_qgroup_column(qgroup, i, verbose);
- 
- 		if (i != BTRFS_QGROUP_ALL - 1)
- 			printf(" ");
-@@ -338,6 +385,47 @@ static int comp_entry_with_qgroupid(struct btrfs_qgroup *entry1,
- 	return is_descending ? -ret : ret;
- }
- 
-+/* Sorts first-level qgroups by pathname and nested qgroups by qgroupid */
-+static int comp_entry_with_pathname(struct btrfs_qgroup *entry1,
-+				    struct btrfs_qgroup *entry2,
-+				    int is_descending)
-+{
-+	int ret = 0;
-+	const char *p1 = entry1->pathname;
-+	const char *p2 = entry2->pathname;
-+
-+	u64 level1 = btrfs_qgroup_level(entry1->qgroupid);
-+	u64 level2 = btrfs_qgroup_level(entry2->qgroupid);
-+
-+	if (level1 != level2) {
-+		if (entry1->qgroupid > entry2->qgroupid)
-+			ret = 1;
-+		else if (entry1->qgroupid < entry2->qgroupid)
-+			ret = -1;
-+	}
-+
-+	if (ret)
-+		goto out;
-+
-+	while (*p1 && *p2) {
-+		if (*p1 != *p2)
-+			break;
-+		p1++;
-+		p2++;
-+	}
-+
-+	if (*p1 == '/')
-+		ret = 1;
-+	else if (*p2 == '/')
-+	      ret = -1;
-+	else if (*p1 > *p2)
-+	      ret = 1;
-+	else if (*p1 < *p2)
-+		ret = -1;
-+out:
-+	return is_descending ? -ret : ret;
-+}
-+
- static int comp_entry_with_rfer(struct btrfs_qgroup *entry1,
- 				struct btrfs_qgroup *entry2,
- 				int is_descending)
-@@ -404,6 +492,7 @@ static int comp_entry_with_max_excl(struct btrfs_qgroup *entry1,
- 
- static btrfs_qgroup_comp_func all_comp_funcs[] = {
- 	[BTRFS_QGROUP_COMP_QGROUPID]	= comp_entry_with_qgroupid,
-+	[BTRFS_QGROUP_COMP_PATHNAME]	= comp_entry_with_pathname,
- 	[BTRFS_QGROUP_COMP_RFER]	= comp_entry_with_rfer,
- 	[BTRFS_QGROUP_COMP_EXCL]	= comp_entry_with_excl,
- 	[BTRFS_QGROUP_COMP_MAX_RFER]	= comp_entry_with_max_rfer,
-@@ -412,6 +501,7 @@ static btrfs_qgroup_comp_func all_comp_funcs[] = {
- 
- static char *all_sort_items[] = {
- 	[BTRFS_QGROUP_COMP_QGROUPID]	= "qgroupid",
-+	[BTRFS_QGROUP_COMP_PATHNAME]	= "pathname",
- 	[BTRFS_QGROUP_COMP_RFER]	= "rfer",
- 	[BTRFS_QGROUP_COMP_EXCL]	= "excl",
- 	[BTRFS_QGROUP_COMP_MAX_RFER]	= "max_rfer",
-@@ -578,6 +668,25 @@ static struct btrfs_qgroup *qgroup_tree_search(struct qgroup_lookup *root_tree,
- 	return NULL;
- }
- 
-+static const char *qgroup_pathname(int fd, u64 qgroupid)
-+{
-+	struct root_info root_info;
-+	int ret;
-+	char *pathname;
-+
-+	ret = get_subvol_info_by_rootid_fd(fd, &root_info, qgroupid);
-+	if (ret)
-+		return NULL;
-+
-+	ret = asprintf(&pathname, "%s%s",
-+		       root_info.full_path[0] == '/' ? "" : "/",
-+		       root_info.full_path);
-+	if (ret < 0)
-+		return NULL;
-+
-+	return pathname;
-+}
-+
- /*
-  * Lookup or insert btrfs_qgroup into qgroup_lookup.
-  *
-@@ -588,7 +697,7 @@ static struct btrfs_qgroup *qgroup_tree_search(struct qgroup_lookup *root_tree,
-  * Return the pointer to the btrfs_qgroup if found or if inserted successfully.
-  * Return ERR_PTR if any error occurred.
+@@ -16,12 +16,16 @@
+  * Boston, MA 021110-1307, USA.
   */
--static struct btrfs_qgroup *get_or_add_qgroup(
-+static struct btrfs_qgroup *get_or_add_qgroup(int fd,
- 		struct qgroup_lookup *qgroup_lookup, u64 qgroupid)
- {
- 	struct btrfs_qgroup *bq;
-@@ -608,6 +717,8 @@ static struct btrfs_qgroup *get_or_add_qgroup(
- 	INIT_LIST_HEAD(&bq->qgroups);
- 	INIT_LIST_HEAD(&bq->members);
  
-+	bq->pathname = qgroup_pathname(fd, qgroupid);
++#include "version.h"
+ #include "qgroup.h"
+ #include <sys/ioctl.h>
+ #include "ctree.h"
+ #include "ioctl.h"
+ #include "utils.h"
+ #include <errno.h>
++#ifdef HAVE_JSON
++#include <json-c/json.h>
++#endif
+ 
+ #define BTRFS_QGROUP_NFILTERS_INCREASE (2 * BTRFS_QGROUP_FILTER_MAX)
+ #define BTRFS_QGROUP_NCOMPS_INCREASE (2 * BTRFS_QGROUP_COMP_MAX)
+@@ -1307,6 +1311,213 @@ int btrfs_show_qgroups(int fd,
+ 	return ret;
+ }
+ 
++#ifdef HAVE_JSON
++static void format_qgroupid(char *buf, size_t size, u64 qgroupid)
++{
++	int ret;
 +
- 	ret = qgroup_tree_insert(qgroup_lookup, bq);
- 	if (ret) {
- 		error("failed to insert %llu into tree: %s",
-@@ -619,12 +730,12 @@ static struct btrfs_qgroup *get_or_add_qgroup(
- 	return bq;
- }
- 
--static int update_qgroup_info(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
--			      struct btrfs_qgroup_info_item *info)
-+static int update_qgroup_info(int fd, struct qgroup_lookup *qgroup_lookup,
-+			      u64 qgroupid, struct btrfs_qgroup_info_item *info)
++	ret = snprintf(buf, size, "%llu/%llu",
++		       btrfs_qgroup_level(qgroupid),
++		       btrfs_qgroup_subvid(qgroupid));
++	ASSERT(ret < sizeof(buf));
++}
++
++static json_object *export_one_u64(u64 value, bool compat)
++{
++	json_object *array, *tmp;
++
++	if (!compat)
++		return json_object_new_int64(value);
++
++	array = json_object_new_array();
++	if (!array)
++		return NULL;
++
++	tmp = json_object_new_int(value >> 32);
++	if (!tmp)
++		goto failure;
++	json_object_array_add(array, tmp);
++
++	tmp = json_object_new_int(value & 0xffffffff);
++	if (!tmp)
++		goto failure;
++	json_object_array_add(array, tmp);
++
++	return array;
++failure:
++	json_object_put(array);
++	return NULL;
++}
++
++static bool export_one_qgroup(json_object *container,
++			     const struct btrfs_qgroup *qgroup, bool compat)
++{
++	json_object *obj = json_object_new_object();
++	json_object *tmp;
++	char buf[42];
++
++	format_qgroupid(buf, sizeof(buf), qgroup->qgroupid);
++	tmp = json_object_new_string(buf);
++	if (!tmp)
++		return false;
++	json_object_object_add(obj, "qgroupid", tmp);
++
++	tmp = export_one_u64(qgroup->qgroupid, compat);
++	if (!tmp)
++		goto failure;
++	json_object_object_add(obj, "qgroupid_raw", tmp);
++
++	tmp = export_one_u64(qgroup->generation, compat);
++	if (!tmp)
++		goto failure;
++	json_object_object_add(obj, "generation", tmp);
++
++	tmp = export_one_u64(qgroup->rfer, compat);
++	if (!tmp)
++		goto failure;
++	json_object_object_add(obj, "referenced_bytes", tmp);
++
++	tmp = export_one_u64(qgroup->excl, compat);
++	if (!tmp)
++		goto failure;
++	json_object_object_add(obj, "exclusive_bytes", tmp);
++
++	tmp = export_one_u64(qgroup->max_rfer, compat);
++	if (!tmp)
++		goto failure;
++	json_object_object_add(obj, "referenced_limit_bytes", tmp);
++
++	tmp = export_one_u64(qgroup->max_excl, compat);
++	if (!tmp)
++		goto failure;
++	json_object_object_add(obj, "exclusive_limit_bytes", tmp);
++
++	if (btrfs_qgroup_level(qgroup->qgroupid) == 0) {
++		tmp = json_object_new_string(qgroup->pathname);
++		if (!tmp)
++			goto failure;
++		json_object_object_add(obj, "pathname", tmp);
++	} else {
++		json_object *array = json_object_new_array();
++		struct btrfs_qgroup_list *list = NULL;
++		if (!array)
++			goto failure;
++		json_object_object_add(obj, "members", array);
++
++		list_for_each_entry(list, &qgroup->qgroups, next_qgroup) {
++			struct btrfs_qgroup *member = list->qgroup;
++			char buf2[42];
++
++			format_qgroupid(buf2, sizeof(buf2), member->qgroupid);
++			tmp = json_object_new_string(buf2);
++			if (!tmp)
++				goto failure;
++
++			json_object_array_add(array, tmp);
++		}
++	}
++
++	json_object_object_add(container, buf, obj);
++	return true;
++failure:
++	json_object_put(obj);
++	return false;
++}
++
++#define BTRFS_JSON_WARNING \
++"This data contains 64-bit values that are incompatible with Javascript. Export in compatibility mode using --json-compat."
++
++static void export_all_qgroups(const struct qgroup_lookup *qgroup_lookup,
++			       bool compat)
++{
++
++	struct rb_node *n;
++	const char *json;
++	json_object *container, *dict, *obj;
++	struct btrfs_qgroup *entry;
++
++	container = json_object_new_object();
++	if (!container)
++		goto failure_msg;
++
++	obj = json_object_new_string(BTRFS_BUILD_VERSION);
++	if (!obj)
++		goto failure;
++	json_object_object_add(container, "exporter", obj);
++
++	if (!compat) {
++		obj = json_object_new_string(BTRFS_JSON_WARNING);
++		if (!obj)
++			goto failure;
++		json_object_object_add(container, "compatibility-warning", obj);
++
++		obj = json_object_new_string("64-bit");
++		if (!obj)
++			goto failure;
++		json_object_object_add(container, "u64-format", obj);
++	} else {
++		obj = json_object_new_string("array");
++		if (!obj)
++			goto failure;
++		json_object_object_add(container, "u64-format", obj);
++	}
++
++	dict = json_object_new_object();
++	if (!dict)
++		goto failure;
++	json_object_object_add(container, "qgroup_data", dict);
++
++	n = rb_first(&qgroup_lookup->root);
++	while (n) {
++		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
++		if (!export_one_qgroup(dict, entry, compat))
++			goto failure;
++		n = rb_next(n);
++	}
++
++	json = json_object_to_json_string(container);
++	if (!json)
++		goto failure;
++
++	puts(json);
++
++	/* clean up container */
++	json_object_put(container);
++	return;
++
++failure:
++	json_object_put(container);
++failure_msg:
++	error("Failed to create JSON object.");
++}
++#endif
++
++int btrfs_export_qgroups_json(int fd,
++			      struct btrfs_qgroup_filter_set *filter_set,
++			      struct btrfs_qgroup_comparer_set *comp_set,
++			      bool compat)
++{
++
++#ifdef HAVE_JSON
++	struct qgroup_lookup qgroup_lookup;
++	struct qgroup_lookup sort_tree;
++	int ret = 0;
++
++	ret = __qgroups_search(fd, &qgroup_lookup);
++	if (ret)
++		return ret;
++	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
++				  filter_set, comp_set);
++	export_all_qgroups(&sort_tree, compat);
++
++	__free_all_qgroups(&qgroup_lookup);
++
++	return ret;
++#else
++	return 0;
++#endif
++}
++
+ int btrfs_qgroup_parse_sort_string(const char *opt_arg,
+ 				   struct btrfs_qgroup_comparer_set **comps)
  {
- 	struct btrfs_qgroup *bq;
- 
--	bq = get_or_add_qgroup(qgroup_lookup, qgroupid);
-+	bq = get_or_add_qgroup(fd, qgroup_lookup, qgroupid);
- 	if (IS_ERR_OR_NULL(bq))
- 		return PTR_ERR(bq);
- 
-@@ -637,13 +748,13 @@ static int update_qgroup_info(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
- 	return 0;
- }
- 
--static int update_qgroup_limit(struct qgroup_lookup *qgroup_lookup,
-+static int update_qgroup_limit(int fd, struct qgroup_lookup *qgroup_lookup,
- 			       u64 qgroupid,
- 			       struct btrfs_qgroup_limit_item *limit)
- {
- 	struct btrfs_qgroup *bq;
- 
--	bq = get_or_add_qgroup(qgroup_lookup, qgroupid);
-+	bq = get_or_add_qgroup(fd, qgroup_lookup, qgroupid);
- 	if (IS_ERR_OR_NULL(bq))
- 		return PTR_ERR(bq);
- 
-@@ -1107,7 +1218,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
- 				info = (struct btrfs_qgroup_info_item *)
- 				       (args.buf + off);
- 
--				ret = update_qgroup_info(qgroup_lookup,
-+				ret = update_qgroup_info(fd, qgroup_lookup,
- 							 qgroupid, info);
- 				break;
- 			case BTRFS_QGROUP_LIMIT_KEY:
-@@ -1115,7 +1226,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
- 				limit = (struct btrfs_qgroup_limit_item *)
- 					(args.buf + off);
- 
--				ret = update_qgroup_limit(qgroup_lookup,
-+				ret = update_qgroup_limit(fd, qgroup_lookup,
- 							  qgroupid, limit);
- 				break;
- 			case BTRFS_QGROUP_RELATION_KEY:
-@@ -1159,7 +1270,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
- 	return ret;
- }
- 
--static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
-+static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bool verbose)
- {
- 
- 	struct rb_node *n;
-@@ -1170,14 +1281,15 @@ static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
- 	n = rb_first(&qgroup_lookup->root);
- 	while (n) {
- 		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
--		print_single_qgroup_table(entry);
-+		print_single_qgroup_table(entry, verbose);
- 		n = rb_next(n);
- 	}
- }
- 
- int btrfs_show_qgroups(int fd,
- 		       struct btrfs_qgroup_filter_set *filter_set,
--		       struct btrfs_qgroup_comparer_set *comp_set)
-+		       struct btrfs_qgroup_comparer_set *comp_set,
-+		       bool verbose)
- {
- 
- 	struct qgroup_lookup qgroup_lookup;
-@@ -1189,7 +1301,7 @@ int btrfs_show_qgroups(int fd,
- 		return ret;
- 	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
- 				  filter_set, comp_set);
--	print_all_qgroups(&sort_tree);
-+	print_all_qgroups(&sort_tree, verbose);
- 
- 	__free_all_qgroups(&qgroup_lookup);
- 	return ret;
 diff --git a/qgroup.h b/qgroup.h
-index 875fbdf3..f7ab7de5 100644
+index f7ab7de5..94717b67 100644
 --- a/qgroup.h
 +++ b/qgroup.h
-@@ -59,11 +59,13 @@ enum btrfs_qgroup_column_enum {
- 	BTRFS_QGROUP_MAX_EXCL,
- 	BTRFS_QGROUP_PARENT,
- 	BTRFS_QGROUP_CHILD,
-+	BTRFS_QGROUP_PATHNAME,
- 	BTRFS_QGROUP_ALL,
- };
- 
- enum btrfs_qgroup_comp_enum {
- 	BTRFS_QGROUP_COMP_QGROUPID,
-+	BTRFS_QGROUP_COMP_PATHNAME,
- 	BTRFS_QGROUP_COMP_RFER,
- 	BTRFS_QGROUP_COMP_EXCL,
- 	BTRFS_QGROUP_COMP_MAX_RFER,
-@@ -80,7 +82,7 @@ enum btrfs_qgroup_filter_enum {
- int btrfs_qgroup_parse_sort_string(const char *opt_arg,
+@@ -83,6 +83,9 @@ int btrfs_qgroup_parse_sort_string(const char *opt_arg,
  				struct btrfs_qgroup_comparer_set **comps);
  int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
--		       struct btrfs_qgroup_comparer_set *);
-+		       struct btrfs_qgroup_comparer_set *, bool verbose);
+ 		       struct btrfs_qgroup_comparer_set *, bool verbose);
++int btrfs_export_qgroups_json(int fd, struct btrfs_qgroup_filter_set *,
++			      struct btrfs_qgroup_comparer_set *,
++			      bool compat);
  void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
  void btrfs_qgroup_setup_units(unsigned unit_mode);
  struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
-diff --git a/utils.c b/utils.c
-index e9cb3a82..68202142 100644
---- a/utils.c
-+++ b/utils.c
-@@ -2556,15 +2556,9 @@ out:
- 	return ret;
- }
- 
--int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri, u64 r_id)
-+int get_subvol_info_by_rootid_fd(int fd, struct root_info *get_ri, u64 r_id)
- {
--	int fd;
- 	int ret;
--	DIR *dirstream = NULL;
--
--	fd = btrfs_open_dir(mnt, &dirstream, 1);
--	if (fd < 0)
--		return -EINVAL;
- 
- 	memset(get_ri, 0, sizeof(*get_ri));
- 	get_ri->root_id = r_id;
-@@ -2574,6 +2568,20 @@ int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri, u64 r_i
- 	else
- 		ret = btrfs_get_subvol(fd, get_ri);
- 
-+	return ret;
-+}
-+
-+int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri, u64 r_id)
-+{
-+	int fd;
-+	int ret;
-+	DIR *dirstream = NULL;
-+
-+	fd = btrfs_open_dir(mnt, &dirstream, 1);
-+	if (fd < 0)
-+		return -EINVAL;
-+
-+	ret = get_subvol_info_by_rootid_fd(fd, get_ri, r_id);
- 	if (ret)
- 		error("can't find rootid '%llu' on '%s': %d", r_id, mnt, ret);
- 
-diff --git a/utils.h b/utils.h
-index b871c9ff..722d3c48 100644
---- a/utils.h
-+++ b/utils.h
-@@ -154,6 +154,8 @@ int test_isdir(const char *path);
- 
- const char *subvol_strip_mountpoint(const char *mnt, const char *full_path);
- int get_subvol_info(const char *fullpath, struct root_info *get_ri);
-+int get_subvol_info_by_rootid_fd(int fd, struct root_info *get_ri,
-+				 u64 rootid_arg);
- int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri,
- 							u64 rootid_arg);
- int get_subvol_info_by_uuid(const char *mnt, struct root_info *get_ri,
 -- 
 2.15.1
 

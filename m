@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60093 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60096 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1947447AbeCBSrQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1947449AbeCBSrQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 2 Mar 2018 13:47:16 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E7F4DAE8B
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:47:14 +0000 (UTC)
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 0D050AE8C
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:47:15 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 3/8] btrfs-progs: constify pathnames passed as arguments
-Date: Fri,  2 Mar 2018 13:46:59 -0500
-Message-Id: <20180302184704.22399-4-jeffm@suse.com>
+Subject: [PATCH 4/8] btrfs-progs: qgroups: add pathname to show output
+Date: Fri,  2 Mar 2018 13:47:00 -0500
+Message-Id: <20180302184704.22399-5-jeffm@suse.com>
 In-Reply-To: <20180302184704.22399-1-jeffm@suse.com>
 References: <20180302184704.22399-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,114 +19,499 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-It's unlikely we're going to modify a pathname argument, so codify that
-and use const.
+The btrfs qgroup show command currently only exports qgroup IDs,
+forcing the user to resolve which subvolume each corresponds to.
+
+This patch adds pathname resolution to qgroup show so that when
+the -P option is used, the last column contains the pathname of
+the root of the subvolume it describes.  In the case of nested
+qgroups, it will show the number of member qgroups or the paths
+of the members if the -v option is used.
+
+Pathname can also be used as a sort parameter.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- chunk-recover.c | 4 ++--
- cmds-device.c   | 2 +-
- cmds-fi-usage.c | 6 +++---
- cmds-rescue.c   | 4 ++--
- send-utils.c    | 4 ++--
- 5 files changed, 10 insertions(+), 10 deletions(-)
+ Documentation/btrfs-qgroup.asciidoc |   4 +
+ cmds-qgroup.c                       |  17 ++++-
+ kerncompat.h                        |   1 +
+ qgroup.c                            | 142 ++++++++++++++++++++++++++++++++----
+ qgroup.h                            |   4 +-
+ utils.c                             |  22 ++++--
+ utils.h                             |   2 +
+ 7 files changed, 166 insertions(+), 26 deletions(-)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 705bcf52..1d30db51 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1492,7 +1492,7 @@ out:
- 	return ERR_PTR(ret);
+diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
+index 3108457c..360b3269 100644
+--- a/Documentation/btrfs-qgroup.asciidoc
++++ b/Documentation/btrfs-qgroup.asciidoc
+@@ -97,10 +97,14 @@ print child qgroup id.
+ print limit of referenced size of qgroup.
+ -e::::
+ print limit of exclusive size of qgroup.
++-P::::
++print pathname to the root of the subvolume managed by qgroup.  For nested qgroups, the number of members will be printed unless -v is specified.
+ -F::::
+ list all qgroups which impact the given path(include ancestral qgroups)
+ -f::::
+ list all qgroups which impact the given path(exclude ancestral qgroups)
++-v::::
++Be more verbose.  Print pathnames of member qgroups when nested.
+ --raw::::
+ raw numbers in bytes, without the 'B' suffix.
+ --human-readable::::
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 48686436..94cd0fd3 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -280,8 +280,10 @@ static const char * const cmd_qgroup_show_usage[] = {
+ 	"               (including ancestral qgroups)",
+ 	"-f             list all qgroups which impact the given path",
+ 	"               (excluding ancestral qgroups)",
++	"-P             print first-level qgroups using pathname",
++	"-v             verbose, prints all nested subvolumes",
+ 	HELPINFO_UNITS_LONG,
+-	"--sort=qgroupid,rfer,excl,max_rfer,max_excl",
++	"--sort=qgroupid,rfer,excl,max_rfer,max_excl,pathname",
+ 	"               list qgroups sorted by specified items",
+ 	"               you can use '+' or '-' in front of each item.",
+ 	"               (+:ascending, -:descending, ascending default)",
+@@ -299,6 +301,7 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 	int filter_flag = 0;
+ 	unsigned unit_mode;
+ 	int sync = 0;
++	bool verbose = false;
+ 
+ 	struct btrfs_qgroup_comparer_set *comparer_set;
+ 	struct btrfs_qgroup_filter_set *filter_set;
+@@ -316,10 +319,11 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 		static const struct option long_options[] = {
+ 			{"sort", required_argument, NULL, GETOPT_VAL_SORT},
+ 			{"sync", no_argument, NULL, GETOPT_VAL_SYNC},
++			{"verbose", no_argument, NULL, 'v'},
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+-		c = getopt_long(argc, argv, "pcreFf", long_options, NULL);
++		c = getopt_long(argc, argv, "pPcreFfv", long_options, NULL);
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+@@ -327,6 +331,10 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 			btrfs_qgroup_setup_print_column(
+ 				BTRFS_QGROUP_PARENT);
+ 			break;
++		case 'P':
++			btrfs_qgroup_setup_print_column(
++				BTRFS_QGROUP_PATHNAME);
++			break;
+ 		case 'c':
+ 			btrfs_qgroup_setup_print_column(
+ 				BTRFS_QGROUP_CHILD);
+@@ -354,6 +362,9 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 		case GETOPT_VAL_SYNC:
+ 			sync = 1;
+ 			break;
++		case 'v':
++			verbose = true;
++			break;
+ 		default:
+ 			usage(cmd_qgroup_show_usage);
+ 		}
+@@ -394,7 +405,7 @@ static int cmd_qgroup_show(int argc, char **argv)
+ 					BTRFS_QGROUP_FILTER_PARENT,
+ 					qgroupid);
+ 	}
+-	ret = btrfs_show_qgroups(fd, filter_set, comparer_set);
++	ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
+ 	close_file_or_dir(fd, dirstream);
+ 	free(filter_set);
+ 	free(comparer_set);
+diff --git a/kerncompat.h b/kerncompat.h
+index fa96715f..f97495ee 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -29,6 +29,7 @@
+ #include <stddef.h>
+ #include <linux/types.h>
+ #include <stdint.h>
++#include <stdbool.h>
+ 
+ #include <features.h>
+ 
+diff --git a/qgroup.c b/qgroup.c
+index 67bc0738..83918134 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -40,6 +40,9 @@ struct btrfs_qgroup {
+ 	struct rb_node all_parent_node;
+ 	u64 qgroupid;
+ 
++	/* NULL for qgroups with level > 0 */
++	const char *pathname;
++
+ 	/*
+ 	 * info_item
+ 	 */
+@@ -133,6 +136,13 @@ static struct {
+ 		.unit_mode	= 0,
+ 		.max_len	= 5,
+ 	},
++	{
++		.name		= "pathname",
++		.column_name	= "pathname",
++		.need_print	= 0,
++		.unit_mode	= 0,
++		.max_len	= 10,
++	},
+ 	{
+ 		.name		= NULL,
+ 		.column_name	= NULL,
+@@ -210,8 +220,42 @@ static void print_qgroup_column_add_blank(enum btrfs_qgroup_column_enum column,
+ 		printf(" ");
  }
  
--static int recover_prepare(struct recover_control *rc, char *path)
-+static int recover_prepare(struct recover_control *rc, const char *path)
++void print_pathname_column(struct btrfs_qgroup *qgroup, bool verbose)
++{
++	struct btrfs_qgroup_list *list = NULL;
++
++	fputs("  ", stdout);
++	if (btrfs_qgroup_level(qgroup->qgroupid) > 0) {
++		int count = 0;
++		list_for_each_entry(list, &qgroup->qgroups,
++				    next_qgroup) {
++			if (verbose) {
++				struct btrfs_qgroup *member = list->qgroup;
++				u64 level = btrfs_qgroup_level(member->qgroupid);
++				u64 sid = btrfs_qgroup_subvid(member->qgroupid);
++				if (count)
++					fputs(" ", stdout);
++				if (btrfs_qgroup_level(member->qgroupid) == 0)
++					fputs(member->pathname, stdout);
++				else
++					printf("%llu/%llu", level, sid);
++			}
++			count++;
++		}
++		if (!count)
++			fputs("<empty>", stdout);
++		else if (!verbose)
++			printf("<%u member qgroup%c>", count,
++			       count != 1 ? 's' : '\0');
++	} else if (qgroup->pathname)
++		fputs(qgroup->pathname, stdout);
++	else
++		fputs("<missing>", stdout);
++}
++
+ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+-				enum btrfs_qgroup_column_enum column)
++				enum btrfs_qgroup_column_enum column,
++				bool verbose)
  {
+ 	int len;
+ 	int unit_mode = btrfs_qgroup_columns[column].unit_mode;
+@@ -253,19 +297,22 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ 		len = print_child_column(qgroup);
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_CHILD, len);
+ 		break;
++	case BTRFS_QGROUP_PATHNAME:
++		print_pathname_column(qgroup, verbose);
++		break;
+ 	default:
+ 		break;
+ 	}
+ }
+ 
+-static void print_single_qgroup_table(struct btrfs_qgroup *qgroup)
++static void print_single_qgroup_table(struct btrfs_qgroup *qgroup, bool verbose)
+ {
+ 	int i;
+ 
+ 	for (i = 0; i < BTRFS_QGROUP_ALL; i++) {
+ 		if (!btrfs_qgroup_columns[i].need_print)
+ 			continue;
+-		print_qgroup_column(qgroup, i);
++		print_qgroup_column(qgroup, i, verbose);
+ 
+ 		if (i != BTRFS_QGROUP_ALL - 1)
+ 			printf(" ");
+@@ -338,6 +385,47 @@ static int comp_entry_with_qgroupid(struct btrfs_qgroup *entry1,
+ 	return is_descending ? -ret : ret;
+ }
+ 
++/* Sorts first-level qgroups by pathname and nested qgroups by qgroupid */
++static int comp_entry_with_pathname(struct btrfs_qgroup *entry1,
++				    struct btrfs_qgroup *entry2,
++				    int is_descending)
++{
++	int ret = 0;
++	const char *p1 = entry1->pathname;
++	const char *p2 = entry2->pathname;
++
++	u64 level1 = btrfs_qgroup_level(entry1->qgroupid);
++	u64 level2 = btrfs_qgroup_level(entry2->qgroupid);
++
++	if (level1 != level2) {
++		if (entry1->qgroupid > entry2->qgroupid)
++			ret = 1;
++		else if (entry1->qgroupid < entry2->qgroupid)
++			ret = -1;
++	}
++
++	if (ret)
++		goto out;
++
++	while (*p1 && *p2) {
++		if (*p1 != *p2)
++			break;
++		p1++;
++		p2++;
++	}
++
++	if (*p1 == '/')
++		ret = 1;
++	else if (*p2 == '/')
++	      ret = -1;
++	else if (*p1 > *p2)
++	      ret = 1;
++	else if (*p1 < *p2)
++		ret = -1;
++out:
++	return is_descending ? -ret : ret;
++}
++
+ static int comp_entry_with_rfer(struct btrfs_qgroup *entry1,
+ 				struct btrfs_qgroup *entry2,
+ 				int is_descending)
+@@ -404,6 +492,7 @@ static int comp_entry_with_max_excl(struct btrfs_qgroup *entry1,
+ 
+ static btrfs_qgroup_comp_func all_comp_funcs[] = {
+ 	[BTRFS_QGROUP_COMP_QGROUPID]	= comp_entry_with_qgroupid,
++	[BTRFS_QGROUP_COMP_PATHNAME]	= comp_entry_with_pathname,
+ 	[BTRFS_QGROUP_COMP_RFER]	= comp_entry_with_rfer,
+ 	[BTRFS_QGROUP_COMP_EXCL]	= comp_entry_with_excl,
+ 	[BTRFS_QGROUP_COMP_MAX_RFER]	= comp_entry_with_max_rfer,
+@@ -412,6 +501,7 @@ static btrfs_qgroup_comp_func all_comp_funcs[] = {
+ 
+ static char *all_sort_items[] = {
+ 	[BTRFS_QGROUP_COMP_QGROUPID]	= "qgroupid",
++	[BTRFS_QGROUP_COMP_PATHNAME]	= "pathname",
+ 	[BTRFS_QGROUP_COMP_RFER]	= "rfer",
+ 	[BTRFS_QGROUP_COMP_EXCL]	= "excl",
+ 	[BTRFS_QGROUP_COMP_MAX_RFER]	= "max_rfer",
+@@ -578,6 +668,25 @@ static struct btrfs_qgroup *qgroup_tree_search(struct qgroup_lookup *root_tree,
+ 	return NULL;
+ }
+ 
++static const char *qgroup_pathname(int fd, u64 qgroupid)
++{
++	struct root_info root_info;
++	int ret;
++	char *pathname;
++
++	ret = get_subvol_info_by_rootid_fd(fd, &root_info, qgroupid);
++	if (ret)
++		return NULL;
++
++	ret = asprintf(&pathname, "%s%s",
++		       root_info.full_path[0] == '/' ? "" : "/",
++		       root_info.full_path);
++	if (ret < 0)
++		return NULL;
++
++	return pathname;
++}
++
+ /*
+  * Lookup or insert btrfs_qgroup into qgroup_lookup.
+  *
+@@ -588,7 +697,7 @@ static struct btrfs_qgroup *qgroup_tree_search(struct qgroup_lookup *root_tree,
+  * Return the pointer to the btrfs_qgroup if found or if inserted successfully.
+  * Return ERR_PTR if any error occurred.
+  */
+-static struct btrfs_qgroup *get_or_add_qgroup(
++static struct btrfs_qgroup *get_or_add_qgroup(int fd,
+ 		struct qgroup_lookup *qgroup_lookup, u64 qgroupid)
+ {
+ 	struct btrfs_qgroup *bq;
+@@ -608,6 +717,8 @@ static struct btrfs_qgroup *get_or_add_qgroup(
+ 	INIT_LIST_HEAD(&bq->qgroups);
+ 	INIT_LIST_HEAD(&bq->members);
+ 
++	bq->pathname = qgroup_pathname(fd, qgroupid);
++
+ 	ret = qgroup_tree_insert(qgroup_lookup, bq);
+ 	if (ret) {
+ 		error("failed to insert %llu into tree: %s",
+@@ -619,12 +730,12 @@ static struct btrfs_qgroup *get_or_add_qgroup(
+ 	return bq;
+ }
+ 
+-static int update_qgroup_info(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+-			      struct btrfs_qgroup_info_item *info)
++static int update_qgroup_info(int fd, struct qgroup_lookup *qgroup_lookup,
++			      u64 qgroupid, struct btrfs_qgroup_info_item *info)
+ {
+ 	struct btrfs_qgroup *bq;
+ 
+-	bq = get_or_add_qgroup(qgroup_lookup, qgroupid);
++	bq = get_or_add_qgroup(fd, qgroup_lookup, qgroupid);
+ 	if (IS_ERR_OR_NULL(bq))
+ 		return PTR_ERR(bq);
+ 
+@@ -637,13 +748,13 @@ static int update_qgroup_info(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
+ 	return 0;
+ }
+ 
+-static int update_qgroup_limit(struct qgroup_lookup *qgroup_lookup,
++static int update_qgroup_limit(int fd, struct qgroup_lookup *qgroup_lookup,
+ 			       u64 qgroupid,
+ 			       struct btrfs_qgroup_limit_item *limit)
+ {
+ 	struct btrfs_qgroup *bq;
+ 
+-	bq = get_or_add_qgroup(qgroup_lookup, qgroupid);
++	bq = get_or_add_qgroup(fd, qgroup_lookup, qgroupid);
+ 	if (IS_ERR_OR_NULL(bq))
+ 		return PTR_ERR(bq);
+ 
+@@ -1107,7 +1218,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 				info = (struct btrfs_qgroup_info_item *)
+ 				       (args.buf + off);
+ 
+-				ret = update_qgroup_info(qgroup_lookup,
++				ret = update_qgroup_info(fd, qgroup_lookup,
+ 							 qgroupid, info);
+ 				break;
+ 			case BTRFS_QGROUP_LIMIT_KEY:
+@@ -1115,7 +1226,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 				limit = (struct btrfs_qgroup_limit_item *)
+ 					(args.buf + off);
+ 
+-				ret = update_qgroup_limit(qgroup_lookup,
++				ret = update_qgroup_limit(fd, qgroup_lookup,
+ 							  qgroupid, limit);
+ 				break;
+ 			case BTRFS_QGROUP_RELATION_KEY:
+@@ -1159,7 +1270,7 @@ static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_lookup)
+ 	return ret;
+ }
+ 
+-static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
++static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bool verbose)
+ {
+ 
+ 	struct rb_node *n;
+@@ -1170,14 +1281,15 @@ static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup)
+ 	n = rb_first(&qgroup_lookup->root);
+ 	while (n) {
+ 		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
+-		print_single_qgroup_table(entry);
++		print_single_qgroup_table(entry, verbose);
+ 		n = rb_next(n);
+ 	}
+ }
+ 
+ int btrfs_show_qgroups(int fd,
+ 		       struct btrfs_qgroup_filter_set *filter_set,
+-		       struct btrfs_qgroup_comparer_set *comp_set)
++		       struct btrfs_qgroup_comparer_set *comp_set,
++		       bool verbose)
+ {
+ 
+ 	struct qgroup_lookup qgroup_lookup;
+@@ -1189,7 +1301,7 @@ int btrfs_show_qgroups(int fd,
+ 		return ret;
+ 	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
+ 				  filter_set, comp_set);
+-	print_all_qgroups(&sort_tree);
++	print_all_qgroups(&sort_tree, verbose);
+ 
+ 	__free_all_qgroups(&qgroup_lookup);
+ 	return ret;
+diff --git a/qgroup.h b/qgroup.h
+index 875fbdf3..f7ab7de5 100644
+--- a/qgroup.h
++++ b/qgroup.h
+@@ -59,11 +59,13 @@ enum btrfs_qgroup_column_enum {
+ 	BTRFS_QGROUP_MAX_EXCL,
+ 	BTRFS_QGROUP_PARENT,
+ 	BTRFS_QGROUP_CHILD,
++	BTRFS_QGROUP_PATHNAME,
+ 	BTRFS_QGROUP_ALL,
+ };
+ 
+ enum btrfs_qgroup_comp_enum {
+ 	BTRFS_QGROUP_COMP_QGROUPID,
++	BTRFS_QGROUP_COMP_PATHNAME,
+ 	BTRFS_QGROUP_COMP_RFER,
+ 	BTRFS_QGROUP_COMP_EXCL,
+ 	BTRFS_QGROUP_COMP_MAX_RFER,
+@@ -80,7 +82,7 @@ enum btrfs_qgroup_filter_enum {
+ int btrfs_qgroup_parse_sort_string(const char *opt_arg,
+ 				struct btrfs_qgroup_comparer_set **comps);
+ int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
+-		       struct btrfs_qgroup_comparer_set *);
++		       struct btrfs_qgroup_comparer_set *, bool verbose);
+ void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
+ void btrfs_qgroup_setup_units(unsigned unit_mode);
+ struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
+diff --git a/utils.c b/utils.c
+index e9cb3a82..68202142 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2556,15 +2556,9 @@ out:
+ 	return ret;
+ }
+ 
+-int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri, u64 r_id)
++int get_subvol_info_by_rootid_fd(int fd, struct root_info *get_ri, u64 r_id)
+ {
+-	int fd;
  	int ret;
- 	int fd;
-@@ -2296,7 +2296,7 @@ static void validate_rebuild_chunks(struct recover_control *rc)
- /*
-  * Return 0 when successful, < 0 on error and > 0 if aborted by user
-  */
--int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
-+int btrfs_recover_chunk_tree(const char *path, int verbose, int yes)
- {
- 	int ret = 0;
- 	struct btrfs_root *root = NULL;
-diff --git a/cmds-device.c b/cmds-device.c
-index 86459d1b..a49c9d9d 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -526,7 +526,7 @@ static const char * const cmd_device_usage_usage[] = {
- 	NULL
- };
+-	DIR *dirstream = NULL;
+-
+-	fd = btrfs_open_dir(mnt, &dirstream, 1);
+-	if (fd < 0)
+-		return -EINVAL;
  
--static int _cmd_device_usage(int fd, char *path, unsigned unit_mode)
-+static int _cmd_device_usage(int fd, const char *path, unsigned unit_mode)
- {
- 	int i;
- 	int ret = 0;
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index de7ad668..9a1c76ab 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -227,7 +227,7 @@ static int cmp_btrfs_ioctl_space_info(const void *a, const void *b)
- /*
-  * This function load all the information about the space usage
-  */
--static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
-+static struct btrfs_ioctl_space_args *load_space_info(int fd, const char *path)
- {
- 	struct btrfs_ioctl_space_args *sargs = NULL, *sargs_orig = NULL;
- 	int ret, count;
-@@ -305,7 +305,7 @@ static void get_raid56_used(struct chunk_info *chunks, int chunkcount,
- #define	MIN_UNALOCATED_THRESH	SZ_16M
- static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		int chunkcount, struct device_info *devinfo, int devcount,
--		char *path, unsigned unit_mode)
-+		const char *path, unsigned unit_mode)
- {
- 	struct btrfs_ioctl_space_args *sargs = NULL;
- 	int i;
-@@ -931,7 +931,7 @@ static void _cmd_filesystem_usage_linear(unsigned unit_mode,
- static int print_filesystem_usage_by_chunk(int fd,
- 		struct chunk_info *chunkinfo, int chunkcount,
- 		struct device_info *devinfo, int devcount,
--		char *path, unsigned unit_mode, int tabular)
-+		const char *path, unsigned unit_mode, int tabular)
- {
- 	struct btrfs_ioctl_space_args *sargs;
- 	int ret = 0;
-diff --git a/cmds-rescue.c b/cmds-rescue.c
-index c40088ad..c61145bc 100644
---- a/cmds-rescue.c
-+++ b/cmds-rescue.c
-@@ -32,8 +32,8 @@ static const char * const rescue_cmd_group_usage[] = {
- 	NULL
- };
+ 	memset(get_ri, 0, sizeof(*get_ri));
+ 	get_ri->root_id = r_id;
+@@ -2574,6 +2568,20 @@ int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri, u64 r_i
+ 	else
+ 		ret = btrfs_get_subvol(fd, get_ri);
  
--int btrfs_recover_chunk_tree(char *path, int verbose, int yes);
--int btrfs_recover_superblocks(char *path, int verbose, int yes);
-+int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
-+int btrfs_recover_superblocks(const char *path, int verbose, int yes);
++	return ret;
++}
++
++int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri, u64 r_id)
++{
++	int fd;
++	int ret;
++	DIR *dirstream = NULL;
++
++	fd = btrfs_open_dir(mnt, &dirstream, 1);
++	if (fd < 0)
++		return -EINVAL;
++
++	ret = get_subvol_info_by_rootid_fd(fd, get_ri, r_id);
+ 	if (ret)
+ 		error("can't find rootid '%llu' on '%s': %d", r_id, mnt, ret);
  
- static const char * const cmd_rescue_chunk_recover_usage[] = {
- 	"btrfs rescue chunk-recover [options] <device>",
-diff --git a/send-utils.c b/send-utils.c
-index b5289e76..8ce94de1 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -28,8 +28,8 @@
- #include "ioctl.h"
- #include "btrfs-list.h"
+diff --git a/utils.h b/utils.h
+index b871c9ff..722d3c48 100644
+--- a/utils.h
++++ b/utils.h
+@@ -154,6 +154,8 @@ int test_isdir(const char *path);
  
--static int btrfs_subvolid_resolve_sub(int fd, char *path, size_t *path_len,
--				      u64 subvol_id);
-+static int btrfs_subvolid_resolve_sub(int fd, char *path,
-+				      size_t *path_len, u64 subvol_id);
- 
- static int btrfs_get_root_id_by_sub_path(int mnt_fd, const char *sub_path,
- 					 u64 *root_id)
+ const char *subvol_strip_mountpoint(const char *mnt, const char *full_path);
+ int get_subvol_info(const char *fullpath, struct root_info *get_ri);
++int get_subvol_info_by_rootid_fd(int fd, struct root_info *get_ri,
++				 u64 rootid_arg);
+ int get_subvol_info_by_rootid(const char *mnt, struct root_info *get_ri,
+ 							u64 rootid_arg);
+ int get_subvol_info_by_uuid(const char *mnt, struct root_info *get_ri,
 -- 
 2.15.1
 

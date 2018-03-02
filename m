@@ -1,84 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60844 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752465AbeCDJeX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Mar 2018 04:34:23 -0500
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 4.16-rc4
-Date: Sun,  4 Mar 2018 10:31:48 +0100
-Message-Id: <cover.1520154785.git.dsterba@suse.com>
+Received: from mail-it0-f46.google.com ([209.85.214.46]:38272 "EHLO
+        mail-it0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S935711AbeCBQT4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Mar 2018 11:19:56 -0500
+Received: by mail-it0-f46.google.com with SMTP id j7so2427205ita.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Mar 2018 08:19:56 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20180302151805.GB5942@twin.jikos.cz>
+References: <CAJVZm6etk=bL0LY3FZXkm5Wun64F4w6HMxdLhKRD-v+mEGm08w@mail.gmail.com>
+ <CAJVZm6e0+urcBNrVkXSwvuckTt1A2R8uj536ZzHcB9eG9FoqpQ@mail.gmail.com> <20180302151805.GB5942@twin.jikos.cz>
+From: Menion <menion@gmail.com>
+Date: Fri, 2 Mar 2018 17:19:34 +0100
+Message-ID: <CAJVZm6dQacWC0hVWoBxy2H3cSm78pCSqyJkD9Ch4AWLdUrwh9w@mail.gmail.com>
+Subject: Re: dmesg flooded with "Very big device. Trying to use READ
+ CAPACITY(16)" with 8TB HDDs
+To: dsterba@suse.cz, Menion <menion@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Thanks
+My point was to understand if this action was taken by BTRFS or
+automously by scsi.
+>From your word it seems clear to me that this should go in
+KERNEL_DEBUG level, instead of KERNEL_NOTICE
+Bye
 
-please consider the follwing btrfs updates, there are bugfixes or fixes
-for user visible behaviour.
-
-No merge conflicts. Please pull, thanks.
-
-- when NR_CPUS is large, a SRCU structure can significantly inflate size
-  of the main filesystem structure that would not be possible to
-  allocate by kmalloc, so the kvalloc fallback is used
-
-- improved error handling
-
-- fix endiannes when printing some filesystem attributes via sysfs, this
-  is could happen when a filesystem is moved between different endianity
-  hosts
-
-- send fixes: the NO_HOLE mode should not send a write operation for a
-  file hole
-
-- fix log replay for for special files followed by file hardlinks
-
-- fix log replay failure after unlink and link combination
-
-- fix max chunk size calculation for DUP allocation
-
-----------------------------------------------------------------
-The following changes since commit fd649f10c3d21ee9d7542c609f29978bdf73ab94:
-
-  btrfs: Fix use-after-free when cleaning up fs_devs with a single stale device (2018-02-05 17:15:14 +0100)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-4.16-rc3-tag
-
-for you to fetch changes up to 1f250e929a9c9332fd6ea34da684afee73837cfe:
-
-  Btrfs: fix log replay failure after unlink and link combination (2018-03-01 16:18:40 +0100)
-
-----------------------------------------------------------------
-Anand Jain (1):
-      btrfs: use proper endianness accessors for super_copy
-
-Filipe Manana (3):
-      Btrfs: send, fix issuing write op when processing hole in no data mode
-      Btrfs: fix log replay failure after linking special file and fsync
-      Btrfs: fix log replay failure after unlink and link combination
-
-Hans van Kranenburg (1):
-      btrfs: alloc_chunk: fix DUP stripe size handling
-
-Jeff Mahoney (1):
-      btrfs: use kvzalloc to allocate btrfs_fs_info
-
-Nikolay Borisov (2):
-      btrfs: handle failure of add_pending_csums
-      btrfs: Handle btrfs_set_extent_delalloc failure in relocate_file_extent_cluster
-
- fs/btrfs/ctree.h       |   7 ++-
- fs/btrfs/inode-item.c  |  44 +++++++++++--------
- fs/btrfs/inode.c       |  11 ++++-
- fs/btrfs/relocation.c  |  18 +++++++-
- fs/btrfs/send.c        |   3 ++
- fs/btrfs/super.c       |   2 +-
- fs/btrfs/sysfs.c       |   8 ++--
- fs/btrfs/transaction.c |  20 +++++----
- fs/btrfs/tree-log.c    | 114 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.c     |  11 ++---
- 10 files changed, 191 insertions(+), 47 deletions(-)
+2018-03-02 16:18 GMT+01:00 David Sterba <dsterba@suse.cz>:
+> On Fri, Mar 02, 2018 at 12:37:49PM +0100, Menion wrote:
+>> Is it really a no problem? I mean, for some reason BTRFS is
+>> continuously read the HDD capacity in an array, that does not seem to
+>> be really correct
+>
+> The message comes from SCSI:
+> https://elixir.bootlin.com/linux/latest/source/drivers/scsi/sd.c#L2508
+>
+> Reading drive capacity could be totally opaque for the filesystem, eg.
+> when the scsi layer compares the requested block address with the device
+> size.
+>
+> The sizes of blockdevices is obtained from the i_size member of the
+> inode representing the block device, so there's no direct read by btrfs.
+> You'd have better luck reporting that to scsi or block layer
+> mailinglists.

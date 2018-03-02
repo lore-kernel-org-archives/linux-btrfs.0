@@ -1,103 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:41141 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:60083 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S933054AbeCEKYy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Mar 2018 05:24:54 -0500
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Free space cache file (v1 space cache) corruption
-Cc: Josef Bacik <jbacik@fb.com>
-Message-ID: <8d38ea96-ebb7-5e5b-1352-a18c1b1778bb@gmx.com>
-Date: Mon, 5 Mar 2018 18:24:41 +0800
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="lhU018Bg2rpuKcfwg1UBYPklz8wnCAGQa"
+        id S1947443AbeCBSrP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 2 Mar 2018 13:47:15 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id A9279AE87
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Mar 2018 18:47:13 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 1/8] btrfs-progs: quota: Add -W option to rescan to wait without starting rescan
+Date: Fri,  2 Mar 2018 13:46:57 -0500
+Message-Id: <20180302184704.22399-2-jeffm@suse.com>
+In-Reply-To: <20180302184704.22399-1-jeffm@suse.com>
+References: <20180302184704.22399-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---lhU018Bg2rpuKcfwg1UBYPklz8wnCAGQa
-Content-Type: multipart/mixed; boundary="pk4Tv1Tvg3lzzcuGPlt92p8HjFo5UOgnR";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Cc: Josef Bacik <jbacik@fb.com>
-Message-ID: <8d38ea96-ebb7-5e5b-1352-a18c1b1778bb@gmx.com>
-Subject: Free space cache file (v1 space cache) corruption
+From: Jeff Mahoney <jeffm@suse.com>
 
---pk4Tv1Tvg3lzzcuGPlt92p8HjFo5UOgnR
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+This patch adds a new -W option to wait for a rescan without starting a
+new operation.  This is useful for things like xfstests where we want
+do to do a "btrfs quota enable" and not continue until the subsequent
+rescan has finished.
 
-As the investigation about unexpected btrfs corruption goes on, here we
-expose an strange v1 space cache corruption.
+In addition to documenting the new option in the man page, I've cleaned
+up the rescan entry to document the -w option a bit better.
 
-The script is updated to gist:
-https://gist.github.com/adam900710/d37f38070f7fc4d858ffe856c516b426
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ Documentation/btrfs-quota.asciidoc | 10 +++++++---
+ cmds-quota.c                       | 21 +++++++++++++++------
+ 2 files changed, 22 insertions(+), 9 deletions(-)
 
-The script itself is pretty straight forward:
+diff --git a/Documentation/btrfs-quota.asciidoc b/Documentation/btrfs-quota.asciidoc
+index 85ebf729..0b64a69b 100644
+--- a/Documentation/btrfs-quota.asciidoc
++++ b/Documentation/btrfs-quota.asciidoc
+@@ -238,15 +238,19 @@ Disable subvolume quota support for a filesystem.
+ *enable* <path>::
+ Enable subvolume quota support for a filesystem.
+ 
+-*rescan* [-s] <path>::
++*rescan* [-s|-w|-W] <path>::
+ Trash all qgroup numbers and scan the metadata again with the current config.
+ +
+ `Options`
+ +
+ -s::::
+-show status of a running rescan operation.
++Show status of a running rescan operation.
++
+ -w::::
+-wait for rescan operation to finish(can be already in progress).
++Start rescan operation and wait until it has finished before exiting.  If a rescan is already running, wait until it finishes and then exit without starting a new one.
++
++-W::::
++Wait for rescan operation to finish and then exit.  If a rescan is not already running, exit silently.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/cmds-quota.c b/cmds-quota.c
+index 745889d1..fe6376ac 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -120,14 +120,20 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	int wait_for_completion = 0;
+ 
+ 	while (1) {
+-		int c = getopt(argc, argv, "sw");
++		int c = getopt(argc, argv, "swW");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+ 		case 's':
+ 			ioctlnum = BTRFS_IOC_QUOTA_RESCAN_STATUS;
+ 			break;
++		case 'W':
++			ioctlnum = 0;
++			wait_for_completion = 1;
++			break;
+ 		case 'w':
++			/* Reset it in case the user did both -W and -w */
++			ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
+ 			wait_for_completion = 1;
+ 			break;
+ 		default:
+@@ -135,8 +141,9 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if (ioctlnum != BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
+-		error("switch -w cannot be used with -s");
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_completion) {
++		error("switch -%c cannot be used with -s",
++		      ioctlnum ? 'w' : 'W');
+ 		return 1;
+ 	}
+ 
+@@ -150,8 +157,10 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	if (fd < 0)
+ 		return 1;
+ 
+-	ret = ioctl(fd, ioctlnum, &args);
+-	e = errno;
++	if (ioctlnum) {
++		ret = ioctl(fd, ioctlnum, &args);
++		e = errno;
++	}
+ 
+ 	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
+ 		close_file_or_dir(fd, dirstream);
+@@ -167,7 +176,7 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		return 0;
+ 	}
+ 
+-	if (ret == 0) {
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN && ret == 0) {
+ 		printf("quota rescan started\n");
+ 		fflush(stdout);
+ 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
+-- 
+2.15.1
 
-0) Create a btrfs with large enough data chunk
-   Original single data chunk created by mkfs is not large enough.
-   Do a full balance to create a large enough data chunk, so space cache
-   will live in a data chunk which also has its own cache.
-
-1) Does some fsstress load along with dm-log-writes.
-   The load is pretty small. Just -n 200 could reproduce it.
-
-   dm-log-writes will record all the operations to later analyse.
-
-2) Use dm-log-writes to replay to each FLUSH and FUA operations and do
-   fsck
-   In the script, it does this manually, just to check both FUA and
-   FLUSH.
-   In fact we can use --check fua option to do it in one line.
-
-   Although btrfs check won't return error as it detects invalid free
-   space cache and just ignore them, but we can get free space cache
-   related error prompt.
-
-Then we can get some free space cache corruption in both flush and fua
-operations.
-And some of them can even survive across *several* transaction.
-
-Further more, when such corruption happens, space cache file extent
-seems to be CoWed, instead of being overwritten.
-In my test environment, the whole 64K file extent of metadata block
-group cache just get CoWed.
-(In previous trans, its bytenr is XXX by in next trans it's YYY, and the
-inode size doesn't change at all, but nbytes seems is increasing)
-
-Although kernel and btrfs check can both report such problem due to free
-space bytes difference, but that's already the last defensing line.
-The corrupted free space cache passes both generation and csum check.
-
-I'll keep digging while advice from anyone who is familiar with free
-space cache would really help in this case.
-
-Thanks,
-Qu
-
-
---pk4Tv1Tvg3lzzcuGPlt92p8HjFo5UOgnR--
-
---lhU018Bg2rpuKcfwg1UBYPklz8wnCAGQa
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqdGukXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qj8tQgAo/dvrlYzC4mNgqP0wbzeMxku
-Ur4e0v9OsO33+lYjCu65mveLEWySYghkS2u7ZxfzU5majHi3SvJeJwjhJeVBzLLh
-I+lxhRbLS6rbqup7OmznCTctmjo1RmmFm9TAY3rQCp1Ed5IiDddvjfTNMhrXBAC9
-Shm8xx2AYzLZYs+RZMOZ6oImCDeb6ngN+F/dZ4CPlGEtYP+y5QRohwjlRdVBr+MB
-7Kbfu84k20yAxtO1ezqMr1NNkTdgte7G8GvCUrPEXfIUGBrkzHhRUbmyFXmwnOov
-8qBEwBPWCXQ6SrS51kVry5OrK9qHd93Hf2ZBi/kSQXBpxrNYEqU0GRsBNe7I2A==
-=l8Wi
------END PGP SIGNATURE-----
-
---lhU018Bg2rpuKcfwg1UBYPklz8wnCAGQa--

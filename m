@@ -1,102 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33891 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935762AbeCCCqP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Mar 2018 21:46:15 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id ACB5EAD2C
-        for <linux-btrfs@vger.kernel.org>; Sat,  3 Mar 2018 02:46:14 +0000 (UTC)
-Subject: Re: [PATCH 1/8] btrfs-progs: quota: Add -W option to rescan to wait
- without starting rescan
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180302184704.22399-1-jeffm@suse.com>
- <20180302184704.22399-2-jeffm@suse.com>
- <f4e6dff0-c0c7-2e3b-d33b-11a6390ab6dd@suse.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <a4b0898c-c20e-4418-0ab3-6c8c8d5e0e60@suse.com>
-Date: Fri, 2 Mar 2018 21:46:13 -0500
-MIME-Version: 1.0
-In-Reply-To: <f4e6dff0-c0c7-2e3b-d33b-11a6390ab6dd@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="lX6qPkrl3q4e2CObMvT4atx8mke25YRAM"
+Received: from [195.159.176.226] ([195.159.176.226]:60914 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1751331AbeCCHBq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Mar 2018 02:01:46 -0500
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1es18p-0007f3-Ht
+        for linux-btrfs@vger.kernel.org; Sat, 03 Mar 2018 07:59:35 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs space used issue
+Date: Sat, 3 Mar 2018 06:59:26 +0000 (UTC)
+Message-ID: <pan$bee0f$57d3b021$cd11cf8a$d3c1d93d@cox.net>
+References: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
+        <9d98d11a-0c30-56eb-efa9-889237592b4b@gmail.com>
+        <CAFmraXjW_J-ezbwcS6YW6=4WThYmZ6-coeFBqtMUgyEdQKCkrw@mail.gmail.com>
+        <CAA91j0Xqco3jYYnPJS81_xa7b73hzLNA8AN6WXiqHeW5sJzu2w@mail.gmail.com>
+        <CAFmraXhRtUh-HPV4vpeE3-0B=vCeK40b2HfsOk_boSFu+EjQhg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---lX6qPkrl3q4e2CObMvT4atx8mke25YRAM
-Content-Type: multipart/mixed; boundary="tcKH44VCndzKJISkkQMrLARNxVHI1gkXk";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <a4b0898c-c20e-4418-0ab3-6c8c8d5e0e60@suse.com>
-Subject: Re: [PATCH 1/8] btrfs-progs: quota: Add -W option to rescan to wait
- without starting rescan
-References: <20180302184704.22399-1-jeffm@suse.com>
- <20180302184704.22399-2-jeffm@suse.com>
- <f4e6dff0-c0c7-2e3b-d33b-11a6390ab6dd@suse.com>
-In-Reply-To: <f4e6dff0-c0c7-2e3b-d33b-11a6390ab6dd@suse.com>
+vinayak hegde posted on Thu, 01 Mar 2018 14:56:46 +0530 as excerpted:
 
---tcKH44VCndzKJISkkQMrLARNxVHI1gkXk
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+> This will happen over and over again until we have completely
+> overwritten the original extent, at which point your space usage will go
+> back down to ~302g.We split big extents with cow, so unless you've got
+> lots of space to spare or are going to use nodatacow you should probably
+> not pre-allocate virt images
 
-On 3/2/18 1:59 PM, Nikolay Borisov wrote:
->=20
->=20
-> On  2.03.2018 20:46, jeffm@suse.com wrote:
->> From: Jeff Mahoney <jeffm@suse.com>
->> @@ -135,8 +141,9 @@ static int cmd_quota_rescan(int argc, char **argv)=
+Indeed.  Preallocation with COW doesn't make the sense it does on an 
+overwrite-in-place filesystem.  Either nocow it and take the penalties 
+that brings[1], or configure your app not to preallocate in the first 
+place[2].
 
->>  		}
->>  	}
->> =20
->> -	if (ioctlnum !=3D BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
->> -		error("switch -w cannot be used with -s");
->> +	if (ioctlnum =3D=3D BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_comple=
-tion) {
->> +		error("switch -%c cannot be used with -s",
->> +		      ioctlnum ? 'w' : 'W');
->=20
-> You can't really distinguish between w/W in this context, since ioctlnu=
-m
-> will be RESCAN_STATUS. So just harcode the w/W in the text message itse=
-lf?
+---
+[1] On btrfs, nocow implies no checksumming or transparent compression, 
+either.  Also, the nocow attribute needs to be set on the empty file, 
+with the easiest way to do that being to set it on the parent directory 
+before file creation, so it's inherited by any newly created files/
+subdirs within it.
 
-Yep.  Derp.
+[2] Many apps that preallocate by default have an option to turn 
+preallocation off.
 
-Thanks,
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
--Jeff
-
---=20
-Jeff Mahoney
-SUSE Labs
-
-
---tcKH44VCndzKJISkkQMrLARNxVHI1gkXk--
-
---lX6qPkrl3q4e2CObMvT4atx8mke25YRAM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlqaDHYACgkQHntLYyF5
-5bLn7RAAk29t3dQO0eN/nfmbuuwSK24YPzMWRf3OOF+AdRG4CNQaBbk5saG8sH/F
-Hxx+ZZ9msmb19A8HEOwjXVjhfFIvA8MeEqLW+s4NJFbqKRqQDM6RjV5f7ornx6gU
-OcH2RxdxMS4VygZZJ7VT0Q/xMakkZhpsW4BeO85h5aY6TWZqk+mZXeyjgOM1xKec
-2dNwGdXv+G2czH9438QxA5ppBX6Jw4mSMq+FGv3LC0D/Q71nuvpZybf17mn1oqRJ
-vAjYAkDPpIhwFPno5CP77Y/Q9G2/jLN0ipnndL2cebWAPMKVJdfESVDpNpFnCHIu
-ZvUsniJO6NBmjOXK+MtLk79RioUsp4e+XLVvlLmNuNAOsD7qtSccHPwT+8PlE9F0
-RlU4MxbWhw0UEWS7NrN+GTUlmnx9Nd5X41YX7JB/l9vhhgp7UIgPj3waL+8dD3xK
-sXd1KbraW+UFZ+VpH++gfI/YIswHkmxd3WAxvQHOo229un7nbWp4nNRBgst1DRdv
-kI0zvyP60iTj5VeBXBnQXcmKAAFc6YRF2KmlZ+acRvD5iXVMrIknQBy6D0HXkLPq
-6L9JvSQYv0hpuwWzyrfoWKf3W2MAfSj2/M/EZaMwCZF4HBguFkp+0l2Nrd2rWISD
-6mwFJRjb9G4+SxThBrbbgdh8XTanBI0vzlBX15qwNxqZgdLHohY=
-=APVw
------END PGP SIGNATURE-----
-
---lX6qPkrl3q4e2CObMvT4atx8mke25YRAM--

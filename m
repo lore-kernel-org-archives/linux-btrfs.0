@@ -1,69 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:58448 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751395AbeCEQQY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Mar 2018 11:16:24 -0500
-Date: Mon, 5 Mar 2018 08:16:19 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, fdmanana@gmail.com
-Message-ID: <20180305161619.prnkl4q4zcyibzhc@merlins.org>
+Received: from mail-it0-f51.google.com ([209.85.214.51]:33456 "EHLO
+        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751400AbeCEQRm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Mar 2018 11:17:42 -0500
+Received: by mail-it0-f51.google.com with SMTP id w19so9641793ite.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Mar 2018 08:17:42 -0800 (PST)
+Subject: Re: btrfs space used issue
+To: Christoph Hellwig <hch@infradead.org>
+Cc: linux-btrfs@vger.kernel.org
+References: <CAFmraXiqhYUvM3VDGHp3Zj0i5SMH_Koy6Ed4B6W092-SVFSNVg@mail.gmail.com>
+ <9d98d11a-0c30-56eb-efa9-889237592b4b@gmail.com>
+ <CAFmraXjW_J-ezbwcS6YW6=4WThYmZ6-coeFBqtMUgyEdQKCkrw@mail.gmail.com>
+ <CAA91j0Xqco3jYYnPJS81_xa7b73hzLNA8AN6WXiqHeW5sJzu2w@mail.gmail.com>
+ <CAFmraXhRtUh-HPV4vpeE3-0B=vCeK40b2HfsOk_boSFu+EjQhg@mail.gmail.com>
+ <pan$bee0f$57d3b021$cd11cf8a$d3c1d93d@cox.net>
+ <20180305152827.GA27477@infradead.org>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <94411d71-b9b7-b0ee-f61d-5c4a93b1ad41@gmail.com>
+Date: Mon, 5 Mar 2018 11:17:35 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Subject: How to change/fix 'Received UUID'
+In-Reply-To: <20180305152827.GA27477@infradead.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Howdy,
+On 2018-03-05 10:28, Christoph Hellwig wrote:
+> On Sat, Mar 03, 2018 at 06:59:26AM +0000, Duncan wrote:
+>> Indeed.  Preallocation with COW doesn't make the sense it does on an
+>> overwrite-in-place filesystem.
+> 
+> It makes a whole lot of sense, it just is a little harder to implement.
+> 
+> There is no reason not to preallocate specific space, or if you aren't
+> forced to be fully log structured by the medium, specific blocks to
+> COW into.  It just isn't quite as trivial as for a rewrite in place
+> file system to implement.
+Yes, there's generally no reason not to pre-allocate space, but given 
+how BTRFS implements pre-allocation, it doesn't make sense to do so 
+pretty much at all for anything but NOCOW files, as it doesn't even 
+guarantee that you'll be able to write however much data you 
+pre-allocated space for (and it doesn't matter whether you use fallocate 
+or just write out a run of zeroes, either way does not work in a manner 
+consistent with how other filesystems do).
 
-I did a bunch of copies and moving around subvolumes between disks and
-at some point, I did a snapshot dir1/Win_ro.20180205_21:18:31 dir2/Win_ro.20180205_21:18:31
-
-As a result, I lost the ro flag, and apparently 'Received UUID' which is
-now preventing me from restarting the btrfs send/receive.
-
-I changed the snapshot back to 'ro' but that's not enough:
-
-Source:
-        Name:                   Win_ro.20180205_21:18:31
-        UUID:                   23ccf2bd-f494-e348-b34e-1f28486b2540
-        Parent UUID:            -
-        Received UUID:          3cc327e1-358f-284e-92e2-4e4fde92b16f
-        Creation time:          2018-02-15 20:14:42 -0800
-        Subvolume ID:           964
-        Generation:             4062
-        Gen at creation:        459
-        Parent ID:              5
-        Top level ID:           5
-        Flags:                  readonly
-
-Dest:
-        Name:                   Win_ro.20180205_21:18:31
-        UUID:                   a1e8777c-c52b-af4e-9ce2-45ca4d4d2df8
-        Parent UUID:            -
-        Received UUID:          -
-        Creation time:          2018-02-17 22:20:25 -0800
-        Subvolume ID:           94826
-        Generation:             250714
-        Gen at creation:        250540
-        Parent ID:              89160
-        Top level ID:           89160
-        Flags:                  readonly
-
-If I absolutely know that the data is the same on both sides, how do I
-either
-1) force back in a 'Received UUID' value on the destination
-2) force a btrfs receive to work despite the lack of matching 'Received
-UUID' 
-
-Yes, I could discard and start over, but my 2nd such subvolume is 8TB,
-so I'd really rather not :)
-
-Any ideas?
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+There's been discussion before about this, arising from the (completely 
+illogical given how fallocate is expected to behave) behavior that you 
+can fallocate more than half the free space on a BTRFS volume but will 
+then fail writes with -ENOSPC part way through actually writing data to 
+the pre-allocated space you just reserved (and that it can fail for 
+other reasons too with -ENOSPC).

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:49212 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:49256 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933266AbeCFTYi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:38 -0500
+        with ESMTP id S933292AbeCFTYj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:39 -0500
 From: Matthew Wilcox <willy@infradead.org>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-kernel@vger.kernel.org,
         linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
         linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 45/63] shmem: Convert replace to XArray
-Date: Tue,  6 Mar 2018 11:23:55 -0800
-Message-Id: <20180306192413.5499-46-willy@infradead.org>
+Subject: [PATCH v8 48/63] shmem: Convert shmem_add_to_page_cache to XArray
+Date: Tue,  6 Mar 2018 11:23:58 -0800
+Message-Id: <20180306192413.5499-49-willy@infradead.org>
 In-Reply-To: <20180306192413.5499-1-willy@infradead.org>
 References: <20180306192413.5499-1-willy@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,77 +19,161 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-shmem_radix_tree_replace() is renamed to shmem_xa_replace() and
-converted to use the XArray API.
+This removes the last caller of radix_tree_maybe_preload_order().
+Simpler code, unless we run out of memory for new xa_nodes partway through
+inserting entries into the xarray.  Hopefully we can support multi-index
+entries in the page cache soon and all the awful code goes away.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 22 ++++++++--------------
- 1 file changed, 8 insertions(+), 14 deletions(-)
+ mm/shmem.c | 87 ++++++++++++++++++++++++++++----------------------------------
+ 1 file changed, 39 insertions(+), 48 deletions(-)
 
 diff --git a/mm/shmem.c b/mm/shmem.c
-index ac53cae5d3a7..5813808965cd 100644
+index 49f42dc9e1dc..fb06fb3e644a 100644
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -321,24 +321,20 @@ void shmem_uncharge(struct inode *inode, long pages)
+@@ -558,9 +558,10 @@ static unsigned long shmem_unused_huge_shrink(struct shmem_sb_info *sbinfo,
+  */
+ static int shmem_add_to_page_cache(struct page *page,
+ 				   struct address_space *mapping,
+-				   pgoff_t index, void *expected)
++				   pgoff_t index, void *expected, gfp_t gfp)
+ {
+-	int error, nr = hpage_nr_pages(page);
++	XA_STATE(xas, &mapping->i_pages, index);
++	unsigned long i, nr = 1UL << compound_order(page);
+ 
+ 	VM_BUG_ON_PAGE(PageTail(page), page);
+ 	VM_BUG_ON_PAGE(index != round_down(index, nr), page);
+@@ -569,49 +570,47 @@ static int shmem_add_to_page_cache(struct page *page,
+ 	VM_BUG_ON(expected && PageTransHuge(page));
+ 
+ 	page_ref_add(page, nr);
+-	page->mapping = mapping;
+ 	page->index = index;
++	page->mapping = mapping;
+ 
+-	xa_lock_irq(&mapping->i_pages);
+-	if (PageTransHuge(page)) {
+-		void __rcu **results;
+-		pgoff_t idx;
+-		int i;
+-
+-		error = 0;
+-		if (radix_tree_gang_lookup_slot(&mapping->i_pages,
+-					&results, &idx, index, 1) &&
+-				idx < index + HPAGE_PMD_NR) {
+-			error = -EEXIST;
++	do {
++		xas_lock_irq(&xas);
++		xas_create_range(&xas, index + nr - 1);
++		if (xas_error(&xas))
++			goto unlock;
++		for (i = 0; i < nr; i++) {
++			void *entry = xas_load(&xas);
++			if (entry != expected)
++				xas_set_err(&xas, -ENOENT);
++			if (xas_error(&xas))
++				goto undo;
++			xas_store(&xas, page + i);
++			xas_next(&xas);
+ 		}
+-
+-		if (!error) {
+-			for (i = 0; i < HPAGE_PMD_NR; i++) {
+-				error = radix_tree_insert(&mapping->i_pages,
+-						index + i, page + i);
+-				VM_BUG_ON(error);
+-			}
++		if (PageTransHuge(page)) {
+ 			count_vm_event(THP_FILE_ALLOC);
++			__inc_node_page_state(page, NR_SHMEM_THPS);
+ 		}
+-	} else if (!expected) {
+-		error = radix_tree_insert(&mapping->i_pages, index, page);
+-	} else {
+-		error = shmem_xa_replace(mapping, index, expected, page);
+-	}
+-
+-	if (!error) {
+ 		mapping->nrpages += nr;
+-		if (PageTransHuge(page))
+-			__inc_node_page_state(page, NR_SHMEM_THPS);
+ 		__mod_node_page_state(page_pgdat(page), NR_FILE_PAGES, nr);
+ 		__mod_node_page_state(page_pgdat(page), NR_SHMEM, nr);
+-		xa_unlock_irq(&mapping->i_pages);
+-	} else {
++		goto unlock;
++undo:
++		while (i-- > 0) {
++			xas_store(&xas, NULL);
++			xas_prev(&xas);
++		}
++unlock:
++		xas_unlock_irq(&xas);
++	} while (xas_nomem(&xas, gfp));
++
++	if (xas_error(&xas)) {
+ 		page->mapping = NULL;
+-		xa_unlock_irq(&mapping->i_pages);
+ 		page_ref_sub(page, nr);
++		return xas_error(&xas);
+ 	}
+-	return error;
++
++	return 0;
  }
  
  /*
-- * Replace item expected in radix tree by a new item, while holding tree lock.
-+ * Replace item expected in xarray by a new item, while holding xa_lock.
-  */
--static int shmem_radix_tree_replace(struct address_space *mapping,
-+static int shmem_xa_replace(struct address_space *mapping,
- 			pgoff_t index, void *expected, void *replacement)
- {
--	struct radix_tree_node *node;
--	void **pslot;
-+	XA_STATE(xas, &mapping->i_pages, index);
- 	void *item;
- 
- 	VM_BUG_ON(!expected);
- 	VM_BUG_ON(!replacement);
--	item = __radix_tree_lookup(&mapping->i_pages, index, &node, &pslot);
--	if (!item)
--		return -ENOENT;
-+	item = xas_load(&xas);
- 	if (item != expected)
- 		return -ENOENT;
--	__radix_tree_replace(&mapping->i_pages, node, pslot,
--			     replacement, NULL);
-+	xas_store(&xas, replacement);
- 	return 0;
- }
- 
-@@ -605,8 +601,7 @@ static int shmem_add_to_page_cache(struct page *page,
- 	} else if (!expected) {
- 		error = radix_tree_insert(&mapping->i_pages, index, page);
- 	} else {
--		error = shmem_radix_tree_replace(mapping, index, expected,
--								 page);
-+		error = shmem_xa_replace(mapping, index, expected, page);
- 	}
- 
- 	if (!error) {
-@@ -635,7 +630,7 @@ static void shmem_delete_from_page_cache(struct page *page, void *radswap)
- 	VM_BUG_ON_PAGE(PageCompound(page), page);
- 
- 	xa_lock_irq(&mapping->i_pages);
--	error = shmem_radix_tree_replace(mapping, page->index, page, radswap);
-+	error = shmem_xa_replace(mapping, page->index, page, radswap);
- 	page->mapping = NULL;
- 	mapping->nrpages--;
- 	__dec_node_page_state(page, NR_FILE_PAGES);
-@@ -1553,8 +1548,7 @@ static int shmem_replace_page(struct page **pagep, gfp_t gfp,
- 	 * a nice clean interface for us to replace oldpage by newpage there.
+@@ -1159,7 +1158,7 @@ static int shmem_unuse_inode(struct shmem_inode_info *info,
  	 */
- 	xa_lock_irq(&swap_mapping->i_pages);
--	error = shmem_radix_tree_replace(swap_mapping, swap_index, oldpage,
--								   newpage);
-+	error = shmem_xa_replace(swap_mapping, swap_index, oldpage, newpage);
- 	if (!error) {
- 		__inc_node_page_state(newpage, NR_FILE_PAGES);
- 		__dec_node_page_state(oldpage, NR_FILE_PAGES);
+ 	if (!error)
+ 		error = shmem_add_to_page_cache(*pagep, mapping, index,
+-						radswap);
++						radswap, gfp);
+ 	if (error != -ENOMEM) {
+ 		/*
+ 		 * Truncation and eviction use free_swap_and_cache(), which
+@@ -1680,7 +1679,7 @@ static int shmem_getpage_gfp(struct inode *inode, pgoff_t index,
+ 				false);
+ 		if (!error) {
+ 			error = shmem_add_to_page_cache(page, mapping, index,
+-						swp_to_radix_entry(swap));
++						swp_to_radix_entry(swap), gfp);
+ 			/*
+ 			 * We already confirmed swap under page lock, and make
+ 			 * no memory allocation here, so usually no possibility
+@@ -1786,13 +1785,8 @@ alloc_nohuge:		page = shmem_alloc_and_acct_page(gfp, inode,
+ 				PageTransHuge(page));
+ 		if (error)
+ 			goto unacct;
+-		error = radix_tree_maybe_preload_order(gfp & GFP_RECLAIM_MASK,
+-				compound_order(page));
+-		if (!error) {
+-			error = shmem_add_to_page_cache(page, mapping, hindex,
+-							NULL);
+-			radix_tree_preload_end();
+-		}
++		error = shmem_add_to_page_cache(page, mapping, hindex,
++						NULL, gfp & GFP_RECLAIM_MASK);
+ 		if (error) {
+ 			mem_cgroup_cancel_charge(page, memcg,
+ 					PageTransHuge(page));
+@@ -2259,11 +2253,8 @@ static int shmem_mfill_atomic_pte(struct mm_struct *dst_mm,
+ 	if (ret)
+ 		goto out_release;
+ 
+-	ret = radix_tree_maybe_preload(gfp & GFP_RECLAIM_MASK);
+-	if (!ret) {
+-		ret = shmem_add_to_page_cache(page, mapping, pgoff, NULL);
+-		radix_tree_preload_end();
+-	}
++	ret = shmem_add_to_page_cache(page, mapping, pgoff, NULL,
++						gfp & GFP_RECLAIM_MASK);
+ 	if (ret)
+ 		goto out_release_uncharge;
+ 
 -- 
 2.16.1
 

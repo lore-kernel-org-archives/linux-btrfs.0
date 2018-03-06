@@ -1,32 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53574 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36801 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751375AbeCVP4G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Mar 2018 11:56:06 -0400
-Date: Thu, 22 Mar 2018 16:53:41 +0100
+        id S1750817AbeCFLaj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Mar 2018 06:30:39 -0500
+Date: Tue, 6 Mar 2018 12:28:18 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: ctree.h: Fix wrong comment position about csum
- size
-Message-ID: <20180322155341.GF6955@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: replace: cache rbio when rebuild data on missing
+ device
+Message-ID: <20180306112818.GN5942@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
- <34461665-141e-55a5-ea29-ebc20cf939de@gmx.com>
+References: <20180302231041.10442-2-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <34461665-141e-55a5-ea29-ebc20cf939de@gmx.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180302231041.10442-2-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 20, 2018 at 04:50:32PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2018年03月20日 14:47, Misono, Tomohiro wrote:
-> > 
-> > Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
-> 
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
+On Fri, Mar 02, 2018 at 04:10:38PM -0700, Liu Bo wrote:
+> Rebuild on missing device is as same as recover, after it's done, rbio
+> has data which is consistent with on-disk data, so it can be cached to
+> avoid further reads.
 
-Added to next, thanks.
+Please add a comment that describes why the READ and REBUILD can be
+merged together, it's not obvious from the code.

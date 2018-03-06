@@ -1,84 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47725 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751029AbeCGIAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 03:00:08 -0500
-Subject: Re: [PATCH 4.4 1/2] btrfs: Don't clear SGID when inheriting ACLs
-To: gregkh@linuxfoundation.org
-Cc: stable@vger.kernel.org, Jan Kara <jack@suse.cz>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-References: <1520409444-24654-1-git-send-email-nborisov@suse.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <190878c6-378c-8660-147a-eba7a49d543d@suse.com>
-Date: Wed, 7 Mar 2018 10:00:05 +0200
+Received: from sub5.mail.dreamhost.com ([208.113.200.129]:51540 "EHLO
+        homiemail-a93.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S933020AbeCFWwD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Mar 2018 17:52:03 -0500
+Subject: Re: ERROR: unsupported checksum algorithm 35355
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <1b11c57b-ee9f-b94a-3d79-bbacf01ba3bf@imo.uto.moe>
+ <8baab099-5779-396b-354a-5f1dfc68f915@gmx.com>
+ <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
+ <eec52354-a579-b2b2-328b-fd01ae2b2f0c@gmx.com>
+From: Ken Swenson <flat@imo.uto.moe>
+Message-ID: <1e7f8335-151d-b761-507d-1603b7ea835b@imo.uto.moe>
+Date: Tue, 6 Mar 2018 17:51:55 -0500
 MIME-Version: 1.0
-In-Reply-To: <1520409444-24654-1-git-send-email-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <eec52354-a579-b2b2-328b-fd01ae2b2f0c@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="YkXunhPKjrrNC7zUEHwo71bNmTZYwYEFd"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--YkXunhPKjrrNC7zUEHwo71bNmTZYwYEFd
+Content-Type: multipart/mixed; boundary="SFdtNSAkoS6OEryv35onbBsNpG4zTgQqO";
+ protected-headers="v1"
+From: Ken Swenson <flat@imo.uto.moe>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Message-ID: <1e7f8335-151d-b761-507d-1603b7ea835b@imo.uto.moe>
+Subject: Re: ERROR: unsupported checksum algorithm 35355
+References: <1b11c57b-ee9f-b94a-3d79-bbacf01ba3bf@imo.uto.moe>
+ <8baab099-5779-396b-354a-5f1dfc68f915@gmx.com>
+ <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
+ <eec52354-a579-b2b2-328b-fd01ae2b2f0c@gmx.com>
+In-Reply-To: <eec52354-a579-b2b2-328b-fd01ae2b2f0c@gmx.com>
 
+--SFdtNSAkoS6OEryv35onbBsNpG4zTgQqO
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+Content-Language: en-US
 
-On  7.03.2018 09:57, Nikolay Borisov wrote:
-> From: Jan Kara <jack@suse.cz>
-> 
-> When new directory 'DIR1' is created in a directory 'DIR0' with SGID bit
-> set, DIR1 is expected to have SGID bit set (and owning group equal to
-> the owning group of 'DIR0'). However when 'DIR0' also has some default
-> ACLs that 'DIR1' inherits, setting these ACLs will result in SGID bit on
-> 'DIR1' to get cleared if user is not member of the owning group.
-> 
-> Fix the problem by moving posix_acl_update_mode() out of
-> __btrfs_set_acl() into btrfs_set_acl(). That way the function will not be
-> called when inheriting ACLs which is what we want as it prevents SGID
-> bit clearing and the mode has been properly set by posix_acl_create()
-> anyway.
-> 
-> Fixes: 073931017b49d9458aa351605b43a7e34598caef
-> CC: stable@vger.kernel.org
-> CC: linux-btrfs@vger.kernel.org
-> CC: David Sterba <dsterba@suse.com>
-> Signed-off-by: Jan Kara <jack@suse.cz>
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
+VGhhbmsgeW91IHNvIG11Y2ggZm9yIGZpeGluZyB0aGF0IHN1cGVyYmxvY2shIFdvdWxkbid0
+IGV2ZW4ga25vdyB3aGVyZQp0byBiZWdpbiBteXNlbGYuCgpidHJmcyBjaGVjayByZXR1cm5l
+ZAoKQ2hlY2tpbmcgZmlsZXN5c3RlbSBvbiAvZGV2L21hcHBlci94ClVVSUQ6IDUxM2YwN2Ux
+LTA4YmUtNGQ5NC1hNTVjLTExYzYyNTFmNmMyZgpjaGVja2luZyBleHRlbnRzCmNoZWNraW5n
+IGZyZWUgc3BhY2UgY2FjaGUKY2hlY2tpbmcgZnMgcm9vdHMKY2hlY2tpbmcgY3N1bXMKY2hl
+Y2tpbmcgcm9vdCByZWZzCmZvdW5kIDQyMDg0OTIwMTE1MiBieXRlcyB1c2VkLCBubyBlcnJv
+ciBmb3VuZAp0b3RhbCBjc3VtIGJ5dGVzOiA0MDUyNjUzNjAKdG90YWwgdHJlZSBieXRlczog
+NTgzNTY1MzEyCnRvdGFsIGZzIHRyZWUgYnl0ZXM6IDU2NDU5MjY0CnRvdGFsIGV4dGVudCB0
+cmVlIGJ5dGVzOiA1NjMyODE5MgpidHJlZSBzcGFjZSB3YXN0ZSBieXRlczogNzQ3NjY1MTQK
+ZmlsZSBkYXRhIGJsb2NrcyBhbGxvY2F0ZWQ6IDQ0MDc1MTIyNjg4MApyZWZlcmVuY2VkIDQx
+OTcwNTc2MTc5MgoKU28gSSBiZWxpZXZlIGV2ZXJ5dGhpbmcgZWxzZSBsb29rcyBnb29kLiBJ
+J3ZlIHN1Y2Nlc3NmdWxseSBtb3VudGVkIHRoZQpmaWxlIHN5c3RlbSBhbmQgY2FuIGFjY2Vz
+cyBhbGwgbXkgZGF0YS4KClRoYW5rcyBhZ2FpbiwKCktlbgoKCk9uIDAzLzA2LzIwMTggMDM6
+NDUgQU0sIFF1IFdlbnJ1byB3cm90ZToKPiBIZXJlIGlzIHRoZSBmaXhlZCBzdXBlcmJsb2Nr
+Lgo+Cj4gY3N1bSB0eXBlIGFuZCBpbmNvbXBhdCBmbGFncyBnZXQgZml4ZWQuCj4KPiBJJ20g
+bm90IHN1cmUgaWYgdGhleSBhcmUgdGhlIG9ubHkgcHJvYmxlbXMsIGJ1dCBJIHN0cm9uZ2x5
+IHJlY29tbWVuZCB0bwo+IHJ1biBidHJmcyBjaGVjayBiZWZvcmUgbW91bnQuCj4KPiBUaGFu
+a3MsCj4gUXUKPgo+IE9uIDIwMTjlubQwM+aciDA25pelIDEwOjIyLCBLZW4gU3dlbnNvbiB3
+cm90ZToKPj4gSGkgUXUsCj4+Cj4+IGF0dGFjaGVkIGlzIHRoZSBiaW5hcnkgc3VwZXIgYmxv
+Y2sgYXMgcmVxdWVzdGVkLgo+Pgo+PiBUaGFuayB5b3UsCj4+Cj4+IEtlbgo+Pgo+PiBPbiAw
+My8wNS8yMDE4IDA5OjA3IFBNLCBRdSBXZW5ydW8gd3JvdGU6Cj4+PiBPbiAyMDE45bm0MDPm
+nIgwNuaXpSAwOTo1MSwgS2VuIFN3ZW5zb24gd3JvdGU6Cj4+Pj4gSGVsbG8sCj4+Pj4gwqAK
+Pj4+PiBTb21laG93IGl0IGFwcGVhcnMgdGhlIGNzdW1fdHlwZSBvbiBteSBidHJmcyBmaWxl
+IHN5c3RlbSBnb3QgY29ycnVwdGVkLgo+Pj4+IEkgY2Fubm90IG1vdW50IHRoZSBzeXN0ZW0g
+aW4gcmVjb3Zlcnkgb3IgcmVhZCBvbmx5LiBidHJmcyBjaGVjayBqdXN0Cj4+Pj4gcmV0dXJu
+cyAiRVJST1I6IHVuc3VwcG9ydGVkIGNoZWNrc3VtIGFsZ29yaXRobSAzNTM1NSIgYXMgd2Vs
+bCBhcyBidHJmcwo+Pj4+IHJlY292ZXIuIFRoZSBvbmx5IGNvbW1hbmQgSSB3YXMgYWJsZSB0
+byBzdWNjZXNzZnVsbHkgcnVuIHdhcyBidHJmcwo+Pj4+IGluc3BlY3QtaW50ZXJuYWwgZHVt
+cC1zdXBlciwgd2hpY2ggSSd2ZSBwYXN0ZWQgdGhlIG91dHB1dCBhdCB0aGUgZW5kIG9mCj4+
+Pj4gdGhpcyBtZXNzYWdlLgo+Pj4+Cj4+Pj4gUmVxdWVzdGVkIGluZm9ybWF0aW9uIGZyb20g
+dGhlIHdpa2k6Cj4+Pj4gTGludXggNC4xNS43LTEtQVJDSCAjMSBTTVAgUFJFRU1QVCBXZWQg
+RmViIDI4IDE5OjAxOjU3IFVUQyAyMDE4IHg4Nl82NAo+Pj4+IEdOVS9MaW51eAo+Pj4+IGJ0
+cmZzLXByb2dzIHY0LjE1LjEKPj4+PiBidHJmcyBmaSBzaG93OiBFUlJPUjogdW5zdXBwb3J0
+ZWQgY2hlY2tzdW0gYWxnb3JpdGhtIDM1MzU1IEVSUk9SOiBjYW5ub3QKPj4+PiBzY2FuIC9k
+ZXYvbWFwcGVyL3g6IElucHV0L291dHB1dCBlcnJvcgo+Pj4+Cj4+Pj4gZG1lc2c6Cj4+Pj4g
+WyAxMS4yMzIzOTldIEJ0cmZzIGxvYWRlZCwgY3JjMzJjPWNyYzMyYy1pbnRlbAo+Pj4+IFsg
+MTEuMjMzMjI5XSBCVFJGUzogZGV2aWNlIGZzaWQgNTEzZjA3ZTEtMDhiZS00ZDk0LWE1NWMt
+MTFjNjI1MWY2YzJmCj4+Pj4gZGV2aWQgMSB0cmFuc2lkIDc3NzcgL2Rldi9kbS0yCj4+Pj4g
+WyA0ODguMzcyODkxXSBCVFJGUyBlcnJvciAoZGV2aWNlIGRtLTIpOiB1bnN1cHBvcnRlZCBj
+aGVja3N1bSBhbGdvcml0aG0KPj4+PiAzNTM1NQo+Pj4+IFsgNDg4LjM3Mjg5NF0gQlRSRlMg
+ZXJyb3IgKGRldmljZSBkbS0yKTogc3VwZXJibG9jayBjaGVja3N1bSBtaXNtYXRjaAo+Pj4+
+IFsgNDg4LjM4NDkwMl0gQlRSRlMgZXJyb3IgKGRldmljZSBkbS0yKTogb3Blbl9jdHJlZSBm
+YWlsZWQKPj4+Pgo+Pj4+IElzIHRoZXJlIGFueXRoaW5nIEkgY2FuIGRvIHRvIHJlY292ZXJ5
+IGZyb20gdGhpcyBvciBhbSBJIG91dCBvZiBsdWNrPyBUbwo+Pj4+IGdpdmUgc29tZSBiYWNr
+Z3JvdW5kIHRoZSBkaXNrIHdhcyB3b3JraW5nIGZpbmUgdW50aWwgSSB1cGdyYWRlZCB0bwo+
+Pj4+IEtlcm5lbCA0LjE1LjcgYW5kIHJlYm9vdGVkLgo+Pj4+Cj4+Pj4gc3VwZXJibG9jazog
+Ynl0ZW5yPTY1NTM2LCBkZXZpY2U9L2Rldi9tYXBwZXIveAo+Pj4+IC0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQo+Pj4+IGNzdW1f
+dHlwZcKgwqDCoCDCoMKgwqAgMzUzNTUgKElOVkFMSUQpCj4+PiBUaGlzIGlzIG9idmlvdXNs
+eSBjb3JydXB0ZWQuCj4+Pgo+Pj4gQnRyZnMgb25seSBzdXBwb3J0cyBjc3VtX3R5cGUgMCAo
+Q1JDMzIpIHlldC4KPj4+Cj4+PiBBbmQgdGhlIHZhbHVlIHNlZW1zIHRvIGJlIHNvbWUgZ2Fy
+YmFnZS4KPj4+Cj4+Pj4gY3N1bV9zaXplwqDCoMKgIMKgwqDCoCAzMgo+Pj4gU28gaXMgdGhl
+IGNzdW0gc2l6ZS4KPj4+Cj4+Pj4gY3N1bcKgwqDCoCDCoMKgwqAgwqDCoMKgCj4+Pj4gMHhm
+MGRiZWRkZDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw
+MDAwMDAwMDAwIFttYXRjaF0KPj4+IFN1cnByaXNlZCB0byBzZWUgdGhlIGNzdW0gZXZlbiBt
+YXRjaGVkLgo+Pj4KPj4+PiBieXRlbnLCoMKgwqAgwqDCoMKgIMKgwqDCoCA2NTUzNgo+Pj4+
+IGZsYWdzwqDCoMKgIMKgwqDCoCDCoMKgwqAgMHgxCj4+Pj4gwqDCoMKgIMKgwqDCoCDCoMKg
+wqAgKCBXUklUVEVOICkKPj4+PiBtYWdpY8KgwqDCoCDCoMKgwqAgwqDCoMKgIF9CSFJmU19N
+IFttYXRjaF0KPj4+PiBmc2lkwqDCoMKgIMKgwqDCoCDCoMKgwqAgNTEzZjA3ZTEtMDhiZS00
+ZDk0LWE1NWMtMTFjNjI1MWY2YzJmCj4+Pj4gbGFiZWzCoMKgwqAgwqDCoMKgIMKgwqDCoAo+
+Pj4+IGdlbmVyYXRpb27CoMKgwqAgwqDCoMKgIDc3NzcKPj4+PiByb290wqDCoMKgIMKgwqDC
+oCDCoMKgwqAgMTg2NDY2MzA0Cj4+Pj4gc3lzX2FycmF5X3NpemXCoMKgwqAgwqDCoMKgIDEy
+OQo+Pj4+IGNodW5rX3Jvb3RfZ2VuZXJhdGlvbsKgwqDCoCA3NDUwCj4+Pj4gcm9vdF9sZXZl
+bMKgwqDCoCDCoMKgwqAgMQo+Pj4+IGNodW5rX3Jvb3TCoMKgwqAgwqDCoMKgIDIxMDA0Mjg4
+Cj4+Pj4gY2h1bmtfcm9vdF9sZXZlbMKgwqDCoCAxCj4+Pj4gbG9nX3Jvb3TCoMKgwqAgwqDC
+oMKgIDAKPj4+PiBsb2dfcm9vdF90cmFuc2lkwqDCoMKgIDAKPj4+PiBsb2dfcm9vdF9sZXZl
+bMKgwqDCoCDCoMKgwqAgMAo+Pj4+IHRvdGFsX2J5dGVzwqDCoMKgIMKgwqDCoCA1MDAwOTQ3
+NTIzNTg0Cj4+Pj4gYnl0ZXNfdXNlZMKgwqDCoCDCoMKgwqAgNDIwODQ5MjAxMTUyCj4+Pj4g
+c2VjdG9yc2l6ZcKgwqDCoCDCoMKgwqAgNDA5Ngo+Pj4+IG5vZGVzaXplwqDCoMKgIMKgwqDC
+oCAxNjM4NAo+Pj4+IGxlYWZzaXplIChkZXByZWNhdGVkKcKgwqDCoCDCoMKgwqAgMTYzODQK
+Pj4+PiBzdHJpcGVzaXplwqDCoMKgIMKgwqDCoCA0MDk2Cj4+Pj4gcm9vdF9kaXLCoMKgwqAg
+wqDCoMKgIDYKPj4+PiBudW1fZGV2aWNlc8KgwqDCoCDCoMKgwqAgMQo+Pj4+IGNvbXBhdF9m
+bGFnc8KgwqDCoCDCoMKgwqAgMHgwCj4+Pj4gY29tcGF0X3JvX2ZsYWdzwqDCoMKgIMKgwqDC
+oCAweDAKPj4+PiBpbmNvbXBhdF9mbGFnc8KgwqDCoCDCoMKgwqAgMHgxNzZkMjAwMDAwMDAw
+MTY5Cj4+Pj4gwqDCoMKgIMKgwqDCoCDCoMKgwqAgKCBNSVhFRF9CQUNLUkVGIHwKPj4+PiDC
+oMKgwqAgwqDCoMKgIMKgwqDCoCDCoCBDT01QUkVTU19MWk8gfAo+Pj4+IMKgwqDCoCDCoMKg
+wqAgwqDCoMKgIMKgIEJJR19NRVRBREFUQSB8Cj4+Pj4gwqDCoMKgIMKgwqDCoCDCoMKgwqAg
+wqAgRVhURU5ERURfSVJFRiB8Cj4+Pj4gwqDCoMKgIMKgwqDCoCDCoMKgwqAgwqAgU0tJTk5Z
+X01FVEFEQVRBIHwKPj4+PiDCoMKgwqAgwqDCoMKgIMKgwqDCoCDCoCB1bmtub3duIGZsYWc6
+IDB4MTc2ZDIwMDAwMDAwMDAwMCApCj4+PiBBbmQgdW5rbm93biBmbGFncyBhbHNvIGV4aXN0
+cy4KPj4+Cj4+PiBBbmQgYWNjb3JkaW5nIHRvIGxhdGVyIG91dHB1dCwgYWxsIGJhY2t1cCBz
+dXBlciBibG9ja3MgaGF2ZSB0aGUgc2FtZQo+Pj4gY29ycnVwdGlvbiB3aGlsZSBjc3VtIHN0
+aWxsIG1hdGNoZXMuCj4+Pgo+Pj4gSSdtIHdvbmRlcmluZyBpZiB0aGUgbWVtb3J5IGlzIGNv
+cnJ1cHRlZC4KPj4+Cj4+PiBJdCdzIHBvc3NpYmxlIHRvIG1hbnVhbGx5IG1vZGlmeSB0aGUg
+c3VwZXJibG9jayB0byBhIHZhbGlkIHN0YXR1cy4KPj4+IEFzIGFsbCB0aGUgY29ycnVwdGlv
+biBpcyBvYnZpb3VzLCBidXQgSSdtIG5vdCAxMDAlIHN1cmUgaWYgdGhlcmUgaXMKPj4+IG90
+aGVyIGNvcnJ1cHRpb24uCj4+Pgo+Pj4gUGxlYXNlIHByb3ZpZGUgdGhlIGJpbmFyeSBzdXBl
+cmJsb2NrIGR1bXAgYnk6Cj4+Pgo+Pj4gZGQgaWY9PGRldmljZT4gYnM9MSBjb3VudD00SyBz
+a2lwPTY0SyBvZj1zdXBlcl9jb3B5Cj4+Pgo+Pj4gVGhhbmtzLAo+Pj4gUXUKPj4+Cj4+Pj4g
+Y2FjaGVfZ2VuZXJhdGlvbsKgwqDCoCA3Nzc3Cj4+Pj4gdXVpZF90cmVlX2dlbmVyYXRpb27C
+oMKgwqAgNzc3Nwo+Pj4+IGRldl9pdGVtLnV1aWTCoMKgwqAgwqDCoMKgIDg4MGM2OTJmLTUy
+NzAtNGM3YS05MDhkLThiMzk1NmZiMzc5MAo+Pj4+IGRldl9pdGVtLmZzaWTCoMKgwqAgwqDC
+oMKgIDUxM2YwN2UxLTA4YmUtNGQ5NC1hNTVjLTExYzYyNTFmNmMyZiBbbWF0Y2hdCj4+Pj4g
+ZGV2X2l0ZW0udHlwZcKgwqDCoCDCoMKgwqAgMAo+Pj4+IGRldl9pdGVtLnRvdGFsX2J5dGVz
+wqDCoMKgIDUwMDA5NDc1MjM1ODQKPj4+PiBkZXZfaXRlbS5ieXRlc191c2VkwqDCoMKgIDQ1
+NzQzOTE4Mjg0OAo+Pj4+IGRldl9pdGVtLmlvX2FsaWduwqDCoMKgIDQwOTYKPj4+PiBkZXZf
+aXRlbS5pb193aWR0aMKgwqDCoCA0MDk2Cj4+Pj4gZGV2X2l0ZW0uc2VjdG9yX3NpemXCoMKg
+wqAgNDA5Ngo+Pj4+IGRldl9pdGVtLmRldmlkwqDCoMKgIMKgwqDCoCAxCj4+Pj4gZGV2X2l0
+ZW0uZGV2X2dyb3VwwqDCoMKgIDAKPj4+PiBkZXZfaXRlbS5zZWVrX3NwZWVkwqDCoMKgIDAK
+Pj4+PiBkZXZfaXRlbS5iYW5kd2lkdGjCoMKgwqAgMAo+Pj4+IGRldl9pdGVtLmdlbmVyYXRp
+b27CoMKgwqAgMAo+Pj4+IHN5c19jaHVua19hcnJheVsyMDQ4XToKPj4+PiDCoMKgwqAgaXRl
+bSAwIGtleSAoRklSU1RfQ0hVTktfVFJFRSBDSFVOS19JVEVNIDIwOTcxNTIwKQo+Pj4+IMKg
+wqDCoCDCoMKgwqAgbGVuZ3RoIDgzODg2MDggb3duZXIgMiBzdHJpcGVfbGVuIDY1NTM2IHR5
+cGUgU1lTVEVNfERVUAo+Pj4+IMKgwqDCoCDCoMKgwqAgaW9fYWxpZ24gNjU1MzYgaW9fd2lk
+dGggNjU1MzYgc2VjdG9yX3NpemUgNDA5Ngo+Pj4+IMKgwqDCoCDCoMKgwqAgbnVtX3N0cmlw
+ZXMgMiBzdWJfc3RyaXBlcyAwCj4+Pj4gwqDCoMKgIMKgwqDCoCDCoMKgwqAgc3RyaXBlIDAg
+ZGV2aWQgMSBvZmZzZXQgMjA5NzE1MjAKPj4+PiDCoMKgwqAgwqDCoMKgIMKgwqDCoCBkZXZf
+dXVpZCA4ODBjNjkyZi01MjcwLTRjN2EtOTA4ZC04YjM5NTZmYjM3OTAKPj4+PiDCoMKgwqAg
+wqDCoMKgIMKgwqDCoCBzdHJpcGUgMSBkZXZpZCAxIG9mZnNldCAyOTM2MDEyOAo+Pj4+IMKg
+wqDCoCDCoMKgwqAgwqDCoMKgIGRldl91dWlkIDg4MGM2OTJmLTUyNzAtNGM3YS05MDhkLThi
+Mzk1NmZiMzc5MAo+Pj4+IGJhY2t1cF9yb290c1s0XToKPj4+PiDCoMKgwqAgYmFja3VwIDA6
+Cj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdHJlZV9yb290OsKgwqDCoCAxODExNzQyNzLC
+oMKgwqAgZ2VuOiA3Nzc0wqDCoMKgIGxldmVsOiAxCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNr
+dXBfY2h1bmtfcm9vdDrCoMKgwqAgMjEwMDQyODjCoMKgwqAgZ2VuOiA3NDUwwqDCoMKgIGxl
+dmVsOiAxCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfZXh0ZW50X3Jvb3Q6wqDCoMKgIDE4
+MTE5MDY1NsKgwqDCoCBnZW46IDc3NzTCoMKgwqAgbGV2ZWw6IDIKPj4+PiDCoMKgwqAgwqDC
+oMKgIGJhY2t1cF9mc19yb290OsKgwqDCoCDCoMKgwqAgODA5ODI4MzUywqDCoMKgIGdlbjog
+NjQwNMKgwqDCoCBsZXZlbDogMAo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2Rldl9yb290
+OsKgwqDCoCA5MzU4NTQwOMKgwqDCoCBnZW46IDc2MzHCoMKgwqAgbGV2ZWw6IDEKPj4+PiDC
+oMKgwqAgwqDCoMKgIGJhY2t1cF9jc3VtX3Jvb3Q6wqDCoMKgIDE4MTg2MjQwMMKgwqDCoCBn
+ZW46IDc3NzTCoMKgwqAgbGV2ZWw6IDIKPj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF90b3Rh
+bF9ieXRlczrCoMKgwqAgNTAwMDk0NzUyMzU4NAo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3Vw
+X2J5dGVzX3VzZWQ6wqDCoMKgIDQyMDg0OTIwMTE1Mgo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFj
+a3VwX251bV9kZXZpY2VzOsKgwqDCoCAxCj4+Pj4KPj4+PiDCoMKgwqAgYmFja3VwIDE6Cj4+
+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdHJlZV9yb290OsKgwqDCoCAxODM4Mjg0ODDCoMKg
+wqAgZ2VuOiA3Nzc1wqDCoMKgIGxldmVsOiAxCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBf
+Y2h1bmtfcm9vdDrCoMKgwqAgMjEwMDQyODjCoMKgwqAgZ2VuOiA3NDUwwqDCoMKgIGxldmVs
+OiAxCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfZXh0ZW50X3Jvb3Q6wqDCoMKgIDE4MzMy
+MDU3NsKgwqDCoCBnZW46IDc3NzXCoMKgwqAgbGV2ZWw6IDIKPj4+PiDCoMKgwqAgwqDCoMKg
+IGJhY2t1cF9mc19yb290OsKgwqDCoCDCoMKgwqAgODA5ODI4MzUywqDCoMKgIGdlbjogNjQw
+NMKgwqDCoCBsZXZlbDogMAo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2Rldl9yb290OsKg
+wqDCoCAxODM5NzU5MzbCoMKgwqAgZ2VuOiA3Nzc1wqDCoMKgIGxldmVsOiAxCj4+Pj4gwqDC
+oMKgIMKgwqDCoCBiYWNrdXBfY3N1bV9yb290OsKgwqDCoCAxODU3NjE3OTLCoMKgwqAgZ2Vu
+OiA3Nzc1wqDCoMKgIGxldmVsOiAyCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdG90YWxf
+Ynl0ZXM6wqDCoMKgIDUwMDA5NDc1MjM1ODQKPj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9i
+eXRlc191c2VkOsKgwqDCoCA0MjA4NDkyMDExNTIKPj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1
+cF9udW1fZGV2aWNlczrCoMKgwqAgMQo+Pj4+Cj4+Pj4gwqDCoMKgIGJhY2t1cCAyOgo+Pj4+
+IMKgwqDCoCDCoMKgwqAgYmFja3VwX3RyZWVfcm9vdDrCoMKgwqAgMTg2ODEwMzY4wqDCoMKg
+IGdlbjogNzc3NsKgwqDCoCBsZXZlbDogMQo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2No
+dW5rX3Jvb3Q6wqDCoMKgIDIxMDA0Mjg4wqDCoMKgIGdlbjogNzQ1MMKgwqDCoCBsZXZlbDog
+MQo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2V4dGVudF9yb290OsKgwqDCoCAxODY2MTM3
+NjDCoMKgwqAgZ2VuOiA3Nzc2wqDCoMKgIGxldmVsOiAyCj4+Pj4gwqDCoMKgIMKgwqDCoCBi
+YWNrdXBfZnNfcm9vdDrCoMKgwqAgwqDCoMKgIDgwOTgyODM1MsKgwqDCoCBnZW46IDY0MDTC
+oMKgwqAgbGV2ZWw6IDAKPj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9kZXZfcm9vdDrCoMKg
+wqAgMTgzOTc1OTM2wqDCoMKgIGdlbjogNzc3NcKgwqDCoCBsZXZlbDogMQo+Pj4+IMKgwqDC
+oCDCoMKgwqAgYmFja3VwX2NzdW1fcm9vdDrCoMKgwqAgMTg3MDU2MTI4wqDCoMKgIGdlbjog
+Nzc3NsKgwqDCoCBsZXZlbDogMgo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX3RvdGFsX2J5
+dGVzOsKgwqDCoCA1MDAwOTQ3NTIzNTg0Cj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfYnl0
+ZXNfdXNlZDrCoMKgwqAgNDIwODQ5MjAxMTUyCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBf
+bnVtX2RldmljZXM6wqDCoMKgIDEKPj4+Pgo+Pj4+IMKgwqDCoCBiYWNrdXAgMzoKPj4+PiDC
+oMKgwqAgwqDCoMKgIGJhY2t1cF90cmVlX3Jvb3Q6wqDCoMKgIDE4NjQ2NjMwNMKgwqDCoCBn
+ZW46IDc3NzfCoMKgwqAgbGV2ZWw6IDEKPj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9jaHVu
+a19yb290OsKgwqDCoCAyMTAwNDI4OMKgwqDCoCBnZW46IDc0NTDCoMKgwqAgbGV2ZWw6IDEK
+Pj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9leHRlbnRfcm9vdDrCoMKgwqAgMTg3OTA4MDk2
+wqDCoMKgIGdlbjogNzc3N8KgwqDCoCBsZXZlbDogMgo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFj
+a3VwX2ZzX3Jvb3Q6wqDCoMKgIMKgwqDCoCA4MDk4MjgzNTLCoMKgwqAgZ2VuOiA2NDA0wqDC
+oMKgIGxldmVsOiAwCj4+Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfZGV2X3Jvb3Q6wqDCoMKg
+IDE4Mzk3NTkzNsKgwqDCoCBnZW46IDc3NzXCoMKgwqAgbGV2ZWw6IDEKPj4+PiDCoMKgwqAg
+wqDCoMKgIGJhY2t1cF9jc3VtX3Jvb3Q6wqDCoMKgIDE4ODA3MTkzNsKgwqDCoCBnZW46IDc3
+NzfCoMKgwqAgbGV2ZWw6IDIKPj4+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF90b3RhbF9ieXRl
+czrCoMKgwqAgNTAwMDk0NzUyMzU4NAo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2J5dGVz
+X3VzZWQ6wqDCoMKgIDQyMDg0OTIwMTE1Mgo+Pj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX251
+bV9kZXZpY2VzOsKgwqDCoCAxCj4+Pj4KPj4+PgoK
 
-Geez, forgot to add the in-reply-to for proper threading. Anyways, those
-are the two backports I emailed you yesterday about.
+--SFdtNSAkoS6OEryv35onbBsNpG4zTgQqO--
 
+--YkXunhPKjrrNC7zUEHwo71bNmTZYwYEFd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
->  fs/btrfs/acl.c | 13 +++++++------
->  1 file changed, 7 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-> index fb3e64d37cb4..233bbc8789e0 100644
-> --- a/fs/btrfs/acl.c
-> +++ b/fs/btrfs/acl.c
-> @@ -82,12 +82,6 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
->  	switch (type) {
->  	case ACL_TYPE_ACCESS:
->  		name = POSIX_ACL_XATTR_ACCESS;
-> -		if (acl) {
-> -			ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-> -			if (ret)
-> -				return ret;
-> -		}
-> -		ret = 0;
->  		break;
->  	case ACL_TYPE_DEFAULT:
->  		if (!S_ISDIR(inode->i_mode))
-> @@ -123,6 +117,13 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
->  
->  int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
->  {
-> +	int ret;
-> +
-> +	if (type == ACL_TYPE_ACCESS && acl) {
-> +		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-> +		if (ret)
-> +			return ret;
-> +	}
->  	return __btrfs_set_acl(NULL, inode, acl, type);
->  }
->  
-> 
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARMIAB0WIQSWLM/ZdK7OwXfK0u7OunHowgvRDAUCWp8bjwAKCRDOunHowgvR
+DOFAAQDsYT+lLy2x3hastf31Kb2XiNx7JizVlHER75Zc29YadQD/U3arkzTrFD8O
+sLjU3qh6/5UntyD7Ht710HYwChzAykE=
+=uMlj
+-----END PGP SIGNATURE-----
+
+--YkXunhPKjrrNC7zUEHwo71bNmTZYwYEFd--

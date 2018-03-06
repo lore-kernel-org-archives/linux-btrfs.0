@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:49326 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:49340 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933312AbeCFTYm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:42 -0500
+        with ESMTP id S933325AbeCFTYn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:43 -0500
 From: Matthew Wilcox <willy@infradead.org>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-kernel@vger.kernel.org,
         linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
         linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 55/63] btrfs: Convert page cache to XArray
-Date: Tue,  6 Mar 2018 11:24:05 -0800
-Message-Id: <20180306192413.5499-56-willy@infradead.org>
+Subject: [PATCH v8 57/63] fs: Convert writeback to XArray
+Date: Tue,  6 Mar 2018 11:24:07 -0800
+Message-Id: <20180306192413.5499-58-willy@infradead.org>
 In-Reply-To: <20180306192413.5499-1-willy@infradead.org>
 References: <20180306192413.5499-1-willy@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,46 +19,62 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
+A couple of short loops.
+
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- fs/btrfs/compression.c | 4 +---
- fs/btrfs/extent_io.c   | 8 +++-----
- 2 files changed, 4 insertions(+), 8 deletions(-)
+ fs/fs-writeback.c | 25 +++++++++----------------
+ 1 file changed, 9 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ad330af89eef..c2286f436571 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -457,9 +457,7 @@ static noinline int add_ra_bio_pages(struct inode *inode,
- 		if (pg_index > end_index)
- 			break;
+diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
+index 091577edc497..98e5e08274a2 100644
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -339,9 +339,9 @@ static void inode_switch_wbs_work_fn(struct work_struct *work)
+ 	struct address_space *mapping = inode->i_mapping;
+ 	struct bdi_writeback *old_wb = inode->i_wb;
+ 	struct bdi_writeback *new_wb = isw->new_wb;
+-	struct radix_tree_iter iter;
++	XA_STATE(xas, &mapping->i_pages, 0);
++	struct page *page;
+ 	bool switched = false;
+-	void **slot;
  
--		rcu_read_lock();
--		page = radix_tree_lookup(&mapping->i_pages, pg_index);
--		rcu_read_unlock();
-+		page = xa_load(&mapping->i_pages, pg_index);
- 		if (page && !xa_is_value(page)) {
- 			misses++;
- 			if (misses > 4)
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bcc24ee5a2c9..edc472b41037 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5170,11 +5170,9 @@ void clear_extent_buffer_dirty(struct extent_buffer *eb)
+ 	/*
+ 	 * By the time control reaches here, RCU grace period has passed
+@@ -375,25 +375,18 @@ static void inode_switch_wbs_work_fn(struct work_struct *work)
+ 	 * to possibly dirty pages while PAGECACHE_TAG_WRITEBACK points to
+ 	 * pages actually under writeback.
+ 	 */
+-	radix_tree_for_each_tagged(slot, &mapping->i_pages, &iter, 0,
+-				   PAGECACHE_TAG_DIRTY) {
+-		struct page *page = radix_tree_deref_slot_protected(slot,
+-						&mapping->i_pages.xa_lock);
+-		if (likely(page) && PageDirty(page)) {
++	xas_for_each_tag(&xas, page, ULONG_MAX, PAGECACHE_TAG_DIRTY) {
++		if (PageDirty(page)) {
+ 			dec_wb_stat(old_wb, WB_RECLAIMABLE);
+ 			inc_wb_stat(new_wb, WB_RECLAIMABLE);
+ 		}
+ 	}
  
- 		clear_page_dirty_for_io(page);
- 		xa_lock_irq(&page->mapping->i_pages);
--		if (!PageDirty(page)) {
--			radix_tree_tag_clear(&page->mapping->i_pages,
--						page_index(page),
--						PAGECACHE_TAG_DIRTY);
+-	radix_tree_for_each_tagged(slot, &mapping->i_pages, &iter, 0,
+-				   PAGECACHE_TAG_WRITEBACK) {
+-		struct page *page = radix_tree_deref_slot_protected(slot,
+-						&mapping->i_pages.xa_lock);
+-		if (likely(page)) {
+-			WARN_ON_ONCE(!PageWriteback(page));
+-			dec_wb_stat(old_wb, WB_WRITEBACK);
+-			inc_wb_stat(new_wb, WB_WRITEBACK);
 -		}
-+		if (!PageDirty(page))
-+			__xa_clear_tag(&page->mapping->i_pages,
-+					page_index(page), PAGECACHE_TAG_DIRTY);
- 		xa_unlock_irq(&page->mapping->i_pages);
- 		ClearPageError(page);
- 		unlock_page(page);
++	xas_set(&xas, 0);
++	xas_for_each_tag(&xas, page, ULONG_MAX, PAGECACHE_TAG_WRITEBACK) {
++		WARN_ON_ONCE(!PageWriteback(page));
++		dec_wb_stat(old_wb, WB_WRITEBACK);
++		inc_wb_stat(new_wb, WB_WRITEBACK);
+ 	}
+ 
+ 	wb_get(new_wb);
 -- 
 2.16.1
 

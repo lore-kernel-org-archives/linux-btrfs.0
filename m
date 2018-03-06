@@ -1,195 +1,315 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sub5.mail.dreamhost.com ([208.113.200.129]:53756 "EHLO
-        homiemail-a93.g.dreamhost.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1752654AbeCFCWX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 5 Mar 2018 21:22:23 -0500
+Received: from mout.gmx.net ([212.227.17.20]:57377 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750730AbeCFIpw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 6 Mar 2018 03:45:52 -0500
 Subject: Re: ERROR: unsupported checksum algorithm 35355
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+To: Ken Swenson <flat@imo.uto.moe>, linux-btrfs@vger.kernel.org
 References: <1b11c57b-ee9f-b94a-3d79-bbacf01ba3bf@imo.uto.moe>
  <8baab099-5779-396b-354a-5f1dfc68f915@gmx.com>
-From: Ken Swenson <flat@imo.uto.moe>
-Message-ID: <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
-Date: Mon, 5 Mar 2018 21:22:17 -0500
+ <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <eec52354-a579-b2b2-328b-fd01ae2b2f0c@gmx.com>
+Date: Tue, 6 Mar 2018 16:45:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <8baab099-5779-396b-354a-5f1dfc68f915@gmx.com>
+In-Reply-To: <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="nDzgzfuUHcmYcDiLK2GfszU44Fe03Bq2x"
+ boundary="ESVKzEIFzvet2mdOfeCORbzJhMAbjLfvv"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---nDzgzfuUHcmYcDiLK2GfszU44Fe03Bq2x
-Content-Type: multipart/mixed; boundary="TlvIE9hCBVSZS420UQu07P9uK4Pjy0CYf";
+--ESVKzEIFzvet2mdOfeCORbzJhMAbjLfvv
+Content-Type: multipart/mixed; boundary="XrJ1GCewYuRtTekaC3i3UVA7BA987h2kU";
  protected-headers="v1"
-From: Ken Swenson <flat@imo.uto.moe>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Message-ID: <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Ken Swenson <flat@imo.uto.moe>, linux-btrfs@vger.kernel.org
+Message-ID: <eec52354-a579-b2b2-328b-fd01ae2b2f0c@gmx.com>
 Subject: Re: ERROR: unsupported checksum algorithm 35355
 References: <1b11c57b-ee9f-b94a-3d79-bbacf01ba3bf@imo.uto.moe>
  <8baab099-5779-396b-354a-5f1dfc68f915@gmx.com>
-In-Reply-To: <8baab099-5779-396b-354a-5f1dfc68f915@gmx.com>
+ <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
+In-Reply-To: <4b7057c1-474b-68bc-ec44-e63d40d5e597@imo.uto.moe>
 
---TlvIE9hCBVSZS420UQu07P9uK4Pjy0CYf
+--XrJ1GCewYuRtTekaC3i3UVA7BA987h2kU
 Content-Type: multipart/mixed;
- boundary="------------2438A2707B749579B7D6DF2E"
+ boundary="------------C7034B6E4E59C81339C90F14"
 Content-Language: en-US
 
 This is a multi-part message in MIME format.
---------------2438A2707B749579B7D6DF2E
+--------------C7034B6E4E59C81339C90F14
 Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: base64
+Content-Transfer-Encoding: quoted-printable
 
-SGkgUXUsCgphdHRhY2hlZCBpcyB0aGUgYmluYXJ5IHN1cGVyIGJsb2NrIGFzIHJlcXVlc3Rl
-ZC4KClRoYW5rIHlvdSwKCktlbgoKT24gMDMvMDUvMjAxOCAwOTowNyBQTSwgUXUgV2VucnVv
-IHdyb3RlOgo+Cj4gT24gMjAxOOW5tDAz5pyIMDbml6UgMDk6NTEsIEtlbiBTd2Vuc29uIHdy
-b3RlOgo+PiBIZWxsbywKPj4gwqAKPj4gU29tZWhvdyBpdCBhcHBlYXJzIHRoZSBjc3VtX3R5
-cGUgb24gbXkgYnRyZnMgZmlsZSBzeXN0ZW0gZ290IGNvcnJ1cHRlZC4KPj4gSSBjYW5ub3Qg
-bW91bnQgdGhlIHN5c3RlbSBpbiByZWNvdmVyeSBvciByZWFkIG9ubHkuIGJ0cmZzIGNoZWNr
-IGp1c3QKPj4gcmV0dXJucyAiRVJST1I6IHVuc3VwcG9ydGVkIGNoZWNrc3VtIGFsZ29yaXRo
-bSAzNTM1NSIgYXMgd2VsbCBhcyBidHJmcwo+PiByZWNvdmVyLiBUaGUgb25seSBjb21tYW5k
-IEkgd2FzIGFibGUgdG8gc3VjY2Vzc2Z1bGx5IHJ1biB3YXMgYnRyZnMKPj4gaW5zcGVjdC1p
-bnRlcm5hbCBkdW1wLXN1cGVyLCB3aGljaCBJJ3ZlIHBhc3RlZCB0aGUgb3V0cHV0IGF0IHRo
-ZSBlbmQgb2YKPj4gdGhpcyBtZXNzYWdlLgo+Pgo+PiBSZXF1ZXN0ZWQgaW5mb3JtYXRpb24g
-ZnJvbSB0aGUgd2lraToKPj4gTGludXggNC4xNS43LTEtQVJDSCAjMSBTTVAgUFJFRU1QVCBX
-ZWQgRmViIDI4IDE5OjAxOjU3IFVUQyAyMDE4IHg4Nl82NAo+PiBHTlUvTGludXgKPj4gYnRy
-ZnMtcHJvZ3MgdjQuMTUuMQo+PiBidHJmcyBmaSBzaG93OiBFUlJPUjogdW5zdXBwb3J0ZWQg
-Y2hlY2tzdW0gYWxnb3JpdGhtIDM1MzU1IEVSUk9SOiBjYW5ub3QKPj4gc2NhbiAvZGV2L21h
-cHBlci94OiBJbnB1dC9vdXRwdXQgZXJyb3IKPj4KPj4gZG1lc2c6Cj4+IFsgMTEuMjMyMzk5
-XSBCdHJmcyBsb2FkZWQsIGNyYzMyYz1jcmMzMmMtaW50ZWwKPj4gWyAxMS4yMzMyMjldIEJU
-UkZTOiBkZXZpY2UgZnNpZCA1MTNmMDdlMS0wOGJlLTRkOTQtYTU1Yy0xMWM2MjUxZjZjMmYK
-Pj4gZGV2aWQgMSB0cmFuc2lkIDc3NzcgL2Rldi9kbS0yCj4+IFsgNDg4LjM3Mjg5MV0gQlRS
-RlMgZXJyb3IgKGRldmljZSBkbS0yKTogdW5zdXBwb3J0ZWQgY2hlY2tzdW0gYWxnb3JpdGht
-Cj4+IDM1MzU1Cj4+IFsgNDg4LjM3Mjg5NF0gQlRSRlMgZXJyb3IgKGRldmljZSBkbS0yKTog
-c3VwZXJibG9jayBjaGVja3N1bSBtaXNtYXRjaAo+PiBbIDQ4OC4zODQ5MDJdIEJUUkZTIGVy
-cm9yIChkZXZpY2UgZG0tMik6IG9wZW5fY3RyZWUgZmFpbGVkCj4+Cj4+IElzIHRoZXJlIGFu
-eXRoaW5nIEkgY2FuIGRvIHRvIHJlY292ZXJ5IGZyb20gdGhpcyBvciBhbSBJIG91dCBvZiBs
-dWNrPyBUbwo+PiBnaXZlIHNvbWUgYmFja2dyb3VuZCB0aGUgZGlzayB3YXMgd29ya2luZyBm
-aW5lIHVudGlsIEkgdXBncmFkZWQgdG8KPj4gS2VybmVsIDQuMTUuNyBhbmQgcmVib290ZWQu
-Cj4+Cj4+IHN1cGVyYmxvY2s6IGJ5dGVucj02NTUzNiwgZGV2aWNlPS9kZXYvbWFwcGVyL3gK
-Pj4gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tCj4+IGNzdW1fdHlwZcKgwqDCoCDCoMKgwqAgMzUzNTUgKElOVkFMSUQpCj4gVGhp
-cyBpcyBvYnZpb3VzbHkgY29ycnVwdGVkLgo+Cj4gQnRyZnMgb25seSBzdXBwb3J0cyBjc3Vt
-X3R5cGUgMCAoQ1JDMzIpIHlldC4KPgo+IEFuZCB0aGUgdmFsdWUgc2VlbXMgdG8gYmUgc29t
-ZSBnYXJiYWdlLgo+Cj4+IGNzdW1fc2l6ZcKgwqDCoCDCoMKgwqAgMzIKPiBTbyBpcyB0aGUg
-Y3N1bSBzaXplLgo+Cj4+IGNzdW3CoMKgwqAgwqDCoMKgIMKgwqDCoAo+PiAweGYwZGJlZGRk
-MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw
-MDAgW21hdGNoXQo+IFN1cnByaXNlZCB0byBzZWUgdGhlIGNzdW0gZXZlbiBtYXRjaGVkLgo+
-Cj4+IGJ5dGVucsKgwqDCoCDCoMKgwqAgwqDCoMKgIDY1NTM2Cj4+IGZsYWdzwqDCoMKgIMKg
-wqDCoCDCoMKgwqAgMHgxCj4+IMKgwqDCoCDCoMKgwqAgwqDCoMKgICggV1JJVFRFTiApCj4+
-IG1hZ2ljwqDCoMKgIMKgwqDCoCDCoMKgwqAgX0JIUmZTX00gW21hdGNoXQo+PiBmc2lkwqDC
-oMKgIMKgwqDCoCDCoMKgwqAgNTEzZjA3ZTEtMDhiZS00ZDk0LWE1NWMtMTFjNjI1MWY2YzJm
-Cj4+IGxhYmVswqDCoMKgIMKgwqDCoCDCoMKgwqAKPj4gZ2VuZXJhdGlvbsKgwqDCoCDCoMKg
-wqAgNzc3Nwo+PiByb290wqDCoMKgIMKgwqDCoCDCoMKgwqAgMTg2NDY2MzA0Cj4+IHN5c19h
-cnJheV9zaXplwqDCoMKgIMKgwqDCoCAxMjkKPj4gY2h1bmtfcm9vdF9nZW5lcmF0aW9uwqDC
-oMKgIDc0NTAKPj4gcm9vdF9sZXZlbMKgwqDCoCDCoMKgwqAgMQo+PiBjaHVua19yb290wqDC
-oMKgIMKgwqDCoCAyMTAwNDI4OAo+PiBjaHVua19yb290X2xldmVswqDCoMKgIDEKPj4gbG9n
-X3Jvb3TCoMKgwqAgwqDCoMKgIDAKPj4gbG9nX3Jvb3RfdHJhbnNpZMKgwqDCoCAwCj4+IGxv
-Z19yb290X2xldmVswqDCoMKgIMKgwqDCoCAwCj4+IHRvdGFsX2J5dGVzwqDCoMKgIMKgwqDC
-oCA1MDAwOTQ3NTIzNTg0Cj4+IGJ5dGVzX3VzZWTCoMKgwqAgwqDCoMKgIDQyMDg0OTIwMTE1
-Mgo+PiBzZWN0b3JzaXplwqDCoMKgIMKgwqDCoCA0MDk2Cj4+IG5vZGVzaXplwqDCoMKgIMKg
-wqDCoCAxNjM4NAo+PiBsZWFmc2l6ZSAoZGVwcmVjYXRlZCnCoMKgwqAgwqDCoMKgIDE2Mzg0
-Cj4+IHN0cmlwZXNpemXCoMKgwqAgwqDCoMKgIDQwOTYKPj4gcm9vdF9kaXLCoMKgwqAgwqDC
-oMKgIDYKPj4gbnVtX2RldmljZXPCoMKgwqAgwqDCoMKgIDEKPj4gY29tcGF0X2ZsYWdzwqDC
-oMKgIMKgwqDCoCAweDAKPj4gY29tcGF0X3JvX2ZsYWdzwqDCoMKgIMKgwqDCoCAweDAKPj4g
-aW5jb21wYXRfZmxhZ3PCoMKgwqAgwqDCoMKgIDB4MTc2ZDIwMDAwMDAwMDE2OQo+PiDCoMKg
-wqAgwqDCoMKgIMKgwqDCoCAoIE1JWEVEX0JBQ0tSRUYgfAo+PiDCoMKgwqAgwqDCoMKgIMKg
-wqDCoCDCoCBDT01QUkVTU19MWk8gfAo+PiDCoMKgwqAgwqDCoMKgIMKgwqDCoCDCoCBCSUdf
-TUVUQURBVEEgfAo+PiDCoMKgwqAgwqDCoMKgIMKgwqDCoCDCoCBFWFRFTkRFRF9JUkVGIHwK
-Pj4gwqDCoMKgIMKgwqDCoCDCoMKgwqAgwqAgU0tJTk5ZX01FVEFEQVRBIHwKPj4gwqDCoMKg
-IMKgwqDCoCDCoMKgwqAgwqAgdW5rbm93biBmbGFnOiAweDE3NmQyMDAwMDAwMDAwMDAgKQo+
-IEFuZCB1bmtub3duIGZsYWdzIGFsc28gZXhpc3RzLgo+Cj4gQW5kIGFjY29yZGluZyB0byBs
-YXRlciBvdXRwdXQsIGFsbCBiYWNrdXAgc3VwZXIgYmxvY2tzIGhhdmUgdGhlIHNhbWUKPiBj
-b3JydXB0aW9uIHdoaWxlIGNzdW0gc3RpbGwgbWF0Y2hlcy4KPgo+IEknbSB3b25kZXJpbmcg
-aWYgdGhlIG1lbW9yeSBpcyBjb3JydXB0ZWQuCj4KPiBJdCdzIHBvc3NpYmxlIHRvIG1hbnVh
-bGx5IG1vZGlmeSB0aGUgc3VwZXJibG9jayB0byBhIHZhbGlkIHN0YXR1cy4KPiBBcyBhbGwg
-dGhlIGNvcnJ1cHRpb24gaXMgb2J2aW91cywgYnV0IEknbSBub3QgMTAwJSBzdXJlIGlmIHRo
-ZXJlIGlzCj4gb3RoZXIgY29ycnVwdGlvbi4KPgo+IFBsZWFzZSBwcm92aWRlIHRoZSBiaW5h
-cnkgc3VwZXJibG9jayBkdW1wIGJ5Ogo+Cj4gZGQgaWY9PGRldmljZT4gYnM9MSBjb3VudD00
-SyBza2lwPTY0SyBvZj1zdXBlcl9jb3B5Cj4KPiBUaGFua3MsCj4gUXUKPgo+PiBjYWNoZV9n
-ZW5lcmF0aW9uwqDCoMKgIDc3NzcKPj4gdXVpZF90cmVlX2dlbmVyYXRpb27CoMKgwqAgNzc3
-Nwo+PiBkZXZfaXRlbS51dWlkwqDCoMKgIMKgwqDCoCA4ODBjNjkyZi01MjcwLTRjN2EtOTA4
-ZC04YjM5NTZmYjM3OTAKPj4gZGV2X2l0ZW0uZnNpZMKgwqDCoCDCoMKgwqAgNTEzZjA3ZTEt
-MDhiZS00ZDk0LWE1NWMtMTFjNjI1MWY2YzJmIFttYXRjaF0KPj4gZGV2X2l0ZW0udHlwZcKg
-wqDCoCDCoMKgwqAgMAo+PiBkZXZfaXRlbS50b3RhbF9ieXRlc8KgwqDCoCA1MDAwOTQ3NTIz
-NTg0Cj4+IGRldl9pdGVtLmJ5dGVzX3VzZWTCoMKgwqAgNDU3NDM5MTgyODQ4Cj4+IGRldl9p
-dGVtLmlvX2FsaWduwqDCoMKgIDQwOTYKPj4gZGV2X2l0ZW0uaW9fd2lkdGjCoMKgwqAgNDA5
-Ngo+PiBkZXZfaXRlbS5zZWN0b3Jfc2l6ZcKgwqDCoCA0MDk2Cj4+IGRldl9pdGVtLmRldmlk
-wqDCoMKgIMKgwqDCoCAxCj4+IGRldl9pdGVtLmRldl9ncm91cMKgwqDCoCAwCj4+IGRldl9p
-dGVtLnNlZWtfc3BlZWTCoMKgwqAgMAo+PiBkZXZfaXRlbS5iYW5kd2lkdGjCoMKgwqAgMAo+
-PiBkZXZfaXRlbS5nZW5lcmF0aW9uwqDCoMKgIDAKPj4gc3lzX2NodW5rX2FycmF5WzIwNDhd
-Ogo+PiDCoMKgwqAgaXRlbSAwIGtleSAoRklSU1RfQ0hVTktfVFJFRSBDSFVOS19JVEVNIDIw
-OTcxNTIwKQo+PiDCoMKgwqAgwqDCoMKgIGxlbmd0aCA4Mzg4NjA4IG93bmVyIDIgc3RyaXBl
-X2xlbiA2NTUzNiB0eXBlIFNZU1RFTXxEVVAKPj4gwqDCoMKgIMKgwqDCoCBpb19hbGlnbiA2
-NTUzNiBpb193aWR0aCA2NTUzNiBzZWN0b3Jfc2l6ZSA0MDk2Cj4+IMKgwqDCoCDCoMKgwqAg
-bnVtX3N0cmlwZXMgMiBzdWJfc3RyaXBlcyAwCj4+IMKgwqDCoCDCoMKgwqAgwqDCoMKgIHN0
-cmlwZSAwIGRldmlkIDEgb2Zmc2V0IDIwOTcxNTIwCj4+IMKgwqDCoCDCoMKgwqAgwqDCoMKg
-IGRldl91dWlkIDg4MGM2OTJmLTUyNzAtNGM3YS05MDhkLThiMzk1NmZiMzc5MAo+PiDCoMKg
-wqAgwqDCoMKgIMKgwqDCoCBzdHJpcGUgMSBkZXZpZCAxIG9mZnNldCAyOTM2MDEyOAo+PiDC
-oMKgwqAgwqDCoMKgIMKgwqDCoCBkZXZfdXVpZCA4ODBjNjkyZi01MjcwLTRjN2EtOTA4ZC04
-YjM5NTZmYjM3OTAKPj4gYmFja3VwX3Jvb3RzWzRdOgo+PiDCoMKgwqAgYmFja3VwIDA6Cj4+
-IMKgwqDCoCDCoMKgwqAgYmFja3VwX3RyZWVfcm9vdDrCoMKgwqAgMTgxMTc0MjcywqDCoMKg
-IGdlbjogNzc3NMKgwqDCoCBsZXZlbDogMQo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9jaHVu
-a19yb290OsKgwqDCoCAyMTAwNDI4OMKgwqDCoCBnZW46IDc0NTDCoMKgwqAgbGV2ZWw6IDEK
-Pj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfZXh0ZW50X3Jvb3Q6wqDCoMKgIDE4MTE5MDY1NsKg
-wqDCoCBnZW46IDc3NzTCoMKgwqAgbGV2ZWw6IDIKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBf
-ZnNfcm9vdDrCoMKgwqAgwqDCoMKgIDgwOTgyODM1MsKgwqDCoCBnZW46IDY0MDTCoMKgwqAg
-bGV2ZWw6IDAKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfZGV2X3Jvb3Q6wqDCoMKgIDkzNTg1
-NDA4wqDCoMKgIGdlbjogNzYzMcKgwqDCoCBsZXZlbDogMQo+PiDCoMKgwqAgwqDCoMKgIGJh
-Y2t1cF9jc3VtX3Jvb3Q6wqDCoMKgIDE4MTg2MjQwMMKgwqDCoCBnZW46IDc3NzTCoMKgwqAg
-bGV2ZWw6IDIKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdG90YWxfYnl0ZXM6wqDCoMKgIDUw
-MDA5NDc1MjM1ODQKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfYnl0ZXNfdXNlZDrCoMKgwqAg
-NDIwODQ5MjAxMTUyCj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX251bV9kZXZpY2VzOsKgwqDC
-oCAxCj4+Cj4+IMKgwqDCoCBiYWNrdXAgMToKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdHJl
-ZV9yb290OsKgwqDCoCAxODM4Mjg0ODDCoMKgwqAgZ2VuOiA3Nzc1wqDCoMKgIGxldmVsOiAx
-Cj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2NodW5rX3Jvb3Q6wqDCoMKgIDIxMDA0Mjg4wqDC
-oMKgIGdlbjogNzQ1MMKgwqDCoCBsZXZlbDogMQo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9l
-eHRlbnRfcm9vdDrCoMKgwqAgMTgzMzIwNTc2wqDCoMKgIGdlbjogNzc3NcKgwqDCoCBsZXZl
-bDogMgo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9mc19yb290OsKgwqDCoCDCoMKgwqAgODA5
-ODI4MzUywqDCoMKgIGdlbjogNjQwNMKgwqDCoCBsZXZlbDogMAo+PiDCoMKgwqAgwqDCoMKg
-IGJhY2t1cF9kZXZfcm9vdDrCoMKgwqAgMTgzOTc1OTM2wqDCoMKgIGdlbjogNzc3NcKgwqDC
-oCBsZXZlbDogMQo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9jc3VtX3Jvb3Q6wqDCoMKgIDE4
-NTc2MTc5MsKgwqDCoCBnZW46IDc3NzXCoMKgwqAgbGV2ZWw6IDIKPj4gwqDCoMKgIMKgwqDC
-oCBiYWNrdXBfdG90YWxfYnl0ZXM6wqDCoMKgIDUwMDA5NDc1MjM1ODQKPj4gwqDCoMKgIMKg
-wqDCoCBiYWNrdXBfYnl0ZXNfdXNlZDrCoMKgwqAgNDIwODQ5MjAxMTUyCj4+IMKgwqDCoCDC
-oMKgwqAgYmFja3VwX251bV9kZXZpY2VzOsKgwqDCoCAxCj4+Cj4+IMKgwqDCoCBiYWNrdXAg
-MjoKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdHJlZV9yb290OsKgwqDCoCAxODY4MTAzNjjC
-oMKgwqAgZ2VuOiA3Nzc2wqDCoMKgIGxldmVsOiAxCj4+IMKgwqDCoCDCoMKgwqAgYmFja3Vw
-X2NodW5rX3Jvb3Q6wqDCoMKgIDIxMDA0Mjg4wqDCoMKgIGdlbjogNzQ1MMKgwqDCoCBsZXZl
-bDogMQo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9leHRlbnRfcm9vdDrCoMKgwqAgMTg2NjEz
-NzYwwqDCoMKgIGdlbjogNzc3NsKgwqDCoCBsZXZlbDogMgo+PiDCoMKgwqAgwqDCoMKgIGJh
-Y2t1cF9mc19yb290OsKgwqDCoCDCoMKgwqAgODA5ODI4MzUywqDCoMKgIGdlbjogNjQwNMKg
-wqDCoCBsZXZlbDogMAo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9kZXZfcm9vdDrCoMKgwqAg
-MTgzOTc1OTM2wqDCoMKgIGdlbjogNzc3NcKgwqDCoCBsZXZlbDogMQo+PiDCoMKgwqAgwqDC
-oMKgIGJhY2t1cF9jc3VtX3Jvb3Q6wqDCoMKgIDE4NzA1NjEyOMKgwqDCoCBnZW46IDc3NzbC
-oMKgwqAgbGV2ZWw6IDIKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfdG90YWxfYnl0ZXM6wqDC
-oMKgIDUwMDA5NDc1MjM1ODQKPj4gwqDCoMKgIMKgwqDCoCBiYWNrdXBfYnl0ZXNfdXNlZDrC
-oMKgwqAgNDIwODQ5MjAxMTUyCj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX251bV9kZXZpY2Vz
-OsKgwqDCoCAxCj4+Cj4+IMKgwqDCoCBiYWNrdXAgMzoKPj4gwqDCoMKgIMKgwqDCoCBiYWNr
-dXBfdHJlZV9yb290OsKgwqDCoCAxODY0NjYzMDTCoMKgwqAgZ2VuOiA3Nzc3wqDCoMKgIGxl
-dmVsOiAxCj4+IMKgwqDCoCDCoMKgwqAgYmFja3VwX2NodW5rX3Jvb3Q6wqDCoMKgIDIxMDA0
-Mjg4wqDCoMKgIGdlbjogNzQ1MMKgwqDCoCBsZXZlbDogMQo+PiDCoMKgwqAgwqDCoMKgIGJh
-Y2t1cF9leHRlbnRfcm9vdDrCoMKgwqAgMTg3OTA4MDk2wqDCoMKgIGdlbjogNzc3N8KgwqDC
-oCBsZXZlbDogMgo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9mc19yb290OsKgwqDCoCDCoMKg
-wqAgODA5ODI4MzUywqDCoMKgIGdlbjogNjQwNMKgwqDCoCBsZXZlbDogMAo+PiDCoMKgwqAg
-wqDCoMKgIGJhY2t1cF9kZXZfcm9vdDrCoMKgwqAgMTgzOTc1OTM2wqDCoMKgIGdlbjogNzc3
-NcKgwqDCoCBsZXZlbDogMQo+PiDCoMKgwqAgwqDCoMKgIGJhY2t1cF9jc3VtX3Jvb3Q6wqDC
-oMKgIDE4ODA3MTkzNsKgwqDCoCBnZW46IDc3NzfCoMKgwqAgbGV2ZWw6IDIKPj4gwqDCoMKg
-IMKgwqDCoCBiYWNrdXBfdG90YWxfYnl0ZXM6wqDCoMKgIDUwMDA5NDc1MjM1ODQKPj4gwqDC
-oMKgIMKgwqDCoCBiYWNrdXBfYnl0ZXNfdXNlZDrCoMKgwqAgNDIwODQ5MjAxMTUyCj4+IMKg
-wqDCoCDCoMKgwqAgYmFja3VwX251bV9kZXZpY2VzOsKgwqDCoCAxCj4+Cj4+Cgo=
---------------2438A2707B749579B7D6DF2E
+Here is the fixed superblock.
+
+csum type and incompat flags get fixed.
+
+I'm not sure if they are the only problems, but I strongly recommend to
+run btrfs check before mount.
+
+Thanks,
+Qu
+
+On 2018=E5=B9=B403=E6=9C=8806=E6=97=A5 10:22, Ken Swenson wrote:
+> Hi Qu,
+>=20
+> attached is the binary super block as requested.
+>=20
+> Thank you,
+>=20
+> Ken
+>=20
+> On 03/05/2018 09:07 PM, Qu Wenruo wrote:
+>>
+>> On 2018=E5=B9=B403=E6=9C=8806=E6=97=A5 09:51, Ken Swenson wrote:
+>>> Hello,
+>>> =C2=A0
+>>> Somehow it appears the csum_type on my btrfs file system got corrupte=
+d.
+>>> I cannot mount the system in recovery or read only. btrfs check just
+>>> returns "ERROR: unsupported checksum algorithm 35355" as well as btrf=
+s
+>>> recover. The only command I was able to successfully run was btrfs
+>>> inspect-internal dump-super, which I've pasted the output at the end =
+of
+>>> this message.
+>>>
+>>> Requested information from the wiki:
+>>> Linux 4.15.7-1-ARCH #1 SMP PREEMPT Wed Feb 28 19:01:57 UTC 2018 x86_6=
+4
+>>> GNU/Linux
+>>> btrfs-progs v4.15.1
+>>> btrfs fi show: ERROR: unsupported checksum algorithm 35355 ERROR: can=
+not
+>>> scan /dev/mapper/x: Input/output error
+>>>
+>>> dmesg:
+>>> [ 11.232399] Btrfs loaded, crc32c=3Dcrc32c-intel
+>>> [ 11.233229] BTRFS: device fsid 513f07e1-08be-4d94-a55c-11c6251f6c2f
+>>> devid 1 transid 7777 /dev/dm-2
+>>> [ 488.372891] BTRFS error (device dm-2): unsupported checksum algorit=
+hm
+>>> 35355
+>>> [ 488.372894] BTRFS error (device dm-2): superblock checksum mismatch=
+
+>>> [ 488.384902] BTRFS error (device dm-2): open_ctree failed
+>>>
+>>> Is there anything I can do to recovery from this or am I out of luck?=
+ To
+>>> give some background the disk was working fine until I upgraded to
+>>> Kernel 4.15.7 and rebooted.
+>>>
+>>> superblock: bytenr=3D65536, device=3D/dev/mapper/x
+>>> ---------------------------------------------------------
+>>> csum_type=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 35355 (INVALID)
+>> This is obviously corrupted.
+>>
+>> Btrfs only supports csum_type 0 (CRC32) yet.
+>>
+>> And the value seems to be some garbage.
+>>
+>>> csum_size=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 32
+>> So is the csum size.
+>>
+>>> csum=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0
+>>> 0xf0dbeddd00000000000000000000000000000000000000000000000000000000 [m=
+atch]
+>> Surprised to see the csum even matched.
+>>
+>>> bytenr=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 65536
+>>> flags=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0x1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 ( WRITTEN )
+>>> magic=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 _BHRfS_=
+M [match]
+>>> fsid=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 513f07e1=
+-08be-4d94-a55c-11c6251f6c2f
+>>> label=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0
+>>> generation=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 7777
+>>> root=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 18646630=
+4
+>>> sys_array_size=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 129
+>>> chunk_root_generation=C2=A0=C2=A0=C2=A0 7450
+>>> root_level=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 1
+>>> chunk_root=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 21004288
+>>> chunk_root_level=C2=A0=C2=A0=C2=A0 1
+>>> log_root=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0
+>>> log_root_transid=C2=A0=C2=A0=C2=A0 0
+>>> log_root_level=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0
+>>> total_bytes=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 5000947523584
+>>> bytes_used=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 420849201152
+>>> sectorsize=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 4096
+>>> nodesize=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 16384
+>>> leafsize (deprecated)=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 16384
+>>> stripesize=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 4096
+>>> root_dir=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 6
+>>> num_devices=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 1
+>>> compat_flags=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0x0
+>>> compat_ro_flags=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0x0
+>>> incompat_flags=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0x176d20000000016=
+9
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 ( MIXED_BACK=
+REF |
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0 COMPR=
+ESS_LZO |
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0 BIG_M=
+ETADATA |
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0 EXTEN=
+DED_IREF |
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0 SKINN=
+Y_METADATA |
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0 unkno=
+wn flag: 0x176d200000000000 )
+>> And unknown flags also exists.
+>>
+>> And according to later output, all backup super blocks have the same
+>> corruption while csum still matches.
+>>
+>> I'm wondering if the memory is corrupted.
+>>
+>> It's possible to manually modify the superblock to a valid status.
+>> As all the corruption is obvious, but I'm not 100% sure if there is
+>> other corruption.
+>>
+>> Please provide the binary superblock dump by:
+>>
+>> dd if=3D<device> bs=3D1 count=3D4K skip=3D64K of=3Dsuper_copy
+>>
+>> Thanks,
+>> Qu
+>>
+>>> cache_generation=C2=A0=C2=A0=C2=A0 7777
+>>> uuid_tree_generation=C2=A0=C2=A0=C2=A0 7777
+>>> dev_item.uuid=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 880c692f-5270-4c7a=
+-908d-8b3956fb3790
+>>> dev_item.fsid=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 513f07e1-08be-4d94=
+-a55c-11c6251f6c2f [match]
+>>> dev_item.type=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 0
+>>> dev_item.total_bytes=C2=A0=C2=A0=C2=A0 5000947523584
+>>> dev_item.bytes_used=C2=A0=C2=A0=C2=A0 457439182848
+>>> dev_item.io_align=C2=A0=C2=A0=C2=A0 4096
+>>> dev_item.io_width=C2=A0=C2=A0=C2=A0 4096
+>>> dev_item.sector_size=C2=A0=C2=A0=C2=A0 4096
+>>> dev_item.devid=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 1
+>>> dev_item.dev_group=C2=A0=C2=A0=C2=A0 0
+>>> dev_item.seek_speed=C2=A0=C2=A0=C2=A0 0
+>>> dev_item.bandwidth=C2=A0=C2=A0=C2=A0 0
+>>> dev_item.generation=C2=A0=C2=A0=C2=A0 0
+>>> sys_chunk_array[2048]:
+>>> =C2=A0=C2=A0=C2=A0 item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 20971520)
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 length 8388608 owner 2 stripe_l=
+en 65536 type SYSTEM|DUP
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 io_align 65536 io_width 65536 s=
+ector_size 4096
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 num_stripes 2 sub_stripes 0
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 stripe 0 dev=
+id 1 offset 20971520
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 dev_uuid 880=
+c692f-5270-4c7a-908d-8b3956fb3790
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 stripe 1 dev=
+id 1 offset 29360128
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 dev_uuid 880=
+c692f-5270-4c7a-908d-8b3956fb3790
+>>> backup_roots[4]:
+>>> =C2=A0=C2=A0=C2=A0 backup 0:
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=
+=A0 181174272=C2=A0=C2=A0=C2=A0 gen: 7774=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_chunk_root:=C2=A0=C2=A0=C2=
+=A0 21004288=C2=A0=C2=A0=C2=A0 gen: 7450=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_extent_root:=C2=A0=C2=A0=
+=C2=A0 181190656=C2=A0=C2=A0=C2=A0 gen: 7774=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_fs_root:=C2=A0=C2=A0=C2=A0=
+ =C2=A0=C2=A0=C2=A0 809828352=C2=A0=C2=A0=C2=A0 gen: 6404=C2=A0=C2=A0=C2=A0=
+ level: 0
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_dev_root:=C2=A0=C2=A0=C2=
+=A0 93585408=C2=A0=C2=A0=C2=A0 gen: 7631=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_csum_root:=C2=A0=C2=A0=C2=
+=A0 181862400=C2=A0=C2=A0=C2=A0 gen: 7774=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_total_bytes:=C2=A0=C2=A0=
+=C2=A0 5000947523584
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_bytes_used:=C2=A0=C2=A0=C2=
+=A0 420849201152
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_num_devices:=C2=A0=C2=A0=
+=C2=A0 1
+>>>
+>>> =C2=A0=C2=A0=C2=A0 backup 1:
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=
+=A0 183828480=C2=A0=C2=A0=C2=A0 gen: 7775=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_chunk_root:=C2=A0=C2=A0=C2=
+=A0 21004288=C2=A0=C2=A0=C2=A0 gen: 7450=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_extent_root:=C2=A0=C2=A0=
+=C2=A0 183320576=C2=A0=C2=A0=C2=A0 gen: 7775=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_fs_root:=C2=A0=C2=A0=C2=A0=
+ =C2=A0=C2=A0=C2=A0 809828352=C2=A0=C2=A0=C2=A0 gen: 6404=C2=A0=C2=A0=C2=A0=
+ level: 0
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_dev_root:=C2=A0=C2=A0=C2=
+=A0 183975936=C2=A0=C2=A0=C2=A0 gen: 7775=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_csum_root:=C2=A0=C2=A0=C2=
+=A0 185761792=C2=A0=C2=A0=C2=A0 gen: 7775=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_total_bytes:=C2=A0=C2=A0=
+=C2=A0 5000947523584
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_bytes_used:=C2=A0=C2=A0=C2=
+=A0 420849201152
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_num_devices:=C2=A0=C2=A0=
+=C2=A0 1
+>>>
+>>> =C2=A0=C2=A0=C2=A0 backup 2:
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=
+=A0 186810368=C2=A0=C2=A0=C2=A0 gen: 7776=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_chunk_root:=C2=A0=C2=A0=C2=
+=A0 21004288=C2=A0=C2=A0=C2=A0 gen: 7450=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_extent_root:=C2=A0=C2=A0=
+=C2=A0 186613760=C2=A0=C2=A0=C2=A0 gen: 7776=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_fs_root:=C2=A0=C2=A0=C2=A0=
+ =C2=A0=C2=A0=C2=A0 809828352=C2=A0=C2=A0=C2=A0 gen: 6404=C2=A0=C2=A0=C2=A0=
+ level: 0
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_dev_root:=C2=A0=C2=A0=C2=
+=A0 183975936=C2=A0=C2=A0=C2=A0 gen: 7775=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_csum_root:=C2=A0=C2=A0=C2=
+=A0 187056128=C2=A0=C2=A0=C2=A0 gen: 7776=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_total_bytes:=C2=A0=C2=A0=
+=C2=A0 5000947523584
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_bytes_used:=C2=A0=C2=A0=C2=
+=A0 420849201152
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_num_devices:=C2=A0=C2=A0=
+=C2=A0 1
+>>>
+>>> =C2=A0=C2=A0=C2=A0 backup 3:
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=
+=A0 186466304=C2=A0=C2=A0=C2=A0 gen: 7777=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_chunk_root:=C2=A0=C2=A0=C2=
+=A0 21004288=C2=A0=C2=A0=C2=A0 gen: 7450=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_extent_root:=C2=A0=C2=A0=
+=C2=A0 187908096=C2=A0=C2=A0=C2=A0 gen: 7777=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_fs_root:=C2=A0=C2=A0=C2=A0=
+ =C2=A0=C2=A0=C2=A0 809828352=C2=A0=C2=A0=C2=A0 gen: 6404=C2=A0=C2=A0=C2=A0=
+ level: 0
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_dev_root:=C2=A0=C2=A0=C2=
+=A0 183975936=C2=A0=C2=A0=C2=A0 gen: 7775=C2=A0=C2=A0=C2=A0 level: 1
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_csum_root:=C2=A0=C2=A0=C2=
+=A0 188071936=C2=A0=C2=A0=C2=A0 gen: 7777=C2=A0=C2=A0=C2=A0 level: 2
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_total_bytes:=C2=A0=C2=A0=
+=C2=A0 5000947523584
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_bytes_used:=C2=A0=C2=A0=C2=
+=A0 420849201152
+>>> =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 backup_num_devices:=C2=A0=C2=A0=
+=C2=A0 1
+>>>
+>>>
+>=20
+
+--------------C7034B6E4E59C81339C90F14
 Content-Type: application/octet-stream;
  name="super_copy"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment;
  filename="super_copy"
 
-8Nvt3QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABRPwfhCL5NlKVcEcYlH2wvAAABAAAA
+Rim7OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABRPwfhCL5NlKVcEcYlH2wvAAABAAAA
 AAABAAAAAAAAAF9CSFJmU19NYR4AAAAAAAAAQB0LAAAAAACAQAEAAAAAAAAAAAAAAAAAAAAA
 AAAAAABgs1+MBAAAADCR/GEAAAAGAAAAAAAAAAEAAAAAAAAAABAAAABAAAAAQAAAABAAAIEA
-AAAaHQAAAAAAAAAAAAAAAAAAAAAAAAAAAABpAQAAACBtFxuKAQEAAQAAAAAAAAAAYLNfjAQA
+AAAaHQAAAAAAAAAAAAAAAAAAAAAAAAAAAABpAQAAAAAAAAAAAQEAAQAAAAAAAAAAYLNfjAQA
 AAAAgIFqAAAAABAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAiAxp
 L1JwTHqQjYs5Vvs3kFE/B+EIvk2UpVwRxiUfbC8AcmloaW1lAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -262,21 +382,25 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
---------------2438A2707B749579B7D6DF2E--
+--------------C7034B6E4E59C81339C90F14--
 
---TlvIE9hCBVSZS420UQu07P9uK4Pjy0CYf--
+--XrJ1GCewYuRtTekaC3i3UVA7BA987h2kU--
 
---nDzgzfuUHcmYcDiLK2GfszU44Fe03Bq2x
+--ESVKzEIFzvet2mdOfeCORbzJhMAbjLfvv
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARMIAB0WIQSWLM/ZdK7OwXfK0u7OunHowgvRDAUCWp37XQAKCRDOunHowgvR
-DL5sAQCaZhpdWgtP7I9clmIGZeCuTaBrRssU9z518LtTTR0ojQD/TbtbGpFAIzv9
-nDQWJxijwiqhfRomE8aqcuL1xH9Yqvo=
-=+Ylg
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqeVTQXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhNgwgAhn1HRa70yF2Y/Rx5U96Fieyo
+ATor9wZJX2caQuOdThyo/hK2DsoAFEpG4NDlcqjUbUbXdwq8c9K5UoD4MP0Dc+gI
+YKag8uW9SrXMLqTvjt4u1kh/6u4283h4zRrSd/HiC9WI/tEKkNC94xXsbl06nG5M
+wosPkNGgOmZAhxcQCZ1kNbVIQogH76S9dXqb62WYWP8WK/6Jh/nfTgOS9FsOzE9X
+QfrdfWvIqMv6OqqWluPUCR1Uaaelep+ctvthheXMBeEbDyVw4hay9x7Z4MVgbYL+
+z5MnQEqzq01Hd0Y5eQe5kKnGPB/IC1hv8wfTdlvq2nbJrTwm4qrV8N/WlSz4XA==
+=N2Tt
 -----END PGP SIGNATURE-----
 
---nDzgzfuUHcmYcDiLK2GfszU44Fe03Bq2x--
+--ESVKzEIFzvet2mdOfeCORbzJhMAbjLfvv--

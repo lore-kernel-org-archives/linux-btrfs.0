@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:49106 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:49006 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933197AbeCFTYe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:34 -0500
+        with ESMTP id S933178AbeCFTYb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:31 -0500
 From: Matthew Wilcox <willy@infradead.org>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-kernel@vger.kernel.org,
         linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
         linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 38/63] mm: Convert delete_from_swap_cache to XArray
-Date: Tue,  6 Mar 2018 11:23:48 -0800
-Message-Id: <20180306192413.5499-39-willy@infradead.org>
+Subject: [PATCH v8 31/63] page cache: Convert delete_batch to XArray
+Date: Tue,  6 Mar 2018 11:23:41 -0800
+Message-Id: <20180306192413.5499-32-willy@infradead.org>
 In-Reply-To: <20180306192413.5499-1-willy@infradead.org>
 References: <20180306192413.5499-1-willy@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,105 +19,92 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Both callers of __delete_from_swap_cache have the swp_entry_t already,
-so pass that in to make constructing the XA_STATE easier.
+Rename the function from page_cache_tree_delete_batch to just
+page_cache_delete_batch.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- include/linux/swap.h |  5 +++--
- mm/swap_state.c      | 24 ++++++++++--------------
- mm/vmscan.c          |  2 +-
- 3 files changed, 14 insertions(+), 17 deletions(-)
+ mm/filemap.c | 28 +++++++++++++---------------
+ 1 file changed, 13 insertions(+), 15 deletions(-)
 
-diff --git a/include/linux/swap.h b/include/linux/swap.h
-index dab96af23d96..0b6a47a46c55 100644
---- a/include/linux/swap.h
-+++ b/include/linux/swap.h
-@@ -404,7 +404,7 @@ extern void show_swap_cache_info(void);
- extern int add_to_swap(struct page *page);
- extern int add_to_swap_cache(struct page *, swp_entry_t, gfp_t);
- extern int __add_to_swap_cache(struct page *page, swp_entry_t entry);
--extern void __delete_from_swap_cache(struct page *);
-+extern void __delete_from_swap_cache(struct page *, swp_entry_t entry);
- extern void delete_from_swap_cache(struct page *);
- extern void free_page_and_swap_cache(struct page *);
- extern void free_pages_and_swap_cache(struct page **, int);
-@@ -564,7 +564,8 @@ static inline int add_to_swap_cache(struct page *page, swp_entry_t entry,
- 	return -1;
- }
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 5a6c7c874d45..0635e9cdbc06 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -275,7 +275,7 @@ void delete_from_page_cache(struct page *page)
+ EXPORT_SYMBOL(delete_from_page_cache);
  
--static inline void __delete_from_swap_cache(struct page *page)
-+static inline void __delete_from_swap_cache(struct page *page,
-+							swp_entry_t entry)
- {
- }
- 
-diff --git a/mm/swap_state.c b/mm/swap_state.c
-index 329736723d36..21218f6e438b 100644
---- a/mm/swap_state.c
-+++ b/mm/swap_state.c
-@@ -154,23 +154,22 @@ int add_to_swap_cache(struct page *page, swp_entry_t entry, gfp_t gfp)
-  * This must be called only on pages that have
-  * been verified to be in the swap cache.
+ /*
+- * page_cache_tree_delete_batch - delete several pages from page cache
++ * page_cache_delete_batch - delete several pages from page cache
+  * @mapping: the mapping to which pages belong
+  * @pvec: pagevec with pages to delete
+  *
+@@ -288,23 +288,18 @@ EXPORT_SYMBOL(delete_from_page_cache);
+  *
+  * The function expects the i_pages lock to be held.
   */
--void __delete_from_swap_cache(struct page *page)
-+void __delete_from_swap_cache(struct page *page, swp_entry_t entry)
+-static void
+-page_cache_tree_delete_batch(struct address_space *mapping,
++static void page_cache_delete_batch(struct address_space *mapping,
+ 			     struct pagevec *pvec)
  {
--	struct address_space *address_space;
-+	struct address_space *address_space = swap_address_space(entry);
- 	int i, nr = hpage_nr_pages(page);
--	swp_entry_t entry;
--	pgoff_t idx;
-+	pgoff_t idx = swp_offset(entry);
-+	XA_STATE(xas, &address_space->i_pages, idx);
+-	struct radix_tree_iter iter;
+-	void **slot;
++	XA_STATE(xas, &mapping->i_pages, pvec->pages[0]->index);
+ 	int total_pages = 0;
+ 	int i = 0, tail_pages = 0;
+ 	struct page *page;
+-	pgoff_t start;
  
- 	VM_BUG_ON_PAGE(!PageLocked(page), page);
- 	VM_BUG_ON_PAGE(!PageSwapCache(page), page);
- 	VM_BUG_ON_PAGE(PageWriteback(page), page);
- 
--	entry.val = page_private(page);
--	address_space = swap_address_space(entry);
--	idx = swp_offset(entry);
- 	for (i = 0; i < nr; i++) {
--		radix_tree_delete(&address_space->i_pages, idx + i);
-+		void *entry = xas_store(&xas, NULL);
-+		VM_BUG_ON_PAGE(entry != page + i, entry);
- 		set_page_private(page + i, 0);
-+		xas_next(&xas);
+-	start = pvec->pages[0]->index;
+-	radix_tree_for_each_slot(slot, &mapping->i_pages, &iter, start) {
++	mapping_set_update(&xas, mapping);
++	xas_for_each(&xas, page, ULONG_MAX) {
+ 		if (i >= pagevec_count(pvec) && !tail_pages)
+ 			break;
+-		page = radix_tree_deref_slot_protected(slot,
+-						       &mapping->i_pages.xa_lock);
+ 		if (xa_is_value(page))
+ 			continue;
+ 		if (!tail_pages) {
+@@ -313,8 +308,11 @@ page_cache_tree_delete_batch(struct address_space *mapping,
+ 			 * have our pages locked so they are protected from
+ 			 * being removed.
+ 			 */
+-			if (page != pvec->pages[i])
++			if (page != pvec->pages[i]) {
++				VM_BUG_ON_PAGE(page->index >
++						pvec->pages[i]->index, page);
+ 				continue;
++			}
+ 			WARN_ON_ONCE(!PageLocked(page));
+ 			if (PageTransHuge(page) && !PageHuge(page))
+ 				tail_pages = HPAGE_PMD_NR - 1;
+@@ -325,11 +323,11 @@ page_cache_tree_delete_batch(struct address_space *mapping,
+ 			 */
+ 			i++;
+ 		} else {
++			VM_BUG_ON_PAGE(page->index + HPAGE_PMD_NR - tail_pages
++					!= pvec->pages[i]->index, page);
+ 			tail_pages--;
+ 		}
+-		radix_tree_clear_tags(&mapping->i_pages, iter.node, slot);
+-		__radix_tree_replace(&mapping->i_pages, iter.node, slot, NULL,
+-				workingset_lookup_update(mapping));
++		xas_store(&xas, NULL);
+ 		total_pages++;
  	}
- 	ClearPageSwapCache(page);
- 	address_space->nrpages -= nr;
-@@ -246,14 +245,11 @@ int add_to_swap(struct page *page)
-  */
- void delete_from_swap_cache(struct page *page)
- {
--	swp_entry_t entry;
--	struct address_space *address_space;
--
--	entry.val = page_private(page);
-+	swp_entry_t entry = { .val = page_private(page) };
-+	struct address_space *address_space = swap_address_space(entry);
+ 	mapping->nrpages -= total_pages;
+@@ -350,7 +348,7 @@ void delete_from_page_cache_batch(struct address_space *mapping,
  
--	address_space = swap_address_space(entry);
- 	xa_lock_irq(&address_space->i_pages);
--	__delete_from_swap_cache(page);
-+	__delete_from_swap_cache(page, entry);
- 	xa_unlock_irq(&address_space->i_pages);
+ 		unaccount_page_cache_page(mapping, pvec->pages[i]);
+ 	}
+-	page_cache_tree_delete_batch(mapping, pvec);
++	page_cache_delete_batch(mapping, pvec);
+ 	xa_unlock_irqrestore(&mapping->i_pages, flags);
  
- 	put_swap_page(page, entry);
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 22bd3720b318..728d7e57cf11 100644
---- a/mm/vmscan.c
-+++ b/mm/vmscan.c
-@@ -689,7 +689,7 @@ static int __remove_mapping(struct address_space *mapping, struct page *page,
- 	if (PageSwapCache(page)) {
- 		swp_entry_t swap = { .val = page_private(page) };
- 		mem_cgroup_swapout(page, swap);
--		__delete_from_swap_cache(page);
-+		__delete_from_swap_cache(page, swap);
- 		xa_unlock_irqrestore(&mapping->i_pages, flags);
- 		put_swap_page(page, swap);
- 	} else {
+ 	for (i = 0; i < pagevec_count(pvec); i++)
 -- 
 2.16.1
 

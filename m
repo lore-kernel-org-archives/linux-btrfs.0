@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:49292 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.133]:49268 "EHLO
         bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S933295AbeCFTYk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:40 -0500
+        with ESMTP id S933293AbeCFTYj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:39 -0500
 From: Matthew Wilcox <willy@infradead.org>
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-kernel@vger.kernel.org,
         linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
         linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 51/63] shmem: Convert shmem_partial_swap_usage to XArray
-Date: Tue,  6 Mar 2018 11:24:01 -0800
-Message-Id: <20180306192413.5499-52-willy@infradead.org>
+Subject: [PATCH v8 49/63] shmem: Convert shmem_alloc_hugepage to XArray
+Date: Tue,  6 Mar 2018 11:23:59 -0800
+Message-Id: <20180306192413.5499-50-willy@infradead.org>
 In-Reply-To: <20180306192413.5499-1-willy@infradead.org>
 References: <20180306192413.5499-1-willy@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,51 +19,46 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Matthew Wilcox <mawilcox@microsoft.com>
 
-Simpler code because the xarray takes care of things like the limit and
-dereferencing the slot.
+xa_find() is a slightly easier API to use than
+radix_tree_gang_lookup_slot() because it contains its own RCU locking.
 
 Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
 ---
- mm/shmem.c | 18 +++---------------
- 1 file changed, 3 insertions(+), 15 deletions(-)
+ mm/shmem.c | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
 
 diff --git a/mm/shmem.c b/mm/shmem.c
-index cfbffb4b47a2..707430003ec7 100644
+index fb06fb3e644a..a0a354a87f3b 100644
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -658,29 +658,17 @@ static int shmem_free_swap(struct address_space *mapping,
- unsigned long shmem_partial_swap_usage(struct address_space *mapping,
- 						pgoff_t start, pgoff_t end)
+@@ -1416,23 +1416,17 @@ static struct page *shmem_alloc_hugepage(gfp_t gfp,
+ 		struct shmem_inode_info *info, pgoff_t index)
  {
--	struct radix_tree_iter iter;
--	void **slot;
-+	XA_STATE(xas, &mapping->i_pages, start);
+ 	struct vm_area_struct pvma;
+-	struct inode *inode = &info->vfs_inode;
+-	struct address_space *mapping = inode->i_mapping;
+-	pgoff_t idx, hindex;
+-	void __rcu **results;
++	struct address_space *mapping = info->vfs_inode.i_mapping;
++	pgoff_t hindex;
  	struct page *page;
- 	unsigned long swapped = 0;
  
- 	rcu_read_lock();
--
--	radix_tree_for_each_slot(slot, &mapping->i_pages, &iter, start) {
--		if (iter.index >= end)
--			break;
--
--		page = radix_tree_deref_slot(slot);
--
--		if (radix_tree_deref_retry(page)) {
--			slot = radix_tree_iter_retry(&iter);
--			continue;
--		}
--
-+	xas_for_each(&xas, page, end - 1) {
- 		if (xa_is_value(page))
- 			swapped++;
+ 	if (!IS_ENABLED(CONFIG_TRANSPARENT_HUGE_PAGECACHE))
+ 		return NULL;
  
- 		if (need_resched()) {
--			slot = radix_tree_iter_resume(slot, &iter);
-+			xas_pause(&xas);
- 			cond_resched_rcu();
- 		}
- 	}
+ 	hindex = round_down(index, HPAGE_PMD_NR);
+-	rcu_read_lock();
+-	if (radix_tree_gang_lookup_slot(&mapping->i_pages, &results, &idx,
+-				hindex, 1) && idx < hindex + HPAGE_PMD_NR) {
+-		rcu_read_unlock();
++	if (xa_find(&mapping->i_pages, &hindex, hindex + HPAGE_PMD_NR - 1,
++								XA_PRESENT))
+ 		return NULL;
+-	}
+-	rcu_read_unlock();
+ 
+ 	shmem_pseudo_vma_init(&pvma, info, hindex);
+ 	page = alloc_pages_vma(gfp | __GFP_COMP | __GFP_NORETRY | __GFP_NOWARN,
 -- 
 2.16.1
 

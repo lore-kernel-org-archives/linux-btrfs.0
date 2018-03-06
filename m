@@ -1,96 +1,389 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:20620 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S932872AbeCEJIg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Mar 2018 04:08:36 -0500
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (unknown [10.167.33.85])
-        by cn.fujitsu.com (Postfix) with ESMTP id 7B3B048AE761
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Mar 2018 17:08:30 +0800 (CST)
-From: Su Yue <suy.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <suy.fnst@cn.fujitsu.com>
-Subject: [PATCH] btrfs: adjust return values of btrfs_inode_by_name
-Date: Mon, 5 Mar 2018 17:13:37 +0800
-Message-ID: <20180305091337.22854-1-suy.fnst@cn.fujitsu.com>
+Received: from hapkido.dreamhost.com ([66.33.216.122]:35055 "EHLO
+        hapkido.dreamhost.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752017AbeCFBwA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Mar 2018 20:52:00 -0500
+Received: from homiemail-a93.g.dreamhost.com (sub5.mail.dreamhost.com [208.113.200.129])
+        by hapkido.dreamhost.com (Postfix) with ESMTP id A3C4C8E3DE
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Mar 2018 17:51:59 -0800 (PST)
+Received: from homiemail-a93.g.dreamhost.com (localhost [127.0.0.1])
+        by homiemail-a93.g.dreamhost.com (Postfix) with ESMTP id 2520A801A120
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Mar 2018 17:51:59 -0800 (PST)
+Received: from [192.168.0.3] (unknown [68.200.76.211])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        (Authenticated sender: flat@imo.uto.moe)
+        by homiemail-a93.g.dreamhost.com (Postfix) with ESMTPSA id DE740801A118
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Mar 2018 17:51:58 -0800 (PST)
+To: linux-btrfs@vger.kernel.org
+From: Ken Swenson <flat@imo.uto.moe>
+Subject: ERROR: unsupported checksum algorithm 35355
+Message-ID: <1b11c57b-ee9f-b94a-3d79-bbacf01ba3bf@imo.uto.moe>
+Date: Mon, 5 Mar 2018 20:51:58 -0500
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Previously, btrfs_inode_by_name() returns 0 which leaves caller to
-check objectid of location even location type is invalid.
+Hello,
+ 
+Somehow it appears the csum_type on my btrfs file system got corrupted.
+I cannot mount the system in recovery or read only. btrfs check just
+returns "ERROR: unsupported checksum algorithm 35355" as well as btrfs
+recover. The only command I was able to successfully run was btrfs
+inspect-internal dump-super, which I've pasted the output at the end of
+this message.
 
-Let btrfs_inode_by_name() returns -EUCLEAN if found corrupted
-location of a dir entry.
-Removal of label out_err also simplifies the function.
+Requested information from the wiki:
+Linux 4.15.7-1-ARCH #1 SMP PREEMPT Wed Feb 28 19:01:57 UTC 2018 x86_64
+GNU/Linux
+btrfs-progs v4.15.1
+btrfs fi show: ERROR: unsupported checksum algorithm 35355 ERROR: cannot
+scan /dev/mapper/x: Input/output error
 
-Signed-off-by: Su Yue <suy.fnst@cn.fujitsu.com>
----
- fs/btrfs/inode.c | 22 ++++++++++------------
- 1 file changed, 10 insertions(+), 12 deletions(-)
+dmesg:
+[ 11.232399] Btrfs loaded, crc32c=crc32c-intel
+[ 11.233229] BTRFS: device fsid 513f07e1-08be-4d94-a55c-11c6251f6c2f
+devid 1 transid 7777 /dev/dm-2
+[ 488.372891] BTRFS error (device dm-2): unsupported checksum algorithm
+35355
+[ 488.372894] BTRFS error (device dm-2): superblock checksum mismatch
+[ 488.384902] BTRFS error (device dm-2): open_ctree failed
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 53ca025655fc..c7155f9d7c6f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5448,7 +5448,8 @@ void btrfs_evict_inode(struct inode *inode)
- 
- /*
-  * this returns the key found in the dir entry in the location pointer.
-- * If no dir entries were found, location->objectid is 0.
-+ * If no dir entries were found, returns -ENOENT.
-+ * If found a corrupted location in dir entry, returns -EUCLEAN.
-  */
- static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
- 			       struct btrfs_key *location)
-@@ -5466,27 +5467,27 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
- 
- 	di = btrfs_lookup_dir_item(NULL, root, path, btrfs_ino(BTRFS_I(dir)),
- 			name, namelen, 0);
--	if (IS_ERR(di))
-+	if (unlikely(!di)) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	if (IS_ERR(di)) {
- 		ret = PTR_ERR(di);
--
--	if (IS_ERR_OR_NULL(di))
--		goto out_err;
-+		goto out;
-+	}
- 
- 	btrfs_dir_item_key_to_cpu(path->nodes[0], di, location);
- 	if (location->type != BTRFS_INODE_ITEM_KEY &&
- 	    location->type != BTRFS_ROOT_ITEM_KEY) {
-+		ret = -EUCLEAN;
- 		btrfs_warn(root->fs_info,
- "%s gets something invalid in DIR_ITEM (name %s, directory ino %llu, location(%llu %u %llu))",
- 			   __func__, name, btrfs_ino(BTRFS_I(dir)),
- 			   location->objectid, location->type, location->offset);
--		goto out_err;
- 	}
- out:
- 	btrfs_free_path(path);
- 	return ret;
--out_err:
--	location->objectid = 0;
--	goto out;
- }
- 
- /*
-@@ -5789,9 +5790,6 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 	if (ret < 0)
- 		return ERR_PTR(ret);
- 
--	if (location.objectid == 0)
--		return ERR_PTR(-ENOENT);
--
- 	if (location.type == BTRFS_INODE_ITEM_KEY) {
- 		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
- 		return inode;
--- 
-2.16.1
+Is there anything I can do to recovery from this or am I out of luck? To
+give some background the disk was working fine until I upgraded to
+Kernel 4.15.7 and rebooted.
+
+superblock: bytenr=65536, device=/dev/mapper/x
+---------------------------------------------------------
+csum_type        35355 (INVALID)
+csum_size        32
+csum           
+0xf0dbeddd00000000000000000000000000000000000000000000000000000000 [match]
+bytenr            65536
+flags            0x1
+            ( WRITTEN )
+magic            _BHRfS_M [match]
+fsid            513f07e1-08be-4d94-a55c-11c6251f6c2f
+label           
+generation        7777
+root            186466304
+sys_array_size        129
+chunk_root_generation    7450
+root_level        1
+chunk_root        21004288
+chunk_root_level    1
+log_root        0
+log_root_transid    0
+log_root_level        0
+total_bytes        5000947523584
+bytes_used        420849201152
+sectorsize        4096
+nodesize        16384
+leafsize (deprecated)        16384
+stripesize        4096
+root_dir        6
+num_devices        1
+compat_flags        0x0
+compat_ro_flags        0x0
+incompat_flags        0x176d200000000169
+            ( MIXED_BACKREF |
+              COMPRESS_LZO |
+              BIG_METADATA |
+              EXTENDED_IREF |
+              SKINNY_METADATA |
+              unknown flag: 0x176d200000000000 )
+cache_generation    7777
+uuid_tree_generation    7777
+dev_item.uuid        880c692f-5270-4c7a-908d-8b3956fb3790
+dev_item.fsid        513f07e1-08be-4d94-a55c-11c6251f6c2f [match]
+dev_item.type        0
+dev_item.total_bytes    5000947523584
+dev_item.bytes_used    457439182848
+dev_item.io_align    4096
+dev_item.io_width    4096
+dev_item.sector_size    4096
+dev_item.devid        1
+dev_item.dev_group    0
+dev_item.seek_speed    0
+dev_item.bandwidth    0
+dev_item.generation    0
+sys_chunk_array[2048]:
+    item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 20971520)
+        length 8388608 owner 2 stripe_len 65536 type SYSTEM|DUP
+        io_align 65536 io_width 65536 sector_size 4096
+        num_stripes 2 sub_stripes 0
+            stripe 0 devid 1 offset 20971520
+            dev_uuid 880c692f-5270-4c7a-908d-8b3956fb3790
+            stripe 1 devid 1 offset 29360128
+            dev_uuid 880c692f-5270-4c7a-908d-8b3956fb3790
+backup_roots[4]:
+    backup 0:
+        backup_tree_root:    181174272    gen: 7774    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    181190656    gen: 7774    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    93585408    gen: 7631    level: 1
+        backup_csum_root:    181862400    gen: 7774    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 1:
+        backup_tree_root:    183828480    gen: 7775    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    183320576    gen: 7775    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    185761792    gen: 7775    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 2:
+        backup_tree_root:    186810368    gen: 7776    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    186613760    gen: 7776    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    187056128    gen: 7776    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 3:
+        backup_tree_root:    186466304    gen: 7777    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    187908096    gen: 7777    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    188071936    gen: 7777    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
 
 
+superblock: bytenr=67108864, device=/dev/mapper/x
+---------------------------------------------------------
+csum_type        35355 (INVALID)
+csum_size        32
+csum           
+0x50bac51300000000000000000000000000000000000000000000000000000000
+[DON'T MATCH]
+bytenr            67108864
+flags            0x1
+            ( WRITTEN )
+magic            _BHRfS_M [match]
+fsid            513f07e1-08be-4d94-a55c-11c6251f6c2f
+label           
+generation        7777
+root            186466304
+sys_array_size        129
+chunk_root_generation    7450
+root_level        1
+chunk_root        21004288
+chunk_root_level    1
+log_root        0
+log_root_transid    0
+log_root_level        0
+total_bytes        5000947523584
+bytes_used        420849201152
+sectorsize        4096
+nodesize        16384
+leafsize (deprecated)        16384
+stripesize        4096
+root_dir        6
+num_devices        1
+compat_flags        0x0
+compat_ro_flags        0x0
+incompat_flags        0x176d200000000169
+            ( MIXED_BACKREF |
+              COMPRESS_LZO |
+              BIG_METADATA |
+              EXTENDED_IREF |
+              SKINNY_METADATA |
+              unknown flag: 0x176d200000000000 )
+cache_generation    7777
+uuid_tree_generation    7777
+dev_item.uuid        880c692f-5270-4c7a-908d-8b3956fb3790
+dev_item.fsid        513f07e1-08be-4d94-a55c-11c6251f6c2f [match]
+dev_item.type        0
+dev_item.total_bytes    5000947523584
+dev_item.bytes_used    457439182848
+dev_item.io_align    4096
+dev_item.io_width    4096
+dev_item.sector_size    4096
+dev_item.devid        1
+dev_item.dev_group    0
+dev_item.seek_speed    0
+dev_item.bandwidth    0
+dev_item.generation    0
+sys_chunk_array[2048]:
+    item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 20971520)
+        length 8388608 owner 2 stripe_len 65536 type SYSTEM|DUP
+        io_align 65536 io_width 65536 sector_size 4096
+        num_stripes 2 sub_stripes 0
+            stripe 0 devid 1 offset 20971520
+            dev_uuid 880c692f-5270-4c7a-908d-8b3956fb3790
+            stripe 1 devid 1 offset 29360128
+            dev_uuid 880c692f-5270-4c7a-908d-8b3956fb3790
+backup_roots[4]:
+    backup 0:
+        backup_tree_root:    181174272    gen: 7774    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    181190656    gen: 7774    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    93585408    gen: 7631    level: 1
+        backup_csum_root:    181862400    gen: 7774    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
 
+    backup 1:
+        backup_tree_root:    183828480    gen: 7775    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    183320576    gen: 7775    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    185761792    gen: 7775    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 2:
+        backup_tree_root:    186810368    gen: 7776    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    186613760    gen: 7776    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    187056128    gen: 7776    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 3:
+        backup_tree_root:    186466304    gen: 7777    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    187908096    gen: 7777    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    188071936    gen: 7777    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+
+superblock: bytenr=274877906944, device=/dev/mapper/x
+---------------------------------------------------------
+csum_type        35355 (INVALID)
+csum_size        32
+csum           
+0xad3d932200000000000000000000000000000000000000000000000000000000
+[DON'T MATCH]
+bytenr            274877906944
+flags            0x1
+            ( WRITTEN )
+magic            _BHRfS_M [match]
+fsid            513f07e1-08be-4d94-a55c-11c6251f6c2f
+label           
+generation        7777
+root            186466304
+sys_array_size        129
+chunk_root_generation    7450
+root_level        1
+chunk_root        21004288
+chunk_root_level    1
+log_root        0
+log_root_transid    0
+log_root_level        0
+total_bytes        5000947523584
+bytes_used        420849201152
+sectorsize        4096
+nodesize        16384
+leafsize (deprecated)        16384
+stripesize        4096
+root_dir        6
+num_devices        1
+compat_flags        0x0
+compat_ro_flags        0x0
+incompat_flags        0x176d200000000169
+            ( MIXED_BACKREF |
+              COMPRESS_LZO |
+              BIG_METADATA |
+              EXTENDED_IREF |
+              SKINNY_METADATA |
+              unknown flag: 0x176d200000000000 )
+cache_generation    7777
+uuid_tree_generation    7777
+dev_item.uuid        880c692f-5270-4c7a-908d-8b3956fb3790
+dev_item.fsid        513f07e1-08be-4d94-a55c-11c6251f6c2f [match]
+dev_item.type        0
+dev_item.total_bytes    5000947523584
+dev_item.bytes_used    457439182848
+dev_item.io_align    4096
+dev_item.io_width    4096
+dev_item.sector_size    4096
+dev_item.devid        1
+dev_item.dev_group    0
+dev_item.seek_speed    0
+dev_item.bandwidth    0
+dev_item.generation    0
+sys_chunk_array[2048]:
+    item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 20971520)
+        length 8388608 owner 2 stripe_len 65536 type SYSTEM|DUP
+        io_align 65536 io_width 65536 sector_size 4096
+        num_stripes 2 sub_stripes 0
+            stripe 0 devid 1 offset 20971520
+            dev_uuid 880c692f-5270-4c7a-908d-8b3956fb3790
+            stripe 1 devid 1 offset 29360128
+            dev_uuid 880c692f-5270-4c7a-908d-8b3956fb3790
+backup_roots[4]:
+    backup 0:
+        backup_tree_root:    181174272    gen: 7774    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    181190656    gen: 7774    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    93585408    gen: 7631    level: 1
+        backup_csum_root:    181862400    gen: 7774    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 1:
+        backup_tree_root:    183828480    gen: 7775    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    183320576    gen: 7775    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    185761792    gen: 7775    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 2:
+        backup_tree_root:    186810368    gen: 7776    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    186613760    gen: 7776    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    187056128    gen: 7776    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+    backup 3:
+        backup_tree_root:    186466304    gen: 7777    level: 1
+        backup_chunk_root:    21004288    gen: 7450    level: 1
+        backup_extent_root:    187908096    gen: 7777    level: 2
+        backup_fs_root:        809828352    gen: 6404    level: 0
+        backup_dev_root:    183975936    gen: 7775    level: 1
+        backup_csum_root:    188071936    gen: 7777    level: 2
+        backup_total_bytes:    5000947523584
+        backup_bytes_used:    420849201152
+        backup_num_devices:    1
+
+Thank you,
+Ken
+
+
+���{.n�+�������+%�����ݶ��w��{.n�+����{���k~���^n�r���z���h����&���z��z�ޗ�+��+zf���h���~����i��������z_��j:+v���)ߣ�m

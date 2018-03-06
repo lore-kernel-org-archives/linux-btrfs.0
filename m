@@ -1,58 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:32832 "EHLO
-        mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750801AbeCFIgn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 03:36:43 -0500
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 019BFAC0059
-        for <linux-btrfs@vger.kernel.org>; Tue,  6 Mar 2018 17:36:38 +0900 (JST)
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:12152 "EHLO
+        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750825AbeCFIhZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 03:37:25 -0500
+Received: from g01jpfmpwkw01.exch.g01.fujitsu.local (g01jpfmpwkw01.exch.g01.fujitsu.local [10.0.193.38])
+        by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 58DEDAC0117
+        for <linux-btrfs@vger.kernel.org>; Tue,  6 Mar 2018 17:37:20 +0900 (JST)
 Received: from g01jpexchkw36.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 3453DBD66FF
-        for <linux-btrfs@vger.kernel.org>; Tue,  6 Mar 2018 17:36:37 +0900 (JST)
-Subject: [RFC PATCH 6/7] btrfs-progs: test: Add helper function to check if
- test user exists
+        by g01jpfmpwkw01.exch.g01.fujitsu.local (Postfix) with ESMTP id 7DCA36923AB
+        for <linux-btrfs@vger.kernel.org>; Tue,  6 Mar 2018 17:37:19 +0900 (JST)
+Subject: [RFC PATCH 7/7] btrfs-porgs: test: Add cli-test/009 to check
+ subvolume list for both root and normal user
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <94a0bad6-d696-a72e-ba7b-287d1d442997@jp.fujitsu.com>
-Message-ID: <91cc562a-e44d-0aee-0336-edae0fc7c92b@jp.fujitsu.com>
-Date: Tue, 6 Mar 2018 17:36:33 +0900
+Message-ID: <6fed5208-e7e8-b653-9422-7dd741a52e2e@jp.fujitsu.com>
+Date: Tue, 6 Mar 2018 17:37:16 +0900
 MIME-Version: 1.0
 In-Reply-To: <94a0bad6-d696-a72e-ba7b-287d1d442997@jp.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test user 'progs-test' will be used to test the behavior of normal user.
-
-In order to pass this check, add the user by "useradd -M progs-test".
-Note that progs-test should not have root privileges.
 
 Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 ---
- tests/common | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ tests/cli-tests/009-subvolume-list/test.sh | 136 +++++++++++++++++++++++++++++
+ 1 file changed, 136 insertions(+)
+ create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
 
-diff --git a/tests/common b/tests/common
-index fae30f1d..e8f7c061 100644
---- a/tests/common
-+++ b/tests/common
-@@ -307,6 +307,16 @@ check_global_prereq()
- 	fi
- }
- 
-+check_testuser()
+diff --git a/tests/cli-tests/009-subvolume-list/test.sh b/tests/cli-tests/009-subvolume-list/test.sh
+new file mode 100755
+index 00000000..e946837b
+--- /dev/null
++++ b/tests/cli-tests/009-subvolume-list/test.sh
+@@ -0,0 +1,136 @@
++#!/bin/bash
++# test for "subvolume list" both for root and normal user
++
++source "$TEST_TOP/common"
++
++check_testuser
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++prepare_test_dev
++
++
++# test if the ids returned by "sub list" match expected ids
++# $1  ... indicate run as root or test user
++# $2  ... PATH to be specified by sub list command
++# $3~ ... expected return ids
++test_list()
 +{
-+	id -u progs-test > /dev/null 2>&1
-+	if [ $? -ne 0 ]; then
-+		_not_run "Need to add user \"progs-test\""
++	local SUDO
++	if [ $1 -eq 1 ]; then
++		SUDO=$SUDO_HELPER
++	else
++		SUDO="sudo -u progs-test"
 +	fi
-+	# Note that progs-test should not have root privileges
-+	# otherwise test may not run as expected
++
++	result=$(run_check_stdout $SUDO "$TOP/btrfs" subvolume list "$2" | \
++		awk '{print $2}' | xargs | sort -n)
++
++	shift
++	shift
++	expected=($(echo "$@" | tr " " "\n" | sort -n))
++	expected=$(IFS=" "; echo "${expected[*]}")
++
++	if [ "$result" != "$expected" ]; then
++		echo "result  : $result"
++		echo "expected: $expected"
++		_fail "ids returned by sub list does not match expected ids"
++	fi
 +}
 +
- check_image()
- {
- 	local image
++run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$TEST_DEV"
++run_check_mount_test_dev
++cd "$TEST_MNT"
++
++# create subvolumes and directories and make some non-readable
++# by user 'progs-test'
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub1
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub1/subsub1
++run_check $SUDO_HELPER mkdir sub1/dir
++
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2
++run_check $SUDO_HELPER mkdir -p sub2/dir/dirdir
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2/dir/subsub2
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub2/dir/dirdir/subsubX
++
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub3
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub3/subsub3
++run_check $SUDO_HELPER mkdir sub3/dir
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub3/dir/subsubY
++run_check $SUDO_HELPER chmod o-r sub3
++
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub4
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub4/subsub4
++run_check $SUDO_HELPER mkdir sub4/dir
++run_check $SUDO_HELPER "$TOP/btrfs" subvolume create sub4/dir/subsubZ
++run_check $SUDO_HELPER setfacl -m u:progs-test:- sub4/dir
++
++run_check $SUDO_HELPER touch "file"
++
++# expected result for root:
++#
++# ID 257 gen 9 top level 5 path sub1
++# ID 258 gen 8 top level 257 path sub1/subsub1
++# ID 259 gen 11 top level 5 path sub2
++# ID 260 gen 10 top level 259 path sub2/dir/subsub2
++# ID 261 gen 11 top level 259 path sub2/dir/dirdir/subsubX
++# ID 262 gen 15 top level 5 path sub3
++# ID 263 gen 13 top level 262 path sub3/subsub3
++# ID 264 gen 14 top level 262 path sub3/dir/subsubY
++# ID 265 gen 17 top level 5 path sub4
++# ID 266 gen 16 top level 265 path sub4/subsub4
++# ID 267 gen 17 top level 265 path sub4/dir/subsubZ
++
++# check for root for both absolute/relative path
++# always returns all subvolumes
++all=$(seq 257 267)
++test_list 1 "$TEST_MNT" "${all[@]}"
++test_list 1 "$TEST_MNT/sub1" "${all[@]}"
++test_list 1 "$TEST_MNT/sub1/dir" "${all[@]}"
++test_list 1 "$TEST_MNT/sub2" "${all[@]}"
++test_list 1 "$TEST_MNT/sub2/dir" "${all[@]}"
++test_list 1 "$TEST_MNT/sub3" "${all[@]}"
++test_list 1 "$TEST_MNT/sub4" "${all[@]}"
++run_mustfail "should fail for file" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume list "$TEST/file"
++
++test_list 1 "." "${all[@]}"
++test_list 1 "sub1" "${all[@]}"
++test_list 1 "sub1/dir" "${all[@]}"
++test_list 1 "sub2" "${all[@]}"
++test_list 1 "sub2/dir" "${all[@]}"
++test_list 1 "sub3" "${all[@]}"
++test_list 1 "sub4" "${all[@]}"
++run_mustfail "should fail for file" \
++	$SUDO_HELPER "$TOP/btrfs" subvolume list "file"
++
++# check for normal user for both absolute/relative path
++# only returns subvolumes under specified path
++test_list 0 "$TEST_MNT" "257 258 259 260 261 262 265 266"
++test_list 0 "$TEST_MNT/sub1" "257 258"
++test_list 0 "$TEST_MNT/sub1/dir" ""
++test_list 0 "$TEST_MNT/sub2" "259 260 261"
++test_list 0 "$TEST_MNT/sub2/dir" "260 261"
++run_mustfail "should raise permission error" \
++	sudo -u progs-test "$TOP/btrfs" subvolume list "$TEST/sub3"
++test_list 0 "$TEST_MNT/sub4" "265 266"
++run_mustfail "should raise permission error" \
++	sudo -u progs-test "$TOP/btrfs" subvolume list "$TEST/sub4/dir"
++run_mustfail "should fail for file" \
++	sudo -u progs-test "$TOP/btrfs" subvolume list "$TEST/file"
++
++test_list 0 "." "257 258 259 260 261 262 265 266"
++test_list 0 "sub1/dir" ""
++test_list 0 "sub2" "259 260 261"
++test_list 0 "sub2/dir" "260 261"
++run_mustfail "should raise permission error" \
++	sudo -u progs-test "$TOP/btrfs" subvolume list "sub3"
++test_list 0 "sub4" "265 266"
++run_mustfail "should raise permission error" \
++	sudo -u progs-test "$TOP/btrfs" subvolume list "sub4/dir"
++run_mustfail "should fail for file" \
++	sudo -u progs-test "$TOP/btrfs" subvolume list "file"
++
++cd ..
++run_check_umount_test_dev
 -- 
 2.14.3
 

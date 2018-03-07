@@ -1,158 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49003 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S965148AbeCGUY1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 15:24:27 -0500
-Subject: Re: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180302184704.22399-1-jeffm@suse.com>
- <20180302184704.22399-7-jeffm@suse.com>
- <08a5b635-cb47-7395-4785-71f14a1ab146@jp.fujitsu.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <9149ed1f-8273-6ced-fc58-c591c9de3eac@suse.com>
-Date: Wed, 7 Mar 2018 15:24:23 -0500
+Received: from frost.carfax.org.uk ([85.119.82.111]:54138 "EHLO
+        frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S933935AbeCGUfs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Mar 2018 15:35:48 -0500
+Date: Wed, 7 Mar 2018 20:35:47 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Diego <diegocg@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Improve error stats message
+Message-ID: <20180307203547.GG20688@carfax.org.uk>
+References: <1588327.cr4xlG2VNd@archlinux>
+ <20180307182453.GF20688@carfax.org.uk>
+ <2011051.lkSedfDimf@archlinux>
 MIME-Version: 1.0
-In-Reply-To: <08a5b635-cb47-7395-4785-71f14a1ab146@jp.fujitsu.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="YTxRyF7t0AGJGnoLXsHZsucaYCm8EuYFA"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+        protocol="application/pgp-signature"; boundary="uc35eWnScqDcQrv5"
+In-Reply-To: <2011051.lkSedfDimf@archlinux>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---YTxRyF7t0AGJGnoLXsHZsucaYCm8EuYFA
-Content-Type: multipart/mixed; boundary="IwbjCayvd5qyco5rwlGGTlFaBtEbW6Yje";
- protected-headers="v1"
-From: Jeff Mahoney <jeffm@suse.com>
-To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <9149ed1f-8273-6ced-fc58-c591c9de3eac@suse.com>
-Subject: Re: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
-References: <20180302184704.22399-1-jeffm@suse.com>
- <20180302184704.22399-7-jeffm@suse.com>
- <08a5b635-cb47-7395-4785-71f14a1ab146@jp.fujitsu.com>
-In-Reply-To: <08a5b635-cb47-7395-4785-71f14a1ab146@jp.fujitsu.com>
 
---IwbjCayvd5qyco5rwlGGTlFaBtEbW6Yje
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+--uc35eWnScqDcQrv5
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On 3/7/18 3:02 AM, Misono, Tomohiro wrote:
-> On 2018/03/03 3:47, jeffm@suse.com wrote:
->> From: Jeff Mahoney <jeffm@suse.com>
->>
->> The only mechanism we have in the progs for searching qgroups is to lo=
-ad
->> all of them and filter the results.  This works for qgroup show but
->> to add quota information to 'btrfs subvoluem show' it's pretty wastefu=
-l.
->>
->> This patch splits out setting up the search and performing the search =
-so
->> we can search for a single qgroupid more easily.
->>
->> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
->> ---
->>  qgroup.c | 98 +++++++++++++++++++++++++++++++++++++++++++++----------=
----------
->>  qgroup.h |  7 +++++
->>  2 files changed, 77 insertions(+), 28 deletions(-)
->>
->> diff --git a/qgroup.c b/qgroup.c
->> index b1be3311..2d0a6947 100644
->> --- a/qgroup.c
->> +++ b/qgroup.c
->> @@ -1146,11 +1146,11 @@ static inline void print_status_flag_warning(u=
-64 flags)
->>  		warning("qgroup data inconsistent, rescan recommended");
->>  }
->> =20
->> -static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_look=
-up)
->> +static int __qgroups_search(int fd, struct btrfs_ioctl_search_args *a=
-rgs,
->> +			    struct qgroup_lookup *qgroup_lookup)
->>  {
->>  	int ret;
->> -	struct btrfs_ioctl_search_args args;
->> -	struct btrfs_ioctl_search_key *sk =3D &args.key;
->> +	struct btrfs_ioctl_search_key *sk =3D &args->key;
->>  	struct btrfs_ioctl_search_header *sh;
->>  	unsigned long off =3D 0;
->>  	unsigned int i;
->> @@ -1161,30 +1161,12 @@ static int __qgroups_search(int fd, struct qgr=
-oup_lookup *qgroup_lookup)
->>  	u64 qgroupid;
->>  	u64 qgroupid1;
->> =20
->> -	memset(&args, 0, sizeof(args));
->> -
->> -	sk->tree_id =3D BTRFS_QUOTA_TREE_OBJECTID;
->> -	sk->max_type =3D BTRFS_QGROUP_RELATION_KEY;
->> -	sk->min_type =3D BTRFS_QGROUP_STATUS_KEY;
->> -	sk->max_objectid =3D (u64)-1;
->> -	sk->max_offset =3D (u64)-1;
->> -	sk->max_transid =3D (u64)-1;
->> -	sk->nr_items =3D 4096;
->> -
->>  	qgroup_lookup_init(qgroup_lookup);
->> =20
->>  	while (1) {
->> -		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
->> +		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, args);
->>  		if (ret < 0) {
->> -			if (errno =3D=3D ENOENT) {
->> -				error("can't list qgroups: quotas not enabled");
->> -				ret =3D -ENOTTY;
->> -			} else {
->> -				error("can't list qgroups: %s",
->> -				       strerror(errno));
->> -				ret =3D -errno;
->> -			}
->> -
->> +			ret =3D -errno;
+On Wed, Mar 07, 2018 at 08:02:51PM +0100, Diego wrote:
+> El mi=E9rcoles, 7 de marzo de 2018 19:24:53 (CET) Hugo Mills escribi=F3:
+> >    On multi-device filesystems, the two are not necessarily the same.
 >=20
-> Originally, -ENOTTY would be returned when qgroup is disabled
-> but this changes to return -ENOENT. so, it seems that error check
-> in 7th patch would not work correctly when qgroup is disabled.
+> Ouch. FWIW, I was moved to do this because I saw this conversation on
+> IRC which made me think that people aren't understanding what the
+> message means:
 >=20
+> <nick1>       hi! I noticed bdev rd 13  as a kernel message
+> <nick1>       what does it mean
+> <nick2>       Well, that's not the whole message.
+> <nick2>       Can you paste the whole line in here? (Just one line)
+   ^^ nick2... that would be me. :)
 
-Good catch.
+> <nick1>       [    3.404959] BTRFS info (device sda4): bdev /dev/sda4 err=
+s: wr 0, rd 13, flush 0, corrupt 0, gen 0
+>=20
+>=20
+> Maybe something like this would be better:
+>=20
+> BTRFS info (device sda4): disk /dev/sda4 errors: write 0, read 13, flush =
+0, corrupt 0, generation 0
 
-Thanks,
+   I think the single most helpful modification here would be to
+change "device" to "fs on", to show that it's only an indicator of the
+filesystem ID, rather than actually the device on which the errors
+occurred. The others I'm not really bothered about, personally.
 
--Jeff
+   Hugo.
+
+> ---
+>  fs/btrfs/volumes.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 2ceb924ca0d6..cfa029468585 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -7239,7 +7239,7 @@ static void btrfs_dev_stat_print_on_error(struct bt=
+rfs_device *dev)
+>  	if (!dev->dev_stats_valid)
+>  		return;
+>  	btrfs_err_rl_in_rcu(dev->fs_info,
+> -		"bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u",
+> +		"disk %s errors: write %u, read %u, flush %u, corrupt %u, generation %=
+u",
+>  			   rcu_str_deref(dev->name),
+>  			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
+>  			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_READ_ERRS),
 
 --=20
-Jeff Mahoney
-SUSE Labs
+Hugo Mills             | Q: What goes, "Pieces of seven! Pieces of seven!"?
+hugo@... carfax.org.uk | A: A parroty error.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
-
---IwbjCayvd5qyco5rwlGGTlFaBtEbW6Yje--
-
---YTxRyF7t0AGJGnoLXsHZsucaYCm8EuYFA
+--uc35eWnScqDcQrv5
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQJDBAEBCAAtFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlqgSncPHGplZmZtQHN1
-c2UuY29tAAoJEB57S2MheeWyAkIP/j/y99htkSjK4FEW/1/KRJQwRN/X2GHGMtis
-qqhZVCcscvQTCokPfpOSN5WB4y3OggT54YjTRQ69cPuMsQiIylb9SUfDUepvmTcx
-fmdLD/TAyJUCo4MkEfkE193hT/F5BWfQeTDVJRispMB+QGMriaY/eZhH5bfvEDaX
-Expp6nZ+57BRLg45MxrVvJYE4xRylrP0h2A8Z+bYGIJ9ilmeWdywvDRLsyRe9t0k
-k6bpbvMC/2RJKC1X61Fotd8858Yhn0d4/2xdwlLi3vx6tZfHIsbdKsAFI9tu2dsT
-hr/vibsjk+7geNbNHh4xR/acux6Xdbm+S+6yoQrdZVThsVaLcqXRSGNJNykt/fBR
-GiR7+LSxWy88bttqkQczPlHNvH2XrL9fIqfRHhlXBJHrgz2IdhilHFgpmuKm9PZf
-aTubf4grvK4V9xv+WmeMDcWflyZ1Bb1nH9RuXKPhBGcfCUuKyvfwkdlDMQYdw8Hz
-wrY8yISobpGGT922fz5C+ZTH05NnCDDpAASKKcxfZltMGuFtyEBnSCgoPCtXyWtF
-R3H9CmjJdYS6cpAsGdO1JXVKIX8N36uWdjmrFrbX14wjN1fC9/uGzB+0XlIQoLvV
-BdCyoGi5NYoQawofFS2fYuJH0/+zo9u8hOhqjknEU0EIZu4UETME5okAgqRlH8Nq
-sGbM9BWc
-=tZAj
+iQIcBAEBAgAGBQJaoE0jAAoJEFheFHXiqx3kYf4P/iIEV4MTGCxcO5k5sqP1GVIX
+ePPpsDYbPfQngu1DB6z1MEuG6d/90VKCxwQgaTyJKjkDX9+PQXNkRdGsHlajR1/w
+BWmTztPTabDQlQaLSUOJIebVPYzDfkzeYG5cQE9SFp/dK1vUZZy0FCShPXYTR0zq
+f28Lie5rqrxYYws1SWPQjEPjtz6XlkNWFR8vuRMu2V+nAZO5H/Svl/SiHklK0kv4
+MX/EMG2KeEHe1i1jn1Cof5ym9uX9DBoLCjUAIBrnBFsYlJuWtd2F6lYJpiKsC67E
+5LXPTht43MCgK/ank9L6nEMpIJhgagNsMPNRQFe+6MqUxf01wtFgQEyWiuac1fTQ
+9ylfZATsZBkDc4ACAYvxn+UpqHdpLAr9HKCV/FWmZr9sWWofC7dZds5XRXGj+rNH
+v6ufEgHSeb9eje6RthTGEca3sXYo5jeSAR7mn4U/XTvAg2J+zRhbAN9l1PQsE7po
+8OpnwDAPy42oYWpxjjKsfE4SQapJ2nonFhDxrO0oaDlNiGlnlyNJeA1Z+JNb0P15
+oxXBtfmIYOMK6tfu8d5/9mcQ/WzoJZP4ypx1pHIqBErdSqX2VlFeWosySSgWmxnt
+dmk6IFPEjbTMr43VJfKa0nuKxST/T6u3/P+/p8LGf+jMEc0RcJNkpNeT90NcdUfv
+t1y75pkJ/JCDOLiTqbJp
+=8vzd
 -----END PGP SIGNATURE-----
 
---YTxRyF7t0AGJGnoLXsHZsucaYCm8EuYFA--
+--uc35eWnScqDcQrv5--

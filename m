@@ -1,73 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:32429 "EHLO
-        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752066AbeC0HHT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 03:07:19 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id B909148AE780
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 15:07:12 +0800 (CST)
-From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 10/10] btrfs-progs: undelete-subvol: update completion and documentation
-Date: Tue, 27 Mar 2018 15:06:58 +0800
-Message-ID: <20180327070658.13064-11-lufq.fnst@cn.fujitsu.com>
-In-Reply-To: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
-References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from synology.com ([59.124.61.242]:37483 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933209AbeCGIVG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 03:21:06 -0500
+From: robbieko <robbieko@synology.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robbie Ko <robbieko@synology.com>
+Subject: [PATCH 1/2] Btrfs: fiemap: pass correct bytenr when fm_extent_count is zero
+Date: Wed,  7 Mar 2018 16:20:18 +0800
+Message-Id: <1520410819-32405-2-git-send-email-robbieko@synology.com>
+In-Reply-To: <1520410819-32405-1-git-send-email-robbieko@synology.com>
+References: <1520410819-32405-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add undelete-subvol to btrfs-completion, and update btrfs-rescue
-documentation to introduce undelete-subvol.
+From: Robbie Ko <robbieko@synology.com>
 
-Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
+ # mount /dev/vdb5 /mnt/btrfs
+ # dd if=/dev/zero bs=16K count=4 oflag=dsync of=/mnt/btrfs/file
+ # xfs_io -c "fiemap -v" /mnt/btrfs/file
+ /mnt/btrfs/file:
+ EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+   0: [0..127]:        25088..25215       128   0x1
+
+Run fiemap with fm_extent_count set to 0, we'll get wrong value 4
+instead of 1.
+
+[REASON]
+When fm_extent_count is 0, disko is not initialized correctly,
+The value is 0 in this case, not the right bytenr.
+
+[FIX]
+Use correct disko.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
-v2: just add -s option documentation.
+ fs/btrfs/extent_io.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
- Documentation/btrfs-rescue.asciidoc | 12 ++++++++++++
- btrfs-completion                    |  2 +-
- 2 files changed, 13 insertions(+), 1 deletion(-)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 012d638..066b6df 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4567,7 +4567,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			offset_in_extent = em_start - em->start;
+ 		em_end = extent_map_end(em);
+ 		em_len = em_end - em_start;
+-		disko = 0;
++		disko = em->block_start + offset_in_extent;
+ 		flags = 0;
 
-diff --git a/Documentation/btrfs-rescue.asciidoc b/Documentation/btrfs-rescue.asciidoc
-index f94a0ff2b45e..573a865b1158 100644
---- a/Documentation/btrfs-rescue.asciidoc
-+++ b/Documentation/btrfs-rescue.asciidoc
-@@ -60,6 +60,18 @@ assume an answer of 'yes' to all questions.
- -v::::
- verbose mode.
- 
-+*undelete-subvol* <device>::
-+Undelete deleted subvolumes that still left intact on the device.
-++
-+This command will create the lost+found directory, and recover all the
-+subvolumes to this directory with the name "sub<id>". If -s <subvolid> option
-+is given, then just recover the subvolume which specified by <subvolid>.
-++
-+`Options`
-++
-+-s::::
-+specify the subvolume which will be recovered.
-+
- *zero-log* <device>::
- clear the filesystem log tree
- +
-diff --git a/btrfs-completion b/btrfs-completion
-index ae683f4ecf61..859595155a4b 100644
---- a/btrfs-completion
-+++ b/btrfs-completion
-@@ -35,7 +35,7 @@ _btrfs()
- 	commands_balance='start pause cancel resume status'
- 	commands_device='scan add delete remove ready stats usage'
- 	commands_scrub='start cancel resume status'
--	commands_rescue='chunk-recover super-recover zero-log'
-+	commands_rescue='chunk-recover super-recover undelete-subvol zero-log'
- 	commands_inspect_internal='inode-resolve logical-resolve subvolid-resolve rootid min-dev-size dump-tree dump-super tree-stats'
- 	commands_property='get set list'
- 	commands_quota='enable disable rescan'
--- 
-2.16.2
+ 		/*
+@@ -4590,8 +4590,6 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 			u64 bytenr = em->block_start -
+ 				(em->start - em->orig_start);
 
-
+-			disko = em->block_start + offset_in_extent;
+-
+ 			/*
+ 			 * As btrfs supports shared space, this information
+ 			 * can be exported to userspace tools via
+--
+1.9.1
 

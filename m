@@ -1,36 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:44537 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.15]:46905 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750959AbeCGF6w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 00:58:52 -0500
+        id S1750960AbeCGGIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 01:08:15 -0500
 Subject: Re: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
 To: jeffm@suse.com, linux-btrfs@vger.kernel.org
 References: <20180302184704.22399-1-jeffm@suse.com>
  <20180302184704.22399-7-jeffm@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <1e0bf346-bef4-c4e5-4054-9cbedb3fd36a@gmx.com>
-Date: Wed, 7 Mar 2018 13:58:41 +0800
+Message-ID: <4184ecdf-1d86-acbb-1a88-2623c4366a37@gmx.com>
+Date: Wed, 7 Mar 2018 14:08:01 +0800
 MIME-Version: 1.0
 In-Reply-To: <20180302184704.22399-7-jeffm@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="N1SvcvbNJYGNW0lOAQBODNOnYIelWqfSt"
+ boundary="rzk400MbVuzZ98F6RvkSnjx0604rWPfej"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---N1SvcvbNJYGNW0lOAQBODNOnYIelWqfSt
-Content-Type: multipart/mixed; boundary="r7GGkGVIGuxpB4nGwmtmc8MIPfZk0aXns";
+--rzk400MbVuzZ98F6RvkSnjx0604rWPfej
+Content-Type: multipart/mixed; boundary="oeM5g2UBQp9sfEDmIfe6UPmlxyfcuLdK2";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: jeffm@suse.com, linux-btrfs@vger.kernel.org
-Message-ID: <1e0bf346-bef4-c4e5-4054-9cbedb3fd36a@gmx.com>
+Message-ID: <4184ecdf-1d86-acbb-1a88-2623c4366a37@gmx.com>
 Subject: Re: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
 References: <20180302184704.22399-1-jeffm@suse.com>
  <20180302184704.22399-7-jeffm@suse.com>
 In-Reply-To: <20180302184704.22399-7-jeffm@suse.com>
 
---r7GGkGVIGuxpB4nGwmtmc8MIPfZk0aXns
+--oeM5g2UBQp9sfEDmIfe6UPmlxyfcuLdK2
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -192,34 +192,6 @@ kup)
 > +			.max_offset =3D qgroupid,
 > +			.max_transid =3D (u64)-1,
 > +			.nr_items =3D 4096, /* should be 2, i think */
-
-2 is not correct in fact.
-
-As QGROUP_INFO is smaller than QGROUP_LIMIT, to get a slice of all what
-we need, we need to include all other unrelated items.
-
-One example will be:
-	item 1 key (0 QGROUP_INFO 0/5) itemoff 16211 itemsize 40
-	item 2 key (0 QGROUP_INFO 0/257) itemoff 16171 itemsize 40
-	item 3 key (0 QGROUP_INFO 1/1) itemoff 16131 itemsize 40
-	item 4 key (0 QGROUP_LIMIT 0/5) itemoff 16091 itemsize 40
-	item 5 key (0 QGROUP_LIMIT 0/257) itemoff 16051 itemsize 40
-	item 6 key (0 QGROUP_LIMIT 1/1) itemoff 16011 itemsize 40
-
-To query qgroup info about 0/257, above setup will get the following slic=
-e:
-	item 1 key (0 QGROUP_INFO 0/5) itemoff 16211 itemsize 40
-	item 2 key (0 QGROUP_INFO 0/257) itemoff 16171 itemsize 40
-	item 3 key (0 QGROUP_INFO 1/1) itemoff 16131 itemsize 40
-	item 4 key (0 QGROUP_LIMIT 0/5) itemoff 16091 itemsize 40
-	item 5 key (0 QGROUP_LIMIT 0/257) itemoff 16051 itemsize 40
-So we still need that large @nr_items.
-
-Despite this comment it looks good.
-
-Thanks,
-Qu
-
 > +		},
 > +	};
 > +	struct qgroup_lookup qgroup_lookup;
@@ -238,6 +210,18 @@ Qu
 > +		stats->qgroupid =3D qgroup->qgroupid;
 > +		stats->info =3D qgroup->info;
 > +		stats->limit =3D qgroup->limit;
+
+I just missed this.
+
+Even we are just doing single query, just as explained in previous
+reply, we could get a splice containing other info of other qgroups.
+
+So here the first qgroup could not be the one we want.
+We need to do extra search to find the qgroup we need.
+
+Thanks,
+Qu
+
 > +
 > +		ret =3D 0;
 > +	}
@@ -288,23 +272,23 @@ r *arg,
 >=20
 
 
---r7GGkGVIGuxpB4nGwmtmc8MIPfZk0aXns--
+--oeM5g2UBQp9sfEDmIfe6UPmlxyfcuLdK2--
 
---N1SvcvbNJYGNW0lOAQBODNOnYIelWqfSt
+--rzk400MbVuzZ98F6RvkSnjx0604rWPfej
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqff5EXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhOzgf7ByGHRsSVJGo52BBliLQ3wE7F
-1x0GEAoJpdyPwuvUMCyCJ8oan0fVoPJ31bqzIjEstvy+zrz7Oqq8EKqbP1G45EUK
-L5rI4wFMkwR5Pga/2zkFlI5Pi0+Uxk1VE8BzW2IGKVOOluyoqML/o8AwcV8MeVMx
-XsNaethC+TtqW01DRaQ6QyKJmGMm3UMsBnpkv0AETymlwDKMkIG+EEKZEbiKCBoc
-cl7z1SBVRuho10HybFtUqa5GKNHIkU6AdJanflTX2nHAssrgItUsxZEbTc4Ot2x2
-iO+OR9B57FBtbSCb2pP+OkvqJZVxwXhbfmYlVtE8M06FRUGnpo4htAA9yCgxTw==
-=Gjll
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqfgcEXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhxywf9EWFIz7Ldz+f5VKw+8Bu5Fm3A
+1e7mZSZFcR7AiH+TH+kdyWkd38lxM/ryIL5//R5vQhjSlJfzjnPLx+1azHrJgRyv
+1QL4J+OES0MTte5orAJ5IXzOVf5q4qxf37yq0CFCb4G9+S51CASF94ibRDzXt+Su
+op6dZZc5l/6z3MrUJArLBbr2vjeyY+g4GvKqUB4XBx1twSBd6I0i1H9efa7H6jnO
+uWEOdCBKfMT4MLtT5ROPECOEbRWDl0xKNzWhONMU33KTWm59Zp7gOZC/Ues4SNGQ
+D71yeMHTQPzkj3xd+n7uuNoDIJEAMTEB+KwADJvP8AMAhEZEYzmvVlRFnWB1vg==
+=vgvz
 -----END PGP SIGNATURE-----
 
---N1SvcvbNJYGNW0lOAQBODNOnYIelWqfSt--
+--rzk400MbVuzZ98F6RvkSnjx0604rWPfej--

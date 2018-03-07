@@ -1,36 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:46905 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.19]:34125 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750960AbeCGGIP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 01:08:15 -0500
-Subject: Re: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
+        id S1751023AbeCGGJN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 01:09:13 -0500
+Subject: Re: [PATCH 7/8] btrfs-progs: subvolume: add quota info to btrfs sub
+ show
 To: jeffm@suse.com, linux-btrfs@vger.kernel.org
 References: <20180302184704.22399-1-jeffm@suse.com>
- <20180302184704.22399-7-jeffm@suse.com>
+ <20180302184704.22399-8-jeffm@suse.com>
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <4184ecdf-1d86-acbb-1a88-2623c4366a37@gmx.com>
-Date: Wed, 7 Mar 2018 14:08:01 +0800
+Message-ID: <51ceaf6c-17e5-734c-478e-38893c9304f7@gmx.com>
+Date: Wed, 7 Mar 2018 14:09:02 +0800
 MIME-Version: 1.0
-In-Reply-To: <20180302184704.22399-7-jeffm@suse.com>
+In-Reply-To: <20180302184704.22399-8-jeffm@suse.com>
 Content-Type: multipart/signed; micalg=pgp-sha256;
  protocol="application/pgp-signature";
- boundary="rzk400MbVuzZ98F6RvkSnjx0604rWPfej"
+ boundary="ST3gfh7Sko006KzY9aNJxHRdrGZdPweRL"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---rzk400MbVuzZ98F6RvkSnjx0604rWPfej
-Content-Type: multipart/mixed; boundary="oeM5g2UBQp9sfEDmIfe6UPmlxyfcuLdK2";
+--ST3gfh7Sko006KzY9aNJxHRdrGZdPweRL
+Content-Type: multipart/mixed; boundary="8NBvlZcS1n6w0uqkjtvvHqz2563UJu4Rc";
  protected-headers="v1"
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 To: jeffm@suse.com, linux-btrfs@vger.kernel.org
-Message-ID: <4184ecdf-1d86-acbb-1a88-2623c4366a37@gmx.com>
-Subject: Re: [PATCH 6/8] btrfs-progs: qgroups: introduce btrfs_qgroup_query
+Message-ID: <51ceaf6c-17e5-734c-478e-38893c9304f7@gmx.com>
+Subject: Re: [PATCH 7/8] btrfs-progs: subvolume: add quota info to btrfs sub
+ show
 References: <20180302184704.22399-1-jeffm@suse.com>
- <20180302184704.22399-7-jeffm@suse.com>
-In-Reply-To: <20180302184704.22399-7-jeffm@suse.com>
+ <20180302184704.22399-8-jeffm@suse.com>
+In-Reply-To: <20180302184704.22399-8-jeffm@suse.com>
 
---oeM5g2UBQp9sfEDmIfe6UPmlxyfcuLdK2
+--8NBvlZcS1n6w0uqkjtvvHqz2563UJu4Rc
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
@@ -40,255 +42,119 @@ Content-Transfer-Encoding: quoted-printable
 On 2018=E5=B9=B403=E6=9C=8803=E6=97=A5 02:47, jeffm@suse.com wrote:
 > From: Jeff Mahoney <jeffm@suse.com>
 >=20
-> The only mechanism we have in the progs for searching qgroups is to loa=
-d
-> all of them and filter the results.  This works for qgroup show but
-> to add quota information to 'btrfs subvoluem show' it's pretty wasteful=
-=2E
->=20
-> This patch splits out setting up the search and performing the search s=
-o
-> we can search for a single qgroupid more easily.
+> This patch reports on the first-level qgroup, if any, associated with
+> a particular subvolume.  It displays the usage and limit, subject
+> to the usual unit parameters.
 >=20
 > Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 > ---
->  qgroup.c | 98 +++++++++++++++++++++++++++++++++++++++++++++-----------=
---------
->  qgroup.h |  7 +++++
->  2 files changed, 77 insertions(+), 28 deletions(-)
+>  cmds-subvolume.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 46 insertions(+)
 >=20
-> diff --git a/qgroup.c b/qgroup.c
-> index b1be3311..2d0a6947 100644
-> --- a/qgroup.c
-> +++ b/qgroup.c
-> @@ -1146,11 +1146,11 @@ static inline void print_status_flag_warning(u6=
-4 flags)
->  		warning("qgroup data inconsistent, rescan recommended");
->  }
-> =20
-> -static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_looku=
-p)
-> +static int __qgroups_search(int fd, struct btrfs_ioctl_search_args *ar=
-gs,
-> +			    struct qgroup_lookup *qgroup_lookup)
->  {
->  	int ret;
-> -	struct btrfs_ioctl_search_args args;
-> -	struct btrfs_ioctl_search_key *sk =3D &args.key;
-> +	struct btrfs_ioctl_search_key *sk =3D &args->key;
->  	struct btrfs_ioctl_search_header *sh;
->  	unsigned long off =3D 0;
->  	unsigned int i;
-> @@ -1161,30 +1161,12 @@ static int __qgroups_search(int fd, struct qgro=
-up_lookup *qgroup_lookup)
->  	u64 qgroupid;
->  	u64 qgroupid1;
-> =20
-> -	memset(&args, 0, sizeof(args));
-> -
-> -	sk->tree_id =3D BTRFS_QUOTA_TREE_OBJECTID;
-> -	sk->max_type =3D BTRFS_QGROUP_RELATION_KEY;
-> -	sk->min_type =3D BTRFS_QGROUP_STATUS_KEY;
-> -	sk->max_objectid =3D (u64)-1;
-> -	sk->max_offset =3D (u64)-1;
-> -	sk->max_transid =3D (u64)-1;
-> -	sk->nr_items =3D 4096;
-> -
->  	qgroup_lookup_init(qgroup_lookup);
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index 8a473f7a..29d0e0e5 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -972,6 +972,7 @@ static const char * const cmd_subvol_show_usage[] =3D=
+ {
+>  	"Show more information about the subvolume",
+>  	"-r|--rootid   rootid of the subvolume",
+>  	"-u|--uuid     uuid of the subvolume",
+> +	HELPINFO_UNITS_SHORT_LONG,
+>  	"",
+>  	"If no option is specified, <subvol-path> will be shown, otherwise",
+>  	"the rootid or uuid are resolved relative to the <mnt> path.",
+> @@ -993,6 +994,13 @@ static int cmd_subvol_show(int argc, char **argv)
+>  	int by_uuid =3D 0;
+>  	u64 rootid_arg;
+>  	u8 uuid_arg[BTRFS_UUID_SIZE];
+> +	struct btrfs_qgroup_stats stats;
+> +	unsigned int unit_mode;
+> +	const char *referenced_size;
+> +	const char *referenced_limit_size =3D "-";
+> +	unsigned field_width =3D 0;
+> +
+> +	unit_mode =3D get_unit_mode_from_arg(&argc, argv, 1);
 > =20
 >  	while (1) {
-> -		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-> +		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, args);
->  		if (ret < 0) {
-> -			if (errno =3D=3D ENOENT) {
-> -				error("can't list qgroups: quotas not enabled");
-> -				ret =3D -ENOTTY;
-> -			} else {
-> -				error("can't list qgroups: %s",
-> -				       strerror(errno));
-> -				ret =3D -errno;
-> -			}
-> -
-> +			ret =3D -errno;
->  			break;
->  		}
-> =20
-> @@ -1198,14 +1180,14 @@ static int __qgroups_search(int fd, struct qgro=
-up_lookup *qgroup_lookup)
->  		 * read the root_ref item it contains
->  		 */
->  		for (i =3D 0; i < sk->nr_items; i++) {
-> -			sh =3D (struct btrfs_ioctl_search_header *)(args.buf +
-> +			sh =3D (struct btrfs_ioctl_search_header *)(args->buf +
->  								  off);
->  			off +=3D sizeof(*sh);
-> =20
->  			switch (btrfs_search_header_type(sh)) {
->  			case BTRFS_QGROUP_STATUS_KEY:
->  				si =3D (struct btrfs_qgroup_status_item *)
-> -				     (args.buf + off);
-> +				     (args->buf + off);
->  				flags =3D btrfs_stack_qgroup_status_flags(si);
-> =20
->  				print_status_flag_warning(flags);
-> @@ -1213,7 +1195,7 @@ static int __qgroups_search(int fd, struct qgroup=
-_lookup *qgroup_lookup)
->  			case BTRFS_QGROUP_INFO_KEY:
->  				qgroupid =3D btrfs_search_header_offset(sh);
->  				info =3D (struct btrfs_qgroup_info_item *)
-> -				       (args.buf + off);
-> +				       (args->buf + off);
-> =20
->  				ret =3D update_qgroup_info(fd, qgroup_lookup,
->  							 qgroupid, info);
-> @@ -1221,7 +1203,7 @@ static int __qgroups_search(int fd, struct qgroup=
-_lookup *qgroup_lookup)
->  			case BTRFS_QGROUP_LIMIT_KEY:
->  				qgroupid =3D btrfs_search_header_offset(sh);
->  				limit =3D (struct btrfs_qgroup_limit_item *)
-> -					(args.buf + off);
-> +					(args->buf + off);
-> =20
->  				ret =3D update_qgroup_limit(fd, qgroup_lookup,
->  							  qgroupid, limit);
-> @@ -1267,6 +1249,66 @@ static int __qgroups_search(int fd, struct qgrou=
-p_lookup *qgroup_lookup)
->  	return ret;
->  }
-> =20
-> +static int qgroups_search_all(int fd, struct qgroup_lookup *qgroup_loo=
-kup)
-> +{
-> +	struct btrfs_ioctl_search_args args =3D {
-> +		.key =3D {
-> +			.tree_id =3D BTRFS_QUOTA_TREE_OBJECTID,
-> +			.max_type =3D BTRFS_QGROUP_RELATION_KEY,
-> +			.min_type =3D BTRFS_QGROUP_STATUS_KEY,
-> +			.max_objectid =3D (u64)-1,
-> +			.max_offset =3D (u64)-1,
-> +			.max_transid =3D (u64)-1,
-> +			.nr_items =3D 4096,
-> +		},
-> +	};
-> +	int ret;
-> +
-> +	ret =3D __qgroups_search(fd, &args, qgroup_lookup);
-> +	if (ret =3D=3D -ENOTTY)
-> +		error("can't list qgroups: quotas not enabled");
-> +	else if (ret < 0)
-> +		error("can't list qgroups: %s", strerror(-ret));
-> +	return ret;
-> +}
-> +
-> +int btrfs_qgroup_query(int fd, u64 qgroupid, struct btrfs_qgroup_stats=
- *stats)
-> +{
-> +	struct btrfs_ioctl_search_args args =3D {
-> +		.key =3D {
-> +			.tree_id =3D BTRFS_QUOTA_TREE_OBJECTID,
-> +			.min_type =3D BTRFS_QGROUP_INFO_KEY,
-> +			.max_type =3D BTRFS_QGROUP_LIMIT_KEY,
-> +			.max_objectid =3D 0,
-> +			.max_offset =3D qgroupid,
-> +			.max_transid =3D (u64)-1,
-> +			.nr_items =3D 4096, /* should be 2, i think */
-> +		},
-> +	};
-> +	struct qgroup_lookup qgroup_lookup;
-> +	struct btrfs_qgroup *qgroup;
-> +	struct rb_node *n;
-> +	int ret;
-> +
-> +	ret =3D __qgroups_search(fd, &args, &qgroup_lookup);
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	ret =3D -ENODATA;
-> +	n =3D rb_first(&qgroup_lookup.root);
-> +	if (n) {
-> +		qgroup =3D rb_entry(n, struct btrfs_qgroup, rb_node);
-> +		stats->qgroupid =3D qgroup->qgroupid;
-> +		stats->info =3D qgroup->info;
-> +		stats->limit =3D qgroup->limit;
+>  		int c;
+> @@ -1112,6 +1120,44 @@ static int cmd_subvol_show(int argc, char **argv=
+)
+>  	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW,=
 
-I just missed this.
+>  			1, raw_prefix);
+> =20
+> +	ret =3D btrfs_qgroup_query(fd, get_ri.root_id, &stats);
+> +	if (ret < 0) {
+> +		if (ret =3D=3D -ENODATA)
+> +			printf("Quotas must be enabled for per-subvolume usage\n");
 
-Even we are just doing single query, just as explained in previous
-reply, we could get a splice containing other info of other qgroups.
+This seems a little confusing.
+If quota is disabled, we get ENOTTY not ENODATA.
 
-So here the first qgroup could not be the one we want.
-We need to do extra search to find the qgroup we need.
+For ENODATA we know quota is enabled but just no info for this qgroup.
 
 Thanks,
 Qu
 
-> +
-> +		ret =3D 0;
+> +		else if (ret !=3D -ENOTTY)
+> +			fprintf(stderr,
+> +				"\nERROR: BTRFS_IOC_QUOTA_QUERY failed: %s\n",
+> +				strerror(errno));
+> +		goto out;
 > +	}
 > +
-> +	__free_all_qgroups(&qgroup_lookup);
-> +	return ret;
-> +}
+> +	printf("\tQuota Usage:\t\t");
+> +	fflush(stdout);
 > +
->  static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, boo=
-l verbose)
->  {
-> =20
-> @@ -1293,7 +1335,7 @@ int btrfs_show_qgroups(int fd,
->  	struct qgroup_lookup sort_tree;
->  	int ret;
-> =20
-> -	ret =3D __qgroups_search(fd, &qgroup_lookup);
-> +	ret =3D qgroups_search_all(fd, &qgroup_lookup);
->  	if (ret)
->  		return ret;
->  	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
-> diff --git a/qgroup.h b/qgroup.h
-> index 5e71349c..688f92b2 100644
-> --- a/qgroup.h
-> +++ b/qgroup.h
-> @@ -87,6 +87,12 @@ struct btrfs_qgroup_info {
->  	u64 exclusive_compressed;
->  };
-> =20
-> +struct btrfs_qgroup_stats {
-> +	u64 qgroupid;
-> +	struct btrfs_qgroup_info info;
-> +	struct btrfs_qgroup_limit limit;
-> +};
+> +	referenced_size =3D pretty_size_mode(stats.info.referenced, unit_mode=
+);
+> +	if (stats.limit.max_referenced)
+> +	       referenced_limit_size =3D pretty_size_mode(
+> +						stats.limit.max_referenced,
+> +						unit_mode);
+> +	field_width =3D max(strlen(referenced_size),
+> +			  strlen(referenced_limit_size));
 > +
->  int btrfs_qgroup_parse_sort_string(const char *opt_arg,
->  				struct btrfs_qgroup_comparer_set **comps);
->  int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
-> @@ -105,4 +111,5 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_in=
-herit **inherit, char *arg);
->  int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, cha=
-r *arg,
->  			    int type);
-> =20
-> +int btrfs_qgroup_query(int fd, u64 qgroupid, struct btrfs_qgroup_stats=
- *stats);
->  #endif
+> +	printf("%-*s referenced, %s exclusive\n ", field_width,
+> +	       referenced_size,
+> +	       pretty_size_mode(stats.info.exclusive, unit_mode));
+> +
+> +	printf("\tQuota Limits:\t\t");
+> +	if (stats.limit.max_referenced || stats.limit.max_exclusive) {
+> +		const char *excl =3D "-";
+> +
+> +		if (stats.limit.max_exclusive)
+> +		       excl =3D pretty_size_mode(stats.limit.max_exclusive,
+> +					       unit_mode);
+> +		printf("%-*s referenced, %s exclusive\n", field_width,
+> +		       referenced_limit_size, excl);
+> +	} else
+> +		printf("None\n");
+> +
+>  out:
+>  	/* clean up */
+>  	free(get_ri.path);
 >=20
 
 
---oeM5g2UBQp9sfEDmIfe6UPmlxyfcuLdK2--
+--8NBvlZcS1n6w0uqkjtvvHqz2563UJu4Rc--
 
---rzk400MbVuzZ98F6RvkSnjx0604rWPfej
+--ST3gfh7Sko006KzY9aNJxHRdrGZdPweRL
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
 
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqfgcEXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhxywf9EWFIz7Ldz+f5VKw+8Bu5Fm3A
-1e7mZSZFcR7AiH+TH+kdyWkd38lxM/ryIL5//R5vQhjSlJfzjnPLx+1azHrJgRyv
-1QL4J+OES0MTte5orAJ5IXzOVf5q4qxf37yq0CFCb4G9+S51CASF94ibRDzXt+Su
-op6dZZc5l/6z3MrUJArLBbr2vjeyY+g4GvKqUB4XBx1twSBd6I0i1H9efa7H6jnO
-uWEOdCBKfMT4MLtT5ROPECOEbRWDl0xKNzWhONMU33KTWm59Zp7gOZC/Ues4SNGQ
-D71yeMHTQPzkj3xd+n7uuNoDIJEAMTEB+KwADJvP8AMAhEZEYzmvVlRFnWB1vg==
-=vgvz
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqfgf4XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgZEggAnG+hEjbI6RgWDVWMeMRVJr8j
+pRGfqDvkDvdtpo/evR20g3HJgd+9rAUCAs3raoY6+TTp2CKPYtL3W13t8gd5of/H
+J8pVlFF9jEGmmkaEnQhCC9emVaT/5AKrvwJLM9Cn2q7NpDQnSfRJ+Rb0mXBPqSG+
+0Wjmo2d6iNKQLtS0hAxXHc729i2h1StzmCvzh8nTbm1uXzTRg4Jhm2qP7omHC+ag
+gbnrtMD3qx8OnDTrOseO4mtlMhQSuGi3eqdqphiypV3LNGG+YNza4KRiN4BGcM30
+BZ3D3aPkNP2p+n4mw2YhInNGalEaOeLrsyEAorXO5GMnwyrw8pQnwqX9E5zxVQ==
+=o5AS
 -----END PGP SIGNATURE-----
 
---rzk400MbVuzZ98F6RvkSnjx0604rWPfej--
+--ST3gfh7Sko006KzY9aNJxHRdrGZdPweRL--

@@ -1,96 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:56059 "EHLO synology.com"
+Received: from mx2.suse.de ([195.135.220.15]:39211 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751075AbeCGJxI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 04:53:08 -0500
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Wed, 07 Mar 2018 17:53:06 +0800
-From: robbieko <robbieko@synology.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/2] btrfs fiemap related BUG fix.
-In-Reply-To: <26835a31-1dc4-98f3-f37c-44e8c73d6d67@gmx.com>
+        id S1751142AbeCGKTs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 05:19:48 -0500
+Subject: Re: [PATCH 1/2] Btrfs: fiemap: pass correct bytenr when
+ fm_extent_count is zero
+To: robbieko <robbieko@synology.com>, linux-btrfs@vger.kernel.org
 References: <1520410819-32405-1-git-send-email-robbieko@synology.com>
- <26835a31-1dc4-98f3-f37c-44e8c73d6d67@gmx.com>
-Message-ID: <ff8a384426d5eb2758f8fa5248e77826@synology.com>
+ <1520410819-32405-2-git-send-email-robbieko@synology.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <1de45bba-fe15-d1d6-173a-741918399d69@suse.com>
+Date: Wed, 7 Mar 2018 12:19:46 +0200
+MIME-Version: 1.0
+In-Reply-To: <1520410819-32405-2-git-send-email-robbieko@synology.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo 於 2018-03-07 17:27 寫到:
-> On 2018年03月07日 16:20, robbieko wrote:
->> From: Robbie Ko <robbieko@synology.com>
->> 
->> This patchset intends to fix btrfs fiemap related bug.
->> 
->> The fiemap has the following problems:
->> 
->> 1) Wrong extent count when fm_extent_count is zero.
->> 
->> 
->> 2) SHARED bit is not correct
->> I have two ideas, but I do not know which one is the best.
->> 
->> Like:
->>  # dd if=/dev/zero bs=16K count=2 oflag=dsync of=/mnt/btrfs/file
->>  # xfs_io -c "fiemap -v" /mnt/btrfs/file
->>      /mnt/btrfs/file:
->>      EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->>        0: [0..63]:         4241424..4241487    64   0x1
->>  # cloner -s $((16*1024)) /mnt/btrfs/file /mnt/btrfs/file_clone
->> 
->> 1. When any extent is shared in extent map, the entire extent map is 
->> shared
->>  # xfs_io -c "fiemap -v" /mnt/btrfs/file
->>      /mnt/btrfs/file:
->>      EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->>        0: [0..63]:         4241424..4241487   64  0x2001
-> 
-> I think this is what btrfs is doing right now.
-> Although I'm not sure if this is the best solution.
-> 
-> BTW, I just did the same operation, and just get the SHARED flag on 
-> both
-> source and destination.
-> 
-> Is there something wrong?
-> 
-
-Currently, only the first extent is checked for shared in extent_map.
-Details can refer to "[PATCH 2/2] Btrfs: fix fiemap extent SHARED flag 
-error with range clone."
 
 
->> 
->> 2. Split into different extent
->>  # xfs_io -c "fiemap -v" /mnt/btrfs/file
->>      /mnt/btrfs/file:
->>      EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->>        0: [0..31]:         4241424..4241455   32  0x0
->>        1: [32..63]:        4241456..4241487   32  0x2001
+On  7.03.2018 10:20, robbieko wrote:
+> From: Robbie Ko <robbieko@synology.com>
 > 
-> This is what XFS does.
+>  # mount /dev/vdb5 /mnt/btrfs
+>  # dd if=/dev/zero bs=16K count=4 oflag=dsync of=/mnt/btrfs/file
+>  # xfs_io -c "fiemap -v" /mnt/btrfs/file
+>  /mnt/btrfs/file:
+>  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+>    0: [0..127]:        25088..25215       128   0x1
 > 
-> Thanks,
-> Qu
-> 
->> 
->> Robbie Ko (2):
->>   Btrfs: fiemap: pass correct bytenr when fm_extent_count is zero
->>   Btrfs: fix fiemap extent SHARED flag error with range clone.
->> 
->>  fs/btrfs/extent_io.c | 150 
->> ++++++++++++++++++++++++++++++++++++++++++++-------
->>  1 file changed, 132 insertions(+), 18 deletions(-)
->> 
->> --
->> 1.9.1
->> 
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
->> in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> 
+> Run fiemap with fm_extent_count set to 0, we'll get wrong value 4
+> instead of 1.
 
+Wrong value 4 instead of 1 for which exact column, the flags? State this
+explicitly.
+
+Also this seems a bit bogus since fiemap's documentation states:
+
+If fm_extent_count is zero, then the fm_extents[] array is ignored (no
+extents will be returned), and the fm_mapped_extents count will hold the
+number of extents needed in fm_extents[] to hold the file's current mapping.
+
+So when fm_extent_count we shouldn't really be returning anything from
+kernel.
+
+
+> 
+> [REASON]
+> When fm_extent_count is 0, disko is not initialized correctly,
+> The value is 0 in this case, not the right bytenr.
+
+This is too sparse, be more explicit i.e. that disko=0 is passed to
+emit_fiemap_extent which then leads to issues.
+
+> 
+> [FIX]
+> Use correct disko.
+> 
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> ---
+>  fs/btrfs/extent_io.c | 4 +---
+>  1 file changed, 1 insertion(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 012d638..066b6df 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4567,7 +4567,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+>  			offset_in_extent = em_start - em->start;
+>  		em_end = extent_map_end(em);
+>  		em_len = em_end - em_start;
+> -		disko = 0;
+> +		disko = em->block_start + offset_in_extent;
+>  		flags = 0;
+> 
+>  		/*
+> @@ -4590,8 +4590,6 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+>  			u64 bytenr = em->block_start -
+>  				(em->start - em->orig_start);
+> 
+> -			disko = em->block_start + offset_in_extent;
+> -
+>  			/*
+>  			 * As btrfs supports shared space, this information
+>  			 * can be exported to userspace tools via
+> --
+> 1.9.1
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

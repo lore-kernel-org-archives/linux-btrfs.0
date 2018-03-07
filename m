@@ -1,50 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.133]:48700 "EHLO
-        bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753821AbeCFTYS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Mar 2018 14:24:18 -0500
-From: Matthew Wilcox <willy@infradead.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Matthew Wilcox <mawilcox@microsoft.com>, linux-kernel@vger.kernel.org,
+Received: from mx2.suse.de ([195.135.220.15]:46556 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1754279AbeCGOTm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 09:19:42 -0500
+Date: Wed, 7 Mar 2018 15:17:20 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Matthew Wilcox <willy@infradead.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <mawilcox@microsoft.com>, linux-kernel@vger.kernel.org,
         linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
         Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
         linux-nilfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: [PATCH v8 03/63] arm64: Turn flush_dcache_mmap_lock into a no-op
-Date: Tue,  6 Mar 2018 11:23:13 -0800
-Message-Id: <20180306192413.5499-4-willy@infradead.org>
-In-Reply-To: <20180306192413.5499-1-willy@infradead.org>
+Subject: Re: [PATCH v8 06/63] btrfs: Use filemap_range_has_page()
+Message-ID: <20180307141720.GA23693@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <20180306192413.5499-1-willy@infradead.org>
+ <20180306192413.5499-7-willy@infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180306192413.5499-7-willy@infradead.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Matthew Wilcox <mawilcox@microsoft.com>
+On Tue, Mar 06, 2018 at 11:23:16AM -0800, Matthew Wilcox wrote:
+> From: Matthew Wilcox <mawilcox@microsoft.com>
+> 
+> The current implementation of btrfs_page_exists_in_range() gives the
+> wrong answer if the workingset code has stored a shadow entry in the
+> page cache.  The filemap_range_has_page() function does not have this
+> problem, and it's shared code, so use it instead.
 
-ARM64 doesn't walk the VMA tree in its flush_dcache_page()
-implementation, so has no need to take the tree_lock.
-
-Signed-off-by: Matthew Wilcox <mawilcox@microsoft.com>
-Reviewed-by: Will Deacon <will.deacon@arm.com>
----
- arch/arm64/include/asm/cacheflush.h | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm64/include/asm/cacheflush.h b/arch/arm64/include/asm/cacheflush.h
-index bef9f418f089..550b0abea953 100644
---- a/arch/arm64/include/asm/cacheflush.h
-+++ b/arch/arm64/include/asm/cacheflush.h
-@@ -137,10 +137,8 @@ static inline void __flush_icache_all(void)
- 	dsb(ish);
- }
- 
--#define flush_dcache_mmap_lock(mapping) \
--	spin_lock_irq(&(mapping)->tree_lock)
--#define flush_dcache_mmap_unlock(mapping) \
--	spin_unlock_irq(&(mapping)->tree_lock)
-+#define flush_dcache_mmap_lock(mapping)		do { } while (0)
-+#define flush_dcache_mmap_unlock(mapping)	do { } while (0)
- 
- /*
-  * We don't appear to need to do anything here.  In fact, if we did, we'd
--- 
-2.16.1
-
+I'm going to merge this patch. btrfs_page_exists_in_range was full of
+bugs from the beginning so I'm more than happy to use the shared one.
+Thanks.

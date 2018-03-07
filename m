@@ -1,49 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:42631 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932433AbeCBFXH (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Fri, 2 Mar 2018 00:23:07 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH 4/5] btrfs: Unify inline extent creation condition for plain and compressed data
-Date: Fri,  2 Mar 2018 13:22:53 +0800
-Message-Id: <20180302052254.7059-5-wqu@suse.com>
-In-Reply-To: <20180302052254.7059-1-wqu@suse.com>
-References: <20180302052254.7059-1-wqu@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:58498 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S933862AbeCGQYh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 11:24:37 -0500
+Date: Wed, 7 Mar 2018 17:22:15 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Filipe Manana <fdmanana@gmail.com>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: qgroup: Fix root item corruption when multiple
+ same source snapshiots are created with quota enabled
+Message-ID: <20180307162215.GK23693@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20171219074454.2874-1-wqu@suse.com>
+ <CAL3q7H5F36cvDh63PaedAXcarE8EftUj6-QAMqoARh-p2DikHA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H5F36cvDh63PaedAXcarE8EftUj6-QAMqoARh-p2DikHA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cow_file_range_inline() used different condition for plain and
-compressed data.
+On Fri, Feb 02, 2018 at 11:45:46AM +0000, Filipe Manana wrote:
+> On Tue, Dec 19, 2017 at 7:44 AM, Qu Wenruo <wqu@suse.com> wrote:
+> > When multiple pending snapshots referring the same source subvolume are
+> > executed, enabled quota will cause root item corruption, where root
+> > items are using old bytenr (no backref in extent tree).
+> >
+> > This can be triggered by fstests btrfs/152.
+> >
+> > The cause is when source subvolume is still dirty, extra commit
+> > (simplied transaction commit) of qgroup_account_snapshot() can skip
+> > dirty roots not recorded in current transaction, making root item of
+> > source subvolume not updated.
+> >
+> > Fix it by forcing recording source subvolume in current transaction
+> > before qgroup sub-transaction commit.
+> >
+> > Reported-by: Justin Maggard <jmaggard@netgear.com>
+> > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-For compressed data, it's allowed to have inline extent equal to sectorsize,
-while for plain data, it's not allowed to have inline extent equal to
-sectorsize.
-
-However we limited BTRFS_MAX_INLINE_DATA_SIZE() to (sectorsize - 1),
-and unified the inline extent condition, there is no such difference any
-longer, just remove the extra check.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/inode.c | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index fe2991eeb337..1e9f4ff46b25 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -299,8 +299,6 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
- 
- 	if (start > 0 ||
- 	    actual_end > fs_info->sectorsize ||
--	    (!compressed_size &&
--	    (actual_end & (fs_info->sectorsize - 1)) == 0) ||
- 	    end + 1 < isize ||
- 	    inline_len > fs_info->max_inline) {
- 		return 1;
--- 
-2.16.2
-
+I overlooked the patch, sorry. Added to next now, thanks.

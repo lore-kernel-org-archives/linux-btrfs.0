@@ -1,57 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from synology.com ([59.124.61.242]:36906 "EHLO synology.com"
+Received: from mx2.suse.de ([195.135.220.15]:57300 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751086AbeCGIU7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 03:20:59 -0500
-From: robbieko <robbieko@synology.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH 0/2]  btrfs fiemap related BUG fix.
-Date: Wed,  7 Mar 2018 16:20:17 +0800
-Message-Id: <1520410819-32405-1-git-send-email-robbieko@synology.com>
+        id S1751036AbeCGJTf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 04:19:35 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 55F23AE63
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Mar 2018 09:19:34 +0000 (UTC)
+Subject: Re: [PATCH 5/8] btrfs-progs: qgroups: introduce and use info and
+ limit structures
+To: jeffm@suse.com, linux-btrfs@vger.kernel.org
+References: <20180302184704.22399-1-jeffm@suse.com>
+ <20180302184704.22399-6-jeffm@suse.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <052cbfbc-a91f-f361-95cf-c13fdfd3378a@suse.com>
+Date: Wed, 7 Mar 2018 11:19:32 +0200
+MIME-Version: 1.0
+In-Reply-To: <20180302184704.22399-6-jeffm@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robbie Ko <robbieko@synology.com>
-
-This patchset intends to fix btrfs fiemap related bug.
-
-The fiemap has the following problems:
-
-1) Wrong extent count when fm_extent_count is zero.
 
 
-2) SHARED bit is not correct
-I have two ideas, but I do not know which one is the best.
+On  2.03.2018 20:47, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> 
+> We use structures to pass the info and limit from the kernel as items
+> but store the individual values separately in btrfs_qgroup.  We already
+> have a btrfs_qgroup_limit structure that's used for setting the limit.
+> 
+> This patch introduces a btrfs_qgroup_info structure and uses that and
+> btrfs_qgroup_limit in btrfs_qgroup.
+> 
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 
-Like:
- # dd if=/dev/zero bs=16K count=2 oflag=dsync of=/mnt/btrfs/file
- # xfs_io -c "fiemap -v" /mnt/btrfs/file
-     /mnt/btrfs/file:
-     EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-       0: [0..63]:         4241424..4241487    64   0x1
- # cloner -s $((16*1024)) /mnt/btrfs/file /mnt/btrfs/file_clone
-
-1. When any extent is shared in extent map, the entire extent map is shared
- # xfs_io -c "fiemap -v" /mnt/btrfs/file
-     /mnt/btrfs/file:
-     EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-       0: [0..63]:         4241424..4241487   64  0x2001
-
-2. Split into different extent
- # xfs_io -c "fiemap -v" /mnt/btrfs/file
-     /mnt/btrfs/file:
-     EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
-       0: [0..31]:         4241424..4241455   32  0x0
-       1: [32..63]:        4241456..4241487   32  0x2001
-
-Robbie Ko (2):
-  Btrfs: fiemap: pass correct bytenr when fm_extent_count is zero
-  Btrfs: fix fiemap extent SHARED flag error with range clone.
-
- fs/btrfs/extent_io.c | 150 ++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 132 insertions(+), 18 deletions(-)
-
---
-1.9.1
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 

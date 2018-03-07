@@ -1,71 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:33636 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S965614AbeCGTwJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Mar 2018 14:52:09 -0500
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w27Jpdo5189183
-        for <linux-btrfs@vger.kernel.org>; Wed, 7 Mar 2018 19:52:09 GMT
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-        by aserp2120.oracle.com with ESMTP id 2gjpa082sc-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Mar 2018 19:52:08 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w27Jq78i032640
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 7 Mar 2018 19:52:07 GMT
-Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w27Jq7aD026348
-        for <linux-btrfs@vger.kernel.org>; Wed, 7 Mar 2018 19:52:07 GMT
-Date: Wed, 7 Mar 2018 11:49:30 -0700
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Inconsistence between sender and receiver
-Message-ID: <20180307184930.GA26754@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Reply-To: bo.li.liu@oracle.com
+Received: from mx2.suse.de ([195.135.220.15]:48756 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S965162AbeCGUVZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 15:21:25 -0500
+Subject: Re: [PATCH 7/8] btrfs-progs: subvolume: add quota info to btrfs sub
+ show
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <20180302184704.22399-1-jeffm@suse.com>
+ <20180302184704.22399-8-jeffm@suse.com>
+ <51ceaf6c-17e5-734c-478e-38893c9304f7@gmx.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <636ab1e0-e928-29cc-58ec-4d6ec0ad9f0a@suse.com>
+Date: Wed, 7 Mar 2018 15:21:20 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <51ceaf6c-17e5-734c-478e-38893c9304f7@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="z0Hb8zDxPuzktKypnwUUmu3LWimfxaKMd"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--z0Hb8zDxPuzktKypnwUUmu3LWimfxaKMd
+Content-Type: multipart/mixed; boundary="8g6a3Mb7RgnHtz78x9OJp6V9Vz7I6fTJh";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Message-ID: <636ab1e0-e928-29cc-58ec-4d6ec0ad9f0a@suse.com>
+Subject: Re: [PATCH 7/8] btrfs-progs: subvolume: add quota info to btrfs sub
+ show
+References: <20180302184704.22399-1-jeffm@suse.com>
+ <20180302184704.22399-8-jeffm@suse.com>
+ <51ceaf6c-17e5-734c-478e-38893c9304f7@gmx.com>
+In-Reply-To: <51ceaf6c-17e5-734c-478e-38893c9304f7@gmx.com>
 
-In the following steps[1], if <parent> on receiver side has got
-changed via 'btrfs property set', then after doing incremental
-updates, receiver gets a different snapshot from what sender has sent.
+--8g6a3Mb7RgnHtz78x9OJp6V9Vz7I6fTJh
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-The reason behind it is that there is no change about file 'foo' in
-the send stream, such that receiver simply creates a snapshot of
-<parent> on its side with nothing to apply from the send stream.
+On 3/7/18 1:09 AM, Qu Wenruo wrote:
+>=20
+>=20
+> On 2018=E5=B9=B403=E6=9C=8803=E6=97=A5 02:47, jeffm@suse.com wrote:
+>> From: Jeff Mahoney <jeffm@suse.com>
+>>
+>> This patch reports on the first-level qgroup, if any, associated with
+>> a particular subvolume.  It displays the usage and limit, subject
+>> to the usual unit parameters.
+>>
+>> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+>> ---
+>>  cmds-subvolume.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+>>  1 file changed, 46 insertions(+)
+>>
+>> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+>> index 8a473f7a..29d0e0e5 100644
+>> --- a/cmds-subvolume.c
+>> +++ b/cmds-subvolume.c
+>> @@ -972,6 +972,7 @@ static const char * const cmd_subvol_show_usage[] =
+=3D {
+>>  	"Show more information about the subvolume",
+>>  	"-r|--rootid   rootid of the subvolume",
+>>  	"-u|--uuid     uuid of the subvolume",
+>> +	HELPINFO_UNITS_SHORT_LONG,
+>>  	"",
+>>  	"If no option is specified, <subvol-path> will be shown, otherwise",=
 
-A possible way to avoid this is to check rtransid and ctranid of
-<parent> on receiver side, but I'm not very sure whether the current
-behavior is made deliberately, does anyone have an idea? 
+>>  	"the rootid or uuid are resolved relative to the <mnt> path.",
+>> @@ -993,6 +994,13 @@ static int cmd_subvol_show(int argc, char **argv)=
+
+>>  	int by_uuid =3D 0;
+>>  	u64 rootid_arg;
+>>  	u8 uuid_arg[BTRFS_UUID_SIZE];
+>> +	struct btrfs_qgroup_stats stats;
+>> +	unsigned int unit_mode;
+>> +	const char *referenced_size;
+>> +	const char *referenced_limit_size =3D "-";
+>> +	unsigned field_width =3D 0;
+>> +
+>> +	unit_mode =3D get_unit_mode_from_arg(&argc, argv, 1);
+>> =20
+>>  	while (1) {
+>>  		int c;
+>> @@ -1112,6 +1120,44 @@ static int cmd_subvol_show(int argc, char **arg=
+v)
+>>  	btrfs_list_subvols_print(fd, filter_set, NULL, BTRFS_LIST_LAYOUT_RAW=
+,
+>>  			1, raw_prefix);
+>> =20
+>> +	ret =3D btrfs_qgroup_query(fd, get_ri.root_id, &stats);
+>> +	if (ret < 0) {
+>> +		if (ret =3D=3D -ENODATA)
+>> +			printf("Quotas must be enabled for per-subvolume usage\n");
+>=20
+> This seems a little confusing.
+> If quota is disabled, we get ENOTTY not ENODATA.
+>=20
+> For ENODATA we know quota is enabled but just no info for this qgroup.
+
+Yep.
 
 Thanks,
 
--liubo
+-Jeff
 
-[1]:
-$ btrfs sub create /mnt/send/sub
-$ touch /mnt/send/sub/foo
-$ btrfs sub snap -r /mnt/send/sub /mnt/send/parent
 
-# send parent out
-$ btrfs send /mnt/send/parent | btrfs receive /mnt/recv/
+> Thanks,
+> Qu
+>=20
+>> +		else if (ret !=3D -ENOTTY)
+>> +			fprintf(stderr,
+>> +				"\nERROR: BTRFS_IOC_QUOTA_QUERY failed: %s\n",
+>> +				strerror(errno));
+>> +		goto out;
+>> +	}
+>> +
+>> +	printf("\tQuota Usage:\t\t");
+>> +	fflush(stdout);
+>> +
+>> +	referenced_size =3D pretty_size_mode(stats.info.referenced, unit_mod=
+e);
+>> +	if (stats.limit.max_referenced)
+>> +	       referenced_limit_size =3D pretty_size_mode(
+>> +						stats.limit.max_referenced,
+>> +						unit_mode);
+>> +	field_width =3D max(strlen(referenced_size),
+>> +			  strlen(referenced_limit_size));
+>> +
+>> +	printf("%-*s referenced, %s exclusive\n ", field_width,
+>> +	       referenced_size,
+>> +	       pretty_size_mode(stats.info.exclusive, unit_mode));
+>> +
+>> +	printf("\tQuota Limits:\t\t");
+>> +	if (stats.limit.max_referenced || stats.limit.max_exclusive) {
+>> +		const char *excl =3D "-";
+>> +
+>> +		if (stats.limit.max_exclusive)
+>> +		       excl =3D pretty_size_mode(stats.limit.max_exclusive,
+>> +					       unit_mode);
+>> +		printf("%-*s referenced, %s exclusive\n", field_width,
+>> +		       referenced_limit_size, excl);
+>> +	} else
+>> +		printf("None\n");
+>> +
+>>  out:
+>>  	/* clean up */
+>>  	free(get_ri.path);
+>>
+>=20
 
-# change parent and file under it
-$ btrfs property set -t subvol /mnt/recv/parent ro false
-$ truncate -s 4096 /mnt/recv/parent/foo
 
-$ btrfs sub snap -r /mnt/send/sub /mnt/send/update
-$ btrfs send -p /mnt/send/parent /mnt/send/update | btrfs receive /mnt/recv
+--=20
+Jeff Mahoney
+SUSE Labs
 
-$ ls -l /mnt/send/update
-total 0
--rw-r--r-- 1 root root 0 Mar  6 11:13 foo
 
-$ ls -l /mnt/recv/update
-total 0
--rw-r--r-- 1 root root 4096 Mar  6 11:14 foo
+--8g6a3Mb7RgnHtz78x9OJp6V9Vz7I6fTJh--
 
+--z0Hb8zDxPuzktKypnwUUmu3LWimfxaKMd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQJDBAEBCAAtFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlqgScEPHGplZmZtQHN1
+c2UuY29tAAoJEB57S2MheeWyvkoP/1ZJG+xZMjNZuiUgKA+HnNBqAE20FjypuL1c
+uaJT1qN4uEfSby18pGVALcv5XtEOQRFy5lO45JWl3Z6A68cVfDhzI/rM3hSjlfBA
+LVvyYPsrCYoaZFC9jPh4USL+l772EEdoW7T0SLbe0HMrqVLeo16N2EfK1Hiom91x
+LbGa/74Fp3u9VrLip2Tbi2vl6NMcaeCvX2O4jnwOAkuozedgxc8DayMoqG2ol+0N
+Kqll78w9WP2ZzA9GqEeu6GfkwSdpgxxx/N1Uz8GVQnugp9Tk33W0OGxMTxRF9wt+
+iwO3OlgE/kPVI/yXia6gtq7WwdMXG7WgQa3J3xIgCzkSxjm5HtOJ4a3sy+7psTmz
+mIJNN8BFeY1dgwiWlcge9Srkxcv5VqRILV2vXvudMUi0ni8doEwOdFrtP1vRPqHQ
+W5NUxtQl7hbCl3zzCggPwKDwUM5t2FTfftUS1x3H1YAL6Cu+baRS+C03G+GhV8fJ
+tJ4bztyfbPIPTkxb7510lzCZijEQ/gYwGhZmVRqm62P1YyJw6+cRsTlJXaXG3hHT
+ub+desSx/AS7WrRYCcrnlc0RifWYlG39NQLGo3pOryM/DOdV/NvzrEAFhae71MRS
+jWOgO819NQztYzc+48nxC0ww52sdlnstEBGU/RZNtI4m+FFJvUBAtd6aXH/0+p9n
+UFYsc4F2
+=/wb7
+-----END PGP SIGNATURE-----
+
+--z0Hb8zDxPuzktKypnwUUmu3LWimfxaKMd--

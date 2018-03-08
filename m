@@ -1,101 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:36283 "EHLO
-        mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964983AbeCHGGV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 01:06:21 -0500
-Date: Wed, 7 Mar 2018 22:06:12 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Hans van Kranenburg <hans.van.kranenburg@mendix.com>
-Cc: Andrei Borzenkov <arvidjaar@gmail.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, fdmanana@gmail.com
-Message-ID: <20180308060612.n655pfxsfh2ehrsf@merlins.org>
-References: <20180305161619.prnkl4q4zcyibzhc@merlins.org>
- <32dcf3b9-e810-dc14-1a0b-005f9c49df0a@gmail.com>
- <20180305194718.GC613@merlins.org>
- <b323d987-9d97-f57e-b0d6-4ff405abf91c@mendix.com>
- <20180306200247.svrsko5zr5vldaes@merlins.org>
+Received: from mail-lf0-f43.google.com ([209.85.215.43]:42129 "EHLO
+        mail-lf0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S965204AbeCHGPy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 01:15:54 -0500
+Received: by mail-lf0-f43.google.com with SMTP id t204-v6so6737350lff.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Mar 2018 22:15:54 -0800 (PST)
+Subject: Re: Inconsistence between sender and receiver
+To: bo.li.liu@oracle.com, linux-btrfs@vger.kernel.org
+References: <20180307184930.GA26754@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+Message-ID: <1a7f0c8f-9bf1-b6eb-ff5c-517d935b84e8@gmail.com>
+Date: Thu, 8 Mar 2018 09:15:50 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180306200247.svrsko5zr5vldaes@merlins.org>
-Subject: Re: How to change/fix 'Received UUID'
+In-Reply-To: <20180307184930.GA26754@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 06, 2018 at 12:02:47PM -0800, Marc MERLIN wrote:
-> > https://github.com/knorrie/python-btrfs/commit/1ace623f95300ecf581b1182780fd6432a46b24d
+07.03.2018 21:49, Liu Bo пишет:
+> Hi,
 > 
-> Well, I had never heard about it until now, thank you.
+> In the following steps[1], if <parent> on receiver side has got
+> changed via 'btrfs property set', then after doing incremental
+> updates, receiver gets a different snapshot from what sender has sent.
 > 
-> I'll see if I can make it work when I get a bit of time.
+> The reason behind it is that there is no change about file 'foo' in
+> the send stream, such that receiver simply creates a snapshot of
+> <parent> on its side with nothing to apply from the send stream.
+> 
+> A possible way to avoid this is to check rtransid and ctranid of
+> <parent> on receiver side, but I'm not very sure whether the current
+> behavior is made deliberately, does anyone have an idea? 
+> 
+> Thanks,
+> 
+> -liubo
+> 
+> [1]:
+> $ btrfs sub create /mnt/send/sub
+> $ touch /mnt/send/sub/foo
+> $ btrfs sub snap -r /mnt/send/sub /mnt/send/parent
+> 
+> # send parent out
+> $ btrfs send /mnt/send/parent | btrfs receive /mnt/recv/
+> 
+> # change parent and file under it
+> $ btrfs property set -t subvol /mnt/recv/parent ro false
 
-Sorry, I missed the fact that there was no code to write at all.
-gargamel:/var/local/src/python-btrfs/examples# ./set_received_uuid.py 2afc7a5e-107f-d54b-8929-197b80b70828 31337 1234.5678 /mnt/btrfs_bigbackup/DS1/Video_ro.20180220_21:03:41
-Current subvolume information:
-  subvol_id: 94887
-  received_uuid: 00000000-0000-0000-0000-000000000000
-  stime: 0.0 (1970-01-01T00:00:00)
-  stransid: 0  
-  rtime: 0.0 (1970-01-01T00:00:00)
-  rtransid: 0  
+Is removing the ability to modify read-only property an option? What are
+use cases for it? What can it do that "btrfs sub snap read-only
+writable" cannot?
 
-Setting received subvolume...
+> $ truncate -s 4096 /mnt/recv/parent/foo
+> 
+> $ btrfs sub snap -r /mnt/send/sub /mnt/send/update
+> $ btrfs send -p /mnt/send/parent /mnt/send/update | btrfs receive /mnt/recv
+> 
 
-Resulting subvolume information:
-  subvol_id: 94887
-  received_uuid: 2afc7a5e-107f-d54b-8929-197b80b70828
-  stime: 1234.5678 (1970-01-01T00:20:34.567800)
-  stransid: 31337
-  rtime: 1520488877.415709329 (2018-03-08T06:01:17.415709)
-  rtransid: 255755
+This should fail right away because /mnt/send/parent is not read-only.
+If it does not, this is really a bug.
 
-gargamel:/var/local/src/python-btrfs/examples# btrfs property set -ts /mnt/btrfs_bigbackup/DS1/Video_ro.20180220_21:03:41 ro true
+Of course one may go one step further and set /mnt/send/parent read-only
+again, then we get this issue.
 
+> $ ls -l /mnt/send/update
+> total 0
+> -rw-r--r-- 1 root root 0 Mar  6 11:13 foo
+> 
+> $ ls -l /mnt/recv/update
+> total 0
+> -rw-r--r-- 1 root root 4096 Mar  6 11:14 foo
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-ABORT: btrfs send -p /mnt/btrfs_pool1/Video_ro.20180205_21:05:15 Video_ro.20180307_22:03:03 |  btrfs receive /mnt/btrfs_bigbackup/DS1//. failed
-At subvol Video_ro.20180307_22:03:03
-At snapshot Video_ro.20180307_22:03:03
-ERROR: cannot find parent subvolume
-
-gargamel:/mnt/btrfs_pool1# btrfs subvolume show /mnt/btrfs_pool1/Video_ro.20180220_21\:03\:41/
-Video_ro.20180220_21:03:41
-        Name:                   Video_ro.20180220_21:03:41
-        UUID:                   2afc7a5e-107f-d54b-8929-197b80b70828
-        Parent UUID:            e5ec5c1e-6b49-084e-8820-5a8cfaa1b089
-        Received UUID:          0e220a4f-6426-4745-8399-0da0084f8b23
-        Creation time:          2018-02-20 21:03:42 -0800
-        Subvolume ID:           11228
-        Generation:             4174
-        Gen at creation:        4150
-        Parent ID:              5
-        Top level ID:           5
-        Flags:                  readonly
-        Snapshot(s):
-                                Video_rw.20180220_21:03:41
-                                Video
-
-
-Wasn't I supposed to set 2afc7a5e-107f-d54b-8929-197b80b70828 onto the destination?
-
-Doesn't that look ok now? Is there something else I'm missing?
-gargamel:/mnt/btrfs_pool1# btrfs subvolume show /mnt/btrfs_bigbackup/DS1/Video_ro.20180220_21:03:41
-DS1/Video_ro.20180220_21:03:41
-        Name:                   Video_ro.20180220_21:03:41
-        UUID:                   cb4f343c-5e79-7f49-adf0-7ce0b29f23b3
-        Parent UUID:            0e220a4f-6426-4745-8399-0da0084f8b23
-        Received UUID:          2afc7a5e-107f-d54b-8929-197b80b70828
-        Creation time:          2018-02-20 21:13:36 -0800
-        Subvolume ID:           94887
-        Generation:             250689
-        Gen at creation:        250689
-        Parent ID:              89160
-        Top level ID:           89160
-        Flags:                  readonly
-        Snapshot(s):
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

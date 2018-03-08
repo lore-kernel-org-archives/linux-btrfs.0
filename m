@@ -1,65 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:58636 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S935784AbeCHNZ1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 08:25:27 -0500
-Subject: Re: [PATCH] Improve error stats message
-To: Diego <diegocg@gmail.com>, linux-btrfs@vger.kernel.org
-References: <1588327.cr4xlG2VNd@archlinux>
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <033a4f8d-3057-59a9-e0cc-0483bb47f1c1@oracle.com>
-Date: Thu, 8 Mar 2018 18:04:54 +0800
+Received: from mx2.suse.de ([195.135.220.15]:56112 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755259AbeCHOZ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 09:25:57 -0500
+Subject: Re: [PATCH 06/20] btrfs-progs: qgroups: add pathname to show output
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-7-jeffm@suse.com>
+ <bfc620df-a02e-f57a-8526-67797547db59@gmx.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <b3321d64-0ae4-cff2-d80e-de75d835dd27@suse.com>
+Date: Thu, 8 Mar 2018 09:25:53 -0500
 MIME-Version: 1.0
-In-Reply-To: <1588327.cr4xlG2VNd@archlinux>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <bfc620df-a02e-f57a-8526-67797547db59@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="yxO5kEV6PfDZjAIFBo38I4bcQa896EkGA"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--yxO5kEV6PfDZjAIFBo38I4bcQa896EkGA
+Content-Type: multipart/mixed; boundary="dpGvPzRRObvpTeFn03hGXQKHc8GhD27Gs";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Message-ID: <b3321d64-0ae4-cff2-d80e-de75d835dd27@suse.com>
+Subject: Re: [PATCH 06/20] btrfs-progs: qgroups: add pathname to show output
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-7-jeffm@suse.com>
+ <bfc620df-a02e-f57a-8526-67797547db59@gmx.com>
+In-Reply-To: <bfc620df-a02e-f57a-8526-67797547db59@gmx.com>
+
+--dpGvPzRRObvpTeFn03hGXQKHc8GhD27Gs
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+On 3/8/18 12:33 AM, Qu Wenruo wrote:
+>=20
+>=20
+> On 2018=E5=B9=B403=E6=9C=8808=E6=97=A5 10:40, jeffm@suse.com wrote:
+>> From: Jeff Mahoney <jeffm@suse.com>
+>>
+>> The btrfs qgroup show command currently only exports qgroup IDs,
+>> forcing the user to resolve which subvolume each corresponds to.
+>>
+>> This patch adds pathname resolution to qgroup show so that when
+>> the -P option is used, the last column contains the pathname of
+>> the root of the subvolume it describes.  In the case of nested
+>> qgroups, it will show the number of member qgroups or the paths
+>> of the members if the -v option is used.
+>>
+>> Pathname can also be used as a sort parameter.
+>>
+>> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+>=20
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Except one nitpick inlined below.
+>=20
+> [snip]
+>>  	}
+>> +	if (bq->pathname)
+>> +		free((void *)bq->pathname);
+>=20
+> What about just free(bq->pathname);?
+>=20
+> Is this (void *) used to get around the const prefix?
+
+Yes.
+
+Thanks,
+
+-Jeff
+
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
-On 03/08/2018 01:37 AM, Diego wrote:
-> A typical notification of filesystem errors looks like this:
-> 
-> BTRFS error (device sda2): bdev /dev/sda2 errs: wr 0, rd 1, flush 0, corrupt 0, gen 0
-> 
-> The device name is being printed twice. Also, these abbreviatures
-> feel unnecesary. Make the message look like this instead:
-> 
-> BTRFS error (device sda2): errors: write 0, read 1, flush 0, corrupt 0, generation 0
-> 
-> 
-> Signed-off-by: Diego Calleja <diegocg@gmail.com>
-> ---
->   fs/btrfs/volumes.c | 5 ++---
->   1 file changed, 2 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 2ceb924ca0d6..52fee5bb056f 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -7238,9 +7238,8 @@ static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev)
->   {
->   	if (!dev->dev_stats_valid)
->   		return;
-> -	btrfs_err_rl_in_rcu(dev->fs_info,
-> -		"bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u",
-> -			   rcu_str_deref(dev->name),
-> +	btrfs_err_rl(dev->fs_info,
-> +		"errors: write %u, read %u, flush %u, corrupt %u, generation %u",
->   			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
->   			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_READ_ERRS),
->   			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_FLUSH_ERRS),
-> 
+--dpGvPzRRObvpTeFn03hGXQKHc8GhD27Gs--
 
+--yxO5kEV6PfDZjAIFBo38I4bcQa896EkGA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-As btrfs_err_rl()->btrfs_printk() does its magic to print the
-latest_bdev, this will print the wrong device for the error
-reporting in case of multiple device FS.
+-----BEGIN PGP SIGNATURE-----
 
-There is this RFC in the ML, to use FSID insted. Comments are
-welcome.
+iQJDBAEBCAAtFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlqhR/EPHGplZmZtQHN1
+c2UuY29tAAoJEB57S2MheeWyzOcP/i0+2tjRkqWHt1DTzzm23NC44azH/xAf/wnl
+6yDacRc4ayQBx4od4rB3B5E9PpICD3U2kL3xL56LJkn8mon+fQkchCafKG8vk+Uf
+wUyOXYUeFFVetfbDTaAja33SoK44OEdbm/Rjza3AJ3afUP9yOqErCq+EyTVDTHiW
+NVEO+wBpwurdqvQ6/wtliMruXGMgE2ZpNs1F9ih5a2k0PIVFzZji4+Q/Tkmab6N/
+XBcOCDslro0YS+HD7ZxnvSep3frjbg9banYP/1FJP+wm3I7LaRnsEI8JsXtrMRCm
+4y7ndKlQDcIIDT3CPml7SXGlBqBzERhGSyxjsGhoNBdTYetdygsBATAqjMqlrDgM
+NH/i17XxBYIK4LZX9dzmjH+w3srpnCg0tBLpd+g7As+9gDW4s9GLzpiR018ifk4B
+3hFrbiKkNe3oyhM0McaFg1lJ0Lf3ZmOahAnfnz/m0DJL3cTjYVBtTaLrIiY8BAis
+Nx20BWK+ZomQseZuX2JcTg7Wl45hMUe4RoUNkAX/kx1CmPnXJrKvF1Q2lp4WCRGh
+liYPLhLOuVm/tr4e+nGfNeN0tu2i/yABq15MMuRTa6vAN0RE8/KLiI5Z3Y0bJ/0z
+nCZ6gnuRfN0THlDFtPzapvDOP4e3QQ7IEcQaRtJRJRbKIM/Z1nDw4U2biV2PPr+Y
+fl3sPziG
+=EL9Z
+-----END PGP SIGNATURE-----
 
-    [RFC PATCH] Btrfs: fix fs logging for multi device
-
-Thanks, Anand
-
+--yxO5kEV6PfDZjAIFBo38I4bcQa896EkGA--

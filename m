@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60635 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60637 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935199AbeCHClH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S935194AbeCHClH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 7 Mar 2018 21:41:07 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 1C33BAF84
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 202AFAF96
         for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 02:41:06 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 19/20] btrfs-progs: qgroups: add json output for usage command
-Date: Wed,  7 Mar 2018 21:40:46 -0500
-Message-Id: <20180308024047.10104-20-jeffm@suse.com>
+Subject: [PATCH 20/20] btrfs-progs: handle command groups directly for common case
+Date: Wed,  7 Mar 2018 21:40:47 -0500
+Message-Id: <20180308024047.10104-21-jeffm@suse.com>
 In-Reply-To: <20180308024047.10104-1-jeffm@suse.com>
 References: <20180308024047.10104-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,355 +19,264 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-One of the common requests I receive is for 'df' like facilities
-for subvolume usage.  Really, the request is for monitoring tools to be
-able to understand when subvolumes may be approaching quota in the same
-manner traditional file systems approach ENOSPC.
-
-This patch allows us to export the qgroups data in a machine-readable
-format so that monitoring tools can parse it easily.
+Most command groups just pass their own command group to
+handle_command_group.  We can remove the explicit definitions
+of command group callbacks by passing the cmd_struct to
+handle_command_group and allowing it to resolve the group from it.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- Documentation/btrfs-qgroup.asciidoc |   3 +
- cmds-qgroup.c                       |  22 +++-
- qgroup.c                            | 222 ++++++++++++++++++++++++++++++++++++
- qgroup.h                            |   8 +-
- 4 files changed, 251 insertions(+), 4 deletions(-)
+ btrfs.c           | 14 +++++++-------
+ cmds-balance.c    |  6 +++---
+ cmds-device.c     |  5 -----
+ cmds-filesystem.c |  6 ------
+ cmds-inspect.c    |  5 -----
+ cmds-property.c   |  6 ------
+ cmds-qgroup.c     |  5 -----
+ cmds-quota.c      |  5 -----
+ cmds-replace.c    |  5 -----
+ cmds-rescue.c     |  5 -----
+ cmds-scrub.c      |  6 ------
+ cmds-subvolume.c  |  5 -----
+ commands.h        |  7 ++++---
+ 13 files changed, 14 insertions(+), 66 deletions(-)
 
-diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
-index 360b3269..7863a4d9 100644
---- a/Documentation/btrfs-qgroup.asciidoc
-+++ b/Documentation/btrfs-qgroup.asciidoc
-@@ -87,6 +87,9 @@ the btrfs filesystem identified by <path>.
- *show* [options] <path>::
- Show all qgroups in the btrfs filesystem identified by <path>.
- +
-+If enabled, this command supports extended output in json and json:compat modes.
-+Use of either json mode implies -P and --raw.
-++
- `Options`
- +
- -p::::
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index f9e81e30..fd637a45 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -301,6 +301,10 @@ static const char * const cmd_qgroup_show_usage[] = {
- 	"               you can use '+' or '-' in front of each item.",
- 	"               (+:ascending, -:descending, ascending default)",
- 	"--sync         force sync of the filesystem before getting info",
-+	"",
-+#ifdef HAVE_JSON
-+	"json and json:compat output implies -P and --raw.",
-+#endif
- 	NULL
+diff --git a/btrfs.c b/btrfs.c
+index 32b8e090..427e14c8 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -140,26 +140,26 @@ static void handle_help_options_next_level(const struct cmd_struct *cmd,
+ 	}
+ }
+ 
+-int handle_command_group(const struct cmd_group *grp,
++int handle_command_group(const struct cmd_struct *cmd,
+ 			 const struct cmd_context *cmdcxt,
+ 			 int argc, char **argv)
+ 
+ {
+-	const struct cmd_struct *cmd;
++	const struct cmd_struct *subcmd;
+ 
+ 	argc--;
+ 	argv++;
+ 	if (argc < 1) {
+-		usage_command_group(grp, false, false);
++		usage_command_group(cmd->next, false, false);
+ 		exit(1);
+ 	}
+ 
+-	cmd = parse_command_token(argv[0], grp);
++	subcmd = parse_command_token(argv[0], cmd->next);
+ 
+-	handle_help_options_next_level(cmd, cmdcxt, argc, argv);
++	handle_help_options_next_level(subcmd, cmdcxt, argc, argv);
+ 
+-	fixup_argv0(argv, cmd->token);
+-	return cmd_execute(cmd, cmdcxt, argc, argv);
++	fixup_argv0(argv, subcmd->token);
++	return cmd_execute(subcmd, cmdcxt, argc, argv);
+ }
+ 
+ static const struct cmd_group btrfs_cmd_group;
+diff --git a/cmds-balance.c b/cmds-balance.c
+index c17b9ee3..e414ca27 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -943,7 +943,7 @@ static const struct cmd_group balance_cmd_group = {
+ 	}
  };
  
-@@ -386,6 +390,10 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd,
- 	}
- 	btrfs_qgroup_setup_units(unit_mode);
- 
-+	if (cmdcxt->output_mode == CMD_OUTPUT_JSON ||
-+	    cmdcxt->output_mode == CMD_OUTPUT_JSON_COMPAT)
-+		unit_mode = UNITS_RAW;
-+
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd);
- 
-@@ -420,7 +428,15 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd,
- 					BTRFS_QGROUP_FILTER_PARENT,
- 					qgroupid);
- 	}
--	ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
-+
-+	if (cmdcxt->output_mode == CMD_OUTPUT_JSON ||
-+	    cmdcxt->output_mode == CMD_OUTPUT_JSON_COMPAT) {
-+		bool compat = (cmdcxt->output_mode == CMD_OUTPUT_JSON_COMPAT);
-+
-+		ret = btrfs_qgroup_output_json(fd, filter_set, comparer_set,
-+					       compat);
-+	} else
-+		ret = btrfs_show_qgroups(fd, filter_set, comparer_set, verbose);
- 	close_file_or_dir(fd, dirstream);
- 	free(filter_set);
- 	free(comparer_set);
-@@ -428,7 +444,9 @@ static int cmd_qgroup_show(const struct cmd_struct *cmd,
- out:
- 	return !!ret;
- }
--static DEFINE_SIMPLE_COMMAND(qgroup_show, "show");
-+static DEFINE_COMMAND(qgroup_show, "show", cmd_qgroup_show,
-+		      cmd_qgroup_show_usage, NULL, 0,
-+		      CMD_OUTPUT_FLAG(JSON)|CMD_OUTPUT_FLAG(JSON_COMPAT));
- 
- static const char * const cmd_qgroup_limit_usage[] = {
- 	"btrfs qgroup limit [options] <size>|none [<qgroupid>] <path>",
-diff --git a/qgroup.c b/qgroup.c
-index d076b1de..95d443db 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -16,12 +16,16 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
-+#include "version.h"
- #include "qgroup.h"
- #include <sys/ioctl.h>
- #include "ctree.h"
- #include "ioctl.h"
- #include "utils.h"
- #include <errno.h>
-+#ifdef HAVE_JSON
-+#include <json-c/json.h>
-+#endif
- 
- #define BTRFS_QGROUP_NFILTERS_INCREASE (2 * BTRFS_QGROUP_FILTER_MAX)
- #define BTRFS_QGROUP_NCOMPS_INCREASE (2 * BTRFS_QGROUP_COMP_MAX)
-@@ -1398,6 +1402,224 @@ int btrfs_show_qgroups(int fd,
- 	return ret;
- }
- 
-+#ifdef HAVE_JSON
-+#define QGROUPID_FORMAT_BUF_LEN (20 + 20 + 1 + 1)
-+static void format_qgroupid(char *buf, size_t size, u64 qgroupid)
-+{
-+	int ret;
-+
-+	ret = snprintf(buf, size, "%llu/%llu",
-+		       btrfs_qgroup_level(qgroupid),
-+		       btrfs_qgroup_subvid(qgroupid));
-+	ASSERT(ret < sizeof(buf));
-+}
-+
-+static json_object *export_one_u64(u64 value, bool compat)
-+{
-+	json_object *array, *tmp;
-+
-+	if (!compat)
-+		return json_object_new_int64(value);
-+
-+	array = json_object_new_array();
-+	if (!array)
-+		return NULL;
-+
-+	tmp = json_object_new_int(value >> 32);
-+	if (!tmp)
-+		goto failure;
-+	json_object_array_add(array, tmp);
-+
-+	tmp = json_object_new_int(value & 0xffffffff);
-+	if (!tmp)
-+		goto failure;
-+	json_object_array_add(array, tmp);
-+
-+	return array;
-+failure:
-+	json_object_put(array);
-+	return NULL;
-+}
-+
-+static bool export_one_qgroup(json_object *container,
-+			     const struct btrfs_qgroup *qgroup, bool compat)
-+{
-+	char buf[QGROUPID_FORMAT_BUF_LEN];
-+	json_object *obj, *tmp;
-+
-+	obj = json_object_new_object();
-+	if (!obj)
-+		return false;
-+
-+	format_qgroupid(buf, sizeof(buf), qgroup->qgroupid);
-+	tmp = json_object_new_string(buf);
-+	if (!tmp)
-+		return false;
-+	json_object_object_add(obj, "qgroupid", tmp);
-+
-+	tmp = export_one_u64(qgroup->qgroupid, compat);
-+	if (!tmp)
-+		goto failure;
-+	json_object_object_add(obj, "qgroupid_raw", tmp);
-+
-+	tmp = export_one_u64(qgroup->info.generation, compat);
-+	if (!tmp)
-+		goto failure;
-+	json_object_object_add(obj, "generation", tmp);
-+
-+	tmp = export_one_u64(qgroup->info.referenced, compat);
-+	if (!tmp)
-+		goto failure;
-+	json_object_object_add(obj, "referenced_bytes", tmp);
-+
-+	tmp = export_one_u64(qgroup->info.exclusive, compat);
-+	if (!tmp)
-+		goto failure;
-+	json_object_object_add(obj, "exclusive_bytes", tmp);
-+
-+	tmp = export_one_u64(qgroup->limit.max_referenced, compat);
-+	if (!tmp)
-+		goto failure;
-+	json_object_object_add(obj, "referenced_limit_bytes", tmp);
-+
-+	tmp = export_one_u64(qgroup->limit.max_exclusive, compat);
-+	if (!tmp)
-+		goto failure;
-+	json_object_object_add(obj, "exclusive_limit_bytes", tmp);
-+
-+	if (btrfs_qgroup_level(qgroup->qgroupid) == 0) {
-+		if (qgroup->pathname) {
-+			tmp = json_object_new_string(qgroup->pathname);
-+			if (!tmp)
-+				goto failure;
-+			json_object_object_add(obj, "pathname", tmp);
-+		}
-+	} else {
-+		json_object *array = json_object_new_array();
-+		struct btrfs_qgroup_list *list = NULL;
-+
-+		if (!array)
-+			goto failure;
-+		json_object_object_add(obj, "members", array);
-+
-+		list_for_each_entry(list, &qgroup->qgroups, next_qgroup) {
-+			struct btrfs_qgroup *member = list->qgroup;
-+			char buf2[QGROUPID_FORMAT_BUF_LEN];
-+
-+			format_qgroupid(buf2, sizeof(buf2), member->qgroupid);
-+			tmp = json_object_new_string(buf2);
-+			if (!tmp)
-+				goto failure;
-+
-+			json_object_array_add(array, tmp);
-+		}
-+	}
-+
-+	json_object_object_add(container, buf, obj);
-+	return true;
-+failure:
-+	json_object_put(obj);
-+	return false;
-+}
-+
-+#define BTRFS_JSON_WARNING \
-+"This data contains 64-bit values that are incompatible with Javascript. Export in compatibility mode using --format=json:compat."
-+
-+static void export_all_qgroups(const struct qgroup_lookup *qgroup_lookup,
-+			       bool compat)
-+{
-+
-+	struct rb_node *n;
-+	const char *json;
-+	json_object *container, *dict, *obj;
-+	struct btrfs_qgroup *entry;
-+	int json_flags = JSON_C_TO_STRING_PRETTY;
-+
-+#ifdef JSON_C_TO_STRING_NOSLASHESCAPE
-+	json_flags |= JSON_C_TO_STRING_NOSLASHESCAPE;
-+#endif
-+
-+	container = json_object_new_object();
-+	if (!container)
-+		goto failure_msg;
-+
-+	obj = json_object_new_string(BTRFS_BUILD_VERSION);
-+	if (!obj)
-+		goto failure;
-+	json_object_object_add(container, "exporter", obj);
-+
-+	if (!compat) {
-+		obj = json_object_new_string(BTRFS_JSON_WARNING);
-+		if (!obj)
-+			goto failure;
-+		json_object_object_add(container, "compatibility-warning", obj);
-+
-+		obj = json_object_new_string("64-bit");
-+		if (!obj)
-+			goto failure;
-+		json_object_object_add(container, "u64-format", obj);
-+	} else {
-+		obj = json_object_new_string("array");
-+		if (!obj)
-+			goto failure;
-+		json_object_object_add(container, "u64-format", obj);
-+	}
-+
-+	dict = json_object_new_object();
-+	if (!dict)
-+		goto failure;
-+	json_object_object_add(container, "qgroup_data", dict);
-+
-+	n = rb_first(&qgroup_lookup->root);
-+	while (n) {
-+		entry = rb_entry(n, struct btrfs_qgroup, sort_node);
-+		if (!export_one_qgroup(dict, entry, compat))
-+			goto failure;
-+		n = rb_next(n);
-+	}
-+
-+	json = json_object_to_json_string_ext(container, json_flags);
-+	if (!json)
-+		goto failure;
-+
-+	puts(json);
-+
-+	/* clean up container */
-+	json_object_put(container);
-+	return;
-+
-+failure:
-+	json_object_put(container);
-+failure_msg:
-+	error("Failed to create JSON object.");
-+}
-+#endif
-+
-+int btrfs_qgroup_output_json(int fd,
-+			     struct btrfs_qgroup_filter_set *filter_set,
-+			     struct btrfs_qgroup_comparer_set *comp_set,
-+			     bool compat)
-+{
-+#ifdef HAVE_JSON
-+	struct qgroup_lookup qgroup_lookup;
-+	struct qgroup_lookup sort_tree;
-+	int ret = 0;
-+
-+	ret = qgroups_search_all(fd, &qgroup_lookup);
-+	if (ret)
-+		return ret;
-+	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
-+				  filter_set, comp_set);
-+	export_all_qgroups(&sort_tree, compat);
-+
-+	__free_all_qgroups(&qgroup_lookup);
-+
-+	return ret;
-+#else
-+	return 0;
-+#endif
-+}
-+
- int btrfs_qgroup_parse_sort_string(const char *opt_arg,
- 				   struct btrfs_qgroup_comparer_set **comps)
+-static int cmd_balance(const struct cmd_struct *unused,
++static int cmd_balance(const struct cmd_struct *cmd,
+ 		       const struct cmd_context *cmdcxt, int argc, char **argv)
  {
-diff --git a/qgroup.h b/qgroup.h
-index 688f92b2..4344c7d8 100644
---- a/qgroup.h
-+++ b/qgroup.h
-@@ -95,8 +95,12 @@ struct btrfs_qgroup_stats {
+ 	if (argc == 2 && strcmp("start", argv[1]) != 0) {
+@@ -956,7 +956,7 @@ static int cmd_balance(const struct cmd_struct *unused,
+ 		return do_balance(argv[1], &args, 0);
+ 	}
  
- int btrfs_qgroup_parse_sort_string(const char *opt_arg,
- 				struct btrfs_qgroup_comparer_set **comps);
--int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
--		       struct btrfs_qgroup_comparer_set *, bool verbose);
-+int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *filter_set,
-+		       struct btrfs_qgroup_comparer_set *comp_set,
-+		       bool verbose);
-+int btrfs_qgroup_output_json(int fd, struct btrfs_qgroup_filter_set *filter_set,
-+			     struct btrfs_qgroup_comparer_set *comp_set,
-+			     bool compat);
- void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
- void btrfs_qgroup_setup_units(unsigned unit_mode);
- struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
+-	return handle_command_group(&balance_cmd_group, cmdcxt, argc, argv);
++	return handle_command_group(cmd, cmdcxt, argc, argv);
+ }
+ 
+-DEFINE_GROUP_COMMAND(balance, "balance");
++DEFINE_COMMAND(balance, "balance", cmd_balance, NULL, &balance_cmd_group, 0, 0);
+diff --git a/cmds-device.c b/cmds-device.c
+index ac9e82b1..f8c0ff20 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -630,9 +630,4 @@ static const struct cmd_group device_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_device(const struct cmd_struct *unused,
+-		      const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&device_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(device);
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 27e0865c..e3e54864 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -1242,10 +1242,4 @@ static const struct cmd_group filesystem_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_filesystem(const struct cmd_struct *unused,
+-			  const struct cmd_context *cmdcxt,
+-			  int argc, char **argv)
+-{
+-	return handle_command_group(&filesystem_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(filesystem);
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index ade9db7e..561a0fbd 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -658,9 +658,4 @@ static const struct cmd_group inspect_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_inspect(const struct cmd_struct *unused,
+-		       const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&inspect_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND(inspect, "inspect");
+diff --git a/cmds-property.c b/cmds-property.c
+index 498fa456..58f6c48a 100644
+--- a/cmds-property.c
++++ b/cmds-property.c
+@@ -422,10 +422,4 @@ static const struct cmd_group property_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_property(const struct cmd_struct *unused,
+-			const struct cmd_context *cmdcxt,
+-			int argc, char **argv)
+-{
+-	return handle_command_group(&property_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(property);
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index fd637a45..e20c1159 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -558,9 +558,4 @@ static const struct cmd_group qgroup_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_qgroup(const struct cmd_struct *unused,
+-		      const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&qgroup_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(qgroup);
+diff --git a/cmds-quota.c b/cmds-quota.c
+index 2a88d4c4..7b524123 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -219,9 +219,4 @@ static const struct cmd_group quota_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_quota(const struct cmd_struct *unused,
+-		     const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&quota_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(quota);
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 64c93537..8b2091c9 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -560,9 +560,4 @@ static const struct cmd_group replace_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_replace(const struct cmd_struct *unused,
+-		       const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&replace_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(replace);
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index ec1ea222..364d6dd9 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -273,9 +273,4 @@ static const struct cmd_group rescue_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_rescue(const struct cmd_struct *unused,
+-		      const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&rescue_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(rescue);
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index d4d5a10c..b0238032 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -1807,10 +1807,4 @@ static const struct cmd_group scrub_cmd_group = {
+ 	}
+ };
+ 
+-static int cmd_scrub(const struct cmd_struct *unused,
+-		     const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&scrub_cmd_group, cmdcxt, argc, argv);
+-}
+-
+ DEFINE_GROUP_COMMAND_TOKEN(scrub);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 3498ff21..7a420a64 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -1466,9 +1466,4 @@ static const struct cmd_group subvolume_cmd_group = {
+ 	}
+ };
+ 
+-int cmd_subvolume(const struct cmd_struct *unused,
+-		  const struct cmd_context *cmdcxt, int argc, char **argv)
+-{
+-	return handle_command_group(&subvolume_cmd_group, cmdcxt, argc, argv);
+-}
+ DEFINE_GROUP_COMMAND_TOKEN(subvolume);
+diff --git a/commands.h b/commands.h
+index bf74eaf8..65be8742 100644
+--- a/commands.h
++++ b/commands.h
+@@ -107,7 +107,8 @@ struct cmd_struct {
+ /*
+  * Define a command for the common case - just a name and string.
+  * It's assumed that the callback is called cmd_<name> and the usage
+- * array is named cmd_<name>_usage.
++ * array is named cmd_<name>_usage.  Text is the only supported output
++ * format.
+  */
+ #define DEFINE_SIMPLE_COMMAND(name, token)				\
+ 	DEFINE_COMMAND(name, token, cmd_ ##name,			\
+@@ -119,7 +120,7 @@ struct cmd_struct {
+  * struct cmd_group is called <name>_cmd_group.
+  */
+ #define DEFINE_GROUP_COMMAND(name, token)				\
+-	DEFINE_COMMAND(name, token, cmd_ ##name,			\
++	DEFINE_COMMAND(name, token, handle_command_group,		\
+ 		       NULL, &(name ## _cmd_group), 0, 0)
+ 
+ /*
+@@ -143,7 +144,7 @@ static inline int cmd_execute(const struct cmd_struct *cmd,
+ 	return cmd->fn(cmd, cmdcxt, argc, argv);
+ }
+ 
+-int handle_command_group(const struct cmd_group *grp,
++int handle_command_group(const struct cmd_struct *cmd,
+ 			 const struct cmd_context *cmdcxt,
+ 			 int argc, char **argv);
+ 
 -- 
 2.12.3
 

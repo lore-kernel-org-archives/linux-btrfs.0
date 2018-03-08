@@ -1,48 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36403 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56756 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752093AbeCHP6r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 10:58:47 -0500
+        id S1751622AbeCHOf3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 09:35:29 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 17F2AAD5E
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 15:58:46 +0000 (UTC)
-Date: Thu, 8 Mar 2018 16:56:25 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 14/22] btrfs: remove trivial locking wrappers of tree mod
- log
-Message-ID: <20180308155625.GO23693@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+        by mx2.suse.de (Postfix) with ESMTP id A91DBAE19
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 14:35:28 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 01/22] btrfs: assume that bio_ret is always valid in submit_extent_page
+Date: Thu,  8 Mar 2018 15:33:08 +0100
+Message-Id: <2ce0d30ad6c25a4266fed3c00cbdb77a6145f207.1520518876.git.dsterba@suse.com>
+In-Reply-To: <cover.1520518876.git.dsterba@suse.com>
 References: <cover.1520518876.git.dsterba@suse.com>
- <4888ae25fe8e1f1f87f3187dc199eed4799a3a99.1520518876.git.dsterba@suse.com>
- <4a72bdae-2a5a-e4e4-1cb0-086b3ddd9857@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4a72bdae-2a5a-e4e4-1cb0-086b3ddd9857@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 08, 2018 at 05:37:33PM +0200, Nikolay Borisov wrote:
-> 
-> 
-> On  8.03.2018 16:33, David Sterba wrote:
-> > The wrappers are trivial and do bring any extra value on top of the
-> 
-> nit: s/do/don't/ ?
+All callers pass a valid pointer so we can drop the redundant checks.
+The call to submit_one_bio never happend and can be removed.
 
-Right, fixed.
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/extent_io.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-> > plain locking primitives.
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> 
-> Just 2 minor nits, otherwise LGTM:
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-> 
-> > - * Note: must be called with write lock (tree_mod_log_write_lock).
-> > + * Note: must be called with write lock for fs_info_;;tree_mod_log_lock.
-> nit: s/;;/::/
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index dfeb74a0be77..d00d5a59ff21 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2758,6 +2758,7 @@ static int merge_bio(struct extent_io_tree *tree, struct page *page,
+ 
+ /*
+  * @opf:	bio REQ_OP_* and REQ_* flags as one value
++ * @bio_ret:	must be valid pointer, newly allocated bio will be stored there
+  */
+ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+ 			      struct writeback_control *wbc,
+@@ -2778,7 +2779,9 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+ 	size_t page_size = min_t(size_t, size, PAGE_SIZE);
+ 	sector_t sector = offset >> 9;
+ 
+-	if (bio_ret && *bio_ret) {
++	ASSERT(bio_ret);
++
++	if (*bio_ret) {
+ 		bio = *bio_ret;
+ 		if (old_compressed)
+ 			contig = bio->bi_iter.bi_sector == sector;
+@@ -2813,10 +2816,7 @@ static int submit_extent_page(unsigned int opf, struct extent_io_tree *tree,
+ 		wbc_account_io(wbc, page, page_size);
+ 	}
+ 
+-	if (bio_ret)
+-		*bio_ret = bio;
+-	else
+-		ret = submit_one_bio(bio, mirror_num, bio_flags);
++	*bio_ret = bio;
+ 
+ 	return ret;
+ }
+-- 
+2.16.2
 
-Fixed, thanks.

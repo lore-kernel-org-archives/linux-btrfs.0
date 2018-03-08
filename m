@@ -1,359 +1,423 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:41588 "EHLO
-        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751622AbeCHOiT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 09:38:19 -0500
-Message-ID: <1520519895.15491.21.camel@scientia.net>
-Subject: Re: spurious full btrfs corruption
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Thu, 08 Mar 2018 15:38:15 +0100
-In-Reply-To: <0a25d1fc-38cb-8fb6-4538-6300093c0bbd@gmx.com>
-References: <26306A4D-2D8E-4661-B89E-9F050FD184D5@scientia.net>
-         <BF03A3DF-684D-47FE-A9AD-320256F64763@scientia.net>
-         <b6b4ed0e-9569-158d-19ad-82c885bab4ec@gmx.com>
-         <BB977A40-847C-4611-A468-9BF1137CE711@scientia.net>
-         <d2a14d69-dfa9-8794-6375-03d1b209632f@gmx.com>
-         <68697875-6E77-49C4-B54E-0FADB94700DA@scientia.net>
-         <99ee9b31-a38a-d479-5b1d-30e9c942d577@gmx.com>
-         <A19E863A-F83C-4630-9675-4309CECB318E@scientia.net>
-         <1b24e69e-2c1e-71af-fb1d-9d32f72cc78c@gmx.com>
-         <8DB99A3B-6238-497D-A70F-8834CC014DCF@gmail.com>
-         <c88d6721-ad20-c45d-0ac1-a49f2bab66cb@gmx.com>
-         <1519833022.3714.122.camel@scientia.net>
-         <8f83436a-9abb-1fd1-599f-d8034a5b3cb5@gmx.com>
-         <1520297878.4428.39.camel@scientia.net>
-         <0a25d1fc-38cb-8fb6-4538-6300093c0bbd@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:60453 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755521AbeCHPVV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 10:21:21 -0500
+Subject: Re: [PATCH 08/20] btrfs-progs: qgroups: introduce btrfs_qgroup_query
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-9-jeffm@suse.com>
+ <5e0953a9-0677-08ad-708b-acbefa66ab41@gmx.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <1379e4ee-91b6-e9ca-ee06-435d0da54282@suse.com>
+Date: Thu, 8 Mar 2018 10:21:16 -0500
+MIME-Version: 1.0
+In-Reply-To: <5e0953a9-0677-08ad-708b-acbefa66ab41@gmx.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="R9gv8PhKpKXcWDiXHB5laDxI5zS3amAs7"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--R9gv8PhKpKXcWDiXHB5laDxI5zS3amAs7
+Content-Type: multipart/mixed; boundary="8uH6B8h5f3Z6L9HR8sr9yZlOmLaKFwMNy";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Message-ID: <1379e4ee-91b6-e9ca-ee06-435d0da54282@suse.com>
+Subject: Re: [PATCH 08/20] btrfs-progs: qgroups: introduce btrfs_qgroup_query
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-9-jeffm@suse.com>
+ <5e0953a9-0677-08ad-708b-acbefa66ab41@gmx.com>
+In-Reply-To: <5e0953a9-0677-08ad-708b-acbefa66ab41@gmx.com>
+
+--8uH6B8h5f3Z6L9HR8sr9yZlOmLaKFwMNy
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+On 3/8/18 12:54 AM, Qu Wenruo wrote:
+>=20
+>=20
+> On 2018=E5=B9=B403=E6=9C=8808=E6=97=A5 10:40, jeffm@suse.com wrote:
+>> From: Jeff Mahoney <jeffm@suse.com>
+>>
+>> The only mechanism we have in the progs for searching qgroups is to lo=
+ad
+>> all of them and filter the results.  This works for qgroup show but
+>> to add quota information to 'btrfs subvoluem show' it's pretty wastefu=
+l.
+>>
+>> This patch splits out setting up the search and performing the search =
+so
+>> we can search for a single qgroupid more easily.  Since TREE_SEARCH
+>> will give results that don't strictly match the search terms, we add
+>> a filter to match only the results we care about.
+>>
+>> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+>> ---
+>>  qgroup.c | 143 ++++++++++++++++++++++++++++++++++++++++++++++++------=
+---------
+>>  qgroup.h |   7 ++++
+>>  2 files changed, 116 insertions(+), 34 deletions(-)
+>>
+>> diff --git a/qgroup.c b/qgroup.c
+>> index 57815718..d076b1de 100644
+>> --- a/qgroup.c
+>> +++ b/qgroup.c
+>> @@ -1165,11 +1165,30 @@ static inline void print_status_flag_warning(u=
+64 flags)
+>>  		warning("qgroup data inconsistent, rescan recommended");
+>>  }
+>> =20
+>> -static int __qgroups_search(int fd, struct qgroup_lookup *qgroup_look=
+up)
+>> +static bool key_in_range(const struct btrfs_key *key,
+>> +			 const struct btrfs_ioctl_search_key *sk)
+>> +{
+>> +	if (key->objectid < sk->min_objectid ||
+>> +	    key->objectid > sk->max_objectid)
+>> +		return false;
+>> +
+>> +	if (key->type < sk->min_type ||
+>> +	    key->type > sk->max_type)
+>> +		return false;
+>> +
+>> +	if (key->offset < sk->min_offset ||
+>> +	    key->offset > sk->max_offset)
+>> +		return false;
+>> +
+>> +	return true;
+>> +}
+>=20
+> Even with the key_in_range() check here, we are still following the tre=
+e
+> search slice behavior:
+>=20
+> tree search will still gives us all the items in key range from
+> (min_objectid, min_type, min_offset) to
+> (max_objectid, max_type, max_offset).
+>=20
+> I don't see much different between the tree search ioctl and this one.
+
+It's fundamentally different.
+
+The one in the kernel has a silly interface.  It should be min_key and
+max_key since the components aren't evaluated independently.  It
+effectively treats min_key and max_key as 136-bit values and returns
+everything between them, inclusive.  That's the slice behavior, as you
+call it.
+
+This key_in_range treats each component separately and acts as a filter
+on the slice returned from the kernel.  If we request min/max_offset =3D
+259, the caller will not get anything without offset =3D 259.
+
+I suppose, ultimately, this could also be done using a filter on the
+rbtree using the existing interface but that seems even more wasteful.
+
+-Jeff
+
+>> +
+>> +static int __qgroups_search(int fd, struct btrfs_ioctl_search_args *a=
+rgs,
+>> +			    struct qgroup_lookup *qgroup_lookup)
+>>  {
+>>  	int ret;
+>> -	struct btrfs_ioctl_search_args args;
+>> -	struct btrfs_ioctl_search_key *sk =3D &args.key;
+>> +	struct btrfs_ioctl_search_key *sk =3D &args->key;
+>> +	struct btrfs_ioctl_search_key filter_key =3D args->key;
+>>  	struct btrfs_ioctl_search_header *sh;
+>>  	unsigned long off =3D 0;
+>>  	unsigned int i;
+>> @@ -1180,30 +1199,15 @@ static int __qgroups_search(int fd, struct qgr=
+oup_lookup *qgroup_lookup)
+>>  	u64 qgroupid;
+>>  	u64 qgroupid1;
+>> =20
+>> -	memset(&args, 0, sizeof(args));
+>> -
+>> -	sk->tree_id =3D BTRFS_QUOTA_TREE_OBJECTID;
+>> -	sk->max_type =3D BTRFS_QGROUP_RELATION_KEY;
+>> -	sk->min_type =3D BTRFS_QGROUP_STATUS_KEY;
+>> -	sk->max_objectid =3D (u64)-1;
+>> -	sk->max_offset =3D (u64)-1;
+>> -	sk->max_transid =3D (u64)-1;
+>> -	sk->nr_items =3D 4096;
+>> -
+>>  	qgroup_lookup_init(qgroup_lookup);
+>> =20
+>>  	while (1) {
+>> -		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+>> +		ret =3D ioctl(fd, BTRFS_IOC_TREE_SEARCH, args);
+>>  		if (ret < 0) {
+>> -			if (errno =3D=3D ENOENT) {
+>> -				error("can't list qgroups: quotas not enabled");
+>> +			if (errno =3D=3D ENOENT)
+>>  				ret =3D -ENOTTY;
+>> -			} else {
+>> -				error("can't list qgroups: %s",
+>> -				       strerror(errno));
+>> +			else
+>>  				ret =3D -errno;
+>> -			}
+>> -
+>>  			break;
+>>  		}
+>> =20
+>> @@ -1217,37 +1221,46 @@ static int __qgroups_search(int fd, struct qgr=
+oup_lookup *qgroup_lookup)
+>>  		 * read the root_ref item it contains
+>>  		 */
+>>  		for (i =3D 0; i < sk->nr_items; i++) {
+>> -			sh =3D (struct btrfs_ioctl_search_header *)(args.buf +
+>> +			struct btrfs_key key;
+>> +
+>> +			sh =3D (struct btrfs_ioctl_search_header *)(args->buf +
+>>  								  off);
+>>  			off +=3D sizeof(*sh);
+>> =20
+>> -			switch (btrfs_search_header_type(sh)) {
+>> +			key.objectid =3D btrfs_search_header_objectid(sh);
+>> +			key.type =3D btrfs_search_header_type(sh);
+>> +			key.offset =3D btrfs_search_header_offset(sh);
+>> +
+>> +			if (!key_in_range(&key, &filter_key))
+>> +				goto next;
+>=20
+> It still looks like that most other qgroup info will get calculated.
+>=20
+>> +
+>> +			switch (key.type) {
+>>  			case BTRFS_QGROUP_STATUS_KEY:
+>>  				si =3D (struct btrfs_qgroup_status_item *)
+>> -				     (args.buf + off);
+>> +				     (args->buf + off);
+>>  				flags =3D btrfs_stack_qgroup_status_flags(si);
+>> =20
+>>  				print_status_flag_warning(flags);
+>>  				break;
+>>  			case BTRFS_QGROUP_INFO_KEY:
+>> -				qgroupid =3D btrfs_search_header_offset(sh);
+>> +				qgroupid =3D key.offset;
+>>  				info =3D (struct btrfs_qgroup_info_item *)
+>> -				       (args.buf + off);
+>> +				       (args->buf + off);
+>> =20
+>>  				ret =3D update_qgroup_info(fd, qgroup_lookup,
+>>  							 qgroupid, info);
+>>  				break;
+>>  			case BTRFS_QGROUP_LIMIT_KEY:
+>> -				qgroupid =3D btrfs_search_header_offset(sh);
+>> +				qgroupid =3D key.offset;
+>>  				limit =3D (struct btrfs_qgroup_limit_item *)
+>> -					(args.buf + off);
+>> +					(args->buf + off);
+>> =20
+>>  				ret =3D update_qgroup_limit(fd, qgroup_lookup,
+>>  							  qgroupid, limit);
+>>  				break;
+>>  			case BTRFS_QGROUP_RELATION_KEY:
+>> -				qgroupid =3D btrfs_search_header_offset(sh);
+>> -				qgroupid1 =3D btrfs_search_header_objectid(sh);
+>> +				qgroupid =3D key.offset;
+>> +				qgroupid1 =3D key.objectid;
+>> =20
+>>  				if (qgroupid < qgroupid1)
+>>  					break;
+>> @@ -1262,15 +1275,16 @@ static int __qgroups_search(int fd, struct qgr=
+oup_lookup *qgroup_lookup)
+>>  			if (ret)
+>>  				return ret;
+>> =20
+>> +next:
+>>  			off +=3D btrfs_search_header_len(sh);
+>> =20
+>>  			/*
+>>  			 * record the mins in sk so we can make sure the
+>>  			 * next search doesn't repeat this root
+>>  			 */
+>> -			sk->min_type =3D btrfs_search_header_type(sh);
+>> -			sk->min_offset =3D btrfs_search_header_offset(sh);
+>> -			sk->min_objectid =3D btrfs_search_header_objectid(sh);
+>> +			sk->min_type =3D key.type;
+>> +			sk->min_offset =3D key.offset;
+>> +			sk->min_objectid =3D key.objectid;
+>>  		}
+>>  		sk->nr_items =3D 4096;
+>>  		/*
+>> @@ -1286,6 +1300,67 @@ static int __qgroups_search(int fd, struct qgro=
+up_lookup *qgroup_lookup)
+>>  	return ret;
+>>  }
+>> =20
+>> +static int qgroups_search_all(int fd, struct qgroup_lookup *qgroup_lo=
+okup)
+>> +{
+>> +	struct btrfs_ioctl_search_args args =3D {
+>> +		.key =3D {
+>> +			.tree_id =3D BTRFS_QUOTA_TREE_OBJECTID,
+>> +			.max_type =3D BTRFS_QGROUP_RELATION_KEY,
+>> +			.min_type =3D BTRFS_QGROUP_STATUS_KEY,
+>> +			.max_objectid =3D (u64)-1,
+>> +			.max_offset =3D (u64)-1,
+>> +			.max_transid =3D (u64)-1,
+>> +			.nr_items =3D 4096,
+>> +		},
+>> +	};
+>> +	int ret;
+>> +
+>> +	ret =3D __qgroups_search(fd, &args, qgroup_lookup);
+>> +	if (ret =3D=3D -ENOTTY)
+>> +		error("can't list qgroups: quotas not enabled");
+>> +	else if (ret < 0)
+>> +		error("can't list qgroups: %s", strerror(-ret));
+>> +	return ret;
+>> +}
+>> +
+>> +int btrfs_qgroup_query(int fd, u64 qgroupid, struct btrfs_qgroup_stat=
+s *stats)
+>> +{
+>> +	struct btrfs_ioctl_search_args args =3D {
+>> +		.key =3D {
+>> +			.tree_id =3D BTRFS_QUOTA_TREE_OBJECTID,
+>> +			.min_type =3D BTRFS_QGROUP_INFO_KEY,
+>> +			.max_type =3D BTRFS_QGROUP_LIMIT_KEY,
+>> +			.max_objectid =3D 0,
+>> +			.min_offset =3D qgroupid,
+>> +			.max_offset =3D qgroupid,
+>=20
+> Just keep in mind that such search could include unrelated qgroup info
+> into the result, key_in_range() check won't help much due to the limit
+> of how tree search works.
+>=20
+>> +			.max_transid =3D (u64)-1,
+>> +			.nr_items =3D 4096,
+>> +		},
+>> +	};
+>> +	struct qgroup_lookup qgroup_lookup;
+>> +	struct btrfs_qgroup *qgroup;
+>> +	struct rb_node *n;
+>> +	int ret;
+>> +
+>> +	ret =3D __qgroups_search(fd, &args, &qgroup_lookup);
+>> +	if (ret < 0)
+>> +		return ret;
+>> +
+>> +	ret =3D -ENODATA;
+>> +	n =3D rb_first(&qgroup_lookup.root);
+>=20
+> And in worst case, if we're query some qgroup which doesn't exist (mayb=
+e
+> manually deleted), then due to limit of tree search, @qgroup_lookup
+> could contain unrelated qgroup info.
+>=20
+> In that case, rb_first() could gives us some unrelated qgroup.
+>=20
+> For example, we have qgroups info for 5, 258, 259, 1/1, and we're tryin=
+g
+> to query qgroup 257 (deleted manually), then we will get the following
+> result from tree search:
+>=20
+> 	item 3 key (0 QGROUP_INFO 0/258) itemoff 16131 itemsize 40
+> 	item 4 key (0 QGROUP_INFO 0/259) itemoff 16131 itemsize 40
+> 	item 5 key (0 QGROUP_INFO 1/1) itemoff 16091 itemsize 40
+> 	item 6 key (0 QGROUP_LIMIT 0/5) itemoff 16051 itemsize 40
+>=20
+> So in @qgroup_lookup, the first item will be qgroup 258 instead of the
+> non-exist qgroup 257.
+>=20
+> Either caller needs extra check or we need to do extra check in this
+> function.
+>
+> Thanks,
+> Qu
+>=20
+>> +	if (n) {
+>> +		qgroup =3D rb_entry(n, struct btrfs_qgroup, rb_node);
+>> +		stats->qgroupid =3D qgroup->qgroupid;
+>> +		stats->info =3D qgroup->info;
+>> +		stats->limit =3D qgroup->limit;
+>> +
+>> +		ret =3D 0;
+>> +	}
+>> +
+>> +	__free_all_qgroups(&qgroup_lookup);
+>> +	return ret;
+>> +}
+>> +
+>>  static void print_all_qgroups(struct qgroup_lookup *qgroup_lookup, bo=
+ol verbose)
+>>  {
+>> =20
+>> @@ -1312,7 +1387,7 @@ int btrfs_show_qgroups(int fd,
+>>  	struct qgroup_lookup sort_tree;
+>>  	int ret;
+>> =20
+>> -	ret =3D __qgroups_search(fd, &qgroup_lookup);
+>> +	ret =3D qgroups_search_all(fd, &qgroup_lookup);
+>>  	if (ret)
+>>  		return ret;
+>>  	__filter_and_sort_qgroups(&qgroup_lookup, &sort_tree,
+>> diff --git a/qgroup.h b/qgroup.h
+>> index 5e71349c..688f92b2 100644
+>> --- a/qgroup.h
+>> +++ b/qgroup.h
+>> @@ -87,6 +87,12 @@ struct btrfs_qgroup_info {
+>>  	u64 exclusive_compressed;
+>>  };
+>> =20
+>> +struct btrfs_qgroup_stats {
+>> +	u64 qgroupid;
+>> +	struct btrfs_qgroup_info info;
+>> +	struct btrfs_qgroup_limit limit;
+>> +};
+>> +
+>>  int btrfs_qgroup_parse_sort_string(const char *opt_arg,
+>>  				struct btrfs_qgroup_comparer_set **comps);
+>>  int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
+>> @@ -105,4 +111,5 @@ int qgroup_inherit_add_group(struct btrfs_qgroup_i=
+nherit **inherit, char *arg);
+>>  int qgroup_inherit_add_copy(struct btrfs_qgroup_inherit **inherit, ch=
+ar *arg,
+>>  			    int type);
+>> =20
+>> +int btrfs_qgroup_query(int fd, u64 qgroupid, struct btrfs_qgroup_stat=
+s *stats);
+>>  #endif
+>>
+>=20
 
 
-On Tue, 2018-03-06 at 09:50 +0800, Qu Wenruo wrote:
-> > These were the two files:
-> > -rw-r--r-- 1 calestyo calestyo   90112 Feb 22 16:46 'Lady In The
-> > Water/05.mp3'
-> > -rw-r--r-- 1 calestyo calestyo 4892407 Feb 27 23:28
-> > '/home/calestyo/share/music/Lady In The Water/05.mp3'
-> > 
-> > 
-> > -rw-r--r-- 1 calestyo calestyo 1904640 Feb 22 16:47 'The Hunt For
-> > Red October [Intrada]/21.mp3'
-> > -rw-r--r-- 1 calestyo calestyo 2968128 Feb 27 23:28
-> > '/home/calestyo/share/music/The Hunt For Red October
-> > [Intrada]/21.mp3'
-> > 
-> > with the former (smaller one) being the corrupted one (i.e. the one
-> > returned by btrfs-restore).
-> > 
-> > Both are (in terms of filesize) multiples of 4096... what does that
-> > mean now?
-> 
-> That means either we lost some file extents or inode items.
-> 
-> Btrfs-restore only found EXTENT_DATA, which contains the pointer to
-> the
-> real data, and inode number.
-> But no INODE_ITEM is found, which records the real inode size, so it
-> can
-> only use EXTENT_DATA to rebuild as much data as possible.
-> That why all recovered one is aligned to 4K.
-> 
-> So some metadata is also corrupted.
-
-But that can also happen to just some files?
-Anyway... still strange that it hit just those two (which weren't
-touched for long).
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
-> > However, all the qcow2 files from the restore are more or less
-> > garbage.
-> > During the btrfs-restore it already complained on them, that it
-> > would
-> > loop too often on them and whether I want to continue or not (I
-> > choose
-> > n and on another full run I choose y).
-> > 
-> > Some still contain a partition table, some partitions even
-> > filesystems
-> > (btrfs again)... but I cannot mount them.
-> 
-> I think the same problem happens on them too.
-> 
-> Some data is lost while some are good.
-> Anyway, they would be garbage.
+--8uH6B8h5f3Z6L9HR8sr9yZlOmLaKFwMNy--
 
-Again, still strange... that so many files (of those that I really
-checked) were fully okay,... while those 4 were all broken.
+--R9gv8PhKpKXcWDiXHB5laDxI5zS3amAs7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-When it only uses EXTENT_DATA, would that mean that it basically breaks
-on every border where the file is split up into multiple extents (which
-is of course likely for the (CoWed) images that I had.
+-----BEGIN PGP SIGNATURE-----
 
+iQJDBAEBCAAtFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlqhVOwPHGplZmZtQHN1
+c2UuY29tAAoJEB57S2MheeWy3PAQAMMm6mOFHr/0ygIl78ZID3Q9ko/R9pS51BbW
+0jbi7uQfdCoX7XJjPj64Kei4ek3ApbXcyz5tNTAc1MF2MHi7krxQgvoHL1A1UaxM
+MIpu7rjN+nHlHxhXaNXiPgqMa1Qm4OPP28O0rGoADHJuixYrHl7KZQYWBj+Ug8AW
+cnWb+I+a+W9DT9WPDMC2/ioWS/YHbYklFfdtoHFgtx/Qzt4L1wS6rQ0sdfK4zzxc
+JVl0LR4U/CKCtznDHK69EAhQpTRy0Kg6WYLzezk05/2vRZ5jN6yIAIDs++V91G5v
+IcoUGQsJeP/ZmewZ57XqOs+LFyqjyj6TRzE3//r/0N81g8c5BIJGB4abkxDegENw
+xzNpUM8OdkdqFo+Fhp5vfZ6ZC9j4mA8yDqkorE+aHQvJrW1Hh2n6TtBqCyo7zy48
+W2TkcpnXLvK+sWvVilvgHeo6Gj4c4BXDEGvtEBem+lIe3xLXP0iCYYCURuwmD+Yw
+M8DQPaG8f8JULzjyRBh21dugPDTZGVqerJsuk1xfLkVb0IYZuZU7hnJg4UbXjSwr
+UWwrWlcBXyYjpsmmIxmnGjXzceersYeH+xwqupkosuDFr66+aZhCuVc3QTogCp+R
+ql6pjRTZAYYY7tY6AGaclrY7ZXb+IHsfzTdx6qRC5WzYZyHWSGJ2tscWswelUjer
+5jtpgUbi
+=QgUT
+-----END PGP SIGNATURE-----
 
-
-> > 
-> > > Would you please try to restore the fs on another system with
-> > > good
-> > > memory?
-> > 
-> > Which one? The originally broken fs from the SSD?
-> 
-> Yep.
-> 
-> > And what should I try to find out here?
-> 
-> During restore, if the csum error happens again on the newly created
-> destination btrfs.
-> (And I recommend use mount option nospace_cache,notreelog on the
-> destination fs)
-
-So an update on this (everything on the OLD notebook with likely good
-memory):
-
-I booted again from USBstick (with 4.15 kernel/progs),
-luksOpened+losetup+luksOpened (yes two dm-crypt, the one from the
-external restore HDD, then the image file of the SSD which again
-contained dmcrypt+LUKS, of which one was the broken btrfs).
-
-As I've mentioned before... btrfs-restore (and the other tools for
-trying to find the bytenr) immediately fail here.
-They bring some "block mapping error" and produce no output.
-
-This worked on my first rescue attempt (where I had 4.12 kernel/progs).
-
-Since I had no 4.12 kernel/progs at hand anymore, I went to an even
-older rescue stick, wich has 4.7 kernel/progs (if I'm not wrong).
-There it worked again (on the same image file).
-
-So something changed after 4.14, which makes the tools no longer being
-able to restore at least that what they could restore at 4.14.
-
-
-=> Some bug recently introduced in btrfs-progs?
-
-
-
-
-I finished the dump then (from OLD notebook/good RAM) with 4.7
-kernel/progs,... to the very same external HDD I've used before.
-
-And afterwards I:
-diff -qr --no-dereference restoreFromNEWnotebook/ restoreFromOLDnotebook/
-
-=> No differences were found, except one further file that was in the
-new restoreFromOLDnotebook. Could be that this was a file wich I
-deleted on the old restore because of csum errors, but I don't really
-remember (actually I thought to remember that there were a few which I
-deleted).
-
-Since all other files were equal (that is at least in terms of file
-contents and symlink targets - I didn't compare the metadata like
-permissions, dates and owners)... the qcow2 images are garbage as well.
-
-=> No csum errors were recorded in the kernel log during the diff, and
-since both, the (remaining) restore results from the NEW notebook and
-the ones just made on the OLD one were read because of the diff,... I'd
-guess that no further corruption happened in the recent btrfs-restore.
-
-
-
-
-
-On to the next working site:
-
-> > > This -28 (ENOSPC) seems to show that the extent tree of the new
-> > > btrfs
-> > > is
-> > > corrupted.
-> > 
-> > "new" here is dm-1, right? Which is the fresh btrfs I've created on
-> > some 8TB HDD for my recovery works.
-> > While that FS shows me:
-> > [26017.690417] BTRFS info (device dm-2): disk space caching is
-> > enabled
-> > [26017.690421] BTRFS info (device dm-2): has skinny extents
-> > [26017.798959] BTRFS info (device dm-2): bdev /dev/mapper/data-a4
-> > errs:
-> > wr 0, rd 0, flush 0, corrupt 130, gen 0
-> > on mounting (I think the 130 corruptions are simply from the time
-> > when
-> > I still used it for btrfs-restore with the NEW notebook with
-> > possibly
-> > bad RAM)... I continued to use it in the meantime (for more
-> > recovery
-> > works) and wrote actually many TB to it... so far, there seem to be
-> > no
-> > further corruption on it.
-> > If there was some extent tree corruption... than nothing I would
-> > notice
-> > now.
-> > 
-> > An fsck of it seems fine:
-> > # btrfs check /dev/mapper/restore 
-> > Checking filesystem on /dev/mapper/restore
-> > UUID: 62eb62e0-775b-4523-b218-1410b90c03c9
-> > checking extents
-> > checking free space cache
-> > checking fs roots
-> > checking csums
-> > checking root refs
-> > found 2502273781760 bytes used, no error found
-> > total csum bytes: 2438116164
-> > total tree bytes: 5030854656
-> > total fs tree bytes: 2168242176
-> > total extent tree bytes: 286375936
-> > btree space waste bytes: 453818165
-> > file data blocks allocated: 2877953581056
-> >  referenced 2877907415040
-> 
-> At least metadata is in good shape.
-> 
-> If scrub reports no error, it would be perfect.
-
-In the meantime I had written the btrfs-restore under kernel 4.7 as
-mentioned above to that disk.
-At the same time I was trying to continue where I stopped last time
-when the SSD fs broke - doing backups of that.
-
-So I had the fs mounted as /-fs and mounted it again in /mnt (where a
-snapshot made from a rescue USB stick) was already waiting, and started
-to tar.xz it.
-
-It happened then, that I wanted to do the diff of the two btrfs-
-restores (as mentioned above) and I accidentally mounted the external
-HDD on /mnt again.
-
-Shouldn't be a problem normally, but automatically I did Ctrl-C during
-the mount (which is of course useless).
-Afterwards I umount /mnt... where it said it couldn't do so,
-nevertheless only the first mount at /mnt was shown,... so maybe I was
-fast enough.
-
-I'm telling this boring story because of two reasons:
-- First I remembered that something very similar happened when the
-first SSD fs was corrupted,.. only that I then got this paging bug as
-described in my very first mail and couldn't unmount / cleanly shut
-down anymore.
-So maybe that had to do something with the whole story? Could there be
-some bug when mounts are stacked (I know it's unlikely... but who
-knows).
-
-- This time (don't think this was the case back then when the SSD fs
-got corrupted), I got a:
-Mar 07 19:58:10 heisenberg kernel: BTRFS info (device dm-1): disk space caching is enabled
-Mar 07 19:58:10 heisenberg kernel: BTRFS info (device dm-1): has skinny extents
-Mar 07 19:58:10 heisenberg kernel: BTRFS info (device dm-1): bdev /dev/mapper/data-a4 errs: wr 0, rd 0, flush 0, corrupt 130, gen 0
-=> so I'd say it was in fact mounted (even though the umount claimed
-   differently)
-
-Mar 07 19:58:20 heisenberg kernel: BTRFS error (device dm-1): open_ctree failed
-=> wtf? What does this mean? Anything to do with free space caches (I
-   haven't disabled that yet)
-
-Mar 07 19:59:07 heisenberg kernel: BTRFS info (device dm-1): disk space caching is enabled
-Mar 07 19:59:07 heisenberg kernel: BTRFS info (device dm-1): has skinny extents
-Mar 07 19:59:07 heisenberg kernel: BTRFS info (device dm-1): bdev /dev/mapper/data-a4 errs: wr 0, rd 0, flush 0, corrupt 130, gen 0
-Mar 07 19:59:31 heisenberg kernel: BTRFS info (device dm-1): disk space caching is enabled
-=> here I mounted it again at another dir...
-
-dm-1 here is the external HDD (and the 130 corrupt are likely from the
-first btrfs-restore that I made while still on the NEW notebook with
-the possible bad RAM).
-
-
-After that I did a fsck of the 8TB HDD / dm-1 ... and as you've anyway
-asked me above, a scrub of it.
-Neither of both showed any errors.... (so still strange why it got that
-open_ctree error)
-
-
-> > > Since free space cache corruption (only happens for v1) is not a
-> > > big
-> > > problem, fsck will only report but doesn't account it as error.
-> > 
-> > Why is it not a big problem?
-> 
-> Because we have "nospace_cache" mount option as our best friend.
-
-Which leaves the question when one could enable the cache again... if
-no clear error is found right now... :(
-
-
-> > This comes as a surprise... wasn't it always said that v2 space
-> > cache
-> > is still unstable?
-> 
-> But v1 also has its problem.
-> In fact I have already found a situation btrfs could corrupt its v1
-> space cache, just using fsstress -n 200.
-> 
-> Although kernel and btrfs-progs can both detect the corruption,
-> that's
-> already the last defending line. The corrupted cache passes both
-> generation and checksum check, the only check which catches it is
-> free
-> space size, but that can be bypassed if we craft the operation
-> carefully
-> enough.
-
-Well then back to:
-it should be disabled per default in an update to stable kernels until
-the issues are found and fixed...
-
-
-> > And shouldn't that then become either default (using v2)... or a
-> > default of not using v1 at least?
-> 
-> Because we still don't have a strong enough evidence or test case to
-> prove it.
-> But I think it would change soon.
-> 
-> Anyway, it's just an optimization, and most of us can live without
-> it.
-
-Perhaps still better to proactively disable it, if it's already
-suspected to be buggy and you have that situation with fsstress -n
-200,... instead of waiting for people getting corruptions.
-
-(And/or possibly a good time to push for v2... if that's anyway the
-future to go) :)
-
-
-
-> > Wouldn't it be reasonable, that when a fs is mounted that was not
-> > properly unmounted (I assume there is some flag that shows
-> > this?),...
-> > any such possible corrupted caches/trees/etc. are simply
-> > invalidated as
-> > a safety measure?
-> 
-> Unfortunately, btrfs doesn't have such flag to indicate dirty umount.
-> We could use log_root to find it, but that's not always the case, and
-> one can even use notreelog to disable log tree completely.
-
-Likely I'm just thinking to naively... but wouldn't that be easy to
-add? If the kernel or any tool that writes to the fs (things like --
-repair) opens the fs in a mode where any changes (including internal
-ones) can be made... flag the fs to be "dirty"... if that operation
-succeesds/ends (e.g. via umount)... flag it to be clean.
-
-I'm not saying, create a journal ;-) ... but such a plain flag could
-then be used to decide whether caches like the freespace cache should
-be rather discarded.
-
-
-> However there are still cases where V1 cache get CoWed, still digging
-> the reason, but under certain chunk layout, it could leads to
-> corruption.
-
-Okay... would be nice if you CC me in case you find anything in the
-future... especially when it's safe again to enable the caches.
-
-
-Thanks,
-Chris. :-)
+--R9gv8PhKpKXcWDiXHB5laDxI5zS3amAs7--

@@ -1,35 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36096 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36403 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1754052AbeCHP4Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 10:56:24 -0500
-Date: Thu, 8 Mar 2018 16:54:01 +0100
+        id S1752093AbeCHP6r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 10:58:47 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 17F2AAD5E
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 15:58:46 +0000 (UTC)
+Date: Thu, 8 Mar 2018 16:56:25 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 18/22] btrfs: move allocation after simple tests in
- tree_mod_log_insert_key
-Message-ID: <20180308155401.GN23693@twin.jikos.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 14/22] btrfs: remove trivial locking wrappers of tree mod
+ log
+Message-ID: <20180308155625.GO23693@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1520518876.git.dsterba@suse.com>
- <0792f4331c42c57426d02f897bc68b7c7820219a.1520518876.git.dsterba@suse.com>
- <CAL3q7H5ozx0vyDQxY+H7JJNRu2JhuKmR+QS2MLYpXO9=BMjtZQ@mail.gmail.com>
+ <4888ae25fe8e1f1f87f3187dc199eed4799a3a99.1520518876.git.dsterba@suse.com>
+ <4a72bdae-2a5a-e4e4-1cb0-086b3ddd9857@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H5ozx0vyDQxY+H7JJNRu2JhuKmR+QS2MLYpXO9=BMjtZQ@mail.gmail.com>
+In-Reply-To: <4a72bdae-2a5a-e4e4-1cb0-086b3ddd9857@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 08, 2018 at 03:26:11PM +0000, Filipe Manana wrote:
-> On Thu, Mar 8, 2018 at 2:33 PM, David Sterba <dsterba@suse.com> wrote:
-> > The allocation of tree_mod_elem can be delayed after tree_mod_dont_log.
-> > In case it causes the function to return, the allocation would be
-> > redundant. Otherwise it could cause unnecessary failure if there's not
-> > enough memory.
+On Thu, Mar 08, 2018 at 05:37:33PM +0200, Nikolay Borisov wrote:
 > 
-> Nop, the allocation must be made before calling tree_mod_dont_log(),
-> as that function acquires a write lock.
-> That's why there's a call to tree_mod_need_log() before the allocation
-> and a call to tree_mod_dont_log() after (they do the same checks).
+> 
+> On  8.03.2018 16:33, David Sterba wrote:
+> > The wrappers are trivial and do bring any extra value on top of the
+> 
+> nit: s/do/don't/ ?
 
-Ah right, thanks, it's even documented, dunno why I missed it.
+Right, fixed.
+
+> > plain locking primitives.
+> > 
+> > Signed-off-by: David Sterba <dsterba@suse.com>
+> 
+> Just 2 minor nits, otherwise LGTM:
+> 
+> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+> 
+> > - * Note: must be called with write lock (tree_mod_log_write_lock).
+> > + * Note: must be called with write lock for fs_info_;;tree_mod_log_lock.
+> nit: s/;;/::/
+
+Fixed, thanks.

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60608 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:60604 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935177AbeCHClF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 7 Mar 2018 21:41:05 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 85321AF61
+        id S935168AbeCHClE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 21:41:04 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 6A3E0AEA8
         for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 02:41:03 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 10/20] btrfs-progs: help: convert ints used as bools to bool
-Date: Wed,  7 Mar 2018 21:40:37 -0500
-Message-Id: <20180308024047.10104-11-jeffm@suse.com>
+Subject: [PATCH 11/20] btrfs-progs: reorder placement of help declarations for send/receive
+Date: Wed,  7 Mar 2018 21:40:38 -0500
+Message-Id: <20180308024047.10104-12-jeffm@suse.com>
 In-Reply-To: <20180308024047.10104-1-jeffm@suse.com>
 References: <20180308024047.10104-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,172 +19,180 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-We use an int for 'full', 'all', and 'err' when we really mean a boolean.
+The usage definitions for send and receive follow the command
+definitions, which use them.  This works because we declare them
+in commands.h.  When we move to using cmd_struct as the entry point,
+these declarations will be removed, breaking the commands.  Since
+that would be an otherwise unrelated change, this patch reorders
+them separately.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- btrfs.c | 14 +++++++-------
- help.c  | 25 +++++++++++++------------
- help.h  |  4 ++--
- 3 files changed, 22 insertions(+), 21 deletions(-)
+ cmds-receive.c | 62 ++++++++++++++++++++++++++--------------------------
+ cmds-send.c    | 69 +++++++++++++++++++++++++++++-----------------------------
+ 2 files changed, 66 insertions(+), 65 deletions(-)
 
-diff --git a/btrfs.c b/btrfs.c
-index 2d39f2ce..fec1a135 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -109,7 +109,7 @@ static void handle_help_options_next_level(const struct cmd_struct *cmd,
- 			argv++;
- 			help_command_group(cmd->next, argc, argv);
- 		} else {
--			usage_command(cmd, 1, 0);
-+			usage_command(cmd, true, false);
- 		}
- 
- 		exit(0);
-@@ -125,7 +125,7 @@ int handle_command_group(const struct cmd_group *grp, int argc,
- 	argc--;
- 	argv++;
- 	if (argc < 1) {
--		usage_command_group(grp, 0, 0);
-+		usage_command_group(grp, false, false);
- 		exit(1);
- 	}
- 
-@@ -212,20 +212,20 @@ static int handle_global_options(int argc, char **argv)
- 
- void handle_special_globals(int shift, int argc, char **argv)
- {
--	int has_help = 0;
--	int has_full = 0;
-+	bool has_help = false;
-+	bool has_full = false;
- 	int i;
- 
- 	for (i = 0; i < shift; i++) {
- 		if (strcmp(argv[i], "--help") == 0)
--			has_help = 1;
-+			has_help = true;
- 		else if (strcmp(argv[i], "--full") == 0)
--			has_full = 1;
-+			has_full = true;
- 	}
- 
- 	if (has_help) {
- 		if (has_full)
--			usage_command_group(&btrfs_cmd_group, 1, 0);
-+			usage_command_group(&btrfs_cmd_group, true, false);
- 		else
- 			cmd_help(argc, argv);
- 		exit(0);
-diff --git a/help.c b/help.c
-index 311a4320..ef7986b4 100644
---- a/help.c
-+++ b/help.c
-@@ -196,8 +196,8 @@ static int do_usage_one_command(const char * const *usagestr,
+diff --git a/cmds-receive.c b/cmds-receive.c
+index 68123a31..b3709f36 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -1248,6 +1248,37 @@ out:
+ 	return ret;
  }
  
- static int usage_command_internal(const char * const *usagestr,
--				  const char *token, int full, int lst,
--				  int alias, FILE *outf)
-+				  const char *token, bool full, bool lst,
-+				  bool alias, FILE *outf)
++const char * const cmd_receive_usage[] = {
++	"btrfs receive [options] <mount>\n"
++	"btrfs receive --dump [options]",
++	"Receive subvolumes from a stream",
++	"Receives one or more subvolumes that were previously",
++	"sent with btrfs send. The received subvolumes are stored",
++	"into MOUNT.",
++	"The receive will fail in case the receiving subvolume",
++	"already exists. It will also fail in case a previously",
++	"received subvolume has been changed after it was received.",
++	"After receiving a subvolume, it is immediately set to",
++	"read-only.",
++	"",
++	"-v               increase verbosity about performed actions",
++	"-f FILE          read the stream from FILE instead of stdin",
++	"-e               terminate after receiving an <end cmd> marker in the stream.",
++	"                 Without this option the receiver side terminates only in case",
++	"                 of an error on end of file.",
++	"-C|--chroot      confine the process to <mount> using chroot",
++	"-E|--max-errors NERR",
++	"                 terminate as soon as NERR errors occur while",
++	"                 stream processing commands from the stream.",
++	"                 Default value is 1. A value of 0 means no limit.",
++	"-m ROOTMOUNT     the root mount point of the destination filesystem.",
++	"                 If /proc is not accessible, use this to tell us where",
++	"                 this file system is mounted.",
++	"--dump           dump stream metadata, one line per operation,",
++	"                 does not require the MOUNT parameter",
++	NULL
++};
++
+ int cmd_receive(int argc, char **argv)
  {
- 	unsigned int flags = 0;
- 	int ret;
-@@ -223,17 +223,17 @@ static int usage_command_internal(const char * const *usagestr,
+ 	char *tomnt = NULL;
+@@ -1357,34 +1388,3 @@ out:
+ 
+ 	return !!ret;
+ }
+-
+-const char * const cmd_receive_usage[] = {
+-	"btrfs receive [options] <mount>\n"
+-	"btrfs receive --dump [options]",
+-	"Receive subvolumes from a stream",
+-	"Receives one or more subvolumes that were previously",
+-	"sent with btrfs send. The received subvolumes are stored",
+-	"into MOUNT.",
+-	"The receive will fail in case the receiving subvolume",
+-	"already exists. It will also fail in case a previously",
+-	"received subvolume has been changed after it was received.",
+-	"After receiving a subvolume, it is immediately set to",
+-	"read-only.",
+-	"",
+-	"-v               increase verbosity about performed actions",
+-	"-f FILE          read the stream from FILE instead of stdin",
+-	"-e               terminate after receiving an <end cmd> marker in the stream.",
+-	"                 Without this option the receiver side terminates only in case",
+-	"                 of an error on end of file.",
+-	"-C|--chroot      confine the process to <mount> using chroot",
+-	"-E|--max-errors NERR",
+-	"                 terminate as soon as NERR errors occur while",
+-	"                 stream processing commands from the stream.",
+-	"                 Default value is 1. A value of 0 means no limit.",
+-	"-m ROOTMOUNT     the root mount point of the destination filesystem.",
+-	"                 If /proc is not accessible, use this to tell us where",
+-	"                 this file system is mounted.",
+-	"--dump           dump stream metadata, one line per operation,",
+-	"                 does not require the MOUNT parameter",
+-	NULL
+-};
+diff --git a/cmds-send.c b/cmds-send.c
+index c5ecdaa1..8365e9c9 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -489,6 +489,41 @@ static void free_send_info(struct btrfs_send *sctx)
+ 	subvol_uuid_search_finit(&sctx->sus);
  }
  
- static void usage_command_usagestr(const char * const *usagestr,
--				   const char *token, int full, int err)
-+				   const char *token, bool full, bool err)
++
++const char * const cmd_send_usage[] = {
++	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
++	"Send the subvolume(s) to stdout.",
++	"Sends the subvolume(s) specified by <subvol> to stdout.",
++	"<subvol> should be read-only here.",
++	"By default, this will send the whole subvolume. To do an incremental",
++	"send, use '-p <parent>'. If you want to allow btrfs to clone from",
++	"any additional local snapshots, use '-c <clone-src>' (multiple times",
++	"where applicable). You must not specify clone sources unless you",
++	"guarantee that these snapshots are exactly in the same state on both",
++	"sides, the sender and the receiver. It is allowed to omit the",
++	"'-p <parent>' option when '-c <clone-src>' options are given, in",
++	"which case 'btrfs send' will determine a suitable parent among the",
++	"clone sources itself.",
++	"\n",
++	"-e               If sending multiple subvols at once, use the new",
++	"                 format and omit the end-cmd between the subvols.",
++	"-p <parent>      Send an incremental stream from <parent> to",
++	"                 <subvol>.",
++	"-c <clone-src>   Use this snapshot as a clone source for an ",
++	"                 incremental send (multiple allowed)",
++	"-f <outfile>     Output is normally written to stdout. To write to",
++	"                 a file, use this option. An alternative would be to",
++	"                 use pipes.",
++	"--no-data        send in NO_FILE_DATA mode, Note: the output stream",
++	"                 does not contain any file data and thus cannot be used",
++	"                 to transfer changes. This mode is faster and useful to",
++	"                 show the differences in metadata.",
++	"-v|--verbose     enable verbose output to stderr, each occurrence of",
++	"                 this option increases verbosity",
++	"-q|--quiet       suppress all messages, except errors",
++	NULL
++};
++
+ int cmd_send(int argc, char **argv)
  {
- 	FILE *outf = err ? stderr : stdout;
- 	int ret;
- 
--	ret = usage_command_internal(usagestr, token, full, 0, 0, outf);
-+	ret = usage_command_internal(usagestr, token, full, false, false, outf);
- 	if (!ret)
- 		fputc('\n', outf);
+ 	char *subvol = NULL;
+@@ -774,37 +809,3 @@ out:
+ 	free_send_info(&send);
+ 	return !!ret;
  }
- 
--void usage_command(const struct cmd_struct *cmd, int full, int err)
-+void usage_command(const struct cmd_struct *cmd, bool full, bool err)
- {
- 	usage_command_usagestr(cmd->usagestr, cmd->token, full, err);
- }
-@@ -241,11 +241,11 @@ void usage_command(const struct cmd_struct *cmd, int full, int err)
- __attribute__((noreturn))
- void usage(const char * const *usagestr)
- {
--	usage_command_usagestr(usagestr, NULL, 1, 1);
-+	usage_command_usagestr(usagestr, NULL, true, true);
- 	exit(1);
- }
- 
--static void usage_command_group_internal(const struct cmd_group *grp, int full,
-+static void usage_command_group_internal(const struct cmd_group *grp, bool full,
- 					 FILE *outf)
- {
- 	const struct cmd_struct *cmd = grp->commands;
-@@ -265,7 +265,8 @@ static void usage_command_group_internal(const struct cmd_group *grp, int full,
- 			}
- 
- 			usage_command_internal(cmd->usagestr, cmd->token, full,
--					       1, cmd->flags & CMD_ALIAS, outf);
-+					       true, cmd->flags & CMD_ALIAS,
-+					       outf);
- 			if (cmd->flags & CMD_ALIAS)
- 				putchar('\n');
- 			continue;
-@@ -327,7 +328,7 @@ void usage_command_group_short(const struct cmd_group *grp)
- 	fprintf(stderr, "All command groups have their manual page named 'btrfs-<group>'.\n");
- }
- 
--void usage_command_group(const struct cmd_group *grp, int full, int err)
-+void usage_command_group(const struct cmd_group *grp, bool full, bool err)
- {
- 	const char * const *usagestr = grp->usagestr;
- 	FILE *outf = err ? stderr : stdout;
-@@ -350,7 +351,7 @@ __attribute__((noreturn))
- void help_unknown_token(const char *arg, const struct cmd_group *grp)
- {
- 	fprintf(stderr, "%s: unknown token '%s'\n", get_argv0_buf(), arg);
--	usage_command_group(grp, 0, 1);
-+	usage_command_group(grp, false, true);
- 	exit(1);
- }
- 
-@@ -372,13 +373,13 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp)
- 
- void help_command_group(const struct cmd_group *grp, int argc, char **argv)
- {
--	int full = 0;
-+	bool full = false;
- 
- 	if (argc > 1) {
- 		if (!strcmp(argv[1], "--full"))
- 			full = 1;
- 	}
- 
--	usage_command_group(grp, full, 0);
-+	usage_command_group(grp, full, false);
- }
- 
-diff --git a/help.h b/help.h
-index efeded30..a69ea6b2 100644
---- a/help.h
-+++ b/help.h
-@@ -57,8 +57,8 @@ struct cmd_group;
- 
- __attribute__((noreturn))
- void usage(const char * const *usagestr);
--void usage_command(const struct cmd_struct *cmd, int full, int err);
--void usage_command_group(const struct cmd_group *grp, int all, int err);
-+void usage_command(const struct cmd_struct *cmd, bool full, bool err);
-+void usage_command_group(const struct cmd_group *grp, bool all, bool err);
- void usage_command_group_short(const struct cmd_group *grp);
- 
- __attribute__((noreturn))
+-
+-const char * const cmd_send_usage[] = {
+-	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
+-	"Send the subvolume(s) to stdout.",
+-	"Sends the subvolume(s) specified by <subvol> to stdout.",
+-	"<subvol> should be read-only here.",
+-	"By default, this will send the whole subvolume. To do an incremental",
+-	"send, use '-p <parent>'. If you want to allow btrfs to clone from",
+-	"any additional local snapshots, use '-c <clone-src>' (multiple times",
+-	"where applicable). You must not specify clone sources unless you",
+-	"guarantee that these snapshots are exactly in the same state on both",
+-	"sides, the sender and the receiver. It is allowed to omit the",
+-	"'-p <parent>' option when '-c <clone-src>' options are given, in",
+-	"which case 'btrfs send' will determine a suitable parent among the",
+-	"clone sources itself.",
+-	"\n",
+-	"-e               If sending multiple subvols at once, use the new",
+-	"                 format and omit the end-cmd between the subvols.",
+-	"-p <parent>      Send an incremental stream from <parent> to",
+-	"                 <subvol>.",
+-	"-c <clone-src>   Use this snapshot as a clone source for an ",
+-	"                 incremental send (multiple allowed)",
+-	"-f <outfile>     Output is normally written to stdout. To write to",
+-	"                 a file, use this option. An alternative would be to",
+-	"                 use pipes.",
+-	"--no-data        send in NO_FILE_DATA mode, Note: the output stream",
+-	"                 does not contain any file data and thus cannot be used",
+-	"                 to transfer changes. This mode is faster and useful to",
+-	"                 show the differences in metadata.",
+-	"-v|--verbose     enable verbose output to stderr, each occurrence of",
+-	"                 this option increases verbosity",
+-	"-q|--quiet       suppress all messages, except errors",
+-	NULL
+-};
 -- 
 2.12.3
 

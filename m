@@ -1,114 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:41546 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S964788AbeCHG3q (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 8 Mar 2018 01:29:46 -0500
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH] btrfs-progs: free-space-cache: Enhance free space cache free space check
-Date: Thu,  8 Mar 2018 14:29:36 +0800
-Message-Id: <20180308062936.26846-1-wqu@suse.com>
+Received: from mout.gmx.net ([212.227.17.20]:43637 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755117AbeCHILV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 03:11:21 -0500
+Subject: Re: [PATCH 2/3] btrfs-progs: check/lowmem: Fix false alert of data
+ extent backref lost for snapshot
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <20180228101323.25442-1-lufq.fnst@cn.fujitsu.com>
+ <20180228101323.25442-2-lufq.fnst@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <0f503ab2-70f0-6141-a85b-f4de19c2af18@gmx.com>
+Date: Thu, 8 Mar 2018 16:11:07 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180228101323.25442-2-lufq.fnst@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="mOnB61G2kX6VVtlJq3toWOkKD7ZEgKgLR"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we found free space difference between free space cache and block
-group item, we just discard this free space cache.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--mOnB61G2kX6VVtlJq3toWOkKD7ZEgKgLR
+Content-Type: multipart/mixed; boundary="6ejY9QYnDZENeNyS9pXvYmGsCQOZQIWhw";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Lu Fengqi <lufq.fnst@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Message-ID: <0f503ab2-70f0-6141-a85b-f4de19c2af18@gmx.com>
+Subject: Re: [PATCH 2/3] btrfs-progs: check/lowmem: Fix false alert of data
+ extent backref lost for snapshot
+References: <20180228101323.25442-1-lufq.fnst@cn.fujitsu.com>
+ <20180228101323.25442-2-lufq.fnst@cn.fujitsu.com>
+In-Reply-To: <20180228101323.25442-2-lufq.fnst@cn.fujitsu.com>
 
-Normally such difference is caused by btrfs_reserve_extent() called by
-delalloc which is out of a transaction.
-And since all btrfs_release_extent() is called with a transaction, under
-heavy race free space cache can have less free space than block group
-item.
+--6ejY9QYnDZENeNyS9pXvYmGsCQOZQIWhw
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Normally kernel will detect such difference and just discard that cache.
 
-However we must be more careful if free space cache has more free space
-cache, and if that happens, paried with above race one invalid free
-space cache can be loaded into kernel.
 
-So if we find any free space cache who has more free space then block
-group item, we report it as an error other than ignoring it.
+On 2018=E5=B9=B402=E6=9C=8828=E6=97=A5 18:13, Lu Fengqi wrote:
+> Btrfs lowmem check reports the following false alert:
+> ------
+> ERROR: file extent[267 2162688] root 256 owner 5 backref lost
+> ------
+>=20
+> The file extent is in the leaf which is shared by file tree 256 and fs
+> tree.
+> ------
+> leaf 30605312 items 46 free space 4353 generation 7 owner 5
+> ......
+>         item 45 key (267 EXTENT_DATA 2162688) itemoff 5503 itemsize 53
+>                 generation 7 type 2 (prealloc)
+>                 prealloc data disk byte 13631488 nr 65536
+>                 prealloc data offset 32768 nr 32768
+> ------
+>=20
+> And there is the corresponding extent_data_ref item in the extent tree.=
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-BTW, invalid free space cache found in dm-log-writes test case just
-has 0 free space, so it won't trigger such error.
----
- check/main.c       |  4 +++-
- free-space-cache.c | 30 +++++++++++++++++++++++-------
- 2 files changed, 26 insertions(+), 8 deletions(-)
+> ------
+>         item 1 key (13631488 EXTENT_DATA_REF 1007496934287921081) itemo=
+ff 15274 itemsize 28
+>                 extent data backref root 5 objectid 267 offset 2129920 =
+count 1
+> ------
+>=20
+> The offset of EXTENT_DATA_REF which is the hash of the owner root objec=
+tid,
+> the inode number and the calculated offset (file offset - extent offset=
+).
+>=20
+> What caused the false alert is the code mix up the owner root objectid =
+and
+> the file tree objectid.
+>=20
+> Fixes: b0d360b541f0 ("btrfs-progs: check: introduce function to check d=
+ata backref in extent tree")
+> Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 
-diff --git a/check/main.c b/check/main.c
-index 97baae583f04..bc31f7e32061 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -5339,7 +5339,9 @@ static int check_space_cache(struct btrfs_root *root)
- 			error += ret;
- 		} else {
- 			ret = load_free_space_cache(root->fs_info, cache);
--			if (!ret)
-+			if (ret < 0)
-+				error++;
-+			if (ret <= 0)
- 				continue;
- 		}
- 
-diff --git a/free-space-cache.c b/free-space-cache.c
-index f933f9f1cf3f..777c5fc682c5 100644
---- a/free-space-cache.c
-+++ b/free-space-cache.c
-@@ -438,7 +438,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 	struct btrfs_path *path;
- 	u64 used = btrfs_block_group_used(&block_group->item);
- 	int ret = 0;
--	int matched;
-+	u64 bg_free;
-+	s64 diff;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -448,18 +449,33 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 				      block_group->key.objectid);
- 	btrfs_free_path(path);
- 
--	matched = (ctl->free_space == (block_group->key.offset - used -
--				       block_group->bytes_super));
--	if (ret == 1 && !matched) {
-+	bg_free = block_group->key.offset - used - block_group->bytes_super;
-+	diff = ctl->free_space - bg_free;
-+	if (ret == 1 && diff) {
- 		__btrfs_remove_free_space_cache(ctl);
- 		fprintf(stderr,
--		       "block group %llu has wrong amount of free space\n",
--		       block_group->key.objectid);
-+		       "block group %llu has wrong amount of free space, free space cache has %llu block group has %llu\n",
-+		       block_group->key.objectid, ctl->free_space, bg_free);
-+		/*
-+		 * Due to btrfs_reserve_extent() can happen out of a
-+		 * transaction, but all btrfs_release_extent() happens inside
-+		 * a transaction, so under heavy race it's possible that free
-+		 * space cache has less free space, and both kernel just discard
-+		 * such cache. But if we find some case where free space cache
-+		 * has more free space, this means under certain case such
-+		 * cache can be loaded and cause double allocate.
-+		 *
-+		 * Detect such possibility here.
-+		 */
-+		if (diff > 0)
-+			error(
-+"free space cache has more free space than block group item, this could leads to serious corruption, please contact btrfs developers");
- 		ret = -1;
- 	}
- 
- 	if (ret < 0) {
--		ret = 0;
-+		if (diff <= 0)
-+			ret = 0;
- 
- 		fprintf(stderr,
- 		       "failed to load free space cache for block group %llu\n",
--- 
-2.16.2
+Looks good.
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+
+> ---
+>  check/mode-lowmem.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index f37b1b2c1571..6f1ea8db341d 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -2689,8 +2689,8 @@ static int check_extent_data_item(struct btrfs_ro=
+ot *root,
+>  		/* Didn't find inlined data backref, try EXTENT_DATA_REF_KEY */
+>  		dbref_key.objectid =3D btrfs_file_extent_disk_bytenr(eb, fi);
+>  		dbref_key.type =3D BTRFS_EXTENT_DATA_REF_KEY;
+> -		dbref_key.offset =3D hash_extent_data_ref(root->objectid,
+> -				fi_key.objectid, fi_key.offset - offset);
+> +		dbref_key.offset =3D hash_extent_data_ref(owner, fi_key.objectid,
+> +							fi_key.offset - offset);
+> =20
+>  		ret =3D btrfs_search_slot(NULL, root->fs_info->extent_root,
+>  					&dbref_key, &path, 0, 0);
+>=20
+
+
+--6ejY9QYnDZENeNyS9pXvYmGsCQOZQIWhw--
+
+--mOnB61G2kX6VVtlJq3toWOkKD7ZEgKgLR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqg8BsXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qg2Fgf/WH63Zo7Ugf7yw/AGGlWeX4bC
+H2QM4nJtJJj2/wtzgrwvu1T5wa33s/E5YVDcISZMrpCSc9VwHHq7HUOsRGtfkoub
+iGxXBg0Pqcv4oTOqubGOCpmDCgIwBCoI5M1dTQYW6M3ZyEerS4XOO2Zo1wkc7srX
+z9R3QjAGnzJ/5eopZbylvMuoy4DBwcbuQlGQoJKH6hhvUkPxznWIRmhwI8j3Uk/d
+ITsT6zwGxHwH0wvuKh51+G3xVZV7OB+Jq5EPr/6VDwuqnEE6wcgDkHcpI1WkN0HI
+fRI9uaYDye81/H1ETgdj3JTcXkuJ205a/yb06Rx6lAt9xiZLXRHdSiGdnKgx3A==
+=CQm3
+-----END PGP SIGNATURE-----
+
+--mOnB61G2kX6VVtlJq3toWOkKD7ZEgKgLR--

@@ -1,49 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36718 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S935072AbeCHLgB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 06:36:01 -0500
-Date: Thu, 8 Mar 2018 12:33:33 +0100
-From: David Sterba <dsterba@suse.cz>
+Received: from mx3-rdu2.redhat.com ([66.187.233.73]:56182 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S934134AbeCHPCm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 10:02:42 -0500
+Date: Thu, 8 Mar 2018 09:02:36 -0600
+From: Josh Poimboeuf <jpoimboe@redhat.com>
 To: Kees Cook <keescook@chromium.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        "David S. Miller" <davem@davemloft.net>, gustavo@embeddedor.com,
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org,
+        corbet@lwn.net, gustavo@embeddedor.com, rostedt@goodmis.org,
         Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>,
-        rostedt@goodmis.org, Peter Zijlstra <peterz@infradead.org>,
-        Randy Dunlap <rdunlap@infradead.org>, Ingo Molnar <mingo@kernel.org>,
-        Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        kernel-hardening@lists.openwall.com, corbet@lwn.net,
-        Ian Abbott <abbotti@mev.co.uk>,
+        David Sterba <dsterba@suse.com>,
+        "David S. Miller" <davem@davemloft.net>,
         Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
-        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
+        Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
         Masahiro Yamada <yamada.masahiro@socionext.com>,
-        Petr Mladek <pmladek@suse.com>, Borislav Petkov <bp@suse.de>,
-        "Tobin C. Harding" <me@tobin.cc>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, netdev@vger.kernel.org
-Subject: Re: [PATCH 3/3] btrfs: tree-checker: Avoid accidental stack VLA
-Message-ID: <20180308113333.GM23693@suse.cz>
-Reply-To: dsterba@suse.cz
+        Borislav Petkov <bp@suse.de>, Randy Dunlap <rdunlap@infradead.org>,
+        Ian Abbott <abbotti@mev.co.uk>, "Tobin C. Harding" <me@tobin.cc>,
+        Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>,
+        Petr Mladek <pmladek@suse.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
+        linux-btrfs@vger.kernel.org, netdev@vger.kernel.org,
+        kernel-hardening@lists.openwall.com
+Subject: Re: [PATCH 0/3] Remove accidental VLA usage
+Message-ID: <20180308150236.5tysfbm3xdouii5n@treble>
 References: <1520479847-39174-1-git-send-email-keescook@chromium.org>
- <1520479847-39174-4-git-send-email-keescook@chromium.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1520479847-39174-4-git-send-email-keescook@chromium.org>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1520479847-39174-1-git-send-email-keescook@chromium.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 07, 2018 at 07:30:47PM -0800, Kees Cook wrote:
-> In the quest to remove all stack VLAs from the kernel[1], this refactors
-> the stack array size calculation to avoid using max(), which makes the
-> compiler think the size isn't fixed.
+On Wed, Mar 07, 2018 at 07:30:44PM -0800, Kees Cook wrote:
+> This series adds SIMPLE_MAX() to be used in places where a stack array
+> is actually fixed, but the compiler still warns about VLA usage due to
+> confusion caused by the safety checks in the max() macro.
 > 
-> [1] https://lkml.org/lkml/2018/3/7/621
-> 
-> Signed-off-by: Kees Cook <keescook@chromium.org>
+> I'm sending these via -mm since that's where I've introduced SIMPLE_MAX(),
+> and they should all have no operational differences.
 
-Acked-by: David Sterba <dsterba@suse.com>
+What if we instead simplify the max() macro's type checking so that GCC
+can more easily fold the array size constants?  The below patch seems to
+work:
 
-for whatever name you decide for the max macro.
+diff --git a/include/linux/kernel.h b/include/linux/kernel.h
+index 3fd291503576..ec863726da29 100644
+--- a/include/linux/kernel.h
++++ b/include/linux/kernel.h
+@@ -782,42 +782,32 @@ ftrace_vprintk(const char *fmt, va_list ap)
+ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+ #endif /* CONFIG_TRACING */
+ 
+-/*
+- * min()/max()/clamp() macros that also do
+- * strict type-checking.. See the
+- * "unnecessary" pointer comparison.
+- */
+-#define __min(t1, t2, min1, min2, x, y) ({		\
+-	t1 min1 = (x);					\
+-	t2 min2 = (y);					\
+-	(void) (&min1 == &min2);			\
+-	min1 < min2 ? min1 : min2; })
++extern long __error_incompatible_types_in_min_macro;
++extern long __error_incompatible_types_in_max_macro;
++
++#define __min(t1, t2, x, y)						\
++	__builtin_choose_expr(__builtin_types_compatible_p(t1, t2),	\
++			      (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),	\
++			      (t1)__error_incompatible_types_in_min_macro)
+ 
+ /**
+  * min - return minimum of two values of the same or compatible types
+  * @x: first value
+  * @y: second value
+  */
+-#define min(x, y)					\
+-	__min(typeof(x), typeof(y),			\
+-	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+-	      x, y)
++#define min(x, y) __min(typeof(x), typeof(y), x, y)			\
+ 
+-#define __max(t1, t2, max1, max2, x, y) ({		\
+-	t1 max1 = (x);					\
+-	t2 max2 = (y);					\
+-	(void) (&max1 == &max2);			\
+-	max1 > max2 ? max1 : max2; })
++#define __max(t1, t2, x, y)						\
++	__builtin_choose_expr(__builtin_types_compatible_p(t1, t2),	\
++			      (t1)(x) > (t2)(y) ? (t1)(x) : (t2)(y),	\
++			      (t1)__error_incompatible_types_in_max_macro)
+ 
+ /**
+  * max - return maximum of two values of the same or compatible types
+  * @x: first value
+  * @y: second value
+  */
+-#define max(x, y)					\
+-	__max(typeof(x), typeof(y),			\
+-	      __UNIQUE_ID(max1_), __UNIQUE_ID(max2_),	\
+-	      x, y)
++#define max(x, y) __max(typeof(x), typeof(y), x, y)
+ 
+ /**
+  * min3 - return minimum of three values
+@@ -869,10 +859,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+  * @x: first value
+  * @y: second value
+  */
+-#define min_t(type, x, y)				\
+-	__min(type, type,				\
+-	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+-	      x, y)
++#define min_t(type, x, y) __min(type, type, x, y)
+ 
+ /**
+  * max_t - return maximum of two values, using the specified type
+@@ -880,10 +867,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+  * @x: first value
+  * @y: second value
+  */
+-#define max_t(type, x, y)				\
+-	__max(type, type,				\
+-	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+-	      x, y)
++#define max_t(type, x, y) __max(type, type, x, y)				\
+ 
+ /**
+  * clamp_t - return a value clamped to a given range using a given type

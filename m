@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:50542 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932177AbeCHSGh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 13:06:37 -0500
-Date: Thu, 8 Mar 2018 13:06:33 -0500
-From: Steven Rostedt <rostedt@goodmis.org>
-To: Josh Poimboeuf <jpoimboe@redhat.com>
-Cc: Kees Cook <keescook@chromium.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-kernel@vger.kernel.org, corbet@lwn.net, gustavo@embeddedor.com,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>,
+Received: from mx3-rdu2.redhat.com ([66.187.233.73]:54766 "EHLO mx1.redhat.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751984AbeCHSL5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 13:11:57 -0500
+Date: Thu, 8 Mar 2018 12:11:54 -0600
+From: Josh Poimboeuf <jpoimboe@redhat.com>
+To: Kees Cook <keescook@chromium.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        LKML <linux-kernel@vger.kernel.org>, Jonathan Corbet <corbet@lwn.net>,
+        "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
+        Steven Rostedt <rostedt@goodmis.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
         "David S. Miller" <davem@davemloft.net>,
         Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
         Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
@@ -23,37 +23,135 @@ Cc: Kees Cook <keescook@chromium.org>,
         Petr Mladek <pmladek@suse.com>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
-        linux-btrfs@vger.kernel.org, netdev@vger.kernel.org,
-        kernel-hardening@lists.openwall.com
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Network Development <netdev@vger.kernel.org>,
+        Kernel Hardening <kernel-hardening@lists.openwall.com>
 Subject: Re: [PATCH 0/3] Remove accidental VLA usage
-Message-ID: <20180308130633.0d819f44@vmware.local.home>
-In-Reply-To: <20180308150236.5tysfbm3xdouii5n@treble>
+Message-ID: <20180308181154.z2pipjykwos2mpzs@treble>
 References: <1520479847-39174-1-git-send-email-keescook@chromium.org>
-        <20180308150236.5tysfbm3xdouii5n@treble>
+ <20180308150236.5tysfbm3xdouii5n@treble>
+ <CAGXu5jL=93keuGEjNaLYHM-hc1EeaaW2SmnnW5ja=SH1jPJwGw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAGXu5jL=93keuGEjNaLYHM-hc1EeaaW2SmnnW5ja=SH1jPJwGw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 8 Mar 2018 09:02:36 -0600
-Josh Poimboeuf <jpoimboe@redhat.com> wrote:
-
-> On Wed, Mar 07, 2018 at 07:30:44PM -0800, Kees Cook wrote:
-> > This series adds SIMPLE_MAX() to be used in places where a stack array
-> > is actually fixed, but the compiler still warns about VLA usage due to
-> > confusion caused by the safety checks in the max() macro.
-> > 
-> > I'm sending these via -mm since that's where I've introduced SIMPLE_MAX(),
-> > and they should all have no operational differences.  
+On Thu, Mar 08, 2018 at 10:02:01AM -0800, Kees Cook wrote:
+> On Thu, Mar 8, 2018 at 7:02 AM, Josh Poimboeuf <jpoimboe@redhat.com> wrote:
+> > On Wed, Mar 07, 2018 at 07:30:44PM -0800, Kees Cook wrote:
+> >> This series adds SIMPLE_MAX() to be used in places where a stack array
+> >> is actually fixed, but the compiler still warns about VLA usage due to
+> >> confusion caused by the safety checks in the max() macro.
+> >>
+> >> I'm sending these via -mm since that's where I've introduced SIMPLE_MAX(),
+> >> and they should all have no operational differences.
+> >
+> > What if we instead simplify the max() macro's type checking so that GCC
+> > can more easily fold the array size constants?  The below patch seems to
+> > work:
 > 
-> What if we instead simplify the max() macro's type checking so that GCC
-> can more easily fold the array size constants?  The below patch seems to
-> work:
+> Oooooh magic! Very nice. I couldn't figure out how to do this when I
+> stared at it. Yes, let me respin. (I assume I can add your S-o-b?)
 
-Nice. Have you tried to do a allmodconfig and build on various archs?
+I'm going to be traveling for a few days, so I bequeath the patch to
+you.  You can add my SOB.  I agree with Steve's suggestion to run it
+through 0-day.
 
-Of course pushing it to kernel.org will have the zero day bot do it for
-you ;-)
+> 
+> -Kees
+> 
+> >
+> > diff --git a/include/linux/kernel.h b/include/linux/kernel.h
+> > index 3fd291503576..ec863726da29 100644
+> > --- a/include/linux/kernel.h
+> > +++ b/include/linux/kernel.h
+> > @@ -782,42 +782,32 @@ ftrace_vprintk(const char *fmt, va_list ap)
+> >  static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+> >  #endif /* CONFIG_TRACING */
+> >
+> > -/*
+> > - * min()/max()/clamp() macros that also do
+> > - * strict type-checking.. See the
+> > - * "unnecessary" pointer comparison.
+> > - */
+> > -#define __min(t1, t2, min1, min2, x, y) ({             \
+> > -       t1 min1 = (x);                                  \
+> > -       t2 min2 = (y);                                  \
+> > -       (void) (&min1 == &min2);                        \
+> > -       min1 < min2 ? min1 : min2; })
+> > +extern long __error_incompatible_types_in_min_macro;
+> > +extern long __error_incompatible_types_in_max_macro;
+> > +
+> > +#define __min(t1, t2, x, y)                                            \
+> > +       __builtin_choose_expr(__builtin_types_compatible_p(t1, t2),     \
+> > +                             (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),    \
+> > +                             (t1)__error_incompatible_types_in_min_macro)
+> >
+> >  /**
+> >   * min - return minimum of two values of the same or compatible types
+> >   * @x: first value
+> >   * @y: second value
+> >   */
+> > -#define min(x, y)                                      \
+> > -       __min(typeof(x), typeof(y),                     \
+> > -             __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),   \
+> > -             x, y)
+> > +#define min(x, y) __min(typeof(x), typeof(y), x, y)                    \
+> >
+> > -#define __max(t1, t2, max1, max2, x, y) ({             \
+> > -       t1 max1 = (x);                                  \
+> > -       t2 max2 = (y);                                  \
+> > -       (void) (&max1 == &max2);                        \
+> > -       max1 > max2 ? max1 : max2; })
+> > +#define __max(t1, t2, x, y)                                            \
+> > +       __builtin_choose_expr(__builtin_types_compatible_p(t1, t2),     \
+> > +                             (t1)(x) > (t2)(y) ? (t1)(x) : (t2)(y),    \
+> > +                             (t1)__error_incompatible_types_in_max_macro)
+> >
+> >  /**
+> >   * max - return maximum of two values of the same or compatible types
+> >   * @x: first value
+> >   * @y: second value
+> >   */
+> > -#define max(x, y)                                      \
+> > -       __max(typeof(x), typeof(y),                     \
+> > -             __UNIQUE_ID(max1_), __UNIQUE_ID(max2_),   \
+> > -             x, y)
+> > +#define max(x, y) __max(typeof(x), typeof(y), x, y)
+> >
+> >  /**
+> >   * min3 - return minimum of three values
+> > @@ -869,10 +859,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+> >   * @x: first value
+> >   * @y: second value
+> >   */
+> > -#define min_t(type, x, y)                              \
+> > -       __min(type, type,                               \
+> > -             __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),   \
+> > -             x, y)
+> > +#define min_t(type, x, y) __min(type, type, x, y)
+> >
+> >  /**
+> >   * max_t - return maximum of two values, using the specified type
+> > @@ -880,10 +867,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+> >   * @x: first value
+> >   * @y: second value
+> >   */
+> > -#define max_t(type, x, y)                              \
+> > -       __max(type, type,                               \
+> > -             __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),   \
+> > -             x, y)
+> > +#define max_t(type, x, y) __max(type, type, x, y)                              \
+> >
+> >  /**
+> >   * clamp_t - return a value clamped to a given range using a given type
+> 
+> 
+> 
+> -- 
+> Kees Cook
+> Pixel Security
 
--- Steve
-
+-- 
+Josh

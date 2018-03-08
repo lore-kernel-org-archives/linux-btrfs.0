@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f66.google.com ([74.125.83.66]:40319 "EHLO
-        mail-pg0-f66.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750867AbeCHXiB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 18:38:01 -0500
-Received: by mail-pg0-f66.google.com with SMTP id g8so2858072pgv.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Mar 2018 15:38:01 -0800 (PST)
-Date: Thu, 8 Mar 2018 15:37:58 -0800
+Received: from mail-pl0-f65.google.com ([209.85.160.65]:33546 "EHLO
+        mail-pl0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751083AbeCHVkt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 16:40:49 -0500
+Received: by mail-pl0-f65.google.com with SMTP id c11-v6so4077859plo.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Mar 2018 13:40:48 -0800 (PST)
+Date: Thu, 8 Mar 2018 13:40:45 -0800
 From: Kees Cook <keescook@chromium.org>
-To: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
-        "Tobin C. Harding" <me@tobin.cc>, Steven Rostedt <rostedt@goodmis.org>,
-        Jonathan Corbet <corbet@lwn.net>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Tobin C. Harding" <me@tobin.cc>, rostedt@goodmis.org, corbet@lwn.net,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
         "David S. Miller" <davem@davemloft.net>,
         Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
         Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
@@ -26,13 +26,10 @@ Cc: Josh Poimboeuf <jpoimboe@redhat.com>,
         Petr Mladek <pmladek@suse.com>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Network Development <netdev@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Kernel Hardening <kernel-hardening@lists.openwall.com>
-Subject: [PATCH v2] kernel.h: Skip single-eval logic on literals in
- min()/max()
-Message-ID: <20180308233758.GA22120@beast>
+        linux-btrfs@vger.kernel.org, netdev@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kernel-hardening@lists.openwall.com
+Subject: [PATCH] kernel.h: Skip single-eval logic on literals in min()/max()
+Message-ID: <20180308214045.GA6787@beast>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -56,16 +53,11 @@ Based on an earlier patch from Josh Poimboeuf.
 
 Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
-v2:
-- fix copy/paste-o max1_/max2_ (ijc)
-- clarify "compile-time" constant in comment (Rasmus)
-- clean up formatting on min_t()/max_t()
----
- include/linux/kernel.h | 50 ++++++++++++++++++++++++++++++++------------------
- 1 file changed, 32 insertions(+), 18 deletions(-)
+ include/linux/kernel.h | 42 ++++++++++++++++++++++++++++++------------
+ 1 file changed, 30 insertions(+), 12 deletions(-)
 
 diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index 3fd291503576..108cdf7bd484 100644
+index 3fd291503576..e0b39d461582 100644
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
 @@ -787,37 +787,57 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
@@ -80,8 +72,8 @@ index 3fd291503576..108cdf7bd484 100644
  	min1 < min2 ? min1 : min2; })
  
 +/*
-+ * In the case of compile-time constant values, there is no need to do
-+ * the double-evaluation protection, so the raw comparison can be made.
++ * In the case of builtin constant values, there is no need to do the
++ * double-evaluation protection, so the raw comparison can be made.
 + * This allows min()/max() to be used in stack array allocations and
 + * avoid the compiler thinking it is a dynamic value leading to an
 + * accidental VLA.
@@ -92,8 +84,8 @@ index 3fd291503576..108cdf7bd484 100644
 +			      __builtin_types_compatible_p(t1, t2),	\
 +			      (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),	\
 +			      __single_eval_min(t1, t2,			\
-+						__UNIQUE_ID(min1_),	\
-+						__UNIQUE_ID(min2_),	\
++						__UNIQUE_ID(max1_),	\
++						__UNIQUE_ID(max2_),	\
 +						x, y))
 +
  /**
@@ -136,30 +128,22 @@ index 3fd291503576..108cdf7bd484 100644
  
  /**
   * min3 - return minimum of three values
-@@ -869,10 +889,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-  * @x: first value
-  * @y: second value
+@@ -871,7 +891,6 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
   */
--#define min_t(type, x, y)				\
--	__min(type, type,				\
+ #define min_t(type, x, y)				\
+ 	__min(type, type,				\
 -	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
--	      x, y)
-+#define min_t(type, x, y)	 __min(type, type, x, y)
+ 	      x, y)
  
  /**
-  * max_t - return maximum of two values, using the specified type
-@@ -880,10 +897,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-  * @x: first value
-  * @y: second value
+@@ -882,7 +901,6 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
   */
--#define max_t(type, x, y)				\
--	__max(type, type,				\
+ #define max_t(type, x, y)				\
+ 	__max(type, type,				\
 -	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
--	      x, y)
-+#define max_t(type, x, y)	__max(type, type, x, y)
+ 	      x, y)
  
  /**
-  * clamp_t - return a value clamped to a given range using a given type
 -- 
 2.7.4
 

@@ -1,102 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:35884 "EHLO
-        james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-        by vger.kernel.org with ESMTP id S1752501AbeCaOkk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Mar 2018 10:40:40 -0400
-Date: Sat, 31 Mar 2018 10:40:38 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Andrei Borzenkov <arvidjaar@gmail.com>
-Cc: kreijack@inwind.it, Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Status of RAID5/6
-Message-ID: <20180331144020.GG2446@hungrycats.org>
-References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
- <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
- <1521662556.4312.39.camel@scientia.net>
- <20180329215011.GC2446@hungrycats.org>
- <389bce3c-92ac-390a-1719-5b9591c9b85c@libero.it>
- <20180331050345.GE2446@hungrycats.org>
- <b4d5bb24-e8d0-dc1b-94d2-4e7f9a292630@inwind.it>
- <20180331074320.GF2446@hungrycats.org>
- <b3214c3e-cf0c-4070-acbb-892a449476f8@inwind.it>
- <28a574db-0f74-b12c-ab5f-400205fd80c8@gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-        protocol="application/pgp-signature"; boundary="gm5TwAJMO0F2iVRz"
-In-Reply-To: <28a574db-0f74-b12c-ab5f-400205fd80c8@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:60568 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S934785AbeCHClC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 7 Mar 2018 21:41:02 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 82A57AB3D
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 02:41:00 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 01/20] btrfs-progs: quota: Add -W option to rescan to wait without starting rescan
+Date: Wed,  7 Mar 2018 21:40:28 -0500
+Message-Id: <20180308024047.10104-2-jeffm@suse.com>
+In-Reply-To: <20180308024047.10104-1-jeffm@suse.com>
+References: <20180308024047.10104-1-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Jeff Mahoney <jeffm@suse.com>
 
---gm5TwAJMO0F2iVRz
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+This patch adds a new -W option to wait for a rescan without starting a
+new operation.  This is useful for things like xfstests where we want
+do to do a "btrfs quota enable" and not continue until the subsequent
+rescan has finished.
 
-On Sat, Mar 31, 2018 at 11:36:50AM +0300, Andrei Borzenkov wrote:
-> 31.03.2018 11:16, Goffredo Baroncelli =D0=BF=D0=B8=D1=88=D0=B5=D1=82:
-> > On 03/31/2018 09:43 AM, Zygo Blaxell wrote:
-> >>> The key is that if a data write is interrupted, all the transaction
-> >>> is interrupted and aborted. And due to the COW nature of btrfs, the
-> >>> "old state" is restored at the next reboot.
-> >=20
-> >> This is not presently true with raid56 and btrfs.  RAID56 on btrfs uses
-> >> RMW operations which are not COW and don't provide any data integrity
-> >> guarantee.  Old data (i.e. data from very old transactions that are not
-> >> part of the currently written transaction) can be destroyed by this.
-> >=20
-> > Could you elaborate a bit ?
-> >=20
-> > Generally speaking, updating a part of a stripe require a RMW cycle, be=
-cause
-> > - you need to read all data stripe (with parity in case of a problem)
-> > - then you should write
-> > 	- the new data
-> > 	- the new parity (calculated on the basis of the first read, and the n=
-ew data)
-> >=20
-> > However the "old" data should be untouched; or you are saying that the =
-"old" data is rewritten with the same data ?=20
-> >=20
->=20
-> If old data block becomes unavailable, it can no more be reconstructed
-> because old content of "new data" and "new priority" blocks are lost.
-> Fortunately if checksum is in use it does not cause silent data
-> corruption but it effectively means data loss.
->=20
-> Writing of data belonging to unrelated transaction affects previous
-> transactions precisely due to RMW cycle. This fundamentally violates
-> btrfs claim of always having either old or new consistent state.
+In addition to documenting the new option in the man page, I've cleaned
+up the rescan entry to document the -w option a bit better.
 
-Correct.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ Documentation/btrfs-quota.asciidoc | 10 +++++++---
+ cmds-quota.c                       | 20 ++++++++++++++------
+ 2 files changed, 21 insertions(+), 9 deletions(-)
 
-To fix this, any RMW stripe update on raid56 has to be written to a
-log first.  All RMW updates must be logged because a disk failure could
-happen at any time.
+diff --git a/Documentation/btrfs-quota.asciidoc b/Documentation/btrfs-quota.asciidoc
+index 85ebf729..0b64a69b 100644
+--- a/Documentation/btrfs-quota.asciidoc
++++ b/Documentation/btrfs-quota.asciidoc
+@@ -238,15 +238,19 @@ Disable subvolume quota support for a filesystem.
+ *enable* <path>::
+ Enable subvolume quota support for a filesystem.
+ 
+-*rescan* [-s] <path>::
++*rescan* [-s|-w|-W] <path>::
+ Trash all qgroup numbers and scan the metadata again with the current config.
+ +
+ `Options`
+ +
+ -s::::
+-show status of a running rescan operation.
++Show status of a running rescan operation.
++
+ -w::::
+-wait for rescan operation to finish(can be already in progress).
++Start rescan operation and wait until it has finished before exiting.  If a rescan is already running, wait until it finishes and then exit without starting a new one.
++
++-W::::
++Wait for rescan operation to finish and then exit.  If a rescan is not already running, exit silently.
+ 
+ EXIT STATUS
+ -----------
+diff --git a/cmds-quota.c b/cmds-quota.c
+index 745889d1..7f933495 100644
+--- a/cmds-quota.c
++++ b/cmds-quota.c
+@@ -120,14 +120,20 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	int wait_for_completion = 0;
+ 
+ 	while (1) {
+-		int c = getopt(argc, argv, "sw");
++		int c = getopt(argc, argv, "swW");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+ 		case 's':
+ 			ioctlnum = BTRFS_IOC_QUOTA_RESCAN_STATUS;
+ 			break;
++		case 'W':
++			ioctlnum = 0;
++			wait_for_completion = 1;
++			break;
+ 		case 'w':
++			/* Reset it in case the user did both -W and -w */
++			ioctlnum = BTRFS_IOC_QUOTA_RESCAN;
+ 			wait_for_completion = 1;
+ 			break;
+ 		default:
+@@ -135,8 +141,8 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		}
+ 	}
+ 
+-	if (ioctlnum != BTRFS_IOC_QUOTA_RESCAN && wait_for_completion) {
+-		error("switch -w cannot be used with -s");
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS && wait_for_completion) {
++		error("switches -w/-W cannot be used with -s");
+ 		return 1;
+ 	}
+ 
+@@ -150,8 +156,10 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 	if (fd < 0)
+ 		return 1;
+ 
+-	ret = ioctl(fd, ioctlnum, &args);
+-	e = errno;
++	if (ioctlnum) {
++		ret = ioctl(fd, ioctlnum, &args);
++		e = errno;
++	}
+ 
+ 	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN_STATUS) {
+ 		close_file_or_dir(fd, dirstream);
+@@ -167,7 +175,7 @@ static int cmd_quota_rescan(int argc, char **argv)
+ 		return 0;
+ 	}
+ 
+-	if (ret == 0) {
++	if (ioctlnum == BTRFS_IOC_QUOTA_RESCAN && ret == 0) {
+ 		printf("quota rescan started\n");
+ 		fflush(stdout);
+ 	} else if (ret < 0 && (!wait_for_completion || e != EINPROGRESS)) {
+-- 
+2.12.3
 
-Full stripe writes don't need to be logged because all the data in the
-stripe belongs to the same transaction, so if a disk fails the entire
-stripe is either committed or it is not.
-
-One way to avoid the logging is to change the btrfs allocation parameters
-so that the filesystem doesn't allocate data in RAID stripes that are
-already occupied by data from older transactions.  This is similar to
-what 'ssd_spread' does, although the ssd_spread option wasn't designed
-for this and won't be effective on large arrays.  This avoids modifying
-stripes that contain old committed data, but it also means the free space
-on the filesystem will become heavily fragmented over time.  Users will
-have to run balance *much* more often to defragment the free space.
-
-
---gm5TwAJMO0F2iVRz
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iF0EABECAB0WIQSnOVjcfGcC/+em7H2B+YsaVrMbnAUCWr+dzwAKCRCB+YsaVrMb
-nMcqAKC2uxAt0sNboNWdLe87b/bhlYMEFgCdFVGbcPurHOR/haZhJN1t/qsiVXM=
-=FgBT
------END PGP SIGNATURE-----
-
---gm5TwAJMO0F2iVRz--

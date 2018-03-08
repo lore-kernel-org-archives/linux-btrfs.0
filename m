@@ -1,83 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:38794 "EHLO
-        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751325AbeCJATn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 19:19:43 -0500
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: linux-kernel@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, stable@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-        Jan Kara <jack@suse.cz>, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 4.4 12/36] btrfs: Dont clear SGID when inheriting ACLs
-Date: Fri,  9 Mar 2018 16:18:28 -0800
-Message-Id: <20180310001807.896983748@linuxfoundation.org>
-In-Reply-To: <20180310001807.213987241@linuxfoundation.org>
-References: <20180310001807.213987241@linuxfoundation.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:56753 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751622AbeCHOf1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 09:35:27 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 99C13AE19
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 14:35:26 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 00/22] Misc cleanups
+Date: Thu,  8 Mar 2018 15:33:06 +0100
+Message-Id: <cover.1520518876.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-4.4-stable review patch.  If anyone has any objections, please let me know.
+Cleanups that have piled over the time. The "very important" unused
+argument removals, some renaming and simplifications.
 
-------------------
+The effects on stack consumption are not huge, but still measurable:
 
-From: Jan Kara <jack@suse.cz>
+ctree.c:tree_mod_log_insert_key               +16 (48 -> 64)
+ctree.c:tree_mod_log_insert_move               -8 (104 -> 96)
+ctree.c:insert_ptr.isra.24                     -8 (80 -> 72)
+ctree.c:del_ptr.isra.25                        -8 (96 -> 88)
+ctree.c:btrfs_old_root_level                   -8 (32 -> 24)
+ctree.c:btrfs_set_item_key_safe                -8 (88 -> 80)
+extent_io.c:submit_extent_page                -40 (112 -> 72)
 
-commit b7f8a09f8097db776b8d160862540e4fc1f51296 upstream.
+David Sterba (22):
+  btrfs: assume that bio_ret is always valid in submit_extent_page
+  btrfs: assume that prev_em_start is always valid in __do_readpage
+  btrfs: remove redundant variable in __do_readpage
+  btrfs: cleanup merging conditions in submit_extent_page
+  btrfs: document more parameters of submit_extent_page
+  btrfs: drop fs_info parameter from tree_mod_log_set_node_key
+  btrfs: drop fs_info parameter from tree_mod_log_insert_move
+  btrfs: drop fs_info parameter from tree_mod_log_insert_key
+  btrfs: drop fs_info parameter from tree_mod_log_free_eb
+  btrfs: drop fs_info parameter from tree_mod_log_free_eb
+  btrfs: drop unused fs_info parameter from tree_mod_log_eb_move
+  btrfs: embed tree_mod_move structure to tree_mod_elem
+  btrfs: drop fs_info parameter from __tree_mod_log_oldest_root
+  btrfs: remove trivial locking wrappers of tree mod log
+  btrfs: kill trivial wrapper tree_mod_log_eb_move
+  btrfs: kill tree_mod_log_set_node_key helper
+  btrfs: kill tree_mod_log_set_root_pointer helper
+  btrfs: move allocation after simple tests in tree_mod_log_insert_key
+  btrfs: separate types for submit_bio_start and submit_bio_done
+  btrfs: remove unused parameters from extent_submit_bio_start_t
+  btrfs: remove unused parameters from extent_submit_bio_done_t
+  btrfs: rename submit callbacks and drop double underscores
 
-When new directory 'DIR1' is created in a directory 'DIR0' with SGID bit
-set, DIR1 is expected to have SGID bit set (and owning group equal to
-the owning group of 'DIR0'). However when 'DIR0' also has some default
-ACLs that 'DIR1' inherits, setting these ACLs will result in SGID bit on
-'DIR1' to get cleared if user is not member of the owning group.
+ fs/btrfs/ctree.c     | 234 ++++++++++++++++++++-------------------------------
+ fs/btrfs/disk-io.c   |  24 +++---
+ fs/btrfs/disk-io.h   |   4 +-
+ fs/btrfs/extent_io.c |  61 ++++++++------
+ fs/btrfs/extent_io.h |   7 ++
+ fs/btrfs/inode.c     |  30 +++----
+ 6 files changed, 158 insertions(+), 202 deletions(-)
 
-Fix the problem by moving posix_acl_update_mode() out of
-__btrfs_set_acl() into btrfs_set_acl(). That way the function will not be
-called when inheriting ACLs which is what we want as it prevents SGID
-bit clearing and the mode has been properly set by posix_acl_create()
-anyway.
-
-Fixes: 073931017b49d9458aa351605b43a7e34598caef
-CC: stable@vger.kernel.org
-CC: linux-btrfs@vger.kernel.org
-CC: David Sterba <dsterba@suse.com>
-Signed-off-by: Jan Kara <jack@suse.cz>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- fs/btrfs/acl.c |   13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
-
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -82,12 +82,6 @@ static int __btrfs_set_acl(struct btrfs_
- 	switch (type) {
- 	case ACL_TYPE_ACCESS:
- 		name = POSIX_ACL_XATTR_ACCESS;
--		if (acl) {
--			ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
--			if (ret)
--				return ret;
--		}
--		ret = 0;
- 		break;
- 	case ACL_TYPE_DEFAULT:
- 		if (!S_ISDIR(inode->i_mode))
-@@ -123,6 +117,13 @@ out:
- 
- int btrfs_set_acl(struct inode *inode, struct posix_acl *acl, int type)
- {
-+	int ret;
-+
-+	if (type == ACL_TYPE_ACCESS && acl) {
-+		ret = posix_acl_update_mode(inode, &inode->i_mode, &acl);
-+		if (ret)
-+			return ret;
-+	}
- 	return __btrfs_set_acl(NULL, inode, acl, type);
- }
- 
-
+-- 
+2.16.2
 

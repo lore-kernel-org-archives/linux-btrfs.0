@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3-rdu2.redhat.com ([66.187.233.73]:54766 "EHLO mx1.redhat.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1751984AbeCHSL5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 13:11:57 -0500
-Date: Thu, 8 Mar 2018 12:11:54 -0600
-From: Josh Poimboeuf <jpoimboe@redhat.com>
-To: Kees Cook <keescook@chromium.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>, Jonathan Corbet <corbet@lwn.net>,
-        "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
-        Steven Rostedt <rostedt@goodmis.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+Received: from mail-lf0-f65.google.com ([209.85.215.65]:37050 "EHLO
+        mail-lf0-f65.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932221AbeCHT5V (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 14:57:21 -0500
+Received: by mail-lf0-f65.google.com with SMTP id y19-v6so10039965lfd.4
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Mar 2018 11:57:21 -0800 (PST)
+Subject: Re: [PATCH 0/3] Remove accidental VLA usage
+To: Josh Poimboeuf <jpoimboe@redhat.com>, Kees Cook <keescook@chromium.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org,
+        corbet@lwn.net, gustavo@embeddedor.com, rostedt@goodmis.org,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
         "David S. Miller" <davem@davemloft.net>,
         Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
         Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
@@ -23,135 +23,56 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         Petr Mladek <pmladek@suse.com>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Network Development <netdev@vger.kernel.org>,
-        Kernel Hardening <kernel-hardening@lists.openwall.com>
-Subject: Re: [PATCH 0/3] Remove accidental VLA usage
-Message-ID: <20180308181154.z2pipjykwos2mpzs@treble>
+        linux-btrfs@vger.kernel.org, netdev@vger.kernel.org,
+        kernel-hardening@lists.openwall.com
 References: <1520479847-39174-1-git-send-email-keescook@chromium.org>
  <20180308150236.5tysfbm3xdouii5n@treble>
- <CAGXu5jL=93keuGEjNaLYHM-hc1EeaaW2SmnnW5ja=SH1jPJwGw@mail.gmail.com>
+From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Message-ID: <78428dec-270e-5d74-0160-83feb5c0ff02@rasmusvillemoes.dk>
+Date: Thu, 8 Mar 2018 20:57:16 +0100
 MIME-Version: 1.0
+In-Reply-To: <20180308150236.5tysfbm3xdouii5n@treble>
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAGXu5jL=93keuGEjNaLYHM-hc1EeaaW2SmnnW5ja=SH1jPJwGw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 08, 2018 at 10:02:01AM -0800, Kees Cook wrote:
-> On Thu, Mar 8, 2018 at 7:02 AM, Josh Poimboeuf <jpoimboe@redhat.com> wrote:
-> > On Wed, Mar 07, 2018 at 07:30:44PM -0800, Kees Cook wrote:
-> >> This series adds SIMPLE_MAX() to be used in places where a stack array
-> >> is actually fixed, but the compiler still warns about VLA usage due to
-> >> confusion caused by the safety checks in the max() macro.
-> >>
-> >> I'm sending these via -mm since that's where I've introduced SIMPLE_MAX(),
-> >> and they should all have no operational differences.
-> >
-> > What if we instead simplify the max() macro's type checking so that GCC
-> > can more easily fold the array size constants?  The below patch seems to
-> > work:
+On 2018-03-08 16:02, Josh Poimboeuf wrote:
+> On Wed, Mar 07, 2018 at 07:30:44PM -0800, Kees Cook wrote:
+>> This series adds SIMPLE_MAX() to be used in places where a stack array
+>> is actually fixed, but the compiler still warns about VLA usage due to
+>> confusion caused by the safety checks in the max() macro.
+>>
+>> I'm sending these via -mm since that's where I've introduced SIMPLE_MAX(),
+>> and they should all have no operational differences.
 > 
-> Oooooh magic! Very nice. I couldn't figure out how to do this when I
-> stared at it. Yes, let me respin. (I assume I can add your S-o-b?)
+> What if we instead simplify the max() macro's type checking so that GCC
+> can more easily fold the array size constants?  The below patch seems to
+> work:
+> 
 
-I'm going to be traveling for a few days, so I bequeath the patch to
-you.  You can add my SOB.  I agree with Steve's suggestion to run it
-through 0-day.
+> +extern long __error_incompatible_types_in_min_macro;
+> +extern long __error_incompatible_types_in_max_macro;
+> +
+> +#define __min(t1, t2, x, y)						\
+> +	__builtin_choose_expr(__builtin_types_compatible_p(t1, t2),	\
+> +			      (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),	\
+> +			      (t1)__error_incompatible_types_in_min_macro)
+>  
+>  /**
+>   * min - return minimum of two values of the same or compatible types
+>   * @x: first value
+>   * @y: second value
+>   */
+> -#define min(x, y)					\
+> -	__min(typeof(x), typeof(y),			\
+> -	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+> -	      x, y)
+> +#define min(x, y) __min(typeof(x), typeof(y), x, y)			\
+>  
 
-> 
-> -Kees
-> 
-> >
-> > diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-> > index 3fd291503576..ec863726da29 100644
-> > --- a/include/linux/kernel.h
-> > +++ b/include/linux/kernel.h
-> > @@ -782,42 +782,32 @@ ftrace_vprintk(const char *fmt, va_list ap)
-> >  static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-> >  #endif /* CONFIG_TRACING */
-> >
-> > -/*
-> > - * min()/max()/clamp() macros that also do
-> > - * strict type-checking.. See the
-> > - * "unnecessary" pointer comparison.
-> > - */
-> > -#define __min(t1, t2, min1, min2, x, y) ({             \
-> > -       t1 min1 = (x);                                  \
-> > -       t2 min2 = (y);                                  \
-> > -       (void) (&min1 == &min2);                        \
-> > -       min1 < min2 ? min1 : min2; })
-> > +extern long __error_incompatible_types_in_min_macro;
-> > +extern long __error_incompatible_types_in_max_macro;
-> > +
-> > +#define __min(t1, t2, x, y)                                            \
-> > +       __builtin_choose_expr(__builtin_types_compatible_p(t1, t2),     \
-> > +                             (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),    \
-> > +                             (t1)__error_incompatible_types_in_min_macro)
-> >
-> >  /**
-> >   * min - return minimum of two values of the same or compatible types
-> >   * @x: first value
-> >   * @y: second value
-> >   */
-> > -#define min(x, y)                                      \
-> > -       __min(typeof(x), typeof(y),                     \
-> > -             __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),   \
-> > -             x, y)
-> > +#define min(x, y) __min(typeof(x), typeof(y), x, y)                    \
-> >
-> > -#define __max(t1, t2, max1, max2, x, y) ({             \
-> > -       t1 max1 = (x);                                  \
-> > -       t2 max2 = (y);                                  \
-> > -       (void) (&max1 == &max2);                        \
-> > -       max1 > max2 ? max1 : max2; })
-> > +#define __max(t1, t2, x, y)                                            \
-> > +       __builtin_choose_expr(__builtin_types_compatible_p(t1, t2),     \
-> > +                             (t1)(x) > (t2)(y) ? (t1)(x) : (t2)(y),    \
-> > +                             (t1)__error_incompatible_types_in_max_macro)
-> >
-> >  /**
-> >   * max - return maximum of two values of the same or compatible types
-> >   * @x: first value
-> >   * @y: second value
-> >   */
-> > -#define max(x, y)                                      \
-> > -       __max(typeof(x), typeof(y),                     \
-> > -             __UNIQUE_ID(max1_), __UNIQUE_ID(max2_),   \
-> > -             x, y)
-> > +#define max(x, y) __max(typeof(x), typeof(y), x, y)
-> >
-> >  /**
-> >   * min3 - return minimum of three values
-> > @@ -869,10 +859,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-> >   * @x: first value
-> >   * @y: second value
-> >   */
-> > -#define min_t(type, x, y)                              \
-> > -       __min(type, type,                               \
-> > -             __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),   \
-> > -             x, y)
-> > +#define min_t(type, x, y) __min(type, type, x, y)
-> >
-> >  /**
-> >   * max_t - return maximum of two values, using the specified type
-> > @@ -880,10 +867,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-> >   * @x: first value
-> >   * @y: second value
-> >   */
-> > -#define max_t(type, x, y)                              \
-> > -       __max(type, type,                               \
-> > -             __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),   \
-> > -             x, y)
-> > +#define max_t(type, x, y) __max(type, type, x, y)                              \
-> >
-> >  /**
-> >   * clamp_t - return a value clamped to a given range using a given type
-> 
-> 
-> 
-> -- 
-> Kees Cook
-> Pixel Security
+But this introduces the the-chosen-one-of-x-and-y-gets-evaluated-twice
+problem. Maybe we don't care? But until we get a
+__builtin_assert_this_has_no_side_effects() I think that's a little
+dangerous.
 
--- 
-Josh
+Rasmus

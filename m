@@ -1,72 +1,225 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56816 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56820 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755323AbeCHOf5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 09:35:57 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 242C7AE19
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 14:35:56 +0000 (UTC)
+        id S1755179AbeCHOf7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 8 Mar 2018 09:35:59 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4EBF7AE19
+        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 14:35:58 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 13/22] btrfs: drop fs_info parameter from __tree_mod_log_oldest_root
-Date: Thu,  8 Mar 2018 15:33:36 +0100
-Message-Id: <2aa1d1598b9b99d5c4104c7e1aa56d5093e39054.1520518876.git.dsterba@suse.com>
+Subject: [PATCH 14/22] btrfs: remove trivial locking wrappers of tree mod log
+Date: Thu,  8 Mar 2018 15:33:38 +0100
+Message-Id: <4888ae25fe8e1f1f87f3187dc199eed4799a3a99.1520518876.git.dsterba@suse.com>
 In-Reply-To: <cover.1520518876.git.dsterba@suse.com>
 References: <cover.1520518876.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's provided by the extent_buffer.
+The wrappers are trivial and do bring any extra value on top of the
+plain locking primitives.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.c | 11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.c | 58 +++++++++++++++++++-------------------------------------
+ 1 file changed, 19 insertions(+), 39 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e53af58697db..716c140798c3 100644
+index 716c140798c3..7d39ef6ce20a 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1195,9 +1195,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
-  * returns the logical address of the oldest predecessor of the given root.
-  * entries older than time_seq are ignored.
+@@ -330,26 +330,6 @@ struct tree_mod_elem {
+ 	struct tree_mod_root old_root;
+ };
+ 
+-static inline void tree_mod_log_read_lock(struct btrfs_fs_info *fs_info)
+-{
+-	read_lock(&fs_info->tree_mod_log_lock);
+-}
+-
+-static inline void tree_mod_log_read_unlock(struct btrfs_fs_info *fs_info)
+-{
+-	read_unlock(&fs_info->tree_mod_log_lock);
+-}
+-
+-static inline void tree_mod_log_write_lock(struct btrfs_fs_info *fs_info)
+-{
+-	write_lock(&fs_info->tree_mod_log_lock);
+-}
+-
+-static inline void tree_mod_log_write_unlock(struct btrfs_fs_info *fs_info)
+-{
+-	write_unlock(&fs_info->tree_mod_log_lock);
+-}
+-
+ /*
+  * Pull a new tree mod seq number for our operation.
   */
--static struct tree_mod_elem *
--__tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
--			   struct extent_buffer *eb_root, u64 time_seq)
-+static struct tree_mod_elem *__tree_mod_log_oldest_root(
-+		struct extent_buffer *eb_root, u64 time_seq)
+@@ -369,14 +349,14 @@ static inline u64 btrfs_inc_tree_mod_seq(struct btrfs_fs_info *fs_info)
+ u64 btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ 			   struct seq_list *elem)
  {
- 	struct tree_mod_elem *tm;
- 	struct tree_mod_elem *found = NULL;
-@@ -1214,7 +1213,7 @@ __tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
- 	 * first operation that's logged for this root.
+-	tree_mod_log_write_lock(fs_info);
++	write_lock(&fs_info->tree_mod_log_lock);
+ 	spin_lock(&fs_info->tree_mod_seq_lock);
+ 	if (!elem->seq) {
+ 		elem->seq = btrfs_inc_tree_mod_seq(fs_info);
+ 		list_add_tail(&elem->list, &fs_info->tree_mod_seq_list);
+ 	}
+ 	spin_unlock(&fs_info->tree_mod_seq_lock);
+-	tree_mod_log_write_unlock(fs_info);
++	write_unlock(&fs_info->tree_mod_log_lock);
+ 
+ 	return elem->seq;
+ }
+@@ -418,7 +398,7 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ 	 * anything that's lower than the lowest existing (read: blocked)
+ 	 * sequence number can be removed from the tree.
  	 */
- 	while (1) {
--		tm = tree_mod_log_search_oldest(fs_info, root_logical,
-+		tm = tree_mod_log_search_oldest(eb_root->fs_info, root_logical,
- 						time_seq);
- 		if (!looped && !tm)
- 			return NULL;
-@@ -1404,7 +1403,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	u64 logical;
+-	tree_mod_log_write_lock(fs_info);
++	write_lock(&fs_info->tree_mod_log_lock);
+ 	tm_root = &fs_info->tree_mod_log;
+ 	for (node = rb_first(tm_root); node; node = next) {
+ 		next = rb_next(node);
+@@ -428,7 +408,7 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ 		rb_erase(node, tm_root);
+ 		kfree(tm);
+ 	}
+-	tree_mod_log_write_unlock(fs_info);
++	write_unlock(&fs_info->tree_mod_log_lock);
+ }
  
- 	eb_root = btrfs_read_lock_root_node(root);
--	tm = __tree_mod_log_oldest_root(fs_info, eb_root, time_seq);
-+	tm = __tree_mod_log_oldest_root(eb_root, time_seq);
- 	if (!tm)
- 		return eb_root;
+ /*
+@@ -439,7 +419,7 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
+  * for root replace operations, or the logical address of the affected
+  * block for all other operations.
+  *
+- * Note: must be called with write lock (tree_mod_log_write_lock).
++ * Note: must be called with write lock for fs_info_;;tree_mod_log_lock.
+  */
+ static noinline int
+ __tree_mod_log_insert(struct btrfs_fs_info *fs_info, struct tree_mod_elem *tm)
+@@ -477,7 +457,7 @@ __tree_mod_log_insert(struct btrfs_fs_info *fs_info, struct tree_mod_elem *tm)
+  * Determines if logging can be omitted. Returns 1 if it can. Otherwise, it
+  * returns zero with the tree_mod_log_lock acquired. The caller must hold
+  * this until all tree mod log insertions are recorded in the rb tree and then
+- * call tree_mod_log_write_unlock() to release.
++ * write unlock fs_info::tree_mod_log_lock.
+  */
+ static inline int tree_mod_dont_log(struct btrfs_fs_info *fs_info,
+ 				    struct extent_buffer *eb) {
+@@ -487,9 +467,9 @@ static inline int tree_mod_dont_log(struct btrfs_fs_info *fs_info,
+ 	if (eb && btrfs_header_level(eb) == 0)
+ 		return 1;
  
-@@ -1468,7 +1467,7 @@ int btrfs_old_root_level(struct btrfs_root *root, u64 time_seq)
- 	int level;
- 	struct extent_buffer *eb_root = btrfs_root_node(root);
+-	tree_mod_log_write_lock(fs_info);
++	write_lock(&fs_info->tree_mod_log_lock);
+ 	if (list_empty(&(fs_info)->tree_mod_seq_list)) {
+-		tree_mod_log_write_unlock(fs_info);
++		write_unlock(&fs_info->tree_mod_log_lock);
+ 		return 1;
+ 	}
  
--	tm = __tree_mod_log_oldest_root(root->fs_info, eb_root, time_seq);
-+	tm = __tree_mod_log_oldest_root(eb_root, time_seq);
- 	if (tm && tm->op == MOD_LOG_ROOT_REPLACE) {
- 		level = tm->old_root.level;
- 	} else {
+@@ -551,7 +531,7 @@ static noinline int tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
+ 	}
+ 
+ 	ret = __tree_mod_log_insert(eb->fs_info, tm);
+-	tree_mod_log_write_unlock(eb->fs_info);
++	write_unlock(&eb->fs_info->tree_mod_log_lock);
+ 	if (ret)
+ 		kfree(tm);
+ 
+@@ -613,7 +593,7 @@ static noinline int tree_mod_log_insert_move(struct extent_buffer *eb,
+ 	ret = __tree_mod_log_insert(eb->fs_info, tm);
+ 	if (ret)
+ 		goto free_tms;
+-	tree_mod_log_write_unlock(eb->fs_info);
++	write_unlock(&eb->fs_info->tree_mod_log_lock);
+ 	kfree(tm_list);
+ 
+ 	return 0;
+@@ -624,7 +604,7 @@ static noinline int tree_mod_log_insert_move(struct extent_buffer *eb,
+ 		kfree(tm_list[i]);
+ 	}
+ 	if (locked)
+-		tree_mod_log_write_unlock(eb->fs_info);
++		write_unlock(&eb->fs_info->tree_mod_log_lock);
+ 	kfree(tm_list);
+ 	kfree(tm);
+ 
+@@ -703,7 +683,7 @@ static noinline int tree_mod_log_insert_root(struct extent_buffer *old_root,
+ 	if (!ret)
+ 		ret = __tree_mod_log_insert(fs_info, tm);
+ 
+-	tree_mod_log_write_unlock(fs_info);
++	write_unlock(&fs_info->tree_mod_log_lock);
+ 	if (ret)
+ 		goto free_tms;
+ 	kfree(tm_list);
+@@ -730,7 +710,7 @@ __tree_mod_log_search(struct btrfs_fs_info *fs_info, u64 start, u64 min_seq,
+ 	struct tree_mod_elem *cur = NULL;
+ 	struct tree_mod_elem *found = NULL;
+ 
+-	tree_mod_log_read_lock(fs_info);
++	read_lock(&fs_info->tree_mod_log_lock);
+ 	tm_root = &fs_info->tree_mod_log;
+ 	node = tm_root->rb_node;
+ 	while (node) {
+@@ -758,7 +738,7 @@ __tree_mod_log_search(struct btrfs_fs_info *fs_info, u64 start, u64 min_seq,
+ 			break;
+ 		}
+ 	}
+-	tree_mod_log_read_unlock(fs_info);
++	read_unlock(&fs_info->tree_mod_log_lock);
+ 
+ 	return found;
+ }
+@@ -839,7 +819,7 @@ tree_mod_log_eb_copy(struct btrfs_fs_info *fs_info, struct extent_buffer *dst,
+ 			goto free_tms;
+ 	}
+ 
+-	tree_mod_log_write_unlock(fs_info);
++	write_unlock(&fs_info->tree_mod_log_lock);
+ 	kfree(tm_list);
+ 
+ 	return 0;
+@@ -851,7 +831,7 @@ tree_mod_log_eb_copy(struct btrfs_fs_info *fs_info, struct extent_buffer *dst,
+ 		kfree(tm_list[i]);
+ 	}
+ 	if (locked)
+-		tree_mod_log_write_unlock(fs_info);
++		write_unlock(&fs_info->tree_mod_log_lock);
+ 	kfree(tm_list);
+ 
+ 	return ret;
+@@ -906,7 +886,7 @@ static noinline int tree_mod_log_free_eb(struct extent_buffer *eb)
+ 		goto free_tms;
+ 
+ 	ret = __tree_mod_log_free_eb(eb->fs_info, tm_list, nritems);
+-	tree_mod_log_write_unlock(eb->fs_info);
++	write_unlock(&eb->fs_info->tree_mod_log_lock);
+ 	if (ret)
+ 		goto free_tms;
+ 	kfree(tm_list);
+@@ -1262,7 +1242,7 @@ __tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ 	unsigned long p_size = sizeof(struct btrfs_key_ptr);
+ 
+ 	n = btrfs_header_nritems(eb);
+-	tree_mod_log_read_lock(fs_info);
++	read_lock(&fs_info->tree_mod_log_lock);
+ 	while (tm && tm->seq >= time_seq) {
+ 		/*
+ 		 * all the operations are recorded with the operator used for
+@@ -1317,7 +1297,7 @@ __tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
+ 		if (tm->logical != first_tm->logical)
+ 			break;
+ 	}
+-	tree_mod_log_read_unlock(fs_info);
++	read_unlock(&fs_info->tree_mod_log_lock);
+ 	btrfs_set_header_nritems(eb, n);
+ }
+ 
 -- 
 2.16.2
 

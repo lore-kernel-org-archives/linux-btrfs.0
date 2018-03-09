@@ -1,43 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pl0-f48.google.com ([209.85.160.48]:46734 "EHLO
-        mail-pl0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751096AbeCIQDC (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 11:03:02 -0500
-Received: by mail-pl0-f48.google.com with SMTP id y8-v6so5435695pll.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Mar 2018 08:03:02 -0800 (PST)
+Received: from mx2.suse.de ([195.135.220.15]:40976 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751182AbeCIQZq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Mar 2018 11:25:46 -0500
+Date: Fri, 9 Mar 2018 17:23:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: dump-tree: add degraded option
+Message-ID: <20180309162324.GY23693@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20180222140011.32713-1-anand.jain@oracle.com>
 MIME-Version: 1.0
-From: Paul Richards <paul.richards@gmail.com>
-Date: Fri, 9 Mar 2018 16:02:59 +0000
-Message-ID: <CAMoswehA9P+JEoLmrMcWDys8t_pgNQxjvSGsk5XHhshFo+=e-Q@mail.gmail.com>
-Subject: How to replace a failed drive in btrfs RAID 1 filesystem
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20180222140011.32713-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello there,
+On Thu, Feb 22, 2018 at 10:00:11PM +0800, Anand Jain wrote:
+> btrfs inspect dump-tree cli picks the disk with the largest generation
+> to read the root tree, even when all the devices were not provided in
+> the cli. But in 2 disks RAID1 you may need to know what's in the disks
+> individually, so this option -x | --degraded indicates to use only the
+> given disk to dump.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  cmds-inspect-dump-tree.c | 7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
+> 
+> diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+> index df44bb635c9c..587b6081df0c 100644
+> --- a/cmds-inspect-dump-tree.c
+> +++ b/cmds-inspect-dump-tree.c
+> @@ -198,6 +198,7 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+>  	"-u|--uuid              print only the uuid tree",
+>  	"-b|--block <block_num> print info from the specified block only",
+>  	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
+> +	"-x|--degraded          For RAID1, use the disk in the arg, do not scan for disks",
 
-I have a 3 disk btrfs RAID 1 filesystem, with a single failed drive.
-Before I attempt any recovery I’d like to ask what is the recommended
-approach?  (The wiki docs suggest consulting here before attempting
-recovery[1].)
+I find this confusing, degraded for kernel means 'mount with anything
+you have' while here it means 'use exactly that disk'.
 
-The system is powered down currently and a replacement drive is being
-delivered soon.
-
-Should I use “replace”, or “add” and “delete”?
-
-Once replaced should I rebalance and/or scrub?
-
-I believe that the recovery may involve mounting in degraded mode.  If
-I do this, how do I later get out of degraded mode, or if it’s
-automatic how do i determine when I’m out of degraded mode?
-
-
-The system is running Ubuntu 16.04 LTS with kernel 4.4.0.
-
-
-
-1: “it may be helpful to consult the mailing list of irc channel
-before attempting recovery”. -
-https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
+Something that would reflect the "don't scan" would be IMHO better, but
+otherwise the goal of the patch makes sense.

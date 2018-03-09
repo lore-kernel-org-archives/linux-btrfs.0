@@ -1,14 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pg0-f67.google.com ([74.125.83.67]:40780 "EHLO
-        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932186AbeCIUFj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 15:05:39 -0500
-Received: by mail-pg0-f67.google.com with SMTP id g8so3950944pgv.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Mar 2018 12:05:39 -0800 (PST)
-Date: Fri, 9 Mar 2018 12:05:36 -0800
-From: Kees Cook <keescook@chromium.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, Josh Poimboeuf <jpoimboe@redhat.com>,
+Received: from mail-it0-f51.google.com ([209.85.214.51]:50391 "EHLO
+        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932661AbeCIVKc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 16:10:32 -0500
+MIME-Version: 1.0
+In-Reply-To: <20180309200536.GA5670@beast>
+References: <20180309200536.GA5670@beast>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Fri, 9 Mar 2018 13:10:30 -0800
+Message-ID: <CA+55aFy82Drgu2xm1GWaDz2Jyj5QBx3dW4AatXzmCx-b1YET5Q@mail.gmail.com>
+Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
+To: Kees Cook <keescook@chromium.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
         "Tobin C. Harding" <me@tobin.cc>, Steven Rostedt <rostedt@goodmis.org>,
@@ -29,140 +34,78 @@ Cc: linux-kernel@vger.kernel.org, Josh Poimboeuf <jpoimboe@redhat.com>,
         Linux Btrfs <linux-btrfs@vger.kernel.org>,
         Network Development <netdev@vger.kernel.org>,
         Kernel Hardening <kernel-hardening@lists.openwall.com>
-Subject: [PATCH v3] kernel.h: Skip single-eval logic on literals in
- min()/max()
-Message-ID: <20180309200536.GA5670@beast>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When max() is used in stack array size calculations from literal values
-(e.g. "char foo[max(sizeof(struct1), sizeof(struct2))]", the compiler
-thinks this is a dynamic calculation due to the single-eval logic, which
-is not needed in the literal case. This change removes several accidental
-stack VLAs from an x86 allmodconfig build:
+On Fri, Mar 9, 2018 at 12:05 PM, Kees Cook <keescook@chromium.org> wrote:
+> When max() is used in stack array size calculations from literal values
+> (e.g. "char foo[max(sizeof(struct1), sizeof(struct2))]", the compiler
+> thinks this is a dynamic calculation due to the single-eval logic, which
+> is not needed in the literal case. This change removes several accidental
+> stack VLAs from an x86 allmodconfig build:
 
-$ diff -u before.txt after.txt | grep ^-
--drivers/input/touchscreen/cyttsp4_core.c:871:2: warning: ISO C90 forbids variable length array ‘ids’ [-Wvla]
--fs/btrfs/tree-checker.c:344:4: warning: ISO C90 forbids variable length array ‘namebuf’ [-Wvla]
--lib/vsprintf.c:747:2: warning: ISO C90 forbids variable length array ‘sym’ [-Wvla]
--net/ipv4/proc.c:403:2: warning: ISO C90 forbids variable length array ‘buff’ [-Wvla]
--net/ipv6/proc.c:198:2: warning: ISO C90 forbids variable length array ‘buff’ [-Wvla]
--net/ipv6/proc.c:218:2: warning: ISO C90 forbids variable length array ‘buff64’ [-Wvla]
+Ok, looks good.
 
-Based on an earlier patch from Josh Poimboeuf.
+I just have a couple of questions about applying it.
 
-Signed-off-by: Kees Cook <keescook@chromium.org>
----
-v3:
-- drop __builtin_types_compatible_p() (Rasmus, Linus)
-v2:
-- fix copy/paste-o max1_/max2_ (ijc)
-- clarify "compile-time" constant in comment (Rasmus)
-- clean up formatting on min_t()/max_t()
----
- include/linux/kernel.h | 48 ++++++++++++++++++++++++++++++------------------
- 1 file changed, 30 insertions(+), 18 deletions(-)
+In particular, if this will help people working on getting rid of
+VLA's in the short term, I can apply it directly. But if people who
+are looking at it (anybody else than Kees?) don't much care, then this
+might be a 4.17 thing or at least "random -mm queue"?
 
-diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index 3fd291503576..a0fca4deb3ab 100644
---- a/include/linux/kernel.h
-+++ b/include/linux/kernel.h
-@@ -787,37 +787,55 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-  * strict type-checking.. See the
-  * "unnecessary" pointer comparison.
-  */
--#define __min(t1, t2, min1, min2, x, y) ({		\
-+#define __single_eval_min(t1, t2, min1, min2, x, y) ({	\
- 	t1 min1 = (x);					\
- 	t2 min2 = (y);					\
- 	(void) (&min1 == &min2);			\
- 	min1 < min2 ? min1 : min2; })
- 
-+/*
-+ * In the case of compile-time constant values, there is no need to do
-+ * the double-evaluation protection, so the raw comparison can be made.
-+ * This allows min()/max() to be used in stack array allocations and
-+ * avoid the compiler thinking it is a dynamic value leading to an
-+ * accidental VLA.
-+ */
-+#define __min(t1, t2, x, y)						\
-+	__builtin_choose_expr(__builtin_constant_p(x) &&		\
-+			      __builtin_constant_p(y),			\
-+			      (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),	\
-+			      __single_eval_min(t1, t2,			\
-+						__UNIQUE_ID(min1_),	\
-+						__UNIQUE_ID(min2_),	\
-+						x, y))
-+
- /**
-  * min - return minimum of two values of the same or compatible types
-  * @x: first value
-  * @y: second value
-  */
--#define min(x, y)					\
--	__min(typeof(x), typeof(y),			\
--	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
--	      x, y)
-+#define min(x, y)	__min(typeof(x), typeof(y), x, y)
- 
--#define __max(t1, t2, max1, max2, x, y) ({		\
-+#define __single_eval_max(t1, t2, max1, max2, x, y) ({	\
- 	t1 max1 = (x);					\
- 	t2 max2 = (y);					\
- 	(void) (&max1 == &max2);			\
- 	max1 > max2 ? max1 : max2; })
- 
-+#define __max(t1, t2, x, y)						\
-+	__builtin_choose_expr(__builtin_constant_p(x) &&		\
-+			      __builtin_constant_p(y),			\
-+			      (t1)(x) > (t2)(y) ? (t1)(x) : (t2)(y),	\
-+			      __single_eval_max(t1, t2,			\
-+						__UNIQUE_ID(max1_),	\
-+						__UNIQUE_ID(max2_),	\
-+						x, y))
- /**
-  * max - return maximum of two values of the same or compatible types
-  * @x: first value
-  * @y: second value
-  */
--#define max(x, y)					\
--	__max(typeof(x), typeof(y),			\
--	      __UNIQUE_ID(max1_), __UNIQUE_ID(max2_),	\
--	      x, y)
-+#define max(x, y)	__max(typeof(x), typeof(y), x, y)
- 
- /**
-  * min3 - return minimum of three values
-@@ -869,10 +887,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-  * @x: first value
-  * @y: second value
-  */
--#define min_t(type, x, y)				\
--	__min(type, type,				\
--	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
--	      x, y)
-+#define min_t(type, x, y)	 __min(type, type, x, y)
- 
- /**
-  * max_t - return maximum of two values, using the specified type
-@@ -880,10 +895,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
-  * @x: first value
-  * @y: second value
-  */
--#define max_t(type, x, y)				\
--	__max(type, type,				\
--	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
--	      x, y)
-+#define max_t(type, x, y)	__max(type, type, x, y)
- 
- /**
-  * clamp_t - return a value clamped to a given range using a given type
--- 
-2.7.4
+The other unrelated reaction I had to this was that "we're passing
+those types down very deep, even though nobody _cares_ about them all
+that much at that deep level".
 
+Honestly, the only case that really cares is the very top level, and
+the rest could just take the properly cast versions.
 
--- 
-Kees Cook
-Pixel Security
+For example, "max_t/min_t" really don't care at all, since they - by
+definition - just take the single specified type.
+
+So I'm wondering if we should just drop the types from __max/__min
+(and everything they call) entirely, and instead do
+
+    #define __check_type(x,y) ((void)((typeof(x)*)1==(typeof(y)*)1))
+    #define min(x,y)   (__check_type(x,y),__min(x,y))
+    #define max(x,y)   (__check_type(x,y),__max(x,y))
+
+    #define min_t(t,x,y) __min((t)(x),(t)(y))
+    #define max_t(t,x,y) __max((t)(x),(t)(y))
+
+and then __min/__max and friends are much simpler (and can just assume
+that the type is already fine, and the casting has been done).
+
+This is technically entirely independent of this VLA cleanup thing,
+but the "passing the types around unnecessarily" just becomes more
+obvious when there's now another level of macros, _and_ it's a more
+complex expression too.
+
+Yes, yes, the __single_eval_xyz() functions still end up wanting the
+types for the declaration of the new single-evaluation variables, but
+the 'typeof' pattern is the standard pattern, so
+
+#define __single_eval_max(max1, max2, x, y) ({  \
+        typeof (x) max1 = (x);                  \
+        typeof (y) max2 = (y);                  \
+        max1 > max2 ? max1 : max2; })
+
+actually looks more natural to me than passing the two types in as
+arguments to the macro.
+
+(That form also is amenable to things like "__auto_type" etc simplifications).
+
+Side note: do we *really* need the unique variable names? That's what
+makes those things _really_ illegible. I thgink it's done just for a
+sparse warning that we should probably ignore. It's off by default
+anyway exactly because it doesn't work that well due to nested macro
+expansions like this.
+
+There is very real value to keeping our odd macros legible, I feel.
+Even when they are complicated by issues like this, it would be good
+to keep them as simple as possible.
+
+Comments?
+
+                Linus

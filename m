@@ -1,81 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f47.google.com ([209.85.215.47]:34552 "EHLO
-        mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750926AbeCIGpe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 01:45:34 -0500
-Received: by mail-lf0-f47.google.com with SMTP id l191-v6so11792903lfe.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Mar 2018 22:45:33 -0800 (PST)
-Subject: Re: Inconsistence between sender and receiver
-To: bo.li.liu@oracle.com
-Cc: linux-btrfs@vger.kernel.org
-References: <20180307184930.GA26754@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <1a7f0c8f-9bf1-b6eb-ff5c-517d935b84e8@gmail.com>
- <20180309053808.GD26754@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <060e33f0-e0b7-649d-8696-75e5a1f7ce85@gmail.com>
-Date: Fri, 9 Mar 2018 09:45:30 +0300
+Received: from synology.com ([59.124.61.242]:52302 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1750926AbeCIJBX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Mar 2018 04:01:23 -0500
 MIME-Version: 1.0
-In-Reply-To: <20180309053808.GD26754@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Fri, 09 Mar 2018 17:01:21 +0800
+From: robbieko <robbieko@synology.com>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: fiemap: pass correct bytenr when
+ fm_extent_count is zero
+In-Reply-To: <5ebe96aa-35e2-6c48-3ac9-ddf84f1d141d@suse.com>
+References: <1520410819-32405-1-git-send-email-robbieko@synology.com>
+ <1520410819-32405-2-git-send-email-robbieko@synology.com>
+ <1de45bba-fe15-d1d6-173a-741918399d69@suse.com>
+ <c7f76974fefae3f4162ae23335ca9971@synology.com>
+ <5ebe96aa-35e2-6c48-3ac9-ddf84f1d141d@suse.com>
+Message-ID: <50c1b80c55db0f334e8d3cfd54d6a3f3@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-09.03.2018 08:38, Liu Bo пишет:
-> On Thu, Mar 08, 2018 at 09:15:50AM +0300, Andrei Borzenkov wrote:
->> 07.03.2018 21:49, Liu Bo пишет:
->>> Hi,
->>>
->>> In the following steps[1], if <parent> on receiver side has got
->>> changed via 'btrfs property set', then after doing incremental
->>> updates, receiver gets a different snapshot from what sender has sent.
->>>
->>> The reason behind it is that there is no change about file 'foo' in
->>> the send stream, such that receiver simply creates a snapshot of
->>> <parent> on its side with nothing to apply from the send stream.
->>>
->>> A possible way to avoid this is to check rtransid and ctranid of
->>> <parent> on receiver side, but I'm not very sure whether the current
->>> behavior is made deliberately, does anyone have an idea? 
->>>
->>> Thanks,
->>>
->>> -liubo
->>>
->>> [1]:
->>> $ btrfs sub create /mnt/send/sub
->>> $ touch /mnt/send/sub/foo
->>> $ btrfs sub snap -r /mnt/send/sub /mnt/send/parent
->>>
->>> # send parent out
->>> $ btrfs send /mnt/send/parent | btrfs receive /mnt/recv/
->>>
->>> # change parent and file under it
->>> $ btrfs property set -t subvol /mnt/recv/parent ro false
->>
->> Is removing the ability to modify read-only property an option? What are
->> use cases for it? What can it do that "btrfs sub snap read-only
->> writable" cannot?
->>
+Nikolay Borisov 於 2018-03-07 19:15 寫到:
+> On  7.03.2018 12:27, robbieko wrote:
+>> Nikolay Borisov 於 2018-03-07 18:19 寫到:
+>>> On  7.03.2018 10:20, robbieko wrote:
+>>>> From: Robbie Ko <robbieko@synology.com>
+>>>> 
+>>>>  # mount /dev/vdb5 /mnt/btrfs
+>>>>  # dd if=/dev/zero bs=16K count=4 oflag=dsync of=/mnt/btrfs/file
+>>>>  # xfs_io -c "fiemap -v" /mnt/btrfs/file
+>>>>  /mnt/btrfs/file:
+>>>>  EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+>>>>    0: [0..127]:        25088..25215       128   0x1
+>>>> 
+>>>> Run fiemap with fm_extent_count set to 0, we'll get wrong value 4
+>>>> instead of 1.
+>>> 
+>>> Wrong value 4 instead of 1 for which exact column, the flags? State 
+>>> this
+>>> explicitly.
+>>> 
+>>> Also this seems a bit bogus since fiemap's documentation states:
+>>> 
+>>> If fm_extent_count is zero, then the fm_extents[] array is ignored 
+>>> (no
+>>> extents will be returned), and the fm_mapped_extents count will hold 
+>>> the
+>>> number of extents needed in fm_extents[] to hold the file's current
+>>> mapping.
+>>> 
+>>> So when fm_extent_count we shouldn't really be returning anything 
+>>> from
+>>> kernel.
+>>> 
+>> 
+>> Sorry I did not explain clearly.
+>> The value is fm_mapped_extents.
 > 
-> Tbh, I don't know any usecase for that, I just wanted to toggle off
-> the ro bit in order to change something inside <parent>.
-> 
->>> $ truncate -s 4096 /mnt/recv/parent/foo
->>>
->>> $ btrfs sub snap -r /mnt/send/sub /mnt/send/update
->>> $ btrfs send -p /mnt/send/parent /mnt/send/update | btrfs receive /mnt/recv
->>>
->>
->> This should fail right away because /mnt/send/parent is not read-only.
->> If it does not, this is really a bug.
->>
-> 
-> It's not '/mnt/send/parent', but '/mnt/recv/parent' got changed.
+> But fm_mapped_extents is tagged as an OUT member, meaning the user has
+> no job writing to it.
 > 
 
-Ah, sorry.
 
-What happened to this patch which clears received_uuid when ro is
-flipped off?
+[BUG]
+fm_mapped_extents is not correct when fm_extent_count is 0
+Like:
+   # mount /dev/vdb5 /mnt/btrfs
+   # dd if=/dev/zero bs=16K count=4 oflag=dsync of=/mnt/btrfs/file
+   # xfs_io -c "fiemap -v" /mnt/btrfs/file
+   /mnt/btrfs/file:
+   EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+     0: [0..127]:        25088..25215       128   0x1
 
-https://patchwork.kernel.org/patch/9986521/
+When user space wants to get the number of file extents,
+set fm_extent_count to 0 to run fiemap and then read fm_mapped_extents.
+
+In the above example, fiemap will return with fm_mapped_extents set to 4 
+,
+but it should be 1 since there's only one entry in the output.
+
+[REASON]
+When fm_extent_count is 0, disko is not initialized correctly,
+The value is 0 in this case, not the right bytenr.
+It will cause the fiemap merge mechanism to fail.
+
+[FIX]
+Use correct disko.
+
+Thanks.
+Robbie Ko
+
+>> If fm_extent_count  is zero, the fm_mapped_extents count will hold the
+>> number of extents needed.
+>> 
+>> 
+>>> 
+>>>> 
+>>>> [REASON]
+>>>> When fm_extent_count is 0, disko is not initialized correctly,
+>>>> The value is 0 in this case, not the right bytenr.
+>>> 
+>>> This is too sparse, be more explicit i.e. that disko=0 is passed to
+>>> emit_fiemap_extent which then leads to issues.
+>>> 
+>>>> 
+>>>> [FIX]
+>>>> Use correct disko.
+>>>> 
+>>>> Signed-off-by: Robbie Ko <robbieko@synology.com>
+>>>> ---
+>>>>  fs/btrfs/extent_io.c | 4 +---
+>>>>  1 file changed, 1 insertion(+), 3 deletions(-)
+>>>> 
+>>>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>>>> index 012d638..066b6df 100644
+>>>> --- a/fs/btrfs/extent_io.c
+>>>> +++ b/fs/btrfs/extent_io.c
+>>>> @@ -4567,7 +4567,7 @@ int extent_fiemap(struct inode *inode, struct
+>>>> fiemap_extent_info *fieinfo,
+>>>>              offset_in_extent = em_start - em->start;
+>>>>          em_end = extent_map_end(em);
+>>>>          em_len = em_end - em_start;
+>>>> -        disko = 0;
+>>>> +        disko = em->block_start + offset_in_extent;
+>>>>          flags = 0;
+>>>> 
+>>>>          /*
+>>>> @@ -4590,8 +4590,6 @@ int extent_fiemap(struct inode *inode, struct
+>>>> fiemap_extent_info *fieinfo,
+>>>>              u64 bytenr = em->block_start -
+>>>>                  (em->start - em->orig_start);
+>>>> 
+>>>> -            disko = em->block_start + offset_in_extent;
+>>>> -
+>>>>              /*
+>>>>               * As btrfs supports shared space, this information
+>>>>               * can be exported to userspace tools via
+>>>> --
+>>>> 1.9.1
+>>>> 
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe
+>>>> linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>> 
+>> 
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" 
+>> in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> 
+

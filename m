@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:37761 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751113AbeCIBfQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 20:35:16 -0500
+Received: from mail-ua0-f177.google.com ([209.85.217.177]:39334 "EHLO
+        mail-ua0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751278AbeCIBqn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Mar 2018 20:46:43 -0500
+Received: by mail-ua0-f177.google.com with SMTP id e25so1257248uam.6
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Mar 2018 17:46:43 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAGXu5j+JiYcsdaC4V9+SmUM2SKW1yRHr18d74G5SM_sSrQm=Nw@mail.gmail.com>
+In-Reply-To: <CA+55aFxXb8JhpELWcFJnQMYy6sTyndwdNpCLFUznA9ML7-oL_Q@mail.gmail.com>
 References: <20180308214045.GA6787@beast> <CA+55aFyf-ajRzW2sUwFrrMOAu5UyuOk5L8g9xfkr4VuJeWjV9w@mail.gmail.com>
- <CAGXu5j+JiYcsdaC4V9+SmUM2SKW1yRHr18d74G5SM_sSrQm=Nw@mail.gmail.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Thu, 8 Mar 2018 17:35:15 -0800
-Message-ID: <CA+55aFxXb8JhpELWcFJnQMYy6sTyndwdNpCLFUznA9ML7-oL_Q@mail.gmail.com>
+ <CAGXu5j+JiYcsdaC4V9+SmUM2SKW1yRHr18d74G5SM_sSrQm=Nw@mail.gmail.com> <CA+55aFxXb8JhpELWcFJnQMYy6sTyndwdNpCLFUznA9ML7-oL_Q@mail.gmail.com>
+From: Kees Cook <keescook@chromium.org>
+Date: Thu, 8 Mar 2018 17:46:42 -0800
+Message-ID: <CAGXu5jJG9JL_3=rgqS+_B-FEumwa4qZkL6YA=KKxaMe-ugz0Rg@mail.gmail.com>
 Subject: Re: [PATCH] kernel.h: Skip single-eval logic on literals in min()/max()
-To: Kees Cook <keescook@chromium.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Cc: Andrew Morton <akpm@linux-foundation.org>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <linux@rasmusvillemoes.dk>,
@@ -39,60 +41,40 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 8, 2018 at 4:45 PM, Kees Cook <keescook@chromium.org> wrote:
+On Thu, Mar 8, 2018 at 5:35 PM, Linus Torvalds
+<torvalds@linux-foundation.org> wrote:
+> I don't want to weaken the type enforcement, and I _thought_ you had
+> done that __builtin_types_compatible_p() to keep it in place.
+
+I thought so too (that originally came from Josh), but on removal, I
+was surprised that the checking was retained. :)
+
+> But if that's not why you did it, then why was it there at all? If the
+> type warning shows through even if it's in the other expression, then
+> just a
 >
-> Rasmus mentioned this too. What I said there was that I was shy to
-> make that change, since we already can't mix that kind of thing with
-> the existing min()/max() implementation. The existing min()/max() is
-> already extremely strict, so there are no instances of this in the
-> tree.
-
-Yes, but I also didn't want to add any new cases in case people add
-new min/max() users.
-
-But:
-
-> If I explicitly add one, I see this with or without the patch:
 >
-> In file included from drivers/misc/lkdtm.h:7:0,
->                  from drivers/misc/lkdtm_core.c:33:
-> drivers/misc/lkdtm_core.c: In function ‘lkdtm_module_exit’:
-> ./include/linux/kernel.h:809:16: warning: comparison of distinct
-> pointer types lacks a cast
+> #define __min(t1, t2, x, y)                             \
+>         __builtin_choose_expr(                          \
+>                 __builtin_constant_p(x) &               \
+>                 __builtin_constant_p(y),                \
+>                 (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),  \
+>                 __single_eval_min(t1, t2,               \
+>    ...
+>
+> would seem to be sufficient?
+>
+> Because logically, the only thing that matters is that x and y don't
+> have any side effects and can be evaluated twice, and
+> "__builtin_constant_p()" is already a much stronger version of that.
+>
+> Hmm? The __builtin_types_compatible_p() just doesn't seem to matter
+> for the only thing I thought it was there for.
 
-Oh, ok, in that case, just drop the __builtin_types_compatible_p()
-entirely. It's not adding anything.
+Yup, agreed. I'll drop it.
 
-I was expecting the non-chosen expression in __builtin_choose_expr()
-to not cause type warnings. I'm actually surprised it does. Type games
-is why __builtin_choose_expr() tends to exist in the first place.
+-Kees
 
-> So are you saying you _want_ the type enforcement weakened here, or
-> that I should just not use __builtin_types_compatible_p()?
-
-I don't want to weaken the type enforcement, and I _thought_ you had
-done that __builtin_types_compatible_p() to keep it in place.
-
-But if that's not why you did it, then why was it there at all? If the
-type warning shows through even if it's in the other expression, then
-just a
-
-
-#define __min(t1, t2, x, y)                             \
-        __builtin_choose_expr(                          \
-                __builtin_constant_p(x) &               \
-                __builtin_constant_p(y),                \
-                (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),  \
-                __single_eval_min(t1, t2,               \
-   ...
-
-would seem to be sufficient?
-
-Because logically, the only thing that matters is that x and y don't
-have any side effects and can be evaluated twice, and
-"__builtin_constant_p()" is already a much stronger version of that.
-
-Hmm? The __builtin_types_compatible_p() just doesn't seem to matter
-for the only thing I thought it was there for.
-
-                  Linus
+-- 
+Kees Cook
+Pixel Security

@@ -1,55 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56844 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755565AbeCHOgI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 8 Mar 2018 09:36:08 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 6338DAE22
-        for <linux-btrfs@vger.kernel.org>; Thu,  8 Mar 2018 14:36:07 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 18/22] btrfs: move allocation after simple tests in tree_mod_log_insert_key
-Date: Thu,  8 Mar 2018 15:33:47 +0100
-Message-Id: <0792f4331c42c57426d02f897bc68b7c7820219a.1520518876.git.dsterba@suse.com>
-In-Reply-To: <cover.1520518876.git.dsterba@suse.com>
-References: <cover.1520518876.git.dsterba@suse.com>
+Received: from mail-pg0-f67.google.com ([74.125.83.67]:40780 "EHLO
+        mail-pg0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932186AbeCIUFj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 15:05:39 -0500
+Received: by mail-pg0-f67.google.com with SMTP id g8so3950944pgv.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Mar 2018 12:05:39 -0800 (PST)
+Date: Fri, 9 Mar 2018 12:05:36 -0800
+From: Kees Cook <keescook@chromium.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
+        "Tobin C. Harding" <me@tobin.cc>, Steven Rostedt <rostedt@goodmis.org>,
+        Jonathan Corbet <corbet@lwn.net>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
+        Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
+        Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Masahiro Yamada <yamada.masahiro@socionext.com>,
+        Borislav Petkov <bp@suse.de>, Randy Dunlap <rdunlap@infradead.org>,
+        Ian Abbott <abbotti@mev.co.uk>,
+        Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>,
+        Petr Mladek <pmladek@suse.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Network Development <netdev@vger.kernel.org>,
+        Kernel Hardening <kernel-hardening@lists.openwall.com>
+Subject: [PATCH v3] kernel.h: Skip single-eval logic on literals in
+ min()/max()
+Message-ID: <20180309200536.GA5670@beast>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The allocation of tree_mod_elem can be delayed after tree_mod_dont_log.
-In case it causes the function to return, the allocation would be
-redundant. Otherwise it could cause unnecessary failure if there's not
-enough memory.
+When max() is used in stack array size calculations from literal values
+(e.g. "char foo[max(sizeof(struct1), sizeof(struct2))]", the compiler
+thinks this is a dynamic calculation due to the single-eval logic, which
+is not needed in the literal case. This change removes several accidental
+stack VLAs from an x86 allmodconfig build:
 
-Signed-off-by: David Sterba <dsterba@suse.com>
+$ diff -u before.txt after.txt | grep ^-
+-drivers/input/touchscreen/cyttsp4_core.c:871:2: warning: ISO C90 forbids variable length array ‘ids’ [-Wvla]
+-fs/btrfs/tree-checker.c:344:4: warning: ISO C90 forbids variable length array ‘namebuf’ [-Wvla]
+-lib/vsprintf.c:747:2: warning: ISO C90 forbids variable length array ‘sym’ [-Wvla]
+-net/ipv4/proc.c:403:2: warning: ISO C90 forbids variable length array ‘buff’ [-Wvla]
+-net/ipv6/proc.c:198:2: warning: ISO C90 forbids variable length array ‘buff’ [-Wvla]
+-net/ipv6/proc.c:218:2: warning: ISO C90 forbids variable length array ‘buff64’ [-Wvla]
+
+Based on an earlier patch from Josh Poimboeuf.
+
+Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- fs/btrfs/ctree.c | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+v3:
+- drop __builtin_types_compatible_p() (Rasmus, Linus)
+v2:
+- fix copy/paste-o max1_/max2_ (ijc)
+- clarify "compile-time" constant in comment (Rasmus)
+- clean up formatting on min_t()/max_t()
+---
+ include/linux/kernel.h | 48 ++++++++++++++++++++++++++++++------------------
+ 1 file changed, 30 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 30950439731e..da6e2c3ca2d0 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -521,15 +521,13 @@ static noinline int tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
- 	if (!tree_mod_need_log(eb->fs_info, eb))
- 		return 0;
+diff --git a/include/linux/kernel.h b/include/linux/kernel.h
+index 3fd291503576..a0fca4deb3ab 100644
+--- a/include/linux/kernel.h
++++ b/include/linux/kernel.h
+@@ -787,37 +787,55 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+  * strict type-checking.. See the
+  * "unnecessary" pointer comparison.
+  */
+-#define __min(t1, t2, min1, min2, x, y) ({		\
++#define __single_eval_min(t1, t2, min1, min2, x, y) ({	\
+ 	t1 min1 = (x);					\
+ 	t2 min2 = (y);					\
+ 	(void) (&min1 == &min2);			\
+ 	min1 < min2 ? min1 : min2; })
  
-+	if (tree_mod_dont_log(eb->fs_info, eb))
-+		return 0;
++/*
++ * In the case of compile-time constant values, there is no need to do
++ * the double-evaluation protection, so the raw comparison can be made.
++ * This allows min()/max() to be used in stack array allocations and
++ * avoid the compiler thinking it is a dynamic value leading to an
++ * accidental VLA.
++ */
++#define __min(t1, t2, x, y)						\
++	__builtin_choose_expr(__builtin_constant_p(x) &&		\
++			      __builtin_constant_p(y),			\
++			      (t1)(x) < (t2)(y) ? (t1)(x) : (t2)(y),	\
++			      __single_eval_min(t1, t2,			\
++						__UNIQUE_ID(min1_),	\
++						__UNIQUE_ID(min2_),	\
++						x, y))
 +
- 	tm = alloc_tree_mod_elem(eb, slot, op, flags);
- 	if (!tm)
- 		return -ENOMEM;
+ /**
+  * min - return minimum of two values of the same or compatible types
+  * @x: first value
+  * @y: second value
+  */
+-#define min(x, y)					\
+-	__min(typeof(x), typeof(y),			\
+-	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+-	      x, y)
++#define min(x, y)	__min(typeof(x), typeof(y), x, y)
  
--	if (tree_mod_dont_log(eb->fs_info, eb)) {
--		kfree(tm);
--		return 0;
--	}
--
- 	ret = __tree_mod_log_insert(eb->fs_info, tm);
- 	write_unlock(&eb->fs_info->tree_mod_log_lock);
- 	if (ret)
+-#define __max(t1, t2, max1, max2, x, y) ({		\
++#define __single_eval_max(t1, t2, max1, max2, x, y) ({	\
+ 	t1 max1 = (x);					\
+ 	t2 max2 = (y);					\
+ 	(void) (&max1 == &max2);			\
+ 	max1 > max2 ? max1 : max2; })
+ 
++#define __max(t1, t2, x, y)						\
++	__builtin_choose_expr(__builtin_constant_p(x) &&		\
++			      __builtin_constant_p(y),			\
++			      (t1)(x) > (t2)(y) ? (t1)(x) : (t2)(y),	\
++			      __single_eval_max(t1, t2,			\
++						__UNIQUE_ID(max1_),	\
++						__UNIQUE_ID(max2_),	\
++						x, y))
+ /**
+  * max - return maximum of two values of the same or compatible types
+  * @x: first value
+  * @y: second value
+  */
+-#define max(x, y)					\
+-	__max(typeof(x), typeof(y),			\
+-	      __UNIQUE_ID(max1_), __UNIQUE_ID(max2_),	\
+-	      x, y)
++#define max(x, y)	__max(typeof(x), typeof(y), x, y)
+ 
+ /**
+  * min3 - return minimum of three values
+@@ -869,10 +887,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+  * @x: first value
+  * @y: second value
+  */
+-#define min_t(type, x, y)				\
+-	__min(type, type,				\
+-	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+-	      x, y)
++#define min_t(type, x, y)	 __min(type, type, x, y)
+ 
+ /**
+  * max_t - return maximum of two values, using the specified type
+@@ -880,10 +895,7 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+  * @x: first value
+  * @y: second value
+  */
+-#define max_t(type, x, y)				\
+-	__max(type, type,				\
+-	      __UNIQUE_ID(min1_), __UNIQUE_ID(min2_),	\
+-	      x, y)
++#define max_t(type, x, y)	__max(type, type, x, y)
+ 
+ /**
+  * clamp_t - return a value clamped to a given range using a given type
 -- 
-2.16.2
+2.7.4
 
+
+-- 
+Kees Cook
+Pixel Security

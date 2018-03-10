@@ -1,28 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-it0-f51.google.com ([209.85.214.51]:36038 "EHLO
-        mail-it0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932223AbeCJCht (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 21:37:49 -0500
-MIME-Version: 1.0
-In-Reply-To: <CAGXu5j+4_2vZF9uPy_agcGymbHbVqohSqApKZZxwcTz4OC_Skg@mail.gmail.com>
-References: <20180309200536.GA5670@beast> <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
- <CA+55aFw9hWz1-YFVoHEiXDjqb9q7dz=rQVXr7YLkMuVLvbwaOg@mail.gmail.com>
- <20180309163241.a421e216999bd0b1f43a64c2@linux-foundation.org>
- <CA+55aFwbO2vUsjWzAwB6SZ65RM4r3P0+2JvyMHn=ry0CgWCBgA@mail.gmail.com>
- <CAGXu5j+D=zs8AMb969dhH05GmKPuBxKPcAs89KfKzVf47faL1g@mail.gmail.com> <CAGXu5j+4_2vZF9uPy_agcGymbHbVqohSqApKZZxwcTz4OC_Skg@mail.gmail.com>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Fri, 9 Mar 2018 18:37:48 -0800
-Message-ID: <CA+55aFyzPJQ41hq4nC24xwwOW6ZiQ=AMEDA1fZzDH5XbcGGzpg@mail.gmail.com>
-Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
-To: Kees Cook <keescook@chromium.org>
+Received: from mail.kernel.org ([198.145.29.99]:51114 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751347AbeCJDKY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 9 Mar 2018 22:10:24 -0500
+Date: Fri, 9 Mar 2018 22:10:19 -0500
+From: Steven Rostedt <rostedt@goodmis.org>
+To: linux-kernel@vger.kernel.org
 Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
-        "Tobin C. Harding" <me@tobin.cc>, Steven Rostedt <rostedt@goodmis.org>,
-        Jonathan Corbet <corbet@lwn.net>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        "Tobin C. Harding" <me@tobin.cc>, Jonathan Corbet <corbet@lwn.net>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>,
         "David S. Miller" <davem@davemloft.net>,
         Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
         Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
@@ -38,27 +28,34 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         Linux Btrfs <linux-btrfs@vger.kernel.org>,
         Network Development <netdev@vger.kernel.org>,
         Kernel Hardening <kernel-hardening@lists.openwall.com>
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [PATCH 3/3] tracing: Rewrite filter logic to be simpler and
+ faster
+Message-ID: <20180309221019.31c896a3@vmware.local.home>
+In-Reply-To: <20180310023907.798690563@goodmis.org>
+References: <20180309200536.GA5670@beast>
+        <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
+        <CA+55aFw9hWz1-YFVoHEiXDjqb9q7dz=rQVXr7YLkMuVLvbwaOg@mail.gmail.com>
+        <20180309163241.a421e216999bd0b1f43a64c2@linux-foundation.org>
+        <CA+55aFwbO2vUsjWzAwB6SZ65RM4r3P0+2JvyMHn=ry0CgWCBgA@mail.gmail.com>
+        <CAGXu5j+D=zs8AMb969dhH05GmKPuBxKPcAs89KfKzVf47faL1g@mail.gmail.com>
+        <CAGXu5j+4_2vZF9uPy_agcGymbHbVqohSqApKZZxwcTz4OC_Skg@mail.gmail.com>
+        <20180310023907.798690563@goodmis.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 9, 2018 at 5:31 PM, Kees Cook <keescook@chromium.org> wrote:
->
-> WTF, gmail just blasted HTML into my explicitly plain-text email?! Apologies...
+On Fri, 09 Mar 2018 21:34:45 -0500
+Steven Rostedt <rostedt@goodmis.org> wrote:
 
-There's more now in your email, I think maybe it's triggered by your
-signature file and some gmail web interface bug. Or it just tries to
-force quote using html.
+>  2 files changed, 1050 insertions(+), 1273 deletions(-)
 
-There's some html email disease inside google, where some parts of the
-company seems to think that html email is _good_.
+BTW, it's a bit bigger impact than 223 deletions. As I added a lot of
+comments to explain the logic better. Removing comments and white space
+from the modifications we have:
 
-The official gmail Android app is a big pain, int hat it doesn't
-*have* a plain-text mode, even though it knows how to format the
-plain-text part of the email.
+ 649 insertions(+), 1035 deletions(-)
 
-You might want to be on the lookout for some bad drugs at the office.
-Because the world would thank you if you took them away from the gmail
-app people.
+That's 386 lines of code removed.
 
-             Linus
+-- Steve

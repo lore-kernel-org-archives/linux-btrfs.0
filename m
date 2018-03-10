@@ -1,43 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35551 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751981AbeCNTlL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 15:41:11 -0400
-Date: Wed, 14 Mar 2018 20:38:47 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: zerofree btrfs support?
-Message-ID: <20180314193847.GR32007@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1520650525.5641.47.camel@scientia.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1520650525.5641.47.camel@scientia.net>
+Received: from mailgw-02.dd24.net ([193.46.215.43]:55923 "EHLO
+        mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751275AbeCJCz2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 21:55:28 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+        by mailgw-02.dd24.net (Postfix) with ESMTP id BA98B5FD78
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Mar 2018 02:55:27 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+        by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+        with ESMTP id awmWFqaiGiTr for <linux-btrfs@vger.kernel.org>;
+        Sat, 10 Mar 2018 02:55:26 +0000 (UTC)
+Received: from heisenberg-old.fritz.box (ppp-82-135-88-141.dynamic.mnet-online.de [82.135.88.141])
+        (using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mailgw-02.dd24.net (Postfix) with ESMTPSA
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Mar 2018 02:55:25 +0000 (UTC)
+Message-ID: <1520650525.5641.47.camel@scientia.net>
+Subject: zerofree btrfs support?
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Sat, 10 Mar 2018 03:55:25 +0100
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 10, 2018 at 03:55:25AM +0100, Christoph Anton Mitterer wrote:
-> Hi.
-> 
-> Just wondered... was it ever planned (or is there some equivalent) to
-> get support for btrfs in zerofree?
+Hi.
 
-The zerofree was requested, eg. here
-https://bugzilla.kernel.org/show_bug.cgi?id=69121
+Just wondered... was it ever planned (or is there some equivalent) to
+get support for btrfs in zerofree?
 
-and there was a discussion under proposed patches on fsdevel 3 years
-ago, message-id is 1422896713-25367-1-git-send-email-holler@ahsoftware.de
-
-tl;dr there's nothing like zeofree now, because.
-
-Because the security reasons are not considered good enough and giving
-false sense of security. Clearing the qemu images sounds good but
-there's another way to do that via trim.
-
-I have a prototype code for that and after the years, seeing the request
-again, I'm not against adding it as long as it's not advertised as a
-security feature.
-
-The zeroing simply builds on top of the trim code, so it's merely adding
-the ioctl interface and passing down the desired operation.
+Thanks,
+Chris.

@@ -1,16 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:36230 "EHLO
-        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932515AbeCJA2x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 19:28:53 -0500
-MIME-Version: 1.0
-In-Reply-To: <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
-References: <20180309200536.GA5670@beast> <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Fri, 9 Mar 2018 16:28:51 -0800
-Message-ID: <CA+55aFw9hWz1-YFVoHEiXDjqb9q7dz=rQVXr7YLkMuVLvbwaOg@mail.gmail.com>
-Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
-To: Andrew Morton <akpm@linux-foundation.org>
+Received: from mail.linuxfoundation.org ([140.211.169.12]:43340 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932893AbeCJAco (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 19:32:44 -0500
+Date: Fri, 9 Mar 2018 16:32:41 -0800
+From: Andrew Morton <akpm@linux-foundation.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
 Cc: Kees Cook <keescook@chromium.org>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
@@ -34,41 +29,53 @@ Cc: Kees Cook <keescook@chromium.org>,
         Linux Btrfs <linux-btrfs@vger.kernel.org>,
         Network Development <netdev@vger.kernel.org>,
         Kernel Hardening <kernel-hardening@lists.openwall.com>
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in
+ min()/max()
+Message-Id: <20180309163241.a421e216999bd0b1f43a64c2@linux-foundation.org>
+In-Reply-To: <CA+55aFw9hWz1-YFVoHEiXDjqb9q7dz=rQVXr7YLkMuVLvbwaOg@mail.gmail.com>
+References: <20180309200536.GA5670@beast>
+        <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
+        <CA+55aFw9hWz1-YFVoHEiXDjqb9q7dz=rQVXr7YLkMuVLvbwaOg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 9, 2018 at 4:07 PM, Andrew Morton <akpm@linux-foundation.org> wrote:
->
-> A brief poke failed to reveal a workaround - gcc-4.4.4 doesn't appear
-> to know that __builtin_constant_p(x) is a constant.  Or something.
+On Fri, 9 Mar 2018 16:28:51 -0800 Linus Torvalds <torvalds@linux-foundation.org> wrote:
 
-LOL.
+> On Fri, Mar 9, 2018 at 4:07 PM, Andrew Morton <akpm@linux-foundation.org> wrote:
+> >
+> > A brief poke failed to reveal a workaround - gcc-4.4.4 doesn't appear
+> > to know that __builtin_constant_p(x) is a constant.  Or something.
+> 
+> LOL.
+> 
+> I suspect it might be that it wants to evaluate
+> __builtin_choose_expr() at an earlier stage than it evaluates
+> __builtin_constant_p(), so it's not that it doesn't know that
+> __builtin_constant_p() is a constant, it just might not know it *yet*.
+> 
+> Maybe.
+> 
+> Side note, if it's not that, but just the "complex" expression that
+> has the logical 'and' etc, maybe the code could just use
+> 
+>   __builtin_constant_p((x)+(y))
+> 
+> or something.
 
-I suspect it might be that it wants to evaluate
-__builtin_choose_expr() at an earlier stage than it evaluates
-__builtin_constant_p(), so it's not that it doesn't know that
-__builtin_constant_p() is a constant, it just might not know it *yet*.
+I'll do a bit more poking at it.
 
-Maybe.
+> But yeah:
+> 
+> > Sigh.  Wasn't there some talk about modernizing our toolchain
+> > requirements?
+> 
+> Maybe it's just time to give up on 4.4.  We wanted 4.5 for "asm goto",
+> and once we upgrade to 4.5 I think Arnd said that no distro actually
+> ships it, so we might as well go to 4.6.
+> 
+> So maybe this is just the excuse to finally make that official, if
+> there is no clever workaround any more.
 
-Side note, if it's not that, but just the "complex" expression that
-has the logical 'and' etc, maybe the code could just use
-
-  __builtin_constant_p((x)+(y))
-
-or something.
-
-But yeah:
-
-> Sigh.  Wasn't there some talk about modernizing our toolchain
-> requirements?
-
-Maybe it's just time to give up on 4.4.  We wanted 4.5 for "asm goto",
-and once we upgrade to 4.5 I think Arnd said that no distro actually
-ships it, so we might as well go to 4.6.
-
-So maybe this is just the excuse to finally make that official, if
-there is no clever workaround any more.
-
-                    Linus
+I wonder which gcc versions actually accept Kees's addition.

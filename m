@@ -1,20 +1,22 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:46428 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932903AbeCJHEJ (ORCPT
+Received: from mail-ua0-f195.google.com ([209.85.217.195]:40750 "EHLO
+        mail-ua0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932168AbeCJPdy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Mar 2018 02:04:09 -0500
+        Sat, 10 Mar 2018 10:33:54 -0500
+Received: by mail-ua0-f195.google.com with SMTP id c14so4164661uak.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Mar 2018 07:33:54 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <CANiq72k_vsTPMXvcfTNo+sjRoVMkihvRz-fzeXdcXvNEEeY-Pw@mail.gmail.com>
 References: <20180309200536.GA5670@beast> <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
  <e8874944-f0b7-7a1f-26f3-446d7d7fcc38@infradead.org> <CANiq72k_vsTPMXvcfTNo+sjRoVMkihvRz-fzeXdcXvNEEeY-Pw@mail.gmail.com>
-From: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
-Date: Sat, 10 Mar 2018 08:03:47 +0100
-Message-ID: <CANiq72nmCCDa9vV-49cNaJoQQO25r2YsYDaspoKn0xMeDOH10w@mail.gmail.com>
+From: Kees Cook <keescook@chromium.org>
+Date: Sat, 10 Mar 2018 07:33:53 -0800
+Message-ID: <CAGXu5jLtKAUsoYemHZTrJqKEH9=BqwO_QXk=x3BPfCKqZ6DRYA@mail.gmail.com>
 Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
-To: Randy Dunlap <rdunlap@infradead.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Kees Cook <keescook@chromium.org>,
+To: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
+Cc: Randy Dunlap <rdunlap@infradead.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
         linux-kernel <linux-kernel@vger.kernel.org>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <linux@rasmusvillemoes.dk>,
@@ -41,7 +43,7 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 10, 2018 at 7:10 AM, Miguel Ojeda
+On Fri, Mar 9, 2018 at 10:10 PM, Miguel Ojeda
 <miguel.ojeda.sandonis@gmail.com> wrote:
 > On Sat, Mar 10, 2018 at 4:11 AM, Randy Dunlap <rdunlap@infradead.org> wrote:
 >> On 03/09/2018 04:07 PM, Andrew Morton wrote:
@@ -75,17 +77,24 @@ On Sat, Mar 10, 2018 at 7:10 AM, Miguel Ojeda
 >
 > Same here, 4.8.5 fails. gcc 5.4.1 seems to work. I compiled a minimal
 > 5.1.0 and it seems to work as well.
->
 
-Just compiled 4.9.0 and it seems to work -- so that would be the
-minimum required.
+And sparse freaks out too:
 
-Sigh...
+   drivers/net/ethernet/via/via-velocity.c:97:26: sparse: incorrect
+type in initializer (different address spaces) @@    expected void
+*addr @@    got struct mac_regs [noderef] <avoid *addr @@
+   drivers/net/ethernet/via/via-velocity.c:97:26:    expected void *addr
+   drivers/net/ethernet/via/via-velocity.c:97:26:    got struct
+mac_regs [noderef] <asn:2>*mac_regs
+   drivers/net/ethernet/via/via-velocity.c:100:49: sparse: incorrect
+type in argument 2 (different base types) @@    expected restricted
+pci_power_t [usertype] state @@    got _t [usertype] state @@
 
-Some enterprise distros are either already shipping gcc >= 5 or will
-probably be shipping it soon (e.g. RHEL 8), so how much does it hurt
-to ask for a newer gcc? Are there many users/companies out there using
-enterprise distributions' gcc to compile and run the very latest
-kernels?
+Alright, I'm giving up on fixing max(). I'll go back to STACK_MAX() or
+some other name for the simple macro. Bleh.
 
-Miguel
+-Kees
+
+-- 
+Kees Cook
+Pixel Security

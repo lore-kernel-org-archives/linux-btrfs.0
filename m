@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:45631 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932329AbeCJQLL (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:33859 "EHLO
+        mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932401AbeCJQam (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Mar 2018 11:11:11 -0500
+        Sat, 10 Mar 2018 11:30:42 -0500
 MIME-Version: 1.0
 In-Reply-To: <CAGXu5jLtKAUsoYemHZTrJqKEH9=BqwO_QXk=x3BPfCKqZ6DRYA@mail.gmail.com>
 References: <20180309200536.GA5670@beast> <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
  <e8874944-f0b7-7a1f-26f3-446d7d7fcc38@infradead.org> <CANiq72k_vsTPMXvcfTNo+sjRoVMkihvRz-fzeXdcXvNEEeY-Pw@mail.gmail.com>
  <CAGXu5jLtKAUsoYemHZTrJqKEH9=BqwO_QXk=x3BPfCKqZ6DRYA@mail.gmail.com>
 From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Sat, 10 Mar 2018 08:11:09 -0800
-Message-ID: <CA+55aFyt0Aua_Jzp__kTRZaiBoki6-EWmVnrFrjntpYiytqe4g@mail.gmail.com>
+Date: Sat, 10 Mar 2018 08:30:40 -0800
+Message-ID: <CA+55aFyLicYSe+R4yQ2Eu+P9m6qsRfso-HiK78Sw+-dPuZvAYg@mail.gmail.com>
 Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
 To: Kees Cook <keescook@chromium.org>
 Cc: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>,
@@ -44,19 +44,37 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 On Sat, Mar 10, 2018 at 7:33 AM, Kees Cook <keescook@chromium.org> wrote:
 >
-> And sparse freaks out too:
->
->    drivers/net/ethernet/via/via-velocity.c:97:26: sparse: incorrect
-> type in initializer (different address spaces) @@    expected void
-> *addr @@    got struct mac_regs [noderef] <avoid *addr @@
+> Alright, I'm giving up on fixing max(). I'll go back to STACK_MAX() or
+> some other name for the simple macro. Bleh.
 
-Actually, this seems a valid warning - it's assigning a __iomem
-pointer to a regular void, and dropping the iomem in the process.
+Oh, and I'm starting to see the real problem.
 
-Sparse does *not* like VLA's, so what may be going on is that fixing
-something VLA-related in your tree just makes sparse (correctly) check
-something that it had given up on before.
+It's not that our current "min/max()" are broiken. It's that "-Wvla" is garbage.
 
-So don't worry about the sparse ones, if they are new. They seem correct.
+Lookie here:
 
-                     Linus
+        int array[(1,2)];
+
+results in gcc saying
+
+     warning: ISO C90 forbids variable length array ‘array’ [-Wvla]
+       int array[(1,2)];
+       ^~~
+
+and that error message - and the name of the flag - is obviously pure garbage.
+
+What is *actually* going on is that ISO C90 requires an array size to
+be not a constant value, but a constant *expression*. Those are two
+different things.
+
+A constant expression has little to do with "compile-time constant".
+It's a more restricted form of it, and has actual syntax requirements.
+A comma expression is not a constant expression, for example, which
+was why I tested this.
+
+So "-Wvla" is garbage, with a misleading name, and a misleading
+warning string. It has nothing to do with "variable length" and
+whether the compiler can figure it out at build time, and everything
+to do with a _syntax_ rule.
+
+                      Linus

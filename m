@@ -1,19 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f193.google.com ([209.85.220.193]:35822 "EHLO
-        mail-qk0-f193.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750703AbeCJRe5 (ORCPT
+Received: from mail-it0-f67.google.com ([209.85.214.67]:55549 "EHLO
+        mail-it0-f67.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750971AbeCJRvV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Mar 2018 12:34:57 -0500
+        Sat, 10 Mar 2018 12:51:21 -0500
 MIME-Version: 1.0
-In-Reply-To: <CA+55aFyLicYSe+R4yQ2Eu+P9m6qsRfso-HiK78Sw+-dPuZvAYg@mail.gmail.com>
+In-Reply-To: <CANiq72nwg3mMhWeE_bLKdQ5WP+0E+SxxvcuUF=Rn9a1MM+EapQ@mail.gmail.com>
 References: <20180309200536.GA5670@beast> <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
  <e8874944-f0b7-7a1f-26f3-446d7d7fcc38@infradead.org> <CANiq72k_vsTPMXvcfTNo+sjRoVMkihvRz-fzeXdcXvNEEeY-Pw@mail.gmail.com>
- <CAGXu5jLtKAUsoYemHZTrJqKEH9=BqwO_QXk=x3BPfCKqZ6DRYA@mail.gmail.com> <CA+55aFyLicYSe+R4yQ2Eu+P9m6qsRfso-HiK78Sw+-dPuZvAYg@mail.gmail.com>
-From: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
-Date: Sat, 10 Mar 2018 18:34:36 +0100
-Message-ID: <CANiq72nwg3mMhWeE_bLKdQ5WP+0E+SxxvcuUF=Rn9a1MM+EapQ@mail.gmail.com>
+ <CAGXu5jLtKAUsoYemHZTrJqKEH9=BqwO_QXk=x3BPfCKqZ6DRYA@mail.gmail.com>
+ <CA+55aFyLicYSe+R4yQ2Eu+P9m6qsRfso-HiK78Sw+-dPuZvAYg@mail.gmail.com> <CANiq72nwg3mMhWeE_bLKdQ5WP+0E+SxxvcuUF=Rn9a1MM+EapQ@mail.gmail.com>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Sat, 10 Mar 2018 09:51:19 -0800
+Message-ID: <CA+55aFw+guiiJ3OavrP-RpFV9NRAF4t=oj3-GDfSyuZ9zBRfdg@mail.gmail.com>
 Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
-To: Linus Torvalds <torvalds@linux-foundation.org>
+To: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
 Cc: Kees Cook <keescook@chromium.org>, Randy Dunlap <rdunlap@infradead.org>,
         Andrew Morton <akpm@linux-foundation.org>,
         linux-kernel <linux-kernel@vger.kernel.org>,
@@ -41,60 +42,64 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 10, 2018 at 5:30 PM, Linus Torvalds
-<torvalds@linux-foundation.org> wrote:
-> On Sat, Mar 10, 2018 at 7:33 AM, Kees Cook <keescook@chromium.org> wrote:
->>
->> Alright, I'm giving up on fixing max(). I'll go back to STACK_MAX() or
->> some other name for the simple macro. Bleh.
+On Sat, Mar 10, 2018 at 9:34 AM, Miguel Ojeda
+<miguel.ojeda.sandonis@gmail.com> wrote:
 >
-> Oh, and I'm starting to see the real problem.
->
-> It's not that our current "min/max()" are broiken. It's that "-Wvla" is garbage.
->
-> Lookie here:
->
->         int array[(1,2)];
->
-> results in gcc saying
->
->      warning: ISO C90 forbids variable length array ‘array’ [-Wvla]
->        int array[(1,2)];
->        ^~~
->
-> and that error message - and the name of the flag - is obviously pure garbage.
->
-> What is *actually* going on is that ISO C90 requires an array size to
-> be not a constant value, but a constant *expression*. Those are two
-> different things.
->
-> A constant expression has little to do with "compile-time constant".
-> It's a more restricted form of it, and has actual syntax requirements.
-> A comma expression is not a constant expression, for example, which
-> was why I tested this.
->
-> So "-Wvla" is garbage, with a misleading name, and a misleading
-> warning string. It has nothing to do with "variable length" and
-> whether the compiler can figure it out at build time, and everything
-> to do with a _syntax_ rule.
+> So the warning is probably implemented to just trigger whenever VLAs
+> are used but the given standard does not allow them, for all
+> languages. The problem is why the ISO C90 frontend is not giving an
+> error for using invalid syntax for array sizes to begin with?
 
-The warning string is basically the same to the one used for C++, i.e.:
+So in *historical* context - when a compiler didn't do variable length
+arrays at all - the original semantics of C "constant expressions"
+actually make a ton of sense.
 
-    int size2 = 2;
-    constexpr int size3 = 2;
+You can basically think of a constant expression as something that can
+be (historically) handled by the front-end without any real
+complexity, and no optimization phases - just evaluating a simple
+parse tree with purely compile-time constants.
 
-    int array1[(2,2)];
-    int array2[(size2, size2)];
-    int array3[(size3, size3)];
+So there's a good and perfectly valid reason for why C limits certain
+expressions to just a very particular subset. It's not just array
+sizes, it's  case statements etc too. And those are very much part of
+the C standard.
 
-only warns for array2 with:
+So an error message like
 
-    warning: ISO C++ forbids variable length array 'array2' [-Wvla]
-     int array2[(size2, size2)];
+   warning: ISO C90 requires array sizes to be constant-expressions
 
-So the warning is probably implemented to just trigger whenever VLAs
-are used but the given standard does not allow them, for all
-languages. The problem is why the ISO C90 frontend is not giving an
-error for using invalid syntax for array sizes to begin with?
+would be technically correct and useful from a portability angle. It
+tells you when you're doing something non-portable, and should be
+automatically enabled with "-ansi -pedantic", for example.
 
-Miguel
+So what's misleading is actually the name of the warning and the
+message, not that it happens. The warning isn't about "variable
+length", it's literally about the rules for what a
+"constant-expression" is.
+
+And in C, the expression (2,3) has a constant _value_ (namely 3), but
+it isn't a constant-expression as specified by the language.
+
+Now, the thing is that once you actually do variable length arrays,
+those old front-end rules make no sense any more (outside of the "give
+portability warnings" thing).
+
+Because once you do variable length arrays, you obviously _parse_
+everything just fine, and you're doing to evaluate much more complex
+expressions than some limited constant-expression rule.
+
+And at that point it would make a whole lot more sense to add a *new*
+warning that basically says "I have to generate code for a
+variable-sized array", if you actually talk about VLA's.
+
+But that's clearly not what gcc actually did.
+
+So the problem really is that -Wvla doesn't actually warn about VLA's,
+but about something technically completely different.
+
+And that's why those stupid syntactic issues with min/max matter. It's
+not whether the end result is a compile-time constant or not, it's
+about completely different issues, like whether there is a
+comma-expression in it.
+
+              Linus

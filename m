@@ -1,56 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39969 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40121 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752079AbeCJMEc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Mar 2018 07:04:32 -0500
-Subject: Re: Ongoing Btrfs stability issues
-To: Alex Adriaanse <alex@oseberg.io>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
- <3b483ff8-cd89-d62a-67d8-d1da6a28ef64@gmail.com>
- <595ED26B-1FCD-4693-8E11-8F4CB267D1C7@oseberg.io>
- <0ca621b4-6307-1acf-65b7-4584dd678d80@suse.com>
- <20180302172951.GC30920@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <DBEFB1DF-D6A7-48D9-AF90-88759597A777@oseberg.io>
- <fc88341d-e440-3007-4b54-e21f74182036@suse.com>
- <D15AA258-5C89-433A-94E3-6C16A0DA4297@oseberg.io>
+        id S1752085AbeCJMN3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 10 Mar 2018 07:13:29 -0500
+Subject: Re: Btrfs remounted read-only due to ENOSPC in btrfs_run_delayed_refs
+To: Martin Svec <martin.svec@zoner.cz>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <5a54af49-c18f-3534-7d58-5224363926c7@zoner.cz>
+ <3622d05f-b31e-6f3d-a70c-d32c4667ef43@suse.com>
+ <7ce06292-6598-2b97-11a3-93174ec597bc@zoner.cz>
+ <8b2db87a-681f-d8b5-8b1b-f67ec9ff6917@zoner.cz>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <5a12a7b7-6cf3-82f8-d5fa-2915fc3d6680@suse.com>
-Date: Sat, 10 Mar 2018 14:04:30 +0200
+Message-ID: <9f72fe11-69d4-140e-7895-5cf44ccc526f@suse.com>
+Date: Sat, 10 Mar 2018 14:13:26 +0200
 MIME-Version: 1.0
-In-Reply-To: <D15AA258-5C89-433A-94E3-6C16A0DA4297@oseberg.io>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <8b2db87a-681f-d8b5-8b1b-f67ec9ff6917@zoner.cz>
+Content-Type: text/plain; charset=iso-8859-2
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On  9.03.2018 21:05, Alex Adriaanse wrote:
-> Am I correct to understand that nodatacow doesn't really avoid CoW when you're using snapshots? In a filesystem that's snapshotted 
+<snip>
 
-Yes, so nodatacow won't interfere with how snapshots operate. For more
-information on that topic check the following mailing list thread:
-https://www.spinics.net/lists/linux-btrfs/msg62715.html
+>>> And then report back on the output of the extra debug 
+>>> statements. 
+>>>
+>>> Your global rsv is essentially unused, this means 
+>>> in the worst case the code should fallback to using the global rsv
+>>> for satisfying the memory allocation for delayed refs. So we should
+>>> figure out why this isn't' happening. 
+>> Patch applied. Thank you very much, Nikolay. I'll let you know as soon as we hit ENOSPC again.
+> 
+> There is the output:
+> 
+> [24672.573075] BTRFS info (device sdb): space_info 4 has 18446744072971649024 free, is not full
+> [24672.573077] BTRFS info (device sdb): space_info total=308163903488, used=304593289216, pinned=2321940480, reserved=174800896, may_use=1811644416, readonly=131072
+> [24672.573079] use_block_rsv: Not using global blockrsv! Current blockrsv->type = 1 blockrsv->space_info = ffff999a57db7000 global_rsv->space_info = ffff999a57db7000
+> [24672.573083] BTRFS: Transaction aborted (error -28)
 
-every 15 minutes, is there a difference between normal CoW and nodatacow
-when (in the case of Postgres) you update a small portion of a 1GB file
-many times per minute? Do you anticipate us seeing a benefit in
-stability and performance if we set nodatacow for the
-So regarding this, you can check :
-https://btrfs.wiki.kernel.org/index.php/Gotchas#Fragmentation
-
-Essentially every bit of small, random postgres update in the db file
-will cause a CoW operation + checksum IO which cause, and I quote, "
-thrashing on HDDs and excessive multi-second spikes of CPU load on
-systems with an SSD or large amount a RAM."
-
-So for OLTP workloads you definitely want nodatacow enabled, bear in
-mind this also disables crc checksumming, but your db engine should
-already have such functionality implemented in it.
-
-entire FS while retaining snapshots? Does nodatacow increase the chance
-of corruption in a database like Postgres, i.e. are writes still
-properly ordered/sync'ed when flushed to disk?
-
-Well most modern DB already implement some sort of a WAL, so the
-reliability responsibility is shifted on the db engine.
+Bummer, so you are indeed running out of global space reservations in
+context which can't really use any other reservation type, thus the
+ENOSPC. Was the stacktrace again during processing of running delayed refs?

@@ -1,12 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:34720 "EHLO
-        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751211AbeCJAHV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 19:07:21 -0500
-Date: Fri, 9 Mar 2018 16:07:19 -0800
-From: Andrew Morton <akpm@linux-foundation.org>
-To: Kees Cook <keescook@chromium.org>
-Cc: linux-kernel@vger.kernel.org, Josh Poimboeuf <jpoimboe@redhat.com>,
+Received: from mail-io0-f180.google.com ([209.85.223.180]:36230 "EHLO
+        mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932515AbeCJA2x (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Mar 2018 19:28:53 -0500
+MIME-Version: 1.0
+In-Reply-To: <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
+References: <20180309200536.GA5670@beast> <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Fri, 9 Mar 2018 16:28:51 -0800
+Message-ID: <CA+55aFw9hWz1-YFVoHEiXDjqb9q7dz=rQVXr7YLkMuVLvbwaOg@mail.gmail.com>
+Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in min()/max()
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Kees Cook <keescook@chromium.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
         "Tobin C. Harding" <me@tobin.cc>, Steven Rostedt <rostedt@goodmis.org>,
@@ -26,63 +33,42 @@ Cc: linux-kernel@vger.kernel.org, Josh Poimboeuf <jpoimboe@redhat.com>,
         Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
         Linux Btrfs <linux-btrfs@vger.kernel.org>,
         Network Development <netdev@vger.kernel.org>,
-        Kernel Hardening <kernel-hardening@lists.openwall.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in
- min()/max()
-Message-Id: <20180309160719.154a3158e2d8ee56e43a918f@linux-foundation.org>
-In-Reply-To: <20180309200536.GA5670@beast>
-References: <20180309200536.GA5670@beast>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+        Kernel Hardening <kernel-hardening@lists.openwall.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 9 Mar 2018 12:05:36 -0800 Kees Cook <keescook@chromium.org> wrote:
+On Fri, Mar 9, 2018 at 4:07 PM, Andrew Morton <akpm@linux-foundation.org> wrote:
+>
+> A brief poke failed to reveal a workaround - gcc-4.4.4 doesn't appear
+> to know that __builtin_constant_p(x) is a constant.  Or something.
 
-> When max() is used in stack array size calculations from literal values
-> (e.g. "char foo[max(sizeof(struct1), sizeof(struct2))]", the compiler
-> thinks this is a dynamic calculation due to the single-eval logic, which
-> is not needed in the literal case. This change removes several accidental
-> stack VLAs from an x86 allmodconfig build:
-> 
-> $ diff -u before.txt after.txt | grep ^-
-> -drivers/input/touchscreen/cyttsp4_core.c:871:2: warning: ISO C90 forbids variable length array ‘ids’ [-Wvla]
-> -fs/btrfs/tree-checker.c:344:4: warning: ISO C90 forbids variable length array ‘namebuf’ [-Wvla]
-> -lib/vsprintf.c:747:2: warning: ISO C90 forbids variable length array ‘sym’ [-Wvla]
-> -net/ipv4/proc.c:403:2: warning: ISO C90 forbids variable length array ‘buff’ [-Wvla]
-> -net/ipv6/proc.c:198:2: warning: ISO C90 forbids variable length array ‘buff’ [-Wvla]
-> -net/ipv6/proc.c:218:2: warning: ISO C90 forbids variable length array ‘buff64’ [-Wvla]
-> 
-> Based on an earlier patch from Josh Poimboeuf.
+LOL.
 
-v1, v2 and v3 of this patch all fail with gcc-4.4.4:
+I suspect it might be that it wants to evaluate
+__builtin_choose_expr() at an earlier stage than it evaluates
+__builtin_constant_p(), so it's not that it doesn't know that
+__builtin_constant_p() is a constant, it just might not know it *yet*.
 
-./include/linux/jiffies.h: In function 'jiffies_delta_to_clock_t':
-./include/linux/jiffies.h:444: error: first argument to '__builtin_choose_expr' not a constant
+Maybe.
 
-That's with
+Side note, if it's not that, but just the "complex" expression that
+has the logical 'and' etc, maybe the code could just use
 
-#define __max(t1, t2, x, y)						\
-	__builtin_choose_expr(__builtin_constant_p(x) &&		\
-			      __builtin_constant_p(y) &&		\
-			      __builtin_types_compatible_p(t1, t2),	\
-			      (t1)(x) > (t2)(y) ? (t1)(x) : (t2)(y),	\
-			      __single_eval_max(t1, t2,			\
-						__UNIQUE_ID(max1_),	\
-						__UNIQUE_ID(max2_),	\
-						x, y))
-/**
- * max - return maximum of two values of the same or compatible types
- * @x: first value
- * @y: second value
- */
-#define max(x, y)	__max(typeof(x), typeof(y), x, y)
+  __builtin_constant_p((x)+(y))
 
+or something.
 
-A brief poke failed to reveal a workaround - gcc-4.4.4 doesn't appear
-to know that __builtin_constant_p(x) is a constant.  Or something.
+But yeah:
 
-Sigh.  Wasn't there some talk about modernizing our toolchain
-requirements?
+> Sigh.  Wasn't there some talk about modernizing our toolchain
+> requirements?
 
+Maybe it's just time to give up on 4.4.  We wanted 4.5 for "asm goto",
+and once we upgrade to 4.5 I think Arnd said that no distro actually
+ships it, so we might as well go to 4.6.
+
+So maybe this is just the excuse to finally make that official, if
+there is no clever workaround any more.
+
+                    Linus

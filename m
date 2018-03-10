@@ -1,49 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:36399 "EHLO
-        mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750714AbeCJFsF (ORCPT
+Received: from tartarus.angband.pl ([89.206.35.136]:50704 "EHLO
+        tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750829AbeCJIQL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 10 Mar 2018 00:48:05 -0500
-Received: by mail-lf0-f49.google.com with SMTP id e28-v6so7140379lfc.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Mar 2018 21:48:04 -0800 (PST)
-Subject: Re: Change of Ownership of the filesystem content when cloning a
- volume
-To: "Saravanan Shanmugham (sarvi)" <sarvi@cisco.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <DD5148B6-42C8-4598-A1E5-D652C6CF10E1@cisco.com>
-From: Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <5c0915bb-96bf-00a5-53d9-c511de8ed4b3@gmail.com>
-Date: Sat, 10 Mar 2018 08:48:02 +0300
+        Sat, 10 Mar 2018 03:16:11 -0500
+Date: Sat, 10 Mar 2018 09:16:06 +0100
+From: Adam Borowski <kilobyte@angband.pl>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: zerofree btrfs support?
+Message-ID: <20180310081606.7c2u2dtopijujhbz@angband.pl>
+References: <1520650525.5641.47.camel@scientia.net>
 MIME-Version: 1.0
-In-Reply-To: <DD5148B6-42C8-4598-A1E5-D652C6CF10E1@cisco.com>
 Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1520650525.5641.47.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-10.03.2018 02:13, Saravanan Shanmugham (sarvi) пишет:
-> 
-> Netapp’s storage system, has the concept of snapshot/clones.
-> And when I create a clone from a snapshot, I can give/change ownership of entire tree in the volume to a different userid.
+On Sat, Mar 10, 2018 at 03:55:25AM +0100, Christoph Anton Mitterer wrote:
+> Just wondered... was it ever planned (or is there some equivalent) to
+> get support for btrfs in zerofree?
 
-You are probably mistaken. NetApp FlexClone (which you probably mean)
-does not have any ways to change volume content. Of course you can now
-mount this clone and do whatever you like from host, but that is
-completely unrelated to NetApp itself and can just as well be done using
-btrfs subvolume.
+Do you want zerofree for thin storage optimization, or for security?
 
-> 
-> Is something like that possible in BTRFS?
-> 
-> We are looking to use CopyOnWrite to snapshot nightly build workspace and clone as developer workspaces to avoid building from scratch for developers,
-> And move directly for incremental builds.
-> For this we would like the clone workspace/volume to be instantly owned by the developer cloning the workspace.
-> 
-> Thanks,
-> Sarvi
-> -----
-> Occam's Razor Rules
-> 
-> 
-> N�����r��y���b�X��ǧv�^�)޺{.n�+����{�n�߲)���w*jg��������ݢj/���z�ޖ��2�ޙ���&�)ߡ�a�����G���h��j:+v���w�٥
-> 
+For the former, you can use fstrim; this is enough on any modern SSD; on HDD
+you can rig the block device to simulate TRIM by writing zeroes.  I'm sure
+one of dm-* can do this, if not -- should be easy to add, there's also
+qemu-nbd which allows control over discard, but incurs a performance penalty
+compared to playing with the block layer.
 
+For zerofree for security, you'd need defrag (to dislodge partial pinned
+extents) first, and do a full balance to avoid data left in metadata nodes
+and in blocks beyond file ends (note that zerofree doesn't do this on
+traditional filesystems either).
+
+
+Meow!
+-- 
+⢀⣴⠾⠻⢶⣦⠀ 
+⣾⠁⢠⠒⠀⣿⡁ A dumb species has no way to open a tuna can.
+⢿⡄⠘⠷⠚⠋⠀ A smart species invents a can opener.
+⠈⠳⣄⠀⠀⠀⠀ A master species delegates.

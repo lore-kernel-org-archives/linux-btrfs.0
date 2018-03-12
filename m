@@ -1,82 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:37323 "EHLO
-        mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S932334AbeCKWh4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Mar 2018 18:37:56 -0400
-Message-ID: <1520807872.4281.11.camel@scientia.net>
-Subject: Re: Ongoing Btrfs stability issues
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: kreijack@inwind.it
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Sun, 11 Mar 2018 23:37:52 +0100
-In-Reply-To: <01ddb562-f1e2-25cf-0a8a-ffaa43b867d3@libero.it>
-References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
-         <3b483ff8-cd89-d62a-67d8-d1da6a28ef64@gmail.com>
-         <595ED26B-1FCD-4693-8E11-8F4CB267D1C7@oseberg.io>
-         <0ca621b4-6307-1acf-65b7-4584dd678d80@suse.com>
-         <20180302172951.GC30920@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
-         <DBEFB1DF-D6A7-48D9-AF90-88759597A777@oseberg.io>
-         <fc88341d-e440-3007-4b54-e21f74182036@suse.com>
-         <D15AA258-5C89-433A-94E3-6C16A0DA4297@oseberg.io>
-         <5a12a7b7-6cf3-82f8-d5fa-2915fc3d6680@suse.com>
-         <1520692153.24363.15.camel@scientia.net>
-         <01ddb562-f1e2-25cf-0a8a-ffaa43b867d3@libero.it>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mx2.suse.de ([195.135.220.15]:53885 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S932451AbeCLDLN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 11 Mar 2018 23:11:13 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id CBF88AEB1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Mar 2018 03:11:10 +0000 (UTC)
+Subject: Re: [PATCH 13/20] btrfs-progs: use cmd_struct as command entry point
+To: linux-btrfs@vger.kernel.org
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-14-jeffm@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <85840b4b-e8c4-d54d-bcf6-b52eaf7e3d5a@suse.com>
+Date: Sun, 11 Mar 2018 23:11:06 -0400
+MIME-Version: 1.0
+In-Reply-To: <20180308024047.10104-14-jeffm@suse.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="eUaytGF9sb2fXgHe5CO17h7mhLequdYrA"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 2018-03-11 at 18:51 +0100, Goffredo Baroncelli wrote:
-> 
-> COW is needed to properly checksum the data. Otherwise is not
-> possible to ensure the coherency between data and checksum (however I
-> have to point out that BTRFS fails even in this case [*]).
-> We could rearrange this sentence, saying that: if you want checksum,
-> you need COW...
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--eUaytGF9sb2fXgHe5CO17h7mhLequdYrA
+Content-Type: multipart/mixed; boundary="Urogw5M22jVckAqPzThW1fOkYBFJhm0d8";
+ protected-headers="v1"
+From: Jeff Mahoney <jeffm@suse.com>
+To: linux-btrfs@vger.kernel.org
+Message-ID: <85840b4b-e8c4-d54d-bcf6-b52eaf7e3d5a@suse.com>
+Subject: Re: [PATCH 13/20] btrfs-progs: use cmd_struct as command entry point
+References: <20180308024047.10104-1-jeffm@suse.com>
+ <20180308024047.10104-14-jeffm@suse.com>
+In-Reply-To: <20180308024047.10104-14-jeffm@suse.com>
 
-No,... not really... the meta-data is anyway always CoWed... so if you
-do checksum *and* notdatacow,..., the only thing that could possibly
-happen (in the worst case) is, that data that actually made it
-correctly to the disk is falsely determined bad, as the metadata (i.e.
-the checksums) weren't upgraded correctly.
+--Urogw5M22jVckAqPzThW1fOkYBFJhm0d8
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-That however is probably much less likely than the other way round,..
-i.e. bad data went to disk and would be detected with checksuming.
+On 3/7/18 9:40 PM, jeffm@suse.com wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+> diff --git a/cmds-inspect.c b/cmds-inspect.c
+> index afd7fe48..12f200b3 100644
+> --- a/cmds-inspect.c
+> +++ b/cmds-inspect.c
+> @@ -625,33 +629,27 @@ static int cmd_inspect_min_dev_size(int argc, cha=
+r **argv)
+>  out:
+>  	return !!ret;
+>  }
+> +static DEFINE_SIMPLE_COMMAND(inspect_min_dev_size, "min-dev-size");
+> =20
+>  static const char inspect_cmd_group_info[] =3D
+>  "query various internal information";
+> =20
+> -const struct cmd_group inspect_cmd_group =3D {
+> +static const struct cmd_group inspect_cmd_group =3D {
+>  	inspect_cmd_group_usage, inspect_cmd_group_info, {
+> -		{ "inode-resolve", cmd_inspect_inode_resolve,
+> -			cmd_inspect_inode_resolve_usage, NULL, 0 },
+> -		{ "logical-resolve", cmd_inspect_logical_resolve,
+> -			cmd_inspect_logical_resolve_usage, NULL, 0 },
+> -		{ "subvolid-resolve", cmd_inspect_subvolid_resolve,
+> -			cmd_inspect_subvolid_resolve_usage, NULL, 0 },
+> -		{ "rootid", cmd_inspect_rootid, cmd_inspect_rootid_usage, NULL,
+> -			0 },
+> -		{ "min-dev-size", cmd_inspect_min_dev_size,
+> -			cmd_inspect_min_dev_size_usage, NULL, 0 },
+> -		{ "dump-tree", cmd_inspect_dump_tree,
+> -				cmd_inspect_dump_tree_usage, NULL, 0 },
+> -		{ "dump-super", cmd_inspect_dump_super,
+> -				cmd_inspect_dump_super_usage, NULL, 0 },
+> -		{ "tree-stats", cmd_inspect_tree_stats,
+> -				cmd_inspect_tree_stats_usage, NULL, 0 },
+> -		NULL_CMD_STRUCT
+> +		&cmd_struct_inspect_inode_resolve,
+> +		&cmd_struct_inspect_logical_resolve,
+> +		&cmd_struct_inspect_subvolid_resolve,
+> +		&cmd_struct_inspect_rootid,
+> +		&cmd_struct_inspect_min_dev_size,
+> +		&cmd_struct_inspect_dump_tree,
+> +		&cmd_struct_inspect_dump_super,
+> +		&cmd_struct_inspect_tree_stats,
+> +		NULL
+>  	}
+>  };
+> =20
+> -int cmd_inspect(int argc, char **argv)
+> +static int cmd_inspect(int argc, char **argv)
+>  {
+>  	return handle_command_group(&inspect_cmd_group, argc, argv);
+>  }
+> +DEFINE_GROUP_COMMAND(inspect, "inspect");
+
+"inspect-internal"
+
+-Jeff
 
 
-I had lots of discussions about this here on the list, and no one ever
-brought up a real argument against it... I also had an off-list
-discussion with Chris Mason who IIRC confirmed that it would actually
-work as I imagine it... with the only two problems:
-- good data possibly be marked bad because of bad checksums
-- reads giving back EIO where people would rather prefer bad data
-(not really sure if this were really his two arguments,... I'd have to
-look it up, so don't nail me down).
+--=20
+Jeff Mahoney
+SUSE Labs
 
 
-Long story short:
+--Urogw5M22jVckAqPzThW1fOkYBFJhm0d8--
 
-In any case, I think giving back bad data without EIO is unacceptable.
-If someone really doesn't care (e.g. because he has higher level
-checksumming and possibly even repair) he could still manually disable
-checksumming.
+--eUaytGF9sb2fXgHe5CO17h7mhLequdYrA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-The little chance of having a false positive weights IMO far less that
-have very large amounts of data (DBs, VM images are our typical cases)
-completely unprotected.
+-----BEGIN PGP SIGNATURE-----
 
-And not having checksumming with notdatacow breaks any safe raid repair
-(so in that case "repair" may even overwrite good data),... which is
-IMO also unacceptable.
-And the typical use cases for nodatacow (VMs, DBs) are in turn not so
-uncommon to want RAID.
+iQIzBAEBCAAdFiEE8wzgbmZ74SnKPwtDHntLYyF55bIFAlql78oACgkQHntLYyF5
+5bIVXg//XTCerptgmVM1H/GCpvSkjdjPgxB9+vxi9dVll6Hzer9d9vqaB/E2bTOH
+Gj5Y99n4MWMnQ/bL8iPrvzWmiKr6nKbVHFGE5evMTQoUUls8CSrQKhJtvU8ei1jC
+OBjD3dvtBnhSrbGCs8LKssQfiJfB3SquogWuKBz9x4n1CmloPqMHp9kfd/qHpSZd
+GD42WH6TUOF1Iw2M+SkNCWNIHM7icBnEmVR37/jOUWQEzz8lx82wevRubucWxJ/F
+l5w6T2OitLQbT6/MnF8BLGlWDWldhuIIxqIDes1pfQAfY/mn046zVDEtO1qM7AJ6
+mkGNJojwDwGzxvi7aIUNBwjRt2WU9R7flVoZXTWShMds/MTj0W04JU8ODQ9Lonng
+JHMvKNrOZz1XW31GlAhxx8aAwYZtJWK6CP+dC3bSNPtS95DEw/8Jcqets2jZFkTU
+xI4qG0f2eQxxNCrBfCdLIsJWBDBm2GQcffMz6hr8kX3p2PC4lNtLlAkDEK7ic2NH
+Usd0bhYLmgeuHHdh5ChzTivoSME3gQzr8hDkH7io5tkESIx2dmn90fbFt8z3Kzlx
+abvOoF4nYzfuHSp72ppTncP3ToH5NP+x0V9yOK7ZQSE6l1WZW8gPDcpYlZtWfKjc
+ADFTUfeFDtaWLAqXCz0Sna8lpv3F0+N5dtXjKnScf/iYyqCuafs=
+=nbvX
+-----END PGP SIGNATURE-----
 
-
-I really like btrfs,... and it's not that other fs (which typically
-have no checksumming at all) would perform better here... but not
-having it for these major use case is a big disappointment for me.
-
-
-Cheers,
-Chris.
+--eUaytGF9sb2fXgHe5CO17h7mhLequdYrA--

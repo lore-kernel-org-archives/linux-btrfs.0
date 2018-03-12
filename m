@@ -1,36 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41947 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37638 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751626AbeCNPpM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 11:45:12 -0400
-Date: Wed, 14 Mar 2018 16:42:48 +0100
+        id S1751232AbeCLSnp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 12 Mar 2018 14:43:45 -0400
+Date: Mon, 12 Mar 2018 19:41:22 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Salvatore Mesoraca <s.mesoraca16@gmail.com>
-Cc: linux-kernel@vger.kernel.org, kernel-hardening@lists.openwall.com,
-        linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, Josef Bacik <jbacik@fb.com>,
-        Kees Cook <keescook@chromium.org>
-Subject: Re: [PATCH] Btrfs: drop a VLA in btrfs_check_super_csum()
-Message-ID: <20180314154248.GL32007@twin.jikos.cz>
+To: dsterba@suse.cz, Dmitriy Gorokh <Dmitriy.Gorokh@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>
+Subject: Re: [PATCH] Fix NULL pointer exception in find_bio_stripe()
+Message-ID: <20180312184121.GD32007@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1520970622-19535-1-git-send-email-s.mesoraca16@gmail.com>
+References: <4F831C76-2968-4A34-B7EF-2D8741A50529@wdc.com>
+ <20180223230932.GR1469@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1520970622-19535-1-git-send-email-s.mesoraca16@gmail.com>
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20180223230932.GR1469@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 13, 2018 at 08:50:22PM +0100, Salvatore Mesoraca wrote:
-> Avoid a VLA[1] by using a real constant expression instead of a variable.
-> The compiler should be able to optimize the original code and avoid using
-> an actual VLA. Anyway this change is useful because it will avoid a false
-> positive with -Wvla, it might also help the compiler generating better
-> code.
+On Sat, Feb 24, 2018 at 12:09:32AM +0100, David Sterba wrote:
+> On Fri, Feb 16, 2018 at 07:51:38PM +0000, Dmitriy Gorokh wrote:
+> > On detaching of a disk which is a part of a RAID6 filesystem, the following kernel OOPS may happen:
+> > 
+> > [63122.680461] BTRFS error (device sdo): bdev /dev/sdo errs: wr 0, rd 0, flush 1, corrupt 0, gen 0 
+> > [63122.719584] BTRFS warning (device sdo): lost page write due to IO error on /dev/sdo 
+> > [63122.719587] BTRFS error (device sdo): bdev /dev/sdo errs: wr 1, rd 0, flush 1, corrupt 0, gen 0 
+> > [63122.803516] BTRFS warning (device sdo): lost page write due to IO error on /dev/sdo 
+> > [63122.803519] BTRFS error (device sdo): bdev /dev/sdo errs: wr 2, rd 0, flush 1, corrupt 0, gen 0 
+> > [63122.863902] BTRFS critical (device sdo): fatal error on device /dev/sdo 
+> > [63122.935338] BUG: unable to handle kernel NULL pointer dereference at 0000000000000080 
+> > [63122.946554] IP: fail_bio_stripe+0x58/0xa0 [btrfs] 
+> > [63122.958185] PGD 9ecda067 P4D 9ecda067 PUD b2b37067 PMD 0 
+> > [63122.971202] Oops: 0000 [#1] SMP 
+> > [63122.990786] Modules linked in: libcrc32c dlm configfs cpufreq_userspace cpufreq_powersave cpufreq_conservative softdog nfsd auth_rpcgss nfs_acl nfs lockd grace fscache sunrpc bonding ipmi_devintf ipmi_msghandler joydev snd_intel8x0 snd_ac97_codec snd_pcm snd_timer snd psmouse evdev parport_pc soundcore serio_raw battery pcspkr video ac97_bus ac parport ohci_pci ohci_hcd i2c_piix4 button crc32c_generic crc32c_intel btrfs xor zstd_decompress zstd_compress xxhash raid6_pq dm_mod dax raid1 md_mod hid_generic usbhid hid xhci_pci xhci_hcd ehci_pci ehci_hcd usbcore sg sd_mod sr_mod cdrom ata_generic ahci libahci ata_piix libata e1000 scsi_mod [last unloaded: scst] 
+> > [63123.006760] CPU: 0 PID: 3979 Comm: kworker/u8:9 Tainted: G W 4.14.2-16-scst34x+ #8 
+> > [63123.007091] Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006 
+> > [63123.007402] Workqueue: btrfs-worker btrfs_worker_helper [btrfs] 
+> > [63123.007595] task: ffff880036ea4040 task.stack: ffffc90006384000 
+> > [63123.007796] RIP: 0010:fail_bio_stripe+0x58/0xa0 [btrfs] 
+> > [63123.007968] RSP: 0018:ffffc90006387ad8 EFLAGS: 00010287 
+> > [63123.008140] RAX: 0000000000000002 RBX: ffff88004beaa0b8 RCX: ffff8800b2bd5690 
+> > [63123.008359] RDX: 0000000000000000 RSI: ffff88007bb43500 RDI: ffff88004beaa000 
+> > [63123.008621] RBP: ffffc90006387ae8 R08: 0000000099100000 R09: ffff8800b2bd5600 
+> > [63123.008840] R10: 0000000000000004 R11: 0000000000010000 R12: ffff88007bb43500 
+> > [63123.009059] R13: 00000000fffffffb R14: ffff880036fc5180 R15: 0000000000000004 
+> > [63123.009278] FS: 0000000000000000(0000) GS:ffff8800b7000000(0000) knlGS:0000000000000000 
+> > [63123.009564] CS: 0010 DS: 0000 ES: 0000 CR0: 0000000080050033 
+> > [63123.009748] CR2: 0000000000000080 CR3: 00000000b0866000 CR4: 00000000000406f0 
+> > [63123.009969] Call Trace: 
+> > [63123.010085] raid_write_end_io+0x7e/0x80 [btrfs] 
+> > [63123.010251] bio_endio+0xa1/0x120 
+> > [63123.010378] generic_make_request+0x218/0x270 
+> > [63123.010921] submit_bio+0x66/0x130 
+> > [63123.011073] finish_rmw+0x3fc/0x5b0 [btrfs] 
+> > [63123.011245] full_stripe_write+0x96/0xc0 [btrfs] 
+> > [63123.011428] raid56_parity_write+0x117/0x170 [btrfs] 
+> > [63123.011604] btrfs_map_bio+0x2ec/0x320 [btrfs] 
+> > [63123.011759] ? ___cache_free+0x1c5/0x300 
+> > [63123.011909] __btrfs_submit_bio_done+0x26/0x50 [btrfs] 
+> > [63123.012087] run_one_async_done+0x9c/0xc0 [btrfs] 
+> > [63123.012257] normal_work_helper+0x19e/0x300 [btrfs] 
+> > [63123.012429] btrfs_worker_helper+0x12/0x20 [btrfs] 
+> > [63123.012656] process_one_work+0x14d/0x350 
+> > [63123.012888] worker_thread+0x4d/0x3a0 
+> > [63123.013026] ? _raw_spin_unlock_irqrestore+0x15/0x20 
+> > [63123.013192] kthread+0x109/0x140 
+> > [63123.013315] ? process_scheduled_works+0x40/0x40 
+> > [63123.013472] ? kthread_stop+0x110/0x110 
+> > [63123.013610] ret_from_fork+0x25/0x30 
+> > [63123.013741] Code: 7e 43 31 c0 48 63 d0 48 8d 14 52 49 8d 4c d1 60 48 8b 51 08 49 39 d0 72 1f 4c 63 1b 4c 01 da 49 39 d0 73 14 48 8b 11 48 8b 52 68 <48> 8b 8a 80 00 00 00 48 39 4e 08 74 14 83 c0 01 44 39 d0 75 c4 
+> > [63123.014469] RIP: fail_bio_stripe+0x58/0xa0 [btrfs] RSP: ffffc90006387ad8 
+> > [63123.014678] CR2: 0000000000000080 
+> > [63123.016590] ---[ end trace a295ea7259c17880 ]— 
+> > 
+> > This is reproducible in a cycle, where a series of writes is followed by SCSI device delete command. The test may take up to few minutes.
+> > 
+> > Fixes: commit 74d46992e0d9dee7f1f376de0d56d31614c8a17a ("block: replace bi_bdev with a gendisk pointer and partitions index")
 > 
-> [1] https://lkml.org/lkml/2018/3/7/621
+> Right, the commit introduced dereference of stripe->dev->bdev so we have
+> to check it first.
 > 
-> Signed-off-by: Salvatore Mesoraca <s.mesoraca16@gmail.com>
+> Please update the Fixes: tag, the word 'commit' should not be there and
+> the sha1 length can be shortened to 12 digits.
+> 
+> Also please add your Signed-off-by. Thanks.
 
-We already have a patch for that from a few days ago, but thanks anyway.
+The signed-off line is the only thing that's remaining to merge the
+patch, I can fix the rest. As this is your first contribution I can see
+in btrfs code I can't assume that the missing S-O-B is a simple omission
+that sometimes happen so I can't add it on your behalf.
 
-https://patchwork.kernel.org/patch/10277901/
+You can read more about that here
+https://www.kernel.org/doc/html/latest/process/submitting-patches.html#sign-your-work-the-developer-s-certificate-of-origin
+
+As I want to add the patch now, I can either wait a bit (not more than 2
+days though) or take the patch crediting you but with my signed-off. The
+formalities can be annoying.

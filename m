@@ -1,67 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out4-smtp.messagingengine.com ([66.111.4.28]:42333 "EHLO
-        out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S932361AbeCKWq0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 11 Mar 2018 18:46:26 -0400
-Date: Mon, 12 Mar 2018 09:46:16 +1100
-From: "Tobin C. Harding" <me@tobin.cc>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Kees Cook <keescook@chromium.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Josh Poimboeuf <jpoimboe@redhat.com>,
-        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-        "Gustavo A. R. Silva" <gustavo@embeddedor.com>,
-        Steven Rostedt <rostedt@goodmis.org>, Jonathan Corbet <corbet@lwn.net>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>,
-        Hideaki YOSHIFUJI <yoshfuji@linux-ipv6.org>,
-        Ingo Molnar <mingo@kernel.org>, Peter Zijlstra <peterz@infradead.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Masahiro Yamada <yamada.masahiro@socionext.com>,
-        Borislav Petkov <bp@suse.de>, Randy Dunlap <rdunlap@infradead.org>,
-        Ian Abbott <abbotti@mev.co.uk>,
-        Sergey Senozhatsky <sergey.senozhatsky.work@gmail.com>,
-        Petr Mladek <pmladek@suse.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Pantelis Antoniou <pantelis.antoniou@konsulko.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Network Development <netdev@vger.kernel.org>,
-        Kernel Hardening <kernel-hardening@lists.openwall.com>
-Subject: Re: [PATCH v3] kernel.h: Skip single-eval logic on literals in
- min()/max()
-Message-ID: <20180311224616.GJ16734@eros>
-References: <20180309200536.GA5670@beast>
- <CA+55aFy82Drgu2xm1GWaDz2Jyj5QBx3dW4AatXzmCx-b1YET5Q@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CA+55aFy82Drgu2xm1GWaDz2Jyj5QBx3dW4AatXzmCx-b1YET5Q@mail.gmail.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:43275 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751980AbeCLHPm (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Mon, 12 Mar 2018 03:15:42 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/3] btrfs-progs: Split mode-original code
+Date: Mon, 12 Mar 2018 15:15:27 +0800
+Message-Id: <20180312071530.8723-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 09, 2018 at 01:10:30PM -0800, Linus Torvalds wrote:
-> On Fri, Mar 9, 2018 at 12:05 PM, Kees Cook <keescook@chromium.org> wrote:
-> > When max() is used in stack array size calculations from literal values
-> > (e.g. "char foo[max(sizeof(struct1), sizeof(struct2))]", the compiler
-> > thinks this is a dynamic calculation due to the single-eval logic, which
-> > is not needed in the literal case. This change removes several accidental
-> > stack VLAs from an x86 allmodconfig build:
-> 
-> Ok, looks good.
-> 
-> I just have a couple of questions about applying it.
-> 
-> In particular, if this will help people working on getting rid of
-> VLA's in the short term, I can apply it directly. But if people who
-> are looking at it (anybody else than Kees?) don't much care, then this
-> might be a 4.17 thing or at least "random -mm queue"?
+This patchset can be fetched from github:
+https://github.com/adam900710/btrfs-progs/tree/split_check_for_david
 
-It's easy enough to work on the other VLA removals without basing on
-this, no rush.
+This is the remaining part of the check code split.
+After the code split, the old cmds-check.c will return to make every
+subcommand have its own cmds-*.c.
+And there will be check/mode-original.[ch] and check/mode-lowmem.[ch] to
+indicates the supported check mode.
 
+As usual, some patch would be quite big so it won't reach mail list.
+Please check github for full change.
 
-thanks,
-Tobin.
+Qu Wenruo (3):
+  btrfs-progs: check: Move more shared codes to mode-common.c
+  btrfs-progs: Move the remaining original mode code to mode-original.c
+  btrfs-progs: Move check/main.c to cmds-check.c to maintain the
+    subcommand hierarchy
+
+ Makefile                          |    7 +-
+ btrfsck.h                         |    1 -
+ check/mode-common.c               | 1724 +++++++++
+ check/mode-common.h               |   38 +
+ check/{main.c => mode-original.c} | 6906 ++++++++++++-------------------------
+ check/mode-original.h             |   32 +-
+ cmds-check.c                      |  661 ++++
+ 7 files changed, 4724 insertions(+), 4645 deletions(-)
+ rename check/{main.c => mode-original.c} (76%)
+ create mode 100644 cmds-check.c
+
+-- 
+2.16.2
+

@@ -1,136 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.159.176.226] ([195.159.176.226]:37276 "EHLO
-        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
-        with ESMTP id S1750752AbeCLGVr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Mar 2018 02:21:47 -0400
-Received: from list by blaine.gmane.org with local (Exim 4.84_2)
-        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
-        id 1evGo6-0004Gr-8A
-        for linux-btrfs@vger.kernel.org; Mon, 12 Mar 2018 07:19:38 +0100
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:38052 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751483AbeCLGHk (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Mon, 12 Mar 2018 02:07:40 -0400
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Raid1 volume stuck as read-only: How to dump, recreate and
- restore its content?
-Date: Mon, 12 Mar 2018 06:19:31 +0000 (UTC)
-Message-ID: <pan$16a8$693752e8$556456d2$4e57d94b@cox.net>
-References: <CAEm4ggntj1ccp6PXvECDVrj0_RXrzn6fX7mu+CWtHNwCAoXbvg@mail.gmail.com>
-        <20180311174713.53tqlmjn6t3d4gwh@angband.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: check: Fix false alerts on sector sized compressed inline file extent
+Date: Mon, 12 Mar 2018 14:07:24 +0800
+Message-Id: <20180312060724.32394-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adam Borowski posted on Sun, 11 Mar 2018 18:47:13 +0100 as excerpted:
+Commit 9d015c984006 ("btrfs-progs: Limit inline extent below page size")
+tries to fix the convert problem which we could create large inline file
+extent but kernel can't hanle.
 
-> On Sun, Mar 11, 2018 at 11:28:08PM +0700, Andreas Hild wrote:
->> Following a physical disk failure of a RAID1 array, I tried to mount
->> the remaining volume of a root partition with "-o degraded". For some
->> reason it ended up as read-only as described here:
->> https://btrfs.wiki.kernel.org/index.php/
-Gotchas#raid1_volumes_only_mountable_once_RW_if_degraded
->> 
->> 
->> How to precisely do this: dump, recreate and restore its contents?
->> Could someone please provided more details how to recover this volume
->> safely?
-> 
->> Linux debian 4.9.0-4-amd64 #1 SMP Debian 4.9.65-3 (2017-12-03) x86_64
->> GNU/Linux
-> 
->> [ 1313.279140] BTRFS warning (device sdb2): missing devices (1)
->> exceeds the limit (0), writeable mount is not allowed
-> 
-> I'd recommend instead going with kernel 4.14 or newer (available in
-> stretch-backports), which handles this case well without the need to
-> restore.  If there's no actual data loss (there shouldn't be, it's RAID1
-> with only a single device missing), you can mount degraded normally,
-> then balance the data onto the new disk.
-> 
-> Recovery with 4.9 is unpleasant.
+This leads the false alert about fsck test case 020.
 
-Second the 4.14+ kernel with the per-chunk-check (vs. older per-device) 
-patches recommendation, both in general and if the priority is getting 
-the existing filesystem back into normal writable condition.
+And after discussion about the problem in the mail list, we still
+need to support compressed inline file extent whose ram_bytes can be
+sector size.
 
-And since we're talking about upgrades, I'll mention that 4.7 btrfs-tools 
-version as well.  For normal operations, mounting, writing, balance, 
-scrub, etc, it's the kernel version that does the work (the userspace 
-scrub and balance commands just call the appropriate kernel 
-functionality), so it's the kernel version that's important to keep 
-current as having the latest bugfixes.  However, when things go wrong and 
-you're running commands such as btrfs check, restore, or rescue, as well 
-as when you create a new btrfs with mkfs.btrfs, it's the userspace code 
-that does the work and thus the userspace code you want to have the 
-latest bugfixes in ordered to have the greatest chance at a fix.
+So instead of embedding the sector size check into
+BTRFS_MAX_INLINE_DATA_SIZE(), we still need to manually check ram_bytes
+and inline_item_len separately.
 
-And with userspace versions synced with kernelspace and coming out 
-shortly after the kernel release of the same major.minor, five such 
-kernel releases a year, and 4.15 being the current kernel release, 4.7 
-userspace is 8 kernel series releases and over a year and a half 
-outdated.  Put differently, 4.7 is missing a year and a half worth of 
-bugfixes that you won't have when you run it to try to check or recover 
-that btrfs that won't mount!  Do you *really* want to risk your data on 
-bugs that were after all discovered and fixed over a year ago?
+This patch reverts the fix in 9d015c984006 ("btrfs-progs: Limit inline
+extent below page size") and do it manually in check and convert, so we
+won't need to maintain 2 different BTRFS_MAX_INLINE_DATA_SIZE().
 
+Fixes: 9d015c984006 ("btrfs-progs: Limit inline extent below page size")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/main.c          | 25 +++++++++++++++++++++++--
+ check/mode-lowmem.c   | 30 +++++++++++++++++++++++++++---
+ convert/source-ext2.c |  4 ++--
+ ctree.h               | 10 ++--------
+ 4 files changed, 54 insertions(+), 15 deletions(-)
 
-Meanwhile, if the priority is simply ensuring access to the data, and 
-you'd prefer to stick with the 4.9-LTS series kernel if possible, then 
-the existing read-only filesystem should let you do just that, reliably 
-read the files in ordered to copy them elsewhere, say to a new btrfs, tho 
-it can just as easily be non-btrfs if desired, since you're just copying 
-the files as normal.  It's a read-only filesystem, but that shouldn't 
-prevent you copying the files off, just prevent writing.
-
-No need to worry about btrfs restore at all, which after all is designed 
-for disaster recovery and thus (among other things) doesn't verify 
-checksums on the data it recovers, in ordered to give the best chance at 
-recovery when things are already badly wrong, so just copying the data 
-off the read-only filesystem is a better option when it's available, as 
-it is here.
-
-
-Alternatively, since the value of data is defined not by empty claims but 
-by the backups you consider it worth having of that data (and raid is not 
-a backup), you either have a backup to copy from if necessary, or by lack 
-of said backup, you defined the value of the data as too trivial to be 
-worth bothering with a backup, in which case it's trivial enough it may 
-not be worth bothering copying it off, either -- just blow it away with a 
-fresh mkfs and start over.
-
-And should you be reconsidering your backup-action (or lack thereof) 
-definition of the value of the data... consider yourself luck fate didn't 
-take you up on that definition... this time... and take the opportunity 
-presented to make that backup while you have the chance, because fate may 
-actually take you up on that value definition, next time. =:^)
-
-(FWIW, about a year ago I upgraded even my backups to ssd, because I 
-wasn't comfortable with amount of unprotected data I had in the delta 
-between current/working and last backup, because backups were enough of a 
-hassle I kept putting them off.  By buying ssds, I deliberately chose to 
-spend money to bring down the hassle cost of the backups, and thus my 
-"trivial value" threshold definition, and backups are fast enough now 
-that as I predicted, I make them far more often.  So I'm walking my own 
-talk, and am able to sleep much more comfortably now as I'm not worrying 
-about that backup I put off and the chance fate might take me up on my 
-formerly too-high-for-comfort "trivial" threshold definition.=:^)
-
-(And as it happens, I'm actually running from a system/root filesystem 
-backup ATM, as an upgrade didn't go well and x wouldn't start, so I 
-reverted.  But my root/system filesystem is under 10 gigs, on SSD for the 
-backup as well as the working copy, so a full backup copy of root takes 
-only a few minutes and I made one before upgrading a few packages I had 
-some doubts about due to previous upgrade issues with them, so the delta 
-between working and that backup was literally the five package upgrades I 
-was it turned out rightly worried about.  So that investment in ssds for 
-backup has paid off.  While in this particular case simply taking a 
-snapshot and recovering to it when the upgrade went bad would have worked 
-just as well, having the independent filesystem backup on a different set 
-of physical devices means I don't have to worry about loss of the 
-filesystem or physical devices containing it, either! =:^)
-
+diff --git a/check/main.c b/check/main.c
+index 392195ca324e..c887b139ccdb 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -1435,6 +1435,8 @@ static int process_file_extent(struct btrfs_root *root,
+ 	u64 disk_bytenr = 0;
+ 	u64 extent_offset = 0;
+ 	u64 mask = root->fs_info->sectorsize - 1;
++	u32 max_inline_size = min_t(u32, mask,
++				BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info));
+ 	int extent_type;
+ 	int ret;
+ 
+@@ -1460,11 +1462,30 @@ static int process_file_extent(struct btrfs_root *root,
+ 	extent_type = btrfs_file_extent_type(eb, fi);
+ 
+ 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
++		u8 compression = btrfs_file_extent_compression(eb, fi);
++		struct btrfs_item *item = btrfs_item_nr(slot);
++
+ 		num_bytes = btrfs_file_extent_inline_len(eb, slot, fi);
+ 		if (num_bytes == 0)
+ 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
+-		if (num_bytes > BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
+-			rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
++		/*
++		 * Here is the hassle.
++		 * For compressed inline file extent, we allow ram_bytes to
++		 * be as large as sectorsize, and only limit its on-disk
++		 * data size below sectorsize.
++		 * But for uncompressed inline file extent, we limit
++		 * the ram_bytes to below sectorsize.
++		 */
++		if (compression) {
++			if (btrfs_file_extent_inline_item_len(eb, item) >
++			    max_inline_size ||
++			    num_bytes > root->fs_info->sectorsize)
++				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
++		} else {
++			if (num_bytes > max_inline_size)
++				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
++		}
++
+ 		rec->found_size += num_bytes;
+ 		num_bytes = (num_bytes + mask) & ~mask;
+ 	} else if (extent_type == BTRFS_FILE_EXTENT_REG ||
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 0c932b343db2..ae81dfb60d7e 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -1417,7 +1417,8 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 	u64 csum_found;		/* In byte size, sectorsize aligned */
+ 	u64 search_start;	/* Logical range start we search for csum */
+ 	u64 search_len;		/* Logical range len we search for csum */
+-	u32 max_inline_extent_size = BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info);
++	u32 max_inline_extent_size = min_t(u32, root->fs_info->sectorsize - 1,
++				BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info));
+ 	unsigned int extent_type;
+ 	unsigned int is_hole;
+ 	int compressed = 0;
+@@ -1441,12 +1442,35 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 				root->objectid, fkey->objectid, fkey->offset);
+ 			err |= FILE_EXTENT_ERROR;
+ 		}
+-		if (extent_num_bytes > max_inline_extent_size) {
++		/*
++		 * Compressed inline and uncompressed inline has different limit
++		 * on ram_bytes and item size.
++		 */
++		if (compressed) {
++			if (extent_num_bytes > root->fs_info->sectorsize) {
++				error(
++"root %llu EXTENT_DATA[%llu %llu] too large inline extent ram size, have %llu, max: %u",
++					root->objectid, fkey->objectid,
++					fkey->offset, extent_num_bytes,
++					root->fs_info->sectorsize);
++				err |= FILE_EXTENT_ERROR;
++			}
++			if (item_inline_len > max_inline_extent_size) {
++				error(
++"root %llu EXTENT_DATA[%llu %llu] too large inline extent on-disk size, have %u, max: %u",
++					root->objectid, fkey->objectid,
++					fkey->offset, item_inline_len,
++					max_inline_extent_size);
++				err |= FILE_EXTENT_ERROR;
++			}
++		} else {
++			if (extent_num_bytes > max_inline_extent_size) {
+ 			error(
+ "root %llu EXTENT_DATA[%llu %llu] too large inline extent size, have %llu, max: %u",
+ 				root->objectid, fkey->objectid, fkey->offset,
+ 				extent_num_bytes, max_inline_extent_size);
+-			err |= FILE_EXTENT_ERROR;
++				err |= FILE_EXTENT_ERROR;
++			}
+ 		}
+ 		if (!compressed && extent_num_bytes != item_inline_len) {
+ 			error(
+diff --git a/convert/source-ext2.c b/convert/source-ext2.c
+index b1492c78693d..2198304a123f 100644
+--- a/convert/source-ext2.c
++++ b/convert/source-ext2.c
+@@ -310,8 +310,8 @@ static int ext2_create_file_extents(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto fail;
+ 	if ((convert_flags & CONVERT_FLAG_INLINE_DATA) && data.first_block == 0
+-	    && data.num_blocks > 0
+-	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
++	    && data.num_blocks > 0 && inode_size < sectorsize &&
++	    inode_size < BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
+ 		u64 num_bytes = data.num_blocks * sectorsize;
+ 		u64 disk_bytenr = data.disk_block * sectorsize;
+ 		u64 nbytes;
+diff --git a/ctree.h b/ctree.h
+index 75dffdff2eca..a73c0a0629c9 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1206,14 +1206,8 @@ static inline u32 BTRFS_NODEPTRS_PER_BLOCK(const struct btrfs_fs_info *info)
+ 	(offsetof(struct btrfs_file_extent_item, disk_bytenr))
+ static inline u32 BTRFS_MAX_INLINE_DATA_SIZE(const struct btrfs_fs_info *info)
+ {
+-	/*
+-	 * Inline extent larger than pagesize could lead to kernel unexpected
+-	 * error when dropping extents, so we need to limit the inline extent
+-	 * size to less than sectorsize.
+-	 */
+-	return min_t(u32, info->sectorsize - 1,
+-		     BTRFS_MAX_ITEM_SIZE(info) -
+-		     BTRFS_FILE_EXTENT_INLINE_DATA_START);
++	return BTRFS_MAX_ITEM_SIZE(info) -
++		     BTRFS_FILE_EXTENT_INLINE_DATA_START;
+ }
+ 
+ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.16.2
 

@@ -1,61 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53281 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752023AbeCMI0L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Mar 2018 04:26:11 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id ED400AB36
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 08:26:09 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2] btrfs: Use sizeof directly instead of a constant variable
-Date: Tue, 13 Mar 2018 10:26:06 +0200
-Message-Id: <1520929566-4155-1-git-send-email-nborisov@suse.com>
-In-Reply-To: <1520873548-26667-1-git-send-email-nborisov@suse.com>
-References: <1520873548-26667-1-git-send-email-nborisov@suse.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:37470 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932445AbeCMNyp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Mar 2018 09:54:45 -0400
+Subject: Re: [PATCH] btrfs: Document parameters of btrfs_reserve_extent
+To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
+References: <1520936552-11586-1-git-send-email-nborisov@suse.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <21852f3c-f330-ecc8-543d-62c0cc4b66bb@oracle.com>
+Date: Tue, 13 Mar 2018 21:56:23 +0800
+MIME-Version: 1.0
+In-Reply-To: <1520936552-11586-1-git-send-email-nborisov@suse.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The kernel would like to have all stack VLA usage removed[1].
-Unfortunately using an integer constant variable as the size of an
-array is still considered a VLA. Instead let's use directly sizeof(var)
-which removes the VLA usage. Use the occasion to remove csum_size
-altogether and use sizeof() also for the size passed to memcmp
 
-[1]: https://lkml.org/lkml/2018/3/7/621
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
+On 03/13/2018 06:22 PM, Nikolay Borisov wrote:
+> This function is the entry to the extent allocator and as such has
+> quite a number of parameters. Some of those have subtle effects on the
+> allocation algorithm. Document the parameters.
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-V2: 
- * Use sizeof(result) in memcmp to make it more clear what we are comparing. 
- fs/btrfs/disk-io.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+  Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3809d6d66f6a..04834cb65272 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -403,8 +403,7 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 
- 	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
- 		u32 crc = ~(u32)0;
--		const int csum_size = sizeof(crc);
--		char result[csum_size];
-+		char result[sizeof(crc)];
- 
- 		/*
- 		 * The super_block structure does not span the whole
-@@ -415,7 +414,7 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 		btrfs_csum_final(crc, result);
- 
--		if (memcmp(raw_disk_sb, result, csum_size))
-+		if (memcmp(raw_disk_sb, result, sizeof(result)))
- 			ret = 1;
- 	}
- 
--- 
-2.7.4
-
+> ---
+>   fs/btrfs/extent-tree.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+>   1 file changed, 45 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index bb1861033071..60ece25101ee 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7961,6 +7961,51 @@ static void dump_space_info(struct btrfs_fs_info *fs_info,
+>   	up_read(&info->groups_sem);
+>   }
+>   
+> +/*
+> + * btrfs_reserve_extent - entry point to the extent allocator. Tries to find a
+> + *			  hole that is at least as big as @num_bytes.
+> + *
+> + * @root           -	The root that will contains this extent
+> + *
+> + * @ram_bytes      -	The amount of space in ram that @num_bytes take. This
+> + *			is used for accounting purposes. This value differs
+> + *			than @num_bytes only in the case of compressed extents.
+> + *
+> + * @num_bytes      -	Number of bytes to allocates on-disk.
+> + *
+> + * @min_alloc_size -	Indicates the minimum amount of memory that the
+> + *			allocator should try to satisfy. In some cases
+> + *			@num_bytes may be larger than what is required and if
+> + *			the filesystem is fragmented then allocation fails.
+> + *			However, the presence of @min_alloc_size gives a
+> + *			chance to try and satisfy the smaller allocation.
+> + *
+> + * @empty_size     -	A hint that you plan on doing more cow. This is the
+> + *			size in bytes the allocator should try to find free
+> + *			next to the block it returns.  This is just a hint and
+> + *			may be ignored by the allocator.
+> + *
+> + * @hint_byte      -	Hint to the allocator to start searching above the byte
+> + *			address passed. It might be ignored.
+> + *
+> + * @ins            -	This key is modified to record the found hole. It will
+> + *			have the following values:
+> + *			ins->objectid == start position
+> + *			ins->flags = BTRFS_EXTENT_ITEM_KEY
+> + *			ins->offset == the size of the hole.
+> + *
+> + * @is_data        -	Boolean flag indicating whether an extent is
+> + *			allocated for data (true) or metadata (false)
+> + *
+> + * @delalloc       -	Boolean flag indicating whether this allocation is for
+> + *			delalloc or not. If 'true' data_rwsem of block groups
+> + *			is going to be acquired.
+> + *
+> + *
+> + * Returns 0 when an allocation succeeded or < 0 when an error occurred. In
+> + * case -ENOSPC is returned then @ins->offset will contain the size of the
+> + * largest available hole the allocator managed to find.
+> + */
+>   int btrfs_reserve_extent(struct btrfs_root *root, u64 ram_bytes,
+>   			 u64 num_bytes, u64 min_alloc_size,
+>   			 u64 empty_size, u64 hint_byte,
+> 

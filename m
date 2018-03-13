@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54227 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53281 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932227AbeCLQwd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Mar 2018 12:52:33 -0400
+        id S1752023AbeCMI0L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Mar 2018 04:26:11 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 83BCAADE5
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Mar 2018 16:52:32 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id ED400AB36
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 08:26:09 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: Use sizeof directly instead of a constant variable
-Date: Mon, 12 Mar 2018 18:52:28 +0200
-Message-Id: <1520873548-26667-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Use sizeof directly instead of a constant variable
+Date: Tue, 13 Mar 2018 10:26:06 +0200
+Message-Id: <1520929566-4155-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <1520873548-26667-1-git-send-email-nborisov@suse.com>
+References: <1520873548-26667-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -25,11 +27,14 @@ altogether and use sizeof() also for the size passed to memcmp
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
+
+V2: 
+ * Use sizeof(result) in memcmp to make it more clear what we are comparing. 
  fs/btrfs/disk-io.c | 5 ++---
  1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 3809d6d66f6a..6247162e334a 100644
+index 3809d6d66f6a..04834cb65272 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
 @@ -403,8 +403,7 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
@@ -47,7 +52,7 @@ index 3809d6d66f6a..6247162e334a 100644
  		btrfs_csum_final(crc, result);
  
 -		if (memcmp(raw_disk_sb, result, csum_size))
-+		if (memcmp(raw_disk_sb, result, sizeof(crc)))
++		if (memcmp(raw_disk_sb, result, sizeof(result)))
  			ret = 1;
  	}
  

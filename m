@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:60914 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:60572 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751606AbeCMSrF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Mar 2018 14:47:05 -0400
+        id S1751711AbeCNPCp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 11:02:45 -0400
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0E448205F4
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 18:47:03 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 094FA20779
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 15:02:43 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] Btrfs-progs: check, fix false error reports for shared prealloc extents
-Date: Tue, 13 Mar 2018 18:47:00 +0000
-Message-Id: <20180313184700.30173-1-fdmanana@kernel.org>
+Subject: [PATCH 1/2 v2] Btrfs-progs: check, fix false error reports for shared prealloc extents
+Date: Tue, 13 Mar 2018 22:48:17 +0000
+Message-Id: <20180313224817.3418-1-fdmanana@kernel.org>
+In-Reply-To: <20180313184700.30173-1-fdmanana@kernel.org>
+References: <20180313184700.30173-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -33,7 +35,7 @@ Example:
   $ xfs_io -c "falloc 0 256K" /mnt/foo
   $ sync
 
-  $ xfs_io -c "pwrite -S 0xab -b 0 256K" /mnt/foo
+  $ xfs_io -c "pwrite -S 0xab 0 256K" /mnt/foo
   $ touch /mnt/bar
   $ xfs_io -c "reflink /mnt/foo 0 0 256K" /mnt/bar
   $ xfs_io -c "fsync" /mnt/bar
@@ -61,7 +63,7 @@ Example:
   $ echo $?
   1
 
-So tech check to not report such cases as errors by checking if the
+So teach check to not report such cases as errors by checking if the
 extent is shared with other inodes and if so, consider it an error the
 existence of checksum items only if all those other inodes are referencing
 the extent as a prealloc extent.
@@ -72,25 +74,56 @@ A test case will follow in a separate patch.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- check/main.c | 270 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 268 insertions(+), 2 deletions(-)
+
+V2: Made stuff work with lowmem mode as well.
+    Added a comment about the limitations of the current check.
+    Removed filtering by inode number since it was unreliable as we can
+    have different inodes with same inode number but in different roots
+    (so opted to drop the filtering instead of filtering by root as well,
+    to keep it simpler).
+
+ check/main.c        |  11 ++-
+ check/mode-common.c | 258 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ check/mode-common.h |   3 +
+ check/mode-lowmem.c |  14 ++-
+ 4 files changed, 281 insertions(+), 5 deletions(-)
 
 diff --git a/check/main.c b/check/main.c
-index 392195ca..bb816311 100644
+index 392195ca..88e6c1e9 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -1424,6 +1424,264 @@ static int process_inode_extref(struct extent_buffer *eb,
+@@ -1515,8 +1515,15 @@ static int process_file_extent(struct btrfs_root *root,
+ 			if (found < num_bytes)
+ 				rec->some_csum_missing = 1;
+ 		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+-			if (found > 0)
+-				rec->errors |= I_ERR_ODD_CSUM_ITEM;
++			if (found > 0) {
++				ret = check_prealloc_extent_written(root->fs_info,
++								    disk_bytenr,
++								    num_bytes);
++				if (ret < 0)
++					return ret;
++				if (ret == 0)
++					rec->errors |= I_ERR_ODD_CSUM_ITEM;
++			}
+ 		}
+ 	}
+ 	return 0;
+diff --git a/check/mode-common.c b/check/mode-common.c
+index 1b56a968..559cd11d 100644
+--- a/check/mode-common.c
++++ b/check/mode-common.c
+@@ -24,6 +24,264 @@
+ #include "check/mode-common.h"
  
- }
- 
-+/*
+ /*
 + * Check if the inode referenced by the given data reference uses the extent
 + * at disk_bytenr as a non-prealloc extent.
 + *
 + * Returns 1 if true, 0 if false and < 0 on error.
 + */
 +static int check_prealloc_data_ref(struct btrfs_fs_info *fs_info,
-+				   u64 ino,
 +				   u64 disk_bytenr,
 +				   struct btrfs_extent_data_ref *dref,
 +				   struct extent_buffer *eb)
@@ -102,9 +135,6 @@ index 392195ca..bb816311 100644
 +	struct btrfs_key key;
 +	struct btrfs_path path;
 +	int ret;
-+
-+	if (objectid == ino)
-+		return 0;
 +
 +	btrfs_init_path(&path);
 +	key.objectid = rootid;
@@ -172,13 +202,11 @@ index 392195ca..bb816311 100644
 +
 +/*
 + * Check if a shared data reference points to a node that has a file extent item
-+ * pointing to the extent at disk_bytenr that is not of type prealloc and is
-+ * associated to an inode with a number different from ino.
++ * pointing to the extent at @disk_bytenr that is not of type prealloc.
 + *
 + * Returns 1 if true, 0 if false and < 0 on error.
 + */
 +static int check_prealloc_shared_data_ref(struct btrfs_fs_info *fs_info,
-+					  u64 ino,
 +					  u64 parent,
 +					  u64 disk_bytenr)
 +{
@@ -202,11 +230,8 @@ index 392195ca..bb816311 100644
 +		btrfs_item_key_to_cpu(eb, &key, i);
 +		if (key.type != BTRFS_EXTENT_DATA_KEY)
 +			continue;
-+		if (key.objectid == ino)
-+			continue;
 +
 +		fi = btrfs_item_ptr(eb, i, struct btrfs_file_extent_item);
-+
 +		extent_type = btrfs_file_extent_type(eb, fi);
 +		if (extent_type != BTRFS_FILE_EXTENT_REG &&
 +		    extent_type != BTRFS_FILE_EXTENT_PREALLOC)
@@ -224,18 +249,29 @@ index 392195ca..bb816311 100644
 +}
 +
 +/*
-+ * Check if a prealloc extent is shared by other inodes and if any inode has
++ * Check if a prealloc extent is shared by multiple inodes and if any inode has
 + * already written to that extent. This is to avoid emitting invalid warnings
 + * about odd csum items (a inode has an extent entirely marked as prealloc
 + * but another inode shares it and has already written to it).
 + *
++ * Note: right now it does not check if the number of checksum items in the
++ * csum tree matches the number of bytes written into the ex-prealloc extent.
++ * It's complex to deal with that because the prealloc extent might have been
++ * partially written through multiple inodes and we would have to keep track of
++ * ranges, merging them and notice ranges that fully or partially overlap, to
++ * avoid false reports of csum items missing for areas of the prealloc extent
++ * that were not written to - for example if we have a 1M prealloc extent, we
++ * can have only the first half of it written, but 2 different inodes refer to
++ * the its first half (through reflinks/cloning), so keeping a counter of bytes
++ * covered by checksum items is not enough, as the correct value would be 512K
++ * and not 1M (whence the need to track ranges).
++ *
 + * Returns 0 if the prealloc extent was not written yet by any inode, 1 if
 + * at least one other inode has written to it, and < 0 on error.
 + */
-+static int check_prealloc_extent_written(struct btrfs_fs_info *fs_info,
-+					 u64 ino,
-+					 u64 disk_bytenr,
-+					 u64 num_bytes)
++int check_prealloc_extent_written(struct btrfs_fs_info *fs_info,
++				  u64 disk_bytenr,
++				  u64 num_bytes)
 +{
 +	struct btrfs_path path;
 +	struct btrfs_key key;
@@ -279,7 +315,7 @@ index 392195ca..bb816311 100644
 +			struct btrfs_extent_data_ref *dref;
 +
 +			dref = (struct btrfs_extent_data_ref *)(&iref->offset);
-+			ret = check_prealloc_data_ref(fs_info, ino, disk_bytenr,
++			ret = check_prealloc_data_ref(fs_info, disk_bytenr,
 +						      dref, path.nodes[0]);
 +			if (ret != 0)
 +				goto out;
@@ -289,7 +325,6 @@ index 392195ca..bb816311 100644
 +			parent = btrfs_extent_inline_ref_offset(path.nodes[0],
 +								iref);
 +			ret = check_prealloc_shared_data_ref(fs_info,
-+							     ino,
 +							     parent,
 +							     disk_bytenr);
 +			if (ret != 0)
@@ -321,13 +356,12 @@ index 392195ca..bb816311 100644
 +
 +			dref = btrfs_item_ptr(path.nodes[0], path.slots[0],
 +					      struct btrfs_extent_data_ref);
-+			ret = check_prealloc_data_ref(fs_info, ino, disk_bytenr,
++			ret = check_prealloc_data_ref(fs_info, disk_bytenr,
 +						      dref, path.nodes[0]);
 +			if (ret != 0)
 +				goto out;
 +		} else if (key.type == BTRFS_SHARED_DATA_REF_KEY) {
 +			ret = check_prealloc_shared_data_ref(fs_info,
-+							     ino,
 +							     key.offset,
 +							     disk_bytenr);
 +			if (ret != 0)
@@ -341,28 +375,49 @@ index 392195ca..bb816311 100644
 +	return ret;
 +}
 +
- static int process_file_extent(struct btrfs_root *root,
- 				struct extent_buffer *eb,
- 				int slot, struct btrfs_key *key,
-@@ -1515,8 +1773,16 @@ static int process_file_extent(struct btrfs_root *root,
- 			if (found < num_bytes)
- 				rec->some_csum_missing = 1;
- 		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
--			if (found > 0)
--				rec->errors |= I_ERR_ODD_CSUM_ITEM;
-+			if (found > 0) {
-+				ret = check_prealloc_extent_written(root->fs_info,
-+								    rec->ino,
-+								    disk_bytenr,
-+								    num_bytes);
-+				if (ret < 0)
-+					return ret;
-+				if (ret == 0)
-+					rec->errors |= I_ERR_ODD_CSUM_ITEM;
-+			}
- 		}
++/*
+  * Search in csum tree to find how many bytes of range [@start, @start + @len)
+  * has the corresponding csum item.
+  *
+diff --git a/check/mode-common.h b/check/mode-common.h
+index ffae782b..79e1b0cf 100644
+--- a/check/mode-common.h
++++ b/check/mode-common.h
+@@ -80,6 +80,9 @@ static inline int fs_root_objectid(u64 objectid)
+ 	return is_fstree(objectid);
+ }
+ 
++int check_prealloc_extent_written(struct btrfs_fs_info *fs_info,
++				  u64 disk_bytenr,
++				  u64 num_bytes);
+ int count_csum_range(struct btrfs_fs_info *fs_info, u64 start,
+ 		     u64 len, u64 *found);
+ int insert_inode_item(struct btrfs_trans_handle *trans,
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index 2424cdc2..02806377 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -1511,9 +1511,17 @@ static int check_file_extent(struct btrfs_root *root, struct btrfs_key *fkey,
+ 		      csum_found, search_len);
+ 	} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC &&
+ 		   csum_found > 0) {
+-		err |= ODD_CSUM_ITEM;
+-		error("root %llu EXTENT_DATA[%llu %llu] prealloc shouldn't have csum, but has: %llu",
+-		      root->objectid, fkey->objectid, fkey->offset, csum_found);
++		ret = check_prealloc_extent_written(root->fs_info,
++						    disk_bytenr,
++						    disk_num_bytes);
++		if (ret < 0)
++			return ret;
++		if (ret == 0) {
++			err |= ODD_CSUM_ITEM;
++			error("root %llu EXTENT_DATA[%llu %llu] prealloc shouldn't have csum, but has: %llu",
++			      root->objectid, fkey->objectid, fkey->offset,
++			      csum_found);
++		}
  	}
- 	return 0;
+ 
+ 	/* Check EXTENT_DATA hole */
 -- 
 2.11.0
 

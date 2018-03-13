@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:60960 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:60622 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751824AbeCMSrQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Mar 2018 14:47:16 -0400
+        id S1752045AbeCNPDD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 11:03:03 -0400
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 70F24205F4
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 18:47:15 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 3104620779
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 15:03:02 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs-progs: add fsck test for filesystem with shared prealloc extents
-Date: Tue, 13 Mar 2018 18:47:13 +0000
-Message-Id: <20180313184713.30223-1-fdmanana@kernel.org>
+Subject: [PATCH 2/2 v2] Btrfs-progs: add fsck test for filesystem with shared prealloc extents
+Date: Tue, 13 Mar 2018 22:48:36 +0000
+Message-Id: <20180313224836.3474-1-fdmanana@kernel.org>
+In-Reply-To: <20180313184713.30223-1-fdmanana@kernel.org>
+References: <20180313184713.30223-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -41,7 +43,7 @@ Such scenario can be created with the following steps for example:
  xfs_io -c "falloc 0 256K" /mnt/foo
  sync
 
- xfs_io -c "pwrite -S 0xab -b 0 256K" /mnt/foo
+ xfs_io -c "pwrite -S 0xab 0 256K" /mnt/foo
  touch /mnt/bar
  xfs_io -c "reflink /mnt/foo 0 0 256K" /mnt/bar
  xfs_io -c "fsync" /mnt/bar
@@ -55,7 +57,11 @@ This scenario is fixed by the following patch for the filesystem checker:
  "Btrfs-progs: check, fix false error reports for shared prealloc extents"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
+
+V2: No changes, only added Qu's reviewed-by tag.
+
  .../reflinked-prealloc-extents.img.xz              | Bin 0 -> 3244 bytes
  .../030-reflinked-prealloc-extents/test.sh         |  42 +++++++++++++++++++++
  2 files changed, 42 insertions(+)
@@ -136,7 +142,7 @@ HcmV?d00001
 
 diff --git a/tests/fsck-tests/030-reflinked-prealloc-extents/test.sh b/tests/fsck-tests/030-reflinked-prealloc-extents/test.sh
 new file mode 100755
-index 00000000..4d3ef7da
+index 00000000..63f692bc
 --- /dev/null
 +++ b/tests/fsck-tests/030-reflinked-prealloc-extents/test.sh
 @@ -0,0 +1,42 @@
@@ -164,7 +170,7 @@ index 00000000..4d3ef7da
 +# xfs_io -c "falloc 0 256K" /mnt/foo
 +# sync
 +#
-+# xfs_io -c "pwrite -S 0xab -b 0 256K" /mnt/foo
++# xfs_io -c "pwrite -S 0xab 0 256K" /mnt/foo
 +# touch /mnt/bar
 +# xfs_io -c "reflink /mnt/foo 0 0 256K" /mnt/bar
 +# xfs_io -c "fsync" /mnt/bar

@@ -1,61 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from services.gouders.net ([141.101.32.176]:57340 "EHLO
-        services.gouders.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751965AbeCMNBl (ORCPT
+Received: from mail-it0-f44.google.com ([209.85.214.44]:39592 "EHLO
+        mail-it0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752156AbeCMNHw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Mar 2018 09:01:41 -0400
-From: Dirk Gouders <dirk@gouders.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Linux BTRFS mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: FS unmountable after RAID/LVM problems
-In-Reply-To: <005e24f2-2638-74c3-5034-92c094671d80@gmx.com> (Qu Wenruo's
-        message of "Tue, 13 Mar 2018 20:25:08 +0800")
-References: <ghlgew5pbq.fsf@lena.gouders.net>
-        <005e24f2-2638-74c3-5034-92c094671d80@gmx.com>
-Date: Tue, 13 Mar 2018 14:01:32 +0100
-Message-ID: <ghwoygxh77.fsf@lena.gouders.net>
+        Tue, 13 Mar 2018 09:07:52 -0400
+Received: by mail-it0-f44.google.com with SMTP id l187-v6so14543ith.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 06:07:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CAHS0cb_Pp8z5d_iKKX8MsDX5ixxVQLMyu94eir_a-AJsnhzqUQ@mail.gmail.com>
+References: <CAHS0cb_Pp8z5d_iKKX8MsDX5ixxVQLMyu94eir_a-AJsnhzqUQ@mail.gmail.com>
+From: Valerio Pachera <sirio81@gmail.com>
+Date: Tue, 13 Mar 2018 14:07:50 +0100
+Message-ID: <CAHS0cb_77AcDUyV1iPAMN-CkYfOx_d4ZhSzhrKB=-ZVBU4jWYQ@mail.gmail.com>
+Subject: Fwd: Used space discrepancy
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
+Short version:
 
-> On 2018年03月13日 16:53, Dirk Gouders wrote:
+656G used (df -h)
+450G used (du -sh)
+10G used by snapshots
+196G discrepancy <-----
 
-<SNIP>
+I don't undertand what is using 196G.
 
->> find-root:
->> 
->> # btrfs-find-root /dev/loop0p1
->> Superblock thinks the generation is 9858294
->> Superblock thinks the level is 1
->> Found tree root at 848773120 gen 9858294 level 1
->
-> Tree root is found, find-root won't help much here.
-> And if it's really tree root corruption, we should have some kernel
-> message for it.
->
->> Well block 832045056(gen: 9858272 level: 1) seems good, but generation/level doesn't match, want gen: 9858294 level: 1
->
-> Especially when the next tree block is 22 generation older.
->
-> Would you please try to call "btrfs inspect dump-tree <device>" and
-> paste the result with *stderr*?
->
-> At least we could know which tree block is corrupted.
+df -h /mnt/dati/
+File system            Dim. Usati Dispon. Uso% Montato su
+/dev/mapper/vg00-dati  919G  656G    262G  72% /mnt/dati
 
-Here is the result of inspect:
+du -sh /mnt/dati/folder1,2,3
+450G
 
-# btrfs inspect dump-tree /dev/loop0p1
-btrfs-progs v4.15
-checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
-checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
-checksum verify failed on 363069440 found DC09290B wanted C630FD61
-checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
-bytenr mismatch, want=363069440, have=17552567724568668829
-ERROR: unable to open /dev/loop0p1
+I have a subvolume with 10 snapshots.
+I know that 10G of data has been copied, so snapshots should hold no
+more than 10G.
 
-Thanks,
+There's not a huge amount of metadata:
 
-Dirk
+btrfs fi df /mnt/dati
+Data, single: total=774.00GiB, used=654.42GiB
+System, single: total=32.00MiB, used=92.00KiB
+Metadata, single: total=2.00GiB, used=1007.42MiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Why such a big difference between 'df -h' and 'du -sh' ?
+
+uname -a
+Linux cubo-ats 4.9.0-0.bpo.5-amd64 #1 SMP Debian
+4.9.65-3+deb9u2~bpo8+1 (2017-01-05) x86_64 GNU/Linux
+
+btrfs --version
+btrfs-progs v4.7.3
+
+btrfs fi show
+Label: none  uuid: f0a8ff89-608e-4ca2-bde9-8dc09b91accf
+        Total devices 1 FS bytes used 655.40GiB
+        devid    1 size 918.35GiB used 776.03GiB path /dev/mapper/vg00-dati

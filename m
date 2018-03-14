@@ -1,205 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:42209 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750818AbeCNKOe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 06:14:34 -0400
-Subject: Re: FS unmountable after RAID/LVM problems
-To: Dirk Gouders <dirk@gouders.net>
-Cc: Linux BTRFS mailing list <linux-btrfs@vger.kernel.org>
-References: <ghlgew5pbq.fsf@lena.gouders.net>
- <005e24f2-2638-74c3-5034-92c094671d80@gmx.com>
- <ghwoygxh77.fsf@lena.gouders.net>
- <b0637390-1dfb-940b-ce11-503faef4ff3d@gmx.com>
- <ghsh94xfx9.fsf@lena.gouders.net>
- <9dd85c04-2371-04df-8bd7-f07f8a92a044@gmx.com>
- <gho9jsxdii.fsf@lena.gouders.net>
- <a9f30fd5-d044-2daa-0a52-085b02f258b1@gmx.com>
- <ghk1ugxc6m.fsf@lena.gouders.net>
- <e134bae6-d316-fcda-d0c5-0b0ae7d56edb@gmx.com>
- <ghlgevjavx.fsf@lena.gouders.net>
- <d77ddf8b-3221-97b9-2193-8e4783231a1a@gmx.com>
- <ghefknj8x3.fsf@lena.gouders.net>
- <749caef1-7f2e-482f-0b16-b6861c475e2b@gmx.com>
- <gha7vbj7iv.fsf@lena.gouders.net>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <de71954e-9738-ffec-3c0b-ee15c5b83d7b@gmx.com>
-Date: Wed, 14 Mar 2018 18:14:12 +0800
+Received: from mail-io0-f182.google.com ([209.85.223.182]:34597 "EHLO
+        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750855AbeCNMCN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 08:02:13 -0400
+Received: by mail-io0-f182.google.com with SMTP id e7so4093597ioj.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 05:02:13 -0700 (PDT)
+Subject: Re: Ongoing Btrfs stability issues
+To: kreijack@inwind.it, Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
+ <3b483ff8-cd89-d62a-67d8-d1da6a28ef64@gmail.com>
+ <595ED26B-1FCD-4693-8E11-8F4CB267D1C7@oseberg.io>
+ <0ca621b4-6307-1acf-65b7-4584dd678d80@suse.com>
+ <20180302172951.GC30920@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+ <DBEFB1DF-D6A7-48D9-AF90-88759597A777@oseberg.io>
+ <fc88341d-e440-3007-4b54-e21f74182036@suse.com>
+ <D15AA258-5C89-433A-94E3-6C16A0DA4297@oseberg.io>
+ <5a12a7b7-6cf3-82f8-d5fa-2915fc3d6680@suse.com>
+ <1520692153.24363.15.camel@scientia.net>
+ <01ddb562-f1e2-25cf-0a8a-ffaa43b867d3@libero.it>
+ <1520807872.4281.11.camel@scientia.net>
+ <3fd8f21b-2e4d-3696-8e92-a20e4dda13ec@inwind.it>
+ <1520891338.4266.16.camel@scientia.net>
+ <d6e007af-7980-3d9b-a497-acb3be90dac9@inwind.it>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <96d34674-b1f0-25db-ba36-5a48f1b7c047@gmail.com>
+Date: Wed, 14 Mar 2018 08:02:08 -0400
 MIME-Version: 1.0
-In-Reply-To: <gha7vbj7iv.fsf@lena.gouders.net>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="JAkjDLhlF8A8PWwHVwsEdVZSupS7eJn45"
+In-Reply-To: <d6e007af-7980-3d9b-a497-acb3be90dac9@inwind.it>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---JAkjDLhlF8A8PWwHVwsEdVZSupS7eJn45
-Content-Type: multipart/mixed; boundary="wqb4czxOU41Fzh3KO0cpTb1j3v6ZniQX7";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Dirk Gouders <dirk@gouders.net>
-Cc: Linux BTRFS mailing list <linux-btrfs@vger.kernel.org>
-Message-ID: <de71954e-9738-ffec-3c0b-ee15c5b83d7b@gmx.com>
-Subject: Re: FS unmountable after RAID/LVM problems
-References: <ghlgew5pbq.fsf@lena.gouders.net>
- <005e24f2-2638-74c3-5034-92c094671d80@gmx.com>
- <ghwoygxh77.fsf@lena.gouders.net>
- <b0637390-1dfb-940b-ce11-503faef4ff3d@gmx.com>
- <ghsh94xfx9.fsf@lena.gouders.net>
- <9dd85c04-2371-04df-8bd7-f07f8a92a044@gmx.com>
- <gho9jsxdii.fsf@lena.gouders.net>
- <a9f30fd5-d044-2daa-0a52-085b02f258b1@gmx.com>
- <ghk1ugxc6m.fsf@lena.gouders.net>
- <e134bae6-d316-fcda-d0c5-0b0ae7d56edb@gmx.com>
- <ghlgevjavx.fsf@lena.gouders.net>
- <d77ddf8b-3221-97b9-2193-8e4783231a1a@gmx.com>
- <ghefknj8x3.fsf@lena.gouders.net>
- <749caef1-7f2e-482f-0b16-b6861c475e2b@gmx.com>
- <gha7vbj7iv.fsf@lena.gouders.net>
-In-Reply-To: <gha7vbj7iv.fsf@lena.gouders.net>
-
---wqb4czxOU41Fzh3KO0cpTb1j3v6ZniQX7
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B403=E6=9C=8814=E6=97=A5 18:06, Dirk Gouders wrote:
-> Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
->=20
->> On 2018=E5=B9=B403=E6=9C=8814=E6=97=A5 17:36, Dirk Gouders wrote:
->>> Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
->>>
->>>> On 2018=E5=B9=B403=E6=9C=8814=E6=97=A5 16:53, Dirk Gouders wrote:
->>>>> Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
->>>>>
->>>>>> On 2018=E5=B9=B403=E6=9C=8813=E6=97=A5 22:49, Dirk Gouders wrote:
->>>>>> [snip]
->>>>>>>>
->>>>>>>> # btrfs inspect dump-tree -b 848986112 /dev/loop0p1
->>>>>>>> # btrfs inspect dump-tree -b 72089600 /dev/loop0p1
->>>>>>>
->>>>>>> OK.
->>>>>>>
->>>>>>> (This mail gets a bit long but I don't want to snip probably impo=
-rtant
->>>>>>>  information above.)
->>>>>>>
->>>>>>
->>>>>> Feel free to snip.
->>>>>> As the involved tree block is not shown anywhere.
->>>>>>
->>>>>> So it's not any root node corrupted.
->>>>>> It may be some extent tree node corrupted in this case.
->>>>>>
->>>>>> While to inspect it, we need some new functionality in btrfs inspe=
-ct tree.
->>>>>>
->>>>>> Before that, would you please try the following patch and to see i=
-f it
->>>>>> helps btrfs-restore to salvage any data?
->>>>>
->>>>> I tried it and got the following output:
->>>>>
->>>>> # btrfs restore /dev/loop0p1 /mnt/
->>>>> checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
->>>>> checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
->>>>> checksum verify failed on 363069440 found DC09290B wanted C630FD61
->>>>> checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
->>>>> bytenr mismatch, want=3D363069440, have=3D17552567724568668829
->>>>> Could not open root, trying backup super
->>>>> checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
->>>>> checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
->>>>> checksum verify failed on 363069440 found DC09290B wanted C630FD61
->>>>> checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
->>>>> bytenr mismatch, want=3D363069440, have=3D17552567724568668829
->>>>> Could not open root, trying backup super
->>>>> ERROR: superblock bytenr 274877906944 is larger than device size 10=
-741612544
->>>>> Could not open root, trying backup super
->>>>
->>>> So it's still something important in the tree.
->>>>
->>>> Would you please apply this patch?
->>>> https://patchwork.kernel.org/patch/10281329/
->>>>
->>>> And then dump the tree again using that newly added -f option?
->>>> (Both stdout and stderr is needed)
->>>>
->>>> The dump command would be:
->>>> # btrfs inspect dump-tree -f -b <bytenr>
->>>>
->>>> Needed bytenrs would be:
->>>> 848773120	tree root
->>>> 848789504	extent root (My primary guess)
->>>
->>> I am currently preparing the diagnosis data but after the above byten=
-r
->>> the log grew to already 28MB.  Should I send all that data to the lis=
-t?
+On 2018-03-13 15:36, Goffredo Baroncelli wrote:
+> On 03/12/2018 10:48 PM, Christoph Anton Mitterer wrote:
+>> On Mon, 2018-03-12 at 22:22 +0100, Goffredo Baroncelli wrote:
+>>> Unfortunately no, the likelihood might be 100%: there are some
+>>> patterns which trigger this problem quite easily. See The link which
+>>> I posted in my previous email. There was a program which creates a
+>>> bad checksum (in COW+DATASUM mode), and the file became unreadable.
+>> But that rather seems like a plain bug?!
+> 
+> You are right, unfortunately it seems that it is catalogate as WONT-FIX :(
+> 
+>> No reason that would conceptually make checksumming+notdatacow
+>> impossible.
 >>
->> Nope, stderr is enough.
->=20
-> OK, I will attach the output to the end.  The output is separated by th=
-e
-> command lines, so searching for "inspect" helps for navigation.
->=20
-> For extend root and fs root I provide only stderr, because they grew
-> stdout by 28 resp. 150 MB.
-
-Thanks for all your effort!
-
-It's clear the problem is the extent tree.
-
-I'll try to enhance open_ctree() to allow btrfs-restore to continue even
-if extent tree is corrupted asap.
-
-Thanks,
-Qu
-
->=20
-> Thanks,
->=20
-> Dirk
->=20
+>> AFAIU, the conceptual thin would be about:
+>> - data is written in nodatacow
+>>    => thus a checksum must be written as well, so write it
+>> - what can then of course happen is
+>>    - both csum and data are written => fine
+>>    - csum is written but data not and then some crash => csum will show
+>>      that => fine
+>>    - data is written but csum not and then some crash => csum will give
+>>      false positive
 >>
->>>
->>> Thanks,
->>>
->>> Dirk
->>>
->>>> 30408704	dev root
->>>> 850509824	fs root (this could contain *FILENAME*, please censor
->>>>                          them if needed, and it may be large)
->>>> 212353024	uuid tree (not really imporatant)
->>>>
->>>> And if it's extent root, we could enhance btrfs-progs open_ctree() t=
-o
->>>> handle it for RO mode (needed by btrfs-restore)
->>>>
->>>> Thanks,
->>>> Qu
->=20
+>> Still better few false positives, as many unnoticed data corruptions
+>> and no true raid repair.
+> 
+> A checksum mismatch, is returned as -EIO by a read() syscall. This is an event handled badly by most part of the programs.
+> I.e. suppose that a page of a VM ram image file has a wrong checksum. When the VM starts, tries to read the page, got -EIO and aborts. It is even possible that it could not print which page is corrupted. In this case, how the user understand the problem, and what he could do ?
+Check the kernel log on the host system, which should have an error 
+message saying which block failed.  If the VM itself actually gets to 
+the point of booting into an OS (and properly propagates things like 
+-EIO to the guest environment like it should), that OS should also log 
+where the error was.
 
+Most of the reason user applications don't tell you where the error was 
+is because the kernel already does it on any sensible system, and the 
+kernel tells you _exactly_ where the error was (exact block and device 
+that threw the error), which user applications can't really do (they 
+generally can't get sufficiently low-level information to give you all 
+the info the kernel does).
+> 
+>>
+>>> Again, you are assuming that the likelihood of having a bad checksum
+>>> is low. Unfortunately this is not true. There are pattern which
+>>> exploits this bug with a likelihood=100%.
+>>
+>> Okay I don't understand why this would be so and wouldn't assume that
+>> the IO pattern can affect it heavily... but I'm not really btrfs
+>> expert.
+>>
+>> My blind assumption would have been that writing an extent of data
+>> takes much longer to complete than writing the corresponding checksum.
+> 
+> The problem is the following: there is a time window between the checksum computation and the writing the data on the disk (which is done at the lower level via a DMA channel), where if the data is update the checksum would mismatch. This happens if we have two threads, where the first commits the data on the disk, and the second one updates the data (I think that both VM and database could behave so).
+Though it only matters if you use O_DIRECT or the files in question are 
+NOCOW.
+> 
+> In btrfs, a checksum mismatch creates an -EIO error during the reading. In a conventional filesystem (or a btrfs filesystem w/o datasum) there is no checksum, so this problem doesn't exist.
+> 
+> I am curious how ZFS solves this problem.
+It doesn't support disabling COW or the O_DIRECT flag, so it just never 
+has the problem in the first place.
+> 
+> However I have to point out that this problem is not solved by the COW. COW solved only the problem about an interrupted commit of the filesystem, where the data is update in place (so it is available by the user), but the metadata not.
+COW is irrelevant if you're bypassing it.  It's only enforced for 
+metadata so that you don't have to check the FS every time you mount it 
+(because the way BTRFS uses it guarantees consistency of the metadata).
+> 
+>>
+>> Even if not... I should be only a problem in case of a crash during
+>> that,.. and than I'd still prefer to get the false positive than bad
+>> data.
+> 
+> How you can know if it is a "bad data" or a "bad checksum" ?
+You can't directly.  Just like you can't know which copy in a two-device 
+MD RAID1 array is bad when they mismatch.
 
---wqb4czxOU41Fzh3KO0cpTb1j3v6ZniQX7--
-
---JAkjDLhlF8A8PWwHVwsEdVZSupS7eJn45
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqo9fQXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qhHiwf9HuN9KKhgY/KXBT4xAKkuuVw5
-Rm1GspnVtyF3BYF7Ymaajfony/G3LkQmSmf6kxUMR7pUkQ5nnR8RQrt35hqYLcwt
-cTPKxDXFmfhXBVjW4jO3A2ig1XMlDjo8beNbv/i9L/xTMfiNhFVTaVXUqcdUUmEa
-IgNDPRIHmEjlXYZaZ5zqyCqcXKmBSy1QJGPVAXkRNgTUz6LwZUjSZ3HdhzJpCeJ+
-PwtD/8ABJUjJ6BDybsWDgnv50Ix1bUH/daOTD+YHwS7t6WzGFWAbo4dUVq6cFiy7
-D3bhsX7L1YyUYChxeac5FNsS5fsPOLav0OOik9Vqo5sAZn9hPVw5RSV296E/ZA==
-=wFz7
------END PGP SIGNATURE-----
-
---JAkjDLhlF8A8PWwHVwsEdVZSupS7eJn45--
+That's part of why I'm not all that fond of the idea of having checksums 
+without COW, you need to verify the data using secondary means anyway, 
+so why exactly should you waste time verifying it twice?
+> 
+>>
+>> Anyway... it's not going to happen so the discussion is pointless.
+>> I think people can probably use dm-integrity (which btw: does no CoW
+>> either (IIRC) and still can provide integrity... ;-) ) to see whether
+>> their data is valid.
+>> No nice but since it won't change on btrfs, a possible alternative.
+> 
+> Even in this case I am curious about dm-integrity would sole this issue.
+dm-integrity uses journaling, and actually based on the testing I've 
+done, will typically have much worse performance than the overhead of 
+just enabling COW on files on BTRFS and manually defragmenting them on a 
+regular basis.

@@ -1,75 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58843 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751541AbeCUPxl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 11:53:41 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2B9E1B036
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 15:53:40 +0000 (UTC)
-Date: Wed, 21 Mar 2018 16:51:15 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH v3 0/6] Fix long standing -EOPNOTSUPP problem caused by
- large inline extent
-Message-ID: <20180321155115.GT6955@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180320064229.31493-1-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180320064229.31493-1-wqu@suse.com>
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:50115 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S932590AbeCNBFu (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 13 Mar 2018 21:05:50 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH] btrfs-progs: inspect-dump-tree: add '-f|--follow' options to print all children tree blocks for '-b'
+Date: Wed, 14 Mar 2018 09:05:38 +0800
+Message-Id: <20180314010538.29292-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 20, 2018 at 02:42:23PM +0800, Qu Wenruo wrote:
-> The patch is based on v4.15.1, and is designed to replace the old patch
-> in devel branch.
-> 
-> Kernel doesn't support dropping range inside inline extent, and prevents
-> such thing happening by limiting max inline extent size to
-> min(max_inline, sectorsize - 1) in cow_file_range_inline().
-> 
-> However btrfs-progs only inherit the BTRFS_MAX_INLINE_DATA_SIZE() macro,
-> which doesn't have sectorsize check.
-> And since btrfs-progs defaults to 16K nodesize, above macro allows large
-> inline extent over 15K size.
-> 
-> This leads to unexpected kernel behavior.
-> 
-> The bug exists in several parts of btrfs-progs, any tool which creates
-> file extent is involved, including:
-> 1) btrfs-convert
-> 2) mkfs --rootdir
-> 
-> This patchset fixes the problems in convert (both ext2 and reiserfs),
-> mkfs --rootdir, then add check support for both original and lowmem
-> mode, and finally adds 2 test cases, one for mkfs and one for convert.
-> 
-> For mkfs test case, it can already be exposed by misc/002, but a
-> pin-point test case will be much better.
-> 
-> changelog:
-> v2:
->   Don't modify BTRFS_MAX_INLINE_DATA_SIZE(), but add extra check to
->   callers who create file extents.
-> v3:
->   Merge fixes for convert.
->   Add real commit message for convert fixes.
->   Use $TEST_TOP to replace cooperate with stand alone test cases.
->   Use for loops to make the new test case shorter.
-> 
-> Qu Wenruo (6):
->   btrfs-progs: convert: Fix inline file extent creation condition
->   btrfs-progs: mkfs/rootdir: Fix inline extent creation check
->   btrfs-progs: check/original mode: Check inline extent size
->   btrfs-progs: check/lowmem mode: Check inline extent size
->   btrfs-progs: test/convert: Add test case for invalid large inline data
->     extent
->   btrfs-progs: test/mkfs: Add test case for rootdir inline extent size
+When debuging with "btrfs inspect dump-tree", it's not that handy if we
+want to iterate all child tree blocks starting from a specified block.
 
-Applied, thanks. I had to fix the test, fallocate may fail, so a file of
-given size is created directly.
+-b can only print a single block, while without -b "btrfs inspect dump-tree"
+will need extra tree roots fulfilled to continue, which is not possible
+for some damaged filesystem.
 
-I hope this bug is fixed. My plan was to release 4.15.2 with just
-bugfixes but as this took some time to fix, there likely will be no
-minor release before 4.16 as kernel is about to be released next week.
+Add a new option '-f|--follow' to iterate a sub-tree starting from block
+specified by '-b|--block', so we would have less limitation.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ Documentation/btrfs-inspect-internal.asciidoc |  2 ++
+ cmds-inspect-dump-tree.c                      | 10 ++++++++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/btrfs-inspect-internal.asciidoc b/Documentation/btrfs-inspect-internal.asciidoc
+index e072a943f825..04cf81b93b8a 100644
+--- a/Documentation/btrfs-inspect-internal.asciidoc
++++ b/Documentation/btrfs-inspect-internal.asciidoc
+@@ -87,6 +87,8 @@ the respective tree root block offset
+ print only the uuid tree information, empty output if the tree does not exist
+ -b <block_num>::::
+ print info of the specified block only
++-f|--follow::::
++use with '-b', print all children tree blocks of '<block_num>'
+ -t <tree_id>::::
+ print only the tree with the specified ID, where the ID can be numerical or
+ common name in a flexible human readable form
+diff --git a/cmds-inspect-dump-tree.c b/cmds-inspect-dump-tree.c
+index df44bb635c9c..5eb9ca34b99a 100644
+--- a/cmds-inspect-dump-tree.c
++++ b/cmds-inspect-dump-tree.c
+@@ -198,6 +198,7 @@ const char * const cmd_inspect_dump_tree_usage[] = {
+ 	"-u|--uuid              print only the uuid tree",
+ 	"-b|--block <block_num> print info from the specified block only",
+ 	"-t|--tree <tree_id>    print only tree with the given id (string or number)",
++	"-f|--follow            use with '-b', to show all children tree blocks of <block_num>",
+ 	NULL
+ };
+ 
+@@ -223,6 +224,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 	u64 block_only = 0;
+ 	struct btrfs_root *tree_root_scan;
+ 	u64 tree_id = 0;
++	bool follow = false;
+ 
+ 	while (1) {
+ 		int c;
+@@ -234,10 +236,11 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 			{ "uuid", no_argument, NULL, 'u'},
+ 			{ "block", required_argument, NULL, 'b'},
+ 			{ "tree", required_argument, NULL, 't'},
++			{ "follow", no_argument, NULL, 'f'},
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+-		c = getopt_long(argc, argv, "deb:rRut:", long_options, NULL);
++		c = getopt_long(argc, argv, "deb:rRut:f", long_options, NULL);
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+@@ -286,6 +289,9 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 			}
+ 			break;
+ 			}
++		case 'f':
++			follow = true;
++			break;
+ 		default:
+ 			usage(cmd_inspect_dump_tree_usage);
+ 		}
+@@ -324,7 +330,7 @@ int cmd_inspect_dump_tree(int argc, char **argv)
+ 				(unsigned long long)block_only);
+ 			goto close_root;
+ 		}
+-		btrfs_print_tree(root, leaf, 0);
++		btrfs_print_tree(root, leaf, follow);
+ 		free_extent_buffer(leaf);
+ 		goto close_root;
+ 	}
+-- 
+2.16.2
+

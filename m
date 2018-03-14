@@ -1,59 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:40042 "EHLO
-        mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751727AbeCNT1h (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 15:27:37 -0400
-Received: by mail-io0-f182.google.com with SMTP id v6so5689054iog.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 12:27:36 -0700 (PDT)
-Subject: Re: Ongoing Btrfs stability issues
-To: kreijack@inwind.it, Christoph Anton Mitterer <calestyo@scientia.net>
+Received: from mx2.suse.de ([195.135.220.15]:35551 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751981AbeCNTlL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 15:41:11 -0400
+Date: Wed, 14 Mar 2018 20:38:47 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
- <3b483ff8-cd89-d62a-67d8-d1da6a28ef64@gmail.com>
- <595ED26B-1FCD-4693-8E11-8F4CB267D1C7@oseberg.io>
- <0ca621b4-6307-1acf-65b7-4584dd678d80@suse.com>
- <20180302172951.GC30920@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
- <DBEFB1DF-D6A7-48D9-AF90-88759597A777@oseberg.io>
- <fc88341d-e440-3007-4b54-e21f74182036@suse.com>
- <D15AA258-5C89-433A-94E3-6C16A0DA4297@oseberg.io>
- <5a12a7b7-6cf3-82f8-d5fa-2915fc3d6680@suse.com>
- <1520692153.24363.15.camel@scientia.net>
- <01ddb562-f1e2-25cf-0a8a-ffaa43b867d3@libero.it>
- <1520807872.4281.11.camel@scientia.net>
- <3fd8f21b-2e4d-3696-8e92-a20e4dda13ec@inwind.it>
- <1520891338.4266.16.camel@scientia.net>
- <d6e007af-7980-3d9b-a497-acb3be90dac9@inwind.it>
- <96d34674-b1f0-25db-ba36-5a48f1b7c047@gmail.com>
- <fc0c1f0d-59cd-f593-b63d-e62b8ffa3a43@inwind.it>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <1c54d4ed-a1ce-e6c4-a79b-f75ec1c14556@gmail.com>
-Date: Wed, 14 Mar 2018 15:27:32 -0400
+Subject: Re: zerofree btrfs support?
+Message-ID: <20180314193847.GR32007@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1520650525.5641.47.camel@scientia.net>
 MIME-Version: 1.0
-In-Reply-To: <fc0c1f0d-59cd-f593-b63d-e62b8ffa3a43@inwind.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1520650525.5641.47.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-03-14 14:39, Goffredo Baroncelli wrote:
-> On 03/14/2018 01:02 PM, Austin S. Hemmelgarn wrote:
-> [...]
->>>
->>> In btrfs, a checksum mismatch creates an -EIO error during the reading. In a conventional filesystem (or a btrfs filesystem w/o datasum) there is no checksum, so this problem doesn't exist.
->>>
->>> I am curious how ZFS solves this problem.
->> It doesn't support disabling COW or the O_DIRECT flag, so it just never has the problem in the first place.
+On Sat, Mar 10, 2018 at 03:55:25AM +0100, Christoph Anton Mitterer wrote:
+> Hi.
 > 
-> I would like to perform some tests: however I think that you are right. if you make a "double buffering" approach (copy the data in the page cache, compute the checksum, then write the data to disk), the mismatch should not happen. Of course this is incompatible with O_DIRECT; but disabling O_DIRECT is a prerequisite to the "double buffering"; alone it couldn't be sufficient; what about mmap ? Are we sure that this does a double buffering ?
-There's a whole lot of applications that would be showing some pretty 
-serious issues if checksumming didn't work correctly with mmap(), so I 
-think it does work correctly given that we don't have hordes of angry 
-users and sysadmins beating down the doors.
-> 
-> I would prefer that btrfs doesn't allow O_DIRECT with the COW files. I prefer this to the checksum mismatch bug.
-This is only reasonable if you are writing to the files.  Checksums 
-appear to be checked on O_DIRECT reads, and outside of databases and 
-VM's, read-only access accounts for a significant percentage of O_DIRECT 
-usage, partly because it is needed for AIO support (nginx for example 
-can serve files using AIO and O_DIRECT and gets a pretty serious 
-performance boost on heavily loaded systems by doing so).
+> Just wondered... was it ever planned (or is there some equivalent) to
+> get support for btrfs in zerofree?
+
+The zerofree was requested, eg. here
+https://bugzilla.kernel.org/show_bug.cgi?id=69121
+
+and there was a discussion under proposed patches on fsdevel 3 years
+ago, message-id is 1422896713-25367-1-git-send-email-holler@ahsoftware.de
+
+tl;dr there's nothing like zeofree now, because.
+
+Because the security reasons are not considered good enough and giving
+false sense of security. Clearing the qemu images sounds good but
+there's another way to do that via trim.
+
+I have a prototype code for that and after the years, seeing the request
+again, I'm not against adding it as long as it's not advertised as a
+security feature.
+
+The zeroing simply builds on top of the trim code, so it's merely adding
+the ioctl interface and passing down the desired operation.

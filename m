@@ -1,33 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:58148 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:58328 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750964AbeCNKdM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 06:33:12 -0400
-Received: from mail-vk0-f42.google.com (mail-vk0-f42.google.com [209.85.213.42])
+        id S1750751AbeCNKej (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 06:34:39 -0400
+Received: from mail-vk0-f48.google.com (mail-vk0-f48.google.com [209.85.213.48])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 38C5F2176E
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 10:33:11 +0000 (UTC)
-Received: by mail-vk0-f42.google.com with SMTP id k187so1639690vke.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 03:33:11 -0700 (PDT)
+        by mail.kernel.org (Postfix) with ESMTPSA id 8A57720685
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 10:34:38 +0000 (UTC)
+Received: by mail-vk0-f48.google.com with SMTP id x5so445824vkd.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 03:34:38 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <4287f45b-cfac-7188-51b2-1647b230f584@gmx.com>
-References: <20180313184700.30173-1-fdmanana@kernel.org> <4287f45b-cfac-7188-51b2-1647b230f584@gmx.com>
+In-Reply-To: <c2202ca5-086d-125f-866e-f08c8080a8c5@suse.com>
+References: <20180313184700.30173-1-fdmanana@kernel.org> <c2202ca5-086d-125f-866e-f08c8080a8c5@suse.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 14 Mar 2018 10:33:09 +0000
-Message-ID: <CAL3q7H6jJ0Sfu6jWgAZaARgka=+KreSUCC-LqkGH3HaDrO3WRA@mail.gmail.com>
+Date: Wed, 14 Mar 2018 10:34:37 +0000
+Message-ID: <CAL3q7H4iiSX+Un-+TZdjYuUnjsSnNMxS-40mjkS5y87oScv_jA@mail.gmail.com>
 Subject: Re: [PATCH 1/2] Btrfs-progs: check, fix false error reports for
  shared prealloc extents
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: Nikolay Borisov <nborisov@suse.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 14, 2018 at 1:32 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+On Wed, Mar 14, 2018 at 8:19 AM, Nikolay Borisov <nborisov@suse.com> wrote:
 >
 >
-> On 2018年03月14日 02:47, fdmanana@kernel.org wrote:
+> On 13.03.2018 20:47, fdmanana@kernel.org wrote:
 >> From: Filipe Manana <fdmanana@suse.com>
 >>
 >> Under some cases the filesystem checker reports an error when it finds
@@ -83,17 +83,6 @@ On Wed, Mar 14, 2018 at 1:32 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >> A test case will follow in a separate patch.
 >>
 >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->
-> Looks good overall, but still some small nitpicks.
->
-> One is, the fix is only for original mode, while the fix itself has
-> nothing mode dependent, so it's better to put the check into
-> check/mode-original.[ch] so lowmem mode can also benefit from it.
-
-Ok, I started doing development on a release branch where the split
-doesn't exist, them moved to the development branch and wrongly
-assumed that shared code would be in main.c.
->
 >> ---
 >>  check/main.c | 270 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
 >>  1 file changed, 268 insertions(+), 2 deletions(-)
@@ -112,63 +101,6 @@ assumed that shared code would be in main.c.
 >> + *
 >> + * Returns 1 if true, 0 if false and < 0 on error.
 >> + */
->
-> The check itself (along with check_prealloc_shared_data_ref) is good
-> enough to detect any regular file extents inside the prealloc extent.
->
-> But when it finds any regular extents, it doesn't check if it's covered
-> by csum correctly.
->
-> For example:
->
-> |<-------------- prealloc extent range -------------------------->|
-> |<- the *only* regular extent ->|
-> |<-------- range covered by csum -------->|
->                                 |<- ODD ->|
->
-> Or
-> |<-------------- prealloc extent range -------------------------->|
-> |<- the *only* regular extent ->|
-> |<- csum ->|
->            |<------ ODD ------->|
->
-> So at least in theory, the best solution is not to just check if there
-> is any regular extents inside the large prealloc extent, but also check
-> how many csum bytes the regular extents contribute, and then compare it
-> to the result of count_csum_range().
-
-Yes, I considered that initially but then moved to this simpler, but
-less accurate solution.
-So the problem is more complex then you think, as a prealloc extent
-can be partially written and then reflinked multiple times and
-fsync'ed.
-For example:
-
-create inode A with prealloc extent [0, 256k[
-sync
-write into prealloc extent, range [0, 128k[ through inode A
-reflink prealloc extent into inode B
-reflink prealloc extent into inode C
-reflink prealloc extent into inode D
-fsync inodes B, C and D
-power fail
-remount to replay log
-
-Now using a simple counter to count how many bytes the are covered by
-chekcsum items we would have, we would get 384K (128K * 3), more then
-the size of the extent.
-So we would have to track ranges and then ranges that partially
-overlap (due to non-zero offsets in the extent items).
-
-And this could go even more complex. It's doable, but I wanted to keep
-things simple for now.
-
-thanks
-
->
-> Thanks,
-> Qu
->
 >> +static int check_prealloc_data_ref(struct btrfs_fs_info *fs_info,
 >> +                                u64 ino,
 >> +                                u64 disk_bytenr,
@@ -177,6 +109,15 @@ thanks
 >> +{
 >> +     u64 rootid = btrfs_extent_data_ref_root(eb, dref);
 >> +     u64 objectid = btrfs_extent_data_ref_objectid(eb, dref);
+>
+> nit: Shouldn't this ino be equal to the ino passed to the function? If
+> so objectid can be removed and when setting up the key for the second
+> search you just assigne ino to its objectid
+
+No, we want to skip if it's equal, because we're only interested in
+references for inodes other then the one being currently processed.
+
+>
 >> +     u64 offset = btrfs_extent_data_ref_offset(eb, dref);
 >> +     struct btrfs_root *root;
 >> +     struct btrfs_key key;
@@ -444,4 +385,3 @@ thanks
 >>       }
 >>       return 0;
 >>
->

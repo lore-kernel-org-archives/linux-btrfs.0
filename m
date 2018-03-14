@@ -1,125 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from v150-95-217-78.ll6w.static.cnode.io ([150.95.217.78]:60800 "EHLO
-        mail.reasonset.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750934AbeCNHjb (ORCPT
+Received: from services.gouders.net ([141.101.32.176]:33163 "EHLO
+        services.gouders.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750860AbeCNIyC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 03:39:31 -0400
-Date: Wed, 14 Mar 2018 16:33:16 +0900
-From: "MASAKI, " Aki " Yuhsuke" <aki@reasonset.net>
-To: MASAKI haruka <yek@reasonset.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs broken in massive transfar
-Message-Id: <20180314163316.4641e2c9dd51fe504a05b34a@reasonset.net>
-In-Reply-To: <20180314135613.4ef005f0b93cb2888abd9750@reasonset.net>
-References: <20180313065743.c3ec9ade3e90dc4fc4b5adc9@reasonset.net>
-        <f4e1a551-fc29-f7e8-a738-76365af403f7@gmx.com>
-        <20180313131928.5f3f1d053eaf50424b6dbff8@reasonset.net>
-        <c938a753-deb6-39bb-0f17-701ec1e0226b@gmx.com>
-        <20180314042507.f20bbf949ce07f88ca01cb38@reasonset.net>
-        <CAJCQCtRaUUSWOWGQzJqZVddV9639O0B8eiZzNKTB0DPYowLWoA@mail.gmail.com>
-        <20180314135613.4ef005f0b93cb2888abd9750@reasonset.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
+        Wed, 14 Mar 2018 04:54:02 -0400
+From: Dirk Gouders <dirk@gouders.net>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: Linux BTRFS mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: FS unmountable after RAID/LVM problems
+In-Reply-To: <e134bae6-d316-fcda-d0c5-0b0ae7d56edb@gmx.com> (Qu Wenruo's
+        message of "Wed, 14 Mar 2018 08:40:11 +0800")
+References: <ghlgew5pbq.fsf@lena.gouders.net>
+        <005e24f2-2638-74c3-5034-92c094671d80@gmx.com>
+        <ghwoygxh77.fsf@lena.gouders.net>
+        <b0637390-1dfb-940b-ce11-503faef4ff3d@gmx.com>
+        <ghsh94xfx9.fsf@lena.gouders.net>
+        <9dd85c04-2371-04df-8bd7-f07f8a92a044@gmx.com>
+        <gho9jsxdii.fsf@lena.gouders.net>
+        <a9f30fd5-d044-2daa-0a52-085b02f258b1@gmx.com>
+        <ghk1ugxc6m.fsf@lena.gouders.net>
+        <e134bae6-d316-fcda-d0c5-0b0ae7d56edb@gmx.com>
+Date: Wed, 14 Mar 2018 09:53:54 +0100
+Message-ID: <ghlgevjavx.fsf@lena.gouders.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changing crypt layer didn't solve this probrem...
+Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
+
+> On 2018年03月13日 22:49, Dirk Gouders wrote:
+> [snip]
+>>>
+>>> # btrfs inspect dump-tree -b 848986112 /dev/loop0p1
+>>> # btrfs inspect dump-tree -b 72089600 /dev/loop0p1
+>> 
+>> OK.
+>> 
+>> (This mail gets a bit long but I don't want to snip probably important
+>>  information above.)
+>> 
+>
+> Feel free to snip.
+> As the involved tree block is not shown anywhere.
+>
+> So it's not any root node corrupted.
+> It may be some extent tree node corrupted in this case.
+>
+> While to inspect it, we need some new functionality in btrfs inspect tree.
+>
+> Before that, would you please try the following patch and to see if it
+> helps btrfs-restore to salvage any data?
+
+I tried it and got the following output:
+
+# btrfs restore /dev/loop0p1 /mnt/
+checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
+checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
+checksum verify failed on 363069440 found DC09290B wanted C630FD61
+checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
+bytenr mismatch, want=363069440, have=17552567724568668829
+Could not open root, trying backup super
+checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
+checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
+checksum verify failed on 363069440 found DC09290B wanted C630FD61
+checksum verify failed on 363069440 found 296FB15A wanted F0AFE59D
+bytenr mismatch, want=363069440, have=17552567724568668829
+Could not open root, trying backup super
+ERROR: superblock bytenr 274877906944 is larger than device size 10741612544
+Could not open root, trying backup super
 
 
-> > On Tue, Mar 13, 2018 at 1:25 PM, MASAKI haruka <yek@reasonset.net> wrote:
-> > > journal(Kernel log), 7th try (to be readonly):
-> > >
-> > > ---
-> > >  3$B7n(B 12 16:25:51 lily kernel: BTRFS info (device dm-6): creating UUID tree
-> > >  3$B7n(B 12 16:25:53 lily iscsid[1406]: Connection-1:0 to [target: iqn.1994-11.com.netgear:eggplant-01:edc9adcf:btr1group, portal: 192.168.1.166,3260] through [iface: default] is shutdown.
-> > >  3$B7n(B 12 16:25:53 lily iscsid[1406]: IPC qtask write failed: Broken pipe
-> > >  3$B7n(B 12 16:26:18 lily kernel:  connection1:0: detected conn error (1020)
-> > >  3$B7n(B 12 16:26:19 lily iscsid[1406]: Kernel reported iSCSI connection 1:0 error (1020 - ISCSI_ERR_TCP_CONN_CLOSE: TCP connection closed) state (3)
-> > >  3$B7n(B 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
-> > >  3$B7n(B 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 Sense Key : 0x2 [current] [descriptor]
-> > >  3$B7n(B 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 ASC=0x8 ASCQ=0x0
-> > >  3$B7n(B 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 CDB: opcode=0x8a 8a 00 00 00 00 00 00 42 5c 00 00 00 34 00 00 00
-> > >  3$B7n(B 12 16:26:21 lily kernel: print_req_error: I/O error, dev sdg, sector 4348928
-> > 
-> > 
-> > Looks like network problems. Is one of these Btrfs volumes on an iSCSI
-> > device? Because there's a bunch of iSCSI errors followed by an I/O
-> > error with sector LBA reported, and then you get a bunch of Btrfs
-> > write errors.
-> > 
-> > What's the relationship between /dev/sdg and device (dm-6)
-> > /dev/mapper/hymaster_1 ?
-> > 
-> 
-> 
-> /dev/mapper/hymaster_1 is dm-crypt plain device.
-> Its real device is /dev/sdg it is an iSCSI disk
-> connected to NAS over GbE link local.
-> 
-> If this probrem from network, it's looked difficult to solve
-> because I tried with two different computers without any other network device...
-> 
-> > 
-> > >
-> > > Note: This system's structure is;
-> > > Computer (Linux 4.14/4.15) - btrfs (original) - dm-crypt plain - internal 4 disks
-> > >  \_ btrfs (destination) - dm-crypt plain - iSCSI (single) - NAS - Hardware RAID5 - 8 disks
-> > 
-> > dm-6 is what btrfs is directly using and is complaining about, and I
-> > will guess that this is a dmcrypt device backed by /dev/sdg which is
-> > iSCSI to the NAS. Correct? Looks like either network problems, or
-> > possibly there is a real hardware problem with an error that's only
-> > partly passing through iSCSI. I can't parse this:
-> > 
-> >  3$B7n(B 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 UNKNOWN(0x2003)
-> > Result: hostbyte=0x00 driverbyte=0x08
-> >  3$B7n(B 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 Sense Key : 0x2
-> > [current] [descriptor]
-> >  3$B7n(B 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 ASC=0x8 ASCQ=0x0
-> >  3$B7n(B 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 CDB: opcode=0x8a
-> > 8a 00 00 00 00 00 cd 6f 0b 80 00 00 2a 20 00 00
-> > 
-> > Anyway, Btrfs detects the write failures, and is going read-only in
-> > order to prevent corrupting the file system. So I think you've got
-> > some iSCSI troubleshooting to do, and fix that. Doesn't seem like it's
-> > a Btrfs specific problem to me.
-> > 
-> 
-> > and I will guess that this is a dmcrypt device backed by /dev/sdg which is
-> > iSCSI to the NAS. Correct?
-> 
-> Yes.
-> 
-> The log looks network (disk?) probrem me too, but I think it is unlikely
-> because I didn't used iSCSI in case of I experienced (when Linux 3.9.)
-> Altough then btrfs disks are little unstable, so it's guessable that
-> target device (disks, iSCSI or network) reason...
-> 
-> I didn't see iSCSI error without btrfs transfaring.
-> I thought if most people didn't see probrem like this,
-> maybe the reason is some difference... dm-crypt plain?
-> 
-> I'm trying to use encrypt function on NAS (LUKS?) instead of dm-crypt plain on iSCSI disk.
-> 
-> (I don't know how to find iSCSI probrem...)
-> 
-> Thank you.
-> 
-> > -- 
-> > Chris Murphy
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> -- 
-> MASAKI haruka <yek@reasonset.net>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Because the patch did not apply, I did the modification manually as
+follows:
 
+# git diff
+diff --git a/cmds-restore.c b/cmds-restore.c
+index ade35f0f..e7b96a67 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -1282,7 +1282,7 @@ static struct btrfs_root *open_fs(const char *dev, u64 root_location,
+        for (i = super_mirror; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+                bytenr = btrfs_sb_offset(i);
+                fs_info = open_ctree_fs_info(dev, bytenr, root_location, 0,
+-                                            OPEN_CTREE_PARTIAL);
++                                            OPEN_CTREE_PARTIAL | __OPEN_CTREE_RETURN_CHUNK_ROOT);
+                if (fs_info)
+                        break;
+                fprintf(stderr, "Could not open root, trying backup super\n");
 
--- 
-MASAKI, "Aki" Yuhsuke <aki@reasonset.net>
+Thanks,
+
+Dirk

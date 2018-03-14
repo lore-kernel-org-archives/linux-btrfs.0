@@ -1,57 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wr0-f196.google.com ([209.85.128.196]:46233 "EHLO
-        mail-wr0-f196.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751606AbeCMTui (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Mar 2018 15:50:38 -0400
-From: Salvatore Mesoraca <s.mesoraca16@gmail.com>
-To: linux-kernel@vger.kernel.org
-Cc: kernel-hardening@lists.openwall.com, linux-btrfs@vger.kernel.org,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <jbacik@fb.com>, Kees Cook <keescook@chromium.org>,
-        Salvatore Mesoraca <s.mesoraca16@gmail.com>
-Subject: [PATCH] Btrfs: drop a VLA in btrfs_check_super_csum()
-Date: Tue, 13 Mar 2018 20:50:22 +0100
-Message-Id: <1520970622-19535-1-git-send-email-s.mesoraca16@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:41947 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751626AbeCNPpM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 11:45:12 -0400
+Date: Wed, 14 Mar 2018 16:42:48 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Salvatore Mesoraca <s.mesoraca16@gmail.com>
+Cc: linux-kernel@vger.kernel.org, kernel-hardening@lists.openwall.com,
+        linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>, Josef Bacik <jbacik@fb.com>,
+        Kees Cook <keescook@chromium.org>
+Subject: Re: [PATCH] Btrfs: drop a VLA in btrfs_check_super_csum()
+Message-ID: <20180314154248.GL32007@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1520970622-19535-1-git-send-email-s.mesoraca16@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1520970622-19535-1-git-send-email-s.mesoraca16@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Avoid a VLA[1] by using a real constant expression instead of a variable.
-The compiler should be able to optimize the original code and avoid using
-an actual VLA. Anyway this change is useful because it will avoid a false
-positive with -Wvla, it might also help the compiler generating better
-code.
+On Tue, Mar 13, 2018 at 08:50:22PM +0100, Salvatore Mesoraca wrote:
+> Avoid a VLA[1] by using a real constant expression instead of a variable.
+> The compiler should be able to optimize the original code and avoid using
+> an actual VLA. Anyway this change is useful because it will avoid a false
+> positive with -Wvla, it might also help the compiler generating better
+> code.
+> 
+> [1] https://lkml.org/lkml/2018/3/7/621
+> 
+> Signed-off-by: Salvatore Mesoraca <s.mesoraca16@gmail.com>
 
-[1] https://lkml.org/lkml/2018/3/7/621
+We already have a patch for that from a few days ago, but thanks anyway.
 
-Signed-off-by: Salvatore Mesoraca <s.mesoraca16@gmail.com>
----
- fs/btrfs/disk-io.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 21f34ad..88cef92 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -403,8 +403,7 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 
- 	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
- 		u32 crc = ~(u32)0;
--		const int csum_size = sizeof(crc);
--		char result[csum_size];
-+		char result[sizeof(crc)];
- 
- 		/*
- 		 * The super_block structure does not span the whole
-@@ -415,7 +414,7 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
- 		btrfs_csum_final(crc, result);
- 
--		if (memcmp(raw_disk_sb, result, csum_size))
-+		if (memcmp(raw_disk_sb, result, sizeof(result)))
- 			ret = 1;
- 	}
- 
--- 
-1.9.1
-
+https://patchwork.kernel.org/patch/10277901/

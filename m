@@ -1,99 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:57810 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751886AbeCMPFA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Mar 2018 11:05:00 -0400
-Received: from pps.filterd (userp2130.oracle.com [127.0.0.1])
-        by userp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2DF4x0x193647
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 15:04:59 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by userp2130.oracle.com with ESMTP id 2gpgym001k-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 15:04:59 +0000
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2DF4wVE008120
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 15:04:58 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-        by userv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w2DF4w31011929
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 15:04:58 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH] btrfs: check for SB checksum when scanned
-Date: Tue, 13 Mar 2018 23:06:37 +0800
-Message-Id: <20180313150637.3913-1-anand.jain@oracle.com>
+Received: from smtp-31-i6.italiaonline.it ([213.209.14.31]:39739 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751739AbeCNSj2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 14:39:28 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: Ongoing Btrfs stability issues
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <SN2PR03MB22697EDC5BC991C819353117A9F40@SN2PR03MB2269.namprd03.prod.outlook.com>
+ <3b483ff8-cd89-d62a-67d8-d1da6a28ef64@gmail.com>
+ <595ED26B-1FCD-4693-8E11-8F4CB267D1C7@oseberg.io>
+ <0ca621b4-6307-1acf-65b7-4584dd678d80@suse.com>
+ <20180302172951.GC30920@dhcp-10-211-47-181.usdhcp.oraclecorp.com>
+ <DBEFB1DF-D6A7-48D9-AF90-88759597A777@oseberg.io>
+ <fc88341d-e440-3007-4b54-e21f74182036@suse.com>
+ <D15AA258-5C89-433A-94E3-6C16A0DA4297@oseberg.io>
+ <5a12a7b7-6cf3-82f8-d5fa-2915fc3d6680@suse.com>
+ <1520692153.24363.15.camel@scientia.net>
+ <01ddb562-f1e2-25cf-0a8a-ffaa43b867d3@libero.it>
+ <1520807872.4281.11.camel@scientia.net>
+ <3fd8f21b-2e4d-3696-8e92-a20e4dda13ec@inwind.it>
+ <1520891338.4266.16.camel@scientia.net>
+ <d6e007af-7980-3d9b-a497-acb3be90dac9@inwind.it>
+ <96d34674-b1f0-25db-ba36-5a48f1b7c047@gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <fc0c1f0d-59cd-f593-b63d-e62b8ffa3a43@inwind.it>
+Date: Wed, 14 Mar 2018 19:39:25 +0100
+MIME-Version: 1.0
+In-Reply-To: <96d34674-b1f0-25db-ba36-5a48f1b7c047@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We aren't checking the SB csum when the device scanned,
-instead we do that when mounting the device, and if the
-csum fails we fail the mount. How if we check the csum
-when the device is scanned, I can't see any reason for
-why not? any idea?
+On 03/14/2018 01:02 PM, Austin S. Hemmelgarn wrote:
+[...]
+>>
+>> In btrfs, a checksum mismatch creates an -EIO error during the reading. In a conventional filesystem (or a btrfs filesystem w/o datasum) there is no checksum, so this problem doesn't exist.
+>>
+>> I am curious how ZFS solves this problem.
+> It doesn't support disabling COW or the O_DIRECT flag, so it just never has the problem in the first place.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/disk-io.c | 9 +++++----
- fs/btrfs/disk-io.h | 2 ++
- fs/btrfs/volumes.c | 4 ++++
- 3 files changed, 11 insertions(+), 4 deletions(-)
+I would like to perform some tests: however I think that you are right. if you make a "double buffering" approach (copy the data in the page cache, compute the checksum, then write the data to disk), the mismatch should not happen. Of course this is incompatible with O_DIRECT; but disabling O_DIRECT is a prerequisite to the "double buffering"; alone it couldn't be sufficient; what about mmap ? Are we sure that this does a double buffering ?
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 156116655a32..28e71e2aaa92 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -393,8 +393,8 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
-  * Return 0 if the superblock checksum type matches the checksum value of that
-  * algorithm. Pass the raw disk superblock data.
-  */
--static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
--				  char *raw_disk_sb)
-+int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
-+			   char *raw_disk_sb)
- {
- 	struct btrfs_super_block *disk_sb =
- 		(struct btrfs_super_block *)raw_disk_sb;
-@@ -420,8 +420,9 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
--		btrfs_err(fs_info, "unsupported checksum algorithm %u",
--				csum_type);
-+		if (fs_info)
-+			btrfs_err(fs_info, "unsupported checksum algorithm %u",
-+				  csum_type);
- 		ret = 1;
- 	}
- 
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 70a88d61b547..683e4b0c4e24 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -70,6 +70,8 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
- int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
- 			struct buffer_head **bh_ret);
- int btrfs_commit_super(struct btrfs_fs_info *fs_info);
-+int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
-+			   char *raw_disk_sb);
- struct btrfs_root *btrfs_read_fs_root(struct btrfs_root *tree_root,
- 				      struct btrfs_key *location);
- int btrfs_init_fs_root(struct btrfs_root *root);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1e72357bdfa8..af34b8a611a0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -677,6 +677,10 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
- 	if (ret)
- 		return ret;
- 
-+	if (btrfs_check_super_csum(NULL, bh->b_data)) {
-+		pr_err("BTRFS: superblock checksum mismatch");
-+		goto error_brelse;
-+	}
- 	disk_super = (struct btrfs_super_block *)bh->b_data;
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	if (devid != device->devid)
+I would prefer that btrfs doesn't allow O_DIRECT with the COW files. I prefer this to the checksum mismatch bug.
+
+
+>>
+>> However I have to point out that this problem is not solved by the COW. COW solved only the problem about an interrupted commit of the filesystem, where the data is update in place (so it is available by the user), but the metadata not.
+> COW is irrelevant if you're bypassing it.  It's only enforced for metadata so that you don't have to check the FS every time you mount it (because the way BTRFS uses it guarantees consistency of the metadata).
+>>
+>>>
+>>> Even if not... I should be only a problem in case of a crash during
+>>> that,.. and than I'd still prefer to get the false positive than bad
+>>> data.
+>>
+>> How you can know if it is a "bad data" or a "bad checksum" ?
+> You can't directly.  Just like you can't know which copy in a two-device MD RAID1 array is bad when they mismatch.
+> 
+> That's part of why I'm not all that fond of the idea of having checksums without COW, you need to verify the data using secondary means anyway, so why exactly should you waste time verifying it twice?
+
+This is true
+
+>>
+>>>
+>>> Anyway... it's not going to happen so the discussion is pointless.
+>>> I think people can probably use dm-integrity (which btw: does no CoW
+>>> either (IIRC) and still can provide integrity... ;-) ) to see whether
+>>> their data is valid.
+>>> No nice but since it won't change on btrfs, a possible alternative.
+>>
+>> Even in this case I am curious about dm-integrity would sole this issue.
+> dm-integrity uses journaling, and actually based on the testing I've done, will typically have much worse performance than the overhead of just enabling COW on files on BTRFS and manually defragmenting them on a regular basis.
+
+Good to know
+> 
+
+
 -- 
-2.15.0
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

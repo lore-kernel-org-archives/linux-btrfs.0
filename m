@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:58328 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:58414 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750751AbeCNKej (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 06:34:39 -0400
-Received: from mail-vk0-f48.google.com (mail-vk0-f48.google.com [209.85.213.48])
+        id S1751348AbeCNKfb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 06:35:31 -0400
+Received: from mail-ua0-f182.google.com (mail-ua0-f182.google.com [209.85.217.182])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 8A57720685
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 10:34:38 +0000 (UTC)
-Received: by mail-vk0-f48.google.com with SMTP id x5so445824vkd.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 03:34:38 -0700 (PDT)
+        by mail.kernel.org (Postfix) with ESMTPSA id 0E24520685
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 10:35:31 +0000 (UTC)
+Received: by mail-ua0-f182.google.com with SMTP id n24so1705185ual.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 03:35:31 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <c2202ca5-086d-125f-866e-f08c8080a8c5@suse.com>
-References: <20180313184700.30173-1-fdmanana@kernel.org> <c2202ca5-086d-125f-866e-f08c8080a8c5@suse.com>
+In-Reply-To: <def20354-62ee-cb57-33b4-342371a09404@suse.com>
+References: <20180313184700.30173-1-fdmanana@kernel.org> <def20354-62ee-cb57-33b4-342371a09404@suse.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 14 Mar 2018 10:34:37 +0000
-Message-ID: <CAL3q7H4iiSX+Un-+TZdjYuUnjsSnNMxS-40mjkS5y87oScv_jA@mail.gmail.com>
+Date: Wed, 14 Mar 2018 10:35:29 +0000
+Message-ID: <CAL3q7H4B9E69UaQrF1saj3mXgadLoQoCUtRT9s7tsO13qrfkTw@mail.gmail.com>
 Subject: Re: [PATCH 1/2] Btrfs-progs: check, fix false error reports for
  shared prealloc extents
 To: Nikolay Borisov <nborisov@suse.com>
@@ -24,7 +24,7 @@ Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 14, 2018 at 8:19 AM, Nikolay Borisov <nborisov@suse.com> wrote:
+On Wed, Mar 14, 2018 at 9:19 AM, Nikolay Borisov <nborisov@suse.com> wrote:
 >
 >
 > On 13.03.2018 20:47, fdmanana@kernel.org wrote:
@@ -46,6 +46,14 @@ On Wed, Mar 14, 2018 at 8:19 AM, Nikolay Borisov <nborisov@suse.com> wrote:
 >>   $ sync
 >>
 >>   $ xfs_io -c "pwrite -S 0xab -b 0 256K" /mnt/foo
+>                                   ^^
+> nit: You are actually missing the argument for the -b switch, how big
+> should the blocks be ? Same thing applies to the commit message of your test
+
+-b is there because originally I had a value there. It's irrelevant
+the block size value, I simply forgot to delete -b.
+
+>
 >>   $ touch /mnt/bar
 >>   $ xfs_io -c "reflink /mnt/foo 0 0 256K" /mnt/bar
 >>   $ xfs_io -c "fsync" /mnt/bar
@@ -109,15 +117,6 @@ On Wed, Mar 14, 2018 at 8:19 AM, Nikolay Borisov <nborisov@suse.com> wrote:
 >> +{
 >> +     u64 rootid = btrfs_extent_data_ref_root(eb, dref);
 >> +     u64 objectid = btrfs_extent_data_ref_objectid(eb, dref);
->
-> nit: Shouldn't this ino be equal to the ino passed to the function? If
-> so objectid can be removed and when setting up the key for the second
-> search you just assigne ino to its objectid
-
-No, we want to skip if it's equal, because we're only interested in
-references for inodes other then the one being currently processed.
-
->
 >> +     u64 offset = btrfs_extent_data_ref_offset(eb, dref);
 >> +     struct btrfs_root *root;
 >> +     struct btrfs_key key;

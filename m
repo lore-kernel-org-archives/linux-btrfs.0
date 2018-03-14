@@ -1,45 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f170.google.com ([74.125.82.170]:44674 "EHLO
-        mail-ot0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750902AbeCNEYo (ORCPT
+Received: from v150-95-217-78.ll6w.static.cnode.io ([150.95.217.78]:60704 "EHLO
+        mail.reasonset.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750758AbeCNE4P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 00:24:44 -0400
-Received: by mail-ot0-f170.google.com with SMTP id 79-v6so1938340oth.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Mar 2018 21:24:44 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20180314020313.2f444787@couracado.motaleite.net>
-References: <20180314020313.2f444787@couracado.motaleite.net>
-From: Chris Murphy <lists@colorremedies.com>
-Date: Tue, 13 Mar 2018 22:24:43 -0600
-Message-ID: <CAJCQCtQg5_V0POgNbQs894Bq6JExpdb5b38F_T000kFanMQxag@mail.gmail.com>
-Subject: Re: btrfs errors
-To: higuita <higuita@gmx.net>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Wed, 14 Mar 2018 00:56:15 -0400
+Received: from mint (203-153-78-198.flets.kamome.or.jp [203.153.78.198])
+        by mail.reasonset.net (Postfix) with ESMTPSA id 2732E2209BC
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 13:56:14 +0900 (JST)
+Date: Wed, 14 Mar 2018 13:56:13 +0900
+From: MASAKI haruka <yek@reasonset.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs broken in massive transfar
+Message-Id: <20180314135613.4ef005f0b93cb2888abd9750@reasonset.net>
+In-Reply-To: <CAJCQCtRaUUSWOWGQzJqZVddV9639O0B8eiZzNKTB0DPYowLWoA@mail.gmail.com>
+References: <20180313065743.c3ec9ade3e90dc4fc4b5adc9@reasonset.net>
+        <f4e1a551-fc29-f7e8-a738-76365af403f7@gmx.com>
+        <20180313131928.5f3f1d053eaf50424b6dbff8@reasonset.net>
+        <c938a753-deb6-39bb-0f17-701ec1e0226b@gmx.com>
+        <20180314042507.f20bbf949ce07f88ca01cb38@reasonset.net>
+        <CAJCQCtRaUUSWOWGQzJqZVddV9639O0B8eiZzNKTB0DPYowLWoA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you search the list for 'corrupt leaf bad key ordering' the top two
-causes are bad RAM and flaky power supply. These can be hard to narrow
-down. But yes pretty good chance it can be fixed with 'btrfs check
---repair' but two things before you do that:
+> On Tue, Mar 13, 2018 at 1:25 PM, MASAKI haruka <yek@reasonset.net> wrote:
+> > journal(Kernel log), 7th try (to be readonly):
+> >
+> > ---
+> >  3月 12 16:25:51 lily kernel: BTRFS info (device dm-6): creating UUID tree
+> >  3月 12 16:25:53 lily iscsid[1406]: Connection-1:0 to [target: iqn.1994-11.com.netgear:eggplant-01:edc9adcf:btr1group, portal: 192.168.1.166,3260] through [iface: default] is shutdown.
+> >  3月 12 16:25:53 lily iscsid[1406]: IPC qtask write failed: Broken pipe
+> >  3月 12 16:26:18 lily kernel:  connection1:0: detected conn error (1020)
+> >  3月 12 16:26:19 lily iscsid[1406]: Kernel reported iSCSI connection 1:0 error (1020 - ISCSI_ERR_TCP_CONN_CLOSE: TCP connection closed) state (3)
+> >  3月 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 UNKNOWN(0x2003) Result: hostbyte=0x00 driverbyte=0x08
+> >  3月 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 Sense Key : 0x2 [current] [descriptor]
+> >  3月 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 ASC=0x8 ASCQ=0x0
+> >  3月 12 16:26:21 lily kernel: sd 8:0:0:0: [sdg] tag#5 CDB: opcode=0x8a 8a 00 00 00 00 00 00 42 5c 00 00 00 34 00 00 00
+> >  3月 12 16:26:21 lily kernel: print_req_error: I/O error, dev sdg, sector 4348928
+> 
+> 
+> Looks like network problems. Is one of these Btrfs volumes on an iSCSI
+> device? Because there's a bunch of iSCSI errors followed by an I/O
+> error with sector LBA reported, and then you get a bunch of Btrfs
+> write errors.
+> 
+> What's the relationship between /dev/sdg and device (dm-6)
+> /dev/mapper/hymaster_1 ?
+> 
 
-a. Make sure backups are up to date. Hopefully you can mount the
-volume read only, it's a more permissive mount and also it helps not
-contribute more problems, and then update your backups. If you can't
-mount read only, then you kinda have to weigh the risk of repair
-breaking the file system versus updating backups with btrfs restore -
-which is an offline scraping tool. I don't know what the risk is for
-bad key ordering repairs though.
 
-b. Make sure you're using a recent btrfs-progs - as recent as you can
-get a hold of. I'd probably not use anything older than 4.14.1 but
-anything since 4.4 should be capable of repairing this because it's a
-pretty old feature in check and should be safe, but yeah...
+/dev/mapper/hymaster_1 is dm-crypt plain device.
+Its real device is /dev/sdg it is an iSCSI disk
+connected to NAS over GbE link local.
 
-c. (optional) take a btrfs image before you do the repair because if
-something blows up, at least that will help a dev figure out why btrfs
-check blew up your file system.
+If this probrem from network, it's looked difficult to solve
+because I tried with two different computers without any other network device...
 
----
-Chris Murphy
+> 
+> >
+> > Note: This system's structure is;
+> > Computer (Linux 4.14/4.15) - btrfs (original) - dm-crypt plain - internal 4 disks
+> >  \_ btrfs (destination) - dm-crypt plain - iSCSI (single) - NAS - Hardware RAID5 - 8 disks
+> 
+> dm-6 is what btrfs is directly using and is complaining about, and I
+> will guess that this is a dmcrypt device backed by /dev/sdg which is
+> iSCSI to the NAS. Correct? Looks like either network problems, or
+> possibly there is a real hardware problem with an error that's only
+> partly passing through iSCSI. I can't parse this:
+> 
+>  3月 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 UNKNOWN(0x2003)
+> Result: hostbyte=0x00 driverbyte=0x08
+>  3月 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 Sense Key : 0x2
+> [current] [descriptor]
+>  3月 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 ASC=0x8 ASCQ=0x0
+>  3月 13 00:36:47 lily kernel: sd 8:0:0:0: [sdg] tag#1 CDB: opcode=0x8a
+> 8a 00 00 00 00 00 cd 6f 0b 80 00 00 2a 20 00 00
+> 
+> Anyway, Btrfs detects the write failures, and is going read-only in
+> order to prevent corrupting the file system. So I think you've got
+> some iSCSI troubleshooting to do, and fix that. Doesn't seem like it's
+> a Btrfs specific problem to me.
+> 
+
+> and I will guess that this is a dmcrypt device backed by /dev/sdg which is
+> iSCSI to the NAS. Correct?
+
+Yes.
+
+The log looks network (disk?) probrem me too, but I think it is unlikely
+because I didn't used iSCSI in case of I experienced (when Linux 3.9.)
+Altough then btrfs disks are little unstable, so it's guessable that
+target device (disks, iSCSI or network) reason...
+
+I didn't see iSCSI error without btrfs transfaring.
+I thought if most people didn't see probrem like this,
+maybe the reason is some difference... dm-crypt plain?
+
+I'm trying to use encrypt function on NAS (LUKS?) instead of dm-crypt plain on iSCSI disk.
+
+(I don't know how to find iSCSI probrem...)
+
+Thank you.
+
+> -- 
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+-- 
+MASAKI haruka <yek@reasonset.net>

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.99]:60572 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.99]:57572 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751711AbeCNPCp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 11:02:45 -0400
+        id S1750731AbeCOMZi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Mar 2018 08:25:38 -0400
 Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
         (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 094FA20779
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 15:02:43 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 4068D204EF
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 12:25:37 +0000 (UTC)
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2 v2] Btrfs-progs: check, fix false error reports for shared prealloc extents
-Date: Tue, 13 Mar 2018 22:48:17 +0000
-Message-Id: <20180313224817.3418-1-fdmanana@kernel.org>
+Subject: [PATCH 1/2 v3] Btrfs-progs: check, fix false error reports for shared prealloc extents
+Date: Wed, 14 Mar 2018 20:11:09 +0000
+Message-Id: <20180314201109.9678-1-fdmanana@kernel.org>
 In-Reply-To: <20180313184700.30173-1-fdmanana@kernel.org>
 References: <20180313184700.30173-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -75,12 +75,15 @@ A test case will follow in a separate patch.
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
 
+V3: Replaced incorrect argument to a btrfs_next_leaf() call (extent_root -> root).
+
 V2: Made stuff work with lowmem mode as well.
     Added a comment about the limitations of the current check.
     Removed filtering by inode number since it was unreliable as we can
     have different inodes with same inode number but in different roots
     (so opted to drop the filtering instead of filtering by root as well,
     to keep it simpler).
+
 
  check/main.c        |  11 ++-
  check/mode-common.c | 258 ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -111,7 +114,7 @@ index 392195ca..88e6c1e9 100644
  	}
  	return 0;
 diff --git a/check/mode-common.c b/check/mode-common.c
-index 1b56a968..559cd11d 100644
+index 1b56a968..8a59e8a4 100644
 --- a/check/mode-common.c
 +++ b/check/mode-common.c
 @@ -24,6 +24,264 @@
@@ -164,7 +167,7 @@ index 1b56a968..559cd11d 100644
 +		int extent_type;
 +
 +		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0])) {
-+			ret = btrfs_next_leaf(fs_info->extent_root, &path);
++			ret = btrfs_next_leaf(root, &path);
 +			if (ret < 0)
 +				goto out;
 +			if (ret > 0)

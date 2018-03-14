@@ -1,115 +1,462 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52112 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.18]:55679 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932415AbeCSMjQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Mar 2018 08:39:16 -0400
-Date: Mon, 19 Mar 2018 13:36:51 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, ralphgauges@googlemail.com
-Subject: Re: [PATCH v2] btrfs-progs: ctree: Add extra level check for
- read_node_slot()
-Message-ID: <20180319123651.GA6955@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180208005940.11551-1-wqu@suse.com>
+        id S932680AbeCNBc7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Mar 2018 21:32:59 -0400
+Subject: Re: [PATCH 1/2] Btrfs-progs: check, fix false error reports for
+ shared prealloc extents
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <20180313184700.30173-1-fdmanana@kernel.org>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <4287f45b-cfac-7188-51b2-1647b230f584@gmx.com>
+Date: Wed, 14 Mar 2018 09:32:50 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180208005940.11551-1-wqu@suse.com>
+In-Reply-To: <20180313184700.30173-1-fdmanana@kernel.org>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="W1Qzl2WWURQWQW0VKFdzjFf2ljIT0ODKj"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 08, 2018 at 08:59:40AM +0800, Qu Wenruo wrote:
-> Strangely, we have level check in btrfs_print_tree() while we don't have
-> the same check in read_node_slot().
-> 
-> That's to say, for the following corruption, btrfs_search_slot() or
-> btrfs_next_leaf() can return invalid leaf:
-> 
-> Parent eb:
->   node XXXXXX level 1
->               ^^^^^^^
->               Child should be leaf (level 0)
->   ...
->   key (XXX XXX XXX) block YYYYYY
-> 
-> Child eb:
->   leaf YYYYYY level 1
->               ^^^^^^^
->               Something went wrong now
-> 
-> And for the corrupted leaf returned, later caller can be screwed up
-> easily.
-> 
-> Although the root cause (powerloss, but still something wrong breaking
-> metadata CoW of btrfs) is still unknown, at least enhance btrfs-progs to
-> avoid SEGV.
-> 
-> Reported-by: Ralph Gauges <ralphgauges@googlemail.com>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--W1Qzl2WWURQWQW0VKFdzjFf2ljIT0ODKj
+Content-Type: multipart/mixed; boundary="HukoTjXDzb2zue2AhoF8chebvH9ytR3ia";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+Message-ID: <4287f45b-cfac-7188-51b2-1647b230f584@gmx.com>
+Subject: Re: [PATCH 1/2] Btrfs-progs: check, fix false error reports for
+ shared prealloc extents
+References: <20180313184700.30173-1-fdmanana@kernel.org>
+In-Reply-To: <20180313184700.30173-1-fdmanana@kernel.org>
 
-Applied, thanks.
+--HukoTjXDzb2zue2AhoF8chebvH9ytR3ia
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2018=E5=B9=B403=E6=9C=8814=E6=97=A5 02:47, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>=20
+> Under some cases the filesystem checker reports an error when it finds
+> checksum items for an extent that is referenced by an inode as a preall=
+oc
+> extent. Such cases are not an error when the extent is actually shared
+> (was cloned/reflinked) with other inodes and was written through one of=
+
+> those other inodes.
+>=20
+> Example:
+>=20
+>   $ mkfs.btrfs -f /dev/sdb
+>   $ mount /dev/sdb /mnt
+>=20
+>   $ touch /mnt/foo
+>   $ xfs_io -c "falloc 0 256K" /mnt/foo
+>   $ sync
+>=20
+>   $ xfs_io -c "pwrite -S 0xab -b 0 256K" /mnt/foo
+>   $ touch /mnt/bar
+>   $ xfs_io -c "reflink /mnt/foo 0 0 256K" /mnt/bar
+>   $ xfs_io -c "fsync" /mnt/bar
+>=20
+>   <power fail>
+>   $ mount /dev/sdb /mnt
+>   $ umount /mnt
+>=20
+>   $ btrfs check /dev/sdc
+>   Checking filesystem on /dev/sdb
+>   UUID: 52d3006e-ee3b-40eb-aa21-e56253a03d39
+>   checking extents
+>   checking free space cache
+>   checking fs roots
+>   root 5 inode 257 errors 800, odd csum item
+>   ERROR: errors found in fs roots
+>   found 688128 bytes used, error(s) found
+>   total csum bytes: 256
+>   total tree bytes: 163840
+>   total fs tree bytes: 65536
+>   total extent tree bytes: 16384
+>   btree space waste bytes: 138819
+>   file data blocks allocated: 10747904
+>    referenced 10747904
+>   $ echo $?
+>   1
+>=20
+> So tech check to not report such cases as errors by checking if the
+> extent is shared with other inodes and if so, consider it an error the
+> existence of checksum items only if all those other inodes are referenc=
+ing
+> the extent as a prealloc extent.
+> This case can be hit often when running the generic/475 testcase from
+> fstests.
+>=20
+> A test case will follow in a separate patch.
+>=20
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+
+Looks good overall, but still some small nitpicks.
+
+One is, the fix is only for original mode, while the fix itself has
+nothing mode dependent, so it's better to put the check into
+check/mode-original.[ch] so lowmem mode can also benefit from it.
 
 > ---
-> changlog:
-> v2:
->   Check if the extent buffer is up-to-date before checking its level to
->   avoid possible NULL pointer access.
-> ---
->  ctree.c | 16 +++++++++++++++-
->  1 file changed, 15 insertions(+), 1 deletion(-)
-> 
-> diff --git a/ctree.c b/ctree.c
-> index 4fc33b14000a..430805e3043f 100644
-> --- a/ctree.c
-> +++ b/ctree.c
-> @@ -22,6 +22,7 @@
->  #include "repair.h"
->  #include "internal.h"
->  #include "sizes.h"
-> +#include "messages.h"
->  
->  static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
->  		      *root, struct btrfs_path *path, int level);
-> @@ -640,7 +641,9 @@ static int bin_search(struct extent_buffer *eb, struct btrfs_key *key,
->  struct extent_buffer *read_node_slot(struct btrfs_fs_info *fs_info,
->  				   struct extent_buffer *parent, int slot)
->  {
-> +	struct extent_buffer *ret;
->  	int level = btrfs_header_level(parent);
-> +
->  	if (slot < 0)
->  		return NULL;
->  	if (slot >= btrfs_header_nritems(parent))
-> @@ -649,8 +652,19 @@ struct extent_buffer *read_node_slot(struct btrfs_fs_info *fs_info,
->  	if (level == 0)
->  		return NULL;
->  
-> -	return read_tree_block(fs_info, btrfs_node_blockptr(parent, slot),
-> +	ret = read_tree_block(fs_info, btrfs_node_blockptr(parent, slot),
->  		       btrfs_node_ptr_generation(parent, slot));
-> +	if (!extent_buffer_uptodate(ret))
-> +		return ERR_PTR(-EIO);
-> +
-> +	if (btrfs_header_level(ret) != level - 1) {
-> +		error("child eb corrupted: parent bytenr=%llu item=%d parent level=%d child level=%d",
-
-Please unindent the strings that are do not fit 80 chars on the line.
-I've fixed that now, but I do that too often despite this has been known
-to be the preferred style.
-
-> +		      btrfs_header_bytenr(parent), slot,
-> +		      btrfs_header_level(parent), btrfs_header_level(ret));
-> +		free_extent_buffer(ret);
-> +		return ERR_PTR(-EIO);
-> +	}
-> +	return ret;
+>  check/main.c | 270 +++++++++++++++++++++++++++++++++++++++++++++++++++=
++++++++-
+>  1 file changed, 268 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/check/main.c b/check/main.c
+> index 392195ca..bb816311 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -1424,6 +1424,264 @@ static int process_inode_extref(struct extent_b=
+uffer *eb,
+> =20
 >  }
->  
->  static int balance_level(struct btrfs_trans_handle *trans,
-> -- 
-> 2.16.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> =20
+> +/*
+> + * Check if the inode referenced by the given data reference uses the =
+extent
+> + * at disk_bytenr as a non-prealloc extent.
+> + *
+> + * Returns 1 if true, 0 if false and < 0 on error.
+> + */
+
+The check itself (along with check_prealloc_shared_data_ref) is good
+enough to detect any regular file extents inside the prealloc extent.
+
+But when it finds any regular extents, it doesn't check if it's covered
+by csum correctly.
+
+For example:
+
+|<-------------- prealloc extent range -------------------------->|
+|<- the *only* regular extent ->|
+|<-------- range covered by csum -------->|
+                                |<- ODD ->|
+
+Or
+|<-------------- prealloc extent range -------------------------->|
+|<- the *only* regular extent ->|
+|<- csum ->|
+           |<------ ODD ------->|
+
+So at least in theory, the best solution is not to just check if there
+is any regular extents inside the large prealloc extent, but also check
+how many csum bytes the regular extents contribute, and then compare it
+to the result of count_csum_range().
+
+Thanks,
+Qu
+
+> +static int check_prealloc_data_ref(struct btrfs_fs_info *fs_info,
+> +				   u64 ino,
+> +				   u64 disk_bytenr,
+> +				   struct btrfs_extent_data_ref *dref,
+> +				   struct extent_buffer *eb)
+> +{
+> +	u64 rootid =3D btrfs_extent_data_ref_root(eb, dref);
+> +	u64 objectid =3D btrfs_extent_data_ref_objectid(eb, dref);
+> +	u64 offset =3D btrfs_extent_data_ref_offset(eb, dref);
+> +	struct btrfs_root *root;
+> +	struct btrfs_key key;
+> +	struct btrfs_path path;
+> +	int ret;
+> +
+> +	if (objectid =3D=3D ino)
+> +		return 0;
+> +
+> +	btrfs_init_path(&path);
+> +	key.objectid =3D rootid;
+> +	key.type =3D BTRFS_ROOT_ITEM_KEY;
+> +	key.offset =3D (u64)-1;
+> +	root =3D btrfs_read_fs_root(fs_info, &key);
+> +	if (IS_ERR(root)) {
+> +		ret =3D PTR_ERR(root);
+> +		goto out;
+> +	}
+> +
+> +	key.objectid =3D objectid;
+> +	key.type =3D BTRFS_EXTENT_DATA_KEY;
+> +	key.offset =3D offset;
+> +	ret =3D btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+> +	if (ret > 0) {
+> +		fprintf(stderr,
+> +			"Missing file extent item for inode %llu, root %llu, offset %llu",
+> +			objectid, rootid, offset);
+> +		ret =3D -ENOENT;
+> +	}
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	while (true) {
+> +		struct btrfs_file_extent_item *fi;
+> +		int extent_type;
+> +
+> +		if (path.slots[0] >=3D btrfs_header_nritems(path.nodes[0])) {
+> +			ret =3D btrfs_next_leaf(fs_info->extent_root, &path);
+> +			if (ret < 0)
+> +				goto out;
+> +			if (ret > 0)
+> +				break;
+> +		}
+> +
+> +		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+> +		if (key.objectid !=3D objectid ||
+> +		    key.type !=3D BTRFS_EXTENT_DATA_KEY)
+> +			break;
+> +
+> +		fi =3D btrfs_item_ptr(path.nodes[0], path.slots[0],
+> +				    struct btrfs_file_extent_item);
+> +		extent_type =3D btrfs_file_extent_type(path.nodes[0], fi);
+> +		if (extent_type !=3D BTRFS_FILE_EXTENT_REG &&
+> +		    extent_type !=3D BTRFS_FILE_EXTENT_PREALLOC)
+> +			goto next;
+> +
+> +		if (btrfs_file_extent_disk_bytenr(path.nodes[0], fi) !=3D
+> +		    disk_bytenr)
+> +			break;
+> +
+> +		if (extent_type =3D=3D BTRFS_FILE_EXTENT_REG) {
+> +			ret =3D 1;
+> +			goto out;
+> +		}
+> +next:
+> +		path.slots[0]++;
+> +	}
+> +	ret =3D 0;
+> + out:
+> +	btrfs_release_path(&path);
+> +	return ret;
+> +}
+> +
+> +/*
+> + * Check if a shared data reference points to a node that has a file e=
+xtent item
+> + * pointing to the extent at disk_bytenr that is not of type prealloc =
+and is
+> + * associated to an inode with a number different from ino.
+> + *
+> + * Returns 1 if true, 0 if false and < 0 on error.
+> + */
+> +static int check_prealloc_shared_data_ref(struct btrfs_fs_info *fs_inf=
+o,
+> +					  u64 ino,
+> +					  u64 parent,
+> +					  u64 disk_bytenr)
+> +{
+> +	struct extent_buffer *eb;
+> +	u32 nr;
+> +	int i;
+> +	int ret =3D 0;
+> +
+> +	eb =3D read_tree_block(fs_info, parent, 0);
+> +	if (!extent_buffer_uptodate(eb)) {
+> +		ret =3D -EIO;
+> +		goto out;
+> +	}
+> +
+> +	nr =3D btrfs_header_nritems(eb);
+> +	for (i =3D 0; i < nr; i++) {
+> +		struct btrfs_key key;
+> +		struct btrfs_file_extent_item *fi;
+> +		int extent_type;
+> +
+> +		btrfs_item_key_to_cpu(eb, &key, i);
+> +		if (key.type !=3D BTRFS_EXTENT_DATA_KEY)
+> +			continue;
+> +		if (key.objectid =3D=3D ino)
+> +			continue;
+> +
+> +		fi =3D btrfs_item_ptr(eb, i, struct btrfs_file_extent_item);
+> +
+> +		extent_type =3D btrfs_file_extent_type(eb, fi);
+> +		if (extent_type !=3D BTRFS_FILE_EXTENT_REG &&
+> +		    extent_type !=3D BTRFS_FILE_EXTENT_PREALLOC)
+> +			continue;
+> +
+> +		if (btrfs_file_extent_disk_bytenr(eb, fi) =3D=3D disk_bytenr &&
+> +		    extent_type =3D=3D BTRFS_FILE_EXTENT_REG) {
+> +			ret =3D 1;
+> +			break;
+> +		}
+> +	}
+> + out:
+> +	free_extent_buffer(eb);
+> +	return ret;
+> +}
+> +
+> +/*
+> + * Check if a prealloc extent is shared by other inodes and if any ino=
+de has
+> + * already written to that extent. This is to avoid emitting invalid w=
+arnings
+> + * about odd csum items (a inode has an extent entirely marked as prea=
+lloc
+> + * but another inode shares it and has already written to it).
+> + *
+> + * Returns 0 if the prealloc extent was not written yet by any inode, =
+1 if
+> + * at least one other inode has written to it, and < 0 on error.
+> + */
+> +static int check_prealloc_extent_written(struct btrfs_fs_info *fs_info=
+,
+> +					 u64 ino,
+> +					 u64 disk_bytenr,
+> +					 u64 num_bytes)
+> +{
+> +	struct btrfs_path path;
+> +	struct btrfs_key key;
+> +	int ret;
+> +	struct btrfs_extent_item *ei;
+> +	u32 item_size;
+> +	unsigned long ptr;
+> +	unsigned long end;
+> +
+> +	key.objectid =3D disk_bytenr;
+> +	key.type =3D BTRFS_EXTENT_ITEM_KEY;
+> +	key.offset =3D num_bytes;
+> +
+> +	btrfs_init_path(&path);
+> +	ret =3D btrfs_search_slot(NULL, fs_info->extent_root, &key, &path, 0,=
+ 0);
+> +	if (ret > 0) {
+> +		fprintf(stderr,
+> +			"Missing extent item in extent tree for disk_bytenr %llu, num_bytes=
+ %llu\n",
+> +			disk_bytenr, num_bytes);
+> +		ret =3D -ENOENT;
+> +	}
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	/* First check all inline refs. */
+> +	ei =3D btrfs_item_ptr(path.nodes[0], path.slots[0],
+> +			    struct btrfs_extent_item);
+> +	item_size =3D btrfs_item_size_nr(path.nodes[0], path.slots[0]);
+> +	ptr =3D (unsigned long)(ei + 1);
+> +	end =3D (unsigned long)ei + item_size;
+> +	while (ptr < end) {
+> +		struct btrfs_extent_inline_ref *iref;
+> +		int type;
+> +
+> +		iref =3D (struct btrfs_extent_inline_ref *)ptr;
+> +		type =3D btrfs_extent_inline_ref_type(path.nodes[0], iref);
+> +		ASSERT(type =3D=3D BTRFS_EXTENT_DATA_REF_KEY ||
+> +		       type =3D=3D BTRFS_SHARED_DATA_REF_KEY);
+> +
+> +		if (type =3D=3D BTRFS_EXTENT_DATA_REF_KEY) {
+> +			struct btrfs_extent_data_ref *dref;
+> +
+> +			dref =3D (struct btrfs_extent_data_ref *)(&iref->offset);
+> +			ret =3D check_prealloc_data_ref(fs_info, ino, disk_bytenr,
+> +						      dref, path.nodes[0]);
+> +			if (ret !=3D 0)
+> +				goto out;
+> +		} else if (type =3D=3D BTRFS_SHARED_DATA_REF_KEY) {
+> +			u64 parent;
+> +
+> +			parent =3D btrfs_extent_inline_ref_offset(path.nodes[0],
+> +								iref);
+> +			ret =3D check_prealloc_shared_data_ref(fs_info,
+> +							     ino,
+> +							     parent,
+> +							     disk_bytenr);
+> +			if (ret !=3D 0)
+> +				goto out;
+> +		}
+> +
+> +		ptr +=3D btrfs_extent_inline_ref_size(type);
+> +	}
+> +
+> +	/* Now check if there are any non-inlined refs. */
+> +	path.slots[0]++;
+> +	while (true) {
+> +		if (path.slots[0] >=3D btrfs_header_nritems(path.nodes[0])) {
+> +			ret =3D btrfs_next_leaf(fs_info->extent_root, &path);
+> +			if (ret < 0)
+> +				goto out;
+> +			if (ret > 0) {
+> +				ret =3D 0;
+> +				break;
+> +			}
+> +		}
+> +
+> +		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+> +		if (key.objectid !=3D disk_bytenr)
+> +			break;
+> +
+> +		if (key.type =3D=3D BTRFS_EXTENT_DATA_REF_KEY) {
+> +			struct btrfs_extent_data_ref *dref;
+> +
+> +			dref =3D btrfs_item_ptr(path.nodes[0], path.slots[0],
+> +					      struct btrfs_extent_data_ref);
+> +			ret =3D check_prealloc_data_ref(fs_info, ino, disk_bytenr,
+> +						      dref, path.nodes[0]);
+> +			if (ret !=3D 0)
+> +				goto out;
+> +		} else if (key.type =3D=3D BTRFS_SHARED_DATA_REF_KEY) {
+> +			ret =3D check_prealloc_shared_data_ref(fs_info,
+> +							     ino,
+> +							     key.offset,
+> +							     disk_bytenr);
+> +			if (ret !=3D 0)
+> +				goto out;
+> +		}
+> +
+> +		path.slots[0]++;
+> +	}
+> +out:
+> +	btrfs_release_path(&path);
+> +	return ret;
+> +}
+> +
+>  static int process_file_extent(struct btrfs_root *root,
+>  				struct extent_buffer *eb,
+>  				int slot, struct btrfs_key *key,
+> @@ -1515,8 +1773,16 @@ static int process_file_extent(struct btrfs_root=
+ *root,
+>  			if (found < num_bytes)
+>  				rec->some_csum_missing =3D 1;
+>  		} else if (extent_type =3D=3D BTRFS_FILE_EXTENT_PREALLOC) {
+> -			if (found > 0)
+> -				rec->errors |=3D I_ERR_ODD_CSUM_ITEM;
+> +			if (found > 0) {
+> +				ret =3D check_prealloc_extent_written(root->fs_info,
+> +								    rec->ino,
+> +								    disk_bytenr,
+> +								    num_bytes);
+> +				if (ret < 0)
+> +					return ret;
+> +				if (ret =3D=3D 0)
+> +					rec->errors |=3D I_ERR_ODD_CSUM_ITEM;
+> +			}
+>  		}
+>  	}
+>  	return 0;
+>=20
+
+
+--HukoTjXDzb2zue2AhoF8chebvH9ytR3ia--
+
+--W1Qzl2WWURQWQW0VKFdzjFf2ljIT0ODKj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqoe8IXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgDLAf+LJ7lcLyajcw7/Y3lI1mYvO2d
+QWlZYtlE/NCkjD277IVUpUWAuewt8w7pLIdIam7s5pnzHtnx6Y/TtPFSt4uTaarE
+nbrcZ4X7OfbccIy6cSrrmBZgzqSYAbZeDSyzcfduwwlfm39rqpjB0GbZNh39DGqK
+FhOjCGy3CvQy5wZIWEnca/4FtHs4thUC7Nb90l8cL/uinpnYV+HcWyYMgCpQjnXw
+Ijc9xzzAeBF93SDXCrhDKjamNpilxL+smd2gUmXsVKu4o5GbIY+VqvmUvzylq8tx
+ZZFKxvIlqMrlqKIj1KFMk1vIUlG8dphWOnaDWNgrgt2xL7tB7flKOWgknjXi3g==
+=19Gx
+-----END PGP SIGNATURE-----
+
+--W1Qzl2WWURQWQW0VKFdzjFf2ljIT0ODKj--

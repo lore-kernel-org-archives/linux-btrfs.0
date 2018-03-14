@@ -1,45 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38402 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58577 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752275AbeCNPDV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 11:03:21 -0400
+        id S1751470AbeCNSnA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 14:43:00 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 64BBAADF9
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 15:03:20 +0000 (UTC)
-From: Edmund Nadolski <enadolski@suse.com>
-To: enadolski@suse.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: add missing initialization in btrfs_check_shared
-Date: Wed, 14 Mar 2018 09:03:11 -0600
-Message-Id: <20180314150311.20152-2-enadolski@suse.com>
-In-Reply-To: <20180314150311.20152-1-enadolski@suse.com>
-References: <20180314150311.20152-1-enadolski@suse.com>
+        by mx2.suse.de (Postfix) with ESMTP id 6FE3EAFAE
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 18:42:59 +0000 (UTC)
+Date: Wed, 14 Mar 2018 19:40:37 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Handle error from btrfs_uuid_tree_rem call in
+ _btrfs_ioctl_set_received_subvol
+Message-ID: <20180314184037.GQ32007@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1520858889-17729-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1520858889-17729-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_check_shared calls find_parent_nodes in a loop. In each
-iteration it passes in a share_check struct to request a check for
-a shared extent.  The share_check::share_count must be re-initialized
-to zero for each iteration in order to avoid using a stale count
-value from the previous iteration, thus causing a false
-shared extent indication.
+On Mon, Mar 12, 2018 at 02:48:09PM +0200, Nikolay Borisov wrote:
+> As with every function which deals with modifying the btree
+> btrfs_uuid_tree_rem can fail for any number of reasons (ie. EIO/ENOMEM).
+> Handle return error value from this function gracefully by aborting the
+> transaction.
+> 
+> Fixes: dd5f9615fc5c ("Btrfs: maintain subvolume items in the UUID tree")
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-Signed-off-by: Edmund Nadolski <enadolski@suse.com>
----
- fs/btrfs/backref.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 4e89598..4a33448 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1519,6 +1519,7 @@ int btrfs_check_shared(struct btrfs_root *root, u64 inum, u64 bytenr)
- 		if (!node)
- 			break;
- 		bytenr = node->val;
-+		shared.share_count = 0;
- 		cond_resched();
- 	}
- 
--- 
-2.10.2
-
+Reviewed-by: David Sterba <dsterba@suse.com>

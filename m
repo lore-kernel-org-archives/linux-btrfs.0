@@ -1,50 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48866 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42284 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751411AbeCUIpQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 04:45:16 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id AE218AC69
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:45:15 +0000 (UTC)
-From: Nikolay Borisov <nborisov@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 0/8] Delayed refs cleanups/streamlining
-Date: Wed, 21 Mar 2018 10:45:04 +0200
-Message-Id: <1521621912-25065-1-git-send-email-nborisov@suse.com>
+        id S1751408AbeCNV12 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 17:27:28 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id AB38DAD9C
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 21:27:27 +0000 (UTC)
+Date: Wed, 14 Mar 2018 22:25:05 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Nikolay Borisov <nborisov@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs: Remove extra run_delayed_items call
+Message-ID: <20180314212505.GV32007@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1518531409-31625-1-git-send-email-nborisov@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1518531409-31625-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patchkit aims to simplify and streamline the logic involved in 
-initialising and adding delayed refs/delayed head structures which deal with 
-modification of the extent tree. Currently the logic for init and add was 
-contained in one function for each type of structure. This resulted in very 
-awkward interface with shitloads of arguments, this in turn made it really hard
-to understand the gist of the code. This series rectifies the situation by 
-extracting common parts and using those rather than open coding duplicated
-logic for every type of delayed ref (tree or data ref). 
+On Tue, Feb 13, 2018 at 04:16:48PM +0200, Nikolay Borisov wrote:
+> Before commit 581227d0d2b8 ("Btrfs: remove the time check in
+> btrfs_commit_transaction()") there would be a loop in the transaction
+> commit path that will go on until all existing writers ended their
+> transaction handles. This loop would try and flush as much pending stuff
+> as possible before going into the transaction critical section. However,
+> the aforementioned commit removed it, yet continued calling this
+> "extra" code for the sake of optimisation.
+> 
+> As it stands the rules for running the delayed items are a bit of
+> a mess. First we have the one call which this patch removes, then we
+> have another one, acting as a "safety net" by catching any delayed
+> items introduced after the previous call is finished and extwriters
+> becoming 0 (meaning no more TRANS_START/TRANS_ATTACHS are possible, only
+> joins). Then we have the delayed items running as part of creating a
+> snapshot (once per pedning snapshot). Finally, delayed items are run
+> once more _after_ snapshots have been created. All in all this amounts
+> to 3 + N (N = number of snapshots slated for creation). I think this
+> could really be reduced to 2 calls - 1 before create_pending_snapshots
+> is called and 1 after it's finished. This suffices to ensure consistent
+> fs state during snapshot creation and after they are created.
+> 
+> I did a full xfstest run to ensure no consistency issues came up. Then
+> I picked the tests which exhibitted rather long runtimes and looked
+> closer to see if it was as a result of this commit - which it wasn't.
+> Finally I did an artifical test with fsstres with only those operations
+> that put stress on the delayed items code:
+> 
+> fsstress -z -f mkdir=25% -f rmdir=25% -f creat=25 -f unlink=25%
+> -f attr_set=25% -p5 -n 25000 and also didn't observe any performance
+> regressions
+> 
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
-The first 5 patches deal with the delayed_ref structs. Each patch is 
-incremental and makes the code bisectable. The last tree factor out the init 
-code for delayed_ref_head into a separate function and begin to use it. The 
-final completely splits the two. 
-
-The net result is both a cleaner interface as well as somewhat reduced 
-critical section under delayed_refs->lock spinlock. 
-
-Nikolay Borisov (8):
-  btrfs: Factor out common delayed refs init code
-  btrfs: Use init_delayed_ref_common in add_delayed_tree_ref
-  btrfs: Use init_delayed_ref_common in add_delayed_data_ref
-  btrfs: Open-code add_delayed_tree_ref
-  btrfs: Open-code add_delayed_data_ref
-  btrfs: Introduce init_delayed_ref_head
-  btrfs: Use init_delayed_ref_head in add_delayed_ref_head
-  btrfs: split delayed ref head initialization and addition
-
- fs/btrfs/delayed-ref.c | 239 ++++++++++++++++++++++++-------------------------
- 1 file changed, 119 insertions(+), 120 deletions(-)
-
--- 
-2.7.4
-
+I don't see anything wrong with the patches, but this is touching the
+transaction commit, so I'll keep the review open. Running xfstests
+might not be enough, this asks for some stress testing. I'll add the
+patches to for-next eventually (probably a separate branch as a reminder
+for myself to merge it after we're sure it's ok).

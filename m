@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:34241 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38039 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751751AbeCNITs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 04:19:48 -0400
+        id S1750812AbeCNJTn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 14 Mar 2018 05:19:43 -0400
 Subject: Re: [PATCH 1/2] Btrfs-progs: check, fix false error reports for
  shared prealloc extents
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
 References: <20180313184700.30173-1-fdmanana@kernel.org>
 From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <c2202ca5-086d-125f-866e-f08c8080a8c5@suse.com>
-Date: Wed, 14 Mar 2018 10:19:45 +0200
+Message-ID: <def20354-62ee-cb57-33b4-342371a09404@suse.com>
+Date: Wed, 14 Mar 2018 11:19:39 +0200
 MIME-Version: 1.0
 In-Reply-To: <20180313184700.30173-1-fdmanana@kernel.org>
 Content-Type: text/plain; charset=utf-8
@@ -37,6 +37,10 @@ On 13.03.2018 20:47, fdmanana@kernel.org wrote:
 >   $ sync
 > 
 >   $ xfs_io -c "pwrite -S 0xab -b 0 256K" /mnt/foo
+                                  ^^
+nit: You are actually missing the argument for the -b switch, how big
+should the blocks be ? Same thing applies to the commit message of your test
+
 >   $ touch /mnt/bar
 >   $ xfs_io -c "reflink /mnt/foo 0 0 256K" /mnt/bar
 >   $ xfs_io -c "fsync" /mnt/bar
@@ -100,11 +104,6 @@ On 13.03.2018 20:47, fdmanana@kernel.org wrote:
 > +{
 > +	u64 rootid = btrfs_extent_data_ref_root(eb, dref);
 > +	u64 objectid = btrfs_extent_data_ref_objectid(eb, dref);
-
-nit: Shouldn't this ino be equal to the ino passed to the function? If
-so objectid can be removed and when setting up the key for the second
-search you just assigne ino to its objectid
-
 > +	u64 offset = btrfs_extent_data_ref_offset(eb, dref);
 > +	struct btrfs_root *root;
 > +	struct btrfs_key key;

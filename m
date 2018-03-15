@@ -1,114 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ot0-f181.google.com ([74.125.82.181]:45815 "EHLO
-        mail-ot0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751492AbeCOVPs (ORCPT
+Received: from mail-oi0-f47.google.com ([209.85.218.47]:35544 "EHLO
+        mail-oi0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751791AbeCOVWP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Mar 2018 17:15:48 -0400
-Received: by mail-ot0-f181.google.com with SMTP id w12-v6so8313117ote.12
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 14:15:48 -0700 (PDT)
+        Thu, 15 Mar 2018 17:22:15 -0400
+Received: by mail-oi0-f47.google.com with SMTP id x10so6971567oig.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 14:22:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <06b1fdb0d1884406a2d4c2e8be75e289@MOXDE7.na.bayer.cnb>
+In-Reply-To: <3a6b6a6fb7d441b5a8081300067d6e02@MOXDE7.na.bayer.cnb>
 References: <06b1fdb0d1884406a2d4c2e8be75e289@MOXDE7.na.bayer.cnb>
+ <5389894b-5553-27b8-f9b3-4f6938bd75dd@dirtcellar.net> <3a6b6a6fb7d441b5a8081300067d6e02@MOXDE7.na.bayer.cnb>
 From: Chris Murphy <lists@colorremedies.com>
-Date: Thu, 15 Mar 2018 15:15:47 -0600
-Message-ID: <CAJCQCtRwon1Qsz2MJ9hzvXvaNa3VyQm=VkG83gM82X+=iQP+FQ@mail.gmail.com>
+Date: Thu, 15 Mar 2018 15:22:13 -0600
+Message-ID: <CAJCQCtTUsH5ynMCjRRcnGZHAccOcUL4os3GriBb+mwwtR8SC2w@mail.gmail.com>
 Subject: Re: Crashes running btrfs scrub
-To: Mike Stevens <michael.stevens@bayer.com>
+To: Mike Stevens <michael.stevens@bayer.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 15, 2018 at 12:58 PM, Mike Stevens
-<michael.stevens@bayer.com> wrote:
-> First, the required information
+On Thu, Mar 15, 2018 at 3:07 PM, Mike Stevens <michael.stevens@bayer.com> wrote:
+
+> Mar 15 14:03:06 auswscs9903 kernel: WARNING: CPU: 6 PID: 2720 at fs/btrfs/extent-tree.c:10192 btrfs_create_pending_block_groups+0x1f3/0x260 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: Modules linked in: nfsv3 nfs fscache mpt3sas raid_class mptctl mptbase binfmt_misc ipt_REJECT nf_reject_ipv4 nf_conntrack_ipv4 nf_defrag_ipv4 xt_comment xt_multiport xt_conntrack nf_conntrack libcrc32c iptable_filter dm_mirror dm_region_hash dm_log dm_mod dax iTCO_wdt iTCO_vendor_support btrfs ses enclosure scsi_transport_sas xor zstd_decompress zstd_compress xxhash raid6_pq sb_edac x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm irqbypass crct10dif_pclmul crc32_pclmul ghash_clmulni_intel pcbc aesni_intel crypto_simd glue_helper cryptd intel_cstate lpc_ich sg intel_rapl_perf pcspkr joydev input_leds i2c_i801 mfd_core mei_me mei ipmi_si ipmi_devintf shpchp wmi ioatdma ipmi_msghandler acpi_power_meter acpi_pad nfsd nfs_acl lockd grace auth_rpcgss sunrpc ip_tables ext4 mbcache
+> Mar 15 14:03:06 auswscs9903 kernel: jbd2 sd_mod crc32c_intel ast drm_kms_helper syscopyarea sysfillrect sysimgblt fb_sys_fops ahci ttm libahci igb ptp drm pps_core i2c_algo_bit libata myri10ge megaraid_sas dca
+> Mar 15 14:03:06 auswscs9903 kernel: CPU: 6 PID: 2720 Comm: btrfs Not tainted 4.15.10-1.el7.elrepo.x86_64 #1
+> Mar 15 14:03:06 auswscs9903 kernel: Hardware name: Supermicro Super Server/X10DRL-i, BIOS 1.1b 09/11/2015
+> Mar 15 14:03:06 auswscs9903 kernel: RIP: 0010:btrfs_create_pending_block_groups+0x1f3/0x260 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: RSP: 0018:ffffc90009c2fae8 EFLAGS: 00010282
+> Mar 15 14:03:06 auswscs9903 kernel: RAX: 0000000000000000 RBX: 00000000ffffffe5 RCX: 0000000000000006
+> Mar 15 14:03:06 auswscs9903 kernel: RDX: 0000000000000000 RSI: 0000000000000092 RDI: ffff88103f3969d0
+> Mar 15 14:03:06 auswscs9903 kernel: RBP: ffffc90009c2fb68 R08: 0000000000000000 R09: 0000000000000525
+> Mar 15 14:03:06 auswscs9903 kernel: R10: 0000000000000004 R11: 0000000000000524 R12: ffff88100d7c7000
+> Mar 15 14:03:06 auswscs9903 kernel: R13: ffff880fc6985800 R14: ffff88100d7c6f48 R15: ffff880fc6985920
+> Mar 15 14:03:06 auswscs9903 kernel: FS:  00007fc1564b6700(0000) GS:ffff88103f380000(0000) knlGS:0000000000000000
+> Mar 15 14:03:06 auswscs9903 kernel: CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> Mar 15 14:03:06 auswscs9903 kernel: CR2: 00000000016a5330 CR3: 0000000fc6310005 CR4: 00000000001606e0
+> Mar 15 14:03:06 auswscs9903 kernel: Call Trace:
+> Mar 15 14:03:06 auswscs9903 kernel: do_chunk_alloc+0x269/0x2e0 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: ? start_transaction+0xa7/0x450 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: btrfs_inc_block_group_ro+0x142/0x160 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: scrub_enumerate_chunks+0x1ad/0x680 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: ? try_to_wake_up+0x59/0x480
+> Mar 15 14:03:06 auswscs9903 kernel: btrfs_scrub_dev+0x21d/0x540 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: ? __check_object_size+0x159/0x190
+> Mar 15 14:03:06 auswscs9903 kernel: ? _copy_from_user+0x33/0x70
+> Mar 15 14:03:06 auswscs9903 kernel: btrfs_ioctl+0xf20/0x2110 [btrfs]
+> Mar 15 14:03:06 auswscs9903 kernel: ? audit_filter_rules.isra.9+0x241/0xe80
+> Mar 15 14:03:06 auswscs9903 kernel: do_vfs_ioctl+0xaa/0x610
+> Mar 15 14:03:06 auswscs9903 kernel: ? __audit_syscall_entry+0xac/0xf0
+> Mar 15 14:03:06 auswscs9903 kernel: ? syscall_trace_enter+0x1cd/0x2b0
+> Mar 15 14:03:06 auswscs9903 kernel: SyS_ioctl+0x79/0x90
+> Mar 15 14:03:06 auswscs9903 kernel: do_syscall_64+0x79/0x1b0
+> Mar 15 14:03:06 auswscs9903 kernel: entry_SYSCALL_64_after_hwframe+0x3d/0xa2
+> Mar 15 14:03:06 auswscs9903 kernel: RIP: 0033:0x7fc1565a6107
+> Mar 15 14:03:06 auswscs9903 kernel: RSP: 002b:00007fc1564b5d58 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+> Mar 15 14:03:06 auswscs9903 kernel: RAX: ffffffffffffffda RBX: 000000000168a3a0 RCX: 00007fc1565a6107
+> Mar 15 14:03:06 auswscs9903 kernel: RDX: 000000000168a3a0 RSI: 00000000c400941b RDI: 0000000000000003
+> Mar 15 14:03:06 auswscs9903 kernel: RBP: 0000000000000000 R08: 00007fc1564b6700 R09: 0000000000000000
+> Mar 15 14:03:06 auswscs9903 kernel: R10: 00007fc1564b6700 R11: 0000000000000246 R12: 00007fc1564b64e0
+> Mar 15 14:03:06 auswscs9903 kernel: R13: 00007fc1564b69c0 R14: 00007fc1564b6700 R15: 0000000000000001
+> Mar 15 14:03:06 auswscs9903 kernel: Code: 00 e9 5d ff ff ff 49 8b 44 24 60 f0 0f ba a8 d8 cd 00 00 02 72 17 83 fb fb 74 2d 89 de 48 c7 c7 d8 68 77 a0 31 c0 e8 cd 8f 9b e0 <0f> 0b 89 d9 ba d0 27 00 00 48 c7 c6 60 f7 76 a0 4c 89 e7 e8 18
 >
-> ~ $ uname -a
-> Linux auswscs9903 3.10.0-693.21.1.el7.x86_64
 
-For a kernel this old you kinda need to get support from the distro.
-This list is upstream and pretty much always what you'll get from any
-upstream, XFS, ext4, or Btrfs, with such an old kernel is the same
-answer: if you want support for a distro kernel, go to the distro for
-support. For upstream, typical response is to try with the current
-stable kernel which is 4.15.10. If you can reproduce the problem there
-too then it's a bug. 3.10 isn't even a longterm kernel getting
-backports so it's really a non-starter. Sorry. You can get newer
-kernels prebuilt from elrepo.org. They have 4.14.121 and 4.15.10.
+Can you post a more complete dmesg rather than snipping it? Is there
+anything device or Btrfs related in the 5 minutes before this trace
+happens? And is it still going read only?
 
-http://elrepo.org/linux/kernel/el7/x86_64/RPMS/
+Also hopefully the SCT ERC on all these drives is less than the SCSI
+driver's default timeout of 30 seconds. You can check with 'smartctl
+-l scterc /dev/' This is critical to ensuring sector failures are
+properly fixed up by Btrfs. And honestly I'm not really certain we had
+fix up code for raid6 in the 3.18 code, so it's possible some problems
+have not been getting fixed up. Any enterprise or NAS drive will have
+something like 70 deciseconds for SCT ERC which is fine. Anything less
+than 30 seconds is OK. For sure fix up code is in 4.14 (I think it's
+since 4.1 or 4.4 for raid56 and since ancient times for other Btrfs
+profiles).
 
+Can you do an offline btrfs check without repair? This probably will
+take a while... it's a big file system.
 
->Data, RAID6: total=150.82TiB, used=88.88TiB
->System, RAID6: total=512.00MiB, used=19.08MiB
->Metadata, RAID6: total=191.00GiB, used=187.38GiB
-
-
-Unfortunately no one is really supporting raid6, distro or even
-upstream, for production purposes. Upstream is really your only
-option, and you really need to be running a newer kernel because so
-much raid5 and raid6 has changed, even aside from Btrfs itself.
-There's tens of thousands of line changes in the code since 3.18 (EL 7
-Btrfs is not really based on 3.10 tree, I think it's based on 3.18
-tree but I don't have Red Hat's decoder ring).
-
-
-> I was running a btrfs balance, which crashed.  Since then, I cannot do anything on the filesystems that does any real i/o, or it quickly goes read only.
-
-Mount it read only - update the backups. Then update the kernel and
-btrfs-progs. You can use the Fedora btrfs-progs package on EL 7.
-
-Full listing
-https://koji.fedoraproject.org/koji/packageinfo?packageID=6398
-
-I recommend this package, only because I'm using it now on Fedora 28.
-https://kojipkgs.fedoraproject.org//packages/btrfs-progs/4.15.1/1.fc28/x86_64/btrfs-progs-4.15.1-1.fc28.x86_64.rpm
-
-For what it's worth, scrub is initiated and monitored by btrfs-progs
-user space tools, but the real work is in the kernel code.
-
-
- >Running btrfs scrub results in this crash:
->
-> Mar 15 11:10:43 auswscs9903 kernel: WARNING: CPU: 1 PID: 4588 at fs/btrfs/extent-tree.c:10367 btrfs_create_pending_block_groups+0x23e/0x240 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: Modules linked in: nfsv3 nfs fscache mpt3sas mpt2sas raid_class mptctl mptbase binfmt_misc ipt_REJECT nf_reject_ipv4 nf_conntrack_ipv4 nf_defrag_ipv4 xt_comment xt_multiport xt_conntrack nf_conntrack libcrc32c iptable_filter dm_mirror dm_region_hash dm_log dm_mod iTCO_wdt iTCO_vendor_support btrfs sb_edac edac_core intel_powerclamp coretemp intel_rapl iosf_mbi kvm_intel kvm irqbypass crc32_pclmul ghash_clmulni_intel aesni_intel lrw gf128mul glue_helper ablk_helper cryptd raid6_pq xor pcspkr joydev ses enclosure scsi_transport_sas sg mei_me i2c_i801 mei lpc_ich ioatdma shpchp wmi ipmi_si ipmi_devintf ipmi_msghandler acpi_power_meter acpi_pad nfsd nfs_acl lockd auth_rpcgss grace sunrpc ip_tables ext4 mbcache jbd2 sd_mod crc_t10dif crct10dif_generic ast drm_kms_helper syscopyarea sysfillrect
-> Mar 15 11:10:43 auswscs9903 kernel: sysimgblt fb_sys_fops ttm drm ahci igb libahci libata crct10dif_pclmul crct10dif_common crc32c_intel megaraid_sas ptp pps_core i2c_algo_bit myri10ge i2c_core dca
-> Mar 15 11:10:43 auswscs9903 kernel: CPU: 1 PID: 4588 Comm: btrfs Tainted: G        W      ------------   3.10.0-693.21.1.el7.x86_64 #1
-> Mar 15 11:10:43 auswscs9903 kernel: Hardware name: Supermicro Super Server/X10DRL-i, BIOS 1.1b 09/11/2015
-> Mar 15 11:10:43 auswscs9903 kernel: Call Trace:
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff816ae7c8>] dump_stack+0x19/0x1b
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff8108ae58>] __warn+0xd8/0x100
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff8108aedf>] warn_slowpath_fmt+0x5f/0x80
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0ac2fd2>] ? btrfs_finish_chunk_alloc+0x222/0x5e0 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0a7cb7e>] btrfs_create_pending_block_groups+0x23e/0x240 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0a7d215>] do_chunk_alloc+0x2f5/0x330 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0a816ee>] btrfs_inc_block_group_ro+0x18e/0x1b0 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0afad47>] scrub_enumerate_chunks+0x207/0x6a0 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff810c79ec>] ? try_to_wake_up+0x18c/0x350
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff816b2c00>] ? __ww_mutex_lock+0x40/0xa0
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0afc5f3>] btrfs_scrub_dev+0x233/0x5a0 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0ad2a00>] ? btrfs_ioctl+0xdc0/0x2d30 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc0ad2a59>] btrfs_ioctl+0xe19/0x2d30 [btrfs]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffffc026b1f1>] ? ext4_filemap_fault+0x41/0x50 [ext4]
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff81186deb>] ? unlock_page+0x2b/0x30
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff811b1f16>] ? do_read_fault.isra.44+0xe6/0x130
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff811e4629>] ? kmem_cache_alloc_node+0x109/0x200
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff811b6781>] ? handle_mm_fault+0x691/0xfa0
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff81121930>] ? audit_filter_rules.isra.8+0x280/0xf90
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff81219e90>] do_vfs_ioctl+0x350/0x560
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff8121a141>] SyS_ioctl+0xa1/0xc0
-> Mar 15 11:10:43 auswscs9903 kernel: [<ffffffff816c0715>] system_call_fastpath+0x1c/0x21
-
-
-Crashing while allocating new chunks, looks like, and then maybe gets
-confused about what it's supposed to scrub. The ext4_filemap_fault is
-curious. I can't really parse this trace, but I doubt this is a
-hardware bug. I think it's a legit bug in the code, and it's almost
-certainly fixed in newer kernels but the only way to know for sure is
-to upgrade. 4.14.121 would be the minimum worth testing so flip a coin
-on 4.15.10 and 4.14.121.
-
-
+This needs to get the attention of a developer though.
 
 -- 
 Chris Murphy

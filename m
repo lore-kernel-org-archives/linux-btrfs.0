@@ -1,198 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47099 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:47110 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751593AbeCOOAb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Mar 2018 10:00:31 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id E85F4AF0C
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 14:00:29 +0000 (UTC)
+        id S1751981AbeCOOAc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Mar 2018 10:00:32 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 31FE0AFE8
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 14:00:31 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/4] btrfs: drop fs_info parameter from btrfs_run_delayed_refs
-Date: Thu, 15 Mar 2018 16:00:24 +0200
-Message-Id: <1521122427-25062-1-git-send-email-nborisov@suse.com>
+Subject: [PATCH 2/4] btrfs: Drop fs_info parameter from btrfs_qgroup_account_extents
+Date: Thu, 15 Mar 2018 16:00:25 +0200
+Message-Id: <1521122427-25062-2-git-send-email-nborisov@suse.com>
+In-Reply-To: <1521122427-25062-1-git-send-email-nborisov@suse.com>
+References: <1521122427-25062-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's provided by the trans handle
+It's provided by the transaction handle.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
+ fs/btrfs/qgroup.c      | 6 +++---
+ fs/btrfs/qgroup.h      | 3 +--
+ fs/btrfs/transaction.c | 4 ++--
+ 3 files changed, 6 insertions(+), 7 deletions(-)
 
-As discussed here https://www.spinics.net/lists/linux-btrfs/msg74775.html
-those were the last 3 remaining function called from btrfs_commit_transaction
-which were needlessly taking fs_info as an argument. 
-
- fs/btrfs/ctree.h       |  2 +-
- fs/btrfs/extent-tree.c |  9 +++++----
- fs/btrfs/transaction.c | 23 +++++++++++------------
- 3 files changed, 17 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8046e3f9c0d2..b037541d393d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2623,7 +2623,7 @@ void btrfs_dec_nocow_writers(struct btrfs_fs_info *fs_info, u64 bytenr);
- void btrfs_wait_nocow_writers(struct btrfs_block_group_cache *bg);
- void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
--			   struct btrfs_fs_info *fs_info, unsigned long count);
-+			   unsigned long count);
- int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
- 				 unsigned long count, u64 transid, int wait);
- int btrfs_lookup_data_extent(struct btrfs_fs_info *fs_info, u64 start, u64 len);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 60ece25101ee..f931c0d59fd3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2992,7 +2992,7 @@ static void delayed_ref_async_start(struct btrfs_work *work)
- 	if (trans->transid > async->transid)
- 		goto end;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 0fa4f07b80b8..2e1da7a44478 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2014,9 +2014,9 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
  
--	ret = btrfs_run_delayed_refs(trans, fs_info, async->count);
-+	ret = btrfs_run_delayed_refs(trans, async->count);
- 	if (ret)
- 		async->error = ret;
- end:
-@@ -3051,8 +3051,9 @@ int btrfs_async_run_delayed_refs(struct btrfs_fs_info *fs_info,
-  * Returns <0 on error and aborts the transaction
-  */
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
--			   struct btrfs_fs_info *fs_info, unsigned long count)
-+			   unsigned long count)
+-int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+-				 struct btrfs_fs_info *fs_info)
++int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans)
  {
 +	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct rb_node *node;
+ 	struct btrfs_qgroup_extent_record *record;
  	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_delayed_ref_head *head;
-@@ -3799,7 +3800,7 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
- 	 * go through delayed refs for all the stuff we've just kicked off
- 	 * and then loop back (just once)
- 	 */
--	ret = btrfs_run_delayed_refs(trans, fs_info, 0);
-+	ret = btrfs_run_delayed_refs(trans, 0);
- 	if (!ret && loops == 0) {
- 		loops++;
- 		spin_lock(&cur_trans->dirty_bgs_lock);
-@@ -3881,7 +3882,7 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 		cache_save_setup(cache, trans, path);
- 
- 		if (!ret)
--			ret = btrfs_run_delayed_refs(trans, fs_info,
-+			ret = btrfs_run_delayed_refs(trans,
- 						     (unsigned long) -1);
- 
- 		if (!ret && cache->disk_cache_state == BTRFS_DC_SETUP) {
+ 	struct ulist *new_roots = NULL;
+@@ -2945,7 +2945,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode,
+ 	if (free && reserved)
+ 		return qgroup_free_reserved_data(inode, reserved, start, len);
+ 	extent_changeset_init(&changeset);
+-	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start, 
++	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
+ 			start + len -1, EXTENT_QGROUP_RESERVED, &changeset);
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index d9984e87cddf..ad003483d20c 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -220,8 +220,7 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_fs_info *fs_info,
+ 			    u64 bytenr, u64 num_bytes,
+ 			    struct ulist *old_roots, struct ulist *new_roots);
+-int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+-				 struct btrfs_fs_info *fs_info);
++int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans);
+ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_fs_info *fs_info);
+ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 24e41f36e249..9913aa9f3a25 100644
+index 9913aa9f3a25..0a582a1adaf3 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -781,7 +781,6 @@ static int should_end_transaction(struct btrfs_trans_handle *trans)
- int btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
- {
- 	struct btrfs_transaction *cur_trans = trans->transaction;
--	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	int updates;
- 	int err;
- 
-@@ -793,7 +792,7 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
- 	updates = trans->delayed_ref_updates;
- 	trans->delayed_ref_updates = 0;
- 	if (updates) {
--		err = btrfs_run_delayed_refs(trans, fs_info, updates * 2);
-+		err = btrfs_run_delayed_refs(trans, updates * 2);
- 		if (err) /* Error code will also eval true */
- 			return err;
- 	}
-@@ -1161,7 +1160,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+@@ -1369,7 +1369,7 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
+ 	ret = commit_fs_roots(trans);
  	if (ret)
- 		return ret;
+ 		goto out;
+-	ret = btrfs_qgroup_account_extents(trans, fs_info);
++	ret = btrfs_qgroup_account_extents(trans);
+ 	if (ret < 0)
+ 		goto out;
  
--	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 	if (ret)
- 		return ret;
- 
-@@ -1180,7 +1179,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
- 		return ret;
- 
- 	/* run_qgroups might have added some more refs */
--	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 	if (ret)
- 		return ret;
- again:
-@@ -1197,7 +1196,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
- 		ret = update_cowonly_root(trans, root);
- 		if (ret)
- 			return ret;
--		ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+		ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 		if (ret)
- 			return ret;
- 	}
-@@ -1206,7 +1205,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
- 		ret = btrfs_write_dirty_block_groups(trans, fs_info);
- 		if (ret)
- 			return ret;
--		ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+		ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 		if (ret)
- 			return ret;
- 	}
-@@ -1617,7 +1616,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		goto fail;
- 	}
- 
--	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 	if (ret) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
-@@ -1671,7 +1670,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		}
- 	}
- 
--	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 	if (ret) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
-@@ -1958,7 +1957,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	/* make a pass through all the delayed refs we have so far
- 	 * any runnings procs may add more while we are here
+@@ -2189,7 +2189,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	 * Since fs roots are all committed, we can get a quite accurate
+ 	 * new_roots. So let's do quota accounting.
  	 */
--	ret = btrfs_run_delayed_refs(trans, fs_info, 0);
-+	ret = btrfs_run_delayed_refs(trans, 0);
- 	if (ret) {
- 		btrfs_end_transaction(trans);
- 		return ret;
-@@ -1979,7 +1978,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (!list_empty(&trans->new_bgs))
- 		btrfs_create_pending_block_groups(trans);
- 
--	ret = btrfs_run_delayed_refs(trans, fs_info, 0);
-+	ret = btrfs_run_delayed_refs(trans, 0);
- 	if (ret) {
- 		btrfs_end_transaction(trans);
- 		return ret;
-@@ -2128,7 +2127,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		goto scrub_continue;
- 	}
- 
--	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 	if (ret) {
- 		mutex_unlock(&fs_info->reloc_mutex);
- 		goto scrub_continue;
-@@ -2179,7 +2178,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	 * commit_fs_roots() can call btrfs_save_ino_cache(), which generates
- 	 * new delayed refs. Must handle them or qgroup can be wrong.
- 	 */
--	ret = btrfs_run_delayed_refs(trans, fs_info, (unsigned long)-1);
-+	ret = btrfs_run_delayed_refs(trans, (unsigned long)-1);
- 	if (ret) {
+-	ret = btrfs_qgroup_account_extents(trans, fs_info);
++	ret = btrfs_qgroup_account_extents(trans);
+ 	if (ret < 0) {
  		mutex_unlock(&fs_info->tree_log_mutex);
  		mutex_unlock(&fs_info->reloc_mutex);
 -- 

@@ -1,184 +1,316 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:64491 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750722AbeCOILM (ORCPT
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:29138 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751843AbeCOILg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Mar 2018 04:11:12 -0400
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 94632AC01BD
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 17:11:04 +0900 (JST)
-Received: from G01JPEXCHYT17.g01.fujitsu.local (G01JPEXCHYT17.g01.fujitsu.local [10.128.194.56])
-        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id 8D76946E82E
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 17:11:03 +0900 (JST)
-Subject: [PATCH v2 2/3] btrfs: Add unprivileged ioctl which returns
- subvolume's ROOT_REF
+        Thu, 15 Mar 2018 04:11:36 -0400
+Received: from g01jpfmpwyt02.exch.g01.fujitsu.local (g01jpfmpwyt02.exch.g01.fujitsu.local [10.128.193.56])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 97D73AC010D
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 17:11:29 +0900 (JST)
+Received: from G01JPEXCHYT15.g01.fujitsu.local (G01JPEXCHYT15.g01.fujitsu.local [10.128.194.54])
+        by g01jpfmpwyt02.exch.g01.fujitsu.local (Postfix) with ESMTP id C6B3D58436C
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 17:11:28 +0900 (JST)
+Subject: [PATCH v2 3/3] btrfs: Add unprivileged version of ino_lookup ioctl
 From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <d185536f-a946-626e-6b7a-72f743a45b90@jp.fujitsu.com>
-Message-ID: <fa0372b3-6fe7-9ce3-f073-9ad8dbe9ff95@jp.fujitsu.com>
-Date: Thu, 15 Mar 2018 17:11:01 +0900
+Message-ID: <64abe7b1-002d-33fd-f842-30bf72373327@jp.fujitsu.com>
+Date: Thu, 15 Mar 2018 17:11:25 +0900
 MIME-Version: 1.0
 In-Reply-To: <d185536f-a946-626e-6b7a-72f743a45b90@jp.fujitsu.com>
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add unprivileged ioctl BTRFS_IOC_GET_SUBVOL_ROOTREF which
-returns ROOT_REF information of the subvolume containing this inode.
-The min id of root ref's subvolume to be searched is specified by
-min_id in struct btrfs_ioctl_get_subvol_rootref_args.
+Add unprivileged version of ino_lookup ioctl BTRFS_IOC_INO_LOOKUP_USER
+to allow normal users to call "btrfs subvololume list/show" etc. in
+combination with BTRFS_IOC_GET_SUBVOL_INFO/BTRFS_IOC_GET_SUBVOL_ROOTREF.
 
-If there are more root refs than BTRFS_MAX_ROOTREF_BUFFER_NUM,
-this ioctl sets min_id to the last searched root ref's subvolid + 1
-and return -EOVERFLOW. Therefore the caller can just call this ioctl
-again without changing the argument to continue search.
+This can be used like BTRFS_IOC_INO_LOOKUP but the argument is
+different. This is  because it always searches the fs/file tree
+correspoinding to the fd with which this ioctl is called and also
+returns the name of bottom subvolume.
+
+The main differences from original ino_lookup ioctl are:
+  1. Read + Exec permission will be checked using inode_permission()
+     during path construction. -EACCES will be returned in case
+     of failure.
+  2. Path construction will be stopped at the inode number which
+     corresponds to the fd with which this ioctl is called. If
+     constructed path does not exist under fd's inode, -EACCES
+     will be returned.
+  3. The name of bottom subvolume is also searched and filled.
+
+Note that the maximum length of path is shorter 256 (BTRFS_VOL_NAME_MAX+1)
+bytes than ino_lookup ioctl because of space of subvolume's name.
 
 Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 ---
- fs/btrfs/ioctl.c           | 91 ++++++++++++++++++++++++++++++++++++++++++++++
- include/uapi/linux/btrfs.h | 16 ++++++++
- 2 files changed, 107 insertions(+)
+ fs/btrfs/ioctl.c           | 204 +++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/linux/btrfs.h |  17 ++++
+ 2 files changed, 221 insertions(+)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 852421ac81cd..816a3eb60020 100644
+index 816a3eb60020..87534e1855f2 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2425,6 +2425,95 @@ static noinline int btrfs_ioctl_get_subvol_info(struct file *file,
+@@ -2267,6 +2267,166 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
  	return ret;
  }
  
-+/* Returns ROOT_REF information of the subvolume contining this inode. */
-+static noinline int btrfs_ioctl_get_subvol_rootref(struct file *file,
-+					   void __user *argp)
++static noinline int btrfs_search_path_in_tree_user(struct inode *inode,
++				struct btrfs_ioctl_ino_lookup_user_args *args)
 +{
-+	struct btrfs_ioctl_get_subvol_rootref_args __user *rootrefs;
-+	struct btrfs_root_ref *rref;
++	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct super_block *sb = inode->i_sb;
++	struct btrfs_key upper_limit = BTRFS_I(inode)->location;
++	u64 treeid = BTRFS_I(inode)->root->root_key.objectid;
++	u64 dirid = args->dirid;
++
++	unsigned long item_off;
++	unsigned long item_len;
++	struct btrfs_inode_ref *iref;
++	struct btrfs_root_ref rref;
 +	struct btrfs_root *root;
 +	struct btrfs_path *path;
-+	struct btrfs_key key;
-+
++	struct btrfs_key key, key2;
 +	struct extent_buffer *l;
++	struct inode *temp_inode;
++	char *ptr;
 +	int slot;
-+
-+	struct inode *inode;
-+	int i, nritems;
-+	int ret;
-+	u64 objectid;
-+	u8 found;
++	int len;
++	int total_len = 0;
++	int ret = -1;
 +
 +	path = btrfs_alloc_path();
 +	if (!path)
 +		return -ENOMEM;
 +
-+	rootrefs = memdup_user(argp, sizeof(*rootrefs));
-+	if (!rootrefs) {
-+		btrfs_free_path(path);
-+		return -ENOMEM;
-+	}
++	/*
++	 * If the bottom subvolume does not exist directly under upper_limit,
++	 * construct the path in bottomup way.
++	 */
++	if (dirid != upper_limit.objectid) {
++		ptr = &args->path[BTRFS_INO_LOOKUP_USER_PATH_MAX - 1];
 +
-+	inode = file_inode(file);
-+	root = BTRFS_I(inode)->root->fs_info->tree_root;
-+	objectid = BTRFS_I(inode)->root->root_key.objectid;
-+
-+	key.objectid = objectid;
-+	key.type = BTRFS_ROOT_REF_KEY;
-+	key.offset = rootrefs->min_id;
-+	found = 0;
-+	while (1) {
-+		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		if (ret < 0)
-+			goto out;
-+
-+		l = path->nodes[0];
-+		slot = path->slots[0];
-+		nritems = btrfs_header_nritems(l);
-+		if (nritems - slot == 0) {
-+			ret = 0;
++		key.objectid = treeid;
++		key.type = BTRFS_ROOT_ITEM_KEY;
++		key.offset = (u64)-1;
++		root = btrfs_read_fs_root_no_name(fs_info, &key);
++		if (IS_ERR(root)) {
++			ret = -ENOENT;
 +			goto out;
 +		}
 +
-+		for (i = slot; i < nritems; i++) {
-+			btrfs_item_key_to_cpu(l, &key, i);
-+			if (key.objectid != objectid ||
-+					key.type != BTRFS_ROOT_REF_KEY) {
-+				ret = 0;
++		key.objectid = dirid;
++		key.type = BTRFS_INODE_REF_KEY;
++		key.offset = (u64)-1;
++		while (1) {
++			ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++			if (ret < 0) {
++				goto out;
++			} else if (ret > 0) {
++				ret = btrfs_previous_item(root, path, dirid,
++							  BTRFS_INODE_REF_KEY);
++				if (ret < 0) {
++					goto out;
++				} else if (ret > 0) {
++					ret = -ENOENT;
++					goto out;
++				}
++			}
++
++			l = path->nodes[0];
++			slot = path->slots[0];
++			btrfs_item_key_to_cpu(l, &key, slot);
++
++			iref = btrfs_item_ptr(l, slot, struct btrfs_inode_ref);
++			len = btrfs_inode_ref_name_len(l, iref);
++			ptr -= len + 1;
++			total_len += len + 1;
++			if (ptr < args->path) {
++				ret = -ENAMETOOLONG;
 +				goto out;
 +			}
 +
-+			if (found == BTRFS_MAX_ROOTREF_BUFFER_NUM) {
-+				/* update min_id for next search */
-+				rootrefs->min_id = key.offset;
-+				ret = -EOVERFLOW;
++			*(ptr + len) = '/';
++			read_extent_buffer(l, ptr,
++			    (unsigned long)(iref + 1), len);
++
++			/* Check the read+exec permission of this directory */
++			ret = btrfs_previous_item(root, path, dirid,
++						  BTRFS_INODE_ITEM_KEY);
++			if (ret < 0) {
++				goto out;
++			} else if (ret > 0) {
++				ret = -ENOENT;
 +				goto out;
 +			}
 +
-+			rref = btrfs_item_ptr(l, i, struct btrfs_root_ref);
-+			rootrefs->rootref[found].subvolid = key.offset;
-+			rootrefs->rootref[found].dirid =
-+					  btrfs_root_ref_dirid(l, rref);
-+			found++;
++			l = path->nodes[0];
++			slot = path->slots[0];
++			btrfs_item_key_to_cpu(l, &key2, slot);
++			if (key2.objectid != dirid) {
++				ret = -ENOENT;
++				goto out;
++			}
++
++			temp_inode = btrfs_iget(sb, &key2, root, NULL);
++			ret = inode_permission(temp_inode, MAY_READ | MAY_EXEC);
++			iput(temp_inode);
++			if (ret) {
++				ret = -EACCES;
++				goto out;
++			}
++
++			if (key.offset == upper_limit.objectid)
++				break;
++			if (key.objectid == BTRFS_FIRST_FREE_OBJECTID) {
++				ret = -EACCES;
++				goto out;
++			}
++
++			btrfs_release_path(path);
++			key.objectid = key.offset;
++			key.offset = (u64)-1;
++			dirid = key.objectid;
 +		}
 +
++		memmove(args->path, ptr, total_len);
++		args->path[total_len] = '\0';
 +		btrfs_release_path(path);
-+		key.offset++;
 +	}
++
++	/* get the bottom subolume's name from ROOT_REF */
++	root = fs_info->tree_root;
++	key.objectid = treeid;
++	key.type = BTRFS_ROOT_REF_KEY;
++	key.offset = args->subvolid;
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	if (ret < 0) {
++		goto out;
++	} else if (ret > 0) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	l = path->nodes[0];
++	slot = path->slots[0];
++	btrfs_item_key_to_cpu(l, &key, slot);
++
++	item_off = btrfs_item_ptr_offset(l, slot);
++	item_len = btrfs_item_size_nr(l, slot);
++	/* check if dirid in ROOT_REF corresponds to passed dirid */
++	read_extent_buffer(l, &rref, item_off, sizeof(struct btrfs_root_ref));
++	if (rref.dirid != args->dirid) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	/* copy subvolume's name */
++	item_off += sizeof(struct btrfs_root_ref);
++	item_len -= sizeof(struct btrfs_root_ref);
++	read_extent_buffer(l, args->name, item_off, item_len);
++	args->name[item_len] = '\0';
 +
 +out:
-+	if (!ret || ret == -EOVERFLOW) {
-+		rootrefs->num_items = found;
-+		if (copy_to_user(argp, rootrefs, sizeof(*rootrefs)))
-+			ret = -EFAULT;
-+	}
-+
 +	btrfs_free_path(path);
-+	kfree(rootrefs);
-+
 +	return ret;
 +}
 +
- static noinline int btrfs_ioctl_snap_destroy(struct file *file,
- 					     void __user *arg)
+ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+ 					   void __user *argp)
  {
-@@ -5781,6 +5870,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_set_features(file, argp);
- 	case BTRFS_IOC_GET_SUBVOL_INFO:
+@@ -2309,6 +2469,48 @@ static noinline int btrfs_ioctl_ino_lookup(struct file *file,
+ 	return ret;
+ }
+ 
++/*
++ * User version of ino_lookup ioctl (unprivileged)
++ *
++ * The main differences from original ino_lookup ioctl are:
++ *   1. Read + Exec permission will be checked using inode_permission()
++ *      during path construction. -EACCES will be returned in case
++ *      of failure.
++ *   2. Path construction will be stopped at the inode number which
++ *      corresponds to the fd with which this ioctl is called. If
++ *      constructed path does not exist under fd's inode, -EACCES
++ *      will be returned.
++ *   3. The name of bottom subvolume is also searched and filled.
++ */
++static noinline int btrfs_ioctl_ino_lookup_user(struct file *file,
++					   void __user *argp)
++{
++	struct btrfs_ioctl_ino_lookup_user_args *args;
++	struct inode *inode;
++	int ret = 0;
++
++	args = memdup_user(argp, sizeof(*args));
++	if (IS_ERR(args))
++		return PTR_ERR(args);
++
++	inode = file_inode(file);
++
++	if (args->dirid == BTRFS_FIRST_FREE_OBJECTID &&
++	    BTRFS_I(inode)->location.objectid != BTRFS_FIRST_FREE_OBJECTID) {
++	/* The subvolume does not exist under fd with which this is called */
++		kfree(args);
++		return -EACCES;
++	}
++
++	ret = btrfs_search_path_in_tree_user(inode, args);
++
++	if (ret == 0 && copy_to_user(argp, args, sizeof(*args)))
++		ret = -EFAULT;
++
++	kfree(args);
++	return ret;
++}
++
+ /* Get the subvolume information in BTRFS_ROOT_ITEM and BTRFS_ROOT_BACKREF */
+ static noinline int btrfs_ioctl_get_subvol_info(struct file *file,
+ 					   void __user *argp)
+@@ -5872,6 +6074,8 @@ long btrfs_ioctl(struct file *file, unsigned int
  		return btrfs_ioctl_get_subvol_info(file, argp);
-+	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
-+		return btrfs_ioctl_get_subvol_rootref(file, argp);
+ 	case BTRFS_IOC_GET_SUBVOL_ROOTREF:
+ 		return btrfs_ioctl_get_subvol_rootref(file, argp);
++	case BTRFS_IOC_INO_LOOKUP_USER:
++		return btrfs_ioctl_ino_lookup_user(file, argp);
  	}
  
  	return -ENOTTY;
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index ed053852c71f..82c88d52d6e6 100644
+index 82c88d52d6e6..5f91de93dd5a 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -774,6 +774,20 @@ struct btrfs_ioctl_get_subvol_info_args {
- 	__u64 reserved[8];
+@@ -422,6 +422,21 @@ struct btrfs_ioctl_ino_lookup_args {
+ 	char name[BTRFS_INO_LOOKUP_PATH_MAX];
  };
  
-+#define BTRFS_MAX_ROOTREF_BUFFER_NUM 255
-+struct btrfs_ioctl_get_subvol_rootref_args {
-+		/* in/out, min id of rootref's subvolid to be searched */
-+		__u64 min_id;
-+		/* out */
-+		struct {
-+			__u64 subvolid;
-+			__u64 dirid;
-+		} rootref[BTRFS_MAX_ROOTREF_BUFFER_NUM];
-+		/* out, number of found items */
-+		__u8 num_items;
-+		__u8 align[7];
++#define BTRFS_INO_LOOKUP_USER_PATH_MAX (4080-BTRFS_VOL_NAME_MAX-1)
++struct btrfs_ioctl_ino_lookup_user_args {
++	/* in, inode number containing the subvolume of 'subvolid' */
++	__u64 dirid;
++	/* in */
++	__u64 subvolid;
++	/* out, name of the subvolume of 'subvolid' */
++	char name[BTRFS_VOL_NAME_MAX + 1];
++	/*
++	 * out, constructed path from the directory with which
++	 * the ioctl is called to dirid
++	 */
++	char path[BTRFS_INO_LOOKUP_USER_PATH_MAX];
 +};
 +
- /* Error codes as returned by the kernel */
- enum btrfs_err_code {
- 	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
-@@ -894,5 +908,7 @@ enum btrfs_err_code {
- 					struct btrfs_ioctl_logical_ino_args)
- #define BTRFS_IOC_GET_SUBVOL_INFO _IOR(BTRFS_IOCTL_MAGIC, 60, \
+ /* Search criteria for the btrfs SEARCH ioctl family. */
+ struct btrfs_ioctl_search_key {
+ 	/*
+@@ -910,5 +925,7 @@ enum btrfs_err_code {
  				struct btrfs_ioctl_get_subvol_info_args)
-+#define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
-+				struct btrfs_ioctl_get_subvol_rootref_args)
+ #define BTRFS_IOC_GET_SUBVOL_ROOTREF _IOWR(BTRFS_IOCTL_MAGIC, 61, \
+ 				struct btrfs_ioctl_get_subvol_rootref_args)
++#define BTRFS_IOC_INO_LOOKUP_USER _IOWR(BTRFS_IOCTL_MAGIC, 62, \
++				struct btrfs_ioctl_ino_lookup_user_args)
  
  #endif /* _UAPI_LINUX_BTRFS_H */
 -- 

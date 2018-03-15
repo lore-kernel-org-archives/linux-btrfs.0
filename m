@@ -1,56 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48309 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37694 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S934558AbeCPQOr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Mar 2018 12:14:47 -0400
-Date: Fri, 16 Mar 2018 17:12:18 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 02/22] btrfs: assume that prev_em_start is always valid
- in __do_readpage
-Message-ID: <20180316161218.GC16736@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1520518876.git.dsterba@suse.com>
- <f92bec1a7defa40fe7c51a4d570e45f419d0c9df.1520518876.git.dsterba@suse.com>
- <46bf43fc-6fd2-3199-9b5d-3bbb768bba2f@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <46bf43fc-6fd2-3199-9b5d-3bbb768bba2f@oracle.com>
+        id S1752020AbeCOMgg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 15 Mar 2018 08:36:36 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 4E5DFACBA
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 12:36:35 +0000 (UTC)
+From: Nikolay Borisov <nborisov@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 0/8] Make the code -Wunused clean
+Date: Thu, 15 Mar 2018 14:36:21 +0200
+Message-Id: <1521117389-13712-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 13, 2018 at 11:03:31PM +0800, Anand Jain wrote:
-> On 03/08/2018 10:33 PM, David Sterba wrote:
-> > All callers pass a valid pointer, we can remove the redundant checks.
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > ---
-> >   fs/btrfs/extent_io.c | 9 ++++++---
-> >   1 file changed, 6 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > index d00d5a59ff21..36514baa661e 100644
-> > --- a/fs/btrfs/extent_io.c
-> > +++ b/fs/btrfs/extent_io.c
-> > @@ -2875,6 +2875,8 @@ __get_extent_map(struct inode *inode, struct page *page, size_t pg_offset,
-> >    * handlers)
-> >    * XXX JDM: This needs looking at to ensure proper page locking
-> >    * return 0 on success, otherwise return error
-> > + *
-> > + * @prev_em_start:	return value of previous em start value; must be valid
-> >    */
-> >   static int __do_readpage(struct extent_io_tree *tree,
-> >   			 struct page *page,
-> > @@ -2903,6 +2905,8 @@ static int __do_readpage(struct extent_io_tree *tree,
-> >   	size_t blocksize = inode->i_sb->s_blocksize;
-> >   	unsigned long this_bio_flag = 0;
-> >   
-> > +	ASSERT(prev_em_start);
-> > +
-> 
-> 
-> mount is failing with this patch as in this stack below the 
-> prev_em_start is NULL.
+This series eliminates all -Wunused warnings in the code base. 
 
-Right, I've removed the patch.
+Nikolay Borisov (8):
+  btrfs: Remove unused op_key var from add_delayed_refs
+  btrfs: Remove unused length var from scrub_handle_errored_block
+  btrfs: Remove unused tot_len var from lzo_decompress
+  btrfs: Remove unused root var from relink_file_extents
+  btrfs: remove max_active var from open_ctree
+  btrfs: Remove unused parent_level var from btrfs_realloc_node
+  btrfs: Remove unused extent_root var from caching_thread
+  btrfs: Remove unused flush var in shrink_delalloc
+
+ fs/btrfs/backref.c     | 5 +----
+ fs/btrfs/ctree.c       | 3 ---
+ fs/btrfs/disk-io.c     | 3 ---
+ fs/btrfs/extent-tree.c | 7 -------
+ fs/btrfs/inode.c       | 2 --
+ fs/btrfs/lzo.c         | 2 --
+ fs/btrfs/scrub.c       | 2 --
+ 7 files changed, 1 insertion(+), 23 deletions(-)
+
+-- 
+2.7.4
+

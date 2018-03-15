@@ -1,49 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37716 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37722 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752020AbeCOMgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752045AbeCOMgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 15 Mar 2018 08:36:38 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 52BB8AD25
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 96D4CAD3C
         for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 12:36:37 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 7/8] btrfs: Remove unused extent_root var from caching_thread
-Date: Thu, 15 Mar 2018 14:36:28 +0200
-Message-Id: <1521117389-13712-8-git-send-email-nborisov@suse.com>
+Subject: [PATCH 8/8] btrfs: Remove unused flush var in shrink_delalloc
+Date: Thu, 15 Mar 2018 14:36:29 +0200
+Message-Id: <1521117389-13712-9-git-send-email-nborisov@suse.com>
 In-Reply-To: <1521117389-13712-1-git-send-email-nborisov@suse.com>
 References: <1521117389-13712-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Added by b4570aa994b8 ("btrfs: fix compiling with CONFIG_BTRFS_DEBUG
-enabled.") and obsoleted by 2ff7e61e0d30 ("btrfs: take an fs_info
-directly when the root is not used otherwise")
+Added by 08e007d2e577 ("Btrfs: improve the noflush reservation") and
+made redundant by 17024ad0a0fd ("Btrfs: fix early ENOSPC due to
+delalloc")
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/extent-tree.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/extent-tree.c | 5 -----
+ 1 file changed, 5 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1469117a8e37..e15ef42a5d4d 100644
+index e15ef42a5d4d..bb1861033071 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -535,13 +535,11 @@ static noinline void caching_thread(struct btrfs_work *work)
- 	struct btrfs_block_group_cache *block_group;
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_caching_control *caching_ctl;
--	struct btrfs_root *extent_root;
- 	int ret;
+@@ -4829,7 +4829,6 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+ 	long time_left;
+ 	unsigned long nr_pages;
+ 	int loops;
+-	enum btrfs_reserve_flush_enum flush;
  
- 	caching_ctl = container_of(work, struct btrfs_caching_control, work);
- 	block_group = caching_ctl->block_group;
- 	fs_info = block_group->fs_info;
--	extent_root = fs_info->extent_root;
- 
- 	mutex_lock(&caching_ctl->mutex);
- 	down_read(&fs_info->commit_root_sem);
+ 	/* Calc the number of the pages we need flush for space reservation */
+ 	items = calc_reclaim_items_nr(fs_info, to_reclaim);
+@@ -4870,10 +4869,6 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info, u64 to_reclaim,
+ 			   atomic_read(&fs_info->async_delalloc_pages) <=
+ 			   (int)max_reclaim);
+ skip_async:
+-		if (!trans)
+-			flush = BTRFS_RESERVE_FLUSH_ALL;
+-		else
+-			flush = BTRFS_RESERVE_NO_FLUSH;
+ 		spin_lock(&space_info->lock);
+ 		if (list_empty(&space_info->tickets) &&
+ 		    list_empty(&space_info->priority_tickets)) {
 -- 
 2.7.4
 

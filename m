@@ -1,50 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37713 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37716 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752060AbeCOMgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1752020AbeCOMgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 15 Mar 2018 08:36:38 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 0A58CACBA
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 52BB8AD25
         for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 12:36:37 +0000 (UTC)
 From: Nikolay Borisov <nborisov@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 6/8] btrfs: Remove unused parent_level var from btrfs_realloc_node
-Date: Thu, 15 Mar 2018 14:36:27 +0200
-Message-Id: <1521117389-13712-7-git-send-email-nborisov@suse.com>
+Subject: [PATCH 7/8] btrfs: Remove unused extent_root var from caching_thread
+Date: Thu, 15 Mar 2018 14:36:28 +0200
+Message-Id: <1521117389-13712-8-git-send-email-nborisov@suse.com>
 In-Reply-To: <1521117389-13712-1-git-send-email-nborisov@suse.com>
 References: <1521117389-13712-1-git-send-email-nborisov@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Added by f2183bde1a91 ("Btrfs: Add BH_Defrag to mark buffers that are
-in need of defragging") but obsoleted by 3f157a2fd2ad ("Btrfs: Online
-btree defragmentation fixes")
+Added by b4570aa994b8 ("btrfs: fix compiling with CONFIG_BTRFS_DEBUG
+enabled.") and obsoleted by 2ff7e61e0d30 ("btrfs: take an fs_info
+directly when the root is not used otherwise")
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/ctree.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/extent-tree.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 1ef6b67f893a..88a8891ef2ec 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1571,14 +1571,11 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 	int end_slot;
- 	int i;
- 	int err = 0;
--	int parent_level;
- 	int uptodate;
- 	u32 blocksize;
- 	int progress_passed = 0;
- 	struct btrfs_disk_key disk_key;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1469117a8e37..e15ef42a5d4d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -535,13 +535,11 @@ static noinline void caching_thread(struct btrfs_work *work)
+ 	struct btrfs_block_group_cache *block_group;
+ 	struct btrfs_fs_info *fs_info;
+ 	struct btrfs_caching_control *caching_ctl;
+-	struct btrfs_root *extent_root;
+ 	int ret;
  
--	parent_level = btrfs_header_level(parent);
--
- 	WARN_ON(trans->transaction != fs_info->running_transaction);
- 	WARN_ON(trans->transid != fs_info->generation);
+ 	caching_ctl = container_of(work, struct btrfs_caching_control, work);
+ 	block_group = caching_ctl->block_group;
+ 	fs_info = block_group->fs_info;
+-	extent_root = fs_info->extent_root;
  
+ 	mutex_lock(&caching_ctl->mutex);
+ 	down_read(&fs_info->commit_root_sem);
 -- 
 2.7.4
 

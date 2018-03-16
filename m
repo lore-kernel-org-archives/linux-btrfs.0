@@ -1,87 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40762 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751414AbeCNU7T (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 16:59:19 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id DF219AC0D
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 20:59:17 +0000 (UTC)
-Date: Wed, 14 Mar 2018 21:56:55 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH] btrfs: volumes: Remove the meaningless condition of
- minimal nr_devs when allocating a chunk
-Message-ID: <20180314205655.GT32007@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180131055615.14454-1-wqu@suse.com>
+Received: from mail.linuxfoundation.org ([140.211.169.12]:50884 "EHLO
+        mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751688AbeCPMau (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 16 Mar 2018 08:30:50 -0400
+Date: Fri, 16 Mar 2018 13:30:49 +0100
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To: Christoph Biedl <linux-kernel.bfrz@manchmal.in-ulm.de>,
+        linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Anand Jain <anand.jain@oracle.com>, Liu Bo <bo.li.liu@oracle.com>,
+        David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH 4.14 024/110] btrfs: use proper endianness accessors for
+ super_copy
+Message-ID: <20180316123049.GC25079@kroah.com>
+References: <20180307191039.748351103@linuxfoundation.org>
+ <20180307191042.810088712@linuxfoundation.org>
+ <1521139304@msgid.manchmal.in-ulm.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180131055615.14454-1-wqu@suse.com>
+In-Reply-To: <1521139304@msgid.manchmal.in-ulm.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 31, 2018 at 01:56:15PM +0800, Qu Wenruo wrote:
-> When checking the minimal nr_devs, there is one dead and meaningless
-> condition:
+On Thu, Mar 15, 2018 at 07:55:42PM +0100, Christoph Biedl wrote:
+> Greg Kroah-Hartman wrote...
 > 
-> if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
->     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> > 4.14-stable review patch.  If anyone has any objections, please let me know.
 > 
-> This condition is meaningless, @devs_increment has nothing to do with
-> @sub_stripes.
+> > commit 3c181c12c431fe33b669410d663beb9cceefcd1b upstream.
+> (...)
 > 
-> In fact, in btrfs_raid_array[], profile with sub_stripes larger than 1
-> (RAID10) already has the @devs_increment set to 2.
-> So no need to multiple it by @sub_stripes.
+> > If the filesystem is always used on a same endian host, this will not
+> > be a problem.
 > 
-> And above condition is also dead.
-> For RAID10, @devs_increment * @sub_stripes equals 4, which is also the
-> @devs_min of RAID10.
-> For other profiles, @sub_stripes is always 1, and since @ndevs is
-> rounded down to @devs_increment, the condition will always be true.
+> >From my observations I cannot quite subscribe to that.
 > 
-> Remove the meaningless condition to make later reader wander less.
-
-I think the condition is a leftover from times when we did not have the nice
-raid table and the various values were defined in the function.
-
-Reviewed-by: David Sterba <dsterba@suse.com>
-
+> On big-endian systems, this change intruduces severe corruption,
+> resulting in complete loss of the data on the used block device.
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/volumes.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Steps to reproduce (tested on ppc/powerpc and parisc/hppa):
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 215e85e22c8e..cb0a8d27661b 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4729,7 +4729,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  	/* round down to number of usable stripes */
->  	ndevs = round_down(ndevs, devs_increment);
->  
-> -	if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
-> +	if (ndevs < devs_min) {
+> # mkfs.btrfs $DEV
+> # mount $DEV /mnt/tmp/
+> # umount /mnt/tmp/
+> 
+> This simple umount corrupts the file system:
+> 
+> # mount $DEV /mnt/tmp/
+> mount: /mnt/tmp: wrong fs type, bad option, bad superblock on $DEV, missing codepage or helper program, or other error.
+> 
+> # dmesg:
+> BTRFS critical (device <dev>): unable to find logical 4294967296 length 4096
+> BTRFS critical (device <dev>): unable to find logical 4294967296 length 4096
+> BTRFS critical (device <dev>): unable to find logical 18102363734671360 length 16384
+> BTRFS error (device <dev>): failed to read chunk root
+> BTRFS error (device <dev>): open_ctree failed
+> 
+> Also fsck is of no help:
+> 
+> # btrfsck $DEV
+> Couldn't map the block 18102363734671360
+> No mapping for 18102363734671360-18102363734687744
+> Couldn't map the block 18102363734671360
+> bytenr mismatch, want=18102363734671360, have=0
+> ERROR: cannot read chunk root
+> ERROR: cannot open file system
+> 
+> 
+> Trying mount or fsck on a little-endian system does not help either. So
+> I consider the data on that device lost - luckily I use btrfs only for
+> files where a backup exists all the time.
+> 
+> 
+> Reverting that change restored the previous error-free behaviour. I
+> didn't check HEAD, i.e. v4.16-rc5, since the upstream commt was the last
+> that affected these files. Still I could give this a try if anybody
+> wishes so.
 
-The redundant condtion is duplicated in the error message a few lines
-below:
+That sucks.  Can you test Linus's tree to verify the problem is there?
+I'll gladly revert this if Linus's tree also gets the revert, I don't
+want you to hit this when you upgrade to a newer kernel.
 
-4840         if (ndevs < devs_min) {
-4841                 ret = -ENOSPC;
-4842                 if (btrfs_test_opt(info, ENOSPC_DEBUG)) {
-4843                         btrfs_debug(info,
-4844         "%s: not enough devices with free space: have=%d minimum required=%d",
-4845                                     __func__, ndevs, min(devs_min,
-4846                                     devs_increment * sub_stripes));
-                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+thanks,
 
-so I'll remove it as well.
-
-4847                 }
-4848                 goto error;
-4849         }
->  		ret = -ENOSPC;
->  		goto error;
->  	}
+greg k-h

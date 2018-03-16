@@ -1,112 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:39574 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751289AbeCNI1c (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:39274 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750991AbeCPQUV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Mar 2018 04:27:32 -0400
-Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
-        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2E8Qj2J157199
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 08:27:31 GMT
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-        by aserp2130.oracle.com with ESMTP id 2gpym884yu-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 08:27:31 +0000
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-        by aserv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2E8RUxL031963
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 08:27:31 GMT
-Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
-        by aserv0121.oracle.com (8.14.4/8.13.8) with ESMTP id w2E8RUS9009138
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Mar 2018 08:27:30 GMT
+        Fri, 16 Mar 2018 12:20:21 -0400
+Subject: Re: [PATCH 4.14 024/110] btrfs: use proper endianness accessors for
+ super_copy
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, dsterba@suse.cz,
+        Christoph Biedl <linux-kernel.bfrz@manchmal.in-ulm.de>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        stable@vger.kernel.org, Liu Bo <bo.li.liu@oracle.com>,
+        David Sterba <dsterba@suse.com>
+References: <20180307191039.748351103@linuxfoundation.org>
+ <20180307191042.810088712@linuxfoundation.org>
+ <1521139304@msgid.manchmal.in-ulm.de> <20180316123049.GC25079@kroah.com>
+ <20180316132202.GB8297@twin.jikos.cz> <20180316140256.GA9735@kroah.com>
 From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] btrfs: drop optimal argument from find_live_mirror()
-Date: Wed, 14 Mar 2018 16:29:13 +0800
-Message-Id: <20180314082913.31503-2-anand.jain@oracle.com>
-In-Reply-To: <20180314082913.31503-1-anand.jain@oracle.com>
-References: <20180314082913.31503-1-anand.jain@oracle.com>
+Message-ID: <8ebec52c-0953-aa6c-3e77-876097aaa353@oracle.com>
+Date: Sat, 17 Mar 2018 00:21:57 +0800
+MIME-Version: 1.0
+In-Reply-To: <20180316140256.GA9735@kroah.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Drop optimal argument from the function find_live_mirror()
-as we can deduce it in the function itself. Also rename
-optimal to preferred_mirror.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-I thought I have sent v2 to the ML. But now I realize I didn't.
-v1->v2:
-   Accepts David's comment to rename %optimal. IMO, %preferred_mirror is
-   better than the suggested %fallback.
 
- fs/btrfs/volumes.c | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+On 03/16/2018 10:02 PM, Greg Kroah-Hartman wrote:
+> On Fri, Mar 16, 2018 at 02:22:02PM +0100, David Sterba wrote:
+>> On Fri, Mar 16, 2018 at 01:30:49PM +0100, Greg Kroah-Hartman wrote:
+>>> On Thu, Mar 15, 2018 at 07:55:42PM +0100, Christoph Biedl wrote:
+>>>> Greg Kroah-Hartman wrote...
+>>>>
+>>>>> 4.14-stable review patch.  If anyone has any objections, please let me know.
+>>>>
+>>>>> commit 3c181c12c431fe33b669410d663beb9cceefcd1b upstream.
+>>>> (...)
+>>>>
+>>>>> If the filesystem is always used on a same endian host, this will not
+>>>>> be a problem.
+>>>>
+>>>> >From my observations I cannot quite subscribe to that.
+>>>>
+>>>> On big-endian systems, this change intruduces severe corruption,
+>>>> resulting in complete loss of the data on the used block device.
+>>>>
+>>>> Steps to reproduce (tested on ppc/powerpc and parisc/hppa):
+>>>>
+>>>> # mkfs.btrfs $DEV
+>>>> # mount $DEV /mnt/tmp/
+>>>> # umount /mnt/tmp/
+>>>>
+>>>> This simple umount corrupts the file system:
+>>>>
+>>>> # mount $DEV /mnt/tmp/
+>>>> mount: /mnt/tmp: wrong fs type, bad option, bad superblock on $DEV, missing codepage or helper program, or other error.
+>>>>
+>>>> # dmesg:
+>>>> BTRFS critical (device <dev>): unable to find logical 4294967296 length 4096
+>>>> BTRFS critical (device <dev>): unable to find logical 4294967296 length 4096
+>>>> BTRFS critical (device <dev>): unable to find logical 18102363734671360 length 16384
+>>>> BTRFS error (device <dev>): failed to read chunk root
+>>>> BTRFS error (device <dev>): open_ctree failed
+>>>>
+>>>> Also fsck is of no help:
+>>>>
+>>>> # btrfsck $DEV
+>>>> Couldn't map the block 18102363734671360
+>>>> No mapping for 18102363734671360-18102363734687744
+>>>> Couldn't map the block 18102363734671360
+>>>> bytenr mismatch, want=18102363734671360, have=0
+>>>> ERROR: cannot read chunk root
+>>>> ERROR: cannot open file system
+>>>>
+>>>>
+>>>> Trying mount or fsck on a little-endian system does not help either. So
+>>>> I consider the data on that device lost - luckily I use btrfs only for
+>>>> files where a backup exists all the time.
+>>>>
+>>>>
+>>>> Reverting that change restored the previous error-free behaviour. I
+>>>> didn't check HEAD, i.e. v4.16-rc5, since the upstream commt was the last
+>>>> that affected these files. Still I could give this a try if anybody
+>>>> wishes so.
+>>>
+>>> That sucks.  Can you test Linus's tree to verify the problem is there?
+>>> I'll gladly revert this if Linus's tree also gets the revert, I don't
+>>> want you to hit this when you upgrade to a newer kernel.
+>>
+>> I'll push a fix for the upcoming rc but I think it would be better to
+>> remove the broken patch from stable kernels ASAP, so I'd recommend to
+>> revert it now.
+> 
+> Now reverted, thanks.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9beea7c891a7..f1b7efbdcec1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5276,10 +5276,11 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 
- static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 			    struct map_lookup *map, int first,
--			    int optimal, int dev_replace_is_ongoing)
-+			    int dev_replace_is_ongoing)
- {
- 	int i;
- 	int num_stripes;
-+	int preferred_mirror;
- 	int tolerance;
- 	struct btrfs_device *srcdev;
- 
-@@ -5291,6 +5292,8 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 	else
- 		num_stripes = map->num_stripes;
- 
-+	preferred_mirror = first + current->pid % num_stripes;
-+
- 	if (dev_replace_is_ongoing &&
- 	    fs_info->dev_replace.cont_reading_from_srcdev_mode ==
- 	     BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_AVOID)
-@@ -5304,9 +5307,9 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 	 * mirror is available
- 	 */
- 	for (tolerance = 0; tolerance < 2; tolerance++) {
--		if (map->stripes[optimal].dev->bdev &&
--		    (tolerance || map->stripes[optimal].dev != srcdev))
--			return optimal;
-+		if (map->stripes[preferred_mirror].dev->bdev &&
-+		    (tolerance || map->stripes[preferred_mirror].dev != srcdev))
-+			return preferred_mirror;
- 		for (i = first; i < first + num_stripes; i++) {
- 			if (map->stripes[i].dev->bdev &&
- 			    (tolerance || map->stripes[i].dev != srcdev))
-@@ -5317,7 +5320,7 @@ static int find_live_mirror(struct btrfs_fs_info *fs_info,
- 	/* we couldn't find one that doesn't fail.  Just return something
- 	 * and the io error handling code will clean up eventually
- 	 */
--	return optimal;
-+	return preferred_mirror;
- }
- 
- static inline int parity_smaller(u64 a, u64 b)
-@@ -5844,7 +5847,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 			stripe_index = mirror_num - 1;
- 		else {
- 			stripe_index = find_live_mirror(fs_info, map, 0,
--					    current->pid % map->num_stripes,
- 					    dev_replace_is_ongoing);
- 			mirror_num = stripe_index + 1;
- 		}
-@@ -5872,8 +5874,6 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info,
- 			int old_stripe_index = stripe_index;
- 			stripe_index = find_live_mirror(fs_info, map,
- 					      stripe_index,
--					      stripe_index +
--					      current->pid % map->sub_stripes,
- 					      dev_replace_is_ongoing);
- 			mirror_num = stripe_index - old_stripe_index + 1;
- 		}
--- 
-2.15.0
+  Thanks ! Sorry for the mess.
 
+-Anand
+
+> greg k-h
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

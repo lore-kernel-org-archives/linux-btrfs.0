@@ -1,148 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:37327 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751832AbeCQBet (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Mar 2018 21:34:49 -0400
-Date: Sat, 17 Mar 2018 01:34:38 +0000
-From: higuita <higuita@GMX.net>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs errors
-Message-ID: <20180317013438.73e5bc35@couracado.motaleite.net>
-In-Reply-To: <CAJCQCtQg5_V0POgNbQs894Bq6JExpdb5b38F_T000kFanMQxag@mail.gmail.com>
-References: <20180314020313.2f444787@couracado.motaleite.net>
-        <CAJCQCtQg5_V0POgNbQs894Bq6JExpdb5b38F_T000kFanMQxag@mail.gmail.com>
+Received: from mail-ot0-f169.google.com ([74.125.82.169]:46730 "EHLO
+        mail-ot0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752685AbeCQRbI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Mar 2018 13:31:08 -0400
+Received: by mail-ot0-f169.google.com with SMTP id g97-v6so13454124otg.13
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Mar 2018 10:31:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/OVbNcXWRF+gJM8YqXhY0uYE"; protocol="application/pgp-signature"
+In-Reply-To: <20180317013438.73e5bc35@couracado.motaleite.net>
+References: <20180314020313.2f444787@couracado.motaleite.net>
+ <CAJCQCtQg5_V0POgNbQs894Bq6JExpdb5b38F_T000kFanMQxag@mail.gmail.com> <20180317013438.73e5bc35@couracado.motaleite.net>
+From: Chris Murphy <lists@colorremedies.com>
+Date: Sat, 17 Mar 2018 11:31:07 -0600
+Message-ID: <CAJCQCtSR8HB4E_9Xntazz=eQ5FokW63TyGb+=PzM8m4=i3x_jQ@mail.gmail.com>
+Subject: Re: btrfs errors
+To: higuita <higuita@gmx.net>, Liu Bo <bo.li.liu@oracle.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/OVbNcXWRF+gJM8YqXhY0uYE
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Fri, Mar 16, 2018 at 7:34 PM, higuita <higuita@gmx.net> wrote:
+> On Tue, 13 Mar 2018 22:24:43 -0600, Chris Murphy
+> <lists@colorremedies.com> wrote:
 
-Thanks for the reply!
+>> c. (optional) take a btrfs image before you do the repair because if
+>> something blows up, at least that will help a dev figure out why btrfs
+>> check blew up your file system.
+>
+>         done! i was expecting a image with at least my used space ( ~40GB),
+> but i got a 1GB file. Is that normal?
 
-On Tue, 13 Mar 2018 22:24:43 -0600, Chris Murphy
-<lists@colorremedies.com> wrote:
-> If you search the list for 'corrupt leaf bad key ordering' the top two
-> causes are bad RAM and flaky power supply. These can be hard to narrow
-> down.
-
-	I will try to get new power supply to test as the current one have
-about almost 10 years, so probably it this one the source of the problem.
-
-> a. Make sure backups are up to date. Hopefully you can mount the
-> volume read only
-
-yes, i have updated backups and i can mount the filesystem without any
-problem. I can always reformat the partition and restore, but i would
-like to use this to learn how to repair btrfs partitions and help=20
-improving the btrfs if possible.
-
-> b. Make sure you're using a recent btrfs-progs=20
-
-	Check! i'm using btrfs-progs v4.15.1,
-
-> c. (optional) take a btrfs image before you do the repair because if
-> something blows up, at least that will help a dev figure out why btrfs
-> check blew up your file system.
-
-	done! i was expecting a image with at least my used space ( ~40GB),=20
-but i got a 1GB file. Is that normal?
+Depends on 'btrfs fi us' output for metadata, and what compression
+option used for btrfs-image. The resulting image output by btrfs-image
+is only metadata. Also, if you want to sanitize file names, it's
+recommended to use the -ss switch rather than just -s; I guess it's
+easier for the devs.
 
 
-> But yes pretty good chance it can be fixed with 'btrfs check
-> --repair'=20
+>         After booting with a livecd and running a --repair with
+> btrfs-progs v4.15.1, it didn't look it have done almost anything to the
+> errors, running a new check still show mostly the same errors:
 
-	After booting with a livecd and running a --repair with
-btrfs-progs v4.15.1, it didn't look it have done almost anything to the
-errors, running a new check still show mostly the same errors:
+OK but we need the entire output from the repair attempt...
 
-# btrfs check --force /dev/vdisk/root=20
-WARNING: filesystem mounted, continuing because of --force
-Checking filesystem on /dev/vdisk/root
-UUID: c6cbf25f-f020-4247-822d-d9a85ec3c09f
-checking extents
-parent transid verify failed on 4505600 wanted 12266 found 13304
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-bad block 4505600
-ERROR: errors found in extent allocation tree or chunk allocation
-checking free space cache
-checking fs roots
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-leaf parent key incorrect 4505600
-checking csums
-parent transid verify failed on 4505600 wanted 12266 found 13304
-Ignoring transid failure
-checking root refs
-ERROR: transid errors in file system
-found 46024671232 bytes used, error(s) found
-total csum bytes: 0
-total tree bytes: 1035763712
-total fs tree bytes: 980156416
-total extent tree bytes: 55296000
-btree space waste bytes: 194602932
-file data blocks allocated: 44942737408
- referenced 59370504192
+> # btrfs check --force /dev/vdisk/root
+> WARNING: filesystem mounted, continuing because of --force
 
-=20
-So looks like btrfs check --repair do not really know how to fix this
+Maybe Qu or Liu can say otherwise. But in my opinion, btrfs check on
+mounted file system is unreliable. If it's completely idle, no writes
+the entire time the check is happening, it might be reliable. But it's
+expected that btrfs check is an offline check. And btrfs scrub is an
+online check.
 
-Thanks for the help
-higuita
---=20
-Naturally the common people don't want war... but after all it is the
-leaders of a country who determine the policy, and it is always a=20
-simple matter to drag the people along, whether it is a democracy, or
-a fascist dictatorship, or a parliament, or a communist dictatorship.
-Voice or no voice, the people can always be brought to the bidding of
-the leaders. That is easy. All you have to do is tell them they are=20
-being attacked, and denounce the pacifists for lack of patriotism and
-exposing the country to danger.  It works the same in every country.
-           -- Hermann Goering, Nazi and war criminal, 1883-1946
 
---Sig_/OVbNcXWRF+gJM8YqXhY0uYE
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
+OK so going back to your first email, I've noticed a couple things:
 
------BEGIN PGP SIGNATURE-----
+1.
+The problem file system is vdisk/root which is an LVM LV made from two
+PVs which are two SSDs. By default LVM uses linear concat so it should
+be possible to figure out which drive is actually involved. It's
+probably not important to know the mapping right now, but it does make
+the troubleshooting more complicated.
 
-iF0EARECAB0WIQQzYESp8QLV9Wpl3Vuu/WNrOwxyswUCWqxwrgAKCRCu/WNrOwxy
-s85vAJ9eDACrVHyDfIsTlGoTemkBiik46wCeK+bwk/Xi2DTQwC4KQYHz7T2L4yY=
-=DmVY
------END PGP SIGNATURE-----
+2.
+>From dmesg, one of the drives has a GPT problem and it makes me wonder
+why. The backup GPT is at the end of the drive, so whatever stepped on
+it probably did not affect anything in sdd2 which is one of the PVs
+for vdisk/root. So it probably isn't related.
 
---Sig_/OVbNcXWRF+gJM8YqXhY0uYE--
+[    8.976491] Alternate GPT is invalid, using primary GPT.
+[    8.976506]  sdd: sdd1 sdd2 sdd3 sdd4
+
+3.
+You got this message from btrfs scrub
+ERROR: scrubbing /dev/mapper/vdisk-root failed for device id 1:
+ret=-1, errno=5 (Input/output error)
+
+Do you have the kernel message that appeared at the exact same time as this?
+
+
+I suggest rebooting from live media and attaching output for the following:
+
+btrfs check
+btrfs check --mode=lowmem
+mount the Btrfs volume and scrub it, and include all the kernel
+messages specifically from mount through the end of scrub, including
+any user space i/o errors. The problem could be anything in the
+storage stack so we need to see device, device-mapper messages as well
+as Btrfs.
+umount and try btrfs check --repair but include all the output
+
+
+The lowmem check is a different implementation and sometimes gives
+different results.
+
+
+-- 
+Chris Murphy

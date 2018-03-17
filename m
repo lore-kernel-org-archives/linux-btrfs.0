@@ -1,84 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:29562 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750722AbeCOIMn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Mar 2018 04:12:43 -0400
-Received: from g01jpfmpwyt03.exch.g01.fujitsu.local (g01jpfmpwyt03.exch.g01.fujitsu.local [10.128.193.57])
-        by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 5F1D9AC017A
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 17:12:39 +0900 (JST)
-Received: from G01JPEXCHYT13.g01.fujitsu.local (G01JPEXCHYT13.g01.fujitsu.local [10.128.194.52])
-        by g01jpfmpwyt03.exch.g01.fujitsu.local (Postfix) with ESMTP id B88CB46E636
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Mar 2018 17:12:38 +0900 (JST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [RFC PATCH v2 0/8] btrfs-progs: Allow normal user to call "subvolume
- list/show"
-Message-ID: <226b6805-c5aa-c40d-4ea6-f81dc1b7de20@jp.fujitsu.com>
-Date: Thu, 15 Mar 2018 17:12:35 +0900
+Received: from smtp-16-i6.italiaonline.it ([213.209.14.16]:60127 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752603AbeCQNXT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 17 Mar 2018 09:23:19 -0400
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [RFC PATCH v2 6/8] btrfs-progs: sub list: Allow normal user to
+ call "subvolume list/show"
+Reply-To: kreijack@inwind.it
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <226b6805-c5aa-c40d-4ea6-f81dc1b7de20@jp.fujitsu.com>
+ <d02c973d-5ebc-46e4-f2a7-bd89da24e46d@jp.fujitsu.com>
+Message-ID: <d1839d67-2ab5-d07b-e459-318bdcd3bd16@libero.it>
+Date: Sat, 17 Mar 2018 14:23:16 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <d02c973d-5ebc-46e4-f2a7-bd89da24e46d@jp.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-changelog:
-v1 -> v2
-  - add independent error handling patch (1st patch)
-  - reimplement according to ioctl change
-  - various cleanup
-===
+On 03/15/2018 09:15 AM, Misono, Tomohiro wrote:
+> Allow normal user to call "subvolume list/show" by using 3 new
+> unprivileged ioctls (BTRFS_IOC_GET_SUBVOL_INFO,
+> BTRFS_IOC_GET_SUBVOL_ROOTREF and BTRFS_IOC_INO_LOOKUP_USER).
+> 
+> Note that for root, "subvolume list" returns all the subvolume in the
+> filesystem by default, but for normal user, it returns subvolumes
+> which exist under the specified path (including the path itself).
 
-This RFC implements user version of "subvolume list/show" using three new ioctls.
-The ioctl patch to the kernel can be found in the ML titled 
-  "[PATCH v2 0/3] btrfs: Add three new unprivileged ioctls to allow normal users to call "sub list/show" etc.
+I found the original "btrfs sub list" behavior quite confusing. I think that the problem is that the output is too technical. And the '-a' switch increase this confusion. May be that I am no smart enough :(
 
-1th patch is independent and improvements of error handling
-2nd-5th are some preparation works.
-6th patch is the main part.
-7th-8th adds the test for "subvolume list"
+The "normal user behavior" seems to me more coherent. However I am not sure that this differences should be acceptable. In any case it should be tracked in the man page.
 
-The main behavior differences between root and normal users are:
+Time to add another command (something like "btrfs sub ls") with a more "human friendly" output ?
 
-1. "sub list" list the subvolumes which exist under the specified path 
-(including the path itself). The specified path itself is not needed to be
- a subvolume. Also If the subvolume cannot be opened but the parent
-directory can be, the information other than name or id would be zeroed out.
+> The specified path itself is not needed to be a subvolume.
+> If the subvolume cannot be opened but the parent directory can be,
+> the information other than name or id would be zeroed out.
+> 
+> Also, for normal user, snapshot filed of "subvolume show" just lists
+> the snapshots under the specified subvolume.
+> 
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> ---
+>  btrfs-list.c     | 326 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+>  cmds-subvolume.c |  13 +++
+>  2 files changed, 332 insertions(+), 7 deletions(-)
+> 
 
-2. snapshot filed of "subvolume show" just lists
-the snapshots under the specified subvolume.
+[....]
+
+>  static void print_subvolume_column(struct root_info *subv,
+>  				   enum btrfs_list_column_enum column)
+>  {
+> @@ -1527,17 +1826,28 @@ static int btrfs_list_subvols(int fd, struct root_lookup *root_lookup,
+>  {
+>  	int ret;
+>  
+> -	ret = list_subvol_search(fd, root_lookup);
+> -	if (ret) {
+> -		error("can't perform the search: %m");
+> -		return ret;
+> +	ret = check_perm_for_tree_search(fd);
+> +	if (ret < 0) {
+> +		error("can't check the permission for tree search: %s",
+> +				strerror(-ret));
+> +		return -1;
+>  	}
+>  
+>  	/*
+>  	 * now we have an rbtree full of root_info objects, but we need to fill
+>  	 * in their path names within the subvol that is referencing each one.
+>  	 */
+> -	ret = list_subvol_fill_paths(fd, root_lookup);
+> +	if (ret) {
+> +		ret = list_subvol_search(fd, root_lookup);
+> +		if (ret) {
+> +			error("can't perform the search: %s", strerror(-ret));
+> +			return ret;
+> +		}
+> +		ret = list_subvol_fill_paths(fd, root_lookup);
+> +	} else {
+> +		ret = list_subvol_user(fd, root_lookup, path);
+> +	}
+> +
+>  	return ret;
+
+I think that the check above should be refined: if I run "btrfs sub list" patched in a kernel without patch I don't get any error and/or warning:
+
+ghigo@venice:~/btrfs/btrfs-progs$ # kernel w/o patch; btrfs-progs w/patch
+ghigo@venice:~/btrfs/btrfs-progs$ ./btrfs sub list /
+ghigo@venice:~/btrfs/btrfs-progs$ # kernel w/o patch; btrfs-progs w/o patch
+ghigo@venice:~/btrfs/btrfs-progs$ btrfs sub list /
+ERROR: can't perform the search: Operation not permitted
+
+I think that in both case an error should be raised
 
 
-This is a part of RFC I sent last December[1] whose aim is to improve normal users' usability.
-The remaining works of RFC are: 
-  - Allow "sub delete" for empty subvolume
-  - Allow "qgroup show" to check quota limit
+>  }
+>  
+> @@ -1631,12 +1941,14 @@ int btrfs_get_subvol(int fd, struct root_info *the_ri, const char *path)
+>  		return ret;
+>  	}
+>  
+> +	ret = -ENOENT;
+>  	rbn = rb_first(&rl.root);
+>  	while(rbn) {
+>  		ri = rb_entry(rbn, struct root_info, rb_node);
+>  		rr = resolve_root(&rl, ri, root_id);
+> -		if (rr == -ENOENT) {
+> -			ret = -ENOENT;
+> +		if (rr == -ENOENT ||
+> +		    ri->root_id == BTRFS_FS_TREE_OBJECTID ||
+> +		    uuid_is_null(ri->uuid)) {
+>  			rbn = rb_next(rbn);
+>  			continue;
+>  		}
+> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+> index faa10c5a..7a7c6f3b 100644
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -596,6 +596,19 @@ static int cmd_subvol_list(int argc, char **argv)
+>  		goto out;
+>  	}
+>  
+> +	ret = check_perm_for_tree_search(fd);
+> +	if (ret < 0) {
+> +		ret = -1;
+> +		error("can't check the permission for tree search: %s",
+> +				strerror(-ret));
+> +		goto out;
+> +	}
+> +	if (!ret && is_list_all) {
+> +		ret = -1;
+> +		error("only root can use -a option");
+> +		goto out;
+> +	}
+> +
+>  	if (flags)
+>  		btrfs_list_setup_filter(&filter_set, BTRFS_LIST_FILTER_FLAGS,
+>  					flags);
+> 
 
-[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg70991.html
-
-Tomohiro Misono (8):
-  btrfs-progs: sub list: Call rb_free_nodes() in error path
-  btrfs-progs: ioctl: Add 3 definitions of new unprivileged ioctl
-  btrfs-progs: sub list: Add helper function which checks the permission
-    for tree search ioctl
-  btrfs-progs: sub list: Pass specified path down to
-    btrfs_list_subvols()
-  btrfs-progs: fallback to open without O_NOATIME flag in
-    find_mount_root()
-  btrfs-progs: sub list: Allow normal user to call "subvolume list/show"
-  btrfs-progs: test: Add helper function to check if test user exists
-  btrfs-porgs: test: Add cli-test/009 to check subvolume list for both
-    root and normal user
-
- btrfs-list.c                               | 391 +++++++++++++++++++++++++++--
- btrfs-list.h                               |   8 +-
- cmds-subvolume.c                           |  19 +-
- ioctl.h                                    |  86 +++++++
- tests/cli-tests/009-subvolume-list/test.sh | 136 ++++++++++
- tests/common                               |  10 +
- utils.c                                    |  13 +-
- 7 files changed, 634 insertions(+), 29 deletions(-)
- create mode 100755 tests/cli-tests/009-subvolume-list/test.sh
 
 -- 
-2.14.3
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 

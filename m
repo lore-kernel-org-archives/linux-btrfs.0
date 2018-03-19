@@ -1,39 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33009 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:57306 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751416AbeCULJs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 07:09:48 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 93D75AECC
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 11:09:47 +0000 (UTC)
-Date: Wed, 21 Mar 2018 12:07:23 +0100
+        id S969072AbeCSSRA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Mar 2018 14:17:00 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5D85EAF07
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Mar 2018 18:16:59 +0000 (UTC)
+Date: Mon, 19 Mar 2018 19:14:35 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Nikolay Borisov <nborisov@suse.com>
-Cc: WenRuo Qu <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Remove obsolete function declaration
-Message-ID: <20180321110723.GS6955@suse.cz>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: print-tree: Do correct offset output for
+ ROOT_ITEM
+Message-ID: <20180319181435.GK6955@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1521615821-17703-1-git-send-email-nborisov@suse.com>
+References: <20180319102810.24356-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1521615821-17703-1-git-send-email-nborisov@suse.com>
+In-Reply-To: <20180319102810.24356-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 21, 2018 at 09:03:41AM +0200, Nikolay Borisov wrote:
-> This function was removed in 24bc2843edd5 ("btrfs:
-> Refactor __get_raid_index() to btrfs_bg_flags_to_raid_index()") what
-> remains is a defunct declaration. Remove it.
+On Mon, Mar 19, 2018 at 06:28:10PM +0800, Qu Wenruo wrote:
+> Commit Fixes: 8c36786c8198 ("btrfs-progs: print-tree: Print offset as tree objectid for ROOT_ITEM")
+> changes how we translate offset of ROOT_ITEM.
 > 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
-> David, 
+> However the fact is, even for ROOT_ITEM, we have different meaning of
+> offset.
 > 
-> This is a fixlet to the aforementioned patch which is only in your misc-next, 
-> I'd suggest just squash this fixlet into the original one. 
+> For tree reloc tree, it's indeed subvolume id.
+> But for other trees, it's the transid of when it's created.
+> 
+> Fix it.
+> 
+> Reported-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Yes, makes sense. Done.
-
-If that happens in the future again, sending a separate mail (not
-necessarily a full blown patch with changelog etc) works fine, namely
-for patches that are deep in the devel queue like that one. So, thanks.
+Applied, thanks.

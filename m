@@ -1,616 +1,591 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:48268 "EHLO
-        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751617AbeCWBbx (ORCPT
-        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
-        Thu, 22 Mar 2018 21:31:53 -0400
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: Validate child tree block's level and first key
-Date: Fri, 23 Mar 2018 09:31:43 +0800
-Message-Id: <20180323013143.17238-1-wqu@suse.com>
+Received: from mga17.intel.com ([192.55.52.151]:29001 "EHLO mga17.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1755783AbeCSW7q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Mar 2018 18:59:46 -0400
+Date: Tue, 20 Mar 2018 06:59:40 +0800
+From: kbuild test robot <lkp@intel.com>
+To: Qu Wenruo <wqu@suse.com>
+Cc: kbuild-all@01.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Validate child tree block's level and first key
+Message-ID: <201803200613.b41DYqgg%fengguang.wu@intel.com>
+References: <20180319091841.18603-1-wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="EeQfGwPcQSOJBaQU"
+In-Reply-To: <20180319091841.18603-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have several reports about node pointer points to incorrect child
-tree blocks, which could have even wrong owner and level but still with
-valid generation and checksum.
 
-Although btrfs check could handle it and print error message like:
-leaf parent key incorrect 60670574592
+--EeQfGwPcQSOJBaQU
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Kernel doesn't have enough check on this type of corruption correctly.
-At least add such check to read_tree_block() and btrfs_read_buffer(),
-where we need two new parameters @first_key and @level to verify the
-child tree block.
+Hi Qu,
 
-There are call sites which can't use this new verfication by their nature:
-1) Root node/leaf
-   It's referred by bytenr directly, so no @first_key to verify
-2) Backref walker
-   FULL_BACKREF only has parent bytenr, no key to verify too.
+Thank you for the patch! Yet something to improve:
 
-Despite above cases, about 50% call sites can take advantage of
-this verification.
+[auto build test ERROR on v4.16-rc4]
+[also build test ERROR on next-20180319]
+[if your patch is applied to the wrong git tree, please drop us a note to help improve the system]
 
-Another note of this verification is, it needs extra info from nodeptr,
-so it can't fit into current tree-checker framework, which is limited to
-node/leaf boundary.
+url:    https://github.com/0day-ci/linux/commits/Qu-Wenruo/btrfs-Validate-child-tree-block-s-level-and-first-key/20180320-054353
+config: i386-randconfig-x006-201811 (attached as .config)
+compiler: gcc-7 (Debian 7.3.0-1) 7.3.0
+reproduce:
+        # save the attached .config to linux build tree
+        make ARCH=i386 
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+All errors (new ones prefixed by >>):
+
+   fs//btrfs/ref-verify.c: In function 'walk_down_tree':
+>> fs//btrfs/ref-verify.c:586:9: error: too few arguments to function 'read_tree_block'
+       eb = read_tree_block(fs_info, block_bytenr, gen);
+            ^~~~~~~~~~~~~~~
+   In file included from fs//btrfs/ref-verify.c:22:0:
+   fs//btrfs/disk-io.h:55:23: note: declared here
+    struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+                          ^~~~~~~~~~~~~~~
+
+vim +/read_tree_block +586 fs//btrfs/ref-verify.c
+
+fd708b81 Josef Bacik 2017-09-29  570  
+fd708b81 Josef Bacik 2017-09-29  571  /* Walk down to the leaf from the given level */
+fd708b81 Josef Bacik 2017-09-29  572  static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
+fd708b81 Josef Bacik 2017-09-29  573  			  int level, u64 *bytenr, u64 *num_bytes)
+fd708b81 Josef Bacik 2017-09-29  574  {
+fd708b81 Josef Bacik 2017-09-29  575  	struct btrfs_fs_info *fs_info = root->fs_info;
+fd708b81 Josef Bacik 2017-09-29  576  	struct extent_buffer *eb;
+fd708b81 Josef Bacik 2017-09-29  577  	u64 block_bytenr, gen;
+fd708b81 Josef Bacik 2017-09-29  578  	int ret = 0;
+fd708b81 Josef Bacik 2017-09-29  579  
+fd708b81 Josef Bacik 2017-09-29  580  	while (level >= 0) {
+fd708b81 Josef Bacik 2017-09-29  581  		if (level) {
+fd708b81 Josef Bacik 2017-09-29  582  			block_bytenr = btrfs_node_blockptr(path->nodes[level],
+fd708b81 Josef Bacik 2017-09-29  583  							   path->slots[level]);
+fd708b81 Josef Bacik 2017-09-29  584  			gen = btrfs_node_ptr_generation(path->nodes[level],
+fd708b81 Josef Bacik 2017-09-29  585  							path->slots[level]);
+fd708b81 Josef Bacik 2017-09-29 @586  			eb = read_tree_block(fs_info, block_bytenr, gen);
+fd708b81 Josef Bacik 2017-09-29  587  			if (IS_ERR(eb))
+fd708b81 Josef Bacik 2017-09-29  588  				return PTR_ERR(eb);
+fd708b81 Josef Bacik 2017-09-29  589  			if (!extent_buffer_uptodate(eb)) {
+fd708b81 Josef Bacik 2017-09-29  590  				free_extent_buffer(eb);
+fd708b81 Josef Bacik 2017-09-29  591  				return -EIO;
+fd708b81 Josef Bacik 2017-09-29  592  			}
+fd708b81 Josef Bacik 2017-09-29  593  			btrfs_tree_read_lock(eb);
+fd708b81 Josef Bacik 2017-09-29  594  			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+fd708b81 Josef Bacik 2017-09-29  595  			path->nodes[level-1] = eb;
+fd708b81 Josef Bacik 2017-09-29  596  			path->slots[level-1] = 0;
+fd708b81 Josef Bacik 2017-09-29  597  			path->locks[level-1] = BTRFS_READ_LOCK_BLOCKING;
+fd708b81 Josef Bacik 2017-09-29  598  		} else {
+fd708b81 Josef Bacik 2017-09-29  599  			ret = process_leaf(root, path, bytenr, num_bytes);
+fd708b81 Josef Bacik 2017-09-29  600  			if (ret)
+fd708b81 Josef Bacik 2017-09-29  601  				break;
+fd708b81 Josef Bacik 2017-09-29  602  		}
+fd708b81 Josef Bacik 2017-09-29  603  		level--;
+fd708b81 Josef Bacik 2017-09-29  604  	}
+fd708b81 Josef Bacik 2017-09-29  605  	return ret;
+fd708b81 Josef Bacik 2017-09-29  606  }
+fd708b81 Josef Bacik 2017-09-29  607  
+
+:::::: The code at line 586 was first introduced by commit
+:::::: fd708b81d972a0714b02a60eb4792fdbf15868c4 Btrfs: add a extent ref verify tool
+
+:::::: TO: Josef Bacik <josef@toxicpanda.com>
+:::::: CC: David Sterba <dsterba@suse.com>
+
 ---
-To David,
+0-DAY kernel test infrastructure                Open Source Technology Center
+https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
 
-Since half of the new parameters are already filled, I'm not sure if it's a good
-idea to make a new function for this.
----
- fs/btrfs/backref.c     |  6 +++--
- fs/btrfs/ctree.c       | 25 +++++++++++++-----
- fs/btrfs/disk-io.c     | 69 ++++++++++++++++++++++++++++++++++++++++----------
- fs/btrfs/disk-io.h     |  8 +++---
- fs/btrfs/extent-tree.c |  6 ++++-
- fs/btrfs/print-tree.c  | 10 +++++---
- fs/btrfs/qgroup.c      |  7 +++--
- fs/btrfs/ref-verify.c  |  7 ++++-
- fs/btrfs/relocation.c  | 21 ++++++++++++---
- fs/btrfs/tree-log.c    | 12 ++++++---
- 10 files changed, 132 insertions(+), 39 deletions(-)
+--EeQfGwPcQSOJBaQU
+Content-Type: application/gzip
+Content-Disposition: attachment; filename=".config.gz"
+Content-Transfer-Encoding: base64
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 26484648d090..3866b8ab20f1 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -738,7 +738,8 @@ static int add_missing_keys(struct btrfs_fs_info *fs_info,
- 		BUG_ON(ref->key_for_search.type);
- 		BUG_ON(!ref->wanted_disk_byte);
- 
--		eb = read_tree_block(fs_info, ref->wanted_disk_byte, 0);
-+		eb = read_tree_block(fs_info, ref->wanted_disk_byte, 0, NULL,
-+				     0);
- 		if (IS_ERR(eb)) {
- 			free_pref(ref);
- 			return PTR_ERR(eb);
-@@ -1291,7 +1292,8 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 			    ref->level == 0) {
- 				struct extent_buffer *eb;
- 
--				eb = read_tree_block(fs_info, ref->parent, 0);
-+				eb = read_tree_block(fs_info, ref->parent, 0,
-+						     NULL, 0);
- 				if (IS_ERR(eb)) {
- 					ret = PTR_ERR(eb);
- 					goto out;
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b88a79e69ddf..e49ca6d529e8 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1436,7 +1436,7 @@ get_old_root(struct btrfs_root *root, u64 time_seq)
- 	if (old_root && tm && tm->op != MOD_LOG_KEY_REMOVE_WHILE_FREEING) {
- 		btrfs_tree_read_unlock(eb_root);
- 		free_extent_buffer(eb_root);
--		old = read_tree_block(fs_info, logical, 0);
-+		old = read_tree_block(fs_info, logical, 0, NULL, 0);
- 		if (WARN_ON(IS_ERR(old) || !extent_buffer_uptodate(old))) {
- 			if (!IS_ERR(old))
- 				free_extent_buffer(old);
-@@ -1656,6 +1656,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 	btrfs_set_lock_blocking(parent);
- 
- 	for (i = start_slot; i <= end_slot; i++) {
-+		struct btrfs_key first_key;
- 		int close = 1;
- 
- 		btrfs_node_key(parent, &disk_key, i);
-@@ -1665,6 +1666,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 		progress_passed = 1;
- 		blocknr = btrfs_node_blockptr(parent, i);
- 		gen = btrfs_node_ptr_generation(parent, i);
-+		btrfs_node_key_to_cpu(parent, &first_key, i);
- 		if (last_block == 0)
- 			last_block = blocknr;
- 
-@@ -1688,7 +1690,9 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 			uptodate = 0;
- 		if (!cur || !uptodate) {
- 			if (!cur) {
--				cur = read_tree_block(fs_info, blocknr, gen);
-+				cur = read_tree_block(fs_info, blocknr, gen,
-+						      &first_key,
-+						      parent_level - 1);
- 				if (IS_ERR(cur)) {
- 					return PTR_ERR(cur);
- 				} else if (!extent_buffer_uptodate(cur)) {
-@@ -1696,7 +1700,8 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 					return -EIO;
- 				}
- 			} else if (!uptodate) {
--				err = btrfs_read_buffer(cur, gen);
-+				err = btrfs_read_buffer(cur, gen, &first_key,
-+							parent_level - 1);
- 				if (err) {
- 					free_extent_buffer(cur);
- 					return err;
-@@ -1849,14 +1854,17 @@ read_node_slot(struct btrfs_fs_info *fs_info, struct extent_buffer *parent,
- {
- 	int level = btrfs_header_level(parent);
- 	struct extent_buffer *eb;
-+	struct btrfs_key first_key;
- 
- 	if (slot < 0 || slot >= btrfs_header_nritems(parent))
- 		return ERR_PTR(-ENOENT);
- 
- 	BUG_ON(level == 0);
- 
-+	btrfs_node_key_to_cpu(parent, &first_key, slot);
- 	eb = read_tree_block(fs_info, btrfs_node_blockptr(parent, slot),
--			     btrfs_node_ptr_generation(parent, slot));
-+			     btrfs_node_ptr_generation(parent, slot),
-+			     &first_key, level - 1);
- 	if (!IS_ERR(eb) && !extent_buffer_uptodate(eb)) {
- 		free_extent_buffer(eb);
- 		eb = ERR_PTR(-EIO);
-@@ -2445,10 +2453,14 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
- 	u64 gen;
- 	struct extent_buffer *b = *eb_ret;
- 	struct extent_buffer *tmp;
-+	struct btrfs_key first_key;
- 	int ret;
-+	int parent_level;
- 
- 	blocknr = btrfs_node_blockptr(b, slot);
- 	gen = btrfs_node_ptr_generation(b, slot);
-+	parent_level = btrfs_header_level(b);
-+	btrfs_node_key_to_cpu(b, &first_key, slot);
- 
- 	tmp = find_extent_buffer(fs_info, blocknr);
- 	if (tmp) {
-@@ -2467,7 +2479,7 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
- 		btrfs_set_path_blocking(p);
- 
- 		/* now we're allowed to do a blocking uptodate check */
--		ret = btrfs_read_buffer(tmp, gen);
-+		ret = btrfs_read_buffer(tmp, gen, &first_key, parent_level - 1);
- 		if (!ret) {
- 			*eb_ret = tmp;
- 			return 0;
-@@ -2494,7 +2506,8 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
- 	btrfs_release_path(p);
- 
- 	ret = -EAGAIN;
--	tmp = read_tree_block(fs_info, blocknr, 0);
-+	tmp = read_tree_block(fs_info, blocknr, 0, &first_key,
-+			      parent_level - 1);
- 	if (!IS_ERR(tmp)) {
- 		/*
- 		 * If the read above didn't mark this buffer up to date,
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 21f34ad0d411..46fbbbf34568 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -428,13 +428,40 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
-+static int verify_parent_key(struct extent_buffer *eb,
-+			     struct btrfs_key *first_key,
-+			     int level)
-+{
-+	int found_level;
-+	struct btrfs_key found_key;
-+
-+	if (!first_key)
-+		return 0;
-+
-+	found_level = btrfs_header_level(eb);
-+	if (found_level != level)
-+		return -EIO;
-+
-+	if (found_level)
-+		btrfs_node_key_to_cpu(eb, &found_key, 0);
-+	else
-+		btrfs_item_key_to_cpu(eb, &found_key, 0);
-+	return btrfs_comp_cpu_keys(first_key, &found_key);
-+}
-+
- /*
-  * helper to read a given tree block, doing retries as required when
-  * the checksums don't match and we have alternate mirrors to try.
-+ *
-+ * @parent_transid:	expected transid, skip check if 0
-+ * @first_key:		expected key of first slot, skip check if NULL
-+ * @level:		expected level, skip check if @first_key is NULL
-  */
- static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
- 					  struct extent_buffer *eb,
--					  u64 parent_transid)
-+					  u64 parent_transid,
-+					  struct btrfs_key *first_key,
-+					  int level)
- {
- 	struct extent_io_tree *io_tree;
- 	int failed = 0;
-@@ -449,11 +476,13 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
- 		ret = read_extent_buffer_pages(io_tree, eb, WAIT_COMPLETE,
- 					       mirror_num);
- 		if (!ret) {
--			if (!verify_parent_transid(io_tree, eb,
-+			if (verify_parent_transid(io_tree, eb,
- 						   parent_transid, 0))
--				break;
--			else
- 				ret = -EIO;
-+			else if (verify_parent_key(eb, first_key, level))
-+				ret = -EUCLEAN;
-+			else
-+				break;
- 		}
- 
- 		/*
-@@ -461,7 +490,8 @@ static int btree_read_extent_buffer_pages(struct btrfs_fs_info *fs_info,
- 		 * there is no reason to read the other copies, they won't be
- 		 * any less wrong.
- 		 */
--		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags))
-+		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags) ||
-+		    ret == -EUCLEAN)
- 			break;
- 
- 		num_copies = btrfs_num_copies(fs_info,
-@@ -1062,8 +1092,17 @@ void btrfs_wait_tree_block_writeback(struct extent_buffer *buf)
- 			        buf->start, buf->start + buf->len - 1);
- }
- 
-+/*
-+ * Read tree block at logical address @bytenr and do variant basic but critical
-+ * verfication.
-+ *
-+ * @parent_transid:	expected transid of this tree block, skip check if 0
-+ * @first_key:		expected key in slot 0, skip check if NULL
-+ * @level:		eppected level, skip check if @first_key is NULL
-+ */
- struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
--				      u64 parent_transid)
-+				      u64 parent_transid,
-+				      struct btrfs_key *first_key, int level)
- {
- 	struct extent_buffer *buf = NULL;
- 	int ret;
-@@ -1072,7 +1111,8 @@ struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
- 	if (IS_ERR(buf))
- 		return buf;
- 
--	ret = btree_read_extent_buffer_pages(fs_info, buf, parent_transid);
-+	ret = btree_read_extent_buffer_pages(fs_info, buf, parent_transid,
-+					     first_key, level);
- 	if (ret) {
- 		free_extent_buffer(buf);
- 		return ERR_PTR(ret);
-@@ -1425,7 +1465,7 @@ static struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
- 	generation = btrfs_root_generation(&root->root_item);
- 	root->node = read_tree_block(fs_info,
- 				     btrfs_root_bytenr(&root->root_item),
--				     generation);
-+				     generation, NULL, 0);
- 	if (IS_ERR(root->node)) {
- 		ret = PTR_ERR(root->node);
- 		goto find_fail;
-@@ -2289,7 +2329,8 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
- 	__setup_root(log_tree_root, fs_info, BTRFS_TREE_LOG_OBJECTID);
- 
- 	log_tree_root->node = read_tree_block(fs_info, bytenr,
--					      fs_info->generation + 1);
-+					      fs_info->generation + 1,
-+					      NULL, 0);
- 	if (IS_ERR(log_tree_root->node)) {
- 		btrfs_warn(fs_info, "failed to read log tree");
- 		ret = PTR_ERR(log_tree_root->node);
-@@ -2746,7 +2787,7 @@ int open_ctree(struct super_block *sb,
- 
- 	chunk_root->node = read_tree_block(fs_info,
- 					   btrfs_super_chunk_root(disk_super),
--					   generation);
-+					   generation, NULL, 0);
- 	if (IS_ERR(chunk_root->node) ||
- 	    !extent_buffer_uptodate(chunk_root->node)) {
- 		btrfs_err(fs_info, "failed to read chunk root");
-@@ -2783,7 +2824,7 @@ int open_ctree(struct super_block *sb,
- 
- 	tree_root->node = read_tree_block(fs_info,
- 					  btrfs_super_root(disk_super),
--					  generation);
-+					  generation, NULL, 0);
- 	if (IS_ERR(tree_root->node) ||
- 	    !extent_buffer_uptodate(tree_root->node)) {
- 		btrfs_warn(fs_info, "failed to read tree root");
-@@ -3890,12 +3931,14 @@ void btrfs_btree_balance_dirty_nodelay(struct btrfs_fs_info *fs_info)
- 	__btrfs_btree_balance_dirty(fs_info, 0);
- }
- 
--int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
-+int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid,
-+		      struct btrfs_key *first_key, int level)
- {
- 	struct btrfs_root *root = BTRFS_I(buf->pages[0]->mapping->host)->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 
--	return btree_read_extent_buffer_pages(fs_info, buf, parent_transid);
-+	return btree_read_extent_buffer_pages(fs_info, buf, parent_transid,
-+					      first_key, level);
- }
- 
- static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info)
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 301151a50ac1..3a1f4b2fa6ff 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -52,8 +52,9 @@ static inline u64 btrfs_sb_offset(int mirror)
- struct btrfs_device;
- struct btrfs_fs_devices;
- 
--struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info,
--				      u64 bytenr, u64 parent_transid);
-+struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
-+				      u64 parent_transid,
-+				      struct btrfs_key *first_key, int level);
- void readahead_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr);
- int reada_tree_block_flagged(struct btrfs_fs_info *fs_info, u64 bytenr,
- 			 int mirror_num, struct extent_buffer **eb);
-@@ -123,7 +124,8 @@ static inline void btrfs_put_fs_root(struct btrfs_root *root)
- void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
- 			  int atomic);
--int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid);
-+int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid,
-+		      struct btrfs_key *first_key, int level);
- u32 btrfs_csum_data(const char *data, u32 seed, size_t len);
- void btrfs_csum_final(u32 crc, u8 *result);
- blk_status_t btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c1618ab9fecf..156ac8e4ff62 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8701,6 +8701,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	u64 parent;
- 	u32 blocksize;
- 	struct btrfs_key key;
-+	struct btrfs_key first_key;
- 	struct extent_buffer *next;
- 	int level = wc->level;
- 	int reada = 0;
-@@ -8721,6 +8722,8 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	}
- 
- 	bytenr = btrfs_node_blockptr(path->nodes[level], path->slots[level]);
-+	btrfs_node_key_to_cpu(path->nodes[level], &first_key,
-+			      path->slots[level]);
- 	blocksize = fs_info->nodesize;
- 
- 	next = find_extent_buffer(fs_info, bytenr);
-@@ -8785,7 +8788,8 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
- 	if (!next) {
- 		if (reada && level == 1)
- 			reada_walk_down(trans, root, wc, path);
--		next = read_tree_block(fs_info, bytenr, generation);
-+		next = read_tree_block(fs_info, bytenr, generation, &first_key,
-+				       level - 1);
- 		if (IS_ERR(next)) {
- 			return PTR_ERR(next);
- 		} else if (!extent_buffer_uptodate(next)) {
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index 569205e651c7..b00d88291085 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -365,9 +365,13 @@ void btrfs_print_tree(struct extent_buffer *c)
- 		       btrfs_node_blockptr(c, i));
- 	}
- 	for (i = 0; i < nr; i++) {
--		struct extent_buffer *next = read_tree_block(fs_info,
--					btrfs_node_blockptr(c, i),
--					btrfs_node_ptr_generation(c, i));
-+		struct btrfs_key first_key;
-+		struct extent_buffer *next;
-+
-+		btrfs_node_key_to_cpu(c, &first_key, i);
-+		next = read_tree_block(fs_info, btrfs_node_blockptr(c, i),
-+				       btrfs_node_ptr_generation(c, i),
-+				       &first_key, level - 1);
- 		if (IS_ERR(next)) {
- 			continue;
- 		} else if (!extent_buffer_uptodate(next)) {
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index aa259d6986e1..86698702d08c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1614,7 +1614,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	if (!extent_buffer_uptodate(root_eb)) {
--		ret = btrfs_read_buffer(root_eb, root_gen);
-+		ret = btrfs_read_buffer(root_eb, root_gen, NULL, 0);
- 		if (ret)
- 			goto out;
- 	}
-@@ -1645,6 +1645,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 	level = root_level;
- 	while (level >= 0) {
- 		if (path->nodes[level] == NULL) {
-+			struct btrfs_key first_key;
- 			int parent_slot;
- 			u64 child_gen;
- 			u64 child_bytenr;
-@@ -1657,8 +1658,10 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
- 			parent_slot = path->slots[level + 1];
- 			child_bytenr = btrfs_node_blockptr(eb, parent_slot);
- 			child_gen = btrfs_node_ptr_generation(eb, parent_slot);
-+			btrfs_node_key_to_cpu(eb, &first_key, parent_slot);
- 
--			eb = read_tree_block(fs_info, child_bytenr, child_gen);
-+			eb = read_tree_block(fs_info, child_bytenr, child_gen,
-+					     &first_key, level);
- 			if (IS_ERR(eb)) {
- 				ret = PTR_ERR(eb);
- 				goto out;
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 171f3cce30e6..25c767635426 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -579,11 +579,16 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 
- 	while (level >= 0) {
- 		if (level) {
-+			struct btrfs_key first_key;
-+
- 			block_bytenr = btrfs_node_blockptr(path->nodes[level],
- 							   path->slots[level]);
- 			gen = btrfs_node_ptr_generation(path->nodes[level],
- 							path->slots[level]);
--			eb = read_tree_block(fs_info, block_bytenr, gen);
-+			btrfs_node_key_to_cpu(path->nodes[level], &first_key,
-+					      path->slots[level]);
-+			eb = read_tree_block(fs_info, block_bytenr, gen,
-+					     &first_key, level - 1);
- 			if (IS_ERR(eb))
- 				return PTR_ERR(eb);
- 			if (!extent_buffer_uptodate(eb)) {
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index cd2298d185dd..4a309f8c9535 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1839,6 +1839,8 @@ int replace_path(struct btrfs_trans_handle *trans,
- 
- 	parent = eb;
- 	while (1) {
-+		struct btrfs_key first_key;
-+
- 		level = btrfs_header_level(parent);
- 		BUG_ON(level < lowest_level);
- 
-@@ -1852,6 +1854,7 @@ int replace_path(struct btrfs_trans_handle *trans,
- 		old_bytenr = btrfs_node_blockptr(parent, slot);
- 		blocksize = fs_info->nodesize;
- 		old_ptr_gen = btrfs_node_ptr_generation(parent, slot);
-+		btrfs_node_key_to_cpu(parent, &key, slot);
- 
- 		if (level <= max_level) {
- 			eb = path->nodes[level];
-@@ -1876,7 +1879,8 @@ int replace_path(struct btrfs_trans_handle *trans,
- 				break;
- 			}
- 
--			eb = read_tree_block(fs_info, old_bytenr, old_ptr_gen);
-+			eb = read_tree_block(fs_info, old_bytenr, old_ptr_gen,
-+					     &first_key, level - 1);
- 			if (IS_ERR(eb)) {
- 				ret = PTR_ERR(eb);
- 				break;
-@@ -2036,6 +2040,8 @@ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
- 	last_snapshot = btrfs_root_last_snapshot(&root->root_item);
- 
- 	for (i = *level; i > 0; i--) {
-+		struct btrfs_key first_key;
-+
- 		eb = path->nodes[i];
- 		nritems = btrfs_header_nritems(eb);
- 		while (path->slots[i] < nritems) {
-@@ -2056,7 +2062,9 @@ int walk_down_reloc_tree(struct btrfs_root *root, struct btrfs_path *path,
- 		}
- 
- 		bytenr = btrfs_node_blockptr(eb, path->slots[i]);
--		eb = read_tree_block(fs_info, bytenr, ptr_gen);
-+		btrfs_node_key_to_cpu(eb, &first_key, path->slots[i]);
-+		eb = read_tree_block(fs_info, bytenr, ptr_gen, &first_key,
-+				     i - 1);
- 		if (IS_ERR(eb)) {
- 			return PTR_ERR(eb);
- 		} else if (!extent_buffer_uptodate(eb)) {
-@@ -2714,6 +2722,8 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 	path->lowest_level = node->level + 1;
- 	rc->backref_cache.path[node->level] = node;
- 	list_for_each_entry(edge, &node->upper, list[LOWER]) {
-+		struct btrfs_key first_key;
-+
- 		cond_resched();
- 
- 		upper = edge->node[UPPER];
-@@ -2779,7 +2789,9 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 
- 		blocksize = root->fs_info->nodesize;
- 		generation = btrfs_node_ptr_generation(upper->eb, slot);
--		eb = read_tree_block(fs_info, bytenr, generation);
-+		btrfs_node_key_to_cpu(upper->eb, &first_key, slot);
-+		eb = read_tree_block(fs_info, bytenr, generation, &first_key,
-+				     upper->level - 1);
- 		if (IS_ERR(eb)) {
- 			err = PTR_ERR(eb);
- 			goto next;
-@@ -2944,7 +2956,8 @@ static int get_tree_block_key(struct btrfs_fs_info *fs_info,
- 	struct extent_buffer *eb;
- 
- 	BUG_ON(block->key_ready);
--	eb = read_tree_block(fs_info, block->bytenr, block->key.offset);
-+	eb = read_tree_block(fs_info, block->bytenr, block->key.offset, NULL,
-+			     0);
- 	if (IS_ERR(eb)) {
- 		return PTR_ERR(eb);
- 	} else if (!extent_buffer_uptodate(eb)) {
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 434457794c27..b98a1801b406 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -304,7 +304,7 @@ static int process_one_buffer(struct btrfs_root *log,
- 	 * pin down any logged extents, so we have to read the block.
- 	 */
- 	if (btrfs_fs_incompat(fs_info, MIXED_GROUPS)) {
--		ret = btrfs_read_buffer(eb, gen);
-+		ret = btrfs_read_buffer(eb, gen, NULL, 0);
- 		if (ret)
- 			return ret;
- 	}
-@@ -2420,7 +2420,7 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
- 	int i;
- 	int ret;
- 
--	ret = btrfs_read_buffer(eb, gen);
-+	ret = btrfs_read_buffer(eb, gen, NULL, 0);
- 	if (ret)
- 		return ret;
- 
-@@ -2537,6 +2537,8 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 	WARN_ON(*level >= BTRFS_MAX_LEVEL);
- 
- 	while (*level > 0) {
-+		struct btrfs_key first_key;
-+
- 		WARN_ON(*level < 0);
- 		WARN_ON(*level >= BTRFS_MAX_LEVEL);
- 		cur = path->nodes[*level];
-@@ -2549,6 +2551,7 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 
- 		bytenr = btrfs_node_blockptr(cur, path->slots[*level]);
- 		ptr_gen = btrfs_node_ptr_generation(cur, path->slots[*level]);
-+		btrfs_node_key_to_cpu(cur, &first_key, path->slots[*level]);
- 		blocksize = fs_info->nodesize;
- 
- 		parent = path->nodes[*level];
-@@ -2567,7 +2570,8 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 
- 			path->slots[*level]++;
- 			if (wc->free) {
--				ret = btrfs_read_buffer(next, ptr_gen);
-+				ret = btrfs_read_buffer(next, ptr_gen,
-+							&first_key, *level - 1);
- 				if (ret) {
- 					free_extent_buffer(next);
- 					return ret;
-@@ -2597,7 +2601,7 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 			free_extent_buffer(next);
- 			continue;
- 		}
--		ret = btrfs_read_buffer(next, ptr_gen);
-+		ret = btrfs_read_buffer(next, ptr_gen, &first_key, *level - 1);
- 		if (ret) {
- 			free_extent_buffer(next);
- 			return ret;
--- 
-2.16.2
+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
 
+--EeQfGwPcQSOJBaQU--

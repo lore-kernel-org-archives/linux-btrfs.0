@@ -1,114 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:57407 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:50155 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932616AbeCSLSJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Mar 2018 07:18:09 -0400
+        id S932277AbeCSMHO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Mar 2018 08:07:14 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+        by mx2.suse.de (Postfix) with ESMTP id 5BB8AACF8
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Mar 2018 12:07:13 +0000 (UTC)
 Subject: Re: [PATCH] btrfs-progs: print-tree: Do correct offset output for
  ROOT_ITEM
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180319102810.24356-1-wqu@suse.com>
- <d1fa813b-814c-21ff-4cc7-f6ba38399f9d@suse.com>
- <f14d629e-4174-9fea-9440-fd7d9b8dd5d7@gmx.com>
- <168142ff-0b85-463e-c028-6183ae32fd75@suse.com>
- <ace03bb9-2676-e233-37e7-2b8171af779d@suse.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <faa81e35-d3d2-e8e5-7aea-ea5da954bf76@gmx.com>
-Date: Mon, 19 Mar 2018 19:17:54 +0800
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <7dd81c72-771b-86e4-0394-946f4def4dc9@suse.com>
+Date: Mon, 19 Mar 2018 14:07:10 +0200
 MIME-Version: 1.0
-In-Reply-To: <ace03bb9-2676-e233-37e7-2b8171af779d@suse.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="gbc0IfISaB8TxXoqkoXSHB7xWlm7OsXrt"
+In-Reply-To: <20180319102810.24356-1-wqu@suse.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gbc0IfISaB8TxXoqkoXSHB7xWlm7OsXrt
-Content-Type: multipart/mixed; boundary="VpK1bpAMHIo8iXTG2HthtHMlP50064nHy";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
- linux-btrfs@vger.kernel.org
-Message-ID: <faa81e35-d3d2-e8e5-7aea-ea5da954bf76@gmx.com>
-Subject: Re: [PATCH] btrfs-progs: print-tree: Do correct offset output for
- ROOT_ITEM
-References: <20180319102810.24356-1-wqu@suse.com>
- <d1fa813b-814c-21ff-4cc7-f6ba38399f9d@suse.com>
- <f14d629e-4174-9fea-9440-fd7d9b8dd5d7@gmx.com>
- <168142ff-0b85-463e-c028-6183ae32fd75@suse.com>
- <ace03bb9-2676-e233-37e7-2b8171af779d@suse.com>
-In-Reply-To: <ace03bb9-2676-e233-37e7-2b8171af779d@suse.com>
-
---VpK1bpAMHIo8iXTG2HthtHMlP50064nHy
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
 
 
+On 19.03.2018 12:28, Qu Wenruo wrote:
+> Commit Fixes: 8c36786c8198 ("btrfs-progs: print-tree: Print offset as tree objectid for ROOT_ITEM")
+> changes how we translate offset of ROOT_ITEM.
+> 
+> However the fact is, even for ROOT_ITEM, we have different meaning of
+> offset.
+> 
+> For tree reloc tree, it's indeed subvolume id.
+> But for other trees, it's the transid of when it's created.
+> 
+> Fix it.
+> 
+> Reported-by: Nikolay Borisov <nborisov@suse.com>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  print-tree.c | 11 ++++++++++-
+>  1 file changed, 10 insertions(+), 1 deletion(-)
+> 
+> diff --git a/print-tree.c b/print-tree.c
+> index 45350fea0963..848e296c4e67 100644
+> --- a/print-tree.c
+> +++ b/print-tree.c
+> @@ -834,7 +834,16 @@ void btrfs_print_key(struct btrfs_disk_key *disk_key)
+>  	 */
+>  	case BTRFS_ROOT_ITEM_KEY:
+>  		printf(" ");
+> -		print_objectid(stdout, offset, type);
+> +		/*
+> +		 * Normally offset of ROOT_ITEM should presents the generation
+> +		 * when this root is created.
+> +		 * However if this is tree reloc tree, offset is the subvolume
+> +		 * id of its source. Here we do extra check on this.
+> +		 */
+> +		if (objectid == BTRFS_TREE_RELOC_OBJECTID)
+> +			print_objectid(stdout, offset, type);
+> +		else
+> +			printf("%lld", offset);
+>  		printf(")");
 
-On 2018=E5=B9=B403=E6=9C=8819=E6=97=A5 19:15, Nikolay Borisov wrote:
->=20
->=20
-> On 19.03.2018 12:54, Nikolay Borisov wrote:
->>
->>
->> On 19.03.2018 12:50, Qu Wenruo wrote:
->>> What about this value?
->>> 18446744073709551607
->>>
->>> It's data reloc tree objectid.
->>> And it's pretty long since it's -9ULL.
->>>
->>> At least this makes 2 objectid more readable.
->>
->> Fair enough.
->>
->=20
-> Looking a bit more I wonder if we should use the same print_objectid
-> function for the "owner" field of a leaf block.
->=20
-> For the data reloc tree we currently get:
->=20
-> leaf 30490624 items 2 free space 16061 generation 4 owner
-> 18446744073709551607
->=20
->=20
-> Or for the leaf belonging to the first fs tree (5):
-> leaf 30883840 items 11 free space 15354 generation 10 owner 5
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 
-Good idea!
-
-Looks pretty nice to me.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
-
-
---VpK1bpAMHIo8iXTG2HthtHMlP50064nHy--
-
---gbc0IfISaB8TxXoqkoXSHB7xWlm7OsXrt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqvnGIXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgAdQf9H2PFCrkX0Abor7alc3jj5D8V
-eHjnH0UIJRd09yEDXAX9LxsvFYZd3+dIOxUHkxYI/srzzuRwwG7bSYSfbywRMlN/
-17trJXJVZlQYs7JiGziVZ01KgEJlFgqEMLpkC/hlmQdTIF9HcWySgFn0jhdY2c9P
-7yjKH4kywb1RqfISzuNthYLVCOx+HRjqptSZIun6QODD2Wlb8UxgMsKRx4M3qn6a
-2RN6HfcDCw/RBi2Jx5CL2WSzOYxZ1p1T3ywA8a80aRu6PTCuHloknibw9cVkzWYQ
-6vynytD5c8/hFBUMgKjY1BclvwSbxx0V7jEAAN7xzuxMK5HNBym/NuFhqaLtJw==
-=1ymQ
------END PGP SIGNATURE-----
-
---gbc0IfISaB8TxXoqkoXSHB7xWlm7OsXrt--
+>  		break;
+>  	default:
+> 

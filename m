@@ -1,96 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from prv3-mh.provo.novell.com ([137.65.250.26]:43852 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:38316 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751334AbeCTGmn (ORCPT
+        with ESMTP id S1751450AbeCTGmn (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 20 Mar 2018 02:42:43 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 1/6] btrfs-progs: convert: Fix inline file extent creation condition
-Date: Tue, 20 Mar 2018 14:42:24 +0800
-Message-Id: <20180320064229.31493-2-wqu@suse.com>
+Subject: [PATCH v3 2/6] btrfs-progs: mkfs/rootdir: Fix inline extent creation check
+Date: Tue, 20 Mar 2018 14:42:25 +0800
+Message-Id: <20180320064229.31493-3-wqu@suse.com>
 In-Reply-To: <20180320064229.31493-1-wqu@suse.com>
 References: <20180320064229.31493-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Bug]
-On btrfs converted from ext*, one user reported the following kernel
-warning:
- ------------[ cut here ]------------
- BTRFS: Transaction aborted (error -95)
- WARNING: CPU: 0 PID: 324 at fs/btrfs/inode.c:3042 btrfs_finish_ordered_io+0x7ab/0x850 [btrfs]
- Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
- RIP: 0010:btrfs_finish_ordered_io+0x7ab/0x850 [btrfs]
- ...
- Call Trace:
-  normal_work_helper+0x39/0x370 [btrfs]
-  process_one_work+0x1ce/0x410
-  worker_thread+0x2b/0x3d0
-  ? process_one_work+0x410/0x410
-  kthread+0x113/0x130
-  ? kthread_create_on_node+0x70/0x70
-  ? do_syscall_64+0x74/0x190
-  ? SyS_exit_group+0x10/0x10
-  ret_from_fork+0x35/0x40
- ---[ end trace c8ed62ff6a525901 ]---
- BTRFS: error (device dm-2) in
-btrfs_finish_ordered_io:3042: errno=-95 unknown
- BTRFS info (device dm-2): forced readonly
- BTRFS error (device dm-2): pending csums is 6447104
-
-[Cause]
-The call trace and the unique return value points to
-__btrfs_drop_extents(), when we tries to drop pages of an inline extent,
-we will trigger such -EOPNOTSUPP.
-
-However kernel has limitation on the size of inline file extent
-(sector size for ram size and sector size - 1for on-disk size),
-btrfs-convert doesn't have the same limitation, resulting much larger
-file extent.
-
-The lack of correct inline extent size check dates back to 2008 when
-btrfs-convert is added into btrfs-progs.
-
-[Fix]
-Fix the inline extent creation condition, not only using
-BTRFS_MAX_INLINE_DATA_SIZE(), which is only the maximum size of inline
-data according to nodesize, but also limit it against sector size.
+Just like convert, we need extra check against sector size for creating
+inline extent.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- convert/source-ext2.c     | 2 +-
- convert/source-reiserfs.c | 3 ++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
+ mkfs/rootdir.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/convert/source-ext2.c b/convert/source-ext2.c
-index b1492c78693d..e13fbe00415a 100644
---- a/convert/source-ext2.c
-+++ b/convert/source-ext2.c
-@@ -310,7 +310,7 @@ static int ext2_create_file_extents(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		goto fail;
- 	if ((convert_flags & CONVERT_FLAG_INLINE_DATA) && data.first_block == 0
--	    && data.num_blocks > 0
-+	    && data.num_blocks > 0 && inode_size < sectorsize
- 	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
- 		u64 num_bytes = data.num_blocks * sectorsize;
- 		u64 disk_bytenr = data.disk_block * sectorsize;
-diff --git a/convert/source-reiserfs.c b/convert/source-reiserfs.c
-index 39d6f0728bd3..eeb68d962c5d 100644
---- a/convert/source-reiserfs.c
-+++ b/convert/source-reiserfs.c
-@@ -376,7 +376,8 @@ static int reiserfs_convert_tail(struct btrfs_trans_handle *trans,
- 	u64 isize;
- 	int ret;
+diff --git a/mkfs/rootdir.c b/mkfs/rootdir.c
+index e06b65ac13e4..a1d223a2408a 100644
+--- a/mkfs/rootdir.c
++++ b/mkfs/rootdir.c
+@@ -139,7 +139,8 @@ static int fill_inode_item(struct btrfs_trans_handle *trans,
+ 	}
+ 	if (S_ISREG(src->st_mode)) {
+ 		btrfs_set_stack_inode_size(dst, (u64)src->st_size);
+-		if (src->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
++		if (src->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info) &&
++		    src->st_size < sectorsize)
+ 			btrfs_set_stack_inode_nbytes(dst, src->st_size);
+ 		else {
+ 			blocks = src->st_size / sectorsize;
+@@ -327,7 +328,8 @@ static int add_file_items(struct btrfs_trans_handle *trans,
+ 	if (st->st_size % sectorsize)
+ 		blocks += 1;
  
--	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
-+	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info) ||
-+	    length >= root->fs_info->sectorsize)
- 		return convert_direct(trans, root, objectid, inode, body,
- 				      length, offset, convert_flags);
+-	if (st->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
++	if (st->st_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info) &&
++	    st->st_size < sectorsize) {
+ 		char *buffer = malloc(st->st_size);
  
+ 		if (!buffer) {
 -- 
 2.16.2
 

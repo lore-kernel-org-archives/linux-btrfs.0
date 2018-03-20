@@ -1,75 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:59515 "EHLO
+Received: from prv3-mh.provo.novell.com ([137.65.250.26]:43852 "EHLO
         prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750949AbeCTGmn (ORCPT
+        with ESMTP id S1751334AbeCTGmn (ORCPT
         <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
         Tue, 20 Mar 2018 02:42:43 -0400
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v3 0/6] Fix long standing -EOPNOTSUPP problem caused by large inline extent
-Date: Tue, 20 Mar 2018 14:42:23 +0800
-Message-Id: <20180320064229.31493-1-wqu@suse.com>
+Subject: [PATCH v3 1/6] btrfs-progs: convert: Fix inline file extent creation condition
+Date: Tue, 20 Mar 2018 14:42:24 +0800
+Message-Id: <20180320064229.31493-2-wqu@suse.com>
+In-Reply-To: <20180320064229.31493-1-wqu@suse.com>
+References: <20180320064229.31493-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patch is based on v4.15.1, and is designed to replace the old patch
-in devel branch.
+[Bug]
+On btrfs converted from ext*, one user reported the following kernel
+warning:
+ ------------[ cut here ]------------
+ BTRFS: Transaction aborted (error -95)
+ WARNING: CPU: 0 PID: 324 at fs/btrfs/inode.c:3042 btrfs_finish_ordered_io+0x7ab/0x850 [btrfs]
+ Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+ RIP: 0010:btrfs_finish_ordered_io+0x7ab/0x850 [btrfs]
+ ...
+ Call Trace:
+  normal_work_helper+0x39/0x370 [btrfs]
+  process_one_work+0x1ce/0x410
+  worker_thread+0x2b/0x3d0
+  ? process_one_work+0x410/0x410
+  kthread+0x113/0x130
+  ? kthread_create_on_node+0x70/0x70
+  ? do_syscall_64+0x74/0x190
+  ? SyS_exit_group+0x10/0x10
+  ret_from_fork+0x35/0x40
+ ---[ end trace c8ed62ff6a525901 ]---
+ BTRFS: error (device dm-2) in
+btrfs_finish_ordered_io:3042: errno=-95 unknown
+ BTRFS info (device dm-2): forced readonly
+ BTRFS error (device dm-2): pending csums is 6447104
 
-Kernel doesn't support dropping range inside inline extent, and prevents
-such thing happening by limiting max inline extent size to
-min(max_inline, sectorsize - 1) in cow_file_range_inline().
+[Cause]
+The call trace and the unique return value points to
+__btrfs_drop_extents(), when we tries to drop pages of an inline extent,
+we will trigger such -EOPNOTSUPP.
 
-However btrfs-progs only inherit the BTRFS_MAX_INLINE_DATA_SIZE() macro,
-which doesn't have sectorsize check.
-And since btrfs-progs defaults to 16K nodesize, above macro allows large
-inline extent over 15K size.
+However kernel has limitation on the size of inline file extent
+(sector size for ram size and sector size - 1for on-disk size),
+btrfs-convert doesn't have the same limitation, resulting much larger
+file extent.
 
-This leads to unexpected kernel behavior.
+The lack of correct inline extent size check dates back to 2008 when
+btrfs-convert is added into btrfs-progs.
 
-The bug exists in several parts of btrfs-progs, any tool which creates
-file extent is involved, including:
-1) btrfs-convert
-2) mkfs --rootdir
+[Fix]
+Fix the inline extent creation condition, not only using
+BTRFS_MAX_INLINE_DATA_SIZE(), which is only the maximum size of inline
+data according to nodesize, but also limit it against sector size.
 
-This patchset fixes the problems in convert (both ext2 and reiserfs),
-mkfs --rootdir, then add check support for both original and lowmem
-mode, and finally adds 2 test cases, one for mkfs and one for convert.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ convert/source-ext2.c     | 2 +-
+ convert/source-reiserfs.c | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-For mkfs test case, it can already be exposed by misc/002, but a
-pin-point test case will be much better.
-
-changelog:
-v2:
-  Don't modify BTRFS_MAX_INLINE_DATA_SIZE(), but add extra check to
-  callers who create file extents.
-v3:
-  Merge fixes for convert.
-  Add real commit message for convert fixes.
-  Use $TEST_TOP to replace cooperate with stand alone test cases.
-  Use for loops to make the new test case shorter.
-
-Qu Wenruo (6):
-  btrfs-progs: convert: Fix inline file extent creation condition
-  btrfs-progs: mkfs/rootdir: Fix inline extent creation check
-  btrfs-progs: check/original mode: Check inline extent size
-  btrfs-progs: check/lowmem mode: Check inline extent size
-  btrfs-progs: test/convert: Add test case for invalid large inline data
-    extent
-  btrfs-progs: test/mkfs: Add test case for rootdir inline extent size
-
- check/main.c                                       | 16 ++++++++
- check/mode-lowmem.c                                | 28 +++++++++++++
- check/mode-original.h                              |  1 +
- convert/source-ext2.c                              |  2 +-
- convert/source-reiserfs.c                          |  3 +-
- mkfs/rootdir.c                                     |  6 ++-
- .../016-invalid-large-inline-extent/test.sh        | 22 ++++++++++
- tests/mkfs-tests/014-rootdir-inline-extent/test.sh | 47 ++++++++++++++++++++++
- 8 files changed, 121 insertions(+), 4 deletions(-)
- create mode 100755 tests/convert-tests/016-invalid-large-inline-extent/test.sh
- create mode 100755 tests/mkfs-tests/014-rootdir-inline-extent/test.sh
-
+diff --git a/convert/source-ext2.c b/convert/source-ext2.c
+index b1492c78693d..e13fbe00415a 100644
+--- a/convert/source-ext2.c
++++ b/convert/source-ext2.c
+@@ -310,7 +310,7 @@ static int ext2_create_file_extents(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto fail;
+ 	if ((convert_flags & CONVERT_FLAG_INLINE_DATA) && data.first_block == 0
+-	    && data.num_blocks > 0
++	    && data.num_blocks > 0 && inode_size < sectorsize
+ 	    && inode_size <= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info)) {
+ 		u64 num_bytes = data.num_blocks * sectorsize;
+ 		u64 disk_bytenr = data.disk_block * sectorsize;
+diff --git a/convert/source-reiserfs.c b/convert/source-reiserfs.c
+index 39d6f0728bd3..eeb68d962c5d 100644
+--- a/convert/source-reiserfs.c
++++ b/convert/source-reiserfs.c
+@@ -376,7 +376,8 @@ static int reiserfs_convert_tail(struct btrfs_trans_handle *trans,
+ 	u64 isize;
+ 	int ret;
+ 
+-	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info))
++	if (length >= BTRFS_MAX_INLINE_DATA_SIZE(root->fs_info) ||
++	    length >= root->fs_info->sectorsize)
+ 		return convert_direct(trans, root, objectid, inode, body,
+ 				      length, offset, convert_flags);
+ 
 -- 
 2.16.2
 

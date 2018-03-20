@@ -1,146 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43283 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751464AbeCUMx7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 08:53:59 -0400
-Subject: Re: [PATCH] btrfs-progs: wipe all copies of the stale superblock
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <20180321101920.9004-1-anand.jain@oracle.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <e16124c3-7f57-6a2f-f760-5164f7c10ad1@suse.com>
-Date: Wed, 21 Mar 2018 14:53:55 +0200
+Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:62029 "EHLO
+        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1750888AbeCTGqJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Mar 2018 02:46:09 -0400
+Received: from g01jpfmpwkw02.exch.g01.fujitsu.local (g01jpfmpwkw02.exch.g01.fujitsu.local [10.0.193.56])
+        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id E4B6BAC00DB
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Mar 2018 15:46:03 +0900 (JST)
+Received: from G01JPEXCHKW16.g01.fujitsu.local (G01JPEXCHKW16.g01.fujitsu.local [10.0.194.55])
+        by g01jpfmpwkw02.exch.g01.fujitsu.local (Postfix) with ESMTP id 08AA13284A2
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Mar 2018 15:46:03 +0900 (JST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Subject: [PATCH] btrfs: Allow non-privileged user to delete empty subvolume by
+ default
+Message-ID: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
+Date: Tue, 20 Mar 2018 15:45:37 +0900
 MIME-Version: 1.0
-In-Reply-To: <20180321101920.9004-1-anand.jain@oracle.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Deletion of subvolume by non-privileged user is completely restricted
+by default because we can delete a subvolume even if it is not empty
+and may cause data loss. In other words, when user_subvol_rm_allowed
+mount option is used, a user can delete a subvolume containing the
+directory which cannot be deleted directly by the user.
 
+However, there should be no harm to allow users to delete empty subvolumes
+when rmdir(2) would have been allowed if they were normal directories.
+This patch allows deletion of empty subvolume by default.
 
-On 21.03.2018 12:19, Anand Jain wrote:
-> Recovering from the other copies of the superblock is fundamental
-> to BTRFS, which provides resilient against single LBA failure in
-nit: s/resilient/resilience.
-> the DUP group profile.
+Note that user_subvol_rm_allowed option requires write+exec permission
+of the subvolume to be deleted, but they are not required for empty
+subvolume.
 
-Furthermore, the number of superblock copies doesn't really depend on
-the group profile of either the data or metadata so the second part of
-that statement is incorrect. All in all I don't think this paragraph
-really brings any value so I suggest removing it altogether.
+The comment in the code is also updated accordingly.
 
-> 
-> Further, in the test case [1] it shows a good but stale superblock
-> at copy#2. This will lead to confusion during auto/manual recovery.
-> So strictly speaking if a device has three copies of the superblock
-> and if we have permission to wipe it (-f option) then we have to wipe
-> all the copies of the superblock.
+Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+---
+ fs/btrfs/ioctl.c | 55 +++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 31 insertions(+), 24 deletions(-)
 
-The problem is not really described in human-readable format. The issue
-is that if we re-create a smaller btrfs filesystem on a driver which
-contained a previous filesystem then it's possible to have old fs and
-new fs superblocks to co-exist. Also the title of the patch needs
-rewording to put the changes in context i.e. :
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 111ee282b777..838406a7a7f5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2366,36 +2366,43 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 	dest = BTRFS_I(inode)->root;
+ 	if (!capable(CAP_SYS_ADMIN)) {
+ 		/*
+-		 * Regular user.  Only allow this with a special mount
+-		 * option, when the user has write+exec access to the
+-		 * subvol root, and when rmdir(2) would have been
+-		 * allowed.
++		 * By default, regular user is only allowed to delete
++		 * empty subvols when rmdir(2) would have been allowed
++		 * if they were normal directories.
+ 		 *
+-		 * Note that this is _not_ check that the subvol is
+-		 * empty or doesn't contain data that we wouldn't
++		 * If the mount option 'user_subvol_rm_allowed' is set,
++		 * it allows users to delete non-empty subvols when the
++		 * user has write+exec access to the subvol root and when
++		 * rmdir(2) would have been allowed (except the emptiness
++		 * check).
++		 *
++		 * Note that this option does _not_ check that if the subvol
++		 * is empty or doesn't contain data that the user wouldn't
+ 		 * otherwise be able to delete.
+ 		 *
+-		 * Users who want to delete empty subvols should try
+-		 * rmdir(2).
++		 * Users who want to delete empty subvols created by
++		 * snapshot (ino number == 2) can use rmdir(2).
+ 		 */
+-		err = -EPERM;
+-		if (!btrfs_test_opt(fs_info, USER_SUBVOL_RM_ALLOWED))
+-			goto out_dput;
++		err = -ENOTEMPTY;
++		if (inode->i_size != BTRFS_EMPTY_DIR_SIZE) {
++			if (!btrfs_test_opt(fs_info, USER_SUBVOL_RM_ALLOWED))
++				goto out_dput;
+ 
+-		/*
+-		 * Do not allow deletion if the parent dir is the same
+-		 * as the dir to be deleted.  That means the ioctl
+-		 * must be called on the dentry referencing the root
+-		 * of the subvol, not a random directory contained
+-		 * within it.
+-		 */
+-		err = -EINVAL;
+-		if (root == dest)
+-			goto out_dput;
++			/*
++			 * Do not allow deletion if the parent dir is the same
++			 * as the dir to be deleted.  That means the ioctl
++			 * must be called on the dentry referencing the root
++			 * of the subvol, not a random directory contained
++			 * within it.
++			 */
++			err = -EINVAL;
++			if (root == dest)
++				goto out_dput;
+ 
+-		err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
+-		if (err)
+-			goto out_dput;
++			err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
++			if (err)
++				goto out_dput;
++		}
+ 	}
+ 
+ 	/* check if subvolume may be deleted by a user */
+-- 
+2.14.3
 
-"Wipe possible superblock stale copies on mkfs" or some such.
-
-> 
-> If there is any objection to writing beyond mkfs.btrfs -b <size>, then
-> we could fail the mkfs/dev-add/dev-replace operation and ask the user
-> the wipe using dd command manually, as anyway there is no use of keeping
-> only the copy#2 when the new FS has been written.
-
-This sentence also doesn't belong in the changelog, you are asking of
-our opinion which is fine, but put it under the scissors line in that case.
-
-> 
-> Test case: Note that copy#2 fsid is different from primary and copy#1
-> fsid.
-> 
-> mkfs.btrfs -qf /dev/mapper/vg-lv && \
-> mkfs.btrfs -qf -b1G /dev/mapper/vg-lv && \
-> btrfs in dump-super -a /dev/mapper/vg-lv | grep '.fsid|superblock:'
-> 
-> superblock: bytenr=65536, device=/dev/mapper/vg-lv
-> dev_item.fsid		ebc67d01-7fc5-43f0-90b4-d1925002551e [match]
-> superblock: bytenr=67108864, device=/dev/mapper/vg-lv
-> dev_item.fsid		ebc67d01-7fc5-43f0-90b4-d1925002551e [match]
-> superblock: bytenr=274877906944, device=/dev/mapper/vg-lv
-> dev_item.fsid		b97a9206-593b-4933-a424-c6a6ee23fe7c [match]
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  Hope with this we can patch the kernel to auto recover from the
->  failed primary SB. In the earlier discussion on that, I think we
->  are scrutinizing the wrong side (kernel) of the problem.
->  Also, we need to fail the mount if all the copies of the SB do
->  not have the same fsid.
-> 
->  utils.c | 35 +++++++++++++++++++++++++++++++++++
->  1 file changed, 35 insertions(+)
-> 
-> diff --git a/utils.c b/utils.c
-> index 00020e1d6bdf..9c027f77d9c1 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -365,6 +365,41 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
->  		return 1;
->  	}
->  
-> +	/*
-> +	 * Check for the BTRFS SB copies up until btrfs_device_size() and zero
-> +	 * it. So that kernel (or user for the manual recovery) don't have to
-> +	 * confuse with the stale SB copy during recovery.
-> +	 */
-> +	if (block_count != btrfs_device_size(fd, &st)) {
-> +		for (i = 1; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-> +			struct btrfs_super_block *disk_super;
-> +			char buf[BTRFS_SUPER_INFO_SIZE];
-> +			disk_super = (struct btrfs_super_block *)buf;
-> +
-> +			/* Already zeroed above */
-> +			if (btrfs_sb_offset(i) < block_count)
-> +				continue;
-> +
-> +			/* Beyond actual disk size */
-> +			if (btrfs_sb_offset(i) >= btrfs_device_size(fd, &st))
-> +				continue;
-> +
-> +			/* Does not contain any stale SB */
-> +			if (btrfs_read_dev_super(fd, disk_super,
-> +						 btrfs_sb_offset(i), 0))
-> +				continue;
-> +
-> +			ret = zero_dev_clamped(fd, btrfs_sb_offset(i),
-> +						BTRFS_SUPER_INFO_SIZE,
-> +						btrfs_device_size(fd, &st));
-> +			if (ret < 0) {
-> +				error("failed to zero device '%s' bytenr %llu: %s",
-> +					file, btrfs_sb_offset(i), strerror(-ret));
-> +				return 1;
-> +			}
-> +		}
-> +	}
-
-A better place for this code is really inside btrfs_wipe_existing_sb.
-Furthermore looking at libblkid it supports a way to wipe multiple
-superblocks by way of: blkid_do_wipe. I.e
-https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.21/libblkid-docs/libblkid-Low-level-tags.html#blkid-do-wipe
-
-Apparently this functionality has been in libblkid for quite some time
-according to this blog post -
-http://karelzak.blogspot.bg/2011/11/wipefs8-improvements.html (Karel Zak
-is the person mainting various system libraries).
-
-So can't we at the very least:
-
-1) Remove some of our (open coded) implementation of
-btrfs_wipe_existing_sb and use the generic blkid implementation.
-
-2) Incorporate your code into btrfs_wipe_existing_sb OR extend the usage
-of the generic blkid_do_wipe to wipe multiple copies of the sb ?
-
-> +
->  	*block_count_ret = block_count;
->  	return 0;
->  }
-> 

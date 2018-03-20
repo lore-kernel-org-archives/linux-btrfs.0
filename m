@@ -1,94 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:64874 "EHLO
-        mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751526AbeCTBnE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Mar 2018 21:43:04 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id B724BAC00A2
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Mar 2018 10:42:55 +0900 (JST)
-Subject: Re: [RFC PATCH v3 5/7] btrfs-progs: sub list: Allow normal user to
- call "subvolume list/show"
-To: <kreijack@inwind.it>, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <a1089ceb-6642-0b20-9690-6cf961efe42e@jp.fujitsu.com>
- <124532ad-d4c9-de0f-a277-b8a7dd571fad@jp.fujitsu.com>
- <2f420cf6-4f70-c573-ef7e-6ebf94152370@libero.it>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <a00576f7-6c26-623d-8f8d-b199212def94@jp.fujitsu.com>
-Date: Tue, 20 Mar 2018 10:41:29 +0900
+Received: from mout.gmx.net ([212.227.15.18]:37721 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751456AbeCTFQd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Mar 2018 01:16:33 -0400
+Subject: Re: [PATCH v2] btrfs-progs: ctree: Add extra level check for
+ read_node_slot()
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        ralphgauges@googlemail.com
+References: <20180208005940.11551-1-wqu@suse.com>
+ <20180319123651.GA6955@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <a5a54dc7-b3ab-d22a-f7e6-2bef8e215ffd@gmx.com>
+Date: Tue, 20 Mar 2018 13:16:19 +0800
 MIME-Version: 1.0
-In-Reply-To: <2f420cf6-4f70-c573-ef7e-6ebf94152370@libero.it>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <20180319123651.GA6955@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="wdeb3JalWtBgpIam9O6kCoO2jwGfJK0A9"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--wdeb3JalWtBgpIam9O6kCoO2jwGfJK0A9
+Content-Type: multipart/mixed; boundary="oxhQ0wdAIKf92kyERYMpZm9wYeWLFBPbO";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+ ralphgauges@googlemail.com
+Message-ID: <a5a54dc7-b3ab-d22a-f7e6-2bef8e215ffd@gmx.com>
+Subject: Re: [PATCH v2] btrfs-progs: ctree: Add extra level check for
+ read_node_slot()
+References: <20180208005940.11551-1-wqu@suse.com>
+ <20180319123651.GA6955@twin.jikos.cz>
+In-Reply-To: <20180319123651.GA6955@twin.jikos.cz>
 
-On 2018/03/20 2:09, Goffredo Baroncelli wrote:
-> On 03/19/2018 08:32 AM, Misono, Tomohiro wrote
-[snip]
->>  static void print_subvolume_column(struct root_info *subv,
->>  				   enum btrfs_list_column_enum column)
+--oxhQ0wdAIKf92kyERYMpZm9wYeWLFBPbO
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+
+
+
+On 2018=E5=B9=B403=E6=9C=8819=E6=97=A5 20:36, David Sterba wrote:
+> On Thu, Feb 08, 2018 at 08:59:40AM +0800, Qu Wenruo wrote:
+>> Strangely, we have level check in btrfs_print_tree() while we don't ha=
+ve
+>> the same check in read_node_slot().
+>>
+>> That's to say, for the following corruption, btrfs_search_slot() or
+>> btrfs_next_leaf() can return invalid leaf:
+>>
+>> Parent eb:
+>>   node XXXXXX level 1
+>>               ^^^^^^^
+>>               Child should be leaf (level 0)
+>>   ...
+>>   key (XXX XXX XXX) block YYYYYY
+>>
+>> Child eb:
+>>   leaf YYYYYY level 1
+>>               ^^^^^^^
+>>               Something went wrong now
+>>
+>> And for the corrupted leaf returned, later caller can be screwed up
+>> easily.
+>>
+>> Although the root cause (powerloss, but still something wrong breaking=
+
+>> metadata CoW of btrfs) is still unknown, at least enhance btrfs-progs =
+to
+>> avoid SEGV.
+>>
+>> Reported-by: Ralph Gauges <ralphgauges@googlemail.com>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>=20
+> Applied, thanks.
+>=20
+>> ---
+>> changlog:
+>> v2:
+>>   Check if the extent buffer is up-to-date before checking its level t=
+o
+>>   avoid possible NULL pointer access.
+>> ---
+>>  ctree.c | 16 +++++++++++++++-
+>>  1 file changed, 15 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/ctree.c b/ctree.c
+>> index 4fc33b14000a..430805e3043f 100644
+>> --- a/ctree.c
+>> +++ b/ctree.c
+>> @@ -22,6 +22,7 @@
+>>  #include "repair.h"
+>>  #include "internal.h"
+>>  #include "sizes.h"
+>> +#include "messages.h"
+>> =20
+>>  static int split_node(struct btrfs_trans_handle *trans, struct btrfs_=
+root
+>>  		      *root, struct btrfs_path *path, int level);
+>> @@ -640,7 +641,9 @@ static int bin_search(struct extent_buffer *eb, st=
+ruct btrfs_key *key,
+>>  struct extent_buffer *read_node_slot(struct btrfs_fs_info *fs_info,
+>>  				   struct extent_buffer *parent, int slot)
 >>  {
->> @@ -1492,19 +1800,33 @@ next:
->>  static int btrfs_list_subvols(int fd, struct root_lookup *root_lookup,
->>  			const char *path)
->>  {
->> +	uid_t uid;
->>  	int ret;
->>  
->> -	ret = list_subvol_search(fd, root_lookup);
->> -	if (ret) {
->> -		error("can't perform the search: %m");
->> -		return ret;
->> +	uid = geteuid();
->> +	if (!uid) {
-> 
-> A minor tip: I think uid == 0 is better here, because we should check that uid is root
+>> +	struct extent_buffer *ret;
+>>  	int level =3D btrfs_header_level(parent);
+>> +
+>>  	if (slot < 0)
+>>  		return NULL;
+>>  	if (slot >=3D btrfs_header_nritems(parent))
+>> @@ -649,8 +652,19 @@ struct extent_buffer *read_node_slot(struct btrfs=
+_fs_info *fs_info,
+>>  	if (level =3D=3D 0)
+>>  		return NULL;
+>> =20
+>> -	return read_tree_block(fs_info, btrfs_node_blockptr(parent, slot),
+>> +	ret =3D read_tree_block(fs_info, btrfs_node_blockptr(parent, slot),
+>>  		       btrfs_node_ptr_generation(parent, slot));
+>> +	if (!extent_buffer_uptodate(ret))
+>> +		return ERR_PTR(-EIO);
+>> +
+>> +	if (btrfs_header_level(ret) !=3D level - 1) {
+>> +		error("child eb corrupted: parent bytenr=3D%llu item=3D%d parent le=
+vel=3D%d child level=3D%d",
+>=20
+> Please unindent the strings that are do not fit 80 chars on the line.
+> I've fixed that now, but I do that too often despite this has been know=
+n
+> to be the preferred style.
 
-ok, thanks.
+Sorry for the extra trouble.
 
-> 
->> +		ret = list_subvol_search(fd, root_lookup);
->> +		if (ret) {
->> +			error("can't perform the search: %s", strerror(-ret));
->> +			return ret;
->> +		}
->> +		/*
->> +		 * now we have an rbtree full of root_info objects, but we
->> +		 * need to fill in their path names within the subvol that
->> +		 * is referencing each one.
->> +		 */
->> +		ret = list_subvol_fill_paths(fd, root_lookup);
->> +	} else {
->> +		ret = list_subvol_user(fd, root_lookup, path);
->> +		if (ret) {
->> +			if (ret == -ENOTTY)
->> +error("can't perform the search: Operation by non-privileged user is not supported by this kernel.");
->> +			else
->> +				error("can't perform the search: %s",
->> +						    strerror(-ret));
->> +		}
-> 
-> Sorry for noticing that only now: which is the reason to not using the new api also in "root" case? I know that the behavior is a bit different, so my question is: it is possible to extend the new ioctls to support also the old behavior in the root case? So we could get rid of the "tree search" ioctl, using it only for the old kernel
+But I'm still a little uncertain about the correct way to handle such
+long string.
+It would be pretty nice to have some recommendation for the following cas=
+es:
 
-It is not possible to provide the same functionality for root by current implementation of ioctl.
+1) Super long, already over 80 chars even without indent
+   No indent at all or just normal indent?
 
-Currently all three ioctls returns the information of subvolume which contains the fd's inode.
-This is because to prevent a user from getting arbitrary subvolume information in the filesystem.
+2) Short enough to have some indent, but can't be aligned to the bracket
+   Should we use as much indent as possible or leave no indent at all?
 
-So, in order to work "sub list" with these new ioctls , we need to do:
-1. open the path
-2. call GET_SUBVOL_INFO to get the subvolume info of opened path.
-3. call GET_SUBVOL_ROOTREF to get the list of child subvolume id.
-4. call INO_LOOKUP_USER to check if a user can really access the (parent directory of) child subvolume and construct the path.
-5. for each accessible child subvolume, repeat 1-5. 
+Thanks,
+Qu
 
-Therefore there is no way to search subvolumes outside of mount point if the default subvolume
-has been changed and cannot be used as an alternative of tree search ioctl for root.
+>=20
+>> +		      btrfs_header_bytenr(parent), slot,
+>> +		      btrfs_header_level(parent), btrfs_header_level(ret));
+>> +		free_extent_buffer(ret);
+>> +		return ERR_PTR(-EIO);
+>> +	}
+>> +	return ret;
+>>  }
+>> =20
+>>  static int balance_level(struct btrfs_trans_handle *trans,
+>> --=20
+>> 2.16.1
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
+ in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
 
-If we pass a subvolid to be searched as an argument (allowing for root only), it is possible to use
-these ioctls to replace tree search ioctl. However, this means the behavior of ioctl is different from
-root and normal user. Is it a good thing? Also, the number of ioctl call certainly increases since 
-GET_SUBVOL_INFO/SUBVOL_ROOTREF needs to be called for each subvolume while tree search returns multiple
-information at once. I'd like to know others' opinions.
 
+--oxhQ0wdAIKf92kyERYMpZm9wYeWLFBPbO--
+
+--wdeb3JalWtBgpIam9O6kCoO2jwGfJK0A9
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqwmSMXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qihMwf/X5hvicab5qpWfNCw8S2CZkTc
+kv4WlKJsO18g2/m08qqDI7ImTEebTLv8P3tuhGf905//jCzB4Vr2T2UrOMO0qSxR
+Uz3nBKjBsEiBn+I1JEdeJ2+QzzPeP3pk6JqwlVX/sk/J5D7gWMBXzPvUkt+7j3KW
+7OMI3YKOFMJ2GnYhh5ad2Tvjjou5hL+rI3jr+o9B3NI4t+EBbXTdNhzidcV+IHWS
+ttDO3UFsPuVRExJKMBjDaLdh8XyDUYizHHwxhhB0Ou2ayIwaU5RcMR+FxIuXS/kO
+x97S7Qv5B2TQGZFcc21JIyrEBfC1ETf0kRs67pUNq27g7NcH+q0Mi9PM860lMw==
+=wacq
+-----END PGP SIGNATURE-----
+
+--wdeb3JalWtBgpIam9O6kCoO2jwGfJK0A9--

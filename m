@@ -1,227 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57309 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.15]:45493 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1751372AbeCTTZd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Mar 2018 15:25:33 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 2A57CAF15
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Mar 2018 19:25:32 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 2/2] btrfs: defer adding raid type kobject until after chunk relocation
-Date: Tue, 20 Mar 2018 15:25:26 -0400
-Message-Id: <20180320192526.4629-2-jeffm@suse.com>
-In-Reply-To: <20180320192526.4629-1-jeffm@suse.com>
-References: <20180320192526.4629-1-jeffm@suse.com>
+        id S1752347AbeCTIur (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Mar 2018 04:50:47 -0400
+Subject: Re: [PATCH] btrfs: ctree.h: Fix wrong comment position about csum
+ size
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <34461665-141e-55a5-ea29-ebc20cf939de@gmx.com>
+Date: Tue, 20 Mar 2018 16:50:32 +0800
+MIME-Version: 1.0
+In-Reply-To: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="gWBR2hZKgrt5TsUKqHTWcE34s99TYnNhm"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--gWBR2hZKgrt5TsUKqHTWcE34s99TYnNhm
+Content-Type: multipart/mixed; boundary="LwCyMeFZJyw52FN9ASW0O6xLrpajvuj6p";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+ linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <34461665-141e-55a5-ea29-ebc20cf939de@gmx.com>
+Subject: Re: [PATCH] btrfs: ctree.h: Fix wrong comment position about csum
+ size
+References: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
+In-Reply-To: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
 
-Any time the first block group of a new type is created, we add a new
-kobject to sysfs to hold the attributes for that type.  Kobject-internal
-allocations always use GFP_KERNEL, making them prone to fs-reclaim races.
-While it appears as if this can occur any time a block group is created,
-the only times the first block group of a new type can be created in
-memory is at mount and when we create the first new block group during
-raid conversion.
+--LwCyMeFZJyw52FN9ASW0O6xLrpajvuj6p
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-This patch adds a new list to track pending kobject additions and then
-handles them after we do chunk relocation.  Between relocating the
-target chunk (or forcing allocation of a new chunk in the case of data)
-and removing the old chunk, we're in a safe place for fs-reclaim to
-occur.  We're holding the volume mutex, which is already held across
-page faults, and the delete_unused_bgs_mutex, which will only stall
-the cleaner thread.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ctree.h       |  6 ++++-
- fs/btrfs/disk-io.c     |  2 ++
- fs/btrfs/extent-tree.c | 59 +++++++++++++++++++++++++++++++++++---------------
- fs/btrfs/sysfs.c       |  2 +-
- fs/btrfs/volumes.c     | 12 ++++++++++
- 5 files changed, 61 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ffbb05aa66fa..75dbdf1bbead 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -381,8 +381,9 @@ struct btrfs_dev_replace {
- 
- /* For raid type sysfs entries */
- struct raid_kobject {
--	int raid_type;
-+	u64 flags;
- 	struct kobject kobj;
-+	struct list_head list;
- };
- 
- struct btrfs_space_info {
-@@ -938,6 +939,8 @@ struct btrfs_fs_info {
- 	int thread_pool_size;
- 
- 	struct kobject *space_info_kobj;
-+	struct list_head pending_raid_kobjs;
-+	spinlock_t pending_raid_kobjs_lock; /* uncontended */
- 
- 	u64 total_pinned;
- 
-@@ -2688,6 +2691,7 @@ int btrfs_can_relocate(struct btrfs_fs_info *fs_info, u64 bytenr);
- int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info, u64 bytes_used,
- 			   u64 type, u64 chunk_offset, u64 size);
-+void btrfs_add_raid_kobjects(struct btrfs_fs_info *fs_info);
- struct btrfs_trans_handle *btrfs_start_trans_remove_block_group(
- 				struct btrfs_fs_info *fs_info,
- 				const u64 chunk_offset);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index eb6bb3169a9e..d5e1c2ff71ff 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2447,6 +2447,8 @@ int open_ctree(struct super_block *sb,
- 	INIT_LIST_HEAD(&fs_info->delayed_iputs);
- 	INIT_LIST_HEAD(&fs_info->delalloc_roots);
- 	INIT_LIST_HEAD(&fs_info->caching_block_groups);
-+	INIT_LIST_HEAD(&fs_info->pending_raid_kobjs);
-+	spin_lock_init(&fs_info->pending_raid_kobjs_lock);
- 	spin_lock_init(&fs_info->delalloc_root_lock);
- 	spin_lock_init(&fs_info->trans_lock);
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0e9a21230217..bb5368faa937 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -9908,9 +9908,39 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
- 	return 0;
- }
- 
-+/* link_block_group will queue up kobjects to add when we're reclaim-safe */
-+void btrfs_add_raid_kobjects(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_space_info *space_info;
-+	struct raid_kobject *rkobj;
-+	LIST_HEAD(list);
-+	int index;
-+	int ret = 0;
-+
-+	spin_lock(&fs_info->pending_raid_kobjs_lock);
-+	list_splice_init(&fs_info->pending_raid_kobjs, &list);
-+	spin_unlock(&fs_info->pending_raid_kobjs_lock);
-+
-+	list_for_each_entry(rkobj, &list, list) {
-+		space_info = __find_space_info(fs_info, rkobj->flags);
-+		index = __get_raid_index(rkobj->flags);
-+
-+		ret = kobject_add(&rkobj->kobj, &space_info->kobj,
-+				  "%s", get_raid_name(index));
-+		if (ret) {
-+			kobject_put(&rkobj->kobj);
-+			break;
-+		}
-+	}
-+	if (ret)
-+		btrfs_warn(fs_info,
-+			   "failed to add kobject for block cache, ignoring");
-+}
-+
- static void link_block_group(struct btrfs_block_group_cache *cache)
- {
- 	struct btrfs_space_info *space_info = cache->space_info;
-+	struct btrfs_fs_info *fs_info = cache->fs_info;
- 	int index = get_block_group_index(cache);
- 	bool first = false;
- 
-@@ -9921,27 +9951,19 @@ static void link_block_group(struct btrfs_block_group_cache *cache)
- 	up_write(&space_info->groups_sem);
- 
- 	if (first) {
--		struct raid_kobject *rkobj;
--		int ret;
--
--		rkobj = kzalloc(sizeof(*rkobj), GFP_NOFS);
--		if (!rkobj)
--			goto out_err;
--		rkobj->raid_type = index;
--		kobject_init(&rkobj->kobj, &btrfs_raid_ktype);
--		ret = kobject_add(&rkobj->kobj, &space_info->kobj,
--				  "%s", get_raid_name(index));
--		if (ret) {
--			kobject_put(&rkobj->kobj);
--			goto out_err;
-+		struct raid_kobject *rkobj = kzalloc(sizeof(*rkobj), GFP_NOFS);
-+		if (!rkobj) {
-+			btrfs_warn(cache->fs_info, "couldn't alloc memory for raid level kobject");
-+			return;
- 		}
-+		rkobj->flags = cache->flags;
-+		kobject_init(&rkobj->kobj, &btrfs_raid_ktype);
-+
-+		spin_lock(&fs_info->pending_raid_kobjs_lock);
-+		list_add_tail(&rkobj->list, &fs_info->pending_raid_kobjs);
-+		spin_unlock(&fs_info->pending_raid_kobjs_lock);
- 		space_info->block_group_kobjs[index] = &rkobj->kobj;
- 	}
--
--	return;
--out_err:
--	btrfs_warn(cache->fs_info,
--		   "failed to add kobject for block cache, ignoring");
- }
- 
- static struct btrfs_block_group_cache *
-@@ -10157,6 +10179,7 @@ int btrfs_read_block_groups(struct btrfs_fs_info *info)
- 			inc_block_group_ro(cache, 1);
- 	}
- 
-+	btrfs_add_raid_kobjects(info);
- 	init_global_block_rsv(info);
- 	ret = 0;
- error:
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index a8bafed931f4..b975fda719e7 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -272,7 +272,7 @@ static ssize_t raid_bytes_show(struct kobject *kobj,
- {
- 	struct btrfs_space_info *sinfo = to_space_info(kobj->parent);
- 	struct btrfs_block_group_cache *block_group;
--	int index = to_raid_kobj(kobj)->raid_type;
-+	int index = __get_raid_index(to_raid_kobj(kobj)->flags);
- 	u64 val = 0;
- 
- 	down_read(&sinfo->groups_sem);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b2d05c6b1c56..b0cffce168cf 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2997,6 +2997,16 @@ static int btrfs_relocate_chunk(struct btrfs_fs_info *fs_info, u64 chunk_offset)
- 	if (ret)
- 		return ret;
- 
-+	/*
-+	 * We add the kobjects here (and after forcing data chunk creation)
-+	 * since relocation is the only place we'll create chunks of a new
-+	 * type at runtime.  The only place where we'll remove the last
-+	 * chunk of a type is the call immediately below this one.  Even
-+	 * so, we're protected against races with the cleaner thread since
-+	 * we're covered by the delete_unused_bgs_mutex.
-+	 */
-+	btrfs_add_raid_kobjects(fs_info);
-+
- 	trans = btrfs_start_trans_remove_block_group(root->fs_info,
- 						     chunk_offset);
- 	if (IS_ERR(trans)) {
-@@ -3124,6 +3134,8 @@ static int btrfs_may_alloc_data_chunk(struct btrfs_fs_info *fs_info,
- 			if (ret < 0)
- 				return ret;
- 
-+			btrfs_add_raid_kobjects(fs_info);
-+
- 			return 1;
- 		}
- 	}
--- 
-2.15.1
+On 2018=E5=B9=B403=E6=9C=8820=E6=97=A5 14:47, Misono, Tomohiro wrote:
+>=20
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+BTW this reminds me that, btrfs-progs is still using BTRFS_CRC32_SIZE
+macro which the original comment is for.
+
+It may be a good time to clean it up in btrfs-progs.
+
+Thanks,
+Qu
+
+> ---
+>  fs/btrfs/ctree.h | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index da308774b8a4..8f59cb20dd4c 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -86,9 +86,9 @@ struct btrfs_ordered_sum;
+>   */
+>  #define BTRFS_LINK_MAX 65535U
+> =20
+> +/* four bytes for CRC32 */
+>  static const int btrfs_csum_sizes[] =3D { 4 };
+> =20
+> -/* four bytes for CRC32 */
+>  #define BTRFS_EMPTY_DIR_SIZE 0
+> =20
+>  /* ioprio of readahead is set to idle */
+>=20
+
+
+--LwCyMeFZJyw52FN9ASW0O6xLrpajvuj6p--
+
+--gWBR2hZKgrt5TsUKqHTWcE34s99TYnNhm
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqwy1gXHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qgb/gf/XiiVsCA4bluJ/xTaRXJFJOP9
+U+MHFLvXSDJu2wLz3EmaobuKfjh7/3/7KUJQNibcWcllKqER/fPBIZF+MEWm6sN6
+QIKRIs6GzGoXU7ZV5JkJhB0+fh0ozEPCPSvlDrEbBfA76g2wFtc4hvSPgTWtD33D
+lt4AZ366rgSz1Bhm3MPxyk7jYG+t9pQPkQqitK69L/hzRI3maNjiaRE5ubbkpjwA
+AWJ8yRCzp840FqG6pVJKIrgysyEqTXhRtDKAtloftbfRFf7LHwBf96iP4wKUsD5H
+qVd2X6l/gGvQ36H3KHSdaAohEJGO7ypjOsWB+wQL9WkPSAIu++lht77gdXdWFQ==
+=tNyx
+-----END PGP SIGNATURE-----
+
+--gWBR2hZKgrt5TsUKqHTWcE34s99TYnNhm--

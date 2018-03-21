@@ -1,39 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:59624 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1750955AbeCZNYZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Mar 2018 09:24:25 -0400
-Date: Mon, 26 Mar 2018 15:21:58 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2] btrfs-progs: mkfs: add uuid and otime to ROOT_ITEM
- of, FS_TREE
-Message-ID: <20180326132158.GL6955@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <7ca269db-a724-5938-f4d8-b85e893fd558@jp.fujitsu.com>
- <f620135f-3a06-c871-3289-881a6bfbc0f1@jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <f620135f-3a06-c871-3289-881a6bfbc0f1@jp.fujitsu.com>
+Received: from aserp2130.oracle.com ([141.146.126.79]:55618 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751472AbeCUINO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Mar 2018 04:13:14 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2L8CfNn005807
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:13 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2gukp3g03s-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:13 +0000
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2L8DCnI030020
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:12 GMT
+Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
+        by userv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w2L8DCG4025034
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:12 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/2] Preparatory to add the csum check in the scan context
+Date: Wed, 21 Mar 2018 16:14:52 +0800
+Message-Id: <20180321081454.31560-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 23, 2018 at 05:16:49PM +0900, Misono Tomohiro wrote:
-> Currently, the top-level subvolume lacks the UUID. As a result, both
-> non-snapshot subvolume and snapshot of top-level subvolume do not have
-> Parent UUID and cannot be distinguisued. Therefore "fi show" of
-> top-level lists all the subvolumes which lacks the UUID in
-> "Snapshot(s)" filed.  Also, it lacks the otime information.
-> 
-> Fix this by adding the UUID and otime at the mkfs time.  As a
-> consequence, snapshots of top-level subvolume now have a Parent UUID and
-> UUID tree will create an entry for top-level subvolume at mount time.
-> This should not cause the problem for current kernel, but user program
-> which relies on the empty Parent UUID may be affected by this change.
-> 
-> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
-> ---
-> v1 -> v2: clear o/ctime in create_tree()
+v2->v3:
+ 1/2: Keep the check %(csum_type >= ARRAY_SIZE(btrfs_csum_sizes))
+      because it is inline to support future expansion, further
+      btrfs-progs is already copied it.
+ 2/2: Drop pr_err for default error which won't be possible.
 
-Yeah that's better, thanks. Patch replaced.
+v1->v2:
+  Merge 2/3 and 3/3
+  Use -EUCLEAN for csum mismatch
+  Move the error logging to the parent function
+  Drop the struct btrfs_fsinfo as the argument for
+        btrfs_check_super_csum()
+  Do not make btrfs_check_super_csum() nonstatic here, it will be part
+        of the patchset which will use the csum in the scan context
+
+Anand Jain (2):
+  btrfs: cleanup btrfs_check_super_csum() to check the csum_type to the
+    type
+  btrfs: return required error from btrfs_check_super_csum
+
+ fs/btrfs/disk-io.c | 53 ++++++++++++++++++++++++++---------------------------
+ 1 file changed, 26 insertions(+), 27 deletions(-)
+
+-- 
+2.15.0
+

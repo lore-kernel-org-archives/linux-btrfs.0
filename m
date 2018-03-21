@@ -1,42 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-17-i6.italiaonline.it ([213.209.14.17]:42108 "EHLO
-        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S1752954AbeCUUiN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 16:38:13 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH] btrfs: Allow non-privileged user to delete empty
- subvolume by default
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Nikolay Borisov <nborisov@suse.com>,
-        "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
- <f00fe679-5c18-27db-a921-b303405968bc@libero.it>
- <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
- <5ce4f667-e97f-c87e-466d-37d488f2abbb@gmail.com>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <cf65350d-1985-ac5b-2fb6-72fedfa9adf0@inwind.it>
-Date: Wed, 21 Mar 2018 21:38:06 +0100
+Received: from mail-cys01nam02on0122.outbound.protection.outlook.com ([104.47.37.122]:4695
+        "EHLO NAM02-CY1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753881AbeCUVxm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Mar 2018 17:53:42 -0400
+From: Shane Walton <shane.walton@indepth.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Out of space and incorrect size reported
+Date: Wed, 21 Mar 2018 21:53:39 +0000
+Message-ID: <4B67E3B8-BF96-43A5-9F0E-91B32496CE7E@indepth.com>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-In-Reply-To: <5ce4f667-e97f-c87e-466d-37d488f2abbb@gmail.com>
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/21/2018 12:47 PM, Austin S. Hemmelgarn wrote:
-> I agree as well, with the addendum that I'd love to see a new ioctl that does proper permissions checks.Â  While letting rmdir(2) work for an empty subvolume with the appropriate permissions would be great (it will let rm -r work correctly), it doesn't address the usefulness of being able to just `btrfs subvolume delete` and not have to wait for the command to finish before you can reuse the name.
+> uname -a
+Linux rockstor 4.4.5-1.el7.elrepo.x86_64 #1 SMP Thu Mar 10 11:45:51 EST 2016 x86_64 x86_64 x86_64 GNU/Linux
 
-How this could work ? 
+> btrfs â€”version 
+btrfs-progs v4.4.1
 
-If you want to check all the subvolumes files permissions, this will require some time: you need to traverse all the subvolume-filesystem; and only if all the checks are passed, you can delete the subvolume.
+> btrfs fi df /mnt2/pool_homes
+Data, RAID1: total=240.00GiB, used=239.78GiB
+System, RAID1: total=8.00MiB, used=64.00KiB
+Metadata, RAID1: total=8.00GiB, used=5.90GiB
+GlobalReserve, single: total=512.00MiB, used=59.31MiB
 
-Unfortunately I think that only two options exist:
-- don't check permissions, and you can quick remove a subvolume
-- check all the permissions, i.e. check all the files permissions, and only if all the permissions are OK, you can delete the subvolume. However this cannot be a "quick" subvolume delete
+> btrfs filesystem show /mnt2/pool_homes
+Label: 'pool_homes'  uuid: 0987930f-8c9c-49cc-985e-de6383863070
+	Total devices 2 FS bytes used 245.75GiB
+	devid    1 size 465.76GiB used 248.01GiB path /dev/sda
+	devid    2 size 465.76GiB used 248.01GiB path /dev/sdb
 
-BR
-G.Baroncelli
+Why is the line above "Data, RAID1: total=240.00GiB, used=239.78GiBâ€ almost full and limited to 240 GiB when there is I have 2x 500 GB HDD?  This is all create/implemented with the Rockstor platform and it says the â€œshareâ€ should be 400 GB.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+What can I do to make this larger or closer to the full size of 465 GiB (minus the System and Metadata overhead)?
+
+Thanks!
+
+Shaneÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

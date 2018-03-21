@@ -1,59 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:38784 "EHLO
-        mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753190AbeCUU1a (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 16:27:30 -0400
-Received: by mail-io0-f171.google.com with SMTP id b20so8221506iof.5
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 13:27:29 -0700 (PDT)
+Received: from smtp-17-i6.italiaonline.it ([213.209.14.17]:42108 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1752954AbeCUUiN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Mar 2018 16:38:13 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH] btrfs: Allow non-privileged user to delete empty
+ subvolume by default
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
+ <f00fe679-5c18-27db-a921-b303405968bc@libero.it>
+ <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
+ <5ce4f667-e97f-c87e-466d-37d488f2abbb@gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <cf65350d-1985-ac5b-2fb6-72fedfa9adf0@inwind.it>
+Date: Wed, 21 Mar 2018 21:38:06 +0100
 MIME-Version: 1.0
-In-Reply-To: <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
-References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
- <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
-From: Menion <menion@gmail.com>
-Date: Wed, 21 Mar 2018 21:27:09 +0100
-Message-ID: <CAJVZm6f=WzZub7K5=jOdt7A6pHjdeo7Pm8MgO9S28n5PXqK=VA@mail.gmail.com>
-Subject: Re: Status of RAID5/6
-To: Liu Bo <obuil.liubo@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <5ce4f667-e97f-c87e-466d-37d488f2abbb@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am on 4.15.5 :)
-Yes I agree that Journaling is better on the same array,  still should
-be unit failure tolerant, so maybe it should go in a RAID1 scheme.
-Will a raid56 array built with older kernel be compatible with the new
-forecoming code?
-Bye
+On 03/21/2018 12:47 PM, Austin S. Hemmelgarn wrote:
+> I agree as well, with the addendum that I'd love to see a new ioctl that does proper permissions checks.  While letting rmdir(2) work for an empty subvolume with the appropriate permissions would be great (it will let rm -r work correctly), it doesn't address the usefulness of being able to just `btrfs subvolume delete` and not have to wait for the command to finish before you can reuse the name.
 
-2018-03-21 18:24 GMT+01:00 Liu Bo <obuil.liubo@gmail.com>:
-> On Wed, Mar 21, 2018 at 9:50 AM, Menion <menion@gmail.com> wrote:
->> Hi all
->> I am trying to understand the status of RAID5/6 in BTRFS
->> I know that there are some discussion ongoing on the RFC patch
->> proposed by Liu bo
->> But it seems that everything stopped last summary. Also it mentioned
->> about a "separate disk for journal", does it mean that the final
->> implementation of RAID5/6 will require a dedicated HDD for the
->> journaling?
->
-> Thanks for the interest on btrfs and raid56.
->
-> The patch set is to plug write hole, which is very rare in practice, tbh.
-> The feedback is to use existing space instead of another dedicate
-> "fast device" as the journal in order to get some extent of raid
-> protection.  I'd need some time to pick it up.
->
-> With that being said, we have several data reconstruction fixes for
-> raid56 (esp. raid6) in 4.15, I'd say please deploy btrfs with the
-> upstream kernel or some distros which do kernel updates frequently,
-> the most important one is
->
-> 8810f7517a3b Btrfs: make raid6 rebuild retry more
-> https://patchwork.kernel.org/patch/10091755/
->
-> AFAIK, no other data corruptions showed up.
->
-> thanks,
-> liubo
+How this could work ? 
+
+If you want to check all the subvolumes files permissions, this will require some time: you need to traverse all the subvolume-filesystem; and only if all the checks are passed, you can delete the subvolume.
+
+Unfortunately I think that only two options exist:
+- don't check permissions, and you can quick remove a subvolume
+- check all the permissions, i.e. check all the files permissions, and only if all the permissions are OK, you can delete the subvolume. However this cannot be a "quick" subvolume delete
+
+BR
+G.Baroncelli
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

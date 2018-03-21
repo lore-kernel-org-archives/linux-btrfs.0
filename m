@@ -1,37 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56266 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39702 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755194AbeCSNak (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Mar 2018 09:30:40 -0400
-Date: Mon, 19 Mar 2018 14:28:14 +0100
+        id S1752304AbeCURvE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Mar 2018 13:51:04 -0400
+Date: Wed, 21 Mar 2018 18:48:38 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: dsterba@suse.cz, Hugo Mills <hugo@carfax.org.uk>,
-        "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] btrfs-progs: mkfs: add uuid and otime to ROOT_ITEM of
  FS_TREE
-Message-ID: <20180319132814.GH6955@twin.jikos.cz>
+Message-ID: <20180321174838.GW6955@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <7ca269db-a724-5938-f4d8-b85e893fd558@jp.fujitsu.com>
- <20180319082010.GC17966@carfax.org.uk>
- <20180319130222.GE6955@twin.jikos.cz>
- <1521465998.3786.2.camel@scientia.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1521465998.3786.2.camel@scientia.net>
+In-Reply-To: <7ca269db-a724-5938-f4d8-b85e893fd558@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 19, 2018 at 02:26:38PM +0100, Christoph Anton Mitterer wrote:
-> On Mon, 2018-03-19 at 14:02 +0100, David Sterba wrote:
-> > We can do that by a special purpose tool.
+On Mon, Mar 19, 2018 at 05:16:42PM +0900, Misono, Tomohiro wrote:
+> Currently, the top-level subvolume lacks the UUID. As a result, both
+> non-snapshot subvolume and snapshot of top-level subvolume do not have
+> Parent UUID and cannot be distinguisued. Therefore "fi show" of
+> top-level lists all the subvolumes which lacks the UUID in
+> "Snapshot(s)" filed.  Also, it lacks the otime information.
 > 
-> No average user will ever run (even know) about that...
+> Fix this by adding the UUID and otime at the mkfs time.  As a
+> consequence, snapshots of top-level subvolume now have a Parent UUID and
+> UUID tree will create an entry for top-level subvolume at mount time.
+> This should not cause the problem for current kernel, but user program
+> which relies on the empty Parent UUID may be affected by this change.
 > 
-> Could you perhaps either do it automatically in fsck (which is IMO als
-> a bad idea as fsck should be read-only per default)... or at least add
-> a warning to fsck, like a "Info: Please run tool foo to get bar done."?
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
 
-Makes sense, check can warn and point to the command, in a similar way
-we have the fix-device-count.
+So this adds uuid, ctime and otime to FS_TEEE but also to UUID_TREE and
+DATA_RELOC_TREE. This is harmelss, but would be nice to mention in the
+changelog, I'll apply the patch add that. Thanks.

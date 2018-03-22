@@ -1,196 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41164 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1752644AbeCVIkZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Mar 2018 04:40:25 -0400
-Subject: Re: [PATCH 1/2] btrfs-progs: print-tree: Use macro to replace
- immediate number for readable flags string buffer length
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20180322073711.5943-1-wqu@suse.com>
- <a3bf609e-a495-d64b-3124-c462f31f9785@suse.com>
- <7076d888-34ee-d9d9-8187-8d024b5a1465@gmx.com>
-From: Nikolay Borisov <nborisov@suse.com>
-Message-ID: <3792de77-6b0d-dd8c-7cca-05391a1c0169@suse.com>
-Date: Thu, 22 Mar 2018 10:40:22 +0200
-MIME-Version: 1.0
-In-Reply-To: <7076d888-34ee-d9d9-8187-8d024b5a1465@gmx.com>
-Content-Type: text/plain; charset=utf-8
+Received: from [195.159.176.226] ([195.159.176.226]:58780 "EHLO
+        blaine.gmane.org" rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org
+        with ESMTP id S1752629AbeCVI4i (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Mar 2018 04:56:38 -0400
+Received: from list by blaine.gmane.org with local (Exim 4.84_2)
+        (envelope-from <gcfb-btrfs-devel-moved1-3@m.gmane.org>)
+        id 1eyvzR-0000UB-Ak
+        for linux-btrfs@vger.kernel.org; Thu, 22 Mar 2018 09:54:29 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Out of space and incorrect size reported
+Date: Thu, 22 Mar 2018 08:54:22 +0000 (UTC)
+Message-ID: <pan$3e3ce$2eec198f$28c68a6e$d9a54d5c@cox.net>
+References: <4B67E3B8-BF96-43A5-9F0E-91B32496CE7E@indepth.com>
+        <20180321215615.GE17966@carfax.org.uk>
+        <471593AD-7540-44BE-9E16-E7804D5C44A3@indepth.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Shane Walton posted on Thu, 22 Mar 2018 00:56:05 +0000 as excerpted:
 
+>>>> btrfs fi df /mnt2/pool_homes
+>>> Data, RAID1: total=240.00GiB, used=239.78GiB
+>>> System, RAID1: total=8.00MiB, used=64.00KiB
+>>> Metadata, RAID1: total=8.00GiB, used=5.90GiB
+>>> GlobalReserve, single: total=512.00MiB, used=59.31MiB
+>>> 
+>>>> btrfs filesystem show /mnt2/pool_homes
+>>> Label: 'pool_homes'  uuid: 0987930f-8c9c-49cc-985e-de6383863070
+>>> 	Total devices 2 FS bytes used 245.75GiB
+>>> 	devid    1 size 465.76GiB used 248.01GiB path /dev/sdaThe output 
+from the (relatively new and thus possibly not yet in the old 4.4 you 
+posted with above and upgraded from) btrfs filesystem usage command makes 
+this somewhat clearer, tho 
+>>> 	devid    2 size 465.76GiB used 248.01GiB path /dev/sdb
+>>> 
+>>> Why is the line above "Data, RAID1: total=240.00GiB, used=239.78GiB
+>>> almost full and limited to 240 GiB when there is I have 2x 500 GB HDD?
 
-On 22.03.2018 10:32, Qu Wenruo wrote:
-> 
-> 
-> On 2018年03月22日 16:20, Nikolay Borisov wrote:
->>
->>
->> On 22.03.2018 09:37, Qu Wenruo wrote:
->>> In print-tree, we have a lot of parsers to convert numeric flags to
->>> human readable string.
->>>
->>> For the buffer size we're using immediate numbers for all their callers.
->>> Change this to macro so it will be much easier for us to expand the
->>> buffer size.
->>>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>
->> The changes look good per se, however I'd like to have all such macros
->> grouped at the beginning of the file - in their own section so to speak.
->>
-> 
-> That's also what I considered.
-> However this makes stack consumption larger for some callers who don't
-> really need that much buffer size.
+>>> What can I do to make this larger or closer to the full size of 465
+>>> GiB (minus the System and Metadata overhead)?
 
-I just meant to have the multiple defines you've introduced grouped at
-the beginning of the file. Not having one define for everyone. This is
-done purely for aesthetics purposes, though I'm not too hung up on that
-so if you decide to ignore it, it's fine.
+By my read, Hugo answered correctly, but (I think) not the question you 
+asked.
 
-> And this also makes expanding buffer size a little more complex, as
-> later change must check if it breaks the up limit.
-> 
-> While current layout makes any modification to the buffer size super
-> obvious.
-> 
-> Thanks,
-> Qu
-> 
->>> ---
->>>  print-tree.c | 29 ++++++++++++++++++++---------
->>>  1 file changed, 20 insertions(+), 9 deletions(-)
->>>
->>> diff --git a/print-tree.c b/print-tree.c
->>> index a2f6bfc027c9..d5bb413019bb 100644
->>> --- a/print-tree.c
->>> +++ b/print-tree.c
->>> @@ -137,7 +137,12 @@ static void print_inode_ref_item(struct extent_buffer *eb, u32 size,
->>>  	}
->>>  }
->>>  
->>> -/* Caller should ensure sizeof(*ret)>=21 "DATA|METADATA|RAID10" */
->>> +/*
->>> + * Caller should ensure sizeof(*ret)>=21 "DATA|METADATA|RAID10"
->>> + * Here we bump up to 64 bytes to handle the worst (and invalid) case:
->>> + * "DATA|METADATA|SYSTEM|RAID0|RAID1|DUP|RAID10|RAID5|RAID6"
->>> + */
->>> +#define BG_FLAGS_BUF_LEN	64
->>>  static void bg_flags_to_str(u64 flags, char *ret)
->>>  {
->>>  	int empty = 1;
->>> @@ -181,6 +186,7 @@ static void bg_flags_to_str(u64 flags, char *ret)
->>>  }
->>>  
->>>  /* Caller should ensure sizeof(*ret)>= 26 "OFF|SCANNING|INCONSISTENT" */
->>> +#define QGROUP_FLAGS_BUF_LEN	32
->>>  static void qgroup_flags_to_str(u64 flags, char *ret)
->>>  {
->>>  	if (flags & BTRFS_QGROUP_STATUS_FLAG_ON)
->>> @@ -199,7 +205,7 @@ void print_chunk_item(struct extent_buffer *eb, struct btrfs_chunk *chunk)
->>>  	u16 num_stripes = btrfs_chunk_num_stripes(eb, chunk);
->>>  	int i;
->>>  	u32 chunk_item_size;
->>> -	char chunk_flags_str[32] = {0};
->>> +	char chunk_flags_str[BG_FLAGS_BUF_LEN] = {0};
->>>  
->>>  	/* The chunk must contain at least one stripe */
->>>  	if (num_stripes < 1) {
->>> @@ -385,7 +391,9 @@ static void print_file_extent_item(struct extent_buffer *eb,
->>>  			compress_str);
->>>  }
->>>  
->>> -/* Caller should ensure sizeof(*ret) >= 16("DATA|TREE_BLOCK") */
->>> +/* Caller should ensure sizeof(*ret) >
->>> + * strlen("DATA|TREE_BLOCK|FULL_BACKREF") */
->>> +#define EXTENT_FLAGS_BUF_LEN	32
->>>  static void extent_flags_to_str(u64 flags, char *ret)
->>>  {
->>>  	int empty = 1;
->>> @@ -420,7 +428,7 @@ void print_extent_item(struct extent_buffer *eb, int slot, int metadata)
->>>  	u32 item_size = btrfs_item_size_nr(eb, slot);
->>>  	u64 flags;
->>>  	u64 offset;
->>> -	char flags_str[32] = {0};
->>> +	char flags_str[EXTENT_FLAGS_BUF_LEN] = {0};
->>>  
->>>  	if (item_size < sizeof(*ei)) {
->>>  #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
->>> @@ -543,6 +551,7 @@ static int empty_uuid(const u8 *uuid)
->>>  /*
->>>   * Caller must ensure sizeof(*ret) >= 7 "RDONLY"
->>>   */
->>> +#define ROOT_FLAGS_BUF_LEN	16
->>>  static void root_flags_to_str(u64 flags, char *ret)
->>>  {
->>>  	if (flags & BTRFS_ROOT_SUBVOL_RDONLY)
->>> @@ -577,7 +586,7 @@ static void print_root_item(struct extent_buffer *leaf, int slot)
->>>  	struct btrfs_root_item root_item;
->>>  	int len;
->>>  	char uuid_str[BTRFS_UUID_UNPARSED_SIZE];
->>> -	char flags_str[32] = {0};
->>> +	char flags_str[ROOT_FLAGS_BUF_LEN] = {0};
->>>  	struct btrfs_key drop_key;
->>>  
->>>  	ri = btrfs_item_ptr(leaf, slot, struct btrfs_root_item);
->>> @@ -888,6 +897,7 @@ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
->>>   * Caller should ensure sizeof(*ret) >= 102: all charactors plus '|' of
->>>   * BTRFS_INODE_* flags
->>>   */
->>> +#define INODE_FLAGS_BUF_LEN	128
->>>  static void inode_flags_to_str(u64 flags, char *ret)
->>>  {
->>>  	int empty = 1;
->>> @@ -911,7 +921,7 @@ static void inode_flags_to_str(u64 flags, char *ret)
->>>  static void print_inode_item(struct extent_buffer *eb,
->>>  		struct btrfs_inode_item *ii)
->>>  {
->>> -	char flags_str[256];
->>> +	char flags_str[INODE_FLAGS_BUF_LEN];
->>>  
->>>  	memset(flags_str, 0, sizeof(flags_str));
->>>  	inode_flags_to_str(btrfs_inode_flags(eb, ii), flags_str);
->>> @@ -1002,7 +1012,7 @@ static void print_block_group_item(struct extent_buffer *eb,
->>>  		struct btrfs_block_group_item *bgi)
->>>  {
->>>  	struct btrfs_block_group_item bg_item;
->>> -	char flags_str[256];
->>> +	char flags_str[BG_FLAGS_BUF_LEN];
->>>  
->>>  	read_extent_buffer(eb, &bg_item, (unsigned long)bgi, sizeof(bg_item));
->>>  	memset(flags_str, 0, sizeof(flags_str));
->>> @@ -1070,7 +1080,7 @@ static void print_dev_extent(struct extent_buffer *eb, int slot)
->>>  static void print_qgroup_status(struct extent_buffer *eb, int slot)
->>>  {
->>>  	struct btrfs_qgroup_status_item *qg_status;
->>> -	char flags_str[256];
->>> +	char flags_str[QGROUP_FLAGS_BUF_LEN];
->>>  
->>>  	qg_status = btrfs_item_ptr(eb, slot, struct btrfs_qgroup_status_item);
->>>  	memset(flags_str, 0, sizeof(flags_str));
->>> @@ -1158,6 +1168,7 @@ static void print_extent_csum(struct extent_buffer *eb,
->>>  }
->>>  
->>>  /* Caller must ensure sizeof(*ret) >= 14 "WRITTEN|RELOC" */
->>> +#define HEADER_FLAGS_BUF_LEN	32
->>>  static void header_flags_to_str(u64 flags, char *ret)
->>>  {
->>>  	int empty = 1;
->>> @@ -1177,7 +1188,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *eb)
->>>  {
->>>  	struct btrfs_item *item;
->>>  	struct btrfs_disk_key disk_key;
->>> -	char flags_str[128];
->>> +	char flags_str[HEADER_FLAGS_BUF_LEN];
->>>  	u32 i;
->>>  	u32 nr;
->>>  	u64 flags;
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
+The upgrade was certainly a good idea, 4.4 being quite old now and not 
+really supported well here now, as this is a development list and we tend 
+to be focused on new, not long ago history, but it didn't change the 
+report output as you expected, because based on your question you're 
+misreading it and it doesn't say what you are interpreting it as saying.
+
+BTW, you might like the output from btrfs filesystem usage a bit better 
+as it's somewhat clearer than the previously required (usage is a 
+relatively new subcommand that might not have been in 4.4 yet) btrfs fi 
+df and btrfs fi show, but understanding how btrfs works and what the 
+reported numbers mean is still useful.
+
+Btrfs does two-stage allocation.  First, it allocates chunks of a 
+specific type, normally data or metadata (system is special, normally 
+only one chunk so no more allocated, and global reserve is actually 
+reserved from metadata and counts as part of it) from unused/unallocated 
+space (which isn't shown by show/df, but usage shows it separately), then 
+when necessary, btrfs actually uses space from the chunks it allocated 
+previously.
+
+So what the above df line is saying is that 240 GiB of space have been 
+allocated as data chunks, and 239.78 GiB of that, almost all of it, is 
+used.
+
+But you should still have 200+ GiB of unallocated space on each of the 
+devices, as here shown by the individual device lines of the show command 
+(465 total, 248 used), tho as I said, btrfs filesystem usage makes that 
+rather clearer.
+
+And btrfs should normally allocate additional space from that 200+ gigs 
+unallocated, to data or metadata chunks, as necessary.  Further, because 
+btrfs can't directly take chunks allocated as data and reallocate them as 
+metadata, you *WANT* lots of unallocated space.  You do NOT want all that 
+extra space allocated as data chunks, because then they wouldn't be 
+available to allocate as metadata if needed.
+
+Now with 200+ GiB of space on each of the two devices unallocated, you 
+shouldn't yet be running into ENOSPC (error no space) errors.  If you 
+are, that's a bug, and there have actually been a couple bugs like that 
+recently, but that doesn't mean you want btrfs to unnecessarily allocate 
+all that unallocated space as data space, which would be what it did if 
+it reported all that as data.  Rather, you need btrfs to allocate data, 
+and metadata, chunks as needed, and any space related errors you are 
+seeing would be bugs related to that.
+
+Now that you have a newer btrfs-progs and kernel, and have read my 
+attempt at an explanation above, try btrfs filesystem usage and see if 
+things are clearer.  If not, maybe Hugo or someone else can do better 
+now, answering /that/ question.  And of course if with the newer 4.12 
+kernel you're getting ENOSPC errors, please report that too, tho be aware 
+that 4.14 is the latest LTS series, with 4.9 the LTS before that, and as 
+a normal non-LTS series kernel 4.12 support has ended as well, so you 
+might wish to either upgrade to a current 4.14 LTS or downgrade to the 
+older 4.9 LTS, for best support.
+
+Or of course you could go with a current non-LTS.  Normally the latest 
+two release series in both normal and LTS are best supported, so with 
+4.15 out and 4.16 nearing release, that's the latest 4.15 stable release 
+now, or 4.14, to be 4.16 and 4.15 at 4.16 release, or on the LTS track 
+the previously mentioned 4.14 and 4.9 series, tho at a year old plus, 4.9 
+is already getting rather harder to support, and 4.14 is old enough now 
+it's preferred for LTS track.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

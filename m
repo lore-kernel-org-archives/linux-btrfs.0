@@ -1,107 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:42321 "EHLO
-        mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750962AbeCSIRt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Mar 2018 04:17:49 -0400
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by yt-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id B2A04AC0065
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Mar 2018 17:17:41 +0900 (JST)
-Received: from g01jpexchkw33.g01.fujitsu.local (unknown [10.0.193.4])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 02C62BD6625
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Mar 2018 17:17:41 +0900 (JST)
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs-progs: mkfs: add uuid and otime to ROOT_ITEM of FS_TREE
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <7ca269db-a724-5938-f4d8-b85e893fd558@jp.fujitsu.com>
-Date: Mon, 19 Mar 2018 17:16:42 +0900
+Received: from mout.gmx.net ([212.227.17.21]:40121 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1753883AbeCVAMr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Mar 2018 20:12:47 -0400
+Subject: Re: [PATCH v3 0/6] Fix long standing -EOPNOTSUPP problem caused by
+ large inline extent
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20180320064229.31493-1-wqu@suse.com>
+ <20180321155115.GT6955@twin.jikos.cz>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <74866cc8-788b-233c-e52f-9ac413e5e6af@gmx.com>
+Date: Thu, 22 Mar 2018 08:12:31 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <20180321155115.GT6955@twin.jikos.cz>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="WjyYktvM43enuCe84RH5BUDZS43flkFvn"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, the top-level subvolume lacks the UUID. As a result, both
-non-snapshot subvolume and snapshot of top-level subvolume do not have
-Parent UUID and cannot be distinguisued. Therefore "fi show" of
-top-level lists all the subvolumes which lacks the UUID in
-"Snapshot(s)" filed.  Also, it lacks the otime information.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--WjyYktvM43enuCe84RH5BUDZS43flkFvn
+Content-Type: multipart/mixed; boundary="t4P3nlp2Bs3VVonYHPQTJY5UnG1DOAHmu";
+ protected-headers="v1"
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Message-ID: <74866cc8-788b-233c-e52f-9ac413e5e6af@gmx.com>
+Subject: Re: [PATCH v3 0/6] Fix long standing -EOPNOTSUPP problem caused by
+ large inline extent
+References: <20180320064229.31493-1-wqu@suse.com>
+ <20180321155115.GT6955@twin.jikos.cz>
+In-Reply-To: <20180321155115.GT6955@twin.jikos.cz>
 
-Fix this by adding the UUID and otime at the mkfs time.  As a
-consequence, snapshots of top-level subvolume now have a Parent UUID and
-UUID tree will create an entry for top-level subvolume at mount time.
-This should not cause the problem for current kernel, but user program
-which relies on the empty Parent UUID may be affected by this change.
+--t4P3nlp2Bs3VVonYHPQTJY5UnG1DOAHmu
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
----
-This is also needed in order that "sub list -s" works properly for
-non-privileged user[1] even if there are snapshots of toplevel subvolume.
 
-Currently the check if a subvolume is a snapshot is done by looking at the key
-offset of ROOT_ITEM of subvolume (non-zero for snapshot) used by tree search ioctl.
-However, non-privileged version of "sub list" won't use tree search ioctl and just
-looking if parent uuid is null or not. Therefore there is no way to recognize
-snapshots of toplevel subvolume.
 
-[1] https://marc.info/?l=linux-btrfs&m=152144463907830&w=2
+On 2018=E5=B9=B403=E6=9C=8821=E6=97=A5 23:51, David Sterba wrote:
+> On Tue, Mar 20, 2018 at 02:42:23PM +0800, Qu Wenruo wrote:
+>> The patch is based on v4.15.1, and is designed to replace the old patc=
+h
+>> in devel branch.
+>>
+>> Kernel doesn't support dropping range inside inline extent, and preven=
+ts
+>> such thing happening by limiting max inline extent size to
+>> min(max_inline, sectorsize - 1) in cow_file_range_inline().
+>>
+>> However btrfs-progs only inherit the BTRFS_MAX_INLINE_DATA_SIZE() macr=
+o,
+>> which doesn't have sectorsize check.
+>> And since btrfs-progs defaults to 16K nodesize, above macro allows lar=
+ge
+>> inline extent over 15K size.
+>>
+>> This leads to unexpected kernel behavior.
+>>
+>> The bug exists in several parts of btrfs-progs, any tool which creates=
 
- mkfs/common.c | 14 ++++++++++++++
- mkfs/main.c   |  3 +++
- 2 files changed, 17 insertions(+)
+>> file extent is involved, including:
+>> 1) btrfs-convert
+>> 2) mkfs --rootdir
+>>
+>> This patchset fixes the problems in convert (both ext2 and reiserfs),
+>> mkfs --rootdir, then add check support for both original and lowmem
+>> mode, and finally adds 2 test cases, one for mkfs and one for convert.=
 
-diff --git a/mkfs/common.c b/mkfs/common.c
-index 16916ca2..6924d9b7 100644
---- a/mkfs/common.c
-+++ b/mkfs/common.c
-@@ -44,6 +44,7 @@ static int btrfs_create_tree_root(int fd, struct btrfs_mkfs_config *cfg,
- 	u32 itemoff;
- 	int ret = 0;
- 	int blk;
-+	u8 uuid[BTRFS_UUID_SIZE];
- 
- 	memset(buf->data + sizeof(struct btrfs_header), 0,
- 		cfg->nodesize - sizeof(struct btrfs_header));
-@@ -77,6 +78,19 @@ static int btrfs_create_tree_root(int fd, struct btrfs_mkfs_config *cfg,
- 		btrfs_set_item_offset(buf, btrfs_item_nr(nritems), itemoff);
- 		btrfs_set_item_size(buf, btrfs_item_nr(nritems),
- 				sizeof(root_item));
-+		if (blk == MKFS_FS_TREE) {
-+			time_t now = time(NULL);
-+
-+			uuid_generate(uuid);
-+			memcpy(root_item.uuid, uuid, BTRFS_UUID_SIZE);
-+			btrfs_set_stack_timespec_sec(&root_item.otime, now);
-+			btrfs_set_stack_timespec_sec(&root_item.ctime, now);
-+		} else {
-+			memset(uuid, 0, BTRFS_UUID_SIZE);
-+			memcpy(root_item.uuid, uuid, BTRFS_UUID_SIZE);
-+			btrfs_set_stack_timespec_sec(&root_item.otime, 0);
-+			btrfs_set_stack_timespec_sec(&root_item.ctime, 0);
-+		}
- 		write_extent_buffer(buf, &root_item,
- 			btrfs_item_ptr_offset(buf, nritems),
- 			sizeof(root_item));
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 5a717f70..52d92581 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -315,6 +315,7 @@ static int create_tree(struct btrfs_trans_handle *trans,
- 	struct btrfs_key location;
- 	struct btrfs_root_item root_item;
- 	struct extent_buffer *tmp;
-+	u8 uuid[BTRFS_UUID_SIZE] = {0};
- 	int ret;
- 
- 	ret = btrfs_copy_root(trans, root, root->node, &tmp, objectid);
-@@ -325,6 +326,8 @@ static int create_tree(struct btrfs_trans_handle *trans,
- 	btrfs_set_root_bytenr(&root_item, tmp->start);
- 	btrfs_set_root_level(&root_item, btrfs_header_level(tmp));
- 	btrfs_set_root_generation(&root_item, trans->transid);
-+	/* clear uuid of source tree */
-+	memcpy(root_item.uuid, uuid, BTRFS_UUID_SIZE);
- 	free_extent_buffer(tmp);
- 
- 	location.objectid = objectid;
--- 
-2.14.3
+>>
+>> For mkfs test case, it can already be exposed by misc/002, but a
+>> pin-point test case will be much better.
+>>
+>> changelog:
+>> v2:
+>>   Don't modify BTRFS_MAX_INLINE_DATA_SIZE(), but add extra check to
+>>   callers who create file extents.
+>> v3:
+>>   Merge fixes for convert.
+>>   Add real commit message for convert fixes.
+>>   Use $TEST_TOP to replace cooperate with stand alone test cases.
+>>   Use for loops to make the new test case shorter.
+>>
+>> Qu Wenruo (6):
+>>   btrfs-progs: convert: Fix inline file extent creation condition
+>>   btrfs-progs: mkfs/rootdir: Fix inline extent creation check
+>>   btrfs-progs: check/original mode: Check inline extent size
+>>   btrfs-progs: check/lowmem mode: Check inline extent size
+>>   btrfs-progs: test/convert: Add test case for invalid large inline da=
+ta
+>>     extent
+>>   btrfs-progs: test/mkfs: Add test case for rootdir inline extent size=
 
+>=20
+> Applied, thanks. I had to fix the test, fallocate may fail, so a file o=
+f
+> given size is created directly.
+
+The fix looks good, and I learn a new trick.
+
+But I'm wondering how could it fail.
+
+Nowadays /tmp should be tmpfs created by systemd, which supports fallocat=
+e.
+Or is the CI things doesn't follow this?
+
+Thanks,
+Qu
+
+>=20
+> I hope this bug is fixed. My plan was to release 4.15.2 with just
+> bugfixes but as this took some time to fix, there likely will be no
+> minor release before 4.16 as kernel is about to be released next week.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+
+--t4P3nlp2Bs3VVonYHPQTJY5UnG1DOAHmu--
+
+--WjyYktvM43enuCe84RH5BUDZS43flkFvn
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqy9O8XHHF1d2VucnVv
+LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qjuWwgAl6znwCbN0adI2KWjX2kLyM51
+JqQs4Yjalyt9nDlgFkpI3ir+jgG3G1m17HWsvw7BaVLSQjQqXveiSk5cOiIhFMF+
+hJDoe2GTf/304k7pWqffI/hwuaLl4KM55Nma66yF4ct9EecQAyAZn8rkn7tZQbn1
+dRSeS4NWbz718Sr/pHnR8SaKNq1WG2Oac7SlcAOvN3C7yVYhcono0Ophi69EKmKb
+ZAMhfSQ97tPB3llcO2OKGOroPipuipKiFEVHFHlLCaM/2IhHW95PK++21HfXjnWq
+qcn8lAs25WMn0rDwuRf682Mr0Ao0wl+0ZDzKJPaPG62BnJY12CkZ53xP/AV1bQ==
+=NiKC
+-----END PGP SIGNATURE-----
+
+--WjyYktvM43enuCe84RH5BUDZS43flkFvn--

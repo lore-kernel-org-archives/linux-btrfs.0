@@ -1,47 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:41945 "EHLO
-        mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750768AbeCTGrR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Mar 2018 02:47:17 -0400
-Received: from g01jpfmpwkw03.exch.g01.fujitsu.local (g01jpfmpwkw03.exch.g01.fujitsu.local [10.0.193.57])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id C0993AC00CF
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Mar 2018 15:47:11 +0900 (JST)
-Received: from G01JPEXCHKW16.g01.fujitsu.local (G01JPEXCHKW16.g01.fujitsu.local [10.0.194.55])
-        by g01jpfmpwkw03.exch.g01.fujitsu.local (Postfix) with ESMTP id 26105BD6691
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Mar 2018 15:47:11 +0900 (JST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH] btrfs: ctree.h: Fix wrong comment position about csum size
-Message-ID: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
-Date: Tue, 20 Mar 2018 15:47:06 +0900
+Received: from mx2.suse.de ([195.135.220.15]:53574 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751375AbeCVP4G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Mar 2018 11:56:06 -0400
+Date: Thu, 22 Mar 2018 16:53:41 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: ctree.h: Fix wrong comment position about csum
+ size
+Message-ID: <20180322155341.GF6955@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cacb081b-619f-413e-0ebf-38f8e8af3d25@jp.fujitsu.com>
+ <34461665-141e-55a5-ea29-ebc20cf939de@gmx.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <34461665-141e-55a5-ea29-ebc20cf939de@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Mar 20, 2018 at 04:50:32PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2018年03月20日 14:47, Misono, Tomohiro wrote:
+> > 
+> > Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> 
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
----
- fs/btrfs/ctree.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index da308774b8a4..8f59cb20dd4c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -86,9 +86,9 @@ struct btrfs_ordered_sum;
-  */
- #define BTRFS_LINK_MAX 65535U
- 
-+/* four bytes for CRC32 */
- static const int btrfs_csum_sizes[] = { 4 };
- 
--/* four bytes for CRC32 */
- #define BTRFS_EMPTY_DIR_SIZE 0
- 
- /* ioprio of readahead is set to idle */
--- 
-2.14.3
-
-
+Added to next, thanks.

@@ -1,71 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.donaanacounty.org ([67.134.23.10]:60628 "EHLO
-        mail.donaanacounty.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1753917AbeCVAn3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 20:43:29 -0400
-Received: from pps.filterd (proofpointagent.donaanacounty.org [127.0.0.1])
-        by ProofPointAgent.donaanacounty.org (8.16.0.21/8.16.0.21) with SMTP id w2M0CpGC019465
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 18:13:40 -0600
-Received: from webmail.donaanacounty.org (gcmxbe02.dac.int [10.250.250.90])
-        by ProofPointAgent.donaanacounty.org with ESMTP id 2gs18s9nay-1
-        (version=TLSv1 cipher=ECDHE-RSA-AES256-SHA bits=256 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 18:13:40 -0600
-From: Matthew Hawn <matthewh@donaanacounty.org>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: grub_probe/grub-mkimage does not find all drives in BTRFS RAID1
-Date: Thu, 22 Mar 2018 00:13:38 +0000
-Message-ID: <DF0C87D105B235419E2D9E5066CCCF51988BA347@gcmxbe02.dac.int>
-Content-Type: text/plain; charset="us-ascii"
+Received: from mail-cys01nam02on0119.outbound.protection.outlook.com ([104.47.37.119]:54703
+        "EHLO NAM02-CY1-obe.outbound.protection.outlook.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1753931AbeCVA4J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 21 Mar 2018 20:56:09 -0400
+From: Shane Walton <shane.walton@indepth.com>
+To: Hugo Mills <hugo@carfax.org.uk>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Out of space and incorrect size reported
+Date: Thu, 22 Mar 2018 00:56:05 +0000
+Message-ID: <471593AD-7540-44BE-9E16-E7804D5C44A3@indepth.com>
+References: <4B67E3B8-BF96-43A5-9F0E-91B32496CE7E@indepth.com>
+ <20180321215615.GE17966@carfax.org.uk>
+In-Reply-To: <20180321215615.GE17966@carfax.org.uk>
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is almost definitely a bug in GRUB, but I wanted to get the btrfs mailing list opinion first.
+Unfortunately this didn‚Äôt seem to correct the problem.  Please see below:
 
-Symptoms:
-I have a btrfs raid1 /boot and root filesystem.  Ever since I replaced a drive, when I run the grub utilities to create my grub.cfg and install to boot sector, it only recognizes one of the drives.
+> uname -a 
+Linux rockstor 4.12.4-1.el7.elrepo.x86_64 #1 SMP Thu Jul 27 20:03:28 EDT 2017 x86_64 x86_64 x86_64 GNU/Linux
 
-$ sudo grub-probe /boot/grub -t device
-/dev/mapper/VG_BTRFS2-LV_BOOT2
+> btrfs ‚Äîversion
+btrfs-progs v4.12
 
-$ sudo grub-probe /boot/grub -t bios_hints
-lvmid/gEfhOx-J9hr-8tkA-OgjD-Aqqu-XR2T-sFB4me/oNnMDp-Rit5-P0qs-QZlf-bQQe-tZU7-Wwmz8z
+> btrfs fi df -H /mnt2/pool_homes
+Data, RAID1: total=257.70GB, used=257.46GB
+System, RAID1: total=8.39MB, used=65.54kB
+Metadata, RAID1: total=7.52GB, used=6.35GB
+GlobalReserve, single: total=498.27MB, used=0.00B
 
-This also prevents boot if the above drive is disconnected. Grub error in locating lvmid/gEfhOx-J9hr-8tkA-OgjD-Aqqu-XR2T-sFB4me/oNnMDp-Rit5-P0qs-QZlf-bQQe-tZU7-Wwmz8z
+> btrfs fi show /mnt2/pool_homes
+Label: 'pool_homes'  uuid: 0987930f-8c9c-49cc-985e-de6383863070
+	Total devices 2 FS bytes used 245.69GiB
+	devid    1 size 465.76GiB used 247.01GiB path /dev/sda
+	devid    2 size 465.76GiB used 247.01GiB path /dev/sdb
 
-Boot works fine if both drives, or only the above drive is present.
+rockstor mounts everything over and over, even if I manually unmount, so I did the following:
 
-Before drive replacement, the above commands returned both drives that were part of the RAID1 mirror.  I never tried booting with a device disconnected, but both showed up in my grub.cfg.   Replacement was not standard since the prior drive was developing bad sectors, but had not failed. Replacement was done by adding a third disk to the mirror, then removing the 1st disk.
+> umount /mnt2/pool_homes; mount -o clear_cache /dev/sda /mnt2/pool_home
 
-Probable Cause:
-To determine the boot drive, grub-probe and grub-mkimage make several ioctl  in osdep/linux/getroot.c: grub_find_root_devices_from_btrfs
-A call to BTRFS_IOC_FS_INFO gets the max_id and num_devices.  It then iterates from 1 to max_id, calling BTRFS_IOC_DEV_INFO to get the path.  
+dmesg shows the following:
 
-For my system, max_id = 3 and num_devices = 2.  Requesting BTRFS_IOC_DEV_INFO for device 1 yields a "No Such Device".  Instead of continuing on to device 2 and 3 (which return without error), grub treats all ioctl errors as fatal, exits the btrfs specific code with a failure, then falls back to generic linux code that only detects the single drive. 
+[ 3473.848389] BTRFS info (device sda): use no compression
+[ 3473.848393] BTRFS info (device sda): disk space caching is enabled
+[ 3473.848394] BTRFS info (device sda): has skinny extents
+[ 3548.337574] BTRFS info (device sda): force clearing of disk cache
+[ 3548.337578] BTRFS info (device sda): disk space caching is enabled
+[ 3548.337580] BTRFS info (device sda): has skinny extents
 
-So, is this a grub bug? If so, any suggestions before I submit to the grub-bug list?  Also, as I wait until a fix is published (or I rebuild grub with my own patch), any ideas to workaround this?
+Any help is appreciated!
 
+> On Mar 21, 2018, at 5:56 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> 
+> On Wed, Mar 21, 2018 at 09:53:39PM +0000, Shane Walton wrote:
+>>> uname -a
+>> Linux rockstor 4.4.5-1.el7.elrepo.x86_64 #1 SMP Thu Mar 10 11:45:51 EST 2016 x86_64 x86_64 x86_64 GNU/Linux
+>> 
+>>> btrfs ‚Äîversion 
+>> btrfs-progs v4.4.1
+>> 
+>>> btrfs fi df /mnt2/pool_homes
+>> Data, RAID1: total=240.00GiB, used=239.78GiB
+>> System, RAID1: total=8.00MiB, used=64.00KiB
+>> Metadata, RAID1: total=8.00GiB, used=5.90GiB
+>> GlobalReserve, single: total=512.00MiB, used=59.31MiB
+>> 
+>>> btrfs filesystem show /mnt2/pool_homes
+>> Label: 'pool_homes'  uuid: 0987930f-8c9c-49cc-985e-de6383863070
+>> 	Total devices 2 FS bytes used 245.75GiB
+>> 	devid    1 size 465.76GiB used 248.01GiB path /dev/sda
+>> 	devid    2 size 465.76GiB used 248.01GiB path /dev/sdb
+>> 
+>> Why is the line above "Data, RAID1: total=240.00GiB, used=239.78GiB‚Äù almost full and limited to 240 GiB when there is I have 2x 500 GB HDD?  This is all create/implemented with the Rockstor platform and it says the ‚Äúshare‚Äù should be 400 GB.
+>> 
+>> What can I do to make this larger or closer to the full size of 465 GiB (minus the System and Metadata overhead)?
+> 
+>   Most likely, you need to ugrade your kernel to get past the known
+> bug (fixed in about 4.6 or so, if I recall correctly), and then mount
+> with -o clear_cache to force the free space cache to be rebuilt.
+> 
+>   Hugo.
+> 
+> -- 
+> Hugo Mills             | Q: What goes, "Pieces of seven! Pieces of seven!"?
+> hugo@... carfax.org.uk | A: A parroty error.
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |
 
-Info:
-Kernel:  4.15.0-12-generic #13-Ubuntu SMP (based on 4.15.7 mainline)
-btrfs-progs: 4.15.1-1
-Grub:  2.02~beta2-36ubuntu3.17 
-
-$ btrfs fi show
-Label: none  uuid: 84c8e78b-9d7f-4451-966d-3c25154e89b8
-	Total devices 2 FS bytes used 22.16GiB
-	devid    2 size 100.00GiB used 25.03GiB path /dev/mapper/VG_BTRFS2-LV_ROOT2
-	devid    3 size 100.00GiB used 25.03GiB path /dev/mapper/VG_BTRFS3-LV_ROOT3
-
-
-Label: none  uuid: 059ab98f-eb63-471d-b099-6561baf39040
-	Total devices 2 FS bytes used 61.04GiB
-	devid    2 size 200.00GiB used 62.03GiB path /dev/mapper/VG_BTRFS2-LV_HOME2
-	devid    3 size 200.00GiB used 62.03GiB path /dev/mapper/VG_BTRFS3-LV_HOME3
-
-
-Label: none  uuid: ffe8b1a0-030c-42c2-94f5-b7e8e54b1439
-	Total devices 2 FS bytes used 342.04MiB
-	devid    2 size 1.00GiB used 693.62MiB path /dev/mapper/VG_BTRFS2-LV_BOOT2
-	devid    3 size 1.00GiB used 693.62MiB path /dev/mapper/VG_BTRFS3-LV_BOOT3
+ˇÙË∫{.n«+â∑üÆâ≠Ü+%äÀˇ±È›∂•äwˇ∫{.n«+â∑•ä{±˝ªk~œ‚ûÿ^nár°ˆ¶zÀÅÎhô®Ë≠⁄&£˚‡zø‰zπﬁó˙+Ä +zf£¢∑höàß~Ü≠Ü€iˇˇÔÅÍˇëÍÁz_ËÆÊj:+vâ®˛)ﬂ£¯m

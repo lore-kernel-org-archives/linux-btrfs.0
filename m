@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailhost.taec.com ([209.243.128.33]:44220 "EHLO
+Received: from mailhost.taec.toshiba.com ([209.243.128.33]:44309 "EHLO
         mailhost.taec.toshiba.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751805AbeCVWkO (ORCPT
+        with ESMTP id S1751665AbeCVWlv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Mar 2018 18:40:14 -0400
+        Thu, 22 Mar 2018 18:41:51 -0400
 Received: from EXMAIL1.taec.toshiba.com (exmail1 [209.243.172.198])
-        by mailhost.taec.toshiba.com (Postfix) with ESMTP id EEB3AA064B
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 15:30:10 -0700 (PDT)
+        by mailhost.taec.toshiba.com (Postfix) with ESMTP id 921D1A064B
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 15:41:35 -0700 (PDT)
 From: Mason Fan <Mason.Fan@taec.toshiba.com>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: 
-Date: Thu, 22 Mar 2018 22:30:09 +0000
-Message-ID: <D8223FDE2A45A442B5271446BC05E11285AE8B75@EXMAIL1.taec.toshiba.com>
+Subject: Status of host managed SMR device support
+Date: Thu, 22 Mar 2018 22:41:34 +0000
+Message-ID: <D8223FDE2A45A442B5271446BC05E11285AE8BAA@EXMAIL1.taec.toshiba.com>
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org

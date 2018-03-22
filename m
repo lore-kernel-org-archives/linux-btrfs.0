@@ -1,126 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:37047 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1755533AbeCVOC2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Mar 2018 10:02:28 -0400
-Subject: Re: [PATCH 1/2] btrfs-progs: print-tree: Use macro to replace
- immediate number for readable flags string buffer length
-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180322073711.5943-1-wqu@suse.com>
- <a3bf609e-a495-d64b-3124-c462f31f9785@suse.com>
- <7076d888-34ee-d9d9-8187-8d024b5a1465@gmx.com>
- <3792de77-6b0d-dd8c-7cca-05391a1c0169@suse.com>
- <20180322133927.GZ6955@twin.jikos.cz>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <fc652775-82a4-6512-0724-e98fc0e68013@gmx.com>
-Date: Thu, 22 Mar 2018 22:02:12 +0800
+Received: from smtp-17-i6.italiaonline.it ([213.209.14.17]:37671 "EHLO
+        libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S1751551AbeCVRih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Mar 2018 13:38:37 -0400
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH] btrfs: Allow non-privileged user to delete empty
+ subvolume by default
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Nikolay Borisov <nborisov@suse.com>,
+        "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
+ <f00fe679-5c18-27db-a921-b303405968bc@libero.it>
+ <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
+ <5ce4f667-e97f-c87e-466d-37d488f2abbb@gmail.com>
+ <cf65350d-1985-ac5b-2fb6-72fedfa9adf0@inwind.it>
+ <53ff753f-6078-ddf7-3107-14f1fddd7c26@gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <e0f46f33-f903-014c-982b-7d8326a4b4a7@inwind.it>
+Date: Thu, 22 Mar 2018 18:38:33 +0100
 MIME-Version: 1.0
-In-Reply-To: <20180322133927.GZ6955@twin.jikos.cz>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="WxRbF4RgcW9mAhnYA64sWUrR5omlMhLWB"
+In-Reply-To: <53ff753f-6078-ddf7-3107-14f1fddd7c26@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---WxRbF4RgcW9mAhnYA64sWUrR5omlMhLWB
-Content-Type: multipart/mixed; boundary="lsxqZDCijzVDJp5lBX9Uei5A0wizrbAb0";
- protected-headers="v1"
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
- Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Message-ID: <fc652775-82a4-6512-0724-e98fc0e68013@gmx.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: print-tree: Use macro to replace
- immediate number for readable flags string buffer length
-References: <20180322073711.5943-1-wqu@suse.com>
- <a3bf609e-a495-d64b-3124-c462f31f9785@suse.com>
- <7076d888-34ee-d9d9-8187-8d024b5a1465@gmx.com>
- <3792de77-6b0d-dd8c-7cca-05391a1c0169@suse.com>
- <20180322133927.GZ6955@twin.jikos.cz>
-In-Reply-To: <20180322133927.GZ6955@twin.jikos.cz>
-
---lsxqZDCijzVDJp5lBX9Uei5A0wizrbAb0
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-
-
-
-On 2018=E5=B9=B403=E6=9C=8822=E6=97=A5 21:39, David Sterba wrote:
-> On Thu, Mar 22, 2018 at 10:40:22AM +0200, Nikolay Borisov wrote:
->> On 22.03.2018 10:32, Qu Wenruo wrote:
->>> On 2018=E5=B9=B403=E6=9C=8822=E6=97=A5 16:20, Nikolay Borisov wrote:
->>>> On 22.03.2018 09:37, Qu Wenruo wrote:
->>>>> In print-tree, we have a lot of parsers to convert numeric flags to=
-
->>>>> human readable string.
->>>>>
->>>>> For the buffer size we're using immediate numbers for all their cal=
-lers.
->>>>> Change this to macro so it will be much easier for us to expand the=
-
->>>>> buffer size.
->>>>>
->>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>>
->>>> The changes look good per se, however I'd like to have all such macr=
-os
->>>> grouped at the beginning of the file - in their own section so to sp=
-eak.
->>>>
->>>
->>> That's also what I considered.
->>> However this makes stack consumption larger for some callers who don'=
-t
->>> really need that much buffer size.
+On 03/22/2018 01:15 PM, Austin S. Hemmelgarn wrote:
+> On 2018-03-21 16:38, Goffredo Baroncelli wrote:
+>> On 03/21/2018 12:47 PM, Austin S. Hemmelgarn wrote:
+>>> I agree as well, with the addendum that I'd love to see a new ioctl that does proper permissions checks.  While letting rmdir(2) work for an empty subvolume with the appropriate permissions would be great (it will let rm -r work correctly), it doesn't address the usefulness of being able to just `btrfs subvolume delete` and not have to wait for the command to finish before you can reuse the name.
 >>
->> I just meant to have the multiple defines you've introduced grouped at=
+>> How this could work ?
+>>
+>> If you want to check all the subvolumes files permissions, this will require some time: you need to traverse all the subvolume-filesystem; and only if all the checks are passed, you can delete the subvolume.
+>>
+>> Unfortunately I think that only two options exist:
+>> - don't check permissions, and you can quick remove a subvolume
+>> - check all the permissions, i.e. check all the files permissions, and only if all the permissions are OK, you can delete the subvolume. However this cannot be a "quick" subvolume delete
+> 
+> Why exactly would you need to check everything?  What I'm talking about is having behavior like `user_subvol_rm_allowed` be the default, with an additional check emulating the regular dentry removal check (namely that the user has appropriate permissions on the parent directory) so that people can't delete things like their own home directories.  We're already _way_ beyond POSIX semantics here because we're debating the handling of permissions for an ioctl that takes a different fd than what it functionally operates on, so I see no reason whatsoever that we need to enforce POSIX semantics to that degree.
+> 
 
->> the beginning of the file. Not having one define for everyone. This is=
+Why "user_subvol_rm_allowed" doesn't satisfy your needing ? Does not perform enough permission checking ?
 
->> done purely for aesthetics purposes, though I'm not too hung up on tha=
-t
->> so if you decide to ignore it, it's fine.
->=20
-> No, that's actually what I prefer, the first part of header or source i=
-s
-> for defintions. Unless it's really local to the function or single use.=
-
-
-All right, I'll change the layout.
-
-But leave some comment for each *_flags_to_str() function to info later
-contributor what to change.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
+BR
+G.Baroncelli
 
 
---lsxqZDCijzVDJp5lBX9Uei5A0wizrbAb0--
-
---WxRbF4RgcW9mAhnYA64sWUrR5omlMhLWB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQFLBAEBCAA1FiEELd9y5aWlW6idqkLhwj2R86El/qgFAlqzt2QXHHF1d2VucnVv
-LmJ0cmZzQGdteC5jb20ACgkQwj2R86El/qiDsQf+MWMD6W+XiLLsT49zKmQE593M
-IHxXt+2GagrmFjeezth+1Nbvs1yz3Y27bNpS6gydYuexGcxerWAHSinZHdM+dUEB
-iM417WcnZySvgvRs3nj9mcCohswLoDcFjhDwnzDEb4nO1xryfD+bUZFH2CDV/uMd
-HtHu1faX/NOFjjHRjULlJ5KyMAVhjvNu1qYdRaiEQ8qe0qzZJLa+rH75xCgJ//l/
-5T+x4B8cotMsQlIIrAZK2PIPCW1AknX0bfPLpV8zzLU75wJkDnEIHSSvuK5uV17Z
-TDM57GPr9KFD0I575mvY0mlVEG+KMATIN43lS0ihDVO/I3+wjavnvA4goqxeYQ==
-=o0Pg
------END PGP SIGNATURE-----
-
---WxRbF4RgcW9mAhnYA64sWUrR5omlMhLWB--
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

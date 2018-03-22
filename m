@@ -1,39 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33135 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41347 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S932116AbeCIO4X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 9 Mar 2018 09:56:23 -0500
-Date: Fri, 9 Mar 2018 15:54:01 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Menion <menion@gmail.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: dmesg flooded with "Very big device. Trying to use READ
- CAPACITY(16)" with 8TB HDDs
-Message-ID: <20180309145401.GS23693@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJVZm6etk=bL0LY3FZXkm5Wun64F4w6HMxdLhKRD-v+mEGm08w@mail.gmail.com>
- <CAJVZm6e0+urcBNrVkXSwvuckTt1A2R8uj536ZzHcB9eG9FoqpQ@mail.gmail.com>
- <20180302151805.GB5942@twin.jikos.cz>
- <CAJVZm6dQacWC0hVWoBxy2H3cSm78pCSqyJkD9Ch4AWLdUrwh9w@mail.gmail.com>
- <CAJVZm6fb+PZ+0tn+JsWK54Nq4W50TwCO7nAaasLoyOm2M13okQ@mail.gmail.com>
- <CAJVZm6eGXez164prciYkemOVVLQ+=RqfvyfB+wzW+imtxVP66w@mail.gmail.com>
+        id S1755014AbeCVNhp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Mar 2018 09:37:45 -0400
+Subject: Re: [PATCH 1/3] btrfs-progs: Remove deprecated btrfs-zero-log
+ standalone tool
+To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs@vger.kernel.org
+References: <1521724707-19180-1-git-send-email-nborisov@suse.com>
+ <77235266-888e-14d2-ac50-057b6f4d8390@gmx.com>
+ <20180322133140.GY6955@twin.jikos.cz>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <d29ba513-7a03-66ec-61d3-28ee07a80b83@suse.com>
+Date: Thu, 22 Mar 2018 15:37:43 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJVZm6eGXez164prciYkemOVVLQ+=RqfvyfB+wzW+imtxVP66w@mail.gmail.com>
+In-Reply-To: <20180322133140.GY6955@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 08, 2018 at 12:18:04PM +0100, Menion wrote:
-> Actually this path can be taken in few occurrency
-> 
-> 1) device probe, only when the device is plugged or detected the first time
-> 2) revalidate_disk fops of block device
-> 
-> Is it possible that BTRFS every 5 minutes call the revalidate_disk?
 
-An idea: udev or blkid cache refresh, triggers 'btrfs dev scan' that
-calls blkdev_get_by_path that could in turn call the revalidation and
-whatnot.
 
-Alternatively you can patch the code and add a WARN_ON right after the
-message, the stacktrace will tell for sure from where it gets triggered.
+On 22.03.2018 15:31, David Sterba wrote:
+> On Thu, Mar 22, 2018 at 09:29:46PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2018年03月22日 21:18, Nikolay Borisov wrote:
+>>> Its function has been subsumed by "btrfs rescue zero-log". Remove its
+>>> source file and adjust make/tests soruces accordingly.
+>>
+>> Despite of the lack of sob tag, it looks good.
+>>
+>>> ---
+>>>  Makefile                              |  4 +-
+>>>  btrfs-zero-log.c                      | 78 -----------------------------------
+>>>  tests/misc-tests.sh                   |  1 -
+>>>  tests/misc-tests/003-zero-log/test.sh |  6 +--
+>>
+>> What about updating .gitignore to remove btrfs-zero-log?
+> 
+> Not just that, here's the whole checklist:
+> 
+> https://github.com/kdave/btrfs-progs/issues/97
+
+I saw the checklist but wasn't sure about the "document removal" bit.
+
+> 

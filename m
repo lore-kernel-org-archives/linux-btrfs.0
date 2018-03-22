@@ -1,86 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f51.google.com ([209.85.218.51]:44032 "EHLO
-        mail-oi0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750983AbeCaVuE (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:49044 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1754949AbeCVM7z (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 31 Mar 2018 17:50:04 -0400
-Received: by mail-oi0-f51.google.com with SMTP id j143-v6so10215103oih.11
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Mar 2018 14:50:04 -0700 (PDT)
-MIME-Version: 1.0
-From: Chris Murphy <lists@colorremedies.com>
-Date: Sat, 31 Mar 2018 15:50:03 -0600
-Message-ID: <CAJCQCtTTerrYvXpof+jiShO1D8PmaPaFCA9W1PyFxaGs0PZaig@mail.gmail.com>
-Subject: dead or dying SDXC card fsck's OK but mount hangs indefinitely
-To: Btrfs BTRFS <linux-block@vger.kernel.org>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Thu, 22 Mar 2018 08:59:55 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2MCgox0026045
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 12:59:54 GMT
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+        by aserp2130.oracle.com with ESMTP id 2gvcr0g2gk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 12:59:54 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w2MCxrCj004792
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 12:59:54 GMT
+Received: from abhmp0001.oracle.com (abhmp0001.oracle.com [141.146.116.7])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w2MCxrkA009450
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 12:59:53 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] handle SB beyond blockcount mkfs.btrfs
+Date: Thu, 22 Mar 2018 21:01:39 +0800
+Message-Id: <20180322130141.19894-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is perhaps a novelty problem report. And it's also a throw away
-card data wise, and is a $12 Samsung EVO+ SDXC card used in an Intel
-NUC.
+v2->v1:
+ progs: update change log
+ Adds kernel check if there is a mismatch in the FSID
+   between primary and copy SB
 
-Kernel is 4.15.14-300.fc27.x86_64
+The kernel patch here checks if all the SB copies are of the
+same fsid.
 
-It contains FAT, ext4, and Btrfs file systems. They can all be fsck'd,
-but none can be mounted. Even if it use blockdev --setro on the entire
-mmc device and then mount -o ro it still fails. Kinda weird huh?
+The btrfs-progs patch zeros SB if found beyond blockcount.
+mkfs.btrfs -b <blockcount>
 
-[68498.521260] mmc0: new ultra high speed SDR104 SDHC card at address 59b4
-[68498.521990] mmcblk0: mmc0:59b4 EB2MW 29.8 GiB
-[68498.530899]  mmcblk0: p1 p2 p3 p4
-[68507.152842] BTRFS info (device mmcblk0p4): using free space tree
-[68507.152919] BTRFS info (device mmcblk0p4): has skinny extents
-[68507.165855] BTRFS info (device mmcblk0p4): bdev /dev/mmcblk0p4
-errs: wr 0, rd 0, flush 0, corrupt 10, gen 0
-[68507.192935] BTRFS info (device mmcblk0p4): enabling ssd optimizations
-[69107.488123] mmc0: Card stuck in programming state! mmcblk0 card_busy_detect
-[69107.539128] mmc0: Tuning timeout, falling back to fixed sampling clock
+** CAVEAT **
+On the systems with only the below kernel patch but without the
+btrfs-progs patch below, it shall return the btrfs scan error
+as shown in the example below.
 
+mkfs.btrfs -fq /dev/sdc
+mkfs.btrfs -fq -b1G /dev/sdc
+ERROR: device scan failed on '/dev/sdc': Invalid argument
 
-The corrupt 10 was fixed with a scrub months ago, and I never reset
-the counter so that's not a current corruption. The most recent scrub
-was maybe a week ago. And even offline scrub works. So literally every
-single block related to this Btrfs file system is readable, and yet
-it's not mountable? Very weird.
+The above error says, mkfs is fine but failed to register/scan
+the device into the kernel. As the kernel now reports an error
+if there is inconsistency in the SB fsid. To overcome this error
+user can apply the btrfs-progs patch OR use dd it zero the stale
+SB manually.
 
-Anyway, that's it. No further errors. No timeouts. User space is hung
-on the mount command. mccqd/0 is using 7% CPU, the stack for that
-process is:
+Anand Jain (1):
+  btrfs: check if the fsid in the primary sb and copy sb are same
 
-[root@f27s ~]# cat /proc/2865/stack
-[<0>] mmc_wait_for_req_done+0x7b/0x130 [mmc_core]
-[<0>] mmc_wait_for_cmd+0x66/0x90 [mmc_core]
-[<0>] __mmc_send_status+0x70/0xa0 [mmc_core]
-[<0>] card_busy_detect+0x59/0x160 [mmc_block]
-[<0>] mmc_blk_err_check+0x170/0x640 [mmc_block]
-[<0>] mmc_start_areq+0xc6/0x3c0 [mmc_core]
-[<0>] mmc_blk_issue_rw_rq+0xcf/0x3b0 [mmc_block]
-[<0>] mmc_blk_issue_rq+0x298/0x7c0 [mmc_block]
-[<0>] mmc_queue_thread+0xce/0x160 [mmc_block]
-[<0>] kthread+0x113/0x130
-[<0>] ret_from_fork+0x35/0x40
-[<0>] 0xffffffffffffffff
-[root@f27s ~]#
+ fs/btrfs/volumes.c | 43 ++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 32 insertions(+), 11 deletions(-)
 
-Basically the card is in some sort of state that the kernel code is
-not going to ever second guess. So there's no further error or reset
-attempt.
+  btrfs-progs: wipe stale sb copy beyond -b size
 
-# cat /sys/block/mmcblk0/queue/scheduler
-noop [deadline] cfq
-
-
-This part of the stack trace is interesting:
-
-mmc_blk_issue_rw_rq
-
-Something wants to write something, even though I'm using mount -o ro,
-and also blockdev --setro should prevent any writes from being
-attempted? Almost sounds like user error...
-
-
+ utils.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
 
 -- 
-Chris Murphy
+2.7.0
+

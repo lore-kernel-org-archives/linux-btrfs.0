@@ -1,48 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:38967 "EHLO
-        mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751908AbeCVMPT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Mar 2018 08:15:19 -0400
-Received: by mail-io0-f169.google.com with SMTP id v13so10686810iob.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Mar 2018 05:15:19 -0700 (PDT)
-Subject: Re: [PATCH] btrfs: Allow non-privileged user to delete empty
- subvolume by default
-To: kreijack@inwind.it, Nikolay Borisov <nborisov@suse.com>,
-        "Misono, Tomohiro" <misono.tomohiro@jp.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
- <f00fe679-5c18-27db-a921-b303405968bc@libero.it>
- <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
- <5ce4f667-e97f-c87e-466d-37d488f2abbb@gmail.com>
- <cf65350d-1985-ac5b-2fb6-72fedfa9adf0@inwind.it>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <53ff753f-6078-ddf7-3107-14f1fddd7c26@gmail.com>
-Date: Thu, 22 Mar 2018 08:15:16 -0400
+Received: from mx2.suse.de ([195.135.220.15]:32798 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751835AbeCVMZ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 22 Mar 2018 08:25:57 -0400
+Subject: Re: [PATCH] btrfs-progs: wipe all copies of the stale superblock
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <20180321101920.9004-1-anand.jain@oracle.com>
+ <e16124c3-7f57-6a2f-f760-5164f7c10ad1@suse.com>
+ <d2fbba43-dff3-3909-a794-69c4a8ed4ace@oracle.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <cb036707-14b7-578a-2051-56768a729771@suse.com>
+Date: Thu, 22 Mar 2018 14:25:54 +0200
 MIME-Version: 1.0
-In-Reply-To: <cf65350d-1985-ac5b-2fb6-72fedfa9adf0@inwind.it>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <d2fbba43-dff3-3909-a794-69c4a8ed4ace@oracle.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018-03-21 16:38, Goffredo Baroncelli wrote:
-> On 03/21/2018 12:47 PM, Austin S. Hemmelgarn wrote:
->> I agree as well, with the addendum that I'd love to see a new ioctl that does proper permissions checks.  While letting rmdir(2) work for an empty subvolume with the appropriate permissions would be great (it will let rm -r work correctly), it doesn't address the usefulness of being able to just `btrfs subvolume delete` and not have to wait for the command to finish before you can reuse the name.
-> 
-> How this could work ?
-> 
-> If you want to check all the subvolumes files permissions, this will require some time: you need to traverse all the subvolume-filesystem; and only if all the checks are passed, you can delete the subvolume.
-> 
-> Unfortunately I think that only two options exist:
-> - don't check permissions, and you can quick remove a subvolume
-> - check all the permissions, i.e. check all the files permissions, and only if all the permissions are OK, you can delete the subvolume. However this cannot be a "quick" subvolume delete
 
-Why exactly would you need to check everything?  What I'm talking about 
-is having behavior like `user_subvol_rm_allowed` be the default, with an 
-additional check emulating the regular dentry removal check (namely that 
-the user has appropriate permissions on the parent directory) so that 
-people can't delete things like their own home directories.  We're 
-already _way_ beyond POSIX semantics here because we're debating the 
-handling of permissions for an ioctl that takes a different fd than what 
-it functionally operates on, so I see no reason whatsoever that we need 
-to enforce POSIX semantics to that degree.
+
+On 22.03.2018 14:14, Anand Jain wrote:
+> 
+> 
+>  Ok. Will update the change log.
+> 
+>> A better place for this code is really inside btrfs_wipe_existing_sb.
+>> Furthermore looking at libblkid it supports a way to wipe multiple
+>> superblocks by way of: blkid_do_wipe. I.e
+>> https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.21/libblkid-docs/libblkid-Low-level-tags.html#blkid-do-wipe
+>>
+>>
+>> Apparently this functionality has been in libblkid for quite some time
+>> according to this blog post -
+>> http://karelzak.blogspot.bg/2011/11/wipefs8-improvements.html (Karel Zak
+>> is the person mainting various system libraries).
+>>
+>> So can't we at the very least:
+>>
+>> 1) Remove some of our (open coded) implementation of
+>> btrfs_wipe_existing_sb and use the generic blkid implementation.
+>>
+>> 2) Incorporate your code into btrfs_wipe_existing_sb OR extend the usage
+>> of the generic blkid_do_wipe to wipe multiple copies of the sb ?
+> 
+>  In btrfs_prepare_device() we have already zeroed the SBs which were
+>  within the block count. The btrfs_wipe_existing_sb() is to handle the
+>  other type of FS SBs. Definitely, we can consolidate all this into a
+>  single function using libblkid. However, it can be done in a separate
+>  patch.
+
+So I misread the code in the beginning, so the actual btrfs SB are being
+wiped out by the for loop which calls zer_dev_clamped. And in there all
+superblocks between  0 - block_count are zeored. And block_count is
+actual physical size of the device, right. And this value can further be
+limited by the max_block_count being passed, which in mkfs case is
+what's passed to -b.
+
+So instead of adding more code, why not just call zero_dev_clamped with
+the return value of btrfs_device_size rather than the possibly clamped
+one block_count? That you always unconditionally will be sure to zero
+out all the sb which are on the device, irrespective of the size of the
+fs? Something like :
+
+diff --git a/utils.c b/utils.c
+index 715bab0ebfb5..17df72c3a1d5 100644
+--- a/utils.c
++++ b/utils.c
+@@ -316,7 +316,7 @@ static int btrfs_wipe_existing_sb(int fd)
+ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
+                u64 max_block_count, unsigned opflags)
+ {
+-       u64 block_count;
++       u64 block_count, device_size;
+        struct stat st;
+        int i, ret;
+
+@@ -326,7 +326,7 @@ int btrfs_prepare_device(int fd, const char *file,
+u64 *block_count_ret,
+                return 1;
+        }
+
+-       block_count = btrfs_device_size(fd, &st);
++       block_count = device_size = btrfs_device_size(fd, &st);
+        if (block_count == 0) {
+                error("unable to determine size of %s", file);
+                return 1;
+@@ -351,7 +351,7 @@ int btrfs_prepare_device(int fd, const char *file,
+u64 *block_count_ret,
+        ret = zero_dev_clamped(fd, 0, ZERO_DEV_BYTES, block_count);
+        for (i = 0 ; !ret && i < BTRFS_SUPER_MIRROR_MAX; i++)
+                ret = zero_dev_clamped(fd, btrfs_sb_offset(i),
+-                                      BTRFS_SUPER_INFO_SIZE, block_count);
++                                      BTRFS_SUPER_INFO_SIZE, device_size);
+

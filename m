@@ -1,75 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp.domeneshop.no ([194.63.252.55]:43302 "EHLO
-        smtp.domeneshop.no" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751548AbeCVVNV (ORCPT
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:15061 "EHLO
+        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1751288AbeCWG3x (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Mar 2018 17:13:21 -0400
-From: waxhead <waxhead@dirtcellar.net>
-Subject: Re: Status of RAID5/6
-Reply-To: waxhead@dirtcellar.net
-To: Liu Bo <obuil.liubo@gmail.com>, Menion <menion@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <CAJVZm6dkZmSpnV3wz4sfOMzMCP36Mrt+-2J7o0mU4z=dEYQqQQ@mail.gmail.com>
- <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
-Message-ID: <d9ee9d63-15af-e9a0-06d9-51f39cc69de0@dirtcellar.net>
-Date: Thu, 22 Mar 2018 22:13:18 +0100
+        Fri, 23 Mar 2018 02:29:53 -0400
+Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
+        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 07EA6AC011A
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Mar 2018 15:29:49 +0900 (JST)
+Subject: Re: [PATCH] btrfs: Allow non-privileged user to delete empty
+ subvolume by default
+To: Nikolay Borisov <nborisov@suse.com>, <kreijack@inwind.it>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
+ <f00fe679-5c18-27db-a921-b303405968bc@libero.it>
+ <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
+From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
+Message-ID: <6bfe41e5-4193-fa49-ef8e-9ec751e72c05@jp.fujitsu.com>
+Date: Fri, 23 Mar 2018 15:29:42 +0900
 MIME-Version: 1.0
-In-Reply-To: <CANQeFDDxZSZ4jYDPvW-Q=AoyPrGzpp0fVywjFOJtkeD+Ysgmew@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Liu Bo wrote:
-> On Wed, Mar 21, 2018 at 9:50 AM, Menion <menion@gmail.com> wrote:
->> Hi all
->> I am trying to understand the status of RAID5/6 in BTRFS
->> I know that there are some discussion ongoing on the RFC patch
->> proposed by Liu bo
->> But it seems that everything stopped last summary. Also it mentioned
->> about a "separate disk for journal", does it mean that the final
->> implementation of RAID5/6 will require a dedicated HDD for the
->> journaling?
+On 2018/03/21 16:46, Nikolay Borisov wrote:
 > 
-> Thanks for the interest on btrfs and raid56.
 > 
-> The patch set is to plug write hole, which is very rare in practice, tbh.
-> The feedback is to use existing space instead of another dedicate
-> "fast device" as the journal in order to get some extent of raid
-> protection.  I'd need some time to pick it up.
+> On 20.03.2018 22:06, Goffredo Baroncelli wrote:
+>> On 03/20/2018 07:45 AM, Misono, Tomohiro wrote:
+>>> Deletion of subvolume by non-privileged user is completely restricted
+>>> by default because we can delete a subvolume even if it is not empty
+>>> and may cause data loss. In other words, when user_subvol_rm_allowed
+>>> mount option is used, a user can delete a subvolume containing the
+>>> directory which cannot be deleted directly by the user.
+>>>
+>>> However, there should be no harm to allow users to delete empty subvolumes
+>>> when rmdir(2) would have been allowed if they were normal directories.
+>>> This patch allows deletion of empty subvolume by default.
+>>
+>> Instead of modifying the ioctl, what about allowing rmdir(2) to work for an _empty_ subvolume (and all the permission check are satisfied) ?
 > 
-> With that being said, we have several data reconstruction fixes for
-> raid56 (esp. raid6) in 4.15, I'd say please deploy btrfs with the
-> upstream kernel or some distros which do kernel updates frequently,
-> the most important one is
-> 
-> 8810f7517a3b Btrfs: make raid6 rebuild retry more
-> https://patchwork.kernel.org/patch/10091755/
-> 
-> AFAIK, no other data corruptions showed up.
-> 
-I am very interested in the "raid"5/6 like behavior myself. Actually 
-calling it RAID in the past may have had it's benefits , but these days 
-continuing to use the RAID term is not helping. Even technically minded 
-people seem to get confused.
+> I'm inclined to agree with Goffredo. user_subvol_rm_allowed flag really
+> looks like a hack ontop of the ioctl. I'd rather we modify the generic
+> behavior.
 
-For example: It was suggested that "raid"5/6 should have hot-spare 
-support. In BTRFS terms a hot spare devicse sounds wrong to me, but 
-reserving extra space for a "hot-space" so any "raid"5/6 like system can 
-(auto?) rebalance to missing blocks to the rest of the pool sounds 
-sensible enough (as long as the number of devices allows to separate the 
-different bits and pieces).
+Ok, I will send another patch which allows rmdir(2) to delete a subvolume.
 
-Anyway , I got carried away a bit there. Sorry about that.
-What I really wanted to comment is about usability of "raid"5/6
-How would really a metadata "raid"1 + data "raid"5 or 6 compare to say 
-mdraid 5 or 6 from a reliability point of view.
+Thanks,
+Tomohiro Misono
 
-Sure mdraid has the advantage, but even with the write hole and the risk 
-of corruption of data (not the filesystem) would not BTRFS in "theory" 
-be safer that at least mdraid 5 if run with metadata "raid"5 ?!
-You have to run scrub on both mdraid as well as BTRFS to ensure data is 
-not corrupted.
 
-PS! It might be worth mentioning that I am slightly affected by a 
-Glenfarclas 105 Whisky while writing this so please bare with me in case 
-something is too far off :)

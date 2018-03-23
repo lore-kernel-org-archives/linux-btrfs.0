@@ -1,52 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:15061 "EHLO
-        mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751288AbeCWG3x (ORCPT
+Received: from mail-ot0-f182.google.com ([74.125.82.182]:38727 "EHLO
+        mail-ot0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752413AbeCWLEu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Mar 2018 02:29:53 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 07EA6AC011A
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Mar 2018 15:29:49 +0900 (JST)
-Subject: Re: [PATCH] btrfs: Allow non-privileged user to delete empty
- subvolume by default
-To: Nikolay Borisov <nborisov@suse.com>, <kreijack@inwind.it>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <5164078e-4e15-d6df-7356-fa4f5d70a2db@jp.fujitsu.com>
- <f00fe679-5c18-27db-a921-b303405968bc@libero.it>
- <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Message-ID: <6bfe41e5-4193-fa49-ef8e-9ec751e72c05@jp.fujitsu.com>
-Date: Fri, 23 Mar 2018 15:29:42 +0900
+        Fri, 23 Mar 2018 07:04:50 -0400
+Received: by mail-ot0-f182.google.com with SMTP id 95-v6so12797955ote.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Mar 2018 04:04:50 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <c4fc8c1f-32cf-06e5-f8fa-ca5574aca347@suse.com>
-Content-Type: text/plain; charset="utf-8"
+From: james harvey <jamespharvey20@gmail.com>
+Date: Fri, 23 Mar 2018 07:04:49 -0400
+Message-ID: <CA+X5Wn5E_Ybvka7MfLZkZs7gT44buB0K9n=6UPVZVX2M5YuEdw@mail.gmail.com>
+Subject: Hard reset during balance - How to continue?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2018/03/21 16:46, Nikolay Borisov wrote:
-> 
-> 
-> On 20.03.2018 22:06, Goffredo Baroncelli wrote:
->> On 03/20/2018 07:45 AM, Misono, Tomohiro wrote:
->>> Deletion of subvolume by non-privileged user is completely restricted
->>> by default because we can delete a subvolume even if it is not empty
->>> and may cause data loss. In other words, when user_subvol_rm_allowed
->>> mount option is used, a user can delete a subvolume containing the
->>> directory which cannot be deleted directly by the user.
->>>
->>> However, there should be no harm to allow users to delete empty subvolumes
->>> when rmdir(2) would have been allowed if they were normal directories.
->>> This patch allows deletion of empty subvolume by default.
->>
->> Instead of modifying the ioctl, what about allowing rmdir(2) to work for an _empty_ subvolume (and all the permission check are satisfied) ?
-> 
-> I'm inclined to agree with Goffredo. user_subvol_rm_allowed flag really
-> looks like a hack ontop of the ioctl. I'd rather we modify the generic
-> behavior.
+If a system unexpectedly reboots during a balance, what's the best next step?
 
-Ok, I will send another patch which allows rmdir(2) to delete a subvolume.
+>From an ISO, read-only operations/mounting looks fine.
 
-Thanks,
-Tomohiro Misono
+Didn't want to make any writes until I ask, because I see some reports
+of bad things happening with a reboot during a balance, and don't want
+to mis-step.
+
+btrfs check reports no errors.  mount -o ro,skip_balance works fine
+and directory entries seem correct.
+
+$ sudo btrfs balance status -v /mnt/tmp
+Balance on '/mnt/tmp' is paused
+0 out of about 0 chunks balanced (0 considered), -nan% left
+Dumping filters: flags 0x17, state 0x0, force is off
+  DATA (flags 0x0): balancing
+  METADATA (flags 0x0): balancing
+  SYSTEM (flags 0x0): balancing
+
+This surprised me.  Not sure if it's expected for an interrupted or
+paused balance to show 0/0/0/nan.
+
+Do I re-mount without "ro,skip_balance" and see if it finishes the
+balance?  (If it doesn't, cancel and restart it?)
+
+Do I re-mount without "ro" but still with "skip_balance", and cancel
+the balance and restart it?  (Never trying to continue the interrupted
+balance?)
+
+Something else that I'm not aware of?
+
+... System didn't reboot on its own, it became completely unresponsive
+for over 24 hours, and I had to perform a hard reset.  Active ssh
+sessions permanently hung, and local logins didn't get past asking for
+password.  Hoped I could get a btrfs balance cancel to run.
 
 
+
+$ uname -a
+Linux terra 4.15.8-1-ARCH #1 SMP PREEMPT Sat Mar 10 00:00:33 UTC 2018
+x86_64 GNU/Linux
+
+$ btrfs --version
+btrfs-progs v4.15.1
+
+$ sudo btrfs fi show /mnt/tmp
+Label: 'losable'  uuid: 9208dacc-8bb3-4303-9f71-124f0cecc7e7
+        Total devices 4 FS bytes used 6.92TiB
+        devid    1 size 2.50TiB used 1.78TiB path /dev/mapper/lvm-losable1
+        devid    2 size 2.50TiB used 1.78TiB path /dev/mapper/lvm-losable2
+        devid    3 size 2.50TiB used 1.78TiB path /dev/mapper/lvm-losable3
+        devid    4 size 2.50TiB used 1.60TiB path /dev/mapper/lvm-losable4
+
+$ sudo btrfs fi df /mnt/tmp
+Data, RAID0: total=6.92TiB, used=6.91TiB
+System, RAID1: total=8.00MiB, used=400.00KiB
+Metadata, RAID1: total=7.00GiB, used=5.77GiB
+GlobalReserve, single: total=368.09MiB, used=0.00B

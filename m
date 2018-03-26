@@ -1,100 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2120.oracle.com ([141.146.126.78]:51970 "EHLO
-        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751701AbeCUINT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Mar 2018 04:13:19 -0400
-Received: from pps.filterd (aserp2120.oracle.com [127.0.0.1])
-        by aserp2120.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2L7k6kg191534
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:18 GMT
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-        by aserp2120.oracle.com with ESMTP id 2guk9w82rs-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:18 +0000
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-        by userv0022.oracle.com (8.14.4/8.14.4) with ESMTP id w2L8DGl7028946
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:17 GMT
-Received: from abhmp0011.oracle.com (abhmp0011.oracle.com [141.146.116.17])
-        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w2L8DGGw016924
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Mar 2018 08:13:16 GMT
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mail.kernel.org ([198.145.29.99]:57734 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751001AbeC0Ido (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Mar 2018 04:33:44 -0400
+Received: from debian3.lan (bl12-226-64.dsl.telepac.pt [85.245.226.64])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 2BEC02183B
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 08:33:43 +0000 (UTC)
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/2] btrfs: return required error from btrfs_check_super_csum
-Date: Wed, 21 Mar 2018 16:14:54 +0800
-Message-Id: <20180321081454.31560-3-anand.jain@oracle.com>
-In-Reply-To: <20180321081454.31560-1-anand.jain@oracle.com>
+Subject: [PATCH 1/2] Btrfs: fix fsync after hole punching when using no-holes feature
+Date: Mon, 26 Mar 2018 23:59:00 +0100
+Message-Id: <20180326225900.9979-1-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <20180321081454.31560-1-anand.jain@oracle.com>
 
-Return the required -EINVAL and -EUCLEAN from the function
-btrfs_check_super_csum(). And more the error log into the
-parent function.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+When we have the no-holes mode enabled and fsync a file after punching a
+hole in it, we can end up not logging the whole hole range in the log tree.
+This happens if the file has extent items that span more than one leaf and
+we punch a hole that covers a range that starts in a leaf but does not go
+beyond the offset of the first extent in the next leaf.
+
+Example:
+
+  $ mkfs.btrfs -f -O no-holes -n 65536 /dev/sdb
+  $ mount /dev/sdb /mnt
+  $ for ((i = 0; i <= 831; i++)); do
+	offset=$((i * 2 * 256 * 1024))
+	xfs_io -f -c "pwrite -S 0xab -b 256K $offset 256K" \
+		/mnt/foobar >/dev/null
+    done
+  $ sync
+
+  # We now have 2 leafs in our filesystem fs tree, the first leaf has an
+  # item corresponding the extent at file offset 216530944 and the second
+  # leaf has a first item corresponding to the extent at offset 217055232.
+  # Now we punch a hole that partially covers the range of the extent at
+  # offset 216530944 but does go beyond the offset 217055232.
+
+  $ xfs_io -c "fpunch $((216530944 + 128 * 1024 - 4000)) 256K" /mnt/foobar
+  $ xfs_io -c "fsync" /mnt/foobar
+
+  <power fail>
+
+  # mount to replay the log
+  $ mount /dev/sdb /mnt
+
+  # Before this patch, only the subrange [216658016, 216662016[ (length of
+  # 4000 bytes) was logged, leaving an incorrect file layout after log
+  # replay.
+
+Fix this by checking if there is a hole between the last extent item that
+we processed and the first extent item in the next leaf, and if there is
+one, log an explicit hole extent item.
+
+Fixes: 16e7549f045d ("Btrfs: incompatible format change to remove hole extents")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/disk-io.c | 25 ++++++++++++++-----------
- 1 file changed, 14 insertions(+), 11 deletions(-)
+ fs/btrfs/tree-log.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b9b435579527..062b3e0c7fd1 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -392,9 +392,10 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
- /*
-  * Return 0 if the superblock checksum type matches the checksum value of that
-  * algorithm. Pass the raw disk superblock data.
-+ * Otherwise: -EINVAL  if csum type is not found
-+ * 	      -EUCLEAN if csum does not match
-  */
--static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
--				  char *raw_disk_sb)
-+static int btrfs_check_super_csum(char *raw_disk_sb)
- {
- 	struct btrfs_super_block *disk_sb =
- 		(struct btrfs_super_block *)raw_disk_sb;
-@@ -402,11 +403,8 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 	u32 crc = ~(u32)0;
- 	char result[sizeof(crc)];
- 
--	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
--		btrfs_err(fs_info, "unsupported checksum algorithm %u",
--			  csum_type);
--		return 1;
--	}
-+	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes))
-+		return -EINVAL;
- 
- 	/*
- 	 * The super_block structure does not span the whole
-@@ -418,7 +416,7 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
- 	btrfs_csum_final(crc, result);
- 
- 	if (memcmp(raw_disk_sb, result, sizeof(result)))
--		return 1;
-+		return -EUCLEAN;
- 
- 	return 0;
- }
-@@ -2570,9 +2568,14 @@ int open_ctree(struct super_block *sb,
- 	 * We want to check superblock checksum, the type is stored inside.
- 	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
- 	 */
--	if (btrfs_check_super_csum(fs_info, bh->b_data)) {
--		btrfs_err(fs_info, "superblock checksum mismatch");
--		err = -EINVAL;
-+	err = btrfs_check_super_csum(bh->b_data);
-+	if (err) {
-+		if (err == -EINVAL)
-+			pr_err("BTRFS error (device %pg): unsupported checksum algorithm",
-+				fs_devices->latest_bdev);
-+		else if (err == -EUCLEAN)
-+			pr_err("BTRFS error (device %pg): superblock checksum mismatch",
-+				fs_devices->latest_bdev);
- 		brelse(bh);
- 		goto fail_alloc;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index fd573816f461..1d738ff5c41b 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3994,6 +3994,36 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 			break;
+ 		*last_extent = extent_end;
  	}
++
++	/*
++	 * Check if there is a hole between the last extent found in our leaf
++	 * and the first extent in the next leaf. If there is one, we need to
++	 * log an explicit hole so that at replay time we can punch the hole.
++	 */
++	if (ret == 0 &&
++	    key.objectid == btrfs_ino(inode) &&
++	    key.type == BTRFS_EXTENT_DATA_KEY &&
++	    i == btrfs_header_nritems(src_path->nodes[0])) {
++		ret = btrfs_next_leaf(inode->root, src_path);
++		need_find_last_extent = true;
++		if (ret > 0) {
++			ret = 0;
++		} else if (ret == 0) {
++			btrfs_item_key_to_cpu(src_path->nodes[0], &key,
++					      src_path->slots[0]);
++			if (key.objectid == btrfs_ino(inode) &&
++			    key.type == BTRFS_EXTENT_DATA_KEY &&
++			    *last_extent < key.offset) {
++				const u64 len = key.offset - *last_extent;
++
++				ret = btrfs_insert_file_extent(trans, log,
++							       btrfs_ino(inode),
++							       *last_extent, 0,
++							       0, len, 0, len,
++							       0, 0, 0);
++			}
++		}
++	}
+ 	/*
+ 	 * Need to let the callers know we dropped the path so they should
+ 	 * re-search.
 -- 
-2.15.0
+2.11.0
 

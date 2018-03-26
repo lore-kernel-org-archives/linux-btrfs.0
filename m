@@ -1,50 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym03.jp.fujitsu.com ([211.128.242.42]:47472 "EHLO
-        mgwym03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751108AbeCZI2d (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Mar 2018 04:28:33 -0400
-Received: from g01jpfmpwyt01.exch.g01.fujitsu.local (g01jpfmpwyt01.exch.g01.fujitsu.local [10.128.193.38])
-        by yt-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 314C3AC01E3
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Mar 2018 17:28:25 +0900 (JST)
-Received: from G01JPEXCHYT14.g01.fujitsu.local (G01JPEXCHYT14.g01.fujitsu.local [10.128.194.53])
-        by g01jpfmpwyt01.exch.g01.fujitsu.local (Postfix) with ESMTP id 88C206D66DF
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Mar 2018 17:28:24 +0900 (JST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>
-Subject: [PATCH v2 0/3] Allow rmdir(2) to delete a subvolume
-Message-ID: <ea15ef98-3668-b2bc-079c-439ec512ae76@jp.fujitsu.com>
-Date: Mon, 26 Mar 2018 17:28:20 +0900
+Received: from mx2.suse.de ([195.135.220.15]:40822 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1751013AbeCZIvK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Mar 2018 04:51:10 -0400
+Subject: Re: [PATCH v2 1/3] btrfs: Move may_destroy_subvol() from ioctl.c to
+ inode.c
+To: Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <ea15ef98-3668-b2bc-079c-439ec512ae76@jp.fujitsu.com>
+ <68f8b2f8-8df9-ccc4-7eca-9b7a7e2d8a86@jp.fujitsu.com>
+From: Nikolay Borisov <nborisov@suse.com>
+Message-ID: <2c2a0e85-a5d1-fe02-e739-f59f302775a1@suse.com>
+Date: Mon, 26 Mar 2018 11:51:07 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <68f8b2f8-8df9-ccc4-7eca-9b7a7e2d8a86@jp.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-changelog:
-  v1 -> v2 ... split the patch to hopefully make review easier
 
-1st patch is a preparation work just moving the declaration of
-may_destroy_subvol().
 
-2nd patch is the main part. New function btrfs_delete_subvolume() is
-introduced and used in btrfs_rmdir() when a direcoty is an empty
-subvolume. The function is almost the copy of second half of
-btrfs_ioctl_snap_destroy().
-The code path for "sub delete" is not changed yet.
+On 26.03.2018 11:28, Misono Tomohiro wrote:
+> This is a preparation work to allow rmdir(2) to delete a subvolume.
+> 
+> Signed-off-by: Tomohiro Misono <misono.tomohiro@jp.fujitsu.com>
+> ---
+>  fs/btrfs/ctree.h |  1 +
+>  fs/btrfs/inode.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.c | 54 ------------------------------------------------------
+>  3 files changed, 55 insertions(+), 54 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index da308774b8a4..2dbead106aab 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3166,6 +3166,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+>  			struct btrfs_root *root,
+>  			struct inode *dir, u64 objectid,
+>  			const char *name, int name_len);
+> +noinline int may_destroy_subvol(struct btrfs_root *root);
 
-3rd patch is a cleanup of btrfs_ioctl_snap_destroy() and uses 
-brrfs_delete_subvolume() for "sub delete" too.
+Why the explicit noinline? If it's for "documentation"/appearing in
+stack traces purposes then you should use noinline_for_stack. But I
+don't think it's really needed.
 
-Tomohiro Misono (3):
-  btrfs: move may_destroy_subvol() from ioctl.c to inode.c
-  btrfs: Allow rmdir(2) to delete a subvolume
-  btrfs: cleanup btrfs_ioctl_snap_destroy() by using btrfs_delete_subvolume()
-
- fs/btrfs/ctree.h |   5 +-
- fs/btrfs/inode.c | 199 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/ioctl.c | 185 +--------------------------------------------------
- 3 files changed, 200 insertions(+), 189 deletions(-)
-
--- 
-2.14.3
-
+>  int btrfs_truncate_block(struct inode *inode, loff_t from, loff_t len,
+>  			int front);
+>  int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index f53470112670..db66fa4fede6 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4333,6 +4333,60 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
+>  	return ret;
+>  }
+>  
+> +/*
+> + * helper to check if the subvolume references other subvolumes
+> + */
+> +noinline int may_destroy_subvol(struct btrfs_root *root)
+> +{
+> +	struct btrfs_fs_info *fs_info = root->fs_info;
+> +	struct btrfs_path *path;
+> +	struct btrfs_dir_item *di;
+> +	struct btrfs_key key;
+> +	u64 dir_id;
+> +	int ret;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+> +
+> +	/* Make sure this root isn't set as the default subvol */
+> +	dir_id = btrfs_super_root_dir(fs_info->super_copy);
+> +	di = btrfs_lookup_dir_item(NULL, fs_info->tree_root, path,
+> +				   dir_id, "default", 7, 0);
+> +	if (di && !IS_ERR(di)) {
+> +		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
+> +		if (key.objectid == root->root_key.objectid) {
+> +			ret = -EPERM;
+> +			btrfs_err(fs_info,
+> +				  "deleting default subvolume %llu is not allowed",
+> +				  key.objectid);
+> +			goto out;
+> +		}
+> +		btrfs_release_path(path);
+> +	}
+> +
+> +	key.objectid = root->root_key.objectid;
+> +	key.type = BTRFS_ROOT_REF_KEY;
+> +	key.offset = (u64)-1;
+> +
+> +	ret = btrfs_search_slot(NULL, fs_info->tree_root, &key, path, 0, 0);
+> +	if (ret < 0)
+> +		goto out;
+> +	BUG_ON(ret == 0);
+> +
+> +	ret = 0;
+> +	if (path->slots[0] > 0) {
+> +		path->slots[0]--;
+> +		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> +		if (key.objectid == root->root_key.objectid &&
+> +		    key.type == BTRFS_ROOT_REF_KEY)
+> +			ret = -ENOTEMPTY;
+> +	}
+> +out:
+> +	btrfs_free_path(path);
+> +	return ret;
+> +}
+> +
+>  static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+>  {
+>  	struct inode *inode = d_inode(dentry);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 111ee282b777..11af9eb449ef 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1843,60 +1843,6 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+>  	return ret;
+>  }
+>  
+> -/*
+> - * helper to check if the subvolume references other subvolumes
+> - */
+> -static noinline int may_destroy_subvol(struct btrfs_root *root)
+> -{
+> -	struct btrfs_fs_info *fs_info = root->fs_info;
+> -	struct btrfs_path *path;
+> -	struct btrfs_dir_item *di;
+> -	struct btrfs_key key;
+> -	u64 dir_id;
+> -	int ret;
+> -
+> -	path = btrfs_alloc_path();
+> -	if (!path)
+> -		return -ENOMEM;
+> -
+> -	/* Make sure this root isn't set as the default subvol */
+> -	dir_id = btrfs_super_root_dir(fs_info->super_copy);
+> -	di = btrfs_lookup_dir_item(NULL, fs_info->tree_root, path,
+> -				   dir_id, "default", 7, 0);
+> -	if (di && !IS_ERR(di)) {
+> -		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
+> -		if (key.objectid == root->root_key.objectid) {
+> -			ret = -EPERM;
+> -			btrfs_err(fs_info,
+> -				  "deleting default subvolume %llu is not allowed",
+> -				  key.objectid);
+> -			goto out;
+> -		}
+> -		btrfs_release_path(path);
+> -	}
+> -
+> -	key.objectid = root->root_key.objectid;
+> -	key.type = BTRFS_ROOT_REF_KEY;
+> -	key.offset = (u64)-1;
+> -
+> -	ret = btrfs_search_slot(NULL, fs_info->tree_root, &key, path, 0, 0);
+> -	if (ret < 0)
+> -		goto out;
+> -	BUG_ON(ret == 0);
+> -
+> -	ret = 0;
+> -	if (path->slots[0] > 0) {
+> -		path->slots[0]--;
+> -		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> -		if (key.objectid == root->root_key.objectid &&
+> -		    key.type == BTRFS_ROOT_REF_KEY)
+> -			ret = -ENOTEMPTY;
+> -	}
+> -out:
+> -	btrfs_free_path(path);
+> -	return ret;
+> -}
+> -
+>  static noinline int key_in_sk(struct btrfs_key *key,
+>  			      struct btrfs_ioctl_search_key *sk)
+>  {
+> 

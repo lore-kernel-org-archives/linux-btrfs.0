@@ -1,49 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:32845 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753195AbeC0Qce (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 12:32:34 -0400
-Date: Tue, 27 Mar 2018 18:30:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        jeffm@suse.com
-Subject: Re: [PATCH 00/14] Qgroup metadata reservation rework
-Message-ID: <20180327163007.GB30422@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20171212073436.16447-1-wqu@suse.com>
- <20171212211209.GB3553@twin.jikos.cz>
- <645e99a8-67ee-b3ce-89cc-e60a481f4bc5@gmx.com>
- <20180326141008.GO6955@twin.jikos.cz>
- <521fafd5-a927-b68d-8b6d-6c29ca5c34e5@gmx.com>
+Received: from mail-ua0-f195.google.com ([209.85.217.195]:40472 "EHLO
+        mail-ua0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1753082AbeC0SBA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Mar 2018 14:01:00 -0400
+Received: by mail-ua0-f195.google.com with SMTP id n20so6151454ual.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 11:01:00 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <521fafd5-a927-b68d-8b6d-6c29ca5c34e5@gmx.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20180327152320.GA30422@twin.jikos.cz>
+References: <20171212073436.16447-1-wqu@suse.com> <20171212211209.GB3553@twin.jikos.cz>
+ <645e99a8-67ee-b3ce-89cc-e60a481f4bc5@gmx.com> <20180326141008.GO6955@twin.jikos.cz>
+ <521fafd5-a927-b68d-8b6d-6c29ca5c34e5@gmx.com> <20180327152320.GA30422@twin.jikos.cz>
+From: Filipe Manana <fdmanana@gmail.com>
+Date: Tue, 27 Mar 2018 19:00:57 +0100
+Message-ID: <CAL3q7H4+SbBPrQCwsDd+Xgu85jtg3AW5Fn1i89eE4WH+b4Bc8w@mail.gmail.com>
+Subject: Re: [PATCH 00/14] Qgroup metadata reservation rework
+To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Jeff Mahoney <jeffm@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 27, 2018 at 07:49:02AM +0800, Qu Wenruo wrote:
-> > As there's going to be one more rc, this gives us one more week to
-> > decide if its' ok-ish to merge this patch and fix the fallouts during
-> > the normal cycle.
-> > 
-> > Given that this patchset has been in for-next for a long time, I'd do
-> > the merge now and focus on testing for that patchset as the rest of
-> > devel patches looks good.
-> > 
-> > Please let me know if you have objections.
-> 
-> I'm completely fine with the decision.
+On Tue, Mar 27, 2018 at 4:23 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Tue, Mar 27, 2018 at 07:49:02AM +0800, Qu Wenruo wrote:
+>> > Merging plan for this patchset from last week was to postpone until
+>> > 4.18 due to lack of final testing here. I've tried to run this with
+>> > quotas enabled an fstests that led to warnings in the power failure
+>> > simulation tests.
+>>
+>> Which test case?
+>
+> eg shared/298, the log is then flooded by this message
+>
+> [153085.406444] ------------[ cut here ]------------
+> [153085.411426] qgroup 5 data reserved space underflow, have 32661504 to free 268435456
+> [153085.411584] WARNING: CPU: 7 PID: 22475 at fs/btrfs/qgroup.c:102 qgroup_rsv_release+0x1fa/0x210 [btrfs]
+> [153085.499574] CPU: 7 PID: 22475 Comm: fio Tainted: G        W        4.16.0-rc6-1.ge195904-vanilla+ #192
+> [153085.509186] Hardware name: empty empty/S3993, BIOS PAQEX0-3 02/24/2008
+> [153085.516008] RIP: 0010:qgroup_rsv_release+0x1fa/0x210 [btrfs]
+> [153085.521899] RSP: 0018:ffffb1de01bf7c18 EFLAGS: 00010296
+> [153085.527367] RAX: 0000000000000047 RBX: ffff928ce4950c00 RCX: 0000000000000002
+> [153085.534799] RDX: 0000000000000007 RSI: 0000000000000001 RDI: 0000000000000202
+> [153085.542236] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+> [153085.549670] R10: 0000000000000000 R11: ffffb1de01bf7aa0 R12: ffff928ce4950c00
+> [153085.557106] R13: 0000000000000000 R14: 0000000010000000 R15: ffff928c3bb54000
+> [153085.564545] FS:  00007f90afdc5740(0000) GS:ffff928ce7400000(0000) knlGS:0000000000000000
+> [153085.572945] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [153085.578925] CR2: 000000000076daa8 CR3: 00000001f86e0000 CR4: 00000000000006e0
+> [153085.586367] Call Trace:
+> [153085.589112]  btrfs_qgroup_free_refroot+0x174/0x2c0 [btrfs]
+> [153085.594873]  __btrfs_run_delayed_refs+0xb9e/0x17e0 [btrfs]
+> [153085.600671]  btrfs_run_delayed_refs+0x10d/0x1c0 [btrfs]
+> [153085.606179]  btrfs_commit_transaction+0x30/0xad0 [btrfs]
+> [153085.611782]  btrfs_sync_file+0x393/0x4f0 [btrfs]
+> [153085.616652]  do_fsync+0x38/0x60
+> [153085.620021]  SyS_fsync+0xc/0x10
+> [153085.623402]  do_syscall_64+0x71/0x1a0
+> [153085.627296]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
+> [153085.632590] RIP: 0033:0x7f90af0942cd
+> [153085.636379] RSP: 002b:00007ffcb59a4c20 EFLAGS: 00000293 ORIG_RAX: 000000000000004a
+> [153085.644249] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f90af0942cd
+> [153085.651675] RDX: 0000000000001000 RSI: 00000000013e5960 RDI: 0000000000000004
+> [153085.659111] RBP: 0000000000000000 R08: 0000000000000008 R09: 9e37fffffffc0001
+> [153085.666549] R10: 000000000f75e468 R11: 0000000000000293 R12: 0000000000000000
+> [153085.673985] R13: 0000000006400000 R14: 00007f90968acfb8 R15: 00007f90adad4db0
+> [153085.700848] ---[ end trace 48a650f3d217fbac ]---
+>
+>
+> or generic/475
 
-So, I've merged the patchset, updated a few comments or changelogs.
+This one is totally unrelated with this patchset, as it happens
+without it and without qgroups enabled.
+It happens very often actually, it's just some proper cleanup missing
+after some fatal error that lead to a transaction abort.
 
-There was one fixup for btrfs_delalloc_release_space, one more call was
-added meanwhile (765f3cebff0023d05 "btrfs: Handle
-btrfs_set_extent_delalloc failure in relocate_file_extent_cluster"), the
-new parameter was set to true as it's an error handling kind of use.
+>
+> [69595.290236] WARNING: CPU: 1 PID: 3659 at fs/btrfs/extent-tree.c:124 btrfs_put_block_group+0x52/0x60 [btrfs]
+> [69595.300499] CPU: 1 PID: 3659 Comm: umount Tainted: G        W        4.16.0-rc6-1.ge195904-vanilla+ #192
+> [69595.300502] Hardware name: empty empty/S3993, BIOS PAQEX0-3 02/24/2008
+> [69595.300555] RIP: 0010:btrfs_put_block_group+0x52/0x60 [btrfs]
+> [69595.300569] RSP: 0018:ffffb1de02d67dd0 EFLAGS: 00010286
+> [69595.393015] RAX: 0000000000000001 RBX: ffff928ca4b7dc00 RCX: 0000000000000002
+> [69595.393018] RDX: ffff928ca4b7ddd8 RSI: 0000000000000001 RDI: ffff928ca4b7dc00
+> [69595.393024] RBP: ffff928ca4b7dc00 R08: ffff928cd6c70e10 R09: 0000000000000000
+> [69595.420315] R10: 0000000000000000 R11: ffff928cd6c70e10 R12: ffff928c9c7640d0
+> [69595.420318] R13: ffff928c9c764000 R14: ffff928c9c764120 R15: 0000000000000000
+> [69595.420322] FS:  00007ff5e66a2840(0000) GS:ffff928ce6800000(0000) knlGS:0000000000000000
+> [69595.420328] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [69595.449136] CR2: 00007efdd6e6b594 CR3: 0000000211943000 CR4: 00000000000006e0
+> [69595.449140] Call Trace:
+> [69595.449207]  btrfs_free_block_groups+0x164/0x420 [btrfs]
+> [69595.464610]  close_ctree+0x127/0x2f0 [btrfs]
+> [69595.469046]  generic_shutdown_super+0x69/0x110
+> [69595.469054]  kill_anon_super+0xe/0x20
+> [69595.469102]  btrfs_kill_super+0x13/0x100 [btrfs]
+> [69595.469114]  deactivate_locked_super+0x39/0x70
+> [69595.469122]  cleanup_mnt+0x3b/0x70
+> [69595.469128]  task_work_run+0x80/0xb0
+> [69595.469139]  exit_to_usermode_loop+0x71/0xa0
+> [69595.469148]  do_syscall_64+0x157/0x1a0
+> [69595.469158]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
+> [69595.469164] RIP: 0033:0x7ff5e5f99d37
+> [69595.469167] RSP: 002b:00007ffeb054adf8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+> [69595.469172] RAX: 0000000000000000 RBX: 0000563360af5060 RCX: 00007ff5e5f99d37
+> [69595.469175] RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000563360af52c0
+> [69595.469178] RBP: 0000563360af52c0 R08: 00007ff5e628b97d R09: 0000000000000005
+> [69595.469181] R10: 0000563360af5280 R11: 0000000000000246 R12: 00007ff5e649a1a4
+> [69595.469183] R13: 0000000000000000 R14: 0000000000000000 R15: 00000000ffffffff
+> [69595.469339] ---[ end trace 48a650f3d217fba6 ]---
+>
+> [69595.530603] WARNING: CPU: 1 PID: 3659 at fs/btrfs/extent-tree.c:9945 btrfs_free_block_groups+0x2cb/0x420 [btrfs]
+> [69595.590550] CPU: 1 PID: 3659 Comm: umount Tainted: G        W        4.16.0-rc6-1.ge195904-vanilla+ #192
+> [69595.590552] Hardware name: empty empty/S3993, BIOS PAQEX0-3 02/24/2008
+> [69595.590594] RIP: 0010:btrfs_free_block_groups+0x2cb/0x420 [btrfs]
+> [69595.590614] RSP: 0018:ffffb1de02d67de0 EFLAGS: 00010286
+> [69595.683331] RAX: ffff928cb96e2908 RBX: 0000000000000000 RCX: 0000000000000002
+> [69595.683334] RDX: 0000000000000001 RSI: 0000000000000001 RDI: ffff928cb96e0800
+> [69595.683339] RBP: ffff928cb96e7c00 R08: 0000000000000000 R09: 0000000000000000
+> [69595.710642] R10: 0000000000000000 R11: 0000000000000002 R12: ffff928cb96e2800
+> [69595.710645] R13: ffff928c9c764000 R14: ffff928cb96e2908 R15: ffff928c9c766b50
+> [69595.710649] FS:  00007ff5e66a2840(0000) GS:ffff928ce6800000(0000) knlGS:0000000000000000
+> [69595.710654] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [69595.739454] CR2: 00007efdd6e6b594 CR3: 0000000211943000 CR4: 00000000000006e0
+> [69595.739457] Call Trace:
+> [69595.739524]  close_ctree+0x127/0x2f0 [btrfs]
+> [69595.753856]  generic_shutdown_super+0x69/0x110
+> [69595.753864]  kill_anon_super+0xe/0x20
+> [69595.753902]  btrfs_kill_super+0x13/0x100 [btrfs]
+> [69595.753912]  deactivate_locked_super+0x39/0x70
+> [69595.771747]  cleanup_mnt+0x3b/0x70
+> [69595.771755]  task_work_run+0x80/0xb0
+> [69595.779135]  exit_to_usermode_loop+0x71/0xa0
+> [69595.779144]  do_syscall_64+0x157/0x1a0
+> [69595.787566]  entry_SYSCALL_64_after_hwframe+0x42/0xb7
+> [69595.787572] RIP: 0033:0x7ff5e5f99d37
+> [69595.796590] RSP: 002b:00007ffeb054adf8 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+> [69595.796596] RAX: 0000000000000000 RBX: 0000563360af5060 RCX: 00007ff5e5f99d37
+> [69595.796599] RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000563360af52c0
+> [69595.796602] RBP: 0000563360af52c0 R08: 00007ff5e628b97d R09: 0000000000000005
+> [69595.796605] R10: 0000563360af5280 R11: 0000000000000246 R12: 00007ff5e649a1a4
+> [69595.796608] R13: 0000000000000000 R14: 0000000000000000 R15: 00000000ffffffff
+> [69595.840989] ---[ end trace 48a650f3d217fba7 ]---
+> [69595.841079] BTRFS info (device dm-0): space_info 1 has 725651456 free, is not full
+> [69595.874673] BTRFS info (device dm-0): space_info total=2155872256, used=1430224896, pinned=0, reserved=18446744073709547520, may_use=0, readonly=0
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-The folloing types of patches will be accepted during the 4.17
-development cycle that are related to this patchset: improved error
-handling, better reporting, tracpoint updates or fixes of bugs triggered
-by the reservation type split. Ie. no unnecessary cleanups or new
-functionality.
+
+
+-- 
+Filipe David Manana,
+
+“Whether you think you can, or you think you can't — you're right.”

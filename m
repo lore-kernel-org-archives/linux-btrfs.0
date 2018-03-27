@@ -1,64 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55296 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1753816AbeC1PwR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Mar 2018 11:52:17 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-        by mx2.suse.de (Postfix) with ESMTP id 41BB3AB39
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Mar 2018 15:52:16 +0000 (UTC)
-Date: Wed, 28 Mar 2018 17:49:50 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/2] btrfs: Validate child tree block's level and
- first key
-Message-ID: <20180328154949.GO30422@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20180327124419.28398-1-wqu@suse.com>
- <20180327124419.28398-2-wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20180327124419.28398-2-wqu@suse.com>
+Received: from victor.provo.novell.com ([137.65.250.26]:50039 "EHLO
+        prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752112AbeC0Mo1 (ORCPT
+        <rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
+        Tue, 27 Mar 2018 08:44:27 -0400
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: tests/qgroup: Fix wrong tree backref level
+Date: Tue, 27 Mar 2018 20:44:18 +0800
+Message-Id: <20180327124419.28398-1-wqu@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Mar 27, 2018 at 08:44:19PM +0800, Qu Wenruo wrote:
-> We have several reports about node pointer points to incorrect child
-> tree blocks, which could have even wrong owner and level but still with
-> valid generation and checksum.
-> 
-> Although btrfs check could handle it and print error message like:
-> leaf parent key incorrect 60670574592
-> 
-> Kernel doesn't have enough check on this type of corruption correctly.
-> At least add such check to read_tree_block() and btrfs_read_buffer(),
-> where we need two new parameters @level and @first_key to verify the
-> child tree block.
-> 
-> The new @level check is mandatory and all call sites are already
-> modified to extract expected level from its call chain.
-> 
-> While @first_key is optional, the following call sites are skipping such
-> check:
-> 1) Root node/leaf
->    As ROOT_ITEM doesn't contain the first key, skip @first_key check.
-> 2) Direct backref
->    Only parent bytenr and level is known and we need to resolve the key
->    all by ourselves, skip @first_key check.
-> 
-> Another note of this verification is, it needs extra info from nodeptr
-> or ROOT_ITEM, so it can't fit into current tree-checker framework, which
-> is limited to node/leaf boundary.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> changelog:
-> v2:
->   Make @level check mandatory, suggesed by Jeff and Nikolay.
->   Change parameter order as @level is now mandatory, put it in front of
->   @first_key.
->   Change verify_parent_level() to verify_key_level() to avoid confusion
->   on the @level parameter.
->   Add btrfs_error() output for CONFIG_BTRFS_DEBUG to help debugging.
+The extent tree of the test fs is like the following:
 
-That's much better overall, thanks. Adding it to next.
+ BTRFS info (device (null)): leaf 16327509003777336587 total ptrs 1 free space 3919
+  item 0 key (4096 168 4096) itemoff 3944 itemsize 51
+          extent refs 1 gen 1 flags 2
+          tree block key (68719476736 0 0) level 1
+                                           ^^^^^^^
+          ref#0: tree block backref root 5
+
+And it's using an empty tree for fs tree, so there is no way that its
+level can be 1.
+
+For REAL (created by mkfs) fs tree backref with no skinny metadata, the
+result should look like:
+
+ item 3 key (30408704 EXTENT_ITEM 4096) itemoff 3845 itemsize 51
+         refs 1 gen 4 flags TREE_BLOCK
+         tree block key (256 INODE_ITEM 0) level 0
+                                           ^^^^^^^
+         tree block backref root 5
+
+Fix the level to 0, so it won't break later tree level checker.
+
+Fixes: faa2dbf004e8 ("Btrfs: add sanity tests for new qgroup accounting code")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/tests/qgroup-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/tests/qgroup-tests.c b/fs/btrfs/tests/qgroup-tests.c
+index 90204b166643..160eb2fba726 100644
+--- a/fs/btrfs/tests/qgroup-tests.c
++++ b/fs/btrfs/tests/qgroup-tests.c
+@@ -63,7 +63,7 @@ static int insert_normal_tree_ref(struct btrfs_root *root, u64 bytenr,
+ 	btrfs_set_extent_generation(leaf, item, 1);
+ 	btrfs_set_extent_flags(leaf, item, BTRFS_EXTENT_FLAG_TREE_BLOCK);
+ 	block_info = (struct btrfs_tree_block_info *)(item + 1);
+-	btrfs_set_tree_block_level(leaf, block_info, 1);
++	btrfs_set_tree_block_level(leaf, block_info, 0);
+ 	iref = (struct btrfs_extent_inline_ref *)(block_info + 1);
+ 	if (parent > 0) {
+ 		btrfs_set_extent_inline_ref_type(leaf, iref,
+-- 
+2.16.2
+

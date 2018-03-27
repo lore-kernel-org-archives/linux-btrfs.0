@@ -1,45 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp2130.oracle.com ([156.151.31.86]:57872 "EHLO
-        userp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1750716AbeC2KSA (ORCPT
+Received: from aserp2130.oracle.com ([141.146.126.79]:36802 "EHLO
+        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752549AbeC0XiQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Mar 2018 06:18:00 -0400
-Subject: Re: [PATCH v2 5/8] btrfs: check if the fsid in the primary sb and
- copy sb are same
-To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20180327234000.23656-1-anand.jain@oracle.com>
- <20180327234000.23656-6-anand.jain@oracle.com>
- <d7679385-3a91-c089-06c8-d7a5d4d02260@suse.com>
+        Tue, 27 Mar 2018 19:38:16 -0400
+Received: from pps.filterd (aserp2130.oracle.com [127.0.0.1])
+        by aserp2130.oracle.com (8.16.0.22/8.16.0.22) with SMTP id w2RNIAqk034270
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:15 GMT
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+        by aserp2130.oracle.com with ESMTP id 2gyygk822v-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:15 +0000
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by userv0021.oracle.com (8.14.4/8.14.4) with ESMTP id w2RNcEg3002996
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:14 GMT
+Received: from abhmp0004.oracle.com (abhmp0004.oracle.com [141.146.116.10])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id w2RNcETw010128
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 23:38:14 GMT
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <ab1ddeed-167a-3c55-bb4b-927b5e38eee9@oracle.com>
-Date: Thu, 29 Mar 2018 18:18:32 +0800
-MIME-Version: 1.0
-In-Reply-To: <d7679385-3a91-c089-06c8-d7a5d4d02260@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/8] btrfs: cleanup btrfs_check_super_csum() for better code flow
+Date: Wed, 28 Mar 2018 07:39:52 +0800
+Message-Id: <20180327234000.23656-2-anand.jain@oracle.com>
+In-Reply-To: <20180327234000.23656-1-anand.jain@oracle.com>
+References: <20180327234000.23656-1-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+We check the %csum_type twice. Drop one. Check for the csum_type and
+then for the csum. Which also matches with the progs which have better
+logic. This is preparatory patch to get proper error code from
+btrfs_check_super_csum().
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/disk-io.c | 38 +++++++++++++++++---------------------
+ 1 file changed, 17 insertions(+), 21 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1657d6aa4fa6..b9b435579527 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -399,32 +399,28 @@ static int btrfs_check_super_csum(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_super_block *disk_sb =
+ 		(struct btrfs_super_block *)raw_disk_sb;
+ 	u16 csum_type = btrfs_super_csum_type(disk_sb);
+-	int ret = 0;
+-
+-	if (csum_type == BTRFS_CSUM_TYPE_CRC32) {
+-		u32 crc = ~(u32)0;
+-		char result[sizeof(crc)];
+-
+-		/*
+-		 * The super_block structure does not span the whole
+-		 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
+-		 * is filled with zeros and is included in the checksum.
+-		 */
+-		crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE,
+-				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
+-		btrfs_csum_final(crc, result);
+-
+-		if (memcmp(raw_disk_sb, result, sizeof(result)))
+-			ret = 1;
+-	}
++	u32 crc = ~(u32)0;
++	char result[sizeof(crc)];
+ 
+ 	if (csum_type >= ARRAY_SIZE(btrfs_csum_sizes)) {
+ 		btrfs_err(fs_info, "unsupported checksum algorithm %u",
+-				csum_type);
+-		ret = 1;
++			  csum_type);
++		return 1;
+ 	}
+ 
+-	return ret;
++	/*
++	 * The super_block structure does not span the whole
++	 * BTRFS_SUPER_INFO_SIZE range, we expect that the unused space
++	 * is filled with zeros and is included in the checksum.
++	 */
++	crc = btrfs_csum_data(raw_disk_sb + BTRFS_CSUM_SIZE,
++			      crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
++	btrfs_csum_final(crc, result);
++
++	if (memcmp(raw_disk_sb, result, sizeof(result)))
++		return 1;
++
++	return 0;
+ }
+ 
+ /*
+-- 
+2.7.0
 
-
->> -	btrfs_release_disk_super(page);
->> ->  error_bdev_put:
-> 
-> You need a check whether page_primary is set here and release it,
-> otherwise you are leaking it. This needs to handle both the primary sb
-> read failure (where page_primary might not be set) as well as any FSID
-> mismatch from loop. (where it will be set)> 
-
-  Right. I should. Will do.
-
-Thanks. Anand
-
->>   	blkdev_put(bdev, flags);
->>   
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 

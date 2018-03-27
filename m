@@ -1,126 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp2130.oracle.com ([141.146.126.79]:36214 "EHLO
-        aserp2130.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1751913AbeC0WrA (ORCPT
+Received: from aserp2120.oracle.com ([141.146.126.78]:36484 "EHLO
+        aserp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1752001AbeC0W7p (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 18:47:00 -0400
-Subject: Re: [PATCH 7/8] btrfs: verify checksum for all devices in mount
- context
+        Tue, 27 Mar 2018 18:59:45 -0400
+Subject: Re: [PATCH 6/8] btrfs: verify checksum when superblock is read for
+ scan
 To: Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
 References: <20180326082742.9235-1-anand.jain@oracle.com>
- <20180326082742.9235-8-anand.jain@oracle.com>
- <63df7a25-7b4b-bb7e-6b85-383c3dcdc54e@suse.com>
+ <20180326082742.9235-7-anand.jain@oracle.com>
+ <d44f6480-016f-2f32-c823-013011d66788@suse.com>
+ <e64a1c27-1dee-ce15-1ad2-738d98d19723@suse.com>
 From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <01ec84dd-658e-4d04-a332-71f9513cbc3f@oracle.com>
-Date: Wed, 28 Mar 2018 06:48:49 +0800
+Message-ID: <761e4a64-0e33-11a7-b265-3428eb12c626@oracle.com>
+Date: Wed, 28 Mar 2018 07:01:35 +0800
 MIME-Version: 1.0
-In-Reply-To: <63df7a25-7b4b-bb7e-6b85-383c3dcdc54e@suse.com>
+In-Reply-To: <e64a1c27-1dee-ce15-1ad2-738d98d19723@suse.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-On 03/27/2018 08:21 PM, Nikolay Borisov wrote:
-> 
-> 
-> On 26.03.2018 11:27, Anand Jain wrote:
->> During mount context, we aren't verifying the superblock checksum
->> for all the devices, instead, we verify it only for the
->> struct btrfs_fs_device::latest_bdev. This patch fixes it
->> by moving the checksum verification code from the function open_ctree()
->> into the function btrfs_read_dev_one_super().
+>>> Test script:
+>>>
+>>>   Corrupt primary superblock and check if device scan and mount
+>>>   fails:
+>>>   mkfs.btrfs -fq /dev/sdc
+>>>   dd if=/dev/urandom of=/dev/sdc ibs=1 obs=1 count=1 seek=64K
+>>>   btrfs dev scan
+>>>   mount /dev/sdb /btrfs
+>>>
+>>>   Corrupt secondary superblock and check if device scan and mount
+>>>   is succcessful, check for the dmesg for errors.
+>>>   mkfs.btrfs -fq /dev/sdc
+>>>   dd if=/dev/urandom of=/dev/sdc ibs=1 obs=1 count=1 seek=64K
+>>>   btrfs dev scan
+>>>   mount /dev/sdb /btrfs
 >>
->> By doing this now we are verifying the superblock checksum
->> in the mount-context, device-replace and, device-delete context.
+>> Have you considered adding fstests, it will be very easy to test for
+>> this behavior?
+
+  This is one off kind of bug, not sure if it would value add
+  for checking it all the time in xfstests?
+
+
+>> Same comment as before regarding string literals splitting across lines.
+
+accepted.
+
+
+>>> +		else
+>>> +			pr_err("BTRFS error (device %pg): "\
+>>> +				"superblock checksum failed, bytenr=%llu",
+>>> +				bdev, bytenr);
+>>> +		btrfs_release_disk_super(*page);
+>>> +		return err;
+>>> +	}
 > 
-> Which call chain provides the device-replace and device-delete contexts?
-> I think it is worth it documenting them in the changelog.
+> Also it will be better to have the checksum check after we have verified
+> some basic invariants - that bytenr and magic have sane values.
 
-  Will copy it here from the cover-letter.
+  accepted.
 
->>
->> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> 
-> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> 
->> ---
->>   fs/btrfs/disk-io.c | 35 +++++++++++++++++------------------
->>   1 file changed, 17 insertions(+), 18 deletions(-)
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 6299ab18da5f..3cc50041c0b9 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -2565,24 +2565,6 @@ int open_ctree(struct super_block *sb,
->>   	}
->>   
->>   	/*
->> -	 * We want to check superblock checksum, the type is stored inside.
->> -	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
->> -	 */
->> -	err = btrfs_check_super_csum(bh->b_data);
->> -	if (err) {
->> -		if (err == -EINVAL)
->> -			pr_err("BTRFS error (device %pg): "\
->> -				"unsupported checksum algorithm",
->> -				fs_devices->latest_bdev);
->> -		else
->> -			pr_err("BTRFS error (device %pg): "\
->> -				"superblock checksum mismatch",
->> -				fs_devices->latest_bdev);
->> -		brelse(bh);
->> -		goto fail_alloc;
->> -	}
->> -
->> -	/*
->>   	 * super_copy is zeroed at allocation time and we never touch the
->>   	 * following bytes up to INFO_SIZE, the checksum is calculated from
->>   	 * the whole block of INFO_SIZE
->> @@ -3128,6 +3110,7 @@ int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
->>   	struct buffer_head *bh;
->>   	struct btrfs_super_block *super;
->>   	u64 bytenr;
->> +	int err;
->>   
->>   	bytenr = btrfs_sb_offset(copy_num);
->>   	if (bytenr + BTRFS_SUPER_INFO_SIZE >= i_size_read(bdev->bd_inode))
->> @@ -3148,6 +3131,22 @@ int btrfs_read_dev_one_super(struct block_device *bdev, int copy_num,
->>   		return -EINVAL;
->>   	}
->>   
->> +	/*
->> +	 * Check the superblock checksum, the type is stored inside.
->> +	 * Pass the whole disk block of size BTRFS_SUPER_INFO_SIZE (4k).
->> +	 */
->> +	err = btrfs_check_super_csum(bh->b_data);
->> +	if (err) {
-
-I am fixing this to if (err < 0) {
-
->> +		if (err == -EINVAL)
->> +			pr_err("BTRFS error (device %pg): unsupported checksum algorithm",
->> +				bdev);
->> +		else if (err == -EUCLEAN)
->> +			pr_err("BTRFS error (device %pg): superblock checksum mismatch",
->> +				bdev);
-
-  I am also dropping else if to else in v2.
-
-Thanks, Anand
-
-
->> +		brelse(bh);
->> +		return err;
->> +	}
->> +
->>   	*bh_ret = bh;
->>   	return 0;
->>   }
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Thanks,
+Anand

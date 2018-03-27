@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.cn.fujitsu.com ([183.91.158.132]:56162 "EHLO
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:32429 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S1752069AbeC0HHT (ORCPT
+        with ESMTP id S1752055AbeC0HHV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Mar 2018 03:07:19 -0400
+        Tue, 27 Mar 2018 03:07:21 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-        by cn.fujitsu.com (Postfix) with ESMTP id 3F89748AE76C
+        by cn.fujitsu.com (Postfix) with ESMTP id B3BC848AE76D
         for <linux-btrfs@vger.kernel.org>; Tue, 27 Mar 2018 15:07:10 +0800 (CST)
 From: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 07/10] btrfs-progs: undelete-subvol: introduce btrfs_undelete_intact_subvols
-Date: Tue, 27 Mar 2018 15:06:55 +0800
-Message-ID: <20180327070658.13064-8-lufq.fnst@cn.fujitsu.com>
+Subject: [PATCH v2 08/10] btrfs-progs: undelete-subvol: add undelete-subvol subcommand
+Date: Tue, 27 Mar 2018 15:06:56 +0800
+Message-ID: <20180327070658.13064-9-lufq.fnst@cn.fujitsu.com>
 In-Reply-To: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
 References: <20180327070658.13064-1-lufq.fnst@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,115 +19,111 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function default will traverse the all orphan items on the tree root,
-and recover the all intact subvolumes. If subvol_id is specified, then only
-the corresponding subvolume will be recovered.
+Add the undelete-subvol subcommand for btrfs rescue. This subcommand is
+used to recover deleted subvolume left intact on the device.
 
 Signed-off-by: Lu Fengqi <lufq.fnst@cn.fujitsu.com>
 ---
-v2: add subvol_id argumenta to specify subvol_id instead of recovering
-all subvolumes.
+v2: add -s option to specify subvol_id.
 
- undelete-subvol.c | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- undelete-subvol.h |  2 ++
- 2 files changed, 72 insertions(+)
+ cmds-rescue.c | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
 
-diff --git a/undelete-subvol.c b/undelete-subvol.c
-index 9243e35545c5..5b494ca086ab 100644
---- a/undelete-subvol.c
-+++ b/undelete-subvol.c
-@@ -15,6 +15,7 @@
- #include "transaction.h"
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index c40088ad374e..c5132126e922 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -25,6 +25,7 @@
  #include "disk-io.h"
- #include "messages.h"
+ #include "commands.h"
+ #include "utils.h"
 +#include "undelete-subvol.h"
+ #include "help.h"
  
- /*
-  * Determines whether the subvolume is intact, according to the drop_progress
-@@ -182,3 +183,72 @@ static int link_subvol_to_lostfound(struct btrfs_root *root, u64 subvol_id)
- out:
- 	return ret;
+ static const char * const rescue_cmd_group_usage[] = {
+@@ -248,6 +249,73 @@ out:
+ 	return !!ret;
  }
+ 
++static const char * const cmd_rescue_undelete_subvol_usage[] = {
++	"btrfs rescue undelete-subvol [-s <subvolid>] <device>",
++	"Undelete deleted subvolume",
++	"All deleted subvolume that still left intact on the device will be",
++	"recovered. If -s <subvolid> option is given, then just recover the",
++	"subvolume which specified by <subvolid>.",
++	"",
++	"-s <subvolid>	specify the subvolume which will be recovered.",
++	NULL
++};
 +
-+/*
-+ * Traverse all orphan items on the root tree, restore them to the lost+found
-+ * directory if the corresponding subvolumes are still intact left on the disk.
-+ *
-+ * @root	the root of the root tree.
-+ * @subvol_id	if not set to 0, skip other subvolumes and only recover the
-+ *		subvolume specified by @subvol_id.
-+ *
-+ * Return 0 if no error occurred even if no subvolume was recovered.
-+ */
-+int btrfs_undelete_intact_subvols(struct btrfs_root *root, u64 subvol_id)
++static int cmd_rescue_undelete_subvol(int argc, char **argv)
 +{
-+	struct btrfs_key key;
-+	struct btrfs_path path;
-+	u64 found_count = 0;
-+	u64 recovered_count = 0;
-+	int ret = 0;
++	struct btrfs_fs_info *fs_info;
++	char *devname;
++	u64 subvol_id = 0;
++	int ret;
 +
-+	key.objectid = BTRFS_ORPHAN_OBJECTID;
-+	key.type = BTRFS_ORPHAN_ITEM_KEY;
-+	key.offset = subvol_id ? subvol_id + 1 : (u64)-1;
++	while (1) {
++		int c = getopt(argc, argv, "s:");
 +
-+	btrfs_init_path(&path);
-+	while (subvol_id != key.offset) {
-+		ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
-+		if (ret < 0) {
-+			error("search ORPHAN_ITEM for %llu failed.\n",
-+			      key.offset);
++		if (c < 0)
 +			break;
-+		}
-+
-+		path.slots[0]--;
-+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-+
-+		btrfs_release_path(&path);
-+
-+		/* No more BTRFS_ORPHAN_ITEM, so we don't need to continue. */
-+		if (key.type != BTRFS_ORPHAN_ITEM_KEY) {
-+			ret = 0;
++		switch (c) {
++		case 's':
++			subvol_id = arg_strtou64(optarg);
++			if (!is_fstree(subvol_id)) {
++				error("%llu is not a valid subvolume id",
++						subvol_id);
++				ret = -EINVAL;
++				goto out;
++			}
 +			break;
++		default:
++			usage(cmd_rescue_undelete_subvol_usage);
 +		}
-+
-+		/* If subvol_id is non-zero, skip other deleted subvolume. */
-+		if (subvol_id && subvol_id != key.offset) {
-+			ret = -ENOENT;
-+			break;
-+		}
-+
-+		if (!is_subvol_intact(root, key.offset))
-+			continue;
-+
-+		/* Here we can confirm there is an intact subvolume. */
-+		found_count++;
-+		ret = link_subvol_to_lostfound(root, key.offset);
-+		if (ret == 0) {
-+			recovered_count++;
-+			printf(
-+		"Recovered subvolume %llu to lost+found successfully.\n",
-+				key.offset);
-+		}
-+
 +	}
 +
-+	printf("Found %llu subvols left intact\n", found_count);
-+	printf("Recovered %llu subvols\n", found_count);
++	if (check_argc_exact(argc - optind, 1))
++		usage(cmd_rescue_undelete_subvol_usage);
 +
++	devname = argv[optind];
++	ret = check_mounted(devname);
++	if (ret < 0) {
++		error("could not check mount status: %s", strerror(-ret));
++		goto out;
++	} else if (ret) {
++		error("%s is currently mounted", devname);
++		ret = -EBUSY;
++		goto out;
++	}
++
++	fs_info = open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES |
++				     OPEN_CTREE_PARTIAL);
++	if (!fs_info) {
++		error("could not open btrfs");
++		ret = -EIO;
++		goto out;
++	}
++
++	ret = btrfs_undelete_intact_subvols(fs_info->tree_root, subvol_id);
++
++	close_ctree(fs_info->tree_root);
++out:
 +	return ret;
 +}
-diff --git a/undelete-subvol.h b/undelete-subvol.h
-index 7cfd100cce37..f773210c46fe 100644
---- a/undelete-subvol.h
-+++ b/undelete-subvol.h
-@@ -14,4 +14,6 @@
- #ifndef __BTRFS_UNDELETE_SUBVOLUME_H__
- #define __BTRFS_UNDELETE_SUBVOLUME_H__
- 
-+int btrfs_undelete_intact_subvols(struct btrfs_root *root, u64 subvol_id);
 +
- #endif
+ static const char rescue_cmd_group_info[] =
+ "toolbox for specific rescue operations";
+ 
+@@ -260,6 +328,8 @@ const struct cmd_group rescue_cmd_group = {
+ 		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL, 0},
+ 		{ "fix-device-size", cmd_rescue_fix_device_size,
+ 			cmd_rescue_fix_device_size_usage, NULL, 0},
++		{ "undelete-subvol", cmd_rescue_undelete_subvol,
++			cmd_rescue_undelete_subvol_usage, NULL, 0},
+ 		NULL_CMD_STRUCT
+ 	}
+ };
 -- 
 2.16.2
 
